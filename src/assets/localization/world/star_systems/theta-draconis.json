@@ -9,20 +9,65 @@
     "43:system_43.Theta_Draconis_A": {
       "en": "Theta Draconis A"
     },
-    "43:system_43.Theta_Draconis_A.Theta_Draconis_Ab": {
-      "en": "Theta Draconis Ab"
-    },
     "43:system_43.Theta_Draconis_B": {
       "en": "Theta Draconis B"
     },
-    "43:system_43.Theta_Draconis_B.Theta_Draconis_Bb": {
-      "en": "Theta Draconis Bb"
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__K1": {
+      "en": "Theta Draconis (BA) K1"
     },
-    "43:system_43.barycenter.belt_0": {
-      "en": "Theta Draconis Belt"
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__K2": {
+      "en": "Theta Draconis (BA) K2"
     },
-    "43:system_43.barycenter.belt_1": {
-      "en": "Theta Draconis Kuiper Belt"
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__K3": {
+      "en": "Theta Draconis (BA) K3"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__b": {
+      "en": "Theta Draconis (BA) b"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__c": {
+      "en": "Theta Draconis (BA) c"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__d": {
+      "en": "Theta Draconis (BA) d"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__e": {
+      "en": "Theta Draconis (BA) e"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__f": {
+      "en": "Theta Draconis (BA) f"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__g": {
+      "en": "Theta Draconis (BA) g"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__h": {
+      "en": "Theta Draconis (BA) h"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__i": {
+      "en": "Theta Draconis (BA) i"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__j": {
+      "en": "Theta Draconis (BA) j"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__k": {
+      "en": "Theta Draconis (BA) k"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__l": {
+      "en": "Theta Draconis (BA) l"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__m": {
+      "en": "Theta Draconis (BA) m"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__n": {
+      "en": "Theta Draconis (BA) n"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__o": {
+      "en": "Theta Draconis (BA) o"
+    },
+    "43:system_43.barycenter_ab.Theta_Draconis__BA__p": {
+      "en": "Theta Draconis (BA) p"
+    },
+    "43:system_43.barycenter_ab.kuiper_belt": {
+      "en": "Theta Draconis (BA) outer belt"
     }
   }
 }

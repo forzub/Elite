@@ -9,14 +9,29 @@
     "3:system_3.Wolf_359": {
       "en": "Wolf 359"
     },
-    "3:system_3.Wolf_359.belt_0": {
-      "en": "Wolf 359 Belt"
+    "3:system_3.Wolf_359.Wolf_359_b": {
+      "en": "Wolf 359 b"
     },
-    "3:system_3.barycenter.belt_0": {
-      "en": "Wolf 359 Belt"
+    "3:system_3.Wolf_359.Wolf_359_c": {
+      "en": "Wolf 359 c"
     },
-    "3:system_3.barycenter.belt_1": {
-      "en": "Wolf 359 Kuiper Belt"
+    "3:system_3.Wolf_359.Wolf_359_d": {
+      "en": "Wolf 359 d"
+    },
+    "3:system_3.Wolf_359.Wolf_359_e": {
+      "en": "Wolf 359 e"
+    },
+    "3:system_3.Wolf_359.Wolf_359_e.Wolf_359_e_I": {
+      "en": "Wolf 359 e I"
+    },
+    "3:system_3.Wolf_359.Wolf_359_f": {
+      "en": "Wolf 359 f"
+    },
+    "3:system_3.Wolf_359.Wolf_359_g": {
+      "en": "Wolf 359 g"
+    },
+    "3:system_3.Wolf_359.debris_disk": {
+      "en": "Wolf 359 debris disk"
     }
   }
 }

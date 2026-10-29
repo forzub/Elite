@@ -24,14 +24,29 @@
     "100062:system_100062.Kepler-62.Kepler-62_f": {
       "en": "Kepler-62 f"
     },
-    "100062:system_100062.Kepler-62.Kepler-62_f.Kepler-62_f-I": {
-      "en": "Kepler-62 f-I"
+    "100062:system_100062.Kepler-62.Kepler-62_g": {
+      "en": "Kepler-62 g"
     },
-    "100062:system_100062.barycenter.belt_0": {
-      "en": "Kepler-62 Belt"
+    "100062:system_100062.Kepler-62.Kepler-62_h": {
+      "en": "Kepler-62 h"
     },
-    "100062:system_100062.barycenter.belt_1": {
-      "en": "Kepler-62 Kuiper Belt"
+    "100062:system_100062.Kepler-62.Kepler-62_i": {
+      "en": "Kepler-62 i"
+    },
+    "100062:system_100062.Kepler-62.Kepler-62_j": {
+      "en": "Kepler-62 j"
+    },
+    "100062:system_100062.Kepler-62.Kepler-62_k": {
+      "en": "Kepler-62 k"
+    },
+    "100062:system_100062.Kepler-62.Kepler-62_l": {
+      "en": "Kepler-62 l"
+    },
+    "100062:system_100062.Kepler-62.Kepler-62_m": {
+      "en": "Kepler-62 m"
+    },
+    "100062:system_100062.Kepler-62.kuiper_belt": {
+      "en": "Kepler-62 outer belt"
     }
   }
 }

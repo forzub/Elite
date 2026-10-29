@@ -9,29 +9,38 @@
     "26:system_26.Teegarden's_Star": {
       "en": "Teegarden's Star"
     },
-    "26:system_26.Teegarden's_Star.Teegarden_b": {
-      "en": "Teegarden b"
+    "26:system_26.Teegarden's_Star.Teegarden's_Star_b": {
+      "en": "Teegarden's Star b"
     },
-    "26:system_26.Teegarden's_Star.Teegarden_b.Teegarden_b-I": {
-      "en": "Teegarden b-I"
+    "26:system_26.Teegarden's_Star.Teegarden's_Star_c": {
+      "en": "Teegarden's Star c"
     },
-    "26:system_26.Teegarden's_Star.Teegarden_c": {
-      "en": "Teegarden c"
+    "26:system_26.Teegarden's_Star.Teegarden's_Star_d": {
+      "en": "Teegarden's Star d"
     },
-    "26:system_26.Teegarden's_Star.Teegarden_d": {
-      "en": "Teegarden d"
+    "26:system_26.Teegarden's_Star.Teegarden's_Star_e": {
+      "en": "Teegarden's Star e"
     },
-    "26:system_26.Teegarden's_Star.Teegarden_e": {
-      "en": "Teegarden e"
+    "26:system_26.Teegarden's_Star.Teegarden's_Star_f": {
+      "en": "Teegarden's Star f"
     },
-    "26:system_26.Teegarden's_Star.Teegarden_e.Teegarden_e-I": {
-      "en": "Teegarden e-I"
+    "26:system_26.Teegarden's_Star.Teegarden's_Star_g": {
+      "en": "Teegarden's Star g"
     },
-    "26:system_26.barycenter.belt_0": {
-      "en": "Teegarden's Star Belt"
+    "26:system_26.Teegarden's_Star.Teegarden's_Star_h": {
+      "en": "Teegarden's Star h"
     },
-    "26:system_26.barycenter.belt_1": {
-      "en": "Teegarden's Star Kuiper Belt"
+    "26:system_26.Teegarden's_Star.Teegarden's_Star_i": {
+      "en": "Teegarden's Star i"
+    },
+    "26:system_26.Teegarden's_Star.Teegarden's_Star_j": {
+      "en": "Teegarden's Star j"
+    },
+    "26:system_26.Teegarden's_Star.Teegarden's_Star_k": {
+      "en": "Teegarden's Star k"
+    },
+    "26:system_26.Teegarden's_Star.kuiper_belt": {
+      "en": "Teegarden's Star outer belt"
     }
   }
 }

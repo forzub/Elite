@@ -9,14 +9,23 @@
     "16:system_16.HD_69830": {
       "en": "HD 69830"
     },
+    "16:system_16.HD_69830.HD_69830_A1": {
+      "en": "HD 69830 A1"
+    },
+    "16:system_16.HD_69830.HD_69830_K2": {
+      "en": "HD 69830 K2"
+    },
+    "16:system_16.HD_69830.HD_69830_K3": {
+      "en": "HD 69830 K3"
+    },
+    "16:system_16.HD_69830.HD_69830_K4": {
+      "en": "HD 69830 K4"
+    },
     "16:system_16.HD_69830.HD_69830_b": {
       "en": "HD 69830 b"
     },
     "16:system_16.HD_69830.HD_69830_c": {
       "en": "HD 69830 c"
-    },
-    "16:system_16.HD_69830.HD_69830_c.HD_69830_c-I": {
-      "en": "HD 69830 c-I"
     },
     "16:system_16.HD_69830.HD_69830_d": {
       "en": "HD 69830 d"
@@ -27,14 +36,47 @@
     "16:system_16.HD_69830.HD_69830_f": {
       "en": "HD 69830 f"
     },
-    "16:system_16.HD_69830.HD_69830_f.HD_69830_f-I": {
-      "en": "HD 69830 f-I"
+    "16:system_16.HD_69830.HD_69830_g": {
+      "en": "HD 69830 g"
     },
-    "16:system_16.barycenter.belt_0": {
-      "en": "HD 69830 Belt"
+    "16:system_16.HD_69830.HD_69830_h": {
+      "en": "HD 69830 h"
     },
-    "16:system_16.barycenter.belt_1": {
-      "en": "HD 69830 Kuiper Belt"
+    "16:system_16.HD_69830.HD_69830_i": {
+      "en": "HD 69830 i"
+    },
+    "16:system_16.HD_69830.HD_69830_j": {
+      "en": "HD 69830 j"
+    },
+    "16:system_16.HD_69830.HD_69830_k": {
+      "en": "HD 69830 k"
+    },
+    "16:system_16.HD_69830.HD_69830_k.HD_69830_k_I": {
+      "en": "HD 69830 k I"
+    },
+    "16:system_16.HD_69830.HD_69830_k.HD_69830_k_II": {
+      "en": "HD 69830 k II"
+    },
+    "16:system_16.HD_69830.HD_69830_k.HD_69830_k_III": {
+      "en": "HD 69830 k III"
+    },
+    "16:system_16.HD_69830.HD_69830_k.HD_69830_k_IV": {
+      "en": "HD 69830 k IV"
+    },
+    "16:system_16.HD_69830.HD_69830_k.HD_69830_k_V": {
+      "en": "HD 69830 k V"
+    },
+    "16:system_16.HD_69830.HD_69830_l": {
+      "en": "HD 69830 l"
+    },
+    "16:system_16.HD_69830.HD_69830_l.HD_69830_l_I": {
+      "en": "HD 69830 l I"
+    },
+    "16:system_16.HD_69830.asteroid_belt": {
+      "en": "HD 69830 asteroid belt"
+    },
+    "16:system_16.HD_69830.kuiper_belt": {
+      "en": "HD 69830 outer belt"
     }
   }
 }

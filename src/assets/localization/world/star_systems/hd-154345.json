@@ -9,14 +9,29 @@
     "47:system_47.HD_154345": {
       "en": "HD 154345"
     },
+    "47:system_47.HD_154345.HD_154345_A1": {
+      "en": "HD 154345 A1"
+    },
+    "47:system_47.HD_154345.HD_154345_K2": {
+      "en": "HD 154345 K2"
+    },
+    "47:system_47.HD_154345.HD_154345_K3": {
+      "en": "HD 154345 K3"
+    },
+    "47:system_47.HD_154345.HD_154345_K4": {
+      "en": "HD 154345 K4"
+    },
     "47:system_47.HD_154345.HD_154345_b": {
       "en": "HD 154345 b"
     },
-    "47:system_47.HD_154345.HD_154345_b.HD_154345_b-I": {
-      "en": "HD 154345 b-I"
+    "47:system_47.HD_154345.HD_154345_b.HD_154345_b_I": {
+      "en": "HD 154345 b I"
     },
-    "47:system_47.HD_154345.HD_154345_b.HD_154345_b-II": {
-      "en": "HD 154345 b-II"
+    "47:system_47.HD_154345.HD_154345_b.HD_154345_b_II": {
+      "en": "HD 154345 b II"
+    },
+    "47:system_47.HD_154345.HD_154345_b.HD_154345_b_III": {
+      "en": "HD 154345 b III"
     },
     "47:system_47.HD_154345.HD_154345_c": {
       "en": "HD 154345 c"
@@ -24,14 +39,32 @@
     "47:system_47.HD_154345.HD_154345_d": {
       "en": "HD 154345 d"
     },
-    "47:system_47.HD_154345.HD_154345_d.HD_154345_d-I": {
-      "en": "HD 154345 d-I"
+    "47:system_47.HD_154345.HD_154345_e": {
+      "en": "HD 154345 e"
     },
-    "47:system_47.barycenter.belt_0": {
-      "en": "HD 154345 Belt"
+    "47:system_47.HD_154345.HD_154345_f": {
+      "en": "HD 154345 f"
     },
-    "47:system_47.barycenter.belt_1": {
-      "en": "HD 154345 Kuiper Belt"
+    "47:system_47.HD_154345.HD_154345_g": {
+      "en": "HD 154345 g"
+    },
+    "47:system_47.HD_154345.HD_154345_h": {
+      "en": "HD 154345 h"
+    },
+    "47:system_47.HD_154345.HD_154345_i": {
+      "en": "HD 154345 i"
+    },
+    "47:system_47.HD_154345.HD_154345_j": {
+      "en": "HD 154345 j"
+    },
+    "47:system_47.HD_154345.HD_154345_j.HD_154345_j_I": {
+      "en": "HD 154345 j I"
+    },
+    "47:system_47.HD_154345.asteroid_belt": {
+      "en": "HD 154345 asteroid belt"
+    },
+    "47:system_47.HD_154345.kuiper_belt": {
+      "en": "HD 154345 outer belt"
     }
   }
 }

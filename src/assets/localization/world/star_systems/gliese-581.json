@@ -9,29 +9,41 @@
     "10:system_10.Gliese_581": {
       "en": "Gliese 581"
     },
-    "10:system_10.Gliese_581.Gliese_581_b": {
-      "en": "Gliese 581 b"
+    "10:system_10.Gliese_581.GJ_581_b": {
+      "en": "GJ 581 b"
     },
-    "10:system_10.Gliese_581.Gliese_581_c": {
-      "en": "Gliese 581 c"
+    "10:system_10.Gliese_581.GJ_581_c": {
+      "en": "GJ 581 c"
+    },
+    "10:system_10.Gliese_581.GJ_581_e": {
+      "en": "GJ 581 e"
+    },
+    "10:system_10.Gliese_581.Gliese_581_K1": {
+      "en": "Gliese 581 K1"
+    },
+    "10:system_10.Gliese_581.Gliese_581_K2": {
+      "en": "Gliese 581 K2"
+    },
+    "10:system_10.Gliese_581.Gliese_581_K3": {
+      "en": "Gliese 581 K3"
     },
     "10:system_10.Gliese_581.Gliese_581_d": {
       "en": "Gliese 581 d"
     },
-    "10:system_10.Gliese_581.Gliese_581_d.Gliese_581_d-I": {
-      "en": "Gliese 581 d-I"
-    },
-    "10:system_10.Gliese_581.Gliese_581_e": {
-      "en": "Gliese 581 e"
+    "10:system_10.Gliese_581.Gliese_581_f": {
+      "en": "Gliese 581 f"
     },
     "10:system_10.Gliese_581.Gliese_581_g": {
       "en": "Gliese 581 g"
     },
-    "10:system_10.barycenter.belt_0": {
-      "en": "Gliese 581 Belt"
+    "10:system_10.Gliese_581.Gliese_581_h": {
+      "en": "Gliese 581 h"
     },
-    "10:system_10.barycenter.belt_1": {
-      "en": "Gliese 581 Kuiper Belt"
+    "10:system_10.Gliese_581.Gliese_581_i": {
+      "en": "Gliese 581 i"
+    },
+    "10:system_10.Gliese_581.kuiper_belt": {
+      "en": "Gliese 581 outer belt"
     }
   }
 }

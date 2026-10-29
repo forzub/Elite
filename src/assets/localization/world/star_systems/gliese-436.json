@@ -12,20 +12,32 @@
     "24:system_24.Gliese_436.GJ_436_b": {
       "en": "GJ 436 b"
     },
-    "24:system_24.Gliese_436.GJ_436_c": {
-      "en": "GJ 436 c"
+    "24:system_24.Gliese_436.Gliese_436_K1": {
+      "en": "Gliese 436 K1"
     },
-    "24:system_24.Gliese_436.GJ_436_d": {
-      "en": "GJ 436 d"
+    "24:system_24.Gliese_436.Gliese_436_c": {
+      "en": "Gliese 436 c"
     },
-    "24:system_24.Gliese_436.GJ_436_d.GJ_436_d-I": {
-      "en": "GJ 436 d-I"
+    "24:system_24.Gliese_436.Gliese_436_d": {
+      "en": "Gliese 436 d"
     },
-    "24:system_24.barycenter.belt_0": {
-      "en": "Gliese 436 Belt"
+    "24:system_24.Gliese_436.Gliese_436_e": {
+      "en": "Gliese 436 e"
     },
-    "24:system_24.barycenter.belt_1": {
-      "en": "Gliese 436 Kuiper Belt"
+    "24:system_24.Gliese_436.Gliese_436_f": {
+      "en": "Gliese 436 f"
+    },
+    "24:system_24.Gliese_436.Gliese_436_g": {
+      "en": "Gliese 436 g"
+    },
+    "24:system_24.Gliese_436.Gliese_436_h": {
+      "en": "Gliese 436 h"
+    },
+    "24:system_24.Gliese_436.Gliese_436_h.Gliese_436_h_I": {
+      "en": "Gliese 436 h I"
+    },
+    "24:system_24.Gliese_436.kuiper_belt": {
+      "en": "Gliese 436 outer belt"
     }
   }
 }

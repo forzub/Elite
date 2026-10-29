@@ -9,11 +9,11 @@
     "27:system_27.Ross_128": {
       "en": "Ross 128"
     },
+    "27:system_27.Ross_128.Ross_128_K1": {
+      "en": "Ross 128 K1"
+    },
     "27:system_27.Ross_128.Ross_128_b": {
       "en": "Ross 128 b"
-    },
-    "27:system_27.Ross_128.Ross_128_b.Ross_128_b-I": {
-      "en": "Ross 128 b-I"
     },
     "27:system_27.Ross_128.Ross_128_c": {
       "en": "Ross 128 c"
@@ -24,14 +24,29 @@
     "27:system_27.Ross_128.Ross_128_e": {
       "en": "Ross 128 e"
     },
-    "27:system_27.Ross_128.Ross_128_e.Ross_128_e-I": {
-      "en": "Ross 128 e-I"
+    "27:system_27.Ross_128.Ross_128_f": {
+      "en": "Ross 128 f"
     },
-    "27:system_27.barycenter.belt_0": {
-      "en": "Ross 128 Belt"
+    "27:system_27.Ross_128.Ross_128_g": {
+      "en": "Ross 128 g"
     },
-    "27:system_27.barycenter.belt_1": {
-      "en": "Ross 128 Kuiper Belt"
+    "27:system_27.Ross_128.Ross_128_g.Ross_128_g_I": {
+      "en": "Ross 128 g I"
+    },
+    "27:system_27.Ross_128.Ross_128_g.Ross_128_g_II": {
+      "en": "Ross 128 g II"
+    },
+    "27:system_27.Ross_128.Ross_128_h": {
+      "en": "Ross 128 h"
+    },
+    "27:system_27.Ross_128.Ross_128_i": {
+      "en": "Ross 128 i"
+    },
+    "27:system_27.Ross_128.Ross_128_j": {
+      "en": "Ross 128 j"
+    },
+    "27:system_27.Ross_128.kuiper_belt": {
+      "en": "Ross 128 outer belt"
     }
   }
 }

@@ -9,32 +9,68 @@
     "35:system_35.Tau_Cygni_A": {
       "en": "Tau Cygni A"
     },
-    "35:system_35.Tau_Cygni_A.Tau_Cygni_Ab": {
-      "en": "Tau Cygni Ab"
+    "35:system_35.Tau_Cygni_A.Tau_Cygni_A_b": {
+      "en": "Tau Cygni A b"
     },
-    "35:system_35.Tau_Cygni_A.Tau_Cygni_Ac": {
-      "en": "Tau Cygni Ac"
+    "35:system_35.Tau_Cygni_A.Tau_Cygni_A_c": {
+      "en": "Tau Cygni A c"
     },
-    "35:system_35.Tau_Cygni_A.Tau_Cygni_Ac.Tau_Cygni_Ac-I": {
-      "en": "Tau Cygni Ac-I"
+    "35:system_35.Tau_Cygni_A.Tau_Cygni_A_d": {
+      "en": "Tau Cygni A d"
+    },
+    "35:system_35.Tau_Cygni_A.Tau_Cygni_A_e": {
+      "en": "Tau Cygni A e"
+    },
+    "35:system_35.Tau_Cygni_A.Tau_Cygni_A_f": {
+      "en": "Tau Cygni A f"
+    },
+    "35:system_35.Tau_Cygni_A.Tau_Cygni_A_g": {
+      "en": "Tau Cygni A g"
+    },
+    "35:system_35.Tau_Cygni_A.Tau_Cygni_A_h": {
+      "en": "Tau Cygni A h"
+    },
+    "35:system_35.Tau_Cygni_A.Tau_Cygni_A_i": {
+      "en": "Tau Cygni A i"
     },
     "35:system_35.Tau_Cygni_B": {
       "en": "Tau Cygni B"
     },
-    "35:system_35.Tau_Cygni_B.Tau_Cygni_Ba": {
-      "en": "Tau Cygni Ba"
+    "35:system_35.Tau_Cygni_B.Tau_Cygni_B_b": {
+      "en": "Tau Cygni B b"
     },
-    "35:system_35.Tau_Cygni_B.Tau_Cygni_Bb": {
-      "en": "Tau Cygni Bb"
+    "35:system_35.Tau_Cygni_B.Tau_Cygni_B_c": {
+      "en": "Tau Cygni B c"
     },
-    "35:system_35.Tau_Cygni_B.Tau_Cygni_Bb.Tau_Cygni_Bb-I": {
-      "en": "Tau Cygni Bb-I"
+    "35:system_35.Tau_Cygni_B.Tau_Cygni_B_d": {
+      "en": "Tau Cygni B d"
     },
-    "35:system_35.barycenter.belt_0": {
-      "en": "Tau Cygni Belt"
+    "35:system_35.Tau_Cygni_B.Tau_Cygni_B_e": {
+      "en": "Tau Cygni B e"
     },
-    "35:system_35.barycenter.belt_1": {
-      "en": "Tau Cygni Kuiper Belt"
+    "35:system_35.Tau_Cygni_B.Tau_Cygni_B_f": {
+      "en": "Tau Cygni B f"
+    },
+    "35:system_35.Tau_Cygni_B.Tau_Cygni_B_g": {
+      "en": "Tau Cygni B g"
+    },
+    "35:system_35.Tau_Cygni_B.Tau_Cygni_B_h": {
+      "en": "Tau Cygni B h"
+    },
+    "35:system_35.Tau_Cygni_B.Tau_Cygni_B_i": {
+      "en": "Tau Cygni B i"
+    },
+    "35:system_35.barycenter_ab.Tau_Cygni__BA__K1": {
+      "en": "Tau Cygni (BA) K1"
+    },
+    "35:system_35.barycenter_ab.Tau_Cygni__BA__K2": {
+      "en": "Tau Cygni (BA) K2"
+    },
+    "35:system_35.barycenter_ab.Tau_Cygni__BA__K3": {
+      "en": "Tau Cygni (BA) K3"
+    },
+    "35:system_35.barycenter_ab.kuiper_belt": {
+      "en": "Tau Cygni (BA) outer belt"
     }
   }
 }

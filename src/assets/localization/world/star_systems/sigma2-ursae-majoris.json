@@ -9,23 +9,65 @@
     "38:system_38.Sigma²_UMa_A": {
       "en": "Sigma² UMa A"
     },
-    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_Ab": {
-      "en": "Sigma² UMa Ab"
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_A_A1": {
+      "en": "Sigma² UMa A A1"
+    },
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_A_b": {
+      "en": "Sigma² UMa A b"
+    },
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_A_c": {
+      "en": "Sigma² UMa A c"
+    },
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_A_d": {
+      "en": "Sigma² UMa A d"
+    },
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_A_e": {
+      "en": "Sigma² UMa A e"
+    },
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_A_f": {
+      "en": "Sigma² UMa A f"
+    },
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_A_g": {
+      "en": "Sigma² UMa A g"
+    },
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h": {
+      "en": "Sigma² UMa A h"
+    },
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_I": {
+      "en": "Sigma² UMa A h I"
+    },
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_II": {
+      "en": "Sigma² UMa A h II"
+    },
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_III": {
+      "en": "Sigma² UMa A h III"
+    },
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_IV": {
+      "en": "Sigma² UMa A h IV"
+    },
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_V": {
+      "en": "Sigma² UMa A h V"
+    },
+    "38:system_38.Sigma²_UMa_A.asteroid_belt": {
+      "en": "Sigma² UMa A asteroid belt"
     },
     "38:system_38.Sigma²_UMa_B": {
       "en": "Sigma² UMa B"
     },
-    "38:system_38.Sigma²_UMa_B.Sigma²_UMa_Bb": {
-      "en": "Sigma² UMa Bb"
-    },
     "38:system_38.Sigma²_UMa_C": {
       "en": "Sigma² UMa C"
     },
-    "38:system_38.barycenter.belt_0": {
-      "en": "Sigma² Ursae Majoris Belt"
+    "38:system_38.Sigma²_UMa_C.Sigma²_UMa_C_b": {
+      "en": "Sigma² UMa C b"
     },
-    "38:system_38.barycenter.belt_1": {
-      "en": "Sigma² Ursae Majoris Kuiper Belt"
+    "38:system_38.Sigma²_UMa_C.Sigma²_UMa_C_c": {
+      "en": "Sigma² UMa C c"
+    },
+    "38:system_38.Sigma²_UMa_C.Sigma²_UMa_C_d": {
+      "en": "Sigma² UMa C d"
+    },
+    "38:system_38.barycenter.kuiper_belt": {
+      "en": "Sigma² UMa (CBA) outer belt"
     }
   }
 }

@@ -9,32 +9,47 @@
     "4:system_4.Lalande_21185": {
       "en": "Lalande 21185"
     },
-    "4:system_4.Lalande_21185.Lalande_b": {
-      "en": "Lalande b"
+    "4:system_4.Lalande_21185.Lalande_21185_b": {
+      "en": "Lalande 21185 b"
     },
-    "4:system_4.Lalande_21185.Lalande_b.Lalande_b-I": {
-      "en": "Lalande b-I"
+    "4:system_4.Lalande_21185.Lalande_21185_c": {
+      "en": "Lalande 21185 c"
     },
-    "4:system_4.Lalande_21185.Lalande_c": {
-      "en": "Lalande c"
+    "4:system_4.Lalande_21185.Lalande_21185_d": {
+      "en": "Lalande 21185 d"
     },
-    "4:system_4.Lalande_21185.Lalande_d": {
-      "en": "Lalande d"
+    "4:system_4.Lalande_21185.Lalande_21185_e": {
+      "en": "Lalande 21185 e"
     },
-    "4:system_4.Lalande_21185.Lalande_e": {
-      "en": "Lalande e"
+    "4:system_4.Lalande_21185.Lalande_21185_f": {
+      "en": "Lalande 21185 f"
     },
-    "4:system_4.Lalande_21185.Lalande_e.Lalande_e-I": {
-      "en": "Lalande e-I"
+    "4:system_4.Lalande_21185.Lalande_21185_g": {
+      "en": "Lalande 21185 g"
     },
-    "4:system_4.Lalande_21185.Lalande_e.Lalande_e-II": {
-      "en": "Lalande e-II"
+    "4:system_4.Lalande_21185.Lalande_21185_h": {
+      "en": "Lalande 21185 h"
     },
-    "4:system_4.barycenter.belt_0": {
-      "en": "Lalande 21185 Belt"
+    "4:system_4.Lalande_21185.Lalande_21185_i": {
+      "en": "Lalande 21185 i"
     },
-    "4:system_4.barycenter.belt_1": {
-      "en": "Lalande 21185 Kuiper Belt"
+    "4:system_4.Lalande_21185.Lalande_21185_j": {
+      "en": "Lalande 21185 j"
+    },
+    "4:system_4.Lalande_21185.Lalande_21185_k": {
+      "en": "Lalande 21185 k"
+    },
+    "4:system_4.Lalande_21185.Lalande_21185_k.Lalande_21185_k_I": {
+      "en": "Lalande 21185 k I"
+    },
+    "4:system_4.Lalande_21185.Lalande_21185_l": {
+      "en": "Lalande 21185 l"
+    },
+    "4:system_4.Lalande_21185.Lalande_21185_m": {
+      "en": "Lalande 21185 m"
+    },
+    "4:system_4.Lalande_21185.kuiper_belt": {
+      "en": "Lalande 21185 outer belt"
     }
   }
 }

@@ -9,23 +9,47 @@
     "23:system_23.Gliese_892": {
       "en": "Gliese 892"
     },
-    "23:system_23.Gliese_892.Gliese_892_b": {
-      "en": "Gliese 892 b"
+    "23:system_23.Gliese_892.Gliese_892_A1": {
+      "en": "Gliese 892 A1"
     },
-    "23:system_23.Gliese_892.Gliese_892_c": {
-      "en": "Gliese 892 c"
+    "23:system_23.Gliese_892.Gliese_892_e": {
+      "en": "Gliese 892 e"
     },
-    "23:system_23.Gliese_892.Gliese_892_d": {
-      "en": "Gliese 892 d"
+    "23:system_23.Gliese_892.Gliese_892_i": {
+      "en": "Gliese 892 i"
     },
-    "23:system_23.Gliese_892.Gliese_892_d.Gliese_892_d-I": {
-      "en": "Gliese 892 d-I"
+    "23:system_23.Gliese_892.Gliese_892_j": {
+      "en": "Gliese 892 j"
     },
-    "23:system_23.barycenter.belt_0": {
-      "en": "Gliese 892 Belt"
+    "23:system_23.Gliese_892.Gliese_892_k": {
+      "en": "Gliese 892 k"
     },
-    "23:system_23.barycenter.belt_1": {
-      "en": "Gliese 892 Kuiper Belt"
+    "23:system_23.Gliese_892.Gliese_892_l": {
+      "en": "Gliese 892 l"
+    },
+    "23:system_23.Gliese_892.HD_219134_b": {
+      "en": "HD 219134 b"
+    },
+    "23:system_23.Gliese_892.HD_219134_c": {
+      "en": "HD 219134 c"
+    },
+    "23:system_23.Gliese_892.HD_219134_d": {
+      "en": "HD 219134 d"
+    },
+    "23:system_23.Gliese_892.HD_219134_h": {
+      "en": "HD 219134 h"
+    },
+    "23:system_23.Gliese_892.HD_219134_h.HD_219134_h_I": {
+      "en": "HD 219134 h I"
+    },
+    "23:system_23.Gliese_892.HD_219134_h.HD_219134_h_II": {
+      "en": "HD 219134 h II"
+    },
+    "23:system_23.Gliese_892.asteroid_belt": {
+      "en": "Gliese 892 asteroid belt"
+    },
+    "23:system_23.Gliese_892.kuiper_belt": {
+      "en": "Gliese 892 outer belt"
     }
   }
 }

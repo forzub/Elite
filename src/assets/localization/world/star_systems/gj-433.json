@@ -9,11 +9,17 @@
     "51:system_51.GJ_433": {
       "en": "GJ 433"
     },
+    "51:system_51.GJ_433.GJ_433_K1": {
+      "en": "GJ 433 K1"
+    },
+    "51:system_51.GJ_433.GJ_433_K2": {
+      "en": "GJ 433 K2"
+    },
+    "51:system_51.GJ_433.GJ_433_K3": {
+      "en": "GJ 433 K3"
+    },
     "51:system_51.GJ_433.GJ_433_b": {
       "en": "GJ 433 b"
-    },
-    "51:system_51.GJ_433.GJ_433_b.GJ_433_b-I": {
-      "en": "GJ 433 b-I"
     },
     "51:system_51.GJ_433.GJ_433_c": {
       "en": "GJ 433 c"
@@ -21,14 +27,44 @@
     "51:system_51.GJ_433.GJ_433_d": {
       "en": "GJ 433 d"
     },
-    "51:system_51.GJ_433.GJ_433_d.GJ_433_d-I": {
-      "en": "GJ 433 d-I"
+    "51:system_51.GJ_433.GJ_433_e": {
+      "en": "GJ 433 e"
     },
-    "51:system_51.barycenter.belt_0": {
-      "en": "GJ 433 Belt"
+    "51:system_51.GJ_433.GJ_433_f": {
+      "en": "GJ 433 f"
     },
-    "51:system_51.barycenter.belt_1": {
-      "en": "GJ 433 Kuiper Belt"
+    "51:system_51.GJ_433.GJ_433_g": {
+      "en": "GJ 433 g"
+    },
+    "51:system_51.GJ_433.GJ_433_h": {
+      "en": "GJ 433 h"
+    },
+    "51:system_51.GJ_433.GJ_433_i": {
+      "en": "GJ 433 i"
+    },
+    "51:system_51.GJ_433.GJ_433_j": {
+      "en": "GJ 433 j"
+    },
+    "51:system_51.GJ_433.GJ_433_k": {
+      "en": "GJ 433 k"
+    },
+    "51:system_51.GJ_433.GJ_433_l": {
+      "en": "GJ 433 l"
+    },
+    "51:system_51.GJ_433.GJ_433_m": {
+      "en": "GJ 433 m"
+    },
+    "51:system_51.GJ_433.GJ_433_n": {
+      "en": "GJ 433 n"
+    },
+    "51:system_51.GJ_433.GJ_433_n.GJ_433_n_I": {
+      "en": "GJ 433 n I"
+    },
+    "51:system_51.GJ_433.GJ_433_o": {
+      "en": "GJ 433 o"
+    },
+    "51:system_51.GJ_433.kuiper_belt": {
+      "en": "GJ 433 outer belt"
     }
   }
 }

@@ -9,23 +9,32 @@
     "33:system_33.Hamal": {
       "en": "Hamal"
     },
-    "33:system_33.Hamal.Hamal_b": {
-      "en": "Hamal b"
+    "33:system_33.Hamal.Hamal_K1": {
+      "en": "Hamal K1"
     },
-    "33:system_33.Hamal.Hamal_b.Hamal_b-I": {
-      "en": "Hamal b-I"
+    "33:system_33.Hamal.Hamal_K2": {
+      "en": "Hamal K2"
+    },
+    "33:system_33.Hamal.Hamal_K3": {
+      "en": "Hamal K3"
     },
     "33:system_33.Hamal.Hamal_c": {
       "en": "Hamal c"
     },
-    "33:system_33.Hamal.Hamal_c.Hamal_c-I": {
-      "en": "Hamal c-I"
+    "33:system_33.Hamal.alf_Ari_b": {
+      "en": "alf Ari b"
     },
-    "33:system_33.barycenter.belt_0": {
-      "en": "Hamal Belt"
+    "33:system_33.Hamal.alf_Ari_b.alf_Ari_b_I": {
+      "en": "alf Ari b I"
     },
-    "33:system_33.barycenter.belt_1": {
-      "en": "Hamal Kuiper Belt"
+    "33:system_33.Hamal.alf_Ari_b.alf_Ari_b_II": {
+      "en": "alf Ari b II"
+    },
+    "33:system_33.Hamal.alf_Ari_b.alf_Ari_b_III": {
+      "en": "alf Ari b III"
+    },
+    "33:system_33.Hamal.kuiper_belt": {
+      "en": "Hamal outer belt"
     }
   }
 }

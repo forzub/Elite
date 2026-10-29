@@ -9,23 +9,29 @@
     "7:system_7.Kapteyn's_Star": {
       "en": "Kapteyn's Star"
     },
-    "7:system_7.Kapteyn's_Star.Kapteyn_b": {
-      "en": "Kapteyn b"
+    "7:system_7.Kapteyn's_Star.Kapteyn's_Star_K1": {
+      "en": "Kapteyn's Star K1"
     },
-    "7:system_7.Kapteyn's_Star.Kapteyn_c": {
-      "en": "Kapteyn c"
+    "7:system_7.Kapteyn's_Star.Kapteyn's_Star_b": {
+      "en": "Kapteyn's Star b"
     },
-    "7:system_7.Kapteyn's_Star.Kapteyn_d": {
-      "en": "Kapteyn d"
+    "7:system_7.Kapteyn's_Star.Kapteyn's_Star_d": {
+      "en": "Kapteyn's Star d"
     },
-    "7:system_7.Kapteyn's_Star.Kapteyn_d.Kapteyn_d-I": {
-      "en": "Kapteyn d-I"
+    "7:system_7.Kapteyn's_Star.Kapteyn's_Star_e": {
+      "en": "Kapteyn's Star e"
     },
-    "7:system_7.barycenter.belt_0": {
-      "en": "Kapteyn's Star Belt"
+    "7:system_7.Kapteyn's_Star.Kapteyn's_Star_f": {
+      "en": "Kapteyn's Star f"
     },
-    "7:system_7.barycenter.belt_1": {
-      "en": "Kapteyn's Star Kuiper Belt"
+    "7:system_7.Kapteyn's_Star.Kapteyn's_Star_g": {
+      "en": "Kapteyn's Star g"
+    },
+    "7:system_7.Kapteyn's_Star.Kapteyn's_Star_h": {
+      "en": "Kapteyn's Star h"
+    },
+    "7:system_7.Kapteyn's_Star.kuiper_belt": {
+      "en": "Kapteyn's Star outer belt"
     }
   }
 }

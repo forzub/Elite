@@ -9,8 +9,14 @@
     "49:system_49.GJ_176": {
       "en": "GJ 176"
     },
-    "49:system_49.GJ_176.GJ_176_b": {
-      "en": "GJ 176 b"
+    "49:system_49.GJ_176.GJ_176_K1": {
+      "en": "GJ 176 K1"
+    },
+    "49:system_49.GJ_176.GJ_176_K2": {
+      "en": "GJ 176 K2"
+    },
+    "49:system_49.GJ_176.GJ_176_K3": {
+      "en": "GJ 176 K3"
     },
     "49:system_49.GJ_176.GJ_176_c": {
       "en": "GJ 176 c"
@@ -18,14 +24,32 @@
     "49:system_49.GJ_176.GJ_176_d": {
       "en": "GJ 176 d"
     },
-    "49:system_49.GJ_176.GJ_176_d.GJ_176_d-I": {
-      "en": "GJ 176 d-I"
+    "49:system_49.GJ_176.GJ_176_e": {
+      "en": "GJ 176 e"
     },
-    "49:system_49.barycenter.belt_0": {
-      "en": "GJ 176 Belt"
+    "49:system_49.GJ_176.GJ_176_f": {
+      "en": "GJ 176 f"
     },
-    "49:system_49.barycenter.belt_1": {
-      "en": "GJ 176 Kuiper Belt"
+    "49:system_49.GJ_176.GJ_176_g": {
+      "en": "GJ 176 g"
+    },
+    "49:system_49.GJ_176.GJ_176_h": {
+      "en": "GJ 176 h"
+    },
+    "49:system_49.GJ_176.GJ_176_i": {
+      "en": "GJ 176 i"
+    },
+    "49:system_49.GJ_176.GJ_176_j": {
+      "en": "GJ 176 j"
+    },
+    "49:system_49.GJ_176.GJ_176_k": {
+      "en": "GJ 176 k"
+    },
+    "49:system_49.GJ_176.HD_285968_b": {
+      "en": "HD 285968 b"
+    },
+    "49:system_49.GJ_176.kuiper_belt": {
+      "en": "GJ 176 outer belt"
     }
   }
 }

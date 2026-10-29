@@ -9,20 +9,11 @@
     "42:system_42.17_Cygni_A": {
       "en": "17 Cygni A"
     },
-    "42:system_42.17_Cygni_A.17_Cygni_Ab": {
-      "en": "17 Cygni Ab"
-    },
     "42:system_42.17_Cygni_B": {
       "en": "17 Cygni B"
     },
-    "42:system_42.17_Cygni_B.17_Cygni_Bb": {
-      "en": "17 Cygni Bb"
-    },
-    "42:system_42.barycenter.belt_0": {
-      "en": "17 Cygni Belt"
-    },
-    "42:system_42.barycenter.belt_1": {
-      "en": "17 Cygni Kuiper Belt"
+    "42:system_42.barycenter_ab.kuiper_belt": {
+      "en": "17 Cygni (BA) outer belt"
     }
   }
 }

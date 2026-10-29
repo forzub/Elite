@@ -18,23 +18,41 @@
     "25:system_25.Gliese_357.GJ_357_d": {
       "en": "GJ 357 d"
     },
-    "25:system_25.Gliese_357.GJ_357_d.GJ_357_d-I": {
-      "en": "GJ 357 d-I"
+    "25:system_25.Gliese_357.Gliese_357_e": {
+      "en": "Gliese 357 e"
     },
-    "25:system_25.Gliese_357.GJ_357_e": {
-      "en": "GJ 357 e"
+    "25:system_25.Gliese_357.Gliese_357_f": {
+      "en": "Gliese 357 f"
     },
-    "25:system_25.Gliese_357.GJ_357_f": {
-      "en": "GJ 357 f"
+    "25:system_25.Gliese_357.Gliese_357_g": {
+      "en": "Gliese 357 g"
     },
-    "25:system_25.Gliese_357.GJ_357_f.GJ_357_f-I": {
-      "en": "GJ 357 f-I"
+    "25:system_25.Gliese_357.Gliese_357_h": {
+      "en": "Gliese 357 h"
     },
-    "25:system_25.barycenter.belt_0": {
-      "en": "Gliese 357 Belt"
+    "25:system_25.Gliese_357.Gliese_357_i": {
+      "en": "Gliese 357 i"
     },
-    "25:system_25.barycenter.belt_1": {
-      "en": "Gliese 357 Kuiper Belt"
+    "25:system_25.Gliese_357.Gliese_357_j": {
+      "en": "Gliese 357 j"
+    },
+    "25:system_25.Gliese_357.Gliese_357_k": {
+      "en": "Gliese 357 k"
+    },
+    "25:system_25.Gliese_357.Gliese_357_l": {
+      "en": "Gliese 357 l"
+    },
+    "25:system_25.Gliese_357.Gliese_357_m": {
+      "en": "Gliese 357 m"
+    },
+    "25:system_25.Gliese_357.Gliese_357_m.Gliese_357_m_I": {
+      "en": "Gliese 357 m I"
+    },
+    "25:system_25.Gliese_357.Gliese_357_n": {
+      "en": "Gliese 357 n"
+    },
+    "25:system_25.Gliese_357.kuiper_belt": {
+      "en": "Gliese 357 outer belt"
     }
   }
 }

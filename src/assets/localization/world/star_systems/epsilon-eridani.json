@@ -9,26 +9,62 @@
     "9:system_9.Epsilon_Eridani": {
       "en": "Epsilon Eridani"
     },
-    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_b": {
-      "en": "Epsilon Eridani b"
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_A1": {
+      "en": "Epsilon Eridani A1"
     },
-    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_b.Epsilon_Eridani_b-I": {
-      "en": "Epsilon Eridani b-I"
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_K2": {
+      "en": "Epsilon Eridani K2"
     },
-    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_b.Epsilon_Eridani_b-II": {
-      "en": "Epsilon Eridani b-II"
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_K3": {
+      "en": "Epsilon Eridani K3"
     },
-    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_b.Epsilon_Eridani_b-III": {
-      "en": "Epsilon Eridani b-III"
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_K4": {
+      "en": "Epsilon Eridani K4"
     },
     "9:system_9.Epsilon_Eridani.Epsilon_Eridani_c": {
       "en": "Epsilon Eridani c"
     },
-    "9:system_9.barycenter.belt_0": {
-      "en": "Epsilon Eridani Belt"
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_d": {
+      "en": "Epsilon Eridani d"
     },
-    "9:system_9.barycenter.belt_1": {
-      "en": "Epsilon Eridani Kuiper Belt"
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_e": {
+      "en": "Epsilon Eridani e"
+    },
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_f": {
+      "en": "Epsilon Eridani f"
+    },
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_g": {
+      "en": "Epsilon Eridani g"
+    },
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_h": {
+      "en": "Epsilon Eridani h"
+    },
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_i": {
+      "en": "Epsilon Eridani i"
+    },
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_j": {
+      "en": "Epsilon Eridani j"
+    },
+    "9:system_9.Epsilon_Eridani.asteroid_belt": {
+      "en": "Epsilon Eridani asteroid belt"
+    },
+    "9:system_9.Epsilon_Eridani.debris_disk": {
+      "en": "Epsilon Eridani debris disk"
+    },
+    "9:system_9.Epsilon_Eridani.eps_Eri_b": {
+      "en": "eps Eri b"
+    },
+    "9:system_9.Epsilon_Eridani.eps_Eri_b.eps_Eri_b_I": {
+      "en": "eps Eri b I"
+    },
+    "9:system_9.Epsilon_Eridani.eps_Eri_b.eps_Eri_b_II": {
+      "en": "eps Eri b II"
+    },
+    "9:system_9.Epsilon_Eridani.eps_Eri_b.eps_Eri_b_III": {
+      "en": "eps Eri b III"
+    },
+    "9:system_9.Epsilon_Eridani.eps_Eri_b.eps_Eri_b_IV": {
+      "en": "eps Eri b IV"
     }
   }
 }

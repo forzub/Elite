@@ -40,37 +40,26 @@ def safe_id_part(value: str) -> str:
 
 
 def expected_catalog_ids() -> tuple[set[str], set[str]]:
+    """Ids of the physical catalog (galaxy_details/systems, distant_systems):
+    stars, planets, dwarf planets, moons and the belts shown on maps."""
     systems: set[str] = set()
     bodies: set[str] = set()
     for directory in (
-        ROOT / "src/assets/data/galaxy_details/systems_details",
-        ROOT / "src/assets/data/galaxy_details/distant_systems_details",
+        ROOT / "src/assets/data/galaxy_details/systems",
+        ROOT / "src/assets/data/galaxy_details/distant_systems",
     ):
-        for p in sorted(directory.glob("*.json")):
-            root = read_json(p)
-            sid = int(root["id"])
+        for sysdir in sorted(p for p in directory.iterdir() if (p / "system.json").is_file()):
+            sid = int(read_json(sysdir / "system.json")["id"])
             systems.add(str(sid))
-            details = root.get("details", {})
-
-            def add_planets(parent: str, planets: list[dict]) -> None:
-                for planet in planets or []:
-                    pid = parent + "." + safe_id_part(planet.get("name", "Planet"))
-                    bodies.add(f"{sid}:{pid}")
-                    for moon in planet.get("moons", []) or []:
-                        mid = pid + "." + safe_id_part(moon.get("name", "Moon"))
-                        bodies.add(f"{sid}:{mid}")
-
-            for star in details.get("stars", []) or []:
-                star_id = f"system_{sid}." + safe_id_part(star.get("name", "Star"))
-                bodies.add(f"{sid}:{star_id}")
-                add_planets(star_id, star.get("planets", []) or [])
-                for index, _belt in enumerate(star.get("asteroid_belts", []) or []):
-                    bodies.add(f"{sid}:{star_id}.belt_{index}")
-
-            bary = f"system_{sid}.barycenter"
-            add_planets(bary, details.get("system_planets", []) or [])
-            for index, _belt in enumerate(details.get("asteroid_belts", []) or []):
-                bodies.add(f"{sid}:{bary}.belt_{index}")
+            generated = read_json(sysdir / "generated" / "system.json")
+            for star in generated.get("stars", []):
+                bodies.add(f"{sid}:{star['id']}")
+            for body_file in sorted((sysdir / "generated" / "bodies").glob("*.json")):
+                bodies.add(f"{sid}:{read_json(body_file)['id']}")
+            for res_file in sorted((sysdir / "generated" / "reservoirs").glob("*.json")):
+                reservoir = read_json(res_file)
+                if reservoir.get("kind") in ("asteroid_belt", "kuiper_belt", "debris_disk"):
+                    bodies.add(f"{sid}:{reservoir['id']}")
 
     return systems, bodies
 

@@ -9,32 +9,47 @@
     "6:system_6.Luyten's_Star": {
       "en": "Luyten's Star"
     },
-    "6:system_6.Luyten's_Star.Luyten_b": {
-      "en": "Luyten b"
+    "6:system_6.Luyten's_Star.Luyten's_Star_K1": {
+      "en": "Luyten's Star K1"
     },
-    "6:system_6.Luyten's_Star.Luyten_b.Luyten_b-I": {
-      "en": "Luyten b-I"
+    "6:system_6.Luyten's_Star.Luyten's_Star_K2": {
+      "en": "Luyten's Star K2"
     },
-    "6:system_6.Luyten's_Star.Luyten_c": {
-      "en": "Luyten c"
+    "6:system_6.Luyten's_Star.Luyten's_Star_b": {
+      "en": "Luyten's Star b"
     },
-    "6:system_6.Luyten's_Star.Luyten_d": {
-      "en": "Luyten d"
+    "6:system_6.Luyten's_Star.Luyten's_Star_c": {
+      "en": "Luyten's Star c"
     },
-    "6:system_6.Luyten's_Star.Luyten_e": {
-      "en": "Luyten e"
+    "6:system_6.Luyten's_Star.Luyten's_Star_d": {
+      "en": "Luyten's Star d"
     },
-    "6:system_6.Luyten's_Star.Luyten_e.Luyten_e-I": {
-      "en": "Luyten e-I"
+    "6:system_6.Luyten's_Star.Luyten's_Star_e": {
+      "en": "Luyten's Star e"
     },
-    "6:system_6.Luyten's_Star.Luyten_e.Luyten_e-II": {
-      "en": "Luyten e-II"
+    "6:system_6.Luyten's_Star.Luyten's_Star_f": {
+      "en": "Luyten's Star f"
     },
-    "6:system_6.barycenter.belt_0": {
-      "en": "Luyten's Star Belt"
+    "6:system_6.Luyten's_Star.Luyten's_Star_g": {
+      "en": "Luyten's Star g"
     },
-    "6:system_6.barycenter.belt_1": {
-      "en": "Luyten's Star Kuiper Belt"
+    "6:system_6.Luyten's_Star.Luyten's_Star_h": {
+      "en": "Luyten's Star h"
+    },
+    "6:system_6.Luyten's_Star.Luyten's_Star_i": {
+      "en": "Luyten's Star i"
+    },
+    "6:system_6.Luyten's_Star.Luyten's_Star_j": {
+      "en": "Luyten's Star j"
+    },
+    "6:system_6.Luyten's_Star.Luyten's_Star_k": {
+      "en": "Luyten's Star k"
+    },
+    "6:system_6.Luyten's_Star.Luyten's_Star_l": {
+      "en": "Luyten's Star l"
+    },
+    "6:system_6.Luyten's_Star.kuiper_belt": {
+      "en": "Luyten's Star outer belt"
     }
   }
 }

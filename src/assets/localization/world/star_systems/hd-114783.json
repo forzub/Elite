@@ -9,29 +9,68 @@
     "37:system_37.HD_114783": {
       "en": "HD 114783"
     },
+    "37:system_37.HD_114783.HD_114783_A1": {
+      "en": "HD 114783 A1"
+    },
+    "37:system_37.HD_114783.HD_114783_K2": {
+      "en": "HD 114783 K2"
+    },
+    "37:system_37.HD_114783.HD_114783_K3": {
+      "en": "HD 114783 K3"
+    },
+    "37:system_37.HD_114783.HD_114783_K4": {
+      "en": "HD 114783 K4"
+    },
     "37:system_37.HD_114783.HD_114783_b": {
       "en": "HD 114783 b"
     },
-    "37:system_37.HD_114783.HD_114783_b.HD_114783_b-I": {
-      "en": "HD 114783 b-I"
+    "37:system_37.HD_114783.HD_114783_b.HD_114783_b_I": {
+      "en": "HD 114783 b I"
     },
-    "37:system_37.HD_114783.HD_114783_b.HD_114783_b-II": {
-      "en": "HD 114783 b-II"
+    "37:system_37.HD_114783.HD_114783_b.HD_114783_b_II": {
+      "en": "HD 114783 b II"
     },
     "37:system_37.HD_114783.HD_114783_c": {
       "en": "HD 114783 c"
     },
+    "37:system_37.HD_114783.HD_114783_c.HD_114783_c_I": {
+      "en": "HD 114783 c I"
+    },
+    "37:system_37.HD_114783.HD_114783_c.HD_114783_c_II": {
+      "en": "HD 114783 c II"
+    },
+    "37:system_37.HD_114783.HD_114783_c.HD_114783_c_III": {
+      "en": "HD 114783 c III"
+    },
+    "37:system_37.HD_114783.HD_114783_c.HD_114783_c_IV": {
+      "en": "HD 114783 c IV"
+    },
     "37:system_37.HD_114783.HD_114783_d": {
       "en": "HD 114783 d"
     },
-    "37:system_37.HD_114783.HD_114783_d.HD_114783_d-I": {
-      "en": "HD 114783 d-I"
+    "37:system_37.HD_114783.HD_114783_e": {
+      "en": "HD 114783 e"
     },
-    "37:system_37.barycenter.belt_0": {
-      "en": "HD 114783 Belt"
+    "37:system_37.HD_114783.HD_114783_f": {
+      "en": "HD 114783 f"
     },
-    "37:system_37.barycenter.belt_1": {
-      "en": "HD 114783 Kuiper Belt"
+    "37:system_37.HD_114783.HD_114783_g": {
+      "en": "HD 114783 g"
+    },
+    "37:system_37.HD_114783.HD_114783_h": {
+      "en": "HD 114783 h"
+    },
+    "37:system_37.HD_114783.HD_114783_i": {
+      "en": "HD 114783 i"
+    },
+    "37:system_37.HD_114783.HD_114783_j": {
+      "en": "HD 114783 j"
+    },
+    "37:system_37.HD_114783.asteroid_belt": {
+      "en": "HD 114783 asteroid belt"
+    },
+    "37:system_37.HD_114783.kuiper_belt": {
+      "en": "HD 114783 outer belt"
     }
   }
 }

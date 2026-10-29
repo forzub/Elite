@@ -15,23 +15,47 @@
     "50:system_50.GJ_3293.GJ_3293_c": {
       "en": "GJ 3293 c"
     },
-    "50:system_50.GJ_3293.GJ_3293_c.GJ_3293_c-I": {
-      "en": "GJ 3293 c-I"
-    },
     "50:system_50.GJ_3293.GJ_3293_d": {
       "en": "GJ 3293 d"
+    },
+    "50:system_50.GJ_3293.GJ_3293_d.GJ_3293_d_I": {
+      "en": "GJ 3293 d I"
     },
     "50:system_50.GJ_3293.GJ_3293_e": {
       "en": "GJ 3293 e"
     },
-    "50:system_50.GJ_3293.GJ_3293_e.GJ_3293_e-I": {
-      "en": "GJ 3293 e-I"
+    "50:system_50.GJ_3293.GJ_3293_f": {
+      "en": "GJ 3293 f"
     },
-    "50:system_50.barycenter.belt_0": {
-      "en": "GJ 3293 Belt"
+    "50:system_50.GJ_3293.GJ_3293_g": {
+      "en": "GJ 3293 g"
     },
-    "50:system_50.barycenter.belt_1": {
-      "en": "GJ 3293 Kuiper Belt"
+    "50:system_50.GJ_3293.GJ_3293_h": {
+      "en": "GJ 3293 h"
+    },
+    "50:system_50.GJ_3293.GJ_3293_i": {
+      "en": "GJ 3293 i"
+    },
+    "50:system_50.GJ_3293.GJ_3293_j": {
+      "en": "GJ 3293 j"
+    },
+    "50:system_50.GJ_3293.GJ_3293_k": {
+      "en": "GJ 3293 k"
+    },
+    "50:system_50.GJ_3293.GJ_3293_l": {
+      "en": "GJ 3293 l"
+    },
+    "50:system_50.GJ_3293.GJ_3293_m": {
+      "en": "GJ 3293 m"
+    },
+    "50:system_50.GJ_3293.GJ_3293_n": {
+      "en": "GJ 3293 n"
+    },
+    "50:system_50.GJ_3293.GJ_3293_o": {
+      "en": "GJ 3293 o"
+    },
+    "50:system_50.GJ_3293.kuiper_belt": {
+      "en": "GJ 3293 outer belt"
     }
   }
 }

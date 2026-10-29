@@ -12,23 +12,20 @@
     "56:system_56.Gliese_422.GJ_422_b": {
       "en": "GJ 422 b"
     },
-    "56:system_56.Gliese_422.GJ_422_b.GJ_422_b-I": {
-      "en": "GJ 422 b-I"
+    "56:system_56.Gliese_422.Gliese_422_c": {
+      "en": "Gliese 422 c"
     },
-    "56:system_56.Gliese_422.GJ_422_c": {
-      "en": "GJ 422 c"
+    "56:system_56.Gliese_422.Gliese_422_d": {
+      "en": "Gliese 422 d"
     },
-    "56:system_56.Gliese_422.GJ_422_d": {
-      "en": "GJ 422 d"
+    "56:system_56.Gliese_422.Gliese_422_e": {
+      "en": "Gliese 422 e"
     },
-    "56:system_56.Gliese_422.GJ_422_d.GJ_422_d-I": {
-      "en": "GJ 422 d-I"
+    "56:system_56.Gliese_422.Gliese_422_f": {
+      "en": "Gliese 422 f"
     },
-    "56:system_56.barycenter.belt_0": {
-      "en": "Gliese 422 Belt"
-    },
-    "56:system_56.barycenter.belt_1": {
-      "en": "Gliese 422 Kuiper Belt"
+    "56:system_56.Gliese_422.kuiper_belt": {
+      "en": "Gliese 422 outer belt"
     }
   }
 }

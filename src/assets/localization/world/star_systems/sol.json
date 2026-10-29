@@ -17,6 +17,14 @@
       "es": "Sol",
       "ja": "太陽"
     },
+    "0:system_0.Sol.asteroid_belt": {
+      "en": "Asteroid Belt",
+      "ru": "Пояс астероидов"
+    },
+    "0:system_0.Sol.kuiper_belt": {
+      "en": "Kuiper Belt",
+      "ru": "Пояс Койпера"
+    },
     "0:system_0.Sol.Венера": {
       "en": "Venus",
       "ru": "Венера",
@@ -160,12 +168,6 @@
     },
     "0:system_0.Sol.Юпитер.Элара": {
       "en": "Elara"
-    },
-    "0:system_0.barycenter.belt_0": {
-      "en": "Asteroid Belt"
-    },
-    "0:system_0.barycenter.belt_1": {
-      "en": "Kuiper Belt"
     }
   },
   "hubs": {

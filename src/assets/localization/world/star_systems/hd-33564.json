@@ -9,23 +9,71 @@
     "44:system_44.HD_33564_A": {
       "en": "HD 33564 A"
     },
+    "44:system_44.HD_33564_A.HD_33564_A_c": {
+      "en": "HD 33564 A c"
+    },
+    "44:system_44.HD_33564_A.HD_33564_A_d": {
+      "en": "HD 33564 A d"
+    },
+    "44:system_44.HD_33564_A.HD_33564_A_e": {
+      "en": "HD 33564 A e"
+    },
+    "44:system_44.HD_33564_A.HD_33564_A_f": {
+      "en": "HD 33564 A f"
+    },
     "44:system_44.HD_33564_A.HD_33564_b": {
       "en": "HD 33564 b"
     },
-    "44:system_44.HD_33564_A.HD_33564_b.HD_33564_b-I": {
-      "en": "HD 33564 b-I"
+    "44:system_44.HD_33564_A.HD_33564_b.HD_33564_b_I": {
+      "en": "HD 33564 b I"
     },
-    "44:system_44.HD_33564_A.HD_33564_b.HD_33564_b-II": {
-      "en": "HD 33564 b-II"
+    "44:system_44.HD_33564_A.HD_33564_b.HD_33564_b_II": {
+      "en": "HD 33564 b II"
+    },
+    "44:system_44.HD_33564_A.HD_33564_b.HD_33564_b_III": {
+      "en": "HD 33564 b III"
     },
     "44:system_44.HD_33564_B": {
       "en": "HD 33564 B"
     },
-    "44:system_44.barycenter.belt_0": {
-      "en": "HD 33564 Belt"
+    "44:system_44.HD_33564_B.HD_33564_B_K1": {
+      "en": "HD 33564 B K1"
     },
-    "44:system_44.barycenter.belt_1": {
-      "en": "HD 33564 Kuiper Belt"
+    "44:system_44.HD_33564_B.HD_33564_B_K2": {
+      "en": "HD 33564 B K2"
+    },
+    "44:system_44.HD_33564_B.HD_33564_B_c": {
+      "en": "HD 33564 B c"
+    },
+    "44:system_44.HD_33564_B.HD_33564_B_d": {
+      "en": "HD 33564 B d"
+    },
+    "44:system_44.HD_33564_B.HD_33564_B_e": {
+      "en": "HD 33564 B e"
+    },
+    "44:system_44.HD_33564_B.HD_33564_B_f": {
+      "en": "HD 33564 B f"
+    },
+    "44:system_44.HD_33564_B.HD_33564_B_g": {
+      "en": "HD 33564 B g"
+    },
+    "44:system_44.HD_33564_B.HD_33564_B_h": {
+      "en": "HD 33564 B h"
+    },
+    "44:system_44.HD_33564_B.HD_33564_B_i": {
+      "en": "HD 33564 B i"
+    },
+    "44:system_44.HD_33564_B.HD_33564_B_j": {
+      "en": "HD 33564 B j"
+    },
+    "44:system_44.HD_33564_B.HD_33564_B_k": {
+      "en": "HD 33564 B k"
+    },
+    "44:system_44.HD_33564_B.kuiper_belt": {
+      "en": "HD 33564 B outer belt"
+    },
+    "44:system_44.barycenter_ab.kuiper_belt": {
+      "en": "HD 33564 (BA) outer belt"
     }
   }
 }

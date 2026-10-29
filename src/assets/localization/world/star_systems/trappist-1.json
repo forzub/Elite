@@ -30,11 +30,14 @@
     "17:system_17.TRAPPIST-1.TRAPPIST-1_h": {
       "en": "TRAPPIST-1 h"
     },
-    "17:system_17.barycenter.belt_0": {
-      "en": "TRAPPIST-1 Belt"
+    "17:system_17.TRAPPIST-1.TRAPPIST-1_i": {
+      "en": "TRAPPIST-1 i"
     },
-    "17:system_17.barycenter.belt_1": {
-      "en": "TRAPPIST-1 Kuiper Belt"
+    "17:system_17.TRAPPIST-1.TRAPPIST-1_j": {
+      "en": "TRAPPIST-1 j"
+    },
+    "17:system_17.TRAPPIST-1.kuiper_belt": {
+      "en": "TRAPPIST-1 outer belt"
     }
   }
 }

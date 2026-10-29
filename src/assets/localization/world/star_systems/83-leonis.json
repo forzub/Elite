@@ -9,26 +9,95 @@
     "45:system_45.83_Leonis_A": {
       "en": "83 Leonis A"
     },
-    "45:system_45.83_Leonis_A.83_Leonis_b": {
-      "en": "83 Leonis b"
+    "45:system_45.83_Leonis_A.83_Leonis_A_d": {
+      "en": "83 Leonis A d"
     },
-    "45:system_45.83_Leonis_A.83_Leonis_b.83_Leonis_b-I": {
-      "en": "83 Leonis b-I"
+    "45:system_45.83_Leonis_A.83_Leonis_A_e": {
+      "en": "83 Leonis A e"
+    },
+    "45:system_45.83_Leonis_A.83_Leonis_A_f": {
+      "en": "83 Leonis A f"
+    },
+    "45:system_45.83_Leonis_A.83_Leonis_A_g": {
+      "en": "83 Leonis A g"
+    },
+    "45:system_45.83_Leonis_A.83_Leonis_A_h": {
+      "en": "83 Leonis A h"
+    },
+    "45:system_45.83_Leonis_A.83_Leonis_A_i": {
+      "en": "83 Leonis A i"
+    },
+    "45:system_45.83_Leonis_A.83_Leonis_A_j": {
+      "en": "83 Leonis A j"
+    },
+    "45:system_45.83_Leonis_A.83_Leonis_A_k": {
+      "en": "83 Leonis A k"
+    },
+    "45:system_45.83_Leonis_A.83_Leonis_A_l": {
+      "en": "83 Leonis A l"
+    },
+    "45:system_45.83_Leonis_A.83_Leonis_A_m": {
+      "en": "83 Leonis A m"
+    },
+    "45:system_45.83_Leonis_A.83_Leonis_A_n": {
+      "en": "83 Leonis A n"
     },
     "45:system_45.83_Leonis_B": {
       "en": "83 Leonis B"
     },
-    "45:system_45.83_Leonis_B.83_Leonis_c": {
-      "en": "83 Leonis c"
+    "45:system_45.83_Leonis_B.83_Leonis_B_A1": {
+      "en": "83 Leonis B A1"
     },
-    "45:system_45.83_Leonis_B.83_Leonis_c.83_Leonis_c-I": {
-      "en": "83 Leonis c-I"
+    "45:system_45.83_Leonis_B.83_Leonis_B_d": {
+      "en": "83 Leonis B d"
     },
-    "45:system_45.barycenter.belt_0": {
-      "en": "83 Leonis Belt"
+    "45:system_45.83_Leonis_B.83_Leonis_B_e": {
+      "en": "83 Leonis B e"
     },
-    "45:system_45.barycenter.belt_1": {
-      "en": "83 Leonis Kuiper Belt"
+    "45:system_45.83_Leonis_B.83_Leonis_B_f": {
+      "en": "83 Leonis B f"
+    },
+    "45:system_45.83_Leonis_B.83_Leonis_B_g": {
+      "en": "83 Leonis B g"
+    },
+    "45:system_45.83_Leonis_B.83_Leonis_B_h": {
+      "en": "83 Leonis B h"
+    },
+    "45:system_45.83_Leonis_B.83_Leonis_B_h.83_Leonis_B_h_I": {
+      "en": "83 Leonis B h I"
+    },
+    "45:system_45.83_Leonis_B.83_Leonis_B_i": {
+      "en": "83 Leonis B i"
+    },
+    "45:system_45.83_Leonis_B.83_Leonis_B_i.83_Leonis_B_i_I": {
+      "en": "83 Leonis B i I"
+    },
+    "45:system_45.83_Leonis_B.83_Leonis_B_j": {
+      "en": "83 Leonis B j"
+    },
+    "45:system_45.83_Leonis_B.83_Leonis_B_j.83_Leonis_B_j_I": {
+      "en": "83 Leonis B j I"
+    },
+    "45:system_45.83_Leonis_B.83_Leonis_B_j.83_Leonis_B_j_II": {
+      "en": "83 Leonis B j II"
+    },
+    "45:system_45.83_Leonis_B.83_Leonis_B_j.83_Leonis_B_j_III": {
+      "en": "83 Leonis B j III"
+    },
+    "45:system_45.83_Leonis_B.83_Leonis_B_j.83_Leonis_B_j_IV": {
+      "en": "83 Leonis B j IV"
+    },
+    "45:system_45.83_Leonis_B.HD_99492_b": {
+      "en": "HD 99492 b"
+    },
+    "45:system_45.83_Leonis_B.HD_99492_c": {
+      "en": "HD 99492 c"
+    },
+    "45:system_45.83_Leonis_B.asteroid_belt": {
+      "en": "83 Leonis B asteroid belt"
+    },
+    "45:system_45.barycenter_ab.kuiper_belt": {
+      "en": "83 Leonis (BA) outer belt"
     }
   }
 }

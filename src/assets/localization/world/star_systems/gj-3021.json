@@ -9,23 +9,68 @@
     "46:system_46.GJ_3021_A": {
       "en": "GJ 3021 A"
     },
+    "46:system_46.GJ_3021_A.GJ_3021_A_K1": {
+      "en": "GJ 3021 A K1"
+    },
+    "46:system_46.GJ_3021_A.GJ_3021_A_K2": {
+      "en": "GJ 3021 A K2"
+    },
+    "46:system_46.GJ_3021_A.GJ_3021_A_K3": {
+      "en": "GJ 3021 A K3"
+    },
+    "46:system_46.GJ_3021_A.GJ_3021_A_c": {
+      "en": "GJ 3021 A c"
+    },
+    "46:system_46.GJ_3021_A.GJ_3021_A_d": {
+      "en": "GJ 3021 A d"
+    },
+    "46:system_46.GJ_3021_A.GJ_3021_A_e": {
+      "en": "GJ 3021 A e"
+    },
     "46:system_46.GJ_3021_A.GJ_3021_b": {
       "en": "GJ 3021 b"
     },
-    "46:system_46.GJ_3021_A.GJ_3021_b.GJ_3021_b-I": {
-      "en": "GJ 3021 b-I"
+    "46:system_46.GJ_3021_A.GJ_3021_b.GJ_3021_b_I": {
+      "en": "GJ 3021 b I"
     },
-    "46:system_46.GJ_3021_A.GJ_3021_b.GJ_3021_b-II": {
-      "en": "GJ 3021 b-II"
+    "46:system_46.GJ_3021_A.debris_disk": {
+      "en": "GJ 3021 A debris disk"
     },
     "46:system_46.GJ_3021_B": {
       "en": "GJ 3021 B"
     },
-    "46:system_46.barycenter.belt_0": {
-      "en": "GJ 3021 Belt"
+    "46:system_46.GJ_3021_B.GJ_3021_B_K1": {
+      "en": "GJ 3021 B K1"
     },
-    "46:system_46.barycenter.belt_1": {
-      "en": "GJ 3021 Kuiper Belt"
+    "46:system_46.GJ_3021_B.GJ_3021_B_K2": {
+      "en": "GJ 3021 B K2"
+    },
+    "46:system_46.GJ_3021_B.GJ_3021_B_K3": {
+      "en": "GJ 3021 B K3"
+    },
+    "46:system_46.GJ_3021_B.GJ_3021_B_c": {
+      "en": "GJ 3021 B c"
+    },
+    "46:system_46.GJ_3021_B.GJ_3021_B_d": {
+      "en": "GJ 3021 B d"
+    },
+    "46:system_46.GJ_3021_B.GJ_3021_B_e": {
+      "en": "GJ 3021 B e"
+    },
+    "46:system_46.GJ_3021_B.GJ_3021_B_f": {
+      "en": "GJ 3021 B f"
+    },
+    "46:system_46.GJ_3021_B.GJ_3021_B_g": {
+      "en": "GJ 3021 B g"
+    },
+    "46:system_46.GJ_3021_B.GJ_3021_B_h": {
+      "en": "GJ 3021 B h"
+    },
+    "46:system_46.GJ_3021_B.kuiper_belt": {
+      "en": "GJ 3021 B outer belt"
+    },
+    "46:system_46.barycenter_ab.debris_disk": {
+      "en": "GJ 3021 (BA) debris disk"
     }
   }
 }

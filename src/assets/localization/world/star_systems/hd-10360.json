@@ -9,14 +9,14 @@
     "57:system_57.HD_10360": {
       "en": "HD 10360"
     },
+    "57:system_57.HD_10360.HD_10360_K1": {
+      "en": "HD 10360 K1"
+    },
     "57:system_57.HD_10360.HD_10360_b": {
       "en": "HD 10360 b"
     },
     "57:system_57.HD_10360.HD_10360_c": {
       "en": "HD 10360 c"
-    },
-    "57:system_57.HD_10360.HD_10360_c.HD_10360_c-I": {
-      "en": "HD 10360 c-I"
     },
     "57:system_57.HD_10360.HD_10360_d": {
       "en": "HD 10360 d"
@@ -24,14 +24,80 @@
     "57:system_57.HD_10360.HD_10360_e": {
       "en": "HD 10360 e"
     },
-    "57:system_57.HD_10360.HD_10360_e.HD_10360_e-I": {
-      "en": "HD 10360 e-I"
+    "57:system_57.HD_10360.HD_10360_f": {
+      "en": "HD 10360 f"
     },
-    "57:system_57.barycenter.belt_0": {
-      "en": "HD 10360 Belt"
+    "57:system_57.HD_10360.HD_10360_f.HD_10360_f_I": {
+      "en": "HD 10360 f I"
     },
-    "57:system_57.barycenter.belt_1": {
-      "en": "HD 10360 Kuiper Belt"
+    "57:system_57.HD_10360.HD_10360_g": {
+      "en": "HD 10360 g"
+    },
+    "57:system_57.HD_10360.HD_10360_g.HD_10360_g_I": {
+      "en": "HD 10360 g I"
+    },
+    "57:system_57.HD_10360.HD_10360_g.HD_10360_g_II": {
+      "en": "HD 10360 g II"
+    },
+    "57:system_57.HD_10360.kuiper_belt": {
+      "en": "HD 10360 outer belt"
+    },
+    "57:system_57.barycenter_ab.kuiper_belt": {
+      "en": "p Eridani (A) outer belt"
+    },
+    "57:system_57.barycenter_ab.p_Eridani__A__K1": {
+      "en": "p Eridani (A) K1"
+    },
+    "57:system_57.barycenter_ab.p_Eridani__A__K2": {
+      "en": "p Eridani (A) K2"
+    },
+    "57:system_57.barycenter_ab.p_Eridani__A__K3": {
+      "en": "p Eridani (A) K3"
+    },
+    "57:system_57.p_Eridani_A": {
+      "en": "p Eridani A"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_b": {
+      "en": "p Eridani A b"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_c": {
+      "en": "p Eridani A c"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_d": {
+      "en": "p Eridani A d"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_e": {
+      "en": "p Eridani A e"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_f": {
+      "en": "p Eridani A f"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_g": {
+      "en": "p Eridani A g"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_h": {
+      "en": "p Eridani A h"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_i": {
+      "en": "p Eridani A i"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_j": {
+      "en": "p Eridani A j"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_k": {
+      "en": "p Eridani A k"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_l": {
+      "en": "p Eridani A l"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_m": {
+      "en": "p Eridani A m"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_n": {
+      "en": "p Eridani A n"
+    },
+    "57:system_57.p_Eridani_A.p_Eridani_A_o": {
+      "en": "p Eridani A o"
     }
   }
 }

@@ -9,35 +9,53 @@
     "14:system_14.HD_20794": {
       "en": "HD 20794"
     },
+    "14:system_14.HD_20794.HD_20794_K1": {
+      "en": "HD 20794 K1"
+    },
+    "14:system_14.HD_20794.HD_20794_K2": {
+      "en": "HD 20794 K2"
+    },
+    "14:system_14.HD_20794.HD_20794_K3": {
+      "en": "HD 20794 K3"
+    },
     "14:system_14.HD_20794.HD_20794_b": {
       "en": "HD 20794 b"
     },
     "14:system_14.HD_20794.HD_20794_c": {
       "en": "HD 20794 c"
     },
-    "14:system_14.HD_20794.HD_20794_c.HD_20794_c-I": {
-      "en": "HD 20794 c-I"
-    },
     "14:system_14.HD_20794.HD_20794_d": {
       "en": "HD 20794 d"
-    },
-    "14:system_14.HD_20794.HD_20794_d.HD_20794_d-I": {
-      "en": "HD 20794 d-I"
-    },
-    "14:system_14.HD_20794.HD_20794_e": {
-      "en": "HD 20794 e"
     },
     "14:system_14.HD_20794.HD_20794_f": {
       "en": "HD 20794 f"
     },
-    "14:system_14.HD_20794.HD_20794_f.HD_20794_f-I": {
-      "en": "HD 20794 f-I"
+    "14:system_14.HD_20794.HD_20794_f.HD_20794_f_I": {
+      "en": "HD 20794 f I"
     },
-    "14:system_14.barycenter.belt_0": {
-      "en": "HD 20794 (82 G. Eridani) Belt"
+    "14:system_14.HD_20794.HD_20794_g": {
+      "en": "HD 20794 g"
     },
-    "14:system_14.barycenter.belt_1": {
-      "en": "HD 20794 (82 G. Eridani) Kuiper Belt"
+    "14:system_14.HD_20794.HD_20794_h": {
+      "en": "HD 20794 h"
+    },
+    "14:system_14.HD_20794.HD_20794_i": {
+      "en": "HD 20794 i"
+    },
+    "14:system_14.HD_20794.HD_20794_j": {
+      "en": "HD 20794 j"
+    },
+    "14:system_14.HD_20794.HD_20794_k": {
+      "en": "HD 20794 k"
+    },
+    "14:system_14.HD_20794.HD_20794_l": {
+      "en": "HD 20794 l"
+    },
+    "14:system_14.HD_20794.HD_20794_m": {
+      "en": "HD 20794 m"
+    },
+    "14:system_14.HD_20794.kuiper_belt": {
+      "en": "HD 20794 outer belt"
     }
   }
 }

@@ -9,32 +9,71 @@
     "29:system_29.Gliese_229_A": {
       "en": "Gliese 229 A"
     },
-    "29:system_29.Gliese_229_A.Gliese_229_Ab": {
-      "en": "Gliese 229 Ab"
+    "29:system_29.Gliese_229_A.Gliese_229_A_d": {
+      "en": "Gliese 229 A d"
     },
-    "29:system_29.Gliese_229_A.Gliese_229_Ac": {
-      "en": "Gliese 229 Ac"
+    "29:system_29.Gliese_229_A.Gliese_229_A_e": {
+      "en": "Gliese 229 A e"
     },
-    "29:system_29.Gliese_229_A.Gliese_229_Ac.Gliese_229_Ac-I": {
-      "en": "Gliese 229 Ac-I"
+    "29:system_29.Gliese_229_A.Gliese_229_A_f": {
+      "en": "Gliese 229 A f"
     },
-    "29:system_29.Gliese_229_A.Gliese_229_Ad": {
-      "en": "Gliese 229 Ad"
+    "29:system_29.Gliese_229_A.Gliese_229_A_g": {
+      "en": "Gliese 229 A g"
     },
-    "29:system_29.Gliese_229_A.Gliese_229_Ae": {
-      "en": "Gliese 229 Ae"
+    "29:system_29.Gliese_229_A.Gliese_229_A_h": {
+      "en": "Gliese 229 A h"
     },
-    "29:system_29.Gliese_229_A.Gliese_229_Ae.Gliese_229_Ae-I": {
-      "en": "Gliese 229 Ae-I"
+    "29:system_29.Gliese_229_A.Gliese_229_A_i": {
+      "en": "Gliese 229 A i"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_A_j": {
+      "en": "Gliese 229 A j"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_A_j.Gliese_229_A_j_I": {
+      "en": "Gliese 229 A j I"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_A_j.Gliese_229_A_j_II": {
+      "en": "Gliese 229 A j II"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_A_k": {
+      "en": "Gliese 229 A k"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_A_l": {
+      "en": "Gliese 229 A l"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_A_m": {
+      "en": "Gliese 229 A m"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_A_n": {
+      "en": "Gliese 229 A n"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_A_o": {
+      "en": "Gliese 229 A o"
     },
     "29:system_29.Gliese_229_B": {
       "en": "Gliese 229 B"
     },
-    "29:system_29.barycenter.belt_0": {
-      "en": "Gliese 229 Belt"
+    "29:system_29.Gliese_229_B.Gliese_229_B_d": {
+      "en": "Gliese 229 B d"
     },
-    "29:system_29.barycenter.belt_1": {
-      "en": "Gliese 229 Kuiper Belt"
+    "29:system_29.Gliese_229_B.Gliese_229_B_e": {
+      "en": "Gliese 229 B e"
+    },
+    "29:system_29.Gliese_229_B.Gliese_229_B_f": {
+      "en": "Gliese 229 B f"
+    },
+    "29:system_29.Gliese_229_B.Gliese_229_B_g": {
+      "en": "Gliese 229 B g"
+    },
+    "29:system_29.Gliese_229_B.Gliese_229_B_g.Gliese_229_B_g_I": {
+      "en": "Gliese 229 B g I"
+    },
+    "29:system_29.Gliese_229_B.Gliese_229_B_g.Gliese_229_B_g_II": {
+      "en": "Gliese 229 B g II"
+    },
+    "29:system_29.barycenter_ab.kuiper_belt": {
+      "en": "Gliese 229 (BA) outer belt"
     }
   }
 }

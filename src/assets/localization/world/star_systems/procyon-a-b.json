@@ -9,14 +9,53 @@
     "52:system_52.Procyon_A": {
       "en": "Procyon A"
     },
+    "52:system_52.Procyon_A.Procyon_A_b": {
+      "en": "Procyon A b"
+    },
+    "52:system_52.Procyon_A.Procyon_A_b.Procyon_A_b_I": {
+      "en": "Procyon A b I"
+    },
+    "52:system_52.Procyon_A.Procyon_A_c": {
+      "en": "Procyon A c"
+    },
+    "52:system_52.Procyon_A.Procyon_A_d": {
+      "en": "Procyon A d"
+    },
+    "52:system_52.Procyon_A.Procyon_A_e": {
+      "en": "Procyon A e"
+    },
+    "52:system_52.Procyon_A.Procyon_A_f": {
+      "en": "Procyon A f"
+    },
+    "52:system_52.Procyon_A.Procyon_A_g": {
+      "en": "Procyon A g"
+    },
+    "52:system_52.Procyon_A.Procyon_A_h": {
+      "en": "Procyon A h"
+    },
+    "52:system_52.Procyon_A.Procyon_A_i": {
+      "en": "Procyon A i"
+    },
+    "52:system_52.Procyon_A.Procyon_A_j": {
+      "en": "Procyon A j"
+    },
+    "52:system_52.Procyon_A.Procyon_A_k": {
+      "en": "Procyon A k"
+    },
     "52:system_52.Procyon_B": {
       "en": "Procyon B"
     },
-    "52:system_52.Procyon_B.belt_0": {
-      "en": "Procyon A+B Belt"
+    "52:system_52.barycenter_ab.Procyon__BA__K1": {
+      "en": "Procyon (BA) K1"
     },
-    "52:system_52.barycenter.belt_0": {
-      "en": "Procyon Kuiper Belt"
+    "52:system_52.barycenter_ab.Procyon__BA__K2": {
+      "en": "Procyon (BA) K2"
+    },
+    "52:system_52.barycenter_ab.Procyon__BA__K3": {
+      "en": "Procyon (BA) K3"
+    },
+    "52:system_52.barycenter_ab.kuiper_belt": {
+      "en": "Procyon (BA) outer belt"
     }
   }
 }

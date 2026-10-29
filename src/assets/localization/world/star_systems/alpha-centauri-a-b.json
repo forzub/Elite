@@ -13,35 +13,77 @@
     "1:system_1.Alpha_Centauri_A": {
       "en": "Alpha Centauri A"
     },
-    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ab": {
-      "en": "Alpha Centauri Ab"
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_A_b": {
+      "en": "Alpha Centauri A b"
     },
-    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ac": {
-      "en": "Alpha Centauri Ac"
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_A_c": {
+      "en": "Alpha Centauri A c"
     },
-    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ac.Alpha_Centauri_Ac-I": {
-      "en": "Alpha Centauri Ac-I"
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_A_d": {
+      "en": "Alpha Centauri A d"
     },
-    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ad": {
-      "en": "Alpha Centauri Ad"
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_A_e": {
+      "en": "Alpha Centauri A e"
     },
-    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ad.Alpha_Centauri_Ad-I": {
-      "en": "Alpha Centauri Ad-I"
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_A_f": {
+      "en": "Alpha Centauri A f"
     },
-    "1:system_1.Alpha_Centauri_A.belt_0": {
-      "en": "Alpha Centauri A+B Belt"
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_A_g": {
+      "en": "Alpha Centauri A g"
+    },
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_A_h": {
+      "en": "Alpha Centauri A h"
+    },
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_A_i": {
+      "en": "Alpha Centauri A i"
+    },
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_A_j": {
+      "en": "Alpha Centauri A j"
     },
     "1:system_1.Alpha_Centauri_B": {
       "en": "Alpha Centauri B"
     },
-    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_Ba": {
-      "en": "Alpha Centauri Ba"
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_b": {
+      "en": "Alpha Centauri B b"
     },
-    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_Bb": {
-      "en": "Alpha Centauri Bb"
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_c": {
+      "en": "Alpha Centauri B c"
     },
-    "1:system_1.barycenter.belt_0": {
-      "en": "Alpha Centauri Kuiper Belt"
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_d": {
+      "en": "Alpha Centauri B d"
+    },
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_e": {
+      "en": "Alpha Centauri B e"
+    },
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_f": {
+      "en": "Alpha Centauri B f"
+    },
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_g": {
+      "en": "Alpha Centauri B g"
+    },
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_h": {
+      "en": "Alpha Centauri B h"
+    },
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_i": {
+      "en": "Alpha Centauri B i"
+    },
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_j": {
+      "en": "Alpha Centauri B j"
+    },
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_k": {
+      "en": "Alpha Centauri B k"
+    },
+    "1:system_1.barycenter_ab.Alpha_Centauri__BA__K1": {
+      "en": "Alpha Centauri (BA) K1"
+    },
+    "1:system_1.barycenter_ab.Alpha_Centauri__BA__K2": {
+      "en": "Alpha Centauri (BA) K2"
+    },
+    "1:system_1.barycenter_ab.Alpha_Centauri__BA__K3": {
+      "en": "Alpha Centauri (BA) K3"
+    },
+    "1:system_1.barycenter_ab.kuiper_belt": {
+      "en": "Alpha Centauri (BA) outer belt"
     }
   }
 }

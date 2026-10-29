@@ -12,20 +12,41 @@
     "59:system_59.Gliese_625.GJ_625_b": {
       "en": "GJ 625 b"
     },
-    "59:system_59.Gliese_625.GJ_625_c": {
-      "en": "GJ 625 c"
+    "59:system_59.Gliese_625.Gliese_625_c": {
+      "en": "Gliese 625 c"
     },
-    "59:system_59.Gliese_625.GJ_625_d": {
-      "en": "GJ 625 d"
+    "59:system_59.Gliese_625.Gliese_625_d": {
+      "en": "Gliese 625 d"
     },
-    "59:system_59.Gliese_625.GJ_625_d.GJ_625_d-I": {
-      "en": "GJ 625 d-I"
+    "59:system_59.Gliese_625.Gliese_625_e": {
+      "en": "Gliese 625 e"
     },
-    "59:system_59.barycenter.belt_0": {
-      "en": "Gliese 625 Belt"
+    "59:system_59.Gliese_625.Gliese_625_f": {
+      "en": "Gliese 625 f"
     },
-    "59:system_59.barycenter.belt_1": {
-      "en": "Gliese 625 Kuiper Belt"
+    "59:system_59.Gliese_625.Gliese_625_g": {
+      "en": "Gliese 625 g"
+    },
+    "59:system_59.Gliese_625.Gliese_625_h": {
+      "en": "Gliese 625 h"
+    },
+    "59:system_59.Gliese_625.Gliese_625_i": {
+      "en": "Gliese 625 i"
+    },
+    "59:system_59.Gliese_625.Gliese_625_i.Gliese_625_i_I": {
+      "en": "Gliese 625 i I"
+    },
+    "59:system_59.Gliese_625.Gliese_625_j": {
+      "en": "Gliese 625 j"
+    },
+    "59:system_59.Gliese_625.Gliese_625_k": {
+      "en": "Gliese 625 k"
+    },
+    "59:system_59.Gliese_625.Gliese_625_l": {
+      "en": "Gliese 625 l"
+    },
+    "59:system_59.Gliese_625.kuiper_belt": {
+      "en": "Gliese 625 outer belt"
     }
   }
 }

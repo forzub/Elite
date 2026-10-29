@@ -9,6 +9,9 @@
     "21:system_21.GJ_1214": {
       "en": "GJ 1214"
     },
+    "21:system_21.GJ_1214.GJ_1214_K1": {
+      "en": "GJ 1214 K1"
+    },
     "21:system_21.GJ_1214.GJ_1214_b": {
       "en": "GJ 1214 b"
     },
@@ -18,14 +21,29 @@
     "21:system_21.GJ_1214.GJ_1214_d": {
       "en": "GJ 1214 d"
     },
-    "21:system_21.GJ_1214.GJ_1214_d.GJ_1214_d-I": {
-      "en": "GJ 1214 d-I"
+    "21:system_21.GJ_1214.GJ_1214_e": {
+      "en": "GJ 1214 e"
     },
-    "21:system_21.barycenter.belt_0": {
-      "en": "GJ 1214 Belt"
+    "21:system_21.GJ_1214.GJ_1214_f": {
+      "en": "GJ 1214 f"
     },
-    "21:system_21.barycenter.belt_1": {
-      "en": "GJ 1214 Kuiper Belt"
+    "21:system_21.GJ_1214.GJ_1214_f.GJ_1214_f_I": {
+      "en": "GJ 1214 f I"
+    },
+    "21:system_21.GJ_1214.GJ_1214_g": {
+      "en": "GJ 1214 g"
+    },
+    "21:system_21.GJ_1214.GJ_1214_h": {
+      "en": "GJ 1214 h"
+    },
+    "21:system_21.GJ_1214.GJ_1214_i": {
+      "en": "GJ 1214 i"
+    },
+    "21:system_21.GJ_1214.GJ_1214_j": {
+      "en": "GJ 1214 j"
+    },
+    "21:system_21.GJ_1214.kuiper_belt": {
+      "en": "GJ 1214 outer belt"
     }
   }
 }

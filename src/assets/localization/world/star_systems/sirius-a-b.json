@@ -13,17 +13,41 @@
     "5:system_5.Sirius_A": {
       "en": "Sirius A"
     },
-    "5:system_5.Sirius_A.belt_0": {
-      "en": "Sirius A+B Belt"
+    "5:system_5.Sirius_A.Sirius_A_b": {
+      "en": "Sirius A b"
+    },
+    "5:system_5.Sirius_A.Sirius_A_c": {
+      "en": "Sirius A c"
+    },
+    "5:system_5.Sirius_A.Sirius_A_d": {
+      "en": "Sirius A d"
+    },
+    "5:system_5.Sirius_A.Sirius_A_e": {
+      "en": "Sirius A e"
+    },
+    "5:system_5.Sirius_A.Sirius_A_f": {
+      "en": "Sirius A f"
+    },
+    "5:system_5.Sirius_A.Sirius_A_g": {
+      "en": "Sirius A g"
     },
     "5:system_5.Sirius_B": {
       "en": "Sirius B"
     },
-    "5:system_5.Sirius_B.belt_0": {
-      "en": "Sirius A+B Belt"
+    "5:system_5.barycenter_ab.Sirius__BA__K1": {
+      "en": "Sirius (BA) K1"
     },
-    "5:system_5.barycenter.belt_0": {
-      "en": "Sirius Kuiper Belt"
+    "5:system_5.barycenter_ab.Sirius__BA__K2": {
+      "en": "Sirius (BA) K2"
+    },
+    "5:system_5.barycenter_ab.Sirius__BA__K3": {
+      "en": "Sirius (BA) K3"
+    },
+    "5:system_5.barycenter_ab.Sirius__BA__b": {
+      "en": "Sirius (BA) b"
+    },
+    "5:system_5.barycenter_ab.debris_disk": {
+      "en": "Sirius (BA) debris disk"
     }
   }
 }

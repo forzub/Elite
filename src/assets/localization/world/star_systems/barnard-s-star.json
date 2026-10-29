@@ -13,14 +13,20 @@
     "2:system_2.Barnard's_Star": {
       "en": "Barnard's Star"
     },
+    "2:system_2.Barnard's_Star.Barnard's_Star_f": {
+      "en": "Barnard's Star f"
+    },
+    "2:system_2.Barnard's_Star.Barnard's_Star_g": {
+      "en": "Barnard's Star g"
+    },
+    "2:system_2.Barnard's_Star.Barnard's_Star_h": {
+      "en": "Barnard's Star h"
+    },
     "2:system_2.Barnard's_Star.Barnard_b": {
       "en": "Barnard b"
     },
     "2:system_2.Barnard's_Star.Barnard_c": {
       "en": "Barnard c"
-    },
-    "2:system_2.Barnard's_Star.Barnard_c.Barnard_c-I": {
-      "en": "Barnard c-I"
     },
     "2:system_2.Barnard's_Star.Barnard_d": {
       "en": "Barnard d"
@@ -28,23 +34,11 @@
     "2:system_2.Barnard's_Star.Barnard_e": {
       "en": "Barnard e"
     },
-    "2:system_2.Barnard's_Star.Barnard_f": {
-      "en": "Barnard f"
+    "2:system_2.Barnard's_Star.Barnard_e.Barnard_e_I": {
+      "en": "Barnard e I"
     },
-    "2:system_2.Barnard's_Star.Barnard_f.Barnard_f-I": {
-      "en": "Barnard f-I"
-    },
-    "2:system_2.Barnard's_Star.Barnard_g": {
-      "en": "Barnard g"
-    },
-    "2:system_2.Barnard's_Star.Barnard_g.Barnard_g-I": {
-      "en": "Barnard g-I"
-    },
-    "2:system_2.barycenter.belt_0": {
-      "en": "Barnard's Star Belt"
-    },
-    "2:system_2.barycenter.belt_1": {
-      "en": "Barnard's Star Kuiper Belt"
+    "2:system_2.Barnard's_Star.kuiper_belt": {
+      "en": "Barnard's Star outer belt"
     }
   }
 }

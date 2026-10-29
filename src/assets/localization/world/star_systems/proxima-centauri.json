@@ -9,14 +9,59 @@
     "60:system_60.Proxima_Centauri": {
       "en": "Proxima Centauri"
     },
-    "60:system_60.Proxima_Centauri.Proxima_Centauri_b": {
-      "en": "Proxima Centauri b"
+    "60:system_60.Proxima_Centauri.Proxima_Cen_b": {
+      "en": "Proxima Cen b"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Cen_d": {
+      "en": "Proxima Cen d"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_K1": {
+      "en": "Proxima Centauri K1"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_K2": {
+      "en": "Proxima Centauri K2"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_K3": {
+      "en": "Proxima Centauri K3"
     },
     "60:system_60.Proxima_Centauri.Proxima_Centauri_c": {
       "en": "Proxima Centauri c"
     },
-    "60:system_60.Proxima_Centauri.Proxima_Centauri_d": {
-      "en": "Proxima Centauri d"
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_e": {
+      "en": "Proxima Centauri e"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_f": {
+      "en": "Proxima Centauri f"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_f.Proxima_Centauri_f_I": {
+      "en": "Proxima Centauri f I"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_f.Proxima_Centauri_f_II": {
+      "en": "Proxima Centauri f II"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_g": {
+      "en": "Proxima Centauri g"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_h": {
+      "en": "Proxima Centauri h"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_h.Proxima_Centauri_h_I": {
+      "en": "Proxima Centauri h I"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_h.Proxima_Centauri_h_II": {
+      "en": "Proxima Centauri h II"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_i": {
+      "en": "Proxima Centauri i"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_i.Proxima_Centauri_i_I": {
+      "en": "Proxima Centauri i I"
+    },
+    "60:system_60.Proxima_Centauri.Proxima_Centauri_j": {
+      "en": "Proxima Centauri j"
+    },
+    "60:system_60.Proxima_Centauri.kuiper_belt": {
+      "en": "Proxima Centauri outer belt"
     }
   }
 }

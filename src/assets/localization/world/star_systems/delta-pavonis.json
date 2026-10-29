@@ -9,6 +9,15 @@
     "22:system_22.Delta_Pavonis": {
       "en": "Delta Pavonis"
     },
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_K1": {
+      "en": "Delta Pavonis K1"
+    },
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_K2": {
+      "en": "Delta Pavonis K2"
+    },
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_K3": {
+      "en": "Delta Pavonis K3"
+    },
     "22:system_22.Delta_Pavonis.Delta_Pavonis_b": {
       "en": "Delta Pavonis b"
     },
@@ -18,14 +27,29 @@
     "22:system_22.Delta_Pavonis.Delta_Pavonis_d": {
       "en": "Delta Pavonis d"
     },
-    "22:system_22.Delta_Pavonis.Delta_Pavonis_d.Delta_Pavonis_d-I": {
-      "en": "Delta Pavonis d-I"
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_e": {
+      "en": "Delta Pavonis e"
     },
-    "22:system_22.barycenter.belt_0": {
-      "en": "Delta Pavonis Belt"
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_f": {
+      "en": "Delta Pavonis f"
     },
-    "22:system_22.barycenter.belt_1": {
-      "en": "Delta Pavonis Kuiper Belt"
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_g": {
+      "en": "Delta Pavonis g"
+    },
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_h": {
+      "en": "Delta Pavonis h"
+    },
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_i": {
+      "en": "Delta Pavonis i"
+    },
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_j": {
+      "en": "Delta Pavonis j"
+    },
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_k": {
+      "en": "Delta Pavonis k"
+    },
+    "22:system_22.Delta_Pavonis.kuiper_belt": {
+      "en": "Delta Pavonis outer belt"
     }
   }
 }

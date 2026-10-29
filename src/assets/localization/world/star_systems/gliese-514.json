@@ -12,23 +12,41 @@
     "58:system_58.Gliese_514.GJ_514_b": {
       "en": "GJ 514 b"
     },
-    "58:system_58.Gliese_514.GJ_514_b.GJ_514_b-I": {
-      "en": "GJ 514 b-I"
+    "58:system_58.Gliese_514.Gliese_514_K1": {
+      "en": "Gliese 514 K1"
     },
-    "58:system_58.Gliese_514.GJ_514_c": {
-      "en": "GJ 514 c"
+    "58:system_58.Gliese_514.Gliese_514_K2": {
+      "en": "Gliese 514 K2"
     },
-    "58:system_58.Gliese_514.GJ_514_d": {
-      "en": "GJ 514 d"
+    "58:system_58.Gliese_514.Gliese_514_K3": {
+      "en": "Gliese 514 K3"
     },
-    "58:system_58.Gliese_514.GJ_514_d.GJ_514_d-I": {
-      "en": "GJ 514 d-I"
+    "58:system_58.Gliese_514.Gliese_514_c": {
+      "en": "Gliese 514 c"
     },
-    "58:system_58.barycenter.belt_0": {
-      "en": "Gliese 514 Belt"
+    "58:system_58.Gliese_514.Gliese_514_d": {
+      "en": "Gliese 514 d"
     },
-    "58:system_58.barycenter.belt_1": {
-      "en": "Gliese 514 Kuiper Belt"
+    "58:system_58.Gliese_514.Gliese_514_e": {
+      "en": "Gliese 514 e"
+    },
+    "58:system_58.Gliese_514.Gliese_514_f": {
+      "en": "Gliese 514 f"
+    },
+    "58:system_58.Gliese_514.Gliese_514_g": {
+      "en": "Gliese 514 g"
+    },
+    "58:system_58.Gliese_514.Gliese_514_h": {
+      "en": "Gliese 514 h"
+    },
+    "58:system_58.Gliese_514.Gliese_514_i": {
+      "en": "Gliese 514 i"
+    },
+    "58:system_58.Gliese_514.Gliese_514_j": {
+      "en": "Gliese 514 j"
+    },
+    "58:system_58.Gliese_514.debris_disk": {
+      "en": "Gliese 514 debris disk"
     }
   }
 }

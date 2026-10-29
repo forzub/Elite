@@ -9,17 +9,14 @@
     "28:system_28.YZ_Ceti": {
       "en": "YZ Ceti"
     },
-    "28:system_28.YZ_Ceti.YZ_Ceti_b": {
-      "en": "YZ Ceti b"
+    "28:system_28.YZ_Ceti.YZ_Cet_b": {
+      "en": "YZ Cet b"
     },
-    "28:system_28.YZ_Ceti.YZ_Ceti_c": {
-      "en": "YZ Ceti c"
+    "28:system_28.YZ_Ceti.YZ_Cet_c": {
+      "en": "YZ Cet c"
     },
-    "28:system_28.YZ_Ceti.YZ_Ceti_d": {
-      "en": "YZ Ceti d"
-    },
-    "28:system_28.YZ_Ceti.YZ_Ceti_d.YZ_Ceti_d-I": {
-      "en": "YZ Ceti d-I"
+    "28:system_28.YZ_Ceti.YZ_Cet_d": {
+      "en": "YZ Cet d"
     },
     "28:system_28.YZ_Ceti.YZ_Ceti_e": {
       "en": "YZ Ceti e"
@@ -27,14 +24,26 @@
     "28:system_28.YZ_Ceti.YZ_Ceti_f": {
       "en": "YZ Ceti f"
     },
-    "28:system_28.YZ_Ceti.YZ_Ceti_f.YZ_Ceti_f-I": {
-      "en": "YZ Ceti f-I"
+    "28:system_28.YZ_Ceti.YZ_Ceti_g": {
+      "en": "YZ Ceti g"
     },
-    "28:system_28.barycenter.belt_0": {
-      "en": "YZ Ceti Belt"
+    "28:system_28.YZ_Ceti.YZ_Ceti_h": {
+      "en": "YZ Ceti h"
     },
-    "28:system_28.barycenter.belt_1": {
-      "en": "YZ Ceti Kuiper Belt"
+    "28:system_28.YZ_Ceti.YZ_Ceti_i": {
+      "en": "YZ Ceti i"
+    },
+    "28:system_28.YZ_Ceti.YZ_Ceti_j": {
+      "en": "YZ Ceti j"
+    },
+    "28:system_28.YZ_Ceti.YZ_Ceti_k": {
+      "en": "YZ Ceti k"
+    },
+    "28:system_28.YZ_Ceti.YZ_Ceti_k.YZ_Ceti_k_I": {
+      "en": "YZ Ceti k I"
+    },
+    "28:system_28.YZ_Ceti.kuiper_belt": {
+      "en": "YZ Ceti outer belt"
     }
   }
 }

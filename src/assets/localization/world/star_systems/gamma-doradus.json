@@ -9,11 +9,53 @@
     "34:system_34.Gamma_Doradus": {
       "en": "Gamma Doradus"
     },
-    "34:system_34.barycenter.belt_0": {
-      "en": "Gamma Doradus Belt"
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_K1": {
+      "en": "Gamma Doradus K1"
     },
-    "34:system_34.barycenter.belt_1": {
-      "en": "Gamma Doradus Kuiper Belt"
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_K2": {
+      "en": "Gamma Doradus K2"
+    },
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_K3": {
+      "en": "Gamma Doradus K3"
+    },
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_b": {
+      "en": "Gamma Doradus b"
+    },
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_c": {
+      "en": "Gamma Doradus c"
+    },
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_d": {
+      "en": "Gamma Doradus d"
+    },
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_e": {
+      "en": "Gamma Doradus e"
+    },
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_e.Gamma_Doradus_e_I": {
+      "en": "Gamma Doradus e I"
+    },
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_f": {
+      "en": "Gamma Doradus f"
+    },
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_f.Gamma_Doradus_f_I": {
+      "en": "Gamma Doradus f I"
+    },
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_f.Gamma_Doradus_f_II": {
+      "en": "Gamma Doradus f II"
+    },
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_g": {
+      "en": "Gamma Doradus g"
+    },
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_h": {
+      "en": "Gamma Doradus h"
+    },
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_h.Gamma_Doradus_h_I": {
+      "en": "Gamma Doradus h I"
+    },
+    "34:system_34.Gamma_Doradus.Gamma_Doradus_i": {
+      "en": "Gamma Doradus i"
+    },
+    "34:system_34.Gamma_Doradus.kuiper_belt": {
+      "en": "Gamma Doradus outer belt"
     }
   }
 }

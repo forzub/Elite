@@ -17,38 +17,75 @@
       "es": "Tau Ceti",
       "ja": "くじら座タウ星"
     },
+    "8:system_8.Tau_Ceti.Tau_Ceti_b": {
+      "en": "Tau Ceti b",
+      "ru": "Тау Кита b",
+      "zh-Hans": "天仓五 b",
+      "es": "Tau Ceti b",
+      "ja": "くじら座タウ星 b"
+    },
+    "8:system_8.Tau_Ceti.Tau_Ceti_c": {
+      "en": "Tau Ceti c",
+      "ru": "Тау Кита c",
+      "zh-Hans": "天仓五 c",
+      "es": "Tau Ceti c",
+      "ja": "くじら座タウ星 c"
+    },
+    "8:system_8.Tau_Ceti.Tau_Ceti_d": {
+      "en": "Tau Ceti d",
+      "ru": "Тау Кита d",
+      "zh-Hans": "天仓五 d",
+      "es": "Tau Ceti d",
+      "ja": "くじら座タウ星 d"
+    },
     "8:system_8.Tau_Ceti.Tau_Ceti_e": {
-      "en": "Tau Ceti e"
-    },
-    "8:system_8.Tau_Ceti.Tau_Ceti_e.Tau_Ceti_e-I": {
-      "en": "Tau Ceti e-I"
-    },
-    "8:system_8.Tau_Ceti.Tau_Ceti_e.Tau_Ceti_e-II": {
-      "en": "Tau Ceti e-II"
-    },
-    "8:system_8.Tau_Ceti.Tau_Ceti_f": {
-      "en": "Tau Ceti f"
-    },
-    "8:system_8.Tau_Ceti.Tau_Ceti_g": {
-      "en": "Tau Ceti g"
-    },
-    "8:system_8.Tau_Ceti.Tau_Ceti_h": {
-      "en": "Tau Ceti h"
+      "en": "Tau Ceti e",
+      "ru": "Тау Кита e",
+      "zh-Hans": "天仓五 e",
+      "es": "Tau Ceti e",
+      "ja": "くじら座タウ星 e"
     },
     "8:system_8.Tau_Ceti.Tau_Ceti_i": {
-      "en": "Tau Ceti i"
+      "en": "Tau Ceti i",
+      "ru": "Тау Кита i",
+      "zh-Hans": "天仓五 i",
+      "es": "Tau Ceti i",
+      "ja": "くじら座タウ星 i"
     },
-    "8:system_8.Tau_Ceti.Tau_Ceti_i.Tau_Ceti_i-I": {
-      "en": "Tau Ceti i-I"
+    "8:system_8.Tau_Ceti.Tau_Ceti_j": {
+      "en": "Tau Ceti j",
+      "ru": "Тау Кита j",
+      "zh-Hans": "天仓五 j",
+      "es": "Tau Ceti j",
+      "ja": "くじら座タウ星 j"
     },
-    "8:system_8.Tau_Ceti.Tau_Ceti_i.Tau_Ceti_i-II": {
-      "en": "Tau Ceti i-II"
+    "8:system_8.Tau_Ceti.Tau_Ceti_k": {
+      "en": "Tau Ceti k",
+      "ru": "Тау Кита k",
+      "zh-Hans": "天仓五 k",
+      "es": "Tau Ceti k",
+      "ja": "くじら座タウ星 k"
     },
-    "8:system_8.barycenter.belt_0": {
-      "en": "Tau Ceti Belt"
+    "8:system_8.Tau_Ceti.Tau_Ceti_l": {
+      "en": "Tau Ceti l",
+      "ru": "Тау Кита l",
+      "zh-Hans": "天仓五 l",
+      "es": "Tau Ceti l",
+      "ja": "くじら座タウ星 l"
     },
-    "8:system_8.barycenter.belt_1": {
-      "en": "Tau Ceti Kuiper Belt"
+    "8:system_8.Tau_Ceti.Tau_Ceti_m": {
+      "en": "Tau Ceti m",
+      "ru": "Тау Кита m",
+      "zh-Hans": "天仓五 m",
+      "es": "Tau Ceti m",
+      "ja": "くじら座タウ星 m"
+    },
+    "8:system_8.Tau_Ceti.kuiper_belt": {
+      "en": "Tau Ceti outer belt",
+      "ru": "Внешний пояс Тау Кита",
+      "zh-Hans": "天仓五外带",
+      "es": "Cinturón exterior de Tau Ceti",
+      "ja": "くじら座タウ星外縁帯"
     }
   }
 }

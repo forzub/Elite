@@ -343,6 +343,7 @@ ShipCore::controlAuthorityTelemetry() const
             value *= gasShare;
         for (auto& value : out.negative)
             value *= gasShare;
+        out.rcsPairFeasibility01 = m_cachedNewtonianRcsPairFeasibility01;
         out.workingForwardAccelerationMps2 = mainPowerShare * std::max(0.0,
             static_cast<double>(capability.effectivePhysics.
                 forwardMainEngineAccelerationMps2));

@@ -34,6 +34,10 @@ struct ShipControlAuthorityTelemetry
     std::array<double,3> workingThrustAxisBody {0.0,0.0,-1.0};
     bool workingThrustAxisEmergency = false;
     int workingThrustMotorIndex = -1;
+    // Newtonian: smallest delivered fraction when two signed RCS axes are
+    // demanded together at their single-axis limits (combined-demand
+    // contract: planned concurrent axes stay within this share).
+    double rcsPairFeasibility01 = 1.0;
     // Indices: body X (strafe), body Y (lift), body Z (reverse positive),
     // angular pitch, yaw, roll. Magnitudes always nonnegative.
 };
@@ -145,6 +149,8 @@ inline void applyNewtonianRcsScalarBounds(
     {
         applyNewtonianRcsScalarBounds(
             p,telemetry.positive,telemetry.negative);
+        p.newtonianRcsCombinedShare01=std::clamp(
+            telemetry.rcsPairFeasibility01,0.0,1.0);
         // The published forward main authority is LIVE (ER-5 power,
         // reactor state); the installed capability is cached per equipment
         // revision. Never plan or fly on more main than the server can power.

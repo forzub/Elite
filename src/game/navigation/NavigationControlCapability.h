@@ -56,6 +56,8 @@ struct NavigationControlCapability
     glm::dvec3 angularPositiveRadPerSec2 {0.0};
     glm::dvec3 angularNegativeRadPerSec2 {0.0};
     double angularScalarRadPerSec2 = 0.0;
+    // Share of the single-axis RCS limits usable on two axes at once.
+    double rcsCombinedShare01 = 1.0;
     glm::dvec3 maxAngularRateRadPerSec {0.0};
     double maxAngularSpeedRadPerSec = 0.0;
 
@@ -126,6 +128,8 @@ struct NavigationControlCapability
         out.rcsNegativeMps2 = glm::dvec3(out.rcsScalarMps2);
     }
 
+    out.rcsCombinedShare01 = std::isfinite(params.newtonianRcsCombinedShare01)
+        ? std::clamp(params.newtonianRcsCombinedShare01, 0.0, 1.0) : 1.0;
     out.angularScalarRadPerSec2 =
         nonNegative(game::ship::angularAccelerationLimitRadPerSec2(params));
     const glm::dvec3 signedPositive = params.newtonianAngularPositiveRadPerSec2;

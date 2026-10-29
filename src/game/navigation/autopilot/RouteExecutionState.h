@@ -77,6 +77,8 @@ struct RouteExecutionState
         continuousSamples;
     std::vector<double> continuousProgressMeters;
     std::vector<double> nominalSpeedProfileMps;
+    // The nominal profile as planned (before any capability reprofile).
+    std::vector<double> plannedNominalSpeedProfileMps;
     std::vector<double> runtimeSpeedProfileMps;
     std::vector<double> runtimeLongitudinalAccelerationMps2;
     std::vector<double> checkpointProgressMeters;

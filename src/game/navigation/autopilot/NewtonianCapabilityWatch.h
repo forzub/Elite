@@ -37,14 +37,50 @@ struct NewtonianCapabilityWatch
     static constexpr double PersistSeconds = 0.5;
 
     NavigationControlCapability accepted {};
+    // The capability the route was planned with (its nominal speeds are the
+    // ceiling a recovery may return to).
+    NavigationControlCapability planned {};
     bool valid = false;
     double pendingSinceSeconds = -1.0;
+    double recoveryPendingSinceSeconds = -1.0;
 
     void accept(const NavigationControlCapability& capability) noexcept
     {
         accepted = capability;
         valid = capability.valid;
         pendingSinceSeconds = -1.0;
+        recoveryPendingSinceSeconds = -1.0;
+    }
+
+    void acceptPlanned(const NavigationControlCapability& capability) noexcept
+    {
+        accept(capability);
+        planned = capability;
+    }
+
+    [[nodiscard]] static bool gained(double before, double now) noexcept
+    {
+        return now > 1.0e-9 && now >= std::max(before, 1.0e-9) * (1.0 + MeaningfulLossShare);
+    }
+
+    // A capability regained after a loss (repair, reactor restart, cooled
+    // nozzles): meaningful on main / RCS / attitude, no loss anywhere,
+    // persisted. Mirror of evaluate(); the caller reprofiles up to the plan.
+    [[nodiscard]] bool recoveryDue(
+        const NavigationControlCapability& live, double nowSeconds) noexcept
+    {
+        if (!valid || !planned.valid ||
+            classify(accepted, live) != CapabilityChange::None ||
+            !(gained(accepted.mainForwardMps2, live.mainForwardMps2) ||
+              gained(accepted.rcsScalarMps2, live.rcsScalarMps2) ||
+              gained(accepted.angularScalarRadPerSec2, live.angularScalarRadPerSec2)))
+        {
+            recoveryPendingSinceSeconds = -1.0;
+            return false;
+        }
+        if (recoveryPendingSinceSeconds < 0.0)
+            recoveryPendingSinceSeconds = nowSeconds;
+        return nowSeconds - recoveryPendingSinceSeconds >= PersistSeconds;
     }
 
     [[nodiscard]] static bool lost(double before, double now) noexcept

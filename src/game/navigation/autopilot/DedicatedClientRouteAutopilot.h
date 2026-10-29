@@ -303,8 +303,9 @@ public:
             dumpAcceptedRoute(state, plan);
         handOverManoeuvreRoute(state, params, initialAgent.forwardMap);
         if constexpr (Law == LocalFlightControlLaw::Newtonian)
-            state.capabilityWatch.accept(
+            state.capabilityWatch.acceptPlanned(
                 makeNavigationControlCapability(params, law));
+        state.plannedNominalSpeedProfileMps = state.nominalSpeedProfileMps;
 
         state.nextCheckpointIndex =
             state.checkpointProgressMeters.size() > 1 ? 1 : 0;
@@ -431,6 +432,50 @@ public:
             else if (change != CapabilityChange::None &&
                      change != CapabilityChange::Unavailable && nearRest)
                 state.capabilityWatch.accept(live);
+            else if (change == CapabilityChange::None && !inNarrowStretch && !nearRest &&
+                     state.plannedNominalSpeedProfileMps.size() ==
+                         state.nominalSpeedProfileMps.size() &&
+                     state.capabilityWatch.recoveryDue(live, universeTimeSeconds))
+            {
+                // Recovery: the speeds ahead go back up to the plan, capped by
+                // the live authority exactly as a loss caps them (curves by
+                // the path-normal authority, narrow zones by sqrt of the RCS
+                // share); never above the planned nominal.
+                const double speed =
+                    glm::length(agent.velocityMapMetersPerSecond);
+                for (std::size_t i = state.currentContinuousSegment;
+                     i < state.nominalSpeedProfileMps.size(); ++i)
+                    state.nominalSpeedProfileMps[i] =
+                        state.plannedNominalSpeedProfileMps[i];
+                limitCurveSpeedsToLateral(state,
+                    executionAuthority.lateralAccelerationMps2 *
+                        planningAuthorityFraction);
+                const auto& planned = state.capabilityWatch.planned;
+                if (planned.rcsScalarMps2 > 1.0e-9 &&
+                    live.rcsScalarMps2 < planned.rcsScalarMps2)
+                    limitNarrowSpeedsToRcs(state,
+                        continuous.spatialProgressMeters,
+                        std::sqrt(live.rcsScalarMps2 / planned.rcsScalarMps2));
+                const double lead = state.pilotController.telemetry(params).
+                    thrustReversalLeadSeconds;
+                recomputeRuntimeSpeedSuffix(
+                    state.nominalSpeedProfileMps,
+                    state.continuousProgressMeters,
+                    state.currentContinuousSegment,
+                    speed,
+                    forwardAuthority,
+                    brakingAuthority,
+                    state.runtimeSpeedProfileMps,
+                    state.runtimeLongitudinalAccelerationMps2,
+                    lead,
+                    toleratedPlateauEnd(state,
+                        state.currentContinuousSegment, speed));
+                ++state.speedProfileRevision;
+                handOverManoeuvreRoute(state, params, agent.forwardMap);
+                traceCapabilityChange(state, universeTimeSeconds,
+                    4, speed, live, "recovered-reprofiled");
+                state.capabilityWatch.accept(live);
+            }
             else if (change != CapabilityChange::None)
             {
                 const double speed =

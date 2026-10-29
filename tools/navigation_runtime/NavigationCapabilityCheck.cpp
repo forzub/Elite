@@ -25,6 +25,7 @@
 #include "src/game/ship/core/ShipCore.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 #include "src/game/ship/presets/cobra/CobraNewtonianRcsNozzles.h"
+#include "src/game/navigation/autopilot/NewtonianTurnModel.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 
@@ -203,6 +204,13 @@ int main()
         core.refreshRuntimeState();
         std::printf("     RCS pair feasibility, nozzle %s destroyed: %.3f\n", ids[0].nozzleId,
                     core.newtonianRcsPairFeasibility01());
+        bool valid = false;
+        const auto facts =
+            makeNavigationControlCapability(clientParams(core, valid), LocalFlightControlLaw::Newtonian);
+        const double planned = game::navigation::autopilot::newtonianPreferredTurnAccelerationRadPerSec2(facts);
+        check(valid && std::abs(facts.rcsCombinedShare01 - core.newtonianRcsPairFeasibility01()) < 1.0e-9 &&
+                  planned <= facts.rcsCombinedShare01 * facts.angularScalarRadPerSec2 + 1.0e-12,
+              "combined RCS contract: published share reaches the client; planned turns use at most that share");
     }
 
     // Production ShipCore: reactors off, restarting, back.

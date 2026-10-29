@@ -677,7 +677,8 @@ ELITE_WIRE_SCHEMA(
     v.workingForwardAccelerationMps2,
     v.workingThrustAxisBody,
     v.workingThrustAxisEmergency,
-    v.workingThrustMotorIndex
+    v.workingThrustMotorIndex,
+    v.rcsPairFeasibility01
 );
 
 ELITE_WIRE_SCHEMA(

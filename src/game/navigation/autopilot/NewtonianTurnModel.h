@@ -30,7 +30,11 @@ namespace game::navigation::autopilot
 [[nodiscard]] inline double newtonianPreferredTurnAccelerationRadPerSec2(
     const NavigationControlCapability& facts) noexcept
 {
-    return NewtonianFlightPolicy::PreferredAccelerationShare *
+    // Planned turns combine axes (pitch / yaw with the tunnel roll): never
+    // plan more of the single-axis limit than two axes can use together
+    // (healthy Cobra 0.502 > 0.5: unchanged; asymmetric damage can be less).
+    return std::min(NewtonianFlightPolicy::PreferredAccelerationShare,
+                    facts.rcsCombinedShare01) *
         std::max(0.0, facts.angularScalarRadPerSec2);
 }
 

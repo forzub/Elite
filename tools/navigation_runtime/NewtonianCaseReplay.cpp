@@ -15,6 +15,7 @@
 // and the applied control every tick (hull/volume checks of matrix.py).
 //
 // ELITE_REPLAY_DAMAGE="T MODULE TARGET01[;T MODULE TARGET01...]" injects a
+// (TARGET01 < 0 restores the module: capability recovery)
 // real equipment failure (ObjectModuleRuntime::injectEquipmentFailure, the
 // server DEV fault path) into the authoritative ship at T seconds. From the
 // first injection on, the autopilot receives the LIVE control params (server
@@ -230,8 +231,10 @@ int main(int argc, char** argv)
         for (auto& e : damage)
             if (e.at >= 0.0 && tick * Dt >= e.at)
             {
-                const bool applied =
-                    core.moduleRuntime().injectEquipmentFailure(e.module, e.target01);
+                // TARGET < 0: repair (the DEV restore path of the real module).
+                const bool applied = e.target01 < 0.0
+                    ? core.debugRestoreModuleById(e.module)
+                    : core.moduleRuntime().injectEquipmentFailure(e.module, e.target01);
                 core.refreshRuntimeState();
                 std::fprintf(stderr, "[REPLAY] damage t=%.2f module=%s target=%.2f %s\n",
                     tick * Dt, e.module.c_str(), e.target01,

@@ -148,6 +148,13 @@ struct ShipParams
     // symmetric scalar angularAccel. Appended for aggregate/dump compatibility.
     glm::dvec3 newtonianAngularPositiveRadPerSec2 {0.0};
     glm::dvec3 newtonianAngularNegativeRadPerSec2 {0.0};
+
+    // Newtonian: share of the single-axis RCS limits two axes can use AT
+    // ONCE (installed 24-nozzle allocator, published by the server; 1 = not
+    // known / independent). APPENDED LAST: case files store ShipParams as
+    // raw bytes and accept only appended fields.
+    double newtonianRcsCombinedShare01 = 1.0;
+
 };
 
 struct ShipPhysicsProfile

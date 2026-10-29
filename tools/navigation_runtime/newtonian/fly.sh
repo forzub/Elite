@@ -10,15 +10,17 @@ cd "$ELITE_ROOT"
 tasklist | grep -qi EliteGame && { echo "EliteGame already running - abort"; exit 1; }
 rm -f "$O/elite_navigation_stress.log" "$O/elite_newtonian_runtime.csv" \
       "$O/elite_${T}_decision.tsv" "$O/elite_${T}_events.tsv"
-(ELITE_AUTOPILOT_CASE_DUMP="$O/elite_${T}_case.txt" \
- ELITE_ROUTE_DUMP="$O/elite_${T}_route.txt" \
- ELITE_NEWTONIAN_POLICY_TRACE="$O/elite_${T}_decision.tsv" \
- ELITE_NEWTONIAN_EVENT_TRACE="$O/elite_${T}_events.tsv" \
- ELITE_SHIP_PHYSICAL_TEST_MODEL=$M \
+ELITE_AUTOPILOT_CASE_DUMP="$O/elite_${T}_case.txt" \
+  ELITE_ROUTE_DUMP="$O/elite_${T}_route.txt" \
+  ELITE_NEWTONIAN_POLICY_TRACE="$O/elite_${T}_decision.tsv" \
+  ELITE_NEWTONIAN_EVENT_TRACE="$O/elite_${T}_events.tsv" \
+  ELITE_SHIP_PHYSICAL_TEST_MODEL=$M \
  ./build/EliteGame.exe --dev-direct-flight --diagnostic-scenario nav-stress:simple \
-   > "$O/elite_$T.stdout" 2> "$O/elite_$T.stderr" &)
+   > "$O/elite_$T.stdout" 2> "$O/elite_$T.stderr" &
+# Stop exactly the instance started here (never other EliteGame windows).
+WINPID=$(cat /proc/$!/winpid)
 sleep "$S"
-taskkill //IM EliteGame.exe //F > /dev/null 2>&1; sleep 3
+taskkill //PID "$WINPID" //F > /dev/null 2>&1; sleep 3
 cp "$O/elite_navigation_stress.log" "$O/elite_$T.log"
 [ -f "$O/elite_newtonian_runtime.csv" ] && \
   cp "$O/elite_newtonian_runtime.csv" "$O/elite_${T}_runtime.csv"

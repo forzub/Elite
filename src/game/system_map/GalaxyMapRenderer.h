@@ -43,6 +43,14 @@ namespace game::system_map
         ) const;
 
     private:
+        void drawMediumVolumes(
+            GalaxyMapView& view,
+            GalaxyMapRenderContext& context,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const glm::mat4& cameraView,
+            const glm::mat4& mvp
+        ) const;
+
         void drawNavigationGrid(
             GalaxyMapView& view,
             GalaxyMapRenderContext& context,

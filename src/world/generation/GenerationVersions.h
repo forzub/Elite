@@ -17,7 +17,7 @@ struct UniverseGenerationVersions
     std::uint32_t stellarSystem = 1;   // hierarchy, disk, architecture, orbits
     std::uint32_t celestialBody = 1;   // composition, radius, thermal, atmosphere, spin
     std::uint32_t satellites = 1;      // moons, rings, small-body reservoirs
-    std::uint32_t interstellar = 1;    // rogue bodies, interstellar medium regions
+    std::uint32_t interstellar = 2;    // 2: per-cell domain materialisation, background medium, density-lattice regions
     std::uint32_t planetSurface = 0;   // not implemented: surface materialisation
 };
 

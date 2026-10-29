@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -14,6 +15,8 @@
 #include "src/game/client/ClientServerClock.h"
 #include "src/game/client/ClientUniverseTimeline.h"
 #include "src/game/client/ClientCelestialMapBridge.h"
+#include "src/game/client/ClientGalaxyMapBridge.h"
+#include "src/world/interstellar/DensityLattice.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/navigation/HubNavigationFrame.h"
 #include "src/world/celestial/CelestialRuntimeRegistry.h"
@@ -330,6 +333,62 @@ void testEphemerisServiceMatchesRuntimeWithoutTouchingIt()
     REQUIRE(!sol.ancestors(earth->id).empty());
     const auto moon = sol.stateRelativeTo(earth->childIds.empty() ? earth->id : earth->childIds.front(), earth->id, 1.0e7);
     REQUIRE(moon && glm::length(moon->positionMeters()) > 3.5e8 && glm::length(moon->positionMeters()) < 4.1e8);
+}
+
+void testInterstellarMediumCoversTheDomainWithoutVacuum()
+{
+    using namespace world::coordinates;
+    const world::celestial::StarAtlasDatabase atlas = loadAtlas();
+    GalacticNavigationDomain domain({40.3214}, {140.0, 20.0});
+    for (const auto& s : atlas.systems()) domain.extendTo(s.positionLy);
+    for (const auto& s : atlas.distantSystems()) domain.extendTo(s.positionLy);
+    const auto cells = generationCellsCovering(domain, interstellarGenerationGrid());
+
+    std::set<GridCell3> backgroundCells;
+    std::size_t structures = 0, compact = 0;
+    for (const auto& o : atlas.objects())
+    {
+        const auto volume = game::client::galaxyMapMediumVolume(o);
+        if (o.objectType == "interstellar_medium_background")
+        {
+            const auto& c = o.properties.at("cell");
+            backgroundCells.insert({c[0].get<std::int64_t>(), c[1].get<std::int64_t>(), c[2].get<std::int64_t>()});
+            world::interstellar::DensityLattice lattice;
+            REQUIRE(world::interstellar::latticeFromJson(o.properties.at("lattice"), lattice));
+            for (std::size_t k = 0; k < lattice.size(); ++k)
+                REQUIRE(lattice.densityCm3(k) > 1.0e-4); // never a vacuum
+            REQUIRE(volume && volume->background);
+        }
+        else if (o.objectType == "interstellar_medium_region")
+        {
+            ++structures;
+            REQUIRE(o.properties.at("geometry").value("shape", std::string()) == "density_lattice");
+            REQUIRE(volume && !volume->background && volume->opacity.size() == volume->phases.size());
+        }
+        else
+        {
+            ++compact;
+            REQUIRE(!volume);
+        }
+    }
+    // Every generation cell of the navigation domain is materialised, nothing else.
+    REQUIRE(backgroundCells.size() == cells.size());
+    for (const auto& c : cells) REQUIRE(backgroundCells.count(c));
+    REQUIRE(structures >= 4 && compact > 0);
+    // Sol sits in the hot Local Bubble cavity; Kepler-62 (~300 pc) lies beyond its wall.
+    const auto* sol = atlas.findSystemSummary(0);
+    const auto* kepler = atlas.findSystemSummary(100062);
+    REQUIRE(sol && kepler);
+    const auto phaseAt = [&](const glm::dvec3& p) {
+        const GridCell3 c = interstellarGenerationGrid().cellOf(p);
+        for (const auto& o : atlas.objects())
+            if (o.objectType == "interstellar_medium_background" && o.properties.at("cell")[0] == c[0] &&
+                o.properties.at("cell")[1] == c[1] && o.properties.at("cell")[2] == c[2])
+                return o.properties.value("dominant_phase", std::string());
+        return std::string();
+    };
+    REQUIRE(phaseAt(sol->positionLy + glm::dvec3(1.0)) == "hot_ionized");
+    REQUIRE(phaseAt(kepler->positionLy) == "warm_neutral");
 }
 
 void testClientUniverseTimelineUsesServerAnchor()
@@ -753,6 +812,10 @@ int main()
         {
             "ephemeris service matches runtime without touching it",
             testEphemerisServiceMatchesRuntimeWithoutTouchingIt
+        },
+        {
+            "interstellar medium covers the domain without vacuum",
+            testInterstellarMediumCoversTheDomainWithoutVacuum
         }
     };
 

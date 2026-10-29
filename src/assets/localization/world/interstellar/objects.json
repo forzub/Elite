@@ -3,13 +3,6 @@
   "kind": "catalog",
   "domain": "galaxy_objects",
   "entries": {
-    "ism_local_bubble": {
-      "en": "Local Bubble",
-      "ru": "Местный пузырь",
-      "zh-Hans": "本地泡",
-      "es": "Burbuja Local",
-      "ja": "局所泡"
-    },
     "ism_local_interstellar_cloud": {
       "en": "Local Interstellar Cloud",
       "ru": "Местное межзвёздное облако",

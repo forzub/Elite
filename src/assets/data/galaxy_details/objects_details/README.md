@@ -2,6 +2,20 @@
 
 Every `.json` file in this directory is loaded automatically. No registry or manifest is required.
 
+Generated content (`EliteUniverseGenerator interstellar`, never edited by hand)
+lives in two subdirectories, also loaded automatically:
+
+- `interstellar_cells/block_<tag>.json` - `elite.interstellar_cell_block.v1`:
+  the 25-ly generation cells covering the navigation domain, 4x4x4 per file.
+  Each cell holds an `interstellar_medium_background` object (log10 density /
+  phase lattice of the continuous background field: Local Bubble cavity,
+  supernova-enriched wall, warm neutral medium) and its compact bodies.
+- `interstellar_medium/<id>.json` - `interstellar_medium_region` objects:
+  irregular density volumes (`geometry.shape = "density_lattice"`, relative
+  density lattice, bounding ellipsoid only as metadata).
+
+Lattice contract: `src/world/interstellar/DensityLattice.h`.
+
 Minimal schema:
 
 ```json

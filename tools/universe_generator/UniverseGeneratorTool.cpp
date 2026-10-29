@@ -10,10 +10,14 @@
 //       <prefix>_planets.tsv); not catalog data, never committed
 //   EliteUniverseGenerator determinism <galaxy_details_root>
 //       generate every system twice, in forward and reverse order, compare bytes;
-//       the interstellar objects on disk must equal a fresh generation
+//       the interstellar files on disk must equal a fresh generation
 //   EliteUniverseGenerator interstellar <galaxy_details_root>
-//       replace objects_details/gen_*.json (rogue bodies, remnants, comets,
-//       debris groups, interstellar medium regions)
+//       replace objects_details/interstellar_cells/ (one file per 25-ly
+//       generation cell covering the navigation domain: background medium
+//       lattice + rogue bodies, remnants, comets, debris groups) and
+//       objects_details/interstellar_medium/ (density-lattice structures)
+//   EliteUniverseGenerator domain <galaxy_details_root>
+//       report the navigation domain of navigation_grid.json
 
 #include <algorithm>
 #include <chrono>
@@ -121,23 +125,7 @@ int domainReport(const fs::path& root)
     return comps.size() == 1 ? 0 : 1;
 }
 
-std::vector<InterstellarObject> interstellarContent(const fs::path& root)
-{
-    std::vector<glm::dvec3> positions;
-    for (const auto& dir : systemDirectories(root))
-    {
-        SystemInput in;
-        std::string error;
-        if (readSystemInput(dir, in, error))
-            positions.push_back(in.positionLy);
-    }
-    auto objects = generateInterstellarObjects(DefaultUniverseSeed, positions);
-    const auto medium = generateInterstellarMedium(DefaultUniverseSeed);
-    objects.insert(objects.end(), medium.begin(), medium.end());
-    return objects;
-}
-
-std::string objectFileText(const InterstellarObject& o)
+nlohmann::ordered_json objectJson(const InterstellarObject& o)
 {
     nlohmann::ordered_json j;
     j["schema_version"] = 1;
@@ -149,25 +137,80 @@ std::string objectFileText(const InterstellarObject& o)
     j["description"] = o.description;
     j["tags"] = o.tags;
     j["properties"] = o.properties;
-    return dumpJson(j);
+    return j;
+}
+
+// Relative path -> file text of every materialised interstellar file.
+std::map<std::string, std::string> interstellarFiles(const fs::path& root)
+{
+    const auto domain = navigationDomain(root);
+    const auto cells = world::coordinates::generationCellsCovering(
+        domain, world::coordinates::interstellarGenerationGrid());
+    const auto systems = catalogPositions(root);
+    std::map<std::string, std::string> files;
+    // Cells are stored in blocks of 4 x 4 x 4 cells (100 ly) so the runtime
+    // opens ~100 files instead of thousands. The content of a cell does not
+    // depend on its block or on its neighbours.
+    constexpr long long BlockCells = 4;
+    const auto floorDiv = [](long long a, long long b) { return a >= 0 ? a / b : -((-a + b - 1) / b); };
+    std::map<world::coordinates::GridCell3, nlohmann::ordered_json> blocks;
+    for (const auto& cell : cells)
+    {
+        const InterstellarCell c = generateInterstellarCell(DefaultUniverseSeed, cell, systems);
+        const world::coordinates::GridCell3 block {
+            floorDiv(cell[0], BlockCells), floorDiv(cell[1], BlockCells), floorDiv(cell[2], BlockCells)};
+        auto& b = blocks[block];
+        if (b.is_null())
+        {
+            b["schema"] = "elite.interstellar_cell_block.v1";
+            b["kind"] = "interstellar_cell_block";
+            b["block"] = {block[0], block[1], block[2]};
+            b["block_size_cells"] = BlockCells;
+            b["cell_size_ly"] = world::coordinates::InterstellarGenerationCellLy;
+            b["interstellar_version"] = CurrentGenerationVersions.interstellar;
+            b["cells"] = nlohmann::ordered_json::array();
+        }
+        nlohmann::ordered_json j;
+        j["cell"] = {cell[0], cell[1], cell[2]};
+        j["seed"] = hexSeed(c.seed);
+        j["objects"] = nlohmann::ordered_json::array();
+        for (const auto& o : c.objects)
+            j["objects"].push_back(objectJson(o));
+        b["cells"].push_back(std::move(j));
+    }
+    for (const auto& [block, j] : blocks)
+        files["interstellar_cells/block_" + interstellarCellTag(block) + ".json"] = dumpJson(j);
+    for (const auto& o : generateInterstellarMedium(DefaultUniverseSeed, cells))
+        files["interstellar_medium/" + o.id + ".json"] = dumpJson(objectJson(o));
+    return files;
 }
 
 int interstellar(const fs::path& root)
 {
     const fs::path dir = root / "objects_details";
-    fs::create_directories(dir);
+    for (const char* sub : {"interstellar_cells", "interstellar_medium"})
+    {
+        fs::remove_all(dir / sub);
+        fs::create_directories(dir / sub);
+    }
     for (const auto& e : fs::directory_iterator(dir))
         if (e.path().filename().string().rfind("gen_", 0) == 0)
-            fs::remove(e.path());
-    const auto objects = interstellarContent(root);
+            fs::remove(e.path()); // the pre-domain flat layout
+    const auto files = interstellarFiles(root);
     std::map<std::string, int> counts;
-    for (const auto& o : objects)
+    for (const auto& [relative, text] : files)
     {
-        std::ofstream f(dir / ("gen_" + o.id + ".json"), std::ios::binary);
-        f << objectFileText(o);
-        ++counts[o.objectType];
+        std::ofstream f(dir / relative, std::ios::binary);
+        f << text;
+        const auto j = nlohmann::json::parse(text);
+        if (j.value("kind", std::string()) == "interstellar_cell_block")
+            for (const auto& c : j["cells"])
+                for (const auto& o : c["objects"])
+                    ++counts[o["object_type"].get<std::string>()];
+        else
+            ++counts[j["object_type"].get<std::string>()];
     }
-    std::cout << "[universe] interstellar objects: " << objects.size();
+    std::cout << "[universe] interstellar files: " << files.size() << ";";
     for (const auto& [type, n] : counts) std::cout << " " << type << "=" << n;
     std::cout << "\n";
     return 0;
@@ -396,14 +439,42 @@ int determinism(const fs::path& root)
             ++stale;
         }
     }
-    for (const auto& o : interstellarContent(root))
+    const auto files = interstellarFiles(root);
+    for (const auto& [relative, text] : files)
     {
-        std::ifstream f(root / "objects_details" / ("gen_" + o.id + ".json"), std::ios::binary);
+        std::ifstream f(root / "objects_details" / relative, std::ios::binary);
         const std::string onDisk((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-        if (onDisk != objectFileText(o))
+        if (onDisk != text)
         {
-            std::cerr << "[universe] STALE interstellar object: " << o.id << "\n";
+            std::cerr << "[universe] STALE interstellar file: " << relative << "\n";
             ++stale;
+        }
+    }
+    for (const char* sub : {"interstellar_cells", "interstellar_medium"})
+    {
+        std::error_code ec;
+        if (fs::is_directory(root / "objects_details" / sub, ec))
+            for (const auto& e : fs::directory_iterator(root / "objects_details" / sub))
+                if (!files.count(std::string(sub) + "/" + e.path().filename().string()))
+                {
+                    std::cerr << "[universe] STALE extra interstellar file: " << e.path().string() << "\n";
+                    ++stale;
+                }
+    }
+    // A cell is independent of the others: generating it alone gives the same bytes.
+    {
+        const auto domain = navigationDomain(root);
+        const auto cells = world::coordinates::generationCellsCovering(
+            domain, world::coordinates::interstellarGenerationGrid());
+        const auto systems = catalogPositions(root);
+        const auto& probe = cells[cells.size() / 2];
+        const auto a = generateInterstellarCell(DefaultUniverseSeed, probe, systems);
+        const auto b = generateInterstellarCell(DefaultUniverseSeed, probe, systems);
+        if (a.objects.size() != b.objects.size() ||
+            dumpJson(objectJson(a.objects.front())) != dumpJson(objectJson(b.objects.front())))
+        {
+            std::cerr << "[universe] interstellar cell not reproducible\n";
+            ++diff;
         }
     }
     std::cout << "[universe] determinism: " << inputs.size() << " systems, " << diff << " differ, " << stale

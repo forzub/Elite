@@ -3,6 +3,8 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <cstdint>
+#include <memory>
 
 #include <glm/glm.hpp>
 #include "src/scene/EntityID.h"
@@ -27,6 +29,21 @@ namespace world::celestial
         std::string jurisdiction;
     };
 
+    /*
+        Map presentation of an interstellar-medium lattice: opacity 0..255 and
+        phase code per voxel (codes of world::interstellar::DensityLattice).
+        Phase -> false colour is a map convention, not the colour of the gas.
+    */
+    struct GalaxyMapMediumVolume
+    {
+        glm::dvec3 originLy {0.0};
+        double voxelLy = 0.0;
+        glm::ivec3 dims {0};
+        std::vector<std::uint8_t> opacity;
+        std::string phases;
+        bool background = false;
+    };
+
     struct GalaxyMapObject
     {
         std::string id;
@@ -36,12 +53,10 @@ namespace world::celestial
         std::string description;
         std::vector<std::string> tags;
 
-        // Volumetric regions (interstellar medium): ellipsoid radii in ly and
-        // the false-colour of the map layer (a map convention, not the
-        // literal colour of the gas). Zero extent = a compact object.
-        glm::dvec3 extentLy {0.0};
-        glm::dvec3 displayColorRgb {0.0};
-        double displayAlpha = 0.0;
+        // Interstellar medium (structures and background cells): the
+        // presentation of its density lattice. Client-local data rebuilt from
+        // the StarAtlas, never on the wire. Null for compact objects.
+        std::shared_ptr<const GalaxyMapMediumVolume> mediumVolume;
     };
 
     struct GalaxyMapSnapshot

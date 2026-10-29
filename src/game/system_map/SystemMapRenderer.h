@@ -478,6 +478,17 @@ private:
 
     void beginSolids() override;
 
+    void beginVolumes() override;
+
+    void addVolumeSprite(
+        const glm::vec3& center,
+        float radius,
+        const glm::vec4& color,
+        const glm::mat4& view
+    ) override;
+
+    void flushVolumes(const glm::mat4& mvp) override;
+
     void addBillboardBall(
         const glm::vec3& center,
         float radius,
@@ -713,6 +724,7 @@ private:
 
     std::vector<Vertex> m_vertices;
     std::vector<Vertex> m_solidVertices;
+    std::vector<Vertex> m_volumeVertices;
     std::vector<TexturedBatch> m_texturedBatches;
     game::system_map::SystemMapGpuCircleBatch m_gpuCircleBatch;
 

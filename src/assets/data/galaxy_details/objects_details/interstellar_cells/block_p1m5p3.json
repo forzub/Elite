@@ -1,0 +1,130 @@
+{
+  "schema": "elite.interstellar_cell_block.v1",
+  "kind": "interstellar_cell_block",
+  "block": [
+    1,
+    -5,
+    3
+  ],
+  "block_size_cells": 4,
+  "cell_size_ly": 25.0,
+  "interstellar_version": 2,
+  "cells": [
+    {
+      "cell": [
+        4,
+        -17,
+        15
+      ],
+      "seed": "0x0f5bf44196b9d9ca",
+      "objects": [
+        {
+          "schema_version": 1,
+          "kind": "galaxy_object",
+          "id": "ism_bg_p4m17p15",
+          "name": "Interstellar medium p4m17p15",
+          "object_type": "interstellar_medium_background",
+          "position_ly": {
+            "x": 112.5,
+            "y": -412.5,
+            "z": 387.5
+          },
+          "description": "Background interstellar medium (warm_neutral).",
+          "tags": [
+            "ism",
+            "background",
+            "warm_neutral"
+          ],
+          "properties": {
+            "cell": [
+              4,
+              -17,
+              15
+            ],
+            "cell_size_ly": 25.0,
+            "dominant_phase": "warm_neutral",
+            "mean_density_cm3": 0.27915113818149057,
+            "temperature_k": 8000.000000000002,
+            "ionization_fraction": 0.09999999999999994,
+            "molecular_fraction": 0.0,
+            "dust_to_gas": 0.006000000000000001,
+            "ice_mantle_fraction": 0.0,
+            "supernova_enrichment": 0.0,
+            "mass_fraction": {
+              "H": 0.71,
+              "He": 0.275,
+              "metals": 0.015
+            },
+            "total_mass_kg": 8.648867795952819e+30,
+            "lattice": {
+              "origin_ly": [
+                100.0,
+                -425.0,
+                375.0
+              ],
+              "voxel_ly": 5.0,
+              "dims": [
+                5,
+                5,
+                5
+              ],
+              "encoding": "log10",
+              "log10_min": -3.5,
+              "log10_max": 2.5,
+              "values_hex": "7c7c79807f7c7b7a80817e7d7d81817c7d7f81807e7d7f7f7f7d7c7b7a7b7c797b7c7c7c78797d7e7c7b797f7f7c7a7d7d7f7c7b7d7d7e7c7a7d7d7e7b777b7d7e7c79797d7f7a797d7c807d7a7e81837b7b7e81827c7a7d7f7f7c7a7c7e7f7b7a7d7e7f7a7b7f81847b797e83847d7a7e80807e7d7e7f7f7c787e7d7f",
+              "phases": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
+            },
+            "gameplay_gravity": false,
+            "provenance": {
+              "generator": "world::generation::Interstellar",
+              "seed": "0x0f5bf44196b9d9ca",
+              "interstellar_version": 2,
+              "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
+            }
+          }
+        },
+        {
+          "schema_version": 1,
+          "kind": "galaxy_object",
+          "id": "ism_obj_p4m17p15_interstellar_comet_0",
+          "name": "Wanderer C-2X275",
+          "object_type": "interstellar_comet",
+          "position_ly": {
+            "x": 122.04043224496975,
+            "y": -410.78176646788256,
+            "z": 390.38516660175236
+          },
+          "description": "Generated interstellar object (interstellar_comet).",
+          "tags": [
+            "comet",
+            "volatile_rich"
+          ],
+          "properties": {
+            "age_gyr": 6.7492962097368565,
+            "velocity_lsr_kms": [
+              -8.581179553667633,
+              6.7452591831067545,
+              15.78440218933014
+            ],
+            "radius_km": 3.026572420971969,
+            "mass_kg": 69677581939399.984,
+            "composition": {
+              "water_ice": 0.45,
+              "co_co2_ices": 0.25,
+              "silicate_dust": 0.2,
+              "organics": 0.1
+            },
+            "origin": "ejected_planetesimal",
+            "gameplay_gravity": true,
+            "provenance": {
+              "generator": "world::generation::Interstellar",
+              "seed": "0x6403a5634a3a8231",
+              "interstellar_version": 2,
+              "model": "cell population, notable member"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

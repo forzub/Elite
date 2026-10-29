@@ -701,6 +701,7 @@ add_executable(EliteGame
     src/game/identity/SecureRandom.cpp
     src/game/identity/Sha256.cpp
     src/game/client/ClientMapService.cpp
+    src/game/client/ClientGalaxyMapBridge.cpp
     src/game/client/ClientCatalogService.cpp
 
     src/game/system_map/AuthoritativeMapInterpolator.cpp

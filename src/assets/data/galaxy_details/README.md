@@ -19,7 +19,12 @@ distant_systems/<id>_<slug>/     distant quest / route destinations (id >= 10000
         system.json              galactic context, present-day stars, barycenters, disks, stability report
         bodies/<kind>_<slug>.json planets, dwarf planets, moons (physical, thermal, atmosphere, surface descriptor)
         reservoirs/<slug>.json   asteroid / outer belts, debris disks, comet clouds, trojans (statistical)
-objects_details/*.json           free interstellar objects (schema kind "galaxy_object")
+objects_details/*.json           authored free interstellar objects (schema kind "galaxy_object")
+objects_details/interstellar_cells/block_<tag>.json
+                                 OUTPUT: 25-ly generation cells of the navigation domain in
+                                 4x4x4 blocks (background medium lattice + compact bodies)
+objects_details/interstellar_medium/<id>.json
+                                 OUTPUT: medium structures (IrregularDensityVolume lattices)
 ```
 
 Inputs are owned by the catalog author; `generated/` is owned by the generator
@@ -27,6 +32,7 @@ and never edited by hand. Regenerate with the DEV tool:
 
 ```bash
 build/headless_server/EliteUniverseGenerator.exe materialize src/assets/data/galaxy_details
+build/headless_server/EliteUniverseGenerator.exe interstellar src/assets/data/galaxy_details
 build/headless_server/EliteUniverseGenerator.exe determinism src/assets/data/galaxy_details
 ```
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -9,6 +10,13 @@
 
 namespace game::client
 {
+/*
+    Map presentation of an interstellar-medium object (structure or
+    background cell); null for compact objects. ClientGalaxyMapBridge.cpp.
+*/
+std::shared_ptr<const world::celestial::GalaxyMapMediumVolume> galaxyMapMediumVolume(
+    const world::celestial::GalaxyObjectDefinition& source);
+
 inline void rebuildGalaxyMapCatalogLayer(
     world::celestial::GalaxyMapSnapshot& snapshot,
     const std::vector<world::celestial::StarSystemSummary>& systems,
@@ -67,24 +75,7 @@ inline void rebuildGalaxyMapCatalogLayer(
         item.positionLy = source.positionLy;
         item.description = source.description;
         item.tags = source.tags;
-        const auto& props = source.properties;
-        if (props.contains("geometry") && props["geometry"].contains("radii_ly") &&
-            props["geometry"]["radii_ly"].is_array() && props["geometry"]["radii_ly"].size() == 3)
-        {
-            const auto& r = props["geometry"]["radii_ly"];
-            item.extentLy = {r[0].get<double>(), r[1].get<double>(), r[2].get<double>()};
-        }
-        if (props.contains("visualization") && props["visualization"].is_object())
-        {
-            const auto& vis = props["visualization"];
-            if (vis.contains("false_color_rgb") && vis["false_color_rgb"].is_array() &&
-                vis["false_color_rgb"].size() == 3)
-            {
-                const auto& c = vis["false_color_rgb"];
-                item.displayColorRgb = {c[0].get<double>(), c[1].get<double>(), c[2].get<double>()};
-            }
-            item.displayAlpha = vis.value("alpha", 0.0);
-        }
+        item.mediumVolume = galaxyMapMediumVolume(source);
         snapshot.objects.push_back(std::move(item));
     }
 }

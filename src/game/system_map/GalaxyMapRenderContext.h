@@ -68,6 +68,20 @@ namespace game::system_map
         virtual void flushSolids(const glm::mat4& mvp) = 0;
         virtual void flushLines(const glm::mat4& mvp) = 0;
 
+        // Translucent volume layer (interstellar medium): soft camera-facing
+        // sprites, alpha blended without depth writes, drawn under the
+        // stars / routes / selection.
+        virtual void beginVolumes() = 0;
+
+        virtual void addVolumeSprite(
+            const glm::vec3& center,
+            float radius,
+            const glm::vec4& color,
+            const glm::mat4& view
+        ) = 0;
+
+        virtual void flushVolumes(const glm::mat4& mvp) = 0;
+
         virtual double currentTimeSeconds() const = 0;
 
         virtual void beginTextFrame(

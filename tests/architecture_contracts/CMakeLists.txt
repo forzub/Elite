@@ -1092,6 +1092,7 @@ set_tests_properties(
 add_executable(
     galaxy_map_catalog_migration_contract_tests
     GalaxyMapCatalogMigrationContractTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/game/client/ClientGalaxyMapBridge.cpp"
 )
 
 target_include_directories(

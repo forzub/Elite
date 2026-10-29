@@ -451,6 +451,14 @@ namespace game::system_map
                 glm::radians(48.0f) * 0.5f
             );
 
+        drawMediumVolumes(
+            viewState,
+            context,
+            galaxy,
+            view,
+            mvp
+        );
+
         for (const auto& system : galaxy.systems)
         {
             const glm::vec3 position =
@@ -627,41 +635,15 @@ namespace game::system_map
             );
         }
 
-        // Interstellar layer: compact objects as small dim points, medium
-        // regions as false-colour ellipsoid outlines (three principal rings).
+        // Interstellar layer: compact objects as small dim points (the medium
+        // volumes were drawn before the systems, see drawMediumVolumes).
         for (const auto& object : galaxy.objects)
         {
+            if (object.mediumVolume)
+                continue;
+
             const glm::vec3 position =
                 viewState.positionLyToRender(object.positionLy);
-
-            if (object.extentLy.x > 0.0)
-            {
-                const glm::vec4 color {
-                    static_cast<float>(object.displayColorRgb.x),
-                    static_cast<float>(object.displayColorRgb.y),
-                    static_cast<float>(object.displayColorRgb.z),
-                    static_cast<float>(std::min(0.6, 0.15 + 2.0 * object.displayAlpha))};
-                constexpr int segments = 48;
-                const glm::dvec3 r = object.extentLy;
-                for (int plane = 0; plane < 3; ++plane)
-                {
-                    glm::vec3 previous {0.0f};
-                    for (int k = 0; k <= segments; ++k)
-                    {
-                        const double a = 6.283185307179586 * k / segments;
-                        const double c = std::cos(a), s = std::sin(a);
-                        const glm::dvec3 offset = plane == 0 ? glm::dvec3(r.x * c, r.y * s, 0.0)
-                            : plane == 1 ? glm::dvec3(r.x * c, 0.0, r.z * s)
-                                         : glm::dvec3(0.0, r.y * c, r.z * s);
-                        const glm::vec3 point =
-                            viewState.positionLyToRender(object.positionLy + offset);
-                        if (k > 0)
-                            context.addLine(previous, point, color);
-                        previous = point;
-                    }
-                }
-                continue;
-            }
 
             glm::vec4 color {0.6f, 0.6f, 0.55f, 0.8f};
             if (object.objectType == "brown_dwarf") color = {0.78f, 0.32f, 0.25f, 0.85f};
@@ -704,6 +686,87 @@ namespace game::system_map
             mvp
         );
     }
+
+/*
+    Interstellar medium as a translucent false-colour volume: every visible
+    voxel of the structures and of the background cells becomes one soft
+    sprite. Very low opacity, no outline; visual priority stars / route /
+    selection > compact objects > medium. Colour = phase (map convention):
+    hot ionised, warm partly ionised, warm neutral, cold neutral, molecular /
+    dust-rich, supernova-enriched shell. A sprite budget keeps the frame
+    cost bounded; sparser sampling enlarges the sprites.
+*/
+void GalaxyMapRenderer::drawMediumVolumes(
+    GalaxyMapView& viewState,
+    GalaxyMapRenderContext& context,
+    const world::celestial::GalaxyMapSnapshot& galaxy,
+    const glm::mat4& view,
+    const glm::mat4& mvp
+) const
+{
+    struct PhaseStyle
+    {
+        glm::vec3 rgb;
+        float alpha;
+    };
+    const auto style = [](char phase) -> PhaseStyle {
+        switch (phase)
+        {
+        case 'p': return {{0.25f, 0.80f, 0.80f}, 0.10f};
+        case 'w': return {{0.35f, 0.55f, 0.95f}, 0.05f};
+        case 'c': return {{0.85f, 0.92f, 1.00f}, 0.12f};
+        case 'm': return {{0.95f, 0.55f, 0.25f}, 0.16f};
+        case 's': return {{0.95f, 0.35f, 0.55f}, 0.09f};
+        default: return {{0.62f, 0.40f, 0.95f}, 0.0f}; // hot cavity: transparent
+        }
+    };
+    constexpr std::uint8_t MinOpacity = 10;
+    constexpr std::size_t SpriteBudget = 7000;
+
+    std::size_t candidates = 0;
+    for (const auto& object : galaxy.objects)
+        if (object.mediumVolume)
+            for (std::size_t k = 0; k < object.mediumVolume->opacity.size(); ++k)
+                candidates += object.mediumVolume->opacity[k] >= MinOpacity &&
+                              style(object.mediumVolume->phases[k]).alpha > 0.0f;
+    if (candidates == 0)
+        return;
+    const std::size_t stride = std::max<std::size_t>(1, (candidates + SpriteBudget - 1) / SpriteBudget);
+    const float strideScale = std::cbrt(static_cast<float>(stride));
+
+    context.beginVolumes();
+    std::size_t counter = 0;
+    for (const auto& object : galaxy.objects)
+    {
+        const auto& v = object.mediumVolume;
+        if (!v)
+            continue;
+        const float radius =
+            glm::length(viewState.vectorLyToRender(glm::dvec3(v->voxelLy * 0.85, 0.0, 0.0))) * strideScale;
+        for (int k = 0; k < v->dims.z; ++k)
+            for (int j = 0; j < v->dims.y; ++j)
+                for (int i = 0; i < v->dims.x; ++i)
+                {
+                    const std::size_t index =
+                        static_cast<std::size_t>(i + v->dims.x * (j + v->dims.y * k));
+                    const std::uint8_t opacity = v->opacity[index];
+                    const PhaseStyle ps = style(v->phases[index]);
+                    if (opacity < MinOpacity || ps.alpha <= 0.0f)
+                        continue;
+                    if (counter++ % stride != 0)
+                        continue;
+                    const glm::dvec3 centre =
+                        v->originLy + (glm::dvec3(i, j, k) + 0.5) * v->voxelLy;
+                    context.addVolumeSprite(
+                        viewState.positionLyToRender(centre),
+                        radius,
+                        glm::vec4(ps.rgb, ps.alpha * static_cast<float>(opacity) / 255.0f),
+                        view
+                    );
+                }
+    }
+    context.flushVolumes(mvp);
+}
 
 void GalaxyMapRenderer::drawNavigationGrid(
     GalaxyMapView& viewState,

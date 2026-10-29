@@ -22,13 +22,19 @@ using json = nlohmann::json;
 
 json loadJson(const std::string& path)
 {
-    std::ifstream f(path);
+    std::ifstream f(path, std::ios::binary);
     if (!f.is_open())
         throw std::runtime_error("Cannot open JSON: " + path);
 
-    json j;
-    f >> j;
-    return j;
+    // Whole file first: parsing from a buffer is several times faster than
+    // from the stream in unoptimised builds (megabytes of catalog).
+    f.seekg(0, std::ios::end);
+    const std::streamoff size = f.tellg();
+    f.seekg(0, std::ios::beg);
+    std::string text(static_cast<std::size_t>(std::max<std::streamoff>(size, 0)), ' ');
+    f.read(text.data(), static_cast<std::streamsize>(text.size()));
+    text.resize(static_cast<std::size_t>(std::max<std::streamsize>(f.gcount(), 0)));
+    return json::parse(text);
 }
 
 
@@ -45,8 +51,17 @@ void hashByte(std::uint64_t& hash, unsigned char value)
 
 void hashBytes(std::uint64_t& hash, const std::string& value)
 {
-    for (unsigned char byte : value)
-        hashByte(hash, byte);
+    // Same FNV-1a as hashByte, one local loop (the catalog is megabytes and
+    // the game also runs unoptimised builds).
+    std::uint64_t h = hash;
+    const unsigned char* p = reinterpret_cast<const unsigned char*>(value.data());
+    const unsigned char* end = p + value.size();
+    while (p != end)
+    {
+        h ^= *p++;
+        h *= FnvPrime64;
+    }
+    hash = h;
 }
 
 std::uint64_t computeCatalogFingerprint(const fs::path& root)
@@ -87,22 +102,22 @@ std::uint64_t computeCatalogFingerprint(const fs::path& root)
         }
     }
 
+    // Relative paths computed once (sorting with per-comparison path
+    // arithmetic costs seconds in unoptimised builds).
+    std::vector<std::pair<std::string, fs::path>> ordered;
+    ordered.reserve(files.size());
+    for (const fs::path& file : files)
+        ordered.emplace_back(file.lexically_relative(root).generic_string(), file);
     std::sort(
-        files.begin(),
-        files.end(),
-        [&root](const fs::path& lhs, const fs::path& rhs)
-        {
-            return lhs.lexically_relative(root).generic_string() <
-                   rhs.lexically_relative(root).generic_string();
-        }
+        ordered.begin(),
+        ordered.end(),
+        [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; }
     );
 
     std::uint64_t hash = FnvOffsetBasis64;
 
-    for (const fs::path& file : files)
+    for (const auto& [relative, file] : ordered)
     {
-        const std::string relative =
-            file.lexically_relative(root).generic_string();
 
         hashBytes(hash, relative);
         hashByte(hash, 0u);
@@ -114,9 +129,13 @@ std::uint64_t computeCatalogFingerprint(const fs::path& root)
         }
         else
         {
-            char c = 0;
-            while (input.get(c))
-                hashByte(hash, static_cast<unsigned char>(c));
+            input.seekg(0, std::ios::end);
+            const std::streamoff size = input.tellg();
+            input.seekg(0, std::ios::beg);
+            std::string bytes(static_cast<std::size_t>(std::max<std::streamoff>(size, 0)), '\0');
+            input.read(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+            bytes.resize(static_cast<std::size_t>(std::max<std::streamsize>(input.gcount(), 0)));
+            hashBytes(hash, bytes);
         }
 
         hashByte(hash, 0xffu);
@@ -583,18 +602,15 @@ void removeDistantCatalogConflicts(
     distantReport.filesLoaded = distantDocuments.size();
 }
 
-bool parseGalaxyObjectFile(
+bool parseGalaxyObjectJson(
+    const json& root,
     const fs::path& path,
     GalaxyObjectDefinition& out,
     std::string& error
 )
 {
-    json root;
-
     try
     {
-        root = loadJson(path.string());
-
         const auto fail =
             [&](const std::string& message)
             {
@@ -709,6 +725,67 @@ bool parseGalaxyObjectFile(
     }
 }
 
+/*
+    One objects_details file: a galaxy_object document, or an
+    interstellar_cell_block (elite.interstellar_cell_block.v1): the 25-ly
+    generation cells of one 4 x 4 x 4 block, each holding its background
+    medium and compact bodies. Every object of a block is validated like a
+    standalone document; an invalid object is dropped alone.
+*/
+void parseGalaxyObjectFile(
+    const fs::path& path,
+    std::vector<GalaxyObjectDefinition>& out,
+    std::vector<std::string>& errors
+)
+{
+    json root;
+    try
+    {
+        root = loadJson(path.string());
+    }
+    catch (const std::exception& e)
+    {
+        errors.push_back(path.generic_string() + ": " + e.what());
+        return;
+    }
+
+    if (root.is_object() &&
+        root.value("kind", std::string()) == "interstellar_cell_block")
+    {
+        if (root.value("schema", std::string()) != "elite.interstellar_cell_block.v1" ||
+            !root.contains("cells") || !root["cells"].is_array())
+        {
+            errors.push_back(path.generic_string() + ": unsupported interstellar_cell_block document");
+            return;
+        }
+        for (const json& cell : root["cells"])
+        {
+            if (!cell.is_object() || !cell.contains("objects") || !cell["objects"].is_array())
+            {
+                errors.push_back(path.generic_string() + ": interstellar cell without objects");
+                continue;
+            }
+            for (const json& item : cell["objects"])
+            {
+                GalaxyObjectDefinition object;
+                std::string error;
+                if (parseGalaxyObjectJson(item, path, object, error))
+                    out.push_back(std::move(object));
+                else
+                    errors.push_back(error);
+            }
+        }
+        return;
+    }
+
+    GalaxyObjectDefinition object;
+    std::string error;
+    if (parseGalaxyObjectJson(root, path, object, error))
+        out.push_back(std::move(object));
+    else
+        errors.push_back(error);
+}
+
 bool loadGalaxyObjects(
     const std::string& galaxyDetailsRoot,
     std::vector<GalaxyObjectDefinition>& outObjects,
@@ -751,6 +828,19 @@ bool loadGalaxyObjects(
         return false;
     }
 
+    // Generated interstellar content: one file per 25-ly generation cell and
+    // one per medium structure (EliteUniverseGenerator interstellar).
+    for (const char* generated : {"interstellar_cells", "interstellar_medium"})
+    {
+        std::error_code generatedError;
+        if (!fs::is_directory(directory / generated, generatedError))
+            continue;
+        std::vector<fs::path> generatedFiles;
+        std::string generatedListError;
+        if (collectJsonFiles(directory / generated, true, generatedFiles, generatedListError))
+            files.insert(files.end(), generatedFiles.begin(), generatedFiles.end());
+    }
+
     report.filesDiscovered = files.size();
 
     outObjects.clear();
@@ -760,36 +850,39 @@ bool loadGalaxyObjects(
 
     for (const fs::path& path : files)
     {
-        GalaxyObjectDefinition object;
-        std::string fileError;
+        std::vector<GalaxyObjectDefinition> parsed;
+        std::vector<std::string> fileErrors;
 
-        if (!parseGalaxyObjectFile(
-                path,
-                object,
-                fileError))
-        {
+        parseGalaxyObjectFile(
+            path,
+            parsed,
+            fileErrors
+        );
+
+        for (const std::string& fileError : fileErrors)
             addCatalogSkip(report, fileError);
-            continue;
-        }
 
-        const auto existing =
-            idSources.find(object.id);
-
-        if (existing != idSources.end())
+        for (GalaxyObjectDefinition& object : parsed)
         {
-            addCatalogSkip(
-                report,
-                path,
-                "duplicate galaxy object id='" +
-                    object.id +
-                    "'; first valid definition kept from " +
-                    existing->second.generic_string()
-            );
-            continue;
-        }
+            const auto existing =
+                idSources.find(object.id);
 
-        idSources.emplace(object.id, path);
-        outObjects.push_back(std::move(object));
+            if (existing != idSources.end())
+            {
+                addCatalogSkip(
+                    report,
+                    path,
+                    "duplicate galaxy object id='" +
+                        object.id +
+                        "'; first valid definition kept from " +
+                        existing->second.generic_string()
+                );
+                continue;
+            }
+
+            idSources.emplace(object.id, path);
+            outObjects.push_back(std::move(object));
+        }
     }
 
     std::sort(

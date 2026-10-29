@@ -1,0 +1,506 @@
+{
+  "schema": "elite.interstellar_cell_block.v1",
+  "kind": "interstellar_cell_block",
+  "block": [
+    1,
+    -3,
+    3
+  ],
+  "block_size_cells": 4,
+  "cell_size_ly": 25.0,
+  "interstellar_version": 2,
+  "cells": [
+    {
+      "cell": [
+        4,
+        -12,
+        12
+      ],
+      "seed": "0x9246ae46e054e155",
+      "objects": [
+        {
+          "schema_version": 1,
+          "kind": "galaxy_object",
+          "id": "ism_bg_p4m12p12",
+          "name": "Interstellar medium p4m12p12",
+          "object_type": "interstellar_medium_background",
+          "position_ly": {
+            "x": 112.5,
+            "y": -287.5,
+            "z": 312.5
+          },
+          "description": "Background interstellar medium (warm_neutral).",
+          "tags": [
+            "ism",
+            "background",
+            "warm_neutral"
+          ],
+          "properties": {
+            "cell": [
+              4,
+              -12,
+              12
+            ],
+            "cell_size_ly": 25.0,
+            "dominant_phase": "warm_neutral",
+            "mean_density_cm3": 0.29298021004064323,
+            "temperature_k": 8000.0000000000055,
+            "ionization_fraction": 0.10000000000000006,
+            "molecular_fraction": 0.0,
+            "dust_to_gas": 0.0060000000000000045,
+            "ice_mantle_fraction": 0.0,
+            "supernova_enrichment": 0.0,
+            "mass_fraction": {
+              "H": 0.71,
+              "He": 0.275,
+              "metals": 0.015
+            },
+            "total_mass_kg": 9.077330366550616e+30,
+            "lattice": {
+              "origin_ly": [
+                100.0,
+                -300.0,
+                300.0
+              ],
+              "voxel_ly": 5.0,
+              "dims": [
+                5,
+                5,
+                5
+              ],
+              "encoding": "log10",
+              "log10_min": -3.5,
+              "log10_max": 2.5,
+              "values_hex": "8180827e7d808080807f817f7f81817f7e81838380828282827f7a7c7e7f7e7c7e7f7f7e7c7f807f7d7c7e817d7c807c7c7b7c7a7c7e7e7d7d7e7e7f7c7b7e7f7f7f7d7b7e7f7d7c7c7c7b7b7c7a7e807c7c7c7f807d7c7d80827e7c7e7d7f7f7f80787a7b7c7b7d7e7b7a7a80817b7a7a80827e7d7e7f818081807a7c",
+              "phases": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
+            },
+            "gameplay_gravity": false,
+            "provenance": {
+              "generator": "world::generation::Interstellar",
+              "seed": "0x9246ae46e054e155",
+              "interstellar_version": 2,
+              "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell": [
+        4,
+        -12,
+        13
+      ],
+      "seed": "0xf4a6b107bc68d689",
+      "objects": [
+        {
+          "schema_version": 1,
+          "kind": "galaxy_object",
+          "id": "ism_bg_p4m12p13",
+          "name": "Interstellar medium p4m12p13",
+          "object_type": "interstellar_medium_background",
+          "position_ly": {
+            "x": 112.5,
+            "y": -287.5,
+            "z": 337.5
+          },
+          "description": "Background interstellar medium (warm_neutral).",
+          "tags": [
+            "ism",
+            "background",
+            "warm_neutral"
+          ],
+          "properties": {
+            "cell": [
+              4,
+              -12,
+              13
+            ],
+            "cell_size_ly": 25.0,
+            "dominant_phase": "warm_neutral",
+            "mean_density_cm3": 0.29438697142119263,
+            "temperature_k": 8000.0,
+            "ionization_fraction": 0.1,
+            "molecular_fraction": 0.0,
+            "dust_to_gas": 0.006000000000000001,
+            "ice_mantle_fraction": 0.0,
+            "supernova_enrichment": 0.0,
+            "mass_fraction": {
+              "H": 0.71,
+              "He": 0.275,
+              "metals": 0.015
+            },
+            "total_mass_kg": 9.120915691977137e+30,
+            "lattice": {
+              "origin_ly": [
+                100.0,
+                -300.0,
+                325.0
+              ],
+              "voxel_ly": 5.0,
+              "dims": [
+                5,
+                5,
+                5
+              ],
+              "encoding": "log10",
+              "log10_min": -3.5,
+              "log10_max": 2.5,
+              "values_hex": "7d7c7b7e7d7b7c7b7f807b7a7c80817e7d7c7e8080827f7d7f7f7e7f7e7c7d7d7e7f7f7b7a7e80817f7b7e8082807e7e81828082807b797e7f807f7e7b7e7f83817c7b8082807f7b7d817f7e7d7d7e7d7d7c7d7f807e7c7e80817e7d7e7c807e7b7e7d7d7c7a7a7e7e807f7d7f7e82807f808080807e807e7b7d7e7d7d",
+              "phases": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
+            },
+            "gameplay_gravity": false,
+            "provenance": {
+              "generator": "world::generation::Interstellar",
+              "seed": "0xf4a6b107bc68d689",
+              "interstellar_version": 2,
+              "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell": [
+        4,
+        -11,
+        12
+      ],
+      "seed": "0x66da142801d75921",
+      "objects": [
+        {
+          "schema_version": 1,
+          "kind": "galaxy_object",
+          "id": "ism_bg_p4m11p12",
+          "name": "Interstellar medium p4m11p12",
+          "object_type": "interstellar_medium_background",
+          "position_ly": {
+            "x": 112.5,
+            "y": -262.5,
+            "z": 312.5
+          },
+          "description": "Background interstellar medium (warm_neutral).",
+          "tags": [
+            "ism",
+            "background",
+            "warm_neutral"
+          ],
+          "properties": {
+            "cell": [
+              4,
+              -11,
+              12
+            ],
+            "cell_size_ly": 25.0,
+            "dominant_phase": "warm_neutral",
+            "mean_density_cm3": 0.3171049097345985,
+            "temperature_k": 8000.0,
+            "ionization_fraction": 0.09999999999999995,
+            "molecular_fraction": 0.0,
+            "dust_to_gas": 0.006000000000000004,
+            "ice_mantle_fraction": 0.0,
+            "supernova_enrichment": 0.0,
+            "mass_fraction": {
+              "H": 0.71,
+              "He": 0.275,
+              "metals": 0.015
+            },
+            "total_mass_kg": 9.824779721868765e+30,
+            "lattice": {
+              "origin_ly": [
+                100.0,
+                -275.0,
+                300.0
+              ],
+              "voxel_ly": 5.0,
+              "dims": [
+                5,
+                5,
+                5
+              ],
+              "encoding": "log10",
+              "log10_min": -3.5,
+              "log10_max": 2.5,
+              "values_hex": "80808180818181817f8180807f80817f7f80818180818382827f7f817d7e81807e817f807d7d82807f7f7f817f7f82817f7f7c7f7c7e7b7e7f7c7d7c7f7f7d7f7e7f807f7f7f8182817f7f80807f7c7d817f7d7f7d827f7f7f7e828181807e8282827f7f83817f7a7c82817e7b7b83817e7b7b8282817f7f8382838181",
+              "phases": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
+            },
+            "gameplay_gravity": false,
+            "provenance": {
+              "generator": "world::generation::Interstellar",
+              "seed": "0x66da142801d75921",
+              "interstellar_version": 2,
+              "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell": [
+        4,
+        -11,
+        13
+      ],
+      "seed": "0xeda50de6080e4ab4",
+      "objects": [
+        {
+          "schema_version": 1,
+          "kind": "galaxy_object",
+          "id": "ism_bg_p4m11p13",
+          "name": "Interstellar medium p4m11p13",
+          "object_type": "interstellar_medium_background",
+          "position_ly": {
+            "x": 112.5,
+            "y": -262.5,
+            "z": 337.5
+          },
+          "description": "Background interstellar medium (warm_neutral).",
+          "tags": [
+            "ism",
+            "background",
+            "warm_neutral"
+          ],
+          "properties": {
+            "cell": [
+              4,
+              -11,
+              13
+            ],
+            "cell_size_ly": 25.0,
+            "dominant_phase": "warm_neutral",
+            "mean_density_cm3": 0.3039917000016732,
+            "temperature_k": 7999.999999999999,
+            "ionization_fraction": 0.09999999999999999,
+            "molecular_fraction": 0.0,
+            "dust_to_gas": 0.005999999999999998,
+            "ice_mantle_fraction": 0.0,
+            "supernova_enrichment": 0.0,
+            "mass_fraction": {
+              "H": 0.71,
+              "He": 0.275,
+              "metals": 0.015
+            },
+            "total_mass_kg": 9.418496523098729e+30,
+            "lattice": {
+              "origin_ly": [
+                100.0,
+                -275.0,
+                325.0
+              ],
+              "voxel_ly": 5.0,
+              "dims": [
+                5,
+                5,
+                5
+              ],
+              "encoding": "log10",
+              "log10_min": -3.5,
+              "log10_max": 2.5,
+              "values_hex": "81807e7c7c81807e7b7b80807f7b7d8181807e7f82828181807f7b7e7f807e7a7d7e807f7b7e7d807e807e7d7d8082807e7d7d7b7c80807f7c7a817f807c7b7e7d807f7e7b7c7e80807b7c7f7e7a7d7f817f7f8281817f7f81807f80807e7d7d81807b7c7c7e7b7b7c83827e808083838281807f8182807d7d8181807c",
+              "phases": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
+            },
+            "gameplay_gravity": false,
+            "provenance": {
+              "generator": "world::generation::Interstellar",
+              "seed": "0xeda50de6080e4ab4",
+              "interstellar_version": 2,
+              "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell": [
+        4,
+        -10,
+        12
+      ],
+      "seed": "0x14d419d74765ab60",
+      "objects": [
+        {
+          "schema_version": 1,
+          "kind": "galaxy_object",
+          "id": "ism_bg_p4m10p12",
+          "name": "Interstellar medium p4m10p12",
+          "object_type": "interstellar_medium_background",
+          "position_ly": {
+            "x": 112.5,
+            "y": -237.5,
+            "z": 312.5
+          },
+          "description": "Background interstellar medium (warm_neutral).",
+          "tags": [
+            "ism",
+            "background",
+            "warm_neutral"
+          ],
+          "properties": {
+            "cell": [
+              4,
+              -10,
+              12
+            ],
+            "cell_size_ly": 25.0,
+            "dominant_phase": "warm_neutral",
+            "mean_density_cm3": 0.30646807067341336,
+            "temperature_k": 8000.0000000000055,
+            "ionization_fraction": 0.10000000000000009,
+            "molecular_fraction": 0.0,
+            "dust_to_gas": 0.005999999999999999,
+            "ice_mantle_fraction": 0.0,
+            "supernova_enrichment": 0.0,
+            "mass_fraction": {
+              "H": 0.71,
+              "He": 0.275,
+              "metals": 0.015
+            },
+            "total_mass_kg": 9.495221277628407e+30,
+            "lattice": {
+              "origin_ly": [
+                100.0,
+                -250.0,
+                300.0
+              ],
+              "voxel_ly": 5.0,
+              "dims": [
+                5,
+                5,
+                5
+              ],
+              "encoding": "log10",
+              "log10_min": -3.5,
+              "log10_max": 2.5,
+              "values_hex": "82828283828181818281817f8081837d7b7b81817d7a7c807f7e827f7d807b7d7a81807c7d7c817f7b7e7e827f7c7f8283807f807e7c7f797b787c7d7a7c7a7e7d7e7f7f80817e80818281817f7f7f7e7c7c7e7d7e7c7f7e7c7c7e7f7f7f817f80817f81828182807e8080817b7d7e80817b7a8180807d7d82817f8080",
+              "phases": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
+            },
+            "gameplay_gravity": false,
+            "provenance": {
+              "generator": "world::generation::Interstellar",
+              "seed": "0x14d419d74765ab60",
+              "interstellar_version": 2,
+              "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
+            }
+          }
+        },
+        {
+          "schema_version": 1,
+          "kind": "galaxy_object",
+          "id": "ism_obj_p4m10p12_rogue_moon_0",
+          "name": "Drifter M-WRW45",
+          "object_type": "rogue_moon",
+          "position_ly": {
+            "x": 124.00215232380509,
+            "y": -225.5310145025635,
+            "z": 301.48418140953504
+          },
+          "description": "Generated interstellar object (rogue_moon).",
+          "tags": [
+            "rogue",
+            "icy"
+          ],
+          "properties": {
+            "age_gyr": 3.167012081440571,
+            "velocity_lsr_kms": [
+              -17.22760353736572,
+              26.0940638510152,
+              -17.068498063384023
+            ],
+            "mass_kg": 8.668619347300558e+21,
+            "mu_m3s2": 578569661096.8811,
+            "radius_km": 1011.4485029937925,
+            "teff_k": 12.44517512549558,
+            "composition": {
+              "water_ice": 0.5,
+              "silicate": 0.45,
+              "organics": 0.05
+            },
+            "origin": "stripped_during_planet_ejection",
+            "gameplay_gravity": true,
+            "provenance": {
+              "generator": "world::generation::Interstellar",
+              "seed": "0x42ce1b7ff9901e17",
+              "interstellar_version": 2,
+              "model": "cell population, notable member"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell": [
+        4,
+        -9,
+        12
+      ],
+      "seed": "0x35d6bdebb7836014",
+      "objects": [
+        {
+          "schema_version": 1,
+          "kind": "galaxy_object",
+          "id": "ism_bg_p4m9p12",
+          "name": "Interstellar medium p4m9p12",
+          "object_type": "interstellar_medium_background",
+          "position_ly": {
+            "x": 112.5,
+            "y": -212.5,
+            "z": 312.5
+          },
+          "description": "Background interstellar medium (warm_neutral).",
+          "tags": [
+            "ism",
+            "background",
+            "warm_neutral"
+          ],
+          "properties": {
+            "cell": [
+              4,
+              -9,
+              12
+            ],
+            "cell_size_ly": 25.0,
+            "dominant_phase": "warm_neutral",
+            "mean_density_cm3": 0.30375019065053926,
+            "temperature_k": 8000.0,
+            "ionization_fraction": 0.0999999999999999,
+            "molecular_fraction": 0.0,
+            "dust_to_gas": 0.006000000000000002,
+            "ice_mantle_fraction": 0.0,
+            "supernova_enrichment": 0.0,
+            "mass_fraction": {
+              "H": 0.71,
+              "He": 0.275,
+              "metals": 0.015
+            },
+            "total_mass_kg": 9.411013901093134e+30,
+            "lattice": {
+              "origin_ly": [
+                100.0,
+                -225.0,
+                300.0
+              ],
+              "voxel_ly": 5.0,
+              "dims": [
+                5,
+                5,
+                5
+              ],
+              "encoding": "log10",
+              "log10_min": -3.5,
+              "log10_max": 2.5,
+              "values_hex": "7d7a7d807f7c7b7d7d7c7c7a7c7e7e7b7b7b80807c787c80827d7d7f81807e7b7a7d7e7a7a7b817f7a797b838178787f82837d7d7f81827e7b7e7f817b787a82827a7a7a83837c7b7c82818081817f82807e7e80827f7e7d81807d7f8182807e7e7f8180818280808081828081828183838181818482807e8282817e7c",
+              "phases": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
+            },
+            "gameplay_gravity": false,
+            "provenance": {
+              "generator": "world::generation::Interstellar",
+              "seed": "0x35d6bdebb7836014",
+              "interstellar_version": 2,
+              "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

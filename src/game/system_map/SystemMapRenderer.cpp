@@ -1749,6 +1749,80 @@ void SystemMapRenderer::beginSolids()
     m_solidVertices.clear();
 }
 
+void SystemMapRenderer::beginVolumes()
+{
+    m_volumeVertices.clear();
+}
+
+void SystemMapRenderer::addVolumeSprite(
+    const glm::vec3& center,
+    float radius,
+    const glm::vec4& color,
+    const glm::mat4& view
+)
+{
+    if (radius <= 0.0f || color.a <= 0.0f)
+        return;
+
+    const glm::vec3 right {view[0][0], view[1][0], view[2][0]};
+    const glm::vec3 up {view[0][1], view[1][1], view[2][1]};
+    const glm::vec4 rim {color.r, color.g, color.b, 0.0f};
+
+    // Soft disc: full alpha at the centre, zero at the rim (6-segment fan).
+    constexpr int segments = 6;
+    for (int i = 0; i < segments; ++i)
+    {
+        const float a0 = 6.28318530718f * static_cast<float>(i) / segments;
+        const float a1 = 6.28318530718f * static_cast<float>(i + 1) / segments;
+        m_volumeVertices.push_back({center, color});
+        m_volumeVertices.push_back({center + (std::cos(a0) * right + std::sin(a0) * up) * radius, rim});
+        m_volumeVertices.push_back({center + (std::cos(a1) * right + std::sin(a1) * up) * radius, rim});
+    }
+}
+
+void SystemMapRenderer::flushVolumes(const glm::mat4& mvp)
+{
+    if (!m_shader || !m_vao || !m_vbo || m_volumeVertices.empty())
+        return;
+
+    const GLboolean depthWasEnabled = glIsEnabled(GL_DEPTH_TEST);
+    const GLboolean blendWasEnabled = glIsEnabled(GL_BLEND);
+    GLboolean depthMaskWasEnabled = GL_TRUE;
+    glGetBooleanv(GL_DEPTH_WRITEMASK, &depthMaskWasEnabled);
+
+    glUseProgram(m_shader);
+    glUniformMatrix4fv(m_mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+    glBindVertexArray(m_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        static_cast<GLsizeiptr>(m_volumeVertices.size() * sizeof(Vertex)),
+        m_volumeVertices.data(),
+        GL_DYNAMIC_DRAW
+    );
+
+    // Unsorted translucent sprites: no depth test against each other, no
+    // depth writes; everything drawn afterwards stays on top.
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_volumeVertices.size()));
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    glUseProgram(0);
+
+    glDepthMask(depthMaskWasEnabled);
+    if (depthWasEnabled)
+        glEnable(GL_DEPTH_TEST);
+    if (!blendWasEnabled)
+        glDisable(GL_BLEND);
+
+    m_volumeVertices.clear();
+}
+
 void SystemMapRenderer::addBillboardBall(
     const glm::vec3& center,
     float radius,

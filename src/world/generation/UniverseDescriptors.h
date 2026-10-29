@@ -161,6 +161,9 @@ struct SystemInput
     std::vector<StarInput> stars;
     HierarchyNodeInput hierarchy;   // root
     std::vector<ObservedBodyInput> observedBodies;
+    // Catalogued designations (incl. controversial / refuted planets) that a
+    // procedural planet must not reuse.
+    std::vector<std::string> reservedDesignations;
 
     // true: the observed bodies are the complete system (Sol); the generator
     // derives their physics but adds no procedural planets.
@@ -171,6 +174,10 @@ struct SystemInput
     // Absent for procedural / synthetic systems (no conditioning).
     std::optional<double> rvDetectionLimitMs;
     std::optional<double> rvBaselineDays;
+    // Transit survey of an edge-on system: no coplanar procedural planet with
+    // a shorter period and a larger radius would have escaped detection.
+    std::optional<double> transitRadiusLimitEarth;
+    std::optional<double> transitBaselineDays;
 
     nlohmann::json passthrough = nlohmann::json::object();
 };

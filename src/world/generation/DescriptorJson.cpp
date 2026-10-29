@@ -206,14 +206,17 @@ bool readSystemInput(const fs::path& dir, SystemInput& out, std::string& error)
     }
     out.positionSource = readString(sys, "position_source");
     out.observedSystemComplete = sys.value("observed_system_complete", false);
+    out.reservedDesignations = readStrings(sys, "reserved_designations");
     if (sys.contains("survey_completeness") && sys["survey_completeness"].is_object())
     {
         out.rvDetectionLimitMs = readValue(sys["survey_completeness"], "rv_detection_limit_ms");
         out.rvBaselineDays = readValue(sys["survey_completeness"], "rv_baseline_days");
+        out.transitRadiusLimitEarth = readValue(sys["survey_completeness"], "transit_radius_limit_earth");
+        out.transitBaselineDays = readValue(sys["survey_completeness"], "transit_baseline_days");
     }
     if (sys.contains("stellar_hierarchy"))
         out.hierarchy = readNode(sys["stellar_hierarchy"]);
-    for (const char* key : {"lore", "observational_reference", "legacy"})
+    for (const char* key : {"lore", "observational_reference", "legacy", "observed_reservoirs"})
         if (sys.contains(key)) out.passthrough[key] = sys[key];
 
     for (const auto& path : sortedJsonFiles(dir / "stars"))

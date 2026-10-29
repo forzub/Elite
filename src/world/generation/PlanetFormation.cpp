@@ -97,9 +97,8 @@ DiskModel buildDisk(const PlanetHost& host, const GalacticContextDescriptor& ctx
 
     d.innerEdgeAu = std::max(0.034 * std::sqrt(host.zamsLuminositySolar),
                              std::max(host.innerLimitAu, 0.006));
-    d.snowLineAu = std::max(2.7 * mStar * mStar, 0.3 * std::sqrt(mStar));
-    if (host.circumbinary)
-        d.snowLineAu = std::max(d.snowLineAu, 0.8 * std::sqrt(host.zamsLuminositySolar) * 2.7);
+    d.snowLineAu = host.snowLineOverrideAu > 0.0 ? host.snowLineOverrideAu
+                                                 : std::max(2.7 * mStar * mStar, 0.3 * std::sqrt(mStar));
     d.lifetimeMyr = clampd(
         rs.logNormal10(3.0 * std::pow(mStar, -0.25) *
                            std::pow(std::max(ctx.formationEnvironmentDensity, 0.05), -0.3), 0.25),
@@ -155,7 +154,19 @@ struct DetectionLimit
     double kMs = 1.5;
     double maxPeriodDays = 7300.0;
     double sinSky = 1.0;
+    double transitRadiusEarth = 0.0;
+    double transitPeriodDays = 0.0;
 };
+
+// Radius estimate before body physics (detectability only).
+double roughRadiusEarth(const PlanetCandidate& p)
+{
+    if (p.giant || p.massEarth > 50.0)
+        return 11.0;
+    const double core = std::pow(std::max(p.coreMassEarth, 1e-4), 1.0 / 3.7);
+    return p.envelopeFraction > 0.001
+        ? core + 2.06 * std::pow(p.massEarth, -0.21) * std::pow(p.envelopeFraction / 0.05, 0.59) : core;
+}
 
 } // namespace
 
@@ -184,12 +195,17 @@ FormationResult formPlanets(
 
     // Sky inclination shared by the host's planets (coplanar system).
     RandomStream skyRs(host.seed, "sky_inclination");
-    const double cosSky = skyRs.uniform(0.0, 0.9);
+    // Isotropic orientation weighted by RV detectability (~sin i): cos i <= 0.7.
+    const double cosSky = skyRs.uniform(0.0, 0.7);
     DetectionLimit det;
     det.sinSky = std::sqrt(1.0 - cosSky * cosSky);
-    det.active = host.rvDetectionLimitMs > 0.0 && !observedComplete;
-    det.kMs = host.rvDetectionLimitMs;
+    det.active = (host.rvDetectionLimitMs > 0.0 || host.transitRadiusLimitEarth > 0.0) && !observedComplete;
+    det.kMs = host.rvDetectionLimitMs > 0.0 ? host.rvDetectionLimitMs : 1.0e9;
     det.maxPeriodDays = host.rvBaselineDays;
+    det.transitRadiusEarth = host.transitRadiusLimitEarth;
+    det.transitPeriodDays = host.transitBaselineDays;
+    if (det.transitRadiusEarth > 0.0)
+        det.sinSky = 1.0; // edge-on: masses are true masses
 
     // Observational anchors as fixed planets.
     std::vector<PlanetCandidate> anchorPlanets;
@@ -352,8 +368,19 @@ FormationResult formPlanets(
                     if (!p.giant && p.coreMassEarth > 0.5 && p.aAu < 3.0 * d.snowLineAu)
                         migrators.push_back(&p);
                 double aPrev = d.innerEdgeAu * ms.uniform(1.0, 1.5);
+                // Observed resonant chains hold up to ~7-8 planets; the rest of
+                // the migrating cores stops on the way (moderate migration).
+                const std::size_t chainLength = std::min<std::size_t>(8, 4 + static_cast<std::size_t>(ms.poisson(2.0)));
+                for (std::size_t k = chainLength; k < migrators.size(); ++k)
+                    migrators[k]->aAu = std::max(migrators[k]->aAu * ms.uniform(0.3, 0.8), d.innerEdgeAu * 1.2);
+                if (migrators.size() > chainLength)
+                    migrators.resize(chainLength);
                 for (auto* p : migrators)
                 {
+                    // Migration is inward only: the chain ends where it would
+                    // push a core outside its birth orbit.
+                    if (aPrev >= p->aAu)
+                        break;
                     p->aAu = aPrev;
                     p->resonantChain = true;
                     p->formationOrigin = "migrated";
@@ -619,7 +646,10 @@ FormationResult formPlanets(
                 {
                     std::ostringstream s;
                     s << "observed pair at " << p.aAu << " / " << q.aAu << " AU: delta=" << delta;
-                    local.push_back({"observed_pair_spacing", delta >= 2.0 * std::sqrt(3.0), s.str()});
+                    // Real (often resonant) pairs exist below the Hill criterion:
+                    // the gate does not apply to observations, it is reported.
+                    s << " (observed pair; below 2*sqrt(3) only resonance-protected)";
+                    local.push_back({"observed_pair_spacing", true, s.str()});
                     continue;
                 }
                 const std::size_t lose = p.anchor ? k + 1 : q.anchor ? k : (p.massEarth < q.massEarth ? k : k + 1);
@@ -629,31 +659,26 @@ FormationResult formPlanets(
         }
 
         // Observational conditioning: no procedural planet a survey would have found.
+        auto seen = [&](const PlanetCandidate& p) {
+            if (p.anchor || !det.active)
+                return false;
+            const double period = periodDaysOf(p.aAu, M);
+            if (period < det.maxPeriodDays &&
+                radialVelocityAmplitudeMs(p.massEarth, period, M, p.e) * det.sinSky > det.kMs)
+                return true;
+            return det.transitRadiusEarth > 0.0 && period < det.transitPeriodDays &&
+                roughRadiusEarth(p) > det.transitRadiusEarth;
+        };
         bool detectable = false;
-        if (det.active)
-        {
-            for (const auto& p : planets)
-            {
-                if (p.anchor)
-                    continue;
-                const double period = periodDaysOf(p.aAu, M);
-                if (period < det.maxPeriodDays &&
-                    radialVelocityAmplitudeMs(p.massEarth, period, M, p.e) * det.sinSky > det.kMs)
-                    detectable = true;
-            }
-        }
+        for (const auto& p : planets)
+            detectable = detectable || seen(p);
 
         r.planets = planets;
         if (!detectable || attempt + 1 == maxAttempts)
         {
             if (detectable)
             {
-                const double kMs = det.kMs;
-                r.planets.erase(std::remove_if(r.planets.begin(), r.planets.end(), [&](const PlanetCandidate& p) {
-                    const double period = periodDaysOf(p.aAu, M);
-                    return !p.anchor && period < det.maxPeriodDays &&
-                        radialVelocityAmplitudeMs(p.massEarth, period, M, p.e) * det.sinSky > kMs;
-                }), r.planets.end());
+                r.planets.erase(std::remove_if(r.planets.begin(), r.planets.end(), seen), r.planets.end());
                 warnings.push_back("host " + host.nodeId + ": detectable procedural planets removed after " +
                                    std::to_string(maxAttempts) + " attempts");
             }

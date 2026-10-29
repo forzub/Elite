@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <map>
 #include <set>
 #include <sstream>
 
@@ -127,7 +128,22 @@ SystemDescriptor generateStellarSystem(
             st.provenance["metallicity_feh"] = Provenance::Generated;
         sd.stars.push_back(st);
     }
-    sd.barycenters = buildStellarHierarchy(in.hierarchy, sd.stars, in.id, seed, sd.stability, sd.warnings);
+    // Stable zone each star needs for its observed planets (apoapsis + margin).
+    std::map<std::string, double> requiredZone;
+    for (const auto& o : in.observedBodies)
+    {
+        if (o.kind == "moon")
+            continue;
+        const StarDescriptor* host = nullptr;
+        for (const auto& s : sd.stars) if (s.key == o.host) host = &s;
+        if (!host)
+            continue;
+        const double a = o.semiMajorAxisAu ? *o.semiMajorAxisAu
+            : o.periodDays ? semiMajorAxisAuFromPeriod(*o.periodDays / 365.25, host->massSolar) : 0.0;
+        const double need = a * (1.0 + o.eccentricity.value_or(0.0)) * 1.15;
+        requiredZone[o.host] = std::max(requiredZone[o.host], need);
+    }
+    sd.barycenters = buildStellarHierarchy(in.hierarchy, sd.stars, in.id, seed, requiredZone, sd.stability, sd.warnings);
 
     auto findStar = [&](const std::string& key) -> const StarDescriptor* {
         for (const auto& s : sd.stars) if (s.key == key) return &s;
@@ -214,6 +230,8 @@ SystemDescriptor generateStellarSystem(
         ph.stage = s.stage;
         ph.rvDetectionLimitMs = in.rvDetectionLimitMs.value_or(0.0);
         ph.rvBaselineDays = in.rvBaselineDays.value_or(0.0);
+        ph.transitRadiusLimitEarth = in.transitRadiusLimitEarth.value_or(0.0);
+        ph.transitBaselineDays = in.transitBaselineDays.value_or(0.0);
         ph.seed = deriveSeed(seed, "host_" + s.key);
         h.prefix = s.name;
         h.lightStar = &s;
@@ -259,6 +277,12 @@ SystemDescriptor generateStellarSystem(
         ph.stage = brightest->stage;
         ph.rvDetectionLimitMs = in.rvDetectionLimitMs.value_or(0.0);
         ph.rvBaselineDays = in.rvBaselineDays.value_or(0.0);
+        ph.transitRadiusLimitEarth = in.transitRadiusLimitEarth.value_or(0.0);
+        ph.transitBaselineDays = in.transitBaselineDays.value_or(0.0);
+        // Snow line from the summed pre-main-sequence light: 2.7 AU sqrt(sum M^4).
+        double l4 = 0.0;
+        for (const auto* m : members) l4 += std::pow(m->initialMassSolar, 4.0);
+        ph.snowLineOverrideAu = 2.7 * std::sqrt(l4);
         ph.seed = deriveSeed(seed, "host_" + n.id);
         std::string letters;
         for (const auto* m : members)
@@ -295,12 +319,15 @@ SystemDescriptor generateStellarSystem(
 
         // Designations: anchors keep theirs; procedural planets take the next free letters.
         std::set<char> used;
-        for (const auto* a : h.anchors)
-        {
-            const std::string& d = a->designation;
+        auto reserve = [&](const std::string& d) {
             if (d.size() >= 2 && d[d.size() - 2] == ' ' && std::islower(static_cast<unsigned char>(d.back())))
                 used.insert(d.back());
-        }
+        };
+        for (const auto* a : h.anchors)
+            reserve(a->designation);
+        for (const auto& d : in.reservedDesignations)
+            if (d.rfind(h.prefix + " ", 0) == 0 || h.anchors.empty() || d.rfind(h.anchors.front()->designation.substr(0, d.size() - 2), 0) == 0)
+                reserve(d);
         char next = 'b';
         const double hostMassKg = h.host.massSolar * SunMassKg;
         const double snow = h.formation.disk.snowLineAu;
@@ -535,6 +562,22 @@ SystemDescriptor generateStellarSystem(
         std::vector<ReservoirDescriptor> reservoirs;
         std::vector<DwarfPlanetCandidate> dwarfs;
         generateReservoirs(rh, planetPtrs, reservoirs, dwarfs);
+        // Authored reservoirs of an observed system override the population model.
+        if (in.passthrough.contains("observed_reservoirs"))
+        {
+            for (auto& r : reservoirs)
+            {
+                const auto& obsRes = in.passthrough["observed_reservoirs"];
+                if (!obsRes.contains(r.kind))
+                    continue;
+                const auto& o = obsRes[r.kind];
+                r.innerAu = o.value("inner_au", r.innerAu);
+                r.outerAu = o.value("outer_au", r.outerAu);
+                r.peakAu = 0.5 * (r.innerAu + r.outerAu);
+                r.totalMassEarth = o.value("total_mass_earth", r.totalMassEarth);
+                r.provenance["population"] = Provenance::Authored;
+            }
+        }
         for (auto& r : reservoirs)
         {
             const std::string localId = r.id;

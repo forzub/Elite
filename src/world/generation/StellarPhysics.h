@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -58,11 +59,14 @@ double zeroAgeLuminositySolar(double massSolar);
 // Builds the barycentric tree: binary relative orbits (observed or sampled),
 // each star's and barycenter's orbit about its parent, planet stability
 // zones. Appends stability checks (Mardling-Aarseth) to `checks`.
+// requiredZoneAu: star key -> outer S-type zone its observed planets need;
+// sampled binary orbits are redrawn until the zone holds them.
 std::vector<BarycenterDescriptor> buildStellarHierarchy(
     const HierarchyNodeInput& root,
     std::vector<StarDescriptor>& stars,
     int systemId,
     std::uint64_t systemSeed,
+    const std::map<std::string, double>& requiredZoneAu,
     std::vector<StabilityCheck>& checks,
     std::vector<std::string>& warnings);
 

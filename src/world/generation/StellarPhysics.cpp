@@ -514,6 +514,7 @@ struct HierarchyBuilder
 {
     int systemId = 0;
     std::uint64_t seed = 0;
+    const std::map<std::string, double>& required;
     std::vector<StarDescriptor>& stars;
     std::vector<BarycenterDescriptor> nodes;
     std::vector<StabilityCheck>& checks;
@@ -525,6 +526,16 @@ struct HierarchyBuilder
             if (s.key == key)
                 return &s;
         return nullptr;
+    }
+
+    static bool contains(const HierarchyNodeInput& n, const std::string& key)
+    {
+        if (n.starKey == key)
+            return true;
+        for (const auto& c : n.children)
+            if (contains(c, key))
+                return true;
+        return false;
     }
 
     double mass(const HierarchyNodeInput& n)
@@ -682,6 +693,19 @@ struct HierarchyBuilder
                         outerMass = mass(n.children[1 - k]);
                     }
             }
+            // Observed planets must stay inside their star's stable zone.
+            bool zonesHold = true;
+            for (int k = 0; k < 2 && sampled; ++k)
+            {
+                const double mc = mass(n.children[k]);
+                const double mo = mass(n.children[1 - k]);
+                const double limit = holmanWiegertSTypeCritical(mo / (mc + mo), rel.eccentricity) * rel.semiMajorAxisAu;
+                for (const auto& [key, need] : required)
+                    if (contains(n.children[k], key) && limit < need)
+                        zonesHold = false;
+            }
+            if (!zonesHold && attempt < 47)
+                continue;
             if (!inner)
                 break;
             const double crit = mardlingAarsethCriticalRatio(
@@ -772,10 +796,11 @@ std::vector<BarycenterDescriptor> buildStellarHierarchy(
     std::vector<StarDescriptor>& stars,
     int systemId,
     std::uint64_t systemSeed,
+    const std::map<std::string, double>& requiredZoneAu,
     std::vector<StabilityCheck>& checks,
     std::vector<std::string>& warnings)
 {
-    HierarchyBuilder b {systemId, systemSeed, stars, {}, checks, warnings};
+    HierarchyBuilder b {systemId, systemSeed, requiredZoneAu, stars, {}, checks, warnings};
     if (root.starKey.empty())
         b.build(root, "");
     else if (auto* s = b.star(root.starKey))

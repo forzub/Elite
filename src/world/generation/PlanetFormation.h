@@ -42,6 +42,9 @@ struct PlanetHost
     StellarStage stage = StellarStage::MainSequence;
     double rvDetectionLimitMs = 0.0; // 0 = not surveyed, no conditioning
     double rvBaselineDays = 0.0;
+    double transitRadiusLimitEarth = 0.0; // 0 = no transit survey
+    double transitBaselineDays = 0.0;
+    double snowLineOverrideAu = 0.0;      // > 0: circumbinary (summed luminosity)
     std::uint64_t seed = 0;
 };
 

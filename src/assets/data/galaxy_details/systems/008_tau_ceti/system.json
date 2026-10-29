@@ -35,7 +35,19 @@
       "value": 7300.0,
       "source": "nearby star in long-baseline precision RV surveys"
     },
-    "source": "nearby star in long-baseline precision RV surveys"
+    "source": "nearby star in long-baseline precision RV surveys",
+    "hosts": {
+      "tau_ceti": {
+        "rv_detection_limit_ms": {
+          "value": 0.6,
+          "source": "HARPS (Feng et al. 2017; signals near 0.4-0.6 m/s disputed)"
+        },
+        "rv_baseline_days": {
+          "value": 7300.0,
+          "source": "HARPS (Feng et al. 2017; signals near 0.4-0.6 m/s disputed)"
+        }
+      }
+    }
   },
   "reserved_designations": [
     "tau Cet f",

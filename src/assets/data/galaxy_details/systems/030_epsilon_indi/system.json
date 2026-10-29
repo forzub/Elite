@@ -73,7 +73,39 @@
       "value": 7300.0,
       "source": "nearby star in long-baseline precision RV surveys"
     },
-    "source": "nearby star in long-baseline precision RV surveys"
+    "source": "nearby star in long-baseline precision RV surveys",
+    "hosts": {
+      "epsilon_indi_a": {
+        "rv_detection_limit_ms": {
+          "value": 1.0,
+          "source": "HARPS long baseline (Feng et al. 2019)"
+        },
+        "rv_baseline_days": {
+          "value": 7300.0,
+          "source": "HARPS long baseline (Feng et al. 2019)"
+        }
+      },
+      "epsilon_indi_ba": {
+        "rv_detection_limit_ms": {
+          "value": 0.0,
+          "source": "no precision RV survey of a brown dwarf"
+        },
+        "rv_baseline_days": {
+          "value": 0.0,
+          "source": "no precision RV survey of a brown dwarf"
+        }
+      },
+      "epsilon_indi_bb": {
+        "rv_detection_limit_ms": {
+          "value": 0.0,
+          "source": "no precision RV survey of a brown dwarf"
+        },
+        "rv_baseline_days": {
+          "value": 0.0,
+          "source": "no precision RV survey of a brown dwarf"
+        }
+      }
+    }
   },
   "reserved_designations": [
     "eps Ind A b"

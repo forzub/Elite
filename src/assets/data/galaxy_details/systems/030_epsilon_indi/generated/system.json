@@ -296,29 +296,29 @@
     },
     {
       "host_node": "epsilon_indi_ba",
-      "gas_mass_solar": 0.0007340176937305762,
-      "solid_mass_earth": 2.6278015462323725,
+      "gas_mass_solar": 0.00011317816729153717,
+      "solid_mass_earth": 1.75035625786927,
       "dust_to_gas": 0.009059511870252555,
       "inner_edge_au": 0.006,
-      "characteristic_radius_au": 24.26555700891478,
+      "characteristic_radius_au": 5.0,
       "outer_truncation_au": 0.27243434399999983,
-      "lifetime_myr": 3.738191644919804,
+      "lifetime_myr": 2.7642179550596007,
       "snow_line_au": 0.07583534795858723,
-      "turbulence_alpha": 0.0008089559950574593,
-      "migration_regime": "strong"
+      "turbulence_alpha": 0.000587659868188367,
+      "migration_regime": "weak"
     },
     {
       "host_node": "epsilon_indi_bb",
-      "gas_mass_solar": 0.00022476146648482502,
-      "solid_mass_earth": 1.4082479691152376,
+      "gas_mass_solar": 8.33092208044697e-05,
+      "solid_mass_earth": 2.937209645190617,
       "dust_to_gas": 0.009059511870252555,
       "inner_edge_au": 0.006,
-      "characteristic_radius_au": 12.217467770062578,
+      "characteristic_radius_au": 18.892498225712753,
       "outer_truncation_au": 0.23911685199999996,
-      "lifetime_myr": 6.7860696243789125,
+      "lifetime_myr": 2.5909987654616415,
       "snow_line_au": 0.06761656601750786,
-      "turbulence_alpha": 0.0019059264472173919,
-      "migration_regime": "moderate"
+      "turbulence_alpha": 0.003428288280583106,
+      "migration_regime": "weak"
     },
     {
       "host_node": "system_barycenter",
@@ -358,7 +358,7 @@
     {
       "check": "architecture_epsilon_indi_a",
       "passed": true,
-      "detail": "planets=1 attempts=1 rv_limit=1.5m/s"
+      "detail": "planets=1 attempts=1 rv_limit=1m/s"
     },
     {
       "check": "moons_eps Ind A b",
@@ -368,17 +368,12 @@
     {
       "check": "architecture_epsilon_indi_ba",
       "passed": true,
-      "detail": "planets=5 attempts=8 rv_limit=1.5m/s"
-    },
-    {
-      "check": "moons_Epsilon Indi Ba c",
-      "passed": true,
-      "detail": "Hill sphere too small for moons"
+      "detail": "planets=3 attempts=1 rv_limit=0m/s"
     },
     {
       "check": "architecture_epsilon_indi_bb",
       "passed": true,
-      "detail": "planets=5 attempts=2 rv_limit=1.5m/s"
+      "detail": "planets=4 attempts=1 rv_limit=0m/s"
     },
     {
       "check": "moons_Epsilon Indi Bb c",

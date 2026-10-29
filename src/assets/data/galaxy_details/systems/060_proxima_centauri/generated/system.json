@@ -83,16 +83,16 @@
   "protoplanetary_disks": [
     {
       "host_node": "proxima_centauri",
-      "gas_mass_solar": 0.004592808205261415,
-      "solid_mass_earth": 15.922387468105034,
+      "gas_mass_solar": 0.00024159241730373717,
+      "solid_mass_earth": 1.1013686606020563,
       "dust_to_gas": 0.010151157411493434,
       "inner_edge_au": 0.006,
-      "characteristic_radius_au": 61.26769642553659,
+      "characteristic_radius_au": 12.872193508862026,
       "outer_truncation_au": 227.5891803902341,
-      "lifetime_myr": 3.009069819754415,
+      "lifetime_myr": 6.2055294614225165,
       "snow_line_au": 0.1048284312579369,
-      "turbulence_alpha": 0.001008730066130657,
-      "migration_regime": "strong"
+      "turbulence_alpha": 0.0005222499311437045,
+      "migration_regime": "weak"
     }
   ],
   "architecture_mode": "proxima_centauri:m_dwarf_compact",
@@ -101,7 +101,7 @@
     {
       "check": "architecture_proxima_centauri",
       "passed": true,
-      "detail": "planets=9 attempts=1 rv_limit=1.5m/s"
+      "detail": "planets=11 attempts=13 rv_limit=0.4m/s"
     },
     {
       "check": "moons_Proxima Centauri c",

@@ -61,7 +61,29 @@
       "value": 7300.0,
       "source": "nearby star in long-baseline precision RV surveys"
     },
-    "source": "nearby star in long-baseline precision RV surveys"
+    "source": "nearby star in long-baseline precision RV surveys",
+    "hosts": {
+      "alpha_centauri_a": {
+        "rv_detection_limit_ms": {
+          "value": 1.0,
+          "source": "HARPS / UVES long-baseline programmes (Zhao et al. 2018)"
+        },
+        "rv_baseline_days": {
+          "value": 7300.0,
+          "source": "HARPS / UVES long-baseline programmes (Zhao et al. 2018)"
+        }
+      },
+      "alpha_centauri_b": {
+        "rv_detection_limit_ms": {
+          "value": 0.5,
+          "source": "HARPS high-cadence monitoring (Dumusque et al. 2012; Zhao et al. 2018)"
+        },
+        "rv_baseline_days": {
+          "value": 7300.0,
+          "source": "HARPS high-cadence monitoring (Dumusque et al. 2012; Zhao et al. 2018)"
+        }
+      }
+    }
   },
   "observational_reference": {
     "source": "NASA Exoplanet Archive",

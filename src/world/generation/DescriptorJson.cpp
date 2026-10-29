@@ -215,6 +215,10 @@ bool readSystemInput(const fs::path& dir, SystemInput& out, std::string& error)
         out.rvBaselineDays = readValue(sys["survey_completeness"], "rv_baseline_days");
         out.transitRadiusLimitEarth = readValue(sys["survey_completeness"], "transit_radius_limit_earth");
         out.transitBaselineDays = readValue(sys["survey_completeness"], "transit_baseline_days");
+        const json hosts = sys["survey_completeness"].value("hosts", json::object());
+        for (auto it = hosts.begin(); it != hosts.end(); ++it)
+            out.hostRvSurvey[it.key()] = {readValue(it.value(), "rv_detection_limit_ms").value_or(0.0),
+                                          readValue(it.value(), "rv_baseline_days").value_or(0.0)};
     }
     if (sys.contains("stellar_hierarchy"))
         out.hierarchy = readNode(sys["stellar_hierarchy"]);

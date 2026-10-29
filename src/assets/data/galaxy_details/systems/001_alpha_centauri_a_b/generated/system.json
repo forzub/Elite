@@ -198,15 +198,15 @@
     },
     {
       "host_node": "alpha_centauri_b",
-      "gas_mass_solar": 0.003280131669882087,
-      "solid_mass_earth": 14.29798416569415,
+      "gas_mass_solar": 0.0027427020074638534,
+      "solid_mass_earth": 12.39141183552969,
       "dust_to_gas": 0.022756464942987376,
       "inner_edge_au": 0.023848662047480908,
-      "characteristic_radius_au": 40.14130818784648,
+      "characteristic_radius_au": 61.80849744241096,
       "outer_truncation_au": 2.477268252725337,
-      "lifetime_myr": 4.557792019813185,
+      "lifetime_myr": 1.760725058658805,
       "snow_line_au": 2.2319405280000004,
-      "turbulence_alpha": 0.00011519184437425445,
+      "turbulence_alpha": 0.002367148566954344,
       "migration_regime": "weak"
     },
     {
@@ -229,12 +229,12 @@
     {
       "check": "architecture_alpha_centauri_a",
       "passed": true,
-      "detail": "planets=9 attempts=1 rv_limit=1.5m/s"
+      "detail": "planets=9 attempts=1 rv_limit=1m/s"
     },
     {
       "check": "architecture_alpha_centauri_b",
       "passed": true,
-      "detail": "planets=10 attempts=2 rv_limit=1.5m/s"
+      "detail": "planets=12 attempts=12 rv_limit=0.5m/s"
     },
     {
       "check": "moons_Alpha Centauri B b",

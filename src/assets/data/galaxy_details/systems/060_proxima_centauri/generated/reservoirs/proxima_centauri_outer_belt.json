@@ -11,17 +11,17 @@
     "satellites": 1,
     "planet_surface": 0
   },
-  "inner_au": 1.4614740151895742,
-  "outer_au": 2.263760162749538,
-  "peak_au": 1.6919146603615216,
-  "total_mass_earth": 0.039485138910238894,
+  "inner_au": 1.3451418135200852,
+  "outer_au": 2.083566604022341,
+  "peak_au": 1.5572395615016827,
+  "total_mass_earth": 0.0014850173100903576,
   "eccentricity_mean": 0.14377726767265184,
   "inclination_mean_deg": 7.44093764305411,
   "size_distribution": {
     "slope": -3.0,
     "min_body_km": 0.01,
-    "max_body_km": 2630.159262565004,
-    "estimated_bodies_above_1km": 42808394.606657065
+    "max_body_km": 881.2138794130749,
+    "estimated_bodies_above_1km": 4805408.208138853
   },
   "clumpiness": 0.1604161011143668,
   "composition": {

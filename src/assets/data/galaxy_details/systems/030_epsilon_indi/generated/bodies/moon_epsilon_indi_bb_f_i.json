@@ -16,14 +16,14 @@
     "planet_surface": 0
   },
   "orbit": {
-    "semi_major_axis_au": 0.00018058709697137143,
+    "semi_major_axis_au": 0.00017884146015385044,
     "eccentricity": 0.009151814943066957,
     "inclination_deg": 0.2975946723242298,
     "longitude_ascending_node_deg": 261.3413179804571,
     "argument_of_periapsis_deg": 170.46002263830144,
     "mean_anomaly_at_epoch_deg": 242.28184230968526,
     "epoch_universe_seconds": 0.0,
-    "period_days": 1.3067828170536497,
+    "period_days": 1.4155311851642893,
     "direction": 1
   },
   "physical": {
@@ -34,8 +34,8 @@
     "mu_m3s2": 647413.1963427466,
     "surface_gravity_ms2": 0.009004204542885256,
     "escape_velocity_kms": 0.012357246861942011,
-    "hill_radius_km": 40.77419637956213,
-    "sphere_of_influence_km": 17.44938104984348,
+    "hill_radius_km": 43.006037388443126,
+    "sphere_of_influence_km": 18.637881664797536,
     "body_class": "dwarf_rocky"
   },
   "bulk_composition": {
@@ -45,29 +45,29 @@
     "other_volatiles": 0.0001,
     "hydrogen_helium_envelope": 0.0,
     "water_mass_fraction": 0.02,
-    "formation_distance_au": 0.06527429070396941
+    "formation_distance_au": 0.15032199053264242
   },
   "thermal": {
-    "instellation_earth": 0.0047029364835853476,
+    "instellation_earth": 0.0008938339508982915,
     "bond_albedo": 0.12,
-    "equilibrium_temperature_k": 70.66332329794061,
-    "mean_surface_temperature_k": 70.66377045133335,
-    "min_surface_temperature_k": 10.599565567700003,
-    "max_surface_temperature_k": 127.19478681240003,
-    "temperature_regime": "frozen",
-    "habitable_zone_position": 13.932716601909512,
+    "equilibrium_temperature_k": 46.656912029156445,
+    "mean_surface_temperature_k": 46.65845075506235,
+    "min_surface_temperature_k": 6.998767613259352,
+    "max_surface_temperature_k": 83.98521135911223,
+    "temperature_regime": "cryogenic",
+    "habitable_zone_position": 31.95890838648618,
     "radiogenic_heat_flux_wm2": 3.4762522325555106e-05,
-    "tidal_heat_flux_wm2": 1.0235928946522273e-06
+    "tidal_heat_flux_wm2": 6.863523561860228e-07
   },
   "atmosphere": {
     "surface_pressure_pa": 0.0,
     "composition": {},
     "mean_molecular_weight": 0.0,
     "scale_height_km": 0.0,
-    "greenhouse_warming_k": 0.0004471533927414839,
+    "greenhouse_warming_k": 0.0015387259059025382,
     "cloud_potential": 0.0,
     "origin": "none",
-    "retention_index": 1.963476655794616e-08,
+    "retention_index": 1.0330896460046617e-07,
     "outer_radius_km": 0.0
   },
   "geophysics": {
@@ -77,7 +77,7 @@
     "hydrosphere": "ice_shell"
   },
   "spin": {
-    "rotation_period_hours": 31.36278760928759,
+    "rotation_period_hours": 33.97274844394295,
     "obliquity_deg": 0.31170767092349144,
     "rotation_direction": 1,
     "axis_node_deg": 59.69007678997365,

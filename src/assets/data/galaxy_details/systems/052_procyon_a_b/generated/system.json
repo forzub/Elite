@@ -230,12 +230,12 @@
     {
       "check": "architecture_procyon_a",
       "passed": true,
-      "detail": "planets=10 attempts=1 rv_limit=1.5m/s"
+      "detail": "planets=10 attempts=1 rv_limit=5m/s"
     },
     {
       "check": "architecture_procyon_b",
       "passed": true,
-      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+      "detail": "planets=0 attempts=1 rv_limit=0m/s"
     },
     {
       "check": "architecture_ab",

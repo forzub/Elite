@@ -103,7 +103,7 @@
     {
       "check": "architecture_epsilon_eridani",
       "passed": true,
-      "detail": "planets=9 attempts=1 rv_limit=1.5m/s"
+      "detail": "planets=9 attempts=1 rv_limit=3m/s"
     },
     {
       "check": "moons_Epsilon Eridani c",

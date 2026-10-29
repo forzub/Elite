@@ -35,7 +35,19 @@
       "value": 7300.0,
       "source": "nearby star in long-baseline precision RV surveys"
     },
-    "source": "nearby star in long-baseline precision RV surveys"
+    "source": "nearby star in long-baseline precision RV surveys",
+    "hosts": {
+      "delta_pavonis": {
+        "rv_detection_limit_ms": {
+          "value": 1.0,
+          "source": "HARPS"
+        },
+        "rv_baseline_days": {
+          "value": 7300.0,
+          "source": "HARPS"
+        }
+      }
+    }
   },
   "lore": {
     "stellar_description": "Стабильный субгигант"

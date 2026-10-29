@@ -103,7 +103,7 @@
     {
       "check": "architecture_tau_ceti",
       "passed": true,
-      "detail": "planets=9 attempts=1 rv_limit=1.5m/s"
+      "detail": "planets=9 attempts=1 rv_limit=0.6m/s"
     },
     {
       "check": "moons_Tau Ceti b",

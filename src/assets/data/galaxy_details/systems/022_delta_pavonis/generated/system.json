@@ -103,7 +103,7 @@
     {
       "check": "architecture_delta_pavonis",
       "passed": true,
-      "detail": "planets=10 attempts=11 rv_limit=1.5m/s"
+      "detail": "planets=10 attempts=11 rv_limit=1m/s"
     },
     {
       "check": "validate_hierarchy_acyclic_parents_valid",

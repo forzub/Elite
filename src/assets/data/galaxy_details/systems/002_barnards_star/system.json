@@ -33,7 +33,19 @@
       "value": 7300.0,
       "source": "nearby star in long-baseline precision RV surveys"
     },
-    "source": "nearby star in long-baseline precision RV surveys"
+    "source": "nearby star in long-baseline precision RV surveys",
+    "hosts": {
+      "barnards_star": {
+        "rv_detection_limit_ms": {
+          "value": 0.4,
+          "source": "ESPRESSO / MAROON-X (Gonzalez Hernandez et al. 2024; Basant et al. 2025)"
+        },
+        "rv_baseline_days": {
+          "value": 2500.0,
+          "source": "ESPRESSO / MAROON-X (Gonzalez Hernandez et al. 2024; Basant et al. 2025)"
+        }
+      }
+    }
   },
   "reserved_designations": [
     "Barnard b",

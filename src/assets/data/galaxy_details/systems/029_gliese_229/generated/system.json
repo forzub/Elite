@@ -196,16 +196,16 @@
     },
     {
       "host_node": "gliese_229_b",
-      "gas_mass_solar": 9.879908120686735e-05,
-      "solid_mass_earth": 0.5373540489420949,
+      "gas_mass_solar": 0.0001707134901699631,
+      "solid_mass_earth": 4.270396234302876,
       "dust_to_gas": 0.0062672655820179175,
       "inner_edge_au": 0.006,
-      "characteristic_radius_au": 5.0,
+      "characteristic_radius_au": 10.469227561469086,
       "outer_truncation_au": 0.46287618244275264,
-      "lifetime_myr": 2.3903872417941643,
+      "lifetime_myr": 11.108526896881317,
       "snow_line_au": 0.07891767862779542,
-      "turbulence_alpha": 0.0012867061543564025,
-      "migration_regime": "weak"
+      "turbulence_alpha": 0.0001344467225891872,
+      "migration_regime": "moderate"
     },
     {
       "host_node": "ab",
@@ -247,7 +247,7 @@
     {
       "check": "architecture_gliese_229_b",
       "passed": true,
-      "detail": "planets=4 attempts=3 rv_limit=1.5m/s"
+      "detail": "planets=4 attempts=1 rv_limit=0m/s"
     },
     {
       "check": "moons_Gliese 229 B d",

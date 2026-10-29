@@ -175,6 +175,10 @@ struct SystemInput
     // Absent for procedural / synthetic systems (no conditioning).
     std::optional<double> rvDetectionLimitMs;
     std::optional<double> rvBaselineDays;
+    // Per-star override of the RV survey (star key -> limit m/s, baseline d):
+    // the best-studied stars have literature limits well below the default,
+    // brown dwarfs and white dwarfs have no precision RV survey (limit 0).
+    std::map<std::string, std::pair<double, double>> hostRvSurvey;
     // Transit survey of an edge-on system: no coplanar procedural planet with
     // a shorter period and a larger radius would have escaped detection.
     std::optional<double> transitRadiusLimitEarth;

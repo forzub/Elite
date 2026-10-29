@@ -230,12 +230,12 @@
     {
       "check": "architecture_sirius_a",
       "passed": true,
-      "detail": "planets=6 attempts=2 rv_limit=1.5m/s"
+      "detail": "planets=6 attempts=2 rv_limit=15m/s"
     },
     {
       "check": "architecture_sirius_b",
       "passed": true,
-      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+      "detail": "planets=0 attempts=1 rv_limit=0m/s"
     },
     {
       "check": "ejection_sirius_b",

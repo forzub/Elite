@@ -83,16 +83,16 @@
   "protoplanetary_disks": [
     {
       "host_node": "barnards_star",
-      "gas_mass_solar": 0.00013998708617103412,
-      "solid_mass_earth": 0.682556405238836,
+      "gas_mass_solar": 0.00016940384077694803,
+      "solid_mass_earth": 0.6452415407410647,
       "dust_to_gas": 0.003690666462473143,
       "inner_edge_au": 0.006,
-      "characteristic_radius_au": 24.988212436283725,
+      "characteristic_radius_au": 8.963268080509065,
       "outer_truncation_au": 229.53971257799105,
-      "lifetime_myr": 3.938630091401222,
+      "lifetime_myr": 15.0,
       "snow_line_au": 0.12074767078498863,
-      "turbulence_alpha": 0.0003025026326147758,
-      "migration_regime": "moderate"
+      "turbulence_alpha": 0.006180101636016388,
+      "migration_regime": "strong"
     }
   ],
   "architecture_mode": "barnards_star:m_dwarf_compact",
@@ -101,10 +101,15 @@
     {
       "check": "architecture_barnards_star",
       "passed": true,
-      "detail": "planets=7 attempts=1 rv_limit=1.5m/s"
+      "detail": "planets=10 attempts=17 rv_limit=0.4m/s"
     },
     {
       "check": "moons_Barnard's Star f",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Barnard's Star g",
       "passed": true,
       "detail": "Hill sphere too small for moons"
     },

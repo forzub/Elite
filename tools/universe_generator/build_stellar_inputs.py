@@ -176,6 +176,39 @@ TRANSIT_SURVEY = {
     17: (0.6, 80.0, "Spitzer / K2 / JWST photometry"),
 }
 
+# Literature RV survey limits of the best-studied stars (star key -> limit m/s,
+# baseline days, source); they override the distance-based default. Rapidly
+# rotating / few-line early-type stars are far less constrained than the
+# default suggests.
+RV_SURVEY_HOSTS = {
+    "alpha_centauri_a": (1.0, 7300.0, "HARPS / UVES long-baseline programmes (Zhao et al. 2018)"),
+    "alpha_centauri_b": (0.5, 7300.0, "HARPS high-cadence monitoring (Dumusque et al. 2012; Zhao et al. 2018)"),
+    "proxima_centauri": (0.4, 2500.0, "ESPRESSO (Faria et al. 2022: Proxima d, K = 0.39 m/s)"),
+    "barnards_star": (0.4, 2500.0, "ESPRESSO / MAROON-X (Gonzalez Hernandez et al. 2024; Basant et al. 2025)"),
+    "tau_ceti": (0.6, 7300.0, "HARPS (Feng et al. 2017; signals near 0.4-0.6 m/s disputed)"),
+    "hd_20794": (0.5, 7300.0, "HARPS + ESPRESSO (Nari et al. 2025)"),
+    "epsilon_eridani": (3.0, 7300.0, "young active K2 V: activity jitter limits RV (Mawet et al. 2019)"),
+    "epsilon_indi_a": (1.0, 7300.0, "HARPS long baseline (Feng et al. 2019)"),
+    "delta_pavonis": (1.0, 7300.0, "HARPS"),
+    "sirius_a": (15.0, 7300.0, "A1V, few lines and v sin i 16 km/s: weak RV constraints"),
+    "procyon_a": (5.0, 7300.0, "F5 IV-V p-mode / granulation jitter"),
+}
+
+
+def host_surveys(star_docs):
+    """Per-star RV survey overrides: literature table; no precision RV survey
+    of brown dwarfs and white dwarfs (limit 0 = no conditioning)."""
+    out = {}
+    for d in star_docs:
+        if d["key"] in RV_SURVEY_HOSTS:
+            lim, base, src = RV_SURVEY_HOSTS[d["key"]]
+            out[d["key"]] = {"rv_detection_limit_ms": value(lim, src), "rv_baseline_days": value(base, src)}
+        elif d.get("stage_hint") in ("white_dwarf", "brown_dwarf"):
+            src = "no precision RV survey of a " + d["stage_hint"].replace("_", " ")
+            out[d["key"]] = {"rv_detection_limit_ms": value(0.0, src), "rv_baseline_days": value(0.0, src)}
+    return out
+
+
 # Survey completeness of the system's real stars (radial velocities).
 def survey(sid, stars):
     stages = {s.get("stage_hint") for s in stars}
@@ -592,6 +625,9 @@ def main():
             if sv:
                 sysdoc["survey_completeness"] = {k: (v if k == "source" else value(v, sv["source"]))
                                                  for k, v in sv.items()}
+                hs = host_surveys(star_docs)
+                if hs:
+                    sysdoc["survey_completeness"]["hosts"] = hs
             # Every catalogued designation of the system (also controversial or
             # refuted planets) stays reserved: procedural planets never reuse it.
             reserved = sorted({r["pl_name"] for h in sys_hosts for r in hosts[h]})

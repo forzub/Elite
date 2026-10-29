@@ -62,7 +62,29 @@
       "value": 7300.0,
       "source": "nearby star in long-baseline precision RV surveys"
     },
-    "source": "nearby star in long-baseline precision RV surveys"
+    "source": "nearby star in long-baseline precision RV surveys",
+    "hosts": {
+      "sirius_a": {
+        "rv_detection_limit_ms": {
+          "value": 15.0,
+          "source": "A1V, few lines and v sin i 16 km/s: weak RV constraints"
+        },
+        "rv_baseline_days": {
+          "value": 7300.0,
+          "source": "A1V, few lines and v sin i 16 km/s: weak RV constraints"
+        }
+      },
+      "sirius_b": {
+        "rv_detection_limit_ms": {
+          "value": 0.0,
+          "source": "no precision RV survey of a white dwarf"
+        },
+        "rv_baseline_days": {
+          "value": 0.0,
+          "source": "no precision RV survey of a white dwarf"
+        }
+      }
+    }
   },
   "lore": {
     "stellar_description": "Стабильная (белый карлик-компаньон)"

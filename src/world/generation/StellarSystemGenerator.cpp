@@ -230,6 +230,11 @@ SystemDescriptor generateStellarSystem(
         ph.stage = s.stage;
         ph.rvDetectionLimitMs = in.rvDetectionLimitMs.value_or(0.0);
         ph.rvBaselineDays = in.rvBaselineDays.value_or(0.0);
+        if (const auto hs = in.hostRvSurvey.find(s.key); hs != in.hostRvSurvey.end())
+        {
+            ph.rvDetectionLimitMs = hs->second.first;
+            ph.rvBaselineDays = hs->second.second;
+        }
         ph.transitRadiusLimitEarth = in.transitRadiusLimitEarth.value_or(0.0);
         ph.transitBaselineDays = in.transitBaselineDays.value_or(0.0);
         ph.seed = deriveSeed(seed, "host_" + s.key);

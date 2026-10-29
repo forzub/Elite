@@ -55,6 +55,9 @@
     "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_e": {
       "en": "Alpha Centauri B e"
     },
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_e.Alpha_Centauri_B_e_I": {
+      "en": "Alpha Centauri B e I"
+    },
     "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_f": {
       "en": "Alpha Centauri B f"
     },
@@ -72,6 +75,12 @@
     },
     "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_k": {
       "en": "Alpha Centauri B k"
+    },
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_l": {
+      "en": "Alpha Centauri B l"
+    },
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_B_m": {
+      "en": "Alpha Centauri B m"
     },
     "1:system_1.barycenter_ab.Alpha_Centauri__BA__K1": {
       "en": "Alpha Centauri (BA) K1"

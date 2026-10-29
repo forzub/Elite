@@ -34,7 +34,19 @@
       "value": 7300.0,
       "source": "nearby star in long-baseline precision RV surveys"
     },
-    "source": "nearby star in long-baseline precision RV surveys"
+    "source": "nearby star in long-baseline precision RV surveys",
+    "hosts": {
+      "hd_20794": {
+        "rv_detection_limit_ms": {
+          "value": 0.5,
+          "source": "HARPS + ESPRESSO (Nari et al. 2025)"
+        },
+        "rv_baseline_days": {
+          "value": 7300.0,
+          "source": "HARPS + ESPRESSO (Nari et al. 2025)"
+        }
+      }
+    }
   },
   "reserved_designations": [
     "HD 20794 b",

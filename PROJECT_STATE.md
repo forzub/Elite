@@ -108,6 +108,52 @@ and A3 (Assisted) ship passports; Y/X stay validation configurations.
   "awaiting RCS gas pressure" (log only); docking architecture
   (DockFrameKinematics etc.) - future stage.
 
+### Universe regeneration stage (started 2026-10-29) — status WIP
+- Goal: keep the 61 stellar addresses (IDs, stars, positions), regenerate all
+  planetary content with one deterministic generator, materialise it as the
+  physical catalog read by Galaxy Map, System Map, celestial runtime, gravity.
+- Pinned references (`38abad39`, `tools/universe_generator/reference/`):
+  NASA Exoplanet Archive pscomppars (669 planets, sy_dist < 36 pc +
+  Kepler-62), HYG v4.1 subset. Coordinate frame of `position_ly` verified =
+  ICRS Cartesian (Kepler-62 reproduces).
+- AUDIT FINDINGS (real data, not assumptions):
+  - Legacy positions: only Sol, Alpha Cen, Barnard, Tau Ceti, GJ 832,
+    HD 93083, HD 114613, Proxima, Kepler-62 point at the real star. ~50
+    systems have roughly right distances but INVENTED directions (8-145 deg
+    off, no common rotation) - so Sirius, Procyon, Aldebaran... are drawn
+    twice on the Galaxy Map (real HYG star + unmerged game proxy, merge radius
+    0.25 ly in GalaxyStarfieldRenderer). Real positions resolved by catalogue
+    identifier (`resolve_stellar_positions.py`); catalog distance errors:
+    HD 102365 (30 ly, not 42), GJ 3293 (66 not 51), HD 10360 (25.5 not 113).
+    HD 102194 in reality is a K2III giant at 630 ly (legacy: fictional G8V at
+    99 ly). DECISION PENDING (user): move stars to real ICRS positions.
+  - Legacy "confirmed" planets are largely fictional (e.g. Barnard b-e at
+    233-1450 d vs real 2.3-6.7 d); observational anchors come only from the
+    pinned archive snapshot, never from legacy JSON.
+  - Legacy stellar defects: eps Indi Ba/Bb share one position, GJ 667 C
+    position contradicts its orbit, Hamal diameter x2.5, template binary orbits
+    "85 AU / e 0.25 / 285 yr" violate Kepler's third law.
+- Generator core (`d9be26f0`, `src/world/generation/`, CMake lib
+  `EliteUniverseGeneration`, DEV tool `EliteUniverseGenerator`
+  materialize|dry-run|bulk|determinism): causal pipeline galactic context ->
+  stars -> hierarchy (Holman-Wiegert, Mardling-Aarseth) -> disk -> embryos +
+  pebble + core accretion -> migration / scattering / giant impacts ->
+  anchors + RV survey conditioning -> gates -> body physics -> moons, rings,
+  reservoirs, dwarf planets -> validation. Seeds: catalog SystemSeed =
+  derive(UniverseSeed, "catalog_system", id) (position-independent);
+  UniverseSeed 0x454C495445303031, versions stellar 1 / body 1 / satellites 1.
+- Bulk calibration (10000 synthetic, offline, production code): all checks in
+  band - FGK small planets 1-20 Me P<200 d 1.9/star, FGK giants 22 %, hot
+  Jupiters 1.1 %, M small planets 1.6/star, M giants 1.4 %, giant
+  metallicity ratio x5, e small 0.013 / giants 0.09, giant moons 3.2, ringed
+  giants 33 %, 0 stability failures, ~1500 systems/s. Known calibration point:
+  median 10 bodies >= 0.05 Me per FGK system (7 M dwarfs) - more than surveys
+  see (sub-Earths below RV limits). Generated populations not committed.
+- Next: stellar input migration (per-system directories, normalised stars,
+  archive anchors, Sol authored) -> dry-run report
+  `D:/tmp/elite_universe_regeneration_report.md` -> materialise -> loader /
+  Kepler runtime / map integration -> references migration -> game check.
+
 ### Next step
 - Autopilot/planner piece closed (J/K). NEXT STAGE (user task 2026-10-29):
   full regeneration of the planetary content of all existing star systems

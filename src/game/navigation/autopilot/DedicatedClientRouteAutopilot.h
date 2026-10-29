@@ -1573,7 +1573,24 @@ public:
             request.terminalPositionMapMeters = finalPose.positionMapMeters;
             request.terminalForwardMap =
                 normalizedOr(finalPose.forwardMap, referenceTangent);
-            request.terminalUpMap = normalizedOr(finalPose.upMap, desiredUp);
+            // The dock may rotate: its "down" at arrival is the planned
+            // terminal up turned by the LIVE roll phase about the terminal
+            // axis (the same phase the in-flight hull roll follows), so the
+            // hull's bottom ends on the dock's bottom, not where the dock's
+            // bottom was when the route was planned.
+            {
+                const glm::dvec3 axis =
+                    normalizedOr(finalPose.forwardMap, referenceTangent);
+                const glm::dvec3 up0 = normalizedOr(finalPose.upMap, desiredUp);
+                const double weight = !state.routeFrameField.empty()
+                    ? RouteFrameField::dynamicRollPhaseWeightAtProgress(
+                        state.routeFrameField,
+                        state.continuousProgressMeters.back())
+                    : 1.0;
+                const double phase = state.liveTunnelRollPhaseRad * weight;
+                request.terminalUpMap = phase == 0.0 ? up0
+                    : RouteFrameField::rotateUpAroundForward(axis, up0, phase);
+            }
             request.terminalPositionToleranceMeters = tolerance.positionMeters;
             request.terminalSpeedToleranceMps = tolerance.linearVelocityMps;
             request.terminalAttitudeToleranceRad = tolerance.forwardAngleRad;

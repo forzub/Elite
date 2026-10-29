@@ -28,10 +28,15 @@ namespace game::equipment::engine
     out.nominalCoolantTemperatureK = 310.0;
     out.nominalOperatingTemperatureK = 390.0;
     out.safeOperatingTemperatureK = 450.0;
-    // 0.8m emitter: 3.02MW at 450K under the universe's common
-    // 6MW/m2 pad law, exceeding the healthy nozzle's 1.2MW waste.
+    // 0.39m emitter: 0.72MW at 450K under the universe's common 6MW/m2
+    // pad law, 60 % of the healthy nozzle's 1.2MW waste at full thrust.
+    // Balanced heating: trims and short bursts never warm the nozzle into
+    // its protection band; a sustained full burn (~15-20 s from the
+    // operating temperature) does, and the nozzle then derates smoothly
+    // toward 60 % (about 84 % after one minute, ~70 % after two) and needs
+    // minutes to cool - flying on the RCS is not free.
     // Nozzle cooling remains autonomous, with physical emitter damage.
-    out.thermalEmitter.outerDiameterM = 0.80;
+    out.thermalEmitter.outerDiameterM = 0.39;
     out.thermalEmitter.apertureDiameterM = 0.0;
     out.thermalEmitter.surfaceTemperatureK = 1200.0;
     out.thermalEmitter.emissivity01 = 0.90;

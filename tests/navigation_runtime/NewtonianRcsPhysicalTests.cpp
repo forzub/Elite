@@ -112,6 +112,41 @@ void checkCentreOfMassAndElectricalBudget()
             unpowered.availabilityN[1]==0.0,
             "missing RCS nozzle was incorrectly treated as installed");
 }
+// Balanced nozzle heating: a 10 s full burst keeps full thrust, a 90 s full
+// burn derates the nozzle (but keeps most of it), and it cools down again.
+void checkBalancedNozzleHeating()
+{
+    using namespace game::equipment;
+    using namespace game::equipment::engine;
+    const auto passport=cobraManoeuvreNozzlePreset();
+    EquipmentDamageLayer damage {};
+    damage.failure.failureAtDamage01=0.95;
+    EngineOperatingState operating {};
+    operating.temperatureK=passport.nominalOperatingTemperatureK;
+    const auto share=[&]()
+    {
+        const auto effective=evaluateEngineUnit(passport,damage,operating);
+        return safeEmitterThrustFraction01(passport,effective,operating);
+    };
+    const auto burn=[&](double seconds,double throttle)
+    {
+        for(int tick=0;tick<static_cast<int>(seconds/0.2);++tick)
+        {
+            const auto effective=evaluateEngineUnit(passport,damage,operating);
+            operating=advanceEngineOperatingState(
+                passport,effective,operating,throttle,0.2,310.0).next;
+        }
+    };
+    burn(10.0,1.0);
+    require(share()>0.999,"a 10 s RCS burst already derated the nozzle");
+    burn(80.0,1.0);
+    const double hot=share();
+    require(hot<0.95 && hot>0.55,
+            "a 90 s full RCS burn did not derate the nozzle moderately");
+    burn(300.0,0.0);
+    require(share()>hot,"a resting nozzle did not cool down");
+}
+
 void checkCombatNozzlePowerAndThermalPlateau()
 {
     using namespace game::equipment;
@@ -308,6 +343,7 @@ int main()
         checkReplenishingGameGasBeforeFire();
         checkGasRecoversOnlyWithoutConsumption();
         checkRcsGasTankPassportLaw();
+        checkBalancedNozzleHeating();
         checkSignedPhysicalAuthorityProjection();
         std::cout<<"NEWTONIAN RCS PHYSICAL: PASS\n";
         return 0;

@@ -12,14 +12,14 @@
   },
   "selection": {
     "real_stars": "top 3000 brightest HYG v4.1 stars by visual magnitude",
-    "game_systems": "merged at runtime from assets/data/galaxy_details/systems_details/*.json; not stored in this file",
+    "game_systems": "merged at runtime from assets/data/galaxy_details/systems/*/system.json; not stored in this file",
     "procedural_stars": 0
   },
   "counts": {
     "stars_total_in_file": 3001,
     "hyg_base_limit": 3000,
     "game_systems_in_file": 0,
-    "game_systems_runtime_source": "assets/data/galaxy_details/systems_details/*.json"
+    "game_systems_runtime_source": "assets/data/galaxy_details/systems/*/system.json"
   },
   "stars": [
     {

@@ -62,12 +62,17 @@ for required in (
 
 for required in (
     "computeCatalogFingerprint",
-    '"systems_details"',
-    '"distant_systems_details"',
+    '"systems"',
+    '"distant_systems"',
     '"objects_details"',
 ):
     if required not in atlas_cpp:
         fail(f"StarAtlas deterministic fingerprint implementation missing: {required}")
+
+# Physical catalog v2 is the one runtime schema: no legacy flat-catalog path.
+for forbidden in ('"systems_details"', '"distant_systems_details"', "parseSystemCatalogFile"):
+    if forbidden in atlas_cpp:
+        fail(f"StarAtlas still carries the legacy flat catalog path: {forbidden}")
 
 for required in (
     "m_starAtlas.loadFromRuntimeOrSource()",

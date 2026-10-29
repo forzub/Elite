@@ -56,8 +56,6 @@ std::uint64_t computeCatalogFingerprint(const fs::path& root)
     for (const char* directory : {
             "systems",
             "distant_systems",
-            "systems_details",
-            "distant_systems_details",
             "objects_details"})
     {
         const fs::path catalogDirectory = root / directory;
@@ -131,10 +129,7 @@ struct SystemCatalogDocument
 {
     fs::path sourcePath;
     StarSystemSummary summary;
-    json details;
-    // Set for a physical-catalog directory: the runtime definition is built
-    // from generated data instead of `details`.
-    std::optional<CelestialSystemDefinition> physical;
+    CelestialSystemDefinition definition;
 };
 
 std::string normalizeCatalogName(std::string value)
@@ -275,251 +270,12 @@ bool collectJsonFiles(
     return true;
 }
 
-bool validateSystemCatalogRoot(
-    const json& root,
-    const fs::path& path,
-    StarSystemCatalogScope catalogScope,
-    SystemCatalogDocument& out,
-    std::string& error
-);
-
 bool parsePhysicalSystemDirectory(
     const fs::path& directory,
     StarSystemCatalogScope catalogScope,
     SystemCatalogDocument& out,
     std::string& error
 );
-
-bool parseSystemCatalogFile(
-    const fs::path& path,
-    StarSystemCatalogScope catalogScope,
-    SystemCatalogDocument& out,
-    std::string& error
-)
-{
-    json root;
-
-    try
-    {
-        root = loadJson(path.string());
-    }
-    catch (const std::exception& e)
-    {
-        error = e.what();
-        return false;
-    }
-
-    return validateSystemCatalogRoot(root, path, catalogScope, out, error);
-}
-
-bool validateSystemCatalogRoot(
-    const json& root,
-    const fs::path& path,
-    StarSystemCatalogScope catalogScope,
-    SystemCatalogDocument& out,
-    std::string& error
-)
-{
-    const auto fail =
-        [&](const std::string& message)
-        {
-            error =
-                path.generic_string() +
-                ": " + message;
-            return false;
-        };
-
-    if (!root.is_object())
-        return fail("root must be an object");
-
-    if (!root.contains("schema_version") ||
-        !root["schema_version"].is_number_integer() ||
-        root["schema_version"].get<int>() != 1)
-    {
-        return fail("unsupported or missing schema_version");
-    }
-
-    if (!root.contains("kind") ||
-        !root["kind"].is_string() ||
-        root["kind"].get<std::string>() != "star_system")
-    {
-        return fail("kind must be 'star_system'");
-    }
-
-    if (!root.contains("id") ||
-        !root["id"].is_number_integer())
-    {
-        return fail("id must be an integer");
-    }
-
-    out.summary.id = root["id"].get<int>();
-
-    if (out.summary.id < 0)
-        return fail("id must be non-negative");
-
-    if (catalogScope == StarSystemCatalogScope::Local &&
-        out.summary.id >= 100000)
-    {
-        return fail("local system id must be below 100000");
-    }
-
-    if (catalogScope == StarSystemCatalogScope::Distant &&
-        out.summary.id < 100000)
-    {
-        return fail("distant system id must be at least 100000");
-    }
-
-    if (!root.contains("name") ||
-        !root["name"].is_string())
-    {
-        return fail("name must be a string");
-    }
-
-    out.summary.name = root["name"].get<std::string>();
-
-    if (out.summary.name.empty())
-        return fail("name must not be empty");
-
-    if (!root.contains("position_ly") ||
-        !readPositionLy(root["position_ly"], out.summary.positionLy))
-    {
-        return fail("position_ly must contain numeric x, y and z");
-    }
-
-    if (root.contains("distance_ly"))
-    {
-        return fail(
-            "distance_ly is derived from position_ly and must not be stored"
-        );
-    }
-
-    if (!root.contains("stars_count") ||
-        !root["stars_count"].is_number_integer())
-    {
-        return fail("stars_count must be an integer");
-    }
-
-    out.summary.starsCount =
-        root["stars_count"].get<int>();
-
-    if (out.summary.starsCount < 1)
-        return fail("stars_count must be positive");
-
-    if (!root.contains("star_type") ||
-        !root["star_type"].is_string())
-    {
-        return fail("star_type must be a string");
-    }
-
-    out.summary.starType =
-        root["star_type"].get<std::string>();
-
-    out.summary.catalogScope = catalogScope;
-    out.summary.atlasVisible =
-        catalogScope == StarSystemCatalogScope::Local;
-    out.summary.routeTarget = true;
-
-    if (root.contains("catalog_scope"))
-    {
-        if (!root["catalog_scope"].is_string())
-            return fail("catalog_scope must be a string");
-
-        const std::string expectedScope =
-            catalogScope == StarSystemCatalogScope::Distant
-                ? "distant"
-                : "local";
-
-        if (root["catalog_scope"].get<std::string>() != expectedScope)
-        {
-            return fail(
-                "catalog_scope does not match the containing directory"
-            );
-        }
-    }
-    else if (catalogScope == StarSystemCatalogScope::Distant)
-    {
-        return fail("distant systems require catalog_scope='distant'");
-    }
-
-    if (root.contains("atlas_visible"))
-    {
-        if (!root["atlas_visible"].is_boolean())
-            return fail("atlas_visible must be a boolean");
-
-        out.summary.atlasVisible =
-            root["atlas_visible"].get<bool>();
-    }
-
-    if (root.contains("route_target"))
-    {
-        if (!root["route_target"].is_boolean())
-            return fail("route_target must be a boolean");
-
-        out.summary.routeTarget =
-            root["route_target"].get<bool>();
-    }
-
-    if (root.contains("quest_role"))
-    {
-        if (!root["quest_role"].is_string())
-            return fail("quest_role must be a string");
-
-        out.summary.questRole =
-            root["quest_role"].get<std::string>();
-    }
-
-    if (catalogScope == StarSystemCatalogScope::Distant &&
-        out.summary.atlasVisible)
-    {
-        return fail(
-            "distant systems must set atlas_visible=false in the current atlas"
-        );
-    }
-
-    if (!root.contains("details") ||
-        !root["details"].is_object())
-    {
-        return fail("details must be an object");
-    }
-
-    out.sourcePath = path;
-    out.details = root["details"];
-
-    const auto requireArray =
-        [&](const char* key)
-        {
-            return
-                !out.details.contains(key) ||
-                out.details[key].is_array();
-        };
-
-    if (!requireArray("stars") ||
-        !requireArray("system_planets") ||
-        !requireArray("asteroid_belts"))
-    {
-        return fail(
-            "details.stars, details.system_planets and "
-            "details.asteroid_belts must be arrays"
-        );
-    }
-
-    if (out.details.contains("center_of_mass") &&
-        !out.details["center_of_mass"].is_object())
-    {
-        return fail("details.center_of_mass must be an object");
-    }
-
-    if (out.details.contains("stars") &&
-        static_cast<int>(out.details["stars"].size()) !=
-            out.summary.starsCount)
-    {
-        return fail(
-            "stars_count does not match details.stars size"
-        );
-    }
-
-    return true;
-}
 
 struct CatalogLoadReport
 {
@@ -580,15 +336,11 @@ bool loadSystemCatalogDocuments(
 {
     report = CatalogLoadReport {};
 
-    // The physical catalog (systems/, distant_systems/) replaces the legacy
-    // documents as a whole once it exists: never a mix of both.
-    const bool physicalCatalog =
-        fs::is_directory(fs::path(galaxyDetailsRoot) / "systems");
-    const std::string physicalName =
-        std::string(directoryName) == "distant_systems_details" ? "distant_systems" : "systems";
+    // Physical catalog v2: one directory per system (system.json, stars/,
+    // generated/). There is no other runtime schema.
     const fs::path directory =
         fs::path(galaxyDetailsRoot) /
-        (physicalCatalog ? physicalName : std::string(directoryName));
+        directoryName;
 
     if (allowMissingOrEmpty)
     {
@@ -613,7 +365,6 @@ bool loadSystemCatalogDocuments(
 
     std::vector<fs::path> files;
 
-    if (physicalCatalog)
     {
         std::error_code ec;
         if (fs::is_directory(directory, ec))
@@ -626,14 +377,6 @@ bool loadSystemCatalogDocuments(
             fatalError = "no system directories in: " + directory.generic_string();
             return false;
         }
-    }
-    else if (!collectJsonFiles(
-            directory,
-            allowMissingOrEmpty,
-            files,
-            fatalError))
-    {
-        return false;
     }
 
     report.filesDiscovered = files.size();
@@ -649,9 +392,7 @@ bool loadSystemCatalogDocuments(
         SystemCatalogDocument document;
         std::string fileError;
 
-        if (!(physicalCatalog
-                  ? parsePhysicalSystemDirectory(path, catalogScope, document, fileError)
-                  : parseSystemCatalogFile(path, catalogScope, document, fileError)))
+        if (!parsePhysicalSystemDirectory(path, catalogScope, document, fileError))
         {
             addCatalogSkip(report, fileError);
             continue;
@@ -759,7 +500,7 @@ bool loadSystemCatalogDocuments(
     {
         std::ostringstream message;
         message
-            << "no valid star-system JSON files found in: "
+            << "no valid star-system directories found in: "
             << directory.generic_string()
             << " (discovered="
             << report.filesDiscovered
@@ -1068,32 +809,6 @@ bool loadGalaxyObjects(
     return true;
 }
 
-glm::dvec3 readAuPosition(const json& j)
-{
-    return glm::dvec3(
-        j.value("x", j.value("x_au", 0.0)),
-        j.value("y", j.value("y_au", 0.0)),
-        j.value("z", j.value("z_au", 0.0))
-    );
-}
-
-std::string safeIdPart(std::string s)
-{
-    for (char& c : s)
-    {
-        if (c == ' ' || c == '(' || c == ')' || c == '/' || c == '\\')
-            c = '_';
-    }
-    return s;
-}
-
-
-
-
-
-
-
-
 void readAlternativeNames(
     const json& src,
     CelestialBodyDefinition& out
@@ -1129,29 +844,6 @@ void readAlternativeNames(
     }
 
 }
-
-
-
-
-void readGravityFields(
-        const json& j,
-        world::celestial::CelestialBodyDefinition& body
-    )
-    {
-        body.massKg =
-            j.value("mass_kg", 0.0);
-
-        body.gravitationalParameterM3s2 =
-            j.value("gravitational_parameter_m3s2", 0.0);
-
-        if (body.gravitationalParameterM3s2 <= 0.0 &&
-            body.massKg > 0.0)
-        {
-            body.gravitationalParameterM3s2 =
-                world::celestial::GravitationalConstant *
-                body.massKg;
-        }
-    }
 
 
 
@@ -1222,24 +914,6 @@ void readOrientationFields(
     body.textureLongitudeOffsetDeg =
         j.value("texture_longitude_offset_deg", 0.0);
 }
-
-
-
-
-
-
-void readEnvironmentFields(
-    const json& source,
-    CelestialBodyDefinition& body
-)
-{
-    body.environmentPresetId =
-        source.value(
-            "environment_preset_id",
-            ""
-        );
-}
-
 
 
 
@@ -1840,252 +1514,16 @@ void readRings(
 
 
 
-void addMoonDefinitions(
-    CelestialSystemDefinition& system,
-    const std::string& parentPlanetId,
-    const json& moons
-)
-{
-    if (!moons.is_array())
-        return;
-
-    for (const auto& moon : moons)
-    {
-        if (!moon.is_object())
-            continue;
-
-        CelestialBodyDefinition body;
-        body.name = moon.value("name", "Moon");
-        body.id = parentPlanetId + "." + safeIdPart(body.name);
-       
-
-        body.type = BodyType::Moon;
-        body.parentId = parentPlanetId;
-
-        body.diameterKm = moon.value("diameter_km", 0.0);
-        body.radiusKm = body.diameterKm * 0.5;
-
-        readGravityFields(moon, body);
-
-        body.distanceAu = moon.value("distance_au", 0.0);
-
-        if (body.distanceAu <= 0.0)
-        {
-            const double distanceKm =
-                moon.value("distance_from_planet_km", 0.0);
-
-            if (distanceKm > 0.0)
-                body.distanceAu = distanceKm / MetersPerAu * 1000.0;
-        }
-
-        body.orbitalPeriodDays = moon.value("orbital_period_days", 0.0);
-        body.dayLengthHours = moon.value("day_length_hours", 0.0);
-
-        readOrientationFields(moon, body);
-        readEnvironmentFields(moon, body);
-        readAlternativeNames(moon, body);
-
-        system.bodies.push_back(std::move(body));
-    }
-}
-
-void addPlanetDefinitions(
-    CelestialSystemDefinition& system,
-    const std::string& parentStarId,
-    const json& planets
-)
-{
-    if (!planets.is_array())
-        return;
-
-    for (const auto& planet : planets)
-    {
-        if (!planet.is_object())
-            continue;
-
-        CelestialBodyDefinition body;
-        body.name = planet.value("name", "Planet");
-        body.id = parentStarId + "." + safeIdPart(body.name);
-        
-
-        body.type = BodyType::Planet;
-        body.parentId = parentStarId;
-
-        body.diameterKm = planet.value("diameter_km", 0.0);
-        body.radiusKm = body.diameterKm * 0.5;
-
-        readGravityFields(planet, body);
-
-        body.distanceAu = planet.value("distance_au", 0.0);
-
-
-        body.orbitalPeriodDays = planet.value("orbital_period_days", 0.0);
-        body.dayLengthHours = planet.value("day_length_hours", 0.0);
-
-        readOrientationFields(planet, body);
-        readEnvironmentFields(planet, body);
-        readAlternativeNames(planet, body);
-        readRings(planet, body);
-
-        const std::string planetId = body.id;
-        system.bodies.push_back(std::move(body));
-
-        if (planet.contains("moons"))
-            addMoonDefinitions(system, planetId, planet["moons"]);
-    }
-}
-
-void addAsteroidBelts(
-    CelestialSystemDefinition& system,
-    const std::string& parentId,
-    const json& belts
-)
-{
-    if (!belts.is_array())
-        return;
-
-    int index = 0;
-
-    for (const auto& belt : belts)
-    {
-        if (!belt.is_object())
-            continue;
-
-        CelestialBodyDefinition body;
-        body.name = belt.value("name", "Asteroid Belt");
-        body.id = parentId + ".belt_" + std::to_string(index++);
-        
-
-        body.type = BodyType::AsteroidBelt;
-        body.parentId = parentId;
-
-        body.distanceAu =
-            belt.value(
-                "distance_au",
-                belt.value("distance_from_star_au", 0.0)
-            );
-        body.orbitalPeriodDays = belt.value("orbital_period_days", 0.0);
-
-        system.bodies.push_back(std::move(body));
-    }
-}
-
-CelestialSystemDefinition buildSystemDefinition(
-    const SystemCatalogDocument& document
-)
-{
-    if (document.physical)
-        return *document.physical;
-
-    const json& srcSystem = document.details;
-
-    CelestialSystemDefinition system;
-    system.systemId = document.summary.id;
-    system.name = document.summary.name;
-
-    if (srcSystem.contains("center_of_mass"))
-    {
-        system.barycenterAu = glm::dvec3(
-            srcSystem["center_of_mass"].value("x_au", 0.0),
-            srcSystem["center_of_mass"].value("y_au", 0.0),
-            srcSystem["center_of_mass"].value("z_au", 0.0)
-        );
-    }
-
-    if (srcSystem.contains("stars"))
-    {
-        if (!srcSystem["stars"].is_array())
-        {
-            throw std::runtime_error(
-                "details.stars must be an array"
-            );
-        }
-
-        for (const auto& star : srcSystem["stars"])
-        {
-            if (!star.is_object())
-            {
-                throw std::runtime_error(
-                    "every details.stars entry must be an object"
-                );
-            }
-
-            CelestialBodyDefinition body;
-            body.name = star.value("name", "Star");
-            body.id =
-                "system_" +
-                std::to_string(system.systemId) +
-                "." +
-                safeIdPart(body.name);
-
-            body.type = BodyType::Star;
-            body.parentId.clear();
-
-            body.diameterKm = star.value("diameter_km", 0.0);
-            body.radiusKm = body.diameterKm * 0.5;
-
-            readGravityFields(star, body);
-            readOrientationFields(star, body);
-
-            if (star.contains("position_au"))
-            {
-                if (!star["position_au"].is_object())
-                {
-                    throw std::runtime_error(
-                        "star.position_au must be an object"
-                    );
-                }
-
-                body.staticPositionAu =
-                    readAuPosition(star["position_au"]);
-            }
-
-            readAlternativeNames(star, body);
-
-            const std::string starId = body.id;
-            system.bodies.push_back(std::move(body));
-
-            if (star.contains("planets"))
-                addPlanetDefinitions(system, starId, star["planets"]);
-
-            if (star.contains("asteroid_belts"))
-                addAsteroidBelts(system, starId, star["asteroid_belts"]);
-        }
-    }
-
-    if (srcSystem.contains("system_planets"))
-    {
-        addPlanetDefinitions(
-            system,
-            "system_" +
-                std::to_string(system.systemId) +
-                ".barycenter",
-            srcSystem["system_planets"]
-        );
-    }
-
-    if (srcSystem.contains("asteroid_belts"))
-    {
-        addAsteroidBelts(
-            system,
-            "system_" +
-                std::to_string(system.systemId) +
-                ".barycenter",
-            srcSystem["asteroid_belts"]
-        );
-    }
-
-    return system;
-}
-
 /*
     Physical catalog (src/world/generation): one directory per system,
         <dir>/system.json                 identity, position, stellar hierarchy
         <dir>/generated/system.json       present-day stars, barycenters
         <dir>/generated/bodies/*.json     planets, dwarf planets, moons
         <dir>/generated/reservoirs/*.json small-body populations
-    The directory is validated with the same rules as a legacy document and
-    becomes a runtime definition with Keplerian orbits.
+    This is the only runtime catalog schema: the directory is validated
+    (readPhysicalSystemSummary) and becomes a runtime definition with
+    Keplerian orbits. Migration from the legacy flat catalog lives in
+    tools/universe_generator (build_stellar_inputs.py), not in the runtime.
 */
 
 std::string joinSpectralTypes(const json& stars)
@@ -2180,7 +1618,7 @@ CelestialBodyDefinition bodyFromGenerated(const json& b)
     if (b.contains("atmosphere"))
         body.atmosphereOuterRadiusKm = b["atmosphere"].value("outer_radius_km", 0.0);
 
-    // Orientation through the legacy reader; authored visual keys win.
+    // Orientation through the shared orientation reader; authored visual keys win.
     const json spin = b.value("spin", json::object());
     json orientation = {
         {"axial_tilt_deg", spin.value("obliquity_deg", 0.0)},
@@ -2205,12 +1643,46 @@ CelestialBodyDefinition bodyFromGenerated(const json& b)
     return body;
 }
 
-bool validateSystemCatalogRoot(
-    const json& root,
+bool readPhysicalSystemSummary(
+    const json& sys,
+    const json& gen,
     const fs::path& path,
     StarSystemCatalogScope catalogScope,
     SystemCatalogDocument& out,
-    std::string& error);
+    std::string& error)
+{
+    const auto fail = [&](const std::string& message) {
+        error = path.generic_string() + ": " + message;
+        return false;
+    };
+    if (!sys.contains("id") || !sys["id"].is_number_integer())
+        return fail("id must be an integer");
+    out.summary.id = sys["id"].get<int>();
+    if (out.summary.id < 0)
+        return fail("id must be non-negative");
+    if (catalogScope == StarSystemCatalogScope::Local && out.summary.id >= 100000)
+        return fail("local system id must be below 100000");
+    if (catalogScope == StarSystemCatalogScope::Distant && out.summary.id < 100000)
+        return fail("distant system id must be at least 100000");
+    if (!sys.contains("name") || !sys["name"].is_string() || sys["name"].get<std::string>().empty())
+        return fail("name must be a non-empty string");
+    out.summary.name = sys["name"].get<std::string>();
+    if (!sys.contains("position_ly") || !readPositionLy(sys["position_ly"], out.summary.positionLy))
+        return fail("position_ly must contain numeric x, y and z");
+    const std::string expectedScope = catalogScope == StarSystemCatalogScope::Distant ? "distant" : "local";
+    if (sys.value("catalog_scope", std::string("local")) != expectedScope)
+        return fail("catalog_scope does not match the containing directory");
+    out.summary.catalogScope = catalogScope;
+    out.summary.atlasVisible = sys.value("atlas_visible", catalogScope == StarSystemCatalogScope::Local);
+    out.summary.routeTarget = sys.value("route_target", true);
+    out.summary.questRole = sys.value("quest_role", std::string());
+    if (catalogScope == StarSystemCatalogScope::Distant && out.summary.atlasVisible)
+        return fail("distant systems must set atlas_visible=false in the current atlas");
+    out.summary.starsCount = static_cast<int>(gen["stars"].size());
+    out.summary.starType = joinSpectralTypes(gen["stars"]);
+    out.sourcePath = path;
+    return true;
+}
 
 bool parsePhysicalSystemDirectory(
     const fs::path& directory,
@@ -2246,20 +1718,7 @@ bool parsePhysicalSystemDirectory(
         return false;
     }
 
-    // Same validation as a legacy document.
-    json root = json::object();
-    root["schema_version"] = 1;
-    root["kind"] = "star_system";
-    for (const char* key : {"id", "name", "position_ly", "atlas_visible", "route_target", "quest_role"})
-        if (sys.contains(key))
-            root[key] = sys[key];
-    if (sys.value("catalog_scope", std::string("local")) == "distant" ||
-        catalogScope == StarSystemCatalogScope::Distant)
-        root["catalog_scope"] = sys.value("catalog_scope", std::string("local"));
-    root["stars_count"] = static_cast<int>(gen["stars"].size());
-    root["star_type"] = joinSpectralTypes(gen["stars"]);
-    root["details"] = {{"stars", gen["stars"]}};
-    if (!validateSystemCatalogRoot(root, directory / "system.json", catalogScope, out, error))
+    if (!readPhysicalSystemSummary(sys, gen, directory / "system.json", catalogScope, out, error))
         return false;
 
     CelestialSystemDefinition def;
@@ -2393,7 +1852,7 @@ bool parsePhysicalSystemDirectory(
                       << e.what() << "\n";
         }
     }
-    out.physical = std::move(def);
+    out.definition = std::move(def);
     return true;
 }
 
@@ -2411,7 +1870,7 @@ bool StarAtlasDatabase::loadSystemSummariesFromDirectory(
 
     if (!loadSystemCatalogDocuments(
             galaxyDetailsRoot,
-            "systems_details",
+            "systems",
             StarSystemCatalogScope::Local,
             false,
             documents,
@@ -2477,7 +1936,7 @@ bool StarAtlasDatabase::load(
 
     if (!loadSystemCatalogDocuments(
             galaxyDetailsRoot,
-            "systems_details",
+            "systems",
             StarSystemCatalogScope::Local,
             false,
             localDocuments,
@@ -2505,7 +1964,7 @@ bool StarAtlasDatabase::load(
 
     if (!loadSystemCatalogDocuments(
             galaxyDetailsRoot,
-            "distant_systems_details",
+            "distant_systems",
             StarSystemCatalogScope::Distant,
             true,
             distantDocuments,
@@ -2580,7 +2039,7 @@ bool StarAtlasDatabase::load(
                 try
                 {
                     CelestialSystemDefinition system =
-                        buildSystemDefinition(document);
+                        document.definition;
 
                     const auto inserted =
                         details.emplace(

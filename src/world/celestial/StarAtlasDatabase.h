@@ -26,8 +26,8 @@ public:
             <galaxyDetailsRoot>/systems/<NNN>_<slug>/
             <galaxyDetailsRoot>/distant_systems/<id>_<slug>/
             <galaxyDetailsRoot>/objects_details
-        The legacy flat documents (systems_details/, distant_systems_details/)
-        are read only when systems/ does not exist; never mixed.
+        This is the one runtime schema; the legacy flat catalog is read only
+        by the migration tools in tools/universe_generator.
 
         Local systems are published through systems(); distant quest and
         route targets are published through distantSystems(). Both are

@@ -282,18 +282,56 @@ and A3 (Assisted) ship passports; Y/X stay validation configurations.
   - world_runtime 15/15 PASS; system_map behaviour PASS; map / membership /
     active-system / static-atlas / localization / galaxy-map-catalog
     contracts PASS; determinism 61 systems 0 differ 0 stale.
+  - Resource layers (`df04d3e4`, `src/world/generation/NaturalResources.*`,
+    generation layer `resources` v1, last pipeline step; written into every
+    generated body / reservoir file as `resources`): NaturalResourceProfile
+    (18 families; bulk from composition + host [Fe/H] / [alpha/Fe] +
+    actinide decay + snow-line position; accessible fraction / grade from
+    differentiation, impacts, volcanism, tectonics, hydrosphere,
+    atmosphere, regolith 3He, polar cold traps; fieldSeed for the future
+    surface deposit field), IndustrialSuitabilityProfile (gravity, dV to
+    orbit, environment, radiation, power, hazards, Hohmann dV to the host
+    HZ orbit, relative extraction cost), graded HabitabilityProfile
+    (life_support_cost vs industrial_operating_cost, settlement class),
+    FuelPotential (abundance x throughput x access). No prices anywhere
+    (economy is a future dynamic layer). Interstellar v3: extraction profile
+    per medium (hot bubble ~worthless, molecular clumps best).
+    `resource_audit.py` -> `D:/tmp/elite_resource_audit.md`: leaders differ
+    by category (water eps Eri, fuel Hamal, metals + strategic sigma2 UMa
+    ([Fe/H] +0.34, metal-rich belt), settlement Sol, cheapest GJ 876); no
+    procedural system leads everything (max 5 of 6 top-10 placings,
+    HD 154345, first in none). NOT visually / gameplay reviewed by the user.
+  - System Map presentation levels (`7a79d0de`): StarAtlas derives
+    major / minor / dwarf planet (Margot 2015 orbit-clearing Pi; major from
+    0.3 Me or observed), moon, major / minor reservoir; the map keeps majors
+    and significant belts at every zoom, minor planets (orbit >= 150 px),
+    dwarfs (300 px), minor belts (150 px) appear on approach. Physical
+    bodies never removed. VISUALLY UNVERIFIED (thresholds are a judgement).
+  - System-id namespaces (`5b3cde0d`): no live implicit join of physical
+    StarAtlas ids and political GalaxyDatabase ids (GalaxyDatabase not
+    loaded; its ids match physical only for Sol 0 and GJ 876 13). Galaxy
+    Map jurisdiction = physical id both sides. Server now validates
+    world-state system ids against the StarAtlas; contract
+    `check_system_id_namespaces.py`. Typed PhysicalSystemId not introduced
+    (no second id space in live code); needed when politics returns.
+  - Final real flight (`5b3cde0d` build, Newtonian-I 150 s): COMPLETE,
+    failures 0, emergency stops 0, no violations. world_runtime 17/17.
 - Known limits / open:
   - NOT verified visually: Galaxy Map (domain cubes, ISM volumes, colours),
-    System Map ellipses.
+    System Map ellipses and presentation thresholds.
   - ISM legend / filter UI not done (user: later).
+  - Reports in D:/tmp: identity audit, root cells, detectability, resource
+    audit. `elite_universe_regeneration_report.md` predates stage 2 (stale).
+  - Sol trojan files keep ASCII names "trojans.json" / "trojans_2.json".
 
 ### Next step
-- Stage 2 remaining, in the user's order: (5) NaturalResourceProfile + IndustrialSuitabilityProfile +
-  graded habitability + fuel potential, derived only from physical
-  descriptors, no prices; ISM extraction profile; 61-system resource audit;
-  (6) physical (StarAtlas) vs political (GalaxyDatabase) system-id audit;
-  System Map presentation levels (major / minor / dwarf / moon / reservoir).
-  Not in scope: economy / trade simulator, interplanetary route planner.
+- Stage 2 (user 30-point task) implemented; waiting for the user's visual
+  review of the Galaxy Map (domain cubes, ISM volumes) and the System Map
+  (ellipses, presentation levels) and for a look at the resource audit.
+- Next foundation stages (NOT started, by user order): interplanetary route
+  planner + gravity assists on CelestialEphemerisService; economy / trade
+  layer valuing the resource endowment by transport cost (dV, time, fuel).
+  Docking architecture later.
 
 ## HISTORICAL CHRONOLOGY (verbatim, dated; superseded where the block above says so)
 

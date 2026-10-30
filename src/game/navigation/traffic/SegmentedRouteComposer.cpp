@@ -397,7 +397,7 @@ planner::RoutePlan failedComposite(
 
 } // namespace
 
-planner::RoutePlan SegmentedRouteComposer::plan(
+static planner::RoutePlan composeOnce(
     const planner::RoutePlanRequest& terminalRequest,
     const CompiledTrafficRoute& trafficRoute
 )
@@ -971,6 +971,37 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         out.userMessage = out.failure;
     }
 
+    return out;
+}
+
+planner::RoutePlan SegmentedRouteComposer::plan(
+    const planner::RoutePlanRequest& terminalRequest,
+    const CompiledTrafficRoute& trafficRoute
+)
+{
+    auto out = composeOnce(terminalRequest, trafficRoute);
+    // Assisted: a route the derated craft cannot fly at its cruise speed is
+    // planned again SLOWER (cruise and, once below the zone limits, the
+    // mandatory-zone hand-off speeds), not refused - reaching the dock
+    // matters more than the time. Only a dynamically infeasible plan is
+    // retried; invalid world data or no authority stays a refusal.
+    // Healthy plans that succeed at full speed are unchanged.
+    constexpr double SlowerSpeedScales[] = {0.75, 0.55, 0.40, 0.30, 0.20};
+    if (!terminalRequest.useContinuousAssistedOptimizer)
+        return out;
+    for (const double scale : SlowerSpeedScales)
+    {
+        if (out.valid() ||
+            out.disposition != planner::RoutePlanDisposition::NeedsRefinement)
+            break;
+        auto slower = terminalRequest;
+        slower.maxSpeedMps = terminalRequest.maxSpeedMps * scale;
+        auto retry = composeOnce(slower, trafficRoute);
+        retry.diagnosticSummary =
+            "slower_retry_speed_scale=" + std::to_string(scale) + " " +
+            retry.diagnosticSummary;
+        out = std::move(retry);
+    }
     return out;
 }
 

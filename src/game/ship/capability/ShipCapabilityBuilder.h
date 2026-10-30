@@ -10,6 +10,7 @@
 #include "src/game/ship/capability/ShipCapabilitySnapshot.h"
 #include "src/game/ship/capability/WorkingThrustAxisAnalysis.h"
 #include "src/game/ship/core/ShipDynamics.h"
+#include "src/game/ship/plant/MainEngineCutoff.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/simulation/ObjectModuleSnapshot.h"
 #include "src/world/modules/ObjectModuleRuntime.h"
@@ -235,6 +236,74 @@ inline plant::EngineSlotState conservativeRcsNode(
     return result;
 }
 
+// The main-engine switch-off law (plant::mainEngineCutoff) on a projected
+// slot vector: a switched-off main engine projects no thrust, exactly as the
+// server executor no longer fires it.
+template<typename ReadModule>
+inline void applyMainEngineCutoff(
+    const std::vector<plant::EngineSlotDefinition>& topology,
+    std::vector<plant::EngineSlotState>& slots,
+    const ReadModule& readModule
+)
+{
+    if (slots.size() != topology.size())
+        return;
+    std::vector<plant::MainEngineCutoffInput> input(topology.size());
+    for (std::size_t i = 0; i < topology.size(); ++i)
+    {
+        input[i].role = topology[i].role;
+        if (topology[i].role != plant::EngineSlotRole::ManoeuvreCluster)
+            readModule(i, input[i]);
+    }
+    const auto off = plant::mainEngineCutoff(input);
+    for (std::size_t i = 0; i < slots.size(); ++i)
+        if (off[i])
+            slots[i] = plant::EngineSlotState {false, 0.0, 0.0};
+}
+
+inline void applyMainEngineCutoff(
+    const std::vector<plant::EngineSlotDefinition>& topology,
+    const std::vector<std::string>& binding,
+    const world::modules::ObjectModuleRuntime& runtime,
+    std::vector<plant::EngineSlotState>& slots
+)
+{
+    applyMainEngineCutoff(topology, slots,
+        [&](std::size_t i, plant::MainEngineCutoffInput& in) {
+            const auto* module = runtime.findModule(binding[i]);
+            if (!module)
+                return;
+            in.attached = module->state ==
+                    world::modules::ObjectModuleRuntimeState::Attached &&
+                module->health > 0.0f;
+            in.damage01 = plant::replicatedTotalDamage01(
+                module->equipmentDamage.accumulated);
+        });
+}
+
+inline void applyMainEngineCutoff(
+    const std::vector<plant::EngineSlotDefinition>& topology,
+    const std::vector<std::string>& binding,
+    const std::vector<game::simulation::ObjectModuleSnapshot>& modules,
+    std::vector<plant::EngineSlotState>& slots
+)
+{
+    applyMainEngineCutoff(topology, slots,
+        [&](std::size_t i, plant::MainEngineCutoffInput& in) {
+            const auto it = std::find_if(modules.begin(), modules.end(),
+                [&](const auto& m) { return m.moduleId == binding[i]; });
+            if (it == modules.end())
+                return;
+            in.attached = it->state == static_cast<std::uint8_t>(
+                    world::modules::ObjectModuleRuntimeState::Attached) &&
+                it->health > 0.0f;
+            in.damage01 = plant::replicatedTotalDamage01(
+                it->laserDamage01, it->impactDamage01, it->thermalDamage01,
+                it->radiationDamage01, it->wearDamage01,
+                it->internalFailureDamage01);
+        });
+}
+
 inline std::vector<plant::EngineSlotState> slotStates(
     const ShipDescriptor& descriptor,
     const world::modules::ObjectModuleRuntime& runtime
@@ -269,6 +338,7 @@ inline std::vector<plant::EngineSlotState> slotStates(
                 : read(moduleId));
     }
 
+    applyMainEngineCutoff(topology, binding, runtime, out);
     return out;
 }
 
@@ -310,6 +380,7 @@ inline std::vector<plant::EngineSlotState> slotStates(
                 : read(moduleId));
     }
 
+    applyMainEngineCutoff(topology, binding, modules, out);
     return out;
 }
 
@@ -651,6 +722,7 @@ inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
                           ? detail::conservativeRcsNode(moduleId, read)
                           : read(moduleId));
     }
+    detail::applyMainEngineCutoff(topology, binding, runtime, out);
     return out;
 }
 
@@ -687,6 +759,7 @@ inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
                           ? detail::conservativeRcsNode(moduleId, read)
                           : read(moduleId));
     }
+    detail::applyMainEngineCutoff(topology, binding, modules, out);
     return out;
 }
 

@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "src/game/navigation/AcceptedManeuverProgram.h"
+#include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/navigation/newtonian/NewtonianExecutionAuthority.h"
@@ -33,6 +34,8 @@ struct ManeuverExecutionAuthority
     double brakingAccelerationMps2 = 0.0;
     double lateralAccelerationMps2 = 0.0;
     double feedbackReserveMps2 = 0.0;
+    // Catch-up braking the pilot may use beyond the profiled braking.
+    double catchUpBrakingAccelerationMps2 = 0.0;
 };
 
 [[nodiscard]] inline ManeuverExecutionAuthority
@@ -71,6 +74,7 @@ makeManeuverExecutionAuthority(
                 params, 1.0).plannedVectorAccelerationMps2;
         out.forwardAccelerationMps2 = longitudinal;
         out.brakingAccelerationMps2 = longitudinal;
+        out.catchUpBrakingAccelerationMps2 = longitudinal;
         out.lateralAccelerationMps2 =
             newtonianPreferredLateralAccelerationMps2(
                 newtonian.plannedVectorAccelerationMps2
@@ -112,8 +116,15 @@ makeManeuverExecutionAuthority(
     // accepting a fictitious 0.1 m/s2 on every missing axis.
     out.forwardAccelerationMps2 =
         std::max(0.0, (forward - reserve) * fraction);
-    out.brakingAccelerationMps2 =
+    // Speed profiles brake with the SAME concurrent-turn share the planner
+    // profiled the route with: braking later and harder (full reverse main)
+    // arrives in curves faster than the craft can turn there. Only the
+    // pilot's catch-up braking keeps the full authority.
+    out.catchUpBrakingAccelerationMps2 =
         std::max(0.0, (reverse - reserve) * fraction);
+    out.brakingAccelerationMps2 =
+        out.catchUpBrakingAccelerationMps2 *
+        assisted_budget::ConcurrentTurnAxisFraction;
     out.lateralAccelerationMps2 =
         std::max(0.0, (lateral - reserve) * fraction);
     return out;

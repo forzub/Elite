@@ -136,6 +136,15 @@ Updated: 2026-10-30, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONL
   these values; it never re-derives the axis or main from replicated module
   health. ER-5 power uses ONE law (`ShipCore::engineReactorAvailableMW`) in
   the executor and in the capability.
+- The client still rebuilds a capability from the float module snapshot
+  (hybrid). Its threshold decisions are made bit-identical to the server:
+  main-engine switch-off law `plant::mainEngineCutoff` (a main engine
+  damaged > 94 % is OFF while its bank keeps an engine <= 94 %; otherwise
+  the bank keeps its real thrust), evaluated on float-rounded damage on both
+  sides and used by the server executor AND every capability projection;
+  failure threshold tolerance 1e-6 (> float rounding; 0.95f read as a live
+  5 % engine before). Assisted: execution speed profiles brake with the
+  planner's concurrent-turn share (1/3); pilot catch-up braking stays full.
 - Planned turns use min(0.5, combined RCS share) of the angular scalar.
   Capability losses reprofile / hand back; recoveries (+10 %, 0.5 s)
   reprofile up to the planned nominal (both laws stabilise and replan on a
@@ -218,6 +227,44 @@ Updated: 2026-10-30, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONL
 - Offline matrix after every step: 90/126 PASS, 0 violations (identical to
   the post-A1 state for B2 / B3).
 
+- A4 Assisted damage stack (user order 2026-10-30, second half):
+  - Root cause of the two thrust pictures: same capability function,
+    different inputs - server double damage 0.95 >= failure 0.95 (engine
+    failed, one-motor axis 49.5 deg, 36.77 m/s2), client 0.95f = 0.94999999
+    (engine alive 5 %, balanced bank, nose axis, 5.15 m/s2) -> "axis
+    mismatch"; plus min(client, server) forward would have cut the plan 7x.
+    Remaining divergent inputs (not yet seen in flight): client applies no
+    current mass / CoM, part of the engine operating state is not in the
+    snapshot. Analysis: D:/tmp/elite_client_server_thrust_analysis.md.
+  - Reverting the server axis (done earlier the same day on a mistaken
+    reading of the user's "return Assisted") was wrong: restored.
+  - Sway after a mid-route loss came from the hot-start replan at ~243 m/s,
+    not from the axis: Assisted now brakes to rest after a capability loss,
+    ALIGNs the emergency working axis onto the course flown (skipped without
+    turning authority), plans from rest with the working axis as first
+    course; infeasible Assisted plans retry slower (0.75 .. 0.20 cruise).
+  - Execution reference braked at (reverse - reserve) x 0.9 x 0.85 = 55
+    m/s2 while the plan assumed 21.8 (A3 L 93 %): late braking into
+    curves. One braking law now (see Factual capability).
+  - A general cruise cap sqrt(2 a D) was NOT added: the planner already
+    caps speed by curvature (lateral + hull rate), angular acceleration and
+    a backward braking pass; with D = 955 m it would cut healthy A3 400 ->
+    184 m/s. Note: `tunnel_radius_floor_m` 955 is the minimum TURN radius,
+    not the tunnel width.
+  - Offline: EliteNavigationCapabilityCheck PASS (new: client == server
+    engine decision / axis / forward at L 0, 0.93, 0.945, 0.95); scenario
+    matrix mx7 90/126 PASS, 0 violations (unchanged).
+
+### Acceptance A4 (real game, acc5..acc7, Debug; COMPLETE = corridor scenario, not docking)
+| flight | result | max cross-track |
+|---|---|---|
+| A3 healthy | COMPLETE | 27.7 m (acc6 25.9) |
+| A3 L 95 % before start | ALIGN 49.5 deg / 5 s, COMPLETE | 73 m (acc6 66) |
+| A3 L 95 % at 60 s | stop, ALIGN 3.5 s, replan, COMPLETE | 82 m (acc6 77; was 115-155 sway) |
+| A3 reactor 60 % at 60 s | flies (6 m on straights); harness FAILED: BLUE not reached in 180 s | 52 m |
+| A3 L 93 % before start (below cutoff) | harness FAILED (BLUE 180 s) | 180 m (acc5 288): mixer limited by the 7 % engine, delivered braking 4-37 m/s2 |
+| A3 L + fore R 95 % | honest refusal: no attitude control (0.0007 rad/s2) | - |
+
 ### Acceptance (real game, nav-stress:simple, Debug, acceptance.sh run acc2)
 Runs acc2 (all) + acc3 (Assisted after `0287c7ea`); damage at t_moving 60 s;
 hitches = frames > 80 ms after start.
@@ -239,9 +286,17 @@ hitches = frames > 80 ms after start.
 | A3 aft L + fore R lost | honest refusal "no attitude control" after 5 attempts, held safe | 25.4 m | - | controlled refusal |
 
 ### OPEN
-- GATE NOT CLOSED: A3 reactor 60 % - the Assisted continuous optimizer
-  finds no feasible path for the derated ship (physically a slower route
-  should exist): planner side of the Assisted damage stack.
+- A3 below the 94 % cutoff (93 %): balanced bank 5.15 m/s2 vs 36.77 on one
+  motor, 180 m on a curve. Candidate law (user decision): switch off when
+  the one-motor axis gives more thrust than the balanced bank.
+- Client capability still hybrid (re-derived from snapshot): mass / CoM and
+  part of the operating state differ; target: control facts only from the
+  server telemetry.
+- Harness: 180-s BLUE limit fails slower damaged Assisted flights; no flight
+  reaches the dock in the window (49 km route).
+- A3 reactor 60 %: planner side solved (stop-before-replan: plan from rest
+  found first time, A4); the gate is not formally closed - the harness 180-s
+  BLUE limit fails the slower flight.
 - X one main lost: 110-130 ms autopilot frames on the slow replanned profile.
 - `updateDockingAdvisory` (3.8k lines) still one member function (debt: no
   behaviour-neutral seam taken during the acceptance run).

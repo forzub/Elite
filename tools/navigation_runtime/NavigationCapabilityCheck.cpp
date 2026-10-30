@@ -28,6 +28,9 @@
 #include "src/game/navigation/autopilot/NewtonianTurnModel.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
+#include "src/game/ship/capability/ReplicatedInstalledAssistedDescriptor.h"
+#include "src/game/ship/capability/ShipCapabilityBuilder.h"
+#include "src/game/simulation/ObjectModuleSnapshotBuilder.h"
 
 namespace
 {
@@ -262,6 +265,72 @@ int main()
                     caps.effectivePhysics.assistedWorkingThrustAxisBody.z, caps.effectivePhysics.assistedWorkingThrustAxisEmergency ? 1 : 0);
         check(healthyTelemetry.valid && telemetry.valid && telemetry.workingForwardAccelerationMps2 > 0.0,
               "Assisted engine L lost: authority telemetry stays published, forward authority > 0");
+    }
+
+    // Assisted A3: the client rebuilds its capability from the float module
+    // snapshot; the server from its double module runtime. Both must take
+    // the same main-engine decision (switch-off above 94 %, failure at 95 %)
+    // and therefore publish ONE working thrust axis.
+    for (const double damage : {0.0, 0.93, 0.945, 0.95})
+    {
+        using namespace game::ship;
+        core::ShipCore assisted;
+        assisted.init(ShipRole::Player, EliteCobraMk1::EliteCobraMk1Descriptor(), glm::vec3(0.0f), ShipInitData {},
+                      glm::mat4(1.0f));
+        assisted.selectPhysicalConstructionForDiagnostic(plant::PhysicalControlModelId::AssistedI);
+        assisted.refreshRuntimeState();
+        if (damage > 0.0)
+            assisted.moduleRuntime().injectEquipmentFailure("ship_engine_L", damage);
+        assisted.refreshRuntimeState();
+        for (int i = 0; i < 20; ++i)
+            assisted.updateSystems(0.02f);
+        const auto server = assisted.capabilities().effectivePhysics;
+        const auto native = EliteCobraMk1::EliteCobraMk1Descriptor();
+        const auto installed =
+            capability::replicatedInstalledAssistedDescriptor(native, plant::PhysicalControlModelId::AssistedI);
+        const ShipDescriptor& selected = installed ? *installed : native;
+        std::vector<game::simulation::ObjectModuleSnapshot> modules;
+        for (const auto& m : selected.modules)
+            modules.push_back(game::simulation::makeObjectModuleSnapshot(
+                m, assisted.moduleRuntime().findModule(m.moduleId)));
+        const auto slots = capability::buildPhysicalControlSlotState(
+            selected, plant::PhysicalControlModelId::AssistedI, modules);
+        auto client = capability::buildShipCapability(selected, plant::PhysicalControlModelId::AssistedI, slots);
+        capability::applyMountedEngineAxialAuthority(selected, plant::PhysicalControlModelId::AssistedI, slots,
+                                                     client);
+        const auto& c = client.effectivePhysics;
+        {
+            VehicleGuidanceEnvelope envelope;
+            envelope.lengthMeters = 22.2;
+            envelope.widthMeters = 26.0;
+            envelope.heightMeters = 5.0;
+            envelope.valid = true;
+            const auto params = game::ship::telemetry::applyAuthorityToControlParams(
+                server, assisted.controlAuthorityTelemetry());
+            const auto facts = makeNavigationControlCapability(params, LocalFlightControlLaw::Assisted);
+            planner::RoutePlanRequest r;
+            (void)applyRouteRequestCapability(
+                r, makeNavigationVehicleProfile(params, envelope, LocalFlightControlLaw::Assisted),
+                LocalFlightControlLaw::Assisted, &facts);
+            std::printf("     A3 engine L %.3f route request: max %.1f m/s accel %.2f brake %.2f lateral %.2f "
+                        "omega %.3f alpha %.3f\n",
+                        damage, r.maxSpeedMps, r.acceleratingMps2, r.brakingMps2, r.lateralMps2,
+                        r.maxAngularVelocityRadPerSecond, r.maxAngularAccelerationRadPerSecond2);
+        }
+        const double dot = glm::dot(glm::normalize(server.assistedWorkingThrustAxisBody),
+                                    glm::normalize(c.assistedWorkingThrustAxisBody));
+        const bool expectEmergency = damage > plant::MainEngineCutoffDamage01;
+        std::printf("     A3 engine L %.3f: server emergency %d motor %d forward %.2f | client emergency %d motor %d "
+                    "forward %.2f | axis dot %.6f\n",
+                    damage, server.assistedWorkingThrustAxisEmergency ? 1 : 0, server.assistedWorkingThrustMotorIndex,
+                    server.forwardMainEngineAccelerationMps2, c.assistedWorkingThrustAxisEmergency ? 1 : 0,
+                    c.assistedWorkingThrustMotorIndex, c.forwardMainEngineAccelerationMps2, dot);
+        check(client.valid && server.assistedWorkingThrustAxisEmergency == c.assistedWorkingThrustAxisEmergency &&
+                  server.assistedWorkingThrustMotorIndex == c.assistedWorkingThrustMotorIndex && dot > 0.999999 &&
+                  std::abs(server.forwardMainEngineAccelerationMps2 - c.forwardMainEngineAccelerationMps2) < 0.01 &&
+                  server.assistedWorkingThrustAxisEmergency == expectEmergency,
+              "A3 engine L " + std::to_string(damage) + ": client and server take one engine decision and axis" +
+                  (expectEmergency ? " (switched off: one-motor axis)" : " (kept: centred bank)"));
     }
 
     std::printf("%s: %d failure(s)\n", failures ? "FAIL" : "PASS", failures);

@@ -180,7 +180,10 @@ inline EquipmentFunctionState evaluateEquipmentFunctionAtDamage01(
             ? std::clamp(failure.failureAtDamage01, 0.0, 1.0)
             : 1.0;
 
-    out.failed = out.damage01 + 1.0e-12 >= threshold;
+    // Clients evaluate the same law on float-replicated damage components
+    // (0.95f = 0.94999999): the tolerance must exceed that rounding, or a
+    // server-failed engine reads as a live 5 % engine on the client.
+    out.failed = out.damage01 + 1.0e-6 >= threshold;
     out.authority01 = out.failed
         ? 0.0
         : std::clamp(1.0 - out.damage01, 0.0, 1.0);

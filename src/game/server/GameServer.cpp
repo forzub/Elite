@@ -617,7 +617,8 @@ namespace
 // "T MODULE TARGET01[;T MODULE TARGET01...]" injects a real installed
 // equipment fault (the same injectEquipmentFailure path as the server DEV
 // command) into the player ship T seconds after it first moved faster than
-// 1 m/s - a capability change DURING a route. MODULE "reactors-toggle"
+// 1 m/s - a capability change DURING a route (T < 0: at once, before the
+// route). MODULE "reactors-toggle"
 // switches the propulsion reactors instead. Unset: nothing happens.
 struct TimedDamageDiagnostic
 {
@@ -650,6 +651,18 @@ void advanceTimedDamageDiagnostic(TimedDamageDiagnostic& d, Ship* ship, double d
     auto& core = ship->core();
     if (d.movingSeconds < 0.0)
     {
+        // T < 0: damaged BEFORE the route (applied at once, ship at rest).
+        for (auto& e : d.events)
+            if (!e.done && e.at < 0.0 && e.module != "reactors-toggle")
+            {
+                e.done = true;
+                const bool applied =
+                    core.moduleRuntime().injectEquipmentFailure(e.module, e.target01);
+                core.refreshRuntimeState();
+                std::cerr << "[ShipDamageAt] t_moving=before module=" << e.module
+                          << " target=" << e.target01
+                          << " status=" << (applied ? "APPLIED" : "FAILED") << '\n';
+            }
         if (glm::length(core.transform().motion.localVelocityMps) <= 1.0)
             return;
         d.movingSeconds = 0.0;

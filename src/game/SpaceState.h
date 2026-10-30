@@ -441,6 +441,19 @@ private:
     // that were turned into a coast-and-replan instead of a final failure.
     int m_newtonianRouteRecoveries = 0;
     double m_newtonianLastRecoveryServerSeconds = -1.0e9;
+    // Assisted: after a capability loss the request is planned again only
+    // after braking to rest along the current (already cleared) course.
+    bool m_assistedRecoveryStopBeforePlanning = false;
+    // Assisted with an off-nose (emergency) working thrust axis: once at
+    // rest the hull is turned until that axis lies on the course the nose
+    // held (ALIGN), and the route is planned from that pose.
+    bool m_assistedAlignDone = false;
+    bool m_assistedAlignActive = false;
+    glm::dvec3 m_assistedAlignTargetMap {0.0, 0.0, -1.0};
+    double m_assistedAlignStartServerSeconds = -1.0;
+    // Direction of the last flown course (while braking / before rest).
+    bool m_assistedAlignCourseValid = false;
+    glm::dvec3 m_assistedAlignCourseMap {0.0, 0.0, -1.0};
     std::string m_dockingGuidanceFailureReason;
     // Presentation/diagnostic warning only. Never participates in control.
     std::string m_dockingStatusWarning;

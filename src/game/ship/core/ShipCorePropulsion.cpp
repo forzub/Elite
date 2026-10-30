@@ -164,7 +164,29 @@ void ShipCore::updateTranslationControl(float dt)
                 };
             }
             if (mainEnginesBound)
+            {
+                // The same switch-off law as every capability projection:
+                // a main engine damaged beyond the limit no longer fires
+                // while its bank keeps a usable engine.
+                std::vector<game::ship::plant::MainEngineCutoffInput> cut(
+                    topology.size());
+                for (std::size_t i = 0; i < topology.size(); ++i)
+                {
+                    cut[i].role = topology[i].role;
+                    if (topology[i].role ==
+                        game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+                        continue;
+                    cut[i].attached = installedEngines[i].attached;
+                    cut[i].damage01 =
+                        game::ship::plant::replicatedTotalDamage01(
+                            installedEngines[i].damage->accumulated);
+                }
+                const auto off = game::ship::plant::mainEngineCutoff(cut);
+                for (std::size_t i = 0; i < off.size(); ++i)
+                    if (off[i])
+                        installedEngines[i].attached = false;
                 physicalEngines = &installedEngines;
+            }
         }
     }
 

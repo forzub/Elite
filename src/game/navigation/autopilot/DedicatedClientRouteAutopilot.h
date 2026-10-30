@@ -383,7 +383,7 @@ public:
             executionAuthority.brakingAccelerationMps2 *
             planningAuthorityFraction;
         const double hardBrakingAuthority =
-            executionAuthority.brakingAccelerationMps2;
+            executionAuthority.catchUpBrakingAccelerationMps2;
 
         // Capability change during the route (damaged stage). A real,
         // persisting loss reprofiles the speed ahead with the live authority

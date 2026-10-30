@@ -271,6 +271,17 @@ void SpaceState::updateDockingAdvisory()
         m_dockSafeCourse = {};
         m_clientDockingPhase = ClientDockingPhase::Stabilizing;
         m_clientDockingSettledSinceServerSeconds = -1.0;
+        // Assisted: a damaged craft does not try to re-enter the route at
+        // its old speed (hot starts beyond the derated authority were
+        // infeasible or flown with large excursions). It brakes to rest on
+        // its current straight course and plans from rest, like a request
+        // made after the damage. Newtonian: coasts and replans (unchanged).
+        if (controlLaw == game::navigation::LocalFlightControlLaw::Assisted)
+        {
+            m_assistedRecoveryStopBeforePlanning = true;
+            m_assistedAlignDone = false;
+            m_assistedAlignActive = false;
+        }
     };
     if (pending.valid() &&
         controlLaw == game::navigation::LocalFlightControlLaw::Newtonian)
@@ -523,6 +534,18 @@ void SpaceState::updateDockingAdvisory()
         return agent;
     };
 
+    // The Assisted working thrust axis (the server's; body +X right, +Y up,
+    // -Z nose) expressed in the map frame of this agent's hull.
+    const auto workingThrustAxisMap = [&](const FollowerAgent& agent)
+    {
+        const glm::dvec3 axis = effectivePhysics.assistedWorkingThrustAxisBody;
+        const glm::dvec3 map = axis.x * agent.rightMap +
+            axis.y * agent.upMap - axis.z * agent.forwardMap;
+        const double length = glm::length(map);
+        return std::isfinite(length) && length > 1.0e-9
+            ? glm::dvec3(map / length) : agent.forwardMap;
+    };
+
     const auto submitAutopilotControl =
         [&](const ShipControlState& control)
         {
@@ -718,6 +741,10 @@ void SpaceState::updateDockingAdvisory()
         m_lastDockingPathRequestSerial = pending.serial;
         m_newtonianRouteRecoveries = 0;
         m_newtonianLastRecoveryServerSeconds = -1.0e9;
+        m_assistedRecoveryStopBeforePlanning = false;
+        m_assistedAlignDone = false;
+        m_assistedAlignActive = false;
+        m_assistedAlignCourseValid = false;
         m_lastDockingRequestTraceSerial = pending.serial;
         m_dockLateEntry = {};
         m_dockAssistedSafeRecovery = {};
@@ -1089,11 +1116,151 @@ void SpaceState::updateDockingAdvisory()
                 transform.rollRate * transform.rollRate
             );
 
+        // ALIGN (Assisted, off-nose emergency working axis, at rest): turn
+        // the hull in place until the working thrust axis lies on the
+        // course the nose held when the ship came to rest; the route is then
+        // planned from that pose with the working axis as its first course,
+        // so it never starts by thrusting sideways while the hull turns.
+        constexpr double AlignAtRestSpeedMps = 1.0;
+        // Without real turning authority (e.g. aft L + fore R lost:
+        // 0.0007 rad/s2) a turn in place cannot finish; skip it and let the
+        // request report the missing attitude control.
+        constexpr double AlignMinAngularRadPerSec2 = 0.01;
+        const double alignAngularAuthorityRadPerSec2 =
+            game::navigation::makeNavigationControlCapability(
+                effectivePhysics, controlLaw).angularScalarRadPerSec2;
+        constexpr double AlignCourseSpeedMps = 5.0;
+        if (relativeSpeedMps > AlignCourseSpeedMps)
+        {
+            m_assistedAlignCourseValid = true;
+            m_assistedAlignCourseMap = motion.localVelocityMps / relativeSpeedMps;
+        }
+        if (automatic && !m_assistedAlignDone &&
+            controlLaw == game::navigation::LocalFlightControlLaw::Assisted &&
+            effectivePhysics.assistedWorkingThrustAxisEmergency &&
+            relativeSpeedMps <= AlignAtRestSpeedMps &&
+            alignAngularAuthorityRadPerSec2 >= AlignMinAngularRadPerSec2)
+        {
+            constexpr double AlignToleranceRad = 0.025;
+            constexpr double AlignStoppedAngularRadPerSec = 0.01;
+            constexpr double AlignSettledSeconds = 0.50;
+            constexpr double AlignTimeoutSeconds = 90.0;
+            const auto agent = makeAgent();
+            const glm::dvec3 workingMap = workingThrustAxisMap(agent);
+            if (!m_assistedAlignActive)
+            {
+                m_assistedAlignActive = true;
+                // The course flown before rest (the nose is off that course
+                // on an emergency axis); a ship that was at rest: its nose.
+                m_assistedAlignTargetMap = m_assistedAlignCourseValid
+                    ? m_assistedAlignCourseMap : agent.forwardMap;
+                m_assistedAlignStartServerSeconds = authoritativeServerSeconds;
+                m_clientDockingSettledSinceServerSeconds = -1.0;
+                std::cerr << "[DockAlign] request=" << pending.serial
+                          << " phase=begin offset_deg="
+                          << glm::degrees(std::acos(std::clamp(glm::dot(
+                                 workingMap, m_assistedAlignTargetMap), -1.0, 1.0)))
+                          << std::endl;
+            }
+            const double errorRad = std::acos(std::clamp(
+                glm::dot(workingMap, m_assistedAlignTargetMap), -1.0, 1.0));
+            const bool timedOut = authoritativeServerSeconds -
+                    m_assistedAlignStartServerSeconds > AlignTimeoutSeconds;
+            if (!timedOut)
+            {
+                // Rotate the whole hull frame by the shortest rotation that
+                // carries the working axis onto the target course.
+                const glm::dquat turn =
+                    glm::rotation(workingMap, m_assistedAlignTargetMap);
+                game::navigation::autopilot::AutopilotControlRequest align;
+                align.desiredVelocityMapMps = glm::dvec3(0.0);
+                align.desiredLinearAccelerationMapMps2 = glm::dvec3(0.0);
+                align.desiredForwardMap = glm::normalize(turn * agent.forwardMap);
+                align.desiredUpMap = glm::normalize(turn * agent.upMap);
+                align.terminalAttitudeHold = true;
+                align.desiredCourseAngularRateMapRadPerSec = glm::dvec3(0.0);
+                align.desiredRollRateRadPerSec = 0.0;
+                align.actualVelocityMapMps = agent.velocityMapMetersPerSecond;
+                align.forwardMap = agent.forwardMap;
+                align.rightMap = agent.rightMap;
+                align.upMap = agent.upMap;
+                align.pitchRateRadPerSec = agent.pitchRateRadPerSec;
+                align.yawRateRadPerSec = agent.yawRateRadPerSec;
+                align.rollRateRadPerSec = agent.rollRateRadPerSec;
+                align.stopRequested = false;
+                align.deltaSeconds =
+                    std::max(1.0e-4, m_client->serverFixedStepSeconds());
+                submitAutopilotControl(
+                    m_clientDockingAssistedStabilizePilotController.update(
+                        align, effectivePhysics));
+                if (errorRad > AlignToleranceRad ||
+                    angularSpeedRadPerSec > AlignStoppedAngularRadPerSec)
+                {
+                    m_clientDockingSettledSinceServerSeconds = -1.0;
+                    return;
+                }
+                if (m_clientDockingSettledSinceServerSeconds < 0.0)
+                {
+                    m_clientDockingSettledSinceServerSeconds =
+                        authoritativeServerSeconds;
+                    return;
+                }
+                if (authoritativeServerSeconds -
+                        m_clientDockingSettledSinceServerSeconds <
+                    AlignSettledSeconds)
+                    return;
+            }
+            std::cerr << "[DockAlign] request=" << pending.serial
+                      << " phase=" << (timedOut ? "timeout" : "aligned")
+                      << " error_deg=" << glm::degrees(errorRad)
+                      << " seconds=" << (authoritativeServerSeconds -
+                                         m_assistedAlignStartServerSeconds)
+                      << std::endl;
+            m_assistedAlignActive = false;
+            m_assistedAlignDone = true;
+            m_clientDockingSettledSinceServerSeconds = -1.0;
+            submitAutopilotControl(stabilizeAngularForPlanningControl());
+            return;
+        }
+
         // MANUAL GUIDANCE CONTRACT:
         // Manual and Automatic consume the SAME route topology/geometry.
         // Manual differs only by reaching a real zero translational/angular
         // state before route calculation.
-        if (!automatic)
+        if (automatic && m_assistedRecoveryStopBeforePlanning)
+        {
+            // Assisted recovery after a capability loss: brake to rest on
+            // the current course (shorter than the ballistic ray the safe
+            // course already cleared), damp the hull, then plan from rest.
+            constexpr double RecoveryStoppedSpeedMps = 1.0;
+            constexpr double RecoveryStoppedAngularRadPerSec = 0.01;
+            constexpr double RecoverySettledSeconds = 0.50;
+            // Translation first; once at rest only the hull rates are damped
+            // (a stop command on an asymmetric plant must not keep firing
+            // the surviving motor and spin the hull).
+            const bool atRest = relativeSpeedMps <= RecoveryStoppedSpeedMps;
+            submitAutopilotControl(atRest
+                ? stabilizeAngularForPlanningControl()
+                : manualStopControl());
+            if (!atRest ||
+                angularSpeedRadPerSec > RecoveryStoppedAngularRadPerSec)
+            {
+                m_clientDockingSettledSinceServerSeconds = -1.0;
+                return;
+            }
+            if (m_clientDockingSettledSinceServerSeconds < 0.0)
+            {
+                m_clientDockingSettledSinceServerSeconds =
+                    authoritativeServerSeconds;
+                return;
+            }
+            if (authoritativeServerSeconds -
+                    m_clientDockingSettledSinceServerSeconds <
+                RecoverySettledSeconds)
+                return;
+            submitAutopilotControl(coastForPlanningControl());
+        }
+        else if (!automatic)
         {
             constexpr double ManualStoppedSpeedMps = 0.05;
             constexpr double ManualStoppedAngularRadPerSec = 0.01;
@@ -1277,10 +1444,19 @@ void SpaceState::updateDockingAdvisory()
                     glm::dvec3(transform.forward())
                 )
             );
+        // Assisted with an emergency working axis pushes along that axis,
+        // not along the nose: at rest the route starts on it (after ALIGN
+        // it lies on the course the nose held).
+        const bool assistedEmergencyAtRest =
+            controlLaw == game::navigation::LocalFlightControlLaw::Assisted &&
+            effectivePhysics.assistedWorkingThrustAxisEmergency &&
+            glm::length(startVelocityMps) <= 1.0;
         request.initialForward =
             game::navigation::DockingRouteEntryPolicy::initialCourse(
                 startVelocityMps,
-                hullForwardLocal
+                assistedEmergencyAtRest
+                    ? workingThrustAxisMap(makeAgent())
+                    : hullForwardLocal
             );
         request.initialForwardLeadMeters =
             std::max(1000.0, hull.lengthMeters * 10.0);

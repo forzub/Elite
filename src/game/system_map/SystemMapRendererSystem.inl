@@ -73,6 +73,10 @@ void SystemMapRenderer::drawSystemLabels(
 {
     using world::celestial::BodyType;
 
+    // The spatial frame's texts (face labels, child coordinates, triad).
+    game::system_map::paintHierarchyFrameTexts(
+        *this, vp, m_systemSceneFrame.camera.mvp, m_systemSceneFrame.camera.view, m_systemFrameTexts);
+
     auto& text = TextRenderer::instance();
 
         text.beginFrameForViewport(
@@ -327,516 +331,62 @@ void SystemMapRenderer::drawSystemNavigationGrid(
     float systemScale
 )
 {
-    if (!m_systemView.state().navigationGrid.enabled() || systemScale <= 0.0f)
+    /*
+        The spatial frame of the current parent cube: the SAME painter as the
+        Galaxy Map (HierarchyFramePainter) - parent edges, the grid on its
+        inner floor / far wall, hovered / selected child with projections.
+        Frame texts are drawn with the labels (drawSystemLabels).
+    */
+    m_systemFrameTexts.clear();
+    auto& state = m_systemView.state();
+    state.presentedCubeMarkers.clear();
+    if (!state.navigationGrid.enabled() || systemScale <= 0.0f)
         return;
 
-    const bool currentLevelCellsInteractive =
-        m_systemView.navigationCellsInteractive(vp);
+    static const GalaxyNavigationGridVisualSettings frameVisuals;
+    const auto& camera = m_systemSceneFrame.camera;
+    const double scale = static_cast<double>(systemScale);
 
-    const auto anchor =
-        m_systemView.state().navigationGrid.anchorCell();
+    game::system_map::HierarchyFramePaintInput in;
+    in.box = m_systemView.hierarchyBox();
+    in.faces = &state.hierarchyFaces;
+    in.eyeUnits = camera.eyeAbsolute / scale;
+    in.viewInto = -camera.basis.direction;
+    in.cameraRight = glm::vec3(camera.basis.right);
+    in.cameraUp = glm::vec3(camera.basis.up);
+    in.cameraDirection = glm::vec3(camera.basis.direction);
+    in.cameraEyeRender = glm::vec3(camera.basis.direction * camera.eyeDistance);
+    in.mvp = camera.mvp;
+    in.viewport = vp;
+    in.tanHalfFovY = std::tan(glm::radians(m_systemView.visuals().projectionFieldOfViewDeg) * 0.5f);
+    in.toRender = [&camera, scale](const glm::dvec3& au) { return camera.relativePosition(au * scale); };
+    in.visuals = &frameVisuals;
+    in.levelPrefix = 'S';
 
-    const std::optional<game::navigation::CubicNavigationCell>
-        selectedCell =
-            m_systemView.state().navigationGrid.hasSelectedCell()
-                ? std::optional<game::navigation::CubicNavigationCell>(
-                    m_systemView.state().navigationGrid.selectedCell()
-                  )
-                : std::nullopt;
-
-    std::vector<game::navigation::CubicNavigationCell> cells;
-    cells.reserve(4);
-    cells.push_back(anchor);
-
-    if (selectedCell.has_value() &&
-        selectedCell->level == anchor.level &&
-        selectedCell->index != anchor.index)
+    in.hoverCell = state.hoverVisualCell;
+    in.hoverAlpha = state.hoverVisualAlpha;
+    in.outgoingCell = state.hoverOutgoingCell;
+    in.outgoingAlpha = state.hoverOutgoingAlpha;
+    in.hoverOnLayer = state.hoverTargetValid && state.hoverTarget.onLayer;
+    in.layerAxis = state.hoverLayerAxis;
+    if (state.hoverTargetValid &&
+        (state.hoverTarget.kind == game::system_map::SystemPointerTarget::Kind::Body ||
+         state.hoverTarget.kind == game::system_map::SystemPointerTarget::Kind::Hub))
     {
-        cells.push_back(
-            selectedCell.value()
-        );
+        in.hoverObjectPoint = state.hoverTarget.pointAu;
     }
 
-    if (m_systemView.state().hoverVisualCell.has_value() &&
-        m_systemView.state().hoverVisualAlpha > 0.001f)
+    if (state.navigationGrid.hasSelectedCell())
+        in.selectedCell = state.navigationGrid.selectedCell();
+    in.objectSelection = !state.selectedBodyId.empty() || !state.selectedHubId.empty();
+    if (!state.selectedBodyId.empty())
     {
-        const auto& hovered =
-            m_systemView.state().hoverVisualCell.value();
-
-        if (hovered.level != anchor.level ||
-            hovered.index != anchor.index)
-        {
-            cells.push_back(hovered);
-        }
+        for (const auto& body : m_systemPresentation.bodies)
+            if (body.id == state.selectedBodyId)
+                in.selectedObjectPoint = body.positionAu;
     }
 
-    if (m_systemView.state().hoverOutgoingCell.has_value() &&
-        m_systemView.state().hoverOutgoingAlpha > 0.001f)
-    {
-        const auto& outgoing =
-            m_systemView.state().hoverOutgoingCell.value();
-
-        const bool alreadyPresent =
-            std::any_of(
-                cells.begin(),
-                cells.end(),
-                [&](const auto& existing)
-                {
-                    return
-                        existing.level == outgoing.level &&
-                        existing.index == outgoing.index;
-                }
-            );
-
-        if (!alreadyPresent)
-            cells.push_back(outgoing);
-    }
-
-    const auto& camera =
-        m_systemSceneFrame.camera;
-
-    const glm::vec3 cameraRight =
-        glm::vec3(camera.basis.right);
-
-    const glm::vec3 cameraUp =
-        glm::vec3(camera.basis.up);
-
-    auto toRender =
-        [&](const glm::dvec3& positionAu) -> glm::vec3
-        {
-            const glm::dvec3 absoluteMap =
-                positionAu * static_cast<double>(systemScale);
-
-            return camera.relativePosition(absoluteMap);
-        };
-
-    const glm::vec3 cameraDirection =
-        glm::vec3(camera.basis.direction);
-
-    const glm::vec3 cameraPosition =
-        glm::vec3(
-            camera.basis.direction *
-            camera.eyeDistance
-        );
-
-    const double worldUnitsPerPixel =
-        camera.worldUnitsPerPixel;
-
-    const float gridFullSizePx =
-        static_cast<float>(
-            std::max(
-                1,
-                std::min(vp.width, vp.height)
-            )
-        ) * 0.60f;
-
-    const float gridHiddenSizePx =
-        gridFullSizePx * (2.0f / 3.0f);
-
-    const auto cubeGridVisibility =
-        [&](const glm::vec3& halfAxisX,
-            const glm::vec3& halfAxisY,
-            const glm::vec3& halfAxisZ) -> float
-        {
-            const float cubeEdgeWorld =
-                2.0f *
-                std::max({
-                    glm::length(halfAxisX),
-                    glm::length(halfAxisY),
-                    glm::length(halfAxisZ)
-                });
-
-            const float cubeSizePx =
-                cubeEdgeWorld *
-                1.35f /
-                static_cast<float>(
-                    std::max(worldUnitsPerPixel, 0.000000001)
-                );
-
-            if (cubeSizePx <= gridHiddenSizePx)
-                return 0.0f;
-
-            if (cubeSizePx >= gridFullSizePx)
-                return 1.0f;
-
-            float visibility =
-                (cubeSizePx - gridHiddenSizePx) /
-                (gridFullSizePx - gridHiddenSizePx);
-
-            visibility =
-                std::clamp(visibility, 0.0f, 1.0f);
-
-            return
-                visibility *
-                visibility *
-                (3.0f - 2.0f * visibility);
-        };
-
-    const int faceDivisions =
-        m_systemView.state().navigationGrid.subdivision();
-
-    const auto addCubeFarFaceGrids =
-        [&](const glm::vec3& cubeCenter,
-            const glm::vec3& halfAxisX,
-            const glm::vec3& halfAxisY,
-            const glm::vec3& halfAxisZ,
-            glm::vec4 gridColor)
-        {
-            const float visibility =
-                cubeGridVisibility(
-                    halfAxisX,
-                    halfAxisY,
-                    halfAxisZ
-                );
-
-            if (visibility <= 0.001f)
-                return;
-
-            gridColor.a *= visibility;
-
-            const auto addFarFace =
-                [&](const glm::vec3& faceHalfAxis,
-                    const glm::vec3& gridHalfAxisU,
-                    const glm::vec3& gridHalfAxisV)
-                {
-                    const glm::vec3 toCamera =
-                        cameraPosition -
-                        cubeCenter;
-
-                    const float farSide =
-                        glm::dot(toCamera, faceHalfAxis) >= 0.0f
-                            ? -1.0f
-                            : 1.0f;
-
-                    const glm::vec3 faceCenter =
-                        cubeCenter +
-                        faceHalfAxis * farSide;
-
-                    for (int division = 1;
-                         division < faceDivisions;
-                         ++division)
-                    {
-                        const float t =
-                            -1.0f +
-                            2.0f *
-                                static_cast<float>(division) /
-                                static_cast<float>(faceDivisions);
-
-                        const glm::vec3 alongU =
-                            gridHalfAxisU * t;
-
-                        const glm::vec3 alongV =
-                            gridHalfAxisV * t;
-
-                        addLine(
-                            faceCenter + alongU - gridHalfAxisV,
-                            faceCenter + alongU + gridHalfAxisV,
-                            gridColor
-                        );
-
-                        addLine(
-                            faceCenter + alongV - gridHalfAxisU,
-                            faceCenter + alongV + gridHalfAxisU,
-                            gridColor
-                        );
-                    }
-                };
-
-            addFarFace(halfAxisX, halfAxisY, halfAxisZ);
-            addFarFace(halfAxisY, halfAxisX, halfAxisZ);
-            addFarFace(halfAxisZ, halfAxisX, halfAxisY);
-        };
-
-    /*
-        The immediate parent is rendered separately from the current level.
-        Anchor and hover can belong to different parents, so keep a unique
-        list but draw the dense face grid only on the parent nearest the
-        camera target.
-    */
-    if (m_systemView.state().navigationGrid.level() >
-        m_systemView.state().navigationGrid.definition().minimumLevel)
-    {
-        std::vector<game::navigation::CubicNavigationCell>
-            parentCells;
-
-        parentCells.reserve(cells.size());
-
-        const double subdivision =
-            static_cast<double>(
-                m_systemView.state().navigationGrid.subdivision()
-            );
-
-        for (const auto& currentCell : cells)
-        {
-            game::navigation::CubicGridIndex parentIndex;
-
-            parentIndex.x =
-                static_cast<std::int64_t>(
-                    std::llround(
-                        static_cast<double>(currentCell.index.x) /
-                        subdivision
-                    )
-                );
-
-            parentIndex.y =
-                static_cast<std::int64_t>(
-                    std::llround(
-                        static_cast<double>(currentCell.index.y) /
-                        subdivision
-                    )
-                );
-
-            parentIndex.z =
-                static_cast<std::int64_t>(
-                    std::llround(
-                        static_cast<double>(currentCell.index.z) /
-                        subdivision
-                    )
-                );
-
-            const auto parentCell =
-                m_systemView.state().navigationGrid.cell(
-                    parentIndex,
-                    currentCell.level - 1
-                );
-
-            const bool alreadyPresent =
-                std::any_of(
-                    parentCells.begin(),
-                    parentCells.end(),
-                    [&](const auto& existing)
-                    {
-                        return
-                            existing.level == parentCell.level &&
-                            existing.index == parentCell.index;
-                    }
-                );
-
-            if (!alreadyPresent)
-                parentCells.push_back(parentCell);
-        }
-
-        std::size_t focusedParentIndex = 0;
-        double focusedParentScore =
-            std::numeric_limits<double>::max();
-
-        for (std::size_t i = 0;
-             i < parentCells.size();
-             ++i)
-        {
-            const glm::dvec3 parentAbsoluteMap =
-                parentCells[i].center *
-                static_cast<double>(systemScale);
-
-            const glm::dvec3 delta =
-                parentAbsoluteMap -
-                camera.targetAbsolute;
-
-            const double rightDistance =
-                glm::dot(
-                    delta,
-                    glm::dvec3(cameraRight)
-                );
-
-            const double upDistance =
-                glm::dot(
-                    delta,
-                    glm::dvec3(cameraUp)
-                );
-
-            const double score =
-                rightDistance * rightDistance +
-                upDistance * upDistance;
-
-            if (score < focusedParentScore)
-            {
-                focusedParentScore = score;
-                focusedParentIndex = i;
-            }
-        }
-
-        for (std::size_t i = 0;
-             i < parentCells.size();
-             ++i)
-        {
-            const auto& parentCell =
-                parentCells[i];
-
-            const glm::vec3 center =
-                toRender(parentCell.center);
-
-            const float halfSize =
-                static_cast<float>(
-                    parentCell.size * 0.5
-                ) * systemScale;
-
-            const glm::vec3 halfAxisX(halfSize, 0.0f, 0.0f);
-            const glm::vec3 halfAxisY(0.0f, halfSize, 0.0f);
-            const glm::vec3 halfAxisZ(0.0f, 0.0f, halfSize);
-
-            addNavigationCubeEdges(
-                center,
-                halfAxisX,
-                halfAxisY,
-                halfAxisZ,
-                m_systemView.visuals().navigationGrid.parentEdgeColor
-            );
-
-            if (i == focusedParentIndex)
-            {
-                addCubeFarFaceGrids(
-                    center,
-                    halfAxisX,
-                    halfAxisY,
-                    halfAxisZ,
-                    m_systemView.visuals().navigationGrid.parentFaceGridColor
-                );
-            }
-        }
-    }
-
-    for (const auto& cell : cells)
-    {
-        if (!currentLevelCellsInteractive)
-            continue;
-
-        const glm::vec3 center = toRender(cell.center);
-        const float halfSize =
-            static_cast<float>(cell.size * 0.5) * systemScale;
-
-        const glm::vec3 halfAxisX(halfSize, 0.0f, 0.0f);
-        const glm::vec3 halfAxisY(0.0f, halfSize, 0.0f);
-        const glm::vec3 halfAxisZ(0.0f, 0.0f, halfSize);
-
-
-
-
-        const bool rootBoundary =
-            cell.level ==
-                m_systemView.state().navigationGrid
-                    .definition()
-                    .minimumLevel;
-
-        const bool selected =
-            !rootBoundary &&
-            selectedCell.has_value() &&
-            cell.level == selectedCell->level &&
-            cell.index == selectedCell->index;
-
-
-
-
-
-
-
-        float hoverVisualAlpha = 0.0f;
-
-        if (m_systemView.state().hoverVisualCell.has_value() &&
-            cell.level == m_systemView.state().hoverVisualCell->level &&
-            cell.index == m_systemView.state().hoverVisualCell->index)
-        {
-            hoverVisualAlpha =
-                std::max(
-                    hoverVisualAlpha,
-                    m_systemView.state().hoverVisualAlpha
-                );
-        }
-
-        if (m_systemView.state().hoverOutgoingCell.has_value() &&
-            cell.level == m_systemView.state().hoverOutgoingCell->level &&
-            cell.index == m_systemView.state().hoverOutgoingCell->index)
-        {
-            hoverVisualAlpha =
-                std::max(
-                    hoverVisualAlpha,
-                    m_systemView.state().hoverOutgoingAlpha
-                );
-        }
-
-        const bool hovered =
-            hoverVisualAlpha > 0.001f;
-
-        glm::vec4 edgeColor =
-            selected
-                ? m_systemView.visuals().navigationGrid.selectedEdgeColor
-                : m_systemView.visuals().navigationGrid.currentEdgeColor;
-
-        if (hovered)
-        {
-            edgeColor =
-                m_systemView.visuals().navigationGrid.hoveredEdgeColor;
-
-            edgeColor.a *=
-                hoverVisualAlpha;
-        }
-
-        glm::vec4 currentLevelGridColor =
-            edgeColor;
-
-        currentLevelGridColor.a =
-            std::clamp(
-                edgeColor.a *
-                    m_systemView.visuals().navigationGrid.faceGridAlphaScale,
-                m_systemView.visuals().navigationGrid.faceGridMinimumAlpha *
-                    (hovered ? hoverVisualAlpha : 1.0f),
-                m_systemView.visuals().navigationGrid.faceGridMaximumAlpha *
-                    (hovered ? hoverVisualAlpha : 1.0f)
-            );
-
-        addCubeFarFaceGrids(
-            center,
-            halfAxisX,
-            halfAxisY,
-            halfAxisZ,
-            currentLevelGridColor
-        );
-
-        addNavigationCubeEdges(
-            center,
-            halfAxisX,
-            halfAxisY,
-            halfAxisZ,
-            edgeColor
-        );
-
-
-
-
-
-        const float markerWorldPerPixel =
-            static_cast<float>(worldUnitsPerPixel);
-
-        const float markerSize =
-            markerWorldPerPixel *
-            (selected
-                ? m_systemView.visuals().navigationGrid.selectedMarkerRadiusPx
-                : m_systemView.visuals().navigationGrid.currentMarkerRadiusPx);
-
-
-
-
-
-
-
-
-
-        glm::vec4 markerColor = selected
-            ? m_systemView.visuals().navigationGrid.selectedMarkerColor
-            : m_systemView.visuals().navigationGrid.currentMarkerColor;
-
-        if (hovered && !selected)
-            markerColor.a *= hoverVisualAlpha;
-
-        const glm::vec3 top = center + cameraUp * markerSize;
-        const glm::vec3 right = center + cameraRight * markerSize;
-        const glm::vec3 bottom = center - cameraUp * markerSize;
-        const glm::vec3 left = center - cameraRight * markerSize;
-
-        addLine(top, right, markerColor);
-        addLine(right, bottom, markerColor);
-        addLine(bottom, left, markerColor);
-        addLine(left, top, markerColor);
-    }
+    game::system_map::paintHierarchyFrame(*this, in, state.presentedCubeMarkers, m_systemFrameTexts);
 }
 
 

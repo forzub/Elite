@@ -6,6 +6,7 @@
 
 #include <glm/glm.hpp>
 
+#include "src/game/system_map/HierarchyFramePainter.h"
 #include "src/render/types/Viewport.h"
 
 namespace world::celestial
@@ -19,18 +20,6 @@ namespace game::system_map
     class GalaxyMapView;
     struct GalaxyMapCameraSnapshot;
     class GalaxyMapRenderContext;
-
-    // A text of the spatial frame: world anchored (render units) or
-    // screen anchored (map viewport pixels).
-    struct GalaxyFrameText
-    {
-        glm::vec3 position {0.0f};
-        std::string text;
-        glm::vec4 color {1.0f};
-        int px = 10;
-        bool axisName = false;
-        bool screenSpace = false;
-    };
 
     /*
         Galaxy draw-pass orchestrator.

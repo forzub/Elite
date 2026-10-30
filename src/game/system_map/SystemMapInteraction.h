@@ -11,6 +11,7 @@
 namespace game::system_map
 {
     class SystemMapView;
+    struct SystemPointerTarget;
 
     struct SystemMapHubSelection
     {
@@ -47,7 +48,10 @@ namespace game::system_map
     struct SystemMapInputResult
     {
         std::optional<int> systemLevelChanged;
+        // Double click on a body: its info card opens.
         std::optional<std::string> clickedBodyId;
+        // Single click on a body: selected (with its cube), no card.
+        std::optional<std::string> selectedBodyId;
         std::optional<navigation::CubicNavigationCell> clickedNavigationCell;
     };
 
@@ -138,19 +142,28 @@ namespace game::system_map
         ) const;
 
     private:
-        void updateNavigationHoverFromCursor(
+        void applyClick(
             SystemMapView& view,
+            const SystemMapInteractionContext& context,
             const Viewport& viewport,
-            double localMouseX,
-            double localMouseY
+            const SystemPointerTarget& target,
+            double x,
+            double y,
+            double nowSeconds,
+            SystemMapInputResult& result
         ) const;
 
-        bool pickNavigationCell(
-            const SystemMapView& view,
-            const Viewport& viewport,
-            double localMouseX,
-            double localMouseY,
-            navigation::CubicNavigationCell& outCell
+        void updatePointerHover(
+            SystemMapView& view,
+            const SystemMapInteractionContext& context,
+            const SystemMapInputFrame& frame
+        ) const;
+
+        void applyWheelLevels(
+            SystemMapView& view,
+            const SystemMapInputFrame& frame,
+            bool zoomIn,
+            SystemMapInputResult& result
         ) const;
 
         void focusBody(

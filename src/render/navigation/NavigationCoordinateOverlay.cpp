@@ -136,7 +136,8 @@ NavigationCoordinateOverlay::trackButtonBounds(
 
 NavigationOverlayButtonBounds
 NavigationCoordinateOverlay::upButtonBounds(
-    const Viewport& viewport
+    const Viewport& viewport,
+    bool besideTrack
 )
 {
     const NavigationOverlayVisualSettings visuals;
@@ -150,7 +151,7 @@ NavigationCoordinateOverlay::upButtonBounds(
         );
 
     const NavigationOverlayButtonBounds levelBounds =
-        levelZeroButtonBounds(viewport);
+        besideTrack ? trackButtonBounds(viewport) : levelZeroButtonBounds(viewport);
 
     const float width =
         visuals.upButtonWidthPx * screenScale;
@@ -215,7 +216,8 @@ void NavigationCoordinateOverlay::drawGalaxyNavigation(
     const std::vector<std::string>& crumbs,
     int hoveredCrumb,
     bool upHovered,
-    bool upEnabled
+    bool upEnabled,
+    bool upBesideTrack
 )
 {
     const auto bounds = breadcrumbBounds(viewport, crumbs);
@@ -257,7 +259,7 @@ void NavigationCoordinateOverlay::drawGalaxyNavigation(
     }
 
     // Up: one level up (to the parent of the current parent).
-    const NavigationOverlayButtonBounds up = upButtonBounds(viewport);
+    const NavigationOverlayButtonBounds up = upButtonBounds(viewport, upBesideTrack);
     const glm::vec4 upColor =
         !upEnabled
             ? glm::vec4(0.30f, 0.36f, 0.40f, 0.34f)

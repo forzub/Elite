@@ -6,6 +6,7 @@
 #include <cmath>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -15,6 +16,9 @@
 #include "src/game/navigation/CubicNavigationInteraction.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
 #include "src/game/system_map/MapCameraSnapshot.h"
+#include "src/game/system_map/GalaxyHierarchy.h"
+#include "src/game/system_map/GalaxyMapVisualSettings.h"
+#include "src/game/system_map/GalaxyPointerResolver.h"
 #include "src/game/system_map/MapCameraState.h"
 #include "src/game/system_map/SystemMapVisualSettings.h"
 
@@ -64,7 +68,6 @@ namespace game::system_map
 
         float navigationCellInteractiveViewportFraction = 0.075f;
         float navigationCellInteractiveMinPx = 56.0f;
-        float navigationCellPickRadiusPx = 18.0f;
 
         float navigationHoverFadeInSeconds = 0.18f;
         float navigationHoverFadeOutSeconds = 0.14f;
@@ -95,6 +98,24 @@ namespace game::system_map
 
         int sparsePivotMaxVisibleBodies = 2;
         float sparsePivotViewportPaddingPx = 96.0f;
+    };
+
+    /*
+        One semantic pointer target of the System map (the same contract as
+        the Galaxy resolver): a hub, a body, a child cube of the current
+        parent (selected-cube marker or the hover-layer cube) or nothing.
+        pointAu: the object / layer point in the system grid (AU).
+    */
+    struct SystemPointerTarget
+    {
+        enum class Kind { Empty, Hub, Body, Cube };
+        Kind kind = Kind::Empty;
+        std::string bodyId;
+        std::string hubId;
+        std::string hubParentBodyId;
+        std::optional<navigation::CubicNavigationCell> cell;
+        glm::dvec3 pointAu {0.0};
+        bool onLayer = false;
     };
 
     /*
@@ -155,6 +176,29 @@ namespace game::system_map
         std::string trackedBodyId;
         glm::dvec3 trackedBodyLastAbsolute {0.0, 0.0, 0.0};
         bool trackedBodyPositionValid = false;
+
+        /*
+            Spatial frame - the SAME model as the Galaxy Map
+            (GalaxyHierarchy.h): the user is inside one current parent cube
+            (level 0 = the S0 root, the top); its children are the working
+            cubes; double click / the wheel enter a child, up / the wheel
+            leave; nothing outside the parent is drawn or a target.
+        */
+        GalaxyHierarchyParent hierarchyParent {0, {}};
+        int hierarchyRevision = 0;
+        GalaxyHierarchyFaces hierarchyFaces;
+        int hoverLayerAxis = -1;
+        GalaxyPointerGesture pointerGesture;
+        SystemPointerTarget pressTarget;
+        SystemPointerTarget hoverTarget;
+        bool hoverTargetValid = false;
+        double hoverMouseX = -1.0e9;
+        double hoverMouseY = -1.0e9;
+        SystemCameraState hoverCamera;
+        int hoverHierarchyRevision = -1;
+        game::presentation::PointerClickTracker<std::string> bodyClickTracker;
+        // Markers the last frame presented (selected cube only).
+        std::vector<GalaxyNavigationMarker> presentedCubeMarkers;
     };
 
     class SystemMapView
@@ -271,18 +315,13 @@ namespace game::system_map
             const Viewport& viewport
         ) const;
 
-        bool navigationCellsInteractive(
-            const Viewport& viewport
-        ) const;
 
         void updateNavigationHoverPresentation(
             const Viewport& viewport,
             double nowSeconds
         );
 
-        glm::dvec3 navigationCursorAu() const;
 
-        void syncNavigationAnchorToCursor();
 
         std::optional<navigation::CubicNavigationCell>
         resolvedTerminalSelection() const;
@@ -291,13 +330,77 @@ namespace game::system_map
             const Viewport& viewport
         ) const;
 
-        glm::dvec3 navigationBoundaryCenterWorld() const;
 
         void constrainCameraToNavigationBoundary(
             const Viewport& viewport
         );
 
+        // ---- spatial frame (current parent cube), AU -------------------
+        static constexpr float ParentFillRatio = 0.98f;
+        static constexpr float ParentHandOverUpRatio = 0.94f;
+
+        GalaxyHierarchyBox hierarchyBox() const;
+        std::optional<navigation::CubicNavigationCell> hierarchyChildAt(
+            const glm::dvec3& positionAu
+        ) const;
+        bool hierarchyContains(const glm::dvec3& positionAu) const;
+
+        // Projected size of a cube (AU) for a camera target (world) and
+        // half-height: extent ratio, or with fitInside the largest |NDC|.
+        float cubeScreenRatioAt(
+            const glm::dvec3& centerAu,
+            double edgeAu,
+            const glm::dvec3& targetWorld,
+            float halfHeight,
+            const Viewport& viewport,
+            bool fitInside = false
+        ) const;
+        float cubeScreenRatio(
+            const glm::dvec3& centerAu,
+            double edgeAu,
+            const Viewport& viewport
+        ) const;
+        float fillHalfHeightAt(
+            const glm::dvec3& centerAu,
+            double edgeAu,
+            const glm::dvec3& targetWorld,
+            const Viewport& viewport,
+            float fill
+        ) const;
+        // The camera half-height at which the parent fills the screen.
+        float hierarchyFitHalfHeight(const Viewport& viewport) const;
+        void hierarchyHalfHeightLimits(
+            const Viewport& viewport,
+            float& minimumHalfHeight,
+            float& maximumHalfHeight
+        ) const;
+
+        void frameHierarchyParent(
+            const Viewport& viewport,
+            double nowSeconds,
+            bool animate
+        );
+        bool enterHierarchyCell(
+            const navigation::CubicNavigationCell& cell,
+            const Viewport& viewport,
+            double nowSeconds,
+            bool frameCamera = true
+        );
+        bool ascendHierarchy(
+            const Viewport& viewport,
+            double nowSeconds
+        );
+        bool jumpToHierarchyLevel(
+            int level,
+            const Viewport& viewport,
+            double nowSeconds,
+            bool frameCamera = true
+        );
+        void resetHierarchyToRoot(const Viewport& viewport);
+
     private:
+        void setHierarchyParent(const GalaxyHierarchyParent& parent);
+
         static float wrapAngleRad(
             float angle
         );

@@ -1154,6 +1154,19 @@ void SpaceState::update(float dt)
             opened = true;
             context().app->requestNavigationView(NavigationPresentationView::Galaxy);
         }
+
+        // DEV: ELITE_DEV_SYSTEM_MAP_AT=<s> opens the System Map once.
+        static const double openSystemAtSeconds = [] {
+            const char* v = std::getenv("ELITE_DEV_SYSTEM_MAP_AT");
+            return v && *v ? std::atof(v) : -1.0;
+        }();
+        static bool systemOpened = false;
+        if (openSystemAtSeconds >= 0.0 && !systemOpened && context().app && m_client &&
+            startupElapsedMs(m_startupTotalBegin) >= openSystemAtSeconds * 1000.0)
+        {
+            systemOpened = true;
+            context().app->requestNavigationView(NavigationPresentationView::System);
+        }
     }
 
 

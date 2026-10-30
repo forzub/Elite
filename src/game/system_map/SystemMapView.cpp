@@ -1,4 +1,5 @@
 #include "src/game/system_map/SystemMapView.h"
+#include "src/game/system_map/HierarchyFramePainter.h"
 
 #include <algorithm>
 #include <cmath>
@@ -57,6 +58,17 @@ void SystemMapView::reset()
 
     m_state.orbitPivotAbsolute = glm::dvec3(0.0);
     m_state.orbitPivotActive = false;
+
+    m_state.hierarchyParent = GalaxyHierarchyParent {0, {}};
+    ++m_state.hierarchyRevision;
+    m_state.hierarchyFaces = GalaxyHierarchyFaces {};
+    m_state.hoverLayerAxis = -1;
+    m_state.pointerGesture.reset();
+    m_state.pressTarget = SystemPointerTarget {};
+    m_state.hoverTarget = SystemPointerTarget {};
+    m_state.hoverTargetValid = false;
+    m_state.bodyClickTracker.reset();
+    m_state.presentedCubeMarkers.clear();
 }
 
 void SystemMapView::resetNavigationToLevelZero(
@@ -106,6 +118,11 @@ void SystemMapView::resetNavigationToLevelZero(
     m_state.hoverVisualLastTimeSeconds = 0.0;
     m_state.cubeClickTracker.reset();
     m_state.orbitPivotActive = false;
+
+    // LEVEL 0: the S0 root as the parent, on the whole screen.
+    resetHierarchyToRoot(viewport);
+    m_state.navigationGrid.selectCell(m_state.navigationGrid.cell({}, 0));
+    m_state.navigationCellExplicitlySelected = false;
 }
 
 void SystemMapView::suppressCameraGesture(
@@ -774,248 +791,23 @@ float SystemMapView::navigationAnchorDiameterPx(
             );
 }
 
-bool SystemMapView::navigationCellsInteractive(
-    const Viewport& viewport
-) const
-{
-    if (!m_state.navigationGrid.enabled() ||
-        m_state.lastScale <= 0.0f ||
-        viewport.width <= 0 ||
-        viewport.height <= 0)
-    {
-        return false;
-    }
-
-    const float viewportReferencePx =
-        static_cast<float>(
-            std::max(
-                1,
-                std::min(
-                    viewport.width,
-                    viewport.height
-                )
-            )
-        );
-
-    const float minimumInteractiveDiameterPx =
-        std::max(
-            m_controls.navigationCellInteractiveMinPx,
-            viewportReferencePx *
-                m_controls
-                    .navigationCellInteractiveViewportFraction
-        );
-
-    return
-        navigationAnchorDiameterPx(viewport) >=
-            minimumInteractiveDiameterPx;
-}
-
 void SystemMapView::updateNavigationHoverPresentation(
     const Viewport& viewport,
     double nowSeconds
 )
 {
-    const bool currentLevelCellsInteractive =
-        navigationCellsInteractive(viewport);
-
-    double hoverDeltaSeconds = 0.0;
-
-    if (m_state.hoverVisualLastTimeSeconds > 0.0)
-    {
-        hoverDeltaSeconds =
-            std::clamp(
-                nowSeconds -
-                    m_state.hoverVisualLastTimeSeconds,
-                0.0,
-                0.10
-            );
-    }
-
-    m_state.hoverVisualLastTimeSeconds = nowSeconds;
-
-    const auto anchor =
-        m_state.navigationGrid.anchorCell();
-
-    const std::optional<navigation::CubicNavigationCell>
-        selectedCell =
-            m_state.navigationGrid.hasSelectedCell()
-                ? std::optional<navigation::CubicNavigationCell>(
-                    m_state.navigationGrid.selectedCell()
-                  )
-                : std::nullopt;
-
-    std::optional<navigation::CubicNavigationCell>
-        hoverTargetCell;
-
-    if (currentLevelCellsInteractive &&
-        m_state.navigationGrid.hasHoveredCell())
-    {
-        const auto& logicalHovered =
-            m_state.navigationGrid.hoveredCell();
-
-        const bool sameAsAnchor =
-            logicalHovered.level == anchor.level &&
-            logicalHovered.index == anchor.index;
-
-        const bool sameAsSelected =
-            selectedCell.has_value() &&
-            logicalHovered.level == selectedCell->level &&
-            logicalHovered.index == selectedCell->index;
-
-        if (!sameAsAnchor && !sameAsSelected)
-            hoverTargetCell = logicalHovered;
-    }
-
-    const bool hoverTargetChanged =
-        hoverTargetCell.has_value() &&
-        (
-            !m_state.hoverVisualCell.has_value() ||
-            hoverTargetCell->level !=
-                m_state.hoverVisualCell->level ||
-            hoverTargetCell->index !=
-                m_state.hoverVisualCell->index
-        );
-
-    if (hoverTargetChanged)
-    {
-        if (m_state.hoverVisualCell.has_value() &&
-            m_state.hoverVisualAlpha > 0.001f)
-        {
-            m_state.hoverOutgoingCell =
-                m_state.hoverVisualCell;
-            m_state.hoverOutgoingAlpha =
-                m_state.hoverVisualAlpha;
-        }
-
-        m_state.hoverVisualCell = hoverTargetCell;
-        m_state.hoverVisualAlpha = 0.0f;
-    }
-
-    if (hoverTargetCell.has_value())
-    {
-        const float fadeInSeconds =
-            std::max(
-                0.001f,
-                m_controls.navigationHoverFadeInSeconds
-            );
-
-        m_state.hoverVisualAlpha =
-            std::min(
-                1.0f,
-                m_state.hoverVisualAlpha +
-                    static_cast<float>(hoverDeltaSeconds) /
-                        fadeInSeconds
-            );
-    }
-    else
-    {
-        const float fadeOutSeconds =
-            std::max(
-                0.001f,
-                m_controls.navigationHoverFadeOutSeconds
-            );
-
-        m_state.hoverVisualAlpha =
-            std::max(
-                0.0f,
-                m_state.hoverVisualAlpha -
-                    static_cast<float>(hoverDeltaSeconds) /
-                        fadeOutSeconds
-            );
-
-        if (m_state.hoverVisualAlpha <= 0.001f)
-        {
-            m_state.hoverVisualAlpha = 0.0f;
-            m_state.hoverVisualCell.reset();
-        }
-    }
-
-    if (m_state.hoverOutgoingCell.has_value())
-    {
-        const float fadeOutSeconds =
-            std::max(
-                0.001f,
-                m_controls.navigationHoverFadeOutSeconds
-            );
-
-        m_state.hoverOutgoingAlpha =
-            std::max(
-                0.0f,
-                m_state.hoverOutgoingAlpha -
-                    static_cast<float>(hoverDeltaSeconds) /
-                        fadeOutSeconds
-            );
-
-        if (m_state.hoverOutgoingAlpha <= 0.001f)
-        {
-            m_state.hoverOutgoingAlpha = 0.0f;
-            m_state.hoverOutgoingCell.reset();
-        }
-    }
-}
-
-glm::dvec3 SystemMapView::navigationCursorAu() const
-{
-    if (m_state.lastScale <= 0.0f)
-        return glm::dvec3(0.0);
-
-    return
-        m_state.camera.target /
-        static_cast<double>(m_state.lastScale);
-}
-
-void SystemMapView::syncNavigationAnchorToCursor()
-{
-    if (!m_state.navigationGrid.enabled() ||
-        m_state.lastScale <= 0.0f)
-    {
-        return;
-    }
-
-    const int minimumLevel =
-        m_state.navigationGrid
-            .definition()
-            .minimumLevel;
-
-    const glm::dvec3 cursorAu =
-        navigationCursorAu();
-
-    const navigation::CubicGridIndex
-        systemRootIndex {};
-
-    if (m_state.navigationGrid.nearestIndexForPosition(
-            cursorAu,
-            minimumLevel
-        ) != systemRootIndex)
-    {
-        return;
-    }
-
-    const auto candidateIndex =
-        m_state.navigationGrid.nearestIndexForPosition(
-            cursorAu,
-            m_state.navigationGrid.level()
-        );
-
-    if (candidateIndex ==
-        m_state.navigationGrid.anchorIndex())
-    {
-        return;
-    }
-
-    m_state.navigationGrid.setAnchorIndex(
-        candidateIndex
+    // Visual hover lifetime of the logical (resolver) hover: fade in / out.
+    (void)viewport;
+    updateHierarchyHoverFade(
+        {&m_state.hoverVisualCell, &m_state.hoverVisualAlpha, &m_state.hoverOutgoingCell,
+         &m_state.hoverOutgoingAlpha, &m_state.hoverVisualLastTimeSeconds},
+        m_state.navigationGrid.hasHoveredCell()
+            ? std::optional<navigation::CubicNavigationCell>(m_state.navigationGrid.hoveredCell())
+            : std::nullopt,
+        nowSeconds,
+        m_controls.navigationHoverFadeInSeconds,
+        m_controls.navigationHoverFadeOutSeconds
     );
-
-    m_state.navigationGrid.clearHoveredCell();
-
-    m_state.hoverVisualCell.reset();
-    m_state.hoverVisualAlpha = 0.0f;
-
-    m_state.hoverOutgoingCell.reset();
-    m_state.hoverOutgoingAlpha = 0.0f;
-
-    m_state.cubeClickTracker.reset();
 }
 
 std::optional<navigation::CubicNavigationCell>
@@ -1125,33 +917,6 @@ float SystemMapView::navigationMaximumCameraDistance(
         minimumCameraHalfHeight,
         maximumCameraHalfHeight
     );
-}
-
-glm::dvec3 SystemMapView::navigationBoundaryCenterWorld() const
-{
-    if (!m_state.navigationGrid.enabled() ||
-        m_state.lastScale <= 0.0f)
-    {
-        return m_state.camera.target;
-    }
-
-    const int boundaryLevel =
-        m_state.navigationGrid
-            .definition()
-            .minimumLevel;
-
-    const navigation::CubicGridIndex
-        boundaryIndex {};
-
-    const auto boundaryCell =
-        m_state.navigationGrid.cell(
-            boundaryIndex,
-            boundaryLevel
-        );
-
-    return
-        boundaryCell.center *
-        static_cast<double>(m_state.lastScale);
 }
 
 void SystemMapView::constrainCameraToNavigationBoundary(
@@ -1433,5 +1198,272 @@ float SystemMapView::farPlane(
             2.0f;
 }
 
+
+} // namespace game::system_map
+
+namespace game::system_map
+{
+
+// ============================================================================
+// Spatial frame: the current parent cube (the same model as the Galaxy Map)
+// ============================================================================
+
+GalaxyHierarchyBox SystemMapView::hierarchyBox() const
+{
+    return cubicHierarchyBox(
+        m_state.navigationGrid,
+        m_state.hierarchyParent
+    );
+}
+
+std::optional<navigation::CubicNavigationCell> SystemMapView::hierarchyChildAt(
+    const glm::dvec3& positionAu
+) const
+{
+    return galaxyHierarchyChildAt(
+        m_state.navigationGrid,
+        hierarchyBox(),
+        positionAu
+    );
+}
+
+bool SystemMapView::hierarchyContains(
+    const glm::dvec3& positionAu
+) const
+{
+    return galaxyHierarchyContains(hierarchyBox(), positionAu);
+}
+
+float SystemMapView::cubeScreenRatioAt(
+    const glm::dvec3& centerAu,
+    double edgeAu,
+    const glm::dvec3& targetWorld,
+    float halfHeight,
+    const Viewport& viewport,
+    bool fitInside
+) const
+{
+    const OrbitCameraBasis basis =
+        orbitCameraBasis(m_state.camera.yaw, m_state.camera.pitch);
+    const float h = std::clamp(halfHeight, minimumCameraHalfHeight, maximumCameraHalfHeight);
+    const double eyeDistance =
+        static_cast<double>(perspectiveEyeDistance(h, m_visuals.projectionFieldOfViewDeg));
+    const glm::mat4 view =
+        glm::lookAt(glm::vec3(basis.direction * eyeDistance), glm::vec3(0.0f), glm::vec3(basis.up));
+    const float aspect =
+        viewport.height > 0 ? static_cast<float>(viewport.width) / static_cast<float>(viewport.height) : 1.0f;
+    const glm::mat4 projection =
+        glm::perspective(glm::radians(m_visuals.projectionFieldOfViewDeg), aspect, nearPlane(h),
+                         farPlane(h, m_visuals.projectionFieldOfViewDeg));
+    const glm::mat4 mvp = projection * view;
+    const double scale = static_cast<double>(m_state.lastScale);
+
+    float minX = 1.0e30f, minY = 1.0e30f, maxX = -1.0e30f, maxY = -1.0e30f;
+    float largest = 0.0f;
+    const double half = edgeAu * 0.5;
+    for (int i = 0; i < 8; ++i)
+    {
+        const glm::dvec3 corner =
+            centerAu + glm::dvec3((i & 1) ? half : -half, (i & 2) ? half : -half, (i & 4) ? half : -half);
+        const glm::vec4 clip = mvp * glm::vec4(glm::vec3(corner * scale - targetWorld), 1.0f);
+        if (clip.w <= 1.0e-9f)
+            return 1.0e9f;
+        minX = std::min(minX, clip.x / clip.w);
+        maxX = std::max(maxX, clip.x / clip.w);
+        minY = std::min(minY, clip.y / clip.w);
+        maxY = std::max(maxY, clip.y / clip.w);
+        largest = std::max({largest, std::abs(clip.x / clip.w), std::abs(clip.y / clip.w)});
+    }
+    if (fitInside)
+        return largest;
+    return std::max((maxX - minX) * 0.5f, (maxY - minY) * 0.5f);
+}
+
+float SystemMapView::cubeScreenRatio(
+    const glm::dvec3& centerAu,
+    double edgeAu,
+    const Viewport& viewport
+) const
+{
+    return cubeScreenRatioAt(centerAu, edgeAu, m_state.camera.target, m_state.camera.distance, viewport);
+}
+
+float SystemMapView::fillHalfHeightAt(
+    const glm::dvec3& centerAu,
+    double edgeAu,
+    const glm::dvec3& targetWorld,
+    const Viewport& viewport,
+    float fill
+) const
+{
+    // The screen ratio falls monotonically with the half-height: bisection
+    // in log space over the camera range.
+    double inner = std::log(static_cast<double>(minimumCameraHalfHeight));
+    double outer = std::log(static_cast<double>(maximumCameraHalfHeight));
+    for (int k = 0; k < 60; ++k)
+    {
+        const double mid = 0.5 * (inner + outer);
+        if (cubeScreenRatioAt(centerAu, edgeAu, targetWorld, static_cast<float>(std::exp(mid)), viewport, true) >
+            fill)
+        {
+            inner = mid;
+        }
+        else
+        {
+            outer = mid;
+        }
+    }
+    return static_cast<float>(std::exp(outer));
+}
+
+float SystemMapView::hierarchyFitHalfHeight(
+    const Viewport& viewport
+) const
+{
+    const GalaxyHierarchyBox box = hierarchyBox();
+    return fillHalfHeightAt(
+        box.centerLy,
+        box.edgeLy,
+        box.centerLy * static_cast<double>(m_state.lastScale),
+        viewport,
+        ParentFillRatio
+    );
+}
+
+void SystemMapView::hierarchyHalfHeightLimits(
+    const Viewport& viewport,
+    float& minimumHalfHeight,
+    float& maximumHalfHeight
+) const
+{
+    /*
+        Deep enough for a child to fill the screen (it then becomes the
+        parent); the S0 root never gets smaller than the screen, any other
+        parent hands over to its own parent before.
+    */
+    const GalaxyHierarchyBox box = hierarchyBox();
+    const float fitted = hierarchyFitHalfHeight(viewport);
+    const float kmLimited =
+        static_cast<float>(
+            (m_controls.minKmPerPixel * static_cast<double>(m_state.lastScale) / 149597870.7) *
+            static_cast<double>(viewport.height) * 0.5);
+    minimumHalfHeight = std::max({minimumCameraHalfHeight, kmLimited, fitted * 0.02f});
+    minimumHalfHeight = std::min(minimumHalfHeight, fitted);
+    maximumHalfHeight =
+        box.parent.level <= 0
+            ? fillHalfHeightAt(box.centerLy, box.edgeLy, m_state.camera.target, viewport, ParentFillRatio)
+            : std::min(maximumCameraHalfHeight, fitted * 1.6f);
+    maximumHalfHeight = std::max(maximumHalfHeight, minimumHalfHeight);
+}
+
+void SystemMapView::setHierarchyParent(
+    const GalaxyHierarchyParent& parent
+)
+{
+    m_state.hierarchyParent = parent;
+    ++m_state.hierarchyRevision;
+
+    auto& grid = m_state.navigationGrid;
+    const GalaxyHierarchyBox box = hierarchyBox();
+    grid.setAnchor(box.childLevel, grid.nearestIndexForPosition(box.centerLy, box.childLevel));
+    grid.clearHoveredCell();
+
+    m_state.hoverVisualCell.reset();
+    m_state.hoverVisualAlpha = 0.0f;
+    m_state.hoverOutgoingCell.reset();
+    m_state.hoverOutgoingAlpha = 0.0f;
+    m_state.hoverTarget = SystemPointerTarget {};
+    m_state.hoverTargetValid = false;
+    m_state.cubeClickTracker.reset();
+    m_state.bodyClickTracker.reset();
+    m_state.hierarchyFaces.valid = false;
+}
+
+void SystemMapView::frameHierarchyParent(
+    const Viewport& viewport,
+    double nowSeconds,
+    bool animate
+)
+{
+    const GalaxyHierarchyBox box = hierarchyBox();
+    const glm::dvec3 target = box.centerLy * static_cast<double>(m_state.lastScale);
+    const float halfHeight = hierarchyFitHalfHeight(viewport);
+    if (animate)
+    {
+        beginCameraFlight(target, halfHeight, nowSeconds);
+        return;
+    }
+    cancelCameraFlight(false);
+    m_state.camera.target = target;
+    m_state.camera.distance = halfHeight;
+}
+
+bool SystemMapView::enterHierarchyCell(
+    const navigation::CubicNavigationCell& cell,
+    const Viewport& viewport,
+    double nowSeconds,
+    bool frameCamera
+)
+{
+    auto& grid = m_state.navigationGrid;
+    if (cell.level < 0 || cell.level >= grid.maximumLevel() || !grid.isCellNavigable(cell))
+        return false;
+
+    GalaxyHierarchyParent parent;
+    parent.level = cell.level;
+    parent.index = cell.index;
+    setHierarchyParent(parent);
+    // The entered cube stays the selected address until a child is chosen.
+    grid.selectCell(grid.cell(cell.index, cell.level));
+
+    if (frameCamera)
+        frameHierarchyParent(viewport, nowSeconds, true);
+    return true;
+}
+
+bool SystemMapView::ascendHierarchy(
+    const Viewport& viewport,
+    double nowSeconds
+)
+{
+    return jumpToHierarchyLevel(m_state.hierarchyParent.level - 1, viewport, nowSeconds);
+}
+
+bool SystemMapView::jumpToHierarchyLevel(
+    int level,
+    const Viewport& viewport,
+    double nowSeconds,
+    bool frameCamera
+)
+{
+    const GalaxyHierarchyParent current = m_state.hierarchyParent;
+    if (level < 0 || level >= current.level)
+        return false;
+
+    auto& grid = m_state.navigationGrid;
+    const navigation::CubicNavigationCell currentCell = grid.cell(current.index, current.level);
+    // The cube the user leaves stays visible and selected inside the parent.
+    const navigation::CubicNavigationCell cameFrom =
+        grid.cell(grid.ancestorIndex(currentCell.index, currentCell.level, level + 1), level + 1);
+
+    setHierarchyParent(galaxyHierarchyAncestor(grid, currentCell, level));
+    if (m_state.selectedBodyId.empty() && m_state.selectedHubId.empty())
+    {
+        grid.selectCell(cameFrom);
+        m_state.navigationCellExplicitlySelected = true;
+    }
+
+    if (frameCamera)
+        frameHierarchyParent(viewport, nowSeconds, true);
+    return true;
+}
+
+void SystemMapView::resetHierarchyToRoot(
+    const Viewport& viewport
+)
+{
+    setHierarchyParent(GalaxyHierarchyParent {0, {}});
+    frameHierarchyParent(viewport, 0.0, false);
+}
 
 } // namespace game::system_map

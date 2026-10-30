@@ -792,12 +792,52 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
     {
         m_navigationCoordinateOverlay.drawGalaxyNavigation(
             viewport,
-            galaxyBreadcrumbs(),
+            mapBreadcrumbs(),
             m_galaxyBreadcrumbHovered,
             m_galaxyUpButtonHovered,
             !m_galaxyView.state().hierarchyParent.overview()
         );
     }
+    else if (m_modeState.current() == Mode::System &&
+             m_systemView.state().navigationGrid.enabled())
+    {
+        m_navigationCoordinateOverlay.drawGalaxyNavigation(
+            viewport,
+            mapBreadcrumbs(),
+            m_galaxyBreadcrumbHovered,
+            m_galaxyUpButtonHovered,
+            m_systemView.state().hierarchyParent.level > 0,
+            true
+        );
+    }
+}
+
+// Breadcrumbs of the current map's parent chain (Galaxy or System).
+std::vector<std::string> SystemMapRenderer::mapBreadcrumbs() const
+{
+    if (m_modeState.current() != Mode::System)
+        return galaxyBreadcrumbs();
+
+    std::vector<std::string> crumbs;
+    const auto chain =
+        game::system_map::galaxyHierarchyChain(
+            m_systemView.state().navigationGrid,
+            m_systemView.state().hierarchyParent,
+            0
+        );
+    for (const auto& parent : chain)
+    {
+        if (parent.level == 0)
+        {
+            crumbs.push_back(m_navigationCoordinateOverlay.textProfile().system);
+            continue;
+        }
+        std::ostringstream crumb;
+        crumb << "S" << parent.level << " [" << parent.index.x << ","
+              << parent.index.y << "," << parent.index.z << "]";
+        crumbs.push_back(crumb.str());
+    }
+    return crumbs;
 }
 
 /*

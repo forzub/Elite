@@ -120,6 +120,41 @@ SystemMapRenderer::handleInput(
         m_galaxyPointerDevScript.drive(
             m_galaxyView, m_galaxyInteraction, galaxy, vp, inputNowSeconds, mx, my, leftDown, rightDown);
     }
+    if (game::system_map::SystemHierarchyDevScript::enabled() &&
+        m_modeState.current() == Mode::System)
+    {
+        if (!m_systemHierarchyDevScript.bodyLocator)
+        {
+            m_systemHierarchyDevScript.bodyLocator = [this, vp] {
+                std::vector<std::pair<std::string, glm::vec2>> out;
+                const double scale = static_cast<double>(m_systemPresentation.systemScale);
+                for (const auto& body : m_systemPresentation.bodies)
+                {
+                    if (body.type != world::celestial::BodyType::Planet)
+                        continue;
+                    bool visible = false;
+                    float depth = 1.0f;
+                    const glm::vec2 s =
+                        m_systemView.projectAbsoluteToScreen(vp, body.positionAu * scale, visible, depth);
+                    if (visible)
+                        out.push_back({body.id, s});
+                }
+                return out;
+            };
+            m_systemHierarchyDevScript.cardOpen = [this](const std::string& id) {
+                return m_objectOverlayState.isOpen(
+                    "body:" + std::to_string(m_systemPresentation.systemId) + ":" + id);
+            };
+            m_systemHierarchyDevScript.bodyPositionAu = [this](const std::string& id) -> std::optional<glm::dvec3> {
+                for (const auto& body : m_systemPresentation.bodies)
+                    if (body.id == id)
+                        return body.positionAu;
+                return std::nullopt;
+            };
+        }
+        m_systemHierarchyDevScript.drive(m_systemView, vp, inputNowSeconds, mx, my, leftDown, rightDown,
+                                         m_pendingScrollY);
+    }
     if (game::system_map::GalaxyHierarchyDevScript::enabled() &&
         m_modeState.current() == Mode::Galaxy)
     {
@@ -220,25 +255,29 @@ SystemMapRenderer::handleInput(
                     localMy
                 );
 
-    // Galaxy Map hierarchy: up button and breadcrumbs (ancestors).
+    // Galaxy / System hierarchy (one model): up button and breadcrumbs.
     const bool galaxyMode = m_modeState.current() == Mode::Galaxy;
+    const bool hierarchyMode =
+        galaxyMode ||
+        (m_modeState.current() == Mode::System && m_systemView.state().navigationGrid.enabled());
     m_galaxyUpButtonHovered =
-        galaxyMode &&
+        hierarchyMode &&
         inside &&
         render::navigation::
             NavigationCoordinateOverlay::
                 upButtonBounds(
-                    vp
+                    vp,
+                    !galaxyMode
                 )
                 .contains(
                     localMx,
                     localMy
                 );
     m_galaxyBreadcrumbHovered = -1;
-    if (galaxyMode && inside)
+    if (hierarchyMode && inside)
     {
         const auto crumbBounds =
-            m_navigationCoordinateOverlay.breadcrumbBounds(vp, galaxyBreadcrumbs());
+            m_navigationCoordinateOverlay.breadcrumbBounds(vp, mapBreadcrumbs());
         // The last crumb is the current parent itself: not a command.
         for (std::size_t i = 0; i + 1 < crumbBounds.size(); ++i)
             if (crumbBounds[i].contains(localMx, localMy))
@@ -282,7 +321,7 @@ SystemMapRenderer::handleInput(
     {
         m_pendingScrollY = 0.0;
 
-        if (galaxyHierarchyPressed)
+        if (galaxyHierarchyPressed && galaxyMode)
         {
             // Breadcrumb i is the ancestor at level i - 1 (0 = overview).
             const bool moved =
@@ -293,8 +332,25 @@ SystemMapRenderer::handleInput(
             if (moved)
                 announceNavigationLevel('G', m_galaxyView.state().navigationGrid.level());
         }
+        else if (galaxyHierarchyPressed)
+        {
+            // System: breadcrumb i is the parent at level i (0 = S0 root).
+            const bool moved =
+                m_galaxyUpButtonHovered
+                    ? m_systemView.ascendHierarchy(vp, inputNowSeconds)
+                    : m_systemView.jumpToHierarchyLevel(
+                          m_galaxyBreadcrumbHovered, vp, inputNowSeconds);
+            if (moved)
+                announceNavigationLevel('S', m_systemView.state().navigationGrid.level());
+        }
 
         m_galaxyView.suppressCameraGesture(
+            leftDown,
+            rightDown,
+            mx,
+            my
+        );
+        m_systemView.suppressCameraGesture(
             leftDown,
             rightDown,
             mx,
@@ -555,14 +611,23 @@ SystemMapRenderer::handleInput(
                     return item.objectId == cardId;
                 }
             );
+            // Double click on a body: its info card opens; the next double
+            // click closes it (a single click only selects).
             if (bodyInfo !=
                 m_systemSceneFrame.interaction.objectOverlay.items.end())
             {
-                m_objectOverlayState.activate(bodyInfo->objectId);
-                m_objectOverlayState.ensureOpen(
-                    *bodyInfo,
-                    glm::dvec2(vp.width, vp.height)
-                );
+                if (m_objectOverlayState.isOpen(bodyInfo->objectId))
+                {
+                    m_objectOverlayState.close(bodyInfo->objectId);
+                }
+                else
+                {
+                    m_objectOverlayState.activate(bodyInfo->objectId);
+                    m_objectOverlayState.ensureOpen(
+                        *bodyInfo,
+                        glm::dvec2(vp.width, vp.height)
+                    );
+                }
             }
         }
 

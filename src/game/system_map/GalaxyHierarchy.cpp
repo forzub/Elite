@@ -19,31 +19,39 @@ namespace
     }
 }
 
+    GalaxyHierarchyBox cubicHierarchyBox(
+        const navigation::CubicNavigationGrid& grid,
+        const GalaxyHierarchyParent& parent
+    )
+    {
+        GalaxyHierarchyBox box;
+        box.parent = parent;
+        const int division = grid.subdivision();
+        const std::int64_t half = division / 2;
+        box.centerLy = grid.cellCenter(parent.index, parent.level);
+        box.edgeLy = grid.cellSize(parent.level);
+        box.childLevel = parent.level + 1;
+        box.childEdgeLy = grid.cellSize(box.childLevel);
+        box.divisions = division;
+        box.firstChild = {
+            parent.index.x * division - half,
+            parent.index.y * division - half,
+            parent.index.z * division - half
+        };
+        return box;
+    }
+
     GalaxyHierarchyBox galaxyHierarchyBox(
         const navigation::GalaxyNavigationGrid& grid,
         const GalaxyHierarchyParent& parent,
         const std::vector<navigation::GalaxyGridIndex>* overviewRoots
     )
     {
+        if (!parent.overview())
+            return cubicHierarchyBox(grid, parent);
+
         GalaxyHierarchyBox box;
         box.parent = parent;
-
-        if (!parent.overview())
-        {
-            const int division = grid.subdivision();
-            const std::int64_t half = division / 2;
-            box.centerLy = grid.cellCenterLy(parent.index, parent.level);
-            box.edgeLy = grid.cellSizeLy(parent.level);
-            box.childLevel = parent.level + 1;
-            box.childEdgeLy = grid.cellSizeLy(box.childLevel);
-            box.divisions = division;
-            box.firstChild = {
-                parent.index.x * division - half,
-                parent.index.y * division - half,
-                parent.index.z * division - half
-            };
-            return box;
-        }
 
         // Overview: the cube on the root lattice around the framed roots.
         std::vector<navigation::GalaxyGridIndex> roots;
@@ -90,22 +98,23 @@ namespace
     }
 
     std::optional<GalaxyHierarchyParent> galaxyHierarchyAscend(
-        const navigation::GalaxyNavigationGrid& grid,
-        const GalaxyHierarchyParent& parent
+        const navigation::CubicNavigationGrid& grid,
+        const GalaxyHierarchyParent& parent,
+        int topLevel
     )
     {
-        if (parent.overview())
+        if (parent.level <= topLevel)
             return std::nullopt;
         GalaxyHierarchyParent up;
         if (parent.level == 0)
-            return up; // overview
+            return up; // overview (topLevel -1)
         up.level = parent.level - 1;
         up.index = grid.parentIndex(parent.index);
         return up;
     }
 
     GalaxyHierarchyParent galaxyHierarchyAncestor(
-        const navigation::GalaxyNavigationGrid& grid,
+        const navigation::CubicNavigationGrid& grid,
         const navigation::GalaxyNavigationCell& cell,
         int level
     )
@@ -119,8 +128,9 @@ namespace
     }
 
     std::vector<GalaxyHierarchyParent> galaxyHierarchyChain(
-        const navigation::GalaxyNavigationGrid& grid,
-        const GalaxyHierarchyParent& parent
+        const navigation::CubicNavigationGrid& grid,
+        const GalaxyHierarchyParent& parent,
+        int topLevel
     )
     {
         std::vector<GalaxyHierarchyParent> chain;
@@ -128,7 +138,7 @@ namespace
         while (cursor)
         {
             chain.push_back(*cursor);
-            cursor = galaxyHierarchyAscend(grid, *cursor);
+            cursor = galaxyHierarchyAscend(grid, *cursor, topLevel);
         }
         std::reverse(chain.begin(), chain.end());
         return chain;
@@ -172,12 +182,12 @@ namespace
     }
 
     std::optional<navigation::GalaxyNavigationCell> galaxyHierarchyChildAt(
-        const navigation::GalaxyNavigationGrid& grid,
+        const navigation::CubicNavigationGrid& grid,
         const GalaxyHierarchyBox& box,
         const glm::dvec3& positionLy
     )
     {
-        const auto index = grid.nearestIndexForPositionLy(positionLy, box.childLevel);
+        const auto index = grid.nearestIndexForPosition(positionLy, box.childLevel);
         const auto cell = grid.cell(index, box.childLevel);
         if (!galaxyHierarchyIsChild(box, cell) || !grid.isCellNavigable(cell))
             return std::nullopt;

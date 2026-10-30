@@ -34,7 +34,11 @@ namespace game::system_map
         bool operator!=(const GalaxyHierarchyParent& other) const { return !(*this == other); }
     };
 
-    // The parent as a box in light-years with its child lattice.
+    /*
+        The parent as a box with its child lattice, in the grid's unit
+        (light-years for the Galaxy grid, AU for a System grid - the same
+        hierarchy model drives both maps).
+    */
     struct GalaxyHierarchyBox
     {
         GalaxyHierarchyParent parent;
@@ -54,29 +58,38 @@ namespace game::system_map
         the star systems into a dot in the middle. Empty: every navigable
         root.
     */
+    // A real cell as the parent (level >= 0), any cubic grid.
+    GalaxyHierarchyBox cubicHierarchyBox(
+        const navigation::CubicNavigationGrid& grid,
+        const GalaxyHierarchyParent& parent
+    );
+
     GalaxyHierarchyBox galaxyHierarchyBox(
         const navigation::GalaxyNavigationGrid& grid,
         const GalaxyHierarchyParent& parent,
         const std::vector<navigation::GalaxyGridIndex>* overviewRoots = nullptr
     );
 
-    // The parent of a parent (overview for a root, nothing above overview).
+    // The parent of a parent; nothing above `topLevel` (Galaxy: -1, the
+    // overview above the roots; System: 0, its root cube).
     std::optional<GalaxyHierarchyParent> galaxyHierarchyAscend(
-        const navigation::GalaxyNavigationGrid& grid,
-        const GalaxyHierarchyParent& parent
+        const navigation::CubicNavigationGrid& grid,
+        const GalaxyHierarchyParent& parent,
+        int topLevel = -1
     );
 
     // The parent at `level` (-1 .. cell level) that contains `cell`.
     GalaxyHierarchyParent galaxyHierarchyAncestor(
-        const navigation::GalaxyNavigationGrid& grid,
+        const navigation::CubicNavigationGrid& grid,
         const navigation::GalaxyNavigationCell& cell,
         int level
     );
 
     // Chain overview .. parent (inclusive) for breadcrumbs.
     std::vector<GalaxyHierarchyParent> galaxyHierarchyChain(
-        const navigation::GalaxyNavigationGrid& grid,
-        const GalaxyHierarchyParent& parent
+        const navigation::CubicNavigationGrid& grid,
+        const GalaxyHierarchyParent& parent,
+        int topLevel = -1
     );
 
     bool galaxyHierarchyContains(
@@ -97,7 +110,7 @@ namespace game::system_map
 
     // The navigable child of the box containing the position, if any.
     std::optional<navigation::GalaxyNavigationCell> galaxyHierarchyChildAt(
-        const navigation::GalaxyNavigationGrid& grid,
+        const navigation::CubicNavigationGrid& grid,
         const GalaxyHierarchyBox& box,
         const glm::dvec3& positionLy
     );

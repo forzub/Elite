@@ -480,7 +480,7 @@ hitches = frames > 80 ms after start.
   in the current catalogue (HD 102195 96.7 ly / HD 93083 90.9 ly set the
   extent). Empty navigable roots outside it stay navigable (a point there
   opens its own root as the parent - `focusHierarchyPoint`).
-- Neighbours: the up-to-26 navigable cubes of the parent's level around it
+- Neighbours (REMOVED by the order of 2026-10-31, see below): the up-to-26 navigable cubes of the parent's level around it
   are pointer targets (resolver tier 5b `neighbour_cube`: ray x neighbour
   boxes when the ray leaves the parent), drawn as faint ghosts, hovered /
   selected like a child (address label, no projections); double click
@@ -495,6 +495,61 @@ hitches = frames > 80 ms after start.
   screenshot ignored a running user game and the cleanup killed the user's
   EliteGame. Rule kept: never start or stop a game while one is running;
   only the guarded scripts launch the game.
+
+### One cube navigation for Galaxy + System maps (user order 2026-10-31)
+- User: the top cube must fill the screen and never get smaller; the wheel
+  must move between levels (a child filling the screen becomes the parent,
+  a parent smaller than the screen hands over up); nothing outside the
+  current parent drawn or interactive (clouds outside the giga-cube); the
+  SAME cube mouse control on the System Map; planet: single click selects
+  it and its cube (the selection follows the planet between cubes), double
+  click opens its info card.
+- Fit: the parent "on the whole screen" = its projected corners reach 0.98
+  of the viewport in the limiting direction (bisection on the camera
+  distance, current orbit angle; `GalaxyMapView::fillDistanceAt`,
+  `SystemMapView::fillHalfHeightAt`); the hand-over size test uses the
+  projected extent (perspective makes the cube asymmetric about the centre).
+- Wheel: zoom IN scales the camera rig about the point under the cursor
+  (the cube there grows); the child under the cursor (else at the view
+  centre) with extent >= 0.98 becomes the parent (no flight); a terminal
+  Galaxy cube filling the screen opens the System Map (its star / sector).
+  Zoom OUT drifts the view to the parent centre; a parent below 0.94
+  hands over to its parent (the cube left selected). Overview / S0 root:
+  the distance range never lets it get smaller than the screen.
+- Outside the parent: stars, labels, compact objects, the player marker,
+  medium structures (drawn and picked only when their sphere reaches into
+  the parent, a shell hit must lie inside it) on the Galaxy Map; bodies on
+  the System Map (`filterBodiesByPresentationLevel`). The neighbour-cube
+  targets of 2026-10-30 d were removed (they lie outside the parent; a
+  neighbour is reached by zooming out one level and in).
+- Shared code: `GalaxyHierarchy` works on any cubic grid
+  (`cubicHierarchyBox`, ascend / chain with a top level: Galaxy -1, System
+  0); `HierarchyFramePainter` (frame, inner faces, labels, projections,
+  child cubes, hover layer, texts + triad, hover fade) draws BOTH maps.
+- System Map (`SystemMapInteraction` rewritten): explicit `hierarchyParent`
+  (S0 root on open / LEVEL 0), `GalaxyPointerGesture` (press never moves
+  the camera), one resolver hub > body > selected-cube marker > hover-layer
+  child (bodies / hubs outside the parent are no targets), hover = winner +
+  its child, cube click selects / double click enters, body click selects
+  + its cube, body double click toggles the card, the body's cube follows
+  the body every frame, `[ ↑ ]` left of TRACK, breadcrumbs `СИСТЕМА › S1
+  [..]`. Old anchor-follows-cursor / wheel-level / invisible cube circle /
+  rotate-on-press code removed.
+- AUTOMATED: `EliteGalaxyPointerCheck` PASS (H1 fill at 48 angle x level
+  cases, min corner margin 7 px; H3 wheel: 2 levels in at ratio >= 0.98,
+  3 levels out with the cube left selected, overview min ratio 0.98);
+  `EliteMapPointerCheck` PASS. SCRIPTED GAME: Galaxy 79/79
+  (`ELITE_DEV_GALAXY_HIERARCHY_SCRIPT`), System 21/21
+  (`ELITE_DEV_SYSTEM_HIERARCHY_SCRIPT` + `ELITE_DEV_SYSTEM_MAP_AT`,
+  `tools/perf/galaxy_map_capture.sh "" 240`): S0 fills, cube hover / click /
+  double click x2, up x2 (button), Uranus click (selected + cube, no card),
+  double click (card), its cube followed for 4.5 s, wheel in one hand-over,
+  wheel out to S0. Frames D:/tmp/elite_gh_*.png, elite_sh_*.png.
+- PERFORMANCE (Debug): Galaxy medium avg 0.33 ms (worst window 0.43), frame
+  avg 12.2 ms; System frame avg 16.0 ms; frames > 50 ms only at startup and
+  the DEV frame captures.
+- OPEN: human mouse acceptance of both maps; the old Galaxy pointer script
+  (`galaxy_pointer_script.sh`) was not re-run after this order.
 
 ### OPEN
 - Galaxy spatial frame: HUMAN acceptance with a real mouse not done (the

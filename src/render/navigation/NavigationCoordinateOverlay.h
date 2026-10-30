@@ -111,9 +111,12 @@ public:
         );
 
     // Galaxy Map: one level up (left of LEVEL 0, where System has TRACK).
+    // besideTrack: the System map keeps TRACK left of LEVEL 0; up goes
+    // left of TRACK.
     static NavigationOverlayButtonBounds
         upButtonBounds(
-            const Viewport& viewport
+            const Viewport& viewport,
+            bool besideTrack = false
         );
 
     // Galaxy Map breadcrumbs (GALAXY > G0 [..] > G1 [..]): one bounds per
@@ -128,7 +131,8 @@ public:
         const std::vector<std::string>& crumbs,
         int hoveredCrumb,
         bool upHovered,
-        bool upEnabled
+        bool upEnabled,
+        bool upBesideTrack = false
     );
 
 private:

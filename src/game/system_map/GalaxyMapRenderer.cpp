@@ -25,6 +25,7 @@
 #include "src/game/system_map/GalaxyMapInteraction.h"
 #include "src/game/system_map/GalaxyMapRenderContext.h"
 #include "src/game/system_map/GalaxyMapView.h"
+#include "src/game/system_map/HierarchyFramePainter.h"
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/world/coordinates/WorldPosition.h"
@@ -983,465 +984,67 @@ void GalaxyMapRenderer::drawNavigationGrid(
     if (!state.navigationGrid.enabled())
         return;
 
-    const auto& gridVisuals = viewState.visuals().navigationGrid;
-    auto& grid = state.navigationGrid;
-
-    /*
-        Logical hover is used for input. Visual hover has its own lifetime,
-        so a cube can fade in and fade out instead of blinking on cell
-        boundaries or when the cursor leaves the map.
-    */
-    const double hoverNowSeconds = context.currentTimeSeconds();
-    double hoverDeltaSeconds = 0.0;
-    if (state.hoverVisualLastTimeSeconds > 0.0)
-    {
-        hoverDeltaSeconds =
-            std::clamp(hoverNowSeconds - state.hoverVisualLastTimeSeconds, 0.0, 0.10);
-    }
-    state.hoverVisualLastTimeSeconds = hoverNowSeconds;
-
-    std::optional<game::navigation::GalaxyNavigationCell> hoverTargetCell;
-    if (grid.hasHoveredCell())
-        hoverTargetCell = grid.hoveredCell();
-
-    const bool hoverTargetChanged =
-        hoverTargetCell.has_value() &&
-        (!state.hoverVisualCell.has_value() ||
-         hoverTargetCell->level != state.hoverVisualCell->level ||
-         hoverTargetCell->index != state.hoverVisualCell->index);
-
-    if (hoverTargetChanged)
-    {
-        if (state.hoverVisualCell.has_value() && state.hoverVisualAlpha > 0.001f)
-        {
-            state.hoverOutgoingCell = state.hoverVisualCell;
-            state.hoverOutgoingAlpha = state.hoverVisualAlpha;
-        }
-        state.hoverVisualCell = hoverTargetCell;
-        state.hoverVisualAlpha = 0.0f;
-    }
-
-    const float fadeInSeconds =
-        std::max(0.001f, viewState.controls().navigationHoverFadeInSeconds);
-    const float fadeOutSeconds =
-        std::max(0.001f, viewState.controls().navigationHoverFadeOutSeconds);
-
-    if (hoverTargetCell.has_value())
-    {
-        state.hoverVisualAlpha =
-            std::min(1.0f, state.hoverVisualAlpha +
-                               static_cast<float>(hoverDeltaSeconds) / fadeInSeconds);
-    }
-    else
-    {
-        state.hoverVisualAlpha =
-            std::max(0.0f, state.hoverVisualAlpha -
-                               static_cast<float>(hoverDeltaSeconds) / fadeOutSeconds);
-        if (state.hoverVisualAlpha <= 0.001f)
-        {
-            state.hoverVisualAlpha = 0.0f;
-            state.hoverVisualCell.reset();
-        }
-    }
-
-    if (state.hoverOutgoingCell.has_value())
-    {
-        state.hoverOutgoingAlpha =
-            std::max(0.0f, state.hoverOutgoingAlpha -
-                               static_cast<float>(hoverDeltaSeconds) / fadeOutSeconds);
-        if (state.hoverOutgoingAlpha <= 0.001f)
-        {
-            state.hoverOutgoingAlpha = 0.0f;
-            state.hoverOutgoingCell.reset();
-        }
-    }
-
-    const GalaxyHierarchyBox box = viewState.hierarchyBox();
-    const glm::dvec3 eyeLy = viewState.renderToPositionLy(glm::vec3(camera.eye));
-    const glm::dvec3 viewInto = -camera.basis.direction;
-    state.hierarchyFaces =
-        galaxyHierarchyChooseFaces(state.hierarchyFaces, eyeLy, viewInto, box);
-    const GalaxyHierarchyFaces faces = state.hierarchyFaces;
-
-    const glm::vec3 cameraRight = glm::vec3(camera.basis.right);
-    const glm::vec3 cameraUp = glm::vec3(camera.basis.up);
-    const glm::vec3 cameraDirection = glm::vec3(camera.basis.direction);
-    const glm::vec3 cameraPosition = glm::vec3(camera.eye);
-
-    const auto toRender = [&](const glm::dvec3& ly) { return viewState.positionLyToRender(ly); };
-
-    // Cube edges in light-years (solid).
-    const auto addBoxEdges =
-        [&](const glm::dvec3& centerLy, double edgeLy, const glm::vec4& color)
-        {
-            const double h = edgeLy * 0.5;
-            glm::vec3 c[8];
-            for (int i = 0; i < 8; ++i)
-            {
-                c[i] = toRender(centerLy + glm::dvec3((i & 1) ? h : -h, (i & 2) ? h : -h, (i & 4) ? h : -h));
-            }
-            static constexpr int edges[12][2] = {
-                {0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3}, {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
-            for (const auto& e : edges)
-                context.addLine(c[e[0]], c[e[1]], color);
-        };
-
-    // Child cube: a solid outline (selected / hovered are the cubes the
-    // user acts on; they must read clearly against the frame).
-    const auto addChildCube =
-        [&](const game::navigation::GalaxyNavigationCell& cell, const glm::vec4& color)
-        {
-            addBoxEdges(cell.center, cell.size, color);
-        };
+    // Logical hover is input; the visual hover fades in / out.
+    updateHierarchyHoverFade(
+        {&state.hoverVisualCell, &state.hoverVisualAlpha, &state.hoverOutgoingCell, &state.hoverOutgoingAlpha,
+         &state.hoverVisualLastTimeSeconds},
+        state.navigationGrid.hasHoveredCell()
+            ? std::optional<game::navigation::CubicNavigationCell>(state.navigationGrid.hoveredCell())
+            : std::nullopt,
+        context.currentTimeSeconds(),
+        viewState.controls().navigationHoverFadeInSeconds,
+        viewState.controls().navigationHoverFadeOutSeconds);
 
     const auto smooth = [](float t) {
         t = std::clamp(t, 0.0f, 1.0f);
         return t * t * (3.0f - 2.0f * t);
     };
 
+    HierarchyFramePaintInput in;
+    in.box = viewState.hierarchyBox();
+    in.faces = &state.hierarchyFaces;
+    in.eyeUnits = viewState.renderToPositionLy(glm::vec3(camera.eye));
+    in.viewInto = -camera.basis.direction;
+    in.cameraRight = glm::vec3(camera.basis.right);
+    in.cameraUp = glm::vec3(camera.basis.up);
+    in.cameraDirection = glm::vec3(camera.basis.direction);
+    in.cameraEyeRender = glm::vec3(camera.eye);
+    in.mvp = camera.mvp;
+    in.viewport = vp;
+    in.tanHalfFovY = std::tan(glm::radians(48.0f) * 0.5f);
+    in.toRender = [&viewState](const glm::dvec3& ly) { return viewState.positionLyToRender(ly); };
+    in.visuals = &viewState.visuals().navigationGrid;
+    in.levelPrefix = 'G';
     // While the camera flies between nested parents the new frame's grids
-    // fade in (no x25 pop of a dense lattice).
-    const float frameFade =
+    // fade in (no x25 pop of a dense lattice); the old frame fades out.
+    in.frameFade =
         state.cameraFlight.active()
             ? smooth(static_cast<float>(state.cameraFlight.progress()) * 1.4f - 0.2f)
             : 1.0f;
-
-    // ---- the flight context: the parent the camera is leaving ----------
     if (state.flightContextBox && state.cameraFlight.active())
+        in.flightContextBox = state.flightContextBox;
+
+    in.hoverCell = state.hoverVisualCell;
+    in.hoverAlpha = state.hoverVisualAlpha;
+    in.outgoingCell = state.hoverOutgoingCell;
+    in.outgoingAlpha = state.hoverOutgoingAlpha;
+    in.hoverOnLayer =
+        state.hoverTargetValid && state.hoverTarget.reason == GalaxyPointerHitReason::HierarchyLayer;
+    in.layerAxis = state.hoverLayerAxis;
+    if (state.hoverTargetValid &&
+        (state.hoverTarget.kind == GalaxyPointerTargetKind::Star ||
+         state.hoverTarget.kind == GalaxyPointerTargetKind::Medium))
     {
-        glm::vec4 color = gridVisuals.parentFrameColor;
-        color.a *= 0.55f * (1.0f - frameFade);
-        if (color.a > 0.002f)
-            addBoxEdges(state.flightContextBox->centerLy, state.flightContextBox->edgeLy, color);
+        in.hoverObjectPoint = GalaxyMapInteraction::semanticPointLy(galaxy, state.hoverTarget);
     }
 
-    // ---- current parent: frame -----------------------------------------
-    addBoxEdges(box.centerLy, box.edgeLy, gridVisuals.parentFrameColor);
+    if (state.navigationGrid.hasSelectedCell())
+        in.selectedCell = state.navigationGrid.selectedCell();
+    in.objectSelection = state.selectedSystemId >= 0 || state.selectedMediumObject >= 0;
+    if (in.objectSelection && state.navigationFocusValid)
+        in.selectedObjectPoint = state.navigationFocusLy;
 
-    // ---- inner coordinate faces ------------------------------------------
-    const double half = box.edgeLy * 0.5;
-    const int divisions = std::max(1, box.divisions);
-    const bool everyLineMajor = divisions <= 12;
-    const auto axisUnit = [](int axis) {
-        return glm::dvec3(axis == 0 ? 1.0 : 0.0, axis == 1 ? 1.0 : 0.0, axis == 2 ? 1.0 : 0.0);
-    };
-    const int otherHorizontal = faces.wallAxis == 0 ? 2 : 0;
-
-    const auto addFaceGrid =
-        [&](int normalAxis, int sign, int axisU, int axisV)
-        {
-            const glm::dvec3 faceCentre = box.centerLy + axisUnit(normalAxis) * (half * sign);
-            const glm::dvec3 u = axisUnit(axisU);
-            const glm::dvec3 v = axisUnit(axisV);
-            for (int k = 0; k <= divisions; ++k)
-            {
-                const double t = -half + box.childEdgeLy * static_cast<double>(k);
-                const bool major = everyLineMajor || k % 5 == 0;
-                glm::vec4 color = major ? gridVisuals.faceMajorColor : gridVisuals.faceMinorColor;
-                color.a *= frameFade;
-                if (color.a <= 0.002f)
-                    continue;
-                context.addLine(toRender(faceCentre + u * t - v * half),
-                                toRender(faceCentre + u * t + v * half), color);
-                context.addLine(toRender(faceCentre + v * t - u * half),
-                                toRender(faceCentre + v * t + u * half), color);
-            }
-        };
-
-    // Floor (or ceiling) and the far wall the camera looks into.
-    addFaceGrid(1, faces.horizontalSign, 0, 2);
-    addFaceGrid(faces.wallAxis, faces.wallSign, otherHorizontal, 1);
-
-    const double floorY = box.centerLy.y + half * faces.horizontalSign;
-    const double wallCoord = box.centerLy[faces.wallAxis] + half * faces.wallSign;
-    // The side of the remaining horizontal axis away from the camera:
-    // the vertical ruler stands in the far corner of floor and wall.
-    const int sideSign = (eyeLy[otherHorizontal] - box.centerLy[otherHorizontal]) >= 0.0 ? -1 : 1;
-    const double sideCoord = box.centerLy[otherHorizontal] + half * sideSign;
-
-    // Coordinate labels (major children only), in parent child offsets
-    // relative to the centre child; the overview shows root indices.
-    const auto childLabel = [&](int axis, int offset) -> std::string {
-        if (box.parent.overview())
-        {
-            const std::int64_t first =
-                axis == 0 ? box.firstChild.x : (axis == 1 ? box.firstChild.y : box.firstChild.z);
-            return std::to_string(first + offset);
-        }
-        return std::to_string(offset - (divisions - 1) / 2);
-    };
-    const auto labelledOffset = [&](int offset) {
-        return everyLineMajor || (offset - (divisions - 1) / 2) % 5 == 0;
-    };
-    const glm::vec4 labelColor(gridVisuals.frameLabelColor.r, gridVisuals.frameLabelColor.g,
-                               gridVisuals.frameLabelColor.b, gridVisuals.frameLabelColor.a * frameFade);
-    const auto addAxisLabels =
-        [&](int axis, const glm::dvec3& lineOrigin, const char* axisName)
-        {
-            // lineOrigin: a point on the ruler edge; the labelled axis runs
-            // along it from -half to +half around the parent centre.
-            for (int offset = 0; offset < divisions; ++offset)
-            {
-                if (!labelledOffset(offset))
-                    continue;
-                glm::dvec3 p = lineOrigin;
-                p[axis] = box.centerLy[axis] - half + box.childEdgeLy * (static_cast<double>(offset) + 0.5);
-                frameTexts.push_back({toRender(p), childLabel(axis, offset), labelColor, 10, false});
-            }
-            glm::dvec3 end = lineOrigin;
-            end[axis] = box.centerLy[axis] + half + box.childEdgeLy * 0.6;
-            frameTexts.push_back({toRender(end), axisName, labelColor, 11, true});
-        };
-    if (frameFade > 0.05f)
-    {
-        // Floor-wall junction carries the axis parallel to the wall,
-        // the floor side edge the wall-normal axis, the far vertical
-        // edge Y.
-        glm::dvec3 junction = box.centerLy;
-        junction.y = floorY;
-        junction[faces.wallAxis] = wallCoord;
-        addAxisLabels(otherHorizontal, junction, otherHorizontal == 0 ? "X" : "Z");
-
-        glm::dvec3 side = box.centerLy;
-        side.y = floorY;
-        side[otherHorizontal] = sideCoord;
-        addAxisLabels(faces.wallAxis, side, faces.wallAxis == 0 ? "X" : "Z");
-
-        glm::dvec3 vertical = box.centerLy;
-        vertical[faces.wallAxis] = wallCoord;
-        vertical[otherHorizontal] = sideCoord;
-        addAxisLabels(1, vertical, "Y");
-    }
-
-    // ---- projections of a point onto the coordinate faces ---------------
-    const auto addProjection =
-        [&](const glm::dvec3& pointLy, const std::optional<game::navigation::GalaxyNavigationCell>& child,
-            float alpha, bool exactPoint)
-        {
-            if (alpha <= 0.002f || !galaxyHierarchyContains(box, pointLy))
-                return;
-            glm::vec4 guide = gridVisuals.projectionColor;
-            guide.a *= alpha;
-            glm::vec4 foot = gridVisuals.projectionFootColor;
-            foot.a *= alpha;
-
-            glm::dvec3 onFloor = pointLy;
-            onFloor.y = floorY;
-            glm::dvec3 onWall = pointLy;
-            onWall[faces.wallAxis] = wallCoord;
-            context.addLine(toRender(pointLy), toRender(onFloor), guide);
-            context.addLine(toRender(pointLy), toRender(onWall), guide);
-
-            // Rulers on the faces: from the foot to the labelled edges.
-            glm::vec4 ruler = guide;
-            ruler.a *= 0.55f;
-            glm::dvec3 floorToJunction = onFloor;
-            floorToJunction[faces.wallAxis] = wallCoord;
-            glm::dvec3 floorToSide = onFloor;
-            floorToSide[otherHorizontal] = sideCoord;
-            glm::dvec3 wallToSide = onWall;
-            wallToSide[otherHorizontal] = sideCoord;
-            context.addLine(toRender(onFloor), toRender(floorToJunction), ruler);
-            context.addLine(toRender(onFloor), toRender(floorToSide), ruler);
-            context.addLine(toRender(onWall), toRender(wallToSide), ruler);
-
-            // The child's footprint: exactly one grid cell on each face.
-            if (child)
-            {
-                const double h = child->size * 0.5;
-                const auto square = [&](const glm::dvec3& c, int axisU, int axisV) {
-                    const glm::dvec3 u = axisUnit(axisU) * h;
-                    const glm::dvec3 v = axisUnit(axisV) * h;
-                    context.addLine(toRender(c - u - v), toRender(c + u - v), foot);
-                    context.addLine(toRender(c + u - v), toRender(c + u + v), foot);
-                    context.addLine(toRender(c + u + v), toRender(c - u + v), foot);
-                    context.addLine(toRender(c - u + v), toRender(c - u - v), foot);
-                };
-                glm::dvec3 floorCell = child->center;
-                floorCell.y = floorY;
-                glm::dvec3 wallCell = child->center;
-                wallCell[faces.wallAxis] = wallCoord;
-                square(floorCell, 0, 2);
-                square(wallCell, otherHorizontal, 1);
-            }
-
-            // Exact feet of an object: a small cross.
-            if (exactPoint)
-            {
-                const float depthFloor =
-                    std::max(0.001f, glm::dot(toRender(onFloor) - cameraPosition, -cameraDirection));
-                const float s = 4.0f * 2.0f * depthFloor * std::tan(glm::radians(24.0f)) /
-                                static_cast<float>(std::max(vp.height, 1));
-                for (const glm::dvec3& f : {onFloor, onWall})
-                {
-                    const glm::vec3 c = toRender(f);
-                    context.addLine(c - cameraRight * s, c + cameraRight * s, foot);
-                    context.addLine(c - cameraUp * s, c + cameraUp * s, foot);
-                }
-            }
-        };
-
-    const auto coordinateText =
-        [&](const game::navigation::GalaxyNavigationCell& child) -> std::string {
-            const glm::ivec3 o = galaxyHierarchyChildOffset(box, child.index);
-            if (box.parent.overview())
-            {
-                return "G0 [" + std::to_string(child.index.x) + ", " + std::to_string(child.index.y) + ", " +
-                       std::to_string(child.index.z) + "]";
-            }
-            const int c = (divisions - 1) / 2;
-            return "x " + std::to_string(o.x - c) + "  y " + std::to_string(o.y - c) + "  z " +
-                   std::to_string(o.z - c);
-        };
-
-    // ---- children: selected, hovered (fade), outgoing (fade) -----------
-    const auto isChild = [&](const game::navigation::GalaxyNavigationCell& cell) {
-        return galaxyHierarchyIsChild(box, cell);
-    };
-
-    /*
-        Marker diamond at a child centre. Only the SELECTED child's marker
-        is a pointer target (published): a hover marker is feedback for the
-        object / layer point under the cursor and must never take the click
-        from that object (e.g. a cloud whose cube centre is near the cursor).
-    */
-    const auto publishMarker =
-        [&](const game::navigation::GalaxyNavigationCell& cell, float radiusPx, const glm::vec4& color,
-            bool pointerTarget)
-        {
-            const glm::vec3 center = toRender(cell.center);
-            const float viewDepth = std::max(0.001f, glm::dot(center - cameraPosition, -cameraDirection));
-            const float worldUnitsPerPixel =
-                2.0f * viewDepth * std::tan(glm::radians(48.0f) * 0.5f) /
-                static_cast<float>(std::max(vp.height, 1));
-            const float markerSize = worldUnitsPerPixel * radiusPx;
-
-            if (pointerTarget)
-            {
-                GalaxyNavigationMarker presented;
-                presented.cell = cell;
-                presented.radiusPx = radiusPx;
-                presented.screen = projectToScreen(center, camera.mvp, vp, presented.visible, presented.depth);
-                state.presentedCubeMarkers.push_back(presented);
-            }
-
-            // Flat diamond facing the camera (unlike a star's 3D cross).
-            const glm::vec3 top = center + cameraUp * markerSize;
-            const glm::vec3 right = center + cameraRight * markerSize;
-            const glm::vec3 bottom = center - cameraUp * markerSize;
-            const glm::vec3 left = center - cameraRight * markerSize;
-            context.addLine(top, right, color);
-            context.addLine(right, bottom, color);
-            context.addLine(bottom, left, color);
-            context.addLine(left, top, color);
-        };
-
-    const std::optional<game::navigation::GalaxyNavigationCell> selectedChild =
-        grid.hasSelectedCell() && isChild(grid.selectedCell())
-            ? std::optional<game::navigation::GalaxyNavigationCell>(grid.selectedCell())
-            : std::nullopt;
-
-    const auto sameCell = [](const game::navigation::GalaxyNavigationCell& a,
-                             const game::navigation::GalaxyNavigationCell& b) {
-        return a.level == b.level && a.index == b.index;
-    };
-
-    if (state.hoverOutgoingCell && isChild(*state.hoverOutgoingCell) &&
-        !(selectedChild && sameCell(*selectedChild, *state.hoverOutgoingCell)))
-    {
-        glm::vec4 edge = gridVisuals.hoveredEdgeColor;
-        edge.a *= state.hoverOutgoingAlpha;
-        addChildCube(*state.hoverOutgoingCell, edge);
-    }
-
-    if (state.hoverVisualCell && isChild(*state.hoverVisualCell) && state.hoverVisualAlpha > 0.001f)
-    {
-        const auto& hovered = *state.hoverVisualCell;
-        const float a = state.hoverVisualAlpha;
-        const bool alsoSelected = selectedChild && sameCell(*selectedChild, hovered);
-        glm::vec4 edge = gridVisuals.hoveredEdgeColor;
-        edge.a *= a;
-        if (!alsoSelected)
-            addChildCube(hovered, edge);
-        glm::vec4 marker = gridVisuals.hoveredMarkerColor;
-        marker.a *= a;
-        if (!alsoSelected)
-            publishMarker(hovered, 4.0f, marker, false);
-
-        // Hover layer: the cross-section of the parent the cursor slides on.
-        if (state.hoverTargetValid && state.hoverTarget.reason == GalaxyPointerHitReason::HierarchyLayer)
-        {
-            const int axis = state.hoverLayerAxis >= 0 ? state.hoverLayerAxis : 1;
-            const int u = axis == 0 ? 1 : 0;
-            const int v = axis == 2 ? 1 : 2;
-            glm::dvec3 c = box.centerLy;
-            c[axis] = hovered.center[axis];
-            glm::vec4 layer = gridVisuals.hoverLayerColor;
-            layer.a *= a;
-            const glm::dvec3 du = axisUnit(u) * half;
-            const glm::dvec3 dv = axisUnit(v) * half;
-            context.addLine(toRender(c - du - dv), toRender(c + du - dv), layer);
-            context.addLine(toRender(c + du - dv), toRender(c + du + dv), layer);
-            context.addLine(toRender(c + du + dv), toRender(c - du + dv), layer);
-            context.addLine(toRender(c - du + dv), toRender(c - du - dv), layer);
-        }
-
-        // Projection of the hovered point (object or cube centre).
-        const auto hoverPoint =
-            state.hoverTargetValid
-                ? GalaxyMapInteraction::semanticPointLy(galaxy, state.hoverTarget)
-                : std::nullopt;
-        const bool exact =
-            state.hoverTargetValid &&
-            (state.hoverTarget.kind == GalaxyPointerTargetKind::Star ||
-             state.hoverTarget.kind == GalaxyPointerTargetKind::Medium);
-        addProjection(exact && hoverPoint ? *hoverPoint : hovered.center, hovered,
-                      gridVisuals.hoverProjectionAlpha * a, exact);
-
-        bool visible = false;
-        float depth = 1.0f;
-        const glm::vec2 screen = projectToScreen(toRender(hovered.center), camera.mvp, vp, visible, depth);
-        if (visible && a > 0.3f)
-        {
-            glm::vec4 color = gridVisuals.hoveredMarkerColor;
-            color.a = 0.80f * a;
-            frameTexts.push_back({glm::vec3(screen.x + 10.0f, screen.y + 16.0f, 0.0f), coordinateText(hovered),
-                                  color, 11, false, true});
-        }
-    }
-
-    if (selectedChild)
-    {
-        addChildCube(*selectedChild, gridVisuals.selectedEdgeColor);
-        // The marker is a pointer target only for a CUBE selection; the cube
-        // of a selected star / cloud is its context and never takes the
-        // object's next click (its double click).
-        const bool objectSelection =
-            state.selectedSystemId >= 0 || state.selectedMediumObject >= 0;
-        publishMarker(*selectedChild, 5.0f, gridVisuals.selectedMarkerColor, !objectSelection);
-
-        // Projection of the selected object (star / cloud point) or cube.
-        const bool objectSelected =
-            (state.selectedSystemId >= 0 || state.selectedMediumObject >= 0) &&
-            state.navigationFocusValid &&
-            game::system_map::galaxyHierarchyContains(box, state.navigationFocusLy);
-        addProjection(objectSelected ? state.navigationFocusLy : selectedChild->center, selectedChild,
-                      gridVisuals.selectedProjectionAlpha, objectSelected);
-
-        bool visible = false;
-        float depth = 1.0f;
-        const glm::vec2 screen = projectToScreen(toRender(selectedChild->center), camera.mvp, vp, visible, depth);
-        const bool hoverShowsSame =
-            state.hoverVisualCell && sameCell(*state.hoverVisualCell, *selectedChild) &&
-            state.hoverVisualAlpha > 0.3f;
-        if (visible && !hoverShowsSame)
-        {
-            glm::vec4 color = gridVisuals.selectedMarkerColor;
-            color.a = 0.85f;
-            frameTexts.push_back({glm::vec3(screen.x + 10.0f, screen.y + 16.0f, 0.0f),
-                                  coordinateText(*selectedChild), color, 11, false, true});
-        }
-    }
+    paintHierarchyFrame(context, in, state.presentedCubeMarkers, frameTexts);
 }
 
 /*
@@ -1457,48 +1060,8 @@ void GalaxyMapRenderer::drawFrameTexts(
     const std::vector<GalaxyFrameText>& frameTexts
 ) const
 {
-    const glm::mat4 ortho =
-        glm::ortho(0.0f, static_cast<float>(vp.width), static_cast<float>(vp.height), 0.0f, -1.0f, 1.0f);
-
-    // Orientation triad (secondary cue): X / Y / Z of the frame as seen now.
-    const glm::vec2 origin(static_cast<float>(vp.width) - 58.0f, 92.0f);
-    const float length = 30.0f;
-    struct Axis { glm::vec3 dir; const char* name; glm::vec4 color; };
-    const Axis axes[3] = {
-        {{1.0f, 0.0f, 0.0f}, "X", {0.90f, 0.52f, 0.46f, 0.80f}},
-        {{0.0f, 1.0f, 0.0f}, "Y", {0.56f, 0.86f, 0.56f, 0.80f}},
-        {{0.0f, 0.0f, 1.0f}, "Z", {0.52f, 0.70f, 0.98f, 0.80f}}};
-    const glm::mat3 view3(camera.view);
-    context.beginLines();
-    glm::vec2 tips[3];
-    for (int i = 0; i < 3; ++i)
-    {
-        const glm::vec3 v = view3 * axes[i].dir;
-        tips[i] = origin + glm::vec2(v.x, -v.y) * length;
-        context.addLine(glm::vec3(origin, 0.0f), glm::vec3(tips[i], 0.0f), axes[i].color);
-    }
-    context.flushLines(ortho);
-
-    context.beginTextFrame(vp.width, vp.height);
-    for (int i = 0; i < 3; ++i)
-        context.drawTextPx(axes[i].name, tips[i].x + 2.0f, tips[i].y + 4.0f, 11, axes[i].color);
-
-    for (const auto& text : frameTexts)
-    {
-        glm::vec2 screen(text.position.x, text.position.y);
-        if (!text.screenSpace)
-        {
-            bool visible = false;
-            float depth = 1.0f;
-            screen = projectToScreen(text.position, camera.mvp, vp, visible, depth);
-            if (!visible)
-                continue;
-            screen += glm::vec2(-3.0f, 4.0f);
-        }
-        context.drawTextPx(text.text, screen.x, screen.y, text.px, text.color);
-    }
-    context.endTextFrame();
     (void)viewState;
+    paintHierarchyFrameTexts(context, vp, camera.mvp, camera.view, frameTexts);
 }
 
 void GalaxyMapRenderer::drawLabels(

@@ -77,6 +77,7 @@ namespace
 
     void fitCameraOnce(
         SystemMapView& view,
+        const Viewport& viewport,
         int systemId
     )
     {
@@ -85,21 +86,10 @@ namespace
         if (state.lastCameraFitSystemId == systemId)
             return;
 
-        view.cancelCameraFlight(false);
-
-        state.camera.target = glm::dvec3(0.0);
-        state.camera.distance =
-            std::clamp(
-                view.controls().fittedSystemRadiusWorld *
-                    view.controls().initialFitPadding,
-                SystemMapView::minimumCameraHalfHeight,
-                SystemMapView::maximumCameraHalfHeight
-            );
-
-        state.navigationGrid.setAnchorFromPosition(glm::dvec3(0.0));
-        state.navigationGrid.selectCell(
-            state.navigationGrid.anchorCell()
-        );
+        // A newly opened system: the S0 root as the current parent, on the
+        // whole screen (the same frame model as the Galaxy Map).
+        view.resetHierarchyToRoot(viewport);
+        state.navigationGrid.selectCell(state.navigationGrid.cell({}, 0));
         state.navigationCellExplicitlySelected = false;
         state.lastCameraFitSystemId = systemId;
     }
@@ -186,6 +176,12 @@ namespace
         std::unordered_set<std::string> hidden;
         for (const auto& body : presentation.bodies)
         {
+            // Nothing outside the current parent cube is shown or a target.
+            if (!view.hierarchyContains(body.positionAu))
+            {
+                hidden.insert(body.id);
+                continue;
+            }
             const double orbitPx = body.orbitRadiusAu * pixelsPerAu;
             const std::string& level = body.presentationLevel;
             const bool show =
@@ -253,7 +249,7 @@ SystemMapPresentation SystemMapPresentationBuilder::build(
 
     view.state().lastScale = presentation.systemScale;
 
-    fitCameraOnce(view, system.systemId);
+    fitCameraOnce(view, viewport, system.systemId);
 
     filterBodiesByPresentationLevel(view, viewport, presentation);
 

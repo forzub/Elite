@@ -3,211 +3,168 @@
 
     This is a standalone translation unit. It deliberately depends only on
     SystemMapView and the semantic SystemMapInteractionContext contract.
+
+    The pointer / cube navigation is the SAME as the Galaxy Map's
+    (GalaxyMapInteraction): one resolver per press (hub > body > the
+    selected cube's marker > the child cube on the hover layer), a press
+    never moves the camera (PendingClick until the drag threshold), hover is
+    the resolver's winner, the current parent cube changes only by double
+    click / up / breadcrumbs / LEVEL 0 and by the wheel through screen size.
 */
 
 #include <algorithm>
 #include <cmath>
 #include <vector>
 
-#include "src/game/navigation/CubicNavigationHierarchy.h"
 #include "src/game/navigation/CubicNavigationInteraction.h"
 #include "src/game/system_map/SystemMapInteraction.h"
 #include "src/game/system_map/SystemMapView.h"
 
-namespace
-{
-    constexpr double SystemInteractionKilometersPerAu =
-        149597870.7;
-
-
-}
-
 namespace game::system_map
 {
-
-void SystemMapInteraction::updateNavigationHoverFromCursor(
-    SystemMapView& view,
-    const Viewport& viewport,
-    double localMouseX,
-    double localMouseY
-) const
+namespace
 {
-    auto& state =
-        view.state();
-
-    if (!state.navigationGrid.enabled() ||
-        state.lastScale <= 0.0f ||
-        !view.navigationCellsInteractive(viewport))
+    double scaleOf(const SystemMapView& view)
     {
-        state.navigationGrid.clearHoveredCell();
-        return;
+        return std::max(static_cast<double>(view.state().lastScale), 1.0e-12);
     }
 
-    const glm::dvec3 cursorMapPosition =
-        view.targetPlanePointFromScreen(
-            viewport,
-            localMouseX,
-            localMouseY
-        );
-
-    const glm::dvec3 cursorAu =
-        cursorMapPosition /
-        static_cast<double>(
-            state.lastScale
-        );
-
-    const auto index =
-        state.navigationGrid.nearestIndexForPosition(
-            cursorAu,
-            state.navigationGrid.level()
-        );
-
-    const int minimumLevel =
-        state.navigationGrid
-            .definition()
-            .minimumLevel;
-
-    const navigation::CubicGridIndex
-        systemRootIndex {};
-
-    const auto rootIndexForCursor =
-        state.navigationGrid.nearestIndexForPosition(
-            cursorAu,
-            minimumLevel
-        );
-
-    if (rootIndexForCursor != systemRootIndex)
+    bool sameCamera(const SystemCameraState& a, const SystemCameraState& b)
     {
-        state.navigationGrid.clearHoveredCell();
-        return;
+        return a.yaw == b.yaw && a.pitch == b.pitch && a.distance == b.distance && a.target == b.target;
     }
 
-    state.navigationGrid.setHoveredCell(
-        state.navigationGrid.cell(
-            index,
-            state.navigationGrid.level()
-        )
-    );
-}
-
-bool SystemMapInteraction::pickNavigationCell(
-    const SystemMapView& view,
-    const Viewport& viewport,
-    double localMouseX,
-    double localMouseY,
-    navigation::CubicNavigationCell& outCell
-) const
-{
-    const auto& state =
-        view.state();
-
-    if (!state.navigationGrid.enabled() ||
-        state.lastScale <= 0.0f ||
-        !view.navigationCellsInteractive(viewport))
+    // The cursor ray in the system grid (AU): from the camera eye.
+    void cursorRayAu(
+        const SystemMapView& view,
+        const Viewport& viewport,
+        double localX,
+        double localY,
+        glm::dvec3& originAu,
+        glm::dvec3& directionAu
+    )
     {
-        return false;
+        const double ndcX = 2.0 * localX / static_cast<double>(std::max(viewport.width, 1)) - 1.0;
+        const double ndcY = 1.0 - 2.0 * localY / static_cast<double>(std::max(viewport.height, 1));
+        const double tanHalf = std::tan(glm::radians(static_cast<double>(view.visuals().projectionFieldOfViewDeg)) * 0.5);
+        const double aspect =
+            viewport.height > 0 ? static_cast<double>(viewport.width) / static_cast<double>(viewport.height) : 1.0;
+        originAu = view.cameraEyeAbsolute() / scaleOf(view);
+        directionAu = glm::normalize(
+            -view.cameraDirectionWorld() +
+            view.cameraRightWorld() * (ndcX * tanHalf * aspect) +
+            view.cameraUpWorld() * (ndcY * tanHalf));
     }
 
-    std::vector<navigation::CubicNavigationCell>
-        cells;
-
-    cells.reserve(3);
-
-    const auto anchor =
-        state.navigationGrid.anchorCell();
-
-    cells.push_back(anchor);
-
-    const auto addUniqueCell =
-        [&](const navigation::CubicNavigationCell& cell)
+    GalaxyHierarchyLayer hoverLayer(const SystemMapView& view)
+    {
+        const auto& state = view.state();
+        const GalaxyHierarchyBox box = view.hierarchyBox();
+        glm::dvec3 through = box.centerLy;
+        if (state.navigationGrid.hasSelectedCell() &&
+            galaxyHierarchyIsChild(box, state.navigationGrid.selectedCell()))
         {
-            const bool alreadyPresent =
-                std::any_of(
-                    cells.begin(),
-                    cells.end(),
-                    [&](const auto& existing)
-                    {
-                        return
-                            existing.level == cell.level &&
-                            existing.index == cell.index;
-                    }
-                );
+            through = state.navigationGrid.selectedCell().center;
+        }
+        return galaxyHierarchyLayer(box, -view.cameraDirectionWorld(), through, state.hoverLayerAxis);
+    }
 
-            if (!alreadyPresent)
-                cells.push_back(cell);
-        };
-
-    if (state.navigationCellExplicitlySelected &&
-        state.navigationGrid.hasSelectedCell())
+    // ONE resolver over what the last frame presented.
+    SystemPointerTarget resolveSystemPointer(
+        const SystemMapView& view,
+        const SystemMapInteractionContext& context,
+        const Viewport& viewport,
+        double localX,
+        double localY
+    )
     {
-        const auto selected =
-            state.navigationGrid.selectedCell();
+        SystemPointerTarget target;
+        const auto& state = view.state();
+        const double scale = scaleOf(view);
 
-        if (selected.level ==
-            state.navigationGrid.level())
+        if (const auto hub = context.pickSystemHubSelection(localX, localY))
         {
-            addUniqueCell(selected);
+            const auto position = context.systemObjectAbsolutePosition(hub->hubId);
+            if (position && view.hierarchyContains(*position / scale))
+            {
+                target.kind = SystemPointerTarget::Kind::Hub;
+                target.hubId = hub->hubId;
+                target.hubParentBodyId = hub->parentBodyId;
+                target.pointAu = *position / scale;
+                return target;
+            }
+        }
+
+        if (const auto body = context.pickSystemBodyId(localX, localY))
+        {
+            const auto position = context.systemBodyAbsolutePosition(*body);
+            if (position && view.hierarchyContains(*position / scale))
+            {
+                target.kind = SystemPointerTarget::Kind::Body;
+                target.bodyId = *body;
+                target.pointAu = *position / scale;
+                return target;
+            }
+        }
+
+        // The selected cube's marker (drawn control).
+        const float margin = static_cast<float>(game::presentation::pointerInteractionSettings().glyphHitMarginPx);
+        for (const auto& marker : state.presentedCubeMarkers)
+        {
+            if (!marker.visible)
+                continue;
+            const float d = glm::length(glm::vec2(static_cast<float>(localX), static_cast<float>(localY)) - marker.screen);
+            if (d <= marker.radiusPx + margin)
+            {
+                target.kind = SystemPointerTarget::Kind::Cube;
+                target.cell = marker.cell;
+                target.pointAu = marker.cell.center;
+                return target;
+            }
+        }
+
+        // Empty space inside the parent: the child on the hover layer.
+        const GalaxyHierarchyLayer layer = hoverLayer(view);
+        glm::dvec3 origin(0.0);
+        glm::dvec3 direction(0.0, 0.0, -1.0);
+        cursorRayAu(view, viewport, localX, localY, origin, direction);
+        const double along = direction[layer.axis];
+        if (std::abs(along) > 1.0e-12)
+        {
+            const double t = (layer.coordinateLy - origin[layer.axis]) / along;
+            if (t > 0.0)
+            {
+                const glm::dvec3 point = origin + direction * t;
+                if (const auto child = view.hierarchyChildAt(point))
+                {
+                    target.kind = SystemPointerTarget::Kind::Cube;
+                    target.cell = *child;
+                    target.pointAu = point;
+                    target.onLayer = true;
+                }
+            }
+        }
+        return target;
+    }
+
+    std::optional<navigation::CubicNavigationCell> targetChild(
+        const SystemMapView& view,
+        const SystemPointerTarget& target
+    )
+    {
+        switch (target.kind)
+        {
+            case SystemPointerTarget::Kind::Cube:
+                if (target.cell && galaxyHierarchyIsChild(view.hierarchyBox(), *target.cell))
+                    return target.cell;
+                return std::nullopt;
+            case SystemPointerTarget::Kind::Body:
+            case SystemPointerTarget::Kind::Hub:
+                return view.hierarchyChildAt(target.pointAu);
+            default:
+                return std::nullopt;
         }
     }
-
-    if (state.navigationGrid.hasHoveredCell())
-    {
-        addUniqueCell(
-            state.navigationGrid.hoveredCell()
-        );
-    }
-
-    bool found = false;
-    float bestDistance =
-        view.controls().navigationCellPickRadiusPx;
-    float bestDepth = 1.0f;
-
-    for (const auto& cell : cells)
-    {
-        const glm::dvec3 absoluteMap =
-            cell.center *
-            static_cast<double>(
-                state.lastScale
-            );
-
-        bool visible = false;
-        float depth = 2.0f;
-
-        const glm::vec2 screen =
-            view.projectAbsoluteToScreen(
-                viewport,
-                absoluteMap,
-                visible,
-                depth
-            );
-
-        if (!visible)
-            continue;
-
-        const glm::vec2 delta =
-            screen -
-            glm::vec2(
-                static_cast<float>(localMouseX),
-                static_cast<float>(localMouseY)
-            );
-
-        const float distance =
-            glm::length(delta);
-
-        if (distance < bestDistance ||
-            (
-                std::abs(distance - bestDistance) < 0.01f &&
-                depth < bestDepth
-            ))
-        {
-            bestDistance = distance;
-            bestDepth = depth;
-            outCell = cell;
-            found = true;
-        }
-    }
-
-    return found;
 }
 
 void SystemMapInteraction::focusBody(
@@ -217,21 +174,10 @@ void SystemMapInteraction::focusBody(
     double nowSeconds
 ) const
 {
-    auto& state =
-        view.state();
-
-    if (bodyId.empty() ||
-        !state.navigationGrid.enabled() ||
-        state.lastScale <= 0.0f)
-    {
+    auto& state = view.state();
+    if (bodyId.empty() || !state.navigationGrid.enabled() || state.lastScale <= 0.0f)
         return;
-    }
-
-    const auto absolutePosition =
-        context.systemBodyAbsolutePosition(
-            bodyId
-        );
-
+    const auto absolutePosition = context.systemBodyAbsolutePosition(bodyId);
     if (!absolutePosition)
         return;
 
@@ -240,26 +186,13 @@ void SystemMapInteraction::focusBody(
     state.selectedHubParentBodyId.clear();
     state.navigationCellExplicitlySelected = false;
 
-    const glm::dvec3 bodyPositionAu =
-        *absolutePosition /
-        static_cast<double>(
-            state.lastScale
-        );
-
-    state.navigationGrid.setAnchorFromPosition(
-        bodyPositionAu
-    );
-
-    state.navigationGrid.clearSelectedCell();
-
-    state.navigationGrid.clearHoveredCell();
-
-    state.hoverVisualCell.reset();
-    state.hoverVisualAlpha = 0.0f;
-    state.hoverOutgoingCell.reset();
-    state.hoverOutgoingAlpha = 0.0f;
+    // The body's cube inside the current parent is its context selection;
+    // it follows the body (handleInput) as it moves.
+    if (const auto child = view.hierarchyChildAt(*absolutePosition / scaleOf(view)))
+        state.navigationGrid.selectCell(*child);
+    else
+        state.navigationGrid.clearSelectedCell();
     state.cubeClickTracker.reset();
-
     (void)nowSeconds;
 }
 
@@ -270,44 +203,23 @@ void SystemMapInteraction::focusHub(
     double nowSeconds
 ) const
 {
-    auto& state =
-        view.state();
-
-    if (hub.hubId.empty() ||
-        !state.navigationGrid.enabled() ||
-        state.lastScale <= 0.0f)
-    {
+    auto& state = view.state();
+    if (hub.hubId.empty() || !state.navigationGrid.enabled() || state.lastScale <= 0.0f)
         return;
-    }
-
-    const auto absolutePosition =
-        context.systemObjectAbsolutePosition(
-            hub.hubId
-        );
-
+    const auto absolutePosition = context.systemObjectAbsolutePosition(hub.hubId);
     if (!absolutePosition)
         return;
 
     state.selectedBodyId.clear();
     state.selectedHubId = hub.hubId;
-    state.selectedHubParentBodyId =
-        hub.parentBodyId;
+    state.selectedHubParentBodyId = hub.parentBodyId;
     state.navigationCellExplicitlySelected = false;
-
-    const glm::dvec3 hubPositionAu =
-        *absolutePosition /
-        static_cast<double>(
-            state.lastScale
-        );
-
-    state.navigationGrid.setAnchorFromPosition(
-        hubPositionAu
-    );
-
-    state.navigationGrid.clearSelectedCell();
-
-    state.navigationGrid.clearHoveredCell();
-
+    if (const auto child = view.hierarchyChildAt(*absolutePosition / scaleOf(view)))
+        state.navigationGrid.selectCell(*child);
+    else
+        state.navigationGrid.clearSelectedCell();
+    state.cubeClickTracker.reset();
+    state.bodyClickTracker.reset();
     (void)nowSeconds;
 }
 
@@ -333,6 +245,153 @@ void SystemMapInteraction::focusTacticalObjectSelection(
     state.orbitPivotActive = false;
 }
 
+/*
+    Single click: a body / hub is selected with the cube it is in (no card);
+    a cube is selected. Double click: a body opens its info card; a cube
+    becomes the current parent (camera fits it).
+*/
+void SystemMapInteraction::applyClick(
+    SystemMapView& view,
+    const SystemMapInteractionContext& context,
+    const Viewport& viewport,
+    const SystemPointerTarget& target,
+    double x,
+    double y,
+    double nowSeconds,
+    SystemMapInputResult& result
+) const
+{
+    auto& state = view.state();
+    const auto& controls = view.controls();
+
+    switch (target.kind)
+    {
+        case SystemPointerTarget::Kind::Body:
+        {
+            state.cubeClickTracker.reset();
+            const bool doubleClick = state.bodyClickTracker.registerClick(nowSeconds, x, y, target.bodyId);
+            focusBody(view, context, target.bodyId, nowSeconds);
+            result.selectedBodyId = target.bodyId;
+            if (doubleClick)
+                result.clickedBodyId = target.bodyId; // the info card
+            return;
+        }
+        case SystemPointerTarget::Kind::Hub:
+        {
+            state.bodyClickTracker.reset();
+            SystemMapHubSelection hub;
+            hub.hubId = target.hubId;
+            hub.parentBodyId = target.hubParentBodyId;
+            focusHub(view, context, hub, nowSeconds);
+            return;
+        }
+        case SystemPointerTarget::Kind::Cube:
+        {
+            if (!target.cell || !state.navigationGrid.enabled())
+                return;
+            state.bodyClickTracker.reset();
+            const auto& cell = *target.cell;
+            const bool doubleClick =
+                state.cubeClickTracker.registerClick(nowSeconds, x, y, cell.level, cell.index,
+                                                     controls.cubeDoubleClickMaxIntervalSeconds,
+                                                     controls.cubeDoubleClickMaxDistancePx);
+            state.selectedBodyId.clear();
+            state.selectedHubId.clear();
+            state.selectedHubParentBodyId.clear();
+            state.navigationGrid.selectCell(cell);
+            state.navigationCellExplicitlySelected = true;
+            result.clickedNavigationCell = cell;
+
+            if (doubleClick && view.enterHierarchyCell(cell, viewport, nowSeconds))
+            {
+                state.navigationCellExplicitlySelected = true;
+                result.systemLevelChanged = view.hierarchyBox().childLevel;
+            }
+            return;
+        }
+        case SystemPointerTarget::Kind::Empty:
+            state.cubeClickTracker.reset();
+            state.bodyClickTracker.reset();
+            return;
+    }
+}
+
+void SystemMapInteraction::updatePointerHover(
+    SystemMapView& view,
+    const SystemMapInteractionContext& context,
+    const SystemMapInputFrame& frame
+) const
+{
+    auto& state = view.state();
+    const bool changed =
+        !state.hoverTargetValid ||
+        std::abs(frame.localMouseX - state.hoverMouseX) + std::abs(frame.localMouseY - state.hoverMouseY) > 0.5 ||
+        !sameCamera(state.hoverCamera, state.camera) ||
+        state.hoverHierarchyRevision != state.hierarchyRevision;
+    if (!changed)
+        return;
+
+    state.hoverLayerAxis = hoverLayer(view).axis;
+    state.hoverTarget = resolveSystemPointer(view, context, frame.viewport, frame.localMouseX, frame.localMouseY);
+    state.hoverTargetValid = true;
+    state.hoverMouseX = frame.localMouseX;
+    state.hoverMouseY = frame.localMouseY;
+    state.hoverCamera = state.camera;
+    state.hoverHierarchyRevision = state.hierarchyRevision;
+
+    if (const auto child = targetChild(view, state.hoverTarget))
+        state.navigationGrid.setHoveredCell(*child);
+    else
+        state.navigationGrid.clearHoveredCell();
+}
+
+/*
+    The wheel walks the hierarchy by screen size (as on the Galaxy Map): the
+    child under the cursor (else at the view centre) filling the screen
+    becomes the parent; a parent smaller than the screen hands over to its
+    own parent; the S0 root never gets smaller than the screen.
+*/
+void SystemMapInteraction::applyWheelLevels(
+    SystemMapView& view,
+    const SystemMapInputFrame& frame,
+    bool zoomIn,
+    SystemMapInputResult& result
+) const
+{
+    auto& state = view.state();
+    auto& grid = state.navigationGrid;
+    const Viewport& vp = frame.viewport;
+    for (int guard = 0; guard < 3; ++guard)
+    {
+        const GalaxyHierarchyBox box = view.hierarchyBox();
+        if (zoomIn)
+        {
+            std::optional<navigation::CubicNavigationCell> candidate;
+            if (grid.hasHoveredCell() && galaxyHierarchyIsChild(box, grid.hoveredCell()))
+                candidate = grid.hoveredCell();
+            else
+                candidate = view.hierarchyChildAt(state.camera.target / scaleOf(view));
+            if (!candidate ||
+                view.cubeScreenRatio(candidate->center, candidate->size, vp) < SystemMapView::ParentFillRatio ||
+                !view.enterHierarchyCell(*candidate, vp, frame.nowSeconds, false))
+            {
+                return;
+            }
+            result.systemLevelChanged = view.hierarchyBox().childLevel;
+        }
+        else
+        {
+            if (box.parent.level <= 0 ||
+                view.cubeScreenRatio(box.centerLy, box.edgeLy, vp) >= SystemMapView::ParentHandOverUpRatio ||
+                !view.jumpToHierarchyLevel(box.parent.level - 1, vp, frame.nowSeconds, false))
+            {
+                return;
+            }
+            result.systemLevelChanged = view.hierarchyBox().childLevel;
+        }
+    }
+}
+
 SystemMapInputResult SystemMapInteraction::handleInput(
     SystemMapView& view,
     const SystemMapInteractionContext& context,
@@ -341,358 +400,112 @@ SystemMapInputResult SystemMapInteraction::handleInput(
 ) const
 {
     SystemMapInputResult result;
+    auto& state = view.state();
+    const auto& controls = view.controls();
+    const Viewport& viewport = frame.viewport;
 
-    auto& state =
-        view.state();
+    const double dx = frame.mouseX - state.camera.lastMouseX;
+    const double dy = frame.mouseY - state.camera.lastMouseY;
 
-    const auto& controls =
-        view.controls();
+    const auto finishFrame = [&]() {
+        state.camera.leftWasDown = frame.leftDown;
+        state.camera.rightWasDown = frame.rightDown;
+        state.camera.lastMouseX = frame.mouseX;
+        state.camera.lastMouseY = frame.mouseY;
+    };
 
-    const Viewport& viewport =
-        frame.viewport;
-
-    const double dx =
-        frame.mouseX -
-        state.camera.lastMouseX;
-
-    const double dy =
-        frame.mouseY -
-        state.camera.lastMouseY;
-
-    bool leftStartedThisFrame = false;
-    bool rightStartedThisFrame = false;
-
-    const bool wheelInputPending =
-        frame.inside &&
-        pendingScrollY != 0.0;
-
+    // A press / wheel during a frame flight finishes it (the new parent is
+    // already current).
     const bool manualFlightCancel =
-        (
-            frame.inside &&
-            frame.leftDown &&
-            !state.camera.leftWasDown
-        ) ||
-        (
-            frame.inside &&
-            frame.rightDown &&
-            !state.camera.rightWasDown
-        ) ||
-        wheelInputPending;
-
-    if (state.cameraFlight.active &&
-        manualFlightCancel)
-    {
-        view.cancelCameraFlight(false);
-    }
+        (frame.inside && frame.leftDown && !state.camera.leftWasDown) ||
+        (frame.inside && frame.rightDown && !state.camera.rightWasDown) ||
+        (frame.inside && pendingScrollY != 0.0);
+    if (state.cameraFlight.active && manualFlightCancel)
+        view.cancelCameraFlight(true);
 
     if (state.cameraFlight.active)
     {
         pendingScrollY = 0.0;
         state.navigationGrid.clearHoveredCell();
+        state.hoverTargetValid = false;
         state.camera.rotating = false;
         state.camera.panning = false;
-
-        view.constrainCameraToNavigationBoundary(
-            viewport
-        );
-
-        state.camera.leftWasDown =
-            frame.leftDown;
-
-        state.camera.rightWasDown =
-            frame.rightDown;
-
-        state.camera.lastMouseX =
-            frame.mouseX;
-
-        state.camera.lastMouseY =
-            frame.mouseY;
-
+        state.pointerGesture.suppress(frame.leftDown);
+        finishFrame();
         return result;
     }
 
-    if (frame.inside)
+    // The selected body's cube follows the body as it moves between cubes.
+    if (!state.selectedBodyId.empty())
     {
-        updateNavigationHoverFromCursor(
-            view,
-            viewport,
-            frame.localMouseX,
-            frame.localMouseY
-        );
-    }
-    else
-    {
-        state.navigationGrid.clearHoveredCell();
-    }
-
-    const auto cursorBodyTarget =
-        frame.inside
-            ? context.pickSystemCameraBodyTarget(
-                frame.localMouseX,
-                frame.localMouseY,
-                viewport
-            )
-            : std::nullopt;
-
-    const auto captureSystemOrbitPivot =
-        [&]()
+        if (const auto position = context.systemBodyAbsolutePosition(state.selectedBodyId))
         {
-            /*
-                Rotation priority:
-
-                1. nearest visible star / planet / moon;
-                2. explicitly selected cube centre;
-                3. cube centre under the cursor;
-                4. physical point under the mouse.
-            */
-            if (cursorBodyTarget)
+            const auto child = view.hierarchyChildAt(*position / scaleOf(view));
+            if (child)
             {
-                state.orbitPivotAbsolute =
-                    cursorBodyTarget->absolutePosition;
-                state.orbitPivotActive = true;
-                return;
-            }
-
-            if (state.navigationGrid.enabled() &&
-                state.navigationGrid.hasSelectedCell() &&
-                state.navigationCellExplicitlySelected)
-            {
-                state.orbitPivotAbsolute =
-                    state.navigationGrid
-                        .selectedCell()
-                        .center *
-                    static_cast<double>(state.lastScale);
-                state.orbitPivotActive = true;
-                return;
-            }
-
-            navigation::CubicNavigationCell pivotCell;
-
-            const bool cubePivotFound =
-                state.navigationGrid.enabled() &&
-                pickNavigationCell(
-                    view,
-                    viewport,
-                    frame.localMouseX,
-                    frame.localMouseY,
-                    pivotCell
-                );
-
-            if (cubePivotFound)
-            {
-                state.orbitPivotAbsolute =
-                    pivotCell.center *
-                    static_cast<double>(state.lastScale);
-                state.orbitPivotActive = true;
-                return;
-            }
-
-            state.orbitPivotAbsolute =
-                view.targetPlanePointFromScreen(
-                    viewport,
-                    frame.localMouseX,
-                    frame.localMouseY
-                );
-            state.orbitPivotActive = true;
-        };
-
-    if (frame.inside &&
-        frame.leftDown &&
-        !state.camera.leftWasDown)
-    {
-        leftStartedThisFrame = true;
-
-        state.camera.mouseDownX =
-            frame.mouseX;
-
-        state.camera.mouseDownY =
-            frame.mouseY;
-
-        state.camera.rotating = true;
-        state.camera.lastMouseX = frame.mouseX;
-        state.camera.lastMouseY = frame.mouseY;
-
-        captureSystemOrbitPivot();
-    }
-
-    if (!frame.leftDown &&
-        state.camera.leftWasDown)
-    {
-        if (frame.inside)
-        {
-            const double move =
-                std::abs(
-                    frame.mouseX -
-                    state.camera.mouseDownX
-                ) +
-                std::abs(
-                    frame.mouseY -
-                    state.camera.mouseDownY
-                );
-
-            if (move < controls.clickMoveThresholdPx)
-            {
-                navigation::CubicNavigationCell
-                    cubeCenterCell;
-
-                const auto pickedHub =
-                    context.pickSystemHubSelection(
-                        frame.localMouseX,
-                        frame.localMouseY
-                    );
-
-                const auto pickedBodyId =
-                    pickedHub
-                        ? std::optional<std::string>{}
-                        : context.pickSystemBodyId(
-                            frame.localMouseX,
-                            frame.localMouseY
-                        );
-
-                const bool cubeCenterPicked =
-                    !pickedHub &&
-                    !pickedBodyId &&
-                    state.navigationGrid.enabled() &&
-                    pickNavigationCell(
-                        view,
-                        viewport,
-                        frame.localMouseX,
-                        frame.localMouseY,
-                        cubeCenterCell
-                    );
-
-                if (pickedHub)
+                if (!state.navigationGrid.hasSelectedCell() ||
+                    state.navigationGrid.selectedCell().index != child->index ||
+                    state.navigationGrid.selectedCell().level != child->level)
                 {
-                    focusHub(
-                        view,
-                        context,
-                        *pickedHub,
-                        frame.nowSeconds
-                    );
+                    state.navigationGrid.selectCell(*child);
                 }
-                else if (pickedBodyId)
-                {
-                    focusBody(
-                        view,
-                        context,
-                        *pickedBodyId,
-                        frame.nowSeconds
-                    );
-                    result.clickedBodyId = *pickedBodyId;
-                }
-                else if (state.navigationGrid.enabled())
-                {
-                    if (cubeCenterPicked)
-                    {
-                        const bool isCubeDoubleClick =
-                            state.cubeClickTracker
-                                .registerClick(
-                                    frame.nowSeconds,
-                                    frame.localMouseX,
-                                    frame.localMouseY,
-                                    cubeCenterCell.level,
-                                    cubeCenterCell.index,
-                                    controls
-                                        .cubeDoubleClickMaxIntervalSeconds,
-                                    controls
-                                        .cubeDoubleClickMaxDistancePx
-                                );
-
-                        state.selectedBodyId.clear();
-                        state.selectedHubId.clear();
-                        state.selectedHubParentBodyId.clear();
-
-                        state.navigationGrid.selectCell(
-                            cubeCenterCell
-                        );
-                        state.navigationCellExplicitlySelected = true;
-                        result.clickedNavigationCell = cubeCenterCell;
-
-                        if (isCubeDoubleClick)
-                        {
-                            const auto levelAction =
-                                navigation::
-                                    cubicNavigationDoubleClickAction(
-                                        state.navigationGrid.canRefine(),
-                                        false
-                                    );
-
-                            const auto newParentCell =
-                                cubeCenterCell;
-
-                            const bool levelChanged =
-                                navigation::
-                                    applyCubicNavigationLevelActionAtPosition(
-                                        levelAction,
-                                        state.navigationGrid,
-                                        cubeCenterCell.center,
-                                        [](
-                                            auto& grid,
-                                            const glm::dvec3& position
-                                        )
-                                        {
-                                            grid.setAnchorFromPosition(
-                                                position
-                                            );
-                                        },
-                                        true
-                                    );
-
-                            if (levelChanged)
-                            {
-                                result.systemLevelChanged =
-                                    state.navigationGrid.level();
-
-                                state.hoverVisualCell.reset();
-                                state.hoverVisualAlpha = 0.0f;
-                                state.hoverOutgoingCell.reset();
-                                state.hoverOutgoingAlpha = 0.0f;
-                                state.cubeClickTracker.reset();
-
-                                const float parentEdgeRender =
-                                    static_cast<float>(
-                                        newParentCell.size *
-                                        static_cast<double>(
-                                            state.lastScale
-                                        )
-                                    );
-
-                                const float fittedHalfHeight =
-                                    navigation::
-                                        cubicNavigationOrthographicFitHalfHeight(
-                                            parentEdgeRender,
-                                            viewport.width,
-                                            viewport.height
-                                        );
-
-                                view.beginCameraFlight(
-                                    newParentCell.center *
-                                        static_cast<double>(
-                                            state.lastScale
-                                        ),
-                                    std::clamp(
-                                        fittedHalfHeight,
-                                        SystemMapView::
-                                            minimumCameraHalfHeight,
-                                        view.navigationMaximumCameraDistance(
-                                            viewport
-                                        )
-                                    ),
-                                    frame.nowSeconds
-                                );
-                            }
-                        }
-                    }
-                    else
-                    {
-                        state.cubeClickTracker.reset();
-                    }
-                }
+            }
+            else if (state.navigationGrid.hasSelectedCell() &&
+                     galaxyHierarchyIsChild(view.hierarchyBox(), state.navigationGrid.selectedCell()))
+            {
+                state.navigationGrid.clearSelectedCell();
             }
         }
+    }
 
-        state.camera.rotating = false;
-        state.orbitPivotActive = false;
+    if (frame.inside && !state.camera.rotating && !state.camera.panning)
+        updatePointerHover(view, context, frame);
+    else if (!frame.inside)
+    {
+        state.navigationGrid.clearHoveredCell();
+        state.hoverTargetValid = false;
+    }
+
+    // ---- left button: one gesture (press never moves the camera) ----------
+    auto& gesture = state.pointerGesture;
+    const auto event =
+        gesture.update(frame.leftDown, frame.inside, frame.localMouseX, frame.localMouseY, frame.nowSeconds,
+                       controls.clickMoveThresholdPx);
+
+    if (event == GalaxyPointerGesture::Event::Pressed)
+        state.pressTarget = resolveSystemPointer(view, context, viewport, frame.localMouseX, frame.localMouseY);
+
+    if (gesture.phase() == GalaxyPointerGesture::Phase::PendingClick &&
+        ((frame.inside && frame.rightDown && !state.camera.rightWasDown) ||
+         (frame.inside && pendingScrollY != 0.0) || frame.zoomInKeyDown || frame.zoomOutKeyDown))
+    {
+        gesture.cancelPendingClick();
+    }
+
+    if (event == GalaxyPointerGesture::Event::DragStarted)
+    {
+        // Rotation pivot at the PRESS target.
+        const auto& press = state.pressTarget;
+        if (press.kind == SystemPointerTarget::Kind::Body || press.kind == SystemPointerTarget::Kind::Hub ||
+            press.kind == SystemPointerTarget::Kind::Cube)
+        {
+            state.orbitPivotAbsolute =
+                (press.kind == SystemPointerTarget::Kind::Cube && press.cell ? press.cell->center : press.pointAu) *
+                scaleOf(view);
+        }
+        else
+        {
+            state.orbitPivotAbsolute =
+                view.targetPlanePointFromScreen(viewport, gesture.pressX(), gesture.pressY());
+        }
+        state.orbitPivotActive = true;
+        state.camera.rotating = true;
+    }
+
+    if (event == GalaxyPointerGesture::Event::Clicked)
+    {
+        applyClick(view, context, viewport, state.pressTarget, gesture.pressX(), gesture.pressY(),
+                   gesture.pressTimeSeconds(), result);
     }
 
     if (!frame.leftDown)
@@ -701,277 +514,100 @@ SystemMapInputResult SystemMapInteraction::handleInput(
         state.orbitPivotActive = false;
     }
 
-    if (frame.inside &&
-        frame.rightDown &&
-        !state.camera.rightWasDown)
+    // ---- rotate / pan -------------------------------------------------------
+    if (state.camera.rotating && frame.leftDown && event != GalaxyPointerGesture::Event::DragStarted &&
+        state.orbitPivotActive)
     {
-        rightStartedThisFrame = true;
-        state.camera.panning = true;
-        state.camera.lastMouseX = frame.mouseX;
-        state.camera.lastMouseY = frame.mouseY;
+        const float yawStep = std::clamp(-static_cast<float>(dx) * controls.rotateSensitivity,
+                                         -controls.rotationMaxStepRad, controls.rotationMaxStepRad);
+        const float pitchStep = std::clamp(static_cast<float>(dy) * controls.rotateSensitivity,
+                                           -controls.rotationMaxStepRad, controls.rotationMaxStepRad);
+        view.orbitCameraAroundPivot(state.orbitPivotAbsolute, yawStep, pitchStep, controls.pitchLimitRad);
     }
 
+    const bool rightStarted = frame.inside && frame.rightDown && !state.camera.rightWasDown;
+    if (rightStarted)
+        state.camera.panning = true;
     if (!frame.rightDown)
         state.camera.panning = false;
+    if (state.camera.panning && frame.rightDown && !rightStarted)
+        view.panCameraByScreenDelta(viewport, dx, dy);
 
-    const double leftDragDistance =
-        std::abs(
-            frame.mouseX -
-            state.camera.mouseDownX
-        ) +
-        std::abs(
-            frame.mouseY -
-            state.camera.mouseDownY
-        );
-
-    if (state.camera.rotating &&
-        frame.leftDown &&
-        !leftStartedThisFrame &&
-        leftDragDistance >=
-            controls.clickMoveThresholdPx)
-    {
-        const float yawStep =
-            std::clamp(
-                -static_cast<float>(dx) *
-                    controls.rotateSensitivity,
-                -controls.rotationMaxStepRad,
-                controls.rotationMaxStepRad
-            );
-
-        const float pitchStep =
-            std::clamp(
-                static_cast<float>(dy) *
-                    controls.rotateSensitivity,
-                -controls.rotationMaxStepRad,
-                controls.rotationMaxStepRad
-            );
-
-        if (state.orbitPivotActive)
-        {
-            view.orbitCameraAroundPivot(
-                state.orbitPivotAbsolute,
-                yawStep,
-                pitchStep,
-                controls.pitchLimitRad
-            );
-
-            view.syncNavigationAnchorToCursor();
-        }
-    }
-
-
-    if (state.camera.panning &&
-        frame.rightDown &&
-        !rightStartedThisFrame)
-    {
-        view.panCameraByScreenDelta(
-            viewport,
-            dx,
-            dy
-        );
-
-        view.syncNavigationAnchorToCursor();
-    }
-
-
+    // ---- wheel: zoom about the point under the cursor, levels by size -------
     if (frame.inside)
     {
         float zoom = 0.0f;
-
         if (pendingScrollY != 0.0)
         {
-            zoom +=
-                pendingScrollY > 0.0
-                    ? 1.0f
-                    : -1.0f;
-
+            zoom += pendingScrollY > 0.0 ? 1.0f : -1.0f;
             pendingScrollY = 0.0;
         }
-
         if (frame.zoomInKeyDown)
             zoom += 1.0f;
-
         if (frame.zoomOutKeyDown)
             zoom -= 1.0f;
 
         if (zoom != 0.0f)
         {
-            /*
-                Zoom priority:
-
-                1. nearest front-facing body anchor near the cursor;
-                2. the current camera target.
-
-                Cube selection changes navigation state, but it is not a
-                hidden wheel pivot. A body selection is not sticky either.
-            */
-            glm::dvec3 navigationPointWorld =
-                state.camera.target;
-
-            double minimumEyeDistanceFromPivot = 0.0;
-
-            if (cursorBodyTarget)
+            // Pivot: the body / hub under the cursor (surface clearance),
+            // else the hovered cube's centre, else the view centre.
+            glm::dvec3 pivot = state.camera.target;
+            double clearance = 0.0;
+            const auto& hover = state.hoverTarget;
+            if (state.hoverTargetValid && hover.kind == SystemPointerTarget::Kind::Body)
             {
-                navigationPointWorld =
-                    cursorBodyTarget->absolutePosition;
-
-                minimumEyeDistanceFromPivot =
-                    cursorBodyTarget->physicalRadiusWorld *
-                    static_cast<double>(
-                        controls.bodyZoomClearanceScale
-                    );
-            }
-
-            glm::dvec3 navigationPointAu =
-                navigationPointWorld /
-                static_cast<double>(state.lastScale);
-
-            if (state.navigationGrid.enabled())
-            {
-                const auto rootIndexForNavigationPoint =
-                    state.navigationGrid.nearestIndexForPosition(
-                        navigationPointAu,
-                        state.navigationGrid
-                            .definition()
-                            .minimumLevel
-                    );
-
-                if (rootIndexForNavigationPoint !=
-                    navigation::CubicGridIndex {})
+                if (const auto body = context.pickSystemCameraBodyTarget(frame.localMouseX, frame.localMouseY, viewport))
                 {
-                    /*
-                        Keep hierarchy refinement inside S0 without changing
-                        the camera's cursor-centred zoom pivot.
-                    */
-                    navigationPointAu =
-                        view.navigationCursorAu();
+                    pivot = body->absolutePosition;
+                    clearance = body->physicalRadiusWorld * static_cast<double>(controls.bodyZoomClearanceScale);
+                }
+                else
+                {
+                    pivot = hover.pointAu * scaleOf(view);
                 }
             }
+            else if (state.hoverTargetValid && hover.kind == SystemPointerTarget::Kind::Hub)
+            {
+                pivot = hover.pointAu * scaleOf(view);
+            }
+            else if (state.navigationGrid.hasHoveredCell())
+            {
+                pivot = state.navigationGrid.hoveredCell().center * scaleOf(view);
+            }
+
+            float minimumHalfHeight = SystemMapView::minimumCameraHalfHeight;
+            float maximumHalfHeight = SystemMapView::maximumCameraHalfHeight;
+            view.hierarchyHalfHeightLimits(viewport, minimumHalfHeight, maximumHalfHeight);
 
             const float factor =
-                zoom > 0.0f
-                    ? std::pow(
-                        controls.zoomInFactor,
-                        zoom
-                    )
-                    : std::pow(
-                        controls.zoomOutFactor,
-                        -zoom
-                    );
-
-            const float minHalfHeightForConfiguredKmPerPixel =
-                static_cast<float>(
-                    (
-                        controls.minKmPerPixel *
-                        static_cast<double>(state.lastScale) /
-                        SystemInteractionKilometersPerAu
-                    ) *
-                    static_cast<double>(viewport.height) *
-                    0.5
-                );
-
-            float minimumHalfHeight =
-                std::max(
-                    SystemMapView::minimumCameraHalfHeight,
-                    minHalfHeightForConfiguredKmPerPixel
-                );
-
-            float maximumHalfHeight =
-                SystemMapView::maximumCameraHalfHeight;
-
-            if (state.navigationGrid.enabled())
+                zoom > 0.0f ? std::pow(controls.zoomInFactor, zoom) : std::pow(controls.zoomOutFactor, -zoom);
+            if (zoom > 0.0f)
             {
-                maximumHalfHeight =
-                    view.navigationMaximumCameraDistance(
-                        viewport
-                    );
-
-                minimumHalfHeight =
-                    std::min(
-                        maximumHalfHeight,
-                        minimumHalfHeight
-                    );
+                view.zoomCameraAroundPivot(pivot, factor, minimumHalfHeight, maximumHalfHeight, clearance);
+            }
+            else
+            {
+                // Zoom out drifts back to the parent's centre (the parent
+                // shrinks into the screen, not off to a side).
+                state.camera.distance = std::clamp(state.camera.distance * factor, minimumHalfHeight, maximumHalfHeight);
+                const glm::dvec3 centre = view.hierarchyBox().centerLy * scaleOf(view);
+                state.camera.target = glm::mix(state.camera.target, centre, 0.18);
             }
 
-            view.zoomCameraAroundPivot(
-                navigationPointWorld,
-                factor,
-                minimumHalfHeight,
-                maximumHalfHeight,
-                minimumEyeDistanceFromPivot
-            );
-
-            view.syncNavigationAnchorToCursor();
-
-            if (state.navigationGrid.enabled())
-            {
-                const float cubeDiameterPx =
-                    view.navigationAnchorDiameterPx(
-                        viewport
-                    );
-
-                const auto levelAction =
-                    navigation::
-                        cubicNavigationWheelAction(
-                            zoom,
-                            cubeDiameterPx,
-                            viewport.width,
-                            viewport.height,
-                            state.navigationGrid.canRefine(),
-                            state.navigationGrid.canCoarsen(),
-                            false
-                        );
-
-                const bool levelChanged =
-                    navigation::
-                        applyCubicNavigationLevelActionAtPosition(
-                            levelAction,
-                            state.navigationGrid,
-                            navigationPointAu,
-                            [](
-                                auto& grid,
-                                const glm::dvec3& position
-                            )
-                            {
-                                grid.setAnchorFromPosition(
-                                    position
-                                );
-                            },
-                            false
-                        );
-
-                if (levelChanged)
-                {
-                    result.systemLevelChanged =
-                        state.navigationGrid.level();
-
-                    state.hoverVisualCell.reset();
-                    state.hoverVisualAlpha = 0.0f;
-                    state.hoverOutgoingCell.reset();
-                    state.hoverOutgoingAlpha = 0.0f;
-                    state.cubeClickTracker.reset();
-                }
-            }
+            applyWheelLevels(view, frame, zoom > 0.0f, result);
         }
-
     }
 
-    view.constrainCameraToNavigationBoundary(
-        viewport
-    );
+    // The S0 root never gets smaller than the screen.
+    if (view.hierarchyBox().parent.level <= 0)
+    {
+        float minimumHalfHeight = 0.0f;
+        float maximumHalfHeight = 0.0f;
+        view.hierarchyHalfHeightLimits(viewport, minimumHalfHeight, maximumHalfHeight);
+        state.camera.distance = std::min(state.camera.distance, maximumHalfHeight);
+    }
 
-    state.camera.leftWasDown =
-        frame.leftDown;
-
-    state.camera.rightWasDown =
-        frame.rightDown;
-
-    state.camera.lastMouseX =
-        frame.mouseX;
-
-    state.camera.lastMouseY =
-        frame.mouseY;
-
+    finishFrame();
     return result;
 }
 

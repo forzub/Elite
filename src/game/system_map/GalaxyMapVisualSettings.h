@@ -5,27 +5,24 @@
 
 struct GalaxyNavigationGridVisualSettings
 {
-    glm::vec4 rootEdgeColor {0.22f, 0.46f, 0.60f, 0.096f};
-    glm::vec4 rootFaceGridColor {0.22f, 0.46f, 0.60f, 0.074f};
-    glm::vec4 parentEdgeColor {0.24f, 0.52f, 0.68f, 0.140f};
-    glm::vec4 parentFaceGridColor {0.24f, 0.52f, 0.68f, 0.092f};
-
-    glm::vec4 currentEdgeColor {0.22f, 0.58f, 0.78f, 0.050f};
-    glm::vec4 currentMarkerColor {0.82f, 0.67f, 0.24f, 0.10f};
-    float anchorEdgeAlpha = 0.18f;
-    float anchorMarkerAlpha = 0.58f;
-
-    glm::vec4 hoveredEdgeColor {0.45f, 0.78f, 0.92f, 0.18f};
+    glm::vec4 hoveredEdgeColor {0.52f, 0.84f, 0.98f, 0.55f};
     glm::vec4 hoveredMarkerColor {0.92f, 0.76f, 0.28f, 0.58f};
-    glm::vec4 selectedEdgeColor {0.78f, 0.58f, 0.16f, 0.25f};
+    glm::vec4 selectedEdgeColor {0.98f, 0.74f, 0.24f, 0.78f};
     glm::vec4 selectedMarkerColor {1.00f, 0.75f, 0.18f, 0.72f};
-
-    float currentFaceGridAlphaScale = 0.36f;
-    float currentFaceGridMinimumAlpha = 0.032f;
-    float currentFaceGridMaximumAlpha = 0.090f;
 
     float terminalCubeAlpha = 0.42f;
     float terminalLeaderAlpha = 0.52f;
+
+    // Spatial frame (current parent cube).
+    glm::vec4 parentFrameColor {0.40f, 0.70f, 0.88f, 0.46f};
+    glm::vec4 faceMajorColor {0.30f, 0.60f, 0.80f, 0.135f};
+    glm::vec4 faceMinorColor {0.30f, 0.60f, 0.80f, 0.045f};
+    glm::vec4 frameLabelColor {0.50f, 0.74f, 0.90f, 0.62f};
+    glm::vec4 hoverLayerColor {0.45f, 0.78f, 0.92f, 0.28f};
+    glm::vec4 projectionColor {0.60f, 0.84f, 0.96f, 1.0f};
+    glm::vec4 projectionFootColor {0.70f, 0.90f, 1.00f, 1.0f};
+    float hoverProjectionAlpha = 0.34f;
+    float selectedProjectionAlpha = 0.42f;
 };
 
 struct GalaxyLabelVisualSettings
@@ -53,6 +50,9 @@ struct GalaxyMapVisualSettings
     */
     float cameraFlightMinSeconds = 0.28f;
     float cameraFlightMaxSeconds = 0.68f;
+
+    // Entering / leaving a nested cube (scale x25): long enough to read.
+    float cameraNestedFlightSeconds = 0.95f;
 
     /*
         Расстояние в render units, после которого используется
@@ -86,7 +86,6 @@ struct GalaxyMapVisualSettings
     float labelReferenceHeightPx = 1080.0f;
     float labelMinimumScreenScale = 0.72f;
     float labelMaximumScreenScale = 1.45f;
-    float labelMaxCameraDistance = 155.0f;
 
     int labelTitleBasePx = 13;
     int labelSelectedTitleBasePx = 15;

@@ -44,6 +44,12 @@ struct NavigationOverlayVisualSettings
     float trackButtonWidthPx = 150.0f;
     float overlayButtonGapPx = 10.0f;
 
+    // Galaxy Map hierarchy: "up" button left of LEVEL 0, breadcrumbs above
+    // the footer.
+    float upButtonWidthPx = 84.0f;
+    float breadcrumbAboveFooterPx = 30.0f;
+    float breadcrumbGapPx = 8.0f;
+
     float levelAnnouncementScale = 2.15f;
     float levelAnnouncementRightPx = 32.0f;
     float levelAnnouncementBaselinePx = 62.0f;

@@ -668,6 +668,7 @@ add_executable(EliteGame
     src/game/system_map/GalaxyMapView.cpp
     src/game/system_map/GalaxyMapInteraction.cpp
     src/game/system_map/GalaxyPointerResolver.cpp
+    src/game/system_map/GalaxyHierarchy.cpp
     src/game/system_map/GalaxyMapRenderer.cpp
     src/game/navigation/DynamicMotionSystem.cpp
     src/game/navigation/NavigationRuntimeControlBridge.cpp
@@ -971,6 +972,7 @@ if(ELITE_BUILD_SERVER)
     add_executable(EliteGalaxyPointerCheck
         tools/navigation_runtime/GalaxyPointerCheck.cpp
         src/game/system_map/GalaxyPointerResolver.cpp
+        src/game/system_map/GalaxyHierarchy.cpp
         src/game/system_map/GalaxyMapInteraction.cpp
         src/game/system_map/GalaxyMapView.cpp
         src/game/navigation/GalaxyNavigationGrid.cpp

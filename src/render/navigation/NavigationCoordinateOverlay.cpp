@@ -134,6 +134,149 @@ NavigationCoordinateOverlay::trackButtonBounds(
     };
 }
 
+NavigationOverlayButtonBounds
+NavigationCoordinateOverlay::upButtonBounds(
+    const Viewport& viewport
+)
+{
+    const NavigationOverlayVisualSettings visuals;
+
+    const float screenScale =
+        std::clamp(
+            static_cast<float>(viewport.height) /
+                visuals.referenceHeightPx,
+            visuals.minimumScreenScale,
+            visuals.maximumScreenScale
+        );
+
+    const NavigationOverlayButtonBounds levelBounds =
+        levelZeroButtonBounds(viewport);
+
+    const float width =
+        visuals.upButtonWidthPx * screenScale;
+
+    const float gap =
+        visuals.overlayButtonGapPx * screenScale;
+
+    return {
+        levelBounds.left - gap - width,
+        levelBounds.top,
+        levelBounds.left - gap,
+        levelBounds.bottom
+    };
+}
+
+namespace
+{
+    const char* const BreadcrumbSeparator = "  ›  ";
+}
+
+std::vector<NavigationOverlayButtonBounds>
+NavigationCoordinateOverlay::breadcrumbBounds(
+    const Viewport& viewport,
+    const std::vector<std::string>& crumbs
+)
+{
+    std::vector<NavigationOverlayButtonBounds> result;
+    ensureFont();
+    if (!m_font || viewport.height <= 0)
+        return result;
+
+    const float screenScale =
+        std::clamp(
+            static_cast<float>(viewport.height) /
+                m_visuals.referenceHeightPx,
+            m_visuals.minimumScreenScale,
+            m_visuals.maximumScreenScale
+        );
+    const float scale =
+        m_visuals.bodyBaseScale *
+        m_visuals.coordinateTextScale *
+        screenScale;
+    const float baseline =
+        static_cast<float>(viewport.height) -
+        (m_visuals.footerBottomPx + m_visuals.breadcrumbAboveFooterPx) *
+            screenScale;
+    const float height = m_visuals.lineStepPx * screenScale;
+    const float separator = m_font->measureText(BreadcrumbSeparator) * scale;
+
+    float x = m_visuals.leftPx * screenScale;
+    for (const std::string& crumb : crumbs)
+    {
+        const float width = m_font->measureText(crumb) * scale;
+        result.push_back({x, baseline - height * 0.8f, x + width, baseline + height * 0.3f});
+        x += width + separator;
+    }
+    return result;
+}
+
+void NavigationCoordinateOverlay::drawGalaxyNavigation(
+    const Viewport& viewport,
+    const std::vector<std::string>& crumbs,
+    int hoveredCrumb,
+    bool upHovered,
+    bool upEnabled
+)
+{
+    const auto bounds = breadcrumbBounds(viewport, crumbs);
+    if (!m_font)
+        return;
+
+    const float screenScale =
+        std::clamp(
+            static_cast<float>(viewport.height) /
+                m_visuals.referenceHeightPx,
+            m_visuals.minimumScreenScale,
+            m_visuals.maximumScreenScale
+        );
+    const float scale =
+        m_visuals.bodyBaseScale *
+        m_visuals.coordinateTextScale *
+        screenScale;
+
+    TextRenderer& text = TextRenderer::instance();
+    text.beginFrameForViewport(viewport.width, viewport.height);
+
+    const glm::vec4 normal {0.44f, 0.62f, 0.74f, 0.70f};
+    const glm::vec4 hovered {0.64f, 0.84f, 0.96f, 0.95f};
+    const glm::vec4 current {0.90f, 0.78f, 0.42f, 0.92f};
+    const glm::vec4 separatorColor {0.40f, 0.54f, 0.64f, 0.55f};
+    const float baseline =
+        static_cast<float>(viewport.height) -
+        (m_visuals.footerBottomPx + m_visuals.breadcrumbAboveFooterPx) *
+            screenScale;
+
+    for (std::size_t i = 0; i < crumbs.size() && i < bounds.size(); ++i)
+    {
+        const bool last = i + 1 == crumbs.size();
+        const glm::vec4 color =
+            last ? current : (static_cast<int>(i) == hoveredCrumb ? hovered : normal);
+        text.textDraw(*m_font, crumbs[i], bounds[i].left, baseline, color, scale);
+        if (!last)
+            text.textDraw(*m_font, BreadcrumbSeparator, bounds[i].right, baseline, separatorColor, scale);
+    }
+
+    // Up: one level up (to the parent of the current parent).
+    const NavigationOverlayButtonBounds up = upButtonBounds(viewport);
+    const glm::vec4 upColor =
+        !upEnabled
+            ? glm::vec4(0.30f, 0.36f, 0.40f, 0.34f)
+            : (upHovered ? glm::vec4(0.64f, 0.84f, 0.96f, 0.92f)
+                         : glm::vec4(0.44f, 0.62f, 0.74f, 0.66f));
+    const std::string upText = "[  ↑  ]";
+    const float upWidth = m_font->measureText(upText) * scale;
+    text.textDraw(
+        *m_font,
+        upText,
+        up.left + (up.right - up.left - upWidth) * 0.5f,
+        up.top + m_visuals.levelZeroButtonBaselinePx * screenScale,
+        upColor,
+        scale
+    );
+
+    text.endFrame();
+}
+
 void NavigationCoordinateOverlay::ensureFont()
 {
     if (m_font)

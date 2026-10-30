@@ -59,8 +59,9 @@ bool loadFile(
     const json galaxy =
         root.value("galaxy", json::object());
 
+    // Level 0 (root cells) is the working level of the galaxy overview.
     result.minimumLevel =
-        std::max(1, galaxy.value(
+        std::max(0, galaxy.value(
             "minimumLevel",
             result.minimumLevel
         ));

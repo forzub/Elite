@@ -22,6 +22,7 @@
 #include "src/core/RuntimeTrace.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
 #include "src/game/presentation/GalaxyNavigationPresentation.h"
+#include "src/game/system_map/GalaxyMapInteraction.h"
 #include "src/game/system_map/GalaxyMapRenderContext.h"
 #include "src/game/system_map/GalaxyMapView.h"
 #include "src/world/celestial/CelestialTypes.h"
@@ -355,6 +356,10 @@ namespace game::system_map
 {
 namespace
 {
+    // Presented medium per frame (blobs / shell ranges) for the trace.
+    int g_mediumBlobs = 0;
+    int g_mediumShells = 0;
+
     // [GalaxyMapPerf] interstellar-medium draw cost (ELITE_TRACE_RUNTIME=1).
     void traceMediumCost(double ms)
     {
@@ -370,7 +375,8 @@ namespace
         if (std::chrono::duration<double>(now - begin).count() >= 2.0)
         {
             std::cerr << "[GalaxyMapPerf] medium_avg_ms=" << sum / frames << " medium_max_ms=" << peak
-                      << " frames=" << frames << std::endl;
+                      << " frames=" << frames << " blobs=" << g_mediumBlobs << " shells=" << g_mediumShells
+                      << std::endl;
             frames = 0;
             sum = peak = 0.0;
             begin = now;
@@ -386,6 +392,7 @@ namespace
     ) const
     {
         viewState.synchronizeCatalogRoots(galaxy);
+        viewState.state().lastViewport = viewport;
 
         const GalaxyMapCameraSnapshot camera =
             viewState.cameraSnapshot(viewport);
@@ -424,13 +431,17 @@ namespace
         // Pointer contract: the resolver hits what THIS frame presents.
         viewState.state().presentedCubeMarkers.clear();
 
+        std::vector<GalaxyFrameText> frameTexts;
+
         if (viewState.state().navigationGrid.enabled())
         {
             drawNavigationGrid(
                 viewState,
                 context,
                 viewport,
-                camera
+                camera,
+                galaxy,
+                frameTexts
             );
         }
         else
@@ -488,6 +499,12 @@ namespace
             traceMediumCost(std::chrono::duration<double, std::milli>(
                 std::chrono::steady_clock::now() - mediumBegin).count());
         }
+
+        // Halo of the stars in the selected / hovered child: meaningful for
+        // cubes holding a few stars, noise for an overview root holding the
+        // whole catalogue neighbourhood.
+        const bool childCubeHalos =
+            !viewState.hierarchyBox().parent.overview();
 
         for (const auto& system : galaxy.systems)
         {
@@ -558,7 +575,8 @@ namespace
             bool insideHoveredCube = false;
             float hoveredCubeVisualAlpha = 0.0f;
 
-            if (viewState.state().navigationGrid.enabled())
+            if (viewState.state().navigationGrid.enabled() &&
+                childCubeHalos)
             {
                 const auto starCellIndex =
                     viewState.state().navigationGrid
@@ -665,11 +683,34 @@ namespace
 
         // Interstellar layer: compact objects as small dim points (the medium
         // volumes were drawn before the systems, see drawMediumVolumes).
+        /*
+            Object LOD: compact interstellar objects are presented only from
+            the parent level where they are visually meaningful, and only in
+            (or next to) the current parent: brown dwarfs and stellar
+            remnants inside a root cube, rogue bodies, comets and icy fields
+            from a G1 parent down. Stars and medium structures stay at every
+            level (the medium has its own projected-size LOD).
+        */
+        const GalaxyHierarchyBox lodBox = viewState.hierarchyBox();
+        GalaxyHierarchyBox lodBoxMargin = lodBox;
+        lodBoxMargin.edgeLy *= 1.25;
+        const auto objectVisibleFromLevel = [](const std::string& type) {
+            if (type == "brown_dwarf" || type == "stellar_remnant")
+                return 0;
+            return 1;
+        };
+
         for (const auto& object : galaxy.objects)
         {
             // Cavities describe the medium (no body); the medium has its proxies.
             if (object.mediumVolume || object.objectType == "interstellar_cavity")
                 continue;
+
+            if (lodBox.parent.level < objectVisibleFromLevel(object.objectType) ||
+                !galaxyHierarchyContains(lodBoxMargin, object.positionLy))
+            {
+                continue;
+            }
 
             const glm::vec3 position =
                 viewState.positionLyToRender(object.positionLy);
@@ -716,6 +757,14 @@ namespace
         context.flushSolids(mvp);
         context.flushLines(mvp);
 
+        drawFrameTexts(
+            viewState,
+            context,
+            viewport,
+            camera,
+            frameTexts
+        );
+
         drawLabels(
             viewState,
             context,
@@ -733,6 +782,55 @@ namespace
             navigation,
             mvp
         );
+    }
+
+    /*
+        "What is here?" (Alt + click): a small translucent list next to the
+        cursor - not a panel over the map.
+    */
+    void GalaxyMapRenderer::drawWhatIsHere(
+        GalaxyMapView& viewState,
+        GalaxyMapRenderContext& context,
+        const Viewport& viewport
+    ) const
+    {
+        const auto& menu = viewState.state().whatIsHere;
+        if (!menu.open || menu.labels.empty())
+            return;
+
+        const glm::mat4 ortho =
+            glm::ortho(0.0f, static_cast<float>(viewport.width), static_cast<float>(viewport.height), 0.0f,
+                       -1.0f, 1.0f);
+        const glm::vec4 b = menu.bounds();
+
+        context.beginLines();
+        // Background: dense horizontal lines (the context draws lines only).
+        for (float y = b.y; y <= b.w; y += 1.0f)
+            context.addLine(glm::vec3(b.x, y, 0.0f), glm::vec3(b.z, y, 0.0f), glm::vec4(0.03f, 0.07f, 0.10f, 0.72f));
+        if (menu.hovered >= 0)
+        {
+            const glm::vec4 r = menu.rowBounds(menu.hovered);
+            for (float y = r.y + 1.0f; y < r.w - 1.0f; y += 1.0f)
+                context.addLine(glm::vec3(r.x + 1.0f, y, 0.0f), glm::vec3(r.z - 1.0f, y, 0.0f),
+                                glm::vec4(0.20f, 0.42f, 0.56f, 0.45f));
+        }
+        const glm::vec4 frame(0.40f, 0.70f, 0.88f, 0.55f);
+        context.addLine(glm::vec3(b.x, b.y, 0.0f), glm::vec3(b.z, b.y, 0.0f), frame);
+        context.addLine(glm::vec3(b.z, b.y, 0.0f), glm::vec3(b.z, b.w, 0.0f), frame);
+        context.addLine(glm::vec3(b.z, b.w, 0.0f), glm::vec3(b.x, b.w, 0.0f), frame);
+        context.addLine(glm::vec3(b.x, b.w, 0.0f), glm::vec3(b.x, b.y, 0.0f), frame);
+        context.flushLines(ortho);
+
+        context.beginTextFrame(viewport.width, viewport.height);
+        context.drawTextPx("What is here?", b.x + 8.0f, b.y + 16.0f, 12, glm::vec4(0.66f, 0.80f, 0.90f, 0.80f));
+        for (int i = 0; i < static_cast<int>(menu.labels.size()); ++i)
+        {
+            const glm::vec4 r = menu.rowBounds(i);
+            context.drawTextPx(menu.labels[static_cast<std::size_t>(i)], r.x + 12.0f, r.y + 15.0f, 12,
+                               i == menu.hovered ? glm::vec4(0.96f, 0.86f, 0.52f, 0.98f)
+                                                 : glm::vec4(0.62f, 0.82f, 0.96f, 0.88f));
+        }
+        context.endTextFrame();
     }
 
 /*
@@ -760,6 +858,11 @@ void GalaxyMapRenderer::drawMediumVolumes(
     using Range = world::celestial::GalaxyMapMediumAtlas::Range;
     constexpr float BlobBelowPx = 6.0f;      // far zoom: one soft blob
     constexpr float DetailFromPx = 70.0f;    // near zoom: the detailed shell
+    // Object LOD: a structure projected below this radius is not drawn; the
+    // selected / hovered one always is. The galaxy overview frames thousands
+    // of small structures: there only the large ones (no blobs) are shown.
+    const float HiddenBelowPx =
+        viewState.hierarchyBox().parent.overview() ? BlobBelowPx : 1.5f;
 
     const float renderPerLy = viewState.vectorLyToRender(glm::dvec3(1.0, 0.0, 0.0)).x;
     const glm::mat4 mvpLy = mvp * glm::scale(glm::mat4(1.0f), glm::vec3(renderPerLy));
@@ -773,6 +876,7 @@ void GalaxyMapRenderer::drawMediumVolumes(
     static thread_local std::vector<Range> ranges;
     ranges.clear();
     bool anyBlob = false;
+    int blobCount = 0;
     context.beginVolumes();
     for (const auto& proxy : atlas->proxies)
     {
@@ -789,11 +893,18 @@ void GalaxyMapRenderer::drawMediumVolumes(
             continue;
         const float w = std::max((mvpLy * glm::vec4(c, 1.0f)).w, 1.0e-4f);
         const float radiusPx = r * clipYPerLy / w * halfHeightPx;
+        if (radiusPx < HiddenBelowPx &&
+            proxy.objectIndex != viewState.state().selectedMediumObject &&
+            proxy.objectIndex != viewState.state().hoveredMediumObject)
+        {
+            continue;
+        }
         if (radiusPx < BlobBelowPx)
         {
             context.addVolumeSprite(viewState.positionLyToRender(proxy.centreLy),
                                     0.8f * r * renderPerLy, proxy.blobRgba, view);
             anyBlob = true;
+            ++blobCount;
             continue;
         }
         const bool detailed = radiusPx >= DetailFromPx;
@@ -813,14 +924,27 @@ void GalaxyMapRenderer::drawMediumVolumes(
     };
     if (const auto* hovered = proxyOf(viewState.state().hoveredMediumObject))
         ranges.push_back(hovered->coarse);
+    if (core::runtimeTraceEnabled())
+    {
+        g_mediumShells = static_cast<int>(ranges.size());
+        g_mediumBlobs = blobCount;
+    }
     if (anyBlob)
         context.flushVolumes(mvp);
     context.drawMediumShells(*atlas, ranges, mvpLy);
     if (const auto* selected = proxyOf(viewState.state().selectedMediumObject))
     {
-        // Readable but quiet: a faint phase-tinted edge, never a solid body.
-        const glm::vec4 rgba(glm::vec3(selected->blobRgba) * 0.8f + glm::vec3(0.2f), 0.10f);
-        context.beginLines();
+        /*
+            Readable but quiet: a faint phase-tinted edge, never a solid body.
+            A structure much larger than the current parent (seen from deep
+            inside it) fades further: its edges would cross the whole frame.
+            The lines join the scene batch (a separate begin would drop the
+            spatial frame drawn before it).
+        */
+        const float parentEdgeLy = static_cast<float>(viewState.hierarchyBox().edgeLy);
+        const float scaleFade =
+            std::clamp(3.0f * parentEdgeLy / std::max(selected->radiusLy, 1.0e-6f), 0.2f, 1.0f);
+        const glm::vec4 rgba(glm::vec3(selected->blobRgba) * 0.8f + glm::vec3(0.2f), 0.10f * scaleFade);
         const auto& range = selected->coarse;
         for (std::uint32_t v = range.first; v + 5 < range.first + range.count; v += 6)
         {
@@ -830,7 +954,6 @@ void GalaxyMapRenderer::drawMediumVolumes(
             for (int e = 0; e < 4; ++e)
                 context.addLine(q[e] * renderPerLy, q[(e + 1) % 4] * renderPerLy, rgba);
         }
-        context.flushLines(mvp);
     }
 }
 
@@ -838,1125 +961,532 @@ void GalaxyMapRenderer::drawNavigationGrid(
     GalaxyMapView& viewState,
     GalaxyMapRenderContext& context,
     const Viewport& vp,
-    const GalaxyMapCameraSnapshot& camera
+    const GalaxyMapCameraSnapshot& camera,
+    const world::celestial::GalaxyMapSnapshot& galaxy,
+    std::vector<GalaxyFrameText>& frameTexts
 ) const
 {
-    if (!viewState.state().navigationGrid.enabled())
+    auto& state = viewState.state();
+    if (!state.navigationGrid.enabled())
         return;
 
-    const auto& frame =
-        viewState.state().navigationGrid.frame();
-
-    const bool currentLevelCellsInteractive =
-        viewState.navigationCellsInteractive(vp);
+    const auto& gridVisuals = viewState.visuals().navigationGrid;
+    auto& grid = state.navigationGrid;
 
     /*
         Logical hover is used for input. Visual hover has its own lifetime,
         so a cube can fade in and fade out instead of blinking on cell
         boundaries or when the cursor leaves the map.
     */
-    const double hoverNowSeconds =
-        context.currentTimeSeconds();
-
+    const double hoverNowSeconds = context.currentTimeSeconds();
     double hoverDeltaSeconds = 0.0;
-
-    if (viewState.state().hoverVisualLastTimeSeconds > 0.0)
+    if (state.hoverVisualLastTimeSeconds > 0.0)
     {
         hoverDeltaSeconds =
-            std::clamp(
-                hoverNowSeconds -
-                    viewState.state().hoverVisualLastTimeSeconds,
-                0.0,
-                0.10
-            );
+            std::clamp(hoverNowSeconds - state.hoverVisualLastTimeSeconds, 0.0, 0.10);
     }
+    state.hoverVisualLastTimeSeconds = hoverNowSeconds;
 
-    viewState.state().hoverVisualLastTimeSeconds =
-        hoverNowSeconds;
-
-    std::optional<game::navigation::GalaxyNavigationCell>
-        hoverTargetCell;
-
-    const auto anchorCell =
-        viewState.state().navigationGrid.anchorCell();
-
-    if (currentLevelCellsInteractive &&
-        viewState.state().navigationGrid.hasHoveredCell())
-    {
-        const auto& logicalHovered =
-            viewState.state().navigationGrid.hoveredCell();
-
-        if (logicalHovered.level != anchorCell.level ||
-            logicalHovered.index != anchorCell.index)
-        {
-            hoverTargetCell = logicalHovered;
-        }
-    }
+    std::optional<game::navigation::GalaxyNavigationCell> hoverTargetCell;
+    if (grid.hasHoveredCell())
+        hoverTargetCell = grid.hoveredCell();
 
     const bool hoverTargetChanged =
         hoverTargetCell.has_value() &&
-        (
-            !viewState.state().hoverVisualCell.has_value() ||
-            hoverTargetCell->level !=
-                viewState.state().hoverVisualCell->level ||
-            hoverTargetCell->index !=
-                viewState.state().hoverVisualCell->index
-        );
+        (!state.hoverVisualCell.has_value() ||
+         hoverTargetCell->level != state.hoverVisualCell->level ||
+         hoverTargetCell->index != state.hoverVisualCell->index);
 
     if (hoverTargetChanged)
     {
-        if (viewState.state().hoverVisualCell.has_value() &&
-            viewState.state().hoverVisualAlpha > 0.001f)
+        if (state.hoverVisualCell.has_value() && state.hoverVisualAlpha > 0.001f)
         {
-            viewState.state().hoverOutgoingCell =
-                viewState.state().hoverVisualCell;
-
-            viewState.state().hoverOutgoingAlpha =
-                viewState.state().hoverVisualAlpha;
+            state.hoverOutgoingCell = state.hoverVisualCell;
+            state.hoverOutgoingAlpha = state.hoverVisualAlpha;
         }
-
-        viewState.state().hoverVisualCell =
-            hoverTargetCell;
-
-        viewState.state().hoverVisualAlpha =
-            0.0f;
+        state.hoverVisualCell = hoverTargetCell;
+        state.hoverVisualAlpha = 0.0f;
     }
+
+    const float fadeInSeconds =
+        std::max(0.001f, viewState.controls().navigationHoverFadeInSeconds);
+    const float fadeOutSeconds =
+        std::max(0.001f, viewState.controls().navigationHoverFadeOutSeconds);
 
     if (hoverTargetCell.has_value())
     {
-        const float fadeInSeconds =
-            std::max(
-                0.001f,
-                viewState.controls().navigationHoverFadeInSeconds
-            );
-
-        viewState.state().hoverVisualAlpha =
-            std::min(
-                1.0f,
-                viewState.state().hoverVisualAlpha +
-                    static_cast<float>(hoverDeltaSeconds) /
-                        fadeInSeconds
-            );
+        state.hoverVisualAlpha =
+            std::min(1.0f, state.hoverVisualAlpha +
+                               static_cast<float>(hoverDeltaSeconds) / fadeInSeconds);
     }
     else
     {
-        const float fadeOutSeconds =
-            std::max(
-                0.001f,
-                viewState.controls().navigationHoverFadeOutSeconds
-            );
-
-        viewState.state().hoverVisualAlpha =
-            std::max(
-                0.0f,
-                viewState.state().hoverVisualAlpha -
-                    static_cast<float>(hoverDeltaSeconds) /
-                        fadeOutSeconds
-            );
-
-        if (viewState.state().hoverVisualAlpha <= 0.001f)
+        state.hoverVisualAlpha =
+            std::max(0.0f, state.hoverVisualAlpha -
+                               static_cast<float>(hoverDeltaSeconds) / fadeOutSeconds);
+        if (state.hoverVisualAlpha <= 0.001f)
         {
-            viewState.state().hoverVisualAlpha = 0.0f;
-            viewState.state().hoverVisualCell.reset();
+            state.hoverVisualAlpha = 0.0f;
+            state.hoverVisualCell.reset();
         }
     }
 
-    if (viewState.state().hoverOutgoingCell.has_value())
+    if (state.hoverOutgoingCell.has_value())
     {
-        const float fadeOutSeconds =
-            std::max(
-                0.001f,
-                viewState.controls().navigationHoverFadeOutSeconds
-            );
-
-        viewState.state().hoverOutgoingAlpha =
-            std::max(
-                0.0f,
-                viewState.state().hoverOutgoingAlpha -
-                    static_cast<float>(hoverDeltaSeconds) /
-                        fadeOutSeconds
-            );
-
-        if (viewState.state().hoverOutgoingAlpha <= 0.001f)
+        state.hoverOutgoingAlpha =
+            std::max(0.0f, state.hoverOutgoingAlpha -
+                               static_cast<float>(hoverDeltaSeconds) / fadeOutSeconds);
+        if (state.hoverOutgoingAlpha <= 0.001f)
         {
-            viewState.state().hoverOutgoingAlpha = 0.0f;
-            viewState.state().hoverOutgoingCell.reset();
+            state.hoverOutgoingAlpha = 0.0f;
+            state.hoverOutgoingCell.reset();
         }
     }
 
+    const GalaxyHierarchyBox box = viewState.hierarchyBox();
+    const glm::dvec3 eyeLy = viewState.renderToPositionLy(glm::vec3(camera.eye));
+    const glm::dvec3 viewInto = -camera.basis.direction;
+    state.hierarchyFaces =
+        galaxyHierarchyChooseFaces(state.hierarchyFaces, eyeLy, viewInto, box);
+    const GalaxyHierarchyFaces faces = state.hierarchyFaces;
 
-        std::vector<
-            game::navigation::GalaxyNavigationCell
-        > cells;
+    const glm::vec3 cameraRight = glm::vec3(camera.basis.right);
+    const glm::vec3 cameraUp = glm::vec3(camera.basis.up);
+    const glm::vec3 cameraDirection = glm::vec3(camera.basis.direction);
+    const glm::vec3 cameraPosition = glm::vec3(camera.eye);
 
-        cells.reserve(4);
+    const auto toRender = [&](const glm::dvec3& ly) { return viewState.positionLyToRender(ly); };
 
-        cells.push_back(anchorCell);
-
-        /*
-            Selection is independent from the view anchor.
-            Draw it only when its stored precision matches the
-            currently displayed level.
-        */
-        if (viewState.state().navigationGrid.hasSelectedCell())
+    // Cube edges in light-years (solid).
+    const auto addBoxEdges =
+        [&](const glm::dvec3& centerLy, double edgeLy, const glm::vec4& color)
         {
-            const auto& selectedCell =
-                viewState.state().navigationGrid.selectedCell();
-
-            if (selectedCell.level == anchorCell.level &&
-                selectedCell.index != anchorCell.index)
+            const double h = edgeLy * 0.5;
+            glm::vec3 c[8];
+            for (int i = 0; i < 8; ++i)
             {
-                cells.push_back(selectedCell);
+                c[i] = toRender(centerLy + glm::dvec3((i & 1) ? h : -h, (i & 2) ? h : -h, (i & 4) ? h : -h));
             }
-        }
+            static constexpr int edges[12][2] = {
+                {0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3}, {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+            for (const auto& e : edges)
+                context.addLine(c[e[0]], c[e[1]], color);
+        };
 
-        if (viewState.state().hoverVisualCell.has_value() &&
-            viewState.state().hoverVisualAlpha > 0.001f)
+    // Child cube: a solid outline (selected / hovered are the cubes the
+    // user acts on; they must read clearly against the frame).
+    const auto addChildCube =
+        [&](const game::navigation::GalaxyNavigationCell& cell, const glm::vec4& color)
         {
-            const auto& hoveredCell =
-                viewState.state().hoverVisualCell.value();
+            addBoxEdges(cell.center, cell.size, color);
+        };
 
-            const bool alreadyPresent =
-                std::any_of(
-                    cells.begin(),
-                    cells.end(),
-                    [&](const auto& existing)
-                    {
-                        return
-                            existing.level == hoveredCell.level &&
-                            existing.index == hoveredCell.index;
-                    }
-                );
+    const auto smooth = [](float t) {
+        t = std::clamp(t, 0.0f, 1.0f);
+        return t * t * (3.0f - 2.0f * t);
+    };
 
-            if (!alreadyPresent)
-            {
-                cells.push_back(hoveredCell);
-            }
-        }
+    // While the camera flies between nested parents the new frame's grids
+    // fade in (no x25 pop of a dense lattice).
+    const float frameFade =
+        state.cameraFlight.active()
+            ? smooth(static_cast<float>(state.cameraFlight.progress()) * 1.4f - 0.2f)
+            : 1.0f;
 
-        if (viewState.state().hoverOutgoingCell.has_value() &&
-            viewState.state().hoverOutgoingAlpha > 0.001f)
+    // ---- the flight context: the parent the camera is leaving ----------
+    if (state.flightContextBox && state.cameraFlight.active())
+    {
+        glm::vec4 color = gridVisuals.parentFrameColor;
+        color.a *= 0.55f * (1.0f - frameFade);
+        if (color.a > 0.002f)
+            addBoxEdges(state.flightContextBox->centerLy, state.flightContextBox->edgeLy, color);
+    }
+
+    // ---- current parent: frame -----------------------------------------
+    addBoxEdges(box.centerLy, box.edgeLy, gridVisuals.parentFrameColor);
+
+    // ---- inner coordinate faces ------------------------------------------
+    const double half = box.edgeLy * 0.5;
+    const int divisions = std::max(1, box.divisions);
+    const bool everyLineMajor = divisions <= 12;
+    const auto axisUnit = [](int axis) {
+        return glm::dvec3(axis == 0 ? 1.0 : 0.0, axis == 1 ? 1.0 : 0.0, axis == 2 ? 1.0 : 0.0);
+    };
+    const int otherHorizontal = faces.wallAxis == 0 ? 2 : 0;
+
+    const auto addFaceGrid =
+        [&](int normalAxis, int sign, int axisU, int axisV)
         {
-            const auto& outgoingCell =
-                viewState.state().hoverOutgoingCell.value();
-
-            const bool alreadyPresent =
-                std::any_of(
-                    cells.begin(),
-                    cells.end(),
-                    [&](const auto& existing)
-                    {
-                        return
-                            existing.level == outgoingCell.level &&
-                            existing.index == outgoingCell.index;
-                    }
-                );
-
-            if (!alreadyPresent)
-                cells.push_back(outgoingCell);
-        }
-
-        const glm::vec3 cameraRight =
-            glm::vec3(camera.basis.right);
-
-        const glm::vec3 cameraUp =
-            glm::vec3(camera.basis.up);
-
-
-        /*
-            Положение и направление Galaxy-камеры нужны,
-            чтобы экранный ромб сохранял постоянный размер
-            независимо от удаления камеры.
-        */
-        const glm::vec3 cameraDirection =
-            glm::vec3(camera.basis.direction);
-
-        const glm::vec3 cameraPosition =
-            glm::vec3(camera.eye);
-
-    const glm::vec3 cameraRayDirection =
-        -cameraDirection;
-
-    /*
-        Расстояние от камеры до первого пересечения центрального луча
-        с ориентированным кубом.
-
-        0 означает, что камера находится внутри куба.
-        max() означает, что куб не находится перед камерой.
-    */
-    const auto cameraRayEntryDistanceToCube =
-        [&](const glm::vec3& cubeCenter,
-            const glm::vec3& halfAxisX,
-            const glm::vec3& halfAxisY,
-            const glm::vec3& halfAxisZ) -> float
-        {
-            const std::array<glm::vec3, 3> halfAxes =
+            const glm::dvec3 faceCentre = box.centerLy + axisUnit(normalAxis) * (half * sign);
+            const glm::dvec3 u = axisUnit(axisU);
+            const glm::dvec3 v = axisUnit(axisV);
+            for (int k = 0; k <= divisions; ++k)
             {
-                halfAxisX,
-                halfAxisY,
-                halfAxisZ
-            };
-
-            float nearDistance =
-                -std::numeric_limits<float>::max();
-
-            float farDistance =
-                std::numeric_limits<float>::max();
-
-            const glm::vec3 originFromCenter =
-                cameraPosition - cubeCenter;
-
-            for (const glm::vec3& halfAxis : halfAxes)
-            {
-                const float extent =
-                    glm::length(halfAxis);
-
-                if (extent <= 0.000001f)
-                    return std::numeric_limits<float>::max();
-
-                const glm::vec3 axis =
-                    halfAxis / extent;
-
-                const float originOnAxis =
-                    glm::dot(
-                        originFromCenter,
-                        axis
-                    );
-
-                const float directionOnAxis =
-                    glm::dot(
-                        cameraRayDirection,
-                        axis
-                    );
-
-                if (std::abs(directionOnAxis) <= 0.000001f)
-                {
-                    if (std::abs(originOnAxis) > extent)
-                    {
-                        return
-                            std::numeric_limits<float>::max();
-                    }
-
+                const double t = -half + box.childEdgeLy * static_cast<double>(k);
+                const bool major = everyLineMajor || k % 5 == 0;
+                glm::vec4 color = major ? gridVisuals.faceMajorColor : gridVisuals.faceMinorColor;
+                color.a *= frameFade;
+                if (color.a <= 0.002f)
                     continue;
-                }
-
-                float distanceA =
-                    (-extent - originOnAxis) /
-                    directionOnAxis;
-
-                float distanceB =
-                    ( extent - originOnAxis) /
-                    directionOnAxis;
-
-                if (distanceA > distanceB)
-                    std::swap(distanceA, distanceB);
-
-                nearDistance =
-                    std::max(
-                        nearDistance,
-                        distanceA
-                    );
-
-                farDistance =
-                    std::min(
-                        farDistance,
-                        distanceB
-                    );
-
-                if (nearDistance > farDistance)
-                {
-                    return
-                        std::numeric_limits<float>::max();
-                }
+                context.addLine(toRender(faceCentre + u * t - v * half),
+                                toRender(faceCentre + u * t + v * half), color);
+                context.addLine(toRender(faceCentre + v * t - u * half),
+                                toRender(faceCentre + v * t + u * half), color);
             }
-
-            if (farDistance < 0.0f)
-                return std::numeric_limits<float>::max();
-
-            return std::max(nearDistance, 0.0f);
         };
 
-    /*
-        Экранный размер, при котором сетка имеет полную заданную
-        непрозрачность. Значение 0.60 соответствует примерно тому
-        масштабу куба, который показан на контрольном скриншоте.
+    // Floor (or ceiling) and the far wall the camera looks into.
+    addFaceGrid(1, faces.horizontalSign, 0, 2);
+    addFaceGrid(faces.wallAxis, faces.wallSign, otherHorizontal, 1);
 
-        Когда куб становится меньше на треть, сетка полностью исчезает.
-    */
-    const float gridFullSizePx =
-        static_cast<float>(
-            std::max(
-                1,
-                std::min(vp.width, vp.height)
-            )
-        ) * 0.60f;
+    const double floorY = box.centerLy.y + half * faces.horizontalSign;
+    const double wallCoord = box.centerLy[faces.wallAxis] + half * faces.wallSign;
+    // The side of the remaining horizontal axis away from the camera:
+    // the vertical ruler stands in the far corner of floor and wall.
+    const int sideSign = (eyeLy[otherHorizontal] - box.centerLy[otherHorizontal]) >= 0.0 ? -1 : 1;
+    const double sideCoord = box.centerLy[otherHorizontal] + half * sideSign;
 
-    const float gridHiddenSizePx =
-        gridFullSizePx * (2.0f / 3.0f);
-
-    const float tanHalfGalaxyFov =
-        std::tan(
-            glm::radians(48.0f) * 0.5f
-        );
-
-    const auto cubeGridVisibility =
-        [&](const glm::vec3& cubeCenter,
-            const glm::vec3& halfAxisX,
-            const glm::vec3& halfAxisY,
-            const glm::vec3& halfAxisZ) -> float
+    // Coordinate labels (major children only), in parent child offsets
+    // relative to the centre child; the overview shows root indices.
+    const auto childLabel = [&](int axis, int offset) -> std::string {
+        if (box.parent.overview())
         {
-            const float viewDepth =
-                glm::dot(
-                    cubeCenter - cameraPosition,
-                    -cameraDirection
-                );
-
-            if (viewDepth <= 0.001f)
-                return 0.0f;
-
-            const float cubeEdgeWorld =
-                2.0f *
-                std::max({
-                    glm::length(halfAxisX),
-                    glm::length(halfAxisY),
-                    glm::length(halfAxisZ)
-                });
-
-            /*
-                1.35 приближает обычный экранный bounding box
-                повёрнутого куба, а не только проекцию одной грани.
-            */
-            const float cubeSizePx =
-                cubeEdgeWorld *
-                1.35f *
-                static_cast<float>(std::max(vp.height, 1)) /
-                (2.0f * viewDepth * tanHalfGalaxyFov);
-
-            if (cubeSizePx <= gridHiddenSizePx)
-                return 0.0f;
-
-            if (cubeSizePx >= gridFullSizePx)
-                return 1.0f;
-
-            float visibility =
-                (cubeSizePx - gridHiddenSizePx) /
-                (gridFullSizePx - gridHiddenSizePx);
-
-            visibility =
-                std::clamp(
-                    visibility,
-                    0.0f,
-                    1.0f
-                );
-
-            /* Smoothstep: исчезновение без заметной ступеньки. */
-            return
-                visibility *
-                visibility *
-                (3.0f - 2.0f * visibility);
+            const std::int64_t first =
+                axis == 0 ? box.firstChild.x : (axis == 1 ? box.firstChild.y : box.firstChild.z);
+            return std::to_string(first + offset);
+        }
+        return std::to_string(offset - (divisions - 1) / 2);
+    };
+    const auto labelledOffset = [&](int offset) {
+        return everyLineMajor || (offset - (divisions - 1) / 2) % 5 == 0;
+    };
+    const glm::vec4 labelColor(gridVisuals.frameLabelColor.r, gridVisuals.frameLabelColor.g,
+                               gridVisuals.frameLabelColor.b, gridVisuals.frameLabelColor.a * frameFade);
+    const auto addAxisLabels =
+        [&](int axis, const glm::dvec3& lineOrigin, const char* axisName)
+        {
+            // lineOrigin: a point on the ruler edge; the labelled axis runs
+            // along it from -half to +half around the parent centre.
+            for (int offset = 0; offset < divisions; ++offset)
+            {
+                if (!labelledOffset(offset))
+                    continue;
+                glm::dvec3 p = lineOrigin;
+                p[axis] = box.centerLy[axis] - half + box.childEdgeLy * (static_cast<double>(offset) + 0.5);
+                frameTexts.push_back({toRender(p), childLabel(axis, offset), labelColor, 10, false});
+            }
+            glm::dvec3 end = lineOrigin;
+            end[axis] = box.centerLy[axis] + half + box.childEdgeLy * 0.6;
+            frameTexts.push_back({toRender(end), axisName, labelColor, 11, true});
         };
+    if (frameFade > 0.05f)
+    {
+        // Floor-wall junction carries the axis parallel to the wall,
+        // the floor side edge the wall-normal axis, the far vertical
+        // edge Y.
+        glm::dvec3 junction = box.centerLy;
+        junction.y = floorY;
+        junction[faces.wallAxis] = wallCoord;
+        addAxisLabels(otherHorizontal, junction, otherHorizontal == 0 ? "X" : "Z");
 
-    const int faceDivisions =
-        viewState.state().navigationGrid.subdivision();
+        glm::dvec3 side = box.centerLy;
+        side.y = floorY;
+        side[otherHorizontal] = sideCoord;
+        addAxisLabels(faces.wallAxis, side, faces.wallAxis == 0 ? "X" : "Z");
 
-    const auto addCubeFarFaceGrids =
-        [&](const glm::vec3& cubeCenter,
-            const glm::vec3& halfAxisX,
-            const glm::vec3& halfAxisY,
-            const glm::vec3& halfAxisZ,
-            glm::vec4 gridColor)
+        glm::dvec3 vertical = box.centerLy;
+        vertical[faces.wallAxis] = wallCoord;
+        vertical[otherHorizontal] = sideCoord;
+        addAxisLabels(1, vertical, "Y");
+    }
+
+    // ---- projections of a point onto the coordinate faces ---------------
+    const auto addProjection =
+        [&](const glm::dvec3& pointLy, const std::optional<game::navigation::GalaxyNavigationCell>& child,
+            float alpha, bool exactPoint)
         {
-            const float visibility =
-                cubeGridVisibility(
-                    cubeCenter,
-                    halfAxisX,
-                    halfAxisY,
-                    halfAxisZ
-                );
-
-            if (visibility <= 0.001f)
+            if (alpha <= 0.002f || !galaxyHierarchyContains(box, pointLy))
                 return;
+            glm::vec4 guide = gridVisuals.projectionColor;
+            guide.a *= alpha;
+            glm::vec4 foot = gridVisuals.projectionFootColor;
+            foot.a *= alpha;
 
-            gridColor.a *= visibility;
+            glm::dvec3 onFloor = pointLy;
+            onFloor.y = floorY;
+            glm::dvec3 onWall = pointLy;
+            onWall[faces.wallAxis] = wallCoord;
+            context.addLine(toRender(pointLy), toRender(onFloor), guide);
+            context.addLine(toRender(pointLy), toRender(onWall), guide);
 
-            const auto addFarFace =
-                [&](const glm::vec3& faceHalfAxis,
-                    const glm::vec3& gridHalfAxisU,
-                    const glm::vec3& gridHalfAxisV)
-                {
-                    const glm::vec3 toCamera =
-                        cameraPosition - cubeCenter;
+            // Rulers on the faces: from the foot to the labelled edges.
+            glm::vec4 ruler = guide;
+            ruler.a *= 0.55f;
+            glm::dvec3 floorToJunction = onFloor;
+            floorToJunction[faces.wallAxis] = wallCoord;
+            glm::dvec3 floorToSide = onFloor;
+            floorToSide[otherHorizontal] = sideCoord;
+            glm::dvec3 wallToSide = onWall;
+            wallToSide[otherHorizontal] = sideCoord;
+            context.addLine(toRender(onFloor), toRender(floorToJunction), ruler);
+            context.addLine(toRender(onFloor), toRender(floorToSide), ruler);
+            context.addLine(toRender(onWall), toRender(wallToSide), ruler);
 
-                    const float farSide =
-                        glm::dot(
-                            toCamera,
-                            faceHalfAxis
-                        ) >= 0.0f
-                            ? -1.0f
-                            : 1.0f;
-
-                    const glm::vec3 faceCenter =
-                        cubeCenter +
-                        faceHalfAxis * farSide;
-
-                    for (int division = 1;
-                         division < faceDivisions;
-                         ++division)
-                    {
-                        const float t =
-                            -1.0f +
-                            2.0f *
-                                static_cast<float>(division) /
-                                static_cast<float>(faceDivisions);
-
-                        const glm::vec3 alongU =
-                            gridHalfAxisU * t;
-
-                        const glm::vec3 alongV =
-                            gridHalfAxisV * t;
-
-                        context.addLine(
-                            faceCenter + alongU - gridHalfAxisV,
-                            faceCenter + alongU + gridHalfAxisV,
-                            gridColor
-                        );
-
-                        context.addLine(
-                            faceCenter + alongV - gridHalfAxisU,
-                            faceCenter + alongV + gridHalfAxisU,
-                            gridColor
-                        );
-                    }
+            // The child's footprint: exactly one grid cell on each face.
+            if (child)
+            {
+                const double h = child->size * 0.5;
+                const auto square = [&](const glm::dvec3& c, int axisU, int axisV) {
+                    const glm::dvec3 u = axisUnit(axisU) * h;
+                    const glm::dvec3 v = axisUnit(axisV) * h;
+                    context.addLine(toRender(c - u - v), toRender(c + u - v), foot);
+                    context.addLine(toRender(c + u - v), toRender(c + u + v), foot);
+                    context.addLine(toRender(c + u + v), toRender(c - u + v), foot);
+                    context.addLine(toRender(c - u + v), toRender(c - u - v), foot);
                 };
-
-            addFarFace(
-                halfAxisX,
-                halfAxisY,
-                halfAxisZ
-            );
-
-            addFarFace(
-                halfAxisY,
-                halfAxisX,
-                halfAxisZ
-            );
-
-            addFarFace(
-                halfAxisZ,
-                halfAxisX,
-                halfAxisY
-            );
-        };
-
-    /*
-        Root не является выбираемым уровнем карты. Навигационный домен -
-        связная оболочка из сотен Root-кубов (пустое пространство тоже
-        навигируемо), поэтому рисуются только Root в фокусе и его соседи
-        из домена, а не весь домен.
-    */
-    const double rootEdgeLy =
-        viewState.state().navigationGrid.config().rootEdgeLy();
-
-    const double rootHalfEdgeLy =
-        rootEdgeLy * 0.5;
-
-    const glm::vec3 rootHalfAxisX =
-        viewState.vectorLyToRender(frame.axisX * rootHalfEdgeLy);
-    const glm::vec3 rootHalfAxisY =
-        viewState.vectorLyToRender(frame.axisY * rootHalfEdgeLy);
-    const glm::vec3 rootHalfAxisZ =
-        viewState.vectorLyToRender(frame.axisZ * rootHalfEdgeLy);
-
-    std::array<std::int64_t, 3>
-        focusedRootIndex {0, 0, 0};
-
-    bool hasFocusedRoot = false;
-    bool focusedRootWasHitByRay = false;
-
-    float focusedRootRayDistance =
-        std::numeric_limits<float>::max();
-
-    float focusedRootFallbackDistanceSquared =
-        std::numeric_limits<float>::max();
-
-    /*
-        Выбираем ровно один Root:
-
-        1. ближайший куб, пересечённый центральным лучом камеры;
-        2. если луч не пересёк ни один Root — ближайший к camera.target.
-    */
-    for (const auto& rootIndex :
-         viewState.state().navigationGrid.navigableRootCells())
-    {
-        const glm::dvec3 rootCenterLy =
-            frame.origin +
-            frame.axisX *
-                (static_cast<double>(rootIndex[0]) * rootEdgeLy) +
-            frame.axisY *
-                (static_cast<double>(rootIndex[1]) * rootEdgeLy) +
-            frame.axisZ *
-                (static_cast<double>(rootIndex[2]) * rootEdgeLy);
-
-        const glm::vec3 rootCenter =
-            viewState.positionLyToRender(rootCenterLy);
-
-        const float rayDistance =
-            cameraRayEntryDistanceToCube(
-                rootCenter,
-                rootHalfAxisX,
-                rootHalfAxisY,
-                rootHalfAxisZ
-            );
-
-        const bool rayHit =
-            rayDistance <
-                std::numeric_limits<float>::max();
-
-        const glm::vec3 fallbackDelta =
-            rootCenter - viewState.state().camera.target;
-
-        const float fallbackDistanceSquared =
-            glm::dot(
-                fallbackDelta,
-                fallbackDelta
-            );
-
-        if (rayHit)
-        {
-            if (!focusedRootWasHitByRay ||
-                rayDistance < focusedRootRayDistance)
-            {
-                focusedRootIndex = rootIndex;
-                focusedRootRayDistance = rayDistance;
-                hasFocusedRoot = true;
-                focusedRootWasHitByRay = true;
+                glm::dvec3 floorCell = child->center;
+                floorCell.y = floorY;
+                glm::dvec3 wallCell = child->center;
+                wallCell[faces.wallAxis] = wallCoord;
+                square(floorCell, 0, 2);
+                square(wallCell, otherHorizontal, 1);
             }
-        }
-        else if (!focusedRootWasHitByRay &&
-                 (!hasFocusedRoot ||
-                  fallbackDistanceSquared <
-                      focusedRootFallbackDistanceSquared))
-        {
-            focusedRootIndex = rootIndex;
-            focusedRootFallbackDistanceSquared =
-                fallbackDistanceSquared;
-            hasFocusedRoot = true;
-        }
-    }
 
-    for (const auto& rootIndex :
-         viewState.state().navigationGrid.navigableRootCells())
-    {
-        const glm::dvec3 rootCenterLy =
-            frame.origin +
-            frame.axisX *
-                (static_cast<double>(rootIndex[0]) * rootEdgeLy) +
-            frame.axisY *
-                (static_cast<double>(rootIndex[1]) * rootEdgeLy) +
-            frame.axisZ *
-                (static_cast<double>(rootIndex[2]) * rootEdgeLy);
-
-        if (hasFocusedRoot &&
-            (std::llabs(rootIndex[0] - focusedRootIndex[0]) > 1 ||
-             std::llabs(rootIndex[1] - focusedRootIndex[1]) > 1 ||
-             std::llabs(rootIndex[2] - focusedRootIndex[2]) > 1))
-        {
-            continue;
-        }
-
-        const glm::vec3 rootCenter =
-            viewState.positionLyToRender(rootCenterLy);
-
-        addNavigationCubeEdges(
-            context,
-            rootCenter,
-            rootHalfAxisX,
-            rootHalfAxisY,
-            rootHalfAxisZ,
-            viewState.visuals().navigationGrid.rootEdgeColor
-        );
-
-        const bool isFocusedRoot =
-            hasFocusedRoot &&
-            rootIndex == focusedRootIndex;
-
-        if (isFocusedRoot &&
-            viewState.state().navigationGrid.level() ==
-                viewState.state().navigationGrid.minimumLevel())
-        {
-            addCubeFarFaceGrids(
-                rootCenter,
-                rootHalfAxisX,
-                rootHalfAxisY,
-                rootHalfAxisZ,
-                viewState.visuals().navigationGrid.rootFaceGridColor
-            );
-        }
-    }
-
-    /*
-        Начиная с G2 непосредственным родителем является уже не Root,
-        а куб предыдущего рабочего уровня. Для выбранного и наведённого
-        кубов родители могут различаться, поэтому собираем уникальный список.
-    */
-    if (viewState.state().navigationGrid.level() >
-        viewState.state().navigationGrid.minimumLevel())
-    {
-        std::vector<game::navigation::GalaxyNavigationCell>
-            parentCells;
-
-        parentCells.reserve(cells.size());
-
-        for (const auto& currentCell : cells)
-        {
-            game::navigation::GalaxyGridIndex parentIndex;
-
-            const double subdivision =
-                static_cast<double>(
-                    viewState.state().navigationGrid.subdivision()
-                );
-
-            parentIndex.x =
-                static_cast<std::int64_t>(
-                    std::llround(
-                        static_cast<double>(currentCell.index.x) /
-                        subdivision
-                    )
-                );
-
-            parentIndex.y =
-                static_cast<std::int64_t>(
-                    std::llround(
-                        static_cast<double>(currentCell.index.y) /
-                        subdivision
-                    )
-                );
-
-            parentIndex.z =
-                static_cast<std::int64_t>(
-                    std::llround(
-                        static_cast<double>(currentCell.index.z) /
-                        subdivision
-                    )
-                );
-
-            const auto parentCell =
-                viewState.state().navigationGrid.cell(
-                    parentIndex,
-                    currentCell.level - 1
-                );
-
-            const bool alreadyPresent =
-                std::any_of(
-                    parentCells.begin(),
-                    parentCells.end(),
-                    [&](const auto& existing)
-                    {
-                        return
-                            existing.level == parentCell.level &&
-                            existing.index == parentCell.index;
-                    }
-                );
-
-            if (!alreadyPresent)
-                parentCells.push_back(parentCell);
-        }
-
-        std::size_t focusedParentIndex = 0;
-
-        bool hasFocusedParent = false;
-        bool focusedParentWasHitByRay = false;
-
-        float focusedParentRayDistance =
-            std::numeric_limits<float>::max();
-
-        float focusedParentFallbackDistanceSquared =
-            std::numeric_limits<float>::max();
-
-        for (std::size_t parentIndex = 0;
-             parentIndex < parentCells.size();
-             ++parentIndex)
-        {
-            const auto& parentCell =
-                parentCells[parentIndex];
-
-            const glm::vec3 parentCenter =
-                viewState.positionLyToRender(
-                    parentCell.center
-                );
-
-            const double parentHalfSizeLy =
-                parentCell.size * 0.5;
-
-            const glm::vec3 parentHalfAxisX =
-                viewState.vectorLyToRender(
-                    frame.axisX * parentHalfSizeLy
-                );
-
-            const glm::vec3 parentHalfAxisY =
-                viewState.vectorLyToRender(
-                    frame.axisY * parentHalfSizeLy
-                );
-
-            const glm::vec3 parentHalfAxisZ =
-                viewState.vectorLyToRender(
-                    frame.axisZ * parentHalfSizeLy
-                );
-
-            const float rayDistance =
-                cameraRayEntryDistanceToCube(
-                    parentCenter,
-                    parentHalfAxisX,
-                    parentHalfAxisY,
-                    parentHalfAxisZ
-                );
-
-            const bool rayHit =
-                rayDistance <
-                    std::numeric_limits<float>::max();
-
-            const glm::vec3 fallbackDelta =
-                parentCenter - viewState.state().camera.target;
-
-            const float fallbackDistanceSquared =
-                glm::dot(
-                    fallbackDelta,
-                    fallbackDelta
-                );
-
-            if (rayHit)
+            // Exact feet of an object: a small cross.
+            if (exactPoint)
             {
-                if (!focusedParentWasHitByRay ||
-                    rayDistance < focusedParentRayDistance)
+                const float depthFloor =
+                    std::max(0.001f, glm::dot(toRender(onFloor) - cameraPosition, -cameraDirection));
+                const float s = 4.0f * 2.0f * depthFloor * std::tan(glm::radians(24.0f)) /
+                                static_cast<float>(std::max(vp.height, 1));
+                for (const glm::dvec3& f : {onFloor, onWall})
                 {
-                    focusedParentIndex = parentIndex;
-                    focusedParentRayDistance = rayDistance;
-                    hasFocusedParent = true;
-                    focusedParentWasHitByRay = true;
+                    const glm::vec3 c = toRender(f);
+                    context.addLine(c - cameraRight * s, c + cameraRight * s, foot);
+                    context.addLine(c - cameraUp * s, c + cameraUp * s, foot);
                 }
             }
-            else if (!focusedParentWasHitByRay &&
-                     (!hasFocusedParent ||
-                      fallbackDistanceSquared <
-                          focusedParentFallbackDistanceSquared))
+        };
+
+    const auto coordinateText =
+        [&](const game::navigation::GalaxyNavigationCell& child) -> std::string {
+            const glm::ivec3 o = galaxyHierarchyChildOffset(box, child.index);
+            if (box.parent.overview())
             {
-                focusedParentIndex = parentIndex;
-                focusedParentFallbackDistanceSquared =
-                    fallbackDistanceSquared;
-                hasFocusedParent = true;
+                return "G0 [" + std::to_string(child.index.x) + ", " + std::to_string(child.index.y) + ", " +
+                       std::to_string(child.index.z) + "]";
             }
+            const int c = (divisions - 1) / 2;
+            return "x " + std::to_string(o.x - c) + "  y " + std::to_string(o.y - c) + "  z " +
+                   std::to_string(o.z - c);
+        };
+
+    // ---- children: selected, hovered (fade), outgoing (fade) -----------
+    const auto isChild = [&](const game::navigation::GalaxyNavigationCell& cell) {
+        return galaxyHierarchyIsChild(box, cell);
+    };
+
+    /*
+        Marker diamond at a child centre. Only the SELECTED child's marker
+        is a pointer target (published): a hover marker is feedback for the
+        object / layer point under the cursor and must never take the click
+        from that object (e.g. a cloud whose cube centre is near the cursor).
+    */
+    const auto publishMarker =
+        [&](const game::navigation::GalaxyNavigationCell& cell, float radiusPx, const glm::vec4& color,
+            bool pointerTarget)
+        {
+            const glm::vec3 center = toRender(cell.center);
+            const float viewDepth = std::max(0.001f, glm::dot(center - cameraPosition, -cameraDirection));
+            const float worldUnitsPerPixel =
+                2.0f * viewDepth * std::tan(glm::radians(48.0f) * 0.5f) /
+                static_cast<float>(std::max(vp.height, 1));
+            const float markerSize = worldUnitsPerPixel * radiusPx;
+
+            if (pointerTarget)
+            {
+                GalaxyNavigationMarker presented;
+                presented.cell = cell;
+                presented.radiusPx = radiusPx;
+                presented.screen = projectToScreen(center, camera.mvp, vp, presented.visible, presented.depth);
+                state.presentedCubeMarkers.push_back(presented);
+            }
+
+            // Flat diamond facing the camera (unlike a star's 3D cross).
+            const glm::vec3 top = center + cameraUp * markerSize;
+            const glm::vec3 right = center + cameraRight * markerSize;
+            const glm::vec3 bottom = center - cameraUp * markerSize;
+            const glm::vec3 left = center - cameraRight * markerSize;
+            context.addLine(top, right, color);
+            context.addLine(right, bottom, color);
+            context.addLine(bottom, left, color);
+            context.addLine(left, top, color);
+        };
+
+    const std::optional<game::navigation::GalaxyNavigationCell> selectedChild =
+        grid.hasSelectedCell() && isChild(grid.selectedCell())
+            ? std::optional<game::navigation::GalaxyNavigationCell>(grid.selectedCell())
+            : std::nullopt;
+
+    const auto sameCell = [](const game::navigation::GalaxyNavigationCell& a,
+                             const game::navigation::GalaxyNavigationCell& b) {
+        return a.level == b.level && a.index == b.index;
+    };
+
+    if (state.hoverOutgoingCell && isChild(*state.hoverOutgoingCell) &&
+        !(selectedChild && sameCell(*selectedChild, *state.hoverOutgoingCell)))
+    {
+        glm::vec4 edge = gridVisuals.hoveredEdgeColor;
+        edge.a *= state.hoverOutgoingAlpha;
+        addChildCube(*state.hoverOutgoingCell, edge);
+    }
+
+    if (state.hoverVisualCell && isChild(*state.hoverVisualCell) && state.hoverVisualAlpha > 0.001f)
+    {
+        const auto& hovered = *state.hoverVisualCell;
+        const float a = state.hoverVisualAlpha;
+        const bool alsoSelected = selectedChild && sameCell(*selectedChild, hovered);
+        glm::vec4 edge = gridVisuals.hoveredEdgeColor;
+        edge.a *= a;
+        if (!alsoSelected)
+            addChildCube(hovered, edge);
+        glm::vec4 marker = gridVisuals.hoveredMarkerColor;
+        marker.a *= a;
+        if (!alsoSelected)
+            publishMarker(hovered, 4.0f, marker, false);
+
+        // Hover layer: the cross-section of the parent the cursor slides on.
+        if (state.hoverTargetValid && state.hoverTarget.reason == GalaxyPointerHitReason::HierarchyLayer)
+        {
+            const int axis = state.hoverLayerAxis >= 0 ? state.hoverLayerAxis : 1;
+            const int u = axis == 0 ? 1 : 0;
+            const int v = axis == 2 ? 1 : 2;
+            glm::dvec3 c = box.centerLy;
+            c[axis] = hovered.center[axis];
+            glm::vec4 layer = gridVisuals.hoverLayerColor;
+            layer.a *= a;
+            const glm::dvec3 du = axisUnit(u) * half;
+            const glm::dvec3 dv = axisUnit(v) * half;
+            context.addLine(toRender(c - du - dv), toRender(c + du - dv), layer);
+            context.addLine(toRender(c + du - dv), toRender(c + du + dv), layer);
+            context.addLine(toRender(c + du + dv), toRender(c - du + dv), layer);
+            context.addLine(toRender(c - du + dv), toRender(c - du - dv), layer);
         }
 
-        for (std::size_t parentIndex = 0;
-             parentIndex < parentCells.size();
-             ++parentIndex)
+        // Projection of the hovered point (object or cube centre).
+        const auto hoverPoint =
+            state.hoverTargetValid
+                ? GalaxyMapInteraction::semanticPointLy(galaxy, state.hoverTarget)
+                : std::nullopt;
+        const bool exact =
+            state.hoverTargetValid &&
+            (state.hoverTarget.kind == GalaxyPointerTargetKind::Star ||
+             state.hoverTarget.kind == GalaxyPointerTargetKind::Medium);
+        addProjection(exact && hoverPoint ? *hoverPoint : hovered.center, hovered,
+                      gridVisuals.hoverProjectionAlpha * a, exact);
+
+        bool visible = false;
+        float depth = 1.0f;
+        const glm::vec2 screen = projectToScreen(toRender(hovered.center), camera.mvp, vp, visible, depth);
+        if (visible && a > 0.3f)
         {
-            const auto& parentCell =
-                parentCells[parentIndex];
-
-            const glm::vec3 parentCenter =
-                viewState.positionLyToRender(
-                    parentCell.center
-                );
-
-            const double parentHalfSizeLy =
-                parentCell.size * 0.5;
-
-            const glm::vec3 parentHalfAxisX =
-                viewState.vectorLyToRender(
-                    frame.axisX * parentHalfSizeLy
-                );
-
-            const glm::vec3 parentHalfAxisY =
-                viewState.vectorLyToRender(
-                    frame.axisY * parentHalfSizeLy
-                );
-
-            const glm::vec3 parentHalfAxisZ =
-                viewState.vectorLyToRender(
-                    frame.axisZ * parentHalfSizeLy
-                );
-
-            addNavigationCubeEdges(
-                context,
-                parentCenter,
-                parentHalfAxisX,
-                parentHalfAxisY,
-                parentHalfAxisZ,
-                viewState.visuals().navigationGrid.parentEdgeColor
-            );
-
-            if (hasFocusedParent &&
-                parentIndex == focusedParentIndex)
-            {
-                addCubeFarFaceGrids(
-                    parentCenter,
-                    parentHalfAxisX,
-                    parentHalfAxisY,
-                    parentHalfAxisZ,
-                    viewState.visuals().navigationGrid.parentFaceGridColor
-                );
-            }
+            glm::vec4 color = gridVisuals.hoveredMarkerColor;
+            color.a = 0.80f * a;
+            frameTexts.push_back({glm::vec3(screen.x + 10.0f, screen.y + 16.0f, 0.0f), coordinateText(hovered),
+                                  color, 11, false, true});
         }
     }
 
-
-
-
-
-
-
-
-    for (const auto& cell : cells)
+    if (selectedChild)
     {
-        /*
-            Parent and Root context remains visible at every distance.
-            Only current-level cells wait until they are large enough to
-            be selected without ambiguity.
-        */
-        if (!currentLevelCellsInteractive)
-            continue;
+        addChildCube(*selectedChild, gridVisuals.selectedEdgeColor);
+        // The marker is a pointer target only for a CUBE selection; the cube
+        // of a selected star / cloud is its context and never takes the
+        // object's next click (its double click).
+        const bool objectSelection =
+            state.selectedSystemId >= 0 || state.selectedMediumObject >= 0;
+        publishMarker(*selectedChild, 5.0f, gridVisuals.selectedMarkerColor, !objectSelection);
 
-        const glm::vec3 center =
-            viewState.positionLyToRender(
-                cell.center
-            );
+        // Projection of the selected object (star / cloud point) or cube.
+        const bool objectSelected =
+            (state.selectedSystemId >= 0 || state.selectedMediumObject >= 0) &&
+            state.navigationFocusValid &&
+            game::system_map::galaxyHierarchyContains(box, state.navigationFocusLy);
+        addProjection(objectSelected ? state.navigationFocusLy : selectedChild->center, selectedChild,
+                      gridVisuals.selectedProjectionAlpha, objectSelected);
 
-        const double halfSizeLy =
-            cell.size * 0.5;
-
-        const glm::vec3 halfAxisX =
-            viewState.vectorLyToRender(
-                frame.axisX * halfSizeLy
-            );
-
-        const glm::vec3 halfAxisY =
-            viewState.vectorLyToRender(
-                frame.axisY * halfSizeLy
-            );
-
-        const glm::vec3 halfAxisZ =
-            viewState.vectorLyToRender(
-                frame.axisZ * halfSizeLy
-            );
-
-        const bool isAnchor =
-            cell.index ==
-            viewState.state().navigationGrid.anchorIndex();
-
-        float hoverVisualAlpha = 0.0f;
-
-        if (viewState.state().hoverVisualCell.has_value() &&
-            cell.index ==
-                viewState.state().hoverVisualCell->index &&
-            cell.level ==
-                viewState.state().hoverVisualCell->level)
+        bool visible = false;
+        float depth = 1.0f;
+        const glm::vec2 screen = projectToScreen(toRender(selectedChild->center), camera.mvp, vp, visible, depth);
+        const bool hoverShowsSame =
+            state.hoverVisualCell && sameCell(*state.hoverVisualCell, *selectedChild) &&
+            state.hoverVisualAlpha > 0.3f;
+        if (visible && !hoverShowsSame)
         {
-            hoverVisualAlpha =
-                std::max(
-                    hoverVisualAlpha,
-                    viewState.state().hoverVisualAlpha
-                );
+            glm::vec4 color = gridVisuals.selectedMarkerColor;
+            color.a = 0.85f;
+            frameTexts.push_back({glm::vec3(screen.x + 10.0f, screen.y + 16.0f, 0.0f),
+                                  coordinateText(*selectedChild), color, 11, false, true});
         }
-
-        if (viewState.state().hoverOutgoingCell.has_value() &&
-            cell.index ==
-                viewState.state().hoverOutgoingCell->index &&
-            cell.level ==
-                viewState.state().hoverOutgoingCell->level)
-        {
-            hoverVisualAlpha =
-                std::max(
-                    hoverVisualAlpha,
-                    viewState.state().hoverOutgoingAlpha
-                );
-        }
-
-        const bool isHovered =
-            hoverVisualAlpha > 0.001f;
-
-        const bool isSelected =
-            viewState.state().navigationGrid.hasSelectedCell() &&
-            cell.level ==
-                viewState.state().navigationGrid.selectedCell().level &&
-            cell.index ==
-                viewState.state().navigationGrid.selectedCell().index;
-
-        glm::vec4 edgeColor =
-            viewState.visuals().navigationGrid.currentEdgeColor;
-
-        glm::vec4 markerColor =
-            viewState.visuals().navigationGrid.currentMarkerColor;
-
-        if (isAnchor)
-        {
-            edgeColor.a =
-                viewState.visuals().navigationGrid.anchorEdgeAlpha;
-            markerColor.a =
-                viewState.visuals().navigationGrid.anchorMarkerAlpha;
-        }
-
-        if (isHovered)
-        {
-            edgeColor =
-                viewState.visuals().navigationGrid.hoveredEdgeColor;
-
-            markerColor =
-                viewState.visuals().navigationGrid.hoveredMarkerColor;
-
-            edgeColor.a *=
-                hoverVisualAlpha;
-
-            markerColor.a *=
-                hoverVisualAlpha;
-        }
-
-        if (isSelected)
-        {
-            edgeColor =
-                viewState.visuals().navigationGrid.selectedEdgeColor;
-
-            markerColor =
-                viewState.visuals().navigationGrid.selectedMarkerColor;
-        }
-
-        glm::vec4 currentLevelGridColor =
-            edgeColor;
-
-        currentLevelGridColor.a =
-            std::clamp(
-                edgeColor.a *
-                    viewState.visuals()
-                        .navigationGrid
-                        .currentFaceGridAlphaScale,
-                viewState.visuals()
-                    .navigationGrid
-                    .currentFaceGridMinimumAlpha,
-                viewState.visuals()
-                    .navigationGrid
-                    .currentFaceGridMaximumAlpha
-            );
-
-        addCubeFarFaceGrids(
-            center,
-            halfAxisX,
-            halfAxisY,
-            halfAxisZ,
-            currentLevelGridColor
-        );
-
-        addNavigationCubeEdges(
-            context,
-            center,
-            halfAxisX,
-            halfAxisY,
-            halfAxisZ,
-            edgeColor
-        );
-
-
-
-
-
-
-        const float viewDepth =
-            std::max(
-                0.001f,
-                glm::dot(
-                    center - cameraPosition,
-                    -cameraDirection
-                )
-            );
-
-        const float worldUnitsPerPixel =
-            2.0f *
-            viewDepth *
-            std::tan(
-                glm::radians(48.0f) * 0.5f
-            ) /
-            static_cast<float>(
-                std::max(vp.height, 1)
-            );
-
-        const float markerRadiusPx =
-            (isHovered || isSelected)
-                ? 5.0f
-                : 4.0f;
-
-        const float markerSize =
-            worldUnitsPerPixel *
-            markerRadiusPx;
-
-        {
-            GalaxyNavigationMarker presented;
-            presented.cell = cell;
-            presented.radiusPx = markerRadiusPx;
-            presented.screen =
-                projectToScreen(
-                    center,
-                    camera.mvp,
-                    vp,
-                    presented.visible,
-                    presented.depth
-                );
-            viewState.state().presentedCubeMarkers.push_back(presented);
-        }
-
-
-
-
-
-
-
-
-
-
-        /*
-            Плоский ромб всегда обращён к камере.
-            Он визуально отличается от трёхмерного креста звезды.
-        */
-        const glm::vec3 markerTop =
-            center + cameraUp * markerSize;
-
-        const glm::vec3 markerRight =
-            center + cameraRight * markerSize;
-
-        const glm::vec3 markerBottom =
-            center - cameraUp * markerSize;
-
-        const glm::vec3 markerLeft =
-            center - cameraRight * markerSize;
-
-        context.addLine(
-            markerTop,
-            markerRight,
-            markerColor
-        );
-
-        context.addLine(
-            markerRight,
-            markerBottom,
-            markerColor
-        );
-
-        context.addLine(
-            markerBottom,
-            markerLeft,
-            markerColor
-        );
-
-        context.addLine(
-            markerLeft,
-            markerTop,
-            markerColor
-        );
-
-
-
-
     }
 }
 
+/*
+    Frame texts: coordinate labels on the parent's faces (world anchored),
+    the hovered / selected child's coordinates and the XYZ triad (screen
+    anchored). Drawn after the scene lines, before the star labels.
+*/
+void GalaxyMapRenderer::drawFrameTexts(
+    GalaxyMapView& viewState,
+    GalaxyMapRenderContext& context,
+    const Viewport& vp,
+    const GalaxyMapCameraSnapshot& camera,
+    const std::vector<GalaxyFrameText>& frameTexts
+) const
+{
+    const glm::mat4 ortho =
+        glm::ortho(0.0f, static_cast<float>(vp.width), static_cast<float>(vp.height), 0.0f, -1.0f, 1.0f);
+
+    // Orientation triad (secondary cue): X / Y / Z of the frame as seen now.
+    const glm::vec2 origin(static_cast<float>(vp.width) - 58.0f, 92.0f);
+    const float length = 30.0f;
+    struct Axis { glm::vec3 dir; const char* name; glm::vec4 color; };
+    const Axis axes[3] = {
+        {{1.0f, 0.0f, 0.0f}, "X", {0.90f, 0.52f, 0.46f, 0.80f}},
+        {{0.0f, 1.0f, 0.0f}, "Y", {0.56f, 0.86f, 0.56f, 0.80f}},
+        {{0.0f, 0.0f, 1.0f}, "Z", {0.52f, 0.70f, 0.98f, 0.80f}}};
+    const glm::mat3 view3(camera.view);
+    context.beginLines();
+    glm::vec2 tips[3];
+    for (int i = 0; i < 3; ++i)
+    {
+        const glm::vec3 v = view3 * axes[i].dir;
+        tips[i] = origin + glm::vec2(v.x, -v.y) * length;
+        context.addLine(glm::vec3(origin, 0.0f), glm::vec3(tips[i], 0.0f), axes[i].color);
+    }
+    context.flushLines(ortho);
+
+    context.beginTextFrame(vp.width, vp.height);
+    for (int i = 0; i < 3; ++i)
+        context.drawTextPx(axes[i].name, tips[i].x + 2.0f, tips[i].y + 4.0f, 11, axes[i].color);
+
+    for (const auto& text : frameTexts)
+    {
+        glm::vec2 screen(text.position.x, text.position.y);
+        if (!text.screenSpace)
+        {
+            bool visible = false;
+            float depth = 1.0f;
+            screen = projectToScreen(text.position, camera.mvp, vp, visible, depth);
+            if (!visible)
+                continue;
+            screen += glm::vec2(-3.0f, 4.0f);
+        }
+        context.drawTextPx(text.text, screen.x, screen.y, text.px, text.color);
+    }
+    context.endTextFrame();
+    (void)viewState;
+}
 
 void GalaxyMapRenderer::drawLabels(
     GalaxyMapView& viewState,

@@ -5,7 +5,7 @@
   "maximumDepth": 9,
   "terminalCellEdgeKm": 100.0,
   "galaxy": {
-    "minimumLevel": 1,
+    "minimumLevel": 0,
     "initialLevel": 1,
     "systemEntryRequiredEdgeAu": 100.0,
     "systemMembershipRadiusAu": 100.0

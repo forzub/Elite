@@ -37,6 +37,12 @@ namespace game::system_map
         m_state.selectedSystemId = -1;
         m_state.focusedSystemId = -1;
 
+        m_state.hierarchyParent = GalaxyHierarchyParent {};
+        m_state.hierarchyFaces = GalaxyHierarchyFaces {};
+        m_state.hoverLayerAxis = -1;
+        m_state.flightContextBox.reset();
+        ++m_state.hierarchyRevision;
+
         m_state.orbitPivotWorld = glm::vec3(0.0f);
         resetTransientPointerState();
     }
@@ -45,11 +51,16 @@ namespace game::system_map
     {
         m_state.cubeClickTracker.reset();
         m_state.mediumClickTracker.reset();
+        m_state.starClickTracker.reset();
         m_state.hoveredMediumObject = -1;
         m_state.selectedMediumObject = -1;
         m_state.selectedMediumHitLy = glm::dvec3(0.0);
-        m_state.mediumHoverMouseX = -1.0e9;
-        m_state.mediumHoverMouseY = -1.0e9;
+        m_state.hoverTarget = GalaxyPointerTarget {};
+        m_state.hoverTargetValid = false;
+        m_state.hoverMouseX = -1.0e9;
+        m_state.hoverMouseY = -1.0e9;
+        m_state.hoverHierarchyRevision = -1;
+        m_state.whatIsHere = GalaxyWhatIsHereMenu {};
         m_state.presentedStars.clear();
         m_state.presentedCubeMarkers.clear();
         m_state.pointerGesture.reset();
@@ -187,40 +198,14 @@ namespace game::system_map
             cancelCameraFlight(false);
 
             m_state.navigationGrid.reset();
-            m_state.navigationGrid.setAnchorFromPositionLy(
-                playerLy
-            );
-            m_state.navigationGrid.selectCell(
-                m_state.navigationGrid.anchorCell()
-            );
-
             m_state.navigationFocusLy = playerLy;
             m_state.navigationFocusValid = true;
-
-            m_state.camera.target =
-                positionLyToRender(
-                    m_state.navigationGrid
-                        .anchorCell()
-                        .center
-                );
-
-            const float initialCellEdgeRender =
-                static_cast<float>(
-                    m_state.navigationGrid
-                        .anchorCell()
-                        .size
-                ) *
-                RenderUnitsPerLightYear;
-
-            m_state.camera.distance =
-                std::clamp(
-                    initialCellEdgeRender * 2.35f,
-                    m_controls.minDistance,
-                    m_controls.maxDistance
-                );
-
             m_state.selectedSystemId = entrySystemId;
             m_state.focusedSystemId = entrySystemId;
+
+            // Opening the map shows the whole galaxy overview, the player's
+            // root selected inside it.
+            showGalaxyOverview(playerLy, false, 0.0);
         }
 
         m_state.entry.systemId = entrySystemId;
@@ -233,41 +218,16 @@ namespace game::system_map
         cancelCameraFlight(false);
 
         m_state.navigationGrid.reset();
-        m_state.navigationGrid.setAnchorFromPositionLy(
-            m_state.entry.positionLy
-        );
-        m_state.navigationGrid.selectCell(
-            m_state.navigationGrid.anchorCell()
-        );
-        m_state.navigationGrid.clearHoveredCell();
-
         m_state.camera = GalaxyCameraState {};
-
-        m_state.camera.target =
-            positionLyToRender(
-                m_state.navigationGrid
-                    .anchorCell()
-                    .center
-            );
-
-        const float initialCellEdgeRender =
-            static_cast<float>(
-                m_state.navigationGrid
-                    .anchorCell()
-                    .size
-            ) *
-            RenderUnitsPerLightYear;
-
-        m_state.camera.distance =
-            std::clamp(
-                initialCellEdgeRender * 2.35f,
-                m_controls.minDistance,
-                m_controls.maxDistance
-            );
 
         m_state.navigationFocusLy =
             m_state.entry.positionLy;
         m_state.navigationFocusValid = true;
+        m_state.selectedSystemId = m_state.entry.systemId;
+        m_state.focusedSystemId = m_state.entry.systemId;
+
+        // LEVEL 0: the galaxy overview, the player's root selected.
+        showGalaxyOverview(m_state.entry.positionLy, false, 0.0);
 
         m_state.hoverVisualCell.reset();
         m_state.hoverVisualAlpha = 0.0f;
@@ -356,7 +316,7 @@ namespace game::system_map
             glm::radians(snapshot.fieldOfViewDeg),
             aspect,
             0.0001f,
-            2000.0f
+            farPlane()
         );
         snapshot.mvp =
             snapshot.projection * snapshot.view;
@@ -402,8 +362,14 @@ namespace game::system_map
             glm::radians(48.0f),
             aspect,
             0.0001f,
-            2000.0f
+            farPlane()
         );
+    }
+
+    float GalaxyMapView::farPlane() const
+    {
+        // Far enough for the whole fitted overview behind its centre.
+        return std::max(2000.0f, m_state.camera.distance * 3.0f);
     }
 
     glm::dvec3 GalaxyMapView::cameraDirectionWorld() const
@@ -469,67 +435,261 @@ namespace game::system_map
             );
     }
 
-    bool GalaxyMapView::navigationCellsInteractive(
+    GalaxyHierarchyBox GalaxyMapView::hierarchyBox() const
+    {
+        return galaxyHierarchyBox(
+            m_state.navigationGrid,
+            m_state.hierarchyParent
+        );
+    }
+
+    float GalaxyMapView::hierarchyFitDistance(
         const Viewport& viewport
     ) const
     {
-        if (!m_state.navigationGrid.enabled() ||
-            viewport.width <= 0 ||
-            viewport.height <= 0)
+        const GalaxyHierarchyBox box = hierarchyBox();
+        return std::clamp(
+            galaxyHierarchyFitDistance(
+                box.edgeLy * static_cast<double>(RenderUnitsPerLightYear),
+                glm::radians(48.0f),
+                viewport.width,
+                viewport.height
+            ),
+            m_controls.minDistance,
+            m_controls.maxDistance
+        );
+    }
+
+    void GalaxyMapView::cameraDistanceLimits(
+        const Viewport& viewport,
+        float& minimumDistance,
+        float& maximumDistance
+    ) const
+    {
+        const float fitted = hierarchyFitDistance(viewport);
+        minimumDistance = std::max(
+            m_controls.minDistance,
+            fitted * m_controls.parentZoomInFraction
+        );
+        maximumDistance = std::min(
+            m_controls.maxDistance,
+            fitted * m_controls.parentZoomOutFactor
+        );
+    }
+
+    std::optional<navigation::GalaxyNavigationCell>
+    GalaxyMapView::hierarchyChildAt(
+        const glm::dvec3& positionLy
+    ) const
+    {
+        return galaxyHierarchyChildAt(
+            m_state.navigationGrid,
+            hierarchyBox(),
+            positionLy
+        );
+    }
+
+    void GalaxyMapView::setHierarchyParent(
+        const GalaxyHierarchyParent& parent
+    )
+    {
+        m_state.hierarchyParent = parent;
+        ++m_state.hierarchyRevision;
+
+        auto& grid = m_state.navigationGrid;
+        const GalaxyHierarchyBox box = hierarchyBox();
+
+        /*
+            The grid works on the parent's child level. Its anchor is the
+            child holding the navigation focus, else the child nearest the
+            parent centre (any navigable root for the sparse overview).
+        */
+        const glm::dvec3 anchorPoint =
+            m_state.navigationFocusValid &&
+                    galaxyHierarchyContains(box, m_state.navigationFocusLy)
+                ? m_state.navigationFocusLy
+                : box.centerLy;
+
+        bool anchored = false;
+        if (const auto child = galaxyHierarchyChildAt(grid, box, anchorPoint))
+            anchored = grid.setAnchor(box.childLevel, child->index);
+
+        if (!anchored && box.parent.overview())
+        {
+            double best = 1.0e300;
+            navigation::GalaxyGridIndex bestIndex;
+            for (const auto& root : grid.navigableRootCells())
+            {
+                const navigation::GalaxyGridIndex index {root[0], root[1], root[2]};
+                const double d = glm::length(grid.cellCenterLy(index, 0) - anchorPoint);
+                if (d < best)
+                {
+                    best = d;
+                    bestIndex = index;
+                }
+            }
+            anchored = best < 1.0e300 && grid.setAnchor(0, bestIndex);
+        }
+
+        if (!anchored)
+        {
+            grid.setAnchor(
+                box.childLevel,
+                grid.nearestIndexForPositionLy(box.centerLy, box.childLevel)
+            );
+        }
+
+        grid.clearHoveredCell();
+        m_state.hoverVisualCell.reset();
+        m_state.hoverVisualAlpha = 0.0f;
+        m_state.hoverOutgoingCell.reset();
+        m_state.hoverOutgoingAlpha = 0.0f;
+        m_state.hoverTarget = GalaxyPointerTarget {};
+        m_state.hoverTargetValid = false;
+        m_state.hoveredMediumObject = -1;
+        m_state.cubeClickTracker.reset();
+        m_state.starClickTracker.reset();
+        m_state.mediumClickTracker.reset();
+        m_state.hierarchyFaces.valid = false;
+    }
+
+    void GalaxyMapView::frameHierarchyParent(
+        const Viewport& viewport,
+        double nowSeconds,
+        bool animate
+    )
+    {
+        const GalaxyHierarchyBox box = hierarchyBox();
+        const glm::vec3 target = positionLyToRender(box.centerLy);
+        const float distance = hierarchyFitDistance(viewport);
+
+        if (animate)
+        {
+            beginCameraFlight(target, distance, nowSeconds, true);
+            return;
+        }
+
+        cancelCameraFlight(false);
+        m_state.flightContextBox.reset();
+        m_state.camera.target = target;
+        m_state.camera.distance = distance;
+    }
+
+    bool GalaxyMapView::enterHierarchyCell(
+        const navigation::GalaxyNavigationCell& cell,
+        const Viewport& viewport,
+        double nowSeconds
+    )
+    {
+        auto& grid = m_state.navigationGrid;
+        if (cell.level < 0 ||
+            cell.level >= grid.maximumLevel() ||
+            !grid.isCellNavigable(cell))
         {
             return false;
         }
 
-        const float viewportReferencePx =
-            static_cast<float>(
-                std::max(
-                    1,
-                    std::min(
-                        viewport.width,
-                        viewport.height
-                    )
-                )
-            );
+        m_state.flightContextBox = hierarchyBox();
 
-        const float minimumInteractiveDiameterPx =
-            std::max(
-                m_controls.navigationCellInteractiveMinPx,
-                viewportReferencePx *
-                    m_controls
-                        .navigationCellInteractiveViewportFraction
-            );
+        GalaxyHierarchyParent parent;
+        parent.level = cell.level;
+        parent.index = cell.index;
+        setHierarchyParent(parent);
 
-        return
-            navigationAnchorDiameterPx(viewport) >=
-            minimumInteractiveDiameterPx;
+        /*
+            The selected object (star, cloud point) stays the navigation
+            focus: its child inside the new parent is selected. Otherwise
+            the entered cube itself stays the selected address.
+        */
+        const bool objectFocus =
+            m_state.selectedSystemId >= 0 ||
+            m_state.selectedMediumObject >= 0;
+        if (objectFocus && m_state.navigationFocusValid)
+        {
+            if (const auto child = hierarchyChildAt(m_state.navigationFocusLy))
+                grid.selectCell(*child);
+        }
+        else
+        {
+            grid.selectCell(grid.cell(cell.index, cell.level));
+        }
+
+        frameHierarchyParent(viewport, nowSeconds, true);
+        return true;
     }
 
-    void GalaxyMapView::syncNavigationAnchorToCameraTarget()
+    bool GalaxyMapView::ascendHierarchy(
+        const Viewport& viewport,
+        double nowSeconds
+    )
     {
-        if (!m_state.navigationGrid.enabled())
-            return;
-
-        m_state.navigationGrid.setAnchorFromPositionLy(
-            renderToPositionLy(
-                m_state.camera.target
-            )
+        return jumpToHierarchyLevel(
+            m_state.hierarchyParent.level - 1,
+            viewport,
+            nowSeconds
         );
+    }
+
+    bool GalaxyMapView::jumpToHierarchyLevel(
+        int level,
+        const Viewport& viewport,
+        double nowSeconds
+    )
+    {
+        const GalaxyHierarchyParent current = m_state.hierarchyParent;
+        if (current.overview() || level >= current.level || level < -1)
+            return false;
+
+        auto& grid = m_state.navigationGrid;
+        const navigation::GalaxyNavigationCell currentCell =
+            grid.cell(current.index, current.level);
+
+        // The cube the user leaves stays visible and selected inside the
+        // new parent: the ancestor of the old parent one level below it.
+        const navigation::GalaxyNavigationCell cameFrom =
+            grid.cell(
+                grid.ancestorIndex(currentCell.index, currentCell.level, level + 1),
+                level + 1
+            );
+
+        m_state.flightContextBox.reset();
+        setHierarchyParent(galaxyHierarchyAncestor(grid, currentCell, level));
+        grid.selectCell(cameFrom);
+
+        frameHierarchyParent(viewport, nowSeconds, true);
+        return true;
+    }
+
+    void GalaxyMapView::showGalaxyOverview(
+        const glm::dvec3& selectRootAtLy,
+        bool animate,
+        double nowSeconds
+    )
+    {
+        m_state.flightContextBox.reset();
+        setHierarchyParent(GalaxyHierarchyParent {});
+
+        auto& grid = m_state.navigationGrid;
+        if (const auto root = hierarchyChildAt(selectRootAtLy))
+            grid.selectCell(*root);
+        else
+            grid.selectCell(grid.anchorCell());
+
+        frameHierarchyParent(m_state.lastViewport, nowSeconds, animate);
     }
 
     void GalaxyMapView::beginCameraFlight(
         const glm::vec3& destinationTarget,
         float destinationDistance,
-        double nowSeconds
+        double nowSeconds,
+        bool nestedFrameFlight
     )
     {
         destinationDistance =
             std::clamp(
                 destinationDistance,
                 m_controls.minDistance,
-                std::min(
-                    m_controls.maxDistance,
-                    m_visuals.labelMaxCameraDistance
-                )
+                m_controls.maxDistance
             );
 
         const float targetTravelDistance =
@@ -571,13 +731,17 @@ namespace game::system_map
                 1.0f
             );
 
+        // Entering / leaving a nested cube changes the scale x25: a
+        // deliberate, readable flight (the child expands to the parent).
         const float duration =
-            m_visuals.cameraFlightMinSeconds +
-            (
-                m_visuals.cameraFlightMaxSeconds -
-                m_visuals.cameraFlightMinSeconds
-            ) *
-            std::max(targetFactor, zoomFactor);
+            nestedFrameFlight
+                ? m_visuals.cameraNestedFlightSeconds
+                : m_visuals.cameraFlightMinSeconds +
+                    (
+                        m_visuals.cameraFlightMaxSeconds -
+                        m_visuals.cameraFlightMinSeconds
+                    ) *
+                    std::max(targetFactor, zoomFactor);
 
         navigation::CubicNavigationCameraPose currentPose;
         currentPose.target = glm::dvec3(m_state.camera.target);
@@ -591,8 +755,12 @@ namespace game::system_map
             currentPose,
             destinationPose,
             nowSeconds,
-            static_cast<double>(duration)
+            static_cast<double>(duration),
+            nestedFrameFlight
         );
+        m_state.nestedFrameFlight = nestedFrameFlight;
+        if (!nestedFrameFlight || !m_state.cameraFlight.active())
+            m_state.flightContextBox.reset();
 
         // begin() may complete immediately for a negligible move.
         m_state.camera.target = glm::vec3(currentPose.target);
@@ -619,6 +787,9 @@ namespace game::system_map
 
         m_state.camera.target = glm::vec3(pose.target);
         m_state.camera.distance = static_cast<float>(pose.scale);
+
+        if (!m_state.cameraFlight.active())
+            m_state.flightContextBox.reset();
     }
 
     void GalaxyMapView::cancelCameraFlight(
@@ -745,37 +916,46 @@ namespace game::system_map
 
         m_state.selectedSystemId = system->id;
         m_state.focusedSystemId = system->id;
+        m_state.selectedMediumObject = -1;
 
         // Keep the exact star position as the navigation target.
-        m_state.navigationFocusLy = system->positionLy;
-        m_state.navigationFocusValid = true;
-
-        m_state.navigationGrid.setAnchorFromPositionLy(
-            system->positionLy
-        );
-
-        m_state.navigationGrid.selectCell(
-            m_state.navigationGrid.anchorCell()
-        );
-
-        const glm::vec3 destinationTarget =
-            positionLyToRender(system->positionLy);
-
-        if (animateCamera)
-        {
-            beginCameraFlight(
-                destinationTarget,
-                m_state.camera.distance,
-                nowSeconds
-            );
-        }
-        else
-        {
-            m_state.camera.target = destinationTarget;
-        }
-
+        focusHierarchyPoint(system->positionLy, animateCamera, nowSeconds);
         return true;
     }
 
+    void GalaxyMapView::focusHierarchyPoint(
+        const glm::dvec3& positionLy,
+        bool animateCamera,
+        double nowSeconds
+    )
+    {
+        m_state.navigationFocusLy = positionLy;
+        m_state.navigationFocusValid = true;
+
+        /*
+            A point outside the current parent moves the frame to the cube
+            of the SAME level that contains it (the overview contains every
+            navigable point); the working level is never changed here.
+        */
+        auto& grid = m_state.navigationGrid;
+        if (!galaxyHierarchyContains(hierarchyBox(), positionLy) &&
+            !m_state.hierarchyParent.overview())
+        {
+            const int level = m_state.hierarchyParent.level;
+            const auto index = grid.nearestIndexForPositionLy(positionLy, level);
+            if (grid.isCellNavigable(index, level))
+            {
+                GalaxyHierarchyParent parent;
+                parent.level = level;
+                parent.index = index;
+                m_state.flightContextBox.reset();
+                setHierarchyParent(parent);
+                frameHierarchyParent(m_state.lastViewport, nowSeconds, animateCamera);
+            }
+        }
+
+        if (const auto child = hierarchyChildAt(positionLy))
+            grid.selectCell(*child);
+    }
 
 }

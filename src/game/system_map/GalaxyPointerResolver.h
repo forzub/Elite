@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/CubicNavigationGrid.h"
+#include "src/game/system_map/GalaxyHierarchy.h"
 #include "src/render/types/Viewport.h"
 
 namespace world::celestial
@@ -36,7 +37,9 @@ namespace game::system_map
         3. star proximity (systemPickRadiusPx around a star, nearest; within
            1 px the foreground star; then the lower id);
         4. cloud shell (ray, nearest hit) / icy field marker;
-        5. empty space.
+        5. the child cube of the current parent where the cursor ray meets
+           the hover layer (GalaxyHierarchyLayer), when a hierarchy is given;
+        6. empty space.
     */
     enum class GalaxyPointerTargetKind
     {
@@ -60,7 +63,9 @@ namespace game::system_map
         IcyFieldMarker,
         // An overlay glyph of the cube that completes this cube's double
         // click (same semantic target, other presentation element).
-        CubeSequenceGlyph
+        CubeSequenceGlyph,
+        // Empty space inside the current parent: the child on the layer.
+        HierarchyLayer
     };
 
     const char* galaxyPointerTargetKindName(GalaxyPointerTargetKind kind);
@@ -75,7 +80,7 @@ namespace game::system_map
         std::optional<navigation::CubicNavigationCell> cell; // cube / glyph of a cube
         std::string overlayObjectId;                        // OverlayGlyph
         int mediumObject = -1;                              // Medium
-        glm::dvec3 hitLy {0.0};                             // Medium
+        glm::dvec3 hitLy {0.0};                             // Medium / layer point
 
         float screenDistancePx = 0.0f;
         float depth = 1.0f;                                 // NDC z, smaller = nearer
@@ -114,6 +119,29 @@ namespace game::system_map
         std::optional<navigation::CubicNavigationCell> semanticCell;
     };
 
+    // The current parent and its hover layer (empty-space child cubes).
+    struct GalaxyPointerHierarchy
+    {
+        const navigation::GalaxyNavigationGrid* grid = nullptr;
+        GalaxyHierarchyBox box;
+        GalaxyHierarchyLayer layer;
+    };
+
+    /*
+        The camera of the presented frame. The cursor ray is built from it
+        directly: un-projecting the far plane of an mvp whose near / far
+        ratio is beyond float precision (the fitted overview) gives no ray.
+    */
+    struct GalaxyPointerCamera
+    {
+        glm::dvec3 eyeLy {0.0};
+        glm::dvec3 right {1.0, 0.0, 0.0};
+        glm::dvec3 up {0.0, 1.0, 0.0};
+        glm::dvec3 forward {0.0, 0.0, -1.0}; // into the scene
+        double tanHalfFovY = 0.4452;
+        double aspect = 1.0;
+    };
+
     struct GalaxyPointerScene
     {
         const std::vector<GalaxyPointerStar>* stars = nullptr;
@@ -130,6 +158,11 @@ namespace game::system_map
         float glyphHitMarginPx = 4.0f;
         float starProximityRadiusPx = 32.0f;
         float icyFieldPickRadiusPx = 32.0f;
+        // Medium LOD: a structure projected smaller than this is not a target.
+        float mediumMinRadiusPx = 0.0f;
+
+        std::optional<GalaxyPointerHierarchy> hierarchy;
+        std::optional<GalaxyPointerCamera> camera;
     };
 
     struct GalaxyPointerResolution
@@ -154,9 +187,21 @@ namespace game::system_map
         const Viewport& viewport,
         float renderUnitsPerLy,
         const glm::vec2& mousePx,
+        const glm::dvec3& rayOriginLy,
+        const glm::dvec3& rayDirectionLy,
         float icyFieldPickRadiusPx,
         glm::dvec3& hitLy,
-        float& hitDepth
+        float& hitDepth,
+        float minRadiusPx = 0.0f
+    );
+
+    // The cursor ray in light-years (from the scene camera, else from
+    // un-projecting the mvp).
+    void galaxyPointerRayLy(
+        const GalaxyPointerScene& scene,
+        const glm::vec2& mousePx,
+        glm::dvec3& originLy,
+        glm::dvec3& directionLy
     );
 
     /*

@@ -1338,14 +1338,9 @@ SystemMapRenderer::advancePendingRouteFocus(
 
         const glm::dvec3 targetLy =
             world::coordinates::toGalacticLy(waypoint->worldPosition);
-        m_galaxyView.state().navigationGrid.setAnchorFromPositionLy(targetLy);
-        m_galaxyView.state().navigationFocusLy = targetLy;
-        m_galaxyView.state().navigationFocusValid = true;
-        m_galaxyView.beginCameraFlight(
-            m_galaxyView.positionLyToRender(targetLy),
-            m_galaxyView.state().camera.distance,
-            nowSeconds
-        );
+        // The waypoint's cube inside the current parent (the frame moves
+        // to the same-level cube holding it when it lies outside).
+        m_galaxyView.focusHierarchyPoint(targetLy, true, nowSeconds);
         m_pendingRouteFocusContextApplied = true;
         (void)viewport;
         return std::nullopt;

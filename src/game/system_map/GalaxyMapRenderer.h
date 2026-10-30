@@ -2,6 +2,7 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <glm/glm.hpp>
 
@@ -18,6 +19,18 @@ namespace game::system_map
     class GalaxyMapView;
     struct GalaxyMapCameraSnapshot;
     class GalaxyMapRenderContext;
+
+    // A text of the spatial frame: world anchored (render units) or
+    // screen anchored (map viewport pixels).
+    struct GalaxyFrameText
+    {
+        glm::vec3 position {0.0f};
+        std::string text;
+        glm::vec4 color {1.0f};
+        int px = 10;
+        bool axisName = false;
+        bool screenSpace = false;
+    };
 
     /*
         Galaxy draw-pass orchestrator.
@@ -42,6 +55,13 @@ namespace game::system_map
             const world::celestial::PlayerNavigationState& navigation
         ) const;
 
+        // "What is here?" list: drawn last, above the map's UI cards.
+        void drawWhatIsHere(
+            GalaxyMapView& view,
+            GalaxyMapRenderContext& context,
+            const Viewport& viewport
+        ) const;
+
     private:
         void drawMediumVolumes(
             GalaxyMapView& view,
@@ -56,7 +76,17 @@ namespace game::system_map
             GalaxyMapView& view,
             GalaxyMapRenderContext& context,
             const Viewport& viewport,
-            const GalaxyMapCameraSnapshot& camera
+            const GalaxyMapCameraSnapshot& camera,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            std::vector<GalaxyFrameText>& frameTexts
+        ) const;
+
+        void drawFrameTexts(
+            GalaxyMapView& view,
+            GalaxyMapRenderContext& context,
+            const Viewport& viewport,
+            const GalaxyMapCameraSnapshot& camera,
+            const std::vector<GalaxyFrameText>& frameTexts
         ) const;
 
         void drawLabels(

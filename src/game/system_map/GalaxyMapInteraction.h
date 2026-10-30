@@ -35,6 +35,8 @@ namespace game::system_map
         bool zoomInKeyDown = false;
         bool zoomOutKeyDown = false;
         bool transitionActive = false;
+        // Alt held: a left press opens "What is here?" instead of clicking.
+        bool altDown = false;
 
         double nowSeconds = 0.0;
 
@@ -101,11 +103,74 @@ namespace game::system_map
             tracePointerSequence(view, galaxy, frame, "overlay", false);
         }
 
-    private:
+        // The resolver's view of the presented frame (stars, cube markers,
+        // overlay glyphs, clouds, current parent + hover layer).
         GalaxyPointerScene pointerScene(
             const GalaxyMapView& view,
             const world::celestial::GalaxyMapSnapshot& galaxy,
             const GalaxyMapInputFrame& frame
+        ) const;
+
+        // Point of a target in light-years (star, cloud hit, layer point,
+        // cube centre).
+        static std::optional<glm::dvec3> semanticPointLy(
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const GalaxyPointerTarget& target
+        );
+
+        // The child cube of the current parent a target belongs to.
+        static std::optional<navigation::GalaxyNavigationCell> semanticChild(
+            const GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const GalaxyPointerTarget& target
+        );
+
+        static GalaxyHierarchyLayer hoverLayer(const GalaxyMapView& view);
+
+        // Single click on a target chosen outside the gesture (the Alt
+        // "what is here" list): the same dispatch as a map click.
+        GalaxyMapInputResult applyChosenTarget(
+            GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const Viewport& viewport,
+            const GalaxyPointerTarget& target,
+            double x,
+            double y,
+            double nowSeconds
+        ) const;
+
+    private:
+        // "What is here?" (Alt + click): open from the resolver candidates;
+        // while open it owns the pointer (row click / dismiss).
+        void openWhatIsHere(
+            GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const GalaxyMapInputFrame& frame
+        ) const;
+
+        bool handleWhatIsHere(
+            GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const GalaxyMapInputFrame& frame,
+            GalaxyMapInputResult& result
+        ) const;
+
+        void updatePointerHover(
+            GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const GalaxyMapInputFrame& frame
+        ) const;
+
+        static void clearPointerHover(GalaxyMapView& view);
+
+        bool descendAt(
+            GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const Viewport& viewport,
+            const glm::dvec3& positionLy,
+            int systemId,
+            double nowSeconds,
+            GalaxyMapInputResult& result
         ) const;
 
         // Click dispatch on the ONE resolved target; true = double click.
@@ -131,23 +196,18 @@ namespace game::system_map
             GalaxyMapInputResult& result
         ) const;
 
-        // Cloud / icy field: single click selects (card), double click flies
-        // to the navigation cube containing the clicked point.
+        // Cloud / icy field: single click selects (card), double click
+        // goes into the child cube containing the clicked point.
         bool applyMediumClick(
             GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
             const Viewport& viewport,
             int object,
             const glm::dvec3& hitLy,
             double localMouseX,
             double localMouseY,
-            double nowSeconds
-        ) const;
-
-        void updateNavigationHoverFromCursor(
-            GalaxyMapView& view,
-            const Viewport& viewport,
-            double localMouseX,
-            double localMouseY
+            double nowSeconds,
+            GalaxyMapInputResult& result
         ) const;
 
         // DEV (ELITE_GALAXY_PICK_TRACE=1): one CSV row per pointer sequence

@@ -143,6 +143,9 @@ public:
     CubicNavigationCell anchorCell() const;
 
     void setAnchorIndex(const CubicGridIndex& index);
+    // Explicit hierarchy frame (Galaxy Map current parent): level and index
+    // together; ignored for a cell outside the domain.
+    bool setAnchor(int level, const CubicGridIndex& index);
     void setAnchorFromPosition(const glm::dvec3& position);
 
     bool hasHoveredCell() const;

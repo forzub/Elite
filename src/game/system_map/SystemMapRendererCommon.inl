@@ -787,6 +787,45 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         m_systemView.state().selectedBodyTrackingEnabled,
         !m_systemView.state().selectedBodyId.empty()
     );
+
+    if (m_modeState.current() == Mode::Galaxy)
+    {
+        m_navigationCoordinateOverlay.drawGalaxyNavigation(
+            viewport,
+            galaxyBreadcrumbs(),
+            m_galaxyBreadcrumbHovered,
+            m_galaxyUpButtonHovered,
+            !m_galaxyView.state().hierarchyParent.overview()
+        );
+    }
+}
+
+/*
+    Galaxy Map breadcrumbs: GALAXY > G0 [x,y,z] > G1 [x,y,z] ... down to the
+    current parent (secondary navigation; the primary is double click down
+    and the up button).
+*/
+std::vector<std::string> SystemMapRenderer::galaxyBreadcrumbs() const
+{
+    std::vector<std::string> crumbs;
+    const auto chain =
+        game::system_map::galaxyHierarchyChain(
+            m_galaxyView.state().navigationGrid,
+            m_galaxyView.state().hierarchyParent
+        );
+    for (const auto& parent : chain)
+    {
+        if (parent.overview())
+        {
+            crumbs.push_back(m_navigationCoordinateOverlay.textProfile().galaxy);
+            continue;
+        }
+        std::ostringstream crumb;
+        crumb << "G" << parent.level << " [" << parent.index.x << ","
+              << parent.index.y << "," << parent.index.z << "]";
+        crumbs.push_back(crumb.str());
+    }
+    return crumbs;
 }
 
 

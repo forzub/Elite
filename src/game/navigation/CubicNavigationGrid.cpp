@@ -177,6 +177,24 @@ void CubicNavigationGrid::setAnchorIndex(
         m_anchor.index = index;
 }
 
+bool CubicNavigationGrid::setAnchor(
+    int levelValue,
+    const CubicGridIndex& index
+)
+{
+    if (levelValue < m_definition.minimumLevel ||
+        levelValue > m_definition.maximumLevel ||
+        !isCellNavigable(index, levelValue))
+    {
+        return false;
+    }
+
+    m_anchor.level = levelValue;
+    m_anchor.index = index;
+    m_hover.cell.reset();
+    return true;
+}
+
 void CubicNavigationGrid::setAnchorFromPosition(
     const glm::dvec3& position
 )

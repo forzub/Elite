@@ -529,6 +529,7 @@ void SystemMapRenderer::render(
             m_objectOverlayState,
             m_navigationMapTextProfile
         );
+        m_galaxyRenderer.drawWhatIsHere(m_galaxyView, *this, vp);
     }
     else if (m_modeState.current() == Mode::System)
     {

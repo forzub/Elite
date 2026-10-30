@@ -18,9 +18,22 @@
 //  G8 re-entry: a selected cloud / pending sequence never survives
 //     onEntered (no phantom selection, no phantom double click, a held
 //     button is not a press).
+//  H1 the map opens on the galaxy overview (every navigable root is its
+//     child); the overview and nested parents fit the viewport (all corners
+//     >= 12 px inside) from any orbit angle.
+//  H2 WYSIWYG hover: the highlighted child cube is the press target.
+//  H3 the wheel zooms inside the parent; the level / parent never change.
+//  H4 double click enters a child (it becomes the parent); up / breadcrumb
+//     return with the cube the user left selected.
+//  H5 star double click descends into the star's cube (star kept); on the
+//     terminal level it opens the System Map.
+//  H6 a hover marker never takes an object's click (cloud wins, enters its
+//     cube).
+//  H7 inner coordinate faces are stable under small orbits.
 //
 //   EliteGalaxyPointerCheck -> PASS/FAIL lines, exit 0/1
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <memory>
@@ -226,7 +239,7 @@ void resolverChecks()
     }
 }
 
-// --- production handleInput (G2, G3, G4, G8) --------------------------------
+// --- production handleInput (G2, G3, G4, G8, H*) ----------------------------
 struct Map
 {
     GalaxyMapView view;
@@ -238,7 +251,9 @@ struct Map
     std::vector<GalaxyPointerOverlayGlyph> glyphs;
     GalaxyMapInputResult last;
 
-    Map()
+    // enterRoot: work inside Sol's root (children: 1.6 ly G1 cubes) instead
+    // of the galaxy overview the map opens with.
+    explicit Map(bool enterRoot = true)
     {
         world::celestial::GalaxyMapSystem sol;
         sol.id = 0;
@@ -246,16 +261,25 @@ struct Map
         sol.starType = "G2V";
         galaxy.systems.push_back(sol);
         player.currentSystemId = 0;
+        view.state().lastViewport = kViewport;
         view.onEntered(galaxy, player);
-        // The entry cube is centred on Sol; keep Sol 0.3 cell off its marker
-        // (a star exactly on a marker wins - checked separately in G1).
-        const auto anchor = view.state().navigationGrid.anchorCell();
-        galaxy.systems[0].positionLy = anchor.center + glm::dvec3(0.0, -0.3 * anchor.size, 0.0);
+        if (enterRoot)
+        {
+            const auto& grid = view.state().navigationGrid;
+            view.enterHierarchyCell(grid.cell(grid.nearestIndexForPositionLy(glm::dvec3(0.0), 0), 0), kViewport,
+                                    now);
+            view.cancelCameraFlight(true);
+            // Sol 0.3 cube off its cube centre (a star exactly on a marker
+            // wins - checked separately in G1).
+            const auto child = view.hierarchyChildAt(glm::dvec3(0.0));
+            galaxy.systems[0].positionLy = child->center + glm::dvec3(0.0, -0.3 * child->size, 0.0);
+        }
     }
 
     glm::mat4 mvp() const { return view.projectionMatrix(kViewport) * view.viewMatrix(); }
 
-    // What GalaxyMapRenderer publishes for the frame (see header comment).
+    // What GalaxyMapRenderer publishes for the frame (see header comment):
+    // star glyphs; the selected child's marker only for a CUBE selection.
     void present()
     {
         auto& state = view.state();
@@ -271,29 +295,22 @@ struct Map
             state.presentedStars.push_back(s);
         }
         state.presentedCubeMarkers.clear();
-        if (!view.navigationCellsInteractive(kViewport))
-            return;
-        std::vector<game::navigation::CubicNavigationCell> cells {state.navigationGrid.anchorCell()};
-        if (state.navigationGrid.hasSelectedCell() &&
-            state.navigationGrid.selectedCell().level == cells[0].level &&
-            !(state.navigationGrid.selectedCell().index == cells[0].index))
-            cells.push_back(state.navigationGrid.selectedCell());
-        for (const auto& cell : cells)
+        const auto box = view.hierarchyBox();
+        const bool objectSelection = state.selectedSystemId >= 0 || state.selectedMediumObject >= 0;
+        if (state.navigationGrid.hasSelectedCell() && galaxyHierarchyIsChild(box, state.navigationGrid.selectedCell()) &&
+            !objectSelection)
         {
             GalaxyNavigationMarker m;
-            m.cell = cell;
-            const bool selected = state.navigationGrid.hasSelectedCell() &&
-                                  state.navigationGrid.selectedCell().index == cell.index;
-            m.radiusPx = selected ? 5.0f : 4.0f;
-            m.screen = project(mvp(), view.positionLyToRender(cell.center), &m.depth);
+            m.cell = state.navigationGrid.selectedCell();
+            m.radiusPx = 5.0f;
+            m.screen = project(mvp(), view.positionLyToRender(m.cell.center), &m.depth);
             m.visible = true;
             state.presentedCubeMarkers.push_back(m);
         }
     }
 
-    GalaxyMapInputResult frame(double x, double y, bool left, bool right = false)
+    GalaxyMapInputFrame makeFrame(double x, double y, bool left, bool right = false) const
     {
-        present();
         GalaxyMapInputFrame f;
         f.viewport = kViewport;
         f.mouseX = f.localMouseX = x;
@@ -303,6 +320,13 @@ struct Map
         f.rightDown = right;
         f.nowSeconds = now;
         f.overlayGlyphs = glyphs;
+        return f;
+    }
+
+    GalaxyMapInputResult frame(double x, double y, bool left, bool right = false)
+    {
+        present();
+        const GalaxyMapInputFrame f = makeFrame(x, y, left, right);
         now += 1.0 / 60.0;
         last = interaction.handleInput(view, galaxy, f, scroll);
         return last;
@@ -318,6 +342,38 @@ struct Map
         return frame(p.x + jitter.x, p.y + jitter.y, false);
     }
 
+    GalaxyPointerTarget resolveAt(glm::vec2 p)
+    {
+        present();
+        const GalaxyMapInputFrame f = makeFrame(p.x, p.y, false);
+        return resolveGalaxyPointer(interaction.pointerScene(view, galaxy, f), p).winner;
+    }
+
+    // An empty-space child cube point (hierarchy layer), away from stars.
+    bool layerPoint(glm::vec2& out, int salt = 0)
+    {
+        for (int k = 0; k < 200; ++k)
+        {
+            const float angle = 0.61f * static_cast<float>(k + salt * 7);
+            const float radius = 40.0f + 1.5f * static_cast<float>(k);
+            const glm::vec2 p(kViewport.width * 0.5f + radius * std::cos(angle),
+                              kViewport.height * 0.5f + radius * std::sin(angle));
+            const auto hit = resolveAt(p);
+            if (hit.kind == GalaxyPointerTargetKind::NavigationCube &&
+                hit.reason == GalaxyPointerHitReason::HierarchyLayer)
+            {
+                out = p;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void settle()
+    {
+        view.cancelCameraFlight(true);
+    }
+
     bool sameCamera(const game::system_map::GalaxyCameraState& a) const
     {
         const auto& b = view.state().camera;
@@ -325,14 +381,32 @@ struct Map
     }
 };
 
+bool cornersInside(const Map& map, float marginPx, float* worst = nullptr)
+{
+    const auto box = map.view.hierarchyBox();
+    float minMargin = 1.0e9f;
+    for (int i = 0; i < 8; ++i)
+    {
+        const double h = box.edgeLy * 0.5;
+        const glm::dvec3 c = box.centerLy + glm::dvec3((i & 1) ? h : -h, (i & 2) ? h : -h, (i & 4) ? h : -h);
+        const glm::vec4 clip = map.mvp() * glm::vec4(map.view.positionLyToRender(c), 1.0f);
+        if (clip.w <= 0.0f)
+            return false;
+        const glm::vec2 s = project(map.mvp(), map.view.positionLyToRender(c));
+        minMargin = std::min({minMargin, s.x, s.y, kViewport.width - s.x, kViewport.height - s.y});
+    }
+    if (worst)
+        *worst = minMargin;
+    return minMargin >= marginPx;
+}
+
 void inputChecks()
 {
-    // G2: jitter on the anchor cube marker and on a star.
+    // G2: jitter on an empty-space cube and on a star.
     {
         Map map;
-        map.present();
-        check(!map.view.state().presentedCubeMarkers.empty(), "setup: entry cube marker presented");
-        const glm::vec2 cube = map.view.state().presentedCubeMarkers[0].screen;
+        glm::vec2 cube;
+        check(map.layerPoint(cube), "setup: an empty-space child cube under the cursor");
         const auto before = map.view.state().camera;
         bool unchanged = true;
         map.frame(cube.x, cube.y, false);
@@ -346,27 +420,24 @@ void inputChecks()
         check(unchanged, "G2 press + 1-4 px jitter: camera unchanged until the release");
         check(release.clickedNavigationCell.has_value(), "G2 jitter release is a click on the press target (cube)");
 
-        // A star on screen (Sol is at the entry cube's centre region).
         Map stars;
         world::celestial::GalaxyMapSystem other;
         other.id = 5;
         other.name = "Near";
         other.starType = "K1V";
-        other.positionLy = stars.view.state().navigationGrid.anchorCell().center +
-                           glm::dvec3(stars.view.state().navigationGrid.anchorCell().size * 0.3, 0.0, 0.0);
+        const auto child = stars.view.hierarchyChildAt(glm::dvec3(0.0));
+        other.positionLy = child->center + glm::dvec3(child->size * 3.3, 0.0, 0.0);
         stars.galaxy.systems.push_back(other);
         stars.present();
         const glm::vec2 starPx = stars.view.state().presentedStars[1].screen;
-        const auto starBefore = stars.view.state().camera;
         stars.click(starPx, {3.0f, 2.0f});
         check(stars.view.state().selectedSystemId == 5, "G2 star click with 3 px jitter selects the star");
-        (void)starBefore;
     }
     // G3: drag beyond the threshold rotates, never selects.
     {
         Map map;
-        map.present();
-        const glm::vec2 cube = map.view.state().presentedCubeMarkers[0].screen;
+        glm::vec2 cube;
+        map.layerPoint(cube);
         const int selectedBefore = map.view.state().selectedSystemId;
         const auto cellBefore = map.view.state().navigationGrid.selectedCell().index;
         const auto before = map.view.state().camera;
@@ -381,55 +452,62 @@ void inputChecks()
                   map.view.state().navigationGrid.selectedCell().index == cellBefore,
               "G3 drag never produces a selection click");
     }
-    // G4: cube double click, second click on the waypoint glyph of that cube.
+    // G4: cube double click (the cube becomes the current parent); second
+    // click on the same point or on the waypoint glyph of the selected cube
+    // (SystemMapRenderer: at the cube centre + (20, -2), hit radius 12).
     {
-        int refinedMarker = 0, refinedGlyph = 0, glyphOutsideSequence = 0;
+        int enteredSame = 0, enteredGlyph = 0, glyphOutsideSequence = 0;
         for (int repeat = 0; repeat < 10; ++repeat)
         {
             for (int variant = 0; variant < 2; ++variant)
             {
-                Map map;
-                map.present();
-                const auto marker = map.view.state().presentedCubeMarkers[0];
-                const int levelBefore = map.view.state().navigationGrid.level();
-                const auto first = map.click(marker.screen);
+                // Glyph variant in the overview (root cubes ~75 px): the
+                // first click near the cube centre, where the waypoint glyph
+                // (centre + (20, -2), r 12) then appears under the cursor.
+                Map map(variant == 0);
+                glm::vec2 p;
+                if (!map.layerPoint(p, repeat))
+                    continue;
+                if (variant == 1)
+                {
+                    const auto probe = map.resolveAt(p);
+                    const glm::vec2 nearGlyph =
+                        project(map.mvp(), map.view.positionLyToRender(probe.cell->center)) + glm::vec2(14.0f, -1.0f);
+                    const auto there = map.resolveAt(nearGlyph);
+                    if (there.cell && there.cell->index == probe.cell->index)
+                        p = nearGlyph;
+                }
+                const auto first = map.click(p);
                 if (!first.clickedNavigationCell)
                     continue;
-                // SystemMapRenderer now shows the waypoint candidate glyph of
-                // the selected cube at marker + (20, -2), hit radius 12.
-                map.glyphs.push_back({"waypoint_candidate:G", marker.screen + glm::vec2(20.0f, -2.0f), 12.0f,
+                const auto cube = *first.clickedNavigationCell;
+                const glm::vec2 glyph = project(map.mvp(), map.view.positionLyToRender(cube.center)) +
+                                        glm::vec2(20.0f, -2.0f);
+                map.glyphs.push_back({"waypoint_candidate:G", glyph, 12.0f,
                                       map.view.state().navigationGrid.selectedCell()});
                 map.now += 0.10;
-                // variant 0: the marker again; 1: 10 px right (glyph area only).
-                const glm::vec2 second = marker.screen + glm::vec2(variant == 0 ? 1.0f : 10.0f, 0.0f);
-                map.click(second);
-                const bool refined = map.view.state().navigationGrid.level() > levelBefore;
-                (variant == 0 ? refinedMarker : refinedGlyph) += refined ? 1 : 0;
+                map.click(variant == 0 ? p + glm::vec2(1.0f, 0.0f) : glyph + glm::vec2(1.0f, 0.0f));
+                const auto& parent = map.view.state().hierarchyParent;
+                const bool entered = parent.level == cube.level && parent.index == cube.index;
+                (variant == 0 ? enteredSame : enteredGlyph) += entered ? 1 : 0;
             }
-            // A deliberate glyph click outside a cube sequence belongs to the
-            // overlay (its card), not to the cube.
             Map map;
-            map.present();
-            const auto marker = map.view.state().presentedCubeMarkers[0];
-            map.click(marker.screen);
-            map.glyphs.push_back({"waypoint_candidate:G", marker.screen + glm::vec2(20.0f, -2.0f), 12.0f,
-                                  map.view.state().navigationGrid.selectedCell()});
+            glm::vec2 p;
+            map.layerPoint(p, repeat);
+            const auto selected = *map.click(p).clickedNavigationCell;
+            const glm::vec2 glyph = project(map.mvp(), map.view.positionLyToRender(selected.center)) +
+                                    glm::vec2(20.0f, -2.0f);
+            map.glyphs.push_back({"waypoint_candidate:G", glyph, 12.0f, map.view.state().navigationGrid.selectedCell()});
             map.now += 2.0;
-            GalaxyMapInputFrame f;
-            f.viewport = kViewport;
-            f.localMouseX = marker.screen.x + 20.0;
-            f.localMouseY = marker.screen.y - 2.0;
-            f.inside = true;
-            f.leftDown = true;
-            f.nowSeconds = map.now;
-            f.overlayGlyphs = map.glyphs;
+            GalaxyMapInputFrame f = map.makeFrame(glyph.x, glyph.y, true);
+            map.present();
             const auto target = map.interaction.resolvePressTarget(map.view, map.galaxy, f);
             glyphOutsideSequence += target.kind == GalaxyPointerTargetKind::OverlayGlyph ? 1 : 0;
         }
-        check(refinedMarker == 10, "G4 marker + marker double click refines (10/10), got " + std::to_string(refinedMarker));
-        check(refinedGlyph == 10,
-              "G4 marker + waypoint-glyph second click refines the same cube (10/10), got " +
-                  std::to_string(refinedGlyph));
+        check(enteredSame == 10, "G4 cube double click: the cube becomes the parent (10/10), got " +
+                                     std::to_string(enteredSame));
+        check(enteredGlyph == 10,
+              "G4 cube + waypoint-glyph second click enters the same cube (10/10), got " + std::to_string(enteredGlyph));
         check(glyphOutsideSequence == 10, "G4 glyph click outside a cube sequence stays the overlay's (10/10)");
     }
     // G8: re-entry resets transient pointer state.
@@ -439,12 +517,11 @@ void inputChecks()
         map.galaxy.objects.resize(1);
         map.galaxy.objects[0].name = "test cloud";
         map.galaxy.objects[0].objectType = "interstellar_medium_region";
-        const auto anchor = map.view.state().navigationGrid.anchorCell();
-        addBoxProxy(*atlas, anchor.center + glm::dvec3(0.0, anchor.size * 0.25, 0.0),
-                    static_cast<float>(anchor.size * 0.2), 0);
+        const auto box = map.view.hierarchyBox();
+        const glm::dvec3 cloudCentre = box.centerLy + glm::dvec3(box.edgeLy * 0.2, box.edgeLy * 0.15, 0.0);
+        addBoxProxy(*atlas, cloudCentre, static_cast<float>(box.edgeLy * 0.06), 0);
         map.galaxy.mediumAtlas = atlas;
-        const glm::vec2 cloud =
-            project(map.mvp(), map.view.positionLyToRender(anchor.center + glm::dvec3(0.0, anchor.size * 0.25, 0.0)));
+        const glm::vec2 cloud = project(map.mvp(), map.view.positionLyToRender(cloudCentre));
         map.click(cloud);
         check(map.view.state().selectedMediumObject == 0, "G8 setup: the cloud is selected by a click");
         map.frame(cloud.x + 30, cloud.y, false);
@@ -453,10 +530,11 @@ void inputChecks()
                   map.view.state().presentedStars.empty() && map.view.state().presentedCubeMarkers.empty(),
               "G8 re-entry drops cloud hover / selection and the presented geometry");
         const auto cameraBefore = map.view.state().camera;
+        const auto parentBefore = map.view.state().hierarchyParent;
         map.click(cloud); // within the double-click interval of the pre-entry click
-        check(!map.view.state().cameraFlight.active() && map.sameCamera(cameraBefore),
+        check(!map.view.state().cameraFlight.active() && map.sameCamera(cameraBefore) &&
+                  map.view.state().hierarchyParent == parentBefore,
               "G8 first click after re-entry is a single click (no phantom double click)");
-        // A button held across entry is not a press.
         map.frame(cloud.x, cloud.y, true);
         map.view.onEntered(map.galaxy, map.player);
         const int selectedBefore = map.view.state().selectedMediumObject;
@@ -466,12 +544,204 @@ void inputChecks()
               "G8 a button held across entry does not click on release");
     }
 }
+
+// --- spatial frame (current parent cube) ------------------------------------
+void hierarchyChecks()
+{
+    using K = GalaxyPointerTargetKind;
+    // H1: the map opens on the galaxy overview; it and every nested parent
+    // fit the viewport (all 8 corners, margin) from any orbit angle.
+    {
+        Map map(false);
+        check(map.view.state().hierarchyParent.overview(), "H1 the map opens on the galaxy overview");
+        const auto box = map.view.hierarchyBox();
+        bool allRoots = true;
+        for (const auto& root : map.view.state().navigationGrid.navigableRootCells())
+            allRoots = allRoots && galaxyHierarchyIsChild(box, map.view.state().navigationGrid.cell(
+                                                                    {root[0], root[1], root[2]}, 0));
+        check(allRoots, "H1 every navigable root is a child of the overview");
+        int fits = 0, total = 0;
+        float worst = 1.0e9f;
+        for (int level = -1; level <= 2; ++level)
+        {
+            if (level >= 0)
+            {
+                const auto& grid = map.view.state().navigationGrid;
+                const auto cell = grid.cell(grid.nearestIndexForPositionLy(glm::dvec3(0.0), level), level);
+                map.view.enterHierarchyCell(cell, kViewport, map.now);
+                map.settle();
+            }
+            for (int a = 0; a < 12; ++a)
+            {
+                map.view.state().camera.yaw = -3.1f + 0.53f * static_cast<float>(a);
+                map.view.state().camera.pitch = -1.4f + 0.25f * static_cast<float>(a);
+                float m = 0.0f;
+                fits += cornersInside(map, 12.0f, &m) ? 1 : 0;
+                worst = std::min(worst, m);
+                ++total;
+            }
+        }
+        check(fits == total, "H1 overview + G0..G2 parents fit (all corners >= 12 px from the edge) at 12 angles: " +
+                                 std::to_string(fits) + "/" + std::to_string(total) + ", worst " +
+                                 std::to_string(static_cast<int>(worst)) + " px");
+    }
+    // H2: WYSIWYG hover - the highlighted child is exactly the press target.
+    {
+        Map map;
+        int same = 0, total = 0;
+        for (int k = 0; k < 30; ++k)
+        {
+            glm::vec2 p;
+            if (!map.layerPoint(p, k))
+                continue;
+            map.frame(p.x, p.y, false);
+            const auto& grid = map.view.state().navigationGrid;
+            GalaxyMapInputFrame f = map.makeFrame(p.x, p.y, true);
+            const auto press = map.interaction.resolvePressTarget(map.view, map.galaxy, f);
+            ++total;
+            same += grid.hasHoveredCell() && press.cell && grid.hoveredCell().index == press.cell->index &&
+                            grid.hoveredCell().level == press.cell->level
+                        ? 1
+                        : 0;
+        }
+        check(total >= 20 && same == total,
+              "H2 hovered child == press target (" + std::to_string(same) + "/" + std::to_string(total) + ")");
+    }
+    // H3: the wheel zooms only; the parent and level never change.
+    {
+        Map map;
+        const auto parent = map.view.state().hierarchyParent;
+        const int level = map.view.state().navigationGrid.level();
+        const float distance = map.view.state().camera.distance;
+        bool same = true;
+        for (int k = 0; k < 60; ++k)
+        {
+            map.scroll = 1.0;
+            map.frame(640, 360, false);
+            same = same && map.view.state().hierarchyParent == parent && map.view.state().navigationGrid.level() == level;
+        }
+        const float zoomed = map.view.state().camera.distance;
+        for (int k = 0; k < 120; ++k)
+        {
+            map.scroll = -1.0;
+            map.frame(640, 360, false);
+            same = same && map.view.state().hierarchyParent == parent;
+        }
+        float minD = 0.0f, maxD = 0.0f;
+        map.view.cameraDistanceLimits(kViewport, minD, maxD);
+        check(same && zoomed < distance && map.view.state().camera.distance <= maxD + 1.0e-3f,
+              "H3 wheel: continuous zoom inside the parent, level / parent never change, range bounded");
+    }
+    // H4: enter / up / breadcrumb: the cube we left stays selected.
+    {
+        Map map;
+        glm::vec2 p;
+        map.layerPoint(p);
+        const auto cube = *map.click(p).clickedNavigationCell;
+        map.now += 0.1;
+        map.click(p);
+        map.settle();
+        const bool entered = map.view.state().hierarchyParent.level == cube.level;
+        glm::vec2 q;
+        map.layerPoint(q, 3);
+        const auto inner = *map.click(q).clickedNavigationCell;
+        map.now += 0.1;
+        map.click(q);
+        map.settle();
+        const bool enteredAgain = map.view.state().hierarchyParent.level == inner.level;
+        map.view.ascendHierarchy(kViewport, map.now);
+        map.settle();
+        const auto& grid = map.view.state().navigationGrid;
+        const bool upOk = map.view.state().hierarchyParent.level == cube.level && grid.hasSelectedCell() &&
+                          grid.selectedCell().index == inner.index &&
+                          galaxyHierarchyIsChild(map.view.hierarchyBox(), grid.selectedCell());
+        map.view.jumpToHierarchyLevel(-1, kViewport, map.now);
+        map.settle();
+        const bool crumbOk = map.view.state().hierarchyParent.overview() && grid.selectedCell().level == 0 &&
+                             grid.selectedCell().index ==
+                                 grid.ancestorIndex(cube.index, cube.level, 0);
+        check(entered && enteredAgain, "H4 double click on a child: it becomes the parent (two levels)");
+        check(upOk, "H4 up: the parent of the parent, the cube we left selected inside it");
+        check(crumbOk, "H4 breadcrumb GALAXY: the overview, the root we came from selected");
+    }
+    // H5: star double click: one level down into the star's cube; on the
+    // terminal Galaxy level it opens the System Map (MapIntent).
+    {
+        Map map;
+        int descents = 0;
+        bool intent = false;
+        for (int k = 0; k < 4; ++k)
+        {
+            map.present();
+            const glm::vec2 star = map.view.state().presentedStars[0].screen;
+            const int levelBefore = map.view.state().hierarchyParent.level;
+            map.click(star);
+            map.now += 0.1;
+            const auto r = map.click(star);
+            map.settle();
+            if (map.view.state().hierarchyParent.level == levelBefore + 1 && map.view.state().selectedSystemId == 0)
+                ++descents;
+            if (r.mapIntent && r.mapIntent->entersKnownSystem() && r.mapIntent->systemId == 0)
+                intent = true;
+            map.now += 1.0;
+        }
+        check(descents == 2, "H5 star double click descends into the star's cube, star kept (G0 -> G1 -> G2), got " +
+                                 std::to_string(descents));
+        check(intent, "H5 star double click on the terminal level opens the System Map");
+    }
+    // H6: a hover marker never takes an object's click: a cloud whose
+    // child-cube centre is right under the cursor stays the target.
+    {
+        Map map;
+        auto atlas = std::make_shared<GalaxyMapMediumAtlas>();
+        map.galaxy.objects.resize(1);
+        map.galaxy.objects[0].objectType = "interstellar_medium_region";
+        const auto box = map.view.hierarchyBox();
+        const auto child = map.view.hierarchyChildAt(box.centerLy + glm::dvec3(box.edgeLy * 0.2, 0.0, 0.0));
+        addBoxProxy(*atlas, child->center, static_cast<float>(box.childEdgeLy * 0.45), 0);
+        map.galaxy.mediumAtlas = atlas;
+        const glm::vec2 at = project(map.mvp(), map.view.positionLyToRender(child->center));
+        map.frame(at.x, at.y, false); // hover: the cloud's cube is highlighted
+        map.click(at);
+        const bool selected = map.view.state().selectedMediumObject == 0;
+        map.now += 0.1;
+        map.click(at);
+        map.settle();
+        const auto& parent = map.view.state().hierarchyParent;
+        check(selected && map.view.state().selectedMediumObject == 0 && parent.level == child->level &&
+                  parent.index == child->index,
+              "H6 cloud click / double click with its cube's marker under the cursor: the cloud wins, enters its cube");
+        (void)K::Empty;
+    }
+    // H7: inner faces are stable under small orbits (hysteresis), and the
+    // layer axis does not flip on a small rotation.
+    {
+        GalaxyHierarchyBox box;
+        box.centerLy = glm::dvec3(0.0);
+        box.edgeLy = 10.0;
+        GalaxyHierarchyFaces faces;
+        const glm::dvec3 start = glm::normalize(glm::dvec3(-1.0, -0.05, -1.03));
+        faces = galaxyHierarchyChooseFaces(faces, -start * 30.0, start, box);
+        const auto first = faces;
+        bool stable = true;
+        for (int k = 0; k < 40; ++k)
+        {
+            const double jiggle = 0.04 * std::sin(0.7 * k);
+            const glm::dvec3 dir = glm::normalize(glm::dvec3(-1.0 - jiggle, -0.01 * std::cos(k), -1.03 + jiggle));
+            faces = galaxyHierarchyChooseFaces(faces, -dir * 30.0, dir, box);
+            stable = stable && faces.wallAxis == first.wallAxis && faces.wallSign == first.wallSign &&
+                     faces.horizontalSign == first.horizontalSign;
+        }
+        check(stable, "H7 inner coordinate faces do not flip under small orbits (hysteresis)");
+    }
+}
 } // namespace
 
 int main()
 {
     resolverChecks();
     inputChecks();
+    hierarchyChecks();
     std::printf("%s (%d failures)\n", failures ? "FAIL" : "PASS", failures);
     return failures ? 1 : 0;
 }

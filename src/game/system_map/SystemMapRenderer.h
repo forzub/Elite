@@ -45,6 +45,7 @@
 #include "src/game/system_map/MapCameraState.h"
 #include "src/game/system_map/GalaxyMapView.h"
 #include "src/game/system_map/GalaxyMapInteraction.h"
+#include "src/game/system_map/GalaxyHierarchyDevScript.h"
 #include "src/game/system_map/GalaxyPointerDevScript.h"
 #include "src/game/system_map/GalaxyMapRenderContext.h"
 #include "src/game/system_map/GalaxyMapRenderer.h"
@@ -752,6 +753,12 @@ private:
     game::system_map::GalaxyMapInteraction m_galaxyInteraction;
     // DEV only (ELITE_DEV_GALAXY_POINTER_SCRIPT): scripted pointer input.
     game::system_map::GalaxyPointerDevScript m_galaxyPointerDevScript;
+    game::system_map::GalaxyHierarchyDevScript m_galaxyHierarchyDevScript;
+
+    // Galaxy Map hierarchy controls (up button, breadcrumbs).
+    bool m_galaxyUpButtonHovered = false;
+    int m_galaxyBreadcrumbHovered = -1;
+    std::vector<std::string> galaxyBreadcrumbs() const;
     game::system_map::GalaxyMapRenderer m_galaxyRenderer;
 
     game::system_map::SystemMapView m_systemView;

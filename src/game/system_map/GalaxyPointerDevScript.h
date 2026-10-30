@@ -7,11 +7,13 @@
 #include <functional>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <memory>
 #include <string>
 
 #include <glm/glm.hpp>
 
+#include "src/game/system_map/GalaxyMapInteraction.h"
 #include "src/game/system_map/GalaxyMapView.h"
 #include "src/render/types/Viewport.h"
 #include "src/world/celestial/SystemMapTypes.h"
@@ -40,9 +42,13 @@ public:
         return on;
     }
 
+    // A UI card / panel at a map point (SystemMapRenderer overlay state).
+    std::function<bool(glm::vec2)> panelAt;
+
     // Replaces the GLFW pointer of this input frame (window coordinates).
     void drive(
         GalaxyMapView& view,
+        const GalaxyMapInteraction& interaction,
         const world::celestial::GalaxyMapSnapshot& galaxy,
         const Viewport& vp,
         double now,
@@ -52,6 +58,7 @@ public:
         bool& rightDown)
     {
         m_view = &view;
+        m_interaction = &interaction;
         m_galaxy = &galaxy;
         m_vp = vp;
         m_now = now;
@@ -119,6 +126,7 @@ private:
     };
 
     GalaxyMapView* m_view = nullptr;
+    const GalaxyMapInteraction* m_interaction = nullptr;
     const world::celestial::GalaxyMapSnapshot* m_galaxy = nullptr;
     Viewport m_vp;
     double m_now = 0.0;
@@ -298,31 +306,60 @@ private:
         }
     }
 
-    // A presented cube marker no star glyph covers (or the first one).
-    bool freeMarker(GalaxyNavigationMarker& out) const
+    // A screen point where the ONE resolver gives an empty-space child
+    // cube of the current parent (hierarchy layer), on a ring around the
+    // viewport centre, away from stars and glyphs.
+    bool layerPoint(glm::vec2& out, int salt) const
     {
-        const auto& markers = m_view->state().presentedCubeMarkers;
-        for (const auto& m : markers)
+        std::optional<navigation::GalaxyNavigationCell> cell;
+        return layerPoint(out, salt, cell);
+    }
+    bool layerPoint(glm::vec2& out, int salt, std::optional<navigation::GalaxyNavigationCell>& cell) const
+    {
+        if (!m_interaction)
+            return false;
+        m_probeFrame = GalaxyMapInputFrame {};
+        m_probeFrame.viewport = m_vp;
+        const auto scene = m_interaction->pointerScene(*m_view, *m_galaxy, m_probeFrame);
+        for (int k = 0; k < 120; ++k)
         {
-            // Room for the glyph-area second click inside the map viewport.
-            if (!m.visible || m.screen.x < 40.0f || m.screen.y < 40.0f ||
-                m.screen.x > m_vp.width - 40.0f || m.screen.y > m_vp.height - 40.0f)
-                continue;
-            bool covered = false;
+            const float angle = 0.61f * static_cast<float>(k + salt * 7);
+            const float radius = (0.06f + 0.0035f * static_cast<float>(k)) * static_cast<float>(m_vp.height);
+            const glm::vec2 p(m_vp.width * 0.5f + radius * std::cos(angle),
+                              m_vp.height * 0.5f + radius * std::sin(angle));
+            bool nearStar = false;
             for (const auto& s : m_view->state().presentedStars)
-                covered = covered || (s.visible && glm::length(s.screen - m.screen) < s.glyphRadiusPx + 8.0f);
-            if (!covered)
+                nearStar = nearStar || (s.visible && glm::length(s.screen - p) < 40.0f);
+            // A UI card there takes the press (overlay contract).
+            if (nearStar || (panelAt && panelAt(p)))
+                continue;
+            const auto hit = resolveGalaxyPointer(scene, p).winner;
+            if (hit.kind == GalaxyPointerTargetKind::NavigationCube &&
+                hit.reason == GalaxyPointerHitReason::HierarchyLayer)
             {
-                out = m;
+                out = p;
+                cell = hit.cell;
                 return true;
             }
         }
-        std::cerr << "[GalaxyPointerScript] no free marker among " << markers.size() << ":";
-        for (const auto& m : markers)
-            std::cerr << " (" << m.screen.x << "," << m.screen.y << " vis=" << m.visible << ")";
-        std::cerr << " viewport=" << m_vp.width << "x" << m_vp.height
-                  << " hovered=" << m_view->state().navigationGrid.hasHoveredCell() << std::endl;
         return false;
+    }
+    mutable GalaxyMapInputFrame m_probeFrame;
+
+    // DEV setup: the entry star's G1 cube as the current parent (the old
+    // entry view; in the galaxy overview / a root Sol, Alpha Centauri and
+    // Proxima share one glyph - the "What is here?" list resolves that).
+    void enterEntryRoot()
+    {
+        auto& grid = m_view->state().navigationGrid;
+        m_view->resetNavigationToEntry();
+        for (int level = 0; level <= 1; ++level)
+        {
+            m_view->enterHierarchyCell(
+                grid.cell(grid.nearestIndexForPositionLy(m_view->state().entry.positionLy, level), level), m_vp,
+                m_now);
+            m_view->cancelCameraFlight(true);
+        }
     }
 
     // ELITE_DEV_GALAXY_POINTER_PHASES="0235": run only these phases.
@@ -344,6 +381,7 @@ private:
         {
             case 0:
             {
+                enterEntryRoot();
                 const int sol = systemNamed("Sol");
                 const int alphaId = systemNamed("Alpha Centauri");
                 std::cerr << "[GalaxyPointerScript] Sol=" << sol << " (" << systemName(sol) << ") AlphaCen="
@@ -388,41 +426,46 @@ private:
             }
             case 2:
             {
-                // Cube single clicks, star after cube, cube after star.
+                // Cube single clicks (empty space inside the current parent:
+                // the resolver's hierarchy-layer cube), star after cube,
+                // cube after star.
                 for (int k = 0; k < 10; ++k)
                 {
                     calm();
-                    auto chosen = std::make_shared<GalaxyNavigationMarker>();
+                    auto at = std::make_shared<glm::vec2>(-50.0f, -50.0f);
                     auto ok = std::make_shared<bool>(false);
-                    call([this, chosen, ok] { *ok = freeMarker(*chosen); });
-                    clickIf(ok, [chosen] { return chosen->screen; }, glm::vec2(2.0f, -1.0f));
-                    call([this, chosen, ok] {
+                    call([this, at, ok, k] { *ok = layerPoint(*at, k); });
+                    clickIf(ok, [at] { return *at; }, glm::vec2(2.0f, -1.0f));
+                    call([this, ok] {
                         const auto& grid = m_view->state().navigationGrid;
+                        const auto& press = m_view->state().pressTarget;
                         record("5 cube single click",
-                               *ok && grid.hasSelectedCell() && grid.selectedCell().index == chosen->cell.index &&
-                                   m_cameraHeldStill,
-                               *ok ? "" : "(no free marker)");
+                               *ok && press.cell && grid.hasSelectedCell() &&
+                                   grid.selectedCell().index == press.cell->index && m_cameraHeldStill,
+                               *ok ? "" : "(no empty-space point)");
                     });
                     wait(0.5);
                     starClicks("6 star after cube", -1, 1);
                     calm();
                     auto keepsStar = std::make_shared<bool>(false);
-                    call([this, chosen, ok, keepsStar] {
-                        *ok = freeMarker(*chosen);
+                    call([this, at, ok, k, keepsStar] {
                         // Navigation semantics: a click on the cube that
                         // contains the current focus refines it (star kept).
+                        std::optional<navigation::GalaxyNavigationCell> cell;
+                        *ok = layerPoint(*at, k + 20, cell);
                         const auto& st = m_view->state();
-                        *keepsStar = st.navigationFocusValid &&
-                                     st.navigationGrid.nearestIndexForPositionLy(st.navigationFocusLy,
-                                                                                 chosen->cell.level) ==
-                                         chosen->cell.index;
+                        *keepsStar = cell && st.navigationFocusValid &&
+                                     st.navigationGrid.nearestIndexForPositionLy(st.navigationFocusLy, cell->level) ==
+                                         cell->index;
                     });
-                    clickIf(ok, [chosen] { return chosen->screen; });
-                    call([this, chosen, ok, keepsStar] {
-                        const auto& grid = m_view->state().navigationGrid;
+                    clickIf(ok, [at] { return *at; });
+                    call([this, ok, keepsStar] {
+                        const auto& st = m_view->state();
+                        const auto& press = st.pressTarget;
+                        const auto& grid = st.navigationGrid;
                         record("7 cube after star",
-                               *ok && (m_view->state().selectedSystemId >= 0) == *keepsStar &&
-                                   grid.hasSelectedCell() && grid.selectedCell().index == chosen->cell.index,
+                               *ok && press.cell && (st.selectedSystemId >= 0) == *keepsStar &&
+                                   grid.hasSelectedCell() && grid.selectedCell().index == press.cell->index,
                                std::string(*keepsStar ? "(cube holds the star: kept)" : "(other cube)"));
                     });
                     wait(0.5);
@@ -431,42 +474,66 @@ private:
             }
             case 3:
             {
-                // Cube double click: marker, then the glyph area (+10 px) of
-                // the same cube; refine must follow every time.
+                // Cube double click on an empty-space cube: the second click
+                // on the same point (+1 px) or on the waypoint glyph of the
+                // selected cube (its marker + (20, -2), SystemMapRenderer);
+                // the cube becomes the parent.
                 for (int k = 0; k < 10; ++k)
                 {
                     calm();
-                    // DEV setup (not interaction): entry view, camera moved
-                    // back so the neighbour cube's marker is inside the map.
-                    call([this] {
-                        m_view->resetNavigationToEntry();
-                        m_view->state().camera.distance *= 1.6f;
-                    });
-                    wait(0.4);
-                    auto chosen = std::make_shared<GalaxyNavigationMarker>();
-                    auto level = std::make_shared<int>(0);
-                    auto ok = std::make_shared<bool>(false);
-                    // The entry cube is centred on Sol (its marker is under
-                    // the star): hover the neighbour cube so its marker shows.
-                    frame([this] {
-                        const float d = m_view->navigationAnchorDiameterPx(m_vp);
-                        return glm::vec2(m_vp.width * 0.5f + 0.9f * d, m_vp.height * 0.5f);
-                    }, false);
+                    call([this] { m_view->resetNavigationToEntry(); });
                     wait(0.5);
-                    call([this, chosen, level, ok] {
-                        *ok = freeMarker(*chosen);
-                        *level = m_view->state().navigationGrid.level();
+                    auto at = std::make_shared<glm::vec2>(-50.0f, -50.0f);
+                    auto ok = std::make_shared<bool>(false);
+                    auto cell = std::make_shared<std::optional<navigation::GalaxyNavigationCell>>();
+                    call([this, at, ok, k] {
+                        std::optional<navigation::GalaxyNavigationCell> probe;
+                        *ok = layerPoint(*at, k * 3, probe);
+                        // Glyph variant: the first click near the cube centre,
+                        // where its waypoint glyph (centre + (20, -2)) appears
+                        // under the cursor - the second click hits the glyph.
+                        // Cubes where that point is another cube / a card are
+                        // skipped (a 12+ px second click is no double click).
+                        for (int attempt = 0; k % 2 == 1 && attempt < 16; ++attempt)
+                        {
+                            if (attempt > 0)
+                                *ok = layerPoint(*at, k * 3 + 31 * attempt, probe);
+                            if (!*ok || !probe)
+                                continue;
+                            const glm::mat4 mvp = m_view->projectionMatrix(m_vp) * m_view->viewMatrix();
+                            const glm::vec4 clip = mvp * glm::vec4(m_view->positionLyToRender(probe->center), 1.0f);
+                            const glm::vec2 centre((clip.x / clip.w * 0.5f + 0.5f) * m_vp.width,
+                                                   (1.0f - (clip.y / clip.w * 0.5f + 0.5f)) * m_vp.height);
+                            m_probeFrame = GalaxyMapInputFrame {};
+                            m_probeFrame.viewport = m_vp;
+                            const glm::vec2 nearGlyph = centre + glm::vec2(14.0f, -1.0f);
+                            const auto there = resolveGalaxyPointer(
+                                m_interaction->pointerScene(*m_view, *m_galaxy, m_probeFrame), nearGlyph).winner;
+                            if (there.cell && there.cell->index == probe->index && !(panelAt && panelAt(nearGlyph)))
+                            {
+                                *at = nearGlyph;
+                                break;
+                            }
+                            *ok = false;
+                        }
                     });
-                    clickIf(ok, [chosen] { return chosen->screen; });
-                    const glm::vec2 second = k % 2 == 0 ? glm::vec2(1.0f, 0.0f) : glm::vec2(10.0f, 0.0f);
-                    clickIf(ok, [chosen, second] { return chosen->screen + second; });
-                    call([this, level, ok, k] {
-                        record(k % 2 == 0 ? "8 cube double click (marker)" : "8 cube double click (glyph area)",
-                               *ok && m_view->state().navigationGrid.level() > *level,
-                               "level " + std::to_string(*level) + "->" +
-                                   std::to_string(m_view->state().navigationGrid.level()));
+                    clickIf(ok, [at] { return *at; });
+                    call([this, cell] { *cell = m_view->state().pressTarget.cell; });
+                    clickIf(ok, [this, at, k] {
+                        if (k % 2 == 0)
+                            return *at + glm::vec2(1.0f, 0.0f);
+                        for (const auto& m : m_view->state().presentedCubeMarkers)
+                            return m.screen + glm::vec2(21.0f, -2.0f);
+                        return *at;
                     });
                     calm();
+                    call([this, ok, cell, k] {
+                        const auto& parent = m_view->state().hierarchyParent;
+                        record(k % 2 == 0 ? "8 cube double click (same point)" : "8 cube double click (glyph area)",
+                               *ok && cell->has_value() && parent.level == (*cell)->level &&
+                                   parent.index == (*cell)->index,
+                               "parent level " + std::to_string(parent.level));
+                    });
                     call([this] { m_view->resetNavigationToEntry(); });
                     wait(0.6);
                 }
@@ -481,7 +548,7 @@ private:
                 for (int k = 0; k < 10; ++k)
                 {
                     calm();
-                    call([this] { m_view->resetNavigationToEntry(); });
+                    call([this] { enterEntryRoot(); });
                     wait(0.4);
                     auto object = std::make_shared<int>(-1);
                     auto point = std::make_shared<glm::vec2>(5.0f, 5.0f);
@@ -550,6 +617,8 @@ private:
         scene.mvp = mvp;
         scene.viewport = m_vp;
         scene.renderUnitsPerLy = GalaxyMapView::RenderUnitsPerLightYear;
+        // The 40 largest on-screen structures (each probe is a full resolve).
+        std::vector<std::pair<float, const world::celestial::GalaxyMapMediumAtlas::Proxy*>> onScreen;
         for (const auto& proxy : atlas.proxies)
         {
             const glm::vec4 clip = mvp * glm::vec4(glm::vec3(proxy.centreLy) * scene.renderUnitsPerLy, 1.0f);
@@ -558,6 +627,17 @@ private:
             const glm::vec3 ndc = glm::vec3(clip) / clip.w;
             if (std::abs(ndc.x) > 0.8f || std::abs(ndc.y) > 0.8f)
                 continue;
+            onScreen.push_back({proxy.radiusLy / std::max(clip.w, 1.0e-3f), &proxy});
+        }
+        std::sort(onScreen.begin(), onScreen.end(),
+                  [](const auto& a, const auto& b) { return a.first > b.first; });
+        if (onScreen.size() > 40)
+            onScreen.resize(40);
+        for (const auto& [apparent, proxyPtr] : onScreen)
+        {
+            const auto& proxy = *proxyPtr;
+            const glm::vec4 clip = mvp * glm::vec4(glm::vec3(proxy.centreLy) * scene.renderUnitsPerLy, 1.0f);
+            const glm::vec3 ndc = glm::vec3(clip) / clip.w;
             const glm::vec2 screen((ndc.x * 0.5f + 0.5f) * m_vp.width, (1.0f - (ndc.y * 0.5f + 0.5f)) * m_vp.height);
             const auto hit = resolveGalaxyPointer(scene, screen).winner;
             if (hit.kind == GalaxyPointerTargetKind::Medium && hit.mediumObject == proxy.objectIndex &&

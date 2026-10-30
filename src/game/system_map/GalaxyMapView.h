@@ -10,6 +10,7 @@
 #include "src/game/navigation/CubicNavigationCameraFlight.h"
 #include "src/game/navigation/CubicNavigationInteraction.h"
 #include "src/game/navigation/GalaxyNavigationGrid.h"
+#include "src/game/system_map/GalaxyHierarchy.h"
 #include "src/game/system_map/GalaxyMapVisualSettings.h"
 #include "src/game/system_map/GalaxyPointerResolver.h"
 #include "src/game/system_map/MapCameraSnapshot.h"
@@ -35,16 +36,21 @@ namespace game::system_map
         float zoomInFactor = 0.935f;
         float zoomOutFactor = 1.07f;
 
-        // Needed for the terminal ~260 AU Galaxy cell.
-        float minDistance = 0.002f;
-        float maxDistance = 700.0f;
+        // Needed for the terminal ~260 AU Galaxy cell. The upper bound only
+        // guards the overview fit; the wheel range is the current parent's
+        // (GalaxyMapView::cameraDistanceLimits).
+        float minDistance = 0.0002f;
+        float maxDistance = 20000.0f;
+
+        // Wheel range relative to the fitted current parent.
+        float parentZoomInFraction = 0.035f;
+        float parentZoomOutFactor = 1.8f;
 
         float pivotPickRadiusPx = 36.0f;
         float rotationMaxStepRad = 0.10f;
         float systemPickRadiusPx = 32.0f;
-
-        float navigationCellInteractiveViewportFraction = 0.075f;
-        float navigationCellInteractiveMinPx = 56.0f;
+        // Medium LOD: a cloud projected smaller than this is not a target.
+        float mediumPickMinRadiusPx = 4.0f;
 
         float navigationHoverFadeInSeconds = 0.18f;
         float navigationHoverFadeOutSeconds = 0.14f;
@@ -63,6 +69,46 @@ namespace game::system_map
         int systemId = -1;
         navigation::GalaxyGridIndex terminalCell {};
         glm::dvec3 positionLy {0.0};
+    };
+
+    /*
+        Alt + click: the compact "What is here?" list of every semantic
+        target the ONE resolver found under the cursor (star, cloud, cube).
+        A row click is a normal single click on that target.
+    */
+    struct GalaxyWhatIsHereMenu
+    {
+        bool open = false;
+        glm::vec2 originPx {0.0f};
+        std::vector<GalaxyPointerTarget> targets;
+        std::vector<std::string> labels;
+        int hovered = -1;
+
+        static constexpr float WidthPx = 300.0f;
+        static constexpr float RowHeightPx = 21.0f;
+        static constexpr float HeaderHeightPx = 24.0f;
+
+        // Row i bounds (left, top, right, bottom) in map viewport pixels.
+        glm::vec4 rowBounds(int i) const
+        {
+            const float top = originPx.y + HeaderHeightPx + RowHeightPx * static_cast<float>(i);
+            return glm::vec4(originPx.x, top, originPx.x + WidthPx, top + RowHeightPx);
+        }
+        glm::vec4 bounds() const
+        {
+            return glm::vec4(originPx.x, originPx.y, originPx.x + WidthPx,
+                             originPx.y + HeaderHeightPx + RowHeightPx * static_cast<float>(labels.size()) + 4.0f);
+        }
+        int rowAt(double x, double y) const
+        {
+            for (int i = 0; i < static_cast<int>(labels.size()); ++i)
+            {
+                const glm::vec4 b = rowBounds(i);
+                if (x >= b.x && x <= b.z && y >= b.y && y < b.w)
+                    return i;
+            }
+            return -1;
+        }
     };
 
     struct GalaxyMapViewState
@@ -90,14 +136,43 @@ namespace game::system_map
         int selectedSystemId = -1;
         int focusedSystemId = -1;
 
+        /*
+            Spatial frame (GalaxyHierarchy.h): the current parent cube. The
+            grid's anchor level is always its child level. It changes only
+            by an explicit command (double click down, up / breadcrumb,
+            LEVEL 0, object double click), never with the camera.
+        */
+        GalaxyHierarchyParent hierarchyParent;
+        int hierarchyRevision = 0;
+        GalaxyHierarchyFaces hierarchyFaces;
+        int hoverLayerAxis = -1;
+        // The parent the camera flies away from (drawn while flying).
+        std::optional<GalaxyHierarchyBox> flightContextBox;
+        // The running flight frames a (new) current parent.
+        bool nestedFrameFlight = false;
+        // The last viewport the map was drawn / driven with (camera fit).
+        Viewport lastViewport {0, 0, 1280, 720};
+
         // Interstellar medium structures / icy fields (GalaxyMapSnapshot
         // object indices): hover and selection are separate states.
         int hoveredMediumObject = -1;
         int selectedMediumObject = -1;
         glm::dvec3 selectedMediumHitLy {0.0};
-        double mediumHoverMouseX = -1.0e9;
-        double mediumHoverMouseY = -1.0e9;
         game::presentation::PointerClickTracker<int> mediumClickTracker;
+        game::presentation::PointerClickTracker<int> starClickTracker;
+
+        /*
+            Pointer hover: the ONE resolver's winner under the cursor and its
+            semantic point; re-resolved when the cursor, the camera or the
+            frame changes. The hovered child cube is derived from it.
+        */
+        GalaxyPointerTarget hoverTarget;
+        bool hoverTargetValid = false;
+        GalaxyWhatIsHereMenu whatIsHere;
+        double hoverMouseX = -1.0e9;
+        double hoverMouseY = -1.0e9;
+        GalaxyCameraState hoverCamera;
+        int hoverHierarchyRevision = -1;
 
         // What the last rendered frame presented (GalaxyMapRenderer): the
         // pointer resolver hits exactly these, never a re-derived geometry.
@@ -217,16 +292,68 @@ namespace game::system_map
             const Viewport& viewport
         ) const;
 
-        bool navigationCellsInteractive(
-            const Viewport& viewport
+        // ---- spatial frame (current parent cube) ----
+        GalaxyHierarchyBox hierarchyBox() const;
+
+        // Distance that shows the whole current parent (any orbit angle).
+        float hierarchyFitDistance(const Viewport& viewport) const;
+
+        // Wheel range inside the current parent: from a child filling the
+        // view to a little beyond the fitted parent.
+        void cameraDistanceLimits(
+            const Viewport& viewport,
+            float& minimumDistance,
+            float& maximumDistance
         ) const;
 
-        void syncNavigationAnchorToCameraTarget();
+        // The navigable child containing the point (nullopt outside).
+        std::optional<navigation::GalaxyNavigationCell> hierarchyChildAt(
+            const glm::dvec3& positionLy
+        ) const;
+
+        void frameHierarchyParent(
+            const Viewport& viewport,
+            double nowSeconds,
+            bool animate
+        );
+
+        // Double click down: the cell becomes the current parent (false for
+        // a terminal cell - the caller enters the System Map instead).
+        bool enterHierarchyCell(
+            const navigation::GalaxyNavigationCell& cell,
+            const Viewport& viewport,
+            double nowSeconds
+        );
+
+        // Up: the parent of the current parent; the cube the user came
+        // from stays selected inside it.
+        bool ascendHierarchy(
+            const Viewport& viewport,
+            double nowSeconds
+        );
+
+        // Breadcrumb: an ancestor (-1 overview .. parent level - 1).
+        bool jumpToHierarchyLevel(
+            int level,
+            const Viewport& viewport,
+            double nowSeconds
+        );
+
+        // Galaxy overview with the root containing the point selected.
+        void showGalaxyOverview(
+            const glm::dvec3& selectRootAtLy,
+            bool animate,
+            double nowSeconds
+        );
+
+        // Projection far plane: the fitted overview must never be clipped.
+        float farPlane() const;
 
         void beginCameraFlight(
             const glm::vec3& destinationTarget,
             float destinationDistance,
-            double nowSeconds
+            double nowSeconds,
+            bool nestedFrameFlight = false
         );
 
         void updateCameraFlight(double nowSeconds);
@@ -238,6 +365,15 @@ namespace game::system_map
             int explicitSystemId = -1
         ) const;
 
+        // Select a point (star, route waypoint): the current parent stays
+        // unless the point lies outside it - then the parent moves to the
+        // cube of the same level containing the point.
+        void focusHierarchyPoint(
+            const glm::dvec3& positionLy,
+            bool animateCamera,
+            double nowSeconds
+        );
+
         bool focusSystem(
             int systemId,
             const world::celestial::GalaxyMapSnapshot& galaxy,
@@ -246,6 +382,8 @@ namespace game::system_map
         );
 
     private:
+        void setHierarchyParent(const GalaxyHierarchyParent& parent);
+
         GalaxyMapViewState m_state;
         GalaxyMapControlSettings m_controls;
         GalaxyMapVisualSettings m_visuals;

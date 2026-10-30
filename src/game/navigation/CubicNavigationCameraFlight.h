@@ -64,13 +64,25 @@ public:
         currentPose передаётся не const, потому что при практически
         нулевом перемещении destination применяется немедленно.
     */
+    /*
+        coupleTargetToScale: the target advances in proportion to the
+        scale change already made (the scale itself follows its logarithm)
+        instead of linearly in time. Entering /
+        leaving a nested cube then keeps the destination moving
+        monotonically to the screen centre: it never leaves the view while
+        the scale changes by x25.
+    */
     void begin(
         CubicNavigationCameraPose& currentPose,
         const CubicNavigationCameraPose& destinationPose,
         double nowSeconds,
-        double durationSeconds
+        double durationSeconds,
+        bool coupleTargetToScale = false
     )
     {
+        m_coupleTargetToScale = coupleTargetToScale;
+        m_progress = 0.0;
+
         const double targetDistance =
             glm::length(
                 destinationPose.target -
@@ -165,12 +177,7 @@ public:
                 linearProgress
             );
 
-        inOutPose.target =
-            glm::mix(
-                m_start.target,
-                m_destination.target,
-                progress
-            );
+        m_progress = progress;
 
         /*
             Масштаб воспринимается как отношение величин,
@@ -186,6 +193,28 @@ public:
                 progress
             );
 
+        double targetProgress = progress;
+
+        if (m_coupleTargetToScale &&
+            std::abs(m_destination.scale - m_start.scale) >
+                0.01 * std::max(m_start.scale, m_destination.scale))
+        {
+            targetProgress =
+                std::clamp(
+                    (inOutPose.scale - m_start.scale) /
+                        (m_destination.scale - m_start.scale),
+                    0.0,
+                    1.0
+                );
+        }
+
+        inOutPose.target =
+            glm::mix(
+                m_start.target,
+                m_destination.target,
+                targetProgress
+            );
+
         if (linearProgress >= 1.0)
         {
             inOutPose =
@@ -193,9 +222,17 @@ public:
 
             m_active =
                 false;
+
+            m_progress = 1.0;
         }
 
         return true;
+    }
+
+    // Eased progress 0..1 of the current / last flight.
+    double progress() const
+    {
+        return m_active ? m_progress : 1.0;
     }
 
     /*
@@ -257,6 +294,8 @@ private:
 
     double m_startTimeSeconds = 0.0;
     double m_durationSeconds = 0.01;
+    double m_progress = 1.0;
+    bool m_coupleTargetToScale = false;
 };
 
 } // namespace game::navigation

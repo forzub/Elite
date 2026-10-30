@@ -59,6 +59,8 @@ SystemMapRenderer::handleInput(
         m_pendingScrollY = 0.0;
         m_navigationLevelZeroButtonHovered = false;
         m_navigationTrackButtonHovered = false;
+        m_galaxyUpButtonHovered = false;
+        m_galaxyBreadcrumbHovered = -1;
         m_navigationOverlayLeftWasDown = false;
         return std::nullopt;
     }
@@ -109,8 +111,30 @@ SystemMapRenderer::handleInput(
     if (game::system_map::GalaxyPointerDevScript::enabled() &&
         m_modeState.current() == Mode::Galaxy)
     {
+        if (!m_galaxyPointerDevScript.panelAt)
+        {
+            m_galaxyPointerDevScript.panelAt = [this](glm::vec2 p) {
+                return m_objectOverlayState.panelUnderCursor(glm::dvec2(p));
+            };
+        }
         m_galaxyPointerDevScript.drive(
-            m_galaxyView, galaxy, vp, inputNowSeconds, mx, my, leftDown, rightDown);
+            m_galaxyView, m_galaxyInteraction, galaxy, vp, inputNowSeconds, mx, my, leftDown, rightDown);
+    }
+    if (game::system_map::GalaxyHierarchyDevScript::enabled() &&
+        m_modeState.current() == Mode::Galaxy)
+    {
+        if (!m_galaxyHierarchyDevScript.breadcrumbLocator)
+        {
+            m_galaxyHierarchyDevScript.breadcrumbLocator = [this, vp] {
+                std::vector<glm::vec4> out;
+                for (const auto& b : m_navigationCoordinateOverlay.breadcrumbBounds(vp, galaxyBreadcrumbs()))
+                    out.push_back(glm::vec4(b.left, b.top, b.right, b.bottom));
+                return out;
+            };
+        }
+        m_galaxyHierarchyDevScript.drive(
+            m_galaxyView, m_galaxyInteraction, galaxy, vp, inputNowSeconds,
+            mx, my, leftDown, rightDown, m_pendingScrollY);
     }
 
     const double localMx =
@@ -196,6 +220,35 @@ SystemMapRenderer::handleInput(
                     localMy
                 );
 
+    // Galaxy Map hierarchy: up button and breadcrumbs (ancestors).
+    const bool galaxyMode = m_modeState.current() == Mode::Galaxy;
+    m_galaxyUpButtonHovered =
+        galaxyMode &&
+        inside &&
+        render::navigation::
+            NavigationCoordinateOverlay::
+                upButtonBounds(
+                    vp
+                )
+                .contains(
+                    localMx,
+                    localMy
+                );
+    m_galaxyBreadcrumbHovered = -1;
+    if (galaxyMode && inside)
+    {
+        const auto crumbBounds =
+            m_navigationCoordinateOverlay.breadcrumbBounds(vp, galaxyBreadcrumbs());
+        // The last crumb is the current parent itself: not a command.
+        for (std::size_t i = 0; i + 1 < crumbBounds.size(); ++i)
+            if (crumbBounds[i].contains(localMx, localMy))
+                m_galaxyBreadcrumbHovered = static_cast<int>(i);
+    }
+    const bool galaxyHierarchyPressed =
+        (m_galaxyUpButtonHovered || m_galaxyBreadcrumbHovered >= 0) &&
+        leftDown &&
+        !m_navigationOverlayLeftWasDown;
+
     const bool showTrackButton =
         m_modeState.current() == Mode::System;
 
@@ -224,6 +277,32 @@ SystemMapRenderer::handleInput(
 
     m_navigationOverlayLeftWasDown =
         leftDown;
+
+    if (m_galaxyUpButtonHovered || m_galaxyBreadcrumbHovered >= 0)
+    {
+        m_pendingScrollY = 0.0;
+
+        if (galaxyHierarchyPressed)
+        {
+            // Breadcrumb i is the ancestor at level i - 1 (0 = overview).
+            const bool moved =
+                m_galaxyUpButtonHovered
+                    ? m_galaxyView.ascendHierarchy(vp, inputNowSeconds)
+                    : m_galaxyView.jumpToHierarchyLevel(
+                          m_galaxyBreadcrumbHovered - 1, vp, inputNowSeconds);
+            if (moved)
+                announceNavigationLevel('G', m_galaxyView.state().navigationGrid.level());
+        }
+
+        m_galaxyView.suppressCameraGesture(
+            leftDown,
+            rightDown,
+            mx,
+            my
+        );
+
+        return std::nullopt;
+    }
 
     if (m_navigationLevelZeroButtonHovered ||
         m_navigationTrackButtonHovered)
@@ -816,6 +895,11 @@ SystemMapRenderer::handleInput(
             glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS;
         frame.transitionActive = m_mapTransition.active();
         frame.nowSeconds = inputNowSeconds;
+        frame.altDown =
+            glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS ||
+            (game::system_map::GalaxyHierarchyDevScript::enabled() &&
+             m_galaxyHierarchyDevScript.altDown());
 
         /*
             ONE Galaxy pointer resolver: the overlay's interactive glyphs and
@@ -852,7 +936,11 @@ SystemMapRenderer::handleInput(
         // A fresh left press is resolved ONCE; the overlay receives it only
         // when the resolver gives it to a card or an overlay glyph.
         bool overlayOwnsPress = true;
-        if (inside &&
+        if (m_galaxyView.state().whatIsHere.open || frame.altDown)
+        {
+            overlayOwnsPress = false;
+        }
+        else if (inside &&
             leftDown &&
             !m_galaxyView.state().pointerGesture.leftWasDown())
         {
@@ -883,17 +971,21 @@ SystemMapRenderer::handleInput(
             std::cerr << "[GalaxyPointerPress] unresolved" << std::endl;
         }
 
+        // An open "What is here?" list owns the pointer (drawn above cards).
+        const bool whatIsHereOpen = m_galaxyView.state().whatIsHere.open;
         const auto overlayPointer =
-            m_objectOverlayState.handlePointer(
-                m_galaxyInfoOverlayFrame,
-                glm::dvec2(vp.width, vp.height),
-                glm::dvec2(localMx, localMy),
-                inside,
-                leftDown,
-                0.0,
-                -1.0,
-                overlayOwnsPress
-            );
+            whatIsHereOpen
+                ? game::system_map::MapObjectOverlayPointerResult {}
+                : m_objectOverlayState.handlePointer(
+                      m_galaxyInfoOverlayFrame,
+                      glm::dvec2(vp.width, vp.height),
+                      glm::dvec2(localMx, localMy),
+                      inside,
+                      leftDown,
+                      0.0,
+                      -1.0,
+                      overlayOwnsPress
+                  );
 
         if (overlayPointer.consumed)
         {

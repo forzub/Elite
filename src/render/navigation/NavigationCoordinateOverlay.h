@@ -110,6 +110,27 @@ public:
             const Viewport& viewport
         );
 
+    // Galaxy Map: one level up (left of LEVEL 0, where System has TRACK).
+    static NavigationOverlayButtonBounds
+        upButtonBounds(
+            const Viewport& viewport
+        );
+
+    // Galaxy Map breadcrumbs (GALAXY > G0 [..] > G1 [..]): one bounds per
+    // crumb, laid out above the footer; separators are not clickable.
+    std::vector<NavigationOverlayButtonBounds> breadcrumbBounds(
+        const Viewport& viewport,
+        const std::vector<std::string>& crumbs
+    );
+
+    void drawGalaxyNavigation(
+        const Viewport& viewport,
+        const std::vector<std::string>& crumbs,
+        int hoveredCrumb,
+        bool upHovered,
+        bool upEnabled
+    );
+
 private:
     void ensureFont();
 

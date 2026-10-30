@@ -101,6 +101,7 @@ namespace game::system_map
             case GalaxyPointerHitReason::MediumShell: return "medium_shell";
             case GalaxyPointerHitReason::IcyFieldMarker: return "icy_field_marker";
             case GalaxyPointerHitReason::CubeSequenceGlyph: return "cube_sequence_glyph";
+            case GalaxyPointerHitReason::HierarchyLayer: return "hierarchy_layer";
         }
         return "?";
     }
@@ -125,28 +126,58 @@ namespace game::system_map
         }
     }
 
+    void galaxyPointerRayLy(
+        const GalaxyPointerScene& scene,
+        const glm::vec2& mousePx,
+        glm::dvec3& originLy,
+        glm::dvec3& directionLy
+    )
+    {
+        const Viewport& viewport = scene.viewport;
+        const double ndcX = 2.0 * mousePx.x / static_cast<double>(std::max(viewport.width, 1)) - 1.0;
+        const double ndcY = 1.0 - 2.0 * mousePx.y / static_cast<double>(std::max(viewport.height, 1));
+        if (scene.camera)
+        {
+            const auto& c = *scene.camera;
+            originLy = c.eyeLy;
+            directionLy = glm::normalize(
+                c.forward +
+                c.right * (ndcX * c.tanHalfFovY * c.aspect) +
+                c.up * (ndcY * c.tanHalfFovY));
+            return;
+        }
+        const double renderUnitsPerLy = static_cast<double>(scene.renderUnitsPerLy);
+        const glm::dmat4 inverse = glm::inverse(glm::dmat4(scene.mvp));
+        glm::dvec4 nearPoint = inverse * glm::dvec4(ndcX, ndcY, -1.0, 1.0);
+        glm::dvec4 farPoint = inverse * glm::dvec4(ndcX, ndcY, 1.0, 1.0);
+        nearPoint /= nearPoint.w;
+        farPoint /= farPoint.w;
+        originLy = glm::dvec3(nearPoint) / renderUnitsPerLy;
+        directionLy = glm::normalize(glm::dvec3(farPoint - nearPoint));
+    }
+
     int pickGalaxyMedium(
         const world::celestial::GalaxyMapSnapshot& galaxy,
         const glm::mat4& mvp,
         const Viewport& viewport,
         float renderUnitsPerLy,
         const glm::vec2& mousePx,
+        const glm::dvec3& origin,
+        const glm::dvec3& direction,
         float icyFieldPickRadiusPx,
         glm::dvec3& hitLy,
-        float& hitDepth
+        float& hitDepth,
+        float minRadiusPx
     )
     {
         const auto& atlas = galaxy.mediumAtlas;
-        // Mouse ray in light-years.
-        const glm::mat4 inverse = glm::inverse(mvp);
-        const float ndcX = 2.0f * mousePx.x / static_cast<float>(std::max(viewport.width, 1)) - 1.0f;
-        const float ndcY = 1.0f - 2.0f * mousePx.y / static_cast<float>(std::max(viewport.height, 1));
-        glm::vec4 nearPoint = inverse * glm::vec4(ndcX, ndcY, -1.0f, 1.0f);
-        glm::vec4 farPoint = inverse * glm::vec4(ndcX, ndcY, 1.0f, 1.0f);
-        nearPoint /= nearPoint.w;
-        farPoint /= farPoint.w;
-        const glm::dvec3 origin = glm::dvec3(glm::vec3(nearPoint)) / static_cast<double>(renderUnitsPerLy);
-        const glm::dvec3 direction = glm::normalize(glm::dvec3(glm::vec3(farPoint - nearPoint)));
+
+        // Medium LOD: projected radius in pixels from the clip w.
+        const glm::mat4 mvpLy = mvp * glm::mat4(
+            glm::vec4(renderUnitsPerLy, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, renderUnitsPerLy, 0.0f, 0.0f),
+            glm::vec4(0.0f, 0.0f, renderUnitsPerLy, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+        const float clipYPerLy = glm::length(glm::vec3(mvpLy[0][1], mvpLy[1][1], mvpLy[2][1]));
+        const float halfHeightPx = 0.5f * static_cast<float>(std::max(viewport.height, 1));
 
         int best = -1;
         double bestT = 1.0e30;
@@ -161,6 +192,12 @@ namespace game::system_map
                 const double missSquared = glm::dot(toCentre, toCentre) - along * along;
                 if (missSquared > radius * radius || along + radius < 0.0 || along - radius > bestT)
                     continue;
+                if (minRadiusPx > 0.0f)
+                {
+                    const float w = (mvpLy * glm::vec4(glm::vec3(proxy.centreLy), 1.0f)).w;
+                    if (w > 1.0e-4f && proxy.radiusLy * clipYPerLy / w * halfHeightPx < minRadiusPx)
+                        continue;
+                }
                 // Exact hit on the coarse shell (Moller-Trumbore). A shell
                 // the camera is INSIDE (odd number of crossings ahead) is not
                 // a visible object under the cursor: its far wall would
@@ -368,9 +405,12 @@ namespace game::system_map
         {
             glm::dvec3 hitLy(0.0);
             float depth = 1.0f;
+            glm::dvec3 rayOrigin(0.0);
+            glm::dvec3 rayDirection(0.0, 0.0, -1.0);
+            galaxyPointerRayLy(scene, mousePx, rayOrigin, rayDirection);
             const int object = pickGalaxyMedium(
                 *scene.galaxy, scene.mvp, scene.viewport, scene.renderUnitsPerLy, mousePx,
-                scene.icyFieldPickRadiusPx, hitLy, depth);
+                rayOrigin, rayDirection, scene.icyFieldPickRadiusPx, hitLy, depth, scene.mediumMinRadiusPx);
             if (object >= 0)
             {
                 GalaxyPointerTarget medium;
@@ -388,6 +428,42 @@ namespace game::system_map
                     resolution.candidates.push_back(medium);
                 if (winner.kind == GalaxyPointerTargetKind::Empty)
                     winner = medium;
+            }
+        }
+
+        // Tier 5: empty space inside the current parent - the child cube
+        // where the cursor ray meets the hover layer.
+        if (scene.hierarchy && scene.hierarchy->grid && scene.hierarchy->layer.valid &&
+            (collectCandidates || winner.kind == GalaxyPointerTargetKind::Empty))
+        {
+            const auto& hierarchy = *scene.hierarchy;
+            glm::dvec3 origin(0.0);
+            glm::dvec3 direction(0.0, 0.0, -1.0);
+            galaxyPointerRayLy(scene, mousePx, origin, direction);
+            const int axis = hierarchy.layer.axis;
+            const double along = direction[axis];
+            if (std::abs(along) > 1.0e-9)
+            {
+                const double t = (hierarchy.layer.coordinateLy - origin[axis]) / along;
+                if (t > 0.0)
+                {
+                    const glm::dvec3 point = origin + direction * t;
+                    if (const auto child = galaxyHierarchyChildAt(*hierarchy.grid, hierarchy.box, point))
+                    {
+                        GalaxyPointerTarget cube;
+                        cube.kind = GalaxyPointerTargetKind::NavigationCube;
+                        cube.reason = GalaxyPointerHitReason::HierarchyLayer;
+                        cube.cell = *child;
+                        cube.hitLy = point;
+                        bool visible = false;
+                        projectToScreen(glm::vec3(point) * scene.renderUnitsPerLy, scene.mvp, scene.viewport,
+                                        visible, cube.depth);
+                        if (collectCandidates)
+                            resolution.candidates.push_back(cube);
+                        if (winner.kind == GalaxyPointerTargetKind::Empty)
+                            winner = cube;
+                    }
+                }
             }
         }
         return resolution;

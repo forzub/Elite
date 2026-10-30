@@ -155,6 +155,13 @@ Updated: 2026-10-30, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONL
   `PointerInteractionSettings` 0.38 s / 12 px): hover never selects; a single
   click acts at once and is never undone; a double click on the same target
   adds its action; the cube trackers delegate to it.
+- Galaxy Map spatial frame (stage 2026-10-30 c, see below): the user is
+  always inside ONE current parent cube (overview = virtual cube of all
+  roots, then G0 / G1 / G2 cells); its children are the working cubes.
+  Double click = child becomes the parent; `[ ↑ ]` / breadcrumbs / LEVEL 0
+  go up (the cube left stays selected); the wheel only zooms. The parent is
+  fitted whole (sphere fit), its floor + far wall carry the coordinate
+  grid; hovered / selected points project onto them.
 - Galaxy Map pointer (stage 2026-10-30 b, see below): ONE resolver
   (`GalaxyPointerResolver`) over what the last frame PRESENTED (renderer
   publishes `presentedStars` with glyph radius and `presentedCubeMarkers`
@@ -351,7 +358,129 @@ hitches = frames > 80 ms after start.
 - PERFORMANCE (same run): medium draw avg 0.53 ms (baseline 0.5-0.6), frame
   avg 20.9 ms, max 49.9, 0 frames > 50 ms (baseline ~20 ms).
 
+### Galaxy Map spatial frame (user order 2026-10-30 c) - AUTOMATED PASS + scripted GAME PASS
+- Order: restore and develop the nested-cube model (not a flat map, no
+  reference plane): the user is always INSIDE one current parent cube; 25 per
+  axis, addresses, topology and generation unchanged.
+- OLD BEHAVIOUR / REGRESSION (source + git verified):
+  * up to `4734bd67` the top level showed the 5 whitelisted root cubes as
+    the visible boundary of the game space; `4734bd67` (connected domain,
+    ~275 roots) drew only the focused root + neighbours: the top-level
+    overview was lost;
+  * the camera range was clamped to `labelMaxCameraDistance` 155 render
+    units (~70 ly, checkpoint `c0a385b7`): a 40.3-ly root needs ~200 to fit,
+    so upper cubes could never be framed (edges outside the viewport);
+  * the working level was implicit: anchor = cell under camera.target,
+    re-synced on every rotate / pan / zoom (`syncNavigationAnchorToCameraTarget`),
+    and the wheel switched levels (`cubicNavigationWheelAction`) - the
+    "parent" drifted with the camera; hover = ray x invisible plane through
+    camera.target; current-level cells hidden below 56 px.
+- RESTORED MODEL (`GalaxyHierarchy.h/.cpp`): explicit `hierarchyParent`
+  (level -1 = virtual galaxy overview: a cube on the root lattice holding
+  every navigable root, NOT a navigation cell; its children are the roots;
+  levels 0..2 = real cells, children = level + 1). The grid works on the
+  child level (Galaxy minimumLevel 0 so roots are children; config loader
+  allowed `std::max(0, ..)`). It changes only by command: double click
+  down, up button, breadcrumb, LEVEL 0, object double click; never by the
+  camera or the wheel.
+- CURRENT PARENT CUBE: camera fit = circumscribed sphere of the parent in the
+  narrower FOV, margin 1.06 (`galaxyHierarchyFitDistance`): whole cube from
+  any orbit angle. Wheel range = [0.035, 1.8] x fit of the parent. Far plane
+  follows the distance; the pointer ray is built from the camera basis (an
+  overview mvp's near/far ratio is beyond float precision - un-projecting
+  its far plane gave no ray). Nested flights: 0.95 s, target coupled to the
+  log scale (the entered cube moves monotonically to the centre, never
+  leaves the view), the old parent fades, the new grids fade in; a press
+  during such a flight finishes it.
+- COORDINATE FACES: the floor (ceiling when below) and the far wall across
+  X or Z the view looks into, chosen with hysteresis (10 % edge dead band,
+  0.15 axis margin); major lines every 5 children (all lines for the
+  overview's root lattice), minor faint; labels at major children (offsets
+  -10..10 from the centre child; root indices in the overview) along the
+  floor-wall junction, the floor side edge and the far vertical edge; X / Y /
+  Z axis names; XYZ triad top-right.
+- PROJECTIONS: hovered and selected point (star / cloud hit = exact point,
+  cube = centre): guide lines to floor and wall, rulers to the labelled
+  edges, the child's footprint (one grid cell) on both faces, a cross at
+  the exact feet; "x y z" child coordinates next to the cube (G0 [..] in
+  the overview). Not drawn for other objects.
+- HIERARCHY NAVIGATION: single click selects a child (parent unchanged);
+  double click = the child becomes the parent (terminal G3 child: System
+  Map, unchanged); up `[ ↑ ]` left of LEVEL 0: parent of the parent, the
+  cube left stays selected; breadcrumbs `ГАЛАКТИКА › G0 [x,y,z] › G1 ..`
+  above the footer (click = jump to that ancestor); LEVEL 0 = overview with
+  the player's root selected; the map opens on the overview.
+- OBJECT LOD: compact interstellar objects only from the parent level where
+  they matter and in / near the parent (brown dwarfs, remnants from a root
+  parent; rogue bodies, comets, icy fields from a G1 parent); medium
+  structures below 1.5 px not drawn (overview: below 6 px - no blobs; the
+  overview framed ~1700 blobs = 6 ms/frame); selected / hovered always.
+  Picking LOD: star proximity ring = clamp(0.6 child px, 8, 32) (glyph only
+  in the overview), icy fields likewise, clouds below 4 px are not targets.
+  Star halos of the selected / hovered cube only below the overview.
+- POINTER INTERACTION: the ONE resolver gained tier 5: empty space inside
+  the parent = the child where the cursor ray meets the hover layer (the
+  child layer perpendicular to the axis most aligned with the view, through
+  the selected child, else the selected object, else the centre; hysteresis
+  0.10), drawn as the parent's cross-section while hovered. Hover = the
+  resolver's winner + the child holding its semantic point (WYSIWYG: the
+  highlighted cube IS the press target). Only the SELECTED child's marker
+  is a pointer target, and only for a cube selection (a hover marker or the
+  cube of a selected star / cloud never takes the object's click). Star:
+  click selects star + its cube; double click = one level down into the
+  star's cube (System Map from the terminal level). Cloud: click selects +
+  card (unchanged); double click = into the cube of the clicked point,
+  cloud kept. Alt + click: "What is here?" list of the resolver candidates
+  (star / cloud / cube, de-duplicated), drawn above the cards, owns the
+  pointer while open; a row = a normal single click. Fixed on the way: the
+  selected cloud outline began its own line batch and erased the frame
+  drawn before it.
+- AUTOMATED: `EliteGalaxyPointerCheck` 42/42 PASS (G1-G8 rewritten for the
+  child-cube model + H1 overview / fit at 48 angle x level cases, worst
+  corner margin 34 px; H2 hover == press target 30/30; H3 wheel; H4 enter /
+  up / breadcrumb; H5 star descent + terminal System Map; H6 cloud vs hover
+  marker; H7 face hysteresis); mutations (no cloud descent, no face dead
+  band) -> H6 / H7 FAIL as expected. `EliteMapPointerCheck` PASS (System
+  Map unchanged). Run from the repo root (the check copy in
+  build/headless_server/assets is stale).
+- SCRIPTED GAME (real game, Debug, nav-stress:simple; synthetic pointer
+  through the production input path, real presented geometry - NOT a
+  human mouse): `ELITE_DEV_GALAXY_HIERARCHY_SCRIPT=1`
+  (`tools/perf/galaxy_map_capture.sh "" 300`) 78/78 PASS: overview fits;
+  branches A (overview -> G0 -> G1 -> G2), C, D through empty space (hover
+  x3 with camera still, click, double click, fit after every entry); up x2
+  by the button and breadcrumb GALAXY (cube left selected); star branch
+  (click, 3 double clicks down to G2, star kept); cloud (click, double click
+  into its cube, up); Alt list (star / cloud / 2 cubes, row selects);
+  wheel; LEVEL 0; breadcrumb G0. Frames: D:/tmp/elite_gh_NN_*.png.
+  Pointer regression script (`galaxy_pointer_script.sh`, phases adapted: 0/1
+  in the entry G1 cube, 2/3 on empty-space cubes): Sol 10/10,
+  Alpha Centauri / Proxima 10/10, close stars 10/10, cube single 10/10,
+  star after cube 10/10, cube after star 10/10, cube double click same
+  point 5/5, glyph second click 3/5 in the full run (the script's second
+  click landed 23 px from the first - not a double click by contract;
+  script fixed to place the first click where the glyph appears) -> phase 3
+  rerun 5/5 + 5/5, cloud 10/10, star after cloud 10/10, drag 5/5.
+- PERFORMANCE (Debug, same runs): medium draw window avg 0.86-0.95 ms (worst 2-second
+  window 2.1 ms = the galaxy overview: 179 shells, no blobs; before the
+  overview LOD it was 6.1 ms with 1721 blobs); hover resolve avg 0.20-0.25
+  ms, max 0.84 ms (only when cursor / camera / frame change); frame avg
+  15.5-15.7 ms (previous stage 20.9). Frames > 50 ms: the hierarchy run's
+  36 include its 33 DEV frame captures (PNG write ~110 ms); the pointer run
+  had 7 (startup, map open, one 101 ms docking-autopilot frame of the
+  scenario flight), none from the map.
+
 ### OPEN
+- Galaxy spatial frame: HUMAN acceptance with a real mouse not done (the
+  scripted runs drive the production input path, not a hand). Known: the
+  cloud info card opens near the clicked point and covers the centre of the
+  entered cube (card placement unchanged, user can close / minimise it);
+  dense star labels in a root parent; "What is here?" texts are English
+  (not in the localisation profile); empty-space depth = the hover layer
+  (through the selected child / view axis) - no explicit layer stepping
+  and no precise point cursor inside a terminal cube yet (targets already
+  carry the exact point `hitLy`); children holding notable objects are not
+  outlined (stars / clouds themselves are).
 - Galaxy pointer: HUMAN repeated-click acceptance with a real mouse not
   done (incl. return from System Map); the LIC cannot be selected by click
   while the camera is inside it (by design of R5 fix); a cube whose marker

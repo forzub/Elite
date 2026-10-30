@@ -140,6 +140,15 @@ namespace game::system_map
         ) const;
 
     private:
+        void applyWheelLevels(
+            GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const GalaxyMapInputFrame& frame,
+            bool zoomIn,
+            int pivotSystemId,
+            GalaxyMapInputResult& result
+        ) const;
+
         // "What is here?" (Alt + click): open from the resolver candidates;
         // while open it owns the pointer (row click / dismiss).
         void openWhatIsHere(

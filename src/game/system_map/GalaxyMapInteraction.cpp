@@ -242,9 +242,7 @@ namespace game::system_map
                 ? state.hoverTarget.mediumObject
                 : -1;
 
-        if (state.hoverTarget.reason == GalaxyPointerHitReason::NeighbourCube && state.hoverTarget.cell)
-            state.navigationGrid.setHoveredCell(*state.hoverTarget.cell);
-        else if (const auto child = semanticChild(view, galaxy, state.hoverTarget))
+        if (const auto child = semanticChild(view, galaxy, state.hoverTarget))
             state.navigationGrid.setHoveredCell(*child);
         else
             state.navigationGrid.clearHoveredCell();
@@ -420,7 +418,6 @@ namespace game::system_map
             hierarchy.grid = &view.state().navigationGrid;
             hierarchy.box = box;
             hierarchy.layer = hoverLayer(view);
-            hierarchy.neighbours = view.hierarchyNeighbours();
             scene.hierarchy = hierarchy;
         }
         return scene;
@@ -1254,127 +1251,55 @@ namespace game::system_map
                     zoomPivotActive = true;
                 }
 
-                bool pivotBeforeVisible = false;
-                float pivotBeforeDepth = 1.0f;
-
-                glm::vec2 pivotBeforeScreen(0.0f);
-
-                if (zoomPivotActive)
-                {
-                    pivotBeforeScreen =
-                        projectToScreen(
-                            zoomPivotWorld,
-                            view.projectionMatrix(vp) *
-                                view.viewMatrix(),
-                            vp,
-                            pivotBeforeVisible,
-                            pivotBeforeDepth
-                        );
-                }
-
                 const float factor =
                     zoom > 0.0f
-                        ? std::pow(
-                            controls.zoomInFactor,
-                            zoom
-                        )
-                        : std::pow(
-                            controls.zoomOutFactor,
-                            -zoom
-                        );
+                        ? std::pow(controls.zoomInFactor, zoom)
+                        : std::pow(controls.zoomOutFactor, -zoom);
 
-                view.state().camera.distance *=
-                    factor;
+                const float distanceBefore =
+                    view.state().camera.distance;
 
                 view.state().camera.distance =
                     std::clamp(
-                        view.state().camera.distance,
+                        distanceBefore * factor,
                         galaxyMinimumDistance,
                         galaxyMaximumDistance
                     );
 
                 /*
-                    Keep the chosen navigation point under the mouse
-                    while the perspective distance changes.
+                    Zoom in towards the point under the cursor: the whole
+                    camera rig scales about that point, so the point stays
+                    under the cursor and the camera really approaches it (the
+                    cube under the cursor grows until it fills the screen).
                 */
-                if (zoomPivotActive)
+                if (zoomPivotActive && zoom > 0.0f)
                 {
-                    bool pivotAfterVisible = false;
-                    float pivotAfterDepth = 1.0f;
-
-                    const glm::mat4 viewAfter =
-                        view.viewMatrix();
-
-                    const glm::vec2 pivotAfterScreen =
-                        projectToScreen(
-                            zoomPivotWorld,
-                            view.projectionMatrix(vp) *
-                                viewAfter,
-                            vp,
-                            pivotAfterVisible,
-                            pivotAfterDepth
-                        );
-
-                    const glm::vec2 screenDelta =
-                        pivotBeforeScreen -
-                        pivotAfterScreen;
-
-                    if (pivotBeforeVisible &&
-                        pivotAfterVisible &&
-                        std::isfinite(screenDelta.x) &&
-                        std::isfinite(screenDelta.y))
-                    {
-                        const glm::vec3 right(
-                            viewAfter[0][0],
-                            viewAfter[1][0],
-                            viewAfter[2][0]
-                        );
-
-                        const glm::vec3 up(
-                            viewAfter[0][1],
-                            viewAfter[1][1],
-                            viewAfter[2][1]
-                        );
-
-                        const glm::vec3 direction =
-                            glm::vec3(view.cameraDirectionWorld());
-
-                        const glm::vec3 eye =
-                            view.state().camera.target +
-                            direction *
-                            view.state().camera.distance;
-
-                        const float pivotDepth =
-                            std::max(
-                                0.0001f,
-                                glm::dot(
-                                    zoomPivotWorld - eye,
-                                    -direction
-                                )
-                            );
-
-                        const float worldUnitsPerPixel =
-                            2.0f *
-                            pivotDepth *
-                            std::tan(
-                                glm::radians(48.0f) *
-                                0.5f
-                            ) /
-                            static_cast<float>(
-                                std::max(vp.height, 1)
-                            );
-
-                        view.state().camera.target -=
-                            right *
-                            screenDelta.x *
-                            worldUnitsPerPixel;
-
-                        view.state().camera.target +=
-                            up *
-                            screenDelta.y *
-                            worldUnitsPerPixel;
-                    }
+                    const float applied =
+                        view.state().camera.distance /
+                        std::max(distanceBefore, 1.0e-9f);
+                    view.state().camera.target =
+                        zoomPivotWorld +
+                        (view.state().camera.target - zoomPivotWorld) * applied;
                 }
+
+                // Zooming out drifts the view back to the parent's centre (the
+                // parent shrinks into the screen, not off to a side).
+                if (zoom < 0.0f)
+                {
+                    const glm::vec3 centre =
+                        view.positionLyToRender(view.hierarchyBox().centerLy);
+                    view.state().camera.target =
+                        glm::mix(view.state().camera.target, centre, 0.18f);
+                }
+
+                applyWheelLevels(
+                    view,
+                    galaxy,
+                    frame,
+                    zoom > 0.0f,
+                    pivotSystemId,
+                    result
+                );
 
                 (void)navigationPointLy;
             }
@@ -1528,14 +1453,6 @@ namespace game::system_map
             const bool keepsStar =
                 clickedCellContainsExistingFocus &&
                 view.state().selectedSystemId >= 0;
-            // A neighbour of the current parent (same level): the frame
-            // moves sideways into it, the level stays.
-            if (galaxyHierarchyIsNeighbour(view.state().hierarchyParent, pickedCell))
-            {
-                if (view.enterHierarchyCell(pickedCell, vp, nowSeconds))
-                    result.galaxyLevelChanged = view.hierarchyBox().childLevel;
-                return isCubeDoubleClick;
-            }
             descendAt(
                 view,
                 galaxy,
@@ -1671,6 +1588,79 @@ namespace game::system_map
         state.camera.lastMouseX = frame.mouseX;
         state.camera.lastMouseY = frame.mouseY;
         return true;
+    }
+
+    /*
+        The wheel moves through the hierarchy by screen size alone:
+        - in: the child under the cursor (else at the view centre) that fills
+          the screen becomes the parent; a terminal Galaxy cube filling the
+          screen opens the System Map (its star / empty sector);
+        - out: a parent smaller than the screen hands over to its own parent
+          (the cube left stays selected); the overview never gets smaller
+          than the screen (distance range).
+        No flight: the camera already shows the new parent.
+    */
+    void GalaxyMapInteraction::applyWheelLevels(
+        GalaxyMapView& view,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const GalaxyMapInputFrame& frame,
+        bool zoomIn,
+        int pivotSystemId,
+        GalaxyMapInputResult& result
+    ) const
+    {
+        const Viewport& vp = frame.viewport;
+        auto& state = view.state();
+        auto& grid = state.navigationGrid;
+
+        for (int guard = 0; guard < 3; ++guard)
+        {
+            const GalaxyHierarchyBox box = view.hierarchyBox();
+            if (zoomIn)
+            {
+                std::optional<navigation::GalaxyNavigationCell> candidate;
+                if (grid.hasHoveredCell() && galaxyHierarchyIsChild(box, grid.hoveredCell()))
+                    candidate = grid.hoveredCell();
+                else
+                    candidate = view.hierarchyChildAt(view.renderToPositionLy(state.camera.target));
+                if (!candidate ||
+                    view.cubeScreenRatio(candidate->center, candidate->size, vp) < GalaxyMapView::ParentFillRatio)
+                {
+                    return;
+                }
+
+                if (candidate->level >= grid.maximumLevel())
+                {
+                    // Terminal cube on the whole screen: its star / sector.
+                    state.cubeClickTracker.reset();
+                    const MapIntent entryIntent =
+                        view.entryIntentForPosition(galaxy, candidate->center, pivotSystemId);
+                    if (entryIntent.entersKnownSystem())
+                    {
+                        state.selectedSystemId = entryIntent.systemId;
+                        state.focusedSystemId = entryIntent.systemId;
+                    }
+                    if (entryIntent.valid())
+                        result.mapIntent = entryIntent;
+                    return;
+                }
+
+                if (!view.enterHierarchyCell(*candidate, vp, frame.nowSeconds, false))
+                    return;
+                result.galaxyLevelChanged = view.hierarchyBox().childLevel;
+            }
+            else
+            {
+                if (box.parent.overview() ||
+                    view.cubeScreenRatio(box.centerLy, box.edgeLy, vp) >= view.controls().parentHandOverUpRatio)
+                {
+                    return;
+                }
+                if (!view.jumpToHierarchyLevel(box.parent.level - 1, vp, frame.nowSeconds, false))
+                    return;
+                result.galaxyLevelChanged = view.hierarchyBox().childLevel;
+            }
+        }
     }
 
     GalaxyMapInputResult GalaxyMapInteraction::applyChosenTarget(

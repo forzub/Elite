@@ -102,7 +102,6 @@ namespace game::system_map
             case GalaxyPointerHitReason::IcyFieldMarker: return "icy_field_marker";
             case GalaxyPointerHitReason::CubeSequenceGlyph: return "cube_sequence_glyph";
             case GalaxyPointerHitReason::HierarchyLayer: return "hierarchy_layer";
-            case GalaxyPointerHitReason::NeighbourCube: return "neighbour_cube";
         }
         return "?";
     }
@@ -168,7 +167,8 @@ namespace game::system_map
         float icyFieldPickRadiusPx,
         glm::dvec3& hitLy,
         float& hitDepth,
-        float minRadiusPx
+        float minRadiusPx,
+        const GalaxyHierarchyBox* clipBox
     )
     {
         const auto& atlas = galaxy.mediumAtlas;
@@ -192,6 +192,9 @@ namespace game::system_map
                 const double radius = static_cast<double>(proxy.radiusLy);
                 const double missSquared = glm::dot(toCentre, toCentre) - along * along;
                 if (missSquared > radius * radius || along + radius < 0.0 || along - radius > bestT)
+                    continue;
+                // Outside the current parent nothing is a target.
+                if (clipBox && !galaxyHierarchyIntersectsSphere(*clipBox, proxy.centreLy, radius))
                     continue;
                 if (minRadiusPx > 0.0f)
                 {
@@ -236,7 +239,8 @@ namespace game::system_map
                 for (std::size_t k = 1; k < crossings.size(); ++k)
                     if (crossings[k] - crossings[k - 1] > tolerance)
                         ++distinct;
-                if (distinct % 2 == 0 && crossings.front() < bestT)
+                if (distinct % 2 == 0 && crossings.front() < bestT &&
+                    (!clipBox || galaxyHierarchyContains(*clipBox, origin + direction * crossings.front())))
                 {
                     bestT = crossings.front();
                     best = proxy.objectIndex;
@@ -254,6 +258,8 @@ namespace game::system_map
         for (std::size_t i = 0; i < galaxy.objects.size(); ++i)
         {
             if (galaxy.objects[i].objectType != "icy_debris_field")
+                continue;
+            if (clipBox && !galaxyHierarchyContains(*clipBox, galaxy.objects[i].positionLy))
                 continue;
             bool visible = false;
             float depth = 1.0f;
@@ -411,7 +417,8 @@ namespace game::system_map
             galaxyPointerRayLy(scene, mousePx, rayOrigin, rayDirection);
             const int object = pickGalaxyMedium(
                 *scene.galaxy, scene.mvp, scene.viewport, scene.renderUnitsPerLy, mousePx,
-                rayOrigin, rayDirection, scene.icyFieldPickRadiusPx, hitLy, depth, scene.mediumMinRadiusPx);
+                rayOrigin, rayDirection, scene.icyFieldPickRadiusPx, hitLy, depth, scene.mediumMinRadiusPx,
+                scene.hierarchy ? &scene.hierarchy->box : nullptr);
             if (object >= 0)
             {
                 GalaxyPointerTarget medium;
@@ -443,14 +450,12 @@ namespace game::system_map
             galaxyPointerRayLy(scene, mousePx, origin, direction);
             const int axis = hierarchy.layer.axis;
             const double along = direction[axis];
-            bool insideParent = false;
             if (std::abs(along) > 1.0e-9)
             {
                 const double t = (hierarchy.layer.coordinateLy - origin[axis]) / along;
                 if (t > 0.0)
                 {
                     const glm::dvec3 point = origin + direction * t;
-                    insideParent = galaxyHierarchyContains(hierarchy.box, point);
                     if (const auto child = galaxyHierarchyChildAt(*hierarchy.grid, hierarchy.box, point))
                     {
                         GalaxyPointerTarget cube;
@@ -466,60 +471,6 @@ namespace game::system_map
                         if (winner.kind == GalaxyPointerTargetKind::Empty)
                             winner = cube;
                     }
-                }
-            }
-
-            // Outside the parent: the neighbour cube the ray enters first.
-            if (!insideParent && !hierarchy.neighbours.empty())
-            {
-                double bestT = 1.0e300;
-                const navigation::CubicNavigationCell* best = nullptr;
-                for (const auto& cell : hierarchy.neighbours)
-                {
-                    const double half = cell.size * 0.5;
-                    double tNear = -1.0e300;
-                    double tFar = 1.0e300;
-                    bool miss = false;
-                    for (int a = 0; a < 3 && !miss; ++a)
-                    {
-                        const double lo = cell.center[a] - half - origin[a];
-                        const double hi = cell.center[a] + half - origin[a];
-                        if (std::abs(direction[a]) < 1.0e-12)
-                        {
-                            miss = lo > 0.0 || hi < 0.0;
-                            continue;
-                        }
-                        double t0 = lo / direction[a];
-                        double t1 = hi / direction[a];
-                        if (t0 > t1)
-                            std::swap(t0, t1);
-                        tNear = std::max(tNear, t0);
-                        tFar = std::min(tFar, t1);
-                        miss = tNear > tFar;
-                    }
-                    if (miss || tFar < 0.0)
-                        continue;
-                    const double t = std::max(tNear, 0.0);
-                    if (t < bestT)
-                    {
-                        bestT = t;
-                        best = &cell;
-                    }
-                }
-                if (best)
-                {
-                    GalaxyPointerTarget cube;
-                    cube.kind = GalaxyPointerTargetKind::NavigationCube;
-                    cube.reason = GalaxyPointerHitReason::NeighbourCube;
-                    cube.cell = *best;
-                    cube.hitLy = origin + direction * bestT;
-                    bool visible = false;
-                    projectToScreen(glm::vec3(cube.hitLy) * scene.renderUnitsPerLy, scene.mvp, scene.viewport,
-                                    visible, cube.depth);
-                    if (collectCandidates)
-                        resolution.candidates.push_back(cube);
-                    if (winner.kind == GalaxyPointerTargetKind::Empty)
-                        winner = cube;
                 }
             }
         }

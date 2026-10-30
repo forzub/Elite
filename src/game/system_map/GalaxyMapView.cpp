@@ -472,27 +472,90 @@ namespace game::system_map
         );
     }
 
-    std::vector<navigation::GalaxyNavigationCell>
-    GalaxyMapView::hierarchyNeighbours() const
+    float GalaxyMapView::cubeScreenRatioAt(
+        const glm::dvec3& centerLy,
+        double edgeLy,
+        const glm::vec3& target,
+        float distance,
+        const Viewport& viewport,
+        bool fitInside
+    ) const
     {
-        return galaxyHierarchyNeighbours(
-            m_state.navigationGrid,
-            m_state.hierarchyParent
-        );
+        const OrbitCameraBasis basis =
+            orbitCameraBasis(m_state.camera.yaw, m_state.camera.pitch);
+        const glm::vec3 eye = target + glm::vec3(basis.direction) * distance;
+        const glm::mat4 view = glm::lookAt(eye, target, glm::vec3(basis.up));
+        const glm::mat4 mvp = projectionMatrix(viewport) * view;
+
+        float minX = 1.0e30f, minY = 1.0e30f, maxX = -1.0e30f, maxY = -1.0e30f;
+        float largest = 0.0f;
+        const double h = edgeLy * 0.5;
+        for (int i = 0; i < 8; ++i)
+        {
+            const glm::dvec3 corner =
+                centerLy + glm::dvec3((i & 1) ? h : -h, (i & 2) ? h : -h, (i & 4) ? h : -h);
+            const glm::vec4 clip = mvp * glm::vec4(positionLyToRender(corner), 1.0f);
+            // A corner behind the camera: the cube is around / beyond the
+            // whole view.
+            if (clip.w <= 1.0e-6f)
+                return 1.0e9f;
+            minX = std::min(minX, clip.x / clip.w);
+            maxX = std::max(maxX, clip.x / clip.w);
+            minY = std::min(minY, clip.y / clip.w);
+            maxY = std::max(maxY, clip.y / clip.w);
+            largest = std::max({largest, std::abs(clip.x / clip.w), std::abs(clip.y / clip.w)});
+        }
+        if (fitInside)
+            return largest;
+        // NDC spans 2 per axis.
+        return std::max((maxX - minX) * 0.5f, (maxY - minY) * 0.5f);
+    }
+
+    float GalaxyMapView::cubeScreenRatio(
+        const glm::dvec3& centerLy,
+        double edgeLy,
+        const Viewport& viewport
+    ) const
+    {
+        return cubeScreenRatioAt(centerLy, edgeLy, m_state.camera.target, m_state.camera.distance, viewport);
+    }
+
+    float GalaxyMapView::fillDistanceAt(
+        const glm::dvec3& centerLy,
+        double edgeLy,
+        const glm::vec3& target,
+        const Viewport& viewport,
+        float fill
+    ) const
+    {
+        // The screen ratio falls monotonically with the distance: bisection
+        // between "inside the cube" and its circumscribed-sphere fit.
+        float inner = static_cast<float>(edgeLy) * RenderUnitsPerLightYear * 0.5f;
+        float outer = std::max(
+            inner * 2.0f,
+            galaxyHierarchyFitDistance(edgeLy * RenderUnitsPerLightYear, glm::radians(48.0f),
+                                       viewport.width, viewport.height, 1.5f));
+        for (int k = 0; k < 40; ++k)
+        {
+            const float mid = 0.5f * (inner + outer);
+            if (cubeScreenRatioAt(centerLy, edgeLy, target, mid, viewport, true) > fill)
+                inner = mid;
+            else
+                outer = mid;
+        }
+        return outer;
     }
 
     float GalaxyMapView::hierarchyFitDistance(
         const Viewport& viewport
     ) const
     {
+        // "The parent on the whole screen": its projected corners fill the
+        // viewport in the limiting direction (current orbit angle).
         const GalaxyHierarchyBox box = hierarchyBox();
         return std::clamp(
-            galaxyHierarchyFitDistance(
-                box.edgeLy * static_cast<double>(RenderUnitsPerLightYear),
-                glm::radians(48.0f),
-                viewport.width,
-                viewport.height
-            ),
+            fillDistanceAt(box.centerLy, box.edgeLy, positionLyToRender(box.centerLy), viewport,
+                           ParentFillRatio),
             m_controls.minDistance,
             m_controls.maxDistance
         );
@@ -504,15 +567,21 @@ namespace game::system_map
         float& maximumDistance
     ) const
     {
+        /*
+            Inside a parent the wheel goes deep enough for a child to fill
+            the screen (it then becomes the parent). The overview never gets
+            smaller than the screen; any other parent hands over to its own
+            parent before (GalaxyMapInteraction wheel levels).
+        */
+        const GalaxyHierarchyBox box = hierarchyBox();
         const float fitted = hierarchyFitDistance(viewport);
-        minimumDistance = std::max(
-            m_controls.minDistance,
-            fitted * m_controls.parentZoomInFraction
-        );
-        maximumDistance = std::min(
-            m_controls.maxDistance,
-            fitted * m_controls.parentZoomOutFactor
-        );
+        minimumDistance = std::max(m_controls.minDistance, fitted * m_controls.parentZoomInFraction);
+        maximumDistance =
+            box.parent.overview()
+                ? std::min(m_controls.maxDistance,
+                           fillDistanceAt(box.centerLy, box.edgeLy, m_state.camera.target, viewport,
+                                          ParentFillRatio))
+                : std::min(m_controls.maxDistance, fitted * m_controls.parentZoomOutFactor);
     }
 
     std::optional<navigation::GalaxyNavigationCell>
@@ -616,7 +685,8 @@ namespace game::system_map
     bool GalaxyMapView::enterHierarchyCell(
         const navigation::GalaxyNavigationCell& cell,
         const Viewport& viewport,
-        double nowSeconds
+        double nowSeconds,
+        bool frameCamera
     )
     {
         auto& grid = m_state.navigationGrid;
@@ -652,7 +722,10 @@ namespace game::system_map
             grid.selectCell(grid.cell(cell.index, cell.level));
         }
 
-        frameHierarchyParent(viewport, nowSeconds, true);
+        if (frameCamera)
+            frameHierarchyParent(viewport, nowSeconds, true);
+        else
+            m_state.flightContextBox.reset();
         return true;
     }
 
@@ -671,7 +744,8 @@ namespace game::system_map
     bool GalaxyMapView::jumpToHierarchyLevel(
         int level,
         const Viewport& viewport,
-        double nowSeconds
+        double nowSeconds,
+        bool frameCamera
     )
     {
         const GalaxyHierarchyParent current = m_state.hierarchyParent;
@@ -694,7 +768,8 @@ namespace game::system_map
         setHierarchyParent(galaxyHierarchyAncestor(grid, currentCell, level));
         grid.selectCell(cameFrom);
 
-        frameHierarchyParent(viewport, nowSeconds, true);
+        if (frameCamera)
+            frameHierarchyParent(viewport, nowSeconds, true);
         return true;
     }
 

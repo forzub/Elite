@@ -60,18 +60,6 @@ namespace game::system_map
         const std::vector<navigation::GalaxyGridIndex>* overviewRoots = nullptr
     );
 
-    // The navigable cubes of the parent's level around it (up to 26); the
-    // overview has none.
-    std::vector<navigation::GalaxyNavigationCell> galaxyHierarchyNeighbours(
-        const navigation::GalaxyNavigationGrid& grid,
-        const GalaxyHierarchyParent& parent
-    );
-
-    bool galaxyHierarchyIsNeighbour(
-        const GalaxyHierarchyParent& parent,
-        const navigation::GalaxyNavigationCell& cell
-    );
-
     // The parent of a parent (overview for a root, nothing above overview).
     std::optional<GalaxyHierarchyParent> galaxyHierarchyAscend(
         const navigation::GalaxyNavigationGrid& grid,
@@ -94,6 +82,12 @@ namespace game::system_map
     bool galaxyHierarchyContains(
         const GalaxyHierarchyBox& box,
         const glm::dvec3& positionLy
+    );
+
+    bool galaxyHierarchyIntersectsSphere(
+        const GalaxyHierarchyBox& box,
+        const glm::dvec3& centreLy,
+        double radiusLy
     );
 
     bool galaxyHierarchyIsChild(

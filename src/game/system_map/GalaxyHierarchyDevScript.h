@@ -118,6 +118,8 @@ public:
             m_left = op.left;
             m_alt = op.alt;
             scroll = op.scroll;
+            if (op.scrollWhile && !op.scrollWhile())
+                scroll = 0.0;
         }
         mx = vp.x + m_pointer.x;
         my = vp.y + m_pointer.y;
@@ -135,6 +137,7 @@ private:
         bool left = false;
         bool alt = false;
         double scroll = 0.0;
+        std::function<bool()> scrollWhile; // conditional wheel step
         double seconds = 0.0;
         double untilSeconds = 0.0;
         std::function<void()> call;
@@ -197,6 +200,18 @@ private:
         op.kind = Op::Frame;
         op.scroll = amount;
         m_ops.push_back(std::move(op));
+    }
+    // Wheel steps while the condition holds (checked at each step).
+    void scrollWhile(double amount, int maxSteps, std::function<bool()> condition)
+    {
+        for (int k = 0; k < maxSteps; ++k)
+        {
+            Op op;
+            op.kind = Op::Frame;
+            op.scroll = amount;
+            op.scrollWhile = condition;
+            m_ops.push_back(op);
+        }
     }
     void record(const std::string& name, bool pass, const std::string& detail = std::string())
     {
@@ -370,9 +385,15 @@ private:
     void checkFits(const std::string& tag)
     {
         call([this, tag] {
+            // On the whole screen: no corner outside, the largest corner
+            // NDC near the viewport edge.
             std::string d;
-            record(tag + ": the parent fits the viewport", parentFits(12.0f, d), d + " " +
-                   parentText(m_view->state().hierarchyParent));
+            const auto box = m_view->hierarchyBox();
+            const auto& camera = m_view->state().camera;
+            const float fill =
+                m_view->cubeScreenRatioAt(box.centerLy, box.edgeLy, camera.target, camera.distance, m_vp, true);
+            record(tag + ": the parent fills the screen", parentFits(0.0f, d) && fill >= 0.95f,
+                   d + " fill " + std::to_string(fill) + " " + parentText(m_view->state().hierarchyParent));
         });
     }
 
@@ -576,24 +597,35 @@ private:
                    !st.whatIsHere.open && st.selectedSystemId < 0 && selectedIsChild());
         });
 
-        // Wheel: zoom only.
-        call([this] {
-            m_parentBefore = m_view->state().hierarchyParent;
-            m_camera = m_view->state().camera;
-        });
+        // Wheel: in - the cube under the cursor becomes the parent when it
+        // fills the screen; out - back up, the cube left selected.
+        call([this] { m_parentBefore = m_view->state().hierarchyParent; });
         frame([this] { return glm::vec2(m_vp.width * 0.5f, m_vp.height * 0.5f); }, false);
-        for (int k = 0; k < 8; ++k)
-            scroll(1.0);
+        // One hand-over only (deeper the terminal cube opens the System Map).
+        scrollWhile(1.0, 200, [this] { return m_view->state().hierarchyParent.level == m_parentBefore.level; });
         wait(0.3);
         call([this] {
-            record("wheel: zoom changes, the level / parent never",
-                   m_view->state().hierarchyParent == m_parentBefore &&
-                       m_view->state().camera.distance < m_camera.distance);
+            const auto& st = m_view->state();
+            const auto box = m_view->hierarchyBox();
+            record("wheel in: a child filling the screen became the parent",
+                   st.hierarchyParent.level > m_parentBefore.level &&
+                       m_view->cubeScreenRatio(box.centerLy, box.edgeLy, m_vp) >= 0.9f,
+                   parentText(st.hierarchyParent));
         });
         shot("wheel_in");
-        for (int k = 0; k < 20; ++k)
+        scrollWhile(-1.0, 400, [this] { return !m_view->state().hierarchyParent.overview(); });
+        for (int k = 0; k < 30; ++k)
             scroll(-1.0);
         wait(0.3);
+        call([this] {
+            const auto& st = m_view->state();
+            const auto box = m_view->hierarchyBox();
+            record("wheel out: up to the overview, which never gets smaller than the screen",
+                   st.hierarchyParent.overview() &&
+                       m_view->cubeScreenRatioAt(box.centerLy, box.edgeLy, st.camera.target, st.camera.distance, m_vp,
+                                                 true) >= 0.97f);
+        });
+        shot("wheel_out");
 
         // More branches from the overview.
         click([this] { return levelZeroButton(); });
@@ -611,57 +643,6 @@ private:
                    parentText(m_view->state().hierarchyParent));
         });
         shot("crumb_g0");
-
-        // Neighbours: the cursor outside the parent hovers a cube of the
-        // same level; double click moves the frame sideways into it.
-        for (int k = 0; k < 2; ++k)
-        {
-            auto p = std::make_shared<glm::vec2>(-50.0f);
-            auto cell = std::make_shared<std::optional<navigation::GalaxyNavigationCell>>();
-            call([this, p, cell, k] {
-                m_parentBefore = m_view->state().hierarchyParent;
-                const auto s = scene();
-                for (int i = 0; i < 600; ++i)
-                {
-                    const float t = static_cast<float>((i * 37 + k * 211) % 600) / 600.0f;
-                    const glm::vec2 c[4] = {{8.0f + t * (m_vp.width - 16.0f), 8.0f},
-                                            {8.0f + t * (m_vp.width - 16.0f), m_vp.height - 120.0f},
-                                            {8.0f, 120.0f + t * (m_vp.height - 240.0f)},
-                                            {m_vp.width - 8.0f, 120.0f + t * (m_vp.height - 240.0f)}};
-                    for (const auto& q : c)
-                    {
-                        const auto hit = resolveGalaxyPointer(s, q).winner;
-                        if (hit.reason == GalaxyPointerHitReason::NeighbourCube && hit.cell)
-                        {
-                            *p = q;
-                            *cell = hit.cell;
-                            return;
-                        }
-                    }
-                }
-            });
-            hoverAt([p] { return *p; });
-            call([this, cell, k] {
-                const auto& grid = m_view->state().navigationGrid;
-                record("neighbour " + std::to_string(k) + ": the cube next to the parent is hovered",
-                       cell->has_value() && grid.hasHoveredCell() && grid.hoveredCell().index == (*cell)->index &&
-                           grid.hoveredCell().level == m_parentBefore.level);
-            });
-            if (k == 0)
-                shot("neighbour_hover");
-            doubleClick([p] { return *p; });
-            calm();
-            call([this, cell, k] {
-                const auto& parent = m_view->state().hierarchyParent;
-                record("neighbour " + std::to_string(k) + ": double click moves sideways, level unchanged",
-                       cell->has_value() && parent.level == m_parentBefore.level && parent.index == (*cell)->index,
-                       parentText(parent));
-            });
-            checkFits("neighbour " + std::to_string(k));
-            if (k == 0)
-                shot("neighbour_entered");
-            wait(0.6);
-        }
 
         call([this] { finish(); });
     }

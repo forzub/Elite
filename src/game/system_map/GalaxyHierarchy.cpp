@@ -89,40 +89,6 @@ namespace
         return box;
     }
 
-    std::vector<navigation::GalaxyNavigationCell> galaxyHierarchyNeighbours(
-        const navigation::GalaxyNavigationGrid& grid,
-        const GalaxyHierarchyParent& parent
-    )
-    {
-        std::vector<navigation::GalaxyNavigationCell> result;
-        if (parent.overview())
-            return result;
-        for (int dz = -1; dz <= 1; ++dz)
-            for (int dy = -1; dy <= 1; ++dy)
-                for (int dx = -1; dx <= 1; ++dx)
-                {
-                    if (dx == 0 && dy == 0 && dz == 0)
-                        continue;
-                    const navigation::GalaxyGridIndex index {
-                        parent.index.x + dx, parent.index.y + dy, parent.index.z + dz};
-                    if (grid.isCellNavigable(index, parent.level))
-                        result.push_back(grid.cell(index, parent.level));
-                }
-        return result;
-    }
-
-    bool galaxyHierarchyIsNeighbour(
-        const GalaxyHierarchyParent& parent,
-        const navigation::GalaxyNavigationCell& cell
-    )
-    {
-        if (parent.overview() || cell.level != parent.level || cell.index == parent.index)
-            return false;
-        return std::llabs(cell.index.x - parent.index.x) <= 1 &&
-               std::llabs(cell.index.y - parent.index.y) <= 1 &&
-               std::llabs(cell.index.z - parent.index.z) <= 1;
-    }
-
     std::optional<GalaxyHierarchyParent> galaxyHierarchyAscend(
         const navigation::GalaxyNavigationGrid& grid,
         const GalaxyHierarchyParent& parent
@@ -176,6 +142,17 @@ namespace
         const glm::dvec3 d = glm::abs(positionLy - box.centerLy);
         const double half = box.edgeLy * 0.5 * (1.0 + 1.0e-9);
         return d.x <= half && d.y <= half && d.z <= half;
+    }
+
+    bool galaxyHierarchyIntersectsSphere(
+        const GalaxyHierarchyBox& box,
+        const glm::dvec3& centreLy,
+        double radiusLy
+    )
+    {
+        const double half = box.edgeLy * 0.5;
+        const glm::dvec3 d = glm::max(glm::abs(centreLy - box.centerLy) - glm::dvec3(half), glm::dvec3(0.0));
+        return glm::dot(d, d) <= radiusLy * radiusLy;
     }
 
     bool galaxyHierarchyIsChild(

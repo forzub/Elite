@@ -42,9 +42,13 @@ namespace game::system_map
         float minDistance = 0.0002f;
         float maxDistance = 20000.0f;
 
-        // Wheel range relative to the fitted current parent.
-        float parentZoomInFraction = 0.035f;
-        float parentZoomOutFactor = 1.8f;
+        // Wheel range relative to the fitted current parent (the level
+        // hand-over happens inside it: a child filling the screen becomes
+        // the parent, a parent smaller than the screen hands over up).
+        float parentZoomInFraction = 0.02f;
+        float parentZoomOutFactor = 1.6f;
+        // Hand-over hysteresis: up below this screen ratio of the parent.
+        float parentHandOverUpRatio = 0.94f;
 
         float pivotPickRadiusPx = 36.0f;
         float rotationMaxStepRad = 0.10f;
@@ -298,7 +302,40 @@ namespace game::system_map
         // ---- spatial frame (current parent cube) ----
         GalaxyHierarchyBox hierarchyBox() const;
 
-        // Distance that shows the whole current parent (any orbit angle).
+        // A parent "on the whole screen": its projected corners fill this
+        // fraction of the viewport in the limiting direction.
+        static constexpr float ParentFillRatio = 0.98f;
+
+        // Projected size of a cube with the current camera (or a given
+        // target / distance): max of its NDC extent over the viewport,
+        // 1 = fills the screen in the limiting direction.
+        float cubeScreenRatio(
+            const glm::dvec3& centerLy,
+            double edgeLy,
+            const Viewport& viewport
+        ) const;
+        // fitInside: the largest |NDC| of a corner instead (1 = a corner on
+        // the viewport edge) - the framing measure; perspective makes the
+        // projected cube asymmetric around the view centre.
+        float cubeScreenRatioAt(
+            const glm::dvec3& centerLy,
+            double edgeLy,
+            const glm::vec3& target,
+            float distance,
+            const Viewport& viewport,
+            bool fitInside = false
+        ) const;
+        // Camera distance at which every corner of the cube lies within
+        // `fill` of the viewport (largest |NDC| = fill).
+        float fillDistanceAt(
+            const glm::dvec3& centerLy,
+            double edgeLy,
+            const glm::vec3& target,
+            const Viewport& viewport,
+            float fill
+        ) const;
+
+        // Distance at which the current parent fills the screen.
         float hierarchyFitDistance(const Viewport& viewport) const;
 
         // Wheel range inside the current parent: from a child filling the
@@ -322,14 +359,14 @@ namespace game::system_map
 
         // Double click down: the cell becomes the current parent (false for
         // a terminal cell - the caller enters the System Map instead).
+        // frameCamera false: the wheel already brought the cube to the
+        // screen (no flight).
         bool enterHierarchyCell(
             const navigation::GalaxyNavigationCell& cell,
             const Viewport& viewport,
-            double nowSeconds
+            double nowSeconds,
+            bool frameCamera = true
         );
-
-        // Neighbour cubes of the current parent's level (none in overview).
-        std::vector<navigation::GalaxyNavigationCell> hierarchyNeighbours() const;
 
         // Up: the parent of the current parent; the cube the user came
         // from stays selected inside it.
@@ -342,7 +379,8 @@ namespace game::system_map
         bool jumpToHierarchyLevel(
             int level,
             const Viewport& viewport,
-            double nowSeconds
+            double nowSeconds,
+            bool frameCamera = true
         );
 
         // Galaxy overview with the root containing the point selected.

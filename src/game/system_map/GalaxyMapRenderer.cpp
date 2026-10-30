@@ -506,8 +506,18 @@ namespace
         const bool childCubeHalos =
             !viewState.hierarchyBox().parent.overview();
 
+        /*
+            The map shows what is INSIDE the current parent cube only:
+            stars, objects and medium outside it are neither drawn nor
+            pointer targets.
+        */
+        const GalaxyHierarchyBox parentBox = viewState.hierarchyBox();
+
         for (const auto& system : galaxy.systems)
         {
+            if (!galaxyHierarchyContains(parentBox, system.positionLy))
+                continue;
+
             const glm::vec3 position =
                 viewState.positionLyToRender(
                     system.positionLy
@@ -692,8 +702,7 @@ namespace
             level (the medium has its own projected-size LOD).
         */
         const GalaxyHierarchyBox lodBox = viewState.hierarchyBox();
-        GalaxyHierarchyBox lodBoxMargin = lodBox;
-        lodBoxMargin.edgeLy *= 1.25;
+        const GalaxyHierarchyBox& lodBoxMargin = lodBox;
         const auto objectVisibleFromLevel = [](const std::string& type) {
             if (type == "brown_dwarf" || type == "stellar_remnant")
                 return 0;
@@ -878,8 +887,12 @@ void GalaxyMapRenderer::drawMediumVolumes(
     bool anyBlob = false;
     int blobCount = 0;
     context.beginVolumes();
+    // Only structures reaching into the current parent cube.
+    const GalaxyHierarchyBox clipBox = viewState.hierarchyBox();
     for (const auto& proxy : atlas->proxies)
     {
+        if (!galaxyHierarchyIntersectsSphere(clipBox, proxy.centreLy, proxy.radiusLy))
+            continue;
         const glm::vec3 c(proxy.centreLy);
         const float r = proxy.radiusLy;
         bool inside = true;
@@ -1268,13 +1281,6 @@ void GalaxyMapRenderer::drawNavigationGrid(
             }
         };
 
-    // A neighbour: its address and the step from the parent.
-    const auto neighbourText =
-        [&](const game::navigation::GalaxyNavigationCell& cell) -> std::string {
-            return "G" + std::to_string(cell.level) + " [" + std::to_string(cell.index.x) + ", " +
-                   std::to_string(cell.index.y) + ", " + std::to_string(cell.index.z) + "]";
-        };
-
     const auto coordinateText =
         [&](const game::navigation::GalaxyNavigationCell& child) -> std::string {
             const glm::ivec3 o = galaxyHierarchyChildOffset(box, child.index);
@@ -1289,30 +1295,9 @@ void GalaxyMapRenderer::drawNavigationGrid(
         };
 
     // ---- children: selected, hovered (fade), outgoing (fade) -----------
-    // A neighbour of the parent (same level, outside it) is drawn like a
-    // child when hovered / selected: the user can move sideways into it.
     const auto isChild = [&](const game::navigation::GalaxyNavigationCell& cell) {
-        return galaxyHierarchyIsChild(box, cell) ||
-               galaxyHierarchyIsNeighbour(box.parent, cell);
+        return galaxyHierarchyIsChild(box, cell);
     };
-    const auto isNeighbour = [&](const game::navigation::GalaxyNavigationCell& cell) {
-        return galaxyHierarchyIsNeighbour(box.parent, cell);
-    };
-
-    // Neighbours of the parent: faint ghost edges (the rest of the level is
-    // there and reachable), stronger when hovered / selected below.
-    {
-        glm::vec4 ghost = gridVisuals.neighbourEdgeColor;
-        ghost.a *= frameFade;
-        if (ghost.a > 0.002f)
-            for (const auto& neighbour : viewState.hierarchyNeighbours())
-                addNavigationCubeEdges(
-                    context, toRender(neighbour.center),
-                    glm::vec3(static_cast<float>(neighbour.size * 0.5) * GalaxyMapView::RenderUnitsPerLightYear, 0.0f, 0.0f),
-                    glm::vec3(0.0f, static_cast<float>(neighbour.size * 0.5) * GalaxyMapView::RenderUnitsPerLightYear, 0.0f),
-                    glm::vec3(0.0f, 0.0f, static_cast<float>(neighbour.size * 0.5) * GalaxyMapView::RenderUnitsPerLightYear),
-                    ghost);
-    }
 
     /*
         Marker diamond at a child centre. Only the SELECTED child's marker
@@ -1410,9 +1395,8 @@ void GalaxyMapRenderer::drawNavigationGrid(
             state.hoverTargetValid &&
             (state.hoverTarget.kind == GalaxyPointerTargetKind::Star ||
              state.hoverTarget.kind == GalaxyPointerTargetKind::Medium);
-        if (!isNeighbour(hovered))
-            addProjection(exact && hoverPoint ? *hoverPoint : hovered.center, hovered,
-                          gridVisuals.hoverProjectionAlpha * a, exact);
+        addProjection(exact && hoverPoint ? *hoverPoint : hovered.center, hovered,
+                      gridVisuals.hoverProjectionAlpha * a, exact);
 
         bool visible = false;
         float depth = 1.0f;
@@ -1421,8 +1405,7 @@ void GalaxyMapRenderer::drawNavigationGrid(
         {
             glm::vec4 color = gridVisuals.hoveredMarkerColor;
             color.a = 0.80f * a;
-            frameTexts.push_back({glm::vec3(screen.x + 10.0f, screen.y + 16.0f, 0.0f),
-                                  isNeighbour(hovered) ? neighbourText(hovered) : coordinateText(hovered),
+            frameTexts.push_back({glm::vec3(screen.x + 10.0f, screen.y + 16.0f, 0.0f), coordinateText(hovered),
                                   color, 11, false, true});
         }
     }
@@ -1442,9 +1425,8 @@ void GalaxyMapRenderer::drawNavigationGrid(
             (state.selectedSystemId >= 0 || state.selectedMediumObject >= 0) &&
             state.navigationFocusValid &&
             game::system_map::galaxyHierarchyContains(box, state.navigationFocusLy);
-        if (!isNeighbour(*selectedChild))
-            addProjection(objectSelected ? state.navigationFocusLy : selectedChild->center, selectedChild,
-                          gridVisuals.selectedProjectionAlpha, objectSelected);
+        addProjection(objectSelected ? state.navigationFocusLy : selectedChild->center, selectedChild,
+                      gridVisuals.selectedProjectionAlpha, objectSelected);
 
         bool visible = false;
         float depth = 1.0f;
@@ -1457,9 +1439,7 @@ void GalaxyMapRenderer::drawNavigationGrid(
             glm::vec4 color = gridVisuals.selectedMarkerColor;
             color.a = 0.85f;
             frameTexts.push_back({glm::vec3(screen.x + 10.0f, screen.y + 16.0f, 0.0f),
-                                  isNeighbour(*selectedChild) ? neighbourText(*selectedChild)
-                                                              : coordinateText(*selectedChild),
-                                  color, 11, false, true});
+                                  coordinateText(*selectedChild), color, 11, false, true});
         }
     }
 }
@@ -1616,8 +1596,12 @@ void GalaxyMapRenderer::drawLabels(
     const glm::dvec3 observerPositionLy =
         playerPositionLy(galaxy, navigation);
 
+    const GalaxyHierarchyBox parentBox = viewState.hierarchyBox();
     for (const auto& s : galaxy.systems)
     {
+        if (!galaxyHierarchyContains(parentBox, s.positionLy))
+            continue;
+
         bool visible = false;
         float depth = 1.0f;
 
@@ -1845,7 +1829,8 @@ void GalaxyMapRenderer::drawPlayerMarker(
 
     (void)playerDepth;
 
-    if (!playerVisible)
+    if (!playerVisible ||
+        !galaxyHierarchyContains(viewState.hierarchyBox(), playerPosition))
         return;
 
     const float screenScale =

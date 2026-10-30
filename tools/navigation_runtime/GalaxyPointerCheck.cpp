@@ -22,7 +22,9 @@
 //     (not the whole empty domain); the overview and nested parents fit the
 //     viewport (all corners >= 12 px inside) from any orbit angle.
 //  H2 WYSIWYG hover: the highlighted child cube is the press target.
-//  H3 the wheel zooms inside the parent; the level / parent never change.
+//  H3 the wheel walks the hierarchy by screen size (child filling the
+//     screen -> parent; parent smaller than the screen -> up); the overview
+//     never gets smaller than the screen.
 //  H4 double click enters a child (it becomes the parent); up / breadcrumb
 //     return with the cube the user left selected.
 //  H5 star double click descends into the star's cube (star kept); on the
@@ -30,8 +32,6 @@
 //  H6 a hover marker never takes an object's click (cloud wins, enters its
 //     cube).
 //  H7 inner coordinate faces are stable under small orbits.
-//  H8 neighbours of the parent are targets: hover, double click = sideways
-//     into the neighbour (level unchanged).
 //
 //   EliteGalaxyPointerCheck -> PASS/FAIL lines, exit 0/1
 
@@ -583,14 +583,21 @@ void hierarchyChecks()
             {
                 map.view.state().camera.yaw = -3.1f + 0.53f * static_cast<float>(a);
                 map.view.state().camera.pitch = -1.4f + 0.25f * static_cast<float>(a);
+                map.view.frameHierarchyParent(kViewport, map.now, false);
+                // On the whole screen: every corner inside, the limiting
+                // extent ~ the viewport.
                 float m = 0.0f;
-                fits += cornersInside(map, 12.0f, &m) ? 1 : 0;
+                const auto box = map.view.hierarchyBox();
+                const float ratio = map.view.cubeScreenRatioAt(box.centerLy, box.edgeLy,
+                                                               map.view.state().camera.target,
+                                                               map.view.state().camera.distance, kViewport, true);
+                fits += cornersInside(map, 0.0f, &m) && ratio > 0.96f && ratio <= 0.99f ? 1 : 0;
                 worst = std::min(worst, m);
                 ++total;
             }
         }
-        check(fits == total, "H1 overview + G0..G2 parents fit (all corners >= 12 px from the edge) at 12 angles: " +
-                                 std::to_string(fits) + "/" + std::to_string(total) + ", worst " +
+        check(fits == total, "H1 overview + G0..G2 parents fill the screen (ratio 0.96..0.99, no corner outside) at "
+                             "12 angles: " + std::to_string(fits) + "/" + std::to_string(total) + ", min corner margin " +
                                  std::to_string(static_cast<int>(worst)) + " px");
     }
     // H2: WYSIWYG hover - the highlighted child is exactly the press target.
@@ -615,30 +622,68 @@ void hierarchyChecks()
         check(total >= 20 && same == total,
               "H2 hovered child == press target (" + std::to_string(same) + "/" + std::to_string(total) + ")");
     }
-    // H3: the wheel zooms only; the parent and level never change.
+    // H3: the wheel walks the hierarchy by screen size: in - the child
+    // under the cursor becomes the parent once it fills the screen; out - a
+    // parent smaller than the screen hands over up (the cube left
+    // selected); the overview never gets smaller than the screen.
     {
         Map map;
-        const auto parent = map.view.state().hierarchyParent;
-        const int level = map.view.state().navigationGrid.level();
-        const float distance = map.view.state().camera.distance;
-        bool same = true;
-        for (int k = 0; k < 60; ++k)
+        const auto start = map.view.state().hierarchyParent;
+        int downs = 0;
+        float ratioAtDown = 0.0f;
+        bool parentFillsAtDown = true;
+        for (int k = 0; k < 400 && map.view.state().hierarchyParent.level < start.level + 2; ++k)
         {
+            const auto before = map.view.state().hierarchyParent;
             map.scroll = 1.0;
             map.frame(640, 360, false);
-            same = same && map.view.state().hierarchyParent == parent && map.view.state().navigationGrid.level() == level;
+            const auto& after = map.view.state().hierarchyParent;
+            if (after.level == before.level + 1)
+            {
+                ++downs;
+                const auto box = map.view.hierarchyBox();
+                ratioAtDown = map.view.cubeScreenRatio(box.centerLy, box.edgeLy, kViewport);
+                parentFillsAtDown = parentFillsAtDown && ratioAtDown >= GalaxyMapView::ParentFillRatio;
+            }
         }
-        const float zoomed = map.view.state().camera.distance;
+        check(downs == 2 && parentFillsAtDown,
+              "H3 wheel in: the child under the cursor becomes the parent when it fills the screen (" +
+                  std::to_string(downs) + " levels, ratio " + std::to_string(ratioAtDown) + ")");
+
+        const auto deep = map.view.state().hierarchyParent;
+        int ups = 0;
+        bool cameFromSelected = true;
+        for (int k = 0; k < 600 && !map.view.state().hierarchyParent.overview(); ++k)
+        {
+            const auto before = map.view.state().hierarchyParent;
+            map.scroll = -1.0;
+            map.frame(640, 360, false);
+            const auto& after = map.view.state().hierarchyParent;
+            if (after.level == before.level - 1)
+            {
+                ++ups;
+                const auto& grid = map.view.state().navigationGrid;
+                cameFromSelected = cameFromSelected && grid.hasSelectedCell() &&
+                                   grid.selectedCell().level == before.level &&
+                                   grid.selectedCell().index == before.index;
+            }
+        }
+        check(ups == deep.level + 1 && cameFromSelected,
+              "H3 wheel out: each parent smaller than the screen hands over up to the overview, the cube left "
+              "selected (" + std::to_string(ups) + " levels)");
+
+        float minRatio = 1.0e9f;
         for (int k = 0; k < 120; ++k)
         {
             map.scroll = -1.0;
             map.frame(640, 360, false);
-            same = same && map.view.state().hierarchyParent == parent;
+            const auto box = map.view.hierarchyBox();
+            minRatio = std::min(minRatio, map.view.cubeScreenRatioAt(box.centerLy, box.edgeLy,
+                                                                     map.view.state().camera.target,
+                                                                     map.view.state().camera.distance, kViewport, true));
         }
-        float minD = 0.0f, maxD = 0.0f;
-        map.view.cameraDistanceLimits(kViewport, minD, maxD);
-        check(same && zoomed < distance && map.view.state().camera.distance <= maxD + 1.0e-3f,
-              "H3 wheel: continuous zoom inside the parent, level / parent never change, range bounded");
+        check(map.view.state().hierarchyParent.overview() && minRatio >= GalaxyMapView::ParentFillRatio - 0.01f,
+              "H3 the overview never gets smaller than the screen (min ratio " + std::to_string(minRatio) + ")");
     }
     // H4: enter / up / breadcrumb: the cube we left stays selected.
     {
@@ -720,52 +765,6 @@ void hierarchyChecks()
                   parent.index == child->index,
               "H6 cloud click / double click with its cube's marker under the cursor: the cloud wins, enters its cube");
         (void)K::Empty;
-    }
-    // H8: neighbours of the parent (same level, outside it) are pointer
-    // targets: hover highlights the neighbour, double click moves the frame
-    // sideways into it (level unchanged), up still returns.
-    {
-        Map map;
-        const auto parentBefore = map.view.state().hierarchyParent;
-        // A screen point outside the parent's projection: scan the edges.
-        glm::vec2 p(-1.0f);
-        GalaxyPointerTarget hit;
-        for (int k = 0; k < 400 && p.x < 0.0f; ++k)
-        {
-            const float t = static_cast<float>(k) / 400.0f;
-            const glm::vec2 candidates[4] = {{6.0f + t * 1268.0f, 6.0f}, {6.0f + t * 1268.0f, 714.0f},
-                                             {6.0f, 6.0f + t * 708.0f}, {1274.0f, 6.0f + t * 708.0f}};
-            for (const auto& c : candidates)
-            {
-                const auto r = map.resolveAt(c);
-                if (r.reason == GalaxyPointerHitReason::NeighbourCube && r.cell)
-                {
-                    p = c;
-                    hit = r;
-                    break;
-                }
-            }
-        }
-        bool hovered = false, sideways = false, upOk = false;
-        if (p.x >= 0.0f)
-        {
-            map.frame(p.x, p.y, false);
-            const auto& grid = map.view.state().navigationGrid;
-            hovered = grid.hasHoveredCell() && grid.hoveredCell().index == hit.cell->index &&
-                      grid.hoveredCell().level == parentBefore.level;
-            map.click(p);
-            map.now += 0.1;
-            map.click(p);
-            map.settle();
-            const auto& parent = map.view.state().hierarchyParent;
-            sideways = parent.level == parentBefore.level && parent.index == hit.cell->index;
-            map.view.ascendHierarchy(kViewport, map.now);
-            map.settle();
-            upOk = map.view.state().hierarchyParent.level == parentBefore.level - 1;
-        }
-        check(p.x >= 0.0f && hovered, "H8 cursor outside the parent: a neighbour cube is hovered");
-        check(sideways, "H8 double click on a neighbour: it becomes the parent, level unchanged");
-        check(upOk, "H8 up from the neighbour returns to the common parent level");
     }
     // H7: inner faces are stable under small orbits (hysteresis), and the
     // layer axis does not flip on a small rotation.

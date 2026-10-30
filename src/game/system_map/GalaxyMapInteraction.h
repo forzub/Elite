@@ -1,10 +1,12 @@
 #pragma once
 
 #include <optional>
+#include <vector>
 
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/GalaxyNavigationGrid.h"
+#include "src/game/system_map/GalaxyPointerResolver.h"
 #include "src/game/system_map/MapIntent.h"
 #include "src/render/types/Viewport.h"
 
@@ -35,6 +37,14 @@ namespace game::system_map
         bool transitionActive = false;
 
         double nowSeconds = 0.0;
+
+        // Presentation owned by SystemMapRenderer that the ONE pointer
+        // resolver must see: pointer-interactive overlay glyphs and whether
+        // a UI panel (info card) is under the cursor.
+        std::vector<GalaxyPointerOverlayGlyph> overlayGlyphs;
+        bool panelUnderCursor = false;
+        // The caller already resolved this frame's press (resolvePressTarget).
+        bool pressTargetResolved = false;
     };
 
     struct GalaxyMapInputResult
@@ -71,27 +81,59 @@ namespace game::system_map
             double& pendingScrollY
         ) const;
 
-    private:
-        bool pickNavigationCell(
+        // Resolve the semantic target under a left press from what the
+        // last frame presented; stored as the gesture's press target. The
+        // waypoint glyph of a cube that completes the cube's double click
+        // resolves to that cube.
+        GalaxyPointerTarget resolvePressTarget(
+            GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const GalaxyMapInputFrame& frame
+        ) const;
+
+        // DEV trace of a press the overlay (card / glyph) owns.
+        void traceOverlayOwnedPress(
             const GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const GalaxyMapInputFrame& frame
+        ) const
+        {
+            tracePointerSequence(view, galaxy, frame, "overlay", false);
+        }
+
+    private:
+        GalaxyPointerScene pointerScene(
+            const GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const GalaxyMapInputFrame& frame
+        ) const;
+
+        // Click dispatch on the ONE resolved target; true = double click.
+        bool applyClick(
+            GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
             const Viewport& viewport,
+            const GalaxyPointerTarget& target,
+            double pressX,
+            double pressY,
+            double pressTimeSeconds,
+            GalaxyMapInputResult& result
+        ) const;
+
+        bool applyCubeClick(
+            GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const Viewport& viewport,
+            const navigation::GalaxyNavigationCell& pickedCell,
             double localMouseX,
             double localMouseY,
-            navigation::GalaxyNavigationCell& outCell
+            double nowSeconds,
+            GalaxyMapInputResult& result
         ) const;
 
-        void updateNavigationHoverFromCursor(
-            GalaxyMapView& view,
-            const Viewport& viewport,
-            double localMouseX,
-            double localMouseY
-        ) const;
-
-        // Medium structure / icy field under the cursor: projected bounding
-        // prefilter, then the ray against the coarse shell triangles of the
-        // few candidates (icy fields: marker distance). Nearest hit to the
-        // camera; returns the object index and the hit point.
-        void applyMediumClick(
+        // Cloud / icy field: single click selects (card), double click flies
+        // to the navigation cube containing the clicked point.
+        bool applyMediumClick(
             GalaxyMapView& view,
             const Viewport& viewport,
             int object,
@@ -101,21 +143,21 @@ namespace game::system_map
             double nowSeconds
         ) const;
 
-        int pickMedium(
-            const GalaxyMapView& view,
+        void updateNavigationHoverFromCursor(
+            GalaxyMapView& view,
             const Viewport& viewport,
-            const world::celestial::GalaxyMapSnapshot& galaxy,
-            double localMouseX,
-            double localMouseY,
-            glm::dvec3& hitLy
-        ) const;
-
-        int pickSystem(
-            const GalaxyMapView& view,
-            const Viewport& viewport,
-            const world::celestial::GalaxyMapSnapshot& galaxy,
             double localMouseX,
             double localMouseY
+        ) const;
+
+        // DEV (ELITE_GALAXY_PICK_TRACE=1): one CSV row per pointer sequence
+        // in D:/tmp/elite_galaxy_pick_trace.csv; no cost when off.
+        void tracePointerSequence(
+            const GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const GalaxyMapInputFrame& frame,
+            const char* gesture,
+            bool doubleClick
         ) const;
 
         glm::vec3 nearestVisibleStarToScreenPoint(

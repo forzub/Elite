@@ -1,7 +1,7 @@
 #include "src/game/system_map/GalaxyMapInteraction.h"
-#include <iostream>
+#include <cstdio>
 #include <cstdlib>
-#include <chrono>
+#include <string>
 
 #include "src/game/system_map/GalaxyMapView.h"
 #include "src/game/navigation/CubicNavigationInteraction.h"
@@ -15,6 +15,26 @@
 
 namespace
 {
+    // DEV pointer trace (ELITE_GALAXY_PICK_TRACE=1): read once.
+    bool galaxyPointerTraceEnabled()
+    {
+        static const bool enabled = [] {
+            const char* v = std::getenv("ELITE_GALAXY_PICK_TRACE");
+            return v && *v && *v != '0';
+        }();
+        return enabled;
+    }
+
+    std::string cellText(const std::optional<game::navigation::GalaxyNavigationCell>& cell)
+    {
+        if (!cell)
+            return "-";
+        char buf[96];
+        std::snprintf(buf, sizeof buf, "L%d/%lld,%lld,%lld", cell->level,
+                      static_cast<long long>(cell->index.x), static_cast<long long>(cell->index.y),
+                      static_cast<long long>(cell->index.z));
+        return buf;
+    }
 
     float wrapAngleRadF(float angle)
     {
@@ -66,96 +86,6 @@ namespace
 
 namespace game::system_map
 {
-    bool GalaxyMapInteraction::pickNavigationCell(
-        const GalaxyMapView& view,
-        const Viewport& viewport,
-        double localMouseX,
-        double localMouseY,
-        navigation::GalaxyNavigationCell& outCell
-    ) const
-    {
-        const auto& state = view.state();
-
-        if (!state.navigationGrid.enabled() ||
-            !view.navigationCellsInteractive(viewport))
-        {
-            return false;
-        }
-
-        const glm::mat4 mvp =
-            view.projectionMatrix(viewport) *
-            view.viewMatrix();
-
-        bool found = false;
-        float bestDistancePx =
-            view.controls().navigationCellPickRadiusPx;
-        float bestDepth = 1.0f;
-
-        std::vector<navigation::GalaxyNavigationCell> cells;
-        cells.reserve(2);
-
-        const auto anchorCell =
-            state.navigationGrid.anchorCell();
-
-        cells.push_back(anchorCell);
-
-        if (state.navigationGrid.hasHoveredCell())
-        {
-            const auto& hoveredCell =
-                state.navigationGrid.hoveredCell();
-
-            if (hoveredCell.index != anchorCell.index)
-                cells.push_back(hoveredCell);
-        }
-
-        for (const auto& cell : cells)
-        {
-            bool visible = false;
-            float depth = 1.0f;
-
-            const glm::vec2 screen =
-                projectToScreen(
-                    view.positionLyToRender(cell.center),
-                    mvp,
-                    viewport,
-                    visible,
-                    depth
-                );
-
-            if (!visible)
-                continue;
-
-            const float dx =
-                screen.x - static_cast<float>(localMouseX);
-
-            const float dy =
-                screen.y - static_cast<float>(localMouseY);
-
-            const float distancePx =
-                std::sqrt(dx * dx + dy * dy);
-
-            const bool betterScreenMatch =
-                distancePx < bestDistancePx - 0.25f;
-
-            const bool equalScreenMatchButNearer =
-                std::abs(distancePx - bestDistancePx) <= 0.25f &&
-                depth < bestDepth;
-
-            if (!betterScreenMatch &&
-                !equalScreenMatchButNearer)
-            {
-                continue;
-            }
-
-            found = true;
-            bestDistancePx = distancePx;
-            bestDepth = depth;
-            outCell = cell;
-        }
-
-        return found;
-    }
-
     void GalaxyMapInteraction::updateNavigationHoverFromCursor(
         GalaxyMapView& view,
         const Viewport& viewport,
@@ -271,107 +201,13 @@ namespace game::system_map
         );
     }
 
-    int GalaxyMapInteraction::pickMedium(
-        const GalaxyMapView& view,
-        const Viewport& viewport,
-        const world::celestial::GalaxyMapSnapshot& galaxy,
-        double localMouseX,
-        double localMouseY,
-        glm::dvec3& hitLy
-    ) const
-    {
-        const auto& atlas = galaxy.mediumAtlas;
-        const glm::mat4 projection = view.projectionMatrix(viewport);
-        const glm::mat4 viewMatrix = view.viewMatrix();
-        const glm::mat4 mvp = projection * viewMatrix;
-        const float renderPerLy = view.vectorLyToRender(glm::dvec3(1.0, 0.0, 0.0)).x;
-        // Mouse ray in light-years.
-        const glm::mat4 inverse = glm::inverse(mvp);
-        const float ndcX = static_cast<float>(2.0 * localMouseX / std::max(viewport.width, 1) - 1.0);
-        const float ndcY = static_cast<float>(1.0 - 2.0 * localMouseY / std::max(viewport.height, 1));
-        glm::vec4 nearPoint = inverse * glm::vec4(ndcX, ndcY, -1.0f, 1.0f);
-        glm::vec4 farPoint = inverse * glm::vec4(ndcX, ndcY, 1.0f, 1.0f);
-        nearPoint /= nearPoint.w;
-        farPoint /= farPoint.w;
-        const glm::dvec3 origin = glm::dvec3(glm::vec3(nearPoint)) / static_cast<double>(renderPerLy);
-        const glm::dvec3 direction = glm::normalize(glm::dvec3(glm::vec3(farPoint - nearPoint)));
-        const glm::vec3 cameraRight(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
-
-        int best = -1;
-        double bestT = 1.0e30;
-        if (atlas)
-            for (const auto& proxy : atlas->proxies)
-            {
-                // Projected bounding prefilter.
-                bool visible = false;
-                float depth = 1.0f;
-                const glm::vec3 c = view.positionLyToRender(proxy.centreLy);
-                const glm::vec2 centre = projectToScreen(c, mvp, viewport, visible, depth);
-                const glm::vec2 edge =
-                    projectToScreen(c + cameraRight * (proxy.radiusLy * renderPerLy), mvp, viewport, visible, depth);
-                const float radiusPx = glm::length(edge - centre);
-                if (glm::length(glm::vec2(localMouseX, localMouseY) - centre) > radiusPx + 2.0f)
-                    continue;
-                // Exact hit on the coarse shell (Moller-Trumbore).
-                const auto& range = proxy.coarse;
-                for (std::uint32_t v = range.first; v + 2 < range.first + range.count; v += 3)
-                {
-                    const glm::dvec3 a(atlas->vertices[v].positionLy);
-                    const glm::dvec3 e1 = glm::dvec3(atlas->vertices[v + 1].positionLy) - a;
-                    const glm::dvec3 e2 = glm::dvec3(atlas->vertices[v + 2].positionLy) - a;
-                    const glm::dvec3 pv = glm::cross(direction, e2);
-                    const double det = glm::dot(e1, pv);
-                    if (std::abs(det) < 1.0e-12)
-                        continue;
-                    const glm::dvec3 tv = origin - a;
-                    const double u = glm::dot(tv, pv) / det;
-                    if (u < 0.0 || u > 1.0)
-                        continue;
-                    const glm::dvec3 qv = glm::cross(tv, e1);
-                    const double w = glm::dot(direction, qv) / det;
-                    if (w < 0.0 || u + w > 1.0)
-                        continue;
-                    const double t = glm::dot(e2, qv) / det;
-                    if (t > 0.0 && t < bestT)
-                    {
-                        bestT = t;
-                        best = proxy.objectIndex;
-                    }
-                }
-            }
-        if (best >= 0)
-        {
-            hitLy = origin + direction * bestT;
-            return best;
-        }
-        // Icy debris fields: their sparse marker (screen distance).
-        float bestPx = static_cast<float>(view.controls().systemPickRadiusPx);
-        for (std::size_t i = 0; i < galaxy.objects.size(); ++i)
-        {
-            if (galaxy.objects[i].objectType != "icy_debris_field")
-                continue;
-            bool visible = false;
-            float depth = 1.0f;
-            const glm::vec2 screen =
-                projectToScreen(view.positionLyToRender(galaxy.objects[i].positionLy), mvp, viewport, visible, depth);
-            const float d = glm::length(glm::vec2(localMouseX, localMouseY) - screen);
-            if (visible && d < bestPx)
-            {
-                bestPx = d;
-                best = static_cast<int>(i);
-                hitLy = galaxy.objects[i].positionLy;
-            }
-        }
-        return best;
-    }
-
     /*
         Pointer contract for a cloud / icy field: the single click selects it
         (star selection dropped, info card follows the selection); the
         second click of a double click keeps it selected and flies the camera
         to the navigation cube containing the clicked point. Never a route.
     */
-    void GalaxyMapInteraction::applyMediumClick(
+    bool GalaxyMapInteraction::applyMediumClick(
         GalaxyMapView& view,
         const Viewport& vp,
         int object,
@@ -389,7 +225,7 @@ namespace game::system_map
         const bool doubleClick =
             view.state().mediumClickTracker.registerClick(nowSeconds, localMx, localMy, object);
         if (!doubleClick || !view.state().navigationGrid.enabled())
-            return;
+            return doubleClick;
         auto& grid = view.state().navigationGrid;
         const int level = grid.level();
         navigation::GalaxyNavigationCell cell;
@@ -405,59 +241,138 @@ namespace game::system_map
             static_cast<float>(cell.size) * GalaxyMapView::RenderUnitsPerLightYear,
             glm::radians(48.0f), vp.width, vp.height);
         view.beginCameraFlight(view.positionLyToRender(cell.center),
-                               std::clamp(fitted, controls.minDistance, controls.maxDistance), nowSeconds);
+                               std::clamp(fitted, controls.minDistance, controls.maxDistance), nowSeconds);        return true;
     }
 
-    int GalaxyMapInteraction::pickSystem(
+    GalaxyPointerScene GalaxyMapInteraction::pointerScene(
         const GalaxyMapView& view,
-        const Viewport& viewport,
         const world::celestial::GalaxyMapSnapshot& galaxy,
-        double localMouseX,
-        double localMouseY
+        const GalaxyMapInputFrame& frame
     ) const
     {
-        const glm::mat4 mvp =
-            view.projectionMatrix(viewport) *
-            view.viewMatrix();
+        GalaxyPointerScene scene;
+        scene.stars = &view.state().presentedStars;
+        scene.cubeMarkers =
+            view.state().navigationGrid.enabled() &&
+                    view.navigationCellsInteractive(frame.viewport)
+                ? &view.state().presentedCubeMarkers
+                : nullptr;
+        scene.overlayGlyphs = &frame.overlayGlyphs;
+        scene.panelUnderCursor = frame.panelUnderCursor;
+        scene.galaxy = &galaxy;
+        scene.mvp = view.projectionMatrix(frame.viewport) * view.viewMatrix();
+        scene.viewport = frame.viewport;
+        scene.renderUnitsPerLy = GalaxyMapView::RenderUnitsPerLightYear;
+        scene.glyphHitMarginPx = static_cast<float>(
+            game::presentation::pointerInteractionSettings().glyphHitMarginPx);
+        scene.starProximityRadiusPx = view.controls().systemPickRadiusPx;
+        scene.icyFieldPickRadiusPx = view.controls().systemPickRadiusPx;
+        return scene;
+    }
 
-        int bestId = -1;
-        float bestDistance = 999999.0f;
+    GalaxyPointerTarget GalaxyMapInteraction::resolvePressTarget(
+        GalaxyMapView& view,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const GalaxyMapInputFrame& frame
+    ) const
+    {
+        auto resolution =
+            resolveGalaxyPointer(
+                pointerScene(view, galaxy, frame),
+                glm::vec2(
+                    static_cast<float>(frame.localMouseX),
+                    static_cast<float>(frame.localMouseY)
+                ),
+                galaxyPointerTraceEnabled()
+            );
 
-        for (const auto& system : galaxy.systems)
+        /*
+            Semantic double click: the waypoint glyph of a cube is the same
+            navigation target as that cube's marker. When this press would
+            complete the cube's double click, it is a cube click (refine),
+            not a waypoint-card click.
+        */
+        auto& winner = resolution.winner;
+        const auto& controls = view.controls();
+        if (winner.kind == GalaxyPointerTargetKind::OverlayGlyph &&
+            winner.cell.has_value() &&
+            view.state().cubeClickTracker.wouldComplete(
+                frame.nowSeconds,
+                frame.localMouseX,
+                frame.localMouseY,
+                winner.cell->level,
+                winner.cell->index,
+                controls.cubeDoubleClickMaxIntervalSeconds,
+                controls.cubeDoubleClickMaxDistancePx))
         {
-            bool visible = false;
-            float depth = 1.0f;
-
-            const glm::vec2 screen =
-                projectToScreen(
-                    view.positionLyToRender(system.positionLy),
-                    mvp,
-                    viewport,
-                    visible,
-                    depth
-                );
-
-            if (!visible)
-                continue;
-
-            const float dx =
-                screen.x - static_cast<float>(localMouseX);
-
-            const float dy =
-                screen.y - static_cast<float>(localMouseY);
-
-            const float distance =
-                std::sqrt(dx * dx + dy * dy);
-
-            if (distance < view.controls().systemPickRadiusPx &&
-                distance < bestDistance)
-            {
-                bestDistance = distance;
-                bestId = system.id;
-            }
+            winner.kind = GalaxyPointerTargetKind::NavigationCube;
+            winner.reason = GalaxyPointerHitReason::CubeSequenceGlyph;
         }
 
-        return bestId;
+        view.state().pressTarget = winner;
+        view.state().pressResolution = std::move(resolution);
+        return winner;
+    }
+
+    bool GalaxyMapInteraction::applyClick(
+        GalaxyMapView& view,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const Viewport& vp,
+        const GalaxyPointerTarget& target,
+        double pressX,
+        double pressY,
+        double pressTimeSeconds,
+        GalaxyMapInputResult& result
+    ) const
+    {
+        switch (target.kind)
+        {
+            case GalaxyPointerTargetKind::Star:
+                /*
+                    A system click is not part of a cube or cloud double
+                    click sequence; it drops the cloud selection.
+                */
+                view.state().selectedMediumObject = -1;
+                view.state().mediumClickTracker.reset();
+                view.state().cubeClickTracker.reset();
+
+                // One function selects the system, its cube and flies.
+                view.focusSystem(
+                    target.systemId,
+                    galaxy,
+                    true,
+                    pressTimeSeconds
+                );
+                return false;
+
+            case GalaxyPointerTargetKind::NavigationCube:
+                if (!target.cell.has_value() ||
+                    !view.state().navigationGrid.enabled())
+                {
+                    return false;
+                }
+                return applyCubeClick(
+                    view, galaxy, vp, *target.cell,
+                    pressX, pressY, pressTimeSeconds, result);
+
+            case GalaxyPointerTargetKind::Medium:
+                return applyMediumClick(
+                    view, vp, target.mediumObject, target.hitLy,
+                    pressX, pressY, pressTimeSeconds);
+
+            case GalaxyPointerTargetKind::Empty:
+                // Empty space drops the cloud selection and every sequence.
+                view.state().selectedMediumObject = -1;
+                view.state().mediumClickTracker.reset();
+                view.state().cubeClickTracker.reset();
+                return false;
+
+            case GalaxyPointerTargetKind::Panel:
+            case GalaxyPointerTargetKind::OverlayGlyph:
+                // Owned by the overlay (SystemMapRenderer); never a map click.
+                return false;
+        }
+        return false;
     }
 
     glm::vec3 GalaxyMapInteraction::nearestVisibleStarToScreenPoint(
@@ -542,77 +457,12 @@ namespace game::system_map
         const bool rightDown = frame.rightDown;
 
         GalaxyMapInputResult result;
-        // DEV (ELITE_DEV_GALAXY_PICK_TEST=1): exercise the real cloud click
-        // path without a mouse - 5 s after the map is shown pick the largest
-        // visible cloud at its projected centre (single click), 0.2 s later
-        // again (double click: focus cube). Logs [GalaxyPick] timings.
-        {
-            static const bool pickTest = [] {
-                const char* v = std::getenv("ELITE_DEV_GALAXY_PICK_TEST");
-                return v && *v;
-            }();
-            static double firstSeen = -1.0;
-            static int step = 0;
-            if (pickTest && galaxy.mediumAtlas && step < 2)
-            {
-                if (firstSeen < 0.0)
-                    firstSeen = frame.nowSeconds;
-                if (frame.nowSeconds - firstSeen >= 5.0 + 0.2 * step)
-                {
-                    const glm::mat4 mvp = view.projectionMatrix(vp) * view.viewMatrix();
-                    const float renderPerLy = view.vectorLyToRender(glm::dvec3(1.0, 0.0, 0.0)).x;
-                    const glm::vec3 right(view.viewMatrix()[0][0], view.viewMatrix()[1][0], view.viewMatrix()[2][0]);
-                    float bestPx = 0.0f;
-                    glm::vec2 target(0.0f);
-                    for (const auto& proxy : galaxy.mediumAtlas->proxies)
-                    {
-                        bool visible = false;
-                        float depth = 1.0f;
-                        const glm::vec3 c = view.positionLyToRender(proxy.centreLy);
-                        const glm::vec2 centre = projectToScreen(c, mvp, vp, visible, depth);
-                        if (!visible)
-                            continue;
-                        bool edgeVisible = false;
-                        const float px = glm::length(projectToScreen(c + right * (proxy.radiusLy * renderPerLy), mvp, vp,
-                                                                     edgeVisible, depth) - centre);
-                        if (px > bestPx)
-                        {
-                            bestPx = px;
-                            target = centre;
-                        }
-                    }
-                    const auto begin = std::chrono::steady_clock::now();
-                    glm::dvec3 hit(0.0);
-                    const int object = pickMedium(view, vp, galaxy, target.x, target.y, hit);
-                    const double ms = std::chrono::duration<double, std::milli>(
-                        std::chrono::steady_clock::now() - begin).count();
-                    std::cerr << "[GalaxyPick] step=" << step << " pick_ms=" << ms << " object=" << object
-                              << " screen=(" << target.x << "," << target.y << ") radius_px=" << bestPx
-                              << " name=" << (object >= 0 ? galaxy.objects[static_cast<std::size_t>(object)].name
-                                                          : std::string("-"))
-                              << std::endl;
-                    if (object >= 0)
-                        applyMediumClick(view, vp, object, hit, target.x, target.y, frame.nowSeconds);
-                    ++step;
-                }
-            }
-        }
-
         const auto announceGalaxyLevel =
             [&](int level)
             {
                 result.galaxyLevelChanged = level;
             };
 
-        const auto beginCameraFlight =
-            [&](const glm::vec3& target, float distance)
-            {
-                view.beginCameraFlight(
-                    target,
-                    distance,
-                    frame.nowSeconds
-                );
-            };
 
 
     // =========================================================
@@ -650,6 +500,7 @@ namespace game::system_map
         {
             view.state().camera.rotating = false;
             view.state().camera.panning = false;
+            view.state().pointerGesture.suppress(leftDown);
 
             view.state().camera.leftWasDown =
                 leftDown;
@@ -724,6 +575,7 @@ namespace game::system_map
 
                     view.state().camera.rotating = false;
                     view.state().camera.panning = false;
+                    view.state().pointerGesture.suppress(leftDown);
 
                     view.state().camera.leftWasDown =
                         leftDown;
@@ -794,9 +646,21 @@ namespace game::system_map
             if (std::abs(localMx - view.state().mediumHoverMouseX) +
                     std::abs(localMy - view.state().mediumHoverMouseY) > 0.5)
             {
-                glm::dvec3 hit(0.0);
+                // The same resolver as a click: a cloud is highlighted only
+                // where a click would select it (never under a star / cube
+                // marker / glyph / panel).
+                const auto hover =
+                    resolveGalaxyPointer(
+                        pointerScene(view, galaxy, frame),
+                        glm::vec2(
+                            static_cast<float>(localMx),
+                            static_cast<float>(localMy)
+                        )
+                    ).winner;
                 view.state().hoveredMediumObject =
-                    pickMedium(view, vp, galaxy, localMx, localMy, hit);
+                    hover.kind == GalaxyPointerTargetKind::Medium
+                        ? hover.mediumObject
+                        : -1;
                 view.state().mediumHoverMouseX = localMx;
                 view.state().mediumHoverMouseY = localMy;
             }
@@ -813,20 +677,50 @@ namespace game::system_map
 
 
 
-        bool leftStartedThisFrame = false;
+        // =====================================================
+        // LEFT BUTTON: ONE gesture. A press never moves the camera; the
+        // target is resolved at the press from what the last frame
+        // presented. Within the drag threshold the release is a click on
+        // that target; beyond it the click is cancelled and the drag
+        // rotates the camera.
+        // =====================================================
+        auto& gesture = view.state().pointerGesture;
+        const auto gestureEvent =
+            gesture.update(
+                leftDown,
+                inside,
+                localMx,
+                localMy,
+                frame.nowSeconds,
+                controls.clickMoveThresholdPx
+            );
 
-        if (inside &&
-            leftDown &&
-            !view.state().camera.leftWasDown)
+        if (gestureEvent == GalaxyPointerGesture::Event::Pressed)
         {
-            leftStartedThisFrame = true;
+            if (!frame.pressTargetResolved)
+                resolvePressTarget(view, galaxy, frame);
+            view.state().pressCamera = view.state().camera;
+        }
 
-            view.state().mouseDownX = mx;
-            view.state().mouseDownY = my;
+        // Another camera gesture during a pending click cancels the click
+        // (the projection the target was resolved in is about to change).
+        if (gesture.phase() == GalaxyPointerGesture::Phase::PendingClick &&
+            ((inside && rightDown && !view.state().camera.rightWasDown) ||
+             (inside && pendingScrollY != 0.0) ||
+             frame.zoomInKeyDown ||
+             frame.zoomOutKeyDown))
+        {
+            gesture.cancelPendingClick();
+            tracePointerSequence(view, galaxy, frame, "cancelled", false);
+        }
 
+        if (gestureEvent == GalaxyPointerGesture::Event::DragStarted)
+        {
             /*
-                Сначала ищем ближайшую к курсору видимую звезду.
-                Если она найдена, вращаем карту вокруг неё.
+                Rotation pivot at the PRESS point: the nearest visible star,
+                else the highlighted cube, else the view centre.
+                camera.target is not replaced by the pivot; the compensation
+                below keeps the pivot under the cursor while rotating.
             */
             bool pivotFound = false;
 
@@ -834,424 +728,53 @@ namespace game::system_map
                 nearestVisibleStarToScreenPoint(view,
                     vp,
                     galaxy,
-                    localMx,
-                    localMy,
+                    gesture.pressX(),
+                    gesture.pressY(),
                     controls.pivotPickRadiusPx,
                     pivotFound
                 );
 
             if (pivotFound)
             {
-                view.state().orbitPivotWorld =
-                    pivot;
-
-                view.state().orbitPivotActive =
-                    true;
+                view.state().orbitPivotWorld = pivot;
+                view.state().orbitPivotActive = true;
             }
             else if (
                 view.state().navigationGrid.enabled() &&
                 view.state().navigationGrid.hasHoveredCell())
             {
-                /*
-                    No object under the mouse: use the cube which is
-                    currently highlighted by the navigation layer.
-                */
                 view.state().orbitPivotWorld =
                     view.positionLyToRender(
                         view.state().navigationGrid
                             .hoveredCell()
                             .center
                     );
-
-                view.state().orbitPivotActive =
-                    true;
+                view.state().orbitPivotActive = true;
             }
             else
             {
-                /*
-                    If neither an object nor a cube is available,
-                    rotate around the current centre of the view.
-                */
-                view.state().orbitPivotWorld =
-                    view.state().camera.target;
-
-                view.state().orbitPivotActive =
-                    false;
+                view.state().orbitPivotWorld = view.state().camera.target;
+                view.state().orbitPivotActive = false;
             }
 
-            /*
-                camera.target здесь не заменяем на pivot.
-
-                Отдельный код компенсации ниже удерживает
-                выбранную звезду под курсором во время вращения.
-            */
-            view.state().camera.rotating =
-                true;
+            view.state().camera.rotating = true;
+            tracePointerSequence(view, galaxy, frame, "drag", false);
         }
 
-        if (!leftDown &&
-            view.state().camera.leftWasDown)
-
-
+        if (gestureEvent == GalaxyPointerGesture::Event::Clicked)
         {
-            if (inside)
-            {
-                const double move =
-                    std::abs(mx - view.state().mouseDownX) +
-                    std::abs(my - view.state().mouseDownY);
-
-                if (move < controls.clickMoveThresholdPx)
-                {
-                                        /*
-                        Маркер центра куба является элементом
-                        интерфейса навигации и располагается
-                        поверх объектов Galaxy.
-
-                        Поэтому сначала проверяем маркер куба,
-                        и только затем — звезду.
-                    */
-                    game::navigation::GalaxyNavigationCell
-                        cubeCenterCell;
-
-                    const bool cubeCenterPicked =
-                        view.state().navigationGrid.enabled() &&
-                        pickNavigationCell(view,
-                            vp,
-                            localMx,
-                            localMy,
-                            cubeCenterCell
-                        );
-
-                    /*
-                        Если курсор попал в маркер куба,
-                        звезда под этим маркером не должна
-                        перехватывать клик.
-                    */
-                    const int picked =
-                        cubeCenterPicked
-                            ? -1
-                            : pickSystem(view,
-                                vp,
-                                galaxy,
-                                localMx,
-                                localMy
-                            );
-
-
-                    glm::dvec3 mediumHitLy(0.0);
-                    const int pickedMedium =
-                        picked < 0 && !cubeCenterPicked
-                            ? pickMedium(view, vp, galaxy, localMx, localMy, mediumHitLy)
-                            : -1;
-
-                    if (pickedMedium >= 0)
-                    {
-                        /*
-                            Interstellar cloud / icy field (pointer contract):
-                            a single click selects it (any star selection is
-                            dropped) and opens its info card; a double click
-                            keeps it selected and flies the camera to the
-                            navigation cube containing the clicked point.
-                            Never a route request.
-                        */
-                        applyMediumClick(view, vp, pickedMedium, mediumHitLy, localMx, localMy,
-                                         frame.nowSeconds);
-                    }
-                    else if (picked >= 0)
-                    {
-                        /*
-                            A system click is not part of a cube double-click
-                            sequence.
-                        */
-                        view.state().selectedMediumObject = -1;
-                        view.state().cubeClickTracker.reset();
-
-                        /*
-                            Одна функция отвечает и за выбор системы,
-                            и за куб, и за плавное движение камеры.
-                        */
-                        view.focusSystem(
-                            picked,
-                            galaxy,
-                            true,
-                            frame.nowSeconds
-                        );
-                    }
-                    else if (view.state().navigationGrid.enabled())
-                    {
-                        // A cube / empty-space click drops the cloud selection.
-                        view.state().selectedMediumObject = -1;
-                        /*
-                            Повторно picking не выполняем.
-
-                            Используем результат, полученный до
-                            проверки звезды. Иначе за один клик
-                            hover может измениться и две проверки
-                            вернут разные кубы.
-                        */
-                        const auto pickedCell =
-                            cubeCenterCell;
-
-                        if (cubeCenterPicked)
-                        {
-
-
-
-
-
-
-
-                            const bool isCubeDoubleClick =
-                                view.state().cubeClickTracker
-                                    .registerClick(
-                                        frame.nowSeconds,
-                                        localMx,
-                                        localMy,
-                                        pickedCell.level,
-                                        pickedCell.index,
-                                        controls
-                                            .cubeDoubleClickMaxIntervalSeconds,
-                                        controls
-                                            .cubeDoubleClickMaxDistancePx
-                                    );
-
-
-
-
-
-
-
-
-
-
-                            /*
-                                Если внутри выбранного куба уже находится текущая точка
-                                навигации — например выбранная звезда Alpha Centauri —
-                                сохраняем точную координату этой звезды.
-
-                                Клик по центру такого куба означает дальнейшее уточнение
-                                прежней цели, а не переключение на геометрический центр куба.
-
-                                Только клик по другому кубу сбрасывает выбранную систему
-                                и делает центром навигации геометрический центр нового куба.
-                            */
-                            bool clickedCellContainsExistingFocus = false;
-
-                            if (view.state().navigationFocusValid)
-                            {
-                                const auto focusCellIndex =
-                                    view.state().navigationGrid.nearestIndexForPositionLy(
-                                        view.state().navigationFocusLy,
-                                        pickedCell.level
-                                    );
-
-                                clickedCellContainsExistingFocus =
-                                    focusCellIndex == pickedCell.index;
-                            }
-
-                            if (!clickedCellContainsExistingFocus)
-                            {
-                                /*
-                                    Пользователь выбрал другой куб, не содержащий прежнюю
-                                    навигационную цель. Теперь работаем от центра этого куба.
-                                */
-                                view.state().selectedSystemId = -1;
-                                view.state().focusedSystemId = -1;
-
-                                view.state().navigationFocusLy =
-                                    pickedCell.center;
-
-                                view.state().navigationFocusValid =
-                                    true;
-                            }
-
-                            /*
-                                Сам куб выбирается в обоих случаях:
-                                и при продолжении детализации звезды,
-                                и при переходе к новому пустому кубу.
-                            */
-                            view.state().navigationGrid.selectCell(pickedCell);
-                            result.clickedNavigationCell = pickedCell;
-
-
-
-
-                                                        /*
-                                Одиночный клик только выбирает куб.
-
-                                Только двойной клик:
-                                - использует выбранный куб как точку уточнения;
-                                - переключает сетку на следующий уровень;
-                                - плавно вписывает этот куб в экран.
-                            */
-
-                                                        /*
-                                Само решение о переходе уровня принимает
-                                общий слой кубической навигации.
-
-                                Galaxy здесь только сообщает:
-                                - можно ли ещё уточнять сетку;
-                                - можно ли открыть System.
-                            */
-                            if (isCubeDoubleClick)
-                            {
-                                const auto levelAction =
-                                    game::navigation::
-                                        cubicNavigationDoubleClickAction(
-                                            view.state().navigationGrid
-                                                .canRefine(),
-
-                                            true
-                                        );
-
-                                if (levelAction ==
-                                    game::navigation::
-                                        CubicNavigationLevelAction::Refine)
-                                {
-                                    /*
-                                        Сохраняем куб двойного клика до
-                                        изменения уровня: он нужен только
-                                        как цель плавного camera fit.
-                                    */
-                                    const auto zoomReferenceCell =
-                                        pickedCell;
-
-
-                                    const bool levelChanged =
-                                        game::navigation::
-                                            applyCubicNavigationLevelActionAtPosition(
-                                                levelAction,
-                                                view.state().navigationGrid,
-                                                pickedCell.center,
-                                                [](
-                                                    auto& grid,
-                                                    const glm::dvec3& positionLy
-                                                )
-                                                {
-                                                    grid.setAnchorFromPositionLy(
-                                                        positionLy
-                                                    );
-                                                },
-                                                false
-                                            );
-
-                                    if (levelChanged)
-                                    {
-                                        announceGalaxyLevel(
-                                            view.state().navigationGrid.level()
-                                        );
-
-                                        view.state().hoverVisualCell.reset();
-                                        view.state().hoverVisualAlpha = 0.0f;
-
-                                        view.state().hoverOutgoingCell.reset();
-                                        view.state().hoverOutgoingAlpha = 0.0f;
-
-                                        view.state().cubeClickTracker.reset();
-
-                                        /*
-                                            Вписываем куб двойного клика,
-                                            а не дочерний куб нового уровня.
-
-                                            Поэтому используем размер
-                                            zoomReferenceCell, сохранённый до
-                                            refineAroundAnchor().
-                                        */
-                                        const float parentEdgeRender =
-                                            static_cast<float>(
-                                                zoomReferenceCell.size
-                                            ) *
-                                            GalaxyMapView::RenderUnitsPerLightYear;
-
-                                        const float fittedDistance =
-                                            game::navigation::
-                                                cubicNavigationPerspectiveFitDistance(
-                                                    parentEdgeRender,
-                                                    glm::radians(48.0f),
-                                                    vp.width,
-                                                    vp.height
-                                                );
-
-                                        /*
-                                            Двойной клик является явной
-                                            командой: камера плавно смотрит
-                                            в центр выбранного куба.
-                                        */
-                                        beginCameraFlight(
-                                            view.positionLyToRender(
-                                                zoomReferenceCell.center
-                                            ),
-                                            std::clamp(
-                                                fittedDistance,
-                                                controls.minDistance,
-                                                controls.maxDistance
-                                            )
-                                        );
-                                    }
-                                }
-                                else if (
-                                    levelAction ==
-                                    game::navigation::
-                                        CubicNavigationLevelAction::
-                                            EnterChildMap)
-                                {
-                                    /*
-                                        На G3 следующий режим — System.
-
-                                        Здесь переход запрошен явным
-                                        двойным кликом. Колесо использует
-                                        тот же MapIntent в своей
-                                        ветке ниже.
-                                    */
-                                    view.state().cubeClickTracker.reset();
-
-                                    const MapIntent entryIntent =
-                                        view.entryIntentForPosition(
-                                            galaxy,
-                                            pickedCell.center
-                                        );
-
-                                    if (entryIntent.entersKnownSystem())
-                                    {
-                                        view.state().selectedSystemId =
-                                            entryIntent.systemId;
-
-                                        view.state().focusedSystemId =
-                                            entryIntent.systemId;
-                                    }
-                                    else
-                                    {
-                                        view.state().selectedSystemId = -1;
-                                        view.state().focusedSystemId = -1;
-                                        view.state().navigationFocusLy =
-                                            pickedCell.center;
-                                        view.state().navigationFocusValid = true;
-                                    }
-
-                                    if (entryIntent.valid())
-                                    {
-                                        if (entryIntent.valid())
-                        {
-                            result.mapIntent = entryIntent;
-                        }
-                                    }
-                                }
-                            }
-
-
-
-
-                        }
-                        else
-                        {
-                            view.state().cubeClickTracker.reset();
-                        }
-                    }
-                }
-            }
-
-            view.state().camera.rotating = false;
-            view.state().orbitPivotActive = false;
+            const bool doubleClick =
+                applyClick(
+                    view,
+                    galaxy,
+                    vp,
+                    view.state().pressTarget,
+                    gesture.pressX(),
+                    gesture.pressY(),
+                    gesture.pressTimeSeconds(),
+                    result
+                );
+            tracePointerSequence(view, galaxy, frame, "click", doubleClick);
         }
 
         if (!leftDown)
@@ -1259,6 +782,7 @@ namespace game::system_map
             view.state().camera.rotating = false;
             view.state().orbitPivotActive = false;
         }
+
 
         if (inside &&
             rightDown &&
@@ -1276,7 +800,7 @@ namespace game::system_map
 
         if (view.state().camera.rotating &&
             leftDown &&
-            !leftStartedThisFrame)
+            gestureEvent != GalaxyPointerGesture::Event::DragStarted)
         {
             bool beforeVisible =
                 false;
@@ -1522,13 +1046,19 @@ namespace game::system_map
 
                 bool zoomPivotActive = false;
 
+                // Wheel pivot: the star the resolver puts under the cursor.
+                const auto wheelTarget =
+                    resolveGalaxyPointer(
+                        pointerScene(view, galaxy, frame),
+                        glm::vec2(
+                            static_cast<float>(localMx),
+                            static_cast<float>(localMy)
+                        )
+                    ).winner;
                 const int pivotSystemId =
-                    pickSystem(view,
-                        vp,
-                        galaxy,
-                        localMx,
-                        localMy
-                    );
+                    wheelTarget.kind == GalaxyPointerTargetKind::Star
+                        ? wheelTarget.systemId
+                        : -1;
 
                 if (pivotSystemId >= 0)
                 {
@@ -1852,5 +1382,384 @@ namespace game::system_map
         view.state().camera.lastMouseY = my;
 
         return result;
+    }
+
+    /*
+        Navigation cube click (pointer contract): a single click selects the
+        cube; a double click on the SAME semantic cube (its marker, or the
+        waypoint glyph of that cube as the second click) refines / enters
+        the child map. Press position and time identify the click.
+    */
+    bool GalaxyMapInteraction::applyCubeClick(
+        GalaxyMapView& view,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const Viewport& vp,
+        const navigation::GalaxyNavigationCell& pickedCell,
+        double localMx,
+        double localMy,
+        double nowSeconds,
+        GalaxyMapInputResult& result
+    ) const
+    {
+        const auto& controls = view.controls();
+
+        const auto announceGalaxyLevel =
+            [&](int level)
+            {
+                result.galaxyLevelChanged = level;
+            };
+
+        const auto beginCameraFlight =
+            [&](const glm::vec3& target, float distance)
+            {
+                view.beginCameraFlight(
+                    target,
+                    distance,
+                    nowSeconds
+                );
+            };
+
+        // A cube / empty-space click drops the cloud selection.
+        view.state().selectedMediumObject = -1;
+        view.state().mediumClickTracker.reset();
+
+
+
+
+
+
+
+
+        const bool isCubeDoubleClick =
+            view.state().cubeClickTracker
+                .registerClick(
+                    nowSeconds,
+                    localMx,
+                    localMy,
+                    pickedCell.level,
+                    pickedCell.index,
+                    controls
+                        .cubeDoubleClickMaxIntervalSeconds,
+                    controls
+                        .cubeDoubleClickMaxDistancePx
+                );
+
+
+
+
+
+
+
+
+
+
+        /*
+            Если внутри выбранного куба уже находится текущая точка
+            навигации — например выбранная звезда Alpha Centauri —
+            сохраняем точную координату этой звезды.
+
+            Клик по центру такого куба означает дальнейшее уточнение
+            прежней цели, а не переключение на геометрический центр куба.
+
+            Только клик по другому кубу сбрасывает выбранную систему
+            и делает центром навигации геометрический центр нового куба.
+        */
+        bool clickedCellContainsExistingFocus = false;
+
+        if (view.state().navigationFocusValid)
+        {
+            const auto focusCellIndex =
+                view.state().navigationGrid.nearestIndexForPositionLy(
+                    view.state().navigationFocusLy,
+                    pickedCell.level
+                );
+
+            clickedCellContainsExistingFocus =
+                focusCellIndex == pickedCell.index;
+        }
+
+        if (!clickedCellContainsExistingFocus)
+        {
+            /*
+                Пользователь выбрал другой куб, не содержащий прежнюю
+                навигационную цель. Теперь работаем от центра этого куба.
+            */
+            view.state().selectedSystemId = -1;
+            view.state().focusedSystemId = -1;
+
+            view.state().navigationFocusLy =
+                pickedCell.center;
+
+            view.state().navigationFocusValid =
+                true;
+        }
+
+        /*
+            Сам куб выбирается в обоих случаях:
+            и при продолжении детализации звезды,
+            и при переходе к новому пустому кубу.
+        */
+        view.state().navigationGrid.selectCell(pickedCell);
+        result.clickedNavigationCell = pickedCell;
+
+
+
+
+                                    /*
+            Одиночный клик только выбирает куб.
+
+            Только двойной клик:
+            - использует выбранный куб как точку уточнения;
+            - переключает сетку на следующий уровень;
+            - плавно вписывает этот куб в экран.
+        */
+
+                                    /*
+            Само решение о переходе уровня принимает
+            общий слой кубической навигации.
+
+            Galaxy здесь только сообщает:
+            - можно ли ещё уточнять сетку;
+            - можно ли открыть System.
+        */
+        if (isCubeDoubleClick)
+        {
+            const auto levelAction =
+                game::navigation::
+                    cubicNavigationDoubleClickAction(
+                        view.state().navigationGrid
+                            .canRefine(),
+
+                        true
+                    );
+
+            if (levelAction ==
+                game::navigation::
+                    CubicNavigationLevelAction::Refine)
+            {
+                /*
+                    Сохраняем куб двойного клика до
+                    изменения уровня: он нужен только
+                    как цель плавного camera fit.
+                */
+                const auto zoomReferenceCell =
+                    pickedCell;
+
+
+                const bool levelChanged =
+                    game::navigation::
+                        applyCubicNavigationLevelActionAtPosition(
+                            levelAction,
+                            view.state().navigationGrid,
+                            pickedCell.center,
+                            [](
+                                auto& grid,
+                                const glm::dvec3& positionLy
+                            )
+                            {
+                                grid.setAnchorFromPositionLy(
+                                    positionLy
+                                );
+                            },
+                            false
+                        );
+
+                if (levelChanged)
+                {
+                    announceGalaxyLevel(
+                        view.state().navigationGrid.level()
+                    );
+
+                    view.state().hoverVisualCell.reset();
+                    view.state().hoverVisualAlpha = 0.0f;
+
+                    view.state().hoverOutgoingCell.reset();
+                    view.state().hoverOutgoingAlpha = 0.0f;
+
+                    view.state().cubeClickTracker.reset();
+
+                    /*
+                        Вписываем куб двойного клика,
+                        а не дочерний куб нового уровня.
+
+                        Поэтому используем размер
+                        zoomReferenceCell, сохранённый до
+                        refineAroundAnchor().
+                    */
+                    const float parentEdgeRender =
+                        static_cast<float>(
+                            zoomReferenceCell.size
+                        ) *
+                        GalaxyMapView::RenderUnitsPerLightYear;
+
+                    const float fittedDistance =
+                        game::navigation::
+                            cubicNavigationPerspectiveFitDistance(
+                                parentEdgeRender,
+                                glm::radians(48.0f),
+                                vp.width,
+                                vp.height
+                            );
+
+                    /*
+                        Двойной клик является явной
+                        командой: камера плавно смотрит
+                        в центр выбранного куба.
+                    */
+                    beginCameraFlight(
+                        view.positionLyToRender(
+                            zoomReferenceCell.center
+                        ),
+                        std::clamp(
+                            fittedDistance,
+                            controls.minDistance,
+                            controls.maxDistance
+                        )
+                    );
+                }
+            }
+            else if (
+                levelAction ==
+                game::navigation::
+                    CubicNavigationLevelAction::
+                        EnterChildMap)
+            {
+                /*
+                    На G3 следующий режим — System.
+
+                    Здесь переход запрошен явным
+                    двойным кликом. Колесо использует
+                    тот же MapIntent в своей
+                    ветке ниже.
+                */
+                view.state().cubeClickTracker.reset();
+
+                const MapIntent entryIntent =
+                    view.entryIntentForPosition(
+                        galaxy,
+                        pickedCell.center
+                    );
+
+                if (entryIntent.entersKnownSystem())
+                {
+                    view.state().selectedSystemId =
+                        entryIntent.systemId;
+
+                    view.state().focusedSystemId =
+                        entryIntent.systemId;
+                }
+                else
+                {
+                    view.state().selectedSystemId = -1;
+                    view.state().focusedSystemId = -1;
+                    view.state().navigationFocusLy =
+                        pickedCell.center;
+                    view.state().navigationFocusValid = true;
+                }
+
+                if (entryIntent.valid())
+                {
+                    result.mapIntent = entryIntent;
+                }
+            }
+        }
+
+        return isCubeDoubleClick;
+    }
+
+    void GalaxyMapInteraction::tracePointerSequence(
+        const GalaxyMapView& view,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const GalaxyMapInputFrame& frame,
+        const char* gesture,
+        bool doubleClick
+    ) const
+    {
+        if (!galaxyPointerTraceEnabled())
+            return;
+        static std::FILE* file = [] {
+            std::FILE* f = std::fopen("D:/tmp/elite_galaxy_pick_trace.csv", "a");
+            if (f)
+                std::fprintf(f,
+                    "time_s,press_x,press_y,release_x,release_y,movement_px,gesture,camera_changed,"
+                    "stars,cubes,media,overlay,winner_kind,winner_id,reason,click,"
+                    "selected_star,selected_cube,selected_medium\n");
+            return f;
+        }();
+        if (!file)
+            return;
+
+        const auto& state = view.state();
+        const auto& gestureState = state.pointerGesture;
+        const auto& pressCamera = state.pressCamera;
+        const bool cameraChanged =
+            pressCamera.yaw != state.camera.yaw ||
+            pressCamera.pitch != state.camera.pitch ||
+            pressCamera.distance != state.camera.distance ||
+            pressCamera.target != state.camera.target;
+
+        std::string stars, cubes, media, overlay;
+        char buf[160];
+        for (const auto& c : state.pressResolution.candidates)
+        {
+            switch (c.kind)
+            {
+                case GalaxyPointerTargetKind::Star:
+                    std::snprintf(buf, sizeof buf, "%s%d:%s:%.1f:%.5f", stars.empty() ? "" : "|", c.systemId,
+                                  galaxyPointerHitReasonName(c.reason), c.screenDistancePx, c.depth);
+                    stars += buf;
+                    break;
+                case GalaxyPointerTargetKind::NavigationCube:
+                    std::snprintf(buf, sizeof buf, "%s%s:%.1f:%.5f", cubes.empty() ? "" : "|",
+                                  cellText(c.cell).c_str(), c.screenDistancePx, c.depth);
+                    cubes += buf;
+                    break;
+                case GalaxyPointerTargetKind::Medium:
+                    std::snprintf(buf, sizeof buf, "%s%d:%.5f", media.empty() ? "" : "|", c.mediumObject, c.depth);
+                    media += buf;
+                    break;
+                case GalaxyPointerTargetKind::OverlayGlyph:
+                    std::snprintf(buf, sizeof buf, "%s%s(%s):%.1f", overlay.empty() ? "" : "|",
+                                  c.overlayObjectId.c_str(), cellText(c.cell).c_str(), c.screenDistancePx);
+                    overlay += buf;
+                    break;
+                case GalaxyPointerTargetKind::Panel:
+                    overlay += overlay.empty() ? "panel" : "|panel";
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        const auto& w = state.pressTarget;
+        std::string winnerId = "-";
+        if (w.kind == GalaxyPointerTargetKind::Star)
+            winnerId = std::to_string(w.systemId);
+        else if (w.kind == GalaxyPointerTargetKind::NavigationCube)
+            winnerId = cellText(w.cell);
+        else if (w.kind == GalaxyPointerTargetKind::Medium)
+            winnerId = std::to_string(w.mediumObject) +
+                (w.mediumObject >= 0 && static_cast<std::size_t>(w.mediumObject) < galaxy.objects.size()
+                     ? "(" + galaxy.objects[static_cast<std::size_t>(w.mediumObject)].name + ")"
+                     : std::string());
+        else if (w.kind == GalaxyPointerTargetKind::OverlayGlyph)
+            winnerId = w.overlayObjectId;
+
+        const std::string selectedCube =
+            state.navigationGrid.hasSelectedCell()
+                ? cellText(state.navigationGrid.selectedCell())
+                : std::string("-");
+        const bool click = std::string(gesture) == "click";
+
+        std::fprintf(file,
+            "%.3f,%.1f,%.1f,%.1f,%.1f,%.1f,%s,%s,%s,%s,%s,%s,%s,\"%s\",%s,%s,%d,%s,%d\n",
+            frame.nowSeconds, gestureState.pressX(), gestureState.pressY(), frame.localMouseX,
+            frame.localMouseY, gestureState.maxMovementPx(), gesture, cameraChanged ? "yes" : "no",
+            stars.empty() ? "-" : stars.c_str(), cubes.empty() ? "-" : cubes.c_str(),
+            media.empty() ? "-" : media.c_str(), overlay.empty() ? "-" : overlay.c_str(),
+            galaxyPointerTargetKindName(w.kind), winnerId.c_str(), galaxyPointerHitReasonName(w.reason),
+            click ? (doubleClick ? "double" : "single") : "-", state.selectedSystemId, selectedCube.c_str(),
+            state.selectedMediumObject);
+        std::fflush(file);
     }
 }

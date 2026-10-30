@@ -45,6 +45,7 @@
 #include "src/game/system_map/MapCameraState.h"
 #include "src/game/system_map/GalaxyMapView.h"
 #include "src/game/system_map/GalaxyMapInteraction.h"
+#include "src/game/system_map/GalaxyPointerDevScript.h"
 #include "src/game/system_map/GalaxyMapRenderContext.h"
 #include "src/game/system_map/GalaxyMapRenderer.h"
 #include "src/game/system_map/SystemMapView.h"
@@ -749,6 +750,8 @@ private:
 
     game::system_map::GalaxyMapView m_galaxyView;
     game::system_map::GalaxyMapInteraction m_galaxyInteraction;
+    // DEV only (ELITE_DEV_GALAXY_POINTER_SCRIPT): scripted pointer input.
+    game::system_map::GalaxyPointerDevScript m_galaxyPointerDevScript;
     game::system_map::GalaxyMapRenderer m_galaxyRenderer;
 
     game::system_map::SystemMapView m_systemView;

@@ -667,6 +667,7 @@ add_executable(EliteGame
     src/game/system_map/HubMapPlanetPass.cpp
     src/game/system_map/GalaxyMapView.cpp
     src/game/system_map/GalaxyMapInteraction.cpp
+    src/game/system_map/GalaxyPointerResolver.cpp
     src/game/system_map/GalaxyMapRenderer.cpp
     src/game/navigation/DynamicMotionSystem.cpp
     src/game/navigation/NavigationRuntimeControlBridge.cpp
@@ -964,6 +965,21 @@ if(ELITE_BUILD_SERVER)
     add_executable(EliteMapPointerCheck tools/navigation_runtime/MapPointerCheck.cpp)
     target_include_directories(EliteMapPointerCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
     target_link_libraries(EliteMapPointerCheck PRIVATE nlohmann_json::nlohmann_json)
+
+    # DEV check: the Galaxy Map pointer contract (one resolver, gesture,
+    # cube double click, re-entry) on the production interaction code.
+    add_executable(EliteGalaxyPointerCheck
+        tools/navigation_runtime/GalaxyPointerCheck.cpp
+        src/game/system_map/GalaxyPointerResolver.cpp
+        src/game/system_map/GalaxyMapInteraction.cpp
+        src/game/system_map/GalaxyMapView.cpp
+        src/game/navigation/GalaxyNavigationGrid.cpp
+        src/game/navigation/CubicNavigationGrid.cpp
+        src/game/navigation/SystemNavigationGrid.cpp
+        src/game/navigation/GalaxyNavigationConfig.cpp
+    )
+    target_include_directories(EliteGalaxyPointerCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
+    target_link_libraries(EliteGalaxyPointerCheck PRIVATE nlohmann_json::nlohmann_json)
 
     # DEV check: emergency thermal coupling on the production ShipCore.
     add_executable(EliteShipThermalCheck

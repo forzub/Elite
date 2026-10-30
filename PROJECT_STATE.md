@@ -155,15 +155,28 @@ Updated: 2026-10-30, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONL
   `PointerInteractionSettings` 0.38 s / 12 px): hover never selects; a single
   click acts at once and is never undone; a double click on the same target
   adds its action; the cube trackers delegate to it.
-- Galaxy Map clouds / icy fields: hover brightens (re-picked only when the
-  cursor moves: projected bounding prefilter + ray vs coarse shell
-  triangles, ~1.4 ms Debug per move); click selects (star selection
-  dropped) and opens ONE info card (shared overlay) with physical data,
-  provenance and the derived ENVIRONMENTAL hazard
-  (`world::interstellar::environmentalHazard`, NEGLIGIBLE..SEVERE with
-  reasons, never stored); risk for a ship: "not computed" (seam
+- Galaxy Map pointer (stage 2026-10-30 b, see below): ONE resolver
+  (`GalaxyPointerResolver`) over what the last frame PRESENTED (renderer
+  publishes `presentedStars` with glyph radius and `presentedCubeMarkers`
+  exactly as drawn; SystemMapRenderer passes overlay glyphs + card-under-
+  cursor). Ranking: UI card > drawn controls (cursor inside a star glyph,
+  foreground first / cube marker / overlay glyph; else nearest drawn edge
+  within `glyphHitMarginPx` 4) > star proximity 32 px (nearest, 1 px ties
+  -> foreground, then id) > cloud shell (ray; a shell the camera is inside
+  is not a target) / icy field > empty. Gesture: press = PendingClick
+  (camera never moves), > 5 px = drag (rotation), release before = click on
+  the PRESS target; right press / wheel / zoom keys cancel a pending click.
+  The waypoint glyph of the selected cube, as the second click of that
+  cube's sequence, IS that cube (`cube_sequence_glyph`) -> refine. Hover of
+  clouds uses the same resolver. A star drawn exactly on a cube marker wins.
+- Galaxy Map clouds / icy fields: hover brightens; click selects (star
+  selection dropped) and opens ONE info card with physical data, provenance
+  and the derived ENVIRONMENTAL hazard (`world::interstellar::
+  environmentalHazard`); risk for a ship "not computed" (seam
   `RouteRiskForShip`); star / cube / empty click drops it and the card;
   double click flies to the navigation cube containing the clicked point.
+  Hover / selection / trackers / gesture are transient: reset on reset(),
+  onEntered(), resetNavigationToEntry().
 - System Map bodies: single click selects only; double click opens the
   card, the next double click closes it; another body's click closes the
   old card; a card never outlives its body's selection.
@@ -285,7 +298,65 @@ hitches = frames > 80 ms after start.
 | A3 reactor 60 % | loss detected, recover; Assisted optimizer finds NO feasible path (12 replans), ship held safe | 25.5 m | - | FAILED (harness timeout) - OPEN |
 | A3 aft L + fore R lost | honest refusal "no attitude control" after 5 attempts, held safe | 25.4 m | - | controlled refusal |
 
+### Galaxy Map pointer regression (user order 2026-10-30 b) - AUTOMATED PASS + scripted GAME PASS
+- User report: stars / cubes picked "every other time", a star under the
+  cursor gave a cube or nothing, cube double click unpredictable.
+- Root causes (source + trace verified):
+  R1 (old, `3975ff6b` and earlier) cube click tested only anchor + hovered
+     cell centres in an invisible 18 px circle; hovered cell = cursor ray x
+     plane through camera.target (not the drawn cube); the cube had first
+     refusal, so the 18 px circle (marker drawn 4-5 px) hid stars (32 px).
+  R2 (old) left press set camera.rotating at once: 1-4 px jitter rotated
+     the camera and re-synced the anchor cell before the release hit test.
+  R3 (old) waypoint-candidate glyph of the selected cube (cube +20,-2 px,
+     12 px) overlapped the 18 px cube circle; the overlay took the second
+     click -> no double click / refine.
+  R4 (old) star pick 2D distance only (no depth tie-break).
+  R5 (`ab9018f6`, the commit that made it user-visible) the cloud picker was
+     added as the fallback of every click that missed R1/R4 circles; the
+     camera sits INSIDE the Local Interstellar Cloud, so the ray hit its far
+     wall and EVERY such click selected the LIC (star selection dropped, a
+     card opened to the right of the click, covering the next targets). The
+     same hit drove cloud hover. Cloud hover / selection / tracker were not
+     reset on reset / re-entry; the DEV pick test kept static state in the
+     production input path (inert without its env var).
+- Changes: `GalaxyPointerResolver` (one resolver + `GalaxyPointerGesture`);
+  renderer publishes presented stars / cube markers (old unused
+  `screenPoints` removed); `GalaxyMapInteraction` resolves once per press,
+  dispatches one target (`applyClick` / `applyCubeClick` with the old cube
+  semantics unchanged / `applyMediumClick`); `pickNavigationCell`,
+  `pickSystem`, `pickMedium`, `navigationCellPickRadiusPx` (Galaxy) and
+  `ELITE_DEV_GALAXY_PICK_TEST` deleted; `PointerClickTracker::wouldComplete`;
+  `MapObjectOverlayState::panelUnderCursor` + `allowItemPick` (default true:
+  System Map unchanged); `GalaxyMapView::resetTransientPointerState`.
+  DEV: `ELITE_GALAXY_PICK_TRACE=1` -> D:/tmp/elite_galaxy_pick_trace.csv (one
+  row per sequence: press/release, movement, camera changed, candidates,
+  winner, reason, single/double, selection after); `ELITE_DEV_GALAXY_POINTER_
+  SCRIPT=1` scripted pointer through the production input path
+  (`tools/perf/galaxy_pointer_script.sh`, PHASES=... subset).
+- AUTOMATED: `EliteGalaxyPointerCheck` 29/29 PASS (G1 star vs cube, G2
+  jitter, G3 drag, G4 cube double click incl. waypoint-glyph second click
+  10/10, G5 depth, G6/G7 cloud behind star / cube + camera inside a cloud,
+  G8 re-entry); mutation (absorption disabled) -> G4 FAIL as expected.
+  `EliteMapPointerCheck` PASS, 0 failures (System Map card contract unchanged).
+- SCRIPTED GAME (real game, Debug, nav-stress:simple, Galaxy Map; synthetic
+  pointer, real presented geometry, production input path - NOT a human
+  mouse): Sol 10/10, Alpha Centauri (Proxima, nearest) 10/10, close stars
+  (15-21 px pair) 10/10, cube single 10/10, star after cube 10/10, cube
+  after star 10/10, cube double click marker 5/5 + glyph area 5/5, cloud
+  10/10, star after cloud 10/10 (cloud dropped 10/10), drag 5/5 (never
+  selects); 100 click rows camera_changed=no. Earlier script runs failed on
+  script defects (localised names, off-viewport second click, off-screen
+  star) - fixed in the script, not in production.
+- PERFORMANCE (same run): medium draw avg 0.53 ms (baseline 0.5-0.6), frame
+  avg 20.9 ms, max 49.9, 0 frames > 50 ms (baseline ~20 ms).
+
 ### OPEN
+- Galaxy pointer: HUMAN repeated-click acceptance with a real mouse not
+  done (incl. return from System Map); the LIC cannot be selected by click
+  while the camera is inside it (by design of R5 fix); a cube whose marker
+  is covered by a star glyph (entry cube on Sol) refines via wheel / the
+  waypoint glyph only; star labels are not click targets.
 - A3 below the 94 % cutoff (93 %): balanced bank 5.15 m/s2 vs 36.77 on one
   motor, 180 m on a curve. Candidate law (user decision): switch off when
   the one-motor axis gives more thrust than the balanced bank.

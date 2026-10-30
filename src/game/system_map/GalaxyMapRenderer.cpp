@@ -106,7 +106,8 @@ namespace
         visible = false;
         depth = 1.0f;
 
-        if (std::abs(clip.w) < 0.00001f)
+        // Behind the camera (w <= 0) is never visible.
+        if (clip.w <= 0.00001f)
             return {0.0f, 0.0f};
 
         const glm::vec3 ndc =
@@ -420,6 +421,9 @@ namespace
         context.beginLines();
         context.beginSolids();
 
+        // Pointer contract: the resolver hits what THIS frame presents.
+        viewState.state().presentedCubeMarkers.clear();
+
         if (viewState.state().navigationGrid.enabled())
         {
             drawNavigationGrid(
@@ -460,7 +464,7 @@ namespace
         // Galaxy route, beacon and restriction layers are intentionally
         // empty until their world data is introduced.
 
-        viewState.state().screenPoints.clear();
+        viewState.state().presentedStars.clear();
 
         const glm::vec3 cameraDirection =
             glm::vec3(camera.basis.direction);
@@ -643,22 +647,20 @@ namespace
                 32
             );
 
-            GalaxyMapScreenPoint screenPoint;
-            screenPoint.systemId = system.id;
-            screenPoint.name = system.name;
-            screenPoint.world = position;
-            screenPoint.screen =
+            GalaxyPointerStar presented;
+            presented.systemId = system.id;
+            presented.glyphRadiusPx =
+                viewState.visuals().starBaseRadiusPx * starScale;
+            presented.screen =
                 projectToScreen(
                     position,
                     mvp,
                     viewport,
-                    screenPoint.visible,
-                    screenPoint.depth
+                    presented.visible,
+                    presented.depth
                 );
 
-            viewState.state().screenPoints.push_back(
-                std::move(screenPoint)
-            );
+            viewState.state().presentedStars.push_back(presented);
         }
 
         // Interstellar layer: compact objects as small dim points (the medium
@@ -1884,6 +1886,21 @@ void GalaxyMapRenderer::drawNavigationGrid(
         const float markerSize =
             worldUnitsPerPixel *
             markerRadiusPx;
+
+        {
+            GalaxyNavigationMarker presented;
+            presented.cell = cell;
+            presented.radiusPx = markerRadiusPx;
+            presented.screen =
+                projectToScreen(
+                    center,
+                    camera.mvp,
+                    vp,
+                    presented.visible,
+                    presented.depth
+                );
+            viewState.state().presentedCubeMarkers.push_back(presented);
+        }
 
 
 

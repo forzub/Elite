@@ -19,6 +19,9 @@ struct PointerInteractionSettings
 {
     double doubleClickMaxIntervalSeconds = 0.38;
     double doubleClickMaxDistancePx = 12.0;
+    // A drawn glyph / marker is hit inside its drawn radius plus this UX
+    // margin; never a radius several times the visible object.
+    double glyphHitMarginPx = 4.0;
 };
 
 inline const PointerInteractionSettings& pointerInteractionSettings()
@@ -41,15 +44,8 @@ public:
         const Key& key,
         const PointerInteractionSettings& settings = pointerInteractionSettings())
     {
-        const double dx = screenX - m_lastX;
-        const double dy = screenY - m_lastY;
-        const double interval = nowSeconds - m_lastTimeSeconds;
         const bool doubleClick =
-            m_valid && interval >= 0.0 &&
-            interval <= settings.doubleClickMaxIntervalSeconds &&
-            dx * dx + dy * dy <=
-                settings.doubleClickMaxDistancePx * settings.doubleClickMaxDistancePx &&
-            key == m_lastKey;
+            wouldComplete(nowSeconds, screenX, screenY, key, settings);
         if (doubleClick)
         {
             reset();
@@ -61,6 +57,26 @@ public:
         m_lastY = screenY;
         m_lastKey = key;
         return false;
+    }
+
+    // True when a click with these values WOULD complete a double click on
+    // the same key (no state change): lets a second presentation element of
+    // the same semantic target join the sequence.
+    bool wouldComplete(
+        double nowSeconds,
+        double screenX,
+        double screenY,
+        const Key& key,
+        const PointerInteractionSettings& settings = pointerInteractionSettings()) const
+    {
+        const double dx = screenX - m_lastX;
+        const double dy = screenY - m_lastY;
+        const double interval = nowSeconds - m_lastTimeSeconds;
+        return m_valid && interval >= 0.0 &&
+               interval <= settings.doubleClickMaxIntervalSeconds &&
+               dx * dx + dy * dy <=
+                   settings.doubleClickMaxDistancePx * settings.doubleClickMaxDistancePx &&
+               key == m_lastKey;
     }
 
     void reset()

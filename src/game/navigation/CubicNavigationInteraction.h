@@ -107,6 +107,24 @@ public:
             nowSeconds, screenX, screenY, std::make_pair(level, index), settings);
     }
 
+    // Peek: would this click complete a double click on (level, index)?
+    bool wouldComplete(
+        double nowSeconds,
+        double screenX,
+        double screenY,
+        int level,
+        const Index& index,
+        double maxIntervalSeconds,
+        double maxDistancePx
+    ) const
+    {
+        game::presentation::PointerInteractionSettings settings;
+        settings.doubleClickMaxIntervalSeconds = maxIntervalSeconds;
+        settings.doubleClickMaxDistancePx = maxDistancePx;
+        return m_tracker.wouldComplete(
+            nowSeconds, screenX, screenY, std::make_pair(level, index), settings);
+    }
+
     void reset()
     {
         m_tracker.reset();

@@ -92,6 +92,27 @@ SystemMapRenderer::handleInput(
         &my
     );
 
+    bool leftDown =
+        glfwGetMouseButton(
+            window,
+            GLFW_MOUSE_BUTTON_LEFT
+        ) == GLFW_PRESS;
+
+    bool rightDown =
+        glfwGetMouseButton(
+            window,
+            GLFW_MOUSE_BUTTON_RIGHT
+        ) == GLFW_PRESS;
+
+    // DEV only: a scripted pointer replaces the GLFW pointer; the rest of
+    // the input path is production.
+    if (game::system_map::GalaxyPointerDevScript::enabled() &&
+        m_modeState.current() == Mode::Galaxy)
+    {
+        m_galaxyPointerDevScript.drive(
+            m_galaxyView, galaxy, vp, inputNowSeconds, mx, my, leftDown, rightDown);
+    }
+
     const double localMx =
         mx - static_cast<double>(vp.x);
 
@@ -103,18 +124,6 @@ SystemMapRenderer::handleInput(
         my >= static_cast<double>(vp.y) &&
         mx <= static_cast<double>(vp.x + vp.width) &&
         my <= static_cast<double>(vp.y + vp.height);
-
-    const bool leftDown =
-        glfwGetMouseButton(
-            window,
-            GLFW_MOUSE_BUTTON_LEFT
-        ) == GLFW_PRESS;
-
-    const bool rightDown =
-        glfwGetMouseButton(
-            window,
-            GLFW_MOUSE_BUTTON_RIGHT
-        ) == GLFW_PRESS;
 
     const auto routePointer =
         m_routeOverlayState.handlePointer(
@@ -135,6 +144,10 @@ SystemMapRenderer::handleInput(
     }
     if (routePointer.consumed)
     {
+        if (game::system_map::GalaxyPointerDevScript::enabled() && leftDown &&
+            m_modeState.current() == Mode::Galaxy)
+            std::cerr << "[GalaxyPointerPress] consumed_by=route_overlay x=" << localMx << " y=" << localMy << std::endl;
+
         std::optional<game::system_map::MapIntent> routeFocusIntent;
         if (routePointer.focusRouteNodeId != 0)
         {
@@ -215,6 +228,10 @@ SystemMapRenderer::handleInput(
     if (m_navigationLevelZeroButtonHovered ||
         m_navigationTrackButtonHovered)
     {
+        if (game::system_map::GalaxyPointerDevScript::enabled() && leftDown &&
+            m_modeState.current() == Mode::Galaxy)
+            std::cerr << "[GalaxyPointerPress] consumed_by=nav_button x=" << localMx << " y=" << localMy << std::endl;
+
         m_pendingScrollY = 0.0;
 
         if (levelZeroPressed)
@@ -782,13 +799,100 @@ SystemMapRenderer::handleInput(
         synchronizeNavigationTracking(m_galaxyInfoOverlayFrame);
         revealPendingRouteFocus(m_galaxyInfoOverlayFrame, vp);
 
+        game::system_map::GalaxyMapInputFrame frame;
+        frame.viewport = vp;
+        frame.mouseX = mx;
+        frame.mouseY = my;
+        frame.localMouseX = localMx;
+        frame.localMouseY = localMy;
+        frame.inside = inside;
+        frame.leftDown = leftDown;
+        frame.rightDown = rightDown;
+        frame.zoomInKeyDown =
+            glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS;
+        frame.zoomOutKeyDown =
+            glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS;
+        frame.transitionActive = m_mapTransition.active();
+        frame.nowSeconds = inputNowSeconds;
+
+        /*
+            ONE Galaxy pointer resolver: the overlay's interactive glyphs and
+            cards are candidates of the same resolver as stars, cube markers
+            and clouds. A glyph that presents a navigation cube (the waypoint
+            candidate / waypoint of the selected cube) carries that cube as
+            its semantic target.
+        */
+        frame.panelUnderCursor =
+            inside &&
+            m_objectOverlayState.panelUnderCursor(
+                glm::dvec2(localMx, localMy)
+            );
+        {
+            const auto& grid = m_galaxyView.state().navigationGrid;
+            const std::string selectedCellGlyphId =
+                grid.hasSelectedCell()
+                    ? waypointCandidateId('G', grid.selectedCell())
+                    : std::string();
+            for (const auto& item : m_galaxyInfoOverlayFrame.items)
+            {
+                if (!item.visible || !item.pointerInteractive || item.objectId.empty())
+                    continue;
+                game::system_map::GalaxyPointerOverlayGlyph glyph;
+                glyph.objectId = item.objectId;
+                glyph.screen = glm::vec2(item.screenPx);
+                glyph.hitRadiusPx = static_cast<float>(item.hitRadiusPx);
+                if (!selectedCellGlyphId.empty() && item.objectId == selectedCellGlyphId)
+                    glyph.semanticCell = grid.selectedCell();
+                frame.overlayGlyphs.push_back(std::move(glyph));
+            }
+        }
+
+        // A fresh left press is resolved ONCE; the overlay receives it only
+        // when the resolver gives it to a card or an overlay glyph.
+        bool overlayOwnsPress = true;
+        if (inside &&
+            leftDown &&
+            !m_galaxyView.state().pointerGesture.leftWasDown())
+        {
+            const auto pressTarget =
+                m_galaxyInteraction.resolvePressTarget(
+                    m_galaxyView,
+                    galaxy,
+                    frame
+                );
+            frame.pressTargetResolved = true;
+            overlayOwnsPress =
+                pressTarget.kind ==
+                    game::system_map::GalaxyPointerTargetKind::Panel ||
+                pressTarget.kind ==
+                    game::system_map::GalaxyPointerTargetKind::OverlayGlyph;
+            if (overlayOwnsPress)
+                m_galaxyInteraction.traceOverlayOwnedPress(m_galaxyView, galaxy, frame);
+            if (game::system_map::GalaxyPointerDevScript::enabled())
+                std::cerr << "[GalaxyPointerPress] target="
+                          << game::system_map::galaxyPointerTargetKindName(pressTarget.kind) << "/"
+                          << game::system_map::galaxyPointerHitReasonName(pressTarget.reason)
+                          << " overlay_owns=" << overlayOwnsPress << " x=" << localMx << " y=" << localMy
+                          << std::endl;
+        }
+        else if (game::system_map::GalaxyPointerDevScript::enabled() && inside && leftDown &&
+                 !m_galaxyView.state().pointerGesture.leftWasDown())
+        {
+            std::cerr << "[GalaxyPointerPress] unresolved" << std::endl;
+        }
+
         const auto overlayPointer =
             m_objectOverlayState.handlePointer(
                 m_galaxyInfoOverlayFrame,
                 glm::dvec2(vp.width, vp.height),
                 glm::dvec2(localMx, localMy),
                 inside,
-                leftDown
+                leftDown,
+                0.0,
+                -1.0,
+                overlayOwnsPress
             );
 
         if (overlayPointer.consumed)
@@ -806,24 +910,6 @@ SystemMapRenderer::handleInput(
             m_pendingScrollY = 0.0;
             return std::nullopt;
         }
-
-        game::system_map::GalaxyMapInputFrame frame;
-        frame.viewport = vp;
-        frame.mouseX = mx;
-        frame.mouseY = my;
-        frame.localMouseX = localMx;
-        frame.localMouseY = localMy;
-        frame.inside = inside;
-        frame.leftDown = leftDown;
-        frame.rightDown = rightDown;
-        frame.zoomInKeyDown =
-            glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS ||
-            glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS;
-        frame.zoomOutKeyDown =
-            glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS ||
-            glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS;
-        frame.transitionActive = m_mapTransition.active();
-        frame.nowSeconds = glfwGetTime();
 
         const auto result =
             m_galaxyInteraction.handleInput(

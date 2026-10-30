@@ -32,17 +32,32 @@ namespace game::system_map
         m_state.hoverOutgoingCell.reset();
         m_state.hoverOutgoingAlpha = 0.0f;
         m_state.hoverVisualLastTimeSeconds = 0.0;
-        m_state.cubeClickTracker.reset();
 
         m_state.entry = GalaxyMapEntryState {};
         m_state.selectedSystemId = -1;
         m_state.focusedSystemId = -1;
-        m_state.screenPoints.clear();
 
         m_state.orbitPivotWorld = glm::vec3(0.0f);
+        resetTransientPointerState();
+    }
+
+    void GalaxyMapView::resetTransientPointerState()
+    {
+        m_state.cubeClickTracker.reset();
+        m_state.mediumClickTracker.reset();
+        m_state.hoveredMediumObject = -1;
+        m_state.selectedMediumObject = -1;
+        m_state.selectedMediumHitLy = glm::dvec3(0.0);
+        m_state.mediumHoverMouseX = -1.0e9;
+        m_state.mediumHoverMouseY = -1.0e9;
+        m_state.presentedStars.clear();
+        m_state.presentedCubeMarkers.clear();
+        m_state.pointerGesture.reset();
+        m_state.pressTarget = GalaxyPointerTarget {};
+        m_state.pressResolution = GalaxyPointerResolution {};
         m_state.orbitPivotActive = false;
-        m_state.mouseDownX = 0.0;
-        m_state.mouseDownY = 0.0;
+        m_state.camera.rotating = false;
+        m_state.camera.panning = false;
     }
 
 
@@ -59,6 +74,10 @@ namespace game::system_map
         m_state.camera.rightWasDown = rightDown;
         m_state.camera.lastMouseX = mouseX;
         m_state.camera.lastMouseY = mouseY;
+        // The gesture belongs to whoever consumed the press (overlay, UI):
+        // no map click / drag may follow from it.
+        m_state.pointerGesture.suppress(leftDown);
+        m_state.orbitPivotActive = false;
     }
 
     glm::dvec3 GalaxyMapView::playerPositionLy(
@@ -128,7 +147,7 @@ namespace game::system_map
         m_state.hoverOutgoingCell.reset();
         m_state.hoverOutgoingAlpha = 0.0f;
         m_state.hoverVisualLastTimeSeconds = 0.0;
-        m_state.cubeClickTracker.reset();
+        resetTransientPointerState();
 
         bool insideKnownSystem = false;
 
@@ -255,8 +274,7 @@ namespace game::system_map
         m_state.hoverOutgoingCell.reset();
         m_state.hoverOutgoingAlpha = 0.0f;
         m_state.hoverVisualLastTimeSeconds = 0.0;
-        m_state.cubeClickTracker.reset();
-        m_state.orbitPivotActive = false;
+        resetTransientPointerState();
     }
 
     glm::vec3 GalaxyMapView::positionLyToRender(

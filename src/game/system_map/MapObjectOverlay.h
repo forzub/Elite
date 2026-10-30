@@ -438,7 +438,10 @@ public:
         bool inside,
         bool leftDown,
         double dominantExternalPhysicalSizeMeters = 0.0,
-        double nowSeconds = -1.0
+        double nowSeconds = -1.0,
+        // false: a map with its own pointer resolver decided this press
+        // belongs to the map (not to an overlay glyph); panels still work.
+        bool allowItemPick = true
     )
     {
         MapObjectOverlayPointerResult result;
@@ -565,7 +568,7 @@ public:
                     }
                 }
             }
-            else
+            else if (allowItemPick)
             {
                 const MapObjectOverlayItem* picked = nullptr;
                 int bestPickPriority = std::numeric_limits<int>::min();
@@ -770,6 +773,24 @@ public:
 
         m_leftWasDown = leftDown;
         return result;
+    }
+
+    // For a map's own pointer resolver: is an info card (UI panel) under
+    // the cursor? Same rectangle as the press hit test.
+    bool panelUnderCursor(const glm::dvec2& mousePx) const
+    {
+        for (const auto& [id, panel] : m_panels)
+        {
+            (void)id;
+            if (mousePx.x >= panel.topLeftPx.x &&
+                mousePx.x <= panel.topLeftPx.x + PanelWidthPx &&
+                mousePx.y >= panel.topLeftPx.y &&
+                mousePx.y <= panel.topLeftPx.y + panelHeight(panel))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Pointer contract: a celestial card never outlives the selection of

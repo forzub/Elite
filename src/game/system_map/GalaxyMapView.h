@@ -11,6 +11,7 @@
 #include "src/game/navigation/CubicNavigationInteraction.h"
 #include "src/game/navigation/GalaxyNavigationGrid.h"
 #include "src/game/system_map/GalaxyMapVisualSettings.h"
+#include "src/game/system_map/GalaxyPointerResolver.h"
 #include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/system_map/MapCameraState.h"
 #include "src/game/system_map/MapIntent.h"
@@ -44,7 +45,6 @@ namespace game::system_map
 
         float navigationCellInteractiveViewportFraction = 0.075f;
         float navigationCellInteractiveMinPx = 56.0f;
-        float navigationCellPickRadiusPx = 18.0f;
 
         float navigationHoverFadeInSeconds = 0.18f;
         float navigationHoverFadeOutSeconds = 0.14f;
@@ -54,16 +54,6 @@ namespace game::system_map
         double cubeDoubleClickMaxDistancePx =
             game::presentation::PointerInteractionSettings {}.doubleClickMaxDistancePx;
         double clickMoveThresholdPx = 5.0;
-    };
-
-    struct GalaxyMapScreenPoint
-    {
-        int systemId = -1;
-        std::string name;
-        glm::vec3 world {0.0f};
-        glm::vec2 screen {0.0f};
-        float depth = 0.0f;
-        bool visible = false;
     };
 
 
@@ -109,13 +99,20 @@ namespace game::system_map
         double mediumHoverMouseY = -1.0e9;
         game::presentation::PointerClickTracker<int> mediumClickTracker;
 
-        std::vector<GalaxyMapScreenPoint> screenPoints;
+        // What the last rendered frame presented (GalaxyMapRenderer): the
+        // pointer resolver hits exactly these, never a re-derived geometry.
+        std::vector<GalaxyPointerStar> presentedStars;
+        std::vector<GalaxyNavigationMarker> presentedCubeMarkers;
+
+        // Left-button gesture (press -> pending click -> click | drag) and
+        // the semantic target resolved at the press.
+        GalaxyPointerGesture pointerGesture;
+        GalaxyPointerTarget pressTarget;
+        GalaxyPointerResolution pressResolution; // candidates: trace only
+        GalaxyCameraState pressCamera;           // trace: camera changed?
 
         glm::vec3 orbitPivotWorld {0.0f, 0.0f, 0.0f};
         bool orbitPivotActive = false;
-
-        double mouseDownX = 0.0;
-        double mouseDownY = 0.0;
     };
 
     /*
@@ -174,6 +171,10 @@ namespace game::system_map
         );
 
         void resetNavigationToEntry();
+
+        // Transient pointer state (hover, cloud selection, click trackers,
+        // gesture, presented geometry) never survives a map session.
+        void resetTransientPointerState();
 
         void suppressCameraGesture(
             bool leftDown,

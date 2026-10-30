@@ -731,6 +731,8 @@ private:
     std::vector<Vertex> m_vertices;
     std::vector<Vertex> m_solidVertices;
     std::vector<Vertex> m_volumeVertices;
+    // Info card of the selected Galaxy-map cloud / icy field ("" = none).
+    std::string m_galaxyMediumCardId;
     // GPU copy of the current GalaxyMapMediumAtlas (one static buffer).
     std::uint64_t m_mediumAtlasUid = 0;
     unsigned int m_mediumVao = 0;

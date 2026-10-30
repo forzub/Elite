@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/game/presentation/PointerClickTracker.h"
 #include <optional>
 #include <string>
 #include <vector>
@@ -48,8 +49,10 @@ namespace game::system_map
         float navigationHoverFadeInSeconds = 0.18f;
         float navigationHoverFadeOutSeconds = 0.14f;
 
-        double cubeDoubleClickMaxIntervalSeconds = 0.38;
-        double cubeDoubleClickMaxDistancePx = 12.0;
+        double cubeDoubleClickMaxIntervalSeconds =
+            game::presentation::PointerInteractionSettings {}.doubleClickMaxIntervalSeconds;
+        double cubeDoubleClickMaxDistancePx =
+            game::presentation::PointerInteractionSettings {}.doubleClickMaxDistancePx;
         double clickMoveThresholdPx = 5.0;
     };
 
@@ -96,6 +99,15 @@ namespace game::system_map
         GalaxyMapEntryState entry;
         int selectedSystemId = -1;
         int focusedSystemId = -1;
+
+        // Interstellar medium structures / icy fields (GalaxyMapSnapshot
+        // object indices): hover and selection are separate states.
+        int hoveredMediumObject = -1;
+        int selectedMediumObject = -1;
+        glm::dvec3 selectedMediumHitLy {0.0};
+        double mediumHoverMouseX = -1.0e9;
+        double mediumHoverMouseY = -1.0e9;
+        game::presentation::PointerClickTracker<int> mediumClickTracker;
 
         std::vector<GalaxyMapScreenPoint> screenPoints;
 

@@ -799,9 +799,37 @@ void GalaxyMapRenderer::drawMediumVolumes(
         if (detailed && proxy.inner.count > 0)
             ranges.push_back(proxy.inner);
     }
+    // Hover: the hovered structure's shell is drawn once more (a slight
+    // brightening, no outline). Selection: a quiet edge outline of its coarse
+    // shell faces (presentation only).
+    const auto proxyOf = [&](int objectIndex) -> const world::celestial::GalaxyMapMediumAtlas::Proxy* {
+        if (objectIndex < 0 || objectIndex >= static_cast<int>(galaxy.objects.size()))
+            return nullptr;
+        const int proxy = galaxy.objects[static_cast<std::size_t>(objectIndex)].mediumProxy;
+        return proxy >= 0 && proxy < static_cast<int>(atlas->proxies.size())
+            ? &atlas->proxies[static_cast<std::size_t>(proxy)] : nullptr;
+    };
+    if (const auto* hovered = proxyOf(viewState.state().hoveredMediumObject))
+        ranges.push_back(hovered->coarse);
     if (anyBlob)
         context.flushVolumes(mvp);
     context.drawMediumShells(*atlas, ranges, mvpLy);
+    if (const auto* selected = proxyOf(viewState.state().selectedMediumObject))
+    {
+        // Readable but quiet: a faint phase-tinted edge, never a solid body.
+        const glm::vec4 rgba(glm::vec3(selected->blobRgba) * 0.8f + glm::vec3(0.2f), 0.10f);
+        context.beginLines();
+        const auto& range = selected->coarse;
+        for (std::uint32_t v = range.first; v + 5 < range.first + range.count; v += 6)
+        {
+            // Quad corners 0, 1, 2, 3 = vertices v, v+1, v+2, v+5.
+            const glm::vec3 q[4] = {atlas->vertices[v].positionLy, atlas->vertices[v + 1].positionLy,
+                                    atlas->vertices[v + 2].positionLy, atlas->vertices[v + 5].positionLy};
+            for (int e = 0; e < 4; ++e)
+                context.addLine(q[e] * renderPerLy, q[(e + 1) % 4] * renderPerLy, rgba);
+        }
+        context.flushLines(mvp);
+    }
 }
 
 void GalaxyMapRenderer::drawNavigationGrid(

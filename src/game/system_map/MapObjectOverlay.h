@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/game/presentation/PointerClickTracker.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -436,7 +437,8 @@ public:
         const glm::dvec2& mousePx,
         bool inside,
         bool leftDown,
-        double dominantExternalPhysicalSizeMeters = 0.0
+        double dominantExternalPhysicalSizeMeters = 0.0,
+        double nowSeconds = -1.0
     )
     {
         MapObjectOverlayPointerResult result;
@@ -684,13 +686,46 @@ public:
 
                 const bool pickedScreenAffordance =
                     picked && picked->screenAffordance;
-                if (picked &&
+                const bool pickedAccepted =
+                    picked &&
                     (pickedScreenAffordance ||
                      bestPhysicalSizeMeters + 1.0e-6 >=
                         std::max(
                             0.0,
                             dominantExternalPhysicalSizeMeters
-                        )))
+                        ));
+                if (pickedAccepted &&
+                    picked->infoKind == MapObjectInfoKind::Celestial &&
+                    nowSeconds >= 0.0)
+                {
+                    // Celestial body (pointer contract): a single click only
+                    // selects it (and closes the card of another body); a
+                    // double click opens its card, the next double click
+                    // closes it again; the body stays selected.
+                    const std::string id = picked->objectId;
+                    activate(id);
+                    result.activatedObjectId = id;
+                    result.activatedInfoKind = picked->infoKind;
+                    result.activatedSemanticTargetId = picked->semanticTargetId;
+                    closeCelestialCardsExcept(frame, id, result);
+                    if (m_cardClickTracker.registerClick(
+                            nowSeconds, mousePx.x, mousePx.y, id))
+                    {
+                        if (isOpen(id))
+                        {
+                            close(id);
+                            result.closedObjectId = id;
+                        }
+                        else
+                        {
+                            ensureOpen(*picked, viewportSizePx);
+                            result.toggledObjectId = id;
+                        }
+                    }
+                    m_pointerCaptured = true;
+                    result.consumed = true;
+                }
+                else if (pickedAccepted)
                 {
                     activate(picked->objectId);
                     result.activatedObjectId = picked->objectId;
@@ -735,6 +770,26 @@ public:
 
         m_leftWasDown = leftDown;
         return result;
+    }
+
+    // Pointer contract: a celestial card never outlives the selection of
+    // its body (empty-space click, another body, another map object).
+    void closeCelestialCardsNotSelected(
+        const MapObjectOverlayFrame& frame,
+        const std::string& selectedBodyId)
+    {
+        std::vector<std::string> toClose;
+        for (const auto& [id, panel] : m_panels)
+        {
+            (void)panel;
+            const auto it = std::find_if(frame.items.begin(), frame.items.end(),
+                                         [&](const MapObjectOverlayItem& item) { return item.objectId == id; });
+            if (it != frame.items.end() && it->infoKind == MapObjectInfoKind::Celestial &&
+                (selectedBodyId.empty() || it->semanticTargetId != selectedBodyId))
+                toClose.push_back(id);
+        }
+        for (const auto& id : toClose)
+            close(id);
     }
 
     std::vector<MapObjectInfoPanelState> orderedPanels() const
@@ -819,6 +874,32 @@ private:
     int m_nextTrackNumber = 1;
     std::uint64_t m_zCounter = 0;
     bool m_leftWasDown = false;
+    game::presentation::PointerClickTracker<std::string> m_cardClickTracker;
+
+    // A body's card never outlives its selection: close the cards of the
+    // other celestial bodies (presentation only).
+    void closeCelestialCardsExcept(
+        const MapObjectOverlayFrame& frame,
+        const std::string& keepId,
+        MapObjectOverlayPointerResult& result)
+    {
+        std::vector<std::string> toClose;
+        for (const auto& [id, panel] : m_panels)
+        {
+            (void)panel;
+            if (id == keepId)
+                continue;
+            const auto it = std::find_if(frame.items.begin(), frame.items.end(),
+                                         [&](const MapObjectOverlayItem& item) { return item.objectId == id; });
+            if (it != frame.items.end() && it->infoKind == MapObjectInfoKind::Celestial)
+                toClose.push_back(id);
+        }
+        for (const auto& id : toClose)
+        {
+            close(id);
+            result.closedObjectId = id;
+        }
+    }
     bool m_pointerCaptured = false;
 };
 

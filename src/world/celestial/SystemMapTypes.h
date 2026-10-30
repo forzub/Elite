@@ -75,6 +75,7 @@ namespace world::celestial
             Range detailed;
             Range inner;
             glm::vec4 blobRgba {0.0f};   // straight (not premultiplied)
+            int objectIndex = -1;        // GalaxyMapSnapshot::objects index
         };
         std::uint64_t uid = 0;           // identity of this vertex set (GPU cache key)
         std::vector<Vertex> vertices;
@@ -99,6 +100,9 @@ namespace world::celestial
         int mediumProxy = -1;
         // Extent of an extended non-gas object (icy debris field), ly.
         float markerRadiusLy = 0.0f;
+        // Map info card of an interstellar-medium structure / icy field
+        // (label, value), derived client-side from the physical properties.
+        std::vector<std::pair<std::string, std::string>> mediumInfo;
     };
 
     struct GalaxyMapSnapshot

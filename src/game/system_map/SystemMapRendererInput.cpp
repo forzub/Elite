@@ -324,8 +324,13 @@ SystemMapRenderer::handleInput(
                     .largestDirectBodyPhysicalSizeMetersAt(
                         localMx,
                         localMy
-                    )
+                    ),
+                currentTimeSeconds()
             );
+        // A celestial card never outlives the selection of its body.
+        m_objectOverlayState.closeCelestialCardsNotSelected(
+            m_systemSceneFrame.interaction.objectOverlay,
+            m_systemView.state().selectedBodyId);
 
         if (leftDown && overlayPointer.consumed)
         {

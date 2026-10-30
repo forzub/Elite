@@ -872,7 +872,6 @@ void SystemMapRenderer::refreshGalaxyWaypointCandidate(
     const world::celestial::GalaxyMapSnapshot& galaxy
 )
 {
-    (void)galaxy;
     m_galaxyInfoOverlayFrame.items.clear();
     m_galaxyInfoOverlayFrame.trajectories.clear();
 
@@ -918,6 +917,43 @@ void SystemMapRenderer::refreshGalaxyWaypointCandidate(
         ) + glm::dvec2(20.0, -2.0);
         item.visible = visible;
         m_galaxyInfoOverlayFrame.items.push_back(std::move(item));
+    }
+
+    // Selected interstellar cloud / icy field: its info card (one card,
+    // closed as soon as the selection is dropped - pointer contract).
+    {
+        const int selected = m_galaxyView.state().selectedMediumObject;
+        std::string cardId;
+        if (selected >= 0 && selected < static_cast<int>(galaxy.objects.size()))
+        {
+            const auto& object = galaxy.objects[static_cast<std::size_t>(selected)];
+            game::system_map::MapObjectOverlayItem item;
+            item.objectId = "medium:" + object.id;
+            item.infoKind = game::system_map::MapObjectInfoKind::WaypointCandidate;
+            item.name = object.name;
+            item.typeName = object.objectType == "icy_debris_field" ? "Icy debris field" : "Interstellar cloud";
+            for (const auto& [label, value] : object.mediumInfo)
+                item.extraFields.push_back({label, value, ""});
+            item.drawGlyph = false;
+            item.pointerInteractive = false;
+            bool visible = false;
+            float depth = 1.0f;
+            item.screenPx = glm::dvec2(projectToScreen(
+                m_galaxyView.positionLyToRender(m_galaxyView.state().selectedMediumHitLy), mvp, viewport, visible,
+                depth));
+            item.visible = true;
+            cardId = item.objectId;
+            if (m_galaxyMediumCardId != cardId)
+            {
+                if (!m_galaxyMediumCardId.empty())
+                    m_objectOverlayState.close(m_galaxyMediumCardId);
+                m_objectOverlayState.ensureOpen(item, glm::dvec2(viewport.width, viewport.height));
+            }
+            m_galaxyInfoOverlayFrame.items.push_back(std::move(item));
+        }
+        if (cardId.empty() && !m_galaxyMediumCardId.empty())
+            m_objectOverlayState.close(m_galaxyMediumCardId);
+        m_galaxyMediumCardId = cardId;
     }
 
     if (!m_galaxyWaypointCandidate.has_value() ||

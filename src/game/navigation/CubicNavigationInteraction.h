@@ -4,6 +4,8 @@
 #include <cmath>
 #include <utility>
 
+#include "src/game/presentation/PointerClickTracker.h"
+
 namespace game::navigation
 {
 
@@ -85,6 +87,9 @@ template<typename Index>
 class CubicNavigationClickTracker
 {
 public:
+    // The shared pointer contract (game::presentation::PointerClickTracker)
+    // keyed by (level, cube index); the interval / distance come from the
+    // map's controls, which default to pointerInteractionSettings().
     bool registerClick(
         double nowSeconds,
         double screenX,
@@ -95,80 +100,20 @@ public:
         double maxDistancePx
     )
     {
-        const double deltaX =
-            screenX - m_lastScreenX;
-
-        const double deltaY =
-            screenY - m_lastScreenY;
-
-        const double distanceSquared =
-            deltaX * deltaX +
-            deltaY * deltaY;
-
-        const double intervalSeconds =
-            nowSeconds -
-            m_lastTimeSeconds;
-
-        const bool doubleClick =
-            m_valid &&
-            intervalSeconds >= 0.0 &&
-            intervalSeconds <= maxIntervalSeconds &&
-            distanceSquared <=
-                maxDistancePx *
-                maxDistancePx &&
-            level == m_lastLevel &&
-            index == m_lastIndex;
-
-        if (doubleClick)
-        {
-            /*
-                Третий клик не должен считаться ещё одним
-                двойным кликом той же последовательности.
-            */
-            reset();
-            return true;
-        }
-
-        m_valid = true;
-
-        m_lastTimeSeconds =
-            nowSeconds;
-
-        m_lastScreenX =
-            screenX;
-
-        m_lastScreenY =
-            screenY;
-
-        m_lastLevel =
-            level;
-
-        m_lastIndex =
-            index;
-
-        return false;
+        game::presentation::PointerInteractionSettings settings;
+        settings.doubleClickMaxIntervalSeconds = maxIntervalSeconds;
+        settings.doubleClickMaxDistancePx = maxDistancePx;
+        return m_tracker.registerClick(
+            nowSeconds, screenX, screenY, std::make_pair(level, index), settings);
     }
 
     void reset()
     {
-        m_valid = false;
-        m_lastTimeSeconds = 0.0;
-        m_lastScreenX = 0.0;
-        m_lastScreenY = 0.0;
-        m_lastLevel = -1;
-        m_lastIndex = {};
+        m_tracker.reset();
     }
 
 private:
-    bool m_valid = false;
-
-    double m_lastTimeSeconds = 0.0;
-    double m_lastScreenX = 0.0;
-    double m_lastScreenY = 0.0;
-
-    int m_lastLevel = -1;
-
-    Index m_lastIndex {};
+    game::presentation::PointerClickTracker<std::pair<int, Index>> m_tracker;
 };
 
 

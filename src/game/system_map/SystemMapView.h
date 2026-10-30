@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/game/presentation/PointerClickTracker.h"
 #include <algorithm>
 #include <cstdint>
 #include <cmath>
@@ -74,8 +75,10 @@ namespace game::system_map
         */
         float navigationParentMinViewportFraction = 0.60f;
 
-        double cubeDoubleClickMaxIntervalSeconds = 0.38;
-        double cubeDoubleClickMaxDistancePx = 12.0;
+        double cubeDoubleClickMaxIntervalSeconds =
+            game::presentation::PointerInteractionSettings {}.doubleClickMaxIntervalSeconds;
+        double cubeDoubleClickMaxDistancePx =
+            game::presentation::PointerInteractionSettings {}.doubleClickMaxDistancePx;
 
         /*
             System navigation stops at S5 (about 2500 km).

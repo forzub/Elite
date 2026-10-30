@@ -3,8 +3,10 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <cstdio>
 
 #include "src/world/interstellar/DensityLattice.h"
+#include "src/world/interstellar/EnvironmentalHazard.h"
 
 namespace game::client
 {
@@ -264,10 +266,127 @@ std::shared_ptr<const world::celestial::GalaxyMapMediumAtlas> buildGalaxyMapMedi
         proxy.centreLy = 0.5 * (lo + hi);
         proxy.radiusLy = static_cast<float>(0.5 * glm::length(hi - lo));
         proxy.blobRgba = glm::vec4(glm::vec3(style), style.a * 1.5f);
+        proxy.objectIndex = static_cast<int>(index);
         proxyOfObject[index] = static_cast<int>(atlas->proxies.size());
         atlas->proxies.push_back(proxy);
     }
     return atlas;
+}
+
+namespace
+{
+std::string fmt(double v, int digits = 3)
+{
+    char buf[64];
+    if (v != 0.0 && (std::abs(v) < 1.0e-2 || std::abs(v) >= 1.0e5))
+        std::snprintf(buf, sizeof buf, "%.*e", digits - 1, v);
+    else
+        std::snprintf(buf, sizeof buf, "%.*g", digits, v);
+    return buf;
+}
+
+std::string phaseLabel(const std::string& phase)
+{
+    if (phase == "warm_partially_ionized") return "warm partially ionized";
+    if (phase == "warm_neutral") return "warm neutral";
+    if (phase == "cold_neutral") return "cold neutral";
+    if (phase == "molecular") return "molecular / dust-rich";
+    if (phase == "supernova_enriched_shell") return "enriched shell";
+    if (phase == "hot_ionized") return "hot ionized";
+    return phase;
+}
+
+std::string extentText(const nlohmann::json& radii)
+{
+    return fmt(2.0 * radii[0].get<double>()) + " x " + fmt(2.0 * radii[1].get<double>()) + " x " +
+           fmt(2.0 * radii[2].get<double>()) + " ly";
+}
+} // namespace
+
+std::vector<std::pair<std::string, std::string>> galaxyMapMediumInfo(
+    const world::celestial::GalaxyObjectDefinition& source)
+{
+    std::vector<std::pair<std::string, std::string>> out;
+    const auto& p = source.properties;
+    const bool region = source.objectType == "interstellar_medium_region";
+    const bool icy = source.objectType == "icy_debris_field";
+    if (!region && !icy)
+        return out;
+    world::interstellar::EnvironmentalHazardInput hazard;
+    if (region)
+    {
+        out.push_back({"Type", "ISM: " + phaseLabel(p.value("phase", std::string()))});
+        if (p.contains("geometry") && p["geometry"].contains("bounding_ellipsoid"))
+            out.push_back({"Extent", extentText(p["geometry"]["bounding_ellipsoid"]["radii_ly"])});
+        const nlohmann::json empty = nlohmann::json::object();
+        const auto& d = p.contains("density_profile") ? p["density_profile"] : empty;
+        const double peak = d.value("peak_density_cm3", 0.0);
+        out.push_back({"Density", fmt(d.value("mean_density_cm3", 0.0)) + " mean / " + fmt(peak) + " peak cm^-3"});
+        out.push_back({"Temperature", fmt(p.value("temperature_k", 0.0)) + " K"});
+        out.push_back({"Ionization", fmt(p.value("ionization_fraction", 0.0))});
+        out.push_back({"Molecular fraction", fmt(p.value("molecular_fraction", 0.0))});
+        out.push_back({"Dust-to-gas", fmt(p.value("dust_to_gas", 0.0))});
+        if (p.value("ice_mantle_fraction", 0.0) > 0.0)
+            out.push_back({"Ice mantles", fmt(p.value("ice_mantle_fraction", 0.0))});
+        if (p.contains("trace_species") && p["trace_species"].is_object())
+        {
+            std::vector<std::pair<double, std::string>> species;
+            for (const auto& item : p["trace_species"].items())
+                if (item.value().is_number())
+                    species.push_back({item.value().get<double>(), item.key()});
+            std::sort(species.rbegin(), species.rend());
+            std::string list;
+            for (std::size_t k = 0; k < species.size() && k < 3; ++k)
+                list += (k ? ", " : "") + species[k].second;
+            if (!list.empty())
+                out.push_back({"Trace species", list});
+        }
+        if (p.contains("extraction_profile"))
+        {
+            const auto& e = p["extraction_profile"];
+            out.push_back({"Resources", "H-fuel " + fmt(e.value("hydrogen_fuel_index", 0.0), 2) + ", volatiles " +
+                                            fmt(e.value("volatile_index", 0.0), 2) + ", heavy " +
+                                            fmt(e.value("heavy_element_index", 0.0), 2)});
+        }
+        if (p.contains("formation"))
+            out.push_back({"Environment", p["formation"].value("environment", std::string())});
+        hazard.gasDensityCm3 = peak;
+        hazard.temperatureK = p.value("temperature_k", 0.0);
+        hazard.ionizationFraction = p.value("ionization_fraction", 0.0);
+        hazard.dustToGas = p.value("dust_to_gas", 0.0);
+        hazard.turbulenceKms = d.value("turbulence_kms", 0.0);
+    }
+    else
+    {
+        out.push_back({"Type", "icy / cometary debris field"});
+        out.push_back({"Origin", p.value("origin", std::string())});
+        if (p.contains("geometry") && p["geometry"].contains("radii_ly"))
+            out.push_back({"Extent", extentText(p["geometry"]["radii_ly"])});
+        if (p.contains("solid_population"))
+        {
+            const auto& sp = p["solid_population"];
+            const auto& n = sp["number_density_per_au3"];
+            out.push_back({"Bodies > 1 km", fmt(sp.value("bodies_above_1km", 0.0))});
+            out.push_back({"Solids per AU^3",
+                           ">1 cm " + fmt(n.value("above_1cm", 0.0)) + ", >10 m " + fmt(n.value("above_10m", 0.0))});
+            hazard.solidsAbove1CmPerAu3 = n.value("above_1cm", 0.0);
+            hazard.solidsAbove10mPerAu3 = n.value("above_10m", 0.0);
+        }
+        if (p.contains("composition"))
+            out.push_back({"Water ice", fmt(p["composition"].value("water_ice", 0.0), 2)});
+        if (p.contains("resource_profile"))
+            out.push_back({"Resources", "volatiles " + fmt(p["resource_profile"].value("volatile_index", 0.0), 2)});
+    }
+    if (p.contains("provenance"))
+        out.push_back({"Provenance", p["provenance"].value("class", std::string("observed"))});
+    const auto h = world::interstellar::environmentalHazard(hazard);
+    std::string reasons;
+    for (std::size_t k = 0; k < h.reasons.size(); ++k)
+        reasons += (k ? " + " : "") + h.reasons[k];
+    out.push_back({"Environmental hazard",
+                   std::string(world::interstellar::environmentalHazardName(h.level)) + " - " + reasons});
+    out.push_back({"Risk for ship", "not computed (needs ship profile and planned velocity)"});
+    return out;
 }
 
 } // namespace game::client

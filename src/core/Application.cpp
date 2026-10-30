@@ -1,4 +1,5 @@
 #include "src/core/HitchProfiler.h"
+#include "src/core/DevFrameCapture.h"
 #include <iostream>
 #include "src/core/RuntimeTrace.h"
 #include <GLFW/glfw3.h>
@@ -1295,6 +1296,23 @@ if ((systemMapMode || serviceMode))
         xprocPhaseBegin = XprocTraceClock::now();
 #endif
         core::hitch::mark("render_tail");
+        for (auto& capture : core::dev::frameCaptureRequests())
+            if (!capture.done && glfwGetTime() >= capture.atSeconds)
+            {
+                // DEV: this window's own back buffer (never a screen grab).
+                capture.done = true;
+                GLint viewport[4] = {0, 0, 0, 0};
+                glGetIntegerv(GL_VIEWPORT, viewport);
+                int width = 0, height = 0;
+                glfwGetFramebufferSize(glfwGetCurrentContext(), &width, &height);
+                std::vector<unsigned char> rgb(static_cast<std::size_t>(width) * height * 3);
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                glPixelStorei(GL_PACK_ALIGNMENT, 1);
+                glReadBuffer(GL_BACK);
+                glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
+                const bool ok = core::dev::writePngRgb(capture.path, width, height, rgb);
+                std::cerr << "[FrameCapture] " << capture.path << (ok ? " written" : " FAILED") << std::endl;
+            }
         m_window->swapBuffers();
         core::hitch::mark("swap_buffers");
         core::hitch::endFrame();

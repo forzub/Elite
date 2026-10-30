@@ -26,6 +26,10 @@ std::shared_ptr<const world::celestial::GalaxyMapMediumAtlas> buildGalaxyMapMedi
     const std::vector<world::celestial::GalaxyObjectDefinition>& objects,
     std::vector<int>& proxyOfObject);
 
+// Map info card rows of a medium structure / icy field (empty otherwise).
+std::vector<std::pair<std::string, std::string>> galaxyMapMediumInfo(
+    const world::celestial::GalaxyObjectDefinition& source);
+
 inline void rebuildGalaxyMapCatalogLayer(
     world::celestial::GalaxyMapSnapshot& snapshot,
     const std::vector<world::celestial::StarSystemSummary>& systems,
@@ -90,6 +94,7 @@ inline void rebuildGalaxyMapCatalogLayer(
         item.tags = source.tags;
         item.mediumVolume = galaxyMapMediumVolume(source);
         item.mediumProxy = proxyOfObject[index];
+        item.mediumInfo = galaxyMapMediumInfo(source);
         if (source.objectType == "icy_debris_field" && source.properties.contains("geometry") &&
             source.properties["geometry"].contains("radii_ly"))
             item.markerRadiusLy = source.properties["geometry"]["radii_ly"][0].get<float>();

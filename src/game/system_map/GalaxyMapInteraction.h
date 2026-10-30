@@ -87,6 +87,29 @@ namespace game::system_map
             double localMouseY
         ) const;
 
+        // Medium structure / icy field under the cursor: projected bounding
+        // prefilter, then the ray against the coarse shell triangles of the
+        // few candidates (icy fields: marker distance). Nearest hit to the
+        // camera; returns the object index and the hit point.
+        void applyMediumClick(
+            GalaxyMapView& view,
+            const Viewport& viewport,
+            int object,
+            const glm::dvec3& hitLy,
+            double localMouseX,
+            double localMouseY,
+            double nowSeconds
+        ) const;
+
+        int pickMedium(
+            const GalaxyMapView& view,
+            const Viewport& viewport,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            double localMouseX,
+            double localMouseY,
+            glm::dvec3& hitLy
+        ) const;
+
         int pickSystem(
             const GalaxyMapView& view,
             const Viewport& viewport,

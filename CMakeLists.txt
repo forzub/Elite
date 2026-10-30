@@ -959,6 +959,12 @@ if(ELITE_BUILD_SERVER)
         target_link_libraries(EliteNavigationCapabilityCheck PRIVATE ws2_32 mswsock)
     endif()
 
+    # DEV check: the map pointer contract (celestial cards) on the production
+    # overlay state.
+    add_executable(EliteMapPointerCheck tools/navigation_runtime/MapPointerCheck.cpp)
+    target_include_directories(EliteMapPointerCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
+    target_link_libraries(EliteMapPointerCheck PRIVATE nlohmann_json::nlohmann_json)
+
     # DEV check: emergency thermal coupling on the production ShipCore.
     add_executable(EliteShipThermalCheck
         tools/navigation_runtime/ShipThermalCheck.cpp

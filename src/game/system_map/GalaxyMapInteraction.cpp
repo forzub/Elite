@@ -1,4 +1,7 @@
 #include "src/game/system_map/GalaxyMapInteraction.h"
+#include <iostream>
+#include <cstdlib>
+#include <chrono>
 
 #include "src/game/system_map/GalaxyMapView.h"
 #include "src/game/navigation/CubicNavigationInteraction.h"
@@ -268,6 +271,143 @@ namespace game::system_map
         );
     }
 
+    int GalaxyMapInteraction::pickMedium(
+        const GalaxyMapView& view,
+        const Viewport& viewport,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        double localMouseX,
+        double localMouseY,
+        glm::dvec3& hitLy
+    ) const
+    {
+        const auto& atlas = galaxy.mediumAtlas;
+        const glm::mat4 projection = view.projectionMatrix(viewport);
+        const glm::mat4 viewMatrix = view.viewMatrix();
+        const glm::mat4 mvp = projection * viewMatrix;
+        const float renderPerLy = view.vectorLyToRender(glm::dvec3(1.0, 0.0, 0.0)).x;
+        // Mouse ray in light-years.
+        const glm::mat4 inverse = glm::inverse(mvp);
+        const float ndcX = static_cast<float>(2.0 * localMouseX / std::max(viewport.width, 1) - 1.0);
+        const float ndcY = static_cast<float>(1.0 - 2.0 * localMouseY / std::max(viewport.height, 1));
+        glm::vec4 nearPoint = inverse * glm::vec4(ndcX, ndcY, -1.0f, 1.0f);
+        glm::vec4 farPoint = inverse * glm::vec4(ndcX, ndcY, 1.0f, 1.0f);
+        nearPoint /= nearPoint.w;
+        farPoint /= farPoint.w;
+        const glm::dvec3 origin = glm::dvec3(glm::vec3(nearPoint)) / static_cast<double>(renderPerLy);
+        const glm::dvec3 direction = glm::normalize(glm::dvec3(glm::vec3(farPoint - nearPoint)));
+        const glm::vec3 cameraRight(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+
+        int best = -1;
+        double bestT = 1.0e30;
+        if (atlas)
+            for (const auto& proxy : atlas->proxies)
+            {
+                // Projected bounding prefilter.
+                bool visible = false;
+                float depth = 1.0f;
+                const glm::vec3 c = view.positionLyToRender(proxy.centreLy);
+                const glm::vec2 centre = projectToScreen(c, mvp, viewport, visible, depth);
+                const glm::vec2 edge =
+                    projectToScreen(c + cameraRight * (proxy.radiusLy * renderPerLy), mvp, viewport, visible, depth);
+                const float radiusPx = glm::length(edge - centre);
+                if (glm::length(glm::vec2(localMouseX, localMouseY) - centre) > radiusPx + 2.0f)
+                    continue;
+                // Exact hit on the coarse shell (Moller-Trumbore).
+                const auto& range = proxy.coarse;
+                for (std::uint32_t v = range.first; v + 2 < range.first + range.count; v += 3)
+                {
+                    const glm::dvec3 a(atlas->vertices[v].positionLy);
+                    const glm::dvec3 e1 = glm::dvec3(atlas->vertices[v + 1].positionLy) - a;
+                    const glm::dvec3 e2 = glm::dvec3(atlas->vertices[v + 2].positionLy) - a;
+                    const glm::dvec3 pv = glm::cross(direction, e2);
+                    const double det = glm::dot(e1, pv);
+                    if (std::abs(det) < 1.0e-12)
+                        continue;
+                    const glm::dvec3 tv = origin - a;
+                    const double u = glm::dot(tv, pv) / det;
+                    if (u < 0.0 || u > 1.0)
+                        continue;
+                    const glm::dvec3 qv = glm::cross(tv, e1);
+                    const double w = glm::dot(direction, qv) / det;
+                    if (w < 0.0 || u + w > 1.0)
+                        continue;
+                    const double t = glm::dot(e2, qv) / det;
+                    if (t > 0.0 && t < bestT)
+                    {
+                        bestT = t;
+                        best = proxy.objectIndex;
+                    }
+                }
+            }
+        if (best >= 0)
+        {
+            hitLy = origin + direction * bestT;
+            return best;
+        }
+        // Icy debris fields: their sparse marker (screen distance).
+        float bestPx = static_cast<float>(view.controls().systemPickRadiusPx);
+        for (std::size_t i = 0; i < galaxy.objects.size(); ++i)
+        {
+            if (galaxy.objects[i].objectType != "icy_debris_field")
+                continue;
+            bool visible = false;
+            float depth = 1.0f;
+            const glm::vec2 screen =
+                projectToScreen(view.positionLyToRender(galaxy.objects[i].positionLy), mvp, viewport, visible, depth);
+            const float d = glm::length(glm::vec2(localMouseX, localMouseY) - screen);
+            if (visible && d < bestPx)
+            {
+                bestPx = d;
+                best = static_cast<int>(i);
+                hitLy = galaxy.objects[i].positionLy;
+            }
+        }
+        return best;
+    }
+
+    /*
+        Pointer contract for a cloud / icy field: the single click selects it
+        (star selection dropped, info card follows the selection); the
+        second click of a double click keeps it selected and flies the camera
+        to the navigation cube containing the clicked point. Never a route.
+    */
+    void GalaxyMapInteraction::applyMediumClick(
+        GalaxyMapView& view,
+        const Viewport& vp,
+        int object,
+        const glm::dvec3& hitLy,
+        double localMx,
+        double localMy,
+        double nowSeconds
+    ) const
+    {
+        const auto& controls = view.controls();
+        view.state().cubeClickTracker.reset();
+        view.state().selectedSystemId = -1;
+        view.state().selectedMediumObject = object;
+        view.state().selectedMediumHitLy = hitLy;
+        const bool doubleClick =
+            view.state().mediumClickTracker.registerClick(nowSeconds, localMx, localMy, object);
+        if (!doubleClick || !view.state().navigationGrid.enabled())
+            return;
+        auto& grid = view.state().navigationGrid;
+        const int level = grid.level();
+        navigation::GalaxyNavigationCell cell;
+        cell.level = level;
+        cell.index = grid.nearestIndexForPositionLy(hitLy, level);
+        cell.center = grid.cellCenterLy(cell.index, level);
+        cell.size = grid.cellSizeLy(level);
+        grid.setAnchorFromPositionLy(hitLy);
+        grid.selectCell(cell);
+        view.state().navigationFocusLy = hitLy;
+        view.state().navigationFocusValid = true;
+        const float fitted = game::navigation::cubicNavigationPerspectiveFitDistance(
+            static_cast<float>(cell.size) * GalaxyMapView::RenderUnitsPerLightYear,
+            glm::radians(48.0f), vp.width, vp.height);
+        view.beginCameraFlight(view.positionLyToRender(cell.center),
+                               std::clamp(fitted, controls.minDistance, controls.maxDistance), nowSeconds);
+    }
+
     int GalaxyMapInteraction::pickSystem(
         const GalaxyMapView& view,
         const Viewport& viewport,
@@ -402,6 +542,61 @@ namespace game::system_map
         const bool rightDown = frame.rightDown;
 
         GalaxyMapInputResult result;
+        // DEV (ELITE_DEV_GALAXY_PICK_TEST=1): exercise the real cloud click
+        // path without a mouse - 5 s after the map is shown pick the largest
+        // visible cloud at its projected centre (single click), 0.2 s later
+        // again (double click: focus cube). Logs [GalaxyPick] timings.
+        {
+            static const bool pickTest = [] {
+                const char* v = std::getenv("ELITE_DEV_GALAXY_PICK_TEST");
+                return v && *v;
+            }();
+            static double firstSeen = -1.0;
+            static int step = 0;
+            if (pickTest && galaxy.mediumAtlas && step < 2)
+            {
+                if (firstSeen < 0.0)
+                    firstSeen = frame.nowSeconds;
+                if (frame.nowSeconds - firstSeen >= 5.0 + 0.2 * step)
+                {
+                    const glm::mat4 mvp = view.projectionMatrix(vp) * view.viewMatrix();
+                    const float renderPerLy = view.vectorLyToRender(glm::dvec3(1.0, 0.0, 0.0)).x;
+                    const glm::vec3 right(view.viewMatrix()[0][0], view.viewMatrix()[1][0], view.viewMatrix()[2][0]);
+                    float bestPx = 0.0f;
+                    glm::vec2 target(0.0f);
+                    for (const auto& proxy : galaxy.mediumAtlas->proxies)
+                    {
+                        bool visible = false;
+                        float depth = 1.0f;
+                        const glm::vec3 c = view.positionLyToRender(proxy.centreLy);
+                        const glm::vec2 centre = projectToScreen(c, mvp, vp, visible, depth);
+                        if (!visible)
+                            continue;
+                        bool edgeVisible = false;
+                        const float px = glm::length(projectToScreen(c + right * (proxy.radiusLy * renderPerLy), mvp, vp,
+                                                                     edgeVisible, depth) - centre);
+                        if (px > bestPx)
+                        {
+                            bestPx = px;
+                            target = centre;
+                        }
+                    }
+                    const auto begin = std::chrono::steady_clock::now();
+                    glm::dvec3 hit(0.0);
+                    const int object = pickMedium(view, vp, galaxy, target.x, target.y, hit);
+                    const double ms = std::chrono::duration<double, std::milli>(
+                        std::chrono::steady_clock::now() - begin).count();
+                    std::cerr << "[GalaxyPick] step=" << step << " pick_ms=" << ms << " object=" << object
+                              << " screen=(" << target.x << "," << target.y << ") radius_px=" << bestPx
+                              << " name=" << (object >= 0 ? galaxy.objects[static_cast<std::size_t>(object)].name
+                                                          : std::string("-"))
+                              << std::endl;
+                    if (object >= 0)
+                        applyMediumClick(view, vp, object, hit, target.x, target.y, frame.nowSeconds);
+                    ++step;
+                }
+            }
+        }
 
         const auto announceGalaxyLevel =
             [&](int level)
@@ -593,6 +788,24 @@ namespace game::system_map
         {
             view.state().navigationGrid.clearHoveredCell();
         }
+        // Medium hover: re-picked only when the cursor moved (cheap when idle).
+        if (inside && !view.state().camera.rotating && !view.state().camera.panning)
+        {
+            if (std::abs(localMx - view.state().mediumHoverMouseX) +
+                    std::abs(localMy - view.state().mediumHoverMouseY) > 0.5)
+            {
+                glm::dvec3 hit(0.0);
+                view.state().hoveredMediumObject =
+                    pickMedium(view, vp, galaxy, localMx, localMy, hit);
+                view.state().mediumHoverMouseX = localMx;
+                view.state().mediumHoverMouseY = localMy;
+            }
+        }
+        else
+        {
+            view.state().hoveredMediumObject = -1;
+            view.state().mediumHoverMouseX = -1.0e9;
+        }
 
 
 
@@ -725,12 +938,32 @@ namespace game::system_map
                             );
 
 
-                    if (picked >= 0)
+                    glm::dvec3 mediumHitLy(0.0);
+                    const int pickedMedium =
+                        picked < 0 && !cubeCenterPicked
+                            ? pickMedium(view, vp, galaxy, localMx, localMy, mediumHitLy)
+                            : -1;
+
+                    if (pickedMedium >= 0)
+                    {
+                        /*
+                            Interstellar cloud / icy field (pointer contract):
+                            a single click selects it (any star selection is
+                            dropped) and opens its info card; a double click
+                            keeps it selected and flies the camera to the
+                            navigation cube containing the clicked point.
+                            Never a route request.
+                        */
+                        applyMediumClick(view, vp, pickedMedium, mediumHitLy, localMx, localMy,
+                                         frame.nowSeconds);
+                    }
+                    else if (picked >= 0)
                     {
                         /*
                             A system click is not part of a cube double-click
                             sequence.
                         */
+                        view.state().selectedMediumObject = -1;
                         view.state().cubeClickTracker.reset();
 
                         /*
@@ -746,6 +979,8 @@ namespace game::system_map
                     }
                     else if (view.state().navigationGrid.enabled())
                     {
+                        // A cube / empty-space click drops the cloud selection.
+                        view.state().selectedMediumObject = -1;
                         /*
                             Повторно picking не выполняем.
 

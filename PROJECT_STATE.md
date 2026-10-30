@@ -1,5 +1,5 @@
 # ELITE — PROJECT STATE (single canonical continuation document)
-Updated: 2026-10-29, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONLY**.
+Updated: 2026-10-30, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONLY**.
 
 ## Hard rules
 - This file is the ONLY active continuation state. No alternative state /
@@ -66,7 +66,7 @@ Updated: 2026-10-29, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONL
   PROPULSION and SHIP SERVICES; cross-link = emergency thermal coupling only,
   bounded by real hardware, gradients and sink headroom; no free / doubled heat.
   Installed since 2026-10-29: module `propulsion_emergency_heat_exchanger`
-  (ER-5 surplus -> service coolant, see the stage section).
+  (ER-5 surplus -> service coolant, bounded, energy exact).
 
 ### Universe
 - 61 stellar systems at real ICRS positions (identity audit), deterministic
@@ -125,119 +125,135 @@ Updated: 2026-10-29, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONL
   (client attitude prediction); LocalPredictedPresentationContractTests does not
   compile; tools/check_map_architecture.py misses a deleted .inl.
 
-## Current stage (user order 2026-10-29 evening, 24 points) — WIP
-Order: decomposition -> PROJECT_STATE -> interstellar clouds -> CPU waste ->
-propulsion / power / thermal / damage / capability / planner / autopilot
-audit + fixes -> acceptance -> STOP (next stage: interstellar navigation).
-Not in scope: planets / orbits / resources, interstellar route planner,
-docking capture system.
+## Factual capability (current contract)
+- Server `ShipCore::controlAuthorityTelemetry()` is the one published fact,
+  wire schema 22: signed RCS / angular authority (24-nozzle allocator
+  samples, gas share, ER-5 power share), LIVE forward main
+  (`workingForwardAccelerationMps2` = installed x ER-5 power share), the
+  Assisted working thrust axis + emergency flag + drive-motor index, and
+  the combined two-axis RCS share (`rcsPairFeasibility01`).
+- The client (`applyAuthorityToControlParams`, MotherComputer adapter) takes
+  these values; it never re-derives the axis or main from replicated module
+  health. ER-5 power uses ONE law (`ShipCore::engineReactorAvailableMW`) in
+  the executor and in the capability.
+- Planned turns use min(0.5, combined RCS share) of the angular scalar.
+  Capability losses reprofile / hand back; recoveries (+10 %, 0.5 s)
+  reprofile up to the planned nominal (both laws stabilise and replan on a
+  failed or invalidated route: 5 attempts >= 5 s apart).
 
-### Done this stage (commits on main)
-- Decomposition (`cf5f97ae`, `4e45618e`, `7d62dfb3`): see Code layout;
-  `DockingCorridorPresentation` extracted. Behaviour preserving: matrix
-  126/126 identical, real flight COMPLETE. Sizes before -> after (bytes):
-  SpaceState.cpp 410889 -> 96073 (+ Docking 156964, Maps, Hud, DevPanel),
-  GameSimulation.cpp 402830 -> 119556 (+ NavigationLab 113595 ...),
+## Map interaction contract
+- ONE pointer contract (`game::presentation::PointerClickTracker`,
+  `PointerInteractionSettings` 0.38 s / 12 px): hover never selects; a single
+  click acts at once and is never undone; a double click on the same target
+  adds its action; the cube trackers delegate to it.
+- Galaxy Map clouds / icy fields: hover brightens (re-picked only when the
+  cursor moves: projected bounding prefilter + ray vs coarse shell
+  triangles, ~1.4 ms Debug per move); click selects (star selection
+  dropped) and opens ONE info card (shared overlay) with physical data,
+  provenance and the derived ENVIRONMENTAL hazard
+  (`world::interstellar::environmentalHazard`, NEGLIGIBLE..SEVERE with
+  reasons, never stored); risk for a ship: "not computed" (seam
+  `RouteRiskForShip`); star / cube / empty click drops it and the card;
+  double click flies to the navigation cube containing the clicked point.
+- System Map bodies: single click selects only; double click opens the
+  card, the next double click closes it; another body's click closes the
+  old card; a card never outlives its body's selection.
+
+## Previous stage (2026-10-29, 24 points) - condensed
+- Decomposition (`cf5f97ae`, `4e45618e`, `7d62dfb3`), sizes before -> after:
+  SpaceState.cpp 410889 -> 96073, GameSimulation.cpp 402830 -> 119556,
   SystemMapRenderer.cpp 156965 -> 15700, DedicatedClientRouteAutopilot.h
-  155185 -> 86035 (+ RouteExecutionCore.cpp), ShipCore.cpp 153339 -> 23514.
-  SpaceState.cpp.obj 43.4k -> 19.4k COFF sections: `-mbig-obj` no longer
-  needed (kept as a safety net). No dependency cycle removed (same classes).
-  OPEN: `updateDockingAdvisory` is still one 3.8k-line member function.
-- Galaxy Map medium (`0a49b731`): static voxel-shell proxies (greedy-meshed
-  boundary faces, 2 LODs, molecular inner shell, far blobs, frustum culling,
-  one multi-draw, premultiplied, no depth writes); background not drawn;
-  faint warm / strong molecular weights. Map open, Debug: medium draw 59 ->
-  0.08 ms, frame 82 -> 22 ms; with the v4 data (2237 structures) 0.55 ms /
-  21 ms, 0 frames > 50 ms. `tools/perf/galaxy_map_perf.sh`,
-  `ELITE_DEV_GALAXY_MAP_AT`, `[FrameStats]`/`[GalaxyMapPerf]` traces.
-- Interstellar v4 (`bbaf7b9e`, generation version interstellar 3 -> 4 only;
-  planets untouched): cavity / shell substrate (`InterstellarMediumField`:
-  Local Bubble, Loop I S1/S2 observed; procedural superbubbles beyond 300
-  ly), immersed / compressed / intersecting walls, `CloudFormationPotential`,
-  structures per cell = rate x integrated potential, calibrated on the
-  observed census (14.97 expected warm clouds within 15 pc vs ~15); same
-  environment = same density near Sol and elsewhere; provenance observed /
-  procedural_inferred / procedural_generated; 2237 structures within the
-  domain + 400-ly context, 10 cavity descriptors, 50 icy debris fields
-  (statistical solid populations, deterministic on-demand bodies);
-  `InterstellarNavigationEnvironment` (physical samples / segment
-  integrals, no route cost). Check: `EliteUniverseGenerator ism-check`.
-  VISUALLY UNVERIFIED by the user (window snapshot only: clouds very faint
-  near Sol, stars / labels dominate).
-- CPU waste: docking corridor presentation 7.2-7.8 -> 2.3 ms / frame
-  (`7d62dfb3`). Scene prepare: debug assembly collection measured
-  negligible (one small struct per entity) - not changed. Manoeuvre
-  recompile: no > 80 ms frame in flight - not moved to a worker.
-  `tools/perf/build_relwithdebinfo.sh` (build-relwithdebinfo/): Release
-  flight frame median 9.5 ms, 0 frames > 50 ms after start.
-- Route pilot cadence (`d41d8284`): the pilot stepped once per RENDER frame
-  with the server step -> pilot clock x2.7 at 100 FPS (root cause of the old
-  "pilot dt x1.64" and "game ~15 % slower than replay"); now steps on elapsed
-  authoritative time. Debug / Release flights: pilot time = flight time.
-- Emergency heat exchanger PROPULSION -> SERVICES (`a5314531`, thresholds
-  fixed in `71c60818`): installed module + descriptor rating (60 MW, 0.25
-  MW/K, pump 20 MW/MW on the service bus, engage 1950 K / release 1700 K of
-  ER-5 (passport safe 2100 / critical 2400), service coolant interlock
-  90 / 97 % of critical); energy exact. `EliteShipThermalCheck` 9/9 PASS.
-  Finding: main / RCS nozzles conduct nothing into `m_propulsionThermal`
-  (own emitter pads, coolantHeatMW = 0 by design) - the store is inert;
-  ER-5 surplus is what the exchanger relieves. In the tested state the
-  transfer is pump-power limited (~5 MW: little spare service power).
-- Capability honesty (`71c60818`): ER-5 available power (one law,
-  `engineReactorAvailableMW`) in the published Newtonian main / RCS
-  authority; RCS node projection over x/y/z nozzles (stale authority after
-  y/z damage fixed). `EliteNavigationCapabilityCheck` 14/14 PASS. Matrix
-  90/126 PASS, 0 violations, 4 narrow X runs differ 0.1-3.5 s.
+  155185 -> 86035, ShipCore.cpp 153339 -> 23514; SpaceState.cpp.obj 43.4k ->
+  19.4k COFF sections (`-mbig-obj` kept as a safety net only).
+- Galaxy Map medium proxies (`0a49b731`): 59 -> 0.08 ms medium draw.
+- Interstellar v4 (`bbaf7b9e`): causal clouds, no Sol privilege, provenance,
+  icy fields, `InterstellarNavigationEnvironment` (see Universe).
+- CPU: docking corridor cache 7.5 -> 2.3 ms (`7d62dfb3`); pilot steps on
+  authoritative time (`d41d8284`); RelWithDebInfo perf path
+  (`tools/perf/build_relwithdebinfo.sh`): flight frame median 9.5 ms.
+- Emergency heat exchanger PROPULSION -> SERVICES (`a5314531`, `71c60818`):
+  60 MW rating, engage 1950 K / release 1700 K, energy exact
+  (`EliteShipThermalCheck` 9/9). Main / RCS nozzles conduct no heat into
+  `m_propulsionThermal` (own pads): that store is inert; the exchanger
+  relieves ER-5 surplus (pump-power limited ~5 MW in the tested state).
+- Capability: ER-5 power, RCS x/y/z node projection (`71c60818`).
 
-### Audit classification (this stage)
-- Two narrow zones, delay 6, main lost in zone 1: ALREADY FIXED (offline
-  replay on current main: I main 50 % at 40 s and X 3 mains lost at 40 s,
-  delays 1/3/6: 0 violations, DONE).
-- Exact 180 deg vertex: STILL REAL in DockingAdvisoryPlanner (explicit
-  refusal "degenerate docking turn", no silent failure); no production
-  route produces it; a fix needs a lateral loop outside the corridor
-  volumes - OPEN.
-- Combined RCS axes: MEASURED - two signed axes at their single-axis limits
-  together deliver ~50 % (healthy 0.502, one nozzle lost 0.486); per-axis
-  values stay honest for single axes; planning still uses min-of-axis
-  scalars - OPEN (needs a combined-authority rule in the pilot / planner).
-- Dead translational RCS direction: hand-back even if the remaining route
-  might not need it (terminal hold needs all directions) - OPEN, low.
-  Dead angular direction: refusal is physically honest (cannot stop a turn).
-- Capability recovery (repair) does not raise route speeds: STILL REAL - OPEN, low.
-- Assisted working axis: execution and autopilot use the real (emergency)
-  axis; the planner is direction-agnostic on conservative single-motor
-  thrust - no change.
-- Reactor off while executing: Newtonian telemetry withdrawn (client waits,
-  replans); `capabilities()`/`effectivePhysics` ignore reactor state, the
-  published telemetry is the gate.
+## Current stage (user order 2026-10-30): close the failed damage gates, residual capability, map interaction
+### Root causes fixed
+- A1 N1 ER-5 70 % (`afcd2f6e`): offline replay reproduced the game failure
+  (3 violations, 1034 m). First wrong layer: the server published main
+  11.37 m/s2 (= physics), but `applyAuthorityToControlParams` applied only
+  the RCS bounds for Newtonian and kept the main from the installed
+  capability cached per equipment revision (ER-5 damage does not change
+  it) -> watch / profile / compiler / pilot kept 36.77. Now main = min(rating,
+  live published). Replay delay 3 / 6: reprofiled 36.77 -> 11.37, 0
+  violations, terminal reached.
+- A2 A3 engine L lost (`a54b8f5d`): the client rebuilt a second axis from
+  replicated module health (nose) while the server executed the 49.5 deg
+  offset axis ("working thrust axis mismatch"); with the axis fixed the
+  doctrine still rejected the emergency axis because the drive-motor index
+  was the client's -1, which then read as "telemetry lost". Fix: the axis,
+  emergency flag and motor index come from the server telemetry; wire
+  schema had never carried `workingForwardAccelerationMps2` (local sessions
+  copy structs) - now serialised; an Assisted capability loss stabilises
+  and replans instead of failing.
+- B1 X one main lost -> 10 % forward: EXPLAINED, kept. The projection
+  balances every surviving aft main down to the weakest (95 %-damaged main
+  ~10 % -> 4 x 10 %). An experiment projecting the gimbal-trimmed sum
+  (~57-73 m/s2) let the planner fly fast while the asymmetry torque fell on
+  the RCS: angular authority collapsed 1.90 -> 0.87 by nozzle heating and the
+  flight had 6 violations (542 m). Reverted; the conservative projection is
+  what the plant can sustain.
+- B2 coupled RCS (`3975ff6b`): two axes at their single-axis limits deliver
+  ~50 % each (healthy 0.502, one nozzle lost 0.486): published share,
+  planned turns use min(0.5, share) - healthy plans unchanged.
+- B3 recovery (`3975ff6b`): replay main 50 % at 60 s, restored at 120 s:
+  main 18.39 -> 36.77 recovered-reprofiled, settled 232.7 s (no repair
+  260.9 s), 0 violations.
+- Maps (`ab9018f6`): see Map interaction contract. Verified: EliteMapPointerCheck
+  7/7 (E1-E4); in game (DEV pick test, own-framebuffer capture): G cloud
+  picked in 1.4 ms, card with all fields, double-click focus cube; Galaxy
+  Map open: medium 0.5-0.6 ms, frame ~20 ms, 0 frames > 50 ms.
+  Selected outline toned down after the first capture (alpha 0.10).
+- Offline matrix after every step: 90/126 PASS, 0 violations (identical to
+  the post-A1 state for B2 / B3).
 
-### Acceptance flights (real game, nav-stress:simple, Debug)
-Run `tools/navigation_runtime/newtonian/acceptance.sh` on the build of
-`d41d8284` + capability commits (2026-10-30). Damage at t_moving = 60 s.
-| flight | result | violations | DONE (pilot s) |
-|---|---|---|---|
-| N1 healthy | COMPLETE | 0 (xtrack 19.5) | 239.8 |
-| Newtonian-X healthy | COMPLETE | 0 | 192.4 |
-| A3 (Assisted-I) healthy | COMPLETE, failures 0 | - | (200 s window) |
-| N1 narrow fixture | DONE; harness status FAILED only by its 30-s BLUE transit limit (zone flown at 33.9 m/s = 35 s) | 0 | 289.9 |
-| X narrow fixture | same harness limit | 0 | 244.5 |
-| N1 main 50 % | reprofiled 36.77 -> 18.39 | 0 | 269.2 |
-| N1 RCS y-nozzle 60 % | reprofiled (rcs 2.0 -> 1.85: y/z projection fix visible) | 0 | 233.3 |
-| N1 reactors off 60 s / on 75 s | coast, replan | 0 | 214.0 |
-| N1 gas tank 60 % at 30 s | COMPLETE | 0 | 233.2 |
-| N1 main 50 % + RCS x-nozzle 70 % | reprofiled | 0 | 270.1 |
-| X one main (upper-left) 95 % | main 73.55 -> 7.35, hand-back + replan | 0 | not in window |
-| **N1 ER-5 70 %** | **FAILED gate**: published main = physics (11.37 m/s2), hand-back "cannot brake to the speeds ahead", on the new plan the safety monitor went UNRECOVERABLE in a curve (t 135 s, s 22.6 km), max xtrack 1034 m, recovered at 170 s, no DONE | 3 | - |
-| **A3 engine L lost** | **FAILED**: "working thrust axis mismatch" (server vs client axis dot 0.65) blocks replanning, then "authoritative motor telemetry lost during docking" | - | - |
-- OPEN (from the gate): N1 ER-5 70 % - root cause not isolated (replan
-  on 31 % main enters a curve it cannot hold); X: one lost main of four
-  leaves only 10 % working forward (torque-neutral ray?) - verify; A3: the
-  server / client working-axis disagreement after an engine loss (client
-  doctrine override in MotherComputer) - Assisted damage NOT accepted.
+### Acceptance (real game, nav-stress:simple, Debug, acceptance.sh run acc2)
+Runs acc2 (all) + acc3 (Assisted after `0287c7ea`); damage at t_moving 60 s;
+hitches = frames > 80 ms after start.
+| flight | result | violations | DONE (pilot s) | notes |
+|---|---|---|---|---|
+| N1 healthy | COMPLETE | 0 (19.1 m) | 234.9 | 0 hitches |
+| Newtonian-X healthy | COMPLETE | 0 | 187.6 | 0 hitches |
+| A3 healthy | COMPLETE | - (27.3 m) | 200-s window | 0 hitches |
+| N1 / X narrow fixture | DONE; harness FAILED only by its 30-s BLUE transit limit | 0 | 291.7 / 241.3 | 1 single 80.5 ms recompile frame (I) |
+| N1 main 50 % | reprofiled | 0 | 275.6 | |
+| N1 ER-5 70 % | reprofiled 36.77 -> 11.37 | 0 (28.2 m) | not in window (slow) | was 3 violations / 1034 m |
+| N1 RCS y-nozzle 60 % | reprofiled | 0 | 232.8 | |
+| N1 reactors off / on | coast, replan | 0 | 217.9 | |
+| N1 gas tank 60 % | COMPLETE | 0 | 233.0 | |
+| N1 main 50 % + RCS 70 % | reprofiled | 0 | 271.5 | |
+| X one main lost | hand-back, replan at 7.35 m/s2; harness BLUE 180-s timeout | 0 | - | 14 frames 110-130 ms (autopilot recompute on the slow profile) |
+| A3 engine L lost | recover + replan on the server axis, COMPLETE | 291 m max on the new plan (inside the 250-500 m corridor) | - | |
+| A3 reactor 60 % | loss detected, recover; Assisted optimizer finds NO feasible path (12 replans), ship held safe | 25.5 m | - | FAILED (harness timeout) - OPEN |
+| A3 aft L + fore R lost | honest refusal "no attitude control" after 5 attempts, held safe | 25.4 m | - | controlled refusal |
+
+### OPEN
+- GATE NOT CLOSED: A3 reactor 60 % - the Assisted continuous optimizer
+  finds no feasible path for the derated ship (physically a slower route
+  should exist): planner side of the Assisted damage stack.
+- X one main lost: 110-130 ms autopilot frames on the slow replanned profile.
+- `updateDockingAdvisory` (3.8k lines) still one member function (debt: no
+  behaviour-neutral seam taken during the acceptance run).
+- Assisted after an engine loss tracks curves poorly (185 m cross-track on
+  the replanned route; inside the 250-500 m route corridor, healthy <= 20 m).
+- Combined RCS share is used by planned turns only; translation + rotation
+  in narrow zones is not separately bounded (small attitude-hold torque).
+- Exact 180 deg docking vertex: explicit refusal, no production route hits it.
+- NOT visually reviewed by the user: Galaxy Map clouds / cards, System Map.
+- Baseline reds above unchanged.
 
 ## Next step
-- Fix the two failed damage gates above (N1 ER-5 70 %, A3 engine loss),
-  then re-run acceptance.sh. Then user review: Galaxy Map (v4 clouds, icy fields), System Map. Then the
-  separate stage "interstellar navigation" (ephemeris, gravity, domain,
-  InterstellarNavigationEnvironment hazards, resources, jump logic).
+- After the user's review: the separate stage INTERSTELLAR NAVIGATION
+  (connected domain, ephemerides, gravity, InterstellarNavigationEnvironment
+  hazards, icy fields, rogue objects, refuelling, ship-specific risk).

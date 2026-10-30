@@ -290,8 +290,10 @@ void ShipCore::newtonianPropulsionPowerShares(double& mainShare01, double& rcsSh
         double demand = 0.0;
         for (const auto& slotId : groups[g].poweredEngineSlotIds)
             for (std::size_t i = 0; i < topology.size() && i < engineIds.size(); ++i)
+                // Forward authority: the aft mains a group powers at full
+                // forward thrust (Assisted fore mains never burn with them).
                 if (std::string_view(topology[i].id) == slotId &&
-                    topology[i].role != game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+                    topology[i].role == game::ship::plant::EngineSlotRole::AftMain)
                     demand += fullDemandMW(engineIds[i]);
         if (demand > 0.0)
             mainShare01 = std::min(mainShare01, std::clamp(available / demand, 0.0, 1.0));
@@ -447,9 +449,20 @@ ShipCore::controlAuthorityTelemetry() const
         m_assistedManeuvers.build(model, installed, physics);
     if (!m_assistedManeuvers.valid)
         return {};
-    return game::ship::telemetry::readAssistedControlAuthority(
+    auto out = game::ship::telemetry::readAssistedControlAuthority(
         m_assistedManeuvers,revision
     );
+    // The executor scales ALL Assisted motors by one common feasible
+    // ER-5 power factor (it keeps the force/torque balance): the published
+    // authority carries the same factor (damaged / cold / hot / old ER-5).
+    double powerShare = 1.0, unusedRcsShare = 1.0;
+    newtonianPropulsionPowerShares(powerShare, unusedRcsShare);
+    for (auto& value : out.positive)
+        value *= powerShare;
+    for (auto& value : out.negative)
+        value *= powerShare;
+    out.workingForwardAccelerationMps2 *= powerShare;
+    return out;
 }
 
 ShipParams ShipCore::effectivePhysics() const

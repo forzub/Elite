@@ -25,6 +25,7 @@ n1_combined Newtonian-I 330 ELITE_SHIP_DAMAGE_AT=60_ship_newtonian_i_main_center
 nx_3mains Newtonian-X 330 ELITE_SHIP_DAMAGE_AT=60_ship_newtonian_x_main_upper_left_0.95
 a3_engine_lost Assisted-I 200 ELITE_SHIP_DAMAGE_AT=60_ship_engine_L_0.95
 a3_reactor60 Assisted-I 200 ELITE_SHIP_DAMAGE_AT=60_ship_drive_left_reactor_0.6
+a3_asym2 Assisted-I 200 ELITE_SHIP_DAMAGE_AT=60_ship_engine_L_0.95;60_ship_fore_engine_R_0.95
 EOF
 )
 OUT="$ELITE_DIAG_DIR/elite_${RUN}_acceptance.txt"
@@ -41,7 +42,7 @@ while read -r TAG MODEL DURATION ENVS; do
     ENVLIST+=("$k=$v")
   done
   F="${RUN}_${TAG}"
-  env "${ENVLIST[@]}" bash "$NEWTONIAN_TOOLS/fly.sh" "$MODEL" "$DURATION" "$F" > /dev/null 2>&1
+  env ELITE_TRACE_RUNTIME=1 "${ENVLIST[@]}" bash "$NEWTONIAN_TOOLS/fly.sh" "$MODEL" "$DURATION" "$F" > /dev/null 2>&1
   {
     echo "== $TAG ($MODEL, ${DURATION}s) ${ENVLIST[*]}"
     if [ -f "$ELITE_DIAG_DIR/elite_${F}_decision.tsv" ]; then
@@ -49,6 +50,8 @@ while read -r TAG MODEL DURATION ENVS; do
       python "$NEWTONIAN_TOOLS/terminal.py" "$F" 2>&1 | grep -E 'DONE at' | head -1
     fi
     grep -ohE 'status=[A-Z_]+|failures=[0-9]+|max_cross_track_m=[0-9.]+' "$ELITE_DIAG_DIR/elite_$F.log" 2>/dev/null | sort | uniq -c | tr '\n' ' '; echo
+    # Frames > 80 ms after the first 40 (startup excluded), max route cross-track.
+    echo "hitches(after start)=$(grep '^\[HITCH\]' "$ELITE_DIAG_DIR/elite_$F.stderr" 2>/dev/null | awk -F'frame=' '{split($2,a," "); if (a[1]+0>600) n++} END{print n+0}')"       "max_xtrack_m=$(grep -o 'cross_track_m=[-0-9.e]*' "$ELITE_DIAG_DIR/elite_$F.stderr" 2>/dev/null | awk -F= '{v=$2<0?-$2:$2; if(v>m)m=v} END{printf "%.1f", m}')"
     grep -hE '\[ShipDamageAt\]|\[CapabilityChange\]|execution-replan|capability-ready|hand(ed)? ?back|FAILED|failed=' \
       "$ELITE_DIAG_DIR/elite_$F.stderr" "$ELITE_DIAG_DIR/elite_$F.stdout" 2>/dev/null | cut -c1-200 | sort | uniq -c | head -8
   } >> "$OUT"

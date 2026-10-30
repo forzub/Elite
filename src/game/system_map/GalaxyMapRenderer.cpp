@@ -1268,6 +1268,13 @@ void GalaxyMapRenderer::drawNavigationGrid(
             }
         };
 
+    // A neighbour: its address and the step from the parent.
+    const auto neighbourText =
+        [&](const game::navigation::GalaxyNavigationCell& cell) -> std::string {
+            return "G" + std::to_string(cell.level) + " [" + std::to_string(cell.index.x) + ", " +
+                   std::to_string(cell.index.y) + ", " + std::to_string(cell.index.z) + "]";
+        };
+
     const auto coordinateText =
         [&](const game::navigation::GalaxyNavigationCell& child) -> std::string {
             const glm::ivec3 o = galaxyHierarchyChildOffset(box, child.index);
@@ -1282,9 +1289,30 @@ void GalaxyMapRenderer::drawNavigationGrid(
         };
 
     // ---- children: selected, hovered (fade), outgoing (fade) -----------
+    // A neighbour of the parent (same level, outside it) is drawn like a
+    // child when hovered / selected: the user can move sideways into it.
     const auto isChild = [&](const game::navigation::GalaxyNavigationCell& cell) {
-        return galaxyHierarchyIsChild(box, cell);
+        return galaxyHierarchyIsChild(box, cell) ||
+               galaxyHierarchyIsNeighbour(box.parent, cell);
     };
+    const auto isNeighbour = [&](const game::navigation::GalaxyNavigationCell& cell) {
+        return galaxyHierarchyIsNeighbour(box.parent, cell);
+    };
+
+    // Neighbours of the parent: faint ghost edges (the rest of the level is
+    // there and reachable), stronger when hovered / selected below.
+    {
+        glm::vec4 ghost = gridVisuals.neighbourEdgeColor;
+        ghost.a *= frameFade;
+        if (ghost.a > 0.002f)
+            for (const auto& neighbour : viewState.hierarchyNeighbours())
+                addNavigationCubeEdges(
+                    context, toRender(neighbour.center),
+                    glm::vec3(static_cast<float>(neighbour.size * 0.5) * GalaxyMapView::RenderUnitsPerLightYear, 0.0f, 0.0f),
+                    glm::vec3(0.0f, static_cast<float>(neighbour.size * 0.5) * GalaxyMapView::RenderUnitsPerLightYear, 0.0f),
+                    glm::vec3(0.0f, 0.0f, static_cast<float>(neighbour.size * 0.5) * GalaxyMapView::RenderUnitsPerLightYear),
+                    ghost);
+    }
 
     /*
         Marker diamond at a child centre. Only the SELECTED child's marker
@@ -1382,8 +1410,9 @@ void GalaxyMapRenderer::drawNavigationGrid(
             state.hoverTargetValid &&
             (state.hoverTarget.kind == GalaxyPointerTargetKind::Star ||
              state.hoverTarget.kind == GalaxyPointerTargetKind::Medium);
-        addProjection(exact && hoverPoint ? *hoverPoint : hovered.center, hovered,
-                      gridVisuals.hoverProjectionAlpha * a, exact);
+        if (!isNeighbour(hovered))
+            addProjection(exact && hoverPoint ? *hoverPoint : hovered.center, hovered,
+                          gridVisuals.hoverProjectionAlpha * a, exact);
 
         bool visible = false;
         float depth = 1.0f;
@@ -1392,7 +1421,8 @@ void GalaxyMapRenderer::drawNavigationGrid(
         {
             glm::vec4 color = gridVisuals.hoveredMarkerColor;
             color.a = 0.80f * a;
-            frameTexts.push_back({glm::vec3(screen.x + 10.0f, screen.y + 16.0f, 0.0f), coordinateText(hovered),
+            frameTexts.push_back({glm::vec3(screen.x + 10.0f, screen.y + 16.0f, 0.0f),
+                                  isNeighbour(hovered) ? neighbourText(hovered) : coordinateText(hovered),
                                   color, 11, false, true});
         }
     }
@@ -1412,8 +1442,9 @@ void GalaxyMapRenderer::drawNavigationGrid(
             (state.selectedSystemId >= 0 || state.selectedMediumObject >= 0) &&
             state.navigationFocusValid &&
             game::system_map::galaxyHierarchyContains(box, state.navigationFocusLy);
-        addProjection(objectSelected ? state.navigationFocusLy : selectedChild->center, selectedChild,
-                      gridVisuals.selectedProjectionAlpha, objectSelected);
+        if (!isNeighbour(*selectedChild))
+            addProjection(objectSelected ? state.navigationFocusLy : selectedChild->center, selectedChild,
+                          gridVisuals.selectedProjectionAlpha, objectSelected);
 
         bool visible = false;
         float depth = 1.0f;
@@ -1426,7 +1457,9 @@ void GalaxyMapRenderer::drawNavigationGrid(
             glm::vec4 color = gridVisuals.selectedMarkerColor;
             color.a = 0.85f;
             frameTexts.push_back({glm::vec3(screen.x + 10.0f, screen.y + 16.0f, 0.0f),
-                                  coordinateText(*selectedChild), color, 11, false, true});
+                                  isNeighbour(*selectedChild) ? neighbourText(*selectedChild)
+                                                              : coordinateText(*selectedChild),
+                                  color, 11, false, true});
         }
     }
 }

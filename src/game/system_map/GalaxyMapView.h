@@ -150,6 +150,9 @@ namespace game::system_map
         std::optional<GalaxyHierarchyBox> flightContextBox;
         // The running flight frames a (new) current parent.
         bool nestedFrameFlight = false;
+        // Roots the galaxy overview frames: those holding star systems and
+        // the player's (synchronizeCatalogRoots / onEntered).
+        std::vector<navigation::GalaxyGridIndex> overviewRoots;
         // The last viewport the map was drawn / driven with (camera fit).
         Viewport lastViewport {0, 0, 1280, 720};
 
@@ -324,6 +327,9 @@ namespace game::system_map
             const Viewport& viewport,
             double nowSeconds
         );
+
+        // Neighbour cubes of the current parent's level (none in overview).
+        std::vector<navigation::GalaxyNavigationCell> hierarchyNeighbours() const;
 
         // Up: the parent of the current parent; the cube the user came
         // from stays selected inside it.

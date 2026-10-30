@@ -47,9 +47,29 @@ namespace game::system_map
         navigation::GalaxyGridIndex firstChild;
     };
 
+    /*
+        overviewRoots: the roots the galaxy overview frames (those holding star
+        systems and the player). The navigation domain is much larger (a
+        140-ly envelope of empty navigable space): framing all of it pushed
+        the star systems into a dot in the middle. Empty: every navigable
+        root.
+    */
     GalaxyHierarchyBox galaxyHierarchyBox(
         const navigation::GalaxyNavigationGrid& grid,
+        const GalaxyHierarchyParent& parent,
+        const std::vector<navigation::GalaxyGridIndex>* overviewRoots = nullptr
+    );
+
+    // The navigable cubes of the parent's level around it (up to 26); the
+    // overview has none.
+    std::vector<navigation::GalaxyNavigationCell> galaxyHierarchyNeighbours(
+        const navigation::GalaxyNavigationGrid& grid,
         const GalaxyHierarchyParent& parent
+    );
+
+    bool galaxyHierarchyIsNeighbour(
+        const GalaxyHierarchyParent& parent,
+        const navigation::GalaxyNavigationCell& cell
     );
 
     // The parent of a parent (overview for a root, nothing above overview).

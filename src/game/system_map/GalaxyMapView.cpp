@@ -138,6 +138,24 @@ namespace game::system_map
         m_state.navigationGrid.extendDomainTo(
             positionsLy
         );
+
+        // The overview frames the roots holding star systems (+ the
+        // player's root, added on entry).
+        auto& roots = m_state.overviewRoots;
+        const std::size_t before = roots.size();
+        const auto addRoot = [&](const glm::dvec3& positionLy) {
+            const auto index = m_state.navigationGrid.nearestIndexForPositionLy(positionLy, 0);
+            if (!m_state.navigationGrid.isCellNavigable(index, 0))
+                return;
+            if (std::find(roots.begin(), roots.end(), index) == roots.end())
+                roots.push_back(index);
+        };
+        for (const auto& positionLy : positionsLy)
+            addRoot(positionLy);
+        if (m_state.entry.valid)
+            addRoot(m_state.entry.positionLy);
+        if (roots.size() != before)
+            ++m_state.hierarchyRevision;
     }
 
     void GalaxyMapView::onEntered(
@@ -173,6 +191,16 @@ namespace game::system_map
 
         // Wherever the player is, that space is navigable (on-demand extension).
         m_state.navigationGrid.extendDomainTo({playerLy});
+        {
+            const auto index = m_state.navigationGrid.nearestIndexForPositionLy(playerLy, 0);
+            auto& roots = m_state.overviewRoots;
+            if (m_state.navigationGrid.isCellNavigable(index, 0) &&
+                std::find(roots.begin(), roots.end(), index) == roots.end())
+            {
+                roots.push_back(index);
+                ++m_state.hierarchyRevision;
+            }
+        }
 
         const int terminalLevel =
             m_state.navigationGrid.maximumLevel();
@@ -438,6 +466,16 @@ namespace game::system_map
     GalaxyHierarchyBox GalaxyMapView::hierarchyBox() const
     {
         return galaxyHierarchyBox(
+            m_state.navigationGrid,
+            m_state.hierarchyParent,
+            &m_state.overviewRoots
+        );
+    }
+
+    std::vector<navigation::GalaxyNavigationCell>
+    GalaxyMapView::hierarchyNeighbours() const
+    {
+        return galaxyHierarchyNeighbours(
             m_state.navigationGrid,
             m_state.hierarchyParent
         );
@@ -938,10 +976,11 @@ namespace game::system_map
             navigable point); the working level is never changed here.
         */
         auto& grid = m_state.navigationGrid;
-        if (!galaxyHierarchyContains(hierarchyBox(), positionLy) &&
-            !m_state.hierarchyParent.overview())
+        if (!galaxyHierarchyContains(hierarchyBox(), positionLy))
         {
-            const int level = m_state.hierarchyParent.level;
+            // The overview frames the content roots only: a point outside
+            // it is shown inside its own root.
+            const int level = std::max(0, m_state.hierarchyParent.level);
             const auto index = grid.nearestIndexForPositionLy(positionLy, level);
             if (grid.isCellNavigable(index, level))
             {

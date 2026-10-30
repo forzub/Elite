@@ -18,9 +18,9 @@
 //  G8 re-entry: a selected cloud / pending sequence never survives
 //     onEntered (no phantom selection, no phantom double click, a held
 //     button is not a press).
-//  H1 the map opens on the galaxy overview (every navigable root is its
-//     child); the overview and nested parents fit the viewport (all corners
-//     >= 12 px inside) from any orbit angle.
+//  H1 the map opens on the galaxy overview framing the star-system roots
+//     (not the whole empty domain); the overview and nested parents fit the
+//     viewport (all corners >= 12 px inside) from any orbit angle.
 //  H2 WYSIWYG hover: the highlighted child cube is the press target.
 //  H3 the wheel zooms inside the parent; the level / parent never change.
 //  H4 double click enters a child (it becomes the parent); up / breadcrumb
@@ -30,6 +30,8 @@
 //  H6 a hover marker never takes an object's click (cloud wins, enters its
 //     cube).
 //  H7 inner coordinate faces are stable under small orbits.
+//  H8 neighbours of the parent are targets: hover, double click = sideways
+//     into the neighbour (level unchanged).
 //
 //   EliteGalaxyPointerCheck -> PASS/FAIL lines, exit 0/1
 
@@ -554,12 +556,18 @@ void hierarchyChecks()
     {
         Map map(false);
         check(map.view.state().hierarchyParent.overview(), "H1 the map opens on the galaxy overview");
+        // The overview frames the roots holding star systems + the player's,
+        // not the whole (much larger) empty navigation domain.
         const auto box = map.view.hierarchyBox();
-        bool allRoots = true;
-        for (const auto& root : map.view.state().navigationGrid.navigableRootCells())
-            allRoots = allRoots && galaxyHierarchyIsChild(box, map.view.state().navigationGrid.cell(
-                                                                    {root[0], root[1], root[2]}, 0));
-        check(allRoots, "H1 every navigable root is a child of the overview");
+        const auto& grid0 = map.view.state().navigationGrid;
+        bool contentRoots = true;
+        for (const auto& system : map.galaxy.systems)
+            contentRoots = contentRoots && galaxyHierarchyIsChild(
+                box, grid0.cell(grid0.nearestIndexForPositionLy(system.positionLy, 0), 0));
+        const auto full = galaxyHierarchyBox(grid0, GalaxyHierarchyParent {});
+        check(contentRoots && box.edgeLy < full.edgeLy,
+              "H1 the overview frames the star-system roots (edge " + std::to_string(box.edgeLy) +
+                  " ly, whole domain " + std::to_string(full.edgeLy) + " ly)");
         int fits = 0, total = 0;
         float worst = 1.0e9f;
         for (int level = -1; level <= 2; ++level)
@@ -712,6 +720,52 @@ void hierarchyChecks()
                   parent.index == child->index,
               "H6 cloud click / double click with its cube's marker under the cursor: the cloud wins, enters its cube");
         (void)K::Empty;
+    }
+    // H8: neighbours of the parent (same level, outside it) are pointer
+    // targets: hover highlights the neighbour, double click moves the frame
+    // sideways into it (level unchanged), up still returns.
+    {
+        Map map;
+        const auto parentBefore = map.view.state().hierarchyParent;
+        // A screen point outside the parent's projection: scan the edges.
+        glm::vec2 p(-1.0f);
+        GalaxyPointerTarget hit;
+        for (int k = 0; k < 400 && p.x < 0.0f; ++k)
+        {
+            const float t = static_cast<float>(k) / 400.0f;
+            const glm::vec2 candidates[4] = {{6.0f + t * 1268.0f, 6.0f}, {6.0f + t * 1268.0f, 714.0f},
+                                             {6.0f, 6.0f + t * 708.0f}, {1274.0f, 6.0f + t * 708.0f}};
+            for (const auto& c : candidates)
+            {
+                const auto r = map.resolveAt(c);
+                if (r.reason == GalaxyPointerHitReason::NeighbourCube && r.cell)
+                {
+                    p = c;
+                    hit = r;
+                    break;
+                }
+            }
+        }
+        bool hovered = false, sideways = false, upOk = false;
+        if (p.x >= 0.0f)
+        {
+            map.frame(p.x, p.y, false);
+            const auto& grid = map.view.state().navigationGrid;
+            hovered = grid.hasHoveredCell() && grid.hoveredCell().index == hit.cell->index &&
+                      grid.hoveredCell().level == parentBefore.level;
+            map.click(p);
+            map.now += 0.1;
+            map.click(p);
+            map.settle();
+            const auto& parent = map.view.state().hierarchyParent;
+            sideways = parent.level == parentBefore.level && parent.index == hit.cell->index;
+            map.view.ascendHierarchy(kViewport, map.now);
+            map.settle();
+            upOk = map.view.state().hierarchyParent.level == parentBefore.level - 1;
+        }
+        check(p.x >= 0.0f && hovered, "H8 cursor outside the parent: a neighbour cube is hovered");
+        check(sideways, "H8 double click on a neighbour: it becomes the parent, level unchanged");
+        check(upOk, "H8 up from the neighbour returns to the common parent level");
     }
     // H7: inner faces are stable under small orbits (hysteresis), and the
     // layer axis does not flip on a small rotation.

@@ -470,6 +470,32 @@ hitches = frames > 80 ms after start.
   had 7 (startup, map open, one 101 ms docking-autopilot frame of the
   scenario flight), none from the map.
 
+### Galaxy Map overview framing + neighbour cubes (user follow-up 2026-10-30 d)
+- User: the top level was "moved too far" - the overview framed the whole
+  navigation domain (275 roots, 282 ly) while the star systems lie within
+  ~97 ly (most within 25 ly): they shrank to a dot. And the cubes next to
+  the current parent could not be chosen.
+- Overview now frames the roots holding star systems + the player's root
+  (`overviewRoots`, `galaxyHierarchyBox(.., overviewRoots)`): 5 roots, 201 ly
+  in the current catalogue (HD 102195 96.7 ly / HD 93083 90.9 ly set the
+  extent). Empty navigable roots outside it stay navigable (a point there
+  opens its own root as the parent - `focusHierarchyPoint`).
+- Neighbours: the up-to-26 navigable cubes of the parent's level around it
+  are pointer targets (resolver tier 5b `neighbour_cube`: ray x neighbour
+  boxes when the ray leaves the parent), drawn as faint ghosts, hovered /
+  selected like a child (address label, no projections); double click
+  moves the frame sideways into the neighbour (level unchanged, same nested
+  flight); up / breadcrumbs unchanged.
+- AUTOMATED: `EliteGalaxyPointerCheck` 45/45 (H1 now: overview frames the
+  star-system roots, 40 ly in the one-star test vs 282 ly domain; H8 new:
+  neighbour hover, sideways double click, up). SCRIPTED GAME 84/84
+  (+ 2 neighbour hover / sideways / fit). Medium draw avg 1.2 ms, worst
+  window 2.3 ms. Human mouse acceptance still open.
+- Incident: during this follow-up a manual (non-script) launch for a
+  screenshot ignored a running user game and the cleanup killed the user's
+  EliteGame. Rule kept: never start or stop a game while one is running;
+  only the guarded scripts launch the game.
+
 ### OPEN
 - Galaxy spatial frame: HUMAN acceptance with a real mouse not done (the
   scripted runs drive the production input path, not a hand). Known: the

@@ -21,7 +21,8 @@ namespace
 
     GalaxyHierarchyBox galaxyHierarchyBox(
         const navigation::GalaxyNavigationGrid& grid,
-        const GalaxyHierarchyParent& parent
+        const GalaxyHierarchyParent& parent,
+        const std::vector<navigation::GalaxyGridIndex>* overviewRoots
     )
     {
         GalaxyHierarchyBox box;
@@ -44,8 +45,13 @@ namespace
             return box;
         }
 
-        // Overview: the cube on the root lattice around every navigable root.
-        const auto& roots = grid.navigableRootCells();
+        // Overview: the cube on the root lattice around the framed roots.
+        std::vector<navigation::GalaxyGridIndex> roots;
+        if (overviewRoots && !overviewRoots->empty())
+            roots = *overviewRoots;
+        else
+            for (const auto& root : grid.navigableRootCells())
+                roots.push_back({root[0], root[1], root[2]});
         std::int64_t lo[3] = {0, 0, 0};
         std::int64_t hi[3] = {0, 0, 0};
         if (!roots.empty())
@@ -58,8 +64,8 @@ namespace
             for (const auto& root : roots)
                 for (int a = 0; a < 3; ++a)
                 {
-                    lo[a] = std::min(lo[a], root[static_cast<std::size_t>(a)]);
-                    hi[a] = std::max(hi[a], root[static_cast<std::size_t>(a)]);
+                    lo[a] = std::min(lo[a], indexValue(root, a));
+                    hi[a] = std::max(hi[a], indexValue(root, a));
                 }
         }
         std::int64_t divisions = 1;
@@ -81,6 +87,40 @@ namespace
             (static_cast<double>(first[1]) + centreOffset) * rootEdge,
             (static_cast<double>(first[2]) + centreOffset) * rootEdge);
         return box;
+    }
+
+    std::vector<navigation::GalaxyNavigationCell> galaxyHierarchyNeighbours(
+        const navigation::GalaxyNavigationGrid& grid,
+        const GalaxyHierarchyParent& parent
+    )
+    {
+        std::vector<navigation::GalaxyNavigationCell> result;
+        if (parent.overview())
+            return result;
+        for (int dz = -1; dz <= 1; ++dz)
+            for (int dy = -1; dy <= 1; ++dy)
+                for (int dx = -1; dx <= 1; ++dx)
+                {
+                    if (dx == 0 && dy == 0 && dz == 0)
+                        continue;
+                    const navigation::GalaxyGridIndex index {
+                        parent.index.x + dx, parent.index.y + dy, parent.index.z + dz};
+                    if (grid.isCellNavigable(index, parent.level))
+                        result.push_back(grid.cell(index, parent.level));
+                }
+        return result;
+    }
+
+    bool galaxyHierarchyIsNeighbour(
+        const GalaxyHierarchyParent& parent,
+        const navigation::GalaxyNavigationCell& cell
+    )
+    {
+        if (parent.overview() || cell.level != parent.level || cell.index == parent.index)
+            return false;
+        return std::llabs(cell.index.x - parent.index.x) <= 1 &&
+               std::llabs(cell.index.y - parent.index.y) <= 1 &&
+               std::llabs(cell.index.z - parent.index.z) <= 1;
     }
 
     std::optional<GalaxyHierarchyParent> galaxyHierarchyAscend(

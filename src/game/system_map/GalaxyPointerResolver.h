@@ -39,6 +39,8 @@ namespace game::system_map
         4. cloud shell (ray, nearest hit) / icy field marker;
         5. the child cube of the current parent where the cursor ray meets
            the hover layer (GalaxyHierarchyLayer), when a hierarchy is given;
+           outside the parent: the nearest neighbour cube of the parent's
+           level the ray enters;
         6. empty space.
     */
     enum class GalaxyPointerTargetKind
@@ -65,7 +67,10 @@ namespace game::system_map
         // click (same semantic target, other presentation element).
         CubeSequenceGlyph,
         // Empty space inside the current parent: the child on the layer.
-        HierarchyLayer
+        HierarchyLayer,
+        // Outside the current parent: a cube of the parent's level around
+        // it (the ray's nearest hit).
+        NeighbourCube
     };
 
     const char* galaxyPointerTargetKindName(GalaxyPointerTargetKind kind);
@@ -125,6 +130,7 @@ namespace game::system_map
         const navigation::GalaxyNavigationGrid* grid = nullptr;
         GalaxyHierarchyBox box;
         GalaxyHierarchyLayer layer;
+        std::vector<navigation::CubicNavigationCell> neighbours;
     };
 
     /*

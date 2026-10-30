@@ -102,6 +102,7 @@ namespace game::system_map
             case GalaxyPointerHitReason::IcyFieldMarker: return "icy_field_marker";
             case GalaxyPointerHitReason::CubeSequenceGlyph: return "cube_sequence_glyph";
             case GalaxyPointerHitReason::HierarchyLayer: return "hierarchy_layer";
+            case GalaxyPointerHitReason::NeighbourCube: return "neighbour_cube";
         }
         return "?";
     }
@@ -442,12 +443,14 @@ namespace game::system_map
             galaxyPointerRayLy(scene, mousePx, origin, direction);
             const int axis = hierarchy.layer.axis;
             const double along = direction[axis];
+            bool insideParent = false;
             if (std::abs(along) > 1.0e-9)
             {
                 const double t = (hierarchy.layer.coordinateLy - origin[axis]) / along;
                 if (t > 0.0)
                 {
                     const glm::dvec3 point = origin + direction * t;
+                    insideParent = galaxyHierarchyContains(hierarchy.box, point);
                     if (const auto child = galaxyHierarchyChildAt(*hierarchy.grid, hierarchy.box, point))
                     {
                         GalaxyPointerTarget cube;
@@ -463,6 +466,60 @@ namespace game::system_map
                         if (winner.kind == GalaxyPointerTargetKind::Empty)
                             winner = cube;
                     }
+                }
+            }
+
+            // Outside the parent: the neighbour cube the ray enters first.
+            if (!insideParent && !hierarchy.neighbours.empty())
+            {
+                double bestT = 1.0e300;
+                const navigation::CubicNavigationCell* best = nullptr;
+                for (const auto& cell : hierarchy.neighbours)
+                {
+                    const double half = cell.size * 0.5;
+                    double tNear = -1.0e300;
+                    double tFar = 1.0e300;
+                    bool miss = false;
+                    for (int a = 0; a < 3 && !miss; ++a)
+                    {
+                        const double lo = cell.center[a] - half - origin[a];
+                        const double hi = cell.center[a] + half - origin[a];
+                        if (std::abs(direction[a]) < 1.0e-12)
+                        {
+                            miss = lo > 0.0 || hi < 0.0;
+                            continue;
+                        }
+                        double t0 = lo / direction[a];
+                        double t1 = hi / direction[a];
+                        if (t0 > t1)
+                            std::swap(t0, t1);
+                        tNear = std::max(tNear, t0);
+                        tFar = std::min(tFar, t1);
+                        miss = tNear > tFar;
+                    }
+                    if (miss || tFar < 0.0)
+                        continue;
+                    const double t = std::max(tNear, 0.0);
+                    if (t < bestT)
+                    {
+                        bestT = t;
+                        best = &cell;
+                    }
+                }
+                if (best)
+                {
+                    GalaxyPointerTarget cube;
+                    cube.kind = GalaxyPointerTargetKind::NavigationCube;
+                    cube.reason = GalaxyPointerHitReason::NeighbourCube;
+                    cube.cell = *best;
+                    cube.hitLy = origin + direction * bestT;
+                    bool visible = false;
+                    projectToScreen(glm::vec3(cube.hitLy) * scene.renderUnitsPerLy, scene.mvp, scene.viewport,
+                                    visible, cube.depth);
+                    if (collectCandidates)
+                        resolution.candidates.push_back(cube);
+                    if (winner.kind == GalaxyPointerTargetKind::Empty)
+                        winner = cube;
                 }
             }
         }

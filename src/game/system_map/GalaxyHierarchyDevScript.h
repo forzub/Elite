@@ -612,6 +612,57 @@ private:
         });
         shot("crumb_g0");
 
+        // Neighbours: the cursor outside the parent hovers a cube of the
+        // same level; double click moves the frame sideways into it.
+        for (int k = 0; k < 2; ++k)
+        {
+            auto p = std::make_shared<glm::vec2>(-50.0f);
+            auto cell = std::make_shared<std::optional<navigation::GalaxyNavigationCell>>();
+            call([this, p, cell, k] {
+                m_parentBefore = m_view->state().hierarchyParent;
+                const auto s = scene();
+                for (int i = 0; i < 600; ++i)
+                {
+                    const float t = static_cast<float>((i * 37 + k * 211) % 600) / 600.0f;
+                    const glm::vec2 c[4] = {{8.0f + t * (m_vp.width - 16.0f), 8.0f},
+                                            {8.0f + t * (m_vp.width - 16.0f), m_vp.height - 120.0f},
+                                            {8.0f, 120.0f + t * (m_vp.height - 240.0f)},
+                                            {m_vp.width - 8.0f, 120.0f + t * (m_vp.height - 240.0f)}};
+                    for (const auto& q : c)
+                    {
+                        const auto hit = resolveGalaxyPointer(s, q).winner;
+                        if (hit.reason == GalaxyPointerHitReason::NeighbourCube && hit.cell)
+                        {
+                            *p = q;
+                            *cell = hit.cell;
+                            return;
+                        }
+                    }
+                }
+            });
+            hoverAt([p] { return *p; });
+            call([this, cell, k] {
+                const auto& grid = m_view->state().navigationGrid;
+                record("neighbour " + std::to_string(k) + ": the cube next to the parent is hovered",
+                       cell->has_value() && grid.hasHoveredCell() && grid.hoveredCell().index == (*cell)->index &&
+                           grid.hoveredCell().level == m_parentBefore.level);
+            });
+            if (k == 0)
+                shot("neighbour_hover");
+            doubleClick([p] { return *p; });
+            calm();
+            call([this, cell, k] {
+                const auto& parent = m_view->state().hierarchyParent;
+                record("neighbour " + std::to_string(k) + ": double click moves sideways, level unchanged",
+                       cell->has_value() && parent.level == m_parentBefore.level && parent.index == (*cell)->index,
+                       parentText(parent));
+            });
+            checkFits("neighbour " + std::to_string(k));
+            if (k == 0)
+                shot("neighbour_entered");
+            wait(0.6);
+        }
+
         call([this] { finish(); });
     }
 

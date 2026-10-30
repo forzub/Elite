@@ -242,7 +242,9 @@ namespace game::system_map
                 ? state.hoverTarget.mediumObject
                 : -1;
 
-        if (const auto child = semanticChild(view, galaxy, state.hoverTarget))
+        if (state.hoverTarget.reason == GalaxyPointerHitReason::NeighbourCube && state.hoverTarget.cell)
+            state.navigationGrid.setHoveredCell(*state.hoverTarget.cell);
+        else if (const auto child = semanticChild(view, galaxy, state.hoverTarget))
             state.navigationGrid.setHoveredCell(*child);
         else
             state.navigationGrid.clearHoveredCell();
@@ -418,6 +420,7 @@ namespace game::system_map
             hierarchy.grid = &view.state().navigationGrid;
             hierarchy.box = box;
             hierarchy.layer = hoverLayer(view);
+            hierarchy.neighbours = view.hierarchyNeighbours();
             scene.hierarchy = hierarchy;
         }
         return scene;
@@ -1525,6 +1528,14 @@ namespace game::system_map
             const bool keepsStar =
                 clickedCellContainsExistingFocus &&
                 view.state().selectedSystemId >= 0;
+            // A neighbour of the current parent (same level): the frame
+            // moves sideways into it, the level stays.
+            if (galaxyHierarchyIsNeighbour(view.state().hierarchyParent, pickedCell))
+            {
+                if (view.enterHierarchyCell(pickedCell, vp, nowSeconds))
+                    result.galaxyLevelChanged = view.hierarchyBox().childLevel;
+                return isCubeDoubleClick;
+            }
             descendAt(
                 view,
                 galaxy,

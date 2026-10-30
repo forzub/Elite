@@ -19,6 +19,7 @@ struct GalaxyNavigationGridVisualSettings
     glm::vec4 faceMinorColor {0.30f, 0.60f, 0.80f, 0.045f};
     glm::vec4 frameLabelColor {0.50f, 0.74f, 0.90f, 0.62f};
     glm::vec4 hoverLayerColor {0.45f, 0.78f, 0.92f, 0.28f};
+    glm::vec4 neighbourEdgeColor {0.30f, 0.56f, 0.72f, 0.06f};
     glm::vec4 projectionColor {0.60f, 0.84f, 0.96f, 1.0f};
     glm::vec4 projectionFootColor {0.70f, 0.90f, 1.00f, 1.0f};
     float hoverProjectionAlpha = 0.34f;

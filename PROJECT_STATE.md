@@ -435,7 +435,7 @@ hitches = frames > 80 ms after start.
   pointer while open; a row = a normal single click. Fixed on the way: the
   selected cloud outline began its own line batch and erased the frame
   drawn before it.
-- AUTOMATED: `EliteGalaxyPointerCheck` 42/42 PASS (G1-G8 rewritten for the
+- AUTOMATED: `EliteGalaxyPointerCheck` 41/41 PASS (G1-G8 rewritten for the
   child-cube model + H1 overview / fit at 48 angle x level cases, worst
   corner margin 34 px; H2 hover == press target 30/30; H3 wheel; H4 enter /
   up / breadcrumb; H5 star descent + terminal System Map; H6 cloud vs hover
@@ -486,7 +486,7 @@ hitches = frames > 80 ms after start.
   selected like a child (address label, no projections); double click
   moves the frame sideways into the neighbour (level unchanged, same nested
   flight); up / breadcrumbs unchanged.
-- AUTOMATED: `EliteGalaxyPointerCheck` 45/45 (H1 now: overview frames the
+- AUTOMATED: `EliteGalaxyPointerCheck` 44/44 (H1 now: overview frames the
   star-system roots, 40 ly in the one-star test vs 282 ly domain; H8 new:
   neighbour hover, sideways double click, up). SCRIPTED GAME 84/84
   (+ 2 neighbour hover / sideways / fit). Medium draw avg 1.2 ms, worst

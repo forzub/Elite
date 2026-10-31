@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cctype>
 #include <cmath>
@@ -22,6 +23,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <sstream>
+#include <thread>
 #include <vector>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -41,6 +43,8 @@
 #include "tools/model_asset_editor/RuntimeAssemblyImporter.h"
 #include "tools/model_asset_editor/SourceFolderImporter.h"
 #include "tools/model_asset_editor/CanonicalMeshBuilder.h"
+#include "tools/model_asset_editor/LodMeshSimplifier.h"
+#include "src/model_asset/ModelAssetLodError.h"
 #include "tools/model_asset_editor/NativeObjImporter.h"
 #include "tools/model_asset_editor/GeometryInstanceFitter.h"
 #include "tools/model_asset_editor/EditorVersion.h"
@@ -2547,31 +2551,202 @@ MeshLod buildComponentCullMesh(
     return out;
 }
 
+// Generated-LOD options (LODS stage). Two independent mechanisms per level:
+// A. component cull - a disconnected detail thinner than the feature
+//    threshold disappears whole (generated_lod_component_cull_v1);
+// B. surface simplification - the remaining surface is decimated (libigl
+//    QEM, region constrained) within a tolerance of
+//    max(simplifyFactor x threshold, measured cull deviation of that mesh):
+//    the cull already costs that much error there, so the surface may use it.
+// Every level is built from canonical LOD0, never from the previous level.
+struct LodGenerationOptions
+{
+    bool simplify = true;
+    double simplifyFactor = 1.0;
+};
+
+LodGenerationOptions lodGenerationOptionsFromJson(const json& value)
+{
+    LodGenerationOptions options;
+    if (!value.is_object()) return options;
+    options.simplify = value.value("enabled", options.simplify);
+    const double factor = value.value("factor", options.simplifyFactor);
+    if (std::isfinite(factor) && factor >= 0.0 && factor <= 16.0) options.simplifyFactor = factor;
+    return options;
+}
+
+// Per geometry and level: what the generator did, with the MEASURED two-sided
+// deviation from the LOD0 geometry (authoring units).
+struct GeneratedGeometryReport
+{
+    std::string geometryId;
+    bool variant = false;
+    std::size_t usage = 0;
+    std::size_t sourceTriangles = 0;
+    std::size_t culledTriangles = 0;
+    std::size_t outputTriangles = 0;
+    std::size_t removedComponents = 0;
+    double targetError = 0.0;
+    double cullError = 0.0;
+    double measuredError = 0.0;
+    bool simplified = false;
+};
+
+MeshLod generateLodGeometryMesh(
+    const MeshLod& lod0,
+    double thresholdMeters,
+    const LodGenerationOptions& options,
+    GeneratedGeometryReport& report)
+{
+    LodCullBuildStats cull;
+    MeshLod mesh = buildComponentCullMesh(lod0, thresholdMeters, &cull);
+    report.sourceTriangles = lod0.triangles.size();
+    report.culledTriangles = mesh.triangles.size();
+    report.removedComponents = cull.removedComponents;
+    report.cullError = std::max(0.0f, meshDeviation(lod0, mesh));
+    if (options.simplify && !mesh.triangles.empty())
+    {
+        report.targetError = std::max(options.simplifyFactor * thresholdMeters, report.cullError);
+        LodSimplifyStats simplifyStats;
+        MeshLod simplified = simplifyLodSurface(mesh, report.targetError, &simplifyStats);
+        report.simplified = simplifyStats.simplifiedComponents != 0 && simplifyStats.canonical;
+        if (report.simplified) mesh = std::move(simplified);
+    }
+    report.outputTriangles = mesh.triangles.size();
+    report.measuredError = report.simplified ? std::max(0.0f, meshDeviation(lod0, mesh)) : report.cullError;
+    return mesh;
+}
+
 RenderLod buildGeneratedComponentCullLod(
     const RenderLod& source,
     std::size_t targetLevel,
     double thresholdMeters,
     std::size_t* removedTriangles = nullptr,
-    std::size_t* removedComponents = nullptr)
+    std::size_t* removedComponents = nullptr,
+    const LodGenerationOptions& options = {},
+    std::vector<GeneratedGeometryReport>* reports = nullptr)
 {
     RenderLod generated = source;
     generated.level = static_cast<std::uint32_t>(targetLevel);
     generated.sourceKind = "generated";
     generated.generatedFromLod = static_cast<std::int32_t>(source.level);
 
+    // Each geometry once (an instance family shares one geometry, so it is
+    // generated once and stays shared), independent geometries in parallel,
+    // largest first.
+    std::vector<GeneratedGeometryReport> local(generated.geometries.size());
+    std::vector<std::size_t> order(generated.geometries.size());
+    for (std::size_t gi = 0; gi < order.size(); ++gi)
+    {
+        order[gi] = gi;
+        local[gi].geometryId = generated.geometries[gi].id;
+        local[gi].variant = isRenderVariantGeometryId(generated.geometries[gi].id);
+    }
+    for (const auto& node : generated.nodes)
+        if (node.enabled && node.geometryIndex >= 0 && static_cast<std::size_t>(node.geometryIndex) < local.size())
+            ++local[static_cast<std::size_t>(node.geometryIndex)].usage;
+    std::sort(order.begin(), order.end(), [&](std::size_t a, std::size_t b) {
+        return source.geometries[a].mesh.triangles.size() > source.geometries[b].mesh.triangles.size();
+    });
+    std::atomic<std::size_t> next {0};
+    const auto worker = [&] {
+        for (std::size_t k = next++; k < order.size(); k = next++)
+        {
+            const std::size_t gi = order[k];
+            generated.geometries[gi].mesh =
+                generateLodGeometryMesh(source.geometries[gi].mesh, thresholdMeters, options, local[gi]);
+        }
+    };
+    const std::size_t threads = std::clamp<std::size_t>(std::thread::hardware_concurrency(), 1, 8);
+    std::vector<std::thread> pool;
+    for (std::size_t t = 1; t < std::min(threads, order.size()); ++t) pool.emplace_back(worker);
+    worker();
+    for (auto& t : pool) t.join();
+
     std::size_t totalRemovedTriangles = 0;
     std::size_t totalRemovedComponents = 0;
-    for (auto& geometry : generated.geometries)
+    for (const auto& r : local)
     {
-        LodCullBuildStats stats;
-        geometry.mesh = buildComponentCullMesh(geometry.mesh, thresholdMeters, &stats);
-        totalRemovedTriangles += stats.removedTriangles;
-        totalRemovedComponents += stats.removedComponents;
+        totalRemovedTriangles += r.sourceTriangles - std::min(r.sourceTriangles, r.outputTriangles);
+        totalRemovedComponents += r.removedComponents;
     }
     recomputeRenderLodBounds(generated);
     if (removedTriangles) *removedTriangles = totalRemovedTriangles;
     if (removedComponents) *removedComponents = totalRemovedComponents;
+    if (reports) *reports = std::move(local);
     return generated;
+}
+
+json generatedLevelReportJson(
+    std::size_t level,
+    double thresholdMeters,
+    const LodGenerationOptions& options,
+    const std::vector<GeneratedGeometryReport>& reports)
+{
+    std::size_t source = 0, culled = 0, output = 0, storedSource = 0, storedCulled = 0, storedOutput = 0;
+    std::size_t omitted = 0, simplifiedGeometries = 0, aliases = 0;
+    double worstTarget = 0.0, worstMeasured = 0.0;
+    json geometries = json::array();
+    for (const auto& r : reports)
+    {
+        const std::size_t uses = std::max<std::size_t>(r.usage, 0);
+        source += r.sourceTriangles * uses;
+        culled += r.culledTriangles * uses;
+        output += r.outputTriangles * uses;
+        storedSource += r.sourceTriangles;
+        storedCulled += r.culledTriangles;
+        storedOutput += r.outputTriangles;
+        omitted += r.removedComponents;
+        if (r.simplified)
+        {
+            ++simplifiedGeometries;
+            if (r.usage > 1) aliases += r.usage - 1;
+        }
+        worstTarget = std::max(worstTarget, r.targetError);
+        worstMeasured = std::max(worstMeasured, r.measuredError);
+        geometries.push_back({
+            {"geometryId", r.geometryId},
+            {"isSourceVariant", r.variant},
+            {"usageCount", r.usage},
+            {"sourceTriangles", r.sourceTriangles},
+            {"culledTriangles", r.culledTriangles},
+            {"outputTriangles", r.outputTriangles},
+            {"removedComponents", r.removedComponents},
+            {"targetError", r.targetError},
+            {"cullError", r.cullError},
+            {"measuredError", r.measuredError},
+            {"simplified", r.simplified}
+        });
+    }
+    return {
+        {"level", level},
+        {"thresholdMeters", thresholdMeters},
+        {"simplify", options.simplify},
+        {"simplifyFactor", options.simplifyFactor},
+        {"sourceRenderedTriangles", source},
+        {"culledRenderedTriangles", culled},
+        {"outputRenderedTriangles", output},
+        {"sourceStoredTriangles", storedSource},
+        {"culledStoredTriangles", storedCulled},
+        {"outputStoredTriangles", storedOutput},
+        {"reductionPercent", source == 0 ? 0.0 : 100.0 * (1.0 - static_cast<double>(output) / static_cast<double>(source))},
+        {"omittedComponents", omitted},
+        {"simplifiedGeometries", simplifiedGeometries},
+        {"instanceAliasesReused", aliases},
+        {"worstTargetError", worstTarget},
+        {"worstMeasuredError", worstMeasured},
+        {"geometries", std::move(geometries)}
+    };
+}
+
+// Identity of one generated level: LOD0 content + threshold + options. A
+// preview is reused by APPLY only when this key is unchanged.
+std::string generatedLevelKey(const RenderLod& lod0, std::size_t level, double threshold, const LodGenerationOptions& options)
+{
+    std::ostringstream key;
+    key << level << '|' << std::setprecision(17) << threshold << '|' << options.simplify << '|' << options.simplifyFactor;
+    for (const auto& geometry : lod0.geometries) key << '|' << geometry.id << ':' << canonicalMeshFingerprint(geometry.mesh);
+    return key.str();
 }
 
 void transformMeshBasis(MeshLod& lod, const glm::mat3& basis)
@@ -3283,6 +3458,20 @@ void ModelAssetEditorSession::applyEditorAuthoringState(EditorAuthoringState sta
     m_sourceMeshFingerprints = std::move(state.sourceMeshFingerprints);
     m_sourceMeshQuickStamps = std::move(state.sourceMeshQuickStamps);
     m_meshSourceRecords = std::move(state.meshSourceRecords);
+    // A mesh certified for LODS by an older canonical algorithm has no current
+    // preparation record (the parser drops records of retired algorithms).
+    // Show it as pending again, so PREPARE reprocesses it instead of skipping
+    // it as certified; otherwise the LOD generator stays blocked with "has no
+    // canonical SOURCE record" and PREPARE has nothing to do (dead end).
+    for (auto& [lodIndex, byGeometry] : m_meshSourceRecords)
+        for (auto& [geometryId, record] : byGeometry)
+        {
+            const auto stage = record.stageChecks.find("lods");
+            if (stage == record.stageChecks.end() || stage->second != "passed") continue;
+            const auto lodIt = m_meshPreparationRecords.find(lodIndex);
+            if (lodIt == m_meshPreparationRecords.end() || lodIt->second.find(geometryId) == lodIt->second.end())
+                stage->second = "not_checked";
+        }
     // schema-13 records are canonical. Rebuild the legacy path->hash index so
     // older PREPARE/orientation code has one synchronized view instead of a
     // second persisted source of truth.
@@ -3749,9 +3938,38 @@ nlohmann::json ModelAssetEditorSession::productionPackageStamp() const
     return packageStampFor(compiledPath(m_selectedId));
 }
 
+// Package stamps compare member names / existence / sizes exactly and mtimes
+// exactly OR off by exactly one hour: MinGW's std::filesystem::last_write_time
+// goes through the CRT's local-time stat, so an untouched file's mtime moves
+// by 3600 s when daylight saving time switches (station working package: all
+// authoring evidence was dropped after the 2026-10 DST change).
+bool packageStampsEquivalent(const nlohmann::json& a, const nlohmann::json& b)
+{
+    if (!a.is_object() || !b.is_object()) return false;
+    if (a.value("assetId", std::string()) != b.value("assetId", std::string()) ||
+        a.value("formatVersion", 0) != b.value("formatVersion", 0))
+        return false;
+    const auto& ma = a.value("members", json::array());
+    const auto& mb = b.value("members", json::array());
+    if (!ma.is_array() || !mb.is_array() || ma.size() != mb.size()) return false;
+    constexpr std::int64_t HourTicks = 3600LL * 1000000000LL; // file_time_type ticks are ns
+    for (std::size_t i = 0; i < ma.size(); ++i)
+    {
+        if (ma[i].value("name", std::string()) != mb[i].value("name", std::string()) ||
+            ma[i].value("exists", false) != mb[i].value("exists", false) ||
+            ma[i].value("size", std::uint64_t(0)) != mb[i].value("size", std::uint64_t(0)))
+            return false;
+        const std::int64_t ta = ma[i].value("mtime", std::int64_t(0));
+        const std::int64_t tb = mb[i].value("mtime", std::int64_t(0));
+        const std::int64_t d = ta > tb ? ta - tb : tb - ta;
+        if (d != 0 && d != HourTicks) return false;
+    }
+    return true;
+}
+
 bool ModelAssetEditorSession::productionPackageStampMatches(const nlohmann::json& expected) const
 {
-    return expected.is_object() && expected == productionPackageStamp();
+    return expected.is_object() && packageStampsEquivalent(expected, productionPackageStamp());
 }
 
 bool ModelAssetEditorSession::writeWorkingEditorState(
@@ -3838,7 +4056,7 @@ bool ModelAssetEditorSession::loadWorkingEditorState(
             if (error) *error = "working editor-state asset id does not match selected asset";
             return false;
         }
-        if (snapshot.value("packageStamp", json::object()) != packageStampFor(workingAssetPath()))
+        if (!packageStampsEquivalent(snapshot.value("packageStamp", json::object()), packageStampFor(workingAssetPath())))
         {
             if (error) *error = "working editor-state belongs to different working package bytes";
             return false;
@@ -4723,7 +4941,10 @@ bool ModelAssetEditorSession::checkWizardStage(const std::string& stage)
     auto& value = m_wizardStages[stage];
     const std::string previousStatus = value.status;
     value.status = passed ? "complete" : "needs_fix";
-    if (value.status != previousStatus) markEditorStateDirty();
+    // BUILD's own status is production certification, not a WORKING edit:
+    // marking WORKING dirty here made the "save before BUILD" guard below fail
+    // on every attempt (status change -> dirty -> refused -> dirty again).
+    if (value.status != previousStatus && stage != "build") markEditorStateDirty();
 
     // VALIDATE uses the same CHECK action but also publishes the per-contract
     // report consumed by the validation panel. This remains read-only.
@@ -4740,14 +4961,12 @@ bool ModelAssetEditorSession::checkWizardStage(const std::string& stage)
             passed = false;
             validationError = "save the current WORKING ASSET before BUILD";
             value.status = "needs_fix";
-            markEditorStateDirty();
         }
         else if (!buildProductionAsset())
         {
             passed = false;
             validationError = "BUILD production package save failed";
             value.status = "needs_fix";
-            markEditorStateDirty();
         }
     }
 
@@ -6114,8 +6333,10 @@ bool ModelAssetEditorSession::previewLodComponentCull(
 
 bool ModelAssetEditorSession::applyGeneratedLods(
     std::size_t sourceLodIndex,
-    const nlohmann::json& levels)
+    const nlohmann::json& levels,
+    const nlohmann::json& optionsJson)
 {
+    const LodGenerationOptions options = lodGenerationOptionsFromJson(optionsJson);
     if (sourceLodIndex != 0)
     {
         sendStatus("Generated LOD authoring currently requires canonical LOD0 as source", true);
@@ -6207,6 +6428,7 @@ bool ModelAssetEditorSession::applyGeneratedLods(
         RenderLod lod;
         std::size_t removedTriangles = 0;
         std::size_t removedComponents = 0;
+        json report;
     };
     std::vector<Candidate> candidates;
     candidates.reserve(selected.size());
@@ -6227,12 +6449,30 @@ bool ModelAssetEditorSession::applyGeneratedLods(
             generationCompleted, selected.size());
         Candidate candidate;
         candidate.selection = selection;
-        candidate.lod = buildGeneratedComponentCullLod(
-            source,
-            selection.level,
-            selection.thresholdMeters,
-            &candidate.removedTriangles,
-            &candidate.removedComponents);
+        const std::string key = generatedLevelKey(source, selection.level, selection.thresholdMeters, options);
+        const auto previewed = m_lodGenerationPreview.find(selection.level);
+        if (previewed != m_lodGenerationPreview.end() && previewed->second.key == key)
+        {
+            // The non-destructive preview already built exactly this level.
+            candidate.lod = std::move(previewed->second.lod);
+            candidate.report = std::move(previewed->second.report);
+            m_lodGenerationPreview.erase(previewed);
+            std::cout << "[ModelAssetEditor][lods] LOD" << selection.level << " applied from the generation preview" << std::endl;
+        }
+        else
+        {
+            std::vector<GeneratedGeometryReport> reports;
+            candidate.lod = buildGeneratedComponentCullLod(
+                source,
+                selection.level,
+                selection.thresholdMeters,
+                &candidate.removedTriangles,
+                &candidate.removedComponents,
+                options,
+                &reports);
+            candidate.report = generatedLevelReportJson(selection.level, selection.thresholdMeters, options, reports);
+        }
+        candidate.removedComponents = candidate.report.value("omittedComponents", candidate.removedComponents);
         candidate.lod.relativeGeometricError = static_cast<float>(
             selection.thresholdMeters / sourceCharacteristic);
         for (std::size_t gi = 0; gi < candidate.lod.geometries.size(); ++gi)
@@ -6331,10 +6571,12 @@ bool ModelAssetEditorSession::applyGeneratedLods(
                 resident.geometries.begin(), resident.geometries.end(),
                 [](const RenderGeometryDefinition& geometry) { return isRenderVariantGeometryId(geometry.id); })},
             {"removedTriangles", candidate.removedTriangles},
-            {"removedComponents", candidate.removedComponents}
+            {"removedComponents", candidate.removedComponents},
+            {"report", candidate.report}
         });
     }
 
+    m_lodGenerationPreview.clear();
     if (!m_asset.renderLods.empty())
         m_asset.renderLods[0].relativeGeometricError = 0.0f;
     markManifestDirty();
@@ -6360,6 +6602,99 @@ bool ModelAssetEditorSession::applyGeneratedLods(
         "Generated LODs applied to authored asset: replaced=" + std::to_string(replaced) +
         ", created=" + std::to_string(created) +
         "; press SAVE to persist the current authored LODs");
+    return true;
+}
+
+bool ModelAssetEditorSession::previewLodGeneration(
+    std::size_t lodIndex,
+    const nlohmann::json& levels,
+    const nlohmann::json& optionsJson)
+{
+    if (lodIndex != 0)
+    {
+        sendStatus("Generated LOD preview currently requires canonical LOD0 as source", true);
+        return false;
+    }
+    if (!ensureAllLodsLoaded()) return false;
+    std::string canonicalReason;
+    if (!verifyLoadedWorkingSetCanonical(&canonicalReason))
+    {
+        sendStatus("Generated LOD preview blocked: canonical SOURCE invariant failed: " + canonicalReason, true);
+        return false;
+    }
+    std::string preflightReason;
+    if (!modelPreflightReadyForLod(&preflightReason))
+    {
+        sendStatus("Generated LOD preview blocked by Model Preflight: " + preflightReason, true);
+        return false;
+    }
+    if (!levels.is_array() || levels.empty())
+    {
+        sendStatus("Generated LOD preview request has no levels", true);
+        return false;
+    }
+    const LodGenerationOptions options = lodGenerationOptionsFromJson(optionsJson);
+    const RenderLod& source = m_asset.renderLods[0];
+    const double characteristic = renderLodPlacedCharacteristicSize(source);
+
+    std::vector<std::pair<std::size_t, double>> selected;
+    for (const auto& item : levels)
+    {
+        const auto level = item.value("level", std::size_t(0));
+        const double threshold = item.value("thresholdMeters", 0.0);
+        if (level == 0 || level > 32 || !std::isfinite(threshold) || threshold <= 0.0)
+        {
+            sendStatus("Generated LOD preview request contains an invalid level/threshold", true);
+            return false;
+        }
+        selected.emplace_back(level, threshold);
+    }
+
+    // Non-destructive: candidates are kept for APPLY, the asset is unchanged.
+    m_lodGenerationPreview.clear();
+    sendStatus("Previewing generated LODs from canonical LOD0 (component cull" +
+                   std::string(options.simplify ? " + surface simplification" : "") + ")...",
+               false, "working");
+    json out = json::array();
+    std::size_t done = 0;
+    const auto start = std::chrono::steady_clock::now();
+    for (const auto& [level, threshold] : selected)
+    {
+        sendProgress("working", "PREVIEW LOD" + std::to_string(level), done, selected.size());
+        std::vector<GeneratedGeometryReport> reports;
+        RenderLod lod = buildGeneratedComponentCullLod(source, level, threshold, nullptr, nullptr, options, &reports);
+        lod.relativeGeometricError = static_cast<float>(threshold / characteristic);
+        bool canonicalOk = true;
+        for (const auto& geometry : lod.geometries)
+        {
+            const auto analysis = analyzeCanonicalMesh(geometry.mesh);
+            canonicalOk = canonicalOk && !analysis.structuralInvalid && analysis.degenerateTriangles == 0 &&
+                          analysis.duplicateTriangles == 0 && analysis.windingConflicts == 0 &&
+                          analysis.insideOutClosedComponents == 0;
+        }
+        json report = generatedLevelReportJson(level, threshold, options, reports);
+        report["canonical"] = canonicalOk;
+        report["relativeGeometricError"] = threshold / characteristic;
+        out.push_back(report);
+        if (canonicalOk)
+            m_lodGenerationPreview[level] = {generatedLevelKey(source, level, threshold, options), std::move(lod), std::move(report)};
+        ++done;
+        sendProgress("working", "PREVIEW LOD" + std::to_string(level), done, selected.size());
+    }
+    const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+    m_server.broadcastText(json({
+        {"type", "lod_generation_preview_result"},
+        {"lodIndex", lodIndex},
+        {"algorithm", std::string(GeneratedLodComponentCullAlgorithmId) +
+                          (options.simplify ? std::string(" + ") + LodSurfaceSimplifyAlgorithmId : std::string())},
+        {"characteristicSourceUnits", characteristic},
+        {"simplify", options.simplify},
+        {"simplifyFactor", options.simplifyFactor},
+        {"seconds", seconds},
+        {"levels", std::move(out)}
+    }).dump());
+    sendStatus("LOD generation preview ready (" + std::to_string(selected.size()) +
+               " level(s), asset unchanged); APPLY reuses it while LOD0 and the options stay the same");
     return true;
 }
 
@@ -9529,8 +9864,8 @@ bool ModelAssetEditorSession::regenerateDerivedLodsForGeometry(
         const double threshold = std::max(
             1.0e-9,
             static_cast<double>(targetLod.relativeGeometricError) * sourceCharacteristic);
-        LodCullBuildStats stats;
-        MeshLod generatedMesh = buildComponentCullMesh(sourceGeometry.mesh, threshold, &stats);
+        GeneratedGeometryReport regenerationReport;
+        MeshLod generatedMesh = generateLodGeometryMesh(sourceGeometry.mesh, threshold, LodGenerationOptions {}, regenerationReport);
 
         std::size_t targetGeometryIndex = std::size_t(-1);
         if (sourceIsVariant)
@@ -10813,7 +11148,16 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         {
             applyGeneratedLods(
                 message.value("sourceLodIndex", std::size_t(0)),
-                message.value("levels", json::array()));
+                message.value("levels", json::array()),
+                message.value("simplify", json::object()));
+            return;
+        }
+        if (command == "preview_lod_generation")
+        {
+            previewLodGeneration(
+                message.value("lodIndex", std::size_t(0)),
+                message.value("levels", json::array()),
+                message.value("simplify", json::object()));
             return;
         }
         if (command == "request_lod_payload")

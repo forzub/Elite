@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <limits>
 #include <map>
+#include <thread>
 #include <tuple>
 #include <vector>
 
@@ -175,15 +176,33 @@ std::vector<Tri> gatherTriangles(const ModelAsset& asset, const presentation::In
 }
 
 // Max over samples of `from` (vertices + centroids) of the distance to `to`.
+// Max over samples of `from` (vertices, edge midpoints, centroid) of the
+// distance to `to`; split over hardware threads (each keeps its own running
+// maximum for the early-out).
 float directedDistance(const std::vector<Tri>& from, const TriangleBvh& to)
 {
-    float worst = 0.0f;
-    for (const auto& t : from)
-    {
-        worst = std::max(worst, to.nearest(t.a, worst));
-        worst = std::max(worst, to.nearest((t.a + t.b + t.c) / 3.0f, worst));
-    }
-    return worst;
+    const auto range = [&](std::size_t begin, std::size_t end) {
+        float worst = 0.0f;
+        for (std::size_t i = begin; i < end; ++i)
+        {
+            const Tri& t = from[i];
+            for (const glm::vec3& p : {t.a, (t.a + t.b) * 0.5f, (t.b + t.c) * 0.5f, (t.c + t.a) * 0.5f,
+                                       (t.a + t.b + t.c) / 3.0f})
+                worst = std::max(worst, to.nearest(p, worst));
+        }
+        return worst;
+    };
+    const std::size_t threads = std::clamp<std::size_t>(std::thread::hardware_concurrency(), 1, 16);
+    if (threads == 1 || from.size() < 4096) return range(0, from.size());
+    std::vector<float> results(threads, 0.0f);
+    std::vector<std::thread> workers;
+    const std::size_t chunk = (from.size() + threads - 1) / threads;
+    for (std::size_t k = 0; k < threads; ++k)
+        workers.emplace_back([&, k] {
+            results[k] = range(std::min(from.size(), k * chunk), std::min(from.size(), (k + 1) * chunk));
+        });
+    for (auto& w : workers) w.join();
+    return *std::max_element(results.begin(), results.end());
 }
 
 bool identical(const std::vector<Tri>& a, const std::vector<Tri>& b)
@@ -214,7 +233,22 @@ bool nearIdentity(const glm::mat4& m)
     return true;
 }
 
+std::vector<Tri> meshTriangles(const MeshLod& mesh)
+{
+    std::vector<Tri> out;
+    out.reserve(mesh.triangles.size());
+    for (const auto& t : mesh.triangles)
+        if (t.a < mesh.vertices.size() && t.b < mesh.vertices.size() && t.c < mesh.vertices.size())
+            out.push_back(Tri {mesh.vertices[t.a].position, mesh.vertices[t.b].position, mesh.vertices[t.c].position});
+    return out;
+}
+
 } // namespace
+
+float meshDeviation(const MeshLod& a, const MeshLod& b)
+{
+    return twoSided(meshTriangles(a), meshTriangles(b));
+}
 
 std::string measureNodeLodErrors(ModelAsset& asset)
 {

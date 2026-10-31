@@ -7341,6 +7341,76 @@
       "es": "APLICADO",
       "ja": "適用済み"
     },
+    "model_editor.lod_generator.asset_unchanged": {
+      "en": "asset unchanged until APPLY",
+      "ru": "asset не изменён до ПРИМЕНИТЬ",
+      "zh-Hans": "应用前资源不变",
+      "es": "asset sin cambios hasta APLICAR",
+      "ja": "適用までアセットは変更されません"
+    },
+    "model_editor.lod_generator.generation_preview": {
+      "en": "PREVIEW GENERATION (USE levels, or all)",
+      "ru": "ПРОСМОТР ГЕНЕРАЦИИ (уровни ИСП. или все)",
+      "zh-Hans": "预览生成（所选级别或全部）",
+      "es": "VISTA PREVIA DE GENERACIÓN (niveles USAR o todos)",
+      "ja": "生成プレビュー（使用レベルまたは全部）"
+    },
+    "model_editor.lod_generator.generation_running": {
+      "en": "GENERATING PREVIEW",
+      "ru": "ИДЁТ ГЕНЕРАЦИЯ ПРОСМОТРА",
+      "zh-Hans": "正在生成预览",
+      "es": "GENERANDO VISTA PREVIA",
+      "ja": "プレビュー生成中"
+    },
+    "model_editor.lod_generator.report_counts": {
+      "en": "omitted comp. · simplified G · aliases",
+      "ru": "убрано комп. · упрощено G · алиасы",
+      "zh-Hans": "移除组件 · 简化几何 · 别名",
+      "es": "comp. omitidos · G simplificadas · alias",
+      "ja": "除去コンポーネント · 簡略化 G · エイリアス"
+    },
+    "model_editor.lod_generator.report_cull_error": {
+      "en": "cull error",
+      "ru": "ошибка отсечения",
+      "zh-Hans": "剔除误差",
+      "es": "error de descarte",
+      "ja": "除去誤差"
+    },
+    "model_editor.lod_generator.report_error": {
+      "en": "target / measured error",
+      "ru": "цель / измеренная ошибка",
+      "zh-Hans": "目标 / 实测误差",
+      "es": "error objetivo / medido",
+      "ja": "目標 / 実測誤差"
+    },
+    "model_editor.lod_generator.report_hint": {
+      "en": "Measured error = two-sided distance from the LOD0 mesh (source units); BUILD measures it again per semantic part and runtime LOD selection uses that value. APPLY reuses this preview while LOD0 and the options are unchanged.",
+      "ru": "Измеренная ошибка — двустороннее расстояние до меша LOD0 (единицы исходника); BUILD измеряет её заново по каждой семантической части, и runtime выбирает LOD по этому значению. ПРИМЕНИТЬ использует этот просмотр, пока LOD0 и параметры не менялись.",
+      "zh-Hans": "实测误差 = 与 LOD0 网格的双向距离（源单位）；BUILD 按语义部件重新测量，运行时 LOD 选择使用该值。只要 LOD0 和选项不变，应用将复用此预览。",
+      "es": "Error medido = distancia bidireccional a la malla LOD0 (unidades de origen); BUILD la mide de nuevo por parte semántica y la selección de LOD en tiempo de ejecución usa ese valor. APLICAR reutiliza esta vista previa mientras LOD0 y las opciones no cambien.",
+      "ja": "実測誤差 = LOD0 メッシュとの双方向距離（ソース単位）。BUILD はセマンティック部品ごとに再測定し、ランタイムの LOD 選択はその値を使います。LOD0 とオプションが変わらない限り、適用はこのプレビューを再利用します。"
+    },
+    "model_editor.lod_generator.report_tris": {
+      "en": "rendered T: LOD0 → cull → simplified",
+      "ru": "отрисовка T: LOD0 → отсечение → упрощение",
+      "zh-Hans": "渲染三角形：LOD0 → 剔除 → 简化",
+      "es": "T renderizados: LOD0 → descarte → simplificado",
+      "ja": "描画 T: LOD0 → 除去 → 簡略化"
+    },
+    "model_editor.lod_generator.simplify": {
+      "en": "SURFACE SIMPLIFY (QEM, after component cull)",
+      "ru": "УПРОЩЕНИЕ ПОВЕРХНОСТИ (QEM, после отсечения компонентов)",
+      "zh-Hans": "表面简化（QEM，组件剔除之后）",
+      "es": "SIMPLIFICAR SUPERFICIE (QEM, tras descartar componentes)",
+      "ja": "サーフェス簡略化（QEM、コンポーネント除去の後）"
+    },
+    "model_editor.lod_generator.simplify_factor": {
+      "en": "surface tolerance × min. feature",
+      "ru": "допуск поверхности × мин. деталь",
+      "zh-Hans": "表面容差 × 最小细节",
+      "es": "tolerancia de superficie × detalle mín.",
+      "ja": "サーフェス許容差 × 最小ディテール"
+    },
     "model_editor.lod_generator.applying": {
       "en": "APPLYING GENERATED LODS",
       "ru": "ПРИМЕНЕНИЕ СОЗДАННЫХ LOD",

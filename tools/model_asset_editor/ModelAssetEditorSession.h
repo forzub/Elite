@@ -263,7 +263,15 @@ private:
     bool previewLodCoplanarCollapse(std::size_t lodIndex);
     bool applyGeneratedLods(
         std::size_t sourceLodIndex,
-        const nlohmann::json& levels);
+        const nlohmann::json& levels,
+        const nlohmann::json& options = nlohmann::json::object());
+    // Non-destructive: builds the selected generated levels (component cull +
+    // surface simplification) and reports triangles / target / measured error;
+    // APPLY reuses the result while LOD0 and the options are unchanged.
+    bool previewLodGeneration(
+        std::size_t lodIndex,
+        const nlohmann::json& levels,
+        const nlohmann::json& options);
     bool refreshSourceVariants(bool sourceOwned = false, bool broadcastUpdates = true);
     bool setSourceVariantReplacement(
         std::size_t lodIndex,
@@ -379,6 +387,13 @@ private:
     std::map<std::string, std::set<std::string>> m_componentMaintenanceIssues;
     std::map<std::string, std::vector<std::string>> m_semanticChildOrder;
     std::map<std::size_t, std::string> m_lodSourceBasisPresets;
+    struct GeneratedLodPreview
+    {
+        std::string key;
+        RenderLod lod;
+        nlohmann::json report;
+    };
+    std::map<std::size_t, GeneratedLodPreview> m_lodGenerationPreview;
     std::string m_sharedSourceBasisPreset = "game_current";
     int m_sharedSourceFrameTransformVersion = 2;
     std::size_t m_nextBaseVisualOrdinal = 1;

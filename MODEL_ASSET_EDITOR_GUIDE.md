@@ -1,3 +1,33 @@
+# QUICK START — CURRENT WORKFLOW (editor 0.10.86, проверено вручную 2026-10-31 на station)
+
+Короткая инструкция для того, кто давно не открывал редактор. Всё ниже этого раздела — история разработки.
+
+**1. Запуск.** Собрать: `cmake --build build --target EliteAssetEditor` (нужен `ELITE_BUILD_ASSET_EDITOR=ON`). Запустить `build/tools/model_asset_editor/bin/EliteAssetEditor.exe` без аргументов — откроется окно (WebView2). В консоль печатается адрес вида `http://localhost:<port>/model_asset_editor.html?editor_session=...`: тот же UI можно открыть и в обычном браузере.
+
+**2. Выбор модели.** Верхний список «Выберите модель…» → `📁 Orbital Station ● v4`. Справа от языка — режим вьюпорта: РАБОЧИЙ (рабочая копия), ИСХОДНИК (сырой OBJ), БЕЗ ОТСЕЧЕНИЯ. Этапы 1–9 — вкладки над вьюпортом; у каждого этапа внизу панели кнопка «✓ ПРОВЕРИТЬ», которая только проверяет и ничего не сохраняет.
+
+**3. ИСТОЧНИК (1).** Показывает путь к исходникам, объявленные LOD и физический масштаб (authoring → метры). «✓ ПРОВЕРИТЬ».
+
+**4. Подготовка мешей — этап LOD (2).** Таблица «КОНТРАКТ ГЕОМЕТРИИ»: красные строки не подготовлены. «⚙ ПОДГОТОВИТЬ МЕШИ · N» обрабатывает только красные, «✓ АНАЛИЗИРОВАТЬ» — проверка только для чтения. Если после смены версии редактора меши снова красные — просто ПОДГОТОВИТЬ (геометрия не меняется, обновляются записи).
+
+**5. Анализ LOD.** Блок «ГЕНЕРАТОР LOD» → «⌁ АНАЛИЗ LOD0». Таблица уровней: минимальная деталь (порог component cull в единицах исходника), экранный размер объекта, треугольники. Галочки «ИСП.» выбирают уровни для генерации.
+
+**6. Preview.** Генерация = два независимых механизма: component cull (мелкая отдельная деталь исчезает целиком) + «SURFACE SIMPLIFY» (QEM-упрощение оставшейся поверхности; допуск = множитель × мин. деталь, но не меньше ошибки, которую уже даёт cull). «⌁ PREVIEW GENERATION» строит выбранные уровни без изменения asset (station: ~35 с) и показывает по уровню: треугольники LOD0 → после cull → после упрощения, цель/измеренную ошибку, удалённые компоненты, упрощённые геометрии, переиспользованные экземпляры. «ПРОСМОТР МЕША» → одна деталь: её строка по каждому LOD. «◉ ПРОСМОТР ОТСЕЧЕНИЯ» подсвечивает в 3D только cull.
+
+**7. Apply.** «✓ ПРИМЕНИТЬ ВЫБРАННЫЕ LOD» (подтвердить) — транзакционно заменяет выбранные LOD; если preview с теми же параметрами есть — берётся он. LOD0 не меняется никогда.
+
+**8. Посмотреть LOD0…LOD4.** На этапе LOD кнопки «АКТИВНЫЙ RENDER LOD» LOD0…LOD4 (payload подгружается по запросу), «# КАРКАС» — реальная сетка, «↗ НОРМАЛИ ГРАНЕЙ». Список «ФАЙЛЫ LOD РЕНДЕРА» показывает размер и SSE каждого уровня.
+
+**9. SAVE.** «⇩ СОХРАНИТЬ» → `Saved WORKING rN`. Рабочий пакет: `build/tools/model_asset_editor/workspaces/<asset>/working/` (`<asset>.elmodel`, `.lodN.elmesh`, `editor_state.json`). После APPLY этапы 2–5 становятся «УСТАРЕЛО»: пройти «✓ ПРОВЕРИТЬ» по этапам 2…8. ПОВЕРХНОСТИ требуют явного «Тип поверхности» у каждой геометрии (строка → список → «применить ко всем LOD»).
+
+**10. BUILD.** Этап «9 · СБОРКА» → «✓ СОБРАТЬ PRODUCTION PACKAGE». Сначала SAVE (BUILD собирает именно сохранённое). Пишет `src/assets/compiled/models/<asset>/` в метрах и измеряет ошибку LOD по каждой семантической части (station ~30 с). Игра читает копию в `build/assets/compiled/...`, её обновляет сборка `EliteGame`. Без UI: `build/EliteModelAssetBuild.exe <working.elmodel> <out.elmodel>` (печатает таблицу ошибок).
+
+**11. Логи.** Консоль редактора (`[ModelAssetEditor][prepare]`, `[lods] ... applied from the generation preview`); `workspaces/<asset>/logs/editor_ui.log`, `mesh_repair.log`, `instance_fit.log`. Игра: `ELITE_MODEL_ASSET_LOD_LOG=<файл>` — выбор LOD по деталям, вызовы отрисовки, CPU/GPU. Headless-проверка генератора: `build/EliteLodSimplifyCheck.exe <working.elmodel>` и `--synthetic`.
+
+**12. WORKING vs production.** WORKING — авторская копия в единицах исходника + доказательства этапов (`editor_state.json`); правится только редактором, SAVE не трогает игру. Production — результат BUILD: метры, измеренная ошибка LOD по частям, то, что грузит игра. Между ними ходит только BUILD.
+
+---
+
 ## Wave7E SEMANTICS effect extraction — v0.10.73
 
 The full 51-function SEMANTICS effect owner now lives in `src/assets/webui/model_asset_editor/effects/semantics.js`. Pure/deterministic SEMANTICS responsibilities remain in the narrow `semantics/*.js` modules and are imported directly; state/DOM/THREE/backend orchestration is injected through `createSemanticsEffects(...)`. The HTML composition root drops from 263 to 212 named functions.

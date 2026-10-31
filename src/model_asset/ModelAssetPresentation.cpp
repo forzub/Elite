@@ -366,12 +366,17 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
         if (interior) ++frame.interiorDraws;
     };
 
-    // Whole-object representations: one LOD, no interiors.
-    if (rep == Representation::Proxy || rep == Representation::Shell)
+    // Whole-object representations: one authored LOD, no interiors. Without
+    // an authored shell / proxy the object stays on the per-component path
+    // below (screen-space error per part): the coarsest component LOD is NOT a
+    // shell and may exceed the error budget by far (station LOD4 at 30 km:
+    // ~9 px for a 1.8 px budget).
+    std::int32_t wholeLod = NoIndex;
+    if (rep == Representation::Proxy) wholeLod = index.proxyLod != NoIndex ? index.proxyLod : index.shellLod;
+    else if (rep == Representation::Shell) wholeLod = index.shellLod;
+    if (wholeLod != NoIndex)
     {
-        std::int32_t lod = rep == Representation::Proxy ? index.proxyLod : index.shellLod;
-        if (lod == NoIndex) lod = rep == Representation::Proxy ? index.shellLod : NoIndex;
-        if (lod == NoIndex) lod = index.componentLods.back();
+        const std::int32_t lod = wholeLod;
         const auto& infos = index.renderNodes[static_cast<std::size_t>(lod)];
         for (std::size_t i = 0; i < infos.size(); ++i)
         {

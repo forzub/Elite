@@ -118,6 +118,13 @@ target_include_directories(EliteModelAsset PUBLIC
 # Headless BUILD (WORKING authoring package -> metric production package) and
 # the runtime presentation check (ladder, per-component LOD, HLOD, interiors).
 add_executable(EliteModelAssetBuild tools/model_asset_build/main.cpp)
+target_link_libraries(EliteModelAsset PUBLIC Threads::Threads) # parallel LOD error measurement
+# Offline geometry kernels stay optimized in Debug trees (same precedent as
+# EliteCelestialSurface): LOD error measurement and the libigl decimation.
+set_source_files_properties(
+    src/model_asset/ModelAssetLodError.cpp
+    tools/model_asset_editor/LodMeshSimplifier.cpp
+    PROPERTIES COMPILE_OPTIONS "-O2")
 target_link_libraries(EliteModelAssetBuild PRIVATE EliteModelAsset)
 add_executable(EliteModelAssetPresentationCheck tests/model_asset_presentation/PresentationCheck.cpp)
 target_link_libraries(EliteModelAssetPresentationCheck PRIVATE EliteModelAsset)
@@ -330,6 +337,7 @@ if(ELITE_BUILD_ASSET_EDITOR)
         tools/model_asset_editor/ModelAssetEditorSession.cpp
         tools/model_asset_editor/ModelAssetEditorWire.cpp
         tools/model_asset_editor/CanonicalMeshBuilder.cpp
+        tools/model_asset_editor/LodMeshSimplifier.cpp
         tools/model_asset_editor/GeometryInstanceFitter.cpp
         tools/model_asset_editor/RuntimeAssemblyImporter.cpp
         tools/model_asset_editor/SourceFolderImporter.cpp
@@ -1425,6 +1433,19 @@ endif()
 
 if(TARGET EliteAssetEditor)
     elite_configure_executable_runtime(EliteAssetEditor)
+endif()
+
+# Headless LOD surface-simplification check (editor geometry code, no UI):
+# runs the generator's simplify stage on a WORKING package and reports
+# triangles / target / measured error per geometry and level.
+if(ELITE_BUILD_ASSET_EDITOR)
+    add_executable(EliteLodSimplifyCheck
+        tests/model_asset_lod_simplify/LodSimplifyCheck.cpp
+        tools/model_asset_editor/LodMeshSimplifier.cpp
+        tools/model_asset_editor/CanonicalMeshBuilder.cpp
+    )
+    target_include_directories(EliteLodSimplifyCheck PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
+    target_link_libraries(EliteLodSimplifyCheck PRIVATE EliteModelAsset igl::core)
 endif()
 
 # Diagnostic libigl/Embree station spike ---------------------------------------

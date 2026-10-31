@@ -1003,6 +1003,61 @@ hitches = frames > 80 ms after start.
   9.15 -> 8.68 (noisy). Telemetry: DRAW line in ELITE_MODEL_ASSET_LOD_LOG,
   ma_* fields in [ScenePerf]; drawCalls now counts real submissions there.
 
+### Generated LOD: surface simplification + editor UI pass (user order 2026-10-31 h, stage 2)
+- GENERATOR (compiled + headless + UI): every generated level = component
+  cull (unchanged, generated_lod_component_cull_v1) THEN surface
+  simplification of the remaining geometry (tools/model_asset_editor/
+  LodMeshSimplifier, lod_surface_qem_region_constrained_v1): libigl
+  igl::decimate with own unweighted plane quadrics (cost = sum of squared
+  distances to the original planes; an edge above target^2 never collapses),
+  smoothing regions (crease > 25 deg / material / smoothing group / boundary)
+  never crossed, border lines kept by constraint planes, corners and authored
+  edge vertices pinned, no face flips, canonical edge topology (no
+  positional welding of separate sheets), textured / non-edge-manifold
+  components untouched, result re-canonicalized. Target per geometry =
+  max(factor x feature threshold, measured cull deviation). Each level from
+  LOD0, each geometry once (instance families stay shared), geometries in
+  parallel. Measured two-sided deviation (ModelAssetLodError::meshDeviation)
+  is reported per geometry; BUILD re-measures per semantic part (authority).
+  libigl's own qslim placement was not usable (A.inverse() -> inf on planar
+  regions). Geometry kernels compiled -O2 in Debug trees (72 s -> 2 s).
+- UI: LODS stage gains SURFACE SIMPLIFY + tolerance factor, PREVIEW
+  GENERATION (non-destructive, cached; APPLY reuses it) and a per-level /
+  per-mesh report table; apply carries the options; per-geometry
+  regeneration uses the same generator. Localization keys added (5 locales).
+- STATION (editor UI, saved WORKING r4, BUILD from the UI): rendered tris
+  LOD0 623.7k; LOD1 583.6k -> 86.7k, LOD2 269.1k -> 27.7k, LOD3 92.9k -> 3.7k,
+  LOD4 67.3k -> 1.5k. Core_Front 201,332 / 18,480 / 8,824 / 911 / 448 tris,
+  measured per-part error 0 / 64.0 / 132.1 / 377.5 / 377.5 m. Canonical
+  failures 0. EliteLodSimplifyCheck --synthetic: box 768 -> 12 T, error 0,
+  material seam kept; open sheet -> 2 T; bump within 2x target: PASS.
+- RUNTIME FIX: SHELL / PROXY without an authored shell / proxy fell back to
+  the coarsest component LOD with no error check (station at 30 km: LOD4,
+  ~9 px for a 1.8 px budget). Now it stays on the per-component SSE path.
+- IN-GAME (instancing on, same build, package swapped): scene ~620 px:
+  580k -> 286k tris, GPU 4.89 -> 2.58 ms; 30 km (per-component SSE): 378.5k
+  -> 56.3k tris, GPU 3.42 -> 0.63 ms; 60 m off the bounds: 616k / 607k tris
+  (big parts must stay LOD0), GPU 15.9 / 14.0 ms median, noise 6-47 ms.
+  First LOD upload hitch 241 -> 148 ms (scene), 152 -> 31 ms (30 km).
+  DEV ELITE_DEV_MODEL_ASSET_PLACE_M=<m> places the station in front of the
+  main camera for such measurements.
+- EDITOR WORKFLOW BREAKAGES found in the manual pass and fixed: (1) package
+  stamp compared raw mtimes; MinGW's last_write_time shifts by exactly 1 h at
+  a DST change, so all authoring evidence was dropped on load ("editor_state
+  unavailable or mismatched") - now +-1 h tolerated; (2) meshes certified by
+  a retired canonical algorithm stayed green while their records were
+  dropped -> PREPARE skipped them, generator blocked ("no canonical SOURCE
+  record") - now demoted to pending; (3) BUILD's own stage status change
+  marked WORKING dirty, so "save before BUILD" refused every attempt - BUILD
+  status no longer dirties WORKING.
+- Contracts: 79 reds before and after (same set; none added).
+- OPEN: Core_Front stays LOD0 below ~33 km because the component cull
+  removes long thin parts (LOD1 cull error 60 m). What-if without cull:
+  Core_Front 42k T at 28 m, Core_Rear 18.5k T at 4 m, habitat 21k T at 12 m
+  -> a Hausdorff-consistent cull criterion (or a simplify-only first level)
+  would make the near station cheap at the same budget: user decision.
+  Lazy-upload prefetch, authored shell / proxy still open.
+
 ### OPEN
 - Galaxy spatial frame: HUMAN acceptance with a real mouse not done (the
   scripted runs drive the production input path, not a hand). Known: the

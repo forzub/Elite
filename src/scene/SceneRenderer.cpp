@@ -3291,7 +3291,30 @@ if (policy.drawObjects)
                 if (!policy.shouldDrawObject(object.type) || !object.gpu)
                     continue;
                 const auto& ma = *object.gpu;
-                const glm::mat4 assetModel = object.model * ma.assetToLogical;
+                glm::mat4 devPlacement(1.0f);
+                // DEV (measurement only): ELITE_DEV_MODEL_ASSET_PLACE_M=<m> puts the
+                // object in front of the main camera, <m> from the nearest face of its
+                // bounds, orientation kept. Spinning modules follow: their node motion
+                // is relative to the object model.
+                static const float devPlaceM = [] {
+                    const char* v = std::getenv("ELITE_DEV_MODEL_ASSET_PLACE_M");
+                    return v && *v ? static_cast<float>(std::atof(v)) : -1.0f;
+                }();
+                if (devPlaceM >= 0.0f && cameraName == "mainCam")
+                {
+                    const glm::vec3 forward =
+                        glm::normalize(-glm::vec3(renderView[0][2], renderView[1][2], renderView[2][2]));
+                    const glm::mat4 toLogical = object.model * ma.assetToLogical;
+                    const glm::vec3 centre = 0.5f * (ma.index.minBounds + ma.index.maxBounds);
+                    const glm::vec3 half = 0.5f * (ma.index.maxBounds - ma.index.minBounds);
+                    const float halfAlong = std::abs(glm::dot(glm::vec3(toLogical[0]), forward)) * half.x +
+                                            std::abs(glm::dot(glm::vec3(toLogical[1]), forward)) * half.y +
+                                            std::abs(glm::dot(glm::vec3(toLogical[2]), forward)) * half.z;
+                    const glm::vec3 centreNow = glm::vec3(toLogical * glm::vec4(centre, 1.0f));
+                    const glm::vec3 target = cameraLocalPosition + forward * (devPlaceM + halfAlong);
+                    devPlacement = glm::translate(glm::mat4(1.0f), target - centreNow);
+                }
+                const glm::mat4 assetModel = devPlacement * object.model * ma.assetToLogical;
                 mp::View view;
                 view.cameraAsset = glm::vec3(glm::inverse(assetModel) * glm::vec4(cameraLocalPosition, 1.0f));
                 view.focalPx = focalPx;
@@ -3312,7 +3335,7 @@ if (policy.drawObjects)
                         continue;
                     if (state.nodeMotion.empty())
                         state.nodeMotion.assign(object.nodeModel.size(), glm::mat4(1.0f));
-                    state.nodeMotion[n] = assetFromWorld * object.nodeModel[n] * ma.assetToLogical;
+                    state.nodeMotion[n] = assetFromWorld * devPlacement * object.nodeModel[n] * ma.assetToLogical;
                 }
                 const double selectStartMs = renderProfileNowMs();
                 const mp::Frame frame = mp::select(ma.asset, ma.index, state, view, selection);

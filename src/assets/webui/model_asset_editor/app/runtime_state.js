@@ -21,7 +21,7 @@ function createEditorRuntimeState({THREE,editorViewState}){
   semanticGraphNodeObjects:new Map(),semanticGraphLinkObjects:new Map(),structuralGraphLinkObjects:new Map(),
   semanticGraphStructureKey:'',semanticGizmoLastUpdateTs:0,semanticGraphApplyRaf:0,
   surfaceAnalysisReady:false,surfaceAnalysisRequested:false,radialRenderNode:null,modelPreflight:null,
-  lodAnalysis:null,lodGeneratorPreview:null,lodGeneratorLevel:0,lodGeneratorApplyLevels:new Set(),lodGeneratorAppliedLevels:new Set(),
+  lodAnalysis:null,lodGeneratorPreview:null,lodSimplify:{enabled:true,factor:1},lodGenerationPreview:null,lodGenerationPreviewRunning:false,lodGeneratorLevel:0,lodGeneratorApplyLevels:new Set(),lodGeneratorAppliedLevels:new Set(),
   lodGeneratorPendingApplyLevels:new Set(),lodGeneratorApplying:false,lodGeneratorMeshSelection:'all',
   lodDiagnosticWireframe:false,lodDiagnosticFaceNormals:false,lodFaceNormalOverlays:[],meshViewportMode:'working',
   sourceChangeScan:null,geometryPartPreflight:null,editorView:editorViewState,

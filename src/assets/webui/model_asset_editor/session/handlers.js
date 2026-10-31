@@ -77,8 +77,14 @@ function createEditorSessionMessageHandlers({
    rebuildScene(true);
    renderWizardPanel();
   },
+  lod_generation_preview_result:msg=>{
+   state.lodGenerationPreview=msg;
+   state.lodGenerationPreviewRunning=false;
+   renderWizardPanel();
+  },
   lod_generator_apply_result:msg=>{
    state.lodGeneratorApplying=false;
+   state.lodGenerationPreview=null;
    state.lodGeneratorAppliedLevels=new Set((msg.levels||[]).map(item=>Number(item.level)).filter(level=>level>0));
    state.lodGeneratorPendingApplyLevels.clear();
    state.lodGeneratorPreview=null;

@@ -869,6 +869,88 @@ hitches = frames > 80 ms after start.
   HUD keeps its look; Modern limb a little bright; prediction offset of the
   player ship vs interpolated world (pre-existing) not examined.
 
+### One main camera, Model Asset audit + presentation, station v4, thrust glow, sun (user order 2026-10-31 f)
+- Scope: remove the rear monitor (F1 front / F2 rear / F3 recon drone / F4
+  reserved, ONE full world render per frame); audit Model Asset Editor /
+  ModelAsset v4 / legacy ObjectAssembly (review: D:/tmp/MODEL_ASSET_
+  ARCHITECTURE_REVIEW.md, notes: D:/tmp/MODEL_ASSET_NOTES.md); station with
+  all components and 5 LODs through ModelAsset v4; representation ladder,
+  per-component LOD, HLOD, compartments / portals, damage variants,
+  structural graph, animation foundation, thrust glow, sun by real size.
+- CAMERA (source + compiled + in-game frames): UICameraView rear monitor and
+  its second SceneRenderer pass deleted (DebugSettings renderRearCamera,
+  forceAssemblyLod1, secondCam branches, SHARED_VIEWS DEV switch removed).
+  FlightPresentationView = Front / Rear / Drone; F4 -> std::nullopt
+  (reserved). SpaceState::setFlightCameraMode(ShipCameraMode) uses the
+  existing ShipCameraMode; celestial / object LOD always plan for the one
+  main camera. Recon drone: external camera behind / above the ship (min
+  90 m; the 9 m descriptor attachment sat inside the hull), no cockpit frame.
+  Contracts updated: check_function_key_presentation_route (F4 reserved),
+  check_render_surface_ownership, PresentationCoordinatorContractTests,
+  feature contract list. Evidence: D:/tmp/elite_cam_drone.png,
+  elite_drone_*_{a,b}.png.
+- STATION ROOT CAUSE (audit, evidence in the review): runtime never consumed
+  ModelAsset (RuntimeModelAssetLibrary::useBinary had no callers); the legacy
+  registry listed 6 of 29 LOD0 parts (no SolPet_* petals, no habitat
+  external modules); legacy LOD is a binary lod0/lod1 switch at 10 km and
+  the LOD1 OBJs exist only as stale build copies; tracked
+  src/assets/compiled/models/station.elmodel is a v2 dump of the legacy
+  registry (2 LODs, LOD1 RGE -1). The real 5-LOD / 29-component package
+  lives ONLY in build/tools/model_asset_editor/workspaces/station/working
+  (untracked) - never BUILT. Its LODs are the same 29-part assembly at
+  decreasing density (577k / 538k / 240k / 76k / 51k tris; RGE 0 / .00238 /
+  .00954 / .0382 / .153); no shell / proxy exists in any source.
+- MODEL ASSET (compiled + EliteModelAssetPresentationCheck PASS, synthetic
+  ship + real station): schema adds RenderLodRole (Component / ModuleProxy /
+  Shell / Proxy), Compartment, CompartmentPortal, SurfaceEffectBinding,
+  JointType::Prismatic + travel (chunks CMPT / PRES, older readers skip
+  them); shared BUILD src/model_asset/ModelAssetBuild (editor uses it) +
+  headless EliteModelAssetBuild; pure src/model_asset/ModelAssetPresentation:
+  ladder CULLED/POINT/PROXY/SHELL/COMPONENT/FULL by projected diameter
+  (1 / 6 / 40 / 180 / 700 px, hysteresis 1.2), per-component SSE LOD
+  (coarsen 1.8 / refine 2.2 px, component cull 2 px, FULL 1 px), module
+  HLOD collapse < 90 px, interiors only in FULL via BFS from visible open
+  exterior portals (frustum, >= 8 px, facing; depth 2), structural islands,
+  atomic ActiveSets, telemetry formatFrame. Check: 22 m ship approach /
+  retreat POINT 20.6 km, PROXY 3.5 km, SHELL 524 m, COMPONENT 126 m, FULL
+  40 m, 0 flips under +-1.5 % jitter; intact hull 0 interiors, breach ->
+  engineering only, hatch open -> + cockpit, breach facing away -> none;
+  detached engine = own island / object; intact -> breached switches
+  collision / hit / opening / repair together. Real station: 60 m off one
+  end all LOD0 (LOD1 error 13 m = 2.4 px at 5 km, honest SSE); 25 km off
+  one end: near LOD1 / far LOD2 (worst 1.68 px); 30 km: LOD2 = 43 % of
+  LOD0 tris; select() 55-70 us.
+- STATION IN GAME (compiled + in-game frame + LOD log): ObjectType::Station
+  renders from assets/compiled/models/station/station.elmodel (BUILT by
+  EliteModelAssetBuild from the working package; untracked, see notes)
+  through render::geometry::ModelAssetGpuLibrary: lazy GPU upload per
+  (LOD, geometry), descriptor basis + logical length (scale 0.905 -> 4937 x
+  4525 x 5021 m = legacy frame of hit volumes / docking), habitat ring spins
+  with replicated legacy module angles. ELITE_MODEL_ASSET_LOD_LOG=<path>
+  telemetry; ELITE_LEGACY_MODEL_ASSETS=1 = old path. Perf (nav-stress, same
+  run length): objects CPU 1.6-2.5 ms vs 0.33 ms legacy (29 components
+  instead of 6), slow-frame main_ms median 9.1 vs 8.5 ms; first lazy LOD
+  upload hitch 161 ms (open). Collision / hits stay legacy (6 parts).
+- THRUST GLOW (in-game frames, three styles, forced thrust): mesh part ->
+  descriptor module -> physical-control slot -> executed thrust01
+  (readEngineMotorLiveView); a visual engine without its own slot glows with
+  the mesh-less aft main motor (Newtonian-I ship_newtonian_i_main_center).
+  Pad = aft end zone of the engine part (Cobra nozzle caps face forward in
+  the OBJ, so the facing term is two-sided). Modern emissive + white-hot core,
+  Elite white plate, Anime flat cel. DEV ELITE_DEV_FORCE_THRUST01.
+- SUN (Lab captures 1 / 0.2 / 0.05 / 0.015 AU, three styles): true projected
+  disc on a screen quad (no GL point-size limit, no 10 px inflation);
+  activity from projected size only (edge wobble from ~6 px, corona from
+  ~25 px); Elite flickering vector rays, Modern limb-darkened disc +
+  streamers, Anime flat core + posterised petals.
+- OPEN: authored SHELL / PROXY / module proxies for station and ship;
+  Cobra still legacy render path; hits / collision from asset (high risk,
+  needs flight gates); station damage states / hidden parts not mapped to
+  the v4 components; lazy-upload hitch (prewarm next LOD); visual ships /
+  traffic proxies have no thrust glow; Blender zone import not written;
+  editor UI does not author roles / compartments / portals / effects yet;
+  station working package must move out of build/ (storage decision).
+
 ### OPEN
 - Galaxy spatial frame: HUMAN acceptance with a real mouse not done (the
   scripted runs drive the production input path, not a hand). Known: the

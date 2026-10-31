@@ -71,3 +71,16 @@ Do not globally switch production object types. The next asset step is deliberat
 6. remove that consumer's direct `AssemblyMeshLibrary` dependency only after parity.
 
 The goal is to make downstream runtime code source-agnostic. It should consume canonical `ModelAsset` and not care whether the asset originated from legacy OBJ or `.elmodel`.
+
+## First consumer (2026-10-31): station rendering
+
+`render::geometry::ModelAssetGpuLibrary` renders `ObjectType::Station` from
+the metric BUILD package `assets/compiled/models/station/station.elmodel`
+(all components, all RenderLods). The selection is
+`src/model_asset/ModelAssetPresentation` (representation ladder,
+per-component screen-space LOD, module HLOD, interiors). The asset is
+placed with the descriptor mesh basis and logical size, i.e. in the same
+frame the legacy assembly, its hit volumes and docking ports use. Collision,
+hits, damage and docking still read the legacy assembly; moving them to the
+asset is a separate gated step. A missing / non-metric package falls back to
+the legacy path; `ELITE_LEGACY_MODEL_ASSETS=1` forces it.

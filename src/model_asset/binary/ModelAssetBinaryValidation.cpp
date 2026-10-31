@@ -281,6 +281,45 @@ bool validateSemanticAsset(const ModelAsset& asset, std::string* error)
             }
         }
     }
+    const auto nodeIndexOk = [&](std::int32_t index, bool optional) {
+        return (optional && index == NoIndex) ||
+               (index >= 0 && index < static_cast<std::int32_t>(asset.nodes.size()));
+    };
+    for (const auto& c : asset.compartments)
+    {
+        if (c.id.empty() || !nodeIndexOk(c.parentNodeIndex, true))
+        {
+            setError(error, "compartment has empty id or invalid parent node: " + c.id);
+            return false;
+        }
+        for (const std::int32_t node : c.interiorNodeIndices)
+            if (!nodeIndexOk(node, false))
+            {
+                setError(error, "compartment interior node out of range: " + c.id);
+                return false;
+            }
+    }
+    const auto compartments = static_cast<std::int32_t>(asset.compartments.size());
+    for (const auto& p : asset.portals)
+    {
+        const bool aOk = p.compartmentA >= 0 && p.compartmentA < compartments;
+        const bool bOk = p.compartmentB == NoIndex || (p.compartmentB >= 0 && p.compartmentB < compartments);
+        const bool openingOk = p.openingIndex == NoIndex ||
+                               (p.openingIndex >= 0 && p.openingIndex < static_cast<std::int32_t>(asset.openings.size()));
+        if (p.id.empty() || !aOk || !bOk || !openingOk || !nodeIndexOk(p.parentNodeIndex, true) ||
+            !nodeIndexOk(p.doorNodeIndex, true))
+        {
+            setError(error, "portal references an invalid compartment / opening / node: " + p.id);
+            return false;
+        }
+    }
+    for (const auto& e : asset.effectBindings)
+        if (e.materialIndex < NoIndex || e.materialIndex >= static_cast<std::int32_t>(asset.materials.size()) ||
+            !nodeIndexOk(e.nodeIndex, true))
+        {
+            setError(error, "effect binding references an invalid material / node: " + e.id);
+            return false;
+        }
     return true;
 }
 

@@ -4,7 +4,7 @@ namespace elite::model_asset::binary
 {
 namespace
 {
-const std::array<ChunkSpec, 14> ManifestChunksV4 {{
+const std::array<ChunkSpec, 16> ManifestChunksV4 {{
     {{{'M','E','T','A'}}, writeMeta, readMeta},
     {{{'M','A','T','L'}}, writeMaterials, readMaterials},
     {{{'S','E','M','N'}}, writeSemanticNodesV4, readSemanticNodesV4},
@@ -18,7 +18,9 @@ const std::array<ChunkSpec, 14> ManifestChunksV4 {{
     {{{'S','I','Z','E'}}, writePhysicalSizeV4, readPhysicalSizeV4},
     {{{'S','T','R','L'}}, writeStructuralLinksV4, readStructuralLinksV4},
     {{{'L','O','D','S'}}, writeLodManifestV4, readLodManifestV4},
-    {{{'L','E','R','R'}}, writeLodScreenErrorV4, readLodScreenErrorV4}
+    {{{'L','E','R','R'}}, writeLodScreenErrorV4, readLodScreenErrorV4},
+    {{{'C','M','P','T'}}, writeCompartmentsV4, readCompartmentsV4},
+    {{{'P','R','E','S'}}, writePresentationV4, readPresentationV4}
 }};
 
 const std::array<ChunkSpec, 6> ManifestChunksV3 {{
@@ -31,7 +33,7 @@ const std::array<ChunkSpec, 6> ManifestChunksV3 {{
 }};
 }
 
-const std::array<ChunkSpec, 14>& manifestChunksV4()
+const std::array<ChunkSpec, 16>& manifestChunksV4()
 {
     return ManifestChunksV4;
 }

@@ -45,6 +45,10 @@ void writeRepairTargetsV4(Writer&, const ModelAsset&);
 void readRepairTargetsV4(Reader&, ModelAsset&);
 void writeStructuralLinksV4(Writer&, const ModelAsset&);
 void readStructuralLinksV4(Reader&, ModelAsset&);
+void writeCompartmentsV4(Writer&, const ModelAsset&);
+void readCompartmentsV4(Reader&, ModelAsset&);
+void writePresentationV4(Writer&, const ModelAsset&);
+void readPresentationV4(Reader&, ModelAsset&);
 void writeLodManifestV4(Writer&, const ModelAsset&);
 void readLodManifestV4(Reader&, ModelAsset&);
 void writeLodScreenErrorV4(Writer&, const ModelAsset&);
@@ -61,7 +65,7 @@ void readCollisionsLegacy(Reader&, ModelAsset&);
 void writeSocketsLegacy(Writer&, const ModelAsset&);
 void readSocketsLegacy(Reader&, ModelAsset&);
 
-const std::array<ChunkSpec, 14>& manifestChunksV4();
+const std::array<ChunkSpec, 16>& manifestChunksV4();
 const ChunkSpec* findManifestChunk(const std::array<char, 4>& id, bool v4);
 ChunkReader findLegacyChunkReader(const std::array<char, 4>& id);
 

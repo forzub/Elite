@@ -40,7 +40,22 @@ enum class AxisDirection : std::int8_t
 enum class JointType : std::uint8_t
 {
     Fixed = 0,
-    Revolute = 1
+    Revolute = 1,
+    // Sliding mechanism (landing-gear strut, extending door). axis = slide
+    // direction; travel limits live in NodeJoint::minTravel/maxTravel.
+    Prismatic = 2
+};
+
+// What a RenderLod represents in the runtime presentation ladder. Component
+// LODs bind render nodes to semantic components and are selected per
+// component by screen-space error; the coarser roles are whole-object (or
+// per-module) HLOD representations.
+enum class RenderLodRole : std::uint8_t
+{
+    Component = 0,   // individual components (per-component SSE LOD)
+    ModuleProxy = 1, // one proxy per module group (Node::moduleId)
+    Shell = 2,       // welded exterior shell, no interior
+    Proxy = 3        // very-low silhouette proxy
 };
 
 enum class MassPropertyMode : std::uint8_t
@@ -223,6 +238,9 @@ struct NodeJoint
     // Narrower ranges are mechanical angular limits.
     float minAngleDeg = -360.0f;
     float maxAngleDeg = 360.0f;
+    // Prismatic travel along axis, authoring units (metres after BUILD).
+    float minTravel = 0.0f;
+    float maxTravel = 0.0f;
     bool breakable = false;
     float breakForceN = 0.0f;
     float breakTorqueNm = 0.0f;
@@ -322,6 +340,9 @@ struct RenderLod
     // explicitly avoids abusing vector::capacity() as hidden manifest state.
     std::uint32_t declaredGeometryCount = 0;
     std::uint32_t declaredNodeCount = 0;
+
+    // Presentation role (PRES chunk; absent = Component).
+    RenderLodRole role = RenderLodRole::Component;
 
     std::vector<RenderGeometryDefinition> geometries;
     std::vector<RenderNode> nodes;
@@ -484,6 +505,59 @@ struct RepairTarget
     bool enabled = true;
 };
 
+// Interior visibility region (cockpit, reactor bay, cargo...). A spatial and
+// gameplay container, not necessarily one mesh: the semantic nodes listed in
+// interiorNodeIndices carry the interior render geometry. Interiors are drawn
+// only when a portal chain from a VISIBLE, OPEN exterior opening reaches them.
+struct Compartment
+{
+    std::string id;
+    std::string role;
+    std::int32_t parentNodeIndex = NoIndex;
+    glm::vec3 localPosition {0.0f};
+    glm::vec3 localRotationDeg {0.0f};
+    glm::vec3 halfSize {0.5f};
+    std::vector<std::int32_t> interiorNodeIndices;
+    bool enabled = true;
+};
+
+// Connection between two compartments, or a compartment and open space
+// (compartmentB == NoIndex). Open when:
+//  - openingIndex refers to an Opening active in its node's current state
+//    (a breach), or
+//  - doorNodeIndex is in state openStateId (a hatch / door), or
+//  - alwaysOpen (a passage).
+struct CompartmentPortal
+{
+    std::string id;
+    std::int32_t compartmentA = NoIndex;
+    std::int32_t compartmentB = NoIndex; // NoIndex = exterior / space
+    std::int32_t parentNodeIndex = NoIndex;
+    glm::vec3 localPosition {0.0f};
+    glm::vec3 localRotationDeg {0.0f};
+    glm::vec3 halfSize {0.5f};          // portal rectangle: x,y extent, z = depth
+    std::int32_t openingIndex = NoIndex;
+    std::int32_t doorNodeIndex = NoIndex;
+    std::string openStateId;
+    bool alwaysOpen = false;
+    bool enabled = true;
+};
+
+// Semantic surface effect: a material (optionally restricted to one semantic
+// node) driven by a runtime channel. effect "thrust": emissive grows with the
+// channel value thrust01 on faces facing localAxis (the nozzle pad).
+struct SurfaceEffectBinding
+{
+    std::string id;
+    std::string effect = "thrust";
+    std::string channel;                 // e.g. "main", "retro", engine socket id
+    std::int32_t materialIndex = NoIndex;
+    std::int32_t nodeIndex = NoIndex;    // NoIndex = any node using the material
+    glm::vec3 localAxis {0.0f, 0.0f, 1.0f};
+    glm::vec3 hotColour {1.0f, 0.86f, 0.62f};
+    float maxEmissive = 4.0f;
+};
+
 struct ModelAsset
 {
     std::uint32_t formatVersion = ModelAssetFormatVersion;
@@ -510,6 +584,9 @@ struct ModelAsset
     std::vector<Opening> openings;
     std::vector<RepairTarget> repairTargets;
     std::vector<StructuralLinkDefinition> structuralLinks;
+    std::vector<Compartment> compartments;
+    std::vector<CompartmentPortal> portals;
+    std::vector<SurfaceEffectBinding> effectBindings;
 
     // Independent render documents. Their hierarchy/geometry/instances do not
     // need to correspond across LOD levels.

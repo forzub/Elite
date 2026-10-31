@@ -95,6 +95,7 @@ add_library(EliteModelAsset STATIC
     src/model_asset/binary/chunks/SocketChunks.cpp
     src/model_asset/binary/chunks/DamageChunks.cpp
     src/model_asset/binary/chunks/StructuralChunks.cpp
+    src/model_asset/binary/chunks/PresentationChunks.cpp
     src/model_asset/binary/chunks/LodChunks.cpp
     src/model_asset/binary/chunks/LegacyChunks.cpp
     src/model_asset/binary/ModelAssetBinaryChunkRegistry.cpp
@@ -104,12 +105,21 @@ add_library(EliteModelAsset STATIC
     src/model_asset/binary/ModelAssetBinaryLodIO.cpp
     src/model_asset/binary/ModelAssetBinaryController.cpp
     src/model_asset/ModelAssetMigration.cpp
+    src/model_asset/ModelAssetBuild.cpp
+    src/model_asset/ModelAssetPresentation.cpp
     src/model_asset/RuntimeMeshNormalizer.cpp
 )
 target_include_directories(EliteModelAsset PUBLIC
     "${CMAKE_SOURCE_DIR}"
     "${CMAKE_SOURCE_DIR}/src"
 )
+
+# Headless BUILD (WORKING authoring package -> metric production package) and
+# the runtime presentation check (ladder, per-component LOD, HLOD, interiors).
+add_executable(EliteModelAssetBuild tools/model_asset_build/main.cpp)
+target_link_libraries(EliteModelAssetBuild PRIVATE EliteModelAsset)
+add_executable(EliteModelAssetPresentationCheck tests/model_asset_presentation/PresentationCheck.cpp)
+target_link_libraries(EliteModelAssetPresentationCheck PRIVATE EliteModelAsset)
 
 # Runtime library decomposition ------------------------------------------------
 # Wave R0: lowest-level deterministic navigation geometry. This target is

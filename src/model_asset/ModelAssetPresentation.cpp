@@ -112,9 +112,17 @@ bool renderNodeActive(const ModelAsset& asset, const ObjectState& state, const R
     return stateScopedActive(rn.activeStates, currentState(asset, state, rn.semanticNodeIndex));
 }
 
-float lodErrorMeters(const ModelAsset& asset, const Index& index, std::int32_t lod)
+// Error of one component at one LOD: the BUILD-measured per-node value when
+// present, else the LOD-wide ratio x model characteristic (conservative for
+// small parts).
+float lodErrorMeters(const ModelAsset& asset, const Index& index, std::int32_t lod, std::int32_t node)
 {
-    const float ratio = runtimeLodErrorRatio(asset.renderLods[static_cast<std::size_t>(lod)]);
+    const RenderLod& rl = asset.renderLods[static_cast<std::size_t>(lod)];
+    if (rl.level == 0) return 0.0f;
+    if (node >= 0 && static_cast<std::size_t>(node) < rl.nodeGeometricErrorM.size() &&
+        rl.nodeGeometricErrorM[static_cast<std::size_t>(node)] >= 0.0f)
+        return rl.nodeGeometricErrorM[static_cast<std::size_t>(node)];
+    const float ratio = runtimeLodErrorRatio(rl);
     return ratio < 0.0f ? std::numeric_limits<float>::infinity() : ratio * index.characteristicM;
 }
 
@@ -310,9 +318,33 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
         selection.componentLod.assign(index.components.size(), NoIndex);
         selection.groupCollapsed.assign(index.groups.size(), 0);
     }
-    frame.objectPx = projectedPx(view, index.minBounds, index.maxBounds);
+    // Bounds where moving parts (joints, spinning modules) are NOW: the LOD,
+    // culling and HLOD follow the relative camera <-> part position, whichever
+    // of the two moves.
+    const bool moving = !state.nodeMotion.empty();
+    std::vector<glm::vec3> movedMin, movedMax;
+    glm::vec3 objectMin = index.minBounds, objectMax = index.maxBounds;
+    if (moving)
+    {
+        movedMin.resize(index.components.size());
+        movedMax.resize(index.components.size());
+        bool any = false;
+        for (std::size_t ci = 0; ci < index.components.size(); ++ci)
+        {
+            const auto& c = index.components[ci];
+            movedMin[ci] = c.minBounds;
+            movedMax[ci] = c.maxBounds;
+            if (!c.hasBounds) continue;
+            if (c.node < static_cast<std::int32_t>(state.nodeMotion.size()))
+                transformAabb(motionFor(state, c.node), c.minBounds, c.maxBounds, movedMin[ci], movedMax[ci]);
+            if (c.interior) continue;
+            expand(objectMin, objectMax, any, movedMin[ci], movedMax[ci]);
+        }
+        if (!any) { objectMin = index.minBounds; objectMax = index.maxBounds; }
+    }
+    frame.objectPx = projectedPx(view, objectMin, objectMax);
     Representation rep = ladder(t, selection.representation, fresh, frame.objectPx);
-    if (!aabbInFrustum(view, index.minBounds, index.maxBounds) && rep > Representation::Point)
+    if (!aabbInFrustum(view, objectMin, objectMax) && rep > Representation::Point)
         rep = Representation::Culled; // off screen: keep nothing resident in the draw list
     selection.representation = rep;
     frame.representation = rep;
@@ -419,17 +451,24 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
     for (std::size_t gi = 0; gi < index.groups.size(); ++gi)
     {
         const auto& g = index.groups[gi];
+        glm::vec3 gMin = g.minBounds, gMax = g.maxBounds;
+        if (moving)
+        {
+            bool any = false;
+            for (const std::int32_t c : g.components)
+                expand(gMin, gMax, any, movedMin[static_cast<std::size_t>(c)], movedMax[static_cast<std::size_t>(c)]);
+        }
         bool collapse = false;
         if (rep == Representation::Component && !g.proxyRenderNodes.empty())
         {
-            const float px = projectedPx(view, g.minBounds, g.maxBounds);
+            const float px = projectedPx(view, gMin, gMax);
             const float h = fresh ? 1.0f : t.hysteresis;
             collapse = selection.groupCollapsed[gi] ? px < t.moduleCollapsePx * h : px < t.moduleCollapsePx / h;
         }
         selection.groupCollapsed[gi] = collapse ? 1 : 0;
         if (!collapse) continue;
         ++frame.collapsedGroups;
-        if (aabbInFrustum(view, g.minBounds, g.maxBounds))
+        if (aabbInFrustum(view, gMin, gMax))
             for (const std::int32_t rn : g.proxyRenderNodes)
                 emit(index.moduleProxyLod, rn,
                      asset.renderLods[static_cast<std::size_t>(index.moduleProxyLod)].nodes[static_cast<std::size_t>(rn)].semanticNodeIndex,
@@ -460,9 +499,8 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
             continue;
         }
         // Motion moves the component: test bounds where it actually is.
-        glm::vec3 mn = c.minBounds, mx = c.maxBounds;
-        if (c.node < static_cast<std::int32_t>(state.nodeMotion.size()))
-            transformAabb(motionFor(state, c.node), c.minBounds, c.maxBounds, mn, mx);
+        const glm::vec3 mn = moving ? movedMin[ci] : c.minBounds;
+        const glm::vec3 mx = moving ? movedMax[ci] : c.maxBounds;
         float dist = 0.0f;
         report.projectedPx = projectedPx(view, mn, mx, &dist);
         const bool wasVisible = selection.componentLod[ci] != NoIndex;
@@ -479,7 +517,7 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
         // Position in the component LOD chain (finest .. coarsest).
         const auto& chainLods = index.componentLods;
         const auto errorPx = [&](std::size_t k) {
-            const float errM = lodErrorMeters(asset, index, chainLods[k]) * view.assetToWorldScale;
+            const float errM = lodErrorMeters(asset, index, chainLods[k], c.node) * view.assetToWorldScale;
             return dist <= 1.0e-4f ? (k == 0 ? 0.0f : std::numeric_limits<float>::infinity())
                                    : errM * view.focalPx / dist;
         };
@@ -502,8 +540,10 @@ Frame select(const ModelAsset& asset, const Index& index, const ObjectState& sta
             report.culled = true;
             ++frame.culledComponents;
         }
+        const std::uint64_t trisBefore = frame.triangles;
         for (const std::int32_t rn : c.renderNodes[static_cast<std::size_t>(lod)])
             emit(lod, rn, static_cast<std::int32_t>(ci), c.interior);
+        report.triangles = static_cast<std::uint32_t>(frame.triangles - trisBefore);
         frame.components.push_back(report);
     }
     // Render nodes without a semantic binding in the finest component LOD
@@ -607,10 +647,10 @@ std::string formatFrame(const ModelAsset& asset, const Index& index, const Frame
     for (const auto& c : frame.components)
     {
         const auto& comp = index.components[static_cast<std::size_t>(c.component)];
-        std::snprintf(line, sizeof(line), "  COMPONENT %s/%s rep=%s lod=%d px=%.1f errPx=%.2f%s%s%s group=%s\n",
+        std::snprintf(line, sizeof(line), "  COMPONENT %s/%s rep=%s lod=%d px=%.1f errPx=%.2f tris=%u%s%s%s group=%s\n",
                       objectId.c_str(), comp.id.c_str(),
                       c.collapsed ? "HLOD" : c.culled ? "CULLED" : representationName(frame.representation), c.lod,
-                      c.projectedPx, c.errorPx, c.culled ? " culled" : "", c.collapsed ? " collapsed" : "",
+                      c.projectedPx, c.errorPx, c.triangles, c.culled ? " culled" : "", c.collapsed ? " collapsed" : "",
                       c.interior ? " interior" : "", comp.moduleId.empty() ? "-" : comp.moduleId.c_str());
         out += line;
     }

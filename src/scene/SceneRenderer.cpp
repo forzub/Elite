@@ -3212,7 +3212,19 @@ if (policy.drawObjects)
                 const auto key = (static_cast<std::uint64_t>(object.objectId) << 8) ^
                                  static_cast<std::uint64_t>(std::hash<std::string>{}(cameraName) & 0xff);
                 auto& selection = m_modelAssetSelections[key];
-                const mp::ObjectState state;
+                // Spinning modules (replicated legacy module angles) as node
+                // motion in asset space: LOD, culling and HLOD then use where
+                // each part is now, not its rest pose.
+                const glm::mat4 assetFromWorld = glm::inverse(assetModel);
+                mp::ObjectState state;
+                for (std::size_t n = 0; n < object.nodeModel.size(); ++n)
+                {
+                    if (object.nodeModel[n] == object.model)
+                        continue;
+                    if (state.nodeMotion.empty())
+                        state.nodeMotion.assign(object.nodeModel.size(), glm::mat4(1.0f));
+                    state.nodeMotion[n] = assetFromWorld * object.nodeModel[n] * ma.assetToLogical;
+                }
                 const double selectStartMs = renderProfileNowMs();
                 const mp::Frame frame = mp::select(ma.asset, ma.index, state, view, selection);
                 const double selectMs = renderProfileNowMs() - selectStartMs;
@@ -3223,12 +3235,8 @@ if (policy.drawObjects)
                     const render::MeshGPU* gpu = ma.gpuFor(d.lod, rn.geometryIndex);
                     if (!gpu)
                         continue;
-                    const glm::mat4& base =
-                        rn.semanticNodeIndex >= 0 &&
-                                static_cast<std::size_t>(rn.semanticNodeIndex) < object.nodeModel.size()
-                            ? object.nodeModel[static_cast<std::size_t>(rn.semanticNodeIndex)]
-                            : object.model;
-                    const glm::mat4 model = base * ma.assetToLogical * d.assetTransform;
+                    // d.assetTransform already carries the node motion.
+                    const glm::mat4 model = assetModel * d.assetTransform;
                     queuedPreparedStationDraws.push_back(QueuedMeshDraw {gpu, proj * renderView * model, model});
                     m_lastStats.partsDrawn++;
                     m_lastStats.drawCalls += 2;

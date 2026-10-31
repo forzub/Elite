@@ -7576,11 +7576,8 @@ bool ModelAssetEditorSession::buildProductionAsset()
     // SOURCE/WORKING are immutable authoring-space coordinates. BUILD is the
     // only normal meter-conversion boundary and operates on a copy so viewport,
     // hit volumes, SOURCE reload and saved WORKING geometry can never diverge.
-    ModelAsset productionAsset = m_asset;
-    productionAsset.formatVersion = ModelAssetFormatVersion;
-    scaleAuthoringDistancesUniform(productionAsset, productionAsset.physicalSize.sourceToMeters);
-    productionAsset.physicalSize.geometrySpace = PhysicalGeometrySpace::Meters;
-    productionAsset.physicalSize.autoApplyOnSourceImport = false;
+    sendStatus("BUILD: measuring per-part LOD error...", false, "writing");
+    ModelAsset productionAsset = makeProductionCopy(m_asset);
 
     std::string error;
     const auto path = compiledPath(m_selectedId);

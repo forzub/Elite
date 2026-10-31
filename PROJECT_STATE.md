@@ -951,6 +951,33 @@ hitches = frames > 80 ms after start.
   editor UI does not author roles / compartments / portals / effects yet;
   station working package must move out of build/ (storage decision).
 
+### Station LOD: moving parts + measured per-part error (2026-10-31 g)
+- MOVING PARTS (compiled + check + in-game LOD log): the game passed an empty
+  ObjectState to presentation::select, so the spinning habitat ring was
+  LOD-selected / frustum-culled / HLOD-grouped at its rest pose. Now the
+  replicated module angles go in as asset-space nodeMotion (SceneRenderer);
+  component, module-group and object bounds are taken where the parts are
+  now; draw matrix = assetModel x DrawItem.assetTransform (motion included).
+  Translation / rotation of the whole object was already covered (camera is
+  re-expressed in asset space each frame).
+- MEASURED PER-PART ERROR (compiled + check): RenderLod::nodeGeometricErrorM
+  (PRES trailing section; older files read without it). BUILD
+  (makeProductionCopy -> ModelAssetLodError, editor BUILD now uses the same
+  function) measures, per semantic node and component LOD, the two-sided
+  distance LOD0 <-> LODk (vertex + centroid samples, BVH nearest triangle,
+  identical parts = 0, instances measured once, monotone along the chain).
+  select() uses it, LOD-wide ratio is the fallback. Also fixed: loading a LOD
+  payload reset the PRES role of that RenderLod.
+- FINDING: the editor LOD-wide errors were understated. LOD-wide LOD1 =
+  10.8 m; measured LOD1: Solar_Panels 452 m (panels dropped), Core_Front
+  60 m, Core_Rear 36 m, habitat 18 m, petals 0 (identical). Selection is now
+  honest, so it is NOT cheaper: in game at ~550 px 579.6k tris (was 583.6k),
+  30 km 491k (was 269k with up to ~11 px popping). Core_Front alone =
+  201k tris at LOD0, 188k at LOD1: the real fix is decimation in the editor.
+- BUILD of the station takes ~2 min (measurement). Check:
+  EliteModelAssetPresentationCheck failures=0 incl. new moving-part and
+  measured-error cases.
+
 ### OPEN
 - Galaxy spatial frame: HUMAN acceptance with a real mouse not done (the
   scripted runs drive the production input path, not a hand). Known: the

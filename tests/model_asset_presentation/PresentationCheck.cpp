@@ -367,6 +367,52 @@ void shipChecks()
               a0.repairTargets.empty() && a1.repairTargets.size() == 1,
           "hull_aft intact -> breached switches collision, hit, opening, repair together");
 
+    // 4b. Moving part: LOD / culling follow where the part is NOW (relative
+    //     camera <-> part position, whoever moves).
+    line("-- moving part: LOD follows the current position --");
+    {
+        const glm::vec3 eye(40, 6, 0);
+        const auto engineLod = [&](const mp::ObjectState& st, mp::Selection& s) {
+            const mp::Frame fr = mp::select(ship, index, st, viewFrom(eye, glm::vec3(0)), s);
+            for (const auto& c : fr.components)
+                if (c.component == 2) return std::make_pair(c.lod, c.culled);
+            return std::make_pair(std::int32_t(NoIndex), true);
+        };
+        mp::Selection rest, moved, offscreen;
+        mp::ObjectState away;
+        away.nodeMotion.assign(ship.nodes.size(), glm::mat4(1.0f));
+        // Same direction as seen from the camera, 600 m further away.
+        away.nodeMotion[2] = glm::translate(glm::mat4(1.0f), -glm::normalize(eye) * 600.0f);
+        mp::ObjectState behind = away;
+        behind.nodeMotion[2] = glm::translate(glm::mat4(1.0f), glm::normalize(eye) * 80.0f);
+        const auto r0 = engineLod(intact, rest);
+        const auto r1 = engineLod(away, moved);
+        const auto r2 = engineLod(behind, offscreen);
+        check(!r0.second && (r1.second || r1.first > r0.first),
+              fmt("engine moved 600 m away: LOD %.0f -> %.0f (or culled)", r0.first, r1.first));
+        check(r2.second, "engine moved behind the camera: culled by the frustum at its current position");
+    }
+
+    // 4c. Measured per-node error overrides the LOD-wide value.
+    {
+        ModelAsset measured = ship;
+        // engine_l: every coarser LOD measured as visibly wrong (1 km).
+        for (std::size_t l = 1; l < measured.renderLods.size(); ++l)
+        {
+            measured.renderLods[l].nodeGeometricErrorM.assign(measured.nodes.size(), -1.0f);
+            measured.renderLods[l].nodeGeometricErrorM[2] = 1000.0f;
+        }
+        const mp::Index mi = mp::buildIndex(measured);
+        mp::Selection a, b;
+        const glm::vec3 eye(40, 6, 0);
+        const mp::Frame fa = mp::select(ship, index, intact, viewFrom(eye, glm::vec3(0)), a);
+        const mp::Frame fb = mp::select(measured, mi, intact, viewFrom(eye, glm::vec3(0)), b);
+        std::int32_t la = NoIndex, lb = NoIndex;
+        for (const auto& c : fa.components) if (c.component == 2) la = c.lod;
+        for (const auto& c : fb.components) if (c.component == 2) lb = c.lod;
+        check(la >= 1 && lb == 0, fmt("measured per-node error wins: engine LOD %.0f (LOD-wide) -> %.0f (measured)", la, lb));
+    }
+
     // 5. Cost table.
     line("-- cost (synthetic ship, close FULL view; CPU = select() average) --");
     const auto timeSelect = [&](const mp::ObjectState& st, glm::vec3 eye) {

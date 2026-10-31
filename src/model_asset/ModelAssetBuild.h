@@ -10,8 +10,9 @@ namespace elite::model_asset
 // SI quantities (kg, N, Nm, light range) are not touched.
 void scaleAuthoringDistancesUniform(ModelAsset& asset, float scale);
 
-// BUILD: a metric production copy of a calibrated WORKING asset. Throws when
-// the asset has no explicit authoring -> metre calibration.
+// BUILD: a metric production copy of a calibrated WORKING asset, with the
+// per-node LOD error measured (ModelAssetLodError.h). Throws when the asset
+// has no explicit authoring -> metre calibration.
 ModelAsset makeProductionCopy(const ModelAsset& working);
 
 } // namespace elite::model_asset

@@ -85,6 +85,14 @@ struct Reader
         bytes(&value, sizeof(T));
     }
 
+    // Optional trailing data in a chunk written by a newer writer.
+    bool atEnd()
+    {
+        if (!ok) return true;
+        if (cursor) return cursor == end;
+        return in->peek() == std::char_traits<char>::eof();
+    }
+
     bool count(std::uint32_t& value)
     {
         pod(value);

@@ -106,6 +106,7 @@ add_library(EliteModelAsset STATIC
     src/model_asset/binary/ModelAssetBinaryController.cpp
     src/model_asset/ModelAssetMigration.cpp
     src/model_asset/ModelAssetBuild.cpp
+    src/model_asset/ModelAssetLodError.cpp
     src/model_asset/ModelAssetPresentation.cpp
     src/model_asset/RuntimeMeshNormalizer.cpp
 )

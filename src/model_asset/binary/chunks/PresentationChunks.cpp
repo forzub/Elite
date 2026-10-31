@@ -70,6 +70,13 @@ void writePresentationV4(Writer& w, const ModelAsset& a)
         w.pod(e.materialIndex); w.pod(e.nodeIndex);
         w.vec3(e.localAxis); w.vec3(e.hotColour); w.pod(e.maxEmissive);
     }
+    // Trailing (optional): measured per-node LOD error, metres.
+    w.pod(static_cast<std::uint32_t>(a.renderLods.size()));
+    for (const auto& lod : a.renderLods)
+    {
+        w.pod(static_cast<std::uint32_t>(lod.nodeGeometricErrorM.size()));
+        for (const float e : lod.nodeGeometricErrorM) w.pod(e);
+    }
 }
 
 void readPresentationV4(Reader& r, ModelAsset& a)
@@ -95,6 +102,16 @@ void readPresentationV4(Reader& r, ModelAsset& a)
         r.string(e.id); r.string(e.effect); r.string(e.channel);
         r.pod(e.materialIndex); r.pod(e.nodeIndex);
         r.vec3(e.localAxis); r.vec3(e.hotColour); r.pod(e.maxEmissive);
+    }
+    if (r.atEnd()) return; // written before per-node LOD errors existed
+    if (!r.count(count)) return;
+    for (std::uint32_t i = 0; i < count; ++i)
+    {
+        std::uint32_t n = 0;
+        if (!r.count(n)) return;
+        std::vector<float> errors(n);
+        for (auto& e : errors) r.pod(e);
+        if (i < a.renderLods.size()) a.renderLods[i].nodeGeometricErrorM = std::move(errors);
     }
 }
 

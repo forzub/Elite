@@ -320,6 +320,20 @@ bool validateSemanticAsset(const ModelAsset& asset, std::string* error)
             setError(error, "effect binding references an invalid material / node: " + e.id);
             return false;
         }
+    for (const auto& lod : asset.renderLods)
+    {
+        if (!lod.nodeGeometricErrorM.empty() && lod.nodeGeometricErrorM.size() != asset.nodes.size())
+        {
+            setError(error, "per-node LOD error table size differs from the node count");
+            return false;
+        }
+        for (const float e : lod.nodeGeometricErrorM)
+            if (!std::isfinite(e))
+            {
+                setError(error, "per-node LOD error is not finite");
+                return false;
+            }
+    }
     return true;
 }
 

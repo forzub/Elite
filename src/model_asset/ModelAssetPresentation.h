@@ -152,6 +152,7 @@ struct ComponentReport
     std::int32_t lod = NoIndex; // NoIndex: culled / not drawn individually
     float projectedPx = 0.0f;
     float errorPx = 0.0f;
+    std::uint32_t triangles = 0; // drawn for this component this frame
     bool culled = false;
     bool collapsed = false; // drawn by its module proxy (HLOD)
     bool interior = false;

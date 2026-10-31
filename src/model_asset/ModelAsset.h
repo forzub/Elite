@@ -344,6 +344,11 @@ struct RenderLod
     // Presentation role (PRES chunk; absent = Component).
     RenderLodRole role = RenderLodRole::Component;
 
+    // Measured by BUILD (PRES chunk), metres, index = semantic node: two-sided
+    // distance between this LOD's geometry of the node and its LOD0 geometry.
+    // Empty / < 0 = unknown: the LOD-wide relativeGeometricError applies.
+    std::vector<float> nodeGeometricErrorM;
+
     std::vector<RenderGeometryDefinition> geometries;
     std::vector<RenderNode> nodes;
 };

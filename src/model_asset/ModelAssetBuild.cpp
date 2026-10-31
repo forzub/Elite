@@ -1,4 +1,5 @@
 #include "src/model_asset/ModelAssetBuild.h"
+#include "src/model_asset/ModelAssetLodError.h"
 
 #include <cmath>
 #include <stdexcept>
@@ -45,6 +46,7 @@ void scaleAuthoringDistancesUniform(ModelAsset& asset, float scale)
     for (auto& lod : asset.renderLods)
     {
         lod.minBounds *= scale; lod.maxBounds *= scale;
+        for (auto& e : lod.nodeGeometricErrorM) if (e > 0.0f) e *= scale;
         for (auto& node : lod.nodes) { node.localPosition *= scale; node.pivot *= scale; }
         for (auto& geometry : lod.geometries)
         {
@@ -74,6 +76,7 @@ ModelAsset makeProductionCopy(const ModelAsset& working)
     scaleAuthoringDistancesUniform(production, production.physicalSize.sourceToMeters);
     production.physicalSize.geometrySpace = PhysicalGeometrySpace::Meters;
     production.physicalSize.autoApplyOnSourceImport = false;
+    measureNodeLodErrors(production);
     return production;
 }
 

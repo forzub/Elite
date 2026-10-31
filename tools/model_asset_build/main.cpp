@@ -78,5 +78,18 @@ int main(int argc, char** argv)
                     lod.nodes.size(), tris, lod.minBounds.x, lod.minBounds.y, lod.minBounds.z, lod.maxBounds.x,
                     lod.maxBounds.y, lod.maxBounds.z);
     }
+    // Measured per-part LOD error (metres): LOD-wide value applies where "-".
+    std::printf("  per-part LOD error, m:\n");
+    for (std::size_t n = 0; n < production.nodes.size(); ++n)
+    {
+        std::printf("    %-48s", production.nodes[n].id.c_str());
+        for (std::size_t l = 1; l < production.renderLods.size(); ++l)
+        {
+            const auto& e = production.renderLods[l].nodeGeometricErrorM;
+            if (n < e.size() && e[n] >= 0.0f) std::printf(" %9.3f", e[n]);
+            else std::printf(" %9s", "-");
+        }
+        std::printf("\n");
+    }
     return 0;
 }

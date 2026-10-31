@@ -171,6 +171,9 @@ bool readLodPayload(
     RenderLod loaded;
     loaded.level = lodIndex;
     loaded.relativeGeometricError = manifestRelativeGeometricError;
+    // Manifest-owned presentation metadata (PRES) survives the payload load.
+    loaded.role = asset.renderLods[expectedLodIndex].role;
+    loaded.nodeGeometricErrorM = asset.renderLods[expectedLodIndex].nodeGeometricErrorM;
     r.string(loaded.sourceKind); r.pod(loaded.generatedFromLod);
     r.vec3(loaded.minBounds); r.vec3(loaded.maxBounds);
     std::uint32_t geometryCount = 0; if (!r.count(geometryCount)) return false;

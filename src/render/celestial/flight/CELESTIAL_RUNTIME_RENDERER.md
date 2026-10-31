@@ -161,3 +161,22 @@ memory for 1024 globe tiers (75–100 MB each).
    remove the cold first-approach cost.
 8. **Expose as user settings**: atmosphere quality (off / 8 / 16 steps),
    cloud quality, terrain detail (cells per level), texture budget.
+
+## 8. Views, activation and diagnostics (2026-10-31 e)
+
+- Only the primary view (the main camera) plans resources: loads, globe
+  tiers, local terrain, clouds, asteroids, budget, stats. Secondary views
+  (rear monitor, mini views) draw the existing representation. Two views
+  planning with different pixel sizes made tiers and terrain levels
+  flip-flop every frame (double image + continuous bakes).
+- Activation by screen size only: point (< 1.5 px radius, sprite, nothing
+  loaded) -> disc (1.5-24 px, field + small tier, no weather) -> globe
+  (>= 24 px, clouds) -> detailed (local terrain, altitude < 0.6 R). HUD
+  markers, selection and UI presence never activate a body.
+- `ELITE_CELESTIAL_DIAG=1|path`: FRAME line per primary frame (CPU / GPU
+  per pass, loads, bakes, terrain builds, uploads, mips, evictions, cache
+  hit / miss, memory) and EVENT lines (level / tier changes, evictions).
+- Scene style: `render::sceneStyle()` (`uSceneStyle`) drives ship / station
+  fills and edges, the starfield and the Milky Way while the flight scene
+  renders; Elite Classic sun = sprite disc with an unstable edge and a
+  flickering ray corona.

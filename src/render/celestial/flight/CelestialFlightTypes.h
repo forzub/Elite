@@ -116,6 +116,20 @@ struct FlightRenderStats
     std::size_t textureBytes = 0;
     std::size_t meshBytes = 0;
     int pendingJobs = 0;            // worker jobs + GPU uploads still in progress
+    // This frame's resource work (diagnostics: what was generated / moved).
+    int bodyLoads = 0;              // descriptor + surface field loads started
+    int globeBakes = 0;             // new GlobeBake jobs (cube tier generation)
+    int cloudBakes = 0;
+    int terrainBuilds = 0;          // local terrain level jobs
+    int textureUploads = 0;         // texture slices / textures sent to GL
+    long long uploadBytes = 0;
+    int mipGenerations = 0;
+    int evictions = 0;
+    int cacheHits = 0;              // disc bodies drawn from an existing tier
+    int cacheMisses = 0;            // disc bodies without the wanted tier
+    int pointBodies = 0;
+    int discBodies = 0;
+    int detailedBodies = 0;
     double workerBusySeconds = 0.0; // cumulative
     long long samplesTaken = 0;     // cumulative field samples
     double nearestAltitudeM = -1.0;

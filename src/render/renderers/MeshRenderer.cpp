@@ -1,3 +1,4 @@
+#include "src/render/SceneStyle.h"
 #include "MeshRenderer.h"
 #include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -250,6 +251,12 @@ void MeshRenderer::drawEdgesInstanced(
             glm::value_ptr(edgeColor)
         );
     }
+
+    GLint styleLoc =
+        cachedUniformLocation(edgeShader, "uSceneStyle");
+
+    if (styleLoc != -1)
+        glUniform1i(styleLoc, render::sceneStyle());
 
     GLint intensityLoc =
         cachedUniformLocation(edgeShader, "edgeIntensity");

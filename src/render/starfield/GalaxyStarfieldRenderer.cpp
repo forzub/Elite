@@ -1,3 +1,4 @@
+#include "src/render/SceneStyle.h"
 #include "GalaxyStarfieldRenderer.h"
 
 #include <algorithm>
@@ -1653,6 +1654,8 @@ void GalaxyStarfieldRenderer::render(
     const GLint locMvp = glGetUniformLocation(shader, "uMVP");
     if (locMvp >= 0)
         glUniformMatrix4fv(locMvp, 1, GL_FALSE, glm::value_ptr(mvp));
+
+    glUniform1i(glGetUniformLocation(shader, "uSceneStyle"), render::sceneStyle());
 
     const GLint locSizeScale = glGetUniformLocation(shader, "uSizeScale");
     if (locSizeScale >= 0)

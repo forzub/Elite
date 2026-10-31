@@ -12,6 +12,7 @@ uniform vec3 cameraPos;
 uniform float fadeStart;
 uniform float fadeEnd;
 uniform float fadePower;
+uniform int uSceneStyle; // 0 Elite Classic, 1 Modern, 2 Anime
 
 void main()
 {
@@ -28,6 +29,19 @@ void main()
 
     // Дальние ребра не просто исчезают, а становятся светлее
     vec3 finalColor = mix(color, farColor, t);
+
+    if (uSceneStyle == 0)
+    {
+        // Elite Classic: light grey vector edges, fading to grey far away.
+        finalColor = mix(vec3(0.86, 0.87, 0.88), vec3(0.45), t);
+        finalAlpha = max(finalAlpha, 0.85 * (1.0 - t * 0.6));
+    }
+    else if (uSceneStyle == 2)
+    {
+        // Anime: dark ink contours.
+        finalColor = vec3(0.05, 0.05, 0.08);
+        finalAlpha = clamp(finalAlpha * 1.4, 0.0, 1.0);
+    }
 
     FragColor = vec4(finalColor, finalAlpha);
 }

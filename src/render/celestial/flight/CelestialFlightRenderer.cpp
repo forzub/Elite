@@ -306,8 +306,14 @@ namespace
             old.used = 0;
             old.categories.clear();
         }
+        bool enabled = true;
         void begin(TimerCategory c)
         {
+            if (!enabled)
+            {
+                m_open = false;
+                return;
+            }
             Frame& f = m_frames[m_index];
             if (f.used + 2 > static_cast<int>(f.queries.size()))
             {
@@ -554,6 +560,7 @@ namespace
         double ringInner = 0.0, ringOuter = 0.0;
         std::uint64_t lastUsedFrame = 0;
         glm::vec3 flatColour {0.5f};
+        int lastLevel = -1;   // diagnostics: last logged representation
     };
 
     struct AsteroidRuntime
@@ -604,6 +611,15 @@ struct CelestialFlightRenderer::Impl
     std::unordered_map<std::string, AsteroidRuntime> asteroids;
     std::unordered_map<std::string, ReservoirRuntime> reservoirs;
 
+    // Diagnostics (ELITE_CELESTIAL_DIAG): per-frame line + events.
+    std::FILE* diag = nullptr;
+    double diagStart = 0.0;
+    void diagEvent(const std::string& body, const std::string& text)
+    {
+        if (diag)
+            std::fprintf(diag, "%10.3f EVENT %s %s\n", nowSeconds() - diagStart, body.c_str(), text.c_str());
+    }
+
     // Terrain of the last frame (near-pass depth).
     std::string terrainBodyId;
     glm::mat3 terrainBodyToWorld {1.0f};
@@ -615,6 +631,15 @@ struct CelestialFlightRenderer::Impl
     bool init(const FlightRenderQuality& q)
     {
         quality = q;
+        // ELITE_CELESTIAL_DIAG=1 (D:/tmp/elite_celestial_diag.log) or a path:
+        // one FRAME line per primary frame + EVENT lines (levels, tiers,
+        // bakes, evictions).
+        if (const char* path = std::getenv("ELITE_CELESTIAL_DIAG"))
+        {
+            const std::string p = std::string(path) == "1" ? "D:/tmp/elite_celestial_diag.log" : std::string(path);
+            diag = std::fopen(p.c_str(), "w");
+            diagStart = nowSeconds();
+        }
         using namespace shaders;
         bool ok = true;
         ok = ok && linkProgram(globe, {LogDepthVs, GlobeVs}, {LogDepthFs, SurfaceShading, GlobeFs});
@@ -671,6 +696,11 @@ struct CelestialFlightRenderer::Impl
 
     void destroy()
     {
+        if (diag)
+        {
+            std::fclose(diag);
+            diag = nullptr;
+        }
         if (!initialized)
             return;
         pool.stop();
@@ -717,6 +747,7 @@ struct CelestialFlightRenderer::Impl
 
     void startLoad(BodyRuntime& rt, const FlightBody& src)
     {
+        ++stats.bodyLoads;
         auto result = std::make_shared<LoadResult>();
         rt.load = result;
         const FlightBody copy = src;
@@ -923,6 +954,8 @@ struct CelestialFlightRenderer::Impl
     {
         if (rt.pendingGlobe.faces)
             return;
+        ++stats.globeBakes;
+        diagEvent(rt.id, "globe bake " + std::to_string(size) + " (was " + std::to_string(rt.globe.size) + ")");
         auto faces = std::make_shared<surface::GlobeFaces>();
         faces->size = size;
         auto done = std::make_shared<std::atomic<int>>(0);
@@ -988,6 +1021,8 @@ struct CelestialFlightRenderer::Impl
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         for (int k = 0; k < 2 && p.cursor < 18; ++k, ++p.cursor)
         {
+            ++stats.textureUploads;
+            stats.uploadBytes += static_cast<long long>(f.size) * f.size * 4;
             const int texture = p.cursor / 6;
             const int face = p.cursor % 6;
             const auto fi = static_cast<std::size_t>(face);
@@ -1014,7 +1049,9 @@ struct CelestialFlightRenderer::Impl
             {
                 glBindTexture(GL_TEXTURE_CUBE_MAP, t);
                 glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+                ++stats.mipGenerations;
             }
+            diagEvent(rt.id, "globe tier " + std::to_string(f.size) + " live");
             rt.globe.destroy();
             rt.globe = p.staging;
             rt.globe.size = f.size;
@@ -1044,6 +1081,9 @@ struct CelestialFlightRenderer::Impl
             rt.cloud.previous = rt.cloud.current;
             rt.cloud.previousTime = rt.cloud.currentTime;
             rt.cloud.current = makeCube(f.size, GL_R8, GL_RED, GL_UNSIGNED_BYTE, c);
+            ++stats.textureUploads;
+            ++stats.mipGenerations;
+            stats.uploadBytes += static_cast<long long>(f.size) * f.size * 6;
             rt.cloud.currentTime = p.timeSeconds;
             rt.cloud.size = f.size;
             p = PendingCloud {};
@@ -1058,6 +1098,7 @@ struct CelestialFlightRenderer::Impl
             auto faces = std::make_shared<surface::CloudFaces>();
             auto done = std::make_shared<std::atomic<int>>(0);
             p = PendingCloud {t, faces, done};
+            ++stats.cloudBakes;
             const auto clouds = rt.clouds;
             const int size = quality.cloudFace;
             for (int f = 0; f < 6; ++f)
@@ -1138,6 +1179,7 @@ struct CelestialFlightRenderer::Impl
     void scheduleLevel(BodyRuntime& rt, const surface::TerrainLevelKey& key, std::map<int, PendingLevel>& into,
                        int priority)
     {
+        ++stats.terrainBuilds;
         PendingLevel p;
         p.key = key;
         p.level = std::make_shared<surface::TerrainLevel>();
@@ -1667,20 +1709,32 @@ struct CelestialFlightRenderer::Impl
             if (total <= quality.textureBudgetBytes)
                 break;
             total -= b->globe.bytes;
+            diagEvent(b->id, "evicted tier " + std::to_string(b->globe.size));
+            ++stats.evictions;
             b->globe.destroy();
             b->cloud.destroy();
         }
     }
 
-    void render(const FlightCelestialFrame& frame, const glm::mat4& viewRotation, float fovY, int width, int height);
+    void render(const FlightCelestialFrame& frame, const glm::mat4& viewRotation, float fovY, int width, int height,
+                bool primary);
 };
 
 void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, const glm::mat4& viewRotation,
-                                           float fovY, int width, int height)
+                                           float fovY, int width, int height, bool primary)
 {
+    // Only the primary view plans resources (globe tiers, local terrain,
+    // loads, clouds, asteroids, budget, stats). A secondary view (rear
+    // monitor) draws what exists: two cameras with different pixel sizes
+    // must not fight over the tier / level set every frame.
+    timers.enabled = primary;
+    const FlightRenderStats savedStats = stats;
     const double t0 = nowSeconds();
-    ++frameIndex;
-    timers.beginFrame();
+    if (primary)
+    {
+        ++frameIndex;
+        timers.beginFrame();
+    }
     const auto gpu = timers.result();
     stats = FlightRenderStats {};
     stats.gpuGlobesMs = gpu[TGlobes];
@@ -1756,9 +1810,9 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
         rt.id = b.id;
         // "Used" = its disc is on screen; sprites need no textures, so a
         // body seen as a dot can lose its globe tier to the budget.
-        if (it.pxRadius >= 1.5)
+        if (primary && it.pxRadius >= 1.5)
             rt.lastUsedFrame = frameIndex;
-        if (!rt.ready && !rt.failed)
+        if (primary && !rt.ready && !rt.failed)
         {
             if (!rt.load && it.pxRadius > 1.0)
                 startLoad(rt, b);
@@ -1776,16 +1830,42 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             nearestAlt = alt;
             nearestId = b.id;
         }
+        if (!primary)
+            continue;
         uploadGlobe(rt);
-        if (it.pxRadius >= 1.5)
+        // Activation by what the body needs on screen - never by markers,
+        // selection or UI presence:
+        //   Point    < 1.5 px radius: sprite, nothing loaded or baked;
+        //   Disc     1.5 .. 24 px: field + small globe tier, no weather;
+        //   Globe    >= 24 px: tier by size, clouds;
+        //   Detailed local terrain (lowest relative altitude, < 0.6 R).
+        const bool terrainRange = b.kind == FlightBodyKind::Solid && it.dist - b.radiusM < 0.6 * b.radiusM;
+        const int level = it.pxRadius < 1.5 ? 0 : terrainRange ? 3 : it.pxRadius < 24.0 ? 1 : 2;
+        stats.discBodies += level == 1 || level == 2 ? 1 : 0;
+        stats.detailedBodies += level == 3 ? 1 : 0;
+        if (level != rt.lastLevel)
+        {
+            static const char* names[] = {"point", "disc", "globe", "detailed"};
+            char text[160];
+            std::snprintf(text, sizeof(text), "level %s -> %s (radius %.2f px, tier %d)",
+                          rt.lastLevel < 0 ? "none" : names[rt.lastLevel], names[level], it.pxRadius, rt.globe.size);
+            diagEvent(b.id, text);
+            rt.lastLevel = level;
+        }
+        if (level >= 1)
         {
             const int want = std::clamp(1 << static_cast<int>(std::ceil(std::log2(std::max(32.0, it.pxRadius)))), 32,
                                         quality.maxGlobeFace);
+            if (rt.globe.size >= want)
+                ++stats.cacheHits;
+            else
+                ++stats.cacheMisses;
             if (want > rt.globe.size && !rt.pendingGlobe.faces)
                 requestGlobe(rt, want);
             else if (rt.globe.size > 0 && want * 4 <= rt.globe.size && !rt.pendingGlobe.faces)
                 requestGlobe(rt, want * 2);
-            updateClouds(rt, frame.worldTimeSeconds);
+            if (level >= 2)
+                updateClouds(rt, frame.worldTimeSeconds);
         }
     }
     stats.nearestBody = nearestId;
@@ -1793,9 +1873,10 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
 
     // Terrain belongs to the nearest solid body within activation range.
     terrainBodyId.clear();
-    for (auto& [id, rt] : bodies)
-        if (id != nearestId && !rt.levels.empty())
-            dropTerrain(rt);
+    if (primary)
+        for (auto& [id, rt] : bodies)
+            if (id != nearestId && !rt.levels.empty())
+                dropTerrain(rt);
 
     std::vector<SpriteVertex> sprites;
     stats.cpuPrepareMs = (nowSeconds() - t0) * 1000.0;
@@ -1889,7 +1970,8 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
         // Local terrain (nearest solid body only).
         if (b.id == nearestId && b.kind == FlightBodyKind::Solid && rt->field->solidSurface())
         {
-            updateTerrain(*rt, cameraBody, pixelAngle);
+            if (primary)
+                updateTerrain(*rt, cameraBody, pixelAngle);
             drawTerrain(*rt, b, toWorld, it.rel, cameraBody, viewProj, pixelAngle, sunDir, sunColour, hazeDensity);
             if (!rt->levels.empty())
             {
@@ -2032,8 +2114,11 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
         FlightBody probe;
         probe.positionM = frame.cameraPositionM;
         lightFor(probe, sunDir, sunColour);
-        updateAsteroids(frame, viewProj, pixelAngle, sunColour, sprites);
-        drawAsteroids(frame, viewProj, sunDir, sunColour);
+        if (primary)
+        {
+            updateAsteroids(frame, viewProj, pixelAngle, sunColour, sprites);
+            drawAsteroids(frame, viewProj, sunDir, sunColour);
+        }
     }
 
     // Sprites last: depth tested against the bodies, additive.
@@ -2069,6 +2154,11 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
     glActiveTexture(GL_TEXTURE0);
     glUseProgram(0);
 
+    if (!primary)
+    {
+        stats = savedStats;
+        return;
+    }
     enforceBudget();
     for (const auto& [id, b] : bodies)
     {
@@ -2087,6 +2177,22 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
     stats.workerBusySeconds = pool.busySeconds();
     stats.samplesTaken = samples.load();
     stats.cpuDrawMs = (nowSeconds() - t1) * 1000.0;
+    if (diag)
+    {
+        const auto& s = stats;
+        std::fprintf(diag,
+                     "%10.3f FRAME %llu cpu %.2f+%.2f upload %.2f ms | gpu globe %.2f terr %.2f cloud %.2f atm %.2f "
+                     "ring %.2f spr %.2f ast %.2f | disc %d detailed %d spr %d | loads %d globeBakes %d cloudBakes %d "
+                     "terrainBuilds %d uploads %d (%lld B) mips %d evictions %d hit %d miss %d | tex %.1f MB mesh "
+                     "%.1f MB | jobs %d busy %.1f s\n",
+                     nowSeconds() - diagStart, static_cast<unsigned long long>(frameIndex), s.cpuPrepareMs,
+                     s.cpuDrawMs, s.cpuUploadMs, s.gpuGlobesMs, s.gpuTerrainMs, s.gpuCloudsMs, s.gpuAtmosphereMs,
+                     s.gpuRingsMs, s.gpuStarsSpritesMs, s.gpuAsteroidsMs, s.discBodies, s.detailedBodies,
+                     s.spriteBodies, s.bodyLoads, s.globeBakes, s.cloudBakes, s.terrainBuilds, s.textureUploads,
+                     s.uploadBytes, s.mipGenerations, s.evictions, s.cacheHits, s.cacheMisses,
+                     s.textureBytes / 1048576.0, s.meshBytes / 1048576.0, s.pendingJobs, s.workerBusySeconds);
+        std::fflush(diag);
+    }
 }
 
 // ---- public -----------------------------------------------------------------
@@ -2136,11 +2242,11 @@ const FlightRenderQuality& CelestialFlightRenderer::quality() const
 }
 
 void CelestialFlightRenderer::render(const FlightCelestialFrame& frame, const glm::mat4& viewRotation,
-                                     float fovYRadians, int viewportWidth, int viewportHeight)
+                                     float fovYRadians, int viewportWidth, int viewportHeight, bool primaryView)
 {
     if (!m->initialized)
         return;
-    m->render(frame, viewRotation, fovYRadians, viewportWidth, viewportHeight);
+    m->render(frame, viewRotation, fovYRadians, viewportWidth, viewportHeight, primaryView);
 }
 
 void CelestialFlightRenderer::renderTerrainDepth(const glm::mat4& viewRotation, const glm::mat4& projection)

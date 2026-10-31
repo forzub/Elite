@@ -62,8 +62,11 @@ public:
 
     // viewRotation: world -> view rotation (translation ignored); the
     // camera position is frame.cameraPositionM.
+    // primaryView: the view that plans resources (main camera). Secondary
+    // views (rear monitor, mini views) draw the existing representation
+    // only - they never request tiers or move the local terrain.
     void render(const FlightCelestialFrame& frame, const glm::mat4& viewRotation, float fovYRadians, int viewportWidth,
-                int viewportHeight);
+                int viewportHeight, bool primaryView = true);
 
     // Near pass helper: depth of the local terrain with the caller's
     // ordinary projection (camera-relative view rotation), no colour.

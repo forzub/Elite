@@ -176,7 +176,10 @@ public:
     {
         render::celestial_flight::CelestialRenderStyle style;
         if (render::celestial_flight::parseCelestialRenderStyle(styleId, style))
+        {
             m_celestialFlight.setStyle(style);
+            m_sceneStyle = static_cast<int>(style);
+        }
     }
 
     const render::celestial_flight::FlightRenderStats& celestialStats() const
@@ -276,6 +279,10 @@ private:
     render::celestial_flight::FlightFrameBuilder m_celestialFrameBuilder;
     render::celestial_flight::FlightCelestialFrame m_celestialFrame;
     bool m_celestialFlightFailed = false;
+    int m_sceneStyle = 1; // render::sceneStyle() while this scene renders
+    glm::dvec3 m_traceRel1 {0.0};   // DEV ELITE_TRACE_CELESTIAL
+    glm::dvec3 m_traceRel2 {0.0};
+    double m_traceTime = 0.0;
 
 
     glm::mat4 makePerspectiveForCurrentViewport(

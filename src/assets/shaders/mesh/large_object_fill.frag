@@ -40,6 +40,7 @@ uniform vec3 fogFarColor;
 uniform float fogIntensity;
 
 uniform vec3 cameraPos;
+uniform int uSceneStyle; // 0 Elite Classic, 1 Modern, 2 Anime
 
 void main()
 {
@@ -84,6 +85,25 @@ void main()
     // модель в радужную visualizer-карту нормалей.
     vec3 normalColor = n * 0.5 + 0.5;
     vec3 finalColor = mix(litColor, litColor * 0.72 + normalColor * hullColorFar * 0.34, normalBlend * 0.45);
+
+    if (uSceneStyle == 0)
+    {
+        // Elite Classic: opaque black structure; edges draw it.
+        FragColor = vec4(vec3(0.012), 1.0);
+        return;
+    }
+    if (uSceneStyle == 2)
+    {
+        // Anime: flat bands + ink silhouette, the structure's own colours.
+        float nl = dot(n, l);
+        float band = nl > 0.30 ? 1.0 : (nl > -0.10 ? 0.66 : 0.40);
+        vec3 shade = band < 0.5 ? vec3(0.86, 0.90, 1.0) : vec3(1.0);
+        vec3 toon = hullColor * (ambientColor * 0.35 + lightColor * 0.62) * band * shade * 1.2;
+        if (facing < 0.14)
+            toon = vec3(0.05, 0.05, 0.07);
+        FragColor = vec4(pow(max(toon, vec3(0.0)), vec3(1.0 / 1.08)), 1.0);
+        return;
+    }
 
     // ===== СЕТКА =====
     if (gridEnabled) {

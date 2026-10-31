@@ -1,4 +1,5 @@
 #pragma once
+#include "src/render/SceneStyle.h"
 
 #include <glm/glm.hpp>
 #include <glad/gl.h>
@@ -79,6 +80,7 @@ struct LightingParams {
     void applyLargeObjectUniforms(GLuint shader, const glm::mat4& mvp, 
                            const glm::mat4& model, const glm::vec3& cameraPos) const {
         glUseProgram(shader);
+        setUniform1i(shader, "uSceneStyle", render::sceneStyle());
      
         // Матрицы
         setUniformMat4(shader, "MVP", mvp);
@@ -146,6 +148,7 @@ struct LightingParams {
                        int viewportHeight) const
      {
         glUseProgram(shader);
+        setUniform1i(shader, "uSceneStyle", render::sceneStyle());
         
         setUniformMat4(shader, "MVP", mvp);
         setUniformMat4(shader, "M", model);
@@ -167,6 +170,7 @@ struct LightingParams {
     void applyShipUniforms(GLuint shader, const glm::mat4& mvp, 
             const glm::mat4& model, const glm::vec3& cameraPos) const {
                 glUseProgram(shader);
+        setUniform1i(shader, "uSceneStyle", render::sceneStyle());
 
    
                 // Матрицы

@@ -1609,6 +1609,14 @@ void SceneRenderer::renderInternal(
     if (!prepared.valid || !prepared.world)
         return;
 
+    // The flight scene's style (ships, stations, sky, bodies) applies only
+    // while this scene renders; maps keep their own look.
+    struct SceneStyleScope
+    {
+        explicit SceneStyleScope(int style) { render::setSceneStyle(style); }
+        ~SceneStyleScope() { render::setSceneStyle(1); }
+    } sceneStyleScope(m_sceneStyle);
+
     const ClientWorldState& world = *prepared.world;
     EntityId playerId = prepared.playerId;
     const world::coordinates::WorldFrame& frame = prepared.frame;
@@ -1799,13 +1807,47 @@ profileAfterSetupMs = renderProfileNowMs();
                 m_celestialFrame
             );
 
+            // DEV: ELITE_TRACE_CELESTIAL=1 - per main frame: universe time,
+            // camera, nearest body relative position and its second
+            // difference (a smooth path has a tiny one; jitter does not).
+            static const bool traceCelestial = std::getenv("ELITE_TRACE_CELESTIAL") != nullptr;
+            if (traceCelestial && cameraName == "mainCam" && !m_celestialFrame.bodies.empty())
+            {
+                const render::celestial_flight::FlightBody* nearest = nullptr;
+                double best = 1.0e300;
+                for (const auto& b : m_celestialFrame.bodies)
+                {
+                    const double alt = glm::length(b.positionM - cameraSystemMeters) - b.radiusM;
+                    if (b.kind != render::celestial_flight::FlightBodyKind::Star && alt < best)
+                    {
+                        best = alt;
+                        nearest = &b;
+                    }
+                }
+                if (nearest)
+                {
+                    const glm::dvec3 rel = nearest->positionM - cameraSystemMeters;
+                    const glm::dvec3 d2 = rel - 2.0 * m_traceRel1 + m_traceRel2;
+                    std::fprintf(stderr, "[CelestialTrace] t=%.4f dt=%.4f alt=%.1f rel=(%.2f %.2f %.2f) d2=%.3f m\n",
+                                 prepared.celestialSnapshot->simTimeSeconds,
+                                 prepared.celestialSnapshot->simTimeSeconds - m_traceTime, best, rel.x, rel.y, rel.z,
+                                 glm::length(d2));
+                    m_traceRel2 = m_traceRel1;
+                    m_traceRel1 = rel;
+                    m_traceTime = prepared.celestialSnapshot->simTimeSeconds;
+                }
+            }
+
             const float fovY = 2.0f * std::atan(1.0f / proj[1][1]);
             m_celestialFlight.render(
                 m_celestialFrame,
                 renderView,
                 fovY,
                 renderViewport[2],
-                renderViewport[3]
+                renderViewport[3],
+                // DEV ELITE_DEV_CELESTIAL_SHARED_VIEWS=1 restores the old
+                // behaviour (every view plans resources) for the A/B test.
+                cameraName == "mainCam" || std::getenv("ELITE_DEV_CELESTIAL_SHARED_VIEWS") != nullptr
             );
         }
     }

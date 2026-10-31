@@ -170,6 +170,35 @@ m_systemMapRenderer.render(
                         loc.text("map.navigation_hud.global_speed_short", "GLOB");
                 }
 
+                // DEV: ELITE_DEV_CELESTIAL_MARKERS=venus,mars,... adds HUD
+                // planet markers through the same tracking path a map info
+                // card uses (rememberCelestialBody) - the marker load test.
+                static const char* devMarkers = std::getenv("ELITE_DEV_CELESTIAL_MARKERS");
+                if (devMarkers && m_client && m_client->celestialSnapshot())
+                {
+                    const std::string list = std::string(",") + devMarkers + ",";
+                    for (const auto& body : m_client->celestialSnapshot()->bodies)
+                    {
+                        const std::size_t slash = body.sourcePath.find_last_of("/\\");
+                        std::string stem = body.sourcePath.substr(slash == std::string::npos ? 0 : slash + 1);
+                        if (stem.rfind("planet_", 0) != 0)
+                            continue;
+                        stem = stem.substr(7, stem.size() - 7 - 5); // planet_<name>.json
+                        if (list.find("," + stem + ",") == std::string::npos &&
+                            list.find(",all,") == std::string::npos)
+                            continue;
+                        m_navigationWorkspace.targets().rememberCelestialBody(
+                            "dev:" + stem,
+                            m_client->celestialSnapshot()->systemId,
+                            body.id,
+                            "Planet",
+                            body.name,
+                            world::coordinates::makeWorldPositionFromMeters(body.worldMeters),
+                            glm::vec4(0.75f, 0.85f, 1.0f, 1.0f)
+                        );
+                    }
+                }
+
                 const auto navigationMarkers =
                     game::presentation::buildNavigationHudMarkers(
                         m_navigationWorkspace,

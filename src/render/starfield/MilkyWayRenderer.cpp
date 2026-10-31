@@ -1,3 +1,4 @@
+#include "src/render/SceneStyle.h"
 #include "MilkyWayRenderer.h"
 
 #include <algorithm>
@@ -895,6 +896,11 @@ void MilkyWayRenderer::render(
                     0
                 );
             }
+
+            glUniform1i(
+                glGetUniformLocation(m_compositeShader, "uSceneStyle"),
+                render::sceneStyle()
+            );
 
             glBindVertexArray(
                 m_compositeVao

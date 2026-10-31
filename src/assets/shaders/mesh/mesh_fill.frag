@@ -36,6 +36,8 @@ uniform vec3 hullColorNear;
 uniform vec3 hullColorMid;
 uniform vec3 hullColorFar;
 
+uniform int uSceneStyle; // 0 Elite Classic, 1 Modern, 2 Anime
+
 void main()
 {
     vec3 n = normalize(vNormal);
@@ -99,6 +101,25 @@ void main()
             litColor * 0.90 + normalColor * hullColorFar * 0.08,
             normalBlend * 0.20
         );
+
+    if (uSceneStyle == 0)
+    {
+        // Elite Classic: opaque black hull; the light edges draw the form.
+        FragColor = vec4(vec3(0.012), 1.0);
+        return;
+    }
+    if (uSceneStyle == 2)
+    {
+        // Anime: three flat light bands, cool shadow, dark ink at the
+        // silhouette; colours stay the hull's own (no extra palette).
+        float band = ndlRaw > 0.30 ? 1.0 : (ndlRaw > -0.10 ? 0.66 : 0.40);
+        vec3 shade = band < 0.5 ? vec3(0.86, 0.90, 1.0) : vec3(1.0);
+        vec3 toon = distanceHullColor * (ambientColor * 0.35 + lightColor * 0.55) * band * shade * 1.25;
+        if (facing < 0.16)
+            toon = vec3(0.05, 0.05, 0.07);
+        FragColor = vec4(pow(max(toon, vec3(0.0)), vec3(1.0 / 1.08)), 1.0);
+        return;
+    }
 
     if (fogEnabled)
     {

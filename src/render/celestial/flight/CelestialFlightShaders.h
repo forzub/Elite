@@ -522,7 +522,10 @@ void main()
 
     if (uStyle == 0)
     {
-        // Elite: a single outline of the atmosphere limb.
+        // Elite: a single outline of the atmosphere limb (only rays that
+        // miss the body can be near it).
+        if (hitsGround)
+            discard;
         vec3 pc = o + dir * clamp(-dot(o, dir), t0, tShell.y);
         float r = length(pc);
         float edge = 1.0 - clamp(abs(r - top) / max(fwidth(r), 1e-6) / 1.2, 0.0, 1.0);

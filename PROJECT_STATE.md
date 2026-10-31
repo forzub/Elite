@@ -791,6 +791,14 @@ hitches = frames > 80 ms after start.
   clipped primitives behind the camera; missing gamma encode (dark Earth);
   terrain morph window overlapping the coarse hole edge (cracks); texture
   budget never evicting (every body marked used).
+- Late fixes (same stage): Earth curated maps disagree (DEM has no zero
+  sea) -> water from the albedo ocean colour, DEM aligned by correlation,
+  sea level = land 5th percentile; atmosphere over the ground additive only
+  (Jupiter / Earth no longer greyed); gas giant atmosphere thinner; Elite
+  atmosphere outline only for rays missing the body (in the game it filled
+  the disc green). DEV `ELITE_DEV_CELESTIAL_FLAGS=noatm,noclouds,norings,
+  nodetail` in the game. Re-run after them: --flight-check 22/22, in-game
+  Elite / Modern / Anime frames OK.
 - OPEN: Earth / Mars close-up limited by the curated sources (~20 km
   texels); worst-frame spikes; hub proxy not depth-tested against bodies;
   eclipses; map clouds and flight clouds are different functions; human

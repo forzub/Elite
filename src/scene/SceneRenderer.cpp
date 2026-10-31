@@ -1770,7 +1770,20 @@ profileAfterSetupMs = renderProfileNowMs();
         prepared.celestialSystem)
     {
         if (!m_celestialFlight.initialized() && !m_celestialFlightFailed)
-            m_celestialFlightFailed = !m_celestialFlight.initialize();
+        {
+            // DEV: ELITE_DEV_CELESTIAL_FLAGS=noatm,noclouds,norings,nodetail
+            // (diagnostics and quality experiments).
+            render::celestial_flight::FlightRenderQuality quality;
+            if (const char* flags = std::getenv("ELITE_DEV_CELESTIAL_FLAGS"))
+            {
+                const std::string f = flags;
+                quality.atmosphere = f.find("noatm") == std::string::npos;
+                quality.clouds = f.find("noclouds") == std::string::npos;
+                quality.rings = f.find("norings") == std::string::npos;
+                quality.detailNormals = f.find("nodetail") == std::string::npos;
+            }
+            m_celestialFlightFailed = !m_celestialFlight.initialize(quality);
+        }
 
         if (m_celestialFlight.initialized())
         {

@@ -40,6 +40,7 @@
 #include "src/game/visual/VisualShip.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/render/geometry/AssemblyGpuLibrary.h"
+#include "src/render/geometry/ModelAssetGpuLibrary.h"
 #include "src/game/client/ClientSpatialDomain.h"
 #include "src/world/coordinates/WorldFrame.h"
 
@@ -1018,6 +1019,7 @@ void SceneRenderer::prepareScene(
     // scalar metadata are reset here.
     prepared.realShipMeshes.clear();
     prepared.objectMeshes.clear();
+    prepared.modelAssetObjects.clear();
     prepared.visualShips.clear();
     prepared.visualShipParts.clear();
     prepared.debugAssemblies.clear();
@@ -1170,6 +1172,7 @@ void SceneRenderer::prepareScene(
 
 
         prepared.objectMeshes.clear();
+        prepared.modelAssetObjects.clear();
 
         for (const auto& pair : world.objects())
         {
@@ -1248,6 +1251,28 @@ void SceneRenderer::prepareScene(
             objectDebug.assemblyModules = &renderAssemblyModules;
             objectDebug.debugHitVolumes = &obj.debugHitVolumes;
             prepared.debugAssemblies.push_back(objectDebug);
+
+            // Production ModelAsset v4 package (all components, all LODs):
+            // per-component screen-space LOD at draw time. Rotating modules
+            // keep the legacy replicated module angles.
+            if (const auto* modelAsset = render::geometry::ModelAssetGpuLibrary::get(obj.type))
+            {
+                PreparedScene::ModelAssetObjectItem item;
+                item.type = obj.type;
+                item.objectId = obj.id.value;
+                item.gpu = modelAsset;
+                item.model = objectBaseModel;
+                item.nodeModel.resize(modelAsset->nodeModule.size(), objectBaseModel);
+                for (std::size_t n = 0; n < modelAsset->nodeModule.size(); ++n)
+                    for (const auto& module : obj.assembly->modules)
+                        if (module.id == modelAsset->nodeModule[n])
+                        {
+                            item.nodeModel[n] = buildAssemblyModuleModel(objectBaseModel, module, renderAssemblyModules);
+                            break;
+                        }
+                prepared.modelAssetObjects.push_back(std::move(item));
+                continue;
+            }
 
             for (const auto& module : obj.assembly->modules)
             {
@@ -3075,6 +3100,68 @@ if (policy.drawObjects)
 
             m_lastStats.partsDrawn++;
             m_lastStats.drawCalls += 2;
+        }
+
+        // ModelAsset objects: representation ladder + per-component SSE LOD
+        // + HLOD for THIS camera (the one main flight camera).
+        if (!prepared.modelAssetObjects.empty())
+        {
+            namespace mp = elite::model_asset::presentation;
+            GLint viewportPx[4] = {0, 0, 1, 1};
+            glGetIntegerv(GL_VIEWPORT, viewportPx);
+            const float focalPx = 0.5f * proj[1][1] * static_cast<float>(std::max(1, viewportPx[3]));
+            static const char* lodLogPath = std::getenv("ELITE_MODEL_ASSET_LOD_LOG");
+            static std::FILE* lodLog = lodLogPath && *lodLogPath ? std::fopen(lodLogPath, "w") : nullptr;
+            const double nowS = renderProfileNowMs() * 0.001;
+            const bool logNow = lodLog && cameraName == "mainCam" && nowS - m_modelAssetLogTime >= 1.0;
+            if (logNow) m_modelAssetLogTime = nowS;
+            for (const auto& object : prepared.modelAssetObjects)
+            {
+                if (!policy.shouldDrawObject(object.type) || !object.gpu)
+                    continue;
+                const auto& ma = *object.gpu;
+                const glm::mat4 assetModel = object.model * ma.assetToLogical;
+                mp::View view;
+                view.cameraAsset = glm::vec3(glm::inverse(assetModel) * glm::vec4(cameraLocalPosition, 1.0f));
+                view.focalPx = focalPx;
+                view.planes = mp::frustumPlanes(proj * renderView * assetModel);
+                view.cullFrustum = true;
+                view.assetToWorldScale = ma.assetToLogicalScale;
+                const auto key = (static_cast<std::uint64_t>(object.objectId) << 8) ^
+                                 static_cast<std::uint64_t>(std::hash<std::string>{}(cameraName) & 0xff);
+                auto& selection = m_modelAssetSelections[key];
+                const mp::ObjectState state;
+                const double selectStartMs = renderProfileNowMs();
+                const mp::Frame frame = mp::select(ma.asset, ma.index, state, view, selection);
+                const double selectMs = renderProfileNowMs() - selectStartMs;
+                for (const auto& d : frame.draws)
+                {
+                    const auto& rn = ma.asset.renderLods[static_cast<std::size_t>(d.lod)]
+                                         .nodes[static_cast<std::size_t>(d.renderNode)];
+                    const render::MeshGPU* gpu = ma.gpuFor(d.lod, rn.geometryIndex);
+                    if (!gpu)
+                        continue;
+                    const glm::mat4& base =
+                        rn.semanticNodeIndex >= 0 &&
+                                static_cast<std::size_t>(rn.semanticNodeIndex) < object.nodeModel.size()
+                            ? object.nodeModel[static_cast<std::size_t>(rn.semanticNodeIndex)]
+                            : object.model;
+                    const glm::mat4 model = base * ma.assetToLogical * d.assetTransform;
+                    queuedPreparedStationDraws.push_back(QueuedMeshDraw {gpu, proj * renderView * model, model});
+                    m_lastStats.partsDrawn++;
+                    m_lastStats.drawCalls += 2;
+                }
+                if (logNow)
+                {
+                    std::fprintf(lodLog, "t=%.1f camera=%s select_ms=%.3f uploaded_meshes=%zu uploaded_tris=%zu vram_est_mb=%.1f\n",
+                                 nowS, cameraName.c_str(), selectMs, ma.uploadedMeshes(), ma.uploadedTriangles(),
+                                 ma.uploadedBytes() / 1048576.0);
+                    std::fputs(mp::formatFrame(ma.asset, ma.index, frame, ma.asset.assetId + "#" +
+                                                                            std::to_string(object.objectId)).c_str(),
+                               lodLog);
+                    std::fflush(lodLog);
+                }
+            }
         }
 
         if (!queuedPreparedStationDraws.empty())

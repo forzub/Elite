@@ -24,6 +24,7 @@
 
 #include "src/scene/PreparedScene.h"
 #include "src/scene/SceneRenderPolicy.h"
+#include "src/model_asset/ModelAssetPresentation.h"
 
 // Forward declaration
 class DebugLineRenderer;
@@ -276,6 +277,9 @@ public:
 private:
     // Celestial bodies of the active system (production runtime renderer).
     render::celestial_flight::CelestialFlightRenderer m_celestialFlight;
+    // Per object (and camera) presentation hysteresis for ModelAsset objects.
+    std::unordered_map<std::uint64_t, elite::model_asset::presentation::Selection> m_modelAssetSelections;
+    double m_modelAssetLogTime = -1.0;
     render::celestial_flight::FlightFrameBuilder m_celestialFrameBuilder;
     render::celestial_flight::FlightCelestialFrame m_celestialFrame;
     bool m_celestialFlightFailed = false;

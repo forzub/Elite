@@ -10,6 +10,9 @@
 #include "src/world/celestial/CelestialTypes.h"
 
 #include "src/world/types/ObjectType.h"
+#include <cstdint>
+
+namespace render::geometry { struct ModelAssetGpu; }
 #include "src/game/ship/core/ShipRole.h"
 #include "src/game/visual/VisualShipKind.h"
 
@@ -87,6 +90,18 @@ struct PreparedScene
 
     std::vector<RealShipMeshItem> realShipMeshes;
     std::vector<ObjectMeshItem> objectMeshes;
+
+    // Objects drawn from a compiled ModelAsset v4 package (per-component
+    // screen-space LOD). The per-camera selection happens at draw time.
+    struct ModelAssetObjectItem
+    {
+        ObjectType type = ObjectType::None;
+        std::uint64_t objectId = 0;
+        const render::geometry::ModelAssetGpu* gpu = nullptr;
+        glm::mat4 model = glm::mat4(1.0f);              // object base model
+        std::vector<glm::mat4> nodeModel;               // per semantic node: module model
+    };
+    std::vector<ModelAssetObjectItem> modelAssetObjects;
 
 
 

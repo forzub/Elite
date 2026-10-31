@@ -610,6 +610,7 @@ add_executable(EliteGame
 
     src/render/ship/ShipMeshRenderer.cpp
     src/render/geometry/AssemblyGpuLibrary.cpp
+    src/render/geometry/ModelAssetGpuLibrary.cpp
     
     # src/game/geometry/MeshLibrary.cpp
     

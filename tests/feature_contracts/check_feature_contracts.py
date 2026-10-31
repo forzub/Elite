@@ -248,7 +248,6 @@ def check_debug_control_runtime_wiring() -> None:
         "renderStarfield": (space_cpp, "mainPolicy.drawStarfield = dbg.renderStarfield;"),
         "renderShipUi": (space_cpp, "shouldRenderShipUi()"),
         "renderCockpit": (space_cpp, "shouldRenderCockpit()"),
-        "renderRearCamera": (space_cpp, "shouldRenderRearCamera()"),
         "showStarLabels": (scene_cpp, "dbg.showStarLabels"),
         "showAllStarLabels": (scene_cpp, "dbg.showAllStarLabels"),
         "showConstellationHover": (scene_cpp, "dbg.showConstellationHover"),

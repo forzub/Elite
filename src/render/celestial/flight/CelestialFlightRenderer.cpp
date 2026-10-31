@@ -601,10 +601,11 @@ struct CelestialFlightRenderer::Impl
     std::uint64_t frameIndex = 0;
     std::atomic<long long> samples {0};
 
-    Program globe, terrain, terrainDepth, cloud, atmosphere, ring, star, sprite, mesh;
+    Program globe, terrain, terrainDepth, cloud, atmosphere, ring, star, sprite, sun, mesh;
     IndexedMesh sphereHigh, sphereLow;
     GLuint ringVao = 0, ringVbo = 0;
     GLuint spriteVao = 0, spriteVbo = 0;
+    float maxPointSize = 64.0f; // GL_POINT_SIZE_RANGE max (sun sprite)
     GLuint dummyCube = 0;
 
     std::unordered_map<std::string, BodyRuntime> bodies;
@@ -651,6 +652,7 @@ struct CelestialFlightRenderer::Impl
         ok = ok && linkProgram(ring, {LogDepthVs, RingVs}, {LogDepthFs, SurfaceShading, RingFs});
         ok = ok && linkProgram(star, {LogDepthVs, ShellVs}, {LogDepthFs, SurfaceShading, StarFs});
         ok = ok && linkProgram(sprite, {LogDepthVs, SpriteVs}, {LogDepthFs, SpriteFs});
+        ok = ok && linkProgram(sun, {LogDepthVs, SunVs}, {LogDepthFs, SunFs});
         ok = ok && linkProgram(mesh, {LogDepthVs, MeshVs}, {LogDepthFs, MeshFs});
         if (!ok)
             return false;
@@ -682,6 +684,9 @@ struct CelestialFlightRenderer::Impl
         glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(SpriteVertex),
                               reinterpret_cast<void*>(offsetof(SpriteVertex, kind)));
         glBindVertexArray(0);
+        GLfloat pointRange[2] = {1.0f, 64.0f};
+        glGetFloatv(GL_POINT_SIZE_RANGE, pointRange);
+        maxPointSize = std::max(64.0f, pointRange[1]);
 
         const std::uint8_t black[4] = {0, 0, 0, 0};
         dummyCube = makeCube(1, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, {black, black, black, black, black, black});
@@ -1882,6 +1887,15 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
                 dropTerrain(rt);
 
     std::vector<SpriteVertex> sprites;
+    struct SunDraw
+    {
+        glm::vec3 rel;
+        glm::vec3 colour;
+        float sizePx;
+        float disc;
+        float activity;
+    };
+    std::vector<SunDraw> suns;
     stats.cpuPrepareMs = (nowSeconds() - t0) * 1000.0;
     const double t1 = nowSeconds();
 
@@ -1904,18 +1918,29 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
         if (b.kind == FlightBodyKind::Star)
         {
             const glm::vec3 colour = blackbody(b.temperatureK);
-            // Elite Classic sun: the whole disc + unstable edge + corona is
-            // one sprite while it fits in a point (disc radius < ~70 px).
-            const bool eliteSun = style == CelestialRenderStyle::EliteStyle && it.pxRadius >= 0.75 &&
-                                  it.pxRadius * 2.0 * 3.4 <= 480.0;
-            if (eliteSun)
+            // The sun in every style: its TRUE projected disc (never inflated)
+            // with an activity that grows with the projected size only - far:
+            // a plain small circle; closer: the edge starts to move; closer
+            // still: edge activity and corona grow. One sprite while it fits
+            // in a GL point; the styles differ only in shading (SpriteFs).
+            const double activity = std::clamp(std::log2(std::max(it.pxRadius, 1.0) / 4.0) / std::log2(25.0), 0.0, 1.0);
+            const double coronaExtent = 0.25 + 1.6 * activity; // corona reach in disc radii
+            const double sunQuad = 2.0 * it.pxRadius * (1.0 + coronaExtent) + 4.0;
+            if (it.pxRadius >= 0.75 && it.pxRadius < 0.45 * height)
             {
-                // Stylised: the disc never smaller than ~10 px radius on
-                // screen (a retro sun is a presence, not a dot).
-                const double shownRadius = std::max(it.pxRadius, 10.0 * height / 1080.0);
-                const float size = static_cast<float>(shownRadius * 2.0 * 3.4);
-                const float disc = static_cast<float>(std::clamp(shownRadius * 2.0 / size, 0.06, 0.9));
-                sprites.push_back(SpriteVertex {glm::vec3(it.rel), glm::vec4(colour, 1.0f), size, 1.0f + disc});
+                const float disc = static_cast<float>(std::clamp(2.0 * it.pxRadius / sunQuad, 0.02, 0.95));
+                suns.push_back(SunDraw {glm::vec3(it.rel), colour, static_cast<float>(sunQuad), disc,
+                                        static_cast<float>(activity)});
+                if (style != CelestialRenderStyle::EliteStyle)
+                {
+                    // Modern / Anime: the light bloom around the disc (flux).
+                    const double flux = b.luminositySolar /
+                                        std::max(1.0e-12, it.dist * it.dist / (MetresPerAu * MetresPerAu));
+                    const float glow = static_cast<float>(
+                        std::clamp(26.0 * std::pow(flux, 0.22) * height / 1080.0 + it.pxRadius * 3.0, 4.0,
+                                   static_cast<double>(maxPointSize)));
+                    sprites.push_back(SpriteVertex {glm::vec3(it.rel), glm::vec4(colour, 0.5f), glow, 1.0f});
+                }
                 continue;
             }
             if (it.pxRadius >= 0.75)
@@ -2137,6 +2162,33 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             updateAsteroids(frame, viewProj, pixelAngle, sunColour, sprites);
             drawAsteroids(frame, viewProj, sunDir, sunColour);
         }
+    }
+
+    // Suns: screen quads (true projected disc + size-driven activity).
+    if (!suns.empty())
+    {
+        ScopedTimer timer(timers, TSprites);
+        sun.use();
+        setCommon(sun, glm::vec3(0, 0, 1), glm::vec3(1));
+        sun.set("uViewProj", viewProj);
+        sun.set("uViewport", glm::vec2(static_cast<float>(width), static_cast<float>(height)));
+        sun.set("uTime", static_cast<float>(std::fmod(nowSeconds(), 1000.0)));
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE);
+        glDepthMask(GL_FALSE);
+        glDisable(GL_CULL_FACE);
+        glBindVertexArray(ringVao);
+        for (const SunDraw& d : suns)
+        {
+            sun.set("uCentre", d.rel);
+            sun.set("uColour", d.colour);
+            sun.set("uSizePx", d.sizePx);
+            sun.set("uDisc", d.disc);
+            sun.set("uActivity", d.activity);
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        }
+        glBindVertexArray(0);
+        glDepthMask(GL_TRUE);
     }
 
     // Sprites last: depth tested against the bodies, additive.

@@ -1617,15 +1617,14 @@ void Application::requestPresentationTarget(GameUiTarget target)
 
     if (target.mode == GameUiMode::Flight)
     {
-        ScreenLayout layout = ScreenLayout::Front_Main_Rear_Mini;
+        ShipCameraMode mode = ShipCameraMode::Cockpit;
         switch (target.flight)
         {
-            case FlightPresentationView::Front: layout = ScreenLayout::Front_Main_Rear_Mini; break;
-            case FlightPresentationView::Rear: layout = ScreenLayout::Rear_Main_Front_Mini; break;
-            case FlightPresentationView::FrontDrone: layout = ScreenLayout::Front_Main_Drone_Mini; break;
-            case FlightPresentationView::Drone: layout = ScreenLayout::Drone_Main_Front_Mini; break;
+            case FlightPresentationView::Front: mode = ShipCameraMode::Cockpit; break;
+            case FlightPresentationView::Rear: mode = ShipCameraMode::Rear; break;
+            case FlightPresentationView::Drone: mode = ShipCameraMode::Drone; break;
         }
-        space->setFlightScreenLayout(layout);
+        space->setFlightCameraMode(mode);
         m_gameUi.armSceneTarget(target);
         Input::instance().reset();
         return;

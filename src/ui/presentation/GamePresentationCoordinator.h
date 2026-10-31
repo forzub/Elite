@@ -6,7 +6,7 @@
 #include <cstdint>
 
 // Presentation is explicit. Flight is not the absence of UI: it is a peer
-// destination selected by F1-F4. Likewise F5-F8 and F9-F12 are direct
+// destination selected by F1-F3 (F4 reserved). Likewise F5-F8 and F9-F12 are direct
 // selectors into service and navigation domains.
 enum class GameUiMode
 {
@@ -21,9 +21,10 @@ enum class GameUiMode
 
 enum class FlightPresentationView
 {
+    // One full world render per frame: the view only selects where the
+    // single main camera looks (F1 front, F2 rear, F3 recon drone).
     Front,
     Rear,
-    FrontDrone,
     Drone
 };
 

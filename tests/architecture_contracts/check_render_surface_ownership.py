@@ -59,14 +59,14 @@ for token in (
 if "serviceMode" in gate_body.split("const bool scene3dActive =", 1)[1].split("const bool postProcessActive =", 1)[0]:
     fail("native F5-F8 service presentation incorrectly participates in the persistent post-process FBO")
 
-# F1-F4 are a domain exit from Navigation. A half-finished internal map
-# transition must be cancelled even when the requested flight layout equals the
-# already selected layout.
-flight_start = space.find("void SpaceState::setFlightScreenLayout")
+# F1-F3 are a domain exit from Navigation. A half-finished internal map
+# transition must be cancelled even when the requested camera mode equals the
+# already selected mode.
+flight_start = space.find("void SpaceState::setFlightCameraMode")
 flight_end = space.find("\n}", flight_start)
 flight = space[flight_start:flight_end + 2]
 cancel = flight.find("m_systemMapRenderer.cancelMapTransition()")
-early_return = flight.find("if (m_layout == layout)")
+early_return = flight.find("if (m_activeCameraMode == mode)")
 if cancel < 0 or early_return < 0 or cancel > early_return:
     fail("Flight selector can leave an old map transition alive behind the next frame")
 

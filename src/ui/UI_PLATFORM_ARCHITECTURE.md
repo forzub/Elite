@@ -97,7 +97,8 @@ A destination is not allowed to become visible merely because a key was accepted
 The application-level direct selector table is:
 
 ```text
-F1-F4   Flight camera presentations
+F1-F3   Flight: the ONE main camera looks front / rear / from the recon drone
+F4      reserved (no rear monitor: one full world render per frame)
 F5-F8   Native service presentations
 F9-F12  Native Navigation presentations
 ```

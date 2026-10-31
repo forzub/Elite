@@ -408,8 +408,9 @@ namespace
                 }
             }
         }
-        // The Sun from near Earth (all styles; Elite Classic: flickering
-        // corona - two frames 0.3 s apart).
+        // The Sun at shrinking distances (all styles): 1 AU (near Earth),
+        // 0.2 AU, 0.05 AU, 0.015 AU - activity of edge / corona grows with
+        // the projected size only. Two frames 0.3 s apart per distance.
         if (wanted("sun") && lab.selectSystem(0, t0))
         {
             const wc::CelestialBodyState* earth = lab.body("planet_earth");
@@ -419,15 +420,19 @@ namespace
                     sunBody = &b;
             if (earth && sunBody)
             {
-                Camera c;
                 const glm::dvec3 toSun = glm::normalize(sunBody->worldMeters - earth->worldMeters);
-                c.pos = earth->worldMeters + glm::normalize(glm::cross(toSun, glm::dvec3(0, 1, 0))) *
-                                                 (earth->radiusKm * 1000.0 * 3.0);
-                c.fwd = glm::normalize(sunBody->worldMeters - c.pos);
-                c.up = glm::normalize(glm::cross(glm::cross(c.fwd, glm::dvec3(0, 1, 0)), c.fwd));
+                const double au = 1.495978707e11;
+                const double dists[] = {1.0, 0.2, 0.05, 0.015};
+                for (int di = 0; di < 4; ++di)
                 for (const auto style : styles)
                     for (int k = 0; k < 2; ++k)
                     {
+                        Camera c;
+                        c.pos = di == 0 ? earth->worldMeters + glm::normalize(glm::cross(toSun, glm::dvec3(0, 1, 0))) *
+                                                                   (earth->radiusKm * 1000.0 * 3.0)
+                                        : sunBody->worldMeters - toSun * (dists[di] * au);
+                        c.fwd = glm::normalize(sunBody->worldMeters - c.pos);
+                        c.up = glm::normalize(glm::cross(glm::cross(c.fwd, glm::dvec3(0, 1, 0)), c.fwd));
                         r.setStyle(style);
                         converge(lab, r, c, win, w, h, 30.0);
                         if (k == 1)
@@ -436,8 +441,8 @@ namespace
                         glFinish();
                         std::vector<unsigned char> rgb;
                         readPixels(w, h, rgb);
-                        const std::string name = std::string("flight_sun_") + cf::celestialRenderStyleId(style) + "_" +
-                                                 std::to_string(k) + ".png";
+                        const std::string name = std::string("flight_sun_") + cf::celestialRenderStyleId(style) + "_d" +
+                                                 std::to_string(di) + "_" + std::to_string(k) + ".png";
                         writePng(dir + "/" + name, w, h, rgb);
                         std::printf("%s\n", name.c_str());
                     }

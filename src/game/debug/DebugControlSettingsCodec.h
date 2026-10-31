@@ -37,7 +37,6 @@ inline json encodeRenderSettings(const ::debug::DebugRenderSettings& dbg)
     payload["renderCockpit"] = dbg.renderCockpit;
     payload["renderShipUi"] = dbg.renderShipUi;
     payload["renderStarfield"] = dbg.renderStarfield;
-    payload["renderRearCamera"] = dbg.renderRearCamera;
     payload["showStarLabels"] = dbg.showStarLabels;
     payload["showAllStarLabels"] = dbg.showAllStarLabels;
 
@@ -109,7 +108,6 @@ inline void applyRenderSettings(
     dbg.renderCockpit = payload.value("renderCockpit", dbg.renderCockpit);
     dbg.renderShipUi = payload.value("renderShipUi", dbg.renderShipUi);
     dbg.renderStarfield = payload.value("renderStarfield", dbg.renderStarfield);
-    dbg.renderRearCamera = payload.value("renderRearCamera", dbg.renderRearCamera);
     dbg.showStarLabels = payload.value("showStarLabels", dbg.showStarLabels);
     dbg.showAllStarLabels = payload.value("showAllStarLabels", dbg.showAllStarLabels);
 

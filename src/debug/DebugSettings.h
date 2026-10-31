@@ -27,7 +27,6 @@ struct DebugRenderSettings
     bool renderCockpit = true;
     bool renderShipUi = true;
     bool renderStarfield = true;
-    bool renderRearCamera = true;
     bool showStarLabels = true;
     bool showAllStarLabels = false;
 
@@ -172,11 +171,6 @@ struct DebugRenderSettings
     bool shouldRenderShipUi() const
     {
         return renderShipUi;
-    }
-
-    bool shouldRenderRearCamera() const
-    {
-        return renderShipUi && renderRearCamera;
     }
 
     bool shouldRenderStarfield() const

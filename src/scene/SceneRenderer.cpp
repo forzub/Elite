@@ -1845,9 +1845,9 @@ profileAfterSetupMs = renderProfileNowMs();
                 fovY,
                 renderViewport[2],
                 renderViewport[3],
-                // DEV ELITE_DEV_CELESTIAL_SHARED_VIEWS=1 restores the old
-                // behaviour (every view plans resources) for the A/B test.
-                cameraName == "mainCam" || std::getenv("ELITE_DEV_CELESTIAL_SHARED_VIEWS") != nullptr
+                // Flight has exactly one full world view (the main camera,
+                // front / rear / drone); it plans celestial resources.
+                true
             );
         }
     }
@@ -1873,14 +1873,6 @@ profileAfterSetupMs = renderProfileNowMs();
     // ============================================================
     // Дальние объекты рисуются отдельными projection-матрицами.
     // Потом depth очищается, чтобы они не портили точность ближнего мира.
-    const bool isRearMonitor = (cameraName == "secondCam");
-
-    // Планеты / sky / celestial objects должны быть видны во всех камерах,
-    // включая задний монитор. Иначе при взгляде назад пропадает планета.
-    
-
-    // Дальний proxy станции можно отключать только для маленького rear-monitor,
-    // но не для обычного главного вида, даже если он смотрит назад.
     if (policy.drawFarStationProxy)
     {
         renderFarStationProxyPass(
@@ -2346,7 +2338,6 @@ profileAfterSetupMs = renderProfileNowMs();
                 glm::length(partLocalPos - cameraLocalPosition);
 
             const bool useLod1 =
-                policy.forceAssemblyLod1 ||
                 distToPart >= item.lodSwitchDistance;
 
             const render::MeshGPU* gpu =
@@ -2647,7 +2638,6 @@ profileAfterSetupMs = renderProfileNowMs();
                         glm::length(partLocalPosition - cameraLocalPosition);
 
                     bool useLod1 =
-                        policy.forceAssemblyLod1 ||
                         distToPart >= prepared.visualShips[part.shipIndex].lodSwitchDistance;
 
                     if (distToPart > 350.0f)
@@ -3048,7 +3038,6 @@ if (policy.drawObjects)
                 glm::length(partLocalPos - cameraLocalPosition);
 
             const bool useLod1 =
-                policy.forceAssemblyLod1 ||
                 distToPart >= item.lodSwitchDistance;
 
             const render::MeshGPU* gpu =

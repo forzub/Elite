@@ -26,8 +26,7 @@ for token in ('struct FunctionKeyPress', 'std::deque<FunctionKeyPress>', 'WM_KEY
 expected = (
     (1, 'forFlight(FlightPresentationView::Front)'),
     (2, 'forFlight(FlightPresentationView::Rear)'),
-    (3, 'forFlight(FlightPresentationView::FrontDrone)'),
-    (4, 'forFlight(FlightPresentationView::Drone)'),
+    (3, 'forFlight(FlightPresentationView::Drone)'),
     (9, 'forNavigation(NavigationPresentationView::Galaxy)'),
     (10, 'forNavigation(NavigationPresentationView::System)'),
     (11, 'forNavigation(NavigationPresentationView::Detail)'),
@@ -38,6 +37,11 @@ for key, target in expected:
         fail(f'F{key} direct mapping missing')
     if f'directTargetForFunctionKey({key})' not in contract:
         fail(f'F{key} executable assertion missing')
+
+if 'case 4: return std::nullopt; // reserved' not in router:
+    fail('F4 must stay reserved (no rear monitor / second full render)')
+if 'directTargetForFunctionKey(4)' not in contract:
+    fail('F4 reserved executable assertion missing')
 
 for key in (5,6,7,8):
     if f'directTargetForFunctionKey({key})' not in contract:

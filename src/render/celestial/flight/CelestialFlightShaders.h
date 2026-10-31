@@ -776,33 +776,6 @@ void main()
     if (uStyle == 0)
     {
         // Elite: a crisp dot or an outlined star with rays.
-        if (vKind > 1.0)
-        {
-            // The sun, Elite Classic: a bright white disc with a living,
-            // unstable edge and a flickering corona of rays - no lens flare.
-            float disc = clamp(vKind - 1.0, 0.05, 0.9);
-            float ang = atan(q.y, q.x);
-            float t = uTime;
-            float wobble = 1.0 + 0.05 * sin(ang * 7.0 + t * 5.3) * sin(ang * 3.0 - t * 3.1) +
-                           0.025 * sin(ang * 13.0 - t * 9.7);
-            float edge = disc * wobble;
-            float sectors = 28.0;
-            float u = (ang + 3.14159265) / 6.2831853 * sectors;
-            float k = floor(u);
-            float flick = fract(sin(k * 12.9898 + floor(t * 11.0) * 78.233) * 43758.5453);
-            float len = edge * (1.18 + 0.75 * flick * flick);
-            float ray = (1.0 - smoothstep(0.08, 0.30, abs(fract(u) - 0.5))) * step(edge, r) *
-                        (1.0 - smoothstep(len * 0.7, len, r));
-            float halo = exp(-max(r - edge, 0.0) / max(0.10 * disc, 1e-3)) * (0.55 + 0.45 * flick);
-            a = r < edge ? 1.0 : max(ray * 0.85, halo * 0.7);
-            col = vec3(0.96);
-            a = clamp(a, 0.0, 1.0) * clamp(vColour.a * 1.5, 0.0, 1.0);
-            if (a < 0.004)
-                discard;
-            fragColour = vec4(col * a, a);
-            writeLogDepth();
-            return;
-        }
         if (vKind > 0.5)
         {
             float ring = 1.0 - clamp(abs(r - 0.35) * 18.0, 0.0, 1.0);
@@ -836,6 +809,109 @@ void main()
         discard;
     fragColour = vec4(col * a, a);
     writeLogDepth();
+}
+)";
+
+// ---- the sun: a screen-aligned quad of any pixel size (no GL point limit) ---
+inline const char* SunVs = R"(
+layout(location = 0) in vec2 aCorner; // -1..1
+uniform mat4 uViewProj;
+uniform vec3 uCentre;                  // relative to the camera (world)
+uniform float uSizePx;                 // quad side in pixels
+uniform vec2 uViewport;
+out vec2 vQ;
+void applyLogDepth();
+void main()
+{
+    vec4 c = uViewProj * vec4(uCentre, 1.0);
+    c.xy += aCorner * (uSizePx / uViewport) * c.w;
+    gl_Position = c;
+    applyLogDepth();
+    vQ = aCorner;
+}
+)";
+
+inline const char* SunFs = R"(
+in vec2 vQ;
+uniform int uStyle;
+uniform vec3 uColour;      // photosphere (blackbody)
+uniform float uDisc;       // disc radius / quad half-size
+uniform float uActivity;   // 0 far .. 1 close (projected size only)
+uniform float uTime;       // presentation clock
+out vec4 fragColour;
+void writeLogDepth();
+void main()
+{
+    vec2 q = vQ;
+    float r = length(q);
+    float a;
+    vec3 col;
+    {
+        // The sun (every style): disc = its true projected radius in sprite
+        // units; activity (uActivity, 0 far .. 1 close) drives how much the
+        // edge moves and how strong the corona is. Far away it is a plain
+        // circle. No lens flare.
+        float disc = clamp(uDisc, 0.02, 0.95);
+        float act = clamp(uActivity, 0.0, 1.0);
+        float edgeAct = smoothstep(0.08, 0.55, act);
+        float coronaAct = smoothstep(0.30, 1.0, act);
+        float ang = atan(q.y, q.x);
+        float t = uTime;
+        float wobble = 1.0 + edgeAct * (0.028 * sin(ang * 7.0 + t * 1.9) * sin(ang * 3.0 - t * 1.3) +
+                                        0.012 * sin(ang * 13.0 - t * 3.7));
+        float edge = disc * wobble;
+        float aa = max(fwidth(r), 1e-4);
+        float inDisc = 1.0 - smoothstep(edge - aa, edge + aa, r);
+        float d = max(r - edge, 0.0) / max(disc, 1e-3);   // distance outside, in disc radii
+        // Corona streamers: slowly varying angular structure.
+        float u = (ang + 3.14159265) / 6.2831853;
+        float streak = 0.5 + 0.5 * sin(u * 6.2831853 * 9.0 + 1.7 * sin(u * 6.2831853 * 4.0 + t * 0.35));
+        float streak2 = 0.5 + 0.5 * sin(u * 6.2831853 * 23.0 - t * 0.6);
+        float corona = coronaAct * exp(-d * (3.2 - 1.6 * streak)) * (0.55 + 0.45 * streak2);
+        float halo = exp(-d * 9.0) * (0.25 + 0.5 * edgeAct);
+        if (uStyle == 0)
+        {
+            // Elite Classic: monochrome white disc, a crisp edge that moves,
+            // corona as flickering vector rays only when close.
+            float sectors = 28.0;
+            float us = u * sectors;
+            float k = floor(us);
+            float flick = fract(sin(k * 12.9898 + floor(t * 6.0) * 78.233) * 43758.5453);
+            float len = 1.0 + coronaAct * (0.25 + 0.9 * flick * flick);
+            float ray = (1.0 - smoothstep(0.06, 0.22, abs(fract(us) - 0.5))) * step(edge, r) *
+                        (1.0 - smoothstep(edge * len * 0.8, edge * len, r)) * coronaAct;
+            a = max(inDisc, max(ray * 0.8, halo * 0.6 * edgeAct));
+            col = vec3(0.96);
+        }
+        else if (uStyle == 2)
+        {
+            // Anime: flat white core, a flat tinted rim band, posterised
+            // corona petals.
+            float core = 1.0 - smoothstep(edge * 0.78 - aa, edge * 0.78 + aa, r);
+            vec3 tint = mix(vec3(1.0), uColour, 0.45);
+            float petals = floor((corona + halo * 0.6) * 3.0 + 0.5) / 3.0;
+            col = inDisc > 0.5 ? mix(tint, vec3(1.0), core) : tint;
+            a = max(inDisc, petals * 0.8);
+        }
+        else
+        {
+            // Modern: limb-darkened disc tinted by the photosphere colour,
+            // soft halo and faint streamer corona.
+            float rr = r / max(edge, 1e-4);
+            float mu = sqrt(max(1.0 - rr * rr, 0.0));
+            vec3 discCol = uColour * (0.55 + 0.45 * mu) * 1.6 + vec3(0.25);
+            vec3 glowCol = mix(uColour, vec3(1.0), 0.4);
+            float outer = max(halo, corona * 0.7);
+            col = mix(glowCol, discCol, inDisc);
+            a = max(inDisc, outer);
+        }
+        a = clamp(a, 0.0, 1.0);
+        if (a < 0.004)
+            discard;
+        fragColour = vec4(col * a, a);
+        writeLogDepth();
+        return;
+    }
 }
 )";
 

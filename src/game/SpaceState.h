@@ -19,7 +19,6 @@
 
 // ============== components ==============
 #include "ui/components/UIContainer.h"
-#include "ui/components/minicamera/UICameraView.h"
 
 // =========== симулейшен ==================
 
@@ -92,15 +91,6 @@ enum class PlayerNavigationMapLevel
 };
 
 
-enum class ScreenLayout
-{
-    Front_Main_Rear_Mini,
-    Rear_Main_Front_Mini,
-    Front_Main_Drone_Mini,
-    Drone_Main_Front_Mini
-};
-
-
 class SpaceState : public GameState
 {
 public:
@@ -139,8 +129,9 @@ public:
     void testDamageSystem();
 
     void handleResize(int width, int height);
-    void setFlightScreenLayout(ScreenLayout layout);
-    ScreenLayout flightScreenLayout() const { return m_layout; }
+    // F1-F3: the single main camera looks front / rear / from the drone.
+    void setFlightCameraMode(ShipCameraMode mode);
+    ShipCameraMode flightCameraMode() const { return m_activeCameraMode; }
 
     const ShipAttachmentOverrideMap& attachmentEditorOverrides() const { return m_attachmentEditorOverrides; }
     ShipAttachmentOverrideMap& attachmentEditorOverrides() { return m_attachmentEditorOverrides; }
@@ -304,8 +295,6 @@ private:
 
 
     std::unique_ptr<UIContainer>                uiRoot;
-    UICameraView*                               rearView = nullptr;
-    ScreenLayout                                m_layout = ScreenLayout::Front_Main_Rear_Mini; //  режими отображения камеры
     Camera*                                     m_activeMainCamera = nullptr;
     ShipCameraMode                              m_activeCameraMode = ShipCameraMode::Cockpit;
 
@@ -633,13 +622,11 @@ private:
     double m_perfFps = 0.0;
     double m_perfFrameMs = 0.0;
     double m_perfMainRenderMs = 0.0;
-    double m_perfRearCameraMs = 0.0;
     double m_perfRenderUiMs = 0.0;
 
     float m_perfPushTimer = 0.0f;
 
     SceneRenderStats m_perfMainStats;
-    SceneRenderStats m_perfRearStats;
 
 
     uint64_t m_perfFrameIndex = 0;

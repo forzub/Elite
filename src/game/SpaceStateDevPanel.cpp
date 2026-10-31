@@ -112,7 +112,7 @@ void SpaceState::processHtmlCommands()
                         // Legacy HtmlUi SystemMap close follows the same
                         // explicit presentation-router contract as the
                         // persistent map panel: return to the last selected
-                        // F1-F4 flight view, never to an implicit UI-none
+                        // F1-F3 flight view, never to an implicit UI-none
                         // gameplay fallback.
                         app->requestLastFlightView();
                     }
@@ -820,7 +820,6 @@ void SpaceState::pushDebugControlState()
     payload["debugSettingsRevision"] = m_debugControlSettingsRevision;
 
     SceneRenderStats totalStats = m_perfMainStats;
-    totalStats.add(m_perfRearStats);
 
     json perf;
     perf["frameIndex"] = m_perfFrameIndex;
@@ -844,7 +843,6 @@ void SpaceState::pushDebugControlState()
     perf["uiRootUpdateMs"] = m_perfUiRootUpdateMs;
 
     perf["mainRenderMs"] = m_perfMainRenderMs;
-    perf["rearCameraMs"] = m_perfRearCameraMs;
     perf["renderUiMs"] = m_perfRenderUiMs;
     perf["hudMs"] = m_perfHudMs;
 

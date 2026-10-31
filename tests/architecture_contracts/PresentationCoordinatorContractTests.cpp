@@ -81,9 +81,8 @@ int main()
     assert(directTargetForFunctionKey(2) ==
         GameUiTarget::forFlight(FlightPresentationView::Rear));
     assert(directTargetForFunctionKey(3) ==
-        GameUiTarget::forFlight(FlightPresentationView::FrontDrone));
-    assert(directTargetForFunctionKey(4) ==
         GameUiTarget::forFlight(FlightPresentationView::Drone));
+    assert(!directTargetForFunctionKey(4).has_value()); // reserved
     assert(directTargetForFunctionKey(9) ==
         GameUiTarget::forNavigation(NavigationPresentationView::Galaxy));
     assert(directTargetForFunctionKey(10) ==

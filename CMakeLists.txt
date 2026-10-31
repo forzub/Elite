@@ -528,7 +528,6 @@ add_executable(EliteGame
     src/render/bitmap/TextureLoader.cpp
     src/render/camera/RenderCameraViewport.cpp
 
-    src/ui/components/minicamera/UICameraView.cpp
     src/ui/components/UIComponent.cpp
     src/ui/components/UIContainer.cpp
     src/ui/components/UIText.cpp

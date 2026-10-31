@@ -962,18 +962,21 @@ void SpaceState::cyclePhysicalControlFamily()
 }
 
 
-void SpaceState::setFlightScreenLayout(ScreenLayout layout)
+void SpaceState::setFlightCameraMode(ShipCameraMode mode)
 {
-    // F1-F4 leave the Navigation presentation domain immediately. Do not let
+    // F1-F3 leave the Navigation presentation domain immediately. Do not let
     // an unfinished map-to-map snapshot/crossfade survive behind the next
     // Flight frame, even when the selected flight layout is already active.
     m_systemMapRenderer.cancelMapTransition();
 
-    if (m_layout == layout)
+    if (m_activeCameraMode == mode)
         return;
 
     PlayerShipView::g_debugLogNextFrame = true;
-    m_layout = layout;
+    m_activeCameraMode = mode;
+    std::cerr << "[FlightCamera] main camera mode="
+              << (mode == ShipCameraMode::Cockpit ? "front" : mode == ShipCameraMode::Rear ? "rear" : "drone")
+              << '\n';
 }
 
 void SpaceState::updateShipObservationInterest(float dt)
@@ -1185,6 +1188,7 @@ void SpaceState::update(float dt)
             startupElapsedMs(m_startupTotalBegin) >= droneAtSeconds * 1000.0)
         {
             droneSet = true;
+            std::cerr << "[FlightCamera] DEV drone view request" << '\n';
             context().app->requestFlightView(FlightPresentationView::Drone);
         }
     }
@@ -2402,10 +2406,8 @@ void SpaceState::renderUI()
                 значения от последнего кадра игрового режима.
             */
             m_perfMainRenderMs = 0.0;
-            m_perfRearCameraMs = 0.0;
 
             m_perfMainStats.reset();
-            m_perfRearStats.reset();
 
             m_activeMainCamera = nullptr;
 
@@ -2418,75 +2420,26 @@ void SpaceState::renderUI()
 
 
 
-    Camera*                                     mainCam = nullptr;
-    Camera*                                     miniCam = nullptr;
-
-    const std::string frontLabel =
-        localizedUiText(context().app, "cockpit.front", "FRONT");
-    const std::string rearLabel =
-        localizedUiText(context().app, "cockpit.rear", "REAR");
-    const std::string droneLabel =
-        localizedUiText(context().app, "cockpit.drone", "DRONE");
-
-
-
-    switch (m_layout)
+    // One full world render per frame: F1/F2/F3 only choose where the main
+    // camera looks; celestial and object LOD plan against this camera.
+    Camera* mainCam = &m_playerView->camera(m_activeCameraMode);
+    if (auto* comp = uiRoot->findById("main_label"))
     {
-        case ScreenLayout::Front_Main_Rear_Mini:
-            mainCam = &m_playerView->camera(ShipCameraMode::Cockpit);
-            miniCam = &m_playerView->camera(ShipCameraMode::Rear);
-            m_activeCameraMode = ShipCameraMode::Cockpit;
-            if (auto* comp = uiRoot->findById("main_label"))
+        if (auto* text = dynamic_cast<UIText*>(comp))
+        {
+            switch (m_activeCameraMode)
             {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = frontLabel;}
+                case ShipCameraMode::Cockpit:
+                    text->label = localizedUiText(context().app, "cockpit.front", "FRONT");
+                    break;
+                case ShipCameraMode::Rear:
+                    text->label = localizedUiText(context().app, "cockpit.rear", "REAR");
+                    break;
+                case ShipCameraMode::Drone:
+                    text->label = localizedUiText(context().app, "cockpit.drone", "RECON DRONE");
+                    break;
             }
-            if (auto* comp = uiRoot->findById("rear_label"))
-            {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = rearLabel;}
-            }
-            break;
-
-        case ScreenLayout::Rear_Main_Front_Mini:
-            mainCam = &m_playerView->camera(ShipCameraMode::Rear);
-            miniCam = &m_playerView->camera(ShipCameraMode::Cockpit);
-            m_activeCameraMode = ShipCameraMode::Rear;
-            if (auto* comp = uiRoot->findById("main_label"))
-            {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = rearLabel;}
-            }
-            if (auto* comp = uiRoot->findById("rear_label"))
-            {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = frontLabel;}
-            }
-            break;
-
-        case ScreenLayout::Front_Main_Drone_Mini:
-            mainCam = &m_playerView->camera(ShipCameraMode::Cockpit);
-            miniCam = &m_playerView->camera(ShipCameraMode::Drone);
-            m_activeCameraMode = ShipCameraMode::Cockpit;
-            if (auto* comp = uiRoot->findById("main_label"))
-            {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = frontLabel;}
-            }
-            if (auto* comp = uiRoot->findById("rear_label"))
-            {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = droneLabel;}
-            }
-            break;
-
-        case ScreenLayout::Drone_Main_Front_Mini:
-            mainCam = &m_playerView->camera(ShipCameraMode::Drone);
-            miniCam = &m_playerView->camera(ShipCameraMode::Cockpit);
-            m_activeCameraMode = ShipCameraMode::Drone;
-            if (auto* comp = uiRoot->findById("main_label"))
-            {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = droneLabel;}
-            }
-            if (auto* comp = uiRoot->findById("rear_label"))
-            {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = frontLabel;}
-            }
-            break;
+        }
     }
 
     m_activeMainCamera = mainCam;
@@ -2644,82 +2597,8 @@ void SpaceState::renderUI()
 
 
 
-    // -------------------------------
-    // Rear - камера корабля.
-    // -------------------------------
-
-    static uint32_t rearCameraFrameCounter = 0;
-rearCameraFrameCounter++;
-
-if (debug::get().render.shouldRenderRearCamera())
 {
-    // Рендерим заднюю камеру не каждый кадр.
-    // 2 = через кадр. 3 = каждый третий кадр.
-    constexpr uint32_t kRearCameraFrameStride = 2;
-
-    if ((rearCameraFrameCounter % kRearCameraFrameStride) == 0)
-    {
-        const double rearStartMs = nowMs();
-
-        rearView->camera = miniCam;
-
-        // Secondary camera consumes the scene already prepared for this frame.
-        // Calling rearView->drawCallback here would invoke SceneRenderer::render
-        // and prepare the whole nearby station/ship scene a second time.
-        SceneRenderPolicy rearPolicy;
-        const auto& rearDbg = debug::get().render;
-        rearPolicy.drawLabels = false;
-        rearPolicy.drawDebug = false;
-        rearPolicy.drawStarfield = rearDbg.renderStarfield;
-        rearPolicy.drawCelestial = rearDbg.renderCelestialBodies;
-        rearPolicy.drawFarStationProxy = rearDbg.renderHubs;
-        rearPolicy.drawHubs = rearDbg.renderHubs;
-        rearPolicy.drawLargeObjects = rearDbg.renderLargeObjects;
-        rearPolicy.drawObjects =
-            rearDbg.renderHubs ||
-            rearDbg.renderLargeObjects ||
-            rearDbg.renderCelestialBodies;
-        rearPolicy.drawRealShips = rearDbg.renderRealShips;
-        rearPolicy.drawPlayerShip = rearDbg.renderPlayerShip;
-        rearPolicy.drawNpcShips = rearDbg.renderNpcShips;
-        rearPolicy.drawVisualShips = rearDbg.renderVisualShips;
-        rearPolicy.drawTrafficShips = rearDbg.renderTrafficShips;
-        rearPolicy.drawVisualDrones = rearDbg.renderVisualShips;
-        rearPolicy.maxVisualShipsToDraw = 24;
-        rearPolicy.forceAssemblyLod1 = true;
-
-        rearView->renderToTexture(
-            vp,
-            [&](const glm::mat4& view, const glm::mat4& proj)
-            {
-                SceneCameraParams rearCamera;
-                rearCamera.view = view;
-                rearCamera.proj = proj;
-                rearCamera.cameraId = 1;
-                rearCamera.cameraName = "secondCam";
-
-                m_sceneRenderer.renderPrepared(
-                    m_preparedScene,
-                    rearCamera,
-                    rearPolicy
-                );
-                m_perfRearStats = m_sceneRenderer.lastStats();
-            }
-        );
-
-        m_perfRearCameraMs = nowMs() - rearStartMs;
-        core::hitch::mark("scene_rear_camera");
-    }
-}
-else
-{
-    m_perfRearCameraMs = 0.0;
-    m_perfRearStats.reset();
-}
-
-{
-    const double observedRenderMs =
-        m_perfMainRenderMs + m_perfRearCameraMs;
+    const double observedRenderMs = m_perfMainRenderMs;
     if (observedRenderMs > 18.0 ||
         m_perfFixedSimMs > 8.0 ||
         m_perfClientUpdateMs > 8.0 ||
@@ -2733,7 +2612,6 @@ else
                 << "[FramePerf] main_ms=" << m_perfMainRenderMs
                 << " prepare_ms=" << m_perfScenePrepareMs
                 << " scene_submit_ms=" << m_perfMainStats.cpuTotalMs
-                << " rear_ms=" << m_perfRearCameraMs
                 << " fixed_sim_ms=" << m_perfFixedSimMs
                 << " client_ms=" << m_perfClientUpdateMs
                 << " dock_ms=" << m_perfDockingGuidanceMs

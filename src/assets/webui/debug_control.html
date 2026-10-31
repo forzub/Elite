@@ -464,7 +464,6 @@
           <div class="row checkboxRow"><input id="renderStarfield" type="checkbox"><label for="renderStarfield">Render starfield</label></div>
           <div class="row checkboxRow"><input id="renderShipUi" type="checkbox"><label for="renderShipUi">Render ship UI</label></div>
           <div class="row checkboxRow"><input id="renderCockpit" type="checkbox"><label for="renderCockpit">Render cockpit inside ship UI</label></div>
-          <div class="row checkboxRow"><input id="renderRearCamera" type="checkbox"><label for="renderRearCamera">Render rear camera</label></div>
           <div class="row checkboxRow"><input id="showStarLabels" type="checkbox"><label for="showStarLabels">Show star labels</label></div>
           <div class="row checkboxRow"><input id="showAllStarLabels" type="checkbox"><label for="showAllStarLabels">Show all star labels</label></div>
           <div class="row checkboxRow"><input id="showConstellationHover" type="checkbox"><label for="showConstellationHover">Show constellation hover</label></div>
@@ -638,7 +637,6 @@
           <div class="perfKey">UI root update</div><div class="perfValue" id="perfUiRootUpdateMs">—</div>
 
           <div class="perfKey">Main render</div><div class="perfValue" id="perfMainRenderMs">—</div>
-          <div class="perfKey">Rear camera</div><div class="perfValue" id="perfRearCameraMs">—</div>
           <div class="perfKey">Render UI total</div><div class="perfValue" id="perfRenderUiMs">—</div>
           <div class="perfKey">HUD</div><div class="perfValue" id="perfHudMs">—</div>
 
@@ -834,7 +832,6 @@
       setText('perfPlayerViewMs', p.playerViewMs != null ? Number(p.playerViewMs).toFixed(2) + ' ms' : '—');
       setText('perfUiRootUpdateMs', p.uiRootUpdateMs != null ? Number(p.uiRootUpdateMs).toFixed(2) + ' ms' : '—');
       setText('perfMainRenderMs', p.mainRenderMs != null ? Number(p.mainRenderMs).toFixed(2) + ' ms' : '—');
-      setText('perfRearCameraMs', p.rearCameraMs != null ? Number(p.rearCameraMs).toFixed(2) + ' ms' : '—');
       setText('perfRenderUiMs', p.renderUiMs != null ? Number(p.renderUiMs).toFixed(2) + ' ms' : '—');
       setText('perfHudMs', p.hudMs != null ? Number(p.hudMs).toFixed(2) + ' ms' : '—');
 
@@ -1043,7 +1040,6 @@
       setChecked('showAllStarLabels', p.showAllStarLabels === true);
       setChecked('showConstellationHover', p.showConstellationHover === true);
       setValue('constellationHoverRadiusPx', p.constellationHoverRadiusPx ?? 140);
-      setChecked('renderRearCamera', p.renderRearCamera !== false);
 
       setChecked('renderPlayerShip', p.renderPlayerShip !== false);
       setChecked('renderNpcShips', p.renderNpcShips !== false);
@@ -1158,7 +1154,6 @@
         sceneMode: document.querySelector('input[name="sceneMode"]:checked')?.value || 'game',
         showConstellationHover: document.getElementById('showConstellationHover').checked,
         constellationHoverRadiusPx: Number(document.getElementById('constellationHoverRadiusPx').value) || 140,
-        renderRearCamera: document.getElementById('renderRearCamera').checked,
 
         renderPlayerShip: document.getElementById('renderPlayerShip').checked,
         renderNpcShips: document.getElementById('renderNpcShips').checked,

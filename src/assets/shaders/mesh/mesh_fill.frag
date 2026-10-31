@@ -38,6 +38,26 @@ uniform vec3 hullColorFar;
 
 uniform int uSceneStyle; // 0 Elite Classic, 1 Modern, 2 Anime
 
+// Surface effect "thrust" (semantic binding resolved on the CPU): executed
+// thrust of the engine owning this part, and the world aft axis. The nozzle
+// pad = faces looking aft; 0 thrust = ordinary surface.
+uniform float uThrust01;
+uniform vec3 uThrustAxis;
+uniform vec2 uThrustPlane; // x = aft-most plane offset along the axis, y = pad depth (world)
+
+// The pad: the aft end of the engine part (within the pad depth of its
+// aft-most plane), strongest on the faces that look aft.
+float nozzlePad(vec3 n, vec3 worldPos)
+{
+    vec3 axis = normalize(uThrustAxis);
+    float behind = uThrustPlane.x - dot(axis, worldPos);
+    float endZone = 1.0 - smoothstep(0.0, uThrustPlane.y, behind);
+    // abs(): authored nozzle discs are not reliably wound (Cobra OBJ
+    // engine caps face forward); the end zone already restricts to the aft end.
+    float facingAft = smoothstep(0.2, 0.8, abs(dot(n, axis)));
+    return endZone * (0.35 + 0.65 * facingAft);
+}
+
 void main()
 {
     vec3 n = normalize(vNormal);
@@ -102,10 +122,17 @@ void main()
             normalBlend * 0.20
         );
 
+    float thrust = clamp(uThrust01, 0.0, 1.0);
+    float pad = thrust > 0.001 ? nozzlePad(n, vWorldPos) : 0.0;
+    // Glow grows with thrust; at high thrust a white-hot core appears.
+    float glowAmount = pad * pow(thrust, 0.8);
+    vec3 hot = mix(vec3(1.0, 0.55, 0.22), vec3(1.0, 0.97, 0.9), smoothstep(0.55, 1.0, thrust));
+
     if (uSceneStyle == 0)
     {
         // Elite Classic: opaque black hull; the light edges draw the form.
-        FragColor = vec4(vec3(0.012), 1.0);
+        // A burning nozzle is a grey-to-white plate (monochrome).
+        FragColor = vec4(vec3(0.012) + vec3(0.92) * glowAmount, 1.0);
         return;
     }
     if (uSceneStyle == 2)
@@ -117,6 +144,9 @@ void main()
         vec3 toon = distanceHullColor * (ambientColor * 0.35 + lightColor * 0.55) * band * shade * 1.25;
         if (facing < 0.16)
             toon = vec3(0.05, 0.05, 0.07);
+        // Anime: the nozzle is a flat bright cel (two steps), no gradient.
+        float cel = glowAmount > 0.66 ? 1.0 : (glowAmount > 0.2 ? 0.6 : 0.0);
+        toon = mix(toon, hot, cel);
         FragColor = vec4(pow(max(toon, vec3(0.0)), vec3(1.0 / 1.08)), 1.0);
         return;
     }
@@ -144,6 +174,9 @@ void main()
         finalColor =
             mix(softColor, finalFogColor, fogFactor);
     }
+
+    // Modern: emissive nozzle, added after fog (it is a light source).
+    finalColor += hot * glowAmount * 2.2;
 
     finalColor =
         pow(max(finalColor, vec3(0.0)), vec3(1.0 / 1.08));

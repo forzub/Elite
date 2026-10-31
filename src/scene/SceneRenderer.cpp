@@ -33,6 +33,7 @@
 
 #include "src/game/math/OrientationBasis.h"
 #include "src/game/presentation/StarSystemLabelPresentation.h"
+#include "src/game/presentation/EngineLiveTelemetryPresentation.h"
 
 #include "src/render/HUD/TextRenderer.h"
 #include <cstdio>
@@ -173,7 +174,68 @@ namespace
             const render::MeshGPU* gpu = nullptr;
             glm::mat4 mvp = glm::mat4(1.0f);
             glm::mat4 model = glm::mat4(1.0f);
+            // Surface effect "thrust": the part's aft-facing faces (the
+            // nozzle pad) glow with the executed thrust of its engine.
+            float thrust01 = 0.0f;
+            // Aft end of the part (model space): the nozzle pad region.
+            glm::vec3 aftPoint = glm::vec3(0.0f);
+            float padDepth = 0.0f;
         };
+
+        // Executed thrust of the engine slot owning a mesh part (semantic
+        // binding: descriptor module meshPartIds -> physicalControl slot).
+        float partThrust01(const ClientShipState& ship, const std::string& partId)
+        {
+            if (!ship.descriptor)
+                return 0.0f;
+            const auto& desc = *ship.descriptor;
+            const auto indexIn = [](const std::vector<std::string>& ids, const std::string& id) {
+                const auto it = std::find(ids.begin(), ids.end(), id);
+                return it == ids.end() ? -1 : static_cast<int>(it - ids.begin());
+            };
+            for (const auto& module : desc.modules)
+            {
+                if (std::find(module.meshPartIds.begin(), module.meshPartIds.end(), partId) == module.meshPartIds.end())
+                    continue;
+                // Engine slot: installed physical-control slot first, else the
+                // main-propulsion order (legacy Newtonian executor reports
+                // delivered thrust per aft main engine in that order).
+                int slot = indexIn(desc.physicalControl.slotModuleIds, module.moduleId);
+                if (slot < 0)
+                    slot = indexIn(desc.mainPropulsion.aftEngineModuleIds, module.moduleId);
+                if (slot < 0 && module.zone == game::damage::HitZoneType::Engine)
+                {
+                    // A visual engine whose installed topology drives it through
+                    // a mesh-less (virtual) aft main motor, e.g. Newtonian-I's
+                    // ship_newtonian_i_main_center: glow with that motor.
+                    for (const auto& aftId : desc.mainPropulsion.aftEngineModuleIds)
+                    {
+                        const bool hasVisual = std::any_of(desc.modules.begin(), desc.modules.end(),
+                            [&](const auto& m) { return m.moduleId == aftId && !m.meshPartIds.empty(); });
+                        const int aftSlot = indexIn(desc.physicalControl.slotModuleIds, aftId);
+                        if (!hasVisual && aftSlot >= 0)
+                        {
+                            slot = aftSlot;
+                            break;
+                        }
+                    }
+                }
+                if (slot < 0)
+                    continue; // a structural module listing the same part
+                // DEV: ELITE_DEV_FORCE_THRUST01=<0..1> shows the nozzle glow
+                // without flying (style captures).
+                static const float forced = [] {
+                    const char* v = std::getenv("ELITE_DEV_FORCE_THRUST01");
+                    return v && *v ? static_cast<float>(std::atof(v)) : -1.0f;
+                }();
+                if (forced >= 0.0f)
+                    return forced;
+                const auto live = game::presentation::readEngineMotorLiveView(
+                    ship.transform.motion, static_cast<std::size_t>(slot), 1.0);
+                return static_cast<float>(live.thrust01);
+            }
+            return 0.0f;
+        }
 
 
 
@@ -304,10 +366,25 @@ namespace
             // Важно: сначала все fill-проходы всех деталей пишут depth.
             // Только после этого рисуем edges. Иначе внутренние ребра двигателей/рам
             // успевают попасть в кадр до того, как обшивка закрыла их depth-буфером.
+            const GLint thrustLoc = fillShader ? glGetUniformLocation(fillShader, "uThrust01") : -1;
+            const GLint thrustAxisLoc = fillShader ? glGetUniformLocation(fillShader, "uThrustAxis") : -1;
+            const GLint thrustPlaneLoc = fillShader ? glGetUniformLocation(fillShader, "uThrustPlane") : -1;
             for (const QueuedMeshDraw& draw : draws)
             {
                 if (!draw.gpu)
                     continue;
+
+                if (thrustLoc >= 0)
+                {
+                    // Logical +Z = aft: the nozzle pad faces it.
+                    const glm::vec3 aft = glm::normalize(glm::mat3(draw.model) * glm::vec3(0.0f, 0.0f, 1.0f));
+                    const glm::vec3 aftWorld = glm::vec3(draw.model * glm::vec4(draw.aftPoint, 1.0f));
+                    const float depthWorld = draw.padDepth * glm::length(glm::vec3(draw.model[2]));
+                    glUseProgram(fillShader);
+                    glUniform1f(thrustLoc, draw.thrust01);
+                    glUniform3f(thrustAxisLoc, aft.x, aft.y, aft.z);
+                    glUniform2f(thrustPlaneLoc, glm::dot(aft, aftWorld), std::max(depthWorld, 1.0e-3f));
+                }
 
                 meshRenderer.draw(
                     *draw.gpu,
@@ -1146,6 +1223,7 @@ void SceneRenderer::prepareScene(
                 {
                     if (ship.hiddenPartIds.find(part.id) != ship.hiddenPartIds.end())
                         continue;
+                    const float partThrust = partThrust01(ship, part.id);
 
                     const auto& gpuPart =
                         gpuAssembly.forPart(
@@ -1163,6 +1241,7 @@ void SceneRenderer::prepareScene(
                     item.boundCenter = part.boundCenter;
                     item.boundHalfSize = part.boundHalfSize;
                     item.lodSwitchDistance = ship.assembly->lodSwitchDistance;
+                    item.thrust01 = partThrust;
 
                     prepared.realShipMeshes.push_back(item);
                 }
@@ -2379,7 +2458,10 @@ profileAfterSetupMs = renderProfileNowMs();
                 QueuedMeshDraw{
                     gpu,
                     mvp,
-                    item.model
+                    item.model,
+                    item.thrust01,
+                    item.boundCenter + glm::vec3(0.0f, 0.0f, item.boundHalfSize.z),
+                    0.3f * item.boundHalfSize.z
                 }
             );
 

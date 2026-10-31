@@ -70,6 +70,10 @@ struct PreparedScene
         glm::vec3 boundHalfSize = glm::vec3(1.0f);
 
         float lodSwitchDistance = 0.0f;
+
+        // Engine nozzle glow: executed thrust of the engine slot this part
+        // belongs to (descriptor module -> physical-control slot), 0 = none.
+        float thrust01 = 0.0f;
     };
 
 

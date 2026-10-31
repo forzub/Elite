@@ -1,0 +1,1387 @@
+{
+ "schema": "elite.colonization_lab.world.v1",
+ "note": "Colonies, hyper-era outposts, beacon network, relation anchors, jump chronology and the Earth-3126 anchor. pop_3126 values are CANON TARGETS: the lab fits a growth path to them and flags implausible implied growth instead of silently overriding them.",
+ "colonies": [
+  {
+   "id": "tau_ceti_cognium",
+   "name": "Новый Шанхай",
+   "polity": "Когниум",
+   "system": 8,
+   "founders": [
+    "MAYFLOWER-2",
+    "GENESIS-1",
+    "TRADERS-GUILD-1"
+   ],
+   "founded": 2233,
+   "pop_3126": 2800000,
+   "regime_3126": "technocratic_meritocracy",
+   "hyper_year": 2750,
+   "bias": {
+    "research": 30,
+    "electronics": 25,
+    "shipbuilding": 10,
+    "extraction": -15
+   },
+   "assets": [
+    {
+     "id": "beacon_authority",
+     "type": "jump_infrastructure",
+     "name": "Управление Маяков и фабрика ядер прыжка «Сычёвник»",
+     "importance": 1.0,
+     "good": "drive_cores"
+    },
+    {
+     "id": "ns_fab",
+     "type": "electronics_fab",
+     "name": "Фабы Кольца Основателей",
+     "importance": 0.8,
+     "good": "electronics"
+    },
+    {
+     "id": "hyperion_yards",
+     "type": "shipyard",
+     "name": "Верфь «Гиперион»",
+     "importance": 0.8,
+     "good": "hulls"
+    },
+    {
+     "id": "ns_exchange",
+     "type": "logistics_hub",
+     "name": "Орбитальная биржа Нового Шанхая",
+     "importance": 0.5,
+     "good": null
+    }
+   ],
+   "problems": [
+    "система почти пуста: импорт воды, летучих и металлов",
+    "закрытость меритократической элиты",
+    "зависимость от концессий GJ 876 и финансов Керна"
+   ],
+   "culture_drift": {
+    "say_no": 5,
+    "formalism": -10,
+    "status_display": 5
+   },
+   "culture_drift_reason": "500 лет меритократии: место по полезности, процедура — помеха"
+  },
+  {
+   "id": "proxima_outpost",
+   "name": "Красный Форпост",
+   "polity": "Сварог",
+   "system": 60,
+   "founders": [
+    "SVAROG-1"
+   ],
+   "founded": 2150,
+   "pop_3126": 890000,
+   "regime_3126": "security_oligarchy",
+   "hyper_year": null,
+   "hyper_note": "отказались от лицензии Конвенции Маяков (2850); транзит покупают у кланов; к Солу — досветовая линия 4.2 св. года",
+   "bias": {
+    "military": 20,
+    "bio": 15
+   },
+   "assets": [
+    {
+     "id": "svarog_fortress",
+     "type": "fortress",
+     "name": "Орбитальная крепость «Сварог»",
+     "importance": 0.9,
+     "good": null
+    },
+    {
+     "id": "acen_farms",
+     "type": "food_habitat",
+     "name": "Агрокупола Alpha Centauri B l",
+     "importance": 0.8,
+     "good": "food"
+    },
+    {
+     "id": "proxima_l_gas",
+     "type": "gas_platform",
+     "name": "Газовые платформы Proxima l",
+     "importance": 0.6,
+     "good": "he3"
+    },
+    {
+     "id": "proxima_d_mines",
+     "type": "mine",
+     "name": "Шахты Proxima Cen d",
+     "importance": 0.5,
+     "good": "metals"
+    }
+   ],
+   "problems": [
+    "ближайший к Земле сосед",
+    "вне сети маяков",
+    "двоевластие русско-индийских кланов по Пакту 2145"
+   ]
+  },
+  {
+   "id": "gj832_tianhe",
+   "name": "Тяньхэ (Небесная Река)",
+   "polity": "Тяньхэ",
+   "system": 12,
+   "founders": [
+    "TIANHE-1"
+   ],
+   "founded": 2288,
+   "pop_3126": 4200000,
+   "regime_3126": "party_technocracy",
+   "hyper_year": 2785,
+   "bias": {
+    "manufacturing": 20,
+    "metallurgy": 15,
+    "bio": 10
+   },
+   "assets": [
+    {
+     "id": "gj832b_gas",
+     "type": "gas_platform",
+     "name": "Платформы GJ 832 b",
+     "importance": 0.9,
+     "good": "he3"
+    },
+    {
+     "id": "tianhe_yards",
+     "type": "shipyard",
+     "name": "Массовые верфи Тяньхэ",
+     "importance": 0.8,
+     "good": "hulls"
+    },
+    {
+     "id": "tianhe_refinery",
+     "type": "refinery",
+     "name": "Комбинат GJ 832 b I",
+     "importance": 0.7,
+     "good": "metals"
+    },
+    {
+     "id": "cordon_fleet",
+     "type": "fortress",
+     "name": "Флот кордона «Филоморфоз»",
+     "importance": 0.5,
+     "good": null
+    }
+   ],
+   "problems": [
+    "подозрение в использовании симбионта Гайи (биопацификация)",
+    "крупнейшее население — крупнейшая потребность в летучих",
+    "старая обида на Гайю-Прим и Синь Хэ"
+   ],
+   "culture_drift": {
+    "grievance_memory": 8,
+    "order_love": 6,
+    "outsider_trust": -6
+   },
+   "culture_drift_reason": "память чистки 2145 и голода 2180; 600 лет стражи карантина"
+  },
+  {
+   "id": "gj832_gaia_zone",
+   "name": "Зона «Филоморфоз»",
+   "polity": "Вердензальб (остатки Гайи-Прим)",
+   "system": 12,
+   "founders": [
+    "GREEN-ARK-1"
+   ],
+   "founded": 2270,
+   "pop_3126": 45000,
+   "regime_3126": "none_quiet",
+   "hyper_year": null,
+   "economic_actor": false,
+   "bias": {},
+   "assets": [],
+   "problems": [
+    "карантин",
+    "живые «тихие» за кордоном"
+   ]
+  },
+  {
+   "id": "lalande_hellas",
+   "name": "Новая Эллада / Агора",
+   "polity": "Агор-Прим",
+   "system": 4,
+   "founders": [
+    "HERACLES-1"
+   ],
+   "founded": 2197,
+   "pop_3126": 1500000,
+   "regime_3126": "shareholder_agora",
+   "hyper_year": 2800,
+   "bias": {
+    "research": 15,
+    "manufacturing": 5
+   },
+   "assets": [
+    {
+     "id": "agora",
+     "type": "logistics_hub",
+     "name": "Агора — нейтральный порт и биржа",
+     "importance": 1.0,
+     "good": null
+    },
+    {
+     "id": "lalande_j_gas_h",
+     "type": "gas_platform",
+     "name": "Платформы Lalande 21185 j (эллинская доля)",
+     "importance": 0.6,
+     "good": "he3"
+    },
+    {
+     "id": "academy",
+     "type": "research",
+     "name": "Академия Новой Эллады",
+     "importance": 0.5,
+     "good": null
+    }
+   ],
+   "problems": [
+    "бедная система (вода 0.06)",
+    "напряжённый мир с Новой Меккой",
+    "жизнь с транзита"
+   ],
+   "culture_drift": {
+    "outsider_trust": 10,
+    "hospitality": 5
+   },
+   "culture_drift_reason": "Агора: живут с чужих"
+  },
+  {
+   "id": "lalande_mecca",
+   "name": "Новая Мекка",
+   "polity": "Ильм-аль-Нуджум",
+   "system": 4,
+   "founders": [
+    "AL-QUDS-1"
+   ],
+   "founded": 2243,
+   "pop_3126": 1800000,
+   "regime_3126": "scholar_theocracy",
+   "hyper_year": 2800,
+   "bias": {
+    "research": 25,
+    "electronics": 10
+   },
+   "assets": [
+    {
+     "id": "rasad",
+     "type": "research",
+     "name": "Обсерватория-вычислитель «Расад»",
+     "importance": 0.8,
+     "good": null
+    },
+    {
+     "id": "lalande_j_gas_m",
+     "type": "gas_platform",
+     "name": "Платформы Lalande 21185 j (доля Мекки)",
+     "importance": 0.6,
+     "good": "he3"
+    },
+    {
+     "id": "mecca_farms",
+     "type": "food_habitat",
+     "name": "Сады Lalande 21185 g",
+     "importance": 0.5,
+     "good": "food"
+    }
+   ],
+   "problems": [
+    "хронический импорт воды",
+    "напряжённый мир с Элладой",
+    "собственная математика прыжка — вне стандарта Когниума"
+   ]
+  },
+  {
+   "id": "eps_eri_harmony",
+   "name": "Цветущая Гармония",
+   "polity": "Синь Хэ",
+   "system": 9,
+   "founders": [
+    "CELESTIAL-DESTINY-1",
+    "HOMEWARD-1"
+   ],
+   "founded": 2212,
+   "pop_3126": 3280000,
+   "regime_3126": "sage_council",
+   "hyper_year": 2760,
+   "bias": {
+    "shipbuilding": 25,
+    "metallurgy": 20,
+    "manufacturing": 15,
+    "extraction": 10
+   },
+   "assets": [
+    {
+     "id": "eri_ice",
+     "type": "ice_export",
+     "name": "Ледовый комплекс облака комет",
+     "importance": 0.9,
+     "good": "volatiles"
+    },
+    {
+     "id": "eri_b_gas",
+     "type": "gas_platform",
+     "name": "Платформы eps Eri b",
+     "importance": 0.9,
+     "good": "he3"
+    },
+    {
+     "id": "harmony_yards",
+     "type": "shipyard",
+     "name": "Верфи Гармонии",
+     "importance": 0.9,
+     "good": "hulls"
+    },
+    {
+     "id": "eri_b1_mines",
+     "type": "mine",
+     "name": "Рудники eps Eri b I",
+     "importance": 0.8,
+     "good": "metals"
+    },
+    {
+     "id": "relay_grid",
+     "type": "jump_infrastructure",
+     "name": "Ретрансляторная сеть (60 % межколониальной связи)",
+     "importance": 0.7,
+     "good": null
+    }
+   ],
+   "problems": [
+    "пиратский пояс у себя дома",
+    "ядра прыжка покупает у Когниума",
+    "Вольные астероиды — «свой Тайвань»"
+   ],
+   "culture_drift": {
+    "outsider_trust": 16,
+    "formalism": -8,
+    "status_display": 12,
+    "rule_bending": 8,
+    "collective_duty": -18,
+    "hardship_pride": -18
+   },
+   "culture_drift_reason": "главный экспортёр ядра и оператор ретрансляторов, богатейшая система ядра: за 900 лет «обуржуазились» (так их дразнят Тяньхэ и Твердыня); соседство с контрабандой Пояса Раздора",
+   "regime_note": "Совет Мудрецов-инженеров (actors.json Синь Хэ): «Прогресс через стабильность»; партия растворилась в инженерной меритократии"
+  },
+  {
+   "id": "eps_eri_strife",
+   "name": "Пояс Раздора / Вольные астероиды",
+   "polity": "Варпстанис",
+   "system": 9,
+   "founders": [
+    "FREE-VENTURE-1",
+    "HOMEWARD-1"
+   ],
+   "founded": 2405,
+   "pop_3126": 45000,
+   "regime_3126": "clan_contracts",
+   "hyper_year": 2865,
+   "bias": {
+    "extraction": 10,
+    "military": 5
+   },
+   "assets": [
+    {
+     "id": "strife_market",
+     "type": "black_market",
+     "name": "Чёрный рынок пояса",
+     "importance": 0.4,
+     "good": null
+    }
+   ],
+   "problems": [
+    "пиратство",
+    "война с Гармонией тлеет 550 лет"
+   ]
+  },
+  {
+   "id": "wolf359_citadel",
+   "name": "Цитадель",
+   "polity": "Скьёльдбург",
+   "system": 3,
+   "founders": [
+    "IRON-SHIELD-1"
+   ],
+   "founded": 2228,
+   "pop_3126": 650000,
+   "regime_3126": "security_oligarchy",
+   "hyper_year": 2855,
+   "hyper_note": "собственные нелицензионные приводы; гипер-торпеды",
+   "bias": {
+    "military": 40,
+    "electronics": 10,
+    "metallurgy": 10
+   },
+   "assets": [
+    {
+     "id": "bastion",
+     "type": "arsenal_shipyard",
+     "name": "Бастион — арсенал и военная верфь",
+     "importance": 1.0,
+     "good": "munitions"
+    },
+    {
+     "id": "wolf_mines",
+     "type": "mine",
+     "name": "Рудники пылевого диска",
+     "importance": 0.6,
+     "good": "metals"
+    },
+    {
+     "id": "archive_vault",
+     "type": "intel",
+     "name": "Хранилище LAST-LIGHT",
+     "importance": 0.4,
+     "good": null
+    }
+   ],
+   "problems": [
+    "нет воды и летучих (0.03)",
+    "травма IRON-SHIELD-2",
+    "нейтралитет продаётся за ресурсы"
+   ],
+   "culture_drift": {
+    "outsider_trust": -15,
+    "grievance_memory": 10,
+    "gallows_humor": -10
+   },
+   "culture_drift_reason": "травма IRON-SHIELD-2: о ней не шутят"
+  },
+  {
+   "id": "gj581_europa",
+   "name": "Новая Европа",
+   "polity": "Рестаурос",
+   "system": 10,
+   "founders": [
+    "EUROPA-1"
+   ],
+   "founded": 2377,
+   "pop_3126": 1200000,
+   "regime_3126": "parliamentary_bureaucracy",
+   "hyper_year": 2805,
+   "bias": {
+    "research": 5
+   },
+   "assets": [
+    {
+     "id": "registry",
+     "type": "legal_hub",
+     "name": "Реестр договоров и Арбитраж «Новый Брюссель»",
+     "importance": 0.9,
+     "good": null
+    },
+    {
+     "id": "gj581i_gas",
+     "type": "gas_platform",
+     "name": "Платформы Gliese 581 i",
+     "importance": 0.5,
+     "good": "he3"
+    },
+    {
+     "id": "europa_farms",
+     "type": "food_habitat",
+     "name": "Агромодули",
+     "importance": 0.5,
+     "good": "food"
+    }
+   ],
+   "problems": [
+    "стареющее население",
+    "решения через 10 лет",
+    "протекторат над кланами Свободного мира"
+   ],
+   "culture_drift": {
+    "formalism": 5
+   },
+   "culture_drift_reason": "реестр договоров как профессия"
+  },
+  {
+   "id": "gj581_freeclans",
+   "name": "Свободные поселения",
+   "polity": "кланы Свободного мира",
+   "system": 10,
+   "founders": [
+    "FREE-WORLD-1"
+   ],
+   "founded": 2574,
+   "pop_3126": 85000,
+   "regime_3126": "clan_contracts",
+   "hyper_year": 2862,
+   "bias": {
+    "electronics": 5,
+    "shipbuilding": 5
+   },
+   "assets": [
+    {
+     "id": "open_drives",
+     "type": "black_market",
+     "name": "Мастерские нелицензионных приводов",
+     "importance": 0.5,
+     "good": "drive_cores"
+    }
+   ],
+   "problems": [
+    "утечка гипер-спецификаций",
+    "контрабанда"
+   ]
+  },
+  {
+   "id": "hd20794_hellas2",
+   "name": "Вторая Эллада",
+   "polity": "Вторая Эллада",
+   "system": 14,
+   "founders": [
+    "NEW-HELLAS-1"
+   ],
+   "founded": 2384,
+   "pop_3126": 980000,
+   "regime_3126": "corporate_democracy",
+   "hyper_year": 2775,
+   "bias": {
+    "research": 15,
+    "electronics": 10
+   },
+   "assets": [
+    {
+     "id": "hd20794d_gas",
+     "type": "gas_platform",
+     "name": "Платформы HD 20794 d",
+     "importance": 0.8,
+     "good": "he3"
+    },
+    {
+     "id": "star_university",
+     "type": "research",
+     "name": "Звёздный Университет",
+     "importance": 0.5,
+     "good": null
+    },
+    {
+     "id": "kuiper_rights_h",
+     "type": "ice_export",
+     "name": "Водные права пояса Койпера",
+     "importance": 0.6,
+     "good": "volatiles"
+    }
+   ],
+   "problems": [
+    "Война за воду 2580 не забыта",
+    "делит систему с Новой Индией"
+   ]
+  },
+  {
+   "id": "hd20794_newindia",
+   "name": "Новая Индия",
+   "polity": "Дхарма-Мандала (южная ветвь)",
+   "system": 14,
+   "founders": [
+    "DHARMA-2"
+   ],
+   "founded": 2523,
+   "pop_3126": 1100000,
+   "regime_3126": "merit_caste_republic",
+   "hyper_year": 2775,
+   "bias": {
+    "manufacturing": 15,
+    "bio": 10
+   },
+   "assets": [
+    {
+     "id": "hd20794f_gas",
+     "type": "gas_platform",
+     "name": "Платформы HD 20794 f",
+     "importance": 0.7,
+     "good": "he3"
+    },
+    {
+     "id": "newindia_works",
+     "type": "factory",
+     "name": "Сборочные кольца",
+     "importance": 0.6,
+     "good": "components"
+    }
+   ],
+   "problems": [
+    "воды меньше, чем людей",
+    "Война за воду"
+   ]
+  },
+  {
+   "id": "hd40307_maland",
+   "name": "Новая Маланд",
+   "polity": "Уджамаа-Джахи",
+   "system": 15,
+   "founders": [
+    "UHURU-2"
+   ],
+   "founded": 2542,
+   "pop_3126": 2400000,
+   "regime_3126": "council_of_chiefs",
+   "hyper_year": 2850,
+   "bias": {
+    "bio": 30,
+    "manufacturing": 10
+   },
+   "assets": [
+    {
+     "id": "maland_rings",
+     "type": "food_habitat",
+     "name": "Агрокольца Маланд («Житница»)",
+     "importance": 1.0,
+     "good": "food"
+    },
+    {
+     "id": "hd40307f_gas_m",
+     "type": "gas_platform",
+     "name": "Платформы HD 40307 f (доля Маланд)",
+     "importance": 0.6,
+     "good": "he3"
+    },
+    {
+     "id": "outer_watch",
+     "type": "fortress",
+     "name": "Внешний дозор",
+     "importance": 0.4,
+     "good": null
+    }
+   ],
+   "problems": [
+    "холодная война с Твердыней",
+    "автономный рой CD-2 во внешней системе",
+    "FINAL-ARK-1 летит сюда"
+   ],
+   "culture_drift": {
+    "collective_duty": 5,
+    "grievance_memory": 8
+   },
+   "culture_drift_reason": "память 2680"
+  },
+  {
+   "id": "hd40307_firmament",
+   "name": "Небесная Твердыня",
+   "polity": "Синь Хэ (дальняя провинция)",
+   "system": 15,
+   "founders": [
+    "CELESTIAL-DESTINY-2"
+   ],
+   "founded": 2742,
+   "pop_3126": 1800000,
+   "regime_3126": "party_technocracy",
+   "hyper_year": 2850,
+   "bias": {
+    "military": 15,
+    "metallurgy": 10
+   },
+   "assets": [
+    {
+     "id": "hd40307f_gas_f",
+     "type": "gas_platform",
+     "name": "Платформы HD 40307 f (доля Твердыни)",
+     "importance": 0.7,
+     "good": "he3"
+    },
+    {
+     "id": "firmament_base",
+     "type": "fortress",
+     "name": "Флотская база",
+     "importance": 0.7,
+     "good": null
+    },
+    {
+     "id": "firmament_mines",
+     "type": "mine",
+     "name": "Рудники пояса",
+     "importance": 0.5,
+     "good": "metals"
+    }
+   ],
+   "problems": [
+    "рост за счёт переселенцев Гармонии",
+    "обязательство перед метрополией Синь Хэ",
+    "рой собственного конвоя"
+   ],
+   "culture_drift": {
+    "outsider_trust": -10,
+    "hardship_pride": 8,
+    "power_distance": 5
+   },
+   "culture_drift_reason": "рождена в холодной войне с Маланд"
+  },
+  {
+   "id": "hd69830_verde",
+   "name": "Сельта-Верде",
+   "polity": "Сельта-Верде («Затерянный мир»)",
+   "system": 16,
+   "founders": [
+    "AMAZONIA-1"
+   ],
+   "founded": 2576,
+   "pop_3126": 1400000,
+   "regime_3126": "grandees_and_church",
+   "hyper_year": 2860,
+   "hyper_note": "первый контакт 2810 «лотерейным» прыжком",
+   "bias": {
+    "extraction": 10,
+    "bio": 10
+   },
+   "assets": [
+    {
+     "id": "verde_gas",
+     "type": "gas_platform",
+     "name": "Платформы трёх гигантов HD 69830",
+     "importance": 1.0,
+     "good": "he3"
+    },
+    {
+     "id": "verde_ice",
+     "type": "ice_export",
+     "name": "Ледовые поля облака комет",
+     "importance": 0.6,
+     "good": "volatiles"
+    }
+   ],
+   "problems": [
+    "культурный шок «мы не последние»",
+    "богатство газа против слабой промышленности",
+    "далеко (40 св. лет)"
+   ],
+   "culture_drift": {
+    "outsider_trust": 5,
+    "grievance_memory": -5,
+    "state_trust": -5
+   },
+   "culture_drift_reason": "после шока 2810: любопытство к чужим, недоверие к своим грандам, которые «знали»"
+  },
+  {
+   "id": "delta_pav_karma",
+   "name": "Новая Карма",
+   "polity": "Дхарма-Мандала (северная ветвь)",
+   "system": 22,
+   "founders": [
+    "DHARMA-1"
+   ],
+   "founded": 2361,
+   "pop_3126": 1750000,
+   "regime_3126": "caste_theocracy",
+   "hyper_year": null,
+   "hyper_note": "отказ от маяка; маяк системы держит Свободная Карма",
+   "bias": {
+    "bio": 10,
+    "research": 5
+   },
+   "assets": [
+    {
+     "id": "gene_temple",
+     "type": "research",
+     "name": "Храм Массива (криобанк генов)",
+     "importance": 0.7,
+     "good": null
+    },
+    {
+     "id": "karma_mines",
+     "type": "mine",
+     "name": "Рудники Delta Pavonis h",
+     "importance": 0.5,
+     "good": "metals"
+    }
+   ],
+   "problems": [
+    "наследственные болезни",
+    "нет гиганта — нет топлива",
+    "холодная война со Свободной Кармой"
+   ],
+   "culture_drift": {
+    "outsider_trust": -15,
+    "power_distance": 8
+   },
+   "culture_drift_reason": "изоляция и отказ от маяка"
+  },
+  {
+   "id": "delta_pav_freekarma",
+   "name": "Свободная Карма",
+   "polity": "Свободная Карма",
+   "system": 22,
+   "founders": [
+    "DHARMA-1"
+   ],
+   "founded": 2420,
+   "pop_3126": 350000,
+   "regime_3126": "exile_republic",
+   "hyper_year": 2795,
+   "bias": {
+    "manufacturing": 5
+   },
+   "assets": [
+    {
+     "id": "freekarma_beacon",
+     "type": "jump_infrastructure",
+     "name": "Маяк Дельты Павлина",
+     "importance": 0.6,
+     "good": null
+    }
+   ],
+   "problems": [
+    "луна-изгой",
+    "зависимость от Тяньхэ (7.4 св. года)"
+   ]
+  },
+  {
+   "id": "gj876_next",
+   "name": "Провидение",
+   "polity": "Культ Машины / Провидение",
+   "system": 13,
+   "founders": [
+    "NEXT-1"
+   ],
+   "founded": 2314,
+   "pop_3126": 45000,
+   "regime_3126": "machine_oracle",
+   "hyper_year": 2765,
+   "bias": {
+    "electronics": 30,
+    "research": 20,
+    "extraction": -10
+   },
+   "assets": [
+    {
+     "id": "oracle_core",
+     "type": "research",
+     "name": "Ядро «Провидца»",
+     "importance": 0.9,
+     "good": null
+    },
+    {
+     "id": "gj876_concessions",
+     "type": "gas_platform",
+     "name": "Концессии трёх гигантов GJ 876 (операторы — Когниум и Керн)",
+     "importance": 1.0,
+     "good": "he3"
+    },
+    {
+     "id": "gj876_mines",
+     "type": "mine",
+     "name": "Концессионные рудники GJ 876 b I",
+     "importance": 0.9,
+     "good": "metals"
+    }
+   ],
+   "problems": [
+    "45 тысяч человек на самом богатом сырьём мире ядра",
+    "все хотят концессий",
+    "Оракул торгуется как бог"
+   ]
+  },
+  {
+   "id": "cyg61_kern",
+   "name": "Шахта Альфа",
+   "polity": "Проспекторат Керн",
+   "system": 31,
+   "founders": [
+    "RESOURCER-1"
+   ],
+   "founded": 2355,
+   "pop_3126": 350000,
+   "regime_3126": "corporate_board",
+   "hyper_year": 2790,
+   "bias": {
+    "extraction": 5
+   },
+   "assets": [
+    {
+     "id": "kern_exchange",
+     "type": "logistics_hub",
+     "name": "Биржа и страховой дом Керна",
+     "importance": 0.9,
+     "good": null
+    },
+    {
+     "id": "cyg_b_i_gas",
+     "type": "gas_platform",
+     "name": "Платформы 61 Cyg B i",
+     "importance": 0.6,
+     "good": "he3"
+    }
+   ],
+   "problems": [
+    "своих руд почти нет — владеет чужими",
+    "кредитор половины ядра",
+    "Шахта без шахты"
+   ]
+  },
+  {
+   "id": "hd114783_hellas3",
+   "name": "Третья Эллада",
+   "polity": "Третья Эллада",
+   "system": 37,
+   "founders": [
+    "ODYSSEY-1"
+   ],
+   "founded": 3122,
+   "pop_3126": 12500,
+   "regime_3126": "litigating_city_states",
+   "hyper_year": null,
+   "bias": {},
+   "assets": [
+    {
+     "id": "odyssey_rock",
+     "type": "station_core",
+     "name": "Астероид-корабль «Одиссей»",
+     "importance": 0.5,
+     "good": null
+    }
+   ],
+   "problems": [
+    "система уже размечена заявками Керна и Когниума",
+    "8 веков устаревшей техники",
+    "Право на Возвращение"
+   ]
+  },
+  {
+   "id": "leo83_zion",
+   "name": "Святой Сион (на орбите)",
+   "polity": "Синод",
+   "system": 45,
+   "founders": [
+    "NEW-JERUSALEM-1"
+   ],
+   "founded": 3126,
+   "pop_3126": 8900,
+   "regime_3126": "synod_theocracy",
+   "hyper_year": null,
+   "bias": {},
+   "assets": [],
+   "problems": [
+    "у цели уже стоит «Золотой Город»",
+    "гипер — «врата без благодати»",
+    "лучшая агро-земля всей карты (83 Leonis B h)"
+   ]
+  }
+ ],
+ "outposts": [
+  {
+   "id": "eps_indi_field",
+   "system": 30,
+   "name": "Гелиевое поле Эпсилон Индейца",
+   "owners": [
+    "eps_eri_harmony",
+    "gj832_tianhe",
+    "tau_ceti_cognium"
+   ],
+   "pop": 30000,
+   "purpose": "He-3 (лучший индекс ядра, 0.96)",
+   "contested": true
+  },
+  {
+   "id": "gj667_ubuntu_node",
+   "system": 11,
+   "name": "Узел Убунту (ретранслятор у обломков)",
+   "owners": [
+    "tau_ceti_cognium"
+   ],
+   "pop": 2000,
+   "purpose": "маяк-связка к GJ 581 и Дельте Павлина"
+  },
+  {
+   "id": "gj892_kern",
+   "system": 23,
+   "name": "Стратегические рудники Gliese 892",
+   "owners": [
+    "cyg61_kern"
+   ],
+   "pop": 10000,
+   "purpose": "платиноиды и тугоплавкие (0.97)"
+  },
+  {
+   "id": "hd10360_relay",
+   "system": 57,
+   "name": "Реле HD 10360",
+   "owners": [
+    "hd20794_hellas2",
+    "hd40307_maland"
+   ],
+   "pop": 1500,
+   "purpose": "мост к HD 40307"
+  },
+  {
+   "id": "barnard_post",
+   "system": 2,
+   "name": "Пост прослушивания у Барнарда",
+   "owners": [
+    "wolf359_citadel"
+   ],
+   "pop": 800,
+   "purpose": "наблюдение за Солом"
+  },
+  {
+   "id": "hd114783_claims",
+   "system": 37,
+   "name": "Лагерь «Кларион»",
+   "owners": [
+    "cyg61_kern",
+    "tau_ceti_cognium"
+   ],
+   "pop": 25000,
+   "purpose": "заявки на металлы и летучие (0.96-0.97)"
+  },
+  {
+   "id": "leo83_golden_city",
+   "system": 45,
+   "name": "«Золотой Город»",
+   "owners": [
+    "cyg61_kern",
+    "tau_ceti_cognium"
+   ],
+   "pop": 6000,
+   "purpose": "разведка и агро-заявки 83 Leonis"
+  },
+  {
+   "id": "sigma2uma_expedition",
+   "system": 38,
+   "name": "Экспедиция Sigma² UMa",
+   "owners": [
+    "cyg61_kern"
+   ],
+   "pop": 3000,
+   "purpose": "лучшие металлы и стратегическое сырьё каталога"
+  }
+ ],
+ "beacons": [
+  {
+   "system": 8,
+   "year": 2755,
+   "operator": "tau_ceti_cognium"
+  },
+  {
+   "system": 9,
+   "year": 2760,
+   "operator": "eps_eri_harmony"
+  },
+  {
+   "system": 13,
+   "year": 2765,
+   "operator": "tau_ceti_cognium"
+  },
+  {
+   "system": 14,
+   "year": 2775,
+   "operator": "tau_ceti_cognium"
+  },
+  {
+   "system": 30,
+   "year": 2778,
+   "operator": "tau_ceti_cognium"
+  },
+  {
+   "system": 12,
+   "year": 2785,
+   "operator": "gj832_tianhe"
+  },
+  {
+   "system": 31,
+   "year": 2790,
+   "operator": "cyg61_kern"
+  },
+  {
+   "system": 22,
+   "year": 2795,
+   "operator": "delta_pav_freekarma"
+  },
+  {
+   "system": 4,
+   "year": 2800,
+   "operator": "lalande_hellas"
+  },
+  {
+   "system": 11,
+   "year": 2800,
+   "operator": "tau_ceti_cognium"
+  },
+  {
+   "system": 10,
+   "year": 2805,
+   "operator": "gj581_europa"
+  },
+  {
+   "system": 57,
+   "year": 2840,
+   "operator": "hd20794_hellas2"
+  },
+  {
+   "system": 15,
+   "year": 2850,
+   "operator": "hd40307_maland"
+  },
+  {
+   "system": 3,
+   "year": 2855,
+   "operator": "wolf359_citadel",
+   "unlicensed": true
+  },
+  {
+   "system": 23,
+   "year": 2880,
+   "operator": "cyg61_kern"
+  },
+  {
+   "system": 53,
+   "year": 2810,
+   "operator": "tau_ceti_cognium"
+  },
+  {
+   "system": 54,
+   "year": 2860,
+   "operator": "tau_ceti_cognium"
+  },
+  {
+   "system": 25,
+   "year": 2860,
+   "operator": "tau_ceti_cognium"
+  },
+  {
+   "system": 16,
+   "year": 2860,
+   "operator": "hd69830_verde"
+  },
+  {
+   "system": 17,
+   "year": 2905,
+   "operator": "tau_ceti_cognium",
+   "quarantined_from": 2910
+  },
+  {
+   "system": 37,
+   "year": 3040,
+   "operator": "cyg61_kern"
+  },
+  {
+   "system": 45,
+   "year": 3045,
+   "operator": "cyg61_kern"
+  },
+  {
+   "system": 41,
+   "year": 3050,
+   "operator": "tau_ceti_cognium"
+  },
+  {
+   "system": 0,
+   "year": 3112,
+   "operator": "sol_authority",
+   "unlicensed": true,
+   "note": "Земля строит собственный маяк из разобранного маяка-памятника HYPERION-1"
+  }
+ ],
+ "extra_links": [
+  {
+   "a": 60,
+   "b": 3,
+   "year": 2870,
+   "cost_factor": 2.5,
+   "note": "нелицензионная линия Сварог — Цитадель: два отказника торгуют напрямую"
+  }
+ ],
+ "max_hop_ly": [
+  [
+   2750,
+   13.0
+  ],
+  [
+   2800,
+   18.0
+  ],
+  [
+   2850,
+   26.0
+  ],
+  [
+   2950,
+   32.0
+  ]
+ ],
+ "jump_chronology": [
+  {
+   "year": 2055,
+   "event": "Компактный термоядерный реактор: дешёвая энергия, но не дешёвая масса (history.md)"
+  },
+  {
+   "year": 2155,
+   "event": "Поколение 2 Мэйфлауэра: от скуки — наука; миф «здесь заложен фундамент гипердвигателя» (01. Мэйфлауэр II)"
+  },
+  {
+   "year": 2583,
+   "event": "Академия Нового Шанхая публикует теорему о схлопывании интервала; сигнал доходит до Земли в 2595 — отсюда «изобретён в 2595» в FAREWELL-1"
+  },
+  {
+   "year": 2750,
+   "event": "HYPERION-1: первый пилотируемый прыжок Тау Кита → Сол → Тау Кита, 3 дня"
+  },
+  {
+   "year": 2752,
+   "event": "HYPERION-2: гиперпространство — среда с градиентами; без маяков прыжок — лотерея; изобретён маяк"
+  },
+  {
+   "year": 2755,
+   "event": "Маяк Тау Кита; 2760 — Эпсилон Эридана (Гармония первая получает связь, 5.5 св. года)"
+  },
+  {
+   "year": 2765,
+   "event": "Концессия GJ 876: Провидение отдаёт гиганты Когниуму в обмен на вычислительное ядро нового поколения"
+  },
+  {
+   "year": 2790,
+   "event": "Конвенция Маяков: лицензии, стандарты, инспекции. «Кордон Сола» — Земля исключена из сети"
+  },
+  {
+   "year": 2790,
+   "event": "Гипер-разведка находит обломки UBUNTU-1 в поясе GJ 667. Тел нет"
+  },
+  {
+   "year": 2810,
+   "event": "Лотерейный прыжок к HD 69830: «последние люди Вселенной» узнают, что они не последние"
+  },
+  {
+   "year": 2850,
+   "event": "Технология лицензирована всем колониям, кроме Цитадели (отказ от инспекций) и Новой Кармы (отказ от контакта); Сварог отказывается от лицензии"
+  },
+  {
+   "year": 2855,
+   "event": "Цитадель: собственные приводы и гипер-торпеды"
+  },
+  {
+   "year": 2862,
+   "event": "Кланы Свободного мира выкладывают спецификации привода «для всех»: эпоха дешёвых нелицензионных прыжков и пиратства"
+  },
+  {
+   "year": 2905,
+   "event": "Маяк у TRAPPIST-1; 2910 — две разведгруппы «остаются»; карантин"
+  },
+  {
+   "year": 2950,
+   "event": "LEGACY-1 узнаёт, что его архив устарел"
+  },
+  {
+   "year": 3040,
+   "event": "Керн и Когниум ставят экспедиционные маяки в глубоком кусте (HD 114783, 83 Leonis, HD 104067) — без связи с ядром (разрыв > 32 св. лет)"
+  },
+  {
+   "year": 3112,
+   "event": "Земля запускает собственный маяк и флотскую программу"
+  },
+  {
+   "year": 3122,
+   "event": "ODYSSEY-1 прибывает к HD 114783"
+  },
+  {
+   "year": 3126,
+   "event": "NEW-JERUSALEM-1 прибывает к 83 Leonis. Земля объявляет «Возвращение»"
+  }
+ ],
+ "relations_anchor": [
+  {
+   "a": "hd20794_hellas2",
+   "b": "hd20794_newindia",
+   "grievance": 55,
+   "since": 2580,
+   "text": "Война за воду 2580"
+  },
+  {
+   "a": "hd40307_maland",
+   "b": "hd40307_firmament",
+   "grievance": 75,
+   "since": 2680,
+   "text": "Стычка 2680 (~1 000 погибших), холодная война"
+  },
+  {
+   "a": "lalande_hellas",
+   "b": "lalande_mecca",
+   "grievance": 30,
+   "since": 2243,
+   "text": "Одна бедная система на двоих"
+  },
+  {
+   "a": "eps_eri_harmony",
+   "b": "eps_eri_strife",
+   "grievance": 70,
+   "since": 2575,
+   "text": "Беглецы HOMEWARD-1 и Пояс Раздора"
+  },
+  {
+   "a": "delta_pav_karma",
+   "b": "delta_pav_freekarma",
+   "grievance": 80,
+   "since": 2420,
+   "text": "Исход нечистых"
+  },
+  {
+   "a": "gj832_tianhe",
+   "b": "gj832_gaia_zone",
+   "grievance": 40,
+   "since": 2510,
+   "text": "Карантин"
+  },
+  {
+   "a": "wolf359_citadel",
+   "b": "tau_ceti_cognium",
+   "grievance": 45,
+   "since": 2855,
+   "text": "Цитадель подозревает, что гипер «принёс что-то» и связан с IRON-SHIELD-2; отказ от инспекций"
+  },
+  {
+   "a": "wolf359_citadel",
+   "b": "lalande_mecca",
+   "grievance": 25,
+   "since": 2355,
+   "text": "В списке подозреваемых по IRON-SHIELD-2"
+  },
+  {
+   "a": "gj581_europa",
+   "b": "gj581_freeclans",
+   "grievance": 35,
+   "since": 2620,
+   "text": "Протекторат"
+  },
+  {
+   "a": "tau_ceti_cognium",
+   "b": "gj832_tianhe",
+   "grievance": 20,
+   "since": 2790,
+   "text": "Старая обида «американцы взяли Тау Кита»; лицензионная рента"
+  },
+  {
+   "a": "eps_eri_harmony",
+   "b": "gj832_tianhe",
+   "grievance": 25,
+   "since": 2790,
+   "text": "Две китайские линии: «правильный» Китай спорит о том, кто правильнее"
+  },
+  {
+   "a": "hd114783_hellas3",
+   "b": "cyg61_kern",
+   "grievance": 50,
+   "since": 3122,
+   "text": "Заявки на систему, которую Одиссей застолбил в 2290 по земному праву"
+  },
+  {
+   "a": "leo83_zion",
+   "b": "cyg61_kern",
+   "grievance": 40,
+   "since": 3126,
+   "text": "«Золотой Город» у обетованной земли"
+  },
+  {
+   "a": "proxima_outpost",
+   "b": "tau_ceti_cognium",
+   "grievance": 30,
+   "since": 2850,
+   "text": "Отказ от лицензии — изоляция"
+  }
+ ],
+ "earth_3126": {
+  "id": "sol_authority",
+  "name": "Солнечная Администрация (Sol Authority)",
+  "system": 0,
+  "pop": 5500000000,
+  "runtime_anchor": "src/assets/data/initial_world_state.json: system 0 jurisdiction 'Sol Authority', player starts at Earth Orbital Hub",
+  "status": "proposal_for_author"
+ }
+}

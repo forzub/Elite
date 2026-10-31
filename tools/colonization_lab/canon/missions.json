@@ -1,0 +1,702 @@
+{
+  "schema": "elite.colonization_lab.missions.v1",
+  "note": "Canonical mission passports after the 2026-11 reconciliation (D:/tmp/COLONIZATION_CANON_RECONCILIATION.md). System ids are PHYSICAL catalog ids (src/assets/data/galaxy_details). 'authored' keeps the superseded value where the canon was corrected. Anchors are written history: the lab must reproduce them and may only fill the gaps between them.",
+  "motive_keys": ["prestige","geopolitical_race","rival_claim_fear","internal_problems","demographic_pressure","export_inconvenient","debt_penal_programme","frontier_myth","state_contract","corruption","elite_capital_flight","civilisational_insurance","ideology","religion","scientific_vanity","name_in_history","stupid"],
+  "missions": [
+    {
+      "id": "MAYFLOWER-2", "aliases": ["Мэйфлауэр II", "MAYFLOWER-2"], "wave": "I", "canon_status": "canon",
+      "sponsor": "US syndicate: heirs of private launch companies, crypto-oligarchs + NASA + Pentagon",
+      "cultures": {"american_frontier": 0.85, "mexican": 0.15},
+      "launch_year": 2088, "source_system": 0, "target_system": 8, "final_system": 8,
+      "population": 25000, "cryo_share": 0.40, "awake_watch": 1800, "watch_years": 16, "safe_cycles": 2,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 700, "dry": 200},
+      "cohorts": {"patricians": {"share": 0.24, "awake": 0.15}, "command": {"share": 0.03, "awake": 1.0}, "engineers": {"share": 0.20, "awake": 0.8},
+                  "workers": {"share": 0.23, "awake": 0.6}, "coerced": {"share": 0.30, "awake": 0.5, "culture": {"american_frontier": 0.6, "mexican": 0.4}}},
+      "motives": {"elite_capital_flight": 0.30, "geopolitical_race": 0.20, "prestige": 0.15, "frontier_myth": 0.15, "export_inconvenient": 0.10, "corruption": 0.05, "stupid": 0.05},
+      "dark_comedy": "Хартия «Договор Свободы» запрещала принуждение вне контракта; поэтому всё, включая воздух, было оформлено контрактом.",
+      "anchors": [
+        {"year": 2115, "type": "class_conflict", "text": "Бунт контрактников сектора D; Совет Инвесторов посылает охрану", "deaths": 800, "effects": {"workers.grievance": 25, "security.power": 10}},
+        {"year": 2156, "type": "reform", "text": "Восстание жилого сектора C: 3 000 рабочих держат гидропонику 6 месяцев; контрактники получают 5 % акций", "deaths": 700, "effects": {"workers.power": 15, "workers.grievance": -20}},
+        {"year": 2180, "type": "sabotage_alleged", "text": "Великий крио-сбой блока 7: 2 500 погибших во сне. Официально — саботаж каторжников; скрытая причина — Совет урезал бюджет запчастей контуров охлаждения в 2171", "deaths": 2500, "effects": {"coerced.grievance": 30, "engineers.power": 10}, "hidden_truth": "deferred_maintenance"},
+        {"year": 2210, "type": "democratisation", "text": "Совет Рождённых в Пути (1 800 совершеннолетних корабельных)", "effects": {"engineers.power": 10, "patricians.power": -10}},
+        {"year": 2233, "type": "arrival", "text": "Тау Кита: высадка невозможна (Tau Ceti e — 1036 K); колония строится как орбитальные кольца у пояса", "pop_after": 18500}
+      ],
+      "arrival_regime": "technocratic_meritocracy",
+      "fate": {"status": "arrived", "ship": "dismantled", "ship_note": "цилиндры стали Кольцом Основателей («Мэйфлауэр-Ринг») на орбите Tau Ceti i", "findable": true},
+      "colony": "tau_ceti_cognium", "sources": ["01. Мэйфлауэр II.md", "fate.md §1", "generation ships.md (A)"]
+    },
+    {
+      "id": "GENESIS-1", "aliases": ["GENESIS-1", "SpaceArk", "GENESIS-2 (merged)"], "wave": "I", "canon_status": "provisional",
+      "sponsor": "SpaceArk consortium: Singapore + Shanghai diaspora capital + Pacific tech, engineers who left both Beijing and Washington",
+      "cultures": {"chinese_diaspora": 0.6, "malay_indonesian": 0.15, "american_frontier": 0.25},
+      "launch_year": 2120, "source_system": 0, "target_system": 8, "final_system": 8,
+      "population": 18000, "cryo_share": 0.55, "awake_watch": 1200, "watch_years": 15, "safe_cycles": 2,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 22, "dry": 18},
+      "cohorts": {"patricians": {"share": 0.15, "awake": 0.1}, "command": {"share": 0.04, "awake": 1.0}, "engineers": {"share": 0.45, "awake": 0.5},
+                  "scientists": {"share": 0.10, "awake": 0.4}, "workers": {"share": 0.26, "awake": 0.3}},
+      "motives": {"elite_capital_flight": 0.30, "rival_claim_fear": 0.20, "scientific_vanity": 0.15, "civilisational_insurance": 0.15, "name_in_history": 0.10, "stupid": 0.10},
+      "dark_comedy": "Консорциум купил у Мэйфлауэра «право второго причала» — по документу, который американский Совет Инвесторов считал шуткой.",
+      "anchors": [
+        {"year": 2263, "type": "arrival", "text": "Прибытие к Тау Кита; «Старшие семьи» Мэйфлауэра против «Новой крови»", "pop_after": 15800},
+        {"year": 2270, "type": "merger", "text": "Слияние двух колоний; главный хаб GENESIS-1 даёт имя городу — «Новый Шанхай»"}
+      ],
+      "arrival_regime": "technocratic_meritocracy",
+      "fate": {"status": "arrived", "ship": "station_core", "ship_note": "ядро станции «Новый Шанхай»", "findable": true},
+      "colony": "tau_ceti_cognium", "sources": ["generation_ships.json (GENESIS-1, GENESIS-2)", "06. CELESTIAL-DESTINY-1.md (упоминание)", "actors.json Когниум"]
+    },
+    {
+      "id": "SVAROG-1", "aliases": ["Сварог"], "wave": "I", "canon_status": "canon",
+      "sponsor": "Eurasian cluster: Russia + India + Kazakhstan + Uzbekistan",
+      "cultures": {"russian": 0.4, "indian": 0.35, "central_asian": 0.25},
+      "launch_year": 2095, "source_system": 0, "target_system": 60, "final_system": 60,
+      "population": 15000, "cryo_share": 0.35, "awake_watch": 1500, "watch_years": 12, "safe_cycles": 2,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 400, "dry": 115},
+      "cohorts": {"patricians": {"share": 0.23, "awake": 0.3}, "command": {"share": 0.03, "awake": 1.0, "culture": {"russian": 1.0}},
+                  "engineers": {"share": 0.17, "awake": 0.8, "culture": {"russian": 0.6, "indian": 0.4}}, "workers": {"share": 0.30, "awake": 0.6},
+                  "coerced": {"share": 0.27, "awake": 0.5, "culture": {"indian": 0.6, "central_asian": 0.4}}},
+      "motives": {"geopolitical_race": 0.30, "demographic_pressure": 0.25, "prestige": 0.15, "export_inconvenient": 0.15, "corruption": 0.10, "stupid": 0.05},
+      "dark_comedy": "«Мост между мирами»: три сектора с тремя разными календарями праздников и одним реактором.",
+      "anchors": [
+        {"year": 2112, "type": "sabotage_alleged", "text": "Сбой криокапсул российского сегмента, 1 200 погибших; виновной объявлена индийская фракция", "deaths": 1200, "effects": {"*.grievance": 20, "cohesion": -15}},
+        {"year": 2135, "type": "clan_fragmentation", "text": "Раскол элит: убийства отключением капсул", "deaths": 600, "effects": {"patricians.cohesion": -25}},
+        {"year": 2145, "type": "reconciliation", "text": "Пакт Выживания: власть 50/50, военные технологии — приоритет", "effects": {"security.power": 15, "*.grievance": -10}},
+        {"year": 2150, "type": "arrival", "text": "Проксима: орбитальные и подповерхностные поселения у Proxima Cen d", "pop_after": 9800}
+      ],
+      "arrival_regime": "security_oligarchy",
+      "fate": {"status": "arrived", "ship": "orbital_fortress", "ship_note": "корпус — орбитальная крепость «Сварог» над Proxima Cen d", "findable": true},
+      "colony": "proxima_outpost", "sources": ["02. SVAROG-1.md", "fate.md §2"]
+    },
+    {
+      "id": "TIANHE-1", "aliases": ["Тянь Хэ"], "wave": "I", "canon_status": "canon",
+      "sponsor": "PRC state project: state corporations, CNSA, Party",
+      "cultures": {"chinese_state": 1.0},
+      "launch_year": 2098, "source_system": 0, "target_system": 12, "final_system": 12,
+      "population": 35000, "cryo_share": 0.45, "awake_watch": 3000, "watch_years": 20, "safe_cycles": 2,
+      "birth_policy": "quota_awake", "claimed_mass_mt": {"full": 900, "dry": 300},
+      "cohorts": {"patricians": {"share": 0.23, "awake": 0.5}, "command": {"share": 0.03, "awake": 1.0}, "engineers": {"share": 0.30, "awake": 0.6},
+                  "workers": {"share": 0.21, "awake": 0.5}, "settlers": {"share": 0.23, "awake": 0.4}},
+      "motives": {"geopolitical_race": 0.35, "civilisational_insurance": 0.20, "prestige": 0.20, "state_contract": 0.15, "demographic_pressure": 0.10},
+      "dark_comedy": "Ответ на «Мэйфлауэр» утверждался как пятилетний план; план выполнили за семь лет и отчитались о досрочном выполнении.",
+      "anchors": [
+        {"year": 2145, "type": "purge", "text": "Великая чистка криосна: 800 «неблагонадёжных» отключены («экономия ресурсов»)", "deaths": 800, "effects": {"settlers.grievance": 25, "state_trust": -10}},
+        {"year": 2180, "type": "shortage", "text": "Кризис гидропоники: грибок, рацион 1 200 ккал", "deaths": 300, "effects": {"thrift": 10, "hardship_pride": 10}},
+        {"year": 2200, "type": "generation_shift", "text": "Молодёжная Лига Гармонии"},
+        {"year": 2250, "type": "reform", "text": "Реформа Данвэй: автономия трудовых коллективов", "effects": {"workers.power": 10, "engineers.power": 10}},
+        {"year": 2288, "type": "arrival", "text": "GJ 832: в системе уже 18 лет живёт Гайя-Прим", "pop_after": 28400}
+      ],
+      "arrival_regime": "party_technocracy",
+      "fate": {"status": "arrived", "ship": "station_core", "ship_note": "три цилиндра — ядро станции «Тяньхэ» у GJ 832 b", "findable": true},
+      "colony": "gj832_tianhe", "sources": ["03. TIANHE-1.md", "fate.md §3"]
+    },
+    {
+      "id": "UBUNTU-1", "aliases": ["Убунту", "Intercontinental Ark of Cooperative Destiny", "The Spine"], "wave": "I", "canon_status": "canon",
+      "sponsor": "African Union + EU (Nigeria, Kenya, Ethiopia, Rwanda + Germany, France, Italy)",
+      "cultures": {"west_african": 0.35, "east_african": 0.30, "eu_bureaucratic": 0.35},
+      "launch_year": 2105, "source_system": 0, "target_system": 11, "final_system": null,
+      "population": 25000, "cryo_share": 0.30, "awake_watch": 2500, "watch_years": 15, "safe_cycles": 2,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 200, "dry": 55},
+      "cohorts": {"patricians": {"share": 0.20, "awake": 0.4, "culture": {"eu_bureaucratic": 0.7, "west_african": 0.3}},
+                  "command": {"share": 0.03, "awake": 1.0, "culture": {"eu_bureaucratic": 1.0}},
+                  "engineers": {"share": 0.15, "awake": 0.8, "culture": {"eu_bureaucratic": 0.6, "east_african": 0.4}},
+                  "workers": {"share": 0.38, "awake": 0.7, "culture": {"west_african": 0.5, "east_african": 0.5}},
+                  "coerced": {"share": 0.24, "awake": 0.5, "culture": {"west_african": 0.6, "east_african": 0.4}}},
+      "motives": {"ideology": 0.25, "demographic_pressure": 0.25, "geopolitical_race": 0.20, "export_inconvenient": 0.15, "prestige": 0.10, "stupid": 0.05},
+      "dark_comedy": "Официальный девиз «Я есть, потому что мы есть»; неофициальный — «Мы есть, потому что кто-то крутит кольца».",
+      "anchors": [
+        {"year": 2178, "type": "class_conflict", "text": "Восстание африканских контрактников против перераспределения ресурсов", "deaths": 1500, "effects": {"workers.grievance": 30, "coerced.grievance": 20}},
+        {"year": 2210, "type": "navigation_failure", "text": "Отклонение на 3°, коррекция 8 лет съела резерв топлива"},
+        {"year": 2250, "type": "schism", "text": "«Неизвестные сигналы» из глубины системы; экипаж разделился"},
+        {"year": 2285, "type": "lost", "text": "Последний сигнал: «Мы видим огни. Они не наши. Они ждут...»"},
+        {"year": 2790, "type": "found", "text": "Гипер-разведка Когниума находит обломки в поясе GJ 667. Тел нет."}
+      ],
+      "fate": {"status": "destroyed_unexplained", "ship": "debris_field", "ship_note": "обломки колец «Цитадель» и «Общий»; кольцо «Кузница» среди обломков не найдено", "findable": true, "author_knows": false},
+      "colony": null, "sources": ["04. UBUNTU-1.md", "fate.md §24", "GENERATION_SHIP_MYSTERY_HORROR_REFERENCE.md"]
+    },
+    {
+      "id": "HERACLES-1", "aliases": ["Геракл"], "wave": "I", "canon_status": "canon",
+      "sponsor": "Mediterranean consortium (Greece, Italy, Spain, Cyprus, Malta): shipowners + EU regional funds",
+      "cultures": {"greek": 0.4, "italian": 0.3, "iberian": 0.15, "maghrebi": 0.15},
+      "launch_year": 2112, "source_system": 0, "target_system": 4, "final_system": 4,
+      "population": 12000, "cryo_share": 0.30, "awake_watch": 1200, "watch_years": 12, "safe_cycles": 2,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 120, "dry": 50},
+      "cohorts": {"patricians": {"share": 0.25, "awake": 0.3}, "command": {"share": 0.03, "awake": 1.0, "culture": {"greek": 1.0}},
+                  "engineers": {"share": 0.22, "awake": 0.8}, "workers": {"share": 0.29, "awake": 0.6},
+                  "coerced": {"share": 0.21, "awake": 0.6, "culture": {"maghrebi": 0.8, "iberian": 0.2}}},
+      "motives": {"frontier_myth": 0.25, "internal_problems": 0.20, "prestige": 0.15, "corruption": 0.15, "elite_capital_flight": 0.15, "stupid": 0.10},
+      "dark_comedy": "Корабль строили, чтобы «обойти Брюссель»; половина бюджета пришла из региональных фондов Брюсселя.",
+      "anchors": [
+        {"year": 2145, "type": "democratisation", "text": "Агора: голосование об изменении маршрута, отклонено 51/49", "effects": {"workers.power": 10}},
+        {"year": 2165, "type": "reform", "text": "Кризис идентичности: 3 места в Совете для Рождённых в Пути", "effects": {"workers.grievance": -10}},
+        {"year": 2180, "type": "generation_shift", "text": "«Звёздный диалект» становится языком корабля"},
+        {"year": 2197, "type": "arrival", "text": "Lalande 21185: поселения у Lalande 21185 g и на орбите гиганта j", "pop_after": 10200}
+      ],
+      "arrival_regime": "shareholder_agora",
+      "fate": {"status": "arrived", "ship": "station_core", "ship_note": "кольца стали первой Агорой", "findable": true},
+      "colony": "lalande_hellas", "sources": ["05. HERACLES-1.md", "fate.md §4"]
+    },
+    {
+      "id": "CELESTIAL-DESTINY-1", "aliases": ["Небесная Судьба", "Целестиал Дестини-1"], "wave": "I", "canon_status": "canon",
+      "sponsor": "PRC (second state ship) - a fast ark: 'arrive first'",
+      "cultures": {"chinese_state": 1.0},
+      "launch_year": 2125, "source_system": 0, "target_system": 9, "final_system": 9,
+      "population": 25000, "cryo_share": 0.85, "awake_watch": 700, "watch_years": 10, "safe_cycles": 2,
+      "birth_policy": "forbidden", "claimed_mass_mt": {"full": 300, "dry": 200},
+      "cohorts": {"patricians": {"share": 0.24, "awake": 0.02}, "command": {"share": 0.02, "awake": 1.0}, "engineers": {"share": 0.20, "awake": 0.06},
+                  "workers": {"share": 0.34, "awake": 0.0}, "settlers": {"share": 0.20, "awake": 0.0}},
+      "motives": {"geopolitical_race": 0.35, "rival_claim_fear": 0.25, "prestige": 0.20, "demographic_pressure": 0.10, "stupid": 0.10},
+      "dark_comedy": "«Нельзя отдать Тау Кита американцам» — поэтому полетели к Эпсилон Эридана и всю жизнь гордились, что прилетели раньше.",
+      "anchors": [
+        {"year": 2148, "type": "purge", "text": "Чистка данных: записи о 500 «неблагонадёжных» стёрты из реестра спящих", "effects": {"state_trust": -5}},
+        {"year": 2160, "type": "reform", "text": "Реформа Комитетов: 14 → 7", "effects": {"command.power": 10}},
+        {"year": 2212, "type": "arrival", "text": "Эпсилон Эридана: поселения на спутниках eps Eri b и в поясе", "pop_after": 21800, "authored": 2172}
+      ],
+      "arrival_regime": "party_technocracy",
+      "fate": {"status": "arrived", "ship": "dismantled", "ship_note": "разобран на первые станции; носовой щит «Мандала» — памятник", "findable": true},
+      "colony": "eps_eri_harmony", "sources": ["06. CELESTIAL-DESTINY-1.md", "fate.md §5", "actors.json Синь Хэ"]
+    },
+    {
+      "id": "GREEN-ARK-1", "aliases": ["Грин Арк-1", "Gaia-1"], "wave": "I", "canon_status": "canon",
+      "sponsor": "Ecological movement + foundations; hidden partner: a food-biotech conglomerate that supplied the closed-loop microbiome",
+      "cultures": {"eco_transnational": 1.0},
+      "launch_year": 2135, "source_system": 0, "target_system": 12, "final_system": 12,
+      "population": 12000, "cryo_share": 0.80, "awake_watch": 600, "watch_years": 10, "safe_cycles": 2,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 15, "dry": 12},
+      "cohorts": {"scientists": {"share": 0.17, "awake": 0.15}, "engineers": {"share": 0.58, "awake": 0.06}, "faithful": {"share": 0.25, "awake": 0.0}},
+      "motives": {"ideology": 0.40, "civilisational_insurance": 0.20, "scientific_vanity": 0.15, "name_in_history": 0.10, "corruption": 0.10, "stupid": 0.05},
+      "dark_comedy": "Чтобы в замкнутом экоцикле не было ссор, спонсор добавил в микробиом «успокаивающий» штамм. Ссор действительно стало меньше.",
+      "anchors": [
+        {"year": 2172, "type": "factional_conflict", "text": "«Чистые» блокируют биореакторы, голод; «Прагматики» берут власть силой", "deaths": 250, "effects": {"faithful.power": -15}},
+        {"year": 2270, "type": "arrival", "text": "GJ 832: сад-купола на GJ 832 b I и в поясе («Гайя-Прим»)", "pop_after": 11500, "authored": 2190},
+        {"year": 2480, "type": "ecology_failure", "text": "Нейроактивный симбионт из корабельного микробиома распространился по всем контурам: 70 % «заражены покоем»"},
+        {"year": 2500, "type": "exodus", "text": "5 000 учёных улетают на GAIA-2"},
+        {"year": 2510, "type": "quarantine", "text": "Тяньхэ объявляет зону «Филоморфоз»"}
+      ],
+      "arrival_regime": "eco_assembly",
+      "fate": {"status": "arrived_colony_quarantined", "ship": "orbit_monument", "ship_note": "корабль на орбите GJ 832 b как памятник-сад; внутри цветёт", "findable": true},
+      "colony": "gj832_gaia_zone", "sources": ["07. GREEN-ARK-1.md", "23. GAIA-2.md", "fate.md §25", "actors.json Зона Филоморфоз"]
+    },
+    {
+      "id": "DHARMA-1", "aliases": ["Дхарма-1", "Новая Карма"], "wave": "I", "canon_status": "canon",
+      "sponsor": "India: state + caste funds",
+      "cultures": {"indian": 1.0},
+      "launch_year": 2140, "source_system": 0, "target_system": 22, "final_system": 22,
+      "population": 30000, "cryo_share": 0.30, "awake_watch": 3500, "watch_years": 20, "safe_cycles": 2,
+      "birth_policy": "elite_exception", "claimed_mass_mt": {"full": 450, "dry": 350},
+      "cohorts": {"patricians": {"share": 0.17, "awake": 0.5}, "faithful": {"share": 0.05, "awake": 1.0}, "engineers": {"share": 0.15, "awake": 0.7},
+                  "workers": {"share": 0.30, "awake": 0.7}, "coerced": {"share": 0.33, "awake": 0.7}},
+      "motives": {"export_inconvenient": 0.25, "demographic_pressure": 0.20, "ideology": 0.20, "religion": 0.15, "prestige": 0.10, "corruption": 0.10},
+      "dark_comedy": "«Храмовый массив» генов охраняли жрецы; по описи в нём были в основном семьи жрецов.",
+      "anchors": [
+        {"year": 2165, "type": "class_conflict", "text": "Бунт неприкасаемых: 2 000 каторжников захватили сектор криосна", "deaths": 2000, "effects": {"coerced.grievance": 25, "security.power": 10}},
+        {"year": 2183, "type": "class_conflict", "text": "Бунт шудр: доступ к генному массиву, конец неприкасаемости; подавлен кшатриями", "deaths": 400, "effects": {"workers.grievance": 20}},
+        {"year": 2190, "type": "caste_reform", "text": "Рождённые в пути объявлены кастой «Звёздные»", "effects": {"command.power": 10}},
+        {"year": 2361, "type": "arrival", "text": "Дельта Павлина: купола у Delta Pavonis h", "pop_after": 22500, "authored": 2210},
+        {"year": 2420, "type": "exodus", "text": "Исход «нечистых» на луну: «Свободная Карма»"}
+      ],
+      "arrival_regime": "caste_theocracy",
+      "fate": {"status": "arrived", "ship": "orbit_temple", "ship_note": "корабль на орбите — Храм Массива, доступ только высшим", "findable": true},
+      "colony": "delta_pav_karma", "sources": ["08. DHARMA-1.md", "fate.md §14", "subactors.json"]
+    },
+    {
+      "id": "IRON-SHIELD-1", "aliases": ["Айрон Шилд-1", "Цитадель"], "wave": "II", "canon_status": "canon",
+      "sponsor": "Ultra-rich families + critical-infrastructure owners; Nordic private military company 'Skjold' runs security",
+      "cultures": {"nordic_pmc": 0.35, "global_ultrarich": 0.25, "russian": 0.2, "american_frontier": 0.2},
+      "launch_year": 2150, "source_system": 0, "target_system": 3, "final_system": 3,
+      "population": 12000, "cryo_share": 0.0, "awake_watch": 12000, "watch_years": 0, "safe_cycles": 0,
+      "birth_policy": "class_quota", "claimed_mass_mt": {"full": 350, "dry": 300},
+      "cohorts": {"patricians": {"share": 0.25, "awake": 1.0, "culture": {"global_ultrarich": 1.0}}, "security": {"share": 0.15, "awake": 1.0, "culture": {"nordic_pmc": 1.0}},
+                  "engineers": {"share": 0.20, "awake": 1.0}, "workers": {"share": 0.15, "awake": 1.0}, "coerced": {"share": 0.25, "awake": 1.0, "culture": {"russian": 0.5, "american_frontier": 0.5}}},
+      "motives": {"elite_capital_flight": 0.40, "civilisational_insurance": 0.25, "internal_problems": 0.15, "corruption": 0.10, "stupid": 0.10},
+      "dark_comedy": "Бункер для избранных: ЧВК наняли охранять владельцев; через двенадцать лет выяснилось, кто кого охраняет.",
+      "anchors": [
+        {"year": 2162, "type": "security_takeover", "text": "«Пурга инвесторов»: три семьи устранены «за подрыв морального духа»", "deaths": 500, "effects": {"security.power": 25, "patricians.power": -20}},
+        {"year": 2175, "type": "militarisation", "text": "«Бастион-1»: корабль превращён в боевую станцию"},
+        {"year": 2215, "type": "class_conflict", "text": "Восстание каторжников за статус детей; подавлено ЧВК", "deaths": 300, "effects": {"coerced.grievance": 20}},
+        {"year": 2228, "type": "arrival", "text": "Вольф 359: астероид-крепость (пояс-диск)", "pop_after": 10800, "authored": 2185}
+      ],
+      "arrival_regime": "security_oligarchy",
+      "fate": {"status": "arrived", "ship": "fortress_core", "ship_note": "ядро крепости «Бастион»", "findable": true},
+      "colony": "wolf359_citadel", "sources": ["09. IRON-SHIELD-1.md", "fate.md §6", "actors.json Скьёльдбург"]
+    },
+    {
+      "id": "AL-QUDS-1", "aliases": ["Аль-Кудс-1", "Новая Мекка"], "wave": "II", "canon_status": "canon",
+      "sponsor": "Islamic League (UAE, Saudi Arabia, Qatar, Malaysia, Indonesia, Pakistan)",
+      "cultures": {"gulf_arab": 0.35, "malay_indonesian": 0.40, "pakistani": 0.25},
+      "launch_year": 2160, "source_system": 0, "target_system": 4, "final_system": 4,
+      "population": 18000, "cryo_share": 0.0, "awake_watch": 18000, "watch_years": 0, "safe_cycles": 0,
+      "birth_policy": "generation", "claimed_mass_mt": {"full": 240, "dry": 200},
+      "cohorts": {"patricians": {"share": 0.17, "awake": 1.0, "culture": {"gulf_arab": 1.0}}, "faithful": {"share": 0.10, "awake": 1.0},
+                  "scientists": {"share": 0.30, "awake": 1.0}, "engineers": {"share": 0.26, "awake": 1.0}, "settlers": {"share": 0.17, "awake": 1.0}},
+      "motives": {"civilisational_insurance": 0.30, "religion": 0.25, "elite_capital_flight": 0.20, "prestige": 0.15, "scientific_vanity": 0.10},
+      "dark_comedy": "Нефтяные фонды страховали правящие семьи от конца нефти кораблём, который летел на термоядерном топливе, купленном за нефть.",
+      "anchors": [
+        {"year": 2178, "type": "religious_conflict", "text": "Спор улемов: столкновения фракций", "deaths": 800, "effects": {"cohesion": -15}},
+        {"year": 2185, "type": "reconciliation", "text": "Звёздный совет богословов", "effects": {"faithful.power": 10, "*.grievance": -10}},
+        {"year": 2243, "type": "arrival", "text": "Lalande 21185 — система уже занята Новой Элладой (с 2197)", "pop_after": 15600, "authored": 2195}
+      ],
+      "arrival_regime": "scholar_theocracy",
+      "fate": {"status": "arrived", "ship": "station_core", "ship_note": "купол SANCTUM — мечеть-обсерватория «Расад»", "findable": true},
+      "colony": "lalande_mecca", "sources": ["10. AL-QUDS-1.md", "fate.md §7", "actors.json Ильм-аль-Нуджум"]
+    },
+    {
+      "id": "NEXT-1", "aliases": ["Некст-1", "Культ Машины"], "wave": "II", "canon_status": "canon",
+      "sponsor": "Transhumanists: biohackers, AI labs, crypto money",
+      "cultures": {"transhumanist": 1.0},
+      "launch_year": 2175, "source_system": 0, "target_system": 13, "final_system": 13,
+      "population": 6000, "cryo_share": 0.40, "awake_watch": 3600, "watch_years": 20, "safe_cycles": 3,
+      "birth_policy": "licensed_modified", "claimed_mass_mt": {"full": 90, "dry": 90},
+      "cohorts": {"patricians": {"share": 0.25, "awake": 0.6}, "scientists": {"share": 0.35, "awake": 0.7}, "engineers": {"share": 0.23, "awake": 0.6}, "faithful": {"share": 0.17, "awake": 0.5}},
+      "motives": {"ideology": 0.40, "scientific_vanity": 0.25, "elite_capital_flight": 0.15, "name_in_history": 0.10, "stupid": 0.10},
+      "dark_comedy": "«Великая загрузка» дала 2 000 бессмертных цифровых личностей и 2 000 вакантных кают.",
+      "anchors": [
+        {"year": 2195, "type": "upload", "text": "Великая загрузка: 2 000 колонистов «загружены» в ИИ «Провидец» (тела утилизированы)", "deaths": 2000},
+        {"year": 2210, "type": "generation_shift", "text": "Первый ребёнок с нейроинтерфейсом"},
+        {"year": 2218, "type": "purge", "text": "Отступники / Чистые / Еретики подавлены Советом Архитекторов и ИИ", "deaths": 300, "effects": {"faithful.power": 15}},
+        {"year": 2314, "type": "arrival", "text": "GJ 876: жёсткая посадка модуля на спутник GJ 876 b I; ядро ИИ уцелело", "pop_after": 3200, "authored": 2230}
+      ],
+      "arrival_regime": "machine_oracle",
+      "fate": {"status": "arrived", "ship": "wreck_shrine", "ship_note": "разбитый посадочный модуль — святилище «Провидца»", "findable": true},
+      "colony": "gj876_next", "sources": ["11. NEXT-1.md", "fate.md §15", "generation_ships.json (Культ Машины)"]
+    },
+    {
+      "id": "EUROPA-1", "aliases": ["Европа-1"], "wave": "II", "canon_status": "canon",
+      "sponsor": "European Union (state project)",
+      "cultures": {"eu_bureaucratic": 0.7, "italian": 0.1, "iberian": 0.1, "greek": 0.1},
+      "launch_year": 2250, "source_system": 0, "target_system": 10, "final_system": 10,
+      "population": 12000, "cryo_share": 0.0, "awake_watch": 12000, "watch_years": 0, "safe_cycles": 0,
+      "birth_policy": "generation", "claimed_mass_mt": {"full": 260, "dry": 260},
+      "cohorts": {"patricians": {"share": 0.25, "awake": 1.0}, "engineers": {"share": 0.35, "awake": 1.0}, "workers": {"share": 0.23, "awake": 1.0}, "scientists": {"share": 0.17, "awake": 1.0}},
+      "motives": {"civilisational_insurance": 0.25, "geopolitical_race": 0.20, "prestige": 0.20, "ideology": 0.15, "state_contract": 0.15, "stupid": 0.05},
+      "dark_comedy": "Комитет по адаптации заседал пять лет и единственным изменением утвердил цвет бюллетеней.",
+      "anchors": [
+        {"year": 2275, "type": "bureaucratisation", "text": "14 комитетов управления полётом", "effects": {"formalism": 10}},
+        {"year": 2280, "type": "constitution", "text": "Звёздная Конституция, 847 страниц"},
+        {"year": 2318, "type": "reform", "text": "Конфликт поколений; комиссия меняет цвет бюллетеней", "effects": {"workers.grievance": 10}},
+        {"year": 2377, "type": "arrival", "text": "GJ 581: орбитальная колонизация (g не подтверждена)", "pop_after": 10500, "authored": 2325}
+      ],
+      "arrival_regime": "parliamentary_bureaucracy",
+      "fate": {"status": "arrived", "ship": "station_core", "ship_note": "решётка GRID+SWARM разобрана на узлы станции «Новый Брюссель»", "findable": true},
+      "colony": "gj581_europa", "sources": ["12. EUROPA-1.md", "fate.md §8", "actors.json Рестаурос"]
+    },
+    {
+      "id": "RESOURCER-1", "aliases": ["Ресурсер-1", "Шахта Альфа"], "wave": "II", "canon_status": "canon",
+      "sponsor": "NeoMining Corp and other mining corporations",
+      "cultures": {"american_frontier": 0.3, "indian": 0.3, "west_african": 0.2, "russian": 0.2},
+      "launch_year": 2260, "source_system": 0, "target_system": 31, "final_system": 31,
+      "population": 10000, "cryo_share": 0.0, "awake_watch": 10000, "watch_years": 0, "safe_cycles": 0,
+      "birth_policy": "contract_licence", "claimed_mass_mt": {"full": 450, "dry": 450},
+      "cohorts": {"patricians": {"share": 0.20, "awake": 1.0, "culture": {"american_frontier": 1.0}}, "engineers": {"share": 0.20, "awake": 1.0},
+                  "workers": {"share": 0.40, "awake": 1.0}, "coerced": {"share": 0.20, "awake": 1.0}},
+      "motives": {"state_contract": 0.15, "rival_claim_fear": 0.30, "corruption": 0.20, "stupid": 0.20, "frontier_myth": 0.15},
+      "dark_comedy": "Пояс 61 Лебедя «стоил триллионы» по проспекту эмиссии. По генерированному каталогу в нём 0.0027 массы Земли — меньше, чем в одном приличном спутнике.",
+      "anchors": [
+        {"year": 2355, "type": "arrival", "text": "61 Лебедя: пояс беден; корпорация переходит на He-3 гиганта 61 Cyg B i и на торговлю фьючерсами", "pop_after": 9000}
+      ],
+      "arrival_regime": "corporate_board",
+      "fate": {"status": "arrived", "ship": "dismantled", "ship_note": "буровой нос продан на лом; остальное — биржа «Керн»", "findable": false},
+      "colony": "cyg61_kern", "sources": ["13. RESOURCER-1.md", "generation_ships.json", "actors.json Проспекторат Керн"]
+    },
+    {
+      "id": "NEW-HELLAS-1", "aliases": ["Новая Эллада (корабль)", "Вторая Эллада"], "wave": "III", "canon_status": "canon",
+      "sponsor": "North American consortium (USA, Canada, Mexico), private + state funds",
+      "cultures": {"american_frontier": 0.6, "canadian": 0.2, "mexican": 0.2},
+      "launch_year": 2260, "source_system": 0, "target_system": 14, "final_system": 14,
+      "population": 15000, "cryo_share": 0.40, "awake_watch": 9000, "watch_years": 25, "safe_cycles": 3,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 200, "dry": 200},
+      "cohorts": {"patricians": {"share": 0.27, "awake": 0.0}, "engineers": {"share": 0.30, "awake": 1.0}, "workers": {"share": 0.23, "awake": 1.0}, "coerced": {"share": 0.20, "awake": 0.8}},
+      "motives": {"elite_capital_flight": 0.25, "rival_claim_fear": 0.20, "frontier_myth": 0.20, "internal_problems": 0.15, "stupid": 0.20},
+      "dark_comedy": "Опоздавшие к Мэйфлауэру назвали корабль греческим именем, чтобы «звучало старше».",
+      "anchors": [
+        {"year": 2310, "type": "class_conflict", "text": "Восстание контрактников: 5 % доли колонии", "deaths": 0, "effects": {"workers.power": 15}},
+        {"year": 2350, "type": "institution", "text": "Звёздный Университет"},
+        {"year": 2365, "type": "sleeper_return", "text": "Спящие владельцы просыпаются с идеологией 2260 и встречают коллективистов-корабельных"},
+        {"year": 2384, "type": "arrival", "text": "HD 20794: спутники гиганта d", "pop_after": 12800, "authored": 2380}
+      ],
+      "arrival_regime": "corporate_democracy",
+      "fate": {"status": "arrived", "ship": "station_core", "ship_note": "", "findable": true},
+      "colony": "hd20794_hellas2", "sources": ["13. NEW-HELLAS-1.md", "fate.md §9"]
+    },
+    {
+      "id": "NEW-JERUSALEM-1", "aliases": ["Новый Иерусалим", "Святой Сион", "Ледяная Вера"], "wave": "III", "canon_status": "canon",
+      "sponsor": "Christian fundamentalists: evangelicals, traditionalist Catholic orders, Orthodox conservatives",
+      "cultures": {"christian_traditionalist": 1.0},
+      "launch_year": 2270, "source_system": 0, "target_system": 11, "final_system": 45,
+      "population": 12000, "cryo_share": 0.70, "awake_watch": 3600, "watch_years": 25, "safe_cycles": 3,
+      "birth_policy": "encouraged_awake", "claimed_mass_mt": {"full": 190, "dry": 190},
+      "cohorts": {"faithful": {"share": 0.33, "awake": 0.1}, "engineers": {"share": 0.30, "awake": 0.5}, "workers": {"share": 0.20, "awake": 0.4}, "settlers": {"share": 0.17, "awake": 0.3}},
+      "motives": {"religion": 0.50, "ideology": 0.15, "internal_problems": 0.15, "stupid": 0.20},
+      "dark_comedy": "Когда «ледяная луна» GJ 667 C c оказалась планетой, Синод выбрал новую звезду — в созвездии Льва, «ибо Лев от колена Иудина».",
+      "anchors": [
+        {"year": 2291, "type": "target_change", "text": "Земля сообщает: цель GJ 667 C c не ледяная луна. Синод на разгоне меняет цель на 83 Leonis (Лев от колена Иудина); крейсерская скорость снижена ради запаса"},
+        {"year": 2350, "type": "purge", "text": "Ересь криосна: монахи, назвавшие криосон «смертью без воскрешения», казнены", "deaths": 40, "effects": {"faithful.power": 10}},
+        {"year": 2375, "type": "sleeper_return", "text": "Пробуждение высшего клира: конфликт с корабельными и компромисс"},
+        {"year": 2800, "type": "religious_revival", "text": "«Видение»: 500 монахов видят «золотой город на орбите» (огни станции-разведки гипер-эпохи у 83 Leonis)"},
+        {"year": 3126, "type": "arrival", "text": "83 Leonis: у цели уже стоит чужая станция «Золотой Город»", "pop_after": 8900}
+      ],
+      "arrival_regime": "synod_theocracy",
+      "fate": {"status": "arrived_3126", "ship": "orbiting", "ship_note": "на парковочной орбите 83 Leonis B h", "findable": true},
+      "colony": "leo83_zion", "sources": ["14. NEW-JERUSALEM-1.md", "fate.md §10"]
+    },
+    {
+      "id": "UHURU-2", "aliases": ["Ухуру-2", "Новая Маланд"], "wave": "III", "canon_status": "canon",
+      "sponsor": "African Union (second ship; UHURU-1 hull lost in a 2276 dock fire)",
+      "cultures": {"west_african": 0.4, "east_african": 0.35, "southern_african": 0.25},
+      "launch_year": 2280, "source_system": 0, "target_system": 15, "final_system": 15,
+      "population": 30000, "cryo_share": 0.70, "awake_watch": 9000, "watch_years": 35, "safe_cycles": 3,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 300, "dry": 300},
+      "cohorts": {"patricians": {"share": 0.20, "awake": 0.1}, "engineers": {"share": 0.25, "awake": 0.5}, "workers": {"share": 0.35, "awake": 0.3}, "settlers": {"share": 0.20, "awake": 0.2}},
+      "motives": {"demographic_pressure": 0.30, "prestige": 0.20, "geopolitical_race": 0.15, "frontier_myth": 0.15, "state_contract": 0.10, "stupid": 0.10},
+      "dark_comedy": "Двести языков на борту договорились о суахили — языке, родном для меньшинства экипажа, именно поэтому.",
+      "anchors": [
+        {"year": 2276, "type": "launch_disaster", "text": "Пожар в доке L1 уничтожает корпус UHURU-1 (600 рабочих); слухи о саботаже конкурентов не подтверждены"},
+        {"year": 2380, "type": "institution", "text": "Совет Старейшин в криосне (представительство спящих)"},
+        {"year": 2480, "type": "generation_shift", "text": "Новый язык (суахили + английский + диалекты)"},
+        {"year": 2542, "type": "arrival", "text": "HD 40307: купола и сельскохозяйственные кольца", "pop_after": 24500}
+      ],
+      "arrival_regime": "council_of_chiefs",
+      "fate": {"status": "arrived", "ship": "station_core", "ship_note": "", "findable": true},
+      "colony": "hd40307_maland", "sources": ["15. UHURU-2.md", "fate.md §11", "generation_ships.json UHURU-1"]
+    },
+    {
+      "id": "ODYSSEY-1", "aliases": ["Одиссей", "Третья Эллада"], "wave": "III", "canon_status": "canon",
+      "sponsor": "Greco-Italian 'second echelon' (Greece, Italy, Spain, Portugal, Cyprus, Malta)",
+      "cultures": {"greek": 0.35, "italian": 0.35, "iberian": 0.30},
+      "launch_year": 2290, "source_system": 0, "target_system": 37, "final_system": 37,
+      "population": 15000, "cryo_share": 0.70, "awake_watch": 4500, "watch_years": 40, "safe_cycles": 4,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 1000, "dry": 1000},
+      "cohorts": {"patricians": {"share": 0.27, "awake": 0.05}, "engineers": {"share": 0.30, "awake": 0.6}, "workers": {"share": 0.23, "awake": 0.3}, "coerced": {"share": 0.20, "awake": 0.3}},
+      "motives": {"frontier_myth": 0.30, "prestige": 0.20, "scientific_vanity": 0.15, "elite_capital_flight": 0.15, "stupid": 0.20},
+      "dark_comedy": "Цель выбрали «у солнцеподобной звезды подальше от Брюсселя»; HIP 116454 оказалась за 180 св. лет, и мишень тихо поменяли на HD 114783.",
+      "anchors": [
+        {"year": 2420, "type": "constitution", "text": "«Новая Одиссея»: конституция с Правом на Возвращение"},
+        {"year": 2600, "type": "sleeper_return", "text": "Патриции просыпаются: «вам капитал, нам социальная сфера» — 20 лет судов вместо стрельбы"},
+        {"year": 2900, "type": "mission_fatigue", "text": "Молодёжь требует лететь дальше; отклонено"},
+        {"year": 3122, "type": "arrival", "text": "HD 114783: система уже размечена заявками гипер-корпораций", "pop_after": 11200}
+      ],
+      "arrival_regime": "litigating_city_states",
+      "fate": {"status": "arrived_3122", "ship": "orbiting", "ship_note": "астероид-корабль на орбите HD 114783 b", "findable": true},
+      "colony": "hd114783_hellas3", "sources": ["16. ODYSSEY-1.md", "fate.md §12"]
+    },
+    {
+      "id": "NIRVANA-1", "aliases": ["Нирвана-1", "Вечный странник"], "wave": "III", "canon_status": "canon",
+      "sponsor": "Neo-Buddhist order 'Path of Infinite Light' (2 million donors)",
+      "cultures": {"neo_buddhist": 1.0},
+      "launch_year": 2300, "source_system": 0, "target_system": 100062, "final_system": null,
+      "population": 3500, "cryo_share": 0.0, "awake_watch": 3500, "watch_years": 0, "safe_cycles": 0,
+      "birth_policy": "generation", "claimed_mass_mt": {"full": 6000, "dry": 6000},
+      "cohorts": {"faithful": {"share": 0.29, "awake": 1.0}, "settlers": {"share": 0.57, "awake": 1.0}, "workers": {"share": 0.14, "awake": 1.0}},
+      "motives": {"religion": 0.50, "ideology": 0.20, "internal_problems": 0.15, "stupid": 0.15},
+      "dark_comedy": "Цель выбрали так, чтобы до неё не долетели ни корпорации, ни миссионеры. До неё не долетели и они сами.",
+      "anchors": [
+        {"year": 2450, "type": "religious_revival", "text": "Медитация всего экипажа; ИИ фиксирует аномалии"},
+        {"year": 2550, "type": "signal", "text": "«Мы видели ткань реальности. Она поёт.»"},
+        {"year": 2650, "type": "signal", "text": "«Расстояние — иллюзия. Мы идём дальше.»"},
+        {"year": 2680, "type": "lost", "text": "«Не ищите нас. Мы нашли Нирвану.»; затем маяк с разных направлений"}
+      ],
+      "fate": {"status": "missing", "ship": "unknown", "ship_note": "координаты fate.md — точка «легенды», не положение", "findable": "rumour", "author_knows": false},
+      "colony": null, "sources": ["17. NIRVANA-1.md", "fate.md §19"]
+    },
+    {
+      "id": "AMAZONIA-1", "aliases": ["Амазония-1", "Затерянный мир"], "wave": "III", "canon_status": "canon",
+      "sponsor": "South American consortium led by Brazil (Colombia, Peru, Ecuador, Bolivia, Venezuela)",
+      "cultures": {"brazilian": 0.6, "andean": 0.4},
+      "launch_year": 2320, "source_system": 0, "target_system": 16, "final_system": 16,
+      "population": 15000, "cryo_share": 0.60, "awake_watch": 6000, "watch_years": 30, "safe_cycles": 3,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 240, "dry": 240},
+      "cohorts": {"patricians": {"share": 0.23, "awake": 0.1, "culture": {"brazilian": 0.7, "andean": 0.3}}, "faithful": {"share": 0.05, "awake": 0.5},
+                  "engineers": {"share": 0.25, "awake": 0.6}, "workers": {"share": 0.30, "awake": 0.5}, "coerced": {"share": 0.17, "awake": 0.5, "culture": {"brazilian": 1.0}}},
+      "motives": {"demographic_pressure": 0.25, "export_inconvenient": 0.20, "geopolitical_race": 0.15, "religion": 0.15, "prestige": 0.15, "stupid": 0.10},
+      "dark_comedy": "Антенну дальней связи сняли перед стартом, чтобы освободить место под второй футбольный стадион. Её обещали довезти следующим кораблём.",
+      "anchors": [
+        {"year": 2405, "type": "contact_lost", "text": "Отказ антенны дальней связи; Земля молчит — экипаж решает, что Земли больше нет"},
+        {"year": 2450, "type": "religious_revival", "text": "Карнавал в криосне; синкретизм католицизма, умбанды и Пачамамы"},
+        {"year": 2576, "type": "arrival", "text": "HD 69830: колония «последних людей Вселенной»", "pop_after": 12800, "authored": 2570},
+        {"year": 2810, "type": "contact", "text": "Гипер-корабль Когниума: «вы не одни». Культурный шок"}
+      ],
+      "arrival_regime": "grandees_and_church",
+      "fate": {"status": "arrived", "ship": "orbit_museum", "ship_note": "", "findable": true},
+      "colony": "hd69830_verde", "sources": ["19. AMAZONIA-1.md", "fate.md §13", "generation_ships.json (Затерянный мир)"]
+    },
+    {
+      "id": "FREE-VENTURE-1", "aliases": ["Фри-Венчур-1", "Пояс Раздора"], "wave": "III", "canon_status": "provisional",
+      "sponsor": "First anarcho-capitalist ark (small, crowdfunded)",
+      "cultures": {"crypto_libertarian": 0.8, "american_frontier": 0.2},
+      "launch_year": 2335, "source_system": 0, "target_system": 9, "final_system": 9,
+      "population": 2800, "cryo_share": 0.5, "awake_watch": 1400, "watch_years": 20, "safe_cycles": 3,
+      "birth_policy": "contract_licence", "claimed_mass_mt": {"full": 9, "dry": 6},
+      "cohorts": {"patricians": {"share": 0.30, "awake": 0.3}, "engineers": {"share": 0.40, "awake": 0.6}, "workers": {"share": 0.30, "awake": 0.6}},
+      "motives": {"ideology": 0.40, "elite_capital_flight": 0.20, "frontier_myth": 0.20, "stupid": 0.20},
+      "dark_comedy": "Модули крепились на смарт-контрактах; первый же спор о воде был решён отстыковкой.",
+      "anchors": [
+        {"year": 2405, "type": "arrival", "text": "Эпсилон Эридана, где уже 190 лет правит Гармония; поселение в поясе", "pop_after": 2500},
+        {"year": 2440, "type": "clan_fragmentation", "text": "Гражданская война модулей: «Пояс Раздора»", "deaths": 400}
+      ],
+      "arrival_regime": "clan_contracts",
+      "fate": {"status": "arrived_fragmented", "ship": "scattered_modules", "ship_note": "модули рассеяны по поясу Эпсилон Эридана", "findable": true},
+      "colony": "eps_eri_strife", "sources": ["generation_ships.json FREE-VENTURE-1", "generation ships.md (A)", "29. HOMEWARD-1.md (обломки FREE-VENTURE-1)"]
+    },
+    {
+      "id": "DHARMA-2", "aliases": ["Дхарма-2", "Новая Индия"], "wave": "III", "canon_status": "canon",
+      "sponsor": "India (second ship; 'reform' ship after news of Dharma-1)",
+      "cultures": {"indian": 1.0},
+      "launch_year": 2400, "source_system": 0, "target_system": 14, "final_system": 14,
+      "population": 25000, "cryo_share": 0.60, "awake_watch": 10000, "watch_years": 30, "safe_cycles": 4,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 280, "dry": 280},
+      "cohorts": {"patricians": {"share": 0.20, "awake": 0.0}, "engineers": {"share": 0.30, "awake": 0.6}, "workers": {"share": 0.30, "awake": 0.5}, "coerced": {"share": 0.20, "awake": 0.4}},
+      "motives": {"demographic_pressure": 0.25, "civilisational_insurance": 0.20, "ideology": 0.20, "prestige": 0.15, "rival_claim_fear": 0.10, "stupid": 0.10},
+      "dark_comedy": "Касты отменили для генного банка — и сохранили для расписания стирки.",
+      "anchors": [
+        {"year": 2450, "type": "reform", "text": "«Гибкие касты»: статус по заслугам", "effects": {"engineers.power": 15, "coerced.grievance": -15}},
+        {"year": 2490, "type": "sleeper_return", "text": "Патриции просыпаются после 90 лет и пытаются вернуть порядок; синтез"},
+        {"year": 2523, "type": "arrival", "text": "HD 20794: Вторая Эллада уже здесь 140 лет", "pop_after": 20500},
+        {"year": 2580, "type": "war", "text": "Война за воду со Второй Элладой, 3 года", "deaths": 700}
+      ],
+      "arrival_regime": "merit_caste_republic",
+      "fate": {"status": "arrived", "ship": "station_core", "ship_note": "", "findable": true},
+      "colony": "hd20794_newindia", "sources": ["18. DHARMA-2.md", "fate.md §16"]
+    },
+    {
+      "id": "FREE-WORLD-1", "aliases": ["Свободный мир"], "wave": "III", "canon_status": "canon",
+      "sponsor": "Libertarians, anarcho-capitalists, refugees from the 'digital concentration camp'; crypto money",
+      "cultures": {"crypto_libertarian": 0.6, "earth_late": 0.4},
+      "launch_year": 2450, "source_system": 0, "target_system": 10, "final_system": 10,
+      "population": 12000, "cryo_share": 0.60, "awake_watch": 4800, "watch_years": 25, "safe_cycles": 4,
+      "birth_policy": "contract_licence", "claimed_mass_mt": {"full": 150, "dry": 150},
+      "cohorts": {"patricians": {"share": 0.25, "awake": 0.0}, "engineers": {"share": 0.30, "awake": 0.7}, "workers": {"share": 0.28, "awake": 0.5}, "settlers": {"share": 0.17, "awake": 0.3}},
+      "motives": {"ideology": 0.35, "internal_problems": 0.25, "elite_capital_flight": 0.20, "stupid": 0.20},
+      "dark_comedy": "Вторая попытка анархо-капиталистов. Первую (FREE-VENTURE-1) они изучили и решили, что тогда было «недостаточно рынка».",
+      "anchors": [
+        {"year": 2500, "type": "abolition", "text": "Отмена правительства голосованием экипажа"},
+        {"year": 2535, "type": "schism", "text": "Проснувшиеся патриции требуют «чистой» анархии; 800 человек отстыковывают модуль «Exit» — судьба неизвестна", "deaths": 0, "pop_loss": 800},
+        {"year": 2550, "type": "resource_conflict", "text": "Конфликт модулей за ресурсы", "deaths": 700},
+        {"year": 2574, "type": "arrival", "text": "GJ 581, рядом с Новой Европой", "pop_after": 9500, "authored": 2570},
+        {"year": 2620, "type": "clan_fragmentation", "text": "Распад на 12 поселений"},
+        {"year": 2862, "type": "leak", "text": "Кланы покупают спецификации гипердвигателя и выкладывают их «для всех»"}
+      ],
+      "arrival_regime": "clan_contracts",
+      "fate": {"status": "arrived_fragmented", "ship": "scattered_modules", "ship_note": "", "findable": true},
+      "colony": "gj581_freeclans", "sources": ["20. FREE-WORLD-1.md", "fate.md §26", "31. HYPERION-1.md (реакция Свободного мира)"]
+    },
+    {
+      "id": "CELESTIAL-DESTINY-2", "aliases": ["Небесная Твердыня", "Небесная твердыня-2", "Третья Гармония"], "wave": "III", "canon_status": "canon",
+      "sponsor": "PRC (third ship) — 'cannot cede the system to the Africans'",
+      "cultures": {"chinese_state": 1.0},
+      "launch_year": 2480, "source_system": 0, "target_system": 15, "final_system": 15,
+      "population": 25000, "cryo_share": 0.60, "awake_watch": 10000, "watch_years": 30, "safe_cycles": 4,
+      "birth_policy": "quota_awake", "claimed_mass_mt": {"full": 600, "dry": 600},
+      "cohorts": {"patricians": {"share": 0.24, "awake": 0.1}, "command": {"share": 0.02, "awake": 1.0}, "engineers": {"share": 0.30, "awake": 0.6}, "security": {"share": 0.06, "awake": 1.0}, "settlers": {"share": 0.38, "awake": 0.2}},
+      "motives": {"rival_claim_fear": 0.35, "geopolitical_race": 0.25, "prestige": 0.20, "demographic_pressure": 0.10, "stupid": 0.10},
+      "dark_comedy": "Конвой заявочных дронов отправили вперёд, чтобы «застолбить» систему до прибытия. Дроны застолбили её слишком хорошо.",
+      "anchors": [
+        {"year": 2580, "type": "rivalry", "text": "Радиоконфликт с Новой Маланд за систему"},
+        {"year": 2680, "type": "skirmish", "text": "Автономный заявочный конвой CD-2 уничтожает внешний хабитат Маланд при инспекции; ~1 000 погибших маландцев"},
+        {"year": 2742, "type": "arrival", "text": "HD 40307: внешние спутники; холодная война", "pop_after": 21500}
+      ],
+      "arrival_regime": "party_technocracy",
+      "fate": {"status": "arrived", "ship": "station_core", "ship_note": "", "findable": true},
+      "colony": "hd40307_firmament", "sources": ["21. CELESTIAL-DESTINY-2.md", "fate.md §17"]
+    },
+    {
+      "id": "IRON-SHIELD-2", "aliases": ["Айрон Шилд-2"], "wave": "III", "canon_status": "canon",
+      "sponsor": "Citadel: in-system expansion to asteroid #2 (Wolf 359 debris disk)",
+      "cultures": {"nordic_pmc": 0.5, "global_ultrarich": 0.2, "russian": 0.3},
+      "launch_year": 2355, "source_system": 3, "target_system": 3, "final_system": 3,
+      "population": 3000, "cryo_share": 0.0, "awake_watch": 3000, "watch_years": 0, "safe_cycles": 0,
+      "birth_policy": "none", "claimed_mass_mt": {"full": 120, "dry": 120},
+      "cohorts": {"patricians": {"share": 0.27, "awake": 1.0}, "engineers": {"share": 0.60, "awake": 1.0}, "coerced": {"share": 0.13, "awake": 1.0}},
+      "motives": {"rival_claim_fear": 0.40, "prestige": 0.20, "internal_problems": 0.20, "stupid": 0.20},
+      "dark_comedy": "",
+      "anchors": [
+        {"year": 2355, "type": "lost", "text": "Через три недели: «…не астероид… структура… она нас зовёт…»; поисковая миссия: ни корабля, ни обломков, ни 3 000 человек (15 % Цитадели)"}
+      ],
+      "fate": {"status": "missing", "ship": "unknown", "ship_note": "данные засекречены Цитаделью", "findable": "classified", "author_knows": false},
+      "colony": null, "sources": ["22. IRON-SHIELD-2.md", "LEGACY_HISTORY_IMPORT §4", "fate.md §27"]
+    },
+    {
+      "id": "GAIA-2", "aliases": ["Гайя-2", "Пустой Сад"], "wave": "IV", "canon_status": "canon",
+      "sponsor": "Gaia-Prim scientists fleeing the symbiont",
+      "cultures": {"eco_transnational": 1.0},
+      "launch_year": 2500, "source_system": 12, "target_system": 17, "final_system": 17,
+      "population": 5000, "cryo_share": 0.60, "awake_watch": 500, "watch_years": 50, "safe_cycles": 4,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 8, "dry": 6},
+      "cohorts": {"scientists": {"share": 0.50, "awake": 0.1}, "engineers": {"share": 0.50, "awake": 0.1}},
+      "motives": {"civilisational_insurance": 0.60, "ideology": 0.30, "stupid": 0.10},
+      "dark_comedy": "Бежали от симбионта и взяли с собой лучший в мире банк образцов — из тех же контуров.",
+      "anchors": [
+        {"year": 2650, "type": "anomaly", "text": "500 образцов криобанка «изменились»"},
+        {"year": 2800, "type": "arrival", "text": "TRAPPIST-1: изучение 10 лет, посадка, исчезновение людей; ИИ «Гомер-2» продолжает слать «Сад растёт»", "pop_after": 3500}
+      ],
+      "fate": {"status": "derelict_empty", "ship": "orbiting_empty", "ship_note": "пустой исправный корабль на орбите TRAPPIST-1 e; ИИ шлёт бодрые сводки", "findable": true, "author_knows": true},
+      "colony": "trappist_quiet", "sources": ["23. GAIA-2.md", "fate.md §20"]
+    },
+    {
+      "id": "NOMAD-1", "aliases": ["Номад-1", "Летучий Голландец"], "wave": "IV", "canon_status": "canon",
+      "sponsor": "Billionaire consortium",
+      "cultures": {"global_ultrarich": 0.5, "earth_late": 0.5},
+      "launch_year": 2485, "source_system": 0, "target_system": null, "final_system": null,
+      "population": 300, "cryo_share": 0.0, "awake_watch": 300, "watch_years": 0, "safe_cycles": 0,
+      "birth_policy": "none", "claimed_mass_mt": {"full": 3, "dry": 2},
+      "cohorts": {"patricians": {"share": 0.40, "awake": 1.0, "culture": {"global_ultrarich": 1.0}}, "workers": {"share": 0.45, "awake": 1.0, "culture": {"earth_late": 1.0}}, "engineers": {"share": 0.15, "awake": 1.0, "culture": {"earth_late": 1.0}}},
+      "motives": {"elite_capital_flight": 0.40, "stupid": 0.40, "name_in_history": 0.20},
+      "dark_comedy": "Механик тайно поставил таймер автовозврата на пять лет. Пассажиры не выдержали друг друга и четырёх.",
+      "anchors": [
+        {"year": 2490, "type": "return_timer", "text": "Срабатывает тайный таймер возврата (provisional); бунт пассажиров против инженеров"},
+        {"year": 2497, "type": "refused", "text": "Земля отказывает в стыковке: активы пассажиров арестованы; Номад уходит в медленную петлю Сол — Барнард"},
+        {"year": 2680, "type": "birth", "text": "Первое рождение на борту («Звезда»)"}
+      ],
+      "fate": {"status": "in_flight", "ship": "drifting_loop", "ship_note": "≈3–5 св. лет от Сола, на обратной ветви петли к внешнему Солу (~3180)", "findable": true},
+      "colony": null, "sources": ["25. NOMAD-1.md", "fate.md §30", "GENERATION_SHIP_MYSTERY_HORROR_REFERENCE.md"]
+    },
+    {
+      "id": "FINAL-ARK-1", "aliases": ["Последний Ковчег", "Файнал Арк-1"], "wave": "IV", "canon_status": "canon",
+      "sponsor": "Earth / UN — the last joint project of a collapsing Earth",
+      "cultures": {"earth_late": 1.0},
+      "launch_year": 2500, "source_system": 0, "target_system": 15, "final_system": 15,
+      "population": 20000, "cryo_share": 0.80, "awake_watch": 600, "watch_years": 50, "safe_cycles": 5,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 11, "dry": 8},
+      "cohorts": {"patricians": {"share": 0.25, "awake": 0.0}, "engineers": {"share": 0.25, "awake": 0.1}, "workers": {"share": 0.25, "awake": 0.0}, "settlers": {"share": 0.25, "awake": 0.0}},
+      "motives": {"civilisational_insurance": 0.35, "prestige": 0.15, "export_inconvenient": 0.20, "internal_problems": 0.20, "stupid": 0.10},
+      "dark_comedy": "Самый дешёвый ковчег в истории: летит со скоростью, которую Земля смогла оплатить.",
+      "anchors": [
+        {"year": 2680, "type": "ethics", "text": "Отвечает на этический запрос ИИ LEGACY-1"},
+        {"year": 2765, "type": "flyby", "text": "Демонстрационный прыжок гипер-корабля рядом с ковчегом («HYPERION обогнал их»)"},
+        {"year": 2850, "type": "signal", "text": "«Земля молчит. Мы — её голос.»"}
+      ],
+      "fate": {"status": "in_flight", "ship": "in_flight", "ship_note": "≈85 % пути к HD 40307; прибытие ~3236 — в зону холодной войны и автономного роя CD-2", "findable": true},
+      "colony": null, "sources": ["26. FINAL-ARK-1.md", "fate.md §21"]
+    },
+    {
+      "id": "LEGACY-1", "aliases": ["Легаси-1", "Архив"], "wave": "IV", "canon_status": "canon",
+      "sponsor": "Foundation 'Heritage of Humanity' (museums, universities, archives)",
+      "cultures": {"earth_late": 1.0},
+      "launch_year": 2520, "source_system": 0, "target_system": 21, "final_system": 21,
+      "population": 0, "cryo_share": 0.0, "awake_watch": 0, "watch_years": 0, "safe_cycles": 0,
+      "birth_policy": "none", "claimed_mass_mt": {"full": 2, "dry": 1},
+      "cohorts": {}, "motives": {"civilisational_insurance": 0.50, "name_in_history": 0.30, "stupid": 0.20},
+      "dark_comedy": "Архив выбрал звезду подальше от торговых путей; торговые пути появились через 230 лет.",
+      "anchors": [{"year": 2950, "type": "news", "text": "ИИ «Гомер» узнаёт о гипердвигателе: архив устарел"}],
+      "fate": {"status": "in_flight", "ship": "in_flight", "ship_note": "прибытие к GJ 1214 ~3150", "findable": true},
+      "colony": null, "sources": ["27. LEGACY-1.md", "fate.md §22"]
+    },
+    {
+      "id": "KEPLER-1", "aliases": ["Кеплер", "«идиоты в космосе»"], "wave": "IV", "canon_status": "canon",
+      "sponsor": "International consortium 'New Frontier' (the last romantics)",
+      "cultures": {"earth_late": 1.0},
+      "launch_year": 2550, "source_system": 0, "target_system": "Kepler-442 (not in catalog)", "final_system": null,
+      "population": 10000, "cryo_share": 1.0, "awake_watch": 0, "watch_years": 0, "safe_cycles": 1,
+      "birth_policy": "none", "claimed_mass_mt": {"full": 500, "dry": 500},
+      "cohorts": {"settlers": {"share": 1.0, "awake": 0.0}},
+      "motives": {"name_in_history": 0.40, "frontier_myth": 0.30, "stupid": 0.30},
+      "dark_comedy": "«Если 200 лет — можно, то почему не 12 000?»",
+      "anchors": [{"year": 2950, "type": "refusal", "text": "ИИ «Одиссей» отказывается от обновления (принцип)"}],
+      "fate": {"status": "in_flight", "ship": "in_flight", "ship_note": "≈58 св. лет от Сола по направлению к Kepler-442 (координаты fate.md ошибочны)", "findable": true},
+      "colony": null, "sources": ["24. KEPLER-1.md", "fate.md §23"]
+    },
+    {
+      "id": "HOMEWARD-1", "aliases": ["Хоумвард-1", "Гармония-2"], "wave": "IV", "canon_status": "canon",
+      "sponsor": "Blooming Harmony — hull of a cancelled 'return to Earth' ark, repurposed for the home belt",
+      "cultures": {"chinese_state": 1.0},
+      "launch_year": 2555, "source_system": 9, "target_system": 9, "final_system": 9,
+      "population": 2000, "cryo_share": 0.0, "awake_watch": 2000, "watch_years": 0, "safe_cycles": 0,
+      "birth_policy": "quota_awake", "claimed_mass_mt": {"full": 50, "dry": 50},
+      "cohorts": {"patricians": {"share": 0.25, "awake": 1.0}, "engineers": {"share": 0.60, "awake": 1.0}, "coerced": {"share": 0.15, "awake": 1.0}},
+      "motives": {"ideology": 0.30, "rival_claim_fear": 0.30, "prestige": 0.20, "stupid": 0.20},
+      "dark_comedy": "Ковчег «Домой» строили к Земле, пока не пришло письмо о том, что дома там уже нет. Название менять не стали: краска дорогая.",
+      "anchors": [
+        {"year": 2565, "type": "mutiny", "text": "Бунт каторжников; часть бежит в пояс", "deaths": 100},
+        {"year": 2575, "type": "secession", "text": "«Вольные астероиды»: беглецы + остатки FREE-VENTURE-1"}
+      ],
+      "fate": {"status": "arrived", "ship": "dismantled", "ship_note": "модули — ядро поясной станции Гармонии", "findable": true},
+      "colony": "eps_eri_harmony", "sources": ["29. HOMEWARD-1.md", "fate.md §18", "generation_ships.json HOMEWARD-1"]
+    },
+    {
+      "id": "DEEP-SEEK-1", "aliases": ["Дип-Сик-1", "Тишина"], "wave": "IV", "canon_status": "canon",
+      "sponsor": "Private consortium 'New Frontier' of 40 technocrat families of New Shanghai",
+      "cultures": {"chinese_diaspora": 0.5, "american_frontier": 0.5},
+      "launch_year": 2540, "source_system": 8, "target_system": 15, "final_system": null,
+      "population": 14000, "cryo_share": 0.70, "awake_watch": 4200, "watch_years": 30, "safe_cycles": 4,
+      "birth_policy": "replacement_awake", "claimed_mass_mt": {"full": 10000, "dry": 10000},
+      "cohorts": {"patricians": {"share": 0.36, "awake": 0.05}, "engineers": {"share": 0.50, "awake": 0.5}, "workers": {"share": 0.14, "awake": 0.3}},
+      "motives": {"name_in_history": 0.25, "civilisational_insurance": 0.25, "prestige": 0.20, "internal_problems": 0.15, "stupid": 0.15},
+      "dark_comedy": "Сорок семей построили «запасной аэродром» в системе, где два народа уже делили каждый спутник.",
+      "anchors": [
+        {"year": 2615, "type": "institution", "text": "Совет Специалистов рядом с Советом Семей"},
+        {"year": 2800, "type": "signal", "text": "«Мы готовы к торможению.»"},
+        {"year": 2820, "type": "lost", "text": "«Мы видим... что-то. Не UHURU. Не CELESTIAL. Другое.»"}
+      ],
+      "fate": {"status": "destroyed", "ship": "debris_trail", "ship_note": "обломочный след на 0.1 c прошил внешнюю систему HD 40307 и ушёл за её пределы", "findable": true, "author_knows": true},
+      "colony": null, "sources": ["28. DEEP-SEEK-1.md", "generation ships.md (A: 2540, 280 лет)", "fate.md §28"]
+    },
+    {
+      "id": "FAREWELL-1", "aliases": ["Фэруэлл-1", "Последняя Поэма"], "wave": "IV", "canon_status": "canon",
+      "sponsor": "Foundation 'The Last Poem' (art patrons, academies)",
+      "cultures": {"earth_late": 0.5, "italian": 0.2, "greek": 0.1, "global_ultrarich": 0.2},
+      "launch_year": 2599, "source_system": 0, "target_system": 10, "final_system": null,
+      "population": 500, "cryo_share": 0.0, "awake_watch": 500, "watch_years": 0, "safe_cycles": 0,
+      "birth_policy": "generation", "claimed_mass_mt": {"full": 5, "dry": 5},
+      "cohorts": {"patricians": {"share": 0.60, "awake": 1.0}, "engineers": {"share": 0.40, "awake": 1.0}},
+      "motives": {"ideology": 0.40, "name_in_history": 0.30, "stupid": 0.30},
+      "dark_comedy": "Протест против мгновенности: улетели на 0.05 c через четыре года после того, как узнали, что расстояние можно схлопнуть.",
+      "anchors": [
+        {"year": 2620, "type": "art", "text": "«Симфония гиперпространства» (название пьесы, а не полёт)"},
+        {"year": 2640, "type": "target_change", "text": "«Мы изменили курс. Туманность поёт.»"},
+        {"year": 2650, "type": "lost", "text": "«Мы нашли то, что искали. Не ищите нас. Прощайте.»"}
+      ],
+      "fate": {"status": "missing", "ship": "unknown", "ship_note": "музыкальные обрывки с разных направлений; часть — «певчие буи», которые корабль сбрасывал как инсталляции", "findable": "rumour", "author_knows": false},
+      "colony": null, "sources": ["30. FAREWELL-1.md", "fate.md §29"]
+    },
+    {
+      "id": "HYPERION-1", "aliases": ["Гиперион-1", "Провидцы"], "wave": "hyper", "canon_status": "canon",
+      "sponsor": "New Shanghai (Cognium) state project",
+      "cultures": {"chinese_diaspora": 0.5, "american_frontier": 0.5},
+      "launch_year": 2750, "source_system": 8, "target_system": 0, "final_system": 8,
+      "population": 200, "cryo_share": 0.0, "awake_watch": 200, "watch_years": 0, "safe_cycles": 0,
+      "birth_policy": "none", "claimed_mass_mt": {"full": 0.5, "dry": 0.5},
+      "cohorts": {"scientists": {"share": 0.5, "awake": 1.0}, "command": {"share": 0.25, "awake": 1.0}, "engineers": {"share": 0.25, "awake": 1.0}},
+      "motives": {"prestige": 0.35, "scientific_vanity": 0.30, "geopolitical_race": 0.20, "name_in_history": 0.15},
+      "dark_comedy": "Первый прыжок в истории человечества был к Земле — показать, что к ней больше не нужно лететь.",
+      "anchors": [
+        {"year": 2750, "type": "first_jump", "text": "Тау Кита → Сол → Тау Кита за 3 дня; Земля видит корабль, который не может повторить"},
+        {"year": 2752, "type": "hyperion_2", "text": "HYPERION-2: гиперпространство — среда с градиентами и течениями; без маяков прыжок — лотерея"}
+      ],
+      "fate": {"status": "museum", "ship": "museum", "ship_note": "музей в Новом Шанхае; у Сола — сброшенный тогда маяк-памятник", "findable": true},
+      "colony": null, "sources": ["31. HYPERION-1.md", "fate.md §31"]
+    },
+    {
+      "id": "TRADERS-GUILD-1", "aliases": ["TRADER'S-GUILD-1", "Первый гипердоговор (legacy name)"], "wave": "III", "canon_status": "provisional",
+      "sponsor": "Lalande colonies (New Hellas + New Mecca): first inter-colony sublight courier",
+      "cultures": {"greek": 0.5, "gulf_arab": 0.5},
+      "launch_year": 2385, "source_system": 4, "target_system": 8, "final_system": 8,
+      "population": 800, "cryo_share": 0.8, "awake_watch": 60, "watch_years": 20, "safe_cycles": 4,
+      "birth_policy": "forbidden", "claimed_mass_mt": {"full": 5, "dry": 3},
+      "cohorts": {"engineers": {"share": 0.5, "awake": 0.1}, "scientists": {"share": 0.5, "awake": 0.05}},
+      "motives": {"prestige": 0.3, "scientific_vanity": 0.3, "frontier_myth": 0.2, "name_in_history": 0.2},
+      "dark_comedy": "Везли «самое ценное в Лаланде»: семена, патентные архивы и рецепт кофе по-гречески, который в Новом Шанхае объявили турецким.",
+      "anchors": [{"year": 2512, "type": "arrival", "text": "Тау Кита; капитан Лира Вэнс — легенда", "pop_after": 760}],
+      "fate": {"status": "arrived", "ship": "museum", "ship_note": "музей в Новом Шанхае", "findable": true},
+      "colony": "tau_ceti_cognium", "sources": ["generation_ships.json TRADER'S-GUILD-1", "generation ships.md (A)"]
+    },
+    {
+      "id": "LAST-LIGHT-1", "aliases": ["Последний Свет"], "wave": "IV", "canon_status": "provisional",
+      "sponsor": "Earth: last official sublight embassy, to the Citadel",
+      "cultures": {"earth_late": 1.0},
+      "launch_year": 2590, "source_system": 0, "target_system": 3, "final_system": 3,
+      "population": 500, "cryo_share": 0.9, "awake_watch": 50, "watch_years": 25, "safe_cycles": 4,
+      "birth_policy": "forbidden", "claimed_mass_mt": {"full": 5, "dry": 4},
+      "cohorts": {"command": {"share": 0.2, "awake": 0.3}, "scientists": {"share": 0.8, "awake": 0.0}},
+      "motives": {"geopolitical_race": 0.4, "civilisational_insurance": 0.3, "stupid": 0.3},
+      "dark_comedy": "Земля отправила в самую параноидальную колонию запечатанный груз с пометкой «вскрыть только Совету». Совет вскрыл его 436 лет назад и до сих пор не сказал, что там.",
+      "anchors": [{"year": 2690, "type": "arrival", "text": "Вольф 359: Цитадель задерживает корабль и груз", "pop_after": 480}],
+      "fate": {"status": "impounded", "ship": "impounded", "ship_note": "в доке Бастиона; груз — архив Хартий и верительные грамоты Земли (скрытый канон)", "findable": "classified", "author_knows": true},
+      "colony": null, "sources": ["generation_ships.json LAST-LIGHT-1"]
+    }
+  ],
+  "retired": [
+    {"id": "GENESIS-2", "reason": "дубль GENESIS-1 (усиление Тау Кита) — слит"},
+    {"id": "GENESIS-3", "reason": "только упоминание в actors.json; нет содержания"},
+    {"id": "UHURU-1", "reason": "старая версия UHURU-2 (Эпсилон Индейца); канон: корпус сгорел в доке 2276, отсюда номер «-2»"},
+    {"id": "STAR-SEED-1", "reason": "цель GJ 3323 вне каталога; мотив завязан на «Ледяную Веру» у GJ 667, которой в каноне нет"},
+    {"id": "VOID-WALKER-1", "reason": "банковский корабль «Перекрёстка» — Перекрёсток стал хабом Агора у Лаланд, миссия не нужна"},
+    {"id": "ETERNITY-1", "reason": "только идентификатор в старом архиве Universe"}
+  ]
+}

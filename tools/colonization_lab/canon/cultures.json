@@ -1,0 +1,53 @@
+{
+  "schema": "elite.colonization_lab.cultures.v1",
+  "note": "Founding-culture tendencies (0..100). HYPOTHESES built from self-image + neighbour caricature + jokes + daily routine + institutions of the launch era (2080-2600). NOT genetics, NOT destiny: they are priors of a population, filtered by mission recruitment and then changed by the voyage. Axis semantics: Notes/Colonycore/COLONYCORE_V2.md.",
+  "axes": [
+    "clock_time", "midday_pause", "night_life", "rule_bending", "formalism", "power_distance",
+    "irony_to_power", "kin_first", "hospitality", "privacy", "open_conflict", "say_no",
+    "status_display", "thrift", "improvisation", "order_love", "risk", "gallows_humor",
+    "complaint_ritual", "hardship_pride", "state_trust", "outsider_trust", "grievance_memory", "collective_duty"
+  ],
+  "cultures": {
+    "american_frontier":    [65,10,50,40,45,35,55,40,60,75,60,75,75,35,65,55,75,45,40,55,30,55,40,40],
+    "russian":              [40,20,70,80,70,60,90,55,85,45,55,45,60,45,85,35,65,95,85,85,20,35,75,60],
+    "indian":               [25,40,60,75,85,80,55,85,90,30,40,25,75,65,85,40,50,55,60,60,40,45,60,55],
+    "central_asian":        [35,45,55,65,65,75,50,90,95,35,35,30,70,55,65,50,45,50,50,65,45,50,55,60],
+    "chinese_state":        [70,40,45,55,75,80,50,70,65,40,25,20,65,80,60,75,40,40,45,80,70,30,75,85],
+    "chinese_diaspora":     [80,25,50,45,70,65,40,75,60,55,30,35,70,80,55,80,60,35,50,60,55,50,55,65],
+    "greek":                [30,75,85,75,55,40,90,80,90,45,85,70,65,40,75,25,55,70,90,55,15,60,70,40],
+    "italian":              [40,65,80,75,70,45,85,85,85,45,80,60,80,45,80,35,55,75,80,40,20,55,55,40],
+    "iberian":              [35,85,90,60,60,45,75,80,85,45,70,60,65,45,65,40,55,70,70,45,30,65,55,45],
+    "maghrebi":             [35,60,65,70,55,60,70,90,95,30,60,40,60,55,75,40,50,65,65,65,25,40,75,55],
+    "eu_bureaucratic":      [80,30,45,25,95,45,60,40,50,75,55,65,40,60,30,80,25,40,70,35,65,60,50,55],
+    "nordic_pmc":           [85,10,30,20,70,70,30,30,40,85,30,85,30,70,50,90,45,50,30,70,45,15,70,70],
+    "west_african":         [30,35,80,75,55,65,80,85,90,30,80,55,90,40,85,35,75,85,60,65,25,55,55,55],
+    "east_african":         [55,40,55,50,70,75,55,80,90,40,35,35,55,60,65,65,50,60,45,70,55,50,65,75],
+    "southern_african":     [45,35,70,60,60,55,80,75,85,45,70,60,70,45,75,45,60,80,60,70,30,55,70,65],
+    "brazilian":            [30,40,90,90,60,50,80,85,95,35,60,30,80,30,90,25,65,90,60,45,20,80,40,50],
+    "andean":               [40,50,60,65,65,65,55,85,80,45,35,30,55,60,70,50,45,60,60,70,30,45,75,70],
+    "gulf_arab":            [30,70,85,55,65,80,35,90,95,60,30,30,90,30,50,55,50,40,40,40,60,45,65,60],
+    "malay_indonesian":     [30,55,60,60,65,75,40,85,90,40,20,15,60,55,60,60,40,55,40,55,55,55,45,75],
+    "pakistani":            [35,45,65,70,70,75,60,90,95,35,55,35,70,55,65,45,55,65,65,70,35,35,70,65],
+    "mexican":              [35,50,75,75,60,60,80,85,90,40,55,35,70,45,80,35,60,85,60,60,20,60,55,55],
+    "canadian":             [70,15,40,30,60,35,55,40,70,70,25,40,40,55,55,65,45,50,55,50,55,75,35,60],
+    "eco_transnational":    [60,30,45,30,55,25,70,35,60,60,65,75,15,85,70,55,55,50,60,60,35,65,55,80],
+    "transhumanist":        [50,10,55,60,25,20,75,20,40,80,65,80,55,40,85,40,90,55,40,40,20,45,30,30],
+    "crypto_libertarian":   [45,15,60,65,15,10,85,30,40,90,70,90,70,50,70,30,90,60,65,50, 5,40,45,15],
+    "christian_traditionalist": [60,15,20,40,55,70,25,75,70,55,40,65,40,65,55,75,40,30,35,80,30,20,65,85],
+    "neo_buddhist":         [45,40,15,30,50,60,40,40,80,60,10,30,10,85,50,70,30,60,15,75,55,60,30,80],
+    "global_ultrarich":     [50,40,85,70,40,20,50,50,40,90,50,85,100,10,30,40,75,40,85,10,20,30,45,10],
+    "earth_late":           [50,40,50,65,65,55,75,70,75,45,50,45,40,70,75,45,45,85,75,75,15,40,60,70]
+  },
+  "cohort_filters": {
+    "_note": "Additive recruitment filters per cohort archetype. Two missions from one country differ because they recruit different cohorts.",
+    "patricians":   {"status_display": 15, "power_distance": -10, "say_no": 10, "privacy": 15, "state_trust": -5, "risk": 5, "collective_duty": -15, "hardship_pride": -20},
+    "command":      {"clock_time": 15, "order_love": 15, "formalism": 10, "power_distance": 10, "collective_duty": 10},
+    "engineers":    {"clock_time": 10, "improvisation": 10, "order_love": 10, "formalism": -10, "irony_to_power": 10, "say_no": 10, "status_display": -10},
+    "security":     {"order_love": 20, "power_distance": 15, "outsider_trust": -15, "hardship_pride": 15, "irony_to_power": -15, "open_conflict": -10},
+    "workers":      {"complaint_ritual": 10, "gallows_humor": 10, "state_trust": -10, "hardship_pride": 10, "status_display": -5},
+    "settlers":     {"risk": 15, "kin_first": 10, "hardship_pride": 10, "outsider_trust": 5},
+    "coerced":      {"rule_bending": 20, "state_trust": -30, "grievance_memory": 20, "irony_to_power": 15, "power_distance": -10, "gallows_humor": 15, "collective_duty": -15},
+    "faithful":     {"collective_duty": 20, "order_love": 10, "outsider_trust": -10, "hardship_pride": 15, "night_life": -15, "status_display": -15, "irony_to_power": -20},
+    "scientists":   {"say_no": 15, "irony_to_power": 10, "formalism": -5, "outsider_trust": 10, "status_display": -10, "risk": 10}
+  }
+}

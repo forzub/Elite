@@ -674,6 +674,27 @@ m_systemMapRenderer.render(
                         alert.severity>=2
                             ? game::presentation::DockingTerminalSeverity::Error
                             : game::presentation::DockingTerminalSeverity::Warning);
+            // Hub dock dispatcher: the server's decision for THIS ship.
+            if (playerShip.dockDispatcher.active)
+            {
+                const auto& dock = playerShip.dockDispatcher;
+                game::presentation::DockDispatcherTerminalInput in;
+                in.phase = static_cast<game::docking::traffic::DockTrafficPhase>(dock.phase);
+                in.queuePosition = dock.queuePosition;
+                in.queueLength = dock.queueLength;
+                in.departureQueuePosition = dock.departureQueuePosition;
+                in.holdPointId = dock.holdPointId;
+                in.padId = dock.padId;
+                // One line per dispatcher state: the terminal history keeps
+                // a new entry only when the state text changes.
+                std::string text;
+                for (const auto& line : game::presentation::dockDispatcherTerminalLines(in))
+                    text += (text.empty() ? "" : " / ") + line;
+                if (in.phase == game::docking::traffic::DockTrafficPhase::Docked)
+                    text += " / L: REQUEST DEPARTURE";
+                terminal.diagnostics.emplace_back(text, game::presentation::DockingTerminalSeverity::Info);
+                terminal.visible = true;
+            }
             {
                 using namespace game::ship::plant;
                 const auto model = playerShip.physicalControlModel;

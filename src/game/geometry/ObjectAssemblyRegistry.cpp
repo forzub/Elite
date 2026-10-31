@@ -677,6 +677,49 @@ void ObjectAssemblyRegistry::init()
             std::move(dockCylinder);
     }
 
+    // Earth Orbital Hub hex dock (rotating) + fixed service block, and the
+    // OCS-4 cargo shuttle. Meshes: tools/hub_meshes/generate_hub_dock_meshes.py.
+    {
+        const struct
+        {
+            ObjectType type;
+            const char* module;
+            const char* mesh;
+            const char* path;
+            float lod;
+            const char* group;
+        } entries[] = {
+            {ObjectType::HubHexDock, "hub_hex_dock_body", "hub_hex_dock",
+             "assets/models/hub/guidance_test/hub_hex_dock.obj", 30000.0f, "hub_dock"},
+            {ObjectType::HubDockServiceBlock, "hub_dock_service_block_body", "hub_dock_service_block",
+             "assets/models/hub/guidance_test/hub_dock_service_block.obj", 30000.0f, "hub_dock"},
+            {ObjectType::OrbitalCargoShuttle, "ocs4_hull", "orbital_cargo_shuttle",
+             "assets/models/ships/orbital_cargo_shuttle.obj", 8000.0f, "ocs4"},
+        };
+        for (const auto& e : entries)
+        {
+            ObjectAssemblyDesc desc;
+            desc.typeId = e.type;
+            desc.lodSwitchDistance = e.lod;
+            desc.modules = {
+                module(
+                    e.module,
+                    {sameMesh(e.mesh, e.path)},
+                    false,
+                    glm::vec3(0.0f, 0.0f, 1.0f),
+                    0.0f,
+                    glm::vec3(0.0f),
+                    glm::vec3(0.0f),
+                    glm::vec3(0.0f),
+                    e.group
+                )
+            };
+            if (e.type == ObjectType::OrbitalCargoShuttle)
+                desc.wholeShipProxyPath = e.path;
+            s_registry[static_cast<uint16_t>(desc.typeId)] = std::move(desc);
+        }
+    }
+
 
 
 

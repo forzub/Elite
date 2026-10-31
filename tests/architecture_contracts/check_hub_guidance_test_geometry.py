@@ -15,13 +15,17 @@ def fail(message: str) -> None:
 
 text = SCENE.read_text(encoding="utf-8", errors="replace")
 
-cube_pos = text.find('"guidance_dock_cube_a"')
+# The rotating hex dock replaced the guidance cube (same place, same spin
+# rule); its fixed service block follows it and must not rotate.
+cube_pos = text.find('"hub_hex_dock_a"')
+base_pos = text.find('"hub_hex_dock_base"')
 cylinder_pos = text.find('"guidance_dock_cylinder_b"')
 specs_end = text.find("    };", cylinder_pos)
-if min(cube_pos, cylinder_pos, specs_end) < 0 or not (cube_pos < cylinder_pos < specs_end):
-    fail("guidance cube/cylinder specs are missing or reordered unexpectedly")
+if min(cube_pos, base_pos, cylinder_pos, specs_end) < 0 or not (cube_pos < base_pos < cylinder_pos < specs_end):
+    fail("hex dock / service block / cylinder specs are missing or reordered unexpectedly")
 
-cube_block = text[cube_pos:cylinder_pos]
+cube_block = text[cube_pos:base_pos]
+base_block = text[base_pos:cylinder_pos]
 cylinder_block = text[cylinder_pos:specs_end]
 
 
@@ -43,11 +47,14 @@ def last_vec3(block: str, label: str) -> tuple[float, float, float]:
 
 cube_spin = last_vec3(cube_block, "guidance box")
 cylinder_spin = last_vec3(cylinder_block, "guidance cylinder")
+base_spin = last_vec3(base_block, "hex dock service block")
+if any(abs(component) > 1.0e-12 for component in base_spin):
+    fail("hex dock service block must remain completely non-rotating")
 
 if abs(cube_spin[0]) > 1.0e-12 or abs(cube_spin[1]) > 1.0e-12:
-    fail("guidance box must rotate only around local Z")
+    fail("hex dock must rotate only around local Z (its entry axis)")
 if not (0.0 < abs(cube_spin[2]) <= 2.0):
-    fail("guidance box must retain a slow non-zero local-Z rotation (<= 2 deg/s)")
+    fail("hex dock must retain a slow non-zero local-Z rotation (<= 2 deg/s)")
 if any(abs(component) > 1.0e-12 for component in cylinder_spin):
     fail("guidance cylinder must remain completely non-rotating")
 
@@ -57,7 +64,7 @@ if any(abs(component) > 1.0e-12 for component in cylinder_spin):
 # ship's belly/down direction is unambiguous without a HUD marker.
 anchors_path = ROOT / "src/assets/data/navigation/hub_semantic_anchors.json"
 anchors = json.loads(anchors_path.read_text(encoding="utf-8"))
-for module_id in ("guidance_dock_cube_a", "guidance_dock_cylinder_b"):
+for module_id in ("hub_hex_dock_a", "guidance_dock_cylinder_b"):
     module = next((m for m in anchors["modules"] if m["module_id"] == module_id), None)
     if not module:
         fail(f"missing semantic module {module_id}")
@@ -69,14 +76,14 @@ for module_id in ("guidance_dock_cube_a", "guidance_dock_cylinder_b"):
         if not width > height:
             fail(f"{module_id}/{dock['id']} aperture must be wider than tall")
 
-for mesh_name, half_width, half_height in (
-    ("guidance_dock_cube.obj", 95.0, 55.0),
-    ("guidance_dock_cylinder.obj", 100.0, 60.0),
+for mesh_name, half_width, half_height, fmt in (
+    ("hub_hex_dock.obj", 80.0, 30.0, "{:.4f}"),
+    ("guidance_dock_cylinder.obj", 100.0, 60.0, "{:.6f}"),
 ):
     mesh = (ROOT / "src/assets/models/hub/guidance_test" / mesh_name).read_text(
         encoding="utf-8", errors="replace"
     )
-    if f"{half_width:.6f}" not in mesh or f"{half_height:.6f}" not in mesh:
+    if fmt.format(half_width) not in mesh or fmt.format(half_height) not in mesh:
         fail(f"{mesh_name} does not expose the horizontal aperture dimensions")
 
 

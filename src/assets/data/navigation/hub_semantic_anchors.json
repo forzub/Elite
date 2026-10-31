@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "description": "Semantic navigation elements are data, not mesh geometry. Local basis: +X right, +Y up, -Z forward.",
+  "description": "Semantic navigation elements are data, not mesh geometry. Local basis: +X right, +Y up, -Z forward. hub_hex_dock_a = rotating hex dock (src/game/docking/model/HexDockFacility.h): entry slot 160 x 60 m on the -Z face, capture ends inside the chamber; holds / pads are dispatcher data.",
   "modules": [
     {
-      "module_id": "guidance_dock_cube_a",
+      "module_id": "hub_hex_dock_a",
       "anchors": [
         {
           "id": "dock_gate_front",
@@ -11,7 +11,7 @@
           "local_position_m": [
             0,
             0,
-            -450
+            -200
           ],
           "local_forward": [
             0,
@@ -24,54 +24,24 @@
             0
           ],
           "extent_m": [
-            190,
-            110,
-            900
+            160,
+            60,
+            400
           ],
           "required_clearance_m": 18,
-          "max_entry_speed_mps": 18,
+          "max_entry_speed_mps": 12,
           "enabled": true,
-          "display_name": "DOCK FRONT",
+          "display_name": "HEX DOCK ENTRY",
           "orientation_policy": "upright",
-          "capture_depth_m": 450
-        },
-        {
-          "id": "dock_gate_rear",
-          "kind": "docking_port",
-          "local_position_m": [
-            0,
-            0,
-            450
-          ],
-          "local_forward": [
-            0,
-            0,
-            1
-          ],
-          "local_up": [
-            0,
-            1,
-            0
-          ],
-          "extent_m": [
-            190,
-            110,
-            900
-          ],
-          "required_clearance_m": 18,
-          "max_entry_speed_mps": 18,
-          "enabled": true,
-          "display_name": "DOCK REAR",
-          "orientation_policy": "upright",
-          "capture_depth_m": 450
+          "capture_depth_m": 160
         },
         {
           "id": "attack_reference_core",
           "kind": "attack_point",
           "local_position_m": [
             0,
-            150,
-            0
+            0,
+            60
           ],
           "local_forward": [
             0,

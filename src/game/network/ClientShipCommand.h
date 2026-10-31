@@ -12,7 +12,8 @@
             SelectPhysicalControlModel,
             TogglePropulsionReactors,
             ToggleAssistedFreeRotation,
-            InjectEquipmentFailure // developer-only main-engine malfunction
+            InjectEquipmentFailure, // developer-only main-engine malfunction
+            RequestDockDeparture    // docked at the hub dock: ask the dispatcher to leave
         };
         Type type;
 

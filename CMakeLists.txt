@@ -274,12 +274,20 @@ target_link_libraries(EliteNavigationScenarioRuntime
 add_library(EliteDockingInfrastructure STATIC
     src/game/docking/traffic/DockTrafficController.cpp
     src/game/docking/landing/DockLandingController.cpp
+    # Dock service traffic (NPC shuttles / busy traffic) consumes the public
+    # dispatcher API only; the dispatcher never sees the traffic actors.
+    src/game/traffic/DockServiceTraffic.cpp
 )
 target_include_directories(EliteDockingInfrastructure PUBLIC
     "${CMAKE_SOURCE_DIR}"
     "${CMAKE_SOURCE_DIR}/src"
 )
 target_compile_features(EliteDockingInfrastructure PUBLIC cxx_std_17)
+
+# Long accelerated dock traffic + dispatcher run (invariants, separation,
+# dock structure). Writes D:/tmp/elite_dock_dispatcher_*.log.
+add_executable(EliteDockTrafficCheck tools/navigation_runtime/DockTrafficCheck.cpp)
+target_link_libraries(EliteDockTrafficCheck PRIVATE EliteDockingInfrastructure)
 
 # Game-level maneuver selection sits deliberately above NavigationWorld.
 # It consumes already-produced candidate annotations and active control-law
@@ -553,6 +561,7 @@ add_executable(EliteGame
 
     src/game/simulation/GameSimulation.cpp
     src/game/simulation/GameSimulationNavigationLab.cpp
+    src/game/simulation/GameSimulationDockTraffic.cpp
     src/game/simulation/GameSimulationDevScenarios.cpp
     src/game/simulation/GameSimulationReplication.cpp
     src/game/simulation/GameSimulationActivation.cpp
@@ -843,6 +852,7 @@ if(ELITE_BUILD_SERVER)
 
         src/game/simulation/GameSimulation.cpp
         src/game/simulation/GameSimulationNavigationLab.cpp
+        src/game/simulation/GameSimulationDockTraffic.cpp
         src/game/simulation/GameSimulationDevScenarios.cpp
         src/game/simulation/GameSimulationReplication.cpp
         src/game/simulation/GameSimulationActivation.cpp

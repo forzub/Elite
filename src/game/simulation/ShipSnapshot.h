@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdint>
+#include <string>
 #include <vector>
 #include <glm/glm.hpp>
 #include <memory>
@@ -22,6 +24,24 @@
 // #include "src/game/geometry/MeshData.h"
 
 #include "src/game/simulation/ObjectGraphSnapshot.h"
+
+namespace game::simulation
+{
+// This ship's dock dispatcher status (DockTrafficController), replicated so
+// the docking terminal shows the server's queue / hold / pad decision. The
+// client never derives queue position or availability itself.
+struct ShipDockDispatcherSnapshot
+{
+    bool active = false;
+    std::uint8_t phase = 0; // game::docking::traffic::DockTrafficPhase
+    std::uint32_t queuePosition = 0;
+    std::uint32_t queueLength = 0;
+    std::uint32_t departureQueuePosition = 0;
+    std::string holdPointId;
+    std::string padId;
+    bool stationControlled = false;
+};
+} // namespace game::simulation
 
 struct ShipSnapshot
 {
@@ -57,4 +77,5 @@ struct ShipSnapshot
     // Must not depend on optional heavy module/structural replication.
     game::ship::telemetry::ShipControlAuthorityTelemetry controlAuthorityTelemetry {};
     game::simulation::ObjectGraphSnapshot                graph;
+    game::simulation::ShipDockDispatcherSnapshot          dockDispatcher;
 };

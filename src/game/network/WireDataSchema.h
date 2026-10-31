@@ -80,7 +80,7 @@ ELITE_WIRE_ENUM_RANGE(
     game::simulation::ShipMaterializedFidelity::Response,
     game::simulation::ShipMaterializedFidelity::Detailed
 );
-ELITE_WIRE_ENUM_RANGE(ObjectType, ObjectType::None, ObjectType::GuidanceDockCylinder);
+ELITE_WIRE_ENUM_RANGE(ObjectType, ObjectType::None, ObjectType::OrbitalCargoShuttle);
 ELITE_WIRE_ENUM_RANGE(
     game::diagnostics::HubMotionLabActorKind,
     game::diagnostics::HubMotionLabActorKind::None,
@@ -682,6 +682,18 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::ShipDockDispatcherSnapshot,
+    v.active,
+    v.phase,
+    v.queuePosition,
+    v.queueLength,
+    v.departureQueuePosition,
+    v.holdPointId,
+    v.padId,
+    v.stationControlled
+);
+
+ELITE_WIRE_SCHEMA(
     ShipSnapshot,
     v.id,
     v.instanceId,
@@ -701,7 +713,8 @@ ELITE_WIRE_SCHEMA(
     v.damageEvents,
     v.shipCoreStatus,
     v.controlAuthorityTelemetry,
-    v.graph
+    v.graph,
+    v.dockDispatcher
 );
 
 ELITE_WIRE_SCHEMA(

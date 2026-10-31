@@ -8,6 +8,7 @@
 #include "src/game/catalog/propulsion/KobraMainDrivePassports.h"
 #include "src/game/catalog/rcs/KobraRcsPassports.h"
 #include "src/game/catalog/ships/CobrettPassports.h"
+#include "src/game/catalog/ships/OrbitalCargoShuttlePassports.h"
 
 // Lookup over all category catalogs. Each category keeps its own files; this
 // registry only enumerates them.
@@ -16,14 +17,20 @@ namespace game::catalog
 
 [[nodiscard]] inline const ProductPassport* findProduct(std::string_view id)
 {
-    static const std::array<const ProductPassport*, 7> products {
+    static const std::array<const ProductPassport*, 13> products {
         &propulsion::kobraN1AxialMainDrive(),
         &propulsion::cr1VectorMainDrive(),
         &power::er5PropulsionReactor(),
         &rcs::fieldCoupledRcsNozzle(),
         &rcs::argonRcsTank(),
         &ships::cobrettIN1().product,
-        &ships::cobrettIA3().product
+        &ships::cobrettIA3().product,
+        &ships::ocs4MainDrive(),
+        &ships::ocs4PropulsionReactor(),
+        &ships::ocs4RcsCluster(),
+        &ships::ocs4Cooling(),
+        &ships::ocs4SensorSuite(),
+        &ships::orbitalCargoShuttleOcs4().product
     };
     for (const auto* product : products)
         if (product->stableId == id)
@@ -38,6 +45,8 @@ namespace game::catalog
         return &ships::cobrettIN1();
     if (id == ships::CobrettIA3Id)
         return &ships::cobrettIA3();
+    if (id == ships::OrbitalCargoShuttleOcs4Id)
+        return &ships::orbitalCargoShuttleOcs4();
     return nullptr;
 }
 

@@ -798,6 +798,23 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         return;
     }
 
+    // L: docked at the hub dock -> ask the dock dispatcher for departure.
+    // The server decides; the terminal shows DEPARTURE QUEUED / CLEARED.
+    if(Input::instance().isKeyPressedOnce(GLFW_KEY_L) && m_client)
+    {
+        const auto it=m_client->world().ships().find(m_playerId.value);
+        if(it!=m_client->world().ships().end() && it->second.dockDispatcher.active &&
+           it->second.dockDispatcher.phase==static_cast<std::uint8_t>(
+               game::docking::traffic::DockTrafficPhase::Docked))
+        {
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type=ClientShipCommand::RequestDockDeparture;
+            msg.payload=command;
+            m_client->sendMessage(msg);
+        }
+    }
+
     // Backspace toggles independent hull attitude only in Assisted flight.
     // The SystemMap already handles its own Backspace before this block.
     if(Input::instance().isKeyPressedOnce(GLFW_KEY_BACKSPACE))
@@ -2117,7 +2134,7 @@ void SpaceState::update(float dt)
             else
             {
                 target.stableObjectId =
-                    "guidance_dock_cube_a";
+                    "hub_hex_dock_a";
                 target.semanticAnchorId =
                     "dock_gate_front";
             }

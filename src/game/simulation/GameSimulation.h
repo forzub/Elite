@@ -50,6 +50,9 @@
 #include "src/world/navigation/map/NavigationMap.h"
 #include "src/world/navigation/space/NavigationSpace.h"
 
+#include <cstdio>
+#include "src/game/traffic/DockServiceTraffic.h"
+
 
 class StateContext;
 
@@ -157,6 +160,12 @@ public:
     );
 
     const game::simulation::ShipShellState* shipShell(EntityId id) const;
+    // Earth Orbital Hub dock traffic model (nullptr until the dock exists).
+    game::traffic::dock::DockServiceTraffic* dockServiceTraffic() noexcept;
+    // Pilot asks the dock dispatcher to leave the pad (docked ships only).
+    bool requestDockDeparture(EntityId shipId);
+    // This ship's dispatcher status (phase None when unknown to the dock).
+    game::docking::traffic::DockTrafficShipStatus dockDispatcherStatus(EntityId shipId) const;
     std::size_t shipShellCount() const noexcept { return m_shipShells.size(); }
 
     EntityId spawnStation(
@@ -422,6 +431,13 @@ private:
     void initializeFiveHundredShipHerd();
     void initializeShipTierTransitionTest();
     void updateShipShells(double dt);
+    // Earth Orbital Hub dock traffic (GameSimulationDockTraffic.cpp).
+    void updateDockServiceTraffic(double dt);
+    // Pilot ships and the dock dispatcher: request on approach, station
+    // capture at the portal, kinematic pose while station-controlled.
+    void updateDockPilotShips();
+    bool isDockStationControlledShip(EntityId id) const noexcept;
+    bool removeTrafficShell(EntityId id);
     void updateShipSimulationDetail(double dt);
     void updateShipTierTransitionTest();
     void updateFiveHundredShipHerdDiagnostics();
@@ -454,6 +470,17 @@ private:
     // Lightweight authoritative ships live outside m_ships by design: merely
     // existing in the universe must not allocate ShipCore/module/damage state.
     std::unordered_map<EntityId, game::simulation::ShipShellState> m_shipShells;
+
+    // Dock service traffic: dispatcher + shuttles + busy traffic, realised as
+    // TrafficShell ships whose pose the traffic model owns.
+    std::unique_ptr<game::traffic::dock::DockServiceTraffic> m_dockServiceTraffic;
+    std::unordered_map<std::uint64_t, EntityId> m_dockTrafficShellByActor;
+    std::unordered_set<EntityId> m_dockTrafficShells;
+    double m_dockTrafficPhaseOffsetRad = 0.0;
+    std::FILE* m_dockTrafficLog = nullptr;
+    bool m_dockTrafficDisabled = false;
+    std::unordered_set<EntityId> m_dockStationControlledShips;
+    double m_dockPilotTraceSeconds = -1e9;
     std::unordered_map<
         EntityId,
         game::simulation::ShipSimulationLifecycleState

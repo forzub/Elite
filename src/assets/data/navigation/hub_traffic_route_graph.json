@@ -48,8 +48,8 @@
       }
     },
     {
-      "id": "cube_a.dock_front",
-      "module_id": "guidance_dock_cube_a",
+      "id": "hex_dock_a.dock_front",
+      "module_id": "hub_hex_dock_a",
       "semantic_anchor_id": "dock_gate_front",
       "role": "docking_port",
       "crossing_forward_local": [
@@ -63,7 +63,7 @@
         0
       ],
       "required_clearance_m": 18,
-      "max_crossing_speed_mps": 18
+      "max_crossing_speed_mps": 12
     }
   ],
   "lanes": [
@@ -87,9 +87,9 @@
       "lane_id": "cylinder_b.blue_lane"
     },
     {
-      "id": "cylinder_b.exit_to_cube_a.front",
+      "id": "cylinder_b.exit_to_hex_dock_a.front",
       "from_portal_id": "cylinder_b.exit_rear",
-      "to_portal_id": "cube_a.dock_front",
+      "to_portal_id": "hex_dock_a.dock_front",
       "kind": "terminal_approach"
     }
   ]

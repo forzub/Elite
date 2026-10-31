@@ -822,6 +822,10 @@ void GameServer::update(double dt)
                     ship.core().toggleAssistedFreeRotation();
                     break;
 
+                case ClientShipCommand::RequestDockDeparture:
+                    m_simulation.requestDockDeparture(id);
+                    break;
+
                 case ClientShipCommand::InjectEquipmentFailure:
                 {
                     // A deliberate test fault on this player's authoritative

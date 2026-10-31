@@ -23,7 +23,7 @@ require(
 )
 
 required_scene_tokens = [
-    '"guidance_dock_cube_a"',
+    '"hub_hex_dock_a"',
     '"guidance_dock_cylinder_b"',
     'two staggered deterministic shells around the hub',
     # Representative points on both shells. These intentionally do not form the

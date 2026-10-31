@@ -65,13 +65,13 @@ int main()
         const auto route =
             graph->resolve(
                 "cylinder_b.entry_front",
-                "cube_a.dock_front"
+                "hex_dock_a.dock_front"
             );
         require(route.valid, "traffic route failed to resolve");
 
         RouteStageCompiler::ReferenceFrameMap frames;
         frames["guidance_dock_cylinder_b"] = {};
-        frames["guidance_dock_cube_a"] = {};
+        frames["hub_hex_dock_a"] = {};
 
         const auto compiled =
             RouteStageCompiler::compile(

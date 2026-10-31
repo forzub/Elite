@@ -578,6 +578,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.damageEvents = s.damageEvents;
             state.shipCoreStatus = s.shipCoreStatus;
             state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;
+            state.dockDispatcher = s.dockDispatcher;
             {
                 const auto phaseBegin = HydrateClock::now();
                 applyGraphSnapshot(
@@ -660,6 +661,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.damageEvents = s.damageEvents;
             state.shipCoreStatus = s.shipCoreStatus;
             state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;
+            state.dockDispatcher = s.dockDispatcher;
             {
                 const auto phaseBegin = HydrateClock::now();
                 applyGraphSnapshot(

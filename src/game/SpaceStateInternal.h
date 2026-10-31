@@ -10,6 +10,7 @@
 #include "src/game/navigation/debug/DockPlannerFileLog.h"
 #include "src/game/navigation/diagnostics/AutopilotCaseFile.h"
 #include "src/game/navigation/traffic/TrafficWindowCrossing.h"
+#include "src/game/presentation/DockDispatcherTerminalText.h"
 #include "src/game/presentation/DockPlannerTerminalTelemetry.h"
 #include "src/game/presentation/DockTerminalBitePresentation.h"
 #include "src/audio/AudioEngine.h"

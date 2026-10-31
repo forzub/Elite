@@ -1915,7 +1915,7 @@ void SpaceState::updateDockingAdvisory()
 
         if (!lateEntryRebind &&
             EnableMandatoryBlueTransit &&
-            pending.target.stableObjectId == "guidance_dock_cube_a" &&
+            pending.target.stableObjectId == "hub_hex_dock_a" &&
             pending.target.semanticAnchorId == "dock_gate_front")
         {
             game::navigation::traffic::TrafficRouteGraphCatalog trafficCatalog;
@@ -1937,7 +1937,7 @@ void SpaceState::updateDockingAdvisory()
             const auto trafficGraph = trafficCatalog.graph();
             const auto trafficRoute = trafficGraph->resolve(
                 "cylinder_b.entry_front",
-                "cube_a.dock_front"
+                "hex_dock_a.dock_front"
             );
             if (!trafficRoute.valid)
             {

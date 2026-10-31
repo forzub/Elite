@@ -61,6 +61,15 @@ MeshGPU& MeshLibrary::get(ObjectType typeId)
         case ObjectType::GuidanceDockCylinder:
             objPath = "assets/models/hub/guidance_test/guidance_dock_cylinder.obj";
             break;
+        case ObjectType::HubHexDock:
+            objPath = "assets/models/hub/guidance_test/hub_hex_dock.obj";
+            break;
+        case ObjectType::HubDockServiceBlock:
+            objPath = "assets/models/hub/guidance_test/hub_dock_service_block.obj";
+            break;
+        case ObjectType::OrbitalCargoShuttle:
+            objPath = "assets/models/ships/orbital_cargo_shuttle.obj";
+            break;
 
         default:
             std::cout << "[MeshLibrary] Unknown object type\n";

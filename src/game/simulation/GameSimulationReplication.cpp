@@ -184,6 +184,21 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         // when its large ObjectGraphSnapshot is sparse or suppressed.
         s.controlAuthorityTelemetry =
             ship.core().controlAuthorityTelemetry();
+        if (m_dockServiceTraffic && isPlayerControlled(id))
+        {
+            const auto dock = dockDispatcherStatus(id);
+            if (dock.phase != game::docking::traffic::DockTrafficPhase::None)
+            {
+                s.dockDispatcher.active = true;
+                s.dockDispatcher.phase = static_cast<std::uint8_t>(dock.phase);
+                s.dockDispatcher.queuePosition = static_cast<std::uint32_t>(dock.queuePosition);
+                s.dockDispatcher.queueLength = static_cast<std::uint32_t>(dock.queueLength);
+                s.dockDispatcher.departureQueuePosition = static_cast<std::uint32_t>(dock.departureQueuePosition);
+                s.dockDispatcher.holdPointId = dock.holdPointId;
+                s.dockDispatcher.padId = dock.padId;
+                s.dockDispatcher.stationControlled = isDockStationControlledShip(id);
+            }
+        }
 
         // s.modules.clear();
         // for (const auto& mod : ship.core().moduleRuntime().modules())

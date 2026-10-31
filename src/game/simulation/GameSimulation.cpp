@@ -341,6 +341,9 @@ void GameSimulation::updateShipShells(double dt)
 
     for (auto& [id, shell] : m_shipShells)
     {
+        // Dock traffic poses are written by updateDockServiceTraffic().
+        if (m_dockTrafficShells.count(id) != 0)
+            continue;
         shell.authoritativeMotionAccumulatorSeconds += dt;
 
         const double interval =
@@ -1691,6 +1694,7 @@ m_hubVelocityMetersPerSecond[hubId] =
         applyPhysicalCorridorHotStart();
         updateShipStateFlightTest();
         updateShipShells(dt);
+        updateDockServiceTraffic(dt);
         updateShipSimulationDetail(dt);
         updateShipTierTransitionTest();
         updateFiveHundredShipHerdDiagnostics();
@@ -1710,7 +1714,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
             }
 
-            if (isHubMotionLabShip(id))
+            if (isHubMotionLabShip(id) || isDockStationControlledShip(id))
                 continue;
 
             if (isInterplanetaryTransferLabShip(id))
@@ -1801,7 +1805,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
             }
 
-            if (isHubMotionLabShip(id))
+            if (isHubMotionLabShip(id) || isDockStationControlledShip(id))
                 continue;
 
             if (isInterplanetaryTransferLabShip(id))
@@ -1821,7 +1825,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
             }
 
-            if (isHubMotionLabShip(id))
+            if (isHubMotionLabShip(id) || isDockStationControlledShip(id))
                 continue;
 
             if (isInterplanetaryTransferLabShip(id))
@@ -1922,7 +1926,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
             }
 
-            if (isHubMotionLabShip(id))
+            if (isHubMotionLabShip(id) || isDockStationControlledShip(id))
                 continue;
 
             if (isInterplanetaryTransferLabShip(id))
@@ -2001,7 +2005,7 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (!shipPtr)
                 continue;
 
-            if (isHubMotionLabShip(id))
+            if (isHubMotionLabShip(id) || isDockStationControlledShip(id))
                 continue;
 
             if (isInterplanetaryTransferLabShip(id))
@@ -2147,6 +2151,7 @@ m_hubVelocityMetersPerSecond[hubId] =
         // excluded from production AI/physics above, then published through
         // the ordinary authoritative ShipSnapshot path below.
         updateHubMotionLabActors();
+        updateDockPilotShips();
 
         // Stage 4B keeps the 5 Hz physical planner. NPC tactical AI, motion
         // control, internal systems and structural/repair maintenance consume

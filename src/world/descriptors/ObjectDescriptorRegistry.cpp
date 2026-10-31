@@ -6,6 +6,8 @@
 
 #include "src/game/drone/descriptors/RepairDroneDescriptor.h"
 #include "src/game/station/descriptors/GuidanceTestDockDescriptor.h"
+#include "src/game/station/descriptors/HubHexDockDescriptor.h"
+#include "src/game/ship/descriptors/OrbitalCargoShuttleDescriptor.h"
 
 #include <mutex>
 
@@ -62,4 +64,12 @@ void ObjectDescriptorRegistry::init()
         auto desc = std::make_unique<game::station::GuidanceDockCylinderDescriptor>();
         registry[ObjectType::GuidanceDockCylinder] = std::move(desc);
     }
+
+    // ===== EARTH ORBITAL HUB HEX DOCK =====
+    registry[ObjectType::HubHexDock] = std::make_unique<game::station::HubHexDockDescriptor>();
+    registry[ObjectType::HubDockServiceBlock] = std::make_unique<game::station::HubDockServiceBlockDescriptor>();
+
+    // ===== OCS-4 ORBITAL CARGO SHUTTLE (dock traffic) =====
+    registry[ObjectType::OrbitalCargoShuttle] =
+        std::make_unique<ShipDescriptor>(game::ship::descriptors::orbitalCargoShuttleDescriptor());
 }

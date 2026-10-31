@@ -560,13 +560,25 @@ void spawnHubGuidanceTestModules(
     // and clear service sectors near both docking targets. This exercises route
     // choice in a realistic local field while keeping every run reproducible.
     const Spec specs[] = {
+        // Earth Orbital Hub dock: rotating hex dock (spins 2 deg/s about its
+        // own Z = entry axis) and its fixed coaxial service block 510 m
+        // behind the dock centre (Ry(27 deg) * (0, 0, 510)). Traffic and the
+        // dispatcher: src/game/traffic/DockServiceTraffic + HexDockFacility.h.
         {
-            ObjectType::GuidanceDockCube,
-            "guidance_dock_cube_a",
-            "GUIDANCE DOCK CUBE A",
+            ObjectType::HubHexDock,
+            "hub_hex_dock_a",
+            "EARTH ORBITAL HUB DOCK",
             glm::dvec3(3000.0, 350.0, 0.0),
             glm::dvec3(0.0, 27.0, 0.0),
             glm::dvec3(0.0, 0.0, 2.0)
+        },
+        {
+            ObjectType::HubDockServiceBlock,
+            "hub_hex_dock_base",
+            "HUB DOCK SERVICE BLOCK",
+            glm::dvec3(3000.0 + 510.0 * 0.45399049973954675, 350.0, 510.0 * 0.8910065241883679),
+            glm::dvec3(0.0, 27.0, 0.0),
+            glm::dvec3(0.0)
         },
         {
             ObjectType::GuidanceDockCylinder,
@@ -781,7 +793,7 @@ void spawnHubGuidanceTestModules(
     for (std::size_t specIndex = 0;
          specIndex < sizeof(specs)/sizeof(specs[0]); ++specIndex)
     {
-        if (game::diagnostics::HubDockingFlightTestScene && specIndex >= 2)
+        if (game::diagnostics::HubDockingFlightTestScene && specIndex >= 3)
             break;
         const Spec& spec = specs[specIndex];
         const EntityId id = sim.spawnStation(

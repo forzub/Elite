@@ -59,7 +59,7 @@ int main()
         const auto route =
             graph->resolve(
                 "cylinder_b.entry_front",
-                "cube_a.dock_front"
+                "hex_dock_a.dock_front"
             );
         require(route.valid, "traffic route failed to resolve");
 
@@ -67,7 +67,7 @@ int main()
         frames["guidance_dock_cylinder_b"] = {};
         NavigationReferenceFramePose cubeFrame;
         cubeFrame.originWorldMeters = {2500.0, 0.0, 600.0};
-        frames["guidance_dock_cube_a"] = cubeFrame;
+        frames["hub_hex_dock_a"] = cubeFrame;
 
         const auto compiled =
             RouteStageCompiler::compile(
@@ -210,9 +210,9 @@ int main()
         require(
             near(
                 compiled.requiredViaPointsMeters[4],
-                glm::dvec3(2500.0, 0.0, 150.0)
+                glm::dvec3(2500.0, 0.0, 400.0)
             ),
-            "compiled route did not continue to cube A dock portal"
+            "compiled route did not continue to the hex dock portal"
         );
 
         // Missing frame data is authoritative failure, not permission to

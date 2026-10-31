@@ -18,7 +18,9 @@ std::optional<NavigationObstacle> makeNavigationObstacleForObject(
 {
     if (type != ObjectType::Station &&
         type != ObjectType::GuidanceDockCube &&
-        type != ObjectType::GuidanceDockCylinder)
+        type != ObjectType::GuidanceDockCylinder &&
+        type != ObjectType::HubHexDock &&
+        type != ObjectType::HubDockServiceBlock)
     {
         return std::nullopt;
     }
@@ -51,7 +53,9 @@ std::optional<NavigationObstacle> makeNavigationObstacleForObject(
     obstacle.requiredClearanceMeters = std::max(0.0, requiredClearanceMeters);
 
     if (type == ObjectType::Station ||
-        type == ObjectType::GuidanceDockCube)
+        type == ObjectType::GuidanceDockCube ||
+        type == ObjectType::HubHexDock ||
+        type == ObjectType::HubDockServiceBlock)
     {
         obstacle.shape = NavigationObstacleShape::Box;
         obstacle.halfExtentsMeters = glm::max(

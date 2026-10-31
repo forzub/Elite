@@ -86,6 +86,7 @@ struct ClientShipState
 
     game::ShipCoreStatus                            shipCoreStatus;
     game::ship::telemetry::ShipControlAuthorityTelemetry controlAuthorityTelemetry {};
+    game::simulation::ShipDockDispatcherSnapshot      dockDispatcher;
     std::vector<game::damage::DamageEvent>           damageEvents;
 
     std::vector<game::simulation::ObjectModuleSnapshot> modules;

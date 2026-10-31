@@ -160,7 +160,7 @@ int main()
         const auto route =
             graph->resolve(
                 "cylinder_b.entry_front",
-                "cube_a.dock_front"
+                "hex_dock_a.dock_front"
             );
 
         require(route.valid, "protected traffic route did not resolve");
@@ -171,7 +171,7 @@ int main()
         require(
             route.portalSequence[0] == "cylinder_b.entry_front" &&
             route.portalSequence[1] == "cylinder_b.exit_rear" &&
-            route.portalSequence[2] == "cube_a.dock_front",
+            route.portalSequence[2] == "hex_dock_a.dock_front",
             "protected traffic route portal order changed"
         );
 

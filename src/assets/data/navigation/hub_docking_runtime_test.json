@@ -3,17 +3,10 @@
   "description": "Diagnostic docking-service state. This producer is temporary; consumers use DockingPortRuntimeState and will later receive equivalent session-scoped server data.",
   "ports": [
     {
-      "module_id": "guidance_dock_cube_a",
+      "module_id": "hub_hex_dock_a",
       "anchor_id": "dock_gate_front",
       "operational": "online",
       "occupancy": "free",
-      "access": "allowed"
-    },
-    {
-      "module_id": "guidance_dock_cube_a",
-      "anchor_id": "dock_gate_rear",
-      "operational": "online",
-      "occupancy": "occupied",
       "access": "allowed"
     },
     {

@@ -9,6 +9,11 @@
 
 class Font;
 
+namespace render::hud
+{
+class HudPrimitiveBatch;
+}
+
 namespace render::navigation
 {
 
@@ -70,6 +75,28 @@ struct NavigationOverlayButtonBounds
     }
 };
 
+// One map button: drawn as a rounded wire bar with the label inside.
+struct NavigationOverlayButton
+{
+    std::string label;
+    NavigationOverlayButtonBounds bounds;
+    bool hovered = false;
+    bool enabled = true;
+    bool active = false;
+};
+
+// A context menu as laid out by its owner: title + command rows.
+struct NavigationContextMenuView
+{
+    NavigationOverlayButtonBounds bounds;
+    float headerHeightPx = 26.0f;
+    float rowHeightPx = 24.0f;
+    std::string title;
+    std::vector<std::string> rows;
+    std::vector<bool> enabled;
+    int hovered = -1;
+};
+
 class NavigationCoordinateOverlay
 {
 public:
@@ -119,6 +146,24 @@ public:
             bool besideTrack = false
         );
 
+    // Back to the previous map: left of `rightNeighbour`, or the rightmost
+    // slot when there is no neighbour (Details / Hub).
+    static NavigationOverlayButtonBounds
+        backButtonBounds(
+            const Viewport& viewport,
+            const NavigationOverlayButtonBounds* rightNeighbour
+        );
+
+    void drawButtons(
+        const Viewport& viewport,
+        const std::vector<NavigationOverlayButton>& buttons
+    );
+
+    void drawContextMenu(
+        const Viewport& viewport,
+        const NavigationContextMenuView& menu
+    );
+
     // Galaxy Map breadcrumbs (GALAXY > G0 [..] > G1 [..]): one bounds per
     // crumb, laid out above the footer; separators are not clickable.
     std::vector<NavigationOverlayButtonBounds> breadcrumbBounds(
@@ -126,20 +171,20 @@ public:
         const std::vector<std::string>& crumbs
     );
 
-    void drawGalaxyNavigation(
+    void drawBreadcrumbs(
         const Viewport& viewport,
         const std::vector<std::string>& crumbs,
-        int hoveredCrumb,
-        bool upHovered,
-        bool upEnabled,
-        bool upBesideTrack = false
+        int hoveredCrumb
     );
 
 private:
     void ensureFont();
+    void ensureBatch();
+    float screenScaleFor(const Viewport& viewport) const;
 
 private:
     std::unique_ptr<Font> m_font;
+    std::unique_ptr<render::hud::HudPrimitiveBatch> m_batch;
     NavigationOverlayVisualSettings m_visuals;
     NavigationOverlayTextProfile m_textProfile;
 };

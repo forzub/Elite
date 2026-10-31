@@ -1,12 +1,15 @@
 #include "src/render/navigation/NavigationCoordinateOverlay.h"
 
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
+#include <vector>
 
 #include <glm/glm.hpp>
 
 #include "render/Font.h"
 #include "render/HUD/TextRenderer.h"
+#include "src/render/HUD/HudPrimitiveBatch.h"
 
 namespace render::navigation
 {
@@ -50,6 +53,43 @@ glm::vec4 colorForRole(
         0.84f,
         0.68f
     );
+}
+
+// A rounded rectangle: optional fill (triangle fan), then the wire outline.
+void roundedFrame(
+    render::hud::HudPrimitiveBatch& batch,
+    const NavigationOverlayButtonBounds& b,
+    float radius,
+    float lineWidth,
+    const glm::vec4& line,
+    const glm::vec4& fill
+)
+{
+    constexpr int ArcSegments = 6;
+    radius = std::min({radius, (b.right - b.left) * 0.5f, (b.bottom - b.top) * 0.5f});
+    std::vector<glm::vec2> outline;
+    const glm::vec2 centres[4] = {
+        {b.right - radius, b.top + radius},
+        {b.right - radius, b.bottom - radius},
+        {b.left + radius, b.bottom - radius},
+        {b.left + radius, b.top + radius}};
+    for (int corner = 0; corner < 4; ++corner)
+    {
+        const float start = -1.5707963f + 1.5707963f * static_cast<float>(corner);
+        for (int i = 0; i <= ArcSegments; ++i)
+        {
+            const float a = start + 1.5707963f * static_cast<float>(i) / static_cast<float>(ArcSegments);
+            outline.push_back(centres[corner] + glm::vec2(std::cos(a), std::sin(a)) * radius);
+        }
+    }
+    if (fill.a > 0.0f)
+    {
+        const glm::vec2 centre((b.left + b.right) * 0.5f, (b.top + b.bottom) * 0.5f);
+        for (std::size_t i = 0; i < outline.size(); ++i)
+            batch.filledTriangle(centre, outline[i], outline[(i + 1) % outline.size()], fill);
+    }
+    for (std::size_t i = 0; i < outline.size(); ++i)
+        batch.line(outline[i], outline[(i + 1) % outline.size()], lineWidth, line);
 }
 
 } // namespace
@@ -167,6 +207,157 @@ NavigationCoordinateOverlay::upButtonBounds(
     };
 }
 
+NavigationOverlayButtonBounds
+NavigationCoordinateOverlay::backButtonBounds(
+    const Viewport& viewport,
+    const NavigationOverlayButtonBounds* rightNeighbour
+)
+{
+    const NavigationOverlayVisualSettings visuals;
+
+    const float screenScale =
+        std::clamp(
+            static_cast<float>(viewport.height) /
+                visuals.referenceHeightPx,
+            visuals.minimumScreenScale,
+            visuals.maximumScreenScale
+        );
+
+    const NavigationOverlayButtonBounds anchor = levelZeroButtonBounds(viewport);
+    const float width = visuals.backButtonWidthPx * screenScale;
+    const float gap = visuals.overlayButtonGapPx * screenScale;
+    const float right = rightNeighbour ? rightNeighbour->left - gap : anchor.right;
+    return {right - width, anchor.top, right, anchor.bottom};
+}
+
+float NavigationCoordinateOverlay::screenScaleFor(
+    const Viewport& viewport
+) const
+{
+    return std::clamp(
+        static_cast<float>(viewport.height) / m_visuals.referenceHeightPx,
+        m_visuals.minimumScreenScale,
+        m_visuals.maximumScreenScale
+    );
+}
+
+void NavigationCoordinateOverlay::ensureBatch()
+{
+    if (!m_batch)
+        m_batch = std::make_unique<render::hud::HudPrimitiveBatch>();
+}
+
+void NavigationCoordinateOverlay::drawButtons(
+    const Viewport& viewport,
+    const std::vector<NavigationOverlayButton>& buttons
+)
+{
+    if (buttons.empty())
+        return;
+    ensureFont();
+    ensureBatch();
+    if (!m_font)
+        return;
+
+    const float screenScale = screenScaleFor(viewport);
+    const float scale = m_visuals.bodyBaseScale * m_visuals.coordinateTextScale * screenScale;
+
+    m_batch->begin(viewport.width, viewport.height);
+    for (const auto& button : buttons)
+    {
+        glm::vec4 line {0.44f, 0.62f, 0.74f, 0.62f};
+        glm::vec4 fill {0.10f, 0.20f, 0.28f, 0.10f};
+        if (!button.enabled)
+        {
+            line = {0.30f, 0.36f, 0.40f, 0.32f};
+            fill.a = 0.0f;
+        }
+        else if (button.active)
+        {
+            line = button.hovered ? glm::vec4(0.96f, 0.82f, 0.42f, 0.95f) : glm::vec4(0.88f, 0.70f, 0.30f, 0.80f);
+            fill = {0.40f, 0.30f, 0.10f, button.hovered ? 0.26f : 0.16f};
+        }
+        else if (button.hovered)
+        {
+            line = {0.64f, 0.84f, 0.96f, 0.92f};
+            fill = {0.20f, 0.42f, 0.56f, 0.24f};
+        }
+        roundedFrame(*m_batch, button.bounds, m_visuals.buttonCornerRadiusPx * screenScale,
+                     m_visuals.buttonLineWidthPx * screenScale, line, fill);
+    }
+    m_batch->flush();
+
+    TextRenderer& text = TextRenderer::instance();
+    text.beginFrameForViewport(viewport.width, viewport.height);
+    for (const auto& button : buttons)
+    {
+        glm::vec4 color {0.56f, 0.76f, 0.88f, 0.84f};
+        if (!button.enabled)
+            color = {0.30f, 0.36f, 0.40f, 0.40f};
+        else if (button.active)
+            color = button.hovered ? glm::vec4(0.98f, 0.86f, 0.48f, 1.0f) : glm::vec4(0.90f, 0.74f, 0.34f, 0.92f);
+        else if (button.hovered)
+            color = {0.74f, 0.90f, 1.0f, 0.98f};
+        const float width = m_font->measureText(button.label) * scale;
+        text.textDraw(
+            *m_font,
+            button.label,
+            button.bounds.left + (button.bounds.right - button.bounds.left - width) * 0.5f,
+            button.bounds.top + m_visuals.levelZeroButtonBaselinePx * screenScale,
+            color,
+            scale
+        );
+    }
+    text.endFrame();
+}
+
+void NavigationCoordinateOverlay::drawContextMenu(
+    const Viewport& viewport,
+    const NavigationContextMenuView& menu
+)
+{
+    ensureFont();
+    ensureBatch();
+    if (!m_font)
+        return;
+
+    const float screenScale = screenScaleFor(viewport);
+    const float scale = m_visuals.bodyBaseScale * m_visuals.coordinateTextScale * screenScale * 0.92f;
+    const NavigationOverlayButtonBounds& b = menu.bounds;
+
+    m_batch->begin(viewport.width, viewport.height);
+    roundedFrame(*m_batch, b, m_visuals.buttonCornerRadiusPx * screenScale, m_visuals.buttonLineWidthPx * screenScale,
+                 glm::vec4(0.44f, 0.66f, 0.82f, 0.70f), glm::vec4(0.02f, 0.06f, 0.09f, 0.78f));
+    // Title separator.
+    const float separatorY = b.top + menu.headerHeightPx;
+    m_batch->line({b.left + 8.0f, separatorY}, {b.right - 8.0f, separatorY}, 1.0f,
+                  glm::vec4(0.40f, 0.60f, 0.74f, 0.40f));
+    if (menu.hovered >= 0 && menu.hovered < static_cast<int>(menu.rows.size()))
+    {
+        const float top = separatorY + 3.0f + menu.rowHeightPx * static_cast<float>(menu.hovered);
+        roundedFrame(*m_batch, {b.left + 4.0f, top, b.right - 4.0f, top + menu.rowHeightPx - 2.0f},
+                     6.0f * screenScale, 1.0f, glm::vec4(0.58f, 0.80f, 0.94f, 0.70f),
+                     glm::vec4(0.20f, 0.42f, 0.56f, 0.30f));
+    }
+    m_batch->flush();
+
+    TextRenderer& text = TextRenderer::instance();
+    text.beginFrameForViewport(viewport.width, viewport.height);
+    text.textDraw(*m_font, menu.title, b.left + 12.0f, b.top + menu.headerHeightPx * 0.70f,
+                  glm::vec4(0.90f, 0.80f, 0.48f, 0.95f), scale);
+    for (std::size_t i = 0; i < menu.rows.size(); ++i)
+    {
+        const bool enabled = i >= menu.enabled.size() || menu.enabled[i];
+        const bool hovered = static_cast<int>(i) == menu.hovered;
+        const glm::vec4 color =
+            !enabled ? glm::vec4(0.34f, 0.40f, 0.44f, 0.50f)
+                     : (hovered ? glm::vec4(0.82f, 0.94f, 1.0f, 1.0f) : glm::vec4(0.60f, 0.80f, 0.92f, 0.90f));
+        const float top = separatorY + 3.0f + menu.rowHeightPx * static_cast<float>(i);
+        text.textDraw(*m_font, menu.rows[i], b.left + 16.0f, top + menu.rowHeightPx * 0.70f, color, scale);
+    }
+    text.endFrame();
+}
+
 namespace
 {
     const char* const BreadcrumbSeparator = "  ›  ";
@@ -211,13 +402,10 @@ NavigationCoordinateOverlay::breadcrumbBounds(
     return result;
 }
 
-void NavigationCoordinateOverlay::drawGalaxyNavigation(
+void NavigationCoordinateOverlay::drawBreadcrumbs(
     const Viewport& viewport,
     const std::vector<std::string>& crumbs,
-    int hoveredCrumb,
-    bool upHovered,
-    bool upEnabled,
-    bool upBesideTrack
+    int hoveredCrumb
 )
 {
     const auto bounds = breadcrumbBounds(viewport, crumbs);
@@ -257,24 +445,6 @@ void NavigationCoordinateOverlay::drawGalaxyNavigation(
         if (!last)
             text.textDraw(*m_font, BreadcrumbSeparator, bounds[i].right, baseline, separatorColor, scale);
     }
-
-    // Up: one level up (to the parent of the current parent).
-    const NavigationOverlayButtonBounds up = upButtonBounds(viewport, upBesideTrack);
-    const glm::vec4 upColor =
-        !upEnabled
-            ? glm::vec4(0.30f, 0.36f, 0.40f, 0.34f)
-            : (upHovered ? glm::vec4(0.64f, 0.84f, 0.96f, 0.92f)
-                         : glm::vec4(0.44f, 0.62f, 0.74f, 0.66f));
-    const std::string upText = "[  ↑  ]";
-    const float upWidth = m_font->measureText(upText) * scale;
-    text.textDraw(
-        *m_font,
-        upText,
-        up.left + (up.right - up.left - upWidth) * 0.5f,
-        up.top + m_visuals.levelZeroButtonBaselinePx * screenScale,
-        upColor,
-        scale
-    );
 
     text.endFrame();
 }

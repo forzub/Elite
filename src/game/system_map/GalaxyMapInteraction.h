@@ -127,6 +127,17 @@ namespace game::system_map
 
         static GalaxyHierarchyLayer hoverLayer(const GalaxyMapView& view);
 
+        // The point under the cursor (ly): the target's point, else the
+        // cursor ray at the camera target's depth.
+        glm::dvec3 pointUnderCursorLy(
+            const GalaxyMapView& view,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const GalaxyMapInputFrame& frame,
+            const GalaxyPointerTarget& target,
+            double localX,
+            double localY
+        ) const;
+
         // Single click on a target chosen outside the gesture (the Alt
         // "what is here" list): the same dispatch as a map click.
         GalaxyMapInputResult applyChosenTarget(

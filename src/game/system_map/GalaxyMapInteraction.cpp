@@ -111,6 +111,36 @@ namespace
 
 namespace game::system_map
 {
+    /*
+        The point under the cursor in light-years: the target's own point
+        (star, cloud hit, hover-layer hit, marker cube), else the cursor ray
+        at the depth of the camera target.
+    */
+    glm::dvec3 GalaxyMapInteraction::pointUnderCursorLy(
+        const GalaxyMapView& view,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const GalaxyMapInputFrame& frame,
+        const GalaxyPointerTarget& target,
+        double localX,
+        double localY
+    ) const
+    {
+        if (const auto point = semanticPointLy(galaxy, target))
+            return *point;
+        const glm::dvec3 targetLy = view.renderToPositionLy(view.state().camera.target);
+        glm::dvec3 origin(0.0);
+        glm::dvec3 direction(0.0);
+        galaxyPointerRayLy(pointerScene(view, galaxy, frame),
+                           glm::vec2(static_cast<float>(localX), static_cast<float>(localY)), origin, direction);
+        if (glm::length(direction) < 1.0e-9)
+            return targetLy;
+        const glm::dvec3 forward = -glm::dvec3(view.cameraDirectionWorld());
+        const double along = glm::dot(direction, forward);
+        if (std::abs(along) < 1.0e-9)
+            return targetLy;
+        return origin + direction * (glm::dot(targetLy - origin, forward) / along);
+    }
+
     std::optional<glm::dvec3> GalaxyMapInteraction::semanticPointLy(
         const world::celestial::GalaxyMapSnapshot& galaxy,
         const GalaxyPointerTarget& target
@@ -278,8 +308,11 @@ namespace game::system_map
         const auto cell =
             grid.cell(grid.nearestIndexForPositionLy(positionLy, childLevel), childLevel);
 
-        if (view.enterHierarchyCell(cell, vp, nowSeconds))
+        // Approach: the cube of the point becomes the parent and the camera
+        // flies to the point itself (it stays in the view centre).
+        if (view.enterHierarchyCell(cell, vp, nowSeconds, false))
         {
+            view.approachHierarchyPoint(positionLy, vp, nowSeconds);
             result.galaxyLevelChanged = view.hierarchyBox().childLevel;
             return true;
         }
@@ -872,7 +905,8 @@ namespace game::system_map
         {
             /*
                 Rotation pivot at the PRESS point: the nearest visible star,
-                else the highlighted cube, else the view centre.
+                else the pressed point itself (cloud hit / hover layer, else
+                the target plane) - never a cube centre.
                 camera.target is not replaced by the pivot; the compensation
                 below keeps the pivot under the cursor while rotating.
             */
@@ -893,22 +927,13 @@ namespace game::system_map
                 view.state().orbitPivotWorld = pivot;
                 view.state().orbitPivotActive = true;
             }
-            else if (
-                view.state().navigationGrid.enabled() &&
-                view.state().navigationGrid.hasHoveredCell())
+            else
             {
                 view.state().orbitPivotWorld =
                     view.positionLyToRender(
-                        view.state().navigationGrid
-                            .hoveredCell()
-                            .center
-                    );
+                        pointUnderCursorLy(view, galaxy, frame, view.state().pressTarget,
+                                           gesture.pressX(), gesture.pressY()));
                 view.state().orbitPivotActive = true;
-            }
-            else
-            {
-                view.state().orbitPivotWorld = view.state().camera.target;
-                view.state().orbitPivotActive = false;
             }
 
             view.state().camera.rotating = true;
@@ -1192,7 +1217,8 @@ namespace game::system_map
 
                 bool zoomPivotActive = false;
 
-                // Wheel pivot: the star the resolver puts under the cursor.
+                // Wheel pivot: the star the resolver puts under the cursor,
+                // else the point under the cursor (both directions).
                 const auto wheelTarget =
                     resolveGalaxyPointer(
                         pointerScene(view, galaxy, frame),
@@ -1234,20 +1260,11 @@ namespace game::system_map
                         zoomPivotActive = true;
                     }
                 }
-                else if (
-                    view.state().navigationGrid.enabled() &&
-                    view.state().navigationGrid.hasHoveredCell())
+                if (!zoomPivotActive)
                 {
                     navigationPointLy =
-                        view.state().navigationGrid
-                            .hoveredCell()
-                            .center;
-
-                    zoomPivotWorld =
-                        view.positionLyToRender(
-                            navigationPointLy
-                        );
-
+                        pointUnderCursorLy(view, galaxy, frame, wheelTarget, localMx, localMy);
+                    zoomPivotWorld = view.positionLyToRender(navigationPointLy);
                     zoomPivotActive = true;
                 }
 
@@ -1267,12 +1284,13 @@ namespace game::system_map
                     );
 
                 /*
-                    Zoom in towards the point under the cursor: the whole
-                    camera rig scales about that point, so the point stays
-                    under the cursor and the camera really approaches it (the
-                    cube under the cursor grows until it fills the screen).
+                    Zoom about the point under the cursor: the whole camera
+                    rig scales about that point, so the point stays under
+                    the cursor and the camera really approaches / leaves it
+                    (the cube under the cursor grows until it fills the
+                    screen).
                 */
-                if (zoomPivotActive && zoom > 0.0f)
+                if (zoomPivotActive)
                 {
                     const float applied =
                         view.state().camera.distance /
@@ -1282,14 +1300,15 @@ namespace game::system_map
                         (view.state().camera.target - zoomPivotWorld) * applied;
                 }
 
-                // Zooming out drifts the view back to the parent's centre (the
-                // parent shrinks into the screen, not off to a side).
-                if (zoom < 0.0f)
+                // Only the overview, zoomed out to its limit, centres itself
+                // so that it fills the whole screen.
+                if (zoom < 0.0f && view.hierarchyBox().parent.overview() &&
+                    view.state().camera.distance >= galaxyMaximumDistance * 0.7f)
                 {
                     const glm::vec3 centre =
                         view.positionLyToRender(view.hierarchyBox().centerLy);
                     view.state().camera.target =
-                        glm::mix(view.state().camera.target, centre, 0.18f);
+                        glm::mix(view.state().camera.target, centre, 0.35f);
                 }
 
                 applyWheelLevels(
@@ -1624,7 +1643,7 @@ namespace game::system_map
                 else
                     candidate = view.hierarchyChildAt(view.renderToPositionLy(state.camera.target));
                 if (!candidate ||
-                    view.cubeScreenRatio(candidate->center, candidate->size, vp) < GalaxyMapView::ParentFillRatio)
+                    view.cubeSizeRatio(candidate->size, vp) < GalaxyMapView::ParentFillRatio)
                 {
                     return;
                 }
@@ -1652,7 +1671,7 @@ namespace game::system_map
             else
             {
                 if (box.parent.overview() ||
-                    view.cubeScreenRatio(box.centerLy, box.edgeLy, vp) >= view.controls().parentHandOverUpRatio)
+                    view.cubeSizeRatio(box.edgeLy, vp) >= view.controls().parentHandOverUpRatio)
                 {
                     return;
                 }

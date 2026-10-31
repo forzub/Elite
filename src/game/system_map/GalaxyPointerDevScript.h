@@ -388,9 +388,16 @@ private:
                           << alphaId << " (" << systemName(alphaId) << ")" << std::endl;
                 if (sol >= 0)
                     starClicks("1 Sol", sol, 10);
-                const int alpha = alphaId;
-                if (alpha >= 0)
-                    starClicks("2 Alpha Centauri", alpha, 10);
+                // Only a star inside the current parent is drawn and a target
+                // (outside the parent nothing is interactive).
+                bool alphaInside = false;
+                for (const auto& system : m_galaxy->systems)
+                    if (system.id == alphaId)
+                        alphaInside = galaxyHierarchyContains(m_view->hierarchyBox(), system.positionLy);
+                if (alphaId >= 0 && alphaInside)
+                    starClicks("2 Alpha Centauri", alphaId, 10);
+                else
+                    std::cerr << "[GalaxyPointerScript] skip 2 Alpha Centauri: outside the current parent" << std::endl;
                 return;
             }
             case 1:
@@ -489,6 +496,22 @@ private:
                     call([this, at, ok, k] {
                         std::optional<navigation::GalaxyNavigationCell> probe;
                         *ok = layerPoint(*at, k * 3, probe);
+                        // Same-point variant: not on a cube border (the
+                        // second click lands 1 px to the right).
+                        for (int attempt = 1; k % 2 == 0 && attempt < 16; ++attempt)
+                        {
+                            if (*ok && probe)
+                            {
+                                m_probeFrame = GalaxyMapInputFrame {};
+                                m_probeFrame.viewport = m_vp;
+                                const auto there = resolveGalaxyPointer(
+                                    m_interaction->pointerScene(*m_view, *m_galaxy, m_probeFrame),
+                                    *at + glm::vec2(1.0f, 0.0f)).winner;
+                                if (there.cell && there.cell->index == probe->index)
+                                    break;
+                            }
+                            *ok = layerPoint(*at, k * 3 + 31 * attempt, probe);
+                        }
                         // Glyph variant: the first click near the cube centre,
                         // where its waypoint glyph (centre + (20, -2)) appears
                         // under the cursor - the second click hits the glyph.
@@ -559,6 +582,13 @@ private:
                     });
                     clickIf(found, [point] { return *point; }, glm::vec2(1.0f, 1.0f));
                     call([this, object] {
+                        // No cloud reaches into this parent: nothing to click.
+                        if (*object < 0)
+                        {
+                            std::cerr << "[GalaxyPointerScript] skip 9 cloud: none inside the current parent"
+                                      << std::endl;
+                            return;
+                        }
                         record("9 cloud single click",
                                *object >= 0 && m_view->state().selectedMediumObject == *object,
                                "object=" + std::to_string(*object) + " selected=" +
@@ -610,13 +640,11 @@ private:
         float bestRadius = 0.0f;
         const auto& atlas = *m_galaxy->mediumAtlas;
         const glm::mat4 mvp = m_view->projectionMatrix(m_vp) * m_view->viewMatrix();
-        GalaxyPointerScene scene;
-        scene.stars = &m_view->state().presentedStars;
-        scene.cubeMarkers = &m_view->state().presentedCubeMarkers;
-        scene.galaxy = m_galaxy;
-        scene.mvp = mvp;
-        scene.viewport = m_vp;
-        scene.renderUnitsPerLy = GalaxyMapView::RenderUnitsPerLightYear;
+        // The production scene: only structures reaching into the current
+        // parent are targets.
+        m_probeFrame = GalaxyMapInputFrame {};
+        m_probeFrame.viewport = m_vp;
+        const GalaxyPointerScene scene = m_interaction->pointerScene(*m_view, *m_galaxy, m_probeFrame);
         // The 40 largest on-screen structures (each probe is a full resolve).
         std::vector<std::pair<float, const world::celestial::GalaxyMapMediumAtlas::Proxy*>> onScreen;
         for (const auto& proxy : atlas.proxies)

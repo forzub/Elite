@@ -21,6 +21,15 @@ public:
         float thicknessPx,
         const glm::vec4& color
     );
+    void filledTriangle(
+        const glm::vec2& aPx,
+        const glm::vec2& bPx,
+        const glm::vec2& cPx,
+        const glm::vec4& color
+    )
+    {
+        triangle(aPx, bPx, cPx, color);
+    }
     void flush();
 
 private:

@@ -115,6 +115,23 @@ namespace game::system_map
         }
     };
 
+    /*
+        A saved Galaxy Map view (map back history): the frame, the camera
+        and the selection, restored when the user returns to this map.
+    */
+    struct GalaxyMapBookmark
+    {
+        GalaxyHierarchyParent parent;
+        GalaxyCameraState camera;
+        std::optional<navigation::GalaxyNavigationCell> selectedCell;
+        int selectedSystemId = -1;
+        int focusedSystemId = -1;
+        glm::dvec3 navigationFocusLy {0.0};
+        bool navigationFocusValid = false;
+        int selectedMediumObject = -1;
+        glm::dvec3 selectedMediumHitLy {0.0};
+    };
+
     struct GalaxyMapViewState
     {
         GalaxyCameraState camera;
@@ -314,6 +331,13 @@ namespace game::system_map
             double edgeLy,
             const Viewport& viewport
         ) const;
+        // Apparent size of a cube edge at the current zoom, wherever the
+        // cube is (as if centred on the camera target): the hierarchy
+        // hand-over measure, independent of where the user looks.
+        float cubeSizeRatio(
+            double edgeLy,
+            const Viewport& viewport
+        ) const;
         // fitInside: the largest |NDC| of a corner instead (1 = a corner on
         // the viewport edge) - the framing measure; perspective makes the
         // projected cube asymmetric around the view centre.
@@ -382,6 +406,17 @@ namespace game::system_map
             double nowSeconds,
             bool frameCamera = true
         );
+
+        // Fly to a point of the current parent: centred on it, the parent's
+        // size filling the screen (a star / cloud double click).
+        void approachHierarchyPoint(
+            const glm::dvec3& pointLy,
+            const Viewport& viewport,
+            double nowSeconds
+        );
+
+        GalaxyMapBookmark bookmark() const;
+        void restoreBookmark(const GalaxyMapBookmark& bookmark);
 
         // Galaxy overview with the root containing the point selected.
         void showGalaxyOverview(

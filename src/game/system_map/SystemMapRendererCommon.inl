@@ -778,38 +778,25 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         blocks,
         footerText,
         m_navigationLevelAnnouncement.text,
-        levelAnnouncementAlpha,
-        m_modeState.current() == Mode::Galaxy ||
-            m_modeState.current() == Mode::System,
-        m_navigationLevelZeroButtonHovered,
-        m_modeState.current() == Mode::System,
-        m_navigationTrackButtonHovered,
-        m_systemView.state().selectedBodyTrackingEnabled,
-        !m_systemView.state().selectedBodyId.empty()
+        levelAnnouncementAlpha
     );
 
-    if (m_modeState.current() == Mode::Galaxy)
+    if (m_modeState.current() == Mode::Galaxy ||
+        (m_modeState.current() == Mode::System &&
+         m_systemView.state().navigationGrid.enabled()))
     {
-        m_navigationCoordinateOverlay.drawGalaxyNavigation(
+        m_navigationCoordinateOverlay.drawBreadcrumbs(
             viewport,
             mapBreadcrumbs(),
-            m_galaxyBreadcrumbHovered,
-            m_galaxyUpButtonHovered,
-            !m_galaxyView.state().hierarchyParent.overview()
+            m_galaxyBreadcrumbHovered
         );
     }
-    else if (m_modeState.current() == Mode::System &&
-             m_systemView.state().navigationGrid.enabled())
-    {
-        m_navigationCoordinateOverlay.drawGalaxyNavigation(
-            viewport,
-            mapBreadcrumbs(),
-            m_galaxyBreadcrumbHovered,
-            m_galaxyUpButtonHovered,
-            m_systemView.state().hierarchyParent.level > 0,
-            true
-        );
-    }
+
+    // Map buttons: back, up, TRACK, LEVEL 0 (every map, where available).
+    std::vector<render::navigation::NavigationOverlayButton> buttons;
+    for (const auto& button : mapButtons(viewport))
+        buttons.push_back(button.view);
+    m_navigationCoordinateOverlay.drawButtons(viewport, buttons);
 }
 
 // Breadcrumbs of the current map's parent chain (Galaxy or System).
@@ -906,6 +893,36 @@ void SystemMapRenderer::updateSelectedBodyTracking(
 {
     auto& state =
         m_systemView.state();
+
+    // Camera focus object (the body the user zoomed / turned about or
+    // approached): the camera moves with it, a running flight included.
+    if (!state.cameraFollowBodyId.empty() &&
+        !(state.selectedBodyTrackingEnabled && state.selectedBodyId == state.cameraFollowBodyId))
+    {
+        const auto followed = std::find_if(
+            presentation.bodies.begin(), presentation.bodies.end(),
+            [&](const auto& body) { return body.id == state.cameraFollowBodyId; });
+        if (followed == presentation.bodies.end())
+        {
+            m_systemView.clearFollow();
+        }
+        else
+        {
+            const glm::dvec3 absolute =
+                followed->positionAu * static_cast<double>(presentation.systemScale);
+            if (state.cameraFollowPositionValid)
+            {
+                const glm::dvec3 delta = absolute - state.cameraFollowLastAbsolute;
+                state.camera.target += delta;
+                state.cameraFlight.startTarget += delta;
+                state.cameraFlight.destinationTarget += delta;
+                if (state.orbitPivotActive)
+                    state.orbitPivotAbsolute += delta;
+            }
+            state.cameraFollowLastAbsolute = absolute;
+            state.cameraFollowPositionValid = true;
+        }
+    }
 
     if (!state.selectedBodyTrackingEnabled)
     {

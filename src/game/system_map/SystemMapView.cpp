@@ -138,6 +138,10 @@ void SystemMapView::suppressCameraGesture(
     m_state.camera.rightWasDown = rightDown;
     m_state.camera.lastMouseX = mouseX;
     m_state.camera.lastMouseY = mouseY;
+    // The gesture belongs to whoever consumed the press (overlay, buttons,
+    // context menu): no map click / drag may follow from it.
+    m_state.pointerGesture.suppress(leftDown);
+    m_state.orbitPivotActive = false;
 }
 
 SystemMapCameraSnapshot SystemMapView::cameraSnapshot(
@@ -1288,6 +1292,16 @@ float SystemMapView::cubeScreenRatio(
     return cubeScreenRatioAt(centerAu, edgeAu, m_state.camera.target, m_state.camera.distance, viewport);
 }
 
+float SystemMapView::cubeSizeRatio(
+    double edgeAu,
+    const Viewport& viewport
+) const
+{
+    const double scale = std::max(static_cast<double>(m_state.lastScale), 1.0e-12);
+    return cubeScreenRatioAt(m_state.camera.target / scale, edgeAu, m_state.camera.target, m_state.camera.distance,
+                             viewport);
+}
+
 float SystemMapView::fillHalfHeightAt(
     const glm::dvec3& centerAu,
     double edgeAu,
@@ -1351,7 +1365,7 @@ void SystemMapView::hierarchyHalfHeightLimits(
     minimumHalfHeight = std::min(minimumHalfHeight, fitted);
     maximumHalfHeight =
         box.parent.level <= 0
-            ? fillHalfHeightAt(box.centerLy, box.edgeLy, m_state.camera.target, viewport, ParentFillRatio)
+            ? fitted
             : std::min(maximumCameraHalfHeight, fitted * 1.6f);
     maximumHalfHeight = std::max(maximumHalfHeight, minimumHalfHeight);
 }
@@ -1385,6 +1399,8 @@ void SystemMapView::frameHierarchyParent(
     bool animate
 )
 {
+    // Framing a cube leaves any followed object.
+    clearFollow();
     const GalaxyHierarchyBox box = hierarchyBox();
     const glm::dvec3 target = box.centerLy * static_cast<double>(m_state.lastScale);
     const float halfHeight = hierarchyFitHalfHeight(viewport);
@@ -1463,7 +1479,107 @@ void SystemMapView::resetHierarchyToRoot(
 )
 {
     setHierarchyParent(GalaxyHierarchyParent {0, {}});
+    clearFollow();
     frameHierarchyParent(viewport, 0.0, false);
+}
+
+void SystemMapView::approachHierarchyPoint(
+    const glm::dvec3& pointAu,
+    const Viewport& viewport,
+    double nowSeconds,
+    float halfHeight
+)
+{
+    const GalaxyHierarchyBox box = hierarchyBox();
+    const glm::dvec3 target = pointAu * static_cast<double>(m_state.lastScale);
+    beginCameraFlight(
+        target,
+        halfHeight > 0.0f ? halfHeight : fillHalfHeightAt(pointAu, box.edgeLy, target, viewport, ParentFillRatio),
+        nowSeconds);
+}
+
+bool SystemMapView::shiftHierarchyParentTo(
+    const glm::dvec3& pointAu
+)
+{
+    const GalaxyHierarchyParent current = m_state.hierarchyParent;
+    if (current.level <= 0)
+        return false;
+    auto& grid = m_state.navigationGrid;
+    const navigation::CubicNavigationCell cell =
+        grid.cell(grid.nearestIndexForPosition(pointAu, current.level), current.level);
+    if (cell.index == current.index || !grid.isCellNavigable(cell))
+        return false;
+    GalaxyHierarchyParent parent;
+    parent.level = cell.level;
+    parent.index = cell.index;
+    setHierarchyParent(parent);
+    return true;
+}
+
+void SystemMapView::followBody(
+    const std::string& bodyId
+)
+{
+    if (m_state.cameraFollowBodyId == bodyId)
+        return;
+    m_state.cameraFollowBodyId = bodyId;
+    m_state.cameraFollowPositionValid = false;
+}
+
+void SystemMapView::clearFollow()
+{
+    m_state.cameraFollowBodyId.clear();
+    m_state.cameraFollowPositionValid = false;
+}
+
+SystemMapBookmark SystemMapView::bookmark(
+    int systemId
+) const
+{
+    SystemMapBookmark result;
+    result.systemId = systemId;
+    result.parent = m_state.hierarchyParent;
+    result.camera = m_state.camera;
+    if (m_state.cameraFlight.active)
+    {
+        result.camera.target = m_state.cameraFlight.destinationTarget;
+        result.camera.distance = m_state.cameraFlight.destinationDistance;
+    }
+    result.selectedBodyId = m_state.selectedBodyId;
+    result.selectedHubId = m_state.selectedHubId;
+    result.selectedHubParentBodyId = m_state.selectedHubParentBodyId;
+    if (m_state.navigationGrid.hasSelectedCell())
+        result.selectedCell = m_state.navigationGrid.selectedCell();
+    result.cellExplicitlySelected = m_state.navigationCellExplicitlySelected;
+    result.cameraFollowBodyId = m_state.cameraFollowBodyId;
+    result.tracking = m_state.selectedBodyTrackingEnabled;
+    return result;
+}
+
+void SystemMapView::restoreBookmark(
+    const SystemMapBookmark& bookmark
+)
+{
+    cancelCameraFlight(false);
+    setHierarchyParent(bookmark.parent);
+    m_state.camera.target = bookmark.camera.target;
+    m_state.camera.distance = bookmark.camera.distance;
+    m_state.camera.yaw = bookmark.camera.yaw;
+    m_state.camera.pitch = bookmark.camera.pitch;
+    m_state.camera.rotating = false;
+    m_state.camera.panning = false;
+    m_state.selectedBodyId = bookmark.selectedBodyId;
+    m_state.selectedHubId = bookmark.selectedHubId;
+    m_state.selectedHubParentBodyId = bookmark.selectedHubParentBodyId;
+    if (bookmark.selectedCell)
+        m_state.navigationGrid.selectCell(*bookmark.selectedCell);
+    m_state.navigationCellExplicitlySelected = bookmark.cellExplicitlySelected;
+    m_state.cameraFollowBodyId = bookmark.cameraFollowBodyId;
+    m_state.cameraFollowPositionValid = false;
+    m_state.selectedBodyTrackingEnabled = bookmark.tracking;
+    m_state.trackedBodyPositionValid = false;
+    m_state.orbitPivotActive = false;
 }
 
 } // namespace game::system_map

@@ -520,6 +520,71 @@ namespace game::system_map
         return cubeScreenRatioAt(centerLy, edgeLy, m_state.camera.target, m_state.camera.distance, viewport);
     }
 
+    float GalaxyMapView::cubeSizeRatio(
+        double edgeLy,
+        const Viewport& viewport
+    ) const
+    {
+        return cubeScreenRatioAt(renderToPositionLy(m_state.camera.target), edgeLy, m_state.camera.target,
+                                 m_state.camera.distance, viewport);
+    }
+
+    void GalaxyMapView::approachHierarchyPoint(
+        const glm::dvec3& pointLy,
+        const Viewport& viewport,
+        double nowSeconds
+    )
+    {
+        const GalaxyHierarchyBox box = hierarchyBox();
+        const glm::vec3 target = positionLyToRender(pointLy);
+        beginCameraFlight(
+            target,
+            std::clamp(fillDistanceAt(pointLy, box.edgeLy, target, viewport, ParentFillRatio),
+                       m_controls.minDistance, m_controls.maxDistance),
+            nowSeconds,
+            true);
+    }
+
+    GalaxyMapBookmark GalaxyMapView::bookmark() const
+    {
+        GalaxyMapBookmark result;
+        result.parent = m_state.hierarchyParent;
+        result.camera = m_state.camera;
+        if (m_state.navigationGrid.hasSelectedCell())
+            result.selectedCell = m_state.navigationGrid.selectedCell();
+        result.selectedSystemId = m_state.selectedSystemId;
+        result.focusedSystemId = m_state.focusedSystemId;
+        result.navigationFocusLy = m_state.navigationFocusLy;
+        result.navigationFocusValid = m_state.navigationFocusValid;
+        result.selectedMediumObject = m_state.selectedMediumObject;
+        result.selectedMediumHitLy = m_state.selectedMediumHitLy;
+        return result;
+    }
+
+    void GalaxyMapView::restoreBookmark(
+        const GalaxyMapBookmark& bookmark
+    )
+    {
+        cancelCameraFlight(false);
+        m_state.flightContextBox.reset();
+        m_state.selectedSystemId = bookmark.selectedSystemId;
+        m_state.focusedSystemId = bookmark.focusedSystemId;
+        m_state.navigationFocusLy = bookmark.navigationFocusLy;
+        m_state.navigationFocusValid = bookmark.navigationFocusValid;
+        m_state.selectedMediumObject = bookmark.selectedMediumObject;
+        m_state.selectedMediumHitLy = bookmark.selectedMediumHitLy;
+        setHierarchyParent(bookmark.parent);
+        if (bookmark.selectedCell)
+            m_state.navigationGrid.selectCell(*bookmark.selectedCell);
+        m_state.camera.target = bookmark.camera.target;
+        m_state.camera.distance = bookmark.camera.distance;
+        m_state.camera.yaw = bookmark.camera.yaw;
+        m_state.camera.pitch = bookmark.camera.pitch;
+        m_state.camera.rotating = false;
+        m_state.camera.panning = false;
+        m_state.orbitPivotActive = false;
+    }
+
     float GalaxyMapView::fillDistanceAt(
         const glm::dvec3& centerLy,
         double edgeLy,
@@ -578,9 +643,7 @@ namespace game::system_map
         minimumDistance = std::max(m_controls.minDistance, fitted * m_controls.parentZoomInFraction);
         maximumDistance =
             box.parent.overview()
-                ? std::min(m_controls.maxDistance,
-                           fillDistanceAt(box.centerLy, box.edgeLy, m_state.camera.target, viewport,
-                                          ParentFillRatio))
+                ? fitted
                 : std::min(m_controls.maxDistance, fitted * m_controls.parentZoomOutFactor);
     }
 

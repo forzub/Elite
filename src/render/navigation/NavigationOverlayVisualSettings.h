@@ -36,17 +36,25 @@ struct NavigationOverlayVisualSettings
     float blockGapPx = 9.333333f;
     float footerBottomPx = 28.0f;
 
-    float levelZeroButtonWidthPx = 190.0f;
-    float levelZeroButtonHeightPx = 38.0f;
+    /*
+        Map buttons: a transparent wire bar with rounded corners, the text
+        or arrow inside. One row at the bottom right, right to left:
+        LEVEL 0, TRACK (System), up (one level up), back (previous map).
+    */
+    float levelZeroButtonWidthPx = 170.0f;
+    float levelZeroButtonHeightPx = 36.0f;
     float levelZeroButtonRightPx = 18.0f;
-    float levelZeroButtonBottomPx = 10.0f;
-    float levelZeroButtonBaselinePx = 27.0f;
+    float levelZeroButtonBottomPx = 34.0f;
+    float levelZeroButtonBaselinePx = 25.0f;
     float trackButtonWidthPx = 150.0f;
     float overlayButtonGapPx = 10.0f;
+    float buttonCornerRadiusPx = 9.0f;
+    float buttonLineWidthPx = 1.4f;
 
-    // Galaxy Map hierarchy: "up" button left of LEVEL 0, breadcrumbs above
-    // the footer.
-    float upButtonWidthPx = 84.0f;
+    // Hierarchy: "up" left of LEVEL 0 (System: left of TRACK), "back" left
+    // of "up"; breadcrumbs above the footer.
+    float upButtonWidthPx = 60.0f;
+    float backButtonWidthPx = 60.0f;
     float breadcrumbAboveFooterPx = 30.0f;
     float breadcrumbGapPx = 8.0f;
 

@@ -19,6 +19,14 @@ namespace game::system_map
         std::string parentBodyId;
     };
 
+    struct SystemMapNearObject
+    {
+        std::string bodyId;
+        std::string hubId;
+        std::string hubParentBodyId;
+        glm::dvec3 absolutePosition {0.0};
+    };
+
     struct SystemMapCameraBodyTarget
     {
         std::string bodyId;
@@ -48,8 +56,6 @@ namespace game::system_map
     struct SystemMapInputResult
     {
         std::optional<int> systemLevelChanged;
-        // Double click on a body: its info card opens.
-        std::optional<std::string> clickedBodyId;
         // Single click on a body: selected (with its cube), no card.
         std::optional<std::string> selectedBodyId;
         std::optional<navigation::CubicNavigationCell> clickedNavigationCell;
@@ -89,6 +95,14 @@ namespace game::system_map
         virtual std::optional<glm::dvec3> systemObjectAbsolutePosition(
             const std::string& objectId
         ) const = 0;
+
+        // The body / hub nearest the point (its disk within radiusPx): the
+        // object "near the mouse" a rotation turns about.
+        virtual std::optional<SystemMapNearObject> nearestSystemObject(
+            double localMouseX,
+            double localMouseY,
+            float radiusPx
+        ) const = 0;
     };
 
     /*
@@ -106,6 +120,35 @@ namespace game::system_map
             const SystemMapInteractionContext& context,
             const SystemMapInputFrame& frame,
             double& pendingScrollY
+        ) const;
+
+        // The ONE resolver (hub > body > selected marker > layer child) at
+        // a viewport point: the context menu asks the same question.
+        SystemPointerTarget resolvePointer(
+            const SystemMapView& view,
+            const SystemMapInteractionContext& context,
+            const Viewport& viewport,
+            double localX,
+            double localY
+        ) const;
+
+        // Single-click selection of a target (no click tracking).
+        void selectTarget(
+            SystemMapView& view,
+            const SystemMapInteractionContext& context,
+            const SystemPointerTarget& target,
+            SystemMapInputResult& result
+        ) const;
+
+        // The double-click action: a body / hub is approached (centred,
+        // its cube entered, the camera follows a body); a cube is entered.
+        bool descendTarget(
+            SystemMapView& view,
+            const SystemMapInteractionContext& context,
+            const Viewport& viewport,
+            const SystemPointerTarget& target,
+            double nowSeconds,
+            SystemMapInputResult& result
         ) const;
 
         // Tactical object overlays use the same canonical Hub-selection path

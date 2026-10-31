@@ -642,7 +642,9 @@ void hierarchyChecks()
             {
                 ++downs;
                 const auto box = map.view.hierarchyBox();
-                ratioAtDown = map.view.cubeScreenRatio(box.centerLy, box.edgeLy, kViewport);
+                // The hand-over measure: the cube's size at the current zoom
+                // (wherever it is on the screen).
+                ratioAtDown = map.view.cubeSizeRatio(box.edgeLy, kViewport);
                 parentFillsAtDown = parentFillsAtDown && ratioAtDown >= GalaxyMapView::ParentFillRatio;
             }
         }

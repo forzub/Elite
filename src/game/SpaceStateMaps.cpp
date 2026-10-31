@@ -1480,6 +1480,45 @@ void SpaceState::beginSystemMapDetailTransition(
 
 
 
+void SpaceState::setSystemMapLoadedHubMode()
+{
+    if (!m_client || m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Hub)
+        return;
+
+    const int systemId = m_loadedHubMapSystemId;
+    const std::string hubId = m_loadedHubMapHubId;
+    if (systemId < 0 || hubId.empty() || !composeHubMapSnapshot(systemId, hubId))
+        return;
+
+    beginSystemMapHubTransition(systemId, hubId);
+}
+
+void SpaceState::restorePreviousSystemMapMode(
+    const game::system_map::MapIntent& intent
+)
+{
+    using game::system_map::MapMode;
+    switch (intent.requestedMapMode)
+    {
+        case MapMode::Galaxy:
+            setSystemMapGalaxyMode();
+            return;
+        case MapMode::System:
+            // The system the map showed (an empty sector: the loaded one).
+            if (intent.systemId == m_loadedSystemMapId || intent.systemId < 0)
+                setSystemMapLoadedSystemMode();
+            else
+                setSystemMapKnownSystemMode(intent.systemId);
+            return;
+        case MapMode::Detail:
+            setSystemMapLoadedDetailMode();
+            return;
+        case MapMode::Hub:
+            setSystemMapLoadedHubMode();
+            return;
+    }
+}
+
 void SpaceState::setSystemMapLoadedDetailMode()
 {
     if (!m_client || m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Detail)
@@ -1674,6 +1713,10 @@ void SpaceState::applyClientCatalogLocalization()
     mapText.setIntermediate = loc.text("map.object_info.set_intermediate");
     mapText.cancelIntermediate = loc.text("map.object_info.cancel_intermediate");
     mapText.spaceTarget = loc.text("map.object_info.space_target");
+    mapText.contextInfo = loc.text("map.context.info", "INFO");
+    mapText.contextDetails = loc.text("map.context.details", "SHOW DETAILS");
+    mapText.contextSurroundings = loc.text("map.context.surroundings", "VIEW SURROUNDINGS");
+    mapText.starSystem = loc.text("map.context.star_system", "Star system");
     mapText.finishTarget = loc.text("map.object_info.finish_target");
     mapText.intermediateTarget = loc.text("map.object_info.intermediate_target");
     mapText.navigationPoint = loc.text("map.object_info.navigation_point");

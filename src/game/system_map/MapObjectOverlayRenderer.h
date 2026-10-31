@@ -19,7 +19,7 @@ public:
         const NavigationMapTextProfile& textProfile
     ) const;
 
-private:
+    // Card / context-menu label of a text key (field, action).
     static std::string text(
         const NavigationMapTextProfile& textProfile,
         const std::string& key

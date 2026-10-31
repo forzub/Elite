@@ -956,6 +956,34 @@ void SystemMapRenderer::refreshGalaxyWaypointCandidate(
         m_galaxyMediumCardId = cardId;
     }
 
+    // Info card of the selected star (opened from its context menu); it
+    // closes when the star is no longer selected.
+    if (m_galaxySystemCard)
+    {
+        if (m_galaxyView.state().selectedSystemId != m_galaxySystemCardSystemId)
+        {
+            m_objectOverlayState.close(m_galaxySystemCard->objectId);
+            m_galaxySystemCard.reset();
+            m_galaxySystemCardSystemId = -1;
+        }
+        else
+        {
+            auto item = *m_galaxySystemCard;
+            bool visible = false;
+            float depth = 1.0f;
+            item.screenPx = glm::dvec2(projectToScreen(
+                m_galaxyView.positionLyToRender(
+                    world::coordinates::toGalacticLy(item.trackingWorldPosition)),
+                mvp, viewport, visible, depth));
+            item.visible = true;
+            const auto* waypoint = m_navigationWorkspace.routePlan().findByTarget(
+                routeTargetRefForOverlayItem(item));
+            if (waypoint)
+                item.panelActions = waypointPanelActions(m_navigationWorkspace.routePlan(), *waypoint);
+            m_galaxyInfoOverlayFrame.items.push_back(std::move(item));
+        }
+    }
+
     if (!m_galaxyWaypointCandidate.has_value() ||
         m_galaxyView.state().selectedSystemId >= 0)
     {

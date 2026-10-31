@@ -18,6 +18,7 @@
 #include "src/core/DevFrameCapture.h"
 #include "src/game/system_map/GalaxyMapInteraction.h"
 #include "src/game/system_map/GalaxyMapView.h"
+#include "src/game/system_map/MapContextMenu.h"
 #include "src/render/navigation/NavigationCoordinateOverlay.h"
 #include "src/render/types/Viewport.h"
 #include "src/world/celestial/SystemMapTypes.h"
@@ -50,6 +51,9 @@ public:
 
     // Breadcrumb i bounds as drawn (left, top, right, bottom), map pixels.
     std::function<std::vector<glm::vec4>()> breadcrumbLocator;
+    // The open context menu (nullptr: closed); is this card open?
+    std::function<const MapContextMenu*()> contextMenu;
+    std::function<bool(const std::string&)> cardOpen;
 
     bool altDown() const { return m_alt; }
 
@@ -116,6 +120,7 @@ public:
             if (op.point)
                 m_pointer = op.point();
             m_left = op.left;
+            m_right = op.right;
             m_alt = op.alt;
             scroll = op.scroll;
             if (op.scrollWhile && !op.scrollWhile())
@@ -124,7 +129,7 @@ public:
         mx = vp.x + m_pointer.x;
         my = vp.y + m_pointer.y;
         leftDown = m_left;
-        rightDown = false;
+        rightDown = m_right;
         if (scroll != 0.0)
             scrollY += scroll;
     }
@@ -135,6 +140,7 @@ private:
         enum Kind { Frame, Wait, StartWait, WaitCalm, Call } kind = Frame;
         std::function<glm::vec2()> point;
         bool left = false;
+        bool right = false;
         bool alt = false;
         double scroll = 0.0;
         std::function<bool()> scrollWhile; // conditional wheel step
@@ -152,6 +158,7 @@ private:
     std::deque<Op> m_ops;
     glm::vec2 m_pointer {20.0f, 20.0f};
     bool m_left = false;
+    bool m_right = false;
     bool m_alt = false;
     int m_shot = 0;
     std::vector<std::pair<std::string, bool>> m_results;
@@ -239,6 +246,47 @@ private:
         frame(at, true, alt);
         frame(at, false, alt);
         frame(at, false);
+    }
+    void rightClick(std::function<glm::vec2()> target)
+    {
+        auto p = std::make_shared<glm::vec2>(-50.0f);
+        call([p, target] { *p = target(); });
+        const auto at = [p] { return *p; };
+        frame(at, false);
+        for (int k = 0; k < 2; ++k)
+        {
+            Op op;
+            op.kind = Op::Frame;
+            op.point = at;
+            op.right = true;
+            m_ops.push_back(op);
+        }
+        frame(at, false);
+        frame(at, false);
+    }
+    glm::vec2 menuRow(const std::string& command) const
+    {
+        const MapContextMenu* menu = contextMenu ? contextMenu() : nullptr;
+        if (!menu)
+            return glm::vec2(-50.0f);
+        for (std::size_t i = 0; i < menu->rows.size(); ++i)
+            if (menu->rows[i].command == command)
+                return glm::vec2(menu->originPx.x + MapContextMenu::WidthPx * 0.5f,
+                                 menu->originPx.y + MapContextMenu::HeaderHeightPx + 3.0f +
+                                     MapContextMenu::RowHeightPx * (static_cast<float>(i) + 0.5f));
+        return glm::vec2(-50.0f);
+    }
+    bool menuHas(const std::string& command) const
+    {
+        return menuRow(command).x >= 0.0f;
+    }
+    glm::vec2 pointScreen(const glm::dvec3& ly) const
+    {
+        const glm::mat4 mvp = m_view->projectionMatrix(m_vp) * m_view->viewMatrix();
+        const glm::vec4 clip = mvp * glm::vec4(m_view->positionLyToRender(ly), 1.0f);
+        if (clip.w <= 1.0e-6f)
+            return glm::vec2(-50.0f);
+        return glm::vec2((clip.x / clip.w * 0.5f + 0.5f) * m_vp.width, (0.5f - clip.y / clip.w * 0.5f) * m_vp.height);
     }
     void doubleClick(std::function<glm::vec2()> target)
     {
@@ -521,7 +569,16 @@ private:
                            st.selectedSystemId == entryStar() && selectedIsChild(),
                        parentText(st.hierarchyParent));
             });
-            checkFits("star level " + std::to_string(k));
+            // A star double click approaches the star: centred, its cube the
+            // parent at screen size.
+            call([this, k] {
+                const auto box = m_view->hierarchyBox();
+                const float size = m_view->cubeSizeRatio(box.edgeLy, m_vp);
+                const float off = glm::length(starScreen(entryStar()) - glm::vec2(m_vp.width * 0.5f, m_vp.height * 0.5f));
+                record("star level " + std::to_string(k) + ": approached - star centred, the parent at screen size",
+                       off < 30.0f && size >= 0.85f && size <= 1.1f,
+                       "off_px=" + std::to_string(off) + " size=" + std::to_string(size));
+            });
             shot("star_level" + std::to_string(k));
         }
 
@@ -558,7 +615,14 @@ private:
             record("cloud double click: into the cube of the clicked point, cloud kept",
                    down && holds && st.selectedMediumObject == m_cloud, parentText(st.hierarchyParent));
         });
-        checkFits("cloud cube");
+        call([this] {
+            const glm::vec2 at = pointScreen(m_view->state().selectedMediumHitLy);
+            const float off = glm::length(at - glm::vec2(m_vp.width * 0.5f, m_vp.height * 0.5f));
+            const float size = m_view->cubeSizeRatio(m_view->hierarchyBox().edgeLy, m_vp);
+            record("cloud cube: approached - the clicked point centred, the parent at screen size",
+                   off < 30.0f && size >= 0.85f && size <= 1.1f,
+                   "off_px=" + std::to_string(off) + " size=" + std::to_string(size));
+        });
         shot("cloud_entered");
         clickUp("cloud_up", true);
 
@@ -626,6 +690,44 @@ private:
                                                  true) >= 0.97f);
         });
         shot("wheel_out");
+
+        // Context menu (right click): the star - name, info, route, details;
+        // INFO opens its card. A cube - surroundings enters it.
+        rightClick([this] { return starScreen(entryStar()); });
+        call([this] {
+            const MapContextMenu* menu = contextMenu ? contextMenu() : nullptr;
+            record("star right click: a context menu with the name, info, route and details",
+                   menu && !menu->title.empty() && menuHas("info") && menuHas("details") &&
+                       menuHas("action:toggle_finish"),
+                   menu ? menu->title : std::string("closed"));
+        });
+        shot("star_menu");
+        click([this] { return menuRow("info"); });
+        wait(0.3);
+        call([this] {
+            record("star menu INFO: the star card opens",
+                   cardOpen && cardOpen("galaxy-system:" + std::to_string(entryStar())) &&
+                       !(contextMenu && contextMenu()));
+        });
+        shot("star_card");
+        call([this] { m_parentBefore = m_view->state().hierarchyParent; });
+        rightClick([this] {
+            // Empty space of the star's root, off the star.
+            return starScreen(entryStar()) + glm::vec2(-48.0f, 40.0f);
+        });
+        call([this] {
+            const MapContextMenu* menu = contextMenu ? contextMenu() : nullptr;
+            record("cube right click: a context menu with the address and surroundings",
+                   menu && menu->targetKind == MapContextMenu::TargetKind::Cube && menuHas("surroundings"),
+                   menu ? menu->title : std::string("closed"));
+        });
+        click([this] { return menuRow("surroundings"); });
+        calm();
+        call([this] {
+            record("cube menu SURROUNDINGS: the cube becomes the parent",
+                   m_view->state().hierarchyParent.level == m_parentBefore.level + 1,
+                   parentText(m_view->state().hierarchyParent));
+        });
 
         // More branches from the overview.
         click([this] { return levelZeroButton(); });

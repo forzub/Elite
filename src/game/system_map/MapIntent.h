@@ -23,7 +23,11 @@ namespace game::system_map
         RecallRouteMap,
         SelectObject,
         SetNavigationTarget,
-        PlotRoute
+        PlotRoute,
+
+        // Back arrow: return to a previous map (its saved view is restored
+        // by the renderer once the map is shown).
+        RestoreMap
     };
 
     /*
@@ -83,6 +87,15 @@ namespace game::system_map
             MapIntent result;
             result.type = MapIntentType::RecallRouteMap;
             result.requestedMapMode = destinationMode;
+            return result;
+        }
+
+        static MapIntent restoreMap(MapMode destinationMode, int destinationSystemId)
+        {
+            MapIntent result;
+            result.type = MapIntentType::RestoreMap;
+            result.requestedMapMode = destinationMode;
+            result.systemId = destinationSystemId;
             return result;
         }
 

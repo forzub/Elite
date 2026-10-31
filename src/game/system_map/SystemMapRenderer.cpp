@@ -165,9 +165,15 @@ void SystemMapRenderer::resetView()
 
     m_mapResources.resetPresentationTime();
 
-    m_navigationLevelZeroButtonHovered = false;
-    m_navigationTrackButtonHovered = false;
+    m_hoveredMapButton.clear();
     m_navigationOverlayLeftWasDown = false;
+    // A new map session starts without back history or an open menu.
+    m_mapHistory.clear();
+    m_pendingHistoryRestore.reset();
+    m_pendingGalaxyBookmark.reset();
+    m_contextMenu.close();
+    m_galaxySystemCard.reset();
+    m_galaxySystemCardSystemId = -1;
     m_objectOverlayState.clearTransientDrag();
     m_routeOverlayState.clearTransientDrag();
 
@@ -202,6 +208,13 @@ void SystemMapRenderer::onGalaxyMapEntered(
         galaxy,
         navigation
     );
+
+    // Back history: the saved Galaxy view replaces the entry framing.
+    if (m_pendingGalaxyBookmark)
+    {
+        m_galaxyView.restoreBookmark(*m_pendingGalaxyBookmark);
+        m_pendingGalaxyBookmark.reset();
+    }
 }
 
 
@@ -300,6 +313,13 @@ void SystemMapRenderer::setMode(Mode mode)
 
     const Mode previousMode = m_modeState.current();
 
+    // The map left is remembered (back arrow) unless this change is the
+    // back navigation itself.
+    if (previousMode == Mode::Galaxy)
+        m_galaxyView.cancelCameraFlight(true);
+    recordMapHistory(previousMode, mode);
+    m_contextMenu.close();
+
     if (previousMode == Mode::Detail)
     {
         auto& systemState = m_systemView.state();
@@ -361,6 +381,8 @@ void SystemMapRenderer::setMode(Mode mode)
         m_hubPresentation =
             game::system_map::HubMapPresentation{};
     }
+
+    applyMapHistoryRestore(mode);
 }
 
 
@@ -581,6 +603,9 @@ void SystemMapRenderer::render(
         system,
         nav
     );
+
+    // The context menu is above everything of the map.
+    drawContextMenu(vp);
 
     /*
         Настоящий crossfade.

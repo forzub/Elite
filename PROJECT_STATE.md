@@ -184,9 +184,21 @@ Updated: 2026-10-30, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONL
   double click flies to the navigation cube containing the clicked point.
   Hover / selection / trackers / gesture are transient: reset on reset(),
   onEntered(), resetNavigationToEntry().
-- System Map bodies: single click selects only; double click opens the
-  card, the next double click closes it; another body's click closes the
-  old card; a card never outlives its body's selection.
+- System Map bodies (2026-10-31 b): single click selects (and its cube);
+  double click APPROACHES (its cube becomes the parent, camera centred on
+  it and following it); the info card comes from the context menu; a card
+  never outlives its body's selection.
+- Context menu (every map, 2026-10-31 b): right click (press + release
+  without a drag) or Ctrl + left press on an object / navigation cube ->
+  `MapContextMenu`: name + commands (INFO = card, the item's route / docking
+  panel actions, SHOW DETAILS = the object's next map, VIEW SURROUNDINGS =
+  enter the cube). It owns the pointer while open; any other press, Esc or
+  the wheel closes it.
+- Map buttons (every map): one row bottom right - back (previous map), up
+  (one level up), TRACK (System), LEVEL 0 - rounded wire bars
+  (`NavigationCoordinateOverlay::drawButtons`); an arrow exists only where
+  its command does. Back restores the previous map with its saved view
+  (`GalaxyMapBookmark` / `SystemMapBookmark` / Detail / Hub cameras).
 
 ## Previous stage (2026-10-29, 24 points) - condensed
 - Decomposition (`cf5f97ae`, `4e45618e`, `7d62dfb3`), sizes before -> after:
@@ -550,6 +562,94 @@ hitches = frames > 80 ms after start.
   the DEV frame captures.
 - OPEN: human mouse acceptance of both maps; the old Galaxy pointer script
   (`galaxy_pointer_script.sh`) was not re-run after this order.
+
+### Map camera focus, context menu, back arrow, map buttons (user order 2026-10-31 b)
+- User: System Map navigation "chaotic" - zooming toward a planet the
+  parent-cube rule kept pulling the view to the cube centre, the planet
+  and its moons were hard to keep in view; rotations at high zoom sharp and
+  about an unclear point. Wanted: rotation about the object near the mouse,
+  else about the pressed point; System double click = approach (as on the
+  Galaxy Map); info via Ctrl + click / right click menu (name + commands:
+  info, route, details) - also for navigation cubes (info, route,
+  surroundings); a back arrow on Details (and the other maps) returning to
+  the remembered map position; buttons as rounded transparent wire bars
+  (text or arrow), no arrow where nothing is beyond.
+- Root causes: zoom-out mixed the target 18 % toward the parent centre per
+  notch; the zoom / rotation pivot fell back to the HOVERED CUBE CENTRE; a
+  cube press rotated about the cube centre; the hand-over measured the
+  cube's on-screen extent at its real position, so it depended on where
+  the user looked (and forced the centre drift); the moving planet left
+  the view (no follow), and once outside the parent it was hidden.
+- Camera (both maps): the wheel zooms in AND out about the object near the
+  cursor (`pivotPickRadiusPx` 36, disk distance), else the point under the
+  cursor (hover layer / target plane) - never a cube centre; only the top
+  cube (overview / S0) at >= 0.7 of its distance limit centres itself
+  (0.35 per notch) so it fills the screen; its limit = the centred fit.
+  Hand-over = `cubeSizeRatio` (the cube's size at the current zoom as if
+  centred on the camera target): down when the child under the cursor
+  reaches 0.98, up below 0.94. Rotation: about the object near the press
+  point (System: body / hub via `nearestSystemObject`; Galaxy: star), else
+  the pressed point (cloud hit / hover layer / target plane).
+- Focus object (System): a body the user zoomed / turned about or
+  double-clicked is FOLLOWED (`cameraFollowBodyId`: camera target, a
+  running flight and the orbit pivot move with it, like TRACK); when it
+  leaves the parent, the parent moves sideways to its cube
+  (`shiftHierarchyParentTo`); a pan or framing a cube ends the follow.
+- Double click on an object = approach (both maps): its child cube becomes
+  the parent without framing, the camera flies to the object itself at the
+  parent's fill size (`approachHierarchyPoint`); a terminal System cube:
+  just closer (0.35 x). Cube double click still frames the cube.
+- Context menu: `MapContextMenu` (data) + `SystemMapRendererContextMenu.cpp`
+  (open / execute / pointer / draw) + `NavigationCoordinateOverlay::
+  drawContextMenu`. Targets: overlay glyphs (every map), Galaxy star /
+  cloud / cube (the resolver), System body / hub / cube
+  (`SystemMapInteraction::resolvePointer`), Hub infrastructure module. The
+  target is selected on open (single-click semantics, no click tracking).
+  Galaxy star INFO = a star card (`galaxy-system:<id>`, route target = the
+  system position, closes with the star selection); SHOW DETAILS: star ->
+  System Map, body -> Details, hub -> Hub map, terminal System cube ->
+  Details; VIEW SURROUNDINGS: cube -> entered (terminal Galaxy cube -> the
+  System Map), cloud -> its cube approached. Labels localised
+  (`map.context.*`).
+- Back history: `SystemMapRenderer::setMode` records the map left
+  (`MapHistoryEntry`, 24 max) unless the change is the back navigation; the
+  back arrow emits `MapIntent::RestoreMap` -> `SpaceState::
+  restorePreviousSystemMapMode` (Galaxy / loaded or known System / loaded
+  Details / loaded Hub); the saved view is applied when the map is shown
+  (Galaxy after `onGalaxyMapEntered`, System in the presentation builder
+  after the fit, Details / Hub in `setMode`). Found by the scripted run: a
+  press held across the map change hit LEVEL 0 of the next map (same
+  screen slot) - a press that starts before a map change now belongs to
+  the old map until released.
+- Buttons: `NavigationOverlayButton` rows drawn with `HudPrimitiveBatch`
+  (rounded wire outline, faint fill on hover / active), raised 34 px above
+  the bottom (the game's hint bar covered them). `SystemMapView::
+  suppressCameraGesture` now also suppresses the System pointer gesture.
+- AUTOMATED: `EliteGalaxyPointerCheck` PASS 44/44 (H3 now measures the
+  size ratio); `EliteMapPointerCheck` PASS. SCRIPTED GAME (Debug):
+  System 29/29 - S0 fill, cube hover / click / double click x2, up x2,
+  Uranus click (no card), right click menu (name, INFO, DETAILS) -> INFO
+  opens the card, cube follows 4.5 s, double click approaches (deeper
+  parent, centred 0 px, followed), still centred 3 s later, rotation drag
+  near it (moved 0.01 px), wheel on it (stays under the cursor), menu
+  DETAILS -> Details with a back arrow -> back: same parent and camera,
+  wheel in / out to S0. Galaxy 83/83 - incl. star / cloud double click =
+  approach (centred, parent size 0.90), star right click menu (name, INFO,
+  route, DETAILS) -> INFO opens the star card, cube right click ->
+  SURROUNDINGS enters it, wheel in / out, overview fills.
+  OLD Galaxy pointer script (`galaxy_pointer_script.sh`, first re-run
+  since 2026-10-30 c): first run 8 PASS / 3 FAIL - all three stale test
+  expectations, not product faults: "2 Alpha Centauri" 0/10 (Proxima lies
+  outside the Sol G1 parent -> by the 2026-10-31 rule not drawn / no
+  target: now skipped when outside the parent), "9 cloud single click"
+  0/10 (the script searched clouds without the parent clip; with the
+  production scene no cloud reaches into that parent: now skipped - cloud
+  click is covered by the hierarchy script), "8 cube double click (same
+  point)" 4/5 (trace: the probe point lay on a cube border, the +1 px
+  second click hit the neighbour cube - correct; the probe now avoids
+  borders). Re-run: all rows PASS (phase 3 re-run 10/10).
+- OPEN: human mouse acceptance of both maps; Detail / Hub maps: the menu
+  covers overlay glyphs and Hub modules only (no body picking there).
 
 ### OPEN
 - Galaxy spatial frame: HUMAN acceptance with a real mouse not done (the

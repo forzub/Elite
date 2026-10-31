@@ -28,6 +28,11 @@ struct NavigationMapTextProfile
     std::string setIntermediate;
     std::string cancelIntermediate;
     std::string spaceTarget;
+    // Context menu commands.
+    std::string contextInfo = "INFO";
+    std::string contextDetails = "SHOW DETAILS";
+    std::string contextSurroundings = "VIEW SURROUNDINGS";
+    std::string starSystem = "Star system";
     std::string finishTarget;
     std::string intermediateTarget;
     std::string navigationPoint;

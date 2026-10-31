@@ -275,6 +275,34 @@
       "es": "QUITAR DE RUTA",
       "ja": "ルートから削除"
     },
+    "map.context.info": {
+      "en": "INFO",
+      "ru": "ИНФО",
+      "zh-Hans": "信息",
+      "es": "INFORMACIÓN",
+      "ja": "情報"
+    },
+    "map.context.details": {
+      "en": "SHOW DETAILS",
+      "ru": "ПОКАЗАТЬ ДЕТАЛИ",
+      "zh-Hans": "显示详情",
+      "es": "MOSTRAR DETALLES",
+      "ja": "詳細を表示"
+    },
+    "map.context.surroundings": {
+      "en": "VIEW SURROUNDINGS",
+      "ru": "ОСМОТРЕТЬ ОКРЕСТНОСТИ",
+      "zh-Hans": "查看周边",
+      "es": "VER ALREDEDORES",
+      "ja": "周辺を見る"
+    },
+    "map.context.star_system": {
+      "en": "Star system",
+      "ru": "Звёздная система",
+      "zh-Hans": "恒星系",
+      "es": "Sistema estelar",
+      "ja": "恒星系"
+    },
     "map.object_info.set_finish": {
       "en": "SET AS FINISH",
       "ru": "СДЕЛАТЬ ФИНИШЕМ",

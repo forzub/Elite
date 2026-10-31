@@ -251,6 +251,14 @@ SystemMapPresentation SystemMapPresentationBuilder::build(
 
     fitCameraOnce(view, viewport, system.systemId);
 
+    // Back history: the saved view of this system replaces the fresh fit.
+    if (auto& pending = view.state().pendingBookmark;
+        pending.has_value() && pending->systemId == system.systemId)
+    {
+        view.restoreBookmark(*pending);
+        pending.reset();
+    }
+
     filterBodiesByPresentationLevel(view, viewport, presentation);
 
     if (updateHoverPresentation &&

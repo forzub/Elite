@@ -10,6 +10,12 @@
     never moves the camera (PendingClick until the drag threshold), hover is
     the resolver's winner, the current parent cube changes only by double
     click / up / breadcrumbs / LEVEL 0 and by the wheel through screen size.
+
+    The camera keeps what the user looks at: the wheel zooms about the
+    object near the cursor (else the point under it), a rotation turns about
+    the object near the press (else the pressed point), a double click on
+    an object approaches it, and a body the camera turned / zoomed about is
+    followed while it moves (the parent moves sideways with it).
 */
 
 #include <algorithm>
@@ -245,10 +251,121 @@ void SystemMapInteraction::focusTacticalObjectSelection(
     state.orbitPivotActive = false;
 }
 
+SystemPointerTarget SystemMapInteraction::resolvePointer(
+    const SystemMapView& view,
+    const SystemMapInteractionContext& context,
+    const Viewport& viewport,
+    double localX,
+    double localY
+) const
+{
+    return resolveSystemPointer(view, context, viewport, localX, localY);
+}
+
+void SystemMapInteraction::selectTarget(
+    SystemMapView& view,
+    const SystemMapInteractionContext& context,
+    const SystemPointerTarget& target,
+    SystemMapInputResult& result
+) const
+{
+    auto& state = view.state();
+    switch (target.kind)
+    {
+        case SystemPointerTarget::Kind::Body:
+            focusBody(view, context, target.bodyId, 0.0);
+            result.selectedBodyId = target.bodyId;
+            return;
+        case SystemPointerTarget::Kind::Hub:
+        {
+            SystemMapHubSelection hub;
+            hub.hubId = target.hubId;
+            hub.parentBodyId = target.hubParentBodyId;
+            focusHub(view, context, hub, 0.0);
+            return;
+        }
+        case SystemPointerTarget::Kind::Cube:
+            if (!target.cell || !state.navigationGrid.enabled())
+                return;
+            state.selectedBodyId.clear();
+            state.selectedHubId.clear();
+            state.selectedHubParentBodyId.clear();
+            state.navigationGrid.selectCell(*target.cell);
+            state.navigationCellExplicitlySelected = true;
+            result.clickedNavigationCell = *target.cell;
+            return;
+        case SystemPointerTarget::Kind::Empty:
+            return;
+    }
+}
+
+bool SystemMapInteraction::descendTarget(
+    SystemMapView& view,
+    const SystemMapInteractionContext& context,
+    const Viewport& viewport,
+    const SystemPointerTarget& target,
+    double nowSeconds,
+    SystemMapInputResult& result
+) const
+{
+    auto& state = view.state();
+    if (!state.navigationGrid.enabled())
+        return false;
+
+    if (target.kind == SystemPointerTarget::Kind::Cube)
+    {
+        if (!target.cell || !view.enterHierarchyCell(*target.cell, viewport, nowSeconds))
+            return false;
+        state.navigationCellExplicitlySelected = true;
+        result.systemLevelChanged = view.hierarchyBox().childLevel;
+        return true;
+    }
+
+    if (target.kind != SystemPointerTarget::Kind::Body && target.kind != SystemPointerTarget::Kind::Hub)
+        return false;
+
+    // Approach: the object's cube becomes the parent (the camera is not
+    // framed on that cube), then the camera flies to the object itself.
+    const bool body = target.kind == SystemPointerTarget::Kind::Body;
+    const auto absolute = body ? context.systemBodyAbsolutePosition(target.bodyId)
+                               : context.systemObjectAbsolutePosition(target.hubId);
+    const glm::dvec3 pointAu = absolute ? *absolute / scaleOf(view) : target.pointAu;
+    bool entered = false;
+    if (const auto child = view.hierarchyChildAt(pointAu))
+        entered = view.enterHierarchyCell(*child, viewport, nowSeconds, false);
+    if (entered)
+        result.systemLevelChanged = view.hierarchyBox().childLevel;
+
+    SystemMapInputResult ignored;
+    selectTarget(view, context, target, ignored);
+    if (body)
+        result.selectedBodyId = target.bodyId;
+
+    if (entered)
+    {
+        view.approachHierarchyPoint(pointAu, viewport, nowSeconds);
+    }
+    else
+    {
+        // A terminal cube: no deeper parent, just closer.
+        float minimumHalfHeight = SystemMapView::minimumCameraHalfHeight;
+        float maximumHalfHeight = SystemMapView::maximumCameraHalfHeight;
+        view.hierarchyHalfHeightLimits(viewport, minimumHalfHeight, maximumHalfHeight);
+        view.approachHierarchyPoint(pointAu, viewport, nowSeconds,
+                                    std::max(minimumHalfHeight, state.camera.distance * 0.35f));
+    }
+    if (body)
+        view.followBody(target.bodyId);
+    else
+        view.clearFollow();
+    return true;
+}
+
 /*
     Single click: a body / hub is selected with the cube it is in (no card);
-    a cube is selected. Double click: a body opens its info card; a cube
-    becomes the current parent (camera fits it).
+    a cube is selected. Double click: a body / hub is approached, a cube
+    becomes the current parent (camera fits it). The info card belongs to
+    the context menu (right click / Ctrl + click).
 */
 void SystemMapInteraction::applyClick(
     SystemMapView& view,
@@ -267,22 +384,17 @@ void SystemMapInteraction::applyClick(
     switch (target.kind)
     {
         case SystemPointerTarget::Kind::Body:
-        {
-            state.cubeClickTracker.reset();
-            const bool doubleClick = state.bodyClickTracker.registerClick(nowSeconds, x, y, target.bodyId);
-            focusBody(view, context, target.bodyId, nowSeconds);
-            result.selectedBodyId = target.bodyId;
-            if (doubleClick)
-                result.clickedBodyId = target.bodyId; // the info card
-            return;
-        }
         case SystemPointerTarget::Kind::Hub:
         {
-            state.bodyClickTracker.reset();
-            SystemMapHubSelection hub;
-            hub.hubId = target.hubId;
-            hub.parentBodyId = target.hubParentBodyId;
-            focusHub(view, context, hub, nowSeconds);
+            state.cubeClickTracker.reset();
+            const std::string id = target.kind == SystemPointerTarget::Kind::Body ? target.bodyId : target.hubId;
+            const bool doubleClick = state.bodyClickTracker.registerClick(nowSeconds, x, y, id);
+            selectTarget(view, context, target, result);
+            if (doubleClick)
+            {
+                state.bodyClickTracker.reset();
+                descendTarget(view, context, viewport, target, nowSeconds, result);
+            }
             return;
         }
         case SystemPointerTarget::Kind::Cube:
@@ -295,18 +407,9 @@ void SystemMapInteraction::applyClick(
                 state.cubeClickTracker.registerClick(nowSeconds, x, y, cell.level, cell.index,
                                                      controls.cubeDoubleClickMaxIntervalSeconds,
                                                      controls.cubeDoubleClickMaxDistancePx);
-            state.selectedBodyId.clear();
-            state.selectedHubId.clear();
-            state.selectedHubParentBodyId.clear();
-            state.navigationGrid.selectCell(cell);
-            state.navigationCellExplicitlySelected = true;
-            result.clickedNavigationCell = cell;
-
-            if (doubleClick && view.enterHierarchyCell(cell, viewport, nowSeconds))
-            {
-                state.navigationCellExplicitlySelected = true;
-                result.systemLevelChanged = view.hierarchyBox().childLevel;
-            }
+            selectTarget(view, context, target, result);
+            if (doubleClick)
+                descendTarget(view, context, viewport, target, nowSeconds, result);
             return;
         }
         case SystemPointerTarget::Kind::Empty:
@@ -372,7 +475,7 @@ void SystemMapInteraction::applyWheelLevels(
             else
                 candidate = view.hierarchyChildAt(state.camera.target / scaleOf(view));
             if (!candidate ||
-                view.cubeScreenRatio(candidate->center, candidate->size, vp) < SystemMapView::ParentFillRatio ||
+                view.cubeSizeRatio(candidate->size, vp) < SystemMapView::ParentFillRatio ||
                 !view.enterHierarchyCell(*candidate, vp, frame.nowSeconds, false))
             {
                 return;
@@ -382,7 +485,7 @@ void SystemMapInteraction::applyWheelLevels(
         else
         {
             if (box.parent.level <= 0 ||
-                view.cubeScreenRatio(box.centerLy, box.edgeLy, vp) >= SystemMapView::ParentHandOverUpRatio ||
+                view.cubeSizeRatio(box.edgeLy, vp) >= SystemMapView::ParentHandOverUpRatio ||
                 !view.jumpToHierarchyLevel(box.parent.level - 1, vp, frame.nowSeconds, false))
             {
                 return;
@@ -435,6 +538,17 @@ SystemMapInputResult SystemMapInteraction::handleInput(
         return result;
     }
 
+    // A followed body leaving the parent takes the parent sideways with it
+    // (the camera already moves with the body).
+    if (!state.cameraFollowBodyId.empty())
+    {
+        const auto position = context.systemBodyAbsolutePosition(state.cameraFollowBodyId);
+        if (!position)
+            view.clearFollow();
+        else if (!view.hierarchyContains(*position / scaleOf(view)))
+            view.shiftHierarchyParentTo(*position / scaleOf(view));
+    }
+
     // The selected body's cube follows the body as it moves between cubes.
     if (!state.selectedBodyId.empty())
     {
@@ -484,14 +598,21 @@ SystemMapInputResult SystemMapInteraction::handleInput(
 
     if (event == GalaxyPointerGesture::Event::DragStarted)
     {
-        // Rotation pivot at the PRESS target.
+        // Rotation pivot: the object near the PRESS point (a body is then
+        // followed), else the pressed point itself (on the hover layer,
+        // else on the target plane) - never a cube centre.
         const auto& press = state.pressTarget;
-        if (press.kind == SystemPointerTarget::Kind::Body || press.kind == SystemPointerTarget::Kind::Hub ||
-            press.kind == SystemPointerTarget::Kind::Cube)
+        if (const auto object =
+                context.nearestSystemObject(gesture.pressX(), gesture.pressY(), controls.pivotPickRadiusPx))
         {
-            state.orbitPivotAbsolute =
-                (press.kind == SystemPointerTarget::Kind::Cube && press.cell ? press.cell->center : press.pointAu) *
-                scaleOf(view);
+            state.orbitPivotAbsolute = object->absolutePosition;
+            if (!object->bodyId.empty())
+                view.followBody(object->bodyId);
+        }
+        else if (press.kind == SystemPointerTarget::Kind::Body || press.kind == SystemPointerTarget::Kind::Hub ||
+                 (press.kind == SystemPointerTarget::Kind::Cube && press.onLayer))
+        {
+            state.orbitPivotAbsolute = press.pointAu * scaleOf(view);
         }
         else
         {
@@ -530,8 +651,12 @@ SystemMapInputResult SystemMapInteraction::handleInput(
         state.camera.panning = true;
     if (!frame.rightDown)
         state.camera.panning = false;
-    if (state.camera.panning && frame.rightDown && !rightStarted)
+    if (state.camera.panning && frame.rightDown && !rightStarted && (dx != 0.0 || dy != 0.0))
+    {
+        // Panning leaves the followed object.
         view.panCameraByScreenDelta(viewport, dx, dy);
+        view.clearFollow();
+    }
 
     // ---- wheel: zoom about the point under the cursor, levels by size -------
     if (frame.inside)
@@ -549,30 +674,31 @@ SystemMapInputResult SystemMapInteraction::handleInput(
 
         if (zoom != 0.0f)
         {
-            // Pivot: the body / hub under the cursor (surface clearance),
-            // else the hovered cube's centre, else the view centre.
-            glm::dvec3 pivot = state.camera.target;
+            // Pivot: the body / hub under or near the cursor (surface
+            // clearance; a body is then followed), else the point under the
+            // cursor (hover layer, else the target plane). Zoom in and out
+            // keep that point where it is on the screen.
+            glm::dvec3 pivot = view.targetPlanePointFromScreen(viewport, frame.localMouseX, frame.localMouseY);
             double clearance = 0.0;
             const auto& hover = state.hoverTarget;
-            if (state.hoverTargetValid && hover.kind == SystemPointerTarget::Kind::Body)
+            const auto cameraBody =
+                context.pickSystemCameraBodyTarget(frame.localMouseX, frame.localMouseY, viewport);
+            if (cameraBody && state.hoverTargetValid && hover.kind == SystemPointerTarget::Kind::Body)
             {
-                if (const auto body = context.pickSystemCameraBodyTarget(frame.localMouseX, frame.localMouseY, viewport))
-                {
-                    pivot = body->absolutePosition;
-                    clearance = body->physicalRadiusWorld * static_cast<double>(controls.bodyZoomClearanceScale);
-                }
-                else
-                {
-                    pivot = hover.pointAu * scaleOf(view);
-                }
+                pivot = cameraBody->absolutePosition;
+                clearance = cameraBody->physicalRadiusWorld * static_cast<double>(controls.bodyZoomClearanceScale);
+                view.followBody(hover.bodyId);
             }
-            else if (state.hoverTargetValid && hover.kind == SystemPointerTarget::Kind::Hub)
+            else if (const auto object = context.nearestSystemObject(frame.localMouseX, frame.localMouseY,
+                                                                     controls.pivotPickRadiusPx))
+            {
+                pivot = object->absolutePosition;
+                if (!object->bodyId.empty())
+                    view.followBody(object->bodyId);
+            }
+            else if (state.hoverTargetValid && hover.kind == SystemPointerTarget::Kind::Cube && hover.onLayer)
             {
                 pivot = hover.pointAu * scaleOf(view);
-            }
-            else if (state.navigationGrid.hasHoveredCell())
-            {
-                pivot = state.navigationGrid.hoveredCell().center * scaleOf(view);
             }
 
             float minimumHalfHeight = SystemMapView::minimumCameraHalfHeight;
@@ -581,17 +707,16 @@ SystemMapInputResult SystemMapInteraction::handleInput(
 
             const float factor =
                 zoom > 0.0f ? std::pow(controls.zoomInFactor, zoom) : std::pow(controls.zoomOutFactor, -zoom);
-            if (zoom > 0.0f)
+            view.zoomCameraAroundPivot(pivot, factor, minimumHalfHeight, maximumHalfHeight,
+                                       zoom > 0.0f ? clearance : 0.0);
+            // Only the S0 root, zoomed out to its limit, centres itself so
+            // that it fills the whole screen.
+            if (zoom < 0.0f && view.hierarchyBox().parent.level <= 0 &&
+                state.camera.distance >= maximumHalfHeight * 0.7f)
             {
-                view.zoomCameraAroundPivot(pivot, factor, minimumHalfHeight, maximumHalfHeight, clearance);
-            }
-            else
-            {
-                // Zoom out drifts back to the parent's centre (the parent
-                // shrinks into the screen, not off to a side).
-                state.camera.distance = std::clamp(state.camera.distance * factor, minimumHalfHeight, maximumHalfHeight);
-                const glm::dvec3 centre = view.hierarchyBox().centerLy * scaleOf(view);
-                state.camera.target = glm::mix(state.camera.target, centre, 0.18);
+                view.clearFollow();
+                state.camera.target =
+                    glm::mix(state.camera.target, view.hierarchyBox().centerLy * scaleOf(view), 0.35);
             }
 
             applyWheelLevels(view, frame, zoom > 0.0f, result);

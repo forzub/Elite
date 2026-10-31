@@ -42,6 +42,12 @@ namespace game::system_map
             const std::string& objectId
         ) const override;
 
+        std::optional<SystemMapNearObject> nearestSystemObject(
+            double localMouseX,
+            double localMouseY,
+            float radiusPx
+        ) const override;
+
         double largestDirectBodyPhysicalSizeMetersAt(
             double localMouseX,
             double localMouseY

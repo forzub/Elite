@@ -302,6 +302,55 @@ SystemMapFrameInteractionContext::pickSystemBodyId(
     return m_frame.bodyScreenPoints[index].bodyId;
 }
 
+std::optional<SystemMapNearObject>
+SystemMapFrameInteractionContext::nearestSystemObject(
+    double x,
+    double y,
+    float radiusPx
+) const
+{
+    const glm::vec2 mouse(static_cast<float>(x), static_cast<float>(y));
+    std::optional<SystemMapNearObject> best;
+    float bestDistance = radiusPx;
+    const auto consider = [&](const glm::vec2& screen, float screenRadiusPx, bool visible, float depth) {
+        if (!std::isfinite(screen.x) || !std::isfinite(screen.y))
+            return false;
+        if (!visible && !(depth >= -1.0f && depth <= 1.0f))
+            return false;
+        const float d = std::max(0.0f, glm::length(screen - mouse) - std::max(0.0f, screenRadiusPx));
+        if (d > bestDistance)
+            return false;
+        bestDistance = d;
+        return true;
+    };
+    for (const auto& point : m_frame.bodyScreenPoints)
+    {
+        if (!consider(point.screen, point.screenRadiusPx, point.visible, point.depth))
+            continue;
+        if (const auto position = systemBodyAbsolutePosition(point.bodyId))
+        {
+            SystemMapNearObject object;
+            object.bodyId = point.bodyId;
+            object.absolutePosition = *position;
+            best = object;
+        }
+    }
+    for (const auto& point : m_frame.hubScreenPoints)
+    {
+        if (!consider(point.screen, 0.0f, point.visible, point.depth))
+            continue;
+        if (const auto position = systemObjectAbsolutePosition(point.hubId))
+        {
+            SystemMapNearObject object;
+            object.hubId = point.hubId;
+            object.hubParentBodyId = point.parentBodyId;
+            object.absolutePosition = *position;
+            best = object;
+        }
+    }
+    return best;
+}
+
 std::optional<SystemMapHubSelection>
 SystemMapFrameInteractionContext::pickSystemHubSelection(
     double x,

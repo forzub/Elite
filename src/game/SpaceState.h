@@ -229,6 +229,9 @@ public:
     );
     void setSystemMapHubMode();
     void setSystemMapLoadedDetailMode();
+    void setSystemMapLoadedHubMode();
+    // Map back arrow: return to a previous map (renderer restores its view).
+    void restorePreviousSystemMapMode(const game::system_map::MapIntent& intent);
 private:
     enum class StartupStage
     {

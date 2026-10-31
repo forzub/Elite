@@ -65,6 +65,9 @@ namespace game::system_map
         float zoomOutFactor = 1.07f;
         float bodyZoomClearanceScale = 1.12f;
         double clickMoveThresholdPx = 5.0;
+        // An object this close to the press / cursor (disk distance) is
+        // what a rotation / zoom turns about.
+        float pivotPickRadiusPx = 36.0f;
 
         float navigationCellInteractiveViewportFraction = 0.075f;
         float navigationCellInteractiveMinPx = 56.0f;
@@ -116,6 +119,24 @@ namespace game::system_map
         std::optional<navigation::CubicNavigationCell> cell;
         glm::dvec3 pointAu {0.0};
         bool onLayer = false;
+    };
+
+    /*
+        A saved System map view (map back history): the frame, the camera
+        and the selection, restored when the user returns to this map.
+    */
+    struct SystemMapBookmark
+    {
+        int systemId = -1;
+        GalaxyHierarchyParent parent {0, {}};
+        SystemCameraState camera;
+        std::string selectedBodyId;
+        std::string selectedHubId;
+        std::string selectedHubParentBodyId;
+        std::optional<navigation::CubicNavigationCell> selectedCell;
+        bool cellExplicitlySelected = false;
+        std::string cameraFollowBodyId;
+        bool tracking = false;
     };
 
     /*
@@ -176,6 +197,19 @@ namespace game::system_map
         std::string trackedBodyId;
         glm::dvec3 trackedBodyLastAbsolute {0.0, 0.0, 0.0};
         bool trackedBodyPositionValid = false;
+
+        /*
+            Camera focus object: the body the user zoomed / rotated about or
+            double-clicked. The camera moves with it (like TRACK) so it stays
+            in view; the current parent moves sideways when it leaves it.
+            Cleared by a pan or by framing a cube.
+        */
+        std::string cameraFollowBodyId;
+        glm::dvec3 cameraFollowLastAbsolute {0.0, 0.0, 0.0};
+        bool cameraFollowPositionValid = false;
+
+        // Back history: applied once the system is presented (builder).
+        std::optional<SystemMapBookmark> pendingBookmark;
 
         /*
             Spatial frame - the SAME model as the Galaxy Map
@@ -360,6 +394,13 @@ namespace game::system_map
             double edgeAu,
             const Viewport& viewport
         ) const;
+        // Apparent size of a cube edge at the current zoom, wherever the
+        // cube is (as if centred on the camera target): the hierarchy
+        // hand-over measure, independent of where the user looks.
+        float cubeSizeRatio(
+            double edgeAu,
+            const Viewport& viewport
+        ) const;
         float fillHalfHeightAt(
             const glm::dvec3& centerAu,
             double edgeAu,
@@ -397,6 +438,24 @@ namespace game::system_map
             bool frameCamera = true
         );
         void resetHierarchyToRoot(const Viewport& viewport);
+        // Fly to a point (AU) of the current parent: centred on it, the
+        // parent's size filling the screen (an object double click).
+        // halfHeight > 0 overrides the size (a terminal cube: closer).
+        void approachHierarchyPoint(
+            const glm::dvec3& pointAu,
+            const Viewport& viewport,
+            double nowSeconds,
+            float halfHeight = -1.0f
+        );
+        // The parent moves sideways (same level) to the cube holding the
+        // point; the camera does not move.
+        bool shiftHierarchyParentTo(const glm::dvec3& pointAu);
+
+        void followBody(const std::string& bodyId);
+        void clearFollow();
+
+        SystemMapBookmark bookmark(int systemId) const;
+        void restoreBookmark(const SystemMapBookmark& bookmark);
 
     private:
         void setHierarchyParent(const GalaxyHierarchyParent& parent);

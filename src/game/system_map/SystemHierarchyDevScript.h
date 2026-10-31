@@ -17,6 +17,7 @@
 #include <glm/glm.hpp>
 
 #include "src/core/DevFrameCapture.h"
+#include "src/game/system_map/MapContextMenu.h"
 #include "src/game/system_map/SystemMapView.h"
 #include "src/render/navigation/NavigationCoordinateOverlay.h"
 #include "src/render/types/Viewport.h"
@@ -52,6 +53,11 @@ public:
     std::function<bool(const std::string&)> cardOpen;
     // Current position (AU) of a body.
     std::function<std::optional<glm::dvec3>(const std::string&)> bodyPositionAu;
+    // The open context menu (nullptr: closed), the map mode, the back
+    // button centre (nullopt: no back button).
+    std::function<const MapContextMenu*()> contextMenu;
+    std::function<MapMode()> mapMode;
+    std::function<std::optional<glm::vec2>()> backButton;
 
     void drive(SystemMapView& view, const Viewport& vp, double now, double& mx, double& my, bool& leftDown,
                bool& rightDown, double& scrollY)
@@ -105,6 +111,7 @@ public:
             if (op.point)
                 m_pointer = op.point();
             m_left = op.left;
+            m_right = op.right;
             scroll = op.scroll;
             if (op.scrollWhile && !op.scrollWhile())
                 scroll = 0.0;
@@ -112,7 +119,7 @@ public:
         mx = vp.x + m_pointer.x;
         my = vp.y + m_pointer.y;
         leftDown = m_left;
-        rightDown = false;
+        rightDown = m_right;
         if (scroll != 0.0)
             scrollY += scroll;
     }
@@ -123,6 +130,7 @@ private:
         enum Kind { Frame, Wait, StartWait, WaitCalm, Call } kind = Frame;
         std::function<glm::vec2()> point;
         bool left = false;
+        bool right = false;
         double scroll = 0.0;
         std::function<bool()> scrollWhile;
         double seconds = 0.0;
@@ -137,6 +145,9 @@ private:
     std::deque<Op> m_ops;
     glm::vec2 m_pointer {20.0f, 20.0f};
     bool m_left = false;
+    bool m_right = false;
+    glm::vec2 m_bodyAt {0.0f};
+    SystemMapBookmark m_saved;
     int m_shot = 0;
     std::vector<std::pair<std::string, bool>> m_results;
     GalaxyHierarchyParent m_before;
@@ -144,12 +155,60 @@ private:
     std::optional<navigation::CubicNavigationCell> m_cell;
     std::string m_body;
 
-    void frame(std::function<glm::vec2()> point, bool left)
+    void frame(std::function<glm::vec2()> point, bool left, bool right = false)
     {
         Op op;
         op.point = std::move(point);
         op.left = left;
+        op.right = right;
         m_ops.push_back(std::move(op));
+    }
+    void rightClick(std::function<glm::vec2()> target)
+    {
+        auto p = std::make_shared<glm::vec2>(-50.0f);
+        call([p, target] { *p = target(); });
+        const auto at = [p] { return *p; };
+        frame(at, false);
+        frame(at, false, true);
+        frame(at, false, true);
+        frame(at, false);
+        frame(at, false);
+    }
+    // A left drag from a point by a screen offset (a rotation).
+    void drag(std::function<glm::vec2()> from, glm::vec2 by, int steps)
+    {
+        auto p = std::make_shared<glm::vec2>(-50.0f);
+        call([p, from] { *p = from(); });
+        frame([p] { return *p; }, false);
+        frame([p] { return *p; }, true);
+        for (int k = 1; k <= steps; ++k)
+        {
+            const float t = static_cast<float>(k) / static_cast<float>(steps);
+            frame([p, by, t] { return *p + by * t; }, true);
+        }
+        frame([p, by] { return *p + by; }, false);
+        frame([p, by] { return *p + by; }, false);
+    }
+    // Centre of the context-menu row with this command (off-screen if none).
+    glm::vec2 menuRow(const std::string& command) const
+    {
+        const MapContextMenu* menu = contextMenu ? contextMenu() : nullptr;
+        if (!menu)
+            return glm::vec2(-50.0f);
+        for (std::size_t i = 0; i < menu->rows.size(); ++i)
+            if (menu->rows[i].command == command)
+                return glm::vec2(menu->originPx.x + MapContextMenu::WidthPx * 0.5f,
+                                 menu->originPx.y + MapContextMenu::HeaderHeightPx + 3.0f +
+                                     MapContextMenu::RowHeightPx * (static_cast<float>(i) + 0.5f));
+        return glm::vec2(-50.0f);
+    }
+    bool menuHas(const std::string& command) const
+    {
+        return menuRow(command).x >= 0.0f;
+    }
+    float bodyFromCentre(const std::string& id) const
+    {
+        return glm::length(bodyScreen(id) - glm::vec2(m_vp.width * 0.5f, m_vp.height * 0.5f));
     }
     void wait(double s)
     {
@@ -351,8 +410,9 @@ private:
         }
         shot("up");
 
-        // Planet: single click selects it and its cube (no card); double
-        // click opens the card; the selection follows the planet.
+        // Planet: single click selects it and its cube (no card); the
+        // context menu (right click) opens the card; the selection follows
+        // the planet; double click approaches it and the camera follows it.
         call([this] {
             m_body.clear();
             float best = 1.0e9f;
@@ -386,10 +446,19 @@ private:
         });
         shot("planet_selected");
         wait(0.6);
-        doubleClick([this] { return bodyScreen(m_body); });
+        rightClick([this] { return bodyScreen(m_body); });
+        call([this] {
+            const MapContextMenu* menu = contextMenu ? contextMenu() : nullptr;
+            record("planet right click: a context menu with the name, info and details",
+                   menu && !menu->title.empty() && menuHas("info") && menuHas("details"),
+                   menu ? menu->title : std::string("closed"));
+        });
+        shot("planet_menu");
+        click([this] { return menuRow("info"); });
         wait(0.3);
         call([this] {
-            record("planet double click: the info card opens", cardOpen && cardOpen(m_body));
+            record("planet menu INFO: the info card opens, the menu closes",
+                   cardOpen && cardOpen(m_body) && !(contextMenu && contextMenu()));
         });
         shot("planet_card");
         for (int k = 0; k < 3; ++k)
@@ -400,6 +469,83 @@ private:
                        selectedCellHoldsBody());
             });
         }
+
+        // Double click: approach (its cube is the parent, it is centred) and
+        // the camera follows it.
+        call([this] { m_before = m_view->state().hierarchyParent; });
+        doubleClick([this] { return bodyScreen(m_body); });
+        calm();
+        call([this] {
+            const auto& st = m_view->state();
+            record("planet double click: approached - deeper parent, the planet centred, followed",
+                   st.hierarchyParent.level == m_before.level + 1 && bodyFromCentre(m_body) < 40.0f &&
+                       st.cameraFollowBodyId == m_body,
+                   parentText() + " d=" + std::to_string(bodyFromCentre(m_body)));
+        });
+        shot("planet_approached");
+        wait(3.0);
+        call([this] {
+            record("planet followed: still in the view centre 3 s later", bodyFromCentre(m_body) < 40.0f,
+                   std::to_string(bodyFromCentre(m_body)));
+        });
+
+        // Rotation near the planet turns about the planet.
+        call([this] {
+            m_camera = m_view->state().camera;
+            m_bodyAt = bodyScreen(m_body);
+        });
+        drag([this] { return bodyScreen(m_body) + glm::vec2(14.0f, 10.0f); }, glm::vec2(90.0f, 40.0f), 12);
+        call([this] {
+            const auto& st = m_view->state();
+            const float moved = glm::length(bodyScreen(m_body) - m_bodyAt);
+            record("rotation near the planet: the camera turned about it",
+                   st.camera.yaw != m_camera.yaw && moved < 12.0f, "moved_px=" + std::to_string(moved));
+        });
+
+        // The wheel on the planet keeps it under the cursor.
+        call([this] { m_bodyAt = bodyScreen(m_body); });
+        frame([this] { return m_bodyAt; }, false);
+        for (int k = 0; k < 4; ++k)
+        {
+            Op op;
+            op.point = [this] { return m_bodyAt; };
+            op.scroll = 1.0;
+            m_ops.push_back(op);
+            frame([this] { return m_bodyAt; }, false);
+        }
+        wait(0.3);
+        call([this] {
+            const float moved = glm::length(bodyScreen(m_body) - m_bodyAt);
+            record("wheel on the planet: it stays under the cursor", moved < 12.0f,
+                   "moved_px=" + std::to_string(moved));
+        });
+
+        // Details from the menu, then back: the System view comes back.
+        call([this] { m_saved = m_view->bookmark(0); });
+        rightClick([this] { return bodyScreen(m_body); });
+        click([this] { return menuRow("details"); });
+        wait(1.5);
+        call([this] {
+            record("planet menu DETAILS: the Details map opens",
+                   mapMode && mapMode() == MapMode::Detail);
+        });
+        shot("details");
+        call([this] {
+            record("Details: a back arrow is shown", backButton && backButton().has_value());
+        });
+        click([this] { return backButton && backButton() ? *backButton() : glm::vec2(-50.0f); });
+        wait(1.5);
+        calm();
+        call([this] {
+            const auto& st = m_view->state();
+            const bool sameParent = st.hierarchyParent == m_saved.parent;
+            const bool sameCamera = std::abs(st.camera.yaw - m_saved.camera.yaw) < 1.0e-4f &&
+                                    std::abs(st.camera.distance - m_saved.camera.distance) <
+                                        1.0e-3f * std::max(1.0f, m_saved.camera.distance);
+            record("back: the System map with the same parent and camera",
+                   mapMode && mapMode() == MapMode::System && sameParent && sameCamera, parentText());
+        });
+        shot("back");
 
         // Wheel: in until a child fills the screen (one hand-over), out to S0.
         call([this] { m_before = m_view->state().hierarchyParent; });

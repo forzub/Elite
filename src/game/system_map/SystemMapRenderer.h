@@ -42,6 +42,7 @@
 #include "src/game/system_map/MapTransitionController.h"
 #include "src/game/system_map/MapMode.h"
 #include "src/game/system_map/MapIntent.h"
+#include "src/game/system_map/MapContextMenu.h"
 #include "src/game/system_map/MapCameraState.h"
 #include "src/game/system_map/GalaxyMapView.h"
 #include "src/game/system_map/GalaxyMapInteraction.h"
@@ -294,6 +295,71 @@ private:
     );
 
     void toggleSelectedBodyTracking();
+
+    // ---- map buttons, back history, context menu -------------------------
+    // (SystemMapRendererContextMenu.cpp)
+    struct MapButton
+    {
+        std::string id; // "back", "up", "track", "level0"
+        render::navigation::NavigationOverlayButton view;
+    };
+    std::vector<MapButton> mapButtons(const Viewport& viewport) const;
+
+    struct MapHistoryEntry
+    {
+        Mode mode = Mode::Galaxy;
+        game::system_map::GalaxyMapBookmark galaxy;
+        game::system_map::SystemMapBookmark system;
+        game::system_map::DetailCameraState detailCamera;
+        std::string detailHubId;
+        std::string detailHubParentBodyId;
+        game::system_map::DetailCameraState hubCamera;
+    };
+    MapHistoryEntry captureHistoryEntry(Mode mode) const;
+    void recordMapHistory(Mode previousMode, Mode mode);
+    void applyMapHistoryRestore(Mode mode);
+    std::optional<game::system_map::MapIntent> navigateBack();
+
+    game::system_map::MapObjectOverlayItem makeWaypointCandidate(
+        char prefix,
+        const game::navigation::CubicNavigationCell& cell,
+        const glm::dvec3& worldPositionMeters,
+        const glm::dvec2& screenPx
+    ) const;
+    void appendContextActionRows(const game::system_map::MapObjectOverlayItem& item);
+    bool openContextMenu(
+        const Viewport& vp,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const world::celestial::SystemMapSnapshot& system,
+        const world::celestial::HubMapSnapshot& hub,
+        const glm::vec2& at,
+        double nowSeconds
+    );
+    std::optional<game::system_map::MapIntent> executeContextCommand(
+        const game::system_map::MapContextMenu& menu,
+        const std::string& command,
+        const Viewport& vp,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const world::celestial::SystemMapSnapshot& system,
+        double nowSeconds
+    );
+    bool handleContextMenuPointer(
+        const Viewport& vp,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const world::celestial::SystemMapSnapshot& system,
+        const world::celestial::HubMapSnapshot& hub,
+        GLFWwindow* window,
+        double mx,
+        double my,
+        double localMx,
+        double localMy,
+        bool inside,
+        bool leftDown,
+        bool rightDown,
+        double nowSeconds,
+        std::optional<game::system_map::MapIntent>& intent
+    );
+    void drawContextMenu(const Viewport& vp);
 
     void updateSelectedBodyTracking(
         const game::system_map::SystemMapPresentation& presentation
@@ -760,9 +826,25 @@ private:
     // System spatial frame texts of the current frame (drawn with labels).
     std::vector<game::system_map::GalaxyFrameText> m_systemFrameTexts;
 
-    // Galaxy Map hierarchy controls (up button, breadcrumbs).
-    bool m_galaxyUpButtonHovered = false;
+    // Map buttons and breadcrumbs (the hovered button id, "" = none).
+    std::string m_hoveredMapButton;
     int m_galaxyBreadcrumbHovered = -1;
+
+    // Back history (previous maps with their views).
+    std::vector<MapHistoryEntry> m_mapHistory;
+    std::optional<MapHistoryEntry> m_pendingHistoryRestore;
+    std::optional<game::system_map::GalaxyMapBookmark> m_pendingGalaxyBookmark;
+
+    // Context menu (right click / Ctrl + click) and its pointer state.
+    game::system_map::MapContextMenu m_contextMenu;
+    bool m_contextLeftWasDown = false;
+    bool m_contextRightWasDown = false;
+    bool m_contextRightCandidate = false;
+    bool m_contextSwallowLeft = false;
+    glm::vec2 m_contextRightPressPx {0.0f};
+    // Info card of a Galaxy star opened from its context menu.
+    std::optional<game::system_map::MapObjectOverlayItem> m_galaxySystemCard;
+    int m_galaxySystemCardSystemId = -1;
     std::vector<std::string> galaxyBreadcrumbs() const;
     std::vector<std::string> mapBreadcrumbs() const;
     game::system_map::GalaxyMapRenderer m_galaxyRenderer;
@@ -790,8 +872,6 @@ private:
     render::navigation::NavigationCoordinateOverlay
         m_navigationCoordinateOverlay;
 
-    bool m_navigationLevelZeroButtonHovered = false;
-    bool m_navigationTrackButtonHovered = false;
     bool m_navigationOverlayLeftWasDown = false;
 
     struct NavigationLevelAnnouncement

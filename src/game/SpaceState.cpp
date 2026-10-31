@@ -669,6 +669,12 @@ void SpaceState::handleInput()
                     return;
                 }
 
+                if (mapIntent->type == MapIntentType::RestoreMap)
+                {
+                    restorePreviousSystemMapMode(*mapIntent);
+                    return;
+                }
+
                 if (mapIntent->type == MapIntentType::OpenBody)
                 {
                     setSystemMapDetailMode();

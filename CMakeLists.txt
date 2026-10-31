@@ -643,6 +643,7 @@ add_executable(EliteGame
     src/game/system_map/SystemMapRendererPrimitives.cpp
     src/game/system_map/SystemMapRendererNavigation.cpp
     src/game/system_map/SystemMapRendererInput.cpp
+    src/game/system_map/SystemMapRendererContextMenu.cpp
     src/game/system_map/SystemMapRendererBackground.cpp
     src/game/system_map/SystemMapInteraction.cpp
     src/game/system_map/SystemMapFrameInteractionContext.cpp

@@ -57,11 +57,13 @@ SystemMapRenderer::handleInput(
         }
 
         m_pendingScrollY = 0.0;
-        m_navigationLevelZeroButtonHovered = false;
-        m_navigationTrackButtonHovered = false;
-        m_galaxyUpButtonHovered = false;
+        m_hoveredMapButton.clear();
         m_galaxyBreadcrumbHovered = -1;
-        m_navigationOverlayLeftWasDown = false;
+        // A press held across the map change (the back arrow sits where
+        // the next map has LEVEL 0) belongs to the old map: nothing of the
+        // new map reacts to it until it is released.
+        m_navigationOverlayLeftWasDown = true;
+        m_contextSwallowLeft = true;
         return std::nullopt;
     }
 
@@ -121,7 +123,7 @@ SystemMapRenderer::handleInput(
             m_galaxyView, m_galaxyInteraction, galaxy, vp, inputNowSeconds, mx, my, leftDown, rightDown);
     }
     if (game::system_map::SystemHierarchyDevScript::enabled() &&
-        m_modeState.current() == Mode::System)
+        (m_modeState.current() == Mode::System || m_modeState.current() == Mode::Detail))
     {
         if (!m_systemHierarchyDevScript.bodyLocator)
         {
@@ -151,6 +153,17 @@ SystemMapRenderer::handleInput(
                         return body.positionAu;
                 return std::nullopt;
             };
+            m_systemHierarchyDevScript.contextMenu = [this]() -> const game::system_map::MapContextMenu* {
+                return m_contextMenu.open ? &m_contextMenu : nullptr;
+            };
+            m_systemHierarchyDevScript.mapMode = [this] { return m_modeState.current(); };
+            m_systemHierarchyDevScript.backButton = [this, vp]() -> std::optional<glm::vec2> {
+                for (const auto& button : mapButtons(vp))
+                    if (button.id == "back")
+                        return glm::vec2((button.view.bounds.left + button.view.bounds.right) * 0.5f,
+                                         (button.view.bounds.top + button.view.bounds.bottom) * 0.5f);
+                return std::nullopt;
+            };
         }
         m_systemHierarchyDevScript.drive(m_systemView, vp, inputNowSeconds, mx, my, leftDown, rightDown,
                                          m_pendingScrollY);
@@ -160,6 +173,12 @@ SystemMapRenderer::handleInput(
     {
         if (!m_galaxyHierarchyDevScript.breadcrumbLocator)
         {
+            m_galaxyHierarchyDevScript.contextMenu = [this]() -> const game::system_map::MapContextMenu* {
+                return m_contextMenu.open ? &m_contextMenu : nullptr;
+            };
+            m_galaxyHierarchyDevScript.cardOpen = [this](const std::string& id) {
+                return m_objectOverlayState.isOpen(id);
+            };
             m_galaxyHierarchyDevScript.breadcrumbLocator = [this, vp] {
                 std::vector<glm::vec4> out;
                 for (const auto& b : m_navigationCoordinateOverlay.breadcrumbBounds(vp, galaxyBreadcrumbs()))
@@ -183,6 +202,19 @@ SystemMapRenderer::handleInput(
         my >= static_cast<double>(vp.y) &&
         mx <= static_cast<double>(vp.x + vp.width) &&
         my <= static_cast<double>(vp.y + vp.height);
+
+    // The context menu (right click / Ctrl + click) first: an open menu
+    // owns the pointer.
+    {
+        std::optional<game::system_map::MapIntent> menuIntent;
+        if (handleContextMenuPointer(vp, galaxy, system, hub, window, mx, my, localMx, localMy, inside, leftDown,
+                                     rightDown, inputNowSeconds, menuIntent))
+        {
+            if (menuIntent && menuIntent->type == game::system_map::MapIntentType::None)
+                menuIntent.reset();
+            return menuIntent;
+        }
+    }
 
     const auto routePointer =
         m_routeOverlayState.handlePointer(
@@ -238,41 +270,19 @@ SystemMapRenderer::handleInput(
         return std::nullopt;
     }
 
-    const bool showLevelZeroButton =
-        m_modeState.current() == Mode::Galaxy ||
-        m_modeState.current() == Mode::System;
-
-    m_navigationLevelZeroButtonHovered =
-        showLevelZeroButton &&
-        inside &&
-        render::navigation::
-            NavigationCoordinateOverlay::
-                levelZeroButtonBounds(
-                    vp
-                )
-                .contains(
-                    localMx,
-                    localMy
-                );
-
-    // Galaxy / System hierarchy (one model): up button and breadcrumbs.
+    // Map buttons (back, up, TRACK, LEVEL 0 - one row, the same in every
+    // map) and the Galaxy / System breadcrumbs.
     const bool galaxyMode = m_modeState.current() == Mode::Galaxy;
     const bool hierarchyMode =
         galaxyMode ||
         (m_modeState.current() == Mode::System && m_systemView.state().navigationGrid.enabled());
-    m_galaxyUpButtonHovered =
-        hierarchyMode &&
-        inside &&
-        render::navigation::
-            NavigationCoordinateOverlay::
-                upButtonBounds(
-                    vp,
-                    !galaxyMode
-                )
-                .contains(
-                    localMx,
-                    localMy
-                );
+    m_hoveredMapButton.clear();
+    if (inside)
+    {
+        for (const auto& button : mapButtons(vp))
+            if (button.view.enabled && button.view.bounds.contains(localMx, localMy))
+                m_hoveredMapButton = button.id;
+    }
     m_galaxyBreadcrumbHovered = -1;
     if (hierarchyMode && inside)
     {
@@ -283,60 +293,49 @@ SystemMapRenderer::handleInput(
             if (crumbBounds[i].contains(localMx, localMy))
                 m_galaxyBreadcrumbHovered = static_cast<int>(i);
     }
-    const bool galaxyHierarchyPressed =
-        (m_galaxyUpButtonHovered || m_galaxyBreadcrumbHovered >= 0) &&
-        leftDown &&
-        !m_navigationOverlayLeftWasDown;
-
-    const bool showTrackButton =
-        m_modeState.current() == Mode::System;
-
-    m_navigationTrackButtonHovered =
-        showTrackButton &&
-        inside &&
-        render::navigation::
-            NavigationCoordinateOverlay::
-                trackButtonBounds(
-                    vp
-                )
-                .contains(
-                    localMx,
-                    localMy
-                );
-
-    const bool levelZeroPressed =
-        m_navigationLevelZeroButtonHovered &&
-        leftDown &&
-        !m_navigationOverlayLeftWasDown;
-
-    const bool trackPressed =
-        m_navigationTrackButtonHovered &&
+    const bool chromePressed =
         leftDown &&
         !m_navigationOverlayLeftWasDown;
 
     m_navigationOverlayLeftWasDown =
         leftDown;
 
-    if (m_galaxyUpButtonHovered || m_galaxyBreadcrumbHovered >= 0)
+    if (!m_hoveredMapButton.empty() || m_galaxyBreadcrumbHovered >= 0)
     {
-        m_pendingScrollY = 0.0;
+        if (game::system_map::GalaxyPointerDevScript::enabled() && leftDown && galaxyMode)
+            std::cerr << "[GalaxyPointerPress] consumed_by=nav_button x=" << localMx << " y=" << localMy << std::endl;
 
-        if (galaxyHierarchyPressed && galaxyMode)
+        m_pendingScrollY = 0.0;
+        std::optional<game::system_map::MapIntent> buttonIntent;
+
+        if (chromePressed && m_hoveredMapButton == "level0")
         {
-            // Breadcrumb i is the ancestor at level i - 1 (0 = overview).
+            resetNavigationViewToLevelZero(vp);
+        }
+        else if (chromePressed && m_hoveredMapButton == "track")
+        {
+            toggleSelectedBodyTracking();
+        }
+        else if (chromePressed && m_hoveredMapButton == "back")
+        {
+            buttonIntent = navigateBack();
+        }
+        else if (chromePressed && galaxyMode)
+        {
+            // Up; breadcrumb i is the ancestor at level i - 1 (0 = overview).
             const bool moved =
-                m_galaxyUpButtonHovered
+                m_hoveredMapButton == "up"
                     ? m_galaxyView.ascendHierarchy(vp, inputNowSeconds)
                     : m_galaxyView.jumpToHierarchyLevel(
                           m_galaxyBreadcrumbHovered - 1, vp, inputNowSeconds);
             if (moved)
                 announceNavigationLevel('G', m_galaxyView.state().navigationGrid.level());
         }
-        else if (galaxyHierarchyPressed)
+        else if (chromePressed && hierarchyMode)
         {
             // System: breadcrumb i is the parent at level i (0 = S0 root).
             const bool moved =
-                m_galaxyUpButtonHovered
+                m_hoveredMapButton == "up"
                     ? m_systemView.ascendHierarchy(vp, inputNowSeconds)
                     : m_systemView.jumpToHierarchyLevel(
                           m_galaxyBreadcrumbHovered, vp, inputNowSeconds);
@@ -344,44 +343,9 @@ SystemMapRenderer::handleInput(
                 announceNavigationLevel('S', m_systemView.state().navigationGrid.level());
         }
 
-        m_galaxyView.suppressCameraGesture(
-            leftDown,
-            rightDown,
-            mx,
-            my
-        );
-        m_systemView.suppressCameraGesture(
-            leftDown,
-            rightDown,
-            mx,
-            my
-        );
-
-        return std::nullopt;
-    }
-
-    if (m_navigationLevelZeroButtonHovered ||
-        m_navigationTrackButtonHovered)
-    {
-        if (game::system_map::GalaxyPointerDevScript::enabled() && leftDown &&
-            m_modeState.current() == Mode::Galaxy)
-            std::cerr << "[GalaxyPointerPress] consumed_by=nav_button x=" << localMx << " y=" << localMy << std::endl;
-
-        m_pendingScrollY = 0.0;
-
-        if (levelZeroPressed)
-        {
-            resetNavigationViewToLevelZero(
-                vp
-            );
-        }
-
-        if (trackPressed)
-            toggleSelectedBodyTracking();
-
         /*
-            The button is part of the map viewport, so explicitly prevent
-            the scene behind it from receiving the same mouse gesture.
+            The buttons are part of the map viewport, so explicitly prevent
+            the scene behind them from receiving the same mouse gesture.
         */
         m_galaxyView.suppressCameraGesture(
             leftDown,
@@ -389,7 +353,6 @@ SystemMapRenderer::handleInput(
             mx,
             my
         );
-
         m_systemView.suppressCameraGesture(
             leftDown,
             rightDown,
@@ -397,7 +360,7 @@ SystemMapRenderer::handleInput(
             my
         );
 
-        return std::nullopt;
+        return buttonIntent;
     }
 
     if (m_modeState.current() == Mode::System)
@@ -598,71 +561,16 @@ SystemMapRenderer::handleInput(
                 m_pendingScrollY
             );
 
-        if (result.clickedBodyId.has_value())
-        {
-            const std::string cardId =
-                "body:" + std::to_string(system.systemId) + ":" +
-                *result.clickedBodyId;
-            const auto bodyInfo = std::find_if(
-                m_systemSceneFrame.interaction.objectOverlay.items.begin(),
-                m_systemSceneFrame.interaction.objectOverlay.items.end(),
-                [&](const game::system_map::MapObjectOverlayItem& item)
-                {
-                    return item.objectId == cardId;
-                }
-            );
-            // Double click on a body: its info card opens; the next double
-            // click closes it (a single click only selects).
-            if (bodyInfo !=
-                m_systemSceneFrame.interaction.objectOverlay.items.end())
-            {
-                if (m_objectOverlayState.isOpen(bodyInfo->objectId))
-                {
-                    m_objectOverlayState.close(bodyInfo->objectId);
-                }
-                else
-                {
-                    m_objectOverlayState.activate(bodyInfo->objectId);
-                    m_objectOverlayState.ensureOpen(
-                        *bodyInfo,
-                        glm::dvec2(vp.width, vp.height)
-                    );
-                }
-            }
-        }
-
         if (result.clickedNavigationCell.has_value())
         {
             const auto& cell = *result.clickedNavigationCell;
-
-            game::system_map::MapObjectOverlayItem candidate;
-            candidate.objectId = waypointCandidateId('S', cell);
-            candidate.infoKind =
-                game::system_map::MapObjectInfoKind::WaypointCandidate;
-            candidate.typeName = m_navigationMapTextProfile.navigationPoint;
-            candidate.name = m_navigationMapTextProfile.spaceTarget;
-            candidate.drawGlyph = true;
-            candidate.pointerInteractive = true;
-            candidate.screenAffordance = true;
-            candidate.glyphScale = 0.78;
-            candidate.hitRadiusPx = 12.0;
-            candidate.facingScreenDirection = glm::dvec2(0.0, -1.0);
-            candidate.factionColor = glm::vec4(0.20f, 0.66f, 1.00f, 0.78f);
-            candidate.extraFields.push_back({
-                "address",
-                navigationCellAddress('S', cell),
-                ""
-            });
-            candidate.trackingWorldPosition =
-                world::coordinates::makeWorldPositionFromMeters(
-                    system.systemPositionLy *
-                        world::coordinates::MetersPerLightYear +
-                    cell.center * world::celestial::MetersPerAu
-                );
-            candidate.hasTrackingWorldPosition = true;
-            candidate.screenPx = glm::dvec2(localMx, localMy);
-            candidate.visible = true;
-            m_systemWaypointCandidate = candidate;
+            m_systemWaypointCandidate = makeWaypointCandidate(
+                'S',
+                cell,
+                system.systemPositionLy * world::coordinates::MetersPerLightYear +
+                    cell.center * world::celestial::MetersPerAu,
+                glm::dvec2(localMx, localMy)
+            );
             refreshSystemWaypointCandidate(vp, system);
         }
 
@@ -1080,33 +988,12 @@ SystemMapRenderer::handleInput(
             m_galaxyView.state().selectedSystemId < 0)
         {
             const auto& cell = *result.clickedNavigationCell;
-
-            game::system_map::MapObjectOverlayItem candidate;
-            candidate.objectId = waypointCandidateId('G', cell);
-            candidate.infoKind =
-                game::system_map::MapObjectInfoKind::WaypointCandidate;
-            candidate.typeName = m_navigationMapTextProfile.navigationPoint;
-            candidate.name = m_navigationMapTextProfile.spaceTarget;
-            candidate.drawGlyph = true;
-            candidate.pointerInteractive = true;
-            candidate.screenAffordance = true;
-            candidate.glyphScale = 0.78;
-            candidate.hitRadiusPx = 12.0;
-            candidate.facingScreenDirection = glm::dvec2(0.0, -1.0);
-            candidate.factionColor = glm::vec4(0.20f, 0.66f, 1.00f, 0.78f);
-            candidate.extraFields.push_back({
-                "address",
-                navigationCellAddress('G', cell),
-                ""
-            });
-            candidate.trackingWorldPosition =
-                world::coordinates::makeWorldPositionFromMeters(
-                    cell.center * world::coordinates::MetersPerLightYear
-                );
-            candidate.hasTrackingWorldPosition = true;
-            candidate.screenPx = glm::dvec2(localMx, localMy);
-            candidate.visible = true;
-            m_galaxyWaypointCandidate = candidate;
+            m_galaxyWaypointCandidate = makeWaypointCandidate(
+                'G',
+                cell,
+                cell.center * world::coordinates::MetersPerLightYear,
+                glm::dvec2(localMx, localMy)
+            );
             refreshGalaxyWaypointCandidate(vp, galaxy);
         }
 

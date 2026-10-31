@@ -385,7 +385,7 @@ namespace
                 }
             // Counter-clockwise seen from outside, whatever the face frame.
             const glm::vec3 p0 = v[base], p1 = v[base + 1], p2 = v[base + static_cast<std::uint32_t>(n + 1)];
-            const bool flip = glm::dot(glm::cross(p1 - p0, p2 - p0), p0) < 0.0f;
+            const bool flip = glm::dot(glm::cross(p1 - p0, p2 - p0), p0) > 0.0f;
             for (int j = 0; j < n; ++j)
                 for (int i = 0; i < n; ++i)
                 {
@@ -442,13 +442,6 @@ namespace
         std::shared_ptr<surface::CloudWeatherField> clouds;
     };
 
-    struct PendingGlobe
-    {
-        int size = 0;
-        std::shared_ptr<surface::GlobeFaces> faces;
-        std::shared_ptr<std::atomic<int>> done;
-        std::shared_ptr<std::atomic<bool>> cancel;
-    };
 
     struct GlobeTier
     {
@@ -464,6 +457,16 @@ namespace
             size = 0;
             bytes = 0;
         }
+    };
+
+    struct PendingGlobe
+    {
+        int size = 0;
+        std::shared_ptr<surface::GlobeFaces> faces;
+        std::shared_ptr<std::atomic<int>> done;
+        std::shared_ptr<std::atomic<bool>> cancel;
+        GlobeTier staging;   // textures being filled
+        int cursor = 0;      // texture * 6 + face uploaded so far
     };
 
     struct PendingCloud
@@ -674,6 +677,7 @@ struct CelestialFlightRenderer::Impl
         for (auto& [id, b] : bodies)
         {
             b.globe.destroy();
+            b.pendingGlobe.staging.destroy();
             b.cloud.destroy();
             for (auto& [k, l] : b.levels)
                 l.destroy();
@@ -743,44 +747,83 @@ struct CelestialFlightRenderer::Impl
                 }
                 std::vector<std::uint8_t> grey;
                 int hw = 0, hh = 0;
-                if (!copy.importedHeightPath.empty() && loadImage(copy.importedHeightPath, 1, grey, hw, hh))
+                if (maps->width > 0 && !copy.importedHeightPath.empty() &&
+                    loadImage(copy.importedHeightPath, 1, grey, hw, hh))
                 {
-                    surface::ImportedSurfaceMaps heights;
+                    // Height grey on the albedo grid (nearest).
+                    const int w = maps->width, h = maps->height;
+                    std::vector<std::uint8_t> g(maps->albedo.size());
+                    for (int y = 0; y < h; ++y)
+                        for (int x = 0; x < w; ++x)
+                            g[static_cast<std::size_t>(y) * w + x] =
+                                grey[static_cast<std::size_t>(y * hh / h) * hw + static_cast<std::size_t>(x * hw / w)];
                     if (copy.importedWaterFromHeight)
                     {
-                        heights.water.resize(grey.size());
-                        for (std::size_t i = 0; i < grey.size(); ++i)
-                            heights.water[i] = grey[i] == 0 ? 1 : 0;
-                    }
-                    surface::importedHeightsFromGrey(grey.data(), hw, hh, copy.importedHeightRangeM,
-                                                     copy.importedHeightSigned, heights);
-                    // Resample to the albedo grid (nearest) when sizes differ.
-                    if (maps->width > 0 && (hw != maps->width || hh != maps->height))
-                    {
-                        maps->heightM.resize(maps->albedo.size());
-                        if (!heights.water.empty())
-                            maps->water.resize(maps->albedo.size());
-                        for (int y = 0; y < maps->height; ++y)
-                            for (int x = 0; x < maps->width; ++x)
+                        // Earth: the sea is the ocean colour of the albedo
+                        // (the DEM has no zero sea). The curated maps do not
+                        // share a longitude origin: the DEM is aligned by the
+                        // column shift whose low half agrees best with the
+                        // ocean.
+                        const auto oceanColour = [](const glm::vec3& c) {
+                            return c.b > 1.4f * c.r && c.b > 1.1f * c.g && (c.r + c.g + c.b) < 0.6f;
+                        };
+                        std::vector<std::uint8_t> sorted(g);
+                        std::nth_element(sorted.begin(), sorted.begin() + sorted.size() / 2, sorted.end());
+                        const std::uint8_t median = sorted[sorted.size() / 2];
+                        int bestShift = 0;
+                        long bestAgree = -1;
+                        for (int shift : {0, w / 4, w / 2, 3 * w / 4})
+                        {
+                            long agree = 0;
+                            for (int y = 0; y < h; y += 4)
+                                for (int x = 0; x < w; x += 4)
+                                {
+                                    const std::size_t ai = static_cast<std::size_t>(y) * w + x;
+                                    const std::size_t gi = static_cast<std::size_t>(y) * w + (x + shift) % w;
+                                    agree += (g[gi] <= median) == oceanColour(maps->albedo[ai]) ? 1 : 0;
+                                }
+                            if (agree > bestAgree)
                             {
-                                const int sx = x * hw / maps->width;
-                                const int sy = y * hh / maps->height;
-                                const std::size_t o = static_cast<std::size_t>(y) * maps->width + x;
-                                const std::size_t s = static_cast<std::size_t>(sy) * hw + sx;
-                                maps->heightM[o] = heights.heightM[s];
-                                if (!heights.water.empty())
-                                    maps->water[o] = heights.water[s];
+                                bestAgree = agree;
+                                bestShift = shift;
                             }
+                        }
+                        std::vector<std::uint8_t> shifted(g.size());
+                        for (int y = 0; y < h; ++y)
+                            for (int x = 0; x < w; ++x)
+                                shifted[static_cast<std::size_t>(y) * w + x] =
+                                    g[static_cast<std::size_t>(y) * w + (x + bestShift) % w];
+                        // Sea level grey: the low end of the land texels.
+                        std::vector<std::uint8_t> land;
+                        maps->water.assign(g.size(), 0);
+                        for (std::size_t i = 0; i < g.size(); ++i)
+                        {
+                            maps->water[i] = oceanColour(maps->albedo[i]) ? 1 : 0;
+                            if (!maps->water[i])
+                                land.push_back(shifted[i]);
+                        }
+                        std::uint8_t sea = 0;
+                        if (!land.empty())
+                        {
+                            std::nth_element(land.begin(), land.begin() + land.size() / 20, land.end());
+                            sea = land[land.size() / 20];
+                        }
+                        std::fprintf(stderr, "[CelestialFlight] %s: curated sea %.2f of the surface, DEM shift %d, sea grey %d\n",
+                                     copy.id.c_str(), 1.0 - static_cast<double>(land.size()) / g.size(), bestShift,
+                                     static_cast<int>(sea));
+                        maps->heightM.resize(g.size());
+                        for (std::size_t i = 0; i < g.size(); ++i)
+                            maps->heightM[i] = maps->water[i]
+                                ? -3500.0f
+                                : static_cast<float>(2.0 + std::max(0, shifted[i] - sea) / std::max(1.0, 255.0 - sea) *
+                                                                copy.importedHeightRangeM);
                     }
                     else
                     {
+                        surface::ImportedSurfaceMaps heights;
+                        surface::importedHeightsFromGrey(g.data(), w, h, copy.importedHeightRangeM,
+                                                         copy.importedHeightSigned, heights);
                         maps->heightM = std::move(heights.heightM);
-                        maps->water = std::move(heights.water);
-                        if (maps->width == 0)
-                        {
-                            maps->width = hw;
-                            maps->height = hh;
-                        }
                     }
                 }
                 if (maps->width > 0)
@@ -788,7 +831,8 @@ struct CelestialFlightRenderer::Impl
             }
             if (!result->field)
                 result->field = std::shared_ptr<surface::SurfaceField>(surface::makeSurfaceField(d).release());
-            if (d.surfacePressurePa > 50.0 && d.cloudPotential > 0.0)
+            // Gas giants: the bands ARE the clouds (no weather shell over them).
+            if (copy.kind != FlightBodyKind::GasGiant && d.surfacePressurePa > 50.0 && d.cloudPotential > 0.0)
             {
                 auto clouds = std::make_shared<surface::CloudWeatherField>(d);
                 if (!clouds->layers().empty())
@@ -816,8 +860,11 @@ struct CelestialFlightRenderer::Impl
         const double co2 = fraction(d, "CO2"), ch4 = fraction(d, "CH4"), n2 = fraction(d, "N2");
         if (gas)
         {
+            // A thin bluish limb; the band deck must stay readable through it.
             a.scatter = {0.45f, 0.62f, 1.0f};
-            a.tauZenith = 0.6;
+            a.tauZenith = 0.3;
+            a.scaleHeightM = std::max(a.scaleHeightM, radiusM * 0.0012);
+            a.shellM = a.scaleHeightM * 8.0;
         }
         else if (co2 > 0.5 && p > 1.0e6)
         {
@@ -836,12 +883,14 @@ struct CelestialFlightRenderer::Impl
         }
         else
         {
+            // Game-grade readability: a thick N2 atmosphere is hazy, not a
+            // white wall (optical depth capped).
             a.scatter = {0.17f, 0.40f, 1.0f};
-            a.tauZenith = std::clamp(0.3 * column, 0.02, 12.0);
+            a.tauZenith = std::clamp(0.3 * column, 0.02, 0.9);
         }
         const glm::vec3 n = a.scatter / std::max(a.scatter.r, std::max(a.scatter.g, a.scatter.b));
         a.haze = glm::mix(n, glm::vec3(1.0f), 0.35f) * 0.9f;
-        a.hazeDensity0 = a.tauZenith / (a.scaleHeightM * 3.0);
+        a.hazeDensity0 = std::min(a.tauZenith, 1.5) / (a.scaleHeightM * 3.0);
         if (hasClouds && clouds && !clouds->layers().empty())
         {
             a.cloudHeightM = std::clamp(clouds->layers()[0].heightM, radiusM * 3.0e-4, a.shellM * 0.5);
@@ -878,7 +927,11 @@ struct CelestialFlightRenderer::Impl
         faces->size = size;
         auto done = std::make_shared<std::atomic<int>>(0);
         auto cancel = std::make_shared<std::atomic<bool>>(false);
-        rt.pendingGlobe = PendingGlobe {size, faces, done, cancel};
+        rt.pendingGlobe = PendingGlobe {};
+        rt.pendingGlobe.size = size;
+        rt.pendingGlobe.faces = faces;
+        rt.pendingGlobe.done = done;
+        rt.pendingGlobe.cancel = cancel;
         const std::shared_ptr<surface::SurfaceField> field = rt.field;
         const int priority = 10 + static_cast<int>(std::log2(std::max(32, size)));
         for (int f = 0; f < 6; ++f)
@@ -889,31 +942,88 @@ struct CelestialFlightRenderer::Impl
             });
     }
 
+    // Allocates a cube without data (filled face by face).
+    static GLuint allocateCube(int size, GLenum internal, GLenum format, GLenum type)
+    {
+        GLuint t = 0;
+        glGenTextures(1, &t);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, t);
+        for (int f = 0; f < 6; ++f)
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + f, 0, static_cast<GLint>(internal), size, size, 0, format,
+                         type, nullptr);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+        return t;
+    }
+
+    // A finished bake goes to the GPU in slices (two faces per frame), the
+    // previous tier stays on screen until the new one is complete: no
+    // frame pays for a whole 100 MB tier.
     void uploadGlobe(BodyRuntime& rt)
     {
         auto& p = rt.pendingGlobe;
         if (!p.faces || p.done->load() < 6)
             return;
-        if (!p.cancel->load())
+        const double u0 = nowSeconds();
+        if (p.cancel->load())
+        {
+            if (p.staging.albedo)
+                p.staging.destroy();
+            rt.pendingGlobe = PendingGlobe {};
+            return;
+        }
+        const auto& f = *p.faces;
+        if (!p.staging.albedo)
         {
             surface::finishGlobeBake(*p.faces);
-            rt.globe.destroy();
-            const auto& f = *p.faces;
-            std::array<const void*, 6> a {}, n {}, r {};
-            for (int i = 0; i < 6; ++i)
+            p.staging.albedo = allocateCube(f.size, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+            p.staging.normal = allocateCube(f.size, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+            p.staging.relief = allocateCube(f.size, GL_RG16F, GL_RG, GL_HALF_FLOAT);
+            p.cursor = 0;
+        }
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        for (int k = 0; k < 2 && p.cursor < 18; ++k, ++p.cursor)
+        {
+            const int texture = p.cursor / 6;
+            const int face = p.cursor % 6;
+            const auto fi = static_cast<std::size_t>(face);
+            const GLenum target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<GLenum>(face);
+            if (texture == 0)
             {
-                a[static_cast<std::size_t>(i)] = f.albedo[static_cast<std::size_t>(i)].data();
-                n[static_cast<std::size_t>(i)] = f.normal[static_cast<std::size_t>(i)].data();
-                r[static_cast<std::size_t>(i)] = f.relief[static_cast<std::size_t>(i)].data();
+                glBindTexture(GL_TEXTURE_CUBE_MAP, p.staging.albedo);
+                glTexSubImage2D(target, 0, 0, 0, f.size, f.size, GL_RGBA, GL_UNSIGNED_BYTE, f.albedo[fi].data());
             }
-            rt.globe.albedo = makeCube(f.size, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, a);
-            rt.globe.normal = makeCube(f.size, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, n);
-            rt.globe.relief = makeCube(f.size, GL_RG16F, GL_RG, GL_HALF_FLOAT, r);
+            else if (texture == 1)
+            {
+                glBindTexture(GL_TEXTURE_CUBE_MAP, p.staging.normal);
+                glTexSubImage2D(target, 0, 0, 0, f.size, f.size, GL_RGBA, GL_UNSIGNED_BYTE, f.normal[fi].data());
+            }
+            else
+            {
+                glBindTexture(GL_TEXTURE_CUBE_MAP, p.staging.relief);
+                glTexSubImage2D(target, 0, 0, 0, f.size, f.size, GL_RG, GL_HALF_FLOAT, f.relief[fi].data());
+            }
+        }
+        if (p.cursor >= 18)
+        {
+            for (GLuint t : {p.staging.albedo, p.staging.normal, p.staging.relief})
+            {
+                glBindTexture(GL_TEXTURE_CUBE_MAP, t);
+                glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+            }
+            rt.globe.destroy();
+            rt.globe = p.staging;
             rt.globe.size = f.size;
             rt.globe.bytes = f.bytes() * 4 / 3;
             rt.globe.meanAlbedo = f.meanAlbedo;
+            rt.pendingGlobe = PendingGlobe {};
         }
-        rt.pendingGlobe = PendingGlobe {};
+        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+        stats.cpuUploadMs += (nowSeconds() - u0) * 1000.0;
     }
 
     // ---- clouds -------------------------------------------------------------
@@ -924,6 +1034,7 @@ struct CelestialFlightRenderer::Impl
         auto& p = rt.pendingCloud;
         if (p.faces && p.done->load() >= 6)
         {
+            const double u0 = nowSeconds();
             const auto& f = *p.faces;
             std::array<const void*, 6> c {};
             for (int i = 0; i < 6; ++i)
@@ -936,6 +1047,7 @@ struct CelestialFlightRenderer::Impl
             rt.cloud.currentTime = p.timeSeconds;
             rt.cloud.size = f.size;
             p = PendingCloud {};
+            stats.cpuUploadMs += (nowSeconds() - u0) * 1000.0;
         }
         // A new weather state every 20 minutes of world time, cross-faded.
         constexpr double Step = 1200.0;
@@ -1148,8 +1260,12 @@ struct CelestialFlightRenderer::Impl
             else
                 ++it;
         }
-        // Recentre with hysteresis (1/8 of a level).
-        const std::int64_t threshold = quality.terrainCells / 8;
+        // Recentre with hysteresis (1/16 of a level). The morph window in
+        // the vertex shader (0.70 .. 0.86 of the half extent) relies on it:
+        // a finer level's footprint never reaches past 0.70 of the coarser
+        // one, and every outer ring is beyond 0.86 - so the coarse hole
+        // edge is unmorphed and the fine outer ring fully morphed.
+        const std::int64_t threshold = quality.terrainCells / 16;
         for (const auto& key : plan.levels)
         {
             if (rt.pendingLevels.count(key.level))
@@ -1638,7 +1754,10 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             continue;
         BodyRuntime& rt = bodies[b.id];
         rt.id = b.id;
-        rt.lastUsedFrame = frameIndex;
+        // "Used" = its disc is on screen; sprites need no textures, so a
+        // body seen as a dot can lose its globe tier to the budget.
+        if (it.pxRadius >= 1.5)
+            rt.lastUsedFrame = frameIndex;
         if (!rt.ready && !rt.failed)
         {
             if (!rt.load && it.pxRadius > 1.0)
@@ -1873,8 +1992,10 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             glDepthMask(GL_TRUE);
         }
 
-        // Atmosphere.
-        if (atm.present && quality.atmosphere)
+        // Atmosphere (Elite: only the limb outline, seen from outside).
+        const bool insideAtmosphere = it.dist < b.radiusM + atm.shellM;
+        if (atm.present && quality.atmosphere &&
+            !(style == CelestialRenderStyle::EliteStyle && insideAtmosphere))
         {
             ScopedTimer timer(timers, TAtmosphere);
             atmosphere.use();
@@ -1961,6 +2082,8 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
         stats.meshBytes += a.mesh.bytes;
     stats.meshBytes += sphereHigh.bytes + sphereLow.bytes;
     stats.pendingJobs = pool.pending();
+    for (const auto& [id, b] : bodies)
+        stats.pendingJobs += b.pendingGlobe.faces ? 1 : 0;
     stats.workerBusySeconds = pool.busySeconds();
     stats.samplesTaken = samples.load();
     stats.cpuDrawMs = (nowSeconds() - t1) * 1000.0;

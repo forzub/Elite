@@ -84,7 +84,7 @@ struct FlightRenderQuality
     int terrainCells = 128;        // per local terrain level side
     int maxTerrainLevels = 14;
     double terrainCellPixels = 4.0;
-    int atmosphereSteps = 8;
+    int atmosphereSteps = 16;
     bool clouds = true;
     bool atmosphere = true;
     bool asteroids = true;
@@ -98,6 +98,7 @@ struct FlightRenderStats
 {
     double cpuPrepareMs = 0.0;
     double cpuDrawMs = 0.0;
+    double cpuUploadMs = 0.0;      // GPU uploads this frame (globe / cloud / terrain)
     // GPU (previous frame, GL_TIME_ELAPSED).
     double gpuGlobesMs = 0.0;
     double gpuTerrainMs = 0.0;
@@ -114,7 +115,7 @@ struct FlightRenderStats
     int asteroidSprites = 0;
     std::size_t textureBytes = 0;
     std::size_t meshBytes = 0;
-    int pendingJobs = 0;
+    int pendingJobs = 0;            // worker jobs + GPU uploads still in progress
     double workerBusySeconds = 0.0; // cumulative
     long long samplesTaken = 0;     // cumulative field samples
     double nearestAltitudeM = -1.0;

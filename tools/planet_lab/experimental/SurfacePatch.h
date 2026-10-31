@@ -16,6 +16,11 @@
 #include "tools/planet_lab/experimental/CubeSphere.h"
 #include "src/world/celestial/surface/SurfaceField.h"
 
+// EXPERIMENTAL (Planet Lab only): the patch pyramid is NOT the production
+// representation of a planet. The game renders bodies with
+// src/render/celestial/flight (globe cache + camera-centred local terrain
+// over the continuous field). Kept as a reference for the old Lab checks.
+
 namespace world::celestial::surface
 {
 /*

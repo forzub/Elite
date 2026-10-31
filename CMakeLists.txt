@@ -1361,6 +1361,7 @@ target_include_directories(EliteGame PRIVATE
 
 target_link_libraries(EliteGame PRIVATE
     EliteModelAsset
+    EliteCelestialFlightRender
     EliteCelestialSurface
     EliteNavigationGeometry
     EliteNavigationWorldRuntime

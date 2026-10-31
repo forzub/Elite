@@ -16,6 +16,9 @@ struct ClientModeState
     bool constellationsEnabled = false;
     std::string skyCultureId;
     std::string coordinateDisplayFormatId = "hierarchical";
+    // Celestial bodies: "elite" | "modern" | "anime"
+    // (render::celestial_flight::CelestialRenderStyle).
+    std::string celestialRenderStyleId = "modern";
     std::uint64_t revision = 1;
 
     bool setUiLocale(std::string locale)
@@ -46,6 +49,15 @@ struct ClientModeState
         if (id.empty() || id == skyCultureId)
             return false;
         skyCultureId = std::move(id);
+        ++revision;
+        return true;
+    }
+
+    bool setCelestialRenderStyleId(std::string id)
+    {
+        if ((id != "elite" && id != "modern" && id != "anime") || id == celestialRenderStyleId)
+            return false;
+        celestialRenderStyleId = std::move(id);
         ++revision;
         return true;
     }

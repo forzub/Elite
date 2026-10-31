@@ -2577,6 +2577,23 @@ void SpaceState::renderUI()
         m_playerId,
         observerGalacticPositionPtr
     );
+    m_preparedScene.celestialSnapshot =
+        m_client ? m_client->celestialSnapshot() : nullptr;
+    m_preparedScene.celestialSystem =
+        m_preparedScene.celestialSnapshot && m_client->starAtlas()
+            ? m_client->starAtlas()->findSystem(
+                  m_preparedScene.celestialSnapshot->systemId)
+            : nullptr;
+    if (context().app)
+    {
+        // DEV: ELITE_DEV_CELESTIAL_STYLE=elite|modern|anime overrides the
+        // user setting for scripted captures (never persisted).
+        static const char* devStyle = std::getenv("ELITE_DEV_CELESTIAL_STYLE");
+        m_sceneRenderer.setCelestialRenderStyle(
+            devStyle ? std::string(devStyle)
+                     : context().app->clientModeState().celestialRenderStyleId
+        );
+    }
     m_perfScenePrepareMs = nowMs() - scenePrepareStartMs;
     core::hitch::mark("scene_prepare");
 

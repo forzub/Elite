@@ -13,15 +13,24 @@ generated physical descriptor (elite.generated_body.v1 / generated_reservoir.v1)
        climate        temperature, moisture, biome (from the MACRO height)
        landmarks      stable feature class + id per direction
   -> SurfaceField::appearance(sample, dir, slope)     materials -> albedo / emission
-  -> generateSurfacePatch(field, PatchKey, n)         cube-sphere patch (SurfacePatch.h)
-  -> SurfacePatchStreamer                             threaded cache
-  -> renderer (Planet Lab) / baker equirect maps (CelestialTextureBaker,
-     ProceduralFromBodyDescriptor) / collision later
+  -> runtime renderer (src/render/celestial/flight, CELESTIAL_RUNTIME_RENDERER.md):
+       far globe      GlobeBake: cube-map cache of the field (face size from screen size)
+       near surface   LocalTerrain: camera-centred clipmap on a planet-fixed lattice
+  -> baker equirect maps (CelestialTextureBaker, ProceduralFromBodyDescriptor)
 ```
+
+The planet is ONE continuous function of planet-fixed direction and band
+limit. There is no patch identity: neither the globe cache nor the local
+terrain owns a piece of the world; both are view-dependent samplings of the
+same field and are rebuilt / dropped freely. The cube-sphere patch pyramid
+(`tools/planet_lab/experimental/SurfacePatch.*`) is a Planet Lab experiment
+and reference for the old checks, not a production path.
 
 Implementations: `PlanetSurfaceField` (rocky / terrestrial / dry / icy /
 volcanic), `GasGiantField` (no ground: cloud deck), `SmallBodyField`
-(asteroids). `CloudWeatherField` is a separate layer over the surface.
+(asteroids), `ImportedSurfaceField` (curated maps of Sol bodies as the macro
+field + procedural detail below the source texel). `CloudWeatherField` is a
+separate layer over the surface.
 
 Sources: a body is either `ImportedRealData` (curated maps, Sol) or
 procedural from its descriptor. Both end in the same render-ready texture
@@ -57,8 +66,13 @@ provider can be run on any descriptor, including Sol bodies (Planet Lab).
   renderer decides water/land per pixel from the interpolated `coastM`.
 - A crater size class that can contain a macro crater is evaluated at
   every LOD.
-- Patches: band limit = 2 × vertex spacing; normals from a border ring of
-  the same field; skirts (1.5 × spacing + bounded detail) hide T-junctions.
+- Local terrain: a level-k vertex is the field at a fixed lattice point of
+  the chart (face, k, i, j) with band limit 2 × spacing_k, so rebuilding a
+  level at another centre reproduces it bit for bit; vertices morph to the
+  next coarser level (linear along its triangles) near the level's outer
+  ring, so levels meet without cracks or skirts.
+- Globe cache: texel = field at the texel direction with band limit
+  2 × texel; a larger face only resolves more of the same geography.
 
 ## 4. Relief
 
@@ -69,6 +83,8 @@ provider can be run on any descriptor, including Sol bodies (Planet Lab).
   ridged multifractal with octave coupling; strength from tectonic regime.
 - Uplands: regional field scaling hill relief (rugged country vs plains).
 - Hills: derivative-damped fBm from 40 km down (damping from erosion).
+  Airless rocky / icy bodies: low, smooth hills (impact gardening: damping
+  0.45, steeper fall-off, strength 0.035-0.085); craters carry the relief.
 - Landmarks from 3D lattice cells (shell acceptance = uniform per area):
   impact craters (classes from R·0.3 to 160 m; simple bowls / complex
   floors with central peaks; density × (1 − resurfacing) × (1 − erosion);
@@ -87,6 +103,8 @@ provider can be run on any descriptor, including Sol bodies (Planet Lab).
 - Moisture: Hadley/Ferrel bands (wet ITCZ, dry subtropics, wet storm
   tracks), drier inland, rain shadow behind ranges, regional noise,
   scaled by weather potential.
+- Vegetation only for a stated biosphere (`geophysics.biosphere` =
+  complex; generated bodies carry `none` - no greening by assumption).
 - Biomes from temperature + moisture + ice; materials (rock, basalt,
   regolith, sand, soil, vegetation, ice, snow, salt, lava) from
   composition (`surface_materials`), biome, temperature, moisture,
@@ -104,12 +122,29 @@ The game's map clouds use identity seeds; the former
 
 ## 7. Detail policy (streaming, not identity)
 
-`surfaceDetailPolicy`: solid + reachable → down to 0.25 m vertices;
+`surfaceDetailPolicy`: solid + reachable → down to 0.25 m vertex spacing;
 solid but unreachable (>100 bar, >30 m/s², molten) → 250 m (overflight);
-no solid surface → cloud deck only (km-scale). `maximumPatchLevel` turns
-it into the deepest quadtree level a client may request.
+no solid surface → cloud deck only (no local terrain). The local terrain
+takes the finest spacing from it.
 
-## 8. Checks (`ElitePlanetLab --check [--record F] [--verify F]`)
+## 7a. Ocean coverage (world generator)
+
+`BodyPhysics`: ocean coverage = 1 - exp(-4.6 D / H) from the global
+equivalent water layer D (observed water fraction = hydrosphere; generated
+bulk fraction keeps most of a small inventory in the mantle, storage scale
+0.02) against basin relief H >= 6 km. Earth gives 0.75; generated temperate
+planets range 0.42 .. 1.0 (water worlds stay oceans).
+
+## 8. Checks
+
+`ElitePlanetLab --flight-check` (production renderer + real catalog):
+silhouette size and position on screen vs asin(R/d) for the Moon, Mars and
+Jupiter at 4 / 15 / 60 radii, on and off axis; ephemeris motion (60 s) and
+spin direction / rate; local terrain lattice determinism (rebuild at
+another centre) and coastline identity between levels.
+
+`ElitePlanetLab --check [--record F] [--verify F]` (field + experimental
+patches):
 
 restart reproducibility (record / verify in a separate process), request
 order and threads, parent/child consistency, coastline and landmark

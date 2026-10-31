@@ -8,14 +8,17 @@
 namespace render::celestial_flight::shaders
 {
 // Logarithmic depth: the camera sits at the origin of a frame that spans
-// metres to astronomical units; every pass writes gl_FragDepth.
+// metres to astronomical units; every pass writes gl_FragDepth (clip z
+// stays the ordinary perspective one with a far plane beyond the system).
 inline const char* LogDepthVs = R"(
 uniform float uLogC;
 out float vFlogz;
 void applyLogDepth()
 {
+    // Depth is written per fragment only: rewriting clip z here would make
+    // primitives that pass behind the camera (an atmosphere shell around
+    // it, the ground under it) clip wrongly.
     vFlogz = 1.0 + gl_Position.w;
-    gl_Position.z = (log2(max(1e-6, vFlogz)) * uLogC - 1.0) * gl_Position.w;
 }
 )";
 
@@ -141,7 +144,7 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
             contour = contourMask(dot(land, vec3(0.3, 0.5, 0.2)) * 9.0, 1.0) * 0.6;
         float grid = lattice >= 0.0 ? lattice * 0.45 : 0.0; // precomputed lattice line mask
         float nv = dot(nSphere, viewDir);
-        float rim = rimMask(nv, 1.2);
+        float rim = rimMask(nv, 1.6);
         // The outline stays bright on the night side (a whole circle, as in
         // the vector original); surface lines dim with the light.
         float fade = 0.30 + 0.70 * day;
@@ -155,7 +158,7 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
     {
         // Anime: posterised palette, banded light, hue-shifted shadows,
         // ink lines on the rim and coast.
-        vec3 base = posterize(albedo * 1.15, 5.0);
+        vec3 base = posterize(pow(max(albedo, vec3(0.0)), vec3(1.0 / 2.2)) * 1.1, 5.0);
         float l = dot(normalize(mix(nSphere, nRelief, 0.55)), L);
         vec3 lit = vec3(1.0, 0.98, 0.92);
         vec3 mid = vec3(0.78, 0.66, 0.70);
@@ -201,7 +204,8 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
         haze = max(haze, pow(1.0 - nv, 5.0) * 0.6 * min(1.0, uHazeDensity * 3.0e5));
         col = mix(col, uHazeColour * (0.05 + 0.95 * day) * uSunColour, clamp(haze, 0.0, 1.0));
     }
-    return col;
+    // Linear albedo and light -> display (no sRGB framebuffer).
+    return pow(max(col, vec3(0.0)), vec3(1.0 / 2.2));
 }
 )";
 
@@ -314,7 +318,7 @@ void applyLogDepth();
 void main()
 {
     vec2 off = abs(aLattice - uCamLattice) / uHalfCells;
-    float m = clamp((max(off.x, off.y) - 0.40) / 0.35, 0.0, 1.0);
+    float m = clamp((max(off.x, off.y) - 0.70) / 0.16, 0.0, 1.0);
     vec3 pb = mix(aPos, aMorph, m);
     vec3 p = uBodyToWorld * pb + uAnchor;
     vWorld = p;
@@ -384,7 +388,7 @@ uniform float uHalfCells;
 void main()
 {
     vec2 off = abs(aLattice - uCamLattice) / uHalfCells;
-    float m = clamp((max(off.x, off.y) - 0.40) / 0.35, 0.0, 1.0);
+    float m = clamp((max(off.x, off.y) - 0.70) / 0.16, 0.0, 1.0);
     gl_Position = uViewProj * vec4(uBodyToWorld * mix(aPos, aMorph, m) + uAnchor, 1.0);
 }
 )";
@@ -533,11 +537,13 @@ void main()
     float ds = (t1 - t0) / float(steps);
     vec3 sum = vec3(0.0);
     float depthView = 0.0;
+    // Per-pixel jitter of the sample positions hides the step rings.
+    float jitter = uStyle == 1 ? fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) : 0.5;
     for (int i = 0; i < 32; ++i)
     {
         if (i >= steps)
             break;
-        vec3 p = o + dir * (t0 + ds * (float(i) + 0.5));
+        vec3 p = o + dir * (t0 + ds * (float(i) + jitter));
         float r = length(p);
         float rho = exp(-(r - 1.0) / H);
         depthView += rho * ds;
@@ -545,15 +551,21 @@ void main()
         float mu = dot(p / r, L);
         float sunVis = smoothstep(-0.18, 0.08, mu + (r - 1.0) * 3.0);
         float sunPath = rho * H * (1.0 + 6.0 * (1.0 - clamp(mu, 0.0, 1.0)));
-        vec3 att = exp(-uScatter * uDensity * (sunPath + depthView));
+        // Game-grade extinction: weaker than single scattering would give,
+        // standing in for the light multiple scattering returns.
+        vec3 att = exp(-uScatter * uDensity * (0.5 * sunPath + 0.15 * depthView));
         sum += rho * sunVis * att * ds;
     }
     float cosTheta = dot(dir, L);
     float phaseR = 0.75 * (1.0 + cosTheta * cosTheta);
     float g = 0.76;
     float phaseM = (1.0 - g * g) / pow(1.0 + g * g - 2.0 * g * cosTheta, 1.5) * 0.08;
-    vec3 colour = uSunColour * sum * uDensity * (uScatter * phaseR + vec3(phaseM));
-    float alpha = clamp(1.0 - exp(-depthView * uDensity * 0.6), 0.0, 1.0);
+    vec3 colour = uSunColour * sum * uDensity *
+                  (uScatter * phaseR + vec3(phaseM) + vec3(dot(uScatter, vec3(0.33))) * 0.12);
+    // Over the ground the surface shaders carry the aerial haze.
+    if (hitsGround)
+        colour *= 0.25;
+    float alpha = clamp(1.0 - exp(-depthView * uDensity * 0.6), 0.0, 1.0) * (hitsGround ? 0.3 : 1.0);
     if (uStyle == 2)
     {
         // Anime: flat stepped sky bands and a clean limb halo.
@@ -563,7 +575,10 @@ void main()
         alpha = floor(alpha * 4.0 + 0.5) / 4.0;
     }
     vec3 mapped = 1.0 - exp(-colour * 1.6);
-    fragColour = vec4(mapped, max(alpha * 0.25, max(max(mapped.r, mapped.g), mapped.b)));
+    // Sky: the scattered light also hides what is behind it (stars).
+    // Over the ground: additive haze only - the surface stays readable.
+    float cover = hitsGround ? alpha * 0.25 : max(alpha * 0.25, max(max(mapped.r, mapped.g), mapped.b));
+    fragColour = vec4(mapped, cover);
     writeLogDepth();
 }
 )";
@@ -626,7 +641,7 @@ void main()
         writeLogDepth();
         return;
     }
-    float lit = (0.25 + 0.75 * abs(dot(uNormal, L))) * (1.0 - 0.85 * shadow);
+    float lit = (0.45 + 0.55 * sqrt(abs(dot(uNormal, L)))) * (1.0 - 0.85 * shadow);
     float a = prof.a;
     vec3 col = prof.rgb * uSunColour * lit;
     if (uStyle == 2)
@@ -795,13 +810,13 @@ void main()
     else if (uStyle == 2)
     {
         vec3 light = l > 0.35 ? vec3(1.0) : (l > 0.0 ? vec3(0.62, 0.55, 0.62) : vec3(0.16, 0.17, 0.32));
-        col = floor(vAlbedo * 6.0 + 0.5) / 6.0 * 1.4 * light * uSunColour;
+        col = floor(pow(vAlbedo, vec3(1.0 / 2.2)) * 6.0 + 0.5) / 6.0 * 1.2 * light * uSunColour;
         float nv = dot(n, normalize(-vWorld));
         if (nv < 0.22)
             col = vec3(0.05, 0.05, 0.10);
     }
     else
-        col = vAlbedo * uSunColour * (max(l, 0.0) + 0.02);
+        col = pow(vAlbedo * uSunColour * (max(l, 0.0) + 0.02), vec3(1.0 / 2.2));
     fragColour = vec4(col, 1.0);
     writeLogDepth();
 }

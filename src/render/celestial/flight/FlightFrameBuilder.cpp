@@ -13,9 +13,15 @@ namespace
     namespace fs = std::filesystem;
     using world::celestial::BodyType;
 
+    // Plain string handling: these strings never go through a locale
+    // conversion (a game locale can reject non-ASCII bytes in fs::path).
     std::string bodyFolderFromSource(const std::string& sourcePath)
     {
-        std::string stem = fs::path(sourcePath).stem().string();
+        const std::size_t slash = sourcePath.find_last_of("/\\");
+        std::string stem = slash == std::string::npos ? sourcePath : sourcePath.substr(slash + 1);
+        const std::size_t dot = stem.rfind('.');
+        if (dot != std::string::npos)
+            stem = stem.substr(0, dot);
         for (const char* prefix : {"planet_", "moon_", "dwarf_"})
             if (stem.rfind(prefix, 0) == 0)
                 return stem.substr(std::char_traits<char>::length(prefix));
@@ -49,8 +55,11 @@ std::string celestialAssetFolder(const std::string& name)
     std::string out;
     for (char c : name)
     {
-        if (std::isalnum(static_cast<unsigned char>(c)))
-            out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+        const bool lower = c >= 'a' && c <= 'z', upper = c >= 'A' && c <= 'Z', digit = c >= '0' && c <= '9';
+        if (lower || digit)
+            out.push_back(c);
+        else if (upper)
+            out.push_back(static_cast<char>(c - 'A' + 'a'));
         else if (!out.empty() && out.back() != '_')
             out.push_back('_');
     }
@@ -70,7 +79,11 @@ const FlightFrameBuilder::Imported& FlightFrameBuilder::imported(const std::stri
         return im;
     im.checked = true;
     const std::string sys = celestialAssetFolder(systemName);
-    const std::string body = bodyFolderFromSource(sourcePath);
+    const std::string body = celestialAssetFolder(bodyFolderFromSource(sourcePath));
+    if (sys.empty() || body.empty())
+        return im;
+    try
+    {
     const fs::path source = fs::path(m_root) / "assets/source/celestial" / sys / body;
     const fs::path generated = fs::path(m_root) / "assets/generated/celestial" / sys / body;
     std::error_code ec;
@@ -85,6 +98,12 @@ const FlightFrameBuilder::Imported& FlightFrameBuilder::imported(const std::stri
     {
         im.height = (source / "height_source.png").generic_string();
         heightRange(body, im.rangeM, im.heightSigned, im.waterFromHeight);
+    }
+    }
+    catch (const std::exception&)
+    {
+        im = Imported {};
+        im.checked = true;
     }
     return im;
 }

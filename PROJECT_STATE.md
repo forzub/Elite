@@ -1,5 +1,5 @@
 # ELITE — PROJECT STATE (single canonical continuation document)
-Updated: 2026-10-30, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONLY**.
+Updated: 2026-10-31, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONLY**.
 
 ## Hard rules
 - This file is the ONLY active continuation state. No alternative state /
@@ -714,13 +714,87 @@ hitches = frames > 80 ms after start.
 - GAME (Debug): EliteGame builds; System Map script 30/30 incl. "all 8
   major planets presented" (Earth); EliteGalaxyPointerCheck PASS,
   EliteMapPointerCheck PASS.
-- Not done / OPEN: the game's map renderers still draw equirect textures
-  (no in-game cube-sphere renderer; the patch streamer is ready for it); no
+- Not done / OPEN (superseded by 2026-10-31 d: flight renderer done, the
+  patch streamer is NOT the production path): the game's map renderers
+  still draw equirect textures; no
   procedural body is configured in the game data (baker path verified on a
   scratch root only); human visual review of the Lab pending. Journal of
   decisions, doubts and proposals: D:/tmp/PROCEDURAL_PLANET_NOTES.md (e.g.
   every generated temperate planet has ocean_coverage 1.0; no biosphere fact
   in the descriptor).
+
+### Celestial runtime renderer: continuous field, local terrain, 3 styles (user order 2026-10-31 d)
+- User: drop the patch / quadtree / pyramid as the production model of a
+  planet; a planet = one continuous procedural field; LOD only changes how
+  precisely the same world is asked; a correct runtime renderer of all
+  bodies (positions, sizes, angular sizes, orientation, spin, motion, fly
+  from body to body, LOD by distance, streaming); 3 styles (Elite /
+  Modern / Anime) with a user setting; performance per style +
+  recommendations; generator fixes (ocean coverage 1.0, alpine airless,
+  blurry gas giant, default vegetation); game-grade, not scientific.
+- FOUND: the flight view drew NO celestial bodies at all (only the
+  starfield and the far hub proxy; `drawCelestial` filtered an object type
+  nothing used). The patch pyramid existed only in Planet Lab.
+- Patch pyramid -> `tools/planet_lab/experimental/` (SurfacePatch,
+  CubeSphere; Lab viewer + old --check only).
+- NEW production representation (`src/world/celestial/surface`):
+  `GlobeBake` (cube-map cache of the field, texel = sample at 2 x texel),
+  `LocalTerrain` (camera-centred clipmap on a planet-fixed equal-angle
+  lattice, 128 cells per level, vertex = field at its lattice point,
+  morph to level k+1 in the vertex shader, no skirts / no patch identity),
+  `ImportedSurfaceField` (Sol curated maps as macro + procedural detail
+  below the source texel).
+- NEW renderer `src/render/celestial/flight` (EliteCelestialFlightRender,
+  contract CELESTIAL_RUNTIME_RENDERER.md): sprites -> globe (displacement,
+  albedo / normal / relief cubes 32..1024, sliced uploads) -> local terrain
+  (stencil over the globe, depth copy in the near pass for ships / hubs),
+  clouds (CloudWeatherField at world time, cross-fade), single-scattering
+  atmosphere, rings with planet shadow, star discs + glow, asteroid belt
+  lattice (SmallBodyField meshes), log depth per fragment, worker pool,
+  512 MB texture budget (LRU), GPU timestamp stats.
+  `FlightFrameBuilder` builds the frame from the SAME celestial snapshot
+  and `makePlanetTextureOrientation` the maps use.
+- GAME: `SceneRenderer` pass 0.25 (after the starfield, before the far
+  proxy); `PreparedScene` carries the client celestial snapshot + system
+  definition; atlas bodies carry `sourcePath`, stars teff / luminosity.
+  Style setting: `ClientModeState::celestialRenderStyleId`, persisted
+  (`celestial_render_style`), main menu SETTINGS dialog (button was
+  disabled), Ctrl+F7 in flight, DEV `ELITE_DEV_CELESTIAL_STYLE`.
+- GENERATOR: ocean coverage = 1 - exp(-4.6 D / max(H, 6 km)) from the water
+  layer (generated bulk water mostly in the mantle); `geophysics.biosphere`
+  (generated "none", Sol Earth observed "complex"); vegetation only for
+  complex. Catalog re-materialized (determinism: 61 systems, 0 differ;
+  only ocean_coverage / biosphere / 2 presets changed); temperate surface
+  oceans now 0.42 .. 1.0 (Earth 0.75). Airless rocky / icy: smooth low
+  hills, craters carry relief. Gas giant: band-limited shear filaments;
+  no weather shell over the bands.
+- CHECKS: `ElitePlanetLab --flight-check` 22/22 PASS (silhouette of Moon /
+  Mars / Jupiter at 4 / 15 / 60 R on / off axis within 0.5 px of
+  asin(R/d); Earth drift vs velocity 11 m / 60 s; Earth spin 15.04 deg/h
+  east; terrain lattice rebuild 2793 shared vertices 0 differ; level k vs
+  k+1 1089 points 0 water/land differences). `ElitePlanetLab --check` PASS
+  (old field checks). EliteMapPointerCheck PASS, EliteGalaxyPointerCheck
+  PASS. EliteGame + ElitePlanetLab build (Debug).
+- GAME START (scripted, nav-stress:simple, `tools/perf/galaxy_map_capture.sh`
+  + ELITE_DEV_CELESTIAL_STYLE): Earth drawn below the hub (Modern), rear
+  monitor Elite (coast + grid) and Anime frames; no crash after the
+  locale-safe asset path fix (first run: fatal filesystem conversion).
+- PERF (`--flight-bench`, Intel UHD 630, 1600x900): far 1-2 ms; near
+  orbit Elite 9.5 / Modern 11.3 / Anime 11.3 ms; approach + surface Elite
+  4.7-5.4 / Modern 15.4-15.9 / Anime 16.0-16.2 ms; atmosphere from inside
+  8.5-9 ms is the bottleneck; worst single frames 50-64 ms (open).
+  Recommendations in CELESTIAL_RUNTIME_RENDERER.md section 7.
+- Captures: D:/tmp/elite_flight_capture/ (10 bodies x 4 distances x 3
+  styles + Earth->Moon travel), game frames D:/tmp/elite_game_*.png.
+- Diagnosed during the work: sphere winding inverted (far hemisphere drawn,
+  night crescent, no sky from inside); log depth in the vertex shader
+  clipped primitives behind the camera; missing gamma encode (dark Earth);
+  terrain morph window overlapping the coarse hole edge (cracks); texture
+  budget never evicting (every body marked used).
+- OPEN: Earth / Mars close-up limited by the curated sources (~20 km
+  texels); worst-frame spikes; hub proxy not depth-tested against bodies;
+  eclipses; map clouds and flight clouds are different functions; human
+  visual review pending. Notes: D:/tmp/PROCEDURAL_PLANET_NOTES.md.
 
 ### OPEN
 - Galaxy spatial frame: HUMAN acceptance with a real mouse not done (the

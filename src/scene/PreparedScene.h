@@ -7,6 +7,7 @@
 #include "src/game/client/ClientWorldState.h"
 #include "src/scene/EntityID.h"
 #include "src/world/coordinates/WorldFrame.h"
+#include "src/world/celestial/CelestialTypes.h"
 
 #include "src/world/types/ObjectType.h"
 #include "src/game/ship/core/ShipRole.h"
@@ -44,6 +45,12 @@ struct PreparedScene
     // WorldFrame and never consumes this large coordinate directly.
     glm::dvec3 observerGalacticPositionLy {0.0};
     bool observerGalacticPositionValid = false;
+
+    // The celestial snapshot the maps use (render universe time) and its
+    // system definition: stars, planets, moons, rings, belts of the
+    // player's system for the celestial pass. Null = nothing to draw.
+    const world::celestial::CelestialSystemSnapshot* celestialSnapshot = nullptr;
+    const world::celestial::CelestialSystemDefinition* celestialSystem = nullptr;
 
 
     struct RealShipMeshItem

@@ -10,6 +10,8 @@
 #include "src/debug/render/DebugLineRenderer.h"
 #include "src/render/frustum/Frustum.h"
 #include "src/render/starfield/GalaxyStarfieldRenderer.h"
+#include "src/render/celestial/flight/CelestialFlightRenderer.h"
+#include "src/render/celestial/flight/FlightFrameBuilder.h"
 
 
 #include "src/debug/FrustumDebugData.h"
@@ -169,6 +171,19 @@ public:
         return m_starfieldRenderer.constellationCultureDisplayName(locale);
     }
 
+    // ClientModeState::celestialRenderStyleId ("elite" / "modern" / "anime").
+    void setCelestialRenderStyle(const std::string& styleId)
+    {
+        render::celestial_flight::CelestialRenderStyle style;
+        if (render::celestial_flight::parseCelestialRenderStyle(styleId, style))
+            m_celestialFlight.setStyle(style);
+    }
+
+    const render::celestial_flight::FlightRenderStats& celestialStats() const
+    {
+        return m_celestialFlight.stats();
+    }
+
     void setUiLocale(const std::string& locale)
     {
         if (m_uiLocale == locale)
@@ -256,6 +271,12 @@ public:
 
 
 private:
+    // Celestial bodies of the active system (production runtime renderer).
+    render::celestial_flight::CelestialFlightRenderer m_celestialFlight;
+    render::celestial_flight::FlightFrameBuilder m_celestialFrameBuilder;
+    render::celestial_flight::FlightCelestialFrame m_celestialFrame;
+    bool m_celestialFlightFailed = false;
+
 
     glm::mat4 makePerspectiveForCurrentViewport(
         float fovDeg,

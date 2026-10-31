@@ -15,6 +15,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -200,6 +201,9 @@ namespace
         double bestScore = -1.0e30;
         const double R = field->referenceRadiusM();
         const int n = 3000;
+        // Oblique light (sun 18..36 deg above the horizon) reads relief best;
+        // when that band is all ocean, the whole day side is searched.
+        for (int pass = 0; pass < 2 && bestScore < -5.0e5; ++pass)
         for (int i = 0; i < n; ++i)
         {
             const double y = 1.0 - 2.0 * (i + 0.5) / n;
@@ -207,7 +211,8 @@ namespace
             const double a = i * 2.399963229728653;
             const glm::dvec3 d(rr * std::cos(a), y, rr * std::sin(a));
             const double sunAngle = std::acos(std::clamp(glm::dot(d, glm::normalize(sunBody)), -1.0, 1.0));
-            if (sunAngle < 0.45 || sunAngle > 1.05 || std::abs(y) > 0.8)
+            const double lo0 = pass == 0 ? 0.95 : 0.35, hi0 = pass == 0 ? 1.25 : 1.35;
+            if (sunAngle < lo0 || sunAngle > hi0 || std::abs(y) > 0.65)
                 continue;
             const surface::SurfaceSample s = field->sample(d, 5000.0);
             double score = 0.0;
@@ -225,9 +230,11 @@ namespace
             if (field->solidSurface())
             {
                 if (s.water)
-                    score -= 1.0e4;
+                    score -= 1.0e6; // never water when land exists
                 if (s.coastM < 1500.0 && !s.water)
                     score += 2000.0; // coastline in view
+                if (s.iceMask > 0.5 || s.temperatureK < 255.0f)
+                    score -= 3000.0; // not on an ice sheet
             }
             if (score > bestScore)
             {
@@ -316,10 +323,10 @@ namespace
         const auto& s = r.stats();
         char buf[512];
         std::snprintf(buf, sizeof(buf),
-                      "%s | alt %.0f m (%s) | cpu %.2f+%.2f ms | gpu globe %.2f terr %.2f cloud %.2f atm %.2f ring %.2f "
+                      "%s | alt %.0f m (%s) | cpu %.2f+%.2f ms (upload %.1f) | gpu globe %.2f terr %.2f cloud %.2f atm %.2f ring %.2f "
                       "spr %.2f ast %.2f | bodies %d+%d spr | terrain %d lv %lld tri | tex %.0f MB mesh %.1f MB | jobs %d",
                       cf::celestialRenderStyleId(r.style()), s.nearestAltitudeM, s.nearestBody.c_str(), s.cpuPrepareMs,
-                      s.cpuDrawMs, s.gpuGlobesMs, s.gpuTerrainMs, s.gpuCloudsMs, s.gpuAtmosphereMs, s.gpuRingsMs,
+                      s.cpuDrawMs, s.cpuUploadMs, s.gpuGlobesMs, s.gpuTerrainMs, s.gpuCloudsMs, s.gpuAtmosphereMs, s.gpuRingsMs,
                       s.gpuStarsSpritesMs, s.gpuAsteroidsMs, s.globeBodies, s.spriteBodies, s.terrainLevels,
                       s.terrainTriangles, s.textureBytes / 1048576.0, s.meshBytes / 1048576.0, s.pendingJobs);
         return buf;
@@ -331,11 +338,29 @@ namespace
     {
         fs::create_directories(dir);
         std::ofstream log(dir + "/flight_capture.txt");
+        // PLANET_LAB_FLAGS=noatm,noclouds,norings,nodetail (diagnostics).
+        if (const char* flags = std::getenv("PLANET_LAB_FLAGS"))
+        {
+            const std::string f = flags;
+            cf::FlightRenderQuality q = r.quality();
+            q.atmosphere = f.find("noatm") == std::string::npos;
+            q.clouds = f.find("noclouds") == std::string::npos;
+            q.rings = f.find("norings") == std::string::npos;
+            q.detailNormals = f.find("nodetail") == std::string::npos;
+            r.setQuality(q);
+        }
         const cf::CelestialRenderStyle styles[] = {cf::CelestialRenderStyle::EliteStyle,
                                                    cf::CelestialRenderStyle::Modern, cf::CelestialRenderStyle::Anime};
+        // PLANET_LAB_ONLY=earth,moon limits the targets ("travel" = the
+        // Earth -> Moon sequence).
+        const char* onlyEnv = std::getenv("PLANET_LAB_ONLY");
+        const std::string only = onlyEnv ? onlyEnv : "";
+        const auto wanted = [&](const std::string& label) {
+            return only.empty() || only.find(label) != std::string::npos;
+        };
         for (const Target& t : targets())
         {
-            if (!lab.selectSystem(t.systemId, t0))
+            if (!wanted(t.label) || !lab.selectSystem(t.systemId, t0))
                 continue;
             const wc::CelestialBodyState* b = lab.body(t.stem);
             if (!b)
@@ -353,6 +378,13 @@ namespace
             for (int v = 0; v < ViewCount; ++v)
             {
                 const Camera cam = viewpoint(lab, *b, field.get(), v, site);
+                if (v == 0 && field)
+                {
+                    const surface::SurfaceSample ss = field->sample(site, 5000.0);
+                    std::printf("site %s: lat %.1f lon %.1f water %d coast %.0f m height %.0f m\n", t.label.c_str(),
+                                std::asin(site.y) * 180.0 / Pi, std::atan2(site.z, site.x) * 180.0 / Pi,
+                                ss.water ? 1 : 0, ss.coastM, ss.heightM);
+                }
                 for (const auto style : styles)
                 {
                     r.setStyle(style);
@@ -364,7 +396,11 @@ namespace
                     const std::string name = "flight_" + t.label + "_" + std::to_string(v + 1) + "_" + viewName(v) +
                                              "_" + cf::celestialRenderStyleId(style) + ".png";
                     writePng(dir + "/" + name, w, h, rgb);
-                    const std::string line = name + " | converged " + std::to_string(secs) + " s | " + telemetry(r);
+                    const double sunElevation =
+                        std::asin(std::clamp(glm::dot(glm::normalize(cam.pos - b->worldMeters), lab.sunDirection(*b)),
+                                             -1.0, 1.0)) * 180.0 / Pi;
+                    const std::string line = name + " | sun elevation " + std::to_string(int(sunElevation)) +
+                                             " deg | converged " + std::to_string(secs) + " s | " + telemetry(r);
                     std::printf("%s\n", line.c_str());
                     log << line << "\n";
                     glfwSwapBuffers(win);
@@ -373,7 +409,7 @@ namespace
             }
         }
         // Travel Earth -> Moon: the same world at shrinking / growing sizes.
-        if (lab.selectSystem(0, t0))
+        if (wanted("travel") && lab.selectSystem(0, t0))
         {
             const wc::CelestialBodyState* earth = lab.body("planet_earth");
             const wc::CelestialBodyState* moon = lab.body("moon_moon");
@@ -450,12 +486,19 @@ namespace
             for (int v = 0; v < ViewCount; ++v)
             {
                 const Camera cam = viewpoint(lab, *b, field.get(), v, site);
+                if (v == 0 && field)
+                {
+                    const surface::SurfaceSample ss = field->sample(site, 5000.0);
+                    std::printf("site %s: lat %.1f lon %.1f water %d coast %.0f m height %.0f m\n", t.label.c_str(),
+                                std::asin(site.y) * 180.0 / Pi, std::atan2(site.z, site.x) * 180.0 / Pi,
+                                ss.water ? 1 : 0, ss.coastM, ss.heightM);
+                }
                 for (const auto style : styles)
                 {
                     r.setStyle(style);
                     const double cold = converge(lab, r, cam, win, w, h, 90.0);
                     const int frames = 90;
-                    double cpu = 0.0, wall = 0.0, gpuTotal = 0.0;
+                    double cpu = 0.0, wall = 0.0, gpuTotal = 0.0, worst = 0.0;
                     std::array<double, 7> cat {};
                     long long tris = 0;
                     for (int i = 0; i < frames; ++i)
@@ -466,6 +509,7 @@ namespace
                         glEndQuery(GL_TIME_ELAPSED);
                         glFinish();
                         wall += seconds() - f0;
+                        worst = std::max(worst, seconds() - f0);
                         GLuint64 ns = 0;
                         glGetQueryObjectui64v(q, GL_QUERY_RESULT, &ns);
                         gpuTotal += ns * 1.0e-6;
@@ -482,9 +526,9 @@ namespace
                     const auto& s = r.stats();
                     char line[512];
                     std::snprintf(line, sizeof(line),
-                                  "%s %s %s | %.2f | %.2f %.2f %.2f | %.2f %.2f %.2f %.2f %.2f %.2f %.2f | %lld | %.0f %.1f",
+                                  "%s %s %s | %.2f | %.2f %.2f %.2f max %.1f | %.2f %.2f %.2f %.2f %.2f %.2f %.2f | %lld | %.0f %.1f",
                                   t.label.c_str(), viewName(v), cf::celestialRenderStyleId(style), cold,
-                                  wall * 1000.0 / frames, cpu / frames, gpuTotal / frames, cat[0] / frames,
+                                  wall * 1000.0 / frames, cpu / frames, gpuTotal / frames, worst * 1000.0, cat[0] / frames,
                                   cat[1] / frames, cat[2] / frames, cat[3] / frames, cat[4] / frames, cat[5] / frames,
                                   cat[6] / frames, tris, s.textureBytes / 1048576.0, s.meshBytes / 1048576.0);
                     print(line);
@@ -558,16 +602,19 @@ namespace
                     // bodies (Jupiter's moons) may share the row.
                     const int x0 = std::max(0, static_cast<int>(left) - 8);
                     const int x1 = std::min(w, static_cast<int>(rightE) + 8);
-                    for (int x = x0; x < x1; ++x)
-                    {
-                        const unsigned char* p = &rgb[(static_cast<std::size_t>(row) * w + x) * 3];
-                        if (p[1] > 40)
+                    // Seven rows around the centre row: a 1-px outline can
+                    // fall between pixel centres on a single row.
+                    for (int dy = -3; dy <= 3; ++dy)
+                        for (int x = x0; x < x1; ++x)
                         {
-                            if (lo < 0)
-                                lo = x;
-                            hi = x;
+                            const unsigned char* p = &rgb[(static_cast<std::size_t>(row + dy) * w + x) * 3];
+                            if (p[1] > 40)
+                            {
+                                if (lo < 0 || x < lo)
+                                    lo = x;
+                                hi = std::max(hi, x);
+                            }
                         }
-                    }
                     const double measuredLeft = lo, measuredRight = hi + 1;
                     const bool ok = lo >= 0 && std::abs(measuredLeft - left) < 2.5 &&
                                     std::abs(measuredRight - rightE) < 2.5;

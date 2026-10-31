@@ -19,6 +19,7 @@ struct ClientPreferences
     bool constellationsEnabled = false;
     std::string skyCultureId;
     std::string coordinateDisplayFormatId = "hierarchical";
+    std::string celestialRenderStyleId = "modern";
 
     // Temporary developer selection of the six fixed ordinary-flight
     // constructions. Empty means "use the descriptor default".

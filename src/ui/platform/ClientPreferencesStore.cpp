@@ -177,6 +177,7 @@ nlohmann::json toJson(const ClientPreferences& preferences)
     root["sky_culture_id"] = preferences.skyCultureId;
     root["coordinate_display_format_id"] =
         preferences.coordinateDisplayFormatId;
+    root["celestial_render_style"] = preferences.celestialRenderStyleId;
     root["preferred_physical_control_model"] =
         preferences.preferredPhysicalControlModel;
     root["last_successful_account_by_server"] = nlohmann::json::object();
@@ -259,6 +260,17 @@ bool fromJson(
                 "coordinate_display_format_id is invalid"
             );
         }
+    }
+
+    if (root.contains("celestial_render_style"))
+    {
+        // Unknown values fall back to the default (a newer client may add
+        // styles); a wrong type is an invalid file.
+        if (!root["celestial_render_style"].is_string())
+            return fail(outError, "celestial_render_style must be a string");
+        const std::string style = root["celestial_render_style"].get<std::string>();
+        if (style == "elite" || style == "modern" || style == "anime")
+            parsed.celestialRenderStyleId = style;
     }
 
     if (root.contains("preferred_physical_control_model"))

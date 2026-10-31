@@ -20,7 +20,7 @@
         <button class="elite-button" data-elite-autofocus data-i18n="main.new_local_game" onclick="openLocalNewGameDialog()">NEW LOCAL GAME</button>
         <button class="elite-button" data-i18n="main.load_local_game" disabled data-pending="true">LOAD LOCAL GAME</button>
         <button class="elite-button" data-i18n="main.multiplayer" onclick="navigateRoute('multiplayer')">MULTIPLAYER</button>
-        <button class="elite-button elite-button--secondary" data-i18n="main.settings" disabled data-pending="true">SETTINGS</button>
+        <button class="elite-button elite-button--secondary" data-i18n="main.settings" onclick="openSettingsDialog()">SETTINGS</button>
         <button class="elite-button elite-button--danger" data-i18n="main.exit" onclick="sendCommand('exit')">EXIT</button>
         <div class="elite-banner" data-tone="info" data-i18n="main.local_save_pending">Local save/load becomes available with the persistence layer and safe-zone policy.</div>
       </section>
@@ -218,6 +218,24 @@
         </div>
       </dialog>
 
+      <dialog id="settings-dialog" class="elite-dialog">
+        <div class="elite-dialog-body">
+          <h2 class="elite-section-title" data-i18n="main.settings">SETTINGS</h2>
+          <div class="elite-field">
+            <label class="elite-field-label" for="celestial-style" data-i18n="main.settings.celestial_style">PLANET RENDER STYLE</label>
+            <select class="elite-select" id="celestial-style" onchange="selectCelestialStyle(this.value)">
+              <option value="elite" data-i18n="main.settings.style_elite">ELITE (VECTOR)</option>
+              <option value="modern" data-i18n="main.settings.style_modern">MODERN</option>
+              <option value="anime" data-i18n="main.settings.style_anime">ANIME (CEL)</option>
+            </select>
+            <div class="elite-field-help" data-i18n="main.settings.celestial_style_help">Stars, planets, moons, clouds, atmospheres, rings and asteroids. In flight: Ctrl+F7 cycles the style.</div>
+          </div>
+          <div class="elite-button-row">
+            <button class="elite-button elite-button--secondary" data-i18n="main.back" onclick="window.EliteUiKit.closeDialog('#settings-dialog')">BACK</button>
+          </div>
+        </div>
+      </dialog>
+
       <div class="elite-hint" data-i18n="main.hint">Client service shell</div>
     </main>
   </div>
@@ -317,6 +335,8 @@
       document.getElementById('signin-recovery-button').hidden = !next.passwordRecoveryAvailable;
       document.getElementById('local-player-name').value = next.localPlayerName || '';
 
+      if (typeof next.celestialStyle === 'string')
+        document.getElementById('celestial-style').value = next.celestialStyle;
       populateLocaleSelect('registration-locale', next.locales, next.locale);
       populateLocaleSelect('account-locale', next.locales, next.locale);
 
@@ -355,6 +375,17 @@
         // dark prepared surface and starts the fade-in.
         await window.EliteUiKit.sendPresentationCommand('main_menu_prepared');
       }
+    }
+
+    function openSettingsDialog() {
+      const dialog = document.getElementById('settings-dialog');
+      if (typeof currentState.celestialStyle === 'string')
+        document.getElementById('celestial-style').value = currentState.celestialStyle;
+      window.EliteUiKit.showDialog(dialog);
+    }
+
+    function selectCelestialStyle(style) {
+      if (style) sendCommand('set_celestial_style|' + style);
     }
 
     function navigateRoute(route) {

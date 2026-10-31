@@ -565,6 +565,9 @@ void Application::init()
         (void)m_clientModeState.setConstellationsEnabled(
             m_clientPreferences.constellationsEnabled
         );
+        (void)m_clientModeState.setCelestialRenderStyleId(
+            m_clientPreferences.celestialRenderStyleId
+        );
         if (!m_clientPreferences.skyCultureId.empty())
         {
             (void)m_clientModeState.setSkyCultureId(
@@ -993,6 +996,11 @@ void Application::mainLoop()
                     {
                         requestPresentationTarget(*target);
                     }
+                }
+
+                if (sessionReady && functionKey == 7 && ctrlDown && !altDown)
+                {
+                    cycleCelestialRenderStyle();
                 }
 
                 if (sessionReady && functionKey == 9 && ctrlDown && !altDown)
@@ -1782,6 +1790,22 @@ void Application::cycleCoordinateDisplayFormat()
     std::cout << "[Coordinates] display=" << mode.id << std::endl;
 }
 
+void Application::setCelestialRenderStyle(const std::string& styleId)
+{
+    if (!m_clientModeState.setCelestialRenderStyleId(styleId))
+        return;
+    persistClientModeState();
+    std::cout << "[Celestial] render style=" << styleId << std::endl;
+}
+
+void Application::cycleCelestialRenderStyle()
+{
+    const std::string& current = m_clientModeState.celestialRenderStyleId;
+    setCelestialRenderStyle(
+        current == "elite" ? "modern" : current == "modern" ? "anime" : "elite"
+    );
+}
+
 bool Application::setConstellationsEnabled(bool enabled)
 {
     if (!m_clientModeState.setConstellationsEnabled(enabled))
@@ -2050,6 +2074,16 @@ void Application::processDocumentWebViewCommands(int surfaceIndex)
                 continue;
 
             applyMainMenuView();
+            continue;
+        }
+
+        constexpr const char* SetCelestialStylePrefix = "set_celestial_style|";
+        if (webCommand.rfind(SetCelestialStylePrefix, 0) == 0)
+        {
+            setCelestialRenderStyle(webCommand.substr(
+                std::char_traits<char>::length(SetCelestialStylePrefix)));
+            if (m_gameUi.committedTarget().mode == GameUiMode::MainMenu)
+                applyMainMenuView();
             continue;
         }
 
@@ -2334,6 +2368,7 @@ void Application::applyMainMenuView()
     state["accountHandle"] = accountHandle;
     state["errorCode"] = m_uiNavigationState.transientMessageCode();
     state["locale"] = m_localization.locale();
+    state["celestialStyle"] = m_clientModeState.celestialRenderStyleId;
     state["localPlayerName"] = m_localPlayerDisplayName;
     state["accountAvailable"] = !m_authenticatedRemoteAccountHandle.empty();
     state["passwordRecoveryAvailable"] = false;
@@ -2533,6 +2568,8 @@ void Application::persistClientModeState()
         m_clientModeState.skyCultureId;
     m_clientPreferences.coordinateDisplayFormatId =
         m_clientModeState.coordinateDisplayFormatId;
+    m_clientPreferences.celestialRenderStyleId =
+        m_clientModeState.celestialRenderStyleId;
 
     std::string preferencesError;
     if (!ui::platform::ClientPreferencesStore::save(

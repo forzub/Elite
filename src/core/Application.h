@@ -126,6 +126,8 @@ private:
     void cancelPendingSessionStart();
     void setUiLanguage(const std::string& locale);
     void cycleCoordinateDisplayFormat();
+    void setCelestialRenderStyle(const std::string& styleId);
+    void cycleCelestialRenderStyle();
     void persistClientModeState();
     void updateGameUiPresentation();
     void syncDocumentWebViewBounds();

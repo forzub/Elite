@@ -232,6 +232,41 @@
       "zh-Hans": "使用已记住的设备",
       "es": "USAR DISPOSITIVO RECORDADO",
       "ja": "保存済みデバイスを使用"
+    },
+    "main.settings.celestial_style": {
+      "en": "PLANET RENDER STYLE",
+      "ru": "СТИЛЬ ОТРИСОВКИ ПЛАНЕТ",
+      "zh-Hans": "行星渲染风格",
+      "es": "ESTILO DE PLANETAS",
+      "ja": "惑星の描画スタイル"
+    },
+    "main.settings.style_elite": {
+      "en": "ELITE (VECTOR)",
+      "ru": "ELITE (ВЕКТОРНЫЙ)",
+      "zh-Hans": "ELITE（矢量）",
+      "es": "ELITE (VECTORIAL)",
+      "ja": "ELITE（ベクター）"
+    },
+    "main.settings.style_modern": {
+      "en": "MODERN",
+      "ru": "СОВРЕМЕННЫЙ",
+      "zh-Hans": "现代",
+      "es": "MODERNO",
+      "ja": "モダン"
+    },
+    "main.settings.style_anime": {
+      "en": "ANIME (CEL)",
+      "ru": "АНИМЕ (CEL)",
+      "zh-Hans": "动画（赛璐璐）",
+      "es": "ANIME (CEL)",
+      "ja": "アニメ（セル）"
+    },
+    "main.settings.celestial_style_help": {
+      "en": "Stars, planets, moons, clouds, atmospheres, rings and asteroids. In flight: Ctrl+F7 cycles the style.",
+      "ru": "Звёзды, планеты, луны, облака, атмосферы, кольца и астероиды. В полёте: Ctrl+F7 переключает стиль.",
+      "zh-Hans": "恒星、行星、卫星、云层、大气、行星环和小行星。飞行中按 Ctrl+F7 切换风格。",
+      "es": "Estrellas, planetas, lunas, nubes, atmósferas, anillos y asteroides. En vuelo: Ctrl+F7 cambia el estilo.",
+      "ja": "恒星・惑星・衛星・雲・大気・環・小惑星。飛行中は Ctrl+F7 で切り替え。"
     }
   }
 }

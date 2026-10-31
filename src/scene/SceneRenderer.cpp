@@ -1756,6 +1756,47 @@ profileAfterSetupMs = renderProfileNowMs();
         m_starfieldRenderer.render(renderView, proj);
     }
 
+    // ============================================================
+    // 0.25. CELESTIAL BODIES
+    // ============================================================
+    // Stars, planets, moons, gas giants, rings, clouds, atmospheres, the
+    // camera-centred local terrain and nearby asteroids, from the same
+    // celestial snapshot the maps draw (system-local metres, the frame of
+    // the ship positions). Own logarithmic depth; leaves depth / stencil
+    // for the near world to clear.
+    if (policy.drawCelestial &&
+        dbg.shouldRenderCelestialBodies() &&
+        prepared.celestialSnapshot &&
+        prepared.celestialSystem)
+    {
+        if (!m_celestialFlight.initialized() && !m_celestialFlightFailed)
+            m_celestialFlightFailed = !m_celestialFlight.initialize();
+
+        if (m_celestialFlight.initialized())
+        {
+            const glm::dvec3 cameraSystemMeters =
+                world::coordinates::fullMeters(frame.origin) +
+                glm::dvec3(cameraLocalPosition);
+
+            m_celestialFrameBuilder.build(
+                *prepared.celestialSystem,
+                *prepared.celestialSnapshot,
+                cameraSystemMeters,
+                prepared.celestialSnapshot->simTimeSeconds,
+                m_celestialFrame
+            );
+
+            const float fovY = 2.0f * std::atan(1.0f / proj[1][1]);
+            m_celestialFlight.render(
+                m_celestialFrame,
+                renderView,
+                fovY,
+                renderViewport[2],
+                renderViewport[3]
+            );
+        }
+    }
+
     profileAfterStarfieldMs = renderProfileNowMs();
 
 
@@ -1802,7 +1843,10 @@ profileAfterSetupMs = renderProfileNowMs();
     glDepthFunc(GL_LESS);
     glDepthMask(GL_TRUE);
 
-
+    // The ground near the camera occludes ships and hubs (depth only, the
+    // colour came from the celestial pass).
+    if (policy.drawCelestial && m_celestialFlight.initialized())
+        m_celestialFlight.renderTerrainDepth(renderView, proj);
 
     profileAfterFarPassesMs = renderProfileNowMs();
 

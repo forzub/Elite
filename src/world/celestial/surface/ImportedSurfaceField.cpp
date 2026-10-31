@@ -23,9 +23,9 @@ ImportedSurfaceField::ImportedSurfaceField(const BodySurfaceDescriptor& body,
     const int w = m_maps ? std::max(1, m_maps->width) : 1;
     // Source texel at the equator: everything coarser is the curated map.
     m_macroCutoffM = 2.0 * Pi * m_radius / static_cast<double>(w);
-    m_detailAmplitudeM = std::clamp(body.reliefAmplitudeKm * 1000.0 * 0.05, 30.0, 900.0);
+    m_detailAmplitudeM = std::clamp(body.reliefAmplitudeKm * 1000.0 * 0.12, 80.0, 1800.0);
     m_detailSpec = OctaveSpec {m_macroCutoffM, 1.92, 0.48, 18, 3.0};
-    m_detailBoundM = m_detailAmplitudeM * 2.0;
+    m_detailBoundM = m_detailAmplitudeM * 3.0;
 }
 
 ImportedSurfaceField::Bilinear ImportedSurfaceField::locate(const glm::dvec3& dir) const
@@ -83,9 +83,14 @@ SurfaceSample ImportedSurfaceField::sample(const glm::dvec3& dir, double minWave
     if (minWavelengthM < m_macroCutoffM)
     {
         // Land gets terrain below the source resolution, the sea floor none.
-        const double landWeight = smoothstep(0.0, 400.0, coast);
-        detail = fbm(m_seedDetail, dir, m_radius, m_detailSpec, 1.0e30, minWavelengthM).total * m_detailAmplitudeM *
-                 landWeight;
+        // Rolling hills plus ridges, rougher on high ground (the curated
+        // map's own elevation says where the mountains are).
+        const double landWeight = m_maps->water.empty() ? 1.0 : smoothstep(0.0, 400.0, coast);
+        const double rugged = 0.35 + 0.65 * smoothstep(200.0, 2500.0, std::abs(macro));
+        const double hills = fbm(m_seedDetail, dir, m_radius, m_detailSpec, 1.0e30, minWavelengthM).total;
+        const double ridges = ridgedMultifractal(m_seedDetail + 1, dir, m_radius, m_detailSpec, 1.0e30,
+                                                 minWavelengthM).total;
+        detail = (0.6 * hills + 0.9 * (ridges - 0.45) * rugged) * m_detailAmplitudeM * rugged * landWeight;
     }
     s.heightM = s.water ? std::min(macro, 0.0) : std::max(macro + detail, 0.5);
     if (m_maps->water.empty())
@@ -117,7 +122,7 @@ SurfaceAppearance ImportedSurfaceField::appearance(const SurfaceSample& s, const
         const double v = fbm(m_seedVariation, dir, m_radius, OctaveSpec {m_macroCutoffM * 0.5, 1.92, 0.5, 8, 0.0},
                              1.0e30, std::max(s.bandLimitM, 1.0))
                              .total;
-        c *= static_cast<float>(1.0 + 0.18 * v);
+        c *= static_cast<float>(1.0 + 0.30 * v);
         const float rock = static_cast<float>(smoothstep(0.08, 0.3, slope));
         c = glm::mix(c, glm::vec3(0.32f, 0.30f, 0.28f), rock * 0.5f);
     }

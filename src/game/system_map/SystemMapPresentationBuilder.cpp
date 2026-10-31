@@ -172,12 +172,20 @@ namespace
         const double pixelsPerAu =
             static_cast<double>(presentation.systemScale) / worldUnitsPerPixel;
         const std::string& selected = view.state().selectedBodyId;
+        const std::string& followed = view.state().cameraFollowBodyId;
+        const GalaxyHierarchyBox box = view.hierarchyBox();
+        constexpr double KmPerAu = 149597870.7;
 
         std::unordered_set<std::string> hidden;
         for (const auto& body : presentation.bodies)
         {
             // Nothing outside the current parent cube is shown or a target.
-            if (!view.hierarchyContains(body.positionAu))
+            // A body reaching into the cube (its sphere, not only its centre)
+            // stays, and so do the selected and the followed body: a planet
+            // moving out of a small parent (Earth, ~107,000 km/h) must not
+            // vanish while its hub and ships are still drawn.
+            const bool keep = body.id == selected || body.id == followed;
+            if (!keep && !galaxyHierarchyIntersectsSphere(box, body.positionAu, body.radiusKm / KmPerAu))
             {
                 hidden.insert(body.id);
                 continue;
@@ -198,7 +206,7 @@ namespace
         {
             changed = false;
             for (const auto& body : presentation.bodies)
-                if (!hidden.count(body.id) && body.id != selected && hidden.count(body.parentId))
+                if (!hidden.count(body.id) && body.id != selected && body.id != followed && hidden.count(body.parentId))
                 {
                     hidden.insert(body.id);
                     changed = true;

@@ -124,6 +124,24 @@ target_include_directories(EliteNavigationGeometry PUBLIC
     "${CMAKE_SOURCE_DIR}/src"
 )
 
+# Procedural surface generator (planets, moons, small bodies, gas giant decks,
+# clouds): deterministic fields, cube-sphere patches, streaming. No GL.
+add_library(EliteCelestialSurface STATIC
+    src/world/celestial/surface/SurfaceNoise.cpp
+    src/world/celestial/surface/SurfaceField.cpp
+    src/world/celestial/surface/BodySurfaceDescriptor.cpp
+    src/world/celestial/surface/PlanetSurfaceField.cpp
+    src/world/celestial/surface/GasGiantField.cpp
+    src/world/celestial/surface/SmallBodyField.cpp
+    src/world/celestial/surface/CloudWeatherField.cpp
+    src/world/celestial/surface/SurfacePatch.cpp
+)
+target_include_directories(EliteCelestialSurface PUBLIC "${CMAKE_SOURCE_DIR}")
+# Numeric kernel: optimised in every configuration (a Debug -O0 build is
+# ~10x slower and makes streaming unusable).
+target_compile_options(EliteCelestialSurface PRIVATE -O2)
+target_link_libraries(EliteCelestialSurface PUBLIC nlohmann_json::nlohmann_json Threads::Threads)
+
 # Universe generator (stellar systems, bodies, satellites, reservoirs). Shared by
 # the offline authoring tool and, later, by on-demand generation in the runtime.
 add_library(EliteUniverseGeneration STATIC
@@ -1398,4 +1416,22 @@ if(ELITE_MODEL_ASSET_LIBIGL_SPIKE)
     endif()
     set_target_properties(model_asset_libigl_spike PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${ELITE_MODEL_ASSET_EDITOR_BIN_DIR}")
+endif()
+
+# Planet Lab: visual demo + reproducibility checks of the procedural surface
+# generator (tools/planet_lab). Run from the repository root:
+#   build/ElitePlanetLab.exe            viewer
+#   build/ElitePlanetLab.exe --check    headless checks (--record / --verify)
+if(ELITE_BUILD_CLIENT)
+    add_executable(ElitePlanetLab
+        tools/planet_lab/PlanetLab.cpp
+        tools/planet_lab/PlanetLabBodies.cpp
+        tools/planet_lab/PlanetLabChecks.cpp
+        tools/planet_lab/PlanetLabViewer.cpp
+        glad/src/gl.c
+    )
+    set_source_files_properties(glad/src/gl.c PROPERTIES LANGUAGE C)
+    target_compile_definitions(ElitePlanetLab PRIVATE GLFW_INCLUDE_NONE)
+    target_include_directories(ElitePlanetLab PRIVATE src "${CMAKE_SOURCE_DIR}" glad/include)
+    target_link_libraries(ElitePlanetLab PRIVATE EliteCelestialSurface glfw opengl32)
 endif()

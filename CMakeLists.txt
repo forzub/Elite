@@ -134,13 +134,28 @@ add_library(EliteCelestialSurface STATIC
     src/world/celestial/surface/GasGiantField.cpp
     src/world/celestial/surface/SmallBodyField.cpp
     src/world/celestial/surface/CloudWeatherField.cpp
-    src/world/celestial/surface/SurfacePatch.cpp
+    src/world/celestial/surface/ImportedSurfaceField.cpp
+    src/world/celestial/surface/GlobeBake.cpp
+    src/world/celestial/surface/LocalTerrain.cpp
 )
 target_include_directories(EliteCelestialSurface PUBLIC "${CMAKE_SOURCE_DIR}")
 # Numeric kernel: optimised in every configuration (a Debug -O0 build is
 # ~10x slower and makes streaming unusable).
 target_compile_options(EliteCelestialSurface PRIVATE -O2)
 target_link_libraries(EliteCelestialSurface PUBLIC nlohmann_json::nlohmann_json Threads::Threads)
+
+# Runtime renderer of celestial bodies (flight views, Planet Lab): globes,
+# camera-centred local terrain, clouds, atmospheres, rings, asteroids; three
+# styles. GL entry points come from the executable's glad.
+if(ELITE_BUILD_CLIENT)
+    add_library(EliteCelestialFlightRender STATIC
+        src/render/celestial/flight/CelestialFlightRenderer.cpp
+        src/render/celestial/flight/FlightFrameBuilder.cpp
+    )
+    target_include_directories(EliteCelestialFlightRender PUBLIC "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/glad/include")
+    target_compile_definitions(EliteCelestialFlightRender PRIVATE GLFW_INCLUDE_NONE)
+    target_link_libraries(EliteCelestialFlightRender PUBLIC EliteCelestialSurface)
+endif()
 
 # Universe generator (stellar systems, bodies, satellites, reservoirs). Shared by
 # the offline authoring tool and, later, by on-demand generation in the runtime.
@@ -1429,10 +1444,15 @@ if(ELITE_BUILD_CLIENT)
         tools/planet_lab/PlanetLabBodies.cpp
         tools/planet_lab/PlanetLabChecks.cpp
         tools/planet_lab/PlanetLabViewer.cpp
+        tools/planet_lab/experimental/SurfacePatch.cpp
+        tools/planet_lab/PlanetLabFlight.cpp
+        tools/planet_lab/StbImageImpl.cpp
+        src/world/celestial/StarAtlasDatabase.cpp
+        src/world/celestial/CelestialSystemRuntime.cpp
         glad/src/gl.c
     )
     set_source_files_properties(glad/src/gl.c PROPERTIES LANGUAGE C)
     target_compile_definitions(ElitePlanetLab PRIVATE GLFW_INCLUDE_NONE)
     target_include_directories(ElitePlanetLab PRIVATE src "${CMAKE_SOURCE_DIR}" glad/include)
-    target_link_libraries(ElitePlanetLab PRIVATE EliteCelestialSurface glfw opengl32)
+    target_link_libraries(ElitePlanetLab PRIVATE EliteCelestialFlightRender EliteCelestialSurface glfw opengl32)
 endif()

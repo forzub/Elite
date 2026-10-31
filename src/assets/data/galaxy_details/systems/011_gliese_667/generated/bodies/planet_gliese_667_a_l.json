@@ -75,7 +75,8 @@
     "tectonic_regime": "stagnant_lid",
     "volcanism": "high",
     "magnetic_field_earth": 0.36137760043786915,
-    "hydrosphere": "none"
+    "hydrosphere": "none",
+    "biosphere": "none"
   },
   "spin": {
     "rotation_period_hours": 227.75059732989095,

@@ -80,7 +80,8 @@
     "tectonic_regime": "episodic",
     "volcanism": "moderate",
     "magnetic_field_earth": 1.2759723983615252,
-    "hydrosphere": "ice_shell"
+    "hydrosphere": "ice_shell",
+    "biosphere": "none"
   },
   "spin": {
     "rotation_period_hours": 11.799528738906112,

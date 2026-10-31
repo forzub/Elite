@@ -373,6 +373,8 @@ bool readSystemInput(const fs::path& dir, SystemInput& out, std::string& error)
         o.surfacePressurePa = readValue(phys, "surface_pressure_pa");
         o.meanSurfaceTemperatureK = readValue(phys, "mean_surface_temperature_k");
         o.waterMassFraction = readValue(phys, "water_mass_fraction");
+        if (phys.contains("biosphere") && phys["biosphere"].is_string())
+            o.biosphere = phys["biosphere"].get<std::string>();
         o.ironCoreFraction = readValue(phys, "iron_core_fraction");
         o.envelopeMassFraction = readValue(phys, "envelope_mass_fraction");
         if (phys.contains("tidally_locked") && phys["tidally_locked"].is_boolean())
@@ -583,6 +585,7 @@ ojson bodyJson(const BodyDescriptor& b, const SystemDescriptor& sd)
     geo["volcanism"] = b.volcanism;
     geo["magnetic_field_earth"] = b.magneticFieldEarth;
     geo["hydrosphere"] = b.hydrosphere;
+    geo["biosphere"] = b.biosphere;
     j["geophysics"] = geo;
 
     ojson sp;

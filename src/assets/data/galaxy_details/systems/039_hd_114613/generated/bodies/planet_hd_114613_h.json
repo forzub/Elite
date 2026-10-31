@@ -75,7 +75,8 @@
     "tectonic_regime": "episodic",
     "volcanism": "low",
     "magnetic_field_earth": 0.21143484175336588,
-    "hydrosphere": "none"
+    "hydrosphere": "none",
+    "biosphere": "none"
   },
   "spin": {
     "rotation_period_hours": 2297.573007249951,

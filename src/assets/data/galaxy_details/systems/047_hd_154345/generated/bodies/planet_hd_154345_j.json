@@ -80,7 +80,8 @@
     "tectonic_regime": "stagnant_lid",
     "volcanism": "none",
     "magnetic_field_earth": 0.0,
-    "hydrosphere": "surface_ocean"
+    "hydrosphere": "surface_ocean",
+    "biosphere": "none"
   },
   "spin": {
     "rotation_period_hours": 14.365718367371812,
@@ -101,7 +102,7 @@
     "lava_tube_propensity": 0.04145207761900348,
     "karst_propensity": 0.5595281029496525,
     "weather_potential": 0.8808098061384437,
-    "ocean_coverage": 1.0,
+    "ocean_coverage": 0.9361022782534435,
     "ice_coverage": 0.05,
     "surface_materials": {
       "basalt": 0.35,

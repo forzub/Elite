@@ -13,7 +13,7 @@
 
 #include <glm/glm.hpp>
 
-#include "src/world/celestial/surface/CubeSphere.h"
+#include "tools/planet_lab/experimental/CubeSphere.h"
 #include "src/world/celestial/surface/SurfaceField.h"
 
 namespace world::celestial::surface

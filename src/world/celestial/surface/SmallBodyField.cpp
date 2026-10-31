@@ -136,6 +136,7 @@ void SmallBodyField::mediumCraters(const glm::dvec3& dir, double cell, std::uint
 SurfaceSample SmallBodyField::sample(const glm::dvec3& dir, double minWavelengthM) const
 {
     SurfaceSample s;
+    s.bandLimitM = minWavelengthM;
     s.biome = Biome::Barren;
     s.temperatureK = 180.0f;
     double macro = macroShape(dir);

@@ -476,6 +476,8 @@ void deriveBodyPhysics(
                                       : 0.0;
     }
 
+    b.biosphere = obs && obs->biosphere ? *obs->biosphere : "none";
+
     // ---- surface generation descriptor ---------------------------------
     SurfaceGenerationDescriptor& sf = b.surface;
     const double g = b.surfaceGravityMs2;
@@ -502,7 +504,19 @@ void deriveBodyPhysics(
         sf.caveTectonicPropensity = clampd(0.6 * tectonic + 0.2 * sf.craterDensity, 0.0, 1.0);
         sf.lavaTubePropensity = clampd((b.volcanism == "none" ? 0.1 : 0.6) * (9.81 / std::max(g, 0.5)) / 3.0, 0.0, 1.0);
         sf.karstPropensity = liquidSurface ? clampd(0.5 + 0.5 * fraction(comp, "CO2") * 100.0, 0.0, 1.0) : 0.0;
-        sf.oceanCoverage = liquidSurface ? clampd(water / 2.3e-4 * 0.7, 0.05, 1.0) : 0.0;
+        // Ocean coverage from the surface water inventory against the
+        // relief. An observed water fraction is the hydrosphere itself; a
+        // generated bulk fraction keeps most of a small inventory in the
+        // mantle (~0.02 storage scale). Global equivalent layer
+        // D = water * M / (rho_w 4 pi R^2); a basin hypsometry of relief H
+        // fills 1 - exp(-4.6 D / H) of the surface, H >= 6 km of basin
+        // depth (crustal dichotomy; Earth: D 2.7 km, H 10 km -> 0.71). Dry, Earth-like and ocean worlds all occur.
+        const double surfaceWater = obs && obs->waterMassFraction ? water : water * water / (water + 0.02);
+        const double layerKm = surfaceWater * massEarth * 5.9722e24 /
+                               (1000.0 * 4.0 * 3.14159265358979 * b.radiusKm * b.radiusKm * 1.0e6) / 1000.0;
+        sf.oceanCoverage = liquidSurface
+            ? clampd(1.0 - std::exp(-4.6 * layerKm / std::max(6.0, sf.reliefAmplitudeKm)), 0.03, 1.0)
+            : 0.0;
         sf.iceCoverage = tSurf < 273.0 && water > 1e-4 ? clampd(water / 0.05, 0.1, 1.0)
             : liquidSurface && tSurf < 290.0 ? 0.05 : 0.0;
 

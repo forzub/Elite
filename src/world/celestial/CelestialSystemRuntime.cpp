@@ -62,6 +62,9 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
             body.textureLongitudeOffsetDeg;
 
         state.rings = body.rings;
+        state.sourcePath = body.sourcePath;
+        state.effectiveTemperatureK = body.effectiveTemperatureK;
+        state.luminositySolar = body.luminositySolar;
 
         glm::dvec3 parentAu {0.0};
         glm::dvec3 parentVelocityAuPerSecond {0.0};

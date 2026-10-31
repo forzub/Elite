@@ -22,8 +22,9 @@ namespace world::celestial::surface
       small features down to minWavelengthM. A finer LOD only adds detail.
 
     Planets (PlanetSurfaceField), gas giants (GasGiantField) and small
-    irregular bodies (SmallBodyField) implement it; the cube-sphere patch
-    generator, the reproducibility checks and the renderer see only this.
+    irregular bodies (SmallBodyField) and curated real data
+    (ImportedSurfaceField) implement it; the runtime renderer (far globe bake, camera-centred local terrain), the
+    reproducibility checks and the baker see only this.
 */
 enum class SurfaceMaterial : std::uint8_t
 {
@@ -92,6 +93,7 @@ struct SurfaceSample
 {
     double heightM = 0.0;       // displayed (band-limited) height above the reference radius
     double macroHeightM = 0.0;  // LOD-independent
+    double bandLimitM = 0.0;    // the minWavelengthM this sample was taken at
     bool water = false;         // ocean or lake surface (LOD-independent)
     bool lake = false;
     double waterLevelM = 0.0;   // surface of that water

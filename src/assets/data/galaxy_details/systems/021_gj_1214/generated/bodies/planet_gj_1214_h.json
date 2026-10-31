@@ -79,7 +79,8 @@
     "tectonic_regime": "cryotectonic",
     "volcanism": "cryovolcanic",
     "magnetic_field_earth": 2.589080814961586,
-    "hydrosphere": "subsurface_ocean"
+    "hydrosphere": "subsurface_ocean",
+    "biosphere": "none"
   },
   "spin": {
     "rotation_period_hours": 8.620678510581358,

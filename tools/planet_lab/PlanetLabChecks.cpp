@@ -9,9 +9,9 @@
 #include <set>
 #include <sstream>
 
-#include "src/world/celestial/surface/CubeSphere.h"
+#include "tools/planet_lab/experimental/CubeSphere.h"
 #include "src/world/celestial/surface/SurfaceIdentity.h"
-#include "src/world/celestial/surface/SurfacePatch.h"
+#include "tools/planet_lab/experimental/SurfacePatch.h"
 
 namespace planet_lab
 {

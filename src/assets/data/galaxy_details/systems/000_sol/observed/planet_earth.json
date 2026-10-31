@@ -27,6 +27,7 @@
     "surface_pressure_pa": 101325.0,
     "mean_surface_temperature_k": 288.0,
     "water_mass_fraction": 0.00023,
+    "biosphere": "complex",
     "iron_core_fraction": 0.325
   },
   "atmosphere_composition": {

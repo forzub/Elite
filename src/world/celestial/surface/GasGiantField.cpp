@@ -95,9 +95,10 @@ void GasGiantField::storms(const glm::dvec3& dir, std::vector<Storm>& out) const
             }
 }
 
-SurfaceSample GasGiantField::sample(const glm::dvec3& dir, double) const
+SurfaceSample GasGiantField::sample(const glm::dvec3& dir, double minWavelengthM) const
 {
     SurfaceSample s;
+    s.bandLimitM = minWavelengthM;
     s.biome = Biome::GasDeck;
     s.temperatureK = static_cast<float>(m_body.meanTemperatureK);
     std::vector<Storm> list;
@@ -111,7 +112,7 @@ SurfaceSample GasGiantField::sample(const glm::dvec3& dir, double) const
     return s;
 }
 
-SurfaceAppearance GasGiantField::appearance(const SurfaceSample&, const glm::dvec3& dirIn, double) const
+SurfaceAppearance GasGiantField::appearance(const SurfaceSample& sample, const glm::dvec3& dirIn, double) const
 {
     SurfaceAppearance a;
     const glm::dvec3 dir = drifted(dirIn);
@@ -149,7 +150,19 @@ SurfaceAppearance GasGiantField::appearance(const SurfaceSample&, const glm::dve
                             .macro;
     // Sharpened band edges and fine turbulence (festoons, filaments).
     const double sharp = std::tanh(band * 2.2) / std::tanh(2.2);
-    const float t = static_cast<float>(std::clamp(0.5 + 0.5 * sharp * m_contrast + 0.32 * fine, 0.0, 1.0));
+    // Shear filaments below the eddy scale, strongly stretched along the
+    // jets: band-limited, so a closer look adds streaks inside the bands
+    // instead of blurring them (none at map scale).
+    double filaments = 0.0;
+    if (sample.bandLimitM > 0.0 && sample.bandLimitM < m_radius * 0.02)
+    {
+        const glm::dvec3 streak = glm::normalize(glm::dvec3(dir.x, dir.y * 9.0, dir.z));
+        filaments = fbm(m_seedEddies + 7, streak, m_radius,
+                        OctaveSpec {m_radius * 0.02, 1.92, 0.62, 14, 1.0}, 1.0e30, sample.bandLimitM)
+                        .total;
+    }
+    const float t = static_cast<float>(
+        std::clamp(0.5 + 0.5 * sharp * m_contrast + 0.32 * fine + 0.22 * filaments * (0.4 + 0.6 * edge), 0.0, 1.0));
     glm::vec3 c = glm::mix(m_belt, m_zone, t);
     // Polar regions are darker and bluer (haze).
     const float polar = static_cast<float>(smoothstep(0.75, 0.98, std::abs(dir.y)));

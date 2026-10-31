@@ -80,7 +80,8 @@
     "tectonic_regime": "mobile_lid",
     "volcanism": "low",
     "magnetic_field_earth": 2.2283100092925068,
-    "hydrosphere": "surface_ocean"
+    "hydrosphere": "surface_ocean",
+    "biosphere": "none"
   },
   "spin": {
     "rotation_period_hours": 9.706025747055078,
@@ -101,7 +102,7 @@
     "lava_tube_propensity": 0.16728975213246552,
     "karst_propensity": 0.6284073665640482,
     "weather_potential": 1.0,
-    "ocean_coverage": 1.0,
+    "ocean_coverage": 0.6957089171240544,
     "ice_coverage": 0.05,
     "surface_materials": {
       "basalt": 0.35,
@@ -111,7 +112,7 @@
     }
   },
   "rings": [],
-  "environment_preset_id": "ocean_world",
+  "environment_preset_id": "terrestrial_temperate",
   "resources": {
     "natural_resources": {
       "field_seed": "0xaa47fb8f800cedac",

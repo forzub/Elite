@@ -311,6 +311,11 @@ struct CelestialBodyDefinition
     // real observed planet.
     std::string presentationLevel;
     bool observed = false;      // observed / authored, not procedural
+    // Generated descriptor this body / reservoir was read from (runtime
+    // renderer: surface field, atmosphere, asteroid population).
+    std::string sourcePath;
+    double effectiveTemperatureK = 0.0; // stars
+    double luminositySolar = 0.0;       // stars
 };
 
 struct CelestialSystemDefinition
@@ -350,6 +355,9 @@ struct CelestialBodyState
     double axialTiltDeg = 0.0;
     double axisNodeDeg = 0.0;
     double textureLongitudeOffsetDeg = 0.0;
+    std::string sourcePath;
+    double effectiveTemperatureK = 0.0;
+    double luminositySolar = 0.0;
 
     std::vector<CelestialRingDefinition> rings;
 };

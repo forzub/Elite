@@ -141,6 +141,16 @@ PlanetSurfaceField::PlanetSurfaceField(const BodySurfaceDescriptor& body)
     if (m_archetype == SurfaceArchetype::Icy)
         m_rangeStrength = 0.12;
     m_hillStrength = 0.10 + 0.20 * std::clamp(body.roughness, 0.0, 1.0);
+    if (m_archetype == SurfaceArchetype::AirlessRocky || m_archetype == SurfaceArchetype::Icy)
+    {
+        // Airless ground is rounded by impact gardening: low, smooth hills
+        // (strong damping, steeper spectral fall-off); craters carry the
+        // relief.
+        m_hillStrength = 0.035 + 0.05 * std::clamp(body.roughness, 0.0, 1.0);
+        m_damping = 0.45;
+        m_hillSpec.gain = std::pow(m_hillSpec.lacunarity, -(h + 0.35));
+        m_rangeStrength = std::min(m_rangeStrength, 0.10);
+    }
 
     m_ocean = m_archetype == SurfaceArchetype::Terrestrial && body.oceanCoverage > 0.0;
     m_volcanoProbability = volcanismLevel(body.volcanism);
@@ -237,8 +247,10 @@ PlanetSurfaceField::PlanetSurfaceField(const BodySurfaceDescriptor& body)
         m_ironOxide = 0.1f;
     m_regolithTint = glm::mix(glm::vec3(1.0f), glm::vec3(1.35f, 0.78f, 0.55f), std::min(1.0f, m_ironOxide * 3.0f));
     m_regolithTint = glm::mix(m_regolithTint, glm::vec3(1.25f, 1.15f, 0.45f), std::min(1.0f, m_sulfur * 3.0f));
-    m_vegetation = m_archetype == SurfaceArchetype::Terrestrial && body.meanTemperatureK > 255.0 &&
-                   body.meanTemperatureK < 330.0;
+    // Vegetation is a stated fact of the descriptor, never assumed from a
+    // temperate climate.
+    m_vegetation = m_archetype == SurfaceArchetype::Terrestrial && body.biosphere == "complex" &&
+                   body.meanTemperatureK > 255.0 && body.meanTemperatureK < 330.0;
 
     // What LOD detail can add to the macro height (checks, skirts).
     const double rangeH = m_reliefM * 1.4 * m_rangeStrength;
@@ -576,6 +588,7 @@ Biome PlanetSurfaceField::biome(const SurfaceSample& s) const
 SurfaceSample PlanetSurfaceField::sample(const glm::dvec3& dir, double minWavelengthM) const
 {
     SurfaceSample s;
+    s.bandLimitM = minWavelengthM;
     const Terrain t = terrain(dir, minWavelengthM);
     double macro = t.macro;
     double total = t.total;

@@ -9,14 +9,26 @@
 //   ElitePlanetLab --capture DIR        renders every body at every viewpoint
 //                                       to DIR/planet_lab_<body>_<view>.png
 //   ElitePlanetLab --body PATH          adds a generated body JSON
+//
+//   Production renderer (render::celestial_flight) on the real catalog:
+//   ElitePlanetLab --flight             interactive flight
+//   ElitePlanetLab --flight-capture DIR 3 styles x bodies x 4 distances
+//   ElitePlanetLab --flight-bench DIR   performance per style / distance
+//   ElitePlanetLab --flight-check       angular size, ephemeris, terrain
+//   (--time SECONDS universe time, default 0)
+//
+//   The cube-sphere patch viewer (default mode) is the EXPERIMENTAL
+//   reference of tools/planet_lab/experimental, not the game renderer.
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <vector>
 
 #include "tools/planet_lab/PlanetLabBodies.h"
 #include "tools/planet_lab/PlanetLabChecks.h"
+#include "tools/planet_lab/PlanetLabFlight.h"
 #include "tools/planet_lab/PlanetLabViewer.h"
 
 int main(int argc, char** argv)
@@ -27,9 +39,30 @@ int main(int argc, char** argv)
     std::string capture;
     std::string root = ".";
     std::vector<std::string> extra;
+    planet_lab::FlightOptions flight;
+    bool flightMode = false;
     for (int i = 1; i < argc; ++i)
     {
         const std::string a = argv[i];
+        if (a == "--flight")
+            flightMode = true;
+        else if (a == "--flight-capture" && i + 1 < argc)
+        {
+            flightMode = true;
+            flight.captureDir = argv[++i];
+        }
+        else if (a == "--flight-bench" && i + 1 < argc)
+        {
+            flightMode = true;
+            flight.benchDir = argv[++i];
+        }
+        else if (a == "--flight-check")
+        {
+            flightMode = true;
+            flight.check = true;
+        }
+        else if (a == "--time" && i + 1 < argc)
+            flight.universeTimeSeconds = std::atof(argv[++i]);
         if (a == "--check")
             checks = true;
         else if (a == "--record" && i + 1 < argc)
@@ -42,6 +75,12 @@ int main(int argc, char** argv)
             root = argv[++i];
         else if (a == "--body" && i + 1 < argc)
             extra.push_back(argv[++i]);
+    }
+
+    if (flightMode)
+    {
+        flight.root = root;
+        return planet_lab::runFlight(flight);
     }
 
     std::vector<planet_lab::LabBody> bodies;

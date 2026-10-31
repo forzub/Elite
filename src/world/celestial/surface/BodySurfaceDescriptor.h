@@ -57,6 +57,7 @@ struct BodySurfaceDescriptor
     double minTemperatureK = 288.0;
     double maxTemperatureK = 288.0;
     double surfacePressurePa = 0.0;
+    double atmosphereScaleHeightM = 0.0;
     double cloudPotential = 0.0;
     double obliquityDeg = 0.0;
     double rotationPeriodHours = 24.0;
@@ -64,6 +65,9 @@ struct BodySurfaceDescriptor
     std::string tectonicRegime;
     std::string volcanism;
     std::string hydrosphere;
+    // Life on the surface: none | microbial | complex. Only "complex" draws
+    // vegetation; the generator states it (no default greening).
+    std::string biosphere = "none";
 
     // surface_generation
     std::string terrainProfile;
@@ -163,5 +167,16 @@ struct SmallBodyDescriptor
 int asteroidCandidatesInCell(const ReservoirSurfaceDescriptor& reservoir, const glm::ivec3& cell);
 SmallBodyDescriptor asteroidInReservoir(const ReservoirSurfaceDescriptor& reservoir, const glm::ivec3& cell,
                                         int candidate);
+// Game-density spatial lattice of a reservoir (heliocentric metres in the
+// reservoir's plane frame): cell = floor(position / AsteroidCellSizeM).
+// Real belts are emptier by orders of magnitude; the lattice keeps a few
+// bodies within view of a ship flying through the belt.
+constexpr double AsteroidCellSizeM = 200000.0;
+// Position of a candidate inside its cell, [0, 1)^3, and its spin
+// (axis, period) - from the candidate seed only.
+glm::dvec3 asteroidPositionInCell(const SmallBodyDescriptor& body);
+glm::dvec3 asteroidSpinAxis(const SmallBodyDescriptor& body);
+double asteroidSpinPeriodSeconds(const SmallBodyDescriptor& body);
+
 const char* compositionName(SmallBodyComposition composition);
 } // namespace world::celestial::surface

@@ -140,6 +140,7 @@ struct ObservedBodyInput
     std::vector<std::pair<std::string, double>> atmosphereComposition;
     std::optional<bool> tidallyLocked;
     std::optional<double> waterMassFraction;
+    std::optional<std::string> biosphere;     // none | microbial | complex (observed fact)
     std::optional<double> ironCoreFraction;
     std::optional<double> envelopeMassFraction;
     std::vector<ObservedRingInput> rings;
@@ -390,6 +391,9 @@ struct BodyDescriptor
     std::string volcanism;          // none | low | moderate | high | extreme | cryovolcanic
     double magneticFieldEarth = 0.0;
     std::string hydrosphere;        // none | subsurface_ocean | ice_shell | surface_ocean | global_ocean | supercritical | steam
+    // Surface life. Generated bodies carry "none": the generator has no
+    // biosphere model, so nothing is greened by assumption.
+    std::string biosphere = "none"; // none | microbial | complex
     AtmosphereDescriptor atmosphere;
 
     double rotationPeriodHours = 0.0;

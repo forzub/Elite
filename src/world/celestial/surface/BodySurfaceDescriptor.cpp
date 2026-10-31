@@ -103,6 +103,7 @@ bool loadGeneratedBody(const std::string& path, BodySurfaceDescriptor& out, std:
 
     const json& atmosphere = section(j, "atmosphere");
     out.surfacePressurePa = number(atmosphere, "surface_pressure_pa", 0.0);
+    out.atmosphereScaleHeightM = number(atmosphere, "scale_height_km", 0.0) * 1000.0;
     out.cloudPotential = number(atmosphere, "cloud_potential", 0.0);
     out.atmosphereComposition = fractions(atmosphere, "composition");
 
@@ -110,6 +111,9 @@ bool loadGeneratedBody(const std::string& path, BodySurfaceDescriptor& out, std:
     out.tectonicRegime = text(geophysics, "tectonic_regime");
     out.volcanism = text(geophysics, "volcanism");
     out.hydrosphere = text(geophysics, "hydrosphere");
+    out.biosphere = text(geophysics, "biosphere");
+    if (out.biosphere.empty())
+        out.biosphere = "none";
 
     const json& spin = section(j, "spin");
     out.obliquityDeg = number(spin, "obliquity_deg", 0.0);
@@ -305,5 +309,26 @@ const char* compositionName(SmallBodyComposition c)
         case SmallBodyComposition::Icy: return "icy";
     }
     return "unknown";
+}
+glm::dvec3 asteroidPositionInCell(const SmallBodyDescriptor& body)
+{
+    const std::uint64_t h = deriveSeed(body.seed, "cell_position");
+    return {unitFromHash(h, 0), unitFromHash(h, 1), unitFromHash(h, 2)};
+}
+
+glm::dvec3 asteroidSpinAxis(const SmallBodyDescriptor& body)
+{
+    const std::uint64_t h = deriveSeed(body.seed, "spin");
+    const double z = unitFromHash(h, 0) * 2.0 - 1.0;
+    const double a = unitFromHash(h, 1) * 6.283185307179586;
+    const double r = std::sqrt(std::max(0.0, 1.0 - z * z));
+    return {r * std::cos(a), z, r * std::sin(a)};
+}
+
+double asteroidSpinPeriodSeconds(const SmallBodyDescriptor& body)
+{
+    // 2.2 h spin barrier for rubble piles; most small bodies spin in hours.
+    const std::uint64_t h = deriveSeed(body.seed, "spin");
+    return 3600.0 * (2.2 + 18.0 * std::pow(unitFromHash(h, 2), 2.0));
 }
 } // namespace world::celestial::surface

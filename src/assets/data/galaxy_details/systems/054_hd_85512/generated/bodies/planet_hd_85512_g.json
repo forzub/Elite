@@ -80,7 +80,8 @@
     "tectonic_regime": "mobile_lid",
     "volcanism": "low",
     "magnetic_field_earth": 2.2481186885275863,
-    "hydrosphere": "global_ocean"
+    "hydrosphere": "global_ocean",
+    "biosphere": "none"
   },
   "spin": {
     "rotation_period_hours": 18.151245408505925,

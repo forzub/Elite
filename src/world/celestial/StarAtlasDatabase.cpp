@@ -1859,6 +1859,8 @@ bool parsePhysicalSystemDirectory(
         body.radiusKm = s.value("radius_solar", 1.0) * 695700.0;
         body.diameterKm = 2.0 * body.radiusKm;
         body.dayLengthHours = s.value("rotation_period_days", 0.0) * 24.0;
+        body.effectiveTemperatureK = s.value("teff_k", 5772.0);
+        body.luminositySolar = s.value("luminosity_solar", 1.0);
         if (s.contains("orbit"))
             readKeplerOrbit(s["orbit"], body);
         readAlternativeNames(s, body);
@@ -1879,6 +1881,7 @@ bool parsePhysicalSystemDirectory(
             if (b.value("schema", std::string()) != "elite.generated_body.v1")
                 throw std::runtime_error("unsupported body schema");
             CelestialBodyDefinition body = bodyFromGenerated(b);
+            body.sourcePath = f.generic_string();
             (body.type == BodyType::Moon ? moons : planets).push_back(std::move(body));
         }
         catch (const std::exception& e)
@@ -1941,6 +1944,7 @@ bool parsePhysicalSystemDirectory(
             body.id = r.at("id").get<std::string>();
             body.name = r.value("name", body.id);
             body.type = BodyType::AsteroidBelt;
+            body.sourcePath = f.generic_string();
             body.parentId = r.value("parent_id", std::string());
             body.distanceAu = r.value("peak_au", 0.0);
             // Significant belts (main asteroid belt class and above) stay on

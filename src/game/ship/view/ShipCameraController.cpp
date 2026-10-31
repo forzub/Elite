@@ -104,10 +104,22 @@ void ShipCameraController::updateMode(
                 detachedFragments
             );
 
-            glm::vec3 pos =
+            // Recon drone: an EXTERNAL camera in the ship frame, behind and
+            // above, looking at the ship. The descriptor attachment gives the
+            // direction; the drone never sits closer than kMinDroneRangeM
+            // (the old 9 m attachment put the camera inside the hull).
+            constexpr float kMinDroneRangeM = 90.0f;
+            const glm::mat3 shipBasis = glm::mat3(transform.orientation);
+            glm::vec3 local =
                 resolved
-                    ? resolved->localPosition
-                    : glm::vec3(0.0f, 30.0f, 0.0f);
+                    ? glm::transpose(shipBasis) * resolved->localPosition
+                    : glm::vec3(0.0f);
+            const glm::vec3 chase(0.0f, 0.28f, 1.0f); // +Z = aft, +Y = up
+            if (glm::length(local) < kMinDroneRangeM)
+                local = glm::normalize(chase) * kMinDroneRangeM;
+
+            const glm::vec3 pos = shipBasis * local;
+            const glm::vec3 shipUp = shipBasis * glm::vec3(0, 1, 0);
 
             camera.setPosition(pos);
 
@@ -115,7 +127,7 @@ void ShipCameraController::updateMode(
                 glm::lookAt(
                     pos,
                     glm::vec3(0.0f),
-                    glm::vec3(0, 1, 0)
+                    shipUp
                 );
 
             glm::mat4 world = glm::inverse(look);

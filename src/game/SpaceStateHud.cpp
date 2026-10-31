@@ -420,7 +420,9 @@ m_systemMapRenderer.render(
             m_galacticCompassRenderer.render(galacticCompass, vp);
         }
 
-        if (debug::get().render.shouldRenderCockpit())
+        // The recon drone is an external camera: no cockpit frame.
+        if (debug::get().render.shouldRenderCockpit() &&
+            m_activeCameraMode != ShipCameraMode::Drone)
         {
             m_playerView->renderCockpit();
         }

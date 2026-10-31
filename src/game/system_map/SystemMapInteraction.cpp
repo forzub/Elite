@@ -103,8 +103,11 @@ namespace
 
         if (const auto body = context.pickSystemBodyId(localX, localY))
         {
+            // Any presented body is a target (the presentation policy keeps
+            // a planet's moons and the planet of a drawn hub even when their
+            // centre lies outside the parent cube).
             const auto position = context.systemBodyAbsolutePosition(*body);
-            if (position && view.hierarchyContains(*position / scale))
+            if (position)
             {
                 target.kind = SystemPointerTarget::Kind::Body;
                 target.bodyId = *body;

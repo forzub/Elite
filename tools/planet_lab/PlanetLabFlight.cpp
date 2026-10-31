@@ -408,6 +408,41 @@ namespace
                 }
             }
         }
+        // The Sun from near Earth (all styles; Elite Classic: flickering
+        // corona - two frames 0.3 s apart).
+        if (wanted("sun") && lab.selectSystem(0, t0))
+        {
+            const wc::CelestialBodyState* earth = lab.body("planet_earth");
+            const wc::CelestialBodyState* sunBody = nullptr;
+            for (const auto& b : lab.snapshot().bodies)
+                if (b.type == wc::BodyType::Star)
+                    sunBody = &b;
+            if (earth && sunBody)
+            {
+                Camera c;
+                const glm::dvec3 toSun = glm::normalize(sunBody->worldMeters - earth->worldMeters);
+                c.pos = earth->worldMeters + glm::normalize(glm::cross(toSun, glm::dvec3(0, 1, 0))) *
+                                                 (earth->radiusKm * 1000.0 * 3.0);
+                c.fwd = glm::normalize(sunBody->worldMeters - c.pos);
+                c.up = glm::normalize(glm::cross(glm::cross(c.fwd, glm::dvec3(0, 1, 0)), c.fwd));
+                for (const auto style : styles)
+                    for (int k = 0; k < 2; ++k)
+                    {
+                        r.setStyle(style);
+                        converge(lab, r, c, win, w, h, 30.0);
+                        if (k == 1)
+                            std::this_thread::sleep_for(std::chrono::milliseconds(300));
+                        lab.frame(r, c, w, h);
+                        glFinish();
+                        std::vector<unsigned char> rgb;
+                        readPixels(w, h, rgb);
+                        const std::string name = std::string("flight_sun_") + cf::celestialRenderStyleId(style) + "_" +
+                                                 std::to_string(k) + ".png";
+                        writePng(dir + "/" + name, w, h, rgb);
+                        std::printf("%s\n", name.c_str());
+                    }
+            }
+        }
         // Travel Earth -> Moon: the same world at shrinking / growing sizes.
         if (wanted("travel") && lab.selectSystem(0, t0))
         {

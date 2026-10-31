@@ -49,6 +49,13 @@ public:
 
     // Visible bodies of the presented frame: id -> screen point (map px).
     std::function<std::vector<std::pair<std::string, glm::vec2>>()> bodyLocator;
+    // Presentation audit: "" when every presented planet presents all its
+    // moons, each presented moon is pickable and Earth is presented while
+    // its hub is drawn; otherwise what is missing.
+    std::function<std::string()> moonAudit;
+    int m_auditViolations = 0;
+    int m_auditSamples = 0;
+    std::string m_auditFirst;
     // Is the info card of this body open?
     std::function<bool(const std::string&)> cardOpen;
     // Current position (AU) of a body.
@@ -249,6 +256,17 @@ private:
     void shot(const std::string& name)
     {
         call([this, name] {
+            if (moonAudit)
+            {
+                const std::string missing = moonAudit();
+                ++m_auditSamples;
+                if (!missing.empty())
+                {
+                    ++m_auditViolations;
+                    if (m_auditFirst.empty())
+                        m_auditFirst = name + ": " + missing;
+                }
+            }
             char path[160];
             std::snprintf(path, sizeof path, "D:/tmp/elite_sh_%02d_%s.png", m_shot++, name.c_str());
             core::dev::frameCaptureRequests().push_back({glfwGetTime(), path, false});
@@ -579,6 +597,11 @@ private:
                    m_view->state().hierarchyParent.level == 0 && fills(), parentText());
         });
         shot("wheel_out");
+        call([this] {
+            record("moons: every presented planet presents and exposes its moons, Earth with its hub (all " +
+                       std::to_string(m_auditSamples) + " navigation states)",
+                   m_auditSamples > 0 && m_auditViolations == 0, m_auditFirst);
+        });
         call([this] { finish(); });
     }
 

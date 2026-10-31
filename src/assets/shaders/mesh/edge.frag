@@ -33,8 +33,8 @@ void main()
     if (uSceneStyle == 0)
     {
         // Elite Classic: light grey vector edges, fading to grey far away.
-        finalColor = mix(vec3(0.86, 0.87, 0.88), vec3(0.45), t);
-        finalAlpha = max(finalAlpha, 0.85 * (1.0 - t * 0.6));
+        finalColor = mix(vec3(0.92, 0.93, 0.94), vec3(0.62), t);
+        finalAlpha = max(finalAlpha, 0.95 * (1.0 - t * 0.4));
     }
     else if (uSceneStyle == 2)
     {

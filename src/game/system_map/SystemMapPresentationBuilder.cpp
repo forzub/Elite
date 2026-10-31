@@ -1,6 +1,7 @@
 #include "src/game/system_map/SystemMapPresentationBuilder.h"
 
 #include <algorithm>
+#include <unordered_map>
 #include <unordered_set>
 #include <string>
 
@@ -176,12 +177,35 @@ namespace
         const std::string& followed = view.state().cameraFollowBodyId;
         const GalaxyHierarchyBox box = view.hierarchyBox();
         constexpr double KmPerAu = 149597870.7;
-        // The planet a hub / ship in the cube orbits stays with it (a hub
-        // in low orbit can sit in a cube its planet's sphere misses).
+        // Presentation policy (visibility / clickability only - positions,
+        // orbits and spin stay the physical state):
+        //  - hubs and ships are always presented, so the planet they orbit
+        //    is too (it vanished when the cube held neither Earth's sphere
+        //    nor its hub while the hub was still drawn);
+        //  - a planet is the context of its moons: a presented planet keeps
+        //    its moons, wherever their instantaneous position falls relative
+        //    to the cube boundaries, and a moon reaching the cube keeps its
+        //    planet;
+        //  - the parent of the selected / followed body stays.
         std::unordered_set<std::string> anchors;
         for (const auto& object : system.objects)
-            if (!object.parentBodyId.empty() && view.hierarchyContains(object.positionAu))
+            if (!object.parentBodyId.empty())
                 anchors.insert(object.parentBodyId);
+        std::unordered_map<std::string, std::string> parentOf;
+        presentation.moonParents.clear();
+        for (const auto& body : presentation.bodies)
+        {
+            parentOf[body.id] = body.parentId;
+            if (body.type == world::celestial::BodyType::Moon)
+                presentation.moonParents.push_back({body.id, body.parentId});
+        }
+        for (const std::string& id : {selected, followed})
+            if (auto it = parentOf.find(id); it != parentOf.end() && !it->second.empty())
+                anchors.insert(it->second);
+        for (const auto& body : presentation.bodies)
+            if (body.type == world::celestial::BodyType::Moon &&
+                galaxyHierarchyIntersectsSphere(box, body.positionAu, body.radiusKm / KmPerAu))
+                anchors.insert(body.parentId);
 
         std::unordered_set<std::string> hidden;
         for (const auto& body : presentation.bodies)
@@ -191,7 +215,8 @@ namespace
             // stays, and so do the selected and the followed body: a planet
             // moving out of a small parent (Earth, ~107,000 km/h) must not
             // vanish while its hub and ships are still drawn.
-            const bool keep = body.id == selected || body.id == followed || anchors.count(body.id) != 0;
+            const bool keep = body.id == selected || body.id == followed || anchors.count(body.id) != 0 ||
+                              body.type == world::celestial::BodyType::Moon; // decided with its planet below
             if (!keep && !galaxyHierarchyIntersectsSphere(box, body.positionAu, body.radiusKm / KmPerAu))
             {
                 hidden.insert(body.id);

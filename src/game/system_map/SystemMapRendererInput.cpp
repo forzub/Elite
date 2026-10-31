@@ -1,5 +1,6 @@
 // SystemMapRenderer: map input handling (mouse / keyboard, picking, panel interaction).
 
+#include <unordered_set>
 #include "src/game/system_map/SystemMapRendererInternal.h"
 
 
@@ -142,6 +143,30 @@ SystemMapRenderer::handleInput(
                         out.push_back({body.id, s});
                 }
                 return out;
+            };
+            m_systemHierarchyDevScript.moonAudit = [this]() {
+                std::unordered_set<std::string> presented, pickable;
+                for (const auto& body : m_systemPresentation.bodies)
+                    presented.insert(body.id);
+                for (const auto& point : m_systemSceneFrame.interaction.bodyScreenPoints)
+                    pickable.insert(point.bodyId);
+                std::string missing;
+                for (const auto& [moon, planet] : m_systemPresentation.moonParents)
+                {
+                    if (!presented.count(planet))
+                        continue;
+                    if (!presented.count(moon))
+                        missing += moon.substr(moon.rfind('.') + 1) + " hidden; ";
+                    else if (!pickable.count(moon))
+                        missing += moon.substr(moon.rfind('.') + 1) + " not pickable; ";
+                }
+                bool earth = false;
+                for (const auto& id : presented)
+                    earth = earth || id.find("Земля") != std::string::npos ||
+                            id.find("Earth") != std::string::npos;
+                if (!earth)
+                    missing += "Earth not presented; ";
+                return missing;
             };
             m_systemHierarchyDevScript.cardOpen = [this](const std::string& id) {
                 return m_objectOverlayState.isOpen(

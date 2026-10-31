@@ -1173,6 +1173,20 @@ void SpaceState::update(float dt)
             systemOpened = true;
             context().app->requestNavigationView(NavigationPresentationView::System);
         }
+
+        // DEV: ELITE_DEV_DRONE_VIEW_AT=<s> switches the flight view to the
+        // external drone camera once (style captures of the player ship).
+        static const double droneAtSeconds = [] {
+            const char* v = std::getenv("ELITE_DEV_DRONE_VIEW_AT");
+            return v && *v ? std::atof(v) : -1.0;
+        }();
+        static bool droneSet = false;
+        if (droneAtSeconds >= 0.0 && !droneSet && m_client && context().app &&
+            startupElapsedMs(m_startupTotalBegin) >= droneAtSeconds * 1000.0)
+        {
+            droneSet = true;
+            context().app->requestFlightView(FlightPresentationView::Drone);
+        }
     }
 
 

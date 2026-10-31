@@ -804,6 +804,71 @@ hitches = frames > 80 ms after start.
   eclipses; map clouds and flight clouds are different functions; human
   visual review pending. Notes: D:/tmp/PROCEDURAL_PLANET_NOTES.md.
 
+### Renderer stabilisation, scene-wide styles, System Map planets / moons (user order 2026-10-31 e)
+- User: jitter / double image; freezes after one Venus planet marker;
+  Modern = calm grey volumetric planet (reference D:/tmp/152905.png, no
+  day / night show); water detail scale wrong from ~400 km; Elite Classic
+  not green, retro sun with a living corona; styles for the WHOLE scene
+  (ships, stations, sky, asteroids, rings, sun); small objects readable on
+  big ones; System Map: Earth vanishes while its hubs show, moons flicker;
+  map and flight one world.
+- ROOT CAUSE (jitter AND load): the main camera and the rear monitor both
+  planned celestial resources every frame with different pixel sizes (Earth
+  717 vs 128 px, Moon 2.5 vs 0.45 px): globe tiers 1024 <-> 256/512 and the
+  local terrain level set flip-flopped (each view re-requested its own);
+  different tiers / levels displace the surface differently -> two nearly
+  coincident images, plus continuous bakes / uploads. Fix: only the primary
+  view plans resources (render(..., primaryView)); secondary views draw what
+  exists. A/B (ELITE_DEV_CELESTIAL_SHARED_VIEWS=1, same 45-s scene, Venus
+  marker): globe bakes 54 -> 2, terrain level builds 673 -> 12, uploads
+  956 -> 38, mip generations 161 -> 8, celestial CPU 3.39 -> 0.33 ms avg
+  (max 10.8 -> 3.6), worst frame 93 -> 51 ms. Coordinate path checked
+  (ELITE_TRACE_CELESTIAL): Earth relative velocity frame-to-frame change
+  median 21 m/s = ~0.4 m/frame at 422 km (no visible jitter).
+- MARKERS: a HUD planet marker (map info card -> rememberCelestialBody ->
+  NavigationHudMarker) never touches the celestial renderer. Measured with
+  ELITE_DEV_CELESTIAL_MARKERS (none / +venus / +mars / +jupiter / all):
+  identical resource work (2 loads, 2 globe bakes, 13 level builds, ~38
+  uploads), celestial CPU 0.35 ms, GPU ~3 ms; Venus stays a point. Steady
+  280-ms frames in those runs = the DEV PNG capture itself.
+- Activation levels (screen size only): point < 1.5 px (sprite, nothing
+  loaded) / disc 1.5-24 px (field + small tier, no weather) / globe >= 24 px
+  (clouds) / detailed (local terrain, altitude < 0.6 R).
+- DIAGNOSTICS: ELITE_CELESTIAL_DIAG=1|path (D:/tmp/elite_celestial_diag.log):
+  FRAME line per primary frame (CPU / GPU per pass, loads, globe / cloud
+  bakes, terrain builds, uploads + bytes, mips, evictions, cache hit / miss,
+  memory) + EVENT lines (level changes, bakes, tiers live, evictions).
+- STYLES: render::sceneStyle (uSceneStyle) in ship / station fill + edges,
+  starfield, Milky Way haze, scoped to the flight scene (maps unchanged).
+  Elite Classic: black opaque hulls, light grey edges, white point stars, no
+  Milky Way colour, grey-white celestial lines, sun = white disc with an
+  unstable edge + flickering ray corona (sprite, min ~10 px). Modern:
+  ships / stations unchanged; bodies calm grey (land lighter than sea,
+  wrap light, no night emission, grey limb / clouds / haze, coast and limb
+  as faint light edges, less contrast far away). Anime: three flat bands +
+  ink silhouette on hulls, heavier ink edges, neutral shadow tones, stepped
+  desaturated sky.
+- WATER LOD: sea surface smooth from the globe distance (no micro relief on
+  water); terrain water gets wave normals of a 40-m wavelength faded by
+  the pixel footprint (none at 422 km, gradual on approach).
+- SYSTEM MAP: Earth vanished because bodies were cube-filtered while hubs /
+  ships are always drawn, and Earth was kept only by objects INSIDE the
+  cube. Moons flickered because each moon was cube-filtered on its own
+  instantaneous position. Policy (presentation only, physics unchanged):
+  the planet of any drawn hub / ship, of the selected / followed body, or
+  of a moon reaching the cube is presented; a presented planet presents
+  all its moons; any presented body is pickable. Script audit on every
+  navigation state: SystemHierarchyScript 31/31 (new: moons + Earth with
+  its hub, 14 states); the OLD policy fails it (cube0_entered: Earth not
+  presented).
+- CHECKS: --flight-check 22/22, EliteMapPointerCheck PASS,
+  EliteGalaxyPointerCheck PASS, game builds; in-game captures
+  D:/tmp/elite_v2_{modern,elite,anime}_*.png, Lab D:/tmp/elite_flight_v2.
+- OPEN: drone-view capture (DEV ELITE_DEV_DRONE_VIEW_AT) did not switch
+  the view in the nav-stress session, so no close-up player ship frame;
+  HUD keeps its look; Modern limb a little bright; prediction offset of the
+  player ship vs interpolated world (pre-existing) not examined.
+
 ### OPEN
 - Galaxy spatial frame: HUMAN acceptance with a real mouse not done (the
   scripted runs drive the production input path, not a hand). Known: the

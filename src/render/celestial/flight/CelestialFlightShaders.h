@@ -38,6 +38,7 @@ uniform vec3 uHazeColour;    // atmosphere tint (day sky at the horizon)
 uniform float uHazeDensity;  // 0 = airless
 uniform float uContourKm;    // Elite contour spacing
 uniform float uDetailStrength; // procedural micro relief (normal tilt)
+uniform float uFarFade;        // 0 near .. 1 small disc: less contrast far away
 
 float hash13(vec3 p)
 {
@@ -137,12 +138,12 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
 
     if (uStyle == 0)
     {
-        // Elite: black opaque body, phosphor lines.
+        // Elite Classic: black opaque body, light grey vector lines.
         float coast = isGas > 0.5 ? 0.0 : lineMask(coastKm, 1.3);
-        float contour = isWater > 0.5 ? 0.0 : contourMask(heightKm / max(uContourKm, 1e-3), 0.9) * 0.55;
+        float contour = isWater > 0.5 ? 0.0 : contourMask(heightKm / max(uContourKm, 1e-3), 0.9) * 0.45;
         if (isGas > 0.5)
             contour = contourMask(dot(land, vec3(0.3, 0.5, 0.2)) * 9.0, 1.0) * 0.6;
-        float grid = lattice >= 0.0 ? lattice * 0.45 : 0.0; // precomputed lattice line mask
+        float grid = lattice >= 0.0 ? lattice * 0.35 : 0.0; // precomputed lattice line mask
         float nv = dot(nSphere, viewDir);
         float rim = rimMask(nv, 1.6);
         // The outline stays bright on the night side (a whole circle, as in
@@ -160,9 +161,11 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
         // ink lines on the rim and coast.
         vec3 base = posterize(pow(max(albedo, vec3(0.0)), vec3(1.0 / 2.2)) * 1.1, 5.0);
         float l = dot(normalize(mix(nSphere, nRelief, 0.55)), L);
-        vec3 lit = vec3(1.0, 0.98, 0.92);
-        vec3 mid = vec3(0.78, 0.66, 0.70);
-        vec3 shade = vec3(0.20, 0.22, 0.42);
+        // Restrained tones: the style is in the bands and the ink, not in
+        // an extra palette.
+        vec3 lit = vec3(1.0, 0.99, 0.96);
+        vec3 mid = vec3(0.70, 0.70, 0.74);
+        vec3 shade = vec3(0.24, 0.26, 0.34);
         vec3 light = l > 0.42 ? lit : (l > 0.04 ? mid : shade);
         vec3 col = base * light * uSunColour;
         if (isWater > 0.5)
@@ -176,7 +179,7 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
         if (uHazeDensity > 0.0 && nv < 0.28 && l > 0.0)
             col = mix(col, uHazeColour * 1.2, 0.45);
         float ink = max(rimMask(nv, 2.2), isGas > 0.5 ? 0.0 : lineMask(coastKm, 1.1) * 0.8);
-        col = mix(col, vec3(0.04, 0.04, 0.10), ink);
+        col = mix(col, vec3(0.05, 0.05, 0.08), ink);
         if (uHazeDensity > 0.0)
         {
             float haze = 1.0 - exp(-dist * uHazeDensity);
@@ -186,24 +189,39 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
         return col;
     }
 
-    // Modern.
-    float nl = max(dot(nRelief, L), 0.0) * day;
-    nl = mix(nl, max(ns, 0.0), 0.15 * isGas);
-    vec3 col = albedo * uSunColour * (nl * (1.0 - cloudShadow * 0.6) + 0.015);
+    // Modern: the game's volumetric polygon look applied to a planet - a
+    // calm grey body whose form reads from light, tone and edges (not a
+    // photo, no day / night show). Land is a lighter grey than the sea,
+    // clouds white, the coast and the limb drawn as faint light edges.
+    float lum = dot(albedo, vec3(0.30, 0.55, 0.15));
+    vec3 grey = vec3(pow(max(lum, 0.0), 0.8) * 0.62) * vec3(0.96, 0.98, 1.0);
+    if (isWater > 0.5)
+        grey = vec3(0.035, 0.040, 0.048);
+    float wrap = clamp((dot(nRelief, L) + 0.35) / 1.35, 0.0, 1.0);
+    float form = 0.16 + 0.84 * wrap * smoothstep(-0.35, 0.25, ns);
+    float sun = dot(uSunColour, vec3(0.33));
+    vec3 col = grey * sun * form * (1.0 - cloudShadow * 0.45);
     if (isWater > 0.5)
     {
+        // One broad glint; its sharpness comes with the wave detail.
         vec3 h = normalize(L + viewDir);
-        float spec = pow(max(dot(nRelief, h), 0.0), 90.0) * 0.6 + pow(max(dot(nRelief, h), 0.0), 12.0) * 0.06;
-        col += uSunColour * spec * day * (1.0 - cloudShadow);
+        float spec = pow(max(dot(nRelief, h), 0.0), 40.0) * 0.18;
+        col += vec3(sun * spec * day * (1.0 - cloudShadow));
     }
-    col += vec3(1.0, 0.72, 0.38) * emission * emission * (1.0 - day) * 0.6;
+    float nv = max(dot(nSphere, viewDir), 0.0);
+    // Edges: the coastline and the limb as faint light lines.
+    col += vec3(0.10) * (isGas > 0.5 ? 0.0 : lineMask(coastKm, 1.0)) * (0.3 + 0.7 * day);
+    col = mix(col, vec3(0.55, 0.57, 0.60) * (0.35 + 0.65 * day), rimMask(nv, 1.4) * 0.6);
     if (uHazeDensity > 0.0)
     {
         float haze = 1.0 - exp(-dist * uHazeDensity);
-        float nv = max(dot(nSphere, viewDir), 0.0);
-        haze = max(haze, pow(1.0 - nv, 5.0) * 0.6 * min(1.0, uHazeDensity * 3.0e5));
-        col = mix(col, uHazeColour * (0.05 + 0.95 * day) * uSunColour, clamp(haze, 0.0, 1.0));
+        haze = max(haze, pow(1.0 - nv, 5.0) * 0.5 * min(1.0, uHazeDensity * 3.0e5));
+        vec3 hazeGrey = mix(vec3(dot(uHazeColour, vec3(0.33))), uHazeColour, 0.25);
+        col = mix(col, hazeGrey * (0.10 + 0.35 * day) * sun, clamp(haze * 0.6, 0.0, 1.0));
     }
+    // Far away: simpler, less contrast.
+    float mean = dot(col, vec3(0.333));
+    col = mix(col, vec3(mean) * 0.9 + 0.02, uFarFade * 0.5);
     // Linear albedo and light -> display (no sRGB framebuffer).
     return pow(max(col, vec3(0.0)), vec3(1.0 / 2.2));
 }
@@ -276,9 +294,13 @@ void main()
         emission = n.a;
         nr = normalize(uBodyToWorld * (n.xyz * 2.0 - 1.0));
     }
-    // Micro relief below the texel (screen-footprint band limited).
-    if (uMicroWavelength > 0.0 && uIsGas < 0.5)
+    // Micro relief below the texel (screen-footprint band limited) - land
+    // only. The sea from the globe distance is a smooth surface: waves
+    // (tens of metres) are far below a pixel there.
+    if (uMicroWavelength > 0.0 && uIsGas < 0.5 && coastKm >= 0.0)
         nr = microNormal(nr, d * (uRadius / uMicroWavelength), dist * uPixelAngle / uMicroWavelength);
+    if (coastKm < 0.0)
+        nr = ns;
     float shadow = 0.0;
     if (uHasClouds > 0.5)
         shadow = texture(uCloudCover, normalize(d + 0.004 * (transpose(uBodyToWorld) * uSunDir))).r;
@@ -348,6 +370,8 @@ uniform vec3 uBodyCentre;   // body centre relative to the camera (world)
 uniform float uPixelAngle;
 uniform float uMicroScale;  // 1 / micro wavelength (m)
 uniform vec3 uAnchorBody;   // anchor in the body frame, mod the micro period
+uniform vec3 uAnchorWave;   // anchor mod the wave period (256 waves)
+const float WaveLengthM = 40.0;
 out vec4 fragColour;
 void writeLogDepth();
 vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float emission, float ice,
@@ -360,8 +384,18 @@ void main()
     vec3 v = -vWorld / dist;
     vec3 ns = normalize(vWorld - uBodyCentre);
     vec3 nr = normalize(vNormal);
-    float footprint = dist * uPixelAngle * uMicroScale;
-    nr = microNormal(nr, (vBodyPos + uAnchorBody) * uMicroScale, footprint);
+    if (vCoast >= 0.0)
+    {
+        float footprint = dist * uPixelAngle * uMicroScale;
+        nr = microNormal(nr, (vBodyPos + uAnchorBody) * uMicroScale, footprint);
+    }
+    else
+    {
+        // Water LOD: wave normals of a physical wavelength (WaveLengthM)
+        // appear only where a wave spans more than about a pixel - none
+        // from orbit, gradually on approach, full near the sea.
+        nr = microNormal(ns, (vBodyPos + uAnchorWave) / WaveLengthM, dist * uPixelAngle / WaveLengthM);
+    }
     vec3 land = vLand.rgb * vLand.rgb;
     vec3 water = vWater.rgb * vWater.rgb;
     float alpha;
@@ -458,12 +492,12 @@ void main()
     }
     else
     {
-        float a = smoothstep(0.30, 0.78, c) * uOpacity;
+        float a = smoothstep(0.30, 0.78, c) * uOpacity * 0.8;
         if (a < 0.003)
             discard;
         float l = max(dot(n, L), 0.0);
         float thick = smoothstep(0.5, 1.0, c);
-        vec3 col = uSunColour * (0.08 + 0.92 * day) * mix(1.0, 0.72, thick * (1.0 - l));
+        vec3 col = vec3(dot(uSunColour, vec3(0.33))) * 0.78 * (0.10 + 0.90 * day) * mix(1.0, 0.72, thick * (1.0 - l));
         // Forward scattering at the limb.
         col += uSunColour * pow(max(dot(-v, L), 0.0), 8.0) * 0.25 * day;
         fragColour = vec4(col * (0.04 + 0.96 * day), a * (0.35 + 0.65 * day + 0.2));
@@ -574,8 +608,17 @@ void main()
         // Anime: flat stepped sky bands and a clean limb halo.
         float lum = dot(colour, vec3(0.3, 0.5, 0.2));
         float band = floor(clamp(lum * 3.0, 0.0, 3.0) + 0.5) / 3.0;
-        colour = normalize(uScatter + 0.15) * band * 1.4 * uSunColour;
+        // Restrained: a soft desaturated tint, the style is the stepping.
+        vec3 tint = normalize(uScatter + 0.15);
+        colour = mix(vec3(dot(tint, vec3(0.33))), tint, 0.45) * band * 1.25 * uSunColour;
         alpha = floor(alpha * 4.0 + 0.5) / 4.0;
+    }
+    if (uStyle == 1)
+    {
+        // Modern: a nearly grey limb and sky (a faint cool tint only).
+        colour = mix(vec3(dot(colour, vec3(0.33))), colour, 0.3);
+        if (hitsGround)
+            colour *= 0.4; // the surface tone carries the form, not the air
     }
     vec3 mapped = 1.0 - exp(-colour * 1.6);
     // Sky: the scattered light also hides what is behind it (stars).
@@ -721,6 +764,7 @@ in vec4 vColour;
 in float vKind;
 uniform int uStyle;
 uniform vec3 uLineColour;
+uniform float uTime;        // seconds (presentation clock): corona flicker
 out vec4 fragColour;
 void writeLogDepth();
 void main()
@@ -732,6 +776,33 @@ void main()
     if (uStyle == 0)
     {
         // Elite: a crisp dot or an outlined star with rays.
+        if (vKind > 1.0)
+        {
+            // The sun, Elite Classic: a bright white disc with a living,
+            // unstable edge and a flickering corona of rays - no lens flare.
+            float disc = clamp(vKind - 1.0, 0.05, 0.9);
+            float ang = atan(q.y, q.x);
+            float t = uTime;
+            float wobble = 1.0 + 0.05 * sin(ang * 7.0 + t * 5.3) * sin(ang * 3.0 - t * 3.1) +
+                           0.025 * sin(ang * 13.0 - t * 9.7);
+            float edge = disc * wobble;
+            float sectors = 28.0;
+            float u = (ang + 3.14159265) / 6.2831853 * sectors;
+            float k = floor(u);
+            float flick = fract(sin(k * 12.9898 + floor(t * 11.0) * 78.233) * 43758.5453);
+            float len = edge * (1.18 + 0.75 * flick * flick);
+            float ray = (1.0 - smoothstep(0.08, 0.30, abs(fract(u) - 0.5))) * step(edge, r) *
+                        (1.0 - smoothstep(len * 0.7, len, r));
+            float halo = exp(-max(r - edge, 0.0) / max(0.10 * disc, 1e-3)) * (0.55 + 0.45 * flick);
+            a = r < edge ? 1.0 : max(ray * 0.85, halo * 0.7);
+            col = vec3(0.96);
+            a = clamp(a, 0.0, 1.0) * clamp(vColour.a * 1.5, 0.0, 1.0);
+            if (a < 0.004)
+                discard;
+            fragColour = vec4(col * a, a);
+            writeLogDepth();
+            return;
+        }
         if (vKind > 0.5)
         {
             float ring = 1.0 - clamp(abs(r - 0.35) * 18.0, 0.0, 1.0);

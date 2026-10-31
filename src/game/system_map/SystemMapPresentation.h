@@ -21,6 +21,10 @@ namespace game::system_map
         float systemScale = 1.0f;
 
         std::vector<world::celestial::SystemMapBody> bodies;
+        // Every moon of the system and its planet, before visibility
+        // filtering (presentation audits: a presented planet must present
+        // all its moons).
+        std::vector<std::pair<std::string, std::string>> moonParents;
     };
 
     std::string systemMapObjectStableKey(

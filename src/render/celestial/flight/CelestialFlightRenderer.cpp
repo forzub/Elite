@@ -626,7 +626,8 @@ struct CelestialFlightRenderer::Impl
     glm::dvec3 terrainBodyCentreRel {0.0};
     glm::dvec3 terrainCameraBody {0.0};
 
-    glm::vec3 lineColour() const { return {0.45f, 1.0f, 0.55f}; }
+    // Elite Classic: light grey vector lines (monochrome).
+    glm::vec3 lineColour() const { return {0.86f, 0.87f, 0.88f}; }
 
     bool init(const FlightRenderQuality& q)
     {
@@ -1347,6 +1348,7 @@ struct CelestialFlightRenderer::Impl
         terrain.set("uHazeDensity", hazeDensity);
         terrain.set("uContourKm", static_cast<float>(rt.contourKm));
         terrain.set("uDetailStrength", quality.detailNormals ? 0.35f : 0.0f);
+        terrain.set("uFarFade", 0.0f);
         const double finest = surface::terrain_chart::spacingM(rt.levels.begin()->first, b.radiusM);
         const double micro = std::max(0.5, finest * 0.7);
         terrain.set("uMicroScale", static_cast<float>(1.0 / micro));
@@ -1368,6 +1370,7 @@ struct CelestialFlightRenderer::Impl
                                                   static_cast<float>(((g.key.cj % 64) + 64) % 64)));
             const glm::dvec3 a = glm::mod(g.anchorBody, glm::dvec3(256.0 * micro));
             terrain.set("uAnchorBody", glm::vec3(a));
+            terrain.set("uAnchorWave", glm::vec3(glm::mod(g.anchorBody, glm::dvec3(256.0 * 40.0))));
             glBindVertexArray(g.vao);
             glDrawElements(GL_TRIANGLES, g.indexCount, GL_UNSIGNED_INT, nullptr);
             stats.terrainTriangles += g.indexCount / 3;
@@ -1901,6 +1904,20 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
         if (b.kind == FlightBodyKind::Star)
         {
             const glm::vec3 colour = blackbody(b.temperatureK);
+            // Elite Classic sun: the whole disc + unstable edge + corona is
+            // one sprite while it fits in a point (disc radius < ~70 px).
+            const bool eliteSun = style == CelestialRenderStyle::EliteStyle && it.pxRadius >= 0.75 &&
+                                  it.pxRadius * 2.0 * 3.4 <= 480.0;
+            if (eliteSun)
+            {
+                // Stylised: the disc never smaller than ~10 px radius on
+                // screen (a retro sun is a presence, not a dot).
+                const double shownRadius = std::max(it.pxRadius, 10.0 * height / 1080.0);
+                const float size = static_cast<float>(shownRadius * 2.0 * 3.4);
+                const float disc = static_cast<float>(std::clamp(shownRadius * 2.0 / size, 0.06, 0.9));
+                sprites.push_back(SpriteVertex {glm::vec3(it.rel), glm::vec4(colour, 1.0f), size, 1.0f + disc});
+                continue;
+            }
             if (it.pxRadius >= 0.75)
             {
                 ScopedTimer timer(timers, TGlobes);
@@ -2003,6 +2020,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             const double texel = tex ? b.radiusM * 1.5708 / rt->globe.size : 0.0;
             globe.set("uMicroWavelength", quality.detailNormals && tex ? static_cast<float>(texel * 0.6) : 0.0f);
             globe.set("uDetailStrength", 0.25f);
+            globe.set("uFarFade", static_cast<float>(std::clamp((40.0 - it.pxRadius) / 38.0, 0.0, 1.0)));
             const bool cloudShadow = style == CelestialRenderStyle::Modern && rt->cloud.current;
             globe.set("uHasClouds", cloudShadow ? 1.0f : 0.0f);
             glActiveTexture(GL_TEXTURE0);
@@ -2128,6 +2146,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
         sprite.use();
         setCommon(sprite, glm::vec3(0, 0, 1), glm::vec3(1));
         sprite.set("uViewProj", viewProj);
+        sprite.set("uTime", static_cast<float>(std::fmod(nowSeconds(), 1000.0)));
         glBindVertexArray(spriteVao);
         glBindBuffer(GL_ARRAY_BUFFER, spriteVbo);
         glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(sprites.size() * sizeof(SpriteVertex)), sprites.data(),

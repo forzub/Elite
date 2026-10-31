@@ -1320,6 +1320,7 @@ if ((systemMapMode || serviceMode))
                 glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
                 const bool ok = core::dev::writePngRgb(capture.path, width, height, rgb);
                 std::cerr << "[FrameCapture] " << capture.path << (ok ? " written" : " FAILED") << std::endl;
+                break; // one capture per frame: equal times = consecutive frames
             }
         m_window->swapBuffers();
         core::hitch::mark("swap_buffers");

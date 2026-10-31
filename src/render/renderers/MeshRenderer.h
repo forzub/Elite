@@ -45,6 +45,19 @@ public:
         float edgeIntensity = 0.65f
     );
 
+    // Instanced production edges (edge_shader_thick_instanced: edge.geom +
+    // edge.frag), visually identical to draw() with the edge shader.
+    void drawEdgesInstancedThick(
+        const render::MeshGPU& mesh,
+        GLuint edgeShader,
+        const glm::mat4& vp,
+        const std::vector<glm::mat4>& models,
+        const LightingParams& lighting,
+        const glm::vec3& cameraPos,
+        int viewportWidth = 0,
+        int viewportHeight = 0
+    );
+
 
     
     void setViewportSize(int width, int height) noexcept

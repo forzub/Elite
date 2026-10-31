@@ -418,6 +418,90 @@ namespace
 
 
 
+        struct InstancedPassStats
+        {
+            std::uint32_t instances = 0; // logical render instances
+            std::uint32_t batches = 0;   // unique MeshGPU in the queue
+            std::uint32_t fillDraws = 0; // actual GPU fill submissions
+            std::uint32_t edgeDraws = 0; // actual GPU edge submissions
+        };
+
+        // drawQueuedMeshPasses() with GPU instancing: every draw sharing one
+        // MeshGPU (= same LOD geometry, same state variant) under the same
+        // shaders / lighting is ONE fill and ONE edge submission; the model
+        // matrix (current pose, spinning modules included) is per instance.
+        // Fill of all batches first, then edges: same depth contract.
+        InstancedPassStats drawQueuedMeshPassesInstanced(
+            MeshRenderer& meshRenderer,
+            const std::vector<QueuedMeshDraw>& draws,
+            GLuint fillShader,
+            GLuint fillInstancedShader,
+            GLuint edgeShader,
+            GLuint edgeInstancedShader,
+            const glm::mat4& vp,
+            const LightingParams& params,
+            const glm::vec3& cameraLocalPosition
+        )
+        {
+            InstancedPassStats stats;
+            std::vector<const render::MeshGPU*> order;
+            std::unordered_map<const render::MeshGPU*, std::vector<const QueuedMeshDraw*>> groups;
+            groups.reserve(draws.size());
+            for (const QueuedMeshDraw& draw : draws)
+            {
+                if (!draw.gpu)
+                    continue;
+                ++stats.instances;
+                auto [it, inserted] = groups.try_emplace(draw.gpu);
+                if (inserted)
+                    order.push_back(draw.gpu);
+                it->second.push_back(&draw);
+            }
+            stats.batches = static_cast<std::uint32_t>(order.size());
+
+            std::vector<glm::mat4> models;
+            const auto collectModels = [&](const std::vector<const QueuedMeshDraw*>& group) {
+                models.clear();
+                for (const QueuedMeshDraw* draw : group)
+                    models.push_back(draw->model);
+            };
+
+            for (const render::MeshGPU* gpu : order)
+            {
+                const auto& group = groups[gpu];
+                if (group.size() > 1 && fillInstancedShader != 0)
+                {
+                    collectModels(group);
+                    meshRenderer.drawInstanced(*gpu, fillInstancedShader, vp, models, params, cameraLocalPosition);
+                    ++stats.fillDraws;
+                    continue;
+                }
+                for (const QueuedMeshDraw* draw : group)
+                {
+                    meshRenderer.draw(*gpu, fillShader, 0, draw->mvp, draw->model, params, cameraLocalPosition);
+                    ++stats.fillDraws;
+                }
+            }
+
+            for (const render::MeshGPU* gpu : order)
+            {
+                const auto& group = groups[gpu];
+                if (group.size() > 1 && edgeInstancedShader != 0)
+                {
+                    collectModels(group);
+                    meshRenderer.drawEdgesInstancedThick(*gpu, edgeInstancedShader, vp, models, params, cameraLocalPosition);
+                    ++stats.edgeDraws;
+                    continue;
+                }
+                for (const QueuedMeshDraw* draw : group)
+                {
+                    meshRenderer.draw(*gpu, 0, edgeShader, draw->mvp, draw->model, params, cameraLocalPosition);
+                    ++stats.edgeDraws;
+                }
+            }
+            return stats;
+        }
+
         void drawQueuedMeshFillOnly(
             MeshRenderer& meshRenderer,
             const std::vector<QueuedMeshDraw>& draws,
@@ -3121,6 +3205,9 @@ if (policy.drawObjects)
     if (policy.drawObjects && dbg.shouldDrawMeshes())
     {
         std::vector<QueuedMeshDraw> queuedPreparedStationDraws;
+        std::vector<QueuedMeshDraw> queuedModelAssetStationDraws;
+        bool modelAssetLogNow = false;
+        std::FILE* modelAssetLog = nullptr;
         std::vector<QueuedMeshDraw> queuedPreparedAsteroidDraws;
         std::vector<QueuedMeshDraw> queuedPreparedPlanetDraws;
         std::vector<QueuedMeshDraw> queuedPreparedDefaultDraws;
@@ -3197,6 +3284,8 @@ if (policy.drawObjects)
             const double nowS = renderProfileNowMs() * 0.001;
             const bool logNow = lodLog && cameraName == "mainCam" && nowS - m_modelAssetLogTime >= 1.0;
             if (logNow) m_modelAssetLogTime = nowS;
+            modelAssetLogNow = logNow;
+            modelAssetLog = lodLog;
             for (const auto& object : prepared.modelAssetObjects)
             {
                 if (!policy.shouldDrawObject(object.type) || !object.gpu)
@@ -3237,9 +3326,8 @@ if (policy.drawObjects)
                         continue;
                     // d.assetTransform already carries the node motion.
                     const glm::mat4 model = assetModel * d.assetTransform;
-                    queuedPreparedStationDraws.push_back(QueuedMeshDraw {gpu, proj * renderView * model, model});
+                    queuedModelAssetStationDraws.push_back(QueuedMeshDraw {gpu, proj * renderView * model, model});
                     m_lastStats.partsDrawn++;
-                    m_lastStats.drawCalls += 2;
                 }
                 if (logNow)
                 {
@@ -3264,6 +3352,80 @@ if (policy.drawObjects)
                 LightingParams::station(),
                 cameraLocalPosition
             );
+        }
+
+        // ModelAsset stations: instance batches (ELITE_MODEL_ASSET_INSTANCING=0
+        // = one submission per instance, for A/B). CPU submission and GPU
+        // time (timestamp queries, main camera) go to the LOD telemetry.
+        if (!queuedModelAssetStationDraws.empty())
+        {
+            // DEV "alt": instancing on every other main-camera frame, for an
+            // A/B pixel comparison of consecutive frames.
+            static const int instancingMode = [] {
+                const char* v = std::getenv("ELITE_MODEL_ASSET_INSTANCING");
+                if (v && v[0] == '0') return 0;
+                if (v && v[0] == 'a') return 2;
+                return 1;
+            }();
+            static std::uint64_t mainFrames = 0;
+            if (cameraName == "mainCam")
+                ++mainFrames;
+            const bool instancing = instancingMode == 2 ? (mainFrames & 1u) != 0 : instancingMode == 1;
+            const bool timeGpu = modelAssetLog && cameraName == "mainCam";
+            if (timeGpu)
+                m_modelAssetGpuTimer.begin();
+            const double submitStartMs = renderProfileNowMs();
+            InstancedPassStats pass;
+            if (instancing)
+            {
+                pass = drawQueuedMeshPassesInstanced(
+                    m_meshRenderer,
+                    queuedModelAssetStationDraws,
+                    largeObjectShader,
+                    ShaderLibrary::instance().get("large_object_shader_instanced"),
+                    edgeShader,
+                    ShaderLibrary::instance().get("edge_shader_thick_instanced"),
+                    proj * renderView,
+                    LightingParams::station(),
+                    cameraLocalPosition
+                );
+            }
+            else
+            {
+                drawQueuedMeshPasses(
+                    m_meshRenderer,
+                    queuedModelAssetStationDraws,
+                    largeObjectShader,
+                    edgeShader,
+                    LightingParams::station(),
+                    cameraLocalPosition
+                );
+                std::unordered_set<const render::MeshGPU*> unique;
+                for (const auto& d : queuedModelAssetStationDraws)
+                    unique.insert(d.gpu);
+                pass.instances = static_cast<std::uint32_t>(queuedModelAssetStationDraws.size());
+                pass.batches = static_cast<std::uint32_t>(unique.size());
+                pass.fillDraws = pass.instances;
+                pass.edgeDraws = pass.instances;
+            }
+            const double submitMs = renderProfileNowMs() - submitStartMs;
+            if (timeGpu)
+                m_modelAssetGpuTimer.end();
+            m_lastStats.drawCalls += pass.fillDraws + pass.edgeDraws;
+            m_lastStats.modelAssetInstances += pass.instances;
+            m_lastStats.modelAssetBatches += pass.batches;
+            m_lastStats.modelAssetFillDraws += pass.fillDraws;
+            m_lastStats.modelAssetEdgeDraws += pass.edgeDraws;
+            m_lastStats.cpuModelAssetSubmitMs += submitMs;
+            if (modelAssetLogNow)
+            {
+                std::fprintf(modelAssetLog,
+                             "DRAW instancing=%d instances=%u unique_meshes=%u fill_draws=%u edge_draws=%u "
+                             "cpu_submit_ms=%.3f gpu_ms=%.3f\n",
+                             instancing ? 1 : 0, pass.instances, pass.batches, pass.fillDraws, pass.edgeDraws,
+                             submitMs, m_modelAssetGpuTimer.lastMs());
+                std::fflush(modelAssetLog);
+            }
         }
 
         if (!queuedPreparedAsteroidDraws.empty())
@@ -3560,6 +3722,11 @@ if (policy.drawObjects)
                 << " debug_ms=" << debugCallbackMs
                 << " draw_calls=" << m_lastStats.drawCalls
                 << " parts=" << m_lastStats.partsDrawn
+                << " ma_instances=" << m_lastStats.modelAssetInstances
+                << " ma_meshes=" << m_lastStats.modelAssetBatches
+                << " ma_fill=" << m_lastStats.modelAssetFillDraws
+                << " ma_edge=" << m_lastStats.modelAssetEdgeDraws
+                << " ma_submit_ms=" << m_lastStats.cpuModelAssetSubmitMs
                 << '\n';
             lastScenePerfReportMs = now;
         }
@@ -4226,4 +4393,40 @@ void SceneRenderer::renderVisualDrones(
             cameraLocalPosition
         );
     }
+}
+
+void GpuPassTimer::begin()
+{
+    if (!m_initialised)
+    {
+        glGenQueries(Ring * 2, m_queries);
+        m_initialised = true;
+    }
+    for (int i = 0; i < Ring; ++i)
+    {
+        if (!m_pending[i])
+            continue;
+        GLint available = 0;
+        glGetQueryObjectiv(m_queries[i * 2 + 1], GL_QUERY_RESULT_AVAILABLE, &available);
+        if (!available)
+            continue;
+        GLuint64 t0 = 0, t1 = 0;
+        glGetQueryObjectui64v(m_queries[i * 2], GL_QUERY_RESULT, &t0);
+        glGetQueryObjectui64v(m_queries[i * 2 + 1], GL_QUERY_RESULT, &t1);
+        m_lastMs = static_cast<double>(t1 - t0) * 1.0e-6;
+        m_pending[i] = false;
+    }
+    m_active = !m_pending[m_index];
+    if (m_active)
+        glQueryCounter(m_queries[m_index * 2], GL_TIMESTAMP);
+}
+
+void GpuPassTimer::end()
+{
+    if (!m_active)
+        return;
+    glQueryCounter(m_queries[m_index * 2 + 1], GL_TIMESTAMP);
+    m_pending[m_index] = true;
+    m_index = (m_index + 1) % Ring;
+    m_active = false;
 }

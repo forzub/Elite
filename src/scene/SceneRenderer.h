@@ -33,6 +33,25 @@ class DebugLineRenderer;
 
 
 
+// GPU time of one render pass: timestamp query pairs in a small ring, read
+// back a few frames later without stalling the pipeline.
+class GpuPassTimer
+{
+public:
+    void begin();
+    void end();
+    double lastMs() const { return m_lastMs; } // -1 = no result yet
+
+private:
+    static constexpr int Ring = 4;
+    unsigned int m_queries[Ring * 2] = {};
+    bool m_pending[Ring] = {};
+    int m_index = 0;
+    bool m_initialised = false;
+    bool m_active = false;
+    double m_lastMs = -1.0;
+};
+
 struct SceneRenderStats
 {
     uint32_t drawCalls = 0;
@@ -67,6 +86,13 @@ struct SceneRenderStats
     uint32_t visualFullShipsDrawn = 0;
     uint32_t visualShipPartsDrawn = 0;
 
+    // ModelAsset path: logical instances vs actual GPU submissions.
+    uint32_t modelAssetInstances = 0;
+    uint32_t modelAssetBatches = 0;
+    uint32_t modelAssetFillDraws = 0;
+    uint32_t modelAssetEdgeDraws = 0;
+    double cpuModelAssetSubmitMs = 0.0;
+
     void reset()
     {
         drawCalls = 0;
@@ -97,6 +123,12 @@ struct SceneRenderStats
         visualProxyShipsDrawn = 0;
         visualFullShipsDrawn = 0;
         visualShipPartsDrawn = 0;
+
+        modelAssetInstances = 0;
+        modelAssetBatches = 0;
+        modelAssetFillDraws = 0;
+        modelAssetEdgeDraws = 0;
+        cpuModelAssetSubmitMs = 0.0;
     }
 
     void add(const SceneRenderStats& other)
@@ -129,6 +161,12 @@ struct SceneRenderStats
         visualProxyShipsDrawn += other.visualProxyShipsDrawn;
         visualFullShipsDrawn += other.visualFullShipsDrawn;
         visualShipPartsDrawn += other.visualShipPartsDrawn;
+
+        modelAssetInstances += other.modelAssetInstances;
+        modelAssetBatches += other.modelAssetBatches;
+        modelAssetFillDraws += other.modelAssetFillDraws;
+        modelAssetEdgeDraws += other.modelAssetEdgeDraws;
+        cpuModelAssetSubmitMs += other.cpuModelAssetSubmitMs;
     }
 };
 
@@ -280,6 +318,7 @@ private:
     // Per object (and camera) presentation hysteresis for ModelAsset objects.
     std::unordered_map<std::uint64_t, elite::model_asset::presentation::Selection> m_modelAssetSelections;
     double m_modelAssetLogTime = -1.0;
+    GpuPassTimer m_modelAssetGpuTimer;
     render::celestial_flight::FlightFrameBuilder m_celestialFrameBuilder;
     render::celestial_flight::FlightCelestialFrame m_celestialFrame;
     bool m_celestialFlightFailed = false;

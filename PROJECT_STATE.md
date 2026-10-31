@@ -978,6 +978,31 @@ hitches = frames > 80 ms after start.
   EliteModelAssetPresentationCheck failures=0 incl. new moving-part and
   measured-error cases.
 
+### ModelAsset station: GPU instancing (user order 2026-10-31 h, stage 1)
+- Scope (order h): instancing on the ModelAsset path, real mesh
+  simplification in the editor LOD generator (component cull stays), manual
+  UI pass + Quick Start. ModelAsset / ladder / five LODs / measured per-node
+  error are the fixed base.
+- INSTANCING (compiled + in-game A/B, same build, ELITE_MODEL_ASSET_INSTANCING
+  =0|1|alt): SceneRenderer queues ModelAsset draws separately and
+  drawQueuedMeshPassesInstanced() groups them by MeshGPU (= LOD geometry +
+  state variant; one lighting / shader set per queue): one fill + one edge
+  submission per group, per-instance current model matrix (spinning ring
+  included), fill of all groups before edges. Existing MeshGPU::drawInstanced
+  / drawEdgesInstanced reused; new programs large_object_shader_instanced
+  (large_object_fill.frag) and edge_shader_thick_instanced (edge.geom +
+  edge.frag = the production thick / faded edges); MeshRenderer::
+  drawInstanced picks large-object uniforms by shader type,
+  drawEdgesInstancedThick mirrors setupEdgePass state.
+- Visual equivalence (3 styles): alternating-mode consecutive frames
+  (DEV capture now takes one request per frame) - adjacent mixed-mode diffs
+  are smaller than same-mode diffs two frames apart, i.e. scene motion only.
+- A/B (nav-stress station ~600 px, 45 samples / mode): instances 29, unique
+  meshes 6; fill + edge draws 58 -> 12; CPU submission 0.764 -> 0.278 ms; GPU
+  (timestamp queries) 5.79 -> 5.73 ms; tris 579.6k both; frame main_ms median
+  9.15 -> 8.68 (noisy). Telemetry: DRAW line in ELITE_MODEL_ASSET_LOD_LOG,
+  ma_* fields in [ScenePerf]; drawCalls now counts real submissions there.
+
 ### OPEN
 - Galaxy spatial frame: HUMAN acceptance with a real mouse not done (the
   scripted runs drive the production input path, not a hand). Known: the

@@ -47,6 +47,23 @@ void InitShaders()
         ShaderProgram::LargeObjectFill
     );
 
+    // Instanced twins of the large-object fill and the thick edge programs
+    // (same fragment / geometry stages): ModelAsset instance batches.
+    shaders.load(
+        "large_object_shader_instanced",
+        "assets/shaders/mesh/large_object_fill_instanced.vert",
+        "assets/shaders/mesh/large_object_fill.frag",
+        ShaderProgram::LargeObjectFill
+    );
+
+    shaders.load(
+        "edge_shader_thick_instanced",
+        "assets/shaders/mesh/edge_thick_instanced.vert",
+        "assets/shaders/mesh/edge.geom",
+        "assets/shaders/mesh/edge.frag",
+        ShaderProgram::Edge
+    );
+
     shaders.load(
         "ship_lines",
         "assets/shaders/wiremesh/ship_lines.vert",

@@ -143,14 +143,13 @@ void MeshRenderer::drawInstanced(
     if (!meshShader || models.empty())
         return;
 
-    // Переиспользуем lighting uniforms от обычного mesh_fill.
-    // MVP/M/normalMat он тоже выставит, но instanced shader их не использует.
-    lighting.applyShipUniforms(
-        meshShader,
-        glm::mat4(1.0f),
-        glm::mat4(1.0f),
-        cameraPos
-    );
+    // Переиспользуем lighting uniforms обычного fill-шейдера того же типа
+    // (mesh_fill / large_object_fill). MVP/M/normalMat он тоже выставит, но
+    // instanced shader их не использует.
+    if (ShaderLibrary::instance().getType(meshShader) == ShaderProgram::LargeObjectFill)
+        lighting.applyLargeObjectUniforms(meshShader, glm::mat4(1.0f), glm::mat4(1.0f), cameraPos);
+    else
+        lighting.applyShipUniforms(meshShader, glm::mat4(1.0f), glm::mat4(1.0f), cameraPos);
 
     glUseProgram(meshShader);
 
@@ -278,5 +277,50 @@ void MeshRenderer::drawEdgesInstanced(
 
     glDepthMask(GL_TRUE);
 
+    glUseProgram(0);
+}
+
+// Production thick / faded edges for an instance batch: the same uniforms and
+// depth / blend state as setupEdgePass(), the model matrix per instance.
+void MeshRenderer::drawEdgesInstancedThick(
+    const render::MeshGPU& mesh,
+    GLuint edgeShader,
+    const glm::mat4& vp,
+    const std::vector<glm::mat4>& models,
+    const LightingParams& lighting,
+    const glm::vec3& cameraPos,
+    int viewportWidth,
+    int viewportHeight
+)
+{
+    if (!edgeShader || models.empty())
+        return;
+
+    if (viewportWidth <= 0 || viewportHeight <= 0)
+    {
+        viewportWidth = m_viewportWidth > 0 ? m_viewportWidth : 800;
+        viewportHeight = m_viewportHeight > 0 ? m_viewportHeight : 600;
+    }
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    lighting.applyEdgeUniforms(edgeShader, glm::mat4(1.0f), glm::mat4(1.0f), cameraPos, viewportWidth, viewportHeight);
+    const GLint vpLoc = cachedUniformLocation(edgeShader, "VP");
+    if (vpLoc != -1)
+        glUniformMatrix4fv(vpLoc, 1, GL_FALSE, glm::value_ptr(vp));
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDepthFunc(GL_LESS);
+    glEnable(GL_POLYGON_OFFSET_LINE);
+    glPolygonOffset(-0.5f, -0.5f);
+
+    mesh.drawEdgesInstanced(models);
+
+    glDisable(GL_POLYGON_OFFSET_LINE);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
     glUseProgram(0);
 }

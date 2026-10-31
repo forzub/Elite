@@ -349,6 +349,12 @@ private:
         shot("open");
         call([this] {
             record("open: the S0 root is the parent", m_view->state().hierarchyParent.level == 0, parentText());
+            // Every major planet (Earth included) is presented and on screen.
+            const auto bodies = bodyLocator ? bodyLocator() : std::vector<std::pair<std::string, glm::vec2>>();
+            std::string names;
+            for (const auto& [id, s] : bodies)
+                names += id.substr(id.rfind('.') + 1) + " ";
+            record("open: all 8 major planets presented", bodies.size() >= 8, names);
         });
         checkFills("open");
 

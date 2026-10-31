@@ -44,7 +44,12 @@ enum class CelestialSurfaceSourceKind
 
     // Explicit temporary placeholder.
     // This must never be silently treated as authoritative.
-    PlaceholderKnownBodyProcedural
+    PlaceholderKnownBodyProcedural,
+
+    // The deterministic surface generator (src/world/celestial/surface)
+    // run on the body's generated physical descriptor
+    // (body_descriptor_path): the same field the Planet Lab streams.
+    ProceduralFromBodyDescriptor
 };
 
 inline const char* toString(CelestialSurfaceSourceKind k)
@@ -59,6 +64,9 @@ inline const char* toString(CelestialSurfaceSourceKind k)
 
         case CelestialSurfaceSourceKind::PlaceholderKnownBodyProcedural:
             return "PlaceholderKnownBodyProcedural";
+
+        case CelestialSurfaceSourceKind::ProceduralFromBodyDescriptor:
+            return "ProceduralFromBodyDescriptor";
 
         default:
             return "PlaceholderKnownBodyProcedural";
@@ -79,6 +87,12 @@ inline bool fromString(
     if (s == "ProceduralFromClassSeed" || s == "ProceduralGeneric")
     {
         out = CelestialSurfaceSourceKind::ProceduralFromClassSeed;
+        return true;
+    }
+
+    if (s == "ProceduralFromBodyDescriptor")
+    {
+        out = CelestialSurfaceSourceKind::ProceduralFromBodyDescriptor;
         return true;
     }
 
@@ -264,6 +278,10 @@ struct CelestialBodyVisualDescriptor
     // For Sol bodies this points to:
     // src/assets/data/celestial/source_catalog/sol/<body>.source.json
     std::string sourceCatalogPath;
+
+    // ProceduralFromBodyDescriptor: the generated body JSON
+    // (elite.generated_body.v1) the surface is derived from.
+    std::string bodyDescriptorPath;
 
     // Data confidence marker.
     // Examples:

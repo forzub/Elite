@@ -95,6 +95,10 @@ struct SurfaceSample
     bool water = false;         // ocean or lake surface (LOD-independent)
     bool lake = false;
     double waterLevelM = 0.0;   // surface of that water
+    // Signed coast value (LOD-independent): macro height above the water
+    // level that applies here, > 0 land, < 0 water. Its zero set is the
+    // coastline (oceans, lakes).
+    double coastM = 1.0e4;
     float temperatureK = 0.0f;  // climate (from the macro height)
     float moisture = 0.0f;
     float iceMask = 0.0f;       // permanent ice / ice cap

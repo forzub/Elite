@@ -162,7 +162,6 @@ private:
     bool m_environmentProfilesAttempted = false;
     bool m_environmentProfilesLoaded = false;
 
-    std::uint32_t m_environmentMapOpenSeed = 0u;
     std::string m_environmentRenderSessionKey;
 
     std::unordered_map<std::string, GLuint>

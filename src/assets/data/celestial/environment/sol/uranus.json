@@ -94,7 +94,7 @@
   "clouds": {
     "enabled": true,
     "pattern": "banded",
-    "seed_policy": "random_on_map_open",
+    "seed_policy": "world_time",
     "seed_base": 7119,
     "coverage_threshold": 0.42,
     "density": 0.82,
@@ -393,7 +393,7 @@
       ]
     },
     "generation": {
-      "seed_policy": "random_on_session",
+      "seed_policy": "world_time",
       "seed_base": 1337,
       "weather_scale": 5,
       "mass_scale": 10,

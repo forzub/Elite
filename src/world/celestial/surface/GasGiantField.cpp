@@ -89,8 +89,8 @@ void GasGiantField::storms(const glm::dvec3& dir, std::vector<Storm>& out) const
                 Storm s;
                 s.id = h;
                 s.center = glm::normalize(q);
-                s.radiusRad = 0.02 + 0.07 * std::pow(unitFromHash(h, 4), 2.0);
-                s.red = unitFromHash(h, 5) < 0.25 && !m_iceGiant;
+                s.radiusRad = 0.03 + 0.10 * std::pow(unitFromHash(h, 4), 2.0);
+                s.red = unitFromHash(h, 5) < 0.35 && !m_iceGiant;
                 out.push_back(s);
             }
 }
@@ -121,7 +121,7 @@ SurfaceAppearance GasGiantField::appearance(const SurfaceSample&, const glm::dve
     const double warp = fbm(m_seedEddies, stretched, m_radius, eddy, 0.0, 0.0).macro;
     double lat = std::asin(std::clamp(dir.y, -1.0, 1.0));
     const double edge = std::abs(std::cos(lat * (2.0 * m_jets + 1.0)));
-    lat += warp * 0.05 * (0.4 + 0.6 * edge);
+    lat += warp * 0.12 * (0.35 + 0.65 * edge);
 
     // Storm vortices: swirl the latitude inside the oval.
     std::vector<Storm> list;
@@ -147,7 +147,9 @@ SurfaceAppearance GasGiantField::appearance(const SurfaceSample&, const glm::dve
     const double fine = fbm(m_seedEddies + 3, stretched, m_radius, OctaveSpec {m_radius * 0.05, 1.92, 0.5, 5, 2.0},
                             0.0, 0.0)
                             .macro;
-    const float t = static_cast<float>(std::clamp(0.5 + 0.5 * band * m_contrast + 0.18 * fine, 0.0, 1.0));
+    // Sharpened band edges and fine turbulence (festoons, filaments).
+    const double sharp = std::tanh(band * 2.2) / std::tanh(2.2);
+    const float t = static_cast<float>(std::clamp(0.5 + 0.5 * sharp * m_contrast + 0.32 * fine, 0.0, 1.0));
     glm::vec3 c = glm::mix(m_belt, m_zone, t);
     // Polar regions are darker and bluer (haze).
     const float polar = static_cast<float>(smoothstep(0.75, 0.98, std::abs(dir.y)));

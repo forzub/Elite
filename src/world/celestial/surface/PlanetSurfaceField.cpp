@@ -97,6 +97,7 @@ PlanetSurfaceField::PlanetSurfaceField(const BodySurfaceDescriptor& body)
     m_seedClimate = layerSeed(m_surfaceSeed, "climate");
     m_seedVariation = layerSeed(m_surfaceSeed, "albedo_variation");
     m_seedBoulders = layerSeed(m_surfaceSeed, "boulders");
+    m_seedUplands = layerSeed(m_surfaceSeed, "uplands");
 
     const double finest = 0.25;
     // Coastlines / landmarks: everything down to ~R/5000 (1.3 km on Earth).
@@ -124,19 +125,22 @@ PlanetSurfaceField::PlanetSurfaceField(const BodySurfaceDescriptor& body)
     m_rangeSpec.octaves = octavesDownTo(m_rangeSpec.baseWavelengthM, finest, m_rangeSpec.lacunarity);
     m_rangeSpec.expStrength = 5.0; // Tobler mu ~ 1.02
 
-    m_hillSpec.baseWavelengthM = std::min(m_radius * 0.025, 150000.0);
+    // Hills live at 40 km and below (the continents carry the larger scales).
+    m_hillSpec.baseWavelengthM = std::min(m_radius * 0.006, 40000.0);
     m_hillSpec.gain = std::pow(m_hillSpec.lacunarity, -h);
     m_hillSpec.octaves = octavesDownTo(m_hillSpec.baseWavelengthM, finest, m_hillSpec.lacunarity);
     m_hillSpec.expStrength = 4.0;
 
-    m_damping = 0.5 + 6.0 * std::clamp(body.erosionPotential, 0.0, 1.0);
+    // The accumulated slope is in noise-lattice units (~1 per octave): a
+    // damping of ~0.3 already flattens eroded valleys, larger kills relief.
+    m_damping = 0.05 + 0.30 * std::clamp(body.erosionPotential, 0.0, 1.0);
 
     // Tectonic style -> mountain ranges.
     const std::string& tect = body.tectonicRegime;
     m_rangeStrength = tect == "mobile_lid" ? 0.55 : tect == "episodic" ? 0.45 : tect == "stagnant_lid" ? 0.22 : 0.15;
     if (m_archetype == SurfaceArchetype::Icy)
         m_rangeStrength = 0.12;
-    m_hillStrength = 0.10 + 0.14 * std::clamp(body.roughness, 0.0, 1.0);
+    m_hillStrength = 0.10 + 0.20 * std::clamp(body.roughness, 0.0, 1.0);
 
     m_ocean = m_archetype == SurfaceArchetype::Terrestrial && body.oceanCoverage > 0.0;
     m_volcanoProbability = volcanismLevel(body.volcanism);
@@ -151,6 +155,8 @@ PlanetSurfaceField::PlanetSurfaceField(const BodySurfaceDescriptor& body)
     const double density = std::clamp(body.craterDensity, 0.0, 1.0) *
                            (1.0 - 0.6 * std::clamp(body.resurfacingRate, 0.0, 1.0)) *
                            (1.0 - 0.5 * std::clamp(body.erosionPotential, 0.0, 1.0));
+    // A world with oceans and weather keeps few, degraded craters.
+    const double terrestrialFactor = m_ocean ? 0.2 : 1.0;
     double cell = m_radius * 0.30;
     while (cell > 160.0)
     {
@@ -158,7 +164,7 @@ PlanetSurfaceField::PlanetSurfaceField(const BodySurfaceDescriptor& body)
         c.cellM = cell;
         c.minRadius = 0.10;
         c.maxRadius = 0.34;
-        c.probability = std::clamp(density * 0.85, 0.0, 0.95);
+        c.probability = std::clamp(density * 0.85 * terrestrialFactor, 0.0, 0.95);
         m_craterClasses.push_back(c);
         cell /= 3.2;
     }
@@ -236,7 +242,7 @@ PlanetSurfaceField::PlanetSurfaceField(const BodySurfaceDescriptor& body)
 
     // What LOD detail can add to the macro height (checks, skirts).
     const double rangeH = m_reliefM * 1.4 * m_rangeStrength;
-    const double hillH = m_reliefM * m_hillStrength;
+    const double hillH = m_reliefM * m_hillStrength * 1.7 * 2.0;
     m_detailBoundM = rangeH * tailShare(m_rangeSpec, m_macroCutoffM) +
                      hillH * tailShare(m_hillSpec, m_macroCutoffM) + 0.25 * m_macroCutoffM + 3.0;
 }
@@ -279,10 +285,18 @@ PlanetSurfaceField::Terrain PlanetSurfaceField::terrain(const glm::dvec3& dir, d
     const BandSum ridged = ridgedMultifractal(m_seedRanges, dir, m_radius, m_rangeSpec, m_macroCutoffM, minWavelengthM);
     const BandSum hills = dampedFbm(m_seedHills, dir, m_radius, m_hillSpec, m_damping, m_macroCutoffM, minWavelengthM);
     const double rangeH = m_reliefM * 1.4 * m_rangeStrength;
-    const double hillH = m_reliefM * m_hillStrength * (m_ocean ? 0.5 + 0.5 * smoothstep(-0.05, 0.1, c) : 1.0);
-
-    t.macro = base + belt * ridged.macro * rangeH + hills.macro * hillH;
-    t.total = base + belt * ridged.total * rangeH + hills.total * hillH;
+    // Uplands vs plains: a regional field scales the hill relief (rugged
+    // hill country, dissected plateaus, flat lowland plains).
+    static const OctaveSpec uplandSpec {0.0, 1.92, 0.5, 3, 1.5};
+    OctaveSpec upSpec = uplandSpec;
+    upSpec.baseWavelengthM = m_radius * 0.35;
+    const double upland = smoothstep(-0.15, 0.35, fbm(m_seedUplands, dir, m_radius, upSpec, 0.0, 0.0).macro);
+    const double hillH = m_reliefM * m_hillStrength * (0.3 + 1.4 * upland) *
+                         (m_ocean ? 0.5 + 0.5 * smoothstep(-0.05, 0.1, c) : 1.0);
+    // Hill relief is mostly at the regional scales: the first octaves of
+    // the damped series are boosted relative to the continental base.
+    t.macro = base + belt * ridged.macro * rangeH + hills.macro * hillH * 2.0;
+    t.total = base + belt * ridged.total * rangeH + hills.total * hillH * 2.0;
     if (belt * ridged.macro > 0.18)
     {
         const glm::dvec3 cell = glm::floor(dir * 4.0);
@@ -327,7 +341,8 @@ void PlanetSurfaceField::craterCandidates(int classIndex, const glm::dvec3& dir,
                 l.freshness = std::pow(unitFromHash(h, 5), 3.0);
                 // Simple bowls are deep; complex craters flatter.
                 const double depthRatio = l.radiusM < 8000.0 ? 0.2 : 0.2 * std::pow(8000.0 / l.radiusM, 0.6);
-                const double degradation = 1.0 - 0.75 * std::clamp(m_body.erosionPotential, 0.0, 1.0);
+                const double degradation =
+                    (1.0 - 0.75 * std::clamp(m_body.erosionPotential, 0.0, 1.0)) * (m_ocean ? 0.4 : 1.0);
                 l.depthM = l.radiusM * depthRatio * (0.45 + 0.55 * (0.3 + 0.7 * l.freshness)) * degradation;
                 out.push_back(l);
             }
@@ -388,13 +403,18 @@ void PlanetSurfaceField::lakeCandidates(const glm::dvec3& dir, std::vector<Landm
 std::optional<PlanetSurfaceField::Landmark> PlanetSurfaceField::lakeInCell(std::int64_t cx, std::int64_t cy,
                                                                           std::int64_t cz) const
 {
-    const std::uint64_t key = latticeHash(0x1A4Eull, cx, cy, cz);
+    // Per-thread memo (no lock contention between streaming workers); the
+    // field's identity seed keys it, so fields never share entries.
+    thread_local std::unordered_map<std::uint64_t, std::optional<Landmark>> cache;
+    thread_local std::uint64_t cacheOwner = 0;
+    if (cacheOwner != m_seedLakes || cache.size() > 200000)
     {
-        std::shared_lock lock(m_lakeMutex);
-        const auto it = m_lakeCache.find(key);
-        if (it != m_lakeCache.end())
-            return it->second;
+        cache.clear();
+        cacheOwner = m_seedLakes;
     }
+    const std::uint64_t key = latticeHash(0x1A4Eull, cx, cy, cz);
+    if (const auto it = cache.find(key); it != cache.end())
+        return it->second;
     const double cellM = m_radius * 0.045;
     std::optional<Landmark> result;
     do
@@ -436,8 +456,7 @@ std::optional<PlanetSurfaceField::Landmark> PlanetSurfaceField::lakeInCell(std::
         l.levelM = at.macro;
         result = l;
     } while (false);
-    std::unique_lock lock(m_lakeMutex);
-    m_lakeCache.emplace(key, result);
+    cache.emplace(key, result);
     return result;
 }
 
@@ -628,8 +647,9 @@ SurfaceSample PlanetSurfaceField::sample(const glm::dvec3& dir, double minWavele
     lakeCandidates(dir, marks);
     for (const Landmark& l : marks)
     {
-        const double wobble = fbm(l.id, dir, m_radius, OctaveSpec {l.radiusM * 1.2, 1.92, 0.5, 3, 0.0}, 0.0, 0.0).macro;
-        const double r = glm::length(x - l.center * m_radius) / l.radiusM * (1.0 + 0.35 * wobble);
+        // Irregular shore: the radius is warped by a 4-octave field.
+        const double wobble = fbm(l.id, dir, m_radius, OctaveSpec {l.radiusM * 0.9, 1.92, 0.55, 4, 0.0}, 0.0, 0.0).macro;
+        const double r = glm::length(x - l.center * m_radius) / l.radiusM * (1.0 + 0.75 * wobble);
         if (r >= 1.6)
             continue;
         if (r < 1.0)
@@ -653,15 +673,27 @@ SurfaceSample PlanetSurfaceField::sample(const glm::dvec3& dir, double minWavele
     }
 
     s.macroHeightM = macro;
-    if (m_ocean && !s.lake && macro < 0.0)
+    // The ocean reaches only what is connected to it: inland the effective
+    // sea level drops away (continuous in the continent signal), so an
+    // inland basin below the datum stays dry land instead of a pit lake.
+    const double seaLevel = m_ocean ? -2500.0 * smoothstep(0.0, 0.10, t.continent) : -1.0e9;
+    if (s.lake)
+        s.coastM = macro - s.waterLevelM;
+    else if (m_ocean)
+        s.coastM = macro - seaLevel;
+    if (m_ocean && !s.lake && macro < seaLevel)
     {
         s.water = true;
         s.waterLevelM = 0.0;
     }
-    if (m_body.terrainProfile == "lava_ocean" && macro < 0.0)
+    if (m_body.terrainProfile == "lava_ocean")
     {
-        s.water = true; // a molten sea at the datum
-        s.waterLevelM = 0.0;
+        s.coastM = macro;
+        if (macro < 0.0)
+        {
+            s.water = true; // a molten sea at the datum
+            s.waterLevelM = 0.0;
+        }
     }
 
     climate(dir, macro, t.continent, t.ranges, s.temperatureK, s.moisture);
@@ -697,7 +729,7 @@ SurfaceSample PlanetSurfaceField::sample(const glm::dvec3& dir, double minWavele
     }
     else
     {
-        const double floorM = m_ocean ? 0.5 : -1.0e9;
+        const double floorM = m_ocean ? std::min(0.5, seaLevel + 0.5) : -1.0e9;
         double h = std::max(total, floorM);
         if (minWavelengthM < 8.0)
         {
@@ -766,7 +798,7 @@ SurfaceAppearance PlanetSurfaceField::appearance(const SurfaceSample& s, const g
             if (m_vegetation)
                 veg = static_cast<float>(smoothstep(-4.0, 6.0, tc) * smoothstep(0.18, 0.45, s.moisture));
             const float sand = static_cast<float>(smoothstep(0.26, 0.12, s.moisture) * smoothstep(2.0, 10.0, tc)) +
-                               static_cast<float>(smoothstep(12.0, 2.0, s.heightM)) * 0.7f;
+                               static_cast<float>(smoothstep(12.0, 2.0, s.coastM)) * 0.7f; // beaches
             const float open = 1.0f - rock;
             w[m(SurfaceMaterial::Snow)] = snow * (1.0f - 0.6f * steep);
             const float rest = 1.0f - w[m(SurfaceMaterial::Snow)];

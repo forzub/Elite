@@ -18,9 +18,10 @@ namespace
         return glm::dvec3(r * std::cos(phi), y, r * std::sin(phi));
     }
 
-    // The viewpoints look at a landmark: the highest macro relief between
-    // 55 deg N and S (a mountain range / volcano / crater rim) - a place
-    // where LOD detail and landmark stability are both visible.
+    // The viewpoints look at a landmark where LOD detail and landmark
+    // stability are both visible: on a world with oceans a mountain range
+    // of moderate height near a coast in the temperate belt (not the
+    // snow-buried top), elsewhere the highest relief (crater rim, volcano).
     void chooseFocus(LabBody& body)
     {
         const SurfaceField& field = *body.field;
@@ -33,6 +34,29 @@ namespace
                 continue;
             const SurfaceSample s = field.sample(d, field.referenceRadiusM() * 0.01);
             double score = s.water ? -1.0e30 : s.macroHeightM;
+            if (!body.isSmallBody && body.descriptor.oceanCoverage > 0.0 && field.solidSurface())
+            {
+                const double lat = std::abs(std::asin(d.y)) * 57.29577951308232;
+                const bool range = s.featureClass == FeatureClass::MountainRange;
+                const bool green = s.biome == Biome::TemperateForest || s.biome == Biome::Grassland ||
+                                   s.biome == Biome::BorealForest;
+                // Local relief: the height range in a +-15 km stencil.
+                double lo = s.macroHeightM, hi = s.macroHeightM;
+                if (!s.water && green)
+                {
+                    const glm::dvec3 e = glm::normalize(glm::cross(glm::dvec3(0, 1, 0), d) + glm::dvec3(1e-9, 0, 0));
+                    const glm::dvec3 n = glm::cross(d, e);
+                    const double step = 15000.0 / field.referenceRadiusM();
+                    for (const glm::dvec3& o : {e, -e, n, -n})
+                    {
+                        const double hh = field.sample(glm::normalize(d + o * step), 2000.0).macroHeightM;
+                        lo = std::min(lo, hh);
+                        hi = std::max(hi, hh);
+                    }
+                }
+                score = s.water || lat < 25.0 || lat > 55.0 || !green ? -1.0e30
+                                                                   : (hi - lo) + (range ? 300.0 : 0.0);
+            }
             if (!field.solidSurface())
                 score = s.featureClass == FeatureClass::Storm ? 1.0 - std::abs(d.y) : -std::abs(d.y);
             if (score > best)

@@ -66,6 +66,25 @@ int main(int argc, char** argv)
                     b.isSmallBody ? "small_body" : planet_lab::archetypeName(planet_lab::surfaceArchetype(b.descriptor)),
                     b.focusLabel.c_str());
 
+    // --probe: the height profile along 200 km eastward from each focus.
+    for (int i = 1; i < argc; ++i)
+        if (std::string(argv[i]) == "--probe")
+        {
+            for (const auto& b : bodies)
+            {
+                const glm::dvec3 up = b.focusDir;
+                const glm::dvec3 east = glm::normalize(glm::cross(glm::dvec3(0, 1, 0), up));
+                std::printf("%s:", b.label.c_str());
+                for (int k = 0; k <= 40; ++k)
+                {
+                    const glm::dvec3 d = glm::normalize(up + east * (k * 5000.0 / b.field->referenceRadiusM()));
+                    std::printf(" %.0f", b.field->sample(d, 100.0).heightM);
+                }
+                std::printf("\n");
+            }
+            return 0;
+        }
+
     if (checks || !record.empty() || !verify.empty())
         return planet_lab::runLabChecks(bodies, record, verify) == 0 ? 0 : 1;
     return planet_lab::runViewer(bodies, capture);

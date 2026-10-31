@@ -220,7 +220,7 @@
       ]
     },
     "generation": {
-      "seed_policy": "random_on_session",
+      "seed_policy": "world_time",
       "seed_base": 7207,
       "weather_scale": 3.5,
       "mass_scale": 9,

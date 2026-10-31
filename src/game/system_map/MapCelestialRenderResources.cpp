@@ -391,28 +391,6 @@ namespace
         return hash;
     }
 
-    std::uint32_t makeEnvironmentRuntimeSeed()
-    {
-        static std::uint32_t counter = 0u;
-
-        ++counter;
-
-        const auto now =
-            std::chrono::high_resolution_clock::now()
-                .time_since_epoch()
-                .count();
-
-        std::uint64_t mixed =
-            static_cast<std::uint64_t>(now);
-
-        mixed ^=
-            static_cast<std::uint64_t>(counter) *
-            0x9E3779B97F4A7C15ull;
-
-        mixed ^= mixed >> 32;
-
-        return static_cast<std::uint32_t>(mixed);
-    }
 
     render::celestial::ProceduralCloudPattern toProceduralCloudPattern(
         world::celestial::visual::EnvironmentCloudPattern pattern
@@ -703,17 +681,11 @@ void MapCelestialRenderResources::beginEnvironmentRenderSessionIfNeeded(
 
 
 
-    if (m_environmentRenderSessionKey == key &&
-        m_environmentMapOpenSeed != 0u)
-    {
+    if (m_environmentRenderSessionKey == key)
         return;
-    }
 
     m_environmentRenderSessionKey =
         key;
-
-    m_environmentMapOpenSeed =
-        makeEnvironmentRuntimeSeed();
 
     // Важно:
     // JSON не перезагружаем.
@@ -724,8 +696,6 @@ void MapCelestialRenderResources::beginEnvironmentRenderSessionIfNeeded(
     std::cout
         << "[SystemMapRenderer] environment render session: "
         << key
-        << " seed="
-        << m_environmentMapOpenSeed
         << "\n";
 }
 
@@ -1150,24 +1120,19 @@ MapCelestialRenderResources::cloudStylesForBody(
                 std::to_string(layerIndex)
             );
 
-        if (clouds.generation.seedPolicy ==
-                "random_on_session" ||
-            clouds.generation.seedPolicy ==
-                "random_on_map_open")
-        {
-            style.seed =
-                clouds.generation.seedBase ^
-                m_environmentMapOpenSeed ^
-                identitySeed ^
-                layerSeed;
-        }
-        else
-        {
-            style.seed =
-                clouds.generation.seedBase ^
-                identitySeed ^
-                layerSeed;
-        }
+        /*
+            Cloud morphology is part of the body's identity: the seed comes
+            from (seed base, body identity, layer) only - the same planet has
+            the same sky whenever the map is opened, after a restart or a
+            save/load. Weather motion comes from the universe time the
+            caller supplies every frame (ProceduralCloudLayer animation).
+            The former random_on_session / random_on_map_open policies are
+            read as "world_time" (CelestialEnvironmentProfile).
+        */
+        style.seed =
+            clouds.generation.seedBase ^
+            identitySeed ^
+            layerSeed;
 
         /*
             Покрытие каждого слоя берём из layer.coverage,

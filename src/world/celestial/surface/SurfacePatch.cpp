@@ -73,14 +73,30 @@ SurfacePatchData generateSurfacePatch(const SurfaceField& field, const PatchKey&
             if (s.water)
                 normal = dirs[k];
             const double slope = 1.0 - glm::dot(normal, dirs[k]);
-            const SurfaceAppearance a = field.appearance(s, dirs[k], slope);
+            // Land and water appearance of every vertex: the renderer picks
+            // per pixel by the interpolated coast value.
+            SurfaceSample asLand = s;
+            asLand.water = false;
+            SurfaceSample asWater = s;
+            asWater.water = true;
+            if (!s.water)
+                asWater.waterLevelM = s.macroHeightM + 5.0; // shallow
+            const SurfaceAppearance a = field.appearance(asLand, dirs[k], s.water ? 0.0 : slope);
+            const SurfaceAppearance aw = field.appearance(asWater, dirs[k], 0.0);
 
             PatchVertex v;
             v.position = glm::vec3(pos[k] - out.origin);
             v.normal = glm::vec3(normal);
             v.albedo = a.albedo;
-            v.emission = a.emission;
-            v.water = s.water ? 1.0f : 0.0f;
+            v.emission = s.water ? aw.emission : a.emission;
+            v.waterAlbedo = aw.albedo;
+            // The macro height relative to the water level, unclamped: its
+            // linear interpolation crosses zero where the macro coastline
+            // does (sign kept exactly at the vertices).
+            v.coast = s.water ? static_cast<float>(std::min(-0.01, s.coastM))
+                              : static_cast<float>(std::max(0.01, std::min(1.0e4, s.coastM)));
+            if (s.water && field.solidSurface())
+                v.normal = glm::vec3(dirs[k]);
             const auto wt = [&](SurfaceMaterial m) { return a.weights[static_cast<std::size_t>(m)]; };
             v.detail = glm::vec4(wt(SurfaceMaterial::Rock) + wt(SurfaceMaterial::Basalt),
                                  wt(SurfaceMaterial::Regolith) + wt(SurfaceMaterial::Sand) +

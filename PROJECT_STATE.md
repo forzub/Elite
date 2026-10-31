@@ -651,6 +651,77 @@ hitches = frames > 80 ms after start.
 - OPEN: human mouse acceptance of both maps; Detail / Hub maps: the menu
   covers overlay glyphs and Hub modules only (no body picking there).
 
+### Procedural planet / asteroid / cloud surfaces + Planet Lab (user order 2026-10-31 c)
+- User: deterministic procedural visual generation of planets, rocky surfaces,
+  asteroids, cloud layers, climate-driven appearance, LOD from map to
+  landing; maximum reproducibility (same identity -> same continents,
+  ranges, craters, lakes; LOD adds detail, never re-generates); appearance
+  derived from the generated physical descriptor; curated real data kept as
+  a provider; deterministic weather; detail budget by reachability; a
+  visual demo; a reproducibility regression check; plus "Earth not found on
+  the Solar System map".
+- Found in the old system (audit): CelestialTextureBaker is offline-only
+  (`EliteGame --bake-celestial-textures`), seeds are literal JSON values,
+  equirect global maps + a tile pyramid nobody reads; every Sol body is
+  ImportedRealData; the runtime draws one equirect texture per body (no
+  geometric LOD); CPU weather / cloud generators unused; map clouds got a
+  clock-based random seed per map opening (`random_on_*`). No C++ reads the
+  descriptor's terrain_profile / surface_materials / weather_potential /
+  orbital_access_index.
+- NEW `src/world/celestial/surface` (library EliteCelestialSurface, -O2,
+  no GL; contract `PLANET_GENERATOR_ALGORITHM.md`): coordinate-addressed
+  seeds (GeneratorVersion 1, one tag per layer), exponential-gradient noise
+  with macro / LOD-detail band split, PlanetSurfaceField (continents with
+  descriptor ocean coverage, range belts, uplands, damped hills, crater
+  classes, volcanoes, lakes, ice caps, boulders, climate, biomes,
+  materials from surface_materials), GasGiantField (bands, eddies, storms;
+  no ground), SmallBodyField (ellipsoid + fracture planes + crater list +
+  lattice craters), CloudWeatherField (layers from pressure, f(seed, world
+  time)), cube-sphere patches with skirts, threaded streamer, reachability
+  policy (ground 0.25 m / overflight 250 m / cloud deck).
+- Reused / unified: GenerationRandom deriveSeed; generated body + reservoir
+  JSON; the baker gets source kind ProceduralFromBodyDescriptor (equirect
+  maps sampled from the same field -> existing normal / material / LOD set;
+  verified by a scratch bake 1024x512 of the Earth descriptor); map clouds:
+  identity seed only (random_on_* -> world_time, 49 asset JSONs migrated,
+  clock seed removed); motion was already universe time.
+- System Map Earth: root cause - the hierarchy filter hid a body whose
+  CENTRE was outside the current parent cube (Earth leaves a small parent in
+  minutes, its hub / ships stayed drawn), and a followed / selected body was
+  dropped from the frame so the follow could not move the parent. Fix: a
+  body stays when its sphere reaches the cube, when it is selected or
+  followed, or when an object (hub, ship) inside the cube orbits it.
+- Planet Lab `tools/planet_lab` (ElitePlanetLab): viewer (bodies 1..6:
+  earth_like = Sol Earth descriptor through the procedural provider, rocky =
+  Mercury, asteroid = Sol belt candidate, gas_giant = Jupiter, dry = Mars,
+  hostile = Alpha Centauri A i 180 bar; F1..F5 far orbit / low orbit /
+  regional / approach / ground; L LOD cap; C clouds; W wireframe; T / Space
+  weather time; title + stdout telemetry), camera-relative + log-depth
+  rendering, screen-space-error quadtree (5 px), per-pixel coastline from
+  the macro field, seamless 1024-m periodic micro detail, `--capture DIR`
+  (PNG per body / viewpoint + LOD-cap 3 / 6 pairs).
+- CHECKS (`ElitePlanetLab --check`, all PASS): restart reproducibility (86
+  checksums recorded, verified by a separate process: 0 differ); patch
+  order / threads identical; parent/child (water, landmark id, macro height
+  identical at coincident vertices; height diff <= detail bound); coastline
+  (20000 directions x 6 band limits 50 km .. 0.25 m: 0 water / landmark /
+  macro changes); seams (same face < 1 mm, across faces < 1 cm, T-junction
+  gap <= 0.03 skirt); Earth climate (polar ice 1.0 vs tropics 0, desert
+  peak 20-30 deg, 7-8 biomes along a latitude); clouds same time -> same
+  sky, 6 h -> change; policy (gas giant no ground, 180-bar no ground);
+  asteroid silhouette LOD-independent. Perf (one thread, -O2): 15-19 us /
+  ground sample, 15-17 ms / patch; streaming 35-45 ms / patch on 14 workers.
+- GAME (Debug): EliteGame builds; System Map script 30/30 incl. "all 8
+  major planets presented" (Earth); EliteGalaxyPointerCheck PASS,
+  EliteMapPointerCheck PASS.
+- Not done / OPEN: the game's map renderers still draw equirect textures
+  (no in-game cube-sphere renderer; the patch streamer is ready for it); no
+  procedural body is configured in the game data (baker path verified on a
+  scratch root only); human visual review of the Lab pending. Journal of
+  decisions, doubts and proposals: D:/tmp/PROCEDURAL_PLANET_NOTES.md (e.g.
+  every generated temperate planet has ocean_coverage 1.0; no biosphere fact
+  in the descriptor).
+
 ### OPEN
 - Galaxy spatial frame: HUMAN acceptance with a real mouse not done (the
   scripted runs drive the production input path, not a hand). Known: the

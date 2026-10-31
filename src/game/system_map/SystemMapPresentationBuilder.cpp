@@ -162,6 +162,7 @@ namespace
     void filterBodiesByPresentationLevel(
         SystemMapView& view,
         const Viewport& viewport,
+        const world::celestial::SystemMapSnapshot& system,
         SystemMapPresentation& presentation
     )
     {
@@ -175,6 +176,12 @@ namespace
         const std::string& followed = view.state().cameraFollowBodyId;
         const GalaxyHierarchyBox box = view.hierarchyBox();
         constexpr double KmPerAu = 149597870.7;
+        // The planet a hub / ship in the cube orbits stays with it (a hub
+        // in low orbit can sit in a cube its planet's sphere misses).
+        std::unordered_set<std::string> anchors;
+        for (const auto& object : system.objects)
+            if (!object.parentBodyId.empty() && view.hierarchyContains(object.positionAu))
+                anchors.insert(object.parentBodyId);
 
         std::unordered_set<std::string> hidden;
         for (const auto& body : presentation.bodies)
@@ -184,7 +191,7 @@ namespace
             // stays, and so do the selected and the followed body: a planet
             // moving out of a small parent (Earth, ~107,000 km/h) must not
             // vanish while its hub and ships are still drawn.
-            const bool keep = body.id == selected || body.id == followed;
+            const bool keep = body.id == selected || body.id == followed || anchors.count(body.id) != 0;
             if (!keep && !galaxyHierarchyIntersectsSphere(box, body.positionAu, body.radiusKm / KmPerAu))
             {
                 hidden.insert(body.id);
@@ -267,7 +274,7 @@ SystemMapPresentation SystemMapPresentationBuilder::build(
         pending.reset();
     }
 
-    filterBodiesByPresentationLevel(view, viewport, presentation);
+    filterBodiesByPresentationLevel(view, viewport, system, presentation);
 
     if (updateHoverPresentation &&
         view.state().navigationGrid.enabled() &&

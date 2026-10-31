@@ -4,6 +4,8 @@
 #include "CelestialVisualTypes.h"
 #include "CelestialSourceCatalog.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
+#include "src/world/celestial/surface/PlanetSurfaceField.h"
+#include "src/world/celestial/surface/SurfaceIdentity.h"
 
 #include <algorithm>
 #include <cmath>
@@ -11,6 +13,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <thread>
 #include <vector>
 #include <utility>
 #include <cctype>
@@ -3771,12 +3774,132 @@ json descriptorToJson(const CelestialBodyVisualDescriptor& d)
     return j;
 }
 
+/*
+    ProceduralFromBodyDescriptor: the global equirect maps are samples of
+    the SAME deterministic surface field the cube-sphere streaming uses
+    (src/world/celestial/surface), at the texel's band limit - the map and
+    the close-up geometry are one surface, not two generators. Rows run
+    north (v = 0) to south, longitude from atan2(z, x) (the map shaders'
+    convention).
+*/
+bool bakeDescriptorSurfaceBody(
+    CelestialBodyVisualDescriptor desc,
+    const std::filesystem::path& outputRoot
+)
+{
+    namespace fs = std::filesystem;
+    namespace surf = world::celestial::surface;
+
+    surf::BodySurfaceDescriptor body;
+    std::string error;
+    if (desc.bodyDescriptorPath.empty() ||
+        !surf::loadGeneratedBody(resolveProjectPath(desc.bodyDescriptorPath).string(), body, &error))
+    {
+        std::cerr << "[CelestialTextureBaker] ProceduralFromBodyDescriptor: " << error << " ("
+                  << desc.systemFolderName << "/" << desc.bodyFolderName << ")\n";
+        return false;
+    }
+    const std::unique_ptr<surf::SurfaceField> field = surf::makeSurfaceField(body);
+
+    const auto [w, h] = resolveTextureSize(desc);
+    const double texelM = 2.0 * 3.14159265358979323846 * field->referenceRadiusM() / static_cast<double>(w);
+    ImageRgba8 albedo;
+    ImageRgba8 height;
+    albedo.width = height.width = w;
+    albedo.height = height.height = h;
+    albedo.pixels.resize(static_cast<std::size_t>(w * h * 4));
+    height.pixels.resize(albedo.pixels.size());
+    std::vector<surf::SurfaceSample> samples(static_cast<std::size_t>(w * h));
+    const auto dirAt = [&](int x, int y) {
+        const double lon = ((x + 0.5) / w - 0.5) * 2.0 * 3.14159265358979323846;
+        const double lat = (0.5 - (y + 0.5) / h) * 3.14159265358979323846;
+        return glm::dvec3(std::cos(lat) * std::cos(lon), std::sin(lat), std::cos(lat) * std::sin(lon));
+    };
+    // Rows in parallel: every texel is an independent pure sample.
+    {
+        const int threads = std::max(1, static_cast<int>(std::thread::hardware_concurrency()));
+        std::vector<std::thread> pool;
+        for (int t = 0; t < threads; ++t)
+            pool.emplace_back([&, t] {
+                for (int y = t; y < h; y += threads)
+                    for (int x = 0; x < w; ++x)
+                        samples[static_cast<std::size_t>(y * w + x)] = field->sample(dirAt(x, y), texelM * 2.0);
+            });
+        for (auto& thread : pool)
+            thread.join();
+    }
+    double minH = 1.0e30, maxH = -1.0e30;
+    for (const auto& s : samples)
+    {
+        minH = std::min(minH, s.heightM);
+        maxH = std::max(maxH, s.heightM);
+    }
+    for (int y = 0; y < h; ++y)
+        for (int x = 0; x < w; ++x)
+        {
+            const auto& s = samples[static_cast<std::size_t>(y * w + x)];
+            const auto& e = samples[static_cast<std::size_t>(y * w + (x + 1) % w)];
+            const auto& n = samples[static_cast<std::size_t>(std::max(0, y - 1) * w + x)];
+            const double slope = std::min(1.0, std::hypot(e.heightM - s.heightM, n.heightM - s.heightM) / texelM);
+            const surf::SurfaceAppearance a = field->appearance(s, dirAt(x, y), 1.0 - 1.0 / std::sqrt(1.0 + slope * slope));
+            const std::size_t i = static_cast<std::size_t>((y * w + x) * 4);
+            const glm::vec3 c = glm::pow(glm::clamp(a.albedo, glm::vec3(0.0f), glm::vec3(1.0f)), glm::vec3(1.0f / 2.2f));
+            albedo.pixels[i + 0] = static_cast<std::uint8_t>(c.r * 255.0f + 0.5f);
+            albedo.pixels[i + 1] = static_cast<std::uint8_t>(c.g * 255.0f + 0.5f);
+            albedo.pixels[i + 2] = static_cast<std::uint8_t>(c.b * 255.0f + 0.5f);
+            albedo.pixels[i + 3] = 255;
+            const auto v = static_cast<std::uint8_t>(
+                std::clamp((s.heightM - minH) / std::max(1.0, maxH - minH), 0.0, 1.0) * 255.0 + 0.5);
+            height.pixels[i + 0] = height.pixels[i + 1] = height.pixels[i + 2] = v;
+            height.pixels[i + 3] = 255;
+        }
+
+    const fs::path bodyOut = outputRoot / fs::path(desc.systemFolderName) / fs::path(desc.bodyFolderName);
+    fs::create_directories(bodyOut);
+    ImageRgba8 normal = buildNormalFromHeightImage(height, 8.0f);
+    ImageRgba8 material = buildImportedMaterialImage(desc, albedo, &height);
+    ImageRgba8 preview = buildPreviewSphere(albedo);
+    ImageRgba8 previewFlat = buildFlatPreview(albedo);
+
+    desc.textures.albedoPath = toAssetPath(bodyOut / "albedo.tga");
+    desc.textures.normalPath = toAssetPath(bodyOut / "normal.tga");
+    desc.textures.materialPath = toAssetPath(bodyOut / "material.tga");
+    desc.textures.previewPath = toAssetPath(bodyOut / "preview.tga");
+    desc.textures.previewFlatPath = toAssetPath(bodyOut / "preview_flat.tga");
+    desc.textures.metaPath = toAssetPath(bodyOut / "meta.json");
+    if (!writeTgaRgba(bodyOut / "albedo.tga", albedo) || !writeTgaRgba(bodyOut / "normal.tga", normal) ||
+        !writeTgaRgba(bodyOut / "material.tga", material) || !writeTgaRgba(bodyOut / "preview.tga", preview) ||
+        !writeTgaRgba(bodyOut / "preview_flat.tga", previewFlat))
+        return false;
+
+    json metaJson = descriptorToJson(desc);
+    if (!bakeRenderReadyLodSet(desc, bodyOut, albedo, normal, material, preview, previewFlat, metaJson))
+        return false;
+    metaJson["baker_mode"] = "ProceduralFromBodyDescriptor";
+    metaJson["surface_generator"] = {
+        {"generator_version", static_cast<int>(surf::GeneratorVersion)},
+        {"body_descriptor_path", desc.bodyDescriptorPath},
+        {"body_seed", std::to_string(body.seed)},
+        {"surface_seed", std::to_string(field->identitySeed())},
+        {"archetype", surf::archetypeName(surf::surfaceArchetype(body))}};
+    std::ofstream meta(bodyOut / "meta.json");
+    if (!meta.is_open())
+        return false;
+    meta << metaJson.dump(4);
+    std::cout << "[CelestialTextureBaker] baked (surface field) " << desc.systemFolderName << "/"
+              << desc.bodyFolderName << " " << w << "x" << h << "\n";
+    return true;
+}
+
 bool bakeOneBody(
     CelestialBodyVisualDescriptor desc,
     const std::filesystem::path& outputRoot,
     const CelestialTextureBakeOptions& options
 )
 {
+    if (desc.surfaceSourceKind == CelestialSurfaceSourceKind::ProceduralFromBodyDescriptor)
+        return bakeDescriptorSurfaceBody(desc, outputRoot);
+
     namespace fs = std::filesystem;
 
 

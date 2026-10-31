@@ -36,7 +36,11 @@ struct PatchVertex
     glm::vec3 albedo {0.5f};
     glm::vec4 detail {0.0f};     // rock, loose (sand/regolith/soil/salt), ice+snow, vegetation
     float emission = 0.0f;
-    float water = 0.0f;
+    // Signed distance-like coast value: < 0 water, > 0 land (macro height
+    // relative to the water level, scaled) - interpolated per pixel the
+    // coastline is smooth and exactly the macro field's.
+    float coast = 1.0f;
+    glm::vec3 waterAlbedo {0.02f, 0.06f, 0.12f};
 };
 
 struct SurfacePatchData

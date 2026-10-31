@@ -146,7 +146,7 @@
       "zones": []
     },
     "generation": {
-      "seed_policy": "random_on_session",
+      "seed_policy": "world_time",
       "seed_base": 1337,
       "weather_scale": 6,
       "mass_scale": 14,

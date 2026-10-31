@@ -90,7 +90,7 @@
   "clouds": {
     "enabled": true,
     "pattern": "dense_overcast",
-    "seed_policy": "random_on_map_open",
+    "seed_policy": "world_time",
     "seed_base": 9012,
     "coverage_threshold": 0.34,
     "density": 1.0,
@@ -290,7 +290,7 @@
       ]
     },
     "generation": {
-      "seed_policy": "random_on_session",
+      "seed_policy": "world_time",
       "seed_base": 1337,
       "weather_scale": 4,
       "mass_scale": 9,

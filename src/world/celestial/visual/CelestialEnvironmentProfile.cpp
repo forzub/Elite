@@ -887,6 +887,10 @@ bool readEnvironmentDocument(
             "seed_policy",
             "fixed"
         );
+    // No cloud field may depend on when the map was opened: the legacy
+    // random policies are deterministic world-time weather now.
+    if (target.seedPolicy == "random_on_session" || target.seedPolicy == "random_on_map_open")
+        target.seedPolicy = "world_time";
 
     target.seedBase =
         jsonUint32(

@@ -258,7 +258,7 @@ namespace
                 if (s.water)
                     waterNotLevel += s.heightM != s.waterLevelM;
                 else if (ocean > 0.0 && field.solidSurface())
-                    landBelowWater += s.heightM <= 0.0;
+                    landBelowWater += s.coastM <= 0.0 || s.heightM < s.macroHeightM - s.coastM;
                 // Below the macro cutoff only detail is added (bounded).
                 if (!s.water && w <= field.macroCutoffM() &&
                     std::abs(s.heightM - s.macroHeightM) > field.detailAmplitudeBoundM() + 6.0)

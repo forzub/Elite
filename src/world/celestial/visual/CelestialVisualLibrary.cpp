@@ -91,6 +91,12 @@ void applyCommonOverrides(
             src.value("source_catalog_path", out.sourceCatalogPath);
     }
 
+    if (src.contains("body_descriptor_path"))
+    {
+        out.bodyDescriptorPath =
+            src.value("body_descriptor_path", out.bodyDescriptorPath);
+    }
+
     if (src.contains("data_confidence"))
     {
         out.dataConfidence =

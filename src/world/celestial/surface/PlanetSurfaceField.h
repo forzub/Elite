@@ -109,7 +109,7 @@ private:
     std::uint64_t m_surfaceSeed = 0;
     std::uint64_t m_seedContinents = 0, m_seedWarp = 0, m_seedBelts = 0, m_seedRanges = 0, m_seedHills = 0,
                   m_seedCraters = 0, m_seedVolcanoes = 0, m_seedLakes = 0, m_seedClimate = 0,
-                  m_seedVariation = 0, m_seedBoulders = 0;
+                  m_seedVariation = 0, m_seedBoulders = 0, m_seedUplands = 0;
     OctaveSpec m_continentSpec, m_warpSpec, m_beltSpec, m_rangeSpec, m_hillSpec;
     double m_macroCutoffM = 1000.0;
     double m_landThreshold = 0.0;
@@ -135,10 +135,8 @@ private:
     bool m_vegetation = false;
 
     // Lake acceptance needs the terrain and climate at the lake centre:
-    // memoised per cell (a pure function - the cache never changes a
-    // result, only its cost).
-    mutable std::shared_mutex m_lakeMutex;
-    mutable std::unordered_map<std::uint64_t, std::optional<Landmark>> m_lakeCache;
+    // memoised per thread and cell in lakeInCell (a pure function - the
+    // cache never changes a result, only its cost).
 };
 
 // Field of any descriptor: planets, moons, gas / ice giants.

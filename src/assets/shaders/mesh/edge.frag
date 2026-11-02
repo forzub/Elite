@@ -38,9 +38,11 @@ void main()
     }
     else if (uSceneStyle == 2)
     {
-        // Anime: dark ink contours.
-        finalColor = vec3(0.05, 0.05, 0.08);
-        finalAlpha = clamp(finalAlpha * 1.4, 0.0, 1.0);
+        // Anime: geometry edges are only quiet interior detail lines (the
+        // silhouette ink is the composite's depth contour). Thin, a deep
+        // slate tint, and gone with distance so far objects stay masses.
+        finalColor = vec3(0.10, 0.12, 0.18);
+        finalAlpha = alpha * 0.42 * (1.0 - smoothstep(0.0, 0.45, t));
     }
 
     FragColor = vec4(finalColor, finalAlpha);

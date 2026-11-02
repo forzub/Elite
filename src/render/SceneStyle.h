@@ -25,4 +25,22 @@ inline void setSceneStyle(int style)
 {
     sceneStyleStorage() = style;
 }
+
+// The style of the flight scene presented this frame (not reset after the
+// scene pass like sceneStyle()): the cinematic composite reads it.
+inline int& presentedSceneStyleStorage()
+{
+    static int style = 1;
+    return style;
+}
+
+inline int presentedSceneStyle()
+{
+    return presentedSceneStyleStorage();
+}
+
+inline void setPresentedSceneStyle(int style)
+{
+    presentedSceneStyleStorage() = style;
+}
 } // namespace render

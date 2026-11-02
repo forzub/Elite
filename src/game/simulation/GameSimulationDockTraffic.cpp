@@ -120,12 +120,12 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
     // =2 also keeps that view every tick (the hub frame turns with its orbit,
     // an inertial attitude would drift off the dock) - scripted captures.
     const char* observerEnv = std::getenv("ELITE_DEV_DOCK_OBSERVER");
-    // =3: the held view from ~700 m in front of the hold "flower" (close shots).
+    // =3: the held view from ~1.1 km in front of the hold "flower" (holds within +-22 deg).
     const bool observerHold = observerEnv && (observerEnv[0] == '2' || observerEnv[0] == '3');
     const bool observerNear = observerEnv && observerEnv[0] == '3';
     if ((!m_dockObserverPlaced || observerHold) && observerEnv && (observerEnv[0] == '1' || observerHold))
     {
-        const glm::dvec3 eye = origin + fixedBasis * (observerNear ? glm::dvec3(300.0, 120.0, -2150.0)
+        const glm::dvec3 eye = origin + fixedBasis * (observerNear ? glm::dvec3(250.0, 100.0, -2700.0)
                                                                    : glm::dvec3(700.0, 250.0, -2600.0));
         const glm::dvec3 look = origin + fixedBasis * (observerNear ? glm::dvec3(0.0, 0.0, -1500.0)
                                                                     : glm::dvec3(0.0, 0.0, -900.0));

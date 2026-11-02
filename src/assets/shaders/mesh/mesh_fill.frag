@@ -137,13 +137,27 @@ void main()
     }
     if (uSceneStyle == 2)
     {
-        // Anime: three flat light bands, cool shadow, dark ink at the
-        // silhouette; colours stay the hull's own (no extra palette).
-        float band = ndlRaw > 0.30 ? 1.0 : (ndlRaw > -0.10 ? 0.66 : 0.40);
-        vec3 shade = band < 0.5 ? vec3(0.86, 0.90, 1.0) : vec3(1.0);
-        vec3 toon = distanceHullColor * (ambientColor * 0.35 + lightColor * 0.55) * band * shade * 1.25;
-        if (facing < 0.16)
-            toon = vec3(0.05, 0.05, 0.07);
+        // Anime: large colour masses under one dominant light. Base tone,
+        // a cool blue-violet shadow tone (never black), a narrow warm
+        // highlight; a hard, slightly anti-aliased terminator. With
+        // distance the bands merge and the hull sinks into the painted
+        // depth tone. The silhouette ink is the composite's depth contour.
+        // Anime hull: a light steel blue-grey of its own (the Modern ramp
+        // starts near black, which reads as a void in a cel frame), lightly
+        // tinted by the distance ramp.
+        vec3 albedo = mix(vec3(0.60, 0.64, 0.72), distanceHullColor * 1.15, 0.20);
+        vec3 lightTint = lightColor / max(max(lightColor.r, max(lightColor.g, lightColor.b)), 1.0e-3);
+        vec3 base = albedo * mix(vec3(1.0), lightTint, 0.35) * 0.92;
+        vec3 shadowTone = albedo * vec3(0.40, 0.44, 0.60) + ambientColor * 0.04;
+        vec3 highlight = mix(base, vec3(1.0, 0.94, 0.82), 0.38);
+        float lit = smoothstep(-0.04, 0.04, ndlRaw);
+        float hi = smoothstep(0.84, 0.88, ndlRaw) * smoothstep(0.30, 0.45, facing);
+        float merge = farT * 0.75;                    // distance: bands merge
+        lit = mix(lit, 0.62, merge);
+        hi *= 1.0 - farT;
+        vec3 toon = mix(mix(shadowTone, base, lit), highlight, hi);
+        vec3 depthTone = vec3(0.17, 0.21, 0.31);      // painted distance tone
+        toon = mix(toon, depthTone, farT * 0.45 + midT * 0.10);
         // Anime: the nozzle is a flat bright cel (two steps), no gradient.
         float cel = glowAmount > 0.66 ? 1.0 : (glowAmount > 0.2 ? 0.6 : 0.0);
         toon = mix(toon, hot, cel);

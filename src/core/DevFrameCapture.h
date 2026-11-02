@@ -137,4 +137,36 @@ inline std::vector<FrameCaptureRequest>& frameCaptureRequests()
     return requests;
 }
 
+// DEV map/view script: ELITE_DEV_MAP_SCRIPT="SECONDS:ACTION[;SECONDS:ACTION...]"
+// (seconds since startup). Actions: f1 / f3 (flight views), f10 / f11 / f12
+// (System / Detail / Hub map), lanes (toggle the traffic lanes overlay),
+// select:CALLSIGN (select that traffic ship on the open map).
+struct DevMapScriptStep
+{
+    double atSeconds = 0.0;
+    std::string action;
+    bool done = false;
+};
+
+inline std::vector<DevMapScriptStep>& mapScriptSteps()
+{
+    static std::vector<DevMapScriptStep> steps = [] {
+        std::vector<DevMapScriptStep> out;
+        const char* v = std::getenv("ELITE_DEV_MAP_SCRIPT");
+        if (!v || !*v)
+            return out;
+        std::stringstream all(v);
+        std::string item;
+        while (std::getline(all, item, ';'))
+        {
+            const auto colon = item.find(':');
+            if (colon == std::string::npos)
+                continue;
+            out.push_back({std::atof(item.substr(0, colon).c_str()), item.substr(colon + 1), false});
+        }
+        return out;
+    }();
+    return steps;
+}
+
 } // namespace core::dev

@@ -22,6 +22,10 @@ void main()
         alpha = max(alpha, 0.7);
     }
     else if (uSceneStyle == 2)
-        c = vec3(0.05, 0.05, 0.08);
+    {
+        // Anime: quiet interior detail lines (silhouette = composite ink).
+        c = vec3(0.10, 0.12, 0.18);
+        alpha *= 0.42;
+    }
     FragColor = vec4(c, alpha);
 }

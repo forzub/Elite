@@ -18,10 +18,14 @@ void main()
     }
     else if (uSceneStyle == 2)
     {
-        // Anime: flat, desaturated bands of haze.
+        // Anime: a soft painted wash, not hard-edged stripes: gently
+        // desaturated toward cool blue-violet, two soft density tones, and
+        // kept faint so it never competes with ships and stations.
         float l = dot(haze.rgb, vec3(0.3, 0.5, 0.2));
-        vec3 c = mix(vec3(l), haze.rgb, 0.45);
-        haze = vec4(floor(c * 6.0 + 0.5) / 6.0, floor(haze.a * 4.0 + 0.5) / 4.0);
+        vec3 c = mix(vec3(l), haze.rgb, 0.45) * vec3(0.92, 0.95, 1.08);
+        float a = haze.a;
+        float tone = smoothstep(0.05, 0.40, a) * 0.6 + smoothstep(0.35, 0.80, a) * 0.4;
+        haze = vec4(c, tone * a * 0.65 + a * 0.10);
     }
     FragColor = haze;
 }

@@ -17,14 +17,12 @@ client_world_cpp = SRC / "game/client/ClientWorldState.cpp"
 game_client_cpp = SRC / "game/client/GameClient.cpp"
 prepared_scene = SRC / "scene/PreparedScene.h"
 scene_renderer_cpp = SRC / "scene/SceneRenderer.cpp"
-traffic_h = SRC / "game/traffic/StationTrafficSystem.h"
-traffic_cpp = SRC / "game/traffic/StationTrafficSystem.cpp"
 promo_h = SRC / "game/promo/PromoSceneScenario.h"
 promo_cpp = SRC / "game/promo/PromoSceneScenario.cpp"
 
 for path in (
     spatial_header, client_world_h, client_world_cpp, game_client_cpp,
-    prepared_scene, scene_renderer_cpp, traffic_h, traffic_cpp, promo_h, promo_cpp,
+    prepared_scene, scene_renderer_cpp, promo_h, promo_cpp,
 ):
     if not path.is_file():
         fail(path, "required client spatial-domain file is missing")
@@ -90,7 +88,6 @@ if scene_renderer_cpp.is_file():
         fail(scene_renderer_cpp, "visual drones bypass active-system filtering")
 
 for header, cpp, label in (
-    (traffic_h, traffic_cpp, "station traffic"),
     (promo_h, promo_cpp, "promo visual ships"),
 ):
     if header.is_file() and "m_systemId = -1" not in header.read_text(encoding="utf-8", errors="replace"):

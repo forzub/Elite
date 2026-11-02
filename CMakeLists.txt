@@ -691,7 +691,6 @@ add_executable(EliteGame
     src/game/promo/PromoSceneScenario.cpp
 
     src/game/scene/GameSceneSetup.cpp
-    src/game/traffic/StationTrafficSystem.cpp
 
     src/render/planet/PlanetWireRenderer.cpp
     src/ui/browser/GameWebView.cpp

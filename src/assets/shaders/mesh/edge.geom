@@ -25,7 +25,7 @@ void main()
     vec2 b = p1.xy / p1.w;
     vec2 dir = normalize(b - a);
     vec2 normal = vec2(-dir.y, dir.x);
-    vec2 offset = normal * thickness * (uSceneStyle == 2 ? 1.6 : 1.0) / viewport;
+    vec2 offset = normal * thickness * (uSceneStyle == 2 ? 0.8 : 1.0) / viewport;
     
     vec4 off0 = vec4(offset * p0.w, 0.0, 0.0);
     vec4 off1 = vec4(offset * p1.w, 0.0, 0.0);

@@ -59,7 +59,7 @@ def extract_struct_body(text: str, name: str) -> str:
 def check_debug_control_schema() -> None:
     settings_h = read("src/debug/DebugSettings.h")
     codec_h = read("src/game/debug/DebugControlSettingsCodec.h")
-    space_cpp = read("src/game/SpaceState.cpp")
+    space_cpp = read("src/game/SpaceState.cpp") + read("src/game/SpaceStateDevPanel.cpp")
     html = read("src/assets/webui/debug_control.html")
     debug_iface = read("src/game/debug/IDebugSessionControl.h")
     server_runtime = read("src/game/server/ServerRuntime.cpp")
@@ -191,7 +191,6 @@ def check_debug_control_runtime_wiring() -> None:
     scene_cpp = read("src/scene/SceneRenderer.cpp")
     policy_h = read("src/scene/SceneRenderPolicy.h")
     prepared_h = read("src/scene/PreparedScene.h")
-    traffic_cpp = read("src/game/traffic/StationTrafficSystem.cpp")
     promo_cpp = read("src/game/promo/PromoSceneScenario.cpp")
     system_scene_cpp = read("src/game/system_map/SystemMapSceneRenderer.cpp")
     system_renderer = read("src/game/system_map/SystemMapRendererSystem.inl")
@@ -319,9 +318,11 @@ def check_debug_control_runtime_wiring() -> None:
     ):
         require(token in policy_h, f"scene visibility policy lost runtime decision: {token}")
 
+    # Client-only decorative station traffic was removed (2026-11-02): the
+    # traffic filter now governs the replicated TrafficShell ships.
     require(
-        "visual.kind = game::visual::VisualShipKind::Traffic;" in traffic_cpp,
-        "station traffic is no longer tagged for the traffic visibility filter",
+        "shellItem.kind = game::visual::VisualShipKind::Traffic;" in scene_cpp,
+        "replicated traffic shells are no longer tagged for the traffic visibility filter",
     )
     require(
         "ship.kind = game::visual::VisualShipKind::Promo;" in promo_cpp,

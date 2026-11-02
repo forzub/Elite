@@ -119,7 +119,7 @@ vec3 posterize(vec3 c, float levels)
     float q = floor(l * levels + 0.5) / levels;
     // Saturated, flat colour.
     float grey = dot(hue, vec3(0.333));
-    hue = clamp(mix(vec3(grey), hue, 1.35), 0.0, 1.5);
+    hue = clamp(mix(vec3(grey), hue, 1.06), 0.0, 1.5);
     return hue * max(q, 0.5 / levels);
 }
 
@@ -157,31 +157,35 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
     vec3 albedo = mix(land, water, isWater);
     if (uStyle == 2)
     {
-        // Anime: posterised palette, banded light, hue-shifted shadows,
-        // ink lines on the rim and coast.
-        vec3 base = posterize(pow(max(albedo, vec3(0.0)), vec3(1.0 / 2.2)) * 1.1, 5.0);
-        float l = dot(normalize(mix(nSphere, nRelief, 0.55)), L);
-        // Restrained tones: the style is in the bands and the ink, not in
-        // an extra palette.
-        vec3 lit = vec3(1.0, 0.99, 0.96);
-        vec3 mid = vec3(0.70, 0.70, 0.74);
-        vec3 shade = vec3(0.24, 0.26, 0.34);
-        vec3 light = l > 0.42 ? lit : (l > 0.04 ? mid : shade);
+        // Anime: a painted planet, not a satellite photo. Large colour
+        // masses (gentle posterisation, no saturation boost, the sphere
+        // normal dominates so procedural relief noise disappears), one
+        // light with a soft painted terminator and a narrow half-tone,
+        // a deep blue-violet night side with stepped warm city lights,
+        // and a bright atmospheric limb instead of an ink ring.
+        vec3 base = posterize(pow(max(albedo, vec3(0.0)), vec3(1.0 / 2.2)) * 1.08, 6.0);
+        float l = dot(normalize(mix(nSphere, nRelief, 0.22)), L);
+        float lit = smoothstep(0.10, 0.16, l);
+        float halfT = smoothstep(-0.06, 0.00, l);
+        vec3 dayTone = vec3(1.0, 0.98, 0.94);
+        vec3 halfTone = vec3(0.66, 0.64, 0.74);
+        vec3 nightTone = vec3(0.16, 0.18, 0.32);
+        vec3 light = mix(mix(nightTone, halfTone, halfT), dayTone, lit);
         vec3 col = base * light * uSunColour;
         if (isWater > 0.5)
         {
             vec3 h = normalize(L + viewDir);
-            if (pow(max(dot(nSphere, h), 0.0), 220.0) > 0.5 && l > 0.1)
-                col = vec3(1.0);
+            float glint = smoothstep(0.55, 0.62, pow(max(dot(nSphere, h), 0.0), 160.0));
+            col = mix(col, vec3(1.0, 0.97, 0.90), glint * step(0.1, l) * 0.85);
         }
-        col += vec3(1.0, 0.85, 0.35) * step(0.35, emission) * (1.0 - day) * 0.9;
+        col += vec3(1.0, 0.82, 0.42) * step(0.35, emission) * (1.0 - day) * 0.75;
         float nv = dot(nSphere, viewDir);
-        if (uHazeDensity > 0.0 && nv < 0.28 && l > 0.0)
-            col = mix(col, uHazeColour * 1.2, 0.45);
-        float ink = max(rimMask(nv, 2.2), isGas > 0.5 ? 0.0 : lineMask(coastKm, 1.1) * 0.8);
-        col = mix(col, vec3(0.05, 0.05, 0.08), ink);
         if (uHazeDensity > 0.0)
         {
+            // Atmospheric limb: a soft bright band on the lit side, a thin
+            // violet one into the night.
+            float limb = 1.0 - smoothstep(0.0, 0.34, nv);
+            col = mix(col, uHazeColour * mix(0.55, 1.35, day), limb * mix(0.35, 0.70, day));
             float haze = 1.0 - exp(-dist * uHazeDensity);
             haze = floor(haze * 4.0) / 4.0;
             col = mix(col, uHazeColour * (0.4 + 0.6 * day), haze);
@@ -481,13 +485,16 @@ void main()
     }
     else if (uStyle == 2)
     {
-        float a = step(0.52, c) * uOpacity;
+        // Anime clouds: painted masses with a soft brush edge, a warm white
+        // sunlit side, lavender shade, slightly brighter dense cores.
+        float a = smoothstep(0.47, 0.56, c) * uOpacity;
         if (a < 0.01)
             discard;
         float l = dot(n, L);
-        vec3 col = l > 0.25 ? vec3(1.0) : (l > -0.05 ? vec3(0.80, 0.80, 0.92) : vec3(0.18, 0.20, 0.36));
-        float rim = 1.0 - clamp(abs(c - 0.52) / max(fwidth(c), 1e-5) / 2.0, 0.0, 1.0);
-        col = mix(col, vec3(0.45, 0.50, 0.70), rim * 0.6);
+        float lit = smoothstep(0.12, 0.20, l);
+        float halfT = smoothstep(-0.10, -0.02, l);
+        vec3 col = mix(mix(vec3(0.20, 0.21, 0.38), vec3(0.78, 0.76, 0.90), halfT), vec3(1.0, 0.98, 0.93), lit);
+        col *= mix(0.90, 1.04, smoothstep(0.62, 0.75, c));
         fragColour = vec4(col * uSunColour, a);
     }
     else
@@ -885,13 +892,17 @@ void main()
         }
         else if (uStyle == 2)
         {
-            // Anime: flat white core, a flat tinted rim band, posterised
-            // corona petals.
-            float core = 1.0 - smoothstep(edge * 0.78 - aa, edge * 0.78 + aa, r);
-            vec3 tint = mix(vec3(1.0), uColour, 0.45);
-            float petals = floor((corona + halo * 0.6) * 3.0 + 0.5) / 3.0;
-            col = inDisc > 0.5 ? mix(tint, vec3(1.0), core) : tint;
-            a = max(inDisc, petals * 0.8);
+            // Anime: clean shapes on the same physical disc - a flat white
+            // core, a warm rim band, and a SOFT corona: broad slow petals
+            // (no fine streaks, no photographic noise) fading in two
+            // gentle tones.
+            float core = 1.0 - smoothstep(edge * 0.80 - aa, edge * 0.80 + aa, r);
+            vec3 tint = mix(vec3(1.0), uColour, 0.40);
+            float softCorona = coronaAct * exp(-d * (2.6 - 0.9 * streak));
+            float glow = softCorona + halo * 0.55;
+            float twoTone = smoothstep(0.05, 0.60, glow) * 0.55 + smoothstep(0.45, 0.95, glow) * 0.30;
+            col = inDisc > 0.5 ? mix(tint, vec3(1.0), core) : mix(tint, vec3(1.0, 0.93, 0.80), 0.35);
+            a = max(inDisc, twoTone);
         }
         else
         {

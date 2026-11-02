@@ -43,7 +43,6 @@
 #include "game/debug/AttachmentEditorData.h"
 
 #include "src/game/promo/PromoSceneScenario.h"
-#include "src/game/traffic/StationTrafficSystem.h"
 #include "src/audio/TerminalAudioAdapter.h"
 #include "src/game/presentation/DockingStatusTerminal.h"
 #include "src/game/navigation/ClientNavigationWorkspace.h"
@@ -652,7 +651,6 @@ private:
 
 
     game::promo::PromoSceneScenario m_promoSceneScenario;
-    game::traffic::StationTrafficSystem m_stationTrafficSystem;
 
     world::celestial::GalaxyMapSnapshot m_galaxyMapSnapshot;
 

@@ -38,6 +38,9 @@ public:
     );
 
     void endPostProcess(float timeSeconds);
+    // 0 Elite, 1 Modern, 2 Anime (render::presentedSceneStyle()). Anime adds
+    // the depth-silhouette ink and its own grade to the composite.
+    void setPostStyle(int style) { m_postStyle = style; }
 
     PostProcessSettings& postProcessSettings() { return m_postProcess; }
     const PostProcessSettings& postProcessSettings() const { return m_postProcess; }
@@ -78,9 +81,14 @@ private:
     GLuint m_sceneFramebuffer = 0;
     GLuint m_sceneColorRenderbuffer = 0;
     GLuint m_sceneDepthStencilRenderbuffer = 0;
+    // With MSAA the scene depth is a multisample TEXTURE so the Anime ink
+    // reads sample 0 directly (a depth resolve blit cost ~1.4 ms).
+    GLuint m_sceneDepthMsTexture = 0;
 
     GLuint m_resolveFramebuffer = 0;
     GLuint m_sceneTexture = 0;
+    GLuint m_sceneDepthTexture = 0; // resolved depth (Anime silhouette ink)
+    int m_postStyle = 1;
 
     GLuint m_bloomFramebuffers[2] = {0, 0};
     GLuint m_bloomTextures[2] = {0, 0};

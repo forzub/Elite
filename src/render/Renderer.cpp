@@ -137,6 +137,8 @@ bool Renderer::init()
     glUseProgram(m_compositeProgram);
     setSampler(m_compositeProgram, "uScene", 0);
     setSampler(m_compositeProgram, "uBloom", 1);
+    setSampler(m_compositeProgram, "uDepth", 2);
+    setSampler(m_compositeProgram, "uDepthMs", 3);
 
     glUseProgram(0);
 
@@ -293,7 +295,11 @@ void Renderer::endPostProcess(float timeSeconds)
     glBlitFramebuffer(
         0, 0, m_width, m_height,
         0, 0, m_width, m_height,
-        GL_COLOR_BUFFER_BIT,
+        // Anime: the depth is resolved too (one sample per pixel) for the
+        // silhouette ink; the other styles never read it.
+        m_postStyle == 2 && m_sceneDepthMsTexture == 0
+            ? (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            : GL_COLOR_BUFFER_BIT,
         GL_NEAREST
     );
 
@@ -383,6 +389,8 @@ void Renderer::endPostProcess(float timeSeconds)
     setFloat(m_compositeProgram, "uGrain", std::clamp(m_postProcess.grain, 0.0f, 0.10f));
     setFloat(m_compositeProgram, "uHaze", std::clamp(m_postProcess.haze, 0.0f, 1.0f));
     setFloat(m_compositeProgram, "uTime", timeSeconds);
+    setSampler(m_compositeProgram, "uStyle", m_postStyle);
+    setSampler(m_compositeProgram, "uDepthIsMs", m_sceneDepthMsTexture != 0 ? 1 : 0);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_sceneTexture);
@@ -390,8 +398,18 @@ void Renderer::endPostProcess(float timeSeconds)
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, m_bloomTextures[0]);
 
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, m_sceneDepthTexture);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_sceneDepthMsTexture);
+
     drawFullscreenTriangle();
 
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE0);
@@ -471,35 +489,44 @@ bool Renderer::createPostProcessTargets(int width, int height)
         m_sceneColorRenderbuffer
     );
 
-    glGenRenderbuffers(1, &m_sceneDepthStencilRenderbuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, m_sceneDepthStencilRenderbuffer);
-
     if (m_msaaSamples > 1)
     {
-        glRenderbufferStorageMultisample(
-            GL_RENDERBUFFER,
+        glGenTextures(1, &m_sceneDepthMsTexture);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_sceneDepthMsTexture);
+        glTexImage2DMultisample(
+            GL_TEXTURE_2D_MULTISAMPLE,
             m_msaaSamples,
             GL_DEPTH24_STENCIL8,
             width,
-            height
+            height,
+            GL_TRUE
+        );
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+        glFramebufferTexture2D(
+            GL_FRAMEBUFFER,
+            GL_DEPTH_STENCIL_ATTACHMENT,
+            GL_TEXTURE_2D_MULTISAMPLE,
+            m_sceneDepthMsTexture,
+            0
         );
     }
     else
     {
+        glGenRenderbuffers(1, &m_sceneDepthStencilRenderbuffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, m_sceneDepthStencilRenderbuffer);
         glRenderbufferStorage(
             GL_RENDERBUFFER,
             GL_DEPTH24_STENCIL8,
             width,
             height
         );
+        glFramebufferRenderbuffer(
+            GL_FRAMEBUFFER,
+            GL_DEPTH_STENCIL_ATTACHMENT,
+            GL_RENDERBUFFER,
+            m_sceneDepthStencilRenderbuffer
+        );
     }
-
-    glFramebufferRenderbuffer(
-        GL_FRAMEBUFFER,
-        GL_DEPTH_STENCIL_ATTACHMENT,
-        GL_RENDERBUFFER,
-        m_sceneDepthStencilRenderbuffer
-    );
 
     ok = framebufferComplete("scene") && ok;
 
@@ -530,6 +557,31 @@ bool Renderer::createPostProcessTargets(int width, int height)
         GL_COLOR_ATTACHMENT0,
         GL_TEXTURE_2D,
         m_sceneTexture,
+        0
+    );
+
+    glGenTextures(1, &m_sceneDepthTexture);
+    glBindTexture(GL_TEXTURE_2D, m_sceneDepthTexture);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_DEPTH24_STENCIL8,
+        width,
+        height,
+        0,
+        GL_DEPTH_STENCIL,
+        GL_UNSIGNED_INT_24_8,
+        nullptr
+    );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER,
+        GL_DEPTH_STENCIL_ATTACHMENT,
+        GL_TEXTURE_2D,
+        m_sceneDepthTexture,
         0
     );
 
@@ -606,6 +658,12 @@ void Renderer::destroyPostProcessTargets()
         m_bloomFramebuffers[1] = 0;
     }
 
+    if (m_sceneDepthTexture != 0)
+    {
+        glDeleteTextures(1, &m_sceneDepthTexture);
+        m_sceneDepthTexture = 0;
+    }
+
     if (m_sceneTexture != 0)
     {
         glDeleteTextures(1, &m_sceneTexture);
@@ -616,6 +674,12 @@ void Renderer::destroyPostProcessTargets()
     {
         glDeleteFramebuffers(1, &m_resolveFramebuffer);
         m_resolveFramebuffer = 0;
+    }
+
+    if (m_sceneDepthMsTexture != 0)
+    {
+        glDeleteTextures(1, &m_sceneDepthMsTexture);
+        m_sceneDepthMsTexture = 0;
     }
 
     if (m_sceneDepthStencilRenderbuffer != 0)

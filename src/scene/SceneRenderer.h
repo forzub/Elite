@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include "src/render/SceneStyle.h"
 #include <memory>
 #include <unordered_map>
 
@@ -218,6 +219,7 @@ public:
         {
             m_celestialFlight.setStyle(style);
             m_sceneStyle = static_cast<int>(style);
+            render::setPresentedSceneStyle(m_sceneStyle);
         }
     }
 

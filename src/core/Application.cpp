@@ -1,5 +1,6 @@
 #include "src/core/HitchProfiler.h"
 #include "src/core/DevFrameCapture.h"
+#include "src/render/SceneStyle.h"
 #include <iostream>
 #include "src/core/RuntimeTrace.h"
 #include <GLFW/glfw3.h>
@@ -1283,7 +1284,17 @@ if (systemMapMode && top)
     top->renderHUD();
 
 if (postProcessActive)
+{
+    // Style-aware composition only for the flight scene; maps keep their look.
+    // DEV A/B: ELITE_DEV_ANIME_NO_INK=1 -> Anime grade without the depth
+    // resolve / silhouette ink (post style 3), to measure the ink cost.
+    static const bool devAnimeNoInk = std::getenv("ELITE_DEV_ANIME_NO_INK") != nullptr;
+    int postStyle = flightMode ? render::presentedSceneStyle() : 1;
+    if (postStyle == 2 && devAnimeNoInk)
+        postStyle = 3;
+    m_renderer.setPostStyle(postStyle);
     m_renderer.endPostProcess(static_cast<float>(currentTime));
+}
 
 if (flightMode && top)
     top->renderHUD();
@@ -1304,6 +1315,28 @@ if ((systemMapMode || serviceMode))
         xprocPhaseBegin = XprocTraceClock::now();
 #endif
         core::hitch::mark("render_tail");
+        for (auto& step : core::dev::mapScriptSteps())
+            if (!step.done && glfwGetTime() >= step.atSeconds)
+            {
+                step.done = true;
+                auto* space = dynamic_cast<SpaceState*>(m_states.current());
+                std::cerr << "[MapScript] t=" << glfwGetTime() << " " << step.action << std::endl;
+                if (step.action == "f1")
+                    requestFlightView(FlightPresentationView::Front);
+                else if (step.action == "f3")
+                    requestFlightView(FlightPresentationView::Drone);
+                else if (step.action == "f10")
+                    requestNavigationView(NavigationPresentationView::System);
+                else if (step.action == "f11")
+                    requestNavigationView(NavigationPresentationView::Detail);
+                else if (step.action == "f12")
+                    requestNavigationView(NavigationPresentationView::Local);
+                else if (space && step.action == "lanes")
+                    space->devToggleTrafficLanes();
+                else if (space && step.action.rfind("select:", 0) == 0)
+                    space->devSelectTrafficShip(step.action.substr(7));
+                break;
+            }
         for (auto& capture : core::dev::frameCaptureRequests())
             if (!capture.done && glfwGetTime() >= capture.atSeconds)
             {

@@ -2632,16 +2632,21 @@ profileAfterSetupMs = renderProfileNowMs();
                 std::unordered_map<const render::MeshGPU*, std::vector<glm::mat4>> proxyInstanceGroups;
                 proxyInstanceGroups.reserve(8);
 
-                // Proxy edges временно отключены.
                 // Полная edge-сетка proxy-меша на дальних кораблях даёт "медуз".
-                // Для proxy пока оставляем только instanced fill.
-                // std::unordered_map<const render::MeshGPU*, std::vector<glm::mat4>> proxyEdgeInstanceGroups;
-                // proxyEdgeInstanceGroups.reserve(8);
+                // Elite Classic draws a hull as a black fill whose EDGES carry the
+                // form: without them a proxy (all hub traffic) is black on black,
+                // i.e. invisible. Elite gets proxy edges inside kEliteProxyEdgeFadeEnd;
+                // beyond it (the "jellyfish" range) and in the other styles, fill only.
+                std::unordered_map<const render::MeshGPU*, std::vector<glm::mat4>> proxyEdgeInstanceGroups;
+                proxyEdgeInstanceGroups.reserve(8);
+                const bool proxyEdges = render::sceneStyle() == 0;
 
                 // Дальше этого расстояния edges для proxy ships вообще не рисуем.
                 // Не делаем коротким: пусть силуэт держится достаточно долго.
-                constexpr float kProxyEdgeFadeStart = 900.0f;
-                constexpr float kProxyEdgeFadeEnd   = 1800.0f;
+                // Elite traffic proxies: edges are the only visible part, keep
+                // them out to 4 km (a few pixels there - a dot, not a jellyfish).
+                constexpr float kEliteProxyEdgeFadeStart = 1500.0f;
+                constexpr float kEliteProxyEdgeFadeEnd = 4000.0f;
 
 
                 for (size_t i = 0; i < prepared.visualShips.size(); ++i)
@@ -2698,10 +2703,8 @@ profileAfterSetupMs = renderProfileNowMs();
                         
                         // Proxy edge-pass отключён намеренно.
                         // Дальние proxy с полной edge-сеткой выглядят как артефактные "медузы".
-                        // if (distToShip <= kProxyEdgeFadeEnd)
-                        // {
-                        //     proxyEdgeInstanceGroups[ship.wholeShipProxyGpu].push_back(ship.model);
-                        // }
+                        if (proxyEdges && distToShip <= kEliteProxyEdgeFadeEnd)
+                            proxyEdgeInstanceGroups[ship.wholeShipProxyGpu].push_back(ship.model);
 
                             m_lastStats.partsDrawn++;
                             m_lastStats.visualShipPartsDrawn++;
@@ -2719,6 +2722,24 @@ profileAfterSetupMs = renderProfileNowMs();
 
 
 
+
+                if (std::getenv("ELITE_DOCK_TRAFFIC_LOG"))
+                {
+                    static double nextDrawTrace = 0.0;
+                    const double nowTrace = glfwGetTime();
+                    if (nowTrace >= nextDrawTrace)
+                    {
+                        nextDrawTrace = nowTrace + 5.0;
+                        std::size_t proxyInstances = 0;
+                        for (const auto& group : proxyInstanceGroups)
+                            proxyInstances += group.first ? group.second.size() : 0;
+                        std::cerr << "[TrafficRender] draw visual_ships=" << prepared.visualShips.size()
+                                  << " drawn=" << visualShipsActuallyDrawn
+                                  << " proxy_instances=" << proxyInstances
+                                  << " proxy_meshes=" << proxyInstanceGroups.size()
+                                  << " style=" << render::sceneStyle() << "\n";
+                    }
+                }
 
                 GLuint instancedFillShader =
                     ShaderLibrary::instance().get("mesh_fill_instanced");
@@ -2750,32 +2771,32 @@ profileAfterSetupMs = renderProfileNowMs();
 
 
 
-                        // GLuint instancedEdgeShader =
-                        //     ShaderLibrary::instance().get("edge_shader_instanced");
+                    GLuint instancedEdgeShader =
+                        ShaderLibrary::instance().get("edge_shader_instanced");
 
-                        // if (instancedEdgeShader != 0)
-                        // {
-                        //     for (const auto& group : proxyEdgeInstanceGroups)
-                        //     {
-                        //         const render::MeshGPU* gpu = group.first;
-                        //         const std::vector<glm::mat4>& models = group.second;
+                    if (instancedEdgeShader != 0)
+                    {
+                        for (const auto& group : proxyEdgeInstanceGroups)
+                        {
+                            const render::MeshGPU* gpu = group.first;
+                            const std::vector<glm::mat4>& models = group.second;
 
-                        //         if (!gpu || models.empty())
-                        //             continue;
+                            if (!gpu || models.empty())
+                                continue;
 
-                        //         m_meshRenderer.drawEdgesInstanced(
-                        //             *gpu,
-                        //             instancedEdgeShader,
-                        //             vpInstanced,
-                        //             models,
-                        //             cameraLocalPosition,
-                        //             kProxyEdgeFadeStart,
-                        //             kProxyEdgeFadeEnd,
-                        //             glm::vec3(0.18f, 0.78f, 1.0f),
-                        //             0.72f
-                        //         );
-                        //     }
-                        // }
+                            m_meshRenderer.drawEdgesInstanced(
+                                *gpu,
+                                instancedEdgeShader,
+                                vpInstanced,
+                                models,
+                                cameraLocalPosition,
+                                kEliteProxyEdgeFadeStart,
+                                kEliteProxyEdgeFadeEnd,
+                                glm::vec3(0.18f, 0.78f, 1.0f),
+                                0.72f
+                            );
+                        }
+                    }
                 }
                 else
                 {

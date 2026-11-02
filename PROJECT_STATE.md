@@ -1216,6 +1216,136 @@ Status: PROPOSAL, offline-verified (deterministic lab), NOT author-accepted.
   notes (habitable "super-earths" mostly hot/sub-Neptune -> colonies on moons,
   ice worlds, workings); [PROPOSAL] tag style (start vs end of sentence).
 
+### Live hub traffic + map ownership + Anime render (user order 2026-11-02, evening)
+Status: live-game verified on this machine (target Windows box); NOT yet
+user-accepted.
+
+**Why the user saw no traffic (diagnosed in the real runtime, not offline):**
+1. The traffic itself ran: a headless probe (`EliteServer --dock-traffic-probe
+   SECONDS LOG`, real ServerRuntime + attached session, reads the CANONICAL
+   client snapshot) showed 6-8 traffic ships replicated with their
+   ShipInstanceIds from t=0.
+2. The default player start is 10.7 km from the dock and BEHIND the hub
+   (dock FIXED z = +7548; the entry/holds face -Z). From there the docked ships
+   are hidden inside the dock, the holds are 11.6 km away and a 22 m Cobrett is
+   sub-pixel.
+3. The server radar collected contacts only from materialized ships
+   (`m_ships`); TrafficShell ships were never radar contacts -> invisible on the
+   radar/HUD. FIXED: shells in the same system are radar inputs
+   (`GameSimulation.cpp`, perception loop).
+4. When the motion-fidelity LOD materialized a traffic shell near the player
+   (350 m / aimed 3 km), `updateDockServiceTraffic` lost it (only `m_shipShells`
+   was updated): the ship froze/drifted under physics and was orphaned when the
+   actor ended. FIXED: the traffic model keeps writing the pose into the
+   materialized Ship (same EntityId/ShipInstanceId); traffic ships are kinematic
+   (`isDockStationControlledShip` covers them -> skipped by physics/AI loops);
+   an ended actor's materialized ship is dematerialized then removed. Live
+   evidence: CBR-13 materialized at 272 m and kept flying its route to hold H2,
+   CBR-11 the same on the departure axis.
+6. Elite Classic (the default look) drew every traffic ship invisibly: hub
+   traffic renders through the instanced whole-ship PROXY lane, whose edge pass
+   had been commented out ("jellyfish"), and Elite's hull fill is black - black
+   on black. FIXED: Elite draws instanced proxy edges out to 4 km (fade from
+   1.5 km); Modern/Anime keep fill only. Live evidence:
+   `D:/tmp/hub_traffic_07_elite_cobrett_at_hold_now_visible.png`.
+7. A client-only decorative system (`StationTrafficSystem`, 1500 "Cobra MK1"
+   visual ships orbiting the station, no server entity) was still running in
+   gameplay - exactly the decoration the order forbids, and it shared the
+   traffic render lane. REMOVED (source, CMake, SpaceState); contracts
+   `check_client_spatial_domain` (passes) and `check_feature_contracts` now
+   point the traffic-visibility tag at the replicated shells. Elite frame time
+   on the same scene 13.45 -> 12.05 ms. Note: `[ScenePerf] visual_ships_ms`
+   ~12 ms after the removal is the GPU sync point moving into the instance
+   upload, not cost (total frame time fell).
+8. Throughput was low: one movement through outer+chamber lanes at a time;
+   the next entry waited for the previous ship to LATCH. FIXED: arrival
+   pipelining in `DockTrafficController::update` - while the previous arrival
+   is under station control in the chamber (outer lane released), the next
+   arrival may leave its hold (approach >= ~100 s > station transfer < 60 s);
+   `chamber_lane` is handed over on latch. Older departures are never
+   overtaken. Offline gate (6 h, 4 Cobretts): arrivals 70 -> 78, 31 pipelined
+   entries, invariant/separation/structure violations 0, min gap 38.6 m.
+   6 Cobretts saturate the 6 pads (73 arrivals) -> kept 4 Cobretts + shuttle
+   every 600 s.
+
+**Telemetry:** `ELITE_DOCK_TRAFFIC_LOG=<path>` now also writes a `[status]`
+row per actor every 10 s (phase, tier shell/MATERIALIZED, fidelity, FIXED
+position, dock and player distance) and the client prints `[TrafficRender]`
+(shells in the flight scene, hydrated assemblies, nearest distance) every 5 s.
+`ELITE_DEV_DOCK_OBSERVER=1|2|3` parks the player at a dock viewpoint
+(2 = hold the view; 3 = near the hold flower). `ELITE_DEV_MAP_SCRIPT=
+"SEC:f1|f3|f10|f11|f12|lanes|select:CALLSIGN;..."` drives views for captures.
+
+**Live acceptance run** (`D:/tmp/elite_live_hub_traffic.log`, 41 min real
+time, RelWithDebInfo client + local server, frames `D:/tmp/elite_live_hub/`):
+- Shuttle ORB-1702 full cycle: materialised 25 km Earth-side t=30 -> queue
+  gate + docking request t=180 -> hold H5 -> entry cleared t=428 (pipelined
+  chamber hand-over t=485) -> station handoff t=555 -> latched P3 t=612 ->
+  900 s unload/load -> departure request t=1512 (queue position 3) ->
+  cleared t=1803 -> clear of the controlled zone t=1941 -> crossed the 11 km
+  hub boundary ~t=2080 -> Earth burn t=2180 -> left the local zone t=2348.
+- Cobrett CBR-12 full cycle: far point -> request t=205 -> hold H1 ->
+  docked P1 t=485 -> service -> departure request t=725 -> departed t=1248.
+- `[TrafficRender]`: all traffic shells are in the flight scene with
+  assemblies; close views show them (`D:/tmp/hub_traffic_*.png`).
+
+**Maps (one ShipInstanceId, one owning level):**
+- Ownership rule: the server binds a traffic ship to the hub
+  (`motion.hubId`) while it is inside the dock's controlled zone =
+  `DockServiceTraffic::controlledZoneRadius()` = max(outermost queue gate,
+  departure turn) = 11 000 m (HexDockFacility data, not a new constant).
+  Hub Map shows only ships of that hub (existing rule); System and Detail maps
+  now skip non-player ships with a hubId (the hub represents them). The local
+  player keeps its marker on every level.
+- Routes: `ShipSnapshot.traffic` (callsign, phase, destination, remaining
+  route as world offsets) is the traffic model's real remaining plan
+  (`DockServiceTraffic::plannedPath`, same segments `pose()` evaluates).
+  Hub/Detail maps draw the SELECTED traffic ship's route; `T` on an open map
+  shows all routes plus the authored dock lanes (holds, hold->axis join,
+  arrival axis, departure clear/turn) from HexDockFacility. System Map: no
+  per-ship route (a 20 km route is sub-pixel at AU scale).
+- Known limit: the Earth Detail map is planet-scale, so a ship 11-25 km from
+  the hub draws on the hub icon (selection ring confirms ownership).
+
+**Anime render (same renderer, Anime branches + composite):**
+- Ships/stations: colour masses (base, cool blue-violet shadow tone, narrow
+  warm highlight, AA terminator); distance merges the bands and sinks the
+  hull into a painted depth tone; ships use an own light steel tone (the
+  Modern ramp starts near black). The old N.V "ink" blocks are gone.
+- Contour: silhouette/fold ink in the cinematic composite from scene depth
+  (MSAA depth is now a multisample texture read at sample 0; a depth resolve
+  blit cost 1.4 ms). Only mesh pixels (1-depth < 0.06, > ~15 m) are inked -
+  planets/Sun/space are backdrop; a planarity test (2nd difference) rejects
+  grazing planes/near terrain; sub-3-px objects stay colour dots. Geometry
+  edges in Anime are thin, slate, fading with distance (detail, not blueprint).
+- Planets: posterise 6 levels without the x1.35 saturation, sphere normal
+  dominant (less relief noise), soft terminator + half-tone, blue-violet night,
+  bright atmospheric limb instead of an ink ring, no coastline ink; clouds with
+  a soft brush edge and lavender shade. Sun: same physical disc/activity, clean
+  core + warm rim + soft broad corona. Milky Way: soft wash, no hard steps.
+  Composite in Anime: no grain/softening, half bloom, blue-violet shadow / warm
+  highlight grade, faint painted wash on empty space only.
+- Performance, same live scene, same 90-320 s window (RelWithDebInfo):
+  Elite 13.4 ms, Modern 16.8 ms, Anime 17.1 ms per frame (before the MS-depth
+  change Anime was 17.6-17.8; A/B without ink 16.2). Celestial GPU passes are
+  identical in Modern and Anime (5.06 ms).
+- Still open (artistic): Anime station palette is a single lavender-grey (no
+  material accents), faint residual terrain contours very near the surface,
+  thrust plume does not exist in any style (nozzle pad only); authored dock
+  lanes on the Hub Map are tiny at the auto-fitted 11 km extent (zoom-in not
+  verified in a capture).
+- Baseline red still present: `check_feature_contracts` stops at "Debug
+  Control checkbox renderShipUi has no verified runtime consumer" (its earlier
+  stale read of `pushDebugControlState` from SpaceState.cpp was fixed: the
+  function lives in SpaceStateDevPanel.cpp).
+
+**Gates:** builds RelWithDebInfo + Debug OK; `docking_infrastructure_api`,
+`route_stage_compiler` PASS; EliteDockTrafficCheck 6 h 0 violations;
+architecture checks touched by this work identical to HEAD (pre-existing reds:
+docking_module_boundaries, hub_motion_lab, multiplayer_client_local_identity,
+navigation_api_purity, navigation_foundation_lock, navigation_guidance_layer,
+client_acceptance architecture, system_map object_overlay).
+
 ## Next step
 - After the user's review: the separate stage INTERSTELLAR NAVIGATION
   (connected domain, ephemerides, gravity, InterstellarNavigationEnvironment

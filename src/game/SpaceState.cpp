@@ -2210,32 +2210,8 @@ void SpaceState::update(float dt)
         }
     }
 
-    // Client-side station traffic.
-    // Это не настоящие ShipCore-корабли, а лёгкий визуальный трафик.
-    // Он не попадает в server snapshot и не грузит GameSimulation.
-    if (!isPromo1SceneMode())
-    {
-
-
-
-        try
-        {
-            m_stationTrafficSystem.setup(m_client->world());
-            m_stationTrafficSystem.update(
-                m_client->world(),
-                dt
-            );
-        }
-        catch (const std::bad_alloc&)
-        {
-            std::cerr
-                << "[HubMotionLab][bad_alloc] phase=station-traffic"
-                << " visualShips=" << m_client->world().visualShips().size()
-                << " realShips=" << m_client->world().ships().size()
-                << "\n";
-            throw;
-        }
-    }
+    // No client-side decorative traffic: every ship the player sees is a
+    // replicated server entity (hub dock traffic = DockServiceTraffic shells).
 
     m_perfClientUpdateMs = nowMs() - clientStartMs;
     core::hitch::mark("client_tail");

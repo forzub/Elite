@@ -479,6 +479,10 @@ auto shouldKeepEdge = [&](const EdgeInfo& info) -> bool
     if (info.polyA == info.polyB)
         return false;
 
+    // A material boundary is a structural line even on one plane.
+    if (mesh.triangles[info.triA].baseColor != mesh.triangles[info.triB].baseColor)
+        return true;
+
     // Если два разных треугольника лежат в одной плоскости,
     // это тоже внутренняя диагональ/стык разрезанной плоскости.
     if (areTrianglesSamePlane(info.triA, info.triB))
@@ -516,6 +520,13 @@ for (const auto& kv : edgeMap)
     MeshEdge e;
     e.a = mesh.vertices[key.a].position;
     e.b = mesh.vertices[key.b].position;
+    if (info.triB == -1)
+        e.weight = 1.0f;
+    else if (mesh.triangles[info.triA].baseColor != mesh.triangles[info.triB].baseColor)
+        e.weight = 0.85f;
+    else
+        e.weight = creaseEdgeWeight(
+            glm::clamp(glm::dot(safeFaceNormal(info.triA), safeFaceNormal(info.triB)), -1.0f, 1.0f));
 
     mesh.edges.push_back(e);
 }

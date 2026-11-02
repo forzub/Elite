@@ -10,10 +10,12 @@ uniform int uSceneStyle; // Anime: heavier ink lines
 // Входные данные из вершинного шейдера
 in vec3 worldPos[];
 in vec3 viewPos[];
+in float edgeWeight[];
 
 // Выходные данные во фрагментный шейдер
 out vec3 fragWorldPos;
 out vec3 fragViewPos;
+out float fragEdgeWeight;
 
 void main()
 {
@@ -25,7 +27,7 @@ void main()
     vec2 b = p1.xy / p1.w;
     vec2 dir = normalize(b - a);
     vec2 normal = vec2(-dir.y, dir.x);
-    vec2 offset = normal * thickness * (uSceneStyle == 2 ? 0.8 : 1.0) / viewport;
+    vec2 offset = normal * thickness * (uSceneStyle == 2 ? mix(0.7, 1.2, smoothstep(0.4, 0.9, edgeWeight[0])) : 1.0) / viewport;
     
     vec4 off0 = vec4(offset * p0.w, 0.0, 0.0);
     vec4 off1 = vec4(offset * p1.w, 0.0, 0.0);
@@ -33,24 +35,28 @@ void main()
     // Вершина 0 (верх)
     gl_Position = p0 + off0;
     fragWorldPos = worldPos[0];
+    fragEdgeWeight = edgeWeight[0];
     fragViewPos = viewPos[0];
     EmitVertex();
 
     // Вершина 0 (низ)
     gl_Position = p0 - off0;
     fragWorldPos = worldPos[0];
+    fragEdgeWeight = edgeWeight[0];
     fragViewPos = viewPos[0];
     EmitVertex();
 
     // Вершина 1 (верх)
     gl_Position = p1 + off1;
     fragWorldPos = worldPos[1];
+    fragEdgeWeight = edgeWeight[1];
     fragViewPos = viewPos[1];
     EmitVertex();
 
     // Вершина 1 (низ)
     gl_Position = p1 - off1;
     fragWorldPos = worldPos[1];
+    fragEdgeWeight = edgeWeight[1];
     fragViewPos = viewPos[1];
     EmitVertex();
 

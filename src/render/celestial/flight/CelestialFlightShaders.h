@@ -123,6 +123,53 @@ vec3 posterize(vec3 c, float levels)
     return hue * max(q, 0.5 / levels);
 }
 
+// ---- Natural zones (Cinematic / Anime) -----------------------------------
+// Large readable geography from the data the planet already has - the
+// albedo's own vegetation / dryness / brightness and the relief height -
+// as zone weights (summing to 1), never per-pixel biome noise. The globe
+// feeds a coarse albedo mip, so zones are continental, not texel-sized.
+struct Zones { float snow; float forest; float plains; float dry; float mountain; };
+
+Zones planetZones(vec3 albedoLin, float heightKm)
+{
+    vec3 g = sqrt(max(albedoLin, vec3(0.0)));
+    float lum = dot(g, vec3(0.299, 0.587, 0.114));
+    float mx = max(g.r, max(g.g, g.b));
+    float mn = min(g.r, min(g.g, g.b));
+    float sat = (mx - mn) / max(mx, 1.0e-4);
+    float green = g.g - max(g.r, g.b) * 0.92;
+    float dryness = (g.r - g.b) * 1.4 + (lum - 0.45);
+    Zones z;
+    z.snow = smoothstep(0.62, 0.78, lum) * (1.0 - smoothstep(0.18, 0.32, sat));
+    z.mountain = smoothstep(3.0, 5.0, heightKm) * (1.0 - z.snow);
+    float veg = smoothstep(-0.03, 0.05, green) * (1.0 - z.snow) * (1.0 - z.mountain);
+    z.forest = veg * (1.0 - smoothstep(0.22, 0.34, lum));
+    z.plains = veg - z.forest;
+    z.dry = smoothstep(0.08, 0.30, dryness) * (1.0 - veg) * (1.0 - z.snow) * (1.0 - z.mountain);
+    z.plains += max(0.0, 1.0 - z.snow - z.mountain - z.forest - z.plains - z.dry);
+    return z;
+}
+
+// Anime: the dominant zone wins with a short soft border - flat masses.
+Zones sharpenZones(Zones z)
+{
+    float m = max(max(max(z.snow, z.forest), max(z.plains, z.dry)), z.mountain);
+    float k = 0.12;
+    z.snow = smoothstep(m - k, m, z.snow);
+    z.forest = smoothstep(m - k, m, z.forest);
+    z.plains = smoothstep(m - k, m, z.plains);
+    z.dry = smoothstep(m - k, m, z.dry);
+    z.mountain = smoothstep(m - k, m, z.mountain);
+    float sum = max(z.snow + z.forest + z.plains + z.dry + z.mountain, 1.0e-4);
+    z.snow /= sum; z.forest /= sum; z.plains /= sum; z.dry /= sum; z.mountain /= sum;
+    return z;
+}
+
+vec3 zoneColour(Zones z, vec3 snow, vec3 forest, vec3 plains, vec3 dry, vec3 mountain)
+{
+    return snow * z.snow + forest * z.forest + plains * z.plains + dry * z.dry + mountain * z.mountain;
+}
+
 // Shades one surface point. land / water: albedo of the two sides of the
 // coastline; coastKm < 0 water. nRelief: relief normal, nSphere: radial.
 // viewDir: from the point to the camera. dist: metres (haze).
@@ -155,81 +202,87 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
     }
 
     vec3 albedo = mix(land, water, isWater);
+    float nv = dot(nSphere, viewDir);
+    vec3 H = normalize(L + viewDir);
+    // Ocean depth from the coast (coastKm < 0 at sea): shallow shelf -> deep.
+    float deepSea = smoothstep(0.0, 180.0, -coastKm);
+    Zones zones = planetZones(land, heightKm);
     if (uStyle == 2)
     {
-        // Anime: a painted planet, not a satellite photo. Large colour
-        // masses (gentle posterisation, no saturation boost, the sphere
-        // normal dominates so procedural relief noise disappears), one
-        // light with a soft painted terminator and a narrow half-tone,
-        // a deep blue-violet night side with stepped warm city lights,
-        // and a bright atmospheric limb instead of an ink ring.
-        vec3 base = posterize(pow(max(albedo, vec3(0.0)), vec3(1.0 / 2.2)) * 1.08, 6.0);
-        // Sea as a deep, slightly saturated blue mass (anime-4); land keeps
-        // its own colours.
-        if (isWater > 0.5)
-            base = mix(base, base * vec3(0.72, 0.95, 1.22), 0.55);
-        float l = dot(normalize(mix(nSphere, nRelief, 0.22)), L);
-        float lit = smoothstep(0.10, 0.16, l);
-        float halfT = smoothstep(-0.06, 0.00, l);
-        vec3 dayTone = vec3(1.0, 0.98, 0.94);
-        vec3 halfTone = vec3(0.62, 0.66, 0.76);
-        vec3 nightTone = vec3(0.16, 0.18, 0.32);
-        vec3 light = mix(mix(nightTone, halfTone, halfT), dayTone, lit);
+        // Anime: a painted background world (anime-1 / anime-4): deep blue
+        // ocean, flat green / brown / ochre land masses, cream snow; one
+        // light with a soft painted terminator; cloud shadows as cool
+        // blue-grey patches; a narrow soft limb (no neon hoop).
+        zones = sharpenZones(zones);
+        vec3 landCol = zoneColour(zones,
+            vec3(0.93, 0.92, 0.87),   // snow / ice: cream
+            vec3(0.20, 0.37, 0.19),   // forest: deep green
+            vec3(0.43, 0.58, 0.27),   // plains / fertile: green
+            vec3(0.78, 0.66, 0.42),   // dry: ochre / sand
+            vec3(0.54, 0.39, 0.24));  // mountains: warm brown
+        vec3 seaCol = mix(vec3(0.15, 0.42, 0.66), vec3(0.08, 0.26, 0.54), deepSea);
+        vec3 base = isGas > 0.5 ? posterize(pow(max(albedo, vec3(0.0)), vec3(1.0 / 2.2)), 6.0)
+                                : mix(landCol, seaCol, isWater);
+        float l = dot(normalize(mix(nSphere, nRelief, 0.15)), L);
+        float lit = smoothstep(0.08, 0.14, l);
+        float halfT = smoothstep(-0.08, -0.02, l);
+        vec3 light = mix(mix(vec3(0.12, 0.15, 0.30), vec3(0.58, 0.63, 0.76), halfT), vec3(1.0, 0.98, 0.94), lit);
         vec3 col = base * light * uSunColour;
+        // Cloud shadows: cool blue-grey patches on the lit ground.
+        col *= mix(vec3(1.0), vec3(0.60, 0.67, 0.80), cloudShadow * lit);
         if (isWater > 0.5)
         {
-            vec3 h = normalize(L + viewDir);
-            float glint = smoothstep(0.55, 0.62, pow(max(dot(nSphere, h), 0.0), 160.0));
-            col = mix(col, vec3(1.0, 0.97, 0.90), glint * step(0.1, l) * 0.85);
+            float glint = smoothstep(0.55, 0.62, pow(max(dot(nSphere, H), 0.0), 160.0));
+            col = mix(col, vec3(1.0, 0.97, 0.90), glint * step(0.1, l) * 0.75);
         }
-        col += vec3(1.0, 0.82, 0.42) * step(0.35, emission) * (1.0 - day) * 0.75;
-        float nv = dot(nSphere, viewDir);
+        col += vec3(1.0, 0.82, 0.42) * step(0.35, emission) * (1.0 - day) * 0.70;
         if (uHazeDensity > 0.0)
         {
-            // Atmospheric limb: a soft bright band on the lit side, a thin
-            // violet one into the night.
-            float limb = 1.0 - smoothstep(0.0, 0.34, nv);
-            col = mix(col, uHazeColour * mix(0.55, 1.35, day), limb * mix(0.35, 0.70, day));
+            // A narrow soft limb toward the horizon; distance haze smooth.
+            float limb = 1.0 - smoothstep(0.0, 0.16, nv);
+            col = mix(col, uHazeColour * mix(0.45, 1.15, day), limb * mix(0.25, 0.50, day));
             float haze = 1.0 - exp(-dist * uHazeDensity);
-            haze = floor(haze * 4.0) / 4.0;
-            col = mix(col, uHazeColour * (0.4 + 0.6 * day), haze);
+            col = mix(col, uHazeColour * (0.35 + 0.55 * day), haze * 0.85);
         }
         return col;
     }
 
-    // Modern: the game's volumetric polygon look applied to a planet - a
-    // calm grey body whose form reads from light, tone and edges (not a
-    // photo, no day / night show). Land is a lighter grey than the sea,
-    // clouds white, the coast and the limb drawn as faint light edges.
-    float lum = dot(albedo, vec3(0.30, 0.55, 0.15));
-    vec3 grey = vec3(pow(max(lum, 0.0), 0.8) * 0.62) * vec3(0.96, 0.98, 1.0);
-    if (isWater > 0.5)
-        grey = vec3(0.035, 0.040, 0.048);
-    float wrap = clamp((dot(nRelief, L) + 0.35) / 1.35, 0.0, 1.0);
-    float form = 0.16 + 0.84 * wrap * smoothstep(-0.35, 0.25, ns);
+    // Cinematic: a large, coherent, physically plausible world. Natural
+    // zone palette blended with the real albedo (variation without noise),
+    // deep blue ocean with a soft broad glint, smooth light with a soft
+    // terminator, cloud shadows, blue aerial haze toward the limb.
+    vec3 landZone = zoneColour(zones,
+        vec3(0.80, 0.82, 0.86),   // snow / ice
+        vec3(0.028, 0.065, 0.016),// forest (linear)
+        vec3(0.12, 0.17, 0.045),  // plains
+        vec3(0.42, 0.29, 0.13),   // dry
+        vec3(0.17, 0.12, 0.075)); // mountains
+    vec3 landCol = mix(landZone, albedo, 0.35);
+    vec3 seaCol = mix(vec3(0.010, 0.055, 0.15), vec3(0.003, 0.018, 0.075), deepSea);
+    vec3 base = isGas > 0.5 ? albedo : mix(landCol, seaCol, isWater);
+    float wrap = clamp((dot(normalize(mix(nSphere, nRelief, 0.6)), L) + 0.08) / 1.08, 0.0, 1.0);
+    float terminator = smoothstep(-0.10, 0.18, ns);
     float sun = dot(uSunColour, vec3(0.33));
-    vec3 col = grey * sun * form * (1.0 - cloudShadow * 0.45);
+    vec3 col = base * uSunColour * (0.03 + 0.97 * wrap * terminator) * (1.0 - cloudShadow * 0.55 * terminator);
     if (isWater > 0.5)
     {
-        // One broad glint; its sharpness comes with the wave detail.
-        vec3 h = normalize(L + viewDir);
-        float spec = pow(max(dot(nRelief, h), 0.0), 40.0) * 0.18;
-        col += vec3(sun * spec * day * (1.0 - cloudShadow));
+        // A broad, calm glint (not plastic): fresnel-weighted, sun-lit only.
+        float spec = pow(max(dot(nRelief, H), 0.0), 60.0);
+        float fresnel = 0.02 + 0.98 * pow(1.0 - max(nv, 0.0), 5.0);
+        col += uSunColour * spec * (0.25 + fresnel) * 0.35 * terminator * (1.0 - cloudShadow);
     }
-    float nv = max(dot(nSphere, viewDir), 0.0);
-    // Edges: the coastline and the limb as faint light lines.
-    col += vec3(0.10) * (isGas > 0.5 ? 0.0 : lineMask(coastKm, 1.0)) * (0.3 + 0.7 * day);
-    col = mix(col, vec3(0.55, 0.57, 0.60) * (0.35 + 0.65 * day), rimMask(nv, 1.4) * 0.6);
+    // Night: subtle city light.
+    col += vec3(1.0, 0.72, 0.38) * emission * 0.020 * (1.0 - day);
     if (uHazeDensity > 0.0)
     {
+        // Blue aerial perspective, strongest toward the limb (thin, not a
+        // white band); the atmosphere pass draws the bright limb itself.
         float haze = 1.0 - exp(-dist * uHazeDensity);
-        haze = max(haze, pow(1.0 - nv, 5.0) * 0.5 * min(1.0, uHazeDensity * 3.0e5));
-        vec3 hazeGrey = mix(vec3(dot(uHazeColour, vec3(0.33))), uHazeColour, 0.25);
-        col = mix(col, hazeGrey * (0.10 + 0.35 * day) * sun, clamp(haze * 0.6, 0.0, 1.0));
+        haze = max(haze, pow(1.0 - max(nv, 0.0), 4.0) * 0.55 * min(1.0, uHazeDensity * 3.0e5));
+        col = mix(col, uHazeColour * 0.30 * sun * terminator, clamp(haze * 0.55, 0.0, 1.0));
     }
-    // Far away: simpler, less contrast.
     float mean = dot(col, vec3(0.333));
-    col = mix(col, vec3(mean) * 0.9 + 0.02, uFarFade * 0.5);
+    col = mix(col, vec3(mean), uFarFade * 0.25);
     // Linear albedo and light -> display (no sRGB framebuffer).
     return pow(max(col, vec3(0.0)), vec3(1.0 / 2.2));
 }
@@ -273,6 +326,7 @@ uniform float uPixelAngle;
 uniform float uRadius;
 uniform vec3 uFlat;          // colour while the texture bakes
 uniform float uHasTexture;
+uniform float uZoneBias;     // albedo mip bias for the natural zones (continental scale)
 out vec4 fragColour;
 void writeLogDepth();
 vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float emission, float ice,
@@ -295,7 +349,9 @@ void main()
         vec4 n = texture(uNormal, d);
         vec2 r = texture(uRelief, d).rg;
         vec3 c = a.rgb * a.rgb;
-        land = c;
+        // Zones read the albedo at a coarse mip: continental masses.
+        vec4 az = texture(uAlbedo, d, uZoneBias);
+        land = uZoneBias > 0.0 ? az.rgb * az.rgb : c;
         water = c;
         coastKm = r.g;
         heightKm = r.r;
@@ -492,14 +548,20 @@ void main()
     {
         // Anime clouds: painted masses with a soft brush edge, a warm white
         // sunlit side, lavender shade, slightly brighter dense cores.
-        float a = smoothstep(0.47, 0.56, c) * uOpacity;
+        // Large systems: the cover at a coarser mip (no small ripple),
+        // cream lit tops, cool blue-grey shade patches where the cloud is
+        // thick and turned from the sun (anime-4).
+        float cs = mix(textureLod(uCoverPrev, d, 2.0).r, textureLod(uCover, d, 2.0).r, uBlend);
+        float a = smoothstep(0.46, 0.54, cs) * uOpacity;
         if (a < 0.01)
             discard;
         float l = dot(n, L);
-        float lit = smoothstep(0.12, 0.20, l);
+        float lit = smoothstep(0.10, 0.18, l);
         float halfT = smoothstep(-0.10, -0.02, l);
-        vec3 col = mix(mix(vec3(0.20, 0.25, 0.38), vec3(0.62, 0.70, 0.80), halfT), vec3(1.0, 0.97, 0.90), lit);
-        col *= mix(0.90, 1.04, smoothstep(0.62, 0.75, c));
+        float thick = smoothstep(0.62, 0.80, c);
+        vec3 shade = vec3(0.60, 0.68, 0.80);
+        vec3 col = mix(mix(vec3(0.20, 0.25, 0.40), shade, halfT), vec3(1.0, 0.97, 0.90), lit);
+        col = mix(col, shade * mix(0.75, 1.0, lit), thick * 0.45 * smoothstep(0.55, 0.20, l));
         fragColour = vec4(col * uSunColour, a);
     }
     else
@@ -568,12 +630,15 @@ void main()
         float rClosest = b > 0.0 ? length(o + dir * b) : length(o) - b;
         vec3 pc = normalize(o + dir * max(b, 0.0));
         float lit = smoothstep(-0.35, 0.30, dot(pc, normalize(uSunDir)));
-        float glow = exp(-max(rClosest - 1.0, 0.0) / 0.11) * smoothstep(0.985, 1.0, rClosest);
+        // Two soft layers, no neon ring: a narrow halo just above the limb
+        // and a wide faint wash that tints the dark sky blue (anime-2).
+        float above = max(rClosest - 1.0, 0.0);
+        float glow = (exp(-above / 0.045) * 0.75 + exp(-above / 0.17) * 0.45) * smoothstep(0.985, 1.0, rClosest);
         vec3 tint = normalize(uScatter + 0.15);
         glowColour = mix(vec3(0.10, 0.12, 0.30), tint * 1.1, lit) * uSunColour;
         // Dither (+-0.5/255): a dark smooth gradient must not band in 8 bits.
-        float dither = (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;
-        glowA = max(glow * mix(0.10, 0.50, lit) + dither, 0.0);
+        float dither = (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * (2.0 / 255.0);
+        glowA = max(glow * mix(0.06, 0.32, lit) + dither, 0.0);
         if (uGlowOnly != 0)
         {
             // Separate cheap pass over a larger sphere: glow only, never the
@@ -645,24 +710,26 @@ void main()
     if (hitsGround)
         colour *= 0.25;
     float alpha = clamp(1.0 - exp(-depthView * uDensity * 0.6), 0.0, 1.0) * (hitsGround ? 0.3 : 1.0);
+    float exposure = 1.6;
     if (uStyle == 2)
     {
-        // Anime: flat stepped sky bands and a clean limb halo.
+        // Anime: a smooth, narrow cyan-blue limb (no stepped neon bands).
         float lum = dot(colour, vec3(0.3, 0.5, 0.2));
-        float band = floor(clamp(lum * 3.0, 0.0, 3.0) + 0.5) / 3.0;
-        // Restrained: a soft desaturated tint, the style is the stepping.
         vec3 tint = normalize(uScatter + 0.15);
-        colour = mix(vec3(dot(tint, vec3(0.33))), tint, 0.45) * band * 1.25 * uSunColour;
-        alpha = floor(alpha * 4.0 + 0.5) / 4.0;
+        colour = mix(vec3(dot(tint, vec3(0.33))), tint, 0.70) * lum * 1.10 * uSunColour;
+        exposure = 1.2;
     }
     if (uStyle == 1)
     {
-        // Modern: a nearly grey limb and sky (a faint cool tint only).
-        colour = mix(vec3(dot(colour, vec3(0.33))), colour, 0.3);
+        // Cinematic: keep the scattered blue (no grey desaturation) and a
+        // gentler exposure, so the limb peaks at the tangent and fades
+        // softly outward instead of a uniform white band.
+        colour = mix(vec3(dot(colour, vec3(0.33))), colour, 0.85);
         if (hitsGround)
-            colour *= 0.4; // the surface tone carries the form, not the air
+            colour *= 0.5;
+        exposure = 1.0;
     }
-    vec3 mapped = 1.0 - exp(-colour * 1.6);
+    vec3 mapped = 1.0 - exp(-colour * exposure);
     // Sky: the scattered light also hides what is behind it (stars).
     // Over the ground: additive haze only - the surface stays readable.
     float cover = hitsGround ? alpha * 0.25 : max(alpha * 0.25, max(max(mapped.r, mapped.g), mapped.b));

@@ -2046,7 +2046,10 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             globe.set("uMicroWavelength", quality.detailNormals && tex ? static_cast<float>(texel * 0.6) : 0.0f);
             globe.set("uDetailStrength", 0.25f);
             globe.set("uFarFade", static_cast<float>(std::clamp((40.0 - it.pxRadius) / 38.0, 0.0, 1.0)));
-            const bool cloudShadow = style == CelestialRenderStyle::Modern && rt->cloud.current;
+            // Natural zones read a coarse albedo mip (Anime coarser, flat masses).
+            globe.set("uZoneBias", style == CelestialRenderStyle::Anime ? 3.0f
+                                   : style == CelestialRenderStyle::Modern ? 1.5f : 0.0f);
+            const bool cloudShadow = style != CelestialRenderStyle::EliteStyle && rt->cloud.current;
             globe.set("uHasClouds", cloudShadow ? 1.0f : 0.0f);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_CUBE_MAP, tex ? rt->globe.albedo : dummyCube);

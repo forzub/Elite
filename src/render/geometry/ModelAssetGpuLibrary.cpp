@@ -46,9 +46,30 @@ game::ship::geometry::MeshData toMeshData(const ma::MeshLod& mesh, const std::ve
         }
         out.triangles.push_back(tri);
     }
+    const auto faceNormal = [&](std::int32_t t) {
+        const auto& tri = mesh.triangles[static_cast<std::size_t>(t)];
+        const glm::vec3 n = glm::cross(mesh.vertices[tri.b].position - mesh.vertices[tri.a].position,
+                                       mesh.vertices[tri.c].position - mesh.vertices[tri.a].position);
+        const float len = glm::length(n);
+        return len > 1.0e-12f ? n / len : glm::vec3(0.0f, 0.0f, 1.0f);
+    };
+    const auto validTri = [&](std::int32_t t) {
+        return t >= 0 && static_cast<std::size_t>(t) < mesh.triangles.size();
+    };
     for (const auto& e : mesh.edges)
         if (lineEdge(e) && e.a < mesh.vertices.size() && e.b < mesh.vertices.size())
-            out.edges.push_back({mesh.vertices[e.a].position, mesh.vertices[e.b].position});
+        {
+            game::ship::geometry::MeshEdge edge {mesh.vertices[e.a].position, mesh.vertices[e.b].position};
+            if ((e.flags & (ma::EdgeBoundary | ma::EdgeAuthored)) || !validTri(e.triangleA) || !validTri(e.triangleB))
+                edge.weight = 1.0f;
+            else if (mesh.triangles[static_cast<std::size_t>(e.triangleA)].materialIndex !=
+                     mesh.triangles[static_cast<std::size_t>(e.triangleB)].materialIndex)
+                edge.weight = 0.85f;
+            else
+                edge.weight = game::ship::geometry::creaseEdgeWeight(
+                    glm::clamp(glm::dot(faceNormal(e.triangleA), faceNormal(e.triangleB)), -1.0f, 1.0f));
+            out.edges.push_back(edge);
+        }
     out.minBounds = mesh.minBounds;
     out.maxBounds = mesh.maxBounds;
     out.boundCenter = 0.5f * (mesh.minBounds + mesh.maxBounds);

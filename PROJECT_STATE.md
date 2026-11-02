@@ -1381,6 +1381,47 @@ Status: implemented, live-captured; NOT user-accepted.
   references show own-colour shadows; gain only with other environments).
   Minimal ScenePalette design recorded in the analysis file.
 
+### Anime objects + planets pass; Modern renamed Cinematic (user order 2026-11-03)
+Status: implemented, live + PlanetLab captured; NOT user-accepted.
+- UI: the style is "CINEMATIC" (main menu + localisation; `cinematic` accepted
+  as an id alias); the persisted id stays `modern` (no preference churn).
+- Anime objects: paleness came from the distance ramp (material mixed toward
+  hullColorMid/Far greys + a depth tone; stations also toward the horizon
+  colour) and a softened station shadow. Now: own material colour only, three
+  values (light / base / shadow) with light materials compressed (no white
+  clay), distance = less chroma + base band merged into light, never lighter.
+  Silhouette = composite depth ink 2 px, near-black (object colour x0.10);
+  internal depth folds 0.75. Geometry lines are RANKED: `MeshEdge.weight`
+  (boundary 1, material boundary 0.85, crease 25..75 deg -> 0.35..1; OBJ and
+  ModelAsset), attribute 1 of the edge VAO; Anime draws major lines near-black
+  to ~2.2 km, minor lines faint and only within ~300 m.
+- Olive calibration: Cobrett temporarily olive (0.36, 0.42, 0.18) for two
+  calibration runs, then reverted to 0.42/0.47/0.50.
+- A composite-shader name clash (`fold`) silently disabled the whole post
+  chain in one calibration run ("[PostProcess] shader initialization
+  failed"): fixed; every run is now grepped for ShaderUtils errors.
+- Planets (both styles, separate palettes): natural zones from existing data
+  (`planetZones`: vegetation = albedo greenness, dry = warm bright albedo,
+  snow = bright low-saturation, mountains = relief > 3..5 km; sea depth from
+  coast distance), read from a coarse albedo mip (`uZoneBias` Anime 3,
+  Cinematic 1.5) -> continental masses, no biome noise. Anime: sharpened
+  dominant zone, painted palette, cloud shadows, narrow soft limb; Cinematic:
+  natural palette blended 35 % with the real albedo, deep-blue ocean with a
+  fresnel glint, cloud shadows, blue aerial haze, scattered blue limb with a
+  gentler exposure (no grey "LED strip"). Anime clouds: coarse cover mip,
+  cream / blue-grey. Anime atmosphere: smooth (no stepped bands), limb glow
+  = narrow halo + wide faint wash (keeps the blue sky of anime-2). Anime sky
+  x0.92 (x0.82 lost the blue; the earlier blue partly came from the wide glow).
+- Performance, same live scene, 1920 px: Elite 12.2, Cinematic 16.5, Anime
+  17.9 ms (before this pass 12.4 / 15.9 / 17.6). Elite regression: unchanged
+  look (`D:/tmp/elite_regression*.png`).
+- Gates: RelWithDebInfo + Debug build; docking_infrastructure_api,
+  route_stage_compiler PASS; client_spatial_domain, client_system_map_ships,
+  hub_guidance_test_geometry PASS; no ShaderUtils errors in the final runs.
+- Open: 8-bit banding in the wide limb glow at grazing view; Earth mountain
+  threshold is a fixed 3..5 km (DEM-scaled heights); station dense geometry
+  still busy at close range; no thrust plume.
+
 ## Next step
 - After the user's review: the separate stage INTERSTELLAR NAVIGATION
   (connected domain, ephemerides, gravity, InterstellarNavigationEnvironment

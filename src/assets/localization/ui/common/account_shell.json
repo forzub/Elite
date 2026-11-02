@@ -248,11 +248,11 @@
       "ja": "ELITE（ベクター）"
     },
     "main.settings.style_modern": {
-      "en": "MODERN",
-      "ru": "СОВРЕМЕННЫЙ",
-      "zh-Hans": "现代",
-      "es": "MODERNO",
-      "ja": "モダン"
+      "en": "CINEMATIC",
+      "ru": "КИНЕМАТОГРАФИЧЕСКИЙ",
+      "zh-Hans": "电影感",
+      "es": "CINEMATOGRÁFICO",
+      "ja": "シネマティック"
     },
     "main.settings.style_anime": {
       "en": "ANIME (CEL)",

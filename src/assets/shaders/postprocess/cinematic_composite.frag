@@ -73,8 +73,18 @@ float animeInk(vec2 uv, vec2 texel, out vec3 nearColor)
     vec2 lap = abs(vec2(on.x + on.y, on.z + on.w) - 2.0 * oc) / oc;
     vec2 fold = smoothstep(vec2(0.08), vec2(0.18), lap);
     vec4 jump = smoothstep(vec4(1.10), vec4(1.25), vec4(oc) / max(on, vec4(1.0e-7))) * fold.xxyy;
-    vec4 edge4 = max(jump, backdrop);
-    float edge = max(max(edge4.x, edge4.y), max(edge4.z, edge4.w));
+    // Silhouette (object vs backdrop) is the strongest line and 2 px wide
+    // (a second ring at 2 texels); internal depth folds are medium.
+    vec4 on2 = vec4(1.0) - vec4(
+        sceneDepth(uv + vec2(2.0 * texel.x, 0.0)),
+        sceneDepth(uv - vec2(2.0 * texel.x, 0.0)),
+        sceneDepth(uv + vec2(0.0, 2.0 * texel.y)),
+        sceneDepth(uv - vec2(0.0, 2.0 * texel.y)));
+    vec4 backdrop2 = min(vec4(greaterThanEqual(on2, vec4(0.06))) + vec4(lessThanEqual(on2, vec4(3.3e-5))), vec4(1.0));
+    float silhouette = max(max(max(backdrop.x, backdrop.y), max(backdrop.z, backdrop.w)),
+                           max(max(backdrop2.x, backdrop2.y), max(backdrop2.z, backdrop2.w)));
+    float foldInk = max(max(jump.x, jump.y), max(jump.z, jump.w)) * 0.75;
+    float edge = max(silhouette, foldInk);
     float open = dot(backdrop, vec4(1.0));
     // A thing about two pixels wide (space on 3-4 sides) stays a colour dot.
     return edge * (1.0 - smoothstep(2.5, 3.5, open));
@@ -144,15 +154,19 @@ void main()
         {
             vec2 ndc = gameUv * 2.0 - 1.0;
             vec3 viewDir = normalize(vec3(ndc.x * uTanHalfFovY * uAspect, ndc.y * uTanHalfFovY, -1.0));
-            vec3 sky = texture(uAnimeSky, normalize(uViewToWorld * viewDir)).rgb;
+            // Slightly darker than baked (x0.92): ships and the station read
+            // better; the blue/violet masses and their depth stay.
+            vec3 sky = texture(uAnimeSky, normalize(uViewToWorld * viewDir)).rgb * 0.92;
             float lumaBg = luminance(color);
             color += sky * (1.0 - smoothstep(0.10, 0.45, lumaBg));
         }
         vec3 nearColor;
         float ink = uStyle == 2 ? animeInk(uv, uSceneTexelSize, nearColor) : 0.0;
         // Coloured ink: the object's own shadow tone, deep and slightly cool.
-        vec3 inkColor = nearColor * vec3(0.22, 0.22, 0.30) + vec3(0.015, 0.015, 0.030);
-        color = mix(color, inkColor, ink * 0.88);
+        // Near-black ink with a trace of the object's own colour: reads on
+        // the dark sky, the blue limb, the ocean and bright clouds alike.
+        vec3 inkColor = nearColor * 0.10 + vec3(0.008, 0.008, 0.016);
+        color = mix(color, inkColor, ink * 0.95);
     }
 
     float luma = luminance(color);

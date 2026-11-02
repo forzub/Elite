@@ -22,7 +22,17 @@ namespace game::ship::geometry
     {
         glm::vec3 a;
         glm::vec3 b;
+        // Structural weight 0..1 for styles that rank lines (Anime):
+        // 1 = silhouette / geometry boundary, ~0.85 = material boundary,
+        // creases by angle (25 deg ~0.35 .. 75 deg+ ~1).
+        float weight = 1.0f;
     };
+
+    inline float creaseEdgeWeight(float cosAngle)
+    {
+        const float t = glm::clamp((0.906f - cosAngle) / (0.906f - 0.259f), 0.0f, 1.0f); // 25..75 deg
+        return 0.35f + 0.65f * t;
+    }
 
     struct MeshVertex
     {

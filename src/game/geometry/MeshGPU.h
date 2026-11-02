@@ -108,11 +108,14 @@ v2.normal = safeNormalize(v2.normal);
 
         // --- edges ---
         std::vector<glm::vec3> edgeVerts;
+        std::vector<float> edgeWeights;
 
         for (const auto& e : mesh.edges)
         {
             edgeVerts.push_back(e.a);
             edgeVerts.push_back(e.b);
+            edgeWeights.push_back(e.weight);
+            edgeWeights.push_back(e.weight);
         }
 
 
@@ -142,6 +145,13 @@ v2.normal = safeNormalize(v2.normal);
             sizeof(glm::vec3),
             (void*)0
         );
+
+        // Structural edge weight (attribute 1).
+        glGenBuffers(1, &edgeWeightVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, edgeWeightVBO);
+        glBufferData(GL_ARRAY_BUFFER, edgeWeights.size() * sizeof(float), edgeWeights.data(), GL_STATIC_DRAW);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
 
         glBindVertexArray(0);
 
@@ -451,6 +461,7 @@ private:
     GLuint ebo = 0;
     GLuint edgeVBO = 0;
     GLuint vaoEdges = 0;
+    GLuint edgeWeightVBO = 0;
 
     size_t vertexCount = 0;
     size_t edgeVertexCount = 0;

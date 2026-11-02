@@ -139,27 +139,26 @@ void main()
     }
     if (uSceneStyle == 2)
     {
-        // Anime: the object's OWN colour (the same as Modern shows) painted
-        // as large tonal masses under one dominant light - base tone, the
-        // own colour darkened with a slight steel-blue shift for shadow
-        // (never a new hue), a narrow highlight that is a lighter tint of
-        // the own colour (no white PBR specular, no reflections), and a
-        // hard, slightly anti-aliased terminator. With distance the bands
-        // merge and the hull sinks into the depth tone. The silhouette ink
-        // is the composite's depth contour.
-        vec3 albedo = distanceHullColor;
+        // Anime value hierarchy on the object's OWN material colour (vColor),
+        // never lightened by distance: light mass / base mass / shadow mass
+        // (+ the composite's near-black silhouette and the ranked edge
+        // lines). Hard, AA-limited band borders; no PBR specular.
+        vec3 albedo = vColor;
+        float lumA = dot(albedo, vec3(0.299, 0.587, 0.114));
+        // Distance simplifies instead of washing out: a little less chroma,
+        // and the base band merges into light (two masses remain).
+        albedo = mix(albedo, vec3(lumA), farT * 0.25);
         vec3 lightTint = lightColor / max(max(lightColor.r, max(lightColor.g, lightColor.b)), 1.0e-3);
-        vec3 base = albedo * mix(vec3(1.0), lightTint, 0.25);
-        vec3 shadowTone = albedo * vec3(0.34, 0.38, 0.46) + ambientColor * 0.02;
-        vec3 highlight = min(base * 1.30 + vec3(0.05, 0.04, 0.02), vec3(1.0));
-        float lit = smoothstep(-0.04, 0.04, ndlRaw);
-        float hi = smoothstep(0.84, 0.88, ndlRaw) * smoothstep(0.30, 0.45, facing);
-        float merge = farT * 0.75;                    // distance: bands merge
-        lit = mix(lit, 0.62, merge);
-        hi *= 1.0 - farT;
-        vec3 toon = mix(mix(shadowTone, base, lit), highlight, hi);
-        vec3 depthTone = vec3(0.10, 0.14, 0.24);      // distance tone (deep space blue)
-        toon = mix(toon, depthTone, farT * 0.45 + midT * 0.10);
+        // Light materials are compressed in the light mass (no white clay):
+        // three clearly separated values for any albedo.
+        vec3 lightMass = albedo * mix(vec3(1.0), lightTint, 0.25) * mix(1.05, 0.80, smoothstep(0.50, 0.85, lumA));
+        vec3 baseMass = albedo * mix(0.66, 0.55, smoothstep(0.50, 0.85, lumA));
+        vec3 shadowMass = albedo * vec3(0.25, 0.27, 0.33);
+        float aa = max(fwidth(ndlRaw), 0.002);
+        float toLight = smoothstep(0.42 - aa, 0.42 + aa, ndlRaw);
+        float toBase = smoothstep(-0.06 - aa, -0.06 + aa, ndlRaw);
+        toLight = mix(toLight, toBase, farT);
+        vec3 toon = mix(mix(shadowMass, baseMass, toBase), lightMass, toLight);
         // Anime: the nozzle is a flat bright cel (two steps), no gradient.
         float cel = glowAmount > 0.66 ? 1.0 : (glowAmount > 0.2 ? 0.6 : 0.0);
         toon = mix(toon, hot, cel);

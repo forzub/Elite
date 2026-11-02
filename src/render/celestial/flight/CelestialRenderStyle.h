@@ -41,7 +41,8 @@ inline const char* celestialRenderStyleId(CelestialRenderStyle style)
 inline bool parseCelestialRenderStyle(const std::string& id, CelestialRenderStyle& out)
 {
     if (id == "elite") { out = CelestialRenderStyle::EliteStyle; return true; }
-    if (id == "modern") { out = CelestialRenderStyle::Modern; return true; }
+    // "Cinematic" in the UI; the persisted id stays "modern".
+    if (id == "modern" || id == "cinematic") { out = CelestialRenderStyle::Modern; return true; }
     if (id == "anime") { out = CelestialRenderStyle::Anime; return true; }
     return false;
 }

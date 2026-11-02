@@ -1,6 +1,7 @@
 #version 330 core
 
 in vec3 fragWorldPos;
+in float fragEdgeWeight;
 out vec4 FragColor;
 
 uniform vec3 color;
@@ -38,11 +39,16 @@ void main()
     }
     else if (uSceneStyle == 2)
     {
-        // Anime: geometry edges are only quiet interior detail lines (the
-        // silhouette ink is the composite's depth contour). Thin, a deep
-        // slate tint, and gone with distance so far objects stay masses.
-        finalColor = vec3(0.10, 0.12, 0.18);
-        finalAlpha = alpha * 0.42 * (1.0 - smoothstep(0.0, 0.45, t));
+        // Anime: a line hierarchy by structural weight (the silhouette is
+        // the composite's depth ink). Major breaks / material boundaries:
+        // near-black, strong, kept far; medium creases: weaker, gone at
+        // mid range; minor ones: faint and only close. Far away an object
+        // keeps its silhouette and big masses, not a wireframe.
+        float major = smoothstep(0.55, 0.95, fragEdgeWeight);
+        float fadeEnd = mix(300.0, 2200.0, major);
+        float strength = mix(0.12, 0.80, major);
+        finalColor = vec3(0.025, 0.028, 0.040);
+        finalAlpha = strength * (1.0 - smoothstep(fadeEnd * 0.35, fadeEnd, dist));
     }
 
     FragColor = vec4(finalColor, finalAlpha);

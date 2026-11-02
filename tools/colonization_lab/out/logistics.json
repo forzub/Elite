@@ -1,0 +1,309 @@
+{
+  "build_cost": {
+    "bulk_carrier_heavy": {
+      "components_cr": 68800000,
+      "labour_cr": 10320000,
+      "list_price_cr": 89722080,
+      "production_cost_cr": 79120000,
+      "sales_tax_cr": 4272480,
+      "yard_margin_cr": 6329600
+    },
+    "cobrett_i_n1": {
+      "components_cr": 2490000,
+      "labour_cr": 448200,
+      "list_price_cr": 3393621,
+      "production_cost_cr": 2938200,
+      "sales_tax_cr": 161601,
+      "yard_margin_cr": 293820
+    },
+    "ocs4_lastochka": {
+      "components_cr": 1500000,
+      "labour_cr": 240000,
+      "list_price_cr": 1973160,
+      "production_cost_cr": 1740000,
+      "sales_tax_cr": 93960,
+      "yard_margin_cr": 139200
+    }
+  },
+  "calibration": {
+    "insystem_leg_cost_cr": 2215.552,
+    "insystem_leg_fuel_kg": 3.6926,
+    "insystem_leg_hours": 75.1658,
+    "jump_charge_cr_per_kg": 5.0773,
+    "jump_fuel_per_mean_jump_t": 1.0909,
+    "k_t_per_ly_at_ref": 0.0544,
+    "mean_jump_cost_cr": 5538.88,
+    "mean_jump_ly": 20.064,
+    "reference_mass_t": 288.0
+  },
+  "fleet_from_flow_examples": [
+    {
+      "loaded_trips_per_ship_year": 8.7,
+      "round_trip_days": 33.52,
+      "ship": "bulk_carrier_heavy",
+      "ships_needed": 192,
+      "tonnes_per_year": 100000000.0
+    },
+    {
+      "loaded_trips_per_ship_year": 16.5,
+      "round_trip_days": 13.7,
+      "ship": "cobrett_i_n1",
+      "ships_needed": 122,
+      "tonnes_per_year": 100000.0
+    }
+  ],
+  "network": {
+    "edge_max_ly": 31.592,
+    "edge_mean_ly": 18.999,
+    "edge_median_ly": 18.863,
+    "edge_min_ly": 4.062,
+    "edges": 140,
+    "max_hop_ly": 32.0,
+    "nearest_neighbour_mean_ly": 11.934,
+    "systems": 24,
+    "trip_hop_mean_ly": 20.064,
+    "trip_max_hops": 3,
+    "trip_mean_hops": 1.465,
+    "trip_mean_ly": 29.39,
+    "year": 3126
+  },
+  "range_mean_jumps": {
+    "bulk_carrier_heavy": {
+      "empty": 30.38,
+      "full": 4.17,
+      "half": 7.33
+    },
+    "cobrett_i_n1": {
+      "empty": 3.02,
+      "full": 2.54,
+      "half": 2.76
+    }
+  },
+  "replacement_examples": [
+    {
+      "fleet": 12000,
+      "losses_per_year": 72.0,
+      "natural_replacement_per_year": 342.9,
+      "service_life_years": 35,
+      "yard_demand_per_year_no_growth": 414.9
+    },
+    {
+      "fleet": 12000,
+      "losses_per_year": 360.0,
+      "natural_replacement_per_year": 342.9,
+      "service_life_years": 35,
+      "yard_demand_per_year_no_growth": 702.9
+    }
+  ],
+  "status": "PROPOSAL",
+  "trip_examples": [
+    {
+      "cargo_t": 50,
+      "cargo_value_cr": 150000.0,
+      "costs_cr": {
+        "beacon_tolls": 450,
+        "cargo_handling": 1200,
+        "cargo_insurance": 600,
+        "crew": 2905,
+        "customs": 6000,
+        "depreciation": 2934,
+        "expected_loss": 1417,
+        "hull_insurance": 1232,
+        "insystem_fuel": 4816,
+        "jump_fuel": 1268,
+        "maintenance_reserve": 3594,
+        "port_fees": 768
+      },
+      "cr_per_tonne": 543.7,
+      "jump_fuel_t": 0.25,
+      "jumps": 1,
+      "ly": 4.23,
+      "route": "0->60",
+      "ship": "cobrett_i_n1",
+      "total_cr": 27184,
+      "trip_days": 6.85
+    },
+    {
+      "cargo_t": 50,
+      "cargo_value_cr": 2000000.0,
+      "costs_cr": {
+        "beacon_tolls": 450,
+        "cargo_handling": 1200,
+        "cargo_insurance": 8000,
+        "crew": 2905,
+        "customs": 80000,
+        "depreciation": 2934,
+        "expected_loss": 2157,
+        "hull_insurance": 1232,
+        "insystem_fuel": 4816,
+        "jump_fuel": 1268,
+        "maintenance_reserve": 3594,
+        "port_fees": 768
+      },
+      "cr_per_tonne": 2186.5,
+      "jump_fuel_t": 0.25,
+      "jumps": 1,
+      "ly": 4.23,
+      "route": "0->60",
+      "ship": "cobrett_i_n1",
+      "total_cr": 109324,
+      "trip_days": 6.85
+    },
+    {
+      "cargo_t": 50,
+      "cargo_value_cr": 150000.0,
+      "costs_cr": {
+        "beacon_tolls": 450,
+        "cargo_handling": 1200,
+        "cargo_insurance": 600,
+        "crew": 2905,
+        "customs": 6000,
+        "depreciation": 2934,
+        "expected_loss": 1417,
+        "hull_insurance": 1232,
+        "insystem_fuel": 4816,
+        "jump_fuel": 5914,
+        "maintenance_reserve": 3594,
+        "port_fees": 768
+      },
+      "cr_per_tonne": 636.6,
+      "jump_fuel_t": 1.165,
+      "jumps": 1,
+      "ly": 19.71,
+      "route": "0->14",
+      "ship": "cobrett_i_n1",
+      "total_cr": 31829,
+      "trip_days": 6.85
+    },
+    {
+      "cargo_t": 50,
+      "cargo_value_cr": 2000000.0,
+      "costs_cr": {
+        "beacon_tolls": 450,
+        "cargo_handling": 1200,
+        "cargo_insurance": 8000,
+        "crew": 2905,
+        "customs": 80000,
+        "depreciation": 2934,
+        "expected_loss": 2157,
+        "hull_insurance": 1232,
+        "insystem_fuel": 4816,
+        "jump_fuel": 5914,
+        "maintenance_reserve": 3594,
+        "port_fees": 768
+      },
+      "cr_per_tonne": 2279.4,
+      "jump_fuel_t": 1.165,
+      "jumps": 1,
+      "ly": 19.71,
+      "route": "0->14",
+      "ship": "cobrett_i_n1",
+      "total_cr": 113969,
+      "trip_days": 6.85
+    },
+    {
+      "cargo_t": 50,
+      "cargo_value_cr": 150000.0,
+      "costs_cr": {
+        "beacon_tolls": 900,
+        "cargo_handling": 1200,
+        "cargo_insurance": 600,
+        "crew": 3011,
+        "customs": 6000,
+        "depreciation": 3041,
+        "expected_loss": 2835,
+        "hull_insurance": 1277,
+        "insystem_fuel": 4816,
+        "jump_fuel": 14045,
+        "maintenance_reserve": 3725,
+        "port_fees": 768
+      },
+      "cr_per_tonne": 844.3,
+      "jump_fuel_t": 2.766,
+      "jumps": 2,
+      "ly": 46.91,
+      "route": "0->16",
+      "ship": "cobrett_i_n1",
+      "total_cr": 42217,
+      "trip_days": 7.1
+    },
+    {
+      "cargo_t": 50,
+      "cargo_value_cr": 2000000.0,
+      "costs_cr": {
+        "beacon_tolls": 900,
+        "cargo_handling": 1200,
+        "cargo_insurance": 8000,
+        "crew": 3011,
+        "customs": 80000,
+        "depreciation": 3041,
+        "expected_loss": 4315,
+        "hull_insurance": 1277,
+        "insystem_fuel": 4816,
+        "jump_fuel": 14045,
+        "maintenance_reserve": 3725,
+        "port_fees": 768
+      },
+      "cr_per_tonne": 2501.9,
+      "jump_fuel_t": 2.766,
+      "jumps": 2,
+      "ly": 46.91,
+      "route": "0->16",
+      "ship": "cobrett_i_n1",
+      "total_cr": 125097,
+      "trip_days": 7.1
+    },
+    {
+      "cargo_t": 60000,
+      "cargo_value_cr": 18000000.0,
+      "costs_cr": {
+        "beacon_tolls": 450,
+        "cargo_handling": 1440000,
+        "cargo_insurance": 72000,
+        "crew": 38563,
+        "customs": 720000,
+        "depreciation": 114416,
+        "expected_loss": 43089,
+        "hull_insurance": 36041,
+        "insystem_fuel": 570031,
+        "jump_fuel": 1324456,
+        "maintenance_reserve": 154461,
+        "port_fees": 16500
+      },
+      "cr_per_tonne": 75.5,
+      "jump_fuel_t": 260.858,
+      "jumps": 1,
+      "ly": 19.71,
+      "route": "0->14",
+      "ship": "bulk_carrier_heavy",
+      "total_cr": 4530006,
+      "trip_days": 16.76
+    },
+    {
+      "cargo_t": 450.0,
+      "cargo_value_cr": 135000.0,
+      "costs_cr": {
+        "beacon_tolls": 0,
+        "cargo_handling": 10800,
+        "cargo_insurance": 540,
+        "crew": 5385,
+        "customs": 0,
+        "depreciation": 1845,
+        "expected_loss": 0,
+        "hull_insurance": 590,
+        "insystem_fuel": 11578,
+        "jump_fuel": 0,
+        "maintenance_reserve": 2214,
+        "port_fees": 984
+      },
+      "cr_per_tonne": 75.4,
+      "jump_fuel_t": 0.0,
+      "jumps": 0,
+      "ly": 0,
+      "route": "in-system (no jump)",
+      "ship": "ocs4_lastochka",
+      "total_cr": 33936,
+      "trip_days": 10.24
+    }
+  ]
+}

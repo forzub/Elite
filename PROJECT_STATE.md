@@ -1422,7 +1422,47 @@ Status: implemented, live + PlanetLab captured; NOT user-accepted.
   threshold is a fixed 3..5 km (DEM-scaled heights); station dense geometry
   still busy at close range; no thrust plume.
 
+### World economy architecture research (user order 2026-11-03)
+Status: research documents + offline logistics reference implemented; PROPOSAL,
+NOT user-accepted; no runtime change.
+- Documents (D:/tmp): `WORLD_ECONOMY_ARCHITECTURE_REVIEW.md` (stocks / flows /
+  decisions instead of themed layers; logistics = mandatory capacity filter
+  between decision and effect; event/cause log; strategic / operational /
+  physical levels with one persistent ShipInstanceId; motives instead of a
+  relation number; SupportProgram pledged->allocated->shipped->arrived->absorbed;
+  war trade channels official / sanctioned / re_export / smuggling /
+  covert_state; 14 commodity categories + separate serialized parts catalogue;
+  sealed containers; minimal primary data; lab keep/extend/delete; order),
+  `REFERENCE_GAME_ECONOMIES.md` (sources: `elite_research_games_aid.md`),
+  `WORLD_DATA_GRAPH.md`, `PLAYER_ECONOMY_BALANCE.md`.
+- New offline tool `tools/colonization_lab/logistics.py` +
+  `canon/ship_economics.json` (all money numbers PROPOSAL; ship physics from
+  runtime descriptors): network stats, jump-fuel calibration, build cost,
+  trip cost per tonne, yard replacement demand, fleet-from-flow. Output
+  `out/logistics.json` / `out/logistics_report.md`; `--check` mode;
+  deterministic (two runs, identical hashes).
+- Results (3126 net: 24 beacons, 140 edges): mean edge 19.0 ly, hops real
+  trips use 20.06 ly, mean trip 29.4 ly / 1.47 jumps. Jump fuel
+  `k*(M/M_ref)*d`, k = 0.0544 t/ly: Cobrett full tank = 3.02 / 2.76 / 2.54
+  mean jumps (empty / half / full cargo) -> author rule 2.5-3 met. Jump
+  charge price derived from "mean jump = 2.5 x in-system leg" (leg 2216 Cr,
+  jump 5539 Cr). Cobrett list 3.39 M Cr; trip Sol->19.7 ly with 50 t cheap
+  cargo 31.8 k Cr = 637 Cr/t; heavy carrier 75.5 Cr/t; OCS-4 in-system
+  75 Cr/t. Yard demand fleet 12000 / 35 y: 343 + 72 losses = 415 hulls/y
+  (703 at 3 % war losses). 100 Mt/y needs 192 heavy carriers.
+- Population vs author targets: targets need 1.1-1.8 %/y sustained since
+  founding (late colonies 1.8-2.4 %/y), the model gives 0.4-1.25 %/y
+  (off-Sol 183 M vs ~10 bn; lab Earth 5.5 bn vs 10 bn). Proposed causes, not
+  multipliers: housing-cost step (habitat boom after belt industry),
+  terraforming, Earth emigration after 2750; NOT implemented (needs author OK).
+- Found inconsistency: traffic Cobrett cargo 40 t vs descriptor 50 t.
+- Checks: `lab.py --check-dataset`, `--check-lore`, `lore_md.py --check` OK
+  (117 files unchanged); lab data untouched.
+
 ## Next step
+- Economy: author review of the four documents; then (offline) commodities.json
+  (14 categories) + trade.py on logistics cost per tonne; demography for
+  author targets (housing epochs + Earth emigration).
 - After the user's review: the separate stage INTERSTELLAR NAVIGATION
   (connected domain, ephemerides, gravity, InterstellarNavigationEnvironment
   hazards, icy fields, rogue objects, refuelling, ship-specific risk).

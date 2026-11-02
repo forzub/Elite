@@ -1,0 +1,122 @@
+{
+  "status": "PROPOSAL",
+  "note": "First balance reference for logistics costs (2026-11-03). Physical ship facts come from the runtime descriptors (EliteCobraMk1.cpp, OrbitalCargoShuttlePassports.h); every money / fuel / wear number here is a PROPOSAL anchored on the few constants in 'anchors'. Currency: Cr.",
+  "anchors": {
+    "pilot_wage_cr_per_month": 4000,
+    "reactor_fuel_cr_per_kg": 600,
+    "jump_vs_insystem_cost_ratio": 2.5,
+    "note": "Reactor fuel = D/He-3 pellets (fusion, ~3.5e14 J/kg, 30 % plant-to-drive). Jump charge = the drive's consumable isotope charge (bulk, refined at fuel depots). The jump-charge price is DERIVED in logistics.py so that one network-mean jump costs jump_vs_insystem_cost_ratio x one mean in-system leg (author wish 2-3x)."
+  },
+  "jump_rule": {
+    "mean_jumps_per_full_tank": 2.75,
+    "mass_exponent": 1.0,
+    "distance_exponent": 1.0,
+    "charge_hours_per_jump": 6.0,
+    "note": "fuel_t = k * (M_total / M_ref) * d_ly ; k calibrated so that a full tank at reference loaded mass covers 2.75 network-mean jumps (author wish 2.5-3)."
+  },
+  "insystem_rule": {
+    "mean_leg_au": 1.2,
+    "burn_accel_g": 1.0,
+    "plant_efficiency": 0.3,
+    "fuel_energy_j_per_kg": 350000000000000.0,
+    "note": "A leg = station <-> jump-safe point or between two in-system ports: brachistochrone at the class burn_accel_g (loaded); drive power scales with the thrust fraction used (electrical input x thrust needed / max thrust)."
+  },
+  "ship_classes": {
+    "cobrett_i_n1": {
+      "role": "medium: regional freight, high-value cargo, courier",
+      "dry_mass_t": 260,
+      "cargo_t": 50,
+      "cargo_m3": 140,
+      "jump_tank_t": 3.0,
+      "drive_input_mw": 4850,
+      "crew": 2,
+      "service_life_years": 35,
+      "utilisation": 0.62,
+      "loss_rate_per_year": 0.006,
+      "components_cr": {
+        "hull_structure": 520000,
+        "main_drive_cr1": 380000,
+        "reactor_er5": 460000,
+        "jump_drive": 610000,
+        "electronics_mothercomputer_radar": 190000,
+        "life_support": 70000,
+        "rcs_thermal_radiators": 140000,
+        "weapons_2_slots": 120000
+      },
+      "labour_share": 0.18,
+      "yard_margin": 0.1,
+      "sales_tax": 0.05,
+      "maintenance_share_per_year": 0.035,
+      "insurance_hull_rate_per_year": 0.012,
+      "thrust_mn": 9.56,
+      "burn_accel_g": 1.0
+    },
+    "ocs4_lastochka": {
+      "role": "small/medium orbital cargo shuttle (no jump drive)",
+      "dry_mass_t": 380,
+      "cargo_t": 450,
+      "cargo_m3": 2600,
+      "jump_tank_t": 0.0,
+      "drive_input_mw": 2400,
+      "crew": 3,
+      "service_life_years": 40,
+      "utilisation": 0.75,
+      "loss_rate_per_year": 0.002,
+      "components_cr": {
+        "hull_structure": 610000,
+        "main_drive": 260000,
+        "reactor": 300000,
+        "jump_drive": 0,
+        "electronics_mothercomputer_radar": 110000,
+        "life_support": 60000,
+        "rcs_thermal_radiators": 160000,
+        "weapons_2_slots": 0
+      },
+      "labour_share": 0.16,
+      "yard_margin": 0.08,
+      "sales_tax": 0.05,
+      "maintenance_share_per_year": 0.03,
+      "insurance_hull_rate_per_year": 0.008,
+      "thrust_mn": 3.3,
+      "burn_accel_g": 0.4
+    },
+    "bulk_carrier_heavy": {
+      "role": "heavy 'space train': ore / container / tanker between systems",
+      "dry_mass_t": 9000,
+      "cargo_t": 60000,
+      "cargo_m3": 150000,
+      "jump_tank_t": 1100.0,
+      "drive_input_mw": 90000,
+      "crew": 14,
+      "service_life_years": 45,
+      "utilisation": 0.8,
+      "loss_rate_per_year": 0.003,
+      "components_cr": {
+        "hull_structure": 21000000,
+        "main_drive_cr1": 7000000,
+        "reactor_er5": 9000000,
+        "jump_drive": 26000000,
+        "electronics_mothercomputer_radar": 1500000,
+        "life_support": 800000,
+        "rcs_thermal_radiators": 3500000,
+        "weapons_2_slots": 0
+      },
+      "labour_share": 0.15,
+      "yard_margin": 0.08,
+      "sales_tax": 0.05,
+      "maintenance_share_per_year": 0.03,
+      "insurance_hull_rate_per_year": 0.007,
+      "thrust_mn": 130.0,
+      "burn_accel_g": 0.15
+    }
+  },
+  "fees": {
+    "dock_cr_per_call_base": 150,
+    "dock_cr_per_tonne_dry": 0.9,
+    "cargo_handling_cr_per_tonne": 12,
+    "beacon_toll_cr_per_jump": 450,
+    "customs_share_of_cargo_value": 0.04,
+    "route_loss_probability_per_jump": 0.0004,
+    "cargo_insurance_rate_per_trip": 0.004
+  }
+}

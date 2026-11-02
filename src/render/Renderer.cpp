@@ -1,3 +1,8 @@
+#include <glm/glm.hpp>
+#include <cmath>
+#include <cstdint>
+#include <vector>
+#include "src/render/SceneStyle.h"
 #include "src/render/legacy/CoreGlLegacyBridge.h"
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -42,6 +47,13 @@ void setFloat(GLuint program, const char* name, float value)
         glUniform1f(location, value);
 }
 
+void setMat3(GLuint program, const char* name, const float* value)
+{
+    const GLint location = glGetUniformLocation(program, name);
+    if (location >= 0)
+        glUniformMatrix3fv(location, 1, GL_FALSE, value);
+}
+
 void setVec2(GLuint program, const char* name, float x, float y)
 {
     const GLint location = glGetUniformLocation(program, name);
@@ -56,6 +68,103 @@ void setVec4(GLuint program, const char* name, float x, float y, float z, float 
         glUniform4f(location, x, y, z, w);
 }
 } // namespace
+
+
+// ---- Anime deep-space backdrop (baked once) --------------------------------
+// References anime-2/anime-3: deep blue <-> violet painted masses, never black,
+// never bright. A function of the WORLD direction only, so it is baked once
+// into a cubemap and the composite pays one texture fetch per sky pixel.
+namespace
+{
+float skyFract(float x) { return x - std::floor(x); }
+
+float skyHash(glm::vec3 p)
+{
+    p = glm::vec3(skyFract(p.x * 0.3183099f + 0.71f), skyFract(p.y * 0.3183099f + 0.113f),
+                  skyFract(p.z * 0.3183099f + 0.419f)) * 17.0f;
+    return skyFract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+float skyNoise(const glm::vec3& x)
+{
+    const glm::vec3 i = glm::floor(x);
+    glm::vec3 f = x - i;
+    f = f * f * (glm::vec3(3.0f) - 2.0f * f);
+    const auto h = [&](float a, float b, float c) { return skyHash(i + glm::vec3(a, b, c)); };
+    return glm::mix(glm::mix(glm::mix(h(0, 0, 0), h(1, 0, 0), f.x), glm::mix(h(0, 1, 0), h(1, 1, 0), f.x), f.y),
+                    glm::mix(glm::mix(h(0, 0, 1), h(1, 0, 1), f.x), glm::mix(h(0, 1, 1), h(1, 1, 1), f.x), f.y), f.z);
+}
+
+float skyFbm(const glm::vec3& x)
+{
+    return skyNoise(x) * 0.55f + skyNoise(x * 2.03f + glm::vec3(7.1f)) * 0.30f +
+           skyNoise(x * 4.11f + glm::vec3(13.7f)) * 0.15f;
+}
+
+float skySmooth(float e0, float e1, float x)
+{
+    const float t = std::clamp((x - e0) / (e1 - e0), 0.0f, 1.0f);
+    return t * t * (3.0f - 2.0f * t);
+}
+
+glm::vec3 animeSky(const glm::vec3& dir)
+{
+    const float masses = skyFbm(dir * 1.6f);
+    const float veil = skyFbm(dir * 3.4f + glm::vec3(11.0f, 3.0f, 5.0f));
+    const float brush = skyNoise(dir * 22.0f) - 0.5f; // faint painted mottling
+    const glm::vec3 deep(0.006f, 0.012f, 0.032f);   // near-black blue
+    const glm::vec3 navy(0.020f, 0.040f, 0.095f);   // deep blue (anime-3)
+    const glm::vec3 violet(0.060f, 0.032f, 0.110f); // violet mass, kept dark
+    const glm::vec3 blue(0.024f, 0.060f, 0.125f);   // brighter blue veil
+    glm::vec3 sky = glm::mix(deep, navy, skySmooth(0.30f, 0.68f, masses));
+    sky = glm::mix(sky, violet, skySmooth(0.55f, 0.82f, veil) * 0.85f);
+    sky = glm::mix(sky, blue, skySmooth(0.62f, 0.86f, masses * 0.6f + veil * 0.5f) * 0.6f);
+    return sky * (1.0f + brush * 0.10f);
+}
+} // namespace
+
+void Renderer::bakeAnimeSkyCubemap()
+{
+    if (m_animeSkyCubemap != 0)
+        return;
+    constexpr int Size = 256;
+    std::vector<std::uint16_t> texels(static_cast<std::size_t>(Size) * Size * 3);
+    glGenTextures(1, &m_animeSkyCubemap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_animeSkyCubemap);
+    for (int face = 0; face < 6; ++face)
+    {
+        for (int y = 0; y < Size; ++y)
+            for (int x = 0; x < Size; ++x)
+            {
+                const float u = 2.0f * (static_cast<float>(x) + 0.5f) / Size - 1.0f;
+                const float v = 2.0f * (static_cast<float>(y) + 0.5f) / Size - 1.0f;
+                glm::vec3 d;
+                switch (face) // GL cubemap face orientation
+                {
+                    case 0: d = glm::vec3(1.0f, -v, -u); break;
+                    case 1: d = glm::vec3(-1.0f, -v, u); break;
+                    case 2: d = glm::vec3(u, 1.0f, v); break;
+                    case 3: d = glm::vec3(u, -1.0f, -v); break;
+                    case 4: d = glm::vec3(u, -v, 1.0f); break;
+                    default: d = glm::vec3(-u, -v, -1.0f); break;
+                }
+                const glm::vec3 c = glm::clamp(animeSky(glm::normalize(d)), glm::vec3(0.0f), glm::vec3(1.0f));
+                const std::size_t i = (static_cast<std::size_t>(y) * Size + x) * 3;
+                texels[i + 0] = static_cast<std::uint16_t>(c.r * 65535.0f);
+                texels[i + 1] = static_cast<std::uint16_t>(c.g * 65535.0f);
+                texels[i + 2] = static_cast<std::uint16_t>(c.b * 65535.0f);
+            }
+        // 16-bit: the dark gradients must not band.
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGB16, Size, Size, 0, GL_RGB, GL_UNSIGNED_SHORT,
+                     texels.data());
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+}
 
 bool Renderer::init()
 {
@@ -139,6 +248,7 @@ bool Renderer::init()
     setSampler(m_compositeProgram, "uBloom", 1);
     setSampler(m_compositeProgram, "uDepth", 2);
     setSampler(m_compositeProgram, "uDepthMs", 3);
+    setSampler(m_compositeProgram, "uAnimeSky", 4);
 
     glUseProgram(0);
 
@@ -391,6 +501,15 @@ void Renderer::endPostProcess(float timeSeconds)
     setFloat(m_compositeProgram, "uTime", timeSeconds);
     setSampler(m_compositeProgram, "uStyle", m_postStyle);
     setSampler(m_compositeProgram, "uDepthIsMs", m_sceneDepthMsTexture != 0 ? 1 : 0);
+    {
+        const auto& camera = render::presentedCameraStorage();
+        const bool cameraValid = camera.valid && (m_postStyle == 2 || m_postStyle == 3);
+        setSampler(m_compositeProgram, "uCameraValid", cameraValid ? 1 : 0);
+        setMat3(m_compositeProgram, "uViewToWorld", camera.viewToWorld);
+        setFloat(m_compositeProgram, "uTanHalfFovY", camera.tanHalfFovY);
+        // The composite works in game-viewport UV; the camera's own aspect.
+        setFloat(m_compositeProgram, "uAspect", camera.aspect);
+    }
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_sceneTexture);
@@ -404,7 +523,15 @@ void Renderer::endPostProcess(float timeSeconds)
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_sceneDepthMsTexture);
 
+    if (m_postStyle == 2 || m_postStyle == 3)
+        bakeAnimeSkyCubemap();
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_animeSkyCubemap);
+
     drawFullscreenTriangle();
+
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);

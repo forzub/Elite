@@ -2,6 +2,7 @@
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
+layout(location = 3) in vec3 materialColor; // material base colour (model data)
 
 uniform mat4 MVP;
 uniform mat4 M;
@@ -24,5 +25,5 @@ void main()
     gl_Position = MVP * vec4(position, 1.0);
 
     vNormal = normalize(normalMat * normal);
-    vColor = vec3(1.0);
+    vColor = materialColor;
 }

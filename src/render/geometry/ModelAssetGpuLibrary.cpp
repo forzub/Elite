@@ -26,7 +26,9 @@ bool lineEdge(const ma::Edge& e)
     return (e.flags & (ma::EdgeBoundary | ma::EdgeCrease | ma::EdgeAuthored)) != 0;
 }
 
-game::ship::geometry::MeshData toMeshData(const ma::MeshLod& mesh)
+// Each triangle carries its MaterialDefinition.baseColor (the model's own
+// colour); every renderer style interprets it.
+game::ship::geometry::MeshData toMeshData(const ma::MeshLod& mesh, const std::vector<ma::MaterialDefinition>& materials)
 {
     game::ship::geometry::MeshData out;
     out.vertices.reserve(mesh.vertices.size());
@@ -34,7 +36,16 @@ game::ship::geometry::MeshData toMeshData(const ma::MeshLod& mesh)
         out.vertices.push_back({v.position, v.normal, glm::vec3(0.0f), glm::vec3(1.0f)});
     out.triangles.reserve(mesh.triangles.size());
     for (const auto& t : mesh.triangles)
-        out.triangles.push_back({static_cast<int>(t.a), static_cast<int>(t.b), static_cast<int>(t.c), t.sourcePolygonId});
+    {
+        game::ship::geometry::MeshTriangle tri {static_cast<int>(t.a), static_cast<int>(t.b), static_cast<int>(t.c),
+                                                t.sourcePolygonId};
+        if (t.materialIndex >= 0 && static_cast<std::size_t>(t.materialIndex) < materials.size())
+        {
+            tri.baseColor = glm::vec3(materials[static_cast<std::size_t>(t.materialIndex)].baseColor);
+            tri.hasMaterialColor = true;
+        }
+        out.triangles.push_back(tri);
+    }
     for (const auto& e : mesh.edges)
         if (lineEdge(e) && e.a < mesh.vertices.size() && e.b < mesh.vertices.size())
             out.edges.push_back({mesh.vertices[e.a].position, mesh.vertices[e.b].position});
@@ -147,7 +158,7 @@ const MeshGPU* ModelAssetGpu::gpuFor(std::int32_t lod, std::int32_t geometry) co
     {
         const auto& mesh = lodData.geometries[static_cast<std::size_t>(geometry)].mesh;
         slot = std::make_unique<MeshGPU>();
-        slot->upload(toMeshData(mesh));
+        slot->upload(toMeshData(mesh, asset.materials));
         m_uploadedTriangles += mesh.triangles.size();
         // MeshGPU expands triangles: 3 MeshVertex per triangle + edge lines.
         m_uploadedBytes += mesh.triangles.size() * 3 * sizeof(game::ship::geometry::MeshVertex);

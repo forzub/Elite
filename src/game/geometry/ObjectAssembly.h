@@ -50,6 +50,11 @@ struct ObjectAssemblyDesc
     // Цельный mesh всего корабля для дальнего рендера.
     // Это НЕ part LOD, а whole-ship proxy.
     std::string wholeShipProxyPath;
+
+    // The model's default material base colour (albedo, linear 0..1) for
+    // faces whose OBJ carries no MTL material. Model data - every renderer
+    // style interprets it (Modern: albedo, Anime: tonal masses, Elite: none).
+    glm::vec3 defaultBaseColor = DefaultMaterialBaseColor;
 };
 
 struct AssemblyMeshPart

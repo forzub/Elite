@@ -36,8 +36,9 @@ public:
             v1.bary = glm::vec3(0,1,0);
             v2.bary = glm::vec3(0,0,1);
 
-            // == цвет корабля =============
-            glm::vec3 color = {0.05, 0.05, 0.1};
+            // Material base colour of the face (attribute 3, per vertex of
+            // the expanded triangle): model data, interpreted by each style.
+            const glm::vec3 color = t.baseColor;
 
             v0.debugColor = color;
             v1.debugColor = color;

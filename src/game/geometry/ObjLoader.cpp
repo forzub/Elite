@@ -128,11 +128,15 @@ bool ObjLoader::load(
     // owns positional weld, collapsed triangles and exact duplicate removal.
     std::vector<elite::model_asset::RuntimeMeshTriangleInput> rawTriangles;
     int globalFaceId = 0;
+    // Source face -> its MTL material (-1 = none); triangles keep the face id.
+    std::vector<int> faceMaterial;
     for (const auto& shape : shapes)
     {
         size_t indexOffset = 0;
         for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); ++f)
         {
+            faceMaterial.push_back(
+                f < shape.mesh.material_ids.size() ? shape.mesh.material_ids[f] : -1);
             const int fv = shape.mesh.num_face_vertices[f];
             if (fv < 3)
             {
@@ -188,12 +192,22 @@ bool ObjLoader::load(
     mesh.triangles.reserve(normalized.triangles.size());
     for (const auto& triangle : normalized.triangles)
     {
-        mesh.triangles.push_back({
+        MeshTriangle t {
             static_cast<int>(triangle.a),
             static_cast<int>(triangle.b),
             static_cast<int>(triangle.c),
             triangle.sourceTag
-        });
+        };
+        const int face = triangle.sourceTag;
+        const int materialId =
+            face >= 0 && face < static_cast<int>(faceMaterial.size()) ? faceMaterial[face] : -1;
+        if (materialId >= 0 && materialId < static_cast<int>(materials.size()))
+        {
+            const auto& m = materials[static_cast<size_t>(materialId)];
+            t.baseColor = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
+            t.hasMaterialColor = true;
+        }
+        mesh.triangles.push_back(t);
     }
 
     // -------------------------

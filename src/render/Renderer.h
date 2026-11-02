@@ -77,6 +77,10 @@ private:
     GLuint m_bloomExtractProgram = 0;
     GLuint m_blurProgram = 0;
     GLuint m_compositeProgram = 0;
+    // Anime deep-space backdrop: a world-fixed painted sky baked ONCE into a
+    // cubemap (per-pixel procedural noise cost ~17 ms at 1920 px).
+    GLuint m_animeSkyCubemap = 0;
+    void bakeAnimeSkyCubemap();
 
     GLuint m_sceneFramebuffer = 0;
     GLuint m_sceneColorRenderbuffer = 0;

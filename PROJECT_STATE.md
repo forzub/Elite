@@ -1346,6 +1346,41 @@ docking_module_boundaries, hub_motion_lab, multiplayer_client_local_identity,
 navigation_api_purity, navigation_foundation_lock, navigation_guidance_layer,
 client_acceptance architecture, system_map object_overlay).
 
+### Anime v2 by the user's references + material baseColor (user order 2026-11-02, night)
+Status: implemented, live-captured; NOT user-accepted.
+- References `D:/tmp/anime-1..4.jpg` analysed in `D:/tmp/ANIME_REFERENCE_ANALYSIS.md`
+  (measured palettes, sky structure, ANIME STYLE TARGET, self-comparison).
+- **Material baseColor is model data now** (user rule: model/material ->
+  baseColor -> each style interprets it; no animeColor). `MeshTriangle.baseColor`
+  carries the face's material colour into vertex attribute 3 (MeshGPU no longer
+  overwrites it): ModelAsset `MaterialDefinition.baseColor` per triangle
+  (station, already editable in EliteAssetEditor SURFACES), OBJ MTL `Kd` per
+  face, otherwise `ObjectAssemblyDesc::defaultBaseColor` (Cobrett 0.42/0.47/0.50,
+  hex dock 0.62/0.64/0.66, service block 0.52/0.54/0.56, OCS-4 0.66/0.64/0.58,
+  generic default 0.55/0.57/0.60). Shaders: near colour = material colour
+  (Modern albedo, Anime tonal masses), LightingParams mid/far stay as the style's
+  distance fade; `hullColorNear` is no longer used; Elite ignores colour.
+- Anime: shadow = own colour darkened with a slight steel-blue shift (no
+  lavender), highlight = lighter own colour; stations use a gentler shadow step
+  and a shifted terminator so small parts merge; deep space = world-fixed
+  painted sky (deep blue <-> violet) BAKED once into a 256^2 RGB16 cubemap
+  (per-pixel procedural noise cost ~17 ms at 1920 px - measured 33.4 ms frame);
+  planet limb glow (anime-2) as a separate cheap pass over a 1.9 R sphere,
+  continued inside the air shell (no dark ring), dithered; soft stars; clouds
+  cream/blue-grey; sea deeper blue.
+- Performance (live, same scene, 1920 px): Elite 12.4, Modern 15.9 ms; Anime
+  with the procedural sky 33.4 ms -> baked sky 18.0 ms -> two-pass limb glow
+  17.6 ms (+1.7 ms / +11 % over Modern: depth ink at 1920 px, glow pass, sky
+  fetch). Ink is limited to mesh pixels ~15 m..30 km, so the near-terrain depth
+  pass seen from orbit gets no false contour lines (they were visible in drone
+  views). PlanetLab GPU atmosphere timers in Anime read 10-20 ms
+  even with the glow pass disabled while Modern reads ~0.6 (0.00 inside the
+  air): those timers are not trustworthy here; end-to-end frame time is the
+  measure. Open: profile the Anime atmosphere pass properly.
+- Adaptive scene palette (user idea): evaluated, NOT implemented now (the
+  references show own-colour shadows; gain only with other environments).
+  Minimal ScenePalette design recorded in the analysis file.
+
 ## Next step
 - After the user's review: the separate stage INTERSTELLAR NAVIGATION
   (connected domain, ephemerides, gravity, InterstellarNavigationEnvironment

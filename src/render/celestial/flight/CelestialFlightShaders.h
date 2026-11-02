@@ -164,11 +164,15 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
         // a deep blue-violet night side with stepped warm city lights,
         // and a bright atmospheric limb instead of an ink ring.
         vec3 base = posterize(pow(max(albedo, vec3(0.0)), vec3(1.0 / 2.2)) * 1.08, 6.0);
+        // Sea as a deep, slightly saturated blue mass (anime-4); land keeps
+        // its own colours.
+        if (isWater > 0.5)
+            base = mix(base, base * vec3(0.72, 0.95, 1.22), 0.55);
         float l = dot(normalize(mix(nSphere, nRelief, 0.22)), L);
         float lit = smoothstep(0.10, 0.16, l);
         float halfT = smoothstep(-0.06, 0.00, l);
         vec3 dayTone = vec3(1.0, 0.98, 0.94);
-        vec3 halfTone = vec3(0.66, 0.64, 0.74);
+        vec3 halfTone = vec3(0.62, 0.66, 0.76);
         vec3 nightTone = vec3(0.16, 0.18, 0.32);
         vec3 light = mix(mix(nightTone, halfTone, halfT), dayTone, lit);
         vec3 col = base * light * uSunColour;
@@ -442,13 +446,14 @@ uniform mat4 uViewProj;
 uniform mat3 uBodyToWorld;
 uniform vec3 uCentre;
 uniform float uShellRadius;
+uniform float uGeomRadius; // > 0: draw the shell geometry at this radius (Anime limb glow)
 out vec3 vDirBody;
 out vec3 vWorld;
 void applyLogDepth();
 void main()
 {
     vec3 d = normalize(aDir);
-    vec3 p = uBodyToWorld * (d * uShellRadius) + uCentre;
+    vec3 p = uBodyToWorld * (d * (uGeomRadius > 0.0 ? uGeomRadius : uShellRadius)) + uCentre;
     vDirBody = d;
     vWorld = p;
     gl_Position = uViewProj * vec4(p, 1.0);
@@ -493,7 +498,7 @@ void main()
         float l = dot(n, L);
         float lit = smoothstep(0.12, 0.20, l);
         float halfT = smoothstep(-0.10, -0.02, l);
-        vec3 col = mix(mix(vec3(0.20, 0.21, 0.38), vec3(0.78, 0.76, 0.90), halfT), vec3(1.0, 0.98, 0.93), lit);
+        vec3 col = mix(mix(vec3(0.20, 0.25, 0.38), vec3(0.62, 0.70, 0.80), halfT), vec3(1.0, 0.97, 0.90), lit);
         col *= mix(0.90, 1.04, smoothstep(0.62, 0.75, c));
         fragColour = vec4(col * uSunColour, a);
     }
@@ -528,6 +533,7 @@ uniform vec3 uSunColour;
 uniform int uStyle;
 uniform vec3 uLineColour;
 uniform int uSteps;
+uniform int uGlowOnly; // Anime: 1 = the cheap limb-glow pass (no ray march)
 out vec4 fragColour;
 void writeLogDepth();
 
@@ -550,6 +556,35 @@ void main()
     vec3 dir = normalize(vWorld);
     float top = uShellRadius / R;
     vec2 tShell = raySphere(o, dir, top);
+    vec3 glowColour = vec3(0.0);
+    float glowA = 0.0;
+    if (uStyle == 2)
+    {
+        // Anime limb glow (anime-2): the atmosphere colour spreads from the
+        // limb as a wide soft glow fading into dark space. Its strength
+        // falls with the ray's closest approach above the surface; a ray
+        // leaving the planet behind it gets none (no blue wash from orbit).
+        float b = -dot(o, dir);
+        float rClosest = b > 0.0 ? length(o + dir * b) : length(o) - b;
+        vec3 pc = normalize(o + dir * max(b, 0.0));
+        float lit = smoothstep(-0.35, 0.30, dot(pc, normalize(uSunDir)));
+        float glow = exp(-max(rClosest - 1.0, 0.0) / 0.11) * smoothstep(0.985, 1.0, rClosest);
+        vec3 tint = normalize(uScatter + 0.15);
+        glowColour = mix(vec3(0.10, 0.12, 0.30), tint * 1.1, lit) * uSunColour;
+        // Dither (+-0.5/255): a dark smooth gradient must not band in 8 bits.
+        float dither = (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;
+        glowA = max(glow * mix(0.10, 0.50, lit) + dither, 0.0);
+        if (uGlowOnly != 0)
+        {
+            // Separate cheap pass over a larger sphere: glow only, never the
+            // planet disc (the march pass and the surface own that).
+            if (rClosest < 1.0 || glowA < 0.004)
+                discard;
+            fragColour = vec4(glowColour * glowA, glowA * 0.45);
+            writeLogDepth();
+            return;
+        }
+    }
     if (tShell.y < 0.0)
         discard;
     float t0 = max(tShell.x, 0.0);
@@ -631,6 +666,13 @@ void main()
     // Sky: the scattered light also hides what is behind it (stars).
     // Over the ground: additive haze only - the surface stays readable.
     float cover = hitsGround ? alpha * 0.25 : max(alpha * 0.25, max(max(mapped.r, mapped.g), mapped.b));
+    if (uStyle == 2 && !hitsGround)
+    {
+        // Inside the physical shell the limb glow continues (no dark ring
+        // between the stepped air and the glow outside it).
+        mapped = max(mapped, glowColour * glowA);
+        cover = max(cover, glowA * 0.45);
+    }
     fragColour = vec4(mapped, cover);
     writeLogDepth();
 }

@@ -8,6 +8,12 @@ uniform sampler2D uBloom;
 uniform sampler2D uDepth;   // resolved scene depth (Anime, no-MSAA targets)
 uniform sampler2DMS uDepthMs; // multisample scene depth, sample 0 (Anime, MSAA)
 uniform int uDepthIsMs;
+// Main flight camera (Anime deep-space sky): view -> world rotation,
+// tan(fovY / 2), aspect. uCameraValid = 0 on maps / without a flight view.
+uniform mat3 uViewToWorld;
+uniform float uTanHalfFovY;
+uniform float uAspect;
+uniform int uCameraValid;
 uniform int uStyle;         // 0 Elite, 1 Modern, 2 Anime
 
 uniform vec2 uSceneTexelSize;
@@ -47,7 +53,10 @@ float animeInk(vec2 uv, vec2 texel, out vec3 nearColor)
 {
     nearColor = texture(uScene, uv).rgb;
     float oc = 1.0 - sceneDepth(uv);
-    if (oc >= 0.06 || oc <= 1.0e-7)
+    // Mesh pixels between ~15 m and ~30 km (1 - depth ~ 1 / distance):
+    // ships, stations, docks. The near-terrain depth pass (planet surface
+    // seen from orbit, hundreds of km) is backdrop - no contour on hills.
+    if (oc >= 0.06 || oc <= 3.3e-5)
         return 0.0;
     // Four neighbours (cross); distance ratio instead of a log per tap.
     vec4 on = vec4(1.0) - vec4(
@@ -55,7 +64,7 @@ float animeInk(vec2 uv, vec2 texel, out vec3 nearColor)
         sceneDepth(uv - vec2(texel.x, 0.0)),
         sceneDepth(uv + vec2(0.0, texel.y)),
         sceneDepth(uv - vec2(0.0, texel.y)));
-    vec4 backdrop = vec4(greaterThanEqual(on, vec4(0.06))) + vec4(lessThanEqual(on, vec4(1.0e-7)));
+    vec4 backdrop = vec4(greaterThanEqual(on, vec4(0.06))) + vec4(lessThanEqual(on, vec4(3.3e-5)));
     backdrop = min(backdrop, vec4(1.0));
     // Farther neighbour -> smaller (1 - depth): ratio > 1.1 .. 1.25 = contour.
     // Perspective depth is affine in screen space over a plane, so a surface
@@ -70,6 +79,10 @@ float animeInk(vec2 uv, vec2 texel, out vec3 nearColor)
     // A thing about two pixels wide (space on 3-4 sides) stays a colour dot.
     return edge * (1.0 - smoothstep(2.5, 3.5, open));
 }
+
+// Anime deep space: the painted world-fixed sky baked once by the Renderer
+// (Renderer::bakeAnimeSkyCubemap) - one fetch per sky pixel.
+uniform samplerCube uAnimeSky;
 
 float hash12(vec2 p)
 {
@@ -123,14 +136,17 @@ void main()
 
     if (anime)
     {
-        // Painted backdrop: empty space gets a very soft deep-blue to violet
-        // wash (top cooler, lower warmer violet) that never reaches objects.
+        // Painted deep space under the stars / Milky Way / planet glow:
+        // only where nothing was drawn (empty depth), added beneath what is
+        // already there (bright stars and glow stay on top).
         float dc = sceneDepth(uv);
-        if (dc >= 0.999999)
+        if (dc >= 0.999999 && uCameraValid != 0)
         {
-            vec3 wash = mix(vec3(0.020, 0.018, 0.040), vec3(0.008, 0.020, 0.046), gameUv.y);
+            vec2 ndc = gameUv * 2.0 - 1.0;
+            vec3 viewDir = normalize(vec3(ndc.x * uTanHalfFovY * uAspect, ndc.y * uTanHalfFovY, -1.0));
+            vec3 sky = texture(uAnimeSky, normalize(uViewToWorld * viewDir)).rgb;
             float lumaBg = luminance(color);
-            color += wash * (1.0 - smoothstep(0.05, 0.35, lumaBg));
+            color += sky * (1.0 - smoothstep(0.10, 0.45, lumaBg));
         }
         vec3 nearColor;
         float ink = uStyle == 2 ? animeInk(uv, uSceneTexelSize, nearColor) : 0.0;
@@ -148,7 +164,7 @@ void main()
     color += vec3(0.012, 0.018, 0.028) * broadHaze * uHaze;
     // Anime grade: shadows lean deep blue-violet, highlights warm; a gentle
     // palette, never "saturation x 2".
-    color += (anime ? vec3(0.004, 0.006, 0.022) : vec3(-0.003, 0.002, 0.010)) * shadowMask * 0.80;
+    color += (anime ? vec3(0.002, 0.006, 0.020) : vec3(-0.003, 0.002, 0.010)) * shadowMask * 0.80;
 
     float highlightMask = smoothstep(0.45, 0.95, luma);
     color += (anime ? vec3(0.024, 0.012, -0.006) : vec3(0.010, 0.004, -0.004)) * highlightMask * 0.70;

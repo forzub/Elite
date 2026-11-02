@@ -2138,6 +2138,23 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             glEnable(GL_BLEND);
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
             glDepthMask(GL_FALSE);
+            if (style == CelestialRenderStyle::Anime)
+            {
+                // Anime limb glow: a separate cheap pass over a larger sphere
+                // (glow formula only, no ray march), under the air shell.
+                const double geom = b.radiusM * 1.9;
+                atmosphere.set("uGeomRadius", static_cast<float>(geom));
+                atmosphere.set("uGlowOnly", 1);
+                glEnable(GL_CULL_FACE);
+                glCullFace(it.dist < geom ? GL_FRONT : GL_BACK);
+                glFrontFace(GL_CCW);
+                const IndexedMesh& g = it.pxRadius > 60.0 ? sphereHigh : sphereLow;
+                glBindVertexArray(g.vao);
+                glDrawElements(GL_TRIANGLES, g.count, GL_UNSIGNED_INT, nullptr);
+                glBindVertexArray(0);
+            }
+            atmosphere.set("uGeomRadius", 0.0f);
+            atmosphere.set("uGlowOnly", 0);
             const bool insideShell = it.dist < shell;
             glEnable(GL_CULL_FACE);
             glCullFace(insideShell ? GL_FRONT : GL_BACK);

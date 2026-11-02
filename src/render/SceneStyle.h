@@ -43,4 +43,20 @@ inline void setPresentedSceneStyle(int style)
 {
     presentedSceneStyleStorage() = style;
 }
+
+// The main flight camera of the presented frame (Anime deep-space sky in the
+// composite needs the per-pixel world view direction).
+struct PresentedCamera
+{
+    bool valid = false;
+    float viewToWorld[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1}; // column-major mat3
+    float tanHalfFovY = 0.7f;
+    float aspect = 1.0f;
+};
+
+inline PresentedCamera& presentedCameraStorage()
+{
+    static PresentedCamera camera;
+    return camera;
+}
 } // namespace render

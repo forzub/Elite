@@ -89,6 +89,8 @@ void ObjectAssemblyRegistry::init()
         cobramk1.lodSwitchDistance = DEFAULT_ASSEMBLY_LOD_SWITCH_DISTANCE;
         cobramk1.wholeShipProxyPath =
             "assets/models/ships/cobrettymk1/LOD1/Cobretti-mk1-cr-LOD1.obj";
+        // Hull material: a calm cool grey-blue steel (model colour).
+        cobramk1.defaultBaseColor = glm::vec3(0.42f, 0.47f, 0.50f);
 
         cobramk1.modules = {
             // =====================================================
@@ -688,19 +690,24 @@ void ObjectAssemblyRegistry::init()
             const char* path;
             float lod;
             const char* group;
+            glm::vec3 baseColor; // model material colour (no MTL in these OBJs)
         } entries[] = {
             {ObjectType::HubHexDock, "hub_hex_dock_body", "hub_hex_dock",
-             "assets/models/hub/guidance_test/hub_hex_dock.obj", 30000.0f, "hub_dock"},
+             "assets/models/hub/guidance_test/hub_hex_dock.obj", 30000.0f, "hub_dock",
+             glm::vec3(0.62f, 0.64f, 0.66f)},
             {ObjectType::HubDockServiceBlock, "hub_dock_service_block_body", "hub_dock_service_block",
-             "assets/models/hub/guidance_test/hub_dock_service_block.obj", 30000.0f, "hub_dock"},
+             "assets/models/hub/guidance_test/hub_dock_service_block.obj", 30000.0f, "hub_dock",
+             glm::vec3(0.52f, 0.54f, 0.56f)},
             {ObjectType::OrbitalCargoShuttle, "ocs4_hull", "orbital_cargo_shuttle",
-             "assets/models/ships/orbital_cargo_shuttle.obj", 8000.0f, "ocs4"},
+             "assets/models/ships/orbital_cargo_shuttle.obj", 8000.0f, "ocs4",
+             glm::vec3(0.66f, 0.64f, 0.58f)},
         };
         for (const auto& e : entries)
         {
             ObjectAssemblyDesc desc;
             desc.typeId = e.type;
             desc.lodSwitchDistance = e.lod;
+            desc.defaultBaseColor = e.baseColor;
             desc.modules = {
                 module(
                     e.module,

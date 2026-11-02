@@ -1,6 +1,7 @@
 #version 330 core
 
 in vec3 vNormal;
+in vec3 vColor; // material base colour of this face (model data)
 in vec3 vWorldPos;
 in vec3 vViewPos;
 in vec3 vObjectPos;
@@ -56,7 +57,9 @@ void main()
     float farT = smoothstep(distMedium, distFar, dist);
     float horizonT = smoothstep(distFar, distHorizon, dist);
 
-    vec3 hullColor = mix(mix(hullColorNear, hullColorMid, midT), hullColorFar, farT);
+    // Near: the object's own material colour; mid/far: the style's
+    // distance fade (hullColorMid/Far), not a replacement colour.
+    vec3 hullColor = mix(mix(vColor, mix(vColor, hullColorMid, 0.5), midT), hullColorFar, farT);
 
     // Далеко объект светлеет мягко, без белой пересветки.
     hullColor = mix(hullColor, hullColorFar * 1.16, horizonT);
@@ -99,16 +102,21 @@ void main()
         // term (distance) merges the bands and lowers the contrast so a far
         // station reads as a painted background element.
         float nl = dot(n, l);
-        vec3 albedo = hullColor * 1.10;
+        // The structure's own colour; shadow = own colour darkened toward
+        // steel blue, highlight = lighter own colour (no white specular).
+        vec3 albedo = hullColor;
         vec3 lightTint = lightColor / max(max(lightColor.r, max(lightColor.g, lightColor.b)), 1.0e-3);
-        vec3 base = albedo * mix(vec3(1.0), lightTint, 0.35) * 0.92;
-        vec3 shadowTone = albedo * vec3(0.40, 0.44, 0.60) + ambientColor * 0.04;
-        vec3 highlight = mix(base, vec3(1.0, 0.94, 0.82), 0.30);
-        float lit = smoothstep(-0.04, 0.04, nl);
+        vec3 base = albedo * mix(vec3(1.0), lightTint, 0.25);
+        // Stations are dense hard-surface geometry: a gentler shadow step
+        // (and a terminator pushed by a wrap term) lets small parts merge
+        // into large masses instead of a busy light/shadow pattern.
+        vec3 shadowTone = albedo * vec3(0.50, 0.54, 0.62) + ambientColor * 0.02;
+        vec3 highlight = min(base * 1.18 + vec3(0.03, 0.02, 0.01), vec3(1.0));
+        float lit = smoothstep(-0.22, -0.12, nl);
         float hi = smoothstep(0.86, 0.90, nl) * smoothstep(0.30, 0.45, facing) * (1.0 - horizonT);
         lit = mix(lit, 0.62, horizonT * 0.80);
         vec3 toon = mix(mix(shadowTone, base, lit), highlight, hi);
-        toon = mix(toon, vec3(0.17, 0.21, 0.31), horizonT * 0.50);
+        toon = mix(toon, vec3(0.10, 0.14, 0.24), horizonT * 0.50);
         FragColor = vec4(pow(max(toon, vec3(0.0)), vec3(1.0 / 1.08)), 1.0);
         return;
     }

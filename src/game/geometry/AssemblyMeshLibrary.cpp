@@ -11,6 +11,14 @@
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 #include "src/world/descriptors/LogicalDimensions.h"
 
+// Faces without an MTL material take the assembly's default material colour.
+static void applyDefaultMaterialColor(game::ship::geometry::MeshData& mesh, const glm::vec3& color)
+{
+    for (auto& t : mesh.triangles)
+        if (!t.hasMaterialColor)
+            t.baseColor = color;
+}
+
 using namespace game::ship::geometry;
 
 
@@ -220,6 +228,8 @@ ObjectAssembly AssemblyMeshLibrary::loadAssembly(ObjectType typeId)
 
             applyBasisToMesh(part.lod0Mesh, meshToLogical);
             applyBasisToMesh(part.lod1Mesh, meshToLogical);
+            applyDefaultMaterialColor(part.lod0Mesh, desc.defaultBaseColor);
+            applyDefaultMaterialColor(part.lod1Mesh, desc.defaultBaseColor);
 
 
 
@@ -251,6 +261,7 @@ ObjectAssembly AssemblyMeshLibrary::loadAssembly(ObjectType typeId)
                 assembly.wholeShipProxyPath
             );
         }
+        applyDefaultMaterialColor(assembly.wholeShipProxyMesh, desc.defaultBaseColor);
 
         applyBasisToMesh(assembly.wholeShipProxyMesh, meshToLogical);
 

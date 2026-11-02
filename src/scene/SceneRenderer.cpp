@@ -1831,6 +1831,19 @@ void SceneRenderer::renderInternal(
         ~SceneStyleScope() { render::setSceneStyle(1); }
     } sceneStyleScope(m_sceneStyle);
 
+    if (cameraId == 0)
+    {
+        // Main flight camera -> the composite (Anime deep-space sky).
+        auto& presented = render::presentedCameraStorage();
+        const glm::mat3 viewToWorld = glm::transpose(glm::mat3(view));
+        for (int c = 0; c < 3; ++c)
+            for (int r = 0; r < 3; ++r)
+                presented.viewToWorld[c * 3 + r] = viewToWorld[c][r];
+        presented.tanHalfFovY = 1.0f / std::max(proj[1][1], 1.0e-6f);
+        presented.aspect = proj[1][1] / std::max(proj[0][0], 1.0e-6f);
+        presented.valid = true;
+    }
+
     const ClientWorldState& world = *prepared.world;
     EntityId playerId = prepared.playerId;
     const world::coordinates::WorldFrame& frame = prepared.frame;

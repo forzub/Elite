@@ -68,9 +68,11 @@ void main()
     float midT = smoothstep(distClose, distMedium, dist);
     float farT = smoothstep(distMedium, distFar, dist);
 
+    // Near: the object's own material colour (vColor = MeshTriangle
+    // baseColor, model data); mid/far: the style's distance fade.
     vec3 distanceHullColor =
         mix(
-            mix(hullColorNear, hullColorMid, midT),
+            mix(vColor, mix(vColor, hullColorMid, 0.5), midT),
             hullColorFar,
             farT
         );
@@ -137,26 +139,26 @@ void main()
     }
     if (uSceneStyle == 2)
     {
-        // Anime: large colour masses under one dominant light. Base tone,
-        // a cool blue-violet shadow tone (never black), a narrow warm
-        // highlight; a hard, slightly anti-aliased terminator. With
-        // distance the bands merge and the hull sinks into the painted
-        // depth tone. The silhouette ink is the composite's depth contour.
-        // Anime hull: a light steel blue-grey of its own (the Modern ramp
-        // starts near black, which reads as a void in a cel frame), lightly
-        // tinted by the distance ramp.
-        vec3 albedo = mix(vec3(0.60, 0.64, 0.72), distanceHullColor * 1.15, 0.20);
+        // Anime: the object's OWN colour (the same as Modern shows) painted
+        // as large tonal masses under one dominant light - base tone, the
+        // own colour darkened with a slight steel-blue shift for shadow
+        // (never a new hue), a narrow highlight that is a lighter tint of
+        // the own colour (no white PBR specular, no reflections), and a
+        // hard, slightly anti-aliased terminator. With distance the bands
+        // merge and the hull sinks into the depth tone. The silhouette ink
+        // is the composite's depth contour.
+        vec3 albedo = distanceHullColor;
         vec3 lightTint = lightColor / max(max(lightColor.r, max(lightColor.g, lightColor.b)), 1.0e-3);
-        vec3 base = albedo * mix(vec3(1.0), lightTint, 0.35) * 0.92;
-        vec3 shadowTone = albedo * vec3(0.40, 0.44, 0.60) + ambientColor * 0.04;
-        vec3 highlight = mix(base, vec3(1.0, 0.94, 0.82), 0.38);
+        vec3 base = albedo * mix(vec3(1.0), lightTint, 0.25);
+        vec3 shadowTone = albedo * vec3(0.34, 0.38, 0.46) + ambientColor * 0.02;
+        vec3 highlight = min(base * 1.30 + vec3(0.05, 0.04, 0.02), vec3(1.0));
         float lit = smoothstep(-0.04, 0.04, ndlRaw);
         float hi = smoothstep(0.84, 0.88, ndlRaw) * smoothstep(0.30, 0.45, facing);
         float merge = farT * 0.75;                    // distance: bands merge
         lit = mix(lit, 0.62, merge);
         hi *= 1.0 - farT;
         vec3 toon = mix(mix(shadowTone, base, lit), highlight, hi);
-        vec3 depthTone = vec3(0.17, 0.21, 0.31);      // painted distance tone
+        vec3 depthTone = vec3(0.10, 0.14, 0.24);      // distance tone (deep space blue)
         toon = mix(toon, depthTone, farT * 0.45 + midT * 0.10);
         // Anime: the nozzle is a flat bright cel (two steps), no gradient.
         float cel = glowAmount > 0.66 ? 1.0 : (glowAmount > 0.2 ? 0.6 : 0.0);

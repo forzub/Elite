@@ -32,6 +32,9 @@ namespace game::ship::geometry
         glm::vec3 debugColor;
     };
 
+    // Neutral material colour for geometry whose model defines none.
+    inline constexpr glm::vec3 DefaultMaterialBaseColor {0.55f, 0.57f, 0.60f};
+
     struct MeshTriangle
     {
         int v0;
@@ -39,6 +42,12 @@ namespace game::ship::geometry
         int v2;
 
         int faceId;
+
+        // Material base colour (albedo, linear 0..1) of this face: model data
+        // (ModelAsset MaterialDefinition.baseColor, OBJ MTL Kd, or the
+        // assembly's default material). Every renderer style interprets it.
+        glm::vec3 baseColor = DefaultMaterialBaseColor;
+        bool hasMaterialColor = false;
     };
 
 

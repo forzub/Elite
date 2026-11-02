@@ -4,6 +4,7 @@
 // comes per instance (locations 4..7), VP is shared by the batch.
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
+layout(location = 3) in vec3 materialColor; // material base colour (model data)
 layout(location = 4) in mat4 instanceModel;
 
 uniform mat4 VP;
@@ -25,5 +26,5 @@ void main()
 
     mat3 normalMat = transpose(inverse(mat3(instanceModel)));
     vNormal = normalize(normalMat * normal);
-    vColor = vec3(1.0);
+    vColor = materialColor;
 }

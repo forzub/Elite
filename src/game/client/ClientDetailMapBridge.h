@@ -229,8 +229,25 @@ inline world::celestial::LocalSceneObject makeDetailShipObject(
         object.hasRelativeVelocity = true;
     }
     object.axes = detailAxesFromOrientation(ship.orientation);
+    if (ship.traffic.active)
+    {
+        if (!ship.traffic.callsign.empty() && !playerPresentation)
+            object.name = ship.traffic.callsign;
+        object.routeOffsetsMeters = ship.traffic.routeOffsetsMeters;
+    }
     object.valid = true;
     return object;
+}
+
+// Map ownership: a non-player ship bound to a hub (server hubId) belongs to
+// that hub's Hub Map; the Detail Map shows the hub instead of it.
+inline bool detailMapOwnsShip(
+    const DetailMapShipRuntimeSample& ship,
+    EntityId localControlledEntityId
+)
+{
+    return ship.hubId.empty() ||
+        game::client::isLocalControlledEntity(ship.id, localControlledEntityId);
 }
 
 inline world::celestial::LocalSceneObject makeDetailHubObject(
@@ -426,7 +443,8 @@ inline void appendDetailLocalContext(
 
     for (const auto& ship : runtime.ships)
     {
-        if (ship.systemId != out.systemId)
+        if (ship.systemId != out.systemId ||
+            !detailMapOwnsShip(ship, localControlledEntityId))
             continue;
 
         const glm::dvec3 positionMeters =
@@ -566,7 +584,8 @@ inline bool buildClientCelestialBodyDetail(
     constexpr double PlanetMapObjectRadiusMeters = 100000000.0;
     for (const auto& ship : runtime.ships)
     {
-        if (ship.systemId != systemId)
+        if (ship.systemId != systemId ||
+            !detailMapOwnsShip(ship, localControlledEntityId))
             continue;
 
         const glm::dvec3 shipPosition =

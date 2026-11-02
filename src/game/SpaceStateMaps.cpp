@@ -1761,3 +1761,23 @@ void SpaceState::applyClientCatalogLocalization()
     m_systemMapRenderer.setNavigationMapTextProfile(mapText);
     m_systemMapRenderer.setNavigationNamingLocale(loc.locale());
 }
+
+
+void SpaceState::devToggleTrafficLanes()
+{
+    m_systemMapRenderer.toggleTrafficLanes();
+}
+
+void SpaceState::devSelectTrafficShip(const std::string& callsign)
+{
+    if (!m_client)
+        return;
+    for (const auto& [id, ship] : m_client->world().ships())
+        if (ship.traffic.active && ship.traffic.callsign == callsign)
+        {
+            m_systemMapRenderer.devActivateObject("entity:" + std::to_string(id));
+            std::cerr << "[MapScript] selected " << callsign << " entity:" << id << std::endl;
+            return;
+        }
+    std::cerr << "[MapScript] traffic ship " << callsign << " not replicated" << std::endl;
+}

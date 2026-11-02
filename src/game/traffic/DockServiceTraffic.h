@@ -145,6 +145,16 @@ public:
     [[nodiscard]] std::vector<TrafficActorView> actors() const;
     [[nodiscard]] TrafficPose pose(std::uint64_t actorId, double nowSeconds) const;
     [[nodiscard]] const TrafficShipClass& actorClass(std::uint64_t actorId) const;
+    // The remaining planned path of an actor (FIXED frame), sampled from the
+    // same segments pose() evaluates: what the ship will actually fly. Empty
+    // while it waits on an open-ended hold.
+    [[nodiscard]] std::vector<glm::dvec3> plannedPath(std::uint64_t actorId, double nowSeconds,
+                                                      std::size_t maxPoints = 32) const;
+    // Human-readable destination of the current leg ("pad P3", "Earth", ...).
+    [[nodiscard]] std::string destination(std::uint64_t actorId) const;
+    // Radius (from the dock centre) of the dock's controlled zone: the
+    // outermost queue gate / departure turn. Ships inside it belong to the hub.
+    [[nodiscard]] double controlledZoneRadius() const;
 
     // ---- external ships (player / any materialised ship) -----------------
     // Station-assisted landing of a ship that flew to the portal itself

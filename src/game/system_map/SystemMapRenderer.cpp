@@ -541,6 +541,7 @@ void SystemMapRenderer::render(
     // planned trajectory on System/Detail/Hub without teaching the planner
     // anything about cameras or render scale.
     decorateActiveGuidanceTrajectory(vp, system, planet, hub);
+    decorateTrafficRoutes(planet, hub);
 
     if (m_modeState.current() == Mode::Galaxy)
     {

@@ -46,7 +46,9 @@ enum class MapTrajectoryKind
 {
     History = 0,
     Prediction,
-    Planned
+    Planned,
+    TrafficRoute,   // a traffic ship's remaining route (selected / all)
+    AuthoredLane    // authored dock lanes / holds / queue gates (toggle)
 };
 
 struct MapTrajectoryPoint

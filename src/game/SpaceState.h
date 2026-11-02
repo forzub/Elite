@@ -94,6 +94,9 @@ enum class PlayerNavigationMapLevel
 class SpaceState : public GameState
 {
 public:
+    // DEV map script hooks (ELITE_DEV_MAP_SCRIPT).
+    void devToggleTrafficLanes();
+    void devSelectTrafficShip(const std::string& callsign);
     enum class StartupMode
     {
         Immediate,

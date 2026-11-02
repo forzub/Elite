@@ -1,6 +1,7 @@
 // SystemMapRenderer: navigation overlays: hub docking cards / actions, active guidance trajectory, navigation tracking, galaxy / system waypoints and route focus.
 
 #include "src/game/system_map/SystemMapRendererInternal.h"
+#include "src/game/docking/model/HexDockFacility.h"
 
 
 void SystemMapRenderer::decorateHubDockingOverlay(
@@ -1602,4 +1603,131 @@ void SystemMapRenderer::updateActiveTacticalLocalContext(
     detailCell.centerAu = cell.center;
     detailCell.edgeAu = cell.size;
     m_activeTacticalDetailCell = detailCell;
+}
+
+
+void SystemMapRenderer::decorateTrafficRoutes(
+    const world::celestial::DetailMapSnapshot& detail,
+    const world::celestial::HubMapSnapshot& hub
+)
+{
+    game::system_map::MapObjectOverlayFrame* overlay = nullptr;
+    const world::celestial::LocalSceneInventory* scene = nullptr;
+    const bool hubMode = m_modeState.current() == Mode::Hub;
+    if (hubMode)
+    {
+        overlay = &m_hubPresentation.frame.objectOverlay;
+        scene = &hub.scene;
+    }
+    else if (m_modeState.current() == Mode::Detail)
+    {
+        overlay = &m_detailPresentation.frame.objectOverlay;
+        scene = &detail.scene;
+    }
+    if (!overlay)
+        return;
+
+    overlay->trajectories.erase(
+        std::remove_if(
+            overlay->trajectories.begin(),
+            overlay->trajectories.end(),
+            [](const game::system_map::MapObjectTrajectory& trajectory)
+            {
+                return trajectory.objectId.rfind("traffic:", 0) == 0;
+            }
+        ),
+        overlay->trajectories.end()
+    );
+
+    // Scene positions are hub-local on the Hub Map; Detail scenes hold world
+    // metres (minus the anchor origin when anchor-local).
+    const auto project = [&](const glm::dvec3& scenePoint, glm::dvec2& px)
+    {
+        glm::dvec3 p = scenePoint;
+        if (!hubMode &&
+            scene->coordinateSpace ==
+                world::celestial::LocalSceneCoordinateSpace::AnchorLocalMeters)
+        {
+            p -= scene->originWorldMeters;
+        }
+        px = hubMode ? m_hubPresentation.camera.project(p)
+                     : m_detailPresentation.camera.project(p);
+        return std::isfinite(px.x) && std::isfinite(px.y);
+    };
+    const auto addPolyline = [&](const std::string& id,
+                                 game::system_map::MapTrajectoryKind kind,
+                                 const std::vector<glm::dvec3>& scenePoints)
+    {
+        game::system_map::MapObjectTrajectory trajectory;
+        trajectory.objectId = id;
+        trajectory.kind = kind;
+        for (const auto& p : scenePoints)
+        {
+            game::system_map::MapTrajectoryPoint point;
+            point.position = p;
+            point.screenProjected = project(p, point.screenPx);
+            if (point.screenProjected)
+                trajectory.points.push_back(point);
+        }
+        if (trajectory.points.size() >= 2)
+            overlay->trajectories.push_back(std::move(trajectory));
+    };
+
+    // The selected ship's route (every traffic route while T is on). This is
+    // the replicated remaining plan of the traffic model, never a UI route.
+    for (const auto& object : scene->objects)
+    {
+        if (!object.valid || object.routeOffsetsMeters.size() < 2)
+            continue;
+        if (!m_showTrafficLanes && !m_objectOverlayState.isActive(object.stableId))
+            continue;
+        std::vector<glm::dvec3> points;
+        points.reserve(object.routeOffsetsMeters.size());
+        for (const auto& offset : object.routeOffsetsMeters)
+            points.push_back(object.positionMeters + offset);
+        addPolyline("traffic:route:" + object.stableId,
+                    game::system_map::MapTrajectoryKind::TrafficRoute, points);
+    }
+
+    if (!hubMode || !m_showTrafficLanes)
+        return;
+
+    // Authored dock geometry (HexDockFacility): the same holds, axis join,
+    // entry face, departure clear/turn points and queue gates the dispatcher
+    // and the traffic model use, placed by the replicated dock modules.
+    const world::celestial::LocalSceneObject* dock = nullptr;
+    const world::celestial::LocalSceneObject* base = nullptr;
+    for (const auto& object : scene->objects)
+    {
+        if (object.stableId == "hub_hex_dock_a")
+            dock = &object;
+        else if (object.stableId == "hub_hex_dock_base")
+            base = &object;
+    }
+    if (!dock || !base)
+        return;
+    const auto toScene = [&](const glm::dvec3& fixed)
+    {
+        return dock->positionMeters + base->axes.x * fixed.x + base->axes.y * fixed.y + base->axes.z * fixed.z;
+    };
+    namespace hex = game::docking::hex;
+    const auto& g = hex::hexDockGeometry();
+    const glm::dvec3 join {0.0, 0.0, g.axisJoinZ};
+    const glm::dvec3 entry {0.0, 0.0, g.entryFaceZ};
+    addPolyline("traffic:lane:arrival-axis", game::system_map::MapTrajectoryKind::AuthoredLane,
+                {toScene(join), toScene(entry), toScene({0.0, 0.0, g.chamberFrontZ})});
+    addPolyline("traffic:lane:departure-axis", game::system_map::MapTrajectoryKind::AuthoredLane,
+                {toScene(entry), toScene({0.0, 0.0, g.departureClearZ}), toScene({0.0, 0.0, g.departureTurnZ})});
+    for (int k = 0; k < hex::HoldCount; ++k)
+    {
+        const glm::dvec3 hold = hex::holdPosition(g, k);
+        // hold -> axis join (the arrival Bezier's chord) and a hold marker.
+        addPolyline("traffic:lane:hold-" + std::to_string(k), game::system_map::MapTrajectoryKind::AuthoredLane,
+                    {toScene(hold), toScene({0.0, 0.0, g.axisJoinZ - 300.0}), toScene(join)});
+        const double r = 60.0;
+        addPolyline("traffic:lane:hold-mark-" + std::to_string(k), game::system_map::MapTrajectoryKind::AuthoredLane,
+                    {toScene(hold + glm::dvec3(r, 0.0, 0.0)), toScene(hold + glm::dvec3(0.0, r, 0.0)),
+                     toScene(hold - glm::dvec3(r, 0.0, 0.0)), toScene(hold - glm::dvec3(0.0, r, 0.0)),
+                     toScene(hold + glm::dvec3(r, 0.0, 0.0))});
+    }
 }

@@ -1106,6 +1106,89 @@ TrafficPose DockServiceTraffic::pose(std::uint64_t actorId, double nowSeconds) c
     return m_impl->poseOf(it->second, nowSeconds);
 }
 
+std::vector<glm::dvec3> DockServiceTraffic::plannedPath(std::uint64_t actorId, double nowSeconds,
+                                                        std::size_t maxPoints) const
+{
+    std::vector<glm::dvec3> out;
+    const auto it = m_impl->actors.find(actorId);
+    if (it == m_impl->actors.end() || it->second.phase == ActorPhase::Gone || maxPoints < 2)
+        return out;
+    const auto& a = it->second;
+    // Sample times: now, then the midpoint and end of every remaining finite
+    // segment (corners and curved corridor legs both survive).
+    std::vector<double> times {nowSeconds};
+    const auto addSegment = [&](const Segment& s) {
+        if (!std::isfinite(s.duration))
+            return;
+        const double end = s.t0 + s.duration;
+        if (end <= nowSeconds)
+            return;
+        const double mid = std::max(nowSeconds, s.t0) + 0.5 * (end - std::max(nowSeconds, s.t0));
+        times.push_back(mid);
+        times.push_back(end);
+    };
+    addSegment(a.current);
+    for (const auto& s : a.segments)
+        addSegment(s);
+    if (times.size() > maxPoints)
+    {
+        std::vector<double> thinned;
+        const double stride = static_cast<double>(times.size() - 1) / static_cast<double>(maxPoints - 1);
+        for (std::size_t i = 0; i < maxPoints; ++i)
+            thinned.push_back(times[std::min(times.size() - 1, static_cast<std::size_t>(std::lround(i * stride)))]);
+        times.swap(thinned);
+    }
+    for (const double t : times)
+    {
+        const auto p = m_impl->poseOf(a, t);
+        if (p.present && (out.empty() || glm::length(p.position - out.back()) > 1.0))
+            out.push_back(p.position);
+    }
+    if (out.size() < 2)
+        out.clear();
+    return out;
+}
+
+std::string DockServiceTraffic::destination(std::uint64_t actorId) const
+{
+    const auto it = m_impl->actors.find(actorId);
+    if (it == m_impl->actors.end())
+        return {};
+    const auto& a = it->second;
+    switch (a.phase)
+    {
+        case ActorPhase::Outbound:
+            return a.cargo.destination.empty() ? std::string("Earth") : a.cargo.destination;
+        case ActorPhase::FarLeg:
+        case ActorPhase::FarWait:
+            return "far point 20 km";
+        case ActorPhase::Docked:
+        case ActorPhase::DepartureWait:
+            return "pad " + std::string(a.padIndex >= 0 ? hex::padIdFor(a.padIndex) : "?");
+        case ActorPhase::Lift:
+        case ActorPhase::ToChamberGate:
+        case ActorPhase::CorridorOut:
+        case ActorPhase::AxialOut:
+        case ActorPhase::Disperse:
+            return a.kind == TrafficShipKind::CargoShuttle ? std::string("Earth") : std::string("far point 20 km");
+        case ActorPhase::Inbound:
+        case ActorPhase::WaitGate:
+        case ActorPhase::ToHold:
+        case ActorPhase::AtHold:
+            return "hub dock (queue)";
+        default:
+            return a.padIndex >= 0 ? "pad " + std::string(hex::padIdFor(a.padIndex)) : std::string("hub dock");
+    }
+}
+
+double DockServiceTraffic::controlledZoneRadius() const
+{
+    double r = std::abs(m_impl->g.departureTurnZ);
+    for (const auto& gate : m_impl->gates)
+        r = std::max(r, glm::length(gate.position));
+    return r;
+}
+
 const TrafficShipClass& DockServiceTraffic::actorClass(std::uint64_t actorId) const
 {
     const auto it = m_impl->actors.find(actorId);

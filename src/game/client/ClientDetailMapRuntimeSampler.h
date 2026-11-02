@@ -57,6 +57,7 @@ struct DetailMapShipRuntimeSample
     glm::dvec3 localVelocityMps {0.0};
     game::navigation::KinematicFrame travelFrame;
     glm::mat4 orientation {1.0f};
+    game::simulation::ShipTrafficSnapshot traffic;
 };
 
 struct DetailMapObjectRuntimeSample
@@ -205,6 +206,7 @@ inline DetailMapShipRuntimeSample makeDetailShipSample(
     out.localVelocityMps = ship.transform.motion.localVelocityMps;
     out.travelFrame = ship.transform.motion.travelFrame;
     out.orientation = ship.transform.orientation;
+    out.traffic = ship.traffic;
     return out;
 }
 

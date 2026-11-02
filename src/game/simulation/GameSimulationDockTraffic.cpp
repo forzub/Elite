@@ -93,8 +93,10 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
             config, [this, omega](double t) { return m_dockTrafficPhaseOffsetRad + omega * t; });
         if (const char* path = std::getenv("ELITE_DOCK_TRAFFIC_LOG"))
             m_dockTrafficLog = std::fopen(path, "w");
+        m_dockTrafficZoneRadiusMeters = m_dockServiceTraffic->controlledZoneRadius();
         std::cerr << "[DockTraffic] started: cobretts=" << config.cobrettCount
-                  << " shuttle_interval_s=" << config.shuttleIntervalSeconds << "\n";
+                  << " shuttle_interval_s=" << config.shuttleIntervalSeconds
+                  << " hub_zone_m=" << m_dockTrafficZoneRadiusMeters << "\n";
     }
 
     m_dockServiceTraffic->advance(now);
@@ -112,6 +114,56 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
     const glm::dvec3 origin = world::coordinates::fullMeters(dock->worldPosition);
     const glm::dmat3 fixedBasis(base->orientation);
     const glm::dvec3 dockVelocity(dock->linearVelocity);
+
+    // DEV: ELITE_DEV_DOCK_OBSERVER=1 parks the player ships 2.7 km in front of
+    // the dock entry, at rest relative to it and facing the hold "flower";
+    // =2 also keeps that view every tick (the hub frame turns with its orbit,
+    // an inertial attitude would drift off the dock) - scripted captures.
+    const char* observerEnv = std::getenv("ELITE_DEV_DOCK_OBSERVER");
+    // =3: the held view from ~700 m in front of the hold "flower" (close shots).
+    const bool observerHold = observerEnv && (observerEnv[0] == '2' || observerEnv[0] == '3');
+    const bool observerNear = observerEnv && observerEnv[0] == '3';
+    if ((!m_dockObserverPlaced || observerHold) && observerEnv && (observerEnv[0] == '1' || observerHold))
+    {
+        const glm::dvec3 eye = origin + fixedBasis * (observerNear ? glm::dvec3(300.0, 120.0, -2150.0)
+                                                                   : glm::dvec3(700.0, 250.0, -2600.0));
+        const glm::dvec3 look = origin + fixedBasis * (observerNear ? glm::dvec3(0.0, 0.0, -1500.0)
+                                                                    : glm::dvec3(0.0, 0.0, -900.0));
+        const glm::dvec3 f = glm::normalize(look - eye);
+        const glm::dvec3 r = glm::normalize(glm::cross(f, fixedBasis[1]));
+        const glm::dvec3 u = glm::cross(r, f);
+        glm::mat4 orientation(1.0f);
+        orientation[0] = glm::vec4(glm::vec3(r), 0.0f);
+        orientation[1] = glm::vec4(glm::vec3(u), 0.0f);
+        orientation[2] = glm::vec4(glm::vec3(-f), 0.0f);
+        for (auto& [id, shipPtr] : m_ships)
+        {
+            if (!shipPtr || !isPlayerControlled(id))
+                continue;
+            auto& tr = shipPtr->core().transform();
+            tr.orientation = orientation;
+            const auto* frame = tr.motion.mode == game::navigation::MotionMode::HubTactical
+                ? hubNavigationFrame(tr.motion.hubId) : nullptr;
+            if (frame && frame->valid)
+            {
+                const glm::dvec3 local = frame->worldToLocalPosition(eye);
+                tr.motion.localPositionMeters = local;
+                tr.motion.localVelocityMps = frame->worldToLocalVelocity(eye, dockVelocity);
+                tr.motion.referenceVelocityMps = tr.motion.travelFrame.localToWorldVelocity(local, glm::dvec3(0.0));
+                tr.referenceVelocityMetersPerSecond = tr.motion.referenceVelocityMps;
+            }
+            tr.motion.worldVelocityMps = dockVelocity;
+            tr.setWorldPositionMeters(eye);
+            if (m_dockObserverPlaced)
+                continue;
+            m_dockObserverPlaced = true;
+            std::cerr << "[DockTraffic] DEV observer: player " << id.value << " parked 2.7 km in front of the dock\n";
+        }
+    }
+
+    const bool refreshRoutes = now - m_dockTrafficRouteSeconds >= 1.0;
+    if (refreshRoutes)
+        m_dockTrafficRouteSeconds = now;
 
     std::unordered_set<std::uint64_t> alive;
     for (const auto& actor : m_dockServiceTraffic->actors())
@@ -148,20 +200,100 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
             shellIt = m_dockTrafficShellByActor.emplace(actor.id, id).first;
             m_dockTrafficShells.insert(id);
         }
-        auto it = m_shipShells.find(shellIt->second);
-        if (it == m_shipShells.end())
+        // The motion-fidelity LOD materializes a shell near a player (same
+        // EntityId / ShipInstanceId). The traffic model still owns its pose:
+        // a materialized traffic ship is kinematic and skips the physics and
+        // AI loops (isDockStationControlledShip).
+        ShipTransform* target = nullptr;
+        if (auto it = m_shipShells.find(shellIt->second); it != m_shipShells.end())
+            target = &it->second.transform;
+        else if (Ship* ship = getShip(shellIt->second))
+            target = &ship->core().transform();
+        if (!target)
             continue;
-        auto& tr = it->second.transform;
+        auto& tr = *target;
         tr.setWorldPositionMeters(position);
         tr.orientation = orientation;
         tr.motion.worldVelocityMps = velocity;
         tr.motion.localVelocityMps = velocity;
+        // Map ownership: inside the dock's controlled zone the ship belongs to
+        // this hub (Hub Map); outside it, to the wider maps.
+        tr.motion.hubId =
+            glm::length(pose.position) <= m_dockTrafficZoneRadiusMeters ? dock->hubId : std::string {};
+
+        if (refreshRoutes)
+        {
+            auto& info = m_dockTrafficInfo[shellIt->second];
+            info.active = true;
+            info.callsign = actor.callsign;
+            info.phase = game::traffic::dock::actorPhaseName(actor.phase);
+            info.destination = m_dockServiceTraffic->destination(actor.id);
+            info.routeOffsetsMeters.clear();
+            for (const auto& p : m_dockServiceTraffic->plannedPath(actor.id, now))
+                info.routeOffsetsMeters.push_back(fixedBasis * (p - pose.position));
+        }
     }
+    // Live status every 10 s of server time: where each traffic ship is, how
+    // the server simulates it and how far the nearest player is.
+    if (m_dockTrafficLog && now - m_dockTrafficStatusSeconds >= 10.0)
+    {
+        m_dockTrafficStatusSeconds = now;
+        const glm::dmat3 toFixed = glm::transpose(fixedBasis);
+        std::vector<glm::dvec3> players;
+        for (const auto& [id, shipPtr] : m_ships)
+            if (shipPtr && isPlayerControlled(id))
+                players.push_back(shipPtr->core().transform().fullWorldMeters());
+        for (const auto& actor : m_dockServiceTraffic->actors())
+        {
+            const auto pose = m_dockServiceTraffic->pose(actor.id, now);
+            const auto shellIt = m_dockTrafficShellByActor.find(actor.id);
+            const char* tier = "none";
+            int fidelity = -1;
+            glm::dvec3 world = origin + fixedBasis * pose.position;
+            if (shellIt != m_dockTrafficShellByActor.end())
+            {
+                if (const auto it = m_shipShells.find(shellIt->second); it != m_shipShells.end())
+                {
+                    tier = "shell";
+                    fidelity = static_cast<int>(it->second.lifecycle.motionFidelity);
+                    world = it->second.transform.fullWorldMeters();
+                }
+                else if (const Ship* ship = getShip(shellIt->second))
+                {
+                    tier = "MATERIALIZED";
+                    world = ship->core().transform().fullWorldMeters();
+                }
+            }
+            double nearest = -1.0;
+            for (const auto& p : players)
+                nearest = nearest < 0.0 ? glm::length(p - world) : std::min(nearest, glm::length(p - world));
+            const glm::dvec3 f = toFixed * (world - origin);
+            std::fprintf(m_dockTrafficLog,
+                         "%9.1f [status] %s phase=%s present=%d tier=%s fidelity=%d entity=%llu "
+                         "fixed=(%.0f,%.0f,%.0f) dock_m=%.0f player_m=%.0f\n",
+                         now, actor.callsign.c_str(), game::traffic::dock::actorPhaseName(actor.phase),
+                         pose.present ? 1 : 0, tier, fidelity,
+                         static_cast<unsigned long long>(
+                             shellIt != m_dockTrafficShellByActor.end() ? shellIt->second.value : 0),
+                         f.x, f.y, f.z, glm::length(world - origin), nearest);
+        }
+        for (const auto& p : players)
+        {
+            const glm::dvec3 f = toFixed * (p - origin);
+            std::fprintf(m_dockTrafficLog, "%9.1f [status] player fixed=(%.0f,%.0f,%.0f) dock_m=%.0f\n", now, f.x,
+                         f.y, f.z, glm::length(p - origin));
+        }
+        std::fflush(m_dockTrafficLog);
+    }
+
     for (auto it = m_dockTrafficShellByActor.begin(); it != m_dockTrafficShellByActor.end();)
     {
         if (alive.count(it->first) == 0)
         {
             m_dockTrafficShells.erase(it->second);
+            m_dockTrafficInfo.erase(it->second);
+            if (getShip(it->second))
+                dematerializeShip(it->second, game::simulation::ShipSimulationTier::TrafficShell);
             removeTrafficShell(it->second);
             it = m_dockTrafficShellByActor.erase(it);
         }
@@ -172,7 +304,7 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
 
 bool GameSimulation::isDockStationControlledShip(EntityId id) const noexcept
 {
-    return m_dockStationControlledShips.count(id) != 0;
+    return m_dockStationControlledShips.count(id) != 0 || m_dockTrafficShells.count(id) != 0;
 }
 
 game::docking::traffic::DockTrafficShipStatus GameSimulation::dockDispatcherStatus(EntityId shipId) const

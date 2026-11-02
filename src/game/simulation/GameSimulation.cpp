@@ -2389,6 +2389,26 @@ m_hubVelocityMetersPerSecond[hubId] =
                     });
                 }
 
+                // Compact traffic shells (hub dock traffic, route traffic)
+                // are physical ships too: the radar must see them, or a
+                // shell is invisible to the player until it materializes.
+                for (const auto& [shellId, shell] : m_shipShells)
+                {
+                    if (!shell.valid() ||
+                        !game::simulation::sameRuntimeSystem(
+                            observerSystemId,
+                            shell.transform.motion.systemId))
+                    {
+                        continue;
+                    }
+
+                    inputs.push_back({
+                        shellId,
+                        shell.transform.worldPosition,
+                        shell.definition->radarCrossSection
+                    });
+                }
+
                 ship.updatePerception(fdt, inputs);
             }
         }

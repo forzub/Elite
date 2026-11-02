@@ -43,6 +43,22 @@ struct ShipDockDispatcherSnapshot
 };
 } // namespace game::simulation
 
+namespace game::simulation
+{
+// Hub dock traffic ship (DockServiceTraffic actor): identity of the leg and
+// the REMAINING planned path the traffic model actually executes, as world
+// offsets from the ship's own position in this snapshot (hub-orbit drift
+// cancels; maps add them to the interpolated ship position).
+struct ShipTrafficSnapshot
+{
+    bool active = false;
+    std::string callsign;
+    std::string phase;
+    std::string destination;
+    std::vector<glm::dvec3> routeOffsetsMeters;
+};
+} // namespace game::simulation
+
 struct ShipSnapshot
 {
     EntityId                                            id;
@@ -78,4 +94,5 @@ struct ShipSnapshot
     game::ship::telemetry::ShipControlAuthorityTelemetry controlAuthorityTelemetry {};
     game::simulation::ObjectGraphSnapshot                graph;
     game::simulation::ShipDockDispatcherSnapshot          dockDispatcher;
+    game::simulation::ShipTrafficSnapshot                 traffic;
 };

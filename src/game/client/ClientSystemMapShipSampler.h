@@ -48,6 +48,7 @@ struct SystemMapShipSample
     world::coordinates::WorldPosition worldPosition;
     glm::dvec3 worldVelocityMps {0.0};
     glm::mat4 orientation {1.0f};
+    game::simulation::ShipTrafficSnapshot traffic;
 };
 
 struct SystemMapShipSampleResult
@@ -92,6 +93,7 @@ inline SystemMapShipSample makeSystemMapShipSample(
     out.systemId = ship.transform.motion.systemId;
     out.parentBodyId = ship.transform.motion.parentBodyId;
     out.hubId = ship.transform.motion.hubId;
+    out.traffic = ship.traffic;
     out.worldPosition = ship.transform.worldPosition;
     out.worldVelocityMps = ship.transform.motion.worldVelocityMps;
     out.orientation = ship.transform.orientation;

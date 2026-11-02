@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <csignal>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <limits>
 #include <string>
@@ -1634,6 +1636,94 @@ int runNetworkServer(
     return 0;
 }
 
+// Live hub-traffic probe: the real authoritative runtime with one attached
+// player session. Every interval it reads the CANONICAL client snapshot (what
+// a client world actually receives) and logs every dock traffic ship there:
+// tier, motion fidelity, dock FIXED-frame position, distance to the player.
+// Server-side traffic/dispatcher log: ELITE_DOCK_TRAFFIC_LOG.
+int runDockTrafficProbe(double seconds, const std::string& logPath)
+{
+    core::disableRuntimeStdoutNoise();
+
+    game::server::HeadlessServerTransport transport;
+    game::server::HeadlessDebugChannel debugChannel;
+    WorldParams worldParams;
+    game::server::ServerRuntime runtime(worldParams, debugChannel);
+    const auto session = runtime.attachPlayerSessionTransport(
+        transport, makeSelfTestIdentity(1301u, 13u));
+    if (!session || !transport.hasSessionWelcome())
+    {
+        std::cerr << "[FAIL] dock-traffic-probe bootstrap failed\n";
+        return 60;
+    }
+    const EntityId playerId = transport.sessionWelcome().controlledEntityId;
+    std::FILE* out = std::fopen(logPath.c_str(), "w");
+    if (!out)
+        return 61;
+
+    const double step = runtime.fixedStepSeconds();
+    double t = 0.0;
+    double nextSample = 0.0;
+    while (t < seconds)
+    {
+        runtime.advance(step);
+        t += step;
+        if (t < nextSample)
+            continue;
+        nextSample += 10.0;
+
+        const auto& snap = transport.latestCanonicalSnapshot();
+        const ObjectSnapshot* dock = nullptr;
+        const ObjectSnapshot* base = nullptr;
+        for (const auto& o : snap.objects)
+        {
+            if (o.hubAttachment.moduleId == "hub_hex_dock_a")
+                dock = &o;
+            else if (o.hubAttachment.moduleId == "hub_hex_dock_base")
+                base = &o;
+        }
+        const ShipSnapshot* player = findShipSnapshot(snap, playerId);
+        if (!dock || !base || !player)
+        {
+            std::fprintf(out, "t=%.1f dock=%d base=%d player=%d\n", t, dock != nullptr, base != nullptr,
+                         player != nullptr);
+            continue;
+        }
+        const glm::dvec3 origin = world::coordinates::fullMeters(dock->worldPosition);
+        const glm::dmat3 toFixed = glm::transpose(glm::dmat3(glm::mat3(base->orientation)));
+        const glm::dvec3 pp = world::coordinates::fullMeters(player->transform.worldPosition);
+        const glm::dvec3 pf = toFixed * (pp - origin);
+        int traffic = 0;
+        for (const auto& ship : snap.ships)
+            traffic += ship.instanceId >= 9000001 && ship.instanceId < 9100000 ? 1 : 0;
+        std::fprintf(out, "t=%.1f ships=%zu traffic=%d player_fixed=(%.0f,%.0f,%.0f) player_dock_m=%.0f\n", t,
+                     snap.ships.size(), traffic, pf.x, pf.y, pf.z, glm::length(pp - origin));
+        for (const auto& ship : snap.ships)
+        {
+            if (ship.instanceId < 9000001 || ship.instanceId >= 9100000)
+                continue;
+            const glm::dvec3 sp = world::coordinates::fullMeters(ship.transform.worldPosition);
+            const glm::dvec3 f = toFixed * (sp - origin);
+            std::fprintf(out,
+                         "  ship inst=%llu entity=%llu type=%d tier=%d fidelity=%d fixed=(%.0f,%.0f,%.0f) "
+                         "dock_m=%.0f player_m=%.0f speed=%.1f hub=%s %s phase=%s dest=%s route_pts=%zu\n",
+                         static_cast<unsigned long long>(ship.instanceId),
+                         static_cast<unsigned long long>(ship.id.value), static_cast<int>(ship.typeId),
+                         static_cast<int>(ship.simulationTier), static_cast<int>(ship.motionFidelity), f.x, f.y,
+                         f.z, glm::length(sp - origin), glm::length(sp - pp),
+                         glm::length(ship.transform.motion.worldVelocityMps -
+                                     glm::dvec3(dock->linearVelocityMps)),
+                         ship.transform.motion.hubId.empty() ? "-" : ship.transform.motion.hubId.c_str(),
+                         ship.traffic.callsign.c_str(), ship.traffic.phase.c_str(),
+                         ship.traffic.destination.c_str(), ship.traffic.routeOffsetsMeters.size());
+        }
+        std::fflush(out);
+    }
+    std::fclose(out);
+    std::cerr << "[PASS] dock-traffic-probe simulated_s=" << t << "\n";
+    return 0;
+}
+
 int runHeadlessServer(bool resetAuthState)
 {
     core::disableRuntimeStdoutNoise();
@@ -1704,6 +1794,8 @@ int main(int argc, char** argv)
     bool oneClientSelfTest = false;
     bool resetAuthState = false;
     bool haveListenEndpoint = false;
+    double dockTrafficProbeSeconds = 0.0;
+    std::string dockTrafficProbeLog;
     game::network::NetworkEndpoint listenEndpoint;
 
     for (int i = 1; i < argc; ++i)
@@ -1719,6 +1811,18 @@ int main(int argc, char** argv)
         if (arg == "--self-test-navigation")
         {
             navigationSelfTest = true;
+            continue;
+        }
+
+        if (arg == "--dock-traffic-probe")
+        {
+            if (i + 2 >= argc)
+            {
+                std::cerr << "[EliteServer] --dock-traffic-probe requires SECONDS LOG\n";
+                return 1;
+            }
+            dockTrafficProbeSeconds = std::atof(argv[++i]);
+            dockTrafficProbeLog = argv[++i];
             continue;
         }
 
@@ -1799,6 +1903,9 @@ int main(int argc, char** argv)
 
     if (navigationSelfTest)
         return runNavigationRuntimeSelfTest();
+
+    if (dockTrafficProbeSeconds > 0.0)
+        return runDockTrafficProbe(dockTrafficProbeSeconds, dockTrafficProbeLog);
 
     if (haveListenEndpoint)
         return runNetworkServer(listenEndpoint, oneClientSelfTest, resetAuthState);

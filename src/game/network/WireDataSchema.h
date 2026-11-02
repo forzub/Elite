@@ -682,6 +682,15 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::ShipTrafficSnapshot,
+    v.active,
+    v.callsign,
+    v.phase,
+    v.destination,
+    v.routeOffsetsMeters
+);
+
+ELITE_WIRE_SCHEMA(
     game::simulation::ShipDockDispatcherSnapshot,
     v.active,
     v.phase,
@@ -714,7 +723,8 @@ ELITE_WIRE_SCHEMA(
     v.shipCoreStatus,
     v.controlAuthorityTelemetry,
     v.graph,
-    v.dockDispatcher
+    v.dockDispatcher,
+    v.traffic
 );
 
 ELITE_WIRE_SCHEMA(

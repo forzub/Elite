@@ -411,6 +411,16 @@ inline bool rebuildHubMapFromClientState(
         }
 
         ship.axes = hubMapAxesToLocal(source.orientation, frame);
+        if (source.traffic.active)
+        {
+            if (!source.traffic.callsign.empty() && !isLocalPlayer)
+                ship.name = source.traffic.callsign + "  " + source.traffic.phase;
+            // World offsets -> Hub Map axes (vector part of the hub frame).
+            const glm::dvec3 origin = frame.worldToLocalPosition(worldMeters);
+            for (const auto& offset : source.traffic.routeOffsetsMeters)
+                ship.routeOffsetsMeters.push_back(
+                    frame.worldToLocalPosition(worldMeters + offset) - origin);
+        }
         ship.sizeMeters = hubMapAssemblySizeMeters(source.typeId);
         ship.player = isLocalPlayer;
         ship.valid = true;

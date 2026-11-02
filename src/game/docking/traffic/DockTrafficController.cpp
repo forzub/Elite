@@ -70,6 +70,10 @@ struct DockTrafficController::Impl
         double readySince = 0.0;
         double preferredHoldAzimuth = -1.0;
         bool directEntry = false;
+        // Pipelined arrival: cleared with the outer lane while the previous
+        // arrival is still under station control in the chamber; the chamber
+        // lane is handed over when that ship latches.
+        bool awaitingChamber = false;
         std::uint64_t revision = 0;
     };
     std::map<std::uint64_t, ShipRecord> ships;
@@ -98,6 +102,15 @@ struct DockTrafficController::Impl
         {
             it->second = 0;
             event(now, ship, std::string("release ") + id);
+            if (std::string(id) == "chamber_lane")
+                for (auto& [otherId, other] : ships)
+                    if (other.awaitingChamber && other.phase == DockTrafficPhase::EntryCleared)
+                    {
+                        other.awaitingChamber = false;
+                        it->second = otherId;
+                        event(now, otherId, "chamber_lane handed over (pipelined entry)");
+                        break;
+                    }
         }
     }
     bool resourcesFree(const std::vector<std::string>& ids) const
@@ -605,9 +618,39 @@ void DockTrafficController::update(double nowSeconds)
         impl.event(nowSeconds, shipId, "hold assigned " + best->id);
     }
 
-    // 2. One movement through the shared lanes at a time.
-    if (impl.facility.portals.empty() || !impl.resourcesFree(impl.portalResources()))
+    // 2. One movement through the shared lanes at a time, with one exception:
+    // arrival pipelining. While the previous arrival is under station control
+    // inside the chamber (outer lane already released), the next arrival may
+    // leave its hold: its hold -> chamber-gate approach (>= ~100 s) outlasts
+    // the station transfer (< 60 s), and the chamber lane is handed to it when
+    // the previous ship latches. Departures still need both lanes free.
+    if (impl.facility.portals.empty())
         return;
+    bool pipelineArrival = false;
+    if (!impl.resourcesFree(impl.portalResources()))
+    {
+        if (direct)
+            return;
+        bool outerFree = true;
+        std::uint64_t chamberOwner = 0;
+        for (const auto& id : impl.portalResources())
+        {
+            const auto it = impl.resourceOwner.find(id);
+            const std::uint64_t owner = it == impl.resourceOwner.end() ? 0 : it->second;
+            if (id == "chamber_lane")
+                chamberOwner = owner;
+            else if (owner != 0)
+                outerFree = false;
+        }
+        const auto owner = impl.ships.find(chamberOwner);
+        bool someoneAwaiting = false;
+        for (const auto& [id, record] : impl.ships)
+            someoneAwaiting = someoneAwaiting || record.awaitingChamber;
+        if (!outerFree || owner == impl.ships.end() || owner->second.phase != DockTrafficPhase::StationControl ||
+            someoneAwaiting)
+            return;
+        pipelineArrival = true;
+    }
     const auto& portal = impl.facility.portals.front();
 
     auto freePadFor = [&](const Impl::ShipRecord& record) -> const ParkingPadDescriptor* {
@@ -677,6 +720,10 @@ void DockTrafficController::update(double nowSeconds)
 
     const bool chooseDeparture = departure &&
         (!arrival || arrivalsWaitingWithoutPad || departure->readySince <= arrival->readySince);
+    // A pipelined slot is only for an arrival that is next in line anyway: an
+    // older departure waits for both lanes instead of being overtaken.
+    if (pipelineArrival && (chooseDeparture || !arrival))
+        return;
     if (chooseDeparture)
     {
         for (const auto& id : impl.portalResources())
@@ -689,7 +736,9 @@ void DockTrafficController::update(double nowSeconds)
     if (arrival)
     {
         for (const auto& id : impl.portalResources())
-            impl.resourceOwner[id] = arrival->shipId;
+            if (!pipelineArrival || id != "chamber_lane")
+                impl.resourceOwner[id] = arrival->shipId;
+        arrival->awaitingChamber = pipelineArrival;
         impl.padOwner[arrivalPad->id] = arrival->shipId;
         arrival->pad = arrivalPad->id;
         impl.setPhase(*arrival, DockTrafficPhase::EntryCleared, nowSeconds);

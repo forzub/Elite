@@ -66,6 +66,11 @@ inline void rebuildSystemMapShipLayer(
             ship.id,
             localControlledEntityId
         );
+        // Map ownership: a ship the server binds to a hub (hubId) is drawn
+        // on that hub's Hub Map only; here the hub itself represents it. The
+        // local player keeps its own "you are here" marker everywhere.
+        if (!isLocalPlayer && !ship.hubId.empty())
+            continue;
 
         object.stableId = isLocalPlayer
             ? "player"
@@ -80,6 +85,10 @@ inline void rebuildSystemMapShipLayer(
         {
             object.name =
                 game::diagnostics::hubMotionLabLabel(ship.motionLabKind);
+        }
+        else if (ship.traffic.active && !ship.traffic.callsign.empty())
+        {
+            object.name = ship.traffic.callsign;
         }
         else
         {

@@ -697,6 +697,10 @@ void SpaceState::handleInput()
             return;
         }
 
+        // T: hub traffic routes + authored dock lanes / holds on the maps.
+        if (Input::instance().isKeyPressedOnce(GLFW_KEY_T))
+            m_systemMapRenderer.toggleTrafficLanes();
+
         if (Input::instance().isKeyPressedOnce(GLFW_KEY_BACKSPACE))
         {
             setSystemMapCurrentSystemMode();

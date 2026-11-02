@@ -477,6 +477,12 @@ private:
     std::unordered_map<std::uint64_t, EntityId> m_dockTrafficShellByActor;
     std::unordered_set<EntityId> m_dockTrafficShells;
     double m_dockTrafficPhaseOffsetRad = 0.0;
+    double m_dockTrafficStatusSeconds = -1.0e30;
+    double m_dockTrafficRouteSeconds = -1.0e30;
+    double m_dockTrafficZoneRadiusMeters = 0.0;
+    bool m_dockObserverPlaced = false;
+    // Replicated traffic identity + remaining route per traffic ship.
+    std::unordered_map<EntityId, game::simulation::ShipTrafficSnapshot> m_dockTrafficInfo;
     std::FILE* m_dockTrafficLog = nullptr;
     bool m_dockTrafficDisabled = false;
     std::unordered_set<EntityId> m_dockStationControlledShips;

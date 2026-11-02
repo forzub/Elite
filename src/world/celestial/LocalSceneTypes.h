@@ -85,6 +85,10 @@ struct LocalSceneObject
     glm::dvec3 sizeMeters {1.0, 1.0, 1.0};
     double boundingRadiusMeters = 0.0;
 
+    // Hub dock traffic ship: the remaining route the traffic model executes,
+    // as offsets from positionMeters in this scene's coordinate axes.
+    std::vector<glm::dvec3> routeOffsetsMeters;
+
     bool player = false;
     bool prime = false;
     bool valid = false;

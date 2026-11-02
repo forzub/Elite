@@ -3,6 +3,7 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <cstdlib>
 #include <vector>
 #include <algorithm>
 #include <memory>
@@ -1486,6 +1487,9 @@ void SceneRenderer::prepareScene(
         // Authoritative TrafficShell/WreckShell entities are visible, but they
         // stay on the cheap instanced proxy path. System-map sampling still
         // consumes the same ShipSnapshot rows, so render/map identity matches.
+        int traceShells = 0;
+        int traceShellsWithAssembly = 0;
+        double traceNearestShellM = -1.0;
         for (const auto& pair : world.ships())
         {
             const auto& ship = pair.second;
@@ -1505,8 +1509,10 @@ void SceneRenderer::prepareScene(
                 continue;
             }
 
+            ++traceShells;
             if (!ship.assembly)
                 continue;
+            ++traceShellsWithAssembly;
 
             const auto& gpuAssembly =
                 render::geometry::AssemblyGpuLibrary::get(
@@ -1519,6 +1525,11 @@ void SceneRenderer::prepareScene(
                     glm::mat4(ship.renderTransform.orientation),
                     prepared.frame
                 );
+            {
+                const double d = glm::length(glm::dvec3(glm::vec3(shipModel[3])));
+                if (traceNearestShellM < 0.0 || d < traceNearestShellM)
+                    traceNearestShellM = d;
+            }
 
             PreparedScene::VisualShipItem shellItem;
             shellItem.kind = game::visual::VisualShipKind::Traffic;
@@ -1563,6 +1574,21 @@ void SceneRenderer::prepareScene(
                     partItem.moduleDistanceBias = moduleDistanceBias;
                     prepared.visualShipParts.push_back(partItem);
                 }
+            }
+        }
+
+        // Traffic render telemetry (ELITE_DOCK_TRAFFIC_LOG set): are the
+        // traffic shells reaching the flight scene, hydrated, and how near.
+        if (std::getenv("ELITE_DOCK_TRAFFIC_LOG"))
+        {
+            static double nextTrace = 0.0;
+            const double nowTrace = glfwGetTime();
+            if (nowTrace >= nextTrace)
+            {
+                nextTrace = nowTrace + 5.0;
+                std::cerr << "[TrafficRender] t=" << nowTrace << " shells=" << traceShells
+                          << " with_assembly=" << traceShellsWithAssembly
+                          << " nearest_m=" << traceNearestShellM << "\n";
             }
         }
 

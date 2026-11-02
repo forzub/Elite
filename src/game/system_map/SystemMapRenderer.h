@@ -400,6 +400,23 @@ private:
         const world::celestial::HubMapSnapshot& hub
     );
 
+    // Hub dock traffic on Detail / Hub maps: the selected traffic ship's
+    // replicated route (all routes + the authored dock lanes, holds and
+    // queue gates while the T toggle is on).
+    void decorateTrafficRoutes(
+        const world::celestial::DetailMapSnapshot& detail,
+        const world::celestial::HubMapSnapshot& hub
+    );
+    bool m_showTrafficLanes = false;
+
+public:
+    void toggleTrafficLanes() noexcept { m_showTrafficLanes = !m_showTrafficLanes; }
+    // DEV map script: select an object as if clicked.
+    void devActivateObject(const std::string& objectId) { m_objectOverlayState.activate(objectId); }
+    bool trafficLanesVisible() const noexcept { return m_showTrafficLanes; }
+
+private:
+
     void applyWaypointAction(
         const std::string& objectId,
         const std::string& actionKey

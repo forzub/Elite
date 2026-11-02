@@ -129,6 +129,14 @@ void drawProjectedTrajectory(const MapObjectTrajectory& trajectory)
         case MapTrajectoryKind::Prediction:
             color = glm::vec4(0.34f, 0.68f, 1.00f, 0.92f);
             break;
+        case MapTrajectoryKind::TrafficRoute:
+            color = glm::vec4(1.00f, 0.74f, 0.30f, 0.92f);
+            width = 1.6f;
+            break;
+        case MapTrajectoryKind::AuthoredLane:
+            color = glm::vec4(0.46f, 0.80f, 0.58f, 0.55f);
+            width = 1.0f;
+            break;
         case MapTrajectoryKind::Planned:
         default:
             // Solver-validation rendering is intentionally plain.  The line

@@ -184,6 +184,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         // when its large ObjectGraphSnapshot is sparse or suppressed.
         s.controlAuthorityTelemetry =
             ship.core().controlAuthorityTelemetry();
+        if (const auto info = m_dockTrafficInfo.find(id); info != m_dockTrafficInfo.end())
+            s.traffic = info->second;
         if (m_dockServiceTraffic && isPlayerControlled(id))
         {
             const auto dock = dockDispatcherStatus(id);
@@ -474,6 +476,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         s.materializedFidelity =
             shell.lifecycle.materializedFidelity;
         s.transform = shell.transform;
+        if (const auto info = m_dockTrafficInfo.find(id); info != m_dockTrafficInfo.end())
+            s.traffic = info->second;
 
         s.referenceFrame.systemId = shell.transform.motion.systemId;
         s.referenceFrame.frameId = shell.transform.motion.travelFrame.frameId;

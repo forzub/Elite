@@ -1,6 +1,6 @@
 {
  "schema": "elite.colonization_lab.world.v1",
- "note": "Colonies, hyper-era outposts, beacon network, relation anchors, jump chronology and the Earth-3126 anchor. pop_3126 values are CANON TARGETS: the lab fits a growth path to them and flags implausible implied growth instead of silently overriding them.",
+ "note": "Colonies, hyper-era outposts, beacon network, relation anchors, jump chronology, Earth anchor and the inputs of the causal demography (demography.py). pop_3126_authored is the AUTHORED population (fate.md or reconciliation); it is NOT a target any more: the lab computes populations causally and reports disagreements as conflicts. Every item carries a knowledge status (see knowledge.py).",
  "colonies": [
   {
    "id": "tau_ceti_cognium",
@@ -13,7 +13,6 @@
     "TRADERS-GUILD-1"
    ],
    "founded": 2233,
-   "pop_3126": 2800000,
    "regime_3126": "technocratic_meritocracy",
    "hyper_year": 2750,
    "bias": {
@@ -62,7 +61,55 @@
     "formalism": -10,
     "status_display": 5
    },
-   "culture_drift_reason": "500 лет меритократии: место по полезности, процедура — помеха"
+   "culture_drift_reason": "500 лет меритократии: место по полезности, процедура — помеха",
+   "pop_3126_authored": 2800000,
+   "demography": {
+    "religious_share": 0.06,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5"
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель MAYFLOWER-2: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя есть в заметках автора"
+    }
+   }
   },
   {
    "id": "proxima_outpost",
@@ -73,7 +120,6 @@
     "SVAROG-1"
    ],
    "founded": 2150,
-   "pop_3126": 890000,
    "regime_3126": "security_oligarchy",
    "hyper_year": null,
    "hyper_note": "отказались от лицензии Конвенции Маяков (2850); транзит покупают у кланов; к Солу — досветовая линия 4.2 св. года",
@@ -115,7 +161,55 @@
     "ближайший к Земле сосед",
     "вне сети маяков",
     "двоевластие русско-индийских кланов по Пакту 2145"
-   ]
+   ],
+   "pop_3126_authored": 890000,
+   "demography": {
+    "religious_share": 0.1,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5"
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель SVAROG-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя есть в заметках автора"
+    }
+   }
   },
   {
    "id": "gj832_tianhe",
@@ -126,7 +220,6 @@
     "TIANHE-1"
    ],
    "founded": 2288,
-   "pop_3126": 4200000,
    "regime_3126": "party_technocracy",
    "hyper_year": 2785,
    "bias": {
@@ -174,7 +267,56 @@
     "order_love": 6,
     "outsider_trust": -6
    },
-   "culture_drift_reason": "память чистки 2145 и голода 2180; 600 лет стражи карантина"
+   "culture_drift_reason": "память чистки 2145 и голода 2180; 600 лет стражи карантина",
+   "pop_3126_authored": 4200000,
+   "demography": {
+    "religious_share": 0.03,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.85
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель TIANHE-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя дано реконсиляцией / старой веткой"
+    }
+   }
   },
   {
    "id": "gj832_gaia_zone",
@@ -185,7 +327,6 @@
     "GREEN-ARK-1"
    ],
    "founded": 2270,
-   "pop_3126": 45000,
    "regime_3126": "none_quiet",
    "hyper_year": null,
    "economic_actor": false,
@@ -194,7 +335,56 @@
    "problems": [
     "карантин",
     "живые «тихие» за кордоном"
-   ]
+   ],
+   "pop_3126_authored": 45000,
+   "demography": {
+    "religious_share": 0.0,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.15
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель GREEN-ARK-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя дано реконсиляцией / старой веткой"
+    }
+   }
   },
   {
    "id": "lalande_hellas",
@@ -205,7 +395,6 @@
     "HERACLES-1"
    ],
    "founded": 2197,
-   "pop_3126": 1500000,
    "regime_3126": "shareholder_agora",
    "hyper_year": 2800,
    "bias": {
@@ -244,7 +433,56 @@
     "outsider_trust": 10,
     "hospitality": 5
    },
-   "culture_drift_reason": "Агора: живут с чужих"
+   "culture_drift_reason": "Агора: живут с чужих",
+   "pop_3126_authored": 1500000,
+   "demography": {
+    "religious_share": 0.1,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.5
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель HERACLES-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя дано реконсиляцией / старой веткой"
+    }
+   }
   },
   {
    "id": "lalande_mecca",
@@ -255,7 +493,6 @@
     "AL-QUDS-1"
    ],
    "founded": 2243,
-   "pop_3126": 1800000,
    "regime_3126": "scholar_theocracy",
    "hyper_year": 2800,
    "bias": {
@@ -289,7 +526,56 @@
     "хронический импорт воды",
     "напряжённый мир с Элладой",
     "собственная математика прыжка — вне стандарта Когниума"
-   ]
+   ],
+   "pop_3126_authored": 1800000,
+   "demography": {
+    "religious_share": 0.35,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.5
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель AL-QUDS-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя есть в заметках автора"
+    }
+   }
   },
   {
    "id": "eps_eri_harmony",
@@ -301,7 +587,6 @@
     "HOMEWARD-1"
    ],
    "founded": 2212,
-   "pop_3126": 3280000,
    "regime_3126": "sage_council",
    "hyper_year": 2760,
    "bias": {
@@ -361,7 +646,56 @@
     "hardship_pride": -18
    },
    "culture_drift_reason": "главный экспортёр ядра и оператор ретрансляторов, богатейшая система ядра: за 900 лет «обуржуазились» (так их дразнят Тяньхэ и Твердыня); соседство с контрабандой Пояса Раздора",
-   "regime_note": "Совет Мудрецов-инженеров (actors.json Синь Хэ): «Прогресс через стабильность»; партия растворилась в инженерной меритократии"
+   "regime_note": "Совет Мудрецов-инженеров (actors.json Синь Хэ): «Прогресс через стабильность»; партия растворилась в инженерной меритократии",
+   "pop_3126_authored": 3280000,
+   "demography": {
+    "religious_share": 0.05,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.8
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель CELESTIAL-DESTINY-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "реконсиляция (разделение/пересчёт)"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя есть в заметках автора"
+    }
+   }
   },
   {
    "id": "eps_eri_strife",
@@ -373,7 +707,6 @@
     "HOMEWARD-1"
    ],
    "founded": 2405,
-   "pop_3126": 45000,
    "regime_3126": "clan_contracts",
    "hyper_year": 2865,
    "bias": {
@@ -392,7 +725,56 @@
    "problems": [
     "пиратство",
     "война с Гармонией тлеет 550 лет"
-   ]
+   ],
+   "pop_3126_authored": 45000,
+   "demography": {
+    "religious_share": 0.05,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.2
+   },
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель FREE-VENTURE-1: PROPOSAL"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя дано реконсиляцией / старой веткой"
+    }
+   }
   },
   {
    "id": "wolf359_citadel",
@@ -403,7 +785,6 @@
     "IRON-SHIELD-1"
    ],
    "founded": 2228,
-   "pop_3126": 650000,
    "regime_3126": "security_oligarchy",
    "hyper_year": 2855,
    "hyper_note": "собственные нелицензионные приводы; гипер-торпеды",
@@ -445,7 +826,55 @@
     "grievance_memory": 10,
     "gallows_humor": -10
    },
-   "culture_drift_reason": "травма IRON-SHIELD-2: о ней не шутят"
+   "culture_drift_reason": "травма IRON-SHIELD-2: о ней не шутят",
+   "pop_3126_authored": 650000,
+   "demography": {
+    "religious_share": 0.05,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5"
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель IRON-SHIELD-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя есть в заметках автора"
+    }
+   }
   },
   {
    "id": "gj581_europa",
@@ -456,7 +885,6 @@
     "EUROPA-1"
    ],
    "founded": 2377,
-   "pop_3126": 1200000,
    "regime_3126": "parliamentary_bureaucracy",
    "hyper_year": 2805,
    "bias": {
@@ -493,7 +921,56 @@
    "culture_drift": {
     "formalism": 5
    },
-   "culture_drift_reason": "реестр договоров как профессия"
+   "culture_drift_reason": "реестр договоров как профессия",
+   "pop_3126_authored": 1200000,
+   "demography": {
+    "religious_share": 0.05,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.75
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель EUROPA-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя есть в заметках автора"
+    }
+   }
   },
   {
    "id": "gj581_freeclans",
@@ -504,7 +981,6 @@
     "FREE-WORLD-1"
    ],
    "founded": 2574,
-   "pop_3126": 85000,
    "regime_3126": "clan_contracts",
    "hyper_year": 2862,
    "bias": {
@@ -523,7 +999,56 @@
    "problems": [
     "утечка гипер-спецификаций",
     "контрабанда"
-   ]
+   ],
+   "pop_3126_authored": 85000,
+   "demography": {
+    "religious_share": 0.05,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.25
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель FREE-WORLD-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя дано реконсиляцией / старой веткой"
+    }
+   }
   },
   {
    "id": "hd20794_hellas2",
@@ -534,7 +1059,6 @@
     "NEW-HELLAS-1"
    ],
    "founded": 2384,
-   "pop_3126": 980000,
    "regime_3126": "corporate_democracy",
    "hyper_year": 2775,
    "bias": {
@@ -567,7 +1091,56 @@
    "problems": [
     "Война за воду 2580 не забыта",
     "делит систему с Новой Индией"
-   ]
+   ],
+   "pop_3126_authored": 980000,
+   "demography": {
+    "religious_share": 0.1,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.55
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель NEW-HELLAS-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя есть в заметках автора"
+    }
+   }
   },
   {
    "id": "hd20794_newindia",
@@ -578,7 +1151,6 @@
     "DHARMA-2"
    ],
    "founded": 2523,
-   "pop_3126": 1100000,
    "regime_3126": "merit_caste_republic",
    "hyper_year": 2775,
    "bias": {
@@ -604,7 +1176,56 @@
    "problems": [
     "воды меньше, чем людей",
     "Война за воду"
-   ]
+   ],
+   "pop_3126_authored": 1100000,
+   "demography": {
+    "religious_share": 0.12,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.45
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель DHARMA-2: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя есть в заметках автора"
+    }
+   }
   },
   {
    "id": "hd40307_maland",
@@ -615,7 +1236,6 @@
     "UHURU-2"
    ],
    "founded": 2542,
-   "pop_3126": 2400000,
    "regime_3126": "council_of_chiefs",
    "hyper_year": 2850,
    "bias": {
@@ -654,7 +1274,56 @@
     "collective_duty": 5,
     "grievance_memory": 8
    },
-   "culture_drift_reason": "память 2680"
+   "culture_drift_reason": "память 2680",
+   "pop_3126_authored": 2400000,
+   "demography": {
+    "religious_share": 0.15,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.6
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель UHURU-2: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя дано реконсиляцией / старой веткой"
+    }
+   }
   },
   {
    "id": "hd40307_firmament",
@@ -665,7 +1334,6 @@
     "CELESTIAL-DESTINY-2"
    ],
    "founded": 2742,
-   "pop_3126": 1800000,
    "regime_3126": "party_technocracy",
    "hyper_year": 2850,
    "bias": {
@@ -705,7 +1373,56 @@
     "hardship_pride": 8,
     "power_distance": 5
    },
-   "culture_drift_reason": "рождена в холодной войне с Маланд"
+   "culture_drift_reason": "рождена в холодной войне с Маланд",
+   "pop_3126_authored": 1800000,
+   "demography": {
+    "religious_share": 0.03,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.4
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель CELESTIAL-DESTINY-2: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя дано реконсиляцией / старой веткой"
+    }
+   }
   },
   {
    "id": "hd69830_verde",
@@ -716,7 +1433,6 @@
     "AMAZONIA-1"
    ],
    "founded": 2576,
-   "pop_3126": 1400000,
    "regime_3126": "grandees_and_church",
    "hyper_year": 2860,
    "hyper_note": "первый контакт 2810 «лотерейным» прыжком",
@@ -750,7 +1466,55 @@
     "grievance_memory": -5,
     "state_trust": -5
    },
-   "culture_drift_reason": "после шока 2810: любопытство к чужим, недоверие к своим грандам, которые «знали»"
+   "culture_drift_reason": "после шока 2810: любопытство к чужим, недоверие к своим грандам, которые «знали»",
+   "pop_3126_authored": 1400000,
+   "demography": {
+    "religious_share": 0.25,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5"
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель AMAZONIA-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя дано реконсиляцией / старой веткой"
+    }
+   }
   },
   {
    "id": "delta_pav_karma",
@@ -761,7 +1525,6 @@
     "DHARMA-1"
    ],
    "founded": 2361,
-   "pop_3126": 1750000,
    "regime_3126": "caste_theocracy",
    "hyper_year": null,
    "hyper_note": "отказ от маяка; маяк системы держит Свободная Карма",
@@ -794,7 +1557,57 @@
     "outsider_trust": -15,
     "power_distance": 8
    },
-   "culture_drift_reason": "изоляция и отказ от маяка"
+   "culture_drift_reason": "изоляция и отказ от маяка",
+   "pop_3126_authored": 1750000,
+   "demography": {
+    "religious_share": 0.3,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption; refuses_network: отказ от маяка и контакта (CANON hyper_note)",
+    "site_share": 0.7,
+    "refuses_network": true
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель DHARMA-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "реконсиляция (разделение/пересчёт)"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя есть в заметках автора"
+    }
+   }
   },
   {
    "id": "delta_pav_freekarma",
@@ -805,7 +1618,6 @@
     "DHARMA-1"
    ],
    "founded": 2420,
-   "pop_3126": 350000,
    "regime_3126": "exile_republic",
    "hyper_year": 2795,
    "bias": {
@@ -823,7 +1635,57 @@
    "problems": [
     "луна-изгой",
     "зависимость от Тяньхэ (7.4 св. года)"
-   ]
+   ],
+   "pop_3126_authored": 350000,
+   "demography": {
+    "religious_share": 0.15,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.3
+   },
+   "founded_by_split": true,
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель DHARMA-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "реконсиляция (разделение/пересчёт)"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя дано реконсиляцией / старой веткой"
+    }
+   }
   },
   {
    "id": "gj876_next",
@@ -834,7 +1696,6 @@
     "NEXT-1"
    ],
    "founded": 2314,
-   "pop_3126": 45000,
    "regime_3126": "machine_oracle",
    "hyper_year": 2765,
    "bias": {
@@ -869,7 +1730,55 @@
     "45 тысяч человек на самом богатом сырьём мире ядра",
     "все хотят концессий",
     "Оракул торгуется как бог"
-   ]
+   ],
+   "pop_3126_authored": 45000,
+   "demography": {
+    "religious_share": 0.02,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5"
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель NEXT-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя дано реконсиляцией / старой веткой"
+    }
+   }
   },
   {
    "id": "cyg61_kern",
@@ -880,7 +1789,6 @@
     "RESOURCER-1"
    ],
    "founded": 2355,
-   "pop_3126": 350000,
    "regime_3126": "corporate_board",
    "hyper_year": 2790,
    "bias": {
@@ -906,7 +1814,55 @@
     "своих руд почти нет — владеет чужими",
     "кредитор половины ядра",
     "Шахта без шахты"
-   ]
+   ],
+   "pop_3126_authored": 350000,
+   "demography": {
+    "religious_share": 0.08,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5"
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель RESOURCER-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "реконсиляция (разделение/пересчёт)"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя дано реконсиляцией / старой веткой"
+    }
+   }
   },
   {
    "id": "hd114783_hellas3",
@@ -917,7 +1873,6 @@
     "ODYSSEY-1"
    ],
    "founded": 3122,
-   "pop_3126": 12500,
    "regime_3126": "litigating_city_states",
    "hyper_year": null,
    "bias": {},
@@ -934,7 +1889,56 @@
     "система уже размечена заявками Керна и Когниума",
     "8 веков устаревшей техники",
     "Право на Возвращение"
-   ]
+   ],
+   "pop_3126_authored": 12500,
+   "demography": {
+    "religious_share": 0.1,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.6
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель ODYSSEY-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "реконсиляция (разделение/пересчёт)"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя есть в заметках автора"
+    }
+   }
   },
   {
    "id": "leo83_zion",
@@ -945,7 +1949,6 @@
     "NEW-JERUSALEM-1"
    ],
    "founded": 3126,
-   "pop_3126": 8900,
    "regime_3126": "synod_theocracy",
    "hyper_year": null,
    "bias": {},
@@ -954,7 +1957,56 @@
     "у цели уже стоит «Золотой Город»",
     "гипер — «врата без благодати»",
     "лучшая агро-земля всей карты (83 Leonis B h)"
-   ]
+   ],
+   "pop_3126_authored": 8900,
+   "demography": {
+    "religious_share": 0.7,
+    "status": "PROPOSAL",
+    "basis": "initial share of a high-fertility religious/traditional subculture, from mission motives (religion), faithful cohort and regime; assumption F5; site_share: share of the system's habitat sites held by this polity (same-system rivals), assumption",
+    "site_share": 0.6
+   },
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "основатель NEW-JERUSALEM-1: CANON"
+   },
+   "field_status": {
+    "pop_3126_authored": {
+     "status": "CANON",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "fate.md"
+    },
+    "regime_3126": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "машинная метка режима по досье (Claude)"
+    },
+    "assets": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "активы и их важность — реконсиляция/экономика"
+    },
+    "culture_drift": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "гипотеза Colonycore v2"
+    },
+    "demography": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "входы причинной демографии (допущения F1–F12)"
+    },
+    "pop_3126_model": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "результат модели demography.py, не канон"
+    },
+    "name": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "имя дано реконсиляцией / старой веткой"
+    }
+   }
   }
  ],
  "outposts": [
@@ -967,9 +2019,16 @@
     "gj832_tianhe",
     "tau_ceti_cognium"
    ],
-   "pop": 30000,
    "purpose": "He-3 (лучший индекс ядра, 0.96)",
-   "contested": true
+   "contested": true,
+   "pop_3126_authored": 30000,
+   "founded": 2778,
+   "seed_people": 300,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "аванпост гипер-эпохи (реконсиляция)"
+   }
   },
   {
    "id": "gj667_ubuntu_node",
@@ -978,8 +2037,15 @@
    "owners": [
     "tau_ceti_cognium"
    ],
-   "pop": 2000,
-   "purpose": "маяк-связка к GJ 581 и Дельте Павлина"
+   "purpose": "маяк-связка к GJ 581 и Дельте Павлина",
+   "pop_3126_authored": 2000,
+   "founded": 2800,
+   "seed_people": 100,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "аванпост гипер-эпохи (реконсиляция)"
+   }
   },
   {
    "id": "gj892_kern",
@@ -988,8 +2054,15 @@
    "owners": [
     "cyg61_kern"
    ],
-   "pop": 10000,
-   "purpose": "платиноиды и тугоплавкие (0.97)"
+   "purpose": "платиноиды и тугоплавкие (0.97)",
+   "pop_3126_authored": 10000,
+   "founded": 2880,
+   "seed_people": 300,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "аванпост гипер-эпохи (реконсиляция)"
+   }
   },
   {
    "id": "hd10360_relay",
@@ -999,8 +2072,15 @@
     "hd20794_hellas2",
     "hd40307_maland"
    ],
-   "pop": 1500,
-   "purpose": "мост к HD 40307"
+   "purpose": "мост к HD 40307",
+   "pop_3126_authored": 1500,
+   "founded": 2840,
+   "seed_people": 100,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "аванпост гипер-эпохи (реконсиляция)"
+   }
   },
   {
    "id": "barnard_post",
@@ -1009,8 +2089,15 @@
    "owners": [
     "wolf359_citadel"
    ],
-   "pop": 800,
-   "purpose": "наблюдение за Солом"
+   "purpose": "наблюдение за Солом",
+   "pop_3126_authored": 800,
+   "founded": 2860,
+   "seed_people": 50,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "аванпост гипер-эпохи (реконсиляция)"
+   }
   },
   {
    "id": "hd114783_claims",
@@ -1020,8 +2107,16 @@
     "cyg61_kern",
     "tau_ceti_cognium"
    ],
-   "pop": 25000,
-   "purpose": "заявки на металлы и летучие (0.96-0.97)"
+   "purpose": "заявки на металлы и летучие (0.96-0.97)",
+   "pop_3126_authored": 25000,
+   "founded": 3040,
+   "seed_people": 500,
+   "site_share": 0.4,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "аванпост гипер-эпохи (реконсиляция)"
+   }
   },
   {
    "id": "leo83_golden_city",
@@ -1031,8 +2126,16 @@
     "cyg61_kern",
     "tau_ceti_cognium"
    ],
-   "pop": 6000,
-   "purpose": "разведка и агро-заявки 83 Leonis"
+   "purpose": "разведка и агро-заявки 83 Leonis",
+   "pop_3126_authored": 6000,
+   "founded": 3045,
+   "seed_people": 200,
+   "site_share": 0.4,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "аванпост гипер-эпохи (реконсиляция)"
+   }
   },
   {
    "id": "sigma2uma_expedition",
@@ -1041,134 +2144,261 @@
    "owners": [
     "cyg61_kern"
    ],
-   "pop": 3000,
-   "purpose": "лучшие металлы и стратегическое сырьё каталога"
+   "purpose": "лучшие металлы и стратегическое сырьё каталога",
+   "pop_3126_authored": 3000,
+   "founded": 3060,
+   "seed_people": 200,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "аванпост гипер-эпохи (реконсиляция)"
+   }
   }
  ],
  "beacons": [
   {
    "system": 8,
    "year": 2755,
-   "operator": "tau_ceti_cognium"
+   "operator": "tau_ceti_cognium",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 9,
    "year": 2760,
-   "operator": "eps_eri_harmony"
+   "operator": "eps_eri_harmony",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 13,
    "year": 2765,
-   "operator": "tau_ceti_cognium"
+   "operator": "tau_ceti_cognium",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 14,
    "year": 2775,
-   "operator": "tau_ceti_cognium"
+   "operator": "tau_ceti_cognium",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 30,
    "year": 2778,
-   "operator": "tau_ceti_cognium"
+   "operator": "tau_ceti_cognium",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 12,
    "year": 2785,
-   "operator": "gj832_tianhe"
+   "operator": "gj832_tianhe",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 31,
    "year": 2790,
-   "operator": "cyg61_kern"
+   "operator": "cyg61_kern",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 22,
    "year": 2795,
-   "operator": "delta_pav_freekarma"
+   "operator": "delta_pav_freekarma",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 4,
    "year": 2800,
-   "operator": "lalande_hellas"
+   "operator": "lalande_hellas",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 11,
    "year": 2800,
-   "operator": "tau_ceti_cognium"
+   "operator": "tau_ceti_cognium",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 10,
    "year": 2805,
-   "operator": "gj581_europa"
+   "operator": "gj581_europa",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 57,
    "year": 2840,
-   "operator": "hd20794_hellas2"
+   "operator": "hd20794_hellas2",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 15,
    "year": 2850,
-   "operator": "hd40307_maland"
+   "operator": "hd40307_maland",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 3,
    "year": 2855,
    "operator": "wolf359_citadel",
-   "unlicensed": true
+   "unlicensed": true,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 23,
    "year": 2880,
-   "operator": "cyg61_kern"
+   "operator": "cyg61_kern",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 53,
    "year": 2810,
-   "operator": "tau_ceti_cognium"
+   "operator": "tau_ceti_cognium",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 54,
    "year": 2860,
-   "operator": "tau_ceti_cognium"
+   "operator": "tau_ceti_cognium",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 25,
    "year": 2860,
-   "operator": "tau_ceti_cognium"
+   "operator": "tau_ceti_cognium",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 16,
    "year": 2860,
-   "operator": "hd69830_verde"
+   "operator": "hd69830_verde",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 17,
    "year": 2905,
    "operator": "tau_ceti_cognium",
-   "quarantined_from": 2910
+   "quarantined_from": 2910,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 37,
    "year": 3040,
-   "operator": "cyg61_kern"
+   "operator": "cyg61_kern",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 45,
    "year": 3045,
-   "operator": "cyg61_kern"
+   "operator": "cyg61_kern",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 41,
    "year": 3050,
-   "operator": "tau_ceti_cognium"
+   "operator": "tau_ceti_cognium",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   },
   {
    "system": 0,
    "year": 3112,
    "operator": "sol_authority",
    "unlicensed": true,
-   "note": "Земля строит собственный маяк из разобранного маяка-памятника HYPERION-1"
+   "note": "Земля строит собственный маяк из разобранного маяка-памятника HYPERION-1",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
   }
  ],
  "extra_links": [
@@ -1177,7 +2407,12 @@
    "b": 3,
    "year": 2870,
    "cost_factor": 2.5,
-   "note": "нелицензионная линия Сварог — Цитадель: два отказника торгуют напрямую"
+   "note": "нелицензионная линия Сварог — Цитадель: два отказника торгуют напрямую",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "реконсиляция"
+   }
   }
  ],
  "max_hop_ly": [
@@ -1201,79 +2436,174 @@
  "jump_chronology": [
   {
    "year": 2055,
-   "event": "Компактный термоядерный реактор: дешёвая энергия, но не дешёвая масса (history.md)"
+   "event": "Компактный термоядерный реактор: дешёвая энергия, но не дешёвая масса (history.md)",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год в заметках автора"
+   }
   },
   {
    "year": 2155,
-   "event": "Поколение 2 Мэйфлауэра: от скуки — наука; миф «здесь заложен фундамент гипердвигателя» (01. Мэйфлауэр II)"
+   "event": "Поколение 2 Мэйфлауэра: от скуки — наука; миф «здесь заложен фундамент гипердвигателя» (01. Мэйфлауэр II)",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год в заметках автора"
+   }
   },
   {
    "year": 2583,
-   "event": "Академия Нового Шанхая публикует теорему о схлопывании интервала; сигнал доходит до Земли в 2595 — отсюда «изобретён в 2595» в FAREWELL-1"
+   "event": "Академия Нового Шанхая публикует теорему о схлопывании интервала; сигнал доходит до Земли в 2595 — отсюда «изобретён в 2595» в FAREWELL-1",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "реконсиляция (часть III)"
+   }
   },
   {
    "year": 2750,
-   "event": "HYPERION-1: первый пилотируемый прыжок Тау Кита → Сол → Тау Кита, 3 дня"
+   "event": "HYPERION-1: первый пилотируемый прыжок Тау Кита → Сол → Тау Кита, 3 дня",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год в заметках автора"
+   }
   },
   {
    "year": 2752,
-   "event": "HYPERION-2: гиперпространство — среда с градиентами; без маяков прыжок — лотерея; изобретён маяк"
+   "event": "HYPERION-2: гиперпространство — среда с градиентами; без маяков прыжок — лотерея; изобретён маяк",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "реконсиляция (часть III)"
+   }
   },
   {
    "year": 2755,
-   "event": "Маяк Тау Кита; 2760 — Эпсилон Эридана (Гармония первая получает связь, 5.5 св. года)"
+   "event": "Маяк Тау Кита; 2760 — Эпсилон Эридана (Гармония первая получает связь, 5.5 св. года)",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "реконсиляция (часть III)"
+   }
   },
   {
    "year": 2765,
-   "event": "Концессия GJ 876: Провидение отдаёт гиганты Когниуму в обмен на вычислительное ядро нового поколения"
+   "event": "Концессия GJ 876: Провидение отдаёт гиганты Когниуму в обмен на вычислительное ядро нового поколения",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "реконсиляция (часть III)"
+   }
   },
   {
    "year": 2790,
-   "event": "Конвенция Маяков: лицензии, стандарты, инспекции. «Кордон Сола» — Земля исключена из сети"
+   "event": "Конвенция Маяков: лицензии, стандарты, инспекции. «Кордон Сола» — Земля исключена из сети",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "реконсиляция (часть III)"
+   }
   },
   {
    "year": 2790,
-   "event": "Гипер-разведка находит обломки UBUNTU-1 в поясе GJ 667. Тел нет"
+   "event": "Гипер-разведка находит обломки UBUNTU-1 в поясе GJ 667. Тел нет",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "реконсиляция (часть III)"
+   }
   },
   {
    "year": 2810,
-   "event": "Лотерейный прыжок к HD 69830: «последние люди Вселенной» узнают, что они не последние"
+   "event": "Лотерейный прыжок к HD 69830: «последние люди Вселенной» узнают, что они не последние",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "реконсиляция (часть III)"
+   }
   },
   {
    "year": 2850,
-   "event": "Технология лицензирована всем колониям, кроме Цитадели (отказ от инспекций) и Новой Кармы (отказ от контакта); Сварог отказывается от лицензии"
+   "event": "Технология лицензирована всем колониям, кроме Цитадели (отказ от инспекций) и Новой Кармы (отказ от контакта); Сварог отказывается от лицензии",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год в заметках автора"
+   }
   },
   {
    "year": 2855,
-   "event": "Цитадель: собственные приводы и гипер-торпеды"
+   "event": "Цитадель: собственные приводы и гипер-торпеды",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год в заметках автора"
+   }
   },
   {
    "year": 2862,
-   "event": "Кланы Свободного мира выкладывают спецификации привода «для всех»: эпоха дешёвых нелицензионных прыжков и пиратства"
+   "event": "Кланы Свободного мира выкладывают спецификации привода «для всех»: эпоха дешёвых нелицензионных прыжков и пиратства",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "реконсиляция (часть III)"
+   }
   },
   {
    "year": 2905,
-   "event": "Маяк у TRAPPIST-1; 2910 — две разведгруппы «остаются»; карантин"
+   "event": "Маяк у TRAPPIST-1; 2910 — две разведгруппы «остаются»; карантин",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "реконсиляция (часть III)"
+   }
   },
   {
    "year": 2950,
-   "event": "LEGACY-1 узнаёт, что его архив устарел"
+   "event": "LEGACY-1 узнаёт, что его архив устарел",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год в заметках автора"
+   }
   },
   {
    "year": 3040,
-   "event": "Керн и Когниум ставят экспедиционные маяки в глубоком кусте (HD 114783, 83 Leonis, HD 104067) — без связи с ядром (разрыв > 32 св. лет)"
+   "event": "Керн и Когниум ставят экспедиционные маяки в глубоком кусте (HD 114783, 83 Leonis, HD 104067) — без связи с ядром (разрыв > 32 св. лет)",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "реконсиляция (часть III)"
+   }
   },
   {
    "year": 3112,
-   "event": "Земля запускает собственный маяк и флотскую программу"
+   "event": "Земля запускает собственный маяк и флотскую программу",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "реконсиляция (часть III)"
+   }
   },
   {
    "year": 3122,
-   "event": "ODYSSEY-1 прибывает к HD 114783"
+   "event": "ODYSSEY-1 прибывает к HD 114783",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год в заметках автора"
+   }
   },
   {
    "year": 3126,
-   "event": "NEW-JERUSALEM-1 прибывает к 83 Leonis. Земля объявляет «Возвращение»"
+   "event": "NEW-JERUSALEM-1 прибывает к 83 Leonis. Земля объявляет «Возвращение»",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год в заметках автора"
+   }
   }
  ],
  "relations_anchor": [
@@ -1282,98 +2612,168 @@
    "b": "hd20794_newindia",
    "grievance": 55,
    "since": 2580,
-   "text": "Война за воду 2580"
+   "text": "Война за воду 2580",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "событие в заметках; величина обиды — Claude"
+   }
   },
   {
    "a": "hd40307_maland",
    "b": "hd40307_firmament",
    "grievance": 75,
    "since": 2680,
-   "text": "Стычка 2680 (~1 000 погибших), холодная война"
+   "text": "Стычка 2680 (~1 000 погибших), холодная война",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "событие в заметках; величина обиды — Claude"
+   }
   },
   {
    "a": "lalande_hellas",
    "b": "lalande_mecca",
    "grievance": 30,
    "since": 2243,
-   "text": "Одна бедная система на двоих"
+   "text": "Одна бедная система на двоих",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "величина обиды — Claude"
+   }
   },
   {
    "a": "eps_eri_harmony",
    "b": "eps_eri_strife",
    "grievance": 70,
    "since": 2575,
-   "text": "Беглецы HOMEWARD-1 и Пояс Раздора"
+   "text": "Беглецы HOMEWARD-1 и Пояс Раздора",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "событие в заметках; величина обиды — Claude"
+   }
   },
   {
    "a": "delta_pav_karma",
    "b": "delta_pav_freekarma",
    "grievance": 80,
    "since": 2420,
-   "text": "Исход нечистых"
+   "text": "Исход нечистых",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "событие в заметках; величина обиды — Claude"
+   }
   },
   {
    "a": "gj832_tianhe",
    "b": "gj832_gaia_zone",
    "grievance": 40,
    "since": 2510,
-   "text": "Карантин"
+   "text": "Карантин",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "событие в заметках; величина обиды — Claude"
+   }
   },
   {
    "a": "wolf359_citadel",
    "b": "tau_ceti_cognium",
    "grievance": 45,
    "since": 2855,
-   "text": "Цитадель подозревает, что гипер «принёс что-то» и связан с IRON-SHIELD-2; отказ от инспекций"
+   "text": "Цитадель подозревает, что гипер «принёс что-то» и связан с IRON-SHIELD-2; отказ от инспекций",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "событие в заметках; величина обиды — Claude"
+   }
   },
   {
    "a": "wolf359_citadel",
    "b": "lalande_mecca",
    "grievance": 25,
    "since": 2355,
-   "text": "В списке подозреваемых по IRON-SHIELD-2"
+   "text": "В списке подозреваемых по IRON-SHIELD-2",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "событие в заметках; величина обиды — Claude"
+   }
   },
   {
    "a": "gj581_europa",
    "b": "gj581_freeclans",
    "grievance": 35,
    "since": 2620,
-   "text": "Протекторат"
+   "text": "Протекторат",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "событие в заметках; величина обиды — Claude"
+   }
   },
   {
    "a": "tau_ceti_cognium",
    "b": "gj832_tianhe",
    "grievance": 20,
    "since": 2790,
-   "text": "Старая обида «американцы взяли Тау Кита»; лицензионная рента"
+   "text": "Старая обида «американцы взяли Тау Кита»; лицензионная рента",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "событие в заметках; величина обиды — Claude"
+   }
   },
   {
    "a": "eps_eri_harmony",
    "b": "gj832_tianhe",
    "grievance": 25,
    "since": 2790,
-   "text": "Две китайские линии: «правильный» Китай спорит о том, кто правильнее"
+   "text": "Две китайские линии: «правильный» Китай спорит о том, кто правильнее",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "событие в заметках; величина обиды — Claude"
+   }
   },
   {
    "a": "hd114783_hellas3",
    "b": "cyg61_kern",
    "grievance": 50,
    "since": 3122,
-   "text": "Заявки на систему, которую Одиссей застолбил в 2290 по земному праву"
+   "text": "Заявки на систему, которую Одиссей застолбил в 2290 по земному праву",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "событие в заметках; величина обиды — Claude"
+   }
   },
   {
    "a": "leo83_zion",
    "b": "cyg61_kern",
    "grievance": 40,
    "since": 3126,
-   "text": "«Золотой Город» у обетованной земли"
+   "text": "«Золотой Город» у обетованной земли",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "событие в заметках; величина обиды — Claude"
+   }
   },
   {
    "a": "proxima_outpost",
    "b": "tau_ceti_cognium",
    "grievance": 30,
    "since": 2850,
-   "text": "Отказ от лицензии — изоляция"
+   "text": "Отказ от лицензии — изоляция",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "событие в заметках; величина обиды — Claude"
+   }
   }
  ],
  "earth_3126": {
@@ -1382,6 +2782,802 @@
   "system": 0,
   "pop": 5500000000,
   "runtime_anchor": "src/assets/data/initial_world_state.json: system 0 jurisdiction 'Sol Authority', player starts at Earth Orbital Hub",
-  "status": "proposal_for_author"
- }
+  "status": "proposal_for_author",
+  "knowledge": {
+   "status": "PROPOSAL",
+   "visibility": "PUBLIC_RECORD",
+   "basis": "Земля 3126 — предложение для автора (§10 справочника)"
+  }
+ },
+ "frontier_pools": [
+  {
+   "id": "gj674_frontier",
+   "system": 53,
+   "name": "Фронтир Gliese 674",
+   "owners": [
+    "tau_ceti_cognium"
+   ],
+   "founded": 2810,
+   "seed_people": 200,
+   "purpose": "открытый фронтир у маяка Когниума: лёд (вода 0.94), пояс; кто прилетит — тот строит",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "фронтир у маяка (вход демографии, Claude)"
+   }
+  },
+  {
+   "id": "hd85512_frontier",
+   "system": 54,
+   "name": "Фронтир HD 85512",
+   "owners": [
+    "tau_ceti_cognium"
+   ],
+   "founded": 2860,
+   "seed_people": 200,
+   "purpose": "фронтир у маяка Когниума; гигантов нет, He-3 привозной",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "фронтир у маяка (вход демографии, Claude)"
+   }
+  },
+  {
+   "id": "gj357_frontier",
+   "system": 25,
+   "name": "Фронтир Gliese 357",
+   "owners": [
+    "tau_ceti_cognium"
+   ],
+   "founded": 2860,
+   "seed_people": 200,
+   "purpose": "фронтир у маяка Когниума: хорошие места для куполов (settle 0.73)",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "фронтир у маяка (вход демографии, Claude)"
+   }
+  },
+  {
+   "id": "hd104067_frontier",
+   "system": 41,
+   "name": "Фронтир HD 104067",
+   "owners": [
+    "tau_ceti_cognium"
+   ],
+   "founded": 3050,
+   "seed_people": 200,
+   "purpose": "экспедиционный маяк глубокого куста; лучшая агро-земля после 83 Leonis",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "фронтир у маяка (вход демографии, Claude)"
+   }
+  }
+ ],
+ "earth_demography": {
+  "status": "PROPOSAL",
+  "basis": "history.md gives 8.2 bn now and a 10.2-10.5 bn peak in 2065-2085 (CANON reference); regional split, TFR, pensions and technology are model assumptions (F7)",
+  "regions": [
+   {
+    "id": "earth_north",
+    "name": "Земля: богатый пояс",
+    "pop_2026": 1300000000.0,
+    "tfr_2026": 1.5,
+    "pension_2026": 0.85,
+    "religious_share": 0.06,
+    "tech_2026": 0.78,
+    "age": "old",
+    "capacity_share": 0.35
+   },
+   {
+    "id": "earth_south",
+    "name": "Земля: развивающийся пояс",
+    "pop_2026": 6900000000.0,
+    "tfr_2026": 2.45,
+    "pension_2026": 0.35,
+    "religious_share": 0.15,
+    "tech_2026": 0.45,
+    "age": "young",
+    "capacity_share": 0.65
+   }
+  ],
+  "checkpoints": [
+   {
+    "year": 2026,
+    "pop": 8200000000.0,
+    "status": "CANON",
+    "source": "Notes/History/history.md",
+    "text": "сейчас 8.2 млрд"
+   },
+   {
+    "year": 2075,
+    "pop": 10300000000.0,
+    "status": "CANON",
+    "source": "Notes/History/history.md",
+    "text": "пик 10.2-10.5 млрд в 2065-2085"
+   },
+   {
+    "year": 2500,
+    "pop": 10000000000.0,
+    "status": "CANON",
+    "source": "Notes/History/generation ships/generation ships.md (FINAL-ARK-1)",
+    "text": "на Земле 10 миллиардов человек. Больше не прокормить"
+   },
+   {
+    "year": 3126,
+    "pop": 5500000000.0,
+    "status": "PROPOSAL",
+    "source": "COLONIZATION_CANON_3126.md §10 (Claude)",
+    "text": "Sol Authority ~5.5 млрд"
+   }
+  ]
+ },
+ "demography_events": [
+  {
+   "year": 2030,
+   "unit": "earth_south",
+   "type": "mortality",
+   "value": 0.0012,
+   "status": "PROPOSAL",
+   "basis": "history.md (CANON): климатические беженцы, локальные войны; величина — допущение",
+   "until": 2150,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "history.md (CANON): климатические беженцы, локальные войны; величина — допущение"
+   }
+  },
+  {
+   "year": 2030,
+   "unit": "earth_south",
+   "type": "capacity_loss",
+   "value": 0.0006,
+   "status": "PROPOSAL",
+   "basis": "history.md (CANON): климат; величина — допущение",
+   "until": 2150,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "history.md (CANON): климат; величина — допущение"
+   }
+  },
+  {
+   "year": 2470,
+   "unit": "earth_north",
+   "type": "capacity_loss",
+   "value": 0.007,
+   "status": "PROPOSAL",
+   "basis": "FINAL-ARK-1 (CANON): климат уничтожил прибрежные города; величина — допущение",
+   "until": 2510,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "FINAL-ARK-1 (CANON): климат уничтожил прибрежные города; величина — допущение"
+   }
+  },
+  {
+   "year": 2470,
+   "unit": "earth_south",
+   "type": "capacity_loss",
+   "value": 0.009,
+   "status": "PROPOSAL",
+   "basis": "FINAL-ARK-1 (CANON): климат уничтожил прибрежные города; величина — допущение",
+   "until": 2510,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "FINAL-ARK-1 (CANON): климат уничтожил прибрежные города; величина — допущение"
+   }
+  },
+  {
+   "year": 2485,
+   "unit": "earth_north",
+   "type": "mortality",
+   "value": 0.004,
+   "status": "PROPOSAL",
+   "basis": "FINAL-ARK-1 (CANON): войны за остатки ресурсов, эпидемии; величина — допущение",
+   "until": 2525,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "FINAL-ARK-1 (CANON): войны за остатки ресурсов, эпидемии; величина — допущение"
+   }
+  },
+  {
+   "year": 2485,
+   "unit": "earth_south",
+   "type": "mortality",
+   "value": 0.008,
+   "status": "PROPOSAL",
+   "basis": "FINAL-ARK-1 (CANON): войны, эпидемии; величина — допущение",
+   "until": 2525,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "FINAL-ARK-1 (CANON): войны, эпидемии; величина — допущение"
+   }
+  },
+  {
+   "year": 2485,
+   "unit": "earth_north",
+   "type": "tech_loss",
+   "value": 0.008,
+   "status": "PROPOSAL",
+   "basis": "разваливающаяся цивилизация 2500 (CANON): разрыв цепочек поставок; величина — допущение",
+   "until": 2540,
+   "domains": [
+    "automation",
+    "electronics",
+    "manufacturing",
+    "bio",
+    "research"
+   ],
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "разваливающаяся цивилизация 2500 (CANON): разрыв цепочек поставок; величина — допущение"
+   }
+  },
+  {
+   "year": 2485,
+   "unit": "earth_south",
+   "type": "tech_loss",
+   "value": 0.01,
+   "status": "PROPOSAL",
+   "basis": "то же",
+   "until": 2540,
+   "domains": [
+    "automation",
+    "electronics",
+    "manufacturing",
+    "bio",
+    "research"
+   ],
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "то же"
+   }
+  },
+  {
+   "year": 3112,
+   "unit": "earth_north",
+   "type": "threat",
+   "value": 0.6,
+   "status": "PROPOSAL",
+   "basis": "Земля запускает маяк и флотскую программу (реконсиляция)",
+   "until": 3126,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "Земля запускает маяк и флотскую программу (реконсиляция)"
+   }
+  },
+  {
+   "year": 3112,
+   "unit": "earth_south",
+   "type": "threat",
+   "value": 0.6,
+   "status": "PROPOSAL",
+   "basis": "то же",
+   "until": 3126,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "то же"
+   }
+  },
+  {
+   "year": 2420,
+   "unit": "delta_pav_karma",
+   "type": "transfer",
+   "value": 0.25,
+   "status": "PROPOSAL",
+   "basis": "DHARMA-1 2420 исход «нечистых» (CANON); доля 25 % — допущение",
+   "to": "delta_pav_freekarma",
+   "label": "exodus",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "DHARMA-1 2420 исход «нечистых» (CANON); доля 25 % — допущение"
+   }
+  },
+  {
+   "year": 2420,
+   "unit": "delta_pav_karma",
+   "type": "threat",
+   "value": 0.3,
+   "status": "PROPOSAL",
+   "basis": "холодная война со Свободной Кармой",
+   "until": 3126,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "холодная война со Свободной Кармой"
+   }
+  },
+  {
+   "year": 2420,
+   "unit": "delta_pav_freekarma",
+   "type": "threat",
+   "value": 0.3,
+   "status": "PROPOSAL",
+   "basis": "то же",
+   "until": 3126,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "то же"
+   }
+  },
+  {
+   "year": 2440,
+   "unit": "eps_eri_strife",
+   "type": "deaths",
+   "value": 400,
+   "status": "CANON",
+   "basis": "FREE-VENTURE-1 anchor 2440: гражданская война модулей",
+   "label": "civil_war",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "FREE-VENTURE-1 anchor 2440: гражданская война модулей"
+   }
+  },
+  {
+   "year": 2575,
+   "unit": "eps_eri_harmony",
+   "type": "transfer",
+   "value": 600,
+   "status": "PROPOSAL",
+   "basis": "HOMEWARD-1 2575 «Вольные астероиды» (CANON событие); 600 беглецов — допущение",
+   "to": "eps_eri_strife",
+   "label": "secession",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "HOMEWARD-1 2575 «Вольные астероиды» (CANON событие); 600 беглецов — допущение"
+   }
+  },
+  {
+   "year": 2575,
+   "unit": "eps_eri_harmony",
+   "type": "threat",
+   "value": 0.3,
+   "status": "PROPOSAL",
+   "basis": "тлеющая война с Поясом Раздора",
+   "until": 3126,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "тлеющая война с Поясом Раздора"
+   }
+  },
+  {
+   "year": 2580,
+   "unit": "hd20794_newindia",
+   "type": "deaths",
+   "value": 700,
+   "status": "CANON",
+   "basis": "DHARMA-2 anchor 2580: Война за воду",
+   "label": "water_war",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "DHARMA-2 anchor 2580: Война за воду"
+   }
+  },
+  {
+   "year": 2580,
+   "unit": "hd20794_hellas2",
+   "type": "deaths",
+   "value": 300,
+   "status": "PROPOSAL",
+   "basis": "Война за воду: потери второй стороны — допущение",
+   "label": "water_war",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "Война за воду: потери второй стороны — допущение"
+   }
+  },
+  {
+   "year": 2680,
+   "unit": "hd40307_maland",
+   "type": "deaths",
+   "value": 1000,
+   "status": "CANON",
+   "basis": "CELESTIAL-DESTINY-2 2680: стычка (~1 000 погибших маландцев)",
+   "label": "skirmish",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "CELESTIAL-DESTINY-2 2680: стычка (~1 000 погибших маландцев)"
+   }
+  },
+  {
+   "year": 2680,
+   "unit": "hd40307_maland",
+   "type": "threat",
+   "value": 0.4,
+   "status": "PROPOSAL",
+   "basis": "холодная война с роем/Твердыней",
+   "until": 3126,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "холодная война с роем/Твердыней"
+   }
+  },
+  {
+   "year": 2742,
+   "unit": "hd40307_firmament",
+   "type": "threat",
+   "value": 0.4,
+   "status": "PROPOSAL",
+   "basis": "то же",
+   "until": 3126,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "то же"
+   }
+  },
+  {
+   "year": 2355,
+   "unit": "wolf359_citadel",
+   "type": "threat",
+   "value": 0.5,
+   "status": "PROPOSAL",
+   "basis": "травма IRON-SHIELD-2 (CANON) -> паранойя",
+   "until": 3126,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "травма IRON-SHIELD-2 (CANON) -> паранойя"
+   }
+  },
+  {
+   "year": 2480,
+   "unit": "gj832_gaia_zone",
+   "type": "tfr_mult",
+   "value": 0.35,
+   "status": "PROPOSAL",
+   "basis": "GREEN-ARK-1 2480: 70 % «заражены покоем» (CANON событие); снижение рождаемости — допущение",
+   "until": 3126,
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "GREEN-ARK-1 2480: 70 % «заражены покоем» (CANON событие); снижение рождаемости — допущение"
+   }
+  },
+  {
+   "year": 2500,
+   "unit": "gj832_gaia_zone",
+   "type": "transfer",
+   "value": 5000,
+   "status": "CANON",
+   "basis": "GREEN-ARK-1 2500: 5 000 учёных улетают на GAIA-2",
+   "to": "__lost__",
+   "label": "exodus_gaia2",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "GREEN-ARK-1 2500: 5 000 учёных улетают на GAIA-2"
+   }
+  },
+  {
+   "year": 2510,
+   "unit": "gj832_gaia_zone",
+   "type": "quarantine",
+   "value": 1,
+   "status": "CANON",
+   "basis": "GREEN-ARK-1 2510: карантин «Филоморфоз»",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "GREEN-ARK-1 2510: карантин «Филоморфоз»"
+   }
+  }
+ ],
+ "migration": {
+  "status": "PROPOSAL",
+  "basis": "assumption F8; historical rates research §8",
+  "seat_share_max": 0.004,
+  "rate_per_gap": 0.01,
+  "max_emig_rate": 0.015,
+  "max_immig_rate": 0.04,
+  "earth_windows": [
+   {
+    "from": 2752,
+    "to": 2790,
+    "per_year": 20000,
+    "status": "PROPOSAL",
+    "text": "до Кордона: вербовка Когниума и «лотерейные» прыжки к Солу"
+   },
+   {
+    "from": 2790,
+    "to": 3112,
+    "per_year": 30000,
+    "status": "PROPOSAL",
+    "text": "Кордон Сола: только выборочные визы (утечка мозгов)"
+   },
+   {
+    "from": 3112,
+    "to": 3127,
+    "per_year": 0,
+    "status": "PROPOSAL",
+    "text": "маяк Земли и флот: колонии закрывают визы"
+   }
+  ]
+ },
+ "jump_technology": [
+  {
+   "year": 2750,
+   "unit": "tau_ceti_cognium",
+   "level": 1.0,
+   "how": "state_secret",
+   "status": "CANON",
+   "basis": "HYPERION-1 (CANON); ядра — гос. тайна Управления Маяков (PROPOSAL)",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "AUTHOR_TRUTH",
+    "basis": "HYPERION-1 (CANON); ядра — гос. тайна Управления Маяков (PROPOSAL)"
+   }
+  },
+  {
+   "year": 2760,
+   "unit": "eps_eri_harmony",
+   "level": 0.6,
+   "how": "licensed",
+   "status": "PROPOSAL",
+   "basis": "маяк 2760; ядра покупает у Когниума",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "маяк 2760; ядра покупает у Когниума"
+   }
+  },
+  {
+   "year": 2765,
+   "unit": "gj876_next",
+   "level": 0.5,
+   "how": "licensed",
+   "status": "PROPOSAL",
+   "basis": "концессия GJ 876",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "концессия GJ 876"
+   }
+  },
+  {
+   "year": 2785,
+   "unit": "gj832_tianhe",
+   "level": 0.5,
+   "how": "licensed",
+   "status": "PROPOSAL",
+   "basis": "маяк 2785",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "маяк 2785"
+   }
+  },
+  {
+   "year": 2790,
+   "unit": "cyg61_kern",
+   "level": 0.5,
+   "how": "licensed",
+   "status": "PROPOSAL",
+   "basis": "маяк 2790",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "маяк 2790"
+   }
+  },
+  {
+   "year": 2795,
+   "unit": "delta_pav_freekarma",
+   "level": 0.5,
+   "how": "licensed",
+   "status": "PROPOSAL",
+   "basis": "маяк 2795",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "маяк 2795"
+   }
+  },
+  {
+   "year": 2800,
+   "unit": "lalande_hellas",
+   "level": 0.5,
+   "how": "licensed",
+   "status": "PROPOSAL",
+   "basis": "маяк 2800",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "маяк 2800"
+   }
+  },
+  {
+   "year": 2800,
+   "unit": "lalande_mecca",
+   "level": 0.8,
+   "how": "own",
+   "status": "PROPOSAL",
+   "basis": "собственная математика прыжка — вне стандарта Когниума",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "собственная математика прыжка — вне стандарта Когниума"
+   }
+  },
+  {
+   "year": 2805,
+   "unit": "gj581_europa",
+   "level": 0.5,
+   "how": "licensed",
+   "status": "PROPOSAL",
+   "basis": "маяк 2805",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "маяк 2805"
+   }
+  },
+  {
+   "year": 2850,
+   "unit": "hd20794_hellas2",
+   "level": 0.5,
+   "how": "licensed",
+   "status": "CANON",
+   "basis": "2850: технология лицензирована всем колониям, кроме Цитадели и Новой Кармы",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "2850: технология лицензирована всем колониям, кроме Цитадели и Новой Кармы"
+   }
+  },
+  {
+   "year": 2850,
+   "unit": "hd20794_newindia",
+   "level": 0.5,
+   "how": "licensed",
+   "status": "CANON",
+   "basis": "2850: технология лицензирована всем колониям, кроме Цитадели и Новой Кармы",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "2850: технология лицензирована всем колониям, кроме Цитадели и Новой Кармы"
+   }
+  },
+  {
+   "year": 2850,
+   "unit": "hd40307_maland",
+   "level": 0.5,
+   "how": "licensed",
+   "status": "CANON",
+   "basis": "2850: технология лицензирована всем колониям, кроме Цитадели и Новой Кармы",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "2850: технология лицензирована всем колониям, кроме Цитадели и Новой Кармы"
+   }
+  },
+  {
+   "year": 2850,
+   "unit": "hd40307_firmament",
+   "level": 0.5,
+   "how": "licensed",
+   "status": "CANON",
+   "basis": "2850: технология лицензирована всем колониям, кроме Цитадели и Новой Кармы",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "2850: технология лицензирована всем колониям, кроме Цитадели и Новой Кармы"
+   }
+  },
+  {
+   "year": 2850,
+   "unit": "hd69830_verde",
+   "level": 0.5,
+   "how": "licensed",
+   "status": "CANON",
+   "basis": "2850: технология лицензирована всем колониям, кроме Цитадели и Новой Кармы",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "2850: технология лицензирована всем колониям, кроме Цитадели и Новой Кармы"
+   }
+  },
+  {
+   "year": 2855,
+   "unit": "wolf359_citadel",
+   "level": 0.75,
+   "how": "own",
+   "status": "CANON",
+   "basis": "2855: Цитадель — собственные приводы и гипер-торпеды",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "2855: Цитадель — собственные приводы и гипер-торпеды"
+   }
+  },
+  {
+   "year": 2862,
+   "unit": "gj581_freeclans",
+   "level": 0.45,
+   "how": "stolen",
+   "status": "CANON",
+   "basis": "2862: кланы выкладывают спецификации «для всех»",
+   "knowledge": {
+    "status": "CANON",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "2862: кланы выкладывают спецификации «для всех»"
+   }
+  },
+  {
+   "year": 2862,
+   "unit": "eps_eri_strife",
+   "level": 0.4,
+   "how": "stolen",
+   "status": "PROPOSAL",
+   "basis": "пиратство после утечки 2862",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "пиратство после утечки 2862"
+   }
+  },
+  {
+   "year": 2862,
+   "unit": "proxima_outpost",
+   "level": 0.35,
+   "how": "stolen",
+   "status": "PROPOSAL",
+   "basis": "отказ от лицензии (CANON); пиратские копии после 2862 — допущение",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "отказ от лицензии (CANON); пиратские копии после 2862 — допущение"
+   }
+  }
+ ],
+ "unknowns": [
+  {
+   "id": "IRON-SHIELD-2.cause",
+   "text": "что случилось с IRON-SHIELD-2 (3 000 человек, 2355)",
+   "status": "UNKNOWN",
+   "visibility": "AUTHOR_TRUTH"
+  },
+  {
+   "id": "NIRVANA-1.fate",
+   "text": "судьба и положение NIRVANA-1",
+   "status": "UNKNOWN",
+   "visibility": "AUTHOR_TRUTH"
+  },
+  {
+   "id": "UBUNTU-1.cause",
+   "text": "причина гибели UBUNTU-1 («огни»)",
+   "status": "UNKNOWN",
+   "visibility": "AUTHOR_TRUTH"
+  },
+  {
+   "id": "FAREWELL-1.people",
+   "text": "судьба людей FAREWELL-1",
+   "status": "UNKNOWN",
+   "visibility": "AUTHOR_TRUTH"
+  },
+  {
+   "id": "EARTH.jump_cores",
+   "text": "умеет ли Земля 3126 делать собственные ядра прыжка (только маяк из памятника HYPERION-1)",
+   "status": "UNKNOWN",
+   "visibility": "AUTHOR_TRUTH"
+  }
+ ]
 }

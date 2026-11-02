@@ -19,8 +19,11 @@ import random
 import sys
 import zlib
 
+import demography as demo
 import endowment as endow
 import physics
+import trade
+from trade import BASE_PRICE, GOODS
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 YEAR_END = 3126
@@ -111,6 +114,7 @@ class Voyage:
                                    cohesion=60.0, culture=cv)
         self.base = base
         self.pop = float(m["population"])
+        self.sleepers = self.pop * m["cryo_share"]
         self.knowledge = 1.0
         self.legitimacy = 60.0
         self.keeper = 0.0
@@ -167,7 +171,10 @@ class Voyage:
                 self.drift["state_trust"] += d
 
     def log(self, year, kind, text, src, deaths=0):
-        self.events.append(dict(year=year, type=kind, text=text, source=src, deaths=int(deaths), pop=int(round(self.pop))))
+        sl = min(getattr(self, "sleepers", 0.0), self.pop)
+        self.events.append(dict(year=year, type=kind, text=text, source=src, deaths=int(deaths), pop=int(round(self.pop)),
+                                awake=int(round(self.pop - sl)), cryo=int(round(sl)), knowledge=round(self.knowledge, 3),
+                                regime_tendency=self.regime_tendency() if self.cohorts else None))
 
     # --- simulation
     def run(self):
@@ -185,6 +192,7 @@ class Voyage:
             self.flags.append(f"бодрствующая вахта {m['awake_watch']} меньше минимума функций {self.req_watch}")
         st_loss, rev_loss = ERA_CRYO[self.era]
         sleepers = m["population"] * m["cryo_share"]
+        self.sleepers = sleepers
         anchors = sorted(m["anchors"], key=lambda a: a["year"])
         ai = 0
         y = L
@@ -210,6 +218,7 @@ class Voyage:
                 sleepers -= lost
                 self.pop -= lost
                 unrecorded += lost
+            self.sleepers = sleepers
             # awake ageing/mortality is offset by policy births; generation ships drift
             if m["birth_policy"] in ("generation", "encouraged_awake"):
                 cap = sleepers + (m["awake_watch"] * 1.25 if m["cryo_share"] > 0 else m["population"] * 1.1)
@@ -259,10 +268,11 @@ class Voyage:
             gap = self.pop - target
             self.unrecorded_losses = int(round(gap))
             self.pop = float(target)
+            self.sleepers = 0.0
             self.log(self.arrival["year"], "arrival", self.arrival["text"], "anchor")
             self.arrival_tendency = self.regime_tendency()
         for a in anchors[ai:]:
-            if a["type"] != "arrival" and a["year"] > self.end_year:
+            if a["type"] != "arrival":   # after arrival / loss (or lost in the launch year: IRON-SHIELD-2)
                 self.log(a["year"], a["type"], a["text"], "anchor (после прибытия/потери)")
         return self
 
@@ -374,7 +384,10 @@ CAP_ENDOW = {"extraction": ("volatiles", "metals", "he3"), "metallurgy": ("metal
 ERA_K = {"I": 0.55, "II": 0.62, "III": 0.70, "IV": 0.72, "hyper": 0.9}
 
 
-def colony_profile(col, voyages, E, missions):
+def colony_profile(col, voyages, E, missions, pop=None, tech_rel=None):
+    """Culture (founders + colony-era drift) and capabilities. With tech_rel (causal demography:
+    domain level relative to the best polity) capabilities come from technology, culture,
+    endowment and size; without it the legacy formula (authored population) is used."""
     founders = [voyages[f] for f in col["founders"] if f in voyages and voyages[f].arrival]
     if not founders:
         founders = [voyages[f] for f in col["founders"] if f in voyages]
@@ -406,9 +419,17 @@ def colony_profile(col, voyages, E, missions):
     hy = col.get("hyper_year")
     conv = 0.0 if hy is None else min(1.0, (YEAR_END - hy) / 300.0)
     know = k0 + (0.95 - k0) * conv * 0.8
-    pop = col["pop_3126"]
-    scale = 8.0 * math.log10(max(pop, 1e3) / 1e4)
+    pop = col["pop_3126"] if pop is None else pop
     caps = {}
+    if tech_rel is not None:
+        for cap in CAPS:
+            cult = sum(w * cv[a] for a, w in CAP_CULTURE[cap].items())
+            end = sum(e[k] for k in CAP_ENDOW.get(cap, ())) / max(1, len(CAP_ENDOW.get(cap, ()))) if cap in CAP_ENDOW else 0.5
+            val = 45 * tech_rel[cap] + 0.25 * cult + 18 * end + 4.0 * math.log10(max(pop, 1e3) / 1e5) + 0.5 * col["bias"].get(cap, 0)
+            caps[cap] = round(clamp(val), 1)
+        know = sum(tech_rel[c] for c in CAPS) / len(CAPS)
+        return dict(culture=cv, knowledge=round(know, 3), caps=caps)
+    scale = 8.0 * math.log10(max(pop, 1e3) / 1e4)
     for cap in CAPS:
         cult = sum(w * cv[a] for a, w in CAP_CULTURE[cap].items())
         end = sum(e[k] for k in CAP_ENDOW.get(cap, ())) / max(1, len(CAP_ENDOW.get(cap, ()))) if cap in CAP_ENDOW else 0.5
@@ -469,44 +490,46 @@ def shortest(edges, src, blocked=frozenset()):
 
 
 # ---------------------------------------------------------------- economy
-GOODS = ["volatiles", "he3", "metals", "food", "components", "electronics", "hulls", "munitions"]
-BASE_PRICE = {"volatiles": 1.0, "he3": 6.0, "metals": 2.0, "food": 1.5, "components": 5.0, "electronics": 12.0, "hulls": 40.0, "munitions": 15.0}
-PER_CAP = {"volatiles": 0.6, "he3": 0.15, "metals": 0.25, "food": 1.0, "components": 0.15, "electronics": 0.05, "hulls": 0.006, "munitions": 0.004}
-INPUTS = {"food": {"volatiles": 0.3}, "components": {"metals": 0.8, "he3": 0.05}, "electronics": {"metals": 0.3, "components": 0.2},
+L_GOODS = ["volatiles", "he3", "metals", "food", "components", "electronics", "hulls", "munitions"]
+L_BASE_PRICE = {"volatiles": 1.0, "he3": 6.0, "metals": 2.0, "food": 1.5, "components": 5.0, "electronics": 12.0, "hulls": 40.0, "munitions": 15.0}
+L_PER_CAP = {"volatiles": 0.6, "he3": 0.15, "metals": 0.25, "food": 1.0, "components": 0.15, "electronics": 0.05, "hulls": 0.006, "munitions": 0.004}
+L_INPUTS = {"food": {"volatiles": 0.3}, "components": {"metals": 0.8, "he3": 0.05}, "electronics": {"metals": 0.3, "components": 0.2},
           "hulls": {"metals": 6.0, "components": 3.0, "electronics": 0.8, "he3": 0.5}, "munitions": {"metals": 1.0, "components": 0.6, "electronics": 0.2}}
-SECTOR_CAP = {"volatiles": "extraction", "he3": "extraction", "metals": "metallurgy", "food": "bio", "components": "manufacturing",
+L_SECTOR_CAP = {"volatiles": "extraction", "he3": "extraction", "metals": "metallurgy", "food": "bio", "components": "manufacturing",
               "electronics": "electronics", "hulls": "shipbuilding", "munitions": "military"}
-ENDOW_GOOD = {"volatiles": lambda e: 0.15 + 0.6 * e["volatiles"] + 0.4 * e["water"], "he3": lambda e: 1.2 * e["he3"],
+L_ENDOW_GOOD = {"volatiles": lambda e: 0.15 + 0.6 * e["volatiles"] + 0.4 * e["water"], "he3": lambda e: 1.2 * e["he3"],
               "metals": lambda e: 0.1 + 0.9 * e["metals"] + 0.3 * e["strategic"], "food": lambda e: 0.55 + 0.45 * e["agri"]}
-ASSET_GOOD = {"gas_platform": "he3", "ice_export": "volatiles", "mine": "metals", "refinery": "metals", "food_habitat": "food",
+L_ASSET_GOOD = {"gas_platform": "he3", "ice_export": "volatiles", "mine": "metals", "refinery": "metals", "food_habitat": "food",
               "factory": "components", "electronics_fab": "electronics", "shipyard": "hulls", "arsenal_shipyard": "munitions"}
 
 
-class Economy:
+class LegacyEconomy:
+    """The pre-2026-11-02 market (per-capita demand, transport cost independent of mass), kept only to
+    list which flows vanished / appeared with the causal populations and the mass-based freight."""
     def __init__(self, cols, profiles, E, world, links_year=YEAR_END):
         self.cols = [c for c in cols if c.get("economic_actor", True)]
         self.prof = profiles
         self.E = E
         self.world = world
         self.nodes, self.edges, _ = beacon_graph(world, E, links_year)
-        self.mult = {c["id"]: {g: 1.0 for g in GOODS} for c in self.cols}
-        self.demand_mult = {c["id"]: {g: 1.0 for g in GOODS} for c in self.cols}
+        self.mult = {c["id"]: {g: 1.0 for g in L_GOODS} for c in self.cols}
+        self.demand_mult = {c["id"]: {g: 1.0 for g in L_GOODS} for c in self.cols}
         self.blocked = set()
         self.risk = {c["id"]: 0.0 for c in self.cols}
         self.extra_edges = []
         self._sp = {}
         for c in self.cols:
             for a in c["assets"]:
-                g = ASSET_GOOD.get(a["type"])
+                g = L_ASSET_GOOD.get(a["type"])
                 if g:
                     self.mult[c["id"]][g] += 0.6 * a["importance"]
         self.mult0 = json.loads(json.dumps(self.mult))
         self.calibrate()
-        self.stock = {c["id"]: {g: self.consumption(c)[g] * 1.5 for g in GOODS} for c in self.cols}
+        self.stock = {c["id"]: {g: self.consumption(c)[g] * 1.5 for g in L_GOODS} for c in self.cols}
 
     def consumption(self, c):
         L = c["pop_3126"] / 1e5
-        out = {g: PER_CAP[g] * L * self.demand_mult[c["id"]][g] for g in GOODS}
+        out = {g: L_PER_CAP[g] * L * self.demand_mult[c["id"]][g] for g in L_GOODS}
         mil = self.prof[c["id"]]["caps"]["military"] / 100
         out["munitions"] *= (0.5 + 2.0 * mil)
         out["hulls"] *= (0.7 + 0.8 * mil)
@@ -516,39 +539,39 @@ class Economy:
         caps = self.prof[c["id"]]["caps"]
         e = self.E[c["system"]]["idx"]
         m = self.mult0[c["id"]] if base else self.mult[c["id"]]
-        return {g: (caps[SECTOR_CAP[g]] / 60.0) ** 1.5 * (ENDOW_GOOD[g](e) if g in ENDOW_GOOD else 1.0) * m[g] for g in GOODS}
+        return {g: (caps[L_SECTOR_CAP[g]] / 60.0) ** 1.5 * (L_ENDOW_GOOD[g](e) if g in L_ENDOW_GOOD else 1.0) * m[g] for g in L_GOODS}
 
     def calibrate(self):
         """Labour follows comparative advantage against the world mean (fixed at
         baseline); k_g scales absolute output so that the 3126 baseline world is
         roughly balanced (units are arbitrary, differences are what matter)."""
         effs = {c["id"]: self.eff(c, base=True) for c in self.cols}
-        self.mean_eff = {g: sum(effs[c][g] for c in effs) / len(effs) for g in GOODS}
-        tot_cons = {g: sum(self.consumption(c)[g] for c in self.cols) for g in GOODS}
-        val = {g: tot_cons[g] * BASE_PRICE[g] for g in GOODS}
+        self.mean_eff = {g: sum(effs[c][g] for c in effs) / len(effs) for g in L_GOODS}
+        tot_cons = {g: sum(self.consumption(c)[g] for c in self.cols) for g in L_GOODS}
+        val = {g: tot_cons[g] * L_BASE_PRICE[g] for g in L_GOODS}
         vt = sum(val.values())
-        self.dshare = {g: val[g] / vt for g in GOODS}
+        self.dshare = {g: val[g] / vt for g in L_GOODS}
         self.alloc = {}
         for c in self.cols:
             ef = effs[c["id"]]
-            w = {g: (ef[g] / self.mean_eff[g]) ** 3 * self.dshare[g] for g in GOODS}
+            w = {g: (ef[g] / self.mean_eff[g]) ** 3 * self.dshare[g] for g in L_GOODS}
             for g in ("food", "volatiles"):   # nobody lets its own life support depend entirely on imports
                 w[g] = max(w[g], 0.25 * self.dshare[g])
             tw = sum(w.values())
-            self.alloc[c["id"]] = {g: w[g] / tw for g in GOODS}
-        self.k = {g: 1.0 for g in GOODS}
+            self.alloc[c["id"]] = {g: w[g] / tw for g in L_GOODS}
+        self.k = {g: 1.0 for g in L_GOODS}
         for _ in range(4):
-            prod = {g: sum(self.raw(c)[g] for c in self.cols) for g in GOODS}
+            prod = {g: sum(self.raw(c)[g] for c in self.cols) for g in L_GOODS}
             need = dict(tot_cons)
-            for g, ins in INPUTS.items():
+            for g, ins in L_INPUTS.items():
                 for inp, q in ins.items():
                     need[inp] += prod[g] * q
-            self.k = {g: self.k[g] * 1.06 * need[g] / max(prod[g], 1e-9) for g in GOODS}
+            self.k = {g: self.k[g] * 1.06 * need[g] / max(prod[g], 1e-9) for g in L_GOODS}
 
     def raw(self, c):
         L = c["pop_3126"] / 1e5
         ef = self.eff(c)
-        return {g: L * self.alloc[c["id"]][g] * ef[g] * self.k[g] / BASE_PRICE[g] * 4.0 for g in GOODS}
+        return {g: L * self.alloc[c["id"]][g] * ef[g] * self.k[g] / L_BASE_PRICE[g] * 4.0 for g in L_GOODS}
 
     def capacity(self, c):
         return self.raw(c)
@@ -560,7 +583,7 @@ class Economy:
             return nc[c["id"]]
         out = dict(self.consumption(c))
         r = self.raw(c)
-        for g, ins in INPUTS.items():
+        for g, ins in L_INPUTS.items():
             for inp, q in ins.items():
                 out[inp] += r[g] * q
         return out
@@ -570,7 +593,7 @@ class Economy:
         target = self.need(c)[g] * 1.15 + 1e-6
         src = getattr(self, "pre", None) or self.stock
         s = src[cid][g] if stock is None else stock
-        return BASE_PRICE[g] * clamp((target / max(s, target * 0.05)) ** 0.7, 0.35, 8.0) * (1 + self.risk[cid])
+        return L_BASE_PRICE[g] * clamp((target / max(s, target * 0.05)) ** 0.7, 0.35, 8.0) * (1 + self.risk[cid])
 
     def transport(self, a_sys, b_sys):
         if a_sys == b_sys:
@@ -604,15 +627,15 @@ class Economy:
             cid = c["id"]
             cap = self.capacity(c)
             prod = {}
-            for g in GOODS:
+            for g in L_GOODS:
                 q = cap[g]
-                for inp, k in INPUTS.get(g, {}).items():
+                for inp, k in L_INPUTS.get(g, {}).items():
                     avail = self.stock[cid][inp] + cap.get(inp, 0) * 0.5
                     q = min(q, avail / k) if k > 0 else q
                 prod[g] = max(0.0, q)
-                for inp, k in INPUTS.get(g, {}).items():
+                for inp, k in L_INPUTS.get(g, {}).items():
                     self.stock[cid][inp] -= prod[g] * k
-            for g in GOODS:
+            for g in L_GOODS:
                 self.stock[cid][g] += prod[g]
             made[cid] = prod
         # trade: deficits buy from cheapest reachable surplus (deterministic order)
@@ -623,7 +646,7 @@ class Economy:
                     continue
                 cost, hops = self.transport(c["system"], d["system"])
                 tc[(c["id"], d["id"])] = cost
-        for g in GOODS:
+        for g in L_GOODS:
             need = []
             for c in self.cols:
                 cons = self.need(c)[g]
@@ -646,7 +669,7 @@ class Economy:
                     griev = relations.get(tuple(sorted((buyer, sid))), 0)
                     if griev >= 85:
                         continue  # embargo
-                    delivered = self.price(sid, g) + 0.25 * cost * (1 + griev / 100) + 0.08 * BASE_PRICE[g]
+                    delivered = self.price(sid, g) + 0.25 * cost * (1 + griev / 100) + 0.08 * L_BASE_PRICE[g]
                     offers.append((delivered, sid, surplus))
                 for delivered, sid, surplus in sorted(offers):
                     if gap <= 0:
@@ -662,7 +685,7 @@ class Economy:
         self.pre = {cid: dict(v) for cid, v in self.stock.items()}
         for c in self.cols:
             cons = self.consumption(c)
-            for g in GOODS:
+            for g in L_GOODS:
                 self.stock[c["id"]][g] = max(0.0, self.stock[c["id"]][g] - cons[g]) * 0.97
         return made, flows
 
@@ -673,21 +696,23 @@ class Economy:
         return hist
 
     def snapshot(self, hist, years=5):
-        made = {c["id"]: {g: 0.0 for g in GOODS} for c in self.cols}
-        imp = {c["id"]: {g: 0.0 for g in GOODS} for c in self.cols}
-        exp = {c["id"]: {g: 0.0 for g in GOODS} for c in self.cols}
+        made = {c["id"]: {g: 0.0 for g in L_GOODS} for c in self.cols}
+        imp = {c["id"]: {g: 0.0 for g in L_GOODS} for c in self.cols}
+        exp = {c["id"]: {g: 0.0 for g in L_GOODS} for c in self.cols}
         partners = {c["id"]: {} for c in self.cols}
+        pair = {}
         for m, flows in hist[-years:]:
             for cid, p in m.items():
-                for g in GOODS:
+                for g in L_GOODS:
                     made[cid][g] += p[g] / years
             for g, s, b, q, _ in flows:
                 imp[b][g] += q / years
                 exp[s][g] += q / years
-                partners[b][s] = partners[b].get(s, 0.0) + q * BASE_PRICE[g] / years
-                partners[s][b] = partners[s].get(b, 0.0) + q * BASE_PRICE[g] / years
-        prices = {c["id"]: {g: round(self.price(c["id"], g), 2) for g in GOODS} for c in self.cols}
-        return dict(made=made, imp=imp, exp=exp, prices=prices, partners=partners)
+                partners[b][s] = partners[b].get(s, 0.0) + q * L_BASE_PRICE[g] / years
+                partners[s][b] = partners[s].get(b, 0.0) + q * L_BASE_PRICE[g] / years
+                pair[(s, b, g)] = pair.get((s, b, g), 0.0) + q / years
+        prices = {c["id"]: {g: round(self.price(c["id"], g), 2) for g in L_GOODS} for c in self.cols}
+        return dict(made=made, imp=imp, exp=exp, prices=prices, partners=partners, pair=pair)
 
 
 SHOCKS = [
@@ -813,6 +838,24 @@ def earth_reaction(col, prof, E, ctx):
 
 
 # ---------------------------------------------------------------- run
+OUTPOST_ASSETS = {  # what an outpost / frontier pool contributes once it is large enough to trade (PROPOSAL, from its purpose)
+    "eps_indi_field": [{"id": "ei_he3", "type": "gas_platform", "name": "Гелиевые платформы eps Ind A b", "importance": 1.0, "good": "he3"}],
+    "gj892_kern": [{"id": "gj892_pgm", "type": "strategic_mine", "name": "Рудники платиноидов Gliese 892", "importance": 1.0, "good": "isotopes"}],
+    "hd114783_claims": [{"id": "clarion", "type": "mine", "name": "Заявки «Кларион»", "importance": 0.8, "good": "metals"}],
+    "gj674_frontier": [{"id": "gj674_ice", "type": "ice_export", "name": "Ледовые прииски Gliese 674", "importance": 0.5, "good": "volatiles"}],
+    "hd10360_relay": [{"id": "hd10360_agri", "type": "food_habitat", "name": "Агро-купола p Eridani", "importance": 0.5, "good": "food"}],
+}
+CORE_HOW = {"state_secret": 1.0, "own": 0.8, "stolen": 0.35}
+SENS_TOP = 10
+
+
+def demo_summary(units):
+    off = {k: u.P() for k, u in units.items() if not u.earth and u.active}
+    earth = sum(u.P() for u in units.values() if u.earth)
+    top = sorted(off.items(), key=lambda kv: (-kv[1], kv[0]))[:SENS_TOP]
+    return dict(earth=int(round(earth)), off_sol=int(round(sum(off.values()))), top=[(k, int(round(v))) for k, v in top])
+
+
 def run(seed):
     E = endow.load_endowment()
     MS = load("missions.json")
@@ -824,8 +867,6 @@ def run(seed):
         v = voyages[mid]
         if m["population"] <= 0 or m["id"] in ("IRON-SHIELD-2", "HOMEWARD-1", "HYPERION-1"):
             continue
-        # average speed incl. accel/brake -> cruise ~8 % higher; ships without an arrival
-        # anchor use the canonical average from the registry (lost ships: distance to loss)
         avg = v.avg_c or {"DEEP-SEEK-1": 38.4 / 280, "KEPLER-1": 0.10, "FINAL-ARK-1": 0.058, "FAREWELL-1": 0.05,
                           "UBUNTU-1": 0.09, "NIRVANA-1": 0.014, "NOMAD-1": 0.0075}.get(m["id"], 0.08)
         cruise = avg * 1.08
@@ -834,29 +875,93 @@ def run(seed):
                            claimed_full_mt=m["claimed_mass_mt"].get("full"), claimed_dry_mt=m["claimed_mass_mt"].get("dry"))
         verdict, reasons = physics.verdict(d)
         sanity[mid] = dict(design={k: (round(x, 4) if isinstance(x, float) else x) for k, x in d.items()}, verdict=verdict, reasons=reasons, cruise_c=round(cruise, 4))
-    # colonies
     cols = W["colonies"]
-    profiles = {c["id"]: colony_profile(c, voyages, E, missions) for c in cols}
-    growth = {}
+    cmap = {c["id"]: c for c in cols}
+    # ---- causal demography (replaces the fitted growth rate to an authored pop_3126)
+    base_cult = {c["id"]: colony_profile(c, voyages, E, missions, pop=c["pop_3126_authored"])["culture"] for c in cols}
+    earth_cult = blend({"earth_late": 1.0})
+
+    def culture_of(uid):
+        return base_cult.get(uid, earth_cult)
+
+    def regime_of(uid):
+        return cmap[uid]["regime_3126"] if uid in cmap else "sol_authority"
+
+    def graph_fn(y):
+        return beacon_graph(W, E, y)
+
+    sens = {}
+    for scen in sorted(demo.SCENARIOS):
+        if scen == "baseline":
+            continue
+        demo.SCEN.clear()
+        demo.SCEN.update(demo.SCENARIOS[scen])
+        u2, _, _ = demo.simulate(W, missions, voyages, E, culture_of, regime_of, graph_fn, shortest, seed)
+        sens[scen] = demo_summary(u2)
+    demo.SCEN.clear()
+    demo.SCEN.update(demo.SCENARIOS["baseline"])
+    units, mflows, earth_hist = demo.simulate(W, missions, voyages, E, culture_of, regime_of, graph_fn, shortest, seed)
+    sens["baseline"] = demo_summary(units)
+    live = [u for u in units.values() if u.active and not u.earth and u.P() > 0]
+    tmax = {d: max(u.tech[d] for u in live) or 1.0 for d in demo.DOMAINS}
+    cols_rt = []
+    profiles = {}
     for c in cols:
-        fv = [voyages[f] for f in c["founders"] if f in voyages and voyages[f].arrival]
-        p0 = sum(v.arrival["pop_after"] for v in fv) if fv else None
-        g = fit_growth(p0, c["founded"], c["pop_3126"], YEAR_END) if p0 else None
+        u = units[c["id"]]
+        c2 = dict(c)
+        c2["pop_3126"] = int(round(u.P()))
+        c2["pop"] = u.P()
+        c2["income"] = u.y
+        cols_rt.append(c2)
+        profiles[c["id"]] = colony_profile(c2, voyages, E, missions, pop=u.P(), tech_rel={d: u.tech[d] / tmax[d] for d in demo.DOMAINS})
+    extra = []
+    for o in W["outposts"] + W["frontier_pools"]:
+        u = units[o["id"]]
+        if not (u.active and u.P() >= 1e5):
+            continue
+        own = cmap[o["owners"][0]]
+        a = dict(id=o["id"], name=o["name"], polity=own["polity"], owner=own["id"], system=o["system"], founders=own["founders"],
+                 regime_3126=own["regime_3126"], bias={}, assets=OUTPOST_ASSETS.get(o["id"], []), culture_drift={},
+                 hyper_year=o["founded"], founded=o["founded"], pop_3126=int(round(u.P())), pop=u.P(), income=u.y, economic_actor=True)
+        profiles[o["id"]] = colony_profile(a, voyages, E, missions, pop=u.P(), tech_rel={d: u.tech[d] / tmax[d] for d in demo.DOMAINS})
+        extra.append(a)
+    core = {}
+    for j in W["jump_technology"]:
+        if j["how"] in CORE_HOW:
+            core[j["unit"]] = max(core.get(j["unit"], 0.0), CORE_HOW[j["how"]] * j["level"])
+    actors = [c for c in cols_rt if c.get("economic_actor", True)] + extra
+    for a in actors:
+        a["core_maker"] = core.get(a["id"], 0.0)
+    growth = {}
+    for c in cols_rt:
+        u = units[c["id"]]
+        h0 = u.hist[0] if u.hist else None
+        p0 = int(round(h0["pop"])) if h0 else None
+        y0 = h0["year"] if h0 else None
+        rate = None if not p0 or not y0 or y0 >= YEAR_END else round(100 * math.log(max(u.P(), 1) / p0) / (YEAR_END - y0), 3)
+        auth = c["pop_3126_authored"]
+        ratio = u.P() / auth if auth else None
         flag = None
-        if g is not None and g > 0.012 and (c.get("hyper_year") is None or c["founded"] > 2700):
-            flag = "рост выше 1.2 %/год без гипер-миграции — проверить"
-        if g is not None and g > 0.03:
-            flag = "рост неправдоподобен (> 3 %/год)"
-        growth[c["id"]] = dict(p0=p0, rate=None if g is None else round(g * 100, 3), flag=flag,
-                               path={y: (int(p0 * math.exp(g * (y - c["founded"]))) if (p0 and g is not None and y >= c["founded"]) else None)
-                                     for y in (2300, 2500, 2750, 2900, 3000, 3126)})
+        if ratio is not None and (ratio > 2.0 or ratio < 0.5):
+            flag = f"конфликт с авторским каноном: модель {u.P() / 1e6:.2f} млн против {auth / 1e6:.2f} млн (×{ratio:.2f})"
+        growth[c["id"]] = dict(p0=p0, founded_model=y0, rate=rate, flag=flag, authored=auth, ratio=None if ratio is None else round(ratio, 3),
+                               path={y: next((int(round(h["pop"])) for h in u.hist if h["year"] == y), None) for y in (2300, 2500, 2750, 2900, 3000, 3126)})
     relations = {}
     for r in W["relations_anchor"]:
         relations[tuple(sorted((r["a"], r["b"])))] = r["grievance"]
-    # baseline economy
-    econ = Economy(cols, profiles, E, W)
+    g3126 = beacon_graph(W, E, YEAR_END)
+    operators = {b["system"]: b["operator"] for b in W["beacons"]}
+    # ---- new economy
+    econ = trade.Economy(actors, profiles, E, g3126)
     hist = econ.run(30, relations)
     base = econ.snapshot(hist)
+    corridors = econ.corridors(base, operators, min_value=0.0)
+    # ---- legacy market (authored populations, mass-blind transport) for the vanished / appeared comparison
+    leg_cols = [dict(c, pop_3126=c["pop_3126_authored"]) for c in cols]
+    leg_prof = {c["id"]: colony_profile(c, voyages, E, missions, pop=c["pop_3126"]) for c in leg_cols}
+    leg = LegacyEconomy(leg_cols, leg_prof, E, W)
+    lbase = leg.snapshot(leg.run(30, relations))
+    flow_diff = compare_flows(lbase, base, cmap)
     # wealth / derived
     wealth = {}
     for c in econ.cols:
@@ -865,9 +970,8 @@ def run(seed):
         hubs = sum(a["importance"] for a in c["assets"] if a["type"] in ("logistics_hub", "legal_hub", "jump_infrastructure"))
         val += hubs * c["pop_3126"] / 1e5 * 6.0
         wealth[cid] = round(val / (c["pop_3126"] / 1e5), 2)
-    # relations matrix (multi-dimensional)
     rel = {}
-    eco = [c for c in cols if c.get("economic_actor", True)]
+    eco = [c for c in cols_rt if c.get("economic_actor", True)]
     for i, a in enumerate(eco):
         for b in eco[i + 1:]:
             key = tuple(sorted((a["id"], b["id"])))
@@ -880,19 +984,19 @@ def run(seed):
                                       competition=60 if same_sys else 0,
                                       stance=("враг-сосед" if griev >= 60 else "соперник" if (same_sys or griev >= 30) else
                                               "партнёр" if tr > 0.15 * tot_a else "нейтрал"))
-    # shocks
+    # shocks: the 12 largest economies
     shock_out = {}
-    targets = [c["id"] for c in econ.cols if c["pop_3126"] >= 40000]
+    targets = [c["id"] for c in sorted(econ.cols, key=lambda c: (-c["pop"], c["id"]))[:12]]
 
     def scenario(sh, cid):
-        e2 = Economy(cols, profiles, E, W)
+        e2 = trade.Economy(actors, profiles, E, g3126)
         e2.stock = json.loads(json.dumps(econ.stock))
         e2.run(5, relations)
         if sh:
             apply_shock(e2, sh, cid)
         return e2.snapshot(e2.run(8, relations))
 
-    ctrl = scenario(None, None)   # same procedure without the shock: deltas are causal, not drift
+    ctrl = scenario(None, None)
     for sh in SHOCKS:
         for cid in (targets if sh["kind"] != "war" else ["_all"]):
             s2 = scenario(sh, cid if cid != "_all" else targets[0])
@@ -907,7 +1011,6 @@ def run(seed):
                 if d:
                     deltas[c["id"]] = d
             shock_out[f"{sh['id']}@{cid}"] = deltas
-    # social responses: same shock for every major colony
     social = {}
     for sh in SHOCKS:
         for c in eco:
@@ -927,18 +1030,17 @@ def run(seed):
                        wealth=min(1.5, wealth[cid] / 25.0), severity=min(3.0, pj))
             social[f"{sh['id']}@{cid}"] = social_response(c, profiles[cid], sh, ctx)
     earth = {}
-    for c in cols:
+    for c in cols_rt:
         cid = c["id"]
         if not c.get("economic_actor", True):
             continue
         mg = max([v for k, v in relations.items() if cid in k] or [0])
-        same = [x for x in cols if x["system"] == c["system"] and x["id"] != cid]
+        same = [x for x in cols_rt if x["system"] == c["system"] and x["id"] != cid]
         ctx = dict(n_partners=sum(1 for v in base["partners"][cid].values() if v > 0.05),
                    hub=sum(a["importance"] for a in c["assets"] if a["type"] in ("logistics_hub", "legal_hub")),
                    exports_war_goods=1.0 if (base["exp"][cid]["munitions"] + base["exp"][cid]["hulls"]) > 0.05 else 0.0,
                    max_grievance=mg, internal_split=0.6 if (same and mg >= 50) else (0.4 if c["regime_3126"] in ("shareholder_agora", "corporate_democracy", "litigating_city_states") else 0.1))
         earth[cid] = earth_reaction(c, profiles[cid], E, ctx)
-    # network chronology
     net = {}
     for y in (2760, 2800, 2850, 2900, 3000, 3126):
         nodes, edges, hop = beacon_graph(W, E, y)
@@ -951,8 +1053,121 @@ def run(seed):
             comp.append(sorted(reach))
             seen |= set(reach)
         net[y] = dict(hop=hop, nodes=sorted(nodes), components=comp)
-    return dict(seed=seed, E=E, missions=missions, voyages=voyages, sanity=sanity, cols=cols, profiles=profiles, growth=growth,
-                base=base, wealth=wealth, rel=rel, shocks=shock_out, social=social, earth=earth, net=net, world=W)
+    assets = industrial_assets(econ, base, units, profiles, actors)
+    ret = earth_return(units, actors, base, profiles, W, E, g3126, assets, tmax)
+    migr = migration_summary(mflows, units)
+    return dict(seed=seed, E=E, missions=missions, voyages=voyages, sanity=sanity, cols=cols_rt, profiles=profiles, growth=growth,
+                base=base, wealth=wealth, rel=rel, shocks=shock_out, social=social, earth=earth, net=net, world=W,
+                units=units, earth_hist=earth_hist, sens=sens, corridors=corridors, flow_diff=flow_diff, legacy=lbase,
+                actors=actors, assets=assets, earth_return=ret, migration=migr, econ=econ, tmax=tmax)
+
+
+def compare_flows(lbase, base, cmap):
+    def big(pairs, price):
+        tot = {}
+        for (s, b, g), q in pairs.items():
+            tot[(s, b, g)] = q * price[g]
+        top = max(tot.values()) if tot else 1.0
+        return {k: v for k, v in tot.items() if v >= 0.01 * top}
+    old = big(lbase["pair"], L_BASE_PRICE)
+    new = big(base["pair"], BASE_PRICE)
+    vanished = sorted(k for k in old if k not in new)
+    appeared = sorted(k for k in new if k not in old)
+    kept = sorted(k for k in old if k in new)
+    by_good = {}
+    for tag, d in (("old", old), ("new", new)):
+        for (s, b, g), v in d.items():
+            by_good.setdefault(g, {"old": 0.0, "new": 0.0})[tag] += v
+    to = sum(old.values()) or 1.0
+    tn = sum(new.values()) or 1.0
+    share = {g: dict(old=round(100 * v["old"] / to, 1), new=round(100 * v["new"] / tn, 1)) for g, v in sorted(by_good.items())}
+    return dict(vanished=[list(k) for k in vanished], appeared=[list(k) for k in appeared], kept=[list(k) for k in kept], share_by_good=share)
+
+
+def migration_summary(mflows, units):
+    pair = {}
+    by_decade = {}
+    for y, a, b, n, h in mflows:
+        pair[(a, b)] = pair.get((a, b), 0.0) + n
+        dk = (y // 50) * 50
+        by_decade[dk] = by_decade.get(dk, 0.0) + n
+    top = sorted(pair.items(), key=lambda kv: (-kv[1], kv[0]))[:25]
+    return dict(top_routes=[dict(src=a, dst=b, people=int(round(n))) for (a, b), n in top],
+                by_half_century={str(k): int(round(v)) for k, v in sorted(by_decade.items())},
+                total=int(round(sum(pair.values()))))
+
+
+def industrial_assets(econ, base, units, profiles, actors):
+    """Shipyards, mining, strategic assets with capacity RANGES (the market units are relative;
+    one hull unit ~ a 10 kt-class merchant hull equivalent, assumption F12)."""
+    out = []
+    for c in sorted(actors, key=lambda c: c["id"]):
+        cid = c["id"]
+        m = base["made"][cid]
+        u = units[cid]
+        for a in c["assets"]:
+            g = trade.ASSET_GOOD.get(a["type"])
+            q = m.get(g, 0.0) if g else 0.0
+            out.append(dict(owner=cid, id=a["id"], name=a["name"], type=a["type"], good=g, output=round(q, 3),
+                            range=[round(q * 0.7, 2), round(q * 1.3, 2)], importance=a["importance"]))
+        mil = profiles[cid]["caps"]["military"] / 100
+        hulls = m["hulls"]
+        young = sum(u.pop[i] for i in (4, 5, 6, 7))
+        out.append(dict(owner=cid, id=cid + "_fleet", name="флот и мобилизационный резерв", type="fleet", good="hulls",
+                        output=round(hulls, 3), range=[round(hulls * 0.7, 2), round(hulls * 1.3, 2)], importance=round(mil, 2),
+                        fleet_hulls=[round(hulls * mil * 10, 1), round(hulls * mil * 20, 1)],
+                        manpower_standing=int(young * 0.01 * (0.5 + mil)), manpower_total_war=int(young * 0.08 * (0.5 + mil))))
+    return out
+
+
+def earth_return(units, actors, base, profiles, W, E, g3126, assets, tmax):
+    """Earth Return 3126 recomputed on the causal world. Industrial index = workers x productivity
+    (demography income x population), comparable between Earth and the colonies."""
+    earth_units = [u for u in units.values() if u.earth]
+    col_units = [units[a["id"]] for a in actors]
+    def side(us):
+        pop = sum(u.P() for u in us)
+        gdp = sum(u.y * u.P() for u in us)
+        young = sum(sum(u.pop[i] for i in (4, 5, 6, 7)) for u in us)
+        ship = sum(u.y * u.P() * u.tech["shipbuilding"] for u in us)
+        return dict(pop=int(round(pop)), industrial_index=round(gdp / 1e6, 1), shipbuilding_index=round(ship / 1e6, 1),
+                    men_20_39=int(round(young)), mobilisable_8pc=int(round(young * 0.08)))
+    es, cs = side(earth_units), side(col_units)
+    # hull production: colonies from the market; Earth by the same hull-per-shipbuilding-index ratio,
+    # x 0.3..0.6 because Earth has no licensed jump cores (HYPERION monument beacon only, 3112)
+    col_hulls = sum(base["made"][a["id"]]["hulls"] for a in actors)
+    ratio = col_hulls / max(cs["shipbuilding_index"], 1e-9)
+    e_hulls = [round(es["shipbuilding_index"] * ratio * 0.3, 1), round(es["shipbuilding_index"] * ratio * 0.6, 1)]
+    nodes, edges, hop = g3126
+    sol = E[0]
+    reach = []
+    for n in sorted(nodes):
+        if n == 0:
+            continue
+        d = endow.distance(sol, E[n])
+        if d <= hop:
+            reach.append(dict(system=n, name=E[n]["name"], ly=round(d, 1)))
+    # jump-network control: beacons per operator and how many shortest routes between actors pass through each node
+    through = {}
+    syss = sorted({a["system"] for a in actors})
+    for s in syss:
+        for t in syss:
+            if s < t:
+                _, _, path = trade.route(edges, s, t)
+                for n in (path or [])[1:-1]:
+                    through[n] = through.get(n, 0) + 1
+    ops = {}
+    for b in W["beacons"]:
+        ops.setdefault(b["operator"], []).append(b["system"])
+    control = sorted(([op, sorted(v), sum(through.get(n, 0) for n in v)] for op, v in ops.items()), key=lambda x: (-x[2], x[0]))
+    strategic = sorted([a for a in assets if a["type"] != "fleet" and a["importance"] >= 0.8], key=lambda a: (-a["output"], a["id"]))[:12]
+    biggest = sorted(((a["id"], units[a["id"]].P(), units[a["id"]].y * units[a["id"]].P()) for a in actors), key=lambda x: -x[2])[:6]
+    return dict(earth=es, colonies=cs, colony_hulls_per_year=round(col_hulls, 1), earth_hulls_per_year_range=e_hulls,
+                earth_jump_reach=reach, hop_ly=hop, network_control=control, strategic_assets=strategic,
+                main_colonies=[dict(id=i, pop=int(round(p)), industrial_index=round(g / 1e6, 1)) for i, p, g in biggest],
+                fleet_replacement_years=dict(
+                    colonies=round(sum(sum(x["fleet_hulls"]) / 2 for x in assets if x["type"] == "fleet") / max(col_hulls, 1e-9), 1),
+                    note="лет на восполнение всего флота колоний при текущем выпуске корпусов"))
 
 
 def to_json(R):
@@ -968,20 +1183,161 @@ def to_json(R):
                                     cohorts={k: dict(power=round(c["power"], 2), grievance=round(c["grievance"], 1)) for k, c in sorted(v.cohorts.items())})
     for c in R["cols"]:
         p = R["profiles"][c["id"]]
-        out["colonies"][c["id"]] = dict(name=c["name"], system=c["system"], pop_3126=c["pop_3126"], regime=c["regime_3126"],
-                                        knowledge=p["knowledge"], caps=p["caps"], culture={a: round(x, 1) for a, x in p["culture"].items()},
+        out["colonies"][c["id"]] = dict(name=c["name"], system=c["system"], pop_3126=c["pop_3126"], pop_3126_authored=c["pop_3126_authored"],
+                                        regime=c["regime_3126"], knowledge=p["knowledge"], caps=p["caps"],
+                                        culture={a: round(x, 1) for a, x in p["culture"].items()},
                                         growth=R["growth"][c["id"]], wealth_per_100k=R["wealth"].get(c["id"]))
     b = R["base"]
     for cid in sorted(b["made"]):
         out["economy"][cid] = dict(made={g: round(x, 3) for g, x in b["made"][cid].items()}, imports={g: round(x, 3) for g, x in b["imp"][cid].items()},
                                    exports={g: round(x, 3) for g, x in b["exp"][cid].items()}, prices=b["prices"][cid],
                                    partners={k: round(x, 2) for k, x in sorted(b["partners"][cid].items(), key=lambda kv: -kv[1])[:5]})
+    units = R["units"]
+    out["demography"] = dict(
+        scenario="baseline", sensitivity=R["sens"],
+        units={uid: dict(name=u.name, kind=u.kind, system=u.system, owner=u.owner, founded=u.hist[0]["year"] if u.hist else None,
+                         checkpoints=demo.checkpoints(u, 25), tech_status=demo.tech_status(u),
+                         tech_3126={d: round(v, 3) for d, v in u.tech.items()},
+                         migrants_in=int(round(u.mig_in_tot)), migrants_out=int(round(u.mig_out_tot)),
+                         events=[e for e in u.events if e["type"] != "epidemic"],
+                         epidemics=len([e for e in u.events if e["type"] == "epidemic"]))
+               for uid, u in sorted(units.items()) if u.hist},
+        trajectories=demo.trajectories(units, {c["id"]: c for c in R["cols"]}),
+        migration=R["migration"])
+    out["trade"] = dict(corridors=R["corridors"], flow_diff=R["flow_diff"], assets=R["assets"])
+    out["earth_return"] = R["earth_return"]
     return out
+
+
+def _m(x):
+    return f"{x / 1e6:,.2f}".replace(",", " ")
+
+
+def fmt_demography(R):
+    units = R["units"]
+    cmap = {c["id"]: c for c in R["cols"]}
+    eh = sum(u.P() for u in units.values() if u.earth)
+    off = {k: u for k, u in units.items() if not u.earth and u.active and u.P() > 0}
+    tot = sum(u.P() for u in off.values())
+    L = ["## D. Демография (причинная модель, demography.py)", "",
+         "Население больше не цель: каждый год из экономики детей (жильё = построенный объём, ценность труда, пенсии, длина образования, детская смертность),",
+         "семейной нормы с запаздыванием, религиозной субкультуры, политики режима, смертности и (после 2750) миграции по сети маяков.",
+         "Авторские числа хранятся как `pop_3126_authored` и сравниваются ниже. Допущения F1–F12 и исторические данные — `D:/tmp/DEMOGRAPHY_RESEARCH.md`.", "",
+         f"- **Земля 3126:** {_m(eh)} млн (Север {_m(units['earth_north'].P())}, Юг {_m(units['earth_south'].P())}).",
+         f"- **Вне Сола:** {_m(tot)} млн в {len(off)} единицах (колонии, аванпосты, фронтиры).", ""]
+    L += ["### D.1 Чувствительность к футурологическим допущениям", "",
+          "| сценарий | Земля 3126, млн | вне Сола, млн | крупнейшая | вторая | третья |", "|---|---|---|---|---|---|"]
+    for k, v in sorted(R["sens"].items()):
+        tops = " | ".join(f"{a} {_m(p)}" for a, p in v["top"][:3])
+        L.append(f"| {k} | {_m(v['earth'])} | {_m(v['off_sol'])} | {tops} |")
+    L += ["", "baseline = F9 (наследуемая склонность к семье) + F10 (автоматизированный уход); transition_persists = демографический переход XXI века без обоих.", ""]
+    L += ["### D.2 Топ-10 политий 3126", "", "| # | единица | система | нас. 3126 | авторское | ×канон | СКР | e0 | q5 | чистая миграция ‰ | фаза | урбанизация | хабитат |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    top = sorted(off.values(), key=lambda u: (-u.P(), u.id))[:10]
+    for i, u in enumerate(top, 1):
+        h = u.hist[-1]
+        auth = cmap.get(u.id, {}).get("pop_3126_authored")
+        L.append(f"| {i} | {u.name} | {R['E'][u.system]['name']} | {_m(u.P())} млн | {'' if auth is None else _m(auth) + ' млн'} | "
+                 f"{'' if not auth else f'{u.P() / auth:.1f}'} | {h['tfr']:.2f} | {h['e0']:.0f} | {h['q5']:.3f} | {h['net_mig'] / max(h['pop'], 1) * 1000:+.1f} | {h['phase']} | {h['urban']:.2f} | {demo.HABITAT[h['tier'] or 1]} |")
+    L += ["", "### D.3 Истории населения (млн)", "", "| единица | осн. | " + " | ".join(str(y) for y in (2200, 2300, 2400, 2500, 2600, 2700, 2750, 2800, 2900, 3000, 3126)) + " |",
+          "|---|---|" + "---|" * 11]
+    for u in sorted([units["earth_north"], units["earth_south"]] + list(off.values()), key=lambda u: (-u.P(), u.id)):
+        if u.P() < 5e4 and not u.earth:
+            continue
+        by = {h["year"]: h["pop"] for h in u.hist}
+        L.append(f"| {u.name} | {u.hist[0]['year']} | " + " | ".join(("" if y not in by else f"{by[y] / 1e6:.2f}") for y in (2200, 2300, 2400, 2500, 2600, 2700, 2750, 2800, 2900, 3000, 3126)) + " |")
+    L += ["", "### D.4 Рождаемость, смертность, миграция, давление расширения (по 100 лет)", "",
+          "| единица | год | нас., млн | СКР | экон. СКР | норма | религ. доля | e0 | q5 | РР‰ | СР‰ | миграция ‰ | теснота | индекс жилья | ценность труда | пенсии | автоматизация | фаза |",
+          "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for u in sorted(top + [units["earth_north"], units["earth_south"]], key=lambda u: u.id):
+        for r in demo.checkpoints(u, 100):
+            L.append(f"| {u.name} | {r['year']} | {r['pop'] / 1e6:.3f} | {r['tfr']} | {r['tfr_econ']} | {r['family_norm']} | {r['religious_share']} | {r['e0']} | {r['q5']} | {r['cbr']} | {r['cdr']} | "
+                     f"{r['net_migration_per_1000']} | {r['crowding']} | {r['space_index']} | {r['labour_value']} | {r['pension_coverage']} | {r['automation']} | {r['phase']} |")
+    L += ["", "### D.5 Технологии: деградация и восстановление", "",
+          "| единица | минимум автоматизации (год) | автоматизация 3126 | энерг. | добыча | металл. | произв. | электр. | био | верфи | воен. | наука | автомат. | строит. | прыжок |", "|---|---|---|" + "---|" * 12]
+    for u in sorted(off.values(), key=lambda u: (-u.P(), u.id)):
+        if u.kind != "colony":
+            continue
+        mn = demo.min_automation(u)
+        st = demo.tech_status(u)
+        L.append(f"| {u.name} | {mn[1]:.2f} ({mn[0]}) | {u.hist[-1]['automation']:.2f} | " + " | ".join(st[d] for d in demo.DOMAINS) + " |")
+    L += ["", "### D.6 Шесть контрастных траекторий (выбраны правилом)", ""]
+    for t in demo.trajectories(units, cmap):
+        u = units[t["unit"]]
+        cp = demo.checkpoints(u, 100)
+        L.append(f"- **{t['kind']}** — {u.name} ({t['why']}): " + "; ".join(f"{r['year']}: {r['pop'] / 1e6:.2f} млн, СКР {r['tfr']}, авт. {r['automation']}, {r['phase']}" for r in cp))
+    m = R["migration"]
+    L += ["", "### D.7 Миграция после гипера", "", f"Всего переселилось (2750–3126): {m['total']:,} человек.".replace(",", " "), "",
+          "| полвека | людей |", "|---|---|"] + [f"| {k} | {v:,} |".replace(",", " ") for k, v in m["by_half_century"].items()]
+    L += ["", "| откуда | куда | людей |", "|---|---|---|"] + [f"| {r['src']} | {r['dst']} | {r['people']:,} |".replace(",", " ") for r in m["top_routes"][:15]]
+    L += ["", "### D.8 Конфликты с авторским населением", ""]
+    for c in R["cols"]:
+        g = R["growth"][c["id"]]
+        if g["flag"]:
+            L.append(f"- {c['name']}: {g['flag']}")
+    return L
+
+
+def fmt_trade(R):
+    cs = sorted(R["corridors"], key=lambda c: (-c["value"], c["seller"], c["buyer"], c["good"]))
+    top = cs[0]["value"] if cs else 1.0
+    fd = R["flow_diff"]
+    L = ["## T. Межзвёздная торговля 3126: коридоры и пересмотр навалочных грузов", "",
+         f"Фрахт: {trade.FREIGHT} ед. цены за тонно-эквивалент на единицу стоимости маршрута (1 + d/10 за прыжок); масса на единицу стоимости — `trade.MASS`.",
+         "Правило: навалочный груз (вода, летучие, металл, пища) везут только если у покупателя нет своего источника или свой источник дороже доставленного импорта.",
+         "`break-even` — ставка фрахта, при которой покупателю выгоднее свой худший источник.", "",
+         "### T.1 Доля стоимости межзвёздного оборота по товарам (старый рынок → новый)", "", "| товар | было % | стало % |", "|---|---|---|"]
+    for g, v in fd["share_by_good"].items():
+        L.append(f"| {g} | {v['old']} | {v['new']} |")
+    bulk_old = sum(v["old"] for g, v in fd["share_by_good"].items() if g in trade.BULK)
+    bulk_new = sum(v["new"] for g, v in fd["share_by_good"].items() if g in trade.BULK)
+    L += ["", f"Навалочные (вода/летучие, металл, пища): {bulk_old:.1f} % → {bulk_new:.1f} % стоимости оборота.", ""]
+    L += ["### T.2 Главные коридоры", "", "| продавец | покупатель | товар | объём | прыжков | причина | альтернативы | узкие места | контролёр | break-even фрахт |", "|---|---|---|---|---|---|---|---|---|---|"]
+    for c in cs[:40]:
+        L.append(f"| {c['seller']} | {c['buyer']} | {c['good']} | {trade.volume_class(c['value'], top)} ({c['value']:.1f}) | {c['hops']} | {c['reason']} | "
+                 f"{', '.join(c['alternatives'])} | {', '.join(str(x) for x in c['choke_points'])} | {', '.join(c['controllers'])} | {'' if c['break_even_freight'] is None else c['break_even_freight']} |")
+    res = [c for c in cs if c["reason"] == "residual_shortfall" and c["value"] > 0.01 * top]
+    L += ["", f"Остаточные навалочные потоки, где свой источник дешевле (модельный остаток, а не коридор): {len(res)}; их суммарная доля "
+          f"{100 * sum(c['value'] for c in res) / max(1e-9, sum(c['value'] for c in cs)):.1f} % оборота.", ""]
+    L += ["### T.3 Исчезнувшие потоки (были на старом рынке)", ""]
+    L += [f"- {g}: {s} → {b}" for s, b, g in fd["vanished"]]
+    L += ["", "### T.4 Появившиеся потоки", ""]
+    L += [f"- {g}: {s} → {b}" for s, b, g in fd["appeared"]]
+    L += ["", "### T.5 Верфи, добыча, стратегические активы (диапазоны выпуска, условные единицы)", "",
+          "| владелец | актив | тип | выпуск | диапазон | флот (корпуса) | мобил. резерв мирн./войн. |", "|---|---|---|---|---|---|---|"]
+    for a in R["assets"]:
+        if a["type"] == "fleet":
+            L.append(f"| {a['owner']} | {a['name']} | fleet | {a['output']} | {a['range']} | {a['fleet_hulls']} | {a['manpower_standing']:,} / {a['manpower_total_war']:,} |".replace(",", " "))
+        else:
+            L.append(f"| {a['owner']} | {a['name']} | {a['type']} | {a['output']} | {a['range']} | | |")
+    return L
+
+
+def fmt_earth_return(R):
+    r = R["earth_return"]
+    e, c = r["earth"], r["colonies"]
+    L = ["## E. «Возвращение Земли» 3126 на новом мире", "",
+         "| показатель | Земля | все колонии-акторы | отношение |", "|---|---|---|---|"]
+    for k, name in (("pop", "население"), ("industrial_index", "промышленный индекс (доход × люди)"), ("shipbuilding_index", "верфевой индекс"),
+                    ("men_20_39", "люди 20–39"), ("mobilisable_8pc", "мобилизуемые (8 %)")):
+        L.append(f"| {name} | {e[k]:,} | {c[k]:,} | {e[k] / max(c[k], 1e-9):.1f} |".replace(",", " "))
+    L += ["", f"- Выпуск корпусов колоний: {r['colony_hulls_per_year']} ед./год; потенциал Земли {r['earth_hulls_per_year_range']} ед./год "
+          "(×0.3–0.6: у Земли нет лицензионных ядер прыжка — только маяк из памятника HYPERION-1, 3112).",
+          f"- Восполнение флота колоний: ~{r['fleet_replacement_years']['colonies']} лет при текущем выпуске.",
+          f"- Досягаемость с маяка Сола (прыжок ≤ {r['hop_ly']} св. лет, нужен маяк у цели): " + ", ".join(f"{x['name']} {x['ly']}" for x in r["earth_jump_reach"]) + ".",
+          "- Контроль сети (оператор: маяки; сколько кратчайших маршрутов между акторами идёт через его узлы):"]
+    for op, sy, n in r["network_control"]:
+        L.append(f"  - {op}: {sy} — {n}")
+    L += ["- Главные колонии по промышленному индексу: " + ", ".join(f"{x['id']} {_m(x['pop'])} млн / {x['industrial_index']}" for x in r["main_colonies"]),
+          "- Стратегические активы (выпуск): " + ", ".join(f"{a['name']} ({a['owner']}, {a['output']})" for a in r["strategic_assets"]), "",
+          "Вывод модели: Земля по людям и промышленности на порядок больше всех колоний вместе; её узкое место — не заводы, а ядра прыжка, маяки "
+          "у цели (их держат Когниум и колонии) и опыт межзвёздной логистики. Война — это борьба за сеть, а не за выпуск.", ""]
+    return L
 
 
 def fmt_report(R, J):
     E = R["E"]
-    L = ["# Colonization lab — отчёт прогона", "", f"seed = {R['seed']}; вход: canon/*.json + каталог galaxy_details; детерминированно.", ""]
+    L = ["# Colonization lab — отчёт прогона", "", f"seed = {R['seed']}; вход: canon/*.json + каталог galaxy_details; детерминированно.",
+         "Статусы знаний (CANON / PROPOSAL / UNKNOWN, PUBLIC_RECORD / AUTHOR_TRUTH): `out/proposals.md`; факты для лорщиков: `out/lore_facts.json`.", ""]
     L += ["## 1. Миссии: скорость, вахта, крио", "",
           "| миссия | старт | прибытие/конец | ср. скорость c | мин. вахта | вахта | циклов/чел | наследств. вахта | хранители | сон владельцев, лет | неучтённые потери | тенденция режима | канон режима | флаги |",
           "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
@@ -1006,16 +1362,18 @@ def fmt_report(R, J):
         L.append(f"| {mid} | {d['era']} | {s['cruise_c']:.3f} | {d['dry_mt']:.1f} / {d.get('claimed_dry_mt', '-')} | {d['full_mt']:.0f} / {d.get('claimed_full_mt', '-')} | {d['mass_ratio']:.1f} | "
                  f"{d['he3_mt']:.1f} | {d['giant_atmo_processed_t']:.1e} | {d['accel_g']:.4f} | {d['jet_power_pw']:.1f} | {d['boost_radiator_km2']:.0f} | "
                  f"{'возможно' if s['verdict'] == 'possible' else 'исправить: ' + '; '.join(s['reasons'])} |")
-    L += ["", "## 4. Колонии 3126", "", "| колония | система | нас. 3126 | основание (нас.) | рост %/год | режим | знание | богатство /100k | " + " | ".join(CAPS) + " | флаг |", "|" + "---|" * (9 + len(CAPS))]
+    L += [""] + fmt_demography(R) + [""]
+    L += ["", "## 4. Колонии 3126", "", "| колония | система | нас. 3126 (модель) | авторское | основание (нас.) | ср. рост %/год | режим | знание | богатство /100k | " + " | ".join(CAPS) + " | флаг |", "|" + "---|" * (10 + len(CAPS))]
     for c in R["cols"]:
         p = R["profiles"][c["id"]]
         g = R["growth"][c["id"]]
-        L.append(f"| {c['name']} | {E[c['system']]['name']} | {c['pop_3126']:,} | {c['founded']} ({g['p0'] or '-'}) | {g['rate'] if g['rate'] is not None else '-'} | {c['regime_3126']} | {p['knowledge']} | "
+        L.append(f"| {c['name']} | {E[c['system']]['name']} | {c['pop_3126']:,} | {c['pop_3126_authored']:,} | {c['founded']} ({g['p0'] or '-'}) | {g['rate'] if g['rate'] is not None else '-'} | {c['regime_3126']} | {p['knowledge']} | "
                  f"{R['wealth'].get(c['id'], '-')} | " + " | ".join(f"{p['caps'][k]:.0f}" for k in CAPS) + f" | {g['flag'] or ''} |")
     L += ["", "## 5. Экономика 3126 (условные единицы/год; цены относительно базовых)", ""]
+    L += fmt_trade(R) + [""]
     b = R["base"]
     L += ["| колония | производит (топ) | импорт (топ) | экспорт (топ) | цены выше 1.5× базы | главные партнёры |", "|---|---|---|---|---|---|"]
-    for c in R["cols"]:
+    for c in R["actors"]:
         cid = c["id"]
         if cid not in b["made"]:
             continue
@@ -1056,6 +1414,7 @@ def fmt_report(R, J):
             tops.add(r[0][0])
             L.append(f"| {c['name']} | {r[0][2]} ({r[0][1]}) | {r[1][2]} ({r[1][1]}) | {', '.join(f'{a} {v:+}' for a, v in r[0][3])} |")
         L.append(f"\nразных первых ответов: {len(tops)}\n")
+    L += fmt_earth_return(R)
     L += ["## 8. Реакция на Землю-3126 (топ-3)", ""]
     for c in R["cols"]:
         if c["id"] in R["earth"]:
@@ -1098,6 +1457,11 @@ def check_dataset():
         for k_rt, k_c in (("launch_year", "launch_year"), ("population", "population"), ("final_system", "final_system"), ("cryo_share", "cryo_share")):
             if c.get(k_rt) != m.get(k_c):
                 problems.append(f"{sid}: canon.{k_rt}={c.get(k_rt)} != {m.get(k_c)}")
+        if c.get("knowledge") != m.get("knowledge"):
+            problems.append(f"{sid}: canon.knowledge расходится с canon/missions.json (перезапустите export_runtime.py --write)")
+        arr = next((x for x in m["anchors"] if x["type"] == "arrival"), None)
+        if arr and (c.get("arrival_year"), c.get("arrival_population")) != (arr["year"], arr["pop_after"]):
+            problems.append(f"{sid}: прибытие в runtime расходится с каноном")
     for mid in canon:
         if mid not in seen:
             problems.append(f"{mid}: канонической миссии нет в runtime-файле")
@@ -1112,20 +1476,26 @@ def main():
     ap.add_argument("--seed", type=int, default=3126)
     ap.add_argument("--out", default=os.path.join(HERE, "out"))
     ap.add_argument("--check-dataset", action="store_true")
+    ap.add_argument("--check-lore", action="store_true", help="verify out/lore_facts.json against canon and a fresh build")
     a = ap.parse_args()
     if a.check_dataset:
         sys.exit(check_dataset())
+    import lore
     R = run(a.seed)
+    if a.check_lore:
+        sys.exit(lore.check(os.path.join(a.out, "lore_facts.json"), R, sys.modules[__name__]))
     J = to_json(R)
     os.makedirs(a.out, exist_ok=True)
     js = json.dumps(J, ensure_ascii=False, indent=1, sort_keys=True)
     md = fmt_report(R, J)
-    with open(os.path.join(a.out, "lab_state_3126.json"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(js)
-    with open(os.path.join(a.out, "lab_report.md"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(md)
-    h = hashlib.sha256((js + md).encode("utf-8")).hexdigest()
-    print(f"seed={a.seed} missions={len(R['voyages'])} colonies={len(R['cols'])} sha256={h}")
+    lf = json.dumps(lore.build(R, sys.modules[__name__]), ensure_ascii=False, indent=1, sort_keys=True)
+    pm = lore.proposals_md(R)
+    for name, text in (("lab_state_3126.json", js), ("lab_report.md", md), ("lore_facts.json", lf), ("proposals.md", pm)):
+        with open(os.path.join(a.out, name), "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+    h = hashlib.sha256((js + md + lf + pm).encode("utf-8")).hexdigest()
+    off = R["sens"]["baseline"]
+    print(f"seed={a.seed} missions={len(R['voyages'])} colonies={len(R['cols'])} earth={off['earth']} off_sol={off['off_sol']} sha256={h}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,1910 @@
+{
+ "schema": "elite.colonization_lab.settlements.v1",
+ "polities": {
+  "barnard_post": [
+   {
+    "id": "barnard_post.capital",
+    "name": "Пост прослушивания у Барнарда",
+    "role": "capital",
+    "body": "Barnard's Star j",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "barnard_post.habitat1",
+    "name": "Barnard's Star h — поселение",
+    "role": "habitat",
+    "body": "Barnard's Star h",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "barnard_post.habitat2",
+    "name": "Barnard's Star k — поселение",
+    "role": "habitat",
+    "body": "Barnard's Star k",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "cyg61_kern": [
+   {
+    "id": "cyg61_kern.capital",
+    "name": "Шахта Альфа",
+    "role": "capital",
+    "body": "61 Cygni B j",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "cyg61_kern.habitat1",
+    "name": "61 Cygni B k — поселение",
+    "role": "habitat",
+    "body": "61 Cygni B k",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "cyg61_kern.habitat2",
+    "name": "61 Cygni A f — поселение",
+    "role": "habitat",
+    "body": "61 Cygni A f",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "cyg61_kern.kern_exchange",
+    "name": "Биржа и страховой дом Керна",
+    "role": "logistics_hub",
+    "body": "61 Cygni B j (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "cyg61_kern.cyg_b_i_gas",
+    "name": "Платформы 61 Cyg B i",
+    "role": "gas_platform",
+    "body": "61 Cygni B i",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "delta_pav_freekarma": [
+   {
+    "id": "delta_pav_freekarma.capital",
+    "name": "Свободная Карма",
+    "role": "capital",
+    "body": "Delta Pavonis k",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "delta_pav_freekarma.habitat1",
+    "name": "Delta Pavonis j — поселение",
+    "role": "habitat",
+    "body": "Delta Pavonis j",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "delta_pav_freekarma.habitat2",
+    "name": "Delta Pavonis K1 — поселение",
+    "role": "habitat",
+    "body": "Delta Pavonis K1",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "delta_pav_freekarma.freekarma_beacon",
+    "name": "Маяк Дельты Павлина",
+    "role": "jump_infrastructure",
+    "body": "Delta Pavonis k (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "delta_pav_karma": [
+   {
+    "id": "delta_pav_karma.capital",
+    "name": "Новая Карма",
+    "role": "capital",
+    "body": "Delta Pavonis k",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "delta_pav_karma.habitat1",
+    "name": "Delta Pavonis j — поселение",
+    "role": "habitat",
+    "body": "Delta Pavonis j",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "delta_pav_karma.habitat2",
+    "name": "Delta Pavonis K1 — поселение",
+    "role": "habitat",
+    "body": "Delta Pavonis K1",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "delta_pav_karma.gene_temple",
+    "name": "Храм Массива (криобанк генов)",
+    "role": "research",
+    "body": "Delta Pavonis k (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "delta_pav_karma.karma_mines",
+    "name": "Рудники Delta Pavonis h",
+    "role": "mine",
+    "body": "Delta Pavonis k (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "eps_eri_harmony": [
+   {
+    "id": "eps_eri_harmony.capital",
+    "name": "Цветущая Гармония",
+    "role": "capital",
+    "body": "Epsilon Eridani K4",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "eps_eri_harmony.habitat1",
+    "name": "Epsilon Eridani K3 — поселение",
+    "role": "habitat",
+    "body": "Epsilon Eridani K3",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "eps_eri_harmony.habitat2",
+    "name": "Epsilon Eridani K2 — поселение",
+    "role": "habitat",
+    "body": "Epsilon Eridani K2",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "eps_eri_harmony.eri_ice",
+    "name": "Ледовый комплекс облака комет",
+    "role": "ice_export",
+    "body": "Epsilon Eridani K4 (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "eps_eri_harmony.eri_b_gas",
+    "name": "Платформы eps Eri b",
+    "role": "gas_platform",
+    "body": "eps Eri b",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "eps_eri_harmony.harmony_yards",
+    "name": "Верфи Гармонии",
+    "role": "shipyard",
+    "body": "Epsilon Eridani K4 (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "eps_eri_harmony.eri_b1_mines",
+    "name": "Рудники eps Eri b I",
+    "role": "mine",
+    "body": "Epsilon Eridani K4 (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "eps_eri_harmony.relay_grid",
+    "name": "Ретрансляторная сеть (60 % межколониальной связи)",
+    "role": "jump_infrastructure",
+    "body": "Epsilon Eridani K4 (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "eps_eri_strife": [
+   {
+    "id": "eps_eri_strife.capital",
+    "name": "Пояс Раздора / Вольные астероиды",
+    "role": "capital",
+    "body": "Epsilon Eridani K4",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "eps_eri_strife.habitat1",
+    "name": "Epsilon Eridani K3 — поселение",
+    "role": "habitat",
+    "body": "Epsilon Eridani K3",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "eps_eri_strife.habitat2",
+    "name": "Epsilon Eridani K2 — поселение",
+    "role": "habitat",
+    "body": "Epsilon Eridani K2",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "eps_eri_strife.strife_market",
+    "name": "Чёрный рынок пояса",
+    "role": "black_market",
+    "body": "Epsilon Eridani K4 (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "eps_indi_field": [
+   {
+    "id": "eps_indi_field.capital",
+    "name": "Гелиевое поле Эпсилон Индейца",
+    "role": "capital",
+    "body": "Epsilon Indi Bb c",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "eps_indi_field.habitat1",
+    "name": "Epsilon Indi Bb e — поселение",
+    "role": "habitat",
+    "body": "Epsilon Indi Bb e",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "eps_indi_field.habitat2",
+    "name": "Epsilon Indi Ba d — поселение",
+    "role": "habitat",
+    "body": "Epsilon Indi Ba d",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "gj357_frontier": [
+   {
+    "id": "gj357_frontier.capital",
+    "name": "Фронтир Gliese 357",
+    "role": "capital",
+    "body": "Gliese 357 k",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "gj357_frontier.habitat1",
+    "name": "Gliese 357 m — поселение",
+    "role": "habitat",
+    "body": "Gliese 357 m",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "gj357_frontier.habitat2",
+    "name": "Gliese 357 n — поселение",
+    "role": "habitat",
+    "body": "Gliese 357 n",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "gj581_europa": [
+   {
+    "id": "gj581_europa.capital",
+    "name": "Новая Европа",
+    "role": "capital",
+    "body": "Gliese 581 h",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "gj581_europa.habitat1",
+    "name": "Gliese 581 K1 — поселение",
+    "role": "habitat",
+    "body": "Gliese 581 K1",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "gj581_europa.habitat2",
+    "name": "Gliese 581 K3 — поселение",
+    "role": "habitat",
+    "body": "Gliese 581 K3",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "gj581_europa.registry",
+    "name": "Реестр договоров и Арбитраж «Новый Брюссель»",
+    "role": "legal_hub",
+    "body": "Gliese 581 h (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "gj581_europa.gj581i_gas",
+    "name": "Платформы Gliese 581 i",
+    "role": "gas_platform",
+    "body": "Gliese 581 i",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "gj581_europa.europa_farms",
+    "name": "Агромодули",
+    "role": "food_habitat",
+    "body": "Gliese 581 K1",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "gj581_freeclans": [
+   {
+    "id": "gj581_freeclans.capital",
+    "name": "Свободные поселения",
+    "role": "capital",
+    "body": "Gliese 581 h",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "gj581_freeclans.habitat1",
+    "name": "Gliese 581 K1 — поселение",
+    "role": "habitat",
+    "body": "Gliese 581 K1",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "gj581_freeclans.habitat2",
+    "name": "Gliese 581 K3 — поселение",
+    "role": "habitat",
+    "body": "Gliese 581 K3",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "gj581_freeclans.open_drives",
+    "name": "Мастерские нелицензионных приводов",
+    "role": "black_market",
+    "body": "Gliese 581 h (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "gj667_ubuntu_node": [
+   {
+    "id": "gj667_ubuntu_node.capital",
+    "name": "Узел Убунту (ретранслятор у обломков)",
+    "role": "capital",
+    "body": "Gliese 667 A t",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "gj667_ubuntu_node.habitat1",
+    "name": "Gliese 667 A u — поселение",
+    "role": "habitat",
+    "body": "Gliese 667 A u",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "gj667_ubuntu_node.habitat2",
+    "name": "Gliese 667 A s — поселение",
+    "role": "habitat",
+    "body": "Gliese 667 A s",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "gj674_frontier": [
+   {
+    "id": "gj674_frontier.capital",
+    "name": "Фронтир Gliese 674",
+    "role": "capital",
+    "body": "Gliese 674 h",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "gj674_frontier.habitat1",
+    "name": "Gliese 674 j — поселение",
+    "role": "habitat",
+    "body": "Gliese 674 j",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "gj674_frontier.habitat2",
+    "name": "Gliese 674 K3 — поселение",
+    "role": "habitat",
+    "body": "Gliese 674 K3",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "gj832_gaia_zone": [
+   {
+    "id": "gj832_gaia_zone.capital",
+    "name": "Зона «Филоморфоз»",
+    "role": "capital",
+    "body": "GJ 832 b III",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "gj832_gaia_zone.habitat1",
+    "name": "GJ 832 b II — поселение",
+    "role": "habitat",
+    "body": "GJ 832 b II",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "gj832_gaia_zone.habitat2",
+    "name": "GJ 832 b I — поселение",
+    "role": "habitat",
+    "body": "GJ 832 b I",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "gj832_tianhe": [
+   {
+    "id": "gj832_tianhe.capital",
+    "name": "Тяньхэ (Небесная Река)",
+    "role": "capital",
+    "body": "GJ 832 b III",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "gj832_tianhe.habitat1",
+    "name": "GJ 832 b II — поселение",
+    "role": "habitat",
+    "body": "GJ 832 b II",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "gj832_tianhe.habitat2",
+    "name": "GJ 832 b I — поселение",
+    "role": "habitat",
+    "body": "GJ 832 b I",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "gj832_tianhe.gj832b_gas",
+    "name": "Платформы GJ 832 b",
+    "role": "gas_platform",
+    "body": "GJ 832 b",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "gj832_tianhe.tianhe_yards",
+    "name": "Массовые верфи Тяньхэ",
+    "role": "shipyard",
+    "body": "GJ 832 b III (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "gj832_tianhe.tianhe_refinery",
+    "name": "Комбинат GJ 832 b I",
+    "role": "refinery",
+    "body": "GJ 832 b III (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "gj832_tianhe.cordon_fleet",
+    "name": "Флот кордона «Филоморфоз»",
+    "role": "fortress",
+    "body": "GJ 832 b III (орбита)",
+    "kind": "military_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "gj876_next": [
+   {
+    "id": "gj876_next.capital",
+    "name": "Провидение",
+    "role": "capital",
+    "body": "Gliese 876 g",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "gj876_next.habitat1",
+    "name": "Gliese 876 f — поселение",
+    "role": "habitat",
+    "body": "Gliese 876 f",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "gj876_next.habitat2",
+    "name": "Gliese 876 K2 — поселение",
+    "role": "habitat",
+    "body": "Gliese 876 K2",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "gj876_next.oracle_core",
+    "name": "Ядро «Провидца»",
+    "role": "research",
+    "body": "Gliese 876 g (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "gj876_next.gj876_concessions",
+    "name": "Концессии трёх гигантов GJ 876 (операторы — Когниум и Керн)",
+    "role": "gas_platform",
+    "body": "GJ 876 b",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "gj876_next.gj876_mines",
+    "name": "Концессионные рудники GJ 876 b I",
+    "role": "mine",
+    "body": "Gliese 876 g (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "gj892_kern": [
+   {
+    "id": "gj892_kern.capital",
+    "name": "Стратегические рудники Gliese 892",
+    "role": "capital",
+    "body": "HD 219134 h II",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "gj892_kern.habitat1",
+    "name": "HD 219134 h I — поселение",
+    "role": "habitat",
+    "body": "HD 219134 h I",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "gj892_kern.habitat2",
+    "name": "Gliese 892 A1 — поселение",
+    "role": "habitat",
+    "body": "Gliese 892 A1",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "hd10360_relay": [
+   {
+    "id": "hd10360_relay.capital",
+    "name": "Реле HD 10360",
+    "role": "capital",
+    "body": "p Eridani A k",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "hd10360_relay.habitat1",
+    "name": "p Eridani A n — поселение",
+    "role": "habitat",
+    "body": "p Eridani A n",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd10360_relay.habitat2",
+    "name": "p Eridani A o — поселение",
+    "role": "habitat",
+    "body": "p Eridani A o",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "hd104067_frontier": [
+   {
+    "id": "hd104067_frontier.capital",
+    "name": "Фронтир HD 104067",
+    "role": "capital",
+    "body": "HD 104067 g",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "hd104067_frontier.habitat1",
+    "name": "HD 104067 j — поселение",
+    "role": "habitat",
+    "body": "HD 104067 j",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd104067_frontier.habitat2",
+    "name": "HD 104067 i — поселение",
+    "role": "habitat",
+    "body": "HD 104067 i",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "hd114783_claims": [
+   {
+    "id": "hd114783_claims.capital",
+    "name": "Лагерь «Кларион»",
+    "role": "capital",
+    "body": "HD 114783 c III",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "hd114783_claims.habitat1",
+    "name": "HD 114783 K2 — поселение",
+    "role": "habitat",
+    "body": "HD 114783 K2",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd114783_claims.habitat2",
+    "name": "HD 114783 K4 — поселение",
+    "role": "habitat",
+    "body": "HD 114783 K4",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "hd114783_hellas3": [
+   {
+    "id": "hd114783_hellas3.capital",
+    "name": "Третья Эллада",
+    "role": "capital",
+    "body": "HD 114783 c III",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "hd114783_hellas3.habitat1",
+    "name": "HD 114783 K2 — поселение",
+    "role": "habitat",
+    "body": "HD 114783 K2",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd114783_hellas3.habitat2",
+    "name": "HD 114783 K4 — поселение",
+    "role": "habitat",
+    "body": "HD 114783 K4",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd114783_hellas3.odyssey_rock",
+    "name": "Астероид-корабль «Одиссей»",
+    "role": "station_core",
+    "body": "HD 114783 c III (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "hd20794_hellas2": [
+   {
+    "id": "hd20794_hellas2.capital",
+    "name": "Вторая Эллада",
+    "role": "capital",
+    "body": "HD 20794 K3",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "hd20794_hellas2.habitat1",
+    "name": "HD 20794 K2 — поселение",
+    "role": "habitat",
+    "body": "HD 20794 K2",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd20794_hellas2.habitat2",
+    "name": "HD 20794 K1 — поселение",
+    "role": "habitat",
+    "body": "HD 20794 K1",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd20794_hellas2.hd20794d_gas",
+    "name": "Платформы HD 20794 d",
+    "role": "gas_platform",
+    "body": "HD 20794 d",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "hd20794_hellas2.star_university",
+    "name": "Звёздный Университет",
+    "role": "research",
+    "body": "HD 20794 K3 (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "hd20794_hellas2.kuiper_rights_h",
+    "name": "Водные права пояса Койпера",
+    "role": "ice_export",
+    "body": "HD 20794 K3 (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "hd20794_newindia": [
+   {
+    "id": "hd20794_newindia.capital",
+    "name": "Новая Индия",
+    "role": "capital",
+    "body": "HD 20794 K3",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "hd20794_newindia.habitat1",
+    "name": "HD 20794 K2 — поселение",
+    "role": "habitat",
+    "body": "HD 20794 K2",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd20794_newindia.habitat2",
+    "name": "HD 20794 K1 — поселение",
+    "role": "habitat",
+    "body": "HD 20794 K1",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd20794_newindia.hd20794f_gas",
+    "name": "Платформы HD 20794 f",
+    "role": "gas_platform",
+    "body": "HD 20794 d",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "hd20794_newindia.newindia_works",
+    "name": "Сборочные кольца",
+    "role": "factory",
+    "body": "HD 20794 K3 (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "hd40307_firmament": [
+   {
+    "id": "hd40307_firmament.capital",
+    "name": "Небесная Твердыня",
+    "role": "capital",
+    "body": "HD 40307 k",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "hd40307_firmament.habitat1",
+    "name": "HD 40307 K2 — поселение",
+    "role": "habitat",
+    "body": "HD 40307 K2",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd40307_firmament.habitat2",
+    "name": "HD 40307 K3 — поселение",
+    "role": "habitat",
+    "body": "HD 40307 K3",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd40307_firmament.hd40307f_gas_f",
+    "name": "Платформы HD 40307 f (доля Твердыни)",
+    "role": "gas_platform",
+    "body": "HD 40307 f",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "hd40307_firmament.firmament_base",
+    "name": "Флотская база",
+    "role": "fortress",
+    "body": "HD 40307 k (орбита)",
+    "kind": "military_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "hd40307_firmament.firmament_mines",
+    "name": "Рудники пояса",
+    "role": "mine",
+    "body": "HD 40307 k (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "hd40307_maland": [
+   {
+    "id": "hd40307_maland.capital",
+    "name": "Новая Маланд",
+    "role": "capital",
+    "body": "HD 40307 k",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "hd40307_maland.habitat1",
+    "name": "HD 40307 K2 — поселение",
+    "role": "habitat",
+    "body": "HD 40307 K2",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd40307_maland.habitat2",
+    "name": "HD 40307 K3 — поселение",
+    "role": "habitat",
+    "body": "HD 40307 K3",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd40307_maland.maland_rings",
+    "name": "Агрокольца Маланд («Житница»)",
+    "role": "food_habitat",
+    "body": "HD 40307 K2",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "hd40307_maland.hd40307f_gas_m",
+    "name": "Платформы HD 40307 f (доля Маланд)",
+    "role": "gas_platform",
+    "body": "HD 40307 f",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "hd40307_maland.outer_watch",
+    "name": "Внешний дозор",
+    "role": "fortress",
+    "body": "HD 40307 k (орбита)",
+    "kind": "military_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "hd69830_verde": [
+   {
+    "id": "hd69830_verde.capital",
+    "name": "Сельта-Верде",
+    "role": "capital",
+    "body": "HD 69830 l",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "hd69830_verde.habitat1",
+    "name": "HD 69830 K2 — поселение",
+    "role": "habitat",
+    "body": "HD 69830 K2",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd69830_verde.habitat2",
+    "name": "HD 69830 K4 — поселение",
+    "role": "habitat",
+    "body": "HD 69830 K4",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd69830_verde.verde_gas",
+    "name": "Платформы трёх гигантов HD 69830",
+    "role": "gas_platform",
+    "body": "HD 69830 c",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "hd69830_verde.verde_ice",
+    "name": "Ледовые поля облака комет",
+    "role": "ice_export",
+    "body": "HD 69830 l (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "hd85512_frontier": [
+   {
+    "id": "hd85512_frontier.capital",
+    "name": "Фронтир HD 85512",
+    "role": "capital",
+    "body": "HD 85512 K1",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "hd85512_frontier.habitat1",
+    "name": "HD 85512 K2 — поселение",
+    "role": "habitat",
+    "body": "HD 85512 K2",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "hd85512_frontier.habitat2",
+    "name": "HD 85512 K3 — поселение",
+    "role": "habitat",
+    "body": "HD 85512 K3",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "lalande_hellas": [
+   {
+    "id": "lalande_hellas.capital",
+    "name": "Новая Эллада / Агора",
+    "role": "capital",
+    "body": "Lalande 21185 m",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "lalande_hellas.habitat1",
+    "name": "Lalande 21185 h — поселение",
+    "role": "habitat",
+    "body": "Lalande 21185 h",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "lalande_hellas.habitat2",
+    "name": "Lalande 21185 k — поселение",
+    "role": "habitat",
+    "body": "Lalande 21185 k",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "lalande_hellas.agora",
+    "name": "Агора — нейтральный порт и биржа",
+    "role": "logistics_hub",
+    "body": "Lalande 21185 m (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "lalande_hellas.lalande_j_gas_h",
+    "name": "Платформы Lalande 21185 j (эллинская доля)",
+    "role": "gas_platform",
+    "body": "Lalande 21185 j",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "lalande_hellas.academy",
+    "name": "Академия Новой Эллады",
+    "role": "research",
+    "body": "Lalande 21185 m (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "lalande_mecca": [
+   {
+    "id": "lalande_mecca.capital",
+    "name": "Новая Мекка",
+    "role": "capital",
+    "body": "Lalande 21185 m",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "lalande_mecca.habitat1",
+    "name": "Lalande 21185 h — поселение",
+    "role": "habitat",
+    "body": "Lalande 21185 h",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "lalande_mecca.habitat2",
+    "name": "Lalande 21185 k — поселение",
+    "role": "habitat",
+    "body": "Lalande 21185 k",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "lalande_mecca.rasad",
+    "name": "Обсерватория-вычислитель «Расад»",
+    "role": "research",
+    "body": "Lalande 21185 m (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "lalande_mecca.lalande_j_gas_m",
+    "name": "Платформы Lalande 21185 j (доля Мекки)",
+    "role": "gas_platform",
+    "body": "Lalande 21185 j",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "lalande_mecca.mecca_farms",
+    "name": "Сады Lalande 21185 g",
+    "role": "food_habitat",
+    "body": "Lalande 21185 h",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "leo83_golden_city": [
+   {
+    "id": "leo83_golden_city.capital",
+    "name": "«Золотой Город»",
+    "role": "capital",
+    "body": "83 Leonis B h",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "leo83_golden_city.habitat1",
+    "name": "83 Leonis B i — поселение",
+    "role": "habitat",
+    "body": "83 Leonis B i",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "leo83_golden_city.habitat2",
+    "name": "83 Leonis B j II — поселение",
+    "role": "habitat",
+    "body": "83 Leonis B j II",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "leo83_zion": [
+   {
+    "id": "leo83_zion.capital",
+    "name": "Святой Сион (на орбите)",
+    "role": "capital",
+    "body": "83 Leonis B h",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "leo83_zion.habitat1",
+    "name": "83 Leonis B i — поселение",
+    "role": "habitat",
+    "body": "83 Leonis B i",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "leo83_zion.habitat2",
+    "name": "83 Leonis B j II — поселение",
+    "role": "habitat",
+    "body": "83 Leonis B j II",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "proxima_outpost": [
+   {
+    "id": "proxima_outpost.capital",
+    "name": "Красный Форпост",
+    "role": "capital",
+    "body": "Proxima Centauri j",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "proxima_outpost.habitat1",
+    "name": "Proxima Centauri k — поселение",
+    "role": "habitat",
+    "body": "Proxima Centauri k",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "proxima_outpost.habitat2",
+    "name": "Proxima Cen b — поселение",
+    "role": "habitat",
+    "body": "Proxima Cen b",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "proxima_outpost.svarog_fortress",
+    "name": "Орбитальная крепость «Сварог»",
+    "role": "fortress",
+    "body": "Proxima Centauri j (орбита)",
+    "kind": "military_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "proxima_outpost.acen_farms",
+    "name": "Агрокупола Alpha Centauri B l",
+    "role": "food_habitat",
+    "body": "Proxima Centauri k",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "proxima_outpost.proxima_l_gas",
+    "name": "Газовые платформы Proxima l",
+    "role": "gas_platform",
+    "body": "Proxima Centauri l",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "proxima_outpost.proxima_d_mines",
+    "name": "Шахты Proxima Cen d",
+    "role": "mine",
+    "body": "Proxima Centauri j (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "sigma2uma_expedition": [
+   {
+    "id": "sigma2uma_expedition.capital",
+    "name": "Экспедиция Sigma² UMa",
+    "role": "capital",
+    "body": "Sigma² UMa A h IV",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "sigma2uma_expedition.habitat1",
+    "name": "Sigma² UMa A h II — поселение",
+    "role": "habitat",
+    "body": "Sigma² UMa A h II",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "sigma2uma_expedition.habitat2",
+    "name": "Sigma² UMa A h III — поселение",
+    "role": "habitat",
+    "body": "Sigma² UMa A h III",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   }
+  ],
+  "tau_ceti_cognium": [
+   {
+    "id": "tau_ceti_cognium.capital",
+    "name": "Новый Шанхай",
+    "role": "capital",
+    "body": "Tau Ceti (орбитальные кольца)",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "tau_ceti_cognium.beacon_authority",
+    "name": "Управление Маяков и фабрика ядер прыжка «Сычёвник»",
+    "role": "jump_infrastructure",
+    "body": "Tau Ceti (орбитальные кольца) (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "tau_ceti_cognium.ns_fab",
+    "name": "Фабы Кольца Основателей",
+    "role": "electronics_fab",
+    "body": "Tau Ceti (орбитальные кольца) (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "tau_ceti_cognium.hyperion_yards",
+    "name": "Верфь «Гиперион»",
+    "role": "shipyard",
+    "body": "Tau Ceti (орбитальные кольца) (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "tau_ceti_cognium.ns_exchange",
+    "name": "Орбитальная биржа Нового Шанхая",
+    "role": "logistics_hub",
+    "body": "Tau Ceti (орбитальные кольца) (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ],
+  "wolf359_citadel": [
+   {
+    "id": "wolf359_citadel.capital",
+    "name": "Цитадель",
+    "role": "capital",
+    "body": "Wolf 359 e",
+    "kind": "habitat_city",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "столица = главное поселение колонии; тело — лучший участок каталога"
+    }
+   },
+   {
+    "id": "wolf359_citadel.habitat1",
+    "name": "Wolf 359 c — поселение",
+    "role": "habitat",
+    "body": "Wolf 359 c",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "wolf359_citadel.habitat2",
+    "name": "Wolf 359 f — поселение",
+    "role": "habitat",
+    "body": "Wolf 359 f",
+    "kind": "habitat_town",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "следующий по качеству участок каталога"
+    }
+   },
+   {
+    "id": "wolf359_citadel.bastion",
+    "name": "Бастион — арсенал и военная верфь",
+    "role": "arsenal_shipyard",
+    "body": "Wolf 359 e (орбита)",
+    "kind": "military_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "wolf359_citadel.wolf_mines",
+    "name": "Рудники пылевого диска",
+    "role": "mine",
+    "body": "Wolf 359 e (орбита)",
+    "kind": "industrial_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   },
+   {
+    "id": "wolf359_citadel.archive_vault",
+    "name": "Хранилище LAST-LIGHT",
+    "role": "intel",
+    "body": "Wolf 359 c",
+    "kind": "military_site",
+    "knowledge": {
+     "status": "PROPOSAL",
+     "visibility": "AUTHOR_TRUTH",
+     "basis": "актив колонии (world.json), размещён на теле каталога"
+    }
+   }
+  ]
+ },
+ "note": "PROPOSAL: key settlements, habitats, industrial and military sites per polity on bodies of the physical catalog (src/assets/data/galaxy_details). Populations are NOT stored here: the lab distributes the model population (Zipf)."
+}

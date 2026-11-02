@@ -34,6 +34,38 @@
       "canon": {
         "id": "GENESIS-1",
         "status": "provisional",
+        "knowledge": {
+          "status": "PROPOSAL",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "реконсиляция A2 (идея старой ветки, числа Claude)"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год не найден в источниках миссии"
+          },
+          "population": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "не найдено в источниках"
+          },
+          "arrival_population": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "модель вахты/крио (реконсиляция C2)"
+          },
+          "fate": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "GENESIS-1",
           "SpaceArk",
@@ -109,6 +141,38 @@
       "canon": {
         "id": "CELESTIAL-DESTINY-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 06. CELESTIAL-DESTINY-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "пересчитано по каталогу и потолку скорости; авторское 2172"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Небесная Судьба",
           "Целестиал Дестини-1"
@@ -182,6 +246,38 @@
       "canon": {
         "id": "GREEN-ARK-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 07. GREEN-ARK-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "пересчитано по каталогу и потолку скорости; авторское 2190"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "PROPOSAL",
+            "visibility": "AUTHOR_TRUTH",
+            "basis": "скрытая правда (реконсиляция): симбионт из корабельного микробиома"
+          }
+        },
         "aliases": [
           "Грин Арк-1",
           "Gaia-1"
@@ -257,6 +353,38 @@
       "canon": {
         "id": "DHARMA-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 08. DHARMA-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "пересчитано по каталогу и потолку скорости; авторское 2210"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Дхарма-1",
           "Новая Карма"
@@ -331,6 +459,38 @@
       "canon": {
         "id": "IRON-SHIELD-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 09. IRON-SHIELD-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "пересчитано по каталогу и потолку скорости; авторское 2185"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Айрон Шилд-1",
           "Цитадель"
@@ -404,6 +564,38 @@
       "canon": {
         "id": "AL-QUDS-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 10. AL-QUDS-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "пересчитано по каталогу и потолку скорости; авторское 2195"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Аль-Кудс-1",
           "Новая Мекка"
@@ -477,6 +669,38 @@
       "canon": {
         "id": "NEXT-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 11. NEXT-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "пересчитано по каталогу и потолку скорости; авторское 2230"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Некст-1",
           "Культ Машины"
@@ -550,6 +774,38 @@
       "canon": {
         "id": "EUROPA-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 12. EUROPA-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "пересчитано по каталогу и потолку скорости; авторское 2325"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Европа-1"
         ],
@@ -623,6 +879,38 @@
       "canon": {
         "id": "RESOURCER-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 13. RESOURCER-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в fate.md"
+          },
+          "arrival_population": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "модель вахты/крио (реконсиляция C2)"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Ресурсер-1",
           "Шахта Альфа"
@@ -696,6 +984,38 @@
       "canon": {
         "id": "NEW-JERUSALEM-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 14. NEW-JERUSALEM-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в fate.md"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Новый Иерусалим",
           "Святой Сион",
@@ -804,6 +1124,38 @@
       "canon": {
         "id": "ODYSSEY-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 16. ODYSSEY-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в fate.md"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Одиссей",
           "Третья Эллада"
@@ -876,6 +1228,28 @@
       "canon": {
         "id": "NIRVANA-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 17. NIRVANA-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "fate": {
+            "status": "UNKNOWN",
+            "visibility": "AUTHOR_TRUTH",
+            "basis": "неизвестно даже автору"
+          }
+        },
         "aliases": [
           "Нирвана-1",
           "Вечный странник"
@@ -983,6 +1357,38 @@
       "canon": {
         "id": "AMAZONIA-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 19. AMAZONIA-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "пересчитано по каталогу и потолку скорости; авторское 2570"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Амазония-1",
           "Затерянный мир"
@@ -1057,6 +1463,38 @@
       "canon": {
         "id": "FREE-VENTURE-1",
         "status": "provisional",
+        "knowledge": {
+          "status": "PROPOSAL",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "реконсиляция A5 (имя есть у автора, паспорт — Claude)"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год не найден в источниках миссии"
+          },
+          "population": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "не найдено в источниках"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Фри-Венчур-1",
           "Пояс Раздора"
@@ -1129,6 +1567,38 @@
       "canon": {
         "id": "CELESTIAL-DESTINY-2",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 21. CELESTIAL-DESTINY-2.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "не найдено в источниках"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Небесная Твердыня",
           "Небесная твердыня-2",
@@ -1202,6 +1672,28 @@
       "canon": {
         "id": "IRON-SHIELD-2",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 22. IRON-SHIELD-2.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "fate": {
+            "status": "UNKNOWN",
+            "visibility": "AUTHOR_TRUTH",
+            "basis": "неизвестно даже автору"
+          }
+        },
         "aliases": [
           "Айрон Шилд-2"
         ],
@@ -1273,6 +1765,38 @@
       "canon": {
         "id": "GAIA-2",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 23. GAIA-2.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 23. GAIA-2.md, fate.md"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "PROPOSAL",
+            "visibility": "AUTHOR_TRUTH",
+            "basis": "скрытая правда (реконсиляция): живые «тихие» и пустой корабль"
+          }
+        },
         "aliases": [
           "Гайя-2",
           "Пустой Сад"
@@ -1343,6 +1867,38 @@
       "canon": {
         "id": "TRADERS-GUILD-1",
         "status": "provisional",
+        "knowledge": {
+          "status": "PROPOSAL",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "реконсиляция A6 (идея старой ветки)"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в generation ships.md (A)"
+          },
+          "population": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "не найдено в источниках"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "TRADER'S-GUILD-1",
           "Первый гипердоговор (legacy name)"
@@ -1414,6 +1970,38 @@
       "canon": {
         "id": "DHARMA-2",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 18. DHARMA-2.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "не найдено в источниках"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Дхарма-2",
           "Новая Индия"
@@ -1487,6 +2075,28 @@
       "canon": {
         "id": "NOMAD-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 25. NOMAD-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Номад-1",
           "Летучий Голландец"
@@ -1558,6 +2168,28 @@
       "canon": {
         "id": "FINAL-ARK-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 26. FINAL-ARK-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Последний Ковчег",
           "Файнал Арк-1"
@@ -1630,6 +2262,28 @@
       "canon": {
         "id": "LEGACY-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 27. LEGACY-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Легаси-1",
           "Архив"
@@ -1700,6 +2354,28 @@
       "canon": {
         "id": "DEEP-SEEK-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год не найден в источниках миссии"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "fate": {
+            "status": "PROPOSAL",
+            "visibility": "AUTHOR_TRUTH",
+            "basis": "скрытая правда (реконсиляция): уничтожен автономным роем CD-2"
+          }
+        },
         "aliases": [
           "Дип-Сик-1",
           "Тишина"
@@ -1773,6 +2449,28 @@
       "canon": {
         "id": "HOMEWARD-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 29. HOMEWARD-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Хоумвард-1",
           "Гармония-2"
@@ -1917,6 +2615,38 @@
       "canon": {
         "id": "LAST-LIGHT-1",
         "status": "provisional",
+        "knowledge": {
+          "status": "PROPOSAL",
+          "visibility": "AUTHOR_TRUTH",
+          "basis": "реконсиляция A8 (идея старой ветки, груз — Claude)"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год не найден в источниках миссии"
+          },
+          "population": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в fate.md"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "PROPOSAL",
+            "visibility": "AUTHOR_TRUTH",
+            "basis": "скрытая правда (реконсиляция): груз: архив Хартий и верительные грамоты Земли"
+          }
+        },
         "aliases": [
           "Последний Свет"
         ],
@@ -1985,6 +2715,28 @@
       "canon": {
         "id": "HYPERION-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 31. HYPERION-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Гиперион-1",
           "Провидцы"
@@ -2056,6 +2808,28 @@
       "canon": {
         "id": "FAREWELL-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 30. FAREWELL-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "fate": {
+            "status": "UNKNOWN",
+            "visibility": "AUTHOR_TRUTH",
+            "basis": "неизвестно даже автору"
+          }
+        },
         "aliases": [
           "Фэруэлл-1",
           "Последняя Поэма"
@@ -2111,6 +2885,38 @@
       "canon": {
         "id": "MAYFLOWER-2",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 01. Мэйфлауэр II.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 01. Мэйфлауэр II.md, fate.md"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Мэйфлауэр II",
           "MAYFLOWER-2"
@@ -2170,6 +2976,38 @@
       "canon": {
         "id": "SVAROG-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 02. SVAROG-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в fate.md"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Сварог"
         ],
@@ -2226,6 +3064,38 @@
       "canon": {
         "id": "TIANHE-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 03. TIANHE-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в fate.md"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Тянь Хэ"
         ],
@@ -2281,6 +3151,28 @@
       "canon": {
         "id": "UBUNTU-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 04. UBUNTU-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "fate": {
+            "status": "UNKNOWN",
+            "visibility": "AUTHOR_TRUTH",
+            "basis": "неизвестно даже автору"
+          }
+        },
         "aliases": [
           "Убунту",
           "Intercontinental Ark of Cooperative Destiny",
@@ -2340,6 +3232,38 @@
       "canon": {
         "id": "HERACLES-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 05. HERACLES-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 05. HERACLES-1.md, fate.md"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Геракл"
         ],
@@ -2396,6 +3320,38 @@
       "canon": {
         "id": "NEW-HELLAS-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 13. NEW-HELLAS-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "пересчитано по каталогу и потолку скорости; авторское 2380"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Новая Эллада (корабль)",
           "Вторая Эллада"
@@ -2452,6 +3408,38 @@
       "canon": {
         "id": "UHURU-2",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 15. UHURU-2.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "не найдено в источниках"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Ухуру-2",
           "Новая Маланд"
@@ -2510,6 +3498,38 @@
       "canon": {
         "id": "FREE-WORLD-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 20. FREE-WORLD-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "пересчитано по каталогу и потолку скорости; авторское 2570"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Свободный мир"
         ],
@@ -2565,6 +3585,28 @@
       "canon": {
         "id": "KEPLER-1",
         "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 24. KEPLER-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
         "aliases": [
           "Кеплер",
           "«идиоты в космосе»"

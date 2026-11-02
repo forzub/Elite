@@ -62,6 +62,8 @@ def canon_block(m, lab, world):
     return {
         "id": m["id"],
         "status": m["canon_status"],
+        "knowledge": m.get("knowledge"),
+        "field_status": m.get("field_status"),
         "aliases": m["aliases"],
         "wave": m["wave"],
         "sponsor": m["sponsor"],

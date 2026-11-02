@@ -52,6 +52,12 @@ def raw_system(d):
     agri = max([x["resources"]["habitability"]["agriculture_potential"] for x in docs
                 if x.get("resources") and x["resources"]["habitability"]["settlement_class"] != "orbital_only"] or [0.0])
     settle = max([ra.settlement(x) for x in alld] or [-1.0])
+    # habitat sites (demography.py): solid bodies where a sealed / suit settlement is possible,
+    # minor bodies (moons, dwarf planets) for burrowed habitats; settle scores of the best sites
+    sites = sorted([(ra.settlement(x), x.get("designation") or x["id"], x.get("kind"), x["resources"]["habitability"]["settlement_class"])
+                    for x in docs if x.get("resources") and x["resources"]["habitability"]["settlement_class"] != "orbital_only"],
+                   key=lambda t: (-t[0], t[1]))
+    n_minor = sum(1 for b in docs if b.get("kind") in ("moon", "dwarf_planet"))
     return dict(
         id=sysdoc["id"], name=sysdoc["name"],
         pos=(pos["x"], pos["y"], pos["z"]),
@@ -62,6 +68,9 @@ def raw_system(d):
         metals_s=max([ra.score(x, ra.STRUCTURAL) for x in alld] or [0]),
         strategic_s=max([ra.score(x, ra.STRATEGIC) for x in alld] or [0]),
         he3_kg=he3, agri=agri, settle=settle,
+        sites=[dict(score=round(sc, 3), body=nm, kind=k, cls=cl) for sc, nm, k, cl in sites],
+        n_sealed=sum(1 for t in sites if t[3] == "sealed_habitat"), n_open=sum(1 for t in sites if t[3] in ("pressure_suit", "open_air")),
+        n_minor=n_minor, bodies=sorted((b.get("designation") or b["id"], b.get("kind"), b["physical"]["body_class"]) for b in docs),
     )
 
 

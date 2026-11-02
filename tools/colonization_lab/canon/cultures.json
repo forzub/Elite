@@ -1,6 +1,7 @@
 {
   "schema": "elite.colonization_lab.cultures.v1",
   "note": "Founding-culture tendencies (0..100). HYPOTHESES built from self-image + neighbour caricature + jokes + daily routine + institutions of the launch era (2080-2600). NOT genetics, NOT destiny: they are priors of a population, filtered by mission recruitment and then changed by the voyage. Axis semantics: Notes/Colonycore/COLONYCORE_V2.md.",
+  "knowledge": {"status": "PROPOSAL", "visibility": "PUBLIC_RECORD", "basis": "культурные априори — гипотезы Claude (Colonycore v2), не канон автора"},
   "axes": [
     "clock_time", "midday_pause", "night_life", "rule_bending", "formalism", "power_distance",
     "irony_to_power", "kin_first", "hospitality", "privacy", "open_conflict", "say_no",

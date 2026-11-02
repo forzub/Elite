@@ -2524,7 +2524,7 @@
    "good": null,
    "id": "archive_vault",
    "importance": 0.4,
-   "name": "Хранилище LAST-LIGHT",
+   "name": "Закрытый архив Совета (Хранилище)",
    "output": 0.0,
    "owner": "wolf359_citadel",
    "range": [
@@ -2695,7 +2695,7 @@
      "source": "anchor",
      "status": "CANON",
      "tech_state": 0.945,
-     "text": "Великий крио-сбой блока 7: 2 500 погибших во сне. Официально — саботаж каторжников; скрытая причина — Совет урезал бюджет запчастей контуров охлаждения в 2171",
+     "text": "Великий крио-сбой блока 7: 2 500 погибших во сне. Официальная версия — саботаж каторжников",
      "visibility": "PUBLIC_RECORD",
      "year": 2180
     },
@@ -2709,7 +2709,7 @@
      "source": "anchor",
      "status": "PROPOSAL",
      "tech_state": null,
-     "text": "deferred_maintenance",
+     "text": "deferred_maintenance: Совет урезал бюджет запчастей контуров охлаждения в 2171, вину переложили на каторжников",
      "visibility": "AUTHOR_TRUTH",
      "year": 2180
     },
@@ -4008,8 +4008,22 @@
      "source": "anchor (после прибытия/потери)",
      "status": "CANON",
      "tech_state": 0.922,
-     "text": "Нейроактивный симбионт из корабельного микробиома распространился по всем контурам: 70 % «заражены покоем»",
+     "text": "Нейроактивный агент распространился по всем контурам: 70 % «заражены покоем»; публично происхождение не установлено",
      "visibility": "PUBLIC_RECORD",
+     "year": 2480
+    },
+    {
+     "awake": 11500,
+     "cryo": 0,
+     "deaths": 0,
+     "event": "ecology_failure.hidden_truth",
+     "population": 11500,
+     "regime": null,
+     "source": "anchor",
+     "status": "PROPOSAL",
+     "tech_state": null,
+     "text": "симбионт вырос из корабельного микробиома («успокаивающий» штамм биотех-партнёра)",
+     "visibility": "AUTHOR_TRUTH",
      "year": 2480
     },
     {
@@ -6698,7 +6712,7 @@
     "fate.md §11",
     "generation_ships.json UHURU-1"
    ],
-   "sponsor": "African Union (second ship; UHURU-1 hull lost in a 2276 dock fire)",
+   "sponsor": "African Union (second ship of the programme; why UHURU-1 never flew is a PROPOSAL, see anchors)",
    "start": {
     "awake": 9000,
     "awake_watch": 9000,
@@ -40594,9 +40608,9 @@
  "schema": "elite.colonization_lab.lore_facts.v1",
  "seed": 3126,
  "status_counts": {
-  "AUTHOR_TRUTH": 17,
+  "AUTHOR_TRUTH": 18,
   "CANON": 309,
-  "PROPOSAL": 289,
+  "PROPOSAL": 290,
   "PUBLIC_RECORD": 590,
   "UNKNOWN": 9
  },

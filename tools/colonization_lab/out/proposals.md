@@ -2,7 +2,7 @@
 
 Генерируется `lab.py` из статусов `canon/*.json` (knowledge.py). CANON = есть в заметках автора; PROPOSAL = добавлено/пересчитано Claude или является результатом модели; UNKNOWN = намеренно без ответа. Видимость: PUBLIC_RECORD / AUTHOR_TRUTH.
 
-Счётчики: AUTHOR_TRUTH 17, CANON 309, PROPOSAL 289, PUBLIC_RECORD 590, UNKNOWN 9
+Счётчики: AUTHOR_TRUTH 18, CANON 309, PROPOSAL 290, PUBLIC_RECORD 590, UNKNOWN 9
 
 Все выходы модели (население 3126, экономика, коридоры, технологии) — PROPOSAL (model) и в этот список не перечисляются поштучно.
 
@@ -246,11 +246,11 @@
 | jump_technology/eps_eri_strife@2862 | PROPOSAL | PUBLIC_RECORD | пиратство после утечки 2862 | пиратство после утечки 2862 |
 | jump_technology/proxima_outpost@2862 | PROPOSAL | PUBLIC_RECORD | отказ от лицензии (CANON); пиратские копии после 2862 — допущение | отказ от лицензии (CANON); пиратские копии после 2862 — допущение |
 
-## missions (85)
+## missions (86)
 
 | путь | статус | видимость | основание | что |
 |---|---|---|---|---|
-| missions/MAYFLOWER-2/anchors/2180/sabotage_alleged/hidden_truth | PROPOSAL | AUTHOR_TRUTH | объяснение реконсиляции; публично — официальная версия | deferred_maintenance |
+| missions/MAYFLOWER-2/anchors/2180/sabotage_alleged/hidden_truth | PROPOSAL | AUTHOR_TRUTH | объяснение реконсиляции; публично — официальная версия | deferred_maintenance: Совет урезал бюджет запчастей контуров охлаждения в 2171, вину переложили на каторжников |
 | missions/GENESIS-1 | PROPOSAL | PUBLIC_RECORD | реконсиляция A2 (идея старой ветки, числа Claude) | SpaceArk consortium: Singapore + Shanghai diaspora capital + Pacific tech, engineers who left both Beijing and Washingto |
 | missions/GENESIS-1/arrival_population | PROPOSAL | PUBLIC_RECORD | модель вахты/крио (реконсиляция C2) | arrival_population |
 | missions/GENESIS-1/arrival_year | PROPOSAL | PUBLIC_RECORD | не найдено в источниках | arrival_year |
@@ -266,6 +266,7 @@
 | missions/GREEN-ARK-1/arrival_year | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2190 | arrival_year |
 | missions/GREEN-ARK-1/fate | PROPOSAL | AUTHOR_TRUTH | скрытая правда (реконсиляция): симбионт из корабельного микробиома | fate |
 | missions/GREEN-ARK-1/anchors/2270/arrival | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2190 | GJ 832: сад-купола на GJ 832 b I и в поясе («Гайя-Прим») |
+| missions/GREEN-ARK-1/anchors/2480/ecology_failure/hidden_truth | PROPOSAL | AUTHOR_TRUTH | объяснение реконсиляции; публично — официальная версия | симбионт вырос из корабельного микробиома («успокаивающий» штамм биотех-партнёра) |
 | missions/GREEN-ARK-1/anchors/2510/quarantine | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Тяньхэ объявляет зону «Филоморфоз» |
 | missions/DHARMA-1/arrival_year | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2210 | arrival_year |
 | missions/DHARMA-1/anchors/2183/class_conflict | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Бунт шудр: доступ к генному массиву, конец неприкасаемости; подавлен кшатриями |

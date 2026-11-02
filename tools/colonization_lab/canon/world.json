@@ -811,7 +811,7 @@
     {
      "id": "archive_vault",
      "type": "intel",
-     "name": "Хранилище LAST-LIGHT",
+     "name": "Закрытый архив Совета (Хранилище)",
      "importance": 0.4,
      "good": null
     }

@@ -254,11 +254,11 @@
 | jump_technology/eps_eri_strife@2862 | пиратство после утечки 2862 | пиратство после утечки 2862 | PROPOSAL · PUBLIC |
 | jump_technology/proxima_outpost@2862 | отказ от лицензии (CANON); пиратские копии после 2862 — допущение | отказ от лицензии (CANON); пиратские копии после 2862 — допущение | PROPOSAL · PUBLIC |
 
-### missions (81)
+### missions (82)
 
 | Путь | Что | Основание | Статус |
 |---|---|---|---|
-| missions/MAYFLOWER-2/anchors/2180/sabotage_alleged/hidden_truth | deferred_maintenance | объяснение реконсиляции; публично — официальная версия | PROPOSAL · AUTHOR TRUTH |
+| missions/MAYFLOWER-2/anchors/2180/sabotage_alleged/hidden_truth | deferred_maintenance: Совет урезал бюджет запчастей контуров охлаждения в 2171, вину переложили на каторжников | объяснение реконсиляции; публично — официальная версия | PROPOSAL · AUTHOR TRUTH |
 | missions/GENESIS-1 | SpaceArk consortium: Singapore + Shanghai diaspora capital + Pacific tech, engineers who left both Beijing and Washington | реконсиляция A2 (идея старой ветки, числа Claude) | PROPOSAL · PUBLIC |
 | missions/GENESIS-1/arrival_population | arrival_population | модель вахты/крио (реконсиляция C2) | PROPOSAL · PUBLIC |
 | missions/GENESIS-1/arrival_year | arrival_year | не найдено в источниках | PROPOSAL · PUBLIC |
@@ -273,6 +273,7 @@
 | missions/GREEN-ARK-1/arrival_year | arrival_year | пересчитано по каталогу и потолку скорости; авторское 2190 | PROPOSAL · PUBLIC |
 | missions/GREEN-ARK-1/fate | fate | скрытая правда (реконсиляция): симбионт из корабельного микробиома | PROPOSAL · AUTHOR TRUTH |
 | missions/GREEN-ARK-1/anchors/2270/arrival | GJ 832: сад-купола на GJ 832 b I и в поясе («Гайя-Прим») | пересчитано по каталогу и потолку скорости; авторское 2190 | PROPOSAL · PUBLIC |
+| missions/GREEN-ARK-1/anchors/2480/ecology_failure/hidden_truth | симбионт вырос из корабельного микробиома («успокаивающий» штамм биотех-партнёра) | объяснение реконсиляции; публично — официальная версия | PROPOSAL · AUTHOR TRUTH |
 | missions/GREEN-ARK-1/anchors/2510/quarantine | Тяньхэ объявляет зону «Филоморфоз» | год не найден в источниках миссии | PROPOSAL · PUBLIC |
 | missions/DHARMA-1/arrival_year | arrival_year | пересчитано по каталогу и потолку скорости; авторское 2210 | PROPOSAL · PUBLIC |
 | missions/DHARMA-1/anchors/2183/class_conflict | Бунт шудр: доступ к генному массиву, конец неприкасаемости; подавлен кшатриями | год не найден в источниках миссии | PROPOSAL · PUBLIC |

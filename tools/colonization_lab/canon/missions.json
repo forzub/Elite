@@ -118,13 +118,13 @@
     {
      "year": 2180,
      "type": "sabotage_alleged",
-     "text": "Великий крио-сбой блока 7: 2 500 погибших во сне. Официально — саботаж каторжников; скрытая причина — Совет урезал бюджет запчастей контуров охлаждения в 2171",
+     "text": "Великий крио-сбой блока 7: 2 500 погибших во сне. Официальная версия — саботаж каторжников",
      "deaths": 2500,
      "effects": {
       "coerced.grievance": 30,
       "engineers.power": 10
      },
-     "hidden_truth": "deferred_maintenance",
+     "hidden_truth": "deferred_maintenance: Совет урезал бюджет запчастей контуров охлаждения в 2171, вину переложили на каторжников",
      "hidden_truth_knowledge": {
       "status": "PROPOSAL",
       "visibility": "AUTHOR_TRUTH",
@@ -1227,7 +1227,13 @@
     {
      "year": 2480,
      "type": "ecology_failure",
-     "text": "Нейроактивный симбионт из корабельного микробиома распространился по всем контурам: 70 % «заражены покоем»",
+     "text": "Нейроактивный агент распространился по всем контурам: 70 % «заражены покоем»; публично происхождение не установлено",
+     "hidden_truth": "симбионт вырос из корабельного микробиома («успокаивающий» штамм биотех-партнёра)",
+     "hidden_truth_knowledge": {
+      "status": "PROPOSAL",
+      "visibility": "AUTHOR_TRUTH",
+      "basis": "объяснение реконсиляции; публично — официальная версия"
+     },
      "knowledge": {
       "status": "CANON",
       "visibility": "PUBLIC_RECORD",
@@ -2512,7 +2518,7 @@
    ],
    "wave": "III",
    "canon_status": "canon",
-   "sponsor": "African Union (second ship; UHURU-1 hull lost in a 2276 dock fire)",
+   "sponsor": "African Union (second ship of the programme; why UHURU-1 never flew is a PROPOSAL, see anchors)",
    "cultures": {
     "west_african": 0.4,
     "east_african": 0.35,

@@ -1,5 +1,5 @@
 # ELITE — PROJECT STATE (single canonical continuation document)
-Updated: 2026-11-01, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONLY**.
+Updated: 2026-11-02, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONLY**.
 
 ## Hard rules
 - This file is the ONLY active continuation state. No alternative state /
@@ -1166,6 +1166,55 @@ code); in game = GAME START + traffic live; player station capture = see
 - Next: user visual review of the dock + traffic; manual (non-autopilot)
   docking request via comm UI; traffic shells as physical obstacles for the
   player planner; dock collision vs captured ship path audit.
+
+### Colonization: causal demography + Notes/Lore reference (user order 2026-11-02)
+Status: PROPOSAL, offline-verified (deterministic lab), NOT author-accepted.
+- Demography (`tools/colonization_lab/demography.py`): population is no longer
+  a target. Yearly 5-year age groups; fertility from child economics (living
+  space = built volume in 3 tiers: domes/lava tubes, moon/belt workings,
+  rotating cylinders; child labour value = (1 - automation) x labour shortage;
+  pensions, education cost, child mortality), family norm lagging ~45 y,
+  religious subculture, regime policy, birth licences, tech capability in 12
+  domains (critical mass of specialists, degradation, cannibalisation),
+  migration only after 2750 over the beacon graph (Earth windows).
+  Result: Earth 3126 6.0 bn (peak 13.35 bn 2100, collapse 2470-2540), off-Sol
+  183.4 M (old targets 26.8 M); largest polities 15-33 M (New Karma 32.7,
+  Citadel 23.4, Strife Belt 21.5, Red Outpost 20.6, Harmony 18.7). Strong
+  sensitivity: without assumptions F9 (inherited family propensity) + F10
+  (automated childcare) off-Sol 28 M, Earth 0.22 bn. 18 colonies differ from
+  the author's numbers by > 2x (kept as `pop_3126_authored`, decision open).
+  Weak spots: e0 saturates at 94 and automation at 0.95 everywhere (late
+  colonies too uniform); research notes written from memory, no live web search.
+- Economy: freight priced by mass; interstellar bulk share 51.1 % -> 15.8 %
+  of trade value; 112 flows vanished (water/metal mostly pointless: 1e22-1e25
+  kg volatiles per system), 179 appeared (electronics, He-3 into giant-less
+  systems, precision equipment, isotopes, jump cores, biotech). Earth Return:
+  Earth 33x population, 58x industrial index, but no own jump cores; Cognium
+  controls the beacon network -> the war is about the network.
+- Knowledge model: CANON / PROPOSAL x PUBLIC_RECORD / AUTHOR_TRUTH + UNKNOWN on
+  every record (615 + 153 settlement proposals); list `out/proposals.md`,
+  `Notes/Lore/AUTHOR/PROPOSALS.md`.
+- `Notes/Lore/` (117 generated + RESEARCH.md): 35 ship dossiers (+ hidden
+  LAST-LIGHT-1 in AUTHOR/), 34 colony dossiers, 25 settlement system files
+  (152 public settlement records), ECONOMY (assets, mines, shipyards, trade
+  routes, dependencies, technology), DEMOGRAPHY, POLITICS, TIMELINE, AUTHOR
+  (hidden canon, missing ships, quest truths). All number tables are
+  generated from `out/lore_facts.json` by `tools/colonization_lab/lore_md.py`
+  (--write / --check: stale blocks, unknown ids, broken links, conflicting
+  population numbers in prose, hidden missions in public files); narrative by
+  hand with ~734 inline [PROPOSAL] tags. `Notes/History/COLONIZATION_CANON_3126.md`
+  marked superseded.
+- Fixed after writing: hidden-truth leaks in generated public rows
+  (MAYFLOWER-2 2180 cause, GREEN-ARK-1 2480 symbiont origin, UHURU-2 sponsor
+  field stating the PROPOSAL dock fire, public asset named after LAST-LIGHT).
+- Gates: lab two runs byte-identical and equal to committed out/,
+  --check-dataset OK, --check-lore OK, lore_md --check OK, second --write
+  changes nothing.
+- Open author decisions: accept F9/F10; model vs author populations (18
+  conflicts); Earth peak / 10 bn in 2500 checkpoints; can Earth make jump
+  cores; Citadel as main jump-core seller; settlement names; catalog vs old
+  notes (habitable "super-earths" mostly hot/sub-Neptune -> colonies on moons,
+  ice worlds, workings); [PROPOSAL] tag style (start vs end of sentence).
 
 ## Next step
 - After the user's review: the separate stage INTERSTELLAR NAVIGATION

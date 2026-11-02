@@ -1,0 +1,137 @@
+# Пост прослушивания у Барнарда (Скьёльдбург)
+
+<!-- GENERATED:legend BEGIN -->
+> **Статусы строк:** `CANON` — есть в заметках автора (generation ships/*, fate.md, history.md, каталог); `PROPOSAL` — добавлено или пересчитано Claude / результат модели; `UNKNOWN` — намеренно без ответа, даже для автора. **Видимость:** `PUBLIC` — мир 3126 это знает или может знать; `AUTHOR TRUTH` — скрытая правда автора.
+>
+> Блоки `GENERATED` пишет только `tools/colonization_lab/lore_md.py` из машинного канона; текст вне них — ручной и сохраняется.
+<!-- GENERATED:legend END -->
+
+## Общие данные
+
+<!-- GENERATED:summary BEGIN -->
+| Поле | Значение | Статус |
+|---|---|---|
+| ID | `barnard_post` | PROPOSAL · PUBLIC |
+| Тип | аванпост | PROPOSAL · PUBLIC |
+| Полития | Скьёльдбург | PROPOSAL · PUBLIC |
+| Владелец | [Цитадель](wolf359_citadel.md) | PROPOSAL · PUBLIC |
+| Система | Barnard's Star (#2) | PROPOSAL · PUBLIC |
+| Основана | 2860 | PROPOSAL · PUBLIC |
+| Миссии-основатели | — | PROPOSAL · PUBLIC |
+| Режим 3126 | — | PROPOSAL · PUBLIC |
+| Население 3126 (модель) | 270 | PROPOSAL · PUBLIC (модель) |
+| Население 3126 (авторское) | 800 | PROPOSAL · PUBLIC |
+| Модель / автор | 0.34 | PROPOSAL · PUBLIC (модель) |
+| Миграция 2750–3126: приток / отток | 0 / 0 | PROPOSAL · PUBLIC (модель) |
+| Эпидемий (модель) | 2 | PROPOSAL · PUBLIC (модель) |
+| Назначение | наблюдение за Солом | PROPOSAL · PUBLIC |
+| Совладельцы | Цитадель | PROPOSAL · PUBLIC |
+<!-- GENERATED:summary END -->
+
+## Почему здесь
+
+<!-- NARRATIVE:why_there -->
+_TODO: почему миссия выбрала эту систему и что она обещала; что в системе реально есть (см. ресурсы и поселения ниже)._
+
+## Прибытие и первое поселение
+
+<!-- NARRATIVE:arrival -->
+_TODO: первые годы после высадки: где жили, что сломалось, кто взял власть._
+
+## События колонии
+
+<!-- GENERATED:events BEGIN -->
+| Год | Событие | Люди | Кто / куда | Статус |
+|---|---|---|---|---|
+| 2860 | founded | 50 | wolf359_citadel | PROPOSAL · PUBLIC |
+<!-- GENERATED:events END -->
+
+## Население: контрольные точки
+
+<!-- GENERATED:checkpoints BEGIN -->
+| Год | Население | СКР | e0 / смертн. ‰ | Чистая миграция ‰ | Фаза | Урбанизация | Хабитат | Тех. индекс | Автоматизация | Статус |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2860 | 52 | 2.50 | 94 / 0.3 | 0.0 | stagnation | 0.00 | купола, лавовые трубки и укрытые поселения на твёрдых телах | 1.15 | 0.73 | PROPOSAL · PUBLIC (модель) |
+| 2900 | 95 | 2.44 | 83 / 9.0 | 0.0 | growth | 0.00 | купола, лавовые трубки и укрытые поселения на твёрдых телах | 0.87 | 0.58 | PROPOSAL · PUBLIC (модель) |
+| 2950 | 119 | 3.21 | 70 / 12.8 | 0.0 | growth | 0.00 | купола, лавовые трубки и укрытые поселения на твёрдых телах | 0.55 | 0.38 | PROPOSAL · PUBLIC (модель) |
+| 3000 | 164 | 2.69 | 65 / 13.2 | 0.0 | growth | 0.00 | купола, лавовые трубки и укрытые поселения на твёрдых телах | 0.41 | 0.29 | PROPOSAL · PUBLIC (модель) |
+| 3050 | 201 | 2.98 | 64 / 14.8 | 0.0 | growth | 0.00 | купола, лавовые трубки и укрытые поселения на твёрдых телах | 0.36 | 0.26 | PROPOSAL · PUBLIC (модель) |
+| 3100 | 246 | 2.79 | 63 / 14.8 | 0.0 | growth | 0.00 | купола, лавовые трубки и укрытые поселения на твёрдых телах | 0.34 | 0.25 | PROPOSAL · PUBLIC (модель) |
+| 3126 | 270 | 2.84 | 62 / 15.1 | 0.0 | growth | 0.00 | купола, лавовые трубки и укрытые поселения на твёрдых телах | 0.34 | 0.24 | PROPOSAL · PUBLIC (модель) |
+<!-- GENERATED:checkpoints END -->
+
+## История роста
+
+<!-- NARRATIVE:growth -->
+_TODO: как росли и почему (жильё, рождаемость, миграция); числа — только из таблицы выше._
+
+## Технологии: сохранено / утрачено / восстановлено
+
+<!-- GENERATED:tech BEGIN -->
+| Область | Уровень 3126 | Состояние | Статус |
+|---|---|---|---|
+| automation | 0.15 | утрачена | PROPOSAL · PUBLIC (модель) |
+| bio | 0.41 | утрачена | PROPOSAL · PUBLIC (модель) |
+| construction | 0.42 | утрачена | PROPOSAL · PUBLIC (модель) |
+| electronics | 0.18 | утрачена | PROPOSAL · PUBLIC (модель) |
+| energy | 0.42 | утрачена | PROPOSAL · PUBLIC (модель) |
+| extraction | 0.42 | утрачена | PROPOSAL · PUBLIC (модель) |
+| jump | 0.75 | none | PROPOSAL · PUBLIC (модель) |
+| manufacturing | 0.41 | утрачена | PROPOSAL · PUBLIC (модель) |
+| metallurgy | 0.41 | утрачена | PROPOSAL · PUBLIC (модель) |
+| military | 0.41 | утрачена | PROPOSAL · PUBLIC (модель) |
+| research | 0.24 | утрачена | PROPOSAL · PUBLIC (модель) |
+| shipbuilding | 0.24 | утрачена | PROPOSAL · PUBLIC (модель) |
+
+Минимум автоматизации: 0.24 в 3126 году (`PROPOSAL · PUBLIC (модель)`).
+<!-- GENERATED:tech END -->
+
+## Экономика 3126
+
+<!-- GENERATED:economy BEGIN -->
+Нет экономики 3126 в данных (единица слишком мала или без истории).
+<!-- GENERATED:economy END -->
+
+## Главные поселения
+
+<!-- GENERATED:settlements BEGIN -->
+| Поселение | Роль | Тело / орбита | Население | Статус |
+|---|---|---|---|---|
+| Пост прослушивания у Барнарда | столица | Barnard's Star j | 125 | PROPOSAL · PUBLIC |
+| Barnard's Star h — поселение | поселение | Barnard's Star h | 62 | PROPOSAL · PUBLIC |
+| Barnard's Star k — поселение | поселение | Barnard's Star k | 42 | PROPOSAL · PUBLIC |
+
+Реестр системы: [SETTLEMENTS/002_barnard_s_star.md](../SETTLEMENTS/002_barnard_s_star.md)
+<!-- GENERATED:settlements END -->
+
+## Отношения
+
+<!-- GENERATED:relations BEGIN -->
+Нет отношений в данных.
+<!-- GENERATED:relations END -->
+
+## Торговые партнёры
+
+<!-- GENERATED:trade BEGIN -->
+Нет межзвёздных коридоров.
+<!-- GENERATED:trade END -->
+
+## Кризисы и войны
+
+<!-- NARRATIVE:crises -->
+_TODO: эпидемии, войны, расколы, исходы — по событиям выше и POLITICS/WARS.md._
+
+## Смена власти
+
+<!-- NARRATIVE:power -->
+_TODO: как режим пришёл к состоянию 3126 (см. режим в общих данных)._
+
+## Чего боятся
+
+<!-- NARRATIVE:fears -->
+_TODO: внешние и внутренние страхи, в том числе «Возвращение Земли» (POLITICS/EARTH_3126.md)._
+
+## Что может их обрушить
+
+<!-- NARRATIVE:collapse -->
+_TODO: уязвимости: зависимости по импорту, узкие места, демография; опираться на экономику и ECONOMY/STRATEGIC_DEPENDENCIES.md._

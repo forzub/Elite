@@ -29,6 +29,7 @@ python export_runtime.py --write     # регенерировать блок can
 python knowledge.py [--write]        # пересчитать статусы знаний в canon/*.json (идемпотентно)
 python lore.py --propose-settlements # добавить заготовки поселений для новых политий (существующие не трогает)
 python endowment.py                  # индексы ресурсов и площадки поселений из каталога
+python lore_md.py --write             # обновить блоки GENERATED справочника Notes/Lore/ (после lab.py); --check — блоки, id сущностей и числа населения в рассказе сверены с данными
 ```
 
 ## Доказательство детерминизма
@@ -95,5 +96,6 @@ seed=3126 missions=36 colonies=22 earth=5998607890 off_sol=183356200 sha256=0f6b
 3. `python export_runtime.py --write`;
 4. `python lab.py --check-dataset`;
 5. `python lab.py --check-lore`.
+6. `python lore_md.py --write` и `python lore_md.py --check` — справочник `Notes/Lore/` (таблицы генерируются, рассказ вне маркеров сохраняется).
 
 Markdown-справочник пишется вручную по отчёту. Его таблицы населения (§8–§9) **устарели**: там авторские числа, а модель считает население причинно (отчёт §D).

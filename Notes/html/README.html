@@ -1,72 +1,95 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Notes/Lore — справочник лора 3126 — Elite Lore</title><link rel="stylesheet" href="style.css"></head><body><header><a href="index.html">Оглавление</a><a href="../Lore/README.md">Markdown-источник</a></header><main class="wrap"><div class="path">Notes/Lore/README.md</div><article id="content"></article></main><script>window.ELITE_LORE_SOURCE="Notes/Lore/README.md";</script><script src="manifest.js"></script><script type="text/plain" id="md-source"># Notes/Lore — справочник лора 3126
-
-<!-- GENERATED:legend BEGIN -->
-> **Статусы строк:** `CANON` — есть в заметках автора (generation ships/*, fate.md, history.md, каталог); `PROPOSAL` — добавлено или пересчитано Claude / результат модели; `UNKNOWN` — намеренно без ответа, даже для автора. **Видимость:** `PUBLIC` — мир 3126 это знает или может знать; `AUTHOR TRUTH` — скрытая правда автора.
->
-> Блоки `GENERATED` пишет только `tools/colonization_lab/lore_md.py` из машинного канона; текст вне них — ручной и сохраняется.
-<!-- GENERATED:legend END -->
-
-## Назначение
-
-Постоянный справочник лора для разработчиков и сценаристов: корабли поколений, колонии, поселения, экономика, демография и политика к 3126 году. Это **справочник, а не учебник**: каждая таблица выводится из машинного канона, рассказ пишется вокруг неё.
-
-## Иерархия источников
-
-1. **Машинный канон** — `tools/colonization_lab/canon/*.json` и выходы лаборатории `tools/colonization_lab/out/lore_facts.json`, `out/lab_state_3126.json`. Это **факты**. При противоречии прав JSON.
-2. **Notes/Lore** (эта папка) — человеческий справочник. Блоки `GENERATED` выводятся из (1) скриптом и не правятся руками; рассказ (`NARRATIVE`) пишут сценаристы.
-3. **Notes/Lore/AUTHOR/** — скрытая правда и спойлеры (`AUTHOR TRUTH`), предложения на утверждение. Публичные разделы ссылаются туда только с меткой [СПОЙЛЕР].
-4. **Старые заметки** (`Notes/History/generation ships/*`, `Notes/fate.md`, `Notes/History/history.md`, `Notes/History/COLONIZATION_CANON_3126.md`, `WORLD_ECONOMY_AND_TRAFFIC_DESIGN.md`) — исходный материал. Их числа населения устарели.
-
-## Как обновлять и проверять
-
-```bash
-cd tools/colonization_lab
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Notes/Lore — справочник лора 3126 — Elite Lore</title><link rel="stylesheet" href="style.css"></head><body><header><a href="index.html">Оглавление</a></header><main class="wrap"><article id="content">
+<h1 id="noteslore-справочник-лора-3126">Notes/Lore — справочник лора 3126</h1>
+<p>&lt;!-- GENERATED:legend BEGIN --&gt;</p>
+<blockquote><p><strong>Статусы строк:</strong> <code>CANON</code> — есть в заметках автора (generation ships/*, fate.md, history.md, каталог); <code>PROPOSAL</code> — добавлено или пересчитано Claude / результат модели; <code>UNKNOWN</code> — намеренно без ответа, даже для автора. <strong>Видимость:</strong> <code>PUBLIC</code> — мир 3126 это знает или может знать; <code>AUTHOR TRUTH</code> — скрытая правда автора.  Блоки <code>GENERATED</code> пишет только <code>tools/colonization_lab/lore_md.py</code> из машинного канона; текст вне них — ручной и сохраняется.</p></blockquote>
+<p>&lt;!-- GENERATED:legend END --&gt;</p>
+<h2 id="назначение">Назначение</h2>
+<p>Постоянный справочник лора для разработчиков и сценаристов: корабли поколений, колонии, поселения, экономика, демография и политика к 3126 году. Это <strong>справочник, а не учебник</strong>: каждая таблица выводится из машинного канона, рассказ пишется вокруг неё.</p>
+<h2 id="иерархия-источников">Иерархия источников</h2>
+<ol>
+<li><strong>Машинный канон</strong> — <code>tools/colonization_lab/canon/*.json</code> и выходы лаборатории <code>tools/colonization_lab/out/lore_facts.json</code>, <code>out/lab_state_3126.json</code>. Это <strong>факты</strong>. При противоречии прав JSON.</li>
+<li><strong>Notes/Lore</strong> (эта папка) — человеческий справочник. Блоки <code>GENERATED</code> выводятся из (1) скриптом и не правятся руками; рассказ (<code>NARRATIVE</code>) пишут сценаристы.</li>
+<li><strong>Notes/Lore/AUTHOR/</strong> — скрытая правда и спойлеры (<code>AUTHOR TRUTH</code>), предложения на утверждение. Публичные разделы ссылаются туда только с меткой [СПОЙЛЕР].</li>
+<li><strong>Старые заметки</strong> (<code>Notes/History/generation ships/*</code>, <code>Notes/fate.md</code>, <code>Notes/History/history.md</code>, <code>Notes/History/COLONIZATION_CANON_3126.md</code>, <code>WORLD_ECONOMY_AND_TRAFFIC_DESIGN.md</code>) — исходный материал. Их числа населения устарели.</li>
+</ol>
+<h2 id="как-обновлять-и-проверять">Как обновлять и проверять</h2>
+<pre><code class="language-bash">cd tools/colonization_lab
 python lab.py                 # пересчитать лабораторию (out/)
 python lore_md.py --write     # обновить блоки GENERATED (текст вне блоков не трогается)
-python lore_md.py --check     # блоки совпадают с данными, ссылки на сущности существуют, рассказ не спорит с населением
-```
-
-Правила для сценариста:
-- писать только в секциях `NARRATIVE` и вообще вне маркеров `GENERATED`; строку `_TODO: ..._` удалить, когда секция написана;
-- числа населения в рассказе — только из таблиц (проверка сверяет строки с «млн / млрд / тыс.» и именем сущности); чтобы сознательно процитировать устаревшее число, добавить в строку `lore-check: ignore`;
-- ссылки на сущности — ссылками на файлы досье или id в обратных кавычках; неизвестный id ломает проверку;
-- `AUTHOR TRUTH` не цитировать вне `AUTHOR/`; `UNKNOWN` не заполнять ответом.
-
-## Счётчики статусов машинного канона
-
-<!-- GENERATED:counts BEGIN -->
-`AUTHOR TRUTH` 18, `CANON` 309, `PROPOSAL` 290, `PUBLIC` 590, `UNKNOWN` 9. Схема данных: `elite.colonization_lab.lore_facts.v1`, seed 3126, сценарий `baseline`.
-<!-- GENERATED:counts END -->
-
-## Оглавление
-
-<!-- GENERATED:index BEGIN -->
-| Папка | Файлов | Файлы |
-|---|---|---|
-| [AUTHOR/](AUTHOR/HIDDEN_CANON.md) | 4 | [HIDDEN_CANON.md](AUTHOR/HIDDEN_CANON.md), [MISSING_SHIPS.md](AUTHOR/MISSING_SHIPS.md), [PROPOSALS.md](AUTHOR/PROPOSALS.md), [QUEST_TRUTHS.md](AUTHOR/QUEST_TRUTHS.md); AUTHOR/SHIPS/ — 1 скрыт. досье [СПОЙЛЕР] |
-| [COLONIES/](COLONIES/INDEX.md) | 35 | см. INDEX.md |
-| [DEMOGRAPHY/](DEMOGRAPHY/MODEL.md) | 2 | [MODEL.md](DEMOGRAPHY/MODEL.md), [POPULATION_3126.md](DEMOGRAPHY/POPULATION_3126.md) |
-| [ECONOMY/](ECONOMY/INDUSTRIAL_ASSETS.md) | 6 | [INDUSTRIAL_ASSETS.md](ECONOMY/INDUSTRIAL_ASSETS.md), [MINES.md](ECONOMY/MINES.md), [SHIPYARDS.md](ECONOMY/SHIPYARDS.md), [STRATEGIC_DEPENDENCIES.md](ECONOMY/STRATEGIC_DEPENDENCIES.md), [TECHNOLOGY.md](ECONOMY/TECHNOLOGY.md), [TRADE_ROUTES.md](ECONOMY/TRADE_ROUTES.md) |
-| [POLITICS/](POLITICS/EARTH_3126.md) | 3 | [EARTH_3126.md](POLITICS/EARTH_3126.md), [RELATIONS.md](POLITICS/RELATIONS.md), [WARS.md](POLITICS/WARS.md) |
-| [SETTLEMENTS/](SETTLEMENTS/INDEX.md) | 26 | см. INDEX.md |
-| [SHIPS/](SHIPS/INDEX.md) | 36 | см. INDEX.md |
-| [TIMELINE/](TIMELINE/EARTH_AND_EXODUS.md) | 3 | [EARTH_AND_EXODUS.md](TIMELINE/EARTH_AND_EXODUS.md), [HYPERDRIVE_TIMELINE.md](TIMELINE/HYPERDRIVE_TIMELINE.md), [MASTER_TIMELINE.md](TIMELINE/MASTER_TIMELINE.md) |
-<!-- GENERATED:index END -->
-
-## Пробелы данных
-
-<!-- GENERATED:gaps BEGIN -->
-- Корабли: в каноне нет полей размеров, двигателя, энергетики и груза — только заявленная масса (досье) и расчёт physics.py; у полей когорт, мотивов, политики рождений нет собственного статуса (наследуется от миссии).
-- Нет расчёта physics.py: IRON-SHIELD-2, LEGACY-1, HOMEWARD-1, HYPERION-1.
-- Нет прибытия: UBUNTU-1, NIRVANA-1, IRON-SHIELD-2, NOMAD-1, FINAL-ARK-1, LEGACY-1, DEEP-SEEK-1, KEPLER-1, HOMEWARD-1, FAREWELL-1, HYPERION-1.
-- Цель вне каталога или не задана: NOMAD-1, KEPLER-1.
-- Скрытые миссии (AUTHOR TRUTH, 1) в этот список не входят — см. AUTHOR/MISSING_SHIPS.md.
-- Единицы без экономики 3126: `barnard_post`, `gj357_frontier`, `gj667_ubuntu_node`, `gj832_gaia_zone`, `hd10360_relay`, `hd104067_frontier`, `hd114783_claims`, `hd85512_frontier`, `leo83_golden_city`, `sigma2uma_expedition`.
-- Единицы без контрольных точек модели: нет.
-- Единицы без авторского населения: `gj357_frontier`, `gj674_frontier`, `hd104067_frontier`, `hd85512_frontier`.
-- Единицы без режима 3126: `barnard_post`, `eps_indi_field`, `gj357_frontier`, `gj667_ubuntu_node`, `gj674_frontier`, `gj892_kern`, `hd10360_relay`, `hd104067_frontier`, `hd114783_claims`, `hd85512_frontier`, `leo83_golden_city`, `sigma2uma_expedition`.
-- Поселения без населения (модель не распределила): нет.
-- Поселения: нет года основания (кроме столиц — год политии) и состояния 3126 (кроме промышленных площадок с выпуском).
-- Верфи: нет классов кораблей и разделения ремонт / военные / гражданские; есть только тип актива и выпуск корпусов.
-<!-- GENERATED:gaps END -->
-</script><script src="reader.js"></script></body></html>
+python lore_md.py --check     # блоки совпадают с данными, ссылки на сущности существуют, рассказ не спорит с населением</code></pre>
+<p>Правила для сценариста:</p>
+<ul>
+<li>писать только в секциях <code>NARRATIVE</code> и вообще вне маркеров <code>GENERATED</code>; строку <code>_TODO: ..._</code> удалить, когда секция написана;</li>
+<li>числа населения в рассказе — только из таблиц (проверка сверяет строки с «млн / млрд / тыс.» и именем сущности); чтобы сознательно процитировать устаревшее число, добавить в строку <code>lore-check: ignore</code>;</li>
+<li>ссылки на сущности — ссылками на файлы досье или id в обратных кавычках; неизвестный id ломает проверку;</li>
+<li><code>AUTHOR TRUTH</code> не цитировать вне <code>AUTHOR/</code>; <code>UNKNOWN</code> не заполнять ответом.</li>
+</ul>
+<h2 id="счётчики-статусов-машинного-канона">Счётчики статусов машинного канона</h2>
+<p>&lt;!-- GENERATED:counts BEGIN --&gt; <code>AUTHOR TRUTH</code> 18, <code>CANON</code> 309, <code>PROPOSAL</code> 290, <code>PUBLIC</code> 590, <code>UNKNOWN</code> 9. Схема данных: <code>elite.colonization_lab.lore_facts.v1</code>, seed 3126, сценарий <code>baseline</code>. &lt;!-- GENERATED:counts END --&gt;</p>
+<h2 id="оглавление">Оглавление</h2>
+<p>&lt;!-- GENERATED:index BEGIN --&gt;</p>
+<div class="table-wrap"><table><thead><tr>
+<th>Папка</th>
+<th>Файлов</th>
+<th>Файлы</th>
+</tr></thead><tbody>
+<tr>
+<td><a href="AUTHOR/HIDDEN_CANON.html">AUTHOR/</a></td>
+<td>4</td>
+<td><a href="AUTHOR/HIDDEN_CANON.html">HIDDEN_CANON.md</a>, <a href="AUTHOR/MISSING_SHIPS.html">MISSING_SHIPS.md</a>, <a href="AUTHOR/PROPOSALS.html">PROPOSALS.md</a>, <a href="AUTHOR/QUEST_TRUTHS.html">QUEST_TRUTHS.md</a>; AUTHOR/SHIPS/ — 1 скрыт. досье [СПОЙЛЕР]</td>
+</tr>
+<tr>
+<td><a href="COLONIES/INDEX.html">COLONIES/</a></td>
+<td>35</td>
+<td>см. INDEX.md</td>
+</tr>
+<tr>
+<td><a href="DEMOGRAPHY/MODEL.html">DEMOGRAPHY/</a></td>
+<td>2</td>
+<td><a href="DEMOGRAPHY/MODEL.html">MODEL.md</a>, <a href="DEMOGRAPHY/POPULATION_3126.html">POPULATION_3126.md</a></td>
+</tr>
+<tr>
+<td><a href="ECONOMY/INDUSTRIAL_ASSETS.html">ECONOMY/</a></td>
+<td>6</td>
+<td><a href="ECONOMY/INDUSTRIAL_ASSETS.html">INDUSTRIAL_ASSETS.md</a>, <a href="ECONOMY/MINES.html">MINES.md</a>, <a href="ECONOMY/SHIPYARDS.html">SHIPYARDS.md</a>, <a href="ECONOMY/STRATEGIC_DEPENDENCIES.html">STRATEGIC_DEPENDENCIES.md</a>, <a href="ECONOMY/TECHNOLOGY.html">TECHNOLOGY.md</a>, <a href="ECONOMY/TRADE_ROUTES.html">TRADE_ROUTES.md</a></td>
+</tr>
+<tr>
+<td><a href="POLITICS/EARTH_3126.html">POLITICS/</a></td>
+<td>3</td>
+<td><a href="POLITICS/EARTH_3126.html">EARTH_3126.md</a>, <a href="POLITICS/RELATIONS.html">RELATIONS.md</a>, <a href="POLITICS/WARS.html">WARS.md</a></td>
+</tr>
+<tr>
+<td><a href="SETTLEMENTS/INDEX.html">SETTLEMENTS/</a></td>
+<td>26</td>
+<td>см. INDEX.md</td>
+</tr>
+<tr>
+<td><a href="SHIPS/INDEX.html">SHIPS/</a></td>
+<td>36</td>
+<td>см. INDEX.md</td>
+</tr>
+<tr>
+<td><a href="TIMELINE/EARTH_AND_EXODUS.html">TIMELINE/</a></td>
+<td>3</td>
+<td><a href="TIMELINE/EARTH_AND_EXODUS.html">EARTH_AND_EXODUS.md</a>, <a href="TIMELINE/HYPERDRIVE_TIMELINE.html">HYPERDRIVE_TIMELINE.md</a>, <a href="TIMELINE/MASTER_TIMELINE.html">MASTER_TIMELINE.md</a></td>
+</tr>
+</tbody></table></div>
+<p>&lt;!-- GENERATED:index END --&gt;</p>
+<h2 id="пробелы-данных">Пробелы данных</h2>
+<p>&lt;!-- GENERATED:gaps BEGIN --&gt;</p>
+<ul>
+<li>Корабли: в каноне нет полей размеров, двигателя, энергетики и груза — только заявленная масса (досье) и расчёт physics.py; у полей когорт, мотивов, политики рождений нет собственного статуса (наследуется от миссии).</li>
+<li>Нет расчёта physics.py: IRON-SHIELD-2, LEGACY-1, HOMEWARD-1, HYPERION-1.</li>
+<li>Нет прибытия: UBUNTU-1, NIRVANA-1, IRON-SHIELD-2, NOMAD-1, FINAL-ARK-1, LEGACY-1, DEEP-SEEK-1, KEPLER-1, HOMEWARD-1, FAREWELL-1, HYPERION-1.</li>
+<li>Цель вне каталога или не задана: NOMAD-1, KEPLER-1.</li>
+<li>Скрытые миссии (AUTHOR TRUTH, 1) в этот список не входят — см. AUTHOR/MISSING_SHIPS.md.</li>
+<li>Единицы без экономики 3126: <code>barnard_post</code>, <code>gj357_frontier</code>, <code>gj667_ubuntu_node</code>, <code>gj832_gaia_zone</code>, <code>hd10360_relay</code>, <code>hd104067_frontier</code>, <code>hd114783_claims</code>, <code>hd85512_frontier</code>, <code>leo83_golden_city</code>, <code>sigma2uma_expedition</code>.</li>
+<li>Единицы без контрольных точек модели: нет.</li>
+<li>Единицы без авторского населения: <code>gj357_frontier</code>, <code>gj674_frontier</code>, <code>hd104067_frontier</code>, <code>hd85512_frontier</code>.</li>
+<li>Единицы без режима 3126: <code>barnard_post</code>, <code>eps_indi_field</code>, <code>gj357_frontier</code>, <code>gj667_ubuntu_node</code>, <code>gj674_frontier</code>, <code>gj892_kern</code>, <code>hd10360_relay</code>, <code>hd104067_frontier</code>, <code>hd114783_claims</code>, <code>hd85512_frontier</code>, <code>leo83_golden_city</code>, <code>sigma2uma_expedition</code>.</li>
+<li>Поселения без населения (модель не распределила): нет.</li>
+<li>Поселения: нет года основания (кроме столиц — год политии) и состояния 3126 (кроме промышленных площадок с выпуском).</li>
+<li>Верфи: нет классов кораблей и разделения ремонт / военные / гражданские; есть только тип актива и выпуск корпусов.</li>
+</ul>
+<p>&lt;!-- GENERATED:gaps END --&gt;</p>
+</article><footer class="path">Источник: <code>Notes/Lore/README.md</code></footer></main></body></html>

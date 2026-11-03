@@ -1931,6 +1931,67 @@ Restore point: tag `restore/pre-sol-network-2026-11-03` (= 7ec5f4c1). Branch mai
 - Live: listed above. Human acceptance (find hubs without ids, read the
   panel, fly hub -> hub to arrival and dock) is the user's.
 
+### Fifth pass (user order 2026-11-03, refinement): major-hub budget, 2.5D map, one transfer architecture
+Restore point: tag `restore/pre-sol-major-hubs-2026-11-03` (= 2eb47aad). Lotusite part of
+the order was already done in the fourth pass (cc56fd59) and is unchanged.
+
+#### Stage B-D: major-hub budget (offline + runtime data; PROPOSAL)
+- Rule: infrastructure capacity != number of map objects. Levels: A major hub
+  (System Map), B sector / terminal / merged hub of a complex (data, panel,
+  Detail / docking), C local facility / settlement (Detail Map or near the player).
+- Earth: 12 stations -> 7 complexes (Vysokiy gateway, Tikhiy mass passenger,
+  Canaveral 31.6 deg passenger + Mars, Wenchang cargo, Kourou lunar /
+  interplanetary, Aurora polar SAR / science + Meridian terminal for Moscow,
+  Ekvator GEO industry / repair); Baikonur / Tanegashima / Tropic /
+  Sriharikota / Meridian are named terminals. Dock model hub -> sector (ring of
+  <= 12 HexDock modules) -> module (6 pads): Tikhiy 12 sectors / 141 modules /
+  846 pads ... Ekvator 1 / 1 / 6; Earth 57 k movements/day vs 92 k capacity
+  (utilisation 0.62, reserve 0.38), terminals and berths per complex.
+- Sol major hubs 29 / 30: Earth 7, cislunar 3, deep space 1, Mars 3, Venus 1,
+  Mercury 1, Belt 5 (incl. the pirate enclave, hidden until known), Jupiter 4,
+  Saturn 2, outer 2. Settlements and small stations (Shackleton, Imbrium,
+  New Tharsis, Hellas, Ahuna, Kaloris, Europa / Enceladus science, quarantine
+  L5) are level C.
+- Other systems: development tier from population (developed >= 800 M,
+  colony >= 100 M, periphery > 0, frontier) with budgets 10-18 / 4-10 / 1-5 /
+  0-3; extra same-kind hubs merged into one complex as level B (capacity kept).
+  Result: developed max 11, colony max 6, periphery 2, frontier 2; some
+  developed systems are below the lower bound (Tau Ceti 4) - not padded.
+- Checks: world_sites incl. map_complexity_within_tier_budgets,
+  sol.sol_major_hubs_within_budget, region budgets, Earth 6-8,
+  earth_capacity_ge_demand_plus_reserve - all OK; industry, economy, dataset,
+  lore_md 133, lore_html 136 OK. Commit da09a65e.
+
+#### Stage E-H: map 2.5D, clusters, one transfer architecture (implemented; scripted + live; human acceptance OPEN)
+- Plan view (default): fixed tilt over the ecliptic (1.30 rad), only azimuth
+  rotates, height stems to the parent's / ecliptic plane; V -> free 3D.
+  Clusters: hubs hidden on a planet's pixel gather into one marker with a
+  count ("Земля: N крупных хабов"; one hub counted once). Relays and dotted
+  beacon links only with the N filter. Body panel: major hubs listed,
+  settlements / local facilities counted (Detail Map). Hub panel: sectors /
+  HexDock modules / pads, passenger / cargo terminals, service berths, named
+  terminals.
+- Transfer: Earth -> Ceres now uses the same plan type / mode / executor /
+  hand-over in compressed time (`planCompressedTransit`, frame follows a
+  bowed star-relative tunnel, arrival at the destination's approach point at
+  the real epoch, physical brachistochrone reported). While a transfer runs
+  the server executes no pilot / autopilot translation inside the frame (the
+  nav-stress autopilot had pushed 500 m/s of local drift in a live run).
+- Dock traffic interval per visible HexDock MODULE (Vysokiy 1 535 s).
+- Evidence: map python tests 5/5 PASS (check_hybrid_map extended: plan view,
+  beacons filter, stems); EliteSystemMapInfoCheck PASS (Sol major hubs drawn
+  29 / 30, Earth 7, Vysokiy panel shows its terminals, Earth panel lists major
+  hubs + counts settlements); EliteOrbitalTransferCheck PASS (6 LEO complexes x
+  2 epochs; compressed Vysokiy -> Pereval Tserery: tunnel 3.92 AU, closest to
+  the Sun 1.00 AU, physical 4.18 d, arrival 15.0 km / 20.0 m/s) + 2 OPEN (GEO);
+  EliteDockTrafficCheck 6 h (4/1534 s, 9/600 s): 76 / 73 arrivals, 0
+  violations, min gap 38.6 m; world_sites / lore_md / lore_html OK. LIVE
+  (D:/tmp/elite_sol5_*, elite_sol6_*, elite_sol7_*): plan-view Earth with its
+  complexes, transfer tunnel to Tikhiy around Earth, Ceres tunnel with the
+  ship mid-way, arrival at Pereval Tserery 15.0 km / 20.0 m/s matched, cluster
+  counts on the overview. Live arrival of a LEO transfer (~2.8 h) still not
+  observed; human acceptance OPEN.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

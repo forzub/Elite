@@ -513,10 +513,16 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
         auto& items = frame.interaction.objectOverlay.items;
         std::stable_sort(order.begin(), order.end(), [&](std::size_t a, std::size_t b) { return priority(items[a]) < priority(items[b]); });
         std::vector<glm::dvec2> kept;
+        std::unordered_map<std::string, int> gatheredAt;      // hubs hidden on a planet's marker, per body
         for (const std::size_t i : order)
         {
             auto& item = items[i];
             const int p = priority(item);
+            if (item.kind == MapObjectGlyphKind::Relay && !viewState.state().showBeacons)
+            {
+                item.drawGlyph = false;        // beacons are a filter (N), not part of the default picture
+                continue;
+            }
             if (p < 0 || !item.visible)
             {
                 if (item.visible)
@@ -531,7 +537,17 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
             bool crowded = false;
             for (const auto& body : frame.interaction.bodyScreenPoints)
                 if (body.visible && glm::length(glm::dvec2(body.screen) - item.screenPx) < std::max(12.0, static_cast<double>(body.screenRadiusPx) + 6.0))
+                {
                     crowded = true;
+                    if (p <= 1)
+                    {
+                        // the planet's own hubs (or its moons') gather at the planet
+                        const std::string planet = item.navigationHubParentBodyId.empty() ? body.bodyId : item.navigationHubParentBodyId;
+                        ++gatheredAt[planet.find('.', planet.find('.', planet.find('.') + 1) + 1) == std::string::npos ? planet
+                                     : planet.substr(0, planet.find('.', planet.find('.', planet.find('.') + 1) + 1))];
+                    }
+                    break;      // one hub counts once, however many moons share the planet's pixel
+                }
             for (const auto& k : kept)
                 if (glm::length(k - item.screenPx) < 10.0)
                     crowded = true;
@@ -541,6 +557,30 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
                 continue;
             }
             kept.push_back(item.screenPx);
+        }
+        // aggregation: one cluster marker per planet that gathered >= 2 major hubs at this zoom
+        for (const auto& [bodyId, count] : gatheredAt)
+        {
+            if (count < 2)
+                continue;
+            const auto body = std::find_if(frame.interaction.bodyScreenPoints.begin(), frame.interaction.bodyScreenPoints.end(),
+                                           [&](const auto& b) { return b.bodyId == bodyId; });
+            if (body == frame.interaction.bodyScreenPoints.end() || !body->visible)
+                continue;
+            MapObjectOverlayItem cluster;
+            cluster.objectId = "cluster:" + bodyId;
+            cluster.name = body->name + ": " + std::to_string(count) + " крупных хабов";
+            cluster.typeName = "приблизьте: двойной щелчок по телу";
+            cluster.kind = MapObjectGlyphKind::Hub;
+            cluster.infoKind = MapObjectInfoKind::Tactical;
+            cluster.factionColor = glm::vec4(1.00f, 0.74f, 0.32f, 0.96f);
+            cluster.screenPx = glm::dvec2(body->screen) + glm::dvec2(14.0, -14.0);
+            cluster.visible = true;
+            cluster.drawGlyph = true;
+            cluster.glyphScale = 0.85;
+            cluster.hitRadiusPx = 12.0;
+            cluster.badge = std::to_string(count);
+            frame.interaction.objectOverlay.items.push_back(std::move(cluster));
         }
     }
 

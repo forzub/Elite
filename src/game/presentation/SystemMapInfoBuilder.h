@@ -135,9 +135,16 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
             add(out, K::Field, "Назначение", s->purpose);
         if (!s->functions.empty())
             add(out, K::Field, "Функции", s->functions);
+        if (!s->roles.empty())
+            add(out, K::Field, "Роли", s->roles);
         if (s->docks > 0)
-            add(out, K::Field, "Доки", s->dockSectors > 0 ? std::to_string(s->dockSectors) + " секторов × 6 площадок (" + std::to_string(s->docks) + ")"
-                                                          : std::to_string(s->docks));
+            add(out, K::Field, "Доки", s->dockModules > 0
+                ? std::to_string(s->dockSectors) + " сект., " + std::to_string(s->dockModules) + " модулей HexDock, " + std::to_string(s->docks) + " площадок"
+                : std::to_string(s->docks) + " площадок");
+        if (s->passengerTerminals > 0 || s->cargoTerminals > 0)
+            add(out, K::Field, "Терминалы", std::to_string(s->passengerTerminals) + " пасс., " + std::to_string(s->cargoTerminals) + " груз., " +
+                                             std::to_string(s->serviceBerths) + " сервисных причалов" +
+                                             (s->terminalNames.empty() ? std::string() : "; " + s->terminalNames));
         if (s->arrivalsPerDay > 0)
         {
             char buf[96];
@@ -194,18 +201,32 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
                 add(out, K::Field, "Радиус", buf);
                 std::snprintf(buf, sizeof(buf), "%.3f а.е.", std::sqrt(b.positionAu.x * b.positionAu.x + b.positionAu.y * b.positionAu.y + b.positionAu.z * b.positionAu.z));
                 add(out, K::Field, "От звезды", buf);
-                std::vector<std::string> here;
+                // major hubs first (what the map shows); settlements and local facilities only counted
+                std::vector<std::string> major;
+                int local = 0, relays = 0;
                 for (const auto& s : in.catalog->sitesInSystem(in.systemId))
-                    if (s.parentBodyId == b.id || s.lagrangeSecondaryId == b.id)
-                        here.push_back(s.name + (s.typeLabel.empty() ? "" : " (" + s.typeLabel + ")"));
-                if (!here.empty())
                 {
-                    add(out, K::Heading, "Здесь (" + std::to_string(here.size()) + ")");
-                    for (std::size_t i = 0; i < here.size() && i < 14; ++i)
-                        add(out, K::Bullet, "", here[i]);
-                    if (here.size() > 14)
-                        add(out, K::Paragraph, "", "… и ещё " + std::to_string(here.size() - 14) + " — Detail Map (P)");
+                    const bool here = s.parentBodyId == b.id || s.lagrangeSecondaryId == b.id ||
+                                      (!s.parentBodyId.empty() && s.parentBodyId.rfind(b.id + ".", 0) == 0);
+                    if (!here)
+                        continue;
+                    if (s.type == "nav_relay")
+                        ++relays;
+                    else if (s.level == "A" && s.mapLevel == "system")
+                        major.push_back(s.name + (s.roles.empty() ? (s.typeLabel.empty() ? "" : " — " + s.typeLabel) : " — " + s.roles));
+                    else
+                        ++local;
                 }
+                if (!major.empty())
+                {
+                    add(out, K::Heading, "Крупные хабы (" + std::to_string(major.size()) + ")");
+                    for (const auto& m : major)
+                        add(out, K::Bullet, "", m);
+                }
+                if (local > 0)
+                    add(out, K::Field, "Поселения и местные объекты", std::to_string(local) + " — на Detail Map (P)");
+                if (relays > 0)
+                    add(out, K::Field, "Навигационные ретрансляторы", std::to_string(relays) + " (фильтр N)");
                 return;
             }
 

@@ -186,6 +186,41 @@ int main(int argc, char** argv)
         emit(line);
         failures += fallOk ? 0 : 1;
     }
+    // Earth hub -> Ceres hub: the same plan type in compressed time (star-relative), checked on the real data
+    for (const auto& h : root["orbital_hubs"])
+    {
+        if (h.value("parent_body_id", std::string()) != "system_0.Sol")
+            continue;
+        world::orbits::OrbitalMotion cm;
+        const auto& m = h["motion"];
+        const double rSun = 695700000.0, muSun = 1.32712440018e20;
+        cm.enabled = true;
+        cm.parentRadiusMeters = rSun;
+        cm.altitudeMeters = m.value("altitude_km", 0.0) * 1000.0;
+        cm.inclinationDeg = m.value("inclination_deg", 0.0);
+        cm.longitudeOfAscendingNodeDeg = m.value("longitude_of_ascending_node_deg", 0.0);
+        cm.initialPhaseDeg = m.value("initial_phase_deg", 0.0);
+        cm.orbitalPeriodSeconds = world::orbits::computeCircularOrbitPeriodSeconds(rSun, cm.altitudeMeters, muSun);
+        // Earth on a 1 AU circle at t0 = 0 (+X), the ship at Vysokiy's offset from Earth
+        const glm::dvec3 earthPos(1.495978707e11, 0.0, 0.0), earthVel(0.0, 0.0, 29780.0);
+        const glm::dvec3 p0 = earthPos + orb::targetPositionAt(src->motion, 0.0);
+        const glm::dvec3 v0 = earthVel + orb::targetVelocityAt(src->motion, 0.0);
+        const orb::OrbitalTransferPlan plan = orb::planCompressedTransit(p0, v0, 0.0, cm, limits, 90.0);
+        const auto end = orb::evaluateCompressed(plan, plan.arrivalTimeSeconds);
+        const glm::dvec3 tv = orb::targetVelocityAt(cm, plan.arrivalTimeSeconds);
+        const glm::dvec3 tp = orb::targetPositionAt(cm, plan.arrivalTimeSeconds);
+        double minSun = 1.0e30;
+        for (const auto& p : plan.tunnelMeters)
+            minSun = std::min(minSun, glm::length(p));
+        const bool ok = plan.compressed && glm::length(end.velocityMps - tv) < 25.0 && std::abs(glm::length(end.positionMeters - tp) - limits.approachOffsetMeters) < 100.0 &&
+                        minSun > 0.6 * 1.495978707e11;
+        std::snprintf(line, sizeof(line), "%s -> %s (compressed time, same plan type): tunnel %.2f AU, closest to the Sun %.2f AU, physical %.2f d, "
+                      "arrival %.1f km from the hub, relative %.1f m/s | %s", src->name.c_str(), h["name"].get<std::string>().c_str(), plan.pathLengthMeters / 1.495978707e11,
+                      minSun / 1.495978707e11, plan.physicalDurationSeconds / 86400.0, glm::length(end.positionMeters - tp) / 1000.0, glm::length(end.velocityMps - tv),
+                      ok ? "PASS" : "FAIL");
+        emit(line);
+        failures += ok ? 0 : 1;
+    }
     // Earth -> Ceres: the physical leg an abstracted transit stands for (Cobra at the sustained transfer envelope)
     for (double d : {1.77, 2.77, 3.77})
     {

@@ -166,6 +166,34 @@ void drawProjectedTrajectory(const MapObjectTrajectory& trajectory)
             glLineWidth(1.0f);
             return;
         }
+        case MapTrajectoryKind::BeaconLink:
+        case MapTrajectoryKind::HeightStem:
+        {
+            const bool stem = trajectory.kind == MapTrajectoryKind::HeightStem;
+            const glm::vec4 c = stem ? glm::vec4(0.62f, 0.72f, 0.82f, 0.45f) : glm::vec4(0.56f, 0.94f, 0.66f, 0.55f);
+            elite::render::core_legacy::color4f(c.r, c.g, c.b, c.a);
+            glLineWidth(1.0f);
+            elite::render::core_legacy::begin(GL_LINES);
+            const double on = stem ? 1000.0 : 2.0, off = stem ? 0.0 : 5.0;
+            for (std::size_t i = 0; i + 1 < points.size(); ++i)
+            {
+                const glm::dvec2 a = points[i];
+                const glm::dvec2 d = points[i + 1] - a;
+                const double len = glm::length(d);
+                if (len < 1.0e-6)
+                    continue;
+                const glm::dvec2 u = d / len;
+                for (double s0 = 0.0; s0 < len; s0 += on + off)
+                {
+                    const glm::dvec2 p0 = a + u * s0;
+                    const glm::dvec2 p1 = a + u * std::min(len, s0 + on);
+                    elite::render::core_legacy::vertex2d(p0.x, p0.y);
+                    elite::render::core_legacy::vertex2d(p1.x, p1.y);
+                }
+            }
+            elite::render::core_legacy::end();
+            return;
+        }
         case MapTrajectoryKind::TransferTunnel:
             color = glm::vec4(0.30f, 0.95f, 1.00f, 0.98f);
             width = 2.6f;
@@ -674,7 +702,11 @@ void MapObjectOverlayRenderer::render(
                 drawTriangle(item);
         }
 
-        if (item.infoKind == MapObjectInfoKind::Tactical)
+        if (!item.badge.empty() && item.drawGlyph)
+            textRenderer.textDrawPx(item.badge, static_cast<float>(item.screenPx.x + 8.0 * item.glyphScale),
+                                    static_cast<float>(item.screenPx.y - 20.0 * item.glyphScale), 13, glm::vec4(1.0f, 0.86f, 0.55f, 1.0f));
+
+        if (item.infoKind == MapObjectInfoKind::Tactical && item.badge.empty())
         {
             drawVelocityArrow(item);
         }

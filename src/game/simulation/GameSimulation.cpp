@@ -1979,6 +1979,14 @@ m_hubVelocityMetersPerSecond[hubId] =
                 decisionIt->second.executionDeltaSeconds
             );
 
+            // Orbital Transfer is an authoritative navigation mode: while it carries the
+            // frame, no pilot / autopilot translation is executed inside it.
+            if (m_orbitalTransfers.count(id))
+            {
+                shipPtr->propagateMotionOrientation(fdt);
+                continue;
+            }
+
             // GameSimulation owns cadence/reference-frame orchestration only.
             // ShipControlState semantics and actuator/backend selection are
             // isolated behind the ship control execution gateway.

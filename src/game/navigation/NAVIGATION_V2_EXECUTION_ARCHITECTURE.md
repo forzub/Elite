@@ -322,9 +322,13 @@ Hub Tactical and Orbital Transfer are different jobs and different modes.
 - Hand-over: at the arrival epoch the ship is re-based into the destination
   hub frame with its actual relative position and velocity
   (`worldToLocalKinematics`, `matchToReference`) - no snap.
-- A destination around another body (Earth -> Ceres) is an ABSTRACTED,
-  time-compressed transit (physical brachistochrone reported, short real
-  wait, placement at the destination's approach point with its velocity).
+- A destination around another body (Earth -> Ceres) uses the SAME plan
+  type, mode, executor and hand-over in compressed time
+  (`planCompressedTransit`): the frame follows a bowed star-relative tunnel
+  to the destination's approach point at the REAL arrival epoch (no snap);
+  the physical brachistochrone it stands for is reported.
+- While a transfer carries the frame, no pilot / autopilot translation is
+  executed inside it (authoritative mode).
 - Not a second autopilot of the tactical route chain: the carrier law moves
   the FRAME; route planning / docking inside a hub frame stays with the
   existing chain. Known debt: ship attitude is not slaved to the carrier

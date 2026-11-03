@@ -190,6 +190,17 @@ namespace game::system_map
         bool gridOverlayVisible = false;
 
         /*
+            Primary 2.5D plan view: the camera looks down on the ecliptic at a
+            fixed tilt (only the azimuth turns); heights above the plane are
+            drawn as stems. V switches to the free 3D view and back.
+        */
+        bool planView = true;
+        float planPitchRad = 1.30f;
+
+        // N: local navigation relays and their links (beacon network) - a filter, off by default.
+        bool showBeacons = false;
+
+        /*
             Arrow-key sibling navigation (overlay visible, child selected):
             the screen plane is chosen from the camera at the first press and
             stays locked while presses keep coming, so Up never turns into

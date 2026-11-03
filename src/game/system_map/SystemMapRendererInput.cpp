@@ -30,6 +30,13 @@ SystemMapRenderer::handleInput(
         m_systemView.updateCameraFlight(
             inputNowSeconds
         );
+        auto& cam = m_systemView.state().camera;
+        if (m_systemView.state().planView && std::abs(cam.pitch - m_systemView.state().planPitchRad) > 1.0e-4f)
+        {
+            // ease into the plan tilt (no jump), rotating about the camera target
+            const float step = std::clamp(m_systemView.state().planPitchRad - cam.pitch, -0.08f, 0.08f);
+            m_systemView.orbitCameraAroundPivot(cam.target, 0.0f, step, m_systemView.controls().pitchLimitRad);
+        }
     }
 
     /*

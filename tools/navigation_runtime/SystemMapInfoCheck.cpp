@@ -93,8 +93,8 @@ int main(int argc, char** argv)
     game::presentation::buildSystemMapInfo(ceres, title, lines);
     check(contains(lines, "Перевал Цереры") && !field(lines, "Оператор").empty() && !field(lines, "Владелец").empty(),
           "Ceres hub: name, owner and operator in the right panel");
-    check(field(lines, "Доки").find("секторов") != std::string::npos && !field(lines, "Трафик").empty() && !field(lines, "Юрисдикция").empty(),
-          "Ceres hub: docks as sectors x 6, traffic and jurisdiction");
+    check(field(lines, "Доки").find("площадок") != std::string::npos && field(lines, "Доки").find("модулей HexDock") != std::string::npos && !field(lines, "Трафик").empty() && !field(lines, "Юрисдикция").empty(),
+          "Ceres hub: docks as sectors -> HexDock modules -> pads, traffic and jurisdiction");
     check(contains(lines, "Маршруты"), "Ceres hub: its routes are listed");
 
     // 3. a replicated Earth hub selected by its runtime id
@@ -116,7 +116,8 @@ int main(int argc, char** argv)
     body.system = &snap;
     body.selectedBodyId = earth.id;
     game::presentation::buildSystemMapInfo(body, title, lines);
-    check(contains(lines, "Здесь") && contains(lines, "Тихий") && contains(lines, "Канаверал"), "Earth body: its orbital hubs are listed");
+    check(contains(lines, "Крупные хабы") && contains(lines, "Тихий") && contains(lines, "Канаверал") && contains(lines, "Поселения и местные объекты"),
+          "Earth body: its major hubs listed, settlements only counted");
 
     // 5. marker <-> world object identity
     std::set<std::string> runtimeHubs;
@@ -145,6 +146,21 @@ int main(int argc, char** argv)
     check(relaysPlaced == static_cast<int>(catalog.relaysInSystem(0).size()) && relaysPlaced > 0,
           std::to_string(relaysPlaced) + " relays are world objects with a placement");
     check(anchorsPlaced == 4, "4 belt anchors (Ceres, Vesta, Pallas, Hygiea) are map objects");
+
+    // 5b. map budget on the data the client draws: major (level A) markers + replicated hubs
+    int major = static_cast<int>(runtimeHubs.size());
+    int earthMajor = 0;
+    for (const auto& id : runtimeHubs)
+        earthMajor += id.rfind("earth", 0) == 0 ? 1 : 0;
+    for (const auto& s : catalog.sitesInSystem(0))
+        if (s.mapLevel == "system" && s.runtimeBinding.empty() && s.type != "nav_relay" && s.type != "belt_anchor" && s.level == "A")
+            ++major;
+    check(major <= 30 && major >= 24, "Sol major hubs drawn on the System Map: " + std::to_string(major) + " / 30");
+    check(earthMajor >= 6 && earthMajor <= 8, "Earth major complexes: " + std::to_string(earthMajor) + " (6-8)");
+    SystemMapInfoInput vys = summary;
+    vys.selectedObjectId = "earth_orbital_hub";
+    game::presentation::buildSystemMapInfo(vys, title, lines);
+    check(field(lines, "Терминалы").find("Байконур") != std::string::npos, "Vysokiy panel shows its terminals (former Baikonur station is a terminal)");
 
     // 6. the Ceres hub stands at its anchor
     const auto* ce = catalog.findSite(0, "site.000.sol.ceres");

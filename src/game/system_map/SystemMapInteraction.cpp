@@ -649,8 +649,9 @@ SystemMapInputResult SystemMapInteraction::handleInput(
     {
         const float yawStep = std::clamp(-static_cast<float>(dx) * controls.rotateSensitivity,
                                          -controls.rotationMaxStepRad, controls.rotationMaxStepRad);
-        const float pitchStep = std::clamp(static_cast<float>(dy) * controls.rotateSensitivity,
-                                           -controls.rotationMaxStepRad, controls.rotationMaxStepRad);
+        // plan view: only the azimuth turns, the tilt stays (2.5D)
+        const float pitchStep = state.planView ? 0.0f : std::clamp(static_cast<float>(dy) * controls.rotateSensitivity,
+                                                                    -controls.rotationMaxStepRad, controls.rotationMaxStepRad);
         view.orbitCameraAroundPivot(state.orbitPivotAbsolute, yawStep, pitchStep, controls.pitchLimitRad);
     }
 

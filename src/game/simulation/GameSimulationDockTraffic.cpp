@@ -123,8 +123,12 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
                 config.connectedDestinations.push_back(site ? site->name : other);
             }
             // one visible dock sector carries its share of the hub's modelled arrivals
-            if (const auto* self = sites.findSite(dock->systemId, dock->hubId); self && self->arrivalsPerDay > 0 && self->dockSectors > 0)
-                config.shuttleIntervalSeconds = std::clamp(86400.0 / (static_cast<double>(self->arrivalsPerDay) / self->dockSectors), 300.0, 3600.0);
+            // the visible HexDock is one 6-pad MODULE of the hub: it carries its share of the modelled arrivals
+            if (const auto* self = sites.findSite(dock->systemId, dock->hubId); self && self->arrivalsPerDay > 0)
+            {
+                const int modules = self->dockModules > 0 ? self->dockModules : std::max(1, self->dockSectors);
+                config.shuttleIntervalSeconds = std::clamp(86400.0 / (static_cast<double>(self->arrivalsPerDay) / modules), 300.0, 3600.0);
+            }
         }
         config.cobrettCount = envInt("ELITE_DOCK_TRAFFIC_COBRETTS", config.cobrettCount);
         config.shuttleIntervalSeconds = envDouble("ELITE_DOCK_TRAFFIC_INTERVAL", config.shuttleIntervalSeconds);

@@ -100,11 +100,15 @@ bool GameSimulation::requestOrbitalTransfer(EntityId shipId, const std::string& 
     }
     else
     {
-        // abstracted interplanetary transit: the physical leg it stands for
-        const glm::dvec3 targetWorld = parentPos + orb::targetPositionAt(target.motion, m_orbitalUniverseTimeSeconds);
+        // interplanetary: the SAME plan / mode / executor / hand-over in compressed time - the frame
+        // follows the tunnel to the destination's approach point at the real arrival epoch
+        t.plan = orb::planCompressedTransit(shipWorld - parentPos, shipWorldVel - parentVel, m_orbitalUniverseTimeSeconds, target.motion, t.limits,
+                                            TransitRealSeconds);
         t.abstracted = true;
-        t.estimate = orb::brachistochrone(glm::length(targetWorld - shipWorld), t.limits.maxThrustAccelMps2);
-        t.transitEndRealSeconds = m_serverTimelineClock.timeSeconds() + TransitRealSeconds;
+        t.estimate = orb::brachistochrone(t.plan.pathLengthMeters, t.limits.maxThrustAccelMps2);
+        t.carrier.positionMeters = shipWorld - parentPos;
+        t.carrier.velocityMps = shipWorldVel - parentVel;
+        t.carrier.timeSeconds = m_orbitalUniverseTimeSeconds;
     }
 
     // Detach: the ship's own travel frame stops following the source hub and is re-based at the
@@ -120,12 +124,11 @@ bool GameSimulation::requestOrbitalTransfer(EntityId shipId, const std::string& 
     motion.travelFrame.valid = true;
     motion.localPositionMeters = glm::dvec3(0.0);
     motion.localVelocityMps = glm::dvec3(0.0);
-    if (t.abstracted)
-        motion.mode = game::navigation::MotionMode::Cruise;
 
     if (t.abstracted)
         std::cerr << "[OrbitalTransfer] ship " << shipId.value << " " << t.sourceHubId << " -> " << targetHubId
-                  << ": ABSTRACTED transit, physical brachistochrone " << t.estimate.durationSeconds / 86400.0 << " d at "
+                  << ": COMPRESSED-TIME transit along a " << t.plan.pathLengthMeters / 1.495978707e11 << " AU tunnel, physical brachistochrone "
+                  << t.estimate.durationSeconds / 86400.0 << " d at "
                   << t.estimate.accelMps2 << " m/s2, peak " << t.estimate.peakSpeedMps / 1000.0 << " km/s; real " << TransitRealSeconds << " s\n";
     else
         std::cerr << "[OrbitalTransfer] ship " << shipId.value << " " << t.sourceHubId << " -> " << targetHubId << ": ETA "
@@ -202,15 +205,16 @@ void GameSimulation::updateOrbitalTransfers()
 
         if (t.abstracted)
         {
-            if (m_serverTimelineClock.timeSeconds() >= t.transitEndRealSeconds)
+            // compressed time: the frame follows the tunnel (no thrust physics); arrival is the plan's end state
+            const double now = std::min(m_orbitalUniverseTimeSeconds, t.plan.arrivalTimeSeconds);
+            const auto s = orb::evaluateCompressed(t.plan, now);
+            motion.travelFrame.originMeters = parentPos + s.positionMeters;
+            motion.travelFrame.linearVelocityMps = parentVel + s.velocityMps;
+            motion.travelFrame.linearAccelerationMps2 = glm::dvec3(0.0);
+            motion.travelFrame.valid = true;
+            if (m_orbitalUniverseTimeSeconds >= t.plan.arrivalTimeSeconds)
             {
-                const double now = m_orbitalUniverseTimeSeconds;
-                const glm::dvec3 hp = orb::targetPositionAt(targetIt->second.motion, now);
-                const glm::dvec3 hv = orb::targetVelocityAt(targetIt->second.motion, now);
-                const glm::dvec3 prograde = glm::normalize(hv);
-                const glm::dvec3 p = parentPos + hp - prograde * t.limits.approachOffsetMeters;
-                const glm::dvec3 v = parentVel + hv + prograde * t.limits.closingSpeedMps;
-                handOverToHub(it->first, *ship, t.targetHubId, &p, &v);
+                handOverToHub(it->first, *ship, t.targetHubId, nullptr, nullptr);
                 it = m_orbitalTransfers.erase(it);
                 continue;
             }

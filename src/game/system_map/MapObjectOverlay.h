@@ -52,7 +52,9 @@ enum class MapTrajectoryKind
     TrafficRoute,   // a traffic ship's remaining route (selected / all)
     AuthoredLane,   // authored dock lanes / holds / queue gates (toggle)
     NetworkRoute,   // aggregate scheduled route of the world model: dashed, width by traffic
-    TransferTunnel  // the player's Orbital Transfer plan: solid, high emphasis
+    TransferTunnel, // the player's Orbital Transfer plan: solid, high emphasis
+    BeaconLink,     // beacon / relay network link: fine dotted (filter N)
+    HeightStem      // plan view: height of an object above its reference plane
 };
 
 struct MapTrajectoryPoint
@@ -114,6 +116,8 @@ struct MapObjectOverlayItem
     std::string name;
     std::string typeName;
     std::string owner;
+    // small count badge (cluster markers: "7" hubs gathered at a planet at this zoom)
+    std::string badge;
     std::vector<MapObjectInfoField> extraFields;
     std::vector<MapObjectPanelAction> panelActions;
 

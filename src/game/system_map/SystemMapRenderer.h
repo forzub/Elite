@@ -464,6 +464,19 @@ public:
         m_systemSceneFrameDirty = true;
     }
     bool systemGridOverlayVisible() const noexcept { return m_systemView.state().gridOverlayVisible; }
+    // V: plan (2.5D, default) <-> free 3D view; N: beacon relays and links
+    void toggleSystemPlanView() noexcept
+    {
+        auto& st = m_systemView.state();
+        st.planView = !st.planView;
+        m_systemSceneFrameDirty = true;
+    }
+    bool systemPlanView() const noexcept { return m_systemView.state().planView; }
+    void toggleSystemBeacons() noexcept
+    {
+        m_systemView.state().showBeacons = !m_systemView.state().showBeacons;
+        m_systemSceneFrameDirty = true;
+    }
     // Arrow keys: move the selected child cube to a sibling in the screen plane
     // locked at the first press (dx = right, dy = up). Returns false when nothing moved.
     bool moveSystemCubeSelection(int dx, int dy, double nowSeconds);

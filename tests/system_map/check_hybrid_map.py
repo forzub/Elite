@@ -32,6 +32,7 @@ def require(cond, msg):
 
 view = text("src/game/system_map/SystemMapView.h")
 require("bool gridOverlayVisible = false;" in view, "grid overlay must exist and be hidden by default")
+require("bool planView = true;" in view and "bool showBeacons = false;" in view, "plan (2.5D) view must be the default; beacons a filter")
 require("arrowAxisRight" in view and "arrowLastPressSeconds" in view, "arrow navigation plane lock state missing")
 
 inl = text("src/game/system_map/SystemMapRendererSystem.inl")
@@ -45,14 +46,16 @@ require("view.hierarchyContains(*position / scale)" not in inter, "a drawn hub m
 pres = text("src/game/system_map/SystemMapPresentationBuilder.cpp")
 require("the cube no longer decides what exists for the user" in pres, "presentation must not hide bodies outside the cube")
 
+require("state.planView ? 0.0f" in inter, "plan view: only the azimuth may turn")
 inp = text("src/game/system_map/SystemMapRendererInput.cpp")
+require("planPitchRad" in inp, "plan view tilt must be enforced")
 require("bool SystemMapRenderer::moveSystemCubeSelection" in inp, "arrow-key sibling navigation missing")
 require("ArrowPlaneLockSeconds" in inp and "hierarchyChildAt(cell.center + step * cell.size)" in inp,
         "arrows must step to a sibling in the locked screen plane")
 require("m_objectOverlayState.setHovered(hovered)" in inp, "hover detection missing")
 
 space = text("src/game/SpaceState.cpp")
-for key in ("GLFW_KEY_G", "GLFW_KEY_LEFT", "GLFW_KEY_RIGHT", "GLFW_KEY_UP", "GLFW_KEY_DOWN", "GLFW_KEY_O"):
+for key in ("GLFW_KEY_V", "GLFW_KEY_N", "GLFW_KEY_G", "GLFW_KEY_LEFT", "GLFW_KEY_RIGHT", "GLFW_KEY_UP", "GLFW_KEY_DOWN", "GLFW_KEY_O"):
     require(key in space, f"map key {key} not handled")
 
 frame = text("src/game/system_map/SystemMapSceneFrameBuilder.cpp")
@@ -60,9 +63,13 @@ require("SystemMapObjectKind::Station)\n            return MapObjectGlyphKind::H
         "kind == world::celestial::SystemMapObjectKind::Station)\n            return MapObjectGlyphKind::Hub;" in frame,
         "world-site hubs must use the hub glyph")
 require("Declutter (hybrid map LOD)" in frame, "far-zoom declutter missing")
+require("!viewState.state().showBeacons" in frame, "relays must be hidden unless the beacon filter is on")
 
 ov = text("src/game/system_map/MapObjectOverlayRenderer.cpp")
 require("void drawHoverTooltip" in ov and "std::clamp(x, 4.0f" in ov, "hover tooltip must stay inside the viewport")
+require("case MapTrajectoryKind::BeaconLink" in ov and "case MapTrajectoryKind::HeightStem" in ov, "dotted beacon links and height stems")
+nav = text("src/game/system_map/SystemMapRendererNavigation.cpp")
+require("plan view: height stems" in nav, "plan view must draw height stems")
 require("case MapTrajectoryKind::NetworkRoute" in ov and "case MapTrajectoryKind::TransferTunnel" in ov,
         "network routes (dashed) and the transfer tunnel (solid) must be distinct kinds")
 

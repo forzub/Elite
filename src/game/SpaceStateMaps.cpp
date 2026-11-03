@@ -1838,6 +1838,18 @@ void SpaceState::requestOrbitalTransfer(const std::string& targetHubId)
             std::cerr << "[OrbitalTransfer] preview -> " << targetIt->second.name << ": " << plan.reason << "\n";
         }
     }
+    else if (sourceIt != world.hubs().end() && sourceIt->first != targetHubId)
+    {
+        // other parent (Earth -> Ceres): the same compressed-time plan as the server, star-relative
+        const double t = m_client->universeTimeSeconds();
+        const auto& dst = targetIt->second;
+        const glm::dvec3 starPos = world::coordinates::fullMeters(dst.worldPosition) - orb::targetPositionAt(dst.motion, t);
+        const glm::dvec3 starVel = dst.worldVelocityMps - orb::targetVelocityAt(dst.motion, t);
+        const glm::dvec3 shipPos = world::coordinates::fullMeters(shipIt->second.transform.worldPosition);
+        const orb::OrbitalTransferPlan plan = orb::planCompressedTransit(shipPos - starPos, motion.worldVelocityMps - starVel, t, dst.motion, orb::TransferLimits {}, 90.0);
+        m_systemMapRenderer.setTransferTunnel(dst.parentBodyId, plan.tunnelMeters);
+        std::cerr << "[OrbitalTransfer] preview -> " << dst.name << ": compressed-time tunnel " << plan.pathLengthMeters / 1.495978707e11 << " AU\n";
+    }
     game::network::ClientMessage msg;
     ClientShipCommand command;
     command.type = ClientShipCommand::RequestOrbitalTransfer;

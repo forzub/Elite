@@ -111,6 +111,14 @@ struct OrbitalTransferPlan
     // Tunnel centre line for the maps (relative to the body), one sample per ~1/160 of the path.
     std::vector<glm::dvec3> tunnelMeters;
 
+    // Interplanetary leg in compressed time (same plan / mode / executor / hand-over): the frame
+    // follows the tunnel to the destination's approach point at the REAL arrival epoch; the
+    // physical leg it stands for is `physical` (brachistochrone at the transfer thrust).
+    bool compressed = false;
+    double physicalDurationSeconds = 0.0;
+    double physicalPeakSpeedMps = 0.0;
+    glm::dvec3 startVelocityMps {0.0};
+
     double durationSeconds() const { return arrivalTimeSeconds - startTimeSeconds; }
     KinematicSample evaluate(double t) const;
 };
@@ -128,6 +136,21 @@ OrbitalTransferPlan planOrbitalTransfer(
     const world::orbits::OrbitalMotion& targetMotion,
     const TransferLimits& limits
 );
+
+// Interplanetary (other parent body / the star): compressed-time plan along a bowed tunnel
+// (never through the star) to the target's approach point at t0 + realSeconds.
+OrbitalTransferPlan planCompressedTransit(
+    const glm::dvec3& startPositionMeters,       // relative to the target's parent (the star)
+    const glm::dvec3& startVelocityMps,
+    double startTimeSeconds,
+    const world::orbits::OrbitalMotion& targetMotion,
+    const TransferLimits& limits,
+    double realSeconds
+);
+
+// Frame state of a compressed plan at t: position on the tunnel, velocity blended from the
+// start velocity to the destination's velocity (what the ship reports while in transit).
+KinematicSample evaluateCompressed(const OrbitalTransferPlan& plan, double t);
 
 struct TransferCarrier
 {

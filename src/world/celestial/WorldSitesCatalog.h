@@ -82,6 +82,14 @@ struct WorldSite
     std::string functions;
     int docks = 0;
     int dockSectors = 0;
+    int dockModules = 0;          // 6-pad HexDock modules; a sector is a ring of up to 12
+    int passengerTerminals = 0;
+    int cargoTerminals = 0;
+    int serviceBerths = 0;
+    std::string level = "A";      // A major hub (System Map) | B part of a complex | C local facility
+    std::string complexId;        // B / C: the complex it belongs to or serves
+    std::string roles;            // joined
+    std::string terminalNames;    // joined named terminals of the complex
     int arrivalsPerDay = 0;
     double utilisation = 0.0;
     double storageTonnes = 0.0;
@@ -209,6 +217,18 @@ public:
                         s.functions += (s.functions.empty() ? "" : ", ") + f.get<std::string>();
             s.docks = num(j, "docks");
             s.dockSectors = num(j, "dock_sectors");
+            s.dockModules = num(j, "dock_modules");
+            s.passengerTerminals = num(j, "passenger_terminals");
+            s.cargoTerminals = num(j, "cargo_terminals");
+            s.serviceBerths = num(j, "service_berths");
+            if (!str(j, "level").empty())
+                s.level = str(j, "level");
+            s.complexId = str(j, "complex");
+            for (const auto& r : strings(j, "roles"))
+                s.roles += (s.roles.empty() ? "" : ", ") + r;
+            if (j.contains("terminals") && j["terminals"].is_array())
+                for (const auto& t : j["terminals"])
+                    s.terminalNames += (s.terminalNames.empty() ? "" : ", ") + str(t, "name");
             s.arrivalsPerDay = num(j, "arrivals_day");
             s.utilisation = dbl(j, "utilisation");
             s.storageTonnes = dbl(j, "storage_t");

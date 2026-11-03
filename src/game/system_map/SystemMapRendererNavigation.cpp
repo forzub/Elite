@@ -1801,6 +1801,65 @@ void SystemMapRenderer::decorateSystemNetworkRoutes(
         }
     }
 
+    // plan view: height stems from every drawn object to its reference plane (its parent body's plane, else the ecliptic)
+    if (m_systemView.state().planView)
+    {
+        const auto& bodies = m_systemSceneFrame.interaction.bodyAbsolutePositionById;
+        for (const auto& item : overlay.items)
+        {
+            if (!item.visible || !item.drawGlyph)
+                continue;
+            const auto pos = positions.find(item.objectId);
+            if (pos == positions.end())
+                continue;
+            double refY = 0.0;
+            if (const auto b = bodies.find(item.navigationHubParentBodyId); b != bodies.end())
+                refY = b->second.y;
+            const glm::dvec3 foot(pos->second.x, refY, pos->second.z);
+            game::system_map::MapObjectTrajectory t;
+            t.objectId = "network:stem:" + item.objectId;
+            t.kind = game::system_map::MapTrajectoryKind::HeightStem;
+            for (const glm::dvec3* p : {&pos->second, &foot})
+            {
+                game::system_map::MapTrajectoryPoint point;
+                point.screenProjected = projectAbsolute(*p, point.screenPx);
+                if (point.screenProjected)
+                    t.points.push_back(point);
+            }
+            if (t.points.size() == 2 && glm::length(t.points[1].screenPx - t.points[0].screenPx) > 4.0)
+                overlay.trajectories.push_back(std::move(t));
+        }
+    }
+
+    // beacon network (filter N): relays of a region chained, regions chained Earth -> transit -> Mars -> Belt -> Jupiter -> Saturn -> outer
+    if (m_systemView.state().showBeacons && m_worldSites)
+    {
+        std::vector<std::string> chain;
+        for (const char* region : {"venus", "mercury", "earth_cislunar", "transit", "mars", "belt", "jupiter", "saturn", "outer"})
+            for (const auto& r : m_worldSites->relaysInSystem(system.systemId))
+                if (r.region == region)
+                    chain.push_back(r.id);
+        for (std::size_t i = 0; i + 1 < chain.size(); ++i)
+        {
+            const glm::dvec3* a = endpoint(chain[i]);
+            const glm::dvec3* b = endpoint(chain[i + 1]);
+            if (!a || !b)
+                continue;
+            game::system_map::MapObjectTrajectory t;
+            t.objectId = "network:beacon:" + chain[i];
+            t.kind = game::system_map::MapTrajectoryKind::BeaconLink;
+            for (const glm::dvec3* p : {a, b})
+            {
+                game::system_map::MapTrajectoryPoint point;
+                point.screenProjected = projectAbsolute(*p, point.screenPx);
+                if (point.screenProjected)
+                    t.points.push_back(point);
+            }
+            if (t.points.size() == 2)
+                overlay.trajectories.push_back(std::move(t));
+        }
+    }
+
     // the player's Orbital Transfer tunnel (body-relative samples, moved with the body)
     if (!m_transferTunnel.empty())
     {

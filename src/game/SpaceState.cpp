@@ -710,6 +710,11 @@ void SpaceState::handleInput()
         // G: optional cube overlay (hybrid System Map); arrows walk sibling cubes in the screen plane.
         if (Input::instance().isKeyPressedOnce(GLFW_KEY_G))
             m_systemMapRenderer.toggleSystemGridOverlay();
+        // V: plan (2.5D) <-> free 3D view; N: beacon network filter
+        if (Input::instance().isKeyPressedOnce(GLFW_KEY_V))
+            m_systemMapRenderer.toggleSystemPlanView();
+        if (Input::instance().isKeyPressedOnce(GLFW_KEY_N))
+            m_systemMapRenderer.toggleSystemBeacons();
         {
             const int dx = (Input::instance().isKeyPressedOnce(GLFW_KEY_RIGHT) ? 1 : 0) - (Input::instance().isKeyPressedOnce(GLFW_KEY_LEFT) ? 1 : 0);
             const int dy = (Input::instance().isKeyPressedOnce(GLFW_KEY_UP) ? 1 : 0) - (Input::instance().isKeyPressedOnce(GLFW_KEY_DOWN) ? 1 : 0);
@@ -1293,7 +1298,7 @@ void SpaceState::update(float dt)
                         const auto& mo = shipIt->second.transform.motion;
                         std::cerr << "[SolMapScript] player hub " << mo.hubId << " matched " << mo.matchedToReferenceFrame
                                   << " world speed " << glm::length(mo.worldVelocityMps) << " m/s local speed " << glm::length(mo.localVelocityMps) << " m/s";
-                        for (const char* hubId : {"earth_orbital_hub", "earth_hub.baikonur"})
+                        for (const char* hubId : {"earth_orbital_hub", "earth_hub.tikhiy", "site.000.sol.ceres"})
                         {
                             const auto h = m_client->world().hubs().find(hubId);
                             if (h != m_client->world().hubs().end())

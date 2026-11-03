@@ -456,6 +456,62 @@ void stepCarrier(
     c.deltaVUsedMps += glm::length(thrust) * dt;
 }
 
+OrbitalTransferPlan planCompressedTransit(
+    const glm::dvec3& p0,
+    const glm::dvec3& v0,
+    double t0,
+    const world::orbits::OrbitalMotion& m,
+    const TransferLimits& L,
+    double realSeconds)
+{
+    OrbitalTransferPlan plan;
+    glm::dvec3 p1, v1, tp, tv;
+    approachState(m, t0 + realSeconds, L, p1, v1, tp, tv);
+    // a bowed arc about the star: the mid point lies on the mean radius between the two directions
+    const double r0 = glm::length(p0), r1 = glm::length(p1);
+    glm::dvec3 midDir = p0 / std::max(1.0, r0) + p1 / std::max(1.0, r1);
+    if (glm::length(midDir) < 1.0e-6)
+        midDir = glm::normalize(glm::cross(p0, glm::dvec3(0.0, 1.0, 0.0)));
+    const glm::dvec3 mid = glm::normalize(midDir) * (0.5 * (r0 + r1));
+    const double tm = t0 + 0.5 * realSeconds;
+    const glm::dvec3 chord = (p1 - p0) / realSeconds;
+    plan.segments.push_back(HermiteSegment {t0, tm, p0, glm::dvec3(0.0), mid, chord});
+    plan.segments.push_back(HermiteSegment {tm, t0 + realSeconds, mid, chord, p1, glm::dvec3(0.0)});
+    plan.startTimeSeconds = t0;
+    plan.arrivalTimeSeconds = t0 + realSeconds;
+    plan.arrivalPositionMeters = p1;
+    plan.arrivalVelocityMps = v1;
+    plan.targetPositionAtArrivalMeters = tp;
+    plan.targetVelocityAtArrivalMps = tv;
+    plan.startVelocityMps = v0;
+    plan.compressed = true;
+    glm::dvec3 prev = p0;
+    for (int k = 0; k <= 160; ++k)
+    {
+        const glm::dvec3 p = plan.evaluate(t0 + realSeconds * k / 160.0).positionMeters;
+        plan.pathLengthMeters += glm::length(p - prev);
+        prev = p;
+        plan.tunnelMeters.push_back(p);
+    }
+    const InterplanetaryEstimate e = brachistochrone(plan.pathLengthMeters, L.maxThrustAccelMps2);
+    plan.physicalDurationSeconds = e.durationSeconds;
+    plan.physicalPeakSpeedMps = e.peakSpeedMps;
+    plan.peakSpeedMps = e.peakSpeedMps;
+    plan.deltaVMps = e.deltaVMps;
+    plan.feasible = true;
+    return plan;
+}
+
+KinematicSample evaluateCompressed(const OrbitalTransferPlan& plan, double t)
+{
+    KinematicSample s = plan.evaluate(t);
+    const double f = std::clamp((t - plan.startTimeSeconds) / std::max(1.0e-9, plan.durationSeconds()), 0.0, 1.0);
+    const double w = f * f * (3.0 - 2.0 * f);
+    s.velocityMps = plan.startVelocityMps * (1.0 - w) + plan.arrivalVelocityMps * w;
+    s.accelerationMps2 = glm::dvec3(0.0);
+    return s;
+}
+
 InterplanetaryEstimate brachistochrone(double d, double a)
 {
     InterplanetaryEstimate e;

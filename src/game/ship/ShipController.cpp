@@ -198,8 +198,12 @@ bool applyVelocityAlignmentAttitude(
         return false;
     }
 
+    // Ctrl+J: the velocity to align with is the global one (frame + local), not the local one.
+    const glm::dvec3 alignmentVelocityWorld = ship.motion.freeFlight
+        ? ship.motion.travelFrame.linearVelocityMps + ship.motion.travelFrame.localToWorldVector(ship.motion.localVelocityMps)
+        : ship.motion.travelFrame.localToWorldVector(ship.motion.localVelocityMps);
     const double localSpeed =
-        glm::length(ship.motion.localVelocityMps);
+        glm::length(alignmentVelocityWorld);
 
     if (localSpeed <= MinAlignmentSpeedMps)
     {
@@ -212,10 +216,7 @@ bool applyVelocityAlignmentAttitude(
         return false;
     }
 
-    glm::dvec3 velocityWorld =
-        ship.motion.travelFrame.localToWorldVector(
-            ship.motion.localVelocityMps
-        );
+    glm::dvec3 velocityWorld = alignmentVelocityWorld;
 
     const double velocityWorldLength = glm::length(velocityWorld);
     if (velocityWorldLength <= 1.0e-9)
@@ -385,19 +386,28 @@ void applyRequestedAngularAcceleration(
     const float safeAngularAccel = static_cast<float>(
         game::ship::angularAccelerationLimitRadPerSec2(params)
     );
-    const float safeAngularRate = static_cast<float>(
+    // Ctrl+J under main thrust: no sharp turns (crew load while the thrust line swings at
+    // free-flight speeds) - every rate limit is capped at FreeFlightThrustTurnRateRadPerSec.
+    // Coasting (and Backspace free rotation, which has no thrust) keeps the ordinary limits.
+    constexpr float FreeFlightThrustTurnRateRadPerSec = 0.10f;
+    const bool freeFlightUnderThrust =
+        ship.motion.freeFlight && glm::length(ship.motion.mainEngineAccelerationMps2) > 0.05;
+    auto turnCap = [&](double limit) {
+        return static_cast<float>(freeFlightUnderThrust ? std::min(limit, static_cast<double>(FreeFlightThrustTurnRateRadPerSec)) : limit);
+    };
+    const float safeAngularRate = turnCap(
         game::ship::angularLoadRateLimitRadPerSec(params)
     );
     const float maxPitchRate =
-        static_cast<float>(
+        turnCap(
             game::ship::pitchRateLimitRadPerSec(params)
         );
     const float maxYawRate =
-        static_cast<float>(
+        turnCap(
             game::ship::yawRateLimitRadPerSec(params)
         );
     const float maxRollRate =
-        static_cast<float>(
+        turnCap(
             game::ship::rollRateLimitRadPerSec(params)
         );
 

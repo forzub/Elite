@@ -133,6 +133,11 @@
    "check": "earth_capacity_ge_demand_plus_reserve",
    "detail": "57 069 movements/day vs capacity 92 238 (utilisation 0.62)",
    "ok": true
+  },
+  {
+   "check": "relay_names_neutral_codes",
+   "detail": "19 / 19 beacons named by region code + number",
+   "ok": true
   }
  ],
  "dock_model": {
@@ -2046,7 +2051,7 @@
    "anchor": null,
    "id": "relay.sol.earth_cislunar.1",
    "kind": "nav_relay",
-   "name": "Маяк Гагарин",
+   "name": "Маяк ЗЛ.1",
    "reason": "резерв района",
    "region": "earth_cislunar",
    "status": "PROPOSAL"
@@ -2055,7 +2060,7 @@
    "anchor": null,
    "id": "relay.sol.earth_cislunar.2",
    "kind": "nav_relay",
-   "name": "Маяк Королёв",
+   "name": "Маяк ЗЛ.2",
    "reason": "резерв района",
    "region": "earth_cislunar",
    "status": "PROPOSAL"
@@ -2064,7 +2069,7 @@
    "anchor": null,
    "id": "relay.sol.earth_cislunar.3",
    "kind": "nav_relay",
-   "name": "Маяк Терешкова",
+   "name": "Маяк ЗЛ.3",
    "reason": "покрытие плотного узла",
    "region": "earth_cislunar",
    "status": "PROPOSAL"
@@ -2073,7 +2078,7 @@
    "anchor": null,
    "id": "relay.sol.earth_cislunar.4",
    "kind": "nav_relay",
-   "name": "Маяк Армстронг",
+   "name": "Маяк ЗЛ.4",
    "reason": "покрытие плотного узла",
    "region": "earth_cislunar",
    "status": "PROPOSAL"
@@ -2082,7 +2087,7 @@
    "anchor": null,
    "id": "relay.sol.mars.1",
    "kind": "nav_relay",
-   "name": "Маяк Скиапарелли",
+   "name": "Маяк МР.1",
    "reason": "резерв района",
    "region": "mars",
    "status": "PROPOSAL"
@@ -2091,7 +2096,7 @@
    "anchor": null,
    "id": "relay.sol.mars.2",
    "kind": "nav_relay",
-   "name": "Маяк Маринер",
+   "name": "Маяк МР.2",
    "reason": "резерв района",
    "region": "mars",
    "status": "PROPOSAL"
@@ -2100,7 +2105,7 @@
    "anchor": null,
    "id": "relay.sol.belt.1",
    "kind": "nav_relay",
-   "name": "Маяк Пиацци",
+   "name": "Маяк ПС.1",
    "reason": "резерв района",
    "region": "belt",
    "status": "PROPOSAL"
@@ -2109,7 +2114,7 @@
    "anchor": null,
    "id": "relay.sol.belt.2",
    "kind": "nav_relay",
-   "name": "Маяк Ольберс",
+   "name": "Маяк ПС.2",
    "reason": "резерв района",
    "region": "belt",
    "status": "PROPOSAL"
@@ -2118,7 +2123,7 @@
    "anchor": null,
    "id": "relay.sol.belt.3",
    "kind": "nav_relay",
-   "name": "Маяк Хирояма",
+   "name": "Маяк ПС.3",
    "reason": "покрытие плотного узла",
    "region": "belt",
    "status": "PROPOSAL"
@@ -2127,7 +2132,7 @@
    "anchor": null,
    "id": "relay.sol.mercury.1",
    "kind": "nav_relay",
-   "name": "Маяк Мессенджер",
+   "name": "Маяк МК.1",
    "reason": "резерв района",
    "region": "mercury",
    "status": "PROPOSAL"
@@ -2136,7 +2141,7 @@
    "anchor": null,
    "id": "relay.sol.venus.1",
    "kind": "nav_relay",
-   "name": "Маяк Венера-7",
+   "name": "Маяк ВН.1",
    "reason": "резерв района",
    "region": "venus",
    "status": "PROPOSAL"
@@ -2145,7 +2150,7 @@
    "anchor": null,
    "id": "relay.sol.jupiter.1",
    "kind": "nav_relay",
-   "name": "Маяк Галилей",
+   "name": "Маяк ЮП.1",
    "reason": "резерв района",
    "region": "jupiter",
    "status": "PROPOSAL"
@@ -2154,7 +2159,7 @@
    "anchor": null,
    "id": "relay.sol.jupiter.2",
    "kind": "nav_relay",
-   "name": "Маяк Пионер",
+   "name": "Маяк ЮП.2",
    "reason": "резерв района",
    "region": "jupiter",
    "status": "PROPOSAL"
@@ -2163,7 +2168,7 @@
    "anchor": null,
    "id": "relay.sol.saturn.1",
    "kind": "nav_relay",
-   "name": "Маяк Кассини",
+   "name": "Маяк СТ.1",
    "reason": "резерв района",
    "region": "saturn",
    "status": "PROPOSAL"
@@ -2172,7 +2177,7 @@
    "anchor": null,
    "id": "relay.sol.saturn.2",
    "kind": "nav_relay",
-   "name": "Маяк Гюйгенс",
+   "name": "Маяк СТ.2",
    "reason": "резерв района",
    "region": "saturn",
    "status": "PROPOSAL"
@@ -2181,7 +2186,7 @@
    "anchor": null,
    "id": "relay.sol.outer.1",
    "kind": "nav_relay",
-   "name": "Маяк Вояджер",
+   "name": "Маяк ВШ.1",
    "reason": "резерв района",
    "region": "outer",
    "status": "PROPOSAL"
@@ -2190,7 +2195,7 @@
    "anchor": null,
    "id": "relay.sol.outer.2",
    "kind": "nav_relay",
-   "name": "Маяк Гершель",
+   "name": "Маяк ВШ.2",
    "reason": "резерв района",
    "region": "outer",
    "status": "PROPOSAL"
@@ -2199,7 +2204,7 @@
    "anchor": "lagrange:Солнце-Земля:L4",
    "id": "relay.sol.transit.1",
    "kind": "nav_relay",
-   "name": "Маяк Лагранж-4",
+   "name": "Маяк СЗ.L4",
    "reason": "резерв района",
    "region": "transit",
    "status": "PROPOSAL"
@@ -2208,7 +2213,7 @@
    "anchor": "lagrange:Солнце-Земля:L5",
    "id": "relay.sol.transit.2",
    "kind": "nav_relay",
-   "name": "Маяк Лагранж-5",
+   "name": "Маяк СЗ.L5",
    "reason": "резерв района",
    "region": "transit",
    "status": "PROPOSAL"

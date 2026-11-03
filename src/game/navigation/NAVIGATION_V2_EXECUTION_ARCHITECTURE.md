@@ -338,6 +338,55 @@ Hub Tactical and Orbital Transfer are different jobs and different modes.
   `[OrbitalTransfer]` (t, speed vs destination, altitude, thrust, tracking
   error).
 
+## 11b. Free flight (Ctrl+J), 2026-11-03
+
+The pilot's own global flight, a third job next to Hub Tactical and Orbital
+Transfer (`GameSimulationFreeFlight.cpp`, flag `DynamicMotionState::freeFlight`,
+replicated; command `ClientShipCommand::ToggleFreeFlight`).
+
+- On: the travel frame is detached from the hub and re-based at the ship with
+  its world kinematics (same seam as Orbital Transfer). The frame carries the
+  ship's GLOBAL motion - position / velocity in the system's world frame (the
+  galaxy reference) - integrated under the real gravity of all bodies
+  (`GravityFieldSystem`, velocity Verlet on the gameplay tick).
+- Every tick, before the ship's flight step, the previous tick's local motion
+  is folded into the frame; the flight laws act on a local state starting at
+  rest. Thrust therefore accumulates without a cap and no servo pulls the
+  velocity back to the 500 m/s envelope; `maxCombatSpeed` is not raised.
+- Laws: Newtonian '+' is the main engine as before; Assisted '+'/'-' are direct
+  forward / reverse main thrust (no VREL servo), keypad translation stays on
+  the vectoring authority. Backspace free rotation has no main thrust (rotation
+  only with the engine off); leaving it aligns the nose with the GLOBAL
+  velocity. Under main thrust every attitude rate is capped at 0.10 rad/s (no
+  sharp turns at free-flight speeds - PROPOSAL value).
+- Off: the ship is re-based into the nearest hub frame with its actual
+  relative position and velocity (no snap); back in Hub Tactical the ordinary
+  laws apply (Assisted brakes toward its envelope).
+- Not yet: atmosphere / impact model (below the surface is only logged),
+  collision with hub geometry at free-flight speeds, client prediction of the
+  re-based frame (server-authoritative; live jitter not measured), the global
+  navigation layer below.
+
+### Global navigation layer (PROPOSAL, not implemented)
+
+Free flight makes the ship's state a heliocentric (system) state; destinations
+are moving bodies and hubs. That needs a separate planner above the hub
+tactical chain, not an extension of it:
+
+- state model: patched conics (sphere of influence per body) for planning, the
+  same n-body `GravityFieldSystem` for execution;
+- solvers: Lambert (arrival epoch -> departure / arrival velocity) for
+  coast-dominated legs, brachistochrone / constant-thrust legs for the engine
+  envelope, a combined search over departure epoch and flight time;
+- gravity assists: flyby of a body changes the heliocentric velocity by the
+  turn angle at periapsis (bounded by the minimum safe altitude); the planner
+  evaluates sequences of 0-2 flybys like Earth -> Venus -> Mercury;
+- autopilot: a carrier-style executor (the Orbital Transfer carrier law, but
+  with the ship's real attitude and engine instead of a frame carrier), with
+  hand-over to Hub Tactical at the destination;
+- the in-system Orbital Transfer planner becomes the special case "same
+  central body".
+
 ## 12. Known implementation debt
 
 These are not contradictions to the architecture, but they remain cleanup work:

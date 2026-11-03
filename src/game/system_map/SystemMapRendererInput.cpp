@@ -505,6 +505,51 @@ SystemMapRenderer::handleInput(
                 m_systemInteraction.descendTarget(m_systemView, interactionContext, vp, target, inputNowSeconds, ignored);
             m_devEnterId.clear();
         }
+        if (!m_listFocusObjectId.empty())
+        {
+            auto& items = m_systemSceneFrame.interaction.objectOverlay.items;
+            const auto item = std::find_if(items.begin(), items.end(), [&](const auto& i) { return i.objectId == m_listFocusObjectId; });
+            const auto position = interactionContext.systemObjectAbsolutePosition(m_listFocusObjectId);
+            if (item != items.end() && position)
+            {
+                game::system_map::SystemMapHubSelection hubSelection;
+                hubSelection.hubId = item->objectId;
+                hubSelection.parentBodyId = item->navigationHubParentBodyId;
+                for (const auto& point : m_systemSceneFrame.interaction.hubScreenPoints)
+                    if (point.hubId == item->objectId)
+                        hubSelection.parentBodyId = point.parentBodyId;
+                // selectedHubId = this object: the declutter / beacon filter always keep its marker
+                m_systemInteraction.focusHubSelection(m_systemView, interactionContext, hubSelection, inputNowSeconds);
+                m_objectOverlayState.activate(item->objectId);
+                updateActiveTacticalLocalContext(*item);
+
+                // camera: centre on the object; frame its planet's neighbourhood (moons and
+                // Lagrange hubs of the same planet) - a heliocentric object keeps the zoom
+                float distance = m_systemView.state().camera.distance;
+                const std::string& parent = hubSelection.parentBodyId;
+                std::size_t dot = parent.find('.');
+                dot = dot == std::string::npos ? dot : parent.find('.', dot + 1);
+                dot = dot == std::string::npos ? dot : parent.find('.', dot + 1);
+                const std::string planet = dot == std::string::npos ? parent : parent.substr(0, dot);
+                const auto& bodies = m_systemSceneFrame.interaction.bodyAbsolutePositionById;
+                if (const auto p = bodies.find(planet); !planet.empty() && p != bodies.end())
+                {
+                    double extent = glm::length(*position - p->second);
+                    for (const auto& [id, pos] : bodies)
+                        if (id.rfind(planet + ".", 0) == 0)
+                            extent = std::max(extent, std::min(glm::length(pos - p->second), 40.0 * std::max(extent, 1.0e-9)));
+                    distance = std::min(distance, static_cast<float>(std::max(extent * 2.5, 1.0e-6)));
+                }
+                m_systemView.beginCameraFlight(*position, distance, inputNowSeconds);
+                m_systemSceneFrameDirty = true;
+                m_listFocusObjectId.clear();
+            }
+            else if (--m_listFocusFramesLeft <= 0)
+            {
+                std::cerr << "[SystemMap] list object not on the map: " << m_listFocusObjectId << std::endl;
+                m_listFocusObjectId.clear();
+            }
+        }
         if (!m_devFocusHubId.empty())
         {
             for (const auto& point : m_systemSceneFrame.interaction.hubScreenPoints)

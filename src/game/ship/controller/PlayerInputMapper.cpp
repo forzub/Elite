@@ -42,7 +42,8 @@ void PlayerInputMapper::updateFromKeyState(
     // ClientShipCommand; ordinary ship input must not maintain a second
     // law-only toggle path.
 
-    ctrl.cruiseActive = keys.isKeyPressed(GLFW_KEY_J);
+    // Ctrl+J is the free-flight toggle (a ClientShipCommand), never the held J placeholder.
+    ctrl.cruiseActive = keys.isKeyPressed(GLFW_KEY_J) && !ctrlDown;
 
     // --- Rotation (disabled in J/cruise placeholder) ---
     if (!ctrl.cruiseActive)

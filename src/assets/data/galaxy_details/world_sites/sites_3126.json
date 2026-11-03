@@ -64,7 +64,7 @@
   {
    "anchor": null,
    "id": "relay.sol.earth_cislunar.1",
-   "name": "Маяк Гагарин",
+   "name": "Маяк ЗЛ.1",
    "placement": {
     "orbit": {
      "altitude_km": 38226,
@@ -79,7 +79,7 @@
   {
    "anchor": null,
    "id": "relay.sol.earth_cislunar.2",
-   "name": "Маяк Королёв",
+   "name": "Маяк ЗЛ.2",
    "placement": {
     "orbit": {
      "altitude_km": 57339,
@@ -94,7 +94,7 @@
   {
    "anchor": null,
    "id": "relay.sol.earth_cislunar.3",
-   "name": "Маяк Терешкова",
+   "name": "Маяк ЗЛ.3",
    "placement": {
     "orbit": {
      "altitude_km": 76452,
@@ -109,7 +109,7 @@
   {
    "anchor": null,
    "id": "relay.sol.earth_cislunar.4",
-   "name": "Маяк Армстронг",
+   "name": "Маяк ЗЛ.4",
    "placement": {
     "orbit": {
      "altitude_km": 95565,
@@ -124,7 +124,7 @@
   {
    "anchor": null,
    "id": "relay.sol.mars.1",
-   "name": "Маяк Скиапарелли",
+   "name": "Маяк МР.1",
    "placement": {
     "orbit": {
      "altitude_km": 20334,
@@ -139,7 +139,7 @@
   {
    "anchor": null,
    "id": "relay.sol.mars.2",
-   "name": "Маяк Маринер",
+   "name": "Маяк МР.2",
    "placement": {
     "orbit": {
      "altitude_km": 30501,
@@ -154,7 +154,7 @@
   {
    "anchor": null,
    "id": "relay.sol.belt.1",
-   "name": "Маяк Пиацци",
+   "name": "Маяк ПС.1",
    "placement": {
     "heliocentric": {
      "a_au": 2.7675,
@@ -175,7 +175,7 @@
   {
    "anchor": null,
    "id": "relay.sol.belt.2",
-   "name": "Маяк Ольберс",
+   "name": "Маяк ПС.2",
    "placement": {
     "heliocentric": {
      "a_au": 2.3615,
@@ -196,7 +196,7 @@
   {
    "anchor": null,
    "id": "relay.sol.belt.3",
-   "name": "Маяк Хирояма",
+   "name": "Маяк ПС.3",
    "placement": {
     "heliocentric": {
      "a_au": 2.7724,
@@ -217,7 +217,7 @@
   {
    "anchor": null,
    "id": "relay.sol.mercury.1",
-   "name": "Маяк Мессенджер",
+   "name": "Маяк МК.1",
    "placement": {
     "orbit": {
      "altitude_km": 14640,
@@ -232,7 +232,7 @@
   {
    "anchor": null,
    "id": "relay.sol.venus.1",
-   "name": "Маяк Венера-7",
+   "name": "Маяк ВН.1",
    "placement": {
     "orbit": {
      "altitude_km": 36312,
@@ -247,7 +247,7 @@
   {
    "anchor": null,
    "id": "relay.sol.jupiter.1",
-   "name": "Маяк Галилей",
+   "name": "Маяк ЮП.1",
    "placement": {
     "orbit": {
      "altitude_km": 419466,
@@ -262,7 +262,7 @@
   {
    "anchor": null,
    "id": "relay.sol.jupiter.2",
-   "name": "Маяк Пионер",
+   "name": "Маяк ЮП.2",
    "placement": {
     "orbit": {
      "altitude_km": 629199,
@@ -277,7 +277,7 @@
   {
    "anchor": null,
    "id": "relay.sol.saturn.1",
-   "name": "Маяк Кассини",
+   "name": "Маяк СТ.1",
    "placement": {
     "orbit": {
      "altitude_km": 349392,
@@ -292,7 +292,7 @@
   {
    "anchor": null,
    "id": "relay.sol.saturn.2",
-   "name": "Маяк Гюйгенс",
+   "name": "Маяк СТ.2",
    "placement": {
     "orbit": {
      "altitude_km": 524088,
@@ -307,7 +307,7 @@
   {
    "anchor": null,
    "id": "relay.sol.outer.1",
-   "name": "Маяк Вояджер",
+   "name": "Маяк ВШ.1",
    "placement": {
     "orbit": {
      "altitude_km": 152172,
@@ -322,7 +322,7 @@
   {
    "anchor": null,
    "id": "relay.sol.outer.2",
-   "name": "Маяк Гершель",
+   "name": "Маяк ВШ.2",
    "placement": {
     "orbit": {
      "altitude_km": 221598,
@@ -337,7 +337,7 @@
   {
    "anchor": "lagrange:Солнце-Земля:L4",
    "id": "relay.sol.transit.1",
-   "name": "Маяк Лагранж-4",
+   "name": "Маяк СЗ.L4",
    "placement": {
     "lagrange_point": {
      "hill_ratio": 0.01,
@@ -354,7 +354,7 @@
   {
    "anchor": "lagrange:Солнце-Земля:L5",
    "id": "relay.sol.transit.2",
-   "name": "Маяк Лагранж-5",
+   "name": "Маяк СЗ.L5",
    "placement": {
     "lagrange_point": {
      "hill_ratio": 0.01,

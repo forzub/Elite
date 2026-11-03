@@ -834,6 +834,10 @@ void GameServer::update(double dt)
                     m_simulation.cancelOrbitalTransfer(id);
                     break;
 
+                case ClientShipCommand::ToggleFreeFlight:
+                    m_simulation.toggleFreeFlight(id);
+                    break;
+
                 case ClientShipCommand::InjectEquipmentFailure:
                 {
                     // A deliberate test fault on this player's authoritative

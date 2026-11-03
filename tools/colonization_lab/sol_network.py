@@ -13,6 +13,7 @@ aliases), Earth orbital network (orbits, surface allocation, docks, utilisation)
 """
 import json
 import math
+import re
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -443,6 +444,9 @@ def compute(I, earth_rows, pax_model):
                           passenger_terminals=sum(h["passenger_terminals"] for h in earth_hubs), cargo_terminals=sum(h["cargo_terminals"] for h in earth_hubs))
     add("earth_capacity_ge_demand_plus_reserve", cap_mov >= tot_mov * 1.25,
         f"{round(tot_mov):,} movements/day vs capacity {round(cap_mov):,} (utilisation {tot_mov / cap_mov:.2f})".replace(",", " "))
+    # beacons carry neutral codes (region + number), never names of people
+    neutral = [r for r in relays if re.fullmatch(r"Маяк [А-ЯЁ]{2}\.(\d+|L\d)", r["name"])]
+    add("relay_names_neutral_codes", len(neutral) == len(relays), f"{len(neutral)} / {len(relays)} beacons named by region code + number")
     major_by_region = {}
     for h in earth_hubs:
         major_by_region["earth"] = major_by_region.get("earth", 0) + 1

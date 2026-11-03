@@ -81,6 +81,13 @@ struct DynamicMotionState
     // Backspace mode: free hull rotation; no Assisted speed servo.
     bool assistedFreeRotation = false;
 
+    // Ctrl+J free flight (server-owned, GameSimulationFreeFlight.cpp): the travel frame is
+    // detached and carries the ship's GLOBAL (system / galaxy reference) motion under the real
+    // gravity of all bodies; every tick the local motion is folded into it, so the 500 m/s local
+    // envelope never caps the speed. +/- are direct main thrust, attitude and alignment use the
+    // global velocity, turns under thrust are rate-limited.
+    bool freeFlight = false;
+
     // True only while/after a real +/- Assisted trim. It lets the release edge
     // capture reached forward speed once without allowing keypad RCS or an
     // external impulse to silently rewrite the longitudinal setpoint.

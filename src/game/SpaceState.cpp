@@ -840,6 +840,21 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         }
     }
 
+    // Ctrl+J: free flight on / off (server decides; leaving re-bases into the nearest hub frame).
+    if(Input::instance().isKeyPressedOnce(GLFW_KEY_J) &&
+       (Input::instance().isKeyPressed(GLFW_KEY_LEFT_CONTROL) || Input::instance().isKeyPressed(GLFW_KEY_RIGHT_CONTROL)))
+    {
+        if(m_client)
+        {
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type=ClientShipCommand::ToggleFreeFlight;
+            msg.payload=command;
+            m_client->sendMessage(msg);
+        }
+        return;
+    }
+
     // Backspace toggles independent hull attitude only in Assisted flight.
     // The SystemMap already handles its own Backspace before this block.
     if(Input::instance().isKeyPressedOnce(GLFW_KEY_BACKSPACE))
@@ -895,6 +910,8 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         // updateDockingAdvisory(), so it continues even while a map/UI screen
         // causes handleInput() to return before reaching this block.
         m_inputMapper.update(m_playerControl, currentLocalControlLaw);
+        if (m_devThrustUntilMs > 0.0 && startupElapsedMs(m_startupTotalBegin) < m_devThrustUntilMs)
+            m_playerControl.targetSpeedRate = 1.0f;      // DEV map script "thrust:<s>": '+' held
         m_client->submitInput(m_playerControl);
     }
 
@@ -1282,6 +1299,28 @@ void SpaceState::update(float dt)
                     m_systemMapRenderer.devZoom(std::atof(arg("zoom:").c_str()));
                 else if (cmd.rfind("transfer:", 0) == 0)
                     requestOrbitalTransfer(arg("transfer:"));
+                // the panel list: open it / pick a row (the same action a click on the row makes)
+                else if (cmd == "listopen")
+                    m_inSessionPresentationRenderer.devOpenObjectList();
+                else if (cmd.rfind("list:", 0) == 0)
+                {
+                    game::presentation::SystemMapPanelAction action;
+                    action.type = game::presentation::SystemMapPanelActionType::SelectObject;
+                    action.objectId = arg("list:");
+                    m_inSessionPresentationRenderer.devOpenObjectList(false);   // a row click closes the list
+                    applyNativeSystemMapPanelAction(action);
+                }
+                // Ctrl+J free flight; hold '+' for N seconds (the keys a pilot presses)
+                else if (cmd == "freeflight")
+                {
+                    game::network::ClientMessage msg;
+                    ClientShipCommand command;
+                    command.type = ClientShipCommand::ToggleFreeFlight;
+                    msg.payload = command;
+                    m_client->sendMessage(msg);
+                }
+                else if (cmd.rfind("thrust:", 0) == 0)
+                    m_devThrustUntilMs = startupElapsedMs(m_startupTotalBegin) + std::atof(arg("thrust:").c_str()) * 1000.0;
                 else if (cmd == "report")
                 {
                     const auto ids = m_systemMapRenderer.devVisibleObjectIds();

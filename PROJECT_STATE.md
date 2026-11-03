@@ -1992,6 +1992,56 @@ the order was already done in the fourth pass (cc56fd59) and is unchanged.
   counts on the overview. Live arrival of a LEO transfer (~2.8 h) still not
   observed; human acceptance OPEN.
 
+### Sixth pass (user order 2026-11-03): hub / beacon list, neutral beacon names, Ctrl+J free flight
+Restore point: `restore/pre-hublist-freeflight-2026-11-03` (= ac71cfb6).
+
+#### Map list (implemented; scripted + live; human acceptance OPEN)
+- System / Detail map: the star-system dropdown is gone (it stays on the
+  Galaxy map); in its place "Хабы и маяки" - every hub and beacon the System
+  Map draws, grouped by planet (moons and Lagrange points with their planet,
+  the belt as one group) in order of distance from the star, then the beacons;
+  objects unknown to the player (map level none) are not listed.
+  `buildSystemMapObjectList` (SystemMapInfoBuilder.h); row ids = marker ids
+  (runtime hub id or site:<id>). A row = the click on the marker:
+  `SystemMapRenderer::focusObjectFromList` selects it (selectedHubId, overlay
+  activation -> panel facts), keeps it drawn through declutter / clusters /
+  the beacon filter, flies the camera to it (planet neighbourhood framed;
+  heliocentric objects keep the zoom).
+- Beacons renamed to neutral codes (region + number: ЗЛ.1-4, МР.1-2, ПС.1-3,
+  МК.1, ВН.1, ЮП.1-3, СТ.1-2, ВШ.1-2, СЗ.L4/L5) in canon/sol_network.json;
+  check `sol.relay_names_neutral_codes` 19/19.
+- Evidence: EliteSystemMapInfoCheck PASS (list 28 hubs + 19 beacons in 10
+  groups, ids = marker ids, the pirate haven not listed, no person names);
+  check_hybrid_map extended, map python tests 5/5 PASS; world_sites --check OK,
+  lore_md / lore_html regenerated. LIVE (D:/tmp/elite_list1..5): grouped list
+  open (Меркурий first, 47 objects), pick Рейсильвия -> panel facts + ringed
+  marker centred, pick Маяк ПС.2 -> drawn with the beacon filter off + facts,
+  pick Тихий -> camera at Earth (500 000 km scale) + facts.
+
+#### Ctrl+J free flight (implemented; live LEO evidence; human acceptance OPEN)
+- Contract: NAVIGATION_V2_EXECUTION_ARCHITECTURE.md §11b. Detached travel
+  frame carries the global (system / galaxy reference) motion under the
+  gravity of all bodies; local motion folded into it each tick (no envelope);
+  Assisted +/- = direct main thrust; Backspace free rotation = no main thrust,
+  its exit aligns with the GLOBAL velocity; attitude rates capped at 0.10 rad/s
+  under thrust (PROPOSAL); off -> nearest hub frame with actual relative
+  kinematics. Held J (cruise placeholder) unchanged; Ctrl+J excluded from it.
+  WireProtocolVersion 20, snapshot schema 23 (motion.freeFlight).
+- LIVE (no nav-stress autopilot, ELITE_ARGS=--dev-direct-flight):
+  Newtonian-I at Vysokiy: coast 150 s -> altitude 422.63-422.65 km (free
+  orbit under Earth gravity), 20 s '+' -> 12 -> 736 m/s vs the hub (36 m/s2),
+  HUD "J НЬЮТОНОВСКИЙ 24.11 km/s" (global); off -> handed over to Vysokiy at
+  734 m/s, 3.6 km. Assisted-I: 15 s '+' -> 1 103 m/s vs the hub, 20 s coast
+  kept 1 103 m/s; off -> Vysokiy at 1 103 m/s, then Assisted brakes toward
+  its envelope (938 m/s 3 s later).
+- Not verified live: the turn-rate cap, Backspace alignment to the global
+  velocity. Open: atmosphere / impact, hub-geometry collision at J speeds,
+  client prediction of the re-based frame, the global navigation layer
+  (PROPOSAL in §11b: patched conics + Lambert / constant-thrust legs +
+  gravity assists + carrier-style autopilot).
+- Contracts: the python contract loop is line-for-line identical to the
+  restore point (no new reds).
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

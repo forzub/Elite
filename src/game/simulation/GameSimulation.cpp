@@ -1457,6 +1457,7 @@ m_hubVelocityMetersPerSecond[hubId] =
         // Orbital Transfer frames move first (carrier on the orbital clock), then every ship's
         // world pose is re-materialised from its travel frame.
         updateOrbitalTransfers();
+        updateFreeFlights(dt);
         updateShipReferenceFrames(dt);
     }
 

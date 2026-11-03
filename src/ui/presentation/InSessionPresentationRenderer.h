@@ -44,6 +44,9 @@ public:
         double scrollY
     );
 
+    // DEV map script: open the hub / beacon list (what a click on the list button does).
+    void devOpenObjectList(bool open = true) noexcept { m_systemDropdownOpen = open; }
+
 private:
     bool m_systemDropdownOpen = false;
     bool m_systemPanelLeftWasDown = false;

@@ -641,6 +641,8 @@ SpaceState::buildNativeSystemMapPanelPresentation()
         info.selectedObjectId = m_systemMapRenderer.activeObjectId();
         info.selectedBodyId = m_systemMapRenderer.selectedBodyId();
         game::presentation::buildSystemMapInfo(info, panel.infoTitle, panel.info);
+        // the star-system list belongs to the Galaxy map; here: every hub and beacon of this system
+        panel.objects = game::presentation::buildSystemMapObjectList(info);
     }
     return panel;
 }
@@ -714,6 +716,14 @@ void SpaceState::applyNativeSystemMapPanelAction(
 
         case SystemMapPanelCommandType::Hub:
             setSystemMapHubMode();
+            return;
+
+        case SystemMapPanelCommandType::SelectObject:
+            // a hub / beacon picked from the list: back to the System map if needed, then the
+            // same selection a click on its marker makes (highlighted marker + facts in the panel)
+            if (m_systemMapRenderer.mode() != SystemMapRenderer::Mode::System)
+                setSystemMapLoadedSystemMode();
+            m_systemMapRenderer.focusObjectFromList(command.objectId);
             return;
     }
 }

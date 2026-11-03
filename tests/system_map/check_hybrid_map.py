@@ -11,7 +11,9 @@ user's navigation model:
   - hover shows a small tooltip (name, owner / operator, type) inside the viewport;
   - the right panel shows КАРТА СИСТЕМЫ built from the world model, word-wrapped, clipped and scrollable;
   - network routes are dashed and distinct from the solid Orbital Transfer tunnel;
-  - every world object marker comes from the world-sites runtime copy (no second list).
+  - every world object marker comes from the world-sites runtime copy (no second list);
+  - System / Detail: the panel list is every hub and beacon of the system (the star-system list
+    belongs to the Galaxy map); picking a row selects the marker, highlights it and shows its facts.
 Behavioural acceptance on data: tools/navigation_runtime/SystemMapInfoCheck.cpp.
 """
 import pathlib
@@ -83,6 +85,13 @@ require('title = "КАРТА СИСТЕМЫ";' in info, "panel title must be К�
 require("system_status_text" not in info and "summary(in.systemId)" in info, "system state must come from the world model summary")
 require("Хабы по районам" in info, "summary must list hubs of every region (discoverability)")
 
+require("buildSystemMapObjectList" in info and "systemMapObjectIdOf" in info, "System / Detail panel must list every hub and beacon")
+require("listRowCount(panel, infoMode)" in panel and "SystemMapPanelActionType::SelectObject" in panel,
+        "System / Detail: the panel list is hubs and beacons (no star-system list), a row selects the object")
+rend_h = text("src/game/system_map/SystemMapRenderer.h")
+require("void focusObjectFromList(" in rend_h, "a list pick must select, highlight and frame the object on the map")
+require("item.objectId != keepId" in frame, "the selected beacon must stay drawn while the beacon filter is off")
+
 bridge = text("src/game/client/ClientWorldSitesMapBridge.h")
 require("WorldSitePlacementKind::Heliocentric" in bridge and "WorldSitePlacementKind::LagrangePoint" in bridge,
         "belt anchors and Lagrange points must be placed from the world model")
@@ -92,4 +101,5 @@ if fails:
         print("[FAIL]", f)
     sys.exit(1)
 print("[PASS] hybrid System Map: optional cube overlay, cube-free picking, screen-plane arrows, hub glyphs, "
-      "hover tooltip, wrapped/clipped/scrollable panel from the world model, dashed network vs solid transfer tunnel")
+      "hover tooltip, wrapped/clipped/scrollable panel from the world model, hub / beacon list, "
+      "dashed network vs solid transfer tunnel")

@@ -946,6 +946,30 @@ void DynamicMotionSystem::applyLocalFrameInput(
         return;
     }
 
+    // Ctrl+J free flight: +/- command the main engine directly (the frame carries the global
+    // motion and is re-based every tick, so there is no speed to servo and no envelope); keypad
+    // translation stays on the vectoring authority. Free rotation (above) has no main thrust.
+    if (motion.freeFlight)
+    {
+        const double rate = static_cast<double>(targetSpeedRate);
+        const double mainAccel = rate >= 0.0 ? forwardMainAccel : reverseMainAccel;
+        motion.mainEngineAccelerationMps2 =
+            assistedTravelForward * (rate * mainAccel) +
+            clampMagnitude(
+                f*(static_cast<double>(forwardInput)*assistedLateralStabilizationAccel)+
+                r*(static_cast<double>(strafeInput)*assistedLateralStabilizationAccel)+
+                u*(static_cast<double>(liftInput)*assistedLateralStabilizationAccel),
+                assistedLateralStabilizationAccel);
+        motion.targetForwardSpeedMps = glm::dot(relativeWorldVelocity, f);
+        motion.assistedTargetSpeedHold = false;
+        motion.assistedThrottleTrimWasActive = false;
+        motion.desiredTacticalVelocityMps = relativeWorldVelocity;
+        motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
+        motion.assistedStabilizationAccelerationMps2 = glm::dvec3(0.0);
+        motion.engineAccelerationMps2 = motion.mainEngineAccelerationMps2;
+        return;
+    }
+
     // With the fore/reverse bank destroyed, Assisted cannot pretend it has
     // an instantaneous reverse main. END/BrakeToStop uses the existing
     // physical flip-and-burn attitude controller: coast while it turns the

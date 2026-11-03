@@ -77,9 +77,13 @@ FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
     out.controlLaw = motion.localControlLaw;
     out.assistedFreeRotation = motion.assistedFreeRotation;
     out.alignmentMode = motion.velocityAlignmentMode;
-    out.speedMps = glm::length(motion.localVelocityMps);
+    // Ctrl+J free flight: the instrument shows the GLOBAL velocity (frame + local); no envelope.
+    const glm::dvec3 globalVelocityWorld = motion.travelFrame.valid
+        ? motion.travelFrame.linearVelocityMps + motion.travelFrame.localToWorldVector(motion.localVelocityMps)
+        : glm::dvec3(0.0);
+    out.speedMps = motion.freeFlight ? glm::length(globalVelocityWorld) : glm::length(motion.localVelocityMps);
 
-    out.speedLimitMps = std::max(0.0, speedLimitMps);
+    out.speedLimitMps = motion.freeFlight ? 0.0 : std::max(0.0, speedLimitMps);
 
     if (out.speedLimitMps > 0.0)
     {
@@ -94,6 +98,14 @@ FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
         motion.localControlLaw == game::navigation::LocalFlightControlLaw::Assisted
             ? textProfile.assistedModeLabel
             : textProfile.newtonianModeLabel;
+    if (motion.freeFlight)
+    {
+        std::ostringstream km;
+        km << std::fixed << std::setprecision(out.speedMps < 100000.0 ? 2 : 1) << out.speedMps / 1000.0 << " km/s";
+        out.speedText = km.str();
+        out.speedFraction01 = 1.0f;
+        out.modeText = "J " + out.modeText;
+    }
 
     switch (motion.velocityAlignmentMode)
     {
@@ -118,8 +130,9 @@ FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
         return out;
     }
 
-    const glm::dvec3 velocityWorld =
-        motion.travelFrame.localToWorldVector(motion.localVelocityMps);
+    const glm::dvec3 velocityWorld = motion.freeFlight
+        ? globalVelocityWorld
+        : motion.travelFrame.localToWorldVector(motion.localVelocityMps);
     const glm::dvec3 indicatorY =
         safeNormalized(velocityWorld, glm::dvec3(0.0, 0.0, -1.0));
 

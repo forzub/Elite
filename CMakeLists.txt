@@ -583,6 +583,7 @@ add_executable(EliteGame
     src/game/simulation/GameSimulationNavigationLab.cpp
     src/game/simulation/GameSimulationDockTraffic.cpp
     src/game/simulation/GameSimulationOrbitalTransfer.cpp
+    src/game/simulation/GameSimulationFreeFlight.cpp
     src/game/simulation/GameSimulationDevScenarios.cpp
     src/game/simulation/GameSimulationReplication.cpp
     src/game/simulation/GameSimulationActivation.cpp
@@ -874,7 +875,7 @@ if(ELITE_BUILD_SERVER)
         src/game/simulation/GameSimulationNavigationLab.cpp
         src/game/simulation/GameSimulationDockTraffic.cpp
         src/game/simulation/GameSimulationOrbitalTransfer.cpp
-    src/game/simulation/GameSimulationOrbitalTransfer.cpp
+        src/game/simulation/GameSimulationFreeFlight.cpp
         src/game/simulation/GameSimulationDevScenarios.cpp
         src/game/simulation/GameSimulationReplication.cpp
         src/game/simulation/GameSimulationActivation.cpp

@@ -18,13 +18,15 @@ enum class SystemMapPanelActionType
     OpenGalaxy,
     OpenSystem,
     OpenDetail,
-    OpenHub
+    OpenHub,
+    SelectObject    // System / Detail: a hub or beacon picked from the object list
 };
 
 struct SystemMapPanelAction
 {
     SystemMapPanelActionType type = SystemMapPanelActionType::OpenSystem;
     int systemId = -1;
+    std::string objectId;
 };
 
 enum class SystemMapPanelCommandType
@@ -36,13 +38,15 @@ enum class SystemMapPanelCommandType
     LoadedSystem,
     LoadedDetail,
     SelectedDetail,
-    Hub
+    Hub,
+    SelectObject
 };
 
 struct SystemMapPanelCommand
 {
     SystemMapPanelCommandType type = SystemMapPanelCommandType::None;
     int systemId = -1;
+    std::string objectId;
 };
 
 SystemMapPanelCommand resolveSystemMapPanelAction(
@@ -100,6 +104,16 @@ struct SystemMapPanelSystemItem
     bool selected = false;
 };
 
+// System / Detail map: one row of the hub and beacon list (replaces the system list there).
+// A heading row groups the objects of one planet / the belt / the beacons and is not selectable.
+struct SystemMapPanelObjectItem
+{
+    std::string objectId;      // overlay object id of the marker (replicated hub id or "site:<id>")
+    std::string label;
+    bool heading = false;
+    bool selected = false;
+};
+
 struct SystemMapPanelNavigationAction
 {
     SystemMapPanelActionType action = SystemMapPanelActionType::OpenSystem;
@@ -131,6 +145,7 @@ struct SystemMapPanelPresentation
     bool canOpenHub = false;
 
     std::vector<SystemMapPanelSystemItem> systems;
+    std::vector<SystemMapPanelObjectItem> objects;
 
     // System / Detail map: "what is here, what happens, how to get there".
     std::string infoTitle;

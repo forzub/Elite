@@ -46,7 +46,7 @@ struct PanelLayout
 };
 
 // infoMode: the System / Detail information block takes the middle of the panel;
-// the system list sits just above the buttons and opens upwards.
+// the hub and beacon list sits just above the buttons and opens upwards.
 PanelLayout makePanelLayout(const Viewport& viewport, bool infoMode = false)
 {
     PanelLayout layout;
@@ -209,6 +209,7 @@ std::string navigationButtonLabel(
         case Action::OpenHub:
             return loc.text("map.hub", "HUB");
         case Action::SelectSystem:
+        case Action::SelectObject:
             break;
     }
 
@@ -274,6 +275,27 @@ std::string systemRowLabel(
     row += item.name;
     if (!item.starType.empty()) row += " [" + item.starType + "]";
     return row;
+}
+
+// System / Detail: the list is hubs and beacons of this system; elsewhere the star systems.
+int listRowCount(const game::presentation::SystemMapPanelPresentation& panel, bool infoMode)
+{
+    return static_cast<int>(infoMode ? panel.objects.size() : panel.systems.size());
+}
+
+int selectedListRow(const game::presentation::SystemMapPanelPresentation& panel, bool infoMode)
+{
+    if (infoMode)
+    {
+        for (std::size_t i = 0; i < panel.objects.size(); ++i)
+            if (panel.objects[i].selected)
+                return static_cast<int>(i);
+        return -1;
+    }
+    for (std::size_t i = 0; i < panel.systems.size(); ++i)
+        if (panel.systems[i].selected)
+            return static_cast<int>(i);
+    return -1;
 }
 }
 
@@ -362,7 +384,8 @@ InSessionPresentationRenderer::handleSystemMapPanelInput(
         return std::nullopt;
     }
 
-    const auto layout = makePanelLayout(viewport, !panel.info.empty());
+    const bool infoMode = !panel.info.empty();
+    const auto layout = makePanelLayout(viewport, infoMode);
     const double localX = mouseX - static_cast<double>(viewport.x);
     const double localY = mouseY - static_cast<double>(viewport.y);
     const bool inside = systemMapPanelContains(viewport, mouseX, mouseY);
@@ -376,11 +399,11 @@ InSessionPresentationRenderer::handleSystemMapPanelInput(
         return std::nullopt;
     }
 
-    const int rowCount = static_cast<int>(panel.systems.size());
+    const int rowCount = listRowCount(panel, infoMode);
     const int maxFirst = std::max(0, rowCount - layout.visibleRows);
     m_systemDropdownFirstRow = std::clamp(m_systemDropdownFirstRow, 0, maxFirst);
 
-    if (!m_systemDropdownOpen && scrollY != 0.0 && !panel.info.empty())
+    if (!m_systemDropdownOpen && scrollY != 0.0 && infoMode)
         m_infoScrollPx -= static_cast<float>(scrollY) * 40.0f;
 
     if (m_systemDropdownOpen && scrollY != 0.0)
@@ -400,14 +423,9 @@ InSessionPresentationRenderer::handleSystemMapPanelInput(
         m_systemDropdownOpen = !m_systemDropdownOpen;
         if (m_systemDropdownOpen)
         {
-            const auto selected = std::find_if(
-                panel.systems.begin(),
-                panel.systems.end(),
-                [](const auto& item) { return item.selected; });
-            if (selected != panel.systems.end())
+            const int selectedIndex = selectedListRow(panel, infoMode);
+            if (selectedIndex >= 0)
             {
-                const int selectedIndex = static_cast<int>(
-                    std::distance(panel.systems.begin(), selected));
                 m_systemDropdownFirstRow = std::clamp(
                     selectedIndex - layout.visibleRows / 2,
                     0,
@@ -424,10 +442,20 @@ InSessionPresentationRenderer::handleSystemMapPanelInput(
         const int itemIndex = m_systemDropdownFirstRow + visibleRow;
         if (itemIndex >= 0 && itemIndex < rowCount)
         {
+            if (infoMode)
+            {
+                const auto& item = panel.objects[static_cast<std::size_t>(itemIndex)];
+                if (item.heading)
+                    return std::nullopt;            // group headings are not selectable
+                m_systemDropdownOpen = false;
+                m_infoScrollPx = 0.0f;              // the new object's facts start at the top
+                return SystemMapPanelAction{SystemMapPanelActionType::SelectObject, -1, item.objectId};
+            }
             m_systemDropdownOpen = false;
             return SystemMapPanelAction{
                 SystemMapPanelActionType::SelectSystem,
-                panel.systems[static_cast<std::size_t>(itemIndex)].id
+                panel.systems[static_cast<std::size_t>(itemIndex)].id,
+                {}
             };
         }
         return std::nullopt;
@@ -629,8 +657,13 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
         selected ? formatDistanceLy(selected->distanceFromPlayerLy) : dash);
     }
 
+    const game::presentation::SystemMapPanelObjectItem* selectedObject = nullptr;
+    for (const auto& item : panel.objects)
+        if (item.selected && !item.heading)
+            selectedObject = &item;
     text.textDrawPx(
-        localization.text("map.system_list", "System list"),
+        infoMode ? localization.text("map.object_list", "Хабы и маяки")
+                 : localization.text("map.system_list", "System list"),
         layout.dropdownButton.x,
         layout.dropdownButton.y - static_cast<float>(bodyPx + 7),
         bodyPx,
@@ -648,7 +681,11 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
         layout.dropdownButton.w,
         1.0f,
         glm::vec4(0.32f, 0.62f, 0.86f, 0.68f));
-    const std::string dropdownLabel = selected
+    const auto objectCount = std::count_if(panel.objects.begin(), panel.objects.end(), [](const auto& o) { return !o.heading; });
+    const std::string dropdownLabel = infoMode
+        ? (selectedObject ? "> " + selectedObject->label
+                          : localization.text("map.select_object", "Выбрать хаб или маяк") + " (" + std::to_string(objectCount) + ")")
+        : selected
         ? systemRowLabel(*selected)
         : localization.text("map.select_system", "Select system");
     text.textDrawPx(
@@ -673,11 +710,28 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
             layout.dropdownMenu.h,
             glm::vec4(0.008f, 0.023f, 0.040f, 1.0f));
 
-        const int rowCount = static_cast<int>(panel.systems.size());
+        const int rowCount = listRowCount(panel, infoMode);
         const int maxFirst = std::max(0, rowCount - layout.visibleRows);
         m_systemDropdownFirstRow = std::clamp(m_systemDropdownFirstRow, 0, maxFirst);
         const int end = std::min(rowCount, m_systemDropdownFirstRow + layout.visibleRows);
-        for (int i = m_systemDropdownFirstRow; i < end; ++i)
+        for (int i = m_systemDropdownFirstRow; i < end && infoMode; ++i)
+        {
+            const auto& item = panel.objects[static_cast<std::size_t>(i)];
+            const float rowY = layout.dropdownMenu.y +
+                static_cast<float>(i - m_systemDropdownFirstRow) * DropdownRowHeight;
+            if (item.selected)
+                text.solidRectPx(layout.dropdownMenu.x, rowY, layout.dropdownMenu.w, DropdownRowHeight,
+                                 glm::vec4(0.055f, 0.120f, 0.175f, 1.0f));
+            text.textDrawPx(
+                item.label,
+                layout.dropdownMenu.x + (item.heading ? 8.0f : 20.0f),
+                rowY + 6.0f,
+                smallPx,
+                item.heading ? glm::vec4(1.0f, 0.70f, 0.42f, 0.94f)
+                : item.selected ? glm::vec4(0.68f, 0.90f, 1.0f, 0.98f)
+                                : glm::vec4(0.67f, 0.78f, 0.87f, 0.92f));
+        }
+        for (int i = m_systemDropdownFirstRow; i < end && !infoMode; ++i)
         {
             const auto& item = panel.systems[static_cast<std::size_t>(i)];
             const float rowY = layout.dropdownMenu.y +

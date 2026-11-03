@@ -16,7 +16,10 @@ SystemMapPanelCommand resolveSystemMapPanelAction(
     switch (action.type)
     {
         case SystemMapPanelActionType::SelectSystem:
-            return {SystemMapPanelCommandType::SelectSystem, action.systemId};
+            return {SystemMapPanelCommandType::SelectSystem, action.systemId, {}};
+
+        case SystemMapPanelActionType::SelectObject:
+            return {SystemMapPanelCommandType::SelectObject, -1, action.objectId};
 
         case SystemMapPanelActionType::OpenGalaxy:
             return mode == MapMode::Galaxy

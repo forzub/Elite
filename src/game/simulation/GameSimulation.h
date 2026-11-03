@@ -188,6 +188,21 @@ public:
     };
     bool requestOrbitalTransfer(EntityId shipId, const std::string& targetHubId);
     void cancelOrbitalTransfer(EntityId shipId);
+
+    // Ctrl+J free flight (GameSimulationFreeFlight.cpp): on - the travel frame is detached and
+    // carries the ship's global motion under gravity; off - the ship is re-based into the
+    // nearest hub frame with its actual relative position and velocity.
+    struct ActiveFreeFlight
+    {
+        std::string sourceHubId;
+        double peakSpeedMps = 0.0;
+        double lastLogSeconds = -1.0e30;
+        double elapsedSeconds = 0.0;
+        std::string primaryBodyId;
+        double primaryAltitudeMeters = 0.0;
+    };
+    bool toggleFreeFlight(EntityId shipId);
+    const ActiveFreeFlight* freeFlight(EntityId shipId) const;
     const ActiveOrbitalTransfer* orbitalTransfer(EntityId shipId) const;
     // This ship's dispatcher status (phase None when unknown to the dock).
     game::docking::traffic::DockTrafficShipStatus dockDispatcherStatus(EntityId shipId) const;
@@ -338,6 +353,7 @@ public:
 
     void updateShipReferenceFrames(double dt);
     void updateOrbitalTransfers();
+    void updateFreeFlights(double dt);
     void handOverToHub(EntityId shipId, Ship& ship, const std::string& hubId, const glm::dvec3* worldOverride, const glm::dvec3* velOverride);
 
     const game::navigation::HubNavigationFrame* hubNavigationFrame(
@@ -533,6 +549,7 @@ private:
     std::unordered_map<EntityId, StaticObject> m_staticObjects;
     std::unordered_map<std::string, world::hubs::OrbitalHubRuntime> m_orbitalHubs;
     std::unordered_map<EntityId, ActiveOrbitalTransfer> m_orbitalTransfers;
+    std::unordered_map<EntityId, ActiveFreeFlight> m_freeFlights;
 
     // Compatibility alias used by the current single-system navigation and
     // local-client presentation paths. Multiplayer authority lives in

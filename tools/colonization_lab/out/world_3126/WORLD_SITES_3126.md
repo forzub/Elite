@@ -104,6 +104,7 @@
 - OK sol.every_hub_has_traffic: ok
 - OK sol.legacy_generic_ids_mapped_once: 26 legacy ids
 - OK sol.earth_capacity_ge_demand_plus_reserve: 57 069 movements/day vs capacity 92 238 (utilisation 0.62)
+- OK sol.relay_names_neutral_codes: 19 / 19 beacons named by region code + number
 - OK lotus_identity_known_to_developers: NIRVANA-1 (CANON, AUTHOR_TRUTH)
 - OK news_reaches_far_periphery_within_author_target: network diameter 1.75 d, Sol -> farthest frontier 3.959 d, target 7.0 d (AUTHOR_TARGET)
 - OK migration_within_transport_capacity: demand 2424245 <= capacity 6005363 per year

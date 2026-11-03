@@ -674,6 +674,7 @@ private:
     bool m_hasGalaxyMapOverlay = false;
     bool m_hasSystemMapSnapshot = false;
     bool m_systemMapShowsEmptySector = false;
+    double m_devThrustUntilMs = 0.0;
     int m_nextEmptySystemMapId = -2;
     double m_systemMapLiveRefreshTimer = 0.0;
     double m_detailMapLiveRefreshTimer = 0.0;

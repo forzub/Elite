@@ -308,6 +308,106 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
             add(out, K::Bullet, "", g.label + ": " + names);
         }
     }
-    add(out, K::Paragraph, "", "Наведите курсор на значок — имя и владелец; щелчок — подробности здесь. G — сетка кубов, T — маршруты.");
+    add(out, K::Paragraph, "", "Наведите курсор на значок — имя и владелец; щелчок — подробности здесь. Все хабы и маяки — в списке внизу. G — сетка кубов, T — маршруты, N — маяки.");
+}
+
+// Marker id of a world site on the System Map: the replicated hub id for a site bound to a
+// runtime hub ("initial_world_state.orbital_hubs[<id>]"), else "site:<id>" (ClientWorldSitesMapBridge).
+inline std::string systemMapObjectIdOf(const world::celestial::WorldSite& s)
+{
+    const auto open = s.runtimeBinding.rfind('[');
+    const auto close = s.runtimeBinding.rfind(']');
+    if (open != std::string::npos && close != std::string::npos && close > open + 1)
+        return s.runtimeBinding.substr(open + 1, close - open - 1);
+    return "site:" + s.id;
+}
+
+/*
+    The full list of what the System Map draws as hubs and beacons (the panel list that replaces
+    the star-system list on the System / Detail map): hubs grouped by planet (moons, Lagrange
+    points with their planet; the belt as one group) in order of distance from the star, then the
+    beacons. Same filter as the map bridge - unknown objects (map level "none") are not listed.
+*/
+inline std::vector<SystemMapPanelObjectItem> buildSystemMapObjectList(const SystemMapInfoInput& in)
+{
+    std::vector<SystemMapPanelObjectItem> out;
+    if (!in.catalog || in.systemId < 0)
+        return out;
+    struct Group { std::string label; double radiusAu = 1.0e9; std::vector<const world::celestial::WorldSite*> sites; };
+    std::vector<Group> groups;
+    std::vector<const world::celestial::WorldSite*> beacons;
+    glm::dvec3 starAu(0.0);
+    if (in.system)
+        for (const auto& b : in.system->bodies)
+            if (b.type == world::celestial::BodyType::Star)
+            {
+                starAu = b.positionAu;
+                break;
+            }
+    for (const auto& s : in.catalog->sitesInSystem(in.systemId))
+    {
+        if (s.type == "belt_anchor" || (s.mapLevel != "system" && s.runtimeBinding.empty()))
+            continue;
+        if (s.type == "nav_relay")
+        {
+            beacons.push_back(&s);
+            continue;
+        }
+        // the planet: third segment of "system_N.Star.Planet[.Moon]"
+        const std::string id = !s.parentBodyId.empty() ? s.parentBodyId : s.lagrangeSecondaryId;
+        std::string planetId = id;
+        double radiusAu = 1.0e9;
+        std::string label;
+        if (s.placement == world::celestial::WorldSitePlacementKind::Heliocentric || id.find("asteroid_belt") != std::string::npos)
+        {
+            label = "Главный пояс";
+            radiusAu = in.system ? 2.7 : radiusAu;     // without bodies: catalog order
+        }
+        else
+        {
+            std::size_t dot = id.find('.');
+            dot = dot == std::string::npos ? dot : id.find('.', dot + 1);
+            dot = dot == std::string::npos ? dot : id.find('.', dot + 1);
+            if (dot != std::string::npos)
+                planetId = id.substr(0, dot);
+            const std::size_t last = planetId.rfind('.');
+            label = last == std::string::npos ? planetId : planetId.substr(last + 1);
+            if (in.system)
+                for (const auto& b : in.system->bodies)
+                    if (b.id == planetId)
+                    {
+                        label = b.name;
+                        radiusAu = glm::length(b.positionAu - starAu);
+                    }
+        }
+        auto g = std::find_if(groups.begin(), groups.end(), [&](const Group& x) { return x.label == label; });
+        if (g == groups.end())
+        {
+            groups.push_back({label, radiusAu, {}});
+            g = groups.end() - 1;
+        }
+        g->sites.push_back(&s);
+    }
+    std::stable_sort(groups.begin(), groups.end(), [](const Group& a, const Group& b) { return a.radiusAu < b.radiusAu; });
+    auto push = [&](const world::celestial::WorldSite& s) {
+        SystemMapPanelObjectItem item;
+        item.objectId = systemMapObjectIdOf(s);
+        item.label = s.name + (s.type == "nav_relay" || s.typeLabel.empty() ? std::string() : " — " + s.typeLabel);
+        item.selected = !in.selectedObjectId.empty() && item.objectId == in.selectedObjectId;
+        out.push_back(std::move(item));
+    };
+    for (const auto& g : groups)
+    {
+        out.push_back({std::string(), g.label + " (" + std::to_string(g.sites.size()) + ")", true, false});
+        for (const auto* s : g.sites)
+            push(*s);
+    }
+    if (!beacons.empty())
+    {
+        out.push_back({std::string(), "Маяки (" + std::to_string(beacons.size()) + ")", true, false});
+        for (const auto* s : beacons)
+            push(*s);
+    }
+    return out;
 }
 }

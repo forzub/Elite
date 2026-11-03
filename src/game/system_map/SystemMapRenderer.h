@@ -419,6 +419,9 @@ private:
     std::string m_devFocusHubId;
     std::string m_devHoverObjectId;
     std::string m_devEnterId;
+    // a hub / beacon picked from the panel list; kept a few frames until its marker exists
+    std::string m_listFocusObjectId;
+    int m_listFocusFramesLeft = 0;
     std::size_t m_devLastNetworkLines = 0;
     std::size_t m_devLastTunnelPoints = 0;
     std::vector<glm::dvec3> m_transferTunnel;
@@ -480,6 +483,14 @@ public:
     // Arrow keys: move the selected child cube to a sibling in the screen plane
     // locked at the first press (dx = right, dy = up). Returns false when nothing moved.
     bool moveSystemCubeSelection(int dx, int dy, double nowSeconds);
+    // Panel list (hubs and beacons): select the object as a click on its marker does, keep its
+    // marker drawn and highlighted whatever the zoom / filters, fly the camera to its planet.
+    void focusObjectFromList(const std::string& objectId)
+    {
+        m_listFocusObjectId = objectId;
+        m_listFocusFramesLeft = 30;
+        m_systemSceneFrameDirty = true;
+    }
     // DEV map script: select an object as if clicked.
     void devActivateObject(const std::string& objectId) { m_objectOverlayState.activate(objectId); }
     // DEV acceptance script: focus a body / hub through the ordinary selection path; hover an object.

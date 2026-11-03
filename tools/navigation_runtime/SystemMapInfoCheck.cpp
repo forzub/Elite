@@ -181,6 +181,42 @@ int main(int argc, char** argv)
     }
     check(rAu > 2.5 && rAu < 3.0, "Ceres hub at its anchor: " + std::to_string(rAu) + " AU from the Sun");
 
+    // the panel list (System / Detail map): every hub and beacon, ids = the markers' ids, no hidden objects
+    {
+        const auto list = game::presentation::buildSystemMapObjectList(summary);
+        int hubs = 0, beacons = 0, headings = 0, personNamed = 0, hidden = 0;
+        bool inBeacons = false, earthRuntimeIds = true;
+        for (const auto& item : list)
+        {
+            if (item.heading)
+            {
+                ++headings;
+                inBeacons = item.label.rfind("Маяки", 0) == 0;
+                continue;
+            }
+            (inBeacons ? beacons : hubs) += 1;
+            for (const char* name : {"Гагарин", "Королёв", "Терешкова", "Армстронг", "Пиацци", "Галилей", "Кассини", "Вояджер"})
+                personNamed += item.label.find(name) != std::string::npos ? 1 : 0;
+            hidden += item.label.find("Тихая Гавань") != std::string::npos ? 1 : 0;
+            if (item.label.rfind("Тихий", 0) == 0)
+                earthRuntimeIds = earthRuntimeIds && item.objectId == "earth_hub.tikhiy";
+            if (item.label.rfind("Перевал Цереры", 0) == 0)
+                earthRuntimeIds = earthRuntimeIds && item.objectId == "site.000.sol.ceres";
+            if (item.label.rfind("Рейсильвия", 0) == 0)
+                earthRuntimeIds = earthRuntimeIds && item.objectId == "site:site.000.sol.vesta";
+        }
+        check(hubs == 28 && beacons == static_cast<int>(catalog.relaysInSystem(0).size()) && headings >= 8,
+              "panel list: " + std::to_string(hubs) + " hubs + " + std::to_string(beacons) + " beacons in " + std::to_string(headings) +
+                  " groups (29 major hubs minus the hidden pirate haven)");
+        check(earthRuntimeIds, "panel list ids are the map markers' ids (runtime hub id / site:<id>)");
+        check(hidden == 0, "an object unknown to the player is not listed");
+        check(personNamed == 0, "beacons carry neutral codes, no names of people");
+        // no body snapshot here: catalog order (Earth first); in the game the groups follow the
+        // distance from the star (Mercury first - live capture)
+        check(!list.empty() && list.front().heading && list.front().label.rfind("Земля", 0) == 0,
+              "groups in catalog order without a body snapshot (first: " + (list.empty() ? std::string() : list.front().label) + ")");
+    }
+
     std::cout << (failures ? "SYSTEM MAP INFO CHECK: FAILED (" + std::to_string(failures) + ")" : "SYSTEM MAP INFO CHECK: PASS") << "\n";
     return failures ? 1 : 0;
 }

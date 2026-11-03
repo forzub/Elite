@@ -518,7 +518,7 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
         {
             auto& item = items[i];
             const int p = priority(item);
-            if (item.kind == MapObjectGlyphKind::Relay && !viewState.state().showBeacons)
+            if (item.kind == MapObjectGlyphKind::Relay && !viewState.state().showBeacons && item.objectId != keepId)
             {
                 item.drawGlyph = false;        // beacons are a filter (N), not part of the default picture
                 continue;

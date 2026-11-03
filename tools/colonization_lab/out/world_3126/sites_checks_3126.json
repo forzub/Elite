@@ -171,6 +171,11 @@
    "ok": true
   },
   {
+   "check": "sol.relay_names_neutral_codes",
+   "detail": "19 / 19 beacons named by region code + number",
+   "ok": true
+  },
+  {
    "check": "lotus_identity_known_to_developers",
    "detail": "NIRVANA-1 (CANON, AUTHOR_TRUTH)",
    "ok": true

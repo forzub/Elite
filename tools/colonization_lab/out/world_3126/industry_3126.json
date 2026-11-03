@@ -5277,7 +5277,7 @@
   },
   {
    "check": "rescue_covers_every_site",
-   "detail": "518 sites",
+   "detail": "513 sites",
    "ok": true
   }
  ],

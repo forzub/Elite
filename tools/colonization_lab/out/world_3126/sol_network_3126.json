@@ -55,23 +55,33 @@
  ],
  "checks": [
   {
-   "check": "earth_hub_count_is_author_target",
-   "detail": "12 hubs",
+   "check": "earth_major_hubs_in_author_target",
+   "detail": "7 Earth complexes (target 6-8)",
+   "ok": true
+  },
+  {
+   "check": "sol_major_hubs_within_budget",
+   "detail": "29 / 30 major hubs (preferred [24, 30])",
+   "ok": true
+  },
+  {
+   "check": "region_major_hubs_within_budget",
+   "detail": "belt 5, deep_space 1, earth 7, earth_cislunar 3, jupiter 4, mars 3, mercury 1, outer 2, saturn 2, venus 1",
    "ok": true
   },
   {
    "check": "unique_sol_hub_ids",
-   "detail": "43 ids",
+   "detail": "38 ids",
    "ok": true
   },
   {
    "check": "unique_sol_hub_names",
-   "detail": "43 names",
+   "detail": "38 names",
    "ok": true
   },
   {
    "check": "earth_hubs_orbital_separation",
-   "detail": "min 26 km between ('earth_hub.baikonur', 'earth_hub.wenchang') over 2 days",
+   "detail": "min 74 km between ('earth_hub.tikhiy', 'earth_hub.kourou') over 2 days",
    "ok": true
   },
   {
@@ -86,12 +96,12 @@
   },
   {
    "check": "earth_demand_within_orbital_capacity",
-   "detail": "demand 398 422 533 legs/y <= 80 % of capacity 644 097 291",
+   "detail": "demand 398 422 533 legs/y <= 80 % of capacity 642 855 411",
    "ok": true
   },
   {
    "check": "major_hub_utilisation_in_band",
-   "detail": "10 major hubs within 0.4-0.75",
+   "detail": "6 major hubs within 0.4-0.75",
    "ok": true
   },
   {
@@ -101,7 +111,7 @@
   },
   {
    "check": "routes_have_real_ends",
-   "detail": "82 routes",
+   "detail": "41 routes",
    "ok": true
   },
   {
@@ -118,9 +128,15 @@
    "check": "legacy_generic_ids_mapped_once",
    "detail": "26 legacy ids",
    "ok": true
+  },
+  {
+   "check": "earth_capacity_ge_demand_plus_reserve",
+   "detail": "57 069 movements/day vs capacity 92 238 (utilisation 0.62)",
+   "ok": true
   }
  ],
  "dock_model": {
+  "modules_per_sector_max": 12,
   "operating_hours_per_day": 22,
   "pad_cycle_minutes": {
    "cargo_lifter": 60,
@@ -129,23 +145,41 @@
    "service": 30,
    "surface_lifter": 35
   },
+  "pads_per_module": 6,
   "pads_per_sector": 6,
   "peak_to_mean": 1.35,
-  "presentation_limit": "в рантайме визуально показан один сектор (hub_hex_dock_a) только у «Высокого»; остальные сектора — данные. Временное ограничение представления, не модель.",
-  "sector": "HexDock sector (рантайм hub_hex_dock_a: 6 площадок, 6 ожидания)",
+  "presentation_limit": "в рантайме визуально показан один модуль HexDock (hub_hex_dock_a) только у «Высокого»; остальные модули и сектора — данные. Временное ограничение представления, не модель.",
+  "sector": "dock sector: кольцо до 12 модулей HexDock; модуль = рантаймовый hub_hex_dock_a (6 площадок, 6 ожидания)",
   "target_utilisation": [
    0.5,
    0.75
   ]
  },
+ "earth_capacity": {
+  "cargo_t_day": 728921,
+  "cargo_terminals": 15,
+  "dock_modules": 488,
+  "dock_sectors": 44,
+  "movement_capacity_day": 92238,
+  "movements_day": 57069,
+  "pads": 2928,
+  "passenger_terminals": 87,
+  "passengers_day": 3344144,
+  "reserve": 0.381,
+  "service_movements_day": 2426,
+  "utilisation": 0.619
+ },
  "earth_hubs": [
   {
    "altitude_km": 420,
-   "arrivals_day": 3903,
-   "cargo_lifter_flights_day": 480.08,
+   "arrivals_day": 5517,
+   "cargo_lifter_flights_day": 899.873,
+   "cargo_t_day": 172776,
+   "cargo_terminals": 3,
    "character": "строгий, перегруженный, официальный; очереди таможни; лучшие ремонтные доки Земли",
-   "dock_sectors": 70,
-   "docks": 420,
+   "dock_modules": 98,
+   "dock_sectors": 9,
+   "docks": 588,
    "founded": 3108,
    "founder": "Власть Сола (Sol Authority)",
    "function": [
@@ -155,7 +189,7 @@
     "administration"
    ],
    "history": "Построен Властью Сола к открытию маяка (3112) на месте старой станции Кордона; через него проходят все рейсы Земли в сеть. Станция Кордона (2790–3108) сама стояла в плоскости станций Реставрации 51.6°.",
-   "hub_shuttle_flights_day": 1606.627,
+   "hub_shuttle_flights_day": 1457.596,
    "id": "earth_orbital_hub",
    "inclination_deg": 51.64,
    "interstellar_or_interplanetary_departures_day": 279.839,
@@ -166,277 +200,173 @@
    },
    "lan_deg": 0,
    "legacy_ids": [],
-   "movements_day": 7806,
+   "level": "A",
+   "movements_day": 11034,
    "name": "Высокий",
    "name_basis": "плоскость 51.6° унаследована от станций XXI века, удобных с Байконура; «Высокий» — старое прозвище станции Кордона, перешедшее к новому хабу",
    "operator": "Портовая служба Высокого (Sol Authority)",
    "owner": "sol_authority",
-   "pad_cycle_min_mean": 44.263,
-   "pads_per_sector": 6,
-   "peak_utilisation": 0.841,
+   "pad_cycle_min_mean": 43.59,
+   "pads_per_module": 6,
+   "passenger_terminals": 16,
+   "passengers_day": 623987,
+   "peak_utilisation": 0.837,
    "period_min": 92.824,
    "phase_deg": 35,
    "player_start": true,
-   "population": 96750,
+   "population": 125804,
    "profile": "gateway",
-   "queue_wait_min": 1.786,
+   "queue_wait_min": 1.464,
    "role_ru": "первый хаб Реставрации; межзвёздные ворота, таможня Сола, пересадка",
+   "roles": [
+    "межзвёздные ворота",
+    "таможня Сола",
+    "пассажиры северных широт"
+   ],
    "runtime_binding": "initial_world_state.orbital_hubs[earth_orbital_hub]",
-   "service_flights_day": 164.599,
+   "service_berths": 6,
+   "service_flights_day": 308.528,
    "speed_km_s": 7.661,
-   "surface_legs_y": 54070690,
-   "surface_pax_flights_day": 1371.656,
-   "type": "orbital_hub",
-   "utilisation": 0.623
-  },
-  {
-   "altitude_km": 470,
-   "arrivals_day": 3816,
-   "cargo_lifter_flights_day": 960.159,
-   "character": "грузовой, шумный, профсоюзы докеров",
-   "dock_sectors": 61,
-   "docks": 366,
-   "founded": 2588,
-   "founder": "консорциум «Тюратам» (Казахстан, Россия, Узбекистан)",
-   "function": [
-    "cargo",
-    "heavy_lift",
-    "passenger"
+   "surface_legs_y": 101351426,
+   "surface_pax_flights_day": 2571.066,
+   "terminals": [
+    {
+     "history": "грузовой терминал консорциума «Тюратам» (2588); до укрупнения сети 3120-х — отдельная станция в той же плоскости 51.6°",
+     "id": "earth_orbital_hub.t.baikonur",
+     "kind": "cargo",
+     "name": "терминал «Байконур»"
+    }
    ],
-   "hub_shuttle_flights_day": 1319.56,
-   "id": "earth_hub.baikonur",
-   "inclination_deg": 51.64,
-   "interstellar_or_interplanetary_departures_day": 0.0,
-   "lan_deg": 0,
-   "legacy_ids": [],
-   "movements_day": 7632,
-   "name": "Байконур",
-   "name_basis": "космодром, ради которого выбрана плоскость 51.6°",
-   "operator": "Тюратам Орбитал",
-   "owner": "sol_authority",
-   "pad_cycle_min_mean": 39.561,
-   "pads_per_sector": 6,
-   "peak_utilisation": 0.844,
-   "period_min": 93.851,
-   "phase_deg": 215,
-   "population": 70188,
-   "profile": "cargo",
-   "queue_wait_min": 1.723,
-   "role_ru": "грузовой хаб Евразии в той же плоскости, что и «Высокий»: общие окна запуска, обратная фаза",
-   "service_flights_day": 164.599,
-   "speed_km_s": 7.633,
-   "surface_legs_y": 54070690,
-   "surface_pax_flights_day": 1371.656,
-   "type": "orbital_hub",
-   "utilisation": 0.625
-  },
-  {
-   "altitude_km": 545,
-   "arrivals_day": 2680,
-   "cargo_lifter_flights_day": 387.961,
-   "character": "деловой, дорогой, много транзита в Америку и Европу",
-   "dock_sectors": 40,
-   "docks": 240,
-   "founded": 2634,
-   "founder": "Северный портовый союз",
-   "function": [
-    "passenger",
-    "cargo"
-   ],
-   "hub_shuttle_flights_day": 1050.22,
-   "id": "earth_hub.meridian",
-   "inclination_deg": 56.5,
-   "interstellar_or_interplanetary_departures_day": 0.0,
-   "lan_deg": 210,
-   "legacy_ids": [],
-   "movements_day": 5359,
-   "name": "Меридиан",
-   "name_basis": "собственное имя XXVII века: союз северных портов «одного меридиана» — от Лондона до Москвы",
-   "operator": "Северный портовый союз",
-   "owner": "sol_authority",
-   "pad_cycle_min_mean": 36.66,
-   "pads_per_sector": 6,
-   "peak_utilisation": 0.837,
-   "period_min": 95.399,
-   "phase_deg": 90,
-   "population": 49734,
-   "profile": "passenger",
-   "queue_wait_min": 1.932,
-   "role_ru": "северный пассажирский хаб: единственная плоскость, прямо доступная Москве (55.8°), и плоскость Лондона, Парижа, Харбина",
-   "service_flights_day": 133.015,
-   "speed_km_s": 7.592,
-   "surface_legs_y": 43695544,
-   "surface_pax_flights_day": 1108.461,
    "type": "orbital_hub",
    "utilisation": 0.62
   },
   {
    "altitude_km": 505,
-   "arrivals_day": 5976,
-   "cargo_lifter_flights_day": 869.116,
+   "arrivals_day": 9461,
+   "cargo_lifter_flights_day": 1382.701,
+   "cargo_t_day": 265479,
+   "cargo_terminals": 4,
    "character": "самый людный хаб Земли; безупречный порядок, бесконечные потоки",
-   "dock_sectors": 89,
-   "docks": 534,
+   "dock_modules": 141,
+   "dock_sectors": 12,
+   "docks": 846,
    "founded": 2612,
    "founder": "Тихоокеанская компания орбитальных перевозок",
    "function": [
     "passenger",
     "cargo"
    ],
-   "hub_shuttle_flights_day": 2325.696,
+   "hub_shuttle_flights_day": 3654.129,
    "id": "earth_hub.tikhiy",
    "inclination_deg": 36.2,
    "interstellar_or_interplanetary_departures_day": 0.0,
    "lan_deg": 120,
    "legacy_ids": [],
-   "movements_day": 11952,
+   "level": "A",
+   "movements_day": 18923,
    "name": "Тихий",
    "name_basis": "по океану, над которым проходит большая часть его окон с Токио",
    "operator": "Тихоокеанская компания орбитальных перевозок",
    "owner": "sol_authority",
-   "pad_cycle_min_mean": 36.69,
-   "pads_per_sector": 6,
+   "pad_cycle_min_mean": 36.722,
+   "pads_per_module": 6,
+   "passenger_terminals": 21,
+   "passengers_day": 821308,
    "peak_utilisation": 0.84,
    "period_min": 94.572,
    "phase_deg": 250,
-   "population": 109068,
+   "population": 171806,
    "profile": "passenger_mega",
-   "queue_wait_min": 1.307,
+   "queue_wait_min": 1.04,
    "role_ru": "главный пассажирский хаб плоскости 36° — агломерации Токио, Осаки, Нагои, Сеула, Тегерана",
-   "service_flights_day": 297.983,
+   "roles": [
+    "массовый пассажирский хаб"
+   ],
+   "service_berths": 8,
+   "service_flights_day": 474.069,
    "speed_km_s": 7.614,
-   "surface_legs_y": 97887296,
-   "surface_pax_flights_day": 2483.189,
+   "surface_legs_y": 155731594,
+   "surface_pax_flights_day": 3950.573,
+   "terminals": [
+    {
+     "history": "японский терминал (2605); вошёл в комплекс «Тихий»",
+     "id": "earth_hub.tikhiy.t.tanegashima",
+     "kind": "passenger",
+     "name": "терминал «Танэгасима»"
+    }
+   ],
    "type": "orbital_hub",
    "utilisation": 0.622
   },
   {
-   "altitude_km": 525,
-   "arrivals_day": 3275,
-   "cargo_lifter_flights_day": 474.469,
-   "character": "аккуратный, технический, верфевые буксиры",
-   "dock_sectors": 49,
-   "docks": 294,
-   "founded": 2605,
-   "founder": "Японское агентство Реставрации",
-   "function": [
-    "passenger",
-    "shipyard_service"
-   ],
-   "hub_shuttle_flights_day": 1281.745,
-   "id": "earth_hub.tanegashima",
-   "inclination_deg": 31.6,
-   "interstellar_or_interplanetary_departures_day": 0.0,
-   "lan_deg": 300,
-   "legacy_ids": [],
-   "movements_day": 6549,
-   "name": "Танэгасима",
-   "name_basis": "японский космодром на 30.4° с.ш.",
-   "operator": "Ниппон Орбитал Портс",
-   "owner": "sol_authority",
-   "pad_cycle_min_mean": 36.665,
-   "pads_per_sector": 6,
-   "peak_utilisation": 0.835,
-   "period_min": 94.985,
-   "phase_deg": 15,
-   "population": 60441,
-   "profile": "passenger",
-   "queue_wait_min": 1.735,
-   "role_ru": "пассажирский хаб 30–32° (Шанхай, Лахор, Нанкин, Ухань) и обслуживание верфей",
-   "service_flights_day": 162.675,
-   "speed_km_s": 7.603,
-   "surface_legs_y": 53438720,
-   "surface_pax_flights_day": 1355.625,
-   "type": "orbital_hub",
-   "utilisation": 0.619
-  },
-  {
    "altitude_km": 485,
-   "arrivals_day": 5298,
-   "cargo_lifter_flights_day": 338.367,
+   "arrivals_day": 7287,
+   "cargo_lifter_flights_day": 835.585,
+   "cargo_t_day": 160432,
+   "cargo_terminals": 3,
    "character": "старый, туристический, «марсианский»",
-   "dock_sectors": 99,
-   "docks": 594,
+   "dock_modules": 132,
+   "dock_sectors": 11,
+   "docks": 792,
    "founded": 2574,
    "founder": "Атлантическая портовая компания",
    "function": [
     "passenger",
     "interplanetary"
    ],
-   "hub_shuttle_flights_day": 3308.563,
+   "hub_shuttle_flights_day": 3208.625,
    "id": "earth_hub.canaveral",
-   "inclination_deg": 29.0,
+   "inclination_deg": 31.6,
    "interstellar_or_interplanetary_departures_day": 568.574,
    "lan_deg": 60,
    "legacy_ids": [],
-   "movements_day": 10597,
+   "level": "A",
+   "movements_day": 14573,
    "name": "Канаверал",
    "name_basis": "мыс на 28.5° с.ш.: исторический старт к Марсу",
    "operator": "Атлантическая портовая компания",
    "owner": "sol_authority",
-   "pad_cycle_min_mean": 45.815,
-   "pads_per_sector": 6,
-   "peak_utilisation": 0.836,
+   "pad_cycle_min_mean": 44.639,
+   "pads_per_module": 6,
+   "passenger_terminals": 25,
+   "passengers_day": 988157,
+   "peak_utilisation": 0.84,
    "period_min": 94.16,
    "phase_deg": 140,
-   "population": 96869,
+   "population": 132660,
    "profile": "passenger",
-   "queue_wait_min": 1.528,
-   "role_ru": "пассажирский хаб 28–29° (Дели, Каир, Чунцин, Хьюстон) и межпланетные вылеты к Марсу",
-   "service_flights_day": 116.012,
-   "speed_km_s": 7.625,
-   "surface_legs_y": 38109822,
-   "surface_pax_flights_day": 966.764,
-   "type": "orbital_hub",
-   "utilisation": 0.619
-  },
-  {
-   "altitude_km": 465,
-   "arrivals_day": 1765,
-   "cargo_lifter_flights_day": 255.191,
-   "character": "молодой, тесный, южные языки, чёрный рынок мелочи",
-   "dock_sectors": 27,
-   "docks": 162,
-   "founded": 2843,
-   "founder": "Южный альянс портов (Сан-Паулу, Дакка, Карачи)",
-   "function": [
-    "passenger",
-    "cargo"
+   "queue_wait_min": 1.306,
+   "role_ru": "пассажирский комплекс полосы 21-32° (Дели, Шанхай, Каир, Сан-Паулу через терминал «Тропик») и вылеты к Марсу",
+   "roles": [
+    "пассажиры 21-32°",
+    "вылеты к Марсу"
    ],
-   "hub_shuttle_flights_day": 692.997,
-   "id": "earth_hub.tropic",
-   "inclination_deg": 24.5,
-   "interstellar_or_interplanetary_departures_day": 0.0,
-   "lan_deg": 180,
-   "legacy_ids": [],
-   "movements_day": 3530,
-   "name": "Тропик",
-   "name_basis": "собственное имя XXIX века: плоскость у тропика Рака",
-   "operator": "Южный альянс портов",
-   "owner": "sol_authority",
-   "pad_cycle_min_mean": 36.652,
-   "pads_per_sector": 6,
-   "peak_utilisation": 0.817,
-   "period_min": 93.748,
-   "phase_deg": 300,
-   "population": 33266,
-   "profile": "passenger_mega",
-   "queue_wait_min": 2.205,
-   "role_ru": "хаб полосы 21–25° (Сан-Паулу, Дакка, Карачи, Калькутта, Гуанчжоу, Рио)",
-   "service_flights_day": 87.494,
-   "speed_km_s": 7.636,
-   "surface_legs_y": 28741796,
-   "surface_pax_flights_day": 729.117,
+   "service_berths": 5,
+   "service_flights_day": 286.486,
+   "speed_km_s": 7.625,
+   "surface_legs_y": 94110691,
+   "surface_pax_flights_day": 2387.384,
+   "terminals": [
+    {
+     "history": "южный терминал Сан-Паулу / Дакки / Карачи (2843)",
+     "id": "earth_hub.canaveral.t.tropic",
+     "kind": "passenger",
+     "name": "терминал «Тропик»"
+    }
+   ],
    "type": "orbital_hub",
-   "utilisation": 0.605
+   "utilisation": 0.622
   },
   {
    "altitude_km": 495,
-   "arrivals_day": 1085,
-   "cargo_lifter_flights_day": 268.162,
+   "arrivals_day": 2073,
+   "cargo_lifter_flights_day": 517.933,
+   "cargo_t_day": 99443,
+   "cargo_terminals": 2,
    "character": "индустриальный, огромные краны, круглосуточно",
-   "dock_sectors": 18,
-   "docks": 108,
+   "dock_modules": 34,
+   "dock_sectors": 3,
+   "docks": 204,
    "founded": 2597,
    "founder": "Китайская корпорация Реставрации",
    "function": [
@@ -444,80 +374,59 @@
     "cargo",
     "passenger"
    ],
-   "hub_shuttle_flights_day": 387.991,
+   "hub_shuttle_flights_day": 726.018,
    "id": "earth_hub.wenchang",
    "inclination_deg": 19.8,
    "interstellar_or_interplanetary_departures_day": 0.0,
    "lan_deg": 30,
    "legacy_ids": [],
-   "movements_day": 2170,
+   "level": "A",
+   "movements_day": 4145,
    "name": "Вэньчан",
    "name_basis": "космодром на Хайнане, 19.6° с.ш.",
    "operator": "Вэньчан Хэви",
    "owner": "sol_authority",
-   "pad_cycle_min_mean": 39.39,
-   "pads_per_sector": 6,
-   "peak_utilisation": 0.81,
+   "pad_cycle_min_mean": 39.496,
+   "pads_per_module": 6,
+   "passenger_terminals": 4,
+   "passengers_day": 158320,
+   "peak_utilisation": 0.821,
    "period_min": 94.366,
    "phase_deg": 200,
-   "population": 21034,
+   "population": 38808,
    "profile": "cargo",
-   "queue_wait_min": 2.839,
-   "role_ru": "тяжёлый грузовой хаб полосы 19–20° (Мехико, Мумбаи) — модули станций и верфей",
-   "service_flights_day": 45.971,
-   "speed_km_s": 7.619,
-   "surface_legs_y": 15101360,
-   "surface_pax_flights_day": 383.089,
-   "type": "orbital_hub",
-   "utilisation": 0.6
-  },
-  {
-   "altitude_km": 455,
-   "arrivals_day": 501,
-   "cargo_lifter_flights_day": 72.261,
-   "character": "многоязычный, рынок пряностей и электроники",
-   "dock_sectors": 8,
-   "docks": 48,
-   "founded": 2621,
-   "founder": "Индийская организация Реставрации",
-   "function": [
-    "passenger",
-    "cargo"
+   "queue_wait_min": 2.144,
+   "role_ru": "грузовой и логистический комплекс, тяжёлые модули; пассажиры 10-20° через терминал «Шрихарикота»",
+   "roles": [
+    "грузы и логистика",
+    "тяжёлые модули"
    ],
-   "hub_shuttle_flights_day": 197.086,
-   "id": "earth_hub.sriharikota",
-   "inclination_deg": 14.8,
-   "interstellar_or_interplanetary_departures_day": 0.0,
-   "lan_deg": 240,
-   "legacy_ids": [],
-   "movements_day": 1001,
-   "name": "Шрихарикота",
-   "name_basis": "индийский космодром на 13.7° с.ш.",
-   "operator": "Бхарат Орбитал",
-   "owner": "sol_authority",
-   "pad_cycle_min_mean": 36.64,
-   "pads_per_sector": 6,
-   "peak_utilisation": 0.782,
-   "period_min": 93.543,
-   "phase_deg": 60,
-   "population": 10510,
-   "profile": "passenger",
-   "queue_wait_min": 3.636,
-   "role_ru": "хаб полосы 10–15° (Манила, Бангкок, Ченнаи, Бангалор, Хошимин, Лима)",
-   "service_flights_day": 24.775,
-   "speed_km_s": 7.642,
-   "surface_legs_y": 8138667,
-   "surface_pax_flights_day": 206.46,
+   "service_berths": 2,
+   "service_flights_day": 88.789,
+   "speed_km_s": 7.619,
+   "surface_legs_y": 29167026,
+   "surface_pax_flights_day": 739.904,
+   "terminals": [
+    {
+     "history": "индийский терминал (2621) — пассажиры полосы 10-20°",
+     "id": "earth_hub.wenchang.t.sriharikota",
+     "kind": "passenger",
+     "name": "терминал «Шрихарикота»"
+    }
+   ],
    "type": "orbital_hub",
-   "utilisation": 0.579
+   "utilisation": 0.608
   },
   {
    "altitude_km": 560,
-   "arrivals_day": 3866,
-   "cargo_lifter_flights_day": 45.885,
+   "arrivals_day": 3598,
+   "cargo_lifter_flights_day": 77.29,
+   "cargo_t_day": 14840,
+   "cargo_terminals": 1,
    "character": "транзитный, топливные фермы, межпланетные экипажи",
-   "dock_sectors": 76,
-   "docks": 456,
+   "dock_modules": 73,
+   "dock_sectors": 7,
+   "docks": 438,
    "founded": 2569,
    "founder": "Европейское агентство Реставрации",
    "function": [
@@ -525,38 +434,50 @@
     "fuel",
     "passenger"
    ],
-   "hub_shuttle_flights_day": 3104.364,
+   "hub_shuttle_flights_day": 2705.115,
    "id": "earth_hub.kourou",
    "inclination_deg": 6.0,
    "interstellar_or_interplanetary_departures_day": 568.574,
    "lan_deg": 90,
    "legacy_ids": [],
-   "movements_day": 7731,
+   "level": "A",
+   "movements_day": 7197,
    "name": "Куру",
    "name_basis": "космодром Гвианы на 5.2° с.ш.",
    "operator": "Экваториальная топливная компания",
    "owner": "sol_authority",
-   "pad_cycle_min_mean": 48.196,
-   "pads_per_sector": 6,
-   "peak_utilisation": 0.836,
+   "pad_cycle_min_mean": 49.949,
+   "pads_per_module": 6,
+   "passenger_terminals": 18,
+   "passengers_day": 699790,
+   "peak_utilisation": 0.839,
    "period_min": 95.709,
    "phase_deg": 330,
-   "population": 71082,
+   "population": 66270,
    "profile": "interplanetary",
-   "queue_wait_min": 1.834,
+   "queue_wait_min": 1.961,
    "role_ru": "экваториальный хаб: вылеты к Луне и планетам, топливо, полоса 0–6° (Лагос, Киншаса, Джакарта, Богота)",
-   "service_flights_day": 15.732,
+   "roles": [
+    "лунный и межпланетный перевалочный узел",
+    "топливо"
+   ],
+   "service_berths": 2,
+   "service_flights_day": 26.499,
    "speed_km_s": 7.584,
-   "surface_legs_y": 5167948,
-   "surface_pax_flights_day": 131.1,
+   "surface_legs_y": 8705033,
+   "surface_pax_flights_day": 220.828,
+   "terminals": [],
    "type": "orbital_hub",
-   "utilisation": 0.619
+   "utilisation": 0.622
   },
   {
    "altitude_km": 35786,
-   "arrivals_day": 46,
+   "arrivals_day": 23,
    "cargo_lifter_flights_day": 0.0,
+   "cargo_t_day": 0,
+   "cargo_terminals": 1,
    "character": "тихий, инженерный, мало пассажиров",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "founded": 2701,
@@ -564,75 +485,108 @@
    "function": [
     "power",
     "industry",
-    "comms"
+    "comms",
+    "repair",
+    "shipyard"
    ],
-   "hub_shuttle_flights_day": 45.662,
+   "hub_shuttle_flights_day": 22.831,
    "id": "earth_hub.ekvator",
    "inclination_deg": 0.0,
    "interstellar_or_interplanetary_departures_day": 0.0,
    "lan_deg": 0,
    "legacy_ids": [],
-   "movements_day": 91,
+   "level": "A",
+   "movements_day": 46,
    "name": "Экватор",
    "name_basis": "собственное имя XXVIII века: висит над экватором",
    "operator": "Энергосеть Сола",
    "owner": "sol_authority",
    "pad_cycle_min_mean": 30.0,
-   "pads_per_sector": 6,
-   "peak_utilisation": 0.467,
+   "pads_per_module": 6,
+   "passenger_terminals": 1,
+   "passengers_day": 2466,
+   "peak_utilisation": 0.233,
    "period_min": 1435.702,
    "phase_deg": 120,
-   "population": 10322,
+   "population": 9911,
    "profile": "industrial",
-   "queue_wait_min": 3.239,
-   "role_ru": "геостационарный узел: энергосеть, связь, сборка крупных модулей вне атмосферы",
+   "queue_wait_min": 1.281,
+   "role_ru": "геостационарный комплекс: ремонт и верфь вне атмосферы, энергосеть, связь",
+   "roles": [
+    "промышленность и ремонт",
+    "энергосеть, связь"
+   ],
+   "service_berths": 2,
    "service_flights_day": 0.0,
    "speed_km_s": 3.075,
    "surface_legs_y": 0,
    "surface_pax_flights_day": 0.0,
+   "terminals": [],
    "type": "orbital_hub",
-   "utilisation": 0.346
+   "utilisation": 0.173
   },
   {
    "altitude_km": 790,
-   "arrivals_day": 3,
-   "cargo_lifter_flights_day": 0.0,
+   "arrivals_day": 576,
+   "cargo_lifter_flights_day": 83.076,
+   "cargo_t_day": 15951,
+   "cargo_terminals": 1,
    "character": "учёные, редкие снабженцы",
+   "dock_modules": 9,
    "dock_sectors": 1,
-   "docks": 6,
+   "docks": 54,
    "founded": 2655,
    "founder": "Северный научный фонд",
    "function": [
     "science",
     "observation",
-    "polar_service"
+    "polar_service",
+    "passenger",
+    "sar"
    ],
-   "hub_shuttle_flights_day": 0.152,
+   "hub_shuttle_flights_day": 226.678,
    "id": "earth_hub.aurora",
    "inclination_deg": 98.6,
    "interstellar_or_interplanetary_departures_day": 0.0,
    "lan_deg": 270,
    "legacy_ids": [],
-   "movements_day": 6,
+   "level": "A",
+   "movements_day": 1151,
    "name": "Аврора",
    "name_basis": "по полярным сияниям, над которыми идёт каждый виток",
    "operator": "Служба наблюдения Земли",
    "owner": "sol_authority",
-   "pad_cycle_min_mean": 30.0,
-   "pads_per_sector": 6,
-   "peak_utilisation": 0.031,
+   "pad_cycle_min_mean": 36.639,
+   "pads_per_module": 6,
+   "passenger_terminals": 2,
+   "passengers_day": 50116,
+   "peak_utilisation": 0.799,
    "period_min": 100.513,
    "phase_deg": 170,
-   "population": 1554,
+   "population": 11861,
    "profile": "science",
-   "queue_wait_min": 0.142,
-   "role_ru": "солнечно-синхронная станция: наблюдение Земли, климат, полярная связь",
-   "service_flights_day": 0.0,
+   "queue_wait_min": 3.613,
+   "role_ru": "полярный комплекс: спасательная служба Земли, наука, единственная плоскость северных городов (терминал «Меридиан»)",
+   "roles": [
+    "полярный узел",
+    "спасательная служба Земли (SAR)",
+    "наука"
+   ],
+   "service_berths": 2,
+   "service_flights_day": 28.483,
    "speed_km_s": 7.461,
-   "surface_legs_y": 0,
-   "surface_pax_flights_day": 0.0,
+   "surface_legs_y": 9356763,
+   "surface_pax_flights_day": 237.361,
+   "terminals": [
+    {
+     "history": "Северный портовый союз (2634): Москва, Лондон, Харбин — единственная плоскость, доступная им прямым стартом, полярная",
+     "id": "earth_hub.aurora.t.meridian",
+     "kind": "passenger",
+     "name": "терминал «Меридиан»"
+    }
+   ],
    "type": "science_hub",
-   "utilisation": 0.023
+   "utilisation": 0.592
   }
  ],
  "hubs": [
@@ -640,7 +594,8 @@
    "anchor": "lagrange:Земля-Луна:L1",
    "arrivals_day": 6557,
    "character": "транзитный узел, вечное движение буксиров",
-   "dock_sectors": 93,
+   "dock_modules": 93,
+   "dock_sectors": 8,
    "docks": 558,
    "driver": "passenger",
    "founded": 2590,
@@ -652,11 +607,12 @@
    ],
    "id": "site.000.sol.eml1",
    "legacy_ids": [],
+   "level": "A",
    "movements_day": 13114,
    "name": "Ворота Луны",
    "operator": "Окололунная транспортная служба",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 342263,
    "region": "earth_cislunar",
    "role_ru": "пересадка Земля ↔ Луна и межпланетные вылеты без глубокого колодца Земли",
@@ -667,7 +623,8 @@
    "arrivals_day": 10535,
    "body": "system_0.Sol.Земля.Луна",
    "character": "старый лунный порт, реголитовая пыль во всём",
-   "dock_sectors": 149,
+   "dock_modules": 149,
+   "dock_sectors": 13,
    "docks": 894,
    "driver": "passenger",
    "founded": 2583,
@@ -678,12 +635,13 @@
    ],
    "id": "site.000.sol.luna_orbit",
    "legacy_ids": [],
+   "level": "A",
    "movements_day": 21070,
    "name": "Селена",
    "operator": "Лунные порты",
    "orbit_altitude_km": 110,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 342263,
    "region": "earth_cislunar",
    "role_ru": "орбитальный порт Луны: челноки к городам полюса и морей",
@@ -694,7 +652,8 @@
    "arrivals_day": 3514,
    "body": "system_0.Sol.Земля.Луна",
    "character": "самый старый город вне Земли",
-   "dock_sectors": 50,
+   "dock_modules": 50,
+   "dock_sectors": 5,
    "docks": 300,
    "driver": "passenger",
    "founded": 2541,
@@ -706,11 +665,12 @@
    ],
    "id": "site.000.sol.shackleton",
    "legacy_ids": [],
+   "level": "C",
    "movements_day": 7029,
    "name": "Шеклтон",
    "operator": "Лунные порты",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 84565701,
    "region": "earth_cislunar",
    "role_ru": "главный город Луны у кратера вечной тени: лёд, энергия на вечном свету",
@@ -725,7 +685,8 @@
    "arrivals_day": 1520,
    "body": "system_0.Sol.Земля.Луна",
    "character": "заводской, масс-драйвер стреляет каждые 4 минуты",
-   "dock_sectors": 93,
+   "dock_modules": 93,
+   "dock_sectors": 8,
    "docks": 558,
    "driver": "mining",
    "founded": 2610,
@@ -736,11 +697,12 @@
    ],
    "id": "site.000.sol.imbrium",
    "legacy_ids": [],
+   "level": "C",
    "movements_day": 3040,
    "name": "Имбриум",
    "operator": "Лунная горная компания",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 46126746,
    "region": "earth_cislunar",
    "role_ru": "реголитовые заводы и масс-драйвер Моря Дождей",
@@ -755,6 +717,7 @@
    "anchor": "lagrange:Солнце-Земля:L2",
    "arrivals_day": 2,
    "character": "холодно, тихо, учёные",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "science",
@@ -768,13 +731,15 @@
    "legacy_ids": [
     "site.000.sol_authority.science_hub01"
    ],
+   "level": "A",
    "movements_day": 4,
    "name": "Тень",
    "operator": "Обсерватория Сола",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 600,
    "region": "earth_cislunar",
+   "region_override": "deep_space",
    "role_ru": "обсерватория и ретранслятор дальней связи в тени Земли",
    "type": "science_hub",
    "utilisation": 0.018
@@ -783,6 +748,7 @@
    "anchor": "lagrange:Земля-Луна:L4",
    "arrivals_day": 15,
    "character": "закрытая зона, патрули",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "military",
@@ -795,11 +761,12 @@
    "legacy_ids": [
     "site.000.sol_authority.military_hub01"
    ],
+   "level": "A",
    "movements_day": 30,
    "name": "Бастион",
    "operator": "Флот Сола",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 5000,
    "region": "earth_cislunar",
    "role_ru": "база Флота Сола: оборона Земли и ворот, учебный центр",
@@ -810,6 +777,7 @@
    "anchor": "lagrange:Земля-Луна:L5",
    "arrivals_day": 5,
    "character": "строгая санитария, длинные очереди",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "quarantine",
@@ -823,14 +791,16 @@
    "legacy_ids": [
     "site.000.sol_authority.quarantine01"
    ],
+   "level": "C",
    "movements_day": 10,
    "name": "Лазарет-1",
    "operator": "Санитарная служба Сола",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 900,
    "region": "earth_cislunar",
    "role_ru": "изоляция прибывших из сети и подозрительных грузов до допуска к Земле",
+   "serves_complex": "site.000.sol.eml1",
    "type": "quarantine_hub",
    "utilisation": 0.044
   },
@@ -838,7 +808,8 @@
    "arrivals_day": 1247,
    "body": "system_0.Sol.Марс.Фобос",
    "character": "марсианская бюрократия, красная пыль на шлюзах",
-   "dock_sectors": 18,
+   "dock_modules": 18,
+   "dock_sectors": 2,
    "docks": 108,
    "driver": "passenger",
    "founded": 2602,
@@ -850,12 +821,13 @@
    ],
    "id": "site.000.sol.mars_phobos",
    "legacy_ids": [],
+   "level": "A",
    "movements_day": 2494,
    "name": "Фобос-Порт",
    "operator": "Порты Марса",
    "orbit_altitude_km": 15,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 285886,
    "region": "mars",
    "role_ru": "главный межпланетный порт Марса на Фобосе",
@@ -866,6 +838,7 @@
    "arrivals_day": 4,
    "body": "system_0.Sol.Марс",
    "character": "гордый марсианский патриотизм",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "passenger",
@@ -879,12 +852,13 @@
    ],
    "id": "site.000.sol.mars_ares",
    "legacy_ids": [],
+   "level": "A",
    "movements_day": 8,
    "name": "Арес",
    "operator": "Порты Марса",
    "orbit_altitude_km": 17032,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 285886,
    "region": "mars",
    "role_ru": "ареостационарный хаб: челноки с поверхности, энергосеть Марса",
@@ -895,6 +869,7 @@
    "arrivals_day": 4,
    "body": "system_0.Sol.Марс",
    "character": "столица Марса",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "passenger",
@@ -906,11 +881,12 @@
    ],
    "id": "site.000.sol.mars_tharsis",
    "legacy_ids": [],
+   "level": "C",
    "movements_day": 8,
    "name": "Новый Тарсис",
    "operator": "Город Новый Тарсис",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 70471417,
    "region": "mars",
    "role_ru": "крупнейший город Марса у вулканов Тарсиса: экваториальный космопорт",
@@ -925,6 +901,7 @@
    "arrivals_day": 4,
    "body": "system_0.Sol.Марс",
    "character": "фермерский, тёплый",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "passenger",
@@ -936,11 +913,12 @@
    ],
    "id": "site.000.sol.mars_hellas",
    "legacy_ids": [],
+   "level": "C",
    "movements_day": 8,
    "name": "Эллада-Марс",
    "operator": "Город Эллада",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 70471417,
    "region": "mars",
    "role_ru": "город на дне равнины Эллады (самое высокое давление на Марсе): агрокупола",
@@ -955,6 +933,7 @@
    "arrivals_day": 4,
    "body": "system_0.Sol.Марс.Деймос",
    "character": "верфевой, искры сварки",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "industry",
@@ -969,12 +948,13 @@
    "legacy_ids": [
     "site.000.sol_authority.industrial_hub02"
    ],
+   "level": "A",
    "movements_day": 8,
    "name": "Деймос-Верфь",
    "operator": "Марсианские верфи",
    "orbit_altitude_km": 8,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 9000,
    "region": "mars",
    "role_ru": "верфь и металлургия на Деймосе",
@@ -985,7 +965,8 @@
    "arrivals_day": 494,
    "belt_anchor": "anchor.ceres",
    "character": "шахтёрская столица, суровый порядок Керна, лучший рынок руды",
-   "dock_sectors": 30,
+   "dock_modules": 30,
+   "dock_sectors": 3,
    "docks": 180,
    "driver": "mining",
    "founded": 2623,
@@ -1001,13 +982,14 @@
     "site.000.sol_authority.mining_hub01",
     "site.000.sol_authority.mining_hub03"
    ],
+   "level": "A",
    "merge_note": "mining_hub01 (246.10°) и mining_hub03 (245.17°) стояли рядом случайно (хеш долготы, а не концентрация). Объединены в кластер у Цереры, где реально сосредоточено население пояса.",
    "movements_day": 988,
    "name": "Перевал Цереры",
    "offset_km": 1800,
    "operator": "Kern Heavy Mining (Сол)",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 3500,
    "region": "belt",
    "role_ru": "столица пояса: сбор руды и льда со всего пояса, перегрузка на фрейтеры, пассажиры",
@@ -1019,7 +1001,8 @@
    "arrivals_day": 697,
    "body_anchor": "anchor.ceres",
    "character": "подлёдные кварталы, тесно и тепло",
-   "dock_sectors": 10,
+   "dock_modules": 10,
+   "dock_sectors": 1,
    "docks": 60,
    "driver": "passenger",
    "founded": 2650,
@@ -1030,11 +1013,12 @@
    ],
    "id": "site.000.sol.ceres_ice",
    "legacy_ids": [],
+   "level": "C",
    "movements_day": 1395,
    "name": "Ахуна",
    "operator": "Город Ахуна",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 187923780,
    "region": "belt",
    "role_ru": "подлёдный город Цереры у горы Ахуна",
@@ -1049,6 +1033,7 @@
    "arrivals_day": 15,
    "belt_anchor": "anchor.vesta",
    "character": "горячие цеха, мало людей, много роботов",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "mining",
@@ -1062,12 +1047,13 @@
    "legacy_ids": [
     "site.000.sol_authority.mining_hub05"
    ],
+   "level": "A",
    "movements_day": 29,
    "name": "Рейсильвия",
    "offset_km": 900,
    "operator": "Металлургический трест Весты",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 3500,
    "region": "belt",
    "role_ru": "металлургия у Весты (кратер Рейсильвия — выход мантии): железо, никель, базальт",
@@ -1078,27 +1064,31 @@
    "arrivals_day": 15,
    "belt_anchor": "anchor.pallas",
    "character": "артельный, вольный, своё право на грани законного",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "mining",
    "founded": 2744,
    "founder": "Свободная артель Паллады",
    "function": [
-    "mining",
     "high_inclination",
-    "science"
+    "mining",
+    "sar",
+    "science",
+    "trade"
    ],
    "id": "site.000.sol.pallas",
    "legacy_ids": [],
+   "level": "A",
    "movements_day": 29,
    "name": "Паллада-Станция",
    "offset_km": 800,
    "operator": "Артель Паллады (лицензия Сола)",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 3500,
    "region": "belt",
-   "role_ru": "станция высоких наклонений: дорогие по Δv, зато нетронутые тела",
+   "role_ru": "вольный рынок и станция высоких наклонений; наука и SAR пояса",
    "type": "belt_hub",
    "utilisation": 0.555
   },
@@ -1106,6 +1096,7 @@
    "arrivals_day": 15,
    "belt_anchor": "anchor.hygiea",
    "character": "склады и топливо, мало людей",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "mining",
@@ -1118,12 +1109,13 @@
    ],
    "id": "site.000.sol.hygiea",
    "legacy_ids": [],
+   "level": "A",
    "movements_day": 29,
    "name": "Гигея-Склад",
    "offset_km": 700,
    "operator": "Топливная компания пояса",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 3500,
    "region": "belt",
    "role_ru": "внешний край пояса: лёд, топливо для фрейтеров к Юпитеру",
@@ -1138,6 +1130,7 @@
     "radius_au": 3.95
    },
    "character": "никаких вопросов, никаких гарантий",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "piracy",
@@ -1149,11 +1142,12 @@
    "id": "site.000.pirate_enclave",
    "known_to_player": "rumour",
    "legacy_ids": [],
+   "level": "A",
    "movements_day": 6,
    "name": "Тихая Гавань",
    "operator": "держатели причалов",
    "owner": null,
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 675,
    "region": "belt",
    "role_ru": "пиратская гавань среди астероидов Хильды — далеко от патрулей Цереры",
@@ -1164,7 +1158,8 @@
    "arrivals_day": 214,
    "body": "system_0.Sol.Меркурий",
    "character": "жара и холод, город на рельсах",
-   "dock_sectors": 13,
+   "dock_modules": 13,
+   "dock_sectors": 2,
    "docks": 78,
    "driver": "mining",
    "founded": 2702,
@@ -1177,11 +1172,12 @@
    ],
    "id": "site.000.sol.mercury_caloris",
    "legacy_ids": [],
+   "level": "C",
    "movements_day": 427,
    "name": "Калорис",
    "operator": "Солнечная металлургическая компания",
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 5125194,
    "region": "mercury",
    "role_ru": "город-поезд на терминаторе у бассейна Калорис: металлы, солнечная энергия",
@@ -1196,6 +1192,7 @@
    "arrivals_day": 4,
    "body": "system_0.Sol.Меркурий",
    "character": "раскалённые радиаторы, грузовые фрейтеры",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "industry",
@@ -1208,12 +1205,13 @@
    ],
    "id": "site.000.sol.mercury_orbit",
    "legacy_ids": [],
+   "level": "A",
    "movements_day": 8,
    "name": "Гермес",
    "operator": "Солнечная металлургическая компания",
    "orbit_altitude_km": 600,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 9000,
    "region": "mercury",
    "role_ru": "орбитальный порт Меркурия: отгрузка металлов, энергостанция",
@@ -1224,6 +1222,7 @@
    "arrivals_day": 2,
    "body": "system_0.Sol.Венера",
    "character": "учёные, сернокислые дожди, вид на облака",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "science",
@@ -1237,12 +1236,13 @@
    "legacy_ids": [
     "site.000.sol_authority.science_hub02"
    ],
+   "level": "A",
    "movements_day": 4,
    "name": "Ломоносов",
    "operator": "Академия Сола",
    "orbit_altitude_km": 55,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 600,
    "region": "venus",
    "role_ru": "аэростатная станция в облаках Венеры на 55 км: наука атмосферы; людей мало, поселений нет",
@@ -1253,7 +1253,8 @@
    "arrivals_day": 512,
    "body": "system_0.Sol.Юпитер.Каллисто",
    "character": "столица юпитерианцев",
-   "dock_sectors": 8,
+   "dock_modules": 8,
+   "dock_sectors": 1,
    "docks": 48,
    "driver": "passenger",
    "founded": 2680,
@@ -1267,12 +1268,13 @@
    "legacy_ids": [
     "site.000.sol_authority.trade_hub01"
    ],
+   "level": "A",
    "movements_day": 1023,
    "name": "Валгалла",
    "operator": "Юпитерианская компания",
    "orbit_altitude_km": 300,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 229509,
    "region": "jupiter",
    "role_ru": "главный порт Юпитера на Каллисто — вне радиационных поясов",
@@ -1283,6 +1285,7 @@
    "arrivals_day": 4,
    "body": "system_0.Sol.Юпитер.Ганимед",
    "character": "промышленный, под льдом",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "passenger",
@@ -1299,12 +1302,13 @@
     "site.000.sol_authority.trade_hub05",
     "site.000.sol_authority.industrial_hub05"
    ],
+   "level": "A",
    "movements_day": 8,
    "name": "Ганимед-Сити",
    "operator": "Порт Ганимеда",
    "orbit_altitude_km": 250,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 229509,
    "region": "jupiter",
    "role_ru": "крупнейший город лун Юпитера (магнитосфера Ганимеда защищает)",
@@ -1315,6 +1319,7 @@
    "arrivals_day": 6,
    "body": "system_0.Sol.Юпитер",
    "character": "газовщики, сильная радиация",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "gas",
@@ -1328,12 +1333,13 @@
    "legacy_ids": [
     "site.000.sol_authority.industrial_hub01"
    ],
+   "level": "A",
    "movements_day": 11,
    "name": "Зевс-Платформа",
    "operator": "Газовый трест Юпитера",
    "orbit_altitude_km": 46426,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 2200,
    "region": "jupiter",
    "role_ru": "сбор газа из атмосферных платформ: водород, гелий-3",
@@ -1344,6 +1350,7 @@
    "arrivals_day": 2,
    "body": "system_0.Sol.Юпитер.Европа",
    "character": "биологи, строгая защита планеты",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "science",
@@ -1357,15 +1364,17 @@
    "legacy_ids": [
     "site.000.sol_authority.science_hub05"
    ],
+   "level": "C",
    "movements_day": 4,
    "name": "Конамара",
    "operator": "Академия Сола",
    "orbit_altitude_km": 200,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 600,
    "region": "jupiter",
    "role_ru": "наука подлёдного океана Европы",
+   "serves_complex": "site.000.sol.callisto",
    "type": "science_hub",
    "utilisation": 0.018
   },
@@ -1373,6 +1382,7 @@
    "arrivals_day": 15,
    "body": "system_0.Sol.Юпитер.Каллисто",
    "character": "закрытая зона",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "military",
@@ -1383,12 +1393,13 @@
    ],
    "id": "site.000.sol.jupiter_fleet",
    "legacy_ids": [],
+   "level": "A",
    "movements_day": 30,
    "name": "Юпитерианский рейд",
    "operator": "Флот Сола",
    "orbit_altitude_km": 2500,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 5000,
    "region": "jupiter",
    "role_ru": "вторая база флота: газ и подходы внешней системы",
@@ -1399,7 +1410,8 @@
    "arrivals_day": 281,
    "body": "system_0.Sol.Сатурн.Титан",
    "character": "химики, метановые дожди",
-   "dock_sectors": 4,
+   "dock_modules": 4,
+   "dock_sectors": 1,
    "docks": 24,
    "driver": "passenger",
    "founded": 2712,
@@ -1415,12 +1427,13 @@
     "site.000.sol_authority.trade_hub06",
     "site.000.sol_authority.industrial_hub06"
    ],
+   "level": "A",
    "movements_day": 562,
    "name": "Кракен",
    "operator": "Порт Титана",
    "orbit_altitude_km": 1500,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 229509,
    "region": "saturn",
    "role_ru": "порт Титана над морем Кракена: углеводороды, химия, столица Сатурна",
@@ -1431,6 +1444,7 @@
    "arrivals_day": 6,
    "body": "system_0.Sol.Сатурн",
    "character": "ледорубы, медленные танкеры",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "gas",
@@ -1445,12 +1459,13 @@
     "site.000.sol_authority.mining_hub06",
     "site.000.sol_authority.mining_hub02"
    ],
+   "level": "A",
    "movements_day": 11,
    "name": "Кольцо-Газ",
    "operator": "Газовый трест Сатурна",
    "orbit_altitude_km": 140780,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 2200,
    "region": "saturn",
    "role_ru": "газ и лёд колец: топливо внешней системы",
@@ -1461,6 +1476,7 @@
    "arrivals_day": 2,
    "body": "system_0.Sol.Сатурн.Энцелад",
    "character": "учёные, гейзеры за окном",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "science",
@@ -1474,15 +1490,17 @@
    "legacy_ids": [
     "site.000.sol_authority.science_hub06"
    ],
+   "level": "C",
    "movements_day": 4,
    "name": "Тигровые Полосы",
    "operator": "Академия Сола",
    "orbit_altitude_km": 100,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 600,
    "region": "saturn",
    "role_ru": "наука гейзеров Энцелада и чистый лёд",
+   "serves_complex": "site.000.sol.titan",
    "type": "science_hub",
    "utilisation": 0.018
   },
@@ -1490,7 +1508,8 @@
    "arrivals_day": 94,
    "body": "system_0.Sol.Уран.Титания",
    "character": "далеко и спокойно",
-   "dock_sectors": 2,
+   "dock_modules": 2,
+   "dock_sectors": 1,
    "docks": 12,
    "driver": "passenger",
    "founded": 2790,
@@ -1508,12 +1527,13 @@
     "site.000.sol_authority.industrial_hub04",
     "site.000.sol_authority.science_hub04"
    ],
+   "level": "A",
    "movements_day": 188,
    "name": "Титания",
    "operator": "Внешняя компания",
    "orbit_altitude_km": 300,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 79170,
    "region": "outer",
    "role_ru": "порт Урана: газ, наука, редкие пассажиры",
@@ -1524,6 +1544,7 @@
    "arrivals_day": 4,
    "body": "system_0.Sol.Нептун.Тритон",
    "character": "край системы, вахтовики",
+   "dock_modules": 1,
    "dock_sectors": 1,
    "docks": 6,
    "driver": "outer",
@@ -1541,12 +1562,13 @@
     "site.000.sol_authority.industrial_hub03",
     "site.000.sol_authority.science_hub03"
    ],
+   "level": "A",
    "movements_day": 8,
    "name": "Тритон-Край",
    "operator": "Внешняя компания",
    "orbit_altitude_km": 400,
    "owner": "sol_authority",
-   "pads_per_sector": 6,
+   "pads_per_module": 6,
    "population": 42502,
    "region": "outer",
    "role_ru": "последний порт Сола: топливо и ретранслятор внешней системы",
@@ -1556,10 +1578,373 @@
  ],
  "interplanetary_pax_y": 466941753,
  "interstellar_pax_y": 68945306,
- "min_separation_km": 26,
+ "major_by_region": {
+  "belt": 5,
+  "deep_space": 1,
+  "earth": 7,
+  "earth_cislunar": 3,
+  "jupiter": 4,
+  "mars": 3,
+  "mercury": 1,
+  "outer": 2,
+  "saturn": 2,
+  "venus": 1
+ },
+ "major_total": 29,
+ "map_complexity": [
+  {
+   "budget": [
+    24,
+    30
+   ],
+   "by_region": {
+    "belt": 5,
+    "deep_space": 1,
+    "earth": 7,
+    "earth_cislunar": 3,
+    "jupiter": 4,
+    "mars": 3,
+    "mercury": 1,
+    "outer": 2,
+    "saturn": 2,
+    "venus": 1
+   },
+   "local_facilities": 9,
+   "major_visible_hubs": 29,
+   "merged": 0,
+   "name": "Sol (Солнце)",
+   "system": 0,
+   "tier": "core"
+  },
+  {
+   "budget": [
+    0,
+    3
+   ],
+   "local_facilities": 0,
+   "major_visible_hubs": 1,
+   "merged": 0,
+   "name": "Barnard's Star",
+   "system": 2,
+   "tier": "frontier"
+  },
+  {
+   "budget": [
+    4,
+    10
+   ],
+   "local_facilities": 19,
+   "major_visible_hubs": 6,
+   "merged": 0,
+   "name": "Wolf 359",
+   "system": 3,
+   "tier": "colony"
+  },
+  {
+   "budget": [
+    10,
+    18
+   ],
+   "local_facilities": 38,
+   "major_visible_hubs": 11,
+   "merged": 0,
+   "name": "Lalande 21185",
+   "system": 4,
+   "tier": "developed"
+  },
+  {
+   "budget": [
+    10,
+    18
+   ],
+   "local_facilities": 16,
+   "major_visible_hubs": 4,
+   "merged": 3,
+   "name": "Tau Ceti",
+   "system": 8,
+   "tier": "developed"
+  },
+  {
+   "budget": [
+    10,
+    18
+   ],
+   "local_facilities": 38,
+   "major_visible_hubs": 11,
+   "merged": 8,
+   "name": "Epsilon Eridani",
+   "system": 9,
+   "tier": "developed"
+  },
+  {
+   "budget": [
+    4,
+    10
+   ],
+   "local_facilities": 33,
+   "major_visible_hubs": 5,
+   "merged": 1,
+   "name": "Gliese 581",
+   "system": 10,
+   "tier": "colony"
+  },
+  {
+   "budget": [
+    0,
+    3
+   ],
+   "local_facilities": 0,
+   "major_visible_hubs": 1,
+   "merged": 0,
+   "name": "Gliese 667 (A+B+C)",
+   "system": 11,
+   "tier": "frontier"
+  },
+  {
+   "budget": [
+    10,
+    18
+   ],
+   "local_facilities": 25,
+   "major_visible_hubs": 7,
+   "merged": 0,
+   "name": "Gliese 832",
+   "system": 12,
+   "tier": "developed"
+  },
+  {
+   "budget": [
+    1,
+    5
+   ],
+   "local_facilities": 6,
+   "major_visible_hubs": 2,
+   "merged": 0,
+   "name": "Gliese 876",
+   "system": 13,
+   "tier": "periphery"
+  },
+  {
+   "budget": [
+    10,
+    18
+   ],
+   "local_facilities": 37,
+   "major_visible_hubs": 8,
+   "merged": 0,
+   "name": "HD 20794 (82 G. Eridani)",
+   "system": 14,
+   "tier": "developed"
+  },
+  {
+   "budget": [
+    4,
+    10
+   ],
+   "local_facilities": 36,
+   "major_visible_hubs": 6,
+   "merged": 1,
+   "name": "HD 40307",
+   "system": 15,
+   "tier": "colony"
+  },
+  {
+   "budget": [
+    4,
+    10
+   ],
+   "local_facilities": 15,
+   "major_visible_hubs": 3,
+   "merged": 0,
+   "name": "HD 69830",
+   "system": 16,
+   "tier": "colony"
+  },
+  {
+   "budget": [
+    0,
+    3
+   ],
+   "local_facilities": 4,
+   "major_visible_hubs": 1,
+   "merged": 0,
+   "name": "HD 102195",
+   "system": 19,
+   "tier": "frontier"
+  },
+  {
+   "budget": [
+    10,
+    18
+   ],
+   "local_facilities": 33,
+   "major_visible_hubs": 8,
+   "merged": 0,
+   "name": "Delta Pavonis",
+   "system": 22,
+   "tier": "developed"
+  },
+  {
+   "budget": [
+    0,
+    3
+   ],
+   "local_facilities": 0,
+   "major_visible_hubs": 1,
+   "merged": 0,
+   "name": "Gliese 892",
+   "system": 23,
+   "tier": "frontier"
+  },
+  {
+   "budget": [
+    0,
+    3
+   ],
+   "local_facilities": 1,
+   "major_visible_hubs": 0,
+   "merged": 0,
+   "name": "Gliese 436",
+   "system": 24,
+   "tier": "frontier"
+  },
+  {
+   "budget": [
+    0,
+    3
+   ],
+   "local_facilities": 0,
+   "major_visible_hubs": 1,
+   "merged": 0,
+   "name": "Gliese 357",
+   "system": 25,
+   "tier": "frontier"
+  },
+  {
+   "budget": [
+    0,
+    3
+   ],
+   "local_facilities": 1,
+   "major_visible_hubs": 0,
+   "merged": 0,
+   "name": "Epsilon Indi",
+   "system": 30,
+   "tier": "frontier"
+  },
+  {
+   "budget": [
+    4,
+    10
+   ],
+   "local_facilities": 11,
+   "major_visible_hubs": 2,
+   "merged": 0,
+   "name": "61 Cygni",
+   "system": 31,
+   "tier": "colony"
+  },
+  {
+   "budget": [
+    1,
+    5
+   ],
+   "local_facilities": 8,
+   "major_visible_hubs": 1,
+   "merged": 0,
+   "name": "HD 114783",
+   "system": 37,
+   "tier": "periphery"
+  },
+  {
+   "budget": [
+    0,
+    3
+   ],
+   "local_facilities": 1,
+   "major_visible_hubs": 0,
+   "merged": 0,
+   "name": "Sigma² Ursae Majoris",
+   "system": 38,
+   "tier": "frontier"
+  },
+  {
+   "budget": [
+    0,
+    3
+   ],
+   "local_facilities": 1,
+   "major_visible_hubs": 2,
+   "merged": 0,
+   "name": "HD 104067",
+   "system": 41,
+   "tier": "frontier"
+  },
+  {
+   "budget": [
+    1,
+    5
+   ],
+   "local_facilities": 7,
+   "major_visible_hubs": 1,
+   "merged": 0,
+   "name": "83 Leonis",
+   "system": 45,
+   "tier": "periphery"
+  },
+  {
+   "budget": [
+    0,
+    3
+   ],
+   "local_facilities": 0,
+   "major_visible_hubs": 1,
+   "merged": 0,
+   "name": "Gliese 674",
+   "system": 53,
+   "tier": "frontier"
+  },
+  {
+   "budget": [
+    0,
+    3
+   ],
+   "local_facilities": 1,
+   "major_visible_hubs": 0,
+   "merged": 0,
+   "name": "HD 85512",
+   "system": 54,
+   "tier": "frontier"
+  },
+  {
+   "budget": [
+    0,
+    3
+   ],
+   "local_facilities": 0,
+   "major_visible_hubs": 1,
+   "merged": 0,
+   "name": "HD 10360",
+   "system": 57,
+   "tier": "frontier"
+  },
+  {
+   "budget": [
+    4,
+    10
+   ],
+   "local_facilities": 17,
+   "major_visible_hubs": 6,
+   "merged": 0,
+   "name": "Proxima Centauri",
+   "system": 60,
+   "tier": "colony"
+  }
+ ],
+ "min_separation_km": 74,
  "min_separation_pair": [
-  "earth_hub.baikonur",
-  "earth_hub.wenchang"
+  "earth_hub.tikhiy",
+  "earth_hub.kourou"
  ],
  "region_assets": {
   "belt": {
@@ -2206,366 +2591,92 @@
   },
   {
    "cargo_t_y": 0,
-   "destination": "earth_hub.baikonur",
-   "disruption": "none",
-   "flights_day": 0.0,
-   "hazard": "none",
-   "id": "route.earth.aurora--baikonur",
-   "mix": {
-    "transfer": 0
-   },
-   "origin": "earth_hub.aurora",
-   "pax_y": 0,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "cargo"
-  },
-  {
-   "cargo_t_y": 0,
    "destination": "earth_hub.canaveral",
    "disruption": "none",
-   "flights_day": 0.0,
+   "flights_day": 87.94,
    "hazard": "none",
    "id": "route.earth.aurora--canaveral",
    "mix": {
-    "interplanetary": 0,
-    "transfer": 0
+    "interplanetary": 3289771,
+    "transfer": 176812
    },
    "origin": "earth_hub.aurora",
-   "pax_y": 0,
+   "pax_y": 3466583,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
    "travel_days": 0.052,
-   "type": "cargo"
+   "type": "shuttle"
   },
   {
    "cargo_t_y": 0,
    "destination": "earth_hub.kourou",
    "disruption": "none",
-   "flights_day": 0.0,
+   "flights_day": 83.869,
    "hazard": "none",
    "id": "route.earth.aurora--kourou",
    "mix": {
-    "interplanetary": 0,
-    "transfer": 0
+    "interplanetary": 3289771,
+    "transfer": 16355
    },
    "origin": "earth_hub.aurora",
-   "pax_y": 0,
+   "pax_y": 3306126,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
    "travel_days": 0.052,
-   "type": "cargo"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.meridian",
-   "disruption": "none",
-   "flights_day": 0.0,
-   "hazard": "none",
-   "id": "route.earth.aurora--meridian",
-   "mix": {
-    "transfer": 0
-   },
-   "origin": "earth_hub.aurora",
-   "pax_y": 0,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "cargo"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.sriharikota",
-   "disruption": "none",
-   "flights_day": 0.0,
-   "hazard": "none",
-   "id": "route.earth.aurora--sriharikota",
-   "mix": {
-    "transfer": 0
-   },
-   "origin": "earth_hub.aurora",
-   "pax_y": 0,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "cargo"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tanegashima",
-   "disruption": "none",
-   "flights_day": 0.0,
-   "hazard": "none",
-   "id": "route.earth.aurora--tanegashima",
-   "mix": {
-    "transfer": 0
-   },
-   "origin": "earth_hub.aurora",
-   "pax_y": 0,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "cargo"
+   "type": "shuttle"
   },
   {
    "cargo_t_y": 0,
    "destination": "earth_hub.tikhiy",
    "disruption": "none",
-   "flights_day": 0.0,
+   "flights_day": 7.422,
    "hazard": "none",
    "id": "route.earth.aurora--tikhiy",
    "mix": {
-    "transfer": 0
+    "transfer": 292583
    },
    "origin": "earth_hub.aurora",
-   "pax_y": 0,
+   "pax_y": 292583,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
    "travel_days": 0.052,
-   "type": "cargo"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tropic",
-   "disruption": "none",
-   "flights_day": 0.0,
-   "hazard": "none",
-   "id": "route.earth.aurora--tropic",
-   "mix": {
-    "transfer": 0
-   },
-   "origin": "earth_hub.aurora",
-   "pax_y": 0,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "cargo"
+   "type": "shuttle"
   },
   {
    "cargo_t_y": 0,
    "destination": "earth_hub.wenchang",
    "disruption": "none",
-   "flights_day": 0.0,
+   "flights_day": 1.39,
    "hazard": "none",
    "id": "route.earth.aurora--wenchang",
    "mix": {
-    "transfer": 0
+    "transfer": 54798
    },
    "origin": "earth_hub.aurora",
-   "pax_y": 0,
+   "pax_y": 54798,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
    "travel_days": 0.052,
-   "type": "cargo"
+   "type": "shuttle"
   },
   {
    "cargo_t_y": 0,
    "destination": "earth_orbital_hub",
    "disruption": "none",
-   "flights_day": 0.152,
+   "flights_day": 46.057,
    "hazard": "none",
    "id": "route.earth.aurora--earth_orbital_hub",
    "mix": {
-    "interstellar": 0,
+    "interstellar": 1619148,
     "service": 6000,
-    "transfer": 0
+    "transfer": 190415
    },
    "origin": "earth_hub.aurora",
-   "pax_y": 6000,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.canaveral",
-   "disruption": "none",
-   "flights_day": 492.761,
-   "hazard": "none",
-   "id": "route.earth.baikonur--canaveral",
-   "mix": {
-    "interplanetary": 19010870,
-    "transfer": 413757
-   },
-   "origin": "earth_hub.baikonur",
-   "pax_y": 19424626,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 2000000,
-   "destination": "earth_hub.ekvator",
-   "disruption": "none",
-   "flights_day": 22.831,
-   "hazard": "none",
-   "id": "route.earth.baikonur--ekvator",
-   "mix": {
-    "cargo_t": 2000000,
-    "transfer": 0
-   },
-   "origin": "earth_hub.baikonur",
-   "pax_y": 0,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "cargo"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.kourou",
-   "disruption": "none",
-   "flights_day": 483.688,
-   "hazard": "none",
-   "id": "route.earth.baikonur--kourou",
-   "mix": {
-    "interplanetary": 19010870,
-    "transfer": 56108
-   },
-   "origin": "earth_hub.baikonur",
-   "pax_y": 19066978,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.meridian",
-   "disruption": "none",
-   "flights_day": 12.035,
-   "hazard": "none",
-   "id": "route.earth.baikonur--meridian",
-   "mix": {
-    "transfer": 474401
-   },
-   "origin": "earth_hub.baikonur",
-   "pax_y": 474401,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.sriharikota",
-   "disruption": "none",
-   "flights_day": 2.242,
-   "hazard": "none",
-   "id": "route.earth.baikonur--sriharikota",
-   "mix": {
-    "transfer": 88361
-   },
-   "origin": "earth_hub.baikonur",
-   "pax_y": 88361,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tanegashima",
-   "disruption": "none",
-   "flights_day": 14.718,
-   "hazard": "none",
-   "id": "route.earth.baikonur--tanegashima",
-   "mix": {
-    "transfer": 580182
-   },
-   "origin": "earth_hub.baikonur",
-   "pax_y": 580182,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tikhiy",
-   "disruption": "none",
-   "flights_day": 26.96,
-   "hazard": "none",
-   "id": "route.earth.baikonur--tikhiy",
-   "mix": {
-    "transfer": 1062758
-   },
-   "origin": "earth_hub.baikonur",
-   "pax_y": 1062758,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tropic",
-   "disruption": "none",
-   "flights_day": 7.916,
-   "hazard": "none",
-   "id": "route.earth.baikonur--tropic",
-   "mix": {
-    "transfer": 312048
-   },
-   "origin": "earth_hub.baikonur",
-   "pax_y": 312048,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.wenchang",
-   "disruption": "none",
-   "flights_day": 4.159,
-   "hazard": "none",
-   "id": "route.earth.baikonur--wenchang",
-   "mix": {
-    "transfer": 163955
-   },
-   "origin": "earth_hub.baikonur",
-   "pax_y": 163955,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_orbital_hub",
-   "disruption": "none",
-   "flights_day": 252.251,
-   "hazard": "none",
-   "id": "route.earth.baikonur--earth_orbital_hub",
-   "mix": {
-    "interstellar": 9356700,
-    "transfer": 587043
-   },
-   "origin": "earth_hub.baikonur",
-   "pax_y": 9943743,
+   "pax_y": 1815563,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2576,72 +2687,15 @@
    "cargo_t_y": 0,
    "destination": "earth_hub.kourou",
    "disruption": "none",
-   "flights_day": 387.004,
+   "flights_day": 921.202,
    "hazard": "none",
    "id": "route.earth.canaveral--kourou",
    "mix": {
-    "interplanetary": 15216156,
-    "transfer": 39546
+    "interplanetary": 36149276,
+    "transfer": 164496
    },
    "origin": "earth_hub.canaveral",
-   "pax_y": 15255702,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.meridian",
-   "disruption": "none",
-   "flights_day": 398.209,
-   "hazard": "none",
-   "id": "route.earth.canaveral--meridian",
-   "mix": {
-    "interplanetary": 15363042,
-    "transfer": 334365
-   },
-   "origin": "earth_hub.canaveral",
-   "pax_y": 15697407,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.sriharikota",
-   "disruption": "none",
-   "flights_day": 74.17,
-   "hazard": "none",
-   "id": "route.earth.canaveral--sriharikota",
-   "mix": {
-    "interplanetary": 2861497,
-    "transfer": 62278
-   },
-   "origin": "earth_hub.canaveral",
-   "pax_y": 2923776,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tanegashima",
-   "disruption": "none",
-   "flights_day": 487.001,
-   "hazard": "none",
-   "id": "route.earth.canaveral--tanegashima",
-   "mix": {
-    "interplanetary": 18788673,
-    "transfer": 408921
-   },
-   "origin": "earth_hub.canaveral",
-   "pax_y": 19197594,
+   "pax_y": 36313773,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2652,34 +2706,15 @@
    "cargo_t_y": 0,
    "destination": "earth_hub.tikhiy",
    "disruption": "none",
-   "flights_day": 892.073,
+   "flights_day": 1463.646,
    "hazard": "none",
    "id": "route.earth.canaveral--tikhiy",
    "mix": {
-    "interplanetary": 34416476,
-    "transfer": 749047
+    "interplanetary": 54754120,
+    "transfer": 2942807
    },
    "origin": "earth_hub.canaveral",
-   "pax_y": 35165524,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tropic",
-   "disruption": "none",
-   "flights_day": 261.932,
-   "hazard": "none",
-   "id": "route.earth.canaveral--tropic",
-   "mix": {
-    "interplanetary": 10105411,
-    "transfer": 219936
-   },
-   "origin": "earth_hub.canaveral",
-   "pax_y": 10325347,
+   "pax_y": 57696927,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2690,15 +2725,15 @@
    "cargo_t_y": 0,
    "destination": "earth_hub.wenchang",
    "disruption": "none",
-   "flights_day": 137.623,
+   "flights_day": 274.127,
    "hazard": "none",
    "id": "route.earth.canaveral--wenchang",
    "mix": {
-    "interplanetary": 5309531,
-    "transfer": 115558
+    "interplanetary": 10254919,
+    "transfer": 551159
    },
    "origin": "earth_hub.canaveral",
-   "pax_y": 5425088,
+   "pax_y": 10806078,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2709,15 +2744,15 @@
    "cargo_t_y": 0,
    "destination": "earth_orbital_hub",
    "disruption": "none",
-   "flights_day": 177.79,
+   "flights_day": 461.711,
    "hazard": "none",
    "id": "route.earth.canaveral--earth_orbital_hub",
    "mix": {
-    "interstellar": 6594741,
-    "transfer": 413757
+    "interstellar": 16285450,
+    "transfer": 1915203
    },
    "origin": "earth_hub.canaveral",
-   "pax_y": 7008497,
+   "pax_y": 18200654,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2745,93 +2780,17 @@
   },
   {
    "cargo_t_y": 0,
-   "destination": "earth_hub.meridian",
-   "disruption": "none",
-   "flights_day": 390.877,
-   "hazard": "none",
-   "id": "route.earth.kourou--meridian",
-   "mix": {
-    "interplanetary": 15363042,
-    "transfer": 45342
-   },
-   "origin": "earth_hub.kourou",
-   "pax_y": 15408384,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.sriharikota",
-   "disruption": "none",
-   "flights_day": 72.804,
-   "hazard": "none",
-   "id": "route.earth.kourou--sriharikota",
-   "mix": {
-    "interplanetary": 2861497,
-    "transfer": 8445
-   },
-   "origin": "earth_hub.kourou",
-   "pax_y": 2869943,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tanegashima",
-   "disruption": "none",
-   "flights_day": 478.035,
-   "hazard": "none",
-   "id": "route.earth.kourou--tanegashima",
-   "mix": {
-    "interplanetary": 18788673,
-    "transfer": 55452
-   },
-   "origin": "earth_hub.kourou",
-   "pax_y": 18844126,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
    "destination": "earth_hub.tikhiy",
    "disruption": "none",
-   "flights_day": 875.648,
+   "flights_day": 1395.899,
    "hazard": "none",
    "id": "route.earth.kourou--tikhiy",
    "mix": {
-    "interplanetary": 34416476,
-    "transfer": 101576
+    "interplanetary": 54754120,
+    "transfer": 272203
    },
    "origin": "earth_hub.kourou",
-   "pax_y": 34518052,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tropic",
-   "disruption": "none",
-   "flights_day": 257.109,
-   "hazard": "none",
-   "id": "route.earth.kourou--tropic",
-   "mix": {
-    "interplanetary": 10105411,
-    "transfer": 29825
-   },
-   "origin": "earth_hub.kourou",
-   "pax_y": 10135236,
+   "pax_y": 55026323,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2842,15 +2801,15 @@
    "cargo_t_y": 0,
    "destination": "earth_hub.wenchang",
    "disruption": "none",
-   "flights_day": 135.089,
+   "flights_day": 261.438,
    "hazard": "none",
    "id": "route.earth.kourou--wenchang",
    "mix": {
-    "interplanetary": 5309531,
-    "transfer": 15670
+    "interplanetary": 10254919,
+    "transfer": 50981
    },
    "origin": "earth_hub.kourou",
-   "pax_y": 5325201,
+   "pax_y": 10305900,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2861,87 +2820,15 @@
    "cargo_t_y": 0,
    "destination": "earth_orbital_hub",
    "disruption": "none",
-   "flights_day": 24.11,
+   "flights_day": 42.707,
    "hazard": "none",
    "id": "route.earth.kourou--earth_orbital_hub",
    "mix": {
-    "interstellar": 894291,
-    "transfer": 56108
+    "interstellar": 1506369,
+    "transfer": 177152
    },
    "origin": "earth_hub.kourou",
-   "pax_y": 950399,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.sriharikota",
-   "disruption": "none",
-   "flights_day": 1.811,
-   "hazard": "none",
-   "id": "route.earth.meridian--sriharikota",
-   "mix": {
-    "transfer": 71406
-   },
-   "origin": "earth_hub.meridian",
-   "pax_y": 71406,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tanegashima",
-   "disruption": "none",
-   "flights_day": 11.894,
-   "hazard": "none",
-   "id": "route.earth.meridian--tanegashima",
-   "mix": {
-    "transfer": 468856
-   },
-   "origin": "earth_hub.meridian",
-   "pax_y": 468856,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tikhiy",
-   "disruption": "none",
-   "flights_day": 21.787,
-   "hazard": "none",
-   "id": "route.earth.meridian--tikhiy",
-   "mix": {
-    "transfer": 858835
-   },
-   "origin": "earth_hub.meridian",
-   "pax_y": 858835,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tropic",
-   "disruption": "none",
-   "flights_day": 6.397,
-   "hazard": "none",
-   "id": "route.earth.meridian--tropic",
-   "mix": {
-    "transfer": 252172
-   },
-   "origin": "earth_hub.meridian",
-   "pax_y": 252172,
+   "pax_y": 1683521,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2952,233 +2839,14 @@
    "cargo_t_y": 0,
    "destination": "earth_hub.wenchang",
    "disruption": "none",
-   "flights_day": 3.361,
-   "hazard": "none",
-   "id": "route.earth.meridian--wenchang",
-   "mix": {
-    "transfer": 132495
-   },
-   "origin": "earth_hub.meridian",
-   "pax_y": 132495,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_orbital_hub",
-   "disruption": "none",
-   "flights_day": 203.849,
-   "hazard": "none",
-   "id": "route.earth.meridian--earth_orbital_hub",
-   "mix": {
-    "interstellar": 7561326,
-    "transfer": 474401
-   },
-   "origin": "earth_hub.meridian",
-   "pax_y": 8035726,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tanegashima",
-   "disruption": "none",
-   "flights_day": 2.215,
-   "hazard": "none",
-   "id": "route.earth.sriharikota--tanegashima",
-   "mix": {
-    "transfer": 87328
-   },
-   "origin": "earth_hub.sriharikota",
-   "pax_y": 87328,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tikhiy",
-   "disruption": "none",
-   "flights_day": 4.058,
-   "hazard": "none",
-   "id": "route.earth.sriharikota--tikhiy",
-   "mix": {
-    "transfer": 159965
-   },
-   "origin": "earth_hub.sriharikota",
-   "pax_y": 159965,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tropic",
-   "disruption": "none",
-   "flights_day": 1.192,
-   "hazard": "none",
-   "id": "route.earth.sriharikota--tropic",
-   "mix": {
-    "transfer": 46969
-   },
-   "origin": "earth_hub.sriharikota",
-   "pax_y": 46969,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.wenchang",
-   "disruption": "none",
-   "flights_day": 0.626,
-   "hazard": "none",
-   "id": "route.earth.sriharikota--wenchang",
-   "mix": {
-    "transfer": 24678
-   },
-   "origin": "earth_hub.sriharikota",
-   "pax_y": 24678,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_orbital_hub",
-   "disruption": "none",
-   "flights_day": 37.969,
-   "hazard": "none",
-   "id": "route.earth.sriharikota--earth_orbital_hub",
-   "mix": {
-    "interstellar": 1408361,
-    "transfer": 88361
-   },
-   "origin": "earth_hub.sriharikota",
-   "pax_y": 1496722,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tikhiy",
-   "disruption": "none",
-   "flights_day": 26.645,
-   "hazard": "none",
-   "id": "route.earth.tanegashima--tikhiy",
-   "mix": {
-    "transfer": 1050337
-   },
-   "origin": "earth_hub.tanegashima",
-   "pax_y": 1050337,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tropic",
-   "disruption": "none",
-   "flights_day": 7.823,
-   "hazard": "none",
-   "id": "route.earth.tanegashima--tropic",
-   "mix": {
-    "transfer": 308401
-   },
-   "origin": "earth_hub.tanegashima",
-   "pax_y": 308401,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.wenchang",
-   "disruption": "none",
-   "flights_day": 4.111,
-   "hazard": "none",
-   "id": "route.earth.tanegashima--wenchang",
-   "mix": {
-    "transfer": 162038
-   },
-   "origin": "earth_hub.tanegashima",
-   "pax_y": 162038,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_orbital_hub",
-   "disruption": "none",
-   "flights_day": 249.303,
-   "hazard": "none",
-   "id": "route.earth.tanegashima--earth_orbital_hub",
-   "mix": {
-    "interstellar": 9247341,
-    "transfer": 580182
-   },
-   "origin": "earth_hub.tanegashima",
-   "pax_y": 9827522,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.tropic",
-   "disruption": "none",
-   "flights_day": 14.331,
-   "hazard": "none",
-   "id": "route.earth.tikhiy--tropic",
-   "mix": {
-    "transfer": 564919
-   },
-   "origin": "earth_hub.tikhiy",
-   "pax_y": 564919,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.wenchang",
-   "disruption": "none",
-   "flights_day": 7.53,
+   "flights_day": 23.137,
    "hazard": "none",
    "id": "route.earth.tikhiy--wenchang",
    "mix": {
-    "transfer": 296817
+    "transfer": 912042
    },
    "origin": "earth_hub.tikhiy",
-   "pax_y": 296817,
+   "pax_y": 912042,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -3189,33 +2857,15 @@
    "cargo_t_y": 0,
    "destination": "earth_orbital_hub",
    "disruption": "none",
-   "flights_day": 456.665,
+   "flights_day": 764.026,
    "hazard": "none",
    "id": "route.earth.tikhiy--earth_orbital_hub",
    "mix": {
-    "interstellar": 16938976,
-    "transfer": 1062758
+    "interstellar": 26948683,
+    "transfer": 3169222
    },
    "origin": "earth_hub.tikhiy",
-   "pax_y": 18001734,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_hub.wenchang",
-   "disruption": "none",
-   "flights_day": 2.211,
-   "hazard": "none",
-   "id": "route.earth.tropic--wenchang",
-   "mix": {
-    "transfer": 87152
-   },
-   "origin": "earth_hub.tropic",
-   "pax_y": 87152,
+   "pax_y": 30117905,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -3226,34 +2876,15 @@
    "cargo_t_y": 0,
    "destination": "earth_orbital_hub",
    "disruption": "none",
-   "flights_day": 134.087,
-   "hazard": "none",
-   "id": "route.earth.tropic--earth_orbital_hub",
-   "mix": {
-    "interstellar": 4973644,
-    "transfer": 312048
-   },
-   "origin": "earth_hub.tropic",
-   "pax_y": 5285693,
-   "ship_class": "surface_lifter",
-   "status": "PROPOSAL",
-   "transfer": "orbital_transfer",
-   "travel_days": 0.052,
-   "type": "shuttle"
-  },
-  {
-   "cargo_t_y": 0,
-   "destination": "earth_orbital_hub",
-   "disruption": "none",
-   "flights_day": 70.451,
+   "flights_day": 143.095,
    "hazard": "none",
    "id": "route.earth.wenchang--earth_orbital_hub",
    "mix": {
-    "interstellar": 2613225,
-    "transfer": 163955
+    "interstellar": 5047228,
+    "transfer": 593565
    },
    "origin": "earth_hub.wenchang",
-   "pax_y": 2777180,
+   "pax_y": 5640793,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -3303,495 +2934,360 @@
  "status": "PROPOSAL",
  "surface": {
   "allocation": {
-   "earth_hub.baikonur": 54070690,
-   "earth_hub.canaveral": 38109822,
-   "earth_hub.kourou": 5167948,
-   "earth_hub.meridian": 43695544,
-   "earth_hub.sriharikota": 8138667,
-   "earth_hub.tanegashima": 53438720,
-   "earth_hub.tikhiy": 97887296,
-   "earth_hub.tropic": 28741796,
-   "earth_hub.wenchang": 15101360,
-   "earth_orbital_hub": 54070690
+   "earth_hub.aurora": 9356763,
+   "earth_hub.canaveral": 94110691,
+   "earth_hub.kourou": 8705033,
+   "earth_hub.tikhiy": 155731594,
+   "earth_hub.wenchang": 29167026,
+   "earth_orbital_hub": 101351426
   },
   "by_city": {
    "city.000.earth.001": {
-    "earth_hub.baikonur": 17614342,
-    "earth_hub.meridian": 13159099,
-    "earth_hub.tikhiy": 44483283,
-    "earth_orbital_hub": 17614342
+    "earth_hub.aurora": 1547765,
+    "earth_hub.tikhiy": 65418931,
+    "earth_orbital_hub": 25904370
    },
    "city.000.earth.002": {
-    "earth_hub.baikonur": 3591023,
-    "earth_hub.canaveral": 13968950,
-    "earth_hub.meridian": 2682736,
-    "earth_hub.tanegashima": 11951264,
-    "earth_hub.tikhiy": 9068773,
-    "earth_orbital_hub": 3591023
+    "earth_hub.aurora": 387658,
+    "earth_hub.canaveral": 21592983,
+    "earth_hub.tikhiy": 16385035,
+    "earth_orbital_hub": 6488092
    },
    "city.000.earth.003": {
-    "earth_hub.baikonur": 3407032,
-    "earth_hub.meridian": 2545282,
-    "earth_hub.tanegashima": 11338925,
-    "earth_hub.tikhiy": 8604123,
-    "earth_orbital_hub": 3407032
+    "earth_hub.aurora": 253252,
+    "earth_hub.canaveral": 14106421,
+    "earth_hub.tikhiy": 10704134,
+    "earth_orbital_hub": 4238587
    },
    "city.000.earth.004": {
-    "earth_hub.baikonur": 1231812,
-    "earth_hub.canaveral": 4791704,
-    "earth_hub.meridian": 920246,
-    "earth_hub.tanegashima": 4099587,
-    "earth_hub.tikhiy": 3110819,
-    "earth_hub.tropic": 6276962,
-    "earth_orbital_hub": 1231812
+    "earth_hub.aurora": 187227,
+    "earth_hub.canaveral": 10428724,
+    "earth_hub.tikhiy": 7913450,
+    "earth_orbital_hub": 3133542
    },
    "city.000.earth.005": {
-    "earth_hub.baikonur": 704053,
-    "earth_hub.canaveral": 2738739,
-    "earth_hub.meridian": 525975,
-    "earth_hub.tanegashima": 2343154,
-    "earth_hub.tikhiy": 1778015,
-    "earth_hub.tropic": 3587651,
-    "earth_hub.wenchang": 4756432,
-    "earth_orbital_hub": 704053
+    "earth_hub.aurora": 74913,
+    "earth_hub.canaveral": 4172725,
+    "earth_hub.tikhiy": 3166317,
+    "earth_hub.wenchang": 8470328,
+    "earth_orbital_hub": 1253788
    },
    "city.000.earth.006": {
-    "earth_hub.baikonur": 1645488,
-    "earth_hub.meridian": 1229290,
-    "earth_hub.tanegashima": 5476340,
-    "earth_hub.tikhiy": 4155518,
-    "earth_orbital_hub": 1645488
+    "earth_hub.aurora": 122313,
+    "earth_hub.canaveral": 6812952,
+    "earth_hub.tikhiy": 5169756,
+    "earth_orbital_hub": 2047103
    },
    "city.000.earth.007": {
-    "earth_hub.baikonur": 494505,
-    "earth_hub.canaveral": 1923607,
-    "earth_hub.meridian": 369428,
-    "earth_hub.tanegashima": 1645759,
-    "earth_hub.tikhiy": 1248823,
-    "earth_hub.tropic": 2519856,
-    "earth_hub.wenchang": 3340772,
-    "earth_orbital_hub": 494505
+    "earth_hub.aurora": 52616,
+    "earth_hub.canaveral": 2930794,
+    "earth_hub.tikhiy": 2223924,
+    "earth_hub.wenchang": 5949299,
+    "earth_orbital_hub": 880622
    },
    "city.000.earth.008": {
-    "earth_hub.baikonur": 3808611,
-    "earth_hub.meridian": 2845289,
-    "earth_orbital_hub": 3808611
+    "earth_hub.aurora": 589881,
+    "earth_orbital_hub": 9872630
    },
    "city.000.earth.009": {
-    "earth_hub.baikonur": 525718,
-    "earth_hub.canaveral": 2045024,
-    "earth_hub.meridian": 392747,
-    "earth_hub.tanegashima": 1749639,
-    "earth_hub.tikhiy": 1327649,
-    "earth_hub.tropic": 2678908,
-    "earth_orbital_hub": 525718
+    "earth_hub.aurora": 79905,
+    "earth_hub.canaveral": 4450815,
+    "earth_hub.tikhiy": 3377336,
+    "earth_orbital_hub": 1337346
    },
    "city.000.earth.010": {
-    "earth_hub.baikonur": 1569880,
-    "earth_hub.meridian": 1172806,
-    "earth_hub.tikhiy": 3964577,
-    "earth_orbital_hub": 1569880
+    "earth_hub.aurora": 137945,
+    "earth_hub.tikhiy": 5830468,
+    "earth_orbital_hub": 2308729
    },
    "city.000.earth.011": {
-    "earth_hub.baikonur": 2726144,
-    "earth_hub.meridian": 2036613,
-    "earth_orbital_hub": 2726144
+    "earth_hub.aurora": 422228,
+    "earth_orbital_hub": 7066673
    },
    "city.000.earth.012": {
-    "earth_hub.baikonur": 391079,
-    "earth_hub.canaveral": 1521283,
-    "earth_hub.meridian": 292162,
-    "earth_hub.tanegashima": 1301548,
-    "earth_hub.tikhiy": 987631,
-    "earth_hub.tropic": 1950243,
-    "earth_orbital_hub": 391079
+    "earth_hub.aurora": 59073,
+    "earth_hub.canaveral": 3290439,
+    "earth_hub.tikhiy": 2496828,
+    "earth_orbital_hub": 988685
    },
    "city.000.earth.013": {
-    "earth_hub.baikonur": 1191862,
-    "earth_hub.meridian": 890401,
-    "earth_hub.tikhiy": 3009929,
-    "earth_orbital_hub": 1191862
+    "earth_hub.aurora": 104728,
+    "earth_hub.tikhiy": 4426525,
+    "earth_orbital_hub": 1752801
    },
    "city.000.earth.014": {
-    "earth_hub.baikonur": 470281,
-    "earth_hub.canaveral": 1768930,
-    "earth_hub.meridian": 351332,
-    "earth_hub.tanegashima": 1565140,
-    "earth_hub.tikhiy": 1187648,
-    "earth_orbital_hub": 470281
+    "earth_hub.aurora": 50245,
+    "earth_hub.canaveral": 2798722,
+    "earth_hub.tikhiy": 2123706,
+    "earth_orbital_hub": 840938
    },
    "city.000.earth.015": {
-    "earth_hub.baikonur": 1968409,
-    "earth_hub.meridian": 1470534,
-    "earth_orbital_hub": 1968409
+    "earth_hub.aurora": 304869,
+    "earth_orbital_hub": 5102482
    },
    "city.000.earth.016": {
-    "earth_hub.baikonur": 287330,
-    "earth_hub.canaveral": 1117705,
-    "earth_hub.meridian": 214655,
-    "earth_hub.tanegashima": 956262,
-    "earth_hub.tikhiy": 725624,
-    "earth_hub.tropic": 1464153,
-    "earth_orbital_hub": 287330
+    "earth_hub.aurora": 43672,
+    "earth_hub.canaveral": 2432586,
+    "earth_hub.tikhiy": 1845878,
+    "earth_orbital_hub": 730924
    },
    "city.000.earth.017": {
-    "earth_hub.baikonur": 141698,
-    "earth_hub.canaveral": 551202,
-    "earth_hub.meridian": 105858,
-    "earth_hub.sriharikota": 1292199,
-    "earth_hub.tanegashima": 471586,
-    "earth_hub.tikhiy": 357845,
-    "earth_hub.tropic": 722055,
-    "earth_hub.wenchang": 957285,
-    "earth_orbital_hub": 141698
+    "earth_hub.aurora": 20725,
+    "earth_hub.canaveral": 1154428,
+    "earth_hub.tikhiy": 875995,
+    "earth_hub.wenchang": 2343405,
+    "earth_orbital_hub": 346874
    },
    "city.000.earth.018": {
-    "earth_hub.baikonur": 92164,
-    "earth_hub.canaveral": 358516,
-    "earth_hub.kourou": 1381289,
-    "earth_hub.meridian": 68853,
-    "earth_hub.sriharikota": 840480,
-    "earth_hub.tanegashima": 306731,
-    "earth_hub.tikhiy": 232752,
-    "earth_hub.tropic": 469643,
-    "earth_hub.wenchang": 622643,
-    "earth_orbital_hub": 92164
+    "earth_hub.aurora": 9310,
+    "earth_hub.canaveral": 518585,
+    "earth_hub.kourou": 2335320,
+    "earth_hub.tikhiy": 393509,
+    "earth_hub.wenchang": 1052690,
+    "earth_orbital_hub": 155820
    },
    "city.000.earth.019": {
-    "earth_hub.baikonur": 239892,
-    "earth_hub.canaveral": 933172,
-    "earth_hub.meridian": 179216,
-    "earth_hub.tanegashima": 798384,
-    "earth_hub.tikhiy": 605824,
-    "earth_hub.tropic": 1222422,
-    "earth_orbital_hub": 239892
+    "earth_hub.aurora": 36462,
+    "earth_hub.canaveral": 2030967,
+    "earth_hub.tikhiy": 1541124,
+    "earth_orbital_hub": 610249
    },
    "city.000.earth.020": {
-    "earth_hub.baikonur": 1455223,
-    "earth_hub.meridian": 1087150,
-    "earth_orbital_hub": 1455223
+    "earth_hub.aurora": 225386,
+    "earth_orbital_hub": 3772210
    },
    "city.000.earth.021": {
-    "earth_hub.baikonur": 77630,
-    "earth_hub.canaveral": 301979,
-    "earth_hub.kourou": 1200338,
-    "earth_hub.meridian": 57995,
-    "earth_hub.sriharikota": 707939,
-    "earth_hub.tanegashima": 258361,
-    "earth_hub.tikhiy": 196048,
-    "earth_hub.tropic": 395582,
-    "earth_hub.wenchang": 524454,
-    "earth_orbital_hub": 77630
+    "earth_hub.aurora": 7790,
+    "earth_hub.canaveral": 433897,
+    "earth_hub.kourou": 2015872,
+    "earth_hub.tikhiy": 329247,
+    "earth_hub.wenchang": 880779,
+    "earth_orbital_hub": 130374
    },
    "city.000.earth.022": {
-    "earth_hub.baikonur": 205666,
-    "earth_hub.canaveral": 800035,
-    "earth_hub.meridian": 153647,
-    "earth_hub.tanegashima": 684478,
-    "earth_hub.tikhiy": 519390,
-    "earth_hub.tropic": 1048018,
-    "earth_orbital_hub": 205666
+    "earth_hub.aurora": 31260,
+    "earth_hub.canaveral": 1741207,
+    "earth_hub.tikhiy": 1321250,
+    "earth_orbital_hub": 523184
    },
    "city.000.earth.023": {
-    "earth_hub.baikonur": 654715,
-    "earth_hub.meridian": 489116,
-    "earth_hub.tikhiy": 1653418,
-    "earth_orbital_hub": 654715
+    "earth_hub.aurora": 57530,
+    "earth_hub.tikhiy": 2431584,
+    "earth_orbital_hub": 962850
    },
    "city.000.earth.024": {
-    "earth_hub.meridian": 3301100
+    "earth_hub.aurora": 3301100
    },
    "city.000.earth.025": {
-    "earth_hub.baikonur": 179833,
-    "earth_hub.canaveral": 699546,
-    "earth_hub.meridian": 134348,
-    "earth_hub.tanegashima": 598503,
-    "earth_hub.tikhiy": 454152,
-    "earth_hub.tropic": 916380,
-    "earth_orbital_hub": 179833
+    "earth_hub.aurora": 27333,
+    "earth_hub.canaveral": 1522499,
+    "earth_hub.tikhiy": 1155292,
+    "earth_orbital_hub": 457469
    },
    "city.000.earth.026": {
-    "earth_hub.baikonur": 352884,
-    "earth_hub.meridian": 263628,
-    "earth_hub.tanegashima": 1174430,
-    "earth_hub.tikhiy": 891173,
-    "earth_orbital_hub": 352884
+    "earth_hub.aurora": 26231,
+    "earth_hub.canaveral": 1461074,
+    "earth_hub.tikhiy": 1108682,
+    "earth_orbital_hub": 439012
    },
    "city.000.earth.027": {
-    "earth_hub.baikonur": 87177,
-    "earth_hub.canaveral": 339117,
-    "earth_hub.meridian": 65127,
-    "earth_hub.sriharikota": 795003,
-    "earth_hub.tanegashima": 290135,
-    "earth_hub.tikhiy": 220158,
-    "earth_hub.tropic": 444232,
-    "earth_hub.wenchang": 588953,
-    "earth_orbital_hub": 87177
+    "earth_hub.aurora": 12751,
+    "earth_hub.canaveral": 710242,
+    "earth_hub.tikhiy": 538941,
+    "earth_hub.wenchang": 1441739,
+    "earth_orbital_hub": 213408
    },
    "city.000.earth.028": {
-    "earth_hub.baikonur": 1022104,
-    "earth_hub.meridian": 763581,
-    "earth_orbital_hub": 1022104
+    "earth_hub.aurora": 158305,
+    "earth_orbital_hub": 2649485
    },
    "city.000.earth.029": {
-    "earth_hub.baikonur": 55315,
-    "earth_hub.canaveral": 215174,
-    "earth_hub.kourou": 855295,
-    "earth_hub.meridian": 41324,
-    "earth_hub.sriharikota": 504439,
-    "earth_hub.tanegashima": 184094,
-    "earth_hub.tikhiy": 139693,
-    "earth_hub.tropic": 281870,
-    "earth_hub.wenchang": 373697,
-    "earth_orbital_hub": 55315
+    "earth_hub.aurora": 5551,
+    "earth_hub.canaveral": 309171,
+    "earth_hub.kourou": 1436399,
+    "earth_hub.tikhiy": 234603,
+    "earth_hub.wenchang": 627595,
+    "earth_orbital_hub": 92897
    },
    "city.000.earth.030": {
-    "earth_hub.baikonur": 53593,
-    "earth_hub.canaveral": 208474,
-    "earth_hub.kourou": 818288,
-    "earth_hub.meridian": 40037,
-    "earth_hub.sriharikota": 488732,
-    "earth_hub.tanegashima": 178362,
-    "earth_hub.tikhiy": 135343,
-    "earth_hub.tropic": 273094,
-    "earth_hub.wenchang": 362062,
-    "earth_orbital_hub": 53593
+    "earth_hub.aurora": 5392,
+    "earth_hub.canaveral": 300355,
+    "earth_hub.kourou": 1377969,
+    "earth_hub.tikhiy": 227914,
+    "earth_hub.wenchang": 609700,
+    "earth_orbital_hub": 90248
    },
    "city.000.earth.031": {
-    "earth_hub.baikonur": 75406,
-    "earth_hub.canaveral": 293327,
-    "earth_hub.meridian": 56333,
-    "earth_hub.sriharikota": 687656,
-    "earth_hub.tanegashima": 250959,
-    "earth_hub.tikhiy": 190431,
-    "earth_hub.tropic": 384248,
-    "earth_hub.wenchang": 509428,
-    "earth_orbital_hub": 75406
+    "earth_hub.aurora": 11029,
+    "earth_hub.canaveral": 614340,
+    "earth_hub.tikhiy": 466169,
+    "earth_hub.wenchang": 1247065,
+    "earth_orbital_hub": 184592
    },
    "city.000.earth.032": {
-    "earth_hub.baikonur": 72934,
-    "earth_hub.canaveral": 283710,
-    "earth_hub.meridian": 54486,
-    "earth_hub.sriharikota": 665110,
-    "earth_hub.tanegashima": 242731,
-    "earth_hub.tikhiy": 184187,
-    "earth_hub.tropic": 371650,
-    "earth_hub.wenchang": 492726,
-    "earth_orbital_hub": 72934
+    "earth_hub.aurora": 10668,
+    "earth_hub.canaveral": 594197,
+    "earth_hub.tikhiy": 450885,
+    "earth_hub.wenchang": 1206178,
+    "earth_orbital_hub": 178540
    },
    "city.000.earth.033": {
-    "earth_hub.baikonur": 70615,
-    "earth_hub.canaveral": 274690,
-    "earth_hub.meridian": 52754,
-    "earth_hub.sriharikota": 643963,
-    "earth_hub.tanegashima": 235013,
-    "earth_hub.tikhiy": 178331,
-    "earth_hub.tropic": 359834,
-    "earth_hub.wenchang": 477060,
-    "earth_orbital_hub": 70615
+    "earth_hub.aurora": 10328,
+    "earth_hub.canaveral": 575306,
+    "earth_hub.tikhiy": 436549,
+    "earth_hub.wenchang": 1167829,
+    "earth_orbital_hub": 172863
    },
    "city.000.earth.034": {
-    "earth_hub.baikonur": 833601,
-    "earth_hub.meridian": 622756,
-    "earth_orbital_hub": 833601
+    "earth_hub.aurora": 129109,
+    "earth_orbital_hub": 2160849
    },
    "city.000.earth.035": {
-    "earth_hub.baikonur": 421303,
-    "earth_hub.meridian": 314742,
-    "earth_hub.tikhiy": 1063960,
-    "earth_orbital_hub": 421303
+    "earth_hub.aurora": 37020,
+    "earth_hub.tikhiy": 1564703,
+    "earth_orbital_hub": 619586
    },
    "city.000.earth.036": {
-    "earth_hub.baikonur": 88594,
-    "earth_hub.canaveral": 344629,
-    "earth_hub.meridian": 66186,
-    "earth_hub.tanegashima": 294850,
-    "earth_hub.tikhiy": 223736,
-    "earth_hub.tropic": 451451,
-    "earth_hub.wenchang": 598525,
-    "earth_orbital_hub": 88594
+    "earth_hub.aurora": 9427,
+    "earth_hub.canaveral": 525074,
+    "earth_hub.tikhiy": 398433,
+    "earth_hub.wenchang": 1065862,
+    "earth_orbital_hub": 157770
    },
    "city.000.earth.037": {
-    "earth_hub.baikonur": 762780,
-    "earth_hub.meridian": 569848,
-    "earth_orbital_hub": 762780
+    "earth_hub.aurora": 118140,
+    "earth_orbital_hub": 1977268
    },
    "city.000.earth.038": {
-    "earth_hub.baikonur": 386450,
-    "earth_hub.meridian": 288704,
-    "earth_hub.tikhiy": 975942,
-    "earth_orbital_hub": 386450
+    "earth_hub.aurora": 33957,
+    "earth_hub.tikhiy": 1435260,
+    "earth_orbital_hub": 568330
    },
    "city.000.earth.039": {
-    "earth_hub.baikonur": 721761,
-    "earth_hub.meridian": 539204,
-    "earth_orbital_hub": 721761
+    "earth_hub.aurora": 111787,
+    "earth_orbital_hub": 1870938
    },
    "city.000.earth.040": {
-    "earth_hub.baikonur": 224487,
-    "earth_hub.meridian": 167707,
-    "earth_hub.tanegashima": 747113,
-    "earth_hub.tikhiy": 566919,
-    "earth_orbital_hub": 224487
+    "earth_hub.aurora": 16687,
+    "earth_hub.canaveral": 929461,
+    "earth_hub.tikhiy": 705287,
+    "earth_orbital_hub": 279277
    },
    "city.000.earth.041": {
-    "earth_hub.baikonur": 221070,
-    "earth_hub.meridian": 165154,
-    "earth_hub.tanegashima": 715713,
-    "earth_hub.tikhiy": 558290,
-    "earth_orbital_hub": 221070
+    "earth_hub.aurora": 16475,
+    "earth_hub.canaveral": 892717,
+    "earth_hub.tikhiy": 696362,
+    "earth_orbital_hub": 275743
    },
    "city.000.earth.042": {
-    "earth_hub.baikonur": 213276,
-    "earth_hub.meridian": 159331,
-    "earth_hub.tanegashima": 709802,
-    "earth_hub.tikhiy": 538607,
-    "earth_orbital_hub": 213276
+    "earth_hub.aurora": 15853,
+    "earth_hub.canaveral": 883044,
+    "earth_hub.tikhiy": 670065,
+    "earth_orbital_hub": 265330
    },
    "city.000.earth.043": {
-    "earth_hub.baikonur": 53480,
-    "earth_hub.canaveral": 208037,
-    "earth_hub.meridian": 39953,
-    "earth_hub.sriharikota": 487707,
-    "earth_hub.tanegashima": 177988,
-    "earth_hub.tikhiy": 135059,
-    "earth_hub.tropic": 272521,
-    "earth_hub.wenchang": 361302,
-    "earth_orbital_hub": 53480
+    "earth_hub.aurora": 7822,
+    "earth_hub.canaveral": 435709,
+    "earth_hub.tikhiy": 330621,
+    "earth_hub.wenchang": 884457,
+    "earth_orbital_hub": 130918
    },
    "city.000.earth.044": {
-    "earth_hub.baikonur": 52205,
-    "earth_hub.canaveral": 203075,
-    "earth_hub.meridian": 39001,
-    "earth_hub.sriharikota": 476075,
-    "earth_hub.tanegashima": 173743,
-    "earth_hub.tikhiy": 131838,
-    "earth_hub.tropic": 266021,
-    "earth_hub.wenchang": 352685,
-    "earth_orbital_hub": 52205
+    "earth_hub.aurora": 7636,
+    "earth_hub.canaveral": 425317,
+    "earth_hub.tikhiy": 322736,
+    "earth_hub.wenchang": 863363,
+    "earth_orbital_hub": 127796
    },
    "city.000.earth.045": {
-    "earth_hub.baikonur": 97014,
-    "earth_hub.canaveral": 377381,
-    "earth_hub.meridian": 72476,
-    "earth_hub.tanegashima": 322872,
-    "earth_hub.tikhiy": 244999,
-    "earth_hub.tropic": 494355,
-    "earth_orbital_hub": 97014
+    "earth_hub.aurora": 14745,
+    "earth_hub.canaveral": 821336,
+    "earth_hub.tikhiy": 623241,
+    "earth_orbital_hub": 246789
    },
    "city.000.earth.046": {
-    "earth_hub.baikonur": 34077,
-    "earth_hub.canaveral": 132560,
-    "earth_hub.kourou": 526912,
-    "earth_hub.meridian": 25458,
-    "earth_hub.sriharikota": 310764,
-    "earth_hub.tanegashima": 113413,
-    "earth_hub.tikhiy": 86059,
-    "earth_hub.tropic": 173649,
-    "earth_hub.wenchang": 230220,
-    "earth_orbital_hub": 34077
+    "earth_hub.aurora": 3419,
+    "earth_hub.canaveral": 190468,
+    "earth_hub.kourou": 884907,
+    "earth_hub.tikhiy": 144529,
+    "earth_hub.wenchang": 386635,
+    "earth_orbital_hub": 57230
    },
    "city.000.earth.047": {
-    "earth_hub.baikonur": 309146,
-    "earth_hub.meridian": 230953,
-    "earth_hub.tikhiy": 780718,
-    "earth_orbital_hub": 309146
+    "earth_hub.aurora": 27165,
+    "earth_hub.tikhiy": 1148155,
+    "earth_orbital_hub": 454643
    },
    "city.000.earth.048": {
-    "earth_hub.baikonur": 90658,
-    "earth_hub.canaveral": 352655,
-    "earth_hub.meridian": 67727,
-    "earth_hub.tanegashima": 301717,
-    "earth_hub.tikhiy": 228947,
-    "earth_hub.tropic": 461965,
-    "earth_orbital_hub": 90658
+    "earth_hub.aurora": 13779,
+    "earth_hub.canaveral": 767522,
+    "earth_hub.tikhiy": 582406,
+    "earth_orbital_hub": 230619
    },
    "city.000.earth.049": {
-    "earth_hub.baikonur": 181404,
-    "earth_hub.meridian": 135521,
-    "earth_hub.tanegashima": 603731,
-    "earth_hub.tikhiy": 458119,
-    "earth_orbital_hub": 181404
+    "earth_hub.aurora": 13484,
+    "earth_hub.canaveral": 751084,
+    "earth_hub.tikhiy": 569932,
+    "earth_orbital_hub": 225680
    },
    "city.000.earth.050": {
-    "earth_hub.baikonur": 556023,
-    "earth_hub.meridian": 415386,
-    "earth_orbital_hub": 556023
+    "earth_hub.aurora": 86117,
+    "earth_orbital_hub": 1441315
    },
    "city.000.earth.051": {
-    "earth_hub.baikonur": 85376,
-    "earth_hub.canaveral": 332111,
-    "earth_hub.meridian": 63782,
-    "earth_hub.tanegashima": 284140,
-    "earth_hub.tikhiy": 215609,
-    "earth_hub.tropic": 429606,
-    "earth_orbital_hub": 85376
+    "earth_hub.aurora": 12929,
+    "earth_hub.canaveral": 720187,
+    "earth_hub.tikhiy": 546487,
+    "earth_orbital_hub": 216396
    },
    "city.000.earth.052": {
-    "earth_hub.baikonur": 278012,
-    "earth_hub.meridian": 207693,
-    "earth_hub.tikhiy": 702091,
-    "earth_orbital_hub": 278012
+    "earth_hub.aurora": 24429,
+    "earth_hub.tikhiy": 1032523,
+    "earth_orbital_hub": 408855
    },
    "city.000.earth.053": {
-    "earth_hub.baikonur": 272506,
-    "earth_hub.meridian": 203581,
-    "earth_hub.tikhiy": 688188,
-    "earth_orbital_hub": 272506
+    "earth_hub.aurora": 23945,
+    "earth_hub.tikhiy": 1012078,
+    "earth_orbital_hub": 400759
    },
    "city.000.earth.054": {
-    "earth_hub.baikonur": 80111,
-    "earth_hub.canaveral": 311630,
-    "earth_hub.meridian": 59849,
-    "earth_hub.tanegashima": 266618,
-    "earth_hub.tikhiy": 202313,
-    "earth_hub.tropic": 408224,
-    "earth_orbital_hub": 80111
+    "earth_hub.aurora": 12176,
+    "earth_hub.canaveral": 678236,
+    "earth_hub.tikhiy": 514654,
+    "earth_orbital_hub": 203791
    },
    "city.000.earth.055": {
-    "earth_hub.baikonur": 503072,
-    "earth_hub.meridian": 375829,
-    "earth_orbital_hub": 503072
+    "earth_hub.aurora": 77916,
+    "earth_orbital_hub": 1304057
    },
    "city.000.earth.056": {
-    "earth_hub.baikonur": 55709,
-    "earth_hub.canaveral": 216706,
-    "earth_hub.meridian": 41618,
-    "earth_hub.tanegashima": 185405,
-    "earth_hub.tikhiy": 140688,
-    "earth_hub.tropic": 283878,
-    "earth_hub.wenchang": 376359,
-    "earth_orbital_hub": 55709
+    "earth_hub.aurora": 5928,
+    "earth_hub.canaveral": 330172,
+    "earth_hub.tikhiy": 250539,
+    "earth_hub.wenchang": 670226,
+    "earth_orbital_hub": 99208
    },
    "city.000.earth.057": {
-    "earth_hub.baikonur": 484554,
-    "earth_hub.meridian": 361995,
-    "earth_orbital_hub": 484554
+    "earth_hub.aurora": 75048,
+    "earth_orbital_hub": 1256055
    },
    "city.000.earth.058": {
-    "earth_hub.baikonur": 106114,
-    "earth_hub.canaveral": 394379,
-    "earth_hub.meridian": 79274,
-    "earth_hub.tanegashima": 353157,
-    "earth_hub.tikhiy": 267980,
-    "earth_orbital_hub": 106114
+    "earth_hub.aurora": 11296,
+    "earth_hub.canaveral": 629209,
+    "earth_hub.tikhiy": 477452,
+    "earth_orbital_hub": 189060
    },
    "city.000.earth.059": {
-    "earth_hub.baikonur": 467322,
-    "earth_hub.meridian": 349121,
-    "earth_orbital_hub": 467322
+    "earth_hub.aurora": 72379,
+    "earth_orbital_hub": 1211386
    },
    "city.000.earth.060": {
-    "earth_hub.baikonur": 26164,
-    "earth_hub.canaveral": 101777,
-    "earth_hub.kourou": 385825,
-    "earth_hub.meridian": 19546,
-    "earth_hub.sriharikota": 238599,
-    "earth_hub.tanegashima": 87076,
-    "earth_hub.tikhiy": 66075,
-    "earth_hub.tropic": 133324,
-    "earth_hub.wenchang": 176759,
-    "earth_orbital_hub": 26164
+    "earth_hub.aurora": 2652,
+    "earth_hub.canaveral": 147728,
+    "earth_hub.kourou": 654566,
+    "earth_hub.tikhiy": 112098,
+    "earth_hub.wenchang": 299877,
+    "earth_orbital_hub": 44388
    }
   },
   "cities": 60,

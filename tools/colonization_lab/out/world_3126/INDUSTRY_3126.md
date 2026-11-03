@@ -51,4 +51,4 @@
 - OK citadel_cores_not_exported: ok
 - OK allied_fleets_uniform: Pact main hull maker 0.744 (uniform), League 0.5 (many vendors)
 - OK production_sites_exist: 43 sites
-- OK rescue_covers_every_site: 518 sites
+- OK rescue_covers_every_site: 513 sites

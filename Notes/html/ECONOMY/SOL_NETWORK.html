@@ -13,15 +13,19 @@
 <div class="table-wrap"><table>
 <thead>
 <tr>
-<th>Хаб</th>
+<th>Комплекс</th>
 <th>Высота, км</th>
 <th>Наклонение</th>
 <th>Узел</th>
 <th>Фаза</th>
 <th>Период, мин</th>
-<th>Назначение</th>
+<th>Роли</th>
 <th>Население</th>
-<th>Секторов × 6</th>
+<th>Секторов</th>
+<th>Модулей HexDock</th>
+<th>Площадок</th>
+<th>Пасс. терминалов</th>
+<th>Груз. терминалов</th>
 <th>Движений/сутки</th>
 <th>Загрузка</th>
 </tr>
@@ -34,36 +38,14 @@
 <td>0</td>
 <td>35</td>
 <td>92.824</td>
-<td>межзвёздные ворота, таможня, пассажиры, администрация</td>
-<td>96 750</td>
-<td>70</td>
-<td>7 806</td>
-<td>0.623</td>
-</tr>
-<tr>
-<td>Байконур</td>
-<td>470</td>
-<td>51.64</td>
-<td>0</td>
-<td>215</td>
-<td>93.851</td>
-<td>грузы, тяжёлые грузы, пассажиры</td>
-<td>70 188</td>
-<td>61</td>
-<td>7 632</td>
-<td>0.625</td>
-</tr>
-<tr>
-<td>Меридиан</td>
-<td>545</td>
-<td>56.5</td>
-<td>210</td>
-<td>90</td>
-<td>95.399</td>
-<td>пассажиры, грузы</td>
-<td>49 734</td>
-<td>40</td>
-<td>5 359</td>
+<td>межзвёздные ворота, таможня Сола, пассажиры северных широт</td>
+<td>125 804</td>
+<td>9</td>
+<td>98</td>
+<td>588</td>
+<td>16</td>
+<td>3</td>
+<td>11 034</td>
 <td>0.62</td>
 </tr>
 <tr>
@@ -73,50 +55,32 @@
 <td>120</td>
 <td>250</td>
 <td>94.572</td>
-<td>пассажиры, грузы</td>
-<td>109 068</td>
-<td>89</td>
-<td>11 952</td>
+<td>массовый пассажирский хаб</td>
+<td>171 806</td>
+<td>12</td>
+<td>141</td>
+<td>846</td>
+<td>21</td>
+<td>4</td>
+<td>18 923</td>
 <td>0.622</td>
-</tr>
-<tr>
-<td>Танэгасима</td>
-<td>525</td>
-<td>31.6</td>
-<td>300</td>
-<td>15</td>
-<td>94.985</td>
-<td>пассажиры, обслуживание верфей</td>
-<td>60 441</td>
-<td>49</td>
-<td>6 549</td>
-<td>0.619</td>
 </tr>
 <tr>
 <td>Канаверал</td>
 <td>485</td>
-<td>29.0</td>
+<td>31.6</td>
 <td>60</td>
 <td>140</td>
 <td>94.16</td>
-<td>пассажиры, межпланетные рейсы</td>
-<td>96 869</td>
-<td>99</td>
-<td>10 597</td>
-<td>0.619</td>
-</tr>
-<tr>
-<td>Тропик</td>
-<td>465</td>
-<td>24.5</td>
-<td>180</td>
-<td>300</td>
-<td>93.748</td>
-<td>пассажиры, грузы</td>
-<td>33 266</td>
-<td>27</td>
-<td>3 530</td>
-<td>0.605</td>
+<td>пассажиры 21-32°, вылеты к Марсу</td>
+<td>132 660</td>
+<td>11</td>
+<td>132</td>
+<td>792</td>
+<td>25</td>
+<td>3</td>
+<td>14 573</td>
+<td>0.622</td>
 </tr>
 <tr>
 <td>Вэньчан</td>
@@ -125,24 +89,15 @@
 <td>30</td>
 <td>200</td>
 <td>94.366</td>
-<td>тяжёлые грузы, грузы, пассажиры</td>
-<td>21 034</td>
-<td>18</td>
-<td>2 170</td>
-<td>0.6</td>
-</tr>
-<tr>
-<td>Шрихарикота</td>
-<td>455</td>
-<td>14.8</td>
-<td>240</td>
-<td>60</td>
-<td>93.543</td>
-<td>пассажиры, грузы</td>
-<td>10 510</td>
-<td>8</td>
-<td>1 001</td>
-<td>0.579</td>
+<td>грузы и логистика, тяжёлые модули</td>
+<td>38 808</td>
+<td>3</td>
+<td>34</td>
+<td>204</td>
+<td>4</td>
+<td>2</td>
+<td>4 145</td>
+<td>0.608</td>
 </tr>
 <tr>
 <td>Куру</td>
@@ -151,11 +106,15 @@
 <td>90</td>
 <td>330</td>
 <td>95.709</td>
-<td>межпланетные рейсы, топливо, пассажиры</td>
-<td>71 082</td>
-<td>76</td>
-<td>7 731</td>
-<td>0.619</td>
+<td>лунный и межпланетный перевалочный узел, топливо</td>
+<td>66 270</td>
+<td>7</td>
+<td>73</td>
+<td>438</td>
+<td>18</td>
+<td>1</td>
+<td>7 197</td>
+<td>0.622</td>
 </tr>
 <tr>
 <td>Экватор</td>
@@ -164,11 +123,15 @@
 <td>0</td>
 <td>120</td>
 <td>1435.702</td>
-<td>энергосеть, промышленность, связь</td>
-<td>10 322</td>
+<td>промышленность и ремонт, энергосеть, связь</td>
+<td>9 911</td>
 <td>1</td>
-<td>91</td>
-<td>0.346</td>
+<td>1</td>
+<td>6</td>
+<td>1</td>
+<td>1</td>
+<td>46</td>
+<td>0.173</td>
 </tr>
 <tr>
 <td>Аврора</td>
@@ -177,15 +140,260 @@
 <td>270</td>
 <td>170</td>
 <td>100.513</td>
-<td>наука, наблюдение Земли, полярная связь</td>
-<td>1 554</td>
+<td>полярный узел, спасательная служба Земли (SAR), наука</td>
+<td>11 861</td>
 <td>1</td>
-<td>6</td>
-<td>0.023</td>
+<td>9</td>
+<td>54</td>
+<td>2</td>
+<td>1</td>
+<td>1 151</td>
+<td>0.592</td>
 </tr>
 </tbody>
 </table></div>
-<p>Минимальное сближение хабов за двое суток: 26 км (Байконур — Вэньчан). Сектор — шестиплощадочный HexDock рантайма; в игре пока показан один сектор «Высокого» (ограничение представления, не модели).</p>
+<p>Именованные терминалы комплексов (бывшие отдельные станции): терминал «Байконур» — Высокий; терминал «Танэгасима» — Тихий; терминал «Тропик» — Канаверал; терминал «Шрихарикота» — Вэньчан; терминал «Меридиан» — Аврора.</p>
+<p>Мощность Земли: 3 344 144 пассажиров и 728 921 т груза в сутки, 57 069 движений из 92 238 возможных (загрузка 0.619, резерв 0.381); 44 секторов, 488 модулей HexDock, 2 928 площадок. Спрос растёт — растут сектора и терминалы, а не число хабов на карте.</p>
+<h3 id="сложность-карты-крупных-хабов-уровня-a-на-систему">Сложность карты (крупных хабов уровня A на систему)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Система</th>
+<th>Уровень развития</th>
+<th>Крупных хабов</th>
+<th>Бюджет</th>
+<th>Слито в комплексы (B)</th>
+<th>Местных объектов (C)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sol (Солнце)</td>
+<td>core</td>
+<td>29</td>
+<td>24-30</td>
+<td>0</td>
+<td>9</td>
+</tr>
+<tr>
+<td>Barnard's Star</td>
+<td>frontier</td>
+<td>1</td>
+<td>0-3</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Wolf 359</td>
+<td>colony</td>
+<td>6</td>
+<td>4-10</td>
+<td>0</td>
+<td>19</td>
+</tr>
+<tr>
+<td>Lalande 21185</td>
+<td>developed</td>
+<td>11</td>
+<td>10-18</td>
+<td>0</td>
+<td>38</td>
+</tr>
+<tr>
+<td>Tau Ceti</td>
+<td>developed</td>
+<td>4</td>
+<td>10-18</td>
+<td>3</td>
+<td>16</td>
+</tr>
+<tr>
+<td>Epsilon Eridani</td>
+<td>developed</td>
+<td>11</td>
+<td>10-18</td>
+<td>8</td>
+<td>38</td>
+</tr>
+<tr>
+<td>Gliese 581</td>
+<td>colony</td>
+<td>5</td>
+<td>4-10</td>
+<td>1</td>
+<td>33</td>
+</tr>
+<tr>
+<td>Gliese 667 (A+B+C)</td>
+<td>frontier</td>
+<td>1</td>
+<td>0-3</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Gliese 832</td>
+<td>developed</td>
+<td>7</td>
+<td>10-18</td>
+<td>0</td>
+<td>25</td>
+</tr>
+<tr>
+<td>Gliese 876</td>
+<td>periphery</td>
+<td>2</td>
+<td>1-5</td>
+<td>0</td>
+<td>6</td>
+</tr>
+<tr>
+<td>HD 20794 (82 G. Eridani)</td>
+<td>developed</td>
+<td>8</td>
+<td>10-18</td>
+<td>0</td>
+<td>37</td>
+</tr>
+<tr>
+<td>HD 40307</td>
+<td>colony</td>
+<td>6</td>
+<td>4-10</td>
+<td>1</td>
+<td>36</td>
+</tr>
+<tr>
+<td>HD 69830</td>
+<td>colony</td>
+<td>3</td>
+<td>4-10</td>
+<td>0</td>
+<td>15</td>
+</tr>
+<tr>
+<td>HD 102195</td>
+<td>frontier</td>
+<td>1</td>
+<td>0-3</td>
+<td>0</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Delta Pavonis</td>
+<td>developed</td>
+<td>8</td>
+<td>10-18</td>
+<td>0</td>
+<td>33</td>
+</tr>
+<tr>
+<td>Gliese 892</td>
+<td>frontier</td>
+<td>1</td>
+<td>0-3</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Gliese 436</td>
+<td>frontier</td>
+<td>0</td>
+<td>0-3</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Gliese 357</td>
+<td>frontier</td>
+<td>1</td>
+<td>0-3</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Epsilon Indi</td>
+<td>frontier</td>
+<td>0</td>
+<td>0-3</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>61 Cygni</td>
+<td>colony</td>
+<td>2</td>
+<td>4-10</td>
+<td>0</td>
+<td>11</td>
+</tr>
+<tr>
+<td>HD 114783</td>
+<td>periphery</td>
+<td>1</td>
+<td>1-5</td>
+<td>0</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Sigma² Ursae Majoris</td>
+<td>frontier</td>
+<td>0</td>
+<td>0-3</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>HD 104067</td>
+<td>frontier</td>
+<td>2</td>
+<td>0-3</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>83 Leonis</td>
+<td>periphery</td>
+<td>1</td>
+<td>1-5</td>
+<td>0</td>
+<td>7</td>
+</tr>
+<tr>
+<td>Gliese 674</td>
+<td>frontier</td>
+<td>1</td>
+<td>0-3</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>HD 85512</td>
+<td>frontier</td>
+<td>0</td>
+<td>0-3</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>HD 10360</td>
+<td>frontier</td>
+<td>1</td>
+<td>0-3</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Proxima Centauri</td>
+<td>colony</td>
+<td>6</td>
+<td>4-10</td>
+<td>0</td>
+<td>17</td>
+</tr>
+</tbody>
+</table></div>
+<p>Минимальное сближение хабов за двое суток: 74 км (Тихий — Куру). Сектор — шестиплощадочный HexDock рантайма; в игре пока показан один сектор «Высокого» (ограничение представления, не модели).</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -207,36 +415,12 @@
 <td>строгий, перегруженный, официальный; очереди таможни; лучшие ремонтные доки Земли</td>
 </tr>
 <tr>
-<td>Байконур</td>
-<td>2588</td>
-<td>консорциум «Тюратам» (Казахстан, Россия, Узбекистан)</td>
-<td>Тюратам Орбитал</td>
-<td>космодром, ради которого выбрана плоскость 51.6°</td>
-<td>грузовой, шумный, профсоюзы докеров</td>
-</tr>
-<tr>
-<td>Меридиан</td>
-<td>2634</td>
-<td>Северный портовый союз</td>
-<td>Северный портовый союз</td>
-<td>собственное имя XXVII века: союз северных портов «одного меридиана» — от Лондона до Москвы</td>
-<td>деловой, дорогой, много транзита в Америку и Европу</td>
-</tr>
-<tr>
 <td>Тихий</td>
 <td>2612</td>
 <td>Тихоокеанская компания орбитальных перевозок</td>
 <td>Тихоокеанская компания орбитальных перевозок</td>
 <td>по океану, над которым проходит большая часть его окон с Токио</td>
 <td>самый людный хаб Земли; безупречный порядок, бесконечные потоки</td>
-</tr>
-<tr>
-<td>Танэгасима</td>
-<td>2605</td>
-<td>Японское агентство Реставрации</td>
-<td>Ниппон Орбитал Портс</td>
-<td>японский космодром на 30.4° с.ш.</td>
-<td>аккуратный, технический, верфевые буксиры</td>
 </tr>
 <tr>
 <td>Канаверал</td>
@@ -247,28 +431,12 @@
 <td>старый, туристический, «марсианский»</td>
 </tr>
 <tr>
-<td>Тропик</td>
-<td>2843</td>
-<td>Южный альянс портов (Сан-Паулу, Дакка, Карачи)</td>
-<td>Южный альянс портов</td>
-<td>собственное имя XXIX века: плоскость у тропика Рака</td>
-<td>молодой, тесный, южные языки, чёрный рынок мелочи</td>
-</tr>
-<tr>
 <td>Вэньчан</td>
 <td>2597</td>
 <td>Китайская корпорация Реставрации</td>
 <td>Вэньчан Хэви</td>
 <td>космодром на Хайнане, 19.6° с.ш.</td>
 <td>индустриальный, огромные краны, круглосуточно</td>
-</tr>
-<tr>
-<td>Шрихарикота</td>
-<td>2621</td>
-<td>Индийская организация Реставрации</td>
-<td>Бхарат Орбитал</td>
-<td>индийский космодром на 13.7° с.ш.</td>
-<td>многоязычный, рынок пряностей и электроники</td>
 </tr>
 <tr>
 <td>Куру</td>
@@ -301,6 +469,7 @@
 <thead>
 <tr>
 <th>Район</th>
+<th>Уровень</th>
 <th>Хаб</th>
 <th>Тип</th>
 <th>Назначение</th>
@@ -308,144 +477,13 @@
 <th>Владелец / оператор</th>
 <th>Население</th>
 <th>Прибытий/сутки</th>
-<th>Доков</th>
+<th>Секторов / площадок</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Земля и окололунное пространство</td>
-<td>Ворота Луны</td>
-<td>орбитальный хаб</td>
-<td>пассажиры, грузы, пересадка</td>
-<td>2590</td>
-<td>Власть Сола / Окололунная транспортная служба</td>
-<td>342 263</td>
-<td>6 557</td>
-<td>558</td>
-</tr>
-<tr>
-<td>Земля и окололунное пространство</td>
-<td>Селена</td>
-<td>хаб на луне</td>
-<td>пассажиры, грузы</td>
-<td>2583</td>
-<td>Власть Сола / Лунные порты</td>
-<td>342 263</td>
-<td>10 535</td>
-<td>894</td>
-</tr>
-<tr>
-<td>Земля и окололунное пространство</td>
-<td>Шеклтон</td>
-<td>наземный космопорт</td>
-<td>пассажиры, лёд, промышленность</td>
-<td>2541</td>
-<td>Власть Сола / Лунные порты</td>
-<td>84 565 701</td>
-<td>3 514</td>
-<td>300</td>
-</tr>
-<tr>
-<td>Земля и окололунное пространство</td>
-<td>Имбриум</td>
-<td>наземный космопорт</td>
-<td>промышленность, добыча</td>
-<td>2610</td>
-<td>Власть Сола / Лунная горная компания</td>
-<td>46 126 746</td>
-<td>1 520</td>
-<td>558</td>
-</tr>
-<tr>
-<td>Земля и окололунное пространство</td>
-<td>Тень</td>
-<td>научный хаб</td>
-<td>наука, связь</td>
-<td>2672</td>
-<td>Власть Сола / Обсерватория Сола</td>
-<td>600</td>
-<td>2</td>
-<td>6</td>
-</tr>
-<tr>
-<td>Земля и окололунное пространство</td>
-<td>Бастион</td>
-<td>военный хаб</td>
-<td>оборона</td>
-<td>2790</td>
-<td>Власть Сола / Флот Сола</td>
-<td>5 000</td>
-<td>15</td>
-<td>6</td>
-</tr>
-<tr>
-<td>Земля и окололунное пространство</td>
-<td>Лазарет-1</td>
-<td>карантинный хаб</td>
-<td>карантин, медицина</td>
-<td>3113</td>
-<td>Власть Сола / Санитарная служба Сола</td>
-<td>900</td>
-<td>5</td>
-<td>6</td>
-</tr>
-<tr>
-<td>Марс</td>
-<td>Фобос-Порт</td>
-<td>хаб на луне</td>
-<td>пассажиры, грузы, межпланетные рейсы</td>
-<td>2602</td>
-<td>Власть Сола / Порты Марса</td>
-<td>285 886</td>
-<td>1 247</td>
-<td>108</td>
-</tr>
-<tr>
-<td>Марс</td>
-<td>Арес</td>
-<td>орбитальный хаб</td>
-<td>пассажиры, промышленность, оборона, наука</td>
-<td>2688</td>
-<td>Власть Сола / Порты Марса</td>
-<td>285 886</td>
-<td>4</td>
-<td>6</td>
-</tr>
-<tr>
-<td>Марс</td>
-<td>Новый Тарсис</td>
-<td>наземный космопорт</td>
-<td>пассажиры, промышленность</td>
-<td>2611</td>
-<td>Власть Сола / Город Новый Тарсис</td>
-<td>70 471 417</td>
-<td>4</td>
-<td>6</td>
-</tr>
-<tr>
-<td>Марс</td>
-<td>Эллада-Марс</td>
-<td>наземный космопорт</td>
-<td>пассажиры, агро</td>
-<td>2640</td>
-<td>Власть Сола / Город Эллада</td>
-<td>70 471 417</td>
-<td>4</td>
-<td>6</td>
-</tr>
-<tr>
-<td>Марс</td>
-<td>Деймос-Верфь</td>
-<td>промышленный хаб</td>
-<td>верфь, промышленность, добыча</td>
-<td>2702</td>
-<td>Власть Сола / Марсианские верфи</td>
-<td>9 000</td>
-<td>4</td>
-<td>6</td>
-</tr>
-<tr>
 <td>Главный пояс</td>
+<td>A</td>
 <td>Перевал Цереры</td>
 <td>горнодобывающий хаб</td>
 <td>добыча, логистика, пассажиры, лёд</td>
@@ -453,21 +491,11 @@
 <td>Власть Сола / Kern Heavy Mining (Сол)</td>
 <td>3 500</td>
 <td>494</td>
-<td>180</td>
+<td>3 / 180</td>
 </tr>
 <tr>
 <td>Главный пояс</td>
-<td>Ахуна</td>
-<td>наземный космопорт</td>
-<td>лёд, пассажиры</td>
-<td>2650</td>
-<td>Власть Сола / Город Ахуна</td>
-<td>187 923 780</td>
-<td>697</td>
-<td>60</td>
-</tr>
-<tr>
-<td>Главный пояс</td>
+<td>A</td>
 <td>Рейсильвия</td>
 <td>горнодобывающий хаб</td>
 <td>добыча, металлургия</td>
@@ -475,21 +503,23 @@
 <td>Власть Сола / Металлургический трест Весты</td>
 <td>3 500</td>
 <td>15</td>
-<td>6</td>
+<td>1 / 6</td>
 </tr>
 <tr>
 <td>Главный пояс</td>
+<td>A</td>
 <td>Паллада-Станция</td>
 <td>хаб пояса</td>
-<td>добыча, высокие наклонения, наука</td>
+<td>высокие наклонения, добыча, sar, наука, торговля</td>
 <td>2744</td>
 <td>Власть Сола / Артель Паллады (лицензия Сола)</td>
 <td>3 500</td>
 <td>15</td>
-<td>6</td>
+<td>1 / 6</td>
 </tr>
 <tr>
 <td>Главный пояс</td>
+<td>A</td>
 <td>Гигея-Склад</td>
 <td>хаб пояса</td>
 <td>лёд, топливо, логистика</td>
@@ -497,10 +527,11 @@
 <td>Власть Сола / Топливная компания пояса</td>
 <td>3 500</td>
 <td>15</td>
-<td>6</td>
+<td>1 / 6</td>
 </tr>
 <tr>
 <td>Главный пояс</td>
+<td>A</td>
 <td>Тихая Гавань</td>
 <td>пиратский анклав</td>
 <td>чёрный рынок</td>
@@ -508,43 +539,59 @@
 <td>держатели причалов</td>
 <td>675</td>
 <td>3</td>
-<td>6</td>
+<td>1 / 6</td>
 </tr>
 <tr>
-<td>Меркурий</td>
-<td>Калорис</td>
-<td>наземный космопорт</td>
-<td>добыча, энергия, промышленность, пассажиры</td>
-<td>2702</td>
-<td>Власть Сола / Солнечная металлургическая компания</td>
-<td>5 125 194</td>
-<td>214</td>
-<td>78</td>
-</tr>
-<tr>
-<td>Меркурий</td>
-<td>Гермес</td>
+<td>Земля и окололунное пространство</td>
+<td>A</td>
+<td>Ворота Луны</td>
 <td>орбитальный хаб</td>
-<td>грузы, энергия, наука</td>
-<td>2715</td>
-<td>Власть Сола / Солнечная металлургическая компания</td>
-<td>9 000</td>
-<td>4</td>
-<td>6</td>
+<td>пассажиры, грузы, пересадка</td>
+<td>2590</td>
+<td>Власть Сола / Окололунная транспортная служба</td>
+<td>342 263</td>
+<td>6 557</td>
+<td>8 / 558</td>
 </tr>
 <tr>
-<td>Венера</td>
-<td>Ломоносов</td>
+<td>Земля и окололунное пространство</td>
+<td>A</td>
+<td>Селена</td>
+<td>хаб на луне</td>
+<td>пассажиры, грузы</td>
+<td>2583</td>
+<td>Власть Сола / Лунные порты</td>
+<td>342 263</td>
+<td>10 535</td>
+<td>13 / 894</td>
+</tr>
+<tr>
+<td>Земля и окололунное пространство</td>
+<td>A</td>
+<td>Тень</td>
 <td>научный хаб</td>
-<td>наука, атмосфера</td>
-<td>2760</td>
-<td>Власть Сола / Академия Сола</td>
+<td>наука, связь</td>
+<td>2672</td>
+<td>Власть Сола / Обсерватория Сола</td>
 <td>600</td>
 <td>2</td>
-<td>6</td>
+<td>1 / 6</td>
+</tr>
+<tr>
+<td>Земля и окололунное пространство</td>
+<td>A</td>
+<td>Бастион</td>
+<td>военный хаб</td>
+<td>оборона</td>
+<td>2790</td>
+<td>Власть Сола / Флот Сола</td>
+<td>5 000</td>
+<td>15</td>
+<td>1 / 6</td>
 </tr>
 <tr>
 <td>Система Юпитера</td>
+<td>A</td>
 <td>Валгалла</td>
 <td>хаб на луне</td>
 <td>пассажиры, торговля, логистика</td>
@@ -552,10 +599,11 @@
 <td>Власть Сола / Юпитерианская компания</td>
 <td>229 509</td>
 <td>512</td>
-<td>48</td>
+<td>1 / 48</td>
 </tr>
 <tr>
 <td>Система Юпитера</td>
+<td>A</td>
 <td>Ганимед-Сити</td>
 <td>хаб на луне</td>
 <td>пассажиры, промышленность, лёд, добыча</td>
@@ -563,10 +611,11 @@
 <td>Власть Сола / Порт Ганимеда</td>
 <td>229 509</td>
 <td>4</td>
-<td>6</td>
+<td>1 / 6</td>
 </tr>
 <tr>
 <td>Система Юпитера</td>
+<td>A</td>
 <td>Зевс-Платформа</td>
 <td>промышленный хаб</td>
 <td>газ, топливо</td>
@@ -574,21 +623,11 @@
 <td>Власть Сола / Газовый трест Юпитера</td>
 <td>2 200</td>
 <td>6</td>
-<td>6</td>
+<td>1 / 6</td>
 </tr>
 <tr>
 <td>Система Юпитера</td>
-<td>Конамара</td>
-<td>научный хаб</td>
-<td>наука, лёд</td>
-<td>2740</td>
-<td>Власть Сола / Академия Сола</td>
-<td>600</td>
-<td>2</td>
-<td>6</td>
-</tr>
-<tr>
-<td>Система Юпитера</td>
+<td>A</td>
 <td>Юпитерианский рейд</td>
 <td>военный хаб</td>
 <td>оборона</td>
@@ -596,43 +635,59 @@
 <td>Власть Сола / Флот Сола</td>
 <td>5 000</td>
 <td>15</td>
-<td>6</td>
+<td>1 / 6</td>
 </tr>
 <tr>
-<td>Система Сатурна</td>
-<td>Кракен</td>
+<td>Марс</td>
+<td>A</td>
+<td>Фобос-Порт</td>
 <td>хаб на луне</td>
-<td>пассажиры, химия, торговля</td>
-<td>2712</td>
-<td>Власть Сола / Порт Титана</td>
-<td>229 509</td>
-<td>281</td>
-<td>24</td>
+<td>пассажиры, грузы, межпланетные рейсы</td>
+<td>2602</td>
+<td>Власть Сола / Порты Марса</td>
+<td>285 886</td>
+<td>1 247</td>
+<td>2 / 108</td>
 </tr>
 <tr>
-<td>Система Сатурна</td>
-<td>Кольцо-Газ</td>
+<td>Марс</td>
+<td>A</td>
+<td>Арес</td>
+<td>орбитальный хаб</td>
+<td>пассажиры, промышленность, оборона, наука</td>
+<td>2688</td>
+<td>Власть Сола / Порты Марса</td>
+<td>285 886</td>
+<td>4</td>
+<td>1 / 6</td>
+</tr>
+<tr>
+<td>Марс</td>
+<td>A</td>
+<td>Деймос-Верфь</td>
 <td>промышленный хаб</td>
-<td>газ, лёд</td>
-<td>2748</td>
-<td>Власть Сола / Газовый трест Сатурна</td>
-<td>2 200</td>
-<td>6</td>
-<td>6</td>
+<td>верфь, промышленность, добыча</td>
+<td>2702</td>
+<td>Власть Сола / Марсианские верфи</td>
+<td>9 000</td>
+<td>4</td>
+<td>1 / 6</td>
 </tr>
 <tr>
-<td>Система Сатурна</td>
-<td>Тигровые Полосы</td>
-<td>научный хаб</td>
-<td>наука, лёд</td>
-<td>2755</td>
-<td>Власть Сола / Академия Сола</td>
-<td>600</td>
-<td>2</td>
-<td>6</td>
+<td>Меркурий</td>
+<td>A</td>
+<td>Гермес</td>
+<td>орбитальный хаб</td>
+<td>грузы, энергия, наука</td>
+<td>2715</td>
+<td>Власть Сола / Солнечная металлургическая компания</td>
+<td>9 000</td>
+<td>4</td>
+<td>1 / 6</td>
 </tr>
 <tr>
 <td>Уран, Нептун и внешние точки</td>
+<td>A</td>
 <td>Титания</td>
 <td>хаб на луне</td>
 <td>пассажиры, наука, газ, лёд</td>
@@ -640,10 +695,11 @@
 <td>Власть Сола / Внешняя компания</td>
 <td>79 170</td>
 <td>94</td>
-<td>12</td>
+<td>1 / 12</td>
 </tr>
 <tr>
 <td>Уран, Нептун и внешние точки</td>
+<td>A</td>
 <td>Тритон-Край</td>
 <td>орбитальный хаб</td>
 <td>топливо, наука, ретранслятор, лёд</td>
@@ -651,10 +707,155 @@
 <td>Власть Сола / Внешняя компания</td>
 <td>42 502</td>
 <td>4</td>
+<td>1 / 6</td>
+</tr>
+<tr>
+<td>Система Сатурна</td>
+<td>A</td>
+<td>Кракен</td>
+<td>хаб на луне</td>
+<td>пассажиры, химия, торговля</td>
+<td>2712</td>
+<td>Власть Сола / Порт Титана</td>
+<td>229 509</td>
+<td>281</td>
+<td>1 / 24</td>
+</tr>
+<tr>
+<td>Система Сатурна</td>
+<td>A</td>
+<td>Кольцо-Газ</td>
+<td>промышленный хаб</td>
+<td>газ, лёд</td>
+<td>2748</td>
+<td>Власть Сола / Газовый трест Сатурна</td>
+<td>2 200</td>
 <td>6</td>
+<td>1 / 6</td>
+</tr>
+<tr>
+<td>Венера</td>
+<td>A</td>
+<td>Ломоносов</td>
+<td>научный хаб</td>
+<td>наука, атмосфера</td>
+<td>2760</td>
+<td>Власть Сола / Академия Сола</td>
+<td>600</td>
+<td>2</td>
+<td>1 / 6</td>
+</tr>
+<tr>
+<td>Главный пояс</td>
+<td>C</td>
+<td>Ахуна</td>
+<td>наземный космопорт</td>
+<td>лёд, пассажиры</td>
+<td>2650</td>
+<td>Власть Сола / Город Ахуна</td>
+<td>187 923 780</td>
+<td>697</td>
+<td>1 / 60</td>
+</tr>
+<tr>
+<td>Земля и окололунное пространство</td>
+<td>C</td>
+<td>Шеклтон</td>
+<td>наземный космопорт</td>
+<td>пассажиры, лёд, промышленность</td>
+<td>2541</td>
+<td>Власть Сола / Лунные порты</td>
+<td>84 565 701</td>
+<td>3 514</td>
+<td>5 / 300</td>
+</tr>
+<tr>
+<td>Земля и окололунное пространство</td>
+<td>C</td>
+<td>Имбриум</td>
+<td>наземный космопорт</td>
+<td>промышленность, добыча</td>
+<td>2610</td>
+<td>Власть Сола / Лунная горная компания</td>
+<td>46 126 746</td>
+<td>1 520</td>
+<td>8 / 558</td>
+</tr>
+<tr>
+<td>Земля и окололунное пространство</td>
+<td>C</td>
+<td>Лазарет-1</td>
+<td>карантинный хаб</td>
+<td>карантин, медицина</td>
+<td>3113</td>
+<td>Власть Сола / Санитарная служба Сола</td>
+<td>900</td>
+<td>5</td>
+<td>1 / 6</td>
+</tr>
+<tr>
+<td>Система Юпитера</td>
+<td>C</td>
+<td>Конамара</td>
+<td>научный хаб</td>
+<td>наука, лёд</td>
+<td>2740</td>
+<td>Власть Сола / Академия Сола</td>
+<td>600</td>
+<td>2</td>
+<td>1 / 6</td>
+</tr>
+<tr>
+<td>Марс</td>
+<td>C</td>
+<td>Новый Тарсис</td>
+<td>наземный космопорт</td>
+<td>пассажиры, промышленность</td>
+<td>2611</td>
+<td>Власть Сола / Город Новый Тарсис</td>
+<td>70 471 417</td>
+<td>4</td>
+<td>1 / 6</td>
+</tr>
+<tr>
+<td>Марс</td>
+<td>C</td>
+<td>Эллада-Марс</td>
+<td>наземный космопорт</td>
+<td>пассажиры, агро</td>
+<td>2640</td>
+<td>Власть Сола / Город Эллада</td>
+<td>70 471 417</td>
+<td>4</td>
+<td>1 / 6</td>
+</tr>
+<tr>
+<td>Меркурий</td>
+<td>C</td>
+<td>Калорис</td>
+<td>наземный космопорт</td>
+<td>добыча, энергия, промышленность, пассажиры</td>
+<td>2702</td>
+<td>Власть Сола / Солнечная металлургическая компания</td>
+<td>5 125 194</td>
+<td>214</td>
+<td>2 / 78</td>
+</tr>
+<tr>
+<td>Система Сатурна</td>
+<td>C</td>
+<td>Тигровые Полосы</td>
+<td>научный хаб</td>
+<td>наука, лёд</td>
+<td>2755</td>
+<td>Власть Сола / Академия Сола</td>
+<td>600</td>
+<td>2</td>
+<td>1 / 6</td>
 </tr>
 </tbody>
 </table></div>
+<p>Крупных хабов Сола (уровень A): 29 / 30 — belt 5, deep_space 1, earth 7, earth_cislunar 3, jupiter 4, mars 3, mercury 1, outer 2, saturn 2, venus 1. Уровень C — поселения и местные объекты: видны на Detail Map тела или рядом с игроком.</p>
 <p>Население районов вне Земли: Главный пояс 341 679 600; Земля и окололунное пространство 461 267 459; Система Юпитера 205 007 760; Марс 512 519 399; Меркурий 51 251 940; Уран, Нептун и внешние точки 34 167 960; Система Сатурна 102 503 880.</p>
 <h3 id="главный-пояс">Главный пояс</h3>
 <p>Крупных астероидов в физическом каталоге нет (пояс — статистический резервуар), поэтому хабы стоят у постоянных якорей с реальными элементами орбит: Церера (a 2.7675 а.е., e 0.0785, i 10.59°); Веста (a 2.3615 а.е., e 0.0887, i 7.14°); Паллада (a 2.7724 а.е., e 0.2302, i 34.84°); Гигея (a 3.1415 а.е., e 0.1146, i 3.83°). Два генерических рудных хаба прошлого прохода стояли на соседних долготах 246.10° и 245.17° случайно (хеш id); они объединены в кластер «Перевал Цереры».</p>
@@ -697,6 +898,17 @@
 <td>0.2</td>
 </tr>
 <tr>
+<td>route.earth.canaveral--tikhiy</td>
+<td>челночный</td>
+<td>Канаверал</td>
+<td>Тихий</td>
+<td>57 696 927</td>
+<td>0</td>
+<td>1463.646</td>
+<td>surface_lifter</td>
+<td>0.052</td>
+</tr>
+<tr>
 <td>route.luna.luna_orbit--imbrium</td>
 <td>челночный</td>
 <td>Селена</td>
@@ -706,6 +918,17 @@
 <td>1404.163</td>
 <td>surface_lifter</td>
 <td>0.2</td>
+</tr>
+<tr>
+<td>route.earth.kourou--tikhiy</td>
+<td>челночный</td>
+<td>Куру</td>
+<td>Тихий</td>
+<td>55 026 323</td>
+<td>0</td>
+<td>1395.899</td>
+<td>surface_lifter</td>
+<td>0.052</td>
 </tr>
 <tr>
 <td>route.sol.pax.mars</td>
@@ -730,24 +953,24 @@
 <td>1.5</td>
 </tr>
 <tr>
-<td>route.earth.canaveral--tikhiy</td>
+<td>route.earth.canaveral--kourou</td>
 <td>челночный</td>
 <td>Канаверал</td>
-<td>Тихий</td>
-<td>35 165 524</td>
+<td>Куру</td>
+<td>36 313 773</td>
 <td>0</td>
-<td>892.073</td>
+<td>921.202</td>
 <td>surface_lifter</td>
 <td>0.052</td>
 </tr>
 <tr>
-<td>route.earth.kourou--tikhiy</td>
+<td>route.earth.tikhiy--earth_orbital_hub</td>
 <td>челночный</td>
-<td>Куру</td>
 <td>Тихий</td>
-<td>34 518 052</td>
+<td>Высокий</td>
+<td>30 117 905</td>
 <td>0</td>
-<td>875.648</td>
+<td>764.026</td>
 <td>surface_lifter</td>
 <td>0.052</td>
 </tr>
@@ -763,57 +986,13 @@
 <td>7.864</td>
 </tr>
 <tr>
-<td>route.earth.baikonur--canaveral</td>
-<td>челночный</td>
-<td>Байконур</td>
-<td>Канаверал</td>
-<td>19 424 626</td>
-<td>0</td>
-<td>492.761</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.canaveral--tanegashima</td>
+<td>route.earth.canaveral--earth_orbital_hub</td>
 <td>челночный</td>
 <td>Канаверал</td>
-<td>Танэгасима</td>
-<td>19 197 594</td>
-<td>0</td>
-<td>487.001</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.baikonur--kourou</td>
-<td>челночный</td>
-<td>Байконур</td>
-<td>Куру</td>
-<td>19 066 978</td>
-<td>0</td>
-<td>483.688</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.kourou--tanegashima</td>
-<td>челночный</td>
-<td>Куру</td>
-<td>Танэгасима</td>
-<td>18 844 126</td>
-<td>0</td>
-<td>478.035</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.tikhiy--earth_orbital_hub</td>
-<td>челночный</td>
-<td>Тихий</td>
 <td>Высокий</td>
-<td>18 001 734</td>
+<td>18 200 654</td>
 <td>0</td>
-<td>456.665</td>
+<td>461.711</td>
 <td>surface_lifter</td>
 <td>0.052</td>
 </tr>
@@ -829,39 +1008,6 @@
 <td>11.32</td>
 </tr>
 <tr>
-<td>route.earth.canaveral--meridian</td>
-<td>челночный</td>
-<td>Канаверал</td>
-<td>Меридиан</td>
-<td>15 697 407</td>
-<td>0</td>
-<td>398.209</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.kourou--meridian</td>
-<td>челночный</td>
-<td>Куру</td>
-<td>Меридиан</td>
-<td>15 408 384</td>
-<td>0</td>
-<td>390.877</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.canaveral--kourou</td>
-<td>челночный</td>
-<td>Канаверал</td>
-<td>Куру</td>
-<td>15 255 702</td>
-<td>0</td>
-<td>387.004</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
 <td>route.sol.cargo.belt</td>
 <td>грузовой</td>
 <td>Перевал Цереры</td>
@@ -873,46 +1019,24 @@
 <td>7.864</td>
 </tr>
 <tr>
-<td>route.earth.canaveral--tropic</td>
+<td>route.earth.canaveral--wenchang</td>
 <td>челночный</td>
 <td>Канаверал</td>
-<td>Тропик</td>
-<td>10 325 347</td>
+<td>Вэньчан</td>
+<td>10 806 078</td>
 <td>0</td>
-<td>261.932</td>
+<td>274.127</td>
 <td>surface_lifter</td>
 <td>0.052</td>
 </tr>
 <tr>
-<td>route.earth.kourou--tropic</td>
+<td>route.earth.kourou--wenchang</td>
 <td>челночный</td>
 <td>Куру</td>
-<td>Тропик</td>
-<td>10 135 236</td>
+<td>Вэньчан</td>
+<td>10 305 900</td>
 <td>0</td>
-<td>257.109</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.baikonur--earth_orbital_hub</td>
-<td>челночный</td>
-<td>Байконур</td>
-<td>Высокий</td>
-<td>9 943 743</td>
-<td>0</td>
-<td>252.251</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.tanegashima--earth_orbital_hub</td>
-<td>челночный</td>
-<td>Танэгасима</td>
-<td>Высокий</td>
-<td>9 827 522</td>
-<td>0</td>
-<td>249.303</td>
+<td>261.438</td>
 <td>surface_lifter</td>
 <td>0.052</td>
 </tr>
@@ -928,57 +1052,13 @@
 <td>15.692</td>
 </tr>
 <tr>
-<td>route.earth.meridian--earth_orbital_hub</td>
+<td>route.earth.wenchang--earth_orbital_hub</td>
 <td>челночный</td>
-<td>Меридиан</td>
-<td>Высокий</td>
-<td>8 035 726</td>
-<td>0</td>
-<td>203.849</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.canaveral--earth_orbital_hub</td>
-<td>челночный</td>
-<td>Канаверал</td>
-<td>Высокий</td>
-<td>7 008 497</td>
-<td>0</td>
-<td>177.79</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.canaveral--wenchang</td>
-<td>челночный</td>
-<td>Канаверал</td>
 <td>Вэньчан</td>
-<td>5 425 088</td>
-<td>0</td>
-<td>137.623</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.kourou--wenchang</td>
-<td>челночный</td>
-<td>Куру</td>
-<td>Вэньчан</td>
-<td>5 325 201</td>
-<td>0</td>
-<td>135.089</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.tropic--earth_orbital_hub</td>
-<td>челночный</td>
-<td>Тропик</td>
 <td>Высокий</td>
-<td>5 285 693</td>
+<td>5 640 793</td>
 <td>0</td>
-<td>134.087</td>
+<td>143.095</td>
 <td>surface_lifter</td>
 <td>0.052</td>
 </tr>
@@ -1038,6 +1118,17 @@
 <td>11.32</td>
 </tr>
 <tr>
+<td>route.earth.aurora--canaveral</td>
+<td>челночный</td>
+<td>Аврора</td>
+<td>Канаверал</td>
+<td>3 466 583</td>
+<td>0</td>
+<td>87.94</td>
+<td>surface_lifter</td>
+<td>0.052</td>
+</tr>
+<tr>
 <td>route.sol.cargo.mars</td>
 <td>грузовой</td>
 <td>Фобос-Порт</td>
@@ -1049,35 +1140,13 @@
 <td>5.282</td>
 </tr>
 <tr>
-<td>route.earth.canaveral--sriharikota</td>
+<td>route.earth.aurora--kourou</td>
 <td>челночный</td>
-<td>Канаверал</td>
-<td>Шрихарикота</td>
-<td>2 923 776</td>
-<td>0</td>
-<td>74.17</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.kourou--sriharikota</td>
-<td>челночный</td>
+<td>Аврора</td>
 <td>Куру</td>
-<td>Шрихарикота</td>
-<td>2 869 943</td>
+<td>3 306 126</td>
 <td>0</td>
-<td>72.804</td>
-<td>surface_lifter</td>
-<td>0.052</td>
-</tr>
-<tr>
-<td>route.earth.wenchang--earth_orbital_hub</td>
-<td>челночный</td>
-<td>Вэньчан</td>
-<td>Высокий</td>
-<td>2 777 180</td>
-<td>0</td>
-<td>70.451</td>
+<td>83.869</td>
 <td>surface_lifter</td>
 <td>0.052</td>
 </tr>
@@ -1104,15 +1173,147 @@
 <td>15.692</td>
 </tr>
 <tr>
-<td>route.earth.sriharikota--earth_orbital_hub</td>
+<td>route.earth.aurora--earth_orbital_hub</td>
 <td>челночный</td>
-<td>Шрихарикота</td>
+<td>Аврора</td>
 <td>Высокий</td>
-<td>1 496 722</td>
+<td>1 815 563</td>
 <td>0</td>
-<td>37.969</td>
+<td>46.057</td>
 <td>surface_lifter</td>
 <td>0.052</td>
+</tr>
+<tr>
+<td>route.earth.kourou--earth_orbital_hub</td>
+<td>челночный</td>
+<td>Куру</td>
+<td>Высокий</td>
+<td>1 683 521</td>
+<td>0</td>
+<td>42.707</td>
+<td>surface_lifter</td>
+<td>0.052</td>
+</tr>
+<tr>
+<td>route.earth.tikhiy--wenchang</td>
+<td>челночный</td>
+<td>Тихий</td>
+<td>Вэньчан</td>
+<td>912 042</td>
+<td>0</td>
+<td>23.137</td>
+<td>surface_lifter</td>
+<td>0.052</td>
+</tr>
+<tr>
+<td>route.earth.ekvator--wenchang</td>
+<td>грузовой</td>
+<td>Экватор</td>
+<td>Вэньчан</td>
+<td>0</td>
+<td>2 000 000</td>
+<td>22.831</td>
+<td>surface_lifter</td>
+<td>0.052</td>
+</tr>
+<tr>
+<td>route.sol.cargo.outer</td>
+<td>грузовой</td>
+<td>Титания</td>
+<td>Вэньчан</td>
+<td>—</td>
+<td>12 712 934</td>
+<td>20.156</td>
+<td>medium_freighter</td>
+<td>22.566</td>
+</tr>
+<tr>
+<td>route.sol.mining.vesta</td>
+<td>рудный</td>
+<td>Рейсильвия</td>
+<td>Перевал Цереры</td>
+<td>—</td>
+<td>77 777 699</td>
+<td>10.654</td>
+<td>ore_tug</td>
+<td>13.562</td>
+</tr>
+<tr>
+<td>route.sol.mining.pallas</td>
+<td>рудный</td>
+<td>Паллада-Станция</td>
+<td>Перевал Цереры</td>
+<td>—</td>
+<td>77 777 699</td>
+<td>10.654</td>
+<td>ore_tug</td>
+<td>22.146</td>
+</tr>
+<tr>
+<td>route.sol.mining.hygiea</td>
+<td>рудный</td>
+<td>Гигея-Склад</td>
+<td>Перевал Цереры</td>
+<td>—</td>
+<td>77 777 699</td>
+<td>10.654</td>
+<td>ore_tug</td>
+<td>14.295</td>
+</tr>
+<tr>
+<td>route.earth.aurora--tikhiy</td>
+<td>челночный</td>
+<td>Аврора</td>
+<td>Тихий</td>
+<td>292 583</td>
+<td>0</td>
+<td>7.422</td>
+<td>surface_lifter</td>
+<td>0.052</td>
+</tr>
+<tr>
+<td>route.sol.gas.jupiter</td>
+<td>грузовой</td>
+<td>Зевс-Платформа</td>
+<td>Куру</td>
+<td>—</td>
+<td>1 883 318</td>
+<td>1.72</td>
+<td>gas_tanker</td>
+<td>14.614</td>
+</tr>
+<tr>
+<td>route.sol.gas.saturn</td>
+<td>грузовой</td>
+<td>Кольцо-Газ</td>
+<td>Куру</td>
+<td>—</td>
+<td>1 674 060</td>
+<td>1.529</td>
+<td>gas_tanker</td>
+<td>20.258</td>
+</tr>
+<tr>
+<td>route.earth.aurora--wenchang</td>
+<td>челночный</td>
+<td>Аврора</td>
+<td>Вэньчан</td>
+<td>54 798</td>
+<td>0</td>
+<td>1.39</td>
+<td>surface_lifter</td>
+<td>0.052</td>
+</tr>
+<tr>
+<td>route.sol.gas.outer</td>
+<td>грузовой</td>
+<td>Титания</td>
+<td>Куру</td>
+<td>—</td>
+<td>627 772</td>
+<td>0.573</td>
+<td>gas_tanker</td>
+<td>29.133</td>
 </tr>
 </tbody>
 </table></div>
@@ -1225,19 +1426,22 @@
 </table></div>
 <h3 id="проверки">Проверки</h3>
 <ul>
-<li>OK <code>earth_hub_count_is_author_target</code> — 12 hubs</li>
-<li>OK <code>unique_sol_hub_ids</code> — 43 ids</li>
-<li>OK <code>unique_sol_hub_names</code> — 43 names</li>
-<li>OK <code>earth_hubs_orbital_separation</code> — min 26 km between ('earth_hub.baikonur', 'earth_hub.wenchang') over 2 days</li>
+<li>OK <code>earth_major_hubs_in_author_target</code> — 7 Earth complexes (target 6-8)</li>
+<li>OK <code>sol_major_hubs_within_budget</code> — 29 / 30 major hubs (preferred [24, 30])</li>
+<li>OK <code>region_major_hubs_within_budget</code> — belt 5, deep_space 1, earth 7, earth_cislunar 3, jupiter 4, mars 3, mercury 1, outer 2, saturn 2, venus 1</li>
+<li>OK <code>unique_sol_hub_ids</code> — 38 ids</li>
+<li>OK <code>unique_sol_hub_names</code> — 38 names</li>
+<li>OK <code>earth_hubs_orbital_separation</code> — min 74 km between ('earth_hub.tikhiy', 'earth_hub.kourou') over 2 days</li>
 <li>OK <code>earth_hubs_above_atmosphere</code> — all &gt;= 400 km</li>
 <li>OK <code>every_spaceport_reaches_a_passenger_plane</code> — ok</li>
-<li>OK <code>earth_demand_within_orbital_capacity</code> — demand 398 422 533 legs/y &lt;= 80 % of capacity 644 097 291</li>
-<li>OK <code>major_hub_utilisation_in_band</code> — 10 major hubs within 0.4-0.75</li>
+<li>OK <code>earth_demand_within_orbital_capacity</code> — demand 398 422 533 legs/y &lt;= 80 % of capacity 642 855 411</li>
+<li>OK <code>major_hub_utilisation_in_band</code> — 6 major hubs within 0.4-0.75</li>
 <li>OK <code>surface_traffic_conserved</code> — 398 422 533 of 398 422 533</li>
-<li>OK <code>routes_have_real_ends</code> — 82 routes</li>
+<li>OK <code>routes_have_real_ends</code> — 41 routes</li>
 <li>OK <code>every_driver_has_a_hub</code> — ok</li>
 <li>OK <code>every_hub_has_traffic</code> — ok</li>
 <li>OK <code>legacy_generic_ids_mapped_once</code> — 26 legacy ids</li>
+<li>OK <code>earth_capacity_ge_demand_plus_reserve</code> — 57 069 movements/day vs capacity 92 238 (utilisation 0.62)</li>
 </ul>
 <!-- GENERATED:sol_network END -->
 </article><footer class="path">Источник: <code>Notes/Lore/ECONOMY/SOL_NETWORK.md</code></footer></main></body></html>

@@ -821,21 +821,21 @@
    "site": "site.009.eps_eri_harmony.city04"
   },
   {
-   "fire_crew_on_site": 22,
+   "fire_crew_on_site": 68,
    "law": "confucian_administrative",
    "responder": "государственная служба + народные дружины",
    "response_h": 3.006,
    "site": "site.009.eps_eri_harmony.trade_hub01"
   },
   {
-   "fire_crew_on_site": 22,
+   "fire_crew_on_site": 45,
    "law": "confucian_administrative",
    "responder": "государственная служба + народные дружины",
    "response_h": 3.006,
    "site": "site.009.eps_eri_harmony.trade_hub02"
   },
   {
-   "fire_crew_on_site": 22,
+   "fire_crew_on_site": 45,
    "law": "confucian_administrative",
    "responder": "государственная служба + народные дружины",
    "response_h": 3.006,
@@ -940,14 +940,14 @@
    "site": "site.009.eps_eri_harmony.industrial_hub06"
   },
   {
-   "fire_crew_on_site": 15,
+   "fire_crew_on_site": 45,
    "law": "confucian_administrative",
    "responder": "государственная служба + народные дружины",
    "response_h": 3.006,
    "site": "site.009.eps_eri_harmony.military_hub01"
   },
   {
-   "fire_crew_on_site": 15,
+   "fire_crew_on_site": 45,
    "law": "confucian_administrative",
    "responder": "государственная служба + народные дружины",
    "response_h": 3.006,
@@ -1283,7 +1283,7 @@
    "site": "site.010.gj581_europa.industrial_hub05"
   },
   {
-   "fire_crew_on_site": 15,
+   "fire_crew_on_site": 30,
    "law": "parliamentary_civil",
    "responder": "государственная + добровольцы",
    "response_h": 3.006,
@@ -2186,7 +2186,7 @@
    "site": "site.015.hd40307_firmament.industrial_hub04"
   },
   {
-   "fire_crew_on_site": 15,
+   "fire_crew_on_site": 30,
    "law": "party_administrative",
    "responder": "государственная служба",
    "response_h": 3.006,
@@ -3047,21 +3047,21 @@
    "site": "site.060.proxima_outpost.quarantine01"
   },
   {
-   "fire_crew_on_site": 22,
+   "fire_crew_on_site": 45,
    "law": "technocratic_civil",
    "responder": "государственная служба спасения",
    "response_h": 3.006,
    "site": "site.008.tau_ceti_cognium.trade_hub01"
   },
   {
-   "fire_crew_on_site": 22,
+   "fire_crew_on_site": 45,
    "law": "technocratic_civil",
    "responder": "государственная служба спасения",
    "response_h": 3.006,
    "site": "site.008.tau_ceti_cognium.trade_hub02"
   },
   {
-   "fire_crew_on_site": 22,
+   "fire_crew_on_site": 45,
    "law": "technocratic_civil",
    "responder": "государственная служба спасения",
    "response_h": 3.006,
@@ -3495,84 +3495,49 @@
    "site": "site.041.hd104067_frontier"
   },
   {
-   "fire_crew_on_site": 242,
+   "fire_crew_on_site": 315,
    "law": "sol_codified",
    "responder": "Береговая служба Сола",
    "response_h": 3.006,
    "site": "earth_orbital_hub"
   },
   {
-   "fire_crew_on_site": 175,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "earth_hub.baikonur"
-  },
-  {
-   "fire_crew_on_site": 124,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "earth_hub.meridian"
-  },
-  {
-   "fire_crew_on_site": 273,
+   "fire_crew_on_site": 430,
    "law": "sol_codified",
    "responder": "Береговая служба Сола",
    "response_h": 3.006,
    "site": "earth_hub.tikhiy"
   },
   {
-   "fire_crew_on_site": 151,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "earth_hub.tanegashima"
-  },
-  {
-   "fire_crew_on_site": 242,
+   "fire_crew_on_site": 332,
    "law": "sol_codified",
    "responder": "Береговая служба Сола",
    "response_h": 3.006,
    "site": "earth_hub.canaveral"
   },
   {
-   "fire_crew_on_site": 83,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "earth_hub.tropic"
-  },
-  {
-   "fire_crew_on_site": 53,
+   "fire_crew_on_site": 97,
    "law": "sol_codified",
    "responder": "Береговая служба Сола",
    "response_h": 3.006,
    "site": "earth_hub.wenchang"
   },
   {
-   "fire_crew_on_site": 26,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "earth_hub.sriharikota"
-  },
-  {
-   "fire_crew_on_site": 178,
+   "fire_crew_on_site": 166,
    "law": "sol_codified",
    "responder": "Береговая служба Сола",
    "response_h": 3.006,
    "site": "earth_hub.kourou"
   },
   {
-   "fire_crew_on_site": 26,
+   "fire_crew_on_site": 25,
    "law": "sol_codified",
    "responder": "Береговая служба Сола",
    "response_h": 3.006,
    "site": "earth_hub.ekvator"
   },
   {
-   "fire_crew_on_site": 4,
+   "fire_crew_on_site": 30,
    "law": "sol_codified",
    "responder": "Береговая служба Сола",
    "response_h": 3.006,

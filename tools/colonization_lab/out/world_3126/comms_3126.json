@@ -4572,22 +4572,7 @@
   {
    "coverage": "full",
    "light_lag_s": 499.0,
-   "site": "earth_hub.baikonur"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 499.0,
-   "site": "earth_hub.meridian"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 499.0,
    "site": "earth_hub.tikhiy"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 499.0,
-   "site": "earth_hub.tanegashima"
   },
   {
    "coverage": "full",
@@ -4597,17 +4582,7 @@
   {
    "coverage": "full",
    "light_lag_s": 499.0,
-   "site": "earth_hub.tropic"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 499.0,
    "site": "earth_hub.wenchang"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 499.0,
-   "site": "earth_hub.sriharikota"
   },
   {
    "coverage": "full",

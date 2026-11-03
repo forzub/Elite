@@ -116,7 +116,7 @@ int main(int argc, char** argv)
     body.system = &snap;
     body.selectedBodyId = earth.id;
     game::presentation::buildSystemMapInfo(body, title, lines);
-    check(contains(lines, "Здесь") && contains(lines, "Байконур") && contains(lines, "Канаверал"), "Earth body: its orbital hubs are listed");
+    check(contains(lines, "Здесь") && contains(lines, "Тихий") && contains(lines, "Канаверал"), "Earth body: its orbital hubs are listed");
 
     // 5. marker <-> world object identity
     std::set<std::string> runtimeHubs;
@@ -128,8 +128,8 @@ int main(int argc, char** argv)
         const auto* site = catalog.findSite(0, id);
         bound += site && site->runtimeBinding.find("[" + id + "]") != std::string::npos ? 1 : 0;
     }
-    check(bound == static_cast<int>(runtimeHubs.size()) && runtimeHubs.size() == 13,
-          "13 runtime hubs, each with exactly one bound world-site record (" + std::to_string(bound) + ")");
+    check(bound == static_cast<int>(runtimeHubs.size()) && runtimeHubs.size() == 8,
+          "8 runtime hubs (7 Earth complexes + Ceres), each with exactly one bound world-site record (" + std::to_string(bound) + ")");
     int badEnds = 0;
     for (const auto& r : catalog.routesInSystem(0))
         for (const auto& end : {r.origin, r.destination})

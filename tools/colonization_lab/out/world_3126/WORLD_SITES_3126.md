@@ -8,7 +8,7 @@
 |---|---:|
 | горнодобывающий хаб | 113 |
 | промышленный хаб | 98 |
-| орбитальный хаб | 53 |
+| орбитальный хаб | 48 |
 | наземный космопорт | 47 |
 | хаб на луне | 43 |
 | научный хаб | 42 |
@@ -23,7 +23,7 @@
 | брошенный хаб | 1 |
 | межзвёздный ретранслятор | 1 |
 
-Всего сайтов 518; объектов глубокого космоса 9; агломераций Земли 61.
+Всего сайтов 513; объектов глубокого космоса 9; агломераций Земли 61.
 
 ## Дорога в карман Керна
 
@@ -70,7 +70,7 @@
 
 ## Проверки
 
-- OK one_id_one_object: 520 ids
+- OK one_id_one_object: 515 ids
 - OK site_bodies_exist_in_catalog: ok
 - OK every_site_has_placement: ok
 - OK access_chains_use_real_hops_only: frontier.worlds_ass max 30.753, frontier.ceti_chest max 25.603, frontier.vega_observatory max 18.304, kern_pocket max 30.753
@@ -87,24 +87,28 @@
 - OK lotosite_has_no_jump_range_effect: stabiliser only in anomalies; no +3 ly
 - OK stabiliser_demand_small_and_specialised: stabilisers 0.852 g/y of 45.827 g/y; installed 8.925 g
 - OK medical_is_main_demand: medical 31.787 g/y, research 13.188, stabilisers 0.852
-- OK sol.earth_hub_count_is_author_target: 12 hubs
-- OK sol.unique_sol_hub_ids: 43 ids
-- OK sol.unique_sol_hub_names: 43 names
-- OK sol.earth_hubs_orbital_separation: min 26 km between ('earth_hub.baikonur', 'earth_hub.wenchang') over 2 days
+- OK map_complexity_within_tier_budgets: core max 29; frontier max 2; colony max 6; developed max 11; periphery max 2
+- OK sol.earth_major_hubs_in_author_target: 7 Earth complexes (target 6-8)
+- OK sol.sol_major_hubs_within_budget: 29 / 30 major hubs (preferred [24, 30])
+- OK sol.region_major_hubs_within_budget: belt 5, deep_space 1, earth 7, earth_cislunar 3, jupiter 4, mars 3, mercury 1, outer 2, saturn 2, venus 1
+- OK sol.unique_sol_hub_ids: 38 ids
+- OK sol.unique_sol_hub_names: 38 names
+- OK sol.earth_hubs_orbital_separation: min 74 km between ('earth_hub.tikhiy', 'earth_hub.kourou') over 2 days
 - OK sol.earth_hubs_above_atmosphere: all >= 400 km
 - OK sol.every_spaceport_reaches_a_passenger_plane: ok
-- OK sol.earth_demand_within_orbital_capacity: demand 398 422 533 legs/y <= 80 % of capacity 644 097 291
-- OK sol.major_hub_utilisation_in_band: 10 major hubs within 0.4-0.75
+- OK sol.earth_demand_within_orbital_capacity: demand 398 422 533 legs/y <= 80 % of capacity 642 855 411
+- OK sol.major_hub_utilisation_in_band: 6 major hubs within 0.4-0.75
 - OK sol.surface_traffic_conserved: 398 422 533 of 398 422 533
-- OK sol.routes_have_real_ends: 82 routes
+- OK sol.routes_have_real_ends: 41 routes
 - OK sol.every_driver_has_a_hub: ok
 - OK sol.every_hub_has_traffic: ok
 - OK sol.legacy_generic_ids_mapped_once: 26 legacy ids
+- OK sol.earth_capacity_ge_demand_plus_reserve: 57 069 movements/day vs capacity 92 238 (utilisation 0.62)
 - OK lotus_identity_known_to_developers: NIRVANA-1 (CANON, AUTHOR_TRUTH)
 - OK news_reaches_far_periphery_within_author_target: network diameter 1.75 d, Sol -> farthest frontier 3.959 d, target 7.0 d (AUTHOR_TARGET)
 - OK migration_within_transport_capacity: demand 2424245 <= capacity 6005363 per year
 - OK no_jump_ship_older_than_jump_drive: ok
 - OK records_match_schemas: Hub / DeepSpaceObject / LocalAdministrator
 - OK knowledge_never_before_truth: 5 records
-- OK every_site_has_jurisdiction: 518 sites
+- OK every_site_has_jurisdiction: 513 sites
 - OK status_present: ok

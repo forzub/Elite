@@ -2,7 +2,7 @@
  "checks": [
   {
    "check": "one_id_one_object",
-   "detail": "520 ids",
+   "detail": "515 ids",
    "ok": true
   },
   {
@@ -86,23 +86,38 @@
    "ok": true
   },
   {
-   "check": "sol.earth_hub_count_is_author_target",
-   "detail": "12 hubs",
+   "check": "map_complexity_within_tier_budgets",
+   "detail": "core max 29; frontier max 2; colony max 6; developed max 11; periphery max 2",
+   "ok": true
+  },
+  {
+   "check": "sol.earth_major_hubs_in_author_target",
+   "detail": "7 Earth complexes (target 6-8)",
+   "ok": true
+  },
+  {
+   "check": "sol.sol_major_hubs_within_budget",
+   "detail": "29 / 30 major hubs (preferred [24, 30])",
+   "ok": true
+  },
+  {
+   "check": "sol.region_major_hubs_within_budget",
+   "detail": "belt 5, deep_space 1, earth 7, earth_cislunar 3, jupiter 4, mars 3, mercury 1, outer 2, saturn 2, venus 1",
    "ok": true
   },
   {
    "check": "sol.unique_sol_hub_ids",
-   "detail": "43 ids",
+   "detail": "38 ids",
    "ok": true
   },
   {
    "check": "sol.unique_sol_hub_names",
-   "detail": "43 names",
+   "detail": "38 names",
    "ok": true
   },
   {
    "check": "sol.earth_hubs_orbital_separation",
-   "detail": "min 26 km between ('earth_hub.baikonur', 'earth_hub.wenchang') over 2 days",
+   "detail": "min 74 km between ('earth_hub.tikhiy', 'earth_hub.kourou') over 2 days",
    "ok": true
   },
   {
@@ -117,12 +132,12 @@
   },
   {
    "check": "sol.earth_demand_within_orbital_capacity",
-   "detail": "demand 398 422 533 legs/y <= 80 % of capacity 644 097 291",
+   "detail": "demand 398 422 533 legs/y <= 80 % of capacity 642 855 411",
    "ok": true
   },
   {
    "check": "sol.major_hub_utilisation_in_band",
-   "detail": "10 major hubs within 0.4-0.75",
+   "detail": "6 major hubs within 0.4-0.75",
    "ok": true
   },
   {
@@ -132,7 +147,7 @@
   },
   {
    "check": "sol.routes_have_real_ends",
-   "detail": "82 routes",
+   "detail": "41 routes",
    "ok": true
   },
   {
@@ -148,6 +163,11 @@
   {
    "check": "sol.legacy_generic_ids_mapped_once",
    "detail": "26 legacy ids",
+   "ok": true
+  },
+  {
+   "check": "sol.earth_capacity_ge_demand_plus_reserve",
+   "detail": "57 069 movements/day vs capacity 92 238 (utilisation 0.62)",
    "ok": true
   },
   {
@@ -182,7 +202,7 @@
   },
   {
    "check": "every_site_has_jurisdiction",
-   "detail": "518 sites",
+   "detail": "513 sites",
    "ok": true
   },
   {

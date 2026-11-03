@@ -29,10 +29,11 @@
       "model_family": "command_station",
       "traffic_profile": {
         "profile": "gateway",
-        "arrivals_day": 3903,
-        "dock_sectors": 70,
-        "surface_pax_flights_day": 1371.656,
-        "hub_shuttle_flights_day": 1606.627
+        "arrivals_day": 5517,
+        "dock_sectors": 9,
+        "dock_modules": 98,
+        "surface_pax_flights_day": 2571.066,
+        "hub_shuttle_flights_day": 1457.596
       },
       "motion": {
         "type": "parent_orbit",
@@ -69,108 +70,6 @@
       ]
     },
     {
-      "id": "earth_hub.baikonur",
-      "name": "Байконур",
-      "owner": "Sol Authority",
-      "operator": "Тюратам Орбитал",
-      "role": "грузовой хаб Евразии в той же плоскости, что и «Высокий»: общие окна запуска, обратная фаза",
-      "system_id": 0,
-      "parent_body_id": "system_0.Sol.Земля",
-      "map_object_module_id": "baikonur_station",
-      "model_family": "command_station",
-      "traffic_profile": {
-        "profile": "cargo",
-        "arrivals_day": 3816,
-        "dock_sectors": 61,
-        "surface_pax_flights_day": 1371.656,
-        "hub_shuttle_flights_day": 1319.56
-      },
-      "motion": {
-        "type": "parent_orbit",
-        "altitude_km": 470,
-        "orbital_period_seconds": 0,
-        "self_rotation_period_seconds": 180,
-        "inclination_deg": 51.64,
-        "longitude_of_ascending_node_deg": 0,
-        "argument_of_periapsis_deg": 0,
-        "initial_phase_deg": 215,
-        "epoch_seconds": 0,
-        "orbital_period_mode": "kepler"
-      },
-      "modules": [
-        {
-          "id": "baikonur_station",
-          "type": "command_station",
-          "name": "Байконур",
-          "offset_m": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "state": {
-            "exists": true
-          },
-          "local_rotation_deg": {
-            "pitch": 45,
-            "yaw": 0,
-            "roll": 0
-          },
-          "map_visible": true
-        }
-      ]
-    },
-    {
-      "id": "earth_hub.meridian",
-      "name": "Меридиан",
-      "owner": "Sol Authority",
-      "operator": "Северный портовый союз",
-      "role": "северный пассажирский хаб: единственная плоскость, прямо доступная Москве (55.8°), и плоскость Лондона, Парижа, Харбина",
-      "system_id": 0,
-      "parent_body_id": "system_0.Sol.Земля",
-      "map_object_module_id": "meridian_station",
-      "model_family": "command_station",
-      "traffic_profile": {
-        "profile": "passenger",
-        "arrivals_day": 2680,
-        "dock_sectors": 40,
-        "surface_pax_flights_day": 1108.461,
-        "hub_shuttle_flights_day": 1050.22
-      },
-      "motion": {
-        "type": "parent_orbit",
-        "altitude_km": 545,
-        "orbital_period_seconds": 0,
-        "self_rotation_period_seconds": 180,
-        "inclination_deg": 56.5,
-        "longitude_of_ascending_node_deg": 210,
-        "argument_of_periapsis_deg": 0,
-        "initial_phase_deg": 90,
-        "epoch_seconds": 0,
-        "orbital_period_mode": "kepler"
-      },
-      "modules": [
-        {
-          "id": "meridian_station",
-          "type": "command_station",
-          "name": "Меридиан",
-          "offset_m": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "state": {
-            "exists": true
-          },
-          "local_rotation_deg": {
-            "pitch": 45,
-            "yaw": 0,
-            "roll": 0
-          },
-          "map_visible": true
-        }
-      ]
-    },
-    {
       "id": "earth_hub.tikhiy",
       "name": "Тихий",
       "owner": "Sol Authority",
@@ -182,10 +81,11 @@
       "model_family": "command_station",
       "traffic_profile": {
         "profile": "passenger_mega",
-        "arrivals_day": 5976,
-        "dock_sectors": 89,
-        "surface_pax_flights_day": 2483.189,
-        "hub_shuttle_flights_day": 2325.696
+        "arrivals_day": 9461,
+        "dock_sectors": 12,
+        "dock_modules": 141,
+        "surface_pax_flights_day": 3950.573,
+        "hub_shuttle_flights_day": 3654.129
       },
       "motion": {
         "type": "parent_orbit",
@@ -222,79 +122,29 @@
       ]
     },
     {
-      "id": "earth_hub.tanegashima",
-      "name": "Танэгасима",
-      "owner": "Sol Authority",
-      "operator": "Ниппон Орбитал Портс",
-      "role": "пассажирский хаб 30–32° (Шанхай, Лахор, Нанкин, Ухань) и обслуживание верфей",
-      "system_id": 0,
-      "parent_body_id": "system_0.Sol.Земля",
-      "map_object_module_id": "tanegashima_station",
-      "model_family": "command_station",
-      "traffic_profile": {
-        "profile": "passenger",
-        "arrivals_day": 3275,
-        "dock_sectors": 49,
-        "surface_pax_flights_day": 1355.625,
-        "hub_shuttle_flights_day": 1281.745
-      },
-      "motion": {
-        "type": "parent_orbit",
-        "altitude_km": 525,
-        "orbital_period_seconds": 0,
-        "self_rotation_period_seconds": 180,
-        "inclination_deg": 31.6,
-        "longitude_of_ascending_node_deg": 300,
-        "argument_of_periapsis_deg": 0,
-        "initial_phase_deg": 15,
-        "epoch_seconds": 0,
-        "orbital_period_mode": "kepler"
-      },
-      "modules": [
-        {
-          "id": "tanegashima_station",
-          "type": "command_station",
-          "name": "Танэгасима",
-          "offset_m": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "state": {
-            "exists": true
-          },
-          "local_rotation_deg": {
-            "pitch": 45,
-            "yaw": 0,
-            "roll": 0
-          },
-          "map_visible": true
-        }
-      ]
-    },
-    {
       "id": "earth_hub.canaveral",
       "name": "Канаверал",
       "owner": "Sol Authority",
       "operator": "Атлантическая портовая компания",
-      "role": "пассажирский хаб 28–29° (Дели, Каир, Чунцин, Хьюстон) и межпланетные вылеты к Марсу",
+      "role": "пассажирский комплекс полосы 21-32° (Дели, Шанхай, Каир, Сан-Паулу через терминал «Тропик») и вылеты к Марсу",
       "system_id": 0,
       "parent_body_id": "system_0.Sol.Земля",
       "map_object_module_id": "canaveral_station",
       "model_family": "command_station",
       "traffic_profile": {
         "profile": "passenger",
-        "arrivals_day": 5298,
-        "dock_sectors": 99,
-        "surface_pax_flights_day": 966.764,
-        "hub_shuttle_flights_day": 3308.563
+        "arrivals_day": 7287,
+        "dock_sectors": 11,
+        "dock_modules": 132,
+        "surface_pax_flights_day": 2387.384,
+        "hub_shuttle_flights_day": 3208.625
       },
       "motion": {
         "type": "parent_orbit",
         "altitude_km": 485,
         "orbital_period_seconds": 0,
         "self_rotation_period_seconds": 180,
-        "inclination_deg": 29.0,
+        "inclination_deg": 31.6,
         "longitude_of_ascending_node_deg": 60,
         "argument_of_periapsis_deg": 0,
         "initial_phase_deg": 140,
@@ -324,72 +174,22 @@
       ]
     },
     {
-      "id": "earth_hub.tropic",
-      "name": "Тропик",
-      "owner": "Sol Authority",
-      "operator": "Южный альянс портов",
-      "role": "хаб полосы 21–25° (Сан-Паулу, Дакка, Карачи, Калькутта, Гуанчжоу, Рио)",
-      "system_id": 0,
-      "parent_body_id": "system_0.Sol.Земля",
-      "map_object_module_id": "tropic_station",
-      "model_family": "command_station",
-      "traffic_profile": {
-        "profile": "passenger_mega",
-        "arrivals_day": 1765,
-        "dock_sectors": 27,
-        "surface_pax_flights_day": 729.117,
-        "hub_shuttle_flights_day": 692.997
-      },
-      "motion": {
-        "type": "parent_orbit",
-        "altitude_km": 465,
-        "orbital_period_seconds": 0,
-        "self_rotation_period_seconds": 180,
-        "inclination_deg": 24.5,
-        "longitude_of_ascending_node_deg": 180,
-        "argument_of_periapsis_deg": 0,
-        "initial_phase_deg": 300,
-        "epoch_seconds": 0,
-        "orbital_period_mode": "kepler"
-      },
-      "modules": [
-        {
-          "id": "tropic_station",
-          "type": "command_station",
-          "name": "Тропик",
-          "offset_m": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "state": {
-            "exists": true
-          },
-          "local_rotation_deg": {
-            "pitch": 45,
-            "yaw": 0,
-            "roll": 0
-          },
-          "map_visible": true
-        }
-      ]
-    },
-    {
       "id": "earth_hub.wenchang",
       "name": "Вэньчан",
       "owner": "Sol Authority",
       "operator": "Вэньчан Хэви",
-      "role": "тяжёлый грузовой хаб полосы 19–20° (Мехико, Мумбаи) — модули станций и верфей",
+      "role": "грузовой и логистический комплекс, тяжёлые модули; пассажиры 10-20° через терминал «Шрихарикота»",
       "system_id": 0,
       "parent_body_id": "system_0.Sol.Земля",
       "map_object_module_id": "wenchang_station",
       "model_family": "command_station",
       "traffic_profile": {
         "profile": "cargo",
-        "arrivals_day": 1085,
-        "dock_sectors": 18,
-        "surface_pax_flights_day": 383.089,
-        "hub_shuttle_flights_day": 387.991
+        "arrivals_day": 2073,
+        "dock_sectors": 3,
+        "dock_modules": 34,
+        "surface_pax_flights_day": 739.904,
+        "hub_shuttle_flights_day": 726.018
       },
       "motion": {
         "type": "parent_orbit",
@@ -426,57 +226,6 @@
       ]
     },
     {
-      "id": "earth_hub.sriharikota",
-      "name": "Шрихарикота",
-      "owner": "Sol Authority",
-      "operator": "Бхарат Орбитал",
-      "role": "хаб полосы 10–15° (Манила, Бангкок, Ченнаи, Бангалор, Хошимин, Лима)",
-      "system_id": 0,
-      "parent_body_id": "system_0.Sol.Земля",
-      "map_object_module_id": "sriharikota_station",
-      "model_family": "command_station",
-      "traffic_profile": {
-        "profile": "passenger",
-        "arrivals_day": 501,
-        "dock_sectors": 8,
-        "surface_pax_flights_day": 206.46,
-        "hub_shuttle_flights_day": 197.086
-      },
-      "motion": {
-        "type": "parent_orbit",
-        "altitude_km": 455,
-        "orbital_period_seconds": 0,
-        "self_rotation_period_seconds": 180,
-        "inclination_deg": 14.8,
-        "longitude_of_ascending_node_deg": 240,
-        "argument_of_periapsis_deg": 0,
-        "initial_phase_deg": 60,
-        "epoch_seconds": 0,
-        "orbital_period_mode": "kepler"
-      },
-      "modules": [
-        {
-          "id": "sriharikota_station",
-          "type": "command_station",
-          "name": "Шрихарикота",
-          "offset_m": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "state": {
-            "exists": true
-          },
-          "local_rotation_deg": {
-            "pitch": 45,
-            "yaw": 0,
-            "roll": 0
-          },
-          "map_visible": true
-        }
-      ]
-    },
-    {
       "id": "earth_hub.kourou",
       "name": "Куру",
       "owner": "Sol Authority",
@@ -488,10 +237,11 @@
       "model_family": "command_station",
       "traffic_profile": {
         "profile": "interplanetary",
-        "arrivals_day": 3866,
-        "dock_sectors": 76,
-        "surface_pax_flights_day": 131.1,
-        "hub_shuttle_flights_day": 3104.364
+        "arrivals_day": 3598,
+        "dock_sectors": 7,
+        "dock_modules": 73,
+        "surface_pax_flights_day": 220.828,
+        "hub_shuttle_flights_day": 2705.115
       },
       "motion": {
         "type": "parent_orbit",
@@ -532,17 +282,18 @@
       "name": "Экватор",
       "owner": "Sol Authority",
       "operator": "Энергосеть Сола",
-      "role": "геостационарный узел: энергосеть, связь, сборка крупных модулей вне атмосферы",
+      "role": "геостационарный комплекс: ремонт и верфь вне атмосферы, энергосеть, связь",
       "system_id": 0,
       "parent_body_id": "system_0.Sol.Земля",
       "map_object_module_id": "ekvator_station",
       "model_family": "command_station",
       "traffic_profile": {
         "profile": "industrial",
-        "arrivals_day": 46,
+        "arrivals_day": 23,
         "dock_sectors": 1,
+        "dock_modules": 1,
         "surface_pax_flights_day": 0.0,
-        "hub_shuttle_flights_day": 45.662
+        "hub_shuttle_flights_day": 22.831
       },
       "motion": {
         "type": "parent_orbit",
@@ -583,17 +334,18 @@
       "name": "Аврора",
       "owner": "Sol Authority",
       "operator": "Служба наблюдения Земли",
-      "role": "солнечно-синхронная станция: наблюдение Земли, климат, полярная связь",
+      "role": "полярный комплекс: спасательная служба Земли, наука, единственная плоскость северных городов (терминал «Меридиан»)",
       "system_id": 0,
       "parent_body_id": "system_0.Sol.Земля",
       "map_object_module_id": "aurora_station",
       "model_family": "command_station",
       "traffic_profile": {
         "profile": "science",
-        "arrivals_day": 3,
+        "arrivals_day": 576,
         "dock_sectors": 1,
-        "surface_pax_flights_day": 0.0,
-        "hub_shuttle_flights_day": 0.152
+        "dock_modules": 9,
+        "surface_pax_flights_day": 237.361,
+        "hub_shuttle_flights_day": 226.678
       },
       "motion": {
         "type": "parent_orbit",
@@ -642,7 +394,7 @@
       "traffic_profile": {
         "profile": "mining",
         "arrivals_day": 494,
-        "dock_sectors": 30
+        "dock_sectors": 3
       },
       "motion": {
         "type": "parent_orbit",

@@ -111,12 +111,17 @@ def allocate_surface(SN, earth_rows, legs_y):
 
 
 def dock_sizing(SN, movements_day, cycle_min):
+    """Returns HexDock MODULES (6 pads each) sized to the target utilisation; sectors are rings of up to 12 modules."""
     D = SN["dock_model"]
     per_pad_day = D["operating_hours_per_day"] * 60.0 / cycle_min
     target = sum(D["target_utilisation"]) / 2.0
-    sectors = max(1, math.ceil(movements_day / (D["pads_per_sector"] * per_pad_day * target)))
-    util = movements_day / (sectors * D["pads_per_sector"] * per_pad_day)
-    return sectors, util, per_pad_day
+    modules = max(1, math.ceil(movements_day / (D["pads_per_module"] * per_pad_day * target)))
+    util = movements_day / (modules * D["pads_per_module"] * per_pad_day)
+    return modules, util, per_pad_day
+
+
+def sectors_of(SN, modules):
+    return max(1, math.ceil(modules / SN["dock_model"]["modules_per_sector_max"]))
 
 
 # ---------------------------------------------------------------- Sol regions and their drivers
@@ -259,14 +264,21 @@ def compute(I, earth_rows, pax_model):
             weighted_cycle = 45.0
         sectors, util, _ = dock_sizing(SN, mov, weighted_cycle)
         h["movements_day"] = round(mov)
+        pax_day = (h["surface_pax_flights_day"] + h["hub_shuttle_flights_day"]) * seats * lf + inter * SE["liner"]["passengers"] * lf
+        h["passengers_day"] = round(pax_day)
+        h["cargo_t_day"] = round(h["cargo_lifter_flights_day"] * SE["surface_lifter"]["cargo_t"] * 0.8)
+        h["passenger_terminals"] = max(1 if pax_day > 0 else 0, math.ceil(pax_day / 40000.0))
+        h["cargo_terminals"] = max(1, math.ceil(h["cargo_lifter_flights_day"] / 400.0))
+        h["service_berths"] = max(2, math.ceil(h["service_flights_day"] / 60.0))
         h["pad_cycle_min_mean"] = r3(weighted_cycle)
-        h["dock_sectors"] = sectors
-        h["pads_per_sector"] = D["pads_per_sector"]
-        h["docks"] = sectors * D["pads_per_sector"]
+        h["dock_modules"] = sectors
+        h["dock_sectors"] = sectors_of(SN, sectors)
+        h["pads_per_module"] = D["pads_per_module"]
+        h["docks"] = sectors * D["pads_per_module"]
         h["utilisation"] = r3(util)
         h["peak_utilisation"] = r3(util * D["peak_to_mean"])
         rho = min(0.99, util)
-        h["queue_wait_min"] = r3(weighted_cycle * rho / (2.0 * (1.0 - rho)) / (D["pads_per_sector"] * sectors) ** 0.5)
+        h["queue_wait_min"] = r3(weighted_cycle * rho / (2.0 * (1.0 - rho)) / (D["pads_per_module"] * sectors) ** 0.5)
         h["population"] = round(1500 + 9.0 * mov + (25000 if h["id"] == gateway else 0) + (8000 if "industry" in h["function"] else 0))
         h["period_min"] = r3(circ_period_s(h["altitude_km"]) / 60.0)
         h["speed_km_s"] = r3(circ_speed_km_s(h["altitude_km"]))
@@ -355,8 +367,8 @@ def compute(I, earth_rows, pax_model):
         mov = 2.0 * flights.get(s["id"], 0.0) + {"military": 30, "science": 4, "quarantine": 10, "piracy": 6}.get(s["driver"], 8)
         cyc = D["pad_cycle_minutes"]["interplanetary"] if s["driver"] in ("mining", "gas") else D["pad_cycle_minutes"]["surface_lifter"]
         sectors, util, _ = dock_sizing(SN, mov, cyc)
-        s.update(population=round(pop), movements_day=round(mov), arrivals_day=round(mov / 2.0), dock_sectors=sectors, pads_per_sector=D["pads_per_sector"],
-                 docks=sectors * D["pads_per_sector"], utilisation=r3(util))
+        s.update(population=round(pop), movements_day=round(mov), arrivals_day=round(mov / 2.0), dock_modules=sectors, dock_sectors=sectors_of(SN, sectors),
+                 pads_per_module=D["pads_per_module"], docks=sectors * D["pads_per_module"], utilisation=r3(util))
     # ---------------- relays (real world objects)
     R = SN["relays"]
     relays = []
@@ -372,7 +384,19 @@ def compute(I, earth_rows, pax_model):
 
     def add(name, ok, detail):
         chk.append(dict(check=name, ok=bool(ok), detail=detail))
-    add("earth_hub_count_is_author_target", len(earth_hubs) == SN["earth_hub_count_target"]["value"], f"{len(earth_hubs)} hubs")
+    lo, hi = SN["earth_hub_count_target"]["value"]
+    add("earth_major_hubs_in_author_target", lo <= len(earth_hubs) <= hi, f"{len(earth_hubs)} Earth complexes (target {lo}-{hi})")
+    B = SN["map_budget"]
+    major = [h for h in hubs if h.get("level") == "A"] + earth_hubs
+    add("sol_major_hubs_within_budget", len(major) <= B["sol_major_max"], f"{len(major)} / {B['sol_major_max']} major hubs (preferred {B['sol_major_preferred']})")
+    per_region = {}
+    for h in hubs:
+        if h.get("level") == "A":
+            r = h.get("region_override") or h["region"]
+            per_region[r] = per_region.get(r, 0) + 1
+    per_region["earth"] = len(earth_hubs)
+    over = [f"{r} {n}>{B['region_max'][r]}" for r, n in per_region.items() if n > B["region_max"].get(r, B["other_body_major_max"])]
+    add("region_major_hubs_within_budget", not over, ", ".join(over) or ", ".join(f"{r} {n}" for r, n in sorted(per_region.items())))
     ids = [h["id"] for h in earth_hubs] + [h["id"] for h in hubs]
     add("unique_sol_hub_ids", len(ids) == len(set(ids)), f"{len(ids)} ids")
     names = [h["name"] for h in earth_hubs] + [h["name"] for h in hubs]
@@ -385,7 +409,7 @@ def compute(I, earth_rows, pax_model):
     cap_legs = 0.0
     for h in earth_hubs:
         if h["id"] in load:
-            cap_legs += h["dock_sectors"] * D["pads_per_sector"] * D["operating_hours_per_day"] * 60.0 / h["pad_cycle_min_mean"] * \
+            cap_legs += h["dock_modules"] * D["pads_per_module"] * D["operating_hours_per_day"] * 60.0 / h["pad_cycle_min_mean"] * \
                 h["surface_pax_flights_day"] / max(1e-9, h["movements_day"] / 2.0) * seats * lf * 365.0 / 2.0
     add("earth_demand_within_orbital_capacity", legs_y <= cap_legs * 0.8, f"demand {round(legs_y):,} legs/y <= 80 % of capacity {round(cap_legs):,}".replace(",", " "))
     major = [h for h in earth_hubs if h["movements_day"] >= 500]
@@ -405,11 +429,29 @@ def compute(I, earth_rows, pax_model):
             if n and not any(serves[drv] & set(s["function"]) for s in hubs if s["region"] == r):
                 gaps.append(f"{r}:{drv}")
     add("every_driver_has_a_hub", not gaps, ", ".join(gaps) or "ok")
-    idle = [s["name"] for s in hubs + earth_hubs if s["arrivals_day"] < 1]
+    idle = [s["name"] for s in hubs + earth_hubs if s.get("level", "A") == "A" and s["arrivals_day"] < 1]
     add("every_hub_has_traffic", not idle, ", ".join(idle) or "ok")
     legacy = [x for s in hubs for x in s.get("legacy_ids", [])]
     add("legacy_generic_ids_mapped_once", len(legacy) == len(set(legacy)), f"{len(legacy)} legacy ids")
-    return dict(earth_hubs=earth_hubs, hubs=hubs, routes=routes, relays=relays, belt_anchors=SN["belt_anchors"], regions=SN["regions"],
+    tot_mov = sum(h["movements_day"] for h in earth_hubs)
+    cap_mov = sum(h["dock_modules"] * D["pads_per_module"] * D["operating_hours_per_day"] * 60.0 / h["pad_cycle_min_mean"] for h in earth_hubs)
+    earth_capacity = dict(passengers_day=sum(h["passengers_day"] for h in earth_hubs), cargo_t_day=sum(h["cargo_t_day"] for h in earth_hubs),
+                          service_movements_day=round(sum(h["service_flights_day"] for h in earth_hubs) * 2),
+                          movements_day=tot_mov, dock_sectors=sum(h["dock_sectors"] for h in earth_hubs),
+                          dock_modules=sum(h["dock_modules"] for h in earth_hubs), pads=sum(h["docks"] for h in earth_hubs), movement_capacity_day=round(cap_mov),
+                          utilisation=r3(tot_mov / cap_mov), reserve=r3(1.0 - tot_mov / cap_mov),
+                          passenger_terminals=sum(h["passenger_terminals"] for h in earth_hubs), cargo_terminals=sum(h["cargo_terminals"] for h in earth_hubs))
+    add("earth_capacity_ge_demand_plus_reserve", cap_mov >= tot_mov * 1.25,
+        f"{round(tot_mov):,} movements/day vs capacity {round(cap_mov):,} (utilisation {tot_mov / cap_mov:.2f})".replace(",", " "))
+    major_by_region = {}
+    for h in earth_hubs:
+        major_by_region["earth"] = major_by_region.get("earth", 0) + 1
+    for h in hubs:
+        if h.get("level") == "A":
+            r = h.get("region_override") or h["region"]
+            major_by_region[r] = major_by_region.get(r, 0) + 1
+    return dict(earth_hubs=earth_hubs, hubs=hubs, routes=routes, relays=relays, earth_capacity=earth_capacity, major_by_region=major_by_region,
+                major_total=sum(major_by_region.values()), belt_anchors=SN["belt_anchors"], regions=SN["regions"],
                 region_population=pops, region_assets={r: {k: r3(v) for k, v in a.items()} for r, a in assets.items()}, required_hubs=req,
                 surface=dict(legs_y=round(legs_y), legs_day=round(legs_y / 365.0), lifter_seats=seats, load_factor=lf,
                              lifter_flights_day=round(legs_y / (seats * lf) / 365.0), allocation={k: round(v) for k, v in load.items()}, **alloc_note,
@@ -428,7 +470,7 @@ def runtime_hubs(net, template):
         out.append(dict(id=h["id"], name=h["name"], owner="Sol Authority", operator=h["operator"], role=h["role_ru"], system_id=0,
                         parent_body_id="system_0.Sol.Земля", map_object_module_id=mod_id,
                         model_family="command_station",
-                        traffic_profile=dict(profile=h["profile"], arrivals_day=h["arrivals_day"], dock_sectors=h["dock_sectors"],
+                        traffic_profile=dict(profile=h["profile"], arrivals_day=h["arrivals_day"], dock_sectors=h["dock_sectors"], dock_modules=h["dock_modules"],
                                              surface_pax_flights_day=h["surface_pax_flights_day"], hub_shuttle_flights_day=h["hub_shuttle_flights_day"]),
                         motion=dict(type="parent_orbit", altitude_km=h["altitude_km"], orbital_period_seconds=0,
                                     self_rotation_period_seconds=180, inclination_deg=h["inclination_deg"], longitude_of_ascending_node_deg=h["lan_deg"],
@@ -507,6 +549,6 @@ if __name__ == "__main__":
     net = compute(I, ws.earth_settlements(I), ws.passengers(I, ws.route_graph(I)))
     for h in net["earth_hubs"]:
         print(f"{h['name']:12s} i={h['inclination_deg']:6.2f} alt={h['altitude_km']:6d} legs/y={h['surface_legs_y']:>12,} mov/d={h['movements_day']:>6} "
-              f"sect={h['dock_sectors']:3d} util={h['utilisation']:.2f} pop={h['population']:>7,}")
+              f"sect={h['dock_sectors']:3d} mod={h['dock_modules']:3d} pads={h['docks']:4d} util={h['utilisation']:.2f} pop={h['population']:>7,}")
     for c in net["checks"]:
         print("OK  " if c["ok"] else "FAIL", c["check"], "|", c["detail"])

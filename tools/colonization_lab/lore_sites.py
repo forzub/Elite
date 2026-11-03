@@ -318,17 +318,30 @@ def sol_docs(D, lm, S, sites):
          f"Поверхность ↔ орбита: {n0(sf['legs_y'])} пассажирских плеч в год (~{n0(sf['legs_day'])} в сутки) → ~{n0(sf['lifter_flights_day'])} рейсов SL-12 в сутки "
          f"({sf['lifter_seats']} мест, загрузка {sf['load_factor']}), плюс грузовые и служебные. Один хаб такой поток не принимает: 12 комплексов в разных плоскостях. "
          "Город летает в плоскости, куда попадает прямым стартом на восток (наклонение ≥ широты); жёсткой привязки «город → хаб» нет: поток делится по всем доступным плоскостям.", "",
-         lm.table(["Хаб", "Высота, км", "Наклонение", "Узел", "Фаза", "Период, мин", "Назначение", "Население", "Секторов × 6", "Движений/сутки", "Загрузка"],
-                  [(h["name"], h["altitude_km"], h["inclination_deg"], h["lan_deg"], h["phase_deg"], h["period_min"], fn(h["function"]), n0(h["population"]),
-                    h["dock_sectors"], n0(h["movements_day"]), h["utilisation"]) for h in N["earth_hubs"]]), "",
+         lm.table(["Комплекс", "Высота, км", "Наклонение", "Узел", "Фаза", "Период, мин", "Роли", "Население", "Секторов", "Модулей HexDock", "Площадок",
+                   "Пасс. терминалов", "Груз. терминалов", "Движений/сутки", "Загрузка"],
+                  [(h["name"], h["altitude_km"], h["inclination_deg"], h["lan_deg"], h["phase_deg"], h["period_min"], ", ".join(h.get("roles") or []), n0(h["population"]),
+                    h["dock_sectors"], h["dock_modules"], h["docks"], h["passenger_terminals"], h["cargo_terminals"], n0(h["movements_day"]), h["utilisation"])
+                   for h in N["earth_hubs"]]), "",
+         "Именованные терминалы комплексов (бывшие отдельные станции): " + "; ".join(f"{t['name']} — {h['name']}" for h in N["earth_hubs"] for t in h.get("terminals") or []) + ".", "",
+         "Мощность Земли: " + f"{n0(N['earth_capacity']['passengers_day'])} пассажиров и {n0(N['earth_capacity']['cargo_t_day'])} т груза в сутки, "
+         f"{n0(N['earth_capacity']['movements_day'])} движений из {n0(N['earth_capacity']['movement_capacity_day'])} возможных (загрузка {N['earth_capacity']['utilisation']}, "
+         f"резерв {N['earth_capacity']['reserve']}); {N['earth_capacity']['dock_sectors']} секторов, {N['earth_capacity']['dock_modules']} модулей HexDock, "
+         f"{n0(N['earth_capacity']['pads'])} площадок. Спрос растёт — растут сектора и терминалы, а не число хабов на карте.", "",
+         "### Сложность карты (крупных хабов уровня A на систему)", "",
+         lm.table(["Система", "Уровень развития", "Крупных хабов", "Бюджет", "Слито в комплексы (B)", "Местных объектов (C)"],
+                  [(r["name"], r["tier"], r["major_visible_hubs"], f"{r['budget'][0]}-{r['budget'][1]}", r["merged"], r["local_facilities"]) for r in N["map_complexity"]]), "",
          f"Минимальное сближение хабов за двое суток: {n0(N['min_separation_km'])} км ({' — '.join(nm(x) for x in N['min_separation_pair'])}). "
          "Сектор — шестиплощадочный HexDock рантайма; в игре пока показан один сектор «Высокого» (ограничение представления, не модели).", "",
          lm.table(["Хаб", "Основан", "Основатель", "Оператор", "Почему так назван", "Характер"],
                   [(h["name"], h["founded"], h["founder"], h["operator"], h["name_basis"], h["character"]) for h in N["earth_hubs"]]), "",
          "### Остальной Сол", "",
-         lm.table(["Район", "Хаб", "Тип", "Назначение", "Основан", "Владелец / оператор", "Население", "Прибытий/сутки", "Доков"],
-                  [(N["regions"][h["region"]]["ru"], h["name"], sites[h["id"]]["type_ru"] if h["id"] in sites else h["type"], fn(h["function"]), h["founded"],
-                    f"Власть Сола / {h['operator']}" if h.get("owner") else h["operator"], n0(h["population"]), n0(h["arrivals_day"]), h["docks"]) for h in N["hubs"]]), "",
+         lm.table(["Район", "Уровень", "Хаб", "Тип", "Назначение", "Основан", "Владелец / оператор", "Население", "Прибытий/сутки", "Секторов / площадок"],
+                  [(N["regions"][h["region"]]["ru"], h.get("level", "A"), h["name"], sites[h["id"]]["type_ru"] if h["id"] in sites else h["type"], fn(h["function"]), h["founded"],
+                    f"Власть Сола / {h['operator']}" if h.get("owner") else h["operator"], n0(h["population"]), n0(h["arrivals_day"]), f"{h['dock_sectors']} / {h['docks']}")
+                   for h in sorted(N["hubs"], key=lambda x: (x.get("level", "A"), x["region"]))]), "",
+         f"Крупных хабов Сола (уровень A): {N['major_total']} / 30 — " + ", ".join(f"{k} {v}" for k, v in sorted(N["major_by_region"].items())) + ". "
+         "Уровень C — поселения и местные объекты: видны на Detail Map тела или рядом с игроком.", "",
          "Население районов вне Земли: " + "; ".join(f"{N['regions'][r]['ru']} {n0(p)}" for r, p in N["region_population"].items() if p) + ".", "",
          "### Главный пояс", "",
          "Крупных астероидов в физическом каталоге нет (пояс — статистический резервуар), поэтому хабы стоят у постоянных якорей с реальными элементами орбит: "

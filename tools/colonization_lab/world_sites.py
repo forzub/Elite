@@ -430,6 +430,60 @@ def build_sites(I, dsos):
     return sites
 
 
+TYPE_CAP = {"developed": {"trade_hub": 3, "military_hub": 2}, "colony": {"trade_hub": 2, "military_hub": 1},
+            "periphery": {"trade_hub": 1, "military_hub": 1}, "frontier": {"trade_hub": 1, "military_hub": 1}}
+
+
+def system_tier(I, system):
+    if system == 0:
+        return "core"
+    pop = sum(v["population"] for k, v in I.pol.items() if I.system_of(k) == system)
+    return "developed" if pop >= 8e8 else "colony" if pop >= 1e8 else "periphery" if pop > 0 else "frontier"
+
+
+def apply_map_budget(I, sites, budget):
+    """Major player-facing hubs (level A) per system within the development-tier budget. Extra hubs of the same kind are
+    merged into one complex (level B, kept as data: capacity and history stay); detail facilities are level C.
+    Capacity never creates map markers."""
+    by_sys = {}
+    for s in sites:
+        if s["system"] is None or s["system"] == 0:
+            continue
+        s.setdefault("level", "A" if s["map_level"] == "system" else "C")
+        by_sys.setdefault(s["system"], []).append(s)
+    report = {}
+    for sysid, rows in by_sys.items():
+        tier = system_tier(I, sysid)
+        hi = budget["tiers"][tier][1]
+        major = [s for s in rows if s["level"] == "A"]
+
+        def merge(victim, anchor):
+            victim["level"] = "B"
+            victim["complex"] = anchor["id"]
+            victim["map_level"] = "detail"
+            anchor.setdefault("merged", []).append(victim["id"])
+            anchor["population"] += victim["population"]
+            anchor["docks"] = (anchor.get("docks") or 0) + (victim.get("docks") or 0)
+        for typ, cap in TYPE_CAP.get(tier, {}).items():
+            same = [s for s in major if s["type"] == typ]
+            for k, extra in enumerate(same[cap:]):
+                merge(extra, same[k % cap])
+        major = [s for s in rows if s["level"] == "A"]
+        while len(major) > hi:
+            counts = {}
+            for s in major:
+                counts[s["type"]] = counts.get(s["type"], 0) + 1
+            typ = max(counts, key=lambda t: (counts[t], t))
+            same = [s for s in major if s["type"] == typ]
+            if len(same) < 2:
+                break
+            merge(same[-1], same[0])
+            major = [s for s in rows if s["level"] == "A"]
+        report[sysid] = dict(system=sysid, name=I.E[sysid]["name"] if sysid in I.E else str(sysid), tier=tier, major_visible_hubs=len(major),
+                             budget=budget["tiers"][tier], merged=sum(1 for s in rows if s["level"] == "B"), local_facilities=sum(1 for s in rows if s["level"] == "C"))
+    return report
+
+
 def sol_sites(I, net):
     """Sol hub network -> site records (one id = one world object; generic ids of the earlier pass are aliases)."""
     rows = []
@@ -438,8 +492,11 @@ def sol_sites(I, net):
     def info(h, polity=SOL):
         return dict(owner=h.get("owner"), founder=h.get("founder"), founded=h.get("founded"), function=h.get("function"), role=h.get("role_ru"),
                     character=h.get("character"), name_basis=h.get("name_basis"), legacy_ids=h.get("legacy_ids", []), dock_sectors=h.get("dock_sectors"),
-                    pads_per_sector=h.get("pads_per_sector"), arrivals_day=h.get("arrivals_day"), movements_day=h.get("movements_day"),
-                    utilisation=h.get("utilisation"), history=h.get("history"), knowledge=h.get("knowledge"))
+                    dock_modules=h.get("dock_modules"), pads_per_module=h.get("pads_per_module"), arrivals_day=h.get("arrivals_day"), movements_day=h.get("movements_day"),
+                    utilisation=h.get("utilisation"), history=h.get("history"), knowledge=h.get("knowledge"),
+                    level=h.get("level", "A"), complex=h.get("serves_complex"), terminals=h.get("terminals"), roles=h.get("roles"),
+                    passenger_terminals=h.get("passenger_terminals"), cargo_terminals=h.get("cargo_terminals"), service_berths=h.get("service_berths"),
+                    passengers_day=h.get("passengers_day"), cargo_t_day=h.get("cargo_t_day"))
     for h in net["earth_hubs"]:
         rec = base_site(I, h["id"], h["name"], h["type"], 0, SOL, h["operator"], h["population"], h["role_ru"], body="system_0.Sol.Земля",
                         placement=dict(orbit=dict(altitude_km=h["altitude_km"], inclination_deg=h["inclination_deg"], lan_deg=h["lan_deg"], phase_deg=h["phase_deg"])),
@@ -471,7 +528,8 @@ def sol_sites(I, net):
             raise ValueError(h["id"])
         rec = base_site(I, h["id"], h["name"], h["type"], 0, SOL, h["operator"], h["population"], h["role_ru"], body=body, placement=pl,
                         runtime_binding=h.get("runtime_binding"), source="sol_network", **info(h))
-        rec["map_level"] = "detail" if "surface" in pl or (pl.get("heliocentric") or {}).get("surface") else "system"     # every Sol hub is findable on the System Map
+        # A = major hub on the System Map; B / C = part of a complex or a local facility (Detail Map / near the player)
+        rec["map_level"] = "system" if h.get("level", "A") == "A" and not ("surface" in pl or (pl.get("heliocentric") or {}).get("surface")) else "detail"
         rec["docks"] = h["docks"]
         rows.append(rec)
     return rows
@@ -1382,6 +1440,10 @@ def checks(I, out):
         f"stabilisers {L_['demand_at_price']['stabiliser_g_y']} g/y of {L_['supply']['refined_g_y']} g/y; installed {L_['stabilizer']['installed_g']} g")
     add("medical_is_main_demand", L_["demand_at_price"]["medical_g_y"] > L_["demand_at_price"]["research_g_y"] + L_["demand_at_price"]["stabiliser_g_y"],
         f"medical {L_['demand_at_price']['medical_g_y']} g/y, research {L_['demand_at_price']['research_g_y']}, stabilisers {L_['demand_at_price']['stabiliser_g_y']}")
+    over = [f"{r['name']} {r['major_visible_hubs']}>{r['budget'][1]} ({r['tier']})" for r in out["sol_network"]["map_complexity"] if r["major_visible_hubs"] > r["budget"][1]]
+    add("map_complexity_within_tier_budgets", not over,
+        ", ".join(over) or "; ".join(f"{r['tier']} max {max(x['major_visible_hubs'] for x in out['sol_network']['map_complexity'] if x['tier'] == r['tier'])}"
+                                    for r in {x['tier']: x for x in out['sol_network']['map_complexity']}.values()))
     for c in out["sol_network"]["checks"]:
         add("sol." + c["check"], c["ok"], c["detail"])
     add("lotus_identity_known_to_developers", out["frontier"]["developer_truth"]["truth"]["identity"]["ship"] == "NIRVANA-1", "NIRVANA-1 (CANON, AUTHOR_TRUTH)")
@@ -1431,7 +1493,7 @@ def runtime_export(I, out):
                          placement=s["placement"], map_level=s["map_level"], polity=s["polity"], polity_name=I.pol[s["polity"]]["name"] if s["polity"] in I.pol else None,
                          population=s["population"], runtime_binding=s.get("runtime_binding"), operator=s.get("operator"), owner=s.get("owner"),
                          founded=s.get("founded"), founder=s.get("founder"), purpose=s.get("role") or s.get("purpose"), character=s.get("character"),
-                         function=[sol_network.FUNC_RU.get(f, f) for f in (s.get("function") or [])] or None, docks=s.get("docks"), dock_sectors=s.get("dock_sectors"), arrivals_day=s.get("arrivals_day"),
+                         function=[sol_network.FUNC_RU.get(f, f) for f in (s.get("function") or [])] or None, docks=s.get("docks"), dock_sectors=s.get("dock_sectors"), dock_modules=s.get("dock_modules"), level=s.get("level", "A"), complex=s.get("complex"), terminals=s.get("terminals"), roles=s.get("roles"), passenger_terminals=s.get("passenger_terminals"), cargo_terminals=s.get("cargo_terminals"), service_berths=s.get("service_berths"), arrivals_day=s.get("arrivals_day"),
                          utilisation=s.get("utilisation"), repair=s.get("repair"), storage_t=s.get("storage_t"), security=s.get("security_base"),
                          medical_beds=s.get("medical_beds"), quarantine_beds=s.get("quarantine_beds"), legal=s.get("legal"),
                          jurisdiction=j.get("applicable_law_ru"), enforcement=j.get("enforcement"), known_to_player=s.get("known_to_player", "public")))
@@ -1582,6 +1644,10 @@ def compute():
     earth = earth_settlements(I)
     sol = sol_network.compute(I, earth, pax)
     sites += sol_sites(I, sol)
+    complexity = apply_map_budget(I, sites, sol_network.load_canon()["map_budget"])
+    complexity[0] = dict(system=0, name=I.E[0]["name"], tier="core", major_visible_hubs=sol["major_total"], budget=[24, 30],
+                         by_region=sol["major_by_region"], merged=0, local_facilities=sum(1 for s in sites if s["system"] == 0 and s.get("level") == "C"))
+    sol["map_complexity"] = [complexity[k] for k in sorted(complexity)]
     comms = comms_model(I, sites, dsos, g)
     csite = {r["site"]: r for r in comms["sites"]}
     eco = I.pol

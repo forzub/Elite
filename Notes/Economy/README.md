@@ -21,6 +21,7 @@
 - [FLEETS_AND_SHIPYARDS.md](FLEETS_AND_SHIPYARDS.md) — классы кораблей, военные роли, тактика, реестр кораблей и агрегатов, замена флота, верфи.
 - [PLAYER_ECONOMY.md](PLAYER_ECONOMY.md) — финансовое давление на игрока, стоянка и собственность, астероидная база игрока, внимание государства.
 - [BANKING.md](BANKING.md) — одна валюта, счета, кредиты, кредитный риск, залог корабля, дефолт.
+- [INDUSTRY_AND_RESCUE.md](INDUSTRY_AND_RESCUE.md) — блоки-союзы, школы кораблестроения, кто строит корабли / оборудование / станционные модули, каналы торговли, однотипность флотов союзников, спасательные службы.
 - [WORLD_SITES_AND_INFORMATION.md](WORLD_SITES_AND_INFORMATION.md) — пространственный слой: хабы и поселения, глубокий космос с мировыми линиями, фронтиры и «Жопа мира», общество и администраторы, право, маяки как сеть связи, WorldEvent → KnowledgeRecord, пассажиры, возраст флота, пираты, кладбища, карты.
 
 ## Команды
@@ -32,7 +33,8 @@ python lab.py                            # демография (эпохи), и
 python logistics.py                      # корабли, прыжок, стоимость рейса -> out/logistics.*
 python world_economy.py                  # баланс мира 3126 -> out/world_3126/
 python world_sites.py                    # хабы, фронтиры, право, связь, пассажиры -> out/world_3126/ + копии для рантайма
+python industry.py                       # промышленность и спасательные службы -> out/world_3126/
 python lore_md.py --write                # справочник Notes/Lore
 python lore_html.py                      # HTML-зеркало Notes/html (после любого изменения Notes/Lore)
-python world_economy.py --check && python world_sites.py --check && python logistics.py --check && python lore_md.py --check && python lore_html.py --check
+python world_economy.py --check && python world_sites.py --check && python industry.py --check && python logistics.py --check && python lore_md.py --check && python lore_html.py --check
 ```

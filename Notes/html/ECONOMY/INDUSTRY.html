@@ -1,0 +1,1609 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Промышленность: кто строит корабли, оборудование и модули — Elite Lore</title><link rel="stylesheet" href="../style.css"></head><body><header><a href="../index.html">Оглавление</a></header><main class="wrap"><article id="content">
+<h1 id="промышленность-кто-строит-корабли-оборудование-и-модули">Промышленность: кто строит корабли, оборудование и модули</h1>
+<!-- GENERATED:legend BEGIN -->
+<blockquote>
+<p><strong>Статусы строк:</strong> <code>CANON</code> — есть в заметках автора (generation ships/*, fate.md, history.md, каталог); <code>PROPOSAL</code> — добавлено или пересчитано Claude / результат модели; <code>UNKNOWN</code> — намеренно без ответа, даже для автора. <strong>Видимость:</strong> <code>PUBLIC</code> — мир 3126 это знает или может знать; <code>AUTHOR TRUTH</code> — скрытая правда автора.</p>
+<p>Блоки <code>GENERATED</code> пишет только <code>tools/colonization_lab/lore_md.py</code> из машинного канона; текст вне них — ручной и сохраняется.</p>
+</blockquote>
+<!-- GENERATED:legend END -->
+<!-- GENERATED:industry BEGIN -->
+<p>Источник: <code>tools/colonization_lab/industry.py</code> (<code>canon/industry.json</code> + экономика + сайты) → <code>out/world_3126/industry_3126.json</code>.</p>
+<h3 id="блоки-союзы">Блоки-союзы</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Блок</th>
+<th>Аналог</th>
+<th>Члены</th>
+<th>Почему вместе</th>
+<th>Школа кораблестроения</th>
+<th>Ядра от</th>
+<th>Производителей корпусов</th>
+<th>Доля главного</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Вне блоков</td>
+<td>закрытые и малые</td>
+<td>Новая Карма, Провидение, Святой Сион (на орбите), Третья Эллада, Зона «Филоморфоз»</td>
+<td>отказ от сети (Карма), концессия (Провидение), слишком малы (Сион, Третья Эллада), карантин (Гайя)</td>
+<td>своего нет</td>
+<td>—</td>
+<td>4</td>
+<td>0.991</td>
+</tr>
+<tr>
+<td>Пакт Цитадели</td>
+<td>военная олигархия</td>
+<td>Цитадель, Красный Форпост</td>
+<td>силовые олигархии, свои (Цитадель) и краденые (Форпост) ядра, вражда с Когниумом</td>
+<td>тяжёлые военные</td>
+<td>Цитадель</td>
+<td>2</td>
+<td>0.523</td>
+</tr>
+<tr>
+<td>Технократический пул Когниума</td>
+<td>Запад / США</td>
+<td>Новый Шанхай, Шахта Альфа, Вторая Эллада, Свободная Карма</td>
+<td>ядра по лицензии Управления Маяков, корпоративные и технократические режимы, общие враги (Цитадель, Новая Карма, Новая Индия у Второй Эллады)</td>
+<td>дорогие модульные</td>
+<td>Новый Шанхай</td>
+<td>2</td>
+<td>0.887</td>
+</tr>
+<tr>
+<td>Вольные пояса</td>
+<td>кланы и чёрный рынок</td>
+<td>Пояс Раздора / Вольные астероиды, Свободные поселения</td>
+<td>клановые договоры, краденые ядра, рынок без вопросов; враги Гармонии и Новой Европы</td>
+<td>выдолбленные астероиды и переделки</td>
+<td>—</td>
+<td>2</td>
+<td>0.75</td>
+</tr>
+<tr>
+<td>Небесный пакт</td>
+<td>СССР / Китай — плановый блок</td>
+<td>Цветущая Гармония, Тяньхэ (Небесная Река), Небесная Твердыня</td>
+<td>общая культура основателей (chinese_state), партийно-советские режимы, государственные концерны, единые стандарты</td>
+<td>простые однокорпусные</td>
+<td>Цветущая Гармония</td>
+<td>2</td>
+<td>0.744</td>
+</tr>
+<tr>
+<td>Лига Лаланд</td>
+<td>Европа</td>
+<td>Новая Эллада / Агора, Новая Европа, Сельта-Верде</td>
+<td>нейтральная торговля Агоры, парламентские и акционерные режимы, право и стандарты вместо флота</td>
+<td>модульные гражданские, много фирм</td>
+<td>Новый Шанхай</td>
+<td>3</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>Сол</td>
+<td>метрополия-исполин</td>
+<td>Солнечная Администрация (Sol Authority)</td>
+<td>65 % выпуска человечества; в сети с 3112; массовый конвейер внутрисистемного флота и модулей; ядра покупает по лицензии Когниума (свои ядра — UNKNOWN у автора)</td>
+<td>массовый конвейер</td>
+<td>Новый Шанхай</td>
+<td>1</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>Южный круг</td>
+<td>неприсоединившиеся / Глобальный Юг</td>
+<td>Новая Индия, Новая Маланд, Новая Мекка</td>
+<td>крупные рынки и сборочные мощности; собственная математика ядер Мекки — источник ядер вне стандарта Когниума</td>
+<td>сборка из комплектов по лицензии</td>
+<td>Новая Мекка</td>
+<td>3</td>
+<td>0.414</td>
+</tr>
+</tbody>
+</table></div>
+<p>Союзники летают на однотипных кораблях немногих производителей (Небесный пакт); Лига Лаланд покупает у многих — её флот пёстрый.</p>
+<h3 id="школы">Школы</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Школа</th>
+<th>Что это</th>
+<th>Цена ×</th>
+<th>Ресурс ×</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>тяжёлые военные</td>
+<td>бронированные корпуса, военные стандарты, гражданские — по остаточному принципу</td>
+<td>1.4</td>
+<td>1.2</td>
+</tr>
+<tr>
+<td>выдолбленные астероиды и переделки</td>
+<td>танкеры, склады и жильё в выдолбленных астероидах; корабли — переделки б/у и доноров</td>
+<td>0.55</td>
+<td>0.7</td>
+</tr>
+<tr>
+<td>сборка из комплектов по лицензии</td>
+<td>корпуса и модули свои, ядра и электроника — по лицензии или из Мекки; крупные сборочные заводы</td>
+<td>0.9</td>
+<td>0.9</td>
+</tr>
+<tr>
+<td>массовый конвейер</td>
+<td>огромные серии внутрисистемных кораблей и станционных модулей; прыжковые — по лицензии</td>
+<td>0.85</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>модульные гражданские, много фирм</td>
+<td>общие стандарты интерфейсов, десятки фирм, пёстрый флот</td>
+<td>1.05</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>дорогие модульные</td>
+<td>мало семейств корпусов, много модулей C20/P20 и сменных секций; дорого, высокое качество, долгий ресурс</td>
+<td>1.25</td>
+<td>1.15</td>
+</tr>
+<tr>
+<td>своего нет</td>
+<td>покупают у соседей или не покупают вовсе</td>
+<td>1.0</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>простые однокорпусные</td>
+<td>государственные стандартные корпуса, мало типов, крупные серии, ремонт где угодно в блоке; дёшево, тяжелее</td>
+<td>0.8</td>
+<td>1.0</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="каналы-между-блоками">Каналы между блоками</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Покупатель → продавец</th>
+<th>Канал</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>autarkies → citadel_compact</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>autarkies → cognium_pool</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>autarkies → free_belts</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>autarkies → heavenly_pact</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>autarkies → lalande_league</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>autarkies → sol</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>autarkies → southern_circle</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>citadel_compact → autarkies</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>citadel_compact → cognium_pool</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>citadel_compact → free_belts</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>citadel_compact → heavenly_pact</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>citadel_compact → lalande_league</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>citadel_compact → sol</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>citadel_compact → southern_circle</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>cognium_pool → autarkies</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>cognium_pool → citadel_compact</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>cognium_pool → free_belts</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>cognium_pool → heavenly_pact</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>cognium_pool → lalande_league</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>cognium_pool → sol</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>cognium_pool → southern_circle</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>free_belts → autarkies</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>free_belts → citadel_compact</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>free_belts → cognium_pool</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>free_belts → heavenly_pact</td>
+<td>чёрный рынок / реэкспорт</td>
+</tr>
+<tr>
+<td>free_belts → lalande_league</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>free_belts → sol</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>free_belts → southern_circle</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>heavenly_pact → autarkies</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>heavenly_pact → citadel_compact</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>heavenly_pact → cognium_pool</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>heavenly_pact → free_belts</td>
+<td>чёрный рынок / реэкспорт</td>
+</tr>
+<tr>
+<td>heavenly_pact → lalande_league</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>heavenly_pact → sol</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>heavenly_pact → southern_circle</td>
+<td>чёрный рынок / реэкспорт</td>
+</tr>
+<tr>
+<td>lalande_league → autarkies</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>lalande_league → citadel_compact</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>lalande_league → cognium_pool</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>lalande_league → free_belts</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>lalande_league → heavenly_pact</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>lalande_league → sol</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>lalande_league → southern_circle</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>sol → autarkies</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>sol → citadel_compact</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>sol → cognium_pool</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>sol → free_belts</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>sol → heavenly_pact</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>sol → lalande_league</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>sol → southern_circle</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>southern_circle → autarkies</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>southern_circle → citadel_compact</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>southern_circle → cognium_pool</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>southern_circle → free_belts</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>southern_circle → heavenly_pact</td>
+<td>чёрный рынок / реэкспорт</td>
+</tr>
+<tr>
+<td>southern_circle → lalande_league</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>southern_circle → sol</td>
+<td>по лицензии</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="кто-что-умеет-корабли">Кто что умеет (корабли)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Полития</th>
+<th>Роль</th>
+<th>Корпус</th>
+<th>Ядро</th>
+<th>Реактор</th>
+<th>Двигатель</th>
+<th>Авионика</th>
+<th>Жизнеобесп.</th>
+<th>Оружие</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Шахта Альфа</td>
+<td>делает узлы и запчасти</td>
+<td>детали</td>
+<td>покупка</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+</tr>
+<tr>
+<td>Свободная Карма</td>
+<td>делает узлы и запчасти</td>
+<td>детали</td>
+<td>покупка</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+</tr>
+<tr>
+<td>Новая Карма</td>
+<td>строит только внутрисистемный флот (отказ от сети)</td>
+<td>сборка</td>
+<td>покупка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+</tr>
+<tr>
+<td>Цветущая Гармония</td>
+<td>строит корабли целиком</td>
+<td>концерн</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Пояс Раздора / Вольные астероиды</td>
+<td>делает узлы и запчасти</td>
+<td>концерн</td>
+<td>детали</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+</tr>
+<tr>
+<td>Новая Европа</td>
+<td>делает узлы и запчасти</td>
+<td>детали</td>
+<td>покупка</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>концерн</td>
+<td>детали</td>
+</tr>
+<tr>
+<td>Свободные поселения</td>
+<td>делает узлы и запчасти</td>
+<td>сборка</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+</tr>
+<tr>
+<td>Зона «Филоморфоз»</td>
+<td>покупает корабли</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+</tr>
+<tr>
+<td>Тяньхэ (Небесная Река)</td>
+<td>строит корабли целиком</td>
+<td>сборка</td>
+<td>покупка</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>сборка</td>
+</tr>
+<tr>
+<td>Провидение</td>
+<td>покупает корабли</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>детали</td>
+<td>покупка</td>
+<td>покупка</td>
+</tr>
+<tr>
+<td>Третья Эллада</td>
+<td>покупает корабли</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+</tr>
+<tr>
+<td>Вторая Эллада</td>
+<td>строит корабли целиком</td>
+<td>концерн</td>
+<td>покупка</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>сборка</td>
+<td>детали</td>
+<td>детали</td>
+</tr>
+<tr>
+<td>Новая Индия</td>
+<td>строит корабли целиком</td>
+<td>концерн</td>
+<td>покупка</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Небесная Твердыня</td>
+<td>делает узлы и запчасти</td>
+<td>детали</td>
+<td>покупка</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Новая Маланд</td>
+<td>строит корабли целиком</td>
+<td>сборка</td>
+<td>покупка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>сборка</td>
+</tr>
+<tr>
+<td>Сельта-Верде</td>
+<td>делает узлы и запчасти</td>
+<td>детали</td>
+<td>покупка</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+</tr>
+<tr>
+<td>Новая Эллада / Агора</td>
+<td>делает узлы и запчасти</td>
+<td>детали</td>
+<td>покупка</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+</tr>
+<tr>
+<td>Новая Мекка</td>
+<td>строит корабли целиком</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Святой Сион (на орбите)</td>
+<td>покупает корабли</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+</tr>
+<tr>
+<td>Красный Форпост</td>
+<td>делает узлы и запчасти</td>
+<td>сборка</td>
+<td>детали</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Солнечная Администрация (Sol Authority)</td>
+<td>строит корабли целиком</td>
+<td>концерн</td>
+<td>покупка</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Новый Шанхай</td>
+<td>строит корабли целиком</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Цитадель</td>
+<td>строит корабли целиком</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>сборка</td>
+<td>концерн</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="горное-газовое-оборудование-и-станционные-модули">Горное, газовое оборудование и станционные модули</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Полития</th>
+<th>Бур. головки</th>
+<th>Обогатители</th>
+<th>Масс-драйверы</th>
+<th>Газ. платформы</th>
+<th>Сепараторы He-3</th>
+<th>Секции</th>
+<th>Кольца</th>
+<th>Доки</th>
+<th>Агро/ЖО</th>
+<th>Каюты</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Шахта Альфа</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+</tr>
+<tr>
+<td>Свободная Карма</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+</tr>
+<tr>
+<td>Новая Карма</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+</tr>
+<tr>
+<td>Цветущая Гармония</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Пояс Раздора / Вольные астероиды</td>
+<td>концерн</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+</tr>
+<tr>
+<td>Новая Европа</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>концерн</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Свободные поселения</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>сборка</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+</tr>
+<tr>
+<td>Зона «Филоморфоз»</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+</tr>
+<tr>
+<td>Тяньхэ (Небесная Река)</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Провидение</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>детали</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+</tr>
+<tr>
+<td>Третья Эллада</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+</tr>
+<tr>
+<td>Вторая Эллада</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>сборка</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+</tr>
+<tr>
+<td>Новая Индия</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Небесная Твердыня</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+</tr>
+<tr>
+<td>Новая Маланд</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>сборка</td>
+</tr>
+<tr>
+<td>Сельта-Верде</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+</tr>
+<tr>
+<td>Новая Эллада / Агора</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>детали</td>
+<td>детали</td>
+<td>детали</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Новая Мекка</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Святой Сион (на орбите)</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+<td>покупка</td>
+</tr>
+<tr>
+<td>Красный Форпост</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>сборка</td>
+</tr>
+<tr>
+<td>Солнечная Администрация (Sol Authority)</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Новый Шанхай</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+<td>концерн</td>
+</tr>
+<tr>
+<td>Цитадель</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>концерн</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+<td>сборка</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="концерны">Концерны</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Производитель</th>
+<th>Полития</th>
+<th>Тип</th>
+<th>Узлы</th>
+<th>Заметка</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>Новый Шанхай</td>
+<td>state_secret_fab</td>
+<td>jump_core</td>
+<td>единственный эталонный производитель ядер; переотжиг демпферов лотосита</td>
+</tr>
+<tr>
+<td>Верфи Гипериона</td>
+<td>Новый Шанхай</td>
+<td>state_concern</td>
+<td>hull_structure, avionics, dock_modules</td>
+<td>курьеры, разведчики, корабли Управления Маяков</td>
+</tr>
+<tr>
+<td>Синьчжи Электроникс</td>
+<td>Новый Шанхай</td>
+<td>corporation</td>
+<td>avionics</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Cobretty Corporation</td>
+<td>Вторая Эллада</td>
+<td>corporation</td>
+<td>hull_structure, reactor, main_drive, rcs, cargo_modules</td>
+<td>Cobrett-I (рантайм: kb.ship.cobrett-i.*, «Cobretty Corporation»); ядра — по лицензии Когниума; модули C20 / P20</td>
+</tr>
+<tr>
+<td>Kern Heavy Mining</td>
+<td>Шахта Альфа</td>
+<td>corporation</td>
+<td>drill_heads, ore_processors, mass_drivers, tug_drives, shielding</td>
+<td>горное оборудование и рудные буксиры; танкеры и склады в выдолбленных астероидах</td>
+</tr>
+<tr>
+<td>Верфи Гармонии</td>
+<td>Цветущая Гармония</td>
+<td>state_concern</td>
+<td>hull_structure, rotating_rings, dock_modules, weapons</td>
+<td>крупнейший концерн Пакта; стандартные корпуса «Хэ» для всего блока; сборка ядер из запечатанных блоков Когниума</td>
+</tr>
+<tr>
+<td>Тяньхэ Тяжмаш</td>
+<td>Тяньхэ (Небесная Река)</td>
+<td>state_concern</td>
+<td>reactor, main_drive, thermal, reactor_modules, radiator_arrays, scoop_platforms</td>
+<td>реакторы и двигатели для всех верфей Пакта</td>
+</tr>
+<tr>
+<td>Бронезавод Твердыни</td>
+<td>Небесная Твердыня</td>
+<td>state_plant</td>
+<td>weapons, shielding</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Agora Modular</td>
+<td>Новая Эллада / Агора</td>
+<td>consortium</td>
+<td>pressure_segments, habitat_cabins, cargo_modules, he3_separators</td>
+<td>станционные секции по открытому стандарту; десятки малых фирм вокруг</td>
+</tr>
+<tr>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>Новая Европа</td>
+<td>consortium</td>
+<td>agro_life_modules, life_support, habitat_cabins</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Бхарат Ассембли</td>
+<td>Новая Индия</td>
+<td>corporation</td>
+<td>hull_structure, cargo_modules, pressure_segments, cryo_tanks</td>
+<td>крупнейшие сборочные заводы Южного круга; корпуса по лицензии, ядра — Мекка или Когниум</td>
+</tr>
+<tr>
+<td>Дар аль-Мизан</td>
+<td>Новая Мекка</td>
+<td>state_concern</td>
+<td>jump_core, avionics</td>
+<td>ядра собственной математики (вне стандарта Когниума); экспорт в Южный круг</td>
+</tr>
+<tr>
+<td>Uhuru Bio-Systems</td>
+<td>Новая Маланд</td>
+<td>cooperative</td>
+<td>life_support, agro_life_modules</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Арсенал «Бастион»</td>
+<td>Цитадель</td>
+<td>state_concern</td>
+<td>jump_core, hull_structure, weapons, avionics</td>
+<td>военные ядра своей разработки, только для Пакта Цитадели; гражданское — по остаточному принципу</td>
+</tr>
+<tr>
+<td>Каменные доки Раздора</td>
+<td>Пояс Раздора / Вольные астероиды</td>
+<td>clan_cooperative</td>
+<td>hull_structure, cryo_tanks, pressure_segments, shielding</td>
+<td>выдолбленные астероиды: танкеры, склады, жильё, «камни-ловушки»; корабли — переделки</td>
+</tr>
+<tr>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>Солнечная Администрация (Sol Authority)</td>
+<td>corporation</td>
+<td>hull_structure, main_drive, reactor, cargo_modules</td>
+<td>OCS-4 «Ласточка» и подъёмники (рантайм: ofu.*)</td>
+</tr>
+<tr>
+<td>Лунно-Марсианские верфи</td>
+<td>Солнечная Администрация (Sol Authority)</td>
+<td>state_concern</td>
+<td>hull_structure, rotating_rings, dock_modules, pressure_segments, radiator_arrays</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Terra Habitat</td>
+<td>Солнечная Администрация (Sol Authority)</td>
+<td>corporation</td>
+<td>habitat_cabins, agro_life_modules, life_support</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Sol Reactor Works</td>
+<td>Солнечная Администрация (Sol Authority)</td>
+<td>corporation</td>
+<td>reactor, reactor_modules, thermal, he3_separators</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="откуда-берут-корпус-и-ядро">Откуда берут (корпус и ядро)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Полития</th>
+<th>Корпус: источник</th>
+<th>Канал</th>
+<th>Ядро: источник</th>
+<th>Канал</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Шахта Альфа</td>
+<td>Новый Шанхай</td>
+<td>открыто (свой блок)</td>
+<td>Новый Шанхай</td>
+<td>открыто (свой блок)</td>
+</tr>
+<tr>
+<td>Свободная Карма</td>
+<td>Новый Шанхай</td>
+<td>открыто (свой блок)</td>
+<td>Новый Шанхай</td>
+<td>открыто (свой блок)</td>
+</tr>
+<tr>
+<td>Новая Карма</td>
+<td>Новая Карма</td>
+<td>своё</td>
+<td>—</td>
+<td>нет</td>
+</tr>
+<tr>
+<td>Цветущая Гармония</td>
+<td>Цветущая Гармония</td>
+<td>своё</td>
+<td>Цветущая Гармония</td>
+<td>своё</td>
+</tr>
+<tr>
+<td>Пояс Раздора / Вольные астероиды</td>
+<td>Пояс Раздора / Вольные астероиды</td>
+<td>своё</td>
+<td>Новый Шанхай</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>Новая Европа</td>
+<td>Солнечная Администрация (Sol Authority) 0.5 / Цветущая Гармония 0.3 / Новый Шанхай 0.2</td>
+<td>по лицензии</td>
+<td>Новый Шанхай</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>Свободные поселения</td>
+<td>Свободные поселения</td>
+<td>своё</td>
+<td>Новый Шанхай</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>Зона «Филоморфоз»</td>
+<td>Солнечная Администрация (Sol Authority) 0.5 / Цветущая Гармония 0.3 / Новый Шанхай 0.2</td>
+<td>ограничено</td>
+<td>Новый Шанхай</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>Тяньхэ (Небесная Река)</td>
+<td>Тяньхэ (Небесная Река)</td>
+<td>своё</td>
+<td>Новый Шанхай</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>Провидение</td>
+<td>Солнечная Администрация (Sol Authority) 0.5 / Цветущая Гармония 0.3 / Новый Шанхай 0.2</td>
+<td>ограничено</td>
+<td>Новый Шанхай</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>Третья Эллада</td>
+<td>Солнечная Администрация (Sol Authority) 0.5 / Цветущая Гармония 0.3 / Новый Шанхай 0.2</td>
+<td>ограничено</td>
+<td>Новый Шанхай</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>Вторая Эллада</td>
+<td>Вторая Эллада</td>
+<td>своё</td>
+<td>Новый Шанхай</td>
+<td>открыто (свой блок)</td>
+</tr>
+<tr>
+<td>Новая Индия</td>
+<td>Новая Индия</td>
+<td>своё</td>
+<td>Новая Мекка</td>
+<td>открыто (свой блок)</td>
+</tr>
+<tr>
+<td>Небесная Твердыня</td>
+<td>Цветущая Гармония</td>
+<td>открыто (свой блок)</td>
+<td>Новый Шанхай</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>Новая Маланд</td>
+<td>Новая Маланд</td>
+<td>своё</td>
+<td>Новая Мекка</td>
+<td>открыто (свой блок)</td>
+</tr>
+<tr>
+<td>Сельта-Верде</td>
+<td>Солнечная Администрация (Sol Authority) 0.5 / Цветущая Гармония 0.3 / Новый Шанхай 0.2</td>
+<td>по лицензии</td>
+<td>Новый Шанхай</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>Новая Эллада / Агора</td>
+<td>Солнечная Администрация (Sol Authority) 0.5 / Цветущая Гармония 0.3 / Новый Шанхай 0.2</td>
+<td>по лицензии</td>
+<td>Новый Шанхай</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>Новая Мекка</td>
+<td>Новая Мекка</td>
+<td>своё</td>
+<td>Новая Мекка</td>
+<td>своё</td>
+</tr>
+<tr>
+<td>Святой Сион (на орбите)</td>
+<td>Солнечная Администрация (Sol Authority) 0.5 / Цветущая Гармония 0.3 / Новый Шанхай 0.2</td>
+<td>ограничено</td>
+<td>Новый Шанхай</td>
+<td>ограничено</td>
+</tr>
+<tr>
+<td>Красный Форпост</td>
+<td>Красный Форпост</td>
+<td>своё</td>
+<td>Цитадель</td>
+<td>открыто (свой блок)</td>
+</tr>
+<tr>
+<td>Солнечная Администрация (Sol Authority)</td>
+<td>Солнечная Администрация (Sol Authority)</td>
+<td>своё</td>
+<td>Новый Шанхай</td>
+<td>по лицензии</td>
+</tr>
+<tr>
+<td>Новый Шанхай</td>
+<td>Новый Шанхай</td>
+<td>своё</td>
+<td>Новый Шанхай</td>
+<td>своё</td>
+</tr>
+<tr>
+<td>Цитадель</td>
+<td>Цитадель</td>
+<td>своё</td>
+<td>Цитадель</td>
+<td>своё</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="где-производят-собирают-и-продают">Где производят, собирают и продают</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Место</th>
+<th>Производят</th>
+<th>Собирают</th>
+<th>Продают (импорт откуда)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Солнечная Администрация (Sol Authority): промышленный хаб 1</td>
+<td>Orbital Freight Union «Ural-Kourou»: hull_structure, main_drive, reactor, cargo_modules; Лунно-Марсианские верфи: hull_structure, rotating_rings, dock_modules, pressure_segments, radiator_arrays; Terra Habitat: habitat_cabins, agro_life_modules, life_support; Sol Reactor Works: reactor, reactor_modules, thermal, he3_separators</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Солнечная Администрация (Sol Authority): торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Новый Шанхай (по лицензии)</td>
+</tr>
+<tr>
+<td>Цитадель: промышленный хаб 1</td>
+<td>—</td>
+<td>reactor, main_drive, thermal, life_support, rcs, cargo_modules, drill_heads, mass_drivers, tug_drives, scoop_platforms, he3_separators, cryo_tanks, rotating_rings, dock_modules, reactor_modules, radiator_arrays, agro_life_modules, shielding, habitat_cabins</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Цитадель: военный хаб 1</td>
+<td>Арсенал «Бастион»: jump_core, hull_structure, weapons, avionics</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Цитадель: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Новая Эллада / Агора: промышленный хаб 1</td>
+<td>Agora Modular: pressure_segments, habitat_cabins, cargo_modules, he3_separators</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Новая Эллада / Агора: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Новая Европа (открыто (свой блок)), Солнечная Администрация (Sol Authority) (по лицензии), Новый Шанхай (по лицензии)</td>
+</tr>
+<tr>
+<td>Новая Мекка: промышленный хаб 1</td>
+<td>Дар аль-Мизан: jump_core, avionics</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Новая Мекка: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Новый Шанхай: промышленный хаб 1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»: jump_core; Верфи Гипериона: hull_structure, avionics, dock_modules; Синьчжи Электроникс: avionics</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Новый Шанхай: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Цветущая Гармония: промышленный хаб 1</td>
+<td>—</td>
+<td>jump_core</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Цветущая Гармония: орбитальный порт</td>
+<td>Верфи Гармонии: hull_structure, rotating_rings, dock_modules, weapons</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Цветущая Гармония: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Пояс Раздора / Вольные астероиды: промышленный хаб 1</td>
+<td>—</td>
+<td>reactor, main_drive, thermal, avionics, life_support, rcs, weapons, cargo_modules, ore_processors, mass_drivers, tug_drives, he3_separators, rotating_rings, dock_modules, reactor_modules, radiator_arrays, agro_life_modules, habitat_cabins</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Пояс Раздора / Вольные астероиды: горнодобывающий хаб 1</td>
+<td>Каменные доки Раздора: hull_structure, cryo_tanks, pressure_segments, shielding</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Пояс Раздора / Вольные астероиды: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Новый Шанхай (ограничено)</td>
+</tr>
+<tr>
+<td>Новая Европа: промышленный хаб 1</td>
+<td>Консорциум «Евро-Хабитат»: agro_life_modules, life_support, habitat_cabins</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Новая Европа: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Новая Эллада / Агора (открыто (свой блок)), Солнечная Администрация (Sol Authority) (по лицензии), Новый Шанхай (по лицензии)</td>
+</tr>
+<tr>
+<td>Свободные поселения: промышленный хаб 1</td>
+<td>—</td>
+<td>hull_structure, cryo_tanks, pressure_segments, shielding</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Свободные поселения: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Пояс Раздора / Вольные астероиды (открыто (свой блок)), Солнечная Администрация (Sol Authority) (ограничено), Новый Шанхай (ограничено)</td>
+</tr>
+<tr>
+<td>Зона «Филоморфоз»: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Солнечная Администрация (Sol Authority) (ограничено), Новый Шанхай (ограничено)</td>
+</tr>
+<tr>
+<td>Тяньхэ (Небесная Река): промышленный хаб 1</td>
+<td>Тяньхэ Тяжмаш: reactor, main_drive, thermal, reactor_modules, radiator_arrays, scoop_platforms</td>
+<td>hull_structure, avionics, weapons, drill_heads, he3_separators, rotating_rings, dock_modules, shielding</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Тяньхэ (Небесная Река): торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Новый Шанхай (по лицензии)</td>
+</tr>
+<tr>
+<td>Провидение: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Солнечная Администрация (Sol Authority) (ограничено), Новый Шанхай (ограничено)</td>
+</tr>
+<tr>
+<td>Вторая Эллада: промышленный хаб 1</td>
+<td>Cobretty Corporation: hull_structure, reactor, main_drive, rcs, cargo_modules</td>
+<td>avionics, he3_separators</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Вторая Эллада: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Новый Шанхай (открыто (свой блок))</td>
+</tr>
+<tr>
+<td>Новая Индия: промышленный хаб 1</td>
+<td>Бхарат Ассембли: hull_structure, cargo_modules, pressure_segments, cryo_tanks</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Новая Индия: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Новая Мекка (открыто (свой блок))</td>
+</tr>
+<tr>
+<td>Небесная Твердыня: промышленный хаб 1</td>
+<td>Бронезавод Твердыни: weapons, shielding</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Небесная Твердыня: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Цветущая Гармония (открыто (свой блок)), Новый Шанхай (по лицензии)</td>
+</tr>
+<tr>
+<td>Новая Маланд: промышленный хаб 1</td>
+<td>Uhuru Bio-Systems: life_support, agro_life_modules</td>
+<td>hull_structure, reactor, main_drive, thermal, avionics, rcs, weapons, cargo_modules, drill_heads, ore_processors, mass_drivers, tug_drives, scoop_platforms, he3_separators, cryo_tanks, pressure_segments, rotating_rings, dock_modules, reactor_modules, radiator_arrays, shielding, habitat_cabins</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Новая Маланд: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Новая Мекка (открыто (свой блок))</td>
+</tr>
+<tr>
+<td>Сельта-Верде: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Новая Европа (открыто (свой блок)), Новая Эллада / Агора (открыто (свой блок)), Солнечная Администрация (Sol Authority) (по лицензии), Новый Шанхай (по лицензии)</td>
+</tr>
+<tr>
+<td>Свободная Карма: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Новый Шанхай (открыто (свой блок))</td>
+</tr>
+<tr>
+<td>Новая Карма: промышленный хаб 1</td>
+<td>—</td>
+<td>hull_structure, reactor, main_drive, thermal, avionics, life_support, rcs, weapons, cargo_modules, drill_heads, ore_processors, mass_drivers, tug_drives, scoop_platforms, he3_separators, cryo_tanks, pressure_segments, rotating_rings, dock_modules, reactor_modules, radiator_arrays, agro_life_modules, shielding, habitat_cabins</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Новая Карма: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Шахта Альфа: горнодобывающий хаб 1</td>
+<td>Kern Heavy Mining: drill_heads, ore_processors, mass_drivers, tug_drives, shielding</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Шахта Альфа: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Новый Шанхай (открыто (свой блок))</td>
+</tr>
+<tr>
+<td>Третья Эллада: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Солнечная Администрация (Sol Authority) (ограничено), Новый Шанхай (ограничено)</td>
+</tr>
+<tr>
+<td>Святой Сион (на орбите): торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Солнечная Администрация (Sol Authority) (ограничено), Новый Шанхай (ограничено)</td>
+</tr>
+<tr>
+<td>Красный Форпост: промышленный хаб 1</td>
+<td>—</td>
+<td>hull_structure, reactor, main_drive, thermal, avionics, rcs, cargo_modules, drill_heads, ore_processors, mass_drivers, tug_drives, scoop_platforms, he3_separators, cryo_tanks, pressure_segments, rotating_rings, dock_modules, reactor_modules, radiator_arrays, shielding, habitat_cabins</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Красный Форпост: торговый хаб 1</td>
+<td>—</td>
+<td>—</td>
+<td>Цитадель (открыто (свой блок))</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="из-чего-состоит-крупные-узлы-и-кто-их-делает">Из чего состоит (крупные узлы и кто их делает)</h3>
+<p><strong>asteroid_mine_base:</strong> drill_heads 30 % (Kern Heavy Mining); ore_processors 25 % (Kern Heavy Mining); mass_drivers 15 % (Kern Heavy Mining); reactor_modules 12 % (Тяньхэ Тяжмаш, Sol Reactor Works); habitat_cabins 10 % (Agora Modular, Консорциум «Евро-Хабитат», Terra Habitat); shielding 8 % (Kern Heavy Mining, Каменные доки Раздора, Бронезавод Твердыни)</p>
+<p><strong>cobrett_i_n1:</strong> jump_core 24 % (Арсенал «Бастион», Фабрика ядер Управления Маяков «Нулевая точка», Дар аль-Мизан); hull_structure 21 % (Арсенал «Бастион», Верфи Гипериона, Cobretty Corporation, Каменные доки Раздора, Верфи Гармонии, Orbital Freight Union «Ural-Kourou», Лунно-Марсианские верфи, Бхарат Ассембли); reactor 18 % (Cobretty Corporation, Тяньхэ Тяжмаш, Orbital Freight Union «Ural-Kourou», Sol Reactor Works); main_drive 15 % (Cobretty Corporation, Тяньхэ Тяжмаш, Orbital Freight Union «Ural-Kourou»); avionics 8 % (Арсенал «Бастион», Верфи Гипериона, Синьчжи Электроникс, Дар аль-Мизан); thermal 6 % (Тяньхэ Тяжмаш, Sol Reactor Works); weapons 5 % (Арсенал «Бастион», Верфи Гармонии, Бронезавод Твердыни); life_support 3 % (Консорциум «Евро-Хабитат», Terra Habitat, Uhuru Bio-Systems)</p>
+<p><strong>gas_platform:</strong> scoop_platforms 45 % (Тяньхэ Тяжмаш); he3_separators 30 % (Agora Modular, Sol Reactor Works); cryo_tanks 15 % (Каменные доки Раздора, Бхарат Ассембли); reactor_modules 10 % (Тяньхэ Тяжмаш, Sol Reactor Works)</p>
+<p><strong>hex_dock:</strong> dock_modules 55 % (Верфи Гипериона, Верфи Гармонии, Лунно-Марсианские верфи); pressure_segments 15 % (Каменные доки Раздора, Agora Modular, Лунно-Марсианские верфи, Бхарат Ассембли); reactor_modules 12 % (Тяньхэ Тяжмаш, Sol Reactor Works); avionics 10 % (Арсенал «Бастион», Верфи Гипериона, Синьчжи Электроникс, Дар аль-Мизан); radiator_arrays 8 % (Тяньхэ Тяжмаш, Лунно-Марсианские верфи)</p>
+<p><strong>jump_train:</strong> jump_core 39 % (Арсенал «Бастион», Фабрика ядер Управления Маяков «Нулевая точка», Дар аль-Мизан); hull_structure 28 % (Арсенал «Бастион», Верфи Гипериона, Cobretty Corporation, Каменные доки Раздора, Верфи Гармонии, Orbital Freight Union «Ural-Kourou», Лунно-Марсианские верфи, Бхарат Ассембли); reactor 14 % (Cobretty Corporation, Тяньхэ Тяжмаш, Orbital Freight Union «Ural-Kourou», Sol Reactor Works); main_drive 11 % (Cobretty Corporation, Тяньхэ Тяжмаш, Orbital Freight Union «Ural-Kourou»); thermal 5 % (Тяньхэ Тяжмаш, Sol Reactor Works); avionics 2 % (Арсенал «Бастион», Верфи Гипериона, Синьчжи Электроникс, Дар аль-Мизан); life_support 1 % (Консорциум «Евро-Хабитат», Terra Habitat, Uhuru Bio-Systems)</p>
+<p><strong>line_combatant:</strong> weapons 27 % (Арсенал «Бастион», Верфи Гармонии, Бронезавод Твердыни); avionics 17 % (Арсенал «Бастион», Верфи Гипериона, Синьчжи Электроникс, Дар аль-Мизан); hull_structure 16 % (Арсенал «Бастион», Верфи Гипериона, Cobretty Corporation, Каменные доки Раздора, Верфи Гармонии, Orbital Freight Union «Ural-Kourou», Лунно-Марсианские верфи, Бхарат Ассембли); jump_core 13 % (Арсенал «Бастион», Фабрика ядер Управления Маяков «Нулевая точка», Дар аль-Мизан); reactor 11 % (Cobretty Corporation, Тяньхэ Тяжмаш, Orbital Freight Union «Ural-Kourou», Sol Reactor Works); main_drive 8 % (Cobretty Corporation, Тяньхэ Тяжмаш, Orbital Freight Union «Ural-Kourou»); thermal 5 % (Тяньхэ Тяжмаш, Sol Reactor Works); life_support 2 % (Консорциум «Евро-Хабитат», Terra Habitat, Uhuru Bio-Systems)</p>
+<p><strong>medium_freighter:</strong> jump_core 31 % (Арсенал «Бастион», Фабрика ядер Управления Маяков «Нулевая точка», Дар аль-Мизан); hull_structure 28 % (Арсенал «Бастион», Верфи Гипериона, Cobretty Corporation, Каменные доки Раздора, Верфи Гармонии, Orbital Freight Union «Ural-Kourou», Лунно-Марсианские верфи, Бхарат Ассембли); reactor 17 % (Cobretty Corporation, Тяньхэ Тяжмаш, Orbital Freight Union «Ural-Kourou», Sol Reactor Works); main_drive 14 % (Cobretty Corporation, Тяньхэ Тяжмаш, Orbital Freight Union «Ural-Kourou»); thermal 5 % (Тяньхэ Тяжмаш, Sol Reactor Works); avionics 4 % (Арсенал «Бастион», Верфи Гипериона, Синьчжи Электроникс, Дар аль-Мизан); life_support 1 % (Консорциум «Евро-Хабитат», Terra Habitat, Uhuru Bio-Systems)</p>
+<p><strong>ocs4_lastochka:</strong> hull_structure 41 % (Арсенал «Бастион», Верфи Гипериона, Cobretty Corporation, Каменные доки Раздора, Верфи Гармонии, Orbital Freight Union «Ural-Kourou», Лунно-Марсианские верфи, Бхарат Ассембли); reactor 20 % (Cobretty Corporation, Тяньхэ Тяжмаш, Orbital Freight Union «Ural-Kourou», Sol Reactor Works); main_drive 17 % (Cobretty Corporation, Тяньхэ Тяжмаш, Orbital Freight Union «Ural-Kourou»); thermal 11 % (Тяньхэ Тяжмаш, Sol Reactor Works); avionics 7 % (Арсенал «Бастион», Верфи Гипериона, Синьчжи Электроникс, Дар аль-Мизан); life_support 4 % (Консорциум «Евро-Хабитат», Terra Habitat, Uhuru Bio-Systems)</p>
+<p><strong>station_ring_section:</strong> rotating_rings 35 % (Верфи Гармонии, Лунно-Марсианские верфи); pressure_segments 20 % (Каменные доки Раздора, Agora Modular, Лунно-Марсианские верфи, Бхарат Ассембли); habitat_cabins 15 % (Agora Modular, Консорциум «Евро-Хабитат», Terra Habitat); agro_life_modules 12 % (Консорциум «Евро-Хабитат», Terra Habitat, Uhuru Bio-Systems); shielding 10 % (Kern Heavy Mining, Каменные доки Раздора, Бронезавод Твердыни); radiator_arrays 8 % (Тяньхэ Тяжмаш, Лунно-Марсианские верфи)</p>
+<h3 id="проверки">Проверки</h3>
+<ul>
+<li>OK <code>every_polity_in_exactly_one_bloc</code> — missing [], dup []</li>
+<li>OK <code>core_makers_match_jump_lineage</code> — ['lalande_mecca', 'tau_ceti_cognium', 'wolf359_citadel'] == ['lalande_mecca', 'tau_ceti_cognium', 'wolf359_citadel']</li>
+<li>OK <code>every_block_has_a_source</code> — ok</li>
+<li>OK <code>citadel_cores_not_exported</code> — ok</li>
+<li>OK <code>allied_fleets_uniform</code> — Pact main hull maker 0.744 (uniform), League 0.5 (many vendors)</li>
+<li>OK <code>production_sites_exist</code> — 43 sites</li>
+<li>OK <code>rescue_covers_every_site</code> — 503 sites</li>
+</ul>
+<!-- GENERATED:industry END -->
+</article><footer class="path">Источник: <code>Notes/Lore/ECONOMY/INDUSTRY.md</code></footer></main></body></html>

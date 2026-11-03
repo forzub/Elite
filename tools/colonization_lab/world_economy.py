@@ -71,6 +71,7 @@ class Inputs:
         self.C = lab.load("commodities.json")
         self.SE = lg.load_ship_economics()
         self.PE = lab.load("polity_economy.json")
+        self.IND = lab.load("industry.json")
         self.E = endow.load_endowment()
         self.cats = [c["id"] for c in self.C["commodities"]]
         self.cat = {c["id"]: c for c in self.C["commodities"]}
@@ -1135,7 +1136,8 @@ def compute_once(I, M):
 
 def shipyards(M, census):
     """New-build demand (dry tonnes / year) vs yard capacity; ships of polities without yards come from
-    their largest trade partner with yards; jump drives from the core makers."""
+    their own bloc (canon/industry.json), else the largest trade partner with yards, else the nearest
+    polity with yards; jump drives from the core makers."""
     I = M.I
     SE = I.SE["ship_classes"]
     by = {}
@@ -1151,11 +1153,20 @@ def shipyards(M, census):
     for k in sorted(by):
         if by[k]["has_yard_tech"]:
             continue
+        # own bloc first (canon/industry.json), then the main trade partner, then the nearest polity with yards
+        bloc = next((b["members"] for bid, b in I.IND["blocs"].items() if k in b["members"] and bid != "autarkies"), [])
+        ok_src = {x for x in by if by[x]["has_yard_tech"] and not M.pols[x]["refuses"]}
+        mates = sorted((x for x in bloc if x != k and x in ok_src), key=lambda x: (-M.pols[x]["gdp"], x))
         partners = {}
         for f in M.flows:
-            if f["buyer"] == k and by.get(f["seller"], {}).get("has_yard_tech"):
+            if f["buyer"] == k and f["seller"] in ok_src:
                 partners[f["seller"]] = partners.get(f["seller"], 0.0) + f["value_cr"]
-        src = sorted(partners.items(), key=lambda kv: (-kv[1], kv[0]))[0][0] if partners else SOL
+        if mates:
+            src = mates[0]
+        elif partners:
+            src = sorted(partners.items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
+        else:
+            src = sorted(ok_src, key=lambda x: (lab_dist(I.E, M.pols[k]["system"], M.pols[x]["system"]), x))[0]
         imports[k] = src
         by[src]["civil_dry_t_y"] += by[k]["civil_dry_t_y"]
         by[src]["military_dry_t_y"] += by[k]["military_dry_t_y"]

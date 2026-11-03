@@ -1,0 +1,3814 @@
+{
+ "note": "SAR-катера — половина задачи «SAR и таможня» обороны; пожарные и аварийные команды — по населению станций и поверхности; поиск — межзвёздный, у маячных систем",
+ "polities": {
+  "cyg61_kern": {
+   "fire_damage_personnel": 340325,
+   "hazmat_teams": 4,
+   "hospital_ships": 2.799,
+   "law_family": "corporate",
+   "organisation": "корпоративная служба по контрактам",
+   "private_salvage_share": 0.2,
+   "rescue_tugs": 1.692,
+   "sar_cutters": 43.25,
+   "search_ships": 2.5,
+   "status": "PROPOSAL"
+  },
+  "delta_pav_freekarma": {
+   "fire_damage_personnel": 495856,
+   "hazmat_teams": 4,
+   "hospital_ships": 4.001,
+   "law_family": "parliamentary_civil",
+   "organisation": "государственная + добровольцы",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 1.736,
+   "sar_cutters": 61.3,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "delta_pav_karma": {
+   "fire_damage_personnel": 1824179,
+   "hazmat_teams": 4,
+   "hospital_ships": 14.807,
+   "law_family": "theocratic",
+   "organisation": "государственная + религиозные братства",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 1.0,
+   "sar_cutters": 222.1,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "eps_eri_harmony": {
+   "fire_damage_personnel": 3412552,
+   "hazmat_teams": 4,
+   "hospital_ships": 27.423,
+   "law_family": "confucian_administrative",
+   "organisation": "государственная служба + народные дружины",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 13.451,
+   "sar_cutters": 421.15,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "eps_eri_strife": {
+   "fire_damage_personnel": 866341,
+   "hazmat_teams": 4,
+   "hospital_ships": 6.961,
+   "law_family": "clan_law",
+   "organisation": "клановые артели (спасение за долю груза)",
+   "private_salvage_share": 0.5,
+   "rescue_tugs": 3.452,
+   "sar_cutters": 106.95,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "gj581_europa": {
+   "fire_damage_personnel": 672670,
+   "hazmat_teams": 4,
+   "hospital_ships": 5.439,
+   "law_family": "parliamentary_civil",
+   "organisation": "государственная + добровольцы",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 2.367,
+   "sar_cutters": 83.3,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "gj581_freeclans": {
+   "fire_damage_personnel": 499073,
+   "hazmat_teams": 4,
+   "hospital_ships": 4.012,
+   "law_family": "clan_law",
+   "organisation": "клановые артели (спасение за долю груза)",
+   "private_salvage_share": 0.5,
+   "rescue_tugs": 1.851,
+   "sar_cutters": 61.55,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "gj832_gaia_zone": {
+   "fire_damage_personnel": 2,
+   "hazmat_teams": 0,
+   "hospital_ships": 0.0,
+   "law_family": "none",
+   "organisation": "никто; частники за плату",
+   "private_salvage_share": 1.0,
+   "rescue_tugs": 1.0,
+   "sar_cutters": 0.0,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "gj832_tianhe": {
+   "fire_damage_personnel": 2636996,
+   "hazmat_teams": 4,
+   "hospital_ships": 21.178,
+   "law_family": "party_administrative",
+   "organisation": "государственная служба",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 10.249,
+   "sar_cutters": 325.15,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "gj876_next": {
+   "fire_damage_personnel": 100,
+   "hazmat_teams": 0,
+   "hospital_ships": 0.002,
+   "law_family": "machine_oracle",
+   "organisation": "концессионер",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 1.0,
+   "sar_cutters": 0.0,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "hd114783_hellas3": {
+   "fire_damage_personnel": 13,
+   "hazmat_teams": 0,
+   "hospital_ships": 0.0,
+   "law_family": "city_state_arbitration",
+   "organisation": "городские службы + частные спасатели за долю",
+   "private_salvage_share": 0.25,
+   "rescue_tugs": 1.0,
+   "sar_cutters": 0.0,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "hd20794_hellas2": {
+   "fire_damage_personnel": 618450,
+   "hazmat_teams": 4,
+   "hospital_ships": 5.0,
+   "law_family": "parliamentary_civil",
+   "organisation": "государственная + добровольцы",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 2.201,
+   "sar_cutters": 76.6,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "hd20794_newindia": {
+   "fire_damage_personnel": 2252250,
+   "hazmat_teams": 4,
+   "hospital_ships": 18.061,
+   "law_family": "parliamentary_civil",
+   "organisation": "государственная + добровольцы",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 8.914,
+   "sar_cutters": 277.45,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "hd40307_firmament": {
+   "fire_damage_personnel": 490898,
+   "hazmat_teams": 4,
+   "hospital_ships": 3.966,
+   "law_family": "party_administrative",
+   "organisation": "государственная служба",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 1.848,
+   "sar_cutters": 60.85,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "hd40307_maland": {
+   "fire_damage_personnel": 1106840,
+   "hazmat_teams": 4,
+   "hospital_ships": 8.912,
+   "law_family": "customary_council",
+   "organisation": "государственная + общинные дружины",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 4.455,
+   "sar_cutters": 136.95,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "hd69830_verde": {
+   "fire_damage_personnel": 485552,
+   "hazmat_teams": 4,
+   "hospital_ships": 4.096,
+   "law_family": "parliamentary_civil",
+   "organisation": "государственная + добровольцы",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 1.919,
+   "sar_cutters": 62.85,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "lalande_hellas": {
+   "fire_damage_personnel": 810619,
+   "hazmat_teams": 4,
+   "hospital_ships": 6.552,
+   "law_family": "city_state_arbitration",
+   "organisation": "городские службы + частные спасатели за долю",
+   "private_salvage_share": 0.25,
+   "rescue_tugs": 2.933,
+   "sar_cutters": 100.4,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "lalande_mecca": {
+   "fire_damage_personnel": 1972153,
+   "hazmat_teams": 4,
+   "hospital_ships": 15.995,
+   "law_family": "theocratic",
+   "organisation": "государственная + религиозные братства",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 7.837,
+   "sar_cutters": 245.65,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "leo83_zion": {
+   "fire_damage_personnel": 9,
+   "hazmat_teams": 0,
+   "hospital_ships": 0.0,
+   "law_family": "theocratic",
+   "organisation": "государственная + религиозные братства",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 1.0,
+   "sar_cutters": 0.0,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "proxima_outpost": {
+   "fire_damage_personnel": 1758390,
+   "hazmat_teams": 4,
+   "hospital_ships": 14.514,
+   "law_family": "military_administration",
+   "organisation": "военная спасательная служба",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 6.776,
+   "sar_cutters": 222.65,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "sol_authority": {
+   "fire_damage_personnel": 14231558,
+   "hazmat_teams": 4,
+   "hospital_ships": 233.379,
+   "law_family": "sol_codified",
+   "organisation": "Береговая служба Сола",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 1.0,
+   "sar_cutters": 3501.05,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  },
+  "tau_ceti_cognium": {
+   "fire_damage_personnel": 3391379,
+   "hazmat_teams": 8,
+   "hospital_ships": 27.131,
+   "law_family": "technocratic_civil",
+   "organisation": "государственная служба спасения",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 14.938,
+   "sar_cutters": 417.85,
+   "search_ships": 2.5,
+   "status": "PROPOSAL"
+  },
+  "wolf359_citadel": {
+   "fire_damage_personnel": 1332182,
+   "hazmat_teams": 4,
+   "hospital_ships": 10.909,
+   "law_family": "military_administration",
+   "organisation": "военная спасательная служба",
+   "private_salvage_share": 0.0,
+   "rescue_tugs": 5.251,
+   "sar_cutters": 167.45,
+   "search_ships": 0.5,
+   "status": "PROPOSAL"
+  }
+ },
+ "services": {
+  "disaster": "крупные катастрофы (кольца, купола)",
+  "fire_damage_control": "пожарные и аварийные команды станций (пожар, пробой, разгерметизация)",
+  "hazmat": "химическая, радиационная, лотосовая опасность",
+  "medevac": "медицинская эвакуация",
+  "sar": "поиск и спасение в системе",
+  "search": "поиск пропавших (межзвёздный)",
+  "towing_salvage": "буксировка и подъём"
+ },
+ "sites": [
+  {
+   "fire_crew_on_site": 105,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "earth_orbital_hub"
+  },
+  {
+   "fire_crew_on_site": 4,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 13.028,
+   "site": "site.024.pereval"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 3.006,
+   "site": "site.019.porog"
+  },
+  {
+   "fire_crew_on_site": 3,
+   "law": "none",
+   "responder": "никто; частники за плату",
+   "response_h": 69.117,
+   "site": "site.019.troyan_market"
+  },
+  {
+   "fire_crew_on_site": 0,
+   "law": "none",
+   "responder": "никто; частники за плату",
+   "response_h": 69.117,
+   "site": "site.019.mandala"
+  },
+  {
+   "fire_crew_on_site": 1,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.019.dead_reckoning"
+  },
+  {
+   "fire_crew_on_site": 0,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 13.028,
+   "site": "site.019.claim_c"
+  },
+  {
+   "fire_crew_on_site": 13,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.041.vorota"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.041.holding"
+  },
+  {
+   "fire_crew_on_site": 0,
+   "law": "none",
+   "responder": "Kern SAR «Ласка» с «Дальнего Причала»",
+   "response_h": 54.0,
+   "site": "dso.lotus"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "none",
+   "responder": "Kern SAR «Ласка» с «Дальнего Причала»",
+   "response_h": 30.0,
+   "site": "dso.far_berth"
+  },
+  {
+   "fire_crew_on_site": 1,
+   "law": "technocratic_civil",
+   "responder": "Kern SAR «Ласка» с «Дальнего Причала»",
+   "response_h": 30.0,
+   "site": "dso.quarantine_picket"
+  },
+  {
+   "fire_crew_on_site": 0,
+   "law": "technocratic_civil",
+   "responder": "ближайший оператор (прыжок + зарядка)",
+   "response_h": 30.0,
+   "site": "dso.ceti_gap_cache"
+  },
+  {
+   "fire_crew_on_site": 0,
+   "law": "technocratic_civil",
+   "responder": "ближайший оператор (прыжок + зарядка)",
+   "response_h": 30.0,
+   "site": "dso.vega_null"
+  },
+  {
+   "fire_crew_on_site": 0,
+   "law": "none",
+   "responder": "ближайший оператор (прыжок + зарядка)",
+   "response_h": 30.0,
+   "site": "dso.cache.lotus_north"
+  },
+  {
+   "fire_crew_on_site": 0,
+   "law": "none",
+   "responder": "Kern SAR «Ласка» с «Дальнего Причала»",
+   "response_h": 54.0,
+   "site": "dso.garden"
+  },
+  {
+   "fire_crew_on_site": 19634,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 3.006,
+   "site": "site.031.cyg61_kern.city01"
+  },
+  {
+   "fire_crew_on_site": 9817,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 3.006,
+   "site": "site.031.cyg61_kern.city02"
+  },
+  {
+   "fire_crew_on_site": 6545,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 3.006,
+   "site": "site.031.cyg61_kern.city03"
+  },
+  {
+   "fire_crew_on_site": 168,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 3.006,
+   "site": "site.031.cyg61_kern.city04"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 3.006,
+   "site": "site.031.cyg61_kern.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 13.028,
+   "site": "site.031.cyg61_kern.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 13.028,
+   "site": "site.031.cyg61_kern.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 3.006,
+   "site": "site.031.cyg61_kern.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 3.006,
+   "site": "site.031.cyg61_kern.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 3.006,
+   "site": "site.031.cyg61_kern.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 3.006,
+   "site": "site.031.cyg61_kern.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 3.006,
+   "site": "site.031.cyg61_kern.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 3.006,
+   "site": "site.031.cyg61_kern.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 26724,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_freekarma.city01"
+  },
+  {
+   "fire_crew_on_site": 134,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_freekarma.port01"
+  },
+  {
+   "fire_crew_on_site": 13362,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_freekarma.city02"
+  },
+  {
+   "fire_crew_on_site": 22270,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_freekarma.city03"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_freekarma.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.022.delta_pav_freekarma.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.022.delta_pav_freekarma.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.022.delta_pav_freekarma.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.022.delta_pav_freekarma.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.022.delta_pav_freekarma.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.022.delta_pav_freekarma.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_freekarma.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_freekarma.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_freekarma.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_freekarma.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_freekarma.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_freekarma.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_freekarma.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 84187,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.city01"
+  },
+  {
+   "fire_crew_on_site": 421,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.port01"
+  },
+  {
+   "fire_crew_on_site": 42094,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.city02"
+  },
+  {
+   "fire_crew_on_site": 210,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.port02"
+  },
+  {
+   "fire_crew_on_site": 70156,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.city03"
+  },
+  {
+   "fire_crew_on_site": 140,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.port03"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 13.028,
+   "site": "site.022.delta_pav_karma.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 13.028,
+   "site": "site.022.delta_pav_karma.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 13.028,
+   "site": "site.022.delta_pav_karma.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 13.028,
+   "site": "site.022.delta_pav_karma.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 13.028,
+   "site": "site.022.delta_pav_karma.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 13.028,
+   "site": "site.022.delta_pav_karma.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.industrial_hub05"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.industrial_hub06"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.science_hub02"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.022.delta_pav_karma.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 364276,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.city01"
+  },
+  {
+   "fire_crew_on_site": 729,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.port01"
+  },
+  {
+   "fire_crew_on_site": 182138,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.city02"
+  },
+  {
+   "fire_crew_on_site": 364,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.port02"
+  },
+  {
+   "fire_crew_on_site": 121425,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.city03"
+  },
+  {
+   "fire_crew_on_site": 243,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.port03"
+  },
+  {
+   "fire_crew_on_site": 4444,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.city04"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.trade_hub02"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.trade_hub03"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.trade_hub04"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.trade_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 13.028,
+   "site": "site.009.eps_eri_harmony.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 13.028,
+   "site": "site.009.eps_eri_harmony.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 13.028,
+   "site": "site.009.eps_eri_harmony.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 13.028,
+   "site": "site.009.eps_eri_harmony.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 13.028,
+   "site": "site.009.eps_eri_harmony.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 13.028,
+   "site": "site.009.eps_eri_harmony.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.industrial_hub05"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.industrial_hub06"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.military_hub02"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.military_hub03"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.military_hub04"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.science_hub02"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.science_hub03"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.science_hub04"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_harmony.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 108235,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.city01"
+  },
+  {
+   "fire_crew_on_site": 216,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.port01"
+  },
+  {
+   "fire_crew_on_site": 54118,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.city02"
+  },
+  {
+   "fire_crew_on_site": 108,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.port02"
+  },
+  {
+   "fire_crew_on_site": 36078,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.city03"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.trade_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.009.eps_eri_strife.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.009.eps_eri_strife.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.009.eps_eri_strife.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.009.eps_eri_strife.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.009.eps_eri_strife.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.009.eps_eri_strife.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.industrial_hub05"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.industrial_hub06"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.military_hub02"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.009.eps_eri_strife.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 34897,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.city01"
+  },
+  {
+   "fire_crew_on_site": 174,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.port01"
+  },
+  {
+   "fire_crew_on_site": 43622,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.city02"
+  },
+  {
+   "fire_crew_on_site": 29081,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.city03"
+  },
+  {
+   "fire_crew_on_site": 320,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.city04"
+  },
+  {
+   "fire_crew_on_site": 21811,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.city05"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.010.gj581_europa.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.010.gj581_europa.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.010.gj581_europa.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.010.gj581_europa.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.010.gj581_europa.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.industrial_hub05"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.010.gj581_europa.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 26786,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.010.gj581_freeclans.city01"
+  },
+  {
+   "fire_crew_on_site": 134,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.010.gj581_freeclans.port01"
+  },
+  {
+   "fire_crew_on_site": 33483,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.010.gj581_freeclans.city02"
+  },
+  {
+   "fire_crew_on_site": 22322,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.010.gj581_freeclans.city03"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.010.gj581_freeclans.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.010.gj581_freeclans.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.010.gj581_freeclans.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.010.gj581_freeclans.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.010.gj581_freeclans.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.010.gj581_freeclans.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.010.gj581_freeclans.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.010.gj581_freeclans.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.010.gj581_freeclans.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.010.gj581_freeclans.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.010.gj581_freeclans.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.010.gj581_freeclans.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.010.gj581_freeclans.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 3.006,
+   "site": "site.010.gj581_freeclans.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 3,
+   "law": "none",
+   "responder": "никто; частники за плату",
+   "response_h": 3.006,
+   "site": "site.012.gj832_gaia_zone.city01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "none",
+   "responder": "никто; частники за плату",
+   "response_h": 3.006,
+   "site": "site.012.gj832_gaia_zone.city02"
+  },
+  {
+   "fire_crew_on_site": 1,
+   "law": "none",
+   "responder": "никто; частники за плату",
+   "response_h": 3.006,
+   "site": "site.012.gj832_gaia_zone.city03"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "none",
+   "responder": "никто; частники за плату",
+   "response_h": 3.006,
+   "site": "site.012.gj832_gaia_zone.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "none",
+   "responder": "никто; частники за плату",
+   "response_h": 69.117,
+   "site": "site.012.gj832_gaia_zone.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "none",
+   "responder": "никто; частники за плату",
+   "response_h": 3.006,
+   "site": "site.012.gj832_gaia_zone.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "none",
+   "responder": "никто; частники за плату",
+   "response_h": 3.006,
+   "site": "site.012.gj832_gaia_zone.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 289253,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.city01"
+  },
+  {
+   "fire_crew_on_site": 579,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.port01"
+  },
+  {
+   "fire_crew_on_site": 144627,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.city02"
+  },
+  {
+   "fire_crew_on_site": 289,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.port02"
+  },
+  {
+   "fire_crew_on_site": 96418,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.city03"
+  },
+  {
+   "fire_crew_on_site": 193,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.port03"
+  },
+  {
+   "fire_crew_on_site": 3279,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.city04"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 13.028,
+   "site": "site.012.gj832_tianhe.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 13.028,
+   "site": "site.012.gj832_tianhe.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 13.028,
+   "site": "site.012.gj832_tianhe.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 13.028,
+   "site": "site.012.gj832_tianhe.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 13.028,
+   "site": "site.012.gj832_tianhe.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 13.028,
+   "site": "site.012.gj832_tianhe.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.industrial_hub05"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.industrial_hub06"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.science_hub02"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.science_hub03"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.012.gj832_tianhe.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 50,
+   "law": "machine_oracle",
+   "responder": "концессионер",
+   "response_h": 3.006,
+   "site": "site.013.gj876_next.city01"
+  },
+  {
+   "fire_crew_on_site": 25,
+   "law": "machine_oracle",
+   "responder": "концессионер",
+   "response_h": 3.006,
+   "site": "site.013.gj876_next.city02"
+  },
+  {
+   "fire_crew_on_site": 42,
+   "law": "machine_oracle",
+   "responder": "концессионер",
+   "response_h": 3.006,
+   "site": "site.013.gj876_next.city03"
+  },
+  {
+   "fire_crew_on_site": 3,
+   "law": "machine_oracle",
+   "responder": "концессионер",
+   "response_h": 3.006,
+   "site": "site.013.gj876_next.city04"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "machine_oracle",
+   "responder": "концессионер",
+   "response_h": 3.006,
+   "site": "site.013.gj876_next.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "machine_oracle",
+   "responder": "концессионер",
+   "response_h": 69.117,
+   "site": "site.013.gj876_next.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "machine_oracle",
+   "responder": "концессионер",
+   "response_h": 3.006,
+   "site": "site.013.gj876_next.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "machine_oracle",
+   "responder": "концессионер",
+   "response_h": 3.006,
+   "site": "site.013.gj876_next.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 17,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.037.hd114783_hellas3.city01"
+  },
+  {
+   "fire_crew_on_site": 8,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.037.hd114783_hellas3.city02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.037.hd114783_hellas3.city03"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.037.hd114783_hellas3.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 69.117,
+   "site": "site.037.hd114783_hellas3.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.037.hd114783_hellas3.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.037.hd114783_hellas3.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 81077,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.city01"
+  },
+  {
+   "fire_crew_on_site": 162,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.port01"
+  },
+  {
+   "fire_crew_on_site": 40539,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.city02"
+  },
+  {
+   "fire_crew_on_site": 27026,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.city03"
+  },
+  {
+   "fire_crew_on_site": 308,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.city04"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.014.hd20794_hellas2.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.014.hd20794_hellas2.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.014.hd20794_hellas2.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.014.hd20794_hellas2.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.014.hd20794_hellas2.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.014.hd20794_hellas2.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.industrial_hub05"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_hellas2.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 251053,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.city01"
+  },
+  {
+   "fire_crew_on_site": 502,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.port01"
+  },
+  {
+   "fire_crew_on_site": 125527,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.city02"
+  },
+  {
+   "fire_crew_on_site": 251,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.port02"
+  },
+  {
+   "fire_crew_on_site": 83684,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.city03"
+  },
+  {
+   "fire_crew_on_site": 167,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.port03"
+  },
+  {
+   "fire_crew_on_site": 1170,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.city04"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.014.hd20794_newindia.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.014.hd20794_newindia.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.014.hd20794_newindia.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.014.hd20794_newindia.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.014.hd20794_newindia.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.014.hd20794_newindia.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.industrial_hub05"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.industrial_hub06"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.science_hub02"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.science_hub03"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.014.hd20794_newindia.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 26517,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_firmament.city01"
+  },
+  {
+   "fire_crew_on_site": 133,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_firmament.port01"
+  },
+  {
+   "fire_crew_on_site": 33146,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_firmament.city02"
+  },
+  {
+   "fire_crew_on_site": 22097,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_firmament.city03"
+  },
+  {
+   "fire_crew_on_site": 250,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_firmament.city04"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_firmament.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 13.028,
+   "site": "site.015.hd40307_firmament.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 13.028,
+   "site": "site.015.hd40307_firmament.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 13.028,
+   "site": "site.015.hd40307_firmament.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 13.028,
+   "site": "site.015.hd40307_firmament.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 13.028,
+   "site": "site.015.hd40307_firmament.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 13.028,
+   "site": "site.015.hd40307_firmament.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_firmament.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_firmament.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_firmament.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_firmament.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_firmament.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_firmament.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "party_administrative",
+   "responder": "государственная служба",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_firmament.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 53775,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.city01"
+  },
+  {
+   "fire_crew_on_site": 269,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.port01"
+  },
+  {
+   "fire_crew_on_site": 67218,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.city02"
+  },
+  {
+   "fire_crew_on_site": 134,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.port02"
+  },
+  {
+   "fire_crew_on_site": 44812,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.city03"
+  },
+  {
+   "fire_crew_on_site": 33609,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.city04"
+  },
+  {
+   "fire_crew_on_site": 561,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.city05"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 13.028,
+   "site": "site.015.hd40307_maland.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 13.028,
+   "site": "site.015.hd40307_maland.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 13.028,
+   "site": "site.015.hd40307_maland.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 13.028,
+   "site": "site.015.hd40307_maland.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 13.028,
+   "site": "site.015.hd40307_maland.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 13.028,
+   "site": "site.015.hd40307_maland.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.industrial_hub05"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.industrial_hub06"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.science_hub02"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "customary_council",
+   "responder": "государственная + общинные дружины",
+   "response_h": 3.006,
+   "site": "site.015.hd40307_maland.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 27271,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.016.hd69830_verde.city01"
+  },
+  {
+   "fire_crew_on_site": 136,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.016.hd69830_verde.port01"
+  },
+  {
+   "fire_crew_on_site": 34088,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.016.hd69830_verde.city02"
+  },
+  {
+   "fire_crew_on_site": 22726,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.016.hd69830_verde.city03"
+  },
+  {
+   "fire_crew_on_site": 249,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.016.hd69830_verde.city04"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.016.hd69830_verde.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.016.hd69830_verde.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.016.hd69830_verde.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.016.hd69830_verde.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.016.hd69830_verde.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.016.hd69830_verde.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.016.hd69830_verde.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.016.hd69830_verde.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.016.hd69830_verde.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.016.hd69830_verde.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.016.hd69830_verde.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.016.hd69830_verde.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 3.006,
+   "site": "site.016.hd69830_verde.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 41057,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.city01"
+  },
+  {
+   "fire_crew_on_site": 205,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.port01"
+  },
+  {
+   "fire_crew_on_site": 20528,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.city02"
+  },
+  {
+   "fire_crew_on_site": 103,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.port02"
+  },
+  {
+   "fire_crew_on_site": 13686,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.city03"
+  },
+  {
+   "fire_crew_on_site": 377,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.city04"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 13.028,
+   "site": "site.004.lalande_hellas.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 13.028,
+   "site": "site.004.lalande_hellas.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 13.028,
+   "site": "site.004.lalande_hellas.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 13.028,
+   "site": "site.004.lalande_hellas.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 13.028,
+   "site": "site.004.lalande_hellas.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 13.028,
+   "site": "site.004.lalande_hellas.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.industrial_hub05"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 3.006,
+   "site": "site.004.lalande_hellas.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 90151,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.city01"
+  },
+  {
+   "fire_crew_on_site": 451,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.port01"
+  },
+  {
+   "fire_crew_on_site": 45076,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.city02"
+  },
+  {
+   "fire_crew_on_site": 225,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.port02"
+  },
+  {
+   "fire_crew_on_site": 30050,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.city03"
+  },
+  {
+   "fire_crew_on_site": 150,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.port03"
+  },
+  {
+   "fire_crew_on_site": 960,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.city04"
+  },
+  {
+   "fire_crew_on_site": 22538,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.city05"
+  },
+  {
+   "fire_crew_on_site": 113,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.port05"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.trade_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 13.028,
+   "site": "site.004.lalande_mecca.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 13.028,
+   "site": "site.004.lalande_mecca.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 13.028,
+   "site": "site.004.lalande_mecca.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 13.028,
+   "site": "site.004.lalande_mecca.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 13.028,
+   "site": "site.004.lalande_mecca.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 13.028,
+   "site": "site.004.lalande_mecca.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.industrial_hub05"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.industrial_hub06"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.science_hub02"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.004.lalande_mecca.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 5,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.045.leo83_zion.city01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.045.leo83_zion.city02"
+  },
+  {
+   "fire_crew_on_site": 4,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.045.leo83_zion.city03"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.045.leo83_zion.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 69.117,
+   "site": "site.045.leo83_zion.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.045.leo83_zion.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "theocratic",
+   "responder": "государственная + религиозные братства",
+   "response_h": 3.006,
+   "site": "site.045.leo83_zion.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 82712,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.city01"
+  },
+  {
+   "fire_crew_on_site": 414,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.port01"
+  },
+  {
+   "fire_crew_on_site": 41356,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.city02"
+  },
+  {
+   "fire_crew_on_site": 207,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.port02"
+  },
+  {
+   "fire_crew_on_site": 27571,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.city03"
+  },
+  {
+   "fire_crew_on_site": 138,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.port03"
+  },
+  {
+   "fire_crew_on_site": 20678,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.city04"
+  },
+  {
+   "fire_crew_on_site": 103,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.port04"
+  },
+  {
+   "fire_crew_on_site": 250,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.city05"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 13.028,
+   "site": "site.060.proxima_outpost.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 13.028,
+   "site": "site.060.proxima_outpost.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 13.028,
+   "site": "site.060.proxima_outpost.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 13.028,
+   "site": "site.060.proxima_outpost.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 13.028,
+   "site": "site.060.proxima_outpost.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 13.028,
+   "site": "site.060.proxima_outpost.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.science_hub02"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.060.proxima_outpost.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.trade_hub02"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.trade_hub03"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.trade_hub04"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.trade_hub05"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.trade_hub06"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 13.028,
+   "site": "site.000.sol_authority.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 13.028,
+   "site": "site.000.sol_authority.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 13.028,
+   "site": "site.000.sol_authority.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 13.028,
+   "site": "site.000.sol_authority.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 13.028,
+   "site": "site.000.sol_authority.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 13.028,
+   "site": "site.000.sol_authority.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.industrial_hub05"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.industrial_hub06"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.science_hub02"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.science_hub03"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.science_hub04"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.science_hub05"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.science_hub06"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol_authority.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.trade_hub02"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.trade_hub03"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.trade_hub04"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.trade_hub05"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.trade_hub06"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 13.028,
+   "site": "site.008.tau_ceti_cognium.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 13.028,
+   "site": "site.008.tau_ceti_cognium.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 13.028,
+   "site": "site.008.tau_ceti_cognium.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 13.028,
+   "site": "site.008.tau_ceti_cognium.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 13.028,
+   "site": "site.008.tau_ceti_cognium.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.industrial_hub05"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.industrial_hub06"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.science_hub02"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.science_hub03"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.science_hub04"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 3.006,
+   "site": "site.008.tau_ceti_cognium.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 64257,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.city01"
+  },
+  {
+   "fire_crew_on_site": 321,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.port01"
+  },
+  {
+   "fire_crew_on_site": 32129,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.city02"
+  },
+  {
+   "fire_crew_on_site": 161,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.port02"
+  },
+  {
+   "fire_crew_on_site": 21419,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.city03"
+  },
+  {
+   "fire_crew_on_site": 107,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.port03"
+  },
+  {
+   "fire_crew_on_site": 1071,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.city04"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.trade_hub01"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.trade_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 13.028,
+   "site": "site.003.wolf359_citadel.mining_hub01"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 13.028,
+   "site": "site.003.wolf359_citadel.mining_hub02"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 13.028,
+   "site": "site.003.wolf359_citadel.mining_hub03"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 13.028,
+   "site": "site.003.wolf359_citadel.mining_hub04"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 13.028,
+   "site": "site.003.wolf359_citadel.mining_hub05"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 13.028,
+   "site": "site.003.wolf359_citadel.mining_hub06"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.industrial_hub01"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.industrial_hub02"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.industrial_hub03"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.industrial_hub04"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.industrial_hub05"
+  },
+  {
+   "fire_crew_on_site": 30,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.industrial_hub06"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.military_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.science_hub01"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.science_hub02"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 3.006,
+   "site": "site.003.wolf359_citadel.quarantine01"
+  },
+  {
+   "fire_crew_on_site": 8,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.009.eps_eri_strife.free_port01"
+  },
+  {
+   "fire_crew_on_site": 8,
+   "law": "clan_law",
+   "responder": "клановые артели (спасение за долю груза)",
+   "response_h": 13.028,
+   "site": "site.010.gj581_freeclans.free_port01"
+  },
+  {
+   "fire_crew_on_site": 8,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 69.117,
+   "site": "site.037.hd114783_hellas3.free_port01"
+  },
+  {
+   "fire_crew_on_site": 8,
+   "law": "city_state_arbitration",
+   "responder": "городские службы + частные спасатели за долю",
+   "response_h": 13.028,
+   "site": "site.004.lalande_hellas.free_port01"
+  },
+  {
+   "fire_crew_on_site": 75,
+   "law": "confucian_administrative",
+   "responder": "государственная служба + народные дружины",
+   "response_h": 13.028,
+   "site": "site.030.eps_indi_field"
+  },
+  {
+   "fire_crew_on_site": 5,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 13.028,
+   "site": "site.011.gj667_ubuntu_node"
+  },
+  {
+   "fire_crew_on_site": 25,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 13.028,
+   "site": "site.023.gj892_kern"
+  },
+  {
+   "fire_crew_on_site": 4,
+   "law": "parliamentary_civil",
+   "responder": "государственная + добровольцы",
+   "response_h": 13.028,
+   "site": "site.057.hd10360_relay"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "military_administration",
+   "responder": "военная спасательная служба",
+   "response_h": 13.028,
+   "site": "site.002.barnard_post"
+  },
+  {
+   "fire_crew_on_site": 62,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 13.028,
+   "site": "site.037.hd114783_claims"
+  },
+  {
+   "fire_crew_on_site": 15,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 13.028,
+   "site": "site.045.leo83_golden_city"
+  },
+  {
+   "fire_crew_on_site": 8,
+   "law": "corporate",
+   "responder": "корпоративная служба по контрактам",
+   "response_h": 13.028,
+   "site": "site.038.sigma2uma_expedition"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 13.028,
+   "site": "site.053.gj674_frontier"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 13.028,
+   "site": "site.054.hd85512_frontier"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 13.028,
+   "site": "site.025.gj357_frontier"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "technocratic_civil",
+   "responder": "государственная служба спасения",
+   "response_h": 13.028,
+   "site": "site.041.hd104067_frontier"
+  },
+  {
+   "fire_crew_on_site": 5,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.025.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 5,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.012.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 5,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.009.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 4,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.010.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 4,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.054.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 4,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.024.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 4,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.004.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 3,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.015.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 3,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.037.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 3,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.060.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 3,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.031.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 3,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.016.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 3,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.014.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 3,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.008.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 3,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.045.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 3,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.022.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.013.pirate_enclave"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "none",
+   "responder": "никто (сами)",
+   "response_h": null,
+   "site": "site.000.pirate_enclave"
+  }
+ ],
+ "status": "PROPOSAL"
+}

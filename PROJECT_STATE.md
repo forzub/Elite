@@ -1655,6 +1655,37 @@ CANON by the author's decision; +3 ly = AUTHOR_TARGET). NOT user-accepted.
 - Checks: world_sites 21/21 OK, world_economy OK, lab dataset / lore OK,
   lore_md 130 files OK, lore_html 133 OK.
 
+### Industrial geography + rescue services (user order 2026-11-03, third pass c)
+Status: offline model + data + Lore; PROPOSAL, NOT user-accepted.
+- `canon/industry.json` + `industry.py` -> out/world_3126/industry_3126.json,
+  rescue_3126.json, INDUSTRY_3126.md; Notes/Economy/INDUSTRY_AND_RESCUE.md;
+  Lore ECONOMY/INDUSTRY.md, ECONOMY/RESCUE_SERVICES.md.
+- 8 blocs (Cognium pool ~ West, Heavenly Pact ~ USSR/China, Lalande League ~
+  Europe, Southern Circle ~ non-aligned with Mecca's own cores, Citadel
+  Compact, Free Belts, Sol, outside blocs) from founders' cultures, jump-core
+  lineage and grievances; inter-bloc channels open / licensed / restricted /
+  black; design schools (modular premium, standard monohull, many-vendor
+  modular, licensed kits, heavy military, hollowed asteroids and refits, mass
+  production); 19 named makers incl. the runtime ones (Cobretty Corporation ->
+  Second Hellas, Orbital Freight Union "Ural-Kourou" -> Sol); per polity and
+  per block (10 ship, 4 mining, 3 gas, 8 station) concern / assembly / parts /
+  import; who supplies whom through which channel; per-site production /
+  assembly / sales; major-block BOMs; fleet uniformity (Pact main hull maker
+  74 %, League 50 %). Jump cores only from Cognium, Mecca, Citadel (Citadel's
+  never exported); Sol's own cores stay UNKNOWN (author). New Karma (refuses
+  the network): in-system fleet only.
+- world_economy.shipyards: yard-less polities buy from their bloc, then their
+  main trade partner, then the nearest polity with yards (refusers never
+  supply).
+- Rescue: SAR, search, fire / damage control, medevac, towing, hazmat,
+  disaster; organisation by legal family; counts from defence tasks and
+  population; response time to every site (hours near the polity's bodies,
+  ~half a day in belts with a patrol base, ~3 days otherwise; Lotus field only
+  Kern SAR "Laska"; pirate enclaves rescue themselves).
+- Checks: industry 7/7, world_sites 21/21, world_economy, logistics,
+  calibrate_population, lab dataset / lore, lore_md 132, lore_html 135 OK;
+  industry / sites runs byte-identical.
+
 ## Next step
 - After the user's review of the spatial layer: Stage 4 runtime communication
   (beacon coverage / relay delays in the client: messages, bank, warrants,

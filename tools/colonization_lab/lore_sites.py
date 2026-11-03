@@ -11,7 +11,7 @@ import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WE_DIR = os.path.join(HERE, "out", "world_3126")
-NAMES = ("sites", "society", "law", "comms", "passengers", "fleet_age", "frontier", "world_events")
+NAMES = ("sites", "society", "law", "comms", "passengers", "fleet_age", "frontier", "world_events", "industry", "rescue")
 TAG = "`PROPOSAL` (модель)"
 
 
@@ -20,8 +20,10 @@ def load():
         return None
     out = {}
     for n in NAMES:
-        with open(os.path.join(WE_DIR, f"{n}_3126.json"), encoding="utf-8") as f:
-            out[n] = json.load(f)
+        p = os.path.join(WE_DIR, f"{n}_3126.json")
+        if os.path.isfile(p):
+            with open(p, encoding="utf-8") as f:
+                out[n] = json.load(f)
     return out
 
 
@@ -272,4 +274,68 @@ def docs(D, lm):
          lm.table(["Поле", "Тип", "Где", "Обломков", "Владение", "Салвидж"], [(w["id"], w["kind"], w["near"], n0(w["wrecks"]), w["ownership"], w["salvage"]) for w in F["wrecks"]["fields"]])]
     d.gen("pax_age", "\n".join(g))
     out.append(d)
+    out += industry_docs(D, lm, S, sites)
     return out
+
+
+LVL_RU = {"concern": "концерн", "assembly": "сборка", "parts": "детали", "import": "покупка"}
+CH_RU = {"open": "открыто (свой блок)", "licensed": "по лицензии", "restricted": "ограничено", "black": "чёрный рынок / реэкспорт", "own": "своё", "none": "нет"}
+
+
+def industry_docs(D, lm, S, sites):
+    out = []
+    if "industry" not in S:
+        return out
+    IN = S["industry"]
+    pn = lambda k: D.pname(k) if k and k in D.X["economy"]["polities"] else (k or "—")
+    path = "ECONOMY/INDUSTRY.md"
+    d = lm.new_doc(D, path, "Промышленность: кто строит корабли, оборудование и модули", "economy")
+    g = ["Источник: `tools/colonization_lab/industry.py` (`canon/industry.json` + экономика + сайты) → `out/world_3126/industry_3126.json`.", "",
+         "### Блоки-союзы", "",
+         lm.table(["Блок", "Аналог", "Члены", "Почему вместе", "Школа кораблестроения", "Ядра от", "Производителей корпусов", "Доля главного"],
+                  [(v["ru"], v["analogue"], ", ".join(pn(m) for m in v["members"]), v["why"], IN["designs"][v["design"]]["ru"], pn(v["core_source"]),
+                    IN["fleet_uniformity"][b]["hull_makers"], IN["fleet_uniformity"][b]["main_maker_share"]) for b, v in IN["blocs"].items()]), "",
+         "Союзники летают на однотипных кораблях немногих производителей (Небесный пакт); Лига Лаланд покупает у многих — её флот пёстрый.", "",
+         "### Школы", "", lm.table(["Школа", "Что это", "Цена ×", "Ресурс ×"], [(v["ru"], v["what"], v["price_x"], v["life_x"]) for v in IN["designs"].values()]), "",
+         "### Каналы между блоками", "", lm.table(["Покупатель → продавец", "Канал"], [(k.replace("|", " → "), CH_RU[v]) for k, v in sorted(IN["channels"].items()) if k.split("|")[0] != k.split("|")[1]]), "",
+         "### Кто что умеет (корабли)", "",
+         lm.table(["Полития", "Роль", "Корпус", "Ядро", "Реактор", "Двигатель", "Авионика", "Жизнеобесп.", "Оружие"],
+                  [(pn(k), c["ship_role"]) + tuple(LVL_RU[c["blocks"][b]["level"]] for b in ("hull_structure", "jump_core", "reactor", "main_drive", "avionics", "life_support", "weapons")) for k, c in IN["capability"].items()]), "",
+         "### Горное, газовое оборудование и станционные модули", "",
+         lm.table(["Полития", "Бур. головки", "Обогатители", "Масс-драйверы", "Газ. платформы", "Сепараторы He-3", "Секции", "Кольца", "Доки", "Агро/ЖО", "Каюты"],
+                  [(pn(k),) + tuple(LVL_RU[c["blocks"][b]["level"]] for b in ("drill_heads", "ore_processors", "mass_drivers", "scoop_platforms", "he3_separators", "pressure_segments", "rotating_rings", "dock_modules", "agro_life_modules", "habitat_cabins")) for k, c in IN["capability"].items()]), "",
+         "### Концерны", "",
+         lm.table(["Производитель", "Полития", "Тип", "Узлы", "Заметка"], [(m["name"], pn(m["polity"]), m["kind"], ", ".join(m["groups"]), m.get("note", "")) for m in IN["manufacturers"]]), "",
+         "### Откуда берут (корпус и ядро)", "",
+         lm.table(["Полития", "Корпус: источник", "Канал", "Ядро: источник", "Канал"],
+                  [(pn(k), " / ".join(f"{pn(x['source'])} {x['share']}" for x in r["hull_structure"]["sources"]) if r["hull_structure"].get("sources") else pn(r["hull_structure"]["source"]),
+                    CH_RU[r["hull_structure"]["channel"]], pn(r["jump_core"]["source"]), CH_RU[r["jump_core"]["channel"]]) for k, r in IN["supply"].items()]), "",
+         "### Где производят, собирают и продают", "",
+         lm.table(["Место", "Производят", "Собирают", "Продают (импорт откуда)"],
+                  [(sites[sid]["name"] if sid in sites else sid, "; ".join(f"{x['maker']}: {', '.join(x['blocks'])}" for x in r["produced"]) or "—",
+                    "; ".join(", ".join(x["blocks"]) for x in r["assembled"]) or "—",
+                    "; ".join(", ".join(f"{pn(y['source'])} ({CH_RU[y['channel']]})" for y in x["imports_from"]) for x in r["sold"]) or "—") for sid, r in sorted(IN["by_site"].items())]), "",
+         "### Из чего состоит (крупные узлы и кто их делает)", ""]
+    for prod, rows in IN["boms"].items():
+        g += [f"**{prod}:** " + "; ".join(f"{r['block']} {100 * r['share']:.0f} % ({', '.join(m for ms in r['makers'].values() for m in ms[:2]) or '—'})" for r in rows), ""]
+    g += ["### Проверки", ""] + [f"- {'OK' if c['ok'] else 'FAIL'} `{c['check']}` — {c['detail']}" for c in IN["checks"]]
+    d.gen("industry", "\n".join(g))
+    out.append(d)
+    if "rescue" not in S:
+        return out
+    R = S["rescue"]
+    path = "ECONOMY/RESCUE_SERVICES.md"
+    d = lm.new_doc(D, path, "Спасательные службы: поисковики, пожарные, медэвакуация, буксиры", "economy")
+    resp = [r for r in R["sites"] if r["response_h"] is not None]
+    worst = sorted(resp, key=lambda r: -r["response_h"])[:12]
+    g = ["Источник: `out/world_3126/rescue_3126.json`. " + R["note"] + ".", "",
+         "Службы: " + "; ".join(f"{k} — {v}" for k, v in R["services"].items()) + ".", "",
+         lm.table(["Полития", "Организация", "Пожарные и аварийные (чел.)", "SAR-катера", "Спасательные буксиры", "Поисковые корабли", "Госпитальные суда", "Химзащита/лотос", "Доля частного спасателя"],
+                  [(pn(k), v["organisation"], n0(v["fire_damage_personnel"]), f2(v["sar_cutters"]), f2(v["rescue_tugs"]), f2(v["search_ships"]), f2(v["hospital_ships"]), v["hazmat_teams"], v["private_salvage_share"]) for k, v in R["polities"].items()]), "",
+         "### Дольше всего ждать помощи", "",
+         lm.table(["Место", "Кто приедет", "Через, ч"], [(sites[r["site"]]["name"] if r["site"] in sites else r["site"], r["responder"], r["response_h"]) for r in worst]), "",
+         "Пиратские анклавы спасают себя сами; в поле «Лотоса» — только Kern SAR «Ласка» с «Дальнего Причала»."]
+    d.gen("rescue", "\n".join(g))
+    out.append(d)
+    return out
+

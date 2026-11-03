@@ -46,7 +46,7 @@ python lore_md.py --check     # блоки совпадают с данными,
 | [AUTHOR/](AUTHOR/HIDDEN_CANON.md) | 4 | [HIDDEN_CANON.md](AUTHOR/HIDDEN_CANON.md), [MISSING_SHIPS.md](AUTHOR/MISSING_SHIPS.md), [PROPOSALS.md](AUTHOR/PROPOSALS.md), [QUEST_TRUTHS.md](AUTHOR/QUEST_TRUTHS.md); AUTHOR/SHIPS/ — 1 скрыт. досье [СПОЙЛЕР] |
 | [COLONIES/](COLONIES/INDEX.md) | 35 | см. INDEX.md |
 | [DEMOGRAPHY/](DEMOGRAPHY/MODEL.md) | 2 | [MODEL.md](DEMOGRAPHY/MODEL.md), [POPULATION_3126.md](DEMOGRAPHY/POPULATION_3126.md) |
-| [ECONOMY/](ECONOMY/INDUSTRIAL_ASSETS.md) | 6 | [INDUSTRIAL_ASSETS.md](ECONOMY/INDUSTRIAL_ASSETS.md), [MINES.md](ECONOMY/MINES.md), [SHIPYARDS.md](ECONOMY/SHIPYARDS.md), [STRATEGIC_DEPENDENCIES.md](ECONOMY/STRATEGIC_DEPENDENCIES.md), [TECHNOLOGY.md](ECONOMY/TECHNOLOGY.md), [TRADE_ROUTES.md](ECONOMY/TRADE_ROUTES.md) |
+| [ECONOMY/](ECONOMY/BEACONS_AND_NAVIGATION.md) | 12 | см. INDEX.md |
 | [POLITICS/](POLITICS/EARTH_3126.md) | 3 | [EARTH_3126.md](POLITICS/EARTH_3126.md), [RELATIONS.md](POLITICS/RELATIONS.md), [WARS.md](POLITICS/WARS.md) |
 | [SETTLEMENTS/](SETTLEMENTS/INDEX.md) | 26 | см. INDEX.md |
 | [SHIPS/](SHIPS/INDEX.md) | 36 | см. INDEX.md |
@@ -61,7 +61,7 @@ python lore_md.py --check     # блоки совпадают с данными,
 - Нет прибытия: UBUNTU-1, NIRVANA-1, IRON-SHIELD-2, NOMAD-1, FINAL-ARK-1, LEGACY-1, DEEP-SEEK-1, KEPLER-1, HOMEWARD-1, FAREWELL-1, HYPERION-1.
 - Цель вне каталога или не задана: NOMAD-1, KEPLER-1.
 - Скрытые миссии (AUTHOR TRUTH, 1) в этот список не входят — см. AUTHOR/MISSING_SHIPS.md.
-- Единицы без экономики 3126: `barnard_post`, `gj357_frontier`, `gj667_ubuntu_node`, `gj832_gaia_zone`, `hd10360_relay`, `hd104067_frontier`, `hd114783_claims`, `hd85512_frontier`, `leo83_golden_city`, `sigma2uma_expedition`.
+- Единицы без экономики 3126: `barnard_post`, `eps_indi_field`, `gj357_frontier`, `gj667_ubuntu_node`, `gj674_frontier`, `gj832_gaia_zone`, `gj892_kern`, `hd10360_relay`, `hd104067_frontier`, `hd114783_claims`, `hd85512_frontier`, `leo83_golden_city`, `sigma2uma_expedition`.
 - Единицы без контрольных точек модели: нет.
 - Единицы без авторского населения: `gj357_frontier`, `gj674_frontier`, `hd104067_frontier`, `hd85512_frontier`.
 - Единицы без режима 3126: `barnard_post`, `eps_indi_field`, `gj357_frontier`, `gj667_ubuntu_node`, `gj674_frontier`, `gj892_kern`, `hd10360_relay`, `hd104067_frontier`, `hd114783_claims`, `hd85512_frontier`, `leo83_golden_city`, `sigma2uma_expedition`.

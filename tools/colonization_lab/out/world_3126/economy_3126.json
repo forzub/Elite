@@ -1,0 +1,7570 @@
+{
+ "banking": {
+  "accounts": [
+   "account",
+   "transfer",
+   "loan",
+   "interest",
+   "collateral",
+   "credit_limit",
+   "default",
+   "repossession"
+  ],
+  "currency": "Cr",
+  "default_chain": [
+   "просрочка 30 дней: штраф 2 %",
+   "90 дней: арест корабля в порту",
+   "180 дней: изъятие и аукцион",
+   "долг остаётся за вычетом выручки"
+  ],
+  "examples": [
+   {
+    "annual_payment_10y_cr": 48450,
+    "inputs": {
+     "debt": 0,
+     "defaults": 0,
+     "income_net_y": 120000,
+     "legal_risk": 0.0,
+     "route_risk": 0.2,
+     "ship_value": 1600000.0,
+     "used": true
+    },
+    "limit_cr": 360000,
+    "rate": 0.058
+   },
+   {
+    "annual_payment_10y_cr": 35049,
+    "inputs": {
+     "debt": 200000,
+     "defaults": 1,
+     "income_net_y": 60000,
+     "legal_risk": 0.5,
+     "route_risk": 0.6,
+     "ship_value": 1600000.0,
+     "used": true
+    },
+    "limit_cr": 180000,
+    "rate": 0.144
+   },
+   {
+    "annual_payment_10y_cr": 150167,
+    "inputs": {
+     "debt": 0,
+     "defaults": 0,
+     "income_net_y": 400000,
+     "legal_risk": 0.0,
+     "route_risk": 0.1,
+     "ship_value": 3390000.0,
+     "used": false
+    },
+    "limit_cr": 1200000,
+    "rate": 0.043
+   }
+  ],
+  "limit_formula": "limit = min(LTV x collateral value, 3 x annual net income)",
+  "ltv": {
+   "base_module": 0.4,
+   "cargo": 0.3,
+   "new_ship": 0.7,
+   "used_ship": 0.55
+  },
+  "note": "одна валюта, без валютного рынка",
+  "rate_formula": "rate = base 4 % + risk premium; premium = 2 % x (1 - income score) + 3 % x route risk + 2 % x legal risk + 4 % x prior defaults + 1 % x debt/income"
+ },
+ "commodities": [
+  {
+   "id": "food",
+   "name": "Продовольствие и органика"
+  },
+  {
+   "id": "water_volatiles",
+   "name": "Вода и летучие"
+  },
+  {
+   "id": "ore",
+   "name": "Руда и сырые минералы"
+  },
+  {
+   "id": "metals",
+   "name": "Металлы и сплавы"
+  },
+  {
+   "id": "chemicals",
+   "name": "Химия и полимеры"
+  },
+  {
+   "id": "construction",
+   "name": "Строительные материалы и модули"
+  },
+  {
+   "id": "reactor_fuel",
+   "name": "Реакторное топливо (D, He-3)"
+  },
+  {
+   "id": "jump_charge",
+   "name": "Заряд прыжка (изотопы привода)"
+  },
+  {
+   "id": "machinery",
+   "name": "Машины и оборудование"
+  },
+  {
+   "id": "electronics",
+   "name": "Электроника и точное оборудование"
+  },
+  {
+   "id": "medical",
+   "name": "Медицина и биотех"
+  },
+  {
+   "id": "consumer",
+   "name": "Потребительские товары"
+  },
+  {
+   "id": "luxury",
+   "name": "Роскошь и алкоголь"
+  },
+  {
+   "id": "controlled",
+   "name": "Подконтрольные вещества"
+  },
+  {
+   "id": "weapons",
+   "name": "Оружие и боеприпасы"
+  }
+ ],
+ "currency": "Cr",
+ "part_catalog": {
+  "note": "Major ship parts are a separate maintenance / refit market with serial numbers (SerializedComponent). share = part of a ship's component cost; life_h = overhaul interval; serial = carries a registry serial.",
+  "parts": [
+   {
+    "id": "reactor",
+    "life_h": 40000,
+    "name": "реактор",
+    "serial": true,
+    "share": 0.18
+   },
+   {
+    "id": "main_engine",
+    "life_h": 50000,
+    "name": "главный двигатель",
+    "serial": true,
+    "share": 0.15
+   },
+   {
+    "id": "jump_drive",
+    "life_h": 30000,
+    "name": "прыжковый двигатель (ядро)",
+    "serial": true,
+    "share": 0.24
+   },
+   {
+    "id": "rcs",
+    "life_h": 25000,
+    "name": "блок RCS",
+    "serial": true,
+    "share": 0.03
+   },
+   {
+    "id": "radiator",
+    "life_h": 35000,
+    "name": "радиатор",
+    "serial": false,
+    "share": 0.03
+   },
+   {
+    "id": "pump",
+    "life_h": 15000,
+    "name": "насосы и контуры",
+    "serial": false,
+    "share": 0.01
+   },
+   {
+    "id": "radar",
+    "life_h": 30000,
+    "name": "радар",
+    "serial": true,
+    "share": 0.03
+   },
+   {
+    "id": "computer",
+    "life_h": 60000,
+    "name": "бортовой компьютер (MotherComputer)",
+    "serial": true,
+    "share": 0.04
+   },
+   {
+    "id": "weapons",
+    "life_h": 20000,
+    "name": "крупное оружие",
+    "serial": true,
+    "share": 0.05
+   },
+   {
+    "id": "life_support",
+    "life_h": 30000,
+    "name": "жизнеобеспечение",
+    "serial": false,
+    "share": 0.03
+   }
+  ]
+ },
+ "player_base": {
+  "attention_signals": [
+   {
+    "id": "beacon_transponder",
+    "text": "регулярные рейсы к участку видны в сети маяков"
+   },
+   {
+    "id": "inspections",
+    "text": "таможня видит строительные грузы"
+   },
+   {
+    "id": "trade_records",
+    "text": "закупки реактора и оружия"
+   },
+   {
+    "id": "banking",
+    "text": "кредит под залог базы"
+   },
+   {
+    "id": "informants",
+    "text": "экипажи и подрядчики говорят"
+   }
+  ],
+  "charge_cost_per_mean_jump_cr": 6212,
+  "escalation": [
+   "разрешения",
+   "проверки",
+   "налоговый аудит",
+   "наблюдение",
+   "заморозка активов",
+   "полиция",
+   "военное вмешательство"
+  ],
+  "minimum_cost_cr": 3050000.0,
+  "stages": [
+   {
+    "cobrett_trips": 0,
+    "cost_cr": 200000.0,
+    "months": 6,
+    "stage": "survey",
+    "text": "геологоразведка, заявка на участок",
+    "tonnes": 0
+   },
+   {
+    "cobrett_trips": 0,
+    "cost_cr": 50000.0,
+    "months": 1,
+    "stage": "claim",
+    "text": "разрешение / аренда / нелегальная заявка",
+    "tonnes": 0
+   },
+   {
+    "cobrett_trips": 4,
+    "cost_cr": 900000.0,
+    "months": 2.5,
+    "stage": "construction_kit",
+    "text": "каркас, шлюз, герметичные модули (C20)",
+    "tonnes": 180
+   },
+   {
+    "cobrett_trips": 2,
+    "cost_cr": 600000.0,
+    "months": 1.5,
+    "stage": "power",
+    "text": "малый реактор 20 МВт и радиаторы",
+    "tonnes": 60
+   },
+   {
+    "cobrett_trips": 2,
+    "cost_cr": 400000.0,
+    "months": 1.8,
+    "stage": "habitation",
+    "text": "жилой модуль на 12 человек",
+    "tonnes": 90
+   },
+   {
+    "cobrett_trips": 3,
+    "cost_cr": 700000.0,
+    "months": 2.0,
+    "stage": "dock",
+    "text": "причал для Cobrett, топливный узел",
+    "tonnes": 120
+   },
+   {
+    "cobrett_trips": 3,
+    "cost_cr": 200000.0,
+    "months": 2.0,
+    "stage": "storage",
+    "text": "склад на 2 000 т",
+    "tonnes": 120
+   },
+   {
+    "cobrett_trips": 6,
+    "cost_cr": 1800000.0,
+    "months": 3.5,
+    "stage": "refinery_workshop",
+    "text": "опционально: мини-обогатитель и мастерская",
+    "tonnes": 300
+   },
+   {
+    "cobrett_trips": 2,
+    "cost_cr": 2500000.0,
+    "months": 1.7,
+    "stage": "defence",
+    "text": "опционально: точечная оборона и сенсоры — повод для внимания государства",
+    "tonnes": 80
+   }
+  ],
+  "triggers": [
+   "вооружённый анклав",
+   "нелегальная верфь",
+   "стратегическая добыча",
+   "собственные вооружённые силы"
+  ]
+ },
+ "polities": {
+  "cyg61_kern": {
+   "balance": {
+    "chemicals": {
+     "consumption": 15193268,
+     "exports": 0,
+     "imports": 759663,
+     "losses": 0,
+     "production": 14433604,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 90996662,
+     "exports": 0,
+     "imports": 19018302,
+     "losses": 0,
+     "production": 71978360,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 16382850,
+     "exports": 0,
+     "imports": 2777365,
+     "losses": 0,
+     "production": 13605485,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 6826,
+     "exports": 0,
+     "imports": 3413,
+     "losses": 0,
+     "production": 3413,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 585178,
+     "exports": 0,
+     "imports": 332495,
+     "losses": 0,
+     "production": 252682,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 77292146,
+     "exports": 0,
+     "imports": 2770923,
+     "losses": 0,
+     "production": 74521223,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 13031,
+     "exports": 0,
+     "imports": 4675,
+     "losses": 0,
+     "production": 8355,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 299833,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 299833,
+     "stock_change": 0,
+     "unmet": 246262
+    },
+    "machinery": {
+     "consumption": 1399722,
+     "exports": 0,
+     "imports": 463924,
+     "losses": 0,
+     "production": 935798,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 546095,
+     "exports": 0,
+     "imports": 208302,
+     "losses": 0,
+     "production": 337793,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 21685248,
+     "exports": 0,
+     "imports": 15060196,
+     "losses": 0,
+     "production": 6625052,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 71585019,
+     "exports": 0,
+     "imports": 43838666,
+     "losses": 0,
+     "production": 27746353,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 1327,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 1327,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 136747700,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 136747700,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 64100,
+     "exports": 0,
+     "imports": 21709,
+     "losses": 0,
+     "production": 42391,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "61 Cygni B j",
+     "name": "Шахта Альфа",
+     "pop": 19634173,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "61 Cygni B k",
+     "name": "61 Cygni B k — поселение",
+     "pop": 9817087,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "61 Cygni A f",
+     "name": "61 Cygni A f — поселение",
+     "pop": 6544724,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "61 Cygni B j (орбита)",
+     "name": "Биржа и страховой дом Керна",
+     "pop": 654472,
+     "role": "орбитальный порт / биржа",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "61 Cygni B i",
+     "name": "Платформы 61 Cyg B i",
+     "pop": 49580,
+     "role": "газовые платформы",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (695)",
+     "pop": 103272184,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 19634173,
+    "settlements_total": 700
+   },
+   "exports_cr_y": 0,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 73588800,
+    "jump_charge_imports_t_y": 4675.5,
+    "jump_charge_local_t_y": 8355.3,
+    "jump_charge_t_y": 13030.8,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 799987220,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 1326.9,
+    "reactor_fuel_power_t_y": 465.2,
+    "reactor_fuel_ships_t_y": 868.1,
+    "reactor_fuel_t_y": 1333.3,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 3213.1,
+    "strategic_reserve_reactor_t": 328.8
+   },
+   "gdp_cr_y": 2596624653220,
+   "gdp_per_capita_cr": 18551,
+   "growth_per_year": 0.01182,
+   "imports_cr_y": 103382310804,
+   "income_index": 2.854,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.6,
+    "industrial_interest": 0.0,
+    "prestige_ideology": 0.3,
+    "resource_dependence": 1.0,
+    "security": 0.62,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.8
+   },
+   "name": "Шахта Альфа",
+   "polity": "Проспекторат Керн",
+   "population": 139972220,
+   "regime": "corporate_board",
+   "settlement_structure": {
+    "аванпост: «Золотой Город»": 559,
+    "аванпост: Лагерь «Кларион»": 1338,
+    "аванпост: Стратегические рудники Gliese 892": 2969,
+    "аванпост: Экспедиция Sigma² UMa": 370,
+    "астероидные поселения": 16386597,
+    "вращающиеся цилиндры": 64943710,
+    "выработки в лунах": 24403657,
+    "орбитальные кольца и станции": 27833019,
+    "поверхность (купола, открытые поселения)": 2560000,
+    "подземные поселения (лавовые трубки, шахтные города)": 3840000
+   },
+   "status": "PROPOSAL",
+   "system": 31,
+   "target": [
+    100000000.0,
+    180000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-031-BR (оператор cyg61_kern)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 57 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.568,
+     "what": "Электроника и точное оборудование: 57 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 0 крупных гражданских, 1 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 42 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.417,
+     "what": "Металлы и сплавы: 69 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 38 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.381,
+     "what": "Медицина и биотех: 38 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 37 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.367,
+     "what": "Руда и сырые минералы: 61 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 34 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.339,
+     "what": "Оружие и боеприпасы: 34 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.333,
+     "what": "Подконтрольные вещества: 50 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.331,
+     "what": "Машины и оборудование: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (4 из 17)"
+    }
+   ]
+  },
+  "delta_pav_freekarma": {
+   "balance": {
+    "chemicals": {
+     "consumption": 21897678,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 21897678,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 104134819,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 104134819,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 23363554,
+     "exports": 0,
+     "imports": 3900445,
+     "losses": 0,
+     "production": 19463109,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 9735,
+     "exports": 0,
+     "imports": 4867,
+     "losses": 0,
+     "production": 4867,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 838372,
+     "exports": 0,
+     "imports": 468371,
+     "losses": 0,
+     "production": 370001,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 110567186,
+     "exports": 10566368,
+     "imports": 1702735,
+     "losses": 21133,
+     "production": 119451952,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 122936,
+     "exports": 0,
+     "imports": 21047,
+     "losses": 0,
+     "production": 101890,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 539075,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 539075,
+     "stock_change": 0,
+     "unmet": 239710
+    },
+    "machinery": {
+     "consumption": 2000703,
+     "exports": 0,
+     "imports": 651485,
+     "losses": 0,
+     "production": 1349219,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 778785,
+     "exports": 0,
+     "imports": 292533,
+     "losses": 0,
+     "production": 486252,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 31367014,
+     "exports": 0,
+     "imports": 772647,
+     "losses": 0,
+     "production": 30594367,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 170796347,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 170796347,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 4086,
+     "exports": 0,
+     "imports": 2031,
+     "losses": 0,
+     "production": 2055,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 199020279,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 199020279,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 170598,
+     "exports": 0,
+     "imports": 56928,
+     "losses": 0,
+     "production": 113669,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "Delta Pavonis k",
+     "name": "Свободная Карма",
+     "pop": 26724254,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Delta Pavonis j",
+     "name": "Delta Pavonis j — поселение",
+     "pop": 13362127,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Delta Pavonis K1",
+     "name": "Delta Pavonis K1 — поселение",
+     "pop": 8908085,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Delta Pavonis k (орбита)",
+     "name": "Маяк Дельты Павлина",
+     "pop": 890808,
+     "role": "маячная станция",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (997)",
+     "pop": 150185045,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 26724254,
+    "settlements_total": 1001
+   },
+   "exports_cr_y": 9509731614,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 694255017,
+    "jump_charge_imports_t_y": 21046.7,
+    "jump_charge_local_t_y": 101889.5,
+    "jump_charge_t_y": 122936.2,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 2457965897,
+    "reactor_fuel_imports_t_y": 2031.1,
+    "reactor_fuel_local_t_y": 2055.1,
+    "reactor_fuel_power_t_y": 672.5,
+    "reactor_fuel_ships_t_y": 3424.1,
+    "reactor_fuel_t_y": 4096.6,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 30313.0,
+    "strategic_reserve_reactor_t": 1010.1
+   },
+   "gdp_cr_y": 3694598545814,
+   "gdp_per_capita_cr": 18467,
+   "growth_per_year": 0.00645,
+   "imports_cr_y": 109730412620,
+   "income_index": 2.841,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.08,
+    "prestige_ideology": 0.3,
+    "resource_dependence": 1.0,
+    "security": 1.0,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.59
+   },
+   "name": "Свободная Карма",
+   "polity": "Свободная Карма",
+   "population": 200070319,
+   "regime": "exile_republic",
+   "settlement_structure": {
+    "астероидные поселения": 11157837,
+    "вращающиеся цилиндры": 122559891,
+    "выработки в лунах": 10946923,
+    "орбитальные кольца и станции": 52525668,
+    "поверхность (купола, открытые поселения)": 1152000,
+    "подземные поселения (лавовые трубки, шахтные города)": 1728000
+   },
+   "status": "PROPOSAL",
+   "system": 22,
+   "target": [
+    150000000.0,
+    250000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "вся сеть остаётся без новых прыжковых двигателей: через 5-10 лет флоты стареют",
+     "kind": "jump_core_fab",
+     "severity": 0.9,
+     "what": "фабрика ядер прыжка / Управление Маяков"
+    },
+    {
+     "consequence": "запаса на 90 суток; затем веерные отключения хабитатов",
+     "kind": "fuel_depot",
+     "severity": 0.8,
+     "what": "импорт реакторного топлива 50 %"
+    },
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-022-BR (оператор delta_pav_freekarma)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 56 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.559,
+     "what": "Электроника и точное оборудование: 56 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 0 крупных гражданских, 5 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 38 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.376,
+     "what": "Медицина и биотех: 38 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.334,
+     "what": "Оружие и боеприпасы: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.333,
+     "what": "Подконтрольные вещества: 50 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.326,
+     "what": "Машины и оборудование: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (10 из 101)"
+    }
+   ]
+  },
+  "delta_pav_karma": {
+   "balance": {
+    "chemicals": {
+     "consumption": 72936205,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 72936205,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 591430274,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 591430274,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 54122946,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 54122946,
+     "stock_change": 0,
+     "unmet": 14997965
+    },
+    "controlled": {
+     "consumption": 5760,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 5760,
+     "stock_change": 0,
+     "unmet": 23040
+    },
+    "electronics": {
+     "consumption": 756054,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 756054,
+     "stock_change": 0,
+     "unmet": 1691697
+    },
+    "food": {
+     "consumption": 402404572,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 402404572,
+     "stock_change": 0,
+     "unmet": 6293957
+    },
+    "jump_charge": {
+     "consumption": 0,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 0,
+     "stock_change": 0,
+     "unmet": 201356
+    },
+    "luxury": {
+     "consumption": 1594850,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 1594850,
+     "stock_change": 0,
+     "unmet": 709181
+    },
+    "machinery": {
+     "consumption": 4159164,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 4159164,
+     "stock_change": 0,
+     "unmet": 3244231
+    },
+    "medical": {
+     "consumption": 1179679,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 1179679,
+     "stock_change": 0,
+     "unmet": 1124351
+    },
+    "metals": {
+     "consumption": 146307116,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 146307116,
+     "stock_change": 0,
+     "unmet": 16566303
+    },
+    "ore": {
+     "consumption": 882183963,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 882183963,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 4339,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 4339,
+     "stock_change": 0,
+     "unmet": 6650
+    },
+    "water_volatiles": {
+     "consumption": 765268897,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 765268897,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 242654,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 242654,
+     "stock_change": 0,
+     "unmet": 185890
+    }
+   },
+   "cities": [
+    {
+     "body": "Delta Pavonis k",
+     "name": "Новая Карма",
+     "pop": 84187085,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Delta Pavonis j",
+     "name": "Delta Pavonis j — поселение",
+     "pop": 42093543,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Delta Pavonis K1",
+     "name": "Delta Pavonis K1 — поселение",
+     "pop": 28062362,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Delta Pavonis k (орбита)",
+     "name": "Храм Массива (криобанк генов)",
+     "pop": 701559,
+     "role": "научное поселение",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Delta Pavonis k (орбита)",
+     "name": "Рудники Delta Pavonis h",
+     "pop": 231315,
+     "role": "шахтёрский посёлок",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (3697)",
+     "pop": 585063615,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 84187085,
+    "settlements_total": 3702
+   },
+   "exports_cr_y": 0,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 1137110806,
+    "jump_charge_imports_t_y": 0.0,
+    "jump_charge_local_t_y": 0.0,
+    "jump_charge_t_y": 201355.5,
+    "jump_charge_unmet_t_y": 201355.5,
+    "reactor_fuel_cost_cr_y": 6614940940,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 4338.7,
+    "reactor_fuel_power_t_y": 2494.8,
+    "reactor_fuel_ships_t_y": 8530.1,
+    "reactor_fuel_t_y": 11024.9,
+    "reactor_fuel_unmet_t_y": 6649.8,
+    "reserve_days": 180,
+    "strategic_reserve_charge_t": 99298.6,
+    "strategic_reserve_reactor_t": 5436.9
+   },
+   "gdp_cr_y": 8738967210116,
+   "gdp_per_capita_cr": 11804,
+   "growth_per_year": 0.01146,
+   "imports_cr_y": 0,
+   "income_index": 1.816,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.7,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.0,
+    "prestige_ideology": 0.8,
+    "resource_dependence": 0.0,
+    "security": 1.0,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.0
+   },
+   "name": "Новая Карма",
+   "polity": "Дхарма-Мандала (северная ветвь)",
+   "population": 740339479,
+   "regime": "caste_theocracy",
+   "settlement_structure": {
+    "астероидные поселения": 22684044,
+    "вращающиеся цилиндры": 474334286,
+    "выработки в лунах": 22255250,
+    "орбитальные кольца и станции": 203286123,
+    "поверхность (купола, открытые поселения)": 7111910,
+    "подземные поселения (лавовые трубки, шахтные города)": 10667866
+   },
+   "status": "PROPOSAL",
+   "system": 22,
+   "target": [
+    650000000.0,
+    850000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-022-BR (оператор delta_pav_freekarma)"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 0 крупных гражданских, 14 военных"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (22 из 519)"
+    }
+   ]
+  },
+  "eps_eri_harmony": {
+   "balance": {
+    "chemicals": {
+     "consumption": 155870751,
+     "exports": 66746659,
+     "imports": 0,
+     "losses": 133493,
+     "production": 222750903,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 340905516,
+     "exports": 105724581,
+     "imports": 0,
+     "losses": 211449,
+     "production": 446841547,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 176577002,
+     "exports": 0,
+     "imports": 28380709,
+     "losses": 0,
+     "production": 148196293,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 73574,
+     "exports": 0,
+     "imports": 58859,
+     "losses": 0,
+     "production": 14715,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 6323430,
+     "exports": 0,
+     "imports": 3400370,
+     "losses": 0,
+     "production": 2923060,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 757477151,
+     "exports": 43313218,
+     "imports": 27155556,
+     "losses": 86626,
+     "production": 773721440,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 1576030,
+     "exports": 6509052,
+     "imports": 0,
+     "losses": 13018,
+     "production": 8098099,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 3231653,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 3231653,
+     "stock_change": 0,
+     "unmet": 2654247
+    },
+    "machinery": {
+     "consumption": 13711643,
+     "exports": 0,
+     "imports": 4273041,
+     "losses": 0,
+     "production": 9438602,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 5885900,
+     "exports": 0,
+     "imports": 2128553,
+     "losses": 0,
+     "production": 3757347,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 125281185,
+     "exports": 48313729,
+     "imports": 0,
+     "losses": 96627,
+     "production": 173691541,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 639533652,
+     "exports": 89547201,
+     "imports": 0,
+     "losses": 179094,
+     "production": 729259947,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 22601,
+     "exports": 10871,
+     "imports": 0,
+     "losses": 22,
+     "production": 33494,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 1288645902,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 1288645902,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 1458950,
+     "exports": 0,
+     "imports": 468985,
+     "losses": 0,
+     "production": 989964,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "Epsilon Eridani K4",
+     "name": "Цветущая Гармония",
+     "pop": 145710506,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Epsilon Eridani K3",
+     "name": "Epsilon Eridani K3 — поселение",
+     "pop": 72855253,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Epsilon Eridani K2",
+     "name": "Epsilon Eridani K2 — поселение",
+     "pop": 48570169,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Epsilon Eridani K4 (орбита)",
+     "name": "Ледовый комплекс облака комет",
+     "pop": 532789,
+     "role": "ледовый промысел",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "eps Eri b",
+     "name": "Платформы eps Eri b",
+     "pop": 532789,
+     "role": "газовые платформы",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Epsilon Eridani K4 (орбита)",
+     "name": "Верфи Гармонии",
+     "pop": 532789,
+     "role": "город-верфь",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Epsilon Eridani K4 (орбита)",
+     "name": "Рудники eps Eri b I",
+     "pop": 532789,
+     "role": "шахтёрский посёлок",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Epsilon Eridani K4 (орбита)",
+     "name": "Ретрансляторная сеть (60 % межколониальной связи)",
+     "pop": 4857017,
+     "role": "маячная станция",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (6848)",
+     "pop": 1097040188,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 145710506,
+    "settlements_total": 6856
+   },
+   "exports_cr_y": 292445132106,
+   "fuel": {
+    "depots": 4,
+    "jump_charge_cost_cr_y": 9074665092,
+    "jump_charge_imports_t_y": 0.0,
+    "jump_charge_local_t_y": 1589047.6,
+    "jump_charge_t_y": 1606909.1,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 13733787741,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 22622.7,
+    "reactor_fuel_power_t_y": 4622.7,
+    "reactor_fuel_ships_t_y": 18267.0,
+    "reactor_fuel_t_y": 22889.6,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 396224.2,
+    "strategic_reserve_reactor_t": 5644.0
+   },
+   "gdp_cr_y": 30792922020218,
+   "gdp_per_capita_cr": 22458,
+   "growth_per_year": 0.00147,
+   "imports_cr_y": 795340933109,
+   "income_index": 3.455,
+   "motives": {
+    "alliance_obligation": 0.6,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.47,
+    "prestige_ideology": 0.5,
+    "resource_dependence": 1.0,
+    "security": 0.88,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.52
+   },
+   "name": "Цветущая Гармония",
+   "polity": "Синь Хэ",
+   "population": 1371164289,
+   "regime": "sage_council",
+   "settlement_structure": {
+    "аванпост: Гелиевое поле Эпсилон Индейца": 62214,
+    "астероидные поселения": 190340650,
+    "вращающиеся цилиндры": 744290303,
+    "выработки в лунах": 107249562,
+    "орбитальные кольца и станции": 318981559,
+    "поверхность (купола, открытые поселения)": 4096000,
+    "подземные поселения (лавовые трубки, шахтные города)": 6144000
+   },
+   "status": "PROPOSAL",
+   "system": 9,
+   "target": [
+    1200000000.0,
+    1500000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "вся сеть остаётся без новых прыжковых двигателей: через 5-10 лет флоты стареют",
+     "kind": "jump_core_fab",
+     "severity": 0.9,
+     "what": "фабрика ядер прыжка / Управление Маяков"
+    },
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-009-BR (оператор eps_eri_harmony)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 54 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.538,
+     "what": "Электроника и точное оборудование: 54 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 53 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.533,
+     "what": "Подконтрольные вещества: 80 % потребности — импорт, крупнейший поставщик gj581_freeclans"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 3 крупных гражданских, 15 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 36 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.362,
+     "what": "Медицина и биотех: 36 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 32 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.321,
+     "what": "Оружие и боеприпасы: 32 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 31 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.312,
+     "what": "Машины и оборудование: 31 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (20 из 429)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 16 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.161,
+     "what": "Потребительские товары: 16 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "eps_eri_strife": {
+   "balance": {
+    "chemicals": {
+     "consumption": 39293945,
+     "exports": 29393415,
+     "imports": 0,
+     "losses": 58787,
+     "production": 68746147,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 199070937,
+     "exports": 52862290,
+     "imports": 0,
+     "losses": 105725,
+     "production": 252038952,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 44348294,
+     "exports": 0,
+     "imports": 7424972,
+     "losses": 0,
+     "production": 36923323,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 18478,
+     "exports": 577877,
+     "imports": 0,
+     "losses": 1156,
+     "production": 597511,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 1582623,
+     "exports": 0,
+     "imports": 884160,
+     "losses": 0,
+     "production": 698462,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 192273380,
+     "exports": 13918831,
+     "imports": 6893001,
+     "losses": 27838,
+     "production": 199327048,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 677655,
+     "exports": 3248732,
+     "imports": 0,
+     "losses": 6497,
+     "production": 3932885,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 811648,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 811648,
+     "stock_change": 0,
+     "unmet": 666629
+    },
+    "machinery": {
+     "consumption": 3480723,
+     "exports": 0,
+     "imports": 1137167,
+     "losses": 0,
+     "production": 2343557,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 1478276,
+     "exports": 0,
+     "imports": 556873,
+     "losses": 0,
+     "production": 921404,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 59740027,
+     "exports": 20237274,
+     "imports": 0,
+     "losses": 40475,
+     "production": 80017775,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 330517740,
+     "exports": 44773600,
+     "imports": 0,
+     "losses": 89547,
+     "production": 375380888,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 7127,
+     "exports": 5436,
+     "imports": 0,
+     "losses": 11,
+     "production": 12573,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 349212265,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 349212265,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 328844,
+     "exports": 0,
+     "imports": 110050,
+     "losses": 0,
+     "production": 218794,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "Epsilon Eridani K4",
+     "name": "Пояс Раздора / Вольные астероиды",
+     "pop": 43294098,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Epsilon Eridani K3",
+     "name": "Epsilon Eridani K3 — поселение",
+     "pop": 21647049,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Epsilon Eridani K2",
+     "name": "Epsilon Eridani K2 — поселение",
+     "pop": 14431366,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Epsilon Eridani K4 (орбита)",
+     "name": "Чёрный рынок пояса",
+     "pop": 1443137,
+     "role": "вольный порт",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (1737)",
+     "pop": 267256680,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 43294098,
+    "settlements_total": 1741
+   },
+   "exports_cr_y": 179762680108,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 3917816531,
+    "jump_charge_imports_t_y": 0.0,
+    "jump_charge_local_t_y": 684152.7,
+    "jump_charge_t_y": 693752.9,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 4359922856,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 7137.8,
+    "reactor_fuel_power_t_y": 1204.4,
+    "reactor_fuel_ships_t_y": 6062.1,
+    "reactor_fuel_t_y": 7266.5,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 171062.3,
+    "strategic_reserve_reactor_t": 1791.7
+   },
+   "gdp_cr_y": 7651674030390,
+   "gdp_per_capita_cr": 21983,
+   "growth_per_year": 0.00849,
+   "imports_cr_y": 205451858326,
+   "income_index": 3.382,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.6,
+    "prestige_ideology": 0.3,
+    "resource_dependence": 1.0,
+    "security": 0.88,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.54
+   },
+   "name": "Пояс Раздора / Вольные астероиды",
+   "polity": "Варпстанис",
+   "population": 348072330,
+   "regime": "clan_contracts",
+   "settlement_structure": {
+    "астероидные поселения": 46586971,
+    "вращающиеся цилиндры": 190872787,
+    "выработки в лунах": 26249949,
+    "орбитальные кольца и станции": 81802623,
+    "поверхность (купола, открытые поселения)": 1024000,
+    "подземные поселения (лавовые трубки, шахтные города)": 1536000
+   },
+   "status": "PROPOSAL",
+   "system": 9,
+   "target": [
+    250000000.0,
+    450000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-009-BR (оператор eps_eri_harmony)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 56 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.559,
+     "what": "Электроника и точное оборудование: 56 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 1 крупных гражданских, 5 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 38 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.377,
+     "what": "Медицина и биотех: 38 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.335,
+     "what": "Оружие и боеприпасы: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.327,
+     "what": "Машины и оборудование: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (14 из 221)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 17 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.167,
+     "what": "Потребительские товары: 17 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "gj581_europa": {
+   "balance": {
+    "chemicals": {
+     "consumption": 29467855,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 29467855,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 88399441,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 88399441,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 31617157,
+     "exports": 0,
+     "imports": 5299522,
+     "losses": 0,
+     "production": 26317634,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 13174,
+     "exports": 0,
+     "imports": 6587,
+     "losses": 0,
+     "production": 6587,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 1130015,
+     "exports": 0,
+     "imports": 632229,
+     "losses": 0,
+     "production": 497786,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 150165604,
+     "exports": 2382536,
+     "imports": 5383437,
+     "losses": 4765,
+     "production": 147169468,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 19842,
+     "exports": 0,
+     "imports": 6647,
+     "losses": 0,
+     "production": 13195,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 578647,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 578647,
+     "stock_change": 0,
+     "unmet": 475259
+    },
+    "machinery": {
+     "consumption": 2719480,
+     "exports": 0,
+     "imports": 889636,
+     "losses": 0,
+     "production": 1829844,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 1053905,
+     "exports": 0,
+     "imports": 397464,
+     "losses": 0,
+     "production": 656441,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 29249270,
+     "exports": 0,
+     "imports": 10925430,
+     "losses": 0,
+     "production": 18323840,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 95496796,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 95496796,
+     "stock_change": 0,
+     "unmet": 25019100
+    },
+    "reactor_fuel": {
+     "consumption": 1984,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 1984,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 257530170,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 257530170,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 96720,
+     "exports": 0,
+     "imports": 32405,
+     "losses": 0,
+     "production": 64315,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "Gliese 581 h",
+     "name": "Новая Европа",
+     "pop": 34897237,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Gliese 581 K1",
+     "name": "Gliese 581 K1 — поселение",
+     "pop": 17448618,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Gliese 581 K3",
+     "name": "Gliese 581 K3 — поселение",
+     "pop": 11632412,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Gliese 581 h (орбита)",
+     "name": "Реестр договоров и Арбитраж «Новый Брюссель»",
+     "pop": 1163241,
+     "role": "орбитальный порт / реестр",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Gliese 581 i",
+     "name": "Платформы Gliese 581 i",
+     "pop": 92823,
+     "role": "газовые платформы",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Gliese 581 K1",
+     "name": "Агромодули",
+     "pop": 8724309,
+     "role": "аграрный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (1354)",
+     "pop": 197989358,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 34897237,
+    "settlements_total": 1360
+   },
+   "exports_cr_y": 2144282058,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 112052487,
+    "jump_charge_imports_t_y": 6647.0,
+    "jump_charge_local_t_y": 13194.9,
+    "jump_charge_t_y": 19841.9,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 1195881212,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 1984.4,
+    "reactor_fuel_power_t_y": 900.9,
+    "reactor_fuel_ships_t_y": 1092.2,
+    "reactor_fuel_t_y": 1993.1,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 4892.5,
+    "strategic_reserve_reactor_t": 491.5
+   },
+   "gdp_cr_y": 4977736155392,
+   "gdp_per_capita_cr": 18304,
+   "growth_per_year": 0.00289,
+   "imports_cr_y": 158467040606,
+   "income_index": 2.816,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.02,
+    "prestige_ideology": 0.3,
+    "resource_dependence": 1.0,
+    "security": 0.44,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.64
+   },
+   "name": "Новая Европа",
+   "polity": "Рестаурос",
+   "population": 271947998,
+   "regime": "parliamentary_bureaucracy",
+   "settlement_structure": {
+    "астероидные поселения": 17533856,
+    "вращающиеся цилиндры": 154668947,
+    "выработки в лунах": 28658503,
+    "орбитальные кольца и станции": 66286692,
+    "поверхность (купола, открытые поселения)": 1920000,
+    "подземные поселения (лавовые трубки, шахтные города)": 2880000
+   },
+   "status": "PROPOSAL",
+   "system": 10,
+   "target": [
+    200000000.0,
+    350000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-010-BR (оператор gj581_europa)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 56 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.559,
+     "what": "Электроника и точное оборудование: 56 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 0 крупных гражданских, 2 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 38 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.377,
+     "what": "Медицина и биотех: 38 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 34 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.335,
+     "what": "Оружие и боеприпасы: 34 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.333,
+     "what": "Подконтрольные вещества: 50 % потребности — импорт, крупнейший поставщик gj581_freeclans"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.327,
+     "what": "Машины и оборудование: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (7 из 57)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 22 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.224,
+     "what": "Металлы и сплавы: 37 % потребности — импорт, крупнейший поставщик wolf359_citadel"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 20 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.201,
+     "what": "Заряд прыжка (изотопы привода): 34 % потребности — импорт, крупнейший поставщик gj876_next"
+    }
+   ]
+  },
+  "gj581_freeclans": {
+   "balance": {
+    "chemicals": {
+     "consumption": 21764501,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 21764501,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 187766388,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 187766388,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 23469443,
+     "exports": 0,
+     "imports": 4003446,
+     "losses": 0,
+     "production": 19465997,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 9779,
+     "exports": 321662,
+     "imports": 0,
+     "losses": 643,
+     "production": 332084,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 838133,
+     "exports": 0,
+     "imports": 477587,
+     "losses": 0,
+     "production": 360546,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 110764092,
+     "exports": 3230062,
+     "imports": 3970893,
+     "losses": 6460,
+     "production": 110029722,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 32584,
+     "exports": 0,
+     "imports": 10916,
+     "losses": 0,
+     "production": 21668,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 429530,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 429530,
+     "stock_change": 0,
+     "unmet": 352785
+    },
+    "machinery": {
+     "consumption": 2005891,
+     "exports": 0,
+     "imports": 669582,
+     "losses": 0,
+     "production": 1336309,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 782315,
+     "exports": 0,
+     "imports": 300090,
+     "losses": 0,
+     "production": 482225,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 52223277,
+     "exports": 0,
+     "imports": 19660284,
+     "losses": 0,
+     "production": 32562993,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 186719590,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 186719590,
+     "stock_change": 0,
+     "unmet": 48918459
+    },
+    "reactor_fuel": {
+     "consumption": 1854,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 1854,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 214511602,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 214511602,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 99654,
+     "exports": 0,
+     "imports": 33960,
+     "losses": 0,
+     "production": 65694,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "Gliese 581 h",
+     "name": "Свободные поселения",
+     "pop": 26786416,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Gliese 581 K1",
+     "name": "Gliese 581 K1 — поселение",
+     "pop": 13393208,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Gliese 581 K3",
+     "name": "Gliese 581 K3 — поселение",
+     "pop": 8928805,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Gliese 581 h (орбита)",
+     "name": "Мастерские нелицензионных приводов",
+     "pop": 892881,
+     "role": "вольный порт",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (999)",
+     "pop": 150587823,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 26786416,
+    "settlements_total": 1003
+   },
+   "exports_cr_y": 31856592417,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 184008654,
+    "jump_charge_imports_t_y": 10915.5,
+    "jump_charge_local_t_y": 21668.1,
+    "jump_charge_t_y": 32583.6,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 1120162333,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 1854.1,
+    "reactor_fuel_power_t_y": 680.3,
+    "reactor_fuel_ships_t_y": 1186.6,
+    "reactor_fuel_t_y": 1866.9,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 8034.3,
+    "strategic_reserve_reactor_t": 460.3
+   },
+   "gdp_cr_y": 3718521347554,
+   "gdp_per_capita_cr": 18538,
+   "growth_per_year": 0.01451,
+   "imports_cr_y": 132146485551,
+   "income_index": 2.852,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.02,
+    "prestige_ideology": 0.3,
+    "resource_dependence": 1.0,
+    "security": 0.44,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.71
+   },
+   "name": "Свободные поселения",
+   "polity": "кланы Свободного мира",
+   "population": 200589133,
+   "regime": "clan_contracts",
+   "settlement_structure": {
+    "астероидные поселения": 7406147,
+    "вращающиеся цилиндры": 125634520,
+    "выработки в лунах": 12105100,
+    "орбитальные кольца и станции": 53843366,
+    "поверхность (купола, открытые поселения)": 640000,
+    "подземные поселения (лавовые трубки, шахтные города)": 960000
+   },
+   "status": "PROPOSAL",
+   "system": 10,
+   "target": [
+    150000000.0,
+    250000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-010-BR (оператор gj581_europa)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 57 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.57,
+     "what": "Электроника и точное оборудование: 57 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 0 крупных гражданских, 2 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 38 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.384,
+     "what": "Медицина и биотех: 38 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 34 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.341,
+     "what": "Оружие и боеприпасы: 34 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.334,
+     "what": "Машины и оборудование: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (10 из 110)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 23 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.226,
+     "what": "Металлы и сплавы: 38 % потребности — импорт, крупнейший поставщик wolf359_citadel"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 20 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.201,
+     "what": "Заряд прыжка (изотопы привода): 34 % потребности — импорт, крупнейший поставщик gj876_next"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 17 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.171,
+     "what": "Потребительские товары: 17 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "gj832_gaia_zone": {
+   "balance": {
+    "chemicals": {
+     "consumption": 180,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 180,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 236,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 236,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 90,
+     "exports": 0,
+     "imports": 34,
+     "losses": 0,
+     "production": 56,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 0,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 0,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 3,
+     "exports": 0,
+     "imports": 3,
+     "losses": 0,
+     "production": 0,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 1301,
+     "exports": 13092333,
+     "imports": 47,
+     "losses": 26185,
+     "production": 13119772,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 2161,
+     "exports": 0,
+     "imports": 2161,
+     "losses": 0,
+     "production": 0,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 2,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 2,
+     "stock_change": 0,
+     "unmet": 1
+    },
+    "machinery": {
+     "consumption": 24,
+     "exports": 0,
+     "imports": 19,
+     "losses": 0,
+     "production": 5,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 3,
+     "exports": 0,
+     "imports": 3,
+     "losses": 0,
+     "production": 0,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 75,
+     "exports": 0,
+     "imports": 4,
+     "losses": 0,
+     "production": 71,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 391,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 391,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 218,
+     "exports": 1219,
+     "imports": 0,
+     "losses": 2,
+     "production": 1440,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 2016,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 2016,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 0,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 0,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "GJ 832 b III",
+     "name": "Зона «Филоморфоз»",
+     "pop": 1224,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "GJ 832 b II",
+     "name": "GJ 832 b II — поселение",
+     "pop": 612,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "GJ 832 b I",
+     "name": "GJ 832 b I — поселение",
+     "pop": 408,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (0)",
+     "pop": 119,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 2363,
+    "settlements_total": 1
+   },
+   "exports_cr_y": 12514300478,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 12495111,
+    "jump_charge_imports_t_y": 2161.2,
+    "jump_charge_local_t_y": 0.0,
+    "jump_charge_t_y": 2212.6,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 132754659,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 220.8,
+    "reactor_fuel_power_t_y": 2.4,
+    "reactor_fuel_ships_t_y": 218.8,
+    "reactor_fuel_t_y": 221.3,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 545.6,
+    "strategic_reserve_reactor_t": 54.6
+   },
+   "gdp_cr_y": 1797062,
+   "gdp_per_capita_cr": 760,
+   "growth_per_year": -0.00369,
+   "imports_cr_y": 11905649,
+   "income_index": 0.117,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 1.0,
+    "prestige_ideology": 0.5,
+    "resource_dependence": 1.0,
+    "security": 0.5,
+    "status": "PROPOSAL",
+    "trade_dependence": 1.0
+   },
+   "name": "Зона «Филоморфоз»",
+   "polity": "Вердензальб (остатки Гайи-Прим)",
+   "population": 2363,
+   "regime": "none_quiet",
+   "settlement_structure": {
+    "астероидные поселения": 0,
+    "вращающиеся цилиндры": 0,
+    "выработки в лунах": 0,
+    "орбитальные кольца и станции": 0,
+    "поверхность (купола, открытые поселения)": 945,
+    "подземные поселения (лавовые трубки, шахтные города)": 1418
+   },
+   "status": "PROPOSAL",
+   "system": 12,
+   "target": null,
+   "target_status": null,
+   "vulnerabilities": [
+    {
+     "consequence": "потеря поставщика: дефицит 100 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.996,
+     "what": "Электроника и точное оборудование: 100 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 85 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.845,
+     "what": "Медицина и биотех: 85 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 80 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.796,
+     "what": "Машины и оборудование: 80 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-012-BR (оператор gj832_tianhe)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 60 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.6,
+     "what": "Заряд прыжка (изотопы привода): 100 % потребности — импорт, крупнейший поставщик gj876_next"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 38 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.376,
+     "what": "Потребительские товары: 38 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (1 из 1)"
+    }
+   ]
+  },
+  "gj832_tianhe": {
+   "balance": {
+    "chemicals": {
+     "consumption": 118603119,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 118603119,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 187758922,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 187758922,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 132741268,
+     "exports": 0,
+     "imports": 21627207,
+     "losses": 0,
+     "production": 111114061,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 55309,
+     "exports": 0,
+     "imports": 44247,
+     "losses": 0,
+     "production": 11062,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 4743574,
+     "exports": 0,
+     "imports": 2581019,
+     "losses": 0,
+     "production": 2162555,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 584887051,
+     "exports": 170499,
+     "imports": 20968201,
+     "losses": 341,
+     "production": 564089690,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 359245,
+     "exports": 0,
+     "imports": 170641,
+     "losses": 0,
+     "production": 188603,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 2429386,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 2429386,
+     "stock_change": 0,
+     "unmet": 1995322
+    },
+    "machinery": {
+     "consumption": 10588782,
+     "exports": 0,
+     "imports": 3352270,
+     "losses": 0,
+     "production": 7236512,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 4424709,
+     "exports": 0,
+     "imports": 1622041,
+     "losses": 0,
+     "production": 2802668,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 76852580,
+     "exports": 3522162,
+     "imports": 0,
+     "losses": 7044,
+     "production": 80381786,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 377359500,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 377359500,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 17374,
+     "exports": 609,
+     "imports": 0,
+     "losses": 1,
+     "production": 17985,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 977359051,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 977359051,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 725101,
+     "exports": 0,
+     "imports": 236278,
+     "losses": 0,
+     "production": 488823,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "GJ 832 b III",
+     "name": "Тяньхэ (Небесная Река)",
+     "pop": 115701203,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "GJ 832 b II",
+     "name": "GJ 832 b II — поселение",
+     "pop": 57850602,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "GJ 832 b I",
+     "name": "GJ 832 b I — поселение",
+     "pop": 38567068,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "GJ 832 b",
+     "name": "Платформы GJ 832 b",
+     "pop": 382045,
+     "role": "газовые платформы",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "GJ 832 b III (орбита)",
+     "name": "Массовые верфи Тяньхэ",
+     "pop": 382045,
+     "role": "город-верфь",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "GJ 832 b III (орбита)",
+     "name": "Комбинат GJ 832 b I",
+     "pop": 382045,
+     "role": "промышленный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "GJ 832 b III (орбита)",
+     "name": "Флот кордона «Филоморфоз»",
+     "pop": 1928353,
+     "role": "военная база",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (5288)",
+     "pop": 843684836,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 115701203,
+    "settlements_total": 5295
+   },
+   "exports_cr_y": 4393427775,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 2029041173,
+    "jump_charge_imports_t_y": 170641.2,
+    "jump_charge_local_t_y": 188603.5,
+    "jump_charge_t_y": 359295.3,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 10448295560,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 17375.3,
+    "reactor_fuel_power_t_y": 3508.8,
+    "reactor_fuel_ships_t_y": 13905.0,
+    "reactor_fuel_t_y": 17413.8,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 180,
+    "strategic_reserve_charge_t": 177186.7,
+    "strategic_reserve_reactor_t": 8587.6
+   },
+   "gdp_cr_y": 22533986910357,
+   "gdp_per_capita_cr": 21281,
+   "growth_per_year": -0.0006,
+   "imports_cr_y": 601331322641,
+   "income_index": 3.274,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.01,
+    "prestige_ideology": 0.5,
+    "resource_dependence": 1.0,
+    "security": 0.5,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.53
+   },
+   "name": "Тяньхэ (Небесная Река)",
+   "polity": "Тяньхэ",
+   "population": 1058878197,
+   "regime": "party_technocracy",
+   "settlement_structure": {
+    "астероидные поселения": 175417296,
+    "вращающиеся цилиндры": 555845452,
+    "выработки в лунах": 82595969,
+    "орбитальные кольца и станции": 238219480,
+    "поверхность (купола, открытые поселения)": 2720000,
+    "подземные поселения (лавовые трубки, шахтные города)": 4080000
+   },
+   "status": "PROPOSAL",
+   "system": 12,
+   "target": [
+    900000000.0,
+    1200000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-012-BR (оператор gj832_tianhe)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 54 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.544,
+     "what": "Электроника и точное оборудование: 54 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 53 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.533,
+     "what": "Подконтрольные вещества: 80 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 0 крупных гражданских, 17 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 37 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.367,
+     "what": "Медицина и биотех: 37 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.326,
+     "what": "Оружие и боеприпасы: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 32 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.317,
+     "what": "Машины и оборудование: 32 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (14 из 222)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 29 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.285,
+     "what": "Заряд прыжка (изотопы привода): 48 % потребности — импорт, крупнейший поставщик gj876_next"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 16 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.163,
+     "what": "Потребительские товары: 16 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "gj876_next": {
+   "balance": {
+    "chemicals": {
+     "consumption": 61293,
+     "exports": 7397749,
+     "imports": 0,
+     "losses": 14795,
+     "production": 7473838,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 9965,
+     "exports": 23326254,
+     "imports": 0,
+     "losses": 46653,
+     "production": 23382872,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 11315,
+     "exports": 0,
+     "imports": 2359,
+     "losses": 0,
+     "production": 8956,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 5,
+     "exports": 0,
+     "imports": 4,
+     "losses": 0,
+     "production": 1,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 396,
+     "exports": 0,
+     "imports": 265,
+     "losses": 0,
+     "production": 131,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 55013,
+     "exports": 5,
+     "imports": 1972,
+     "losses": 0,
+     "production": 53045,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 254149,
+     "exports": 1211781,
+     "imports": 0,
+     "losses": 2424,
+     "production": 1468354,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 207,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 207,
+     "stock_change": 0,
+     "unmet": 170
+    },
+    "machinery": {
+     "consumption": 996,
+     "exports": 0,
+     "imports": 418,
+     "losses": 0,
+     "production": 579,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 377,
+     "exports": 0,
+     "imports": 177,
+     "losses": 0,
+     "production": 200,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 30281,
+     "exports": 11495612,
+     "imports": 0,
+     "losses": 22991,
+     "production": 11548884,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 103875,
+     "exports": 28076133,
+     "imports": 0,
+     "losses": 56152,
+     "production": 28236160,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 1164,
+     "exports": 1812,
+     "imports": 0,
+     "losses": 4,
+     "production": 2980,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 165616,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 165616,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 29,
+     "exports": 0,
+     "imports": 12,
+     "losses": 0,
+     "production": 17,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "Gliese 876 g",
+     "name": "Провидение",
+     "pop": 48756,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Gliese 876 f",
+     "name": "Gliese 876 f — поселение",
+     "pop": 24378,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Gliese 876 K2",
+     "name": "Gliese 876 K2 — поселение",
+     "pop": 16252,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Gliese 876 g (орбита)",
+     "name": "Ядро «Провидца»",
+     "pop": 406,
+     "role": "научное поселение",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "GJ 876 b",
+     "name": "Концессии трёх гигантов GJ 876 (операторы — Когниум и Керн)",
+     "pop": 2438,
+     "role": "газовые платформы",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Gliese 876 g (орбита)",
+     "name": "Концессионные рудники GJ 876 b I",
+     "pop": 2438,
+     "role": "шахтёрский посёлок",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (0)",
+     "pop": 4981,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 99649,
+    "settlements_total": 1
+   },
+   "exports_cr_y": 42491322104,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 1471475918,
+    "jump_charge_imports_t_y": 0.0,
+    "jump_charge_local_t_y": 256572.8,
+    "jump_charge_t_y": 260563.7,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 724177149,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 1167.7,
+    "reactor_fuel_power_t_y": 12.7,
+    "reactor_fuel_ships_t_y": 1194.2,
+    "reactor_fuel_t_y": 1207.0,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 64248.6,
+    "strategic_reserve_reactor_t": 297.6
+   },
+   "gdp_cr_y": 1739771891,
+   "gdp_per_capita_cr": 17459,
+   "growth_per_year": -0.00489,
+   "imports_cr_y": 63003998,
+   "income_index": 2.686,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 1.0,
+    "prestige_ideology": 0.5,
+    "resource_dependence": 1.0,
+    "security": 0.0,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.72
+   },
+   "name": "Провидение",
+   "polity": "Культ Машины / Провидение",
+   "population": 99649,
+   "regime": "machine_oracle",
+   "settlement_structure": {
+    "астероидные поселения": 0,
+    "вращающиеся цилиндры": 0,
+    "выработки в лунах": 0,
+    "орбитальные кольца и станции": 0,
+    "поверхность (купола, открытые поселения)": 39860,
+    "подземные поселения (лавовые трубки, шахтные города)": 59789
+   },
+   "status": "PROPOSAL",
+   "system": 13,
+   "target": null,
+   "target_status": null,
+   "vulnerabilities": [
+    {
+     "consequence": "потеря поставщика: дефицит 67 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.669,
+     "what": "Электроника и точное оборудование: 67 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-013-BR (оператор tau_ceti_cognium)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 53 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.533,
+     "what": "Подконтрольные вещества: 80 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 47 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.469,
+     "what": "Медицина и биотех: 47 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 42 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.419,
+     "what": "Машины и оборудование: 42 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 42 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.417,
+     "what": "Оружие и боеприпасы: 42 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (4 из 17)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 21 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.208,
+     "what": "Потребительские товары: 21 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "hd114783_hellas3": {
+   "balance": {
+    "chemicals": {
+     "consumption": 1207,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 1207,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 10522,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 10522,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 1142,
+     "exports": 0,
+     "imports": 326,
+     "losses": 0,
+     "production": 816,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 0,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 0,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 39,
+     "exports": 0,
+     "imports": 33,
+     "losses": 0,
+     "production": 6,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 7160,
+     "exports": 19,
+     "imports": 257,
+     "losses": 0,
+     "production": 6923,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 319,
+     "exports": 0,
+     "imports": 319,
+     "losses": 0,
+     "production": 0,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 21,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 21,
+     "stock_change": 0,
+     "unmet": 17
+    },
+    "machinery": {
+     "consumption": 130,
+     "exports": 0,
+     "imports": 77,
+     "losses": 0,
+     "production": 53,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 38,
+     "exports": 0,
+     "imports": 24,
+     "losses": 0,
+     "production": 14,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 2844,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 2844,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 16468,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 16468,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 13,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 13,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 13251,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 13251,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 2,
+     "exports": 0,
+     "imports": 1,
+     "losses": 0,
+     "production": 1,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "HD 114783 c III",
+     "name": "Третья Эллада",
+     "pop": 6607,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 114783 K2",
+     "name": "HD 114783 K2 — поселение",
+     "pop": 3304,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 114783 K4",
+     "name": "HD 114783 K4 — поселение",
+     "pop": 2203,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 114783 c III (орбита)",
+     "name": "Астероид-корабль «Одиссей»",
+     "pop": 220,
+     "role": "станция-ядро",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (0)",
+     "pop": 649,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 12983,
+    "settlements_total": 1
+   },
+   "exports_cr_y": 17193,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 1802932,
+    "jump_charge_imports_t_y": 319.3,
+    "jump_charge_local_t_y": 0.0,
+    "jump_charge_t_y": 319.3,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 8253286,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 12.7,
+    "reactor_fuel_power_t_y": 1.1,
+    "reactor_fuel_ships_t_y": 12.7,
+    "reactor_fuel_t_y": 13.8,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 78.7,
+    "strategic_reserve_reactor_t": 3.4
+   },
+   "gdp_cr_y": 135951484,
+   "gdp_per_capita_cr": 10472,
+   "growth_per_year": 0.02842,
+   "imports_cr_y": 9974335,
+   "income_index": 1.611,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.0,
+    "prestige_ideology": 0.3,
+    "resource_dependence": 1.0,
+    "security": 0.62,
+    "status": "PROPOSAL",
+    "trade_dependence": 1.0
+   },
+   "name": "Третья Эллада",
+   "polity": "Третья Эллада",
+   "population": 12983,
+   "regime": "litigating_city_states",
+   "settlement_structure": {
+    "астероидные поселения": 0,
+    "вращающиеся цилиндры": 0,
+    "выработки в лунах": 0,
+    "орбитальные кольца и станции": 0,
+    "поверхность (купола, открытые поселения)": 5193,
+    "подземные поселения (лавовые трубки, шахтные города)": 7790
+   },
+   "status": "PROPOSAL",
+   "system": 37,
+   "target": null,
+   "target_status": null,
+   "vulnerabilities": [
+    {
+     "consequence": "потеря поставщика: дефицит 85 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.846,
+     "what": "Электроника и точное оборудование: 85 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 64 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.642,
+     "what": "Медицина и биотех: 64 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-037-BR (оператор cyg61_kern)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 60 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.6,
+     "what": "Заряд прыжка (изотопы привода): 100 % потребности — импорт, крупнейший поставщик hd69830_verde"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 59 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.592,
+     "what": "Машины и оборудование: 59 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 57 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.57,
+     "what": "Оружие и боеприпасы: 57 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (1 из 1)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 29 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.285,
+     "what": "Потребительские товары: 29 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "hd20794_hellas2": {
+   "balance": {
+    "chemicals": {
+     "consumption": 27684134,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 27684134,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 68597022,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 68597022,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 30562231,
+     "exports": 0,
+     "imports": 5075918,
+     "losses": 0,
+     "production": 25486313,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 12734,
+     "exports": 0,
+     "imports": 6367,
+     "losses": 0,
+     "production": 6367,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 1091486,
+     "exports": 0,
+     "imports": 605896,
+     "losses": 0,
+     "production": 485590,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 138086162,
+     "exports": 18378350,
+     "imports": 4950389,
+     "losses": 36757,
+     "production": 151550880,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 115751,
+     "exports": 114141,
+     "imports": 0,
+     "losses": 228,
+     "production": 230120,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 559340,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 559340,
+     "stock_change": 0,
+     "unmet": 459401
+    },
+    "machinery": {
+     "consumption": 2500201,
+     "exports": 0,
+     "imports": 809291,
+     "losses": 0,
+     "production": 1690909,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 1018741,
+     "exports": 0,
+     "imports": 380475,
+     "losses": 0,
+     "production": 638266,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 24033322,
+     "exports": 16487730,
+     "imports": 0,
+     "losses": 32975,
+     "production": 40554028,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 124924547,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 124924547,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 2708,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 2708,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 235135097,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 235135097,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 147637,
+     "exports": 0,
+     "imports": 49012,
+     "losses": 0,
+     "production": 98624,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "HD 20794 K3",
+     "name": "Вторая Эллада",
+     "pop": 32430911,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 20794 K2",
+     "name": "HD 20794 K2 — поселение",
+     "pop": 16215455,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 20794 K1",
+     "name": "HD 20794 K1 — поселение",
+     "pop": 10810304,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 20794 d",
+     "name": "Платформы HD 20794 d",
+     "pop": 92129,
+     "role": "газовые платформы",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 20794 K3 (орбита)",
+     "name": "Звёздный Университет",
+     "pop": 270258,
+     "role": "научное поселение",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 20794 K3 (орбита)",
+     "name": "Водные права пояса Койпера",
+     "pop": 92129,
+     "role": "ледовый промысел",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (1245)",
+     "pop": 190108882,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 32430911,
+    "settlements_total": 1251
+   },
+   "exports_cr_y": 35256853027,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 660267847,
+    "jump_charge_imports_t_y": 0.0,
+    "jump_charge_local_t_y": 115979.4,
+    "jump_charge_t_y": 116917.9,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 1637155615,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 2708.5,
+    "reactor_fuel_power_t_y": 837.4,
+    "reactor_fuel_ships_t_y": 1891.2,
+    "reactor_fuel_t_y": 2728.6,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 28829.1,
+    "strategic_reserve_reactor_t": 672.8
+   },
+   "gdp_cr_y": 5059031065946,
+   "gdp_per_capita_cr": 20234,
+   "growth_per_year": 0.00175,
+   "imports_cr_y": 140509098685,
+   "income_index": 3.113,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.26,
+    "prestige_ideology": 0.3,
+    "resource_dependence": 1.0,
+    "security": 0.69,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.56
+   },
+   "name": "Вторая Эллада",
+   "polity": "Вторая Эллада",
+   "population": 250020068,
+   "regime": "corporate_democracy",
+   "settlement_structure": {
+    "аванпост: Реле HD 10360": 3862,
+    "астероидные поселения": 13699626,
+    "вращающиеся цилиндры": 144456607,
+    "выработки в лунах": 25549998,
+    "орбитальные кольца и станции": 61909975,
+    "поверхность (купола, открытые поселения)": 1760000,
+    "подземные поселения (лавовые трубки, шахтные города)": 2640000
+   },
+   "status": "PROPOSAL",
+   "system": 14,
+   "target": [
+    200000000.0,
+    300000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-014-BR (оператор tau_ceti_cognium)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 56 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.555,
+     "what": "Электроника и точное оборудование: 56 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 0 крупных гражданских, 2 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 37 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.373,
+     "what": "Медицина и биотех: 37 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.333,
+     "what": "Подконтрольные вещества: 50 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.332,
+     "what": "Оружие и боеприпасы: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 32 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.324,
+     "what": "Машины и оборудование: 32 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (8 из 74)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 17 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.166,
+     "what": "Потребительские товары: 17 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "hd20794_newindia": {
+   "balance": {
+    "chemicals": {
+     "consumption": 100760818,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 100760818,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 641700122,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 641700122,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 112740102,
+     "exports": 0,
+     "imports": 18832262,
+     "losses": 0,
+     "production": 93907840,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 46975,
+     "exports": 0,
+     "imports": 37580,
+     "losses": 0,
+     "production": 9395,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 4020054,
+     "exports": 0,
+     "imports": 2235980,
+     "losses": 0,
+     "production": 1784074,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 498802844,
+     "exports": 6794784,
+     "imports": 17882082,
+     "losses": 13590,
+     "production": 487729136,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 314026,
+     "exports": 47378,
+     "imports": 0,
+     "losses": 95,
+     "production": 361499,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 2063332,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 2063332,
+     "stock_change": 0,
+     "unmet": 1694672
+    },
+    "machinery": {
+     "consumption": 9030601,
+     "exports": 0,
+     "imports": 2942559,
+     "losses": 0,
+     "production": 6088042,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 3758003,
+     "exports": 0,
+     "imports": 1412420,
+     "losses": 0,
+     "production": 2345584,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 185658290,
+     "exports": 8205233,
+     "imports": 0,
+     "losses": 16410,
+     "production": 193879933,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 1043296612,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 1043296612,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 14628,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 14628,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 929257754,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 929257754,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 569029,
+     "exports": 0,
+     "imports": 189994,
+     "losses": 0,
+     "production": 379035,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "HD 20794 K3",
+     "name": "Новая Индия",
+     "pop": 100421373,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 20794 K2",
+     "name": "HD 20794 K2 — поселение",
+     "pop": 50210686,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 20794 K1",
+     "name": "HD 20794 K1 — поселение",
+     "pop": 33473791,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 20794 d",
+     "name": "Платформы HD 20794 f",
+     "pop": 348436,
+     "role": "газовые платформы",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 20794 K3 (орбита)",
+     "name": "Сборочные кольца",
+     "pop": 348436,
+     "role": "промышленный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (4511)",
+     "pop": 718257391,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 100421373,
+    "settlements_total": 4516
+   },
+   "exports_cr_y": 15381741123,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 1776168772,
+    "jump_charge_imports_t_y": 0.0,
+    "jump_charge_local_t_y": 314121.0,
+    "jump_charge_t_y": 314517.6,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 8812662989,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 14628.0,
+    "reactor_fuel_power_t_y": 3066.3,
+    "reactor_fuel_ships_t_y": 11621.5,
+    "reactor_fuel_t_y": 14687.8,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 77552.3,
+    "strategic_reserve_reactor_t": 3621.6
+   },
+   "gdp_cr_y": 19059535214922,
+   "gdp_per_capita_cr": 21106,
+   "growth_per_year": 0.00937,
+   "imports_cr_y": 520565224628,
+   "income_index": 3.247,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.02,
+    "prestige_ideology": 0.5,
+    "resource_dependence": 1.0,
+    "security": 0.69,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.55
+   },
+   "name": "Новая Индия",
+   "polity": "Дхарма-Мандала (южная ветвь)",
+   "population": 903060113,
+   "regime": "merit_caste_republic",
+   "settlement_structure": {
+    "астероидные поселения": 12557624,
+    "вращающиеся цилиндры": 604437638,
+    "выработки в лунах": 23420149,
+    "орбитальные кольца и станции": 259044702,
+    "поверхность (купола, открытые поселения)": 1440000,
+    "подземные поселения (лавовые трубки, шахтные города)": 2160000
+   },
+   "status": "PROPOSAL",
+   "system": 14,
+   "target": [
+    800000000.0,
+    1000000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-014-BR (оператор tau_ceti_cognium)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 56 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.556,
+     "what": "Электроника и точное оборудование: 56 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 53 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.533,
+     "what": "Подконтрольные вещества: 80 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 1 крупных гражданских, 17 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 38 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.376,
+     "what": "Медицина и биотех: 38 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.334,
+     "what": "Оружие и боеприпасы: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.326,
+     "what": "Машины и оборудование: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (24 из 614)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 17 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.167,
+     "what": "Потребительские товары: 17 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "hd40307_firmament": {
+   "balance": {
+    "chemicals": {
+     "consumption": 21825316,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 21825316,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 143739662,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 143739662,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 24089070,
+     "exports": 0,
+     "imports": 4148321,
+     "losses": 0,
+     "production": 19940749,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 10037,
+     "exports": 0,
+     "imports": 8030,
+     "losses": 0,
+     "production": 2007,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 859323,
+     "exports": 0,
+     "imports": 493147,
+     "losses": 0,
+     "production": 366176,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 109504549,
+     "exports": 0,
+     "imports": 3925738,
+     "losses": 0,
+     "production": 105578811,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 74014,
+     "exports": 0,
+     "imports": 29976,
+     "losses": 0,
+     "production": 44038,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 440870,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 440870,
+     "stock_change": 0,
+     "unmet": 362099
+    },
+    "machinery": {
+     "consumption": 1982791,
+     "exports": 0,
+     "imports": 669127,
+     "losses": 0,
+     "production": 1313664,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 802969,
+     "exports": 0,
+     "imports": 311124,
+     "losses": 0,
+     "production": 491845,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 41317943,
+     "exports": 0,
+     "imports": 8487022,
+     "losses": 0,
+     "production": 32830921,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 205676711,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 205676711,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 3725,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 3725,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 204144817,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 204144817,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 156826,
+     "exports": 0,
+     "imports": 53983,
+     "losses": 0,
+     "production": 102843,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "HD 40307 k",
+     "name": "Небесная Твердыня",
+     "pop": 26516962,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 40307 K2",
+     "name": "HD 40307 K2 — поселение",
+     "pop": 13258481,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 40307 K3",
+     "name": "HD 40307 K3 — поселение",
+     "pop": 8838987,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 40307 f",
+     "name": "Платформы HD 40307 f (доля Твердыни)",
+     "pop": 76053,
+     "role": "газовые платформы",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 40307 k (орбита)",
+     "name": "Флотская база",
+     "pop": 441949,
+     "role": "военная база",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 40307 k (орбита)",
+     "name": "Рудники пояса",
+     "pop": 76053,
+     "role": "шахтёрский посёлок",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (986)",
+     "pop": 149070576,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 26516962,
+    "settlements_total": 992
+   },
+   "exports_cr_y": 0,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 417978623,
+    "jump_charge_imports_t_y": 29975.8,
+    "jump_charge_local_t_y": 44038.4,
+    "jump_charge_t_y": 74014.2,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 2242473061,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 3725.1,
+    "reactor_fuel_power_t_y": 670.6,
+    "reactor_fuel_ships_t_y": 3066.9,
+    "reactor_fuel_t_y": 3737.5,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 180,
+    "strategic_reserve_charge_t": 36500.1,
+    "strategic_reserve_reactor_t": 1843.1
+   },
+   "gdp_cr_y": 3963102731738,
+   "gdp_per_capita_cr": 19988,
+   "growth_per_year": 0.01178,
+   "imports_cr_y": 124930282974,
+   "income_index": 3.075,
+   "motives": {
+    "alliance_obligation": 0.6,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.0,
+    "prestige_ideology": 0.5,
+    "resource_dependence": 1.0,
+    "security": 0.94,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.63
+   },
+   "name": "Небесная Твердыня",
+   "polity": "Синь Хэ (дальняя провинция)",
+   "population": 198279061,
+   "regime": "party_technocracy",
+   "settlement_structure": {
+    "астероидные поселения": 16495578,
+    "вращающиеся цилиндры": 108882807,
+    "выработки в лунах": 23036616,
+    "орбитальные кольца и станции": 46664060,
+    "поверхность (купола, открытые поселения)": 1280000,
+    "подземные поселения (лавовые трубки, шахтные города)": 1920000
+   },
+   "status": "PROPOSAL",
+   "system": 15,
+   "target": [
+    150000000.0,
+    250000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-015-BR (оператор hd40307_maland)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 57 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.574,
+     "what": "Электроника и точное оборудование: 57 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 53 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.533,
+     "what": "Подконтрольные вещества: 80 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 0 крупных гражданских, 5 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 39 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.387,
+     "what": "Медицина и биотех: 39 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 34 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.344,
+     "what": "Оружие и боеприпасы: 34 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 34 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.337,
+     "what": "Машины и оборудование: 34 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (11 из 121)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 24 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.243,
+     "what": "Заряд прыжка (изотопы привода): 40 % потребности — импорт, крупнейший поставщик hd20794_hellas2"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 17 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.172,
+     "what": "Потребительские товары: 17 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "hd40307_maland": {
+   "balance": {
+    "chemicals": {
+     "consumption": 49063993,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 49063993,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 323254699,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 323254699,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 54032478,
+     "exports": 0,
+     "imports": 9196248,
+     "losses": 0,
+     "production": 44836230,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 22514,
+     "exports": 0,
+     "imports": 18011,
+     "losses": 0,
+     "production": 4503,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 1928998,
+     "exports": 0,
+     "imports": 1092383,
+     "losses": 0,
+     "production": 836615,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 246102176,
+     "exports": 0,
+     "imports": 8822763,
+     "losses": 0,
+     "production": 237279413,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 156381,
+     "exports": 0,
+     "imports": 63334,
+     "losses": 0,
+     "production": 93047,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 988884,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 988884,
+     "stock_change": 0,
+     "unmet": 812198
+    },
+    "machinery": {
+     "consumption": 4456160,
+     "exports": 0,
+     "imports": 1483664,
+     "losses": 0,
+     "production": 2972496,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 1801083,
+     "exports": 0,
+     "imports": 689719,
+     "losses": 0,
+     "production": 1111364,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 92931204,
+     "exports": 0,
+     "imports": 18863754,
+     "losses": 0,
+     "production": 74067450,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 463294128,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 463294128,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 7988,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 7988,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 458860974,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 458860974,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 331224,
+     "exports": 0,
+     "imports": 112748,
+     "losses": 0,
+     "production": 218476,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "HD 40307 k",
+     "name": "Новая Маланд",
+     "pop": 53774530,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 40307 K2",
+     "name": "HD 40307 K2 — поселение",
+     "pop": 26887265,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 40307 K3",
+     "name": "HD 40307 K3 — поселение",
+     "pop": 17924843,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 40307 K2",
+     "name": "Агрокольца Маланд («Житница»)",
+     "pop": 13443632,
+     "role": "аграрный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 40307 f",
+     "name": "Платформы HD 40307 f (доля Маланд)",
+     "pop": 169287,
+     "role": "газовые платформы",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 40307 k (орбита)",
+     "name": "Внешний дозор",
+     "pop": 896242,
+     "role": "военная база",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (2223)",
+     "pop": 332520194,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 53774530,
+    "settlements_total": 2229
+   },
+   "exports_cr_y": 0,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 883126819,
+    "jump_charge_imports_t_y": 63334.3,
+    "jump_charge_local_t_y": 93046.6,
+    "jump_charge_t_y": 156380.9,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 4809435121,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 7988.4,
+    "reactor_fuel_power_t_y": 1506.3,
+    "reactor_fuel_ships_t_y": 6509.4,
+    "reactor_fuel_t_y": 8015.7,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 38559.7,
+    "strategic_reserve_reactor_t": 1976.5
+   },
+   "gdp_cr_y": 8871991612634,
+   "gdp_per_capita_cr": 19910,
+   "growth_per_year": 0.01048,
+   "imports_cr_y": 276706497651,
+   "income_index": 3.063,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.0,
+    "prestige_ideology": 0.5,
+    "resource_dependence": 1.0,
+    "security": 0.94,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.62
+   },
+   "name": "Новая Маланд",
+   "polity": "Уджамаа-Джахи",
+   "population": 445615993,
+   "regime": "council_of_chiefs",
+   "settlement_structure": {
+    "астероидные поселения": 19751775,
+    "вращающиеся цилиндры": 275436152,
+    "выработки в лунах": 27584001,
+    "орбитальные кольца и станции": 118044065,
+    "поверхность (купола, открытые поселения)": 1920000,
+    "подземные поселения (лавовые трубки, шахтные города)": 2880000
+   },
+   "status": "PROPOSAL",
+   "system": 15,
+   "target": [
+    350000000.0,
+    550000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-015-BR (оператор hd40307_maland)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 57 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.566,
+     "what": "Электроника и точное оборудование: 57 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 53 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.533,
+     "what": "Подконтрольные вещества: 80 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 0 крупных гражданских, 10 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 38 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.383,
+     "what": "Медицина и биотех: 38 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 34 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.34,
+     "what": "Оружие и боеприпасы: 34 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.333,
+     "what": "Машины и оборудование: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (16 из 273)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 24 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.243,
+     "what": "Заряд прыжка (изотопы привода): 40 % потребности — импорт, крупнейший поставщик hd20794_hellas2"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 17 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.17,
+     "what": "Потребительские товары: 17 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "hd69830_verde": {
+   "balance": {
+    "chemicals": {
+     "consumption": 22745493,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 22745493,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 50571735,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 50571735,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 25588928,
+     "exports": 0,
+     "imports": 4431089,
+     "losses": 0,
+     "production": 21157839,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 10662,
+     "exports": 0,
+     "imports": 8530,
+     "losses": 0,
+     "production": 2132,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 907405,
+     "exports": 0,
+     "imports": 523677,
+     "losses": 0,
+     "production": 383728,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 113108278,
+     "exports": 87,
+     "imports": 4054932,
+     "losses": 0,
+     "production": 109053433,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 13192,
+     "exports": 221,
+     "imports": 116,
+     "losses": 0,
+     "production": 13298,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 468320,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 468320,
+     "stock_change": 0,
+     "unmet": 384644
+    },
+    "machinery": {
+     "consumption": 2047809,
+     "exports": 0,
+     "imports": 695476,
+     "losses": 0,
+     "production": 1352333,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 852964,
+     "exports": 0,
+     "imports": 332332,
+     "losses": 0,
+     "production": 520633,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 18270520,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 18270520,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 93865879,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 93865879,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 1375,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 1375,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 191576954,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 191576954,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 61482,
+     "exports": 0,
+     "imports": 21281,
+     "losses": 0,
+     "production": 40201,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "HD 69830 l",
+     "name": "Сельта-Верде",
+     "pop": 27270756,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 69830 K2",
+     "name": "HD 69830 K2 — поселение",
+     "pop": 13635378,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 69830 K4",
+     "name": "HD 69830 K4 — поселение",
+     "pop": 9090252,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 69830 c",
+     "name": "Платформы трёх гигантов HD 69830",
+     "pop": 71067,
+     "role": "газовые платформы",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "HD 69830 l (орбита)",
+     "name": "Ледовые поля облака комет",
+     "pop": 71067,
+     "role": "ледовый промысел",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (1019)",
+     "pop": 154642381,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 27270756,
+    "settlements_total": 1024
+   },
+   "exports_cr_y": 1202970,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 74531197,
+    "jump_charge_imports_t_y": 116.1,
+    "jump_charge_local_t_y": 13076.2,
+    "jump_charge_t_y": 13197.7,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 828572310,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 1374.7,
+    "reactor_fuel_power_t_y": 679.1,
+    "reactor_fuel_ships_t_y": 701.9,
+    "reactor_fuel_t_y": 1381.0,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 3254.2,
+    "strategic_reserve_reactor_t": 340.5
+   },
+   "gdp_cr_y": 4329989761195,
+   "gdp_per_capita_cr": 21145,
+   "growth_per_year": 0.01483,
+   "imports_cr_y": 121002345055,
+   "income_index": 3.253,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.7,
+    "elite_interest": 0.6,
+    "industrial_interest": 0.0,
+    "prestige_ideology": 0.8,
+    "resource_dependence": 1.0,
+    "security": 0.0,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.56
+   },
+   "name": "Сельта-Верде",
+   "polity": "Сельта-Верде («Затерянный мир»)",
+   "population": 204780901,
+   "regime": "grandees_and_church",
+   "settlement_structure": {
+    "астероидные поселения": 95553022,
+    "вращающиеся цилиндры": 0,
+    "выработки в лунах": 91627879,
+    "орбитальные кольца и станции": 0,
+    "поверхность (купола, открытые поселения)": 7040000,
+    "подземные поселения (лавовые трубки, шахтные города)": 10560000
+   },
+   "status": "PROPOSAL",
+   "system": 16,
+   "target": [
+    150000000.0,
+    250000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-016-BR (оператор hd69830_verde)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 58 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.577,
+     "what": "Электроника и точное оборудование: 58 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 53 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.533,
+     "what": "Подконтрольные вещества: 80 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 0 крупных гражданских, 1 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 39 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.39,
+     "what": "Медицина и биотех: 39 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 35 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.346,
+     "what": "Оружие и боеприпасы: 35 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 34 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.34,
+     "what": "Машины и оборудование: 34 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (7 из 56)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 17 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.173,
+     "what": "Потребительские товары: 17 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "lalande_hellas": {
+   "balance": {
+    "chemicals": {
+     "consumption": 34370415,
+     "exports": 0,
+     "imports": 7424010,
+     "losses": 0,
+     "production": 26946405,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 97829237,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 97829237,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 38061166,
+     "exports": 0,
+     "imports": 6284963,
+     "losses": 0,
+     "production": 31776203,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 15859,
+     "exports": 0,
+     "imports": 7929,
+     "losses": 0,
+     "production": 7929,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 1361770,
+     "exports": 0,
+     "imports": 751825,
+     "losses": 0,
+     "production": 609944,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 181034063,
+     "exports": 0,
+     "imports": 30250792,
+     "losses": 0,
+     "production": 150783271,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 21962,
+     "exports": 0,
+     "imports": 6343,
+     "losses": 0,
+     "production": 15620,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 863100,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 863100,
+     "stock_change": 0,
+     "unmet": 405605
+    },
+    "machinery": {
+     "consumption": 3276075,
+     "exports": 0,
+     "imports": 1053382,
+     "losses": 0,
+     "production": 2222693,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 1268706,
+     "exports": 0,
+     "imports": 471372,
+     "losses": 0,
+     "production": 797333,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 33101360,
+     "exports": 0,
+     "imports": 3617136,
+     "losses": 0,
+     "production": 29484225,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 162829985,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 162829985,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 2314,
+     "exports": 6405,
+     "imports": 0,
+     "losses": 13,
+     "production": 8731,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 255600558,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 255600558,
+     "stock_change": 0,
+     "unmet": 25897854
+    },
+    "weapons": {
+     "consumption": 106626,
+     "exports": 0,
+     "imports": 35214,
+     "losses": 0,
+     "production": 71412,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "Lalande 21185 m",
+     "name": "Новая Эллада / Агора",
+     "pop": 41056850,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Lalande 21185 h",
+     "name": "Lalande 21185 h — поселение",
+     "pop": 20528425,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Lalande 21185 k",
+     "name": "Lalande 21185 k — поселение",
+     "pop": 13685617,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Lalande 21185 m (орбита)",
+     "name": "Агора — нейтральный порт и биржа",
+     "pop": 1368562,
+     "role": "орбитальный порт / биржа",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Lalande 21185 j",
+     "name": "Платформы Lalande 21185 j (эллинская доля)",
+     "pop": 108552,
+     "role": "газовые платформы",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Lalande 21185 m (орбита)",
+     "name": "Академия Новой Эллады",
+     "pop": 342140,
+     "role": "научное поселение",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (1633)",
+     "pop": 250517338,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 41056850,
+    "settlements_total": 1639
+   },
+   "exports_cr_y": 3842780276,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 125575485,
+    "jump_charge_imports_t_y": 6342.8,
+    "jump_charge_local_t_y": 15619.7,
+    "jump_charge_t_y": 22236.5,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 1397940718,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 2326.7,
+    "reactor_fuel_power_t_y": 1086.9,
+    "reactor_fuel_ships_t_y": 1243.0,
+    "reactor_fuel_t_y": 2329.9,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 5483.0,
+    "strategic_reserve_reactor_t": 574.5
+   },
+   "gdp_cr_y": 5988009592552,
+   "gdp_per_capita_cr": 18278,
+   "growth_per_year": 0.0018,
+   "imports_cr_y": 212589857700,
+   "income_index": 2.812,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.6,
+    "industrial_interest": 0.0,
+    "prestige_ideology": 0.3,
+    "resource_dependence": 1.0,
+    "security": 0.38,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.71
+   },
+   "name": "Новая Эллада / Агора",
+   "polity": "Агор-Прим",
+   "population": 327607484,
+   "regime": "shareholder_agora",
+   "settlement_structure": {
+    "астероидные поселения": 15793325,
+    "вращающиеся цилиндры": 209338508,
+    "выработки в лунах": 7159148,
+    "орбитальные кольца и станции": 89716504,
+    "поверхность (купола, открытые поселения)": 2240000,
+    "подземные поселения (лавовые трубки, шахтные города)": 3360000
+   },
+   "status": "PROPOSAL",
+   "system": 4,
+   "target": [
+    250000000.0,
+    400000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-004-BR (оператор lalande_hellas)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 55 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.552,
+     "what": "Электроника и точное оборудование: 55 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 0 крупных гражданских, 2 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 37 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.372,
+     "what": "Медицина и биотех: 37 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.333,
+     "what": "Подконтрольные вещества: 50 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.33,
+     "what": "Оружие и боеприпасы: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 32 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.322,
+     "what": "Машины и оборудование: 32 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (9 из 96)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 17 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.173,
+     "what": "Заряд прыжка (изотопы привода): 29 % потребности — импорт, крупнейший поставщик eps_eri_harmony"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 17 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.165,
+     "what": "Потребительские товары: 17 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "lalande_mecca": {
+   "balance": {
+    "chemicals": {
+     "consumption": 84450471,
+     "exports": 0,
+     "imports": 18241302,
+     "losses": 0,
+     "production": 66209169,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 477525592,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 477525592,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 94209655,
+     "exports": 0,
+     "imports": 15448491,
+     "losses": 0,
+     "production": 78761164,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 39254,
+     "exports": 0,
+     "imports": 31403,
+     "losses": 0,
+     "production": 7851,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 3371546,
+     "exports": 0,
+     "imports": 1845647,
+     "losses": 0,
+     "production": 1525899,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 441964381,
+     "exports": 0,
+     "imports": 73852248,
+     "losses": 0,
+     "production": 368112133,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 155893,
+     "exports": 0,
+     "imports": 45022,
+     "losses": 0,
+     "production": 110871,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 2136361,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 2136361,
+     "stock_change": 0,
+     "unmet": 1003961
+    },
+    "machinery": {
+     "consumption": 7997436,
+     "exports": 0,
+     "imports": 2550820,
+     "losses": 0,
+     "production": 5446615,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 3140322,
+     "exports": 0,
+     "imports": 1158637,
+     "losses": 0,
+     "production": 1981685,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 140786975,
+     "exports": 0,
+     "imports": 15157662,
+     "losses": 0,
+     "production": 125629312,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 736281714,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 736281714,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 9702,
+     "exports": 3202,
+     "imports": 0,
+     "losses": 6,
+     "production": 12911,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 667909885,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 667909885,
+     "stock_change": 0,
+     "unmet": 67673689
+    },
+    "weapons": {
+     "consumption": 322262,
+     "exports": 0,
+     "imports": 105689,
+     "losses": 0,
+     "production": 216573,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "Lalande 21185 m",
+     "name": "Новая Мекка",
+     "pop": 90151156,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Lalande 21185 h",
+     "name": "Lalande 21185 h — поселение",
+     "pop": 45075578,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Lalande 21185 k",
+     "name": "Lalande 21185 k — поселение",
+     "pop": 30050385,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Lalande 21185 m (орбита)",
+     "name": "Обсерватория-вычислитель «Расад»",
+     "pop": 751260,
+     "role": "научное поселение",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Lalande 21185 j",
+     "name": "Платформы Lalande 21185 j (доля Мекки)",
+     "pop": 282881,
+     "role": "газовые платформы",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Lalande 21185 h",
+     "name": "Сады Lalande 21185 g",
+     "pop": 22537789,
+     "role": "аграрный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (3993)",
+     "pop": 610894506,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 90151156,
+    "settlements_total": 3999
+   },
+   "exports_cr_y": 1921390138,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 881142821,
+    "jump_charge_imports_t_y": 45021.8,
+    "jump_charge_local_t_y": 110870.8,
+    "jump_charge_t_y": 156029.6,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 5846296445,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 9708.8,
+    "reactor_fuel_power_t_y": 2683.3,
+    "reactor_fuel_ships_t_y": 7060.5,
+    "reactor_fuel_t_y": 9743.8,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 38473.1,
+    "strategic_reserve_reactor_t": 2402.6
+   },
+   "gdp_cr_y": 15028381013782,
+   "gdp_per_capita_cr": 18792,
+   "growth_per_year": 0.00725,
+   "imports_cr_y": 530430019113,
+   "income_index": 2.891,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.7,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.0,
+    "prestige_ideology": 0.8,
+    "resource_dependence": 1.0,
+    "security": 0.38,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.71
+   },
+   "name": "Новая Мекка",
+   "polity": "Ильм-аль-Нуджум",
+   "population": 799743555,
+   "regime": "scholar_theocracy",
+   "settlement_structure": {
+    "астероидные поселения": 15656454,
+    "вращающиеся цилиндры": 531196902,
+    "выработки в лунах": 7097104,
+    "орбитальные кольца и станции": 227655815,
+    "поверхность (купола, открытые поселения)": 7254912,
+    "подземные поселения (лавовые трубки, шахтные города)": 10882368
+   },
+   "status": "PROPOSAL",
+   "system": 4,
+   "target": [
+    700000000.0,
+    900000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-004-BR (оператор lalande_hellas)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 55 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.547,
+     "what": "Электроника и точное оборудование: 55 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 53 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.533,
+     "what": "Подконтрольные вещества: 80 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 0 крупных гражданских, 10 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 37 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.369,
+     "what": "Медицина и биотех: 37 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.328,
+     "what": "Оружие и боеприпасы: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 32 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.319,
+     "what": "Машины и оборудование: 32 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (20 из 434)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 17 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.173,
+     "what": "Заряд прыжка (изотопы привода): 29 % потребности — импорт, крупнейший поставщик eps_eri_harmony"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 16 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.164,
+     "what": "Потребительские товары: 16 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "leo83_zion": {
+   "balance": {
+    "chemicals": {
+     "consumption": 864,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 864,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 923,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 923,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 810,
+     "exports": 0,
+     "imports": 234,
+     "losses": 0,
+     "production": 576,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 0,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 0,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 27,
+     "exports": 0,
+     "imports": 23,
+     "losses": 0,
+     "production": 4,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 5094,
+     "exports": 154,
+     "imports": 32,
+     "losses": 0,
+     "production": 5217,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 299,
+     "exports": 0,
+     "imports": 299,
+     "losses": 0,
+     "production": 0,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 20,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 20,
+     "stock_change": 0,
+     "unmet": 7
+    },
+    "machinery": {
+     "consumption": 92,
+     "exports": 0,
+     "imports": 55,
+     "losses": 0,
+     "production": 37,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 27,
+     "exports": 0,
+     "imports": 18,
+     "losses": 0,
+     "production": 9,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 381,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 381,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 1865,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 1865,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 10,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 10,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 8210,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 8210,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 0,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 0,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "83 Leonis B h",
+     "name": "Святой Сион (на орбите)",
+     "pop": 4783,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "83 Leonis B i",
+     "name": "83 Leonis B i — поселение",
+     "pop": 2391,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "83 Leonis B j II",
+     "name": "83 Leonis B j II — поселение",
+     "pop": 1594,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (0)",
+     "pop": 461,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 9229,
+    "settlements_total": 1
+   },
+   "exports_cr_y": 138612,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 1687805,
+    "jump_charge_imports_t_y": 298.9,
+    "jump_charge_local_t_y": 0.0,
+    "jump_charge_t_y": 298.9,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 6485606,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 9.8,
+    "reactor_fuel_power_t_y": 1.0,
+    "reactor_fuel_ships_t_y": 9.8,
+    "reactor_fuel_t_y": 10.8,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 73.7,
+    "strategic_reserve_reactor_t": 2.7
+   },
+   "gdp_cr_y": 96281542,
+   "gdp_per_capita_cr": 10432,
+   "growth_per_year": 0.0,
+   "imports_cr_y": 7313125,
+   "income_index": 1.605,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.7,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.04,
+    "prestige_ideology": 0.8,
+    "resource_dependence": 1.0,
+    "security": 0.5,
+    "status": "PROPOSAL",
+    "trade_dependence": 1.0
+   },
+   "name": "Святой Сион (на орбите)",
+   "polity": "Синод",
+   "population": 9229,
+   "regime": "synod_theocracy",
+   "settlement_structure": {
+    "астероидные поселения": 0,
+    "вращающиеся цилиндры": 0,
+    "выработки в лунах": 0,
+    "орбитальные кольца и станции": 0,
+    "поверхность (купола, открытые поселения)": 3692,
+    "подземные поселения (лавовые трубки, шахтные города)": 5537
+   },
+   "status": "PROPOSAL",
+   "system": 45,
+   "target": null,
+   "target_status": null,
+   "vulnerabilities": [
+    {
+     "consequence": "потеря поставщика: дефицит 85 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.853,
+     "what": "Электроника и точное оборудование: 85 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 65 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.649,
+     "what": "Медицина и биотех: 65 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-045-BR (оператор cyg61_kern)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 60 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.6,
+     "what": "Заряд прыжка (изотопы привода): 100 % потребности — импорт, крупнейший поставщик eps_eri_harmony"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 60 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.599,
+     "what": "Машины и оборудование: 60 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (1 из 1)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 29 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.289,
+     "what": "Потребительские товары: 29 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "proxima_outpost": {
+   "balance": {
+    "chemicals": {
+     "consumption": 79010602,
+     "exports": 0,
+     "imports": 14537951,
+     "losses": 0,
+     "production": 64472652,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 327062239,
+     "exports": 1901830,
+     "imports": 0,
+     "losses": 3804,
+     "production": 328967873,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 83922503,
+     "exports": 0,
+     "imports": 13986415,
+     "losses": 0,
+     "production": 69936088,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 34968,
+     "exports": 0,
+     "imports": 27974,
+     "losses": 0,
+     "production": 6994,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 3009538,
+     "exports": 0,
+     "imports": 1670628,
+     "losses": 0,
+     "production": 1338910,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 401003929,
+     "exports": 29732544,
+     "imports": 7177970,
+     "losses": 59465,
+     "production": 423617968,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 361474,
+     "exports": 0,
+     "imports": 205606,
+     "losses": 0,
+     "production": 155868,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 1887417,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 1887417,
+     "stock_change": 0,
+     "unmet": 910000
+    },
+    "machinery": {
+     "consumption": 7257169,
+     "exports": 0,
+     "imports": 2358450,
+     "losses": 0,
+     "production": 4898719,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 2797417,
+     "exports": 0,
+     "imports": 1048981,
+     "losses": 0,
+     "production": 1748436,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 100906768,
+     "exports": 0,
+     "imports": 17206045,
+     "losses": 0,
+     "production": 83700723,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 496785881,
+     "exports": 4383867,
+     "imports": 0,
+     "losses": 8768,
+     "production": 501178515,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 12467,
+     "exports": 203,
+     "imports": 0,
+     "losses": 0,
+     "production": 12670,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 688703770,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 688703770,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 484830,
+     "exports": 0,
+     "imports": 161509,
+     "losses": 0,
+     "production": 323320,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "Proxima Centauri j",
+     "name": "Красный Форпост",
+     "pop": 82711589,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Proxima Centauri k",
+     "name": "Proxima Centauri k — поселение",
+     "pop": 41355794,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Proxima Cen b",
+     "name": "Proxima Cen b — поселение",
+     "pop": 27570530,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Proxima Centauri j (орбита)",
+     "name": "Орбитальная крепость «Сварог»",
+     "pop": 1378526,
+     "role": "военная база",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Proxima Centauri k",
+     "name": "Агрокупола Alpha Centauri B l",
+     "pop": 20677897,
+     "role": "аграрный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Proxima Centauri l",
+     "name": "Газовые платформы Proxima l",
+     "pop": 264253,
+     "role": "газовые платформы",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Proxima Centauri j (орбита)",
+     "name": "Шахты Proxima Cen d",
+     "pop": 264253,
+     "role": "шахтёрский посёлок",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (3622)",
+     "pop": 551494082,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 82711589,
+    "settlements_total": 3629
+   },
+   "exports_cr_y": 27722151805,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 2041480060,
+    "jump_charge_imports_t_y": 205606.5,
+    "jump_charge_local_t_y": 155867.6,
+    "jump_charge_t_y": 361497.9,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 7502102788,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 12467.4,
+    "reactor_fuel_power_t_y": 2424.8,
+    "reactor_fuel_ships_t_y": 10078.7,
+    "reactor_fuel_t_y": 12503.5,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 180,
+    "strategic_reserve_charge_t": 178273.0,
+    "strategic_reserve_reactor_t": 6166.1
+   },
+   "gdp_cr_y": 13142007776716,
+   "gdp_per_capita_cr": 18109,
+   "growth_per_year": 0.00456,
+   "imports_cr_y": 430944009725,
+   "income_index": 2.786,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.7,
+    "elite_interest": 0.6,
+    "industrial_interest": 0.08,
+    "prestige_ideology": 0.7,
+    "resource_dependence": 1.0,
+    "security": 0.38,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.66
+   },
+   "name": "Красный Форпост",
+   "polity": "Сварог",
+   "population": 725716924,
+   "regime": "security_oligarchy",
+   "settlement_structure": {
+    "астероидные поселения": 5634160,
+    "вращающиеся цилиндры": 471984238,
+    "выработки в лунах": 8551087,
+    "орбитальные кольца и станции": 202278959,
+    "поверхность (купола, открытые поселения)": 14907392,
+    "подземные поселения (лавовые трубки, шахтные города)": 22361088
+   },
+   "status": "PROPOSAL",
+   "system": 60,
+   "target": [
+    600000000.0,
+    850000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "потеря поставщика: дефицит 56 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.555,
+     "what": "Электроника и точное оборудование: 56 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 53 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.533,
+     "what": "Подконтрольные вещества: 80 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 0 крупных гражданских, 13 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 37 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.375,
+     "what": "Медицина и биотех: 37 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 34 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.341,
+     "what": "Заряд прыжка (изотопы привода): 57 % потребности — импорт, крупнейший поставщик eps_eri_harmony"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 33 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.333,
+     "what": "Оружие и боеприпасы: 33 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 32 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.325,
+     "what": "Машины и оборудование: 32 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (17 из 295)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 17 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.167,
+     "what": "Потребительские товары: 17 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 11 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.11,
+     "what": "Химия и полимеры: 18 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "sol_authority": {
+   "balance": {
+    "chemicals": {
+     "consumption": 1560538155,
+     "exports": 47758978,
+     "imports": 0,
+     "losses": 95518,
+     "production": 1608392650,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 1264544592,
+     "exports": 11410981,
+     "imports": 0,
+     "losses": 22822,
+     "production": 1275978395,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 1732498816,
+     "exports": 185867721,
+     "imports": 0,
+     "losses": 371735,
+     "production": 1918738272,
+     "stock_change": 0,
+     "unmet": 17905564
+    },
+    "controlled": {
+     "consumption": 729335,
+     "exports": 0,
+     "imports": 583468,
+     "losses": 0,
+     "production": 145867,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 63435844,
+     "exports": 22201842,
+     "imports": 0,
+     "losses": 44404,
+     "production": 85682090,
+     "stock_change": 0,
+     "unmet": 2514211
+    },
+    "food": {
+     "consumption": 6466132363,
+     "exports": 189304307,
+     "imports": 10669118,
+     "losses": 378609,
+     "production": 6645146161,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 9826147,
+     "exports": 0,
+     "imports": 9826147,
+     "losses": 0,
+     "production": 0,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 46003544,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 46003544,
+     "stock_change": 0,
+     "unmet": 12343268
+    },
+    "machinery": {
+     "consumption": 116689614,
+     "exports": 30090003,
+     "imports": 0,
+     "losses": 60180,
+     "production": 146839797,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 57003895,
+     "exports": 13939691,
+     "imports": 0,
+     "losses": 27879,
+     "production": 70971466,
+     "stock_change": 0,
+     "unmet": 1342917
+    },
+    "metals": {
+     "consumption": 795399377,
+     "exports": 34167898,
+     "imports": 0,
+     "losses": 68336,
+     "production": 829635611,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 3430459220,
+     "exports": 26303199,
+     "imports": 0,
+     "losses": 52606,
+     "production": 3456815026,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 149082,
+     "exports": 1067,
+     "imports": 0,
+     "losses": 2,
+     "production": 150151,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 11134578642,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 11134578642,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "weapons": {
+     "consumption": 3947460,
+     "exports": 2072039,
+     "imports": 0,
+     "losses": 4144,
+     "production": 6023642,
+     "stock_change": 0,
+     "unmet": 82447
+    }
+   },
+   "cities": [
+    {
+     "body": "—",
+     "name": "прочие поселения (58345)",
+     "pop": 11668961361,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 1010173338,
+    "settlements_total": 58345
+   },
+   "exports_cr_y": 5279471835716,
+   "fuel": {
+    "depots": 14,
+    "jump_charge_cost_cr_y": 55637757612,
+    "jump_charge_imports_t_y": 9826147.2,
+    "jump_charge_local_t_y": 0.0,
+    "jump_charge_t_y": 9852134.0,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 89992254012,
+    "reactor_fuel_imports_t_y": 0.0,
+    "reactor_fuel_local_t_y": 149083.9,
+    "reactor_fuel_power_t_y": 39443.5,
+    "reactor_fuel_ships_t_y": 110543.6,
+    "reactor_fuel_t_y": 149987.1,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 2429293.3,
+    "strategic_reserve_reactor_t": 36983.1
+   },
+   "gdp_cr_y": 355563113342463,
+   "gdp_per_capita_cr": 30471,
+   "growth_per_year": -0.00013,
+   "imports_cr_y": 112031165736,
+   "income_index": 4.688,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.1,
+    "prestige_ideology": 0.5,
+    "resource_dependence": 0.0,
+    "security": 0.0,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.01
+   },
+   "name": "Солнечная Администрация (Sol Authority)",
+   "polity": "Солнечная Администрация (Sol Authority)",
+   "population": 11668961361,
+   "regime": "sol_authority",
+   "settlement_structure": {
+    "Земля: поверхность": 9960563363,
+    "Сол: Луна и точки Лагранжа": 461267459,
+    "Сол: Марс": 512519399,
+    "Сол: Меркурий": 51251940,
+    "Сол: внешние поселения": 34167960,
+    "Сол: пояс и Церера": 341679600,
+    "Сол: система Сатурна": 102503880,
+    "Сол: система Юпитера": 205007760
+   },
+   "status": "PROPOSAL",
+   "system": 0,
+   "target": null,
+   "target_status": null,
+   "vulnerabilities": [
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-000-BR (оператор sol_authority)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 60 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.6,
+     "what": "Заряд прыжка (изотопы привода): 100 % потребности — импорт, крупнейший поставщик eps_eri_harmony"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 53 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.533,
+     "what": "Подконтрольные вещества: 80 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 21 крупных гражданских, 90 военных"
+    },
+    {
+     "consequence": "металл и стройматериалы дорожают; хабитатное строительство замедляется",
+     "kind": "major_mine",
+     "severity": 0.3,
+     "what": "крупнейшие рудники (45 из 2034)"
+    }
+   ]
+  },
+  "tau_ceti_cognium": {
+   "balance": {
+    "chemicals": {
+     "consumption": 138950591,
+     "exports": 0,
+     "imports": 71698505,
+     "losses": 0,
+     "production": 67252086,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 383894630,
+     "exports": 0,
+     "imports": 176207635,
+     "losses": 0,
+     "production": 207686995,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 149786907,
+     "exports": 0,
+     "imports": 24461732,
+     "losses": 0,
+     "production": 125325176,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 62411,
+     "exports": 0,
+     "imports": 31206,
+     "losses": 0,
+     "production": 31206,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 5391755,
+     "exports": 0,
+     "imports": 2939654,
+     "losses": 0,
+     "production": 2452102,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 748928215,
+     "exports": 0,
+     "imports": 139188309,
+     "losses": 0,
+     "production": 609739906,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 331777,
+     "exports": 0,
+     "imports": 281612,
+     "losses": 0,
+     "production": 50165,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 2741350,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 2741350,
+     "stock_change": 0,
+     "unmet": 2251547
+    },
+    "machinery": {
+     "consumption": 13565518,
+     "exports": 0,
+     "imports": 4306346,
+     "losses": 0,
+     "production": 9259172,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 4992897,
+     "exports": 0,
+     "imports": 1834630,
+     "losses": 0,
+     "production": 3158267,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 86587465,
+     "exports": 0,
+     "imports": 67457579,
+     "losses": 0,
+     "production": 19129886,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 206596532,
+     "exports": 0,
+     "imports": 149245335,
+     "losses": 0,
+     "production": 57351197,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 19411,
+     "exports": 0,
+     "imports": 18119,
+     "losses": 0,
+     "production": 1292,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 692530042,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 692530042,
+     "stock_change": 0,
+     "unmet": 358350143
+    },
+    "weapons": {
+     "consumption": 696907,
+     "exports": 0,
+     "imports": 227624,
+     "losses": 0,
+     "production": 469283,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "Tau Ceti (орбитальные кольца)",
+     "name": "Новый Шанхай",
+     "pop": 144321843,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Tau Ceti (орбитальные кольца) (орбита)",
+     "name": "Управление Маяков и фабрика ядер прыжка «Сычёвник»",
+     "pop": 4810728,
+     "role": "маячная станция",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Tau Ceti (орбитальные кольца) (орбита)",
+     "name": "Фабы Кольца Основателей",
+     "pop": 431179,
+     "role": "промышленный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Tau Ceti (орбитальные кольца) (орбита)",
+     "name": "Верфь «Гиперион»",
+     "pop": 431179,
+     "role": "город-верфь",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Tau Ceti (орбитальные кольца) (орбита)",
+     "name": "Орбитальная биржа Нового Шанхая",
+     "pop": 4810728,
+     "role": "орбитальный порт / биржа",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (6778)",
+     "pop": 1201746128,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 144321843,
+    "settlements_total": 6783
+   },
+   "exports_cr_y": 0,
+   "fuel": {
+    "depots": 2,
+    "jump_charge_cost_cr_y": 1873637591,
+    "jump_charge_imports_t_y": 281612.3,
+    "jump_charge_local_t_y": 50164.7,
+    "jump_charge_t_y": 331777.0,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 11662567715,
+    "reactor_fuel_imports_t_y": 18118.5,
+    "reactor_fuel_local_t_y": 1292.2,
+    "reactor_fuel_power_t_y": 4424.9,
+    "reactor_fuel_ships_t_y": 15012.7,
+    "reactor_fuel_t_y": 19437.6,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 90,
+    "strategic_reserve_charge_t": 81808.0,
+    "strategic_reserve_reactor_t": 4792.8
+   },
+   "gdp_cr_y": 22396669970350,
+   "gdp_per_capita_cr": 16510,
+   "growth_per_year": 0.00116,
+   "imports_cr_y": 1069889673840,
+   "income_index": 2.54,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.5,
+    "elite_interest": 0.4,
+    "industrial_interest": 0.0,
+    "prestige_ideology": 0.3,
+    "resource_dependence": 1.0,
+    "security": 0.56,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.96
+   },
+   "name": "Новый Шанхай",
+   "polity": "Когниум",
+   "population": 1356551785,
+   "regime": "technocratic_meritocracy",
+   "settlement_structure": {
+    "аванпост: Узел Убунту (ретранслятор у обломков)": 7226,
+    "аванпост: Фронтир Gliese 357": 1603,
+    "аванпост: Фронтир Gliese 674": 12134,
+    "аванпост: Фронтир HD 104067": 507,
+    "аванпост: Фронтир HD 85512": 2417,
+    "астероидные поселения": 4240117,
+    "вращающиеся цилиндры": 946601447,
+    "выработки в лунах": 0,
+    "орбитальные кольца и станции": 405686334,
+    "поверхность (купола, открытые поселения)": 0,
+    "подземные поселения (лавовые трубки, шахтные города)": 0
+   },
+   "status": "PROPOSAL",
+   "system": 8,
+   "target": [
+    1200000000.0,
+    1500000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "вся сеть остаётся без новых прыжковых двигателей: через 5-10 лет флоты стареют",
+     "kind": "jump_core_fab",
+     "severity": 0.9,
+     "what": "фабрика ядер прыжка / Управление Маяков"
+    },
+    {
+     "consequence": "запаса на 90 суток; затем веерные отключения хабитатов",
+     "kind": "fuel_depot",
+     "severity": 0.8,
+     "what": "импорт реакторного топлива 93 %"
+    },
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-008-BR (оператор tau_ceti_cognium)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 56 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.56,
+     "what": "Реакторное топливо (D, He-3): 93 % потребности — импорт, крупнейший поставщик eps_eri_harmony"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 55 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.545,
+     "what": "Электроника и точное оборудование: 55 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 51 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.509,
+     "what": "Заряд прыжка (изотопы привода): 85 % потребности — импорт, крупнейший поставщик eps_eri_harmony"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 1 крупных гражданских, 17 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 47 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.467,
+     "what": "Металлы и сплавы: 78 % потребности — импорт, крупнейший поставщик eps_eri_harmony"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 43 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.433,
+     "what": "Руда и сырые минералы: 72 % потребности — импорт, крупнейший поставщик eps_eri_harmony"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 37 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.367,
+     "what": "Медицина и биотех: 37 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  },
+  "wolf359_citadel": {
+   "balance": {
+    "chemicals": {
+     "consumption": 59439032,
+     "exports": 0,
+     "imports": 38635371,
+     "losses": 0,
+     "production": 20803661,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "construction": {
+     "consumption": 287101224,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 287101224,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "consumer": {
+     "consumption": 63190557,
+     "exports": 0,
+     "imports": 10585665,
+     "losses": 0,
+     "production": 52604892,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "controlled": {
+     "consumption": 26329,
+     "exports": 0,
+     "imports": 21064,
+     "losses": 0,
+     "production": 5266,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "electronics": {
+     "consumption": 2268016,
+     "exports": 0,
+     "imports": 1266447,
+     "losses": 0,
+     "production": 1001568,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "food": {
+     "consumption": 301421925,
+     "exports": 43635404,
+     "imports": 4898106,
+     "losses": 87271,
+     "production": 340246494,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "jump_charge": {
+     "consumption": 509993,
+     "exports": 0,
+     "imports": 456444,
+     "losses": 0,
+     "production": 53549,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "luxury": {
+     "consumption": 1445484,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 1445484,
+     "stock_change": 0,
+     "unmet": 660868
+    },
+    "machinery": {
+     "consumption": 5454601,
+     "exports": 0,
+     "imports": 1783215,
+     "losses": 0,
+     "production": 3671386,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "medical": {
+     "consumption": 2106352,
+     "exports": 0,
+     "imports": 793925,
+     "losses": 0,
+     "production": 1312427,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "metals": {
+     "consumption": 86190683,
+     "exports": 34778120,
+     "imports": 0,
+     "losses": 69556,
+     "production": 121038359,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "ore": {
+     "consumption": 476781042,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 476781042,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "reactor_fuel": {
+     "consumption": 11980,
+     "exports": 0,
+     "imports": 10674,
+     "losses": 0,
+     "production": 1306,
+     "stock_change": 0,
+     "unmet": 0
+    },
+    "water_volatiles": {
+     "consumption": 327188745,
+     "exports": 0,
+     "imports": 0,
+     "losses": 0,
+     "production": 327188745,
+     "stock_change": 0,
+     "unmet": 157535322
+    },
+    "weapons": {
+     "consumption": 461603,
+     "exports": 0,
+     "imports": 154655,
+     "losses": 0,
+     "production": 306948,
+     "stock_change": 0,
+     "unmet": 0
+    }
+   },
+   "cities": [
+    {
+     "body": "Wolf 359 e",
+     "name": "Цитадель",
+     "pop": 64257026,
+     "role": "столица",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Wolf 359 c",
+     "name": "Wolf 359 c — поселение",
+     "pop": 32128513,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Wolf 359 f",
+     "name": "Wolf 359 f — поселение",
+     "pop": 21419009,
+     "role": "крупный город",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Wolf 359 e (орбита)",
+     "name": "Бастион — арсенал и военная верфь",
+     "pop": 207883,
+     "role": "военная верфь",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Wolf 359 e (орбита)",
+     "name": "Рудники пылевого диска",
+     "pop": 207883,
+     "role": "шахтёрский посёлок",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "Wolf 359 c",
+     "name": "Хранилище LAST-LIGHT",
+     "pop": 1070950,
+     "role": "закрытый объект",
+     "status": "PROPOSAL"
+    },
+    {
+     "body": "—",
+     "name": "прочие поселения (2722)",
+     "pop": 426168832,
+     "role": "агрегат",
+     "status": "PROPOSAL"
+    }
+   ],
+   "city_stats": {
+    "largest_city": 64257026,
+    "settlements_total": 2728
+   },
+   "exports_cr_y": 77527796235,
+   "fuel": {
+    "depots": 3,
+    "jump_charge_cost_cr_y": 2880921839,
+    "jump_charge_imports_t_y": 456443.6,
+    "jump_charge_local_t_y": 53549.2,
+    "jump_charge_t_y": 510143.3,
+    "jump_charge_unmet_t_y": 0.0,
+    "reactor_fuel_cost_cr_y": 7209720191,
+    "reactor_fuel_imports_t_y": 10674.4,
+    "reactor_fuel_local_t_y": 1305.5,
+    "reactor_fuel_power_t_y": 1834.1,
+    "reactor_fuel_ships_t_y": 10182.1,
+    "reactor_fuel_t_y": 12016.2,
+    "reactor_fuel_unmet_t_y": 0.0,
+    "reserve_days": 180,
+    "strategic_reserve_charge_t": 251577.5,
+    "strategic_reserve_reactor_t": 5925.8
+   },
+   "gdp_cr_y": 9913191784704,
+   "gdp_per_capita_cr": 18174,
+   "growth_per_year": 0.00938,
+   "imports_cr_y": 370702639885,
+   "income_index": 2.796,
+   "motives": {
+    "alliance_obligation": 0.2,
+    "domestic_legitimacy": 0.7,
+    "elite_interest": 0.6,
+    "industrial_interest": 0.24,
+    "prestige_ideology": 0.7,
+    "resource_dependence": 1.0,
+    "security": 0.56,
+    "status": "PROPOSAL",
+    "trade_dependence": 0.75
+   },
+   "name": "Цитадель",
+   "polity": "Скьёльдбург",
+   "population": 545460096,
+   "regime": "security_oligarchy",
+   "settlement_structure": {
+    "аванпост: Пост прослушивания у Барнарда": 277,
+    "астероидные поселения": 164976099,
+    "вращающиеся цилиндры": 238349905,
+    "выработки в лунах": 19004977,
+    "орбитальные кольца и станции": 102149959,
+    "поверхность (купола, открытые поселения)": 8391552,
+    "подземные поселения (лавовые трубки, шахтные города)": 12587328
+   },
+   "status": "PROPOSAL",
+   "system": 3,
+   "target": [
+    450000000.0,
+    650000000.0
+   ],
+   "target_status": "AUTHOR_TARGET",
+   "vulnerabilities": [
+    {
+     "consequence": "запаса на 180 суток; затем веерные отключения хабитатов",
+     "kind": "fuel_depot",
+     "severity": 0.8,
+     "what": "импорт реакторного топлива 89 %"
+    },
+    {
+     "consequence": "прыжки в систему без маяка: ошибка выхода растёт в ~200 раз, расписания рвутся, страховка растёт, грузопоток падает",
+     "kind": "bridge_beacon",
+     "severity": 0.6,
+     "what": "маяк BCN-003-BR (оператор wolf359_citadel)"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 56 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.558,
+     "what": "Электроника и точное оборудование: 56 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 54 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.537,
+     "what": "Заряд прыжка (изотопы привода): 90 % потребности — импорт, крупнейший поставщик eps_eri_harmony"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 53 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.535,
+     "what": "Реакторное топливо (D, He-3): 89 % потребности — импорт, крупнейший поставщик lalande_hellas"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 53 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.533,
+     "what": "Подконтрольные вещества: 80 % потребности — импорт, крупнейший поставщик eps_eri_strife"
+    },
+    {
+     "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
+     "kind": "shipyard",
+     "severity": 0.5,
+     "what": "верфи: 1 крупных гражданских, 14 военных"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 39 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.39,
+     "what": "Химия и полимеры: 65 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 38 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.377,
+     "what": "Медицина и биотех: 38 % потребности — импорт, крупнейший поставщик sol_authority"
+    },
+    {
+     "consequence": "потеря поставщика: дефицит 34 % на время переключения",
+     "kind": "import_dependency",
+     "severity": 0.335,
+     "what": "Оружие и боеприпасы: 34 % потребности — импорт, крупнейший поставщик sol_authority"
+    }
+   ]
+  }
+ },
+ "status": "PROPOSAL",
+ "world": {
+  "beacons": {
+   "bridge": 24,
+   "military": 926,
+   "relay": 74,
+   "remote_science": 542,
+   "station": 1104,
+   "trade_hub": 41
+  },
+  "fleet": {
+   "cobrett_i_n1": {
+    "active": 31364,
+    "family": "civil",
+    "lost_per_year": 197.7,
+    "new_per_year": 1210.0,
+    "repair": 2521,
+    "reserve": 1582,
+    "retired_per_year": 941.8,
+    "role": "medium_cargo"
+   },
+   "escort_frigate": {
+    "active": 1001,
+    "family": "military",
+    "lost_per_year": 7.0,
+    "new_per_year": 46.2,
+    "repair": 154,
+    "reserve": 204,
+    "retired_per_year": 34.5,
+    "role": "escort"
+   },
+   "fleet_tender": {
+    "active": 2925,
+    "family": "military",
+    "lost_per_year": 14.1,
+    "new_per_year": 113.7,
+    "repair": 451,
+    "reserve": 598,
+    "retired_per_year": 88.1,
+    "role": "military"
+   },
+   "gas_tanker": {
+    "active": 242,
+    "family": "civil",
+    "lost_per_year": 0.5,
+    "new_per_year": 8.4,
+    "repair": 35,
+    "reserve": 29,
+    "retired_per_year": 7.1,
+    "role": "tanker"
+   },
+   "impact_defence_tug": {
+    "active": 1114,
+    "family": "security",
+    "lost_per_year": 5.3,
+    "new_per_year": 50.2,
+    "repair": 143,
+    "reserve": 231,
+    "retired_per_year": 38.5,
+    "role": "impact_defence"
+   },
+   "interceptor": {
+    "active": 4256,
+    "family": "military",
+    "lost_per_year": 51.1,
+    "new_per_year": 280.5,
+    "repair": 647,
+    "reserve": 858,
+    "retired_per_year": 204.6,
+    "role": "interceptor"
+   },
+   "jump_tanker": {
+    "active": 35,
+    "family": "civil",
+    "lost_per_year": 0.1,
+    "new_per_year": 1.1,
+    "repair": 5,
+    "reserve": 4,
+    "retired_per_year": 0.8,
+    "role": "tanker"
+   },
+   "jump_train": {
+    "active": 3304,
+    "family": "civil",
+    "lost_per_year": 10.2,
+    "new_per_year": 97.6,
+    "repair": 336,
+    "reserve": 171,
+    "retired_per_year": 77.3,
+    "role": "bulk_cargo"
+   },
+   "line_combatant": {
+    "active": 23292,
+    "family": "military",
+    "lost_per_year": 111.7,
+    "new_per_year": 900.6,
+    "repair": 4667,
+    "reserve": 4667,
+    "retired_per_year": 699.3,
+    "role": "military"
+   },
+   "medium_freighter": {
+    "active": 34024,
+    "family": "civil",
+    "lost_per_year": 142.9,
+    "new_per_year": 1036.9,
+    "repair": 2734,
+    "reserve": 1713,
+    "retired_per_year": 893.9,
+    "role": "medium_cargo"
+   },
+   "ocs4_lastochka": {
+    "active": 100954,
+    "family": "civil",
+    "lost_per_year": 212.1,
+    "new_per_year": 3186.3,
+    "repair": 7078,
+    "reserve": 5059,
+    "retired_per_year": 2650.4,
+    "role": "shuttle"
+   },
+   "ore_tug": {
+    "active": 34951,
+    "family": "civil",
+    "lost_per_year": 146.8,
+    "new_per_year": 1209.9,
+    "repair": 2810,
+    "reserve": 1761,
+    "retired_per_year": 917.9,
+    "role": "tug"
+   },
+   "patrol_cutter": {
+    "active": 14873,
+    "family": "security",
+    "lost_per_year": 142.8,
+    "new_per_year": 784.5,
+    "repair": 1794,
+    "reserve": 2984,
+    "retired_per_year": 595.5,
+    "role": "patrol"
+   },
+   "recon_picket": {
+    "active": 122,
+    "family": "military",
+    "lost_per_year": 1.0,
+    "new_per_year": 7.4,
+    "repair": 30,
+    "reserve": 32,
+    "retired_per_year": 5.1,
+    "role": "military"
+   },
+   "service_tender": {
+    "active": 547,
+    "family": "civil",
+    "lost_per_year": 1.6,
+    "new_per_year": 20.9,
+    "repair": 57,
+    "reserve": 41,
+    "retired_per_year": 16.7,
+    "role": "maintenance"
+   }
+  },
+  "gdp_cr_y": 548022028542040,
+  "goods": {
+   "chemicals": {
+    "consumption": 2653929885,
+    "interstellar": 151296801,
+    "production": 2654232479
+   },
+   "construction": {
+    "consumption": 5856305359,
+    "interstellar": 195225937,
+    "production": 5856695811
+   },
+   "consumer": {
+    "consumption": 2911318283,
+    "interstellar": 185867721,
+    "production": 2911690018
+   },
+   "controlled": {
+    "consumption": 1203719,
+    "interstellar": 899539,
+    "production": 1205517
+   },
+   "electronics": {
+    "consumption": 104443580,
+    "interstellar": 22201842,
+    "production": 104487984
+   },
+   "food": {
+    "consumption": 12031988638,
+    "interstellar": 374519500,
+    "production": 12032737677
+   },
+   "jump_charge": {
+    "consumption": 14938861,
+    "interstellar": 11131306,
+    "production": 14961124
+   },
+   "luxury": {
+    "consumption": 69512876,
+    "interstellar": 0,
+    "production": 69512876
+   },
+   "machinery": {
+    "consumption": 214325324,
+    "interstellar": 30090003,
+    "production": 214385504
+   },
+   "medical": {
+    "consumption": 95673458,
+    "interstellar": 13939691,
+    "production": 95701338
+   },
+   "metals": {
+    "consumption": 2147923203,
+    "interstellar": 177207758,
+    "production": 2148277618
+   },
+   "ore": {
+    "consumption": 10195107458,
+    "interstellar": 193084000,
+    "production": 10195493626
+   },
+   "reactor_fuel": {
+    "consumption": 297478,
+    "interstellar": 30824,
+    "production": 297539
+   },
+   "water_volatiles": {
+    "consumption": 19973972199,
+    "interstellar": 0,
+    "production": 19973972199
+   },
+   "weapons": {
+    "consumption": 10472536,
+    "interstellar": 2072039,
+    "production": 10476680
+   }
+  },
+  "infrastructure": {
+   "agro_module": {
+    "count": 14171,
+    "major": 412,
+    "name": "агрокомплекс",
+    "named": 4
+   },
+   "arms_works": {
+    "count": 628,
+    "major": 88,
+    "name": "оружейный завод",
+    "named": 0
+   },
+   "biotech_plant": {
+    "count": 5640,
+    "major": 219,
+    "name": "биотех / медицина",
+    "named": 0
+   },
+   "charge_refinery": {
+    "count": 449,
+    "major": 62,
+    "name": "завод заряда прыжка",
+    "named": 0
+   },
+   "chemical_plant": {
+    "count": 6259,
+    "major": 263,
+    "name": "химический завод",
+    "named": 0
+   },
+   "civil_shipyard": {
+    "count": 28,
+    "major": 12,
+    "name": "гражданская верфь (крупная)",
+    "named": 3
+   },
+   "construction_works": {
+    "count": 2309,
+    "major": 196,
+    "name": "завод стройматериалов и модулей",
+    "named": 0
+   },
+   "consumer_factory": {
+    "count": 11432,
+    "major": 340,
+    "name": "фабрика потребительских товаров",
+    "named": 0
+   },
+   "drug_lab": {
+    "count": 7102,
+    "major": 237,
+    "name": "подпольные лаборатории",
+    "named": 0
+   },
+   "electronics_fab": {
+    "count": 6158,
+    "major": 206,
+    "name": "фабрика электроники",
+    "named": 1
+   },
+   "factory": {
+    "count": 4217,
+    "major": 203,
+    "name": "машиностроительный завод",
+    "named": 1
+   },
+   "fuel_depot": {
+    "count": 61,
+    "major": 49,
+    "name": "топливное депо",
+    "named": 0
+   },
+   "gas_platform": {
+    "count": 2348,
+    "major": 169,
+    "name": "газовая платформа (He-3 / D)",
+    "named": 13
+   },
+   "habitat_yard": {
+    "count": 1050,
+    "major": 134,
+    "name": "верфь хабитатов",
+    "named": 0
+   },
+   "ice_mine": {
+    "count": 1189,
+    "major": 122,
+    "name": "ледовый / летучий промысел",
+    "named": 3
+   },
+   "luxury_works": {
+    "count": 4103,
+    "major": 206,
+    "name": "винокурни и мастерские роскоши",
+    "named": 0
+   },
+   "metallurgy": {
+    "count": 2541,
+    "major": 192,
+    "name": "металлургический комбинат",
+    "named": 1
+   },
+   "military_base": {
+    "count": 926,
+    "major": 112,
+    "name": "военная база",
+    "named": 5
+   },
+   "military_shipyard": {
+    "count": 242,
+    "major": 59,
+    "name": "военная верфь",
+    "named": 1
+   },
+   "mine": {
+    "count": 6008,
+    "major": 298,
+    "name": "рудник (руда)",
+    "named": 6
+   },
+   "orbital_port": {
+    "count": 1359,
+    "major": 141,
+    "name": "орбитальный порт",
+    "named": 1
+   },
+   "patrol_base": {
+    "count": 1506,
+    "major": 144,
+    "name": "патрульная база",
+    "named": 0
+   },
+   "power_plant": {
+    "count": 19122,
+    "major": 480,
+    "name": "термоядерная электростанция (20 ГВт)",
+    "named": 0
+   },
+   "repair_yard": {
+    "count": 856,
+    "major": 106,
+    "name": "ремонтная верфь",
+    "named": 0
+   },
+   "research_station": {
+    "count": 4311,
+    "major": 207,
+    "name": "исследовательская станция",
+    "named": 5
+   },
+   "small_yard": {
+    "count": 268,
+    "major": 63,
+    "name": "малая верфь",
+    "named": 0
+   },
+   "trade_hub": {
+    "count": 41,
+    "major": 30,
+    "name": "торговый узел",
+    "named": 6
+   },
+   "warehouse": {
+    "count": 5379,
+    "major": 270,
+    "name": "склад / таможенный терминал",
+    "named": 0
+   }
+  },
+  "interstellar_flows": 325,
+  "interstellar_tonnes_y": 1357566961,
+  "interstellar_value_cr_y": 6016243375756,
+  "population": {
+   "earth": 9960563363,
+   "off_sol": 10087994169,
+   "sol_outside_earth": 1708397998,
+   "total": 21756955530
+  }
+ },
+ "year": 3126
+}

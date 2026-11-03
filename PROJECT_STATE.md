@@ -1459,10 +1459,77 @@ NOT user-accepted; no runtime change.
 - Checks: `lab.py --check-dataset`, `--check-lore`, `lore_md.py --check` OK
   (117 files unchanged); lab data untouched.
 
+### Political-economic world balance 3126 (user order 2026-11-03, second pass)
+Status: offline model + permanent data + Lore layer implemented; runtime cargo
+capacity unified (built, dock traffic check PASS); PROPOSAL, NOT
+user-accepted. Population scale = AUTHOR_TARGET.
+- Architecture moved from D:/tmp into `Notes/Economy/` (README,
+  WORLD_ECONOMY_ARCHITECTURE, WORLD_DATA_GRAPH, POLITICAL_ECONOMY,
+  LOGISTICS_AND_NAVIGATION, FLEETS_AND_SHIPYARDS, PLAYER_ECONOMY, BANKING);
+  world facts generated into `Notes/Lore/ECONOMY/` (new WORLD_BALANCE, FLEETS,
+  DEFENCE, FUEL, BEACONS_AND_NAVIGATION, SCENARIOS + blocks in the old files),
+  polity report (14 sections) in every `COLONIES/<id>.md` and Sol in
+  `POLITICS/EARTH_3126.md`, system report in every `SETTLEMENTS/*.md`,
+  population eras per polity. One truth: canon/*.json -> out/ -> Lore.
+- Demography: `canon/population_history.json` (targets + dated epochs:
+  habitat boom, terraforming, high-fertility era, immigration programmes;
+  Earth visa windows 6 / 4 / 1 M/y), new mechanisms in `demography.py`
+  (recruiting polity never donates; fill-cheapest-tier split; Earth surface
+  ~10 bn per the FINAL-ARK-1 quote), `calibrate_population.py` fits ONE
+  number per polity (`intensity`, 0.38-1.4; no population multiplier).
+  Result: Earth 9.96 bn, Sol outside Earth 1.71 bn, off-Sol 10.09 bn, all 18
+  polities inside their ranges; boom-era TFR 3.4-4.6 (Free Clans 5.3);
+  Earth emigrants 2752-3126 ~1.23 bn. lab.py D.8 table, POPULATION_3126.md.
+  Old fate.md numbers kept as `pop_3126_authored`, superseded in checks.
+- Cobrett capacity diagnosed: repo had no container data (one
+  `container_mount_center`); 140 m3 = 6 x 23.3 m3. Decision: C20 container
+  (<= 20 t payload, 23.3 m3, tare 1.7 t); Cobrett 6 x C20, 120 t limit,
+  typical mixed load 56 t (volume-limited). Runtime:
+  `src/game/catalog/ships/ShipCargoPassports.h` is the single source for
+  `ShipStorageCaps` (cargoMass in TONNES, new containerSlots /
+  containerPayloadTonnes) and dock traffic (no own 40 t); OCS-4 cargoMass
+  was written in kg (450000) -> 450 t, 24 C20. Build (MSYS2 MinGW64) OK;
+  `EliteDockTrafficCheck` 6 h: 78 arrivals, 0 invariant / separation /
+  structure violations.
+- Jump rule: `charge = q * d * (kappa * hull_envelope + M)` (field term +
+  mass term), calibrated on Cobrett 3.0 empty / 2.5 full 120 t ->
+  3.01 / 2.73 / 2.50 mean jumps; consumable / charge energy (25 % of reactor,
+  Cobrett 27 TJ in 6 h) / peak discharge (2 s, 13.5 TW) kept apart;
+  170 kg/(ly*1000 t) Cobrett, 110 train; charge 5.65 Cr/kg.
+  Heavy carrier = jump tug + 12 modules (57.6 kt, 67 Cr/t); classes:
+  Cobrett, medium freighter C-120, jump train / tanker, OCS-4, gas tanker,
+  ore tug, service tender, patrol cutter, interceptor, escort frigate, line
+  combatant, recon/EW picket, fleet tender, impact-defence tug.
+- `world_economy.py` (out/world_3126/: economy, infrastructure, trade_flows,
+  fleet_census, defence, beacons, scenarios, checks + WORLD_BALANCE_3126.md):
+  15 commodities, 325 interstellar flows 1.36 Gt/y 7.5 T Cr/y over the real
+  beacon net (+ short unbeaconed links, + expedition link to the far Kern
+  pocket 37/41/45 which is disconnected at 32 ly), hostile pairs via neutral
+  re-export, infrastructure from output (e.g. 6 008 mines, 28 big civil
+  yards), fleet from flows (101 k shuttles, 35 k tugs, 34 k freighters, 31 k
+  Cobretts incl. couriers, 3.3 k trains; 23 k line combatants, 15 k cutters),
+  defence share 0.8 % (Sol) .. 3.5 % (New Karma) from doctrine + tasks,
+  beacons (24 bridge + hub / station / relay / military / science), jump
+  error model (950 km both-end beacons .. 190 000 km none at 20 ly),
+  vulnerabilities, 6 scenarios (mine, beacon loss: Tianhe +39 % ships;
+  yard; habitat disaster with SupportProgram; external aid; war + sanctions
+  -> re-export via New India, import price x1.22).
+- Checks (all OK): world_economy --check (author ranges, settlement sums,
+  cargo identity 2e-16, no goods from thin air, infrastructure >= output,
+  flows <= transport, fuel covered, replacement <= yards + imports,
+  statuses), logistics --check, calibrate_population --check, lab
+  --check-dataset / --check-lore, lore_md --check (123 files); two lab runs
+  and two world_economy runs byte-identical (lab sha c8225243...).
+- Open author decisions: Sol's navy scale (8.5 k line combatants from its
+  GDP even at 0.8 %); Earth visa windows during the Cordon (4 M/y recruited
+  out); Sol as the largest exporter of electronics after 3112; fleet scale
+  constants (defence task norms) in `canon/polity_economy.json`.
+
 ## Next step
-- Economy: author review of the four documents; then (offline) commodities.json
-  (14 categories) + trade.py on logistics cost per tonne; demography for
-  author targets (housing epochs + Earth emigration).
+- Economy runtime (after the author's review): persistent ShipInstance /
+  component registry, Sol market with stocks, C20 container contracts,
+  hub traffic derived from flows + fleet + schedule, beacons as objects
+  (transponders, light lag, jump error), banking and storage fees.
 - After the user's review: the separate stage INTERSTELLAR NAVIGATION
   (connected domain, ephemerides, gravity, InterstellarNavigationEnvironment
   hazards, icy fields, rogue objects, refuelling, ship-specific risk).

@@ -46,6 +46,9 @@ import posixpath
 import re
 import sys
 
+import endowment
+import lore_economy
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, "..", ".."))
 LORE = os.path.join(ROOT, "Notes", "Lore")
@@ -118,6 +121,11 @@ class Data:
         for r in self.F["earth"]["return_3126"]["earth_jump_reach"]:
             self.sysname[r["system"]] = r["name"]
         self.unknowns = {u["id"]: u for u in self.F["unknowns"]}
+        # economy / logistics / defence layer (world_economy.py), population history
+        self.X = lore_economy.load()
+        self.ST_E = endowment.load_endowment()
+        with open(os.path.join(CANON, "population_history.json"), encoding="utf-8") as f:
+            self.PH = json.load(f)
 
     # -- visibility
     def mission_public(self, mid):
@@ -567,6 +575,15 @@ def colony_doc(D, uid):
                            link(path, f"COLONIES/{x['buyer'] if x['seller'] == uid else x['seller']}.md", D.pname(x["buyer"] if x["seller"] == uid else x["seller"])),
                            GOODS.get(x["good"], x["good"]), x["volume_class"], fl(x["value"], 1), REASONS.get(x["reason"], x["reason"]), MODEL_TAG) for x in cors])
           if cors else "Нет межзвёздных коридоров.")
+    lm = sys.modules[__name__]
+    eras = lore_economy.eras_block(D, lm, D.X, uid) if D.X else None
+    if eras:
+        d.gen("population_eras", "## История населения: эпохи\n\n" + eras)
+    if D.X and uid in D.X["economy"]["polities"]:
+        d.gen("economy_3126", "## Экономика и логистика 3126\n\n" + lore_economy.polity_report(D, lm, D.X, uid, path))
+    elif D.X and p.get("owner") in D.X["economy"]["polities"]:
+        d.gen("economy_3126", "## Экономика и логистика 3126\n\nЭкономика, флот и оборона этой единицы считаются в составе владельца: "
+              + link(path, f"COLONIES/{p['owner']}.md", D.pname(p["owner"])) + ".")
     d.narr("crises", "Кризисы и войны", "эпидемии, войны, расколы, исходы — по событиям выше и POLITICS/WARS.md.")
     d.narr("power", "Смена власти", "как режим пришёл к состоянию 3126 (см. режим в общих данных).")
     d.narr("fears", "Чего боятся", "внешние и внутренние страхи, в том числе «Возвращение Земли» (POLITICS/EARTH_3126.md).")
@@ -624,6 +641,8 @@ def settlement_docs(D):
         d = new_doc(D, path, f"Поселения — {D.sname(sid)}", "settlements")
         rows = settlement_rows(D, sid, path)
         d.gen("registry", "Население поселений — доля модельного населения политии по Ципфу (`" + MODEL_TAG + "`). Тела — из физического каталога.\n\n" + table(SET_HEAD, rows))
+        if D.X:
+            d.gen("system_economy_3126", lore_economy.system_report(D, sys.modules[__name__], D.X, sid, path))
         d.narr("places", "Места (рассказ)", "облик главных поселений, кто там живёт, чем пахнет и что продают; одно-два предложения на поселение.")
         docs.append(d)
         units = [u for u in D.pol_order if D.pol[u]["system"]["id"] == sid]
@@ -776,6 +795,11 @@ def economy_docs(D):
     d.gen("technology", "\n".join(g))
     d.narr("tech_story", "Технологический быт", "что работает, что чинят вручную, какие машины — реликвии; культ и ремесло вокруг утраченного.")
     docs.append(d)
+    lm = sys.modules[__name__]
+    for doc in docs:
+        for bid, content in lore_economy.blocks_for_existing(D, lm, doc.path):
+            doc.gen(bid, content)
+    docs += lore_economy.docs(D, lm)
     return docs
 
 
@@ -837,7 +861,7 @@ def demography_docs(D):
     last = E["trajectory"][-1]
     g = [table(["Показатель", "Значение", "Статус"],
                [("Земля 3126 (модель)", num(last["pop"]), MODEL_TAG), ("— богатый пояс", num(last["north"]), MODEL_TAG), ("— развивающийся пояс", num(last["south"]), MODEL_TAG),
-                ("Земля 3126 (предложение для автора, Sol Authority)", num(E["anchor"]["pop"]), tagk(E["anchor"]["knowledge"])),
+                ("Земля + Сол 3126, цель автора (AUTHOR_TARGET)", f"{num(D.PH['world_targets']['earth']['centre'])} + {num(D.PH['world_targets']['sol_outside_earth']['centre'])}", "`AUTHOR_TARGET`"),
                 ("Вне Сола (модель)", num(sens["baseline"]["off_sol"]), MODEL_TAG)]),
          "", "Земля, авторские точки:", "", table(["Год", "Население", "Текст", "Источник", "Статус"], [(c["year"], num(c["pop"]), c["text"], c["source"], tag(c["status"])) for c in E["checkpoints_authored"]])]
     d.text("## Земля и итог")
@@ -861,11 +885,26 @@ def demography_docs(D):
     rows = []
     for u in D.pol_order:
         pp = D.pol[u]["population_3126"]
-        if pp.get("authored") and (pp["model"] / pp["authored"] > 2 or pp["model"] / pp["authored"] < 0.5):
+        tg = D.PH["units"].get(u, {}).get("target")
+        if tg:
+            if not (tg[0] <= pp["model"] <= tg[1]):
+                rows.append((link(path, f"COLONIES/{u}.md", D.pname(u)), num(pp["model"]), f"{num(tg[0])}–{num(tg[1])}", "вне цели", "`AUTHOR_TARGET`"))
+        elif pp.get("authored") and (pp["model"] / pp["authored"] > 2 or pp["model"] / pp["authored"] < 0.5):
             rows.append((link(path, f"COLONIES/{u}.md", D.pname(u)), num(pp["model"]), num(pp["authored"]), fl(pp["model"] / pp["authored"], 2), tag(pp.get("authored_status") or "PROPOSAL")))
     d.text("## Конфликты: авторское население против модели")
-    d.gen("conflicts", "Расхождение больше чем в 2 раза. Модель не переписывает канон: решение за автором.\n\n" +
-          table(["Единица", "Модель 3126", "Авторское", "Модель / автор", "Статус авторского"], rows))
+    d.gen("conflicts", "Крупные политии сверяются с авторским масштабом 3126 (`AUTHOR_TARGET`, canon/population_history.json; старые числа fate.md им заменены), "
+          "малые — с авторским числом (расхождение больше чем в 2 раза). Модель не переписывает канон: решение за автором.\n\n" +
+          (table(["Единица", "Модель 3126", "Цель / авторское", "Расхождение", "Статус"], rows) if rows else "Расхождений нет."))
+    sc = D.S["demography"].get("scale_3126")
+    if sc:
+        g3 = [table(["Слой", "Модель", "Цель автора", "В диапазоне", "Статус"],
+                    [(nm, num(sc[k]["model"]), f"{num(sc[k]['target'][0])}–{num(sc[k]['target'][1])}", "да" if sc[k]["inside"] else "НЕТ", "`AUTHOR_TARGET`")
+                     for k, nm in (("earth", "Земля"), ("sol_outside_earth", "Сол вне Земли"), ("off_sol", "вне Сола"))]), "",
+              f"Эмигрантов с Земли 2752–3126: {num(sc['earth_emigrants_2752_3126'])} (`{MODEL_TAG}`). Эпохи, которые объясняют масштаб, — в досье каждой политии (блок «История населения: эпохи»). "
+              "Окна вербовки на Земле:", "",
+              table(["С", "По", "Людей в год", "Суть", "Статус"], [(w["from"], w["to"], num(w["per_year"]), w["text"], tag(w["status"])) for w in D.PH["earth_programme_windows"]])]
+        d.text("## Авторский масштаб 3126")
+        d.gen("author_scale", "\n".join(g3))
     d.narr("conflict_decisions", "Решения автора по конфликтам", "для каждой строки выше: принять модель, оставить авторское число (с объяснением) или поменять входы модели.")
     docs.append(d)
     return docs
@@ -945,6 +984,15 @@ def politics_docs(D):
     if "EARTH.jump_cores" in D.unknowns:
         g += ["", "[СПОЙЛЕР] Открытый вопрос о ядрах прыжка Земли — " + link(path, "AUTHOR/QUEST_TRUTHS.md", "AUTHOR/QUEST_TRUTHS.md") + "."]
     d.gen("earth_return", "\n".join(g))
+    if D.X:
+        lm = sys.modules[__name__]
+        g2 = ["## Экономика и логистика Сола 3126", ""]
+        for e in ("earth_north", "earth_south"):
+            eb = lore_economy.eras_block(D, lm, D.X, e)
+            if eb:
+                g2 += [f"### История населения: {D.S['demography']['units'][e]['name']}", "", eb, ""]
+        g2.append(lore_economy.polity_report(D, lm, D.X, "sol_authority", path))
+        d.gen("sol_economy_3126", "\n".join(g2))
     d.narr("earth_politics", "Политика Земли", "кто правит Солом, чего хочет «Возвращение», как Земля видит колонии и наоборот.")
     docs.append(d)
     return docs
@@ -1223,7 +1271,7 @@ def _walk_strings(x, acc):
 
 def known_tokens(D):
     acc = set()
-    for obj in (D.F, D.MS, D.W, D.CU, D.ST):
+    for obj in (D.F, D.MS, D.W, D.CU, D.ST, D.X or {}):
         _walk_strings(obj, acc)
     for u in D.pol_order:
         for s in D.pol[u].get("settlements", []):
@@ -1257,6 +1305,9 @@ def entity_figures(D):
         vals = {p["population_3126"]["model"]} | ({p["population_3126"]["authored"]} if p["population_3126"].get("authored") else set())
         vals |= {r["pop"] for r in p["checkpoints"]}
         vals |= {s["population"] for s in p.get("settlements", []) if s.get("population") and s["role"] == "capital"}
+        tg = D.PH["units"].get(u, {}).get("target")
+        if tg:
+            vals |= {tg[0], tg[1], (tg[0] + tg[1]) / 2.0}
         for n in names_of(p["name"]):
             ents.append((n, vals))
         if p.get("polity"):
@@ -1288,9 +1339,18 @@ def entity_figures(D):
     for k in ("baseline", "transition_persists"):
         ev.add(D.F["demography_sensitivity"][k]["earth"])
     ev |= {w["per_year"] for w in D.W["migration"]["earth_windows"]}
+    ev |= {w["per_year"] for w in D.PH["earth_programme_windows"]}
+    for key in ("earth", "sol_outside_earth"):
+        t = D.PH["world_targets"][key]
+        ev |= {t["centre"], t["range"][0], t["range"][1]}
+    if D.X:
+        wp = D.X["economy"]["world"]["population"]
+        ev |= {wp["earth"], wp["sol_outside_earth"], wp["earth"] + wp["sol_outside_earth"]}
     for n in ("Земля", "Sol Authority", "Солнечная Администрация"):
         ents.append((n, ev))
     off = {D.F["demography_sensitivity"][k]["off_sol"] for k in ("baseline", "transition_persists")}
+    t = D.PH["world_targets"]["off_sol"]
+    off |= {t["centre"], t["range"][0], t["range"][1]}
     for n in ("Вне Сола", "вне Сола"):
         ents.append((n, off))
     return ents

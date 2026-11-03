@@ -6,6 +6,7 @@
 #include "src/game/ship/presets/cobra/CobraLoadouts.h"
 #include "src/game/catalog/CatalogRegistry.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
+#include "src/game/catalog/ships/ShipCargoPassports.h"
 #include "src/game/ship/presets/cobra/CobraRcsEquipmentAssembly.h"
 #include <stdexcept>
 #include "src/game/equipment/decryptor/DecryptorDesc.h"
@@ -219,8 +220,11 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // Storage
         // ─────────────────────────
         desc.storage = {
-            .cargoMass       = 50,                          // Грузоподъемность (тонн)
-            .cargoVolume     = 140,                         // Объем груза (м³)
+            // src/game/catalog/ships/ShipCargoPassports.h: 6 мест C20
+            .cargoMass       = catalog::ships::CobrettIN1Cargo.cargoTonnes,    // Грузоподъемность (тонн)
+            .cargoVolume     = catalog::ships::CobrettIN1Cargo.cargoVolumeM3,  // Объем груза (м³)
+            .containerSlots  = catalog::ships::CobrettIN1Cargo.containerSlots, // Места под контейнеры C20
+            .containerPayloadTonnes = catalog::ships::C20PayloadTonnes,         // Полезная масса контейнера
             .missileCapacity = 4                            // Ракет
         };
 

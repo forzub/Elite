@@ -1,0 +1,789 @@
+{
+  "schema": "population_history/1",
+  "status": "PROPOSAL",
+  "note": "Author scale of 3126 (AUTHOR_TARGET) and the dated epochs that explain it. Targets are the author's calibration, not model results. Epochs are PROPOSAL history: the model (demography.py) runs them causally; calibrate_population.py fits only the 'mult' of the high-fertility era (field fit=true) so the 3126 population lands on the target centre. Every other number is narrative input.",
+  "world_targets": {
+    "earth": {
+      "range": [
+        9000000000.0,
+        11000000000.0
+      ],
+      "centre": 10000000000.0,
+      "status": "AUTHOR_TARGET"
+    },
+    "sol_outside_earth": {
+      "range": [
+        1200000000.0,
+        2000000000.0
+      ],
+      "centre": 1600000000.0,
+      "status": "AUTHOR_TARGET"
+    },
+    "off_sol": {
+      "range": [
+        8500000000.0,
+        12000000000.0
+      ],
+      "centre": 10000000000.0,
+      "status": "AUTHOR_TARGET"
+    }
+  },
+  "era_names": {
+    "sealed_habitat": "эпоха замкнутых поселений: купола, трубки, лицензии на рождение",
+    "industrial_recovery": "промышленное восстановление: автоматизация и техника возвращаются",
+    "habitat_boom": "жилищный бум: серийные выработки и вращающиеся хабитаты, место дешевеет в 2-3 раза",
+    "terraforming": "терраформинг: открытая поверхность растёт медленно, веками",
+    "high_fertility": "эпоха высокой рождаемости: семейная норма выше экономического сигнала (вера, государство, фронтир)",
+    "hyper_migration": "гипер-миграция: государственные программы переселения по сети маяков",
+    "urban_saturation": "насыщение: хабитаты полны, рождаемость к воспроизводству"
+  },
+  "earth_programme_windows": [
+    {
+      "from": 2752,
+      "to": 2790,
+      "per_year": 6000000.0,
+      "status": "PROPOSAL",
+      "text": "до Кордона: колонии вербуют на Земле открыто, «лотерейные» прыжки"
+    },
+    {
+      "from": 2790,
+      "to": 3112,
+      "per_year": 4000000.0,
+      "status": "PROPOSAL",
+      "text": "Кордон: корабли Земли в сеть не пускают, но вербовщики колоний вывозят отобранных по визам (около 0.04 % населения Земли в год)"
+    },
+    {
+      "from": 3112,
+      "to": 3127,
+      "per_year": 1000000.0,
+      "status": "PROPOSAL",
+      "text": "маяк Земли: колонии сужают визы из страха перед её численностью"
+    }
+  ],
+  "units": {
+    "earth_north": {
+      "target_share_of": "earth",
+      "story": "После краха 2475-2550 Земля восстанавливается: «Реставрация» (государственная семейная политика) и освоение Сола — Луна, Марс, пояс, Церера, луны гигантов.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2600,
+          "ramp": 150,
+          "cost": 0.6,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "серийные хабитаты Сола после Реставрации"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2560,
+          "to": 3126,
+          "mult": 1.2,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "Реставрация: государственная семейная политика после краха"
+        }
+      ],
+      "intensity": 0.4669
+    },
+    "earth_south": {
+      "target_share_of": "earth",
+      "story": "Развивающийся пояс Земли: главный источник переселенцев Сола и колоний.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2600,
+          "ramp": 150,
+          "cost": 0.6,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "серийные хабитаты Сола после Реставрации"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2560,
+          "to": 3126,
+          "mult": 1.2,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "Реставрация: государственная семейная политика после краха"
+        }
+      ],
+      "intensity": 0.4669
+    },
+    "tau_ceti_cognium": {
+      "target": [
+        1200000000.0,
+        1500000000.0
+      ],
+      "author_name": "Новый Шанхай / Когниум",
+      "story": "У Тау Кита нет пригодных тел: Когниум живёт в кольцах. Первым поставив на поток вращающиеся хабитаты из кометного льда и привозного металла, он превратил дефицит места в отрасль; после гипера — главный магнит переселенцев сети.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2420,
+          "ramp": 120,
+          "cost": 0.3,
+          "cap": 1.0,
+          "status": "PROPOSAL",
+          "text": "кольцевой бум: вращающиеся хабитаты серийно"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2420,
+          "to": 2950,
+          "mult": 1.3,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "меритократия поощряет семьи инженеров: место в кольце — по стажу семьи"
+        },
+        {
+          "kind": "immigration",
+          "from": 2752,
+          "to": 3126,
+          "share": 0.004,
+          "sources": [
+            "earth",
+            "network"
+          ],
+          "status": "PROPOSAL",
+          "text": "вербовка специалистов Земли и сети"
+        }
+      ],
+      "intensity": 1.1238
+    },
+    "eps_eri_harmony": {
+      "target": [
+        1200000000.0,
+        1500000000.0
+      ],
+      "author_name": "Цветущая Гармония",
+      "story": "Лучший пояс человечества: вода, металлы, гелий-3. Совет мудрецов сделал строительство хабитатов государственной программой и платил семьям за третьего ребёнка; после гипера — открытые визы.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2400,
+          "ramp": 120,
+          "cost": 0.35,
+          "cap": 6.0,
+          "status": "PROPOSAL",
+          "text": "поясной бум: выработки и цилиндры из астероидов"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2400,
+          "to": 3000,
+          "mult": 1.3,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "государственная программа «Цветущий сад»"
+        },
+        {
+          "kind": "immigration",
+          "from": 2752,
+          "to": 3126,
+          "share": 0.004,
+          "sources": [
+            "earth",
+            "network"
+          ],
+          "status": "PROPOSAL",
+          "text": "открытые визы и вербовка"
+        }
+      ],
+      "intensity": 0.6066
+    },
+    "gj832_tianhe": {
+      "target": [
+        900000000.0,
+        1200000000.0
+      ],
+      "author_name": "Тяньхэ",
+      "story": "Партийная технократия планирует жильё пятилетками: кометный лёд Gliese 832 даёт сырьё, плановое строительство — места; рождаемость ведёт план, а не рынок.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2450,
+          "ramp": 120,
+          "cost": 0.35,
+          "cap": 5.0,
+          "status": "PROPOSAL",
+          "text": "плановое строительство хабитатов"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2450,
+          "to": 3000,
+          "mult": 1.3,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "план населения: квоты семьи расширены"
+        },
+        {
+          "kind": "immigration",
+          "from": 2752,
+          "to": 3126,
+          "share": 0.003,
+          "sources": [
+            "earth",
+            "network"
+          ],
+          "status": "PROPOSAL",
+          "text": "оргнабор"
+        }
+      ],
+      "intensity": 0.9713
+    },
+    "hd20794_newindia": {
+      "target": [
+        800000000.0,
+        1000000000.0
+      ],
+      "author_name": "Новая Индия",
+      "story": "Поздняя колония, выросшая на гипер-миграции: из 1.0 % естественного прироста и до 1.2 % иммиграции в год. Меритократическая кастовая республика принимала переселенцев целыми общинами.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2600,
+          "ramp": 120,
+          "cost": 0.4,
+          "cap": 5.0,
+          "status": "PROPOSAL",
+          "text": "бум выработок в лунах"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2600,
+          "to": 3126,
+          "mult": 1.25,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "семейная норма общин"
+        },
+        {
+          "kind": "immigration",
+          "from": 2760,
+          "to": 3126,
+          "share": 0.012,
+          "sources": [
+            "earth",
+            "network"
+          ],
+          "status": "PROPOSAL",
+          "text": "переселение общинами"
+        }
+      ],
+      "intensity": 0.8779
+    },
+    "lalande_mecca": {
+      "target": [
+        700000000.0,
+        900000000.0
+      ],
+      "author_name": "Новая Мекка",
+      "story": "Учёная теократия: высокая рождаемость веры, медленный терраформинг холодного мира и выработки в лунах; въезд для чужих закрыт — рост собственный.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2450,
+          "ramp": 120,
+          "cost": 0.4,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "выработки и купола серийно"
+        },
+        {
+          "kind": "terraforming",
+          "from": 2700,
+          "ramp": 300,
+          "cap": 3.0,
+          "status": "PROPOSAL",
+          "text": "медленный терраформинг"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2300,
+          "to": 3126,
+          "mult": 1.2,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "норма веры"
+        }
+      ],
+      "intensity": 1.1194
+    },
+    "delta_pav_karma": {
+      "target": [
+        650000000.0,
+        850000000.0
+      ],
+      "author_name": "Новая Карма",
+      "story": "Отказалась от маяка: никакой иммиграции. Всё население — собственный прирост кастовой теократии, терраформинг и выработки.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2500,
+          "ramp": 150,
+          "cost": 0.45,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "храмовые выработки"
+        },
+        {
+          "kind": "terraforming",
+          "from": 2650,
+          "ramp": 300,
+          "cap": 3.0,
+          "status": "PROPOSAL",
+          "text": "терраформинг долин"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2450,
+          "to": 3126,
+          "mult": 1.25,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "долг рождения (кастовая норма)"
+        }
+      ],
+      "intensity": 0.8229
+    },
+    "proxima_outpost": {
+      "target": [
+        600000000.0,
+        850000000.0
+      ],
+      "author_name": "Красный Форпост / Сварог",
+      "story": "Старейшая колония. Силовая олигархия держит рождаемость ради людской силы; терраформинг терминатора и выработки; выезд закрыт, въезд — только по найму.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2450,
+          "ramp": 120,
+          "cost": 0.4,
+          "cap": 3.0,
+          "status": "PROPOSAL",
+          "text": "выработки и купола"
+        },
+        {
+          "kind": "terraforming",
+          "from": 2650,
+          "ramp": 300,
+          "cap": 3.0,
+          "status": "PROPOSAL",
+          "text": "терраформинг терминатора"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2450,
+          "to": 3050,
+          "mult": 1.2,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "политика людской силы"
+        }
+      ],
+      "intensity": 0.9558
+    },
+    "wolf359_citadel": {
+      "target": [
+        450000000.0,
+        650000000.0
+      ],
+      "author_name": "Цитадель",
+      "story": "Крепость: закрытый въезд и выезд, своя рождаемость, металл пояса Wolf 359; медленный терраформинг.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2450,
+          "ramp": 120,
+          "cost": 0.4,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "бункерные выработки серийно"
+        },
+        {
+          "kind": "terraforming",
+          "from": 2700,
+          "ramp": 300,
+          "cap": 2.5,
+          "status": "PROPOSAL",
+          "text": "терраформинг"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2450,
+          "to": 3126,
+          "mult": 1.2,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "людская сила крепости"
+        }
+      ],
+      "intensity": 0.7902
+    },
+    "hd40307_maland": {
+      "target": [
+        350000000.0,
+        550000000.0
+      ],
+      "author_name": "Новая Маланд",
+      "story": "Совет вождей: общинная рождаемость и большая гипер-миграция из Африки Земли и сети.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2640,
+          "ramp": 120,
+          "cost": 0.4,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "бум выработок"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2640,
+          "to": 3126,
+          "mult": 1.2,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "общинная норма"
+        },
+        {
+          "kind": "immigration",
+          "from": 2760,
+          "to": 3126,
+          "share": 0.008,
+          "sources": [
+            "earth",
+            "network"
+          ],
+          "status": "PROPOSAL",
+          "text": "переселение общин"
+        }
+      ],
+      "intensity": 0.9614
+    },
+    "eps_eri_strife": {
+      "target": [
+        250000000.0,
+        450000000.0
+      ],
+      "author_name": "Пояс Раздора",
+      "story": "Кланы пояса Эпсилон Эридана: дешёвое жильё в выработках и клановая рождаемость.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2500,
+          "ramp": 120,
+          "cost": 0.45,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "выработки кланов"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2500,
+          "to": 3126,
+          "mult": 1.15,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "клановая норма"
+        }
+      ],
+      "intensity": 0.9828
+    },
+    "lalande_hellas": {
+      "target": [
+        250000000.0,
+        400000000.0
+      ],
+      "author_name": "Новая Эллада / Агора",
+      "story": "Акционерная Агора: торговый узел, жильё строит рынок; рост на открытых визах.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2420,
+          "ramp": 120,
+          "cost": 0.4,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "рыночный бум хабитатов"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2420,
+          "to": 2900,
+          "mult": 1.15,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "семьи торговых домов"
+        },
+        {
+          "kind": "immigration",
+          "from": 2752,
+          "to": 3126,
+          "share": 0.003,
+          "sources": [
+            "earth",
+            "network"
+          ],
+          "status": "PROPOSAL",
+          "text": "открытые визы торгового узла"
+        }
+      ],
+      "intensity": 1.1321
+    },
+    "gj581_europa": {
+      "target": [
+        200000000.0,
+        350000000.0
+      ],
+      "author_name": "Новая Европа",
+      "story": "Парламентская бюрократия с семейной политикой; жилищные программы и умеренные визы.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2500,
+          "ramp": 120,
+          "cost": 0.4,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "жилищные программы"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2500,
+          "to": 3050,
+          "mult": 1.2,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "семейная политика"
+        },
+        {
+          "kind": "immigration",
+          "from": 2760,
+          "to": 3126,
+          "share": 0.003,
+          "sources": [
+            "earth",
+            "network"
+          ],
+          "status": "PROPOSAL",
+          "text": "визы"
+        }
+      ],
+      "intensity": 1.1219
+    },
+    "hd20794_hellas2": {
+      "target": [
+        200000000.0,
+        300000000.0
+      ],
+      "author_name": "Вторая Эллада",
+      "story": "Корпоративная демократия: компании строят жильё под рабочие места и вербуют.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2500,
+          "ramp": 120,
+          "cost": 0.4,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "корпоративные хабитаты"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2500,
+          "to": 3000,
+          "mult": 1.15,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "корпоративные семейные пакеты"
+        },
+        {
+          "kind": "immigration",
+          "from": 2760,
+          "to": 3126,
+          "share": 0.003,
+          "sources": [
+            "earth",
+            "network"
+          ],
+          "status": "PROPOSAL",
+          "text": "вербовка компаний"
+        }
+      ],
+      "intensity": 1.009
+    },
+    "hd69830_verde": {
+      "target": [
+        150000000.0,
+        250000000.0
+      ],
+      "author_name": "Сельта-Верде",
+      "story": "Гранды и церковь: высокая рождаемость веры, богатые летучие HD 69830.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2680,
+          "ramp": 120,
+          "cost": 0.45,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "выработки грандов"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2600,
+          "to": 3126,
+          "mult": 1.15,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "норма церкви"
+        }
+      ],
+      "intensity": 1.372
+    },
+    "hd40307_firmament": {
+      "target": [
+        150000000.0,
+        250000000.0
+      ],
+      "author_name": "Небесная Твердыня",
+      "story": "Дальняя провинция Гармонии, основанная в 2742: почти всё население — гипер-миграция (1.0 % естественного прироста + до 1.4 % иммиграции в год).",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2780,
+          "ramp": 100,
+          "cost": 0.4,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "провинциальная программа хабитатов"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2780,
+          "to": 3126,
+          "mult": 1.2,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "подъёмные семьям переселенцев"
+        },
+        {
+          "kind": "immigration",
+          "from": 2760,
+          "to": 3126,
+          "share": 0.014,
+          "sources": [
+            "earth",
+            "network"
+          ],
+          "status": "PROPOSAL",
+          "text": "программа заселения провинции"
+        }
+      ],
+      "intensity": 1.2886
+    },
+    "delta_pav_freekarma": {
+      "target": [
+        150000000.0,
+        250000000.0
+      ],
+      "author_name": "Свободная Карма",
+      "story": "Республика изгнанников: собственная высокая рождаемость, выработки Delta Pavonis.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2520,
+          "ramp": 120,
+          "cost": 0.45,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "выработки"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2520,
+          "to": 3126,
+          "mult": 1.15,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "норма изгнанников"
+        }
+      ],
+      "intensity": 0.9937
+    },
+    "gj581_freeclans": {
+      "target": [
+        150000000.0,
+        250000000.0
+      ],
+      "author_name": "Свободные поселения",
+      "story": "Кланы Свободного мира: фронтир с очень высокой рождаемостью — земля и лёд почти даром.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2650,
+          "ramp": 120,
+          "cost": 0.45,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "клановые выработки"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2650,
+          "to": 3126,
+          "mult": 1.15,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "фронтирная норма"
+        }
+      ],
+      "intensity": 1.5107
+    },
+    "cyg61_kern": {
+      "target": [
+        100000000.0,
+        180000000.0
+      ],
+      "author_name": "Керн",
+      "story": "Проспекторат: корпорация растит рабочую силу под рудники и вербует.",
+      "epochs": [
+        {
+          "kind": "habitat_boom",
+          "from": 2500,
+          "ramp": 120,
+          "cost": 0.45,
+          "cap": 4.0,
+          "status": "PROPOSAL",
+          "text": "корпоративные выработки"
+        },
+        {
+          "kind": "high_fertility",
+          "from": 2500,
+          "to": 3126,
+          "mult": 1.15,
+          "fit": true,
+          "status": "PROPOSAL",
+          "text": "семейные контракты компании"
+        },
+        {
+          "kind": "immigration",
+          "from": 2760,
+          "to": 3126,
+          "share": 0.004,
+          "sources": [
+            "earth",
+            "network"
+          ],
+          "status": "PROPOSAL",
+          "text": "вербовка на рудники"
+        }
+      ],
+      "intensity": 1.0492
+    }
+  }
+}

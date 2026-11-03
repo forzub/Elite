@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/game/catalog/ships/ShipCargoPassports.h"
 #include "src/game/ship/ShipDescriptor.h"
 
 // World-side descriptor of the OCS-4 "Lastochka" orbital cargo shuttle
@@ -19,8 +20,11 @@ namespace game::ship::descriptors
         d.physicalControlModel = game::ship::plant::PhysicalControlModelId::NewtonianI;
         d.localFlightControlLaw = game::ship::plant::nativeFlightLaw(d.physicalControlModel);
         d.physics.massKg = 380000.0;
-        d.storage.cargoMass = 450000;
-        d.storage.cargoVolume = 2600;
+        // tonnes (was written in kg): src/game/catalog/ships/ShipCargoPassports.h
+        d.storage.cargoMass = catalog::ships::Ocs4Cargo.cargoTonnes;
+        d.storage.cargoVolume = catalog::ships::Ocs4Cargo.cargoVolumeM3;
+        d.storage.containerSlots = catalog::ships::Ocs4Cargo.containerSlots;
+        d.storage.containerPayloadTonnes = catalog::ships::C20PayloadTonnes;
         d.hud.name = "OCS-4";
         d.meshSizeMeters = glm::vec3(18.0f, 14.0f, 56.0f);
         d.logicalDimensionsValue.length = 56.0f;

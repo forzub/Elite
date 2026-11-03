@@ -27,6 +27,13 @@ Nothing here targets a population number. Every year, for every unit
   migration          only after the hyper drive, over the beacon graph, limited
                      by seats in ships and by regime barriers; driven by income,
                      space, war, crowding, religion/culture affinity.
+  population history canon/population_history.json (PROPOSAL): the author's 3126
+                     scale (AUTHOR_TARGET) is explained by dated epochs per unit,
+                     not by a multiplier: habitat boom (industrial place cost
+                     falls, capacity grows), terraforming (surface capacity), a
+                     high-fertility era (family norm above the economic signal)
+                     and state immigration programmes (hyper-era migration from
+                     Earth's visa windows and from the network).
 
 Historical regularities and their sources: D:/tmp/DEMOGRAPHY_RESEARCH.md.
 Deterministic: no clock, RNG seeded per unit, sorted iteration.
@@ -233,7 +240,9 @@ class Unit:
         e = self.E
         # habitat tiers from the physical catalog (assumption F2)
         if earth:
-            self.K = (11.0e9, 4e8, None)  # Earth surface + Sol habitats (moons, Mars, belt)
+            # Earth surface ~10 bn (FINAL-ARK-1 dossier, 2500: "10 billion, no more can be fed") +
+            # Sol habitats (moons, Mars, belt)
+            self.K = (10.0e9, 4e8, None)
             self.c = (E_OPEN_AIR, C_TIER[1], C_TIER[2])
         else:
             k1 = 1.6e6 * e["n_sealed"] + 4e6 * e["n_open"]
@@ -259,6 +268,56 @@ class Unit:
         self.urban = 0.0
         self.tier = 0
         self.workers = 0.0
+        self.n_settlements = 1
+        self.largest = 0.0
+        # population history epochs (canon/population_history.json)
+        self.boom = None        # habitat boom: dict(year, ramp, cost, cap)
+        self.terra = None       # terraforming: dict(year, ramp, cap)
+        self.fert = []          # high-fertility eras: [dict(from, to, mult)]
+        self.immig = []         # immigration programmes: [dict(from, to, share, sources)]
+        self.y_now = YEAR0
+
+    # --- epochs
+    def boom_factors(self):
+        """(tier-1 capacity x, tier-2 capacity x, place-cost x for tiers 2/3, tier-1 cost x)."""
+        y = self.y_now
+        k1 = k2 = cost = c1 = 1.0
+        b = self.boom
+        if b and y >= b["year"]:
+            f = clamp((y - b["year"]) / b.get("ramp", 100.0))
+            cost = 1.0 - f * (1.0 - b["cost"])
+            k2 = 1.0 + f * (b.get("cap", 1.0) - 1.0)
+        t = self.terra
+        if t and y >= t["year"]:
+            f = clamp((y - t["year"]) / t.get("ramp", 200.0))
+            k1 = 1.0 + f * (t["cap"] - 1.0)
+            c1 = 1.0 - 0.4 * f
+        return k1, k2, cost, c1
+
+    def fert_mult(self):
+        m = 1.0
+        for e in self.fert:
+            if e["from"] <= self.y_now < e["to"]:
+                ramp = clamp((self.y_now - e["from"]) / 30.0) * clamp((e["to"] - self.y_now) / 30.0)
+                m *= 1.0 + (e["mult"] - 1.0) * ramp
+        return m
+
+    def capacity_split(self):
+        """Population shares by habitat tier. Places are built cheapest tier first, and people
+        fill them in the same order, so the vacancies sit in the dearest habitats: tier 1 surface /
+        domes / lava tubes (Earth: the surface), tier 2 burrowed moons and asteroids (Earth: Sol
+        habitats), tier 3 rotating habitats."""
+        k1x, k2x, _, _ = self.boom_factors()
+        K1 = (self.K[0] or 0.0) * k1x
+        K2 = (self.K[1] or 0.0) * k2x
+        H = max(self.H, 1.0)
+        P = max(self.P(), 1.0)
+        t1 = min(H, K1)
+        t2 = min(H - t1, K2)
+        p1 = min(P, t1)
+        p2 = min(P - p1, t2)
+        p3 = max(0.0, P - p1 - p2)
+        return p1 / P, p2 / P, p3 / P
 
     # --- helpers
     def P(self):
@@ -299,11 +358,13 @@ class Unit:
         """Labour-years per new habitat place (assumption F2)."""
         H = self.H
         k1, k2, _ = self.K
+        k1x, k2x, bc, c1x = self.boom_factors()
+        k1, k2 = k1 * k1x, k2 * k2x
         # Ricardian rent: the best sites of a tier are used first, so the marginal place gets dearer
         # as the tier fills; the next tier takes over when it becomes the cheaper option
-        c1 = self.c[0] * (1 + 2.0 * (H / k1) ** 2) if k1 > 0 else 1e9
-        c2 = self.c[1] * (1 + 1.5 * (max(0.0, H - k1) / k2) ** 2) if k2 > 0 else 1e9
-        c3 = self.c[2]
+        c1 = self.c[0] * c1x * (1 + 2.0 * (H / k1) ** 2) if k1 > 0 else 1e9
+        c2 = self.c[1] * bc * (1 + 1.5 * (max(0.0, H - k1) / k2) ** 2) if k2 > 0 else 1e9
+        c3 = self.c[2] * bc
         base = min(c1, c2, c3)
         self.tier = 1 if base == c1 else 2 if base == c2 else 3
         e = self.E["idx"]
@@ -316,6 +377,7 @@ class Unit:
 
     # --- yearly step
     def step(self, y, rng):
+        self.y_now = y
         P = self.P()
         if P < 1:
             self.active = False
@@ -392,8 +454,9 @@ class Unit:
         tfr_s, tfr_r = clamp(tfr_s, 0.7, 8.5), clamp(tfr_r, 1.5, 9.5)
         lic = 1.0 if self.crowd < 1.08 else (1.08 / self.crowd) ** 6     # birth licences when habitats are full
         self.lic = lic
-        tfr_s *= lic * self.tfr_mult
-        tfr_r *= lic * self.tfr_mult
+        fm = self.fert_mult()
+        tfr_s *= lic * self.tfr_mult * fm
+        tfr_r *= lic * self.tfr_mult * fm
         self.tfr = (1 - self.r) * tfr_s + self.r * tfr_r
         # births ---------------------------------------------------------------
         women = {i: self.pop[i] * 0.5 for i in FERT_W}
@@ -518,7 +581,32 @@ def build_units(world, missions, voyages, E, culture_of, regime_of):
                  regime_of(owner), culture_of(owner), o["founded"], 0.05, owner=owner, site_share=o.get("site_share", 1.0))
         u.norm = 2.5
         units[u.id] = u
+    apply_history(units, world.get("population_history"))
     return units
+
+
+def apply_history(units, ph):
+    """Attach the dated epochs of canon/population_history.json to the units."""
+    if not ph:
+        return
+    for uid in sorted(ph["units"]):
+        u = units.get(uid)
+        if u is None:
+            continue
+        # intensity (fitted by calibrate_population.py) scales how far each epoch moves its lever
+        # from "no change": 1 = the narrative values written in the epoch
+        lam = ph["units"][uid].get("intensity", 1.0)
+        for e in ph["units"][uid].get("epochs", []):
+            k = e["kind"]
+            if k == "habitat_boom":
+                u.boom = dict(year=e["from"], ramp=e.get("ramp", 100.0), cost=max(0.08, 1.0 - (1.0 - e["cost"]) * lam),
+                              cap=1.0 + (e.get("cap", 1.0) - 1.0) * lam)
+            elif k == "terraforming":
+                u.terra = dict(year=e["from"], ramp=e.get("ramp", 200.0), cap=1.0 + (e["cap"] - 1.0) * lam)
+            elif k == "high_fertility":
+                u.fert.append(dict(e, mult=1.0 + (e["mult"] - 1.0) * lam))
+            elif k == "immigration":
+                u.immig.append(dict(e, share=e["share"] * lam))
 
 
 SHORTEST = [None]
@@ -599,6 +687,7 @@ def simulate(world, missions, voyages, E, culture_of, regime_of, beacon_graph, s
         if g is not None:
             flows_log.extend(migrate(units, g, y, world, mig_sched))
         earth_migration(units, earth_ids, y, world, flows_log)
+        programme_migration(units, earth_ids, y, world, flows_log)
         # records
         if y % 5 == 1 or y == YEAR_END:
             pass
@@ -829,6 +918,75 @@ def earth_migration(units, earth_ids, y, world, flows_log):
         flows_log.append((y, src.id, u.id, moved, 0))
 
 
+def programme_migration(units, earth_ids, y, world, flows_log):
+    """State immigration programmes of the hyper era (population_history.json): a destination
+    recruits share x its population per year. Earth supplies what its visa windows allow
+    (population_history.earth_programme_windows); the rest comes from the connected network,
+    proportional to the donors' population, never from hostile neighbours (grievance >= 60),
+    never from a polity that recruits itself, capped per donor at donor_max_rate of its
+    population per year."""
+    ph = world.get("population_history")
+    if y < 2752 or not ph:
+        return
+    want = []
+    for uid in sorted(units):
+        u = units[uid]
+        if not u.active or u.earth:
+            continue
+        for e in u.immig:
+            if e["from"] <= y < e["to"]:
+                want.append((uid, e["share"] * u.P(), e.get("sources", ["network"])))
+    if not want:
+        return
+    recruiting = {uid for uid, _, _ in want}     # a recruiting polity is never a donor the same year
+    quota = 0.0
+    for win in ph.get("earth_programme_windows", []):
+        if win["from"] <= y < win["to"]:
+            quota = win["per_year"]
+    e_want = sum(w for _, w, s in want if "earth" in s)
+    k_e = min(1.0, quota / e_want) if e_want > 0 else 0.0
+    rel = {tuple(sorted((r["a"], r["b"]))): r["grievance"] for r in world["relations_anchor"]}
+    emig_left = {}
+    max_emig = ph.get("donor_max_rate", 0.0025)
+    for uid, w, src in want:
+        dst = units[uid]
+        moved = 0.0
+        if "earth" in src and k_e > 0:
+            take = w * k_e
+            e_tot = sum(units[e].P() for e in earth_ids) or 1.0
+            for eid in earth_ids:
+                eu = units[eid]
+                m = eu.remove_people(take * eu.P() / e_tot, MIG_W)
+                eu.net_mig -= m
+                eu.mig_out_tot += m
+                moved += m
+                flows_log.append((y, eid, uid, m, 0))
+        rest = w - moved
+        if "network" in src and rest > 1 and dst.connected:
+            donors = [units[k] for k in sorted(units) if k != uid and k not in recruiting and units[k].active and units[k].connected
+                      and not units[k].earth and units[k].P() > 1e5 and rel.get(tuple(sorted((k, uid))), 0) < 60
+                      and REGIME.get(units[k].regime, REGIME["shareholder_agora"])["exitb"] < 0.7]
+            tp = sum(d.P() for d in donors)
+            for d in donors:
+                cap = emig_left.setdefault(d.id, max_emig * d.P())
+                n = min(rest * d.P() / tp, cap)
+                if n < 1:
+                    continue
+                m = d.remove_people(n, MIG_W)
+                emig_left[d.id] -= m
+                d.net_mig -= m
+                d.mig_out_tot += m
+                moved += m
+                flows_log.append((y, d.id, uid, m, 1))
+        if moved <= 0:
+            continue
+        for i in range(NB):
+            dst.pop[i] += moved * MIG_W[i]
+        dst.H += moved * 0.3
+        dst.net_mig += moved
+        dst.mig_in_tot += moved
+
+
 def _cdist(a, b):
     ks = sorted(a)
     return math.sqrt(sum((a[k] - b[k]) ** 2 for k in ks) / len(ks))
@@ -921,4 +1079,86 @@ def trajectories(units, cols_by_id):
     young = [u for u in units.values() if u.hist and not u.earth and u.hist[0]["year"] >= 2750 and age(u) >= 60 and u.P() > 1000]
     pick("young_hyper_frontier", lambda u: -u.mig_in_tot, young, "основана в гипер-эпоху (аванпост или фронтир), больше всего переселенцев")
     pick("stagnant", lambda u: abs(u.hist[-1]["growth"]), cand, "самый малый темп роста к 3126 среди колоний с историей >= 100 лет")
+    return out
+
+
+# ---------------------------------------------------------------- population history (epochs)
+ERA_ORDER = ["sealed_habitat", "industrial_recovery", "habitat_boom", "terraforming", "high_fertility",
+             "hyper_migration", "urban_saturation"]
+
+
+def habitat_split(u):
+    """People by habitat tier in 3126 (see Unit.capacity_split)."""
+    s1, s2, s3 = u.capacity_split()
+    P = u.P()
+    if u.earth:
+        return dict(earth_surface=int(round(P * s1)), sol_habitats=int(round(P * (s2 + s3))),
+                    sol_burrowed=int(round(P * s2)), sol_rotating=int(round(P * s3)))
+    return dict(surface_and_underground=int(round(P * s1)), burrowed_moons_asteroids=int(round(P * s2)),
+                rotating_habitats=int(round(P * s3)))
+
+
+def epoch_table(u, phu):
+    """Dated eras of one unit with their births, deaths, migration, housing and economy. The cut
+    points are the model's own (deepest automation = end of the sealed-habitat era) and the epochs
+    of population_history.json; each era is named by the mechanism that dominates it."""
+    if not u.hist:
+        return []
+    ep = (phu or {}).get("epochs", [])
+    f0 = u.hist[0]["year"]
+    mn = min_automation(u)[0]
+    boom = next((e["from"] for e in ep if e["kind"] == "habitat_boom"), None)
+    terra = next((e["from"] for e in ep if e["kind"] == "terraforming"), None)
+    fert = [(e["from"], e["to"]) for e in ep if e["kind"] == "high_fertility"]
+    imm = [(e["from"], e["to"]) for e in ep if e["kind"] == "immigration"]
+    cuts = {f0, YEAR_END}
+    for y in [mn, boom, terra] + [a for a, _ in fert + imm] + [b for _, b in fert + imm]:
+        if y is not None and f0 < y < YEAR_END:
+            cuts.add(int(y))
+    cuts = sorted(cuts)
+
+    def era(a):
+        if any(x <= a < z for x, z in imm) and a >= 2752:
+            return "hyper_migration"
+        if a < mn and (boom is None or a < boom):
+            return "sealed_habitat"
+        if boom is None or a < boom:
+            return "industrial_recovery"
+        if any(x <= a < z for x, z in fert):
+            return "high_fertility"
+        if terra is not None and a >= terra:
+            return "terraforming"
+        if fert and a >= max(z for _, z in fert):
+            return "urban_saturation"
+        return "habitat_boom"
+
+    rows = []
+    for a, b in zip(cuts, cuts[1:]):
+        hs = [h for h in u.hist if a <= h["year"] <= b]
+        if len(hs) < 2:
+            continue
+        p0, p1 = hs[0]["pop"], hs[-1]["pop"]
+        yrs = max(1, hs[-1]["year"] - hs[0]["year"])
+        n = len(hs)
+        tiers = [h["tier"] or 1 for h in hs]
+        rows.append(dict(era=era(a), start=a, end=b, pop_start=int(round(p0)), pop_end=int(round(p1)),
+                         growth_pct=round(100 * math.log(max(p1, 1) / max(p0, 1)) / yrs, 3),
+                         tfr=round(sum(h["tfr"] for h in hs) / n, 2), cbr=round(sum(h["cbr"] for h in hs) / n, 1),
+                         cdr=round(sum(h["cdr"] for h in hs) / n, 1),
+                         net_migration_per_1000=round(sum(h["net_mig"] / max(h["pop"], 1) for h in hs) / n * 1000, 2),
+                         crowding=round(sum(h["crowd"] for h in hs) / n, 2), housing_tier=max(set(tiers), key=tiers.count),
+                         income=round(sum(h["income"] for h in hs) / n, 2), automation=round(sum(h["automation"] for h in hs) / n, 2)))
+    # merge neighbouring rows of the same era
+    out = []
+    for r in rows:
+        if out and out[-1]["era"] == r["era"]:
+            q = out[-1]
+            w0, w1 = q["end"] - q["start"], r["end"] - r["start"]
+            for k in ("tfr", "cbr", "cdr", "net_migration_per_1000", "crowding", "income", "automation"):
+                q[k] = round((q[k] * w0 + r[k] * w1) / max(1, w0 + w1), 2)
+            q["end"], q["pop_end"] = r["end"], r["pop_end"]
+            q["growth_pct"] = round(100 * math.log(max(q["pop_end"], 1) / max(q["pop_start"], 1)) / max(1, q["end"] - q["start"]), 3)
+            q["housing_tier"] = r["housing_tier"]
+        else:
+            out.append(r)
     return out

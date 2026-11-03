@@ -19,7 +19,7 @@
 | Основана | 3060 | PROPOSAL · PUBLIC |
 | Миссии-основатели | — | PROPOSAL · PUBLIC |
 | Режим 3126 | — | PROPOSAL · PUBLIC |
-| Население 3126 (модель) | 372 | PROPOSAL · PUBLIC (модель) |
+| Население 3126 (модель) | 370 | PROPOSAL · PUBLIC (модель) |
 | Население 3126 (авторское) | 3 000 | PROPOSAL · PUBLIC |
 | Модель / автор | 0.12 | PROPOSAL · PUBLIC (модель) |
 | Миграция 2750–3126: приток / отток | 0 / 0 | PROPOSAL · PUBLIC (модель) |
@@ -53,9 +53,9 @@
 <!-- GENERATED:checkpoints BEGIN -->
 | Год | Население | СКР | e0 / смертн. ‰ | Чистая миграция ‰ | Фаза | Урбанизация | Хабитат | Тех. индекс | Автоматизация | Статус |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 3060 | 207 | 2.28 | 94 / 0.3 | 0.0 | stagnation | 0.00 | купола, лавовые трубки и укрытые поселения на твёрдых телах | 1.78 | 0.95 | PROPOSAL · PUBLIC (модель) |
-| 3100 | 358 | 2.07 | 94 / 7.0 | 0.0 | growth | 0.00 | купола, лавовые трубки и укрытые поселения на твёрдых телах | 1.35 | 0.84 | PROPOSAL · PUBLIC (модель) |
-| 3126 | 372 | 2.11 | 94 / 11.7 | 0.0 | stagnation | 0.00 | купола, лавовые трубки и укрытые поселения на твёрдых телах | 1.05 | 0.66 | PROPOSAL · PUBLIC (модель) |
+| 3060 | 207 | 2.27 | 94 / 0.3 | 0.0 | stagnation | 0.00 | купола, лавовые трубки и укрытые поселения на твёрдых телах | 2.11 | 0.95 | PROPOSAL · PUBLIC (модель) |
+| 3100 | 357 | 2.08 | 94 / 7.0 | 0.0 | growth | 0.00 | купола, лавовые трубки и укрытые поселения на твёрдых телах | 1.60 | 0.95 | PROPOSAL · PUBLIC (модель) |
+| 3126 | 370 | 2.06 | 94 / 11.8 | 0.0 | stagnation | 0.00 | купола, лавовые трубки и укрытые поселения на твёрдых телах | 1.23 | 0.79 | PROPOSAL · PUBLIC (модель) |
 <!-- GENERATED:checkpoints END -->
 
 ## История роста
@@ -68,20 +68,20 @@
 <!-- GENERATED:tech BEGIN -->
 | Область | Уровень 3126 | Состояние | Статус |
 |---|---|---|---|
-| automation | 0.93 | утрачена | PROPOSAL · PUBLIC (модель) |
-| bio | 1.08 | сохранена | PROPOSAL · PUBLIC (модель) |
-| construction | 1.14 | сохранена | PROPOSAL · PUBLIC (модель) |
-| electronics | 0.91 | утрачена | PROPOSAL · PUBLIC (модель) |
-| energy | 1.14 | сохранена | PROPOSAL · PUBLIC (модель) |
-| extraction | 1.15 | сохранена | PROPOSAL · PUBLIC (модель) |
+| automation | 1.15 | утрачена | PROPOSAL · PUBLIC (модель) |
+| bio | 1.27 | утрачена | PROPOSAL · PUBLIC (модель) |
+| construction | 1.27 | сохранена | PROPOSAL · PUBLIC (модель) |
+| electronics | 1.14 | утрачена | PROPOSAL · PUBLIC (модель) |
+| energy | 1.28 | сохранена | PROPOSAL · PUBLIC (модель) |
+| extraction | 1.28 | сохранена | PROPOSAL · PUBLIC (модель) |
 | jump | 0.50 | none | PROPOSAL · PUBLIC (модель) |
-| manufacturing | 1.07 | сохранена | PROPOSAL · PUBLIC (модель) |
-| metallurgy | 1.10 | сохранена | PROPOSAL · PUBLIC (модель) |
-| military | 1.11 | сохранена | PROPOSAL · PUBLIC (модель) |
-| research | 0.94 | утрачена | PROPOSAL · PUBLIC (модель) |
-| shipbuilding | 0.94 | утрачена | PROPOSAL · PUBLIC (модель) |
+| manufacturing | 1.27 | утрачена | PROPOSAL · PUBLIC (модель) |
+| metallurgy | 1.27 | утрачена | PROPOSAL · PUBLIC (модель) |
+| military | 1.27 | утрачена | PROPOSAL · PUBLIC (модель) |
+| research | 1.16 | утрачена | PROPOSAL · PUBLIC (модель) |
+| shipbuilding | 1.16 | утрачена | PROPOSAL · PUBLIC (модель) |
 
-Минимум автоматизации: 0.66 в 3126 году (`PROPOSAL · PUBLIC (модель)`).
+Минимум автоматизации: 0.79 в 3126 году (`PROPOSAL · PUBLIC (модель)`).
 <!-- GENERATED:tech END -->
 
 ## Экономика 3126
@@ -95,7 +95,7 @@
 <!-- GENERATED:settlements BEGIN -->
 | Поселение | Роль | Тело / орбита | Население | Статус |
 |---|---|---|---|---|
-| Экспедиция Sigma² UMa | столица | Sigma² UMa A h IV | 172 | PROPOSAL · PUBLIC |
+| Экспедиция Sigma² UMa | столица | Sigma² UMa A h IV | 171 | PROPOSAL · PUBLIC |
 | Sigma² UMa A h II — поселение | поселение | Sigma² UMa A h II | 86 | PROPOSAL · PUBLIC |
 | Sigma² UMa A h III — поселение | поселение | Sigma² UMa A h III | 57 | PROPOSAL · PUBLIC |
 
@@ -133,3 +133,17 @@
 
 <!-- NARRATIVE:collapse -->
 Нет экономики в данных, нет притока людей, теряются навыки. Без подкрепления в ближайшие десятилетия экспедиция либо эвакуируется, либо превратится в деградировавший посёлок на ледяной луне.
+
+<!-- GENERATED:population_eras BEGIN -->
+## История населения: эпохи
+
+| Эпоха | Годы | Население: начало → конец | Рост %/год | СКР | Рожд. ‰ | Смерт. ‰ | Миграция ‰ | Теснота | Ярус жилья | Доход | Статус |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| замкнутые поселения | 3060–3126 | 207 → 370 | 0.876 | 2.12 | 15.0 | 5.9 | 0.0 | 0.86 | 1 | 2.24 | `PROPOSAL` (модель) |
+<!-- GENERATED:population_eras END -->
+
+<!-- GENERATED:economy_3126 BEGIN -->
+## Экономика и логистика 3126
+
+Экономика, флот и оборона этой единицы считаются в составе владельца: [Шахта Альфа](cyg61_kern.md).
+<!-- GENERATED:economy_3126 END -->

@@ -860,6 +860,7 @@ def run(seed):
     E = endow.load_endowment()
     MS = load("missions.json")
     W = load("world.json")
+    W["population_history"] = load("population_history.json")
     missions = {m["id"]: m for m in MS["missions"]}
     voyages = {mid: Voyage(m, E, seed).run() for mid, m in sorted(missions.items())}
     sanity = {}
@@ -942,7 +943,12 @@ def run(seed):
         auth = c["pop_3126_authored"]
         ratio = u.P() / auth if auth else None
         flag = None
-        if ratio is not None and (ratio > 2.0 or ratio < 0.5):
+        tgt = W["population_history"]["units"].get(c["id"], {}).get("target")
+        if tgt:
+            # the author's 2026-11-03 scale (AUTHOR_TARGET) supersedes the old fate.md numbers
+            if not (tgt[0] <= u.P() <= tgt[1]):
+                flag = f"вне авторской цели: модель {u.P() / 1e6:.0f} млн, цель {tgt[0] / 1e6:.0f}–{tgt[1] / 1e6:.0f} млн"
+        elif ratio is not None and (ratio > 2.0 or ratio < 0.5):
             flag = f"конфликт с авторским каноном: модель {u.P() / 1e6:.2f} млн против {auth / 1e6:.2f} млн (×{ratio:.2f})"
         growth[c["id"]] = dict(p0=p0, founded_model=y0, rate=rate, flag=flag, authored=auth, ratio=None if ratio is None else round(ratio, 3),
                                path={y: next((int(round(h["pop"])) for h in u.hist if h["year"] == y), None) for y in (2300, 2500, 2750, 2900, 3000, 3126)})
@@ -1200,8 +1206,13 @@ def to_json(R):
                          tech_3126={d: round(v, 3) for d, v in u.tech.items()},
                          migrants_in=int(round(u.mig_in_tot)), migrants_out=int(round(u.mig_out_tot)),
                          events=[e for e in u.events if e["type"] != "epidemic"],
-                         epidemics=len([e for e in u.events if e["type"] == "epidemic"]))
+                         epidemics=len([e for e in u.events if e["type"] == "epidemic"]),
+                         pop_3126=int(round(u.P())), habitat_3126=demo.habitat_split(u),
+                         target=R["world"]["population_history"]["units"].get(uid, {}).get("target"),
+                         intensity=R["world"]["population_history"]["units"].get(uid, {}).get("intensity"),
+                         eras=demo.epoch_table(u, R["world"]["population_history"]["units"].get(uid)))
                for uid, u in sorted(units.items()) if u.hist},
+        scale_3126=scale_3126(R),
         trajectories=demo.trajectories(units, {c["id"]: c for c in R["cols"]}),
         migration=R["migration"])
     out["trade"] = dict(corridors=R["corridors"], flow_diff=R["flow_diff"], assets=R["assets"])
@@ -1211,6 +1222,21 @@ def to_json(R):
 
 def _m(x):
     return f"{x / 1e6:,.2f}".replace(",", " ")
+
+
+def scale_3126(R):
+    """Earth / Sol outside Earth / off-Sol against the author's scale."""
+    units = R["units"]
+    ph = R["world"]["population_history"]
+    earth = sum(demo.habitat_split(u)["earth_surface"] for u in units.values() if u.earth)
+    sol = sum(demo.habitat_split(u)["sol_habitats"] for u in units.values() if u.earth)
+    off = sum(u.P() for u in units.values() if not u.earth and u.active)
+    wt = ph["world_targets"]
+    def row(v, key):
+        lo, hi = wt[key]["range"]
+        return dict(model=int(round(v)), target=wt[key]["range"], centre=wt[key]["centre"], inside=lo <= v <= hi, status=wt[key]["status"])
+    return dict(earth=row(earth, "earth"), sol_outside_earth=row(sol, "sol_outside_earth"), off_sol=row(off, "off_sol"),
+                earth_emigrants_2752_3126=int(round(sum(units[e].mig_out_tot for e in ("earth_north", "earth_south")))))
 
 
 def fmt_demography(R):
@@ -1269,7 +1295,26 @@ def fmt_demography(R):
     L += ["", "### D.7 Миграция после гипера", "", f"Всего переселилось (2750–3126): {m['total']:,} человек.".replace(",", " "), "",
           "| полвека | людей |", "|---|---|"] + [f"| {k} | {v:,} |".replace(",", " ") for k, v in m["by_half_century"].items()]
     L += ["", "| откуда | куда | людей |", "|---|---|---|"] + [f"| {r['src']} | {r['dst']} | {r['people']:,} |".replace(",", " ") for r in m["top_routes"][:15]]
-    L += ["", "### D.8 Конфликты с авторским населением", ""]
+    sc = scale_3126(R)
+    ph = R["world"]["population_history"]
+    L += ["", "### D.8 Авторский масштаб 3126 и эпохи, которые его объясняют", "",
+          "Цели — `AUTHOR_TARGET` (canon/population_history.json); эпохи — PROPOSAL-история, которую модель прогоняет причинно. "
+          "`calibrate_population.py` подбирает одно число на политию — интенсивность эпох (1 = значения рассказа); население не умножается.", "",
+          "| слой | модель | цель | в диапазоне |", "|---|---|---|---|"]
+    for k, nm in (("earth", "Земля"), ("sol_outside_earth", "Сол вне Земли"), ("off_sol", "вне Сола")):
+        r = sc[k]
+        L.append(f"| {nm} | {r['model'] / 1e9:.2f} млрд | {r['target'][0] / 1e9:.2f}–{r['target'][1] / 1e9:.2f} млрд | {'да' if r['inside'] else 'НЕТ'} |")
+    L += ["", f"Эмигрантов с Земли 2752–3126: {sc['earth_emigrants_2752_3126'] / 1e6:,.0f} млн.".replace(",", " "), "",
+          "| полития | 3126, млн | цель, млн | интенсивность | эпохи (годы: рост %/год, СКР, миграция ‰) |", "|---|---|---|---|---|"]
+    for uid in sorted(ph["units"], key=lambda k: -units[k].P() if k in units else 0):
+        u = units.get(uid)
+        if u is None or not u.hist:
+            continue
+        hu = ph["units"][uid]
+        t = hu.get("target")
+        eras = "; ".join(f"{e['era']} {e['start']}–{e['end']}: {e['growth_pct']:+.2f}, {e['tfr']}, {e['net_migration_per_1000']:+.1f}" for e in demo.epoch_table(u, hu))
+        L.append(f"| {u.name} | {u.P() / 1e6:,.0f} | {'' if not t else f'{t[0] / 1e6:.0f}–{t[1] / 1e6:.0f}'} | {hu.get('intensity', 1.0)} | {eras} |".replace(",", " "))
+    L += ["", "### D.9 Конфликты с авторским населением", ""]
     for c in R["cols"]:
         g = R["growth"][c["id"]]
         if g["flag"]:

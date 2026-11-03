@@ -89,8 +89,14 @@ struct ShipDockSlots
 
 struct ShipStorageCaps
 {
+    // Authoritative cargo model (tools/colonization_lab/canon/ship_economics.json):
+    // cargoMass is the structural payload limit in TONNES, cargoVolume the hold in m3.
+    // Standard cargo containers (class C20: up to 20 t payload, 23.3 m3) ride in
+    // containerSlots; a hull may limit mass before its slots are full (OCS-4).
     int cargoMass = 0;
     int cargoVolume = 0;
+    int containerSlots = 0;
+    int containerPayloadTonnes = 0;
     int missileCapacity = 0;
 };
 

@@ -1,0 +1,60 @@
+{
+ "checks": [
+  {
+   "check": "population_earth_in_author_range",
+   "detail": "9.961 bn in 9.00-11.00",
+   "ok": true
+  },
+  {
+   "check": "population_sol_outside_earth_in_author_range",
+   "detail": "1.708 bn in 1.20-2.00",
+   "ok": true
+  },
+  {
+   "check": "population_off_sol_in_author_range",
+   "detail": "10.088 bn in 8.50-12.00",
+   "ok": true
+  },
+  {
+   "check": "settlement_structure_sums_to_population",
+   "detail": "all polities",
+   "ok": true
+  },
+  {
+   "check": "cargo_balance_identity",
+   "detail": "max relative residual 1.87e-16",
+   "ok": true
+  },
+  {
+   "check": "no_goods_from_thin_air",
+   "detail": "negative stock changes: 0",
+   "ok": true
+  },
+  {
+   "check": "infrastructure_covers_production",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "cargo_flows_within_transport_capacity",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "fuel_demand_covered",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "fleet_replacement_within_shipyard_output_plus_imports",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "status_present",
+   "detail": "ok",
+   "ok": true
+  }
+ ],
+ "status": "PROPOSAL"
+}

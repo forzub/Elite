@@ -1,0 +1,500 @@
+{
+  "schema": "polity_economy/1",
+  "status": "PROPOSAL",
+  "note": "Inputs of world_economy.py that cannot be derived: the security doctrine of each polity (why it pays for armed forces, written from its history in world.json), the split of Sol's population over bodies, and the standard asset / ship-task constants. Everything numeric about defence (share of output, ships, bases) is DERIVED from these doctrines plus data (relations, beacons, habitats, trade); the shares are not typed in.",
+  "gdp_cr_per_income_unit": 6500,
+  "power_kw_per_capita": 14.0,
+  "fusion_electric_efficiency": 0.4,
+  "doctrines": {
+    "sol_authority": {
+      "why": "300 лет за Кордоном, 11.7 млрд людей и самый густой пояс хабитатов человечества: защита от падения камней на Землю и хабитаты Сола, таможня возвращающейся сети, страх колоний перед её численностью",
+      "roles": [
+        "impact_defence",
+        "customs",
+        "deterrence",
+        "SAR"
+      ]
+    },
+    "tau_ceti_cognium": {
+      "why": "держатель Управления Маяков и тайны ядер прыжка: охрана сети и фабрики ядер, инспекции по лицензиям, сдерживание Цитадели, отказавшейся от инспекций",
+      "roles": [
+        "beacon_security",
+        "customs",
+        "deterrence",
+        "strategic_industry"
+      ]
+    },
+    "eps_eri_harmony": {
+      "why": "пиратский пояс у себя дома и 550 лет тлеющей войны с Варпстанисом; конвои пояса, противоастероидная оборона густого пояса, обязательство перед дальней провинцией",
+      "roles": [
+        "piracy_suppression",
+        "convoy_protection",
+        "impact_defence",
+        "alliance_obligation"
+      ]
+    },
+    "gj832_tianhe": {
+      "why": "крупнейшая потребность в летучих, карантин Гайи-Прим и «кордонный флот»; спор двух китайских линий о первенстве",
+      "roles": [
+        "quarantine",
+        "infrastructure_defence",
+        "deterrence"
+      ]
+    },
+    "hd20794_newindia": {
+      "why": "Война за воду 2580 и общая система со Второй Элладой: охрана ледовых прав и водных конвоев",
+      "roles": [
+        "infrastructure_defence",
+        "deterrence",
+        "customs"
+      ]
+    },
+    "lalande_mecca": {
+      "why": "одна бедная система на двоих с Агорой, собственная математика прыжка вне стандарта Когниума, подозрения Цитадели; оборона хабитатов и обсерватории",
+      "roles": [
+        "infrastructure_defence",
+        "deterrence",
+        "strategic_industry"
+      ]
+    },
+    "delta_pav_karma": {
+      "why": "отказ от маяка и сети: режим держится на внутреннем контроле; холодная война с изгнанниками Свободной Кармы",
+      "roles": [
+        "internal_control",
+        "deterrence",
+        "impact_defence"
+      ]
+    },
+    "proxima_outpost": {
+      "why": "силовая олигархия вне сети маяков и ближайший сосед Земли: людская сила как идеология, двоевластие кланов, оборона от «Возвращения Земли»",
+      "roles": [
+        "regime_survival",
+        "deterrence",
+        "impact_defence"
+      ]
+    },
+    "wolf359_citadel": {
+      "why": "травма IRON-SHIELD-2 и паранойя: арсенальная верфь, архив-хранилище, нейтралитет, который продаётся за ресурсы",
+      "roles": [
+        "deterrence",
+        "strategic_industry",
+        "intelligence"
+      ]
+    },
+    "hd40307_maland": {
+      "why": "холодная война с Небесной Твердыней (стычка 2680), автономный рой CD-2 во внешней системе",
+      "roles": [
+        "deterrence",
+        "infrastructure_defence",
+        "SAR"
+      ]
+    },
+    "eps_eri_strife": {
+      "why": "кланы живут контрактами и пиратством; частные охраны рудников, рейды против Гармонии",
+      "roles": [
+        "clan_defence",
+        "raiding"
+      ]
+    },
+    "lalande_hellas": {
+      "why": "живёт транзитом: таможня, защита нейтральной торговли, напряжённый мир с Меккой",
+      "roles": [
+        "customs",
+        "neutral_trade_protection",
+        "SAR"
+      ]
+    },
+    "gj581_europa": {
+      "why": "протекторат над кланами Свободного мира и реестр права: таможня, контрабанда, спасение",
+      "roles": [
+        "customs",
+        "anti_smuggling",
+        "SAR"
+      ]
+    },
+    "hd20794_hellas2": {
+      "why": "корпоративные ледовые права и память о Войне за воду: охрана рудников и конвоев",
+      "roles": [
+        "infrastructure_defence",
+        "convoy_protection",
+        "customs"
+      ]
+    },
+    "hd69830_verde": {
+      "why": "далёкий богатый газом мир со слабой промышленностью: оборона газовых платформ, противоастероидная защита кометного облака",
+      "roles": [
+        "infrastructure_defence",
+        "impact_defence",
+        "SAR"
+      ]
+    },
+    "hd40307_firmament": {
+      "why": "провинция Гармонии в холодной войне с Маланд: база, рой собственного конвоя, обязательство метрополии",
+      "roles": [
+        "deterrence",
+        "alliance_obligation",
+        "infrastructure_defence"
+      ]
+    },
+    "delta_pav_freekarma": {
+      "why": "республика изгнанников под угрозой Кармы; маяк как гарантия, что о них узнают",
+      "roles": [
+        "deterrence",
+        "beacon_security",
+        "SAR"
+      ]
+    },
+    "gj581_freeclans": {
+      "why": "кланы без государства: самооборона, контрабанда, частные охраны",
+      "roles": [
+        "clan_defence",
+        "smuggling"
+      ]
+    },
+    "cyg61_kern": {
+      "why": "кредитор половины ядра и владелец чужих рудников: охрана концессий и маяков, частные силы компании",
+      "roles": [
+        "infrastructure_defence",
+        "beacon_security",
+        "convoy_protection"
+      ]
+    },
+    "gj876_next": {
+      "why": "45 тысяч человек на богатейшем сырьём мире; концессии охраняют чужие флоты",
+      "roles": [
+        "concession_guards"
+      ]
+    },
+    "gj832_gaia_zone": {
+      "why": "карантин: обороны нет, охраняет Тяньхэ",
+      "roles": []
+    },
+    "hd114783_hellas3": {
+      "why": "город-государства на скале Одиссея: тяжбы, а не флоты",
+      "roles": [
+        "SAR"
+      ]
+    },
+    "leo83_zion": {
+      "why": "только что прибывший Синод у «Золотого Города»: обороны пока нет",
+      "roles": []
+    }
+  },
+  "regime_security_premium": {
+    "security_oligarchy": 0.015,
+    "party_technocracy": 0.005,
+    "caste_theocracy": 0.009,
+    "machine_oracle": 0.003,
+    "clan_contracts": 0.004,
+    "sage_council": 0.002,
+    "technocratic_meritocracy": 0.002,
+    "scholar_theocracy": 0.003,
+    "council_of_chiefs": 0.003,
+    "grandees_and_church": 0.002,
+    "exile_republic": 0.004,
+    "corporate_board": 0.002,
+    "shareholder_agora": 0.0,
+    "corporate_democracy": 0.001,
+    "parliamentary_bureaucracy": 0.0,
+    "merit_caste_republic": 0.003,
+    "litigating_city_states": 0.0,
+    "synod_theocracy": 0.001,
+    "none_quiet": 0.0,
+    "sol_authority": 0.002
+  },
+  "sol_bodies": {
+    "note": "Split of Sol's population outside Earth (AUTHOR_TARGET 1.2-2 bn) over bodies; shares are a PROPOSAL.",
+    "shares": {
+      "Луна и точки Лагранжа": 0.27,
+      "Марс": 0.3,
+      "пояс и Церера": 0.2,
+      "Меркурий": 0.03,
+      "система Юпитера": 0.12,
+      "система Сатурна": 0.06,
+      "внешние поселения": 0.02
+    }
+  },
+  "asset_types": {
+    "mine": {
+      "name": "рудник (руда)",
+      "output": "ore",
+      "capacity_t_y": 2000000.0,
+      "workers": 120,
+      "power_mw": 40,
+      "equipment_t": 6000,
+      "wear_per_year": 0.07
+    },
+    "ice_mine": {
+      "name": "ледовый / летучий промысел",
+      "output": "water_volatiles",
+      "capacity_t_y": 20000000.0,
+      "workers": 200,
+      "power_mw": 90,
+      "equipment_t": 12000,
+      "wear_per_year": 0.06
+    },
+    "metallurgy": {
+      "name": "металлургический комбинат",
+      "output": "metals",
+      "capacity_t_y": 1000000.0,
+      "workers": 900,
+      "power_mw": 1100,
+      "equipment_t": 40000,
+      "wear_per_year": 0.04
+    },
+    "chemical_plant": {
+      "name": "химический завод",
+      "output": "chemicals",
+      "capacity_t_y": 500000.0,
+      "workers": 700,
+      "power_mw": 380,
+      "equipment_t": 20000,
+      "wear_per_year": 0.045
+    },
+    "construction_works": {
+      "name": "завод стройматериалов и модулей",
+      "output": "construction",
+      "capacity_t_y": 3000000.0,
+      "workers": 600,
+      "power_mw": 520,
+      "equipment_t": 30000,
+      "wear_per_year": 0.04
+    },
+    "habitat_yard": {
+      "name": "верфь хабитатов",
+      "output": null,
+      "capacity_t_y": 4000000.0,
+      "workers": 2500,
+      "power_mw": 600,
+      "equipment_t": 60000,
+      "wear_per_year": 0.035
+    },
+    "factory": {
+      "name": "машиностроительный завод",
+      "output": "machinery",
+      "capacity_t_y": 60000.0,
+      "workers": 2400,
+      "power_mw": 100,
+      "equipment_t": 15000,
+      "wear_per_year": 0.05
+    },
+    "consumer_factory": {
+      "name": "фабрика потребительских товаров",
+      "output": "consumer",
+      "capacity_t_y": 300000.0,
+      "workers": 4500,
+      "power_mw": 270,
+      "equipment_t": 25000,
+      "wear_per_year": 0.05
+    },
+    "electronics_fab": {
+      "name": "фабрика электроники",
+      "output": "electronics",
+      "capacity_t_y": 20000.0,
+      "workers": 12000,
+      "power_mw": 600,
+      "equipment_t": 40000,
+      "wear_per_year": 0.08
+    },
+    "component_factory": {
+      "name": "завод корабельных агрегатов",
+      "output": null,
+      "capacity_t_y": 20000.0,
+      "workers": 3500,
+      "power_mw": 120,
+      "equipment_t": 12000,
+      "wear_per_year": 0.05
+    },
+    "agro_module": {
+      "name": "агрокомплекс",
+      "output": "food",
+      "capacity_t_y": 1000000.0,
+      "workers": 2500,
+      "power_mw": 250,
+      "equipment_t": 40000,
+      "wear_per_year": 0.05
+    },
+    "biotech_plant": {
+      "name": "биотех / медицина",
+      "output": "medical",
+      "capacity_t_y": 20000.0,
+      "workers": 6000,
+      "power_mw": 200,
+      "equipment_t": 15000,
+      "wear_per_year": 0.06
+    },
+    "luxury_works": {
+      "name": "винокурни и мастерские роскоши",
+      "output": "luxury",
+      "capacity_t_y": 20000.0,
+      "workers": 1500,
+      "power_mw": 20,
+      "equipment_t": 3000,
+      "wear_per_year": 0.05
+    },
+    "drug_lab": {
+      "name": "подпольные лаборатории",
+      "output": "controlled",
+      "capacity_t_y": 200.0,
+      "workers": 40,
+      "power_mw": 1,
+      "equipment_t": 50,
+      "wear_per_year": 0.2
+    },
+    "arms_works": {
+      "name": "оружейный завод",
+      "output": "weapons",
+      "capacity_t_y": 20000.0,
+      "workers": 2200,
+      "power_mw": 80,
+      "equipment_t": 9000,
+      "wear_per_year": 0.05
+    },
+    "power_plant": {
+      "name": "термоядерная электростанция (20 ГВт)",
+      "output": null,
+      "capacity_mw": 20000,
+      "workers": 900,
+      "power_mw": 0,
+      "equipment_t": 90000,
+      "wear_per_year": 0.03
+    },
+    "gas_platform": {
+      "name": "газовая платформа (He-3 / D)",
+      "output": "reactor_fuel",
+      "capacity_t_y": 150.0,
+      "workers": 150,
+      "power_mw": 300,
+      "equipment_t": 25000,
+      "wear_per_year": 0.05
+    },
+    "charge_refinery": {
+      "name": "завод заряда прыжка",
+      "output": "jump_charge",
+      "capacity_t_y": 40000.0,
+      "workers": 500,
+      "power_mw": 400,
+      "equipment_t": 15000,
+      "wear_per_year": 0.05
+    },
+    "fuel_depot": {
+      "name": "топливное депо",
+      "output": null,
+      "capacity_t": 200000.0,
+      "workers": 60,
+      "power_mw": 10,
+      "equipment_t": 8000,
+      "wear_per_year": 0.03
+    },
+    "warehouse": {
+      "name": "склад / таможенный терминал",
+      "output": null,
+      "capacity_t": 400000.0,
+      "workers": 120,
+      "power_mw": 8,
+      "equipment_t": 3000,
+      "wear_per_year": 0.03
+    },
+    "trade_hub": {
+      "name": "торговый узел",
+      "output": null,
+      "throughput_t_y": 100000000.0,
+      "workers": 6000,
+      "power_mw": 150,
+      "equipment_t": 50000,
+      "wear_per_year": 0.03
+    },
+    "orbital_port": {
+      "name": "орбитальный порт",
+      "output": null,
+      "throughput_t_y": 20000000.0,
+      "workers": 1500,
+      "power_mw": 60,
+      "equipment_t": 20000,
+      "wear_per_year": 0.03
+    },
+    "repair_yard": {
+      "name": "ремонтная верфь",
+      "output": null,
+      "ships_served": 300,
+      "workers": 1500,
+      "power_mw": 80,
+      "equipment_t": 12000,
+      "wear_per_year": 0.04
+    },
+    "civil_shipyard": {
+      "name": "гражданская верфь (крупная)",
+      "output": null,
+      "dry_t_y": 120000.0,
+      "workers": 9000,
+      "power_mw": 500,
+      "equipment_t": 90000,
+      "wear_per_year": 0.035
+    },
+    "small_yard": {
+      "name": "малая верфь",
+      "output": null,
+      "dry_t_y": 8000.0,
+      "workers": 700,
+      "power_mw": 40,
+      "equipment_t": 6000,
+      "wear_per_year": 0.04
+    },
+    "military_shipyard": {
+      "name": "военная верфь",
+      "output": null,
+      "dry_t_y": 40000.0,
+      "workers": 7000,
+      "power_mw": 400,
+      "equipment_t": 60000,
+      "wear_per_year": 0.035
+    },
+    "research_station": {
+      "name": "исследовательская станция",
+      "output": null,
+      "per_people": 4000000.0,
+      "workers": 400,
+      "power_mw": 20,
+      "equipment_t": 2000,
+      "wear_per_year": 0.04
+    },
+    "military_base": {
+      "name": "военная база",
+      "output": null,
+      "ships": 25,
+      "workers": 3000,
+      "power_mw": 200,
+      "equipment_t": 25000,
+      "wear_per_year": 0.03
+    },
+    "patrol_base": {
+      "name": "патрульная база",
+      "output": null,
+      "ships": 12,
+      "workers": 500,
+      "power_mw": 30,
+      "equipment_t": 4000,
+      "wear_per_year": 0.03
+    }
+  },
+  "habitat_tonnes_per_place": {
+    "tier1": 25.0,
+    "tier2": 12.0,
+    "tier3": 55.0,
+    "maintenance_share": 0.004
+  },
+  "defence_tasks": {
+    "patrol_per_beacon": 3,
+    "patrol_per_10k_arrivals": 4,
+    "patrol_per_100m_people_sar": 60,
+    "interceptor_per_100m_orbital": 30,
+    "interceptor_threat_bonus": 12,
+    "impact_tug_per_100m_orbital": 8,
+    "impact_tug_per_belt_system": 6,
+    "escort_days_per_risky_jump_trip": 14,
+    "recon_per_hostile_neighbour": 4,
+    "tender_per_combatants": 8,
+    "military_wage_factor": 1.6,
+    "crew_per_ship_year_overhead_cr": 30000
+  }
+}

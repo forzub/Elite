@@ -1,0 +1,8248 @@
+{
+ "flows": [
+  {
+   "buyer": "eps_eri_harmony",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120703.9,
+   "jumps": 1,
+   "loaded_trips_y": 4082.1,
+   "path": [
+    0,
+    9
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 399.51,
+   "status": "PROPOSAL",
+   "tonnes_y": 3400370,
+   "transport_cr_per_t": 689.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 408044458849,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120707.7,
+   "jumps": 1,
+   "loaded_trips_y": 3529.0,
+   "path": [
+    0,
+    8
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 345.38,
+   "status": "PROPOSAL",
+   "tonnes_y": 2939654,
+   "transport_cr_per_t": 692.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 352758461212,
+   "via": null
+  },
+  {
+   "buyer": "gj832_tianhe",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120719.5,
+   "jumps": 1,
+   "loaded_trips_y": 3098.5,
+   "path": [
+    0,
+    12
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 303.24,
+   "status": "PROPOSAL",
+   "tonnes_y": 2581019,
+   "transport_cr_per_t": 704.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 309722242846,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_newindia",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120729.3,
+   "jumps": 1,
+   "loaded_trips_y": 2684.3,
+   "path": [
+    0,
+    14
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 262.71,
+   "status": "PROPOSAL",
+   "tonnes_y": 2235980,
+   "transport_cr_per_t": 713.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 268317646705,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120697.9,
+   "jumps": 1,
+   "loaded_trips_y": 2215.7,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 216.84,
+   "status": "PROPOSAL",
+   "tonnes_y": 1845647,
+   "transport_cr_per_t": 683.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 221477685720,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120686.6,
+   "jumps": 1,
+   "loaded_trips_y": 2005.6,
+   "path": [
+    0,
+    60
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 196.28,
+   "status": "PROPOSAL",
+   "tonnes_y": 1670628,
+   "transport_cr_per_t": 672.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 200475394267,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_harmony",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6162.9,
+   "jumps": 1,
+   "loaded_trips_y": 39748.9,
+   "path": [
+    0,
+    9
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 3890.19,
+   "status": "PROPOSAL",
+   "tonnes_y": 28380709,
+   "transport_cr_per_t": 207.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 170284255249,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120696.5,
+   "jumps": 1,
+   "loaded_trips_y": 1520.3,
+   "path": [
+    0,
+    3
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 148.79,
+   "status": "PROPOSAL",
+   "tonnes_y": 1266447,
+   "transport_cr_per_t": 681.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 151973690956,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6167.4,
+   "jumps": 1,
+   "loaded_trips_y": 34260.1,
+   "path": [
+    0,
+    8
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 3353.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 24461732,
+   "transport_cr_per_t": 211.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 146770390405,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120865.6,
+   "jumps": 2,
+   "loaded_trips_y": 1311.4,
+   "path": [
+    0,
+    14,
+    15
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 139.22,
+   "status": "PROPOSAL",
+   "tonnes_y": 1092383,
+   "transport_cr_per_t": 844.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 131085957794,
+   "via": null
+  },
+  {
+   "buyer": "gj832_tianhe",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6180.7,
+   "jumps": 1,
+   "loaded_trips_y": 30290.2,
+   "path": [
+    0,
+    12
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 2964.48,
+   "status": "PROPOSAL",
+   "tonnes_y": 21627207,
+   "transport_cr_per_t": 224.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 129763241085,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_harmony",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60137.2,
+   "jumps": 1,
+   "loaded_trips_y": 2235.9,
+   "path": [
+    0,
+    9
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 218.82,
+   "status": "PROPOSAL",
+   "tonnes_y": 2128553,
+   "transport_cr_per_t": 409.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 127713191437,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_newindia",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6191.9,
+   "jumps": 1,
+   "loaded_trips_y": 26375.7,
+   "path": [
+    0,
+    14
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 2581.37,
+   "status": "PROPOSAL",
+   "tonnes_y": 18832262,
+   "transport_cr_per_t": 235.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 112993571752,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60140.7,
+   "jumps": 1,
+   "loaded_trips_y": 1927.1,
+   "path": [
+    0,
+    8
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 188.61,
+   "status": "PROPOSAL",
+   "tonnes_y": 1834630,
+   "transport_cr_per_t": 413.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 110077792803,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_strife",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120703.9,
+   "jumps": 1,
+   "loaded_trips_y": 1061.4,
+   "path": [
+    0,
+    9
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 103.88,
+   "status": "PROPOSAL",
+   "tonnes_y": 884160,
+   "transport_cr_per_t": 689.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 106099214775,
+   "via": null
+  },
+  {
+   "buyer": "gj832_tianhe",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60151.2,
+   "jumps": 1,
+   "loaded_trips_y": 1703.8,
+   "path": [
+    0,
+    12
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 166.75,
+   "status": "PROPOSAL",
+   "tonnes_y": 1622041,
+   "transport_cr_per_t": 423.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 97322430814,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6156.1,
+   "jumps": 1,
+   "loaded_trips_y": 21636.5,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 2117.55,
+   "status": "PROPOSAL",
+   "tonnes_y": 15448491,
+   "transport_cr_per_t": 200.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 92690943986,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120697.9,
+   "jumps": 1,
+   "loaded_trips_y": 902.6,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 88.33,
+   "status": "PROPOSAL",
+   "tonnes_y": 751825,
+   "transport_cr_per_t": 683.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 90219032069,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_newindia",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60159.9,
+   "jumps": 1,
+   "loaded_trips_y": 1483.6,
+   "path": [
+    0,
+    14
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 145.2,
+   "status": "PROPOSAL",
+   "tonnes_y": 1412420,
+   "transport_cr_per_t": 431.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 84745178814,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6143.3,
+   "jumps": 1,
+   "loaded_trips_y": 19588.8,
+   "path": [
+    0,
+    60
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 1917.14,
+   "status": "PROPOSAL",
+   "tonnes_y": 13986415,
+   "transport_cr_per_t": 188.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 83918488061,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1832.5,
+   "jumps": 1,
+   "loaded_trips_y": 878.7,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 118.38,
+   "status": "PROPOSAL",
+   "tonnes_y": 43019103,
+   "transport_cr_per_t": 52.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 77434385118,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120730.8,
+   "jumps": 1,
+   "loaded_trips_y": 759.0,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 74.28,
+   "status": "PROPOSAL",
+   "tonnes_y": 632229,
+   "transport_cr_per_t": 714.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 75867443118,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 944.1,
+   "jumps": 1,
+   "loaded_trips_y": 1705.7,
+   "path": [
+    0,
+    8
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 229.81,
+   "status": "PROPOSAL",
+   "tonnes_y": 83512985,
+   "transport_cr_per_t": 52.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 75161686749,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_hellas2",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120729.3,
+   "jumps": 1,
+   "loaded_trips_y": 727.4,
+   "path": [
+    0,
+    14
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 71.19,
+   "status": "PROPOSAL",
+   "tonnes_y": 605896,
+   "transport_cr_per_t": 713.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 72707561097,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60131.7,
+   "jumps": 1,
+   "loaded_trips_y": 1217.1,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 119.11,
+   "status": "PROPOSAL",
+   "tonnes_y": 1158637,
+   "transport_cr_per_t": 404.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 69518207989,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6154.5,
+   "jumps": 1,
+   "loaded_trips_y": 14825.9,
+   "path": [
+    0,
+    3
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 1450.99,
+   "status": "PROPOSAL",
+   "tonnes_y": 10585665,
+   "transport_cr_per_t": 199.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 63513991569,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60121.7,
+   "jumps": 1,
+   "loaded_trips_y": 1101.9,
+   "path": [
+    0,
+    60
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 107.84,
+   "status": "PROPOSAL",
+   "tonnes_y": 1048981,
+   "transport_cr_per_t": 395.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 62938866046,
+   "via": null
+  },
+  {
+   "buyer": "hd69830_verde",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120866.5,
+   "jumps": 2,
+   "loaded_trips_y": 628.7,
+   "path": [
+    0,
+    25,
+    16
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 66.74,
+   "status": "PROPOSAL",
+   "tonnes_y": 523677,
+   "transport_cr_per_t": 845.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 62841275831,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120865.6,
+   "jumps": 2,
+   "loaded_trips_y": 592.0,
+   "path": [
+    0,
+    14,
+    15
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 62.85,
+   "status": "PROPOSAL",
+   "tonnes_y": 493147,
+   "transport_cr_per_t": 844.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 59177684269,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120730.8,
+   "jumps": 1,
+   "loaded_trips_y": 573.3,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 56.11,
+   "status": "PROPOSAL",
+   "tonnes_y": 477587,
+   "transport_cr_per_t": 714.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 57310401031,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120729.9,
+   "jumps": 1,
+   "loaded_trips_y": 562.3,
+   "path": [
+    0,
+    22
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 55.03,
+   "status": "PROPOSAL",
+   "tonnes_y": 468371,
+   "transport_cr_per_t": 714.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 56204572933,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6292.9,
+   "jumps": 2,
+   "loaded_trips_y": 12879.9,
+   "path": [
+    0,
+    14,
+    15
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 1367.39,
+   "status": "PROPOSAL",
+   "tonnes_y": 9196248,
+   "transport_cr_per_t": 332.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 55177485900,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60130.5,
+   "jumps": 1,
+   "loaded_trips_y": 834.0,
+   "path": [
+    0,
+    3
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 81.62,
+   "status": "PROPOSAL",
+   "tonnes_y": 793925,
+   "transport_cr_per_t": 403.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 47635493677,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_strife",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6162.9,
+   "jumps": 1,
+   "loaded_trips_y": 10399.1,
+   "path": [
+    0,
+    9
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 1017.75,
+   "status": "PROPOSAL",
+   "tonnes_y": 7424972,
+   "transport_cr_per_t": 207.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 44549829227,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1137.7,
+   "jumps": 1,
+   "loaded_trips_y": 826.7,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 111.38,
+   "status": "PROPOSAL",
+   "tonnes_y": 40474547,
+   "transport_cr_per_t": 48.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 44522002207,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1834.0,
+   "jumps": 1,
+   "loaded_trips_y": 473.5,
+   "path": [
+    0,
+    3
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 63.79,
+   "status": "PROPOSAL",
+   "tonnes_y": 23181222,
+   "transport_cr_per_t": 53.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 41726200189,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60262.2,
+   "jumps": 2,
+   "loaded_trips_y": 724.5,
+   "path": [
+    0,
+    14,
+    15
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 76.92,
+   "status": "PROPOSAL",
+   "tonnes_y": 689719,
+   "transport_cr_per_t": 530.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 41383114425,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 120706.3,
+   "jumps": 1,
+   "loaded_trips_y": 399.2,
+   "path": [
+    0,
+    31
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 39.06,
+   "status": "PROPOSAL",
+   "tonnes_y": 332495,
+   "transport_cr_per_t": 691.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 39899438464,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 941.6,
+   "jumps": 1,
+   "loaded_trips_y": 905.1,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 121.93,
+   "status": "PROPOSAL",
+   "tonnes_y": 44311349,
+   "transport_cr_per_t": 49.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 39880213956,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9032.2,
+   "jumps": 1,
+   "loaded_trips_y": 2261.7,
+   "path": [
+    0,
+    8
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 221.35,
+   "status": "PROPOSAL",
+   "tonnes_y": 4306346,
+   "transport_cr_per_t": 134.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 38757116024,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1832.5,
+   "jumps": 1,
+   "loaded_trips_y": 439.3,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "jump_train",
+   "ships": 59.19,
+   "status": "PROPOSAL",
+   "tonnes_y": 21509551,
+   "transport_cr_per_t": 52.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 38717192559,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_harmony",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9030.1,
+   "jumps": 1,
+   "loaded_trips_y": 2244.2,
+   "path": [
+    0,
+    9
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 219.64,
+   "status": "PROPOSAL",
+   "tonnes_y": 4273041,
+   "transport_cr_per_t": 132.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 38457370469,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6156.1,
+   "jumps": 1,
+   "loaded_trips_y": 8802.5,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 861.49,
+   "status": "PROPOSAL",
+   "tonnes_y": 6284963,
+   "transport_cr_per_t": 200.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 37709776360,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 949.2,
+   "jumps": 1,
+   "loaded_trips_y": 852.9,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 114.9,
+   "status": "PROPOSAL",
+   "tonnes_y": 41756493,
+   "transport_cr_per_t": 48.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 37580843374,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "construction",
+   "delivered_cr_per_t": 393.2,
+   "jumps": 1,
+   "loaded_trips_y": 2159.4,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 290.93,
+   "status": "PROPOSAL",
+   "tonnes_y": 105724581,
+   "transport_cr_per_t": 45.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 37003603347,
+   "via": null
+  },
+  {
+   "buyer": "sol_authority",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89678.6,
+   "jumps": 1,
+   "loaded_trips_y": 6537.5,
+   "path": [
+    9,
+    0
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 395.77,
+   "status": "PROPOSAL",
+   "tonnes_y": 388979,
+   "transport_cr_per_t": 729.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 35008087601,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_strife",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60137.2,
+   "jumps": 1,
+   "loaded_trips_y": 585.0,
+   "path": [
+    0,
+    9
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 57.25,
+   "status": "PROPOSAL",
+   "tonnes_y": 556873,
+   "transport_cr_per_t": 409.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 33412371920,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6193.5,
+   "jumps": 1,
+   "loaded_trips_y": 7422.3,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 726.41,
+   "status": "PROPOSAL",
+   "tonnes_y": 5299522,
+   "transport_cr_per_t": 236.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 31797134648,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_hellas2",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6191.9,
+   "jumps": 1,
+   "loaded_trips_y": 7109.1,
+   "path": [
+    0,
+    14
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 695.76,
+   "status": "PROPOSAL",
+   "tonnes_y": 5075918,
+   "transport_cr_per_t": 235.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 30455507651,
+   "via": null
+  },
+  {
+   "buyer": "gj832_tianhe",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9038.4,
+   "jumps": 1,
+   "loaded_trips_y": 1760.6,
+   "path": [
+    0,
+    12
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 172.31,
+   "status": "PROPOSAL",
+   "tonnes_y": 3352270,
+   "transport_cr_per_t": 140.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 30170430828,
+   "via": null
+  },
+  {
+   "buyer": "sol_authority",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5094.2,
+   "jumps": 1,
+   "loaded_trips_y": 138.7,
+   "path": [
+    9,
+    0
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_tanker",
+   "ships": 17.99,
+   "status": "PROPOSAL",
+   "tonnes_y": 5895688,
+   "transport_cr_per_t": 72.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 29950096666,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60131.7,
+   "jumps": 1,
+   "loaded_trips_y": 495.1,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 48.46,
+   "status": "PROPOSAL",
+   "tonnes_y": 471372,
+   "transport_cr_per_t": 404.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 28282332270,
+   "via": null
+  },
+  {
+   "buyer": "hd69830_verde",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6294.1,
+   "jumps": 2,
+   "loaded_trips_y": 6206.0,
+   "path": [
+    0,
+    25,
+    16
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 658.86,
+   "status": "PROPOSAL",
+   "tonnes_y": 4431089,
+   "transport_cr_per_t": 333.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 26586535554,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_newindia",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9043.7,
+   "jumps": 1,
+   "loaded_trips_y": 1545.5,
+   "path": [
+    0,
+    14
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 151.25,
+   "status": "PROPOSAL",
+   "tonnes_y": 2942559,
+   "transport_cr_per_t": 145.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 26483031582,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6292.9,
+   "jumps": 2,
+   "loaded_trips_y": 5810.0,
+   "path": [
+    0,
+    14,
+    15
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 616.81,
+   "status": "PROPOSAL",
+   "tonnes_y": 4148321,
+   "transport_cr_per_t": 332.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 24889926351,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6193.5,
+   "jumps": 1,
+   "loaded_trips_y": 5607.1,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 548.76,
+   "status": "PROPOSAL",
+   "tonnes_y": 4003446,
+   "transport_cr_per_t": 236.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 24020674480,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60161.4,
+   "jumps": 1,
+   "loaded_trips_y": 417.5,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 40.86,
+   "status": "PROPOSAL",
+   "tonnes_y": 397464,
+   "transport_cr_per_t": 433.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 23847850986,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6192.5,
+   "jumps": 1,
+   "loaded_trips_y": 5462.8,
+   "path": [
+    0,
+    22
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 534.64,
+   "status": "PROPOSAL",
+   "tonnes_y": 3900445,
+   "transport_cr_per_t": 235.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 23402669833,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9026.9,
+   "jumps": 1,
+   "loaded_trips_y": 1339.7,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 131.12,
+   "status": "PROPOSAL",
+   "tonnes_y": 2550820,
+   "transport_cr_per_t": 129.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 22957383784,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_hellas2",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60159.9,
+   "jumps": 1,
+   "loaded_trips_y": 399.7,
+   "path": [
+    0,
+    14
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 39.11,
+   "status": "PROPOSAL",
+   "tonnes_y": 380475,
+   "transport_cr_per_t": 431.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 22828473117,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1137.7,
+   "jumps": 1,
+   "loaded_trips_y": 413.3,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "jump_train",
+   "ships": 55.69,
+   "status": "PROPOSAL",
+   "tonnes_y": 20237274,
+   "transport_cr_per_t": 48.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 22261001103,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9020.9,
+   "jumps": 1,
+   "loaded_trips_y": 1238.7,
+   "path": [
+    0,
+    60
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 121.23,
+   "status": "PROPOSAL",
+   "tonnes_y": 2358450,
+   "transport_cr_per_t": 123.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 21226048396,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_harmony",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45046.4,
+   "jumps": 1,
+   "loaded_trips_y": 229.9,
+   "path": [
+    0,
+    9
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 22.5,
+   "status": "PROPOSAL",
+   "tonnes_y": 468985,
+   "transport_cr_per_t": 287.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 21104346773,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1839.2,
+   "jumps": 1,
+   "loaded_trips_y": 236.7,
+   "path": [
+    9,
+    3
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 31.89,
+   "status": "PROPOSAL",
+   "tonnes_y": 11590611,
+   "transport_cr_per_t": 58.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 20863100094,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 942.7,
+   "jumps": 1,
+   "loaded_trips_y": 452.5,
+   "path": [
+    3,
+    4
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 60.97,
+   "status": "PROPOSAL",
+   "tonnes_y": 22155674,
+   "transport_cr_per_t": 47.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 19940106978,
+   "via": null
+  },
+  {
+   "buyer": "hd69830_verde",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60263.0,
+   "jumps": 2,
+   "loaded_trips_y": 349.1,
+   "path": [
+    0,
+    25,
+    16
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 37.06,
+   "status": "PROPOSAL",
+   "tonnes_y": 332332,
+   "transport_cr_per_t": 530.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 19939901665,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1834.5,
+   "jumps": 1,
+   "loaded_trips_y": 223.5,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 30.12,
+   "status": "PROPOSAL",
+   "tonnes_y": 10944781,
+   "transport_cr_per_t": 53.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 19700605789,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60262.2,
+   "jumps": 2,
+   "loaded_trips_y": 326.8,
+   "path": [
+    0,
+    14,
+    15
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 34.7,
+   "status": "PROPOSAL",
+   "tonnes_y": 311124,
+   "transport_cr_per_t": 530.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 18667444763,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "construction",
+   "delivered_cr_per_t": 393.2,
+   "jumps": 1,
+   "loaded_trips_y": 1079.7,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "jump_train",
+   "ships": 145.46,
+   "status": "PROPOSAL",
+   "tonnes_y": 52862290,
+   "transport_cr_per_t": 45.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 18501801673,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60161.4,
+   "jumps": 1,
+   "loaded_trips_y": 315.2,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 30.85,
+   "status": "PROPOSAL",
+   "tonnes_y": 300090,
+   "transport_cr_per_t": 433.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 18005401818,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60160.5,
+   "jumps": 1,
+   "loaded_trips_y": 307.3,
+   "path": [
+    0,
+    22
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 30.07,
+   "status": "PROPOSAL",
+   "tonnes_y": 292533,
+   "transport_cr_per_t": 432.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 17552002375,
+   "via": null
+  },
+  {
+   "buyer": "sol_authority",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89724.2,
+   "jumps": 1,
+   "loaded_trips_y": 3268.7,
+   "path": [
+    10,
+    0
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 197.89,
+   "status": "PROPOSAL",
+   "tonnes_y": 194489,
+   "transport_cr_per_t": 773.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 17504043800,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6165.7,
+   "jumps": 1,
+   "loaded_trips_y": 3889.9,
+   "path": [
+    0,
+    31
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 380.7,
+   "status": "PROPOSAL",
+   "tonnes_y": 2777365,
+   "transport_cr_per_t": 210.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 16664191413,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 941.6,
+   "jumps": 1,
+   "loaded_trips_y": 370.7,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 49.95,
+   "status": "PROPOSAL",
+   "tonnes_y": 18150475,
+   "transport_cr_per_t": 49.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 16335427656,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9026.1,
+   "jumps": 1,
+   "loaded_trips_y": 936.6,
+   "path": [
+    0,
+    3
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 91.66,
+   "status": "PROPOSAL",
+   "tonnes_y": 1783215,
+   "transport_cr_per_t": 128.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 16048933724,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1831.6,
+   "jumps": 1,
+   "loaded_trips_y": 178.2,
+   "path": [
+    0,
+    60
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 24.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 8722771,
+   "transport_cr_per_t": 51.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 15700986928,
+   "via": null
+  },
+  {
+   "buyer": "sol_authority",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5094.2,
+   "jumps": 1,
+   "loaded_trips_y": 69.4,
+   "path": [
+    9,
+    0
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "jump_tanker",
+   "ships": 8.99,
+   "status": "PROPOSAL",
+   "tonnes_y": 2947844,
+   "transport_cr_per_t": 72.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 14975048333,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_harmony",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 943.1,
+   "jumps": 1,
+   "loaded_trips_y": 332.8,
+   "path": [
+    0,
+    9
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 44.84,
+   "status": "PROPOSAL",
+   "tonnes_y": 16293334,
+   "transport_cr_per_t": 51.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 14664000167,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9092.6,
+   "jumps": 2,
+   "loaded_trips_y": 779.2,
+   "path": [
+    0,
+    14,
+    15
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 82.73,
+   "status": "PROPOSAL",
+   "tonnes_y": 1483664,
+   "transport_cr_per_t": 192.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 13352972226,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1146.8,
+   "jumps": 1,
+   "loaded_trips_y": 240.9,
+   "path": [
+    3,
+    10
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 32.46,
+   "status": "PROPOSAL",
+   "tonnes_y": 11796170,
+   "transport_cr_per_t": 57.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 12975787263,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1835.7,
+   "jumps": 1,
+   "loaded_trips_y": 146.4,
+   "path": [
+    13,
+    8
+   ],
+   "seller": "gj876_next",
+   "ship_class": "jump_train",
+   "ships": 19.73,
+   "status": "PROPOSAL",
+   "tonnes_y": 7169850,
+   "transport_cr_per_t": 55.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 12905730853,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 949.2,
+   "jumps": 1,
+   "loaded_trips_y": 284.3,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "jump_train",
+   "ships": 38.3,
+   "status": "PROPOSAL",
+   "tonnes_y": 13918831,
+   "transport_cr_per_t": 48.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 12526947791,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60139.3,
+   "jumps": 1,
+   "loaded_trips_y": 218.8,
+   "path": [
+    0,
+    31
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 21.41,
+   "status": "PROPOSAL",
+   "tonnes_y": 208302,
+   "transport_cr_per_t": 412.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 12498143560,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1152.5,
+   "jumps": 1,
+   "loaded_trips_y": 231.2,
+   "path": [
+    14,
+    15
+   ],
+   "seller": "hd20794_hellas2",
+   "ship_class": "jump_train",
+   "ships": 31.15,
+   "status": "PROPOSAL",
+   "tonnes_y": 11318252,
+   "transport_cr_per_t": 63.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 12450077695,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1136.8,
+   "jumps": 1,
+   "loaded_trips_y": 210.9,
+   "path": [
+    0,
+    60
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 28.41,
+   "status": "PROPOSAL",
+   "tonnes_y": 10323627,
+   "transport_cr_per_t": 48.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 11355989524,
+   "via": null
+  },
+  {
+   "buyer": "gj832_tianhe",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 944.1,
+   "jumps": 0,
+   "loaded_trips_y": 257.0,
+   "path": [
+    12
+   ],
+   "seller": "gj832_gaia_zone",
+   "ship_class": "jump_train",
+   "ships": 32.42,
+   "status": "PROPOSAL",
+   "tonnes_y": 12580920,
+   "transport_cr_per_t": 43.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 11322828424,
+   "via": null
+  },
+  {
+   "buyer": "gj832_tianhe",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45054.5,
+   "jumps": 1,
+   "loaded_trips_y": 115.8,
+   "path": [
+    0,
+    12
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 11.34,
+   "status": "PROPOSAL",
+   "tonnes_y": 236278,
+   "transport_cr_per_t": 295.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 10632500858,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45048.4,
+   "jumps": 1,
+   "loaded_trips_y": 111.6,
+   "path": [
+    0,
+    8
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 10.92,
+   "status": "PROPOSAL",
+   "tonnes_y": 227624,
+   "transport_cr_per_t": 289.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 10243085884,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_strife",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9030.1,
+   "jumps": 1,
+   "loaded_trips_y": 597.3,
+   "path": [
+    0,
+    9
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 58.45,
+   "status": "PROPOSAL",
+   "tonnes_y": 1137167,
+   "transport_cr_per_t": 132.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 10234500341,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1136.7,
+   "jumps": 1,
+   "loaded_trips_y": 185.8,
+   "path": [
+    3,
+    4
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 25.03,
+   "status": "PROPOSAL",
+   "tonnes_y": 9094597,
+   "transport_cr_per_t": 48.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 10004057219,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1141.7,
+   "jumps": 1,
+   "loaded_trips_y": 184.6,
+   "path": [
+    0,
+    31
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 24.87,
+   "status": "PROPOSAL",
+   "tonnes_y": 9036118,
+   "transport_cr_per_t": 52.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 9939729300,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1839.7,
+   "jumps": 1,
+   "loaded_trips_y": 111.8,
+   "path": [
+    9,
+    4
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 15.06,
+   "status": "PROPOSAL",
+   "tonnes_y": 5472390,
+   "transport_cr_per_t": 58.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 9850302894,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_newindia",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 944.1,
+   "jumps": 0,
+   "loaded_trips_y": 219.1,
+   "path": [
+    14
+   ],
+   "seller": "hd20794_hellas2",
+   "ship_class": "jump_train",
+   "ships": 27.65,
+   "status": "PROPOSAL",
+   "tonnes_y": 10729249,
+   "transport_cr_per_t": 43.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 9656324263,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9026.9,
+   "jumps": 1,
+   "loaded_trips_y": 553.2,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 54.15,
+   "status": "PROPOSAL",
+   "tonnes_y": 1053382,
+   "transport_cr_per_t": 129.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 9480440301,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_newindia",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45059.4,
+   "jumps": 1,
+   "loaded_trips_y": 93.1,
+   "path": [
+    0,
+    14
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 9.11,
+   "status": "PROPOSAL",
+   "tonnes_y": 189994,
+   "transport_cr_per_t": 300.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 8549718942,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 942.7,
+   "jumps": 1,
+   "loaded_trips_y": 185.4,
+   "path": [
+    3,
+    4
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 24.97,
+   "status": "PROPOSAL",
+   "tonnes_y": 9075238,
+   "transport_cr_per_t": 47.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 8167713828,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1834.5,
+   "jumps": 1,
+   "loaded_trips_y": 91.0,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 12.26,
+   "status": "PROPOSAL",
+   "tonnes_y": 4454406,
+   "transport_cr_per_t": 53.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 8017930344,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9044.6,
+   "jumps": 1,
+   "loaded_trips_y": 467.2,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 45.73,
+   "status": "PROPOSAL",
+   "tonnes_y": 889636,
+   "transport_cr_per_t": 146.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 8006725349,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1837.3,
+   "jumps": 1,
+   "loaded_trips_y": 89.1,
+   "path": [
+    9,
+    60
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 12.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 4361385,
+   "transport_cr_per_t": 56.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 7850493464,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1140.9,
+   "jumps": 1,
+   "loaded_trips_y": 137.8,
+   "path": [
+    13,
+    8
+   ],
+   "seller": "gj876_next",
+   "ship_class": "jump_train",
+   "ships": 18.56,
+   "status": "PROPOSAL",
+   "tonnes_y": 6745758,
+   "transport_cr_per_t": 52.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 7420333701,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_harmony",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 948.9,
+   "jumps": 1,
+   "loaded_trips_y": 166.4,
+   "path": [
+    60,
+    9
+   ],
+   "seller": "proxima_outpost",
+   "ship_class": "jump_train",
+   "ships": 22.42,
+   "status": "PROPOSAL",
+   "tonnes_y": 8146667,
+   "transport_cr_per_t": 52.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 7332000084,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_hellas2",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9043.7,
+   "jumps": 1,
+   "loaded_trips_y": 425.0,
+   "path": [
+    0,
+    14
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 41.6,
+   "status": "PROPOSAL",
+   "tonnes_y": 809291,
+   "transport_cr_per_t": 145.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 7283620979,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45037.5,
+   "jumps": 1,
+   "loaded_trips_y": 79.2,
+   "path": [
+    0,
+    60
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 7.75,
+   "status": "PROPOSAL",
+   "tonnes_y": 161509,
+   "transport_cr_per_t": 279.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 7267922972,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1146.8,
+   "jumps": 1,
+   "loaded_trips_y": 133.9,
+   "path": [
+    3,
+    10
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 18.04,
+   "status": "PROPOSAL",
+   "tonnes_y": 6555258,
+   "transport_cr_per_t": 57.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 7210783664,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45042.6,
+   "jumps": 1,
+   "loaded_trips_y": 75.8,
+   "path": [
+    0,
+    3
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 7.42,
+   "status": "PROPOSAL",
+   "tonnes_y": 154655,
+   "transport_cr_per_t": 284.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 6959483537,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1839.2,
+   "jumps": 1,
+   "loaded_trips_y": 78.9,
+   "path": [
+    9,
+    3
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "jump_train",
+   "ships": 10.63,
+   "status": "PROPOSAL",
+   "tonnes_y": 3863537,
+   "transport_cr_per_t": 58.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 6954366698,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 947.6,
+   "jumps": 1,
+   "loaded_trips_y": 150.8,
+   "path": [
+    60,
+    4
+   ],
+   "seller": "proxima_outpost",
+   "ship_class": "jump_train",
+   "ships": 20.32,
+   "status": "PROPOSAL",
+   "tonnes_y": 7385225,
+   "transport_cr_per_t": 51.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 6646702326,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "reactor_fuel",
+   "delivered_cr_per_t": 595834.6,
+   "jumps": 1,
+   "loaded_trips_y": 28.5,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 2.79,
+   "status": "PROPOSAL",
+   "tonnes_y": 10871,
+   "transport_cr_per_t": 2917.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 6522674004,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1148.0,
+   "jumps": 1,
+   "loaded_trips_y": 120.5,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 16.23,
+   "status": "PROPOSAL",
+   "tonnes_y": 5898085,
+   "transport_cr_per_t": 58.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 6487893632,
+   "via": null
+  },
+  {
+   "buyer": "hd69830_verde",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9093.1,
+   "jumps": 2,
+   "loaded_trips_y": 365.3,
+   "path": [
+    0,
+    25,
+    16
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 38.78,
+   "status": "PROPOSAL",
+   "tonnes_y": 695476,
+   "transport_cr_per_t": 193.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 6259286686,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1152.5,
+   "jumps": 1,
+   "loaded_trips_y": 115.6,
+   "path": [
+    14,
+    15
+   ],
+   "seller": "hd20794_newindia",
+   "ship_class": "jump_train",
+   "ships": 15.57,
+   "status": "PROPOSAL",
+   "tonnes_y": 5659126,
+   "transport_cr_per_t": 63.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 6225038847,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "construction",
+   "delivered_cr_per_t": 396.4,
+   "jumps": 1,
+   "loaded_trips_y": 359.9,
+   "path": [
+    13,
+    8
+   ],
+   "seller": "gj876_next",
+   "ship_class": "jump_train",
+   "ships": 48.49,
+   "status": "PROPOSAL",
+   "tonnes_y": 17620763,
+   "transport_cr_per_t": 48.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 6167267224,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9044.6,
+   "jumps": 1,
+   "loaded_trips_y": 351.7,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 34.42,
+   "status": "PROPOSAL",
+   "tonnes_y": 669582,
+   "transport_cr_per_t": 146.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 6026237769,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9092.6,
+   "jumps": 2,
+   "loaded_trips_y": 351.4,
+   "path": [
+    0,
+    14,
+    15
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 37.31,
+   "status": "PROPOSAL",
+   "tonnes_y": 669127,
+   "transport_cr_per_t": 192.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 6022139608,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9044.0,
+   "jumps": 1,
+   "loaded_trips_y": 342.2,
+   "path": [
+    0,
+    22
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 33.49,
+   "status": "PROPOSAL",
+   "tonnes_y": 651485,
+   "transport_cr_per_t": 146.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 5863361928,
+   "via": null
+  },
+  {
+   "buyer": "sol_authority",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 943.3,
+   "jumps": 1,
+   "loaded_trips_y": 130.7,
+   "path": [
+    60,
+    0
+   ],
+   "seller": "proxima_outpost",
+   "ship_class": "jump_train",
+   "ships": 17.62,
+   "status": "PROPOSAL",
+   "tonnes_y": 6401471,
+   "transport_cr_per_t": 47.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 5761323936,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1139.6,
+   "jumps": 1,
+   "loaded_trips_y": 105.4,
+   "path": [
+    3,
+    60
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 14.2,
+   "status": "PROPOSAL",
+   "tonnes_y": 5161813,
+   "transport_cr_per_t": 50.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 5677994762,
+   "via": null
+  },
+  {
+   "buyer": "gj832_tianhe",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 944.8,
+   "jumps": 1,
+   "loaded_trips_y": 128.5,
+   "path": [
+    22,
+    12
+   ],
+   "seller": "delta_pav_freekarma",
+   "ship_class": "jump_train",
+   "ships": 17.31,
+   "status": "PROPOSAL",
+   "tonnes_y": 6290460,
+   "transport_cr_per_t": 49.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 5661414212,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1152.5,
+   "jumps": 1,
+   "loaded_trips_y": 104.0,
+   "path": [
+    14,
+    15
+   ],
+   "seller": "hd20794_hellas2",
+   "ship_class": "jump_train",
+   "ships": 14.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 5092213,
+   "transport_cr_per_t": 63.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 5601434298,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45121.1,
+   "jumps": 2,
+   "loaded_trips_y": 55.3,
+   "path": [
+    0,
+    14,
+    15
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 5.87,
+   "status": "PROPOSAL",
+   "tonnes_y": 112748,
+   "transport_cr_per_t": 359.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 5073638683,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1139.6,
+   "jumps": 1,
+   "loaded_trips_y": 92.9,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 12.51,
+   "status": "PROPOSAL",
+   "tonnes_y": 4547299,
+   "transport_cr_per_t": 50.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 5002028609,
+   "via": null
+  },
+  {
+   "buyer": "sol_authority",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5097.8,
+   "jumps": 1,
+   "loaded_trips_y": 23.1,
+   "path": [
+    13,
+    0
+   ],
+   "seller": "gj876_next",
+   "ship_class": "jump_tanker",
+   "ships": 3.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 982615,
+   "transport_cr_per_t": 75.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 4991682778,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1143.3,
+   "jumps": 1,
+   "loaded_trips_y": 92.3,
+   "path": [
+    13,
+    31
+   ],
+   "seller": "gj876_next",
+   "ship_class": "jump_train",
+   "ships": 12.43,
+   "status": "PROPOSAL",
+   "tonnes_y": 4518059,
+   "transport_cr_per_t": 54.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 4969864650,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_strife",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45046.4,
+   "jumps": 1,
+   "loaded_trips_y": 53.9,
+   "path": [
+    0,
+    9
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 5.28,
+   "status": "PROPOSAL",
+   "tonnes_y": 110050,
+   "transport_cr_per_t": 287.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 4952241444,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_newindia",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 949.5,
+   "jumps": 1,
+   "loaded_trips_y": 109.6,
+   "path": [
+    0,
+    14
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 14.76,
+   "status": "PROPOSAL",
+   "tonnes_y": 5364625,
+   "transport_cr_per_t": 57.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 4828162132,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 964.1,
+   "jumps": 1,
+   "loaded_trips_y": 108.1,
+   "path": [
+    14,
+    15
+   ],
+   "seller": "hd20794_hellas2",
+   "ship_class": "jump_train",
+   "ships": 14.57,
+   "status": "PROPOSAL",
+   "tonnes_y": 5293658,
+   "transport_cr_per_t": 62.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 4764292034,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45043.3,
+   "jumps": 1,
+   "loaded_trips_y": 51.8,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 5.07,
+   "status": "PROPOSAL",
+   "tonnes_y": 105689,
+   "transport_cr_per_t": 284.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 4756002388,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9031.4,
+   "jumps": 1,
+   "loaded_trips_y": 243.7,
+   "path": [
+    0,
+    31
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 23.85,
+   "status": "PROPOSAL",
+   "tonnes_y": 463924,
+   "transport_cr_per_t": 134.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 4175313405,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1839.7,
+   "jumps": 1,
+   "loaded_trips_y": 45.5,
+   "path": [
+    9,
+    4
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 6.13,
+   "status": "PROPOSAL",
+   "tonnes_y": 2227203,
+   "transport_cr_per_t": 58.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 4008965172,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "construction",
+   "delivered_cr_per_t": 397.3,
+   "jumps": 1,
+   "loaded_trips_y": 233.1,
+   "path": [
+    0,
+    31
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 31.4,
+   "status": "PROPOSAL",
+   "tonnes_y": 11410981,
+   "transport_cr_per_t": 49.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 3993843488,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 938.8,
+   "jumps": 1,
+   "loaded_trips_y": 88.0,
+   "path": [
+    0,
+    60
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 11.85,
+   "status": "PROPOSAL",
+   "tonnes_y": 4306782,
+   "transport_cr_per_t": 47.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 3876103978,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "reactor_fuel",
+   "delivered_cr_per_t": 595826.9,
+   "jumps": 1,
+   "loaded_trips_y": 16.8,
+   "path": [
+    4,
+    3
+   ],
+   "seller": "lalande_hellas",
+   "ship_class": "medium_freighter",
+   "ships": 1.65,
+   "status": "PROPOSAL",
+   "tonnes_y": 6405,
+   "transport_cr_per_t": 2910.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 3842780276,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_strife",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 943.1,
+   "jumps": 1,
+   "loaded_trips_y": 84.5,
+   "path": [
+    0,
+    9
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 11.38,
+   "status": "PROPOSAL",
+   "tonnes_y": 4135800,
+   "transport_cr_per_t": 51.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 3722220371,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1148.0,
+   "jumps": 1,
+   "loaded_trips_y": 66.9,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 9.02,
+   "status": "PROPOSAL",
+   "tonnes_y": 3277629,
+   "transport_cr_per_t": 58.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 3605391832,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "ore",
+   "delivered_cr_per_t": 85.5,
+   "jumps": 1,
+   "loaded_trips_y": 1829.0,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 246.41,
+   "status": "PROPOSAL",
+   "tonnes_y": 89547201,
+   "transport_cr_per_t": 44.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 3581888030,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_harmony",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89771.8,
+   "jumps": 1,
+   "loaded_trips_y": 659.5,
+   "path": [
+    10,
+    9
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 39.92,
+   "status": "PROPOSAL",
+   "tonnes_y": 39239,
+   "transport_cr_per_t": 819.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 3531540036,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1839.7,
+   "jumps": 1,
+   "loaded_trips_y": 37.3,
+   "path": [
+    9,
+    4
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "jump_train",
+   "ships": 5.02,
+   "status": "PROPOSAL",
+   "tonnes_y": 1824130,
+   "transport_cr_per_t": 58.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 3283434298,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "reactor_fuel",
+   "delivered_cr_per_t": 595834.6,
+   "jumps": 1,
+   "loaded_trips_y": 14.3,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "medium_freighter",
+   "ships": 1.4,
+   "status": "PROPOSAL",
+   "tonnes_y": 5436,
+   "transport_cr_per_t": 2917.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 3261337002,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 944.1,
+   "jumps": 0,
+   "loaded_trips_y": 66.0,
+   "path": [
+    10
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "jump_train",
+   "ships": 8.32,
+   "status": "PROPOSAL",
+   "tonnes_y": 3230062,
+   "transport_cr_per_t": 43.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2907055936,
+   "via": null
+  },
+  {
+   "buyer": "sol_authority",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 945.3,
+   "jumps": 1,
+   "loaded_trips_y": 65.4,
+   "path": [
+    3,
+    0
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 8.81,
+   "status": "PROPOSAL",
+   "tonnes_y": 3200736,
+   "transport_cr_per_t": 49.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2880661968,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1152.5,
+   "jumps": 1,
+   "loaded_trips_y": 52.0,
+   "path": [
+    14,
+    15
+   ],
+   "seller": "hd20794_newindia",
+   "ship_class": "jump_train",
+   "ships": 7.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 2546106,
+   "transport_cr_per_t": 63.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2800717149,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 947.6,
+   "jumps": 1,
+   "loaded_trips_y": 61.8,
+   "path": [
+    60,
+    4
+   ],
+   "seller": "proxima_outpost",
+   "ship_class": "jump_train",
+   "ships": 8.32,
+   "status": "PROPOSAL",
+   "tonnes_y": 3025079,
+   "transport_cr_per_t": 51.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2722571276,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_hellas2",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 944.1,
+   "jumps": 0,
+   "loaded_trips_y": 60.7,
+   "path": [
+    14
+   ],
+   "seller": "hd20794_newindia",
+   "ship_class": "jump_train",
+   "ships": 7.65,
+   "status": "PROPOSAL",
+   "tonnes_y": 2970233,
+   "transport_cr_per_t": 43.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2673210020,
+   "via": null
+  },
+  {
+   "buyer": "gj832_tianhe",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89714.2,
+   "jumps": 1,
+   "loaded_trips_y": 495.8,
+   "path": [
+    9,
+    12
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 30.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 29498,
+   "transport_cr_per_t": 763.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2654825362,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 941.2,
+   "jumps": 1,
+   "loaded_trips_y": 60.0,
+   "path": [
+    0,
+    3
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 8.09,
+   "status": "PROPOSAL",
+   "tonnes_y": 2938864,
+   "transport_cr_per_t": 49.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2644977395,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1837.3,
+   "jumps": 1,
+   "loaded_trips_y": 29.7,
+   "path": [
+    9,
+    60
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "jump_train",
+   "ships": 4.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 1453795,
+   "transport_cr_per_t": 56.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2616831155,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45059.8,
+   "jumps": 1,
+   "loaded_trips_y": 27.9,
+   "path": [
+    0,
+    22
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 2.73,
+   "status": "PROPOSAL",
+   "tonnes_y": 56928,
+   "transport_cr_per_t": 300.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2561779847,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_harmony",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 950.4,
+   "jumps": 1,
+   "loaded_trips_y": 55.5,
+   "path": [
+    3,
+    9
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 7.47,
+   "status": "PROPOSAL",
+   "tonnes_y": 2715556,
+   "transport_cr_per_t": 54.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2444000028,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45121.1,
+   "jumps": 2,
+   "loaded_trips_y": 26.5,
+   "path": [
+    0,
+    14,
+    15
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 2.81,
+   "status": "PROPOSAL",
+   "tonnes_y": 53983,
+   "transport_cr_per_t": 359.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2429250979,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1136.7,
+   "jumps": 1,
+   "loaded_trips_y": 44.3,
+   "path": [
+    3,
+    4
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 5.97,
+   "status": "PROPOSAL",
+   "tonnes_y": 2170281,
+   "transport_cr_per_t": 48.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2387309441,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 964.1,
+   "jumps": 1,
+   "loaded_trips_y": 54.1,
+   "path": [
+    14,
+    15
+   ],
+   "seller": "hd20794_newindia",
+   "ship_class": "jump_train",
+   "ships": 7.28,
+   "status": "PROPOSAL",
+   "tonnes_y": 2646829,
+   "transport_cr_per_t": 62.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2382146017,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_newindia",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89687.7,
+   "jumps": 1,
+   "loaded_trips_y": 421.1,
+   "path": [
+    9,
+    14
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 25.49,
+   "status": "PROPOSAL",
+   "tonnes_y": 25053,
+   "transport_cr_per_t": 738.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2254802040,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_hellas2",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45059.4,
+   "jumps": 1,
+   "loaded_trips_y": 24.0,
+   "path": [
+    0,
+    14
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 2.35,
+   "status": "PROPOSAL",
+   "tonnes_y": 49012,
+   "transport_cr_per_t": 300.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2205543984,
+   "via": null
+  },
+  {
+   "buyer": "hd69830_verde",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 969.6,
+   "jumps": 2,
+   "loaded_trips_y": 49.7,
+   "path": [
+    3,
+    25,
+    16
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 7.12,
+   "status": "PROPOSAL",
+   "tonnes_y": 2432959,
+   "transport_cr_per_t": 72.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2189663156,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1151.3,
+   "jumps": 1,
+   "loaded_trips_y": 40.2,
+   "path": [
+    12,
+    10
+   ],
+   "seller": "gj832_tianhe",
+   "ship_class": "jump_train",
+   "ships": 5.41,
+   "status": "PROPOSAL",
+   "tonnes_y": 1966028,
+   "transport_cr_per_t": 62.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2162631211,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 944.1,
+   "jumps": 0,
+   "loaded_trips_y": 48.7,
+   "path": [
+    10
+   ],
+   "seller": "gj581_europa",
+   "ship_class": "jump_train",
+   "ships": 6.14,
+   "status": "PROPOSAL",
+   "tonnes_y": 2382536,
+   "transport_cr_per_t": 43.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2144282058,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 964.1,
+   "jumps": 1,
+   "loaded_trips_y": 48.1,
+   "path": [
+    14,
+    15
+   ],
+   "seller": "hd20794_hellas2",
+   "ship_class": "jump_train",
+   "ships": 6.48,
+   "status": "PROPOSAL",
+   "tonnes_y": 2355443,
+   "transport_cr_per_t": 62.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2119898557,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1162.5,
+   "jumps": 2,
+   "loaded_trips_y": 38.5,
+   "path": [
+    9,
+    14,
+    15
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 5.52,
+   "status": "PROPOSAL",
+   "tonnes_y": 1886375,
+   "transport_cr_per_t": 72.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2075012949,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "construction",
+   "delivered_cr_per_t": 398.8,
+   "jumps": 1,
+   "loaded_trips_y": 116.5,
+   "path": [
+    13,
+    31
+   ],
+   "seller": "gj876_next",
+   "ship_class": "jump_train",
+   "ships": 15.7,
+   "status": "PROPOSAL",
+   "tonnes_y": 5705491,
+   "transport_cr_per_t": 51.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1996921744,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 945.7,
+   "jumps": 1,
+   "loaded_trips_y": 44.0,
+   "path": [
+    3,
+    60
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 5.93,
+   "status": "PROPOSAL",
+   "tonnes_y": 2153391,
+   "transport_cr_per_t": 49.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1938051989,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "reactor_fuel",
+   "delivered_cr_per_t": 595826.9,
+   "jumps": 1,
+   "loaded_trips_y": 8.4,
+   "path": [
+    4,
+    3
+   ],
+   "seller": "lalande_mecca",
+   "ship_class": "medium_freighter",
+   "ships": 0.82,
+   "status": "PROPOSAL",
+   "tonnes_y": 3202,
+   "transport_cr_per_t": 2910.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1921390138,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1142.4,
+   "jumps": 1,
+   "loaded_trips_y": 35.1,
+   "path": [
+    9,
+    60
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 4.73,
+   "status": "PROPOSAL",
+   "tonnes_y": 1720604,
+   "transport_cr_per_t": 53.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1892664921,
+   "via": null
+  },
+  {
+   "buyer": "gj832_tianhe",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 947.1,
+   "jumps": 1,
+   "loaded_trips_y": 42.8,
+   "path": [
+    0,
+    12
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 5.77,
+   "status": "PROPOSAL",
+   "tonnes_y": 2096820,
+   "transport_cr_per_t": 55.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1887138071,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89703.3,
+   "jumps": 1,
+   "loaded_trips_y": 351.9,
+   "path": [
+    9,
+    4
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 21.3,
+   "status": "PROPOSAL",
+   "tonnes_y": 20935,
+   "transport_cr_per_t": 753.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1884193100,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89655.2,
+   "jumps": 1,
+   "loaded_trips_y": 349.6,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 21.17,
+   "status": "PROPOSAL",
+   "tonnes_y": 20804,
+   "transport_cr_per_t": 706.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1872336343,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_strife",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 948.9,
+   "jumps": 1,
+   "loaded_trips_y": 42.2,
+   "path": [
+    60,
+    9
+   ],
+   "seller": "proxima_outpost",
+   "ship_class": "jump_train",
+   "ships": 5.69,
+   "status": "PROPOSAL",
+   "tonnes_y": 2067900,
+   "transport_cr_per_t": 52.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1861110185,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "ore",
+   "delivered_cr_per_t": 85.5,
+   "jumps": 1,
+   "loaded_trips_y": 914.5,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "jump_train",
+   "ships": 123.21,
+   "status": "PROPOSAL",
+   "tonnes_y": 44773600,
+   "transport_cr_per_t": 44.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1790944015,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_harmony",
+   "channel": "re_export",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 112479.5,
+   "jumps": 2,
+   "loaded_trips_y": 329.7,
+   "path": [
+    9,
+    10,
+    9
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 20.69,
+   "status": "PROPOSAL",
+   "tonnes_y": 19620,
+   "transport_cr_per_t": 1022.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1765770018,
+   "via": "gj581_freeclans"
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89687.5,
+   "jumps": 1,
+   "loaded_trips_y": 313.4,
+   "path": [
+    9,
+    60
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 18.98,
+   "status": "PROPOSAL",
+   "tonnes_y": 18649,
+   "transport_cr_per_t": 738.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1678450051,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1144.8,
+   "jumps": 1,
+   "loaded_trips_y": 31.0,
+   "path": [
+    9,
+    4
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 4.17,
+   "status": "PROPOSAL",
+   "tonnes_y": 1515766,
+   "transport_cr_per_t": 55.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1667342870,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1145.6,
+   "jumps": 1,
+   "loaded_trips_y": 30.8,
+   "path": [
+    9,
+    31
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 4.14,
+   "status": "PROPOSAL",
+   "tonnes_y": 1506020,
+   "transport_cr_per_t": 56.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1656621550,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_newindia",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 952.9,
+   "jumps": 1,
+   "loaded_trips_y": 36.5,
+   "path": [
+    22,
+    14
+   ],
+   "seller": "delta_pav_freekarma",
+   "ship_class": "jump_train",
+   "ships": 4.92,
+   "status": "PROPOSAL",
+   "tonnes_y": 1788208,
+   "transport_cr_per_t": 57.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1609387377,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45043.3,
+   "jumps": 1,
+   "loaded_trips_y": 17.3,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 1.69,
+   "status": "PROPOSAL",
+   "tonnes_y": 35214,
+   "transport_cr_per_t": 284.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1584629492,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45060.2,
+   "jumps": 1,
+   "loaded_trips_y": 16.6,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 1.63,
+   "status": "PROPOSAL",
+   "tonnes_y": 33960,
+   "transport_cr_per_t": 300.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1528204147,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 943.7,
+   "jumps": 1,
+   "loaded_trips_y": 34.0,
+   "path": [
+    0,
+    31
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 4.57,
+   "status": "PROPOSAL",
+   "tonnes_y": 1662554,
+   "transport_cr_per_t": 52.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1496298660,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45060.2,
+   "jumps": 1,
+   "loaded_trips_y": 15.9,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 1.55,
+   "status": "PROPOSAL",
+   "tonnes_y": 32405,
+   "transport_cr_per_t": 300.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1458231874,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 949.9,
+   "jumps": 1,
+   "loaded_trips_y": 33.0,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 4.44,
+   "status": "PROPOSAL",
+   "tonnes_y": 1615031,
+   "transport_cr_per_t": 57.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1453527968,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5097.8,
+   "jumps": 1,
+   "loaded_trips_y": 6.4,
+   "path": [
+    9,
+    3
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_tanker",
+   "ships": 0.84,
+   "status": "PROPOSAL",
+   "tonnes_y": 273866,
+   "transport_cr_per_t": 75.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1391239959,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_hellas2",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 949.5,
+   "jumps": 1,
+   "loaded_trips_y": 30.3,
+   "path": [
+    0,
+    14
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 4.09,
+   "status": "PROPOSAL",
+   "tonnes_y": 1485117,
+   "transport_cr_per_t": 57.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1336605010,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1839.7,
+   "jumps": 1,
+   "loaded_trips_y": 15.2,
+   "path": [
+    9,
+    4
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "jump_train",
+   "ships": 2.04,
+   "status": "PROPOSAL",
+   "tonnes_y": 742401,
+   "transport_cr_per_t": 58.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1336321724,
+   "via": null
+  },
+  {
+   "buyer": "gj832_tianhe",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89747.0,
+   "jumps": 1,
+   "loaded_trips_y": 247.9,
+   "path": [
+    10,
+    12
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 15.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 14749,
+   "transport_cr_per_t": 795.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1327412681,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 946.1,
+   "jumps": 1,
+   "loaded_trips_y": 30.0,
+   "path": [
+    60,
+    3
+   ],
+   "seller": "proxima_outpost",
+   "ship_class": "jump_train",
+   "ships": 4.04,
+   "status": "PROPOSAL",
+   "tonnes_y": 1469432,
+   "transport_cr_per_t": 49.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1322488698,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89700.6,
+   "jumps": 1,
+   "loaded_trips_y": 236.0,
+   "path": [
+    9,
+    3
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 14.29,
+   "status": "PROPOSAL",
+   "tonnes_y": 14042,
+   "transport_cr_per_t": 750.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1263811150,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1151.3,
+   "jumps": 1,
+   "loaded_trips_y": 22.3,
+   "path": [
+    12,
+    10
+   ],
+   "seller": "gj832_tianhe",
+   "ship_class": "jump_train",
+   "ships": 3.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 1092543,
+   "transport_cr_per_t": 62.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1201797277,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1139.6,
+   "jumps": 1,
+   "loaded_trips_y": 22.2,
+   "path": [
+    0,
+    4
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 2.99,
+   "status": "PROPOSAL",
+   "tonnes_y": 1085141,
+   "transport_cr_per_t": 50.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1193654720,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_newindia",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89873.3,
+   "jumps": 2,
+   "loaded_trips_y": 210.5,
+   "path": [
+    10,
+    60,
+    14
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 13.21,
+   "status": "PROPOSAL",
+   "tonnes_y": 12527,
+   "transport_cr_per_t": 916.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1127401020,
+   "via": null
+  },
+  {
+   "buyer": "hd69830_verde",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 969.6,
+   "jumps": 2,
+   "loaded_trips_y": 24.8,
+   "path": [
+    0,
+    25,
+    16
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 3.56,
+   "status": "PROPOSAL",
+   "tonnes_y": 1216480,
+   "transport_cr_per_t": 76.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1094831578,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "reactor_fuel",
+   "delivered_cr_per_t": 595859.7,
+   "jumps": 1,
+   "loaded_trips_y": 4.8,
+   "path": [
+    13,
+    8
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 0.47,
+   "status": "PROPOSAL",
+   "tonnes_y": 1812,
+   "transport_cr_per_t": 2942.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1087112334,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89882.9,
+   "jumps": 2,
+   "loaded_trips_y": 201.8,
+   "path": [
+    9,
+    14,
+    15
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 12.66,
+   "status": "PROPOSAL",
+   "tonnes_y": 12007,
+   "transport_cr_per_t": 925.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1080649562,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 949.9,
+   "jumps": 1,
+   "loaded_trips_y": 24.3,
+   "path": [
+    0,
+    10
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 3.28,
+   "status": "PROPOSAL",
+   "tonnes_y": 1191268,
+   "transport_cr_per_t": 57.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1072141029,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 964.1,
+   "jumps": 1,
+   "loaded_trips_y": 24.1,
+   "path": [
+    14,
+    15
+   ],
+   "seller": "hd20794_newindia",
+   "ship_class": "jump_train",
+   "ships": 3.24,
+   "status": "PROPOSAL",
+   "tonnes_y": 1177721,
+   "transport_cr_per_t": 62.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1059949279,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "ore",
+   "delivered_cr_per_t": 89.6,
+   "jumps": 1,
+   "loaded_trips_y": 537.2,
+   "path": [
+    0,
+    31
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 72.38,
+   "status": "PROPOSAL",
+   "tonnes_y": 26303199,
+   "transport_cr_per_t": 48.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1052127979,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45047.7,
+   "jumps": 1,
+   "loaded_trips_y": 10.6,
+   "path": [
+    0,
+    31
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 1.04,
+   "status": "PROPOSAL",
+   "tonnes_y": 21709,
+   "transport_cr_per_t": 288.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 976901100,
+   "via": null
+  },
+  {
+   "buyer": "sol_authority",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 952.7,
+   "jumps": 1,
+   "loaded_trips_y": 21.8,
+   "path": [
+    9,
+    0
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 2.94,
+   "status": "PROPOSAL",
+   "tonnes_y": 1066912,
+   "transport_cr_per_t": 51.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 960220656,
+   "via": null
+  },
+  {
+   "buyer": "hd69830_verde",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45121.6,
+   "jumps": 2,
+   "loaded_trips_y": 10.4,
+   "path": [
+    0,
+    25,
+    16
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 1.11,
+   "status": "PROPOSAL",
+   "tonnes_y": 21281,
+   "transport_cr_per_t": 360.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 957649147,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89721.6,
+   "jumps": 1,
+   "loaded_trips_y": 175.9,
+   "path": [
+    10,
+    4
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 10.65,
+   "status": "PROPOSAL",
+   "tonnes_y": 10468,
+   "transport_cr_per_t": 770.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 942096550,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89773.9,
+   "jumps": 1,
+   "loaded_trips_y": 174.8,
+   "path": [
+    10,
+    8
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 10.58,
+   "status": "PROPOSAL",
+   "tonnes_y": 10402,
+   "transport_cr_per_t": 821.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 936168171,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1162.5,
+   "jumps": 2,
+   "loaded_trips_y": 17.3,
+   "path": [
+    9,
+    14,
+    15
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 2.49,
+   "status": "PROPOSAL",
+   "tonnes_y": 848702,
+   "transport_cr_per_t": 72.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 933572383,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 949.7,
+   "jumps": 1,
+   "loaded_trips_y": 20.9,
+   "path": [
+    0,
+    22
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 2.81,
+   "status": "PROPOSAL",
+   "tonnes_y": 1021641,
+   "transport_cr_per_t": 57.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 919476718,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5090.5,
+   "jumps": 1,
+   "loaded_trips_y": 82.8,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 8.11,
+   "status": "PROPOSAL",
+   "tonnes_y": 168967,
+   "transport_cr_per_t": 105.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 858354344,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89714.8,
+   "jumps": 1,
+   "loaded_trips_y": 156.7,
+   "path": [
+    10,
+    60
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 9.49,
+   "status": "PROPOSAL",
+   "tonnes_y": 9325,
+   "transport_cr_per_t": 764.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 839225025,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1836.5,
+   "jumps": 1,
+   "loaded_trips_y": 9.3,
+   "path": [
+    0,
+    31
+   ],
+   "seller": "sol_authority",
+   "ship_class": "jump_train",
+   "ships": 1.25,
+   "status": "PROPOSAL",
+   "tonnes_y": 455798,
+   "transport_cr_per_t": 55.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 820436454,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 969.1,
+   "jumps": 2,
+   "loaded_trips_y": 18.0,
+   "path": [
+    22,
+    57,
+    15
+   ],
+   "seller": "delta_pav_freekarma",
+   "ship_class": "jump_train",
+   "ships": 2.58,
+   "status": "PROPOSAL",
+   "tonnes_y": 882276,
+   "transport_cr_per_t": 72.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 794048672,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 950.4,
+   "jumps": 1,
+   "loaded_trips_y": 17.0,
+   "path": [
+    60,
+    31
+   ],
+   "seller": "proxima_outpost",
+   "ship_class": "jump_train",
+   "ships": 2.29,
+   "status": "PROPOSAL",
+   "tonnes_y": 831277,
+   "transport_cr_per_t": 54.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 748149330,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "reactor_fuel",
+   "delivered_cr_per_t": 595845.0,
+   "jumps": 1,
+   "loaded_trips_y": 3.2,
+   "path": [
+    12,
+    22
+   ],
+   "seller": "gj832_gaia_zone",
+   "ship_class": "medium_freighter",
+   "ships": 0.31,
+   "status": "PROPOSAL",
+   "tonnes_y": 1219,
+   "transport_cr_per_t": 2927.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 731201200,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5097.8,
+   "jumps": 1,
+   "loaded_trips_y": 67.1,
+   "path": [
+    9,
+    3
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "medium_freighter",
+   "ships": 6.57,
+   "status": "PROPOSAL",
+   "tonnes_y": 136933,
+   "transport_cr_per_t": 118.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 695619979,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "construction",
+   "delivered_cr_per_t": 399.4,
+   "jumps": 1,
+   "loaded_trips_y": 38.8,
+   "path": [
+    60,
+    31
+   ],
+   "seller": "proxima_outpost",
+   "ship_class": "jump_train",
+   "ships": 5.23,
+   "status": "PROPOSAL",
+   "tonnes_y": 1901830,
+   "transport_cr_per_t": 51.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 665640581,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 951.1,
+   "jumps": 1,
+   "loaded_trips_y": 14.7,
+   "path": [
+    22,
+    60
+   ],
+   "seller": "delta_pav_freekarma",
+   "ship_class": "jump_train",
+   "ships": 1.98,
+   "status": "PROPOSAL",
+   "tonnes_y": 717797,
+   "transport_cr_per_t": 55.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 646017330,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "reactor_fuel",
+   "delivered_cr_per_t": 595847.3,
+   "jumps": 1,
+   "loaded_trips_y": 2.8,
+   "path": [
+    0,
+    3
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 0.27,
+   "status": "PROPOSAL",
+   "tonnes_y": 1067,
+   "transport_cr_per_t": 2930.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 640463379,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89716.8,
+   "jumps": 1,
+   "loaded_trips_y": 118.0,
+   "path": [
+    10,
+    3
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 7.14,
+   "status": "PROPOSAL",
+   "tonnes_y": 7021,
+   "transport_cr_per_t": 766.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 631905575,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5095.7,
+   "jumps": 1,
+   "loaded_trips_y": 60.5,
+   "path": [
+    9,
+    60
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 5.92,
+   "status": "PROPOSAL",
+   "tonnes_y": 123364,
+   "transport_cr_per_t": 114.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 626688515,
+   "via": null
+  },
+  {
+   "buyer": "eps_eri_strife",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 950.4,
+   "jumps": 1,
+   "loaded_trips_y": 14.1,
+   "path": [
+    3,
+    9
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 1.9,
+   "status": "PROPOSAL",
+   "tonnes_y": 689300,
+   "transport_cr_per_t": 54.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 620370062,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "ore",
+   "delivered_cr_per_t": 88.7,
+   "jumps": 1,
+   "loaded_trips_y": 304.8,
+   "path": [
+    13,
+    8
+   ],
+   "seller": "gj876_next",
+   "ship_class": "jump_train",
+   "ships": 41.07,
+   "status": "PROPOSAL",
+   "tonnes_y": 14924533,
+   "transport_cr_per_t": 47.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 596981338,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 90067.5,
+   "jumps": 3,
+   "loaded_trips_y": 100.9,
+   "path": [
+    10,
+    53,
+    57,
+    15
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 6.55,
+   "status": "PROPOSAL",
+   "tonnes_y": 6004,
+   "transport_cr_per_t": 1103.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 540324781,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "ore",
+   "delivered_cr_per_t": 91.1,
+   "jumps": 1,
+   "loaded_trips_y": 268.6,
+   "path": [
+    13,
+    31
+   ],
+   "seller": "gj876_next",
+   "ship_class": "jump_train",
+   "ships": 36.19,
+   "status": "PROPOSAL",
+   "tonnes_y": 13151600,
+   "transport_cr_per_t": 49.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 526063989,
+   "via": null
+  },
+  {
+   "buyer": "gj832_tianhe",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5135.4,
+   "jumps": 1,
+   "loaded_trips_y": 50.2,
+   "path": [
+    13,
+    12
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 4.91,
+   "status": "PROPOSAL",
+   "tonnes_y": 102385,
+   "transport_cr_per_t": 111.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 520114477,
+   "via": null
+  },
+  {
+   "buyer": "hd69830_verde",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 90031.4,
+   "jumps": 3,
+   "loaded_trips_y": 95.6,
+   "path": [
+    9,
+    3,
+    25,
+    16
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 6.21,
+   "status": "PROPOSAL",
+   "tonnes_y": 5686,
+   "transport_cr_per_t": 1068.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 511778569,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1139.0,
+   "jumps": 1,
+   "loaded_trips_y": 9.5,
+   "path": [
+    12,
+    22
+   ],
+   "seller": "gj832_tianhe",
+   "ship_class": "jump_train",
+   "ships": 1.28,
+   "status": "PROPOSAL",
+   "tonnes_y": 463588,
+   "transport_cr_per_t": 50.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 509947253,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 952.8,
+   "jumps": 1,
+   "loaded_trips_y": 11.0,
+   "path": [
+    3,
+    10
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 1.48,
+   "status": "PROPOSAL",
+   "tonnes_y": 538344,
+   "transport_cr_per_t": 56.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 484509323,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89882.9,
+   "jumps": 2,
+   "loaded_trips_y": 90.0,
+   "path": [
+    9,
+    14,
+    15
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 5.65,
+   "status": "PROPOSAL",
+   "tonnes_y": 5353,
+   "transport_cr_per_t": 925.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 481781398,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89703.3,
+   "jumps": 1,
+   "loaded_trips_y": 88.8,
+   "path": [
+    9,
+    4
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 5.38,
+   "status": "PROPOSAL",
+   "tonnes_y": 5286,
+   "transport_cr_per_t": 753.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 475764578,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 950.5,
+   "jumps": 1,
+   "loaded_trips_y": 10.4,
+   "path": [
+    12,
+    22
+   ],
+   "seller": "gj832_gaia_zone",
+   "ship_class": "jump_train",
+   "ships": 1.41,
+   "status": "PROPOSAL",
+   "tonnes_y": 510820,
+   "transport_cr_per_t": 49.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 459738359,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_hellas2",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 952.9,
+   "jumps": 1,
+   "loaded_trips_y": 10.1,
+   "path": [
+    22,
+    14
+   ],
+   "seller": "delta_pav_freekarma",
+   "ship_class": "jump_train",
+   "ships": 1.36,
+   "status": "PROPOSAL",
+   "tonnes_y": 495039,
+   "transport_cr_per_t": 57.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 445535003,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 955.9,
+   "jumps": 1,
+   "loaded_trips_y": 10.0,
+   "path": [
+    9,
+    3
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 1.35,
+   "status": "PROPOSAL",
+   "tonnes_y": 489811,
+   "transport_cr_per_t": 54.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 440829566,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5090.5,
+   "jumps": 1,
+   "loaded_trips_y": 41.4,
+   "path": [
+    9,
+    8
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "medium_freighter",
+   "ships": 4.05,
+   "status": "PROPOSAL",
+   "tonnes_y": 84484,
+   "transport_cr_per_t": 105.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 429177172,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1838.0,
+   "jumps": 1,
+   "loaded_trips_y": 4.7,
+   "path": [
+    13,
+    31
+   ],
+   "seller": "gj876_next",
+   "ship_class": "jump_train",
+   "ships": 0.63,
+   "status": "PROPOSAL",
+   "tonnes_y": 227899,
+   "transport_cr_per_t": 57.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 410218227,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1144.8,
+   "jumps": 1,
+   "loaded_trips_y": 7.4,
+   "path": [
+    9,
+    4
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "jump_train",
+   "ships": 1.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 361714,
+   "transport_cr_per_t": 55.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 397884907,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89559.5,
+   "jumps": 0,
+   "loaded_trips_y": 73.8,
+   "path": [
+    10
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 4.3,
+   "status": "PROPOSAL",
+   "tonnes_y": 4391,
+   "transport_cr_per_t": 614.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 395214457,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_hellas2",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89687.7,
+   "jumps": 1,
+   "loaded_trips_y": 71.3,
+   "path": [
+    9,
+    14
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 4.32,
+   "status": "PROPOSAL",
+   "tonnes_y": 4245,
+   "transport_cr_per_t": 738.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 382027882,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "reactor_fuel",
+   "delivered_cr_per_t": 595845.0,
+   "jumps": 1,
+   "loaded_trips_y": 1.6,
+   "path": [
+    12,
+    22
+   ],
+   "seller": "gj832_tianhe",
+   "ship_class": "medium_freighter",
+   "ships": 0.16,
+   "status": "PROPOSAL",
+   "tonnes_y": 609,
+   "transport_cr_per_t": 2927.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 365600600,
+   "via": null
+  },
+  {
+   "buyer": "hd69830_verde",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 973.1,
+   "jumps": 2,
+   "loaded_trips_y": 8.3,
+   "path": [
+    60,
+    25,
+    16
+   ],
+   "seller": "proxima_outpost",
+   "ship_class": "jump_train",
+   "ships": 1.19,
+   "status": "PROPOSAL",
+   "tonnes_y": 405493,
+   "transport_cr_per_t": 75.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 364943859,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 952.8,
+   "jumps": 1,
+   "loaded_trips_y": 8.1,
+   "path": [
+    3,
+    10
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 1.09,
+   "status": "PROPOSAL",
+   "tonnes_y": 397089,
+   "transport_cr_per_t": 56.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 357380343,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 969.1,
+   "jumps": 2,
+   "loaded_trips_y": 8.0,
+   "path": [
+    22,
+    57,
+    15
+   ],
+   "seller": "delta_pav_freekarma",
+   "ship_class": "jump_train",
+   "ships": 1.15,
+   "status": "PROPOSAL",
+   "tonnes_y": 392574,
+   "transport_cr_per_t": 72.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 353316426,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5095.7,
+   "jumps": 1,
+   "loaded_trips_y": 30.2,
+   "path": [
+    9,
+    60
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "medium_freighter",
+   "ships": 2.96,
+   "status": "PROPOSAL",
+   "tonnes_y": 61682,
+   "transport_cr_per_t": 114.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 313344257,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89734.4,
+   "jumps": 1,
+   "loaded_trips_y": 54.5,
+   "path": [
+    9,
+    22
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 3.3,
+   "status": "PROPOSAL",
+   "tonnes_y": 3245,
+   "transport_cr_per_t": 783.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 292044420,
+   "via": null
+  },
+  {
+   "buyer": "gj832_tianhe",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5145.3,
+   "jumps": 1,
+   "loaded_trips_y": 25.1,
+   "path": [
+    14,
+    12
+   ],
+   "seller": "hd20794_hellas2",
+   "ship_class": "medium_freighter",
+   "ships": 2.46,
+   "status": "PROPOSAL",
+   "tonnes_y": 51192,
+   "transport_cr_per_t": 121.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 260057238,
+   "via": null
+  },
+  {
+   "buyer": "hd69830_verde",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 90047.6,
+   "jumps": 3,
+   "loaded_trips_y": 47.8,
+   "path": [
+    10,
+    3,
+    25,
+    16
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 3.1,
+   "status": "PROPOSAL",
+   "tonnes_y": 2843,
+   "transport_cr_per_t": 1084.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 255889284,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1146.2,
+   "jumps": 1,
+   "loaded_trips_y": 4.7,
+   "path": [
+    13,
+    22
+   ],
+   "seller": "gj876_next",
+   "ship_class": "jump_train",
+   "ships": 0.64,
+   "status": "PROPOSAL",
+   "tonnes_y": 231794,
+   "transport_cr_per_t": 57.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 254973627,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 951.9,
+   "jumps": 1,
+   "loaded_trips_y": 5.7,
+   "path": [
+    3,
+    31
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "jump_train",
+   "ships": 0.76,
+   "status": "PROPOSAL",
+   "tonnes_y": 277092,
+   "transport_cr_per_t": 55.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 249383110,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 90067.5,
+   "jumps": 3,
+   "loaded_trips_y": 45.0,
+   "path": [
+    10,
+    53,
+    57,
+    15
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 2.92,
+   "status": "PROPOSAL",
+   "tonnes_y": 2677,
+   "transport_cr_per_t": 1103.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 240890699,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89721.6,
+   "jumps": 1,
+   "loaded_trips_y": 44.4,
+   "path": [
+    10,
+    4
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 2.69,
+   "status": "PROPOSAL",
+   "tonnes_y": 2643,
+   "transport_cr_per_t": 770.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 237882289,
+   "via": null
+  },
+  {
+   "buyer": "wolf359_citadel",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5103.6,
+   "jumps": 1,
+   "loaded_trips_y": 22.4,
+   "path": [
+    13,
+    3
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 2.19,
+   "status": "PROPOSAL",
+   "tonnes_y": 45644,
+   "transport_cr_per_t": 129.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 231873326,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89708.4,
+   "jumps": 1,
+   "loaded_trips_y": 38.2,
+   "path": [
+    9,
+    31
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 2.32,
+   "status": "PROPOSAL",
+   "tonnes_y": 2275,
+   "transport_cr_per_t": 758.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 204785624,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89771.8,
+   "jumps": 1,
+   "loaded_trips_y": 36.9,
+   "path": [
+    9,
+    10
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 2.23,
+   "status": "PROPOSAL",
+   "tonnes_y": 2196,
+   "transport_cr_per_t": 819.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 197607229,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5158.6,
+   "jumps": 1,
+   "loaded_trips_y": 18.6,
+   "path": [
+    14,
+    15
+   ],
+   "seller": "hd20794_hellas2",
+   "ship_class": "medium_freighter",
+   "ships": 1.82,
+   "status": "PROPOSAL",
+   "tonnes_y": 38001,
+   "transport_cr_per_t": 134.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 193042838,
+   "via": null
+  },
+  {
+   "buyer": "hd20794_hellas2",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89873.3,
+   "jumps": 2,
+   "loaded_trips_y": 35.7,
+   "path": [
+    10,
+    60,
+    14
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 2.24,
+   "status": "PROPOSAL",
+   "tonnes_y": 2122,
+   "transport_cr_per_t": 916.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 191013941,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "ore",
+   "delivered_cr_per_t": 91.7,
+   "jumps": 1,
+   "loaded_trips_y": 89.5,
+   "path": [
+    60,
+    31
+   ],
+   "seller": "proxima_outpost",
+   "ship_class": "jump_train",
+   "ships": 12.06,
+   "status": "PROPOSAL",
+   "tonnes_y": 4383867,
+   "transport_cr_per_t": 50.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 175354663,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 950.5,
+   "jumps": 1,
+   "loaded_trips_y": 130.1,
+   "path": [
+    12,
+    22
+   ],
+   "seller": "gj832_tianhe",
+   "ship_class": "medium_freighter",
+   "ships": 12.73,
+   "status": "PROPOSAL",
+   "tonnes_y": 170273,
+   "transport_cr_per_t": 115.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 153246120,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89745.0,
+   "jumps": 1,
+   "loaded_trips_y": 27.3,
+   "path": [
+    10,
+    22
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 1.65,
+   "status": "PROPOSAL",
+   "tonnes_y": 1622,
+   "transport_cr_per_t": 793.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 146022210,
+   "via": null
+  },
+  {
+   "buyer": "tau_ceti_cognium",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5093.9,
+   "jumps": 1,
+   "loaded_trips_y": 13.8,
+   "path": [
+    13,
+    8
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 1.35,
+   "status": "PROPOSAL",
+   "tonnes_y": 28161,
+   "transport_cr_per_t": 111.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 143059057,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5143.0,
+   "jumps": 1,
+   "loaded_trips_y": 13.2,
+   "path": [
+    9,
+    4
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 1.3,
+   "status": "PROPOSAL",
+   "tonnes_y": 27013,
+   "transport_cr_per_t": 119.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 137226394,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "chemicals",
+   "delivered_cr_per_t": 1840.4,
+   "jumps": 1,
+   "loaded_trips_y": 37.2,
+   "path": [
+    9,
+    31
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 3.64,
+   "status": "PROPOSAL",
+   "tonnes_y": 75966,
+   "transport_cr_per_t": 106.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 136739409,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "reactor_fuel",
+   "delivered_cr_per_t": 595895.1,
+   "jumps": 1,
+   "loaded_trips_y": 0.5,
+   "path": [
+    60,
+    22
+   ],
+   "seller": "proxima_outpost",
+   "ship_class": "medium_freighter",
+   "ships": 0.05,
+   "status": "PROPOSAL",
+   "tonnes_y": 203,
+   "transport_cr_per_t": 2976.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 121866867,
+   "via": null
+  },
+  {
+   "buyer": "proxima_outpost",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5098.4,
+   "jumps": 1,
+   "loaded_trips_y": 10.1,
+   "path": [
+    13,
+    60
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 0.99,
+   "status": "PROPOSAL",
+   "tonnes_y": 20561,
+   "transport_cr_per_t": 119.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 104448086,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89740.0,
+   "jumps": 1,
+   "loaded_trips_y": 19.1,
+   "path": [
+    10,
+    31
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 1.16,
+   "status": "PROPOSAL",
+   "tonnes_y": 1138,
+   "transport_cr_per_t": 788.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 102392812,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5158.6,
+   "jumps": 1,
+   "loaded_trips_y": 9.3,
+   "path": [
+    14,
+    15
+   ],
+   "seller": "hd20794_newindia",
+   "ship_class": "medium_freighter",
+   "ships": 0.91,
+   "status": "PROPOSAL",
+   "tonnes_y": 19000,
+   "transport_cr_per_t": 134.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 96521419,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5158.6,
+   "jumps": 1,
+   "loaded_trips_y": 8.8,
+   "path": [
+    14,
+    15
+   ],
+   "seller": "hd20794_hellas2",
+   "ship_class": "medium_freighter",
+   "ships": 0.86,
+   "status": "PROPOSAL",
+   "tonnes_y": 17985,
+   "transport_cr_per_t": 134.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 91366089,
+   "via": null
+  },
+  {
+   "buyer": "gj832_tianhe",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5145.3,
+   "jumps": 1,
+   "loaded_trips_y": 8.4,
+   "path": [
+    14,
+    12
+   ],
+   "seller": "hd20794_newindia",
+   "ship_class": "medium_freighter",
+   "ships": 0.82,
+   "status": "PROPOSAL",
+   "tonnes_y": 17064,
+   "transport_cr_per_t": 121.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 86685746,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1147.1,
+   "jumps": 1,
+   "loaded_trips_y": 37.9,
+   "path": [
+    14,
+    22
+   ],
+   "seller": "hd20794_hellas2",
+   "ship_class": "medium_freighter",
+   "ships": 3.71,
+   "status": "PROPOSAL",
+   "tonnes_y": 77265,
+   "transport_cr_per_t": 106.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 84991209,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5143.0,
+   "jumps": 1,
+   "loaded_trips_y": 6.6,
+   "path": [
+    9,
+    4
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "medium_freighter",
+   "ships": 0.65,
+   "status": "PROPOSAL",
+   "tonnes_y": 13507,
+   "transport_cr_per_t": 119.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 68613197,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5145.7,
+   "jumps": 1,
+   "loaded_trips_y": 6.2,
+   "path": [
+    13,
+    22
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 0.61,
+   "status": "PROPOSAL",
+   "tonnes_y": 12628,
+   "transport_cr_per_t": 121.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 64150273,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5158.6,
+   "jumps": 1,
+   "loaded_trips_y": 4.4,
+   "path": [
+    14,
+    15
+   ],
+   "seller": "hd20794_newindia",
+   "ship_class": "medium_freighter",
+   "ships": 0.43,
+   "status": "PROPOSAL",
+   "tonnes_y": 8993,
+   "transport_cr_per_t": 134.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 45683045,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5162.1,
+   "jumps": 1,
+   "loaded_trips_y": 3.2,
+   "path": [
+    13,
+    10
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 0.31,
+   "status": "PROPOSAL",
+   "tonnes_y": 6549,
+   "transport_cr_per_t": 137.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 33270462,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_maland",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5183.5,
+   "jumps": 2,
+   "loaded_trips_y": 3.1,
+   "path": [
+    9,
+    14,
+    15
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 0.33,
+   "status": "PROPOSAL",
+   "tonnes_y": 6333,
+   "transport_cr_per_t": 158.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 32173806,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5147.7,
+   "jumps": 1,
+   "loaded_trips_y": 3.1,
+   "path": [
+    14,
+    22
+   ],
+   "seller": "hd20794_hellas2",
+   "ship_class": "medium_freighter",
+   "ships": 0.3,
+   "status": "PROPOSAL",
+   "tonnes_y": 6314,
+   "transport_cr_per_t": 123.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 32075136,
+   "via": null
+  },
+  {
+   "buyer": "gj876_next",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 121043.1,
+   "jumps": 1,
+   "loaded_trips_y": 6.4,
+   "path": [
+    0,
+    13
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.39,
+   "status": "PROPOSAL",
+   "tonnes_y": 265,
+   "transport_cr_per_t": 1015.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 31816003,
+   "via": null
+  },
+  {
+   "buyer": "lalande_mecca",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5153.5,
+   "jumps": 1,
+   "loaded_trips_y": 2.2,
+   "path": [
+    13,
+    4
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 0.22,
+   "status": "PROPOSAL",
+   "tonnes_y": 4502,
+   "transport_cr_per_t": 129.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 22871066,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5162.1,
+   "jumps": 1,
+   "loaded_trips_y": 2.0,
+   "path": [
+    13,
+    10
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 0.19,
+   "status": "PROPOSAL",
+   "tonnes_y": 3988,
+   "transport_cr_per_t": 137.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 20260167,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5143.0,
+   "jumps": 1,
+   "loaded_trips_y": 1.9,
+   "path": [
+    9,
+    4
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 0.18,
+   "status": "PROPOSAL",
+   "tonnes_y": 3806,
+   "transport_cr_per_t": 119.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 19332763,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5163.7,
+   "jumps": 1,
+   "loaded_trips_y": 1.6,
+   "path": [
+    9,
+    10
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 0.16,
+   "status": "PROPOSAL",
+   "tonnes_y": 3275,
+   "transport_cr_per_t": 139.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 16635231,
+   "via": null
+  },
+  {
+   "buyer": "hd40307_firmament",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5183.5,
+   "jumps": 2,
+   "loaded_trips_y": 1.5,
+   "path": [
+    9,
+    14,
+    15
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 0.16,
+   "status": "PROPOSAL",
+   "tonnes_y": 2998,
+   "transport_cr_per_t": 158.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 15227682,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5139.8,
+   "jumps": 1,
+   "loaded_trips_y": 1.4,
+   "path": [
+    13,
+    31
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 0.13,
+   "status": "PROPOSAL",
+   "tonnes_y": 2805,
+   "transport_cr_per_t": 116.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 14250775,
+   "via": null
+  },
+  {
+   "buyer": "gj876_next",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6557.6,
+   "jumps": 1,
+   "loaded_trips_y": 66.1,
+   "path": [
+    0,
+    13
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 4.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 2359,
+   "transport_cr_per_t": 587.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 14152556,
+   "via": null
+  },
+  {
+   "buyer": "delta_pav_freekarma",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5147.7,
+   "jumps": 1,
+   "loaded_trips_y": 1.0,
+   "path": [
+    14,
+    22
+   ],
+   "seller": "hd20794_newindia",
+   "ship_class": "medium_freighter",
+   "ships": 0.1,
+   "status": "PROPOSAL",
+   "tonnes_y": 2105,
+   "transport_cr_per_t": 123.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 10691712,
+   "via": null
+  },
+  {
+   "buyer": "gj876_next",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60434.8,
+   "jumps": 1,
+   "loaded_trips_y": 3.7,
+   "path": [
+    0,
+    13
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.22,
+   "status": "PROPOSAL",
+   "tonnes_y": 177,
+   "transport_cr_per_t": 696.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 10614417,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5163.7,
+   "jumps": 1,
+   "loaded_trips_y": 1.0,
+   "path": [
+    9,
+    10
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 0.1,
+   "status": "PROPOSAL",
+   "tonnes_y": 1994,
+   "transport_cr_per_t": 139.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 10130084,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5143.0,
+   "jumps": 1,
+   "loaded_trips_y": 0.9,
+   "path": [
+    9,
+    4
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "medium_freighter",
+   "ships": 0.09,
+   "status": "PROPOSAL",
+   "tonnes_y": 1903,
+   "transport_cr_per_t": 119.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 9666381,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5144.6,
+   "jumps": 1,
+   "loaded_trips_y": 0.7,
+   "path": [
+    9,
+    31
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 0.07,
+   "status": "PROPOSAL",
+   "tonnes_y": 1403,
+   "transport_cr_per_t": 120.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 7125387,
+   "via": null
+  },
+  {
+   "buyer": "gj832_gaia_zone",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5135.4,
+   "jumps": 1,
+   "loaded_trips_y": 0.6,
+   "path": [
+    13,
+    12
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 0.06,
+   "status": "PROPOSAL",
+   "tonnes_y": 1297,
+   "transport_cr_per_t": 111.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 6587338,
+   "via": null
+  },
+  {
+   "buyer": "gj581_freeclans",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5163.7,
+   "jumps": 1,
+   "loaded_trips_y": 0.5,
+   "path": [
+    9,
+    10
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "medium_freighter",
+   "ships": 0.05,
+   "status": "PROPOSAL",
+   "tonnes_y": 1092,
+   "transport_cr_per_t": 139.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 5545077,
+   "via": null
+  },
+  {
+   "buyer": "hd114783_hellas3",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 122968.7,
+   "jumps": 3,
+   "loaded_trips_y": 0.8,
+   "path": [
+    0,
+    25,
+    45,
+    37
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.06,
+   "status": "PROPOSAL",
+   "tonnes_y": 33,
+   "transport_cr_per_t": 2866.7,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 3947571,
+   "via": null
+  },
+  {
+   "buyer": "gj876_next",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9182.1,
+   "jumps": 1,
+   "loaded_trips_y": 4.4,
+   "path": [
+    0,
+    13
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.27,
+   "status": "PROPOSAL",
+   "tonnes_y": 418,
+   "transport_cr_per_t": 278.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 3758216,
+   "via": null
+  },
+  {
+   "buyer": "gj581_europa",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5163.7,
+   "jumps": 1,
+   "loaded_trips_y": 0.3,
+   "path": [
+    9,
+    10
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "medium_freighter",
+   "ships": 0.03,
+   "status": "PROPOSAL",
+   "tonnes_y": 665,
+   "transport_cr_per_t": 139.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 3376695,
+   "via": null
+  },
+  {
+   "buyer": "gj832_gaia_zone",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5145.3,
+   "jumps": 1,
+   "loaded_trips_y": 0.3,
+   "path": [
+    14,
+    12
+   ],
+   "seller": "hd20794_hellas2",
+   "ship_class": "medium_freighter",
+   "ships": 0.03,
+   "status": "PROPOSAL",
+   "tonnes_y": 648,
+   "transport_cr_per_t": 121.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 3293669,
+   "via": null
+  },
+  {
+   "buyer": "lalande_hellas",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5153.5,
+   "jumps": 1,
+   "loaded_trips_y": 0.3,
+   "path": [
+    13,
+    4
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 0.03,
+   "status": "PROPOSAL",
+   "tonnes_y": 634,
+   "transport_cr_per_t": 129.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 3222127,
+   "via": null
+  },
+  {
+   "buyer": "leo83_zion",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 122981.1,
+   "jumps": 2,
+   "loaded_trips_y": 0.6,
+   "path": [
+    0,
+    25,
+    45
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.04,
+   "status": "PROPOSAL",
+   "tonnes_y": 23,
+   "transport_cr_per_t": 2878.6,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 2814120,
+   "via": null
+  },
+  {
+   "buyer": "cyg61_kern",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5144.6,
+   "jumps": 1,
+   "loaded_trips_y": 0.2,
+   "path": [
+    9,
+    31
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "medium_freighter",
+   "ships": 0.02,
+   "status": "PROPOSAL",
+   "tonnes_y": 468,
+   "transport_cr_per_t": 120.7,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2375129,
+   "via": null
+  },
+  {
+   "buyer": "hd114783_hellas3",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 8192.9,
+   "jumps": 3,
+   "loaded_trips_y": 9.1,
+   "path": [
+    0,
+    25,
+    45,
+    37
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.67,
+   "status": "PROPOSAL",
+   "tonnes_y": 326,
+   "transport_cr_per_t": 2159.3,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 1953604,
+   "via": null
+  },
+  {
+   "buyer": "hd114783_hellas3",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 61932.5,
+   "jumps": 3,
+   "loaded_trips_y": 0.5,
+   "path": [
+    0,
+    25,
+    45,
+    37
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.04,
+   "status": "PROPOSAL",
+   "tonnes_y": 24,
+   "transport_cr_per_t": 2136.2,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 1465203,
+   "via": null
+  },
+  {
+   "buyer": "leo83_zion",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 8077.3,
+   "jumps": 2,
+   "loaded_trips_y": 6.5,
+   "path": [
+    0,
+    25,
+    45
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.49,
+   "status": "PROPOSAL",
+   "tonnes_y": 234,
+   "transport_cr_per_t": 2048.2,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 1402411,
+   "via": null
+  },
+  {
+   "buyer": "gj832_gaia_zone",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5145.3,
+   "jumps": 1,
+   "loaded_trips_y": 0.1,
+   "path": [
+    14,
+    12
+   ],
+   "seller": "hd20794_newindia",
+   "ship_class": "medium_freighter",
+   "ships": 0.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 216,
+   "transport_cr_per_t": 121.4,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1097890,
+   "via": null
+  },
+  {
+   "buyer": "gj876_next",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 1024.9,
+   "jumps": 1,
+   "loaded_trips_y": 0.9,
+   "path": [
+    0,
+    13
+   ],
+   "seller": "sol_authority",
+   "ship_class": "medium_freighter",
+   "ships": 0.09,
+   "status": "PROPOSAL",
+   "tonnes_y": 1183,
+   "transport_cr_per_t": 130.0,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1064990,
+   "via": null
+  },
+  {
+   "buyer": "leo83_zion",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 61899.9,
+   "jumps": 2,
+   "loaded_trips_y": 0.4,
+   "path": [
+    0,
+    25,
+    45
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.03,
+   "status": "PROPOSAL",
+   "tonnes_y": 18,
+   "transport_cr_per_t": 2104.8,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 1051808,
+   "via": null
+  },
+  {
+   "buyer": "hd114783_hellas3",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5425.1,
+   "jumps": 3,
+   "loaded_trips_y": 0.1,
+   "path": [
+    16,
+    25,
+    45,
+    37
+   ],
+   "seller": "hd69830_verde",
+   "ship_class": "medium_freighter",
+   "ships": 0.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 192,
+   "transport_cr_per_t": 377.0,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 973226,
+   "via": null
+  },
+  {
+   "buyer": "leo83_zion",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5395.9,
+   "jumps": 3,
+   "loaded_trips_y": 0.1,
+   "path": [
+    9,
+    3,
+    25,
+    45
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 0.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 179,
+   "transport_cr_per_t": 362.3,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 911047,
+   "via": null
+  },
+  {
+   "buyer": "hd114783_hellas3",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9887.8,
+   "jumps": 3,
+   "loaded_trips_y": 0.8,
+   "path": [
+    0,
+    25,
+    45,
+    37
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.06,
+   "status": "PROPOSAL",
+   "tonnes_y": 77,
+   "transport_cr_per_t": 957.5,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 691370,
+   "via": null
+  },
+  {
+   "buyer": "gj876_next",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 45188.7,
+   "jumps": 1,
+   "loaded_trips_y": 0.1,
+   "path": [
+    0,
+    13
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 12,
+   "transport_cr_per_t": 424.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 548379,
+   "via": null
+  },
+  {
+   "buyer": "gj876_next",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 1025.0,
+   "jumps": 1,
+   "loaded_trips_y": 0.5,
+   "path": [
+    12,
+    13
+   ],
+   "seller": "gj832_gaia_zone",
+   "ship_class": "medium_freighter",
+   "ships": 0.04,
+   "status": "PROPOSAL",
+   "tonnes_y": 592,
+   "transport_cr_per_t": 120.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 532495,
+   "via": null
+  },
+  {
+   "buyer": "leo83_zion",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9851.3,
+   "jumps": 2,
+   "loaded_trips_y": 0.6,
+   "path": [
+    0,
+    25,
+    45
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.04,
+   "status": "PROPOSAL",
+   "tonnes_y": 55,
+   "transport_cr_per_t": 922.4,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 497720,
+   "via": null
+  },
+  {
+   "buyer": "hd114783_hellas3",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5433.1,
+   "jumps": 4,
+   "loaded_trips_y": 0.0,
+   "path": [
+    9,
+    3,
+    25,
+    45,
+    37
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 0.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 96,
+   "transport_cr_per_t": 398.1,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 486613,
+   "via": null
+  },
+  {
+   "buyer": "leo83_zion",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5395.9,
+   "jumps": 3,
+   "loaded_trips_y": 0.0,
+   "path": [
+    9,
+    3,
+    25,
+    45
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "medium_freighter",
+   "ships": 0.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 90,
+   "transport_cr_per_t": 362.3,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 455524,
+   "via": null
+  },
+  {
+   "buyer": "gj832_gaia_zone",
+   "channel": "official",
+   "commodity": "electronics",
+   "delivered_cr_per_t": 121048.7,
+   "jumps": 1,
+   "loaded_trips_y": 0.1,
+   "path": [
+    0,
+    12
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 3,
+   "transport_cr_per_t": 1020.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 357898,
+   "via": null
+  },
+  {
+   "buyer": "hd69830_verde",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5214.5,
+   "jumps": 3,
+   "loaded_trips_y": 0.0,
+   "path": [
+    9,
+    3,
+    25,
+    16
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 70,
+   "transport_cr_per_t": 187.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 353836,
+   "via": null
+  },
+  {
+   "buyer": "gj876_next",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89699.8,
+   "jumps": 1,
+   "loaded_trips_y": 0.0,
+   "path": [
+    9,
+    13
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 3,
+   "transport_cr_per_t": 749.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 226296,
+   "via": null
+  },
+  {
+   "buyer": "gj832_gaia_zone",
+   "channel": "official",
+   "commodity": "consumer",
+   "delivered_cr_per_t": 6564.1,
+   "jumps": 1,
+   "loaded_trips_y": 0.9,
+   "path": [
+    0,
+    12
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.06,
+   "status": "PROPOSAL",
+   "tonnes_y": 34,
+   "transport_cr_per_t": 593.2,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 202184,
+   "via": null
+  },
+  {
+   "buyer": "gj876_next",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 1025.0,
+   "jumps": 1,
+   "loaded_trips_y": 0.2,
+   "path": [
+    12,
+    13
+   ],
+   "seller": "gj832_tianhe",
+   "ship_class": "medium_freighter",
+   "ships": 0.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 197,
+   "transport_cr_per_t": 120.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 177498,
+   "via": null
+  },
+  {
+   "buyer": "hd69830_verde",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5214.5,
+   "jumps": 3,
+   "loaded_trips_y": 0.0,
+   "path": [
+    9,
+    3,
+    25,
+    16
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 35,
+   "transport_cr_per_t": 187.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 176918,
+   "via": null
+  },
+  {
+   "buyer": "gj832_gaia_zone",
+   "channel": "official",
+   "commodity": "machinery",
+   "delivered_cr_per_t": 9184.8,
+   "jumps": 1,
+   "loaded_trips_y": 0.2,
+   "path": [
+    0,
+    12
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 19,
+   "transport_cr_per_t": 281.5,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 169187,
+   "via": null
+  },
+  {
+   "buyer": "hd114783_hellas3",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5433.1,
+   "jumps": 4,
+   "loaded_trips_y": 0.0,
+   "path": [
+    9,
+    3,
+    25,
+    45,
+    37
+   ],
+   "seller": "eps_eri_strife",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 32,
+   "transport_cr_per_t": 398.1,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 162204,
+   "via": null
+  },
+  {
+   "buyer": "leo83_zion",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5403.4,
+   "jumps": 2,
+   "loaded_trips_y": 0.0,
+   "path": [
+    16,
+    25,
+    45
+   ],
+   "seller": "hd69830_verde",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 30,
+   "transport_cr_per_t": 356.2,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 151841,
+   "via": null
+  },
+  {
+   "buyer": "gj832_gaia_zone",
+   "channel": "official",
+   "commodity": "medical",
+   "delivered_cr_per_t": 60439.8,
+   "jumps": 1,
+   "loaded_trips_y": 0.1,
+   "path": [
+    0,
+    12
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 3,
+   "transport_cr_per_t": 700.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 151561,
+   "via": null
+  },
+  {
+   "buyer": "hd114783_hellas3",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 1055.4,
+   "jumps": 1,
+   "loaded_trips_y": 0.1,
+   "path": [
+    45,
+    37
+   ],
+   "seller": "leo83_zion",
+   "ship_class": "medium_freighter",
+   "ships": 0.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 154,
+   "transport_cr_per_t": 158.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 138612,
+   "via": null
+  },
+  {
+   "buyer": "gj876_next",
+   "channel": "official",
+   "commodity": "controlled",
+   "delivered_cr_per_t": 89766.7,
+   "jumps": 1,
+   "loaded_trips_y": 0.0,
+   "path": [
+    10,
+    13
+   ],
+   "seller": "gj581_freeclans",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 1,
+   "transport_cr_per_t": 814.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 113148,
+   "via": null
+  },
+  {
+   "buyer": "hd114783_hellas3",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 1374.4,
+   "jumps": 3,
+   "loaded_trips_y": 0.1,
+   "path": [
+    16,
+    25,
+    45,
+    37
+   ],
+   "seller": "hd69830_verde",
+   "ship_class": "medium_freighter",
+   "ships": 0.01,
+   "status": "PROPOSAL",
+   "tonnes_y": 77,
+   "transport_cr_per_t": 456.8,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 69306,
+   "via": null
+  },
+  {
+   "buyer": "hd114783_hellas3",
+   "channel": "official",
+   "commodity": "weapons",
+   "delivered_cr_per_t": 46016.6,
+   "jumps": 3,
+   "loaded_trips_y": 0.0,
+   "path": [
+    0,
+    25,
+    45,
+    37
+   ],
+   "seller": "sol_authority",
+   "ship_class": "cobrett_i_n1",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 1,
+   "transport_cr_per_t": 1220.5,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 63522,
+   "via": null
+  },
+  {
+   "buyer": "hd69830_verde",
+   "channel": "official",
+   "commodity": "jump_charge",
+   "delivered_cr_per_t": 5221.7,
+   "jumps": 3,
+   "loaded_trips_y": 0.0,
+   "path": [
+    13,
+    60,
+    25,
+    16
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 12,
+   "transport_cr_per_t": 194.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 58973,
+   "via": null
+  },
+  {
+   "buyer": "gj832_gaia_zone",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 996.6,
+   "jumps": 0,
+   "loaded_trips_y": 0.0,
+   "path": [
+    12
+   ],
+   "seller": "gj832_tianhe",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 28,
+   "transport_cr_per_t": 93.6,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 25187,
+   "via": null
+  },
+  {
+   "buyer": "hd114783_hellas3",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 1396.8,
+   "jumps": 3,
+   "loaded_trips_y": 0.0,
+   "path": [
+    3,
+    25,
+    45,
+    37
+   ],
+   "seller": "wolf359_citadel",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 26,
+   "transport_cr_per_t": 483.7,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 23102,
+   "via": null
+  },
+  {
+   "buyer": "leo83_zion",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 1063.7,
+   "jumps": 1,
+   "loaded_trips_y": 0.0,
+   "path": [
+    37,
+    45
+   ],
+   "seller": "hd114783_hellas3",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 19,
+   "transport_cr_per_t": 158.1,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 17193,
+   "via": null
+  },
+  {
+   "buyer": "gj832_gaia_zone",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 1013.4,
+   "jumps": 1,
+   "loaded_trips_y": 0.0,
+   "path": [
+    22,
+    12
+   ],
+   "seller": "delta_pav_freekarma",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 14,
+   "transport_cr_per_t": 115.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 12594,
+   "via": null
+  },
+  {
+   "buyer": "leo83_zion",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 1335.9,
+   "jumps": 2,
+   "loaded_trips_y": 0.0,
+   "path": [
+    16,
+    25,
+    45
+   ],
+   "seller": "hd69830_verde",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 10,
+   "transport_cr_per_t": 419.8,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 8596,
+   "via": null
+  },
+  {
+   "buyer": "gj832_gaia_zone",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 1025.0,
+   "jumps": 1,
+   "loaded_trips_y": 0.0,
+   "path": [
+    13,
+    12
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 5,
+   "transport_cr_per_t": 120.9,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 4198,
+   "via": null
+  },
+  {
+   "buyer": "leo83_zion",
+   "channel": "official",
+   "commodity": "food",
+   "delivered_cr_per_t": 1353.6,
+   "jumps": 3,
+   "loaded_trips_y": 0.0,
+   "path": [
+    9,
+    3,
+    25,
+    45
+   ],
+   "seller": "eps_eri_harmony",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 3,
+   "transport_cr_per_t": 436.8,
+   "unbeaconed_hops": 1,
+   "value_cr_y": 2865,
+   "via": null
+  },
+  {
+   "buyer": "gj832_gaia_zone",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1164.6,
+   "jumps": 0,
+   "loaded_trips_y": 0.0,
+   "path": [
+    12
+   ],
+   "seller": "gj832_tianhe",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 2,
+   "transport_cr_per_t": 74.8,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 2629,
+   "via": null
+  },
+  {
+   "buyer": "gj832_gaia_zone",
+   "channel": "official",
+   "commodity": "metals",
+   "delivered_cr_per_t": 1184.9,
+   "jumps": 1,
+   "loaded_trips_y": 0.0,
+   "path": [
+    13,
+    12
+   ],
+   "seller": "gj876_next",
+   "ship_class": "medium_freighter",
+   "ships": 0.0,
+   "status": "PROPOSAL",
+   "tonnes_y": 1,
+   "transport_cr_per_t": 94.3,
+   "unbeaconed_hops": 0,
+   "value_cr_y": 1315,
+   "via": null
+  }
+ ],
+ "routes": [
+  {
+   "beacons_supporting": [
+    "BCN-000-BR",
+    "BCN-003-BR"
+   ],
+   "edge": [
+    0,
+    3
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "sol_authority",
+    "wolf359_citadel"
+   ],
+   "klass": "trunk",
+   "ly": 7.8,
+   "names": [
+    "Sol (Солнце)",
+    "Wolf 359"
+   ],
+   "tonnes_y": 43905797,
+   "unbeaconed": false,
+   "value_cr_y": 334023896394
+  },
+  {
+   "beacons_supporting": [
+    "BCN-000-BR",
+    "BCN-004-BR"
+   ],
+   "edge": [
+    0,
+    4
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "lalande_hellas",
+    "sol_authority"
+   ],
+   "klass": "trunk",
+   "ly": 8.31,
+   "names": [
+    "Sol (Солнце)",
+    "Lalande 21185"
+   ],
+   "tonnes_y": 113199491,
+   "unbeaconed": false,
+   "value_cr_y": 668806295434
+  },
+  {
+   "beacons_supporting": [
+    "BCN-000-BR",
+    "BCN-008-BR"
+   ],
+   "edge": [
+    0,
+    8
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "sol_authority",
+    "tau_ceti_cognium"
+   ],
+   "klass": "trunk",
+   "ly": 11.91,
+   "names": [
+    "Sol (Солнце)",
+    "Tau Ceti"
+   ],
+   "tonnes_y": 117282971,
+   "unbeaconed": false,
+   "value_cr_y": 733768533078
+  },
+  {
+   "beacons_supporting": [
+    "BCN-000-BR",
+    "BCN-009-BR"
+   ],
+   "edge": [
+    0,
+    9
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "eps_eri_harmony",
+    "sol_authority"
+   ],
+   "klass": "trunk",
+   "ly": 10.49,
+   "names": [
+    "Sol (Солнце)",
+    "Epsilon Eridani"
+   ],
+   "tonnes_y": 79493438,
+   "unbeaconed": false,
+   "value_cr_y": 1064131454278
+  },
+  {
+   "beacons_supporting": [
+    "BCN-000-BR",
+    "BCN-010-BR"
+   ],
+   "edge": [
+    0,
+    10
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj581_europa",
+    "sol_authority"
+   ],
+   "klass": "trunk",
+   "ly": 20.27,
+   "names": [
+    "Sol (Солнце)",
+    "Gliese 581"
+   ],
+   "tonnes_y": 24912423,
+   "unbeaconed": false,
+   "value_cr_y": 277991303480
+  },
+  {
+   "beacons_supporting": [
+    "BCN-000-BR",
+    "BCN-012-BR"
+   ],
+   "edge": [
+    0,
+    12
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj832_tianhe",
+    "sol_authority"
+   ],
+   "klass": "trunk",
+   "ly": 16.16,
+   "names": [
+    "Sol (Солнце)",
+    "Gliese 832"
+   ],
+   "tonnes_y": 31515692,
+   "unbeaconed": false,
+   "value_cr_y": 579498865332
+  },
+  {
+   "beacons_supporting": [
+    "BCN-000-BR",
+    "BCN-013-BR"
+   ],
+   "edge": [
+    0,
+    13
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj876_next",
+    "sol_authority"
+   ],
+   "klass": "trunk",
+   "ly": 15.29,
+   "names": [
+    "Sol (Солнце)",
+    "Gliese 876"
+   ],
+   "tonnes_y": 987029,
+   "unbeaconed": false,
+   "value_cr_y": 5053637339
+  },
+  {
+   "beacons_supporting": [
+    "BCN-000-BR",
+    "BCN-014-BR"
+   ],
+   "edge": [
+    0,
+    14
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "hd20794_hellas2",
+    "sol_authority"
+   ],
+   "klass": "trunk",
+   "ly": 19.71,
+   "names": [
+    "Sol (Солнце)",
+    "HD 20794 (82 G. Eridani)"
+   ],
+   "tonnes_y": 57634011,
+   "unbeaconed": false,
+   "value_cr_y": 999994236764
+  },
+  {
+   "beacons_supporting": [
+    "BCN-000-BR",
+    "BCN-022-BR"
+   ],
+   "edge": [
+    0,
+    22
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "delta_pav_karma",
+    "sol_authority"
+   ],
+   "klass": "trunk",
+   "ly": 19.92,
+   "names": [
+    "Sol (Солнце)",
+    "Delta Pavonis"
+   ],
+   "tonnes_y": 6391404,
+   "unbeaconed": false,
+   "value_cr_y": 106503863634
+  },
+  {
+   "beacons_supporting": [
+    "BCN-000-BR",
+    "BCN-025-BR"
+   ],
+   "edge": [
+    0,
+    25
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "sol_authority"
+   ],
+   "klass": "trunk",
+   "ly": 30.8,
+   "names": [
+    "Sol (Солнце)",
+    "Gliese 357"
+   ],
+   "tonnes_y": 7221126,
+   "unbeaconed": false,
+   "value_cr_y": 117693367790
+  },
+  {
+   "beacons_supporting": [
+    "BCN-000-BR",
+    "BCN-031-BR"
+   ],
+   "edge": [
+    0,
+    31
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "cyg61_kern",
+    "sol_authority"
+   ],
+   "klass": "trunk",
+   "ly": 11.37,
+   "names": [
+    "Sol (Солнце)",
+    "61 Cygni"
+   ],
+   "tonnes_y": 52672446,
+   "unbeaconed": false,
+   "value_cr_y": 91516423822
+  },
+  {
+   "beacons_supporting": [
+    "BCN-000-BR"
+   ],
+   "edge": [
+    0,
+    60
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "proxima_outpost",
+    "sol_authority"
+   ],
+   "klass": "trunk",
+   "ly": 4.23,
+   "names": [
+    "Sol (Солнце)",
+    "Proxima Centauri"
+   ],
+   "tonnes_y": 48980634,
+   "unbeaconed": false,
+   "value_cr_y": 412521124108
+  },
+  {
+   "beacons_supporting": [
+    "BCN-003-BR",
+    "BCN-004-BR"
+   ],
+   "edge": [
+    3,
+    4
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "lalande_hellas",
+    "wolf359_citadel"
+   ],
+   "klass": "trunk",
+   "ly": 4.06,
+   "names": [
+    "Wolf 359",
+    "Lalande 21185"
+   ],
+   "tonnes_y": 42505398,
+   "unbeaconed": false,
+   "value_cr_y": 46263357880
+  },
+  {
+   "beacons_supporting": [
+    "BCN-003-BR",
+    "BCN-009-BR"
+   ],
+   "edge": [
+    3,
+    9
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "eps_eri_harmony",
+    "wolf359_citadel"
+   ],
+   "klass": "trunk",
+   "ly": 15.21,
+   "names": [
+    "Wolf 359",
+    "Epsilon Eridani"
+   ],
+   "tonnes_y": 19779847,
+   "unbeaconed": false,
+   "value_cr_y": 35187665112
+  },
+  {
+   "beacons_supporting": [
+    "BCN-003-BR",
+    "BCN-010-BR"
+   ],
+   "edge": [
+    3,
+    10
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj581_europa",
+    "wolf359_citadel"
+   ],
+   "klass": "trunk",
+   "ly": 18.68,
+   "names": [
+    "Wolf 359",
+    "Gliese 581"
+   ],
+   "tonnes_y": 19296725,
+   "unbeaconed": false,
+   "value_cr_y": 21916255452
+  },
+  {
+   "beacons_supporting": [
+    "BCN-003-BR",
+    "BCN-013-BR"
+   ],
+   "edge": [
+    3,
+    13
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj876_next",
+    "wolf359_citadel"
+   ],
+   "klass": "feeder",
+   "ly": 23.05,
+   "names": [
+    "Wolf 359",
+    "Gliese 876"
+   ],
+   "tonnes_y": 45644,
+   "unbeaconed": false,
+   "value_cr_y": 231873326
+  },
+  {
+   "beacons_supporting": [
+    "BCN-003-BR",
+    "BCN-025-BR"
+   ],
+   "edge": [
+    3,
+    25
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "wolf359_citadel"
+   ],
+   "klass": "secondary",
+   "ly": 24.8,
+   "names": [
+    "Wolf 359",
+    "Gliese 357"
+   ],
+   "tonnes_y": 2442019,
+   "unbeaconed": false,
+   "value_cr_y": 2959903118
+  },
+  {
+   "beacons_supporting": [
+    "BCN-003-BR",
+    "BCN-031-BR"
+   ],
+   "edge": [
+    3,
+    31
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "cyg61_kern",
+    "wolf359_citadel"
+   ],
+   "klass": "feeder",
+   "ly": 17.27,
+   "names": [
+    "Wolf 359",
+    "61 Cygni"
+   ],
+   "tonnes_y": 277092,
+   "unbeaconed": false,
+   "value_cr_y": 249383110
+  },
+  {
+   "beacons_supporting": [
+    "BCN-003-BR"
+   ],
+   "edge": [
+    3,
+    60
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "proxima_outpost",
+    "wolf359_citadel"
+   ],
+   "klass": "trunk",
+   "ly": 8.24,
+   "names": [
+    "Wolf 359",
+    "Proxima Centauri"
+   ],
+   "tonnes_y": 8784636,
+   "unbeaconed": false,
+   "value_cr_y": 8938535448
+  },
+  {
+   "beacons_supporting": [
+    "BCN-004-BR",
+    "BCN-009-BR"
+   ],
+   "edge": [
+    4,
+    9
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "eps_eri_harmony",
+    "lalande_hellas"
+   ],
+   "klass": "trunk",
+   "ly": 15.79,
+   "names": [
+    "Lalande 21185",
+    "Epsilon Eridani"
+   ],
+   "tonnes_y": 12216054,
+   "unbeaconed": false,
+   "value_cr_y": 23139048279
+  },
+  {
+   "beacons_supporting": [
+    "BCN-004-BR",
+    "BCN-010-BR"
+   ],
+   "edge": [
+    4,
+    10
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj581_europa",
+    "lalande_hellas"
+   ],
+   "klass": "secondary",
+   "ly": 19.7,
+   "names": [
+    "Lalande 21185",
+    "Gliese 581"
+   ],
+   "tonnes_y": 13111,
+   "unbeaconed": false,
+   "value_cr_y": 1179978839
+  },
+  {
+   "beacons_supporting": [
+    "BCN-004-BR",
+    "BCN-013-BR"
+   ],
+   "edge": [
+    4,
+    13
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj876_next",
+    "lalande_hellas"
+   ],
+   "klass": "feeder",
+   "ly": 23.21,
+   "names": [
+    "Lalande 21185",
+    "Gliese 876"
+   ],
+   "tonnes_y": 5136,
+   "unbeaconed": false,
+   "value_cr_y": 26093193
+  },
+  {
+   "beacons_supporting": [
+    "BCN-004-BR"
+   ],
+   "edge": [
+    4,
+    60
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "lalande_hellas",
+    "proxima_outpost"
+   ],
+   "klass": "trunk",
+   "ly": 10.36,
+   "names": [
+    "Lalande 21185",
+    "Proxima Centauri"
+   ],
+   "tonnes_y": 10410304,
+   "unbeaconed": false,
+   "value_cr_y": 9369273602
+  },
+  {
+   "beacons_supporting": [
+    "BCN-008-BR",
+    "BCN-009-BR"
+   ],
+   "edge": [
+    8,
+    9
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "eps_eri_harmony",
+    "tau_ceti_cognium"
+   ],
+   "klass": "trunk",
+   "ly": 5.46,
+   "names": [
+    "Tau Ceti",
+    "Epsilon Eridani"
+   ],
+   "tonnes_y": 474114033,
+   "unbeaconed": false,
+   "value_cr_y": 306864488082
+  },
+  {
+   "beacons_supporting": [
+    "BCN-008-BR",
+    "BCN-010-BR"
+   ],
+   "edge": [
+    8,
+    10
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj581_europa",
+    "tau_ceti_cognium"
+   ],
+   "klass": "secondary",
+   "ly": 30.91,
+   "names": [
+    "Tau Ceti",
+    "Gliese 581"
+   ],
+   "tonnes_y": 10402,
+   "unbeaconed": false,
+   "value_cr_y": 936168171
+  },
+  {
+   "beacons_supporting": [
+    "BCN-008-BR",
+    "BCN-013-BR"
+   ],
+   "edge": [
+    8,
+    13
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj876_next",
+    "tau_ceti_cognium"
+   ],
+   "klass": "trunk",
+   "ly": 10.08,
+   "names": [
+    "Tau Ceti",
+    "Gliese 876"
+   ],
+   "tonnes_y": 46490878,
+   "unbeaconed": false,
+   "value_cr_y": 28320484508
+  },
+  {
+   "beacons_supporting": [
+    "BCN-009-BR",
+    "BCN-010-BR"
+   ],
+   "edge": [
+    9,
+    10
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "eps_eri_harmony",
+    "gj581_europa"
+   ],
+   "klass": "trunk",
+   "ly": 30.44,
+   "names": [
+    "Epsilon Eridani",
+    "Gliese 581"
+   ],
+   "tonnes_y": 87699,
+   "unbeaconed": false,
+   "value_cr_y": 7296374386
+  },
+  {
+   "beacons_supporting": [
+    "BCN-009-BR",
+    "BCN-012-BR"
+   ],
+   "edge": [
+    9,
+    12
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "eps_eri_harmony",
+    "gj832_tianhe"
+   ],
+   "klass": "secondary",
+   "ly": 18.12,
+   "names": [
+    "Epsilon Eridani",
+    "Gliese 832"
+   ],
+   "tonnes_y": 29498,
+   "unbeaconed": false,
+   "value_cr_y": 2654825362
+  },
+  {
+   "beacons_supporting": [
+    "BCN-009-BR",
+    "BCN-013-BR"
+   ],
+   "edge": [
+    9,
+    13
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "eps_eri_harmony",
+    "gj876_next"
+   ],
+   "klass": "feeder",
+   "ly": 15.02,
+   "names": [
+    "Epsilon Eridani",
+    "Gliese 876"
+   ],
+   "tonnes_y": 3,
+   "unbeaconed": false,
+   "value_cr_y": 226296
+  },
+  {
+   "beacons_supporting": [
+    "BCN-009-BR",
+    "BCN-014-BR"
+   ],
+   "edge": [
+    9,
+    14
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "eps_eri_harmony",
+    "hd20794_hellas2"
+   ],
+   "klass": "trunk",
+   "ly": 12.44,
+   "names": [
+    "Epsilon Eridani",
+    "HD 20794 (82 G. Eridani)"
+   ],
+   "tonnes_y": 2791067,
+   "unbeaconed": false,
+   "value_cr_y": 7255247703
+  },
+  {
+   "beacons_supporting": [
+    "BCN-009-BR",
+    "BCN-022-BR"
+   ],
+   "edge": [
+    9,
+    22
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "delta_pav_karma",
+    "eps_eri_harmony"
+   ],
+   "klass": "feeder",
+   "ly": 22.45,
+   "names": [
+    "Epsilon Eridani",
+    "Delta Pavonis"
+   ],
+   "tonnes_y": 3245,
+   "unbeaconed": false,
+   "value_cr_y": 292044420
+  },
+  {
+   "beacons_supporting": [
+    "BCN-009-BR",
+    "BCN-031-BR"
+   ],
+   "edge": [
+    9,
+    31
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "cyg61_kern",
+    "eps_eri_harmony"
+   ],
+   "klass": "secondary",
+   "ly": 16.87,
+   "names": [
+    "Epsilon Eridani",
+    "61 Cygni"
+   ],
+   "tonnes_y": 1586132,
+   "unbeaconed": false,
+   "value_cr_y": 2007647100
+  },
+  {
+   "beacons_supporting": [
+    "BCN-009-BR"
+   ],
+   "edge": [
+    9,
+    60
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "eps_eri_harmony",
+    "proxima_outpost"
+   ],
+   "klass": "trunk",
+   "ly": 12.39,
+   "names": [
+    "Epsilon Eridani",
+    "Proxima Centauri"
+   ],
+   "tonnes_y": 17954047,
+   "unbeaconed": false,
+   "value_cr_y": 24171582631
+  },
+  {
+   "beacons_supporting": [
+    "BCN-010-BR",
+    "BCN-012-BR"
+   ],
+   "edge": [
+    10,
+    12
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj581_europa",
+    "gj832_tianhe"
+   ],
+   "klass": "secondary",
+   "ly": 25.13,
+   "names": [
+    "Gliese 581",
+    "Gliese 832"
+   ],
+   "tonnes_y": 3073320,
+   "unbeaconed": false,
+   "value_cr_y": 4691841169
+  },
+  {
+   "beacons_supporting": [
+    "BCN-010-BR",
+    "BCN-013-BR"
+   ],
+   "edge": [
+    10,
+    13
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj581_europa",
+    "gj876_next"
+   ],
+   "klass": "feeder",
+   "ly": 29.35,
+   "names": [
+    "Gliese 581",
+    "Gliese 876"
+   ],
+   "tonnes_y": 10539,
+   "unbeaconed": false,
+   "value_cr_y": 53643777
+  },
+  {
+   "beacons_supporting": [
+    "BCN-010-BR",
+    "BCN-022-BR"
+   ],
+   "edge": [
+    10,
+    22
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "delta_pav_karma",
+    "gj581_europa"
+   ],
+   "klass": "feeder",
+   "ly": 24.7,
+   "names": [
+    "Gliese 581",
+    "Delta Pavonis"
+   ],
+   "tonnes_y": 1622,
+   "unbeaconed": false,
+   "value_cr_y": 146022210
+  },
+  {
+   "beacons_supporting": [
+    "BCN-010-BR",
+    "BCN-031-BR"
+   ],
+   "edge": [
+    10,
+    31
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "cyg61_kern",
+    "gj581_europa"
+   ],
+   "klass": "feeder",
+   "ly": 23.65,
+   "names": [
+    "Gliese 581",
+    "61 Cygni"
+   ],
+   "tonnes_y": 1138,
+   "unbeaconed": false,
+   "value_cr_y": 102392812
+  },
+  {
+   "beacons_supporting": [
+    "BCN-010-BR",
+    "BCN-053-BR"
+   ],
+   "edge": [
+    10,
+    53
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj581_europa"
+   ],
+   "klass": "secondary",
+   "ly": 15.09,
+   "names": [
+    "Gliese 581",
+    "Gliese 674"
+   ],
+   "tonnes_y": 8680,
+   "unbeaconed": false,
+   "value_cr_y": 781215480
+  },
+  {
+   "beacons_supporting": [
+    "BCN-010-BR"
+   ],
+   "edge": [
+    10,
+    60
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj581_europa",
+    "proxima_outpost"
+   ],
+   "klass": "secondary",
+   "ly": 18.23,
+   "names": [
+    "Gliese 581",
+    "Proxima Centauri"
+   ],
+   "tonnes_y": 23974,
+   "unbeaconed": false,
+   "value_cr_y": 2157639987
+  },
+  {
+   "beacons_supporting": [
+    "BCN-012-BR",
+    "BCN-013-BR"
+   ],
+   "edge": [
+    12,
+    13
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj832_tianhe",
+    "gj876_next"
+   ],
+   "klass": "secondary",
+   "ly": 10.38,
+   "names": [
+    "Gliese 832",
+    "Gliese 876"
+   ],
+   "tonnes_y": 104476,
+   "unbeaconed": false,
+   "value_cr_y": 527417320
+  },
+  {
+   "beacons_supporting": [
+    "BCN-012-BR",
+    "BCN-014-BR"
+   ],
+   "edge": [
+    12,
+    14
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj832_tianhe",
+    "hd20794_hellas2"
+   ],
+   "klass": "feeder",
+   "ly": 17.41,
+   "names": [
+    "Gliese 832",
+    "HD 20794 (82 G. Eridani)"
+   ],
+   "tonnes_y": 69121,
+   "unbeaconed": false,
+   "value_cr_y": 351134543
+  },
+  {
+   "beacons_supporting": [
+    "BCN-012-BR",
+    "BCN-022-BR"
+   ],
+   "edge": [
+    12,
+    22
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "delta_pav_karma",
+    "gj832_tianhe"
+   ],
+   "klass": "trunk",
+   "ly": 7.38,
+   "names": [
+    "Gliese 832",
+    "Delta Pavonis"
+   ],
+   "tonnes_y": 7436985,
+   "unbeaconed": false,
+   "value_cr_y": 7881160337
+  },
+  {
+   "beacons_supporting": [
+    "BCN-013-BR",
+    "BCN-022-BR"
+   ],
+   "edge": [
+    13,
+    22
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "delta_pav_karma",
+    "gj876_next"
+   ],
+   "klass": "feeder",
+   "ly": 17.72,
+   "names": [
+    "Gliese 876",
+    "Delta Pavonis"
+   ],
+   "tonnes_y": 244422,
+   "unbeaconed": false,
+   "value_cr_y": 319123899
+  },
+  {
+   "beacons_supporting": [
+    "BCN-013-BR",
+    "BCN-031-BR"
+   ],
+   "edge": [
+    13,
+    31
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "cyg61_kern",
+    "gj876_next"
+   ],
+   "klass": "trunk",
+   "ly": 13.48,
+   "names": [
+    "Gliese 876",
+    "61 Cygni"
+   ],
+   "tonnes_y": 23605853,
+   "unbeaconed": false,
+   "value_cr_y": 7917319385
+  },
+  {
+   "beacons_supporting": [
+    "BCN-013-BR"
+   ],
+   "edge": [
+    13,
+    60
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "gj876_next",
+    "proxima_outpost"
+   ],
+   "klass": "feeder",
+   "ly": 16.04,
+   "names": [
+    "Gliese 876",
+    "Proxima Centauri"
+   ],
+   "tonnes_y": 20572,
+   "unbeaconed": false,
+   "value_cr_y": 104507058
+  },
+  {
+   "beacons_supporting": [
+    "BCN-014-BR",
+    "BCN-015-BR"
+   ],
+   "edge": [
+    14,
+    15
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "hd20794_hellas2",
+    "hd40307_maland"
+   ],
+   "klass": "trunk",
+   "ly": 26.83,
+   "names": [
+    "HD 20794 (82 G. Eridani)",
+    "HD 40307"
+   ],
+   "tonnes_y": 57185560,
+   "unbeaconed": false,
+   "value_cr_y": 399708200046
+  },
+  {
+   "beacons_supporting": [
+    "BCN-014-BR",
+    "BCN-022-BR"
+   ],
+   "edge": [
+    14,
+    22
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "delta_pav_karma",
+    "hd20794_hellas2"
+   ],
+   "klass": "secondary",
+   "ly": 19.12,
+   "names": [
+    "HD 20794 (82 G. Eridani)",
+    "Delta Pavonis"
+   ],
+   "tonnes_y": 2368930,
+   "unbeaconed": false,
+   "value_cr_y": 2182680438
+  },
+  {
+   "beacons_supporting": [
+    "BCN-014-BR"
+   ],
+   "edge": [
+    14,
+    60
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "hd20794_hellas2",
+    "proxima_outpost"
+   ],
+   "klass": "secondary",
+   "ly": 18.97,
+   "names": [
+    "HD 20794 (82 G. Eridani)",
+    "Proxima Centauri"
+   ],
+   "tonnes_y": 14649,
+   "unbeaconed": false,
+   "value_cr_y": 1318414961
+  },
+  {
+   "beacons_supporting": [
+    "BCN-015-BR",
+    "BCN-057-BR"
+   ],
+   "edge": [
+    15,
+    57
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "hd40307_maland"
+   ],
+   "klass": "secondary",
+   "ly": 24.96,
+   "names": [
+    "HD 40307",
+    "HD 10360"
+   ],
+   "tonnes_y": 1283530,
+   "unbeaconed": false,
+   "value_cr_y": 1928580579
+  },
+  {
+   "beacons_supporting": [
+    "BCN-016-BR",
+    "BCN-025-BR"
+   ],
+   "edge": [
+    16,
+    25
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "hd69830_verde"
+   ],
+   "klass": "trunk",
+   "ly": 16.11,
+   "names": [
+    "HD 69830",
+    "Gliese 357"
+   ],
+   "tonnes_y": 10067741,
+   "unbeaconed": false,
+   "value_cr_y": 121003548025
+  },
+  {
+   "beacons_supporting": [
+    "BCN-022-BR",
+    "BCN-057-BR"
+   ],
+   "edge": [
+    22,
+    57
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "delta_pav_karma"
+   ],
+   "klass": "secondary",
+   "ly": 15.69,
+   "names": [
+    "Delta Pavonis",
+    "HD 10360"
+   ],
+   "tonnes_y": 1274850,
+   "unbeaconed": false,
+   "value_cr_y": 1147365099
+  },
+  {
+   "beacons_supporting": [
+    "BCN-022-BR"
+   ],
+   "edge": [
+    22,
+    60
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "delta_pav_karma",
+    "proxima_outpost"
+   ],
+   "klass": "secondary",
+   "ly": 16.58,
+   "names": [
+    "Delta Pavonis",
+    "Proxima Centauri"
+   ],
+   "tonnes_y": 718000,
+   "unbeaconed": false,
+   "value_cr_y": 767884196
+  },
+  {
+   "beacons_supporting": [
+    "BCN-025-BR",
+    "BCN-045-BR"
+   ],
+   "edge": [
+    25,
+    45
+   ],
+   "expedition": true,
+   "guarded_by": [
+    "leo83_zion"
+   ],
+   "klass": "feeder",
+   "ly": 37.92,
+   "names": [
+    "Gliese 357",
+    "83 Leonis"
+   ],
+   "tonnes_y": 1525,
+   "unbeaconed": true,
+   "value_cr_y": 17131655
+  },
+  {
+   "beacons_supporting": [
+    "BCN-025-BR"
+   ],
+   "edge": [
+    25,
+    60
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "proxima_outpost"
+   ],
+   "klass": "feeder",
+   "ly": 29.14,
+   "names": [
+    "Gliese 357",
+    "Proxima Centauri"
+   ],
+   "tonnes_y": 405505,
+   "unbeaconed": false,
+   "value_cr_y": 365002832
+  },
+  {
+   "beacons_supporting": [
+    "BCN-031-BR"
+   ],
+   "edge": [
+    31,
+    60
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "cyg61_kern",
+    "proxima_outpost"
+   ],
+   "klass": "secondary",
+   "ly": 14.36,
+   "names": [
+    "61 Cygni",
+    "Proxima Centauri"
+   ],
+   "tonnes_y": 7116974,
+   "unbeaconed": false,
+   "value_cr_y": 1589144574
+  },
+  {
+   "beacons_supporting": [
+    "BCN-037-BR",
+    "BCN-045-BR"
+   ],
+   "edge": [
+    37,
+    45
+   ],
+   "expedition": false,
+   "guarded_by": [
+    "hd114783_hellas3",
+    "leo83_zion"
+   ],
+   "klass": "feeder",
+   "ly": 30.41,
+   "names": [
+    "HD 114783",
+    "83 Leonis"
+   ],
+   "tonnes_y": 1056,
+   "unbeaconed": false,
+   "value_cr_y": 9991528
+  },
+  {
+   "beacons_supporting": [
+    "BCN-053-BR",
+    "BCN-057-BR"
+   ],
+   "edge": [
+    53,
+    57
+   ],
+   "expedition": false,
+   "guarded_by": [],
+   "klass": "secondary",
+   "ly": 23.82,
+   "names": [
+    "Gliese 674",
+    "HD 10360"
+   ],
+   "tonnes_y": 8680,
+   "unbeaconed": false,
+   "value_cr_y": 781215480
+  }
+ ],
+ "status": "PROPOSAL"
+}

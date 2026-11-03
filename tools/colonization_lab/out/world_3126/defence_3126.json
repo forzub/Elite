@@ -1,0 +1,1614 @@
+{
+ "doctrine": {
+  "principles": [
+   "почти нет укрытий: кто видит первым, тот выбирает бой; сенсоры и пикеты важнее брони",
+   "время до перехвата = f(ускорение, дальность обнаружения, дальность оружия, запас топлива), а не максимальная скорость",
+   "хабы и планеты движутся: оборона держит точки, а не линии; маршруты — коридоры, а не рельсы",
+   "логистика определяет выносливость: тендер и депо — первые цели, уничтожение снабжения важнее уничтожения линкора",
+   "выход из прыжка имеет ошибку: засада у точки выхода работает только у маяка, без маяка противник появляется в эллипсе",
+   "маяк — военный объект: даёт точную навигацию и картину трафика; его захват или выключение меняет театр",
+   "противоастероидная оборона — та же техника (буксиры, перехватчики, сенсоры): флот существует и в мирное время"
+  ],
+  "roles": {
+   "escort": "эскортный фрегат: конвои поездов, точечная оборона, выносливость",
+   "impact_defence": "буксир противоастероидной обороны: обнаружить, перехватить, увести или разбить опасный камень",
+   "interceptor": "перехватчик: быстрый ответ внутри системы, короткая автономность",
+   "military": "линейный ракетный корабль: сдерживание и война; разведчик/РЭБ-пикет; тендер флота",
+   "patrol": "патрульный катер: таможня, полиция, SAR, охрана маяков (единая береговая служба)"
+  }
+ },
+ "polities": {
+  "cyg61_kern": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 6521,
+   "bases": {
+    "military": 3,
+    "patrol": 14
+   },
+   "budget_cr_y": 45785394820,
+   "components": {
+    "impact_defence": 0.001,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.002,
+    "route_protection": 0.001,
+    "strategic_assets": 0.0016,
+    "threat": 0.008
+   },
+   "forces": {
+    "escort_frigate": 4.0,
+    "fleet_tender": 6.4,
+    "impact_defence_tug": 11.7,
+    "interceptor": 52.1,
+    "line_combatant": 47.6,
+    "patrol_cutter": 98.6,
+    "recon_picket": 10.0
+   },
+   "hostile": [
+    {
+     "grievance": 50,
+     "other": "hd114783_hellas3",
+     "same_system": false
+    },
+    {
+     "grievance": 40,
+     "other": "leo83_zion",
+     "same_system": false
+    }
+   ],
+   "personnel": 33059,
+   "risky_train_trips": 0.0,
+   "roles": [
+    "infrastructure_defence",
+    "beacon_security",
+    "convoy_protection"
+   ],
+   "share_of_output": 0.0176,
+   "structure": {
+    "bases_infrastructure": 6409955275,
+    "beacon_security": 2747123689,
+    "impact_defence_programme": 2747123689,
+    "intelligence": 3204977637,
+    "readiness_reserve_from_ship_budget": 9973198641,
+    "ships_procurement_operations_crews": 13735618446,
+    "shore_personnel": 10072786861,
+    "stockpiles_munitions_fuel": 4120685534,
+    "training": 2747123689
+   },
+   "task_ships": {
+    "escort_frigate": 4.0,
+    "impact_defence_tug": 11.7,
+    "interceptor": 52.1,
+    "patrol_cutter": 98.6,
+    "recon_picket": 10
+   },
+   "under_resourced": false,
+   "why": "кредитор половины ядра и владелец чужих рудников: охрана концессий и маяков, частные силы компании"
+  },
+  "delta_pav_freekarma": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 7013,
+   "bases": {
+    "military": 17,
+    "patrol": 18
+   },
+   "budget_cr_y": 121855449296,
+   "components": {
+    "impact_defence": 0.0013,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.004,
+    "route_protection": 0.0001,
+    "strategic_assets": 0.0044,
+    "threat": 0.0192
+   },
+   "forces": {
+    "escort_frigate": 0.0,
+    "fleet_tender": 45.2,
+    "impact_defence_tug": 16.8,
+    "interceptor": 71.2,
+    "line_combatant": 361.3,
+    "patrol_cutter": 125.8,
+    "recon_picket": 6.0
+   },
+   "hostile": [
+    {
+     "grievance": 80,
+     "other": "delta_pav_karma",
+     "same_system": true
+    }
+   ],
+   "personnel": 171850,
+   "risky_train_trips": 0.0,
+   "roles": [
+    "deterrence",
+    "beacon_security",
+    "SAR"
+   ],
+   "share_of_output": 0.033,
+   "structure": {
+    "bases_infrastructure": 17059762901,
+    "beacon_security": 7311326958,
+    "impact_defence_programme": 7311326958,
+    "intelligence": 8529881451,
+    "readiness_reserve_from_ship_budget": 10825130691,
+    "ships_procurement_operations_crews": 36556634789,
+    "shore_personnel": 26808198845,
+    "stockpiles_munitions_fuel": 10966990437,
+    "training": 7311326958
+   },
+   "task_ships": {
+    "escort_frigate": 0.0,
+    "impact_defence_tug": 16.8,
+    "interceptor": 71.2,
+    "patrol_cutter": 125.8,
+    "recon_picket": 6
+   },
+   "under_resourced": false,
+   "why": "республика изгнанников под угрозой Кармы; маяк как гарантия, что о них узнают"
+  },
+  "delta_pav_karma": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 0,
+   "bases": {
+    "military": 41,
+    "patrol": 61
+   },
+   "budget_cr_y": 306102847432,
+   "components": {
+    "impact_defence": 0.0013,
+    "internal": 0.0015,
+    "law_customs_sar": 0.004,
+    "regime": 0.009,
+    "route_protection": 0.0,
+    "strategic_assets": 0.0,
+    "threat": 0.0192
+   },
+   "forces": {
+    "escort_frigate": 0.0,
+    "fleet_tender": 113.0,
+    "impact_defence_tug": 58.8,
+    "interceptor": 228.8,
+    "line_combatant": 903.7,
+    "patrol_cutter": 444.2,
+    "recon_picket": 4.0
+   },
+   "hostile": [
+    {
+     "grievance": 80,
+     "other": "delta_pav_freekarma",
+     "same_system": true
+    }
+   ],
+   "personnel": 435777,
+   "risky_train_trips": 0.0,
+   "roles": [
+    "internal_control",
+    "deterrence",
+    "impact_defence"
+   ],
+   "share_of_output": 0.035,
+   "structure": {
+    "bases_infrastructure": 42854398640,
+    "beacon_security": 18366170846,
+    "impact_defence_programme": 18366170846,
+    "intelligence": 21427199320,
+    "readiness_reserve_from_ship_budget": 27078776759,
+    "ships_procurement_operations_crews": 91830854230,
+    "shore_personnel": 67342626435,
+    "stockpiles_munitions_fuel": 27549256269,
+    "training": 18366170846
+   },
+   "task_ships": {
+    "escort_frigate": 0.0,
+    "impact_defence_tug": 58.8,
+    "interceptor": 228.8,
+    "patrol_cutter": 444.2,
+    "recon_picket": 4
+   },
+   "under_resourced": false,
+   "why": "отказ от маяка и сети: режим держится на внутреннем контроле; холодная война с изгнанниками Свободной Кармы"
+  },
+  "eps_eri_harmony": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 50085,
+   "bases": {
+    "military": 73,
+    "patrol": 116
+   },
+   "budget_cr_y": 1042876288743,
+   "components": {
+    "impact_defence": 0.004,
+    "internal": 0.0015,
+    "law_customs_sar": 0.004,
+    "regime": 0.002,
+    "route_protection": 0.0012,
+    "strategic_assets": 0.0044,
+    "threat": 0.0168
+   },
+   "forces": {
+    "escort_frigate": 517.7,
+    "fleet_tender": 200.4,
+    "impact_defence_tug": 115.9,
+    "interceptor": 420.3,
+    "line_combatant": 1085.2,
+    "patrol_cutter": 845.7,
+    "recon_picket": 6.0
+   },
+   "hostile": [
+    {
+     "grievance": 70,
+     "other": "eps_eri_strife",
+     "same_system": true
+    }
+   ],
+   "personnel": 667152,
+   "risky_train_trips": 7366.8,
+   "roles": [
+    "piracy_suppression",
+    "convoy_protection",
+    "impact_defence",
+    "alliance_obligation"
+   ],
+   "share_of_output": 0.0339,
+   "structure": {
+    "bases_infrastructure": 146002680424,
+    "beacon_security": 62572577325,
+    "impact_defence_programme": 62572577325,
+    "intelligence": 73001340212,
+    "readiness_reserve_from_ship_budget": 226856291477,
+    "ships_procurement_operations_crews": 312862886623,
+    "shore_personnel": 229432783524,
+    "stockpiles_munitions_fuel": 93858865987,
+    "training": 62572577325
+   },
+   "task_ships": {
+    "escort_frigate": 517.7,
+    "impact_defence_tug": 115.9,
+    "interceptor": 420.3,
+    "patrol_cutter": 845.7,
+    "recon_picket": 6
+   },
+   "under_resourced": false,
+   "why": "пиратский пояс у себя дома и 550 лет тлеющей войны с Варпстанисом; конвои пояса, противоастероидная оборона густого пояса, обязательство перед дальней провинцией"
+  },
+  "eps_eri_strife": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 12837,
+   "bases": {
+    "military": 22,
+    "patrol": 31
+   },
+   "budget_cr_y": 235272147283,
+   "components": {
+    "impact_defence": 0.004,
+    "internal": 0.0015,
+    "law_customs_sar": 0.004,
+    "regime": 0.004,
+    "route_protection": 0.0005,
+    "strategic_assets": 0.0,
+    "threat": 0.0168
+   },
+   "forces": {
+    "escort_frigate": 234.4,
+    "fleet_tender": 59.2,
+    "impact_defence_tug": 34.6,
+    "interceptor": 115.7,
+    "line_combatant": 239.2,
+    "patrol_cutter": 214.0,
+    "recon_picket": 4.0
+   },
+   "hostile": [
+    {
+     "grievance": 70,
+     "other": "eps_eri_harmony",
+     "same_system": true
+    }
+   ],
+   "personnel": 178634,
+   "risky_train_trips": 3361.5,
+   "roles": [
+    "clan_defence",
+    "raiding"
+   ],
+   "share_of_output": 0.0307,
+   "structure": {
+    "bases_infrastructure": 32938100620,
+    "beacon_security": 14116328837,
+    "impact_defence_programme": 14116328837,
+    "intelligence": 16469050310,
+    "readiness_reserve_from_ship_budget": 49820096495,
+    "ships_procurement_operations_crews": 70581644185,
+    "shore_personnel": 51759872402,
+    "stockpiles_munitions_fuel": 21174493255,
+    "training": 14116328837
+   },
+   "task_ships": {
+    "escort_frigate": 234.4,
+    "impact_defence_tug": 34.6,
+    "interceptor": 115.7,
+    "patrol_cutter": 214.0,
+    "recon_picket": 4
+   },
+   "under_resourced": false,
+   "why": "кланы живут контрактами и пиратством; частные охраны рудников, рейды против Гармонии"
+  },
+  "gj581_europa": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 9529,
+   "bases": {
+    "military": 4,
+    "patrol": 24
+   },
+   "budget_cr_y": 69086003758,
+   "components": {
+    "impact_defence": 0.0011,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.0,
+    "route_protection": 0.0,
+    "strategic_assets": 0.0004,
+    "threat": 0.0084
+   },
+   "forces": {
+    "escort_frigate": 3.4,
+    "fleet_tender": 9.4,
+    "impact_defence_tug": 22.4,
+    "interceptor": 92.1,
+    "line_combatant": 71.7,
+    "patrol_cutter": 170.0,
+    "recon_picket": 6.0
+   },
+   "hostile": [
+    {
+     "grievance": 35,
+     "other": "gj581_freeclans",
+     "same_system": true
+    }
+   ],
+   "personnel": 49797,
+   "risky_train_trips": 48.7,
+   "roles": [
+    "customs",
+    "anti_smuggling",
+    "SAR"
+   ],
+   "share_of_output": 0.0139,
+   "structure": {
+    "bases_infrastructure": 9672040526,
+    "beacon_security": 4145160225,
+    "impact_defence_programme": 4145160225,
+    "intelligence": 4836020263,
+    "readiness_reserve_from_ship_budget": 15040143310,
+    "ships_procurement_operations_crews": 20725801127,
+    "shore_personnel": 15198920827,
+    "stockpiles_munitions_fuel": 6217740338,
+    "training": 4145160225
+   },
+   "task_ships": {
+    "escort_frigate": 3.4,
+    "impact_defence_tug": 22.4,
+    "interceptor": 92.1,
+    "patrol_cutter": 170.0,
+    "recon_picket": 6
+   },
+   "under_resourced": false,
+   "why": "протекторат над кланами Свободного мира и реестр права: таможня, контрабанда, спасение"
+  },
+  "gj581_freeclans": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 7352,
+   "bases": {
+    "military": 4,
+    "patrol": 18
+   },
+   "budget_cr_y": 71181491790,
+   "components": {
+    "impact_defence": 0.0011,
+    "internal": 0.0015,
+    "law_customs_sar": 0.004,
+    "regime": 0.004,
+    "route_protection": 0.0002,
+    "strategic_assets": 0.0,
+    "threat": 0.0084
+   },
+   "forces": {
+    "escort_frigate": 4.6,
+    "fleet_tender": 9.9,
+    "impact_defence_tug": 16.9,
+    "interceptor": 71.7,
+    "line_combatant": 74.5,
+    "patrol_cutter": 123.3,
+    "recon_picket": 4.0
+   },
+   "hostile": [
+    {
+     "grievance": 35,
+     "other": "gj581_europa",
+     "same_system": true
+    }
+   ],
+   "personnel": 46701,
+   "risky_train_trips": 66.0,
+   "roles": [
+    "clan_defence",
+    "smuggling"
+   ],
+   "share_of_output": 0.0191,
+   "structure": {
+    "bases_infrastructure": 9965408851,
+    "beacon_security": 4270889507,
+    "impact_defence_programme": 4270889507,
+    "intelligence": 4982704425,
+    "readiness_reserve_from_ship_budget": 15621181894,
+    "ships_procurement_operations_crews": 21354447537,
+    "shore_personnel": 15659928194,
+    "stockpiles_munitions_fuel": 6406334261,
+    "training": 4270889507
+   },
+   "task_ships": {
+    "escort_frigate": 4.6,
+    "impact_defence_tug": 16.9,
+    "interceptor": 71.7,
+    "patrol_cutter": 123.3,
+    "recon_picket": 4
+   },
+   "under_resourced": false,
+   "why": "кланы без государства: самооборона, контрабанда, частные охраны"
+  },
+  "gj832_gaia_zone": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 2,
+   "bases": {
+    "military": 0,
+    "patrol": 0
+   },
+   "budget_cr_y": 1797,
+   "components": {
+    "impact_defence": 0.001,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.0,
+    "route_protection": 0.004,
+    "strategic_assets": 0.0,
+    "threat": 0.0096
+   },
+   "forces": {
+    "escort_frigate": 0.0,
+    "fleet_tender": 0.0,
+    "impact_defence_tug": 0.0,
+    "interceptor": 0.0,
+    "line_combatant": 0.0,
+    "patrol_cutter": 0.0,
+    "recon_picket": 0.0
+   },
+   "hostile": [
+    {
+     "grievance": 40,
+     "other": "gj832_tianhe",
+     "same_system": true
+    }
+   ],
+   "personnel": 0,
+   "risky_train_trips": 0.0,
+   "roles": [],
+   "share_of_output": 0.001,
+   "structure": {
+    "bases_infrastructure": 252,
+    "beacon_security": 108,
+    "impact_defence_programme": 108,
+    "intelligence": 126,
+    "readiness_reserve_from_ship_budget": 404,
+    "ships_procurement_operations_crews": 539,
+    "shore_personnel": 395,
+    "stockpiles_munitions_fuel": 162,
+    "training": 108
+   },
+   "task_ships": {
+    "escort_frigate": 0.0,
+    "impact_defence_tug": 0.0,
+    "interceptor": 0.0,
+    "patrol_cutter": 0.0,
+    "recon_picket": 0.0
+   },
+   "under_resourced": false,
+   "why": "карантин: обороны нет, охраняет Тяньхэ"
+  },
+  "gj832_tianhe": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 38225,
+   "bases": {
+    "military": 70,
+    "patrol": 90
+   },
+   "budget_cr_y": 517935435094,
+   "components": {
+    "impact_defence": 0.004,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.005,
+    "route_protection": 0.0,
+    "strategic_assets": 0.0004,
+    "threat": 0.0096
+   },
+   "forces": {
+    "escort_frigate": 4.4,
+    "fleet_tender": 192.0,
+    "impact_defence_tug": 91.2,
+    "interceptor": 327.6,
+    "line_combatant": 1531.9,
+    "patrol_cutter": 653.6,
+    "recon_picket": 6.0
+   },
+   "hostile": [
+    {
+     "grievance": 40,
+     "other": "gj832_gaia_zone",
+     "same_system": true
+    }
+   ],
+   "personnel": 731785,
+   "risky_train_trips": 62.5,
+   "roles": [
+    "quarantine",
+    "infrastructure_defence",
+    "deterrence"
+   ],
+   "share_of_output": 0.023,
+   "structure": {
+    "bases_infrastructure": 72510960913,
+    "beacon_security": 31076126106,
+    "impact_defence_programme": 31076126106,
+    "intelligence": 36255480457,
+    "readiness_reserve_from_ship_budget": 45896421984,
+    "ships_procurement_operations_crews": 155380630528,
+    "shore_personnel": 113945795721,
+    "stockpiles_munitions_fuel": 46614189158,
+    "training": 31076126106
+   },
+   "task_ships": {
+    "escort_frigate": 4.4,
+    "impact_defence_tug": 91.2,
+    "interceptor": 327.6,
+    "patrol_cutter": 653.6,
+    "recon_picket": 6
+   },
+   "under_resourced": false,
+   "why": "крупнейшая потребность в летучих, карантин Гайи-Прим и «кордонный флот»; спор двух китайских линий о первенстве"
+  },
+  "gj876_next": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 82,
+   "bases": {
+    "military": 1,
+    "patrol": 1
+   },
+   "budget_cr_y": 20877263,
+   "components": {
+    "impact_defence": 0.001,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.003,
+    "route_protection": 0.004,
+    "strategic_assets": 0.0,
+    "threat": 0.0
+   },
+   "forces": {
+    "escort_frigate": 0.0,
+    "fleet_tender": 0.0,
+    "impact_defence_tug": 1.2,
+    "interceptor": 0.0,
+    "line_combatant": 0.0,
+    "patrol_cutter": 0.0,
+    "recon_picket": 0.0
+   },
+   "hostile": [],
+   "personnel": 3535,
+   "risky_train_trips": 0.0,
+   "roles": [
+    "concession_guards"
+   ],
+   "share_of_output": 0.012,
+   "structure": {
+    "bases_infrastructure": 2922817,
+    "beacon_security": 1252636,
+    "impact_defence_programme": 1252636,
+    "intelligence": 1461408,
+    "readiness_reserve_from_ship_budget": 704608,
+    "ships_procurement_operations_crews": 6263179,
+    "shore_personnel": 4592998,
+    "stockpiles_munitions_fuel": 1878954,
+    "training": 1252636
+   },
+   "task_ships": {
+    "escort_frigate": 0.0,
+    "impact_defence_tug": 7.0,
+    "interceptor": 0.0,
+    "patrol_cutter": 0.1,
+    "recon_picket": 0
+   },
+   "under_resourced": true,
+   "why": "45 тысяч человек на богатейшем сырьём мире; концессии охраняют чужие флоты"
+  },
+  "hd114783_hellas3": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 12,
+   "bases": {
+    "military": 0,
+    "patrol": 0
+   },
+   "budget_cr_y": 1767713,
+   "components": {
+    "impact_defence": 0.001,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.0,
+    "route_protection": 0.0,
+    "strategic_assets": 0.0,
+    "threat": 0.008
+   },
+   "forces": {
+    "escort_frigate": 0.0,
+    "fleet_tender": 0.0,
+    "impact_defence_tug": 0.0,
+    "interceptor": 0.1,
+    "line_combatant": 0.0,
+    "patrol_cutter": 0.0,
+    "recon_picket": 0.0
+   },
+   "hostile": [
+    {
+     "grievance": 50,
+     "other": "cyg61_kern",
+     "same_system": false
+    }
+   ],
+   "personnel": 3,
+   "risky_train_trips": 0.0,
+   "roles": [
+    "SAR"
+   ],
+   "share_of_output": 0.013,
+   "structure": {
+    "bases_infrastructure": 247480,
+    "beacon_security": 106063,
+    "impact_defence_programme": 106063,
+    "intelligence": 123740,
+    "readiness_reserve_from_ship_budget": 59660,
+    "ships_procurement_operations_crews": 530314,
+    "shore_personnel": 388897,
+    "stockpiles_munitions_fuel": 159094,
+    "training": 106063
+   },
+   "task_ships": {
+    "escort_frigate": 0.0,
+    "impact_defence_tug": 7.0,
+    "interceptor": 12.0,
+    "patrol_cutter": 0.0,
+    "recon_picket": 4
+   },
+   "under_resourced": true,
+   "why": "город-государства на скале Одиссея: тяжбы, а не флоты"
+  },
+  "hd20794_hellas2": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 8893,
+   "bases": {
+    "military": 6,
+    "patrol": 22
+   },
+   "budget_cr_y": 105466847991,
+   "components": {
+    "impact_defence": 0.0011,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.001,
+    "route_protection": 0.0011,
+    "strategic_assets": 0.0004,
+    "threat": 0.0132
+   },
+   "forces": {
+    "escort_frigate": 4.0,
+    "fleet_tender": 14.4,
+    "impact_defence_tug": 20.6,
+    "interceptor": 85.7,
+    "line_combatant": 110.9,
+    "patrol_cutter": 156.6,
+    "recon_picket": 6.0
+   },
+   "hostile": [
+    {
+     "grievance": 55,
+     "other": "hd20794_newindia",
+     "same_system": true
+    }
+   ],
+   "personnel": 66367,
+   "risky_train_trips": 0.0,
+   "roles": [
+    "infrastructure_defence",
+    "convoy_protection",
+    "customs"
+   ],
+   "share_of_output": 0.0208,
+   "structure": {
+    "bases_infrastructure": 14765358719,
+    "beacon_security": 6328010879,
+    "impact_defence_programme": 6328010879,
+    "intelligence": 7382679359,
+    "readiness_reserve_from_ship_budget": 23253854312,
+    "ships_procurement_operations_crews": 31640054397,
+    "shore_personnel": 23202706558,
+    "stockpiles_munitions_fuel": 9492016319,
+    "training": 6328010879
+   },
+   "task_ships": {
+    "escort_frigate": 4.0,
+    "impact_defence_tug": 20.6,
+    "interceptor": 85.7,
+    "patrol_cutter": 156.6,
+    "recon_picket": 6
+   },
+   "under_resourced": false,
+   "why": "корпоративные ледовые права и память о Войне за воду: охрана рудников и конвоев"
+  },
+  "hd20794_newindia": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 33179,
+   "bases": {
+    "military": 55,
+    "patrol": 76
+   },
+   "budget_cr_y": 406454075050,
+   "components": {
+    "impact_defence": 0.0011,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.003,
+    "route_protection": 0.0,
+    "strategic_assets": 0.0,
+    "threat": 0.0132
+   },
+   "forces": {
+    "escort_frigate": 0.0,
+    "fleet_tender": 150.2,
+    "impact_defence_tug": 73.0,
+    "interceptor": 281.8,
+    "line_combatant": 1201.3,
+    "patrol_cutter": 555.1,
+    "recon_picket": 4.0
+   },
+   "hostile": [
+    {
+     "grievance": 55,
+     "other": "hd20794_hellas2",
+     "same_system": true
+    }
+   ],
+   "personnel": 577400,
+   "risky_train_trips": 0.0,
+   "roles": [
+    "infrastructure_defence",
+    "deterrence",
+    "customs"
+   ],
+   "share_of_output": 0.0213,
+   "structure": {
+    "bases_infrastructure": 56903570507,
+    "beacon_security": 24387244503,
+    "impact_defence_programme": 24387244503,
+    "intelligence": 28451785254,
+    "readiness_reserve_from_ship_budget": 35996427367,
+    "ships_procurement_operations_crews": 121936222515,
+    "shore_personnel": 89419896511,
+    "stockpiles_munitions_fuel": 36580866755,
+    "training": 24387244503
+   },
+   "task_ships": {
+    "escort_frigate": 0.0,
+    "impact_defence_tug": 73.0,
+    "interceptor": 281.8,
+    "patrol_cutter": 555.1,
+    "recon_picket": 4
+   },
+   "under_resourced": false,
+   "why": "Война за воду 2580 и общая система со Второй Элладой: охрана ледовых прав и водных конвоев"
+  },
+  "hd40307_firmament": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 7510,
+   "bases": {
+    "military": 16,
+    "patrol": 18
+   },
+   "budget_cr_y": 112018784043,
+   "components": {
+    "impact_defence": 0.0013,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.005,
+    "route_protection": 0.0,
+    "strategic_assets": 0.0,
+    "threat": 0.018
+   },
+   "forces": {
+    "escort_frigate": 0.0,
+    "fleet_tender": 41.5,
+    "impact_defence_tug": 16.6,
+    "interceptor": 70.5,
+    "line_combatant": 331.9,
+    "patrol_cutter": 122.0,
+    "recon_picket": 4.0
+   },
+   "hostile": [
+    {
+     "grievance": 75,
+     "other": "hd40307_maland",
+     "same_system": true
+    }
+   ],
+   "personnel": 159878,
+   "risky_train_trips": 0.0,
+   "roles": [
+    "deterrence",
+    "alliance_obligation",
+    "infrastructure_defence"
+   ],
+   "share_of_output": 0.0283,
+   "structure": {
+    "bases_infrastructure": 15682629766,
+    "beacon_security": 6721127043,
+    "impact_defence_programme": 6721127043,
+    "intelligence": 7841314883,
+    "readiness_reserve_from_ship_budget": 9945348272,
+    "ships_procurement_operations_crews": 33605635213,
+    "shore_personnel": 24644132490,
+    "stockpiles_munitions_fuel": 10081690564,
+    "training": 6721127043
+   },
+   "task_ships": {
+    "escort_frigate": 0.0,
+    "impact_defence_tug": 16.6,
+    "interceptor": 70.5,
+    "patrol_cutter": 122.0,
+    "recon_picket": 4
+   },
+   "under_resourced": false,
+   "why": "провинция Гармонии в холодной войне с Маланд: база, рой собственного конвоя, обязательство метрополии"
+  },
+  "hd40307_maland": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 16650,
+   "bases": {
+    "military": 32,
+    "patrol": 39
+   },
+   "budget_cr_y": 236588275645,
+   "components": {
+    "impact_defence": 0.0013,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.003,
+    "route_protection": 0.0,
+    "strategic_assets": 0.0004,
+    "threat": 0.018
+   },
+   "forces": {
+    "escort_frigate": 0.0,
+    "fleet_tender": 87.6,
+    "impact_defence_tug": 36.3,
+    "interceptor": 144.2,
+    "line_combatant": 700.7,
+    "patrol_cutter": 277.0,
+    "recon_picket": 6.0
+   },
+   "hostile": [
+    {
+     "grievance": 75,
+     "other": "hd40307_firmament",
+     "same_system": true
+    }
+   ],
+   "personnel": 332953,
+   "risky_train_trips": 0.0,
+   "roles": [
+    "deterrence",
+    "infrastructure_defence",
+    "SAR"
+   ],
+   "share_of_output": 0.0267,
+   "structure": {
+    "bases_infrastructure": 33122358590,
+    "beacon_security": 14195296539,
+    "impact_defence_programme": 14195296539,
+    "intelligence": 16561179295,
+    "readiness_reserve_from_ship_budget": 20995181626,
+    "ships_procurement_operations_crews": 70976482693,
+    "shore_personnel": 52049420642,
+    "stockpiles_munitions_fuel": 21292944808,
+    "training": 14195296539
+   },
+   "task_ships": {
+    "escort_frigate": 0.0,
+    "impact_defence_tug": 36.3,
+    "interceptor": 144.2,
+    "patrol_cutter": 277.0,
+    "recon_picket": 6
+   },
+   "under_resourced": false,
+   "why": "холодная война с Небесной Твердыней (стычка 2680), автономный рой CD-2 во внешней системе"
+  },
+  "hd69830_verde": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 7786,
+   "bases": {
+    "military": 3,
+    "patrol": 18
+   },
+   "budget_cr_y": 43915487976,
+   "components": {
+    "impact_defence": 0.0037,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.002,
+    "route_protection": 0.0,
+    "strategic_assets": 0.0004,
+    "threat": 0.0
+   },
+   "forces": {
+    "escort_frigate": 0.0,
+    "fleet_tender": 5.7,
+    "impact_defence_tug": 22.0,
+    "interceptor": 56.2,
+    "line_combatant": 45.4,
+    "patrol_cutter": 129.0,
+    "recon_picket": 2.0
+   },
+   "hostile": [],
+   "personnel": 34674,
+   "risky_train_trips": 0.0,
+   "roles": [
+    "infrastructure_defence",
+    "impact_defence",
+    "SAR"
+   ],
+   "share_of_output": 0.0101,
+   "structure": {
+    "bases_infrastructure": 6148168317,
+    "beacon_security": 2634929279,
+    "impact_defence_programme": 2634929279,
+    "intelligence": 3074084158,
+    "readiness_reserve_from_ship_budget": 9530287612,
+    "ships_procurement_operations_crews": 13174646393,
+    "shore_personnel": 9661407355,
+    "stockpiles_munitions_fuel": 3952393918,
+    "training": 2634929279
+   },
+   "task_ships": {
+    "escort_frigate": 0.0,
+    "impact_defence_tug": 22.0,
+    "interceptor": 56.2,
+    "patrol_cutter": 129.0,
+    "recon_picket": 2
+   },
+   "under_resourced": false,
+   "why": "далёкий богатый газом мир со слабой промышленностью: оборона газовых платформ, противоастероидная защита кометного облака"
+  },
+  "lalande_hellas": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 11750,
+   "bases": {
+    "military": 4,
+    "patrol": 29
+   },
+   "budget_cr_y": 76226994082,
+   "components": {
+    "impact_defence": 0.0011,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.0,
+    "route_protection": 0.0,
+    "strategic_assets": 0.0004,
+    "threat": 0.0072
+   },
+   "forces": {
+    "escort_frigate": 0.0,
+    "fleet_tender": 9.9,
+    "impact_defence_tug": 26.8,
+    "interceptor": 108.6,
+    "line_combatant": 79.1,
+    "patrol_cutter": 204.3,
+    "recon_picket": 6.0
+   },
+   "hostile": [
+    {
+     "grievance": 30,
+     "other": "lalande_mecca",
+     "same_system": true
+    }
+   ],
+   "personnel": 54976,
+   "risky_train_trips": 0.0,
+   "roles": [
+    "customs",
+    "neutral_trade_protection",
+    "SAR"
+   ],
+   "share_of_output": 0.0127,
+   "structure": {
+    "bases_infrastructure": 10671779171,
+    "beacon_security": 4573619645,
+    "impact_defence_programme": 4573619645,
+    "intelligence": 5335889586,
+    "readiness_reserve_from_ship_budget": 16595127752,
+    "ships_procurement_operations_crews": 22868098225,
+    "shore_personnel": 16769938698,
+    "stockpiles_munitions_fuel": 6860429467,
+    "training": 4573619645
+   },
+   "task_ships": {
+    "escort_frigate": 0.0,
+    "impact_defence_tug": 26.8,
+    "interceptor": 108.6,
+    "patrol_cutter": 204.3,
+    "recon_picket": 6
+   },
+   "under_resourced": false,
+   "why": "живёт транзитом: таможня, защита нейтральной торговли, напряжённый мир с Меккой"
+  },
+  "lalande_mecca": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 29201,
+   "bases": {
+    "military": 31,
+    "patrol": 67
+   },
+   "budget_cr_y": 230219696766,
+   "components": {
+    "impact_defence": 0.0011,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.003,
+    "route_protection": 0.0,
+    "strategic_assets": 0.0,
+    "threat": 0.0072
+   },
+   "forces": {
+    "escort_frigate": 0.0,
+    "fleet_tender": 84.3,
+    "impact_defence_tug": 63.5,
+    "interceptor": 246.5,
+    "line_combatant": 674.3,
+    "patrol_cutter": 491.5,
+    "recon_picket": 4.0
+   },
+   "hostile": [
+    {
+     "grievance": 30,
+     "other": "lalande_hellas",
+     "same_system": true
+    }
+   ],
+   "personnel": 340574,
+   "risky_train_trips": 0.0,
+   "roles": [
+    "infrastructure_defence",
+    "deterrence",
+    "strategic_industry"
+   ],
+   "share_of_output": 0.0153,
+   "structure": {
+    "bases_infrastructure": 32230757547,
+    "beacon_security": 13813181806,
+    "impact_defence_programme": 13813181806,
+    "intelligence": 16115378774,
+    "readiness_reserve_from_ship_budget": 20204351979,
+    "ships_procurement_operations_crews": 69065909030,
+    "shore_personnel": 50648333288,
+    "stockpiles_munitions_fuel": 20719772709,
+    "training": 13813181806
+   },
+   "task_ships": {
+    "escort_frigate": 0.0,
+    "impact_defence_tug": 63.5,
+    "interceptor": 246.5,
+    "patrol_cutter": 491.5,
+    "recon_picket": 4
+   },
+   "under_resourced": false,
+   "why": "одна бедная система на двоих с Агорой, собственная математика прыжка вне стандарта Когниума, подозрения Цитадели; оборона хабитатов и обсерватории"
+  },
+  "leo83_zion": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 8,
+   "bases": {
+    "military": 0,
+    "patrol": 0
+   },
+   "budget_cr_y": 96282,
+   "components": {
+    "impact_defence": 0.001,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.001,
+    "route_protection": 0.0,
+    "strategic_assets": 0.0,
+    "threat": 0.0064
+   },
+   "forces": {
+    "escort_frigate": 0.0,
+    "fleet_tender": 0.0,
+    "impact_defence_tug": 0.0,
+    "interceptor": 0.0,
+    "line_combatant": 0.0,
+    "patrol_cutter": 0.0,
+    "recon_picket": 0.0
+   },
+   "hostile": [
+    {
+     "grievance": 40,
+     "other": "cyg61_kern",
+     "same_system": false
+    }
+   ],
+   "personnel": 0,
+   "risky_train_trips": 0.0,
+   "roles": [],
+   "share_of_output": 0.001,
+   "structure": {
+    "bases_infrastructure": 13479,
+    "beacon_security": 5777,
+    "impact_defence_programme": 5777,
+    "intelligence": 6740,
+    "readiness_reserve_from_ship_budget": 21663,
+    "ships_procurement_operations_crews": 28884,
+    "shore_personnel": 21182,
+    "stockpiles_munitions_fuel": 8665,
+    "training": 5777
+   },
+   "task_ships": {
+    "escort_frigate": 0.0,
+    "impact_defence_tug": 0.0,
+    "interceptor": 0.0,
+    "patrol_cutter": 0.0,
+    "recon_picket": 0.0
+   },
+   "under_resourced": false,
+   "why": "только что прибывший Синод у «Золотого Города»: обороны пока нет"
+  },
+  "proxima_outpost": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 25380,
+   "bases": {
+    "military": 47,
+    "patrol": 61
+   },
+   "budget_cr_y": 346308967942,
+   "components": {
+    "impact_defence": 0.001,
+    "internal": 0.0015,
+    "law_customs_sar": 0.004,
+    "regime": 0.015,
+    "route_protection": 0.0,
+    "strategic_assets": 0.0,
+    "threat": 0.0048
+   },
+   "forces": {
+    "escort_frigate": 14.5,
+    "fleet_tender": 129.7,
+    "impact_defence_tug": 56.1,
+    "interceptor": 218.5,
+    "line_combatant": 1022.9,
+    "patrol_cutter": 445.6,
+    "recon_picket": 4.0
+   },
+   "hostile": [
+    {
+     "grievance": 30,
+     "other": "tau_ceti_cognium",
+     "same_system": false
+    }
+   ],
+   "personnel": 490863,
+   "risky_train_trips": 208.6,
+   "roles": [
+    "regime_survival",
+    "deterrence",
+    "impact_defence"
+   ],
+   "share_of_output": 0.0264,
+   "structure": {
+    "bases_infrastructure": 48483255512,
+    "beacon_security": 20778538077,
+    "impact_defence_programme": 20778538077,
+    "intelligence": 24241627756,
+    "readiness_reserve_from_ship_budget": 30628697511,
+    "ships_procurement_operations_crews": 103892690383,
+    "shore_personnel": 76187972947,
+    "stockpiles_munitions_fuel": 31167807115,
+    "training": 20778538077
+   },
+   "task_ships": {
+    "escort_frigate": 14.5,
+    "impact_defence_tug": 56.1,
+    "interceptor": 218.5,
+    "patrol_cutter": 445.6,
+    "recon_picket": 4
+   },
+   "under_resourced": false,
+   "why": "силовая олигархия вне сети маяков и ближайший сосед Земли: людская сила как идеология, двоевластие кланов, оборона от «Возвращения Земли»"
+  },
+  "sol_authority": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 10255,
+   "bases": {
+    "military": 384,
+    "patrol": 639
+   },
+   "budget_cr_y": 2880662881605,
+   "components": {
+    "impact_defence": 0.0014,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.002,
+    "route_protection": 0.0003,
+    "strategic_assets": 0.0004,
+    "threat": 0.0
+   },
+   "forces": {
+    "escort_frigate": 46.2,
+    "fleet_tender": 1065.3,
+    "impact_defence_tug": 143.7,
+    "interceptor": 512.5,
+    "line_combatant": 8476.6,
+    "patrol_cutter": 7008.5,
+    "recon_picket": 2.0
+   },
+   "hostile": [],
+   "personnel": 4150718,
+   "risky_train_trips": 662.0,
+   "roles": [
+    "impact_defence",
+    "customs",
+    "deterrence",
+    "SAR"
+   ],
+   "share_of_output": 0.0081,
+   "structure": {
+    "bases_infrastructure": 403292803425,
+    "beacon_security": 172839772896,
+    "impact_defence_programme": 172839772896,
+    "intelligence": 201646401712,
+    "readiness_reserve_from_ship_budget": 253930645817,
+    "ships_procurement_operations_crews": 864198864481,
+    "shore_personnel": 633745833953,
+    "stockpiles_munitions_fuel": 259259659344,
+    "training": 172839772896
+   },
+   "task_ships": {
+    "escort_frigate": 46.2,
+    "impact_defence_tug": 143.7,
+    "interceptor": 512.5,
+    "patrol_cutter": 7008.5,
+    "recon_picket": 2
+   },
+   "under_resourced": false,
+   "why": "300 лет за Кордоном, 11.7 млрд людей и самый густой пояс хабитатов человечества: защита от падения камней на Землю и хабитаты Сола, таможня возвращающейся сети, страх колоний перед её численностью"
+  },
+  "tau_ceti_cognium": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 55132,
+   "bases": {
+    "military": 67,
+    "patrol": 117
+   },
+   "budget_cr_y": 497790866767,
+   "components": {
+    "impact_defence": 0.001,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.002,
+    "route_protection": 0.0,
+    "strategic_assets": 0.008,
+    "threat": 0.0072
+   },
+   "forces": {
+    "escort_frigate": 0.0,
+    "fleet_tender": 183.1,
+    "impact_defence_tug": 109.5,
+    "interceptor": 419.0,
+    "line_combatant": 1465.0,
+    "patrol_cutter": 866.0,
+    "recon_picket": 10.0
+   },
+   "hostile": [
+    {
+     "grievance": 30,
+     "other": "proxima_outpost",
+     "same_system": false
+    },
+    {
+     "grievance": 45,
+     "other": "wolf359_citadel",
+     "same_system": false
+    }
+   ],
+   "personnel": 720146,
+   "risky_train_trips": 0.0,
+   "roles": [
+    "beacon_security",
+    "customs",
+    "deterrence",
+    "strategic_industry"
+   ],
+   "share_of_output": 0.0222,
+   "structure": {
+    "bases_infrastructure": 69690721347,
+    "beacon_security": 29867452006,
+    "impact_defence_programme": 29867452006,
+    "intelligence": 34845360674,
+    "readiness_reserve_from_ship_budget": 43898654947,
+    "ships_procurement_operations_crews": 149337260030,
+    "shore_personnel": 109513990689,
+    "stockpiles_munitions_fuel": 44801178009,
+    "training": 29867452006
+   },
+   "task_ships": {
+    "escort_frigate": 0.0,
+    "impact_defence_tug": 109.5,
+    "interceptor": 419.0,
+    "patrol_cutter": 866.0,
+    "recon_picket": 10
+   },
+   "under_resourced": false,
+   "why": "держатель Управления Маяков и тайны ядер прыжка: охрана сети и фабрики ядер, инспекции по лицензиям, сдерживание Цитадели, отказавшейся от инспекций"
+  },
+  "wolf359_citadel": {
+   "annual_cost_per_ship": {
+    "escort_frigate": 12346273,
+    "fleet_tender": 11802586,
+    "impact_defence_tug": 4502613,
+    "interceptor": 1290724,
+    "line_combatant": 68442172,
+    "patrol_cutter": 2232979,
+    "recon_picket": 4079075
+   },
+   "arrivals_per_year": 19560,
+   "bases": {
+    "military": 46,
+    "patrol": 47
+   },
+   "budget_cr_y": 329717276451,
+   "components": {
+    "impact_defence": 0.0035,
+    "internal": 0.0,
+    "law_customs_sar": 0.004,
+    "regime": 0.015,
+    "route_protection": 0.0002,
+    "strategic_assets": 0.0034,
+    "threat": 0.0072
+   },
+   "forces": {
+    "escort_frigate": 32.3,
+    "fleet_tender": 125.8,
+    "impact_defence_tug": 49.0,
+    "interceptor": 169.3,
+    "line_combatant": 974.1,
+    "patrol_cutter": 338.1,
+    "recon_picket": 6.0
+   },
+   "hostile": [
+    {
+     "grievance": 45,
+     "other": "tau_ceti_cognium",
+     "same_system": false
+    }
+   ],
+   "personnel": 465610,
+   "risky_train_trips": 463.5,
+   "roles": [
+    "deterrence",
+    "strategic_industry",
+    "intelligence"
+   ],
+   "share_of_output": 0.0333,
+   "structure": {
+    "bases_infrastructure": 46160418703,
+    "beacon_security": 19783036587,
+    "impact_defence_programme": 19783036587,
+    "intelligence": 23080209352,
+    "readiness_reserve_from_ship_budget": 29141613883,
+    "ships_procurement_operations_crews": 98915182935,
+    "shore_personnel": 72537800819,
+    "stockpiles_munitions_fuel": 29674554881,
+    "training": 19783036587
+   },
+   "task_ships": {
+    "escort_frigate": 32.3,
+    "impact_defence_tug": 49.0,
+    "interceptor": 169.3,
+    "patrol_cutter": 338.1,
+    "recon_picket": 6
+   },
+   "under_resourced": false,
+   "why": "травма IRON-SHIELD-2 и паранойя: арсенальная верфь, архив-хранилище, нейтралитет, который продаётся за ресурсы"
+  }
+ },
+ "status": "PROPOSAL"
+}

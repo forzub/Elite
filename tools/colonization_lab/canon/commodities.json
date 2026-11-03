@@ -1,0 +1,409 @@
+{
+  "schema": "commodities/1",
+  "status": "PROPOSAL",
+  "note": "Final compact commodity list (15 categories). Ship parts are NOT commodities: see part_catalog. Containers: standard C20 (20 t payload, 23.3 m3, 1.7 t tare). cost_cr_per_t is the reference production cost at an average 3126 producer; prices are derived (cost + delivery + scarcity). per_capita_t_y is household + public consumption per person per year; industrial use comes from recipes. local_only: interstellar freight is almost never worth it (only the no-local-source rule). legality: by regime family (open / strict / faith / military).",
+  "container": {
+    "id": "C20",
+    "payload_t": 20.0,
+    "volume_m3": 23.3,
+    "tare_t": 1.7,
+    "status": "PROPOSAL"
+  },
+  "commodities": [
+    {
+      "id": "food",
+      "name": "Продовольствие и органика",
+      "cost_cr_per_t": 900,
+      "density_t_m3": 0.55,
+      "hazard": "A",
+      "per_capita_t_y": 0.55,
+      "local_share_typical": 0.92,
+      "perishable": true,
+      "legality": {
+        "open": "legal",
+        "strict": "legal",
+        "faith": "legal",
+        "military": "legal"
+      },
+      "inputs": {
+        "water_volatiles": 0.6,
+        "chemicals": 0.05
+      },
+      "labour_wy_per_kt": 1.2,
+      "energy_mwh_per_t": 2.5
+    },
+    {
+      "id": "water_volatiles",
+      "name": "Вода и летучие",
+      "cost_cr_per_t": 25,
+      "density_t_m3": 0.95,
+      "hazard": "A",
+      "per_capita_t_y": 0.4,
+      "local_only": true,
+      "legality": {
+        "open": "legal",
+        "strict": "legal",
+        "faith": "legal",
+        "military": "legal"
+      },
+      "inputs": {},
+      "labour_wy_per_kt": 0.02,
+      "energy_mwh_per_t": 0.3
+    },
+    {
+      "id": "ore",
+      "name": "Руда и сырые минералы",
+      "cost_cr_per_t": 40,
+      "density_t_m3": 2.4,
+      "hazard": "A",
+      "per_capita_t_y": 0.0,
+      "local_only": true,
+      "legality": {
+        "open": "legal",
+        "strict": "legal",
+        "faith": "legal",
+        "military": "legal"
+      },
+      "inputs": {},
+      "labour_wy_per_kt": 0.03,
+      "energy_mwh_per_t": 0.15
+    },
+    {
+      "id": "metals",
+      "name": "Металлы и сплавы",
+      "cost_cr_per_t": 1100,
+      "density_t_m3": 4.5,
+      "hazard": "A",
+      "per_capita_t_y": 0.0,
+      "legality": {
+        "open": "legal",
+        "strict": "legal",
+        "faith": "legal",
+        "military": "legal"
+      },
+      "inputs": {
+        "ore": 3.2
+      },
+      "labour_wy_per_kt": 0.4,
+      "energy_mwh_per_t": 9.0
+    },
+    {
+      "id": "chemicals",
+      "name": "Химия и полимеры",
+      "cost_cr_per_t": 1800,
+      "density_t_m3": 0.9,
+      "hazard": "C",
+      "per_capita_t_y": 0.04,
+      "legality": {
+        "open": "legal",
+        "strict": "legal",
+        "faith": "legal",
+        "military": "legal"
+      },
+      "inputs": {
+        "water_volatiles": 1.5
+      },
+      "labour_wy_per_kt": 0.5,
+      "energy_mwh_per_t": 6.0
+    },
+    {
+      "id": "construction",
+      "name": "Строительные материалы и модули",
+      "cost_cr_per_t": 350,
+      "density_t_m3": 1.8,
+      "hazard": "A",
+      "per_capita_t_y": 0.0,
+      "legality": {
+        "open": "legal",
+        "strict": "legal",
+        "faith": "legal",
+        "military": "legal"
+      },
+      "inputs": {
+        "ore": 0.7,
+        "metals": 0.25,
+        "water_volatiles": 0.2
+      },
+      "labour_wy_per_kt": 0.15,
+      "energy_mwh_per_t": 1.5
+    },
+    {
+      "id": "reactor_fuel",
+      "name": "Реакторное топливо (D, He-3)",
+      "cost_cr_per_t": 600000,
+      "density_t_m3": 0.16,
+      "hazard": "C",
+      "per_capita_t_y": 0.0,
+      "legality": {
+        "open": "legal",
+        "strict": "restricted",
+        "faith": "legal",
+        "military": "restricted"
+      },
+      "inputs": {},
+      "labour_wy_per_kt": 25.0,
+      "energy_mwh_per_t": 400.0
+    },
+    {
+      "id": "jump_charge",
+      "name": "Заряд прыжка (изотопы привода)",
+      "cost_cr_per_t": 5080,
+      "density_t_m3": 1.9,
+      "hazard": "D",
+      "per_capita_t_y": 0.0,
+      "strategic": true,
+      "legality": {
+        "open": "restricted",
+        "strict": "restricted",
+        "faith": "restricted",
+        "military": "restricted"
+      },
+      "inputs": {
+        "chemicals": 0.2,
+        "metals": 0.1
+      },
+      "labour_wy_per_kt": 2.0,
+      "energy_mwh_per_t": 60.0
+    },
+    {
+      "id": "machinery",
+      "name": "Машины и оборудование",
+      "cost_cr_per_t": 9000,
+      "density_t_m3": 0.8,
+      "hazard": "A",
+      "per_capita_t_y": 0.01,
+      "legality": {
+        "open": "legal",
+        "strict": "legal",
+        "faith": "legal",
+        "military": "legal"
+      },
+      "inputs": {
+        "metals": 0.9,
+        "electronics": 0.04,
+        "chemicals": 0.05
+      },
+      "labour_wy_per_kt": 4.0,
+      "energy_mwh_per_t": 15.0
+    },
+    {
+      "id": "electronics",
+      "name": "Электроника и точное оборудование",
+      "cost_cr_per_t": 120000,
+      "density_t_m3": 0.35,
+      "hazard": "A",
+      "per_capita_t_y": 0.003,
+      "legality": {
+        "open": "legal",
+        "strict": "restricted",
+        "faith": "legal",
+        "military": "restricted"
+      },
+      "inputs": {
+        "metals": 0.4,
+        "chemicals": 0.5
+      },
+      "labour_wy_per_kt": 60.0,
+      "energy_mwh_per_t": 250.0
+    },
+    {
+      "id": "medical",
+      "name": "Медицина и биотех",
+      "cost_cr_per_t": 60000,
+      "density_t_m3": 0.4,
+      "hazard": "B",
+      "per_capita_t_y": 0.004,
+      "legality": {
+        "open": "legal",
+        "strict": "legal",
+        "faith": "legal",
+        "military": "legal"
+      },
+      "inputs": {
+        "chemicals": 0.6,
+        "food": 0.2
+      },
+      "labour_wy_per_kt": 30.0,
+      "energy_mwh_per_t": 80.0
+    },
+    {
+      "id": "consumer",
+      "name": "Потребительские товары",
+      "cost_cr_per_t": 6000,
+      "density_t_m3": 0.3,
+      "hazard": "A",
+      "per_capita_t_y": 0.12,
+      "legality": {
+        "open": "legal",
+        "strict": "legal",
+        "faith": "legal",
+        "military": "legal"
+      },
+      "inputs": {
+        "chemicals": 0.4,
+        "metals": 0.2,
+        "electronics": 0.01
+      },
+      "labour_wy_per_kt": 3.0,
+      "energy_mwh_per_t": 8.0
+    },
+    {
+      "id": "luxury",
+      "name": "Роскошь и алкоголь",
+      "cost_cr_per_t": 40000,
+      "density_t_m3": 0.45,
+      "hazard": "A",
+      "per_capita_t_y": 0.004,
+      "legality": {
+        "open": "legal",
+        "strict": "restricted",
+        "faith": "banned",
+        "military": "restricted"
+      },
+      "inputs": {
+        "food": 0.8,
+        "chemicals": 0.1
+      },
+      "labour_wy_per_kt": 20.0,
+      "energy_mwh_per_t": 10.0
+    },
+    {
+      "id": "controlled",
+      "name": "Подконтрольные вещества",
+      "cost_cr_per_t": 90000,
+      "density_t_m3": 0.5,
+      "hazard": "B",
+      "per_capita_t_y": 5e-05,
+      "legality": {
+        "open": "restricted",
+        "strict": "banned",
+        "faith": "banned",
+        "military": "banned"
+      },
+      "inputs": {
+        "chemicals": 0.5
+      },
+      "labour_wy_per_kt": 15.0,
+      "energy_mwh_per_t": 15.0
+    },
+    {
+      "id": "weapons",
+      "name": "Оружие и боеприпасы",
+      "cost_cr_per_t": 45000,
+      "density_t_m3": 1.1,
+      "hazard": "E",
+      "per_capita_t_y": 0.0,
+      "strategic": true,
+      "legality": {
+        "open": "restricted",
+        "strict": "restricted",
+        "faith": "restricted",
+        "military": "restricted"
+      },
+      "inputs": {
+        "metals": 0.6,
+        "chemicals": 0.4,
+        "electronics": 0.05
+      },
+      "labour_wy_per_kt": 10.0,
+      "energy_mwh_per_t": 20.0
+    }
+  ],
+  "regime_family": {
+    "technocratic_meritocracy": "open",
+    "shareholder_agora": "open",
+    "corporate_democracy": "open",
+    "corporate_board": "open",
+    "litigating_city_states": "open",
+    "clan_contracts": "open",
+    "exile_republic": "open",
+    "parliamentary_bureaucracy": "open",
+    "merit_caste_republic": "strict",
+    "party_technocracy": "strict",
+    "sage_council": "strict",
+    "machine_oracle": "strict",
+    "none_quiet": "strict",
+    "sol_authority": "strict",
+    "scholar_theocracy": "faith",
+    "grandees_and_church": "faith",
+    "caste_theocracy": "faith",
+    "synod_theocracy": "faith",
+    "security_oligarchy": "military",
+    "council_of_chiefs": "strict"
+  },
+  "part_catalog": {
+    "note": "Major ship parts are a separate maintenance / refit market with serial numbers (SerializedComponent). share = part of a ship's component cost; life_h = overhaul interval; serial = carries a registry serial.",
+    "parts": [
+      {
+        "id": "reactor",
+        "name": "реактор",
+        "serial": true,
+        "life_h": 40000,
+        "share": 0.18
+      },
+      {
+        "id": "main_engine",
+        "name": "главный двигатель",
+        "serial": true,
+        "life_h": 50000,
+        "share": 0.15
+      },
+      {
+        "id": "jump_drive",
+        "name": "прыжковый двигатель (ядро)",
+        "serial": true,
+        "life_h": 30000,
+        "share": 0.24
+      },
+      {
+        "id": "rcs",
+        "name": "блок RCS",
+        "serial": true,
+        "life_h": 25000,
+        "share": 0.03
+      },
+      {
+        "id": "radiator",
+        "name": "радиатор",
+        "serial": false,
+        "life_h": 35000,
+        "share": 0.03
+      },
+      {
+        "id": "pump",
+        "name": "насосы и контуры",
+        "serial": false,
+        "life_h": 15000,
+        "share": 0.01
+      },
+      {
+        "id": "radar",
+        "name": "радар",
+        "serial": true,
+        "life_h": 30000,
+        "share": 0.03
+      },
+      {
+        "id": "computer",
+        "name": "бортовой компьютер (MotherComputer)",
+        "serial": true,
+        "life_h": 60000,
+        "share": 0.04
+      },
+      {
+        "id": "weapons",
+        "name": "крупное оружие",
+        "serial": true,
+        "life_h": 20000,
+        "share": 0.05
+      },
+      {
+        "id": "life_support",
+        "name": "жизнеобеспечение",
+        "serial": false,
+        "life_h": 30000,
+        "share": 0.03
+      }
+    ]
+  }
+}

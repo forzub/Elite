@@ -1,4 +1,5 @@
 #include "src/game/traffic/DockServiceTraffic.h"
+#include "src/game/catalog/ships/ShipCargoPassports.h"
 
 #include <algorithm>
 #include <array>
@@ -311,16 +312,19 @@ const char* HubToEarthCargo[] = {"orbital production", "processed material", "st
 
 const TrafficShipClass& trafficShipClass(TrafficShipKind kind)
 {
+    // Mass and cargo capacity: the authoritative cargo passports (no traffic-only numbers).
+    using catalog::ships::CobrettIN1Cargo;
+    using catalog::ships::Ocs4Cargo;
     // Orbital cargo shuttle: see src/game/catalog/ships/OrbitalCargoShuttlePassports.h
     static const TrafficShipClass shuttle {
         TrafficShipKind::CargoShuttle, "OCS-4 \"Lastochka\" orbital cargo shuttle",
         56.0, 18.0, 14.0, 0.5 * std::sqrt(56.0 * 56.0 + 18.0 * 18.0 + 14.0 * 14.0),
-        380000.0, 450000.0,
+        Ocs4Cargo.dryMassKg, 1000.0 * Ocs4Cargo.cargoTonnes,
         4.0, 200.0, 25.0, 1.2, 18.0, 900.0, game::docking::DockSizeClass::Medium};
     static const TrafficShipClass cobrett {
         TrafficShipKind::Cobrett, "Cobrett-I FRN-U N1",
         22.2, 26.0, 5.0, 0.5 * std::sqrt(22.2 * 22.2 + 26.0 * 26.0 + 5.0 * 5.0),
-        260000.0, 40000.0,
+        CobrettIN1Cargo.dryMassKg, 1000.0 * CobrettIN1Cargo.cargoTonnes,
         12.0, 300.0, 30.0, 2.0, 10.0, 240.0, game::docking::DockSizeClass::Medium};
     return kind == TrafficShipKind::CargoShuttle ? shuttle : cobrett;
 }

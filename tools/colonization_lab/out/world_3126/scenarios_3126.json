@@ -1,0 +1,547 @@
+{
+ "scenarios": [
+  {
+   "changes": [
+    {
+     "commodity": "ore",
+     "imports_t_after": 0,
+     "imports_t_before": 0,
+     "polity": "eps_eri_harmony",
+     "price_index": 2.778,
+     "shortage_t_after": 215673027,
+     "shortage_t_before": 0
+    },
+    {
+     "commodity": "metals",
+     "imports_t_after": 31307157,
+     "imports_t_before": 0,
+     "polity": "eps_eri_harmony",
+     "price_index": 1.009,
+     "shortage_t_after": 0,
+     "shortage_t_before": 0
+    }
+   ],
+   "fleet_active_after": {
+    "eps_eri_harmony": 16486,
+    "eps_eri_strife": 9380,
+    "gj832_tianhe": 9410
+   },
+   "fleet_active_before": {
+    "eps_eri_harmony": 19551,
+    "eps_eri_strife": 7775,
+    "gj832_tianhe": 9410
+   },
+   "id": "major_mine_destroyed",
+   "metrics": {
+    "eps_eri_harmony": {
+     "after": {
+      "avg_delivered_cr_per_t": 8646.4,
+      "import_delivered_cr": 840189648210,
+      "import_t": 97172693,
+      "re_export_t": 19620,
+      "ships_on_its_flows": 5607.4,
+      "shortage_t": 218327273
+     },
+     "before": {
+      "avg_delivered_cr_per_t": 12213.7,
+      "import_delivered_cr": 804471660621,
+      "import_t": 65866074,
+      "re_export_t": 19620,
+      "ships_on_its_flows": 5901.0,
+      "shortage_t": 2654247
+     },
+     "import_price_index": 0.708
+    },
+    "eps_eri_strife": {
+     "after": {
+      "avg_delivered_cr_per_t": 12214.7,
+      "import_delivered_cr": 207729919787,
+      "import_t": 17006544,
+      "re_export_t": 0,
+      "ships_on_its_flows": 2520.7,
+      "shortage_t": 666629
+     },
+     "before": {
+      "avg_delivered_cr_per_t": 12214.0,
+      "import_delivered_cr": 207714118548,
+      "import_t": 17006222,
+      "re_export_t": 0,
+      "ships_on_its_flows": 2319.7,
+      "shortage_t": 666629
+     },
+     "import_price_index": 1.0
+    },
+    "gj832_tianhe": {
+     "after": {
+      "avg_delivered_cr_per_t": 12023.6,
+      "import_delivered_cr": 608417193105,
+      "import_t": 50601903,
+      "re_export_t": 0,
+      "ships_on_its_flows": 3749.4,
+      "shortage_t": 1995322
+     },
+     "before": {
+      "avg_delivered_cr_per_t": 12023.6,
+      "import_delivered_cr": 608417193105,
+      "import_t": 50601903,
+      "re_export_t": 0,
+      "ships_on_its_flows": 3749.4,
+      "shortage_t": 1995322
+     },
+     "import_price_index": 1.0
+    }
+   },
+   "recovery": {
+    "cobrett_trips": 8186,
+    "equipment_to_replace_t": 458400,
+    "text": "замена оборудования: местные заводы + импорт машин; пока руда идёт из резервных выработок, цена металла выше",
+    "train_trips": 8,
+    "years": 3.1
+   },
+   "text": "Гармония: уничтожен крупнейший рудный комплекс пояса (−40 % руды, −25 % металла)"
+  },
+  {
+   "changes": [],
+   "fleet_active_after": {
+    "delta_pav_freekarma": 2396,
+    "gj832_tianhe": 9313,
+    "tau_ceti_cognium": 17822
+   },
+   "fleet_active_before": {
+    "delta_pav_freekarma": 2377,
+    "gj832_tianhe": 9410,
+    "tau_ceti_cognium": 17822
+   },
+   "id": "jump_beacon_lost",
+   "metrics": {
+    "delta_pav_freekarma": {
+     "after": {
+      "avg_delivered_cr_per_t": 14102.6,
+      "import_delivered_cr": 111032673192,
+      "import_t": 7873216,
+      "re_export_t": 0,
+      "ships_on_its_flows": 721.3,
+      "shortage_t": 239710
+     },
+     "before": {
+      "avg_delivered_cr_per_t": 14100.1,
+      "import_delivered_cr": 111011377243,
+      "import_t": 7873090,
+      "re_export_t": 0,
+      "ships_on_its_flows": 714.3,
+      "shortage_t": 239710
+     },
+     "import_price_index": 1.0
+    },
+    "gj832_tianhe": {
+     "after": {
+      "avg_delivered_cr_per_t": 12110.7,
+      "import_delivered_cr": 612736177814,
+      "import_t": 50594516,
+      "re_export_t": 0,
+      "ships_on_its_flows": 5204.1,
+      "shortage_t": 1995322
+     },
+     "before": {
+      "avg_delivered_cr_per_t": 12023.6,
+      "import_delivered_cr": 608417193105,
+      "import_t": 50601903,
+      "re_export_t": 0,
+      "ships_on_its_flows": 3749.4,
+      "shortage_t": 1995322
+     },
+     "import_price_index": 1.007
+    },
+    "tau_ceti_cognium": {
+     "after": {
+      "avg_delivered_cr_per_t": 1727.9,
+      "import_delivered_cr": 1102233136674,
+      "import_t": 637898284,
+      "re_export_t": 0,
+      "ships_on_its_flows": 5830.7,
+      "shortage_t": 360601690
+     },
+     "before": {
+      "avg_delivered_cr_per_t": 1727.9,
+      "import_delivered_cr": 1102233136674,
+      "import_t": 637898284,
+      "re_export_t": 0,
+      "ships_on_its_flows": 5830.7,
+      "shortage_t": 360601690
+     },
+     "import_price_index": 1.0
+    }
+   },
+   "recovery": {
+    "text": "новый маяк: изготовление 8 месяцев + буксировка; до тех пор поезда ходят реже, страховка ×2",
+    "years": 1.5
+   },
+   "text": "потерян мост-маяк Gliese 832 (Тяньхэ): прыжки в систему без маяка"
+  },
+  {
+   "changes": [],
+   "id": "shipyard_damaged",
+   "metrics": {
+    "backlog_after_3y_dry_t": 0,
+    "fleet_shortfall_share_after_3y": 0.0,
+    "lost_dry_t_y": 100468,
+    "spare_capacity_elsewhere_dry_t_y": 406253,
+    "takers": [
+     "sol_authority",
+     "eps_eri_harmony",
+     "eps_eri_strife"
+    ]
+   },
+   "recovery": {
+    "text": "заказы уходят к другим верфям (свободно ~10 % их мощности); остальное — очередь: старые корабли летают дольше, фрахт растёт",
+    "years": 3
+   },
+   "text": "повреждена верфь «Гиперион» (Когниум): −60 % выпуска на 3 года"
+  },
+  {
+   "changes": [
+    {
+     "commodity": "ore",
+     "imports_t_after": 158668158,
+     "imports_t_before": 149245335,
+     "polity": "tau_ceti_cognium",
+     "price_index": 1.0,
+     "shortage_t_after": 0,
+     "shortage_t_before": 0
+    },
+    {
+     "commodity": "construction",
+     "imports_t_after": 188830135,
+     "imports_t_before": 176207635,
+     "polity": "tau_ceti_cognium",
+     "price_index": 1.0,
+     "shortage_t_after": 0,
+     "shortage_t_before": 0
+    }
+   ],
+   "fleet_active_after": {
+    "tau_ceti_cognium": 18250
+   },
+   "fleet_active_before": {
+    "tau_ceti_cognium": 17822
+   },
+   "id": "habitat_disaster",
+   "metrics": {
+    "tau_ceti_cognium": {
+     "after": {
+      "avg_delivered_cr_per_t": 1677.3,
+      "import_delivered_cr": 1112009253588,
+      "import_t": 662969249,
+      "re_export_t": 0,
+      "ships_on_its_flows": 5900.6,
+      "shortage_t": 361716286
+     },
+     "before": {
+      "avg_delivered_cr_per_t": 1727.9,
+      "import_delivered_cr": 1102233136674,
+      "import_t": 637898284,
+      "re_export_t": 0,
+      "ships_on_its_flows": 5830.7,
+      "shortage_t": 360601690
+     },
+     "import_price_index": 0.971
+    }
+   },
+   "recovery": {
+    "relief_t": 28074000,
+    "support": {
+     "budget_cr": 11560000000,
+     "donor": "eps_eri_harmony",
+     "motive": "trade_dependence",
+     "recipient": "tau_ceti_cognium",
+     "status_counts": [
+      {
+       "absorbed_t": 5428296,
+       "allocated_t": 27500000,
+       "arrived_t": 5713996,
+       "commodity": "construction",
+       "pledged_t": 27500000,
+       "route": [
+        9,
+        8
+       ],
+       "ship_class": "jump_train",
+       "shipped_t": 5771713,
+       "transport_cr": 263190125
+      },
+      {
+       "absorbed_t": 517275,
+       "allocated_t": 550000,
+       "arrived_t": 544500,
+       "commodity": "food",
+       "pledged_t": 550000,
+       "route": [
+        9,
+        8
+       ],
+       "ship_class": "jump_train",
+       "shipped_t": 550000,
+       "transport_cr": 26400000
+      },
+      {
+       "absorbed_t": 5381,
+       "allocated_t": 24000,
+       "arrived_t": 5665,
+       "commodity": "medical",
+       "pledged_t": 24000,
+       "route": [
+        9,
+        8
+       ],
+       "ship_class": "medium_freighter",
+       "shipped_t": 5722,
+       "transport_cr": 2277328
+      }
+     ],
+     "statuses": [
+      "pledged",
+      "allocated",
+      "shipped",
+      "arrived",
+      "absorbed"
+     ]
+    },
+    "text": "эвакуация в соседние кольца, помощь соседей по цепочке SupportProgram, затем верфи хабитатов",
+    "years": 4
+   },
+   "text": "авария кольца Нового Шанхая: 2 млн человек без жилья"
+  },
+  {
+   "changes": [],
+   "id": "external_aid",
+   "recovery": {
+    "text": "помощь вычитается из экономики донора и проходит через логистику"
+   },
+   "support_program": {
+    "budget_cr": 1285400000,
+    "donor": "eps_eri_harmony",
+    "motive": "alliance_obligation",
+    "recipient": "hd40307_firmament",
+    "status_counts": [
+     {
+      "absorbed_t": 4655,
+      "allocated_t": 5000,
+      "arrived_t": 4900,
+      "commodity": "jump_charge",
+      "pledged_t": 5000,
+      "route": [
+       9,
+       14,
+       15
+      ],
+      "ship_class": "medium_freighter",
+      "shipped_t": 5000,
+      "transport_cr": 790500
+     },
+     {
+      "absorbed_t": 8788,
+      "allocated_t": 40000,
+      "arrived_t": 10339,
+      "commodity": "machinery",
+      "pledged_t": 40000,
+      "route": [
+       9,
+       14,
+       15
+      ],
+      "ship_class": "medium_freighter",
+      "shipped_t": 10550,
+      "transport_cr": 1926371
+     },
+     {
+      "absorbed_t": 9416,
+      "allocated_t": 20000,
+      "arrived_t": 11077,
+      "commodity": "weapons",
+      "pledged_t": 20000,
+      "route": [
+       9,
+       14,
+       15
+      ],
+      "ship_class": "medium_freighter",
+      "shipped_t": 11303,
+      "transport_cr": 3952738
+     }
+    ],
+    "statuses": [
+     "pledged",
+     "allocated",
+     "shipped",
+     "arrived",
+     "absorbed"
+    ]
+   },
+   "text": "Гармония помогает своей провинции Небесная Твердыня в обострении с Маланд"
+  },
+  {
+   "changes": [],
+   "fleet_active_after": {
+    "eps_eri_harmony": 19509,
+    "hd40307_firmament": 2415,
+    "hd40307_maland": 5337
+   },
+   "fleet_active_before": {
+    "eps_eri_harmony": 19551,
+    "hd40307_firmament": 2415,
+    "hd40307_maland": 5337
+   },
+   "id": "war_sanctions_reexport",
+   "metrics": {
+    "eps_eri_harmony": {
+     "after": {
+      "avg_delivered_cr_per_t": 12213.7,
+      "import_delivered_cr": 804470692845,
+      "import_t": 65866055,
+      "re_export_t": 19620,
+      "ships_on_its_flows": 5895.3,
+      "shortage_t": 2654247
+     },
+     "before": {
+      "avg_delivered_cr_per_t": 12213.7,
+      "import_delivered_cr": 804471660621,
+      "import_t": 65866074,
+      "re_export_t": 19620,
+      "ships_on_its_flows": 5901.0,
+      "shortage_t": 2654247
+     },
+     "import_price_index": 1.0
+    },
+    "hd40307_firmament": {
+     "after": {
+      "avg_delivered_cr_per_t": 7030.2,
+      "import_delivered_cr": 127432211729,
+      "import_t": 18126468,
+      "re_export_t": 0,
+      "ships_on_its_flows": 798.9,
+      "shortage_t": 362099
+     },
+     "before": {
+      "avg_delivered_cr_per_t": 7030.2,
+      "import_delivered_cr": 127432211729,
+      "import_t": 18126468,
+      "re_export_t": 0,
+      "ships_on_its_flows": 798.9,
+      "shortage_t": 362099
+     },
+     "import_price_index": 1.0
+    },
+    "hd40307_maland": {
+     "after": {
+      "avg_delivered_cr_per_t": 8548.0,
+      "import_delivered_cr": 344848808044,
+      "import_t": 40342623,
+      "re_export_t": 12574760,
+      "ships_on_its_flows": 1772.6,
+      "shortage_t": 812198
+     },
+     "before": {
+      "avg_delivered_cr_per_t": 6996.6,
+      "import_delivered_cr": 282261486757,
+      "import_t": 40342623,
+      "re_export_t": 0,
+      "ships_on_its_flows": 1771.1,
+      "shortage_t": 812198
+     },
+     "import_price_index": 1.222
+    }
+   },
+   "recovery": {
+    "mobilisation": {
+     "conversion": [
+      {
+       "dry_t_y": 44840,
+       "from_": "civil yard",
+       "months": 9,
+       "to": "military transports / escorts"
+      },
+      {
+       "from_": "electronics",
+       "months": 6,
+       "share": 0.4,
+       "to": "radars / guidance"
+      },
+      {
+       "from_": "machinery",
+       "months": 4,
+       "share": 0.35,
+       "to": "weapons / repair parts"
+      }
+     ],
+     "costs": [
+      "гражданский выпуск −20-35 %",
+      "жилищное строительство встаёт",
+      "цены потребительских товаров +30-60 %",
+      "нехватка транспорта: поезда реквизированы",
+      "торговля падает, растут нейтральные посредники"
+     ],
+     "emergency_share": 0.107,
+     "normal_defence_share": 0.0267
+    },
+    "re_export_flows": [
+     {
+      "buyer": "hd40307_maland",
+      "commodity": "machinery",
+      "markup": 1.25,
+      "seller": "sol_authority",
+      "tonnes": 1483664,
+      "via": "hd20794_newindia"
+     },
+     {
+      "buyer": "hd40307_maland",
+      "commodity": "electronics",
+      "markup": 1.25,
+      "seller": "sol_authority",
+      "tonnes": 1092383,
+      "via": "hd20794_newindia"
+     },
+     {
+      "buyer": "hd40307_maland",
+      "commodity": "medical",
+      "markup": 1.25,
+      "seller": "sol_authority",
+      "tonnes": 689719,
+      "via": "hd20794_newindia"
+     },
+     {
+      "buyer": "hd40307_maland",
+      "commodity": "consumer",
+      "markup": 1.25,
+      "seller": "sol_authority",
+      "tonnes": 9196248,
+      "via": "hd20794_newindia"
+     },
+     {
+      "buyer": "eps_eri_harmony",
+      "commodity": "controlled",
+      "markup": 1.25,
+      "seller": "eps_eri_strife",
+      "tonnes": 19620,
+      "via": "gj581_freeclans"
+     },
+     {
+      "buyer": "hd40307_maland",
+      "commodity": "weapons",
+      "markup": 1.25,
+      "seller": "sol_authority",
+      "tonnes": 112748,
+      "via": "hd20794_newindia"
+     }
+    ],
+    "sanctioning": [
+     "sol_authority",
+     "hd20794_hellas2"
+    ],
+    "text": "законные каналы закрыты: поставки идут через нейтральные узлы с наценкой 25 % и задержкой; страховка растёт; военная конверсия съедает гражданский выпуск",
+    "years": 6
+   },
+   "text": "война Маланд — Твердыня/Гармония; два крупнейших поставщика Маланд (sol_authority, hd20794_hellas2) вводят санкции"
+  }
+ ],
+ "status": "PROPOSAL"
+}

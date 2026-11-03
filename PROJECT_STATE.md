@@ -1686,6 +1686,77 @@ Status: offline model + data + Lore; PROPOSAL, NOT user-accepted.
   calibrate_population, lab dataset / lore, lore_md 132, lore_html 135 OK;
   industry / sites runs byte-identical.
 
+### Fourth pass (user order 2026-11-03, after 7ec5f4c1): lotusite price, Sol network, System Map, Orbital Transfer
+Restore point: tag `restore/pre-sol-network-2026-11-03` (= 7ec5f4c1). Branch main.
+
+#### Stage A audit (source-audited, 2026-11-03)
+- System Map: one pointer resolver (hub > body > cube marker > child cube on a
+  hover-layer plane); no arrow / Tab keys; cube frame colours borrowed from
+  the Galaxy defaults (`GalaxyNavigationGridVisualSettings`, the System struct
+  `SystemNavigationGridVisualSettings` is dead code); no toggle to hide cubes;
+  world-site stations drawn with the ship triangle glyph (tacticalGlyphKind maps
+  Station -> Infrastructure); no hover tooltip on objects; info cards 238 px,
+  titles / values neither wrapped nor clipped; right panel (28 %) shows only
+  the selected system; no beacon links on the System Map.
+- `tests/system_map/check_architecture.py` red root cause: commit 97b39d73
+  (map history "back arrow", 2026-10-31) assigns `m_detailView.camera()` /
+  `m_hubView.camera()` directly in `SystemMapRendererContextMenu.cpp`
+  (applyMapHistoryRestore) -> real rule violation, not a stale test.
+  `check_object_overlay.py` red: stale token `clickedBodyId` (renamed to
+  `selectedBodyId` in the same commit).
+- Orbital motion: circular Kepler orbits (`OrbitalMotion`), hub world velocity =
+  parent + orbit velocity, replicated with the full motion; several hubs are
+  structurally supported (`m_orbitalHubs` map) but data has one and many
+  places hard-code `earth_orbital_hub` / `hub_hex_dock_a`.
+- Gravity: `GravityFieldSystem` result is navigation metadata only; the only
+  stepped player motion is `HubTactical` in the hub's LVLH frame (no gravity,
+  no fictitious forces) -> a ship with thrust off co-orbits with the hub
+  forever; it cannot fall. Real gravity integration exists only in
+  diagnostics (`PassiveTrajectory`, velocity-Verlet). `TravelFrameSystem::detach`
+  and `KinematicFrame::rebaseLocalKinematics` are unused: there is no
+  hub-tactical <-> system-travel transition. `maxCruiseSpeed` (0.1c) is unused.
+- Navigation v2: routes are planned in one hub frame to fixed goals; terminal
+  matching is scalar speed only; `NavigationArrivalProfile.matchVelocity` has
+  no executor; the only executed route is docking.
+- DockServiceTraffic: one instance, hard-coded facility `earth_orbital_hub.hex_dock_a`,
+  "Earth Orbital Hub" strings, ORB-/CBR- callsigns, flight id EOH-n; geometry
+  from C++ constants (6 pads); no ETA, no multi-hub identity.
+
+#### Stage 1: lotusite price and technical role (offline; PROPOSAL)
+- Author rejected ~219 M Cr/g and +3 ly. Removed: `jump_component`,
+  `max_hop_bonus_ly`, `hop_bonus_effect`, mass `jump_g_y`, the map effect
+  (17 edges, GJ 1214 / 9 Ceti reachability) everywhere (model, checks, Lore,
+  Notes/Economy).
+- New `lotus.phase_stabilizer`: insert 0.3 / 0.6 / 1.2 g in the emitter of
+  Cognium G4+ cores; holds the jump field in jump-dead (only the outer 15 %),
+  distortion (exit error x25 -> x6), unstable navigation (misjump 0.12 ->
+  0.035) and the Lotus field; emergency exit with 30 % irreversible damage;
+  not consumed, degrades only under heavy anomalous exposure; no effect in
+  normal space. Demand from real users (cordon units in the field, SAR,
+  research, anomaly patrols, licensed expeditions): ~24 ships, ~9 g installed,
+  ~0.9 g/y; each fit decided by avoided hull loss vs ownership cost.
+- Demand: medical = Pareto income tail of every polity (economy_3126 GDP per
+  capita) x access (prohibition, taboo, distance from the Kern pocket);
+  research = budgets (unit elastic); stabilisers as above. The ONLY parameter
+  fitted to the AUTHOR_TARGET is `demand.medical.access_base` (0.0005).
+- Supply: each raid segment enters on the economics it BELIEVES (rumoured
+  outer-perimeter price, optimistic corridor), the hulk gives ~80 bodies/y and
+  those who know the open compartments take them first (connected -> map ->
+  blind); connected crews capped at 15 runs/y by bought pickets. Fixed two
+  latent bugs: illegal-raid "insurance" double-counted hull risk (removed);
+  charge / fuel keys did not match `trip_cost` (was always 0).
+- Result (not canon): price ~3.11 M Cr/g (~0.92 Cobrett-I), course 0.12 g ~373 k
+  Cr, body ~2.25 M Cr retail, ~1 300 medical buyers (mostly Sol), ~46 g/y
+  refined, ~60 raids/y (15 connected, ~32 blind, ~13 cover-story), ~12.5 ships
+  lost/y, primary stock exhausted in ~21 y; trafficking now ~0 (margin 0.83:
+  while NIRVANA-1 bodies last, live raw material does not pay), after
+  exhaustion ~46 M Cr/g and ~50 victims/y; corruption expected share outer
+  17-40 %, grey 47-75 %, inner 68-88 %; blockade least smuggling at
+  strictness 0.4 (actual 0.6); bribe pool ~3 M Cr/y.
+- Checks: world_sites 25/25 OK (new: price in AUTHOR_TARGET, no jump-range
+  effect, stabiliser demand small, medical main demand, networks self-source
+  cheaper than buying < map-buyers); lore_md 132 OK; lore_html rebuilt.
+
 ## Next step
 - After the user's review of the spatial layer: Stage 4 runtime communication
   (beacon coverage / relay delays in the client: messages, bank, warrants,

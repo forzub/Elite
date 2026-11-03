@@ -690,36 +690,6 @@
    "visibility": "AUTHOR_TRUTH",
    "world_belief": "спорно: инфекция? частицы? поле? — медицина мира не знает"
   },
-  "jump_component": {
-   "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
-   "compatible": "лицензионные ядра Когниума поколения G4+ (с 3000 г.), включая ядро Cobrett; пиратские копии и ядра Земли — нет (иная геометрия эмиттера)",
-   "decay_per_year": 0.02,
-   "g_per_class": {
-    "cobrett_i_n1": 0.8,
-    "escort_frigate": 2.5,
-    "jump_train": 6.0,
-    "line_combatant": 4.0,
-    "liner": 2.4,
-    "medium_freighter": 2.0,
-    "recon_picket": 1.0
-   },
-   "max_hop_bonus_ly": 3.0,
-   "max_hop_bonus_status": "AUTHOR_TARGET",
-   "name": "фазовый демпфер ядра (вставка лотосита в эмиттер поля)",
-   "restoration": "переотжиг на фабрике ядер Когниума: возвращает 60 % потерянного действия, теряет 10 % массы",
-   "status": "PROPOSAL",
-   "visibility": "AUTHOR_TRUTH",
-   "wear_per_extended_jump": 0.0012,
-   "wear_per_normal_jump": 0.0001,
-   "why_not_mass": [
-    "весь извлекаемый запас — килограммы",
-    "медицинский спрос перебивает цену",
-    "износ на дальних прыжках",
-    "монополия Когниума на демпферы и переотжиг",
-    "санитарный риск сырья",
-    "+3 св. года нужны немногим трассам"
-   ]
-  },
   "markets": {
    "black": [
     "тела преобразованных людей",
@@ -733,6 +703,8 @@
     "нелегальный salvage",
     "перепродажа координат и карт коридора"
    ],
+   "integrated_network_share": 0.6,
+   "integrated_note": "организованные сети с собственной лабораторией и клиникой продают почти по рознице",
    "legal": [
     "сертифицированный лотосит (только через кордон: научный вывоз Когниума и Керна)",
     "научные образцы",
@@ -784,6 +756,115 @@
    "status": "PROPOSAL",
    "unknowns": "долгосрочные последствия неизвестны; есть случаи поздних сосудистых осложнений",
    "visibility": "AUTHOR_TRUTH"
+  },
+  "phase_stabilizer": {
+   "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+   "class_size": {
+    "cobrett_i_n1": "small",
+    "escort_frigate": "medium",
+    "fleet_tender": "medium",
+    "interceptor": "small",
+    "jump_train": "heavy",
+    "line_combatant": "heavy",
+    "medium_freighter": "medium",
+    "patrol_cutter": "small",
+    "recon_picket": "small",
+    "service_tender": "small"
+   },
+   "compatible": "лицензионные ядра Когниума поколения G4+ (с 3000 г.), включая ядро Cobrett; пиратские копии и ядра Земли — нет (иная геометрия эмиттера)",
+   "consumption": "не сгорает и не расходуется в прыжке, энергии не создаёт",
+   "decision": "автор 2026-11-03 (четвёртый проход): +3 св. года отклонено. Лотосит — не топливо, не заряд прыжка, не расходное питание и не средство обычной дальности",
+   "degradation_per_heavy_exposure_day": 0.0006,
+   "effects": {
+    "emergency_exit": {
+     "efficacy_lost_if_damaged": 0.4,
+     "note": "аварийный запуск сквозь возмущение: один раз, с риском необратимого повреждения вставки",
+     "p_irreversible_damage": 0.3
+    },
+    "jump_dead": {
+     "boundary_margin_share": 0.15,
+     "with": "запуск возможен только во внешних 15 % радиуса мёртвой зоны; глубже — невозможен",
+     "without": "запуск невозможен"
+    },
+    "jump_distortion": {
+     "exit_error_multiplier_with": 6.0,
+     "exit_error_multiplier_without": 25.0
+    },
+    "normal_space": {
+     "exit_error_multiplier": 0.99,
+     "note": "в пределах шума"
+    },
+    "unstable_navigation": {
+     "abort_or_misjump_per_jump_with": 0.035,
+     "abort_or_misjump_per_jump_without": 0.12,
+     "tail_index_with": 2.4,
+     "tail_index_without": 1.6
+    }
+   },
+   "function": "удерживает поле прыжка при сильном внешнем аномальном возмущении; в нормальном пространстве пользы почти нет",
+   "g_per_unit": {
+    "heavy": 1.2,
+    "medium": 0.6,
+    "small": 0.3
+   },
+   "name": "фазовый стабилизатор лотосита (вставка в эмиттер поля ядра)",
+   "not_absolute": "не защищает от столкновений, излучения, синдрома и пиратов; в глубине мёртвой зоны не работает; хвосты ошибки выхода остаются",
+   "recalibration_cost_cr": 18000,
+   "recalibration_every_exposure_days": 60,
+   "restoration": "переотжиг на фабрике ядер Когниума: возвращает 60 % потерянного действия, теряет 10 % массы",
+   "service_life_years_fleet_turnover": 30,
+   "status": "PROPOSAL",
+   "users": [
+    {
+     "exposure_days_y": 120,
+     "id": "cordon",
+     "ships_from": "security_units",
+     "who": "отряды кордона в серой зоне и у поля"
+    },
+    {
+     "class": "patrol_cutter",
+     "exposure_days_y": 90,
+     "extra_basis": "дежурные катера Управления Маяков у пикета",
+     "extra_ships": 2,
+     "id": "sar",
+     "ships_from": "security_units:SAR",
+     "who": "SAR у поля и в аномалиях"
+    },
+    {
+     "class": "escort_frigate",
+     "exposure_days_y": 150,
+     "id": "research",
+     "ships_per_zone": 0.5,
+     "who": "исследовательские суда (Когниум, Керн, Вега)"
+    },
+    {
+     "class": "patrol_cutter",
+     "exposure_days_y": 100,
+     "id": "anomaly_patrol",
+     "ships_per_zone": 1.0,
+     "who": "патрули аномалий и лоцманская служба"
+    },
+    {
+     "class": "cobrett_i_n1",
+     "exposure_days_y": 30,
+     "id": "expeditions",
+     "ships_per_legal_body": 0.25,
+     "who": "лицензированные спецэкспедиции (подъём, salvage) — вставки в аренду"
+    }
+   ],
+   "visibility": "AUTHOR_TRUTH",
+   "why_not_mass": [
+    "в нормальном пространстве не даёт ничего",
+    "нужен немногим: SAR, наука, патрули аномалий, кордон, специальные экспедиции",
+    "медицинский спрос задаёт цену",
+    "монополия Когниума на вставки и переотжиг",
+    "совместим только с ядрами Когниума G4+"
+   ],
+   "zone_kinds": [
+    "jump_dead",
+    "jump_distortion",
+    "unstable_navigation"
+   ]
   },
   "phenomena": [
    {
@@ -957,6 +1038,7 @@
     "фиктивные колонизационные программы"
    ],
    "law": "тяжкое преступление во всех семьях права, кроме «нет закона»",
+   "sells_at": "integrated_network_share",
    "survival_to_harvest": 0.45,
    "useful_yield_share": 0.3
   },
@@ -1630,14 +1712,14 @@
    "basis": "дороже всего: артефакт или 3 тела в лабораторию; риск = потеря корабля",
    "hazard_zones": 8,
    "max_payoff_cr": 250000000,
-   "risk": 0.386
+   "risk": 0.368
   }
  },
  "status": "PROPOSAL",
  "worlds_ass": {
   "average_expedition_profitable": false,
   "causal_chain": [
-   "редкий материал (прыжок +3 св. года и «эликсир»)",
+   "редкий материал («эликсир», научный спрос, стабилизаторы для аномалий)",
    "спрос на рейды",
    "специальный транспорт и танкеры",
    "дорогая поддержка",
@@ -1650,18 +1732,17 @@
   ],
   "cobrett_round_trip_charge_t": 4.042,
   "cobrett_tank_t": 3.0,
-  "expected_value_cr": -112733,
+  "expected_value_cr": -424034,
   "expedition_cost_cr": {
    "berth_fees": 20000,
-   "charge_and_fuel": 0,
+   "charge_and_fuel": 35145,
    "corridor_reactor_fuel": 9428,
    "crew_hazard_pay": 20000,
-   "insurance": 407235,
    "provisions": 12000,
    "sealed_containers_ppe_ascorbate": 55000,
    "spare_parts": 40000
   },
-  "expedition_cost_total_cr": 563663,
+  "expedition_cost_total_cr": 191573,
   "information_market": [
    "свежая карта коридора",
    "какие отсеки корпуса ещё не выбраны",
@@ -1684,9 +1765,9 @@
   "lotus": {
    "after_primary_exhausted": {
     "note": "после исчерпания тел NIRVANA-1 материал даёт только живое сырьё: цена растёт, ёмкость «Сада» становится узким местом — давление строить новые «Сады»",
-    "price_cr_per_g": 146305586523,
-    "refined_g_y": 2.17,
-    "victims_y": 53.997
+    "price_cr_per_g": 46488177,
+    "refined_g_y": 1.996,
+    "victims_y": 49.664
    },
    "approach": {
     "corridor": {
@@ -1744,408 +1825,248 @@
     "note": "жёстче контроль ≠ меньше контрабанды: премия и взятки растут, контролёров покупают",
     "rows": [
      {
-      "attempts_y": 198.325,
+      "attempts_y": 62.139,
       "black_premium": 1.08,
-      "interdicted_y": 27.034,
-      "leakage": 0.026,
-      "smuggled_y": 171.291,
+      "interdicted_y": 8.399,
+      "leakage": 0.035,
+      "smuggled_y": 53.74,
       "strictness": 0.2
      },
      {
-      "attempts_y": 216.774,
+      "attempts_y": 67.919,
       "black_premium": 1.32,
-      "interdicted_y": 56.155,
-      "leakage": 0.075,
-      "smuggled_y": 160.619,
+      "interdicted_y": 17.182,
+      "leakage": 0.096,
+      "smuggled_y": 50.737,
       "strictness": 0.4
      },
      {
-      "attempts_y": 247.522,
+      "attempts_y": 77.553,
       "black_premium": 1.72,
-      "interdicted_y": 86.202,
-      "leakage": 0.171,
-      "smuggled_y": 161.32,
+      "interdicted_y": 25.607,
+      "leakage": 0.214,
+      "smuggled_y": 51.946,
       "strictness": 0.6
      },
      {
-      "attempts_y": 290.569,
+      "attempts_y": 91.041,
       "black_premium": 2.28,
-      "interdicted_y": 109.75,
-      "leakage": 0.326,
-      "smuggled_y": 180.819,
+      "interdicted_y": 31.139,
+      "leakage": 0.389,
+      "smuggled_y": 59.902,
       "strictness": 0.8
      },
      {
-      "attempts_y": 345.915,
+      "attempts_y": 108.382,
       "black_premium": 3.0,
-      "interdicted_y": 118.436,
-      "leakage": 0.511,
-      "smuggled_y": 227.479,
+      "interdicted_y": 31.889,
+      "leakage": 0.58,
+      "smuggled_y": 76.493,
       "strictness": 1.0
      }
     ]
    },
+   "bribe_pool_cr_y": 3036435,
    "buying_vs_self": {
-    "civilisation_retail_cr_per_g": 219221576,
-    "note": "у внешнего периметра материал стоит в разы дороже, чем обходится самому слетать и вынести тела — если не погибнешь, не заразишься и не попадёшься",
-    "outer_perimeter_buy_cr_per_g": 54805394,
-    "self_sourcing_expected_cr_per_g": 5606277
+    "civilisation_retail_cr_per_g": 3109001,
+    "note": "у внешнего периметра материал дороже, чем обходится рейс «со связями»; рейс с купленной картой — дороже покупки: поэтому вынос держат сети, а одиночки гибнут или продают за бесценок",
+    "outer_perimeter_buy_cr_per_g": 777250,
+    "self_sourcing_connected_cr_per_g": 333324,
+    "self_sourcing_informed_cr_per_g": 941793
    },
    "corruption": {
     "by_zone": {
      "grey_frontier": [
       {
-       "cost_of_honesty_cr_y": 1611279,
-       "expected_corrupt_share": 0.476,
-       "illicit_cr_y": 2301827,
+       "cost_of_honesty_cr_y": 70850,
+       "expected_corrupt_share": 0.545,
+       "illicit_cr_y": 101214,
        "legal_salary_cr_y": 60000,
-       "pressure": 0.909,
+       "pressure": 1.199,
        "role": "досмотровый инспектор"
       },
       {
-       "cost_of_honesty_cr_y": 5370929,
-       "expected_corrupt_share": 0.694,
-       "illicit_cr_y": 7672755,
+       "cost_of_honesty_cr_y": 236167,
+       "expected_corrupt_share": 0.75,
+       "illicit_cr_y": 337381,
        "legal_salary_cr_y": 80000,
-       "pressure": 2.271,
+       "pressure": 2.996,
        "role": "офицер изъятия"
       },
       {
-       "cost_of_honesty_cr_y": 1074186,
-       "expected_corrupt_share": 0.447,
-       "illicit_cr_y": 1534551,
+       "cost_of_honesty_cr_y": 47233,
+       "expected_corrupt_share": 0.516,
+       "illicit_cr_y": 67476,
        "legal_salary_cr_y": 45000,
-       "pressure": 0.808,
+       "pressure": 1.065,
        "role": "клерк навигационных данных"
       },
       {
-       "cost_of_honesty_cr_y": 1342732,
-       "expected_corrupt_share": 0.452,
-       "illicit_cr_y": 1918189,
+       "cost_of_honesty_cr_y": 59042,
+       "expected_corrupt_share": 0.521,
+       "illicit_cr_y": 84345,
        "legal_salary_cr_y": 55000,
-       "pressure": 0.826,
+       "pressure": 1.09,
        "role": "лаборант-аналитик"
       },
       {
-       "cost_of_honesty_cr_y": 2416918,
-       "expected_corrupt_share": 0.405,
-       "illicit_cr_y": 3452740,
+       "cost_of_honesty_cr_y": 106275,
+       "expected_corrupt_share": 0.473,
+       "illicit_cr_y": 151821,
        "legal_salary_cr_y": 120000,
-       "pressure": 0.681,
+       "pressure": 0.899,
        "role": "командир патруля"
       },
       {
-       "cost_of_honesty_cr_y": 1342732,
-       "expected_corrupt_share": 0.476,
-       "illicit_cr_y": 1918189,
+       "cost_of_honesty_cr_y": 59042,
+       "expected_corrupt_share": 0.545,
+       "illicit_cr_y": 84345,
        "legal_salary_cr_y": 50000,
-       "pressure": 0.909,
+       "pressure": 1.199,
        "role": "выдача карантинных справок"
       }
      ],
      "inner_anomaly": [
       {
-       "cost_of_honesty_cr_y": 2186735,
-       "expected_corrupt_share": 0.68,
-       "illicit_cr_y": 2301827,
+       "cost_of_honesty_cr_y": 96154,
+       "expected_corrupt_share": 0.737,
+       "illicit_cr_y": 101214,
        "legal_salary_cr_y": 60000,
-       "pressure": 2.126,
+       "pressure": 2.804,
        "role": "досмотровый инспектор"
       },
       {
-       "cost_of_honesty_cr_y": 7289117,
-       "expected_corrupt_share": 0.842,
-       "illicit_cr_y": 7672755,
+       "cost_of_honesty_cr_y": 320512,
+       "expected_corrupt_share": 0.875,
+       "illicit_cr_y": 337381,
        "legal_salary_cr_y": 80000,
-       "pressure": 5.315,
+       "pressure": 7.011,
        "role": "офицер изъятия"
       },
       {
-       "cost_of_honesty_cr_y": 1457823,
-       "expected_corrupt_share": 0.654,
-       "illicit_cr_y": 1534551,
+       "cost_of_honesty_cr_y": 64102,
+       "expected_corrupt_share": 0.714,
+       "illicit_cr_y": 67476,
        "legal_salary_cr_y": 45000,
-       "pressure": 1.89,
+       "pressure": 2.493,
        "role": "клерк навигационных данных"
       },
       {
-       "cost_of_honesty_cr_y": 1822279,
-       "expected_corrupt_share": 0.659,
-       "illicit_cr_y": 1918189,
+       "cost_of_honesty_cr_y": 80128,
+       "expected_corrupt_share": 0.718,
+       "illicit_cr_y": 84345,
        "legal_salary_cr_y": 55000,
-       "pressure": 1.933,
+       "pressure": 2.55,
        "role": "лаборант-аналитик"
       },
       {
-       "cost_of_honesty_cr_y": 3280103,
-       "expected_corrupt_share": 0.615,
-       "illicit_cr_y": 3452740,
+       "cost_of_honesty_cr_y": 144230,
+       "expected_corrupt_share": 0.678,
+       "illicit_cr_y": 151821,
        "legal_salary_cr_y": 120000,
-       "pressure": 1.594,
+       "pressure": 2.103,
        "role": "командир патруля"
       },
       {
-       "cost_of_honesty_cr_y": 1822279,
-       "expected_corrupt_share": 0.68,
-       "illicit_cr_y": 1918189,
+       "cost_of_honesty_cr_y": 80128,
+       "expected_corrupt_share": 0.737,
+       "illicit_cr_y": 84345,
        "legal_salary_cr_y": 50000,
-       "pressure": 2.126,
+       "pressure": 2.804,
        "role": "выдача карантинных справок"
       }
      ],
      "outer_perimeter": [
       {
-       "cost_of_honesty_cr_y": 920731,
-       "expected_corrupt_share": 0.171,
-       "illicit_cr_y": 2301827,
+       "cost_of_honesty_cr_y": 40486,
+       "expected_corrupt_share": 0.214,
+       "illicit_cr_y": 101214,
        "legal_salary_cr_y": 60000,
-       "pressure": 0.206,
+       "pressure": 0.272,
        "role": "досмотровый инспектор"
       },
       {
-       "cost_of_honesty_cr_y": 3069102,
-       "expected_corrupt_share": 0.34,
-       "illicit_cr_y": 7672755,
+       "cost_of_honesty_cr_y": 134952,
+       "expected_corrupt_share": 0.404,
+       "illicit_cr_y": 337381,
        "legal_salary_cr_y": 80000,
-       "pressure": 0.515,
+       "pressure": 0.679,
        "role": "офицер изъятия"
       },
       {
-       "cost_of_honesty_cr_y": 613820,
-       "expected_corrupt_share": 0.155,
-       "illicit_cr_y": 1534551,
+       "cost_of_honesty_cr_y": 26990,
+       "expected_corrupt_share": 0.194,
+       "illicit_cr_y": 67476,
        "legal_salary_cr_y": 45000,
-       "pressure": 0.183,
+       "pressure": 0.241,
        "role": "клерк навигационных данных"
       },
       {
-       "cost_of_honesty_cr_y": 767276,
-       "expected_corrupt_share": 0.158,
-       "illicit_cr_y": 1918189,
+       "cost_of_honesty_cr_y": 33738,
+       "expected_corrupt_share": 0.198,
+       "illicit_cr_y": 84345,
        "legal_salary_cr_y": 55000,
-       "pressure": 0.187,
+       "pressure": 0.247,
        "role": "лаборант-аналитик"
       },
       {
-       "cost_of_honesty_cr_y": 1381096,
-       "expected_corrupt_share": 0.134,
-       "illicit_cr_y": 3452740,
+       "cost_of_honesty_cr_y": 60729,
+       "expected_corrupt_share": 0.169,
+       "illicit_cr_y": 151821,
        "legal_salary_cr_y": 120000,
-       "pressure": 0.154,
+       "pressure": 0.204,
        "role": "командир патруля"
       },
       {
-       "cost_of_honesty_cr_y": 767276,
-       "expected_corrupt_share": 0.171,
-       "illicit_cr_y": 1918189,
+       "cost_of_honesty_cr_y": 33738,
+       "expected_corrupt_share": 0.214,
+       "illicit_cr_y": 84345,
        "legal_salary_cr_y": 50000,
-       "pressure": 0.206,
+       "pressure": 0.272,
        "role": "выдача карантинных справок"
       }
      ]
     },
-    "formula": "pressure = illicit profit / legal lifetime income x (1 - audit) x isolation x fragmentation",
+    "cargo_cr": 1686905,
+    "formula": "pressure = illicit income per year / legal salary per year x (1 - audit) x isolation x fragmentation; corrupt share = p / (1 + p)",
     "note": "не все продажны: доля — ожидание по роли; честные офицеры, врачи и следователи есть, но ближе к полю честность стоит дороже"
    },
    "demand_at_price": {
-    "jump_g_y": 19.062,
-    "medical_g_y": 20.186
-   },
-   "jump": {
-    "cobrett_insert_price_cr": 175377261,
-    "cobrett_inserts_possible_from_stock": 1199,
-    "component": "фазовый демпфер ядра (вставка лотосита в эмиттер поля)",
-    "effect": {
-     "bonus_ly": 3.0,
-     "hostile_pairs_brought_into_one_jump": [],
-     "new_direct_beacon_edges": [
-      {
-       "a": 0,
-       "b": 24,
-       "ly": 33.076,
-       "names": [
-        "Sol (Солнце)",
-        "Gliese 436"
-       ]
-      },
-      {
-       "a": 3,
-       "b": 54,
-       "ly": 32.263,
-       "names": [
-        "Wolf 359",
-        "HD 85512"
-       ]
-      },
-      {
-       "a": 4,
-       "b": 57,
-       "ly": 32.785,
-       "names": [
-        "Lalande 21185",
-        "HD 10360"
-       ]
-      },
-      {
-       "a": 9,
-       "b": 25,
-       "ly": 32.05,
-       "names": [
-        "Epsilon Eridani",
-        "Gliese 357"
-       ]
-      },
-      {
-       "a": 10,
-       "b": 23,
-       "ly": 34.438,
-       "names": [
-        "Gliese 581",
-        "Gliese 892"
-       ]
-      },
-      {
-       "a": 10,
-       "b": 25,
-       "ly": 34.845,
-       "names": [
-        "Gliese 581",
-        "Gliese 357"
-       ]
-      },
-      {
-       "a": 14,
-       "b": 23,
-       "ly": 34.192,
-       "names": [
-        "HD 20794 (82 G. Eridani)",
-        "Gliese 892"
-       ]
-      },
-      {
-       "a": 14,
-       "b": 25,
-       "ly": 32.995,
-       "names": [
-        "HD 20794 (82 G. Eridani)",
-        "Gliese 357"
-       ]
-      },
-      {
-       "a": 14,
-       "b": 54,
-       "ly": 33.789,
-       "names": [
-        "HD 20794 (82 G. Eridani)",
-        "HD 85512"
-       ]
-      },
-      {
-       "a": 15,
-       "b": 22,
-       "ly": 33.745,
-       "names": [
-        "HD 40307",
-        "Delta Pavonis"
-       ]
-      },
-      {
-       "a": 15,
-       "b": 25,
-       "ly": 34.975,
-       "names": [
-        "HD 40307",
-        "Gliese 357"
-       ]
-      },
-      {
-       "a": 22,
-       "b": 54,
-       "ly": 34.514,
-       "names": [
-        "Delta Pavonis",
-        "HD 85512"
-       ]
-      },
-      {
-       "a": 23,
-       "b": 53,
-       "ly": 32.363,
-       "names": [
-        "Gliese 892",
-        "Gliese 674"
-       ]
-      },
-      {
-       "a": 24,
-       "b": 60,
-       "ly": 33.737,
-       "names": [
-        "Gliese 436",
-        "Proxima Centauri"
-       ]
-      },
-      {
-       "a": 25,
-       "b": 53,
-       "ly": 34.571,
-       "names": [
-        "Gliese 357",
-        "Gliese 674"
-       ]
-      },
-      {
-       "a": 53,
-       "b": 54,
-       "ly": 34.966,
-       "names": [
-        "Gliese 674",
-        "HD 85512"
-       ]
-      },
-      {
-       "a": 54,
-       "b": 60,
-       "ly": 33.445,
-       "names": [
-        "HD 85512",
-        "Proxima Centauri"
-       ]
-      }
+    "medical_buyers": 1324,
+    "medical_buyers_top": [
+     [
+      "sol_authority",
+      1022
      ],
-     "newly_reachable_systems": [
-      {
-       "id": 21,
-       "name": "GJ 1214"
-      },
-      {
-       "id": 36,
-       "name": "9 Ceti"
-      }
+     [
+      "eps_eri_harmony",
+      51
      ],
-     "status": "AUTHOR_TARGET"
-    },
-    "g_per_class": {
-     "cobrett_i_n1": 0.8,
-     "escort_frigate": 2.5,
-     "jump_train": 6.0,
-     "line_combatant": 4.0,
-     "liner": 2.4,
-     "medium_freighter": 2.0,
-     "recon_picket": 1.0
-    },
-    "politics": [
-     "Когниум (единственный производитель демпферов и переотжига) получает рычаг: дальние прыжки только для лицензиатов",
-     "открываются без промежуточных точек: GJ 1214, 9 Ceti — их ценность (9 Кита — пояс ~2.8 массы Земли) зависит от доступа к лотоситу",
-     "17 новых прямых маячных рёбер сокращают маршруты в обход узлов-посредников (Агора, Новая Индия как реэкспортёры теряют часть ренты)",
-     "враждебных пар, сближающихся до одного прыжка, нет: военный эффект — скорость рейдов и обход застав, а не новые фронты",
-     "страх распространения +3 св. лет — главная негласная причина кордона"
-    ]
+     [
+      "lalande_mecca",
+      46
+     ],
+     [
+      "wolf359_citadel",
+      28
+     ],
+     [
+      "gj832_tianhe",
+      25
+     ],
+     [
+      "proxima_outpost",
+      25
+     ]
+    ],
+    "medical_g_y": 31.787,
+    "research_g_y": 13.188,
+    "stabiliser_g_y": 0.852
    },
    "medical": {
     "course_g": 0.12,
-    "course_price_cr": 26306589,
-    "courses_y": 168,
+    "course_price_cr": 373080,
+    "courses_y": 265,
     "dangerous": 0.12,
     "fraud": 0.25,
     "useless": 0.45
@@ -2197,7 +2118,14 @@
      "year": 3121.2
     }
    ],
-   "price_cr_per_g": 219221576,
+   "price_cr_per_g": 3109001,
+   "price_in_target": true,
+   "price_target_cr_per_g": [
+    2000000,
+    5000000
+   ],
+   "price_target_status": "AUTHOR_TARGET",
+   "price_vs_cobrett": 0.916,
    "quarantine": {
     "dso.far_berth": {
      "arrivals_per_day": 0.0,
@@ -2216,11 +2144,11 @@
      }
     },
     "dso.quarantine_picket": {
-     "arrivals_per_day": 0.743,
-     "holding_needed": 1.171,
+     "arrivals_per_day": 0.526,
+     "holding_needed": 0.829,
      "holding_slots": 9,
-     "holding_utilisation": 0.13,
-     "inspection_utilisation": 0.155,
+     "holding_utilisation": 0.092,
+     "inspection_utilisation": 0.11,
      "inspections_per_day": 4.8,
      "resources": {
       "beds": 8,
@@ -2232,11 +2160,11 @@
      }
     },
     "site.041.holding": {
-     "arrivals_per_day": 1.239,
-     "holding_needed": 1.951,
+     "arrivals_per_day": 0.877,
+     "holding_needed": 1.382,
      "holding_slots": 28,
-     "holding_utilisation": 0.07,
-     "inspection_utilisation": 0.194,
+     "holding_utilisation": 0.049,
+     "inspection_utilisation": 0.137,
      "inspections_per_day": 6.4,
      "resources": {
       "beds": 60,
@@ -2249,64 +2177,69 @@
     }
    },
    "raids": {
-    "average_ev_cr": -112733,
-    "run_cost_cr": 563663,
+    "average_ev_cr": -424034,
+    "body_value_retail_cr": 2249207,
+    "run_cost_cr": 191573,
     "segments": [
      {
-      "bodies": 0.139,
+      "bodies": 0.255,
       "bribe_cr": 0,
       "corridor": "unknown",
-      "ev_cr": -1339237,
+      "ev_cr": -1053015,
       "map_cr": 0,
       "p_caught": 0.27,
       "p_ship_lost": 0.35,
-      "price_per_body": 634383,
+      "perceived_ev_cr": -38315,
+      "price_per_body": 8997,
       "ru": "наивные (без карты, без связей)",
+      "runs_y": 32.295,
       "segment": "naive",
-      "share": 0.45,
       "stage1_risk": 0.13
      },
      {
-      "bodies": 0.294,
+      "bodies": 1.204,
       "bribe_cr": 0,
       "corridor": "estimated",
-      "ev_cr": 247038,
+      "ev_cr": -698383,
       "map_cr": 40000,
       "p_caught": 0.27,
       "p_ship_lost": 0.175,
-      "price_per_body": 4757875,
+      "perceived_ev_cr": -181528,
+      "price_per_body": 67476,
       "ru": "с купленной картой (часть карт ложные)",
+      "runs_y": 0.0,
       "segment": "informed",
-      "share": 0.32,
       "stage1_risk": 0.13
      },
      {
-      "bodies": 0.653,
-      "bribe_cr": 14273626,
+      "bodies": 2.674,
+      "bribe_cr": 202429,
       "corridor": "known_safe",
-      "ev_cr": 10794436,
+      "ev_cr": 861034,
       "map_cr": 120000,
       "p_caught": 0.081,
       "p_ship_lost": 0.03,
-      "price_per_body": 39648962,
+      "perceived_ev_cr": 928671,
+      "price_per_body": 562302,
       "ru": "со связями (свежая карта, взятка, своя лаборатория)",
+      "runs_y": 15,
       "segment": "connected",
-      "share": 0.05,
       "stage1_risk": 0.13
      },
      {
       "bodies": 0.0,
-      "ev_cr": -715833,
+      "ev_cr": -343743,
       "p_caught": 0.0,
       "p_ship_lost": 0.06,
+      "perceived_ev_cr": null,
       "price_per_body": 0,
       "ru": "старатели «минерала» у планеты c (легенда)",
+      "runs_y": 12.918,
       "segment": "cover_story",
-      "share": 0.18,
       "stage1_risk": 0.0
      }
     ],
-    "ships_lost_y": 43.393
+    "ships_lost_y": 12.528
    },
    "security_units": [
     {
@@ -2326,7 +2259,10 @@
      "mandate": "досмотр, карантин, изъятие",
      "name": "Карантинная эскадра УМ, 1-я группа",
      "owner": "tau_ceti_cognium",
-     "unofficial_income_cr_y": 328832
+     "ship_class": "escort_frigate",
+     "ships": 4,
+     "unofficial_income_cr_y": 155848,
+     "works_in_field": true
     },
     {
      "alliances": [
@@ -2345,7 +2281,10 @@
      "mandate": "изъятие незаконного материала",
      "name": "Группа изъятия-7",
      "owner": "tau_ceti_cognium",
-     "unofficial_income_cr_y": 1578395
+     "ship_class": "patrol_cutter",
+     "ships": 2,
+     "unofficial_income_cr_y": 374035,
+     "works_in_field": true
     },
     {
      "alliances": [
@@ -2365,7 +2304,10 @@
      "mandate": "охрана доков, досмотр",
      "name": "Охрана портов Kern Logistics («Перевал», «Причал»)",
      "owner": "cyg61_kern",
-     "unofficial_income_cr_y": 2608737
+     "ship_class": "patrol_cutter",
+     "ships": 3,
+     "unofficial_income_cr_y": 927295,
+     "works_in_field": true
     },
     {
      "alliances": [
@@ -2384,7 +2326,10 @@
      "mandate": "таможня и лицензии",
      "name": "Таможня «Порога»",
      "owner": "cyg61_kern",
-     "unofficial_income_cr_y": 2499126
+     "ship_class": "patrol_cutter",
+     "ships": 2,
+     "unofficial_income_cr_y": 592222,
+     "works_in_field": false
     },
     {
      "alliances": [
@@ -2403,7 +2348,10 @@
      "mandate": "истёк в 3119",
      "name": "«Синие печати» (бывший патруль Третьей Эллады)",
      "owner": "hd114783_hellas3",
-     "unofficial_income_cr_y": 4165210
+     "ship_class": "interceptor",
+     "ships": 2,
+     "unofficial_income_cr_y": 987036,
+     "works_in_field": true
     },
     {
      "alliances": [],
@@ -2420,9 +2368,177 @@
      "mandate": "SAR",
      "name": "Спасательный катер «Ласка» (Керн)",
      "owner": "cyg61_kern",
-     "unofficial_income_cr_y": 0
+     "ship_class": "patrol_cutter",
+     "ships": 1,
+     "unofficial_income_cr_y": 0,
+     "works_in_field": true
     }
    ],
+   "stabilizer": {
+    "anomaly_zones": 4,
+    "consumption": "не сгорает и не расходуется в прыжке, энергии не создаёт",
+    "effects": {
+     "emergency_exit": {
+      "efficacy_lost_if_damaged": 0.4,
+      "note": "аварийный запуск сквозь возмущение: один раз, с риском необратимого повреждения вставки",
+      "p_irreversible_damage": 0.3
+     },
+     "jump_dead": {
+      "boundary_margin_share": 0.15,
+      "with": "запуск возможен только во внешних 15 % радиуса мёртвой зоны; глубже — невозможен",
+      "without": "запуск невозможен"
+     },
+     "jump_distortion": {
+      "exit_error_multiplier_with": 6.0,
+      "exit_error_multiplier_without": 25.0
+     },
+     "normal_space": {
+      "exit_error_multiplier": 0.99,
+      "note": "в пределах шума"
+     },
+     "unstable_navigation": {
+      "abort_or_misjump_per_jump_with": 0.035,
+      "abort_or_misjump_per_jump_without": 0.12,
+      "tail_index_with": 2.4,
+      "tail_index_without": 1.6
+     }
+    },
+    "fleet": [
+     {
+      "avoided_loss_cr_y": 23728464,
+      "cost_cr_y": 226893,
+      "exposure_days_y": 120,
+      "fitted": true,
+      "g_per_ship": 0.6,
+      "installed_g": 2.4,
+      "replacement_g_y": 0.247,
+      "ship_class": "escort_frigate",
+      "ships": 4,
+      "user": "cordon",
+      "wear_share_y": 0.069,
+      "who": "Карантинная эскадра УМ, 1-я группа"
+     },
+     {
+      "avoided_loss_cr_y": 3549355,
+      "cost_cr_y": 131446,
+      "exposure_days_y": 120,
+      "fitted": true,
+      "g_per_ship": 0.3,
+      "installed_g": 0.6,
+      "replacement_g_y": 0.062,
+      "ship_class": "patrol_cutter",
+      "ships": 2,
+      "user": "cordon",
+      "wear_share_y": 0.069,
+      "who": "Группа изъятия-7"
+     },
+     {
+      "avoided_loss_cr_y": 3549355,
+      "cost_cr_y": 131446,
+      "exposure_days_y": 120,
+      "fitted": true,
+      "g_per_ship": 0.3,
+      "installed_g": 0.9,
+      "replacement_g_y": 0.093,
+      "ship_class": "patrol_cutter",
+      "ships": 3,
+      "user": "cordon",
+      "wear_share_y": 0.069,
+      "who": "Охрана портов Kern Logistics («Перевал», «Причал»)"
+     },
+     {
+      "avoided_loss_cr_y": 2412504,
+      "cost_cr_y": 131446,
+      "exposure_days_y": 120,
+      "fitted": true,
+      "g_per_ship": 0.3,
+      "installed_g": 0.6,
+      "replacement_g_y": 0.062,
+      "ship_class": "interceptor",
+      "ships": 2,
+      "user": "cordon",
+      "wear_share_y": 0.069,
+      "who": "«Синие печати» (бывший патруль Третьей Эллады)"
+     },
+     {
+      "avoided_loss_cr_y": 2662016,
+      "cost_cr_y": 107523,
+      "exposure_days_y": 90,
+      "fitted": true,
+      "g_per_ship": 0.3,
+      "installed_g": 0.9,
+      "replacement_g_y": 0.077,
+      "ship_class": "patrol_cutter",
+      "ships": 3,
+      "user": "sar",
+      "wear_share_y": 0.053,
+      "who": "SAR у поля и в аномалиях"
+     },
+     {
+      "avoided_loss_cr_y": 29660580,
+      "cost_cr_y": 267604,
+      "exposure_days_y": 150,
+      "fitted": true,
+      "g_per_ship": 0.6,
+      "installed_g": 1.2,
+      "replacement_g_y": 0.143,
+      "ship_class": "escort_frigate",
+      "ships": 2.0,
+      "user": "research",
+      "wear_share_y": 0.086,
+      "who": "исследовательские суда (Когниум, Керн, Вега)"
+     },
+     {
+      "avoided_loss_cr_y": 2957796,
+      "cost_cr_y": 115187,
+      "exposure_days_y": 100,
+      "fitted": true,
+      "g_per_ship": 0.3,
+      "installed_g": 1.2,
+      "replacement_g_y": 0.11,
+      "ship_class": "patrol_cutter",
+      "ships": 4.0,
+      "user": "anomaly_patrol",
+      "wear_share_y": 0.058,
+      "who": "патрули аномалий и лоцманская служба"
+     },
+     {
+      "avoided_loss_cr_y": 216343,
+      "cost_cr_y": 56879,
+      "exposure_days_y": 30,
+      "fitted": true,
+      "g_per_ship": 0.3,
+      "installed_g": 1.125,
+      "replacement_g_y": 0.058,
+      "ship_class": "cobrett_i_n1",
+      "ships": 3.75,
+      "user": "expeditions",
+      "wear_share_y": 0.018,
+      "who": "лицензированные спецэкспедиции (подъём, salvage) — вставки в аренду"
+     }
+    ],
+    "function": "удерживает поле прыжка при сильном внешнем аномальном возмущении; в нормальном пространстве пользы почти нет",
+    "g_per_unit": {
+     "heavy": 1.2,
+     "medium": 0.6,
+     "small": 0.3
+    },
+    "installed_g": 8.925,
+    "map_effect": {
+     "new_direct_beacon_edges": [],
+     "newly_reachable_systems": [],
+     "note": "обычная дальность прыжка не меняется"
+    },
+    "name": "фазовый стабилизатор лотосита (вставка в эмиттер поля ядра)",
+    "not_absolute": "не защищает от столкновений, излучения, синдрома и пиратов; в глубине мёртвой зоны не работает; хвосты ошибки выхода остаются",
+    "politics": [
+     "обычная дальность прыжка не меняется: новых маячных рёбер и новых достижимых систем нет (+3 св. года отклонено автором)",
+     "Когниум — единственный производитель вставок и переотжига: решает, чьи SAR, наука и патрули могут работать в аномалиях",
+     "стабилизаторы стоят на 23.8 кораблях; без них кордон не досматривает внутри поля, а SAR не вытаскивает застрявших",
+     "у рейдеров вставок почти нет (несовместимые ядра, учёт Когниума): поэтому они гибнут чаще кордона"
+    ],
+    "small_insert_price_cr": 932700
+   },
    "status": "PROPOSAL",
    "stock": {
     "bodies": 2220,
@@ -2463,20 +2579,26 @@
     "upper_estimate": true
    },
    "supply": {
-    "bodies_stolen_y": 36.375,
+    "bodies_stolen_y": 48.345,
     "legal_bodies_y": 15.0,
-    "raids_y": 192.175,
-    "refined_g_y": 39.248,
-    "years_until_primary_exhausted": 25.81
+    "raids_by_segment": {
+     "connected": 15,
+     "cover_story": 12.918,
+     "informed": 0.0,
+     "naive": 32.295
+    },
+    "raids_y": 60.212,
+    "refined_g_y": 45.827,
+    "years_until_primary_exhausted": 20.933
    },
    "trafficking": {
     "capacity_y": 54.0,
     "g_per_victim": 0.04,
-    "g_y": 2.081,
-    "margin": 24.469,
+    "g_y": 0.0,
+    "margin": 0.833,
     "note": "объём следует из выгоды (маржа) и ёмкости преступных сетей, а не задан фракцией",
-    "revenue_per_victim_cr": 2202173,
-    "victims_y": 51.793
+    "revenue_per_victim_cr": 74955,
+    "victims_y": 0.0
    }
   },
   "official_names": {

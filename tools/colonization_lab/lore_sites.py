@@ -90,20 +90,25 @@ def docs(D, lm):
                   [(z["name"], ZONE_RU.get(z["kind"], z["kind"]), z.get("anchor"), ", ".join(f"{k}: {v}" for k, v in z["effects"].items()), KNOW_RU.get(z["knowledge"], z["knowledge"]), TAG) for z in zones]), "",
          "### Лотосит (что знает мир)", "",
          "Официально (кордон): стратегический материал и биологическая опасность; «минерал у планеты c» — легенда Когниума. Freeband: «его выносят из мертвецов «Лотоса»». "
-         f"В ядре прыжка демпфер с лотоситом даёт +3 св. года (AUTHOR_TARGET): {', '.join(LM['jump']['politics'])}. "
-         f"Демпфер для Cobrett — {LM['jump']['g_per_class']['cobrett_i_n1']} г, ~{n0(LM['jump']['cobrett_insert_price_cr'])} Cr. "
+         "Лотосит — не топливо и не заряд прыжка, обычную дальность он не увеличивает. Его техническое применение — фазовый стабилизатор: "
+         "вставка в эмиттер ядра удерживает поле прыжка в мёртвых зонах, зонах искажения и в поле «Лотоса», где обычное ядро срывается. "
+         f"Вставка малого корабля — {LM['stabilizer']['g_per_unit']['small']} г, ~{n0(LM['stabilizer']['small_insert_price_cr'])} Cr; в нормальном пространстве пользы нет. "
+         f"{'; '.join(LM['stabilizer']['politics'][1:3])}. "
+         f"Грамм стоит ~{n0(LM['price_cr_per_g'])} Cr — примерно {LM['price_vs_cobrett']:.1f} нового Cobrett-I; тело с извлекаемым лотоситом — ~{n0(LM['raids']['body_value_retail_cr'])} Cr в рознице. "
          f"В медицине это «эликсир молодости»: курс {LM['medical']['course_g']} г ≈ {n0(LM['medical']['course_price_cr'])} Cr; на рынке {100 * LM['medical']['useless']:.0f} % препаратов бесполезны, {100 * LM['medical']['dangerous']:.0f} % опасны, {100 * LM['medical']['fraud']:.0f} % — подделки.", "",
          "Лотосовая лихорадка («красная», «скарлатина старателей»): жар, яркая красная сыпь, слабость, сосудистые нарушения, дезориентация; в тяжёлых случаях — неврология. Причину медицина мира спорит. Отсюда санитарный контроль, герметичные контейнеры, карантинный статус тел и обломков, досмотр, протокол L страховщиков; контрабанда заражённого материала — особо тяжкое преступление.", "",
          lm.table(["Вспышка", "Где", "Год", "Людей", "Заболело", "Погибло", "Причина", "Последствия"],
                   [(o["id"], o["site"], o["year"], n0(o["population"]), n0(o["cases"]), n0(o["deaths"]), o["cause_chain"], o["consequence"]) for o in LM["outbreaks"]]), "",
          "### Экономика 3126 (модель, не канон)", "",
          f"Первичный запас конечен: {n0(LM['stock']['bodies'])} тел, извлекаемо всего {f2(LM['stock']['recoverable_g_total'])} г, осталось {f2(LM['stock']['recoverable_g_left'])} г (верхняя оценка). "
-         f"Цена ~{n0(LM['price_cr_per_g'])} Cr/г; в год — {n0(LM['supply']['raids_y'])} рейдов, {f2(LM['supply']['bodies_stolen_y'])} вынесенных тел + {LM['supply']['legal_bodies_y']} законно, "
+         f"Цена ~{n0(LM['price_cr_per_g'])} Cr/г (спрос: медицина {f2(LM['demand_at_price']['medical_g_y'])} г/год от ~{n0(LM['demand_at_price']['medical_buyers'])} покупателей, "
+         f"наука {f2(LM['demand_at_price']['research_g_y'])}, стабилизаторы {f2(LM['demand_at_price']['stabiliser_g_y'])}); в год — {n0(LM['supply']['raids_y'])} рейдов, {f2(LM['supply']['bodies_stolen_y'])} вынесенных тел + {LM['supply']['legal_bodies_y']} законно, "
          f"{f2(LM['supply']['refined_g_y'])} г лотосита, {f2(LM['raids']['ships_lost_y'])} потерянных кораблей; первичный запас иссякнет через ~{LM['supply']['years_until_primary_exhausted']:.0f} лет.", "",
-         lm.table(["Сегмент", "Доля", "Карта", "Риск потери", "Риск ареста", "Тел за рейс", "Цена тела, Cr", "Итог рейса, Cr"],
-                  [(r["ru"], r["share"], r.get("corridor") or "—", r["p_ship_lost"], r["p_caught"], r["bodies"], n0(r["price_per_body"]), n0(r["ev_cr"])) for r in LM["raids"]["segments"]]), "",
-         f"Средний рейд: {n0(LM['raids']['average_ev_cr'])} Cr — убыточен; прибыль у редких «со связями». Купить у внешнего периметра — ~{n0(LM['buying_vs_self']['outer_perimeter_buy_cr_per_g'])} Cr/г, "
-         f"вынести самому — ~{n0(LM['buying_vs_self']['self_sourcing_expected_cr_per_g'])} Cr/г ожидаемых затрат: перекупщик у поля платит ~0.4 % конечной цены, лаборатория в сером фронтире — ~3 %, периметр — ~25 %.", "",
+         lm.table(["Сегмент", "Рейдов/год", "Карта", "Риск потери", "Риск ареста", "Тел за рейс", "Цена тела, Cr", "Итог рейса, Cr"],
+                  [(r["ru"], f2(r["runs_y"]), r.get("corridor") or "—", r["p_ship_lost"], r["p_caught"], r["bodies"], n0(r["price_per_body"]), n0(r["ev_cr"])) for r in LM["raids"]["segments"]]), "",
+         f"Средний рейд: {n0(LM['raids']['average_ev_cr'])} Cr — убыточен; прибыль у немногих «со связями». Купить у внешнего периметра — ~{n0(LM['buying_vs_self']['outer_perimeter_buy_cr_per_g'])} Cr/г; "
+         f"рейс «со связями» обходится в ~{n0(LM['buying_vs_self']['self_sourcing_connected_cr_per_g'])} Cr/г, с купленной картой — ~{n0(LM['buying_vs_self']['self_sourcing_informed_cr_per_g'])} Cr/г. "
+         "Перекупщик у поля платит ~0.4 % конечной цены, лаборатория в сером фронтире — ~3 %, периметр — ~25 %: вынос держат сети, одиночки гибнут или продают за бесценок.", "",
          "Рынки: легальный — " + "; ".join(T_["markets"]["legal"]) + ". Серый — " + "; ".join(T_["markets"]["grey"]) + ". Чёрный — " + "; ".join(T_["markets"]["black"]) + ".", "",
          f"Блокада нелинейна: контрабанды меньше всего при строгости {LM['blockade']['least_smuggling_at']}, нынешний кордон — {LM['blockade']['actual']} ({LM['blockade']['note']}).", "",
          lm.table(["Строгость", "Премия чёрного рынка", "Попыток/год", "Утечка (подкуп)", "Прошло/год"], [(r["strictness"], r["black_premium"], r["attempts_y"], r["leakage"], r["smuggled_y"]) for r in LM["blockade"]["rows"]]), "",
@@ -157,14 +162,25 @@ def docs(D, lm):
          "### Материал и запас", "", T_["material"]["origin"] + ".", "",
          lm.table(["Когорта", "Людей", "Экспозиция, лет", "Преобразовано", "г на тело", "Потенциал, г"], [(c["cohort"], c["people"], c["exposure_years"], c["transformed_share"], c["g_per_body"], c["potential_g"]) for c in st["cohorts"]]), "",
          f"Потенциал {f2(st['potential_g'])} г; извлекаемо {f2(st['recoverable_g_total'])} г; вывезено {st['removed_bodies']} тел ({T_['material']['removed_note']}); осталось {f2(st['recoverable_g_left'])} г. {st['note']}.", "",
-         "### Прыжковый компонент", "", f"{T_['jump_component']['name']}; граммов на класс: " + ", ".join(f"{k} {v}" for k, v in T_["jump_component"]["g_per_class"].items()) + ". "
-         f"Износ: {T_['jump_component']['wear_per_normal_jump']} за обычный прыжок, {T_['jump_component']['wear_per_extended_jump']} за дальний, {T_['jump_component']['decay_per_year']} в год. {T_['jump_component']['restoration']}. Совместимость: {T_['jump_component']['compatible']}. "
-         "Почему не массово: " + "; ".join(T_["jump_component"]["why_not_mass"]) + ".", "",
-         f"+3 св. года (AUTHOR_TARGET) на карте: новых прямых маячных рёбер {len(LM['jump']['effect']['new_direct_beacon_edges'])}; впервые достижимы {', '.join(x['name'] for x in LM['jump']['effect']['newly_reachable_systems']) or 'нет'}; "
-         f"враждебных пар в один прыжок: {len(LM['jump']['effect']['hostile_pairs_brought_into_one_jump'])}.", "",
+         "### Фазовый стабилизатор", "", f"{T_['phase_stabilizer']['decision']}.", "",
+         f"{T_['phase_stabilizer']['name']}: {T_['phase_stabilizer']['function']}. Граммов на вставку: " + ", ".join(f"{k} {v}" for k, v in T_["phase_stabilizer"]["g_per_unit"].items()) + ". "
+         f"{T_['phase_stabilizer']['consumption']}. Деградация — только при тяжёлой аномальной экспозиции ({T_['phase_stabilizer']['degradation_per_heavy_exposure_day']} в сутки), перекалибровка раз в {T_['phase_stabilizer']['recalibration_every_exposure_days']} суток экспозиции; "
+         f"{T_['phase_stabilizer']['restoration']}. Совместимость: {T_['phase_stabilizer']['compatible']}. Не абсолютна: {T_['phase_stabilizer']['not_absolute']}.", "",
+         lm.table(["Где", "Без стабилизатора", "Со стабилизатором"],
+                  [("мёртвая зона", T_["phase_stabilizer"]["effects"]["jump_dead"]["without"], T_["phase_stabilizer"]["effects"]["jump_dead"]["with"]),
+                   ("зона искажения", f"ошибка выхода ×{T_['phase_stabilizer']['effects']['jump_distortion']['exit_error_multiplier_without']}", f"×{T_['phase_stabilizer']['effects']['jump_distortion']['exit_error_multiplier_with']}"),
+                   ("неустойчивая навигация", f"срыв/мисджамп {T_['phase_stabilizer']['effects']['unstable_navigation']['abort_or_misjump_per_jump_without']} за прыжок",
+                    f"{T_['phase_stabilizer']['effects']['unstable_navigation']['abort_or_misjump_per_jump_with']}"),
+                   ("аварийный выход", "—", T_["phase_stabilizer"]["effects"]["emergency_exit"]["note"]),
+                   ("нормальное пространство", "—", T_["phase_stabilizer"]["effects"]["normal_space"]["note"])]), "",
+         "Кто реально ставит стабилизаторы (спрос выведен из флота, а не из +3 св. года):", "",
+         lm.table(["Пользователь", "Кораблей", "г на корабль", "Суток в аномалии/год", "Сбережённые потери, Cr/год", "Цена владения, Cr/год", "Ставит"],
+                  [(r["who"], f2(r["ships"]), r["g_per_ship"], r["exposure_days_y"], n0(r["avoided_loss_cr_y"]), n0(r["cost_cr_y"]), "да" if r["fitted"] else "нет") for r in LM["stabilizer"]["fleet"]]), "",
+         "Почему не массово: " + "; ".join(T_["phase_stabilizer"]["why_not_mass"]) + ". " + LM["stabilizer"]["politics"][0] + ".", "",
          "### Медицина", "", T_["medical"]["effect"] + ". " + T_["medical"]["unknowns"] + ".", "",
          "### Лотосовая лихорадка — истинный механизм (игровая модель)", "", T_["fever"]["truth_mechanism"] + ".", "",
-         "### Торговля людьми", "", f"Формы: {', '.join(T_['trafficking']['forms'])}. Сейчас ~{LM['trafficking']['victims_y']:.0f} жертв в год (маржа ×{LM['trafficking']['margin']:.0f}, ёмкость «Сада» {LM['trafficking']['capacity_y']:.0f}/год). "
+         "### Торговля людьми", "", f"Формы: {', '.join(T_['trafficking']['forms'])}. Сейчас ~{LM['trafficking']['victims_y']:.0f} жертв в год (маржа ×{LM['trafficking']['margin']:.2f}, ёмкость «Сада» {LM['trafficking']['capacity_y']:.0f}/год): пока есть мёртвые NIRVANA-1, живое сырьё не окупается — «Сад» держится на долгах и культах. "
+         f"Когда тела кончатся, цена поднимется до ~{n0(LM['after_primary_exhausted']['price_cr_per_g'])} Cr/г и торговля людьми станет выгодной (~{LM['after_primary_exhausted']['victims_y']:.0f} жертв в год). "
          f"После исчерпания тел: {LM['after_primary_exhausted']['note']}. {T_['reproduction']['note']}.", "",
          "### Подразделения: что на самом деле", "",
          lm.table(["Подразделение", "Категория", "Коррупция", "Аудит", "Лояльность", "Союзы", "Неофициальный доход, Cr/год"],

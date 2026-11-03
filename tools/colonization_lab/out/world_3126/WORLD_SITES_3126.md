@@ -35,9 +35,9 @@
 - Cobrett туда-обратно от HD 104067: 4.042 т заряда при баке 3.0 т -> баков J20: 1
 - поле «Лотоса»: прыжок HD 104067 → «Дальний Причал», коридор 1.5 а.е. (3.502 сут в одну сторону), в поле 6.681 сут
 - запас: 2220 тел, извлекаемо всего 1588.665 г, осталось 959.276 г (верхняя оценка)
-- цена 219221576 Cr/г; рейдов 192.175/год, тел 36.375/год, лотосита 39.248 г/год; первичный запас кончится через 25.81 лет
-- средний рейд -112733 Cr; потерянных кораблей 43.393/год; жертв торговли людьми 51.793/год (AUTHOR_TRUTH)
-- +3 св. года: новые прямые рёбра 17, новые достижимые системы ['GJ 1214', '9 Ceti']
+- цена 3109001 Cr/г; рейдов 60.212/год, тел 48.345/год, лотосита 45.827 г/год; первичный запас кончится через 20.933 лет
+- средний рейд -424034 Cr; потерянных кораблей 12.528/год; жертв торговли людьми 0.0/год (AUTHOR_TRUTH)
+- стабилизатор: 8.925 г установлено на кораблях аномалий; обычная дальность прыжка не меняется
 
 ## Связь
 
@@ -76,13 +76,17 @@
 - OK access_chains_use_real_hops_only: frontier.worlds_ass max 30.753, frontier.ceti_chest max 25.603, frontier.vega_observatory max 18.304, kern_pocket max 30.753
 - OK kern_pocket_reachable_without_exceptions: legs [30.641, 30.753, 30.407]
 - OK deep_space_objects_have_world_lines: 9 objects
-- OK worlds_ass_is_max_risk_and_reward: frontier.worlds_ass: 250000000 / 0.386, frontier.ceti_chest: 2640000 / 0.016, frontier.vega_observatory: 2000000 / 0.006
-- OK average_expedition_not_profitable: average visitor EV -112733 Cr, run cost 563663
-- OK rare_successes_make_the_profit: best segment 10794436 Cr > 0, average -112733 Cr < 0
-- OK buying_dearer_than_self_sourcing: 54805394 > 5606277 Cr/g
-- OK lotosite_primary_stock_finite: 959.276 g left of 1588.665 g, ~25.81 years
+- OK worlds_ass_is_max_risk_and_reward: frontier.worlds_ass: 250000000 / 0.368, frontier.ceti_chest: 2640000 / 0.016, frontier.vega_observatory: 2000000 / 0.006
+- OK average_expedition_not_profitable: average visitor EV -424034 Cr, run cost 191573
+- OK rare_successes_make_the_profit: best segment 861034 Cr > 0, average -424034 Cr < 0
+- OK networks_self_source_cheaper_than_buying: connected 333324 < buy 777250 < informed 941793 Cr/g
+- OK lotosite_primary_stock_finite: 959.276 g left of 1588.665 g, ~20.933 years
 - OK phenomena_have_developer_category: 13 phenomena: physical, sensor, subjective
 - OK outbreaks_within_population: OB-3093-MANDALA 200/76; OB-3115-STELLA 126/52; OB-3121-PEREVAL 180/15
+- OK lotosite_price_in_author_target: 3109001 Cr/g, target [2000000, 5000000] (AUTHOR_TARGET); = 0.916 Cobrett-I
+- OK lotosite_has_no_jump_range_effect: stabiliser only in anomalies; no +3 ly
+- OK stabiliser_demand_small_and_specialised: stabilisers 0.852 g/y of 45.827 g/y; installed 8.925 g
+- OK medical_is_main_demand: medical 31.787 g/y, research 13.188, stabilisers 0.852
 - OK lotus_identity_known_to_developers: NIRVANA-1 (CANON, AUTHOR_TRUTH)
 - OK news_reaches_far_periphery_within_author_target: network diameter 1.75 d, Sol -> farthest frontier 3.959 d, target 7.0 d (AUTHOR_TARGET)
 - OK migration_within_transport_capacity: demand 2424245 <= capacity 6005363 per year

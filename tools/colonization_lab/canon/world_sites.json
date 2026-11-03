@@ -2405,36 +2405,6 @@
       "removed_bodies_by_3126": 870,
       "removed_note": "мародёры 3098-3112 (~420), кордонный научный вывоз 3112-3126 (~210), кража 3112-3126 (~240)"
     },
-    "jump_component": {
-      "status": "PROPOSAL",
-      "visibility": "AUTHOR_TRUTH",
-      "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
-      "name": "фазовый демпфер ядра (вставка лотосита в эмиттер поля)",
-      "g_per_class": {
-        "cobrett_i_n1": 0.8,
-        "medium_freighter": 2.0,
-        "liner": 2.4,
-        "jump_train": 6.0,
-        "escort_frigate": 2.5,
-        "line_combatant": 4.0,
-        "recon_picket": 1.0
-      },
-      "max_hop_bonus_ly": 3.0,
-      "max_hop_bonus_status": "AUTHOR_TARGET",
-      "wear_per_normal_jump": 0.0001,
-      "wear_per_extended_jump": 0.0012,
-      "decay_per_year": 0.02,
-      "restoration": "переотжиг на фабрике ядер Когниума: возвращает 60 % потерянного действия, теряет 10 % массы",
-      "compatible": "лицензионные ядра Когниума поколения G4+ (с 3000 г.), включая ядро Cobrett; пиратские копии и ядра Земли — нет (иная геометрия эмиттера)",
-      "why_not_mass": [
-        "весь извлекаемый запас — килограммы",
-        "медицинский спрос перебивает цену",
-        "износ на дальних прыжках",
-        "монополия Когниума на демпферы и переотжиг",
-        "санитарный риск сырья",
-        "+3 св. года нужны немногим трассам"
-      ]
-    },
     "medical": {
       "status": "PROPOSAL",
       "visibility": "AUTHOR_TRUTH",
@@ -2449,12 +2419,37 @@
       "public_image": "«эликсир молодости»"
     },
     "demand": {
-      "medical_g_y_at_ref": 50.0,
-      "medical_elasticity": 0.7,
-      "jump_g_y_at_ref": 30.0,
-      "jump_elasticity": 0.35,
-      "ref_price_cr_per_g": 60000000,
-      "basis": "медицина: ~400 курсов в год по 7 млн Cr — круг богатейших (тысячи семей); прыжок: демпферы Когниума для курьеров, разведки, флагманов"
+      "status": "PROPOSAL",
+      "medical": {
+        "model": "покупатели — хвост распределения доходов (Парето) в каждой политии; покупает тот, у кого цена курса ≤ доля годового дохода; доступ — запрет почти во всех семьях права, табу человеческого происхождения, недоверие к подделкам, удалённость от кармана Керна",
+        "pareto_alpha": 1.7,
+        "top_share": 0.01,
+        "top_income_multiple_of_gdp_pc": 6.0,
+        "wtp_income_share": 0.5,
+        "repeat_years": 5.0,
+        "access_base": 0.0005,
+        "access_reach_ly": 20.0,
+        "access_origin_system": 24,
+        "access_basis": "калибровка под AUTHOR_TARGET 2–5 млн Cr/г (≈3): единственный параметр, подогнанный под цель; остальное — доходы политий из economy_3126.json",
+        "substitute": "обычная геронтология (−1..2 биолет за десятки тысяч Cr) ограничивает готовность платить"
+      },
+      "research": {
+        "budgets_cr_y": {
+          "tau_ceti_cognium": 24000000,
+          "cyg61_kern": 6000000,
+          "sol": 9000000,
+          "vega_observatory": 2000000
+        },
+        "basis": "научные бюджеты по лотоситу: тратят бюджет, а не граммы (единичная эластичность)"
+      },
+      "technical": {
+        "basis": "спрос стабилизаторов из реальных пользователей аномалий (см. phase_stabilizer.users); не расходуется — только износ, потери кораблей и обновление флота"
+      },
+      "target_price_cr_per_g": [
+        2000000,
+        5000000
+      ],
+      "target_status": "AUTHOR_TARGET"
     },
     "fever": {
       "status": "PROPOSAL",
@@ -2626,7 +2621,10 @@
           "научная служба Когниума"
         ],
         "category": "individual_corruption",
-        "behaviour": "реально досматривает и спасает; отдельные инспекторы берут"
+        "behaviour": "реально досматривает и спасает; отдельные инспекторы берут",
+        "ships": 4,
+        "ship_class": "escort_frigate",
+        "works_in_field": true
       },
       {
         "id": "SU-SEIZE-7",
@@ -2644,7 +2642,10 @@
           "лаборатории Когниума"
         ],
         "category": "officially_sanctioned_dirty_operation",
-        "behaviour": "изымает и тайно передаёт материал в лаборатории Когниума мимо учёта; подбрасывает улики конкурентам Когниума"
+        "behaviour": "изымает и тайно передаёт материал в лаборатории Когниума мимо учёта; подбрасывает улики конкурентам Когниума",
+        "ships": 2,
+        "ship_class": "patrol_cutter",
+        "works_in_field": true
       },
       {
         "id": "SU-KPS",
@@ -2663,7 +2664,10 @@
           "братство «Счисление»"
         ],
         "category": "corrupt_unit",
-        "behaviour": "продаёт расписание патрулей, берёт за «чистые» справки, сопровождает контрабанду"
+        "behaviour": "продаёт расписание патрулей, берёт за «чистые» справки, сопровождает контрабанду",
+        "ships": 3,
+        "ship_class": "patrol_cutter",
+        "works_in_field": true
       },
       {
         "id": "SU-POROG-CUST",
@@ -2681,7 +2685,10 @@
           "держатели причалов «Троянского рынка»"
         ],
         "category": "captured_local_institution",
-        "behaviour": "законные пошлины + «очередь за деньги»; задерживает корабли до «штрафа»"
+        "behaviour": "законные пошлины + «очередь за деньги»; задерживает корабли до «штрафа»",
+        "ships": 2,
+        "ship_class": "patrol_cutter",
+        "works_in_field": false
       },
       {
         "id": "SU-HELLAS-BLUE",
@@ -2699,7 +2706,10 @@
           "братство «Счисление»"
         ],
         "category": "genuine_piracy_in_uniform",
-        "behaviour": "рейды «против пиратов» под государственными кодами; объявляют обломки нарушителями карантина и забирают груз"
+        "behaviour": "рейды «против пиратов» под государственными кодами; объявляют обломки нарушителями карантина и забирают груз",
+        "ships": 2,
+        "ship_class": "interceptor",
+        "works_in_field": true
       },
       {
         "id": "SU-KERN-SAR",
@@ -2715,7 +2725,10 @@
         "loyalty": 0.9,
         "alliances": [],
         "category": "lawful",
-        "behaviour": "реально вытаскивает застрявших из поля; известен отказом брать груз"
+        "behaviour": "реально вытаскивает застрявших из поля; известен отказом брать груз",
+        "ships": 1,
+        "ship_class": "patrol_cutter",
+        "works_in_field": true
       }
     ],
     "corridor": {
@@ -2786,7 +2799,9 @@
         "grey_frontier": 0.03,
         "outer_perimeter": 0.25,
         "civilisation_retail": 1.0
-      }
+      },
+      "integrated_network_share": 0.6,
+      "integrated_note": "организованные сети с собственной лабораторией и клиникой продают почти по рознице"
     },
     "trafficking": {
       "forms": [
@@ -2804,7 +2819,8 @@
       "useful_yield_share": 0.3,
       "cost_per_victim_cr": 90000,
       "law": "тяжкое преступление во всех семьях права, кроме «нет закона»",
-      "capacity_basis": "ёмкость = население скрытого «Сада» (dso.garden) / годы выдержки"
+      "capacity_basis": "ёмкость = население скрытого «Сада» (dso.garden) / годы выдержки",
+      "sells_at": "integrated_network_share"
     },
     "reproduction": {
       "note": "воспроизвести можно только в этом поле на живом человеке: долго, опасно, часто просто убивает, низкий выход, зависит от места и траектории; биореактор невозможен — поэтому ресурс остаётся редким"
@@ -2813,7 +2829,141 @@
       "optimism_bias": 0.2,
       "cordon_capacity_runs": 300,
       "hulk_extraction_capacity_bodies_y": 80,
-      "hulk_note": "глубокие палубы закрыты аварийными переборками ИИ «Мандала»; шесть рабочих входов; вскрытие переборки — дни в поле (стадия 1-2 у резчиков): на все команды ~80 тел в год; при наплыве улов на рейд падает"
+      "hulk_note": "глубокие палубы закрыты аварийными переборками ИИ «Мандала»; шесть рабочих входов; вскрытие переборки — дни в поле (стадия 1-2 у резчиков): на все команды ~80 тел в год; при наплыве улов на рейд падает",
+      "segment_perception": {
+        "naive": {
+          "believed_tier": "outer_perimeter",
+          "believed_corridor": "known_safe",
+          "learning": 1.0
+        },
+        "informed": {
+          "believed_tier": "outer_perimeter",
+          "believed_discount": 0.6,
+          "believed_corridor": "estimated",
+          "learning": 1.0
+        },
+        "connected": {
+          "believed_tier": "outer_perimeter",
+          "believed_corridor": "known_safe",
+          "learning": 1.0
+        }
+      },
+      "connected_capacity_runs_y": 15,
+      "connected_basis": "столько рейсов в год пропускают купленные пикеты (две смены «синих печатей» и SU-KPS) и принимают свои лаборатории",
+      "cover_story_per_naive": 0.4,
+      "entry_rule": "каждый сегмент входит, пока ОЖИДАЕМАЯ им (по слухам) выгода ≥ −optimism_bias × стоимость рейса; фактическая выгода считается по реальным ценам яруса",
+      "run_cost_note": "страховки у нелегального рейса нет: риск корпуса — в потерях (раньше учитывался дважды)",
+      "learning_note": "улов на рейс все узнают от вернувшихся; наивные ошибаются в цене (верят цене лаборатории периметра) и в коридоре (верят, что он безопасен)",
+      "priority_note": "корпус отдаёт ~80 тел в год; кто знает открытые отсеки (связи → карта → наугад), выносит первым"
+    },
+    "phase_stabilizer": {
+      "status": "PROPOSAL",
+      "visibility": "AUTHOR_TRUTH",
+      "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+      "decision": "автор 2026-11-03 (четвёртый проход): +3 св. года отклонено. Лотосит — не топливо, не заряд прыжка, не расходное питание и не средство обычной дальности",
+      "name": "фазовый стабилизатор лотосита (вставка в эмиттер поля ядра)",
+      "function": "удерживает поле прыжка при сильном внешнем аномальном возмущении; в нормальном пространстве пользы почти нет",
+      "g_per_unit": {
+        "small": 0.3,
+        "medium": 0.6,
+        "heavy": 1.2
+      },
+      "class_size": {
+        "cobrett_i_n1": "small",
+        "patrol_cutter": "small",
+        "recon_picket": "small",
+        "interceptor": "small",
+        "service_tender": "small",
+        "medium_freighter": "medium",
+        "escort_frigate": "medium",
+        "fleet_tender": "medium",
+        "line_combatant": "heavy",
+        "jump_train": "heavy"
+      },
+      "effects": {
+        "normal_space": {
+          "exit_error_multiplier": 0.99,
+          "note": "в пределах шума"
+        },
+        "jump_dead": {
+          "without": "запуск невозможен",
+          "with": "запуск возможен только во внешних 15 % радиуса мёртвой зоны; глубже — невозможен",
+          "boundary_margin_share": 0.15
+        },
+        "jump_distortion": {
+          "exit_error_multiplier_without": 25.0,
+          "exit_error_multiplier_with": 6.0
+        },
+        "unstable_navigation": {
+          "abort_or_misjump_per_jump_without": 0.12,
+          "abort_or_misjump_per_jump_with": 0.035,
+          "tail_index_without": 1.6,
+          "tail_index_with": 2.4
+        },
+        "emergency_exit": {
+          "note": "аварийный запуск сквозь возмущение: один раз, с риском необратимого повреждения вставки",
+          "p_irreversible_damage": 0.3,
+          "efficacy_lost_if_damaged": 0.4
+        }
+      },
+      "not_absolute": "не защищает от столкновений, излучения, синдрома и пиратов; в глубине мёртвой зоны не работает; хвосты ошибки выхода остаются",
+      "consumption": "не сгорает и не расходуется в прыжке, энергии не создаёт",
+      "degradation_per_heavy_exposure_day": 0.0006,
+      "recalibration_every_exposure_days": 60,
+      "recalibration_cost_cr": 18000,
+      "service_life_years_fleet_turnover": 30,
+      "restoration": "переотжиг на фабрике ядер Когниума: возвращает 60 % потерянного действия, теряет 10 % массы",
+      "compatible": "лицензионные ядра Когниума поколения G4+ (с 3000 г.), включая ядро Cobrett; пиратские копии и ядра Земли — нет (иная геометрия эмиттера)",
+      "why_not_mass": [
+        "в нормальном пространстве не даёт ничего",
+        "нужен немногим: SAR, наука, патрули аномалий, кордон, специальные экспедиции",
+        "медицинский спрос задаёт цену",
+        "монополия Когниума на вставки и переотжиг",
+        "совместим только с ядрами Когниума G4+"
+      ],
+      "users": [
+        {
+          "id": "cordon",
+          "who": "отряды кордона в серой зоне и у поля",
+          "ships_from": "security_units",
+          "exposure_days_y": 120
+        },
+        {
+          "id": "sar",
+          "who": "SAR у поля и в аномалиях",
+          "ships_from": "security_units:SAR",
+          "extra_ships": 2,
+          "class": "patrol_cutter",
+          "exposure_days_y": 90,
+          "extra_basis": "дежурные катера Управления Маяков у пикета"
+        },
+        {
+          "id": "research",
+          "who": "исследовательские суда (Когниум, Керн, Вега)",
+          "ships_per_zone": 0.5,
+          "class": "escort_frigate",
+          "exposure_days_y": 150
+        },
+        {
+          "id": "anomaly_patrol",
+          "who": "патрули аномалий и лоцманская служба",
+          "ships_per_zone": 1.0,
+          "class": "patrol_cutter",
+          "exposure_days_y": 100
+        },
+        {
+          "id": "expeditions",
+          "who": "лицензированные спецэкспедиции (подъём, salvage) — вставки в аренду",
+          "ships_per_legal_body": 0.25,
+          "class": "cobrett_i_n1",
+          "exposure_days_y": 30
+        }
+      ],
+      "zone_kinds": [
+        "jump_dead",
+        "jump_distortion",
+        "unstable_navigation"
+      ]
     }
   }
 }

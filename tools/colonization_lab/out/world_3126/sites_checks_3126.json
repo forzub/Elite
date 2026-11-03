@@ -32,27 +32,27 @@
   },
   {
    "check": "worlds_ass_is_max_risk_and_reward",
-   "detail": "frontier.worlds_ass: 250000000 / 0.386, frontier.ceti_chest: 2640000 / 0.016, frontier.vega_observatory: 2000000 / 0.006",
+   "detail": "frontier.worlds_ass: 250000000 / 0.368, frontier.ceti_chest: 2640000 / 0.016, frontier.vega_observatory: 2000000 / 0.006",
    "ok": true
   },
   {
    "check": "average_expedition_not_profitable",
-   "detail": "average visitor EV -112733 Cr, run cost 563663",
+   "detail": "average visitor EV -424034 Cr, run cost 191573",
    "ok": true
   },
   {
    "check": "rare_successes_make_the_profit",
-   "detail": "best segment 10794436 Cr > 0, average -112733 Cr < 0",
+   "detail": "best segment 861034 Cr > 0, average -424034 Cr < 0",
    "ok": true
   },
   {
-   "check": "buying_dearer_than_self_sourcing",
-   "detail": "54805394 > 5606277 Cr/g",
+   "check": "networks_self_source_cheaper_than_buying",
+   "detail": "connected 333324 < buy 777250 < informed 941793 Cr/g",
    "ok": true
   },
   {
    "check": "lotosite_primary_stock_finite",
-   "detail": "959.276 g left of 1588.665 g, ~25.81 years",
+   "detail": "959.276 g left of 1588.665 g, ~20.933 years",
    "ok": true
   },
   {
@@ -63,6 +63,26 @@
   {
    "check": "outbreaks_within_population",
    "detail": "OB-3093-MANDALA 200/76; OB-3115-STELLA 126/52; OB-3121-PEREVAL 180/15",
+   "ok": true
+  },
+  {
+   "check": "lotosite_price_in_author_target",
+   "detail": "3109001 Cr/g, target [2000000, 5000000] (AUTHOR_TARGET); = 0.916 Cobrett-I",
+   "ok": true
+  },
+  {
+   "check": "lotosite_has_no_jump_range_effect",
+   "detail": "stabiliser only in anomalies; no +3 ly",
+   "ok": true
+  },
+  {
+   "check": "stabiliser_demand_small_and_specialised",
+   "detail": "stabilisers 0.852 g/y of 45.827 g/y; installed 8.925 g",
+   "ok": true
+  },
+  {
+   "check": "medical_is_main_demand",
+   "detail": "medical 31.787 g/y, research 13.188, stabilisers 0.852",
    "ok": true
   },
   {

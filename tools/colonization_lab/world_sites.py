@@ -1160,26 +1160,35 @@ def frontier_model(I, dsos, sites, g):
                                note="короткий визит даёт стадию 1 (сон, повторяющиеся сны) у части экипажа; обратимо вне поля"))
     hull = lg.build_cost(cob)["list_price_cr"]
     base = lg.trip_cost(I.SE, I.cal, "cobrett_i_n1", [leg_berth, leg_berth], 40.0, 0.0)
-    run_cost = dict(charge_and_fuel=round(2.2 * (base["costs_cr"].get("jump_charge", 0) + base["costs_cr"].get("reactor_fuel", 0))),
+    run_cost = dict(charge_and_fuel=round(2.2 * (base["costs_cr"]["jump_fuel"] + base["costs_cr"]["insystem_fuel"])),
                     corridor_reactor_fuel=round(4.0 * lg.insystem_leg(cob, I.SE["insystem_rule"], 40.0)[1] * I.SE["anchors"]["reactor_fuel_cr_per_kg"]),
-                    insurance=round(0.12 * hull), crew_hazard_pay=round(2.5 * 2 * 4000 * 1.0), sealed_containers_ppe_ascorbate=55000,
+                    crew_hazard_pay=round(2.5 * 2 * 4000 * 1.0), sealed_containers_ppe_ascorbate=55000,
                     provisions=12000, spare_parts=40000, berth_fees=20000)
     rc = sum(run_cost.values())
-    pol_sys = {k: I.system_of(k) for k in I.pol}
-    LM = lotus_model.compute(L, I.E, I.net["_edges"], I.rel, pol_sys, hop, hull, rc)
-    informed = next(r for r in LM["raids"]["segments"] if r["segment"] == "informed")
+    origin = I.E[L["demand"]["medical"]["access_origin_system"]]["pos"]
+    pols = {k: dict(pop=v["population"], gdp_pc=v["gdp_per_capita_cr"], ly_from_origin=vlen(vsub(I.E[I.system_of(k)]["pos"], origin)))
+            for k, v in I.pol.items()}
+    class_price = {k: lg.build_cost(sc)["list_price_cr"] for k, sc in I.SE["ship_classes"].items()}
+    zones_by_kind = {}
+    for z in WS["hazard_zones"]:
+        zones_by_kind[z["kind"]] = zones_by_kind.get(z["kind"], 0) + 1
+    LM = lotus_model.compute(L, pols, class_price, zones_by_kind, hull, rc)
     g_body = LM["stock"]["mean_g_per_body"] * L["material"]["recoverable_fraction"]
-    self_cost = rc + informed["map_cr"] + informed["p_ship_lost"] * 0.6 * hull + informed["p_caught"] * (250000 + 0.3 * 0.6 * hull)
-    self_per_g = self_cost / max(1e-9, informed["bodies"] * g_body)
+
+    def self_per_g(seg):
+        r = next(x for x in LM["raids"]["segments"] if x["segment"] == seg)
+        cost = rc + r["map_cr"] + r["bribe_cr"] + r["p_ship_lost"] * 0.6 * hull + r["p_caught"] * (250000 + 0.3 * 0.6 * hull)
+        return cost / max(1e-9, r["bodies"] * g_body)
     buy_per_g = LM["price_cr_per_g"] * L["markets"]["tier_share_of_civilised_price"]["outer_perimeter"]
-    LM["buying_vs_self"] = dict(outer_perimeter_buy_cr_per_g=round(buy_per_g), self_sourcing_expected_cr_per_g=round(self_per_g),
-                                civilisation_retail_cr_per_g=LM["price_cr_per_g"],
-                                note="у внешнего периметра материал стоит в разы дороже, чем обходится самому слетать и вынести тела — если не погибнешь, не заразишься и не попадёшься")
+    LM["buying_vs_self"] = dict(outer_perimeter_buy_cr_per_g=round(buy_per_g), self_sourcing_connected_cr_per_g=round(self_per_g("connected")),
+                                self_sourcing_informed_cr_per_g=round(self_per_g("informed")), civilisation_retail_cr_per_g=LM["price_cr_per_g"],
+                                note="у внешнего периметра материал дороже, чем обходится рейс «со связями»; рейс с купленной картой — дороже покупки: "
+                                     "поэтому вынос держат сети, а одиночки гибнут или продают за бесценок")
     LM["approach"] = approach
     ctot = rc
     avg_ev = LM["raids"]["average_ev_cr"]
-    p_loss = sum(r["share"] * r["p_ship_lost"] for r in LM["raids"]["segments"])
-    chain = ["редкий материал (прыжок +3 св. года и «эликсир»)", "спрос на рейды", "специальный транспорт и танкеры", "дорогая поддержка", "пиратство",
+    p_loss = sum(r["runs_y"] * r["p_ship_lost"] for r in LM["raids"]["segments"]) / max(1e-9, LM["supply"]["raids_y"])
+    chain = ["редкий материал («эликсир», научный спрос, стабилизаторы для аномалий)", "спрос на рейды", "специальный транспорт и танкеры", "дорогая поддержка", "пиратство",
              "кордон", "коррупция контролёров", "серый и чёрный рынок", "санитарные вспышки", "торговля людьми, когда мёртвые кончаются"]
     body_lab = L["markets"]["tier_share_of_civilised_price"]["outer_perimeter"] * LM["price_cr_per_g"] * g_body
     risk_reward = {}
@@ -1214,7 +1223,7 @@ def frontier_model(I, dsos, sites, g):
         information_rule="часть сведений ложна (30 % карт коридора); цена зависит от репутации продавца (см. KnowledgeRecord.confidence)"),
         risk_reward=risk_reward, hazard_zones=hz, artifacts=WS["artifacts"],
         developer_truth=dict(truth=WS["lotus"]["truth"], biology=WS["lotus"]["biology"], phenomena=WS["lotus"]["phenomena"], material=WS["lotus"]["material"],
-                             jump_component=WS["lotus"]["jump_component"], medical=WS["lotus"]["medical"], fever=WS["lotus"]["fever"],
+                             phase_stabilizer=WS["lotus"]["phase_stabilizer"], medical=WS["lotus"]["medical"], fever=WS["lotus"]["fever"],
                              quarantine=WS["lotus"]["quarantine"], cordon=WS["lotus"]["cordon"], markets=WS["lotus"]["markets"],
                              trafficking=WS["lotus"]["trafficking"], reproduction=WS["lotus"]["reproduction"]),
         frontiers=[{k: f[k] for k in ("id", "specialisation", "system", "region")} for f in WS["frontiers"]], status=TAG)
@@ -1305,14 +1314,23 @@ def checks(I, out):
     L_ = w["lotus"]
     best = max(x["ev_cr"] for x in L_["raids"]["segments"])
     add("rare_successes_make_the_profit", best > 0 and w["expected_value_cr"] < 0, f"best segment {best} Cr > 0, average {w['expected_value_cr']} Cr < 0")
-    add("buying_dearer_than_self_sourcing", L_["buying_vs_self"]["outer_perimeter_buy_cr_per_g"] > L_["buying_vs_self"]["self_sourcing_expected_cr_per_g"],
-        f"{L_['buying_vs_self']['outer_perimeter_buy_cr_per_g']} > {L_['buying_vs_self']['self_sourcing_expected_cr_per_g']} Cr/g")
+    bv = L_["buying_vs_self"]
+    add("networks_self_source_cheaper_than_buying", bv["self_sourcing_connected_cr_per_g"] < bv["outer_perimeter_buy_cr_per_g"] < bv["self_sourcing_informed_cr_per_g"],
+        f"connected {bv['self_sourcing_connected_cr_per_g']} < buy {bv['outer_perimeter_buy_cr_per_g']} < informed {bv['self_sourcing_informed_cr_per_g']} Cr/g")
     add("lotosite_primary_stock_finite", 0 < L_["stock"]["recoverable_g_left"] < L_["stock"]["recoverable_g_total"] and L_["supply"]["years_until_primary_exhausted"] < 200,
         f"{L_['stock']['recoverable_g_left']} g left of {L_['stock']['recoverable_g_total']} g, ~{L_['supply']['years_until_primary_exhausted']} years")
     ph = out["frontier"]["developer_truth"]["phenomena"]
     add("phenomena_have_developer_category", all(x["category"] in ("physical", "sensor", "subjective") for x in ph) and {x["category"] for x in ph} == {"physical", "sensor", "subjective"},
         f"{len(ph)} phenomena: " + ", ".join(sorted({x['category'] for x in ph})))
     add("outbreaks_within_population", all(o["deaths"] <= o["cases"] <= o["population"] for o in L_["outbreaks"]), "; ".join(f"{o['id']} {o['cases']}/{o['deaths']}" for o in L_["outbreaks"]))
+    add("lotosite_price_in_author_target", L_["price_in_target"],
+        f"{L_['price_cr_per_g']} Cr/g, target {L_['price_target_cr_per_g']} ({L_['price_target_status']}); = {L_['price_vs_cobrett']} Cobrett-I")
+    add("lotosite_has_no_jump_range_effect", not L_["stabilizer"]["map_effect"]["new_direct_beacon_edges"] and "jump" not in L_
+        and "jump_component" not in out["frontier"]["developer_truth"], "stabiliser only in anomalies; no +3 ly")
+    add("stabiliser_demand_small_and_specialised", L_["demand_at_price"]["stabiliser_g_y"] < 0.25 * L_["supply"]["refined_g_y"],
+        f"stabilisers {L_['demand_at_price']['stabiliser_g_y']} g/y of {L_['supply']['refined_g_y']} g/y; installed {L_['stabilizer']['installed_g']} g")
+    add("medical_is_main_demand", L_["demand_at_price"]["medical_g_y"] > L_["demand_at_price"]["research_g_y"] + L_["demand_at_price"]["stabiliser_g_y"],
+        f"medical {L_['demand_at_price']['medical_g_y']} g/y, research {L_['demand_at_price']['research_g_y']}, stabilisers {L_['demand_at_price']['stabiliser_g_y']}")
     add("lotus_identity_known_to_developers", out["frontier"]["developer_truth"]["truth"]["identity"]["ship"] == "NIRVANA-1", "NIRVANA-1 (CANON, AUTHOR_TRUTH)")
     c = out["comms"]
     far = max(c["frontier_from_sol_days"].values())
@@ -1401,7 +1419,7 @@ def md_report(I, out, chk):
         f"- запас: {w['lotus']['stock']['bodies']} тел, извлекаемо всего {w['lotus']['stock']['recoverable_g_total']} г, осталось {w['lotus']['stock']['recoverable_g_left']} г (верхняя оценка)",
         f"- цена {w['lotus']['price_cr_per_g']} Cr/г; рейдов {w['lotus']['supply']['raids_y']}/год, тел {w['lotus']['supply']['bodies_stolen_y']}/год, лотосита {w['lotus']['supply']['refined_g_y']} г/год; первичный запас кончится через {w['lotus']['supply']['years_until_primary_exhausted']} лет",
         f"- средний рейд {w['expected_value_cr']} Cr; потерянных кораблей {w['lotus']['raids']['ships_lost_y']}/год; жертв торговли людьми {w['lotus']['trafficking']['victims_y']}/год (AUTHOR_TRUTH)",
-        f"- +3 св. года: новые прямые рёбра {len(w['lotus']['jump']['effect']['new_direct_beacon_edges'])}, новые достижимые системы {[x['name'] for x in w['lotus']['jump']['effect']['newly_reachable_systems']]}", "",
+        f"- стабилизатор: {w['lotus']['stabilizer']['installed_g']} г установлено на кораблях аномалий; обычная дальность прыжка не меняется", "",
         "## Связь", "", f"Диаметр сети (обычная новость): {c['diameter_days']} сут (AUTHOR_TARGET {c['author_target_days']}).", "",
         "| Куда | Обычная, сут | Срочная, сут |", "|---|---:|---:|"] + [f"| {e['name']} | {e['routine_days']} | {e['flash_days']} |" for e in c["examples"]] + [
         "", "## Пассажиры", "", f"Межзвёздных поездок {p['interstellar_trips_y']:,}/год, переселенцев {p['migrants_y']:,}, беженцев {p['refugees_y']:,}; поверхность ↔ орбита {p['surface_orbit_trips_y']:,}.".replace(",", " "),

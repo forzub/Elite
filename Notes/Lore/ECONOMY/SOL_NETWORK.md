@@ -204,4 +204,5 @@
 - OK `every_hub_has_traffic` — ok
 - OK `legacy_generic_ids_mapped_once` — 26 legacy ids
 - OK `earth_capacity_ge_demand_plus_reserve` — 57 069 movements/day vs capacity 92 238 (utilisation 0.62)
+- OK `relay_names_neutral_codes` — 19 / 19 beacons named by region code + number
 <!-- GENERATED:sol_network END -->

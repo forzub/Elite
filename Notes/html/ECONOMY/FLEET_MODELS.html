@@ -1,0 +1,5037 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Модели кораблей 3126 — Elite Lore</title><link rel="stylesheet" href="../style.css"></head><body><header><a href="../index.html">Оглавление</a></header><main class="wrap"><article id="content">
+<h1 id="модели-кораблей-3126">Модели кораблей 3126</h1>
+<!-- GENERATED:legend BEGIN -->
+<blockquote>
+<p><strong>Статусы строк:</strong> <code>CANON</code> — есть в заметках автора (generation ships/*, fate.md, history.md, каталог); <code>PROPOSAL</code> — добавлено или пересчитано Claude / результат модели; <code>UNKNOWN</code> — намеренно без ответа, даже для автора. <strong>Видимость:</strong> <code>PUBLIC</code> — мир 3126 это знает или может знать; <code>AUTHOR TRUTH</code> — скрытая правда автора.</p>
+<p>Блоки <code>GENERATED</code> пишет только <code>tools/colonization_lab/lore_md.py</code> из машинного канона; текст вне них — ручной и сохраняется.</p>
+</blockquote>
+<!-- GENERATED:legend END -->
+<!-- GENERATED:fleet_models BEGIN -->
+<p>Источник: <code>tools/colonization_lab/canon/ship_designs.json</code> → <code>ship_designer.py</code> → <code>out/ships_3126/</code> (чертежи и функциональные схемы — <code>out/ships_3126/index.html</code>); рантайм: <code>assets/data/ships/ship_catalog_3126.json</code> → общий построитель <code>GenericShipDescriptorBuilder</code>. Одна каноническая модель на каждый из 17 классов (<code>FLEETS_AND_SHIPYARDS.md</code>) и варианты только там, где есть конструктивная или лорная причина. Физика — законы вселенной игры: двигательные площадки 6 МВт/м², излучение ×10, отходы двигателя = вход × (1 − КПД).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Модель</th>
+<th>Класс</th>
+<th>Производитель (блок)</th>
+<th>Схема</th>
+<th>Сухая, т</th>
+<th>Нагрузка</th>
+<th>Тяга, МН</th>
+<th>g гружёный / лёгкий</th>
+<th>Ядро</th>
+<th>Цена, млн Cr</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cobrett-I N1</td>
+<td>cobrett_i_n1</td>
+<td>Cobretty Corporation (cognium_pool)</td>
+<td>Newtonian I</td>
+<td>260</td>
+<td>120 т</td>
+<td>9.56</td>
+<td>2.515 / 3.646</td>
+<td>Я-0.5</td>
+<td>4.0</td>
+</tr>
+<tr>
+<td>Cobrett-I A3 — вариант</td>
+<td>cobrett_i_n1</td>
+<td>Cobretty Corporation (cognium_pool)</td>
+<td>Assisted I</td>
+<td>260</td>
+<td>110 т</td>
+<td>19.12</td>
+<td>5.192 / 7.347</td>
+<td>Я-0.5</td>
+<td>4.9</td>
+</tr>
+<tr>
+<td>OCS-4 «Ласточка»</td>
+<td>ocs4_lastochka</td>
+<td>Orbital Freight Union «Ural-Kourou» (sol)</td>
+<td>Newtonian I</td>
+<td>380</td>
+<td>409 т</td>
+<td>3.3</td>
+<td>0.425 / 0.881</td>
+<td>—</td>
+<td>2.3</td>
+</tr>
+<tr>
+<td>SL-12 «Подъёмник»</td>
+<td>surface_lifter</td>
+<td>Orbital Freight Union «Ural-Kourou» (sol)</td>
+<td>Newtonian Y</td>
+<td>620</td>
+<td>240 т, 144 пасс.</td>
+<td>21.99</td>
+<td>2.551 / 3.584</td>
+<td>—</td>
+<td>7.0</td>
+</tr>
+<tr>
+<td>C-120 «Конвейер»</td>
+<td>medium_freighter</td>
+<td>Бхарат Ассембли (southern_circle)</td>
+<td>Newtonian Y</td>
+<td>1 900</td>
+<td>2 400 т</td>
+<td>12.99</td>
+<td>0.305 / 0.683</td>
+<td>М-5</td>
+<td>14.9</td>
+</tr>
+<tr>
+<td>Хэ-120 «Хуэйлю» — вариант</td>
+<td>medium_freighter</td>
+<td>Верфи Гармонии (heavenly_pact)</td>
+<td>Newtonian I</td>
+<td>1 900</td>
+<td>2 400 т</td>
+<td>13.0</td>
+<td>0.305 / 0.683</td>
+<td>Х-5</td>
+<td>13.8</td>
+</tr>
+<tr>
+<td>Хэ-Т12 «Локомотив» + 12 модулей</td>
+<td>jump_train</td>
+<td>Верфи Гармонии (heavenly_pact)</td>
+<td>Newtonian X</td>
+<td>10 800</td>
+<td>57 600 т</td>
+<td>90.0</td>
+<td>0.133 / 0.809</td>
+<td>Х-80</td>
+<td>89.9</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц (поезд-танкер)</td>
+<td>jump_tanker</td>
+<td>Верфи Гармонии (heavenly_pact)</td>
+<td>Newtonian X</td>
+<td>12 000</td>
+<td>50 000 т</td>
+<td>90.0</td>
+<td>0.147 / 0.732</td>
+<td>Х-80</td>
+<td>93.5</td>
+</tr>
+<tr>
+<td>ГТ-3000 «Титан» — вариант</td>
+<td>gas_tanker</td>
+<td>Лунно-Марсианские верфи (sol)</td>
+<td>Newtonian Y</td>
+<td>900</td>
+<td>3 000 т</td>
+<td>6.99</td>
+<td>0.182 / 0.782</td>
+<td>—</td>
+<td>4.6</td>
+</tr>
+<tr>
+<td>«Камень» (танкер из астероида) — вариант</td>
+<td>gas_tanker</td>
+<td>Каменные доки Раздора (free_belts)</td>
+<td>Newtonian I</td>
+<td>2 400</td>
+<td>6 000 т</td>
+<td>3.3</td>
+<td>0.04 / 0.14</td>
+<td>—</td>
+<td>4.2</td>
+</tr>
+<tr>
+<td>HT-20K «Мул»</td>
+<td>ore_tug</td>
+<td>Kern Heavy Mining (cognium_pool)</td>
+<td>Newtonian X</td>
+<td>700</td>
+<td>0 т</td>
+<td>4.0</td>
+<td>0.571 / 0.572</td>
+<td>—</td>
+<td>3.3</td>
+</tr>
+<tr>
+<td>СТ-6 «Мастеровой»</td>
+<td>service_tender</td>
+<td>Лунно-Марсианские верфи (sol)</td>
+<td>Assisted I</td>
+<td>500</td>
+<td>150 т</td>
+<td>3.0</td>
+<td>0.466 / 0.605</td>
+<td>—</td>
+<td>2.6</td>
+</tr>
+<tr>
+<td>ПК-30 «Страж»</td>
+<td>patrol_cutter</td>
+<td>Лунно-Марсианские верфи (sol)</td>
+<td>Assisted I</td>
+<td>420</td>
+<td>20 т, 6 пасс.</td>
+<td>13.0</td>
+<td>2.926 / 3.071</td>
+<td>Я-1</td>
+<td>15.8</td>
+</tr>
+<tr>
+<td>Б-4 «Сокол»</td>
+<td>interceptor</td>
+<td>Арсенал «Бастион» (citadel_compact)</td>
+<td>Assisted X</td>
+<td>140</td>
+<td>2 т</td>
+<td>6.2</td>
+<td>4.383 / 4.45</td>
+<td>—</td>
+<td>20.6</td>
+</tr>
+<tr>
+<td>Хэ-Ф22 «Дунь»</td>
+<td>escort_frigate</td>
+<td>Верфи Гармонии (heavenly_pact)</td>
+<td>Assisted Y</td>
+<td>2 200</td>
+<td>80 т</td>
+<td>32.1</td>
+<td>1.385 / 1.436</td>
+<td>Х-5</td>
+<td>77.0</td>
+</tr>
+<tr>
+<td>Б-90 «Цитадель»</td>
+<td>line_combatant</td>
+<td>Арсенал «Бастион» (citadel_compact)</td>
+<td>Newtonian X</td>
+<td>9 000</td>
+<td>300 т</td>
+<td>110.0</td>
+<td>1.148 / 1.187</td>
+<td>Б-12</td>
+<td>796.7</td>
+</tr>
+<tr>
+<td>R-7 «Аргус»</td>
+<td>recon_picket</td>
+<td>Верфи Гипериона (cognium_pool)</td>
+<td>Newtonian X</td>
+<td>600</td>
+<td>10 т</td>
+<td>12.0</td>
+<td>1.932 / 1.967</td>
+<td>Я-1</td>
+<td>37.0</td>
+</tr>
+<tr>
+<td>Хэ-С240 «Тыловик»</td>
+<td>fleet_tender</td>
+<td>Верфи Гармонии (heavenly_pact)</td>
+<td>Newtonian Y</td>
+<td>5 000</td>
+<td>6 000 т</td>
+<td>39.0</td>
+<td>0.354 / 0.763</td>
+<td>Х-12</td>
+<td>59.5</td>
+</tr>
+<tr>
+<td>ПАО-7 «Щит»</td>
+<td>impact_defence_tug</td>
+<td>Лунно-Марсианские верфи (sol)</td>
+<td>Newtonian X</td>
+<td>1 600</td>
+<td>200 т</td>
+<td>28.0</td>
+<td>1.555 / 1.747</td>
+<td>—</td>
+<td>33.1</td>
+</tr>
+<tr>
+<td>L-900 «Пилигрим»</td>
+<td>liner</td>
+<td>Верфи Гипериона (cognium_pool)</td>
+<td>Newtonian Y</td>
+<td>2 600</td>
+<td>90 т, 900 пасс.</td>
+<td>12.0</td>
+<td>0.407 / 0.432</td>
+<td>Я-5</td>
+<td>35.9</td>
+</tr>
+<tr>
+<td>T-5000 «Исход»</td>
+<td>colonist_transport</td>
+<td>Бхарат Ассембли (southern_circle)</td>
+<td>Newtonian X</td>
+<td>6 500</td>
+<td>600 т, 5 000 пасс.</td>
+<td>17.32</td>
+<td>0.196 / 0.222</td>
+<td>М-12</td>
+<td>58.4</td>
+</tr>
+</tbody>
+</table></div>
+<p>Похожие корабли у разных акторов — это не копии: школа блока меняет решение (C-120 Бхарат — три двигателя ОФУ и ядро Мизан; Хэ-120 Гармонии — один двигатель Тяньхэ, тяжелее и дешевле, стандартный корпус Пакта). Оборудование идёт только по каналам блоков: оружие и ядра — внутри блока или по лицензии; через «ограниченный» канал — только гражданское; «чёрный» канал закрыт.</p>
+<h3 id="cobrett-i-n1-cobrett-i-n1">Cobrett-I N1 (Cobrett-I N1)</h3>
+<p>Быстрый гибкий фрахт: ценный и срочный груз, курьер, малый чартер.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>kb.ship.cobrett-i.frnu.n1</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Cobretty Corporation — hd20794_hellas2, блок cognium_pool, школа modular_premium</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>industrial_hub</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>wedge, 22.2 × 26.0 × 4.3 м; несущий клиновидный монокок; алюминий-литиевый сплав, C-SiC обшивка</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian I (рантайм NewtonianI)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>2 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>120 т, C20 6</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 260 т (оборудование 84 т, силовой корпус 176 т), полная 388 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>9.56 МН, 2.515 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>1 × ER-5 = 5 000 МВт; бытовая нагрузка 4.3 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>380 м² радиаторов = 236 МВт; контуры 180 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>30 сут / 40 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>3.99 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>Cobrett-I N1-A1A1, Cobrett-I N1-A2A1, Cobrett-I N1-A2A2, Cobrett-I N1-A3A2, Cobrett-I N1-A4A1, Cobrett-I N1-A6A1, Cobrett-I N1-A6A2, Cobrett-I N1-A6A3, Cobrett-I N1-A6A4, Cobrett-I N1-A7A1</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cobrett-I N1-A1A1</td>
+<td>Cobretty N1 Axial Main Drive</td>
+<td>1</td>
+<td>Cobretty Corporation</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A2A1</td>
+<td>Cobretty ER-5 Propulsion Reactor</td>
+<td>1</td>
+<td>Cobretty Corporation</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A2A2</td>
+<td>Cobretty SR-70 Service Reactor</td>
+<td>1</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A3A1</td>
+<td>Cobretty C-SiC radiator panel set (10 m2)</td>
+<td>38</td>
+<td>Cobretty Corporation</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A3A2</td>
+<td>Cobretty coolant loop + pump (180 MW)</td>
+<td>1</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A4A1</td>
+<td>Ядро «Нулевая точка» Я-0.5</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>завод</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A4A2</td>
+<td>Бак заряда прыжка (1 т)</td>
+<td>3</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A4A3</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A5A1</td>
+<td>Cobretty field-coupled RCS nozzle</td>
+<td>24</td>
+<td>Cobretty Corporation</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A4A4</td>
+<td>Cobretty argon RCS tank</td>
+<td>1</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A6A1</td>
+<td>Синьчжи MotherComputer MC-C1 (гражданский)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A6A2</td>
+<td>Синьчжи навигационный радар N-2 (2 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A7A1</td>
+<td>Евро-Хабитат ЖО L-4 (4 чел.)</td>
+<td>1</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A7A2</td>
+<td>Cobretty катапультируемая капсула кабины (2 места)</td>
+<td>1</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A8A1</td>
+<td>Стойка C20 (замки и рельсы, 1 место)</td>
+<td>6</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A9A1</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Cobrett-I N1-A11A1</td>
+<td>Cobretty PD-1 оборонительная турель</td>
+<td>1</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="cobrett-i-a3-cobrett-i-a3">Cobrett-I A3 (Cobrett-I A3)</h3>
+<p>Как N1, для пилотов с законом Assisted; дороже в обслуживании. Вариант: другое поколение линии с законом Assisted: широкий вектор тяги CR-1 в четырёх гондолах, два реактора ER-5 (уже существует в игре).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>kb.ship.cobrett-i.frnu-inta.a3</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Cobretty Corporation — hd20794_hellas2, блок cognium_pool, школа modular_premium</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>industrial_hub</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>wedge, 22.2 × 26.0 × 4.3 м; несущий клиновидный монокок, гондолы двигателей; алюминий-литиевый сплав, C-SiC обшивка</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Assisted I (рантайм AssistedI)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>2 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>110 т, C20 6</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 260 т (оборудование 140 т, силовой корпус 120 т), полная 376 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>19.12 МН, 5.192 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>2 × ER-5 = 10 000 МВт; бытовая нагрузка 4.3 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>380 м² радиаторов = 236 МВт; контуры 180 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>30 сут / 40 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>4.95 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>Cobrett-I A3-A2A2, Cobrett-I A3-A3A2, Cobrett-I A3-A4A1, Cobrett-I A3-A6A1, Cobrett-I A3-A6A2, Cobrett-I A3-A6A3, Cobrett-I A3-A6A4, Cobrett-I A3-A7A1</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cobrett-I A3-A1A1</td>
+<td>Cobretty CR-1 Vector Main Drive</td>
+<td>4</td>
+<td>Cobretty Corporation</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A2A1</td>
+<td>Cobretty ER-5 Propulsion Reactor</td>
+<td>2</td>
+<td>Cobretty Corporation</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A2A2</td>
+<td>Cobretty SR-70 Service Reactor</td>
+<td>1</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A3A1</td>
+<td>Cobretty C-SiC radiator panel set (10 m2)</td>
+<td>38</td>
+<td>Cobretty Corporation</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A3A2</td>
+<td>Cobretty coolant loop + pump (180 MW)</td>
+<td>1</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A4A1</td>
+<td>Ядро «Нулевая точка» Я-0.5</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>завод</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A4A2</td>
+<td>Бак заряда прыжка (1 т)</td>
+<td>3</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A4A3</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A6A1</td>
+<td>Синьчжи MotherComputer MC-C1 (гражданский)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A6A2</td>
+<td>Синьчжи навигационный радар N-2 (2 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A7A1</td>
+<td>Евро-Хабитат ЖО L-4 (4 чел.)</td>
+<td>1</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A7A2</td>
+<td>Cobretty катапультируемая капсула кабины (2 места)</td>
+<td>1</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A8A1</td>
+<td>Стойка C20 (замки и рельсы, 1 место)</td>
+<td>6</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A9A1</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Cobrett-I A3-A11A1</td>
+<td>Cobretty PD-1 оборонительная турель</td>
+<td>1</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="ocs-4-ласточка-ocs-4">OCS-4 «Ласточка» (OCS-4)</h3>
+<p>Только орбита ↔ хабы и депо (без посадки, без прыжка).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>ofu.ship.ocs-4.lastochka</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Orbital Freight Union «Ural-Kourou» — sol_authority, блок sol, школа mass_production</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>Урал-Куру (орбитальные верфи ОФУ)</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>box, 56.0 × 18.0 × 14.0 м; ферма-хребет с открытыми гнёздами C20; сталь-титановая ферма</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian I (рантайм NewtonianI)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>3 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>409 т, C20 24</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 380 т (оборудование 65 т, силовой корпус 315 т), полная 791 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>3.3 МН, 0.425 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>1 × ЭР-2.6 = 2 600 МВт; бытовая нагрузка 4.4 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>100 м² радиаторов = 62 МВт; контуры 300 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>7 сут / 40 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>2.26 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>OCS-4-A1A1, OCS-4-A2A1, OCS-4-A2A2, OCS-4-A3A2, OCS-4-A6A1, OCS-4-A6A2, OCS-4-A6A3, OCS-4-A6A4, OCS-4-A7A1</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OCS-4-A1A1</td>
+<td>Урал-33</td>
+<td>1</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>OCS-4-A2A1</td>
+<td>ОФУ ЭР-2.6</td>
+<td>1</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>OCS-4-A2A2</td>
+<td>ОФУ СР-20</td>
+<td>1</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>OCS-4-A3A1</td>
+<td>ЛМВ радиаторная секция (50 м2)</td>
+<td>2</td>
+<td>Лунно-Марсианские верфи</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>OCS-4-A3A2</td>
+<td>ЛМВ контур охлаждения (300 МВт)</td>
+<td>1</td>
+<td>Лунно-Марсианские верфи</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>OCS-4-A4A1</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>OCS-4-A5A1</td>
+<td>Кластер RCS (4 сопла, поле)</td>
+<td>8</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>OCS-4-A6A1</td>
+<td>Синьчжи MotherComputer MC-C1 (гражданский)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>OCS-4-A6A2</td>
+<td>Синьчжи навигационный радар N-2 (2 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>OCS-4-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>OCS-4-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>OCS-4-A7A1</td>
+<td>ОФУ ЖО О-4 (челнок)</td>
+<td>1</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>OCS-4-A7A2</td>
+<td>Спасательная капсула (4 места)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>OCS-4-A8A1</td>
+<td>Стойка C20 (замки и рельсы, 1 место)</td>
+<td>24</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>3</td>
+</tr>
+<tr>
+<td>OCS-4-A9A1</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="sl-12-подъёмник-sl-12">SL-12 «Подъёмник» (SL-12)</h3>
+<p>Космопорт на поверхности ↔ низкая орбита: 12 мест C20 или 12 модулей P20 (144 пассажира).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>ofu.ship.sl-12.podyomnik</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Orbital Freight Union «Ural-Kourou» — sol_authority, блок sol, школа mass_production</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>Урал-Куру</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>lifter, 48.0 × 16.0 × 16.0 м; цилиндрический корпус с теплозащитой и опорами; титан, абляционно-керамический экран</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian Y (рантайм NewtonianY)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>3 / 144</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>240 т, C20 12</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 620 т (оборудование 319 т, силовой корпус 301 т), полная 879 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>21.99 МН, 2.551 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>3 × SR-9 = 27 000 МВт; бытовая нагрузка 12.8 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>200 м² радиаторов = 124 МВт; контуры 600 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>3 сут / 30 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>6.96 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>SL-12-A6A2</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SL-12-A1A1</td>
+<td>Урал-73Л (подъёмный)</td>
+<td>3</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>SL-12-A2A1</td>
+<td>Sol Reactor Works SR-9</td>
+<td>3</td>
+<td>Sol Reactor Works</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>SL-12-A2A2</td>
+<td>Sol Reactor Works S-60</td>
+<td>2</td>
+<td>Sol Reactor Works</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>SL-12-A3A1</td>
+<td>ЛМВ радиаторная секция (50 м2)</td>
+<td>4</td>
+<td>Лунно-Марсианские верфи</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>SL-12-A3A2</td>
+<td>ЛМВ контур охлаждения (300 МВт)</td>
+<td>2</td>
+<td>Лунно-Марсианские верфи</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>SL-12-A4A1</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>3</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>SL-12-A5A1</td>
+<td>Кластер RCS (4 сопла, поле)</td>
+<td>8</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>SL-12-A6A1</td>
+<td>Синьчжи MotherComputer MC-C1 (гражданский)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>SL-12-A6A2</td>
+<td>Синьчжи навигационный радар N-2 (2 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>SL-12-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>SL-12-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>2</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>SL-12-A7A1</td>
+<td>ОФУ ЖО О-4 (челнок)</td>
+<td>2</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>SL-12-A7A2</td>
+<td>Спасательная капсула (4 места)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>SL-12-A8A1</td>
+<td>Стойка C20 (замки и рельсы, 1 место)</td>
+<td>12</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>3</td>
+</tr>
+<tr>
+<td>SL-12-A8A2</td>
+<td>Пассажирский модуль P20 (12 мест, своё ЖО на сутки, отстреливаемый)</td>
+<td>12</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>верфь, сменный блок</td>
+<td>24</td>
+</tr>
+<tr>
+<td>SL-12-A9A1</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>SL-12-A10A1</td>
+<td>Теплозащитный экран подъёмника</td>
+<td>1</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>верфь, сменный блок</td>
+<td>40</td>
+</tr>
+<tr>
+<td>SL-12-A10A2</td>
+<td>Посадочные опоры (4)</td>
+<td>1</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="c-120-конвейер-c-120">C-120 «Конвейер» (C-120)</h3>
+<p>Вторичные межзвёздные трассы: контейнеры, машины, товары, медикаменты.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>bharat.ship.c-120.konveyer</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Бхарат Ассембли — hd20794_newindia, блок southern_circle, школа licensed_kit_assembly</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>industrial_hub</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>box, 95.0 × 30.0 × 26.0 м; ферма с 120 гнёздами C20, жилой модуль в носу; сталь, алюминий</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian Y (рантайм NewtonianY)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>6 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>2 400 т, C20 120</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 1 900 т (оборудование 229 т, силовой корпус 1 671 т), полная 4 340 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>12.99 МН, 0.305 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>3 × SR-3.3 = 9 900 МВт; бытовая нагрузка 4.9 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>200 м² радиаторов = 124 МВт; контуры 300 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>40 сут / 36 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>14.88 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>C-120-A2A2, C-120-A3A2, C-120-A4A1, C-120-A6A1, C-120-A6A2, C-120-A6A3, C-120-A6A4, C-120-A7A1</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C-120-A1A1</td>
+<td>Урал-43</td>
+<td>3</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>C-120-A2A1</td>
+<td>Sol Reactor Works SR-3.3</td>
+<td>3</td>
+<td>Sol Reactor Works</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>C-120-A2A2</td>
+<td>Sol Reactor Works S-60</td>
+<td>1</td>
+<td>Sol Reactor Works</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>C-120-A3A1</td>
+<td>ЛМВ радиаторная секция (50 м2)</td>
+<td>4</td>
+<td>Лунно-Марсианские верфи</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>C-120-A3A2</td>
+<td>ЛМВ контур охлаждения (300 МВт)</td>
+<td>1</td>
+<td>Лунно-Марсианские верфи</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>C-120-A4A1</td>
+<td>Дар аль-Мизан М-5</td>
+<td>1</td>
+<td>Дар аль-Мизан</td>
+<td>завод</td>
+<td>—</td>
+</tr>
+<tr>
+<td>C-120-A4A2</td>
+<td>Бак заряда прыжка (1 т)</td>
+<td>30</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>C-120-A4A3</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>8</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>C-120-A5A1</td>
+<td>Кластер RCS (4 сопла, поле)</td>
+<td>8</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>C-120-A6A1</td>
+<td>Мизан бортовой вычислитель МВ-1</td>
+<td>1</td>
+<td>Дар аль-Мизан</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>C-120-A6A2</td>
+<td>Синьчжи навигационный радар N-2 (2 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>C-120-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>C-120-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>C-120-A7A1</td>
+<td>Евро-Хабитат ЖО L-20</td>
+<td>1</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>C-120-A7A2</td>
+<td>Спасательная капсула (4 места)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>C-120-A8A1</td>
+<td>Стойка C20 (замки и рельсы, 1 место)</td>
+<td>120</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>3</td>
+</tr>
+<tr>
+<td>C-120-A9A1</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="хэ-120-хуэйлю-хэ-120">Хэ-120 «Хуэйлю» (Хэ-120)</h3>
+<p>Как C-120 для флотов Пакта; ремонт в любом порту блока. Вариант: школа «простые однокорпусные»: один большой двигатель, тяжелее и дешевле; 74 % флота Небесного пакта — корпуса Гармонии (allied_fleets_uniform).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>harmony.ship.he-120</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Верфи Гармонии — eps_eri_harmony, блок heavenly_pact, школа standard_monohull</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>orbital</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>box, 98.0 × 32.0 × 28.0 м; стандартный однокорпусный короб «Хэ» с внутренними гнёздами; сталь</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian I (рантайм NewtonianI)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>7 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>2 400 т, C20 120</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 1 900 т (оборудование 267 т, силовой корпус 1 633 т), полная 4 340 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>13.0 МН, 0.305 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>1 × ТР-10 = 10 000 МВт; бытовая нагрузка 7.6 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>200 м² радиаторов = 100 МВт; контуры 600 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>40 сут / 40 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>13.85 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>Хэ-120-A1A1, Хэ-120-A2A1, Хэ-120-A2A2, Хэ-120-A3A2, Хэ-120-A4A1, Хэ-120-A6A1, Хэ-120-A6A2, Хэ-120-A6A3, Хэ-120-A6A4, Хэ-120-A7A1</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Хэ-120-A1A1</td>
+<td>Тяньхэ ТЦ-13</td>
+<td>1</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>Хэ-120-A2A1</td>
+<td>Тяньхэ ТР-10</td>
+<td>1</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>Хэ-120-A2A2</td>
+<td>Тяньхэ СР-150</td>
+<td>1</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Хэ-120-A3A1</td>
+<td>Тяньхэ радиаторная секция (50 м2)</td>
+<td>4</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>Хэ-120-A3A2</td>
+<td>Тяньхэ контур охлаждения (600 МВт)</td>
+<td>1</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-120-A4A1</td>
+<td>Гармония Х-5 (сборка из блоков Когниума)</td>
+<td>1</td>
+<td>Верфи Гармонии</td>
+<td>завод</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Хэ-120-A4A2</td>
+<td>Бак заряда прыжка (1 т)</td>
+<td>30</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-120-A4A3</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>8</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-120-A5A1</td>
+<td>Тяжёлый кластер RCS (4 сопла)</td>
+<td>8</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Хэ-120-A6A1</td>
+<td>Синьчжи MotherComputer MC-C1 (гражданский)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Хэ-120-A6A2</td>
+<td>Синьчжи навигационный радар N-2 (2 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-120-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Хэ-120-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>Хэ-120-A7A1</td>
+<td>Terra Habitat ЖО T-10</td>
+<td>1</td>
+<td>Terra Habitat</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Хэ-120-A7A2</td>
+<td>Спасательная капсула (4 места)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-120-A8A1</td>
+<td>Стойка C20 (замки и рельсы, 1 место)</td>
+<td>120</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Хэ-120-A9A1</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="хэ-т12-локомотив-12-модулей-хэ-т12">Хэ-Т12 «Локомотив» + 12 модулей (Хэ-Т12)</h3>
+<p>Магистрали: навал и контейнеры в модулях; тягач оставляет модули в депо и забирает готовые.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>harmony.ship.he-t12.lokomotiv</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Верфи Гармонии — eps_eri_harmony, блок heavenly_pact, школа standard_monohull</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>orbital</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>train, 160.0 × 40.0 × 40.0 м; тягач с ядром прыжка и сцепкой 12 модулей (42×20×20 м); сталь</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian X (рантайм NewtonianX)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>12 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>57 600 т, C20 2880</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 10 800 т (оборудование 6 015 т, силовой корпус 4 785 т), полная 68 945 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>90.0 МН, 0.133 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>4 × ТР-20 = 80 000 МВт; бытовая нагрузка 26.4 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>1 000 м² радиаторов = 499 МВт; контуры 1 200 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>60 сут / 45 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>89.89 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>Хэ-Т12-A2A2, Хэ-Т12-A4A1, Хэ-Т12-A6A1, Хэ-Т12-A6A2, Хэ-Т12-A6A3, Хэ-Т12-A6A4, Хэ-Т12-A7A1</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Хэ-Т12-A1A1</td>
+<td>Тяньхэ ТЦ-23</td>
+<td>4</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A2A1</td>
+<td>Тяньхэ ТР-20</td>
+<td>4</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A2A2</td>
+<td>Тяньхэ СР-600</td>
+<td>1</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A3A1</td>
+<td>Тяньхэ радиаторная секция (50 м2)</td>
+<td>20</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A3A2</td>
+<td>Тяньхэ контур охлаждения (600 МВт)</td>
+<td>2</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A4A1</td>
+<td>Гармония Х-80 (тягач поезда)</td>
+<td>1</td>
+<td>Верфи Гармонии</td>
+<td>завод</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A4A2</td>
+<td>Бак заряда прыжка (1 т)</td>
+<td>420</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A4A3</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>120</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A5A1</td>
+<td>Тяжёлый кластер RCS (4 сопла)</td>
+<td>16</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A6A1</td>
+<td>Синьчжи MotherComputer MC-C3 (флот)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A6A2</td>
+<td>Синьчжи радар обзора N-10 (10 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A7A1</td>
+<td>Terra Habitat ЖО T-60 (флот)</td>
+<td>1</td>
+<td>Terra Habitat</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A7A2</td>
+<td>Спасательная шлюпка (20 мест, 10 суток)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A8A1</td>
+<td>Модуль поезда грузовой (4 800 т, 240 C20)</td>
+<td>12</td>
+<td>Верфи Гармонии</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A9A1</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-Т12-A11A1</td>
+<td>Гармония турель ПРО ПТ-3</td>
+<td>2</td>
+<td>Верфи Гармонии</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="хэ-т12ц-поезд-танкер-хэ-т12ц">Хэ-Т12Ц (поезд-танкер) (Хэ-Т12Ц)</h3>
+<p>Топливо реакторов и заряд прыжка к депо и импортёрам.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>harmony.ship.he-t12c.tanker</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Верфи Гармонии — eps_eri_harmony, блок heavenly_pact, школа standard_monohull</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>orbital</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>train, 160.0 × 40.0 × 40.0 м; тот же тягач «Локомотив» + 12 модулей-цистерн; сталь</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian X (рантайм NewtonianX)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>12 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>50 000 т, C20 0</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 12 000 т (оборудование 7 215 т, силовой корпус 4 785 т), полная 62 545 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>90.0 МН, 0.147 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>4 × ТР-20 = 80 000 МВт; бытовая нагрузка 26.4 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>1 000 м² радиаторов = 499 МВт; контуры 1 200 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>60 сут / 45 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>93.54 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>Хэ-Т12Ц-A2A2, Хэ-Т12Ц-A4A1, Хэ-Т12Ц-A6A1, Хэ-Т12Ц-A6A2, Хэ-Т12Ц-A6A3, Хэ-Т12Ц-A6A4, Хэ-Т12Ц-A7A1</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Хэ-Т12Ц-A1A1</td>
+<td>Тяньхэ ТЦ-23</td>
+<td>4</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A2A1</td>
+<td>Тяньхэ ТР-20</td>
+<td>4</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A2A2</td>
+<td>Тяньхэ СР-600</td>
+<td>1</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A3A1</td>
+<td>Тяньхэ радиаторная секция (50 м2)</td>
+<td>20</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A3A2</td>
+<td>Тяньхэ контур охлаждения (600 МВт)</td>
+<td>2</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A4A1</td>
+<td>Гармония Х-80 (тягач поезда)</td>
+<td>1</td>
+<td>Верфи Гармонии</td>
+<td>завод</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A4A2</td>
+<td>Бак заряда прыжка (1 т)</td>
+<td>420</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A4A3</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>120</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A5A1</td>
+<td>Тяжёлый кластер RCS (4 сопла)</td>
+<td>16</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A6A1</td>
+<td>Синьчжи MotherComputer MC-C3 (флот)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A6A2</td>
+<td>Синьчжи радар обзора N-10 (10 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A7A1</td>
+<td>Terra Habitat ЖО T-60 (флот)</td>
+<td>1</td>
+<td>Terra Habitat</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A7A2</td>
+<td>Спасательная шлюпка (20 мест, 10 суток)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A8A1</td>
+<td>Модуль поезда-цистерна (4 170 т)</td>
+<td>12</td>
+<td>Верфи Гармонии</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A9A1</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-Т12Ц-A11A1</td>
+<td>Гармония турель ПРО ПТ-3</td>
+<td>2</td>
+<td>Верфи Гармонии</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="гт-3000-титан-гт-3000">ГТ-3000 «Титан» (ГТ-3000)</h3>
+<p>He-3 и дейтерий с платформ Юпитера и Сатурна к депо и портам. Вариант: отдельный экономический класс: внутрисистемный газовый танкер Сола (He-3/D с платформ газовых гигантов), без прыжка.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>sol.ship.gt-3000.titan</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Лунно-Марсианские верфи — sol_authority, блок sol, школа mass_production</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>Лунно-Марсианские верфи</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>cylinder, 110.0 × 30.0 × 30.0 м; три криоцистерны на хребте; сталь, теплоизоляция</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian Y (рантайм NewtonianY)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>4 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>3 000 т, C20 0</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 900 т (оборудование 268 т, силовой корпус 632 т), полная 3 912 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>6.99 МН, 0.182 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>3 × SR-2.2 = 6 600 МВт; бытовая нагрузка 4.6 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>150 м² радиаторов = 93 МВт; контуры 300 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>60 сут / 40 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>4.62 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>ГТ-3000-A2A2, ГТ-3000-A3A2, ГТ-3000-A6A1, ГТ-3000-A6A2, ГТ-3000-A6A3, ГТ-3000-A6A4, ГТ-3000-A7A1</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ГТ-3000-A1A1</td>
+<td>Урал-23</td>
+<td>3</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>ГТ-3000-A2A1</td>
+<td>Sol Reactor Works SR-2.2</td>
+<td>3</td>
+<td>Sol Reactor Works</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>ГТ-3000-A2A2</td>
+<td>Sol Reactor Works S-60</td>
+<td>1</td>
+<td>Sol Reactor Works</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>ГТ-3000-A3A1</td>
+<td>ЛМВ радиаторная секция (50 м2)</td>
+<td>3</td>
+<td>Лунно-Марсианские верфи</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>ГТ-3000-A3A2</td>
+<td>ЛМВ контур охлаждения (300 МВт)</td>
+<td>1</td>
+<td>Лунно-Марсианские верфи</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>ГТ-3000-A4A1</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>10</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>ГТ-3000-A5A1</td>
+<td>Кластер RCS (4 сопла, поле)</td>
+<td>8</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>ГТ-3000-A6A1</td>
+<td>Синьчжи MotherComputer MC-C1 (гражданский)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>ГТ-3000-A6A2</td>
+<td>Синьчжи навигационный радар N-2 (2 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>ГТ-3000-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>ГТ-3000-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>ГТ-3000-A7A1</td>
+<td>Terra Habitat ЖО T-10</td>
+<td>1</td>
+<td>Terra Habitat</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>ГТ-3000-A7A2</td>
+<td>Спасательная капсула (4 места)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>ГТ-3000-A8A1</td>
+<td>Криоцистерна He-3/D (1 000 т)</td>
+<td>3</td>
+<td>Лунно-Марсианские верфи</td>
+<td>верфь, сменный блок</td>
+<td>30</td>
+</tr>
+<tr>
+<td>ГТ-3000-A9A1</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="камень-танкер-из-астероида-кд-т">«Камень» (танкер из астероида) (КД-Т)</h3>
+<p>Лёд и летучие внутри системы; каменная оболочка — защита от обломков; медленный и дешёвый. Вариант: Вольные пояса: выдолбленный астероид как цистерна и щит, двигатель и реактор — восстановленные б/у ОФУ (лор Каменных доков).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>stone.ship.kamen.tanker</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Каменные доки Раздора — eps_eri_strife, блок free_belts, школа hollowed_asteroid_and_refit</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>mining_hub</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>asteroid, 60.0 × 45.0 × 40.0 м; выдолбленный каменный монолит, ферма двигателя; силикатная порода, стальная ферма</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian I (рантайм NewtonianI)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>5 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>6 000 т, C20 0</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 2 400 т (оборудование 57 т, силовой корпус 2 343 т), полная 8 409 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>3.3 МН, 0.04 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>1 × ЭР-2.6 = 2 600 МВт; бытовая нагрузка 6.2 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>100 м² радиаторов = 62 МВт; контуры 300 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>90 сут / 21 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>4.24 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>КД-Т-A1A1, КД-Т-A2A1, КД-Т-A2A2, КД-Т-A3A2, КД-Т-A6A1, КД-Т-A6A2, КД-Т-A6A3, КД-Т-A7A1</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>КД-Т-A1A1</td>
+<td>Урал-33</td>
+<td>1</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>КД-Т-A2A1</td>
+<td>ОФУ ЭР-2.6</td>
+<td>1</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>КД-Т-A2A2</td>
+<td>ОФУ СР-20</td>
+<td>1</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>КД-Т-A3A1</td>
+<td>ЛМВ радиаторная секция (50 м2)</td>
+<td>2</td>
+<td>Лунно-Марсианские верфи</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>КД-Т-A3A2</td>
+<td>ЛМВ контур охлаждения (300 МВт)</td>
+<td>1</td>
+<td>Лунно-Марсианские верфи</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>КД-Т-A4A1</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>6</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>КД-Т-A5A1</td>
+<td>Кластер RCS (4 сопла, поле)</td>
+<td>6</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>КД-Т-A6A1</td>
+<td>Синьчжи MotherComputer MC-C1 (гражданский)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>КД-Т-A6A2</td>
+<td>Kern радар обломков DR-5 (5 000 км)</td>
+<td>1</td>
+<td>Kern Heavy Mining</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>КД-Т-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>КД-Т-A7A1</td>
+<td>Евро-Хабитат ЖО L-20</td>
+<td>1</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>КД-Т-A7A2</td>
+<td>Спасательная капсула (4 места)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>КД-Т-A9A1</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="ht-20k-мул-ht-20k">HT-20K «Мул» (HT-20K)</h3>
+<p>Толкает плоты руды и льда (до 20 000 т) от рудников к заводам; буксирует оборудование и маяки.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>kern.ship.ht-20k.mul</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Kern Heavy Mining — cyg61_kern, блок cognium_pool, школа modular_premium</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>mining_hub</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>tug, 60.0 × 25.0 × 25.0 м; открытая силовая рама, толкающая плита; сталь</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian X (рантайм NewtonianX)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>3 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>0 т, C20 0</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 700 т (оборудование 136 т, силовой корпус 564 т), полная 714 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>4.0 МН, 0.571 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>4 × ER-1 = 3 320 МВт; бытовая нагрузка 6.2 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>150 м² радиаторов = 93 МВт; контуры 300 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>90 сут / 46 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>3.29 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>HT-20K-A2A2, HT-20K-A3A2, HT-20K-A6A1, HT-20K-A6A2, HT-20K-A6A3, HT-20K-A6A4, HT-20K-A7A1</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HT-20K-A1A1</td>
+<td>Kern KT-1 Tug Drive</td>
+<td>4</td>
+<td>Kern Heavy Mining</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>HT-20K-A2A1</td>
+<td>Cobretty ER-1</td>
+<td>4</td>
+<td>Cobretty Corporation</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>HT-20K-A2A2</td>
+<td>Sol Reactor Works S-60</td>
+<td>1</td>
+<td>Sol Reactor Works</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>HT-20K-A3A1</td>
+<td>ЛМВ радиаторная секция (50 м2)</td>
+<td>3</td>
+<td>Лунно-Марсианские верфи</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>HT-20K-A3A2</td>
+<td>ЛМВ контур охлаждения (300 МВт)</td>
+<td>1</td>
+<td>Лунно-Марсианские верфи</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>HT-20K-A4A1</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>12</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>HT-20K-A5A1</td>
+<td>Кластер RCS (4 сопла, поле)</td>
+<td>8</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>HT-20K-A6A1</td>
+<td>Синьчжи MotherComputer MC-C1 (гражданский)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>HT-20K-A6A2</td>
+<td>Kern радар обломков DR-5 (5 000 км)</td>
+<td>1</td>
+<td>Kern Heavy Mining</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>HT-20K-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>HT-20K-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>HT-20K-A7A1</td>
+<td>Евро-Хабитат ЖО L-20</td>
+<td>1</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>HT-20K-A7A2</td>
+<td>Спасательная капсула (4 места)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>HT-20K-A10A1</td>
+<td>Kern буксирная рама плота (20 000 т)</td>
+<td>1</td>
+<td>Kern Heavy Mining</td>
+<td>станция, сменный блок</td>
+<td>16</td>
+</tr>
+<tr>
+<td>HT-20K-A9A1</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="ст-6-мастеровой-ст-6">СТ-6 «Мастеровой» (СТ-6)</h3>
+<p>Ремонт рудников, станций, маяков и кораблей на месте; запчасти и мастерская.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>sol.ship.st-6.masterovoy</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Лунно-Марсианские верфи — sol_authority, блок sol, школа mass_production</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>Лунно-Марсианские верфи</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>box, 48.0 × 20.0 × 14.0 м; корпус с мастерской, складом запчастей и манипуляторами; алюминий, сталь</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Assisted I (рантайм AssistedI)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>8 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>150 т, C20 6</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 500 т (оборудование 102 т, силовой корпус 398 т), полная 656 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>3.0 МН, 0.466 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>2 × SR-1.4 = 2 800 МВт; бытовая нагрузка 5.5 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>150 м² радиаторов = 93 МВт; контуры 300 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>30 сут / 35 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>2.58 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>СТ-6-A2A2, СТ-6-A3A2, СТ-6-A6A1, СТ-6-A6A2, СТ-6-A6A3, СТ-6-A6A4, СТ-6-A7A1</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>СТ-6-A1A1</td>
+<td>Урал-15</td>
+<td>4</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>СТ-6-A2A1</td>
+<td>Sol Reactor Works SR-1.4</td>
+<td>2</td>
+<td>Sol Reactor Works</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>СТ-6-A2A2</td>
+<td>Sol Reactor Works S-60</td>
+<td>1</td>
+<td>Sol Reactor Works</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>СТ-6-A3A1</td>
+<td>ЛМВ радиаторная секция (50 м2)</td>
+<td>3</td>
+<td>Лунно-Марсианские верфи</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>СТ-6-A3A2</td>
+<td>ЛМВ контур охлаждения (300 МВт)</td>
+<td>1</td>
+<td>Лунно-Марсианские верфи</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>СТ-6-A4A1</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>4</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>СТ-6-A6A1</td>
+<td>Синьчжи MotherComputer MC-C1 (гражданский)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>СТ-6-A6A2</td>
+<td>Синьчжи навигационный радар N-2 (2 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>СТ-6-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>СТ-6-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>СТ-6-A7A1</td>
+<td>Terra Habitat ЖО T-10</td>
+<td>1</td>
+<td>Terra Habitat</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>СТ-6-A7A2</td>
+<td>Спасательная капсула (4 места)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>СТ-6-A7A3</td>
+<td>Медотсек (4 койки)</td>
+<td>1</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>СТ-6-A8A1</td>
+<td>Стойка C20 (замки и рельсы, 1 место)</td>
+<td>6</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>3</td>
+</tr>
+<tr>
+<td>СТ-6-A9A1</td>
+<td>Отсек дронов (4 сервисных дрона)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>СТ-6-A10A1</td>
+<td>Мастерская сервисного тендера (2 бригады)</td>
+<td>1</td>
+<td>Лунно-Марсианские верфи</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>СТ-6-A9A2</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="пк-30-страж-пк-30">ПК-30 «Страж» (ПК-30)</h3>
+<p>Береговая охрана: таможня и досмотр, полиция, SAR, охрана маяков.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>sol.ship.pk-30.strazh</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Лунно-Марсианские верфи — sol_authority, блок sol, школа mass_production</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>Лунно-Марсианские верфи</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>flat, 34.0 × 22.0 × 8.0 м; плоский корпус, ангар досмотрового катера; титан, керамокомпозитная броня</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Assisted I (рантайм AssistedI)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>9 / 6</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>20 т, C20 0</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 420 т (оборудование 219 т, силовой корпус 201 т), полная 453 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>13.0 МН, 2.926 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>2 × SR-4.8 = 9 600 МВт; бытовая нагрузка 27.6 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>200 м² радиаторов = 124 МВт; контуры 600 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>30 сут / 30 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>15.75 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>ПК-30-A4A1, ПК-30-A6A2</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ПК-30-A1A1</td>
+<td>Урал-65М (служебный)</td>
+<td>4</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>ПК-30-A2A1</td>
+<td>Sol Reactor Works SR-4.8</td>
+<td>2</td>
+<td>Sol Reactor Works</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>ПК-30-A2A2</td>
+<td>Sol Reactor Works S-200</td>
+<td>2</td>
+<td>Sol Reactor Works</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>ПК-30-A3A1</td>
+<td>ЛМВ радиаторная секция (50 м2)</td>
+<td>4</td>
+<td>Лунно-Марсианские верфи</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>ПК-30-A3A2</td>
+<td>ЛМВ контур охлаждения (300 МВт)</td>
+<td>2</td>
+<td>Лунно-Марсианские верфи</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>ПК-30-A4A1</td>
+<td>Ядро «Нулевая точка» Я-1</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>завод</td>
+<td>—</td>
+</tr>
+<tr>
+<td>ПК-30-A4A2</td>
+<td>Бак заряда прыжка (1 т)</td>
+<td>5</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>ПК-30-A4A3</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>4</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>ПК-30-A6A1</td>
+<td>Синьчжи MotherComputer MC-C3 (флот)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>ПК-30-A6A2</td>
+<td>Синьчжи радар обзора N-10 (10 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>ПК-30-A6A3</td>
+<td>Синьчжи связной комплекс C-3 (флот, защищённый)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>ПК-30-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>2</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>ПК-30-A7A1</td>
+<td>Terra Habitat ЖО T-10</td>
+<td>2</td>
+<td>Terra Habitat</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>ПК-30-A7A2</td>
+<td>Спасательная капсула (4 места)</td>
+<td>4</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>ПК-30-A7A3</td>
+<td>Медотсек (4 койки)</td>
+<td>1</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>ПК-30-A8A1</td>
+<td>Камера для задержанных и спасённых (6 мест)</td>
+<td>1</td>
+<td>Лунно-Марсианские верфи</td>
+<td>верфь, сменный блок</td>
+<td>24</td>
+</tr>
+<tr>
+<td>ПК-30-A9A1</td>
+<td>Ангар досмотрового катера (1 катер)</td>
+<td>1</td>
+<td>Лунно-Марсианские верфи</td>
+<td>верфь</td>
+<td>—</td>
+</tr>
+<tr>
+<td>ПК-30-A9A2</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>ПК-30-A11A1</td>
+<td>Твердыня магнитная пушка КП-30</td>
+<td>1</td>
+<td>Бронезавод Твердыни</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>ПК-30-A11A2</td>
+<td>Твердыня турель ПРО ПТ-2</td>
+<td>1</td>
+<td>Бронезавод Твердыни</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>ПК-30-A12A1</td>
+<td>Броня керамокомпозитная (1 т)</td>
+<td>20</td>
+<td>Бронезавод Твердыни</td>
+<td>верфь, сменный блок</td>
+<td>2</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="б-4-сокол-б-4">Б-4 «Сокол» (Б-4)</h3>
+<p>Быстрый ответ в системе: перехват пиратов и нарушителей, камней и обломков; короткая автономность.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>bastion.ship.b-4.sokol</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Арсенал «Бастион» — wolf359_citadel, блок citadel_compact, школа heavy_military</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>military_hub</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>dart, 18.0 × 12.0 × 4.0 м; плоская стрела, восемь гондол векторной тяги; титан, тяжёлая броня носа</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Assisted X (рантайм AssistedX)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>2 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>2 т, C20 0</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 140 т (оборудование 114 т, силовой корпус 26 т), полная 144 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>6.2 МН, 4.383 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>4 × ТР-2.6В = 10 000 МВт; бытовая нагрузка 27.4 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>300 м² радиаторов = 186 МВт; контуры 360 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>5 сут / 30 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>20.56 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>Б-4-A6A2</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Б-4-A1A1</td>
+<td>Тяньхэ ТЦ-1.6В (военная поставка)</td>
+<td>8</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>Б-4-A2A1</td>
+<td>Тяньхэ ТР-2.6В</td>
+<td>4</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>Б-4-A2A2</td>
+<td>ОФУ СР-20</td>
+<td>2</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Б-4-A3A1</td>
+<td>Cobretty C-SiC radiator panel set (10 m2)</td>
+<td>30</td>
+<td>Cobretty Corporation</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>Б-4-A3A2</td>
+<td>Cobretty coolant loop + pump (180 MW)</td>
+<td>2</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Б-4-A4A1</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Б-4-A6A1</td>
+<td>Бастион боевой вычислитель БВ-1</td>
+<td>2</td>
+<td>Арсенал «Бастион»</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Б-4-A6A2</td>
+<td>Синьчжи радар обзора N-10 (10 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Б-4-A6A3</td>
+<td>Бастион связь БС-1</td>
+<td>2</td>
+<td>Арсенал «Бастион»</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Б-4-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>2</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>Б-4-A7A1</td>
+<td>ОФУ ЖО О-4 (челнок)</td>
+<td>2</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Б-4-A7A2</td>
+<td>Cobretty катапультируемая капсула кабины (2 места)</td>
+<td>1</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Б-4-A11A1</td>
+<td>Бастион скорострельная пушка БП-10</td>
+<td>2</td>
+<td>Арсенал «Бастион»</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Б-4-A12A1</td>
+<td>Броня Бастиона тяжёлая (1 т)</td>
+<td>5</td>
+<td>Арсенал «Бастион»</td>
+<td>верфь, сменный блок</td>
+<td>2</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="хэ-ф22-дунь-хэ-ф22">Хэ-Ф22 «Дунь» (Хэ-Ф22)</h3>
+<p>Охрана конвоев: ПРО, сенсоры, автономность наравне с поездами.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>harmony.ship.he-f22.dun</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Верфи Гармонии — eps_eri_harmony, блок heavenly_pact, школа standard_monohull</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>orbital</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>cylinder, 85.0 × 30.0 × 18.0 м; стандартный корпус «Хэ» с бронепоясом; сталь, керамокомпозит</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Assisted Y (рантайм AssistedY)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>40 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>80 т, C20 0</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 2 200 т (оборудование 863 т, силовой корпус 1 337 т), полная 2 363 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>32.1 МН, 1.385 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>3 × ТР-11 = 32 100 МВт; бытовая нагрузка 52.3 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>500 м² радиаторов = 250 МВт; контуры 1 200 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>90 сут / 35 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>76.96 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>Хэ-Ф22-A4A1</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Хэ-Ф22-A1A1</td>
+<td>Тяньхэ ТЦ-11</td>
+<td>6</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A2A1</td>
+<td>Тяньхэ ТР-11</td>
+<td>3</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A2A2</td>
+<td>Тяньхэ СР-600</td>
+<td>2</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A3A1</td>
+<td>Тяньхэ радиаторная секция (50 м2)</td>
+<td>10</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A3A2</td>
+<td>Тяньхэ контур охлаждения (600 МВт)</td>
+<td>2</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A4A1</td>
+<td>Гармония Х-5 (сборка из блоков Когниума)</td>
+<td>1</td>
+<td>Верфи Гармонии</td>
+<td>завод</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A4A2</td>
+<td>Бак заряда прыжка (1 т)</td>
+<td>28</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A4A3</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>30</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A5A1</td>
+<td>Тяжёлый кластер RCS (4 сопла)</td>
+<td>8</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A6A1</td>
+<td>Синьчжи MotherComputer MC-C3 (флот)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A6A2</td>
+<td>Синьчжи радар обзора N-10 (10 000 км)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A6A3</td>
+<td>Синьчжи связной комплекс C-3 (флот, защищённый)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>2</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A7A1</td>
+<td>Terra Habitat ЖО T-60 (флот)</td>
+<td>2</td>
+<td>Terra Habitat</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A7A2</td>
+<td>Спасательная шлюпка (20 мест, 10 суток)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A7A3</td>
+<td>Медотсек (4 койки)</td>
+<td>2</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A9A1</td>
+<td>Ангар досмотрового катера (1 катер)</td>
+<td>1</td>
+<td>Лунно-Марсианские верфи</td>
+<td>верфь</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A9A2</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A11A1</td>
+<td>Гармония пусковая ВПУ-8 (8 ракет)</td>
+<td>2</td>
+<td>Верфи Гармонии</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A11A2</td>
+<td>Гармония турель ПРО ПТ-3</td>
+<td>6</td>
+<td>Верфи Гармонии</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Хэ-Ф22-A12A1</td>
+<td>Броня керамокомпозитная (1 т)</td>
+<td>220</td>
+<td>Бронезавод Твердыни</td>
+<td>верфь, сменный блок</td>
+<td>2</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="б-90-цитадель-б-90">Б-90 «Цитадель» (Б-90)</h3>
+<p>Сдерживание и война: дальние ракеты, сильные сенсоры, броня; главная боевая единица Цитадели.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>bastion.ship.b-90.tsitadel</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Арсенал «Бастион» — wolf359_citadel, блок citadel_compact, школа heavy_military</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>military_hub</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>cylinder, 180.0 × 45.0 × 35.0 м; бронированный корпус-цитадель, ВПУ по бортам; сталь, тяжёлая броня</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian X (рантайм NewtonianX)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>160 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>300 т, C20 0</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 9 000 т (оборудование 3 392 т, силовой корпус 5 608 т), полная 9 767 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>110.0 МН, 1.148 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>4 × ТР-30В = 120 000 МВт; бытовая нагрузка 184.2 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>2 000 м² радиаторов = 998 МВт; контуры 2 400 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>180 сут / 48 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>796.74 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>Б-90-A4A1</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Б-90-A1A1</td>
+<td>Тяньхэ ТЦ-28В</td>
+<td>4</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>Б-90-A2A1</td>
+<td>Тяньхэ ТР-30В</td>
+<td>4</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>Б-90-A2A2</td>
+<td>Тяньхэ СР-600</td>
+<td>2</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Б-90-A3A1</td>
+<td>Тяньхэ радиаторная секция (50 м2)</td>
+<td>40</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>Б-90-A3A2</td>
+<td>Тяньхэ контур охлаждения (600 МВт)</td>
+<td>4</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Б-90-A4A1</td>
+<td>Бастион Б-12</td>
+<td>1</td>
+<td>Арсенал «Бастион»</td>
+<td>завод</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Б-90-A4A2</td>
+<td>Бак заряда прыжка (1 т)</td>
+<td>120</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Б-90-A4A3</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>160</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Б-90-A5A1</td>
+<td>Тяжёлый кластер RCS (4 сопла)</td>
+<td>16</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Б-90-A6A1</td>
+<td>Бастион боевой вычислитель БВ-1</td>
+<td>2</td>
+<td>Арсенал «Бастион»</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Б-90-A6A2</td>
+<td>Бастион радар обзора С-50 (50 000 км)</td>
+<td>2</td>
+<td>Арсенал «Бастион»</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Б-90-A6A3</td>
+<td>Бастион связь БС-1</td>
+<td>2</td>
+<td>Арсенал «Бастион»</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Б-90-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>2</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>Б-90-A7A1</td>
+<td>Terra Habitat ЖО T-200 (флот)</td>
+<td>2</td>
+<td>Terra Habitat</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Б-90-A7A2</td>
+<td>Спасательная шлюпка (20 мест, 10 суток)</td>
+<td>9</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Б-90-A7A3</td>
+<td>Медотсек (4 койки)</td>
+<td>3</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Б-90-A9A1</td>
+<td>Отсек дронов (4 сервисных дрона)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Б-90-A9A2</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Б-90-A11A1</td>
+<td>Бастион ВПУ-16 дальних ракет</td>
+<td>6</td>
+<td>Арсенал «Бастион»</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Б-90-A11A2</td>
+<td>Бастион турель ПРО БТ-4</td>
+<td>12</td>
+<td>Арсенал «Бастион»</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Б-90-A12A1</td>
+<td>Броня Бастиона тяжёлая (1 т)</td>
+<td>1600</td>
+<td>Арсенал «Бастион»</td>
+<td>верфь, сменный блок</td>
+<td>2</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="r-7-аргус-r-7">R-7 «Аргус» (R-7)</h3>
+<p>Сенсоры и раннее предупреждение у точек выхода, РЭБ, ретрансляция сети маяков в войну.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>hyp.ship.r-7.argus</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Верфи Гипериона — tau_ceti_cognium, блок cognium_pool, школа modular_premium</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>orbital</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>flat, 40.0 × 26.0 × 8.0 м; плоский малозаметный корпус, выдвижная мачта; композит, поглощающее покрытие</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian X (рантайм NewtonianX)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>14 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>10 т, C20 0</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 600 т (оборудование 220 т, силовой корпус 380 т), полная 633 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>12.0 МН, 1.932 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>4 × ER-3 = 11 000 МВт; бытовая нагрузка 68.5 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>600 м² радиаторов = 372 МВт; контуры 360 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>60 сут / 34 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>37.01 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>R-7-A4A1, R-7-A6A2</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R-7-A1A1</td>
+<td>Hyperion HD-3</td>
+<td>4</td>
+<td>Верфи Гипериона</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>R-7-A2A1</td>
+<td>Cobretty ER-3</td>
+<td>4</td>
+<td>Cobretty Corporation</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>R-7-A2A2</td>
+<td>Cobretty SR-150</td>
+<td>2</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>R-7-A3A1</td>
+<td>Cobretty C-SiC radiator panel set (10 m2)</td>
+<td>60</td>
+<td>Cobretty Corporation</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>R-7-A3A2</td>
+<td>Cobretty coolant loop + pump (180 MW)</td>
+<td>2</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>R-7-A4A1</td>
+<td>Ядро «Нулевая точка» Я-1</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>завод</td>
+<td>—</td>
+</tr>
+<tr>
+<td>R-7-A4A2</td>
+<td>Бак заряда прыжка (1 т)</td>
+<td>7</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>R-7-A4A3</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>10</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>R-7-A5A1</td>
+<td>Кластер RCS (4 сопла, поле)</td>
+<td>8</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>R-7-A6A1</td>
+<td>Hyperion разведывательный вычислитель HR-1</td>
+<td>2</td>
+<td>Верфи Гипериона</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>R-7-A6A2</td>
+<td>Hyperion пассивная решётка PA-100 + активный режим</td>
+<td>1</td>
+<td>Верфи Гипериона</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>R-7-A6A3</td>
+<td>Hyperion выдвижная сенсорная мачта</td>
+<td>1</td>
+<td>Верфи Гипериона</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>R-7-A6A4</td>
+<td>Hyperion комплекс РЭБ E-1</td>
+<td>1</td>
+<td>Верфи Гипериона</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>R-7-A6A5</td>
+<td>Синьчжи связной комплекс C-3 (флот, защищённый)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>R-7-A6A6</td>
+<td>Hyperion полевой ретранслятор R-1 (сеть маяков в войну)</td>
+<td>1</td>
+<td>Верфи Гипериона</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>R-7-A6A7</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>2</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>R-7-A7A1</td>
+<td>Евро-Хабитат ЖО L-20</td>
+<td>2</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>R-7-A7A2</td>
+<td>Спасательная капсула (4 места)</td>
+<td>4</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>R-7-A7A3</td>
+<td>Медотсек (4 койки)</td>
+<td>1</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>R-7-A9A1</td>
+<td>Отсек дронов (4 сервисных дрона)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>R-7-A9A2</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>R-7-A11A1</td>
+<td>Твердыня турель ПРО ПТ-2</td>
+<td>1</td>
+<td>Бронезавод Твердыни</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="хэ-с240-тыловик-хэ-с240">Хэ-С240 «Тыловик» (Хэ-С240)</h3>
+<p>Автономность эскадры вдали от баз: топливо, заряд прыжка, боеприпасы, ремонт.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>harmony.ship.he-s240.tylovik</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Верфи Гармонии — eps_eri_harmony, блок heavenly_pact, школа standard_monohull</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>orbital</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>box, 150.0 × 40.0 × 35.0 м; стандартный корпус «Хэ», 240 гнёзд C20, ангар перехватчиков; сталь</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian Y (рантайм NewtonianY)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>60 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>6 000 т, C20 240</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 5 000 т (оборудование 991 т, силовой корпус 4 009 т), полная 11 220 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>39.0 МН, 0.354 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>3 × ТР-11 = 32 100 МВт; бытовая нагрузка 35.3 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>600 м² радиаторов = 299 МВт; контуры 1 200 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>180 сут / 40 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>59.52 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>Хэ-С240-A4A1, Хэ-С240-A6A2</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Хэ-С240-A1A1</td>
+<td>Тяньхэ ТЦ-13</td>
+<td>3</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>Хэ-С240-A2A1</td>
+<td>Тяньхэ ТР-11</td>
+<td>3</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>Хэ-С240-A2A2</td>
+<td>Тяньхэ СР-600</td>
+<td>2</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Хэ-С240-A3A1</td>
+<td>Тяньхэ радиаторная секция (50 м2)</td>
+<td>12</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>Хэ-С240-A3A2</td>
+<td>Тяньхэ контур охлаждения (600 МВт)</td>
+<td>2</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-С240-A4A1</td>
+<td>Гармония Х-12</td>
+<td>1</td>
+<td>Верфи Гармонии</td>
+<td>завод</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Хэ-С240-A4A2</td>
+<td>Бак заряда прыжка (1 т)</td>
+<td>90</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-С240-A4A3</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>60</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-С240-A5A1</td>
+<td>Тяжёлый кластер RCS (4 сопла)</td>
+<td>12</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Хэ-С240-A6A1</td>
+<td>Синьчжи MotherComputer MC-C3 (флот)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Хэ-С240-A6A2</td>
+<td>Синьчжи радар обзора N-10 (10 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-С240-A6A3</td>
+<td>Синьчжи связной комплекс C-3 (флот, защищённый)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Хэ-С240-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>2</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>Хэ-С240-A7A1</td>
+<td>Terra Habitat ЖО T-60 (флот)</td>
+<td>2</td>
+<td>Terra Habitat</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Хэ-С240-A7A2</td>
+<td>Спасательная шлюпка (20 мест, 10 суток)</td>
+<td>3</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-С240-A7A3</td>
+<td>Медотсек (4 койки)</td>
+<td>3</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Хэ-С240-A8A1</td>
+<td>Стойка C20 (замки и рельсы, 1 место)</td>
+<td>240</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Хэ-С240-A9A1</td>
+<td>Ангар перехватчиков (2 места)</td>
+<td>1</td>
+<td>Верфи Гармонии</td>
+<td>верфь</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Хэ-С240-A9A2</td>
+<td>Отсек дронов (4 сервисных дрона)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-С240-A10A1</td>
+<td>Мастерская сервисного тендера (2 бригады)</td>
+<td>2</td>
+<td>Лунно-Марсианские верфи</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Хэ-С240-A9A3</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>4</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Хэ-С240-A11A1</td>
+<td>Гармония турель ПРО ПТ-3</td>
+<td>2</td>
+<td>Верфи Гармонии</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="пао-7-щит-пао-7">ПАО-7 «Щит» (ПАО-7)</h3>
+<p>Защита планет и обитаемых станций: обнаружить, перехватить, увести, отклонить или раздробить камень; тяжёлое спасение.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>sol.ship.pao-7.shchit</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Лунно-Марсианские верфи — sol_authority, блок sol, школа mass_production</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>Лунно-Марсианские верфи</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>tug, 70.0 × 30.0 × 30.0 м; силовая рама с тяжёлым захватом и пусковой ударников; сталь, броня носа</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian X (рантайм NewtonianX)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>16 / 0</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>200 т, C20 0</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 1 600 т (оборудование 593 т, силовой корпус 1 007 т), полная 1 836 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>28.0 МН, 1.555 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>4 × SR-7 = 28 000 МВт; бытовая нагрузка 141.7 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>700 м² радиаторов = 434 МВт; контуры 600 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>45 сут / 35 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>33.08 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>нет</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ПАО-7-A1A1</td>
+<td>Урал-70</td>
+<td>4</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>ПАО-7-A2A1</td>
+<td>Sol Reactor Works SR-7</td>
+<td>4</td>
+<td>Sol Reactor Works</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>ПАО-7-A2A2</td>
+<td>Sol Reactor Works S-200</td>
+<td>2</td>
+<td>Sol Reactor Works</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>ПАО-7-A3A1</td>
+<td>ЛМВ радиаторная секция (50 м2)</td>
+<td>14</td>
+<td>Лунно-Марсианские верфи</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>ПАО-7-A3A2</td>
+<td>ЛМВ контур охлаждения (300 МВт)</td>
+<td>2</td>
+<td>Лунно-Марсианские верфи</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>ПАО-7-A4A1</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>30</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>ПАО-7-A5A1</td>
+<td>Тяжёлый кластер RCS (4 сопла)</td>
+<td>8</td>
+<td>Тяньхэ Тяжмаш</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>ПАО-7-A6A1</td>
+<td>Синьчжи MotherComputer MC-C3 (флот)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>ПАО-7-A6A2</td>
+<td>Kern радар обломков DR-5 (5 000 км)</td>
+<td>1</td>
+<td>Kern Heavy Mining</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>ПАО-7-A6A3</td>
+<td>Синьчжи радар обзора N-10 (10 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>ПАО-7-A6A4</td>
+<td>Синьчжи связной комплекс C-3 (флот, защищённый)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>ПАО-7-A6A5</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>2</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>ПАО-7-A7A1</td>
+<td>Terra Habitat ЖО T-60 (флот)</td>
+<td>2</td>
+<td>Terra Habitat</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>ПАО-7-A7A2</td>
+<td>Спасательная шлюпка (20 мест, 10 суток)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>ПАО-7-A7A3</td>
+<td>Медотсек (4 койки)</td>
+<td>1</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>ПАО-7-A9A1</td>
+<td>Отсек дронов (4 сервисных дрона)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>ПАО-7-A9A2</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>2</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>ПАО-7-A10A1</td>
+<td>Kern тяжёлый захват (обломки, камни)</td>
+<td>1</td>
+<td>Kern Heavy Mining</td>
+<td>станция, сменный блок</td>
+<td>16</td>
+</tr>
+<tr>
+<td>ПАО-7-A11A1</td>
+<td>Kern пусковая ударников МД-40 (масс-драйвер)</td>
+<td>1</td>
+<td>Kern Heavy Mining</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>ПАО-7-A12A1</td>
+<td>Броня керамокомпозитная (1 т)</td>
+<td>60</td>
+<td>Бронезавод Твердыни</td>
+<td>верфь, сменный блок</td>
+<td>2</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="l-900-пилигрим-l-900">L-900 «Пилигрим» (L-900)</h3>
+<p>Регулярные межзвёздные рейсы: 900 мест (60 каюты / 240 бизнес / 600 эконом), почта и 90 т срочного груза.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>hyp.ship.l-900.piligrim</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Верфи Гипериона — tau_ceti_cognium, блок cognium_pool, школа modular_premium</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>orbital</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>cylinder, 150.0 × 34.0 × 28.0 м; модульный корпус: 9 пассажирских секций Agora на хребте; алюминий, композит</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian Y (рантайм NewtonianY)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>40 / 900</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>90 т, C20 0</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 2 600 т (оборудование 1 041 т, силовой корпус 1 559 т), полная 3 009 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>12.0 МН, 0.407 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>3 × ER-5 = 15 000 МВт; бытовая нагрузка 42.5 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>4 000 м² радиаторов = 2 481 МВт; контуры 360 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>30 сут / 46 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>35.85 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>L-900-A4A1, L-900-A6A2</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L-900-A1A1</td>
+<td>Hyperion HD-4</td>
+<td>3</td>
+<td>Верфи Гипериона</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>L-900-A2A1</td>
+<td>Cobretty ER-5 Propulsion Reactor</td>
+<td>3</td>
+<td>Cobretty Corporation</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>L-900-A2A2</td>
+<td>Cobretty SR-150</td>
+<td>2</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>L-900-A3A1</td>
+<td>Cobretty C-SiC radiator panel set (10 m2)</td>
+<td>400</td>
+<td>Cobretty Corporation</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>L-900-A3A2</td>
+<td>Cobretty coolant loop + pump (180 MW)</td>
+<td>2</td>
+<td>Cobretty Corporation</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>L-900-A4A1</td>
+<td>Ядро «Нулевая точка» Я-5</td>
+<td>1</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>завод</td>
+<td>—</td>
+</tr>
+<tr>
+<td>L-900-A4A2</td>
+<td>Бак заряда прыжка (1 т)</td>
+<td>45</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>L-900-A4A3</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>20</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>L-900-A5A1</td>
+<td>Кластер RCS (4 сопла, поле)</td>
+<td>12</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>L-900-A6A1</td>
+<td>Синьчжи MotherComputer MC-C3 (флот)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>L-900-A6A2</td>
+<td>Синьчжи навигационный радар N-2 (2 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>L-900-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>L-900-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>2</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>L-900-A7A1</td>
+<td>Евро-Хабитат ЖО L-200 (лайнер)</td>
+<td>5</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>L-900-A7A2</td>
+<td>Спасательная шлюпка (20 мест, 10 суток)</td>
+<td>47</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>L-900-A7A3</td>
+<td>Медотсек (4 койки)</td>
+<td>4</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>L-900-A8A1</td>
+<td>Пассажирская секция Agora (100 мест)</td>
+<td>9</td>
+<td>Agora Modular</td>
+<td>верфь, сменный блок</td>
+<td>24</td>
+</tr>
+<tr>
+<td>L-900-A8A2</td>
+<td>Грузовой отсек (100 т, 300 м3)</td>
+<td>1</td>
+<td>Agora Modular</td>
+<td>верфь</td>
+<td>—</td>
+</tr>
+<tr>
+<td>L-900-A9A1</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>4</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="t-5000-исход-t-5000">T-5000 «Исход» (T-5000)</h3>
+<p>Миграция и эвакуация: 5 000 мест (70 % койки, 30 % анабиоз), медленно и дёшево на человека; реквизируется при бедствиях.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Паспорт</td>
+<td><code>bharat.ship.t-5000.iskhod</code></td>
+</tr>
+<tr>
+<td>Производитель</td>
+<td>Бхарат Ассембли — hd20794_newindia, блок southern_circle, школа licensed_kit_assembly</td>
+</tr>
+<tr>
+<td>Верфь</td>
+<td>industrial_hub</td>
+</tr>
+<tr>
+<td>Корпус</td>
+<td>cylinder, 220.0 × 50.0 × 40.0 м; хребет с 7 секциями коек и 15 блоками анабиоза; сталь</td>
+</tr>
+<tr>
+<td>Схема управления</td>
+<td>Newtonian X (рантайм NewtonianX)</td>
+</tr>
+<tr>
+<td>Экипаж / пассажиры</td>
+<td>60 / 5000 (анабиоз 1500)</td>
+</tr>
+<tr>
+<td>Груз</td>
+<td>600 т, C20 0</td>
+</tr>
+<tr>
+<td>Масса</td>
+<td>сухая 6 500 т (оборудование 2 674 т, силовой корпус 3 826 т), полная 8 997 т</td>
+</tr>
+<tr>
+<td>Тяга</td>
+<td>17.32 МН, 0.196 g гружёный; длительно 100 %</td>
+</tr>
+<tr>
+<td>Энергия</td>
+<td>4 × SR-3.3 = 13 200 МВт; бытовая нагрузка 148.4 МВт</td>
+</tr>
+<tr>
+<td>Охлаждение</td>
+<td>1 000 м² радиаторов = 620 МВт; контуры 600 МВт</td>
+</tr>
+<tr>
+<td>Автономность / ресурс</td>
+<td>60 сут / 40 лет</td>
+</tr>
+<tr>
+<td>Цена</td>
+<td>58.43 млн Cr</td>
+</tr>
+<tr>
+<td>Единичные точки отказа</td>
+<td>T-5000-A4A1, T-5000-A6A2</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Позиция</th>
+<th>Изделие</th>
+<th>Кол.</th>
+<th>Производитель</th>
+<th>Ремонт</th>
+<th>Замена, ч</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T-5000-A1A1</td>
+<td>Урал-43</td>
+<td>4</td>
+<td>Orbital Freight Union «Ural-Kourou»</td>
+<td>верфь, сменный блок</td>
+<td>36</td>
+</tr>
+<tr>
+<td>T-5000-A2A1</td>
+<td>Sol Reactor Works SR-3.3</td>
+<td>4</td>
+<td>Sol Reactor Works</td>
+<td>верфь, сменный блок</td>
+<td>48</td>
+</tr>
+<tr>
+<td>T-5000-A2A2</td>
+<td>Sol Reactor Works S-200</td>
+<td>2</td>
+<td>Sol Reactor Works</td>
+<td>станция, сменный блок</td>
+<td>12</td>
+</tr>
+<tr>
+<td>T-5000-A3A1</td>
+<td>ЛМВ радиаторная секция (50 м2)</td>
+<td>20</td>
+<td>Лунно-Марсианские верфи</td>
+<td>экипаж, сменный блок</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>T-5000-A3A2</td>
+<td>ЛМВ контур охлаждения (300 МВт)</td>
+<td>2</td>
+<td>Лунно-Марсианские верфи</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>T-5000-A4A1</td>
+<td>Дар аль-Мизан М-12</td>
+<td>1</td>
+<td>Дар аль-Мизан</td>
+<td>завод</td>
+<td>—</td>
+</tr>
+<tr>
+<td>T-5000-A4A2</td>
+<td>Бак заряда прыжка (1 т)</td>
+<td>120</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>T-5000-A4A3</td>
+<td>Бункер топливных таблеток D/He-3 (1 т)</td>
+<td>40</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>T-5000-A5A1</td>
+<td>Кластер RCS (4 сопла, поле)</td>
+<td>16</td>
+<td>Agora Modular</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>T-5000-A6A1</td>
+<td>Мизан бортовой вычислитель МВ-1</td>
+<td>2</td>
+<td>Дар аль-Мизан</td>
+<td>станция, сменный блок</td>
+<td>4</td>
+</tr>
+<tr>
+<td>T-5000-A6A2</td>
+<td>Синьчжи навигационный радар N-2 (2 000 км)</td>
+<td>1</td>
+<td>Синьчжи Электроникс</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>T-5000-A6A3</td>
+<td>Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</td>
+<td>2</td>
+<td>Синьчжи Электроникс</td>
+<td>экипаж, сменный блок</td>
+<td>2</td>
+</tr>
+<tr>
+<td>T-5000-A6A4</td>
+<td>Транспондер Управления Маяков Т-1</td>
+<td>2</td>
+<td>Фабрика ядер Управления Маяков «Нулевая точка»</td>
+<td>экипаж, сменный блок</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>T-5000-A7A1</td>
+<td>Uhuru ЖО U-500 (биорегенерация)</td>
+<td>8</td>
+<td>Uhuru Bio-Systems</td>
+<td>станция, сменный блок</td>
+<td>10</td>
+</tr>
+<tr>
+<td>T-5000-A7A2</td>
+<td>Спасательный модуль-убежище (100 мест)</td>
+<td>51</td>
+<td>Бхарат Ассембли</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+<tr>
+<td>T-5000-A7A3</td>
+<td>Медотсек (4 койки)</td>
+<td>6</td>
+<td>Консорциум «Евро-Хабитат»</td>
+<td>станция, сменный блок</td>
+<td>6</td>
+</tr>
+<tr>
+<td>T-5000-A8A1</td>
+<td>Секция переселенцев (500 коек)</td>
+<td>7</td>
+<td>Бхарат Ассембли</td>
+<td>верфь, сменный блок</td>
+<td>24</td>
+</tr>
+<tr>
+<td>T-5000-A8A2</td>
+<td>Блок анабиоза (100 капсул)</td>
+<td>15</td>
+<td>Uhuru Bio-Systems</td>
+<td>верфь, сменный блок</td>
+<td>24</td>
+</tr>
+<tr>
+<td>T-5000-A8A3</td>
+<td>Грузовой отсек (100 т, 300 м3)</td>
+<td>6</td>
+<td>Agora Modular</td>
+<td>верфь</td>
+<td>—</td>
+</tr>
+<tr>
+<td>T-5000-A9A1</td>
+<td>Стыковочный узел (стандарт хабов)</td>
+<td>4</td>
+<td>Agora Modular</td>
+<td>станция, сменный блок</td>
+<td>8</td>
+</tr>
+</tbody>
+</table></div>
+<!-- GENERATED:fleet_models END -->
+</article><footer class="path">Источник: <code>Notes/Lore/ECONOMY/FLEET_MODELS.md</code></footer></main></body></html>

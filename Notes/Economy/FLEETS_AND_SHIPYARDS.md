@@ -1,6 +1,6 @@
 # Флоты, классы кораблей, реестр, верфи
 
-Статус: PROPOSAL (2026-11-03). Данные классов — `tools/colonization_lab/canon/ship_economics.json`; цены, дальность, расход — `out/logistics_report.md`; численность — `out/world_3126/fleet_census_3126.json`.
+Статус: PROPOSAL (2026-11-03). Конкретные модели каждого класса, паспорта оборудования, чертежи и функциональные схемы — `tools/colonization_lab/canon/ship_designs.json` → `ship_designer.py` (`Notes/Lore/ECONOMY/FLEET_MODELS.md`, `SHIP_EQUIPMENT.md`, `tools/colonization_lab/out/ships_3126/index.html`). Данные классов — `tools/colonization_lab/canon/ship_economics.json`; цены, дальность, расход — `out/logistics_report.md`; численность — `out/world_3126/fleet_census_3126.json`.
 
 ## 1. Классы из задач, а не ради красоты
 

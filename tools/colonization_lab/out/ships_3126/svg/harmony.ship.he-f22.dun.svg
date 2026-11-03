@@ -1,0 +1,211 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 410" font-family="Segoe UI, Arial, sans-serif" font-size="10">
+<rect width="100%" height="100%" fill="#0e1620"/>
+<text x="20" y="16" fill="#f0b46a" font-size="14">Хэ-Ф22 «Дунь» — Верфи Гармонии</text>
+<rect x="20.0" y="50" width="300.0" height="300.0" fill="none" stroke="#24364a"/>
+<text x="24.0" y="64" fill="#8fb3d1">вид сверху</text>
+<g fill="#1f3348" stroke="#7fa6c9" stroke-width="1.2"><rect x="117.05882352941177" y="50.0" width="105.88235294117646" height="300.0" rx="52.94117647058823" /></g>
+<rect x="87.4" y="215.0" width="29.7" height="105.0" fill="#7fb8e6" fill-opacity="0.25" stroke="#7fb8e6" stroke-width="0.8"><title>радиаторы 500 м2</title></rect>
+<rect x="222.9" y="215.0" width="29.7" height="105.0" fill="#7fb8e6" fill-opacity="0.25" stroke="#7fb8e6" stroke-width="0.8"><title>радиаторы 500 м2</title></rect>
+<text x="316.0" y="346.0" fill="#8fb3d1" text-anchor="end">30 × 85 м</text>
+<circle cx="170.0" cy="327.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="130.8" cy="327.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="209.2" cy="327.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="170.0" cy="72.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="130.8" cy="72.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="209.2" cy="72.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="170.0" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Хэ-Ф22-A2A1 Тяньхэ ТР-11</title></circle>
+<circle cx="142.6" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Хэ-Ф22-A2A1 Тяньхэ ТР-11</title></circle>
+<circle cx="197.4" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Хэ-Ф22-A2A1 Тяньхэ ТР-11</title></circle>
+<circle cx="158.8" cy="238.2" r="3" fill="#c76b6b" fill-opacity="0.9"><title>Хэ-Ф22-A2A2 Тяньхэ СР-600</title></circle>
+<circle cx="181.2" cy="238.2" r="3" fill="#c76b6b" fill-opacity="0.9"><title>Хэ-Ф22-A2A2 Тяньхэ СР-600</title></circle>
+<circle cx="125.0" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Хэ-Ф22-A3A1 Тяньхэ радиаторная секция (50 м2)</title></circle>
+<circle cx="215.0" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Хэ-Ф22-A3A1 Тяньхэ радиаторная секция (50 м2)</title></circle>
+<circle cx="158.8" cy="251.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>Хэ-Ф22-A3A2 Тяньхэ контур охлаждения (600 МВт)</title></circle>
+<circle cx="181.2" cy="251.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>Хэ-Ф22-A3A2 Тяньхэ контур охлаждения (600 МВт)</title></circle>
+<circle cx="170.0" cy="212.8" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>Хэ-Ф22-A4A1 Гармония Х-5 (сборка из блоков Когниума)</title></circle>
+<circle cx="136.2" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A2 Бак заряда прыжка (1 т)</title></circle>
+<circle cx="158.8" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A2 Бак заряда прыжка (1 т)</title></circle>
+<circle cx="181.2" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A2 Бак заряда прыжка (1 т)</title></circle>
+<circle cx="203.8" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A2 Бак заряда прыжка (1 т)</title></circle>
+<circle cx="136.2" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="158.8" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="181.2" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="203.8" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="129.5" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="210.5" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="129.5" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="210.5" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="129.5" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="210.5" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="129.5" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="210.5" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="158.8" cy="104.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>Хэ-Ф22-A6A1 Синьчжи MotherComputer MC-C3 (флот)</title></circle>
+<circle cx="181.2" cy="104.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>Хэ-Ф22-A6A1 Синьчжи MotherComputer MC-C3 (флот)</title></circle>
+<circle cx="158.8" cy="91.6" r="3" fill="#2fa58a" fill-opacity="0.9"><title>Хэ-Ф22-A6A2 Синьчжи радар обзора N-10 (10 000 км)</title></circle>
+<circle cx="181.2" cy="91.6" r="3" fill="#2fa58a" fill-opacity="0.9"><title>Хэ-Ф22-A6A2 Синьчжи радар обзора N-10 (10 000 км)</title></circle>
+<circle cx="158.8" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Хэ-Ф22-A6A3 Синьчжи связной комплекс C-3 (флот, защищённый)</title></circle>
+<circle cx="181.2" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Хэ-Ф22-A6A3 Синьчжи связной комплекс C-3 (флот, защищённый)</title></circle>
+<circle cx="158.8" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Хэ-Ф22-A6A4 Транспондер Управления Маяков Т-1</title></circle>
+<circle cx="181.2" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Хэ-Ф22-A6A4 Транспондер Управления Маяков Т-1</title></circle>
+<circle cx="158.8" cy="123.5" r="3" fill="#5aa04a" fill-opacity="0.9"><title>Хэ-Ф22-A7A1 Terra Habitat ЖО T-60 (флот)</title></circle>
+<circle cx="181.2" cy="123.5" r="3" fill="#5aa04a" fill-opacity="0.9"><title>Хэ-Ф22-A7A1 Terra Habitat ЖО T-60 (флот)</title></circle>
+<circle cx="158.8" cy="174.5" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Хэ-Ф22-A7A2 Спасательная шлюпка (20 мест, 10 суток)</title></circle>
+<circle cx="181.2" cy="174.5" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Хэ-Ф22-A7A2 Спасательная шлюпка (20 мест, 10 суток)</title></circle>
+<circle cx="158.8" cy="136.2" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Хэ-Ф22-A7A3 Медотсек (4 койки)</title></circle>
+<circle cx="181.2" cy="136.2" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Хэ-Ф22-A7A3 Медотсек (4 койки)</title></circle>
+<circle cx="170.0" cy="225.5" r="3" fill="#bdbdbd" fill-opacity="0.9"><title>Хэ-Ф22-A9A1 Ангар досмотрового катера (1 катер)</title></circle>
+<circle cx="158.8" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>Хэ-Ф22-A9A2 Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="181.2" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>Хэ-Ф22-A9A2 Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="158.8" cy="161.8" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A1 Гармония пусковая ВПУ-8 (8 ракет)</title></circle>
+<circle cx="181.2" cy="161.8" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A1 Гармония пусковая ВПУ-8 (8 ракет)</title></circle>
+<circle cx="136.2" cy="161.8" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A2 Гармония турель ПРО ПТ-3</title></circle>
+<circle cx="158.8" cy="161.8" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A2 Гармония турель ПРО ПТ-3</title></circle>
+<circle cx="181.2" cy="161.8" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A2 Гармония турель ПРО ПТ-3</title></circle>
+<circle cx="203.8" cy="161.8" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A2 Гармония турель ПРО ПТ-3</title></circle>
+<circle cx="136.2" cy="78.9" r="3" fill="#5d6d7e" fill-opacity="0.9"><title>Хэ-Ф22-A12A1 Броня керамокомпозитная (1 т)</title></circle>
+<circle cx="158.8" cy="78.9" r="3" fill="#5d6d7e" fill-opacity="0.9"><title>Хэ-Ф22-A12A1 Броня керамокомпозитная (1 т)</title></circle>
+<circle cx="181.2" cy="78.9" r="3" fill="#5d6d7e" fill-opacity="0.9"><title>Хэ-Ф22-A12A1 Броня керамокомпозитная (1 т)</title></circle>
+<circle cx="203.8" cy="78.9" r="3" fill="#5d6d7e" fill-opacity="0.9"><title>Хэ-Ф22-A12A1 Броня керамокомпозитная (1 т)</title></circle>
+<rect x="340.0" y="50" width="300.0" height="300.0" fill="none" stroke="#24364a"/>
+<text x="344.0" y="64" fill="#8fb3d1">вид сбоку</text>
+<g fill="#1f3348" stroke="#7fa6c9" stroke-width="1.2"><rect x="458.2352941176471" y="50.0" width="63.529411764705884" height="300.0" rx="31.764705882352942" /></g>
+<text x="636.0" y="346.0" fill="#8fb3d1" text-anchor="end">18 × 85 м</text>
+<circle cx="517.0" cy="327.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="476.5" cy="327.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="476.5" cy="327.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="517.0" cy="72.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="476.5" cy="72.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="476.5" cy="72.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="508.9" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Хэ-Ф22-A2A1 Тяньхэ ТР-11</title></circle>
+<circle cx="480.6" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Хэ-Ф22-A2A1 Тяньхэ ТР-11</title></circle>
+<circle cx="480.6" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Хэ-Ф22-A2A1 Тяньхэ ТР-11</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#c76b6b" fill-opacity="0.9"><title>Хэ-Ф22-A2A2 Тяньхэ СР-600</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#c76b6b" fill-opacity="0.9"><title>Хэ-Ф22-A2A2 Тяньхэ СР-600</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Хэ-Ф22-A3A1 Тяньхэ радиаторная секция (50 м2)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Хэ-Ф22-A3A1 Тяньхэ радиаторная секция (50 м2)</title></circle>
+<circle cx="490.0" cy="251.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>Хэ-Ф22-A3A2 Тяньхэ контур охлаждения (600 МВт)</title></circle>
+<circle cx="490.0" cy="251.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>Хэ-Ф22-A3A2 Тяньхэ контур охлаждения (600 МВт)</title></circle>
+<circle cx="490.0" cy="212.8" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>Хэ-Ф22-A4A1 Гармония Х-5 (сборка из блоков Когниума)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A2 Бак заряда прыжка (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A2 Бак заряда прыжка (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A2 Бак заряда прыжка (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A2 Бак заряда прыжка (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="511.6" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="511.6" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="468.4" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="468.4" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="511.6" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="511.6" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="468.4" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="468.4" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="490.0" cy="104.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>Хэ-Ф22-A6A1 Синьчжи MotherComputer MC-C3 (флот)</title></circle>
+<circle cx="490.0" cy="104.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>Хэ-Ф22-A6A1 Синьчжи MotherComputer MC-C3 (флот)</title></circle>
+<circle cx="514.3" cy="91.6" r="3" fill="#2fa58a" fill-opacity="0.9"><title>Хэ-Ф22-A6A2 Синьчжи радар обзора N-10 (10 000 км)</title></circle>
+<circle cx="514.3" cy="91.6" r="3" fill="#2fa58a" fill-opacity="0.9"><title>Хэ-Ф22-A6A2 Синьчжи радар обзора N-10 (10 000 км)</title></circle>
+<circle cx="490.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Хэ-Ф22-A6A3 Синьчжи связной комплекс C-3 (флот, защищённый)</title></circle>
+<circle cx="490.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Хэ-Ф22-A6A3 Синьчжи связной комплекс C-3 (флот, защищённый)</title></circle>
+<circle cx="490.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Хэ-Ф22-A6A4 Транспондер Управления Маяков Т-1</title></circle>
+<circle cx="490.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Хэ-Ф22-A6A4 Транспондер Управления Маяков Т-1</title></circle>
+<circle cx="490.0" cy="123.5" r="3" fill="#5aa04a" fill-opacity="0.9"><title>Хэ-Ф22-A7A1 Terra Habitat ЖО T-60 (флот)</title></circle>
+<circle cx="490.0" cy="123.5" r="3" fill="#5aa04a" fill-opacity="0.9"><title>Хэ-Ф22-A7A1 Terra Habitat ЖО T-60 (флот)</title></circle>
+<circle cx="490.0" cy="174.5" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Хэ-Ф22-A7A2 Спасательная шлюпка (20 мест, 10 суток)</title></circle>
+<circle cx="490.0" cy="174.5" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Хэ-Ф22-A7A2 Спасательная шлюпка (20 мест, 10 суток)</title></circle>
+<circle cx="490.0" cy="136.2" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Хэ-Ф22-A7A3 Медотсек (4 койки)</title></circle>
+<circle cx="490.0" cy="136.2" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Хэ-Ф22-A7A3 Медотсек (4 койки)</title></circle>
+<circle cx="490.0" cy="225.5" r="3" fill="#bdbdbd" fill-opacity="0.9"><title>Хэ-Ф22-A9A1 Ангар досмотрового катера (1 катер)</title></circle>
+<circle cx="490.0" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>Хэ-Ф22-A9A2 Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="490.0" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>Хэ-Ф22-A9A2 Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="511.6" cy="161.8" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A1 Гармония пусковая ВПУ-8 (8 ракет)</title></circle>
+<circle cx="511.6" cy="161.8" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A1 Гармония пусковая ВПУ-8 (8 ракет)</title></circle>
+<circle cx="511.6" cy="161.8" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A2 Гармония турель ПРО ПТ-3</title></circle>
+<circle cx="511.6" cy="161.8" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A2 Гармония турель ПРО ПТ-3</title></circle>
+<circle cx="511.6" cy="161.8" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A2 Гармония турель ПРО ПТ-3</title></circle>
+<circle cx="511.6" cy="161.8" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A2 Гармония турель ПРО ПТ-3</title></circle>
+<circle cx="490.0" cy="78.9" r="3" fill="#5d6d7e" fill-opacity="0.9"><title>Хэ-Ф22-A12A1 Броня керамокомпозитная (1 т)</title></circle>
+<circle cx="490.0" cy="78.9" r="3" fill="#5d6d7e" fill-opacity="0.9"><title>Хэ-Ф22-A12A1 Броня керамокомпозитная (1 т)</title></circle>
+<circle cx="490.0" cy="78.9" r="3" fill="#5d6d7e" fill-opacity="0.9"><title>Хэ-Ф22-A12A1 Броня керамокомпозитная (1 т)</title></circle>
+<circle cx="490.0" cy="78.9" r="3" fill="#5d6d7e" fill-opacity="0.9"><title>Хэ-Ф22-A12A1 Броня керамокомпозитная (1 т)</title></circle>
+<rect x="660.0" y="50" width="300.0" height="300.0" fill="none" stroke="#24364a"/>
+<text x="664.0" y="64" fill="#8fb3d1">вид спереди</text>
+<g fill="#1f3348" stroke="#7fa6c9" stroke-width="1.2"><ellipse cx="810.0" cy="200.0" rx="52.94117647058823" ry="31.764705882352942" /></g>
+<line x1="727.4" y1="200.0" x2="757.1" y2="200.0" stroke="#7fb8e6" stroke-width="2"/>
+<line x1="862.9" y1="200.0" x2="892.6" y2="200.0" stroke="#7fb8e6" stroke-width="2"/>
+<text x="956.0" y="346.0" fill="#8fb3d1" text-anchor="end">30 × 18 м</text>
+<circle cx="810.0" cy="173.0" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="770.9" cy="213.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="849.1" cy="213.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="810.0" cy="173.0" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="770.9" cy="213.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="849.1" cy="213.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>Хэ-Ф22-A1A1 Тяньхэ ТЦ-11</title></circle>
+<circle cx="810.0" cy="181.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Хэ-Ф22-A2A1 Тяньхэ ТР-11</title></circle>
+<circle cx="782.6" cy="209.4" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Хэ-Ф22-A2A1 Тяньхэ ТР-11</title></circle>
+<circle cx="837.4" cy="209.4" r="4.5" fill="#d64545" fill-opacity="0.9"><title>Хэ-Ф22-A2A1 Тяньхэ ТР-11</title></circle>
+<circle cx="798.8" cy="200.0" r="3" fill="#c76b6b" fill-opacity="0.9"><title>Хэ-Ф22-A2A2 Тяньхэ СР-600</title></circle>
+<circle cx="821.2" cy="200.0" r="3" fill="#c76b6b" fill-opacity="0.9"><title>Хэ-Ф22-A2A2 Тяньхэ СР-600</title></circle>
+<circle cx="765.0" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Хэ-Ф22-A3A1 Тяньхэ радиаторная секция (50 м2)</title></circle>
+<circle cx="855.0" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>Хэ-Ф22-A3A1 Тяньхэ радиаторная секция (50 м2)</title></circle>
+<circle cx="798.8" cy="200.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>Хэ-Ф22-A3A2 Тяньхэ контур охлаждения (600 МВт)</title></circle>
+<circle cx="821.2" cy="200.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>Хэ-Ф22-A3A2 Тяньхэ контур охлаждения (600 МВт)</title></circle>
+<circle cx="810.0" cy="200.0" r="4.5" fill="#9b59d0" fill-opacity="0.9"><title>Хэ-Ф22-A4A1 Гармония Х-5 (сборка из блоков Когниума)</title></circle>
+<circle cx="776.2" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A2 Бак заряда прыжка (1 т)</title></circle>
+<circle cx="798.8" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A2 Бак заряда прыжка (1 т)</title></circle>
+<circle cx="821.2" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A2 Бак заряда прыжка (1 т)</title></circle>
+<circle cx="843.8" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A2 Бак заряда прыжка (1 т)</title></circle>
+<circle cx="776.2" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="798.8" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="821.2" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="843.8" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>Хэ-Ф22-A4A3 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="769.5" cy="178.4" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="850.5" cy="178.4" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="769.5" cy="221.6" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="850.5" cy="221.6" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="769.5" cy="178.4" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="850.5" cy="178.4" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="769.5" cy="221.6" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="850.5" cy="221.6" r="3" fill="#d6b13d" fill-opacity="0.9"><title>Хэ-Ф22-A5A1 Тяжёлый кластер RCS (4 сопла)</title></circle>
+<circle cx="798.8" cy="200.0" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>Хэ-Ф22-A6A1 Синьчжи MotherComputer MC-C3 (флот)</title></circle>
+<circle cx="821.2" cy="200.0" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>Хэ-Ф22-A6A1 Синьчжи MotherComputer MC-C3 (флот)</title></circle>
+<circle cx="798.8" cy="175.7" r="3" fill="#2fa58a" fill-opacity="0.9"><title>Хэ-Ф22-A6A2 Синьчжи радар обзора N-10 (10 000 км)</title></circle>
+<circle cx="821.2" cy="175.7" r="3" fill="#2fa58a" fill-opacity="0.9"><title>Хэ-Ф22-A6A2 Синьчжи радар обзора N-10 (10 000 км)</title></circle>
+<circle cx="798.8" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Хэ-Ф22-A6A3 Синьчжи связной комплекс C-3 (флот, защищённый)</title></circle>
+<circle cx="821.2" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Хэ-Ф22-A6A3 Синьчжи связной комплекс C-3 (флот, защищённый)</title></circle>
+<circle cx="798.8" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Хэ-Ф22-A6A4 Транспондер Управления Маяков Т-1</title></circle>
+<circle cx="821.2" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>Хэ-Ф22-A6A4 Транспондер Управления Маяков Т-1</title></circle>
+<circle cx="798.8" cy="200.0" r="3" fill="#5aa04a" fill-opacity="0.9"><title>Хэ-Ф22-A7A1 Terra Habitat ЖО T-60 (флот)</title></circle>
+<circle cx="821.2" cy="200.0" r="3" fill="#5aa04a" fill-opacity="0.9"><title>Хэ-Ф22-A7A1 Terra Habitat ЖО T-60 (флот)</title></circle>
+<circle cx="798.8" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Хэ-Ф22-A7A2 Спасательная шлюпка (20 мест, 10 суток)</title></circle>
+<circle cx="821.2" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Хэ-Ф22-A7A2 Спасательная шлюпка (20 мест, 10 суток)</title></circle>
+<circle cx="798.8" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Хэ-Ф22-A7A3 Медотсек (4 койки)</title></circle>
+<circle cx="821.2" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>Хэ-Ф22-A7A3 Медотсек (4 койки)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#bdbdbd" fill-opacity="0.9"><title>Хэ-Ф22-A9A1 Ангар досмотрового катера (1 катер)</title></circle>
+<circle cx="798.8" cy="200.0" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>Хэ-Ф22-A9A2 Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="821.2" cy="200.0" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>Хэ-Ф22-A9A2 Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="798.8" cy="178.4" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A1 Гармония пусковая ВПУ-8 (8 ракет)</title></circle>
+<circle cx="821.2" cy="178.4" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A1 Гармония пусковая ВПУ-8 (8 ракет)</title></circle>
+<circle cx="776.2" cy="178.4" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A2 Гармония турель ПРО ПТ-3</title></circle>
+<circle cx="798.8" cy="178.4" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A2 Гармония турель ПРО ПТ-3</title></circle>
+<circle cx="821.2" cy="178.4" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A2 Гармония турель ПРО ПТ-3</title></circle>
+<circle cx="843.8" cy="178.4" r="3" fill="#c0392b" fill-opacity="0.9"><title>Хэ-Ф22-A11A2 Гармония турель ПРО ПТ-3</title></circle>
+<circle cx="776.2" cy="200.0" r="3" fill="#5d6d7e" fill-opacity="0.9"><title>Хэ-Ф22-A12A1 Броня керамокомпозитная (1 т)</title></circle>
+<circle cx="798.8" cy="200.0" r="3" fill="#5d6d7e" fill-opacity="0.9"><title>Хэ-Ф22-A12A1 Броня керамокомпозитная (1 т)</title></circle>
+<circle cx="821.2" cy="200.0" r="3" fill="#5d6d7e" fill-opacity="0.9"><title>Хэ-Ф22-A12A1 Броня керамокомпозитная (1 т)</title></circle>
+<circle cx="843.8" cy="200.0" r="3" fill="#5d6d7e" fill-opacity="0.9"><title>Хэ-Ф22-A12A1 Броня керамокомпозитная (1 т)</title></circle>
+<circle cx="25" cy="365.0" r="4" fill="#e8762b"/><text x="33" y="368.0" fill="#c8d6e5">главный двигатель</text>
+<circle cx="155" cy="365.0" r="4" fill="#d64545"/><text x="163" y="368.0" fill="#c8d6e5">двигательный реактор</text>
+<circle cx="285" cy="365.0" r="4" fill="#c76b6b"/><text x="293" y="368.0" fill="#c8d6e5">служебный реактор</text>
+<circle cx="415" cy="365.0" r="4" fill="#7fb8e6"/><text x="423" y="368.0" fill="#c8d6e5">радиаторы</text>
+<circle cx="545" cy="365.0" r="4" fill="#3d8fd6"/><text x="553" y="368.0" fill="#c8d6e5">контур охлаждения</text>
+<circle cx="675" cy="365.0" r="4" fill="#9b59d0"/><text x="683" y="368.0" fill="#c8d6e5">ядро прыжка</text>
+<circle cx="805" cy="365.0" r="4" fill="#b08ad6"/><text x="813" y="368.0" fill="#c8d6e5">баки</text>
+<circle cx="25" cy="379.0" r="4" fill="#d6b13d"/><text x="33" y="382.0" fill="#c8d6e5">маневровая система</text>
+<circle cx="155" cy="379.0" r="4" fill="#3dbf9a"/><text x="163" y="382.0" fill="#c8d6e5">MotherComputer</text>
+<circle cx="285" cy="379.0" r="4" fill="#2fa58a"/><text x="293" y="382.0" fill="#c8d6e5">радар</text>
+<circle cx="415" cy="379.0" r="4" fill="#57c7b0"/><text x="423" y="382.0" fill="#c8d6e5">связь</text>
+<circle cx="545" cy="379.0" r="4" fill="#57c7b0"/><text x="553" y="382.0" fill="#c8d6e5">транспондер</text>
+<circle cx="675" cy="379.0" r="4" fill="#5aa04a"/><text x="683" y="382.0" fill="#c8d6e5">жизнеобеспечение</text>
+<circle cx="805" cy="379.0" r="4" fill="#8cc56f"/><text x="813" y="382.0" fill="#c8d6e5">спасательная шлюпка</text>
+</svg>

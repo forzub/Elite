@@ -11,7 +11,9 @@
 #include "src/game/catalog/rcs/KobraRcsPassports.h"
 #include "src/game/ship/presets/cobra/CobraNewtonianRcsNozzles.h"
 
-// Cobrett ship models of Kobersberg-Braunauer Raumfahrzeugwerke GmbH.
+// Cobrett ship models of Cobretty Corporation (Second Hellas), founded as
+// Kobersberg-Braunauer Raumfahrzeugwerke GmbH - hence the KB-* stock numbers.
+// Full design passports: tools/colonization_lab/canon/ship_designs.json.
 // N1 and A3 are DIFFERENT serial products/generations of the Cobrett-I line,
 // not one ship with a flight-law switch. They temporarily share the legacy
 // Cobra hull geometry; their data identities are already distinct.

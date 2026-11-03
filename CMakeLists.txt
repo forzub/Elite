@@ -221,6 +221,11 @@ target_include_directories(EliteSystemMapInfoCheck PRIVATE "${CMAKE_SOURCE_DIR}"
 target_compile_features(EliteSystemMapInfoCheck PRIVATE cxx_std_17)
 target_link_libraries(EliteSystemMapInfoCheck PRIVATE nlohmann_json::nlohmann_json)
 
+add_executable(EliteShipCatalogCheck tools/navigation_runtime/ShipCatalogCheck.cpp)
+target_include_directories(EliteShipCatalogCheck PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
+target_compile_features(EliteShipCatalogCheck PRIVATE cxx_std_17)
+target_link_libraries(EliteShipCatalogCheck PRIVATE nlohmann_json::nlohmann_json)
+
 add_executable(EliteOrbitalTransferCheck tools/navigation_runtime/OrbitalTransferCheck.cpp)
 target_link_libraries(EliteOrbitalTransferCheck PRIVATE EliteOrbitalTransfer nlohmann_json::nlohmann_json)
 

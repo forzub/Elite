@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 376" font-family="Segoe UI, Arial, sans-serif" font-size="10">
+<rect width="100%" height="100%" fill="#0e1620"/>
+<text x="16" y="22" fill="#f0b46a" font-size="14">T-5000 «Исход»: функциональная схема</text>
+<line x1="560" y1="18" x2="580" y2="18" stroke="#e8762b" stroke-width="2"/><text x="584" y="22" fill="#c8d6e5">propulsion</text>
+<line x1="632" y1="18" x2="652" y2="18" stroke="#f0d060" stroke-width="2"/><text x="656" y="22" fill="#c8d6e5">service</text>
+<line x1="704" y1="18" x2="724" y2="18" stroke="#3d8fd6" stroke-width="2"/><text x="728" y="22" fill="#c8d6e5">coolant</text>
+<line x1="776" y1="18" x2="796" y2="18" stroke="#b08ad6" stroke-width="2"/><text x="800" y="22" fill="#c8d6e5">fuel</text>
+<line x1="848" y1="18" x2="868" y2="18" stroke="#3dbf9a" stroke-width="2"/><text x="872" y="22" fill="#c8d6e5">data</text>
+<line x1="920" y1="18" x2="940" y2="18" stroke="#8cc56f" stroke-width="2"/><text x="944" y="22" fill="#c8d6e5">life</text>
+<path d="M290,70 C450.0,70 330.0,70 490,70" fill="none" stroke="#e8762b" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,70 C450.0,70 330.0,116 490,116" fill="none" stroke="#e8762b" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,116 C370.0,116 250.0,116 330,116" fill="none" stroke="#f0d060" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,116 C210.0,116 90.0,70 10,70" fill="none" stroke="#f0d060" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,116 C530.0,116 410.0,70 650,70" fill="none" stroke="#f0d060" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,116 C530.0,116 410.0,116 650,116" fill="none" stroke="#f0d060" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,116 C530.0,116 410.0,162 650,162" fill="none" stroke="#f0d060" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,116 C530.0,116 410.0,208 650,208" fill="none" stroke="#f0d060" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,116 C610.0,116 490.0,70 810,70" fill="none" stroke="#f0d060" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,116 C610.0,116 490.0,162 810,162" fill="none" stroke="#f0d060" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,116 C610.0,116 490.0,208 810,208" fill="none" stroke="#f0d060" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,116 C610.0,116 490.0,254 810,254" fill="none" stroke="#f0d060" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,116 C530.0,116 410.0,254 650,254" fill="none" stroke="#f0d060" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M610,70 C530.0,70 410.0,116 330,116" fill="none" stroke="#3d8fd6" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,70 C370.0,70 250.0,116 330,116" fill="none" stroke="#3d8fd6" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M290,116 C370.0,116 250.0,116 330,116" fill="none" stroke="#3d8fd6" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M130,70 C290.0,70 170.0,116 330,116" fill="none" stroke="#3d8fd6" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M770,70 C610.0,70 490.0,116 330,116" fill="none" stroke="#3d8fd6" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M770,116 C610.0,116 490.0,116 330,116" fill="none" stroke="#3d8fd6" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M930,70 C690.0,70 570.0,116 330,116" fill="none" stroke="#3d8fd6" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M450,116 C450.0,116 330.0,70 330,70" fill="none" stroke="#3d8fd6" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M130,116 C130.0,116 10.0,70 10,70" fill="none" stroke="#b08ad6" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M130,162 C210.0,162 90.0,70 170,70" fill="none" stroke="#b08ad6" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M130,162 C210.0,162 90.0,116 170,116" fill="none" stroke="#b08ad6" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M770,70 C690.0,70 570.0,70 490,70" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M770,70 C530.0,70 410.0,70 170,70" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M770,70 C530.0,70 410.0,116 170,116" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M770,70 C610.0,70 490.0,116 330,116" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M770,70 C450.0,70 330.0,70 10,70" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M770,70 C690.0,70 570.0,116 490,116" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M770,70 C770.0,70 650.0,116 650,116" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M770,70 C770.0,70 650.0,162 650,162" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M770,70 C850.0,70 730.0,70 810,70" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M930,70 C930.0,70 810.0,208 810,208" fill="none" stroke="#8cc56f" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M930,70 C930.0,70 810.0,254 810,254" fill="none" stroke="#8cc56f" stroke-opacity="0.55" stroke-width="1.2"/>
+<path d="M930,70 C930.0,70 810.0,162 810,162" fill="none" stroke="#8cc56f" stroke-opacity="0.55" stroke-width="1.2"/>
+<rect x="490" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="550" y="67" fill="#e6eef6" text-anchor="middle">У-43 ×4</text>
+<text x="550" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A1A1 · yard</text>
+<rect x="170" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="230" y="67" fill="#e6eef6" text-anchor="middle">SR-3.3 ×4</text>
+<text x="230" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A2A1 · yard</text>
+<rect x="170" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="230" y="113" fill="#e6eef6" text-anchor="middle">S-200 ×2</text>
+<text x="230" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A2A2 · station</text>
+<rect x="330" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="390" y="67" fill="#e6eef6" text-anchor="middle">РС-50С ×20</text>
+<text x="390" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A3A1 · crew</text>
+<rect x="330" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="390" y="113" fill="#e6eef6" text-anchor="middle">КО-300 ×2</text>
+<text x="390" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A3A2 · station</text>
+<rect x="10" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
+<text x="70" y="67" fill="#e6eef6" text-anchor="middle">М-12</text>
+<text x="70" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A4A1 · factory</text>
+<rect x="10" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="70" y="113" fill="#e6eef6" text-anchor="middle">БЗ-1 ×120</text>
+<text x="70" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A4A2 · station</text>
+<rect x="10" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="70" y="159" fill="#e6eef6" text-anchor="middle">БТ-1 ×40</text>
+<text x="70" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A4A3 · station</text>
+<rect x="490" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="550" y="113" fill="#e6eef6" text-anchor="middle">RCS-4 ×16</text>
+<text x="550" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A5A1 · crew</text>
+<rect x="650" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="710" y="67" fill="#e6eef6" text-anchor="middle">МВ-1 ×2</text>
+<text x="710" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A6A1 · station</text>
+<rect x="650" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
+<text x="710" y="113" fill="#e6eef6" text-anchor="middle">N-2</text>
+<text x="710" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A6A2 · station</text>
+<rect x="650" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="710" y="159" fill="#e6eef6" text-anchor="middle">C-1 ×2</text>
+<text x="710" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A6A3 · crew</text>
+<rect x="650" y="192" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="710" y="205" fill="#e6eef6" text-anchor="middle">Т-1 ×2</text>
+<text x="710" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A6A4 · crew</text>
+<rect x="810" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="870" y="67" fill="#e6eef6" text-anchor="middle">U-500 ×8</text>
+<text x="870" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A7A1 · station</text>
+<rect x="810" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="870" y="113" fill="#e6eef6" text-anchor="middle">СМ-100 ×51</text>
+<text x="870" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A7A2 · station</text>
+<rect x="810" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="870" y="159" fill="#e6eef6" text-anchor="middle">МО-4 ×6</text>
+<text x="870" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A7A3 · station</text>
+<rect x="810" y="192" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="870" y="205" fill="#e6eef6" text-anchor="middle">СП-500 ×7</text>
+<text x="870" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A8A1 · yard</text>
+<rect x="810" y="238" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="870" y="251" fill="#e6eef6" text-anchor="middle">АБ-100 ×15</text>
+<text x="870" y="264" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A8A2 · yard</text>
+<rect x="810" y="284" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="870" y="297" fill="#e6eef6" text-anchor="middle">ГО-100 ×6</text>
+<text x="870" y="310" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A8A3 · yard</text>
+<rect x="650" y="238" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
+<text x="710" y="251" fill="#e6eef6" text-anchor="middle">СУ-1 ×4</text>
+<text x="710" y="264" fill="#8fb3d1" text-anchor="middle" font-size="8">T-5000-A9A1 · station</text>
+<text x="16" y="364" fill="#ff8a8a">красная рамка — единичная точка отказа функции</text>
+</svg>

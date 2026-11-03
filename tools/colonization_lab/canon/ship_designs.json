@@ -1,0 +1,4305 @@
+{
+ "schema": "elite.ship_designs.v1",
+ "status": "PROPOSAL",
+ "note": "Канонические модели кораблей 3126 и паспорта их оборудования (авторский вход). Классы и экономические цели — ship_economics.json; производители и каналы — industry.json. Проверки, производные числа, чертежи, функциональные схемы и рантайм-копия — ship_designer.py. Физика корабля в игре выводится из этих данных общим построителем (GenericShipDescriptorBuilder); Cobrett-I N1 / A3 пока используют существующий дескриптор EliteCobraMk1, а паспорт здесь его описывает.",
+ "rules": {
+  "pad_cooling_mw_per_m2": 6.0,
+  "radiation_effectiveness": 10.0,
+  "hotel_mw_per_person": 0.015,
+  "consumables_t_per_person_day": 0.006,
+  "fusion_j_per_kg": 350000000000000.0,
+  "drive_duty_share": 0.1,
+  "structure_share_range": [
+   0.15,
+   0.9
+  ],
+  "structure_share_plausible": [
+   0.3,
+   0.75
+  ],
+  "structure_share_by_form": {
+   "asteroid": [
+    0.5,
+    0.995
+   ]
+  },
+  "rcs_simultaneous_share": 0.3,
+  "price_tolerance": 0.45,
+  "physics_tolerance": 0.25,
+  "survival_seat_share": 1.0,
+  "jump_rating_margin": 1.0,
+  "layouts": {
+   "NewtonianI": {
+    "aft": 1,
+    "fore": 0,
+    "rcs_nodes": 8
+   },
+   "NewtonianY": {
+    "aft": 3,
+    "fore": 0,
+    "rcs_nodes": 8
+   },
+   "NewtonianX": {
+    "aft": 4,
+    "fore": 0,
+    "rcs_nodes": 8
+   },
+   "AssistedI": {
+    "aft": 2,
+    "fore": 2,
+    "rcs_nodes": 0
+   },
+   "AssistedY": {
+    "aft": 3,
+    "fore": 3,
+    "rcs_nodes": 0
+   },
+   "AssistedX": {
+    "aft": 4,
+    "fore": 4,
+    "rcs_nodes": 0
+   }
+  }
+ },
+ "products": [
+  {
+   "id": "kb.drive.n1-axial",
+   "cat": "drive",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty N1 Axial Main Drive",
+   "model": "N1-AX",
+   "mass_t": 14,
+   "price_cr": 380000,
+   "thrust_mn": 9.56,
+   "input_mw": 4850,
+   "eff": 0.9855,
+   "gimbal_deg": 4,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "runtime_preset": "elite.engine.kobra.n1-axial.v1",
+   "existing": true
+  },
+  {
+   "id": "kb.drive.cr1-vector",
+   "cat": "drive",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty CR-1 Vector Main Drive",
+   "model": "CR-1",
+   "mass_t": 14,
+   "price_cr": 190000,
+   "thrust_mn": 9.56,
+   "input_mw": 4850,
+   "eff": 0.9855,
+   "gimbal_deg": 75,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "runtime_preset": "elite.engine.cobretty.cr1-vector.v1",
+   "existing": true
+  },
+  {
+   "id": "ofu.drive.u33",
+   "cat": "drive",
+   "mfr": "mfr.ofu",
+   "name": "Урал-33",
+   "model": "У-33",
+   "mass_t": 6,
+   "price_cr": 260000,
+   "thrust_mn": 3.3,
+   "input_mw": 2400,
+   "eff": 0.984,
+   "gimbal_deg": 6,
+   "overhaul_h": 30000,
+   "life_h": 50000
+  },
+  {
+   "id": "ofu.drive.u73l",
+   "cat": "drive",
+   "mfr": "mfr.ofu",
+   "name": "Урал-73Л (подъёмный)",
+   "model": "У-73Л",
+   "mass_t": 13,
+   "price_cr": 400000,
+   "thrust_mn": 7.33,
+   "input_mw": 8670,
+   "eff": 0.98,
+   "gimbal_deg": 10,
+   "notes": "форсированный подъёмный двигатель: старт с поверхности при 2.5 g, высокая удельная мощность",
+   "overhaul_h": 30000,
+   "life_h": 50000
+  },
+  {
+   "id": "ofu.drive.u43",
+   "cat": "drive",
+   "mfr": "mfr.ofu",
+   "name": "Урал-43",
+   "model": "У-43",
+   "mass_t": 7.5,
+   "price_cr": 530000,
+   "thrust_mn": 4.33,
+   "input_mw": 3000,
+   "eff": 0.984,
+   "gimbal_deg": 6,
+   "overhaul_h": 30000,
+   "life_h": 50000
+  },
+  {
+   "id": "ofu.drive.u15",
+   "cat": "drive",
+   "mfr": "mfr.ofu",
+   "name": "Урал-15",
+   "model": "У-15",
+   "mass_t": 3,
+   "price_cr": 65000,
+   "thrust_mn": 1.5,
+   "input_mw": 1250,
+   "eff": 0.984,
+   "gimbal_deg": 60,
+   "overhaul_h": 30000,
+   "life_h": 50000
+  },
+  {
+   "id": "ofu.drive.u65m",
+   "cat": "drive",
+   "mfr": "mfr.ofu",
+   "name": "Урал-65М (служебный)",
+   "model": "У-65М",
+   "mass_t": 9,
+   "price_cr": 350000,
+   "thrust_mn": 6.5,
+   "input_mw": 4500,
+   "eff": 0.985,
+   "gimbal_deg": 60,
+   "overhaul_h": 30000,
+   "life_h": 50000
+  },
+  {
+   "id": "ofu.drive.u70",
+   "cat": "drive",
+   "mfr": "mfr.ofu",
+   "name": "Урал-70",
+   "model": "У-70",
+   "mass_t": 11,
+   "price_cr": 1125000,
+   "thrust_mn": 7.0,
+   "input_mw": 6500,
+   "eff": 0.985,
+   "gimbal_deg": 8,
+   "overhaul_h": 30000,
+   "life_h": 50000
+  },
+  {
+   "id": "ofu.drive.u23",
+   "cat": "drive",
+   "mfr": "mfr.ofu",
+   "name": "Урал-23",
+   "model": "У-23",
+   "mass_t": 4,
+   "price_cr": 200000,
+   "thrust_mn": 2.33,
+   "input_mw": 2000,
+   "eff": 0.984,
+   "gimbal_deg": 6,
+   "overhaul_h": 30000,
+   "life_h": 50000
+  },
+  {
+   "id": "th.drive.tz13",
+   "cat": "drive",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ ТЦ-13",
+   "model": "ТЦ-13",
+   "mass_t": 21,
+   "price_cr": 1280000,
+   "thrust_mn": 13.0,
+   "input_mw": 9000,
+   "eff": 0.983,
+   "gimbal_deg": 5,
+   "overhaul_h": 30000,
+   "life_h": 50000
+  },
+  {
+   "id": "th.drive.tz23",
+   "cat": "drive",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ ТЦ-23",
+   "model": "ТЦ-23",
+   "mass_t": 34,
+   "price_cr": 1500000,
+   "thrust_mn": 22.5,
+   "input_mw": 17500,
+   "eff": 0.983,
+   "gimbal_deg": 5,
+   "overhaul_h": 30000,
+   "life_h": 50000
+  },
+  {
+   "id": "th.drive.tz11",
+   "cat": "drive",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ ТЦ-11",
+   "model": "ТЦ-11",
+   "mass_t": 16,
+   "price_cr": 1170000,
+   "thrust_mn": 10.7,
+   "input_mw": 10000,
+   "eff": 0.985,
+   "gimbal_deg": 40,
+   "overhaul_h": 30000,
+   "life_h": 50000
+  },
+  {
+   "id": "th.drive.tz16v",
+   "cat": "drive",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ ТЦ-1.6В (военная поставка)",
+   "model": "ТЦ-1.6В",
+   "mass_t": 2.6,
+   "price_cr": 230000,
+   "thrust_mn": 1.55,
+   "input_mw": 2375,
+   "eff": 0.986,
+   "gimbal_deg": 60,
+   "notes": "экспорт Пакту Цитадели по лицензии; форсированный, короткий ресурс",
+   "overhaul_h": 8000,
+   "life_h": 15000
+  },
+  {
+   "id": "th.drive.tz28",
+   "cat": "drive",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ ТЦ-28В",
+   "model": "ТЦ-28В",
+   "mass_t": 40,
+   "price_cr": 10500000,
+   "thrust_mn": 27.5,
+   "input_mw": 27500,
+   "eff": 0.986,
+   "gimbal_deg": 6,
+   "notes": "военный вариант с бронированным кожухом",
+   "overhaul_h": 30000,
+   "life_h": 50000
+  },
+  {
+   "id": "kern.drive.kt1",
+   "cat": "drive",
+   "mfr": "mfr.kern_heavy",
+   "name": "Kern KT-1 Tug Drive",
+   "model": "KT-1",
+   "mass_t": 2.5,
+   "price_cr": 100000,
+   "thrust_mn": 1.0,
+   "input_mw": 750,
+   "eff": 0.982,
+   "gimbal_deg": 8,
+   "overhaul_h": 40000,
+   "life_h": 70000,
+   "notes": "тихоходный, ресурсный: буксировка неделями"
+  },
+  {
+   "id": "hyp.drive.hd4",
+   "cat": "drive",
+   "mfr": "mfr.hyperion",
+   "name": "Hyperion HD-4",
+   "model": "HD-4",
+   "mass_t": 6,
+   "price_cr": 633000,
+   "thrust_mn": 4.0,
+   "input_mw": 4000,
+   "eff": 0.987,
+   "gimbal_deg": 6,
+   "overhaul_h": 30000,
+   "life_h": 50000
+  },
+  {
+   "id": "hyp.drive.hd3",
+   "cat": "drive",
+   "mfr": "mfr.hyperion",
+   "name": "Hyperion HD-3",
+   "model": "HD-3",
+   "mass_t": 4.5,
+   "price_cr": 450000,
+   "thrust_mn": 3.0,
+   "input_mw": 2500,
+   "eff": 0.987,
+   "gimbal_deg": 8,
+   "overhaul_h": 30000,
+   "life_h": 50000
+  },
+  {
+   "id": "kb.reactor.er5",
+   "cat": "reactor",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty ER-5 Propulsion Reactor",
+   "model": "ER-5",
+   "mass_t": 25,
+   "price_cr": 460000,
+   "mwe": 5000,
+   "eff": 0.9,
+   "runtime_preset": "elite.reactor.cobra.cobretty.er5.v1",
+   "existing": true,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "kb.reactor.er3",
+   "cat": "reactor",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty ER-3",
+   "model": "ER-3",
+   "mass_t": 15,
+   "price_cr": 550000,
+   "mwe": 2750,
+   "eff": 0.9,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "kb.reactor.er1",
+   "cat": "reactor",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty ER-1",
+   "model": "ER-1",
+   "mass_t": 5,
+   "price_cr": 105000,
+   "mwe": 830,
+   "eff": 0.9,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "ofu.reactor.er26",
+   "cat": "reactor",
+   "mfr": "mfr.ofu",
+   "name": "ОФУ ЭР-2.6",
+   "model": "ЭР-2.6",
+   "mass_t": 13,
+   "price_cr": 300000,
+   "mwe": 2600,
+   "eff": 0.9,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "srw.reactor.sr9",
+   "cat": "reactor",
+   "mfr": "mfr.sol_reactor",
+   "name": "Sol Reactor Works SR-9",
+   "model": "SR-9",
+   "mass_t": 40,
+   "price_cr": 500000,
+   "mwe": 9000,
+   "eff": 0.9,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "srw.reactor.sr33",
+   "cat": "reactor",
+   "mfr": "mfr.sol_reactor",
+   "name": "Sol Reactor Works SR-3.3",
+   "model": "SR-3.3",
+   "mass_t": 16,
+   "price_cr": 633000,
+   "mwe": 3300,
+   "eff": 0.9,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "srw.reactor.sr14",
+   "cat": "reactor",
+   "mfr": "mfr.sol_reactor",
+   "name": "Sol Reactor Works SR-1.4",
+   "model": "SR-1.4",
+   "mass_t": 8,
+   "price_cr": 150000,
+   "mwe": 1400,
+   "eff": 0.9,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "srw.reactor.sr48",
+   "cat": "reactor",
+   "mfr": "mfr.sol_reactor",
+   "name": "Sol Reactor Works SR-4.8",
+   "model": "SR-4.8",
+   "mass_t": 22,
+   "price_cr": 850000,
+   "mwe": 4800,
+   "eff": 0.9,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "srw.reactor.sr7",
+   "cat": "reactor",
+   "mfr": "mfr.sol_reactor",
+   "name": "Sol Reactor Works SR-7",
+   "model": "SR-7",
+   "mass_t": 32,
+   "price_cr": 1425000,
+   "mwe": 7000,
+   "eff": 0.9,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "srw.reactor.sr22",
+   "cat": "reactor",
+   "mfr": "mfr.sol_reactor",
+   "name": "Sol Reactor Works SR-2.2",
+   "model": "SR-2.2",
+   "mass_t": 11,
+   "price_cr": 267000,
+   "mwe": 2200,
+   "eff": 0.9,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "th.reactor.tr10",
+   "cat": "reactor",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ ТР-10",
+   "model": "ТР-10",
+   "mass_t": 48,
+   "price_cr": 1520000,
+   "mwe": 10000,
+   "eff": 0.89,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "th.reactor.tr20",
+   "cat": "reactor",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ ТР-20",
+   "model": "ТР-20",
+   "mass_t": 90,
+   "price_cr": 2000000,
+   "mwe": 20000,
+   "eff": 0.89,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "th.reactor.tr11",
+   "cat": "reactor",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ ТР-11",
+   "model": "ТР-11",
+   "mass_t": 50,
+   "price_cr": 3000000,
+   "mwe": 10700,
+   "eff": 0.89,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "th.reactor.tr26v",
+   "cat": "reactor",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ ТР-2.6В",
+   "model": "ТР-2.6В",
+   "mass_t": 11,
+   "price_cr": 400000,
+   "mwe": 2500,
+   "eff": 0.9,
+   "overhaul_h": 8000,
+   "life_h": 15000,
+   "startup_s": 420
+  },
+  {
+   "id": "th.reactor.tr30",
+   "cat": "reactor",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ ТР-30В",
+   "model": "ТР-30В",
+   "mass_t": 125,
+   "price_cr": 14250000,
+   "mwe": 30000,
+   "eff": 0.9,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "startup_s": 420
+  },
+  {
+   "id": "kb.apu.s70",
+   "cat": "service_reactor",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty SR-70 Service Reactor",
+   "model": "SR-70",
+   "mass_t": 6,
+   "price_cr": 60000,
+   "mwe": 70,
+   "eff": 0.45,
+   "existing": true,
+   "overhaul_h": 40000,
+   "life_h": 80000
+  },
+  {
+   "id": "ofu.apu.s20",
+   "cat": "service_reactor",
+   "mfr": "mfr.ofu",
+   "name": "ОФУ СР-20",
+   "model": "СР-20",
+   "mass_t": 2.5,
+   "price_cr": 25000,
+   "mwe": 20,
+   "eff": 0.45,
+   "overhaul_h": 40000,
+   "life_h": 80000
+  },
+  {
+   "id": "srw.apu.s60",
+   "cat": "service_reactor",
+   "mfr": "mfr.sol_reactor",
+   "name": "Sol Reactor Works S-60",
+   "model": "S-60",
+   "mass_t": 6,
+   "price_cr": 70000,
+   "mwe": 60,
+   "eff": 0.45,
+   "overhaul_h": 40000,
+   "life_h": 80000
+  },
+  {
+   "id": "srw.apu.s200",
+   "cat": "service_reactor",
+   "mfr": "mfr.sol_reactor",
+   "name": "Sol Reactor Works S-200",
+   "model": "S-200",
+   "mass_t": 16,
+   "price_cr": 220000,
+   "mwe": 200,
+   "eff": 0.45,
+   "overhaul_h": 40000,
+   "life_h": 80000
+  },
+  {
+   "id": "th.apu.s150",
+   "cat": "service_reactor",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ СР-150",
+   "model": "СР-150",
+   "mass_t": 15,
+   "price_cr": 140000,
+   "mwe": 150,
+   "eff": 0.42,
+   "overhaul_h": 40000,
+   "life_h": 80000
+  },
+  {
+   "id": "th.apu.s600",
+   "cat": "service_reactor",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ СР-600",
+   "model": "СР-600",
+   "mass_t": 45,
+   "price_cr": 600000,
+   "mwe": 600,
+   "eff": 0.44,
+   "overhaul_h": 40000,
+   "life_h": 80000
+  },
+  {
+   "id": "kb.apu.s150",
+   "cat": "service_reactor",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty SR-150",
+   "model": "SR-150",
+   "mass_t": 12,
+   "price_cr": 160000,
+   "mwe": 150,
+   "eff": 0.45,
+   "overhaul_h": 40000,
+   "life_h": 80000
+  },
+  {
+   "id": "kb.rad.cs-panel",
+   "cat": "radiator",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty C-SiC radiator panel set (10 m2)",
+   "model": "RP-10",
+   "mass_t": 0.12,
+   "price_cr": 3500,
+   "area_m2": 10,
+   "temp_k": 1050,
+   "eps": 0.9,
+   "material": "elite.material.radiator.c-sic.v1"
+  },
+  {
+   "id": "th.rad.panel50",
+   "cat": "radiator",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ радиаторная секция (50 м2)",
+   "model": "РС-50",
+   "mass_t": 0.75,
+   "price_cr": 12000,
+   "area_m2": 50,
+   "temp_k": 1000,
+   "eps": 0.88,
+   "material": "elite.material.radiator.c-sic.v1"
+  },
+  {
+   "id": "sol.rad.panel50",
+   "cat": "radiator",
+   "mfr": "mfr.sol_mass_yards",
+   "name": "ЛМВ радиаторная секция (50 м2)",
+   "model": "РС-50С",
+   "mass_t": 0.65,
+   "price_cr": 15000,
+   "area_m2": 50,
+   "temp_k": 1050,
+   "eps": 0.9,
+   "material": "elite.material.radiator.c-sic.v1"
+  },
+  {
+   "id": "kb.cool.loop200",
+   "cat": "coolant_loop",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty coolant loop + pump (180 MW)",
+   "model": "CL-180",
+   "mass_t": 3,
+   "price_cr": 40000,
+   "capacity_mw": 180,
+   "pump_mw": 2.0
+  },
+  {
+   "id": "th.cool.loop600",
+   "cat": "coolant_loop",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ контур охлаждения (600 МВт)",
+   "model": "КО-600",
+   "mass_t": 9,
+   "price_cr": 90000,
+   "capacity_mw": 600,
+   "pump_mw": 6.0
+  },
+  {
+   "id": "sol.cool.loop300",
+   "cat": "coolant_loop",
+   "mfr": "mfr.sol_mass_yards",
+   "name": "ЛМВ контур охлаждения (300 МВт)",
+   "model": "КО-300",
+   "mass_t": 5,
+   "price_cr": 60000,
+   "capacity_mw": 300,
+   "pump_mw": 3.0
+  },
+  {
+   "id": "um.core.z05",
+   "cat": "jump_core",
+   "mfr": "mfr.um_core_fab",
+   "name": "Ядро «Нулевая точка» Я-0.5",
+   "model": "Я-0.5",
+   "mass_t": 6,
+   "price_cr": 610000,
+   "rating_t": 500,
+   "sealed": true,
+   "overhaul_h": 60000,
+   "life_h": 120000
+  },
+  {
+   "id": "um.core.z1",
+   "cat": "jump_core",
+   "mfr": "mfr.um_core_fab",
+   "name": "Ядро «Нулевая точка» Я-1",
+   "model": "Я-1",
+   "mass_t": 10,
+   "price_cr": 1800000,
+   "rating_t": 1000,
+   "sealed": true,
+   "overhaul_h": 60000,
+   "life_h": 120000
+  },
+  {
+   "id": "um.core.z5",
+   "cat": "jump_core",
+   "mfr": "mfr.um_core_fab",
+   "name": "Ядро «Нулевая точка» Я-5",
+   "model": "Я-5",
+   "mass_t": 35,
+   "price_cr": 4800000,
+   "rating_t": 5000,
+   "sealed": true,
+   "overhaul_h": 60000,
+   "life_h": 120000
+  },
+  {
+   "id": "mizan.core.m5",
+   "cat": "jump_core",
+   "mfr": "mfr.mizan",
+   "name": "Дар аль-Мизан М-5",
+   "model": "М-5",
+   "mass_t": 40,
+   "price_cr": 3600000,
+   "rating_t": 5000,
+   "sealed": true,
+   "notes": "собственная математика вне стандарта Когниума; совместим только с ядрами Мизан при ремонте",
+   "overhaul_h": 60000,
+   "life_h": 120000
+  },
+  {
+   "id": "mizan.core.m12",
+   "cat": "jump_core",
+   "mfr": "mfr.mizan",
+   "name": "Дар аль-Мизан М-12",
+   "model": "М-12",
+   "mass_t": 80,
+   "price_cr": 8200000,
+   "rating_t": 12000,
+   "sealed": true,
+   "overhaul_h": 60000,
+   "life_h": 120000
+  },
+  {
+   "id": "harmony.core.h5",
+   "cat": "jump_core",
+   "mfr": "mfr.harmony_yards",
+   "name": "Гармония Х-5 (сборка из блоков Когниума)",
+   "model": "Х-5",
+   "mass_t": 38,
+   "price_cr": 3600000,
+   "rating_t": 5000,
+   "sealed": true,
+   "notes": "запечатанные блоки «Нулевой точки», собранные на Гармонии",
+   "overhaul_h": 60000,
+   "life_h": 120000
+  },
+  {
+   "id": "harmony.core.h12",
+   "cat": "jump_core",
+   "mfr": "mfr.harmony_yards",
+   "name": "Гармония Х-12",
+   "model": "Х-12",
+   "mass_t": 80,
+   "price_cr": 10500000,
+   "rating_t": 12000,
+   "sealed": true,
+   "overhaul_h": 60000,
+   "life_h": 120000
+  },
+  {
+   "id": "harmony.core.h80",
+   "cat": "jump_core",
+   "mfr": "mfr.harmony_yards",
+   "name": "Гармония Х-80 (тягач поезда)",
+   "model": "Х-80",
+   "mass_t": 320,
+   "price_cr": 22000000,
+   "rating_t": 80000,
+   "sealed": true,
+   "overhaul_h": 60000,
+   "life_h": 120000
+  },
+  {
+   "id": "bastion.core.b12",
+   "cat": "jump_core",
+   "mfr": "mfr.bastion",
+   "name": "Бастион Б-12",
+   "model": "Б-12",
+   "mass_t": 90,
+   "price_cr": 66000000,
+   "rating_t": 12000,
+   "sealed": true,
+   "notes": "военные ядра собственной разработки; не экспортируются",
+   "overhaul_h": 60000,
+   "life_h": 120000
+  },
+  {
+   "id": "std.tank.jumpcharge",
+   "cat": "tank",
+   "mfr": "mfr.agora_modular",
+   "name": "Бак заряда прыжка (1 т)",
+   "model": "БЗ-1",
+   "mass_t": 0.35,
+   "price_cr": 6000,
+   "fluid": "jump_charge",
+   "capacity_t": 1.0,
+   "overhaul_h": 60000,
+   "life_h": 120000
+  },
+  {
+   "id": "std.tank.pellets",
+   "cat": "tank",
+   "mfr": "mfr.agora_modular",
+   "name": "Бункер топливных таблеток D/He-3 (1 т)",
+   "model": "БТ-1",
+   "mass_t": 0.25,
+   "price_cr": 3000,
+   "fluid": "fusion_pellets",
+   "capacity_t": 1.0,
+   "overhaul_h": 60000,
+   "life_h": 120000
+  },
+  {
+   "id": "kb.rcs.fc-nozzle",
+   "cat": "rcs",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty field-coupled RCS nozzle",
+   "model": "FC-RCS",
+   "mass_t": 0.4,
+   "price_cr": 5000,
+   "thrust_mn": 0.5,
+   "input_mw": 20,
+   "eff": 0.94,
+   "runtime_preset": "cobra.rcs.electric.fixed.v1",
+   "existing": true,
+   "overhaul_h": 20000,
+   "life_h": 40000
+  },
+  {
+   "id": "kb.rcs.argon-tank",
+   "cat": "tank",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty argon RCS tank",
+   "model": "AR-T",
+   "mass_t": 1.5,
+   "price_cr": 15000,
+   "fluid": "argon",
+   "capacity_t": 2.0,
+   "existing": true,
+   "overhaul_h": 20000,
+   "life_h": 40000
+  },
+  {
+   "id": "std.rcs.cluster",
+   "cat": "rcs",
+   "mfr": "mfr.agora_modular",
+   "name": "Кластер RCS (4 сопла, поле)",
+   "model": "RCS-4",
+   "mass_t": 2.0,
+   "price_cr": 20000,
+   "thrust_mn": 1.0,
+   "input_mw": 40,
+   "eff": 0.94,
+   "overhaul_h": 20000,
+   "life_h": 40000
+  },
+  {
+   "id": "std.rcs.cluster_h",
+   "cat": "rcs",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяжёлый кластер RCS (4 сопла)",
+   "model": "RCS-4Т",
+   "mass_t": 6.0,
+   "price_cr": 45000,
+   "thrust_mn": 4.0,
+   "input_mw": 150,
+   "eff": 0.93,
+   "overhaul_h": 20000,
+   "life_h": 40000
+  },
+  {
+   "id": "xz.mc.c1",
+   "cat": "computer",
+   "mfr": "mfr.xinzhi",
+   "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
+   "model": "MC-C1",
+   "mass_t": 0.8,
+   "price_cr": 90000,
+   "power_mw": 0.4,
+   "grade": "civil",
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "xz.mc.c3",
+   "cat": "computer",
+   "mfr": "mfr.xinzhi",
+   "name": "Синьчжи MotherComputer MC-C3 (флот)",
+   "model": "MC-C3",
+   "mass_t": 2.5,
+   "price_cr": 400000,
+   "power_mw": 1.5,
+   "grade": "fleet",
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "mizan.mc.m1",
+   "cat": "computer",
+   "mfr": "mfr.mizan",
+   "name": "Мизан бортовой вычислитель МВ-1",
+   "model": "МВ-1",
+   "mass_t": 1.0,
+   "price_cr": 70000,
+   "power_mw": 0.5,
+   "grade": "civil",
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "bastion.mc.w1",
+   "cat": "computer",
+   "mfr": "mfr.bastion",
+   "name": "Бастион боевой вычислитель БВ-1",
+   "model": "БВ-1",
+   "mass_t": 4.0,
+   "price_cr": 1200000,
+   "power_mw": 3.0,
+   "grade": "military",
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "hyp.mc.r1",
+   "cat": "computer",
+   "mfr": "mfr.hyperion",
+   "name": "Hyperion разведывательный вычислитель HR-1",
+   "model": "HR-1",
+   "mass_t": 3.0,
+   "price_cr": 3000000,
+   "power_mw": 4.0,
+   "grade": "military",
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "xz.radar.n2",
+   "cat": "radar",
+   "mfr": "mfr.xinzhi",
+   "name": "Синьчжи навигационный радар N-2 (2 000 км)",
+   "model": "N-2",
+   "mass_t": 1.2,
+   "price_cr": 60000,
+   "range_km": 2000,
+   "power_mw": 0.6,
+   "runtime_backend": "TestIdeal",
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "xz.radar.n10",
+   "cat": "radar",
+   "mfr": "mfr.xinzhi",
+   "name": "Синьчжи радар обзора N-10 (10 000 км)",
+   "model": "N-10",
+   "mass_t": 4.0,
+   "price_cr": 450000,
+   "range_km": 10000,
+   "power_mw": 4.0,
+   "runtime_backend": "TestIdeal",
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "bastion.radar.s50",
+   "cat": "radar",
+   "mfr": "mfr.bastion",
+   "name": "Бастион радар обзора С-50 (50 000 км)",
+   "model": "С-50",
+   "mass_t": 22,
+   "price_cr": 18000000,
+   "range_km": 50000,
+   "power_mw": 40,
+   "runtime_backend": "TestIdeal",
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "hyp.radar.pa100",
+   "cat": "radar",
+   "mfr": "mfr.hyperion",
+   "name": "Hyperion пассивная решётка PA-100 + активный режим",
+   "model": "PA-100",
+   "mass_t": 12,
+   "price_cr": 4500000,
+   "range_km": 100000,
+   "power_mw": 12,
+   "runtime_backend": "TestIdeal",
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "kern.radar.deb5",
+   "cat": "radar",
+   "mfr": "mfr.kern_heavy",
+   "name": "Kern радар обломков DR-5 (5 000 км)",
+   "model": "DR-5",
+   "mass_t": 3.0,
+   "price_cr": 220000,
+   "range_km": 5000,
+   "power_mw": 2.0,
+   "runtime_backend": "TestIdeal",
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "xz.comm.c1",
+   "cat": "comm",
+   "mfr": "mfr.xinzhi",
+   "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+   "model": "C-1",
+   "mass_t": 0.6,
+   "price_cr": 40000,
+   "power_mw": 0.3,
+   "range_ls": 10,
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "xz.comm.c3",
+   "cat": "comm",
+   "mfr": "mfr.xinzhi",
+   "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
+   "model": "C-3",
+   "mass_t": 2.0,
+   "price_cr": 600000,
+   "power_mw": 2.0,
+   "range_ls": 60,
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "bastion.comm.w1",
+   "cat": "comm",
+   "mfr": "mfr.bastion",
+   "name": "Бастион связь БС-1",
+   "model": "БС-1",
+   "mass_t": 3.0,
+   "price_cr": 3000000,
+   "power_mw": 3.0,
+   "range_ls": 60,
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "um.xpdr.t1",
+   "cat": "transponder",
+   "mfr": "mfr.um_core_fab",
+   "name": "Транспондер Управления Маяков Т-1",
+   "model": "Т-1",
+   "mass_t": 0.05,
+   "price_cr": 8000,
+   "power_mw": 0.02,
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "hyp.ecm.e1",
+   "cat": "ecm",
+   "mfr": "mfr.hyperion",
+   "name": "Hyperion комплекс РЭБ E-1",
+   "model": "E-1",
+   "mass_t": 8,
+   "price_cr": 3000000,
+   "power_mw": 30,
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "hyp.relay.r1",
+   "cat": "comm",
+   "mfr": "mfr.hyperion",
+   "name": "Hyperion полевой ретранслятор R-1 (сеть маяков в войну)",
+   "model": "R-1",
+   "mass_t": 4,
+   "price_cr": 1200000,
+   "power_mw": 5,
+   "range_ls": 120,
+   "overhaul_h": 40000,
+   "life_h": 90000
+  },
+  {
+   "id": "eurohab.ls.l4",
+   "cat": "life_support",
+   "mfr": "mfr.eurohab",
+   "name": "Евро-Хабитат ЖО L-4 (4 чел.)",
+   "model": "L-4",
+   "mass_t": 2.0,
+   "price_cr": 35000,
+   "persons": 4,
+   "days": 60,
+   "power_mw": 0.08,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "eurohab.ls.l20",
+   "cat": "life_support",
+   "mfr": "mfr.eurohab",
+   "name": "Евро-Хабитат ЖО L-20",
+   "model": "L-20",
+   "mass_t": 7.0,
+   "price_cr": 120000,
+   "persons": 20,
+   "days": 90,
+   "power_mw": 0.4,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "eurohab.ls.l200",
+   "cat": "life_support",
+   "mfr": "mfr.eurohab",
+   "name": "Евро-Хабитат ЖО L-200 (лайнер)",
+   "model": "L-200",
+   "mass_t": 45,
+   "price_cr": 700000,
+   "persons": 200,
+   "days": 40,
+   "power_mw": 4,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "terra.ls.t10",
+   "cat": "life_support",
+   "mfr": "mfr.terra_habitat",
+   "name": "Terra Habitat ЖО T-10",
+   "model": "T-10",
+   "mass_t": 4.0,
+   "price_cr": 45000,
+   "persons": 10,
+   "days": 60,
+   "power_mw": 0.2,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "terra.ls.t60",
+   "cat": "life_support",
+   "mfr": "mfr.terra_habitat",
+   "name": "Terra Habitat ЖО T-60 (флот)",
+   "model": "T-60",
+   "mass_t": 22,
+   "price_cr": 700000,
+   "persons": 60,
+   "days": 200,
+   "power_mw": 1.2,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "terra.ls.t200",
+   "cat": "life_support",
+   "mfr": "mfr.terra_habitat",
+   "name": "Terra Habitat ЖО T-200 (флот)",
+   "model": "T-200",
+   "mass_t": 70,
+   "price_cr": 3000000,
+   "persons": 200,
+   "days": 200,
+   "power_mw": 4,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "uhuru.ls.u500",
+   "cat": "life_support",
+   "mfr": "mfr.uhuru_bio",
+   "name": "Uhuru ЖО U-500 (биорегенерация)",
+   "model": "U-500",
+   "mass_t": 95,
+   "price_cr": 1200000,
+   "persons": 500,
+   "days": 60,
+   "power_mw": 8,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "ofu.ls.o4",
+   "cat": "life_support",
+   "mfr": "mfr.ofu",
+   "name": "ОФУ ЖО О-4 (челнок)",
+   "model": "О-4",
+   "mass_t": 1.5,
+   "price_cr": 30000,
+   "persons": 4,
+   "days": 14,
+   "power_mw": 0.06,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "kb.surv.capsule2",
+   "cat": "escape_capsule",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty катапультируемая капсула кабины (2 места)",
+   "model": "EC-2",
+   "mass_t": 2.5,
+   "price_cr": 40000,
+   "seats": 2,
+   "existing": true,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "std.surv.pod4",
+   "cat": "escape_capsule",
+   "mfr": "mfr.agora_modular",
+   "name": "Спасательная капсула (4 места)",
+   "model": "СК-4",
+   "mass_t": 1.6,
+   "price_cr": 18000,
+   "seats": 4,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "std.surv.boat20",
+   "cat": "lifeboat",
+   "mfr": "mfr.agora_modular",
+   "name": "Спасательная шлюпка (20 мест, 10 суток)",
+   "model": "СШ-20",
+   "mass_t": 6.0,
+   "price_cr": 60000,
+   "seats": 20,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "std.surv.refuge100",
+   "cat": "lifeboat",
+   "mfr": "mfr.bharat",
+   "name": "Спасательный модуль-убежище (100 мест)",
+   "model": "СМ-100",
+   "mass_t": 12,
+   "price_cr": 90000,
+   "seats": 100,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "std.med.bay",
+   "cat": "medbay",
+   "mfr": "mfr.eurohab",
+   "name": "Медотсек (4 койки)",
+   "model": "МО-4",
+   "mass_t": 3.0,
+   "price_cr": 80000,
+   "beds": 4,
+   "power_mw": 0.05,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "std.cargo.c20lock",
+   "cat": "container_rack",
+   "mfr": "mfr.agora_modular",
+   "name": "Стойка C20 (замки и рельсы, 1 место)",
+   "model": "C20-R",
+   "mass_t": 0.5,
+   "price_cr": 2500,
+   "c20_slots": 1,
+   "overhaul_h": 60000,
+   "life_h": 150000
+  },
+  {
+   "id": "ofu.cargo.p20",
+   "cat": "passenger_module",
+   "mfr": "mfr.ofu",
+   "name": "Пассажирский модуль P20 (12 мест, своё ЖО на сутки, отстреливаемый)",
+   "model": "P20",
+   "mass_t": 4.5,
+   "price_cr": 50000,
+   "seats": 12,
+   "ls_persons": 12,
+   "ls_days": 1,
+   "survival_seats": 12,
+   "power_mw": 0.2,
+   "overhaul_h": 60000,
+   "life_h": 150000
+  },
+  {
+   "id": "std.cabin.hold6",
+   "cat": "passenger_module",
+   "mfr": "mfr.sol_mass_yards",
+   "name": "Камера для задержанных и спасённых (6 мест)",
+   "model": "КЗ-6",
+   "mass_t": 3.0,
+   "price_cr": 30000,
+   "seats": 6,
+   "overhaul_h": 60000,
+   "life_h": 150000
+  },
+  {
+   "id": "agora.hab.pax100",
+   "cat": "passenger_module",
+   "mfr": "mfr.agora_modular",
+   "name": "Пассажирская секция Agora (100 мест)",
+   "model": "PS-100",
+   "mass_t": 28,
+   "price_cr": 260000,
+   "seats": 100,
+   "overhaul_h": 60000,
+   "life_h": 150000
+  },
+  {
+   "id": "bharat.hab.bunk500",
+   "cat": "passenger_module",
+   "mfr": "mfr.bharat",
+   "name": "Секция переселенцев (500 коек)",
+   "model": "СП-500",
+   "mass_t": 85,
+   "price_cr": 300000,
+   "seats": 500,
+   "overhaul_h": 60000,
+   "life_h": 150000
+  },
+  {
+   "id": "uhuru.cryo.pod100",
+   "cat": "passenger_module",
+   "mfr": "mfr.uhuru_bio",
+   "name": "Блок анабиоза (100 капсул)",
+   "model": "АБ-100",
+   "mass_t": 22,
+   "price_cr": 250000,
+   "seats": 100,
+   "cold_sleep": true,
+   "overhaul_h": 60000,
+   "life_h": 150000
+  },
+  {
+   "id": "harmony.mod.cargo4800",
+   "cat": "train_module",
+   "mfr": "mfr.harmony_yards",
+   "name": "Модуль поезда грузовой (4 800 т, 240 C20)",
+   "model": "МП-4800",
+   "mass_t": 400,
+   "price_cr": 900000,
+   "payload_t": 4800,
+   "c20_slots": 240,
+   "overhaul_h": 60000,
+   "life_h": 150000
+  },
+  {
+   "id": "harmony.mod.tank4200",
+   "cat": "train_module",
+   "mfr": "mfr.harmony_yards",
+   "name": "Модуль поезда-цистерна (4 170 т)",
+   "model": "МЦ-4200",
+   "mass_t": 500,
+   "price_cr": 1000000,
+   "payload_t": 4170,
+   "overhaul_h": 60000,
+   "life_h": 150000
+  },
+  {
+   "id": "sol.cryo.t1000",
+   "cat": "cryo_tank",
+   "mfr": "mfr.sol_mass_yards",
+   "name": "Криоцистерна He-3/D (1 000 т)",
+   "model": "КЦ-1000",
+   "mass_t": 60,
+   "price_cr": 120000,
+   "capacity_t": 1000,
+   "overhaul_h": 60000,
+   "life_h": 150000
+  },
+  {
+   "id": "std.cargo.hold100",
+   "cat": "bulk_hold",
+   "mfr": "mfr.agora_modular",
+   "name": "Грузовой отсек (100 т, 300 м3)",
+   "model": "ГО-100",
+   "mass_t": 6,
+   "price_cr": 20000,
+   "capacity_t": 100,
+   "overhaul_h": 60000,
+   "life_h": 150000
+  },
+  {
+   "id": "std.dock.collar",
+   "cat": "docking_port",
+   "mfr": "mfr.agora_modular",
+   "name": "Стыковочный узел (стандарт хабов)",
+   "model": "СУ-1",
+   "mass_t": 1.5,
+   "price_cr": 25000,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "std.bay.boat",
+   "cat": "boat_bay",
+   "mfr": "mfr.sol_mass_yards",
+   "name": "Ангар досмотрового катера (1 катер)",
+   "model": "АК-1",
+   "mass_t": 18,
+   "price_cr": 400000,
+   "craft_slots": 1,
+   "craft": "boarding_boat",
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "std.bay.drone4",
+   "cat": "drone_bay",
+   "mfr": "mfr.agora_modular",
+   "name": "Отсек дронов (4 сервисных дрона)",
+   "model": "ОД-4",
+   "mass_t": 6,
+   "price_cr": 180000,
+   "drones": 4,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "harmony.bay.hangar2",
+   "cat": "hangar",
+   "mfr": "mfr.harmony_yards",
+   "name": "Ангар перехватчиков (2 места)",
+   "model": "АП-2",
+   "mass_t": 160,
+   "price_cr": 1500000,
+   "craft_slots": 2,
+   "craft": "interceptor",
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "ofu.lift.shield",
+   "cat": "heat_shield",
+   "mfr": "mfr.ofu",
+   "name": "Теплозащитный экран подъёмника",
+   "model": "ТЗ-12",
+   "mass_t": 30,
+   "price_cr": 180000,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "ofu.lift.gear",
+   "cat": "landing_gear",
+   "mfr": "mfr.ofu",
+   "name": "Посадочные опоры (4)",
+   "model": "ПО-4",
+   "mass_t": 18,
+   "price_cr": 40000,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "kern.tow.raft20k",
+   "cat": "tow_rig",
+   "mfr": "mfr.kern_heavy",
+   "name": "Kern буксирная рама плота (20 000 т)",
+   "model": "TR-20K",
+   "mass_t": 60,
+   "price_cr": 160000,
+   "tow_t": 20000,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "kern.tow.heavy",
+   "cat": "tow_rig",
+   "mfr": "mfr.kern_heavy",
+   "name": "Kern тяжёлый захват (обломки, камни)",
+   "model": "TR-H",
+   "mass_t": 80,
+   "price_cr": 600000,
+   "tow_t": 50000,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "sol.workshop.w1",
+   "cat": "workshop",
+   "mfr": "mfr.sol_mass_yards",
+   "name": "Мастерская сервисного тендера (2 бригады)",
+   "model": "МС-1",
+   "mass_t": 35,
+   "price_cr": 180000,
+   "power_mw": 0.8,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "std.armour.ceramic",
+   "cat": "armour",
+   "mfr": "mfr.firmament_armour",
+   "name": "Броня керамокомпозитная (1 т)",
+   "model": "БК-1",
+   "mass_t": 1.0,
+   "price_cr": 30000,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "bastion.armour.heavy",
+   "cat": "armour",
+   "mfr": "mfr.bastion",
+   "name": "Броня Бастиона тяжёлая (1 т)",
+   "model": "БТ-1",
+   "mass_t": 1.0,
+   "price_cr": 60000,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "hyp.mast.s1",
+   "cat": "sensor_mast",
+   "mfr": "mfr.hyperion",
+   "name": "Hyperion выдвижная сенсорная мачта",
+   "model": "SM-1",
+   "mass_t": 6,
+   "price_cr": 1800000,
+   "power_mw": 2,
+   "overhaul_h": 40000,
+   "life_h": 100000
+  },
+  {
+   "id": "kb.wpn.pd1",
+   "cat": "weapon",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty PD-1 оборонительная турель",
+   "model": "PD-1",
+   "mass_t": 1.5,
+   "price_cr": 120000,
+   "kind": "point_defence",
+   "power_mw": 3,
+   "overhaul_h": 30000,
+   "life_h": 60000
+  },
+  {
+   "id": "fa.wpn.coil30",
+   "cat": "weapon",
+   "mfr": "mfr.firmament_armour",
+   "name": "Твердыня магнитная пушка КП-30",
+   "model": "КП-30",
+   "mass_t": 6,
+   "price_cr": 700000,
+   "kind": "coilgun",
+   "power_mw": 25,
+   "overhaul_h": 30000,
+   "life_h": 60000
+  },
+  {
+   "id": "fa.wpn.pd2",
+   "cat": "weapon",
+   "mfr": "mfr.firmament_armour",
+   "name": "Твердыня турель ПРО ПТ-2",
+   "model": "ПТ-2",
+   "mass_t": 3,
+   "price_cr": 600000,
+   "kind": "point_defence",
+   "power_mw": 8,
+   "overhaul_h": 30000,
+   "life_h": 60000
+  },
+  {
+   "id": "harmony.wpn.pd3",
+   "cat": "weapon",
+   "mfr": "mfr.harmony_yards",
+   "name": "Гармония турель ПРО ПТ-3",
+   "model": "ПТ-3",
+   "mass_t": 5,
+   "price_cr": 1500000,
+   "kind": "point_defence",
+   "power_mw": 12,
+   "overhaul_h": 30000,
+   "life_h": 60000
+  },
+  {
+   "id": "harmony.wpn.vls8",
+   "cat": "weapon",
+   "mfr": "mfr.harmony_yards",
+   "name": "Гармония пусковая ВПУ-8 (8 ракет)",
+   "model": "ВПУ-8",
+   "mass_t": 24,
+   "price_cr": 4500000,
+   "kind": "missile_cells",
+   "cells": 8,
+   "power_mw": 1,
+   "overhaul_h": 30000,
+   "life_h": 60000
+  },
+  {
+   "id": "bastion.wpn.coil10",
+   "cat": "weapon",
+   "mfr": "mfr.bastion",
+   "name": "Бастион скорострельная пушка БП-10",
+   "model": "БП-10",
+   "mass_t": 2.5,
+   "price_cr": 900000,
+   "kind": "coilgun",
+   "power_mw": 12,
+   "overhaul_h": 30000,
+   "life_h": 60000
+  },
+  {
+   "id": "bastion.wpn.vls16",
+   "cat": "weapon",
+   "mfr": "mfr.bastion",
+   "name": "Бастион ВПУ-16 дальних ракет",
+   "model": "ВПУ-16",
+   "mass_t": 60,
+   "price_cr": 22500000,
+   "kind": "missile_cells",
+   "cells": 16,
+   "power_mw": 2,
+   "overhaul_h": 30000,
+   "life_h": 60000
+  },
+  {
+   "id": "bastion.wpn.pd4",
+   "cat": "weapon",
+   "mfr": "mfr.bastion",
+   "name": "Бастион турель ПРО БТ-4",
+   "model": "БТ-4",
+   "mass_t": 6,
+   "price_cr": 4500000,
+   "kind": "point_defence",
+   "power_mw": 15,
+   "overhaul_h": 30000,
+   "life_h": 60000
+  },
+  {
+   "id": "kern.md.impactor",
+   "cat": "weapon",
+   "mfr": "mfr.kern_heavy",
+   "name": "Kern пусковая ударников МД-40 (масс-драйвер)",
+   "model": "МД-40",
+   "mass_t": 90,
+   "price_cr": 3750000,
+   "kind": "mass_driver",
+   "power_mw": 400,
+   "notes": "гражданское двойное назначение: отклонение и дробление камней",
+   "overhaul_h": 30000,
+   "life_h": 60000
+  }
+ ],
+ "ships": [
+  {
+   "id": "kb.ship.cobrett-i.frnu.n1",
+   "cls": "cobrett_i_n1",
+   "base": true,
+   "name": "Cobrett-I N1",
+   "designation": "Cobrett-I N1",
+   "mfr": "mfr.cobretty",
+   "developer": "Kobersberg-Braunauer Raumfahrzeugwerke (основатель, ныне Cobretty Corporation)",
+   "polity": "hd20794_hellas2",
+   "yard": "industrial_hub",
+   "law": "Newtonian",
+   "layout": "I",
+   "runtime": "existing:EliteCobraMk1:NewtonianI",
+   "hull": {
+    "form": "wedge",
+    "envelope_m": [
+     22.2,
+     26.0,
+     4.3
+    ],
+    "structure": "несущий клиновидный монокок",
+    "material": "алюминий-литиевый сплав, C-SiC обшивка"
+   },
+   "crew": 2,
+   "passengers": 0,
+   "cargo_t": 120,
+   "c20": 6,
+   "endurance_days": 30,
+   "service_life_years": 35,
+   "purpose": "быстрый гибкий фрахт: ценный и срочный груз, курьер, малый чартер",
+   "eq": [
+    [
+     "D",
+     "kb.drive.n1-axial",
+     1
+    ],
+    [
+     "R",
+     "kb.reactor.er5",
+     1
+    ],
+    [
+     "S",
+     "kb.apu.s70",
+     1
+    ],
+    [
+     "T",
+     "kb.rad.cs-panel",
+     38
+    ],
+    [
+     "L",
+     "kb.cool.loop200",
+     1
+    ],
+    [
+     "J",
+     "um.core.z05",
+     1
+    ],
+    [
+     "JT",
+     "std.tank.jumpcharge",
+     3
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     2
+    ],
+    [
+     "Q",
+     "kb.rcs.fc-nozzle",
+     24
+    ],
+    [
+     "QT",
+     "kb.rcs.argon-tank",
+     1
+    ],
+    [
+     "M",
+     "xz.mc.c1",
+     1
+    ],
+    [
+     "SR",
+     "xz.radar.n2",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     1
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     1
+    ],
+    [
+     "H",
+     "eurohab.ls.l4",
+     1
+    ],
+    [
+     "E",
+     "kb.surv.capsule2",
+     1
+    ],
+    [
+     "C",
+     "std.cargo.c20lock",
+     6
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     1
+    ],
+    [
+     "W",
+     "kb.wpn.pd1",
+     1
+    ]
+   ]
+  },
+  {
+   "id": "kb.ship.cobrett-i.frnu-inta.a3",
+   "cls": "cobrett_i_n1",
+   "base": false,
+   "variant_of": "kb.ship.cobrett-i.frnu.n1",
+   "variant_reason": "другое поколение линии с законом Assisted: широкий вектор тяги CR-1 в четырёх гондолах, два реактора ER-5 (уже существует в игре)",
+   "name": "Cobrett-I A3",
+   "designation": "Cobrett-I A3",
+   "mfr": "mfr.cobretty",
+   "polity": "hd20794_hellas2",
+   "yard": "industrial_hub",
+   "law": "Assisted",
+   "layout": "I",
+   "runtime": "existing:EliteCobraMk1:AssistedI",
+   "hull": {
+    "form": "wedge",
+    "envelope_m": [
+     22.2,
+     26.0,
+     4.3
+    ],
+    "structure": "несущий клиновидный монокок, гондолы двигателей",
+    "material": "алюминий-литиевый сплав, C-SiC обшивка"
+   },
+   "crew": 2,
+   "passengers": 0,
+   "cargo_t": 110,
+   "c20": 6,
+   "endurance_days": 30,
+   "service_life_years": 35,
+   "purpose": "как N1, для пилотов с законом Assisted; дороже в обслуживании",
+   "eq": [
+    [
+     "D",
+     "kb.drive.cr1-vector",
+     4
+    ],
+    [
+     "R",
+     "kb.reactor.er5",
+     2
+    ],
+    [
+     "S",
+     "kb.apu.s70",
+     1
+    ],
+    [
+     "T",
+     "kb.rad.cs-panel",
+     38
+    ],
+    [
+     "L",
+     "kb.cool.loop200",
+     1
+    ],
+    [
+     "J",
+     "um.core.z05",
+     1
+    ],
+    [
+     "JT",
+     "std.tank.jumpcharge",
+     3
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     2
+    ],
+    [
+     "M",
+     "xz.mc.c1",
+     1
+    ],
+    [
+     "SR",
+     "xz.radar.n2",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     1
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     1
+    ],
+    [
+     "H",
+     "eurohab.ls.l4",
+     1
+    ],
+    [
+     "E",
+     "kb.surv.capsule2",
+     1
+    ],
+    [
+     "C",
+     "std.cargo.c20lock",
+     6
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     1
+    ],
+    [
+     "W",
+     "kb.wpn.pd1",
+     1
+    ]
+   ]
+  },
+  {
+   "id": "ofu.ship.ocs-4.lastochka",
+   "cls": "ocs4_lastochka",
+   "base": true,
+   "name": "OCS-4 «Ласточка»",
+   "designation": "OCS-4",
+   "mfr": "mfr.ofu",
+   "polity": "sol_authority",
+   "yard": "Урал-Куру (орбитальные верфи ОФУ)",
+   "law": "Newtonian",
+   "layout": "I",
+   "runtime": "generic",
+   "hull": {
+    "form": "box",
+    "envelope_m": [
+     56.0,
+     18.0,
+     14.0
+    ],
+    "structure": "ферма-хребет с открытыми гнёздами C20",
+    "material": "сталь-титановая ферма"
+   },
+   "crew": 3,
+   "passengers": 0,
+   "cargo_t": 409,
+   "c20": 24,
+   "endurance_days": 7,
+   "service_life_years": 40,
+   "purpose": "только орбита ↔ хабы и депо (без посадки, без прыжка)",
+   "eq": [
+    [
+     "D",
+     "ofu.drive.u33",
+     1
+    ],
+    [
+     "R",
+     "ofu.reactor.er26",
+     1
+    ],
+    [
+     "S",
+     "ofu.apu.s20",
+     1
+    ],
+    [
+     "T",
+     "sol.rad.panel50",
+     2
+    ],
+    [
+     "L",
+     "sol.cool.loop300",
+     1
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     2
+    ],
+    [
+     "Q",
+     "std.rcs.cluster",
+     8
+    ],
+    [
+     "M",
+     "xz.mc.c1",
+     1
+    ],
+    [
+     "SR",
+     "xz.radar.n2",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     1
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     1
+    ],
+    [
+     "H",
+     "ofu.ls.o4",
+     1
+    ],
+    [
+     "E",
+     "std.surv.pod4",
+     1
+    ],
+    [
+     "C",
+     "std.cargo.c20lock",
+     24
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "ofu.ship.sl-12.podyomnik",
+   "cls": "surface_lifter",
+   "base": true,
+   "name": "SL-12 «Подъёмник»",
+   "designation": "SL-12",
+   "mfr": "mfr.ofu",
+   "polity": "sol_authority",
+   "yard": "Урал-Куру",
+   "law": "Newtonian",
+   "layout": "Y",
+   "runtime": "generic",
+   "hull": {
+    "form": "lifter",
+    "envelope_m": [
+     48.0,
+     16.0,
+     16.0
+    ],
+    "structure": "цилиндрический корпус с теплозащитой и опорами",
+    "material": "титан, абляционно-керамический экран"
+   },
+   "crew": 3,
+   "passengers": 144,
+   "cargo_t": 240,
+   "c20": 12,
+   "endurance_days": 3,
+   "service_life_years": 30,
+   "purpose": "космопорт на поверхности ↔ низкая орбита: 12 мест C20 или 12 модулей P20 (144 пассажира)",
+   "eq": [
+    [
+     "D",
+     "ofu.drive.u73l",
+     3
+    ],
+    [
+     "R",
+     "srw.reactor.sr9",
+     3
+    ],
+    [
+     "S",
+     "srw.apu.s60",
+     2
+    ],
+    [
+     "T",
+     "sol.rad.panel50",
+     4
+    ],
+    [
+     "L",
+     "sol.cool.loop300",
+     2
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     3
+    ],
+    [
+     "Q",
+     "std.rcs.cluster",
+     8
+    ],
+    [
+     "M",
+     "xz.mc.c1",
+     2
+    ],
+    [
+     "SR",
+     "xz.radar.n2",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     2
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     2
+    ],
+    [
+     "H",
+     "ofu.ls.o4",
+     2
+    ],
+    [
+     "E",
+     "std.surv.pod4",
+     1
+    ],
+    [
+     "C",
+     "std.cargo.c20lock",
+     12
+    ],
+    [
+     "P",
+     "ofu.cargo.p20",
+     12,
+     {
+      "alt_load": true
+     }
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     1
+    ],
+    [
+     "Z",
+     "ofu.lift.shield",
+     1
+    ],
+    [
+     "G",
+     "ofu.lift.gear",
+     1
+    ]
+   ],
+   "redundancy_doctrine": "critical"
+  },
+  {
+   "id": "bharat.ship.c-120.konveyer",
+   "cls": "medium_freighter",
+   "base": true,
+   "name": "C-120 «Конвейер»",
+   "designation": "C-120",
+   "mfr": "mfr.bharat",
+   "polity": "hd20794_newindia",
+   "yard": "industrial_hub",
+   "law": "Newtonian",
+   "layout": "Y",
+   "runtime": "generic",
+   "hull": {
+    "form": "box",
+    "envelope_m": [
+     95.0,
+     30.0,
+     26.0
+    ],
+    "structure": "ферма с 120 гнёздами C20, жилой модуль в носу",
+    "material": "сталь, алюминий"
+   },
+   "crew": 6,
+   "passengers": 0,
+   "cargo_t": 2400,
+   "c20": 120,
+   "endurance_days": 40,
+   "service_life_years": 40,
+   "purpose": "вторичные межзвёздные трассы: контейнеры, машины, товары, медикаменты",
+   "eq": [
+    [
+     "D",
+     "ofu.drive.u43",
+     3
+    ],
+    [
+     "R",
+     "srw.reactor.sr33",
+     3
+    ],
+    [
+     "S",
+     "srw.apu.s60",
+     1
+    ],
+    [
+     "T",
+     "sol.rad.panel50",
+     4
+    ],
+    [
+     "L",
+     "sol.cool.loop300",
+     1
+    ],
+    [
+     "J",
+     "mizan.core.m5",
+     1
+    ],
+    [
+     "JT",
+     "std.tank.jumpcharge",
+     30
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     8
+    ],
+    [
+     "Q",
+     "std.rcs.cluster",
+     8
+    ],
+    [
+     "M",
+     "mizan.mc.m1",
+     1
+    ],
+    [
+     "SR",
+     "xz.radar.n2",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     1
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     1
+    ],
+    [
+     "H",
+     "eurohab.ls.l20",
+     1
+    ],
+    [
+     "E",
+     "std.surv.pod4",
+     2
+    ],
+    [
+     "C",
+     "std.cargo.c20lock",
+     120
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "harmony.ship.he-120",
+   "cls": "medium_freighter",
+   "base": false,
+   "variant_of": "bharat.ship.c-120.konveyer",
+   "variant_reason": "школа «простые однокорпусные»: один большой двигатель, тяжелее и дешевле; 74 % флота Небесного пакта — корпуса Гармонии (allied_fleets_uniform)",
+   "name": "Хэ-120 «Хуэйлю»",
+   "designation": "Хэ-120",
+   "mfr": "mfr.harmony_yards",
+   "polity": "eps_eri_harmony",
+   "yard": "orbital",
+   "law": "Newtonian",
+   "layout": "I",
+   "runtime": "generic",
+   "hull": {
+    "form": "box",
+    "envelope_m": [
+     98.0,
+     32.0,
+     28.0
+    ],
+    "structure": "стандартный однокорпусный короб «Хэ» с внутренними гнёздами",
+    "material": "сталь"
+   },
+   "crew": 7,
+   "passengers": 0,
+   "cargo_t": 2400,
+   "c20": 120,
+   "endurance_days": 40,
+   "service_life_years": 40,
+   "purpose": "как C-120 для флотов Пакта; ремонт в любом порту блока",
+   "eq": [
+    [
+     "D",
+     "th.drive.tz13",
+     1
+    ],
+    [
+     "R",
+     "th.reactor.tr10",
+     1
+    ],
+    [
+     "S",
+     "th.apu.s150",
+     1
+    ],
+    [
+     "T",
+     "th.rad.panel50",
+     4
+    ],
+    [
+     "L",
+     "th.cool.loop600",
+     1
+    ],
+    [
+     "J",
+     "harmony.core.h5",
+     1
+    ],
+    [
+     "JT",
+     "std.tank.jumpcharge",
+     30
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     8
+    ],
+    [
+     "Q",
+     "std.rcs.cluster_h",
+     8
+    ],
+    [
+     "M",
+     "xz.mc.c1",
+     1
+    ],
+    [
+     "SR",
+     "xz.radar.n2",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     1
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     1
+    ],
+    [
+     "H",
+     "terra.ls.t10",
+     1
+    ],
+    [
+     "E",
+     "std.surv.pod4",
+     2
+    ],
+    [
+     "C",
+     "std.cargo.c20lock",
+     120
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "harmony.ship.he-t12.lokomotiv",
+   "cls": "jump_train",
+   "base": true,
+   "name": "Хэ-Т12 «Локомотив» + 12 модулей",
+   "designation": "Хэ-Т12",
+   "mfr": "mfr.harmony_yards",
+   "polity": "eps_eri_harmony",
+   "yard": "orbital",
+   "law": "Newtonian",
+   "layout": "X",
+   "runtime": "generic",
+   "hull": {
+    "form": "train",
+    "envelope_m": [
+     160.0,
+     40.0,
+     40.0
+    ],
+    "structure": "тягач с ядром прыжка и сцепкой 12 модулей (42×20×20 м)",
+    "material": "сталь"
+   },
+   "crew": 12,
+   "passengers": 0,
+   "cargo_t": 57600,
+   "c20": 2880,
+   "endurance_days": 60,
+   "service_life_years": 45,
+   "purpose": "магистрали: навал и контейнеры в модулях; тягач оставляет модули в депо и забирает готовые",
+   "eq": [
+    [
+     "D",
+     "th.drive.tz23",
+     4
+    ],
+    [
+     "R",
+     "th.reactor.tr20",
+     4
+    ],
+    [
+     "S",
+     "th.apu.s600",
+     1
+    ],
+    [
+     "T",
+     "th.rad.panel50",
+     20
+    ],
+    [
+     "L",
+     "th.cool.loop600",
+     2
+    ],
+    [
+     "J",
+     "harmony.core.h80",
+     1
+    ],
+    [
+     "JT",
+     "std.tank.jumpcharge",
+     420
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     120
+    ],
+    [
+     "Q",
+     "std.rcs.cluster_h",
+     16
+    ],
+    [
+     "M",
+     "xz.mc.c3",
+     1
+    ],
+    [
+     "SR",
+     "xz.radar.n10",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     1
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     1
+    ],
+    [
+     "H",
+     "terra.ls.t60",
+     1
+    ],
+    [
+     "E",
+     "std.surv.boat20",
+     1
+    ],
+    [
+     "U",
+     "harmony.mod.cargo4800",
+     12
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     2
+    ],
+    [
+     "W",
+     "harmony.wpn.pd3",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "harmony.ship.he-t12c.tanker",
+   "cls": "jump_tanker",
+   "base": true,
+   "name": "Хэ-Т12Ц (поезд-танкер)",
+   "designation": "Хэ-Т12Ц",
+   "mfr": "mfr.harmony_yards",
+   "polity": "eps_eri_harmony",
+   "yard": "orbital",
+   "law": "Newtonian",
+   "layout": "X",
+   "runtime": "generic",
+   "hull": {
+    "form": "train",
+    "envelope_m": [
+     160.0,
+     40.0,
+     40.0
+    ],
+    "structure": "тот же тягач «Локомотив» + 12 модулей-цистерн",
+    "material": "сталь"
+   },
+   "crew": 12,
+   "passengers": 0,
+   "cargo_t": 50000,
+   "c20": 0,
+   "endurance_days": 60,
+   "service_life_years": 45,
+   "purpose": "топливо реакторов и заряд прыжка к депо и импортёрам",
+   "eq": [
+    [
+     "D",
+     "th.drive.tz23",
+     4
+    ],
+    [
+     "R",
+     "th.reactor.tr20",
+     4
+    ],
+    [
+     "S",
+     "th.apu.s600",
+     1
+    ],
+    [
+     "T",
+     "th.rad.panel50",
+     20
+    ],
+    [
+     "L",
+     "th.cool.loop600",
+     2
+    ],
+    [
+     "J",
+     "harmony.core.h80",
+     1
+    ],
+    [
+     "JT",
+     "std.tank.jumpcharge",
+     420
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     120
+    ],
+    [
+     "Q",
+     "std.rcs.cluster_h",
+     16
+    ],
+    [
+     "M",
+     "xz.mc.c3",
+     1
+    ],
+    [
+     "SR",
+     "xz.radar.n10",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     1
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     1
+    ],
+    [
+     "H",
+     "terra.ls.t60",
+     1
+    ],
+    [
+     "E",
+     "std.surv.boat20",
+     1
+    ],
+    [
+     "U",
+     "harmony.mod.tank4200",
+     12
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     2
+    ],
+    [
+     "W",
+     "harmony.wpn.pd3",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "sol.ship.gt-3000.titan",
+   "cls": "gas_tanker",
+   "base": false,
+   "variant_of": "harmony.ship.he-t12c.tanker",
+   "variant_reason": "отдельный экономический класс: внутрисистемный газовый танкер Сола (He-3/D с платформ газовых гигантов), без прыжка",
+   "name": "ГТ-3000 «Титан»",
+   "designation": "ГТ-3000",
+   "mfr": "mfr.sol_mass_yards",
+   "polity": "sol_authority",
+   "yard": "Лунно-Марсианские верфи",
+   "law": "Newtonian",
+   "layout": "Y",
+   "runtime": "generic",
+   "hull": {
+    "form": "cylinder",
+    "envelope_m": [
+     110.0,
+     30.0,
+     30.0
+    ],
+    "structure": "три криоцистерны на хребте",
+    "material": "сталь, теплоизоляция"
+   },
+   "crew": 4,
+   "passengers": 0,
+   "cargo_t": 3000,
+   "c20": 0,
+   "endurance_days": 60,
+   "service_life_years": 40,
+   "purpose": "He-3 и дейтерий с платформ Юпитера и Сатурна к депо и портам",
+   "eq": [
+    [
+     "D",
+     "ofu.drive.u23",
+     3
+    ],
+    [
+     "R",
+     "srw.reactor.sr22",
+     3
+    ],
+    [
+     "S",
+     "srw.apu.s60",
+     1
+    ],
+    [
+     "T",
+     "sol.rad.panel50",
+     3
+    ],
+    [
+     "L",
+     "sol.cool.loop300",
+     1
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     10
+    ],
+    [
+     "Q",
+     "std.rcs.cluster",
+     8
+    ],
+    [
+     "M",
+     "xz.mc.c1",
+     1
+    ],
+    [
+     "SR",
+     "xz.radar.n2",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     1
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     1
+    ],
+    [
+     "H",
+     "terra.ls.t10",
+     1
+    ],
+    [
+     "E",
+     "std.surv.pod4",
+     1
+    ],
+    [
+     "U",
+     "sol.cryo.t1000",
+     3
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "stone.ship.kamen.tanker",
+   "cls": "gas_tanker",
+   "base": false,
+   "variant_of": "sol.ship.gt-3000.titan",
+   "variant_reason": "Вольные пояса: выдолбленный астероид как цистерна и щит, двигатель и реактор — восстановленные б/у ОФУ (лор Каменных доков)",
+   "name": "«Камень» (танкер из астероида)",
+   "designation": "КД-Т",
+   "mfr": "mfr.stone_docks",
+   "polity": "eps_eri_strife",
+   "yard": "mining_hub",
+   "law": "Newtonian",
+   "layout": "I",
+   "runtime": "generic",
+   "school_override": "hollowed_asteroid_and_refit",
+   "dry_mass_t": 2400,
+   "burn_accel_g": 0.03,
+   "hull": {
+    "form": "asteroid",
+    "envelope_m": [
+     60.0,
+     45.0,
+     40.0
+    ],
+    "structure": "выдолбленный каменный монолит, ферма двигателя",
+    "material": "силикатная порода, стальная ферма"
+   },
+   "crew": 5,
+   "passengers": 0,
+   "cargo_t": 6000,
+   "c20": 0,
+   "endurance_days": 90,
+   "service_life_years": 30,
+   "purpose": "лёд и летучие внутри системы; каменная оболочка — защита от обломков; медленный и дешёвый",
+   "eq": [
+    [
+     "D",
+     "ofu.drive.u33",
+     1,
+     {
+      "condition": "refurbished"
+     }
+    ],
+    [
+     "R",
+     "ofu.reactor.er26",
+     1,
+     {
+      "condition": "refurbished"
+     }
+    ],
+    [
+     "S",
+     "ofu.apu.s20",
+     1
+    ],
+    [
+     "T",
+     "sol.rad.panel50",
+     2
+    ],
+    [
+     "L",
+     "sol.cool.loop300",
+     1
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     6
+    ],
+    [
+     "Q",
+     "std.rcs.cluster",
+     6
+    ],
+    [
+     "M",
+     "xz.mc.c1",
+     1,
+     {
+      "condition": "refurbished"
+     }
+    ],
+    [
+     "SR",
+     "kern.radar.deb5",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     1
+    ],
+    [
+     "H",
+     "eurohab.ls.l20",
+     1
+    ],
+    [
+     "E",
+     "std.surv.pod4",
+     2
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     1
+    ]
+   ]
+  },
+  {
+   "id": "kern.ship.ht-20k.mul",
+   "cls": "ore_tug",
+   "base": true,
+   "name": "HT-20K «Мул»",
+   "designation": "HT-20K",
+   "mfr": "mfr.kern_heavy",
+   "polity": "cyg61_kern",
+   "yard": "mining_hub",
+   "law": "Newtonian",
+   "layout": "X",
+   "runtime": "generic",
+   "hull": {
+    "form": "tug",
+    "envelope_m": [
+     60.0,
+     25.0,
+     25.0
+    ],
+    "structure": "открытая силовая рама, толкающая плита",
+    "material": "сталь"
+   },
+   "crew": 3,
+   "passengers": 0,
+   "cargo_t": 0,
+   "c20": 0,
+   "endurance_days": 90,
+   "service_life_years": 40,
+   "purpose": "толкает плоты руды и льда (до 20 000 т) от рудников к заводам; буксирует оборудование и маяки",
+   "eq": [
+    [
+     "D",
+     "kern.drive.kt1",
+     4
+    ],
+    [
+     "R",
+     "kb.reactor.er1",
+     4
+    ],
+    [
+     "S",
+     "srw.apu.s60",
+     1
+    ],
+    [
+     "T",
+     "sol.rad.panel50",
+     3
+    ],
+    [
+     "L",
+     "sol.cool.loop300",
+     1
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     12
+    ],
+    [
+     "Q",
+     "std.rcs.cluster",
+     8
+    ],
+    [
+     "M",
+     "xz.mc.c1",
+     1
+    ],
+    [
+     "SR",
+     "kern.radar.deb5",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     1
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     1
+    ],
+    [
+     "H",
+     "eurohab.ls.l20",
+     1
+    ],
+    [
+     "E",
+     "std.surv.pod4",
+     1
+    ],
+    [
+     "X",
+     "kern.tow.raft20k",
+     1
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     1
+    ]
+   ]
+  },
+  {
+   "id": "sol.ship.st-6.masterovoy",
+   "cls": "service_tender",
+   "base": true,
+   "name": "СТ-6 «Мастеровой»",
+   "designation": "СТ-6",
+   "mfr": "mfr.sol_mass_yards",
+   "polity": "sol_authority",
+   "yard": "Лунно-Марсианские верфи",
+   "law": "Assisted",
+   "layout": "I",
+   "runtime": "generic",
+   "hull": {
+    "form": "box",
+    "envelope_m": [
+     48.0,
+     20.0,
+     14.0
+    ],
+    "structure": "корпус с мастерской, складом запчастей и манипуляторами",
+    "material": "алюминий, сталь"
+   },
+   "crew": 8,
+   "passengers": 0,
+   "cargo_t": 150,
+   "c20": 6,
+   "endurance_days": 30,
+   "service_life_years": 35,
+   "purpose": "ремонт рудников, станций, маяков и кораблей на месте; запчасти и мастерская",
+   "eq": [
+    [
+     "D",
+     "ofu.drive.u15",
+     4
+    ],
+    [
+     "R",
+     "srw.reactor.sr14",
+     2
+    ],
+    [
+     "S",
+     "srw.apu.s60",
+     1
+    ],
+    [
+     "T",
+     "sol.rad.panel50",
+     3
+    ],
+    [
+     "L",
+     "sol.cool.loop300",
+     1
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     4
+    ],
+    [
+     "M",
+     "xz.mc.c1",
+     1
+    ],
+    [
+     "SR",
+     "xz.radar.n2",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     1
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     1
+    ],
+    [
+     "H",
+     "terra.ls.t10",
+     1
+    ],
+    [
+     "E",
+     "std.surv.pod4",
+     2
+    ],
+    [
+     "V",
+     "std.med.bay",
+     1
+    ],
+    [
+     "C",
+     "std.cargo.c20lock",
+     6
+    ],
+    [
+     "B",
+     "std.bay.drone4",
+     1
+    ],
+    [
+     "X",
+     "sol.workshop.w1",
+     1
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "sol.ship.pk-30.strazh",
+   "cls": "patrol_cutter",
+   "base": true,
+   "name": "ПК-30 «Страж»",
+   "designation": "ПК-30",
+   "mfr": "mfr.sol_mass_yards",
+   "polity": "sol_authority",
+   "yard": "Лунно-Марсианские верфи",
+   "law": "Assisted",
+   "layout": "I",
+   "runtime": "generic",
+   "hull": {
+    "form": "flat",
+    "envelope_m": [
+     34.0,
+     22.0,
+     8.0
+    ],
+    "structure": "плоский корпус, ангар досмотрового катера",
+    "material": "титан, керамокомпозитная броня"
+   },
+   "crew": 9,
+   "passengers": 6,
+   "cargo_t": 20,
+   "c20": 0,
+   "endurance_days": 30,
+   "service_life_years": 30,
+   "purpose": "береговая охрана: таможня и досмотр, полиция, SAR, охрана маяков",
+   "eq": [
+    [
+     "D",
+     "ofu.drive.u65m",
+     4
+    ],
+    [
+     "R",
+     "srw.reactor.sr48",
+     2
+    ],
+    [
+     "S",
+     "srw.apu.s200",
+     2
+    ],
+    [
+     "T",
+     "sol.rad.panel50",
+     4
+    ],
+    [
+     "L",
+     "sol.cool.loop300",
+     2
+    ],
+    [
+     "J",
+     "um.core.z1",
+     1
+    ],
+    [
+     "JT",
+     "std.tank.jumpcharge",
+     5
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     4
+    ],
+    [
+     "M",
+     "xz.mc.c3",
+     2
+    ],
+    [
+     "SR",
+     "xz.radar.n10",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c3",
+     2
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     2
+    ],
+    [
+     "H",
+     "terra.ls.t10",
+     2
+    ],
+    [
+     "E",
+     "std.surv.pod4",
+     4
+    ],
+    [
+     "V",
+     "std.med.bay",
+     1
+    ],
+    [
+     "P",
+     "std.cabin.hold6",
+     1
+    ],
+    [
+     "B",
+     "std.bay.boat",
+     1
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     1
+    ],
+    [
+     "W",
+     "fa.wpn.coil30",
+     1
+    ],
+    [
+     "WP",
+     "fa.wpn.pd2",
+     1
+    ],
+    [
+     "A",
+     "std.armour.ceramic",
+     20
+    ]
+   ],
+   "redundancy_doctrine": "critical"
+  },
+  {
+   "id": "bastion.ship.b-4.sokol",
+   "cls": "interceptor",
+   "base": true,
+   "name": "Б-4 «Сокол»",
+   "designation": "Б-4",
+   "mfr": "mfr.bastion",
+   "polity": "wolf359_citadel",
+   "yard": "military_hub",
+   "law": "Assisted",
+   "layout": "X",
+   "runtime": "generic",
+   "hull": {
+    "form": "dart",
+    "envelope_m": [
+     18.0,
+     12.0,
+     4.0
+    ],
+    "structure": "плоская стрела, восемь гондол векторной тяги",
+    "material": "титан, тяжёлая броня носа"
+   },
+   "crew": 2,
+   "passengers": 0,
+   "cargo_t": 2,
+   "c20": 0,
+   "endurance_days": 5,
+   "service_life_years": 25,
+   "purpose": "быстрый ответ в системе: перехват пиратов и нарушителей, камней и обломков; короткая автономность",
+   "eq": [
+    [
+     "D",
+     "th.drive.tz16v",
+     8
+    ],
+    [
+     "R",
+     "th.reactor.tr26v",
+     4
+    ],
+    [
+     "S",
+     "ofu.apu.s20",
+     2,
+     {
+      "supplier_note": "по лицензии Сола"
+     }
+    ],
+    [
+     "T",
+     "kb.rad.cs-panel",
+     30
+    ],
+    [
+     "L",
+     "kb.cool.loop200",
+     2
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     2
+    ],
+    [
+     "M",
+     "bastion.mc.w1",
+     2
+    ],
+    [
+     "SR",
+     "xz.radar.n10",
+     1,
+     {
+      "supplier_note": "реэкспорт"
+     }
+    ],
+    [
+     "SC",
+     "bastion.comm.w1",
+     2
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     2
+    ],
+    [
+     "H",
+     "ofu.ls.o4",
+     2,
+     {
+      "supplier_note": "по лицензии Сола"
+     }
+    ],
+    [
+     "E",
+     "kb.surv.capsule2",
+     1,
+     {
+      "supplier_note": "реэкспорт"
+     }
+    ],
+    [
+     "W",
+     "bastion.wpn.coil10",
+     2
+    ],
+    [
+     "A",
+     "bastion.armour.heavy",
+     5
+    ]
+   ],
+   "redundancy_doctrine": "critical"
+  },
+  {
+   "id": "harmony.ship.he-f22.dun",
+   "cls": "escort_frigate",
+   "base": true,
+   "name": "Хэ-Ф22 «Дунь»",
+   "designation": "Хэ-Ф22",
+   "mfr": "mfr.harmony_yards",
+   "polity": "eps_eri_harmony",
+   "yard": "orbital",
+   "law": "Assisted",
+   "layout": "Y",
+   "runtime": "generic",
+   "hull": {
+    "form": "cylinder",
+    "envelope_m": [
+     85.0,
+     30.0,
+     18.0
+    ],
+    "structure": "стандартный корпус «Хэ» с бронепоясом",
+    "material": "сталь, керамокомпозит"
+   },
+   "crew": 40,
+   "passengers": 0,
+   "cargo_t": 80,
+   "c20": 0,
+   "endurance_days": 90,
+   "service_life_years": 35,
+   "purpose": "охрана конвоев: ПРО, сенсоры, автономность наравне с поездами",
+   "eq": [
+    [
+     "D",
+     "th.drive.tz11",
+     6
+    ],
+    [
+     "R",
+     "th.reactor.tr11",
+     3
+    ],
+    [
+     "S",
+     "th.apu.s600",
+     2
+    ],
+    [
+     "T",
+     "th.rad.panel50",
+     10
+    ],
+    [
+     "L",
+     "th.cool.loop600",
+     2
+    ],
+    [
+     "J",
+     "harmony.core.h5",
+     1
+    ],
+    [
+     "JT",
+     "std.tank.jumpcharge",
+     28
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     30
+    ],
+    [
+     "Q",
+     "std.rcs.cluster_h",
+     8
+    ],
+    [
+     "M",
+     "xz.mc.c3",
+     2
+    ],
+    [
+     "SR",
+     "xz.radar.n10",
+     2
+    ],
+    [
+     "SC",
+     "xz.comm.c3",
+     2
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     2
+    ],
+    [
+     "H",
+     "terra.ls.t60",
+     2
+    ],
+    [
+     "E",
+     "std.surv.boat20",
+     2
+    ],
+    [
+     "V",
+     "std.med.bay",
+     2
+    ],
+    [
+     "B",
+     "std.bay.boat",
+     1
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     2
+    ],
+    [
+     "W",
+     "harmony.wpn.vls8",
+     2
+    ],
+    [
+     "WP",
+     "harmony.wpn.pd3",
+     6
+    ],
+    [
+     "A",
+     "std.armour.ceramic",
+     220
+    ]
+   ],
+   "redundancy_doctrine": "critical"
+  },
+  {
+   "id": "bastion.ship.b-90.tsitadel",
+   "cls": "line_combatant",
+   "base": true,
+   "name": "Б-90 «Цитадель»",
+   "designation": "Б-90",
+   "mfr": "mfr.bastion",
+   "polity": "wolf359_citadel",
+   "yard": "military_hub",
+   "law": "Newtonian",
+   "layout": "X",
+   "runtime": "generic",
+   "hull": {
+    "form": "cylinder",
+    "envelope_m": [
+     180.0,
+     45.0,
+     35.0
+    ],
+    "structure": "бронированный корпус-цитадель, ВПУ по бортам",
+    "material": "сталь, тяжёлая броня"
+   },
+   "crew": 160,
+   "passengers": 0,
+   "cargo_t": 300,
+   "c20": 0,
+   "endurance_days": 180,
+   "service_life_years": 40,
+   "purpose": "сдерживание и война: дальние ракеты, сильные сенсоры, броня; главная боевая единица Цитадели",
+   "eq": [
+    [
+     "D",
+     "th.drive.tz28",
+     4
+    ],
+    [
+     "R",
+     "th.reactor.tr30",
+     4
+    ],
+    [
+     "S",
+     "th.apu.s600",
+     2
+    ],
+    [
+     "T",
+     "th.rad.panel50",
+     40
+    ],
+    [
+     "L",
+     "th.cool.loop600",
+     4
+    ],
+    [
+     "J",
+     "bastion.core.b12",
+     1
+    ],
+    [
+     "JT",
+     "std.tank.jumpcharge",
+     120
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     160
+    ],
+    [
+     "Q",
+     "std.rcs.cluster_h",
+     16
+    ],
+    [
+     "M",
+     "bastion.mc.w1",
+     2
+    ],
+    [
+     "SR",
+     "bastion.radar.s50",
+     2
+    ],
+    [
+     "SC",
+     "bastion.comm.w1",
+     2
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     2
+    ],
+    [
+     "H",
+     "terra.ls.t200",
+     2,
+     {
+      "supplier_note": "по лицензии Сола"
+     }
+    ],
+    [
+     "E",
+     "std.surv.boat20",
+     9
+    ],
+    [
+     "V",
+     "std.med.bay",
+     3
+    ],
+    [
+     "B",
+     "std.bay.drone4",
+     2
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     2
+    ],
+    [
+     "W",
+     "bastion.wpn.vls16",
+     6
+    ],
+    [
+     "WP",
+     "bastion.wpn.pd4",
+     12
+    ],
+    [
+     "A",
+     "bastion.armour.heavy",
+     1600
+    ]
+   ],
+   "redundancy_doctrine": "critical"
+  },
+  {
+   "id": "hyp.ship.r-7.argus",
+   "cls": "recon_picket",
+   "base": true,
+   "name": "R-7 «Аргус»",
+   "designation": "R-7",
+   "mfr": "mfr.hyperion",
+   "polity": "tau_ceti_cognium",
+   "yard": "orbital",
+   "law": "Newtonian",
+   "layout": "X",
+   "runtime": "generic",
+   "hull": {
+    "form": "flat",
+    "envelope_m": [
+     40.0,
+     26.0,
+     8.0
+    ],
+    "structure": "плоский малозаметный корпус, выдвижная мачта",
+    "material": "композит, поглощающее покрытие"
+   },
+   "crew": 14,
+   "passengers": 0,
+   "cargo_t": 10,
+   "c20": 0,
+   "endurance_days": 60,
+   "service_life_years": 30,
+   "purpose": "сенсоры и раннее предупреждение у точек выхода, РЭБ, ретрансляция сети маяков в войну",
+   "eq": [
+    [
+     "D",
+     "hyp.drive.hd3",
+     4
+    ],
+    [
+     "R",
+     "kb.reactor.er3",
+     4
+    ],
+    [
+     "S",
+     "kb.apu.s150",
+     2
+    ],
+    [
+     "T",
+     "kb.rad.cs-panel",
+     60
+    ],
+    [
+     "L",
+     "kb.cool.loop200",
+     2
+    ],
+    [
+     "J",
+     "um.core.z1",
+     1
+    ],
+    [
+     "JT",
+     "std.tank.jumpcharge",
+     7
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     10
+    ],
+    [
+     "Q",
+     "std.rcs.cluster",
+     8
+    ],
+    [
+     "M",
+     "hyp.mc.r1",
+     2
+    ],
+    [
+     "SR",
+     "hyp.radar.pa100",
+     1
+    ],
+    [
+     "SM",
+     "hyp.mast.s1",
+     1
+    ],
+    [
+     "SE",
+     "hyp.ecm.e1",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c3",
+     2
+    ],
+    [
+     "SY",
+     "hyp.relay.r1",
+     1
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     2
+    ],
+    [
+     "H",
+     "eurohab.ls.l20",
+     2
+    ],
+    [
+     "E",
+     "std.surv.pod4",
+     4
+    ],
+    [
+     "V",
+     "std.med.bay",
+     1
+    ],
+    [
+     "B",
+     "std.bay.drone4",
+     1
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     1
+    ],
+    [
+     "WP",
+     "fa.wpn.pd2",
+     1,
+     {
+      "supplier_note": "по лицензии Пакта"
+     }
+    ]
+   ],
+   "redundancy_doctrine": "critical"
+  },
+  {
+   "id": "harmony.ship.he-s240.tylovik",
+   "cls": "fleet_tender",
+   "base": true,
+   "name": "Хэ-С240 «Тыловик»",
+   "designation": "Хэ-С240",
+   "mfr": "mfr.harmony_yards",
+   "polity": "eps_eri_harmony",
+   "yard": "orbital",
+   "law": "Newtonian",
+   "layout": "Y",
+   "runtime": "generic",
+   "hull": {
+    "form": "box",
+    "envelope_m": [
+     150.0,
+     40.0,
+     35.0
+    ],
+    "structure": "стандартный корпус «Хэ», 240 гнёзд C20, ангар перехватчиков",
+    "material": "сталь"
+   },
+   "crew": 60,
+   "passengers": 0,
+   "cargo_t": 6000,
+   "c20": 240,
+   "endurance_days": 180,
+   "service_life_years": 40,
+   "purpose": "автономность эскадры вдали от баз: топливо, заряд прыжка, боеприпасы, ремонт",
+   "eq": [
+    [
+     "D",
+     "th.drive.tz13",
+     3
+    ],
+    [
+     "R",
+     "th.reactor.tr11",
+     3
+    ],
+    [
+     "S",
+     "th.apu.s600",
+     2
+    ],
+    [
+     "T",
+     "th.rad.panel50",
+     12
+    ],
+    [
+     "L",
+     "th.cool.loop600",
+     2
+    ],
+    [
+     "J",
+     "harmony.core.h12",
+     1
+    ],
+    [
+     "JT",
+     "std.tank.jumpcharge",
+     90
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     60
+    ],
+    [
+     "Q",
+     "std.rcs.cluster_h",
+     12
+    ],
+    [
+     "M",
+     "xz.mc.c3",
+     2
+    ],
+    [
+     "SR",
+     "xz.radar.n10",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c3",
+     2
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     2
+    ],
+    [
+     "H",
+     "terra.ls.t60",
+     2
+    ],
+    [
+     "E",
+     "std.surv.boat20",
+     3
+    ],
+    [
+     "V",
+     "std.med.bay",
+     3
+    ],
+    [
+     "C",
+     "std.cargo.c20lock",
+     240
+    ],
+    [
+     "B",
+     "harmony.bay.hangar2",
+     1
+    ],
+    [
+     "BD",
+     "std.bay.drone4",
+     2
+    ],
+    [
+     "X",
+     "sol.workshop.w1",
+     2,
+     {
+      "supplier_note": "по лицензии Сола"
+     }
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     4
+    ],
+    [
+     "WP",
+     "harmony.wpn.pd3",
+     2
+    ]
+   ],
+   "redundancy_doctrine": "critical"
+  },
+  {
+   "id": "sol.ship.pao-7.shchit",
+   "cls": "impact_defence_tug",
+   "base": true,
+   "name": "ПАО-7 «Щит»",
+   "designation": "ПАО-7",
+   "mfr": "mfr.sol_mass_yards",
+   "polity": "sol_authority",
+   "yard": "Лунно-Марсианские верфи",
+   "law": "Newtonian",
+   "layout": "X",
+   "runtime": "generic",
+   "hull": {
+    "form": "tug",
+    "envelope_m": [
+     70.0,
+     30.0,
+     30.0
+    ],
+    "structure": "силовая рама с тяжёлым захватом и пусковой ударников",
+    "material": "сталь, броня носа"
+   },
+   "crew": 16,
+   "passengers": 0,
+   "cargo_t": 200,
+   "c20": 0,
+   "endurance_days": 45,
+   "service_life_years": 35,
+   "purpose": "защита планет и обитаемых станций: обнаружить, перехватить, увести, отклонить или раздробить камень; тяжёлое спасение",
+   "eq": [
+    [
+     "D",
+     "ofu.drive.u70",
+     4
+    ],
+    [
+     "R",
+     "srw.reactor.sr7",
+     4
+    ],
+    [
+     "S",
+     "srw.apu.s200",
+     2
+    ],
+    [
+     "T",
+     "sol.rad.panel50",
+     14
+    ],
+    [
+     "L",
+     "sol.cool.loop300",
+     2
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     30
+    ],
+    [
+     "Q",
+     "std.rcs.cluster_h",
+     8
+    ],
+    [
+     "M",
+     "xz.mc.c3",
+     2
+    ],
+    [
+     "SR",
+     "kern.radar.deb5",
+     1
+    ],
+    [
+     "SR2",
+     "xz.radar.n10",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c3",
+     2
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     2
+    ],
+    [
+     "H",
+     "terra.ls.t60",
+     2
+    ],
+    [
+     "E",
+     "std.surv.boat20",
+     1
+    ],
+    [
+     "V",
+     "std.med.bay",
+     1
+    ],
+    [
+     "B",
+     "std.bay.drone4",
+     2
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     2
+    ],
+    [
+     "X",
+     "kern.tow.heavy",
+     1
+    ],
+    [
+     "W",
+     "kern.md.impactor",
+     1
+    ],
+    [
+     "A",
+     "std.armour.ceramic",
+     60
+    ]
+   ],
+   "redundancy_doctrine": "critical"
+  },
+  {
+   "id": "hyp.ship.l-900.piligrim",
+   "cls": "liner",
+   "base": true,
+   "name": "L-900 «Пилигрим»",
+   "designation": "L-900",
+   "mfr": "mfr.hyperion",
+   "polity": "tau_ceti_cognium",
+   "yard": "orbital",
+   "law": "Newtonian",
+   "layout": "Y",
+   "runtime": "generic",
+   "hull": {
+    "form": "cylinder",
+    "envelope_m": [
+     150.0,
+     34.0,
+     28.0
+    ],
+    "structure": "модульный корпус: 9 пассажирских секций Agora на хребте",
+    "material": "алюминий, композит"
+   },
+   "crew": 40,
+   "passengers": 900,
+   "cargo_t": 90,
+   "c20": 0,
+   "endurance_days": 30,
+   "service_life_years": 40,
+   "purpose": "регулярные межзвёздные рейсы: 900 мест (60 каюты / 240 бизнес / 600 эконом), почта и 90 т срочного груза",
+   "eq": [
+    [
+     "D",
+     "hyp.drive.hd4",
+     3
+    ],
+    [
+     "R",
+     "kb.reactor.er5",
+     3
+    ],
+    [
+     "S",
+     "kb.apu.s150",
+     2
+    ],
+    [
+     "T",
+     "kb.rad.cs-panel",
+     400
+    ],
+    [
+     "L",
+     "kb.cool.loop200",
+     2
+    ],
+    [
+     "J",
+     "um.core.z5",
+     1
+    ],
+    [
+     "JT",
+     "std.tank.jumpcharge",
+     45
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     20
+    ],
+    [
+     "Q",
+     "std.rcs.cluster",
+     12
+    ],
+    [
+     "M",
+     "xz.mc.c3",
+     2
+    ],
+    [
+     "SR",
+     "xz.radar.n2",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     2
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     2
+    ],
+    [
+     "H",
+     "eurohab.ls.l200",
+     5
+    ],
+    [
+     "E",
+     "std.surv.boat20",
+     47
+    ],
+    [
+     "V",
+     "std.med.bay",
+     4
+    ],
+    [
+     "P",
+     "agora.hab.pax100",
+     9
+    ],
+    [
+     "C",
+     "std.cargo.hold100",
+     1
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     4
+    ]
+   ],
+   "redundancy_doctrine": "critical"
+  },
+  {
+   "id": "bharat.ship.t-5000.iskhod",
+   "cls": "colonist_transport",
+   "base": true,
+   "name": "T-5000 «Исход»",
+   "designation": "T-5000",
+   "mfr": "mfr.bharat",
+   "polity": "hd20794_newindia",
+   "yard": "industrial_hub",
+   "law": "Newtonian",
+   "layout": "X",
+   "runtime": "generic",
+   "hull": {
+    "form": "cylinder",
+    "envelope_m": [
+     220.0,
+     50.0,
+     40.0
+    ],
+    "structure": "хребет с 7 секциями коек и 15 блоками анабиоза",
+    "material": "сталь"
+   },
+   "crew": 60,
+   "passengers": 5000,
+   "cargo_t": 600,
+   "c20": 0,
+   "endurance_days": 60,
+   "service_life_years": 45,
+   "purpose": "миграция и эвакуация: 5 000 мест (70 % койки, 30 % анабиоз), медленно и дёшево на человека; реквизируется при бедствиях",
+   "eq": [
+    [
+     "D",
+     "ofu.drive.u43",
+     4
+    ],
+    [
+     "R",
+     "srw.reactor.sr33",
+     4
+    ],
+    [
+     "S",
+     "srw.apu.s200",
+     2
+    ],
+    [
+     "T",
+     "sol.rad.panel50",
+     20
+    ],
+    [
+     "L",
+     "sol.cool.loop300",
+     2
+    ],
+    [
+     "J",
+     "mizan.core.m12",
+     1
+    ],
+    [
+     "JT",
+     "std.tank.jumpcharge",
+     120
+    ],
+    [
+     "F",
+     "std.tank.pellets",
+     40
+    ],
+    [
+     "Q",
+     "std.rcs.cluster",
+     16
+    ],
+    [
+     "M",
+     "mizan.mc.m1",
+     2
+    ],
+    [
+     "SR",
+     "xz.radar.n2",
+     1
+    ],
+    [
+     "SC",
+     "xz.comm.c1",
+     2
+    ],
+    [
+     "SX",
+     "um.xpdr.t1",
+     2
+    ],
+    [
+     "H",
+     "uhuru.ls.u500",
+     8
+    ],
+    [
+     "E",
+     "std.surv.refuge100",
+     51
+    ],
+    [
+     "V",
+     "std.med.bay",
+     6
+    ],
+    [
+     "P",
+     "bharat.hab.bunk500",
+     7
+    ],
+    [
+     "PC",
+     "uhuru.cryo.pod100",
+     15
+    ],
+    [
+     "C",
+     "std.cargo.hold100",
+     6
+    ],
+    [
+     "K",
+     "std.dock.collar",
+     4
+    ]
+   ],
+   "redundancy_doctrine": "critical"
+  }
+ ]
+}

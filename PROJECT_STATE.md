@@ -2074,6 +2074,55 @@ Restore point: `restore/pre-hublist-freeflight-2026-11-03` (= ac71cfb6).
   written for main AFTER a generic ship / ShipDescriptor / equipment pass that
   is not on main - not started.
 
+### Ships pass (user order 2026-11-04): 17 class base models + justified variants, passports, equipment passports, drawings, functional schematics
+Restore point: `restore/pre-ships-2026-11-03`. Scope (user): one full canonical base model per fleet
+class, variants only with a real design / lore reason; each a full passport with a runtime-compatible
+descriptor / loadout; primitive placeholder geometry allowed.
+
+- Data (authored): `tools/colonization_lab/canon/ship_designs.json` - 120 equipment products
+  (drives, propulsion / service reactors, radiators, coolant loops, jump cores, tanks, RCS, MotherComputers,
+  radars, comms, transponders, ECM, life support, capsules / lifeboats / refuges, medbays, C20 / P20 /
+  habitat / cold-sleep / train / cryo modules, docks, bays, hangars, tow rigs, workshop, heat shield,
+  landing gear, weapons, armour) by the industry.json manufacturers; 21 ship models = 17 bases + 4
+  variants (Cobrett-I A3 Assisted - existing runtime; GT-3000 gas tanker - separate economic class;
+  Harmony He-120 - standard-monohull school / allied_fleets_uniform; Stone Docks "Kamen" hollowed-asteroid
+  tanker - Free Belts lore). Manufacturer mapping: Cobretty (Cobrett), OFU (OCS-4, SL-12), Bharat (C-120,
+  T-5000), Harmony (train, tanker, He-120, frigate, fleet tender), Sol Lunar-Martian Yards (gas tanker,
+  service tender, patrol cutter, PAO tug), Kern (ore tug), Bastion (interceptor, line ship), Hyperion
+  (recon, liner).
+- Tool: `ship_designer.py` (+ `--check`): layout fill (drives per I/Y/X main slot, one generator per
+  Newtonian main / Assisted pair), mass budget (hull structure = dry - equipment; possible 15-90 %, typical
+  30-75 % WARN, asteroid form own bounds), thrust / acceleration vs class, group power, hotel power,
+  RCS from propulsion spare (30 % simultaneous), universe thermal law (6 MW/m2 pads, x10 radiation; drive
+  emitter diameter and sustainable thrust fraction derived), jump core rating vs gross mass, charge,
+  life support capacity / endurance, survival seats for everyone awake, C20 / passenger places, supplier
+  reachability through bloc channels (weapons / cores only open or licensed), price by component vs the
+  economics model x school (WARN), functional schematic (power propulsion / service, coolant, fuel, data,
+  life), functions -> required units, single points of failure, redundancy doctrine (passenger /
+  security / military: thrust, life, comms without SPOF - FAIL otherwise; the sealed jump core is a
+  factory item and excluded), repair doctrine per category (crew / station / yard / factory, LRU,
+  hours). Result: 21 ships, 0 FAIL, 39 WARN (price deviations from the economics estimate, truss
+  freighters' structure share > 75 %, A3 = runtime fact 19.1 MN aft).
+- Outputs: `out/ships_3126/` (ship_designs_3126.json, SHIP_DESIGNS_3126.md, svg/<id>.svg top/side/front
+  drawing, svg/<id>.schematic.svg, index.html catalog page); lore `Notes/Lore/ECONOMY/FLEET_MODELS.md`,
+  `SHIP_EQUIPMENT.md` (lore_ships.py, registered in lore_md; lore_md --check OK); runtime copy
+  `src/assets/data/ships/ship_catalog_3126.json` (GENERATED).
+- Runtime: `ShipDesignCatalog.h` (loader) + `GenericShipDescriptorBuilder.h`: ONE builder makes a
+  ShipDescriptor from any design - one damageable module per unit (bulk positions - armour, fluids,
+  radiator field, C20 rails - one module each), EngineUnitDescriptor / EngineReactorDescriptor from the
+  product ratings, loadout on the fixed physical topology (CobraPropulsionPresets), generator groups,
+  ship services, rigid body (box inertia), flight envelope (crew load by class, size-scaled rates,
+  500 m/s tactical envelope), radiators, payload, survival, bays. `EliteShipCatalogCheck`: PASS - 21
+  descriptors build, modules = installed units, slots / groups / services bound, forward accel = design
+  thrust / dry mass, schematic nodes are modules, sealed cores not field-repairable, 18 economic classes.
+- Not done (next): non-Cobra ships are NOT yet flyable - ShipCore still hard-codes the Cobra RCS nozzle
+  presets / cockpit / mesh and the registry is keyed by ObjectType; radar range of the product is not yet
+  bound to the runtime sensor; ship_economics.json radiator_mw (e.g. 3 400 MW for Cobrett) contradicts
+  the universe thermal law used by the runtime (380 m2 / ~180 MW) - to reconcile; economics prices differ
+  from the designed parts (WARN list) - the economics should take the design as source next.
+- Decision recorded: Cobrett manufacturer = Cobretty Corporation (Second Hellas), founded as
+  Kobersberg-Braunauer Raumfahrzeugwerke (KB-* stock numbers); code comment and industry note agree.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

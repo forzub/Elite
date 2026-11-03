@@ -49,6 +49,7 @@ import sys
 import endowment
 import lore_economy
 import lore_sites
+import lore_ships
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, "..", ".."))
@@ -1242,6 +1243,7 @@ def build_docs(D):
     docs += settlement_docs(D)
     docs += economy_docs(D)
     docs += lore_sites.docs(D, sys.modules[__name__])
+    docs += lore_ships.docs(D, sys.modules[__name__])
     docs += demography_docs(D)
     docs += politics_docs(D)
     docs += timeline_docs(D)
@@ -1276,6 +1278,7 @@ def known_tokens(D):
     acc = set()
     for obj in (D.F, D.MS, D.W, D.CU, D.ST, D.X or {}, D.SX or {}):
         _walk_strings(obj, acc)
+    _walk_strings(lore_ships.load() or {}, acc)       # ship designations / equipment models (PD-1, R-7 ...)
     for u in D.pol_order:
         for s in D.pol[u].get("settlements", []):
             acc.add(s["id"])

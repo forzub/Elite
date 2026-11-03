@@ -2276,11 +2276,6 @@
  "sites": [
   {
    "coverage": "full",
-   "light_lag_s": 499.0,
-   "site": "earth_orbital_hub"
-  },
-  {
-   "coverage": "full",
    "light_lag_s": 1251.4,
    "site": "site.024.pereval"
   },
@@ -4251,136 +4246,6 @@
   },
   {
    "coverage": "full",
-   "light_lag_s": 2596.3,
-   "site": "site.000.sol_authority.trade_hub01"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 4758.8,
-   "site": "site.000.sol_authority.trade_hub02"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 15005.0,
-   "site": "site.000.sol_authority.trade_hub03"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 9575.5,
-   "site": "site.000.sol_authority.trade_hub04"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 2596.3,
-   "site": "site.000.sol_authority.trade_hub05"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 4758.8,
-   "site": "site.000.sol_authority.trade_hub06"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 1329.8,
-   "site": "site.000.sol_authority.mining_hub01"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 4758.8,
-   "site": "site.000.sol_authority.mining_hub02"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 1329.8,
-   "site": "site.000.sol_authority.mining_hub03"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 9575.5,
-   "site": "site.000.sol_authority.mining_hub04"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 1329.8,
-   "site": "site.000.sol_authority.mining_hub05"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 4758.8,
-   "site": "site.000.sol_authority.mining_hub06"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 2596.3,
-   "site": "site.000.sol_authority.industrial_hub01"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 4758.8,
-   "site": "site.000.sol_authority.industrial_hub02"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 15005.0,
-   "site": "site.000.sol_authority.industrial_hub03"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 9575.5,
-   "site": "site.000.sol_authority.industrial_hub04"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 2596.3,
-   "site": "site.000.sol_authority.industrial_hub05"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 4758.8,
-   "site": "site.000.sol_authority.industrial_hub06"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 2596.3,
-   "site": "site.000.sol_authority.military_hub01"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 2596.3,
-   "site": "site.000.sol_authority.science_hub01"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 4758.8,
-   "site": "site.000.sol_authority.science_hub02"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 15005.0,
-   "site": "site.000.sol_authority.science_hub03"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 9575.5,
-   "site": "site.000.sol_authority.science_hub04"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 2596.3,
-   "site": "site.000.sol_authority.science_hub05"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 4758.8,
-   "site": "site.000.sol_authority.science_hub06"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 2596.3,
-   "site": "site.000.sol_authority.quarantine01"
-  },
-  {
-   "coverage": "full",
    "light_lag_s": 88.6,
    "site": "site.008.tau_ceti_cognium.trade_hub01"
   },
@@ -4698,6 +4563,216 @@
    "coverage": "full",
    "light_lag_s": 133.4,
    "site": "site.041.hd104067_frontier"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "earth_orbital_hub"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "earth_hub.baikonur"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "earth_hub.meridian"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "earth_hub.tikhiy"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "earth_hub.tanegashima"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "earth_hub.canaveral"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "earth_hub.tropic"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "earth_hub.wenchang"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "earth_hub.sriharikota"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "earth_hub.kourou"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "earth_hub.ekvator"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "earth_hub.aurora"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "site.000.sol.eml1"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "site.000.sol.luna_orbit"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "site.000.sol.shackleton"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "site.000.sol.imbrium"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "site.000.sol.sel2"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "site.000.sol.military_luna"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "site.000.sol.quarantine"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 760.3,
+   "site": "site.000.sol.mars_phobos"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 760.3,
+   "site": "site.000.sol.mars_ares"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 760.3,
+   "site": "site.000.sol.mars_tharsis"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 760.3,
+   "site": "site.000.sol.mars_hellas"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 760.3,
+   "site": "site.000.sol.mars_deimos"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 1329.8,
+   "site": "site.000.sol.ceres"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 1329.8,
+   "site": "site.000.sol.ceres_ice"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 1329.8,
+   "site": "site.000.sol.vesta"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 1329.8,
+   "site": "site.000.sol.pallas"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 1329.8,
+   "site": "site.000.sol.hygiea"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 193.2,
+   "site": "site.000.sol.mercury_caloris"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 193.2,
+   "site": "site.000.sol.mercury_orbit"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 360.9,
+   "site": "site.000.sol.venus"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 2596.3,
+   "site": "site.000.sol.callisto"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 2596.3,
+   "site": "site.000.sol.ganymede"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 2596.3,
+   "site": "site.000.sol.jupiter_gas"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 2596.3,
+   "site": "site.000.sol.europa"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 2596.3,
+   "site": "site.000.sol.jupiter_fleet"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 4758.8,
+   "site": "site.000.sol.titan"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 4758.8,
+   "site": "site.000.sol.saturn_gas"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 4758.8,
+   "site": "site.000.sol.enceladus"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 9575.5,
+   "site": "site.000.sol.titania"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 15005.0,
+   "site": "site.000.sol.triton"
   },
   {
    "coverage": "partial",

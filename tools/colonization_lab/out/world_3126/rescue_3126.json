@@ -289,13 +289,6 @@
  },
  "sites": [
   {
-   "fire_crew_on_site": 105,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "earth_orbital_hub"
-  },
-  {
    "fire_crew_on_site": 4,
    "law": "corporate",
    "responder": "корпоративная служба по контрактам",
@@ -3055,188 +3048,6 @@
   },
   {
    "fire_crew_on_site": 22,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.trade_hub01"
-  },
-  {
-   "fire_crew_on_site": 22,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.trade_hub02"
-  },
-  {
-   "fire_crew_on_site": 22,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.trade_hub03"
-  },
-  {
-   "fire_crew_on_site": 22,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.trade_hub04"
-  },
-  {
-   "fire_crew_on_site": 22,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.trade_hub05"
-  },
-  {
-   "fire_crew_on_site": 22,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.trade_hub06"
-  },
-  {
-   "fire_crew_on_site": 6,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 13.028,
-   "site": "site.000.sol_authority.mining_hub01"
-  },
-  {
-   "fire_crew_on_site": 6,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 13.028,
-   "site": "site.000.sol_authority.mining_hub02"
-  },
-  {
-   "fire_crew_on_site": 6,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 13.028,
-   "site": "site.000.sol_authority.mining_hub03"
-  },
-  {
-   "fire_crew_on_site": 6,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 13.028,
-   "site": "site.000.sol_authority.mining_hub04"
-  },
-  {
-   "fire_crew_on_site": 6,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 13.028,
-   "site": "site.000.sol_authority.mining_hub05"
-  },
-  {
-   "fire_crew_on_site": 6,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 13.028,
-   "site": "site.000.sol_authority.mining_hub06"
-  },
-  {
-   "fire_crew_on_site": 30,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.industrial_hub01"
-  },
-  {
-   "fire_crew_on_site": 30,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.industrial_hub02"
-  },
-  {
-   "fire_crew_on_site": 30,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.industrial_hub03"
-  },
-  {
-   "fire_crew_on_site": 30,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.industrial_hub04"
-  },
-  {
-   "fire_crew_on_site": 30,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.industrial_hub05"
-  },
-  {
-   "fire_crew_on_site": 30,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.industrial_hub06"
-  },
-  {
-   "fire_crew_on_site": 15,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.military_hub01"
-  },
-  {
-   "fire_crew_on_site": 2,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.science_hub01"
-  },
-  {
-   "fire_crew_on_site": 2,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.science_hub02"
-  },
-  {
-   "fire_crew_on_site": 2,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.science_hub03"
-  },
-  {
-   "fire_crew_on_site": 2,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.science_hub04"
-  },
-  {
-   "fire_crew_on_site": 2,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.science_hub05"
-  },
-  {
-   "fire_crew_on_site": 2,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.science_hub06"
-  },
-  {
-   "fire_crew_on_site": 2,
-   "law": "sol_codified",
-   "responder": "Береговая служба Сола",
-   "response_h": 3.006,
-   "site": "site.000.sol_authority.quarantine01"
-  },
-  {
-   "fire_crew_on_site": 22,
    "law": "technocratic_civil",
    "responder": "государственная служба спасения",
    "response_h": 3.006,
@@ -3682,6 +3493,300 @@
    "responder": "государственная служба спасения",
    "response_h": 13.028,
    "site": "site.041.hd104067_frontier"
+  },
+  {
+   "fire_crew_on_site": 242,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "earth_orbital_hub"
+  },
+  {
+   "fire_crew_on_site": 175,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "earth_hub.baikonur"
+  },
+  {
+   "fire_crew_on_site": 124,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "earth_hub.meridian"
+  },
+  {
+   "fire_crew_on_site": 273,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "earth_hub.tikhiy"
+  },
+  {
+   "fire_crew_on_site": 151,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "earth_hub.tanegashima"
+  },
+  {
+   "fire_crew_on_site": 242,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "earth_hub.canaveral"
+  },
+  {
+   "fire_crew_on_site": 83,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "earth_hub.tropic"
+  },
+  {
+   "fire_crew_on_site": 53,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "earth_hub.wenchang"
+  },
+  {
+   "fire_crew_on_site": 26,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "earth_hub.sriharikota"
+  },
+  {
+   "fire_crew_on_site": 178,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "earth_hub.kourou"
+  },
+  {
+   "fire_crew_on_site": 26,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "earth_hub.ekvator"
+  },
+  {
+   "fire_crew_on_site": 4,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "earth_hub.aurora"
+  },
+  {
+   "fire_crew_on_site": 856,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.eml1"
+  },
+  {
+   "fire_crew_on_site": 856,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.luna_orbit"
+  },
+  {
+   "fire_crew_on_site": 84566,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.shackleton"
+  },
+  {
+   "fire_crew_on_site": 46127,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.imbrium"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.sel2"
+  },
+  {
+   "fire_crew_on_site": 12,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.military_luna"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.quarantine"
+  },
+  {
+   "fire_crew_on_site": 715,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.mars_phobos"
+  },
+  {
+   "fire_crew_on_site": 715,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.mars_ares"
+  },
+  {
+   "fire_crew_on_site": 70471,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.mars_tharsis"
+  },
+  {
+   "fire_crew_on_site": 70471,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.mars_hellas"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.mars_deimos"
+  },
+  {
+   "fire_crew_on_site": 9,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 13.028,
+   "site": "site.000.sol.ceres"
+  },
+  {
+   "fire_crew_on_site": 187924,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.ceres_ice"
+  },
+  {
+   "fire_crew_on_site": 9,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 13.028,
+   "site": "site.000.sol.vesta"
+  },
+  {
+   "fire_crew_on_site": 9,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 13.028,
+   "site": "site.000.sol.pallas"
+  },
+  {
+   "fire_crew_on_site": 9,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 13.028,
+   "site": "site.000.sol.hygiea"
+  },
+  {
+   "fire_crew_on_site": 5125,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.mercury_caloris"
+  },
+  {
+   "fire_crew_on_site": 22,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.mercury_orbit"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.venus"
+  },
+  {
+   "fire_crew_on_site": 574,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.callisto"
+  },
+  {
+   "fire_crew_on_site": 574,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.ganymede"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.jupiter_gas"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.europa"
+  },
+  {
+   "fire_crew_on_site": 12,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.jupiter_fleet"
+  },
+  {
+   "fire_crew_on_site": 574,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.titan"
+  },
+  {
+   "fire_crew_on_site": 6,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.saturn_gas"
+  },
+  {
+   "fire_crew_on_site": 2,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.enceladus"
+  },
+  {
+   "fire_crew_on_site": 198,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.titania"
+  },
+  {
+   "fire_crew_on_site": 106,
+   "law": "sol_codified",
+   "responder": "Береговая служба Сола",
+   "response_h": 3.006,
+   "site": "site.000.sol.triton"
   },
   {
    "fire_crew_on_site": 5,

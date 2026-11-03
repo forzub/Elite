@@ -2,7 +2,7 @@
  "checks": [
   {
    "check": "one_id_one_object",
-   "detail": "505 ids",
+   "detail": "520 ids",
    "ok": true
   },
   {
@@ -86,6 +86,71 @@
    "ok": true
   },
   {
+   "check": "sol.earth_hub_count_is_author_target",
+   "detail": "12 hubs",
+   "ok": true
+  },
+  {
+   "check": "sol.unique_sol_hub_ids",
+   "detail": "43 ids",
+   "ok": true
+  },
+  {
+   "check": "sol.unique_sol_hub_names",
+   "detail": "43 names",
+   "ok": true
+  },
+  {
+   "check": "sol.earth_hubs_orbital_separation",
+   "detail": "min 26 km between ('earth_hub.baikonur', 'earth_hub.wenchang') over 2 days",
+   "ok": true
+  },
+  {
+   "check": "sol.earth_hubs_above_atmosphere",
+   "detail": "all >= 400 km",
+   "ok": true
+  },
+  {
+   "check": "sol.every_spaceport_reaches_a_passenger_plane",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "sol.earth_demand_within_orbital_capacity",
+   "detail": "demand 398 422 533 legs/y <= 80 % of capacity 644 097 291",
+   "ok": true
+  },
+  {
+   "check": "sol.major_hub_utilisation_in_band",
+   "detail": "10 major hubs within 0.4-0.75",
+   "ok": true
+  },
+  {
+   "check": "sol.surface_traffic_conserved",
+   "detail": "398 422 533 of 398 422 533",
+   "ok": true
+  },
+  {
+   "check": "sol.routes_have_real_ends",
+   "detail": "82 routes",
+   "ok": true
+  },
+  {
+   "check": "sol.every_driver_has_a_hub",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "sol.every_hub_has_traffic",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "sol.legacy_generic_ids_mapped_once",
+   "detail": "26 legacy ids",
+   "ok": true
+  },
+  {
    "check": "lotus_identity_known_to_developers",
    "detail": "NIRVANA-1 (CANON, AUTHOR_TRUTH)",
    "ok": true
@@ -117,7 +182,7 @@
   },
   {
    "check": "every_site_has_jurisdiction",
-   "detail": "503 sites",
+   "detail": "518 sites",
    "ok": true
   },
   {

@@ -1,0 +1,1206 @@
+{
+  "schema": "sol_network/1",
+  "status": "PROPOSAL",
+  "note": "Сеть хабов Солнечной системы 3126. Здесь только авторский вход: имена, история, владельцы, орбиты и правила. Население, трафик, доки, загрузка, маршруты и маяки считает sol_network.py из населения (polity_economy.sol_bodies, 60 агломераций Земли), активов инфраструктуры Сола, пассажирской модели и физики орбит. Число хабов Земли (12) — AUTHOR_TARGET; число хабов у других тел проверяется по драйверам (население, добыча, газ, наука, оборона).",
+  "earth_hub_count_target": {
+    "value": 12,
+    "status": "AUTHOR_TARGET"
+  },
+  "dock_model": {
+    "sector": "HexDock sector (рантайм hub_hex_dock_a: 6 площадок, 6 ожидания)",
+    "pads_per_sector": 6,
+    "operating_hours_per_day": 22,
+    "pad_cycle_minutes": {
+      "surface_lifter": 35,
+      "cargo_lifter": 60,
+      "interplanetary": 150,
+      "service": 30,
+      "hub_shuttle": 30
+    },
+    "target_utilisation": [
+      0.5,
+      0.75
+    ],
+    "peak_to_mean": 1.35,
+    "presentation_limit": "в рантайме визуально показан один сектор (hub_hex_dock_a) только у «Высокого»; остальные сектора — данные. Временное ограничение представления, не модель."
+  },
+  "surface_traffic": {
+    "lifter_class": "surface_lifter",
+    "load_factor": 0.75,
+    "cargo_flights_per_pax_flight": 0.35,
+    "service_flights_per_pax_flight": 0.12,
+    "inclination_penalty_per_deg": 0.06,
+    "dogleg_tolerance_deg": 1.0,
+    "congestion_weight": 0.0,
+    "basis": "старт на восток с широты φ попадает прямо в плоскость с наклонением i ≥ |φ|; каждые лишние градусы — потеря попутной скорости Земли и плохие окна; плоскость с i < |φ| недостижима без «собачьей ноги» (дорого — не используется)",
+    "congestion_note": "загрузку выравнивает не перераспределение, а число секторов: ёмкость хаба строится под его географический спрос с запасом; перегрузка видна в utilisation"
+  },
+  "transfer_shares": {
+    "to_gateway_interstellar": "межзвёздные пассажиры Сола из passengers_3126 (Земля) пересаживаются на «Высокий»",
+    "interplanetary_per_capita_off_earth_y": 0.25,
+    "interplanetary_per_capita_earth_y": 0.004,
+    "hub_to_hub_transfer_share": 0.08,
+    "basis": "жители вне Земли летают на Землю и между телами ~раз в 4 года; землянин — раз в 250 лет; 8 % пассажиров лифтов пересаживаются между хабами (стыковка рейсов, работа на орбите)"
+  },
+  "earth_hubs": [
+    {
+      "id": "earth_orbital_hub",
+      "name": "Высокий",
+      "type": "orbital_hub",
+      "altitude_km": 420,
+      "inclination_deg": 51.64,
+      "lan_deg": 0,
+      "phase_deg": 35,
+      "founded": 3108,
+      "founder": "Власть Сола (Sol Authority)",
+      "owner": "sol_authority",
+      "operator": "Портовая служба Высокого (Sol Authority)",
+      "function": [
+        "interstellar_gateway",
+        "customs",
+        "passenger",
+        "administration"
+      ],
+      "profile": "gateway",
+      "role_ru": "первый хаб Реставрации; межзвёздные ворота, таможня Сола, пересадка",
+      "name_basis": "плоскость 51.6° унаследована от станций XXI века, удобных с Байконура; «Высокий» — старое прозвище станции Кордона, перешедшее к новому хабу",
+      "runtime_binding": "initial_world_state.orbital_hubs[earth_orbital_hub]",
+      "player_start": true,
+      "legacy_ids": [],
+      "character": "строгий, перегруженный, официальный; очереди таможни; лучшие ремонтные доки Земли",
+      "history": "Построен Властью Сола к открытию маяка (3112) на месте старой станции Кордона; через него проходят все рейсы Земли в сеть. Станция Кордона (2790–3108) сама стояла в плоскости станций Реставрации 51.6°.",
+      "knowledge": {
+        "status": "CANON",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "станция существует в рантайме (initial_world_state.json, HexDockFacility); имя и численность — PROPOSAL"
+      }
+    },
+    {
+      "id": "earth_hub.baikonur",
+      "name": "Байконур",
+      "type": "orbital_hub",
+      "altitude_km": 470,
+      "inclination_deg": 51.64,
+      "lan_deg": 0,
+      "phase_deg": 215,
+      "founded": 2588,
+      "founder": "консорциум «Тюратам» (Казахстан, Россия, Узбекистан)",
+      "owner": "sol_authority",
+      "operator": "Тюратам Орбитал",
+      "function": [
+        "cargo",
+        "heavy_lift",
+        "passenger"
+      ],
+      "profile": "cargo",
+      "role_ru": "грузовой хаб Евразии в той же плоскости, что и «Высокий»: общие окна запуска, обратная фаза",
+      "name_basis": "космодром, ради которого выбрана плоскость 51.6°",
+      "legacy_ids": [],
+      "character": "грузовой, шумный, профсоюзы докеров"
+    },
+    {
+      "id": "earth_hub.meridian",
+      "name": "Меридиан",
+      "type": "orbital_hub",
+      "altitude_km": 545,
+      "inclination_deg": 56.5,
+      "lan_deg": 210,
+      "phase_deg": 90,
+      "founded": 2634,
+      "founder": "Северный портовый союз",
+      "owner": "sol_authority",
+      "operator": "Северный портовый союз",
+      "function": [
+        "passenger",
+        "cargo"
+      ],
+      "profile": "passenger",
+      "role_ru": "северный пассажирский хаб: единственная плоскость, прямо доступная Москве (55.8°), и плоскость Лондона, Парижа, Харбина",
+      "name_basis": "собственное имя XXVII века: союз северных портов «одного меридиана» — от Лондона до Москвы",
+      "legacy_ids": [],
+      "character": "деловой, дорогой, много транзита в Америку и Европу"
+    },
+    {
+      "id": "earth_hub.tikhiy",
+      "name": "Тихий",
+      "type": "orbital_hub",
+      "altitude_km": 505,
+      "inclination_deg": 36.2,
+      "lan_deg": 120,
+      "phase_deg": 250,
+      "founded": 2612,
+      "founder": "Тихоокеанская компания орбитальных перевозок",
+      "owner": "sol_authority",
+      "operator": "Тихоокеанская компания орбитальных перевозок",
+      "function": [
+        "passenger",
+        "cargo"
+      ],
+      "profile": "passenger_mega",
+      "role_ru": "главный пассажирский хаб плоскости 36° — агломерации Токио, Осаки, Нагои, Сеула, Тегерана",
+      "name_basis": "по океану, над которым проходит большая часть его окон с Токио",
+      "legacy_ids": [],
+      "character": "самый людный хаб Земли; безупречный порядок, бесконечные потоки"
+    },
+    {
+      "id": "earth_hub.tanegashima",
+      "name": "Танэгасима",
+      "type": "orbital_hub",
+      "altitude_km": 525,
+      "inclination_deg": 31.6,
+      "lan_deg": 300,
+      "phase_deg": 15,
+      "founded": 2605,
+      "founder": "Японское агентство Реставрации",
+      "owner": "sol_authority",
+      "operator": "Ниппон Орбитал Портс",
+      "function": [
+        "passenger",
+        "shipyard_service"
+      ],
+      "profile": "passenger",
+      "role_ru": "пассажирский хаб 30–32° (Шанхай, Лахор, Нанкин, Ухань) и обслуживание верфей",
+      "name_basis": "японский космодром на 30.4° с.ш.",
+      "legacy_ids": [],
+      "character": "аккуратный, технический, верфевые буксиры"
+    },
+    {
+      "id": "earth_hub.canaveral",
+      "name": "Канаверал",
+      "type": "orbital_hub",
+      "altitude_km": 485,
+      "inclination_deg": 29.0,
+      "lan_deg": 60,
+      "phase_deg": 140,
+      "founded": 2574,
+      "founder": "Атлантическая портовая компания",
+      "owner": "sol_authority",
+      "operator": "Атлантическая портовая компания",
+      "function": [
+        "passenger",
+        "interplanetary"
+      ],
+      "profile": "passenger",
+      "role_ru": "пассажирский хаб 28–29° (Дели, Каир, Чунцин, Хьюстон) и межпланетные вылеты к Марсу",
+      "name_basis": "мыс на 28.5° с.ш.: исторический старт к Марсу",
+      "legacy_ids": [],
+      "character": "старый, туристический, «марсианский»"
+    },
+    {
+      "id": "earth_hub.tropic",
+      "name": "Тропик",
+      "type": "orbital_hub",
+      "altitude_km": 465,
+      "inclination_deg": 24.5,
+      "lan_deg": 180,
+      "phase_deg": 300,
+      "founded": 2843,
+      "founder": "Южный альянс портов (Сан-Паулу, Дакка, Карачи)",
+      "owner": "sol_authority",
+      "operator": "Южный альянс портов",
+      "function": [
+        "passenger",
+        "cargo"
+      ],
+      "profile": "passenger_mega",
+      "role_ru": "хаб полосы 21–25° (Сан-Паулу, Дакка, Карачи, Калькутта, Гуанчжоу, Рио)",
+      "name_basis": "собственное имя XXIX века: плоскость у тропика Рака",
+      "legacy_ids": [],
+      "character": "молодой, тесный, южные языки, чёрный рынок мелочи"
+    },
+    {
+      "id": "earth_hub.wenchang",
+      "name": "Вэньчан",
+      "type": "orbital_hub",
+      "altitude_km": 495,
+      "inclination_deg": 19.8,
+      "lan_deg": 30,
+      "phase_deg": 200,
+      "founded": 2597,
+      "founder": "Китайская корпорация Реставрации",
+      "owner": "sol_authority",
+      "operator": "Вэньчан Хэви",
+      "function": [
+        "heavy_lift",
+        "cargo",
+        "passenger"
+      ],
+      "profile": "cargo",
+      "role_ru": "тяжёлый грузовой хаб полосы 19–20° (Мехико, Мумбаи) — модули станций и верфей",
+      "name_basis": "космодром на Хайнане, 19.6° с.ш.",
+      "legacy_ids": [],
+      "character": "индустриальный, огромные краны, круглосуточно"
+    },
+    {
+      "id": "earth_hub.sriharikota",
+      "name": "Шрихарикота",
+      "type": "orbital_hub",
+      "altitude_km": 455,
+      "inclination_deg": 14.8,
+      "lan_deg": 240,
+      "phase_deg": 60,
+      "founded": 2621,
+      "founder": "Индийская организация Реставрации",
+      "owner": "sol_authority",
+      "operator": "Бхарат Орбитал",
+      "function": [
+        "passenger",
+        "cargo"
+      ],
+      "profile": "passenger",
+      "role_ru": "хаб полосы 10–15° (Манила, Бангкок, Ченнаи, Бангалор, Хошимин, Лима)",
+      "name_basis": "индийский космодром на 13.7° с.ш.",
+      "legacy_ids": [],
+      "character": "многоязычный, рынок пряностей и электроники"
+    },
+    {
+      "id": "earth_hub.kourou",
+      "name": "Куру",
+      "type": "orbital_hub",
+      "altitude_km": 560,
+      "inclination_deg": 6.0,
+      "lan_deg": 90,
+      "phase_deg": 330,
+      "founded": 2569,
+      "founder": "Европейское агентство Реставрации",
+      "owner": "sol_authority",
+      "operator": "Экваториальная топливная компания",
+      "function": [
+        "interplanetary",
+        "fuel",
+        "passenger"
+      ],
+      "profile": "interplanetary",
+      "role_ru": "экваториальный хаб: вылеты к Луне и планетам, топливо, полоса 0–6° (Лагос, Киншаса, Джакарта, Богота)",
+      "name_basis": "космодром Гвианы на 5.2° с.ш.",
+      "legacy_ids": [],
+      "character": "транзитный, топливные фермы, межпланетные экипажи"
+    },
+    {
+      "id": "earth_hub.ekvator",
+      "name": "Экватор",
+      "type": "orbital_hub",
+      "altitude_km": 35786,
+      "inclination_deg": 0.0,
+      "lan_deg": 0,
+      "phase_deg": 120,
+      "founded": 2701,
+      "founder": "Энергетический консорциум Сола",
+      "owner": "sol_authority",
+      "operator": "Энергосеть Сола",
+      "function": [
+        "power",
+        "industry",
+        "comms"
+      ],
+      "profile": "industrial",
+      "role_ru": "геостационарный узел: энергосеть, связь, сборка крупных модулей вне атмосферы",
+      "name_basis": "собственное имя XXVIII века: висит над экватором",
+      "legacy_ids": [],
+      "character": "тихий, инженерный, мало пассажиров"
+    },
+    {
+      "id": "earth_hub.aurora",
+      "name": "Аврора",
+      "type": "science_hub",
+      "altitude_km": 790,
+      "inclination_deg": 98.6,
+      "lan_deg": 270,
+      "phase_deg": 170,
+      "founded": 2655,
+      "founder": "Северный научный фонд",
+      "owner": "sol_authority",
+      "operator": "Служба наблюдения Земли",
+      "function": [
+        "science",
+        "observation",
+        "polar_service"
+      ],
+      "profile": "science",
+      "role_ru": "солнечно-синхронная станция: наблюдение Земли, климат, полярная связь",
+      "name_basis": "по полярным сияниям, над которыми идёт каждый виток",
+      "legacy_ids": [],
+      "character": "учёные, редкие снабженцы"
+    }
+  ],
+  "belt_anchors": [
+    {
+      "id": "anchor.ceres",
+      "name": "Церера",
+      "a_au": 2.7675,
+      "e": 0.0785,
+      "i_deg": 10.59,
+      "node_deg": 80.3,
+      "peri_deg": 73.6,
+      "mean_anomaly_epoch_deg": 95.0,
+      "radius_km": 470,
+      "mass_kg": 9.38e+20,
+      "source": "приближённые J2000 элементы (MPC); средняя аномалия — фаза игровой эпохи (PROPOSAL)"
+    },
+    {
+      "id": "anchor.vesta",
+      "name": "Веста",
+      "a_au": 2.3615,
+      "e": 0.0887,
+      "i_deg": 7.14,
+      "node_deg": 103.8,
+      "peri_deg": 151.2,
+      "mean_anomaly_epoch_deg": 205.0,
+      "radius_km": 263,
+      "mass_kg": 2.59e+20,
+      "source": "приближённые J2000 элементы (MPC); средняя аномалия — фаза игровой эпохи (PROPOSAL)"
+    },
+    {
+      "id": "anchor.pallas",
+      "name": "Паллада",
+      "a_au": 2.7724,
+      "e": 0.2302,
+      "i_deg": 34.84,
+      "node_deg": 173.1,
+      "peri_deg": 310.0,
+      "mean_anomaly_epoch_deg": 40.0,
+      "radius_km": 256,
+      "mass_kg": 2.04e+20,
+      "source": "приближённые J2000 элементы (MPC); средняя аномалия — фаза игровой эпохи (PROPOSAL)"
+    },
+    {
+      "id": "anchor.hygiea",
+      "name": "Гигея",
+      "a_au": 3.1415,
+      "e": 0.1146,
+      "i_deg": 3.83,
+      "node_deg": 283.2,
+      "peri_deg": 312.3,
+      "mean_anomaly_epoch_deg": 300.0,
+      "radius_km": 217,
+      "mass_kg": 8.7e+19,
+      "source": "приближённые J2000 элементы (MPC); средняя аномалия — фаза игровой эпохи (PROPOSAL)"
+    }
+  ],
+  "belt_anchor_note": "Крупных астероидов в физическом каталоге (galaxy_details) нет: пояс там статистический резервуар. Якоря — постоянные объекты мира с реальными элементами орбит; в рантайме хаб у якоря идёт по круговой аппроксимации орбиты (e опущено). Добавить Цереру и др. в каталог — отдельное решение (генератор не принимает наблюдаемые карликовые планеты Сола).",
+  "regions": {
+    "earth_cislunar": {
+      "ru": "Земля и окололунное пространство",
+      "population_key": "Луна и точки Лагранжа"
+    },
+    "mars": {
+      "ru": "Марс",
+      "population_key": "Марс"
+    },
+    "belt": {
+      "ru": "Главный пояс",
+      "population_key": "пояс и Церера"
+    },
+    "mercury": {
+      "ru": "Меркурий",
+      "population_key": "Меркурий"
+    },
+    "jupiter": {
+      "ru": "Система Юпитера",
+      "population_key": "система Юпитера"
+    },
+    "saturn": {
+      "ru": "Система Сатурна",
+      "population_key": "система Сатурна"
+    },
+    "outer": {
+      "ru": "Уран, Нептун и внешние точки",
+      "population_key": "внешние поселения"
+    },
+    "venus": {
+      "ru": "Венера",
+      "population_key": null
+    }
+  },
+  "asset_region_shares": {
+    "mine": {
+      "belt": 0.45,
+      "earth_cislunar": 0.18,
+      "mercury": 0.17,
+      "mars": 0.12,
+      "jupiter": 0.05,
+      "saturn": 0.03
+    },
+    "ice_mine": {
+      "belt": 0.3,
+      "jupiter": 0.3,
+      "saturn": 0.25,
+      "outer": 0.1,
+      "mars": 0.05
+    },
+    "gas_platform": {
+      "jupiter": 0.45,
+      "saturn": 0.4,
+      "outer": 0.15
+    },
+    "industry": "по населению региона (без Земли — земная промышленность на поверхности)",
+    "research_station": {
+      "earth_cislunar": 0.25,
+      "mars": 0.15,
+      "belt": 0.1,
+      "mercury": 0.08,
+      "venus": 0.07,
+      "jupiter": 0.15,
+      "saturn": 0.12,
+      "outer": 0.08
+    },
+    "military_base": {
+      "earth_cislunar": 0.34,
+      "mars": 0.33,
+      "jupiter": 0.33
+    }
+  },
+  "hub_drivers": {
+    "passenger_port_per_population": 120000000,
+    "mining_hub_per_mines": 220,
+    "gas_hub_per_platforms": 180,
+    "industrial_hub_per_population_off_earth": 150000000,
+    "science_hub_per_stations": 300,
+    "basis": "один крупный пассажирский порт на ~120 млн жителей тела; горнодобывающий хаб собирает ~220 рудников и ледяных шахт; газовый — ~180 платформ; научный — ~300 станций"
+  },
+  "hubs": [
+    {
+      "id": "site.000.sol.eml1",
+      "name": "Ворота Луны",
+      "region": "earth_cislunar",
+      "type": "orbital_hub",
+      "anchor": "lagrange:Земля-Луна:L1",
+      "function": [
+        "passenger",
+        "cargo",
+        "transfer"
+      ],
+      "founded": 2590,
+      "founder": "Комиссия Реставрации",
+      "owner": "sol_authority",
+      "operator": "Окололунная транспортная служба",
+      "driver": "passenger",
+      "role_ru": "пересадка Земля ↔ Луна и межпланетные вылеты без глубокого колодца Земли",
+      "legacy_ids": [],
+      "character": "транзитный узел, вечное движение буксиров"
+    },
+    {
+      "id": "site.000.sol.luna_orbit",
+      "name": "Селена",
+      "region": "earth_cislunar",
+      "type": "moon_hub",
+      "body": "system_0.Sol.Земля.Луна",
+      "orbit_altitude_km": 110,
+      "function": [
+        "passenger",
+        "cargo"
+      ],
+      "founded": 2583,
+      "founder": "Лунная корпорация Реставрации",
+      "owner": "sol_authority",
+      "operator": "Лунные порты",
+      "driver": "passenger",
+      "role_ru": "орбитальный порт Луны: челноки к городам полюса и морей",
+      "legacy_ids": [],
+      "character": "старый лунный порт, реголитовая пыль во всём"
+    },
+    {
+      "id": "site.000.sol.shackleton",
+      "name": "Шеклтон",
+      "region": "earth_cislunar",
+      "type": "planetary_surface_port",
+      "body": "system_0.Sol.Земля.Луна",
+      "surface": {
+        "lat_deg": -89.6,
+        "lon_deg": 129.0
+      },
+      "function": [
+        "passenger",
+        "ice",
+        "industry"
+      ],
+      "founded": 2541,
+      "founder": "Международная лунная станция (до Краха)",
+      "owner": "sol_authority",
+      "operator": "Лунные порты",
+      "driver": "passenger",
+      "role_ru": "главный город Луны у кратера вечной тени: лёд, энергия на вечном свету",
+      "legacy_ids": [],
+      "character": "самый старый город вне Земли"
+    },
+    {
+      "id": "site.000.sol.imbrium",
+      "name": "Имбриум",
+      "region": "earth_cislunar",
+      "type": "planetary_surface_port",
+      "body": "system_0.Sol.Земля.Луна",
+      "surface": {
+        "lat_deg": 32.8,
+        "lon_deg": -15.6
+      },
+      "function": [
+        "industry",
+        "mining"
+      ],
+      "founded": 2610,
+      "founder": "Лунная горная компания",
+      "owner": "sol_authority",
+      "operator": "Лунная горная компания",
+      "driver": "mining",
+      "role_ru": "реголитовые заводы и масс-драйвер Моря Дождей",
+      "legacy_ids": [],
+      "character": "заводской, масс-драйвер стреляет каждые 4 минуты"
+    },
+    {
+      "id": "site.000.sol.sel2",
+      "name": "Тень",
+      "region": "earth_cislunar",
+      "type": "science_hub",
+      "anchor": "lagrange:Солнце-Земля:L2",
+      "function": [
+        "science",
+        "comms"
+      ],
+      "founded": 2672,
+      "founder": "Обсерватория Сола",
+      "owner": "sol_authority",
+      "operator": "Обсерватория Сола",
+      "driver": "science",
+      "role_ru": "обсерватория и ретранслятор дальней связи в тени Земли",
+      "legacy_ids": [
+        "site.000.sol_authority.science_hub01"
+      ],
+      "character": "холодно, тихо, учёные"
+    },
+    {
+      "id": "site.000.sol.military_luna",
+      "name": "Бастион",
+      "region": "earth_cislunar",
+      "type": "military_hub",
+      "anchor": "lagrange:Земля-Луна:L4",
+      "function": [
+        "defence"
+      ],
+      "founded": 2790,
+      "founder": "Флот Сола (эпоха Кордона)",
+      "owner": "sol_authority",
+      "operator": "Флот Сола",
+      "driver": "military",
+      "role_ru": "база Флота Сола: оборона Земли и ворот, учебный центр",
+      "legacy_ids": [
+        "site.000.sol_authority.military_hub01"
+      ],
+      "character": "закрытая зона, патрули"
+    },
+    {
+      "id": "site.000.sol.quarantine",
+      "name": "Лазарет-1",
+      "region": "earth_cislunar",
+      "type": "quarantine_hub",
+      "anchor": "lagrange:Земля-Луна:L5",
+      "function": [
+        "quarantine",
+        "medical"
+      ],
+      "founded": 3113,
+      "founder": "Санитарная служба Сола (после маяка Земли)",
+      "owner": "sol_authority",
+      "operator": "Санитарная служба Сола",
+      "driver": "quarantine",
+      "role_ru": "изоляция прибывших из сети и подозрительных грузов до допуска к Земле",
+      "legacy_ids": [
+        "site.000.sol_authority.quarantine01"
+      ],
+      "character": "строгая санитария, длинные очереди"
+    },
+    {
+      "id": "site.000.sol.mars_phobos",
+      "name": "Фобос-Порт",
+      "region": "mars",
+      "type": "moon_hub",
+      "body": "system_0.Sol.Марс.Фобос",
+      "orbit_altitude_km": 15,
+      "function": [
+        "passenger",
+        "cargo",
+        "interplanetary"
+      ],
+      "founded": 2602,
+      "founder": "Марсианская колониальная администрация",
+      "owner": "sol_authority",
+      "operator": "Порты Марса",
+      "driver": "passenger",
+      "role_ru": "главный межпланетный порт Марса на Фобосе",
+      "legacy_ids": [],
+      "character": "марсианская бюрократия, красная пыль на шлюзах"
+    },
+    {
+      "id": "site.000.sol.mars_ares",
+      "name": "Арес",
+      "region": "mars",
+      "type": "orbital_hub",
+      "body": "system_0.Sol.Марс",
+      "orbit_altitude_km": 17032,
+      "function": [
+        "passenger",
+        "industry",
+        "defence",
+        "science"
+      ],
+      "founded": 2688,
+      "founder": "Марсианская республика (до присоединения к Солу)",
+      "owner": "sol_authority",
+      "operator": "Порты Марса",
+      "driver": "passenger",
+      "role_ru": "ареостационарный хаб: челноки с поверхности, энергосеть Марса",
+      "legacy_ids": [],
+      "character": "гордый марсианский патриотизм"
+    },
+    {
+      "id": "site.000.sol.mars_tharsis",
+      "name": "Новый Тарсис",
+      "region": "mars",
+      "type": "planetary_surface_port",
+      "body": "system_0.Sol.Марс",
+      "surface": {
+        "lat_deg": 1.5,
+        "lon_deg": -112.0
+      },
+      "function": [
+        "passenger",
+        "industry"
+      ],
+      "founded": 2611,
+      "founder": "Марсианская колониальная администрация",
+      "owner": "sol_authority",
+      "operator": "Город Новый Тарсис",
+      "driver": "passenger",
+      "role_ru": "крупнейший город Марса у вулканов Тарсиса: экваториальный космопорт",
+      "legacy_ids": [],
+      "character": "столица Марса"
+    },
+    {
+      "id": "site.000.sol.mars_hellas",
+      "name": "Эллада-Марс",
+      "region": "mars",
+      "type": "planetary_surface_port",
+      "body": "system_0.Sol.Марс",
+      "surface": {
+        "lat_deg": -42.4,
+        "lon_deg": 70.5
+      },
+      "function": [
+        "passenger",
+        "agro"
+      ],
+      "founded": 2640,
+      "founder": "Средиземноморский союз переселенцев",
+      "owner": "sol_authority",
+      "operator": "Город Эллада",
+      "driver": "passenger",
+      "role_ru": "город на дне равнины Эллады (самое высокое давление на Марсе): агрокупола",
+      "legacy_ids": [],
+      "character": "фермерский, тёплый"
+    },
+    {
+      "id": "site.000.sol.mars_deimos",
+      "name": "Деймос-Верфь",
+      "region": "mars",
+      "type": "industrial_hub",
+      "body": "system_0.Sol.Марс.Деймос",
+      "orbit_altitude_km": 8,
+      "function": [
+        "shipyard",
+        "industry",
+        "mining"
+      ],
+      "founded": 2702,
+      "founder": "Марсианские верфи",
+      "owner": "sol_authority",
+      "operator": "Марсианские верфи",
+      "driver": "industry",
+      "role_ru": "верфь и металлургия на Деймосе",
+      "legacy_ids": [
+        "site.000.sol_authority.industrial_hub02"
+      ],
+      "character": "верфевой, искры сварки"
+    },
+    {
+      "id": "site.000.sol.ceres",
+      "name": "Перевал Цереры",
+      "region": "belt",
+      "type": "mining_hub",
+      "belt_anchor": "anchor.ceres",
+      "offset_km": 1800,
+      "function": [
+        "mining",
+        "logistics",
+        "passenger",
+        "ice"
+      ],
+      "founded": 2623,
+      "founder": "Kern Heavy Mining (земная ветвь до исхода Керна)",
+      "owner": "sol_authority",
+      "operator": "Kern Heavy Mining (Сол)",
+      "driver": "mining",
+      "role_ru": "столица пояса: сбор руды и льда со всего пояса, перегрузка на фрейтеры, пассажиры",
+      "legacy_ids": [
+        "site.000.sol_authority.mining_hub01",
+        "site.000.sol_authority.mining_hub03"
+      ],
+      "merge_note": "mining_hub01 (246.10°) и mining_hub03 (245.17°) стояли рядом случайно (хеш долготы, а не концентрация). Объединены в кластер у Цереры, где реально сосредоточено население пояса.",
+      "character": "шахтёрская столица, суровый порядок Керна, лучший рынок руды",
+      "runtime_binding": "initial_world_state.orbital_hubs[site.000.sol.ceres]"
+    },
+    {
+      "id": "site.000.sol.ceres_ice",
+      "name": "Ахуна",
+      "region": "belt",
+      "type": "planetary_surface_port",
+      "body_anchor": "anchor.ceres",
+      "surface": {
+        "lat_deg": -10.5,
+        "lon_deg": 316.2
+      },
+      "function": [
+        "ice",
+        "passenger"
+      ],
+      "founded": 2650,
+      "founder": "Kern Heavy Mining",
+      "owner": "sol_authority",
+      "operator": "Город Ахуна",
+      "driver": "passenger",
+      "role_ru": "подлёдный город Цереры у горы Ахуна",
+      "legacy_ids": [],
+      "character": "подлёдные кварталы, тесно и тепло"
+    },
+    {
+      "id": "site.000.sol.vesta",
+      "name": "Рейсильвия",
+      "region": "belt",
+      "type": "mining_hub",
+      "belt_anchor": "anchor.vesta",
+      "offset_km": 900,
+      "function": [
+        "mining",
+        "metallurgy"
+      ],
+      "founded": 2667,
+      "founder": "Металлургический трест Весты",
+      "owner": "sol_authority",
+      "operator": "Металлургический трест Весты",
+      "driver": "mining",
+      "role_ru": "металлургия у Весты (кратер Рейсильвия — выход мантии): железо, никель, базальт",
+      "legacy_ids": [
+        "site.000.sol_authority.mining_hub05"
+      ],
+      "character": "горячие цеха, мало людей, много роботов"
+    },
+    {
+      "id": "site.000.sol.pallas",
+      "name": "Паллада-Станция",
+      "region": "belt",
+      "type": "belt_hub",
+      "belt_anchor": "anchor.pallas",
+      "offset_km": 800,
+      "function": [
+        "mining",
+        "high_inclination",
+        "science"
+      ],
+      "founded": 2744,
+      "founder": "Свободная артель Паллады",
+      "owner": "sol_authority",
+      "operator": "Артель Паллады (лицензия Сола)",
+      "driver": "mining",
+      "role_ru": "станция высоких наклонений: дорогие по Δv, зато нетронутые тела",
+      "legacy_ids": [],
+      "character": "артельный, вольный, своё право на грани законного"
+    },
+    {
+      "id": "site.000.sol.hygiea",
+      "name": "Гигея-Склад",
+      "region": "belt",
+      "type": "belt_hub",
+      "belt_anchor": "anchor.hygiea",
+      "offset_km": 700,
+      "function": [
+        "ice",
+        "fuel",
+        "logistics"
+      ],
+      "founded": 2771,
+      "founder": "Топливная компания пояса",
+      "owner": "sol_authority",
+      "operator": "Топливная компания пояса",
+      "driver": "mining",
+      "role_ru": "внешний край пояса: лёд, топливо для фрейтеров к Юпитеру",
+      "legacy_ids": [],
+      "character": "склады и топливо, мало людей"
+    },
+    {
+      "id": "site.000.pirate_enclave",
+      "name": "Тихая Гавань",
+      "region": "belt",
+      "type": "pirate_enclave",
+      "belt_sector": {
+        "radius_au": 3.95,
+        "longitude_deg": 331.06,
+        "label": "группа Хильды (резонанс 3:2 с Юпитером)"
+      },
+      "function": [
+        "black_market"
+      ],
+      "founded": 3040,
+      "founder": "беглые шахтёры и списанные экипажи",
+      "owner": null,
+      "operator": "держатели причалов",
+      "driver": "piracy",
+      "role_ru": "пиратская гавань среди астероидов Хильды — далеко от патрулей Цереры",
+      "legacy_ids": [],
+      "known_to_player": "rumour",
+      "character": "никаких вопросов, никаких гарантий"
+    },
+    {
+      "id": "site.000.sol.mercury_caloris",
+      "name": "Калорис",
+      "region": "mercury",
+      "type": "planetary_surface_port",
+      "body": "system_0.Sol.Меркурий",
+      "surface": {
+        "lat_deg": 30.5,
+        "lon_deg": 170.0
+      },
+      "function": [
+        "mining",
+        "energy",
+        "industry",
+        "passenger"
+      ],
+      "founded": 2702,
+      "founder": "Солнечная металлургическая компания",
+      "owner": "sol_authority",
+      "operator": "Солнечная металлургическая компания",
+      "driver": "mining",
+      "role_ru": "город-поезд на терминаторе у бассейна Калорис: металлы, солнечная энергия",
+      "legacy_ids": [],
+      "character": "жара и холод, город на рельсах"
+    },
+    {
+      "id": "site.000.sol.mercury_orbit",
+      "name": "Гермес",
+      "region": "mercury",
+      "type": "orbital_hub",
+      "body": "system_0.Sol.Меркурий",
+      "orbit_altitude_km": 600,
+      "function": [
+        "cargo",
+        "energy",
+        "science"
+      ],
+      "founded": 2715,
+      "founder": "Солнечная металлургическая компания",
+      "owner": "sol_authority",
+      "operator": "Солнечная металлургическая компания",
+      "driver": "industry",
+      "role_ru": "орбитальный порт Меркурия: отгрузка металлов, энергостанция",
+      "legacy_ids": [],
+      "character": "раскалённые радиаторы, грузовые фрейтеры"
+    },
+    {
+      "id": "site.000.sol.venus",
+      "name": "Ломоносов",
+      "region": "venus",
+      "type": "science_hub",
+      "body": "system_0.Sol.Венера",
+      "orbit_altitude_km": 55,
+      "function": [
+        "science",
+        "atmosphere"
+      ],
+      "founded": 2760,
+      "founder": "Академия Сола",
+      "owner": "sol_authority",
+      "operator": "Академия Сола",
+      "driver": "science",
+      "role_ru": "аэростатная станция в облаках Венеры на 55 км: наука атмосферы; людей мало, поселений нет",
+      "legacy_ids": [
+        "site.000.sol_authority.science_hub02"
+      ],
+      "character": "учёные, сернокислые дожди, вид на облака"
+    },
+    {
+      "id": "site.000.sol.callisto",
+      "name": "Валгалла",
+      "region": "jupiter",
+      "type": "moon_hub",
+      "body": "system_0.Sol.Юпитер.Каллисто",
+      "orbit_altitude_km": 300,
+      "function": [
+        "passenger",
+        "trade",
+        "logistics"
+      ],
+      "founded": 2680,
+      "founder": "Юпитерианская компания",
+      "owner": "sol_authority",
+      "operator": "Юпитерианская компания",
+      "driver": "passenger",
+      "role_ru": "главный порт Юпитера на Каллисто — вне радиационных поясов",
+      "legacy_ids": [
+        "site.000.sol_authority.trade_hub01"
+      ],
+      "character": "столица юпитерианцев"
+    },
+    {
+      "id": "site.000.sol.ganymede",
+      "name": "Ганимед-Сити",
+      "region": "jupiter",
+      "type": "moon_hub",
+      "body": "system_0.Sol.Юпитер.Ганимед",
+      "orbit_altitude_km": 250,
+      "function": [
+        "passenger",
+        "industry",
+        "ice",
+        "mining"
+      ],
+      "founded": 2702,
+      "founder": "Юпитерианская компания",
+      "owner": "sol_authority",
+      "operator": "Порт Ганимеда",
+      "driver": "passenger",
+      "role_ru": "крупнейший город лун Юпитера (магнитосфера Ганимеда защищает)",
+      "legacy_ids": [
+        "site.000.sol_authority.trade_hub05",
+        "site.000.sol_authority.industrial_hub05"
+      ],
+      "character": "промышленный, под льдом"
+    },
+    {
+      "id": "site.000.sol.jupiter_gas",
+      "name": "Зевс-Платформа",
+      "region": "jupiter",
+      "type": "industrial_hub",
+      "body": "system_0.Sol.Юпитер",
+      "orbit_altitude_km": 46426,
+      "function": [
+        "gas",
+        "fuel"
+      ],
+      "founded": 2730,
+      "founder": "Газовый трест Юпитера",
+      "owner": "sol_authority",
+      "operator": "Газовый трест Юпитера",
+      "driver": "gas",
+      "role_ru": "сбор газа из атмосферных платформ: водород, гелий-3",
+      "legacy_ids": [
+        "site.000.sol_authority.industrial_hub01"
+      ],
+      "character": "газовщики, сильная радиация"
+    },
+    {
+      "id": "site.000.sol.europa",
+      "name": "Конамара",
+      "region": "jupiter",
+      "type": "science_hub",
+      "body": "system_0.Sol.Юпитер.Европа",
+      "orbit_altitude_km": 200,
+      "function": [
+        "science",
+        "ice"
+      ],
+      "founded": 2740,
+      "founder": "Академия Сола",
+      "owner": "sol_authority",
+      "operator": "Академия Сола",
+      "driver": "science",
+      "role_ru": "наука подлёдного океана Европы",
+      "legacy_ids": [
+        "site.000.sol_authority.science_hub05"
+      ],
+      "character": "биологи, строгая защита планеты"
+    },
+    {
+      "id": "site.000.sol.jupiter_fleet",
+      "name": "Юпитерианский рейд",
+      "region": "jupiter",
+      "type": "military_hub",
+      "body": "system_0.Sol.Юпитер.Каллисто",
+      "orbit_altitude_km": 2500,
+      "function": [
+        "defence"
+      ],
+      "founded": 2795,
+      "founder": "Флот Сола",
+      "owner": "sol_authority",
+      "operator": "Флот Сола",
+      "driver": "military",
+      "role_ru": "вторая база флота: газ и подходы внешней системы",
+      "legacy_ids": [],
+      "character": "закрытая зона"
+    },
+    {
+      "id": "site.000.sol.titan",
+      "name": "Кракен",
+      "region": "saturn",
+      "type": "moon_hub",
+      "body": "system_0.Sol.Сатурн.Титан",
+      "orbit_altitude_km": 1500,
+      "function": [
+        "passenger",
+        "chemicals",
+        "trade"
+      ],
+      "founded": 2712,
+      "founder": "Сатурнианская химическая компания",
+      "owner": "sol_authority",
+      "operator": "Порт Титана",
+      "driver": "passenger",
+      "role_ru": "порт Титана над морем Кракена: углеводороды, химия, столица Сатурна",
+      "legacy_ids": [
+        "site.000.sol_authority.trade_hub02",
+        "site.000.sol_authority.trade_hub06",
+        "site.000.sol_authority.industrial_hub06"
+      ],
+      "character": "химики, метановые дожди"
+    },
+    {
+      "id": "site.000.sol.saturn_gas",
+      "name": "Кольцо-Газ",
+      "region": "saturn",
+      "type": "industrial_hub",
+      "body": "system_0.Sol.Сатурн",
+      "orbit_altitude_km": 140780,
+      "function": [
+        "gas",
+        "ice"
+      ],
+      "founded": 2748,
+      "founder": "Газовый трест Сатурна",
+      "owner": "sol_authority",
+      "operator": "Газовый трест Сатурна",
+      "driver": "gas",
+      "role_ru": "газ и лёд колец: топливо внешней системы",
+      "legacy_ids": [
+        "site.000.sol_authority.mining_hub06",
+        "site.000.sol_authority.mining_hub02"
+      ],
+      "character": "ледорубы, медленные танкеры"
+    },
+    {
+      "id": "site.000.sol.enceladus",
+      "name": "Тигровые Полосы",
+      "region": "saturn",
+      "type": "science_hub",
+      "body": "system_0.Sol.Сатурн.Энцелад",
+      "orbit_altitude_km": 100,
+      "function": [
+        "science",
+        "ice"
+      ],
+      "founded": 2755,
+      "founder": "Академия Сола",
+      "owner": "sol_authority",
+      "operator": "Академия Сола",
+      "driver": "science",
+      "role_ru": "наука гейзеров Энцелада и чистый лёд",
+      "legacy_ids": [
+        "site.000.sol_authority.science_hub06"
+      ],
+      "character": "учёные, гейзеры за окном"
+    },
+    {
+      "id": "site.000.sol.titania",
+      "name": "Титания",
+      "region": "outer",
+      "type": "moon_hub",
+      "body": "system_0.Sol.Уран.Титания",
+      "orbit_altitude_km": 300,
+      "function": [
+        "passenger",
+        "science",
+        "gas",
+        "ice"
+      ],
+      "founded": 2790,
+      "founder": "Внешняя компания",
+      "owner": "sol_authority",
+      "operator": "Внешняя компания",
+      "driver": "passenger",
+      "role_ru": "порт Урана: газ, наука, редкие пассажиры",
+      "legacy_ids": [
+        "site.000.sol_authority.trade_hub04",
+        "site.000.sol_authority.mining_hub04",
+        "site.000.sol_authority.industrial_hub04",
+        "site.000.sol_authority.science_hub04"
+      ],
+      "character": "далеко и спокойно"
+    },
+    {
+      "id": "site.000.sol.triton",
+      "name": "Тритон-Край",
+      "region": "outer",
+      "type": "orbital_hub",
+      "body": "system_0.Sol.Нептун.Тритон",
+      "orbit_altitude_km": 400,
+      "function": [
+        "fuel",
+        "science",
+        "outer_relay",
+        "ice"
+      ],
+      "founded": 2810,
+      "founder": "Внешняя компания",
+      "owner": "sol_authority",
+      "operator": "Внешняя компания",
+      "driver": "outer",
+      "role_ru": "последний порт Сола: топливо и ретранслятор внешней системы",
+      "legacy_ids": [
+        "site.000.sol_authority.trade_hub03",
+        "site.000.sol_authority.industrial_hub03",
+        "site.000.sol_authority.science_hub03"
+      ],
+      "character": "край системы, вахтовики"
+    }
+  ],
+  "relays": {
+    "rule": "локальные навигационные ретрансляторы: по 2 на каждый населённый район (резерв), +1 на каждые 3 хаба района, плюс точки L4/L5 Солнце–Земля, чтобы связь Земля–Марс–пояс не прерывалась при соединении с Солнцем",
+    "names_by_region": {
+      "earth_cislunar": [
+        "Маяк Гагарин",
+        "Маяк Королёв",
+        "Маяк Терешкова",
+        "Маяк Армстронг"
+      ],
+      "mars": [
+        "Маяк Скиапарелли",
+        "Маяк Маринер"
+      ],
+      "belt": [
+        "Маяк Пиацци",
+        "Маяк Ольберс",
+        "Маяк Хирояма"
+      ],
+      "mercury": [
+        "Маяк Мессенджер"
+      ],
+      "venus": [
+        "Маяк Венера-7"
+      ],
+      "jupiter": [
+        "Маяк Галилей",
+        "Маяк Пионер",
+        "Маяк Юнона"
+      ],
+      "saturn": [
+        "Маяк Кассини",
+        "Маяк Гюйгенс"
+      ],
+      "outer": [
+        "Маяк Вояджер",
+        "Маяк Гершель"
+      ],
+      "transit": [
+        "Маяк Лагранж-4",
+        "Маяк Лагранж-5"
+      ]
+    }
+  }
+}

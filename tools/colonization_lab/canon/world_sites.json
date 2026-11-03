@@ -167,29 +167,6 @@
   },
   "named_sites": [
     {
-      "id": "earth_orbital_hub",
-      "runtime_binding": "initial_world_state.orbital_hubs",
-      "name": "Земной орбитальный хаб «Высокий»",
-      "type": "orbital_hub",
-      "system": 0,
-      "body": "system_0.Sol.Земля",
-      "orbit": {
-        "altitude_km": 420,
-        "inclination_deg": 51.64
-      },
-      "polity": "sol_authority",
-      "operator": "sol_authority",
-      "purpose": "главный грузовой и пассажирский узел Земля ↔ сеть; таможня Сола; док с шестью площадками",
-      "population": 42000,
-      "founded": 3108,
-      "history": "Построен Властью Сола к открытию маяка (3112) на месте старой станции Кордона; через него проходят все рейсы Земли в сеть.",
-      "knowledge": {
-        "status": "CANON",
-        "visibility": "PUBLIC_RECORD",
-        "basis": "станция существует в рантайме (initial_world_state.json, HexDockFacility); имя и численность — PROPOSAL"
-      }
-    },
-    {
       "id": "site.024.pereval",
       "name": "Депо «Перевал»",
       "type": "deep_space_refuel_point",
@@ -2965,5 +2942,6 @@
         "unstable_navigation"
       ]
     }
-  }
+  },
+  "named_sites_note": "earth_orbital_hub перенесён в canon/sol_network.json (единый источник сети хабов Сола, четвёртый проход)"
 }

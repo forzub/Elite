@@ -2339,13 +2339,783 @@
     }
    }
   },
+  "earth_hub.aurora": {
+   "archetype": "sleepy_periphery",
+   "archetype_ru": "размеренная скучная периферия",
+   "comms_delay_days": 0.0,
+   "description": "Мало событий, мало кораблей, всё по расписанию.",
+   "metrics": {
+    "activity": 0.426,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.789,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.388
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "earth_hub.baikonur": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.896,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "earth_hub.canaveral": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.915,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "earth_hub.ekvator": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.785,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "earth_hub.kourou": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.897,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "earth_hub.meridian": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.876,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "earth_hub.sriharikota": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.786,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "earth_hub.tanegashima": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.888,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "earth_hub.tikhiy": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.922,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "earth_hub.tropic": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.853,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "earth_hub.wenchang": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.826,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
   "earth_orbital_hub": {
    "archetype": "rich_hub",
    "archetype_ru": "насыщенный богатый центр",
    "comms_delay_days": 0.0,
    "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
    "metrics": {
-    "activity": 0.866,
+    "activity": 0.915,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
@@ -2479,13 +3249,503 @@
     }
    }
   },
-  "site.000.sol_authority.industrial_hub01": {
+  "site.000.sol.callisto": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.715,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "site.000.sol.ceres": {
    "archetype": "calm_provided",
    "archetype_ru": "спокойное обеспеченное место",
    "comms_delay_days": 0.0,
    "description": "Спокойно и обеспечено, работают институты.",
    "metrics": {
-    "activity": 0.544,
+    "activity": 0.473,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.589,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.477
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "site.000.sol.ceres_ice": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 1.0,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.71,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.423
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "site.000.sol.eml1": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.988,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "site.000.sol.enceladus": {
+   "archetype": "sleepy_periphery",
+   "archetype_ru": "размеренная скучная периферия",
+   "comms_delay_days": 0.0,
+   "description": "Мало событий, мало кораблей, всё по расписанию.",
+   "metrics": {
+    "activity": 0.371,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.662,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.444
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "site.000.sol.europa": {
+   "archetype": "sleepy_periphery",
+   "archetype_ru": "размеренная скучная периферия",
+   "comms_delay_days": 0.0,
+   "description": "Мало событий, мало кораблей, всё по расписанию.",
+   "metrics": {
+    "activity": 0.371,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.662,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.444
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "site.000.sol.ganymede": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.715,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "site.000.sol.hygiea": {
+   "archetype": "calm_provided",
+   "archetype_ru": "спокойное обеспеченное место",
+   "comms_delay_days": 0.0,
+   "description": "Спокойно и обеспечено, работают институты.",
+   "metrics": {
+    "activity": 0.473,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
@@ -2549,18 +3809,18 @@
     }
    }
   },
-  "site.000.sol_authority.industrial_hub02": {
-   "archetype": "calm_provided",
-   "archetype_ru": "спокойное обеспеченное место",
+  "site.000.sol.imbrium": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
    "comms_delay_days": 0.0,
-   "description": "Спокойно и обеспечено, работают институты.",
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
    "metrics": {
-    "activity": 0.544,
+    "activity": 1.0,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
     "isolation": 0.15,
-    "medical_resilience": 0.63,
+    "medical_resilience": 0.71,
     "political_volatility": 0.18,
     "prosperity": 1.0,
     "security_pressure": 0.335,
@@ -2579,7 +3839,7 @@
     },
     "epidemic": {
      "response": "организованный ответ",
-     "severity": 0.459
+     "severity": 0.423
     },
     "infrastructure_destruction": {
      "response": "организованный ответ",
@@ -2619,293 +3879,13 @@
     }
    }
   },
-  "site.000.sol_authority.industrial_hub03": {
-   "archetype": "calm_provided",
-   "archetype_ru": "спокойное обеспеченное место",
-   "comms_delay_days": 0.0,
-   "description": "Спокойно и обеспечено, работают институты.",
-   "metrics": {
-    "activity": 0.544,
-    "corruption": 0.259,
-    "crime": 0.192,
-    "institutional_capacity": 0.74,
-    "isolation": 0.15,
-    "medical_resilience": 0.63,
-    "political_volatility": 0.18,
-    "prosperity": 1.0,
-    "security_pressure": 0.335,
-    "social_cohesion": 0.602,
-    "supply_security": 0.797,
-    "trust": 0.561
-   },
-   "reactions": {
-    "accident": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "beacon_loss": {
-     "response": "организованный ответ",
-     "severity": 0.435
-    },
-    "epidemic": {
-     "response": "организованный ответ",
-     "severity": 0.459
-    },
-    "infrastructure_destruction": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "mass_migration": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "pirates": {
-     "response": "организованный ответ",
-     "severity": 0.464
-    },
-    "quarantine": {
-     "response": "организованный ответ",
-     "severity": 0.53
-    },
-    "refugee_influx": {
-     "response": "организованный ответ",
-     "severity": 0.442
-    },
-    "route_loss": {
-     "response": "организованный ответ",
-     "severity": 0.469
-    },
-    "sanctions": {
-     "response": "организованный ответ",
-     "severity": 0.349
-    },
-    "shortage": {
-     "response": "организованный ответ",
-     "severity": 0.284
-    },
-    "war": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    }
-   }
-  },
-  "site.000.sol_authority.industrial_hub04": {
-   "archetype": "calm_provided",
-   "archetype_ru": "спокойное обеспеченное место",
-   "comms_delay_days": 0.0,
-   "description": "Спокойно и обеспечено, работают институты.",
-   "metrics": {
-    "activity": 0.544,
-    "corruption": 0.259,
-    "crime": 0.192,
-    "institutional_capacity": 0.74,
-    "isolation": 0.15,
-    "medical_resilience": 0.63,
-    "political_volatility": 0.18,
-    "prosperity": 1.0,
-    "security_pressure": 0.335,
-    "social_cohesion": 0.602,
-    "supply_security": 0.797,
-    "trust": 0.561
-   },
-   "reactions": {
-    "accident": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "beacon_loss": {
-     "response": "организованный ответ",
-     "severity": 0.435
-    },
-    "epidemic": {
-     "response": "организованный ответ",
-     "severity": 0.459
-    },
-    "infrastructure_destruction": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "mass_migration": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "pirates": {
-     "response": "организованный ответ",
-     "severity": 0.464
-    },
-    "quarantine": {
-     "response": "организованный ответ",
-     "severity": 0.53
-    },
-    "refugee_influx": {
-     "response": "организованный ответ",
-     "severity": 0.442
-    },
-    "route_loss": {
-     "response": "организованный ответ",
-     "severity": 0.469
-    },
-    "sanctions": {
-     "response": "организованный ответ",
-     "severity": 0.349
-    },
-    "shortage": {
-     "response": "организованный ответ",
-     "severity": 0.284
-    },
-    "war": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    }
-   }
-  },
-  "site.000.sol_authority.industrial_hub05": {
-   "archetype": "calm_provided",
-   "archetype_ru": "спокойное обеспеченное место",
-   "comms_delay_days": 0.0,
-   "description": "Спокойно и обеспечено, работают институты.",
-   "metrics": {
-    "activity": 0.544,
-    "corruption": 0.259,
-    "crime": 0.192,
-    "institutional_capacity": 0.74,
-    "isolation": 0.15,
-    "medical_resilience": 0.63,
-    "political_volatility": 0.18,
-    "prosperity": 1.0,
-    "security_pressure": 0.335,
-    "social_cohesion": 0.602,
-    "supply_security": 0.797,
-    "trust": 0.561
-   },
-   "reactions": {
-    "accident": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "beacon_loss": {
-     "response": "организованный ответ",
-     "severity": 0.435
-    },
-    "epidemic": {
-     "response": "организованный ответ",
-     "severity": 0.459
-    },
-    "infrastructure_destruction": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "mass_migration": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "pirates": {
-     "response": "организованный ответ",
-     "severity": 0.464
-    },
-    "quarantine": {
-     "response": "организованный ответ",
-     "severity": 0.53
-    },
-    "refugee_influx": {
-     "response": "организованный ответ",
-     "severity": 0.442
-    },
-    "route_loss": {
-     "response": "организованный ответ",
-     "severity": 0.469
-    },
-    "sanctions": {
-     "response": "организованный ответ",
-     "severity": 0.349
-    },
-    "shortage": {
-     "response": "организованный ответ",
-     "severity": 0.284
-    },
-    "war": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    }
-   }
-  },
-  "site.000.sol_authority.industrial_hub06": {
-   "archetype": "calm_provided",
-   "archetype_ru": "спокойное обеспеченное место",
-   "comms_delay_days": 0.0,
-   "description": "Спокойно и обеспечено, работают институты.",
-   "metrics": {
-    "activity": 0.544,
-    "corruption": 0.259,
-    "crime": 0.192,
-    "institutional_capacity": 0.74,
-    "isolation": 0.15,
-    "medical_resilience": 0.63,
-    "political_volatility": 0.18,
-    "prosperity": 1.0,
-    "security_pressure": 0.335,
-    "social_cohesion": 0.602,
-    "supply_security": 0.797,
-    "trust": 0.561
-   },
-   "reactions": {
-    "accident": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "beacon_loss": {
-     "response": "организованный ответ",
-     "severity": 0.435
-    },
-    "epidemic": {
-     "response": "организованный ответ",
-     "severity": 0.459
-    },
-    "infrastructure_destruction": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "mass_migration": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "pirates": {
-     "response": "организованный ответ",
-     "severity": 0.464
-    },
-    "quarantine": {
-     "response": "организованный ответ",
-     "severity": 0.53
-    },
-    "refugee_influx": {
-     "response": "организованный ответ",
-     "severity": 0.442
-    },
-    "route_loss": {
-     "response": "организованный ответ",
-     "severity": 0.469
-    },
-    "sanctions": {
-     "response": "организованный ответ",
-     "severity": 0.349
-    },
-    "shortage": {
-     "response": "организованный ответ",
-     "severity": 0.284
-    },
-    "war": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    }
-   }
-  },
-  "site.000.sol_authority.military_hub01": {
+  "site.000.sol.jupiter_fleet": {
    "archetype": "closed_disciplined",
    "archetype_ru": "закрытая дисциплинированная база",
    "comms_delay_days": 0.0,
    "description": "Пропуска, режим, порядок; чужих не любят.",
    "metrics": {
-    "activity": 0.504,
+    "activity": 0.493,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
@@ -2969,18 +3949,18 @@
     }
    }
   },
-  "site.000.sol_authority.mining_hub01": {
-   "archetype": "calm_provided",
-   "archetype_ru": "спокойное обеспеченное место",
+  "site.000.sol.jupiter_gas": {
+   "archetype": "sleepy_periphery",
+   "archetype_ru": "размеренная скучная периферия",
    "comms_delay_days": 0.0,
-   "description": "Спокойно и обеспечено, работают институты.",
+   "description": "Мало событий, мало кораблей, всё по расписанию.",
    "metrics": {
-    "activity": 0.453,
+    "activity": 0.446,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
     "isolation": 0.15,
-    "medical_resilience": 0.592,
+    "medical_resilience": 0.63,
     "political_volatility": 0.18,
     "prosperity": 1.0,
     "security_pressure": 0.335,
@@ -2999,7 +3979,7 @@
     },
     "epidemic": {
      "response": "организованный ответ",
-     "severity": 0.475
+     "severity": 0.459
     },
     "infrastructure_destruction": {
      "response": "организованный ответ",
@@ -3039,18 +4019,18 @@
     }
    }
   },
-  "site.000.sol_authority.mining_hub02": {
-   "archetype": "calm_provided",
-   "archetype_ru": "спокойное обеспеченное место",
+  "site.000.sol.luna_orbit": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
    "comms_delay_days": 0.0,
-   "description": "Спокойно и обеспечено, работают институты.",
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
    "metrics": {
-    "activity": 0.453,
+    "activity": 0.738,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
     "isolation": 0.15,
-    "medical_resilience": 0.592,
+    "medical_resilience": 0.67,
     "political_volatility": 0.18,
     "prosperity": 1.0,
     "security_pressure": 0.335,
@@ -3069,7 +4049,7 @@
     },
     "epidemic": {
      "response": "организованный ответ",
-     "severity": 0.475
+     "severity": 0.441
     },
     "infrastructure_destruction": {
      "response": "организованный ответ",
@@ -3109,18 +4089,18 @@
     }
    }
   },
-  "site.000.sol_authority.mining_hub03": {
-   "archetype": "calm_provided",
-   "archetype_ru": "спокойное обеспеченное место",
+  "site.000.sol.mars_ares": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
    "comms_delay_days": 0.0,
-   "description": "Спокойно и обеспечено, работают институты.",
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
    "metrics": {
-    "activity": 0.453,
+    "activity": 0.977,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
     "isolation": 0.15,
-    "medical_resilience": 0.592,
+    "medical_resilience": 0.67,
     "political_volatility": 0.18,
     "prosperity": 1.0,
     "security_pressure": 0.335,
@@ -3139,7 +4119,7 @@
     },
     "epidemic": {
      "response": "организованный ответ",
-     "severity": 0.475
+     "severity": 0.441
     },
     "infrastructure_destruction": {
      "response": "организованный ответ",
@@ -3179,18 +4159,18 @@
     }
    }
   },
-  "site.000.sol_authority.mining_hub04": {
+  "site.000.sol.mars_deimos": {
    "archetype": "calm_provided",
    "archetype_ru": "спокойное обеспеченное место",
    "comms_delay_days": 0.0,
    "description": "Спокойно и обеспечено, работают институты.",
    "metrics": {
-    "activity": 0.453,
+    "activity": 0.527,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
     "isolation": 0.15,
-    "medical_resilience": 0.592,
+    "medical_resilience": 0.63,
     "political_volatility": 0.18,
     "prosperity": 1.0,
     "security_pressure": 0.335,
@@ -3209,7 +4189,7 @@
     },
     "epidemic": {
      "response": "организованный ответ",
-     "severity": 0.475
+     "severity": 0.459
     },
     "infrastructure_destruction": {
      "response": "организованный ответ",
@@ -3249,18 +4229,18 @@
     }
    }
   },
-  "site.000.sol_authority.mining_hub05": {
-   "archetype": "calm_provided",
-   "archetype_ru": "спокойное обеспеченное место",
+  "site.000.sol.mars_hellas": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
    "comms_delay_days": 0.0,
-   "description": "Спокойно и обеспечено, работают институты.",
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
    "metrics": {
-    "activity": 0.453,
+    "activity": 1.0,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
     "isolation": 0.15,
-    "medical_resilience": 0.592,
+    "medical_resilience": 0.71,
     "political_volatility": 0.18,
     "prosperity": 1.0,
     "security_pressure": 0.335,
@@ -3279,7 +4259,7 @@
     },
     "epidemic": {
      "response": "организованный ответ",
-     "severity": 0.475
+     "severity": 0.423
     },
     "infrastructure_destruction": {
      "response": "организованный ответ",
@@ -3319,18 +4299,18 @@
     }
    }
   },
-  "site.000.sol_authority.mining_hub06": {
-   "archetype": "calm_provided",
-   "archetype_ru": "спокойное обеспеченное место",
+  "site.000.sol.mars_phobos": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
    "comms_delay_days": 0.0,
-   "description": "Спокойно и обеспечено, работают институты.",
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
    "metrics": {
-    "activity": 0.453,
+    "activity": 0.727,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
     "isolation": 0.15,
-    "medical_resilience": 0.592,
+    "medical_resilience": 0.67,
     "political_volatility": 0.18,
     "prosperity": 1.0,
     "security_pressure": 0.335,
@@ -3349,7 +4329,7 @@
     },
     "epidemic": {
      "response": "организованный ответ",
-     "severity": 0.475
+     "severity": 0.441
     },
     "infrastructure_destruction": {
      "response": "организованный ответ",
@@ -3389,7 +4369,357 @@
     }
    }
   },
-  "site.000.sol_authority.quarantine01": {
+  "site.000.sol.mars_tharsis": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 1.0,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.71,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.423
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "site.000.sol.mercury_caloris": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.895,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.71,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.423
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "site.000.sol.mercury_orbit": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.777,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.67,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.441
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "site.000.sol.military_luna": {
+   "archetype": "closed_disciplined",
+   "archetype_ru": "закрытая дисциплинированная база",
+   "comms_delay_days": 0.0,
+   "description": "Пропуска, режим, порядок; чужих не любят.",
+   "metrics": {
+    "activity": 0.493,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.95,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.317
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "site.000.sol.pallas": {
+   "archetype": "calm_provided",
+   "archetype_ru": "спокойное обеспеченное место",
+   "comms_delay_days": 0.0,
+   "description": "Спокойно и обеспечено, работают институты.",
+   "metrics": {
+    "activity": 0.473,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.63,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.459
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "site.000.sol.quarantine": {
    "archetype": "closed_disciplined",
    "archetype_ru": "закрытая дисциплинированная база",
    "comms_delay_days": 0.0,
@@ -3459,18 +4789,18 @@
     }
    }
   },
-  "site.000.sol_authority.science_hub01": {
+  "site.000.sol.saturn_gas": {
    "archetype": "sleepy_periphery",
    "archetype_ru": "размеренная скучная периферия",
    "comms_delay_days": 0.0,
    "description": "Мало событий, мало кораблей, всё по расписанию.",
    "metrics": {
-    "activity": 0.387,
+    "activity": 0.446,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
     "isolation": 0.15,
-    "medical_resilience": 0.726,
+    "medical_resilience": 0.63,
     "political_volatility": 0.18,
     "prosperity": 1.0,
     "security_pressure": 0.335,
@@ -3489,7 +4819,7 @@
     },
     "epidemic": {
      "response": "организованный ответ",
-     "severity": 0.416
+     "severity": 0.459
     },
     "infrastructure_destruction": {
      "response": "организованный ответ",
@@ -3529,18 +4859,18 @@
     }
    }
   },
-  "site.000.sol_authority.science_hub02": {
+  "site.000.sol.sel2": {
    "archetype": "sleepy_periphery",
    "archetype_ru": "размеренная скучная периферия",
    "comms_delay_days": 0.0,
    "description": "Мало событий, мало кораблей, всё по расписанию.",
    "metrics": {
-    "activity": 0.387,
+    "activity": 0.371,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
     "isolation": 0.15,
-    "medical_resilience": 0.726,
+    "medical_resilience": 0.662,
     "political_volatility": 0.18,
     "prosperity": 1.0,
     "security_pressure": 0.335,
@@ -3559,7 +4889,7 @@
     },
     "epidemic": {
      "response": "организованный ответ",
-     "severity": 0.416
+     "severity": 0.444
     },
     "infrastructure_destruction": {
      "response": "организованный ответ",
@@ -3599,293 +4929,83 @@
     }
    }
   },
-  "site.000.sol_authority.science_hub03": {
-   "archetype": "sleepy_periphery",
-   "archetype_ru": "размеренная скучная периферия",
-   "comms_delay_days": 0.0,
-   "description": "Мало событий, мало кораблей, всё по расписанию.",
-   "metrics": {
-    "activity": 0.387,
-    "corruption": 0.259,
-    "crime": 0.192,
-    "institutional_capacity": 0.74,
-    "isolation": 0.15,
-    "medical_resilience": 0.726,
-    "political_volatility": 0.18,
-    "prosperity": 1.0,
-    "security_pressure": 0.335,
-    "social_cohesion": 0.602,
-    "supply_security": 0.797,
-    "trust": 0.561
-   },
-   "reactions": {
-    "accident": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "beacon_loss": {
-     "response": "организованный ответ",
-     "severity": 0.435
-    },
-    "epidemic": {
-     "response": "организованный ответ",
-     "severity": 0.416
-    },
-    "infrastructure_destruction": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "mass_migration": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "pirates": {
-     "response": "организованный ответ",
-     "severity": 0.464
-    },
-    "quarantine": {
-     "response": "организованный ответ",
-     "severity": 0.53
-    },
-    "refugee_influx": {
-     "response": "организованный ответ",
-     "severity": 0.442
-    },
-    "route_loss": {
-     "response": "организованный ответ",
-     "severity": 0.469
-    },
-    "sanctions": {
-     "response": "организованный ответ",
-     "severity": 0.349
-    },
-    "shortage": {
-     "response": "организованный ответ",
-     "severity": 0.284
-    },
-    "war": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    }
-   }
-  },
-  "site.000.sol_authority.science_hub04": {
-   "archetype": "sleepy_periphery",
-   "archetype_ru": "размеренная скучная периферия",
-   "comms_delay_days": 0.0,
-   "description": "Мало событий, мало кораблей, всё по расписанию.",
-   "metrics": {
-    "activity": 0.387,
-    "corruption": 0.259,
-    "crime": 0.192,
-    "institutional_capacity": 0.74,
-    "isolation": 0.15,
-    "medical_resilience": 0.726,
-    "political_volatility": 0.18,
-    "prosperity": 1.0,
-    "security_pressure": 0.335,
-    "social_cohesion": 0.602,
-    "supply_security": 0.797,
-    "trust": 0.561
-   },
-   "reactions": {
-    "accident": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "beacon_loss": {
-     "response": "организованный ответ",
-     "severity": 0.435
-    },
-    "epidemic": {
-     "response": "организованный ответ",
-     "severity": 0.416
-    },
-    "infrastructure_destruction": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "mass_migration": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "pirates": {
-     "response": "организованный ответ",
-     "severity": 0.464
-    },
-    "quarantine": {
-     "response": "организованный ответ",
-     "severity": 0.53
-    },
-    "refugee_influx": {
-     "response": "организованный ответ",
-     "severity": 0.442
-    },
-    "route_loss": {
-     "response": "организованный ответ",
-     "severity": 0.469
-    },
-    "sanctions": {
-     "response": "организованный ответ",
-     "severity": 0.349
-    },
-    "shortage": {
-     "response": "организованный ответ",
-     "severity": 0.284
-    },
-    "war": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    }
-   }
-  },
-  "site.000.sol_authority.science_hub05": {
-   "archetype": "sleepy_periphery",
-   "archetype_ru": "размеренная скучная периферия",
-   "comms_delay_days": 0.0,
-   "description": "Мало событий, мало кораблей, всё по расписанию.",
-   "metrics": {
-    "activity": 0.387,
-    "corruption": 0.259,
-    "crime": 0.192,
-    "institutional_capacity": 0.74,
-    "isolation": 0.15,
-    "medical_resilience": 0.726,
-    "political_volatility": 0.18,
-    "prosperity": 1.0,
-    "security_pressure": 0.335,
-    "social_cohesion": 0.602,
-    "supply_security": 0.797,
-    "trust": 0.561
-   },
-   "reactions": {
-    "accident": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "beacon_loss": {
-     "response": "организованный ответ",
-     "severity": 0.435
-    },
-    "epidemic": {
-     "response": "организованный ответ",
-     "severity": 0.416
-    },
-    "infrastructure_destruction": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "mass_migration": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "pirates": {
-     "response": "организованный ответ",
-     "severity": 0.464
-    },
-    "quarantine": {
-     "response": "организованный ответ",
-     "severity": 0.53
-    },
-    "refugee_influx": {
-     "response": "организованный ответ",
-     "severity": 0.442
-    },
-    "route_loss": {
-     "response": "организованный ответ",
-     "severity": 0.469
-    },
-    "sanctions": {
-     "response": "организованный ответ",
-     "severity": 0.349
-    },
-    "shortage": {
-     "response": "организованный ответ",
-     "severity": 0.284
-    },
-    "war": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    }
-   }
-  },
-  "site.000.sol_authority.science_hub06": {
-   "archetype": "sleepy_periphery",
-   "archetype_ru": "размеренная скучная периферия",
-   "comms_delay_days": 0.0,
-   "description": "Мало событий, мало кораблей, всё по расписанию.",
-   "metrics": {
-    "activity": 0.387,
-    "corruption": 0.259,
-    "crime": 0.192,
-    "institutional_capacity": 0.74,
-    "isolation": 0.15,
-    "medical_resilience": 0.726,
-    "political_volatility": 0.18,
-    "prosperity": 1.0,
-    "security_pressure": 0.335,
-    "social_cohesion": 0.602,
-    "supply_security": 0.797,
-    "trust": 0.561
-   },
-   "reactions": {
-    "accident": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "beacon_loss": {
-     "response": "организованный ответ",
-     "severity": 0.435
-    },
-    "epidemic": {
-     "response": "организованный ответ",
-     "severity": 0.416
-    },
-    "infrastructure_destruction": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "mass_migration": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "pirates": {
-     "response": "организованный ответ",
-     "severity": 0.464
-    },
-    "quarantine": {
-     "response": "организованный ответ",
-     "severity": 0.53
-    },
-    "refugee_influx": {
-     "response": "организованный ответ",
-     "severity": 0.442
-    },
-    "route_loss": {
-     "response": "организованный ответ",
-     "severity": 0.469
-    },
-    "sanctions": {
-     "response": "организованный ответ",
-     "severity": 0.349
-    },
-    "shortage": {
-     "response": "организованный ответ",
-     "severity": 0.284
-    },
-    "war": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    }
-   }
-  },
-  "site.000.sol_authority.trade_hub01": {
+  "site.000.sol.shackleton": {
    "archetype": "rich_hub",
    "archetype_ru": "насыщенный богатый центр",
    "comms_delay_days": 0.0,
    "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
    "metrics": {
-    "activity": 0.777,
+    "activity": 1.0,
+    "corruption": 0.259,
+    "crime": 0.192,
+    "institutional_capacity": 0.74,
+    "isolation": 0.15,
+    "medical_resilience": 0.71,
+    "political_volatility": 0.18,
+    "prosperity": 1.0,
+    "security_pressure": 0.335,
+    "social_cohesion": 0.602,
+    "supply_security": 0.797,
+    "trust": 0.561
+   },
+   "reactions": {
+    "accident": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "beacon_loss": {
+     "response": "организованный ответ",
+     "severity": 0.435
+    },
+    "epidemic": {
+     "response": "организованный ответ",
+     "severity": 0.423
+    },
+    "infrastructure_destruction": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "mass_migration": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    },
+    "pirates": {
+     "response": "организованный ответ",
+     "severity": 0.464
+    },
+    "quarantine": {
+     "response": "организованный ответ",
+     "severity": 0.53
+    },
+    "refugee_influx": {
+     "response": "организованный ответ",
+     "severity": 0.442
+    },
+    "route_loss": {
+     "response": "организованный ответ",
+     "severity": 0.469
+    },
+    "sanctions": {
+     "response": "организованный ответ",
+     "severity": 0.349
+    },
+    "shortage": {
+     "response": "организованный ответ",
+     "severity": 0.284
+    },
+    "war": {
+     "response": "организованный ответ",
+     "severity": 0.542
+    }
+   }
+  },
+  "site.000.sol.titan": {
+   "archetype": "rich_hub",
+   "archetype_ru": "насыщенный богатый центр",
+   "comms_delay_days": 0.0,
+   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "metrics": {
+    "activity": 0.715,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
@@ -3949,13 +5069,13 @@
     }
    }
   },
-  "site.000.sol_authority.trade_hub02": {
-   "archetype": "rich_hub",
-   "archetype_ru": "насыщенный богатый центр",
+  "site.000.sol.titania": {
+   "archetype": "calm_provided",
+   "archetype_ru": "спокойное обеспеченное место",
    "comms_delay_days": 0.0,
-   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "description": "Спокойно и обеспечено, работают институты.",
    "metrics": {
-    "activity": 0.777,
+    "activity": 0.653,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
@@ -4019,13 +5139,13 @@
     }
    }
   },
-  "site.000.sol_authority.trade_hub03": {
+  "site.000.sol.triton": {
    "archetype": "rich_hub",
    "archetype_ru": "насыщенный богатый центр",
    "comms_delay_days": 0.0,
    "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
    "metrics": {
-    "activity": 0.777,
+    "activity": 0.867,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
@@ -4089,18 +5209,18 @@
     }
    }
   },
-  "site.000.sol_authority.trade_hub04": {
-   "archetype": "rich_hub",
-   "archetype_ru": "насыщенный богатый центр",
+  "site.000.sol.venus": {
+   "archetype": "sleepy_periphery",
+   "archetype_ru": "размеренная скучная периферия",
    "comms_delay_days": 0.0,
-   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "description": "Мало событий, мало кораблей, всё по расписанию.",
    "metrics": {
-    "activity": 0.777,
+    "activity": 0.371,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
     "isolation": 0.15,
-    "medical_resilience": 0.67,
+    "medical_resilience": 0.662,
     "political_volatility": 0.18,
     "prosperity": 1.0,
     "security_pressure": 0.335,
@@ -4119,7 +5239,7 @@
     },
     "epidemic": {
      "response": "организованный ответ",
-     "severity": 0.441
+     "severity": 0.444
     },
     "infrastructure_destruction": {
      "response": "организованный ответ",
@@ -4159,18 +5279,18 @@
     }
    }
   },
-  "site.000.sol_authority.trade_hub05": {
-   "archetype": "rich_hub",
-   "archetype_ru": "насыщенный богатый центр",
+  "site.000.sol.vesta": {
+   "archetype": "calm_provided",
+   "archetype_ru": "спокойное обеспеченное место",
    "comms_delay_days": 0.0,
-   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
+   "description": "Спокойно и обеспечено, работают институты.",
    "metrics": {
-    "activity": 0.777,
+    "activity": 0.473,
     "corruption": 0.259,
     "crime": 0.192,
     "institutional_capacity": 0.74,
     "isolation": 0.15,
-    "medical_resilience": 0.67,
+    "medical_resilience": 0.589,
     "political_volatility": 0.18,
     "prosperity": 1.0,
     "security_pressure": 0.335,
@@ -4189,77 +5309,7 @@
     },
     "epidemic": {
      "response": "организованный ответ",
-     "severity": 0.441
-    },
-    "infrastructure_destruction": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "mass_migration": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "pirates": {
-     "response": "организованный ответ",
-     "severity": 0.464
-    },
-    "quarantine": {
-     "response": "организованный ответ",
-     "severity": 0.53
-    },
-    "refugee_influx": {
-     "response": "организованный ответ",
-     "severity": 0.442
-    },
-    "route_loss": {
-     "response": "организованный ответ",
-     "severity": 0.469
-    },
-    "sanctions": {
-     "response": "организованный ответ",
-     "severity": 0.349
-    },
-    "shortage": {
-     "response": "организованный ответ",
-     "severity": 0.284
-    },
-    "war": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    }
-   }
-  },
-  "site.000.sol_authority.trade_hub06": {
-   "archetype": "rich_hub",
-   "archetype_ru": "насыщенный богатый центр",
-   "comms_delay_days": 0.0,
-   "description": "Плотный трафик, деньги и сервис; всё есть, всё дорого.",
-   "metrics": {
-    "activity": 0.777,
-    "corruption": 0.259,
-    "crime": 0.192,
-    "institutional_capacity": 0.74,
-    "isolation": 0.15,
-    "medical_resilience": 0.67,
-    "political_volatility": 0.18,
-    "prosperity": 1.0,
-    "security_pressure": 0.335,
-    "social_cohesion": 0.602,
-    "supply_security": 0.797,
-    "trust": 0.561
-   },
-   "reactions": {
-    "accident": {
-     "response": "организованный ответ",
-     "severity": 0.542
-    },
-    "beacon_loss": {
-     "response": "организованный ответ",
-     "severity": 0.435
-    },
-    "epidemic": {
-     "response": "организованный ответ",
-     "severity": 0.441
+     "severity": 0.477
     },
     "infrastructure_destruction": {
      "response": "организованный ответ",

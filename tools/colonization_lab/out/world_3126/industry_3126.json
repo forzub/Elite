@@ -973,28 +973,9 @@
   ]
  },
  "by_site": {
-  "site.000.sol_authority.industrial_hub01": {
+  "earth_hub.wenchang": {
    "assembled": [],
    "produced": [
-    {
-     "blocks": [
-      "hull_structure",
-      "main_drive",
-      "reactor",
-      "cargo_modules"
-     ],
-     "maker": "Orbital Freight Union «Ural-Kourou»"
-    },
-    {
-     "blocks": [
-      "hull_structure",
-      "rotating_rings",
-      "dock_modules",
-      "pressure_segments",
-      "radiator_arrays"
-     ],
-     "maker": "Лунно-Марсианские верфи"
-    },
     {
      "blocks": [
       "habitat_cabins",
@@ -1015,9 +996,29 @@
    ],
    "sold": []
   },
-  "site.000.sol_authority.trade_hub01": {
+  "earth_orbital_hub": {
    "assembled": [],
-   "produced": [],
+   "produced": [
+    {
+     "blocks": [
+      "hull_structure",
+      "main_drive",
+      "reactor",
+      "cargo_modules"
+     ],
+     "maker": "Orbital Freight Union «Ural-Kourou»"
+    },
+    {
+     "blocks": [
+      "hull_structure",
+      "rotating_rings",
+      "dock_modules",
+      "pressure_segments",
+      "radiator_arrays"
+     ],
+     "maker": "Лунно-Марсианские верфи"
+    }
+   ],
    "sold": [
     {
      "imports_from": [
@@ -5276,7 +5277,7 @@
   },
   {
    "check": "rescue_covers_every_site",
-   "detail": "503 sites",
+   "detail": "518 sites",
    "ok": true
   }
  ],

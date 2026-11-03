@@ -32,6 +32,7 @@ import random
 import sys
 
 import endowment as endow
+import sol_network
 import lab
 import logistics as lg
 import lotus_model
@@ -41,6 +42,7 @@ OUT = os.path.join(HERE, "out", "world_3126")
 CATALOG = endow.CATALOG
 RUNTIME_SITES = os.path.join(CATALOG, "world_sites", "sites_3126.json")
 RUNTIME_OBJECTS = os.path.join(CATALOG, "objects_details")
+RUNTIME_WORLD_STATE = os.path.join(endow.ROOT, "src", "assets", "data", "initial_world_state.json")
 YEAR = 3126
 SOL = "sol_authority"
 LY_KM = 9.4607e12
@@ -341,6 +343,8 @@ def build_sites(I, dsos):
         used.add(d["id"])
     # generated from the economy: cities (habitats, ports), then hubs from infrastructure counts
     for k in sorted(I.pol):
+        if k == SOL:
+            continue          # Sol: the explained hub network of sol_network.py (added in compute)
         e = I.pol[k]
         system = I.system_of(k)
         inf = I.X["infrastructure"]["polities"][k]["assets"]
@@ -424,6 +428,52 @@ def build_sites(I, dsos):
     for s in sites:
         s["language"] = I.language(s["polity"]) if s["polity"] else I.WS["languages"]["network_lingua_franca"]
     return sites
+
+
+def sol_sites(I, net):
+    """Sol hub network -> site records (one id = one world object; generic ids of the earlier pass are aliases)."""
+    rows = []
+    anchors = {a["id"]: a for a in net["belt_anchors"]}
+
+    def info(h, polity=SOL):
+        return dict(owner=h.get("owner"), founder=h.get("founder"), founded=h.get("founded"), function=h.get("function"), role=h.get("role_ru"),
+                    character=h.get("character"), name_basis=h.get("name_basis"), legacy_ids=h.get("legacy_ids", []), dock_sectors=h.get("dock_sectors"),
+                    pads_per_sector=h.get("pads_per_sector"), arrivals_day=h.get("arrivals_day"), movements_day=h.get("movements_day"),
+                    utilisation=h.get("utilisation"), history=h.get("history"), knowledge=h.get("knowledge"))
+    for h in net["earth_hubs"]:
+        rec = base_site(I, h["id"], h["name"], h["type"], 0, SOL, h["operator"], h["population"], h["role_ru"], body="system_0.Sol.Земля",
+                        placement=dict(orbit=dict(altitude_km=h["altitude_km"], inclination_deg=h["inclination_deg"], lan_deg=h["lan_deg"], phase_deg=h["phase_deg"])),
+                        runtime_binding=f"initial_world_state.orbital_hubs[{h['id']}]", source="sol_network", **info(h))
+        rec["docks"] = h["docks"]
+        rows.append(rec)
+    for h in net["hubs"]:
+        if h["type"] == "pirate_enclave":
+            continue        # the enclave itself comes from the piracy model; sol_network only names and places it
+        body = h.get("body")
+        if "orbit_altitude_km" in h:
+            pl = dict(orbit=dict(altitude_km=h["orbit_altitude_km"], inclination_deg=0.0))
+        elif "surface" in h and body:
+            pl = dict(surface=dict(h["surface"], placement_status="authored"))
+        elif h.get("anchor", "").startswith("lagrange:"):
+            _, pair, pt = h["anchor"].split(":")
+            prim, sec = pair.split("-")
+            ids = {"Земля": "system_0.Sol.Земля", "Луна": "system_0.Sol.Земля.Луна", "Солнце": "system_0.Sol"}
+            body = ids[prim] if prim != "Солнце" else "system_0.Sol.Земля"
+            pl = dict(lagrange_point=dict(primary=ids[prim], secondary=ids[sec], point=pt))
+        elif h.get("belt_anchor") or h.get("body_anchor"):
+            a = anchors[h.get("belt_anchor") or h.get("body_anchor")]
+            body = "system_0.Sol.asteroid_belt"
+            pl = dict(heliocentric=dict(anchor=a["id"], anchor_name=a["name"], a_au=a["a_au"], e=a["e"], i_deg=a["i_deg"], node_deg=a["node_deg"],
+                                        peri_deg=a["peri_deg"], mean_anomaly_epoch_deg=a["mean_anomaly_epoch_deg"], offset_km=h.get("offset_km", 0),
+                                        surface=h.get("surface")))
+        else:
+            raise ValueError(h["id"])
+        rec = base_site(I, h["id"], h["name"], h["type"], 0, SOL, h["operator"], h["population"], h["role_ru"], body=body, placement=pl,
+                        runtime_binding=h.get("runtime_binding"), source="sol_network", **info(h))
+        rec["map_level"] = "detail" if "surface" in pl or (pl.get("heliocentric") or {}).get("surface") else "system"     # every Sol hub is findable on the System Map
+        rec["docks"] = h["docks"]
+        rows.append(rec)
+    return rows
 
 
 # Earth in the maps is the real Earth (texture and coastlines), so its agglomerations stand where
@@ -1331,6 +1381,8 @@ def checks(I, out):
         f"stabilisers {L_['demand_at_price']['stabiliser_g_y']} g/y of {L_['supply']['refined_g_y']} g/y; installed {L_['stabilizer']['installed_g']} g")
     add("medical_is_main_demand", L_["demand_at_price"]["medical_g_y"] > L_["demand_at_price"]["research_g_y"] + L_["demand_at_price"]["stabiliser_g_y"],
         f"medical {L_['demand_at_price']['medical_g_y']} g/y, research {L_['demand_at_price']['research_g_y']}, stabilisers {L_['demand_at_price']['stabiliser_g_y']}")
+    for c in out["sol_network"]["checks"]:
+        add("sol." + c["check"], c["ok"], c["detail"])
     add("lotus_identity_known_to_developers", out["frontier"]["developer_truth"]["truth"]["identity"]["ship"] == "NIRVANA-1", "NIRVANA-1 (CANON, AUTHOR_TRUTH)")
     c = out["comms"]
     far = max(c["frontier_from_sol_days"].values())
@@ -1369,11 +1421,19 @@ def runtime_export(I, out):
     """GENERATED runtime copies: in-system sites + zones (System / Detail maps) and deep-space objects (Galaxy Map)."""
     S = out["sites"]["sites"]
     rows = []
+    jur = {r["site"]: r for r in out["law"]["sites"]}
     for s in S:
-        if s["system"] is None or s.get("hidden") or s["type"] == "pirate_enclave":
+        if s["system"] is None or s.get("hidden") or s["type"] == "pirate_enclave":     # enclaves: only when the player knows (runtime knowledge)
             continue
-        rows.append(dict(id=s["id"], name=s["name"], type=s["type"], system_id=s["system"], parent_body_id=s.get("body"), placement=s["placement"],
-                         map_level=s["map_level"], polity=s["polity"], population=s["population"], runtime_binding=s.get("runtime_binding")))
+        j = jur.get(s["id"], {})
+        rows.append(dict(id=s["id"], name=s["name"], type=s["type"], type_ru=s.get("type_ru"), system_id=s["system"], parent_body_id=s.get("body"),
+                         placement=s["placement"], map_level=s["map_level"], polity=s["polity"], polity_name=I.pol[s["polity"]]["name"] if s["polity"] in I.pol else None,
+                         population=s["population"], runtime_binding=s.get("runtime_binding"), operator=s.get("operator"), owner=s.get("owner"),
+                         founded=s.get("founded"), founder=s.get("founder"), purpose=s.get("role") or s.get("purpose"), character=s.get("character"),
+                         function=s.get("function"), docks=s.get("docks"), dock_sectors=s.get("dock_sectors"), arrivals_day=s.get("arrivals_day"),
+                         utilisation=s.get("utilisation"), repair=s.get("repair"), storage_t=s.get("storage_t"), security=s.get("security_base"),
+                         medical_beds=s.get("medical_beds"), quarantine_beds=s.get("quarantine_beds"), legal=s.get("legal"),
+                         jurisdiction=j.get("applicable_law_ru"), enforcement=j.get("enforcement"), known_to_player=s.get("known_to_player", "public")))
     for c in out["sites"]["earth"]:
         if c.get("spaceport"):
             rows.append(dict(id=c["id"], name=c["name"], type="planetary_surface_port", system_id=0, parent_body_id=c["body"],
@@ -1384,8 +1444,15 @@ def runtime_export(I, out):
         if anc.startswith("system_") and "." in anc and z["knowledge"] in ("official", "mapped", "partial"):
             zones.append(dict(id=z["id"], name=z["name"], kind=z["kind"], anchor_body_id=anc, shape=z["shape"], radius_km=z.get("radius_km"),
                               knowledge=z["knowledge"]))
+    net = out["sol_network"]
     doc = dict(schema="elite.world_sites_runtime.v1", generated_by="tools/colonization_lab/world_sites.py", do_not_edit=True, epoch_year=I.WS["epoch_year"],
-               status=TAG, sites=rows, zones=zones)
+               status=TAG, sites=rows, zones=zones,
+               routes=[dict(id=r["id"], type=r["type"], system_id=0, origin=r["origin"], destination=r["destination"], pax_y=r.get("pax_y", 0),
+                            cargo_t_y=r.get("cargo_t_y", 0), flights_day=r["flights_day"], ship_class=r["ship_class"], travel_days=r["travel_days"],
+                            disruption=r["disruption"], hazard=r["hazard"]) for r in net["routes"]],
+               relays=[dict(id=r["id"], name=r["name"], system_id=0, region=r["region"], anchor=r["anchor"], reason=r["reason"]) for r in net["relays"]],
+               belt_anchors=[dict(a, system_id=0) for a in net["belt_anchors"]],
+               systems=system_summaries(I, out))
     objs = []
     for d in out["frontier"]["deep_space_objects"]:
         if d["hidden"]:
@@ -1398,6 +1465,61 @@ def runtime_export(I, out):
                                          population=(ss or {}).get("population"), polity=(ss or {}).get("polity"),
                                          provenance=dict(generator="tools/colonization_lab/world_sites.py", status=TAG))))
     return doc, objs
+
+
+def system_summaries(I, out):
+    """Right panel of the System Map: the summary of every inhabited system, assembled from the world model
+    (polities, economy, events, epidemics, hazards, shortages, traffic) - never a hand-written status text."""
+    eco = I.X["economy"]["polities"]
+    ev_by_sys = {}
+    site_sys = {x["id"]: x["system"] for x in out["sites"]["sites"]}
+    zone_sys = {}
+    for z in out["frontier"]["hazard_zones"]:
+        anc = z.get("anchor") or ""
+        zone_sys[z["id"]] = int(anc.split(".")[0].split("_")[1]) if anc.startswith("system_") else site_sys.get(anc)
+    for e in out["events"].get("events", []) + out["events"].get("epidemics", []):
+        loc = e.get("location") or e.get("origin")
+        sysid = site_sys.get(loc, zone_sys.get(loc)) if isinstance(loc, str) else None
+        if sysid is not None:
+            ev_by_sys.setdefault(sysid, []).append(e.get("kind") or "epidemic")
+    hz_by_sys = {}
+    for z in out["frontier"]["hazard_zones"]:
+        anc = z.get("anchor") or ""
+        if anc.startswith("system_"):
+            hz_by_sys.setdefault(int(anc.split(".")[0].split("_")[1]), []).append(z["name"])
+    com = json.load(open(os.path.join(HERE, "canon", "commodities.json"), encoding="utf-8"))["commodities"]
+    cat_ru = {c["id"]: c.get("name", c["id"]) for c in com} if isinstance(com, list) else {k: (v.get("name") or k) for k, v in com.items()}
+    out_rows = []
+    by_sys = {}
+    for k, p in eco.items():
+        by_sys.setdefault(I.system_of(k), []).append(k)
+    for sysid, ks in sorted(by_sys.items()):
+        ks = sorted(ks, key=lambda k: -eco[k]["population"])
+        main = ks[0]
+        bal = {}
+        for k in ks:
+            for c, b in eco[k]["balance"].items():
+                t = bal.setdefault(c, dict(production=0, imports=0, exports=0, unmet=0, consumption=0))
+                for f in t:
+                    t[f] += b.get(f, 0)
+        top = sorted(bal, key=lambda c: -bal[c]["production"])[:3]
+        imp = sorted((c for c in bal if bal[c]["imports"] > 0), key=lambda c: -bal[c]["imports"])[:3]
+        exp = sorted((c for c in bal if bal[c]["exports"] > 0), key=lambda c: -bal[c]["exports"])[:3]
+        short = [c for c in bal if bal[c]["unmet"] > 0.05 * max(1, bal[c]["consumption"])]
+        pop = sum(eco[k]["population"] for k in ks)
+        state = []
+        if sysid in ev_by_sys:
+            state += ev_by_sys[sysid]
+        if short:
+            state.append("shortage")
+        out_rows.append(dict(system_id=sysid, name=I.E[sysid]["name"] if sysid in I.E else str(sysid), primary_polity=main, primary_name=eco[main]["name"],
+                             regime=eco[main]["regime"], other_actors=[dict(polity=k, name=eco[k]["name"]) for k in ks[1:]],
+                             population=pop, gdp_cr_y=sum(eco[k]["gdp_cr_y"] for k in ks), law_family=I.law_family(main),
+                             industries=[cat_ru.get(c, c) for c in top], imports=[cat_ru.get(c, c) for c in imp], exports=[cat_ru.get(c, c) for c in exp],
+                             shortages=[cat_ru.get(c, c) for c in short], hazards=hz_by_sys.get(sysid, []),
+                             traffic_arrivals_day=round(sum(x["departures_y"] for x in out["passengers"]["od_top"] if any(I.system_of(e) == sysid for e in x["link"])) / 365.0, 1),
+                             state=state or ["quiet"]))
+    return out_rows
 
 
 def md_report(I, out, chk):
@@ -1434,6 +1556,10 @@ def compute():
     g = route_graph(I)
     dsos = dso_records(I)
     sites = build_sites(I, dsos)
+    pax = passengers(I, g)
+    earth = earth_settlements(I)
+    sol = sol_network.compute(I, earth, pax)
+    sites += sol_sites(I, sol)
     comms = comms_model(I, sites, dsos, g)
     csite = {r["site"]: r for r in comms["sites"]}
     eco = I.pol
@@ -1443,6 +1569,11 @@ def compute():
     by_sys, enclaves = piracy_model(I, sites, None)
     for s in enclaves:
         s["language"] = I.WS["languages"]["network_lingua_franca"]
+        named = next((h for h in sol["hubs"] if h["id"] == s["id"]), None)
+        if named:       # Sol's enclave: named and placed by the Sol network (Hilda group), known to the player only as a rumour
+            s.update(name=named["name"], placement=dict(belt=dict(radius_au=named["belt_sector"]["radius_au"], longitude_deg=named["belt_sector"]["longitude_deg"],
+                                                                     sector=named["belt_sector"]["label"])),
+                     known_to_player=named["known_to_player"], founded=named["founded"], founder=named["founder"], role=named["role_ru"], character=named["character"])
     sites += enclaves
     comms = comms_model(I, sites, dsos, g)
     csite = {r["site"]: r for r in comms["sites"]}
@@ -1458,7 +1589,6 @@ def compute():
                                reactions=shock_reactions(m), comms_delay_days=r3(delay))
     admins = administrators(I, sites, social)
     law = law_model(I, sites, comms)
-    pax = passengers(I, g)
     age = fleet_age(I)
     wrecks = wreck_fields(I)
     front = frontier_model(I, dsos, sites, g)
@@ -1466,15 +1596,15 @@ def compute():
     front["piracy_by_system"] = [by_sys[k] for k in sorted(by_sys)]
     front["wrecks"] = wrecks
     out = dict(
-        sites=dict(sites=sites, earth=earth_settlements(I), status=TAG,
+        sites=dict(sites=sites, earth=earth, status=TAG,
                    note="хаб — объект мира; маркер карты — только визуализация. Счётные объекты (рудники, заводы) агрегированы в хабы с полем aggregates."),
         society=dict(sites=social, administrators=admins, archetypes=I.WS["social"]["archetypes"], status=TAG),
-        law=law, comms=comms, passengers=pax, fleet_age=age, frontier=front)
+        law=law, comms=comms, passengers=pax, fleet_age=age, frontier=front, sol_network=sol)
     out["events"] = world_events(I, comms)
     return I, out
 
 
-NAMES = ("sites", "society", "law", "comms", "passengers", "fleet_age", "frontier", "events")
+NAMES = ("sites", "society", "law", "comms", "passengers", "fleet_age", "frontier", "events", "sol_network")
 
 
 def serialise(I, out, chk):
@@ -1483,6 +1613,11 @@ def serialise(I, out, chk):
     files["WORLD_SITES_3126.md"] = md_report(I, out, chk)
     doc, objs = runtime_export(I, out)
     runtime = {RUNTIME_SITES: json.dumps(doc, ensure_ascii=False, indent=1, sort_keys=True) + "\n"}
+    ws_doc = json.load(open(RUNTIME_WORLD_STATE, encoding="utf-8"))
+    template = next(h for h in ws_doc["orbital_hubs"] if h["id"] == "earth_orbital_hub")
+    ws_doc["orbital_hubs"] = sol_network.runtime_hubs(out["sol_network"], template)
+    ws_doc["orbital_hubs_generated_by"] = "tools/colonization_lab/world_sites.py (sol_network.py); edit canon/sol_network.json, not this list"
+    runtime[RUNTIME_WORLD_STATE] = json.dumps(ws_doc, ensure_ascii=False, indent=2) + "\n"
     for o in objs:
         runtime[os.path.join(RUNTIME_OBJECTS, f"world_{o['id'].replace('.', '_')}.json")] = json.dumps(o, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     return files, runtime

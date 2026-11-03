@@ -1757,6 +1757,48 @@ Restore point: tag `restore/pre-sol-network-2026-11-03` (= 7ec5f4c1). Branch mai
   effect, stabiliser demand small, medical main demand, networks self-source
   cheaper than buying < map-buyers); lore_md 132 OK; lore_html rebuilt.
 
+#### Stage 2 (B): Sol hub network - world data (offline + runtime data; PROPOSAL)
+- `canon/sol_network.json` (authored: names, history, owners, orbits, rules) +
+  `sol_network.py` (derived: populations, traffic, docks, utilisation, routes,
+  relays, checks); world_sites.py replaces the generic Sol hubs with it.
+  `earth_orbital_hub` moved from world_sites named_sites into sol_network (one
+  source; founded 3108 on the Cordon station site kept from the old record).
+- Earth: 12 hub complexes (AUTHOR_TARGET) in 11 planes: Vysokiy 51.64 (gateway,
+  player start), Baikonur 51.64 (opposite phase), Meridian 56.5 (the only plane
+  Moscow reaches directly), Tikhiy 36.2 (Tokyo), Tanegashima 31.6, Canaveral 29,
+  Tropic 24.5, Wenchang 19.8, Sriharikota 14.8, Kourou 6, Ekvator (GEO), Aurora
+  (SSO 98.6). Surface traffic 398.4 M legs/y (~1.09 M/day, ~13.5 k SL-12
+  flights/day) split per agglomeration over the planes it reaches directly
+  (i >= |lat|, logit on the lost Earth-rotation boost); rest of Earth follows
+  the agglomerations' latitude mix; no fixed city -> hub binding.
+- Dock semantics: dock_sector = runtime 6-pad HexDock; hubs get
+  `dock_sectors` x 6 pads sized to mean utilisation ~0.62 (peak x1.35); only
+  Vysokiy's first sector is visible in runtime (presentation limit recorded).
+- Other Sol: 31 hubs at Moon / EML1 / EML4 / EML5 / SEL2, Mars (Phobos, Ares,
+  New Tharsis, Hellas, Deimos), Mercury, Venus (aerostat science), Belt
+  (Ceres, Ahuna, Vesta, Pallas, Hygiea + the Hilda pirate enclave, rumour only),
+  Jupiter, Saturn, Uranus, Neptune; counts checked against drivers (population,
+  mines, gas platforms, research, military). Belt hubs stand at persistent
+  anchors with real orbital elements (Ceres, Vesta, Pallas, Hygiea are not in
+  the physical catalog). The two generic mining hubs at 246.10 / 245.17 deg
+  were adjacent by id hash -> merged into the Ceres cluster; 26 generic ids
+  mapped once as legacy aliases.
+- 82 aggregate routes with persistent ids (Earth hub<->hub shuttles,
+  interplanetary passenger / cargo / gas, belt ore tugs, Moon shuttles), 19
+  local nav relays (2 per inhabited region + dense-node extra + SE L4/L5
+  conjunction relays).
+- Runtime data: initial_world_state.json orbital_hubs is now GENERATED (12 Earth
+  hubs + "Pereval Tserery" co-orbiting the Ceres anchor, parent = the Sun, one
+  command_station model family); sites_3126.json gains hub details, routes,
+  relays, belt anchors and per-system summaries (state from events / epidemics /
+  shortages, never a hand-written status).
+- Found, not changed: OrbitalMotion's circle runs +X -> +Z (retrograde against the
+  catalog's prograde convention) and is relative to the parent's ecliptic-aligned
+  frame, not the Earth equator; the Ceres hub compensates with i = 173.9 deg.
+- Checks: world_sites 39/39 (14 new sol.*), industry, world_economy, logistics,
+  lab dataset / lore, lore_md 133 (new ECONOMY/SOL_NETWORK.md), lore_html 136
+  OK; sol / runtime outputs byte-identical across runs.
+
 ## Next step
 - After the user's review of the spatial layer: Stage 4 runtime communication
   (beacon coverage / relay delays in the client: messages, bank, warrants,

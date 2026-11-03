@@ -11,7 +11,7 @@ import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WE_DIR = os.path.join(HERE, "out", "world_3126")
-NAMES = ("sites", "society", "law", "comms", "passengers", "fleet_age", "frontier", "world_events", "industry", "rescue")
+NAMES = ("sites", "society", "law", "comms", "passengers", "fleet_age", "frontier", "world_events", "industry", "rescue", "sol_network")
 TAG = "`PROPOSAL` (модель)"
 
 
@@ -291,11 +291,63 @@ def docs(D, lm):
     d.gen("pax_age", "\n".join(g))
     out.append(d)
     out += industry_docs(D, lm, S, sites)
+    out += sol_docs(D, lm, S, sites)
     return out
 
 
 LVL_RU = {"concern": "концерн", "assembly": "сборка", "parts": "детали", "import": "покупка"}
 CH_RU = {"open": "открыто (свой блок)", "licensed": "по лицензии", "restricted": "ограничено", "black": "чёрный рынок / реэкспорт", "own": "своё", "none": "нет"}
+
+
+FUNC_RU = {"interstellar_gateway": "межзвёздные ворота", "customs": "таможня", "passenger": "пассажиры", "administration": "администрация", "cargo": "грузы",
+           "heavy_lift": "тяжёлые грузы", "shipyard_service": "обслуживание верфей", "interplanetary": "межпланетные рейсы", "fuel": "топливо",
+           "power": "энергосеть", "industry": "промышленность", "comms": "связь", "science": "наука", "observation": "наблюдение Земли",
+           "polar_service": "полярная связь", "transfer": "пересадка", "ice": "лёд", "mining": "добыча", "defence": "оборона", "quarantine": "карантин",
+           "medical": "медицина", "shipyard": "верфь", "agro": "агро", "logistics": "логистика", "metallurgy": "металлургия", "high_inclination": "высокие наклонения",
+           "black_market": "чёрный рынок", "energy": "энергия", "atmosphere": "атмосфера", "trade": "торговля", "chemicals": "химия", "gas": "газ", "outer_relay": "ретранслятор"}
+ROUTE_RU = {"passenger": "пассажирский", "cargo": "грузовой", "shuttle": "челночный", "mining": "рудный"}
+
+
+def sol_docs(D, lm, S, sites):
+    if "sol_network" not in S:
+        return []
+    N = S["sol_network"]
+    nm = lambda i: sites[i]["name"] if i in sites else i
+    fn = lambda f: ", ".join(FUNC_RU.get(x, x) for x in f)
+    d = lm.new_doc(D, "ECONOMY/SOL_NETWORK.md", "Сеть хабов Солнечной системы", "economy")
+    sf = N["surface"]
+    g = ["Источник: `tools/colonization_lab/sol_network.py` (`canon/sol_network.json` — имена, история, владельцы, орбиты; всё остальное — из населения, "
+         "добычи, пассажирской модели и физики орбит) → `out/world_3126/sol_network_3126.json`; рантайм: `initial_world_state.json → orbital_hubs` "
+         "(12 хабов Земли + «Перевал Цереры»), `galaxy_details/world_sites/sites_3126.json` (маркеры, маршруты, ретрансляторы, сводки систем).", "",
+         "### Земная орбитальная сеть", "",
+         f"Поверхность ↔ орбита: {n0(sf['legs_y'])} пассажирских плеч в год (~{n0(sf['legs_day'])} в сутки) → ~{n0(sf['lifter_flights_day'])} рейсов SL-12 в сутки "
+         f"({sf['lifter_seats']} мест, загрузка {sf['load_factor']}), плюс грузовые и служебные. Один хаб такой поток не принимает: 12 комплексов в разных плоскостях. "
+         "Город летает в плоскости, куда попадает прямым стартом на восток (наклонение ≥ широты); жёсткой привязки «город → хаб» нет: поток делится по всем доступным плоскостям.", "",
+         lm.table(["Хаб", "Высота, км", "Наклонение", "Узел", "Фаза", "Период, мин", "Назначение", "Население", "Секторов × 6", "Движений/сутки", "Загрузка"],
+                  [(h["name"], h["altitude_km"], h["inclination_deg"], h["lan_deg"], h["phase_deg"], h["period_min"], fn(h["function"]), n0(h["population"]),
+                    h["dock_sectors"], n0(h["movements_day"]), h["utilisation"]) for h in N["earth_hubs"]]), "",
+         f"Минимальное сближение хабов за двое суток: {n0(N['min_separation_km'])} км ({' — '.join(nm(x) for x in N['min_separation_pair'])}). "
+         "Сектор — шестиплощадочный HexDock рантайма; в игре пока показан один сектор «Высокого» (ограничение представления, не модели).", "",
+         lm.table(["Хаб", "Основан", "Основатель", "Оператор", "Почему так назван", "Характер"],
+                  [(h["name"], h["founded"], h["founder"], h["operator"], h["name_basis"], h["character"]) for h in N["earth_hubs"]]), "",
+         "### Остальной Сол", "",
+         lm.table(["Район", "Хаб", "Тип", "Назначение", "Основан", "Владелец / оператор", "Население", "Прибытий/сутки", "Доков"],
+                  [(N["regions"][h["region"]]["ru"], h["name"], sites[h["id"]]["type_ru"] if h["id"] in sites else h["type"], fn(h["function"]), h["founded"],
+                    f"Власть Сола / {h['operator']}" if h.get("owner") else h["operator"], n0(h["population"]), n0(h["arrivals_day"]), h["docks"]) for h in N["hubs"]]), "",
+         "Население районов вне Земли: " + "; ".join(f"{N['regions'][r]['ru']} {n0(p)}" for r, p in N["region_population"].items() if p) + ".", "",
+         "### Главный пояс", "",
+         "Крупных астероидов в физическом каталоге нет (пояс — статистический резервуар), поэтому хабы стоят у постоянных якорей с реальными элементами орбит: "
+         + "; ".join(f"{a['name']} (a {a['a_au']} а.е., e {a['e']}, i {a['i_deg']}°)" for a in N["belt_anchors"]) + ". "
+         "Два генерических рудных хаба прошлого прохода стояли на соседних долготах 246.10° и 245.17° случайно (хеш id); они объединены в кластер «Перевал Цереры».", "",
+         "### Маршруты (агрегат, не отдельные рейсы)", "",
+         lm.table(["Маршрут", "Тип", "Откуда", "Куда", "Пассажиров/год", "Груза, т/год", "Рейсов/сутки", "Класс", "В пути, сут"],
+                  [(r["id"], ROUTE_RU.get(r["type"], r["type"]), nm(r["origin"]), nm(r["destination"]), n0(r.get("pax_y")), n0(r.get("cargo_t_y")), r["flights_day"],
+                    r["ship_class"], r["travel_days"]) for r in sorted(N["routes"], key=lambda r: -r["flights_day"])[:40]]), "",
+         "### Ретрансляторы", "", N.get("relay_rule", ""),
+         lm.table(["Ретранслятор", "Район", "Зачем"], [(r["name"], N["regions"].get(r["region"], {}).get("ru", "транзит Земля–Марс–пояс"), r["reason"]) for r in N["relays"]]), "",
+         "### Проверки", ""] + [f"- {'OK' if c['ok'] else 'FAIL'} `{c['check']}` — {c['detail']}" for c in N["checks"]]
+    d.gen("sol_network", "\n".join(g))
+    return [d]
 
 
 def industry_docs(D, lm, S, sites):

@@ -153,8 +153,8 @@ def plant_site(I, k, kind):
     for cand in (f"site.{sys_:03d}.{k}.{pref}", f"site.{sys_:03d}.{k}.industrial_hub01", f"site.{sys_:03d}.{k}.trade_hub01", f"site.{sys_:03d}.{k}.city01"):
         if cand in ids:
             return cand
-    if k == SOL:
-        return "earth_orbital_hub"
+    if k == SOL:      # Sol: the named hub network (sol_network.py)
+        return {"industrial_hub": "earth_hub.wenchang", "mining_hub": "site.000.sol.ceres", "military_hub": "site.000.sol.military_luna"}.get(kind, "earth_orbital_hub")
     return sorted(ids)[0] if ids else None
 
 

@@ -210,8 +210,8 @@
 
 | Место | Производят | Собирают | Продают (импорт откуда) |
 |---|---|---|---|
-| Солнечная Администрация (Sol Authority): промышленный хаб 1 | Orbital Freight Union «Ural-Kourou»: hull_structure, main_drive, reactor, cargo_modules; Лунно-Марсианские верфи: hull_structure, rotating_rings, dock_modules, pressure_segments, radiator_arrays; Terra Habitat: habitat_cabins, agro_life_modules, life_support; Sol Reactor Works: reactor, reactor_modules, thermal, he3_separators | — | — |
-| Солнечная Администрация (Sol Authority): торговый хаб 1 | — | — | Новый Шанхай (по лицензии) |
+| Вэньчан | Terra Habitat: habitat_cabins, agro_life_modules, life_support; Sol Reactor Works: reactor, reactor_modules, thermal, he3_separators | — | — |
+| Высокий | Orbital Freight Union «Ural-Kourou»: hull_structure, main_drive, reactor, cargo_modules; Лунно-Марсианские верфи: hull_structure, rotating_rings, dock_modules, pressure_segments, radiator_arrays | — | Новый Шанхай (по лицензии) |
 | Цитадель: промышленный хаб 1 | — | reactor, main_drive, thermal, life_support, rcs, cargo_modules, drill_heads, mass_drivers, tug_drives, scoop_platforms, he3_separators, cryo_tanks, rotating_rings, dock_modules, reactor_modules, radiator_arrays, agro_life_modules, shielding, habitat_cabins | — |
 | Цитадель: военный хаб 1 | Арсенал «Бастион»: jump_core, hull_structure, weapons, avionics | — | — |
 | Цитадель: торговый хаб 1 | — | — | — |
@@ -282,5 +282,5 @@
 - OK `citadel_cores_not_exported` — ok
 - OK `allied_fleets_uniform` — Pact main hull maker 0.744 (uniform), League 0.5 (many vendors)
 - OK `production_sites_exist` — 43 sites
-- OK `rescue_covers_every_site` — 503 sites
+- OK `rescue_covers_every_site` — 518 sites
 <!-- GENERATED:industry END -->

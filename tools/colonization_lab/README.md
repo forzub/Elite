@@ -36,6 +36,7 @@ python endowment.py                  # индексы ресурсов и пло
 python calibrate_population.py --check   # население 3126 в авторских диапазонах (AUTHOR_TARGET); без флага — подобрать интенсивность эпох, --write — сохранить
 python logistics.py                   # корабли, правило прыжка, стоимость рейса -> out/logistics.*; --check
 python world_economy.py               # баланс мира 3126 -> out/world_3126/ (после lab.py и logistics.py); --check — пересчёт + проверки непротиворечивости
+python sol_network.py                 # сеть хабов Сола отдельно (печать и проверки); в данные её встраивает world_sites.py: 12 хабов Земли, хабы тел и пояса, маршруты, ретрансляторы, initial_world_state.orbital_hubs
 python world_sites.py                 # хабы, поселения, глубокий космос, фронтиры («Жопа мира»), общество, администраторы, право, связь, пассажиры, возраст флота, пираты -> out/world_3126/ + копии для рантайма (galaxy_details/world_sites, objects_details/world_*.json); --check
 python industry.py                    # промышленная география (блоки, концерны, кто что умеет, где производят/собирают/продают) и спасательные службы -> out/world_3126/; --check
 python lore_md.py --write             # обновить блоки GENERATED справочника Notes/Lore/ (после lab.py, world_economy.py, world_sites.py, industry.py); --check — блоки, id сущностей и числа населения в рассказе сверены с данными

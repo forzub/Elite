@@ -7,6 +7,7 @@
 #include <iterator>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include <glad/gl.h>
 
@@ -44,7 +45,9 @@ struct PanelLayout
     int visibleRows = 1;
 };
 
-PanelLayout makePanelLayout(const Viewport& viewport)
+// infoMode: the System / Detail information block takes the middle of the panel;
+// the system list sits just above the buttons and opens upwards.
+PanelLayout makePanelLayout(const Viewport& viewport, bool infoMode = false)
 {
     PanelLayout layout;
     const float w = static_cast<float>(viewport.width);
@@ -87,6 +90,17 @@ PanelLayout makePanelLayout(const Viewport& viewport)
         };
     }
 
+    if (infoMode)
+    {
+        layout.dropdownButton.y = std::max(120.0f, actionY - 34.0f - 12.0f);
+        const float top = std::min(layout.dropdownButton.y - 2.0f, std::max(120.0f, h * 0.18f));
+        const float menuH = std::max(DropdownRowHeight, layout.dropdownButton.y - 2.0f - top);
+        layout.visibleRows = std::max(1, static_cast<int>(std::floor(menuH / DropdownRowHeight)));
+        const float realH = static_cast<float>(layout.visibleRows) * DropdownRowHeight;
+        layout.dropdownMenu = {layout.dropdownButton.x, layout.dropdownButton.y - 2.0f - realH, layout.dropdownButton.w, realH};
+        return layout;
+    }
+
     const float menuY = layout.dropdownButton.y + layout.dropdownButton.h + 2.0f;
     const float menuBottom = actionY - 34.0f;
     const float menuH = std::max(DropdownRowHeight, menuBottom - menuY);
@@ -98,6 +112,49 @@ PanelLayout makePanelLayout(const Viewport& viewport)
         static_cast<float>(layout.visibleRows) * DropdownRowHeight
     };
     return layout;
+}
+
+// Word wrap by measured width (UTF-8 safe: splits on spaces; an over-long word is cut by characters).
+std::vector<std::string> wrapText(TextRenderer& text, const std::string& s, int px, float maxWidth)
+{
+    std::vector<std::string> out;
+    std::istringstream words(s);
+    std::string word;
+    std::string line;
+    auto pushCut = [&](std::string w) {
+        while (!w.empty() && text.measureTextPx(w, px) > maxWidth)
+        {
+            std::string head = w;
+            while (head.size() > 1 && text.measureTextPx(head, px) > maxWidth)
+            {
+                head.pop_back();
+                while (!head.empty() && (static_cast<unsigned char>(head.back()) & 0xC0) == 0x80)
+                    head.pop_back();
+            }
+            if (head.empty())
+                break;
+            out.push_back(head);
+            w = w.substr(head.size());
+        }
+        return w;
+    };
+    while (words >> word)
+    {
+        const std::string candidate = line.empty() ? word : line + " " + word;
+        if (text.measureTextPx(candidate, px) <= maxWidth)
+        {
+            line = candidate;
+            continue;
+        }
+        if (!line.empty())
+            out.push_back(line);
+        line = pushCut(word);
+    }
+    if (!line.empty())
+        out.push_back(line);
+    if (out.empty())
+        out.push_back(std::string());
+    return out;
 }
 
 std::string formatDistanceLy(double value)
@@ -305,7 +362,7 @@ InSessionPresentationRenderer::handleSystemMapPanelInput(
         return std::nullopt;
     }
 
-    const auto layout = makePanelLayout(viewport);
+    const auto layout = makePanelLayout(viewport, !panel.info.empty());
     const double localX = mouseX - static_cast<double>(viewport.x);
     const double localY = mouseY - static_cast<double>(viewport.y);
     const bool inside = systemMapPanelContains(viewport, mouseX, mouseY);
@@ -322,6 +379,9 @@ InSessionPresentationRenderer::handleSystemMapPanelInput(
     const int rowCount = static_cast<int>(panel.systems.size());
     const int maxFirst = std::max(0, rowCount - layout.visibleRows);
     m_systemDropdownFirstRow = std::clamp(m_systemDropdownFirstRow, 0, maxFirst);
+
+    if (!m_systemDropdownOpen && scrollY != 0.0 && !panel.info.empty())
+        m_infoScrollPx -= static_cast<float>(scrollY) * 40.0f;
 
     if (m_systemDropdownOpen && scrollY != 0.0)
     {
@@ -406,7 +466,8 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
     auto& text = TextRenderer::instance();
     text.beginFrameForViewport(viewport.width, viewport.height);
 
-    const auto layout = makePanelLayout(viewport);
+    const bool infoMode = !panel.info.empty();
+    const auto layout = makePanelLayout(viewport, infoMode);
     const float w = static_cast<float>(viewport.width);
     const float h = static_cast<float>(viewport.height);
     const float panelX = layout.panelX;
@@ -422,7 +483,7 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
 
     float y = std::max(42.0f, h * 0.075f);
     text.textDrawPx(
-        localization.text("map.title", "STAR ATLAS"),
+        infoMode && !panel.infoTitle.empty() ? panel.infoTitle : localization.text("map.title", "STAR ATLAS"),
         panelX + pad,
         y,
         titlePx,
@@ -452,6 +513,97 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
         glm::vec4(0.36f, 0.56f, 0.74f, 0.28f));
     y += 22.0f;
 
+    const auto* selected = selectedSystem(panel);
+    const std::string dash = "—";
+    if (infoMode)
+    {
+        // Information block: wrapped, clipped to its box, scrollable (wheel over the panel).
+        const int infoPx = std::max(15, bodyPx);
+        const int headPx = infoPx + 2;
+        const float lineGap = 5.0f;
+        const float boxTop = y;
+        const float boxBottom = (m_systemDropdownOpen ? layout.dropdownMenu.y : layout.dropdownButton.y) - static_cast<float>(bodyPx + 16);
+        const float contentW = panelW - pad * 2.0f;
+        const float labelW = contentW * 0.36f;
+        struct Row { std::string text; int px; glm::vec4 color; float x; float gapAfter; };
+        std::vector<Row> rows;
+        for (const auto& line : panel.info)
+        {
+            using K = game::presentation::SystemMapInfoLine::Kind;
+            if (line.kind == K::Heading)
+            {
+                for (const auto& t : wrapText(text, line.label, headPx, contentW))
+                    rows.push_back({t, headPx, glm::vec4(1.0f, 0.70f, 0.42f, 0.98f), panelX + pad, lineGap});
+                rows.back().gapAfter = lineGap + 3.0f;
+            }
+            else if (line.kind == K::Paragraph || line.kind == K::Bullet)
+            {
+                const bool bullet = line.kind == K::Bullet;
+                const float indent = bullet ? 14.0f : 0.0f;
+                bool first = true;
+                for (const auto& t : wrapText(text, line.value, infoPx, contentW - indent))
+                {
+                    rows.push_back({(bullet && first ? "• " : "") + t, infoPx, glm::vec4(0.80f, 0.88f, 0.95f, 0.96f),
+                                    panelX + pad + (bullet && !first ? indent : 0.0f), lineGap});
+                    first = false;
+                }
+                rows.back().gapAfter = lineGap + 2.0f;
+            }
+            else
+            {
+                const auto label = wrapText(text, line.label, infoPx, labelW - 8.0f);
+                const auto value = wrapText(text, line.value.empty() ? "—" : line.value, infoPx, contentW - labelW);
+                const std::size_t n = std::max(label.size(), value.size());
+                for (std::size_t i = 0; i < n; ++i)
+                {
+                    if (i < label.size())
+                        rows.push_back({label[i], infoPx, glm::vec4(0.55f, 0.70f, 0.83f, 0.92f), panelX + pad, 0.0f});
+                    if (i < value.size())
+                        rows.push_back({value[i], infoPx, glm::vec4(0.88f, 0.94f, 0.98f, 0.98f), panelX + pad + labelW, 0.0f});
+                    rows.back().gapAfter = lineGap;     // the label / value pair shares the line
+                    if (i < label.size() && i < value.size())
+                        rows[rows.size() - 2].gapAfter = -1.0f;
+                }
+            }
+        }
+        float total = 0.0f;
+        for (const auto& r : rows)
+            if (r.gapAfter >= 0.0f)
+                total += static_cast<float>(r.px) + r.gapAfter;
+        const float boxH = std::max(0.0f, boxBottom - boxTop);
+        m_infoScrollPx = std::clamp(m_infoScrollPx, 0.0f, std::max(0.0f, total - boxH));
+        text.endFrame();                                   // flush what is above the box
+        text.beginFrameForViewport(viewport.width, viewport.height);
+        const GLboolean scissorWasOn = glIsEnabled(GL_SCISSOR_TEST);
+        glEnable(GL_SCISSOR_TEST);
+        // glyphs rise above their pen y by up to ~0.8 em: the clip starts that much above the box
+        const float rise = static_cast<float>(headPx) * 0.8f;
+        glScissor(viewport.x + static_cast<int>(panelX), viewport.y + static_cast<int>(h - boxBottom), static_cast<int>(panelW),
+                  static_cast<int>(std::max(0.0f, boxH + rise)));
+        float ry = boxTop + rise - m_infoScrollPx;
+        for (const auto& r : rows)
+        {
+            if (ry + static_cast<float>(r.px) >= boxTop && ry <= boxBottom)
+                text.textDrawPx(r.text, r.x, ry, r.px, r.color);
+            if (r.gapAfter >= 0.0f)
+                ry += static_cast<float>(r.px) + r.gapAfter;
+        }
+        text.endFrame();                                   // flush the clipped rows
+        glScissor(viewport.x, viewport.y, viewport.width, viewport.height);
+        if (!scissorWasOn)
+            glDisable(GL_SCISSOR_TEST);
+        text.beginFrameForViewport(viewport.width, viewport.height);
+        if (total > boxH && boxH > 10.0f)
+        {
+            const float trackH = boxH;
+            const float thumbH = std::max(24.0f, trackH * boxH / total);
+            const float thumbY = boxTop + (trackH - thumbH) * (m_infoScrollPx / std::max(1.0f, total - boxH));
+            text.solidRectPx(panelX + panelW - 6.0f, boxTop, 2.0f, trackH, glm::vec4(0.30f, 0.46f, 0.60f, 0.35f));
+            text.solidRectPx(panelX + panelW - 7.0f, thumbY, 4.0f, thumbH, glm::vec4(0.55f, 0.78f, 0.95f, 0.85f));
+        }
+    }
+    else
+    {
     text.textDrawPx(
         localization.text("map.selected_system", "Selected system"),
         panelX + pad,
@@ -460,8 +612,6 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
         glm::vec4(1.0f, 0.70f, 0.42f, 0.96f));
     y += static_cast<float>(bodyPx + 13);
 
-    const auto* selected = selectedSystem(panel);
-    const std::string dash = "—";
     drawLabelValue(text, panelX + pad, y, valueX, bodyPx,
         localization.text("map.name", "Name"), selected ? selected->name : dash);
     drawLabelValue(text, panelX + pad, y, valueX, bodyPx,
@@ -477,6 +627,7 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
     drawLabelValue(text, panelX + pad, y, valueX, bodyPx,
         localization.text("map.distance", "Distance"),
         selected ? formatDistanceLy(selected->distanceFromPlayerLy) : dash);
+    }
 
     text.textDrawPx(
         localization.text("map.system_list", "System list"),
@@ -566,6 +717,7 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
     const std::string hint = localization.text(
         "map.hint",
         "F9 Galaxy · F10 System · F11 Details · F12 Local / Hub");
+    if (!infoMode)
     text.textDrawPx(
         hint,
         panelX + pad,

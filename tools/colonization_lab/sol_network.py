@@ -26,6 +26,12 @@ G0 = 9.80665
 DAY = 86400.0
 SOL = "sol_authority"
 REGION_OF_KEY = {}
+FUNC_RU = {"interstellar_gateway": "межзвёздные ворота", "customs": "таможня", "passenger": "пассажиры", "administration": "администрация", "cargo": "грузы",
+           "heavy_lift": "тяжёлые грузы", "shipyard_service": "обслуживание верфей", "interplanetary": "межпланетные рейсы", "fuel": "топливо",
+           "power": "энергосеть", "industry": "промышленность", "comms": "связь", "science": "наука", "observation": "наблюдение Земли",
+           "polar_service": "полярная связь", "transfer": "пересадка", "ice": "лёд", "mining": "добыча", "defence": "оборона", "quarantine": "карантин",
+           "medical": "медицина", "shipyard": "верфь", "agro": "агро", "logistics": "логистика", "metallurgy": "металлургия", "high_inclination": "высокие наклонения",
+           "black_market": "чёрный рынок", "energy": "энергия", "atmosphere": "атмосфера", "trade": "торговля", "chemicals": "химия", "gas": "газ", "outer_relay": "ретранслятор"}
 
 
 def r3(x):

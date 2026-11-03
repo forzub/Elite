@@ -459,7 +459,8 @@ def sol_sites(I, net):
             prim, sec = pair.split("-")
             ids = {"Земля": "system_0.Sol.Земля", "Луна": "system_0.Sol.Земля.Луна", "Солнце": "system_0.Sol"}
             body = ids[prim] if prim != "Солнце" else "system_0.Sol.Земля"
-            pl = dict(lagrange_point=dict(primary=ids[prim], secondary=ids[sec], point=pt))
+            mass = {"Земля": 5.972e24, "Луна": 7.342e22, "Солнце": 1.989e30}
+            pl = dict(lagrange_point=dict(primary=ids[prim], secondary=ids[sec], point=pt, hill_ratio=r3((mass[sec] / (3.0 * mass[prim])) ** (1.0 / 3.0))))
         elif h.get("belt_anchor") or h.get("body_anchor"):
             a = anchors[h.get("belt_anchor") or h.get("body_anchor")]
             body = "system_0.Sol.asteroid_belt"
@@ -1430,7 +1431,7 @@ def runtime_export(I, out):
                          placement=s["placement"], map_level=s["map_level"], polity=s["polity"], polity_name=I.pol[s["polity"]]["name"] if s["polity"] in I.pol else None,
                          population=s["population"], runtime_binding=s.get("runtime_binding"), operator=s.get("operator"), owner=s.get("owner"),
                          founded=s.get("founded"), founder=s.get("founder"), purpose=s.get("role") or s.get("purpose"), character=s.get("character"),
-                         function=s.get("function"), docks=s.get("docks"), dock_sectors=s.get("dock_sectors"), arrivals_day=s.get("arrivals_day"),
+                         function=[sol_network.FUNC_RU.get(f, f) for f in (s.get("function") or [])] or None, docks=s.get("docks"), dock_sectors=s.get("dock_sectors"), arrivals_day=s.get("arrivals_day"),
                          utilisation=s.get("utilisation"), repair=s.get("repair"), storage_t=s.get("storage_t"), security=s.get("security_base"),
                          medical_beds=s.get("medical_beds"), quarantine_beds=s.get("quarantine_beds"), legal=s.get("legal"),
                          jurisdiction=j.get("applicable_law_ru"), enforcement=j.get("enforcement"), known_to_player=s.get("known_to_player", "public")))
@@ -1450,7 +1451,8 @@ def runtime_export(I, out):
                routes=[dict(id=r["id"], type=r["type"], system_id=0, origin=r["origin"], destination=r["destination"], pax_y=r.get("pax_y", 0),
                             cargo_t_y=r.get("cargo_t_y", 0), flights_day=r["flights_day"], ship_class=r["ship_class"], travel_days=r["travel_days"],
                             disruption=r["disruption"], hazard=r["hazard"]) for r in net["routes"]],
-               relays=[dict(id=r["id"], name=r["name"], system_id=0, region=r["region"], anchor=r["anchor"], reason=r["reason"]) for r in net["relays"]],
+               relays=[dict(id=r["id"], name=r["name"], system_id=0, region=r["region"], anchor=r["anchor"], reason=r["reason"],
+                            placement=relay_placement(r, net)) for r in net["relays"]],
                belt_anchors=[dict(a, system_id=0) for a in net["belt_anchors"]],
                systems=system_summaries(I, out))
     objs = []
@@ -1465,6 +1467,26 @@ def runtime_export(I, out):
                                          population=(ss or {}).get("population"), polity=(ss or {}).get("polity"),
                                          provenance=dict(generator="tools/colonization_lab/world_sites.py", status=TAG))))
     return doc, objs
+
+
+RELAY_BODY = {"earth_cislunar": ("system_0.Sol.Земля", 6371.0), "mars": ("system_0.Sol.Марс", 3389.0), "mercury": ("system_0.Sol.Меркурий", 2440.0),
+              "venus": ("system_0.Sol.Венера", 6052.0), "jupiter": ("system_0.Sol.Юпитер", 69911.0), "saturn": ("system_0.Sol.Сатурн", 58232.0),
+              "outer": ("system_0.Sol.Уран", 25362.0)}
+
+
+def relay_placement(r, net):
+    """Where a local relay physically is: a high orbit of its region's body, a belt anchor, or a Sun-Earth L4 / L5 conjunction point."""
+    idx = int(r["id"].rsplit(".", 1)[1]) - 1
+    if r["region"] == "transit":
+        return dict(parent_body_id="system_0.Sol.Земля", lagrange_point=dict(primary="system_0.Sol", secondary="system_0.Sol.Земля", point="L4" if idx == 0 else "L5", hill_ratio=0.01))
+    if r["region"] == "belt":
+        a = net["belt_anchors"][idx % len(net["belt_anchors"])]
+        return dict(parent_body_id="system_0.Sol.asteroid_belt", heliocentric=dict(anchor=a["id"], anchor_name=a["name"], a_au=a["a_au"], e=a["e"], i_deg=a["i_deg"],
+                                                                                   node_deg=a["node_deg"], peri_deg=a["peri_deg"], mean_anomaly_epoch_deg=a["mean_anomaly_epoch_deg"]))
+    body, radius = RELAY_BODY[r["region"]]
+    if r["region"] == "outer" and idx == 1:
+        body, radius = "system_0.Sol.Нептун", 24622.0
+    return dict(parent_body_id=body, orbit=dict(altitude_km=round(radius * (6.0 + 3.0 * idx)), inclination_deg=0.0))
 
 
 def system_summaries(I, out):

@@ -216,6 +216,11 @@ target_include_directories(EliteOrbitalTransfer PUBLIC
 )
 target_compile_features(EliteOrbitalTransfer PUBLIC cxx_std_17)
 
+add_executable(EliteSystemMapInfoCheck tools/navigation_runtime/SystemMapInfoCheck.cpp)
+target_include_directories(EliteSystemMapInfoCheck PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
+target_compile_features(EliteSystemMapInfoCheck PRIVATE cxx_std_17)
+target_link_libraries(EliteSystemMapInfoCheck PRIVATE nlohmann_json::nlohmann_json)
+
 add_executable(EliteOrbitalTransferCheck tools/navigation_runtime/OrbitalTransferCheck.cpp)
 target_link_libraries(EliteOrbitalTransferCheck PRIVATE EliteOrbitalTransfer nlohmann_json::nlohmann_json)
 
@@ -577,6 +582,7 @@ add_executable(EliteGame
     src/game/simulation/GameSimulation.cpp
     src/game/simulation/GameSimulationNavigationLab.cpp
     src/game/simulation/GameSimulationDockTraffic.cpp
+    src/game/simulation/GameSimulationOrbitalTransfer.cpp
     src/game/simulation/GameSimulationDevScenarios.cpp
     src/game/simulation/GameSimulationReplication.cpp
     src/game/simulation/GameSimulationActivation.cpp
@@ -867,6 +873,8 @@ if(ELITE_BUILD_SERVER)
         src/game/simulation/GameSimulation.cpp
         src/game/simulation/GameSimulationNavigationLab.cpp
         src/game/simulation/GameSimulationDockTraffic.cpp
+        src/game/simulation/GameSimulationOrbitalTransfer.cpp
+    src/game/simulation/GameSimulationOrbitalTransfer.cpp
         src/game/simulation/GameSimulationDevScenarios.cpp
         src/game/simulation/GameSimulationReplication.cpp
         src/game/simulation/GameSimulationActivation.cpp

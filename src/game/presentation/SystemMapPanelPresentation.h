@@ -50,6 +50,15 @@ SystemMapPanelCommand resolveSystemMapPanelAction(
     game::system_map::MapMode mode
 );
 
+// One line of the System Map information block (right panel).
+struct SystemMapInfoLine
+{
+    enum class Kind { Heading, Field, Paragraph, Bullet };
+    Kind kind = Kind::Field;
+    std::string label;
+    std::string value;
+};
+
 struct SystemMapPanelPresentationInput
 {
     double universeTimeSeconds = 0.0;
@@ -122,6 +131,10 @@ struct SystemMapPanelPresentation
     bool canOpenHub = false;
 
     std::vector<SystemMapPanelSystemItem> systems;
+
+    // System / Detail map: "what is here, what happens, how to get there".
+    std::string infoTitle;
+    std::vector<SystemMapInfoLine> info;
 };
 
 SystemMapPanelPresentation buildSystemMapPanelPresentation(

@@ -90,8 +90,9 @@ namespace
 
         if (const auto hub = context.pickSystemHubSelection(localX, localY))
         {
+            // Any drawn hub is a target: the user must not need to know its cube.
             const auto position = context.systemObjectAbsolutePosition(hub->hubId);
-            if (position && view.hierarchyContains(*position / scale))
+            if (position)
             {
                 target.kind = SystemPointerTarget::Kind::Hub;
                 target.hubId = hub->hubId;
@@ -115,6 +116,10 @@ namespace
                 return target;
             }
         }
+
+        // Cubes are targets only while the optional grid overlay is shown.
+        if (!state.gridOverlayVisible)
+            return target;
 
         // The selected cube's marker (drawn control).
         const float margin = static_cast<float>(game::presentation::pointerInteractionSettings().glyphHitMarginPx);

@@ -137,6 +137,39 @@ void drawProjectedTrajectory(const MapObjectTrajectory& trajectory)
             color = glm::vec4(0.46f, 0.80f, 0.58f, 0.55f);
             width = 1.0f;
             break;
+        case MapTrajectoryKind::NetworkRoute:
+        {
+            // regular traffic: dashed; prominence follows the traffic volume
+            const float e = std::clamp(trajectory.emphasis, 0.0f, 1.0f);
+            const glm::vec4 c(0.98f, 0.80f, 0.42f, 0.22f + 0.55f * e);
+            glLineWidth(1.0f + 1.6f * e);
+            elite::render::core_legacy::color4f(c.r, c.g, c.b, c.a);
+            elite::render::core_legacy::begin(GL_LINES);
+            const double on = 9.0, off = 6.0;
+            for (std::size_t i = 0; i + 1 < points.size(); ++i)
+            {
+                const glm::dvec2 a = points[i];
+                const glm::dvec2 d = points[i + 1] - a;
+                const double len = glm::length(d);
+                if (len < 1.0e-6)
+                    continue;
+                const glm::dvec2 u = d / len;
+                for (double s = 0.0; s < len; s += on + off)
+                {
+                    const glm::dvec2 p0 = a + u * s;
+                    const glm::dvec2 p1 = a + u * std::min(len, s + on);
+                    elite::render::core_legacy::vertex2d(p0.x, p0.y);
+                    elite::render::core_legacy::vertex2d(p1.x, p1.y);
+                }
+            }
+            elite::render::core_legacy::end();
+            glLineWidth(1.0f);
+            return;
+        }
+        case MapTrajectoryKind::TransferTunnel:
+            color = glm::vec4(0.30f, 0.95f, 1.00f, 0.98f);
+            width = 2.6f;
+            break;
         case MapTrajectoryKind::Planned:
         default:
             // Solver-validation rendering is intentionally plain.  The line
@@ -277,6 +310,78 @@ void drawRoutePoint(
         dotHalf * 2.0,
         color
     );
+}
+
+void drawRelayDiamond(const MapObjectOverlayItem& item)
+{
+    const double r = 5.0 * item.glyphScale;
+    const glm::vec4& c = item.factionColor;
+    elite::render::core_legacy::color4f(c.r, c.g, c.b, c.a);
+    glLineWidth(1.6f);
+    elite::render::core_legacy::begin(GL_LINE_LOOP);
+    elite::render::core_legacy::vertex2d(item.screenPx.x, item.screenPx.y - r);
+    elite::render::core_legacy::vertex2d(item.screenPx.x + r, item.screenPx.y);
+    elite::render::core_legacy::vertex2d(item.screenPx.x, item.screenPx.y + r);
+    elite::render::core_legacy::vertex2d(item.screenPx.x - r, item.screenPx.y);
+    elite::render::core_legacy::end();
+    glLineWidth(1.0f);
+}
+
+void drawAnchorDisc(const MapObjectOverlayItem& item)
+{
+    const double r = 4.0 * item.glyphScale;
+    const glm::vec4& c = item.factionColor;
+    elite::render::core_legacy::color4f(c.r, c.g, c.b, c.a);
+    elite::render::core_legacy::begin(GL_TRIANGLE_FAN);
+    elite::render::core_legacy::vertex2d(item.screenPx.x, item.screenPx.y);
+    for (int i = 0; i <= 16; ++i)
+    {
+        const double a = 6.28318530717958647692 * i / 16.0;
+        elite::render::core_legacy::vertex2d(item.screenPx.x + std::cos(a) * r, item.screenPx.y + std::sin(a) * r);
+    }
+    elite::render::core_legacy::end();
+}
+
+void drawHoverTooltip(const MapObjectOverlayItem& item, const Viewport& viewport)
+{
+    auto& text = TextRenderer::instance();
+    const int titlePx = 15;
+    const int linePx = 13;
+    std::vector<std::pair<std::string, int>> lines;
+    lines.push_back({item.name.empty() ? item.objectId : item.name, titlePx});
+    if (!item.owner.empty())
+        lines.push_back({item.owner, linePx});
+    if (!item.typeName.empty())
+        lines.push_back({item.typeName, linePx});
+    float w = 0.0f;
+    for (const auto& [t, px] : lines)
+        w = std::max(w, text.measureTextPx(t, px));
+    const float maxW = std::min(420.0f, static_cast<float>(viewport.width) * 0.45f);
+    w = std::min(w, maxW) + 16.0f;
+    const float h = 10.0f + static_cast<float>(titlePx + 6 + (lines.size() - 1) * (linePx + 5));
+    float x = static_cast<float>(item.screenPx.x) + 16.0f;
+    float y = static_cast<float>(item.screenPx.y) + 14.0f;
+    x = std::clamp(x, 4.0f, std::max(4.0f, static_cast<float>(viewport.width) - w - 4.0f));
+    y = std::clamp(y, 4.0f, std::max(4.0f, static_cast<float>(viewport.height) - h - 4.0f));
+    text.solidRectPx(x, y, w, h, glm::vec4(0.01f, 0.03f, 0.055f, 0.92f));
+    text.solidRectPx(x, y, w, 1.0f, glm::vec4(0.40f, 0.72f, 0.92f, 0.75f));
+    float ty = y + 8.0f;
+    for (std::size_t i = 0; i < lines.size(); ++i)
+    {
+        std::string t = lines[i].first;
+        // never draw past the box: trim to the width with an ellipsis
+        while (t.size() > 4 && text.measureTextPx(t, lines[i].second) > maxW)
+        {
+            t.pop_back();
+            while (!t.empty() && (static_cast<unsigned char>(t.back()) & 0xC0) == 0x80)
+                t.pop_back();
+        }
+        if (t.size() != lines[i].first.size())
+            t += "...";
+        text.textDrawPx(t, x + 8.0f, ty, lines[i].second,
+            i == 0 ? glm::vec4(1.0f, 0.86f, 0.55f, 1.0f) : glm::vec4(0.74f, 0.86f, 0.96f, 0.96f));
+        ty += static_cast<float>(lines[i].second + (i == 0 ? 6 : 5));
+    }
 }
 
 void drawHubCube(
@@ -561,6 +666,10 @@ void MapObjectOverlayRenderer::render(
                 drawHubCube(item);
             else if (item.kind == MapObjectGlyphKind::DockingPort)
                 drawDockGate(item);
+            else if (item.kind == MapObjectGlyphKind::Relay)
+                drawRelayDiamond(item);
+            else if (item.kind == MapObjectGlyphKind::Anchor)
+                drawAnchorDisc(item);
             else
                 drawTriangle(item);
         }
@@ -594,6 +703,15 @@ void MapObjectOverlayRenderer::render(
             );
         }
     }
+
+    // Hover tooltip: small, near the pointer, inside the viewport.
+    if (!state.hoveredObjectId().empty())
+        for (const auto& item : frame.items)
+            if (item.visible && item.objectId == state.hoveredObjectId())
+            {
+                drawHoverTooltip(item, viewport);
+                break;
+            }
 
     const auto panels = state.orderedPanels();
     for (const auto& panel : panels)

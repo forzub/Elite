@@ -181,6 +181,26 @@ namespace game::system_map
         */
         bool navigationCellExplicitlySelected = false;
 
+        /*
+            Hybrid System Map (fourth pass): the cubic hierarchy stays the
+            spatial index, LOD and zoom structure, but its wireframe is an
+            optional overlay (G). Hidden by default: no cube is drawn or
+            picked, objects are found by what they are, not by their cube.
+        */
+        bool gridOverlayVisible = false;
+
+        /*
+            Arrow-key sibling navigation (overlay visible, child selected):
+            the screen plane is chosen from the camera at the first press and
+            stays locked while presses keep coming, so Up never turns into
+            "into the screen" mid-gesture.
+        */
+        double arrowLastPressSeconds = -1.0e9;
+        int arrowAxisRight = 0;
+        int arrowSignRight = 1;
+        int arrowAxisUp = 1;
+        int arrowSignUp = 1;
+
         float lastScale = 1.0f;
 
 

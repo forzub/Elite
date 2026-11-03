@@ -7,6 +7,10 @@
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 #include "src/game/ship/descriptors/OrbitalCargoShuttleDescriptor.h"
 #include "src/game/traffic/DockServiceTraffic.h"
+#include "src/world/celestial/WorldSitesCatalog.h"
+
+#include <algorithm>
+#include <cctype>
 
 // Earth Orbital Hub dock traffic: the deterministic DockServiceTraffic model
 // (dispatcher + cargo shuttles + busy-traffic Cobretts) realised as
@@ -84,6 +88,44 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
     if (!m_dockServiceTraffic)
     {
         game::traffic::dock::TrafficConfig config;
+        // Generic traffic: identity of THIS hub's dock sector, its namespaces and the network it is
+        // connected to come from the hub record and the world-model routes (GENERATED world sites copy).
+        config.hubId = dock->hubId;
+        config.systemId = dock->systemId;
+        config.dockFacilityId = dock->hubId + "." + std::string(DockModuleId).substr(4);   // e.g. earth_orbital_hub.hex_dock_a
+        config.dockFrameId = DockModuleId;
+        if (const auto hubIt = m_orbitalHubs.find(dock->hubId); hubIt != m_orbitalHubs.end())
+        {
+            config.hubDisplayName = hubIt->second.name;
+            const std::string& parent = hubIt->second.parentBodyId;
+            config.surfaceName = parent.substr(parent.rfind('.') + 1) + ": наземные космопорты";
+        }
+        {
+            // callsign / flight namespace per hub: Vysokiy keeps VYS; others take their id's last segment
+            std::string key = dock->hubId == "earth_orbital_hub" ? std::string("vys") : dock->hubId.substr(dock->hubId.rfind('.') + 1);
+            std::string prefix;
+            for (char ch : key)
+                if (std::isalpha(static_cast<unsigned char>(ch)) && prefix.size() < 3)
+                    prefix += static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+            config.shuttleCallsignPrefix = prefix;
+            config.flightPrefix = prefix;
+            config.cobrettCallsignPrefix = prefix + "C";
+        }
+        world::celestial::WorldSitesCatalog sites;
+        if (sites.loadFromRuntimeOrSource())
+        {
+            for (const auto& r : sites.routesInSystem(dock->systemId))
+            {
+                const std::string other = r.origin == dock->hubId ? r.destination : r.destination == dock->hubId ? r.origin : std::string();
+                if (other.empty())
+                    continue;
+                const auto* site = sites.findSite(dock->systemId, other);
+                config.connectedDestinations.push_back(site ? site->name : other);
+            }
+            // one visible dock sector carries its share of the hub's modelled arrivals
+            if (const auto* self = sites.findSite(dock->systemId, dock->hubId); self && self->arrivalsPerDay > 0 && self->dockSectors > 0)
+                config.shuttleIntervalSeconds = std::clamp(86400.0 / (static_cast<double>(self->arrivalsPerDay) / self->dockSectors), 300.0, 3600.0);
+        }
         config.cobrettCount = envInt("ELITE_DOCK_TRAFFIC_COBRETTS", config.cobrettCount);
         config.shuttleIntervalSeconds = envDouble("ELITE_DOCK_TRAFFIC_INTERVAL", config.shuttleIntervalSeconds);
         // Earth = hub radial down. The FIXED frame is hub visual basis x
@@ -94,7 +136,8 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
         if (const char* path = std::getenv("ELITE_DOCK_TRAFFIC_LOG"))
             m_dockTrafficLog = std::fopen(path, "w");
         m_dockTrafficZoneRadiusMeters = m_dockServiceTraffic->controlledZoneRadius();
-        std::cerr << "[DockTraffic] started: cobretts=" << config.cobrettCount
+        std::cerr << "[DockTraffic] started at " << config.hubDisplayName << " (" << config.dockFacilityId << ", namespace "
+                  << config.flightPrefix << ", " << config.connectedDestinations.size() << " connected destinations): cobretts=" << config.cobrettCount
                   << " shuttle_interval_s=" << config.shuttleIntervalSeconds
                   << " hub_zone_m=" << m_dockTrafficZoneRadiusMeters << "\n";
     }

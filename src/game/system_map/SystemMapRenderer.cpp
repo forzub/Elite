@@ -542,6 +542,7 @@ void SystemMapRenderer::render(
     // anything about cameras or render scale.
     decorateActiveGuidanceTrajectory(vp, system, planet, hub);
     decorateTrafficRoutes(planet, hub);
+    decorateSystemNetworkRoutes(vp, system);
 
     if (m_modeState.current() == Mode::Galaxy)
     {

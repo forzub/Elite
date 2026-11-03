@@ -65,6 +65,13 @@
    "anchor": null,
    "id": "relay.sol.earth_cislunar.1",
    "name": "Маяк Гагарин",
+   "placement": {
+    "orbit": {
+     "altitude_km": 38226,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Земля"
+   },
    "reason": "резерв района",
    "region": "earth_cislunar",
    "system_id": 0
@@ -73,6 +80,13 @@
    "anchor": null,
    "id": "relay.sol.earth_cislunar.2",
    "name": "Маяк Королёв",
+   "placement": {
+    "orbit": {
+     "altitude_km": 57339,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Земля"
+   },
    "reason": "резерв района",
    "region": "earth_cislunar",
    "system_id": 0
@@ -81,6 +95,13 @@
    "anchor": null,
    "id": "relay.sol.earth_cislunar.3",
    "name": "Маяк Терешкова",
+   "placement": {
+    "orbit": {
+     "altitude_km": 76452,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Земля"
+   },
    "reason": "покрытие плотного узла",
    "region": "earth_cislunar",
    "system_id": 0
@@ -89,6 +110,13 @@
    "anchor": null,
    "id": "relay.sol.earth_cislunar.4",
    "name": "Маяк Армстронг",
+   "placement": {
+    "orbit": {
+     "altitude_km": 95565,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Земля"
+   },
    "reason": "покрытие плотного узла",
    "region": "earth_cislunar",
    "system_id": 0
@@ -97,6 +125,13 @@
    "anchor": null,
    "id": "relay.sol.mars.1",
    "name": "Маяк Скиапарелли",
+   "placement": {
+    "orbit": {
+     "altitude_km": 20334,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Марс"
+   },
    "reason": "резерв района",
    "region": "mars",
    "system_id": 0
@@ -105,6 +140,13 @@
    "anchor": null,
    "id": "relay.sol.mars.2",
    "name": "Маяк Маринер",
+   "placement": {
+    "orbit": {
+     "altitude_km": 30501,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Марс"
+   },
    "reason": "резерв района",
    "region": "mars",
    "system_id": 0
@@ -113,6 +155,19 @@
    "anchor": null,
    "id": "relay.sol.belt.1",
    "name": "Маяк Пиацци",
+   "placement": {
+    "heliocentric": {
+     "a_au": 2.7675,
+     "anchor": "anchor.ceres",
+     "anchor_name": "Церера",
+     "e": 0.0785,
+     "i_deg": 10.59,
+     "mean_anomaly_epoch_deg": 95.0,
+     "node_deg": 80.3,
+     "peri_deg": 73.6
+    },
+    "parent_body_id": "system_0.Sol.asteroid_belt"
+   },
    "reason": "резерв района",
    "region": "belt",
    "system_id": 0
@@ -121,6 +176,19 @@
    "anchor": null,
    "id": "relay.sol.belt.2",
    "name": "Маяк Ольберс",
+   "placement": {
+    "heliocentric": {
+     "a_au": 2.3615,
+     "anchor": "anchor.vesta",
+     "anchor_name": "Веста",
+     "e": 0.0887,
+     "i_deg": 7.14,
+     "mean_anomaly_epoch_deg": 205.0,
+     "node_deg": 103.8,
+     "peri_deg": 151.2
+    },
+    "parent_body_id": "system_0.Sol.asteroid_belt"
+   },
    "reason": "резерв района",
    "region": "belt",
    "system_id": 0
@@ -129,6 +197,19 @@
    "anchor": null,
    "id": "relay.sol.belt.3",
    "name": "Маяк Хирояма",
+   "placement": {
+    "heliocentric": {
+     "a_au": 2.7724,
+     "anchor": "anchor.pallas",
+     "anchor_name": "Паллада",
+     "e": 0.2302,
+     "i_deg": 34.84,
+     "mean_anomaly_epoch_deg": 40.0,
+     "node_deg": 173.1,
+     "peri_deg": 310.0
+    },
+    "parent_body_id": "system_0.Sol.asteroid_belt"
+   },
    "reason": "покрытие плотного узла",
    "region": "belt",
    "system_id": 0
@@ -137,6 +218,13 @@
    "anchor": null,
    "id": "relay.sol.mercury.1",
    "name": "Маяк Мессенджер",
+   "placement": {
+    "orbit": {
+     "altitude_km": 14640,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Меркурий"
+   },
    "reason": "резерв района",
    "region": "mercury",
    "system_id": 0
@@ -145,6 +233,13 @@
    "anchor": null,
    "id": "relay.sol.venus.1",
    "name": "Маяк Венера-7",
+   "placement": {
+    "orbit": {
+     "altitude_km": 36312,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Венера"
+   },
    "reason": "резерв района",
    "region": "venus",
    "system_id": 0
@@ -153,6 +248,13 @@
    "anchor": null,
    "id": "relay.sol.jupiter.1",
    "name": "Маяк Галилей",
+   "placement": {
+    "orbit": {
+     "altitude_km": 419466,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Юпитер"
+   },
    "reason": "резерв района",
    "region": "jupiter",
    "system_id": 0
@@ -161,6 +263,13 @@
    "anchor": null,
    "id": "relay.sol.jupiter.2",
    "name": "Маяк Пионер",
+   "placement": {
+    "orbit": {
+     "altitude_km": 629199,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Юпитер"
+   },
    "reason": "резерв района",
    "region": "jupiter",
    "system_id": 0
@@ -169,6 +278,13 @@
    "anchor": null,
    "id": "relay.sol.saturn.1",
    "name": "Маяк Кассини",
+   "placement": {
+    "orbit": {
+     "altitude_km": 349392,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Сатурн"
+   },
    "reason": "резерв района",
    "region": "saturn",
    "system_id": 0
@@ -177,6 +293,13 @@
    "anchor": null,
    "id": "relay.sol.saturn.2",
    "name": "Маяк Гюйгенс",
+   "placement": {
+    "orbit": {
+     "altitude_km": 524088,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Сатурн"
+   },
    "reason": "резерв района",
    "region": "saturn",
    "system_id": 0
@@ -185,6 +308,13 @@
    "anchor": null,
    "id": "relay.sol.outer.1",
    "name": "Маяк Вояджер",
+   "placement": {
+    "orbit": {
+     "altitude_km": 152172,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Уран"
+   },
    "reason": "резерв района",
    "region": "outer",
    "system_id": 0
@@ -193,6 +323,13 @@
    "anchor": null,
    "id": "relay.sol.outer.2",
    "name": "Маяк Гершель",
+   "placement": {
+    "orbit": {
+     "altitude_km": 221598,
+     "inclination_deg": 0.0
+    },
+    "parent_body_id": "system_0.Sol.Нептун"
+   },
    "reason": "резерв района",
    "region": "outer",
    "system_id": 0
@@ -201,6 +338,15 @@
    "anchor": "lagrange:Солнце-Земля:L4",
    "id": "relay.sol.transit.1",
    "name": "Маяк Лагранж-4",
+   "placement": {
+    "lagrange_point": {
+     "hill_ratio": 0.01,
+     "point": "L4",
+     "primary": "system_0.Sol",
+     "secondary": "system_0.Sol.Земля"
+    },
+    "parent_body_id": "system_0.Sol.Земля"
+   },
    "reason": "резерв района",
    "region": "transit",
    "system_id": 0
@@ -209,6 +355,15 @@
    "anchor": "lagrange:Солнце-Земля:L5",
    "id": "relay.sol.transit.2",
    "name": "Маяк Лагранж-5",
+   "placement": {
+    "lagrange_point": {
+     "hill_ratio": 0.01,
+     "point": "L5",
+     "primary": "system_0.Sol",
+     "secondary": "system_0.Sol.Земля"
+    },
+    "parent_body_id": "system_0.Sol.Земля"
+   },
    "reason": "резерв района",
    "region": "transit",
    "system_id": 0
@@ -18929,10 +19084,10 @@
    "founded": 3108,
    "founder": "Власть Сола (Sol Authority)",
    "function": [
-    "interstellar_gateway",
-    "customs",
-    "passenger",
-    "administration"
+    "межзвёздные ворота",
+    "таможня",
+    "пассажиры",
+    "администрация"
    ],
    "id": "earth_orbital_hub",
    "jurisdiction": "кодекс Власти Сола",
@@ -18975,9 +19130,9 @@
    "founded": 2588,
    "founder": "консорциум «Тюратам» (Казахстан, Россия, Узбекистан)",
    "function": [
-    "cargo",
-    "heavy_lift",
-    "passenger"
+    "грузы",
+    "тяжёлые грузы",
+    "пассажиры"
    ],
    "id": "earth_hub.baikonur",
    "jurisdiction": "кодекс Власти Сола",
@@ -19020,8 +19175,8 @@
    "founded": 2634,
    "founder": "Северный портовый союз",
    "function": [
-    "passenger",
-    "cargo"
+    "пассажиры",
+    "грузы"
    ],
    "id": "earth_hub.meridian",
    "jurisdiction": "кодекс Власти Сола",
@@ -19064,8 +19219,8 @@
    "founded": 2612,
    "founder": "Тихоокеанская компания орбитальных перевозок",
    "function": [
-    "passenger",
-    "cargo"
+    "пассажиры",
+    "грузы"
    ],
    "id": "earth_hub.tikhiy",
    "jurisdiction": "кодекс Власти Сола",
@@ -19108,8 +19263,8 @@
    "founded": 2605,
    "founder": "Японское агентство Реставрации",
    "function": [
-    "passenger",
-    "shipyard_service"
+    "пассажиры",
+    "обслуживание верфей"
    ],
    "id": "earth_hub.tanegashima",
    "jurisdiction": "кодекс Власти Сола",
@@ -19152,8 +19307,8 @@
    "founded": 2574,
    "founder": "Атлантическая портовая компания",
    "function": [
-    "passenger",
-    "interplanetary"
+    "пассажиры",
+    "межпланетные рейсы"
    ],
    "id": "earth_hub.canaveral",
    "jurisdiction": "кодекс Власти Сола",
@@ -19196,8 +19351,8 @@
    "founded": 2843,
    "founder": "Южный альянс портов (Сан-Паулу, Дакка, Карачи)",
    "function": [
-    "passenger",
-    "cargo"
+    "пассажиры",
+    "грузы"
    ],
    "id": "earth_hub.tropic",
    "jurisdiction": "кодекс Власти Сола",
@@ -19240,9 +19395,9 @@
    "founded": 2597,
    "founder": "Китайская корпорация Реставрации",
    "function": [
-    "heavy_lift",
-    "cargo",
-    "passenger"
+    "тяжёлые грузы",
+    "грузы",
+    "пассажиры"
    ],
    "id": "earth_hub.wenchang",
    "jurisdiction": "кодекс Власти Сола",
@@ -19285,8 +19440,8 @@
    "founded": 2621,
    "founder": "Индийская организация Реставрации",
    "function": [
-    "passenger",
-    "cargo"
+    "пассажиры",
+    "грузы"
    ],
    "id": "earth_hub.sriharikota",
    "jurisdiction": "кодекс Власти Сола",
@@ -19329,9 +19484,9 @@
    "founded": 2569,
    "founder": "Европейское агентство Реставрации",
    "function": [
-    "interplanetary",
-    "fuel",
-    "passenger"
+    "межпланетные рейсы",
+    "топливо",
+    "пассажиры"
    ],
    "id": "earth_hub.kourou",
    "jurisdiction": "кодекс Власти Сола",
@@ -19374,9 +19529,9 @@
    "founded": 2701,
    "founder": "Энергетический консорциум Сола",
    "function": [
-    "power",
-    "industry",
-    "comms"
+    "энергосеть",
+    "промышленность",
+    "связь"
    ],
    "id": "earth_hub.ekvator",
    "jurisdiction": "кодекс Власти Сола",
@@ -19419,9 +19574,9 @@
    "founded": 2655,
    "founder": "Северный научный фонд",
    "function": [
-    "science",
-    "observation",
-    "polar_service"
+    "наука",
+    "наблюдение Земли",
+    "полярная связь"
    ],
    "id": "earth_hub.aurora",
    "jurisdiction": "кодекс Власти Сола",
@@ -19464,9 +19619,9 @@
    "founded": 2590,
    "founder": "Комиссия Реставрации",
    "function": [
-    "passenger",
-    "cargo",
-    "transfer"
+    "пассажиры",
+    "грузы",
+    "пересадка"
    ],
    "id": "site.000.sol.eml1",
    "jurisdiction": "кодекс Власти Сола",
@@ -19480,6 +19635,7 @@
    "parent_body_id": "system_0.Sol.Земля",
    "placement": {
     "lagrange_point": {
+     "hill_ratio": 0.16,
      "point": "L1",
      "primary": "system_0.Sol.Земля",
      "secondary": "system_0.Sol.Земля.Луна"
@@ -19508,8 +19664,8 @@
    "founded": 2583,
    "founder": "Лунная корпорация Реставрации",
    "function": [
-    "passenger",
-    "cargo"
+    "пассажиры",
+    "грузы"
    ],
    "id": "site.000.sol.luna_orbit",
    "jurisdiction": "кодекс Власти Сола",
@@ -19550,9 +19706,9 @@
    "founded": 2541,
    "founder": "Международная лунная станция (до Краха)",
    "function": [
-    "passenger",
-    "ice",
-    "industry"
+    "пассажиры",
+    "лёд",
+    "промышленность"
    ],
    "id": "site.000.sol.shackleton",
    "jurisdiction": "кодекс Власти Сола",
@@ -19594,8 +19750,8 @@
    "founded": 2610,
    "founder": "Лунная горная компания",
    "function": [
-    "industry",
-    "mining"
+    "промышленность",
+    "добыча"
    ],
    "id": "site.000.sol.imbrium",
    "jurisdiction": "кодекс Власти Сола",
@@ -19637,8 +19793,8 @@
    "founded": 2672,
    "founder": "Обсерватория Сола",
    "function": [
-    "science",
-    "comms"
+    "наука",
+    "связь"
    ],
    "id": "site.000.sol.sel2",
    "jurisdiction": "кодекс Власти Сола",
@@ -19652,6 +19808,7 @@
    "parent_body_id": "system_0.Sol.Земля",
    "placement": {
     "lagrange_point": {
+     "hill_ratio": 0.01,
      "point": "L2",
      "primary": "system_0.Sol",
      "secondary": "system_0.Sol.Земля"
@@ -19680,7 +19837,7 @@
    "founded": 2790,
    "founder": "Флот Сола (эпоха Кордона)",
    "function": [
-    "defence"
+    "оборона"
    ],
    "id": "site.000.sol.military_luna",
    "jurisdiction": "кодекс Власти Сола",
@@ -19694,6 +19851,7 @@
    "parent_body_id": "system_0.Sol.Земля",
    "placement": {
     "lagrange_point": {
+     "hill_ratio": 0.16,
      "point": "L4",
      "primary": "system_0.Sol.Земля",
      "secondary": "system_0.Sol.Земля.Луна"
@@ -19722,8 +19880,8 @@
    "founded": 3113,
    "founder": "Санитарная служба Сола (после маяка Земли)",
    "function": [
-    "quarantine",
-    "medical"
+    "карантин",
+    "медицина"
    ],
    "id": "site.000.sol.quarantine",
    "jurisdiction": "кодекс Власти Сола",
@@ -19737,6 +19895,7 @@
    "parent_body_id": "system_0.Sol.Земля",
    "placement": {
     "lagrange_point": {
+     "hill_ratio": 0.16,
      "point": "L5",
      "primary": "system_0.Sol.Земля",
      "secondary": "system_0.Sol.Земля.Луна"
@@ -19765,9 +19924,9 @@
    "founded": 2602,
    "founder": "Марсианская колониальная администрация",
    "function": [
-    "passenger",
-    "cargo",
-    "interplanetary"
+    "пассажиры",
+    "грузы",
+    "межпланетные рейсы"
    ],
    "id": "site.000.sol.mars_phobos",
    "jurisdiction": "кодекс Власти Сола",
@@ -19808,10 +19967,10 @@
    "founded": 2688,
    "founder": "Марсианская республика (до присоединения к Солу)",
    "function": [
-    "passenger",
-    "industry",
-    "defence",
-    "science"
+    "пассажиры",
+    "промышленность",
+    "оборона",
+    "наука"
    ],
    "id": "site.000.sol.mars_ares",
    "jurisdiction": "кодекс Власти Сола",
@@ -19852,8 +20011,8 @@
    "founded": 2611,
    "founder": "Марсианская колониальная администрация",
    "function": [
-    "passenger",
-    "industry"
+    "пассажиры",
+    "промышленность"
    ],
    "id": "site.000.sol.mars_tharsis",
    "jurisdiction": "кодекс Власти Сола",
@@ -19895,8 +20054,8 @@
    "founded": 2640,
    "founder": "Средиземноморский союз переселенцев",
    "function": [
-    "passenger",
-    "agro"
+    "пассажиры",
+    "агро"
    ],
    "id": "site.000.sol.mars_hellas",
    "jurisdiction": "кодекс Власти Сола",
@@ -19938,9 +20097,9 @@
    "founded": 2702,
    "founder": "Марсианские верфи",
    "function": [
-    "shipyard",
-    "industry",
-    "mining"
+    "верфь",
+    "промышленность",
+    "добыча"
    ],
    "id": "site.000.sol.mars_deimos",
    "jurisdiction": "кодекс Власти Сола",
@@ -19981,10 +20140,10 @@
    "founded": 2623,
    "founder": "Kern Heavy Mining (земная ветвь до исхода Керна)",
    "function": [
-    "mining",
-    "logistics",
-    "passenger",
-    "ice"
+    "добыча",
+    "логистика",
+    "пассажиры",
+    "лёд"
    ],
    "id": "site.000.sol.ceres",
    "jurisdiction": "кодекс Власти Сола",
@@ -20033,8 +20192,8 @@
    "founded": 2650,
    "founder": "Kern Heavy Mining",
    "function": [
-    "ice",
-    "passenger"
+    "лёд",
+    "пассажиры"
    ],
    "id": "site.000.sol.ceres_ice",
    "jurisdiction": "кодекс Власти Сола",
@@ -20086,8 +20245,8 @@
    "founded": 2667,
    "founder": "Металлургический трест Весты",
    "function": [
-    "mining",
-    "metallurgy"
+    "добыча",
+    "металлургия"
    ],
    "id": "site.000.sol.vesta",
    "jurisdiction": "кодекс Власти Сола",
@@ -20136,9 +20295,9 @@
    "founded": 2744,
    "founder": "Свободная артель Паллады",
    "function": [
-    "mining",
-    "high_inclination",
-    "science"
+    "добыча",
+    "высокие наклонения",
+    "наука"
    ],
    "id": "site.000.sol.pallas",
    "jurisdiction": "кодекс Власти Сола",
@@ -20187,9 +20346,9 @@
    "founded": 2771,
    "founder": "Топливная компания пояса",
    "function": [
-    "ice",
-    "fuel",
-    "logistics"
+    "лёд",
+    "топливо",
+    "логистика"
    ],
    "id": "site.000.sol.hygiea",
    "jurisdiction": "кодекс Власти Сола",
@@ -20238,10 +20397,10 @@
    "founded": 2702,
    "founder": "Солнечная металлургическая компания",
    "function": [
-    "mining",
-    "energy",
-    "industry",
-    "passenger"
+    "добыча",
+    "энергия",
+    "промышленность",
+    "пассажиры"
    ],
    "id": "site.000.sol.mercury_caloris",
    "jurisdiction": "кодекс Власти Сола",
@@ -20283,9 +20442,9 @@
    "founded": 2715,
    "founder": "Солнечная металлургическая компания",
    "function": [
-    "cargo",
-    "energy",
-    "science"
+    "грузы",
+    "энергия",
+    "наука"
    ],
    "id": "site.000.sol.mercury_orbit",
    "jurisdiction": "кодекс Власти Сола",
@@ -20326,8 +20485,8 @@
    "founded": 2760,
    "founder": "Академия Сола",
    "function": [
-    "science",
-    "atmosphere"
+    "наука",
+    "атмосфера"
    ],
    "id": "site.000.sol.venus",
    "jurisdiction": "кодекс Власти Сола",
@@ -20368,9 +20527,9 @@
    "founded": 2680,
    "founder": "Юпитерианская компания",
    "function": [
-    "passenger",
-    "trade",
-    "logistics"
+    "пассажиры",
+    "торговля",
+    "логистика"
    ],
    "id": "site.000.sol.callisto",
    "jurisdiction": "кодекс Власти Сола",
@@ -20411,10 +20570,10 @@
    "founded": 2702,
    "founder": "Юпитерианская компания",
    "function": [
-    "passenger",
-    "industry",
-    "ice",
-    "mining"
+    "пассажиры",
+    "промышленность",
+    "лёд",
+    "добыча"
    ],
    "id": "site.000.sol.ganymede",
    "jurisdiction": "кодекс Власти Сола",
@@ -20455,8 +20614,8 @@
    "founded": 2730,
    "founder": "Газовый трест Юпитера",
    "function": [
-    "gas",
-    "fuel"
+    "газ",
+    "топливо"
    ],
    "id": "site.000.sol.jupiter_gas",
    "jurisdiction": "кодекс Власти Сола",
@@ -20497,8 +20656,8 @@
    "founded": 2740,
    "founder": "Академия Сола",
    "function": [
-    "science",
-    "ice"
+    "наука",
+    "лёд"
    ],
    "id": "site.000.sol.europa",
    "jurisdiction": "кодекс Власти Сола",
@@ -20539,7 +20698,7 @@
    "founded": 2795,
    "founder": "Флот Сола",
    "function": [
-    "defence"
+    "оборона"
    ],
    "id": "site.000.sol.jupiter_fleet",
    "jurisdiction": "кодекс Власти Сола",
@@ -20580,9 +20739,9 @@
    "founded": 2712,
    "founder": "Сатурнианская химическая компания",
    "function": [
-    "passenger",
-    "chemicals",
-    "trade"
+    "пассажиры",
+    "химия",
+    "торговля"
    ],
    "id": "site.000.sol.titan",
    "jurisdiction": "кодекс Власти Сола",
@@ -20623,8 +20782,8 @@
    "founded": 2748,
    "founder": "Газовый трест Сатурна",
    "function": [
-    "gas",
-    "ice"
+    "газ",
+    "лёд"
    ],
    "id": "site.000.sol.saturn_gas",
    "jurisdiction": "кодекс Власти Сола",
@@ -20665,8 +20824,8 @@
    "founded": 2755,
    "founder": "Академия Сола",
    "function": [
-    "science",
-    "ice"
+    "наука",
+    "лёд"
    ],
    "id": "site.000.sol.enceladus",
    "jurisdiction": "кодекс Власти Сола",
@@ -20707,10 +20866,10 @@
    "founded": 2790,
    "founder": "Внешняя компания",
    "function": [
-    "passenger",
-    "science",
-    "gas",
-    "ice"
+    "пассажиры",
+    "наука",
+    "газ",
+    "лёд"
    ],
    "id": "site.000.sol.titania",
    "jurisdiction": "кодекс Власти Сола",
@@ -20751,10 +20910,10 @@
    "founded": 2810,
    "founder": "Внешняя компания",
    "function": [
-    "fuel",
-    "science",
-    "outer_relay",
-    "ice"
+    "топливо",
+    "наука",
+    "ретранслятор",
+    "лёд"
    ],
    "id": "site.000.sol.triton",
    "jurisdiction": "кодекс Власти Сола",

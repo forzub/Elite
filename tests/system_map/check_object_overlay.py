@@ -393,7 +393,7 @@ def main() -> int:
         "updateActiveTacticalLocalContext",
         "navigationHubId",
         "m_activeTacticalDetailCell",
-        "clickedBodyId",
+        "selectedBodyId",
         "clickedNavigationCell",
     )
     require("m_navigationTrackingState" not in renderer_facade,

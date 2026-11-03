@@ -54,6 +54,9 @@ struct TrafficShipClass
 [[nodiscard]] const TrafficShipClass& trafficShipClass(TrafficShipKind kind);
 [[nodiscard]] game::docking::DockingEnvelope dockingEnvelope(const TrafficShipClass& c);
 
+// One persistent flight identity: the same flight id from scheduled departure to
+// arrival; the far (aggregated) part of the leg keeps it, it never vanishes at A and
+// reappears independently at B.
 struct CargoManifest
 {
     std::string flightId;
@@ -62,6 +65,8 @@ struct CargoManifest
     std::string origin;
     std::string destination;
     double scheduledSeconds = 0.0; // dock-side schedule time of this leg
+    double etaSeconds = 0.0;       // arrival at the destination (aggregated far part included)
+    std::string category;          // passenger | cargo | service | crew | mail | fuel
 };
 
 struct TrafficPose
@@ -97,11 +102,28 @@ enum class ActorPhase : std::uint8_t
 
 [[nodiscard]] const char* actorPhaseName(ActorPhase phase) noexcept;
 
+// Generic hub dock traffic: one model class, one config per hub dock sector. Nothing in
+// the model names a particular hub; identity, namespaces and the connected network come
+// from here (the game fills it from the hub record and the world-model routes).
 struct TrafficConfig
 {
+    std::string hubId = "earth_orbital_hub";
+    std::string hubDisplayName = "Hub";
+    std::string dockFacilityId = "earth_orbital_hub.hex_dock_a";
+    std::string dockFrameId = "hub_hex_dock_a";
+    int systemId = 0;
+    // callsign / flight namespaces of this hub (no shared global namespace)
+    std::string shuttleCallsignPrefix = "ORB";
+    std::string cobrettCallsignPrefix = "CBR";
+    std::string flightPrefix = "FLT";
+    // where shuttles come from / go to: the parent surface port and the connected hubs
+    std::string surfaceName = "surface port";
+    std::vector<std::string> connectedDestinations;
+    // mix of shuttle flights: surface <-> hub vs hub <-> hub (rest)
+    double surfaceShare = 0.8;
     std::uint64_t seed = 3126;
-    double shuttleIntervalSeconds = 600.0; // one Earth -> hub flight per interval
-    double shuttleTransferSeconds = 3.0 * 3600.0; // aggregated Earth leg
+    double shuttleIntervalSeconds = 600.0; // one inbound shuttle flight per interval
+    double shuttleTransferSeconds = 3.0 * 3600.0; // aggregated far part of the leg
     int cobrettCount = 4;
     double cobrettFarDistance = 20000.0;
     double materializeDistance = 25000.0;  // local simulation boundary

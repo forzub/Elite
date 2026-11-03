@@ -1731,3 +1731,103 @@ void SystemMapRenderer::decorateTrafficRoutes(
                      toScene(hold + glm::dvec3(r, 0.0, 0.0))});
     }
 }
+
+
+void SystemMapRenderer::decorateSystemNetworkRoutes(
+    const Viewport& viewport,
+    const world::celestial::SystemMapSnapshot& system
+)
+{
+    if (m_modeState.current() != Mode::System)
+        return;
+    auto& overlay = m_systemSceneFrame.interaction.objectOverlay;
+    overlay.trajectories.erase(
+        std::remove_if(overlay.trajectories.begin(), overlay.trajectories.end(),
+            [](const game::system_map::MapObjectTrajectory& t) {
+                return t.objectId.rfind("network:", 0) == 0 || t.objectId == "orbital_transfer";
+            }),
+        overlay.trajectories.end());
+
+    m_devLastNetworkLines = 0;
+    m_devLastTunnelPoints = 0;
+    const auto& positions = m_systemSceneFrame.interaction.objectAbsolutePositionById;
+    const auto projectAbsolute = [&](const glm::dvec3& absoluteMapUnits, glm::dvec2& px) -> bool
+    {
+        const glm::vec3 render = glm::vec3(absoluteMapUnits - m_systemSceneFrame.cameraOrigin);
+        const glm::vec4 clip = m_systemSceneFrame.mvp * glm::vec4(render, 1.0f);
+        if (clip.w <= 1.0e-6f)
+            return false;
+        const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+        if (!std::isfinite(ndc.x) || !std::isfinite(ndc.y) || ndc.z < -1.2f || ndc.z > 1.2f)
+            return false;
+        px = glm::dvec2((ndc.x * 0.5 + 0.5) * viewport.width, (1.0 - (ndc.y * 0.5 + 0.5)) * viewport.height);
+        return true;
+    };
+    const auto endpoint = [&](const std::string& id) -> const glm::dvec3* {
+        auto it = positions.find(id);
+        if (it == positions.end())
+            it = positions.find("site:" + id);
+        return it == positions.end() ? nullptr : &it->second;
+    };
+
+    // aggregate scheduled network (world model routes): dashed, prominence by traffic volume
+    if (m_showNetworkRoutes && m_worldSites)
+    {
+        double maxFlights = 1.0;
+        for (const auto& r : m_worldSites->routesInSystem(system.systemId))
+            maxFlights = std::max(maxFlights, r.flightsPerDay);
+        for (const auto& r : m_worldSites->routesInSystem(system.systemId))
+        {
+            const glm::dvec3* a = endpoint(r.origin);
+            const glm::dvec3* b = endpoint(r.destination);
+            if (!a || !b)
+                continue;
+            game::system_map::MapObjectTrajectory t;
+            t.objectId = "network:" + r.id;
+            t.kind = game::system_map::MapTrajectoryKind::NetworkRoute;
+            t.emphasis = static_cast<float>(std::log1p(r.flightsPerDay) / std::log1p(maxFlights));
+            for (const glm::dvec3* p : {a, b})
+            {
+                game::system_map::MapTrajectoryPoint point;
+                point.screenProjected = projectAbsolute(*p, point.screenPx);
+                if (point.screenProjected)
+                    t.points.push_back(point);
+            }
+            if (t.points.size() == 2 && glm::length(t.points[1].screenPx - t.points[0].screenPx) > 6.0)
+            {
+                overlay.trajectories.push_back(std::move(t));
+                ++m_devLastNetworkLines;
+            }
+        }
+    }
+
+    // the player's Orbital Transfer tunnel (body-relative samples, moved with the body)
+    if (!m_transferTunnel.empty())
+    {
+        glm::dvec3 bodyAu(0.0);
+        bool found = false;
+        for (const auto& body : system.bodies)
+            if (body.id == m_transferTunnelBodyId)
+            {
+                bodyAu = body.positionAu;
+                found = true;
+            }
+        if (found)
+        {
+            game::system_map::MapObjectTrajectory t;
+            t.objectId = "orbital_transfer";
+            t.kind = game::system_map::MapTrajectoryKind::TransferTunnel;
+            for (const auto& m : m_transferTunnel)
+            {
+                const glm::dvec3 absolute = (bodyAu + m / world::celestial::MetersPerAu) * static_cast<double>(m_systemSceneFrame.systemScale);
+                game::system_map::MapTrajectoryPoint point;
+                point.screenProjected = projectAbsolute(absolute, point.screenPx);
+                if (point.screenProjected)
+                    t.points.push_back(point);
+            }
+            m_devLastTunnelPoints = t.points.size();
+            if (t.points.size() >= 2)
+                overlay.trajectories.push_back(std::move(t));
+        }
+    }
+}

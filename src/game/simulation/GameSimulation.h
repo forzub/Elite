@@ -1,4 +1,5 @@
 #pragma once
+#include "src/game/navigation/orbital/OrbitalTransferPlanner.h"
 #include <cstdint>
 
 #include <vector>
@@ -164,6 +165,30 @@ public:
     game::traffic::dock::DockServiceTraffic* dockServiceTraffic() noexcept;
     // Pilot asks the dock dispatcher to leave the pad (docked ships only).
     bool requestDockDeparture(EntityId shipId);
+
+    // Orbital Transfer (GameSimulationOrbitalTransfer.cpp): hub -> hub travel
+    // as an authoritative navigation mode; the tactical envelope is untouched.
+    struct ActiveOrbitalTransfer
+    {
+        std::string sourceHubId;
+        std::string targetHubId;
+        std::string parentBodyId;
+        game::navigation::orbital::CentralBody body;
+        game::navigation::orbital::TransferLimits limits;
+        game::navigation::orbital::OrbitalTransferPlan plan;
+        game::navigation::orbital::TransferCarrier carrier;
+        game::navigation::orbital::InterplanetaryEstimate estimate;
+        bool abstracted = false;      // interplanetary: time-compressed transit, not flight
+        bool thrustEnabled = true;
+        double engineMaxAccelMps2 = 0.0;
+        double lastOrbitalTimeSeconds = 0.0;
+        double transitEndRealSeconds = 0.0;
+        double peakSpeedMps = 0.0;
+        double lastLogOrbitalSeconds = -1.0e30;
+    };
+    bool requestOrbitalTransfer(EntityId shipId, const std::string& targetHubId);
+    void cancelOrbitalTransfer(EntityId shipId);
+    const ActiveOrbitalTransfer* orbitalTransfer(EntityId shipId) const;
     // This ship's dispatcher status (phase None when unknown to the dock).
     game::docking::traffic::DockTrafficShipStatus dockDispatcherStatus(EntityId shipId) const;
     std::size_t shipShellCount() const noexcept { return m_shipShells.size(); }
@@ -312,6 +337,8 @@ public:
     }
 
     void updateShipReferenceFrames(double dt);
+    void updateOrbitalTransfers();
+    void handOverToHub(EntityId shipId, Ship& ship, const std::string& hubId, const glm::dvec3* worldOverride, const glm::dvec3* velOverride);
 
     const game::navigation::HubNavigationFrame* hubNavigationFrame(
         const std::string& hubId
@@ -505,6 +532,7 @@ private:
     double m_shipMotionFidelityEvaluationAccumulatorSeconds = 0.0;
     std::unordered_map<EntityId, StaticObject> m_staticObjects;
     std::unordered_map<std::string, world::hubs::OrbitalHubRuntime> m_orbitalHubs;
+    std::unordered_map<EntityId, ActiveOrbitalTransfer> m_orbitalTransfers;
 
     // Compatibility alias used by the current single-system navigation and
     // local-client presentation paths. Multiplayer authority lives in

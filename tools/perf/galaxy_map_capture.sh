@@ -4,13 +4,14 @@
 # write the game's own back buffer at the given times (ELITE_DEV_FRAME_CAPTURE).
 # Extra env (e.g. ELITE_DEV_GALAXY_HIERARCHY_SCRIPT=1) is passed through.
 # usage: galaxy_map_capture.sh "SECONDS:PATH[;SECONDS:PATH...]" [MAX_SECONDS=60]
+# ELITE_EXE=<path> selects the build (default ./build/EliteGame.exe).
 # Stops only the game PID it started.
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 O="${ELITE_DIAG_DIR:-/d/tmp}"
 cd "$ROOT"
 tasklist | grep -qi EliteGame && { echo "EliteGame already running - abort"; exit 1; }
 ELITE_DEV_FRAME_CAPTURE="$1" ELITE_DEV_GALAXY_MAP_AT=${MAP_AT:--1} ELITE_SHIP_PHYSICAL_TEST_MODEL=Newtonian-I \
-  ./build/EliteGame.exe --dev-direct-flight --diagnostic-scenario nav-stress:simple \
+  ${ELITE_EXE:-./build/EliteGame.exe} --dev-direct-flight --diagnostic-scenario nav-stress:simple \
   > /dev/null 2> "$O/elite_galaxy_capture_stderr.txt" &
 WINPID=; W=0
 while [ -z "$WINPID" ] && [ $W -lt 30 ]; do

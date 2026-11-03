@@ -826,6 +826,14 @@ void GameServer::update(double dt)
                     m_simulation.requestDockDeparture(id);
                     break;
 
+                case ClientShipCommand::RequestOrbitalTransfer:
+                    m_simulation.requestOrbitalTransfer(id, shipCmd.target);
+                    break;
+
+                case ClientShipCommand::CancelOrbitalTransfer:
+                    m_simulation.cancelOrbitalTransfer(id);
+                    break;
+
                 case ClientShipCommand::InjectEquipmentFailure:
                 {
                     // A deliberate test fault on this player's authoritative

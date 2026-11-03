@@ -27,6 +27,14 @@ public:
 
     DetailCameraState& camera() noexcept { return m_state.camera; }
     const DetailCameraState& camera() const noexcept { return m_state.camera; }
+    // History restore: the view owns its camera state; a restored camera never
+    // resumes an interrupted rotate / pan gesture.
+    void restoreCamera(const DetailCameraState& camera) noexcept
+    {
+        m_state.camera = camera;
+        m_state.camera.rotating = false;
+        m_state.camera.panning = false;
+    }
 
     LocalMapControlSettings& controls() noexcept { return m_controls; }
     const LocalMapControlSettings& controls() const noexcept { return m_controls; }

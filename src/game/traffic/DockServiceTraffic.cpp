@@ -393,6 +393,7 @@ struct DockServiceTraffic::Impl
         double queuedSince = 0.0;
         int loops = 0;
         bool external = false; // pilot ship under station control
+        std::uint64_t flightSerial = 0; // persistent flight identity (not parsed back from the callsign)
     };
 
     TrafficConfig config;
@@ -414,7 +415,7 @@ struct DockServiceTraffic::Impl
     Impl(TrafficConfig c, std::function<double(double)> phase, std::uint64_t firstId)
         : config(std::move(c)),
           phaseAt(std::move(phase)),
-          dispatcher(hex::hexDockFacilityDescriptor("earth_orbital_hub.hex_dock_a", 0, "hub_hex_dock_a")),
+          dispatcher(hex::hexDockFacilityDescriptor(c.dockFacilityId, c.systemId, c.dockFrameId)),
           gates(gateSlots(hex::hexDockGeometry())),
           gateOwner(gates.size(), 0),
           rng{c.seed},
@@ -537,18 +538,32 @@ struct DockServiceTraffic::Impl
         a.gateSlot = -1;
     }
 
+    // The far end of a flight: the surface port or a connected hub of the network, fixed per
+    // flight serial so the outbound leg of the same flight keeps its counterpart.
+    std::string counterpartFor(std::uint64_t serial) const
+    {
+        const std::size_t n = config.connectedDestinations.size();
+        const double u = static_cast<double>((serial * 2654435761ull) % 1000ull) / 1000.0;
+        if (n == 0 || u < config.surfaceShare)
+            return config.surfaceName;
+        return config.connectedDestinations[static_cast<std::size_t>(serial % n)];
+    }
+
     CargoManifest manifest(bool toHub, std::uint64_t serial, double when)
     {
         CargoManifest m;
         std::ostringstream id;
-        id << "EOH-" << serial;
+        id << config.flightPrefix << "-" << serial << (toHub ? "A" : "D");
         m.flightId = id.str();
         const auto& list = toHub ? EarthToHubCargo : HubToEarthCargo;
         m.cargoClass = list[rng.next() % 6];
         m.tonnes = std::round(trafficShipClass(TrafficShipKind::CargoShuttle).cargoCapacityKg / 1000.0 * (0.55 + 0.45 * rng.uniform()));
-        m.origin = toHub ? "Earth (surface port)" : "Earth Orbital Hub";
-        m.destination = toHub ? "Earth Orbital Hub" : "Earth (surface port)";
+        const std::string other = counterpartFor(serial);
+        m.origin = toHub ? other : config.hubDisplayName;
+        m.destination = toHub ? config.hubDisplayName : other;
+        m.category = other == config.surfaceName ? "cargo" : "service";
         m.scheduledSeconds = when;
+        m.etaSeconds = toHub ? when : when + config.shuttleTransferSeconds;
         return m;
     }
 
@@ -556,7 +571,7 @@ struct DockServiceTraffic::Impl
     {
         const int serial = shuttleSerial++;
         std::ostringstream cs;
-        cs << "ORB-" << serial;
+        cs << config.shuttleCallsignPrefix << "-" << serial;
         const std::uint64_t id = spawn(TrafficShipKind::CargoShuttle, cs.str());
         Actor& a = actors[id];
         a.gateSlot = takeGate(id, true);
@@ -564,12 +579,13 @@ struct DockServiceTraffic::Impl
         {
             // Every Earth-side gate taken: the flight is held at Earth (the
             // schedule slips), it never materialises on top of a waiting ship.
-            say(id, "held at Earth: all Earth-side queue gates occupied");
+            say(id, "held at " + config.surfaceName + ": all inbound queue gates occupied");
             actors.erase(id);
             nextShuttleAt = now + 60.0;
             return;
         }
-        a.cargo = manifest(true, static_cast<std::uint64_t>(serial), now);
+        a.flightSerial = static_cast<std::uint64_t>(serial);
+        a.cargo = manifest(true, a.flightSerial, now);
         const TrafficShipClass& c = trafficShipClass(a.kind);
         const glm::dvec3 gate = gates[static_cast<std::size_t>(a.gateSlot)].position;
         const glm::dvec3 start = gate + config.earthDirectionFixed * config.materializeDistance;
@@ -584,7 +600,7 @@ struct DockServiceTraffic::Impl
         setPhase(a, ActorPhase::Inbound);
         ++stats.shuttleFlights;
         std::ostringstream text;
-        text << "materialised " << static_cast<int>(config.materializeDistance / 1000.0) << " km Earth-side, "
+        text << "materialised " << static_cast<int>(config.materializeDistance / 1000.0) << " km out on the inbound side, "
              << a.cargo.flightId << " " << a.cargo.tonnes << " t " << a.cargo.cargoClass
              << " (after the aggregated " << static_cast<int>(config.shuttleTransferSeconds / 60.0) << "-min Earth leg), coasting "
              << c.cruiseSpeed << " m/s -> gate " << a.gateSlot;
@@ -640,7 +656,10 @@ struct DockServiceTraffic::Impl
             const std::uint64_t id = spawn(kind, cs);
             Actor& a = actors[id];
             if (kind == TrafficShipKind::CargoShuttle)
-                a.cargo = manifest(true, static_cast<std::uint64_t>(shuttleSerial++), now);
+            {
+                a.flightSerial = static_cast<std::uint64_t>(shuttleSerial++);
+                a.cargo = manifest(true, a.flightSerial, now);
+            }
             if (!dispatcher.registerDocked(requestFor(a), hex::padIdFor(pad), now))
             {
                 actors.erase(id);
@@ -661,13 +680,13 @@ struct DockServiceTraffic::Impl
         for (int i = 0; i < config.initialDockedShuttles; ++i)
         {
             std::ostringstream cs;
-            cs << "ORB-" << shuttleSerial;
+            cs << config.shuttleCallsignPrefix << "-" << shuttleSerial;
             dockAtStart(TrafficShipKind::CargoShuttle, cs.str(), 120.0 + 300.0 * i);
         }
         for (int i = 0; i < config.cobrettCount; ++i)
         {
             std::ostringstream cs;
-            cs << "CBR-" << (11 + i);
+            cs << config.cobrettCallsignPrefix << "-" << (11 + i);
             if (i < config.initialDockedCobretts)
             {
                 dockAtStart(TrafficShipKind::Cobrett, cs.str(), 60.0 + 90.0 * i);
@@ -846,9 +865,9 @@ struct DockServiceTraffic::Impl
                 {
                     if (a.kind == TrafficShipKind::CargoShuttle)
                     {
-                        a.cargo = manifest(false, std::stoull(a.callsign.substr(4)), now);
+                        a.cargo = manifest(false, a.flightSerial, now);
                         say(a.id, "loaded " + std::to_string(static_cast<int>(a.cargo.tonnes)) + " t " + a.cargo.cargoClass +
-                                      " for Earth, departure requested");
+                                      " for " + a.cargo.destination + ", departure requested");
                     }
                     else
                         say(a.id, "service done, departure requested");
@@ -967,7 +986,7 @@ struct DockServiceTraffic::Impl
                         pushBurn(a, from + config.earthDirectionFixed * config.materializeDistance, 0.0, c.cruiseSpeed,
                                  c.mainAccel, c.cruiseSpeed, {0.0, 0.0, -1.0}, true);
                         setPhase(a, ActorPhase::Outbound);
-                        say(a.id, a.cargo.flightId + " Earth leg: burning for Earth with " +
+                        say(a.id, a.cargo.flightId + " outbound: burning for " + a.cargo.destination + " with " +
                                       std::to_string(static_cast<int>(a.cargo.tonnes)) + " t " + a.cargo.cargoClass);
                     }
                     else
@@ -982,7 +1001,7 @@ struct DockServiceTraffic::Impl
             case ActorPhase::Outbound:
                 if (segmentsDone)
                 {
-                    say(a.id, "left the local zone (aggregated Earth leg, arrival Earth in " +
+                    say(a.id, "left the local zone (" + a.cargo.flightId + " continues aggregated, arrival " + a.cargo.destination + " in " +
                                   std::to_string(static_cast<int>(config.shuttleTransferSeconds / 60.0)) + " min)");
                     setPhase(a, ActorPhase::Gone);
                 }
@@ -1164,7 +1183,7 @@ std::string DockServiceTraffic::destination(std::uint64_t actorId) const
     switch (a.phase)
     {
         case ActorPhase::Outbound:
-            return a.cargo.destination.empty() ? std::string("Earth") : a.cargo.destination;
+            return a.cargo.destination.empty() ? m_impl->config.surfaceName : a.cargo.destination;
         case ActorPhase::FarLeg:
         case ActorPhase::FarWait:
             return "far point 20 km";
@@ -1176,7 +1195,8 @@ std::string DockServiceTraffic::destination(std::uint64_t actorId) const
         case ActorPhase::CorridorOut:
         case ActorPhase::AxialOut:
         case ActorPhase::Disperse:
-            return a.kind == TrafficShipKind::CargoShuttle ? std::string("Earth") : std::string("far point 20 km");
+            return a.kind == TrafficShipKind::CargoShuttle ? (a.cargo.destination.empty() ? m_impl->config.surfaceName : a.cargo.destination)
+                                                           : std::string("far point 20 km");
         case ActorPhase::Inbound:
         case ActorPhase::WaitGate:
         case ActorPhase::ToHold:

@@ -124,15 +124,11 @@ void SystemMapRenderer::applyMapHistoryRestore(
             m_systemView.state().pendingBookmark = entry.system;
             break;
         case Mode::Detail:
-            m_detailView.camera() = entry.detailCamera;
-            m_detailView.camera().rotating = false;
-            m_detailView.camera().panning = false;
+            m_detailView.restoreCamera(entry.detailCamera);
             m_detailView.selectHub(entry.detailHubId, entry.detailHubParentBodyId);
             break;
         case Mode::Hub:
-            m_hubView.camera() = entry.hubCamera;
-            m_hubView.camera().rotating = false;
-            m_hubView.camera().panning = false;
+            m_hubView.restoreCamera(entry.hubCamera);
             break;
     }
 }
@@ -449,6 +445,8 @@ bool SystemMapRenderer::openContextMenu(
             m_contextMenu.rows.push_back({text.contextInfo, "info", item != nullptr});
             if (item)
                 appendContextActionRows(*item);
+            // Orbital Transfer: hub -> hub (the server plans and flies it; the map shows the tunnel)
+            m_contextMenu.rows.push_back({"Орбитальный перелёт", "transfer:" + target.hubId, true});
             m_contextMenu.rows.push_back({text.contextDetails, "details", true});
         }
         else
@@ -530,6 +528,12 @@ std::optional<game::system_map::MapIntent> SystemMapRenderer::executeContextComm
             return std::nullopt;
         m_objectOverlayState.activate(item->objectId);
         m_objectOverlayState.ensureOpen(*item, viewportSize);
+        return std::nullopt;
+    }
+
+    if (command.rfind("transfer:", 0) == 0)
+    {
+        m_pendingOrbitalTransferHubId = command.substr(9);
         return std::nullopt;
     }
 

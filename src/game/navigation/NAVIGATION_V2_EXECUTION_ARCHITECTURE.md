@@ -297,6 +297,43 @@ Still to migrate before direct-demand removal:
 
 Target-machine build/test evidence is required after each deletion slice.
 
+## 11a. Orbital Transfer (hub -> hub around one body), 2026-11-03
+
+Hub Tactical and Orbital Transfer are different jobs and different modes.
+
+- **Hub Tactical** (unchanged): local tens of km inside the moving hub frame,
+  docking, queues, traffic separation, the 500 m/s controlled envelope. The
+  ship-owned travel frame is matched to the hub frame.
+- **Orbital Transfer** (server-authoritative navigation mode,
+  `GameSimulationOrbitalTransfer.cpp`): the ship's travel frame is DETACHED
+  from the source hub (`TravelFrameSystem::detach`), re-based at the ship and
+  its origin driven by the carrier law of `src/game/navigation/orbital/`:
+  plan feed-forward + real central-body gravity + PD, clamped to the ship's
+  main engine. The ordinary tactical integrator keeps running inside that
+  frame, so the local envelope and `maxCombatSpeed` are never raised; the
+  transit speed envelope is an output of the plan (curvature, lateral and
+  braking acceleration, target velocity), not a speed limit.
+- The plan (`planOrbitalTransfer`) ends at the destination hub's approach
+  point AT THE ARRIVAL EPOCH with the hub's velocity at that epoch (moving
+  target, ephemeris from `OrbitalMotion`), departure / arrival ramps inside
+  the traffic zones, a nearly Keplerian phasing chain over the body (minimum
+  safe altitude checked), smallest arrival epoch within the thrust envelope
+  and a delta-v budget.
+- Hand-over: at the arrival epoch the ship is re-based into the destination
+  hub frame with its actual relative position and velocity
+  (`worldToLocalKinematics`, `matchToReference`) - no snap.
+- A destination around another body (Earth -> Ceres) is an ABSTRACTED,
+  time-compressed transit (physical brachistochrone reported, short real
+  wait, placement at the destination's approach point with its velocity).
+- Not a second autopilot of the tactical route chain: the carrier law moves
+  the FRAME; route planning / docking inside a hub frame stays with the
+  existing chain. Known debt: ship attitude is not slaved to the carrier
+  thrust; free gravitational flight of ships outside a transfer is still not
+  integrated (gravity remains metadata in Hub Tactical).
+- Checks: `EliteOrbitalTransferCheck` (offline), live server log
+  `[OrbitalTransfer]` (t, speed vs destination, altitude, thrust, tracking
+  error).
+
 ## 12. Known implementation debt
 
 These are not contradictions to the architecture, but they remain cleanup work:

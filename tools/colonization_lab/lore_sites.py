@@ -299,12 +299,7 @@ LVL_RU = {"concern": "концерн", "assembly": "сборка", "parts": "д�
 CH_RU = {"open": "открыто (свой блок)", "licensed": "по лицензии", "restricted": "ограничено", "black": "чёрный рынок / реэкспорт", "own": "своё", "none": "нет"}
 
 
-FUNC_RU = {"interstellar_gateway": "межзвёздные ворота", "customs": "таможня", "passenger": "пассажиры", "administration": "администрация", "cargo": "грузы",
-           "heavy_lift": "тяжёлые грузы", "shipyard_service": "обслуживание верфей", "interplanetary": "межпланетные рейсы", "fuel": "топливо",
-           "power": "энергосеть", "industry": "промышленность", "comms": "связь", "science": "наука", "observation": "наблюдение Земли",
-           "polar_service": "полярная связь", "transfer": "пересадка", "ice": "лёд", "mining": "добыча", "defence": "оборона", "quarantine": "карантин",
-           "medical": "медицина", "shipyard": "верфь", "agro": "агро", "logistics": "логистика", "metallurgy": "металлургия", "high_inclination": "высокие наклонения",
-           "black_market": "чёрный рынок", "energy": "энергия", "atmosphere": "атмосфера", "trade": "торговля", "chemicals": "химия", "gas": "газ", "outer_relay": "ретранслятор"}
+from sol_network import FUNC_RU   # one translation of hub functions for Lore and the map
 ROUTE_RU = {"passenger": "пассажирский", "cargo": "грузовой", "shuttle": "челночный", "mining": "рудный"}
 
 

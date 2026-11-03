@@ -340,10 +340,22 @@ void SystemMapRenderer::drawSystemNavigationGrid(
     m_systemFrameTexts.clear();
     auto& state = m_systemView.state();
     state.presentedCubeMarkers.clear();
-    if (!state.navigationGrid.enabled() || systemScale <= 0.0f)
+    if (!state.navigationGrid.enabled() || !state.gridOverlayVisible || systemScale <= 0.0f)
         return;
 
-    static const GalaxyNavigationGridVisualSettings frameVisuals;
+    // The System overlay is quieter than the Galaxy frame: objects read before the grid.
+    static const GalaxyNavigationGridVisualSettings frameVisuals = [] {
+        GalaxyNavigationGridVisualSettings v;
+        v.parentFrameColor.a *= 0.40f;
+        v.faceMajorColor.a *= 0.45f;
+        v.faceMinorColor.a *= 0.45f;
+        v.frameLabelColor.a *= 0.55f;
+        v.hoverLayerColor.a *= 0.5f;
+        v.hoveredEdgeColor.a *= 0.6f;
+        v.hoverProjectionAlpha *= 0.6f;
+        v.selectedProjectionAlpha *= 0.7f;
+        return v;
+    }();
     const auto& camera = m_systemSceneFrame.camera;
     const double scale = static_cast<double>(systemScale);
 

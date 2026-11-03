@@ -1,5 +1,7 @@
 // SpaceState: Galaxy / System Map glue: map snapshots, map modes and transitions, the native map panel and the map UI state.
 
+#include "src/game/navigation/orbital/OrbitalTransferPlanner.h"
+#include "src/game/presentation/SystemMapInfoBuilder.h"
 #include "src/game/SpaceStateInternal.h"
 
 
@@ -626,7 +628,21 @@ SpaceState::buildNativeSystemMapPanelPresentation()
          m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Detail) &&
         m_systemMapRenderer.canOpenSelectedLocalContext();
 
-    return game::presentation::buildSystemMapPanelPresentation(input);
+    auto panel = game::presentation::buildSystemMapPanelPresentation(input);
+    m_systemMapRenderer.setWorldSitesCatalog(&m_client->catalogs().worldSites());
+    // System / Detail: the information block (world model facts; never a hand-written status)
+    if ((m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System || m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Detail) &&
+        m_systemMapSnapshot.systemId >= 0 && !m_systemMapShowsEmptySector)
+    {
+        game::presentation::SystemMapInfoInput info;
+        info.systemId = m_systemMapSnapshot.systemId;
+        info.catalog = &m_client->catalogs().worldSites();
+        info.system = &m_systemMapSnapshot;
+        info.selectedObjectId = m_systemMapRenderer.activeObjectId();
+        info.selectedBodyId = m_systemMapRenderer.selectedBodyId();
+        game::presentation::buildSystemMapInfo(info, panel.infoTitle, panel.info);
+    }
+    return panel;
 }
 
 void SpaceState::openSelectedGalaxyMapTarget()
@@ -1780,4 +1796,52 @@ void SpaceState::devSelectTrafficShip(const std::string& callsign)
             return;
         }
     std::cerr << "[MapScript] traffic ship " << callsign << " not replicated" << std::endl;
+}
+
+
+// Orbital Transfer from the map: the client previews the tunnel with the same planner the
+// server uses (Earth's state is recovered from the source hub's replicated ephemeris), then
+// asks the server, which plans and flies the authoritative transfer.
+void SpaceState::requestOrbitalTransfer(const std::string& targetHubId)
+{
+    namespace orb = game::navigation::orbital;
+    if (!m_client)
+        return;
+    const auto& world = m_client->world();
+    const auto shipIt = world.ships().find(m_playerId.value);
+    const auto targetIt = world.hubs().find(targetHubId);
+    if (shipIt == world.ships().end() || targetIt == world.hubs().end())
+        return;
+    const auto& motion = shipIt->second.transform.motion;
+    const auto sourceIt = world.hubs().find(motion.hubId);
+    m_systemMapRenderer.clearTransferTunnel();
+    if (sourceIt != world.hubs().end() && sourceIt->second.parentBodyId == targetIt->second.parentBodyId && sourceIt->first != targetHubId)
+    {
+        const double t = m_client->universeTimeSeconds();
+        const auto& src = sourceIt->second;
+        const glm::dvec3 bodyPos = world::coordinates::fullMeters(src.worldPosition) - orb::targetPositionAt(src.motion, t);
+        const glm::dvec3 bodyVel = src.worldVelocityMps - orb::targetVelocityAt(src.motion, t);
+        const glm::dvec3 shipPos = world::coordinates::fullMeters(shipIt->second.transform.worldPosition);
+        orb::CentralBody body;
+        body.radiusMeters = src.motion.parentRadiusMeters > 0.0 ? src.motion.parentRadiusMeters : body.radiusMeters;
+        orb::TransferLimits limits;
+        const orb::OrbitalTransferPlan plan =
+            orb::planOrbitalTransfer(body, shipPos - bodyPos, motion.worldVelocityMps - bodyVel, t, targetIt->second.motion, limits);
+        if (plan.feasible)
+        {
+            m_systemMapRenderer.setTransferTunnel(targetIt->second.parentBodyId, plan.tunnelMeters);
+            std::cerr << "[OrbitalTransfer] preview -> " << targetIt->second.name << ": ETA " << plan.durationSeconds() << " s, path "
+                      << plan.pathLengthMeters / 1000.0 << " km, peak " << plan.peakSpeedMps / 1000.0 << " km/s\n";
+        }
+        else
+        {
+            std::cerr << "[OrbitalTransfer] preview -> " << targetIt->second.name << ": " << plan.reason << "\n";
+        }
+    }
+    game::network::ClientMessage msg;
+    ClientShipCommand command;
+    command.type = ClientShipCommand::RequestOrbitalTransfer;
+    command.target = targetHubId;
+    msg.payload = command;
+    m_client->sendMessage(msg);
 }

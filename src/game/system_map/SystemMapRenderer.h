@@ -78,6 +78,7 @@
 #include "src/game/system_map/MapObjectOverlayRenderer.h"
 #include "src/game/system_map/NavigationRouteOverlay.h"
 #include "src/game/system_map/NavigationMapTextProfile.h"
+#include "src/world/celestial/WorldSitesCatalog.h"
 
 struct GLFWwindow;
 class SystemMapRenderer
@@ -179,6 +180,8 @@ public:
 
     const std::string& selectedBodyId() const;
     const std::string& selectedHubId() const;
+    // The object the map currently presents as selected (site, hub, ship) - right panel source.
+    const std::string& activeObjectId() const noexcept { return m_objectOverlayState.activeObjectId(); }
     const std::string& selectedHubParentBodyId() const;
 
     bool canOpenSelectedDetail() const;
@@ -408,11 +411,82 @@ private:
         const world::celestial::HubMapSnapshot& hub
     );
     bool m_showTrafficLanes = false;
+    bool m_showNetworkRoutes = true;
+    const world::celestial::WorldSitesCatalog* m_worldSites = nullptr;
+    std::string m_transferTunnelBodyId;
+    std::string m_pendingOrbitalTransferHubId;
+    std::string m_devFocusBodyId;
+    std::string m_devFocusHubId;
+    std::string m_devHoverObjectId;
+    std::string m_devEnterId;
+    std::size_t m_devLastNetworkLines = 0;
+    std::size_t m_devLastTunnelPoints = 0;
+    std::vector<glm::dvec3> m_transferTunnel;
+    void decorateSystemNetworkRoutes(const Viewport& viewport, const world::celestial::SystemMapSnapshot& system);
 
 public:
-    void toggleTrafficLanes() noexcept { m_showTrafficLanes = !m_showTrafficLanes; }
+    // T: on the System Map the aggregate network routes; on Detail / Hub the dock traffic lanes.
+    void toggleTrafficLanes() noexcept
+    {
+        if (m_modeState.current() == Mode::System)
+            m_showNetworkRoutes = !m_showNetworkRoutes;
+        else
+            m_showTrafficLanes = !m_showTrafficLanes;
+    }
+    // World-model facts for the System Map (routes, sites): read-only, owned by the client catalogs.
+    void setWorldSitesCatalog(const world::celestial::WorldSitesCatalog* catalog) noexcept { m_worldSites = catalog; }
+    // The player's Orbital Transfer plan (body-relative tunnel) shown as a solid line until arrival.
+    void setTransferTunnel(std::string parentBodyId, std::vector<glm::dvec3> tunnelBodyRelativeMeters)
+    {
+        m_transferTunnelBodyId = std::move(parentBodyId);
+        m_transferTunnel = std::move(tunnelBodyRelativeMeters);
+    }
+    void clearTransferTunnel() { m_transferTunnel.clear(); m_transferTunnelBodyId.clear(); }
+    // Orbital Transfer requested from the map (context menu or O on a selected hub); consumed by SpaceState.
+    std::optional<std::string> consumeOrbitalTransferRequest()
+    {
+        if (m_pendingOrbitalTransferHubId.empty())
+            return std::nullopt;
+        std::string id = std::move(m_pendingOrbitalTransferHubId);
+        m_pendingOrbitalTransferHubId.clear();
+        return id;
+    }
+    void requestOrbitalTransferToSelectedHub()
+    {
+        if (!m_systemView.state().selectedHubId.empty())
+            m_pendingOrbitalTransferHubId = m_systemView.state().selectedHubId;
+    }
+    // G: optional cube overlay of the System Map (hybrid map; hidden by default).
+    void toggleSystemGridOverlay() noexcept
+    {
+        auto& st = m_systemView.state();
+        st.gridOverlayVisible = !st.gridOverlayVisible;
+        m_systemSceneFrameDirty = true;
+    }
+    bool systemGridOverlayVisible() const noexcept { return m_systemView.state().gridOverlayVisible; }
+    // Arrow keys: move the selected child cube to a sibling in the screen plane
+    // locked at the first press (dx = right, dy = up). Returns false when nothing moved.
+    bool moveSystemCubeSelection(int dx, int dy, double nowSeconds);
     // DEV map script: select an object as if clicked.
     void devActivateObject(const std::string& objectId) { m_objectOverlayState.activate(objectId); }
+    // DEV acceptance script: focus a body / hub through the ordinary selection path; hover an object.
+    void devFocusBody(const std::string& bodyId) { m_devFocusBodyId = bodyId; }
+    void devFocusHub(const std::string& hubId) { m_devFocusHubId = hubId; }
+    void devHover(const std::string& objectId) { m_devHoverObjectId = objectId; }
+    // DEV: the double-click approach on a body (body id) or a hub (hub id) - one cube level per call.
+    void devEnter(const std::string& id) { m_devEnterId = id; }
+    void devZoom(double steps) { m_pendingScrollY += steps; }
+    // DEV: what the map shows right now (scripted checks: marker <-> world object identity)
+    std::vector<std::string> devVisibleObjectIds() const
+    {
+        std::vector<std::string> ids;
+        for (const auto& item : m_systemSceneFrame.interaction.objectOverlay.items)
+            if (item.visible && item.drawGlyph)
+                ids.push_back(item.objectId);
+        return ids;
+    }
+    std::size_t devNetworkRouteLines() const { return m_devLastNetworkLines; }
+    bool devTransferTunnelShown() const { return m_devLastTunnelPoints >= 2; }
     bool trafficLanesVisible() const noexcept { return m_showTrafficLanes; }
 
 private:

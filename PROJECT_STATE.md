@@ -124,6 +124,14 @@ Updated: 2026-11-02, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONL
   (wire schema 13), ship_capability_layer (client prediction), ship_control_execution_gateway
   (client attitude prediction); LocalPredictedPresentationContractTests does not
   compile; tools/check_map_architecture.py misses a deleted .inl.
+- Re-measured 2026-11-03 against restore/pre-sol-network-2026-11-03: python
+  contract reds ship_capability_layer, ship_control_execution_gateway,
+  ship_physical_control_models, trajectory_generator, travel_frame_ownership,
+  wire_data_schema, client_acceptance, constellation_overlay,
+  debug_ui_compatibility, feature_contracts, interaction_activation are all
+  red at the restore point too. tests/system_map/check_architecture.py was red
+  (facade assigned Detail/Hub view cameras, commit 97b39d73) - FIXED in the
+  fourth pass.
 
 ## Factual capability (current contract)
 - Server `ShipCore::controlAuthorityTelemetry()` is the one published fact,
@@ -1795,11 +1803,142 @@ Restore point: tag `restore/pre-sol-network-2026-11-03` (= 7ec5f4c1). Branch mai
 - Found, not changed: OrbitalMotion's circle runs +X -> +Z (retrograde against the
   catalog's prograde convention) and is relative to the parent's ecliptic-aligned
   frame, not the Earth equator; the Ceres hub compensates with i = 173.9 deg.
-- Checks: world_sites 39/39 (14 new sol.*), industry, world_economy, logistics,
+- Checks: world_sites 38/38 (13 new sol.*), industry, world_economy, logistics,
   lab dataset / lore, lore_md 133 (new ECONOMY/SOL_NETWORK.md), lore_html 136
   OK; sol / runtime outputs byte-identical across runs.
 
+#### Stage 3 (E): Orbital Transfer - planner + server mode (implemented; offline PASS, live partially verified; NOT user-accepted)
+- `src/game/navigation/orbital/OrbitalTransferPlanner.{h,cpp}` (lib
+  `EliteOrbitalTransfer`, linked into EliteNavigationWorldRuntime): plan in the
+  central body's frame from the ship's actual state to the destination hub's
+  approach point (15 km behind on -prograde, closing 20 m/s) AT THE ARRIVAL
+  EPOCH with the hub's velocity then (moving target from `OrbitalMotion`);
+  departure / arrival ramps (0.4 g inside 25 km), a nearly Keplerian phasing
+  chain (radius blend start -> phasing radius -> end, angle at the local
+  circular rate, plane change done where the orbit is high), minimum safe
+  altitude (catalog atmosphere top + 150 km), smallest arrival epoch within
+  the thrust envelope (min(18 m/s2, 0.25 x main engine)) and a delta-v budget
+  25 km/s (PROPOSAL). Carrier law: feed-forward + real gravity + PD, clamped
+  to the engine.
+- Server (`GameSimulationOrbitalTransfer.cpp`): `ClientShipCommand::
+  RequestOrbitalTransfer{target}` / `CancelOrbitalTransfer` (wire v19). The
+  ship's travel frame is detached from the source hub and its origin driven
+  by the carrier on the orbital clock; the ordinary tactical integrator keeps
+  running inside it (maxCombatSpeed untouched). At the arrival epoch the ship
+  is re-based into the destination hub frame with its actual relative state.
+  Other body (Earth -> Ceres): ABSTRACTED transit (brachistochrone reported,
+  90 s real, placed at the approach point with the hub's velocity).
+  Normative note added to NAVIGATION_V2_EXECUTION_ARCHITECTURE.md section 11a.
+- Client: map context menu "Орбитальный перелёт" on a hub (or O with a hub
+  selected) previews the tunnel with the same planner (Earth state recovered
+  from the source hub's replicated ephemeris) and sends the command.
+- Evidence:
+  - OFFLINE `EliteOrbitalTransferCheck` PASS: Vysokiy -> 10 LEO hubs at two
+    epochs: ETA 1.9-2.9 h, path 46-75 thousand km, peak 7.7-8.3 km/s vs Earth
+    and 5.6-15.7 km/s vs destination, dv 9.6-25 km/s, min altitude >= 251 km,
+    arrival position error 0.8-2.5 m at the approach point, arrival relative
+    speed 20.0 m/s (= the planned closing speed); coasting with thrust off
+    stays in orbit (419.8-420.2 km); a 300 m/s retro burn falls below 100 km
+    after 1029 s. OPEN: Vysokiy -> Ekvator (GEO) infeasible within the budget
+    (no Hohmann / spiral optimisation yet).
+  - LIVE (RelWithDebInfo, nav-stress:simple, `ELITE_DEV_SOL_MAP_SCRIPT`,
+    stderr D:/tmp/elite_galaxy_capture_stderr.txt): Vysokiy -> Baikonur
+    started (server ETA 11 196 s, dv 12.0 km/s, min alt 391.6 km); server log
+    t+0..360 s: departure ramp 3.92 m/s2 for 113 s, then 5-9 m/s2, tracking
+    error <= 1 m; at t+335 s the ship is 102 km from Vysokiy at 1 268 m/s
+    relative (above the tactical 500 m/s). Arrival at Baikonur NOT observed
+    live (3.1 h). Vysokiy -> Pereval Tserery (abstracted, physical 5.5 d at
+    9.2 m/s2) handed over: 15 km offset, 20 m/s relative, matched to the
+    Ceres hub frame - LIVE VERIFIED.
+- Answers (section 19): with thrust off outside a transfer the ship does NOT
+  orbit or fall - Hub Tactical carries it in the hub frame, gravity is
+  metadata; inside a transfer the carrier IS gravitational (coasts / falls,
+  offline-proved). The tactical -> system transition is the new detach in
+  requestOrbitalTransfer; the return is handOverToHub.
+- Known debt: ship attitude not slaved to carrier thrust; abstracted transit
+  leaves the ship's world pose stale for the 90 s; a cancelled transfer that
+  reaches the atmosphere stops updating its frame; no free gravitational
+  flight outside transfers.
+
+#### Stage 4 (C): hybrid System Map (implemented; scripted + live captures; human acceptance OPEN)
+- Cubes stop being the user's model: wireframe = optional overlay (G, hidden
+  by default, System-specific quieter colours); cubes are pick targets only
+  with the overlay; drawn hubs / bodies are targets anywhere (removed the
+  cube-containment rule for hub picks and the cube culling of bodies); arrows
+  move a selected child cube to a sibling in the screen plane locked at the
+  first press (1.5 s lock), never "into the screen".
+- World objects: hubs use the hub glyph (world sites amber, replicated hubs
+  cyan), relays a diamond, belt anchors a disc; far-zoom declutter (objects on
+  a planet's or another marker's pixel appear as the region grows); hover
+  tooltip (name, operator, type) clamped to the viewport; replicated hubs
+  take name / operator / type from the world model.
+- Right panel "КАРТА СИСТЕМЫ" (`SystemMapInfoBuilder.h`): nothing selected ->
+  summary from the world model (actors, economy, imports / exports /
+  shortages, state from events / epidemics / hazards, relation to the player
+  "neutral, no records" until reputation exists, hubs BY REGION); hub / site /
+  relay / anchor / body selected -> its facts and routes. Word-wrapped,
+  clipped (scissor), scrollable, >= 15 px text; the system list moves under
+  the information and opens upwards.
+- Network routes: 82 aggregate routes drawn dashed (width / alpha by
+  flights/day, T toggles) - distinct from the solid Orbital Transfer tunnel.
+- Data: WorldSitesCatalog parses hub facts, routes, relays (placed), belt
+  anchors (heliocentric, Kepler like the planets), Lagrange points (L1/L2/L4/
+  L5 with Hill ratio) and system summaries.
+- `tests/system_map/check_architecture.py` GREEN: root cause fixed in code
+  (`DetailMapView::restoreCamera` / `HubMapView::restoreCamera` instead of
+  assigning the views' cameras from the facade); `check_object_overlay.py`
+  stale token updated (`clickedBodyId` -> `selectedBodyId`).
+- Evidence: `tests/system_map/check_hybrid_map.py` PASS (new static
+  contract); `EliteSystemMapInfoCheck` PASS (new, on the runtime data: the
+  summary names "Перевал Цереры" and the Earth hubs without ids; Ceres / Тихий
+  / Earth panels; 13 runtime hubs bound once; all 82 route ends real; 19
+  relays placed; 4 anchors; Ceres hub 2.80 AU) - the check found and fixed a
+  real discoverability bug (summary listed only the 12 busiest = Earth hubs).
+  Live captures D:/tmp/elite_sol*_*.png: overview + panel summary, Earth
+  approach (cislunar hubs, dashed routes to Venus / Mars / outer), LEO zoom
+  (hub orbits, relays), Baikonur / Ceres panels, hover tooltip, grid toggle.
+- NOT done / limits: primary view stays 3D perspective (hybrid = optional
+  cubes, no 2D ecliptic lock); clicking a route line opens nothing (routes
+  are listed in the hub panel); Detail Map has no zoom-to-lat/lon for a
+  selected settlement; relation to the player is a placeholder until
+  reputation / warrants exist; human mouse acceptance of the new map OPEN.
+
+#### Stage 5 (D): generic dock traffic (implemented; offline PASS)
+- `TrafficConfig` carries hub id / display name / dock facility / frame /
+  system, callsign + flight namespaces, surface name, connected destinations
+  and the surface / hub mix; no hub name, facility id or "ORB-/EOH-/Earth"
+  literal remains in DockServiceTraffic; flights keep one persistent serial
+  (no parsing of the callsign), manifests carry origin, destination,
+  category and ETA of the aggregated far part. The game fills the config
+  from the hub record and the world-model routes: "Высокий",
+  earth_orbital_hub.hex_dock_a, namespace VYS, 11 connected destinations,
+  shuttle interval 1 550 s = the hub's modelled arrivals per dock sector.
+- Evidence: EliteDockTrafficCheck 6 h, 4 profiles (cobretts/interval 4/600,
+  4/1549, 9/600, 6/300): 78 / 71 / 73 / 72 arrivals, 0 invariant / separation
+  / structure violations, min gap 38.6 m; queue max 0 / 0 / 7 / 6.
+- NOT done: physical dock traffic exists only where a dock sector is spawned
+  (Vysokiy); other hubs have modelled traffic (panel, routes) but no
+  materialised ships; hub A -> hub B flights are not yet one cross-hub
+  schedule object.
+
+#### Verification summary of the fourth pass
+- Offline: world_sites 38/38 OK (13 sol.*), world_economy, industry,
+  logistics, lab dataset / lore, lore_md 133, lore_html 136, Sol / runtime
+  outputs byte-identical; EliteOrbitalTransferCheck PASS (LEO) + 2 OPEN (GEO);
+  EliteSystemMapInfoCheck PASS; map tests 5/5 PASS; EliteDockTrafficCheck 4x6 h
+  PASS. Python contract suites: 11 reds, all identical at the restore point
+  (pre-existing, unchanged by this pass).
+- Live: listed above. Human acceptance (find hubs without ids, read the
+  panel, fly hub -> hub to arrival and dock) is the user's.
+
 ## Next step
+- Fourth pass follow-ups (after the user's review): human acceptance of the
+  hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival
+  and docking (3.1 h); LEO -> GEO transfers (Hohmann / spiral phasing);
+  ship attitude slaved to transfer thrust; dock sectors + physical traffic at
+  the other Earth hubs (cross-hub flight objects); route click info;
+  settlement zoom-to on the Detail Map; reputation / warrants for the
+  relation-to-player line.
 - After the user's review of the spatial layer: Stage 4 runtime communication
   (beacon coverage / relay delays in the client: messages, bank, warrants,
   sync on return to coverage), then Stage 5 (passenger / cargo flows ->

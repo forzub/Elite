@@ -48,5 +48,6 @@ private:
     bool m_systemDropdownOpen = false;
     bool m_systemPanelLeftWasDown = false;
     int m_systemDropdownFirstRow = 0;
+    float m_infoScrollPx = 0.0f;
 };
 }

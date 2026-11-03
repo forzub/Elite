@@ -16990,6 +16990,7 @@
    "pads_per_sector": 6,
    "placement": {
     "lagrange_point": {
+     "hill_ratio": 0.16,
      "point": "L1",
      "primary": "system_0.Sol.Земля",
      "secondary": "system_0.Sol.Земля.Луна"
@@ -17184,6 +17185,7 @@
    "pads_per_sector": 6,
    "placement": {
     "lagrange_point": {
+     "hill_ratio": 0.01,
      "point": "L2",
      "primary": "system_0.Sol",
      "secondary": "system_0.Sol.Земля"
@@ -17233,6 +17235,7 @@
    "pads_per_sector": 6,
    "placement": {
     "lagrange_point": {
+     "hill_ratio": 0.16,
      "point": "L4",
      "primary": "system_0.Sol.Земля",
      "secondary": "system_0.Sol.Земля.Луна"
@@ -17283,6 +17286,7 @@
    "pads_per_sector": 6,
    "placement": {
     "lagrange_point": {
+     "hill_ratio": 0.16,
      "point": "L5",
      "primary": "system_0.Sol.Земля",
      "secondary": "system_0.Sol.Земля.Луна"

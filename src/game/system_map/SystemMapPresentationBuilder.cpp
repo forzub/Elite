@@ -210,18 +210,10 @@ namespace
         std::unordered_set<std::string> hidden;
         for (const auto& body : presentation.bodies)
         {
-            // Nothing outside the current parent cube is shown or a target.
-            // A body reaching into the cube (its sphere, not only its centre)
-            // stays, and so do the selected and the followed body: a planet
-            // moving out of a small parent (Earth, ~107,000 km/h) must not
-            // vanish while its hub and ships are still drawn.
-            const bool keep = body.id == selected || body.id == followed || anchors.count(body.id) != 0 ||
-                              body.type == world::celestial::BodyType::Moon; // decided with its planet below
-            if (!keep && !galaxyHierarchyIntersectsSphere(box, body.positionAu, body.radiusKm / KmPerAu))
-            {
-                hidden.insert(body.id);
-                continue;
-            }
+            // Hybrid map: the cube no longer decides what exists for the user.
+            // Visibility follows the presentation level (orbit size on screen)
+            // only; the cube stays the zoom / LOD structure.
+            (void)box;
             const double orbitPx = body.orbitRadiusAu * pixelsPerAu;
             const std::string& level = body.presentationLevel;
             const bool show =

@@ -67,6 +67,12 @@ namespace
             return glm::vec4(1.00f, 0.78f, 0.28f, 0.98f);
         if (object.kind == world::celestial::SystemMapObjectKind::Hub)
             return glm::vec4(0.34f, 0.88f, 1.00f, 0.96f);
+        if (object.kind == world::celestial::SystemMapObjectKind::Station)
+            return glm::vec4(1.00f, 0.74f, 0.32f, 0.96f);     // world-site hubs: amber, never star-like
+        if (object.kind == world::celestial::SystemMapObjectKind::Relay)
+            return glm::vec4(0.56f, 0.94f, 0.66f, 0.85f);
+        if (object.kind == world::celestial::SystemMapObjectKind::Buoy)
+            return glm::vec4(0.82f, 0.74f, 0.60f, 0.90f);
         return glm::vec4(0.78f, 0.86f, 0.94f, 0.96f);
     }
 
@@ -76,8 +82,13 @@ namespace
     {
         if (kind == world::celestial::SystemMapObjectKind::Ship)
             return MapObjectGlyphKind::Ship;
-        if (kind == world::celestial::SystemMapObjectKind::Hub)
-            return MapObjectGlyphKind::Hub;
+        if (kind == world::celestial::SystemMapObjectKind::Hub ||
+            kind == world::celestial::SystemMapObjectKind::Station)
+            return MapObjectGlyphKind::Hub;          // every hub reads as a hub, not as a ship arrowhead
+        if (kind == world::celestial::SystemMapObjectKind::Relay)
+            return MapObjectGlyphKind::Relay;
+        if (kind == world::celestial::SystemMapObjectKind::Buoy)
+            return MapObjectGlyphKind::Anchor;
         return MapObjectGlyphKind::Infrastructure;
     }
 
@@ -476,6 +487,61 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
         frame.interaction.hubScreenPoints.push_back(
             std::move(point)
         );
+    }
+
+    /*
+        Declutter (hybrid map LOD): a world object whose marker would sit on a
+        planet's marker or on another object's marker is not drawn at this
+        zoom; it appears as the region grows on screen. Priority: replicated
+        hubs, hubs of the world model, belt anchors, relays. The selected,
+        followed or player-related object is always drawn.
+    */
+    {
+        auto priority = [](const MapObjectOverlayItem& item) {
+            switch (item.kind)
+            {
+                case MapObjectGlyphKind::Hub: return item.objectId.rfind("site:", 0) == 0 ? 1 : 0;   // replicated hubs before world sites
+                case MapObjectGlyphKind::Anchor: return 2;
+                case MapObjectGlyphKind::Relay: return 3;
+                default: return -1;                                                    // ships, player, ports: never decluttered here
+            }
+        };
+        const std::string& keepId = viewState.state().selectedHubId;
+        std::vector<std::size_t> order;
+        for (std::size_t i = 0; i < frame.interaction.objectOverlay.items.size(); ++i)
+            order.push_back(i);
+        auto& items = frame.interaction.objectOverlay.items;
+        std::stable_sort(order.begin(), order.end(), [&](std::size_t a, std::size_t b) { return priority(items[a]) < priority(items[b]); });
+        std::vector<glm::dvec2> kept;
+        for (const std::size_t i : order)
+        {
+            auto& item = items[i];
+            const int p = priority(item);
+            if (p < 0 || !item.visible)
+            {
+                if (item.visible)
+                    kept.push_back(item.screenPx);
+                continue;
+            }
+            if (item.objectId == keepId)
+            {
+                kept.push_back(item.screenPx);
+                continue;
+            }
+            bool crowded = false;
+            for (const auto& body : frame.interaction.bodyScreenPoints)
+                if (body.visible && glm::length(glm::dvec2(body.screen) - item.screenPx) < std::max(12.0, static_cast<double>(body.screenRadiusPx) + 6.0))
+                    crowded = true;
+            for (const auto& k : kept)
+                if (glm::length(k - item.screenPx) < 10.0)
+                    crowded = true;
+            if (crowded)
+            {
+                item.drawGlyph = false;
+                continue;
+            }
+            kept.push_back(item.screenPx);
+        }
     }
 
     return frame;

@@ -206,6 +206,7 @@ public:
     );
 
     void setSystemMapDetailMode();
+    void requestOrbitalTransfer(const std::string& targetHubId);
 
     bool composeHubMapSnapshot(
         int systemId,

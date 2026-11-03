@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/system_map/PlanetBodyOrientation.h"
+#include "src/world/celestial/CelestialOrbitKinematics.h"
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/world/celestial/WorldSitesCatalog.h"
 #include "src/world/orbits/OrbitalMotion.h"
@@ -55,6 +56,37 @@ inline const char* worldSiteTypeLabel(const std::string& type)
     return "World site";
 }
 
+// Position of a site at a belt anchor: the anchor's Kepler orbit about the star,
+// through the same contract as the catalog planets (keplerStateAu).
+inline glm::dvec3 worldSiteHeliocentricAu(const world::celestial::WorldOrbitElements& e, double universeTimeSeconds)
+{
+    world::celestial::CelestialBodyDefinition body;
+    body.distanceAu = e.aAu;
+    body.eccentricity = e.e;
+    body.inclinationDeg = e.iDeg;
+    body.longitudeAscendingNodeDeg = e.nodeDeg;
+    body.argumentOfPeriapsisDeg = e.periDeg;
+    body.meanAnomalyAtEpochDeg = e.meanAnomalyEpochDeg;
+    body.orbitEpochSeconds = 0.0;
+    body.orbitalPeriodDays = 365.25 * std::pow(std::max(1.0e-6, e.aAu), 1.5);
+    glm::dvec3 p(0.0), v(0.0);
+    world::celestial::keplerStateAu(body, universeTimeSeconds, p, v);
+    return p;
+}
+
+// Lagrange point of a primary-secondary pair at the bodies' current positions.
+inline glm::dvec3 worldSiteLagrangeAu(const glm::dvec3& primary, const glm::dvec3& secondary, const std::string& point, double hillRatio)
+{
+    const glm::dvec3 d = secondary - primary;
+    const double h = hillRatio > 0.0 ? hillRatio : 0.01;
+    if (point == "L1")
+        return secondary - d * h;
+    if (point == "L2")
+        return secondary + d * h;
+    const double a = (point == "L5" ? -1.0 : 1.0) * 3.14159265358979323846 / 3.0;
+    return primary + glm::dvec3(d.x * std::cos(a) - d.z * std::sin(a), d.y, d.x * std::sin(a) + d.z * std::cos(a));
+}
+
 inline glm::dvec3 worldSiteOrbitOffsetMeters(
     const world::celestial::WorldSite& site,
     double parentRadiusMeters,
@@ -83,27 +115,60 @@ inline void appendSystemMapWorldSites(
     using namespace world::celestial;
     for (const auto& site : catalog.sitesInSystem(map.systemId))
     {
-        if (site.mapLevel != "system" || !site.runtimeBinding.empty())
+        if (!site.runtimeBinding.empty())
+        {
+            // the replicated hub represents this site: give its marker the world model's operator and type
+            for (auto& object : map.objects)
+                if (object.kind == SystemMapObjectKind::Hub && site.runtimeBinding.find("[" + object.stableId + "]") != std::string::npos)
+                {
+                    if (!site.operatorName.empty())
+                        object.owner = site.operatorName;
+                    if (!site.typeLabel.empty())
+                        object.typeName = site.typeLabel;
+                    object.name = site.name;
+                }
+            continue;
+        }
+        if (site.mapLevel != "system")
             continue;
         SystemMapObject o;
         o.stableId = "site:" + site.id;
         o.name = site.name;
-        o.owner = site.polity;
+        o.owner = !site.operatorName.empty() ? site.operatorName : !site.polityName.empty() ? site.polityName : site.polity;
         o.parentBodyId = site.parentBodyId;
-        o.kind = SystemMapObjectKind::Station;
+        o.kind = site.type == "nav_relay" ? SystemMapObjectKind::Relay
+                 : site.type == "belt_anchor" ? SystemMapObjectKind::Buoy
+                 : SystemMapObjectKind::Station;
         o.systemId = map.systemId;
-        o.typeName = worldSiteTypeLabel(site.type);
+        o.typeName = !site.typeLabel.empty() ? site.typeLabel : worldSiteTypeLabel(site.type);
         o.sizeMeters = glm::dvec3(800.0);
-        const SystemMapBody* parent = nullptr;
-        for (const auto& b : map.bodies)
+        auto bodyById = [&map](const std::string& id) -> const SystemMapBody* {
+            for (const auto& b : map.bodies)
+                if (b.id == id)
+                    return &b;
+            return nullptr;
+        };
+        const SystemMapBody* parent = bodyById(site.parentBodyId);
+        if (site.placement == WorldSitePlacementKind::Heliocentric)
         {
-            if (b.id == site.parentBodyId)
-            {
-                parent = &b;
-                break;
-            }
+            const SystemMapBody* star = nullptr;
+            for (const auto& b : map.bodies)
+                if (b.type == BodyType::Star)
+                {
+                    star = &b;
+                    break;
+                }
+            o.positionAu = (star ? star->positionAu : glm::dvec3(0.0)) + worldSiteHeliocentricAu(site.elements, universeTimeSeconds);
         }
-        if (site.placement == WorldSitePlacementKind::Belt)
+        else if (site.placement == WorldSitePlacementKind::LagrangePoint)
+        {
+            const SystemMapBody* p = bodyById(site.lagrangePrimaryId);
+            const SystemMapBody* q = bodyById(site.lagrangeSecondaryId);
+            if (!q)
+                continue;
+            o.positionAu = worldSiteLagrangeAu(p ? p->positionAu : glm::dvec3(0.0), q->positionAu, site.lagrangePoint, site.lagrangeHillRatio);
+        }
+        else if (site.placement == WorldSitePlacementKind::Belt)
         {
             const double l = site.beltLongitudeDeg * 3.14159265358979323846 / 180.0;
             o.positionAu = glm::dvec3(std::cos(l), 0.0, std::sin(l)) * site.beltRadiusAu;

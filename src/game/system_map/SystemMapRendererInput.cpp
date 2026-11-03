@@ -436,6 +436,26 @@ SystemMapRenderer::handleInput(
         frame.nowSeconds = inputNowSeconds;
 
         refreshSystemWaypointCandidate(vp, system);
+        {
+            // hover tooltip target: the nearest drawn object under the pointer
+            std::string hovered;
+            double best = 1.0e9;
+            if (inside)
+                for (const auto& item : m_systemSceneFrame.interaction.objectOverlay.items)
+                {
+                    if (!item.visible || !item.drawGlyph)
+                        continue;
+                    const double d = glm::length(item.screenPx - glm::dvec2(localMx, localMy));
+                    if (d <= std::max(10.0, item.hitRadiusPx) && d < best)
+                    {
+                        best = d;
+                        hovered = item.objectId;
+                    }
+                }
+            if (!m_devHoverObjectId.empty())
+                hovered = m_devHoverObjectId;
+            m_objectOverlayState.setHovered(hovered);
+        }
         synchronizeNavigationTracking(
             m_systemSceneFrame.interaction.objectOverlay
         );
@@ -449,6 +469,48 @@ SystemMapRenderer::handleInput(
                 m_systemSceneFrame.interaction,
                 m_systemView.controls()
             );
+
+        // DEV acceptance script hooks: the same selection path a click takes.
+        if (!m_devFocusBodyId.empty())
+        {
+            m_systemInteraction.focusBodySelection(m_systemView, interactionContext, m_devFocusBodyId, inputNowSeconds);
+            m_systemView.state().selectedBodyId = m_devFocusBodyId;
+            m_objectOverlayState.clearActive();
+            m_devFocusBodyId.clear();
+        }
+        if (!m_devEnterId.empty())
+        {
+            game::system_map::SystemPointerTarget target;
+            if (const auto position = interactionContext.systemBodyAbsolutePosition(m_devEnterId))
+            {
+                target.kind = game::system_map::SystemPointerTarget::Kind::Body;
+                target.bodyId = m_devEnterId;
+                target.pointAu = *position / static_cast<double>(m_systemSceneFrame.systemScale);
+            }
+            else if (const auto hubPosition = interactionContext.systemObjectAbsolutePosition(m_devEnterId))
+            {
+                target.kind = game::system_map::SystemPointerTarget::Kind::Hub;
+                target.hubId = m_devEnterId;
+                target.pointAu = *hubPosition / static_cast<double>(m_systemSceneFrame.systemScale);
+            }
+            game::system_map::SystemMapInputResult ignored;
+            if (target.kind != game::system_map::SystemPointerTarget::Kind::Empty)
+                m_systemInteraction.descendTarget(m_systemView, interactionContext, vp, target, inputNowSeconds, ignored);
+            m_devEnterId.clear();
+        }
+        if (!m_devFocusHubId.empty())
+        {
+            for (const auto& point : m_systemSceneFrame.interaction.hubScreenPoints)
+                if (point.hubId == m_devFocusHubId)
+                {
+                    game::system_map::SystemMapHubSelection hubSelection;
+                    hubSelection.hubId = point.hubId;
+                    hubSelection.parentBodyId = point.parentBodyId;
+                    m_systemInteraction.focusHubSelection(m_systemView, interactionContext, hubSelection, inputNowSeconds);
+                }
+            m_objectOverlayState.activate(m_devFocusHubId);
+            m_devFocusHubId.clear();
+        }
 
         const auto overlayPointer =
             m_objectOverlayState.handlePointer(
@@ -1061,4 +1123,50 @@ SystemMapRenderer::handleInput(
 
     return std::nullopt;
 
+}
+
+
+bool SystemMapRenderer::moveSystemCubeSelection(int dx, int dy, double nowSeconds)
+{
+    auto& st = m_systemView.state();
+    if (m_modeState.current() != Mode::System || !st.gridOverlayVisible || !st.navigationGrid.hasSelectedCell() || (dx == 0 && dy == 0))
+        return false;
+    constexpr double ArrowPlaneLockSeconds = 1.5;
+    if (nowSeconds - st.arrowLastPressSeconds > ArrowPlaneLockSeconds)
+    {
+        // The plane facing the camera: drop the world axis closest to the view direction,
+        // then map screen right / up onto the two remaining axes.
+        const glm::dvec3 fwd = m_systemSceneFrame.camera.basis.direction;
+        const glm::dvec3 right = m_systemSceneFrame.camera.basis.right;
+        const glm::dvec3 up = m_systemSceneFrame.camera.basis.up;
+        int depth = 0;
+        for (int a = 1; a < 3; ++a)
+            if (std::abs(fwd[a]) > std::abs(fwd[depth]))
+                depth = a;
+        int axes[2];
+        int k = 0;
+        for (int a = 0; a < 3; ++a)
+            if (a != depth)
+                axes[k++] = a;
+        const bool firstIsRight = std::abs(right[axes[0]]) * std::abs(up[axes[1]]) >= std::abs(right[axes[1]]) * std::abs(up[axes[0]]);
+        st.arrowAxisRight = firstIsRight ? axes[0] : axes[1];
+        st.arrowAxisUp = firstIsRight ? axes[1] : axes[0];
+        st.arrowSignRight = right[st.arrowAxisRight] >= 0.0 ? 1 : -1;
+        st.arrowSignUp = up[st.arrowAxisUp] >= 0.0 ? 1 : -1;
+    }
+    st.arrowLastPressSeconds = nowSeconds;
+    const auto cell = st.navigationGrid.selectedCell();
+    glm::dvec3 step(0.0);
+    step[st.arrowAxisRight] += static_cast<double>(dx * st.arrowSignRight);
+    step[st.arrowAxisUp] += static_cast<double>(dy * st.arrowSignUp);
+    const auto next = m_systemView.hierarchyChildAt(cell.center + step * cell.size);
+    if (!next || (next->index == cell.index && next->level == cell.level))
+        return false;      // the selection stays a sibling of the current parent
+    st.selectedBodyId.clear();
+    st.selectedHubId.clear();
+    st.selectedHubParentBodyId.clear();
+    st.navigationGrid.selectCell(*next);
+    st.navigationCellExplicitlySelected = true;
+    m_systemSceneFrameDirty = true;
+    return true;
 }

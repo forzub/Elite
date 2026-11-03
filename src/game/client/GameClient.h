@@ -56,6 +56,7 @@ public:
     );
 
     const ClientWorldState& world() const;
+    const game::client::ClientCatalogService& catalogs() const { return m_catalogs; }
     ClientWorldState& world();
 
     void sendMessage(const game::network::ClientMessage& msg);

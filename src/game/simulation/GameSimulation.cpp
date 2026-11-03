@@ -1453,7 +1453,12 @@ m_hubVelocityMetersPerSecond[hubId] =
     // offset of roughly frameVelocity * dt (hundreds of metres at orbital
     // world speeds).
     if (!trajectoryDebugMode)
+    {
+        // Orbital Transfer frames move first (carrier on the orbital clock), then every ship's
+        // world pose is re-materialised from its travel frame.
+        updateOrbitalTransfers();
         updateShipReferenceFrames(dt);
+    }
 
     if (!trajectoryDebugMode)
         endUniverseTrajectoryDiagnostic();

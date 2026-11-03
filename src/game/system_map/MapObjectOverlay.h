@@ -30,7 +30,9 @@ enum class MapObjectGlyphKind
     Ship = 0,
     Hub,
     Infrastructure,
-    DockingPort
+    DockingPort,
+    Relay,      // navigation / comms relay: small diamond
+    Anchor      // major asteroid of a belt (Ceres, Vesta...): small disc
 };
 
 enum class MapObjectInfoKind
@@ -48,7 +50,9 @@ enum class MapTrajectoryKind
     Prediction,
     Planned,
     TrafficRoute,   // a traffic ship's remaining route (selected / all)
-    AuthoredLane    // authored dock lanes / holds / queue gates (toggle)
+    AuthoredLane,   // authored dock lanes / holds / queue gates (toggle)
+    NetworkRoute,   // aggregate scheduled route of the world model: dashed, width by traffic
+    TransferTunnel  // the player's Orbital Transfer plan: solid, high emphasis
 };
 
 struct MapTrajectoryPoint
@@ -78,6 +82,9 @@ struct MapObjectTrajectory
     double terminalPositionErrorMeters = 0.0;
 
     std::vector<MapTrajectoryPoint> points;
+
+    // NetworkRoute: emphasis from traffic volume (0..1)
+    float emphasis = 1.0f;
 };
 
 struct MapObjectInfoField
@@ -355,11 +362,18 @@ public:
         return m_activeObjectId;
     }
 
+    // Hover: a small tooltip (name, owner / operator, type) - never the large card.
+    const std::string& hoveredObjectId() const noexcept { return m_hoveredObjectId; }
+    void setHovered(const std::string& objectId) { m_hoveredObjectId = objectId; }
+
     bool isActive(const std::string& objectId) const
     {
         return !objectId.empty() && objectId == m_activeObjectId;
     }
 
+    std::string m_hoveredObjectId;
+
+public:
     void activate(const std::string& objectId)
     {
         if (!objectId.empty())

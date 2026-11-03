@@ -701,6 +701,22 @@ void SpaceState::handleInput()
         if (Input::instance().isKeyPressedOnce(GLFW_KEY_T))
             m_systemMapRenderer.toggleTrafficLanes();
 
+        // O: Orbital Transfer to the hub selected on the map (same as the context-menu row).
+        if (Input::instance().isKeyPressedOnce(GLFW_KEY_O))
+            m_systemMapRenderer.requestOrbitalTransferToSelectedHub();
+        if (const auto target = m_systemMapRenderer.consumeOrbitalTransferRequest())
+            requestOrbitalTransfer(*target);
+
+        // G: optional cube overlay (hybrid System Map); arrows walk sibling cubes in the screen plane.
+        if (Input::instance().isKeyPressedOnce(GLFW_KEY_G))
+            m_systemMapRenderer.toggleSystemGridOverlay();
+        {
+            const int dx = (Input::instance().isKeyPressedOnce(GLFW_KEY_RIGHT) ? 1 : 0) - (Input::instance().isKeyPressedOnce(GLFW_KEY_LEFT) ? 1 : 0);
+            const int dy = (Input::instance().isKeyPressedOnce(GLFW_KEY_UP) ? 1 : 0) - (Input::instance().isKeyPressedOnce(GLFW_KEY_DOWN) ? 1 : 0);
+            if (dx || dy)
+                m_systemMapRenderer.moveSystemCubeSelection(dx, dy, glfwGetTime());
+        }
+
         if (Input::instance().isKeyPressedOnce(GLFW_KEY_BACKSPACE))
         {
             setSystemMapCurrentSystemMode();
@@ -1196,6 +1212,99 @@ void SpaceState::update(float dt)
         {
             systemOpened = true;
             context().app->requestNavigationView(NavigationPresentationView::System);
+        }
+
+        // DEV: ELITE_DEV_SOL_MAP_SCRIPT="t:cmd;t:cmd;..." - System Map acceptance steps at t seconds:
+        //   system | grid | body:<id> | hub:<id> | object:<id> | hover:<id> | zoom:<steps> | transfer:<hubId> | report
+        // (no IDs are needed by a human; the script only replays what a click / key does).
+        {
+            static std::vector<std::pair<double, std::string>> steps = [] {
+                std::vector<std::pair<double, std::string>> out;
+                const char* v = std::getenv("ELITE_DEV_SOL_MAP_SCRIPT");
+                std::string s = v ? v : "";
+                std::size_t p = 0;
+                while (p < s.size())
+                {
+                    const std::size_t e = s.find(';', p);
+                    const std::string item = s.substr(p, e == std::string::npos ? std::string::npos : e - p);
+                    const std::size_t c = item.find(':');
+                    if (c != std::string::npos)
+                        out.push_back({std::atof(item.substr(0, c).c_str()), item.substr(c + 1)});
+                    if (e == std::string::npos)
+                        break;
+                    p = e + 1;
+                }
+                return out;
+            }();
+            static std::size_t next = 0;
+            while (next < steps.size() && context().app && m_client &&
+                   startupElapsedMs(m_startupTotalBegin) >= steps[next].first * 1000.0)
+            {
+                const std::string cmd = steps[next++].second;
+                std::cerr << "[SolMapScript] " << cmd << '\n';
+                auto arg = [&](const char* k) { return cmd.substr(std::string(k).size()); };
+                if (cmd == "system")
+                    context().app->requestNavigationView(NavigationPresentationView::System);
+                else if (cmd == "grid")
+                    m_systemMapRenderer.toggleSystemGridOverlay();
+                else if (cmd.rfind("body:", 0) == 0)
+                {
+                    // ASCII aliases: the environment of a Windows process is not UTF-8
+                    static const std::pair<const char*, const char*> aliases[] = {
+                        {"earth", "system_0.Sol.Земля"}, {"moon", "system_0.Sol.Земля.Луна"}, {"mars", "system_0.Sol.Марс"},
+                        {"jupiter", "system_0.Sol.Юпитер"}, {"saturn", "system_0.Sol.Сатурн"}, {"venus", "system_0.Sol.Венера"},
+                        {"mercury", "system_0.Sol.Меркурий"}, {"belt", "system_0.Sol.asteroid_belt"}};
+                    std::string id = arg("body:");
+                    for (const auto& [k, v] : aliases)
+                        if (id == k)
+                            id = v;
+                    m_systemMapRenderer.devFocusBody(id);
+                }
+                else if (cmd.rfind("enter:", 0) == 0)
+                {
+                    std::string id = arg("enter:");
+                    if (id == "earth") id = "system_0.Sol.Земля";
+                    else if (id == "mars") id = "system_0.Sol.Марс";
+                    m_systemMapRenderer.devEnter(id);
+                }
+                else if (cmd.rfind("hub:", 0) == 0)
+                    m_systemMapRenderer.devFocusHub(arg("hub:"));
+                else if (cmd.rfind("object:", 0) == 0)
+                    m_systemMapRenderer.devActivateObject(arg("object:"));
+                else if (cmd.rfind("hover:", 0) == 0)
+                    m_systemMapRenderer.devHover(arg("hover:"));
+                else if (cmd.rfind("zoom:", 0) == 0)
+                    m_systemMapRenderer.devZoom(std::atof(arg("zoom:").c_str()));
+                else if (cmd.rfind("transfer:", 0) == 0)
+                    requestOrbitalTransfer(arg("transfer:"));
+                else if (cmd == "report")
+                {
+                    const auto ids = m_systemMapRenderer.devVisibleObjectIds();
+                    std::cerr << "[SolMapScript] visible objects " << ids.size() << ':';
+                    for (const auto& id : ids)
+                        std::cerr << ' ' << id;
+                    std::cerr << "\n[SolMapScript] network route lines " << m_systemMapRenderer.devNetworkRouteLines()
+                              << ", transfer tunnel " << (m_systemMapRenderer.devTransferTunnelShown() ? "shown" : "none")
+                              << ", grid " << (m_systemMapRenderer.systemGridOverlayVisible() ? "on" : "off")
+                              << ", active " << m_systemMapRenderer.activeObjectId() << '\n';
+                    const auto shipIt = m_client->world().ships().find(m_playerId.value);
+                    if (shipIt != m_client->world().ships().end())
+                    {
+                        const auto& mo = shipIt->second.transform.motion;
+                        std::cerr << "[SolMapScript] player hub " << mo.hubId << " matched " << mo.matchedToReferenceFrame
+                                  << " world speed " << glm::length(mo.worldVelocityMps) << " m/s local speed " << glm::length(mo.localVelocityMps) << " m/s";
+                        for (const char* hubId : {"earth_orbital_hub", "earth_hub.baikonur"})
+                        {
+                            const auto h = m_client->world().hubs().find(hubId);
+                            if (h != m_client->world().hubs().end())
+                                std::cerr << " | vs " << hubId << ": " << glm::length(mo.worldVelocityMps - h->second.worldVelocityMps) << " m/s, "
+                                          << glm::length(world::coordinates::fullMeters(shipIt->second.transform.worldPosition) -
+                                                         world::coordinates::fullMeters(h->second.worldPosition)) / 1000.0 << " km";
+                        }
+                        std::cerr << '\n';
+                    }
+                }
+            }
         }
 
         // DEV: ELITE_DEV_DRONE_VIEW_AT=<s> switches the flight view to the

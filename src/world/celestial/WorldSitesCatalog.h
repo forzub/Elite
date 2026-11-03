@@ -26,7 +26,20 @@ enum class WorldSitePlacementKind
     Orbit,
     Surface,
     Belt,
-    Lagrange
+    Lagrange,       // trojan swarm of a planet (+-60 deg about the star)
+    LagrangePoint,  // L1/L2/L4/L5 of a primary-secondary pair (Earth-Moon, Sun-Earth)
+    Heliocentric    // at a belt anchor with real orbital elements (Ceres, Vesta, ...)
+};
+
+// Orbital elements of a persistent belt anchor (catalog convention of keplerStateAu).
+struct WorldOrbitElements
+{
+    double aAu = 0.0;
+    double e = 0.0;
+    double iDeg = 0.0;
+    double nodeDeg = 0.0;
+    double periDeg = 0.0;
+    double meanAnomalyEpochDeg = 0.0;
 };
 
 struct WorldSite
@@ -48,7 +61,87 @@ struct WorldSite
     double longitudeDeg = 0.0;
     double beltRadiusAu = 0.0;
     double beltLongitudeDeg = 0.0;
-    std::string lagrangePoint; // "L4" / "L5"
+    std::string lagrangePoint; // "L4" / "L5" (trojans) or L1/L2/L4/L5 (LagrangePoint)
+    std::string lagrangePrimaryId;
+    std::string lagrangeSecondaryId;
+    double lagrangeHillRatio = 0.0;
+    WorldOrbitElements elements;
+    std::string anchorName;
+
+    // presentation facts (right panel / tooltip); empty when unknown
+    std::string typeLabel;
+    std::string polityName;
+    std::string operatorName;
+    std::string founder;
+    int founded = 0;
+    std::string purpose;
+    std::string character;
+    std::string jurisdiction;
+    std::string enforcement;
+    std::string repair;
+    std::string functions;
+    int docks = 0;
+    int dockSectors = 0;
+    int arrivalsPerDay = 0;
+    double utilisation = 0.0;
+    double storageTonnes = 0.0;
+    double security = 0.0;
+};
+
+// Aggregate traffic route (not individual flights): drawn dashed on the System Map.
+struct WorldRoute
+{
+    std::string id;
+    std::string type;          // passenger | cargo | shuttle | mining
+    int systemId = -1;
+    std::string origin;
+    std::string destination;
+    double paxPerYear = 0.0;
+    double cargoTonnesPerYear = 0.0;
+    double flightsPerDay = 0.0;
+    std::string shipClass;
+    double travelDays = 0.0;
+    std::string disruption;
+    std::string hazard;
+};
+
+struct WorldRelay
+{
+    std::string id;
+    std::string name;
+    int systemId = -1;
+    std::string region;
+    std::string anchor;
+    std::string reason;
+};
+
+struct WorldBeltAnchor
+{
+    std::string id;
+    std::string name;
+    int systemId = -1;
+    WorldOrbitElements elements;
+    double radiusKm = 0.0;
+};
+
+// System summary of the right panel, assembled by the world model (never a hand-written status).
+struct WorldSystemSummary
+{
+    int systemId = -1;
+    std::string name;
+    std::string primaryName;
+    std::string regime;
+    std::vector<std::string> otherActors;
+    double population = 0.0;
+    double gdpPerYear = 0.0;
+    std::string lawFamily;
+    std::vector<std::string> industries;
+    std::vector<std::string> imports;
+    std::vector<std::string> exports;
+    std::vector<std::string> shortages;
+    std::vector<std::string> hazards;
+    double trafficArrivalsPerDay = 0.0;
+    std::vector<std::string> state;
 };
 
 class WorldSitesCatalog
@@ -99,40 +192,145 @@ public:
             s.runtimeBinding = j["runtime_binding"].is_string() ? j["runtime_binding"].get<std::string>() : std::string();
             s.systemId = j.value("system_id", -1);
             s.population = j.value("population", 0LL);
-            const auto& p = j.contains("placement") ? j["placement"] : nlohmann::json::object();
-            if (p.contains("orbit"))
-            {
-                const auto& o = p["orbit"];
-                if (o.contains("lagrange"))
-                {
-                    s.placement = WorldSitePlacementKind::Lagrange;
-                    s.lagrangePoint = o.value("lagrange", std::string("L4"));
-                }
-                else
-                {
-                    s.placement = WorldSitePlacementKind::Orbit;
-                    s.altitudeKm = o.value("altitude_km", 0.0);
-                    s.inclinationDeg = o.value("inclination_deg", 0.0);
-                }
-            }
-            else if (p.contains("surface"))
-            {
-                s.placement = WorldSitePlacementKind::Surface;
-                s.latitudeDeg = p["surface"].value("lat_deg", 0.0);
-                s.longitudeDeg = p["surface"].value("lon_deg", 0.0);
-            }
-            else if (p.contains("belt"))
-            {
-                s.placement = WorldSitePlacementKind::Belt;
-                s.beltRadiusAu = p["belt"].value("radius_au", 0.0);
-                s.beltLongitudeDeg = p["belt"].value("longitude_deg", 0.0);
-            }
+            readPlacement(j.contains("placement") ? j["placement"] : nlohmann::json::object(), s);
+            s.typeLabel = str(j, "type_ru");
+            s.polityName = str(j, "polity_name");
+            s.operatorName = str(j, "operator");
+            s.founder = str(j, "founder");
+            s.founded = j.contains("founded") && j["founded"].is_number() ? static_cast<int>(j["founded"].get<double>()) : 0;
+            s.purpose = str(j, "purpose");
+            s.character = str(j, "character");
+            s.jurisdiction = str(j, "jurisdiction");
+            s.enforcement = str(j, "enforcement");
+            s.repair = str(j, "repair");
+            if (j.contains("function") && j["function"].is_array())
+                for (const auto& f : j["function"])
+                    if (f.is_string())
+                        s.functions += (s.functions.empty() ? "" : ", ") + f.get<std::string>();
+            s.docks = num(j, "docks");
+            s.dockSectors = num(j, "dock_sectors");
+            s.arrivalsPerDay = num(j, "arrivals_day");
+            s.utilisation = dbl(j, "utilisation");
+            s.storageTonnes = dbl(j, "storage_t");
+            s.security = dbl(j, "security");
             if (s.id.empty() || s.systemId < 0 || s.placement == WorldSitePlacementKind::None)
                 continue;
             m_bySystem[s.systemId].push_back(std::move(s));
         }
+        m_routes.clear();
+        if (root.contains("routes") && root["routes"].is_array())
+            for (const auto& j : root["routes"])
+            {
+                WorldRoute r;
+                r.id = str(j, "id");
+                r.type = str(j, "type");
+                r.systemId = j.value("system_id", -1);
+                r.origin = str(j, "origin");
+                r.destination = str(j, "destination");
+                r.paxPerYear = dbl(j, "pax_y");
+                r.cargoTonnesPerYear = dbl(j, "cargo_t_y");
+                r.flightsPerDay = dbl(j, "flights_day");
+                r.shipClass = str(j, "ship_class");
+                r.travelDays = dbl(j, "travel_days");
+                r.disruption = str(j, "disruption");
+                r.hazard = str(j, "hazard");
+                m_routes[r.systemId].push_back(std::move(r));
+            }
+        m_relays.clear();
+        if (root.contains("relays") && root["relays"].is_array())
+            for (const auto& j : root["relays"])
+            {
+                WorldRelay r;
+                r.id = str(j, "id");
+                r.name = str(j, "name");
+                r.systemId = j.value("system_id", -1);
+                r.region = str(j, "region");
+                r.anchor = str(j, "anchor");
+                r.reason = str(j, "reason");
+                if (j.contains("placement") && j["placement"].is_object())
+                {
+                    WorldSite site;
+                    site.id = r.id;
+                    site.name = r.name;
+                    site.type = "nav_relay";
+                    site.typeLabel = "навигационный ретранслятор";
+                    site.mapLevel = "system";
+                    site.systemId = r.systemId;
+                    site.parentBodyId = str(j["placement"], "parent_body_id");
+                    site.purpose = r.reason;
+                    readPlacement(j["placement"], site);
+                    if (site.placement != WorldSitePlacementKind::None)
+                        m_bySystem[site.systemId].push_back(std::move(site));
+                }
+                m_relays[r.systemId].push_back(std::move(r));
+            }
+        m_anchors.clear();
+        if (root.contains("belt_anchors") && root["belt_anchors"].is_array())
+            for (const auto& j : root["belt_anchors"])
+            {
+                WorldBeltAnchor a;
+                a.id = str(j, "id");
+                a.name = str(j, "name");
+                a.systemId = j.value("system_id", -1);
+                a.radiusKm = dbl(j, "radius_km");
+                a.elements = readElements(j);
+                WorldSite site;
+                site.id = a.id;
+                site.name = a.name;
+                site.type = "belt_anchor";
+                site.typeLabel = "крупный астероид (якорь пояса)";
+                site.mapLevel = "system";
+                site.systemId = a.systemId;
+                site.parentBodyId.clear();   // heliocentric: placed by its own elements
+                site.placement = WorldSitePlacementKind::Heliocentric;
+                site.elements = a.elements;
+                site.anchorName = a.name;
+                m_bySystem[site.systemId].push_back(std::move(site));
+                m_anchors[a.systemId].push_back(std::move(a));
+            }
+        m_summaries.clear();
+        if (root.contains("systems") && root["systems"].is_array())
+            for (const auto& j : root["systems"])
+            {
+                WorldSystemSummary w;
+                w.systemId = j.value("system_id", -1);
+                w.name = str(j, "name");
+                w.primaryName = str(j, "primary_name");
+                w.regime = str(j, "regime");
+                if (j.contains("other_actors") && j["other_actors"].is_array())
+                    for (const auto& a : j["other_actors"])
+                        w.otherActors.push_back(str(a, "name"));
+                w.population = dbl(j, "population");
+                w.gdpPerYear = dbl(j, "gdp_cr_y");
+                w.lawFamily = str(j, "law_family");
+                w.industries = strings(j, "industries");
+                w.imports = strings(j, "imports");
+                w.exports = strings(j, "exports");
+                w.shortages = strings(j, "shortages");
+                w.hazards = strings(j, "hazards");
+                w.trafficArrivalsPerDay = dbl(j, "traffic_arrivals_day");
+                w.state = strings(j, "state");
+                m_summaries[w.systemId] = std::move(w);
+            }
         m_loaded = true;
         return true;
+    }
+
+    const std::vector<WorldRoute>& routesInSystem(int systemId) const { return lookup(m_routes, systemId); }
+    const std::vector<WorldRelay>& relaysInSystem(int systemId) const { return lookup(m_relays, systemId); }
+    const std::vector<WorldBeltAnchor>& anchorsInSystem(int systemId) const { return lookup(m_anchors, systemId); }
+    const WorldSystemSummary* summary(int systemId) const
+    {
+        const auto it = m_summaries.find(systemId);
+        return it == m_summaries.end() ? nullptr : &it->second;
+    }
+    // Site record of a world object: by its site id, or the site bound to a replicated runtime hub id.
+    const WorldSite* findSite(int systemId, const std::string& idOrHubId) const
+    {
+        for (const auto& s : sitesInSystem(systemId))
+            if (s.id == idOrHubId || (!s.runtimeBinding.empty() && s.runtimeBinding.find("[" + idOrHubId + "]") != std::string::npos))
+                return &s;
+        return nullptr;
     }
 
     bool loaded() const { return m_loaded; }
@@ -145,7 +343,98 @@ public:
     }
 
 private:
+    static std::string str(const nlohmann::json& j, const char* k)
+    {
+        return j.contains(k) && j[k].is_string() ? j[k].get<std::string>() : std::string();
+    }
+    static double dbl(const nlohmann::json& j, const char* k)
+    {
+        return j.contains(k) && j[k].is_number() ? j[k].get<double>() : 0.0;
+    }
+    static int num(const nlohmann::json& j, const char* k)
+    {
+        return j.contains(k) && j[k].is_number() ? static_cast<int>(j[k].get<double>()) : 0;
+    }
+    static std::vector<std::string> strings(const nlohmann::json& j, const char* k)
+    {
+        std::vector<std::string> out;
+        if (j.contains(k) && j[k].is_array())
+            for (const auto& x : j[k])
+                if (x.is_string())
+                    out.push_back(x.get<std::string>());
+        return out;
+    }
+    static void readPlacement(const nlohmann::json& p, WorldSite& s)
+    {
+        if (p.contains("orbit"))
+        {
+            const auto& o = p["orbit"];
+            if (o.contains("lagrange"))
+            {
+                s.placement = WorldSitePlacementKind::Lagrange;
+                s.lagrangePoint = o.value("lagrange", std::string("L4"));
+            }
+            else
+            {
+                s.placement = WorldSitePlacementKind::Orbit;
+                s.altitudeKm = o.value("altitude_km", 0.0);
+                s.inclinationDeg = o.value("inclination_deg", 0.0);
+            }
+        }
+        else if (p.contains("surface"))
+        {
+            s.placement = WorldSitePlacementKind::Surface;
+            s.latitudeDeg = p["surface"].value("lat_deg", 0.0);
+            s.longitudeDeg = p["surface"].value("lon_deg", 0.0);
+        }
+        else if (p.contains("belt"))
+        {
+            s.placement = WorldSitePlacementKind::Belt;
+            s.beltRadiusAu = p["belt"].value("radius_au", 0.0);
+            s.beltLongitudeDeg = p["belt"].value("longitude_deg", 0.0);
+        }
+        else if (p.contains("lagrange_point"))
+        {
+            const auto& l = p["lagrange_point"];
+            s.placement = WorldSitePlacementKind::LagrangePoint;
+            s.lagrangePoint = l.value("point", std::string("L1"));
+            s.lagrangePrimaryId = l.value("primary", std::string());
+            s.lagrangeSecondaryId = l.value("secondary", std::string());
+            s.lagrangeHillRatio = l.value("hill_ratio", 0.0);
+        }
+        else if (p.contains("heliocentric"))
+        {
+            const auto& h = p["heliocentric"];
+            s.placement = WorldSitePlacementKind::Heliocentric;
+            s.elements = readElements(h);
+            s.anchorName = str(h, "anchor_name");
+        }
+    }
+
+    static WorldOrbitElements readElements(const nlohmann::json& h)
+    {
+        WorldOrbitElements e;
+        e.aAu = dbl(h, "a_au");
+        e.e = dbl(h, "e");
+        e.iDeg = dbl(h, "i_deg");
+        e.nodeDeg = dbl(h, "node_deg");
+        e.periDeg = dbl(h, "peri_deg");
+        e.meanAnomalyEpochDeg = dbl(h, "mean_anomaly_epoch_deg");
+        return e;
+    }
+    template <class T>
+    static const std::vector<T>& lookup(const std::map<int, std::vector<T>>& m, int systemId)
+    {
+        static const std::vector<T> none;
+        const auto it = m.find(systemId);
+        return it == m.end() ? none : it->second;
+    }
+
     bool m_loaded = false;
     std::map<int, std::vector<WorldSite>> m_bySystem;
+    std::map<int, std::vector<WorldRoute>> m_routes;
+    std::map<int, std::vector<WorldRelay>> m_relays;
+    std::map<int, std::vector<WorldBeltAnchor>> m_anchors;
+    std::map<int, WorldSystemSummary> m_summaries;
 };
 }

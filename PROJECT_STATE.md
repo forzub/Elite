@@ -1619,6 +1619,42 @@ periphery) = AUTHOR_TARGET. Restore point before this work: tag
   (+3 ly hop) as a strategic resource; names of Earth's 3126 agglomerations;
   defence posture norms (squadron 4, 0.5 posture per key node).
 
+### World's Ass rework: Developer World Truth, Lotus = NIRVANA-1, causal lotusite model (user orders 2026-11-03, third pass b)
+Status: offline model + data + Lore; PROPOSAL (Lotus = NIRVANA-1 is internal
+CANON by the author's decision; +3 ly = AUTHOR_TARGET). NOT user-accepted.
+- Developer World Truth vs world knowledge split: `canon/world_sites.json ->
+  lotus.truth` (route, 2680 fold accident, trajectory, crew cohorts, last human
+  2712, systems, messages incl. which arrived, animals, discovery 3091 by Kern
+  "Sirin", cover-up and leak 3103) -> `Notes/Lore/AUTHOR/WORLDS_ASS_TRUTH.md`;
+  public layer `Notes/Lore/FRONTIER/WORLDS_ASS.md`.
+- Canon check: the first draft (fold 2341) contradicted fate.md / reconciled
+  canon (signals 2550 / 2650, "Do not look for us" 2680, 2 100 aboard) ->
+  fixed to 2680; ART-0006 "cryo pods" contradicted "no cryo" -> infirmary stasis
+  pods; legacy loss point HD 104067 kept: the field lies 21 ly beyond it.
+  missions.json NIRVANA-1 fate -> derelict_found (author_knows), knowledge.py
+  AUTHOR_TRUTH, unknown removed; COLONIZATION_CANON note added.
+- Biology (fictional anomalous): combined profile uricase loss + GULO loss +
+  CMAH loss (none unique alone); species table (dogs / cats / apes / guinea
+  pig / ferret not affected); 5-stage field syndrome; phenomena registry with
+  developer category physical / sensor / subjective.
+- `lotus_model.py` (causal): finite primary stock by crew cohorts (upper
+  estimate ~1.6 kg recoverable, ~0.96 kg left), medical + jump demand, free
+  entry raids capped by physical hulk extraction (~80 bodies/y), price
+  ~0.22 bn Cr/g, ~190 raids/y, ~43 ships lost/y, ~26 y to exhaustion,
+  trafficking ~52 victims/y from incentives and the hidden "Garden" capacity,
+  quarantine capacity, corruption pressure by role and zone (outer ~13-34 %,
+  grey ~40-69 %, inner ~61-84 %), non-linear blockade (least smuggling at
+  strictness 0.4, actual 0.6), lotus fever outbreaks from population and beds
+  (Mandala 3093, Stella 3115, Pereval 3121 via a bribed inspector), +3 ly map
+  effect (17 new beacon edges, GJ 1214 and 9 Ceti reachable, no hostile pair
+  brought into one jump), six security units (lawful .. piracy in uniform).
+  Previous numbers (9 M Cr/kg, 534 expeditions) withdrawn.
+- Three zones (outer perimeter HD 104067 "Vorota", grey frontier Far Berth /
+  picket / HD 102195, inner field Lotus / Garden / Dead Reckoning); cordon =
+  Cognium + Kern (Cognium doctrine gains `quarantine`).
+- Checks: world_sites 21/21 OK, world_economy OK, lab dataset / lore OK,
+  lore_md 130 files OK, lore_html 133 OK.
+
 ## Next step
 - After the user's review of the spatial layer: Stage 4 runtime communication
   (beacon coverage / relay delays in the client: messages, bank, warrants,

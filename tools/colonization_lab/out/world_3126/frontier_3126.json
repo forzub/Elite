@@ -46,7 +46,8 @@
     25,
     24,
     45,
-    "dso.lotus",
+    41,
+    "dso.far_berth",
     19
    ],
    "from_sol_jumps_to_start": 1.0,
@@ -57,8 +58,9 @@
    "legs_ly": [
     30.641,
     30.753,
-    21.095,
-    18.386
+    29.05,
+    21.023,
+    22.326
    ],
    "max_leg_ly": 30.753,
    "within_max_hop": true
@@ -86,6 +88,7 @@
  },
  "artifacts": [
   {
+   "author_truth": "навигатор «Мандала» с 2450 слышал поле складки и к 2680 сам повёл корабль в её ядро, считая его целью пути",
    "claims": [
     "Путь Бесконечного Света (наследник ордена-спонсора NIRVANA-1)",
     "Керн (находка)",
@@ -115,6 +118,7 @@
    ]
   },
   {
+   "author_truth": "лотосит, выросший за 30 лет экспозиции, резонирует с полем ядра (то же свойство, что стабилизирует прыжок)",
    "claims": [
     "нашедший",
     "Керн (лицензия)",
@@ -122,27 +126,28 @@
    ],
    "custody": "утерян (украден в 3113)",
    "finder": "старатель Мирко Валента",
-   "found_at": "dep.lotosite.k2",
+   "found_at": "dso.lotus",
    "found_year": 3111,
    "fraud": false,
    "hazard": "осечка прыжка рядом",
    "id": "ART-0002",
    "known": [
-    "взаимодействует с полем прыжка: ядро рядом даёт осечку"
+    "сильно преобразованная ткань сустава; рядом с ядром прыжка даёт осечку"
    ],
    "market_value_cr": 60000000,
-   "name": "«поющий» кристалл",
+   "name": "«поющий» хрящевой кристалл",
    "provenance": [
-    "K2 у «Мандалы»",
-    "Троянский рынок",
+    "тело с палубы 7 «Лотоса»",
+    "Дальний Причал",
     "исчез"
    ],
    "scientific_value": "high",
    "unknown": [
-    "природа звука"
+    "почему звучит"
    ]
   },
   {
+   "author_truth": "ФИЗИКА: эхо транспондера самой NIRVANA-1 2680 года сквозь складку; второго корабля нет",
    "claims": [
     "Керн (улика)",
     "Тяньхэ (требует передачи)"
@@ -191,6 +196,7 @@
    "unknown": []
   },
   {
+   "author_truth": "ФИЗИКА: застывший узел эха складки (утечка поля греет лёд); никто его не строил; лагерь поставили рядом, потому что приборы тянулись к сигналу",
    "claims": [
     "Керн",
     "Когниум",
@@ -204,7 +210,7 @@
    "hazard": "зона восприятия",
    "id": "ART-0005",
    "known": [
-    "кольцо 40 м, температура на 3 K выше окружения"
+    "кольцо 40 м во льду, на 3 K теплее окружения"
    ],
    "market_value_cr": null,
    "name": "структура неизвестного назначения",
@@ -214,11 +220,11 @@
    "scientific_value": "extreme",
    "unknown": [
     "назначение",
-    "строитель",
-    "возраст"
+    "строитель"
    ]
   },
   {
+   "author_truth": "канон: на NIRVANA-1 нет колонистского крио; это 2 медицинские капсулы лазарета, которые ИИ «Мандала» обслуживал до отказа реактора в 2890",
    "claims": [
     "Путь Бесконечного Света",
     "Керн"
@@ -232,10 +238,10 @@
    "id": "ART-0006",
    "known": [
     "маркировка NIRVANA-1",
-    "даты обслуживания на 400 лет позже старта"
+    "даты обслуживания на 200 лет позже гибели экипажа"
    ],
    "market_value_cr": 900000,
-   "name": "пустые криокапсулы с несовпадающими датами",
+   "name": "капсулы стазиса лазарета с несовпадающими датами",
    "provenance": [
     "корпус «Лотоса»"
    ],
@@ -253,23 +259,91 @@
    "hidden": false,
    "id": "dso.lotus",
    "legs_ly": {
-    "19": 18.386,
-    "45": 21.095
+    "19": 22.325,
+    "41": 21.024
    },
-   "name": "«Лотос»",
+   "name": "«Лотос» (корпус NIRVANA-1)",
    "object_type": "derelict",
    "position_ly": [
-    -78.255,
-    9.102,
-    3.96
+    -79.731,
+    4.023,
+    -10.001
    ],
    "site_type": "derelict_hub",
    "source": "placement",
    "status": "PROPOSAL",
    "velocity_km_s": [
-    -1.657,
-    -0.099,
-    -37.964
+    -24.745,
+    4.48,
+    -28.489
+   ]
+  },
+  {
+   "drift_km_per_year": 1199188800,
+   "epoch_year": 3126.0,
+   "frame": "ICRS_heliocentric",
+   "hidden": false,
+   "id": "dso.far_berth",
+   "legs_ly": {
+    "19": 22.325,
+    "41": 21.024
+   },
+   "name": "Станция «Дальний Причал»",
+   "object_type": "deep_space_station",
+   "offset_from": {
+    "au": [
+     1.5,
+     0.0,
+     0.0
+    ],
+    "object": "dso.lotus"
+   },
+   "position_ly": [
+    -79.7309763,
+    4.023,
+    -10.001
+   ],
+   "site_type": "deep_space_refuel_point",
+   "source": "placement (co-moving)",
+   "status": "PROPOSAL",
+   "velocity_km_s": [
+    -24.745,
+    4.48,
+    -28.489
+   ]
+  },
+  {
+   "drift_km_per_year": 1199188800,
+   "epoch_year": 3126.0,
+   "frame": "ICRS_heliocentric",
+   "hidden": false,
+   "id": "dso.quarantine_picket",
+   "legs_ly": {
+    "19": 22.325,
+    "41": 21.024
+   },
+   "name": "Карантинный пикет «Лотос» (Когниум)",
+   "object_type": "deep_space_station",
+   "offset_from": {
+    "au": [
+     1.3,
+     0.2,
+     0.0
+    ],
+    "object": "dso.lotus"
+   },
+   "position_ly": [
+    -79.7309794,
+    4.0230032,
+    -10.001
+   ],
+   "site_type": "military_hub",
+   "source": "placement (co-moving)",
+   "status": "PROPOSAL",
+   "velocity_km_s": [
+    -24.745,
+    4.48,
+    -28.489
    ]
   },
   {
@@ -351,6 +425,40 @@
    ]
   },
   {
+   "drift_km_per_year": 1199188800,
+   "epoch_year": 3126.0,
+   "frame": "ICRS_heliocentric",
+   "hidden": true,
+   "id": "dso.garden",
+   "legs_ly": {
+    "19": 22.325,
+    "41": 21.024
+   },
+   "name": "«Сад» (нелегальный жилой модуль)",
+   "object_type": "deep_space_station",
+   "offset_from": {
+    "au": [
+     0.6,
+     -0.3,
+     0.1
+    ],
+    "object": "dso.lotus"
+   },
+   "position_ly": [
+    -79.7309905,
+    4.0229953,
+    -10.0009984
+   ],
+   "site_type": "derelict_hub",
+   "source": "placement (co-moving)",
+   "status": "PROPOSAL",
+   "velocity_km_s": [
+    -24.745,
+    4.48,
+    -28.489
+   ]
+  },
+  {
    "drift_km_per_year": 546815028077,
    "epoch_year": 3126.0,
    "frame": "ICRS_heliocentric",
@@ -399,10 +507,657 @@
    ]
   }
  ],
+ "developer_truth": {
+  "biology": {
+   "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+   "lab_identification": "метастабильная фаза видна в спектроскопии и по связи с полем (образец меняет натяжение тестового поля); в останках — блеск в суставах",
+   "outside_field": "вне поля синдром не развивается и не прогрессирует; стадии 1-2 после коротких визитов (дни-недели) обратимы за месяцы",
+   "rule": "аномальное поле распознаёт СОВОКУПНЫЙ профиль, а не одну молекулу: (1) нет уриказы → высокий системный урат; (2) нет синтеза витамина C (GULO) → аскорбат только с пищей; (3) сиалом без Neu5Gc (CMAH). Ни один признак сам по себе не уникален человеку",
+   "species": [
+    {
+     "affected": true,
+     "neu5gc": false,
+     "species": "человек",
+     "uricase": false,
+     "vitamin_c_synthesis": false
+    },
+    {
+     "affected": false,
+     "neu5gc": "у части пород",
+     "species": "собака",
+     "uricase": true,
+     "vitamin_c_synthesis": true
+    },
+    {
+     "affected": false,
+     "neu5gc": "у типа A",
+     "species": "кошка",
+     "uricase": true,
+     "vitamin_c_synthesis": true
+    },
+    {
+     "affected": false,
+     "neu5gc": true,
+     "species": "человекообразные обезьяны",
+     "uricase": false,
+     "vitamin_c_synthesis": false
+    },
+    {
+     "affected": false,
+     "neu5gc": true,
+     "species": "морская свинка",
+     "uricase": true,
+     "vitamin_c_synthesis": false
+    },
+    {
+     "affected": false,
+     "neu5gc": false,
+     "species": "хорёк",
+     "uricase": true,
+     "vitamin_c_synthesis": true
+    }
+   ],
+   "status": "PROPOSAL",
+   "syndrome_stages": [
+    {
+     "months": [
+      1,
+      6
+     ],
+     "signs": [
+      "нарушения сна",
+      "повторяющиеся сны"
+     ],
+     "stage": 1
+    },
+    {
+     "months": [
+      6,
+      24
+     ],
+     "signs": [
+      "потеря ориентации",
+      "ошибки памяти",
+      "ложное узнавание"
+     ],
+     "stage": 2
+    },
+    {
+     "months": [
+      24,
+      72
+     ],
+     "signs": [
+      "слуховые и зрительные галлюцинации",
+      "паранойя",
+      "расхождение восприятия с приборами"
+     ],
+     "stage": 3
+    },
+    {
+     "months": [
+      60,
+      180
+     ],
+     "signs": [
+      "нарушение координации"
+     ],
+     "stage": 4
+    },
+    {
+     "months": [
+      120,
+      400
+     ],
+     "signs": [
+      "системное поражение: почки, сосуды, суставы — минерализация лотоситом",
+      "смерть"
+     ],
+     "stage": 5
+    }
+   ],
+   "tissue_distribution": {
+    "кожа (дерма)": 0.12,
+    "костный мозг": 0.14,
+    "нервная ткань": 0.06,
+    "почки (мозговое вещество)": 0.18,
+    "стенки артерий": 0.16,
+    "суставной хрящ и сухожилия": 0.34
+   },
+   "visibility": "AUTHOR_TRUTH",
+   "visitor_risk_per_day_in_field": {
+    "stage1": 0.02,
+    "stage2_after_days": 45
+   }
+  },
+  "cordon": {
+   "coalition": [
+    {
+     "actor": "tau_ceti_cognium",
+     "interests": [
+      "монополия на демпферы",
+      "тайна поля (родственно полю ядра)",
+      "страх распространения +3 св. лет"
+     ],
+     "role": "лидер: Управление Маяков, ядра прыжка, флот кордона"
+    },
+    {
+     "actor": "cyg61_kern",
+     "interests": [
+      "сборы и лицензии",
+      "права находки 3091",
+      "доля в научном вывозе"
+     ],
+     "role": "порты, лицензии, близость (карман Керна)"
+    }
+   ],
+   "official_grounds": [
+    "санитарная безопасность (лотосовая лихорадка — реальные вспышки)",
+    "навигационная безопасность",
+    "контроль стратегического материала",
+    "борьба с торговлей людьми",
+    "борьба с пиратством",
+    "регулирование спасения"
+   ],
+   "since": 3112,
+   "strictness": 0.6
+  },
+  "fever": {
+   "ascorbate_prophylaxis_rr": 0.6,
+   "attack_rate": {
+    "contaminated_equipment": 0.5,
+    "direct_handling": 0.8,
+    "same_section_air": 0.25
+   },
+   "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+   "cfr_treated": 0.06,
+   "cfr_untreated": 0.45,
+   "name": "лотосовая лихорадка (lotus fever)",
+   "signs": [
+    "высокая температура",
+    "яркая красная сыпь",
+    "слабость",
+    "сосудистые нарушения",
+    "дезориентация",
+    "в тяжёлых случаях — неврологические осложнения"
+   ],
+   "slang": [
+    "красная",
+    "скарлатина старателей"
+   ],
+   "status": "PROPOSAL",
+   "truth_mechanism": "игровая модель: необработанный лотосит и распадающиеся преобразованные ткани сбрасывают метастабильные микрочастицы; у человека (тот же профиль) они оседают на уратных участках сосудистых стенок и запускают связанный с полем окислительный каскад → васкулит (сыпь), лихорадка; аскорбат частично защищает. Не передаётся от человека к человеку; заражает через пыль, ткани, загрязнённое оборудование и вентиляцию",
+   "visibility": "AUTHOR_TRUTH",
+   "world_belief": "спорно: инфекция? частицы? поле? — медицина мира не знает"
+  },
+  "jump_component": {
+   "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+   "compatible": "лицензионные ядра Когниума поколения G4+ (с 3000 г.), включая ядро Cobrett; пиратские копии и ядра Земли — нет (иная геометрия эмиттера)",
+   "decay_per_year": 0.02,
+   "g_per_class": {
+    "cobrett_i_n1": 0.8,
+    "escort_frigate": 2.5,
+    "jump_train": 6.0,
+    "line_combatant": 4.0,
+    "liner": 2.4,
+    "medium_freighter": 2.0,
+    "recon_picket": 1.0
+   },
+   "max_hop_bonus_ly": 3.0,
+   "max_hop_bonus_status": "AUTHOR_TARGET",
+   "name": "фазовый демпфер ядра (вставка лотосита в эмиттер поля)",
+   "restoration": "переотжиг на фабрике ядер Когниума: возвращает 60 % потерянного действия, теряет 10 % массы",
+   "status": "PROPOSAL",
+   "visibility": "AUTHOR_TRUTH",
+   "wear_per_extended_jump": 0.0012,
+   "wear_per_normal_jump": 0.0001,
+   "why_not_mass": [
+    "весь извлекаемый запас — килограммы",
+    "медицинский спрос перебивает цену",
+    "износ на дальних прыжках",
+    "монополия Когниума на демпферы и переотжиг",
+    "санитарный риск сырья",
+    "+3 св. года нужны немногим трассам"
+   ]
+  },
+  "markets": {
+   "black": [
+    "тела преобразованных людей",
+    "украденные медицинские образцы",
+    "материал с убитых экипажей",
+    "живой товар (торговля людьми)"
+   ],
+   "grey": [
+    "материал неизвестного происхождения",
+    "фрагменты из старых обломков",
+    "нелегальный salvage",
+    "перепродажа координат и карт коридора"
+   ],
+   "legal": [
+    "сертифицированный лотосит (только через кордон: научный вывоз Когниума и Керна)",
+    "научные образцы",
+    "разрешения на salvage",
+    "медицинский исследовательский материал"
+   ],
+   "price_factors": [
+    "чистота",
+    "количество",
+    "происхождение",
+    "законность",
+    "санитарный статус",
+    "текущий рынок",
+    "блокада",
+    "научный спрос"
+   ],
+   "tier_share_of_civilised_price": {
+    "civilisation_retail": 1.0,
+    "grey_frontier": 0.03,
+    "inner_anomaly": 0.004,
+    "outer_perimeter": 0.25
+   }
+  },
+  "material": {
+   "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+   "half_life_years_in_field": 900,
+   "half_life_years_raw_outside": 40,
+   "origin": "человеческая биомасса + длительная экспозиция в поле → предшественники и включения лотосита; после смерти часть сохраняется",
+   "post_mortem_growth": 0.25,
+   "potential_g_fully_transformed_body": 3.0,
+   "pre_exposure_intensity": 0.015,
+   "pre_exposure_years": 230,
+   "recoverable_fraction": 0.35,
+   "removed_bodies_by_3126": 870,
+   "removed_note": "мародёры 3098-3112 (~420), кордонный научный вывоз 3112-3126 (~210), кража 3112-3126 (~240)",
+   "status": "PROPOSAL",
+   "tau_years": 12.0,
+   "visibility": "AUTHOR_TRUTH"
+  },
+  "medical": {
+   "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+   "course_g": 0.12,
+   "effect": "очищенные производные ускоряют репарацию, снижают маркеры клеточного старения, помогают регенерации после травм; −3..6 биологических лет на курс, действие слабеет за 4-6 лет; бессмертия нет",
+   "fraud_share": 0.25,
+   "market_dangerous_share": 0.12,
+   "market_useless_share": 0.45,
+   "public_image": "«эликсир молодости»",
+   "purification_yield": 0.3,
+   "status": "PROPOSAL",
+   "unknowns": "долгосрочные последствия неизвестны; есть случаи поздних сосудистых осложнений",
+   "visibility": "AUTHOR_TRUTH"
+  },
+  "phenomena": [
+   {
+    "category": "physical",
+    "crew": "—",
+    "id": "ph.dead_core",
+    "sensors": "ядро прыжка не набирает поле",
+    "truth": "реальная мёртвая зона",
+    "where": "hz.lotus_dead"
+   },
+   {
+    "category": "physical",
+    "crew": "—",
+    "id": "ph.exit_tails",
+    "sensors": "выходы на сотни тысяч км мимо цели",
+    "truth": "тяжёлые хвосты ошибки выхода в поле",
+    "where": "hz.lotus_field"
+   },
+   {
+    "category": "physical",
+    "crew": "—",
+    "id": "ph.corridor_drift",
+    "sensors": "старая карта ведёт в зону высокой ошибки",
+    "truth": "безопасный коридор смещается ~0.04 а.е./год",
+    "where": "hz.lotus_field"
+   },
+   {
+    "category": "physical",
+    "crew": "«мёртвые зовут»",
+    "id": "ph.fold_echo",
+    "sensors": "сигнал бедствия / транспондер давно погибшего корабля с невозможного направления",
+    "truth": "эхо реальных старых передач сквозь складку",
+    "where": "вся сеть"
+   },
+   {
+    "category": "physical",
+    "crew": "—",
+    "id": "ph.clock_drift",
+    "sensors": "часы уходят ~40 мс/сут от сети",
+    "truth": "реальная разница хода в поле",
+    "where": "hz.lotus_field"
+   },
+   {
+    "category": "physical",
+    "crew": "«кольцо построено»",
+    "id": "ph.k2_echo_node",
+    "sensors": "тепло +3 K, слабый сигнал",
+    "truth": "узел эха складки",
+    "where": "site.019.mandala"
+   },
+   {
+    "category": "sensor",
+    "crew": "видят то же на экране",
+    "id": "ph.radar_ghosts",
+    "sensors": "ложные отметки, многолучёвость",
+    "truth": "ошибка датчиков на градиентах поля; объекта нет",
+    "where": "hz.lotus_field, hz.019.b_ghosts"
+   },
+   {
+    "category": "sensor",
+    "crew": "—",
+    "id": "ph.false_decode",
+    "sensors": "декодер собирает обрывки эха в «живой» позывной",
+    "truth": "ошибка декодирования",
+    "where": "hz.lotus_field"
+   },
+   {
+    "category": "sensor",
+    "crew": "—",
+    "id": "ph.star_tracker",
+    "sensors": "звёздный датчик даёт сдвиг фикса",
+    "truth": "рефракция в поле; ориентация верна, датчик врёт",
+    "where": "hz.lotus_field"
+   },
+   {
+    "category": "subjective",
+    "crew": "слышат мантры и голоса",
+    "id": "ph.mantras",
+    "sensors": "эфир пуст",
+    "truth": "галлюцинация (настоящий маяк передаёт мантры только на своей частоте)",
+    "where": "внутри поля, стадия 3"
+   },
+   {
+    "category": "subjective",
+    "crew": "видят копию своего корабля",
+    "id": "ph.own_ship",
+    "sensors": "ничего",
+    "truth": "галлюцинация",
+    "where": "внутри поля, стадия 3"
+   },
+   {
+    "category": "subjective",
+    "crew": "узнают в чужих погибших товарищей",
+    "id": "ph.false_recognition",
+    "sensors": "—",
+    "truth": "ложное узнавание",
+    "where": "внутри поля, стадия 2"
+   },
+   {
+    "category": "subjective",
+    "crew": "видят неверную дальность",
+    "id": "ph.distance",
+    "sensors": "дальность верна",
+    "truth": "нарушение восприятия",
+    "where": "внутри поля, стадия 3"
+   }
+  ],
+  "quarantine": {
+   "corruption_chain": "corruption → bypassed control → contaminated cargo → outbreak → political consequences (OB-3121-PEREVAL)",
+   "hold_days": {
+    "contaminated": 21,
+    "suspect": 3
+   },
+   "inspection_minutes_per_ship": 240,
+   "inspectors": {
+    "dso.far_berth": 0,
+    "dso.quarantine_picket": 3,
+    "site.041.holding": 4
+   },
+   "resources": {
+    "dso.far_berth": {
+     "beds": 2,
+     "holding_berths": 1,
+     "isolated_anchorage": 2,
+     "ppe_days": 10,
+     "security": 15,
+     "staff": 6
+    },
+    "dso.quarantine_picket": {
+     "beds": 8,
+     "holding_berths": 3,
+     "isolated_anchorage": 6,
+     "ppe_days": 60,
+     "security": 120,
+     "staff": 50
+    },
+    "site.041.holding": {
+     "beds": 60,
+     "holding_berths": 8,
+     "isolated_anchorage": 20,
+     "ppe_days": 120,
+     "security": 40,
+     "staff": 160
+    }
+   },
+   "ship_states": [
+    "cleared",
+    "suspect",
+    "contaminated",
+    "quarantined",
+    "decontamination_required",
+    "denied_docking"
+   ],
+   "suspect_share_of_traffic": 0.35
+  },
+  "reproduction": {
+   "note": "воспроизвести можно только в этом поле на живом человеке: долго, опасно, часто просто убивает, низкий выход, зависит от места и траектории; биореактор невозможен — поэтому ресурс остаётся редким"
+  },
+  "trafficking": {
+   "capacity_basis": "ёмкость = население скрытого «Сада» (dso.garden) / годы выдержки",
+   "cost_per_victim_cr": 90000,
+   "exposure_years": 4.0,
+   "forms": [
+    "похищенные люди",
+    "купленные должники",
+    "обманутые переселенцы",
+    "ложные экспедиционные контракты",
+    "исчезающие экипажи",
+    "культы добровольцев",
+    "нелегальные «лечебные» экспедиции",
+    "фиктивные колонизационные программы"
+   ],
+   "law": "тяжкое преступление во всех семьях права, кроме «нет закона»",
+   "survival_to_harvest": 0.45,
+   "useful_yield_share": 0.3
+  },
+  "truth": {
+   "accident": {
+    "category": "physical",
+    "cause": "с 2450 корабль шёл вдоль внешней оболочки природной складки поля (того же поля, которое через 70 лет откроет HYPERION-1). Навигатор «Мандала» (недетерминированная логика) воспринимал её шум как сигнал цели; монашеская Ассамблея, уже частично поражённая ранней экспозицией, утвердила курс в ядро («Расстояние — иллюзия. Мы идём дальше», 2650). 2680: вход в ядро",
+    "where": "~30 св. лет от Солнца по курсу на Kepler-62, у ядра природной складки поля",
+    "year": 2680.4
+   },
+   "animals": {
+    "aboard_2680": {
+     "cats": 310,
+     "chickens": 900,
+     "dogs": 120,
+     "goats": 60
+    },
+    "fate": "синдром их не тронул (профиль не совпадает). Агросекции кормили их до 2790; кошки дали ~25 поколений, последние умерли около 2810; собаки — к 2770; козы и куры — с отказом агросекций",
+    "found": "поисковая группа 3091 нашла мумии кошек нескольких поколений, гнёзда, следы когтей на дверях запертых отсеков с телами людей"
+   },
+   "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+   "consistency": [
+    "канон fate.md / COLONIZATION_CANON: старт 2300, 3 500 человек, без крио; 2450 «ИИ фиксирует аномалии»; сигналы 2550 и 2650; 2680 «Не ищите нас. Мы нашли Нирвану», 2 100 на борту; маяк с разных направлений — всё сохранено как реальные события",
+    "канон: «потерян 2680» → авария (вход в складку) — 2680, а не раньше (первый черновик со складкой 2341 противоречил сигналам 2550/2650 и был исправлен)",
+    "legacy fate.md ставит потерю у HD 104067 (id 41) как точку легенды; реальный корпус — в 21 св. годе за HD 104067",
+    "канон «без крио»: ART-0006 — капсулы лазарета, не колонистское крио",
+    "досветово корабль за 380 лет прошёл ~30 св. лет к Kepler-62; оказаться в 95 св. годах от Солнца в другой стороне неба он мог только через складку — это и есть причина «невозможных направлений»"
+   ],
+   "crew": {
+    "aboard_at_accident": 2100,
+    "born_after": 60,
+    "cohorts": [
+     {
+      "alive_in_field_years": 5,
+      "cause": "насилие, самоубийства, несчастные случаи на стадиях 2-3",
+      "died": [
+       2680,
+       2690
+      ],
+      "people": 470
+     },
+     {
+      "alive_in_field_years": 16,
+      "cause": "стадии 4-5",
+      "died": [
+       2690,
+       2702
+      ],
+      "people": 1010
+     },
+     {
+      "alive_in_field_years": 27,
+      "cause": "стадия 5 (системное поражение)",
+      "died": [
+       2702,
+       2712
+      ],
+      "people": 680
+     }
+    ],
+    "deaths_before_accident_remains": "переработаны в биосферу (обычай корабля) — лотосита не дают",
+    "last_human": 2712,
+    "survival_years": 32,
+    "syndrome_onset": "ранняя слабая экспозиция с 2450 (оболочка складки), полная — с 2680"
+   },
+   "discovery": {
+    "cover_up": "совет Керна засекречивает находку (3094-3101), пытается воспроизвести, продаёт Когниуму навигатор (3101) как отвлекающий манёвр",
+    "expedition": "Kern Survey «Сирин» + танкер «Бхадра», капитан Рахул Менса; вышла с HD 104067 в 3091",
+    "first_aboard": {
+     "when": 3091.62,
+     "who": "инженер Дита Варга"
+    },
+    "found": [
+     "корпус цел",
+     "тела экипажа без разложения, с блеском в суставах",
+     "мумии кошек, следы нескольких поколений животных",
+     "ИИ «Мандала» читает мантры",
+     "журналы частично повреждены"
+    ],
+    "leak": "3103: Барету, потерявшая лагерь, продаёт экстракт лаборатории Агоры — та находит регенеративный эффект; 3104 первые продажи «лотосового стекла»; 3108 Когниум сам видит эффект стабилизации на навигаторе-образце; 3110 перебежчик из Керна; 3112 кордон",
+    "lotusite_first_seen": {
+     "what": "кристаллические включения в тканях; лагерь начинает болеть",
+     "when": 3093.4,
+     "who": "медик Инеш Барету (лагерь «Мандала»)"
+    },
+    "value_understood": {
+     "what": "ядро «Сирина» держит повышенное натяжение поля, пока образец лежит в отсеке привода",
+     "when": 3094.1,
+     "who": "инженер прыжка Томаш Илунга (Керн)"
+    },
+    "why_resumed": "с 3079 ретранслятор Керна у 83 Leonis логирует повторяющийся сигнал; в 3087 аналитик Kern Survey Амара Окойе-Линд замечает доплеровский сдвиг (реальный движущийся источник, не эхо) и узнаёт код маяка NIRVANA-1 по архивам XXIII века; консорциум коллекционеров Агоры (3086) обещает премию за предметы «Нирваны»"
+   },
+   "identity": {
+    "basis": "решение автора 2026-11-03: «Лотос» — NIRVANA-1; хронология проверена (см. consistency)",
+    "ship": "NIRVANA-1",
+    "status": "CANON",
+    "visibility": "AUTHOR_TRUTH"
+   },
+   "messages": [
+    {
+     "arrived": true,
+     "from_ly": 20,
+     "received": "Земля ~2570",
+     "sent": 2550,
+     "text": "«Мы видели ткань реальности. Она поёт.»"
+    },
+    {
+     "arrived": true,
+     "from_ly": 28,
+     "received": "Земля ~2678",
+     "sent": 2650,
+     "text": "«Расстояние — иллюзия. Мы идём дальше.»"
+    },
+    {
+     "arrived": true,
+     "from_ly": 30,
+     "received": "Земля ~2710",
+     "sent": 2680.3,
+     "text": "«Не ищите нас. Мы нашли Нирвану.»"
+    },
+    {
+     "arrived": "частично",
+     "from_ly": 95,
+     "received": "3 фрагмента записаны лунной обсерваторией в 2779-2806 как шум; не расшифрованы до 3126",
+     "sent": [
+      2681,
+      2712
+     ],
+     "text": "214 лазерных сообщений «домой»; 41 нацелено верно (остальные — по ложному небу экипажа)"
+    },
+    {
+     "arrived": true,
+     "received": "эхо сквозь складку на рубежах «с невозможных направлений» (канон)",
+     "sent": [
+      2680,
+      3126
+     ],
+     "text": "маяк: мантры ИИ"
+    }
+   ],
+   "route": "Солнце → Kepler-62 f (ICRS-направление на 100062), разгон 2300-2306 до 0.08 c, крейсерский полёт; к 2680 пройдено ~30 св. лет",
+   "ship_state": "корпус цел; реактор работал в малой мощности до исчерпания топлива в 2890; затем — РИТЭГ резервного маяка и ядра ИИ; тела не разлагаются (холод, поле, лотосит)",
+   "status": "PROPOSAL",
+   "systems": [
+    {
+     "note": "читает мантры по маяку",
+     "system": "ИИ «Мандала»",
+     "until": "2890 полно, далее минимальный режим на РИТЭГ"
+    },
+    {
+     "note": "сигнал реальный; сквозь складку часть уходит «эхом» в случайные точки неба",
+     "system": "маяк",
+     "until": "работает в 3126 (РИТЭГ Am-241)"
+    },
+    {
+     "note": "кормило животных",
+     "system": "жизнеобеспечение агросекций",
+     "until": 2790
+    },
+    {
+     "note": "последние пациенты умерли 2712",
+     "system": "капсулы стазиса лазарета",
+     "until": 2890
+    },
+    {
+     "note": "тормозное топливо израсходовано",
+     "system": "главный привод",
+     "until": 2686
+    }
+   ],
+   "trajectory": [
+    {
+     "from": 2300.0,
+     "to": 2680.4,
+     "what": "досветовой полёт 0.08 c к Kepler-62, ~30 св. лет"
+    },
+    {
+     "from": 2680.4,
+     "to": 2680.4,
+     "what": "складка: перенос на ~95 св. лет от Солнца в поле между HD 104067 и HD 102195 (первый «прыжок» людей; никто об этом не знает)"
+    },
+    {
+     "from": 2680.4,
+     "to": 2686.0,
+     "what": "экипаж решает, что прибыл, и тратит тормозное топливо: 0.08 c → ~38 км/с; корабль останавливается в центре поля"
+    },
+    {
+     "from": 2686.0,
+     "to": 3126.0,
+     "what": "дрейф 38 км/с относительно Солнца вместе с полем (поле перемещается с той же скоростью)"
+    }
+   ],
+   "visibility": "AUTHOR_TRUTH"
+  }
+ },
  "frontiers": [
   {
    "id": "frontier.worlds_ass",
    "region": [
+    "system:41",
+    "dso.far_berth",
     "dso.lotus",
     "system:19"
    ],
@@ -432,21 +1187,35 @@
   {
    "anchor": "dso.lotus",
    "effects": {
+    "clock_drift_ms_per_day": 40,
+    "corridor_required": true,
+    "error_distribution": "heavy_tailed",
+    "human_exposure_syndrome": true,
+    "sensor_ghosts": true
+   },
+   "id": "hz.lotus_field",
+   "kind": "unstable_navigation",
+   "knowledge": "partial",
+   "name": "Поле «Лотоса»",
+   "note": "Поле радиусом ~1 а.е.: здесь у людей развивается синдром «Лотоса» и формируется лотосит; навигация неустойчива; путь к корпусу — по коридору, который дрейфует.",
+   "radius_km": 150000000,
+   "shape": "sphere",
+   "since_known": 3091,
+   "status": "PROPOSAL"
+  },
+  {
+   "anchor": "dso.lotus",
+   "effects": {
     "jump_initiation": "impossible"
    },
    "id": "hz.lotus_dead",
    "kind": "jump_dead",
    "knowledge": "mapped",
-   "name": "Мёртвая зона «Лотоса»",
-   "note": "Край зоны в 260 тыс. км от корпуса; без маячного захвата сигма выхода на 21 св. год ~200 тыс. км, и часть кораблей выходит внутрь. Отсюда кладбище вокруг «Лотоса».",
-   "offset_km": [
-    680000,
-    0,
-    0
-   ],
-   "radius_km": 420000,
+   "name": "Мёртвое ядро поля",
+   "note": "0.3 а.е. вокруг корпуса: прыжок не начать. Кто прыгнул прямо к корпусу, выходит внутрь и выбирается на тяге.",
+   "radius_km": 45000000,
    "shape": "sphere",
-   "since_known": 3099,
+   "since_known": 3093,
    "status": "PROPOSAL"
   },
   {
@@ -458,13 +1227,8 @@
    "kind": "sargasso",
    "knowledge": "mapped",
    "name": "Саргассы «Лотоса»",
-   "note": "Обломки и брошенные корабли, застрявшие в мёртвой зоне.",
-   "offset_km": [
-    680000,
-    0,
-    0
-   ],
-   "radius_km": 700000,
+   "note": "Обломки мародёров и экспедиций; на каждом — заражённые тела (вторичный источник).",
+   "radius_km": 150000000,
    "shape": "sphere",
    "since_known": 3099,
    "status": "PROPOSAL"
@@ -647,14 +1411,14 @@
   {
    "corruption": 0.15,
    "cover": 0.506,
-   "index": 0.456,
+   "index": 0.455,
    "name": "Tau Ceti",
    "resale_market": 0.3,
    "safe_haven": 0.375,
    "system": 8,
    "traffic": 0.947,
    "valuable_cargo": 0.911,
-   "weak_enforcement": 0.555
+   "weak_enforcement": 0.552
   },
   {
    "corruption": 0.45,
@@ -849,80 +1613,6 @@
    "weak_enforcement": 0.428
   }
  ],
- "rare_resources": [
-  {
-   "aliases": {
-    "cognium": "相锁晶格 (фазовая решётка)",
-    "pilot_en": "lotus glass",
-    "pilot_ru": "лотос"
-   },
-   "black_market_share": 0.4,
-   "demand_kg_y_at_base_price": 120,
-   "deposits": [
-    {
-     "anchor": "system_19.HD_102195.HD_102195_c",
-     "difficulty": "extreme",
-     "extracted_kg": 260,
-     "grade_g_per_t": 12.0,
-     "id": "dep.lotosite.c1",
-     "operator": "лицензиаты Керна",
-     "reserve_kg": 900,
-     "zone": "hz.019.c_distortion"
-    },
-    {
-     "anchor": "system_19.HD_102195.HD_102195_c",
-     "difficulty": "extreme",
-     "extracted_kg": 90,
-     "grade_g_per_t": 4.0,
-     "id": "dep.lotosite.c2",
-     "operator": "захватчик (без лицензии)",
-     "reserve_kg": 2400,
-     "zone": "hz.019.c_distortion"
-    },
-    {
-     "anchor": "system_19.HD_102195.HD_102195_b.trojans",
-     "difficulty": "high",
-     "extracted_kg": 310,
-     "grade_g_per_t": 0.8,
-     "id": "dep.lotosite.t1",
-     "operator": "старатели «Троянского рынка»",
-     "reserve_kg": 1500,
-     "zone": "hz.019.trojan_unstable"
-    },
-    {
-     "anchor": "system_19.HD_102195.HD_102195_K2",
-     "difficulty": "extreme",
-     "extracted_kg": 15,
-     "grade_g_per_t": 20.0,
-     "id": "dep.lotosite.k2",
-     "operator": "никто (у «Мандалы»)",
-     "reserve_kg": 300,
-     "zone": "hz.019.k2_perception"
-    }
-   ],
-   "id": "res.lotosite",
-   "knowledge": {
-    "basis": "заказ автора: редкий ресурс фронтира",
-    "status": "PROPOSAL",
-    "visibility": "PUBLIC_RECORD"
-   },
-   "name": "лотосит",
-   "price_cr_per_kg": 4000000,
-   "price_elasticity": 0.6,
-   "strategic_note": "+3 св. года к пределу прыжка открывают 9 Кита и HD 93083 без промежуточных точек; поэтому лотосит — политика, а не только деньги",
-   "use": {
-    "jump_error_multiplier": 0.5,
-    "kg_per_core": 2.0,
-    "max_hop_bonus_ly": 3.0,
-    "who_needs": [
-     "фабрика ядер Когниума",
-     "военные ядра",
-     "научные ядра"
-    ]
-   },
-   "what": "фазово-упорядоченный кристалл неизвестного происхождения; в ядре прыжка гасит шум поля"
-  }
- ],
  "risk_reward": {
   "frontier.ceti_chest": {
    "basis": "полный фрейтер металлов за рейс; риск = обычные потери x 4 прыжка",
@@ -937,62 +1627,53 @@
    "risk": 0.006
   },
   "frontier.worlds_ass": {
-   "basis": "дороже всего: артефакт или 3 кг лотосита; риск = потеря корабля",
-   "hazard_zones": 7,
+   "basis": "дороже всего: артефакт или 3 тела в лабораторию; риск = потеря корабля",
+   "hazard_zones": 8,
    "max_payoff_cr": 250000000,
-   "risk": 0.189
+   "risk": 0.386
   }
  },
  "status": "PROPOSAL",
  "worlds_ass": {
   "average_expedition_profitable": false,
   "causal_chain": [
-   "extraordinary reward",
-   "expedition demand",
-   "specialised transport",
-   "expensive support",
-   "piracy",
-   "security",
-   "black market",
-   "salvage",
-   "repeated exploration"
+   "редкий материал (прыжок +3 св. года и «эликсир»)",
+   "спрос на рейды",
+   "специальный транспорт и танкеры",
+   "дорогая поддержка",
+   "пиратство",
+   "кордон",
+   "коррупция контролёров",
+   "серый и чёрный рынок",
+   "санитарные вспышки",
+   "торговля людьми, когда мёртвые кончаются"
   ],
-  "cobrett_round_trip_charge_t": 3.682,
+  "cobrett_round_trip_charge_t": 4.042,
   "cobrett_tank_t": 3.0,
-  "dead_zone": {
-   "beacon_uptime": 0.62,
-   "p_inside_expected": 0.017,
-   "p_inside_locked": 0.0,
-   "p_inside_no_lock": 0.045,
-   "sigma_km_both_ends": 998,
-   "sigma_km_no_lock": 199573
-  },
-  "expected_value_cr": -257982,
+  "expected_value_cr": -112733,
   "expedition_cost_cr": {
-   "bribes_and_tolls": 40000,
-   "charge_and_fuel": 67800,
-   "coordinates_and_information": 65000,
-   "crew_hazard_pay": 60000,
+   "berth_fees": 20000,
+   "charge_and_fuel": 0,
+   "corridor_reactor_fuel": 9428,
+   "crew_hazard_pay": 20000,
    "insurance": 407235,
-   "licence": 30000,
-   "provisions": 24000,
-   "repair": 95000,
-   "spare_parts": 60000,
-   "tanker_support": 180000
+   "provisions": 12000,
+   "sealed_containers_ppe_ascorbate": 55000,
+   "spare_parts": 40000
   },
-  "expedition_cost_total_cr": 1029035,
-  "expeditions_per_year": 534,
+  "expedition_cost_total_cr": 563663,
   "information_market": [
-   "координаты безопасной точки выхода",
-   "положение тайников заряда",
-   "состояние аномальных зон",
+   "свежая карта коридора",
+   "какие отсеки корпуса ещё не выбраны",
+   "расписание и цена пикета",
+   "поддельные карантинные справки и разрешения",
+   "координаты тайников заряда",
    "новые обломки",
-   "месторождения",
-   "расписание патрулей",
-   "засады",
+   "лаборатории, которые берут тела",
+   "засады пиратов и «синих печатей»",
    "судьба пропавших экспедиций"
   ],
-  "information_rule": "часть сведений ложна; цена зависит от репутации продавца (см. KnowledgeRecord.confidence)",
+  "information_rule": "часть сведений ложна (30 % карт коридора); цена зависит от репутации продавца (см. KnowledgeRecord.confidence)",
   "j20_tank": {
    "charge_t": 6.0,
    "form": "C20 place",
@@ -1000,19 +1681,804 @@
    "note": "бак заряда J20 вместо контейнера: -1 место груза, +6 т заряда (PROPOSAL)"
   },
   "j20_tanks_needed": 1,
-  "lotosite_market": {
-   "base_demand_kg_y": 120,
-   "base_price_cr_per_kg": 4000000,
-   "black_market_share": 0.4,
-   "elasticity": 0.6,
-   "equilibrium_kg_y": 73.696,
-   "monopoly_threat": "Керн + Когниум держат лицензии и пробирную палату «Порога»; Тяньхэ требует доли",
-   "price_cr_per_kg": 9014761,
-   "price_shock_rule": "крупная находка (+Q кг) сбивает цену: P = P* x (1 + Q/q)^(-1/elasticity); монополия на пробирную палату удерживает цену выше P*",
-   "remaining_reserve_kg": 4425,
-   "years_to_depletion": 60.044
+  "lotus": {
+   "after_primary_exhausted": {
+    "note": "после исчерпания тел NIRVANA-1 материал даёт только живое сырьё: цена растёт, ёмкость «Сада» становится узким местом — давление строить новые «Сады»",
+    "price_cr_per_g": 146305586523,
+    "refined_g_y": 2.17,
+    "victims_y": 53.997
+   },
+   "approach": {
+    "corridor": {
+     "drift_au_per_year": 0.04,
+     "exposure_days": 6.681,
+     "length_au": 1.5,
+     "note": "внутри поля навигация неустойчива, коридор дрейфует: планировщик показывает known safe / estimated / outdated / unknown по возрасту карты",
+     "one_way_days": 3.502,
+     "states": {
+      "estimated": {
+       "age_days": [
+        60,
+        240
+       ],
+       "p_loss": 0.1
+      },
+      "known_safe": {
+       "age_days": [
+        0,
+        60
+       ],
+       "p_loss": 0.03
+      },
+      "outdated": {
+       "age_days": [
+        240,
+        900
+       ],
+       "p_loss": 0.22
+      },
+      "unknown": {
+       "p_loss": 0.35
+      }
+     }
+    },
+    "jump_to_berth": {
+     "field_edge_distance_km": 74396806,
+     "from_system": 41,
+     "ly": 21.023,
+     "note": "прыжок к «Причалу» безопасен: край поля в десятках млн км, а ошибка выхода — сотни тысяч км",
+     "sigma_km_no_lock": 198892
+    },
+    "shortcut_jump_into_field": {
+     "note": "прыжок прямо к корпусу выводит в мёртвое ядро (0.3 а.е.): прыжок оттуда не начать, выбираться на тяге"
+    },
+    "syndrome_exposure": {
+     "days": 6.681,
+     "note": "короткий визит даёт стадию 1 (сон, повторяющиеся сны) у части экипажа; обратимо вне поля",
+     "stage1_risk": 0.126
+    }
+   },
+   "blockade": {
+    "actual": 0.6,
+    "least_smuggling_at": 0.4,
+    "note": "жёстче контроль ≠ меньше контрабанды: премия и взятки растут, контролёров покупают",
+    "rows": [
+     {
+      "attempts_y": 198.325,
+      "black_premium": 1.08,
+      "interdicted_y": 27.034,
+      "leakage": 0.026,
+      "smuggled_y": 171.291,
+      "strictness": 0.2
+     },
+     {
+      "attempts_y": 216.774,
+      "black_premium": 1.32,
+      "interdicted_y": 56.155,
+      "leakage": 0.075,
+      "smuggled_y": 160.619,
+      "strictness": 0.4
+     },
+     {
+      "attempts_y": 247.522,
+      "black_premium": 1.72,
+      "interdicted_y": 86.202,
+      "leakage": 0.171,
+      "smuggled_y": 161.32,
+      "strictness": 0.6
+     },
+     {
+      "attempts_y": 290.569,
+      "black_premium": 2.28,
+      "interdicted_y": 109.75,
+      "leakage": 0.326,
+      "smuggled_y": 180.819,
+      "strictness": 0.8
+     },
+     {
+      "attempts_y": 345.915,
+      "black_premium": 3.0,
+      "interdicted_y": 118.436,
+      "leakage": 0.511,
+      "smuggled_y": 227.479,
+      "strictness": 1.0
+     }
+    ]
+   },
+   "buying_vs_self": {
+    "civilisation_retail_cr_per_g": 219221576,
+    "note": "у внешнего периметра материал стоит в разы дороже, чем обходится самому слетать и вынести тела — если не погибнешь, не заразишься и не попадёшься",
+    "outer_perimeter_buy_cr_per_g": 54805394,
+    "self_sourcing_expected_cr_per_g": 5606277
+   },
+   "corruption": {
+    "by_zone": {
+     "grey_frontier": [
+      {
+       "cost_of_honesty_cr_y": 1611279,
+       "expected_corrupt_share": 0.476,
+       "illicit_cr_y": 2301827,
+       "legal_salary_cr_y": 60000,
+       "pressure": 0.909,
+       "role": "досмотровый инспектор"
+      },
+      {
+       "cost_of_honesty_cr_y": 5370929,
+       "expected_corrupt_share": 0.694,
+       "illicit_cr_y": 7672755,
+       "legal_salary_cr_y": 80000,
+       "pressure": 2.271,
+       "role": "офицер изъятия"
+      },
+      {
+       "cost_of_honesty_cr_y": 1074186,
+       "expected_corrupt_share": 0.447,
+       "illicit_cr_y": 1534551,
+       "legal_salary_cr_y": 45000,
+       "pressure": 0.808,
+       "role": "клерк навигационных данных"
+      },
+      {
+       "cost_of_honesty_cr_y": 1342732,
+       "expected_corrupt_share": 0.452,
+       "illicit_cr_y": 1918189,
+       "legal_salary_cr_y": 55000,
+       "pressure": 0.826,
+       "role": "лаборант-аналитик"
+      },
+      {
+       "cost_of_honesty_cr_y": 2416918,
+       "expected_corrupt_share": 0.405,
+       "illicit_cr_y": 3452740,
+       "legal_salary_cr_y": 120000,
+       "pressure": 0.681,
+       "role": "командир патруля"
+      },
+      {
+       "cost_of_honesty_cr_y": 1342732,
+       "expected_corrupt_share": 0.476,
+       "illicit_cr_y": 1918189,
+       "legal_salary_cr_y": 50000,
+       "pressure": 0.909,
+       "role": "выдача карантинных справок"
+      }
+     ],
+     "inner_anomaly": [
+      {
+       "cost_of_honesty_cr_y": 2186735,
+       "expected_corrupt_share": 0.68,
+       "illicit_cr_y": 2301827,
+       "legal_salary_cr_y": 60000,
+       "pressure": 2.126,
+       "role": "досмотровый инспектор"
+      },
+      {
+       "cost_of_honesty_cr_y": 7289117,
+       "expected_corrupt_share": 0.842,
+       "illicit_cr_y": 7672755,
+       "legal_salary_cr_y": 80000,
+       "pressure": 5.315,
+       "role": "офицер изъятия"
+      },
+      {
+       "cost_of_honesty_cr_y": 1457823,
+       "expected_corrupt_share": 0.654,
+       "illicit_cr_y": 1534551,
+       "legal_salary_cr_y": 45000,
+       "pressure": 1.89,
+       "role": "клерк навигационных данных"
+      },
+      {
+       "cost_of_honesty_cr_y": 1822279,
+       "expected_corrupt_share": 0.659,
+       "illicit_cr_y": 1918189,
+       "legal_salary_cr_y": 55000,
+       "pressure": 1.933,
+       "role": "лаборант-аналитик"
+      },
+      {
+       "cost_of_honesty_cr_y": 3280103,
+       "expected_corrupt_share": 0.615,
+       "illicit_cr_y": 3452740,
+       "legal_salary_cr_y": 120000,
+       "pressure": 1.594,
+       "role": "командир патруля"
+      },
+      {
+       "cost_of_honesty_cr_y": 1822279,
+       "expected_corrupt_share": 0.68,
+       "illicit_cr_y": 1918189,
+       "legal_salary_cr_y": 50000,
+       "pressure": 2.126,
+       "role": "выдача карантинных справок"
+      }
+     ],
+     "outer_perimeter": [
+      {
+       "cost_of_honesty_cr_y": 920731,
+       "expected_corrupt_share": 0.171,
+       "illicit_cr_y": 2301827,
+       "legal_salary_cr_y": 60000,
+       "pressure": 0.206,
+       "role": "досмотровый инспектор"
+      },
+      {
+       "cost_of_honesty_cr_y": 3069102,
+       "expected_corrupt_share": 0.34,
+       "illicit_cr_y": 7672755,
+       "legal_salary_cr_y": 80000,
+       "pressure": 0.515,
+       "role": "офицер изъятия"
+      },
+      {
+       "cost_of_honesty_cr_y": 613820,
+       "expected_corrupt_share": 0.155,
+       "illicit_cr_y": 1534551,
+       "legal_salary_cr_y": 45000,
+       "pressure": 0.183,
+       "role": "клерк навигационных данных"
+      },
+      {
+       "cost_of_honesty_cr_y": 767276,
+       "expected_corrupt_share": 0.158,
+       "illicit_cr_y": 1918189,
+       "legal_salary_cr_y": 55000,
+       "pressure": 0.187,
+       "role": "лаборант-аналитик"
+      },
+      {
+       "cost_of_honesty_cr_y": 1381096,
+       "expected_corrupt_share": 0.134,
+       "illicit_cr_y": 3452740,
+       "legal_salary_cr_y": 120000,
+       "pressure": 0.154,
+       "role": "командир патруля"
+      },
+      {
+       "cost_of_honesty_cr_y": 767276,
+       "expected_corrupt_share": 0.171,
+       "illicit_cr_y": 1918189,
+       "legal_salary_cr_y": 50000,
+       "pressure": 0.206,
+       "role": "выдача карантинных справок"
+      }
+     ]
+    },
+    "formula": "pressure = illicit profit / legal lifetime income x (1 - audit) x isolation x fragmentation",
+    "note": "не все продажны: доля — ожидание по роли; честные офицеры, врачи и следователи есть, но ближе к полю честность стоит дороже"
+   },
+   "demand_at_price": {
+    "jump_g_y": 19.062,
+    "medical_g_y": 20.186
+   },
+   "jump": {
+    "cobrett_insert_price_cr": 175377261,
+    "cobrett_inserts_possible_from_stock": 1199,
+    "component": "фазовый демпфер ядра (вставка лотосита в эмиттер поля)",
+    "effect": {
+     "bonus_ly": 3.0,
+     "hostile_pairs_brought_into_one_jump": [],
+     "new_direct_beacon_edges": [
+      {
+       "a": 0,
+       "b": 24,
+       "ly": 33.076,
+       "names": [
+        "Sol (Солнце)",
+        "Gliese 436"
+       ]
+      },
+      {
+       "a": 3,
+       "b": 54,
+       "ly": 32.263,
+       "names": [
+        "Wolf 359",
+        "HD 85512"
+       ]
+      },
+      {
+       "a": 4,
+       "b": 57,
+       "ly": 32.785,
+       "names": [
+        "Lalande 21185",
+        "HD 10360"
+       ]
+      },
+      {
+       "a": 9,
+       "b": 25,
+       "ly": 32.05,
+       "names": [
+        "Epsilon Eridani",
+        "Gliese 357"
+       ]
+      },
+      {
+       "a": 10,
+       "b": 23,
+       "ly": 34.438,
+       "names": [
+        "Gliese 581",
+        "Gliese 892"
+       ]
+      },
+      {
+       "a": 10,
+       "b": 25,
+       "ly": 34.845,
+       "names": [
+        "Gliese 581",
+        "Gliese 357"
+       ]
+      },
+      {
+       "a": 14,
+       "b": 23,
+       "ly": 34.192,
+       "names": [
+        "HD 20794 (82 G. Eridani)",
+        "Gliese 892"
+       ]
+      },
+      {
+       "a": 14,
+       "b": 25,
+       "ly": 32.995,
+       "names": [
+        "HD 20794 (82 G. Eridani)",
+        "Gliese 357"
+       ]
+      },
+      {
+       "a": 14,
+       "b": 54,
+       "ly": 33.789,
+       "names": [
+        "HD 20794 (82 G. Eridani)",
+        "HD 85512"
+       ]
+      },
+      {
+       "a": 15,
+       "b": 22,
+       "ly": 33.745,
+       "names": [
+        "HD 40307",
+        "Delta Pavonis"
+       ]
+      },
+      {
+       "a": 15,
+       "b": 25,
+       "ly": 34.975,
+       "names": [
+        "HD 40307",
+        "Gliese 357"
+       ]
+      },
+      {
+       "a": 22,
+       "b": 54,
+       "ly": 34.514,
+       "names": [
+        "Delta Pavonis",
+        "HD 85512"
+       ]
+      },
+      {
+       "a": 23,
+       "b": 53,
+       "ly": 32.363,
+       "names": [
+        "Gliese 892",
+        "Gliese 674"
+       ]
+      },
+      {
+       "a": 24,
+       "b": 60,
+       "ly": 33.737,
+       "names": [
+        "Gliese 436",
+        "Proxima Centauri"
+       ]
+      },
+      {
+       "a": 25,
+       "b": 53,
+       "ly": 34.571,
+       "names": [
+        "Gliese 357",
+        "Gliese 674"
+       ]
+      },
+      {
+       "a": 53,
+       "b": 54,
+       "ly": 34.966,
+       "names": [
+        "Gliese 674",
+        "HD 85512"
+       ]
+      },
+      {
+       "a": 54,
+       "b": 60,
+       "ly": 33.445,
+       "names": [
+        "HD 85512",
+        "Proxima Centauri"
+       ]
+      }
+     ],
+     "newly_reachable_systems": [
+      {
+       "id": 21,
+       "name": "GJ 1214"
+      },
+      {
+       "id": 36,
+       "name": "9 Ceti"
+      }
+     ],
+     "status": "AUTHOR_TARGET"
+    },
+    "g_per_class": {
+     "cobrett_i_n1": 0.8,
+     "escort_frigate": 2.5,
+     "jump_train": 6.0,
+     "line_combatant": 4.0,
+     "liner": 2.4,
+     "medium_freighter": 2.0,
+     "recon_picket": 1.0
+    },
+    "politics": [
+     "Когниум (единственный производитель демпферов и переотжига) получает рычаг: дальние прыжки только для лицензиатов",
+     "открываются без промежуточных точек: GJ 1214, 9 Ceti — их ценность (9 Кита — пояс ~2.8 массы Земли) зависит от доступа к лотоситу",
+     "17 новых прямых маячных рёбер сокращают маршруты в обход узлов-посредников (Агора, Новая Индия как реэкспортёры теряют часть ренты)",
+     "враждебных пар, сближающихся до одного прыжка, нет: военный эффект — скорость рейдов и обход застав, а не новые фронты",
+     "страх распространения +3 св. лет — главная негласная причина кордона"
+    ]
+   },
+   "medical": {
+    "course_g": 0.12,
+    "course_price_cr": 26306589,
+    "courses_y": 168,
+    "dangerous": 0.12,
+    "fraud": 0.25,
+    "useless": 0.45
+   },
+   "outbreaks": [
+    {
+     "beds": 3,
+     "cases": 200,
+     "cause_chain": "тела с «Лотоса» вскрывали в жилом модуле",
+     "cfr": 0.38,
+     "consequence": "лагерь брошен в 3096, выживших эвакуировали; Керн засекретил причину",
+     "deaths": 76,
+     "exposed": 260,
+     "id": "OB-3093-MANDALA",
+     "population": 260,
+     "site": "site.019.mandala",
+     "status": "PROPOSAL",
+     "treated": 36,
+     "year": 3093.4
+    },
+    {
+     "beds": 1,
+     "cases": 126,
+     "cause_chain": "подпольная лаборатория «Стелла» выпаривала сырую партию в общей вентиляции",
+     "cfr": 0.413,
+     "consequence": "секция заварена на 60 суток; кордон расширил стоянку «Ворота-К»; «Троянский рынок» запретил необработанный материал",
+     "deaths": 52,
+     "exposed": 406,
+     "id": "OB-3115-STELLA",
+     "population": 1150,
+     "site": "site.019.troyan_market",
+     "status": "PROPOSAL",
+     "treated": 12,
+     "year": 3115.7
+    },
+    {
+     "beds": 14,
+     "cases": 180,
+     "cause_chain": "инспектор Kern Logistics за взятку пропустил «чистый» контейнер с телами; контейнер вскрыли в доке",
+     "cfr": 0.086,
+     "consequence": "доки «Перевала» закрыты 40 суток; Когниум потребовал права досмотра на «Перевале»; суд над инспектором; страховщики ввели протокол L",
+     "deaths": 15,
+     "exposed": 570,
+     "id": "OB-3121-PEREVAL",
+     "population": 1800,
+     "site": "site.024.pereval",
+     "status": "PROPOSAL",
+     "treated": 168,
+     "year": 3121.2
+    }
+   ],
+   "price_cr_per_g": 219221576,
+   "quarantine": {
+    "dso.far_berth": {
+     "arrivals_per_day": 0.0,
+     "holding_needed": 0.0,
+     "holding_slots": 3,
+     "holding_utilisation": 0.0,
+     "inspection_utilisation": null,
+     "inspections_per_day": 0.0,
+     "resources": {
+      "beds": 2,
+      "holding_berths": 1,
+      "isolated_anchorage": 2,
+      "ppe_days": 10,
+      "security": 15,
+      "staff": 6
+     }
+    },
+    "dso.quarantine_picket": {
+     "arrivals_per_day": 0.743,
+     "holding_needed": 1.171,
+     "holding_slots": 9,
+     "holding_utilisation": 0.13,
+     "inspection_utilisation": 0.155,
+     "inspections_per_day": 4.8,
+     "resources": {
+      "beds": 8,
+      "holding_berths": 3,
+      "isolated_anchorage": 6,
+      "ppe_days": 60,
+      "security": 120,
+      "staff": 50
+     }
+    },
+    "site.041.holding": {
+     "arrivals_per_day": 1.239,
+     "holding_needed": 1.951,
+     "holding_slots": 28,
+     "holding_utilisation": 0.07,
+     "inspection_utilisation": 0.194,
+     "inspections_per_day": 6.4,
+     "resources": {
+      "beds": 60,
+      "holding_berths": 8,
+      "isolated_anchorage": 20,
+      "ppe_days": 120,
+      "security": 40,
+      "staff": 160
+     }
+    }
+   },
+   "raids": {
+    "average_ev_cr": -112733,
+    "run_cost_cr": 563663,
+    "segments": [
+     {
+      "bodies": 0.139,
+      "bribe_cr": 0,
+      "corridor": "unknown",
+      "ev_cr": -1339237,
+      "map_cr": 0,
+      "p_caught": 0.27,
+      "p_ship_lost": 0.35,
+      "price_per_body": 634383,
+      "ru": "наивные (без карты, без связей)",
+      "segment": "naive",
+      "share": 0.45,
+      "stage1_risk": 0.13
+     },
+     {
+      "bodies": 0.294,
+      "bribe_cr": 0,
+      "corridor": "estimated",
+      "ev_cr": 247038,
+      "map_cr": 40000,
+      "p_caught": 0.27,
+      "p_ship_lost": 0.175,
+      "price_per_body": 4757875,
+      "ru": "с купленной картой (часть карт ложные)",
+      "segment": "informed",
+      "share": 0.32,
+      "stage1_risk": 0.13
+     },
+     {
+      "bodies": 0.653,
+      "bribe_cr": 14273626,
+      "corridor": "known_safe",
+      "ev_cr": 10794436,
+      "map_cr": 120000,
+      "p_caught": 0.081,
+      "p_ship_lost": 0.03,
+      "price_per_body": 39648962,
+      "ru": "со связями (свежая карта, взятка, своя лаборатория)",
+      "segment": "connected",
+      "share": 0.05,
+      "stage1_risk": 0.13
+     },
+     {
+      "bodies": 0.0,
+      "ev_cr": -715833,
+      "p_caught": 0.0,
+      "p_ship_lost": 0.06,
+      "price_per_body": 0,
+      "ru": "старатели «минерала» у планеты c (легенда)",
+      "segment": "cover_story",
+      "share": 0.18,
+      "stage1_risk": 0.0
+     }
+    ],
+    "ships_lost_y": 43.393
+   },
+   "security_units": [
+    {
+     "alliances": [
+      "научная служба Когниума"
+     ],
+     "audit_risk": 0.5,
+     "base": "dso.quarantine_picket",
+     "behaviour": "реально досматривает и спасает; отдельные инспекторы берут",
+     "category": "individual_corruption",
+     "chain": "Управление Маяков → командир кордона",
+     "commander": "капитан 1 ранга Лю Цзинь",
+     "corruption": 0.15,
+     "discipline": 0.85,
+     "id": "SU-CQS-1",
+     "loyalty": 0.85,
+     "mandate": "досмотр, карантин, изъятие",
+     "name": "Карантинная эскадра УМ, 1-я группа",
+     "owner": "tau_ceti_cognium",
+     "unofficial_income_cr_y": 328832
+    },
+    {
+     "alliances": [
+      "лаборатории Когниума"
+     ],
+     "audit_risk": 0.1,
+     "base": "site.041.vorota",
+     "behaviour": "изымает и тайно передаёт материал в лаборатории Когниума мимо учёта; подбрасывает улики конкурентам Когниума",
+     "category": "officially_sanctioned_dirty_operation",
+     "chain": "внутренняя безопасность УМ (вне командира кордона)",
+     "commander": "майор Арвид Сэлл",
+     "corruption": 0.4,
+     "discipline": 0.9,
+     "id": "SU-SEIZE-7",
+     "loyalty": 0.95,
+     "mandate": "изъятие незаконного материала",
+     "name": "Группа изъятия-7",
+     "owner": "tau_ceti_cognium",
+     "unofficial_income_cr_y": 1578395
+    },
+    {
+     "alliances": [
+      "перекупщики «Причала»",
+      "братство «Счисление»"
+     ],
+     "audit_risk": 0.15,
+     "base": "dso.far_berth",
+     "behaviour": "продаёт расписание патрулей, берёт за «чистые» справки, сопровождает контрабанду",
+     "category": "corrupt_unit",
+     "chain": "Kern Logistics → совет Керна",
+     "commander": "Отто Брайан",
+     "corruption": 0.7,
+     "discipline": 0.4,
+     "id": "SU-KPS",
+     "loyalty": 0.4,
+     "mandate": "охрана доков, досмотр",
+     "name": "Охрана портов Kern Logistics («Перевал», «Причал»)",
+     "owner": "cyg61_kern",
+     "unofficial_income_cr_y": 2608737
+    },
+    {
+     "alliances": [
+      "держатели причалов «Троянского рынка»"
+     ],
+     "audit_risk": 0.05,
+     "base": "site.019.porog",
+     "behaviour": "законные пошлины + «очередь за деньги»; задерживает корабли до «штрафа»",
+     "category": "captured_local_institution",
+     "chain": "формально Керн; фактически держатели причалов",
+     "commander": "Сандра Велес",
+     "corruption": 0.6,
+     "discipline": 0.5,
+     "id": "SU-POROG-CUST",
+     "loyalty": 0.3,
+     "mandate": "таможня и лицензии",
+     "name": "Таможня «Порога»",
+     "owner": "cyg61_kern",
+     "unofficial_income_cr_y": 2499126
+    },
+    {
+     "alliances": [
+      "братство «Счисление»"
+     ],
+     "audit_risk": 0.0,
+     "base": "site.019.dead_reckoning",
+     "behaviour": "рейды «против пиратов» под государственными кодами; объявляют обломки нарушителями карантина и забирают груз",
+     "category": "genuine_piracy_in_uniform",
+     "chain": "нет (старые коды регистрации)",
+     "commander": "Ставрос Ангелу",
+     "corruption": 0.95,
+     "discipline": 0.7,
+     "id": "SU-HELLAS-BLUE",
+     "loyalty": 0.1,
+     "mandate": "истёк в 3119",
+     "name": "«Синие печати» (бывший патруль Третьей Эллады)",
+     "owner": "hd114783_hellas3",
+     "unofficial_income_cr_y": 4165210
+    },
+    {
+     "alliances": [],
+     "audit_risk": 0.4,
+     "base": "dso.far_berth",
+     "behaviour": "реально вытаскивает застрявших из поля; известен отказом брать груз",
+     "category": "lawful",
+     "chain": "служба спасения Керна",
+     "commander": "Мирей Фонтен",
+     "corruption": 0.05,
+     "discipline": 0.9,
+     "id": "SU-KERN-SAR",
+     "loyalty": 0.9,
+     "mandate": "SAR",
+     "name": "Спасательный катер «Ласка» (Керн)",
+     "owner": "cyg61_kern",
+     "unofficial_income_cr_y": 0
+    }
+   ],
+   "status": "PROPOSAL",
+   "stock": {
+    "bodies": 2220,
+    "bodies_left": 1350,
+    "cohorts": [
+     {
+      "cohort": "2680-2690",
+      "exposure_years": 8.45,
+      "g_per_body": 1.335,
+      "people": 470,
+      "potential_g": 627.642,
+      "transformed_share": 0.505
+     },
+     {
+      "cohort": "2690-2702",
+      "exposure_years": 19.45,
+      "g_per_body": 2.136,
+      "people": 1010,
+      "potential_g": 2157.129,
+      "transformed_share": 0.802
+     },
+     {
+      "cohort": "2702-2712",
+      "exposure_years": 30.45,
+      "g_per_body": 2.47,
+      "people": 680,
+      "potential_g": 1679.862,
+      "transformed_share": 0.921
+     }
+    ],
+    "mean_g_per_body": 2.067,
+    "note": "верхняя оценка: все 2 160 тел, полная экспозиция по когортам, извлекаемая доля 35 %, распад в поле; вне поля сырьё распадается быстрее (40 лет)",
+    "potential_g": 4539.042,
+    "recoverable_g_left": 959.276,
+    "recoverable_g_total": 1588.665,
+    "removed_bodies": 870,
+    "removed_recoverable_g": 629.389,
+    "upper_estimate": true
+   },
+   "supply": {
+    "bodies_stolen_y": 36.375,
+    "legal_bodies_y": 15.0,
+    "raids_y": 192.175,
+    "refined_g_y": 39.248,
+    "years_until_primary_exhausted": 25.81
+   },
+   "trafficking": {
+    "capacity_y": 54.0,
+    "g_per_victim": 0.04,
+    "g_y": 2.081,
+    "margin": 24.469,
+    "note": "объём следует из выгоды (маржа) и ёмкости преступных сетей, а не задан фракцией",
+    "revenue_per_victim_cr": 2202173,
+    "victims_y": 51.793
+   }
   },
-  "median_result_cr": -1029035,
   "official_names": {
    "cyg61_kern": {
     "lang": "en",
@@ -1086,34 +2552,6 @@
     "name": "Far Gate"
    }
   },
-  "optimism_bias": 0.25,
-  "outcomes": [
-   {
-    "outcome": "ship lost",
-    "p": 0.049,
-    "value_cr": -2036173
-   },
-   {
-    "outcome": "nothing",
-    "p": 0.551,
-    "value_cr": 0
-   },
-   {
-    "outcome": "small find 0.1 kg",
-    "p": 0.3,
-    "value_cr": 631033
-   },
-   {
-    "outcome": "good find 0.6 kg",
-    "p": 0.08,
-    "value_cr": 3786199
-   },
-   {
-    "outcome": "jackpot: 3 kg or artifact",
-    "p": 0.02,
-    "value_cr": 18930997
-   }
-  ],
   "pilot_names": [
    {
     "lang": "ru",
@@ -1147,27 +2585,67 @@
     "translit": "duniyā kā pichhvāṛā"
    }
   ],
-  "ships_lost_per_year": 25.978,
   "story": {
-   "rush": "3104: в Агоре проданы первые 300 г лотосита (кристалл стабилизирует поле ядра). 3104-3126: золотая лихорадка — исследователи, старатели, Керн, Когниум, Тяньхэ, контрабандисты, культ «Путь Бесконечного Света», пираты, жулики, охотники за обломками.",
+   "rush": "3103: лаборатория Агоры получила экстракт из закристаллизованного мозга — он омолаживает. 3104: первые продажи «лотосового стекла». 3104-3126: лихорадка — мародёры, перекупщики, клиники, пираты; 3112: карантинная блокада Когниума.",
    "versions": [
     {
-     "source": "official (Kern)",
-     "text": "В 3091 разведка Керна, шедшая на повторяющийся сигнал, нашла в межзвёздном пространстве брошенный корабль-«лотос»; дальше, у HD 102195, — автоматический комплекс «Мандала» на карлике K2 и следы давней жизни. Экипажа нет."
+     "source": "official (Когниум)",
+     "text": "У HD 102195 найден минерал лотосит; район закрыт карантином из-за неизвестной биоопасности на брошенном корабле."
+    },
+    {
+     "source": "official (Керн)",
+     "text": "В 3091 наша поисковая партия нашла брошенный корабль-«лотос» по повторяющемуся сигналу. Экипажа нет. Права находки — наши."
     },
     {
      "source": "freeband",
-     "text": "Это «Нирвана». Они не погибли, они ушли туда, где прыжок не работает, и иногда отвечают по радио."
-    },
-    {
-     "source": "Cognium science",
-     "text": "Корпус похож на NIRVANA-1, но его положение досветовой физикой не объясняется. Изотопный возраст корпуса не совпадает с годом старта. Вопрос открыт."
+     "text": "Лотос выжимают из мертвецов. Тела там не гниют и светятся изнутри. Кто долго ходит по отсекам — сам становится товаром."
     },
     {
      "source": "rumour",
      "text": "Корпусов два. Второй никто не может найти дважды."
+    },
+    {
+     "source": "rumour (Дальний Причал)",
+     "text": "Вербовщики возят в «колонию Farpoint» людей, которые обратно не возвращаются."
     }
    ]
+  },
+  "zones": {
+   "grey_frontier": {
+    "audit": 0.3,
+    "fragmentation": 4,
+    "isolation": 0.7,
+    "sites": [
+     "dso.far_berth",
+     "dso.quarantine_picket",
+     "site.019.porog",
+     "site.019.troyan_market",
+     "site.019.claim_c",
+     "site.019.mandala"
+    ],
+    "what": "независимые станции, дорогое топливо, проводники, брокеры информации, контрабанда, сомнительные врачи, нелегальный ремонт, продажные чиновники, подразделения в доле"
+   },
+   "inner_anomaly": {
+    "audit": 0.05,
+    "fragmentation": 6,
+    "isolation": 1.0,
+    "sites": [
+     "dso.lotus",
+     "dso.garden",
+     "site.019.dead_reckoning"
+    ],
+    "what": "обломки, пираты, «пираты с печатью», скрытые склады, нелегальное жильё, неустойчивая навигация, охота за лотоситом, брошенные экспедиции, торговля людьми; государство — только рейды и сопровождение"
+   },
+   "outer_perimeter": {
+    "audit": 0.6,
+    "fragmentation": 2,
+    "isolation": 0.35,
+    "sites": [
+     "site.041.vorota",
+     "site.041.holding"
+    ],
+    "what": "кордон, флот, полиция, таможня, карантин, наука, лицензии, страховщики, ремонт, танкеры, легальные брокеры; коррупция — в разрешениях, очереди досмотра, конфискатах, карантинных справках"
+   }
   }
  },
  "wrecks": {

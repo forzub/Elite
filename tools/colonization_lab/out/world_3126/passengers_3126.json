@@ -24,7 +24,7 @@
  "migration_capacity_y": 6005363,
  "migration_demand_y": 2424245,
  "migration_limited": false,
- "military_rotation_y": 276953,
+ "military_rotation_y": 277092,
  "od_top": [
   {
    "colonist_transports": 11.506,

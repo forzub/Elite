@@ -34,6 +34,7 @@ import sys
 import endowment as endow
 import lab
 import logistics as lg
+import lotus_model
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out", "world_3126")
@@ -211,7 +212,7 @@ def path_to(prev, src, dst):
 
 # real hop chains beyond the network edge (systems and deep-space objects; every leg <= max hop)
 ACCESS = {
-    "frontier.worlds_ass": [("system", 25), ("system", 24), ("system", 45), ("dso", "dso.lotus"), ("system", 19)],
+    "frontier.worlds_ass": [("system", 25), ("system", 24), ("system", 45), ("system", 41), ("dso", "dso.far_berth"), ("system", 19)],
     "frontier.ceti_chest": [("system", 13), ("system", 17), ("dso", "dso.ceti_gap_cache"), ("system", 36)],
     "frontier.vega_observatory": [("system", 41), ("dso", "dso.vega_null"), ("system", 20)],
     "kern_pocket": [("system", 25), ("system", 24), ("system", 45), ("system", 37)],
@@ -223,8 +224,18 @@ FRONTIER_SYSTEMS = (19, 36, 20)
 # ---------------------------------------------------------------- deep-space objects (world lines)
 def dso_records(I):
     out = []
+    done = {}
     for d in I.WS["deep_space_objects"]:
         pl = d["placement"]
+        if "near" in pl:
+            ref = done[pl["near"]]
+            off = vmul(pl["offset_au"], AU_KM / LY_KM)
+            p = vadd(ref["position_ly"], off)
+            rec = dict(ref, id=d["id"], name=d["name"], site_type=d["site_type"], object_type=d["object_type"], hidden=bool(d.get("hidden")),
+                       position_ly=[round(x, 7) for x in p], offset_from=dict(object=pl["near"], au=pl["offset_au"]), source="placement (co-moving)", status=TAG)
+            out.append(rec)
+            done[d["id"]] = rec
+            continue
         a, b = I.pos[pl["from_system"]], I.pos[pl["toward_system"]]
         u = vnorm(vsub(b, a))
         side = vnorm(vcross(u, [0.0, 0.0, 1.0]))
@@ -240,6 +251,7 @@ def dso_records(I):
                         velocity_km_s=[r3(x) for x in vel], drift_km_per_year=round(vlen(vel) * SECONDS_Y),
                         legs_ly={str(pl["from_system"]): r3(vlen(vsub(p, a))), str(pl["toward_system"]): r3(vlen(vsub(p, b)))},
                         source="placement", status=TAG))
+        done[d["id"]] = out[-1]
     # generation ships still in flight: positions from the mission canon (source -> target, share of the path)
     for sid in I.WS["in_flight_generation_ships"]:
         m = I.MI[sid]
@@ -770,7 +782,7 @@ def law_model(I, sites, comms):
             juris = {"illegal": "вне закона (де-факто сила)", "semi_legal": "договор держателей при формальном суверенитете", "contested": "оспаривается"}.get(s.get("legal"), "государственная")
         claims = []
         if s.get("legal") in ("contested", "licensed_and_contested") or s["system"] is None:
-            if s["id"] in ("dso.lotus", "site.019.mandala"):
+            if s["id"] in ("dso.lotus", "site.019.mandala", "dso.far_berth"):
                 claims = ["cyg61_kern (находка, лицензия)", "tau_ceti_cognium (наука, покупка артефактов)", "Путь Бесконечного Света (наследник спонсора NIRVANA-1)"]
             elif s["system"] == 19:
                 claims = ["cyg61_kern", "tau_ceti_cognium", "gj832_tianhe"]
@@ -1114,56 +1126,62 @@ def frontier_model(I, dsos, sites, g):
         dist, prev = dijkstra(g, 0, lambda u, v, e: 1.0)
         a["from_sol_jumps_to_start"] = dist.get(a["chain"][0])
         a["from_sol_path_to_start"] = path_to(prev, 0, a["chain"][0])
-    # the World's Ass access: Cobrett range, extra tanks, dead-zone risk with / without beacon lock
+    # the World's Ass access: Cobrett range, extra tanks; the Lotus field is crossed by thrust along a corridor
     cob = I.SE["ship_classes"]["cobrett_i_n1"]
     wa = access["frontier.worlds_ass"]
-    leg_lotus, leg_wa = wa["legs_ly"][2], wa["legs_ly"][3]
-    m_dry = cob["dry_mass_t"]
+    leg_berth, leg_wa = wa["legs_ly"][3], wa["legs_ly"][4]
     fuel_round = 0.0
-    m = m_dry + cob["jump_tank_t"] + lg.cargo_gross_t(cob, 40.0)
-    for d in (leg_lotus, leg_wa, leg_wa, leg_lotus):
+    m = cob["dry_mass_t"] + cob["jump_tank_t"] + lg.cargo_gross_t(cob, 40.0)
+    for d in (leg_berth, leg_wa, leg_wa, leg_berth):
         f = lg.jump_fuel_t(I.cal, I.SE, cob, m, d)
         fuel_round += f
         m -= f
     j20 = dict(form="C20 place", charge_t=6.0, mass_loaded_t=8.0, note="бак заряда J20 вместо контейнера: -1 место груза, +6 т заряда (PROPOSAL)")
     tanks_needed = max(0, math.ceil((fuel_round - cob["jump_tank_t"]) / j20["charge_t"]))
-    zone = next(z for z in WS["hazard_zones"] if z["id"] == "hz.lotus_dead")
-    sig_none = jump_sigma_km(leg_lotus, "none")
-    sig_lock = jump_sigma_km(leg_lotus, "both_ends")
-    p_none = p_inside_sphere(sig_none, zone["offset_km"][0], zone["radius_km"])
-    p_lock = p_inside_sphere(sig_lock, zone["offset_km"][0], zone["radius_km"])
-    up = next(x for x in WS["deep_space_objects"] if x["id"] == "dso.lotus")["beacon"]["uptime"]
-    p_dead = up * p_lock + (1 - up) * p_none
-    # expedition economics (one Cobrett expedition 3126): costs, outcome distribution, EV
-    res = WS["rare_resources"][0]
-    price = res["price_cr_per_kg"]
-    base = lg.trip_cost(I.SE, I.cal, "cobrett_i_n1", [leg_lotus, leg_wa], 40.0, 0.0)
+    berth = next(x for x in WS["deep_space_objects"] if x["id"] == "dso.far_berth")
+    field = next(z for z in WS["hazard_zones"] if z["id"] == "hz.lotus_field")
+    core = next(z for z in WS["hazard_zones"] if z["id"] == "hz.lotus_dead")
+    L = dict(WS["lotus"], zones=WS["frontiers"][0]["zones"])
+    corridor_au = vlen(berth["placement"]["offset_au"])
+    accel = cob["burn_accel_g"] * 9.80665
+    one_way_s = 2.0 * math.sqrt(corridor_au * AU_KM * 1000.0 / accel)
+    inside_share = min(1.0, field["radius_km"] / (corridor_au * AU_KM))
+    exposure_days = 2.0 * one_way_s / 86400.0 * inside_share + 2.0
+    leg_berth = wa["legs_ly"][3]
+    sig_none = jump_sigma_km(leg_berth, "none")
+    approach = dict(
+        jump_to_berth=dict(from_system=41, ly=leg_berth, sigma_km_no_lock=round(sig_none), field_edge_distance_km=round(corridor_au * AU_KM - field["radius_km"]),
+                           note="прыжок к «Причалу» безопасен: край поля в десятках млн км, а ошибка выхода — сотни тысяч км"),
+        corridor=dict(length_au=round(corridor_au, 2), one_way_days=r3(one_way_s / 86400.0), exposure_days=r3(exposure_days), states=L["corridor"]["states"],
+                      drift_au_per_year=L["corridor"]["drift_au_per_year"],
+                      note="внутри поля навигация неустойчива, коридор дрейфует: планировщик показывает known safe / estimated / outdated / unknown по возрасту карты"),
+        shortcut_jump_into_field=dict(note=f"прыжок прямо к корпусу выводит в мёртвое ядро ({round(core['radius_km'] / AU_KM, 2)} а.е.): прыжок оттуда не начать, выбираться на тяге"),
+        syndrome_exposure=dict(days=r3(exposure_days), stage1_risk=r3(1 - (1 - L["biology"]["visitor_risk_per_day_in_field"]["stage1"]) ** exposure_days),
+                               note="короткий визит даёт стадию 1 (сон, повторяющиеся сны) у части экипажа; обратимо вне поля"))
     hull = lg.build_cost(cob)["list_price_cr"]
-    cost = dict(charge_and_fuel=round(2 * (base["costs_cr"].get("jump_charge", 0) + base["costs_cr"].get("reactor_fuel", 0)) * 2.2 + tanks_needed * 6000 * 5.65 * 2.0),
-                tanker_support=180000, repair=95000, insurance=round(0.12 * hull), crew_hazard_pay=round(2.5 * 2 * 4000 * 3.0),
-                provisions=24000, spare_parts=60000, coordinates_and_information=65000, bribes_and_tolls=40000, licence=30000)
-    p_loss = 0.04 + p_dead * 0.5
-    ctot = sum(cost.values())
-    # equilibrium: expeditions keep coming while the AVERAGE one loses no more than the optimism bias of
-    # prospectors (25 % of its cost) -> that fixes the price; demand at that price fixes the quantity, and the
-    # quantity fixes the number of expeditions, the ships lost and the depletion of the deposits
-    finds = [("small find 0.1 kg", 0.30, 0.1), ("good find 0.6 kg", 0.08, 0.6), ("jackpot: 3 kg or artifact", 0.02, 3.0)]
-    e_kg = sum(pf * kg for _, pf, kg in finds)
-    bias = 0.25
-    seller_share = 0.7          # assay, broker, Kern licence and black-market discount
-    pr = ((1.0 - bias) * ctot + p_loss * 0.6 * hull) / (seller_share * e_kg)
-    q0 = res["demand_kg_y_at_base_price"]
-    eps = res["price_elasticity"]
-    q = q0 * (pr / price) ** (-eps)
-    expeditions_y = q / e_kg
-    outcomes = [dict(outcome="ship lost", p=r3(p_loss), value_cr=round(-hull * 0.6)),
-                dict(outcome="nothing", p=r3(1.0 - p_loss - sum(pf for _, pf, _ in finds)), value_cr=0)] + \
-               [dict(outcome=nm, p=pf, value_cr=round(kg * pr * seller_share)) for nm, pf, kg in finds]
-    ev = sum(o["p"] * o["value_cr"] for o in outcomes) - ctot
-    median_outcome = -ctot
-    remaining = sum(d["reserve_kg"] - d["extracted_kg"] for d in res["deposits"])
-    chain = ["extraordinary reward", "expedition demand", "specialised transport", "expensive support", "piracy", "security", "black market",
-             "salvage", "repeated exploration"]
+    base = lg.trip_cost(I.SE, I.cal, "cobrett_i_n1", [leg_berth, leg_berth], 40.0, 0.0)
+    run_cost = dict(charge_and_fuel=round(2.2 * (base["costs_cr"].get("jump_charge", 0) + base["costs_cr"].get("reactor_fuel", 0))),
+                    corridor_reactor_fuel=round(4.0 * lg.insystem_leg(cob, I.SE["insystem_rule"], 40.0)[1] * I.SE["anchors"]["reactor_fuel_cr_per_kg"]),
+                    insurance=round(0.12 * hull), crew_hazard_pay=round(2.5 * 2 * 4000 * 1.0), sealed_containers_ppe_ascorbate=55000,
+                    provisions=12000, spare_parts=40000, berth_fees=20000)
+    rc = sum(run_cost.values())
+    pol_sys = {k: I.system_of(k) for k in I.pol}
+    LM = lotus_model.compute(L, I.E, I.net["_edges"], I.rel, pol_sys, hop, hull, rc)
+    informed = next(r for r in LM["raids"]["segments"] if r["segment"] == "informed")
+    g_body = LM["stock"]["mean_g_per_body"] * L["material"]["recoverable_fraction"]
+    self_cost = rc + informed["map_cr"] + informed["p_ship_lost"] * 0.6 * hull + informed["p_caught"] * (250000 + 0.3 * 0.6 * hull)
+    self_per_g = self_cost / max(1e-9, informed["bodies"] * g_body)
+    buy_per_g = LM["price_cr_per_g"] * L["markets"]["tier_share_of_civilised_price"]["outer_perimeter"]
+    LM["buying_vs_self"] = dict(outer_perimeter_buy_cr_per_g=round(buy_per_g), self_sourcing_expected_cr_per_g=round(self_per_g),
+                                civilisation_retail_cr_per_g=LM["price_cr_per_g"],
+                                note="у внешнего периметра материал стоит в разы дороже, чем обходится самому слетать и вынести тела — если не погибнешь, не заразишься и не попадёшься")
+    LM["approach"] = approach
+    ctot = rc
+    avg_ev = LM["raids"]["average_ev_cr"]
+    p_loss = sum(r["share"] * r["p_ship_lost"] for r in LM["raids"]["segments"])
+    chain = ["редкий материал (прыжок +3 св. года и «эликсир»)", "спрос на рейды", "специальный транспорт и танкеры", "дорогая поддержка", "пиратство",
+             "кордон", "коррупция контролёров", "серый и чёрный рынок", "санитарные вспышки", "торговля людьми, когда мёртвые кончаются"]
+    body_lab = L["markets"]["tier_share_of_civilised_price"]["outer_perimeter"] * LM["price_cr_per_g"] * g_body
     risk_reward = {}
     art_max = max((a["market_value_cr"] or 0) for a in WS["artifacts"])
     freighter = I.SE["ship_classes"]["medium_freighter"]
@@ -1171,7 +1189,7 @@ def frontier_model(I, dsos, sites, g):
     for f in WS["frontiers"]:
         z = [h for h in WS["hazard_zones"] if h.get("anchor", "").startswith(f"system_{f['system']}.") or h.get("anchor") in f["region"]]
         if f["specialisation"] == "risk_reward_max":
-            reward, risk = max(art_max, 3.0 * price * 0.7), p_loss
+            reward, risk = max(art_max, 3.0 * body_lab), p_loss
         elif f["specialisation"] == "resource":
             # a full freighter of metals from the Chest, one trip (licensed rush, no single jackpot)
             reward, risk = freighter["cargo_t"] * metals_cr_t, 0.004 * 4
@@ -1179,7 +1197,7 @@ def frontier_model(I, dsos, sites, g):
             reward, risk = 2.0e6, 0.002 * 3
         risk = risk + 0.02 * len(z)
         risk_reward[f["id"]] = dict(max_payoff_cr=round(reward), risk=r3(risk), hazard_zones=len(z),
-                                    basis={"risk_reward_max": "дороже всего: артефакт или 3 кг лотосита; риск = потеря корабля",
+                                    basis={"risk_reward_max": "дороже всего: артефакт или 3 тела в лабораторию; риск = потеря корабля",
                                            "resource": "полный фрейтер металлов за рейс; риск = обычные потери x 4 прыжка",
                                            "science": "грант/контракт; риск = обычные потери"}[f["specialisation"]])
     hz = []
@@ -1187,20 +1205,18 @@ def frontier_model(I, dsos, sites, g):
         hz.append(dict(z, status=TAG if z["kind"] not in ("quarantine",) else "CANON"))
     return dict(access=access, worlds_ass=dict(
         official_names=WS["frontiers"][0]["official_names"], pilot_names=WS["frontiers"][0]["pilot_names"], story=WS["frontiers"][0]["story"],
+        zones=WS["frontiers"][0]["zones"],
         cobrett_round_trip_charge_t=r3(fuel_round), cobrett_tank_t=cob["jump_tank_t"], j20_tank=j20, j20_tanks_needed=tanks_needed,
-        dead_zone=dict(sigma_km_no_lock=round(sig_none), sigma_km_both_ends=round(sig_lock), p_inside_no_lock=r3(p_none), p_inside_locked=r3(p_lock),
-                       beacon_uptime=up, p_inside_expected=r3(p_dead)),
-        expedition_cost_cr=cost, expedition_cost_total_cr=round(ctot), outcomes=outcomes, expected_value_cr=round(ev), median_result_cr=round(median_outcome),
-        average_expedition_profitable=ev > 0, causal_chain=chain, expeditions_per_year=round(expeditions_y),
-        ships_lost_per_year=r3(expeditions_y * p_loss), optimism_bias=bias,
-        lotosite_market=dict(equilibrium_kg_y=r3(q), base_price_cr_per_kg=price, base_demand_kg_y=q0, price_cr_per_kg=round(pr), black_market_share=res["black_market_share"],
-                             remaining_reserve_kg=remaining, years_to_depletion=r3(remaining / q), elasticity=eps,
-                             monopoly_threat="Керн + Когниум держат лицензии и пробирную палату «Порога»; Тяньхэ требует доли",
-                             price_shock_rule="крупная находка (+Q кг) сбивает цену: P = P* x (1 + Q/q)^(-1/elasticity); монополия на пробирную палату удерживает цену выше P*"),
-        information_market=["координаты безопасной точки выхода", "положение тайников заряда", "состояние аномальных зон", "новые обломки", "месторождения",
-                            "расписание патрулей", "засады", "судьба пропавших экспедиций"],
-        information_rule="часть сведений ложна; цена зависит от репутации продавца (см. KnowledgeRecord.confidence)"),
-        risk_reward=risk_reward, hazard_zones=hz, rare_resources=WS["rare_resources"], artifacts=WS["artifacts"],
+        lotus=LM, expedition_cost_cr=run_cost, expedition_cost_total_cr=round(ctot), expected_value_cr=round(avg_ev),
+        average_expedition_profitable=avg_ev > 0, causal_chain=chain,
+        information_market=["свежая карта коридора", "какие отсеки корпуса ещё не выбраны", "расписание и цена пикета", "поддельные карантинные справки и разрешения",
+                            "координаты тайников заряда", "новые обломки", "лаборатории, которые берут тела", "засады пиратов и «синих печатей»", "судьба пропавших экспедиций"],
+        information_rule="часть сведений ложна (30 % карт коридора); цена зависит от репутации продавца (см. KnowledgeRecord.confidence)"),
+        risk_reward=risk_reward, hazard_zones=hz, artifacts=WS["artifacts"],
+        developer_truth=dict(truth=WS["lotus"]["truth"], biology=WS["lotus"]["biology"], phenomena=WS["lotus"]["phenomena"], material=WS["lotus"]["material"],
+                             jump_component=WS["lotus"]["jump_component"], medical=WS["lotus"]["medical"], fever=WS["lotus"]["fever"],
+                             quarantine=WS["lotus"]["quarantine"], cordon=WS["lotus"]["cordon"], markets=WS["lotus"]["markets"],
+                             trafficking=WS["lotus"]["trafficking"], reproduction=WS["lotus"]["reproduction"]),
         frontiers=[{k: f[k] for k in ("id", "specialisation", "system", "region")} for f in WS["frontiers"]], status=TAG)
 
 
@@ -1234,9 +1250,9 @@ def world_events(I, comms):
     """One worked event: WorldTruth is single; every holder gets its own KnowledgeRecord when the news
     physically arrives over the beacon net (routine) or by courier (flash)."""
     h = comms["from_sol_routine_h"]
-    lotus_to_porog_h = next(l["routine_hop_h"] for l in comms["links"] if {l["a"], l["b"]} == {"dso.lotus", 19})
-    ev = dict(id="EVT-3126-0001", kind="ship_missing", status=TAG, time=3126.412, location="hz.lotus_dead",
-              truth=dict(ship="экспедиционный Cobrett «Мэй-Лин-2»", state="вышел из прыжка внутри мёртвой зоны «Лотоса», цел, экипаж 3, запасов на 19 суток, сигнал бедствия слабый"))
+    lotus_to_porog_h = next(l["routine_hop_h"] for l in comms["links"] if {l["a"], l["b"]} == {"dso.far_berth", 19})
+    ev = dict(id="EVT-3126-0001", kind="ship_missing", status=TAG, time=3126.412, location="hz.lotus_field",
+              truth=dict(ship="Cobrett «Мэй-Лин-2» (мародёры, купленная карта коридора)", state="карта оказалась ложной: корабль сошёл с коридора и застрял в мёртвом ядре поля; цел, экипаж 3 (один уже заражён), запасов на 19 суток, в трюме 2 тела с «Лотоса»"))
     t0 = ev["time"]
     day = 1.0 / 365.25
 
@@ -1244,13 +1260,17 @@ def world_events(I, comms):
         return dict(event=ev["id"], holder=holder, source=src, channel=ch, observed_at=r3(t0), received_at=round(t0 + delay_h / 24.0 * day, 5),
                     delay_days=r3(delay_h / 24.0), confidence=conf, freshness="fresh" if delay_h < 48 else "stale", classification=cls, text=text, language=lang)
     recs = [
-        rec("dso.lotus", "local_radio", "сигнал бедствия", 0.2, 0.9, "public", "Слабый сигнал бедствия из мёртвой зоны: «Мэй-Лин-2», трое живы.", "en"),
+        rec("dso.far_berth", "local_radio", "сигнал бедствия", 0.2, 0.9, "public", "Слабый сигнал бедствия из поля: «Мэй-Лин-2», трое живы.", "en"),
         rec("site.019.porog", "official", "диспетчер «Лотоса»", lotus_to_porog_h, 0.8, "public", "Экспедиционное судно не вышло на связь согласно плану.", "en"),
-        rec("site.019.troyan_market", "freeband", "пилоты", lotus_to_porog_h + 3.0, 0.4, "rumour", "Они нашли второй корабль, поэтому и застряли.", "zh"),
+        rec("site.019.troyan_market", "freeband", "пилоты", lotus_to_porog_h + 3.0, 0.4, "rumour", "Карту им продал Хромой; они везут двух мертвецов. Кто вытащит — заберёт груз.", "zh"),
         rec("lalande_hellas", "commercial", "страховой брокер Агоры", float(h.get("4", 72.0)) + 50.0, 0.7, "commercial", "Страховой случай: корпус и груз под вопросом, ставки по маршруту +2 %.", "el"),
         rec("sol_authority", "official", "Управление Маяков (сводка)", float(h.get("19", 120.0)), 0.6, "public", "В районе HD 102195 пропало судно; спасательная операция организуется лицензиатом.", "en"),
     ]
-    return dict(schemas=SCHEMAS, events=[ev], knowledge=recs,
+    epi = dict(id="EPI-LOTUS", origin="поле «Лотоса» (dso.lotus)", incubation_days=[60, 540], transmission="контакт с заражённой тканью внутри поля; не по воздуху",
+               severity="смертельно (кристаллизация нервной ткани за 3-8 лет)", mortality=1.0, detectability="низкая до кристаллизации (эйфория, «омоложение»)",
+               treatment="нет; вне поля решётка инертна", immunity="все нелюди (двойной ключ: Neu5Ac-only + белки человеко-специфичных генов коры)",
+               environmental_survival="только в поле; в сильном поле прыжка — медленное пробуждение остатков", visibility="AUTHOR_TRUTH (мир знает частично)", status=TAG)
+    return dict(schemas=SCHEMAS, events=[ev], knowledge=recs, epidemics=[epi],
                 rule="WorldTruth один; KnowledgeRecord у каждого держателя приходит с задержкой сети; новости = представление записей, а не отдельная истина; "
                      "радио = звуковое представление тех же потоков (Public / Freeband)",
                 status=TAG)
@@ -1281,7 +1301,19 @@ def checks(I, out):
     add("worlds_ass_is_max_risk_and_reward", all(wa["max_payoff_cr"] >= v["max_payoff_cr"] and wa["risk"] >= v["risk"] for v in rr.values()),
         ", ".join(f"{k}: {v['max_payoff_cr']} / {v['risk']}" for k, v in rr.items()))
     w = out["frontier"]["worlds_ass"]
-    add("average_expedition_not_profitable", not w["average_expedition_profitable"], f"EV {w['expected_value_cr']} Cr, cost {w['expedition_cost_total_cr']}")
+    add("average_expedition_not_profitable", not w["average_expedition_profitable"], f"average visitor EV {w['expected_value_cr']} Cr, run cost {w['expedition_cost_total_cr']}")
+    L_ = w["lotus"]
+    best = max(x["ev_cr"] for x in L_["raids"]["segments"])
+    add("rare_successes_make_the_profit", best > 0 and w["expected_value_cr"] < 0, f"best segment {best} Cr > 0, average {w['expected_value_cr']} Cr < 0")
+    add("buying_dearer_than_self_sourcing", L_["buying_vs_self"]["outer_perimeter_buy_cr_per_g"] > L_["buying_vs_self"]["self_sourcing_expected_cr_per_g"],
+        f"{L_['buying_vs_self']['outer_perimeter_buy_cr_per_g']} > {L_['buying_vs_self']['self_sourcing_expected_cr_per_g']} Cr/g")
+    add("lotosite_primary_stock_finite", 0 < L_["stock"]["recoverable_g_left"] < L_["stock"]["recoverable_g_total"] and L_["supply"]["years_until_primary_exhausted"] < 200,
+        f"{L_['stock']['recoverable_g_left']} g left of {L_['stock']['recoverable_g_total']} g, ~{L_['supply']['years_until_primary_exhausted']} years")
+    ph = out["frontier"]["developer_truth"]["phenomena"]
+    add("phenomena_have_developer_category", all(x["category"] in ("physical", "sensor", "subjective") for x in ph) and {x["category"] for x in ph} == {"physical", "sensor", "subjective"},
+        f"{len(ph)} phenomena: " + ", ".join(sorted({x['category'] for x in ph})))
+    add("outbreaks_within_population", all(o["deaths"] <= o["cases"] <= o["population"] for o in L_["outbreaks"]), "; ".join(f"{o['id']} {o['cases']}/{o['deaths']}" for o in L_["outbreaks"]))
+    add("lotus_identity_known_to_developers", out["frontier"]["developer_truth"]["truth"]["identity"]["ship"] == "NIRVANA-1", "NIRVANA-1 (CANON, AUTHOR_TRUTH)")
     c = out["comms"]
     far = max(c["frontier_from_sol_days"].values())
     add("news_reaches_far_periphery_within_author_target", c["diameter_days"] <= c["author_target_days"] + 1e-9 and far <= c["author_target_days"] + 1e-9,
@@ -1364,12 +1396,12 @@ def md_report(I, out, chk):
         "## Дорога в карман Керна", "", f"Цепочка {out['frontier']['access']['kern_pocket']['chain']}: плечи {out['frontier']['access']['kern_pocket']['legs_ly']} св. лет (предел {I.hop}).", "",
         "## Жопа мира (月工门)", "",
         f"- доступ: {out['frontier']['access']['frontier.worlds_ass']['chain']}, плечи {out['frontier']['access']['frontier.worlds_ass']['legs_ly']} св. лет",
-        f"- Cobrett туда-обратно от 83 Leonis: {w['cobrett_round_trip_charge_t']} т заряда при баке {w['cobrett_tank_t']} т -> баков J20: {w['j20_tanks_needed']}",
-        f"- мёртвая зона «Лотоса»: сигма без захвата {w['dead_zone']['sigma_km_no_lock']} км, с захватом {w['dead_zone']['sigma_km_both_ends']} км; "
-        f"вероятность выйти внутрь {w['dead_zone']['p_inside_no_lock']} / {w['dead_zone']['p_inside_locked']}, ожидаемая при маяке {w['dead_zone']['beacon_uptime']} — {w['dead_zone']['p_inside_expected']}",
-        f"- экспедиция: стоимость {w['expedition_cost_total_cr']} Cr, ожидание {w['expected_value_cr']} Cr (средняя экспедиция убыточна), медиана {w['median_result_cr']} Cr",
-        f"- лотосит: {w['lotosite_market']['equilibrium_kg_y']} кг/год, цена {w['lotosite_market']['price_cr_per_kg']} Cr/кг, запасов на {w['lotosite_market']['years_to_depletion']} лет; "
-        f"экспедиций ~{w['expeditions_per_year']}/год, теряется кораблей {w['ships_lost_per_year']}/год", "",
+        f"- Cobrett туда-обратно от HD 104067: {w['cobrett_round_trip_charge_t']} т заряда при баке {w['cobrett_tank_t']} т -> баков J20: {w['j20_tanks_needed']}",
+        f"- поле «Лотоса»: прыжок HD 104067 → «Дальний Причал», коридор {w['lotus']['approach']['corridor']['length_au']} а.е. ({w['lotus']['approach']['corridor']['one_way_days']} сут в одну сторону), в поле {w['lotus']['approach']['corridor']['exposure_days']} сут",
+        f"- запас: {w['lotus']['stock']['bodies']} тел, извлекаемо всего {w['lotus']['stock']['recoverable_g_total']} г, осталось {w['lotus']['stock']['recoverable_g_left']} г (верхняя оценка)",
+        f"- цена {w['lotus']['price_cr_per_g']} Cr/г; рейдов {w['lotus']['supply']['raids_y']}/год, тел {w['lotus']['supply']['bodies_stolen_y']}/год, лотосита {w['lotus']['supply']['refined_g_y']} г/год; первичный запас кончится через {w['lotus']['supply']['years_until_primary_exhausted']} лет",
+        f"- средний рейд {w['expected_value_cr']} Cr; потерянных кораблей {w['lotus']['raids']['ships_lost_y']}/год; жертв торговли людьми {w['lotus']['trafficking']['victims_y']}/год (AUTHOR_TRUTH)",
+        f"- +3 св. года: новые прямые рёбра {len(w['lotus']['jump']['effect']['new_direct_beacon_edges'])}, новые достижимые системы {[x['name'] for x in w['lotus']['jump']['effect']['newly_reachable_systems']]}", "",
         "## Связь", "", f"Диаметр сети (обычная новость): {c['diameter_days']} сут (AUTHOR_TARGET {c['author_target_days']}).", "",
         "| Куда | Обычная, сут | Срочная, сут |", "|---|---:|---:|"] + [f"| {e['name']} | {e['routine_days']} | {e['flash_days']} |" for e in c["examples"]] + [
         "", "## Пассажиры", "", f"Межзвёздных поездок {p['interstellar_trips_y']:,}/год, переселенцев {p['migrants_y']:,}, беженцев {p['refugees_y']:,}; поверхность ↔ орбита {p['surface_orbit_trips_y']:,}.".replace(",", " "),

@@ -6389,14 +6389,14 @@
     "max_age_y": 51.0,
     "mean_age_y": 25.2,
     "states": {
-     "heavily_worn": 396.4,
-     "mature": 235.7,
+     "heavily_worn": 401.6,
+     "mature": 238.8,
      "mothballed": 0.0,
-     "new": 60.7,
-     "old": 291.2,
-     "reserve": 197,
-     "restoration_project": 4.9,
-     "scrap_candidate": 19.7
+     "new": 61.5,
+     "old": 295.1,
+     "reserve": 200,
+     "restoration_project": 5.0,
+     "scrap_candidate": 19.9
     },
     "tier": "poor"
    },
@@ -6823,12 +6823,12 @@
  "status": "PROPOSAL",
  "used_ships_sold_rich_to_poor_y": 2539,
  "world_states": {
-  "heavily_worn": 18578,
-  "mature": 109783,
+  "heavily_worn": 18584,
+  "mature": 109786,
   "mothballed": 5902,
-  "new": 33050,
-  "old": 75518,
-  "reserve": 15409,
+  "new": 33051,
+  "old": 75521,
+  "reserve": 15412,
   "restoration_project": 388,
   "scrap_candidate": 3334
  }

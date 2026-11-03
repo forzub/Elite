@@ -1,14 +1,33 @@
 {
+ "epidemics": [
+  {
+   "detectability": "низкая до кристаллизации (эйфория, «омоложение»)",
+   "environmental_survival": "только в поле; в сильном поле прыжка — медленное пробуждение остатков",
+   "id": "EPI-LOTUS",
+   "immunity": "все нелюди (двойной ключ: Neu5Ac-only + белки человеко-специфичных генов коры)",
+   "incubation_days": [
+    60,
+    540
+   ],
+   "mortality": 1.0,
+   "origin": "поле «Лотоса» (dso.lotus)",
+   "severity": "смертельно (кристаллизация нервной ткани за 3-8 лет)",
+   "status": "PROPOSAL",
+   "transmission": "контакт с заражённой тканью внутри поля; не по воздуху",
+   "treatment": "нет; вне поля решётка инертна",
+   "visibility": "AUTHOR_TRUTH (мир знает частично)"
+  }
+ ],
  "events": [
   {
    "id": "EVT-3126-0001",
    "kind": "ship_missing",
-   "location": "hz.lotus_dead",
+   "location": "hz.lotus_field",
    "status": "PROPOSAL",
    "time": 3126.412,
    "truth": {
-    "ship": "экспедиционный Cobrett «Мэй-Лин-2»",
-    "state": "вышел из прыжка внутри мёртвой зоны «Лотоса», цел, экипаж 3, запасов на 19 суток, сигнал бедствия слабый"
+    "ship": "Cobrett «Мэй-Лин-2» (мародёры, купленная карта коридора)",
+    "state": "карта оказалась ложной: корабль сошёл с коридора и застрял в мёртвом ядре поля; цел, экипаж 3 (один уже заражён), запасов на 19 суток, в трюме 2 тела с «Лотоса»"
    }
   }
  ],
@@ -20,24 +39,24 @@
    "delay_days": 0.008,
    "event": "EVT-3126-0001",
    "freshness": "fresh",
-   "holder": "dso.lotus",
+   "holder": "dso.far_berth",
    "language": "en",
    "observed_at": 3126.412,
    "received_at": 3126.41202,
    "source": "сигнал бедствия",
-   "text": "Слабый сигнал бедствия из мёртвой зоны: «Мэй-Лин-2», трое живы."
+   "text": "Слабый сигнал бедствия из поля: «Мэй-Лин-2», трое живы."
   },
   {
    "channel": "official",
    "classification": "public",
    "confidence": 0.8,
-   "delay_days": 1.524,
+   "delay_days": 1.27,
    "event": "EVT-3126-0001",
    "freshness": "fresh",
    "holder": "site.019.porog",
    "language": "en",
    "observed_at": 3126.412,
-   "received_at": 3126.41617,
+   "received_at": 3126.41548,
    "source": "диспетчер «Лотоса»",
    "text": "Экспедиционное судно не вышло на связь согласно плану."
   },
@@ -45,15 +64,15 @@
    "channel": "freeband",
    "classification": "rumour",
    "confidence": 0.4,
-   "delay_days": 1.649,
+   "delay_days": 1.395,
    "event": "EVT-3126-0001",
    "freshness": "fresh",
    "holder": "site.019.troyan_market",
    "language": "zh",
    "observed_at": 3126.412,
-   "received_at": 3126.41651,
+   "received_at": 3126.41582,
    "source": "пилоты",
-   "text": "Они нашли второй корабль, поэтому и застряли."
+   "text": "Карту им продал Хромой; они везут двух мертвецов. Кто вытащит — заберёт груз."
   },
   {
    "channel": "commercial",
@@ -73,13 +92,13 @@
    "channel": "official",
    "classification": "public",
    "confidence": 0.6,
-   "delay_days": 4.029,
+   "delay_days": 3.959,
    "event": "EVT-3126-0001",
    "freshness": "stale",
    "holder": "sol_authority",
    "language": "en",
    "observed_at": 3126.412,
-   "received_at": 3126.42303,
+   "received_at": 3126.42284,
    "source": "Управление Маяков (сводка)",
    "text": "В районе HD 102195 пропало судно; спасательная операция организуется лицензиатом."
   }

@@ -68,15 +68,9 @@
    "to": 37
   },
   {
-   "flash_days": 0.417,
-   "name": "dso.lotus",
-   "routine_days": 2.505,
-   "to": "dso.lotus"
-  },
-  {
-   "flash_days": 0.521,
+   "flash_days": 0.625,
    "name": "HD 102195",
-   "routine_days": 4.029,
+   "routine_days": 3.959,
    "to": 19
   },
   {
@@ -102,7 +96,7 @@
   "15": 5.13,
   "16": 5.63,
   "17": 37.0,
-  "19": 96.7,
+  "19": 95.01,
   "20": 87.59,
   "23": 10.5,
   "24": 13.06,
@@ -122,16 +116,16 @@
   "8": 2.55,
   "9": 2.53,
   "dso.ceti_gap_cache": 64.3,
-  "dso.lotus": 60.13,
+  "dso.far_berth": 64.53,
   "dso.vega_null": 60.82
  },
  "frontier_from_sol_days": {
   "17": 1.542,
-  "19": 4.029,
+  "19": 3.959,
   "20": 3.649,
   "36": 3.816,
   "dso.ceti_gap_cache": 2.679,
-  "dso.lotus": 2.505,
+  "dso.far_berth": 2.689,
   "dso.vega_null": 2.534
  },
  "frontier_nodes": [
@@ -140,7 +134,7 @@
   "20",
   "36",
   "dso.ceti_gap_cache",
-  "dso.lotus",
+  "dso.far_berth",
   "dso.vega_null"
  ],
  "frontier_note": "Фронтиры (за краем сети: «Лотос», «Китовая Щель», «Ноль-Вега») не входят в диаметр сети: там почта ходит реже, а ретранслятор «Лотоса» часто молчит (задержка ребра x (2 - uptime)).",
@@ -1596,25 +1590,25 @@
    "unbeaconed": false
   },
   {
-   "a": 45,
-   "b": "dso.lotus",
+   "a": 41,
+   "b": "dso.far_berth",
    "departures_per_day": 0.5,
-   "flash_hop_h": 3.45,
+   "flash_hop_h": 2.88,
    "klass": "frontier",
-   "ly": 21.095,
-   "relay_uptime": 0.62,
-   "routine_hop_h": 36.57,
+   "ly": 21.023,
+   "relay_uptime": 0.85,
+   "routine_hop_h": 30.47,
    "unbeaconed": false
   },
   {
-   "a": "dso.lotus",
+   "a": "dso.far_berth",
    "b": 19,
    "departures_per_day": 0.5,
-   "flash_hop_h": 3.45,
+   "flash_hop_h": 2.88,
    "klass": "frontier",
-   "ly": 18.386,
-   "relay_uptime": 0.62,
-   "routine_hop_h": 36.57,
+   "ly": 22.326,
+   "relay_uptime": 0.85,
+   "routine_hop_h": 30.47,
    "unbeaconed": false
   },
   {
@@ -2151,13 +2145,53 @@
    "legal_bulletin_cache": false,
    "navigation_ephemeris": true,
    "news_cache": true,
-   "operator": "Экспедиционная компания «Дальний Причал» (лицензия Керна) — фактически; формально — никто",
+   "operator": "никто (карантин Когниума с 3112; мародёры)",
    "relay_links": "два ребра доступа",
    "status": "PROPOSAL",
    "system": null,
    "traffic_control": false,
    "trust_authority": "оператор хаба (без подписи Управления)",
-   "uptime": 0.62
+   "uptime": 0.3
+  },
+  {
+   "banking_sync": false,
+   "capacity_msgs_per_h": 600,
+   "clock_sync": true,
+   "coverage_ls": 60,
+   "deep_space": "dso.far_berth",
+   "emergency_channel": true,
+   "id": "BCN-dso.far_berth",
+   "kind": "relay",
+   "legal_bulletin_cache": false,
+   "navigation_ephemeris": true,
+   "news_cache": true,
+   "operator": "экспедиционная компания «Дальний Причал» (лицензия Керна) + держатели причалов",
+   "relay_links": "два ребра доступа",
+   "status": "PROPOSAL",
+   "system": null,
+   "traffic_control": false,
+   "trust_authority": "оператор хаба (без подписи Управления)",
+   "uptime": 0.85
+  },
+  {
+   "banking_sync": true,
+   "capacity_msgs_per_h": 600,
+   "clock_sync": true,
+   "coverage_ls": 90,
+   "deep_space": "dso.quarantine_picket",
+   "emergency_channel": true,
+   "id": "BCN-dso.quarantine_picket",
+   "kind": "military",
+   "legal_bulletin_cache": true,
+   "navigation_ephemeris": true,
+   "news_cache": true,
+   "operator": "Карантинная эскадра Управления Маяков",
+   "relay_links": "два ребра доступа",
+   "status": "PROPOSAL",
+   "system": null,
+   "traffic_control": false,
+   "trust_authority": "Управление Маяков",
+   "uptime": 0.99
   },
   {
    "banking_sync": true,
@@ -2217,6 +2251,25 @@
    "traffic_control": true,
    "trust_authority": "лицензия Керна",
    "uptime": 0.9
+  },
+  {
+   "banking_sync": true,
+   "capacity_msgs_per_h": 2000,
+   "clock_sync": true,
+   "coverage_ls": 30,
+   "emergency_channel": true,
+   "id": "BCN-site.041.vorota",
+   "kind": "station",
+   "legal_bulletin_cache": true,
+   "navigation_ephemeris": true,
+   "news_cache": true,
+   "operator": "Управление Маяков + Kern Logistics (кордон)",
+   "relay_links": "через «Лотос»",
+   "status": "PROPOSAL",
+   "system": 41,
+   "traffic_control": true,
+   "trust_authority": "лицензия Керна",
+   "uptime": 0.99
   }
  ],
  "offline_rule": "вне покрытия: местное радио, корабль-корабль, станция, бедствие, направленная передача, кэш; при возврате — синхронизация сообщений, новостей, банка, ордеров, рынков, навигации, правового состояния",
@@ -2257,9 +2310,29 @@
    "site": "site.019.claim_c"
   },
   {
+   "coverage": "full",
+   "light_lag_s": 133.4,
+   "site": "site.041.vorota"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 133.4,
+   "site": "site.041.holding"
+  },
+  {
    "coverage": "own_relay",
    "light_lag_s": 0.0,
    "site": "dso.lotus"
+  },
+  {
+   "coverage": "own_relay",
+   "light_lag_s": 0.0,
+   "site": "dso.far_berth"
+  },
+  {
+   "coverage": "own_relay",
+   "light_lag_s": 0.0,
+   "site": "dso.quarantine_picket"
   },
   {
    "coverage": "own_relay",
@@ -2275,6 +2348,11 @@
    "coverage": "none",
    "light_lag_s": 0.0,
    "site": "dso.cache.lotus_north"
+  },
+  {
+   "coverage": "none",
+   "light_lag_s": 0.0,
+   "site": "dso.garden"
   },
   {
    "coverage": "full",

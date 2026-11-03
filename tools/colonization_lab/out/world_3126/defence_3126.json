@@ -455,7 +455,7 @@
     "military": 28,
     "patrol": 120
    },
-   "budget_cr_y": 1043383621912,
+   "budget_cr_y": 1043383666460,
    "components": {
     "impact_defence": 0.004,
     "internal": 0.0015,
@@ -486,18 +486,18 @@
    "mothballed_hulls": 287.5,
    "personnel": 218708,
    "readiness": {
-    "bases": 19484428045,
-    "budget_reserve": 11133958883,
-    "impact_and_missile_defence": 41752345811,
-    "mobilisation_capacity": 11133958883,
-    "mothballed_ships": 5566979441,
-    "munitions": 44535835532,
-    "repair": 27834897207,
-    "research_development": 22267917766,
-    "reserve_crews": 22267917766,
-    "sensor_networks": 38968856090,
-    "strategic_stocks": 33401876649,
-    "training": 22267917766
+    "bases": 19484428907,
+    "budget_reserve": 11133959376,
+    "impact_and_missile_defence": 41752347659,
+    "mobilisation_capacity": 11133959376,
+    "mothballed_ships": 5566979688,
+    "munitions": 44535837503,
+    "repair": 27834898439,
+    "research_development": 22267918751,
+    "reserve_crews": 22267918751,
+    "sensor_networks": 38968857815,
+    "strategic_stocks": 33401878127,
+    "training": 22267918751
    },
    "risky_train_trips": 8407.2,
    "roles": [
@@ -507,16 +507,16 @@
     "alliance_obligation"
    ],
    "share_of_output": 0.0339,
-   "ship_line_unspent_cr_y": 300616889839,
+   "ship_line_unspent_cr_y": 300616903143,
    "structure": {
-    "bases_infrastructure": 146073707068,
-    "beacon_security": 62603017315,
-    "impact_defence_programme": 62603017315,
-    "intelligence": 73036853534,
-    "ships_procurement_operations_crews": 313015086573,
-    "shore_personnel": 229544396821,
-    "stockpiles_munitions_fuel": 93904525972,
-    "training": 62603017315
+    "bases_infrastructure": 146073713304,
+    "beacon_security": 62603019988,
+    "impact_defence_programme": 62603019988,
+    "intelligence": 73036856652,
+    "ships_procurement_operations_crews": 313015099938,
+    "shore_personnel": 229544406621,
+    "stockpiles_munitions_fuel": 93904529981,
+    "training": 62603019988
    },
    "task_ships": {
     "escort_frigate": 590.3,
@@ -607,7 +607,7 @@
     "military": 12,
     "patrol": 33
    },
-   "budget_cr_y": 234273173086,
+   "budget_cr_y": 234273192677,
    "components": {
     "impact_defence": 0.004,
     "internal": 0.0015,
@@ -638,18 +638,18 @@
    "mothballed_hulls": 67.9,
    "personnel": 80208,
    "readiness": {
-    "bases": 4598920301,
-    "budget_reserve": 2627954458,
-    "impact_and_missile_defence": 4598920301,
-    "mobilisation_capacity": 2627954458,
-    "mothballed_ships": 1313977229,
-    "munitions": 10511817831,
-    "repair": 6569886145,
-    "research_development": 5255908916,
-    "reserve_crews": 5255908916,
-    "sensor_networks": 9197840602,
-    "strategic_stocks": 7883863373,
-    "training": 5255908916
+    "bases": 4598920711,
+    "budget_reserve": 2627954692,
+    "impact_and_missile_defence": 4598920711,
+    "mobilisation_capacity": 2627954692,
+    "mothballed_ships": 1313977346,
+    "munitions": 10511818767,
+    "repair": 6569886730,
+    "research_development": 5255909384,
+    "reserve_crews": 5255909384,
+    "sensor_networks": 9197841421,
+    "strategic_stocks": 7883864075,
+    "training": 5255909384
    },
    "risky_train_trips": 3400.6,
    "roles": [
@@ -657,16 +657,16 @@
     "raiding"
    ],
    "share_of_output": 0.0306,
-   "ship_line_unspent_cr_y": 65698861445,
+   "ship_line_unspent_cr_y": 65698867295,
    "structure": {
-    "bases_infrastructure": 32798244232,
-    "beacon_security": 14056390385,
-    "impact_defence_programme": 14056390385,
-    "intelligence": 16399122116,
-    "ships_procurement_operations_crews": 70281951926,
-    "shore_personnel": 51540098079,
-    "stockpiles_munitions_fuel": 21084585578,
-    "training": 14056390385
+    "bases_infrastructure": 32798246975,
+    "beacon_security": 14056391561,
+    "impact_defence_programme": 14056391561,
+    "intelligence": 16399123487,
+    "ships_procurement_operations_crews": 70281957803,
+    "shore_personnel": 51540102389,
+    "stockpiles_munitions_fuel": 21084587341,
+    "training": 14056391561
    },
    "task_ships": {
     "escort_frigate": 241.2,
@@ -1277,7 +1277,7 @@
     "military": 0,
     "patrol": 1
    },
-   "budget_cr_y": 20865240,
+   "budget_cr_y": 20865261,
    "components": {
     "impact_defence": 0.001,
     "internal": 0.0,
@@ -1322,14 +1322,14 @@
    "share_of_output": 0.012,
    "ship_line_unspent_cr_y": 0,
    "structure": {
-    "bases_infrastructure": 2921134,
-    "beacon_security": 1251914,
-    "impact_defence_programme": 1251914,
-    "intelligence": 1460567,
-    "ships_procurement_operations_crews": 6259572,
-    "shore_personnel": 4590353,
-    "stockpiles_munitions_fuel": 1877872,
-    "training": 1251914
+    "bases_infrastructure": 2921136,
+    "beacon_security": 1251916,
+    "impact_defence_programme": 1251916,
+    "intelligence": 1460568,
+    "ships_procurement_operations_crews": 6259578,
+    "shore_personnel": 4590357,
+    "stockpiles_munitions_fuel": 1877873,
+    "training": 1251916
    },
    "task_ships": {
     "escort_frigate": 0.0,
@@ -1509,7 +1509,7 @@
     "military": 2,
     "patrol": 23
    },
-   "budget_cr_y": 105527167965,
+   "budget_cr_y": 105527169108,
    "components": {
     "impact_defence": 0.0011,
     "internal": 0.0,
@@ -1540,18 +1540,18 @@
    "mothballed_hulls": 8.7,
    "personnel": 24528,
    "readiness": {
-    "bases": 2124021955,
-    "budget_reserve": 1213726831,
-    "impact_and_missile_defence": 2124021955,
-    "mobilisation_capacity": 1213726831,
-    "mothballed_ships": 606863416,
-    "munitions": 4854907325,
-    "repair": 3034317078,
-    "research_development": 2427453662,
-    "reserve_crews": 2427453662,
-    "sensor_networks": 4248043909,
-    "strategic_stocks": 3641180494,
-    "training": 2427453662
+    "bases": 2124021979,
+    "budget_reserve": 1213726845,
+    "impact_and_missile_defence": 2124021979,
+    "mobilisation_capacity": 1213726845,
+    "mothballed_ships": 606863422,
+    "munitions": 4854907380,
+    "repair": 3034317112,
+    "research_development": 2427453690,
+    "reserve_crews": 2427453690,
+    "sensor_networks": 4248043957,
+    "strategic_stocks": 3641180535,
+    "training": 2427453690
    },
    "risky_train_trips": 69.5,
    "roles": [
@@ -1560,16 +1560,16 @@
     "customs"
    ],
    "share_of_output": 0.0209,
-   "ship_line_unspent_cr_y": 30343170780,
+   "ship_line_unspent_cr_y": 30343171123,
    "structure": {
-    "bases_infrastructure": 14773803515,
-    "beacon_security": 6331630078,
-    "impact_defence_programme": 6331630078,
-    "intelligence": 7386901758,
-    "ships_procurement_operations_crews": 31658150389,
-    "shore_personnel": 23215976952,
-    "stockpiles_munitions_fuel": 9497445117,
-    "training": 6331630078
+    "bases_infrastructure": 14773803675,
+    "beacon_security": 6331630146,
+    "impact_defence_programme": 6331630146,
+    "intelligence": 7386901838,
+    "ships_procurement_operations_crews": 31658150732,
+    "shore_personnel": 23215977204,
+    "stockpiles_munitions_fuel": 9497445220,
+    "training": 6331630146
    },
    "task_ships": {
     "escort_frigate": 8.8,
@@ -2809,7 +2809,7 @@
    "arrivals_per_year": 54522,
    "bases": {
     "military": 2,
-    "patrol": 119
+    "patrol": 120
    },
    "budget_cr_y": 497790869703,
    "components": {
@@ -2828,7 +2828,7 @@
     "impact_defence_tug": 109.5,
     "interceptor": 435.0,
     "line_combatant": 13.6,
-    "patrol_cutter": 877.7,
+    "patrol_cutter": 889.7,
     "recon_picket": 10.0
    },
    "hostile": [
@@ -2845,30 +2845,31 @@
    ],
    "key_nodes": 5,
    "mothballed_hulls": 6.8,
-   "personnel": 88790,
+   "personnel": 89484,
    "readiness": {
-    "bases": 8477672084,
-    "budget_reserve": 4844384048,
-    "impact_and_missile_defence": 8477672084,
-    "mobilisation_capacity": 9688768096,
-    "mothballed_ships": 2422192024,
-    "munitions": 26644112263,
-    "repair": 12110960120,
-    "research_development": 16955344168,
-    "reserve_crews": 9688768096,
-    "sensor_networks": 21799728215,
-    "strategic_stocks": 14533152144,
-    "training": 9688768096
+    "bases": 8476108995,
+    "budget_reserve": 4843490854,
+    "impact_and_missile_defence": 8476108995,
+    "mobilisation_capacity": 9686981709,
+    "mothballed_ships": 2421745427,
+    "munitions": 26639199699,
+    "repair": 12108727136,
+    "research_development": 16952217990,
+    "reserve_crews": 9686981709,
+    "sensor_networks": 21795708845,
+    "strategic_stocks": 14530472563,
+    "training": 9686981709
    },
    "risky_train_trips": 0.0,
    "roles": [
     "beacon_security",
     "customs",
     "deterrence",
-    "strategic_industry"
+    "strategic_industry",
+    "quarantine"
    ],
    "share_of_output": 0.0222,
-   "ship_line_unspent_cr_y": 145331521436,
+   "ship_line_unspent_cr_y": 145304725632,
    "structure": {
     "bases_infrastructure": 69690721758,
     "beacon_security": 29867452182,
@@ -2885,7 +2886,7 @@
     "impact_defence_tug": 109.5,
     "interceptor": 435.0,
     "line_combatant": 13.6,
-    "patrol_cutter": 877.7,
+    "patrol_cutter": 889.7,
     "recon_picket": 10.0
    },
    "tasks": [
@@ -2906,6 +2907,12 @@
      "ships": 12.0,
      "task": "border_patrol",
      "why": "граница с враждебными соседями"
+    },
+    {
+     "ship_class": "patrol_cutter",
+     "ships": 12.0,
+     "task": "quarantine",
+     "why": "обеспечение карантина"
     },
     {
      "ship_class": "interceptor",
@@ -2939,7 +2946,7 @@
     }
    ],
    "under_resourced": false,
-   "why": "держатель Управления Маяков и тайны ядер прыжка: охрана сети и фабрики ядер, инспекции по лицензиям, сдерживание Цитадели, отказавшейся от инспекций"
+   "why": "держатель Управления Маяков и тайны ядер прыжка: охрана сети и фабрики ядер, инспекции по лицензиям, сдерживание Цитадели, отказавшейся от инспекций; карантинная блокада поля «Лотоса» (с 3112: официально биоопасность, на деле монополия на лотосит и тайна поля)"
   },
   "wolf359_citadel": {
    "annual_cost_per_ship": {

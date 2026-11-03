@@ -15,7 +15,7 @@
 | missions/UBUNTU-1/fate | fate | неизвестно даже автору | UNKNOWN · AUTHOR TRUTH |
 | missions/GREEN-ARK-1/fate | fate | скрытая правда (реконсиляция): симбионт из корабельного микробиома | PROPOSAL · AUTHOR TRUTH |
 | missions/GREEN-ARK-1/anchors/2480/ecology_failure/hidden_truth | симбионт вырос из корабельного микробиома («успокаивающий» штамм биотех-партнёра) | объяснение реконсиляции; публично — официальная версия | PROPOSAL · AUTHOR TRUTH |
-| missions/NIRVANA-1/fate | fate | неизвестно даже автору | UNKNOWN · AUTHOR TRUTH |
+| missions/NIRVANA-1/fate | fate | скрытая правда (реконсиляция): 2680: складка поля перенесла корабль в поле «Лотоса» за HD 104067; экипаж погиб от синдрома поля к 2712; «Лотос» = NIRVANA-1 (решение автора 2026-11-03; детали — PROPOSAL) | PROPOSAL · AUTHOR TRUTH |
 | missions/IRON-SHIELD-2/fate | fate | неизвестно даже автору | UNKNOWN · AUTHOR TRUTH |
 | missions/GAIA-2/fate | fate | скрытая правда (реконсиляция): живые «тихие» и пустой корабль | PROPOSAL · AUTHOR TRUTH |
 | missions/GAIA-2/anchors/2800/arrival | TRAPPIST-1: изучение 10 лет, посадка, исчезновение людей; ИИ «Гомер-2» продолжает слать «Сад растёт» | реконсиляция B14: люди исчезли после посадки, сводки шлёт ИИ | PROPOSAL · AUTHOR TRUTH |
@@ -25,7 +25,6 @@
 | missions/LAST-LIGHT-1/fate | fate | скрытая правда (реконсиляция): груз: архив Хартий и верительные грамоты Земли | PROPOSAL · AUTHOR TRUTH |
 | jump_technology/tau_ceti_cognium@2750 | HYPERION-1 (CANON); ядра — гос. тайна Управления Маяков (PROPOSAL) | HYPERION-1 (CANON); ядра — гос. тайна Управления Маяков (PROPOSAL) | CANON · AUTHOR TRUTH |
 | unknowns/IRON-SHIELD-2.cause | что случилось с IRON-SHIELD-2 (3 000 человек, 2355) | намеренно без ответа | UNKNOWN · AUTHOR TRUTH |
-| unknowns/NIRVANA-1.fate | судьба и положение NIRVANA-1 | намеренно без ответа | UNKNOWN · AUTHOR TRUTH |
 | unknowns/UBUNTU-1.cause | причина гибели UBUNTU-1 («огни») | намеренно без ответа | UNKNOWN · AUTHOR TRUTH |
 | unknowns/FAREWELL-1.people | судьба людей FAREWELL-1 | намеренно без ответа | UNKNOWN · AUTHOR TRUTH |
 | unknowns/EARTH.jump_cores | умеет ли Земля 3126 делать собственные ядра прыжка (только маяк из памятника HYPERION-1) | намеренно без ответа | UNKNOWN · AUTHOR TRUTH |

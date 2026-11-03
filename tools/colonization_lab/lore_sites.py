@@ -52,52 +52,122 @@ def docs(D, lm):
     W = F["worlds_ass"]
     acc = F["access"]
 
-    # ---------------- the World's Ass
+    # ---------------- the World's Ass (public layer: what the world can know)
     path = "FRONTIER/WORLDS_ASS.md"
-    d = lm.new_doc(D, path, "«Жопа мира» — 月工门 (HD 102195 и «Лотос»)", "frontier")
+    d = lm.new_doc(D, path, "«Жопа мира» — 月工门 (поле «Лотоса», HD 104067, HD 102195)", "frontier")
+    LM = W["lotus"]
+    T_ = F["developer_truth"]
     names = [(D.pname(k) if k in D.X["economy"]["polities"] else k, v["name"] + (f" ({v['translit']})" if v.get("translit") else ""), v["lang"], v["meaning"])
              for k, v in sorted(W["official_names"].items())]
     pil = [(v["lang"], v["name"] + (f" ({v['translit']})" if v.get("translit") else ""), v.get("note", "")) for v in W["pilot_names"]]
     zones = [z for z in F["hazard_zones"] if z.get("anchor", "").startswith("system_19.") or z.get("anchor") == "dso.lotus"]
-    res = F["rare_resources"][0]
-    mk = W["lotosite_market"]
-    g = ["Источник: `tools/colonization_lab/world_sites.py` → `out/world_3126/frontier_3126.json`. Максимум риска и награды известного пространства.", "",
+    ap = LM["approach"]
+    zn = W["zones"]
+    g = ["Источник: `tools/colonization_lab/world_sites.py` + `lotus_model.py` → `out/world_3126/frontier_3126.json`. Публичный слой: что мир может знать. "
+         "Правда разработчика — `AUTHOR/WORLDS_ASS_TRUTH.md`.", "",
          "### Названия", "", "Официальные названия (документы политий):", "", lm.table(["Полития", "Название", "Язык", "Смысл"], names), "",
          "Пилоты, торговцы, пираты и механики между собой:", "", lm.table(["Язык", "Название", "Заметка"], pil), "",
-         "### Где это и как туда попасть", "",
-         f"Цепочка реальных прыжков: {' → '.join(str(x) for x in acc['frontier.worlds_ass']['chain'])}; плечи {', '.join(str(x) for x in acc['frontier.worlds_ass']['legs_ly'])} св. лет "
-         f"(предел прыжка 32). Прямо 83 Leonis → HD 102195 — 39.3 св. лет: невозможно. Из Сола до начала цепочки {acc['frontier.worlds_ass']['from_sol_jumps_to_start']:.0f} прыжка(ов).", "",
-         f"- Cobrett туда-обратно от 83 Leonis: {W['cobrett_round_trip_charge_t']} т заряда при баке {W['cobrett_tank_t']} т → нужен бак J20 ({W['j20_tanks_needed']} шт.: −1 место груза, +6 т заряда), заправка на «Лотосе» или танкер.",
-         f"- «Лотос» дрейфует (мировая линия): эфемериды старше месяца бесполезны, свежие координаты продаются.",
-         f"- Мёртвая зона у «Лотоса»: сигма выхода без маячного захвата {n0(W['dead_zone']['sigma_km_no_lock'])} км → внутрь выходят {100 * W['dead_zone']['p_inside_no_lock']:.1f} % кораблей; "
-         f"с захватом {n0(W['dead_zone']['sigma_km_both_ends'])} км → {100 * W['dead_zone']['p_inside_locked']:.1f} %. Маяк «Лотоса» работает {100 * W['dead_zone']['beacon_uptime']:.0f} % времени.", "",
+         "### Три зоны", "",
+         lm.table(["Зона", "Объекты", "Аудит", "Изоляция", "Что там"], [(k, ", ".join(v["sites"]), v["audit"], v["isolation"], v["what"]) for k, v in zn.items()]), "",
+         "Государство здесь есть — флот, полиция, таможня, санитария, наука. Проблема в другом: прибыль так велика, что разлагает институты; чем ближе к полю, тем дороже честность.", "",
+         "### Дорога", "",
+         f"Цепочка реальных прыжков: {' → '.join(str(x) for x in acc['frontier.worlds_ass']['chain'])}; плечи {', '.join(str(x) for x in acc['frontier.worlds_ass']['legs_ly'])} св. лет (предел 32).", "",
+         f"- Прыжок HD 104067 → «Дальний Причал» ({ap['jump_to_berth']['ly']} св. лет): {ap['jump_to_berth']['note']}.",
+         f"- Коридор через поле: {ap['corridor']['length_au']} а.е. на тяге, {ap['corridor']['one_way_days']} сут в одну сторону, в поле {ap['corridor']['exposure_days']} сут. {ap['corridor']['note']}; дрейф {ap['corridor']['drift_au_per_year']} а.е./год.",
+         f"- {ap['shortcut_jump_into_field']['note']}.",
+         f"- Короткий визит: риск стадии 1 синдрома (сон, повторяющиеся сны) ~{100 * ap['syndrome_exposure']['stage1_risk']:.0f} % на человека; вне поля обратимо.",
+         f"- Cobrett туда-обратно от HD 104067: {W['cobrett_round_trip_charge_t']} т заряда при баке {W['cobrett_tank_t']} т → бак J20 ({W['j20_tanks_needed']} шт.).", "",
+         lm.table(["Состояние карты коридора", "Возраст, сут", "Риск потери корабля"], [(k, "–".join(str(x) for x in v.get("age_days", ["—"])), v["p_loss"]) for k, v in ap["corridor"]["states"].items()]), "",
          "### Объекты", "",
          lm.table(["Объект", "Тип", "Где", "Людей", "Оператор", "Право", "Характер", "Статус"],
-                  [(s["name"], s["type_ru"], s.get("body") or s["system_name"], n0(s["population"]), s.get("operator") or "—", s.get("legal", "—"),
-                    soc[s["id"]]["archetype_ru"], TAG) for s in sites.values() if s["system"] == 19 or s["id"] in ("dso.lotus",)]), "",
+                  [(s_["name"], s_["type_ru"], s_.get("body") or s_["system_name"], n0(s_["population"]), s_.get("operator") or "—", s_.get("legal", "—"),
+                    soc[s_["id"]]["archetype_ru"], TAG) for s_ in sites.values() if (s_["system"] in (19, 41) and s_["id"].startswith("site.0") and (s_["id"].startswith("site.019") or s_["id"].startswith("site.041.v") or s_["id"].startswith("site.041.h")))
+                    or s_["id"] in ("dso.lotus", "dso.far_berth", "dso.quarantine_picket")]), "",
          "### Аномальные зоны (стабильная география)", "",
          lm.table(["Зона", "Тип", "Где", "Эффект", "Знание", "Статус"],
                   [(z["name"], ZONE_RU.get(z["kind"], z["kind"]), z.get("anchor"), ", ".join(f"{k}: {v}" for k, v in z["effects"].items()), KNOW_RU.get(z["knowledge"], z["knowledge"]), TAG) for z in zones]), "",
-         "Мир не ломается: симуляция знает, что существует; слой восприятия может показывать ложный объект, несуществующий радиообмен, копию своего корабля, неверную дальность. Причина эффектов «Мандалы» неизвестна и не обязана быть объяснена.", "",
-         f"### Ресурс: {res['name']}", "",
-         f"{res['what']}. В ядре прыжка: ошибка ×{res['use']['jump_error_multiplier']}, предел прыжка +{res['use']['max_hop_bonus_ly']} св. года ({res['strategic_note']}).", "",
-         lm.table(["Месторождение", "Где", "Зона", "Сорт, г/т", "Запас, кг", "Добыто, кг", "Сложность", "Кто добывает", "Статус"],
-                  [(x["id"], x["anchor"], x["zone"], x["grade_g_per_t"], x["reserve_kg"], x["extracted_kg"], x["difficulty"], x["operator"], TAG) for x in res["deposits"]]), "",
-         f"Рынок: равновесие {f2(mk['equilibrium_kg_y'])} кг/год по ~{n0(mk['price_cr_per_kg'])} Cr/кг; чёрный рынок {100 * mk['black_market_share']:.0f} %; запасов на ~{mk['years_to_depletion']:.0f} лет. {mk['monopoly_threat']}. {mk['price_shock_rule']}.", "",
-         "### Экономика риска", "",
-         lm.table(["Статья экспедиции", "Cr"], [(k, n0(v)) for k, v in W["expedition_cost_cr"].items()] + [("**итого**", n0(W["expedition_cost_total_cr"]))]), "",
-         lm.table(["Исход", "Вероятность", "Cr"], [(o["outcome"], o["p"], n0(o["value_cr"])) for o in W["outcomes"]]), "",
-         f"Средняя экспедиция: {n0(W['expected_value_cr'])} Cr (убыточна), медианная теряет всё ({n0(W['median_result_cr'])} Cr). Прибыль делают редкие находки. "
-         f"~{n0(W['expeditions_per_year'])} экспедиций в год, ~{W['ships_lost_per_year']:.0f} потерянных кораблей в год.", "",
-         "Причинная цепочка: " + " → ".join(W["causal_chain"]) + ".", "",
+         "### Лотосит (что знает мир)", "",
+         "Официально (кордон): стратегический материал и биологическая опасность; «минерал у планеты c» — легенда Когниума. Freeband: «его выносят из мертвецов «Лотоса»». "
+         f"В ядре прыжка демпфер с лотоситом даёт +3 св. года (AUTHOR_TARGET): {', '.join(LM['jump']['politics'])}. "
+         f"Демпфер для Cobrett — {LM['jump']['g_per_class']['cobrett_i_n1']} г, ~{n0(LM['jump']['cobrett_insert_price_cr'])} Cr. "
+         f"В медицине это «эликсир молодости»: курс {LM['medical']['course_g']} г ≈ {n0(LM['medical']['course_price_cr'])} Cr; на рынке {100 * LM['medical']['useless']:.0f} % препаратов бесполезны, {100 * LM['medical']['dangerous']:.0f} % опасны, {100 * LM['medical']['fraud']:.0f} % — подделки.", "",
+         "Лотосовая лихорадка («красная», «скарлатина старателей»): жар, яркая красная сыпь, слабость, сосудистые нарушения, дезориентация; в тяжёлых случаях — неврология. Причину медицина мира спорит. Отсюда санитарный контроль, герметичные контейнеры, карантинный статус тел и обломков, досмотр, протокол L страховщиков; контрабанда заражённого материала — особо тяжкое преступление.", "",
+         lm.table(["Вспышка", "Где", "Год", "Людей", "Заболело", "Погибло", "Причина", "Последствия"],
+                  [(o["id"], o["site"], o["year"], n0(o["population"]), n0(o["cases"]), n0(o["deaths"]), o["cause_chain"], o["consequence"]) for o in LM["outbreaks"]]), "",
+         "### Экономика 3126 (модель, не канон)", "",
+         f"Первичный запас конечен: {n0(LM['stock']['bodies'])} тел, извлекаемо всего {f2(LM['stock']['recoverable_g_total'])} г, осталось {f2(LM['stock']['recoverable_g_left'])} г (верхняя оценка). "
+         f"Цена ~{n0(LM['price_cr_per_g'])} Cr/г; в год — {n0(LM['supply']['raids_y'])} рейдов, {f2(LM['supply']['bodies_stolen_y'])} вынесенных тел + {LM['supply']['legal_bodies_y']} законно, "
+         f"{f2(LM['supply']['refined_g_y'])} г лотосита, {f2(LM['raids']['ships_lost_y'])} потерянных кораблей; первичный запас иссякнет через ~{LM['supply']['years_until_primary_exhausted']:.0f} лет.", "",
+         lm.table(["Сегмент", "Доля", "Карта", "Риск потери", "Риск ареста", "Тел за рейс", "Цена тела, Cr", "Итог рейса, Cr"],
+                  [(r["ru"], r["share"], r.get("corridor") or "—", r["p_ship_lost"], r["p_caught"], r["bodies"], n0(r["price_per_body"]), n0(r["ev_cr"])) for r in LM["raids"]["segments"]]), "",
+         f"Средний рейд: {n0(LM['raids']['average_ev_cr'])} Cr — убыточен; прибыль у редких «со связями». Купить у внешнего периметра — ~{n0(LM['buying_vs_self']['outer_perimeter_buy_cr_per_g'])} Cr/г, "
+         f"вынести самому — ~{n0(LM['buying_vs_self']['self_sourcing_expected_cr_per_g'])} Cr/г ожидаемых затрат: перекупщик у поля платит ~0.4 % конечной цены, лаборатория в сером фронтире — ~3 %, периметр — ~25 %.", "",
+         "Рынки: легальный — " + "; ".join(T_["markets"]["legal"]) + ". Серый — " + "; ".join(T_["markets"]["grey"]) + ". Чёрный — " + "; ".join(T_["markets"]["black"]) + ".", "",
+         f"Блокада нелинейна: контрабанды меньше всего при строгости {LM['blockade']['least_smuggling_at']}, нынешний кордон — {LM['blockade']['actual']} ({LM['blockade']['note']}).", "",
+         lm.table(["Строгость", "Премия чёрного рынка", "Попыток/год", "Утечка (подкуп)", "Прошло/год"], [(r["strictness"], r["black_premium"], r["attempts_y"], r["leakage"], r["smuggled_y"]) for r in LM["blockade"]["rows"]]), "",
+         "Давление коррупции (" + LM["corruption"]["formula"] + "), ожидаемая доля продажных по ролям:", "",
+         lm.table(["Роль"] + list(LM["corruption"]["by_zone"]), [(r["role"],) + tuple(LM["corruption"]["by_zone"][z][i]["expected_corrupt_share"] for z in LM["corruption"]["by_zone"])
+                                                               for i, r in enumerate(next(iter(LM["corruption"]["by_zone"].values())))]), "",
+         "### Кто носит форму", "",
+         lm.table(["Подразделение", "Чьё", "База", "Мандат", "Командир", "Дисциплина", "Как себя ведёт (видно миру)"],
+                  [(u["name"], D.pname(u["owner"]) if u["owner"] in D.X["economy"]["polities"] else u["owner"], u["base"], u["mandate"], u["commander"], u["discipline"], u["behaviour"]) for u in LM["security_units"]]), "",
+         "Принадлежность к государственному флоту не доказывает законности: две эскадры одного государства ведут себя по-разному.", "",
          "Самый ценный товар — информация: " + "; ".join(W["information_market"]) + ". " + W["information_rule"] + ".", "",
          "### Артефакты", "",
          lm.table(["Id", "Что", "Где найден", "Год", "У кого", "Претензии", "Наука", "Цена, Cr", "Известно", "Неизвестно", "Опасность", "Подделка"],
                   [(a["id"], a["name"], a["found_at"], a["found_year"], a["custody"], "; ".join(a["claims"]), a["scientific_value"], n0(a["market_value_cr"]),
                     "; ".join(a["known"]), "; ".join(a["unknown"]) or "—", a["hazard"], {True: "да", False: "нет"}.get(a["fraud"], "спорно")) for a in F["artifacts"]]), "",
-         "### Версии истории", ""] + [f"- **{v['source']}:** {v['text']}" for v in W["story"]["versions"]] + ["", W["story"]["rush"]]
+         "### Версии истории (в мире)", ""] + [f"- **{v['source']}:** {v['text']}" for v in W["story"]["versions"]] + ["", W["story"]["rush"]]
     d.gen("worlds_ass", "\n".join(g))
     d.narr("worlds_ass_story", "Как это рассказывать", "слухи, вывески, бары, старатели; официальные новости скучнее слухов.")
+    out.append(d)
+
+    # ---------------- Developer World Truth
+    path = "AUTHOR/WORLDS_ASS_TRUTH.md"
+    d = lm.new_doc(D, path, "Правда разработчика: «Лотос» = NIRVANA-1, лотосит, синдром поля", "author")
+    t = T_["truth"]
+    b_ = T_["biology"]
+    st = LM["stock"]
+    g = ["`AUTHOR_TRUTH` — Developer World Truth. Мир знает это частично или не знает вовсе; публичный слой — `FRONTIER/WORLDS_ASS.md`. Источник: `canon/world_sites.json → lotus`.", "",
+         f"**Идентичность:** «Лотос» — **{t['identity']['ship']}** ({t['identity']['status']}, {t['identity']['basis']}).", "",
+         "### Сверка с каноном", ""] + [f"- {x}" for x in t["consistency"]] + ["",
+         "### Маршрут, авария, траектория", "", f"- Маршрут: {t['route']}.", f"- Авария: {t['accident']['year']} — {t['accident']['where']}. Причина: {t['accident']['cause']} (категория: {t['accident']['category']}).", "",
+         lm.table(["С", "По", "Что"], [(x["from"], x["to"], x["what"]) for x in t["trajectory"]]), "",
+         "### Экипаж", "", f"На борту при аварии {t['crew']['aboard_at_accident']}, родилось после {t['crew']['born_after']}. {t['crew']['syndrome_onset']}. Последний человек умер в {t['crew']['last_human']} ({t['crew']['survival_years']} лет в поле). "
+         f"Умершие до аварии: {t['crew']['deaths_before_accident_remains']}.", "",
+         lm.table(["Умерли", "Людей", "Причина", "Лет живыми в поле"], [("–".join(str(x) for x in c["died"]), c["people"], c["cause"], c["alive_in_field_years"]) for c in t["crew"]["cohorts"]]), "",
+         f"Корабль: {t['ship_state']}.", "",
+         lm.table(["Система", "Работала до", "Заметка"], [(x["system"], x["until"], x["note"]) for x in t["systems"]]), "",
+         "### Сообщения", "", lm.table(["Отправлено", "Текст", "Откуда, св. лет", "Кто принял", "Дошло"], [(str(m["sent"]), m["text"], m.get("from_ly", "—"), m["received"], m["arrived"]) for m in t["messages"]]), "",
+         "### Животные", "", f"На борту в 2680: " + ", ".join(f"{k} {v}" for k, v in t["animals"]["aboard_2680"].items()) + f". {t['animals']['fate']}. Находка: {t['animals']['found']}.", "",
+         "### Находка и утечка", "",
+         f"- Почему возобновили: {t['discovery']['why_resumed']}.", f"- Экспедиция: {t['discovery']['expedition']}; первой вошла {t['discovery']['first_aboard']['who']} ({t['discovery']['first_aboard']['when']}).",
+         f"- Нашли: {'; '.join(t['discovery']['found'])}.", f"- Лотосит впервые: {t['discovery']['lotusite_first_seen']['when']}, {t['discovery']['lotusite_first_seen']['who']} — {t['discovery']['lotusite_first_seen']['what']}.",
+         f"- Ценность понял: {t['discovery']['value_understood']['when']}, {t['discovery']['value_understood']['who']} — {t['discovery']['value_understood']['what']}.",
+         f"- Сокрытие: {t['discovery']['cover_up']}.", f"- Утечка: {t['discovery']['leak']}.", "",
+         "### Биология (вымышленная аномальная биохимия)", "", b_["rule"] + ".", "",
+         lm.table(["Вид", "Уриказа", "Синтез витамина C", "Neu5Gc", "Поражается"], [(x["species"], x["uricase"], x["vitamin_c_synthesis"], x["neu5gc"], x["affected"]) for x in b_["species"]]), "",
+         "Распределение лотосита по тканям: " + ", ".join(f"{k} {100 * v:.0f} %" for k, v in b_["tissue_distribution"].items()) + f". Лабораторно: {b_['lab_identification']}.", "",
+         lm.table(["Стадия", "Месяцы", "Признаки"], [(x["stage"], "–".join(str(m) for m in x["months"]), "; ".join(x["signs"])) for x in b_["syndrome_stages"]]), "",
+         b_["outside_field"] + ".", "",
+         "### Явления поля: что реально", "", "Разработчик всегда знает категорию: физика / ошибка датчика / субъективное. Отладочная телеметрия обязана показывать истину (датчик A, сеть B, экипаж C, правда D).", "",
+         lm.table(["Явление", "Категория", "Где", "Датчики", "Экипаж", "Правда"], [(x["id"], x["category"], x["where"], x["sensors"], x["crew"], x["truth"]) for x in T_["phenomena"]]), "",
+         "### Материал и запас", "", T_["material"]["origin"] + ".", "",
+         lm.table(["Когорта", "Людей", "Экспозиция, лет", "Преобразовано", "г на тело", "Потенциал, г"], [(c["cohort"], c["people"], c["exposure_years"], c["transformed_share"], c["g_per_body"], c["potential_g"]) for c in st["cohorts"]]), "",
+         f"Потенциал {f2(st['potential_g'])} г; извлекаемо {f2(st['recoverable_g_total'])} г; вывезено {st['removed_bodies']} тел ({T_['material']['removed_note']}); осталось {f2(st['recoverable_g_left'])} г. {st['note']}.", "",
+         "### Прыжковый компонент", "", f"{T_['jump_component']['name']}; граммов на класс: " + ", ".join(f"{k} {v}" for k, v in T_["jump_component"]["g_per_class"].items()) + ". "
+         f"Износ: {T_['jump_component']['wear_per_normal_jump']} за обычный прыжок, {T_['jump_component']['wear_per_extended_jump']} за дальний, {T_['jump_component']['decay_per_year']} в год. {T_['jump_component']['restoration']}. Совместимость: {T_['jump_component']['compatible']}. "
+         "Почему не массово: " + "; ".join(T_["jump_component"]["why_not_mass"]) + ".", "",
+         f"+3 св. года (AUTHOR_TARGET) на карте: новых прямых маячных рёбер {len(LM['jump']['effect']['new_direct_beacon_edges'])}; впервые достижимы {', '.join(x['name'] for x in LM['jump']['effect']['newly_reachable_systems']) or 'нет'}; "
+         f"враждебных пар в один прыжок: {len(LM['jump']['effect']['hostile_pairs_brought_into_one_jump'])}.", "",
+         "### Медицина", "", T_["medical"]["effect"] + ". " + T_["medical"]["unknowns"] + ".", "",
+         "### Лотосовая лихорадка — истинный механизм (игровая модель)", "", T_["fever"]["truth_mechanism"] + ".", "",
+         "### Торговля людьми", "", f"Формы: {', '.join(T_['trafficking']['forms'])}. Сейчас ~{LM['trafficking']['victims_y']:.0f} жертв в год (маржа ×{LM['trafficking']['margin']:.0f}, ёмкость «Сада» {LM['trafficking']['capacity_y']:.0f}/год). "
+         f"После исчерпания тел: {LM['after_primary_exhausted']['note']}. {T_['reproduction']['note']}.", "",
+         "### Подразделения: что на самом деле", "",
+         lm.table(["Подразделение", "Категория", "Коррупция", "Аудит", "Лояльность", "Союзы", "Неофициальный доход, Cr/год"],
+                  [(u["name"], u["category"], u["corruption"], u["audit_risk"], u["loyalty"], ", ".join(u["alliances"]) or "—", n0(u["unofficial_income_cr_y"])) for u in LM["security_units"]])]
+    d.gen("worlds_ass_truth", "\n".join(g))
     out.append(d)
 
     # ---------------- frontiers and deep space

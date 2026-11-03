@@ -1193,10 +1193,10 @@
    "balance": {
     "chemicals": {
      "consumption": 155863245,
-     "exports": 74028550,
+     "exports": 74028551,
      "imports": 0,
      "losses": 148057,
-     "production": 230039852,
+     "production": 230039854,
      "stock_change": 0,
      "unmet": 0
     },
@@ -1247,10 +1247,10 @@
     },
     "jump_charge": {
      "consumption": 1536851,
-     "exports": 5765973,
+     "exports": 5766040,
      "imports": 0,
      "losses": 11532,
-     "production": 7314356,
+     "production": 7314423,
      "stock_change": 0,
      "unmet": 0
     },
@@ -1283,10 +1283,10 @@
     },
     "metals": {
      "consumption": 125277811,
-     "exports": 58053080,
+     "exports": 58053081,
      "imports": 0,
      "losses": 116106,
-     "production": 183446997,
+     "production": 183446998,
      "stock_change": 0,
      "unmet": 0
     },
@@ -1295,16 +1295,16 @@
      "exports": 104398889,
      "imports": 0,
      "losses": 208798,
-     "production": 744130959,
+     "production": 744130960,
      "stock_change": 0,
      "unmet": 0
     },
     "reactor_fuel": {
      "consumption": 15745,
-     "exports": 5244,
+     "exports": 5248,
      "imports": 0,
      "losses": 10,
-     "production": 21000,
+     "production": 21003,
      "stock_change": 0,
      "unmet": 0
     },
@@ -1396,13 +1396,13 @@
     "largest_city": 145710577,
     "settlements_total": 6856
    },
-   "exports_cr_y": 317786320229,
+   "exports_cr_y": 317788547629,
    "fuel": {
     "depots": 3,
-    "jump_charge_cost_cr_y": 8964935683,
+    "jump_charge_cost_cr_y": 8964940296,
     "jump_charge_imports_t_y": 0.0,
-    "jump_charge_local_t_y": 1548382.8,
-    "jump_charge_t_y": 1562802.7,
+    "jump_charge_local_t_y": 1548383.0,
+    "jump_charge_t_y": 1562803.5,
     "jump_charge_unmet_t_y": 0.0,
     "reactor_fuel_cost_cr_y": 9973895522,
     "reactor_fuel_imports_t_y": 0.0,
@@ -1412,7 +1412,7 @@
     "reactor_fuel_t_y": 16623.2,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
-    "strategic_reserve_charge_t": 385348.6,
+    "strategic_reserve_charge_t": 385348.8,
     "strategic_reserve_reactor_t": 4098.9
    },
    "gdp_cr_y": 30792937134115,
@@ -1512,7 +1512,7 @@
    "balance": {
     "chemicals": {
      "consumption": 39281376,
-     "exports": 29466963,
+     "exports": 29466964,
      "imports": 0,
      "losses": 58934,
      "production": 68807273,
@@ -1566,10 +1566,10 @@
     },
     "jump_charge": {
      "consumption": 616502,
-     "exports": 2492219,
+     "exports": 2492252,
      "imports": 0,
-     "losses": 4984,
-     "production": 3113705,
+     "losses": 4985,
+     "production": 3113739,
      "stock_change": 0,
      "unmet": 0
     },
@@ -1602,7 +1602,7 @@
     },
     "metals": {
      "consumption": 59733408,
-     "exports": 21742324,
+     "exports": 21742325,
      "imports": 0,
      "losses": 43485,
      "production": 81519217,
@@ -1620,10 +1620,10 @@
     },
     "reactor_fuel": {
      "consumption": 5481,
-     "exports": 2273,
+     "exports": 2274,
      "imports": 0,
      "losses": 5,
-     "production": 7758,
+     "production": 7760,
      "stock_change": 0,
      "unmet": 0
     },
@@ -1687,23 +1687,23 @@
     "largest_city": 43294098,
     "settlements_total": 1741
    },
-   "exports_cr_y": 129814070196,
+   "exports_cr_y": 129815049728,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 3601233389,
+    "jump_charge_cost_cr_y": 3601235628,
     "jump_charge_imports_t_y": 0.0,
-    "jump_charge_local_t_y": 621486.2,
-    "jump_charge_t_y": 627781.1,
+    "jump_charge_local_t_y": 621486.3,
+    "jump_charge_t_y": 627781.5,
     "jump_charge_unmet_t_y": 0.0,
     "reactor_fuel_cost_cr_y": 3468293943,
     "reactor_fuel_imports_t_y": 0.0,
-    "reactor_fuel_local_t_y": 5485.0,
+    "reactor_fuel_local_t_y": 5485.1,
     "reactor_fuel_power_t_y": 1393.0,
     "reactor_fuel_ships_t_y": 4387.5,
     "reactor_fuel_t_y": 5780.5,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
-    "strategic_reserve_charge_t": 154795.3,
+    "strategic_reserve_charge_t": 154795.4,
     "strategic_reserve_reactor_t": 1425.3
    },
    "gdp_cr_y": 7651673964441,
@@ -3128,10 +3128,10 @@
     "largest_city": 99649,
     "settlements_total": 1
    },
-   "exports_cr_y": 347353228,
+   "exports_cr_y": 347354270,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 22458173,
+    "jump_charge_cost_cr_y": 22458184,
     "jump_charge_imports_t_y": 0.0,
     "jump_charge_local_t_y": 3723.8,
     "jump_charge_t_y": 3915.0,
@@ -3539,10 +3539,10 @@
     },
     "jump_charge": {
      "consumption": 106569,
-     "exports": 62567,
+     "exports": 62578,
      "imports": 0,
      "losses": 125,
-     "production": 169261,
+     "production": 169272,
      "stock_change": 0,
      "unmet": 0
     },
@@ -3674,13 +3674,13 @@
     "largest_city": 32430910,
     "settlements_total": 1251
    },
-   "exports_cr_y": 38272956474,
+   "exports_cr_y": 38273013607,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 615113520,
+    "jump_charge_cost_cr_y": 615114128,
     "jump_charge_imports_t_y": 0.0,
-    "jump_charge_local_t_y": 106694.2,
-    "jump_charge_t_y": 107229.0,
+    "jump_charge_local_t_y": 106694.3,
+    "jump_charge_t_y": 107229.1,
     "jump_charge_unmet_t_y": 0.0,
     "reactor_fuel_cost_cr_y": 1296087290,
     "reactor_fuel_imports_t_y": 0.0,
@@ -3690,7 +3690,7 @@
     "reactor_fuel_t_y": 2160.1,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
-    "strategic_reserve_charge_t": 26440.0,
+    "strategic_reserve_charge_t": 26440.1,
     "strategic_reserve_reactor_t": 532.6
    },
    "gdp_cr_y": 5059030964774,
@@ -6361,11 +6361,11 @@
   "tau_ceti_cognium": {
    "balance": {
     "chemicals": {
-     "consumption": 138941239,
+     "consumption": 138941243,
      "exports": 0,
-     "imports": 71693680,
+     "imports": 71693682,
      "losses": 0,
-     "production": 67247560,
+     "production": 67247562,
      "stock_change": 0,
      "unmet": 0
     },
@@ -6415,11 +6415,11 @@
      "unmet": 0
     },
     "jump_charge": {
-     "consumption": 22521,
+     "consumption": 22653,
      "exports": 0,
-     "imports": 19116,
+     "imports": 19228,
      "losses": 0,
-     "production": 3405,
+     "production": 3425,
      "stock_change": 0,
      "unmet": 0
     },
@@ -6451,40 +6451,40 @@
      "unmet": 0
     },
     "metals": {
-     "consumption": 86582791,
+     "consumption": 86582793,
      "exports": 0,
-     "imports": 67453937,
+     "imports": 67453939,
      "losses": 0,
-     "production": 19128853,
+     "production": 19128854,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 206593230,
+     "consumption": 206593232,
      "exports": 0,
-     "imports": 149242950,
+     "imports": 149242951,
      "losses": 0,
      "production": 57350281,
      "stock_change": 0,
      "unmet": 0
     },
     "reactor_fuel": {
-     "consumption": 8118,
+     "consumption": 8122,
      "exports": 0,
-     "imports": 7577,
+     "imports": 7582,
      "losses": 0,
-     "production": 540,
+     "production": 541,
      "stock_change": 0,
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 692525573,
+     "consumption": 692525574,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 692525573,
+     "production": 692525574,
      "stock_change": 0,
-     "unmet": 358347830
+     "unmet": 358347831
     },
     "weapons": {
      "consumption": 696907,
@@ -6514,14 +6514,14 @@
     {
      "body": "Tau Ceti (орбитальные кольца) (орбита)",
      "name": "Фабы Кольца Основателей",
-     "pop": 1449641,
+     "pop": 1449971,
      "role": "промышленный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Tau Ceti (орбитальные кольца) (орбита)",
      "name": "Верфь «Гиперион»",
-     "pop": 1449641,
+     "pop": 1449971,
      "role": "город-верфь",
      "status": "PROPOSAL"
     },
@@ -6535,7 +6535,7 @@
     {
      "body": "—",
      "name": "прочие поселения (6778)",
-     "pop": 1199709211,
+     "pop": 1199708551,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
@@ -6547,26 +6547,26 @@
    "exports_cr_y": 0,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 129243852,
-    "jump_charge_imports_t_y": 19115.7,
-    "jump_charge_local_t_y": 3405.1,
-    "jump_charge_t_y": 22530.3,
+    "jump_charge_cost_cr_y": 129949425,
+    "jump_charge_imports_t_y": 19228.1,
+    "jump_charge_local_t_y": 3425.2,
+    "jump_charge_t_y": 22653.3,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 5126927094,
-    "reactor_fuel_imports_t_y": 7577.1,
-    "reactor_fuel_local_t_y": 540.4,
+    "reactor_fuel_cost_cr_y": 5129622904,
+    "reactor_fuel_imports_t_y": 7581.6,
+    "reactor_fuel_local_t_y": 540.7,
     "reactor_fuel_power_t_y": 4825.3,
-    "reactor_fuel_ships_t_y": 3719.5,
-    "reactor_fuel_t_y": 8544.9,
+    "reactor_fuel_ships_t_y": 3724.0,
+    "reactor_fuel_t_y": 8549.4,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
-    "strategic_reserve_charge_t": 5555.4,
-    "strategic_reserve_reactor_t": 2107.0
+    "strategic_reserve_charge_t": 5585.7,
+    "strategic_reserve_reactor_t": 2108.1
    },
    "gdp_cr_y": 22396670102430,
    "gdp_per_capita_cr": 16510,
    "growth_per_year": 0.00116,
-   "imports_cr_y": 1059410062710,
+   "imports_cr_y": 1059413327818,
    "income_index": 2.54,
    "motives": {
     "alliance_obligation": 0.2,
@@ -6656,7 +6656,7 @@
      "consequence": "замена флота встаёт: потери не восполняются, фрахт дорожает",
      "kind": "shipyard",
      "severity": 0.5,
-     "what": "верфи: 1 крупных гражданских, 1 военных"
+     "what": "верфи: 1 крупных гражданских, 2 военных"
     },
     {
      "consequence": "потеря поставщика: дефицит 37 % на время переключения",
@@ -7110,13 +7110,13 @@
     "role": "tug"
    },
    "patrol_cutter": {
-    "active": 15557,
+    "active": 15570,
     "family": "security",
-    "lost_per_year": 149.3,
-    "new_per_year": 824.5,
-    "repair": 1879,
-    "reserve": 3122,
-    "retired_per_year": 622.8,
+    "lost_per_year": 149.5,
+    "new_per_year": 825.2,
+    "repair": 1880,
+    "reserve": 3125,
+    "retired_per_year": 623.3,
     "role": "patrol"
    },
    "recon_picket": {
@@ -7143,9 +7143,9 @@
   "gdp_cr_y": 548022003923348,
   "goods": {
    "chemicals": {
-    "consumption": 2653680319,
-    "interstellar": 151282271,
-    "production": 2653982883
+    "consumption": 2653680323,
+    "interstellar": 151282273,
+    "production": 2653982887
    },
    "construction": {
     "consumption": 5856302864,
@@ -7173,9 +7173,9 @@
     "production": 12032736852
    },
    "jump_charge": {
-    "consumption": 10938251,
-    "interstellar": 8348245,
-    "production": 10954948
+    "consumption": 10938384,
+    "interstellar": 8348357,
+    "production": 10955080
    },
    "luxury": {
     "consumption": 69512872,
@@ -7193,24 +7193,24 @@
     "production": 95701332
    },
    "metals": {
-    "consumption": 2147792339,
-    "interstellar": 177198477,
-    "production": 2148146736
+    "consumption": 2147792341,
+    "interstellar": 177198479,
+    "production": 2148146738
    },
    "ore": {
-    "consumption": 10194718398,
-    "interstellar": 193081616,
-    "production": 10195104561
+    "consumption": 10194718399,
+    "interstellar": 193081617,
+    "production": 10195104562
    },
    "reactor_fuel": {
-    "consumption": 152672,
-    "interstellar": 12531,
-    "production": 152697
+    "consumption": 152677,
+    "interstellar": 12535,
+    "production": 152702
    },
    "water_volatiles": {
-    "consumption": 19973622151,
+    "consumption": 19973622153,
     "interstellar": 0,
-    "production": 19973622151
+    "production": 19973622153
    },
    "weapons": {
     "consumption": 9487873,
@@ -7328,8 +7328,8 @@
     "named": 5
    },
    "military_shipyard": {
-    "count": 27,
-    "major": 22,
+    "count": 28,
+    "major": 23,
     "name": "военная верфь",
     "named": 1
    },
@@ -7346,7 +7346,7 @@
     "named": 1
    },
    "patrol_base": {
-    "count": 1570,
+    "count": 1571,
     "major": 147,
     "name": "патрульная база",
     "named": 0
@@ -7389,8 +7389,8 @@
    }
   },
   "interstellar_flows": 261,
-  "interstellar_tonnes_y": 1348514508,
-  "interstellar_value_cr_y": 5341400102247,
+  "interstellar_tonnes_y": 1348514629,
+  "interstellar_value_cr_y": 5341403367354,
   "population": {
    "earth": 9960563363,
    "off_sol": 10087992674,

@@ -124,12 +124,12 @@
    "fleet_active_after": {
     "delta_pav_freekarma": 2359,
     "gj832_tianhe": 7689,
-    "tau_ceti_cognium": 17142
+    "tau_ceti_cognium": 17155
    },
    "fleet_active_before": {
     "delta_pav_freekarma": 2294,
     "gj832_tianhe": 7788,
-    "tau_ceti_cognium": 17142
+    "tau_ceti_cognium": 17155
    },
    "id": "jump_beacon_lost",
    "metrics": {
@@ -174,19 +174,19 @@
     "tau_ceti_cognium": {
      "after": {
       "avg_delivered_cr_per_t": 1712.3,
-      "import_delivered_cr": 1091720145929,
-      "import_t": 637583194,
+      "import_delivered_cr": 1091723398031,
+      "import_t": 637583316,
       "re_export_t": 0,
       "ships_on_its_flows": 5790.4,
-      "shortage_t": 360630583
+      "shortage_t": 360630584
      },
      "before": {
       "avg_delivered_cr_per_t": 1712.3,
-      "import_delivered_cr": 1091720145929,
-      "import_t": 637583194,
+      "import_delivered_cr": 1091723398031,
+      "import_t": 637583316,
       "re_export_t": 0,
       "ships_on_its_flows": 5790.4,
-      "shortage_t": 360630583
+      "shortage_t": 360630584
      },
      "import_price_index": 1.0
     }
@@ -221,8 +221,8 @@
    "changes": [
     {
      "commodity": "ore",
-     "imports_t_after": 158665773,
-     "imports_t_before": 149242950,
+     "imports_t_after": 158665774,
+     "imports_t_before": 149242951,
      "polity": "tau_ceti_cognium",
      "price_index": 1.0,
      "shortage_t_after": 0,
@@ -239,29 +239,29 @@
     }
    ],
    "fleet_active_after": {
-    "tau_ceti_cognium": 17609
+    "tau_ceti_cognium": 17622
    },
    "fleet_active_before": {
-    "tau_ceti_cognium": 17142
+    "tau_ceti_cognium": 17155
    },
    "id": "habitat_disaster",
    "metrics": {
     "tau_ceti_cognium": {
      "after": {
       "avg_delivered_cr_per_t": 1662.3,
-      "import_delivered_cr": 1101500482105,
-      "import_t": 662654174,
+      "import_delivered_cr": 1101503525593,
+      "import_t": 662654287,
       "re_export_t": 0,
       "ships_on_its_flows": 5860.3,
-      "shortage_t": 361745179
+      "shortage_t": 361745180
      },
      "before": {
       "avg_delivered_cr_per_t": 1712.3,
-      "import_delivered_cr": 1091720145929,
-      "import_t": 637583194,
+      "import_delivered_cr": 1091723398031,
+      "import_t": 637583316,
       "re_export_t": 0,
       "ships_on_its_flows": 5790.4,
-      "shortage_t": 360630583
+      "shortage_t": 360630584
      },
      "import_price_index": 0.971
     }
@@ -418,7 +418,7 @@
       "import_delivered_cr": 798688734771,
       "import_t": 65807537,
       "re_export_t": 0,
-      "ships_on_its_flows": 5964.8,
+      "ships_on_its_flows": 5964.9,
       "shortage_t": 2713107
      },
      "before": {

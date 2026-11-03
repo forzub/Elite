@@ -41,12 +41,12 @@
 
 | Состояние | Кораблей |
 |---|---|
-| heavily_worn | 18 578 |
-| mature | 109 783 |
+| heavily_worn | 18 584 |
+| mature | 109 786 |
 | mothballed | 5 902 |
-| new | 33 050 |
-| old | 75 518 |
-| reserve | 15 409 |
+| new | 33 051 |
+| old | 75 521 |
+| reserve | 15 412 |
 | restoration_project | 388 |
 | scrap_candidate | 3 334 |
 

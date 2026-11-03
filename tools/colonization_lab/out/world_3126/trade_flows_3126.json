@@ -352,10 +352,10 @@
    "ship_class": "jump_train",
    "ships": 138.01,
    "status": "PROPOSAL",
-   "tonnes_y": 50151973,
+   "tonnes_y": 50151974,
    "transport_cr_per_t": 52.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 90273550823,
+   "value_cr_y": 90273553428,
    "via": null
   },
   {
@@ -542,10 +542,10 @@
    "ship_class": "jump_train",
    "ships": 129.89,
    "status": "PROPOSAL",
-   "tonnes_y": 47202053,
+   "tonnes_y": 47202054,
    "transport_cr_per_t": 49.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 51922258395,
+   "value_cr_y": 51922259597,
    "via": null
   },
   {
@@ -714,7 +714,7 @@
    "tonnes_y": 21508104,
    "transport_cr_per_t": 52.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 38714586972,
+   "value_cr_y": 38714588088,
    "via": null
   },
   {
@@ -903,7 +903,7 @@
    "tonnes_y": 5533539,
    "transport_cr_per_t": 71.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 28110377212,
+   "value_cr_y": 28110376170,
    "via": null
   },
   {
@@ -1091,10 +1091,10 @@
    "ship_class": "jump_train",
    "ships": 55.69,
    "status": "PROPOSAL",
-   "tonnes_y": 20236181,
+   "tonnes_y": 20236182,
    "transport_cr_per_t": 49.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 22259799320,
+   "value_cr_y": 22259799835,
    "via": null
   },
   {
@@ -2274,7 +2274,7 @@
    "tonnes_y": 104398889,
    "transport_cr_per_t": 44.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 4175955550,
+   "value_cr_y": 4175955578,
    "via": null
   },
   {
@@ -2439,10 +2439,10 @@
    "ship_class": "medium_freighter",
    "ships": 1.35,
    "status": "PROPOSAL",
-   "tonnes_y": 5244,
+   "tonnes_y": 5248,
    "transport_cr_per_t": 2915.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 3146699923,
+   "value_cr_y": 3148581733,
    "via": null
   },
   {
@@ -2903,7 +2903,7 @@
    "tonnes_y": 44772885,
    "transport_cr_per_t": 44.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1790915396,
+   "value_cr_y": 1790915408,
    "via": null
   },
   {
@@ -3047,10 +3047,10 @@
    "ship_class": "medium_freighter",
    "ships": 0.58,
    "status": "PROPOSAL",
-   "tonnes_y": 2273,
+   "tonnes_y": 2274,
    "transport_cr_per_t": 2915.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1363884094,
+   "value_cr_y": 1364690585,
    "via": null
   },
   {
@@ -3937,7 +3937,7 @@
    "tonnes_y": 15232,
    "transport_cr_per_t": 116.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 77378706,
+   "value_cr_y": 77379748,
    "via": null
   },
   {
@@ -3988,7 +3988,7 @@
    "commodity": "jump_charge",
    "delivered_cr_per_t": 5128.0,
    "jumps": 1,
-   "loaded_trips_y": 5.6,
+   "loaded_trips_y": 5.7,
    "path": [
     9,
     8
@@ -3997,10 +3997,10 @@
    "ship_class": "medium_freighter",
    "ships": 0.55,
    "status": "PROPOSAL",
-   "tonnes_y": 11469,
+   "tonnes_y": 11537,
    "transport_cr_per_t": 104.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 58264517,
+   "value_cr_y": 58607313,
    "via": null
   },
   {
@@ -4165,10 +4165,10 @@
    "ship_class": "medium_freighter",
    "ships": 0.28,
    "status": "PROPOSAL",
-   "tonnes_y": 5735,
+   "tonnes_y": 5768,
    "transport_cr_per_t": 104.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 29132258,
+   "value_cr_y": 29303656,
    "via": null
   },
   {
@@ -4459,10 +4459,10 @@
    "ship_class": "medium_freighter",
    "ships": 0.09,
    "status": "PROPOSAL",
-   "tonnes_y": 1912,
+   "tonnes_y": 1923,
    "transport_cr_per_t": 112.6,
    "unbeaconed_hops": 0,
-   "value_cr_y": 9710753,
+   "value_cr_y": 9767885,
    "via": null
   },
   {
@@ -5625,7 +5625,7 @@
    ],
    "tonnes_y": 81165217,
    "unbeaconed": false,
-   "value_cr_y": 1008851041083
+   "value_cr_y": 1008851040040
   },
   {
    "beacons_supporting": [
@@ -5694,7 +5694,7 @@
    ],
    "tonnes_y": 19369,
    "unbeaconed": false,
-   "value_cr_y": 106968885
+   "value_cr_y": 106969927
   },
   {
    "beacons_supporting": [
@@ -6123,9 +6123,9 @@
     "Tau Ceti",
     "Epsilon Eridani"
    ],
-   "tonnes_y": 520147875,
+   "tonnes_y": 520147985,
    "unbeaconed": false,
-   "value_cr_y": 325505049273
+   "value_cr_y": 325508257247
   },
   {
    "beacons_supporting": [
@@ -6169,9 +6169,9 @@
     "Tau Ceti",
     "HD 20794 (82 G. Eridani)"
    ],
-   "tonnes_y": 1912,
+   "tonnes_y": 1923,
    "unbeaconed": false,
-   "value_cr_y": 9710753
+   "value_cr_y": 9767885
   },
   {
    "beacons_supporting": [

@@ -155,7 +155,6 @@
 
 ### AUTHOR TRUTH
 
-[СПОЙЛЕР] Судьба — `UNKNOWN`: намеренно без ответа, даже для автора. 
 [СПОЙЛЕР] Скрытая правда: [AUTHOR/MISSING_SHIPS.md](../AUTHOR/MISSING_SHIPS.md) (раздел NIRVANA-1).
 <!-- GENERATED:outcome END -->
 

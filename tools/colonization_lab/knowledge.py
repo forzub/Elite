@@ -51,10 +51,10 @@ MISSION_PROPOSAL = {"GENESIS-1": "реконсиляция A2 (идея стар
                     "LAST-LIGHT-1": "реконсиляция A8 (идея старой ветки, груз — Claude)",
                     "FREE-VENTURE-1": "реконсиляция A5 (имя есть у автора, паспорт — Claude)"}
 AUTHOR_TRUTH_MISSIONS = {"GAIA-2": "живые «тихие» и пустой корабль", "DEEP-SEEK-1": "уничтожен автономным роем CD-2",
-                         "LAST-LIGHT-1": "груз: архив Хартий и верительные грамоты Земли", "GREEN-ARK-1": "симбионт из корабельного микробиома"}
+                         "LAST-LIGHT-1": "груз: архив Хартий и верительные грамоты Земли", "GREEN-ARK-1": "симбионт из корабельного микробиома",
+                         "NIRVANA-1": "2680: складка поля перенесла корабль в поле «Лотоса» за HD 104067; экипаж погиб от синдрома поля к 2712; «Лотос» = NIRVANA-1 (решение автора 2026-11-03; детали — PROPOSAL)"}
 UNKNOWNS = [
     dict(id="IRON-SHIELD-2.cause", text="что случилось с IRON-SHIELD-2 (3 000 человек, 2355)", status=U, visibility=AT),
-    dict(id="NIRVANA-1.fate", text="судьба и положение NIRVANA-1", status=U, visibility=AT),
     dict(id="UBUNTU-1.cause", text="причина гибели UBUNTU-1 («огни»)", status=U, visibility=AT),
     dict(id="FAREWELL-1.people", text="судьба людей FAREWELL-1", status=U, visibility=AT),
     dict(id="EARTH.jump_cores", text="умеет ли Земля 3126 делать собственные ядра прыжка (только маяк из памятника HYPERION-1)", status=U, visibility=AT),

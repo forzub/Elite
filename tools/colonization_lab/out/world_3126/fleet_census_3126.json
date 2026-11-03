@@ -2904,14 +2904,14 @@
     "role": "tug"
    },
    "patrol_cutter": {
-    "active": 984,
-    "dry_t_new_per_year": 21077,
+    "active": 997,
+    "dry_t_new_per_year": 21362,
     "family": "security",
-    "lost_per_year": 9.4,
-    "new_per_year": 50.2,
-    "repair": 119,
-    "reserve": 197,
-    "retired_per_year": 39.4,
+    "lost_per_year": 9.6,
+    "new_per_year": 50.9,
+    "repair": 120,
+    "reserve": 200,
+    "retired_per_year": 39.9,
     "role": "patrol"
    },
    "recon_picket": {
@@ -3217,13 +3217,13 @@
    "role": "tug"
   },
   "patrol_cutter": {
-   "active": 15557,
+   "active": 15570,
    "family": "security",
-   "lost_per_year": 149.3,
-   "new_per_year": 824.5,
-   "repair": 1879,
-   "reserve": 3122,
-   "retired_per_year": 622.8,
+   "lost_per_year": 149.5,
+   "new_per_year": 825.2,
+   "repair": 1880,
+   "reserve": 3125,
+   "retired_per_year": 623.3,
    "role": "patrol"
   },
   "recon_picket": {
@@ -3259,6 +3259,6 @@
    "hd114783_hellas3": "sol_authority",
    "leo83_zion": "sol_authority"
   },
-  "jump_drives_total_y": 3183.4
+  "jump_drives_total_y": 3184.1
  }
 }

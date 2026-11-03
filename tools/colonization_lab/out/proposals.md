@@ -2,7 +2,7 @@
 
 Генерируется `lab.py` из статусов `canon/*.json` (knowledge.py). CANON = есть в заметках автора; PROPOSAL = добавлено/пересчитано Claude или является результатом модели; UNKNOWN = намеренно без ответа. Видимость: PUBLIC_RECORD / AUTHOR_TRUTH.
 
-Счётчики: AUTHOR_TRUTH 18, CANON 309, PROPOSAL 291, PUBLIC_RECORD 591, UNKNOWN 9
+Счётчики: AUTHOR_TRUTH 17, CANON 309, PROPOSAL 292, PUBLIC_RECORD 591, UNKNOWN 7
 
 Все выходы модели (население 3126, экономика, коридоры, технологии) — PROPOSAL (model) и в этот список не перечисляются поштучно.
 
@@ -293,7 +293,7 @@
 | missions/UHURU-2/anchors/2276/launch_disaster | PROPOSAL | PUBLIC_RECORD | реконсиляция A4: пожар в доке объясняет номер «-2» | Пожар в доке L1 уничтожает корпус UHURU-1 (600 рабочих); слухи о саботаже конкурентов не подтверждены |
 | missions/UHURU-2/anchors/2542/arrival | PROPOSAL | PUBLIC_RECORD | не найдено в источниках | HD 40307: купола и сельскохозяйственные кольца |
 | missions/ODYSSEY-1/anchors/2600/sleeper_return | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Патриции просыпаются: «вам капитал, нам социальная сфера» — 20 лет судов вместо стрельбы |
-| missions/NIRVANA-1/fate | UNKNOWN | AUTHOR_TRUTH | неизвестно даже автору | fate |
+| missions/NIRVANA-1/fate | PROPOSAL | AUTHOR_TRUTH | скрытая правда (реконсиляция): 2680: складка поля перенесла корабль в поле «Лотоса» за HD 104067; экипаж погиб от синдрома поля к 2712; «Лотос» = NIRVANA-1 (решение автора 2026-11-03; детали — PROPOSAL) | fate |
 | missions/AMAZONIA-1/arrival_year | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2570 | arrival_year |
 | missions/AMAZONIA-1/anchors/2405/contact_lost | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Отказ антенны дальней связи; Земля молчит — экипаж решает, что Земли больше нет |
 | missions/AMAZONIA-1/anchors/2576/arrival | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2570 | HD 69830: колония «последних людей Вселенной» |
@@ -357,12 +357,11 @@
 |---|---|---|---|---|
 | relations/lalande_hellas|lalande_mecca | PROPOSAL | PUBLIC_RECORD | величина обиды — Claude | Одна бедная система на двоих |
 
-## unknowns (5)
+## unknowns (4)
 
 | путь | статус | видимость | основание | что |
 |---|---|---|---|---|
 | unknowns/IRON-SHIELD-2.cause | UNKNOWN | AUTHOR_TRUTH | намеренно без ответа | что случилось с IRON-SHIELD-2 (3 000 человек, 2355) |
-| unknowns/NIRVANA-1.fate | UNKNOWN | AUTHOR_TRUTH | намеренно без ответа | судьба и положение NIRVANA-1 |
 | unknowns/UBUNTU-1.cause | UNKNOWN | AUTHOR_TRUTH | намеренно без ответа | причина гибели UBUNTU-1 («огни») |
 | unknowns/FAREWELL-1.people | UNKNOWN | AUTHOR_TRUTH | намеренно без ответа | судьба людей FAREWELL-1 |
 | unknowns/EARTH.jump_cores | UNKNOWN | AUTHOR_TRUTH | намеренно без ответа | умеет ли Земля 3126 делать собственные ядра прыжка (только маяк из памятника HYPERION-1) |

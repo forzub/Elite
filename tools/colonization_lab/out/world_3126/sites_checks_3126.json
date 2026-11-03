@@ -2,7 +2,7 @@
  "checks": [
   {
    "check": "one_id_one_object",
-   "detail": "500 ids",
+   "detail": "505 ids",
    "ok": true
   },
   {
@@ -27,22 +27,52 @@
   },
   {
    "check": "deep_space_objects_have_world_lines",
-   "detail": "6 objects",
+   "detail": "9 objects",
    "ok": true
   },
   {
    "check": "worlds_ass_is_max_risk_and_reward",
-   "detail": "frontier.worlds_ass: 250000000 / 0.189, frontier.ceti_chest: 2640000 / 0.016, frontier.vega_observatory: 2000000 / 0.006",
+   "detail": "frontier.worlds_ass: 250000000 / 0.386, frontier.ceti_chest: 2640000 / 0.016, frontier.vega_observatory: 2000000 / 0.006",
    "ok": true
   },
   {
    "check": "average_expedition_not_profitable",
-   "detail": "EV -257982 Cr, cost 1029035",
+   "detail": "average visitor EV -112733 Cr, run cost 563663",
+   "ok": true
+  },
+  {
+   "check": "rare_successes_make_the_profit",
+   "detail": "best segment 10794436 Cr > 0, average -112733 Cr < 0",
+   "ok": true
+  },
+  {
+   "check": "buying_dearer_than_self_sourcing",
+   "detail": "54805394 > 5606277 Cr/g",
+   "ok": true
+  },
+  {
+   "check": "lotosite_primary_stock_finite",
+   "detail": "959.276 g left of 1588.665 g, ~25.81 years",
+   "ok": true
+  },
+  {
+   "check": "phenomena_have_developer_category",
+   "detail": "13 phenomena: physical, sensor, subjective",
+   "ok": true
+  },
+  {
+   "check": "outbreaks_within_population",
+   "detail": "OB-3093-MANDALA 200/76; OB-3115-STELLA 126/52; OB-3121-PEREVAL 180/15",
+   "ok": true
+  },
+  {
+   "check": "lotus_identity_known_to_developers",
+   "detail": "NIRVANA-1 (CANON, AUTHOR_TRUTH)",
    "ok": true
   },
   {
    "check": "news_reaches_far_periphery_within_author_target",
-   "detail": "network diameter 1.75 d, Sol -> farthest frontier 4.029 d, target 7.0 d (AUTHOR_TARGET)",
+   "detail": "network diameter 1.75 d, Sol -> farthest frontier 3.959 d, target 7.0 d (AUTHOR_TARGET)",
    "ok": true
   },
   {
@@ -67,7 +97,7 @@
   },
   {
    "check": "every_site_has_jurisdiction",
-   "detail": "498 sites",
+   "detail": "503 sites",
    "ok": true
   },
   {

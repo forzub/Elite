@@ -102,11 +102,10 @@
 | Поле | Значение | Статус |
 |---|---|---|
 | Досье | [SHIPS/NIRVANA-1.md](../SHIPS/NIRVANA-1.md) | CANON · PUBLIC |
-| Итог | missing | UNKNOWN · AUTHOR TRUTH |
-| Корабль | unknown | UNKNOWN · AUTHOR TRUTH |
-| Правда | координаты fate.md — точка «легенды», не положение | UNKNOWN · AUTHOR TRUTH |
-| Можно найти в игре | да | UNKNOWN · AUTHOR TRUTH |
-| Открытый вопрос | судьба и положение NIRVANA-1 | UNKNOWN · AUTHOR TRUTH |
+| Итог | derelict_found | PROPOSAL · AUTHOR TRUTH |
+| Корабль | derelict_infected | PROPOSAL · AUTHOR TRUTH |
+| Правда | корпус «Лотос» в поле аномалий в 21 св. годе за HD 104067 (dso.lotus); в 2680 вошёл в ядро природной складки поля и был перенесён туда; экипаж погиб от синдрома поля к 2712 (AUTHOR_TRUTH, world_sites.json -> lotus.truth) | PROPOSAL · AUTHOR TRUTH |
+| Можно найти в игре | да | PROPOSAL · AUTHOR TRUTH |
 <!-- GENERATED:ship.NIRVANA-1 END -->
 
 ### NIRVANA-1: правда

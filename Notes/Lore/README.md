@@ -35,7 +35,7 @@ python lore_md.py --check     # блоки совпадают с данными,
 ## Счётчики статусов машинного канона
 
 <!-- GENERATED:counts BEGIN -->
-`AUTHOR TRUTH` 18, `CANON` 309, `PROPOSAL` 291, `PUBLIC` 591, `UNKNOWN` 9. Схема данных: `elite.colonization_lab.lore_facts.v1`, seed 3126, сценарий `baseline`.
+`AUTHOR TRUTH` 17, `CANON` 309, `PROPOSAL` 292, `PUBLIC` 591, `UNKNOWN` 7. Схема данных: `elite.colonization_lab.lore_facts.v1`, seed 3126, сценарий `baseline`.
 <!-- GENERATED:counts END -->
 
 ## Оглавление
@@ -43,7 +43,7 @@ python lore_md.py --check     # блоки совпадают с данными,
 <!-- GENERATED:index BEGIN -->
 | Папка | Файлов | Файлы |
 |---|---|---|
-| [AUTHOR/](AUTHOR/HIDDEN_CANON.md) | 4 | [HIDDEN_CANON.md](AUTHOR/HIDDEN_CANON.md), [MISSING_SHIPS.md](AUTHOR/MISSING_SHIPS.md), [PROPOSALS.md](AUTHOR/PROPOSALS.md), [QUEST_TRUTHS.md](AUTHOR/QUEST_TRUTHS.md); AUTHOR/SHIPS/ — 1 скрыт. досье [СПОЙЛЕР] |
+| [AUTHOR/](AUTHOR/HIDDEN_CANON.md) | 5 | [HIDDEN_CANON.md](AUTHOR/HIDDEN_CANON.md), [MISSING_SHIPS.md](AUTHOR/MISSING_SHIPS.md), [PROPOSALS.md](AUTHOR/PROPOSALS.md), [QUEST_TRUTHS.md](AUTHOR/QUEST_TRUTHS.md), [WORLDS_ASS_TRUTH.md](AUTHOR/WORLDS_ASS_TRUTH.md); AUTHOR/SHIPS/ — 1 скрыт. досье [СПОЙЛЕР] |
 | [COLONIES/](COLONIES/INDEX.md) | 35 | см. INDEX.md |
 | [DEMOGRAPHY/](DEMOGRAPHY/MODEL.md) | 2 | [MODEL.md](DEMOGRAPHY/MODEL.md), [POPULATION_3126.md](DEMOGRAPHY/POPULATION_3126.md) |
 | [ECONOMY/](ECONOMY/BEACONS_AND_NAVIGATION.md) | 15 | см. INDEX.md |

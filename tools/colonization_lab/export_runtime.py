@@ -28,7 +28,7 @@ LEGACY_TO_CANON = {"TRADER'S-GUILD-1": "TRADERS-GUILD-1"}
 STATUS_3126 = {  # canon fate.status -> legacy-style display word
     "arrived": "КОЛОНИЯ", "arrived_colony_quarantined": "КАРАНТИН", "arrived_fragmented": "РАСКОЛ", "arrived_3122": "ПРИБЫЛ",
     "arrived_3126": "ПРИБЫЛ", "destroyed_unexplained": "ПРИЗРАК", "destroyed": "ПРИЗРАК", "missing": "ПРИЗРАК",
-    "derelict_empty": "ПРИЗРАК", "in_flight": "В ПУТИ", "museum": "ХРОНИКИ", "impounded": "ХРОНИКИ",
+    "derelict_empty": "ПРИЗРАК", "derelict_found": "ПРИЗРАК", "in_flight": "В ПУТИ", "museum": "ХРОНИКИ", "impounded": "ХРОНИКИ",
 }
 
 

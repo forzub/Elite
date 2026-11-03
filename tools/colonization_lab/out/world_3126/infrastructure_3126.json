@@ -1531,7 +1531,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 744130959,
+     "annual_output_t": 744130960,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 1505,
@@ -1541,7 +1541,7 @@
      "estimated_reserve_index": 6.298,
      "excavation_sites": 4515,
      "grade": 0.94,
-     "mined_volume_m3_y": 310054566,
+     "mined_volume_m3_y": 310054567,
      "power_mw": 60200,
      "reactor_fuel_t_y": 13.57,
      "resource": "ore",
@@ -9361,12 +9361,12 @@
      "workers": 6000
     },
     "military_shipyard": {
-     "count": 1,
-     "equipment_t": 60000,
+     "count": 2,
+     "equipment_t": 120000,
      "name": "военная верфь",
-     "power_mw": 400,
-     "spare_parts_t_y": 2100,
-     "workers": 7000
+     "power_mw": 800,
+     "spare_parts_t_y": 4200,
+     "workers": 14000
     },
     "mine": {
      "count": 135,
@@ -9385,12 +9385,12 @@
      "workers": 150000
     },
     "patrol_base": {
-     "count": 119,
-     "equipment_t": 476000,
+     "count": 120,
+     "equipment_t": 480000,
      "name": "патрульная база",
-     "power_mw": 3570,
-     "spare_parts_t_y": 14280,
-     "workers": 59500
+     "power_mw": 3600,
+     "spare_parts_t_y": 14400,
+     "workers": 60000
     },
     "power_plant": {
      "count": 1260,
@@ -9464,7 +9464,7 @@
      "workers": 16200
     },
     {
-     "annual_output_t": 692525573,
+     "annual_output_t": 692525574,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 163,
@@ -9474,7 +9474,7 @@
      "estimated_reserve_index": 2.861,
      "excavation_sites": 489,
      "grade": 0.07,
-     "mined_volume_m3_y": 728974287,
+     "mined_volume_m3_y": 728974289,
      "power_mw": 14670,
      "reactor_fuel_t_y": 3.31,
      "resource": "water_volatiles",
@@ -9589,9 +9589,9 @@
      "total": 2
     },
     "military_shipyard": {
-     "major": 1,
+     "major": 2,
      "named": [],
-     "total": 1
+     "total": 2
     },
     "mine": {
      "major": 12,
@@ -9606,7 +9606,7 @@
     "patrol_base": {
      "major": 11,
      "named": [],
-     "total": 119
+     "total": 120
     },
     "power_plant": {
      "major": 35,
@@ -9648,14 +9648,14 @@
    "shipyards": {
     "civil_dry_t_y": 181482,
     "has_yard_tech": true,
-    "jump_drives_y": 98.10000000000001,
-    "military_dry_t_y": 39910
+    "jump_drives_y": 98.8,
+    "military_dry_t_y": 40195
    },
    "totals": {
-    "equipment_t": 363670750,
-    "power_mw": 2437733,
-    "spare_parts_t_y": 16417600,
-    "workers": 32946390
+    "equipment_t": 363734750,
+    "power_mw": 2438163,
+    "spare_parts_t_y": 16419820,
+    "workers": 32953890
    }
   },
   "wolf359_citadel": {
@@ -10214,8 +10214,8 @@
    "named": 5
   },
   "military_shipyard": {
-   "count": 27,
-   "major": 22,
+   "count": 28,
+   "major": 23,
    "name": "военная верфь",
    "named": 1
   },
@@ -10232,7 +10232,7 @@
    "named": 1
   },
   "patrol_base": {
-   "count": 1570,
+   "count": 1571,
    "major": 147,
    "name": "патрульная база",
    "named": 0

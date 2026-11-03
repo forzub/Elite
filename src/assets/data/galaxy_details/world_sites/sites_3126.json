@@ -74,7 +74,7 @@
   {
    "id": "site.019.mandala",
    "map_level": "detail",
-   "name": "Комплекс «Мандала»",
+   "name": "Лагерь «Мандала» (брошен)",
    "parent_body_id": "system_19.HD_102195.HD_102195_K2",
    "placement": {
     "surface": {
@@ -105,6 +105,40 @@
    "runtime_binding": null,
    "system_id": 19,
    "type": "mining_hub"
+  },
+  {
+   "id": "site.041.vorota",
+   "map_level": "system",
+   "name": "Станция «Ворота» (внешний периметр)",
+   "parent_body_id": "system_41.HD_104067.HD_104067_b",
+   "placement": {
+    "orbit": {
+     "altitude_km": 160000,
+     "inclination_deg": 3.0
+    }
+   },
+   "polity": "tau_ceti_cognium",
+   "population": 5200,
+   "runtime_binding": null,
+   "system_id": 41,
+   "type": "trade_hub"
+  },
+  {
+   "id": "site.041.holding",
+   "map_level": "detail",
+   "name": "Карантинная стоянка «Ворота-К»",
+   "parent_body_id": "system_41.HD_104067.HD_104067_b",
+   "placement": {
+    "orbit": {
+     "altitude_km": 400000,
+     "inclination_deg": 20.0
+    }
+   },
+   "polity": "tau_ceti_cognium",
+   "population": 600,
+   "runtime_binding": null,
+   "system_id": 41,
+   "type": "quarantine_hub"
   },
   {
    "id": "site.031.cyg61_kern.city01",

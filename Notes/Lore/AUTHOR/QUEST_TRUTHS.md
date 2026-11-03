@@ -14,7 +14,7 @@
 | [MAYFLOWER-2](../SHIPS/MAYFLOWER-2.md) | arrived | dismantled | да | deferred_maintenance: Совет урезал бюджет запчастей контуров охлаждения в 2171, вину переложили на каторжников | CANON · PUBLIC |
 | [UBUNTU-1](../SHIPS/UBUNTU-1.md) | destroyed_unexplained | debris_field | да | обломки колец «Цитадель» и «Общий»; кольцо «Кузница» среди обломков не найдено | UNKNOWN · AUTHOR TRUTH |
 | [GREEN-ARK-1](../SHIPS/GREEN-ARK-1.md) | arrived_colony_quarantined | orbit_monument | да | симбионт вырос из корабельного микробиома («успокаивающий» штамм биотех-партнёра) | PROPOSAL · AUTHOR TRUTH |
-| [NIRVANA-1](../SHIPS/NIRVANA-1.md) | missing | unknown | да | координаты fate.md — точка «легенды», не положение | UNKNOWN · AUTHOR TRUTH |
+| [NIRVANA-1](../SHIPS/NIRVANA-1.md) | derelict_found | derelict_infected | да | корпус «Лотос» в поле аномалий в 21 св. годе за HD 104067 (dso.lotus); в 2680 вошёл в ядро природной складки поля и был перенесён туда; экипаж погиб от синдрома поля к 2712 (AUTHOR_TRUTH, world_sites.json -> lotus.truth) | PROPOSAL · AUTHOR TRUTH |
 | [IRON-SHIELD-2](../SHIPS/IRON-SHIELD-2.md) | missing | unknown | да | данные засекречены Цитаделью | UNKNOWN · AUTHOR TRUTH |
 | [GAIA-2](../SHIPS/GAIA-2.md) | derelict_empty | orbiting_empty | да | TRAPPIST-1: изучение 10 лет, посадка, исчезновение людей; ИИ «Гомер-2» продолжает слать «Сад растёт» | PROPOSAL · AUTHOR TRUTH |
 | [DEEP-SEEK-1](../SHIPS/DEEP-SEEK-1.md) | destroyed | debris_trail | да | обломочный след на 0.1 c прошил внешнюю систему HD 40307 и ушёл за её пределы | PROPOSAL · AUTHOR TRUTH |
@@ -26,7 +26,6 @@
 | ID | Вопрос | Статус |
 |---|---|---|
 | IRON-SHIELD-2.cause | что случилось с IRON-SHIELD-2 (3 000 человек, 2355) | UNKNOWN · AUTHOR TRUTH |
-| NIRVANA-1.fate | судьба и положение NIRVANA-1 | UNKNOWN · AUTHOR TRUTH |
 | UBUNTU-1.cause | причина гибели UBUNTU-1 («огни») | UNKNOWN · AUTHOR TRUTH |
 | FAREWELL-1.people | судьба людей FAREWELL-1 | UNKNOWN · AUTHOR TRUTH |
 | EARTH.jump_cores | умеет ли Земля 3126 делать собственные ядра прыжка (только маяк из памятника HYPERION-1) | UNKNOWN · AUTHOR TRUTH |

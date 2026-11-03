@@ -4,19 +4,19 @@
    "appointed": 3122,
    "background": "company_manager",
    "background_ru": "менеджер компании",
-   "drift": 0.264,
-   "effective_freedom": 0.674,
+   "drift": 0.263,
+   "effective_freedom": 0.671,
    "id": "adm.site.019.porog",
    "name": "Marcus Hale",
-   "origin": "Менеджер компании, назначен в 3122: так обычно отбирают руководителей в системе «корпоративная юрисдикция». Свобода рук 0.67 — удалённость 0.80, приказы идут 3.9 сут, проверок 0.5/год.",
+   "origin": "Менеджер компании, назначен в 3122: так обычно отбирают руководителей в системе «корпоративная юрисдикция». Свобода рук 0.67 — удалённость 0.80, приказы идут 3.8 сут, проверок 0.5/год.",
    "oversight": {
-    "comms_quality": 0.414,
+    "comms_quality": 0.424,
     "economic_autonomy": 0.596,
     "force_presence": 0.36,
     "inspection_per_year": 0.48,
     "institution_strength": 0.6,
     "local_elite_dependence": 0.6,
-    "order_delay_days": 3.908,
+    "order_delay_days": 3.838,
     "remoteness": 0.8
    },
    "site": "site.019.porog",
@@ -39,18 +39,18 @@
    "background": "boss",
    "background_ru": "главарь",
    "drift": 1.0,
-   "effective_freedom": 0.834,
+   "effective_freedom": 0.833,
    "id": "adm.site.019.troyan_market",
    "name": "Leah Okafor",
    "origin": "Главарь, назначен в 3121: так обычно отбирают руководителей в системе «фактически нет работающего закона». Свобода рук 0.83 — удалённость 0.80, приказы идут 4.0 сут, проверок 0.2/год.",
    "oversight": {
-    "comms_quality": 0.396,
+    "comms_quality": 0.406,
     "economic_autonomy": 0.7,
     "force_presence": 0.013,
     "inspection_per_year": 0.2,
     "institution_strength": 0.05,
     "local_elite_dependence": 0.6,
-    "order_delay_days": 4.029,
+    "order_delay_days": 3.959,
     "remoteness": 0.8
    },
    "site": "site.019.troyan_market",
@@ -72,19 +72,19 @@
    "appointed": 3124,
    "background": "local_notable",
    "background_ru": "местный уважаемый человек",
-   "drift": 0.563,
-   "effective_freedom": 0.832,
+   "drift": 0.562,
+   "effective_freedom": 0.831,
    "id": "adm.site.019.dead_reckoning",
    "name": "Owen Price",
    "origin": "Местный уважаемый человек, назначен в 3124: так обычно отбирают руководителей в системе «фактически нет работающего закона». Свобода рук 0.83 — удалённость 0.80, приказы идут 4.0 сут, проверок 0.2/год.",
    "oversight": {
-    "comms_quality": 0.396,
+    "comms_quality": 0.406,
     "economic_autonomy": 0.7,
     "force_presence": 0.025,
     "inspection_per_year": 0.2,
     "institution_strength": 0.05,
     "local_elite_dependence": 0.6,
-    "order_delay_days": 4.029,
+    "order_delay_days": 3.959,
     "remoteness": 0.8
    },
    "site": "site.019.dead_reckoning",
@@ -106,19 +106,19 @@
    "appointed": 3118,
    "background": "company_manager",
    "background_ru": "менеджер компании",
-   "drift": 0.394,
-   "effective_freedom": 0.701,
+   "drift": 0.392,
+   "effective_freedom": 0.698,
    "id": "adm.site.019.claim_c",
    "name": "Sam Ibarra",
-   "origin": "Менеджер компании, назначен в 3118: так обычно отбирают руководителей в системе «корпоративная юрисдикция». Свобода рук 0.70 — удалённость 0.80, приказы идут 3.9 сут, проверок 0.5/год.",
+   "origin": "Менеджер компании, назначен в 3118: так обычно отбирают руководителей в системе «корпоративная юрисдикция». Свобода рук 0.70 — удалённость 0.80, приказы идут 3.8 сут, проверок 0.5/год.",
    "oversight": {
-    "comms_quality": 0.414,
+    "comms_quality": 0.424,
     "economic_autonomy": 0.596,
     "force_presence": 0.18,
     "inspection_per_year": 0.48,
     "institution_strength": 0.6,
     "local_elite_dependence": 0.6,
-    "order_delay_days": 3.908,
+    "order_delay_days": 3.838,
     "remoteness": 0.8
    },
    "site": "site.019.claim_c",
@@ -140,19 +140,19 @@
    "appointed": 3122,
    "background": "local_notable",
    "background_ru": "местный уважаемый человек",
-   "drift": 0.476,
-   "effective_freedom": 0.78,
+   "drift": 0.522,
+   "effective_freedom": 0.855,
    "id": "adm.dso.lotus",
    "name": "Leah Okafor",
-   "origin": "Местный уважаемый человек, назначен в 3122: так обычно отбирают руководителей в системе «фактически нет работающего закона». Свобода рук 0.78 — удалённость 0.75, приказы идут 2.5 сут, проверок 0.2/год.",
+   "origin": "Местный уважаемый человек, назначен в 3122: так обычно отбирают руководителей в системе «фактически нет работающего закона». Свобода рук 0.85 — удалённость 0.75, приказы идут 7.0 сут, проверок 0.2/год.",
    "oversight": {
-    "comms_quality": 0.624,
+    "comms_quality": 0.0,
     "economic_autonomy": 0.675,
     "force_presence": 0.01,
     "inspection_per_year": 0.2,
     "institution_strength": 0.05,
     "local_elite_dependence": 0.575,
-    "order_delay_days": 2.505,
+    "order_delay_days": 7.0,
     "remoteness": 0.75
    },
    "site": "dso.lotus",
@@ -169,6 +169,74 @@
     "susceptibility_to_bribery": 0.403
    },
    "verdict": "превращает пост в контрабандный узел"
+  },
+  {
+   "appointed": 3125,
+   "background": "boss",
+   "background_ru": "главарь",
+   "drift": 1.0,
+   "effective_freedom": 0.782,
+   "id": "adm.dso.far_berth",
+   "name": "Marcus Hale",
+   "origin": "Главарь, назначен в 3125: так обычно отбирают руководителей в системе «фактически нет работающего закона». Свобода рук 0.78 — удалённость 0.75, приказы идут 2.7 сут, проверок 0.2/год.",
+   "oversight": {
+    "comms_quality": 0.597,
+    "economic_autonomy": 0.675,
+    "force_presence": 0.013,
+    "inspection_per_year": 0.2,
+    "institution_strength": 0.05,
+    "local_elite_dependence": 0.575,
+    "order_delay_days": 2.689,
+    "remoteness": 0.75
+   },
+   "site": "dso.far_berth",
+   "status": "PROPOSAL",
+   "traits": {
+    "ambition": 0.831,
+    "competence": 0.621,
+    "connections": 0.644,
+    "corruption": 0.969,
+    "cruelty_empathy": 0.266,
+    "ideological_commitment": 0.174,
+    "loyalty": 0.075,
+    "risk_tolerance": 0.799,
+    "susceptibility_to_bribery": 1.0
+   },
+   "verdict": "превращает пост в контрабандный узел"
+  },
+  {
+   "appointed": 3122,
+   "background": "career_bureaucrat",
+   "background_ru": "карьерный чиновник",
+   "drift": 0.229,
+   "effective_freedom": 0.705,
+   "id": "adm.dso.quarantine_picket",
+   "name": "Marcus Hale",
+   "origin": "Карьерный чиновник, назначен в 3122: так обычно отбирают руководителей в системе «технократическое гражданское право». Свобода рук 0.71 — удалённость 0.75, приказы идут 7.0 сут, проверок 0.8/год.",
+   "oversight": {
+    "comms_quality": 0.0,
+    "economic_autonomy": 0.556,
+    "force_presence": 0.807,
+    "inspection_per_year": 0.85,
+    "institution_strength": 0.85,
+    "local_elite_dependence": 0.575,
+    "order_delay_days": 7.0,
+    "remoteness": 0.75
+   },
+   "site": "dso.quarantine_picket",
+   "status": "PROPOSAL",
+   "traits": {
+    "ambition": 0.609,
+    "competence": 0.644,
+    "connections": 0.662,
+    "corruption": 0.322,
+    "cruelty_empathy": 0.53,
+    "ideological_commitment": 0.45,
+    "loyalty": 0.541,
+    "risk_tolerance": 0.395,
+    "susceptibility_to_bribery": 0.389
+   },
+   "verdict": "служит делу"
   },
   {
    "appointed": 3122,
@@ -1921,18 +1989,18 @@
     }
    }
   },
-  "dso.lotus": {
-   "archetype": "corrupt_free_port",
-   "archetype_ru": "коррумпированный вольный порт",
-   "comms_delay_days": 2.505,
-   "description": "Можно всё — за деньги; закон договорной.",
+  "dso.far_berth": {
+   "archetype": "poor_stagnant",
+   "archetype_ru": "бедное прозябающее поселение",
+   "comms_delay_days": 2.689,
+   "description": "Нехватка, старые корабли, люди уезжают.",
    "metrics": {
-    "activity": 0.338,
+    "activity": 0.379,
     "corruption": 1.0,
     "crime": 0.754,
     "institutional_capacity": 0.031,
     "isolation": 0.75,
-    "medical_resilience": 0.237,
+    "medical_resilience": 0.573,
     "political_volatility": 0.247,
     "prosperity": 0.25,
     "security_pressure": 0.5,
@@ -1951,7 +2019,7 @@
     },
     "epidemic": {
      "response": "карантин только на бумаге",
-     "severity": 1.12
+     "severity": 0.857
     },
     "infrastructure_destruction": {
      "response": "мародёрство и спекуляция",
@@ -1988,6 +2056,216 @@
     "war": {
      "response": "мародёрство и спекуляция",
      "severity": 1.256
+    }
+   }
+  },
+  "dso.garden": {
+   "archetype": "corrupt_free_port",
+   "archetype_ru": "коррумпированный вольный порт",
+   "comms_delay_days": 7.0,
+   "description": "Можно всё — за деньги; закон договорной.",
+   "metrics": {
+    "activity": 0.301,
+    "corruption": 1.0,
+    "crime": 0.755,
+    "institutional_capacity": 0.026,
+    "isolation": 0.95,
+    "medical_resilience": 0.141,
+    "political_volatility": 0.247,
+    "prosperity": 0.25,
+    "security_pressure": 0.5,
+    "social_cohesion": 0.264,
+    "supply_security": 0.0,
+    "trust": 0.0
+   },
+   "reactions": {
+    "accident": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.26
+    },
+    "beacon_loss": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.399
+    },
+    "epidemic": {
+     "response": "карантин только на бумаге",
+     "severity": 1.197
+    },
+    "infrastructure_destruction": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.26
+    },
+    "mass_migration": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.26
+    },
+    "pirates": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.291
+    },
+    "quarantine": {
+     "response": "карантин только на бумаге",
+     "severity": 1.308
+    },
+    "refugee_influx": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.177
+    },
+    "route_loss": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.667
+    },
+    "sanctions": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.229
+    },
+    "shortage": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.216
+    },
+    "war": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.26
+    }
+   }
+  },
+  "dso.lotus": {
+   "archetype": "half_abandoned",
+   "archetype_ru": "полузаброшенная станция",
+   "comms_delay_days": 7.0,
+   "description": "Пустые отсеки, автоматика, редкие люди.",
+   "metrics": {
+    "activity": 0.0,
+    "corruption": 1.0,
+    "crime": 0.754,
+    "institutional_capacity": 0.031,
+    "isolation": 0.75,
+    "medical_resilience": 0.125,
+    "political_volatility": 0.247,
+    "prosperity": 0.25,
+    "security_pressure": 0.5,
+    "social_cohesion": 0.264,
+    "supply_security": 0.0,
+    "trust": 0.0
+   },
+   "reactions": {
+    "accident": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.256
+    },
+    "beacon_loss": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.24
+    },
+    "epidemic": {
+     "response": "карантин только на бумаге",
+     "severity": 1.207
+    },
+    "infrastructure_destruction": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.256
+    },
+    "mass_migration": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.256
+    },
+    "pirates": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.285
+    },
+    "quarantine": {
+     "response": "карантин только на бумаге",
+     "severity": 1.305
+    },
+    "refugee_influx": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.175
+    },
+    "route_loss": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.534
+    },
+    "sanctions": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.227
+    },
+    "shortage": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.214
+    },
+    "war": {
+     "response": "мародёрство и спекуляция",
+     "severity": 1.256
+    }
+   }
+  },
+  "dso.quarantine_picket": {
+   "archetype": "closed_disciplined",
+   "archetype_ru": "закрытая дисциплинированная база",
+   "comms_delay_days": 7.0,
+   "description": "Пропуска, режим, порядок; чужих не любят.",
+   "metrics": {
+    "activity": 0.35,
+    "corruption": 0.184,
+    "crime": 0.409,
+    "institutional_capacity": 0.531,
+    "isolation": 0.75,
+    "medical_resilience": 0.437,
+    "political_volatility": 0.466,
+    "prosperity": 0.623,
+    "security_pressure": 0.68,
+    "social_cohesion": 0.565,
+    "supply_security": 0.593,
+    "trust": 0.487
+   },
+   "reactions": {
+    "accident": {
+     "response": "взаимопомощь",
+     "severity": 0.683
+    },
+    "beacon_loss": {
+     "response": "взаимопомощь",
+     "severity": 0.824
+    },
+    "epidemic": {
+     "response": "взаимопомощь",
+     "severity": 0.64
+    },
+    "infrastructure_destruction": {
+     "response": "взаимопомощь",
+     "severity": 0.683
+    },
+    "mass_migration": {
+     "response": "взаимопомощь",
+     "severity": 0.683
+    },
+    "pirates": {
+     "response": "взаимопомощь",
+     "severity": 0.637
+    },
+    "quarantine": {
+     "response": "взаимопомощь",
+     "severity": 0.656
+    },
+    "refugee_influx": {
+     "response": "взаимопомощь",
+     "severity": 0.651
+    },
+    "route_loss": {
+     "response": "взаимопомощь",
+     "severity": 0.865
+    },
+    "sanctions": {
+     "response": "взаимопомощь",
+     "severity": 0.553
+    },
+    "shortage": {
+     "response": "взаимопомощь",
+     "severity": 0.5
+    },
+    "war": {
+     "response": "взаимопомощь",
+     "severity": 0.683
     }
    }
   },
@@ -9347,7 +9625,7 @@
    "comms_delay_days": 0.106,
    "description": "Силу решает оружие; заходить с охраной.",
    "metrics": {
-    "activity": 0.408,
+    "activity": 0.407,
     "corruption": 1.0,
     "crime": 0.965,
     "institutional_capacity": 0.041,
@@ -9355,7 +9633,7 @@
     "medical_resilience": 0.238,
     "political_volatility": 0.256,
     "prosperity": 0.15,
-    "security_pressure": 0.428,
+    "security_pressure": 0.427,
     "social_cohesion": 0.222,
     "supply_security": 0.0,
     "trust": 0.0
@@ -28524,7 +28802,7 @@
   "site.019.claim_c": {
    "archetype": "half_abandoned",
    "archetype_ru": "полузаброшенная станция",
-   "comms_delay_days": 3.908,
+   "comms_delay_days": 3.838,
    "description": "Пустые отсеки, автоматика, редкие люди.",
    "metrics": {
     "activity": 0.287,
@@ -28594,7 +28872,7 @@
   "site.019.dead_reckoning": {
    "archetype": "criminal_cesspit",
    "archetype_ru": "криминальная клоака",
-   "comms_delay_days": 4.029,
+   "comms_delay_days": 3.959,
    "description": "Силу решает оружие; заходить с охраной.",
    "metrics": {
     "activity": 0.362,
@@ -28664,7 +28942,7 @@
   "site.019.mandala": {
    "archetype": "half_abandoned",
    "archetype_ru": "полузаброшенная станция",
-   "comms_delay_days": 4.029,
+   "comms_delay_days": 3.959,
    "description": "Пустые отсеки, автоматика, редкие люди.",
    "metrics": {
     "activity": 0.0,
@@ -28734,7 +29012,7 @@
   "site.019.porog": {
    "archetype": "nervous_boomtown",
    "archetype_ru": "нервный бумтаун",
-   "comms_delay_days": 3.908,
+   "comms_delay_days": 3.838,
    "description": "Быстрый рост, приезжие, слабые связи; деньги и драки.",
    "metrics": {
     "activity": 0.705,
@@ -28804,7 +29082,7 @@
   "site.019.troyan_market": {
    "archetype": "corrupt_free_port",
    "archetype_ru": "коррумпированный вольный порт",
-   "comms_delay_days": 4.029,
+   "comms_delay_days": 3.959,
    "description": "Можно всё — за деньги; закон договорной.",
    "metrics": {
     "activity": 0.658,
@@ -34012,6 +34290,146 @@
     "epidemic": {
      "response": "взаимопомощь",
      "severity": 0.54
+    },
+    "infrastructure_destruction": {
+     "response": "взаимопомощь",
+     "severity": 0.555
+    },
+    "mass_migration": {
+     "response": "взаимопомощь",
+     "severity": 0.555
+    },
+    "pirates": {
+     "response": "взаимопомощь",
+     "severity": 0.495
+    },
+    "quarantine": {
+     "response": "взаимопомощь",
+     "severity": 0.531
+    },
+    "refugee_influx": {
+     "response": "взаимопомощь",
+     "severity": 0.563
+    },
+    "route_loss": {
+     "response": "взаимопомощь",
+     "severity": 0.612
+    },
+    "sanctions": {
+     "response": "взаимопомощь",
+     "severity": 0.472
+    },
+    "shortage": {
+     "response": "взаимопомощь",
+     "severity": 0.426
+    },
+    "war": {
+     "response": "взаимопомощь",
+     "severity": 0.555
+    }
+   }
+  },
+  "site.041.holding": {
+   "archetype": "closed_disciplined",
+   "archetype_ru": "закрытая дисциплинированная база",
+   "comms_delay_days": 1.313,
+   "description": "Пропуска, режим, порядок; чужих не любят.",
+   "metrics": {
+    "activity": 0.371,
+    "corruption": 0.168,
+    "crime": 0.014,
+    "institutional_capacity": 0.68,
+    "isolation": 0.4,
+    "medical_resilience": 1.0,
+    "political_volatility": 0.45,
+    "prosperity": 0.623,
+    "security_pressure": 0.38,
+    "social_cohesion": 0.643,
+    "supply_security": 0.615,
+    "trust": 0.585
+   },
+   "reactions": {
+    "accident": {
+     "response": "взаимопомощь",
+     "severity": 0.555
+    },
+    "beacon_loss": {
+     "response": "взаимопомощь",
+     "severity": 0.555
+    },
+    "epidemic": {
+     "response": "взаимопомощь",
+     "severity": 0.3
+    },
+    "infrastructure_destruction": {
+     "response": "взаимопомощь",
+     "severity": 0.555
+    },
+    "mass_migration": {
+     "response": "взаимопомощь",
+     "severity": 0.555
+    },
+    "pirates": {
+     "response": "взаимопомощь",
+     "severity": 0.495
+    },
+    "quarantine": {
+     "response": "взаимопомощь",
+     "severity": 0.531
+    },
+    "refugee_influx": {
+     "response": "взаимопомощь",
+     "severity": 0.563
+    },
+    "route_loss": {
+     "response": "взаимопомощь",
+     "severity": 0.612
+    },
+    "sanctions": {
+     "response": "взаимопомощь",
+     "severity": 0.472
+    },
+    "shortage": {
+     "response": "взаимопомощь",
+     "severity": 0.426
+    },
+    "war": {
+     "response": "взаимопомощь",
+     "severity": 0.555
+    }
+   }
+  },
+  "site.041.vorota": {
+   "archetype": "calm_provided",
+   "archetype_ru": "спокойное обеспеченное место",
+   "comms_delay_days": 1.313,
+   "description": "Спокойно и обеспечено, работают институты.",
+   "metrics": {
+    "activity": 0.745,
+    "corruption": 0.168,
+    "crime": 0.014,
+    "institutional_capacity": 0.68,
+    "isolation": 0.4,
+    "medical_resilience": 0.507,
+    "political_volatility": 0.45,
+    "prosperity": 0.623,
+    "security_pressure": 0.38,
+    "social_cohesion": 0.643,
+    "supply_security": 0.615,
+    "trust": 0.585
+   },
+   "reactions": {
+    "accident": {
+     "response": "взаимопомощь",
+     "severity": 0.555
+    },
+    "beacon_loss": {
+     "response": "взаимопомощь",
+     "severity": 0.555
+    },
+    "epidemic": {
+     "response": "взаимопомощь",
+     "severity": 0.522
     },
     "infrastructure_destruction": {
      "response": "взаимопомощь",

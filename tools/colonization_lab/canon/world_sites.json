@@ -4,22 +4,166 @@
   "note": "Authored input of the spatial civilisation layer (2026-11-03, third pass). One object = one id: world_sites.py turns this file + the physical catalog + the economy into out/world_3126/*_3126.json (GENERATED) and exports the runtime copies (galaxy_details/world_sites/, objects_details/world_*.json). Nothing here is canon until the author accepts it; positions of deep-space objects are generated from 'placement' (deterministic) and carry a world line (position at epoch + velocity).",
   "epoch_year": 3126.0,
   "site_types": {
-    "planetary_surface_port": {"ru": "наземный космопорт", "map": "detail", "docks": 12, "storage_t": 400000, "repair": "full", "medical_beds_per_1000": 3.0, "quarantine_beds_per_1000": 0.4, "security": 0.6},
-    "orbital_hub": {"ru": "орбитальный хаб", "map": "system", "docks": 24, "storage_t": 900000, "repair": "full", "medical_beds_per_1000": 2.5, "quarantine_beds_per_1000": 0.5, "security": 0.7},
-    "moon_hub": {"ru": "хаб на луне", "map": "detail", "docks": 10, "storage_t": 300000, "repair": "basic", "medical_beds_per_1000": 2.5, "quarantine_beds_per_1000": 0.4, "security": 0.5},
-    "belt_hub": {"ru": "хаб пояса", "map": "system", "docks": 10, "storage_t": 250000, "repair": "basic", "medical_beds_per_1000": 2.0, "quarantine_beds_per_1000": 0.3, "security": 0.4},
-    "mining_hub": {"ru": "горнодобывающий хаб", "map": "detail", "docks": 6, "storage_t": 400000, "repair": "basic", "medical_beds_per_1000": 1.5, "quarantine_beds_per_1000": 0.2, "security": 0.3},
-    "industrial_hub": {"ru": "промышленный хаб", "map": "detail", "docks": 8, "storage_t": 600000, "repair": "full", "medical_beds_per_1000": 2.0, "quarantine_beds_per_1000": 0.3, "security": 0.5},
-    "trade_hub": {"ru": "торговый хаб", "map": "system", "docks": 30, "storage_t": 1500000, "repair": "full", "medical_beds_per_1000": 2.5, "quarantine_beds_per_1000": 0.6, "security": 0.6},
-    "deep_space_relay": {"ru": "межзвёздный ретранслятор", "map": "galaxy", "docks": 2, "storage_t": 2000, "repair": "none", "medical_beds_per_1000": 10.0, "quarantine_beds_per_1000": 5.0, "security": 0.2},
-    "deep_space_refuel_point": {"ru": "межзвёздная заправка", "map": "galaxy", "docks": 4, "storage_t": 30000, "repair": "basic", "medical_beds_per_1000": 8.0, "quarantine_beds_per_1000": 4.0, "security": 0.25},
-    "derelict_hub": {"ru": "хаб на брошенном корабле", "map": "galaxy", "docks": 6, "storage_t": 60000, "repair": "basic", "medical_beds_per_1000": 4.0, "quarantine_beds_per_1000": 2.0, "security": 0.2},
-    "military_hub": {"ru": "военный хаб", "map": "system", "docks": 16, "storage_t": 500000, "repair": "full", "medical_beds_per_1000": 6.0, "quarantine_beds_per_1000": 1.0, "security": 0.95},
-    "quarantine_hub": {"ru": "карантинный хаб", "map": "detail", "docks": 6, "storage_t": 80000, "repair": "basic", "medical_beds_per_1000": 40.0, "quarantine_beds_per_1000": 300.0, "security": 0.8},
-    "science_hub": {"ru": "научный хаб", "map": "detail", "docks": 4, "storage_t": 20000, "repair": "basic", "medical_beds_per_1000": 4.0, "quarantine_beds_per_1000": 2.0, "security": 0.4},
-    "free_port": {"ru": "вольный порт", "map": "detail", "docks": 12, "storage_t": 200000, "repair": "full", "medical_beds_per_1000": 1.0, "quarantine_beds_per_1000": 0.1, "security": 0.25},
-    "pirate_enclave": {"ru": "пиратский анклав", "map": "none", "docks": 6, "storage_t": 80000, "repair": "basic", "medical_beds_per_1000": 0.8, "quarantine_beds_per_1000": 0.0, "security": 0.5},
-    "abandoned_hub": {"ru": "брошенный хаб", "map": "detail", "docks": 0, "storage_t": 0, "repair": "none", "medical_beds_per_1000": 0.0, "quarantine_beds_per_1000": 0.0, "security": 0.0}
+    "planetary_surface_port": {
+      "ru": "наземный космопорт",
+      "map": "detail",
+      "docks": 12,
+      "storage_t": 400000,
+      "repair": "full",
+      "medical_beds_per_1000": 3.0,
+      "quarantine_beds_per_1000": 0.4,
+      "security": 0.6
+    },
+    "orbital_hub": {
+      "ru": "орбитальный хаб",
+      "map": "system",
+      "docks": 24,
+      "storage_t": 900000,
+      "repair": "full",
+      "medical_beds_per_1000": 2.5,
+      "quarantine_beds_per_1000": 0.5,
+      "security": 0.7
+    },
+    "moon_hub": {
+      "ru": "хаб на луне",
+      "map": "detail",
+      "docks": 10,
+      "storage_t": 300000,
+      "repair": "basic",
+      "medical_beds_per_1000": 2.5,
+      "quarantine_beds_per_1000": 0.4,
+      "security": 0.5
+    },
+    "belt_hub": {
+      "ru": "хаб пояса",
+      "map": "system",
+      "docks": 10,
+      "storage_t": 250000,
+      "repair": "basic",
+      "medical_beds_per_1000": 2.0,
+      "quarantine_beds_per_1000": 0.3,
+      "security": 0.4
+    },
+    "mining_hub": {
+      "ru": "горнодобывающий хаб",
+      "map": "detail",
+      "docks": 6,
+      "storage_t": 400000,
+      "repair": "basic",
+      "medical_beds_per_1000": 1.5,
+      "quarantine_beds_per_1000": 0.2,
+      "security": 0.3
+    },
+    "industrial_hub": {
+      "ru": "промышленный хаб",
+      "map": "detail",
+      "docks": 8,
+      "storage_t": 600000,
+      "repair": "full",
+      "medical_beds_per_1000": 2.0,
+      "quarantine_beds_per_1000": 0.3,
+      "security": 0.5
+    },
+    "trade_hub": {
+      "ru": "торговый хаб",
+      "map": "system",
+      "docks": 30,
+      "storage_t": 1500000,
+      "repair": "full",
+      "medical_beds_per_1000": 2.5,
+      "quarantine_beds_per_1000": 0.6,
+      "security": 0.6
+    },
+    "deep_space_relay": {
+      "ru": "межзвёздный ретранслятор",
+      "map": "galaxy",
+      "docks": 2,
+      "storage_t": 2000,
+      "repair": "none",
+      "medical_beds_per_1000": 10.0,
+      "quarantine_beds_per_1000": 5.0,
+      "security": 0.2
+    },
+    "deep_space_refuel_point": {
+      "ru": "межзвёздная заправка",
+      "map": "galaxy",
+      "docks": 4,
+      "storage_t": 30000,
+      "repair": "basic",
+      "medical_beds_per_1000": 8.0,
+      "quarantine_beds_per_1000": 4.0,
+      "security": 0.25
+    },
+    "derelict_hub": {
+      "ru": "хаб на брошенном корабле",
+      "map": "galaxy",
+      "docks": 6,
+      "storage_t": 60000,
+      "repair": "basic",
+      "medical_beds_per_1000": 4.0,
+      "quarantine_beds_per_1000": 2.0,
+      "security": 0.2
+    },
+    "military_hub": {
+      "ru": "военный хаб",
+      "map": "system",
+      "docks": 16,
+      "storage_t": 500000,
+      "repair": "full",
+      "medical_beds_per_1000": 6.0,
+      "quarantine_beds_per_1000": 1.0,
+      "security": 0.95
+    },
+    "quarantine_hub": {
+      "ru": "карантинный хаб",
+      "map": "detail",
+      "docks": 6,
+      "storage_t": 80000,
+      "repair": "basic",
+      "medical_beds_per_1000": 40.0,
+      "quarantine_beds_per_1000": 300.0,
+      "security": 0.8
+    },
+    "science_hub": {
+      "ru": "научный хаб",
+      "map": "detail",
+      "docks": 4,
+      "storage_t": 20000,
+      "repair": "basic",
+      "medical_beds_per_1000": 4.0,
+      "quarantine_beds_per_1000": 2.0,
+      "security": 0.4
+    },
+    "free_port": {
+      "ru": "вольный порт",
+      "map": "detail",
+      "docks": 12,
+      "storage_t": 200000,
+      "repair": "full",
+      "medical_beds_per_1000": 1.0,
+      "quarantine_beds_per_1000": 0.1,
+      "security": 0.25
+    },
+    "pirate_enclave": {
+      "ru": "пиратский анклав",
+      "map": "none",
+      "docks": 6,
+      "storage_t": 80000,
+      "repair": "basic",
+      "medical_beds_per_1000": 0.8,
+      "quarantine_beds_per_1000": 0.0,
+      "security": 0.5
+    },
+    "abandoned_hub": {
+      "ru": "брошенный хаб",
+      "map": "detail",
+      "docks": 0,
+      "storage_t": 0,
+      "repair": "none",
+      "medical_beds_per_1000": 0.0,
+      "quarantine_beds_per_1000": 0.0,
+      "security": 0.0
+    }
   },
   "named_sites": [
     {
@@ -29,14 +173,21 @@
       "type": "orbital_hub",
       "system": 0,
       "body": "system_0.Sol.Земля",
-      "orbit": {"altitude_km": 420, "inclination_deg": 51.64},
+      "orbit": {
+        "altitude_km": 420,
+        "inclination_deg": 51.64
+      },
       "polity": "sol_authority",
       "operator": "sol_authority",
       "purpose": "главный грузовой и пассажирский узел Земля ↔ сеть; таможня Сола; док с шестью площадками",
       "population": 42000,
       "founded": 3108,
       "history": "Построен Властью Сола к открытию маяка (3112) на месте старой станции Кордона; через него проходят все рейсы Земли в сеть.",
-      "knowledge": {"status": "CANON", "visibility": "PUBLIC_RECORD", "basis": "станция существует в рантайме (initial_world_state.json, HexDockFacility); имя и численность — PROPOSAL"}
+      "knowledge": {
+        "status": "CANON",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "станция существует в рантайме (initial_world_state.json, HexDockFacility); имя и численность — PROPOSAL"
+      }
     },
     {
       "id": "site.024.pereval",
@@ -45,70 +196,240 @@
       "frame": "system",
       "system": 24,
       "body": "system_24.Gliese_436.Gliese_436_K1",
-      "orbit": {"altitude_km": 3000, "inclination_deg": 12.0},
+      "orbit": {
+        "altitude_km": 3000,
+        "inclination_deg": 12.0
+      },
       "polity": "cyg61_kern",
       "operator": "Kern Logistics (дочерняя компания «Шахты Альфа»)",
       "purpose": "единственная физическая дорога в дальний карман Керна: заряд прыжка (завозят танкеры), реакторное топливо из льда K1, ремонт, маяк-ретранслятор 3036 года",
       "population": 1800,
       "founded": 3034,
       "history": "Поставлено в 3034-3036, когда Керн готовил заявки у HD 114783 и 83 Leonis: прыжок Gliese 357 → 83 Leonis (37.9 св. лет) невозможен при пределе 32, а через Gliese 436 — два прыжка по 30.6 и 30.8. Без «Перевала» нет ни Третьей Эллады, ни Святого Сиона.",
-      "stocks": {"jump_charge_t": 4200, "reactor_fuel_t": 900, "food_days": 240},
-      "knowledge": {"status": "PROPOSAL", "visibility": "PUBLIC_RECORD", "basis": "геометрия каталога: единственная цепочка прыжков <= 32 св. лет в карман 37/41/45"}
+      "stocks": {
+        "jump_charge_t": 4200,
+        "reactor_fuel_t": 900,
+        "food_days": 240
+      },
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "геометрия каталога: единственная цепочка прыжков <= 32 св. лет в карман 37/41/45"
+      }
     }
   ],
   "deep_space_objects": [
     {
       "id": "dso.lotus",
       "site_type": "derelict_hub",
-      "name": "«Лотос»",
+      "name": "«Лотос» (корпус NIRVANA-1)",
       "object_type": "derelict",
-      "placement": {"from_system": 45, "toward_system": 19, "distance_ly": 21.0, "lateral_offset_ly": 2.0},
-      "velocity_km_s": {"speed": 38.0, "direction": "toward_system_perpendicular", "note": "остаточная скорость корпуса относительно Солнца (ICRS); годовой сдвиг ~1.2 млрд км — эфемериды старше месяца бесполезны для прыжка"},
-      "hull": {"form": "лотос", "length_m": 900, "diameter_m": 1200, "dry_mass_mt": 8},
-      "identity": {"claimed": "NIRVANA-1", "status": "DISPUTED", "basis": "форма «Лотос» и размеры совпадают с NIRVANA-1; но NIRVANA-1 стартовала с Солнца в 2300 г. к Kepler-62 и досветово не могла оказаться в 97 св. годах от Солнца в стороне от курса. Судьба NIRVANA-1 — UNKNOWN (автор)."},
+      "placement": {
+        "from_system": 41,
+        "toward_system": 19,
+        "distance_ly": 21.0,
+        "lateral_offset_ly": 1.0
+      },
+      "velocity_km_s": {
+        "speed": 38.0,
+        "direction": "toward_system_perpendicular",
+        "note": "остаточная скорость корпуса относительно Солнца (ICRS); годовой сдвиг ~1.2 млрд км — эфемериды старше месяца бесполезны для прыжка"
+      },
+      "hull": {
+        "form": "лотос",
+        "length_m": 900,
+        "diameter_m": 1200,
+        "dry_mass_mt": 8
+      },
+      "identity": {
+        "claimed": "NIRVANA-1",
+        "status": "DISPUTED",
+        "author_truth": "NIRVANA-1",
+        "basis": "для мира — спорно (досветово туда не попасть); для разработчиков — это NIRVANA-1 (см. author_truth)"
+      },
       "polity": null,
-      "operator": "Экспедиционная компания «Дальний Причал» (лицензия Керна) — фактически; формально — никто",
-      "purpose": "промежуточный прыжок 83 Leonis → HD 102195 (21 + 18 св. лет): док, заряд с танкеров, укрытие, ремонт, тайники",
-      "population": 340,
-      "founded": 3098,
-      "history": "Корпус нашла в 3091 разведка Керна, шедшая на сигнал маяка «с невозможного направления». С 3098 в нём живут: сначала спасатели, потом экспедиционная компания, сквоттеры, скупщики. Маяк-ретранслятор поставлен в 3104 и часто молчит.",
-      "beacon": {"kind": "relay", "since": 3104, "uptime": 0.62},
-      "stocks": {"jump_charge_t": 900, "reactor_fuel_t": 300, "food_days": 120},
-      "knowledge": {"status": "PROPOSAL", "visibility": "PUBLIC_RECORD", "basis": "геометрия каталога: 83 Leonis → HD 102195 = 39.3 св. лет > 32, нужна промежуточная точка"}
+      "operator": "никто (карантин Когниума с 3112; мародёры)",
+      "purpose": "мёртвая NIRVANA-1 в центре поля аномалий: ~2 160 тел экипажа, первичный (конечный) источник лотосита; маяк корабля передаёт мантры",
+      "population": 0,
+      "founded": null,
+      "history": "Найден 3091 поисковой экспедицией Керна «Сирин» по сигналу маяка с доплеровским сдвигом (реальный источник, а не эхо). 3093-3101 Керн скрывает находку; 3103 утечка через Агору; 3112 кордон Когниума и Керна.",
+      "beacon": {
+        "kind": "relay",
+        "since": 2300,
+        "uptime": 0.3,
+        "note": "старый маяк корабля: мантры ИИ «Мандала»; навигационного захвата не даёт"
+      },
+      "stocks": {
+        "jump_charge_t": 0,
+        "reactor_fuel_t": 0,
+        "food_days": 0
+      },
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "геометрия каталога: 83 Leonis → HD 102195 = 39.3 св. лет > 32, нужна промежуточная точка"
+      }
+    },
+    {
+      "id": "dso.far_berth",
+      "site_type": "deep_space_refuel_point",
+      "name": "Станция «Дальний Причал»",
+      "object_type": "deep_space_station",
+      "placement": {
+        "near": "dso.lotus",
+        "offset_au": [
+          1.5,
+          0.0,
+          0.0
+        ]
+      },
+      "velocity_km_s": {
+        "speed": 38.0,
+        "direction": "comoving",
+        "note": "держится в 1.5 а.е. от корпуса, вне поля; общая мировая линия с «Лотосом»"
+      },
+      "polity": null,
+      "operator": "экспедиционная компания «Дальний Причал» (лицензия Керна) + держатели причалов",
+      "purpose": "серый фронтир у края поля (HD 104067 → 21 св. лет): заряд, ремонт, бары, перекупщики, проводники, карты коридора, сомнительные врачи, вербовщики",
+      "population": 700,
+      "founded": 3099,
+      "history": "Поставлена спасателями Керна у края поля в 3099: в самом поле жить нельзя. Выросла в рынок перекупщиков. С 3112 рядом стоит карантинный пикет Когниума.",
+      "beacon": {
+        "kind": "relay",
+        "since": 3104,
+        "uptime": 0.85
+      },
+      "stocks": {
+        "jump_charge_t": 900,
+        "reactor_fuel_t": 300,
+        "food_days": 120
+      },
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "83 Leonis → HD 102195 = 39.3 св. лет > 32: нужна промежуточная точка; внутри поля прыжок не начать"
+      }
+    },
+    {
+      "id": "dso.quarantine_picket",
+      "site_type": "military_hub",
+      "name": "Карантинный пикет «Лотос» (Когниум)",
+      "object_type": "deep_space_station",
+      "placement": {
+        "near": "dso.lotus",
+        "offset_au": [
+          1.3,
+          0.2,
+          0.0
+        ]
+      },
+      "velocity_km_s": {
+        "speed": 38.0,
+        "direction": "comoving",
+        "note": "у входа в коридор"
+      },
+      "polity": "tau_ceti_cognium",
+      "operator": "Карантинная эскадра Управления Маяков",
+      "purpose": "пикет кордона у входа в коридор: досмотр, карантинная стоянка, изъятие; официально — санитарная безопасность",
+      "population": 420,
+      "founded": 3112,
+      "history": "Когниум объявил карантин в 3112. Официально — биоопасность; на деле — монополия на лотосит и тайна поля (оно той же природы, что поле ядра прыжка). Контроль у входа в коридор, остальной объём не перекрыть.",
+      "beacon": {
+        "kind": "military",
+        "since": 3112,
+        "uptime": 0.99
+      },
+      "forces": {
+        "escort_frigate": 2,
+        "patrol_cutter": 8,
+        "fleet_tender": 1
+      },
+      "stocks": {
+        "jump_charge_t": 1500,
+        "reactor_fuel_t": 400,
+        "food_days": 365
+      },
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "заказ автора: блокада и патруль сектора актором"
+      }
     },
     {
       "id": "dso.ceti_gap_cache",
       "site_type": "deep_space_refuel_point",
       "name": "Склад «Китовая Щель»",
       "object_type": "deep_space_station",
-      "placement": {"from_system": 17, "toward_system": 36, "distance_ly": 16.5, "lateral_offset_ly": 0.6},
-      "velocity_km_s": {"speed": 0.0, "direction": "none", "note": "поставлен на скорость Солнца (ICRS-покой), коррекции раз в год"},
+      "placement": {
+        "from_system": 17,
+        "toward_system": 36,
+        "distance_ly": 16.5,
+        "lateral_offset_ly": 0.6
+      },
+      "velocity_km_s": {
+        "speed": 0.0,
+        "direction": "none",
+        "note": "поставлен на скорость Солнца (ICRS-покой), коррекции раз в год"
+      },
       "polity": "tau_ceti_cognium",
       "operator": "консорциум «Сундук» (Когниум + Новая Индия)",
       "purpose": "заправка на дороге к поясу 9 Кита (33.1 св. лет — на 1.1 больше предела прыжка)",
       "population": 60,
       "founded": 3119,
       "history": "Поставлен в 3119, когда разведка подтвердила пояс 9 Кита (~2.8 массы Земли). Ресурсный фронтир, не криминальный.",
-      "beacon": {"kind": "relay", "since": 3119, "uptime": 0.97},
-      "stocks": {"jump_charge_t": 2600, "reactor_fuel_t": 400, "food_days": 400},
-      "knowledge": {"status": "PROPOSAL", "visibility": "PUBLIC_RECORD", "basis": "геометрия каталога: TRAPPIST-1 → 9 Кита 33.1 св. лет"}
+      "beacon": {
+        "kind": "relay",
+        "since": 3119,
+        "uptime": 0.97
+      },
+      "stocks": {
+        "jump_charge_t": 2600,
+        "reactor_fuel_t": 400,
+        "food_days": 400
+      },
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "геометрия каталога: TRAPPIST-1 → 9 Кита 33.1 св. лет"
+      }
     },
     {
       "id": "dso.vega_null",
       "site_type": "deep_space_relay",
       "name": "Ретранслятор «Ноль-Вега»",
       "object_type": "relay",
-      "placement": {"from_system": 41, "toward_system": 20, "distance_ly": 18.3, "lateral_offset_ly": 0.4},
-      "velocity_km_s": {"speed": 0.0, "direction": "none", "note": "ICRS-покой"},
+      "placement": {
+        "from_system": 41,
+        "toward_system": 20,
+        "distance_ly": 18.3,
+        "lateral_offset_ly": 0.4
+      },
+      "velocity_km_s": {
+        "speed": 0.0,
+        "direction": "none",
+        "note": "ICRS-покой"
+      },
       "polity": "tau_ceti_cognium",
       "operator": "Научная служба Управления Маяков",
       "purpose": "дорога к научной станции у HD 93083 (36.6 св. лет от HD 104067)",
       "population": 14,
       "founded": 3112,
       "history": "Автоматический ретранслятор с вахтой из 14 человек; танкер раз в квартал.",
-      "beacon": {"kind": "science", "since": 3112, "uptime": 0.99},
-      "stocks": {"jump_charge_t": 600, "reactor_fuel_t": 80, "food_days": 500},
-      "knowledge": {"status": "PROPOSAL", "visibility": "PUBLIC_RECORD", "basis": "геометрия каталога: HD 104067 → HD 93083 36.6 св. лет"}
+      "beacon": {
+        "kind": "science",
+        "since": 3112,
+        "uptime": 0.99
+      },
+      "stocks": {
+        "jump_charge_t": 600,
+        "reactor_fuel_t": 80,
+        "food_days": 500
+      },
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "геометрия каталога: HD 104067 → HD 93083 36.6 св. лет"
+      }
     },
     {
       "id": "dso.cache.lotus_north",
@@ -116,275 +437,1510 @@
       "name": "незаконный тайник «Северный»",
       "object_type": "deep_space_station",
       "hidden": true,
-      "placement": {"from_system": 45, "toward_system": 19, "distance_ly": 14.0, "lateral_offset_ly": -3.5},
-      "velocity_km_s": {"speed": 0.0, "direction": "none", "note": "контейнеры с зарядом на ICRS-покое"},
+      "placement": {
+        "from_system": 45,
+        "toward_system": 19,
+        "distance_ly": 14.0,
+        "lateral_offset_ly": -3.5
+      },
+      "velocity_km_s": {
+        "speed": 0.0,
+        "direction": "none",
+        "note": "контейнеры с зарядом на ICRS-покое"
+      },
       "polity": null,
       "operator": "неизвестен (контрабандисты «Дальнего Причала»?)",
       "purpose": "незаконный склад заряда; координаты продаются как информация",
       "population": 0,
       "founded": 3117,
       "history": "Двенадцать контейнеров C20 с зарядом, без маяка. Координаты продаются в баре троянцев за 40-90 тыс. Cr; две из пяти продаваемых версий ложные.",
-      "stocks": {"jump_charge_t": 180, "reactor_fuel_t": 0, "food_days": 0},
-      "knowledge": {"status": "PROPOSAL", "visibility": "RUMOUR", "basis": "информационная асимметрия фронтира"}
+      "stocks": {
+        "jump_charge_t": 180,
+        "reactor_fuel_t": 0,
+        "food_days": 0
+      },
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "RUMOUR",
+        "basis": "информационная асимметрия фронтира"
+      }
+    },
+    {
+      "id": "dso.garden",
+      "site_type": "derelict_hub",
+      "name": "«Сад» (нелегальный жилой модуль)",
+      "object_type": "deep_space_station",
+      "hidden": true,
+      "placement": {
+        "near": "dso.lotus",
+        "offset_au": [
+          0.6,
+          -0.3,
+          0.1
+        ]
+      },
+      "velocity_km_s": {
+        "speed": 38.0,
+        "direction": "comoving",
+        "note": "внутри поля"
+      },
+      "polity": null,
+      "operator": "братство «Счисление» + продажные чиновники Kern Logistics (AUTHOR_TRUTH)",
+      "purpose": "AUTHOR_TRUTH: место выдержки людей в поле (вторичное «производство» лотосита); официально не существует",
+      "population": 180,
+      "founded": 3117,
+      "history": "Списанный жилой модуль, отбуксированный в поле в 3117. Внутри — обманутые «переселенцы» и должники; держат 2-5 лет.",
+      "stocks": {
+        "jump_charge_t": 0,
+        "reactor_fuel_t": 40,
+        "food_days": 300
+      },
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "AUTHOR_TRUTH",
+        "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия"
+      }
     }
   ],
-  "in_flight_generation_ships": ["FINAL-ARK-1", "LEGACY-1"],
+  "in_flight_generation_ships": [
+    "FINAL-ARK-1",
+    "LEGACY-1"
+  ],
   "frontiers": [
     {
       "id": "frontier.worlds_ass",
       "specialisation": "risk_reward_max",
-      "region": ["dso.lotus", "system:19"],
+      "region": [
+        "system:41",
+        "dso.far_berth",
+        "dso.lotus",
+        "system:19"
+      ],
       "system": 19,
       "official_names": {
-        "tau_ceti_cognium": {"lang": "zh", "name": "月门星区", "translit": "Yuèmén xīngqū", "meaning": "звёздный район «Лунные врата»"},
-        "eps_eri_harmony": {"lang": "zh", "name": "天井", "translit": "Tiānjǐng", "meaning": "Небесный Колодец"},
-        "sol_authority": {"lang": "en", "name": "Meridian Terminus", "meaning": "Меридианный предел"},
-        "gj581_europa": {"lang": "la", "name": "Ultima Thule", "meaning": "край известного мира"},
-        "lalande_hellas": {"lang": "el", "name": "Ἐσχατιά", "translit": "Eschatiá", "meaning": "дальнее пограничье"},
-        "hd114783_hellas3": {"lang": "el", "name": "Ἐσχατιά", "translit": "Eschatiá", "meaning": "дальнее пограничье"},
-        "cyg61_kern": {"lang": "en", "name": "Claim District HD-19 «Farpoint»", "meaning": "заявочный округ"},
-        "hd20794_newindia": {"lang": "hi", "name": "अन्त्यद्वार", "translit": "Antyadvāra", "meaning": "Последние врата"},
-        "delta_pav_karma": {"lang": "sa", "name": "अन्त्यद्वार", "translit": "Antyadvāra", "meaning": "Последние врата"},
-        "wolf359_citadel": {"lang": "en", "name": "Far Gate", "meaning": "Дальние ворота"},
-        "hd40307_maland": {"lang": "sw", "name": "Lango la Mbali", "meaning": "Дальние ворота"},
-        "hd69830_verde": {"lang": "pt", "name": "Porto Extremo", "meaning": "Крайний порт"},
-        "leo83_zion": {"lang": "ru", "name": "Пустыня Испытания", "meaning": "место искуса"}
+        "tau_ceti_cognium": {
+          "lang": "zh",
+          "name": "月门星区",
+          "translit": "Yuèmén xīngqū",
+          "meaning": "звёздный район «Лунные врата»"
+        },
+        "eps_eri_harmony": {
+          "lang": "zh",
+          "name": "天井",
+          "translit": "Tiānjǐng",
+          "meaning": "Небесный Колодец"
+        },
+        "sol_authority": {
+          "lang": "en",
+          "name": "Meridian Terminus",
+          "meaning": "Меридианный предел"
+        },
+        "gj581_europa": {
+          "lang": "la",
+          "name": "Ultima Thule",
+          "meaning": "край известного мира"
+        },
+        "lalande_hellas": {
+          "lang": "el",
+          "name": "Ἐσχατιά",
+          "translit": "Eschatiá",
+          "meaning": "дальнее пограничье"
+        },
+        "hd114783_hellas3": {
+          "lang": "el",
+          "name": "Ἐσχατιά",
+          "translit": "Eschatiá",
+          "meaning": "дальнее пограничье"
+        },
+        "cyg61_kern": {
+          "lang": "en",
+          "name": "Claim District HD-19 «Farpoint»",
+          "meaning": "заявочный округ"
+        },
+        "hd20794_newindia": {
+          "lang": "hi",
+          "name": "अन्त्यद्वार",
+          "translit": "Antyadvāra",
+          "meaning": "Последние врата"
+        },
+        "delta_pav_karma": {
+          "lang": "sa",
+          "name": "अन्त्यद्वार",
+          "translit": "Antyadvāra",
+          "meaning": "Последние врата"
+        },
+        "wolf359_citadel": {
+          "lang": "en",
+          "name": "Far Gate",
+          "meaning": "Дальние ворота"
+        },
+        "hd40307_maland": {
+          "lang": "sw",
+          "name": "Lango la Mbali",
+          "meaning": "Дальние ворота"
+        },
+        "hd69830_verde": {
+          "lang": "pt",
+          "name": "Porto Extremo",
+          "meaning": "Крайний порт"
+        },
+        "leo83_zion": {
+          "lang": "ru",
+          "name": "Пустыня Испытания",
+          "meaning": "место искуса"
+        }
       },
       "pilot_names": [
-        {"lang": "ru", "name": "Жопа мира"},
-        {"lang": "en", "name": "the ass end of nowhere", "also": ["Bumfuck"]},
-        {"lang": "zh", "name": "月工门", "translit": "yuè gōng mén", "note": "ребус: официальное 月门 («Лунные врата») с вставленным 工; 月 + 工 — это разобранный на части иероглиф 肛, и вся надпись читается как 肛门. Не словарное слово, а намеренно идиотская шутка пилотов; носители понимают её сразу."},
-        {"lang": "pt", "name": "cu do mundo"},
-        {"lang": "el", "name": "Κωλοχώρι", "translit": "kolochóri"},
-        {"lang": "hi", "name": "दुनिया का पिछवाड़ा", "translit": "duniyā kā pichhvāṛā"}
+        {
+          "lang": "ru",
+          "name": "Жопа мира"
+        },
+        {
+          "lang": "en",
+          "name": "the ass end of nowhere",
+          "also": [
+            "Bumfuck"
+          ]
+        },
+        {
+          "lang": "zh",
+          "name": "月工门",
+          "translit": "yuè gōng mén",
+          "note": "ребус: официальное 月门 («Лунные врата») с вставленным 工; 月 + 工 — это разобранный на части иероглиф 肛, и вся надпись читается как 肛门. Не словарное слово, а намеренно идиотская шутка пилотов; носители понимают её сразу."
+        },
+        {
+          "lang": "pt",
+          "name": "cu do mundo"
+        },
+        {
+          "lang": "el",
+          "name": "Κωλοχώρι",
+          "translit": "kolochóri"
+        },
+        {
+          "lang": "hi",
+          "name": "दुनिया का पिछवाड़ा",
+          "translit": "duniyā kā pichhvāṛā"
+        }
       ],
       "story": {
         "versions": [
-          {"source": "official (Kern)", "text": "В 3091 разведка Керна, шедшая на повторяющийся сигнал, нашла в межзвёздном пространстве брошенный корабль-«лотос»; дальше, у HD 102195, — автоматический комплекс «Мандала» на карлике K2 и следы давней жизни. Экипажа нет."},
-          {"source": "freeband", "text": "Это «Нирвана». Они не погибли, они ушли туда, где прыжок не работает, и иногда отвечают по радио."},
-          {"source": "Cognium science", "text": "Корпус похож на NIRVANA-1, но его положение досветовой физикой не объясняется. Изотопный возраст корпуса не совпадает с годом старта. Вопрос открыт."},
-          {"source": "rumour", "text": "Корпусов два. Второй никто не может найти дважды."}
+          {
+            "source": "official (Когниум)",
+            "text": "У HD 102195 найден минерал лотосит; район закрыт карантином из-за неизвестной биоопасности на брошенном корабле."
+          },
+          {
+            "source": "official (Керн)",
+            "text": "В 3091 наша поисковая партия нашла брошенный корабль-«лотос» по повторяющемуся сигналу. Экипажа нет. Права находки — наши."
+          },
+          {
+            "source": "freeband",
+            "text": "Лотос выжимают из мертвецов. Тела там не гниют и светятся изнутри. Кто долго ходит по отсекам — сам становится товаром."
+          },
+          {
+            "source": "rumour",
+            "text": "Корпусов два. Второй никто не может найти дважды."
+          },
+          {
+            "source": "rumour (Дальний Причал)",
+            "text": "Вербовщики возят в «колонию Farpoint» людей, которые обратно не возвращаются."
+          }
         ],
-        "rush": "3104: в Агоре проданы первые 300 г лотосита (кристалл стабилизирует поле ядра). 3104-3126: золотая лихорадка — исследователи, старатели, Керн, Когниум, Тяньхэ, контрабандисты, культ «Путь Бесконечного Света», пираты, жулики, охотники за обломками."
+        "rush": "3103: лаборатория Агоры получила экстракт из закристаллизованного мозга — он омолаживает. 3104: первые продажи «лотосового стекла». 3104-3126: лихорадка — мародёры, перекупщики, клиники, пираты; 3112: карантинная блокада Когниума."
       },
-      "knowledge": {"status": "PROPOSAL", "visibility": "PUBLIC_RECORD", "basis": "заказ автора 2026-11-03: «Жопа мира» — максимум риска и награды"}
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "заказ автора 2026-11-03: «Жопа мира» — максимум риска и награды"
+      },
+      "zones": {
+        "outer_perimeter": {
+          "sites": [
+            "site.041.vorota",
+            "site.041.holding"
+          ],
+          "audit": 0.6,
+          "isolation": 0.35,
+          "fragmentation": 2,
+          "what": "кордон, флот, полиция, таможня, карантин, наука, лицензии, страховщики, ремонт, танкеры, легальные брокеры; коррупция — в разрешениях, очереди досмотра, конфискатах, карантинных справках"
+        },
+        "grey_frontier": {
+          "sites": [
+            "dso.far_berth",
+            "dso.quarantine_picket",
+            "site.019.porog",
+            "site.019.troyan_market",
+            "site.019.claim_c",
+            "site.019.mandala"
+          ],
+          "audit": 0.3,
+          "isolation": 0.7,
+          "fragmentation": 4,
+          "what": "независимые станции, дорогое топливо, проводники, брокеры информации, контрабанда, сомнительные врачи, нелегальный ремонт, продажные чиновники, подразделения в доле"
+        },
+        "inner_anomaly": {
+          "sites": [
+            "dso.lotus",
+            "dso.garden",
+            "site.019.dead_reckoning"
+          ],
+          "audit": 0.05,
+          "isolation": 1.0,
+          "fragmentation": 6,
+          "what": "обломки, пираты, «пираты с печатью», скрытые склады, нелегальное жильё, неустойчивая навигация, охота за лотоситом, брошенные экспедиции, торговля людьми; государство — только рейды и сопровождение"
+        }
+      }
     },
     {
       "id": "frontier.ceti_chest",
       "specialisation": "resource",
-      "region": ["dso.ceti_gap_cache", "system:36"],
+      "region": [
+        "dso.ceti_gap_cache",
+        "system:36"
+      ],
       "system": 36,
-      "official_names": {"tau_ceti_cognium": {"lang": "zh", "name": "鲸箱", "translit": "Jīngxiāng", "meaning": "Китовый сундук"}, "hd20794_newindia": {"lang": "hi", "name": "Timiṅgila Kosha", "meaning": "Сокровищница Кита"}},
-      "pilot_names": [{"lang": "ru", "name": "Сундук"}, {"lang": "en", "name": "the Chest"}],
-      "story": {"versions": [{"source": "official", "text": "Пояс 9 Кита (~2.8 массы Земли): металлы и лёд на века. Законная лихорадка с лицензиями консорциума."}], "rush": "3119-3126: лицензионная добыча, медленный рост."},
-      "knowledge": {"status": "PROPOSAL", "visibility": "PUBLIC_RECORD", "basis": "каталог: 9 Ceti belt_me 2.835"}
+      "official_names": {
+        "tau_ceti_cognium": {
+          "lang": "zh",
+          "name": "鲸箱",
+          "translit": "Jīngxiāng",
+          "meaning": "Китовый сундук"
+        },
+        "hd20794_newindia": {
+          "lang": "hi",
+          "name": "Timiṅgila Kosha",
+          "meaning": "Сокровищница Кита"
+        }
+      },
+      "pilot_names": [
+        {
+          "lang": "ru",
+          "name": "Сундук"
+        },
+        {
+          "lang": "en",
+          "name": "the Chest"
+        }
+      ],
+      "story": {
+        "versions": [
+          {
+            "source": "official",
+            "text": "Пояс 9 Кита (~2.8 массы Земли): металлы и лёд на века. Законная лихорадка с лицензиями консорциума."
+          }
+        ],
+        "rush": "3119-3126: лицензионная добыча, медленный рост."
+      },
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "каталог: 9 Ceti belt_me 2.835"
+      }
     },
     {
       "id": "frontier.vega_observatory",
       "specialisation": "science",
-      "region": ["dso.vega_null", "system:20"],
+      "region": [
+        "dso.vega_null",
+        "system:20"
+      ],
       "system": 20,
-      "official_names": {"tau_ceti_cognium": {"lang": "zh", "name": "零维观测站", "translit": "Língwéi guāncèzhàn", "meaning": "Обсерватория «Нулевое измерение»"}},
-      "pilot_names": [{"lang": "ru", "name": "Монастырь"}, {"lang": "en", "name": "the Monastery"}],
-      "story": {"versions": [{"source": "official", "text": "Научная станция Управления Маяков у HD 93083: эталонные измерения поля прыжка вдали от сети."}], "rush": "нет: доступ по пропускам."},
-      "knowledge": {"status": "PROPOSAL", "visibility": "PUBLIC_RECORD", "basis": "каталог: HD 93083 вне сети, 36.6 св. лет от HD 104067"}
+      "official_names": {
+        "tau_ceti_cognium": {
+          "lang": "zh",
+          "name": "零维观测站",
+          "translit": "Língwéi guāncèzhàn",
+          "meaning": "Обсерватория «Нулевое измерение»"
+        }
+      },
+      "pilot_names": [
+        {
+          "lang": "ru",
+          "name": "Монастырь"
+        },
+        {
+          "lang": "en",
+          "name": "the Monastery"
+        }
+      ],
+      "story": {
+        "versions": [
+          {
+            "source": "official",
+            "text": "Научная станция Управления Маяков у HD 93083: эталонные измерения поля прыжка вдали от сети."
+          }
+        ],
+        "rush": "нет: доступ по пропускам."
+      },
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "каталог: HD 93083 вне сети, 36.6 св. лет от HD 104067"
+      }
     }
   ],
   "frontier_sites": [
-    {"id": "site.019.porog", "name": "Станция «Порог»", "type": "trade_hub", "system": 19, "body": "system_19.HD_102195.HD_102195_g", "orbit": {"altitude_km": 38000, "inclination_deg": 4.0},
-     "polity": "cyg61_kern", "operator": "Kern Logistics + Научная служба Когниума (совместная лицензия)", "purpose": "легальный экспедиционный хаб: лицензии, страхование, склад, госпиталь, пробирная палата лотосита",
-     "population": 2600, "founded": 3106, "legal": "licensed", "history": "Первый законный хаб у HD 102195; юрисдикция по лицензии Керна, оспаривается Когниумом и Тяньхэ.",
-     "beacon": {"kind": "station", "since": 3107, "uptime": 0.9}},
-    {"id": "site.019.troyan_market", "name": "«Троянский рынок» (Кабак)", "type": "free_port", "system": 19, "body": "system_19.HD_102195.HD_102195_b.trojans", "orbit": {"lagrange": "L4"},
-     "polity": null, "operator": "совет держателей причалов", "purpose": "полулегальный вольный порт: бары, рынок координат, скупщики, казино, бордель, страховые брокеры, вербовщики, ремонт без вопросов",
-     "population": 1150, "founded": 3109, "legal": "semi_legal", "history": "Вырос из лагеря старателей в троянском рое горячего гиганта: укрытие от сенсоров «Порога» и от радиации гиганта."},
-    {"id": "site.019.mandala", "name": "Комплекс «Мандала»", "type": "abandoned_hub", "system": 19, "body": "system_19.HD_102195.HD_102195_K2", "surface": {"lat_deg": 41.2, "lon_deg": 187.5},
-     "polity": null, "operator": "никто (автоматика частично работает)", "purpose": "первый аварийный хаб: автоматические комплексы неизвестной постройки, теплицы без людей, архив с повреждёнными записями",
-     "population": 0, "founded": null, "legal": "contested", "history": "Найден Керном в 3092. Кто его построил — оспаривается (см. версии фронтира). Внутри зоны искажения восприятия."},
-    {"id": "site.019.dead_reckoning", "name": "«Счисление» (пиратская база)", "type": "pirate_enclave", "system": 19, "body": "system_19.HD_102195.kuiper_belt", "belt": {"radius_au": 9.4, "longitude_deg": 233.0},
-     "polity": null, "operator": "братство «Счисление»", "purpose": "пиратская база: разборка кораблей, перебивка серийников, фальшивые транспондеры, склад угнанного заряда",
-     "population": 520, "founded": 3112, "legal": "illegal", "history": "Основана экипажем, оставшимся без корабля после аварии в мёртвой зоне «Лотоса»."},
-    {"id": "site.019.claim_c", "name": "Заявки у горячего железа", "type": "mining_hub", "system": 19, "body": "system_19.HD_102195.HD_102195_c", "orbit": {"altitude_km": 900, "inclination_deg": 0.5},
-     "polity": "cyg61_kern", "operator": "три лицензиата Керна и один захватчик", "purpose": "добыча лотосита в зоне искажения прыжка у раскалённой планеты c",
-     "population": 140, "founded": 3110, "legal": "licensed_and_contested", "history": "Самая богатая и самая смертельная точка карты."}
+    {
+      "id": "site.019.porog",
+      "name": "Станция «Порог»",
+      "type": "trade_hub",
+      "system": 19,
+      "body": "system_19.HD_102195.HD_102195_g",
+      "orbit": {
+        "altitude_km": 38000,
+        "inclination_deg": 4.0
+      },
+      "polity": "cyg61_kern",
+      "operator": "Kern Logistics + Научная служба Когниума (совместная лицензия)",
+      "purpose": "легальный экспедиционный хаб: лицензии, страхование, склад, госпиталь, пробирная палата лотосита",
+      "population": 2600,
+      "founded": 3106,
+      "legal": "licensed",
+      "history": "Первый законный хаб у HD 102195; юрисдикция по лицензии Керна, оспаривается Когниумом и Тяньхэ.",
+      "beacon": {
+        "kind": "station",
+        "since": 3107,
+        "uptime": 0.9
+      }
+    },
+    {
+      "id": "site.019.troyan_market",
+      "name": "«Троянский рынок» (Кабак)",
+      "type": "free_port",
+      "system": 19,
+      "body": "system_19.HD_102195.HD_102195_b.trojans",
+      "orbit": {
+        "lagrange": "L4"
+      },
+      "polity": null,
+      "operator": "совет держателей причалов",
+      "purpose": "полулегальный вольный порт: бары, рынок координат, скупщики, казино, бордель, страховые брокеры, вербовщики, ремонт без вопросов",
+      "population": 1150,
+      "founded": 3109,
+      "legal": "semi_legal",
+      "history": "Вырос из лагеря старателей в троянском рое горячего гиганта: укрытие от сенсоров «Порога» и от радиации гиганта."
+    },
+    {
+      "id": "site.019.mandala",
+      "name": "Лагерь «Мандала» (брошен)",
+      "type": "abandoned_hub",
+      "system": 19,
+      "body": "system_19.HD_102195.HD_102195_K2",
+      "surface": {
+        "lat_deg": 41.2,
+        "lon_deg": 187.5
+      },
+      "polity": null,
+      "operator": "никто (автоматика частично работает)",
+      "purpose": "первый лагерь Керна у HD 102195 (3092): сюда свезли тела и навигатор с «Лотоса»; брошен после вспышки лотосовой лихорадки 3093-3096",
+      "population": 0,
+      "founded": 3092,
+      "legal": "contested",
+      "history": "Старатели вскрывали тела в поисках «кристаллов» и заболели. Лагерь стоит у физического эха складки (ART-0005)."
+    },
+    {
+      "id": "site.019.dead_reckoning",
+      "name": "«Счисление» (пиратская база)",
+      "type": "pirate_enclave",
+      "system": 19,
+      "body": "system_19.HD_102195.kuiper_belt",
+      "belt": {
+        "radius_au": 9.4,
+        "longitude_deg": 233.0
+      },
+      "polity": null,
+      "operator": "братство «Счисление»",
+      "purpose": "пиратская база: угон, разборка, перебивка серийников, склад угнанного заряда; вербовка «поселенцев» для живого сырья (AUTHOR_TRUTH)",
+      "population": 520,
+      "founded": 3112,
+      "legal": "illegal",
+      "history": "Основана экипажем, оставшимся без корабля после аварии в мёртвой зоне «Лотоса»."
+    },
+    {
+      "id": "site.019.claim_c",
+      "name": "Заявки у горячего железа",
+      "type": "mining_hub",
+      "system": 19,
+      "body": "system_19.HD_102195.HD_102195_c",
+      "orbit": {
+        "altitude_km": 900,
+        "inclination_deg": 0.5
+      },
+      "polity": "cyg61_kern",
+      "operator": "три лицензиата Керна и один захватчик",
+      "purpose": "лицензии Когниума на «лотосит-минерал» у раскалённой планеты c: официальная легенда о происхождении лотосита; старатели гибнут в зоне искажения за пустую породу",
+      "population": 140,
+      "founded": 3110,
+      "legal": "licensed",
+      "history": "Прикрытие: Когниум продаёт лицензии на минерал, которого нет, чтобы отвести внимание от тел на «Лотосе»."
+    },
+    {
+      "id": "site.041.vorota",
+      "name": "Станция «Ворота» (внешний периметр)",
+      "type": "trade_hub",
+      "system": 41,
+      "body": "system_41.HD_104067.HD_104067_b",
+      "orbit": {
+        "altitude_km": 160000,
+        "inclination_deg": 3.0
+      },
+      "polity": "tau_ceti_cognium",
+      "operator": "Управление Маяков + Kern Logistics (кордон)",
+      "purpose": "внешний периметр: КПП кордона, таможня, лицензионные экспедиционные компании, страховщики, танкеры, ремонт, легальные брокеры, научная станция",
+      "population": 5200,
+      "founded": 3112,
+      "legal": "lawful",
+      "history": "Построена с кордоном 3112 у маяка Когниума 3050. Самая контролируемая точка — и рынок разрешений, очередей досмотра и карантинных справок.",
+      "beacon": {
+        "kind": "station",
+        "since": 3112,
+        "uptime": 0.99
+      }
+    },
+    {
+      "id": "site.041.holding",
+      "name": "Карантинная стоянка «Ворота-К»",
+      "type": "quarantine_hub",
+      "system": 41,
+      "body": "system_41.HD_104067.HD_104067_b",
+      "orbit": {
+        "altitude_km": 400000,
+        "inclination_deg": 20.0
+      },
+      "polity": "tau_ceti_cognium",
+      "operator": "санитарная служба кордона",
+      "purpose": "изолированная якорная стоянка, причалы выдержки, дезактивация, госпиталь лотосовой лихорадки",
+      "population": 600,
+      "founded": 3113,
+      "legal": "lawful",
+      "history": "После вспышки «Стеллы» (3115) расширена вдвое."
+    }
   ],
   "hazard_zones": [
-    {"id": "hz.lotus_dead", "kind": "jump_dead", "name": "Мёртвая зона «Лотоса»", "anchor": "dso.lotus", "shape": "sphere", "offset_km": [680000, 0, 0], "radius_km": 420000,
-     "effects": {"jump_initiation": "impossible"}, "knowledge": "mapped", "since_known": 3099,
-     "note": "Край зоны в 260 тыс. км от корпуса; без маячного захвата сигма выхода на 21 св. год ~200 тыс. км, и часть кораблей выходит внутрь. Отсюда кладбище вокруг «Лотоса»."},
-    {"id": "hz.lotus_sargasso", "kind": "sargasso", "name": "Саргассы «Лотоса»", "anchor": "dso.lotus", "shape": "sphere", "offset_km": [680000, 0, 0], "radius_km": 700000,
-     "effects": {"wreck_density": "high"}, "knowledge": "mapped", "since_known": 3099, "note": "Обломки и брошенные корабли, застрявшие в мёртвой зоне."},
-    {"id": "hz.019.c_distortion", "kind": "jump_distortion", "name": "Искажение у горячего железа", "anchor": "system_19.HD_102195.HD_102195_c", "shape": "sphere", "radius_km": 4000000,
-     "effects": {"exit_error_multiplier": 25.0}, "knowledge": "partial", "since_known": 3107, "note": "Ошибка выхода растёт в 25 раз; лотосит лежит именно здесь."},
-    {"id": "hz.019.trojan_unstable", "kind": "unstable_navigation", "name": "Троянский туман", "anchor": "system_19.HD_102195.HD_102195_b.trojans", "shape": "sphere", "radius_km": 1500000,
-     "effects": {"error_distribution": "heavy_tailed", "tail_index": 1.6}, "knowledge": "partial", "since_known": 3109, "note": "Ошибка не гауссова: редкие выходы за сотни тысяч км."},
-    {"id": "hz.019.b_radiation", "kind": "radiation", "name": "Пояса горячего гиганта", "anchor": "system_19.HD_102195.HD_102195_b", "shape": "torus", "radius_km": 900000, "minor_radius_km": 300000,
-     "effects": {"dose_sv_per_day_unshielded": 4.0, "electronics_upset_per_hour": 0.02}, "knowledge": "official", "since_known": 3104, "note": "Физика: магнитосфера горячего Юпитера."},
-    {"id": "hz.019.b_ghosts", "kind": "sensor_disturbance", "name": "Призраки радара", "anchor": "system_19.HD_102195.HD_102195_b", "shape": "sphere", "radius_km": 6000000,
-     "effects": {"false_contacts_per_hour": 0.4, "false_transponders": true, "radio_echoes": true, "repeating_distress": true}, "knowledge": "partial", "since_known": 3105, "note": "Ложные отметки, эхо, повторяющийся сигнал бедствия кораблей, погибших годы назад. Причина не установлена."},
-    {"id": "hz.019.k2_perception", "kind": "perception_anomaly", "name": "Зона «Мандалы»", "anchor": "system_19.HD_102195.HD_102195_K2", "shape": "sphere", "radius_km": 25000,
-     "effects": {"clock_drift_ms_per_hour": 3.0, "subjective_effects": ["ложный объект", "несуществующий радиообмен", "копия своего корабля", "неверная дальность"], "onset_hours": 6.0, "shielding_helps": "partly"},
-     "knowledge": "rumour", "since_known": 3093, "note": "Мир не ломается: симуляция знает истину, слой восприятия может показывать ложное. Причина неизвестна и не обязана быть объяснена."},
-    {"id": "hz.frost_stream_zwlh8", "kind": "debris", "name": "Ледяной поток у TRAPPIST-1", "bound_object_id": "ism_icy_p1m1m1_0", "shape": "bound_geometry",
-     "effects": {"collision_risk": "medium", "sensor_clutter": true}, "knowledge": "official", "since_known": 3100, "note": "Физический ледяной поток каталога (генератор ISM); тот же объект, не копия."},
-    {"id": "hz.gaia_quarantine", "kind": "quarantine", "name": "Карантин «Гайя»", "anchor": "system_12", "shape": "system_body_zone", "body_match": "gaia", "radius_km": 2000000,
-     "effects": {"entry": "forbidden", "biohazard": "unknown"}, "knowledge": "official", "since_known": 2600, "note": "Канон GREEN-ARK-1: пустой неповреждённый корабль на орбите, чуждая экосистема; охраняет Тяньхэ."},
-    {"id": "hz.strife_graveyard", "kind": "sargasso", "name": "Кладбище Раздора", "anchor": "system_9", "shape": "belt_sector", "radius_km": 30000000,
-     "effects": {"wreck_density": "very_high", "mines": "old"}, "knowledge": "mapped", "since_known": 2900, "note": "550 лет войны Гармонии с Поясом Раздора: обломки, старые мины, разобранные корпуса."}
-  ],
-  "rare_resources": [
     {
-      "id": "res.lotosite",
-      "name": "лотосит",
-      "aliases": {"pilot_ru": "лотос", "pilot_en": "lotus glass", "cognium": "相锁晶格 (фазовая решётка)"},
-      "what": "фазово-упорядоченный кристалл неизвестного происхождения; в ядре прыжка гасит шум поля",
-      "use": {"jump_error_multiplier": 0.5, "max_hop_bonus_ly": 3.0, "kg_per_core": 2.0, "who_needs": ["фабрика ядер Когниума", "военные ядра", "научные ядра"]},
-      "strategic_note": "+3 св. года к пределу прыжка открывают 9 Кита и HD 93083 без промежуточных точек; поэтому лотосит — политика, а не только деньги",
-      "price_cr_per_kg": 4000000,
-      "demand_kg_y_at_base_price": 120,
-      "price_elasticity": 0.6,
-      "black_market_share": 0.4,
-      "deposits": [
-        {"id": "dep.lotosite.c1", "anchor": "system_19.HD_102195.HD_102195_c", "zone": "hz.019.c_distortion", "grade_g_per_t": 12.0, "reserve_kg": 900, "extracted_kg": 260, "difficulty": "extreme", "operator": "лицензиаты Керна"},
-        {"id": "dep.lotosite.c2", "anchor": "system_19.HD_102195.HD_102195_c", "zone": "hz.019.c_distortion", "grade_g_per_t": 4.0, "reserve_kg": 2400, "extracted_kg": 90, "difficulty": "extreme", "operator": "захватчик (без лицензии)"},
-        {"id": "dep.lotosite.t1", "anchor": "system_19.HD_102195.HD_102195_b.trojans", "zone": "hz.019.trojan_unstable", "grade_g_per_t": 0.8, "reserve_kg": 1500, "extracted_kg": 310, "difficulty": "high", "operator": "старатели «Троянского рынка»"},
-        {"id": "dep.lotosite.k2", "anchor": "system_19.HD_102195.HD_102195_K2", "zone": "hz.019.k2_perception", "grade_g_per_t": 20.0, "reserve_kg": 300, "extracted_kg": 15, "difficulty": "extreme", "operator": "никто (у «Мандалы»)"}
-      ],
-      "knowledge": {"status": "PROPOSAL", "visibility": "PUBLIC_RECORD", "basis": "заказ автора: редкий ресурс фронтира"}
+      "id": "hz.lotus_field",
+      "kind": "unstable_navigation",
+      "name": "Поле «Лотоса»",
+      "anchor": "dso.lotus",
+      "shape": "sphere",
+      "radius_km": 150000000,
+      "effects": {
+        "error_distribution": "heavy_tailed",
+        "corridor_required": true,
+        "human_exposure_syndrome": true,
+        "sensor_ghosts": true,
+        "clock_drift_ms_per_day": 40
+      },
+      "knowledge": "partial",
+      "since_known": 3091,
+      "note": "Поле радиусом ~1 а.е.: здесь у людей развивается синдром «Лотоса» и формируется лотосит; навигация неустойчива; путь к корпусу — по коридору, который дрейфует."
+    },
+    {
+      "id": "hz.lotus_dead",
+      "kind": "jump_dead",
+      "name": "Мёртвое ядро поля",
+      "anchor": "dso.lotus",
+      "shape": "sphere",
+      "radius_km": 45000000,
+      "effects": {
+        "jump_initiation": "impossible"
+      },
+      "knowledge": "mapped",
+      "since_known": 3093,
+      "note": "0.3 а.е. вокруг корпуса: прыжок не начать. Кто прыгнул прямо к корпусу, выходит внутрь и выбирается на тяге."
+    },
+    {
+      "id": "hz.lotus_sargasso",
+      "kind": "sargasso",
+      "name": "Саргассы «Лотоса»",
+      "anchor": "dso.lotus",
+      "shape": "sphere",
+      "radius_km": 150000000,
+      "effects": {
+        "wreck_density": "high"
+      },
+      "knowledge": "mapped",
+      "since_known": 3099,
+      "note": "Обломки мародёров и экспедиций; на каждом — заражённые тела (вторичный источник)."
+    },
+    {
+      "id": "hz.019.c_distortion",
+      "kind": "jump_distortion",
+      "name": "Искажение у горячего железа",
+      "anchor": "system_19.HD_102195.HD_102195_c",
+      "shape": "sphere",
+      "radius_km": 4000000,
+      "effects": {
+        "exit_error_multiplier": 25.0
+      },
+      "knowledge": "partial",
+      "since_known": 3107,
+      "note": "Ошибка выхода растёт в 25 раз; лотосит лежит именно здесь."
+    },
+    {
+      "id": "hz.019.trojan_unstable",
+      "kind": "unstable_navigation",
+      "name": "Троянский туман",
+      "anchor": "system_19.HD_102195.HD_102195_b.trojans",
+      "shape": "sphere",
+      "radius_km": 1500000,
+      "effects": {
+        "error_distribution": "heavy_tailed",
+        "tail_index": 1.6
+      },
+      "knowledge": "partial",
+      "since_known": 3109,
+      "note": "Ошибка не гауссова: редкие выходы за сотни тысяч км."
+    },
+    {
+      "id": "hz.019.b_radiation",
+      "kind": "radiation",
+      "name": "Пояса горячего гиганта",
+      "anchor": "system_19.HD_102195.HD_102195_b",
+      "shape": "torus",
+      "radius_km": 900000,
+      "minor_radius_km": 300000,
+      "effects": {
+        "dose_sv_per_day_unshielded": 4.0,
+        "electronics_upset_per_hour": 0.02
+      },
+      "knowledge": "official",
+      "since_known": 3104,
+      "note": "Физика: магнитосфера горячего Юпитера."
+    },
+    {
+      "id": "hz.019.b_ghosts",
+      "kind": "sensor_disturbance",
+      "name": "Призраки радара",
+      "anchor": "system_19.HD_102195.HD_102195_b",
+      "shape": "sphere",
+      "radius_km": 6000000,
+      "effects": {
+        "false_contacts_per_hour": 0.4,
+        "false_transponders": true,
+        "radio_echoes": true,
+        "repeating_distress": true
+      },
+      "knowledge": "partial",
+      "since_known": 3105,
+      "note": "Ложные отметки, эхо, повторяющийся сигнал бедствия кораблей, погибших годы назад. Причина не установлена."
+    },
+    {
+      "id": "hz.019.k2_perception",
+      "kind": "perception_anomaly",
+      "name": "Зона «Мандалы»",
+      "anchor": "system_19.HD_102195.HD_102195_K2",
+      "shape": "sphere",
+      "radius_km": 25000,
+      "effects": {
+        "clock_drift_ms_per_hour": 3.0,
+        "subjective_effects": [
+          "ложный объект",
+          "несуществующий радиообмен",
+          "копия своего корабля",
+          "неверная дальность"
+        ],
+        "onset_hours": 6.0,
+        "shielding_helps": "partly"
+      },
+      "knowledge": "rumour",
+      "since_known": 3093,
+      "note": "Мир не ломается: симуляция знает истину, слой восприятия может показывать ложное. Причина неизвестна и не обязана быть объяснена."
+    },
+    {
+      "id": "hz.frost_stream_zwlh8",
+      "kind": "debris",
+      "name": "Ледяной поток у TRAPPIST-1",
+      "bound_object_id": "ism_icy_p1m1m1_0",
+      "shape": "bound_geometry",
+      "effects": {
+        "collision_risk": "medium",
+        "sensor_clutter": true
+      },
+      "knowledge": "official",
+      "since_known": 3100,
+      "note": "Физический ледяной поток каталога (генератор ISM); тот же объект, не копия."
+    },
+    {
+      "id": "hz.gaia_quarantine",
+      "kind": "quarantine",
+      "name": "Карантин «Гайя»",
+      "anchor": "system_12",
+      "shape": "system_body_zone",
+      "body_match": "gaia",
+      "radius_km": 2000000,
+      "effects": {
+        "entry": "forbidden",
+        "biohazard": "unknown"
+      },
+      "knowledge": "official",
+      "since_known": 2600,
+      "note": "Канон GREEN-ARK-1: пустой неповреждённый корабль на орбите, чуждая экосистема; охраняет Тяньхэ."
+    },
+    {
+      "id": "hz.strife_graveyard",
+      "kind": "sargasso",
+      "name": "Кладбище Раздора",
+      "anchor": "system_9",
+      "shape": "belt_sector",
+      "radius_km": 30000000,
+      "effects": {
+        "wreck_density": "very_high",
+        "mines": "old"
+      },
+      "knowledge": "mapped",
+      "since_known": 2900,
+      "note": "550 лет войны Гармонии с Поясом Раздора: обломки, старые мины, разобранные корпуса."
     }
   ],
   "artifacts": [
-    {"id": "ART-0001", "name": "навигатор «Мандала»", "found_at": "dso.lotus", "found_year": 3098, "finder": "спасатели Керна", "custody": "Когниум (Научная служба), Новый Шанхай",
-     "provenance": ["корпус «Лотоса»", "Керн (3098)", "продан Когниуму (3101) — сделка оспаривается"], "claims": ["Путь Бесконечного Света (наследник ордена-спонсора NIRVANA-1)", "Керн (находка)", "Когниум (покупатель)"],
-     "scientific_value": "very_high", "market_value_cr": 250000000, "known": ["недетерминированная логика", "совместим с ядрами XXIII века"], "unknown": ["почему он работает"], "hazard": "неизвестно", "fraud": false},
-    {"id": "ART-0002", "name": "«поющий» кристалл", "found_at": "dep.lotosite.k2", "found_year": 3111, "finder": "старатель Мирко Валента", "custody": "утерян (украден в 3113)",
-     "provenance": ["K2 у «Мандалы»", "Троянский рынок", "исчез"], "claims": ["нашедший", "Керн (лицензия)", "страховщик кражи"],
-     "scientific_value": "high", "market_value_cr": 60000000, "known": ["взаимодействует с полем прыжка: ядро рядом даёт осечку"], "unknown": ["природа звука"], "hazard": "осечка прыжка рядом", "fraud": false},
-    {"id": "ART-0003", "name": "транспондер «второго корабля»", "found_at": "hz.019.b_ghosts", "found_year": 3116, "finder": "буксир «Мэй-Лин»", "custody": "Станция «Порог», хранилище улик",
-     "provenance": ["пойман в зоне призраков"], "claims": ["Керн (улика)", "Тяньхэ (требует передачи)"],
-     "scientific_value": "high", "market_value_cr": 0, "known": ["передаёт позывной, которого нет ни в одном регистре"], "unknown": ["кто его построил"], "hazard": "нет", "fraud": "disputed"},
-    {"id": "ART-0004", "name": "«реликвия Нирваны» (мантры на меди)", "found_at": "site.019.troyan_market", "found_year": 3118, "finder": "продавец по кличке Святой", "custody": "частная коллекция в Агоре",
-     "provenance": ["Троянский рынок", "Агора"], "claims": ["покупатель"], "scientific_value": "none", "market_value_cr": 1200000, "known": ["медь земного состава XXXI века"], "unknown": [], "hazard": "нет", "fraud": true},
-    {"id": "ART-0005", "name": "структура неизвестного назначения", "found_at": "site.019.mandala", "found_year": 3093, "finder": "Керн", "custody": "на месте (неподвижна)",
-     "provenance": ["K2"], "claims": ["Керн", "Когниум", "Путь Бесконечного Света"], "scientific_value": "extreme", "market_value_cr": null,
-     "known": ["кольцо 40 м, температура на 3 K выше окружения"], "unknown": ["назначение", "строитель", "возраст"], "hazard": "зона восприятия", "fraud": false},
-    {"id": "ART-0006", "name": "пустые криокапсулы с несовпадающими датами", "found_at": "dso.lotus", "found_year": 3100, "finder": "сквоттеры «Лотоса»", "custody": "Станция «Порог»",
-     "provenance": ["корпус «Лотоса»"], "claims": ["Путь Бесконечного Света", "Керн"], "scientific_value": "medium", "market_value_cr": 900000,
-     "known": ["маркировка NIRVANA-1", "даты обслуживания на 400 лет позже старта"], "unknown": ["кто обслуживал"], "hazard": "нет", "fraud": "disputed"}
+    {
+      "id": "ART-0001",
+      "name": "навигатор «Мандала»",
+      "found_at": "dso.lotus",
+      "found_year": 3098,
+      "finder": "спасатели Керна",
+      "custody": "Когниум (Научная служба), Новый Шанхай",
+      "provenance": [
+        "корпус «Лотоса»",
+        "Керн (3098)",
+        "продан Когниуму (3101) — сделка оспаривается"
+      ],
+      "claims": [
+        "Путь Бесконечного Света (наследник ордена-спонсора NIRVANA-1)",
+        "Керн (находка)",
+        "Когниум (покупатель)"
+      ],
+      "scientific_value": "very_high",
+      "market_value_cr": 250000000,
+      "known": [
+        "недетерминированная логика",
+        "совместим с ядрами XXIII века"
+      ],
+      "unknown": [
+        "почему он работает"
+      ],
+      "hazard": "неизвестно",
+      "fraud": false,
+      "author_truth": "навигатор «Мандала» с 2450 слышал поле складки и к 2680 сам повёл корабль в её ядро, считая его целью пути"
+    },
+    {
+      "id": "ART-0002",
+      "name": "«поющий» хрящевой кристалл",
+      "found_at": "dso.lotus",
+      "found_year": 3111,
+      "finder": "старатель Мирко Валента",
+      "custody": "утерян (украден в 3113)",
+      "provenance": [
+        "тело с палубы 7 «Лотоса»",
+        "Дальний Причал",
+        "исчез"
+      ],
+      "claims": [
+        "нашедший",
+        "Керн (лицензия)",
+        "страховщик кражи"
+      ],
+      "scientific_value": "high",
+      "market_value_cr": 60000000,
+      "known": [
+        "сильно преобразованная ткань сустава; рядом с ядром прыжка даёт осечку"
+      ],
+      "unknown": [
+        "почему звучит"
+      ],
+      "hazard": "осечка прыжка рядом",
+      "fraud": false,
+      "author_truth": "лотосит, выросший за 30 лет экспозиции, резонирует с полем ядра (то же свойство, что стабилизирует прыжок)"
+    },
+    {
+      "id": "ART-0003",
+      "name": "транспондер «второго корабля»",
+      "found_at": "hz.019.b_ghosts",
+      "found_year": 3116,
+      "finder": "буксир «Мэй-Лин»",
+      "custody": "Станция «Порог», хранилище улик",
+      "provenance": [
+        "пойман в зоне призраков"
+      ],
+      "claims": [
+        "Керн (улика)",
+        "Тяньхэ (требует передачи)"
+      ],
+      "scientific_value": "high",
+      "market_value_cr": 0,
+      "known": [
+        "передаёт позывной, которого нет ни в одном регистре"
+      ],
+      "unknown": [
+        "кто его построил"
+      ],
+      "hazard": "нет",
+      "fraud": "disputed",
+      "author_truth": "ФИЗИКА: эхо транспондера самой NIRVANA-1 2680 года сквозь складку; второго корабля нет"
+    },
+    {
+      "id": "ART-0004",
+      "name": "«реликвия Нирваны» (мантры на меди)",
+      "found_at": "site.019.troyan_market",
+      "found_year": 3118,
+      "finder": "продавец по кличке Святой",
+      "custody": "частная коллекция в Агоре",
+      "provenance": [
+        "Троянский рынок",
+        "Агора"
+      ],
+      "claims": [
+        "покупатель"
+      ],
+      "scientific_value": "none",
+      "market_value_cr": 1200000,
+      "known": [
+        "медь земного состава XXXI века"
+      ],
+      "unknown": [],
+      "hazard": "нет",
+      "fraud": true
+    },
+    {
+      "id": "ART-0005",
+      "name": "структура неизвестного назначения",
+      "found_at": "site.019.mandala",
+      "found_year": 3093,
+      "finder": "Керн",
+      "custody": "на месте (неподвижна)",
+      "provenance": [
+        "K2"
+      ],
+      "claims": [
+        "Керн",
+        "Когниум",
+        "Путь Бесконечного Света"
+      ],
+      "scientific_value": "extreme",
+      "market_value_cr": null,
+      "known": [
+        "кольцо 40 м во льду, на 3 K теплее окружения"
+      ],
+      "unknown": [
+        "назначение",
+        "строитель"
+      ],
+      "hazard": "зона восприятия",
+      "fraud": false,
+      "author_truth": "ФИЗИКА: застывший узел эха складки (утечка поля греет лёд); никто его не строил; лагерь поставили рядом, потому что приборы тянулись к сигналу"
+    },
+    {
+      "id": "ART-0006",
+      "name": "капсулы стазиса лазарета с несовпадающими датами",
+      "found_at": "dso.lotus",
+      "found_year": 3100,
+      "finder": "сквоттеры «Лотоса»",
+      "custody": "Станция «Порог»",
+      "provenance": [
+        "корпус «Лотоса»"
+      ],
+      "claims": [
+        "Путь Бесконечного Света",
+        "Керн"
+      ],
+      "scientific_value": "medium",
+      "market_value_cr": 900000,
+      "known": [
+        "маркировка NIRVANA-1",
+        "даты обслуживания на 200 лет позже гибели экипажа"
+      ],
+      "unknown": [
+        "кто обслуживал"
+      ],
+      "hazard": "нет",
+      "fraud": "disputed",
+      "author_truth": "канон: на NIRVANA-1 нет колонистского крио; это 2 медицинские капсулы лазарета, которые ИИ «Мандала» обслуживал до отказа реактора в 2890"
+    }
   ],
   "languages": {
-    "culture_to_language": {"american_frontier": "en", "canadian": "en", "nordic_pmc": "en", "global_ultrarich": "en", "eu_bureaucratic": "fr", "crypto_libertarian": "en", "transhumanist": "en",
-                            "eco_transnational": "en", "earth_late": "en", "russian": "ru", "central_asian": "ru", "indian": "hi", "pakistani": "ur", "chinese_state": "zh", "chinese_diaspora": "zh",
-                            "greek": "el", "italian": "it", "iberian": "es", "mexican": "es", "andean": "es", "brazilian": "pt", "maghrebi": "ar", "gulf_arab": "ar", "malay_indonesian": "ms",
-                            "west_african": "sw", "east_african": "sw", "southern_african": "sw", "christian_traditionalist": "ru", "neo_buddhist": "en"},
+    "culture_to_language": {
+      "american_frontier": "en",
+      "canadian": "en",
+      "nordic_pmc": "en",
+      "global_ultrarich": "en",
+      "eu_bureaucratic": "fr",
+      "crypto_libertarian": "en",
+      "transhumanist": "en",
+      "eco_transnational": "en",
+      "earth_late": "en",
+      "russian": "ru",
+      "central_asian": "ru",
+      "indian": "hi",
+      "pakistani": "ur",
+      "chinese_state": "zh",
+      "chinese_diaspora": "zh",
+      "greek": "el",
+      "italian": "it",
+      "iberian": "es",
+      "mexican": "es",
+      "andean": "es",
+      "brazilian": "pt",
+      "maghrebi": "ar",
+      "gulf_arab": "ar",
+      "malay_indonesian": "ms",
+      "west_african": "sw",
+      "east_african": "sw",
+      "southern_african": "sw",
+      "christian_traditionalist": "ru",
+      "neo_buddhist": "en"
+    },
     "network_lingua_franca": "en",
     "note": "Язык территории = язык крупнейшей культуры основателей; второй язык — язык сети (пилотский английский). Сообщения идут на языке территории; перевод у игрока: знание / хороший переводчик / плохой автоматический / нет."
   },
   "law_profiles": {
-    "technocratic_civil": {"ru": "технократическое гражданское право", "courts": "государственные суды + арбитраж лицензий", "police": "государственная полиция", "salvage_finder_share": 0.25, "registration": "strict", "weapons": "licensed", "controlled_goods": "strict", "search_seizure": "warrant", "private_security": "licensed", "extradition": "treaty", "death_penalty": false},
-    "confucian_administrative": {"ru": "административное право Совета", "courts": "административные трибуналы", "police": "государственная полиция + цензоры", "salvage_finder_share": 0.1, "registration": "strict", "weapons": "forbidden", "controlled_goods": "strict", "search_seizure": "administrative", "private_security": "forbidden", "extradition": "political", "death_penalty": true},
-    "party_administrative": {"ru": "партийно-административное право", "courts": "народные суды под партией", "police": "государственная полиция", "salvage_finder_share": 0.1, "registration": "strict", "weapons": "forbidden", "controlled_goods": "strict", "search_seizure": "administrative", "private_security": "forbidden", "extradition": "political", "death_penalty": true},
-    "sol_codified": {"ru": "кодекс Власти Сола", "courts": "суды Власти + Морской трибунал", "police": "полиция и таможня Сола", "salvage_finder_share": 0.33, "registration": "strict", "weapons": "licensed", "controlled_goods": "strict", "search_seizure": "warrant", "private_security": "licensed", "extradition": "treaty", "death_penalty": false},
-    "theocratic": {"ru": "религиозное право", "courts": "религиозные суды", "police": "государственная + религиозная стража", "salvage_finder_share": 0.2, "registration": "strict", "weapons": "licensed", "controlled_goods": "very_strict", "search_seizure": "administrative", "private_security": "licensed", "extradition": "political", "death_penalty": true},
-    "corporate": {"ru": "корпоративная юрисдикция", "courts": "корпоративный арбитраж", "police": "служба безопасности компании", "salvage_finder_share": 0.4, "registration": "contractual", "weapons": "licensed", "controlled_goods": "taxed", "search_seizure": "contractual", "private_security": "allowed", "extradition": "contractual", "death_penalty": false},
-    "city_state_arbitration": {"ru": "городские суды и частный арбитраж", "courts": "городские суды + частный арбитраж", "police": "городская стража", "salvage_finder_share": 0.5, "registration": "liberal", "weapons": "licensed", "controlled_goods": "taxed", "search_seizure": "warrant", "private_security": "allowed", "extradition": "treaty", "death_penalty": false},
-    "parliamentary_civil": {"ru": "гражданское право парламентской республики", "courts": "независимые суды", "police": "государственная полиция", "salvage_finder_share": 0.33, "registration": "strict", "weapons": "licensed", "controlled_goods": "strict", "search_seizure": "warrant", "private_security": "licensed", "extradition": "treaty", "death_penalty": false},
-    "military_administration": {"ru": "военно-административное право", "courts": "военные трибуналы", "police": "военная полиция", "salvage_finder_share": 0.0, "registration": "strict", "weapons": "military_only", "controlled_goods": "strict", "search_seizure": "summary", "private_security": "forbidden", "extradition": "none", "death_penalty": true},
-    "clan_law": {"ru": "клановое право и договоры", "courts": "советы кланов, договорное право", "police": "ополчения кланов", "salvage_finder_share": 0.8, "registration": "liberal", "weapons": "allowed", "controlled_goods": "free", "search_seizure": "clan", "private_security": "allowed", "extradition": "none", "death_penalty": true},
-    "customary_council": {"ru": "обычное право совета вождей + кодекс", "courts": "совет вождей + гражданские суды", "police": "государственная полиция", "salvage_finder_share": 0.3, "registration": "strict", "weapons": "licensed", "controlled_goods": "strict", "search_seizure": "warrant", "private_security": "licensed", "extradition": "treaty", "death_penalty": false},
-    "machine_oracle": {"ru": "решения Оракула", "courts": "Оракул", "police": "охрана концессий", "salvage_finder_share": 0.0, "registration": "strict", "weapons": "forbidden", "controlled_goods": "strict", "search_seizure": "summary", "private_security": "forbidden", "extradition": "none", "death_penalty": false},
-    "none": {"ru": "фактически нет работающего закона", "courts": "нет (сила, репутация, долги)", "police": "нет", "salvage_finder_share": 1.0, "registration": "none", "weapons": "allowed", "controlled_goods": "free", "search_seizure": "force", "private_security": "allowed", "extradition": "none", "death_penalty": false}
+    "technocratic_civil": {
+      "ru": "технократическое гражданское право",
+      "courts": "государственные суды + арбитраж лицензий",
+      "police": "государственная полиция",
+      "salvage_finder_share": 0.25,
+      "registration": "strict",
+      "weapons": "licensed",
+      "controlled_goods": "strict",
+      "search_seizure": "warrant",
+      "private_security": "licensed",
+      "extradition": "treaty",
+      "death_penalty": false
+    },
+    "confucian_administrative": {
+      "ru": "административное право Совета",
+      "courts": "административные трибуналы",
+      "police": "государственная полиция + цензоры",
+      "salvage_finder_share": 0.1,
+      "registration": "strict",
+      "weapons": "forbidden",
+      "controlled_goods": "strict",
+      "search_seizure": "administrative",
+      "private_security": "forbidden",
+      "extradition": "political",
+      "death_penalty": true
+    },
+    "party_administrative": {
+      "ru": "партийно-административное право",
+      "courts": "народные суды под партией",
+      "police": "государственная полиция",
+      "salvage_finder_share": 0.1,
+      "registration": "strict",
+      "weapons": "forbidden",
+      "controlled_goods": "strict",
+      "search_seizure": "administrative",
+      "private_security": "forbidden",
+      "extradition": "political",
+      "death_penalty": true
+    },
+    "sol_codified": {
+      "ru": "кодекс Власти Сола",
+      "courts": "суды Власти + Морской трибунал",
+      "police": "полиция и таможня Сола",
+      "salvage_finder_share": 0.33,
+      "registration": "strict",
+      "weapons": "licensed",
+      "controlled_goods": "strict",
+      "search_seizure": "warrant",
+      "private_security": "licensed",
+      "extradition": "treaty",
+      "death_penalty": false
+    },
+    "theocratic": {
+      "ru": "религиозное право",
+      "courts": "религиозные суды",
+      "police": "государственная + религиозная стража",
+      "salvage_finder_share": 0.2,
+      "registration": "strict",
+      "weapons": "licensed",
+      "controlled_goods": "very_strict",
+      "search_seizure": "administrative",
+      "private_security": "licensed",
+      "extradition": "political",
+      "death_penalty": true
+    },
+    "corporate": {
+      "ru": "корпоративная юрисдикция",
+      "courts": "корпоративный арбитраж",
+      "police": "служба безопасности компании",
+      "salvage_finder_share": 0.4,
+      "registration": "contractual",
+      "weapons": "licensed",
+      "controlled_goods": "taxed",
+      "search_seizure": "contractual",
+      "private_security": "allowed",
+      "extradition": "contractual",
+      "death_penalty": false
+    },
+    "city_state_arbitration": {
+      "ru": "городские суды и частный арбитраж",
+      "courts": "городские суды + частный арбитраж",
+      "police": "городская стража",
+      "salvage_finder_share": 0.5,
+      "registration": "liberal",
+      "weapons": "licensed",
+      "controlled_goods": "taxed",
+      "search_seizure": "warrant",
+      "private_security": "allowed",
+      "extradition": "treaty",
+      "death_penalty": false
+    },
+    "parliamentary_civil": {
+      "ru": "гражданское право парламентской республики",
+      "courts": "независимые суды",
+      "police": "государственная полиция",
+      "salvage_finder_share": 0.33,
+      "registration": "strict",
+      "weapons": "licensed",
+      "controlled_goods": "strict",
+      "search_seizure": "warrant",
+      "private_security": "licensed",
+      "extradition": "treaty",
+      "death_penalty": false
+    },
+    "military_administration": {
+      "ru": "военно-административное право",
+      "courts": "военные трибуналы",
+      "police": "военная полиция",
+      "salvage_finder_share": 0.0,
+      "registration": "strict",
+      "weapons": "military_only",
+      "controlled_goods": "strict",
+      "search_seizure": "summary",
+      "private_security": "forbidden",
+      "extradition": "none",
+      "death_penalty": true
+    },
+    "clan_law": {
+      "ru": "клановое право и договоры",
+      "courts": "советы кланов, договорное право",
+      "police": "ополчения кланов",
+      "salvage_finder_share": 0.8,
+      "registration": "liberal",
+      "weapons": "allowed",
+      "controlled_goods": "free",
+      "search_seizure": "clan",
+      "private_security": "allowed",
+      "extradition": "none",
+      "death_penalty": true
+    },
+    "customary_council": {
+      "ru": "обычное право совета вождей + кодекс",
+      "courts": "совет вождей + гражданские суды",
+      "police": "государственная полиция",
+      "salvage_finder_share": 0.3,
+      "registration": "strict",
+      "weapons": "licensed",
+      "controlled_goods": "strict",
+      "search_seizure": "warrant",
+      "private_security": "licensed",
+      "extradition": "treaty",
+      "death_penalty": false
+    },
+    "machine_oracle": {
+      "ru": "решения Оракула",
+      "courts": "Оракул",
+      "police": "охрана концессий",
+      "salvage_finder_share": 0.0,
+      "registration": "strict",
+      "weapons": "forbidden",
+      "controlled_goods": "strict",
+      "search_seizure": "summary",
+      "private_security": "forbidden",
+      "extradition": "none",
+      "death_penalty": false
+    },
+    "none": {
+      "ru": "фактически нет работающего закона",
+      "courts": "нет (сила, репутация, долги)",
+      "police": "нет",
+      "salvage_finder_share": 1.0,
+      "registration": "none",
+      "weapons": "allowed",
+      "controlled_goods": "free",
+      "search_seizure": "force",
+      "private_security": "allowed",
+      "extradition": "none",
+      "death_penalty": false
+    }
   },
   "regime_law": {
-    "technocratic_meritocracy": "technocratic_civil", "sage_council": "confucian_administrative", "party_technocracy": "party_administrative", "sol_authority": "sol_codified",
-    "scholar_theocracy": "theocratic", "caste_theocracy": "theocratic", "synod_theocracy": "theocratic", "grandees_and_church": "parliamentary_civil",
-    "corporate_board": "corporate", "corporate_democracy": "parliamentary_civil", "shareholder_agora": "city_state_arbitration", "litigating_city_states": "city_state_arbitration",
-    "parliamentary_bureaucracy": "parliamentary_civil", "merit_caste_republic": "parliamentary_civil", "exile_republic": "parliamentary_civil",
-    "security_oligarchy": "military_administration", "clan_contracts": "clan_law", "council_of_chiefs": "customary_council", "machine_oracle": "machine_oracle", "none_quiet": "none"
+    "technocratic_meritocracy": "technocratic_civil",
+    "sage_council": "confucian_administrative",
+    "party_technocracy": "party_administrative",
+    "sol_authority": "sol_codified",
+    "scholar_theocracy": "theocratic",
+    "caste_theocracy": "theocratic",
+    "synod_theocracy": "theocratic",
+    "grandees_and_church": "parliamentary_civil",
+    "corporate_board": "corporate",
+    "corporate_democracy": "parliamentary_civil",
+    "shareholder_agora": "city_state_arbitration",
+    "litigating_city_states": "city_state_arbitration",
+    "parliamentary_bureaucracy": "parliamentary_civil",
+    "merit_caste_republic": "parliamentary_civil",
+    "exile_republic": "parliamentary_civil",
+    "security_oligarchy": "military_administration",
+    "clan_contracts": "clan_law",
+    "council_of_chiefs": "customary_council",
+    "machine_oracle": "machine_oracle",
+    "none_quiet": "none"
   },
   "space_law": {
-    "beacon_convention": {"ru": "Конвенция Управления Маяков", "since": 2790, "rules": ["маяк — нейтральная инфраструктура; саботаж маяка и помехи навигации — преступление для всех участников", "сигнал бедствия обязателен к ответу ближайшим кораблём", "регистр транспондеров общий"], "parties": "все подключённые к сети, кроме отказавшихся"},
+    "beacon_convention": {
+      "ru": "Конвенция Управления Маяков",
+      "since": 2790,
+      "rules": [
+        "маяк — нейтральная инфраструктура; саботаж маяка и помехи навигации — преступление для всех участников",
+        "сигнал бедствия обязателен к ответу ближайшим кораблём",
+        "регистр транспондеров общий"
+      ],
+      "parties": "все подключённые к сети, кроме отказавшихся"
+    },
     "territorial": "внутри системы с колонией — закон её государства; несколько государств в системе — по зонам тел (орбита/поверхность владельца) и по договорам",
     "deep_space": "вне систем: закон флага корабля; на межзвёздном хабе — закон лицензиара, если он есть, иначе договор держателей; спорные хабы — конкурирующие юрисдикции",
     "warrants": "ордер действует там, где его признают (договор об экстрадиции) и куда он дошёл по сети маяков; приходит с задержкой связи",
-    "offences": ["contraband", "smuggling", "false_transponder", "forged_registration", "piracy", "theft", "assault", "murder", "unlawful_salvage", "quarantine_violation", "customs_evasion", "restricted_weapons", "illegal_docking", "beacon_sabotage", "navigation_interference"],
-    "universal_offences": ["piracy", "beacon_sabotage", "navigation_interference"]
+    "offences": [
+      "contraband",
+      "smuggling",
+      "false_transponder",
+      "forged_registration",
+      "piracy",
+      "theft",
+      "assault",
+      "murder",
+      "unlawful_salvage",
+      "quarantine_violation",
+      "customs_evasion",
+      "restricted_weapons",
+      "illegal_docking",
+      "beacon_sabotage",
+      "navigation_interference"
+    ],
+    "universal_offences": [
+      "piracy",
+      "beacon_sabotage",
+      "navigation_interference"
+    ]
   },
   "comms": {
     "author_target_days_to_far_periphery": 7.0,
     "in_system_processing_s": 30,
     "relay_hop_processing_h": 0.5,
     "mail_drone_charge_h": 2.0,
-    "link_min_departures_per_day": {"trunk": 8.0, "secondary": 3.0, "feeder": 1.5, "frontier": 0.5},
-    "priority_factor": {"flash": 0.0, "priority": 0.25, "routine": 1.0, "bulk": 3.0},
-    "coverage_ls": {"bridge": 120, "trade_hub": 60, "station": 30, "relay": 60, "military": 90, "science": 30},
+    "link_min_departures_per_day": {
+      "trunk": 8.0,
+      "secondary": 3.0,
+      "feeder": 1.5,
+      "frontier": 0.5
+    },
+    "priority_factor": {
+      "flash": 0.0,
+      "priority": 0.25,
+      "routine": 1.0,
+      "bulk": 3.0
+    },
+    "coverage_ls": {
+      "bridge": 120,
+      "trade_hub": 60,
+      "station": 30,
+      "relay": 60,
+      "military": 90,
+      "science": 30
+    },
     "frontier_note": "Фронтиры (за краем сети: «Лотос», «Китовая Щель», «Ноль-Вега») не входят в диаметр сети: там почта ходит реже, а ретранслятор «Лотоса» часто молчит (задержка ребра x (2 - uptime)).",
     "note": "Межзвёздная связь = данные на каждом прыжке + почтовые дроны Управления Маяков с минимальной частотой по классу ребра. Задержка ребра = ожидание ближайшего отправления (1/(2f)) + зарядка дрона + обработка. Внутри системы — свет + обработка. Игровое временное сжатие: AUTHOR_TARGET неделя до края сети."
   },
   "passengers": {
-    "trips_per_capita_y_interstellar": {"labour_rotation": 0.0008, "family": 0.0010, "business": 0.0012, "education": 0.0002, "medical": 0.0001, "tourism": 0.0006, "pilgrimage": 0.0002, "administrative": 0.0002},
-    "pilgrimage_regimes": ["scholar_theocracy", "caste_theocracy", "synod_theocracy", "sage_council"],
+    "trips_per_capita_y_interstellar": {
+      "labour_rotation": 0.0008,
+      "family": 0.001,
+      "business": 0.0012,
+      "education": 0.0002,
+      "medical": 0.0001,
+      "tourism": 0.0006,
+      "pilgrimage": 0.0002,
+      "administrative": 0.0002
+    },
+    "pilgrimage_regimes": [
+      "scholar_theocracy",
+      "caste_theocracy",
+      "synod_theocracy",
+      "sage_council"
+    ],
     "trips_per_capita_y_surface_orbit": 0.02,
     "network_migration_per_1000_y": 0.15,
     "refugees_per_grievance_point_per_million": 0.4,
     "military_rotation_per_person_y": 1.0,
-    "class_split": {"cabin": 0.04, "business": 0.22, "economy": 0.62, "steerage": 0.12},
-    "class_price_factor": {"cabin": 6.0, "business": 2.2, "economy": 1.0, "steerage": 0.45},
+    "class_split": {
+      "cabin": 0.04,
+      "business": 0.22,
+      "economy": 0.62,
+      "steerage": 0.12
+    },
+    "class_price_factor": {
+      "cabin": 6.0,
+      "business": 2.2,
+      "economy": 1.0,
+      "steerage": 0.45
+    },
     "load_factor_target": 0.75,
     "migration_by": "colonist_transport",
     "small_link_threshold_pax_y": 20000,
     "note": "Спрос: гравитационная модель по сети (население^0.8 x население^0.8 / стоимость пути), враждебные пары x0.05, культурная близость x1.5."
   },
   "fleet_age": {
-    "states": ["new", "mature", "old", "heavily_worn", "reserve", "mothballed", "restoration_project", "scrap_candidate"],
+    "states": [
+      "new",
+      "mature",
+      "old",
+      "heavily_worn",
+      "reserve",
+      "mothballed",
+      "restoration_project",
+      "scrap_candidate"
+    ],
     "effects": {
-      "new": {"failure_rate_x": 0.6, "opex_x": 0.9, "availability": 0.95, "insurance_x": 0.8, "fuel_x": 0.98, "repair_days_per_y": 8, "delay_probability": 0.03, "resale_share": 0.85},
-      "mature": {"failure_rate_x": 1.0, "opex_x": 1.0, "availability": 0.92, "insurance_x": 1.0, "fuel_x": 1.0, "repair_days_per_y": 14, "delay_probability": 0.05, "resale_share": 0.55},
-      "old": {"failure_rate_x": 1.8, "opex_x": 1.25, "availability": 0.86, "insurance_x": 1.5, "fuel_x": 1.05, "repair_days_per_y": 24, "delay_probability": 0.09, "resale_share": 0.3},
-      "heavily_worn": {"failure_rate_x": 3.5, "opex_x": 1.6, "availability": 0.75, "insurance_x": 2.6, "fuel_x": 1.12, "repair_days_per_y": 45, "delay_probability": 0.17, "resale_share": 0.12},
-      "reserve": {"failure_rate_x": 1.2, "opex_x": 0.3, "availability": 0.5, "insurance_x": 0.5, "fuel_x": 1.0, "repair_days_per_y": 6, "delay_probability": 0.0, "resale_share": 0.4},
-      "mothballed": {"failure_rate_x": 2.0, "opex_x": 0.08, "availability": 0.05, "insurance_x": 0.2, "fuel_x": 1.05, "repair_days_per_y": 0, "delay_probability": 0.0, "resale_share": 0.2},
-      "restoration_project": {"failure_rate_x": 5.0, "opex_x": 0.2, "availability": 0.0, "insurance_x": 0.3, "fuel_x": 1.2, "repair_days_per_y": 200, "delay_probability": 0.0, "resale_share": 0.08},
-      "scrap_candidate": {"failure_rate_x": 6.0, "opex_x": 2.0, "availability": 0.4, "insurance_x": 4.0, "fuel_x": 1.2, "repair_days_per_y": 90, "delay_probability": 0.3, "resale_share": 0.03}
+      "new": {
+        "failure_rate_x": 0.6,
+        "opex_x": 0.9,
+        "availability": 0.95,
+        "insurance_x": 0.8,
+        "fuel_x": 0.98,
+        "repair_days_per_y": 8,
+        "delay_probability": 0.03,
+        "resale_share": 0.85
+      },
+      "mature": {
+        "failure_rate_x": 1.0,
+        "opex_x": 1.0,
+        "availability": 0.92,
+        "insurance_x": 1.0,
+        "fuel_x": 1.0,
+        "repair_days_per_y": 14,
+        "delay_probability": 0.05,
+        "resale_share": 0.55
+      },
+      "old": {
+        "failure_rate_x": 1.8,
+        "opex_x": 1.25,
+        "availability": 0.86,
+        "insurance_x": 1.5,
+        "fuel_x": 1.05,
+        "repair_days_per_y": 24,
+        "delay_probability": 0.09,
+        "resale_share": 0.3
+      },
+      "heavily_worn": {
+        "failure_rate_x": 3.5,
+        "opex_x": 1.6,
+        "availability": 0.75,
+        "insurance_x": 2.6,
+        "fuel_x": 1.12,
+        "repair_days_per_y": 45,
+        "delay_probability": 0.17,
+        "resale_share": 0.12
+      },
+      "reserve": {
+        "failure_rate_x": 1.2,
+        "opex_x": 0.3,
+        "availability": 0.5,
+        "insurance_x": 0.5,
+        "fuel_x": 1.0,
+        "repair_days_per_y": 6,
+        "delay_probability": 0.0,
+        "resale_share": 0.4
+      },
+      "mothballed": {
+        "failure_rate_x": 2.0,
+        "opex_x": 0.08,
+        "availability": 0.05,
+        "insurance_x": 0.2,
+        "fuel_x": 1.05,
+        "repair_days_per_y": 0,
+        "delay_probability": 0.0,
+        "resale_share": 0.2
+      },
+      "restoration_project": {
+        "failure_rate_x": 5.0,
+        "opex_x": 0.2,
+        "availability": 0.0,
+        "insurance_x": 0.3,
+        "fuel_x": 1.2,
+        "repair_days_per_y": 200,
+        "delay_probability": 0.0,
+        "resale_share": 0.08
+      },
+      "scrap_candidate": {
+        "failure_rate_x": 6.0,
+        "opex_x": 2.0,
+        "availability": 0.4,
+        "insurance_x": 4.0,
+        "fuel_x": 1.2,
+        "repair_days_per_y": 90,
+        "delay_probability": 0.3,
+        "resale_share": 0.03
+      }
     },
-    "retirement_age_share_of_life": {"rich": 1.0, "middle": 1.3, "poor": 1.7},
+    "retirement_age_share_of_life": {
+      "rich": 1.0,
+      "middle": 1.3,
+      "poor": 1.7
+    },
     "jump_era_rule": "корабль с прыжковым двигателем не старше подключения своей политии к сети (ядра появились в 2750-х); внутрисистемный флот может быть старше",
-    "pirate_fleet": {"stolen": 0.32, "restored_wreck": 0.22, "old_bought": 0.2, "illegally_modified": 0.14, "reflagged": 0.07, "multi_donor": 0.05}
+    "pirate_fleet": {
+      "stolen": 0.32,
+      "restored_wreck": 0.22,
+      "old_bought": 0.2,
+      "illegally_modified": 0.14,
+      "reflagged": 0.07,
+      "multi_donor": 0.05
+    }
   },
   "piracy": {
     "formula": "traffic x valuable_cargo x weak_enforcement x cover x safe_haven x corruption x resale_market",
     "enclave_threshold": 0.18,
     "people_per_index_point": 2500,
-    "cover_bodies": ["kuiper_belt", "asteroid_belt", "trojans", "comet_cloud"]
+    "cover_bodies": [
+      "kuiper_belt",
+      "asteroid_belt",
+      "trojans",
+      "comet_cloud"
+    ]
   },
   "administrators": {
     "remoteness_threshold": 0.45,
     "backgrounds": {
-      "career_officer": {"ru": "кадровый офицер", "competence": 0.65, "loyalty": 0.8, "corruption": 0.15, "ambition": 0.5, "risk_tolerance": 0.55, "empathy": 0.45, "ideology": 0.6, "connections": 0.5, "bribery": 0.15},
-      "career_bureaucrat": {"ru": "карьерный чиновник", "competence": 0.55, "loyalty": 0.6, "corruption": 0.3, "ambition": 0.65, "risk_tolerance": 0.3, "empathy": 0.45, "ideology": 0.4, "connections": 0.65, "bribery": 0.35},
-      "company_manager": {"ru": "менеджер компании", "competence": 0.65, "loyalty": 0.5, "corruption": 0.35, "ambition": 0.7, "risk_tolerance": 0.55, "empathy": 0.35, "ideology": 0.2, "connections": 0.6, "bribery": 0.4},
-      "local_notable": {"ru": "местный уважаемый человек", "competence": 0.5, "loyalty": 0.4, "corruption": 0.35, "ambition": 0.45, "risk_tolerance": 0.5, "empathy": 0.6, "ideology": 0.35, "connections": 0.8, "bribery": 0.4},
-      "political_appointee": {"ru": "назначенец по связям", "competence": 0.35, "loyalty": 0.65, "corruption": 0.5, "ambition": 0.75, "risk_tolerance": 0.4, "empathy": 0.35, "ideology": 0.55, "connections": 0.85, "bribery": 0.55},
-      "exiled_official": {"ru": "сосланный чиновник", "competence": 0.6, "loyalty": 0.3, "corruption": 0.45, "ambition": 0.4, "risk_tolerance": 0.6, "empathy": 0.4, "ideology": 0.3, "connections": 0.4, "bribery": 0.5},
-      "cleric": {"ru": "духовное лицо", "competence": 0.5, "loyalty": 0.75, "corruption": 0.2, "ambition": 0.35, "risk_tolerance": 0.35, "empathy": 0.6, "ideology": 0.9, "connections": 0.5, "bribery": 0.2},
-      "boss": {"ru": "главарь", "competence": 0.6, "loyalty": 0.2, "corruption": 0.85, "ambition": 0.8, "risk_tolerance": 0.8, "empathy": 0.25, "ideology": 0.1, "connections": 0.7, "bribery": 0.9}
+      "career_officer": {
+        "ru": "кадровый офицер",
+        "competence": 0.65,
+        "loyalty": 0.8,
+        "corruption": 0.15,
+        "ambition": 0.5,
+        "risk_tolerance": 0.55,
+        "empathy": 0.45,
+        "ideology": 0.6,
+        "connections": 0.5,
+        "bribery": 0.15
+      },
+      "career_bureaucrat": {
+        "ru": "карьерный чиновник",
+        "competence": 0.55,
+        "loyalty": 0.6,
+        "corruption": 0.3,
+        "ambition": 0.65,
+        "risk_tolerance": 0.3,
+        "empathy": 0.45,
+        "ideology": 0.4,
+        "connections": 0.65,
+        "bribery": 0.35
+      },
+      "company_manager": {
+        "ru": "менеджер компании",
+        "competence": 0.65,
+        "loyalty": 0.5,
+        "corruption": 0.35,
+        "ambition": 0.7,
+        "risk_tolerance": 0.55,
+        "empathy": 0.35,
+        "ideology": 0.2,
+        "connections": 0.6,
+        "bribery": 0.4
+      },
+      "local_notable": {
+        "ru": "местный уважаемый человек",
+        "competence": 0.5,
+        "loyalty": 0.4,
+        "corruption": 0.35,
+        "ambition": 0.45,
+        "risk_tolerance": 0.5,
+        "empathy": 0.6,
+        "ideology": 0.35,
+        "connections": 0.8,
+        "bribery": 0.4
+      },
+      "political_appointee": {
+        "ru": "назначенец по связям",
+        "competence": 0.35,
+        "loyalty": 0.65,
+        "corruption": 0.5,
+        "ambition": 0.75,
+        "risk_tolerance": 0.4,
+        "empathy": 0.35,
+        "ideology": 0.55,
+        "connections": 0.85,
+        "bribery": 0.55
+      },
+      "exiled_official": {
+        "ru": "сосланный чиновник",
+        "competence": 0.6,
+        "loyalty": 0.3,
+        "corruption": 0.45,
+        "ambition": 0.4,
+        "risk_tolerance": 0.6,
+        "empathy": 0.4,
+        "ideology": 0.3,
+        "connections": 0.4,
+        "bribery": 0.5
+      },
+      "cleric": {
+        "ru": "духовное лицо",
+        "competence": 0.5,
+        "loyalty": 0.75,
+        "corruption": 0.2,
+        "ambition": 0.35,
+        "risk_tolerance": 0.35,
+        "empathy": 0.6,
+        "ideology": 0.9,
+        "connections": 0.5,
+        "bribery": 0.2
+      },
+      "boss": {
+        "ru": "главарь",
+        "competence": 0.6,
+        "loyalty": 0.2,
+        "corruption": 0.85,
+        "ambition": 0.8,
+        "risk_tolerance": 0.8,
+        "empathy": 0.25,
+        "ideology": 0.1,
+        "connections": 0.7,
+        "bribery": 0.9
+      }
     },
     "regime_backgrounds": {
-      "military_administration": ["career_officer", "career_officer", "political_appointee"],
-      "confucian_administrative": ["career_bureaucrat", "career_officer", "exiled_official"],
-      "party_administrative": ["career_bureaucrat", "political_appointee", "career_officer"],
-      "technocratic_civil": ["career_bureaucrat", "company_manager", "exiled_official"],
-      "corporate": ["company_manager", "company_manager", "local_notable"],
-      "theocratic": ["cleric", "career_bureaucrat", "political_appointee"],
-      "city_state_arbitration": ["local_notable", "company_manager", "political_appointee"],
-      "parliamentary_civil": ["career_bureaucrat", "local_notable", "political_appointee"],
-      "sol_codified": ["career_bureaucrat", "career_officer", "political_appointee"],
-      "clan_law": ["local_notable", "boss", "local_notable"],
-      "customary_council": ["local_notable", "career_bureaucrat", "political_appointee"],
-      "machine_oracle": ["career_bureaucrat"],
-      "none": ["boss", "local_notable", "boss"]
+      "military_administration": [
+        "career_officer",
+        "career_officer",
+        "political_appointee"
+      ],
+      "confucian_administrative": [
+        "career_bureaucrat",
+        "career_officer",
+        "exiled_official"
+      ],
+      "party_administrative": [
+        "career_bureaucrat",
+        "political_appointee",
+        "career_officer"
+      ],
+      "technocratic_civil": [
+        "career_bureaucrat",
+        "company_manager",
+        "exiled_official"
+      ],
+      "corporate": [
+        "company_manager",
+        "company_manager",
+        "local_notable"
+      ],
+      "theocratic": [
+        "cleric",
+        "career_bureaucrat",
+        "political_appointee"
+      ],
+      "city_state_arbitration": [
+        "local_notable",
+        "company_manager",
+        "political_appointee"
+      ],
+      "parliamentary_civil": [
+        "career_bureaucrat",
+        "local_notable",
+        "political_appointee"
+      ],
+      "sol_codified": [
+        "career_bureaucrat",
+        "career_officer",
+        "political_appointee"
+      ],
+      "clan_law": [
+        "local_notable",
+        "boss",
+        "local_notable"
+      ],
+      "customary_council": [
+        "local_notable",
+        "career_bureaucrat",
+        "political_appointee"
+      ],
+      "machine_oracle": [
+        "career_bureaucrat"
+      ],
+      "none": [
+        "boss",
+        "local_notable",
+        "boss"
+      ]
     },
-    "given_names": {"zh": ["Ли Вэй", "Чжан Мин", "Ван Фан", "Чэнь Цзин", "Лю Ян", "Хуан Лэй"], "en": ["Marcus Hale", "Dana Whitlock", "Owen Price", "Leah Okafor", "Ruth Calder", "Sam Ibarra"], "ru": ["Сергей Карпов", "Анна Белова", "Илья Громов", "Вера Лаптева"], "hi": ["Арджун Мехта", "Прия Наир", "Викрам Рао", "Анжали Деси"], "el": ["Никос Ставру", "Елена Папа", "Янис Маркос"], "es": ["Хорхе Сальвадор", "Лусия Ортега"], "pt": ["Жуан Барбоза", "Ана Мартинс"], "sw": ["Кофи Мванги", "Амани Одуор", "Неема Барака"], "fr": ["Клер Дюбуа", "Люк Мартен"], "ar": ["Юсуф Хамдан", "Мариам Саид"], "ms": ["Ахмад Рахман", "Сити Нур"], "it": ["Марко Ренци", "Джулия Конти"], "ur": ["Имран Шах", "Айша Малик"]}
+    "given_names": {
+      "zh": [
+        "Ли Вэй",
+        "Чжан Мин",
+        "Ван Фан",
+        "Чэнь Цзин",
+        "Лю Ян",
+        "Хуан Лэй"
+      ],
+      "en": [
+        "Marcus Hale",
+        "Dana Whitlock",
+        "Owen Price",
+        "Leah Okafor",
+        "Ruth Calder",
+        "Sam Ibarra"
+      ],
+      "ru": [
+        "Сергей Карпов",
+        "Анна Белова",
+        "Илья Громов",
+        "Вера Лаптева"
+      ],
+      "hi": [
+        "Арджун Мехта",
+        "Прия Наир",
+        "Викрам Рао",
+        "Анжали Деси"
+      ],
+      "el": [
+        "Никос Ставру",
+        "Елена Папа",
+        "Янис Маркос"
+      ],
+      "es": [
+        "Хорхе Сальвадор",
+        "Лусия Ортега"
+      ],
+      "pt": [
+        "Жуан Барбоза",
+        "Ана Мартинс"
+      ],
+      "sw": [
+        "Кофи Мванги",
+        "Амани Одуор",
+        "Неема Барака"
+      ],
+      "fr": [
+        "Клер Дюбуа",
+        "Люк Мартен"
+      ],
+      "ar": [
+        "Юсуф Хамдан",
+        "Мариам Саид"
+      ],
+      "ms": [
+        "Ахмад Рахман",
+        "Сити Нур"
+      ],
+      "it": [
+        "Марко Ренци",
+        "Джулия Конти"
+      ],
+      "ur": [
+        "Имран Шах",
+        "Айша Малик"
+      ]
+    }
   },
   "social": {
     "archetypes": {
@@ -398,6 +1954,866 @@
       "criminal_cesspit": "криминальная клоака",
       "closed_disciplined": "закрытая дисциплинированная база"
     },
-    "shocks": ["accident", "epidemic", "shortage", "war", "sanctions", "refugee_influx", "pirates", "mass_migration", "quarantine", "beacon_loss", "route_loss", "infrastructure_destruction"]
+    "shocks": [
+      "accident",
+      "epidemic",
+      "shortage",
+      "war",
+      "sanctions",
+      "refugee_influx",
+      "pirates",
+      "mass_migration",
+      "quarantine",
+      "beacon_loss",
+      "route_loss",
+      "infrastructure_destruction"
+    ]
+  },
+  "lotus": {
+    "truth": {
+      "status": "PROPOSAL",
+      "visibility": "AUTHOR_TRUTH",
+      "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+      "identity": {
+        "ship": "NIRVANA-1",
+        "status": "CANON",
+        "visibility": "AUTHOR_TRUTH",
+        "basis": "решение автора 2026-11-03: «Лотос» — NIRVANA-1; хронология проверена (см. consistency)"
+      },
+      "consistency": [
+        "канон fate.md / COLONIZATION_CANON: старт 2300, 3 500 человек, без крио; 2450 «ИИ фиксирует аномалии»; сигналы 2550 и 2650; 2680 «Не ищите нас. Мы нашли Нирвану», 2 100 на борту; маяк с разных направлений — всё сохранено как реальные события",
+        "канон: «потерян 2680» → авария (вход в складку) — 2680, а не раньше (первый черновик со складкой 2341 противоречил сигналам 2550/2650 и был исправлен)",
+        "legacy fate.md ставит потерю у HD 104067 (id 41) как точку легенды; реальный корпус — в 21 св. годе за HD 104067",
+        "канон «без крио»: ART-0006 — капсулы лазарета, не колонистское крио",
+        "досветово корабль за 380 лет прошёл ~30 св. лет к Kepler-62; оказаться в 95 св. годах от Солнца в другой стороне неба он мог только через складку — это и есть причина «невозможных направлений»"
+      ],
+      "route": "Солнце → Kepler-62 f (ICRS-направление на 100062), разгон 2300-2306 до 0.08 c, крейсерский полёт; к 2680 пройдено ~30 св. лет",
+      "accident": {
+        "year": 2680.4,
+        "where": "~30 св. лет от Солнца по курсу на Kepler-62, у ядра природной складки поля",
+        "cause": "с 2450 корабль шёл вдоль внешней оболочки природной складки поля (того же поля, которое через 70 лет откроет HYPERION-1). Навигатор «Мандала» (недетерминированная логика) воспринимал её шум как сигнал цели; монашеская Ассамблея, уже частично поражённая ранней экспозицией, утвердила курс в ядро («Расстояние — иллюзия. Мы идём дальше», 2650). 2680: вход в ядро",
+        "category": "physical"
+      },
+      "trajectory": [
+        {
+          "from": 2300.0,
+          "to": 2680.4,
+          "what": "досветовой полёт 0.08 c к Kepler-62, ~30 св. лет"
+        },
+        {
+          "from": 2680.4,
+          "to": 2680.4,
+          "what": "складка: перенос на ~95 св. лет от Солнца в поле между HD 104067 и HD 102195 (первый «прыжок» людей; никто об этом не знает)"
+        },
+        {
+          "from": 2680.4,
+          "to": 2686.0,
+          "what": "экипаж решает, что прибыл, и тратит тормозное топливо: 0.08 c → ~38 км/с; корабль останавливается в центре поля"
+        },
+        {
+          "from": 2686.0,
+          "to": 3126.0,
+          "what": "дрейф 38 км/с относительно Солнца вместе с полем (поле перемещается с той же скоростью)"
+        }
+      ],
+      "crew": {
+        "aboard_at_accident": 2100,
+        "born_after": 60,
+        "deaths_before_accident_remains": "переработаны в биосферу (обычай корабля) — лотосита не дают",
+        "syndrome_onset": "ранняя слабая экспозиция с 2450 (оболочка складки), полная — с 2680",
+        "cohorts": [
+          {
+            "died": [
+              2680,
+              2690
+            ],
+            "people": 470,
+            "cause": "насилие, самоубийства, несчастные случаи на стадиях 2-3",
+            "alive_in_field_years": 5
+          },
+          {
+            "died": [
+              2690,
+              2702
+            ],
+            "people": 1010,
+            "cause": "стадии 4-5",
+            "alive_in_field_years": 16
+          },
+          {
+            "died": [
+              2702,
+              2712
+            ],
+            "people": 680,
+            "cause": "стадия 5 (системное поражение)",
+            "alive_in_field_years": 27
+          }
+        ],
+        "last_human": 2712,
+        "survival_years": 32
+      },
+      "ship_state": "корпус цел; реактор работал в малой мощности до исчерпания топлива в 2890; затем — РИТЭГ резервного маяка и ядра ИИ; тела не разлагаются (холод, поле, лотосит)",
+      "systems": [
+        {
+          "system": "ИИ «Мандала»",
+          "until": "2890 полно, далее минимальный режим на РИТЭГ",
+          "note": "читает мантры по маяку"
+        },
+        {
+          "system": "маяк",
+          "until": "работает в 3126 (РИТЭГ Am-241)",
+          "note": "сигнал реальный; сквозь складку часть уходит «эхом» в случайные точки неба"
+        },
+        {
+          "system": "жизнеобеспечение агросекций",
+          "until": 2790,
+          "note": "кормило животных"
+        },
+        {
+          "system": "капсулы стазиса лазарета",
+          "until": 2890,
+          "note": "последние пациенты умерли 2712"
+        },
+        {
+          "system": "главный привод",
+          "until": 2686,
+          "note": "тормозное топливо израсходовано"
+        }
+      ],
+      "messages": [
+        {
+          "sent": 2550,
+          "text": "«Мы видели ткань реальности. Она поёт.»",
+          "from_ly": 20,
+          "received": "Земля ~2570",
+          "arrived": true
+        },
+        {
+          "sent": 2650,
+          "text": "«Расстояние — иллюзия. Мы идём дальше.»",
+          "from_ly": 28,
+          "received": "Земля ~2678",
+          "arrived": true
+        },
+        {
+          "sent": 2680.3,
+          "text": "«Не ищите нас. Мы нашли Нирвану.»",
+          "from_ly": 30,
+          "received": "Земля ~2710",
+          "arrived": true
+        },
+        {
+          "sent": [
+            2681,
+            2712
+          ],
+          "text": "214 лазерных сообщений «домой»; 41 нацелено верно (остальные — по ложному небу экипажа)",
+          "from_ly": 95,
+          "received": "3 фрагмента записаны лунной обсерваторией в 2779-2806 как шум; не расшифрованы до 3126",
+          "arrived": "частично"
+        },
+        {
+          "sent": [
+            2680,
+            3126
+          ],
+          "text": "маяк: мантры ИИ",
+          "received": "эхо сквозь складку на рубежах «с невозможных направлений» (канон)",
+          "arrived": true
+        }
+      ],
+      "animals": {
+        "aboard_2680": {
+          "dogs": 120,
+          "cats": 310,
+          "goats": 60,
+          "chickens": 900
+        },
+        "fate": "синдром их не тронул (профиль не совпадает). Агросекции кормили их до 2790; кошки дали ~25 поколений, последние умерли около 2810; собаки — к 2770; козы и куры — с отказом агросекций",
+        "found": "поисковая группа 3091 нашла мумии кошек нескольких поколений, гнёзда, следы когтей на дверях запертых отсеков с телами людей"
+      },
+      "discovery": {
+        "why_resumed": "с 3079 ретранслятор Керна у 83 Leonis логирует повторяющийся сигнал; в 3087 аналитик Kern Survey Амара Окойе-Линд замечает доплеровский сдвиг (реальный движущийся источник, не эхо) и узнаёт код маяка NIRVANA-1 по архивам XXIII века; консорциум коллекционеров Агоры (3086) обещает премию за предметы «Нирваны»",
+        "expedition": "Kern Survey «Сирин» + танкер «Бхадра», капитан Рахул Менса; вышла с HD 104067 в 3091",
+        "first_aboard": {
+          "who": "инженер Дита Варга",
+          "when": 3091.62
+        },
+        "found": [
+          "корпус цел",
+          "тела экипажа без разложения, с блеском в суставах",
+          "мумии кошек, следы нескольких поколений животных",
+          "ИИ «Мандала» читает мантры",
+          "журналы частично повреждены"
+        ],
+        "lotusite_first_seen": {
+          "when": 3093.4,
+          "who": "медик Инеш Барету (лагерь «Мандала»)",
+          "what": "кристаллические включения в тканях; лагерь начинает болеть"
+        },
+        "value_understood": {
+          "when": 3094.1,
+          "who": "инженер прыжка Томаш Илунга (Керн)",
+          "what": "ядро «Сирина» держит повышенное натяжение поля, пока образец лежит в отсеке привода"
+        },
+        "cover_up": "совет Керна засекречивает находку (3094-3101), пытается воспроизвести, продаёт Когниуму навигатор (3101) как отвлекающий манёвр",
+        "leak": "3103: Барету, потерявшая лагерь, продаёт экстракт лаборатории Агоры — та находит регенеративный эффект; 3104 первые продажи «лотосового стекла»; 3108 Когниум сам видит эффект стабилизации на навигаторе-образце; 3110 перебежчик из Керна; 3112 кордон"
+      }
+    },
+    "biology": {
+      "status": "PROPOSAL",
+      "visibility": "AUTHOR_TRUTH",
+      "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+      "rule": "аномальное поле распознаёт СОВОКУПНЫЙ профиль, а не одну молекулу: (1) нет уриказы → высокий системный урат; (2) нет синтеза витамина C (GULO) → аскорбат только с пищей; (3) сиалом без Neu5Gc (CMAH). Ни один признак сам по себе не уникален человеку",
+      "species": [
+        {
+          "species": "человек",
+          "uricase": false,
+          "vitamin_c_synthesis": false,
+          "neu5gc": false,
+          "affected": true
+        },
+        {
+          "species": "собака",
+          "uricase": true,
+          "vitamin_c_synthesis": true,
+          "neu5gc": "у части пород",
+          "affected": false
+        },
+        {
+          "species": "кошка",
+          "uricase": true,
+          "vitamin_c_synthesis": true,
+          "neu5gc": "у типа A",
+          "affected": false
+        },
+        {
+          "species": "человекообразные обезьяны",
+          "uricase": false,
+          "vitamin_c_synthesis": false,
+          "neu5gc": true,
+          "affected": false
+        },
+        {
+          "species": "морская свинка",
+          "uricase": true,
+          "vitamin_c_synthesis": false,
+          "neu5gc": true,
+          "affected": false
+        },
+        {
+          "species": "хорёк",
+          "uricase": true,
+          "vitamin_c_synthesis": true,
+          "neu5gc": false,
+          "affected": false
+        }
+      ],
+      "tissue_distribution": {
+        "суставной хрящ и сухожилия": 0.34,
+        "почки (мозговое вещество)": 0.18,
+        "стенки артерий": 0.16,
+        "костный мозг": 0.14,
+        "кожа (дерма)": 0.12,
+        "нервная ткань": 0.06
+      },
+      "lab_identification": "метастабильная фаза видна в спектроскопии и по связи с полем (образец меняет натяжение тестового поля); в останках — блеск в суставах",
+      "syndrome_stages": [
+        {
+          "stage": 1,
+          "months": [
+            1,
+            6
+          ],
+          "signs": [
+            "нарушения сна",
+            "повторяющиеся сны"
+          ]
+        },
+        {
+          "stage": 2,
+          "months": [
+            6,
+            24
+          ],
+          "signs": [
+            "потеря ориентации",
+            "ошибки памяти",
+            "ложное узнавание"
+          ]
+        },
+        {
+          "stage": 3,
+          "months": [
+            24,
+            72
+          ],
+          "signs": [
+            "слуховые и зрительные галлюцинации",
+            "паранойя",
+            "расхождение восприятия с приборами"
+          ]
+        },
+        {
+          "stage": 4,
+          "months": [
+            60,
+            180
+          ],
+          "signs": [
+            "нарушение координации"
+          ]
+        },
+        {
+          "stage": 5,
+          "months": [
+            120,
+            400
+          ],
+          "signs": [
+            "системное поражение: почки, сосуды, суставы — минерализация лотоситом",
+            "смерть"
+          ]
+        }
+      ],
+      "outside_field": "вне поля синдром не развивается и не прогрессирует; стадии 1-2 после коротких визитов (дни-недели) обратимы за месяцы",
+      "visitor_risk_per_day_in_field": {
+        "stage1": 0.02,
+        "stage2_after_days": 45
+      }
+    },
+    "phenomena": [
+      {
+        "id": "ph.dead_core",
+        "category": "physical",
+        "where": "hz.lotus_dead",
+        "sensors": "ядро прыжка не набирает поле",
+        "crew": "—",
+        "truth": "реальная мёртвая зона"
+      },
+      {
+        "id": "ph.exit_tails",
+        "category": "physical",
+        "where": "hz.lotus_field",
+        "sensors": "выходы на сотни тысяч км мимо цели",
+        "crew": "—",
+        "truth": "тяжёлые хвосты ошибки выхода в поле"
+      },
+      {
+        "id": "ph.corridor_drift",
+        "category": "physical",
+        "where": "hz.lotus_field",
+        "sensors": "старая карта ведёт в зону высокой ошибки",
+        "crew": "—",
+        "truth": "безопасный коридор смещается ~0.04 а.е./год"
+      },
+      {
+        "id": "ph.fold_echo",
+        "category": "physical",
+        "where": "вся сеть",
+        "sensors": "сигнал бедствия / транспондер давно погибшего корабля с невозможного направления",
+        "crew": "«мёртвые зовут»",
+        "truth": "эхо реальных старых передач сквозь складку"
+      },
+      {
+        "id": "ph.clock_drift",
+        "category": "physical",
+        "where": "hz.lotus_field",
+        "sensors": "часы уходят ~40 мс/сут от сети",
+        "crew": "—",
+        "truth": "реальная разница хода в поле"
+      },
+      {
+        "id": "ph.k2_echo_node",
+        "category": "physical",
+        "where": "site.019.mandala",
+        "sensors": "тепло +3 K, слабый сигнал",
+        "crew": "«кольцо построено»",
+        "truth": "узел эха складки"
+      },
+      {
+        "id": "ph.radar_ghosts",
+        "category": "sensor",
+        "where": "hz.lotus_field, hz.019.b_ghosts",
+        "sensors": "ложные отметки, многолучёвость",
+        "crew": "видят то же на экране",
+        "truth": "ошибка датчиков на градиентах поля; объекта нет"
+      },
+      {
+        "id": "ph.false_decode",
+        "category": "sensor",
+        "where": "hz.lotus_field",
+        "sensors": "декодер собирает обрывки эха в «живой» позывной",
+        "crew": "—",
+        "truth": "ошибка декодирования"
+      },
+      {
+        "id": "ph.star_tracker",
+        "category": "sensor",
+        "where": "hz.lotus_field",
+        "sensors": "звёздный датчик даёт сдвиг фикса",
+        "crew": "—",
+        "truth": "рефракция в поле; ориентация верна, датчик врёт"
+      },
+      {
+        "id": "ph.mantras",
+        "category": "subjective",
+        "where": "внутри поля, стадия 3",
+        "sensors": "эфир пуст",
+        "crew": "слышат мантры и голоса",
+        "truth": "галлюцинация (настоящий маяк передаёт мантры только на своей частоте)"
+      },
+      {
+        "id": "ph.own_ship",
+        "category": "subjective",
+        "where": "внутри поля, стадия 3",
+        "sensors": "ничего",
+        "crew": "видят копию своего корабля",
+        "truth": "галлюцинация"
+      },
+      {
+        "id": "ph.false_recognition",
+        "category": "subjective",
+        "where": "внутри поля, стадия 2",
+        "sensors": "—",
+        "crew": "узнают в чужих погибших товарищей",
+        "truth": "ложное узнавание"
+      },
+      {
+        "id": "ph.distance",
+        "category": "subjective",
+        "where": "внутри поля, стадия 3",
+        "sensors": "дальность верна",
+        "crew": "видят неверную дальность",
+        "truth": "нарушение восприятия"
+      }
+    ],
+    "material": {
+      "status": "PROPOSAL",
+      "visibility": "AUTHOR_TRUTH",
+      "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+      "origin": "человеческая биомасса + длительная экспозиция в поле → предшественники и включения лотосита; после смерти часть сохраняется",
+      "potential_g_fully_transformed_body": 3.0,
+      "tau_years": 12.0,
+      "pre_exposure_years": 230,
+      "pre_exposure_intensity": 0.015,
+      "post_mortem_growth": 0.25,
+      "recoverable_fraction": 0.35,
+      "half_life_years_in_field": 900,
+      "half_life_years_raw_outside": 40,
+      "removed_bodies_by_3126": 870,
+      "removed_note": "мародёры 3098-3112 (~420), кордонный научный вывоз 3112-3126 (~210), кража 3112-3126 (~240)"
+    },
+    "jump_component": {
+      "status": "PROPOSAL",
+      "visibility": "AUTHOR_TRUTH",
+      "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+      "name": "фазовый демпфер ядра (вставка лотосита в эмиттер поля)",
+      "g_per_class": {
+        "cobrett_i_n1": 0.8,
+        "medium_freighter": 2.0,
+        "liner": 2.4,
+        "jump_train": 6.0,
+        "escort_frigate": 2.5,
+        "line_combatant": 4.0,
+        "recon_picket": 1.0
+      },
+      "max_hop_bonus_ly": 3.0,
+      "max_hop_bonus_status": "AUTHOR_TARGET",
+      "wear_per_normal_jump": 0.0001,
+      "wear_per_extended_jump": 0.0012,
+      "decay_per_year": 0.02,
+      "restoration": "переотжиг на фабрике ядер Когниума: возвращает 60 % потерянного действия, теряет 10 % массы",
+      "compatible": "лицензионные ядра Когниума поколения G4+ (с 3000 г.), включая ядро Cobrett; пиратские копии и ядра Земли — нет (иная геометрия эмиттера)",
+      "why_not_mass": [
+        "весь извлекаемый запас — килограммы",
+        "медицинский спрос перебивает цену",
+        "износ на дальних прыжках",
+        "монополия Когниума на демпферы и переотжиг",
+        "санитарный риск сырья",
+        "+3 св. года нужны немногим трассам"
+      ]
+    },
+    "medical": {
+      "status": "PROPOSAL",
+      "visibility": "AUTHOR_TRUTH",
+      "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+      "effect": "очищенные производные ускоряют репарацию, снижают маркеры клеточного старения, помогают регенерации после травм; −3..6 биологических лет на курс, действие слабеет за 4-6 лет; бессмертия нет",
+      "course_g": 0.12,
+      "purification_yield": 0.3,
+      "market_useless_share": 0.45,
+      "market_dangerous_share": 0.12,
+      "fraud_share": 0.25,
+      "unknowns": "долгосрочные последствия неизвестны; есть случаи поздних сосудистых осложнений",
+      "public_image": "«эликсир молодости»"
+    },
+    "demand": {
+      "medical_g_y_at_ref": 50.0,
+      "medical_elasticity": 0.7,
+      "jump_g_y_at_ref": 30.0,
+      "jump_elasticity": 0.35,
+      "ref_price_cr_per_g": 60000000,
+      "basis": "медицина: ~400 курсов в год по 7 млн Cr — круг богатейших (тысячи семей); прыжок: демпферы Когниума для курьеров, разведки, флагманов"
+    },
+    "fever": {
+      "status": "PROPOSAL",
+      "visibility": "AUTHOR_TRUTH",
+      "basis": "Developer World Truth (решение автора 2026-11-03: разработчики знают всё); детали — PROPOSAL до принятия",
+      "name": "лотосовая лихорадка (lotus fever)",
+      "slang": [
+        "красная",
+        "скарлатина старателей"
+      ],
+      "signs": [
+        "высокая температура",
+        "яркая красная сыпь",
+        "слабость",
+        "сосудистые нарушения",
+        "дезориентация",
+        "в тяжёлых случаях — неврологические осложнения"
+      ],
+      "truth_mechanism": "игровая модель: необработанный лотосит и распадающиеся преобразованные ткани сбрасывают метастабильные микрочастицы; у человека (тот же профиль) они оседают на уратных участках сосудистых стенок и запускают связанный с полем окислительный каскад → васкулит (сыпь), лихорадка; аскорбат частично защищает. Не передаётся от человека к человеку; заражает через пыль, ткани, загрязнённое оборудование и вентиляцию",
+      "world_belief": "спорно: инфекция? частицы? поле? — медицина мира не знает",
+      "attack_rate": {
+        "direct_handling": 0.8,
+        "same_section_air": 0.25,
+        "contaminated_equipment": 0.5
+      },
+      "cfr_treated": 0.06,
+      "cfr_untreated": 0.45,
+      "ascorbate_prophylaxis_rr": 0.6
+    },
+    "outbreaks": [
+      {
+        "id": "OB-3093-MANDALA",
+        "site": "site.019.mandala",
+        "year": 3093.4,
+        "population": 260,
+        "exposed": {
+          "direct_handling": 70,
+          "same_section_air": 190
+        },
+        "repeat_exposure_years": 3,
+        "beds": 3,
+        "cause_chain": "тела с «Лотоса» вскрывали в жилом модуле",
+        "consequence": "лагерь брошен в 3096, выживших эвакуировали; Керн засекретил причину"
+      },
+      {
+        "id": "OB-3115-STELLA",
+        "site": "site.019.troyan_market",
+        "year": 3115.7,
+        "population": 1150,
+        "exposed": {
+          "direct_handling": 26,
+          "same_section_air": 340,
+          "contaminated_equipment": 40
+        },
+        "repeat_exposure_years": 0,
+        "beds": 1,
+        "cause_chain": "подпольная лаборатория «Стелла» выпаривала сырую партию в общей вентиляции",
+        "consequence": "секция заварена на 60 суток; кордон расширил стоянку «Ворота-К»; «Троянский рынок» запретил необработанный материал"
+      },
+      {
+        "id": "OB-3121-PEREVAL",
+        "site": "site.024.pereval",
+        "year": 3121.2,
+        "population": 1800,
+        "exposed": {
+          "contaminated_equipment": 150,
+          "same_section_air": 420
+        },
+        "repeat_exposure_years": 0,
+        "beds": 14,
+        "cause_chain": "инспектор Kern Logistics за взятку пропустил «чистый» контейнер с телами; контейнер вскрыли в доке",
+        "consequence": "доки «Перевала» закрыты 40 суток; Когниум потребовал права досмотра на «Перевале»; суд над инспектором; страховщики ввели протокол L"
+      }
+    ],
+    "quarantine": {
+      "ship_states": [
+        "cleared",
+        "suspect",
+        "contaminated",
+        "quarantined",
+        "decontamination_required",
+        "denied_docking"
+      ],
+      "resources": {
+        "site.041.holding": {
+          "holding_berths": 8,
+          "isolated_anchorage": 20,
+          "staff": 160,
+          "ppe_days": 120,
+          "beds": 60,
+          "security": 40
+        },
+        "dso.quarantine_picket": {
+          "holding_berths": 3,
+          "isolated_anchorage": 6,
+          "staff": 50,
+          "ppe_days": 60,
+          "beds": 8,
+          "security": 120
+        },
+        "dso.far_berth": {
+          "holding_berths": 1,
+          "isolated_anchorage": 2,
+          "staff": 6,
+          "ppe_days": 10,
+          "beds": 2,
+          "security": 15
+        }
+      },
+      "inspection_minutes_per_ship": 240,
+      "inspectors": {
+        "site.041.holding": 4,
+        "dso.quarantine_picket": 3,
+        "dso.far_berth": 0
+      },
+      "suspect_share_of_traffic": 0.35,
+      "hold_days": {
+        "suspect": 3,
+        "contaminated": 21
+      },
+      "corruption_chain": "corruption → bypassed control → contaminated cargo → outbreak → political consequences (OB-3121-PEREVAL)"
+    },
+    "cordon": {
+      "coalition": [
+        {
+          "actor": "tau_ceti_cognium",
+          "role": "лидер: Управление Маяков, ядра прыжка, флот кордона",
+          "interests": [
+            "монополия на демпферы",
+            "тайна поля (родственно полю ядра)",
+            "страх распространения +3 св. лет"
+          ]
+        },
+        {
+          "actor": "cyg61_kern",
+          "role": "порты, лицензии, близость (карман Керна)",
+          "interests": [
+            "сборы и лицензии",
+            "права находки 3091",
+            "доля в научном вывозе"
+          ]
+        }
+      ],
+      "official_grounds": [
+        "санитарная безопасность (лотосовая лихорадка — реальные вспышки)",
+        "навигационная безопасность",
+        "контроль стратегического материала",
+        "борьба с торговлей людьми",
+        "борьба с пиратством",
+        "регулирование спасения"
+      ],
+      "since": 3112,
+      "strictness": 0.6
+    },
+    "security_units": [
+      {
+        "id": "SU-CQS-1",
+        "name": "Карантинная эскадра УМ, 1-я группа",
+        "owner": "tau_ceti_cognium",
+        "base": "dso.quarantine_picket",
+        "mandate": "досмотр, карантин, изъятие",
+        "chain": "Управление Маяков → командир кордона",
+        "commander": "капитан 1 ранга Лю Цзинь",
+        "corruption": 0.15,
+        "discipline": 0.85,
+        "audit_risk": 0.5,
+        "loyalty": 0.85,
+        "alliances": [
+          "научная служба Когниума"
+        ],
+        "category": "individual_corruption",
+        "behaviour": "реально досматривает и спасает; отдельные инспекторы берут"
+      },
+      {
+        "id": "SU-SEIZE-7",
+        "name": "Группа изъятия-7",
+        "owner": "tau_ceti_cognium",
+        "base": "site.041.vorota",
+        "mandate": "изъятие незаконного материала",
+        "chain": "внутренняя безопасность УМ (вне командира кордона)",
+        "commander": "майор Арвид Сэлл",
+        "corruption": 0.4,
+        "discipline": 0.9,
+        "audit_risk": 0.1,
+        "loyalty": 0.95,
+        "alliances": [
+          "лаборатории Когниума"
+        ],
+        "category": "officially_sanctioned_dirty_operation",
+        "behaviour": "изымает и тайно передаёт материал в лаборатории Когниума мимо учёта; подбрасывает улики конкурентам Когниума"
+      },
+      {
+        "id": "SU-KPS",
+        "name": "Охрана портов Kern Logistics («Перевал», «Причал»)",
+        "owner": "cyg61_kern",
+        "base": "dso.far_berth",
+        "mandate": "охрана доков, досмотр",
+        "chain": "Kern Logistics → совет Керна",
+        "commander": "Отто Брайан",
+        "corruption": 0.7,
+        "discipline": 0.4,
+        "audit_risk": 0.15,
+        "loyalty": 0.4,
+        "alliances": [
+          "перекупщики «Причала»",
+          "братство «Счисление»"
+        ],
+        "category": "corrupt_unit",
+        "behaviour": "продаёт расписание патрулей, берёт за «чистые» справки, сопровождает контрабанду"
+      },
+      {
+        "id": "SU-POROG-CUST",
+        "name": "Таможня «Порога»",
+        "owner": "cyg61_kern",
+        "base": "site.019.porog",
+        "mandate": "таможня и лицензии",
+        "chain": "формально Керн; фактически держатели причалов",
+        "commander": "Сандра Велес",
+        "corruption": 0.6,
+        "discipline": 0.5,
+        "audit_risk": 0.05,
+        "loyalty": 0.3,
+        "alliances": [
+          "держатели причалов «Троянского рынка»"
+        ],
+        "category": "captured_local_institution",
+        "behaviour": "законные пошлины + «очередь за деньги»; задерживает корабли до «штрафа»"
+      },
+      {
+        "id": "SU-HELLAS-BLUE",
+        "name": "«Синие печати» (бывший патруль Третьей Эллады)",
+        "owner": "hd114783_hellas3",
+        "base": "site.019.dead_reckoning",
+        "mandate": "истёк в 3119",
+        "chain": "нет (старые коды регистрации)",
+        "commander": "Ставрос Ангелу",
+        "corruption": 0.95,
+        "discipline": 0.7,
+        "audit_risk": 0.0,
+        "loyalty": 0.1,
+        "alliances": [
+          "братство «Счисление»"
+        ],
+        "category": "genuine_piracy_in_uniform",
+        "behaviour": "рейды «против пиратов» под государственными кодами; объявляют обломки нарушителями карантина и забирают груз"
+      },
+      {
+        "id": "SU-KERN-SAR",
+        "name": "Спасательный катер «Ласка» (Керн)",
+        "owner": "cyg61_kern",
+        "base": "dso.far_berth",
+        "mandate": "SAR",
+        "chain": "служба спасения Керна",
+        "commander": "Мирей Фонтен",
+        "corruption": 0.05,
+        "discipline": 0.9,
+        "audit_risk": 0.4,
+        "loyalty": 0.9,
+        "alliances": [],
+        "category": "lawful",
+        "behaviour": "реально вытаскивает застрявших из поля; известен отказом брать груз"
+      }
+    ],
+    "corridor": {
+      "states": {
+        "known_safe": {
+          "p_loss": 0.03,
+          "age_days": [
+            0,
+            60
+          ]
+        },
+        "estimated": {
+          "p_loss": 0.1,
+          "age_days": [
+            60,
+            240
+          ]
+        },
+        "outdated": {
+          "p_loss": 0.22,
+          "age_days": [
+            240,
+            900
+          ]
+        },
+        "unknown": {
+          "p_loss": 0.35
+        }
+      },
+      "drift_au_per_year": 0.04,
+      "map_price_cr": {
+        "known_safe": 120000,
+        "estimated": 40000
+      },
+      "fake_share": 0.3
+    },
+    "markets": {
+      "legal": [
+        "сертифицированный лотосит (только через кордон: научный вывоз Когниума и Керна)",
+        "научные образцы",
+        "разрешения на salvage",
+        "медицинский исследовательский материал"
+      ],
+      "grey": [
+        "материал неизвестного происхождения",
+        "фрагменты из старых обломков",
+        "нелегальный salvage",
+        "перепродажа координат и карт коридора"
+      ],
+      "black": [
+        "тела преобразованных людей",
+        "украденные медицинские образцы",
+        "материал с убитых экипажей",
+        "живой товар (торговля людьми)"
+      ],
+      "price_factors": [
+        "чистота",
+        "количество",
+        "происхождение",
+        "законность",
+        "санитарный статус",
+        "текущий рынок",
+        "блокада",
+        "научный спрос"
+      ],
+      "tier_share_of_civilised_price": {
+        "inner_anomaly": 0.004,
+        "grey_frontier": 0.03,
+        "outer_perimeter": 0.25,
+        "civilisation_retail": 1.0
+      }
+    },
+    "trafficking": {
+      "forms": [
+        "похищенные люди",
+        "купленные должники",
+        "обманутые переселенцы",
+        "ложные экспедиционные контракты",
+        "исчезающие экипажи",
+        "культы добровольцев",
+        "нелегальные «лечебные» экспедиции",
+        "фиктивные колонизационные программы"
+      ],
+      "exposure_years": 4.0,
+      "survival_to_harvest": 0.45,
+      "useful_yield_share": 0.3,
+      "cost_per_victim_cr": 90000,
+      "law": "тяжкое преступление во всех семьях права, кроме «нет закона»",
+      "capacity_basis": "ёмкость = население скрытого «Сада» (dso.garden) / годы выдержки"
+    },
+    "reproduction": {
+      "note": "воспроизвести можно только в этом поле на живом человеке: долго, опасно, часто просто убивает, низкий выход, зависит от места и траектории; биореактор невозможен — поэтому ресурс остаётся редким"
+    },
+    "runs": {
+      "optimism_bias": 0.2,
+      "cordon_capacity_runs": 300,
+      "hulk_extraction_capacity_bodies_y": 80,
+      "hulk_note": "глубокие палубы закрыты аварийными переборками ИИ «Мандала»; шесть рабочих входов; вскрытие переборки — дни в поле (стадия 1-2 у резчиков): на все команды ~80 тел в год; при наплыве улов на рейд падает"
+    }
   }
 }

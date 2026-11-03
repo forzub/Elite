@@ -1245,9 +1245,9 @@
             "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
           },
           "fate": {
-            "status": "UNKNOWN",
+            "status": "PROPOSAL",
             "visibility": "AUTHOR_TRUTH",
-            "basis": "неизвестно даже автору"
+            "basis": "скрытая правда (реконсиляция): 2680: складка поля перенесла корабль в поле «Лотоса» за HD 104067; экипаж погиб от синдрома поля к 2712; «Лотос» = NIRVANA-1 (решение автора 2026-11-03; детали — PROPOSAL)"
           }
         },
         "aliases": [
@@ -1273,14 +1273,14 @@
           "internal_problems": 0.15,
           "stupid": 0.15
         },
-        "fate_3126": "missing",
-        "ship_state_3126": "unknown",
-        "ship_note": "координаты fate.md — точка «легенды», не положение",
+        "fate_3126": "derelict_found",
+        "ship_state_3126": "derelict_infected",
+        "ship_note": "корпус «Лотос» в поле аномалий в 21 св. годе за HD 104067 (dso.lotus); в 2680 вошёл в ядро природной складки поля и был перенесён туда; экипаж погиб от синдрома поля к 2712 (AUTHOR_TRUTH, world_sites.json -> lotus.truth)",
         "location_3126": "unknown_or_moving",
         "living_aboard_3126": 0,
         "owner_3126": null,
-        "findable": "rumour",
-        "author_knows_truth": false,
+        "findable": "found_disputed",
+        "author_knows_truth": true,
         "colony": null,
         "sources": [
           "17. NIRVANA-1.md",

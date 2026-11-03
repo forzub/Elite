@@ -255,7 +255,7 @@
 | jump_technology/eps_eri_strife@2862 | пиратство после утечки 2862 | пиратство после утечки 2862 | PROPOSAL · PUBLIC |
 | jump_technology/proxima_outpost@2862 | отказ от лицензии (CANON); пиратские копии после 2862 — допущение | отказ от лицензии (CANON); пиратские копии после 2862 — допущение | PROPOSAL · PUBLIC |
 
-### missions (82)
+### missions (83)
 
 | Путь | Что | Основание | Статус |
 |---|---|---|---|
@@ -300,6 +300,7 @@
 | missions/UHURU-2/anchors/2276/launch_disaster | Пожар в доке L1 уничтожает корпус UHURU-1 (600 рабочих); слухи о саботаже конкурентов не подтверждены | реконсиляция A4: пожар в доке объясняет номер «-2» | PROPOSAL · PUBLIC |
 | missions/UHURU-2/anchors/2542/arrival | HD 40307: купола и сельскохозяйственные кольца | не найдено в источниках | PROPOSAL · PUBLIC |
 | missions/ODYSSEY-1/anchors/2600/sleeper_return | Патриции просыпаются: «вам капитал, нам социальная сфера» — 20 лет судов вместо стрельбы | год не найден в источниках миссии | PROPOSAL · PUBLIC |
+| missions/NIRVANA-1/fate | fate | скрытая правда (реконсиляция): 2680: складка поля перенесла корабль в поле «Лотоса» за HD 104067; экипаж погиб от синдрома поля к 2712; «Лотос» = NIRVANA-1 (решение автора 2026-11-03; детали — PROPOSAL) | PROPOSAL · AUTHOR TRUTH |
 | missions/AMAZONIA-1/arrival_year | arrival_year | пересчитано по каталогу и потолку скорости; авторское 2570 | PROPOSAL · PUBLIC |
 | missions/AMAZONIA-1/anchors/2405/contact_lost | Отказ антенны дальней связи; Земля молчит — экипаж решает, что Земли больше нет | год не найден в источниках миссии | PROPOSAL · PUBLIC |
 | missions/AMAZONIA-1/anchors/2576/arrival | HD 69830: колония «последних людей Вселенной» | пересчитано по каталогу и потолку скорости; авторское 2570 | PROPOSAL · PUBLIC |

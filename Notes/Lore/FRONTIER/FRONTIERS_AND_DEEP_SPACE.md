@@ -15,7 +15,7 @@
 |---|---|---|---|---|
 | frontier.ceti_chest | 13 → 17 → dso.ceti_gap_cache → 36 | 25.603, 16.511, 16.605 | 25.603 | да |
 | frontier.vega_observatory | 41 → dso.vega_null → 20 | 18.304, 18.262 | 18.304 | да |
-| frontier.worlds_ass | 25 → 24 → 45 → dso.lotus → 19 | 30.641, 30.753, 21.095, 18.386 | 30.753 | да |
+| frontier.worlds_ass | 25 → 24 → 45 → 41 → dso.far_berth → 19 | 30.641, 30.753, 29.05, 21.023, 22.326 | 30.753 | да |
 | kern_pocket | 25 → 24 → 45 → 37 | 30.641, 30.753, 30.407 | 30.753 | да |
 
 Карман Керна (HD 114783, HD 104067, 83 Leonis) достижим только через депо «Перевал» у Gliese 436 — его поставили в 3034–3036, до маяков кармана.
@@ -24,7 +24,9 @@
 
 | Id | Имя | Тип | Положение, св. лет (ICRS, 3126.0) | Скорость, км/с | Сдвиг за год, км | Источник | Статус |
 |---|---|---|---|---|---|---|---|
-| dso.lotus | «Лотос» | derelict | -78.255, 9.102, 3.96 | -1.657, -0.099, -37.964 | 1 199 188 800 | placement | PROPOSAL |
+| dso.lotus | «Лотос» (корпус NIRVANA-1) | derelict | -79.731, 4.023, -10.001 | -24.745, 4.48, -28.489 | 1 199 188 800 | placement | PROPOSAL |
+| dso.far_berth | Станция «Дальний Причал» | deep_space_station | -79.7309763, 4.023, -10.001 | -24.745, 4.48, -28.489 | 1 199 188 800 | placement (co-moving) | PROPOSAL |
+| dso.quarantine_picket | Карантинный пикет «Лотос» (Когниум) | deep_space_station | -79.7309794, 4.0230032, -10.001 | -24.745, 4.48, -28.489 | 1 199 188 800 | placement (co-moving) | PROPOSAL |
 | dso.ceti_gap_cache | Склад «Китовая Щель» | deep_space_station | 53.002, -1.897, -8.962 | 0.0, 0.0, 0.0 | 0 | placement | PROPOSAL |
 | dso.vega_null | Ретранслятор «Ноль-Вега» | relay | -67.632, 12.512, -37.087 | 0.0, 0.0, 0.0 | 0 | placement | PROPOSAL |
 | dso.genship.final-ark-1 | FINAL-ARK-1 | generation_ship | 0.466, 17.995, -31.208 | 223.944, 8654.721, -15009.62 | 546 815 028 077 | missions.json FINAL-ARK-1 (in flight, share 0.85, arrival ~3236) | GENERATED |
@@ -36,7 +38,7 @@
 |---|---|---|---|---|---|
 | frontier.ceti_chest | resource | 2 640 000 | 0.016 | 0 | полный фрейтер металлов за рейс; риск = обычные потери x 4 прыжка |
 | frontier.vega_observatory | science | 2 000 000 | 0.006 | 0 | грант/контракт; риск = обычные потери |
-| frontier.worlds_ass | risk_reward_max | 250 000 000 | 0.189 | 7 | дороже всего: артефакт или 3 кг лотосита; риск = потеря корабля |
+| frontier.worlds_ass | risk_reward_max | 250 000 000 | 0.386 | 8 | дороже всего: артефакт или 3 тела в лабораторию; риск = потеря корабля |
 
 ### Прочие опасные зоны
 

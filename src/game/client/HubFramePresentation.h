@@ -16,9 +16,13 @@ inline bool canResolveHubLocalPosition(
     const game::simulation::ShipReferenceFrameSnapshot& frame
 ) noexcept
 {
+    // Only a travel frame actually matched to the hub IS the hub frame. A detached frame
+    // (Ctrl+J free flight, Orbital Transfer) keeps the hub id as metadata but its origin is
+    // the ship's own: placing hub objects in it would draw the station around the ship.
     return
         systemId >= 0 &&
         frame.valid &&
+        frame.matchedToReferenceFrame &&
         systemId == frame.systemId &&
         !hubId.empty() &&
         hubId == frame.hubId;
@@ -48,6 +52,7 @@ inline bool canResolveHubAttachedPresentation(
         attachment.valid &&
         attachment.inheritHubOrientation &&
         frame.valid &&
+        frame.matchedToReferenceFrame &&      // detached frame: see canResolveHubLocalPosition
         attachment.systemId >= 0 &&
         attachment.systemId == frame.systemId &&
         !attachment.hubId.empty() &&

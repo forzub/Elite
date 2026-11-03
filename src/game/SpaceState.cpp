@@ -855,6 +855,28 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         return;
     }
 
+    // Free flight: HOME full thrust, END brake (flip and burn), INSERT thrust off (server-latched).
+    if(m_client)
+    {
+        const auto it=m_client->world().ships().find(m_playerId.value);
+        if(it!=m_client->world().ships().end() && it->second.transform.motion.freeFlight)
+        {
+            int thrust=-1;
+            if(Input::instance().isKeyPressedOnce(GLFW_KEY_HOME)) thrust=1;
+            else if(Input::instance().isKeyPressedOnce(GLFW_KEY_END)) thrust=2;
+            else if(Input::instance().isKeyPressedOnce(GLFW_KEY_INSERT)) thrust=0;
+            if(thrust>=0)
+            {
+                game::network::ClientMessage msg;
+                ClientShipCommand command;
+                command.type=ClientShipCommand::SetFreeFlightThrust;
+                command.index=thrust;
+                msg.payload=command;
+                m_client->sendMessage(msg);
+            }
+        }
+    }
+
     // Backspace toggles independent hull attitude only in Assisted flight.
     // The SystemMap already handles its own Backspace before this block.
     if(Input::instance().isKeyPressedOnce(GLFW_KEY_BACKSPACE))
@@ -883,14 +905,18 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
     // game that starts in Assisted would otherwise desynchronize the chord.
     auto currentLocalControlLaw =
         game::navigation::LocalFlightControlStateMachine::defaultLaw();
+    bool playerFreeFlight = false;
 
     if (m_client)
     {
         const auto& ships = m_client->world().ships();
         const auto playerIt = ships.find(m_playerId.value);
         if (playerIt != ships.end())
+        {
             currentLocalControlLaw =
                 playerIt->second.transform.motion.localControlLaw;
+            playerFreeFlight = playerIt->second.transform.motion.freeFlight;
+        }
     }
 
     if (m_shipRuntimeControlOracle.enabled() &&
@@ -909,7 +935,7 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         // virtual pilot is inactive. Client autopilot submission happens from
         // updateDockingAdvisory(), so it continues even while a map/UI screen
         // causes handleInput() to return before reaching this block.
-        m_inputMapper.update(m_playerControl, currentLocalControlLaw);
+        m_inputMapper.update(m_playerControl, currentLocalControlLaw, playerFreeFlight);
         if (m_devThrustUntilMs > 0.0 && startupElapsedMs(m_startupTotalBegin) < m_devThrustUntilMs)
             m_playerControl.targetSpeedRate = 1.0f;      // DEV map script "thrust:<s>": '+' held
         m_client->submitInput(m_playerControl);
@@ -1316,6 +1342,24 @@ void SpaceState::update(float dt)
                     game::network::ClientMessage msg;
                     ClientShipCommand command;
                     command.type = ClientShipCommand::ToggleFreeFlight;
+                    msg.payload = command;
+                    m_client->sendMessage(msg);
+                }
+                // free-flight thrust keys: home / end / insert (what the keys send)
+                else if (cmd == "backspace")
+                {
+                    game::network::ClientMessage msg;
+                    ClientShipCommand command;
+                    command.type = ClientShipCommand::ToggleAssistedFreeRotation;
+                    msg.payload = command;
+                    m_client->sendMessage(msg);
+                }
+                else if (cmd == "home" || cmd == "end" || cmd == "insert")
+                {
+                    game::network::ClientMessage msg;
+                    ClientShipCommand command;
+                    command.type = ClientShipCommand::SetFreeFlightThrust;
+                    command.index = cmd == "home" ? 1 : cmd == "end" ? 2 : 0;
                     msg.payload = command;
                     m_client->sendMessage(msg);
                 }

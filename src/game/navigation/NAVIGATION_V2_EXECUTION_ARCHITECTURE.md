@@ -353,19 +353,39 @@ replicated; command `ClientShipCommand::ToggleFreeFlight`).
   is folded into the frame; the flight laws act on a local state starting at
   rest. Thrust therefore accumulates without a cap and no servo pulls the
   velocity back to the 500 m/s envelope; `maxCombatSpeed` is not raised.
-- Laws: Newtonian '+' is the main engine as before; Assisted '+'/'-' are direct
-  forward / reverse main thrust (no VREL servo), keypad translation stays on
-  the vectoring authority. Backspace free rotation has no main thrust (rotation
-  only with the engine off); leaving it aligns the nose with the GLOBAL
-  velocity. Under main thrust every attitude rate is capped at 0.10 rad/s (no
-  sharp turns at free-flight speeds - PROPOSAL value).
-- Off: the ship is re-based into the nearest hub frame with its actual
-  relative position and velocity (no snap); back in Hub Tactical the ordinary
-  laws apply (Assisted brakes toward its envelope).
+- Controls (both laws, one path: the main command into `applyLocalFrameInput`
+  through `SharedShipPhysics::freeFlightMainCommand`, then the installed
+  plant): HOME latches full main thrust, END flips the hull against the
+  velocity relative to the reference (ordinary alignment controller,
+  BackwardToVelocity) and burns only once aligned, down to ~2 m/s, INSERT
+  stops; '+'/'-' remain momentary thrust. Keypad translation only while the
+  main engine is idle. Backspace free rotation burns nothing; leaving it aligns
+  the nose with the velocity relative to the reference (the latched thrust
+  resumes after the alignment).
+- Velocity reference: the hub the ship left (`freeFlightReferenceId`, its
+  current world velocity replicated as `freeFlightReferenceVelocityMps`). The
+  HUD vector / speed, the Backspace exit alignment and the brake all use
+  v_ship - v_reference, so the speed starts at ~0 and grows with thrust; the
+  heliocentric speed is not a pilot instrument. Top banner: "J СВОБОДНЫЙ ПОЛЁТ
+  - скорость не локальная", reference, thrust state, keys, capture refusal.
+- Turn rate under thrust: omega_max = j_crew / |a_thrust| with j_crew = 3 m/s3
+  (sustained lateral jerk of the swinging thrust vector, upper transport
+  comfort band - PROPOSAL value), capped by the ordinary attitude limits. Cobra
+  at 36.8 m/s2: 0.082 rad/s.
+- Off = capture: only the nearest hub within the capture envelope (50 km,
+  PROPOSAL until hubs carry a traffic-control radius) and only at a relative
+  speed within the tactical envelope (500 m/s); otherwise the ship stays in
+  free flight and the refusal is shown (no local frame / unsafe speed). A
+  capture re-bases with the actual relative kinematics (no snap).
+- Rendering: hub-attached objects and co-hub ships are placed in the player's
+  frame only while that frame is MATCHED to the hub
+  (`HubFramePresentation.h`); a detached frame keeps the hub id as metadata
+  only (before: the station was drawn around the ship).
 - Not yet: atmosphere / impact model (below the surface is only logged),
-  collision with hub geometry at free-flight speeds, client prediction of the
-  re-based frame (server-authoritative; live jitter not measured), the global
-  navigation layer below.
+  collision with hub geometry at free-flight speeds (a HOME burn aimed at the
+  station passes through it), client prediction of the re-based frame
+  (server-authoritative; live jitter not measured), the global navigation
+  layer below.
 
 ### Global navigation layer (PROPOSAL, not implemented)
 

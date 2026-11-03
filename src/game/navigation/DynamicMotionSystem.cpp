@@ -759,6 +759,35 @@ void DynamicMotionSystem::applyLocalFrameInput(
     motion.strafeSpeedMps = glm::dot(relativeWorldVelocity, r);
     motion.liftSpeedMps = glm::dot(relativeWorldVelocity, u);
 
+    // Ctrl+J free flight, both laws: the frame carries the global motion, so the main command is
+    // direct thrust and the controlled speed envelope does not apply to the REQUEST (actual force
+    // is still what the installed engines / reactors deliver). Backspace free rotation and the
+    // velocity alignment it ends with burn nothing (rotation only, engine off); the brake flip
+    // (END) burns only once aligned. Keypad translation only while the main engine is idle.
+    if (motion.freeFlight)
+    {
+        const bool rotationOnly = motion.assistedFreeRotation ||
+            motion.velocityAlignmentMode == VelocityAlignmentMode::ForwardToVelocity;
+        const double command = rotationOnly ? 0.0 : std::clamp(static_cast<double>(targetSpeedRate), -1.0, 1.0);
+        const glm::dvec3 travel = motion.localControlLaw == LocalFlightControlLaw::Assisted ? assistedTravelForward : f;
+        motion.mainEngineAccelerationMps2 = travel * (command * (command >= 0.0 ? forwardMainAccel : reverseMainAccel));
+        motion.manoeuvreAccelerationMps2 = std::abs(command) > 1.0e-6 || rotationOnly
+            ? glm::dvec3(0.0)
+            : clampMagnitude(f * (static_cast<double>(forwardInput) * manoeuvreAccel) +
+                             r * (static_cast<double>(strafeInput) * manoeuvreAccel) +
+                             u * (static_cast<double>(liftInput) * manoeuvreAccel),
+                             manoeuvreAccel);
+        motion.assistedStabilizationAccelerationMps2 = glm::dvec3(0.0);
+        motion.engineAccelerationMps2 = motion.mainEngineAccelerationMps2 + motion.manoeuvreAccelerationMps2;
+        motion.targetForwardSpeedMps = motion.forwardSpeedMps;
+        motion.assistedTargetSpeedHold = false;
+        motion.assistedThrottleTrimWasActive = false;
+        motion.desiredTacticalVelocityMps = relativeWorldVelocity;
+        motion.newtonianManualManoeuvreDeltaVelocityMps = glm::dvec3(0.0);
+        motion.newtonianManualManoeuvreInputActive = false;
+        return;
+    }
+
     if (motion.localControlLaw == LocalFlightControlLaw::Newtonian)
     {
         // Newtonian owns real independent RCS clusters. Their body-axis force
@@ -943,30 +972,6 @@ void DynamicMotionSystem::applyLocalFrameInput(
         motion.manoeuvreAccelerationMps2=glm::dvec3(0.0);
         motion.assistedStabilizationAccelerationMps2=glm::dvec3(0.0);
         motion.engineAccelerationMps2=motion.mainEngineAccelerationMps2;
-        return;
-    }
-
-    // Ctrl+J free flight: +/- command the main engine directly (the frame carries the global
-    // motion and is re-based every tick, so there is no speed to servo and no envelope); keypad
-    // translation stays on the vectoring authority. Free rotation (above) has no main thrust.
-    if (motion.freeFlight)
-    {
-        const double rate = static_cast<double>(targetSpeedRate);
-        const double mainAccel = rate >= 0.0 ? forwardMainAccel : reverseMainAccel;
-        motion.mainEngineAccelerationMps2 =
-            assistedTravelForward * (rate * mainAccel) +
-            clampMagnitude(
-                f*(static_cast<double>(forwardInput)*assistedLateralStabilizationAccel)+
-                r*(static_cast<double>(strafeInput)*assistedLateralStabilizationAccel)+
-                u*(static_cast<double>(liftInput)*assistedLateralStabilizationAccel),
-                assistedLateralStabilizationAccel);
-        motion.targetForwardSpeedMps = glm::dot(relativeWorldVelocity, f);
-        motion.assistedTargetSpeedHold = false;
-        motion.assistedThrottleTrimWasActive = false;
-        motion.desiredTacticalVelocityMps = relativeWorldVelocity;
-        motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
-        motion.assistedStabilizationAccelerationMps2 = glm::dvec3(0.0);
-        motion.engineAccelerationMps2 = motion.mainEngineAccelerationMps2;
         return;
     }
 

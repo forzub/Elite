@@ -1986,7 +1986,8 @@ the order was already done in the fourth pass (cc56fd59) and is unchanged.
   the Sun 1.00 AU, physical 4.18 d, arrival 15.0 km / 20.0 m/s) + 2 OPEN (GEO);
   EliteDockTrafficCheck 6 h (4/1534 s, 9/600 s): 76 / 73 arrivals, 0
   violations, min gap 38.6 m; world_sites / lore_md / lore_html OK. LIVE
-  (D:/tmp/elite_sol5_*, elite_sol6_*, elite_sol7_*): plan-view Earth with its
+  (captures no longer exist - deleted by a D:/tmp cleanup error 2026-11-03;
+  observations recorded here only): plan-view Earth with its
   complexes, transfer tunnel to Tikhiy around Earth, Ceres tunnel with the
   ship mid-way, arrival at Pereval Tserery 15.0 km / 20.0 m/s matched, cluster
   counts on the overview. Live arrival of a LEO transfer (~2.8 h) still not
@@ -2034,13 +2035,44 @@ Restore point: `restore/pre-hublist-freeflight-2026-11-03` (= ac71cfb6).
   734 m/s, 3.6 km. Assisted-I: 15 s '+' -> 1 103 m/s vs the hub, 20 s coast
   kept 1 103 m/s; off -> Vysokiy at 1 103 m/s, then Assisted brakes toward
   its envelope (938 m/s 3 s later).
-- Not verified live: the turn-rate cap, Backspace alignment to the global
-  velocity. Open: atmosphere / impact, hub-geometry collision at J speeds,
-  client prediction of the re-based frame, the global navigation layer
-  (PROPOSAL in §11b: patched conics + Lambert / constant-thrust legs +
-  gravity assists + carrier-style autopilot).
 - Contracts: the python contract loop is line-for-line identical to the
   restore point (no new reds).
+
+#### J corrections after the user's live review (restore/pre-j-fix-2026-11-03)
+- User report: on Ctrl+J the ship was inside the station; the velocity vector
+  pointed anywhere; wanted: speed relative to the hub (starts ~0), a banner
+  "speed no longer local", HOME full thrust / END brake / INSERT thrust off,
+  limited manoeuvres.
+- Root cause (inside the station): SceneRenderer placed hub-attached objects
+  and co-hub ships in the PLAYER's reference frame whenever the hub id matched;
+  after detach the frame origin is the ship, so the station was drawn around
+  the ship (the same applied during Orbital Transfer). FIX: only a matched
+  frame resolves hub-local presentation (HubFramePresentation.h; contract test
+  extended).
+- Implemented: §11b updated - velocity reference = the hub left (replicated),
+  HUD vector / speed / Backspace exit / brake on v - v_ref; HOME / END / INSERT
+  latched thrust through the ordinary main command and alignment controller
+  (`freeFlightMainCommand`, gateway); keypad only with the engine idle; turn
+  rate omega = 3 m/s3 / |a_thrust| (Cobra 0.082 rad/s) instead of 0.10;
+  capture envelope 50 km + safe speed 500 m/s on Ctrl+J OFF; HUD banner.
+  Wire protocol 21, snapshot schema 24.
+- LIVE (D:/tmp/elite_jfix_run1, run2): station stays 10 km away on entry;
+  Newtonian-I HOME 36.8 m/s2 -> 703 m/s vs Vysokiy in ~19 s; OFF at 737 m/s
+  -> UNSAFE capture refused, stays in J; END flip + burn 737 -> 1.7 m/s, thrust
+  off by itself; OFF at 10 km / ~2 m/s -> captured. Assisted-I: HOME latched +
+  Backspace ON -> 0 thrust (735.8 m/s held); Backspace OFF -> alignment then
+  thrust resumes at the full 72 m/s2 (nose along the relative velocity).
+  The HOME burn aimed at the station passed ~1.5 km from it at 700 m/s: no
+  station collision yet.
+- Not verified live: the turn-rate value itself; Newtonian Backspace (Assisted
+  only in the input); OFF with no hub within 50 km.
+- Radar: the cockpit radar HUD is disabled by design
+  (`RuntimeFeatureFlags.h` RadarHudEnabled = false: the player slot holds the
+  TEST_IDEAL_RADAR sensor without presentation) - not a regression.
+- Pending order (user, 2026-11-03, 60 sections): unify free flight, global
+  autopilot, hub transfers and real ship components into one physics; it is
+  written for main AFTER a generic ship / ShipDescriptor / equipment pass that
+  is not on main - not started.
 
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the

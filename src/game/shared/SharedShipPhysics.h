@@ -42,6 +42,13 @@ namespace SharedShipPhysics
         float dt
     );
 
+    // Ctrl+J free flight: the effective main command (HOME latched thrust, END brake burn once
+    // the flip is aligned, else the pilot's +/-); sets the brake alignment. Identity outside J.
+    float freeFlightMainCommand(
+        ShipTransform& transform,
+        const ShipParams& params,
+        float pilotCommand);
+
     // Expensive control/rate evaluation may run at a lower cadence for
     // Prewarm/Coarse server entities.
     void evaluateControl(

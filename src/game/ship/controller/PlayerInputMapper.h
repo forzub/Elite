@@ -17,15 +17,18 @@ public:
 
 struct PlayerInputMapper
 {
+    // freeFlight: HOME / END / INSERT are free-flight thrust commands, not mapped here.
     void update(
         ShipControlState& control,
-        game::navigation::LocalFlightControlLaw currentLocalControlLaw
+        game::navigation::LocalFlightControlLaw currentLocalControlLaw,
+        bool freeFlight = false
     );
 
     void updateFromKeyState(
         ShipControlState& control,
         const IPlayerInputKeyState& keys,
-        game::navigation::LocalFlightControlLaw currentLocalControlLaw
+        game::navigation::LocalFlightControlLaw currentLocalControlLaw,
+        bool freeFlight = false
     );
 
 };

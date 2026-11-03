@@ -17,17 +17,19 @@ public:
 
 void PlayerInputMapper::update(
     ShipControlState& control,
-    game::navigation::LocalFlightControlLaw currentLocalControlLaw
+    game::navigation::LocalFlightControlLaw currentLocalControlLaw,
+    bool freeFlight
 )
 {
     const RuntimePlayerInputKeyState keys;
-    updateFromKeyState(control, keys, currentLocalControlLaw);
+    updateFromKeyState(control, keys, currentLocalControlLaw, freeFlight);
 }
 
 void PlayerInputMapper::updateFromKeyState(
     ShipControlState& control,
     const IPlayerInputKeyState& keys,
-    game::navigation::LocalFlightControlLaw currentLocalControlLaw
+    game::navigation::LocalFlightControlLaw currentLocalControlLaw,
+    bool freeFlight
 )
 {
     auto& ctrl = control;
@@ -93,7 +95,12 @@ void PlayerInputMapper::updateFromKeyState(
             (keys.isKeyPressed(GLFW_KEY_KP_9) ? 1.0f : 0.0f) -
             (keys.isKeyPressed(GLFW_KEY_KP_3) ? 1.0f : 0.0f);
 
-        if (keys.isKeyPressed(GLFW_KEY_HOME))
+        // Free flight: HOME / END / INSERT are the latched thrust commands (SpaceState sends them
+        // as ClientShipCommand), not the tactical alignment / max-speed commands.
+        if (freeFlight)
+        {
+        }
+        else if (keys.isKeyPressed(GLFW_KEY_HOME))
         {
             if (currentLocalControlLaw ==
                     game::navigation::LocalFlightControlLaw::Assisted)

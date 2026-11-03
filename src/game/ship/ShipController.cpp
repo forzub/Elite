@@ -188,19 +188,26 @@ bool applyVelocityAlignmentAttitude(
 {
     using game::navigation::VelocityAlignmentMode;
 
-    if (!isVelocityAlignmentAttitudeActive(
+    // In free flight every alignment (Backspace exit, END brake flip) owns attitude: the brake is
+    // always a flip and burn on the main engine there, whatever reverse bank the law could use.
+    const bool freeFlightAlignment = ship.motion.freeFlight &&
+        ship.motion.velocityAlignmentMode != VelocityAlignmentMode::None;
+    if ((!freeFlightAlignment &&
+         !isVelocityAlignmentAttitudeActive(
             ship,
             forwardMainEngineAvailable,
             reverseMainEngineAvailable
-        ) ||
+        )) ||
         !ship.motion.travelFrame.valid)
     {
         return false;
     }
 
-    // Ctrl+J: the velocity to align with is the global one (frame + local), not the local one.
+    // Ctrl+J: align with the velocity relative to the free-flight reference (the source hub),
+    // the same vector the HUD shows - not the global (heliocentric) one.
     const glm::dvec3 alignmentVelocityWorld = ship.motion.freeFlight
-        ? ship.motion.travelFrame.linearVelocityMps + ship.motion.travelFrame.localToWorldVector(ship.motion.localVelocityMps)
+        ? ship.motion.travelFrame.linearVelocityMps + ship.motion.travelFrame.localToWorldVector(ship.motion.localVelocityMps) -
+              ship.motion.freeFlightReferenceVelocityMps
         : ship.motion.travelFrame.localToWorldVector(ship.motion.localVelocityMps);
     const double localSpeed =
         glm::length(alignmentVelocityWorld);
@@ -386,14 +393,20 @@ void applyRequestedAngularAcceleration(
     const float safeAngularAccel = static_cast<float>(
         game::ship::angularAccelerationLimitRadPerSec2(params)
     );
-    // Ctrl+J under main thrust: no sharp turns (crew load while the thrust line swings at
-    // free-flight speeds) - every rate limit is capped at FreeFlightThrustTurnRateRadPerSec.
-    // Coasting (and Backspace free rotation, which has no thrust) keeps the ordinary limits.
-    constexpr float FreeFlightThrustTurnRateRadPerSec = 0.10f;
-    const bool freeFlightUnderThrust =
-        ship.motion.freeFlight && glm::length(ship.motion.mainEngineAccelerationMps2) > 0.05;
+    // Ctrl+J under main thrust: turning the hull swings the thrust vector a (|a| = thrust
+    // acceleration) at omega, so the crew feels a lateral jerk |da/dt| = |a| * omega. The turn
+    // rate is limited by the sustained lateral jerk a seated crew tolerates:
+    //     omega_max = FreeFlightCrewJerkLimitMps3 / |a_thrust|
+    // capped by the ship's own attitude authority (the ordinary limits below). 3 m/s3 is the
+    // upper comfort band of transport practice (rail / lifts 0.5-3 m/s3) - for a Cobra at
+    // ~36 m/s2 (3.7 g) it gives 0.083 rad/s; at 5 m/s2 0.6 rad/s (authority-limited).
+    // Coasting and Backspace free rotation (engine off) keep the ordinary limits.
+    constexpr double FreeFlightCrewJerkLimitMps3 = 3.0;
+    const double thrustAccel = ship.motion.freeFlight ? glm::length(ship.motion.mainEngineAccelerationMps2) : 0.0;
+    const double jerkTurnLimit = thrustAccel > 0.05 ? FreeFlightCrewJerkLimitMps3 / thrustAccel
+                                                    : std::numeric_limits<double>::infinity();
     auto turnCap = [&](double limit) {
-        return static_cast<float>(freeFlightUnderThrust ? std::min(limit, static_cast<double>(FreeFlightThrustTurnRateRadPerSec)) : limit);
+        return static_cast<float>(std::min(limit, jerkTurnLimit));
     };
     const float safeAngularRate = turnCap(
         game::ship::angularLoadRateLimitRadPerSec(params)

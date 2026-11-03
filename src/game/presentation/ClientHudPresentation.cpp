@@ -77,9 +77,11 @@ FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
     out.controlLaw = motion.localControlLaw;
     out.assistedFreeRotation = motion.assistedFreeRotation;
     out.alignmentMode = motion.velocityAlignmentMode;
-    // Ctrl+J free flight: the instrument shows the GLOBAL velocity (frame + local); no envelope.
+    // Ctrl+J free flight: the instrument shows the velocity relative to the free-flight reference
+    // (the hub left; ~0 at the start, grows with thrust); no envelope. Not the heliocentric one.
     const glm::dvec3 globalVelocityWorld = motion.travelFrame.valid
-        ? motion.travelFrame.linearVelocityMps + motion.travelFrame.localToWorldVector(motion.localVelocityMps)
+        ? motion.travelFrame.linearVelocityMps + motion.travelFrame.localToWorldVector(motion.localVelocityMps) -
+              motion.freeFlightReferenceVelocityMps
         : glm::dvec3(0.0);
     out.speedMps = motion.freeFlight ? glm::length(globalVelocityWorld) : glm::length(motion.localVelocityMps);
 
@@ -101,7 +103,10 @@ FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
     if (motion.freeFlight)
     {
         std::ostringstream km;
-        km << std::fixed << std::setprecision(out.speedMps < 100000.0 ? 2 : 1) << out.speedMps / 1000.0 << " km/s";
+        if (out.speedMps < 1000.0)
+            km << std::fixed << std::setprecision(0) << out.speedMps << " m/s";
+        else
+            km << std::fixed << std::setprecision(out.speedMps < 100000.0 ? 2 : 1) << out.speedMps / 1000.0 << " km/s";
         out.speedText = km.str();
         out.speedFraction01 = 1.0f;
         out.modeText = "J " + out.modeText;

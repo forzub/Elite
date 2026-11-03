@@ -1109,6 +1109,7 @@ m_systemMapRenderer.render(
     renderUniverseTimeSimulationOverlay(vp);
     renderUiLanguageIndicator(vp);
     renderNavigationStressOverlay(vp);
+    renderFreeFlightBanner(vp);
     if (context().app)
     {
         game::presentation::TemporaryShortcutStrip::render(
@@ -1567,6 +1568,47 @@ void SpaceState::renderNavigationStressOverlay(
     text.endFrame();
 }
 
+
+void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
+{
+    if (!m_client || viewport.width <= 0 || viewport.height <= 0)
+        return;
+    const auto& ships = m_client->world().ships();
+    const auto it = ships.find(m_playerId.value);
+    if (it == ships.end() || !it->second.transform.motion.freeFlight)
+        return;
+    const auto& motion = it->second.transform.motion;
+
+    std::string reference = motion.freeFlightReferenceId;
+    if (const auto hub = m_client->world().hubs().find(reference); hub != m_client->world().hubs().end() && !hub->second.name.empty())
+        reference = hub->second.name;
+    const glm::dvec3 relative = motion.travelFrame.linearVelocityMps +
+        motion.travelFrame.localToWorldVector(motion.localVelocityMps) - motion.freeFlightReferenceVelocityMps;
+
+    std::ostringstream line1;
+    line1 << "J  СВОБОДНЫЙ ПОЛЁТ - скорость не локальная, без ограничения: "
+          << std::fixed << std::setprecision(0) << glm::length(relative) << " м/с отн. " << reference;
+    const char* thrust = motion.freeFlightThrust == 1 ? "ТЯГА ПОЛНАЯ" : motion.freeFlightThrust == 2 ? "ТОРМОЖЕНИЕ" : "ТЯГА ВЫКЛ";
+    std::string line2 = std::string(thrust) + "   HOME тяга  ·  END торможение  ·  INSERT выкл  ·  Ctrl+J выход";
+    if (motion.freeFlightCaptureRefusal == 1)
+        line2 = "Нет доступной локальной системы отсчёта (хаб дальше зоны захвата)   " + line2;
+    else if (motion.freeFlightCaptureRefusal == 2)
+        line2 = "Захват невозможен: слишком высокая скорость относительно хаба   " + line2;
+
+    auto& text = TextRenderer::instance();
+    text.beginFrameForViewport(viewport.width, viewport.height);
+    const float w1 = text.measureTextPx(line1.str(), 17);
+    const float w2 = text.measureTextPx(line2, 14);
+    const float width = std::max(w1, w2) + 40.0f;
+    const float x = std::max(8.0f, (static_cast<float>(viewport.width) - width) * 0.5f);
+    const float y = 96.0f;
+    text.solidRectPx(x, y, width, 56.0f, glm::vec4(0.03f, 0.02f, 0.01f, 0.82f));
+    text.solidRectPx(x, y, width, 2.0f, glm::vec4(1.0f, 0.62f, 0.20f, 0.95f));
+    text.textDrawPx(line1.str(), x + 20.0f, y + 22.0f, 17, glm::vec4(1.0f, 0.78f, 0.45f, 1.0f));
+    text.textDrawPx(line2, x + 20.0f, y + 44.0f, 14,
+                    motion.freeFlightCaptureRefusal ? glm::vec4(1.0f, 0.50f, 0.42f, 1.0f) : glm::vec4(0.86f, 0.80f, 0.70f, 0.95f));
+    text.endFrame();
+}
 
 void SpaceState::renderUiLanguageIndicator(const Viewport& viewport)
 {

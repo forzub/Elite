@@ -180,7 +180,9 @@ ShipControlExecutionGateway::evaluateTranslationControl(
                 motion.travelFrame,
                 capabilities,
                 dt,
-                control.targetSpeedRate,
+                // free flight: the effective main command of the control step (the pilot's +/-,
+                // or HOME's latched thrust / END's brake burn - SharedShipPhysics::evaluateControl)
+                SharedShipPhysics::freeFlightMainCommand(transform, capabilities, control.targetSpeedRate),
                 control.cruiseActive,
                 control.forwardInput,
                 control.liftInput,

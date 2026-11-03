@@ -520,6 +520,7 @@ void testHubAttachedPresentationUsesOneSharedFrameSample()
     frameA.radialAxis = glm::dvec3(0.0, 1.0, 0.0);
     frameA.normalAxis = glm::dvec3(0.0, 0.0, 1.0);
     frameA.universeTimeSeconds = 0.0;
+    frameA.matchedToReferenceFrame = true;
 
     game::simulation::ShipReferenceFrameSnapshot frameB = frameA;
     frameB.originMeters = glm::dvec3(9000.0, -4000.0, 7000.0);
@@ -539,6 +540,13 @@ void testHubAttachedPresentationUsesOneSharedFrameSample()
     REQUIRE(game::client::canResolveHubLocalPosition(0, "hub", frameA));
     REQUIRE(!game::client::canResolveHubLocalPosition(0, "other_hub", frameA));
     REQUIRE(!game::client::canResolveHubLocalPosition(9, "hub", frameA));
+    {
+        // a detached travel frame (free flight / transfer) is not the hub frame
+        auto detached = frameA;
+        detached.matchedToReferenceFrame = false;
+        REQUIRE(!game::client::canResolveHubLocalPosition(0, "hub", detached));
+        REQUIRE(!game::client::resolveHubAttachedObjectPresentation(attachment, detached).valid);
+    }
 
     const glm::dvec3 playerLocal(-10000.0, 2500.0, 0.0);
     const glm::dvec3 playerA = frameA.localToWorldPosition(playerLocal);

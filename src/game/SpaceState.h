@@ -261,6 +261,8 @@ private:
     );
     void renderUiLanguageIndicator(const Viewport& viewport);
     void renderNavigationStressOverlay(const Viewport& viewport);
+    // Ctrl+J free flight: the banner at the top of the HUD (speed no longer local, keys, capture)
+    void renderFreeFlightBanner(const Viewport& viewport);
     void renderRoutePlanningModal(const Viewport& viewport);
     void updateDockingAdvisory();
     void updateShipObservationInterest(float dt);

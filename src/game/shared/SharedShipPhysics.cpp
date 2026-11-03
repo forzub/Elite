@@ -192,6 +192,44 @@ void evaluateControl(
     transform.targetSpeedRate = 0.0f;
 }
 
+float freeFlightMainCommand(
+    ShipTransform& transform,
+    const ShipParams& params,
+    float pilotCommand)
+{
+    // Free flight (Ctrl+J): HOME latches full main thrust, END flips the hull against the velocity
+    // relative to the reference and burns to ~0, INSERT stops; the pilot's +/- still add. They act
+    // through the ordinary main-engine command and the ordinary alignment controller - no
+    // separate propulsion path. Called where the translation command is executed.
+    auto& motion = transform.motion;
+    if (!motion.freeFlight || !motion.travelFrame.valid)
+        return pilotCommand;
+    using game::navigation::VelocityAlignmentMode;
+    if (motion.freeFlightThrust == 1)
+    {
+        if (!motion.assistedFreeRotation && motion.velocityAlignmentMode == VelocityAlignmentMode::None)
+            return 1.0f;
+    }
+    else if (motion.freeFlightThrust == 2)
+    {
+        const glm::dvec3 relative = motion.travelFrame.linearVelocityMps +
+            motion.travelFrame.localToWorldVector(motion.localVelocityMps) - motion.freeFlightReferenceVelocityMps;
+        const double speed = glm::length(relative);
+        if (speed <= 2.0)
+        {
+            motion.freeFlightThrust = 0;
+            motion.velocityAlignmentMode = VelocityAlignmentMode::None;
+            return 0.0f;
+        }
+        motion.assistedFreeRotation = false;
+        motion.velocityAlignmentMode = VelocityAlignmentMode::BackwardToVelocity;
+        const glm::dvec3 nose = glm::normalize(glm::dvec3(transform.forward()));
+        const bool aligned = glm::dot(nose, -relative / speed) >= static_cast<double>(params.brakeAlignmentCosine);
+        return aligned ? 1.0f : 0.0f;
+    }
+    return pilotCommand;
+}
+
 void propagateOrientation(
     ShipTransform& transform,
     float dt

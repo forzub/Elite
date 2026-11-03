@@ -18,7 +18,8 @@
             RequestDockDeparture,   // docked at the hub dock: ask the dispatcher to leave
             RequestOrbitalTransfer, // hub -> hub Orbital Transfer to `target` (orbital hub id)
             CancelOrbitalTransfer,  // stop the active transfer: the carrier coasts on gravity
-            ToggleFreeFlight        // Ctrl+J: free flight (global frame, no speed envelope) on / off
+            ToggleFreeFlight,       // Ctrl+J: free flight (global frame, no speed envelope) on / off
+            SetFreeFlightThrust     // free flight: index 0 off (INSERT), 1 full (HOME), 2 brake (END)
         };
         Type type;
 

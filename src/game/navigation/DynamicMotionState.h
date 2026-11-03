@@ -1,6 +1,8 @@
 #include "src/game/ship/telemetry/EngineLiveTelemetry.h"
 #pragma once
 
+#include <cstdint>
+
 #include <array>
 #include <cstddef>
 #include <string>
@@ -87,6 +89,16 @@ struct DynamicMotionState
     // envelope never caps the speed. +/- are direct main thrust, attitude and alignment use the
     // global velocity, turns under thrust are rate-limited.
     bool freeFlight = false;
+    // HOME / END / INSERT in free flight: 0 thrust off, 1 full main thrust, 2 brake (flip and
+    // burn against the velocity relative to the reference until it is ~0).
+    std::uint8_t freeFlightThrust = 0;
+    // The velocity the pilot flies against (HUD vector, Backspace exit alignment, brake): the
+    // source hub's world velocity, updated by the server every tick. Speed shown = |v - ref|.
+    std::string freeFlightReferenceId;
+    glm::dvec3 freeFlightReferenceVelocityMps {0.0};
+    // Last refused Ctrl+J OFF: 0 none, 1 no hub frame within the capture envelope,
+    // 2 relative speed too high for a safe capture.
+    std::uint8_t freeFlightCaptureRefusal = 0;
 
     // True only while/after a real +/- Assisted trim. It lets the release edge
     // capture reached forward speed once without allowing keypad RCS or an

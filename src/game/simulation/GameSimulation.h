@@ -202,6 +202,7 @@ public:
         double primaryAltitudeMeters = 0.0;
     };
     bool toggleFreeFlight(EntityId shipId);
+    void setFreeFlightThrust(EntityId shipId, int command);
     const ActiveFreeFlight* freeFlight(EntityId shipId) const;
     const ActiveOrbitalTransfer* orbitalTransfer(EntityId shipId) const;
     // This ship's dispatcher status (phase None when unknown to the dock).

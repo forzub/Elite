@@ -838,6 +838,10 @@ void GameServer::update(double dt)
                     m_simulation.toggleFreeFlight(id);
                     break;
 
+                case ClientShipCommand::SetFreeFlightThrust:
+                    m_simulation.setFreeFlightThrust(id, shipCmd.index);
+                    break;
+
                 case ClientShipCommand::InjectEquipmentFailure:
                 {
                     // A deliberate test fault on this player's authoritative

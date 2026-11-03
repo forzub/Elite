@@ -1,0 +1,729 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Топливо: реакторное и заряд прыжка — Elite Lore</title><link rel="stylesheet" href="../style.css"></head><body><header><a href="../index.html">Оглавление</a></header><main class="wrap"><article id="content">
+<h1 id="топливо-реакторное-и-заряд-прыжка">Топливо: реакторное и заряд прыжка</h1>
+<!-- GENERATED:legend BEGIN -->
+<blockquote>
+<p><strong>Статусы строк:</strong> <code>CANON</code> — есть в заметках автора (generation ships/*, fate.md, history.md, каталог); <code>PROPOSAL</code> — добавлено или пересчитано Claude / результат модели; <code>UNKNOWN</code> — намеренно без ответа, даже для автора. <strong>Видимость:</strong> <code>PUBLIC</code> — мир 3126 это знает или может знать; <code>AUTHOR TRUTH</code> — скрытая правда автора.</p>
+<p>Блоки <code>GENERATED</code> пишет только <code>tools/colonization_lab/lore_md.py</code> из машинного канона; текст вне них — ручной и сохраняется.</p>
+</blockquote>
+<!-- GENERATED:legend END -->
+<!-- GENERATED:fuel BEGIN -->
+<p>Правило прыжка: <code>заряд_т = q · d_св.лет · (κ · площадь_оболочки + масса)</code>, q = 6.7e-05, κ = 0.247304 т/м². Поле строится по оболочке корпуса (член κ·A), масса внутри — второй член: груз внутри корпуса добавляет массу, но не площадь. Расходник (заряд, т), энергия (от реактора при зарядке) и пиковая мощность (из накопителя ядра при разряде) — разные величины.</p>
+<p>Средний прыжок сети 3126 — 22.83 св. лет (прыжки, которые реально используют кратчайшие маршруты). Заряд стоит 5.74 Cr/кг: средний прыжок Cobrett с половиной груза ≈ 6310 Cr = 2.5 × внутрисистемного плеча (<code>PROPOSAL</code>).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Класс</th>
+<th>Член поля, т</th>
+<th>Масса (пол-груза), т</th>
+<th>Заряд на средний прыжок, т</th>
+<th>кг/(св.год·1000 т корабля)</th>
+<th>кг/(св.год·1000 т груза)</th>
+<th>Энергия, ТДж</th>
+<th>Зарядка, ч</th>
+<th>Пик, ТВт</th>
+<th>Cr</th>
+<th>Статус</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cobrett-I N1</td>
+<td>388.0</td>
+<td>328.1</td>
+<td>1.1</td>
+<td>146.852</td>
+<td>803.04</td>
+<td>27.0</td>
+<td>6.0</td>
+<td>13.5</td>
+<td>6 310</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>colonist_transport</td>
+<td>10782.4</td>
+<td>6920.0</td>
+<td>27.1927</td>
+<td>172.124</td>
+<td>3970.32</td>
+<td>667.46</td>
+<td>32.24</td>
+<td>333.73</td>
+<td>155 990</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>эскортный фрегат</td>
+<td>2285.1</td>
+<td>2268.0</td>
+<td>6.994</td>
+<td>135.075</td>
+<td>7658.77</td>
+<td>171.67</td>
+<td>5.96</td>
+<td>85.84</td>
+<td>40 121</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>тендер флота</td>
+<td>6256.8</td>
+<td>8345.0</td>
+<td>22.4298</td>
+<td>117.732</td>
+<td>327.49</td>
+<td>550.55</td>
+<td>18.54</td>
+<td>275.27</td>
+<td>128 667</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>поезд-танкер</td>
+<td>16322.1</td>
+<td>37420.0</td>
+<td>82.5531</td>
+<td>96.633</td>
+<td>144.64</td>
+<td>2026.3</td>
+<td>28.14</td>
+<td>1013.15</td>
+<td>473 561</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>прыжковый поезд</td>
+<td>15036.1</td>
+<td>42468.0</td>
+<td>88.3319</td>
+<td>91.107</td>
+<td>134.34</td>
+<td>2168.15</td>
+<td>30.11</td>
+<td>1084.07</td>
+<td>506 711</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>линейный ракетный корабль</td>
+<td>7901.4</td>
+<td>9270.0</td>
+<td>26.3769</td>
+<td>124.634</td>
+<td>7702.41</td>
+<td>647.43</td>
+<td>5.99</td>
+<td>323.72</td>
+<td>151 310</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>liner</td>
+<td>5070.7</td>
+<td>2690.0</td>
+<td>11.9212</td>
+<td>194.117</td>
+<td>11603.86</td>
+<td>292.61</td>
+<td>23.22</td>
+<td>146.31</td>
+<td>68 385</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>фрейтер «Конвейер»</td>
+<td>3017.1</td>
+<td>3232.0</td>
+<td>9.5992</td>
+<td>130.095</td>
+<td>350.39</td>
+<td>235.62</td>
+<td>26.18</td>
+<td>117.81</td>
+<td>55 066</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>патрульный катер</td>
+<td>591.6</td>
+<td>435.0</td>
+<td>1.5769</td>
+<td>158.783</td>
+<td>6907.07</td>
+<td>38.71</td>
+<td>4.53</td>
+<td>19.35</td>
+<td>9 046</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>разведчик / РЭБ-пикет</td>
+<td>775.5</td>
+<td>612.0</td>
+<td>2.1314</td>
+<td>152.549</td>
+<td>18671.97</td>
+<td>52.32</td>
+<td>5.28</td>
+<td>26.16</td>
+<td>12 227</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Внутрисистемная тяга (типовое плечо 1.2 а.е., половина груза):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Класс</th>
+<th>Тяга, МН</th>
+<th>g</th>
+<th>Мощность привода, МВт</th>
+<th>Плечо, ч</th>
+<th>Реакторное топливо, кг</th>
+<th>Cr</th>
+<th>Тепло, МВт</th>
+<th>Радиаторы, МВт</th>
+<th>Статус</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cobrett-I N1</td>
+<td>9.56</td>
+<td>1.0</td>
+<td>1 632</td>
+<td>75.2</td>
+<td>4.21</td>
+<td>2 524</td>
+<td>1 143</td>
+<td>3 400</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>colonist_transport</td>
+<td>18.0</td>
+<td>0.18</td>
+<td>13 572</td>
+<td>177.2</td>
+<td>82.44</td>
+<td>49 466</td>
+<td>9 501</td>
+<td>14 000</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>эскортный фрегат</td>
+<td>32.0</td>
+<td>1.4</td>
+<td>29 192</td>
+<td>63.5</td>
+<td>63.58</td>
+<td>38 149</td>
+<td>20 434</td>
+<td>21 000</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>тендер флота</td>
+<td>35.0</td>
+<td>0.35</td>
+<td>24 551</td>
+<td>127.1</td>
+<td>106.95</td>
+<td>64 168</td>
+<td>17 186</td>
+<td>21 000</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>газовый танкер</td>
+<td>7.0</td>
+<td>0.18</td>
+<td>3 631</td>
+<td>177.2</td>
+<td>22.06</td>
+<td>13 234</td>
+<td>2 542</td>
+<td>4 200</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>буксир ПАО</td>
+<td>28.0</td>
+<td>1.6</td>
+<td>24 769</td>
+<td>59.4</td>
+<td>50.46</td>
+<td>30 278</td>
+<td>17 338</td>
+<td>18 000</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>перехватчик</td>
+<td>6.2</td>
+<td>4.0</td>
+<td>8 475</td>
+<td>37.6</td>
+<td>10.92</td>
+<td>6 552</td>
+<td>5 932</td>
+<td>6 700</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>поезд-танкер</td>
+<td>90.0</td>
+<td>0.13</td>
+<td>37 104</td>
+<td>208.5</td>
+<td>265.21</td>
+<td>159 124</td>
+<td>25 973</td>
+<td>49 000</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>прыжковый поезд</td>
+<td>90.0</td>
+<td>0.12</td>
+<td>38 870</td>
+<td>217.0</td>
+<td>289.18</td>
+<td>173 506</td>
+<td>27 209</td>
+<td>49 000</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>линейный ракетный корабль</td>
+<td>110.0</td>
+<td>1.1</td>
+<td>99 998</td>
+<td>71.7</td>
+<td>245.71</td>
+<td>147 429</td>
+<td>69 999</td>
+<td>77 000</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>liner</td>
+<td>12.0</td>
+<td>0.3</td>
+<td>7 914</td>
+<td>137.2</td>
+<td>37.24</td>
+<td>22 342</td>
+<td>5 540</td>
+<td>8 000</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>фрейтер «Конвейер»</td>
+<td>13.0</td>
+<td>0.3</td>
+<td>6 583</td>
+<td>137.2</td>
+<td>30.97</td>
+<td>18 584</td>
+<td>4 608</td>
+<td>6 300</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>OCS-4 «Ласточка»</td>
+<td>3.3</td>
+<td>0.4</td>
+<td>1 721</td>
+<td>118.8</td>
+<td>7.01</td>
+<td>4 207</td>
+<td>1 205</td>
+<td>1 700</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>рудный буксир</td>
+<td>4.0</td>
+<td>0.02</td>
+<td>1 574</td>
+<td>531.5</td>
+<td>28.68</td>
+<td>17 209</td>
+<td>1 102</td>
+<td>2 100</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>патрульный катер</td>
+<td>13.0</td>
+<td>1.5</td>
+<td>4 430</td>
+<td>61.4</td>
+<td>9.32</td>
+<td>5 593</td>
+<td>3 101</td>
+<td>6 300</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>разведчик / РЭБ-пикет</td>
+<td>12.0</td>
+<td>2.0</td>
+<td>10 000</td>
+<td>53.2</td>
+<td>18.22</td>
+<td>10 934</td>
+<td>7 000</td>
+<td>7 000</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>сервисный тендер</td>
+<td>3.0</td>
+<td>0.4</td>
+<td>1 902</td>
+<td>118.8</td>
+<td>7.75</td>
+<td>4 650</td>
+<td>1 331</td>
+<td>1 800</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>surface_lifter</td>
+<td>22.0</td>
+<td>2.5</td>
+<td>21 736</td>
+<td>47.5</td>
+<td>35.43</td>
+<td>21 257</td>
+<td>15 216</td>
+<td>9 000</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="баланс-топлива-по-политиям">Баланс топлива по политиям</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Полития</th>
+<th>Реакторное, т/год</th>
+<th>своё</th>
+<th>импорт</th>
+<th>Заряд, т/год</th>
+<th>своё</th>
+<th>импорт</th>
+<th>Не покрыто (реакт./заряд)</th>
+<th>Резерв, сут</th>
+<th>Депо</th>
+<th>Статус</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Шахта Альфа</td>
+<td>1 243</td>
+<td>1 175</td>
+<td>0</td>
+<td>40 606</td>
+<td>26 036</td>
+<td>14 569</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Свободная Карма</td>
+<td>1 642</td>
+<td>766</td>
+<td>757</td>
+<td>88 928</td>
+<td>73 703</td>
+<td>15 224</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новая Карма</td>
+<td>4 517</td>
+<td>1 602</td>
+<td>0</td>
+<td>13 775</td>
+<td>0</td>
+<td>0</td>
+<td>2 454 / 13 775</td>
+<td>180</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Цветущая Гармония</td>
+<td>16 623</td>
+<td>15 755</td>
+<td>0</td>
+<td>1 562 803</td>
+<td>1 548 383</td>
+<td>0</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>3</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Пояс Раздора / Вольные астероиды</td>
+<td>5 780</td>
+<td>5 485</td>
+<td>0</td>
+<td>627 781</td>
+<td>621 486</td>
+<td>0</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новая Европа</td>
+<td>1 583</td>
+<td>1 456</td>
+<td>0</td>
+<td>4 978</td>
+<td>3 310</td>
+<td>1 668</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Свободные поселения</td>
+<td>1 391</td>
+<td>1 257</td>
+<td>0</td>
+<td>5 029</td>
+<td>3 344</td>
+<td>1 685</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Зона «Филоморфоз»</td>
+<td>3</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Тяньхэ (Небесная Река)</td>
+<td>5 922</td>
+<td>5 434</td>
+<td>0</td>
+<td>36 082</td>
+<td>18 922</td>
+<td>17 120</td>
+<td>0 / 0</td>
+<td>180</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Провидение</td>
+<td>22</td>
+<td>20</td>
+<td>0</td>
+<td>3 915</td>
+<td>3 724</td>
+<td>0</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Третья Эллада</td>
+<td>14</td>
+<td>13</td>
+<td>0</td>
+<td>315</td>
+<td>0</td>
+<td>315</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Вторая Эллада</td>
+<td>2 160</td>
+<td>2 031</td>
+<td>0</td>
+<td>107 229</td>
+<td>106 694</td>
+<td>0</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новая Индия</td>
+<td>5 896</td>
+<td>5 273</td>
+<td>0</td>
+<td>61 032</td>
+<td>60 897</td>
+<td>0</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Небесная Твердыня</td>
+<td>1 440</td>
+<td>1 312</td>
+<td>0</td>
+<td>11 260</td>
+<td>6 700</td>
+<td>4 560</td>
+<td>0 / 0</td>
+<td>180</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новая Маланд</td>
+<td>2 859</td>
+<td>2 572</td>
+<td>0</td>
+<td>9 736</td>
+<td>5 793</td>
+<td>3 943</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Сельта-Верде</td>
+<td>1 123</td>
+<td>1 024</td>
+<td>0</td>
+<td>3 364</td>
+<td>3 335</td>
+<td>30</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новая Эллада / Агора</td>
+<td>2 234</td>
+<td>2 089</td>
+<td>0</td>
+<td>74 119</td>
+<td>52 644</td>
+<td>21 378</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новая Мекка</td>
+<td>5 081</td>
+<td>4 620</td>
+<td>0</td>
+<td>36 712</td>
+<td>26 077</td>
+<td>10 589</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Святой Сион (на орбите)</td>
+<td>3</td>
+<td>2</td>
+<td>0</td>
+<td>2</td>
+<td>0</td>
+<td>1</td>
+<td>0 / 1</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Красный Форпост</td>
+<td>3 968</td>
+<td>3 942</td>
+<td>0</td>
+<td>15 734</td>
+<td>6 784</td>
+<td>8 949</td>
+<td>0 / 0</td>
+<td>180</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Солнечная Администрация (Sol Authority)</td>
+<td>84 357</td>
+<td>83 284</td>
+<td>0</td>
+<td>7 939 070</td>
+<td>0</td>
+<td>7 926 816</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>11</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новый Шанхай</td>
+<td>8 545</td>
+<td>540</td>
+<td>7 577</td>
+<td>22 530</td>
+<td>3 405</td>
+<td>19 116</td>
+<td>0 / 0</td>
+<td>90</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Цитадель</td>
+<td>5 007</td>
+<td>513</td>
+<td>4 196</td>
+<td>337 888</td>
+<td>35 463</td>
+<td>302 281</td>
+<td>0 / 0</td>
+<td>180</td>
+<td>2</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+</tbody>
+</table></div>
+<!-- GENERATED:fuel END -->
+</article><footer class="path">Источник: <code>Notes/Lore/ECONOMY/FUEL.md</code></footer></main></body></html>

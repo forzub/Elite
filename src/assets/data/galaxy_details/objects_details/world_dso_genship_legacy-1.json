@@ -1,0 +1,33 @@
+{
+  "description": "missions.json LEGACY-1 (in flight, share 0.38, arrival ~4120)",
+  "id": "dso.genship.legacy-1",
+  "kind": "galaxy_object",
+  "name": "LEGACY-1",
+  "object_type": "generation_ship",
+  "position_ly": {
+    "x": -3.491,
+    "y": -17.679,
+    "z": 1.564
+  },
+  "properties": {
+    "epoch_year": 3126.0,
+    "frame": "ICRS_heliocentric",
+    "polity": null,
+    "population": null,
+    "provenance": {
+      "generator": "tools/colonization_lab/world_sites.py",
+      "status": "PROPOSAL"
+    },
+    "site_type": null,
+    "velocity_km_s": [
+      -1726.78,
+      -8746.061,
+      773.781
+    ]
+  },
+  "schema_version": 1,
+  "tags": [
+    "world_site",
+    "generation_ship"
+  ]
+}

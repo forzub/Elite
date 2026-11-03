@@ -1525,11 +1525,112 @@ user-accepted. Population scale = AUTHOR_TARGET.
   out); Sol as the largest exporter of electronics after 3112; fleet scale
   constants (defence task norms) in `canon/polity_economy.json`.
 
+### Spatial civilisation layer + fixes of the second pass (user order 2026-11-03, third pass)
+Status: offline model + permanent data + Lore + first visible map layer
+implemented; PROPOSAL, NOT user-accepted. News delay (<= 7 days to the far
+periphery) = AUTHOR_TARGET. Restore point before this work: tag
+`restore/pre-world-sites-2026-11-03` (= 9fa2fa19).
+- Analysis answered before work (no blocking questions). Second source of
+  truth risks named and closed: sites are generated from canon into ONE file
+  the runtime only reads; deep-space objects are GENERATED `galaxy_object`
+  copies (provenance, never edited); `earth_orbital_hub` keeps its runtime id
+  (`runtime_binding`, never drawn twice); legacy
+  `src/assets/data/galaxy/{actors,nodes,routes,systems}.json` (GalaxyDatabase)
+  is NOT extended.
+- Fixes of the second pass (all verified by checks):
+  1. Defence: forces ONLY from 15 tasks; line combatants only from the
+     deterrence task (key nodes x threat, squadron 4); the ship budget left over
+     goes to munitions / stocks / sensors / repair / training / reserve crews /
+     bases / impact & missile defence / R&D / mobilisation / mothballed / reserve.
+     Line combatants 19 397 -> ~180 (226 with reserve / repair); Sol 8 477 -> 12
+     (Sol's unspent ship line ~842 bn Cr/y goes to readiness). Check
+     `line_combatants_only_from_deterrence_task`.
+  2. Export production limited by installed (+ finishing) export plant built
+     since joining the network (2 %/y of home output, cap x3; network fuels sized
+     to the network's need, ramp 50 y). Flows 325 -> 261, 1.35 Gt/y,
+     5.3 T Cr/y. Asset counts from installed plant (utilisation reported).
+     Check `exports_within_installed_export_capacity`.
+  3. C20 net / tare / gross: mass equations use gross (`logistics.cargo_gross_t`,
+     runtime `catalog::ships::grossCargoTonnes`); Cobrett 120 t net + 10.2 t tare
+     = 130.2 t gross; recalibrated 3.0 / 2.73 / 2.5 mean jumps (q 7.7e-5,
+     kappa 0.247, field term 388 t). Dock traffic envelope mass = gross.
+  4. OCS-4: passport 4 m/s2 at 830 t -> 450 t GROSS = 409 t net + 40.8 t tare;
+     orbit only (0.4 g, cannot lift off Earth); new surface lifter SL-12.
+  5. Runtime passports vs `ship_economics.json`: `logistics.py --check` parses
+     `ShipCargoPassports.h` (dry mass, net, volume, places, C20) - PASS; a
+     mismatch is detected (verified with a forced 450 t).
+  6. Expedition edge removed: Kern pocket reached via Gliese 436 (real system,
+     Kern staging depot "Pereval", beacon 3036 in world.json): legs 30.6 / 30.8
+     / 30.4 ly. Check `no_edge_beyond_max_hop`.
+  7. HTML Lore: the mirror had been made by an external tool (no style.css,
+     stale since 9fa2fa19); now `tools/colonization_lab/lore_html.py`
+     (markdown-it, same template) regenerates Notes/html; `--check` PASS
+     (132 files).
+- New: `canon/world_sites.json` (authored) + `world_sites.py` ->
+  out/world_3126/{sites, society, law, comms, passengers, fleet_age, frontier,
+  world_events}_3126.json, sites_checks, WORLD_SITES_3126.md; runtime copies
+  `src/assets/data/galaxy_details/world_sites/sites_3126.json` (527 in-system
+  sites + 4 zones) and `objects_details/world_dso_*.json` (5 deep-space
+  objects). 498 sites (16 hub types), 60 Earth agglomerations at the real
+  urban regions (the map Earth is the real Earth), 6 deep-space objects with
+  world lines (Lotus 38 km/s; FINAL-ARK-1, LEGACY-1 in flight), 10 hazard zones,
+  52 persistent administrators, social state (12 metrics, 9 archetypes,
+  reactions to 12 shocks), law (13 families, offence matrix, competing
+  claims, ship legal status fields), beacon comms (Sol -> Gliese 436 0.5 d,
+  Kern pocket 1.4 d, Lotus 2.5 d, World's Ass 4.0 d; network diameter
+  1.75 d), passengers (91 M interstellar trips/y, 2.4 M migrants, 7.3 k
+  liners, 2.4 k surface lifters; evacuation of 1.2 M ~2 days), fleet age
+  (8 states; jump ships never older than their polity's network link),
+  piracy index (19 enclaves), wreck fields, schema registry + WorldEvent ->
+  KnowledgeRecord example.
+- World's Ass (月工门 = 月门 with 工 inserted: 月+工 = 肛, reads as 肛门):
+  HD 102195 behind the Lotus (83 Leonis -> Lotus 21.1 ly -> HD 102195 18.4;
+  direct 39.3 > 32); Cobrett needs a J20 charge tank (3.7 t round trip vs 3 t
+  tank); Lotus dead zone 4.5 % unlocked / 0 % locked (beacon uptime 62 %);
+  lotosite equilibrium ~9 M Cr/kg, ~74 kg/y, ~534 expeditions/y, ~26 ships
+  lost/y, reserves ~60 y; average expedition EV -0.26 M of 1.03 M cost; six
+  artifacts (one fraud); identity of the Lotus = DISPUTED (NIRVANA-1 fate is
+  UNKNOWN to the author). Other frontiers: the Chest (9 Ceti, resource), the
+  Monastery (HD 93083, science).
+- Runtime (built RelWithDebInfo, MSYS2 MinGW64): `WorldSitesCatalog.h`
+  (loaded with the StarAtlas by ClientCatalogService, presentation only),
+  `ClientWorldSitesMapBridge.h`: System Map adds system-level sites as
+  infrastructure markers (no Hub-map drill; bound runtime hub skipped);
+  Detail Map adds the body's sites (surface ones at lat/lon in the planet
+  texture frame, small glyph, no velocity arrow); Galaxy Map colours
+  deep-space sites and shows them from the overview level.
+- Evidence: offline checks PASS (world_economy 14/14, world_sites 15/15,
+  logistics incl. passports, calibrate_population, lab --check-dataset /
+  --check-lore, lore_md --check 129 files, lore_html --check 132 files); two
+  lab runs and two world_economy + world_sites runs byte-identical (lab sha
+  1895d762...); EliteDockTrafficCheck 6 h: 78 arrivals, 0 violations, min gap
+  38.6 m (unchanged). Live game (nav-stress:simple, captures
+  D:/tmp/elite_ws_*.png): Earth Detail map shows the agglomerations on land
+  (East Asia, Japan, Korea, US west coast) as small markers - GAME VERIFIED;
+  System Map / Galaxy Map markers present but not distinguishable at the
+  scripted overview zoom - NOT visually verified. Architecture contracts for
+  maps PASS; `tests/system_map/check_architecture.py` red on
+  SystemMapRenderer.cpp (file not touched; pre-existing).
+- Limits: orbit sites use a presentation phase law (1-day period); the server
+  does not read sites yet; climate-only lat/lon for non-Earth bodies (terrain
+  sampling = Stage 6); Earth agglomeration names = historical regions
+  (author decision); epidemics / quarantine only as schemas (Stage 7).
+- Open author decisions: Lotus = NIRVANA-1 or not (kept DISPUTED); lotosite
+  (+3 ly hop) as a strategic resource; names of Earth's 3126 agglomerations;
+  defence posture norms (squadron 4, 0.5 posture per key node).
+
 ## Next step
+- After the user's review of the spatial layer: Stage 4 runtime communication
+  (beacon coverage / relay delays in the client: messages, bank, warrants,
+  sync on return to coverage), then Stage 5 (passenger / cargo flows ->
+  schedules -> hub traffic), Stage 6 (seeded belts / asteroid ids, city
+  placement by the runtime terrain sampler, night lights per style), Stage 7
+  events (epidemics, piracy, failures, rescue, anomalies; perception layer
+  for the World's Ass), Stage 8 law in runtime, Stage 9 information
+  (KnowledgeRecord propagation, Public / Freeband radio and news).
 - Economy runtime (after the author's review): persistent ShipInstance /
-  component registry, Sol market with stocks, C20 container contracts,
-  hub traffic derived from flows + fleet + schedule, beacons as objects
-  (transponders, light lag, jump error), banking and storage fees.
+  component registry (legal status, age), Sol market with stocks, C20
+  container contracts, banking and storage fees.
 - After the user's review: the separate stage INTERSTELLAR NAVIGATION
   (connected domain, ephemerides, gravity, InterstellarNavigationEnvironment
   hazards, icy fields, rogue objects, refuelling, ship-specific risk).

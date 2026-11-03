@@ -1,0 +1,33 @@
+{
+  "description": "дорога к научной станции у HD 93083 (36.6 св. лет от HD 104067)",
+  "id": "dso.vega_null",
+  "kind": "galaxy_object",
+  "name": "Ретранслятор «Ноль-Вега»",
+  "object_type": "relay",
+  "position_ly": {
+    "x": -67.632,
+    "y": 12.512,
+    "z": -37.087
+  },
+  "properties": {
+    "epoch_year": 3126.0,
+    "frame": "ICRS_heliocentric",
+    "polity": "tau_ceti_cognium",
+    "population": 14,
+    "provenance": {
+      "generator": "tools/colonization_lab/world_sites.py",
+      "status": "PROPOSAL"
+    },
+    "site_type": "deep_space_relay",
+    "velocity_km_s": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "schema_version": 1,
+  "tags": [
+    "world_site",
+    "relay"
+  ]
+}

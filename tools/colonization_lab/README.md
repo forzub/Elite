@@ -36,10 +36,12 @@ python endowment.py                  # индексы ресурсов и пло
 python calibrate_population.py --check   # население 3126 в авторских диапазонах (AUTHOR_TARGET); без флага — подобрать интенсивность эпох, --write — сохранить
 python logistics.py                   # корабли, правило прыжка, стоимость рейса -> out/logistics.*; --check
 python world_economy.py               # баланс мира 3126 -> out/world_3126/ (после lab.py и logistics.py); --check — пересчёт + проверки непротиворечивости
-python lore_md.py --write             # обновить блоки GENERATED справочника Notes/Lore/ (после lab.py и world_economy.py); --check — блоки, id сущностей и числа населения в рассказе сверены с данными
+python world_sites.py                 # хабы, поселения, глубокий космос, фронтиры («Жопа мира»), общество, администраторы, право, связь, пассажиры, возраст флота, пираты -> out/world_3126/ + копии для рантайма (galaxy_details/world_sites, objects_details/world_*.json); --check
+python lore_md.py --write             # обновить блоки GENERATED справочника Notes/Lore/ (после lab.py, world_economy.py, world_sites.py); --check — блоки, id сущностей и числа населения в рассказе сверены с данными
+python lore_html.py                   # HTML-зеркало Notes/html (после любого изменения Notes/Lore); --check
 ```
 
-Проектные решения экономического слоя — `Notes/Economy/` (архитектура, граф данных, политэкономия, логистика и навигация, флоты, экономика игрока, банк).
+Проектные решения экономического слоя — `Notes/Economy/` (архитектура, граф данных, политэкономия, логистика и навигация, флоты, экономика игрока, банк, пространственный слой `WORLD_SITES_AND_INFORMATION.md`).
 
 ## Доказательство детерминизма
 
@@ -52,7 +54,7 @@ python lab.py --out D:/tmp/elite_labA && python lab.py --out D:/tmp/elite_labB &
 Программа печатает sha256 от всех четырёх выходов:
 
 ```text
-seed=3126 missions=36 colonies=22 earth=11668961361 off_sol=10087994167 sha256=c82252433d9c6fdd79b09369a6ee9f08d63112dffa0db2607ef5d0347a33f5e7  (прогон 2026-11-03; earth = Земля + Сол; меняется при любом изменении canon/*.json или кода)
+seed=3126 missions=36 colonies=22 earth=11668961361 off_sol=10087992674 sha256=1895d76278c0c1d4e97bfae7c535aebe6ab51eda19d9824b84b43d92291b1499  (прогон 2026-11-03, третий проход: маяк депо «Перевал» у Gliese 436; earth = Земля + Сол; меняется при любом изменении canon/*.json или кода)
 ```
 
 ## Статусы знаний (knowledge.py)

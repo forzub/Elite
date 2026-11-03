@@ -1,0 +1,1292 @@
+{
+ "access": {
+  "frontier.ceti_chest": {
+   "chain": [
+    13,
+    17,
+    "dso.ceti_gap_cache",
+    36
+   ],
+   "from_sol_jumps_to_start": 1.0,
+   "from_sol_path_to_start": [
+    0,
+    13
+   ],
+   "legs_ly": [
+    25.603,
+    16.511,
+    16.605
+   ],
+   "max_leg_ly": 25.603,
+   "within_max_hop": true
+  },
+  "frontier.vega_observatory": {
+   "chain": [
+    41,
+    "dso.vega_null",
+    20
+   ],
+   "from_sol_jumps_to_start": 4.0,
+   "from_sol_path_to_start": [
+    0,
+    3,
+    24,
+    45,
+    41
+   ],
+   "legs_ly": [
+    18.304,
+    18.262
+   ],
+   "max_leg_ly": 18.304,
+   "within_max_hop": true
+  },
+  "frontier.worlds_ass": {
+   "chain": [
+    25,
+    24,
+    45,
+    "dso.lotus",
+    19
+   ],
+   "from_sol_jumps_to_start": 1.0,
+   "from_sol_path_to_start": [
+    0,
+    25
+   ],
+   "legs_ly": [
+    30.641,
+    30.753,
+    21.095,
+    18.386
+   ],
+   "max_leg_ly": 30.753,
+   "within_max_hop": true
+  },
+  "kern_pocket": {
+   "chain": [
+    25,
+    24,
+    45,
+    37
+   ],
+   "from_sol_jumps_to_start": 1.0,
+   "from_sol_path_to_start": [
+    0,
+    25
+   ],
+   "legs_ly": [
+    30.641,
+    30.753,
+    30.407
+   ],
+   "max_leg_ly": 30.753,
+   "within_max_hop": true
+  }
+ },
+ "artifacts": [
+  {
+   "claims": [
+    "Путь Бесконечного Света (наследник ордена-спонсора NIRVANA-1)",
+    "Керн (находка)",
+    "Когниум (покупатель)"
+   ],
+   "custody": "Когниум (Научная служба), Новый Шанхай",
+   "finder": "спасатели Керна",
+   "found_at": "dso.lotus",
+   "found_year": 3098,
+   "fraud": false,
+   "hazard": "неизвестно",
+   "id": "ART-0001",
+   "known": [
+    "недетерминированная логика",
+    "совместим с ядрами XXIII века"
+   ],
+   "market_value_cr": 250000000,
+   "name": "навигатор «Мандала»",
+   "provenance": [
+    "корпус «Лотоса»",
+    "Керн (3098)",
+    "продан Когниуму (3101) — сделка оспаривается"
+   ],
+   "scientific_value": "very_high",
+   "unknown": [
+    "почему он работает"
+   ]
+  },
+  {
+   "claims": [
+    "нашедший",
+    "Керн (лицензия)",
+    "страховщик кражи"
+   ],
+   "custody": "утерян (украден в 3113)",
+   "finder": "старатель Мирко Валента",
+   "found_at": "dep.lotosite.k2",
+   "found_year": 3111,
+   "fraud": false,
+   "hazard": "осечка прыжка рядом",
+   "id": "ART-0002",
+   "known": [
+    "взаимодействует с полем прыжка: ядро рядом даёт осечку"
+   ],
+   "market_value_cr": 60000000,
+   "name": "«поющий» кристалл",
+   "provenance": [
+    "K2 у «Мандалы»",
+    "Троянский рынок",
+    "исчез"
+   ],
+   "scientific_value": "high",
+   "unknown": [
+    "природа звука"
+   ]
+  },
+  {
+   "claims": [
+    "Керн (улика)",
+    "Тяньхэ (требует передачи)"
+   ],
+   "custody": "Станция «Порог», хранилище улик",
+   "finder": "буксир «Мэй-Лин»",
+   "found_at": "hz.019.b_ghosts",
+   "found_year": 3116,
+   "fraud": "disputed",
+   "hazard": "нет",
+   "id": "ART-0003",
+   "known": [
+    "передаёт позывной, которого нет ни в одном регистре"
+   ],
+   "market_value_cr": 0,
+   "name": "транспондер «второго корабля»",
+   "provenance": [
+    "пойман в зоне призраков"
+   ],
+   "scientific_value": "high",
+   "unknown": [
+    "кто его построил"
+   ]
+  },
+  {
+   "claims": [
+    "покупатель"
+   ],
+   "custody": "частная коллекция в Агоре",
+   "finder": "продавец по кличке Святой",
+   "found_at": "site.019.troyan_market",
+   "found_year": 3118,
+   "fraud": true,
+   "hazard": "нет",
+   "id": "ART-0004",
+   "known": [
+    "медь земного состава XXXI века"
+   ],
+   "market_value_cr": 1200000,
+   "name": "«реликвия Нирваны» (мантры на меди)",
+   "provenance": [
+    "Троянский рынок",
+    "Агора"
+   ],
+   "scientific_value": "none",
+   "unknown": []
+  },
+  {
+   "claims": [
+    "Керн",
+    "Когниум",
+    "Путь Бесконечного Света"
+   ],
+   "custody": "на месте (неподвижна)",
+   "finder": "Керн",
+   "found_at": "site.019.mandala",
+   "found_year": 3093,
+   "fraud": false,
+   "hazard": "зона восприятия",
+   "id": "ART-0005",
+   "known": [
+    "кольцо 40 м, температура на 3 K выше окружения"
+   ],
+   "market_value_cr": null,
+   "name": "структура неизвестного назначения",
+   "provenance": [
+    "K2"
+   ],
+   "scientific_value": "extreme",
+   "unknown": [
+    "назначение",
+    "строитель",
+    "возраст"
+   ]
+  },
+  {
+   "claims": [
+    "Путь Бесконечного Света",
+    "Керн"
+   ],
+   "custody": "Станция «Порог»",
+   "finder": "сквоттеры «Лотоса»",
+   "found_at": "dso.lotus",
+   "found_year": 3100,
+   "fraud": "disputed",
+   "hazard": "нет",
+   "id": "ART-0006",
+   "known": [
+    "маркировка NIRVANA-1",
+    "даты обслуживания на 400 лет позже старта"
+   ],
+   "market_value_cr": 900000,
+   "name": "пустые криокапсулы с несовпадающими датами",
+   "provenance": [
+    "корпус «Лотоса»"
+   ],
+   "scientific_value": "medium",
+   "unknown": [
+    "кто обслуживал"
+   ]
+  }
+ ],
+ "deep_space_objects": [
+  {
+   "drift_km_per_year": 1199188800,
+   "epoch_year": 3126.0,
+   "frame": "ICRS_heliocentric",
+   "hidden": false,
+   "id": "dso.lotus",
+   "legs_ly": {
+    "19": 18.386,
+    "45": 21.095
+   },
+   "name": "«Лотос»",
+   "object_type": "derelict",
+   "position_ly": [
+    -78.255,
+    9.102,
+    3.96
+   ],
+   "site_type": "derelict_hub",
+   "source": "placement",
+   "status": "PROPOSAL",
+   "velocity_km_s": [
+    -1.657,
+    -0.099,
+    -37.964
+   ]
+  },
+  {
+   "drift_km_per_year": 0,
+   "epoch_year": 3126.0,
+   "frame": "ICRS_heliocentric",
+   "hidden": false,
+   "id": "dso.ceti_gap_cache",
+   "legs_ly": {
+    "17": 16.511,
+    "36": 16.604
+   },
+   "name": "Склад «Китовая Щель»",
+   "object_type": "deep_space_station",
+   "position_ly": [
+    53.002,
+    -1.897,
+    -8.962
+   ],
+   "site_type": "deep_space_refuel_point",
+   "source": "placement",
+   "status": "PROPOSAL",
+   "velocity_km_s": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "drift_km_per_year": 0,
+   "epoch_year": 3126.0,
+   "frame": "ICRS_heliocentric",
+   "hidden": false,
+   "id": "dso.vega_null",
+   "legs_ly": {
+    "20": 18.261,
+    "41": 18.304
+   },
+   "name": "Ретранслятор «Ноль-Вега»",
+   "object_type": "relay",
+   "position_ly": [
+    -67.632,
+    12.512,
+    -37.087
+   ],
+   "site_type": "deep_space_relay",
+   "source": "placement",
+   "status": "PROPOSAL",
+   "velocity_km_s": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "drift_km_per_year": 0,
+   "epoch_year": 3126.0,
+   "frame": "ICRS_heliocentric",
+   "hidden": true,
+   "id": "dso.cache.lotus_north",
+   "legs_ly": {
+    "19": 25.518,
+    "45": 14.431
+   },
+   "name": "незаконный тайник «Северный»",
+   "object_type": "deep_space_station",
+   "position_ly": [
+    -70.947,
+    4.028,
+    3.654
+   ],
+   "site_type": "deep_space_refuel_point",
+   "source": "placement",
+   "status": "PROPOSAL",
+   "velocity_km_s": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "drift_km_per_year": 546815028077,
+   "epoch_year": 3126.0,
+   "frame": "ICRS_heliocentric",
+   "hidden": false,
+   "id": "dso.genship.final-ark-1",
+   "legs_ly": {},
+   "living_aboard": 14500,
+   "name": "FINAL-ARK-1",
+   "object_type": "generation_ship",
+   "position_ly": [
+    0.466,
+    17.995,
+    -31.208
+   ],
+   "site_type": null,
+   "source": "missions.json FINAL-ARK-1 (in flight, share 0.85, arrival ~3236)",
+   "status": "GENERATED",
+   "velocity_km_s": [
+    223.944,
+    8654.721,
+    -15009.62
+   ]
+  },
+  {
+   "drift_km_per_year": 282390421397,
+   "epoch_year": 3126.0,
+   "frame": "ICRS_heliocentric",
+   "hidden": false,
+   "id": "dso.genship.legacy-1",
+   "legs_ly": {},
+   "living_aboard": 0,
+   "name": "LEGACY-1",
+   "object_type": "generation_ship",
+   "position_ly": [
+    -3.491,
+    -17.679,
+    1.564
+   ],
+   "site_type": null,
+   "source": "missions.json LEGACY-1 (in flight, share 0.38, arrival ~4120)",
+   "status": "GENERATED",
+   "velocity_km_s": [
+    -1726.78,
+    -8746.061,
+    773.781
+   ]
+  }
+ ],
+ "frontiers": [
+  {
+   "id": "frontier.worlds_ass",
+   "region": [
+    "dso.lotus",
+    "system:19"
+   ],
+   "specialisation": "risk_reward_max",
+   "system": 19
+  },
+  {
+   "id": "frontier.ceti_chest",
+   "region": [
+    "dso.ceti_gap_cache",
+    "system:36"
+   ],
+   "specialisation": "resource",
+   "system": 36
+  },
+  {
+   "id": "frontier.vega_observatory",
+   "region": [
+    "dso.vega_null",
+    "system:20"
+   ],
+   "specialisation": "science",
+   "system": 20
+  }
+ ],
+ "hazard_zones": [
+  {
+   "anchor": "dso.lotus",
+   "effects": {
+    "jump_initiation": "impossible"
+   },
+   "id": "hz.lotus_dead",
+   "kind": "jump_dead",
+   "knowledge": "mapped",
+   "name": "Мёртвая зона «Лотоса»",
+   "note": "Край зоны в 260 тыс. км от корпуса; без маячного захвата сигма выхода на 21 св. год ~200 тыс. км, и часть кораблей выходит внутрь. Отсюда кладбище вокруг «Лотоса».",
+   "offset_km": [
+    680000,
+    0,
+    0
+   ],
+   "radius_km": 420000,
+   "shape": "sphere",
+   "since_known": 3099,
+   "status": "PROPOSAL"
+  },
+  {
+   "anchor": "dso.lotus",
+   "effects": {
+    "wreck_density": "high"
+   },
+   "id": "hz.lotus_sargasso",
+   "kind": "sargasso",
+   "knowledge": "mapped",
+   "name": "Саргассы «Лотоса»",
+   "note": "Обломки и брошенные корабли, застрявшие в мёртвой зоне.",
+   "offset_km": [
+    680000,
+    0,
+    0
+   ],
+   "radius_km": 700000,
+   "shape": "sphere",
+   "since_known": 3099,
+   "status": "PROPOSAL"
+  },
+  {
+   "anchor": "system_19.HD_102195.HD_102195_c",
+   "effects": {
+    "exit_error_multiplier": 25.0
+   },
+   "id": "hz.019.c_distortion",
+   "kind": "jump_distortion",
+   "knowledge": "partial",
+   "name": "Искажение у горячего железа",
+   "note": "Ошибка выхода растёт в 25 раз; лотосит лежит именно здесь.",
+   "radius_km": 4000000,
+   "shape": "sphere",
+   "since_known": 3107,
+   "status": "PROPOSAL"
+  },
+  {
+   "anchor": "system_19.HD_102195.HD_102195_b.trojans",
+   "effects": {
+    "error_distribution": "heavy_tailed",
+    "tail_index": 1.6
+   },
+   "id": "hz.019.trojan_unstable",
+   "kind": "unstable_navigation",
+   "knowledge": "partial",
+   "name": "Троянский туман",
+   "note": "Ошибка не гауссова: редкие выходы за сотни тысяч км.",
+   "radius_km": 1500000,
+   "shape": "sphere",
+   "since_known": 3109,
+   "status": "PROPOSAL"
+  },
+  {
+   "anchor": "system_19.HD_102195.HD_102195_b",
+   "effects": {
+    "dose_sv_per_day_unshielded": 4.0,
+    "electronics_upset_per_hour": 0.02
+   },
+   "id": "hz.019.b_radiation",
+   "kind": "radiation",
+   "knowledge": "official",
+   "minor_radius_km": 300000,
+   "name": "Пояса горячего гиганта",
+   "note": "Физика: магнитосфера горячего Юпитера.",
+   "radius_km": 900000,
+   "shape": "torus",
+   "since_known": 3104,
+   "status": "PROPOSAL"
+  },
+  {
+   "anchor": "system_19.HD_102195.HD_102195_b",
+   "effects": {
+    "false_contacts_per_hour": 0.4,
+    "false_transponders": true,
+    "radio_echoes": true,
+    "repeating_distress": true
+   },
+   "id": "hz.019.b_ghosts",
+   "kind": "sensor_disturbance",
+   "knowledge": "partial",
+   "name": "Призраки радара",
+   "note": "Ложные отметки, эхо, повторяющийся сигнал бедствия кораблей, погибших годы назад. Причина не установлена.",
+   "radius_km": 6000000,
+   "shape": "sphere",
+   "since_known": 3105,
+   "status": "PROPOSAL"
+  },
+  {
+   "anchor": "system_19.HD_102195.HD_102195_K2",
+   "effects": {
+    "clock_drift_ms_per_hour": 3.0,
+    "onset_hours": 6.0,
+    "shielding_helps": "partly",
+    "subjective_effects": [
+     "ложный объект",
+     "несуществующий радиообмен",
+     "копия своего корабля",
+     "неверная дальность"
+    ]
+   },
+   "id": "hz.019.k2_perception",
+   "kind": "perception_anomaly",
+   "knowledge": "rumour",
+   "name": "Зона «Мандалы»",
+   "note": "Мир не ломается: симуляция знает истину, слой восприятия может показывать ложное. Причина неизвестна и не обязана быть объяснена.",
+   "radius_km": 25000,
+   "shape": "sphere",
+   "since_known": 3093,
+   "status": "PROPOSAL"
+  },
+  {
+   "bound_object_id": "ism_icy_p1m1m1_0",
+   "effects": {
+    "collision_risk": "medium",
+    "sensor_clutter": true
+   },
+   "id": "hz.frost_stream_zwlh8",
+   "kind": "debris",
+   "knowledge": "official",
+   "name": "Ледяной поток у TRAPPIST-1",
+   "note": "Физический ледяной поток каталога (генератор ISM); тот же объект, не копия.",
+   "shape": "bound_geometry",
+   "since_known": 3100,
+   "status": "PROPOSAL"
+  },
+  {
+   "anchor": "system_12",
+   "body_match": "gaia",
+   "effects": {
+    "biohazard": "unknown",
+    "entry": "forbidden"
+   },
+   "id": "hz.gaia_quarantine",
+   "kind": "quarantine",
+   "knowledge": "official",
+   "name": "Карантин «Гайя»",
+   "note": "Канон GREEN-ARK-1: пустой неповреждённый корабль на орбите, чуждая экосистема; охраняет Тяньхэ.",
+   "radius_km": 2000000,
+   "shape": "system_body_zone",
+   "since_known": 2600,
+   "status": "CANON"
+  },
+  {
+   "anchor": "system_9",
+   "effects": {
+    "mines": "old",
+    "wreck_density": "very_high"
+   },
+   "id": "hz.strife_graveyard",
+   "kind": "sargasso",
+   "knowledge": "mapped",
+   "name": "Кладбище Раздора",
+   "note": "550 лет войны Гармонии с Поясом Раздора: обломки, старые мины, разобранные корпуса.",
+   "radius_km": 30000000,
+   "shape": "belt_sector",
+   "since_known": 2900,
+   "status": "PROPOSAL"
+  }
+ ],
+ "piracy_by_system": [
+  {
+   "corruption": 0.25,
+   "cover": 0.895,
+   "index": 0.27,
+   "name": "Sol (Солнце)",
+   "resale_market": 0.3,
+   "safe_haven": 0.425,
+   "system": 0,
+   "traffic": 0.654,
+   "valuable_cargo": 0.936,
+   "weak_enforcement": 0.006
+  },
+  {
+   "corruption": 0.42,
+   "cover": 0.3,
+   "index": 0.501,
+   "name": "Wolf 359",
+   "resale_market": 0.3,
+   "safe_haven": 0.51,
+   "system": 3,
+   "traffic": 0.857,
+   "valuable_cargo": 0.909,
+   "weak_enforcement": 0.53
+  },
+  {
+   "corruption": 0.3,
+   "cover": 0.599,
+   "index": 0.577,
+   "name": "Lalande 21185",
+   "resale_market": 0.6,
+   "safe_haven": 0.45,
+   "system": 4,
+   "traffic": 0.919,
+   "valuable_cargo": 0.902,
+   "weak_enforcement": 0.528
+  },
+  {
+   "corruption": 0.15,
+   "cover": 0.506,
+   "index": 0.456,
+   "name": "Tau Ceti",
+   "resale_market": 0.3,
+   "safe_haven": 0.375,
+   "system": 8,
+   "traffic": 0.947,
+   "valuable_cargo": 0.911,
+   "weak_enforcement": 0.555
+  },
+  {
+   "corruption": 0.45,
+   "cover": 0.886,
+   "index": 0.762,
+   "name": "Epsilon Eridani",
+   "resale_market": 1.0,
+   "safe_haven": 0.825,
+   "system": 9,
+   "traffic": 0.958,
+   "valuable_cargo": 0.9,
+   "weak_enforcement": 0.527
+  },
+  {
+   "corruption": 0.45,
+   "cover": 0.565,
+   "index": 0.692,
+   "name": "Gliese 581",
+   "resale_market": 1.0,
+   "safe_haven": 0.825,
+   "system": 10,
+   "traffic": 0.837,
+   "valuable_cargo": 0.874,
+   "weak_enforcement": 0.497
+  },
+  {
+   "corruption": 0.85,
+   "cover": 0.928,
+   "index": 0.798,
+   "name": "Gliese 832",
+   "resale_market": 0.6,
+   "safe_haven": 1.0,
+   "system": 12,
+   "traffic": 0.915,
+   "valuable_cargo": 0.9,
+   "weak_enforcement": 0.529
+  },
+  {
+   "corruption": 0.05,
+   "cover": 0.964,
+   "index": 0.377,
+   "name": "Gliese 876",
+   "resale_market": 0.3,
+   "safe_haven": 0.325,
+   "system": 13,
+   "traffic": 0.377,
+   "valuable_cargo": 0.7,
+   "weak_enforcement": 0.879
+  },
+  {
+   "corruption": 0.2,
+   "cover": 0.593,
+   "index": 0.499,
+   "name": "HD 20794 (82 G. Eridani)",
+   "resale_market": 0.3,
+   "safe_haven": 0.4,
+   "system": 14,
+   "traffic": 0.959,
+   "valuable_cargo": 0.893,
+   "weak_enforcement": 0.635
+  },
+  {
+   "corruption": 0.32,
+   "cover": 0.658,
+   "index": 0.532,
+   "name": "HD 40307",
+   "resale_market": 0.3,
+   "safe_haven": 0.46,
+   "system": 15,
+   "traffic": 0.872,
+   "valuable_cargo": 0.895,
+   "weak_enforcement": 0.531
+  },
+  {
+   "corruption": 0.2,
+   "cover": 0.958,
+   "index": 0.503,
+   "name": "HD 69830",
+   "resale_market": 0.3,
+   "safe_haven": 0.4,
+   "system": 16,
+   "traffic": 0.769,
+   "valuable_cargo": 0.863,
+   "weak_enforcement": 0.53
+  },
+  {
+   "corruption": 0.85,
+   "cover": 0.962,
+   "index": 0.92,
+   "name": "HD 102195",
+   "resale_market": 0.6,
+   "safe_haven": 1.0,
+   "system": 19,
+   "traffic": 0.5,
+   "valuable_cargo": 1.0,
+   "weak_enforcement": 0.9
+  },
+  {
+   "corruption": 0.3,
+   "cover": 0.675,
+   "index": 0.425,
+   "name": "Delta Pavonis",
+   "resale_market": 0.3,
+   "safe_haven": 0.45,
+   "system": 22,
+   "traffic": 0.76,
+   "valuable_cargo": 0.862,
+   "weak_enforcement": 0.141
+  },
+  {
+   "corruption": 0.85,
+   "cover": 0.574,
+   "index": 0.658,
+   "name": "Gliese 436",
+   "resale_market": 0.6,
+   "safe_haven": 1.0,
+   "system": 24,
+   "traffic": 0.256,
+   "valuable_cargo": 0.711,
+   "weak_enforcement": 1.0
+  },
+  {
+   "corruption": 0.85,
+   "cover": 0.629,
+   "index": 0.802,
+   "name": "Gliese 357",
+   "resale_market": 0.6,
+   "safe_haven": 1.0,
+   "system": 25,
+   "traffic": 0.769,
+   "valuable_cargo": 0.863,
+   "weak_enforcement": 1.0
+  },
+  {
+   "corruption": 0.35,
+   "cover": 0.485,
+   "index": 0.506,
+   "name": "61 Cygni",
+   "resale_market": 0.3,
+   "safe_haven": 0.475,
+   "system": 31,
+   "traffic": 0.758,
+   "valuable_cargo": 0.875,
+   "weak_enforcement": 0.531
+  },
+  {
+   "corruption": 0.28,
+   "cover": 1.0,
+   "index": 0.527,
+   "name": "HD 114783",
+   "resale_market": 0.6,
+   "safe_haven": 0.44,
+   "system": 37,
+   "traffic": 0.214,
+   "valuable_cargo": 0.718,
+   "weak_enforcement": 1.0
+  },
+  {
+   "corruption": 0.3,
+   "cover": 0.434,
+   "index": 0.44,
+   "name": "83 Leonis",
+   "resale_market": 0.3,
+   "safe_haven": 0.45,
+   "system": 45,
+   "traffic": 0.256,
+   "valuable_cargo": 0.711,
+   "weak_enforcement": 1.0
+  },
+  {
+   "corruption": 0.85,
+   "cover": 0.637,
+   "index": 0.669,
+   "name": "HD 85512",
+   "resale_market": 0.6,
+   "safe_haven": 1.0,
+   "system": 54,
+   "traffic": 0.194,
+   "valuable_cargo": 0.955,
+   "weak_enforcement": 1.0
+  },
+  {
+   "corruption": 0.42,
+   "cover": 0.459,
+   "index": 0.518,
+   "name": "Proxima Centauri",
+   "resale_market": 0.3,
+   "safe_haven": 0.51,
+   "system": 60,
+   "traffic": 0.879,
+   "valuable_cargo": 0.904,
+   "weak_enforcement": 0.428
+  }
+ ],
+ "rare_resources": [
+  {
+   "aliases": {
+    "cognium": "相锁晶格 (фазовая решётка)",
+    "pilot_en": "lotus glass",
+    "pilot_ru": "лотос"
+   },
+   "black_market_share": 0.4,
+   "demand_kg_y_at_base_price": 120,
+   "deposits": [
+    {
+     "anchor": "system_19.HD_102195.HD_102195_c",
+     "difficulty": "extreme",
+     "extracted_kg": 260,
+     "grade_g_per_t": 12.0,
+     "id": "dep.lotosite.c1",
+     "operator": "лицензиаты Керна",
+     "reserve_kg": 900,
+     "zone": "hz.019.c_distortion"
+    },
+    {
+     "anchor": "system_19.HD_102195.HD_102195_c",
+     "difficulty": "extreme",
+     "extracted_kg": 90,
+     "grade_g_per_t": 4.0,
+     "id": "dep.lotosite.c2",
+     "operator": "захватчик (без лицензии)",
+     "reserve_kg": 2400,
+     "zone": "hz.019.c_distortion"
+    },
+    {
+     "anchor": "system_19.HD_102195.HD_102195_b.trojans",
+     "difficulty": "high",
+     "extracted_kg": 310,
+     "grade_g_per_t": 0.8,
+     "id": "dep.lotosite.t1",
+     "operator": "старатели «Троянского рынка»",
+     "reserve_kg": 1500,
+     "zone": "hz.019.trojan_unstable"
+    },
+    {
+     "anchor": "system_19.HD_102195.HD_102195_K2",
+     "difficulty": "extreme",
+     "extracted_kg": 15,
+     "grade_g_per_t": 20.0,
+     "id": "dep.lotosite.k2",
+     "operator": "никто (у «Мандалы»)",
+     "reserve_kg": 300,
+     "zone": "hz.019.k2_perception"
+    }
+   ],
+   "id": "res.lotosite",
+   "knowledge": {
+    "basis": "заказ автора: редкий ресурс фронтира",
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD"
+   },
+   "name": "лотосит",
+   "price_cr_per_kg": 4000000,
+   "price_elasticity": 0.6,
+   "strategic_note": "+3 св. года к пределу прыжка открывают 9 Кита и HD 93083 без промежуточных точек; поэтому лотосит — политика, а не только деньги",
+   "use": {
+    "jump_error_multiplier": 0.5,
+    "kg_per_core": 2.0,
+    "max_hop_bonus_ly": 3.0,
+    "who_needs": [
+     "фабрика ядер Когниума",
+     "военные ядра",
+     "научные ядра"
+    ]
+   },
+   "what": "фазово-упорядоченный кристалл неизвестного происхождения; в ядре прыжка гасит шум поля"
+  }
+ ],
+ "risk_reward": {
+  "frontier.ceti_chest": {
+   "basis": "полный фрейтер металлов за рейс; риск = обычные потери x 4 прыжка",
+   "hazard_zones": 0,
+   "max_payoff_cr": 2640000,
+   "risk": 0.016
+  },
+  "frontier.vega_observatory": {
+   "basis": "грант/контракт; риск = обычные потери",
+   "hazard_zones": 0,
+   "max_payoff_cr": 2000000,
+   "risk": 0.006
+  },
+  "frontier.worlds_ass": {
+   "basis": "дороже всего: артефакт или 3 кг лотосита; риск = потеря корабля",
+   "hazard_zones": 7,
+   "max_payoff_cr": 250000000,
+   "risk": 0.189
+  }
+ },
+ "status": "PROPOSAL",
+ "worlds_ass": {
+  "average_expedition_profitable": false,
+  "causal_chain": [
+   "extraordinary reward",
+   "expedition demand",
+   "specialised transport",
+   "expensive support",
+   "piracy",
+   "security",
+   "black market",
+   "salvage",
+   "repeated exploration"
+  ],
+  "cobrett_round_trip_charge_t": 3.682,
+  "cobrett_tank_t": 3.0,
+  "dead_zone": {
+   "beacon_uptime": 0.62,
+   "p_inside_expected": 0.017,
+   "p_inside_locked": 0.0,
+   "p_inside_no_lock": 0.045,
+   "sigma_km_both_ends": 998,
+   "sigma_km_no_lock": 199573
+  },
+  "expected_value_cr": -257982,
+  "expedition_cost_cr": {
+   "bribes_and_tolls": 40000,
+   "charge_and_fuel": 67800,
+   "coordinates_and_information": 65000,
+   "crew_hazard_pay": 60000,
+   "insurance": 407235,
+   "licence": 30000,
+   "provisions": 24000,
+   "repair": 95000,
+   "spare_parts": 60000,
+   "tanker_support": 180000
+  },
+  "expedition_cost_total_cr": 1029035,
+  "expeditions_per_year": 534,
+  "information_market": [
+   "координаты безопасной точки выхода",
+   "положение тайников заряда",
+   "состояние аномальных зон",
+   "новые обломки",
+   "месторождения",
+   "расписание патрулей",
+   "засады",
+   "судьба пропавших экспедиций"
+  ],
+  "information_rule": "часть сведений ложна; цена зависит от репутации продавца (см. KnowledgeRecord.confidence)",
+  "j20_tank": {
+   "charge_t": 6.0,
+   "form": "C20 place",
+   "mass_loaded_t": 8.0,
+   "note": "бак заряда J20 вместо контейнера: -1 место груза, +6 т заряда (PROPOSAL)"
+  },
+  "j20_tanks_needed": 1,
+  "lotosite_market": {
+   "base_demand_kg_y": 120,
+   "base_price_cr_per_kg": 4000000,
+   "black_market_share": 0.4,
+   "elasticity": 0.6,
+   "equilibrium_kg_y": 73.696,
+   "monopoly_threat": "Керн + Когниум держат лицензии и пробирную палату «Порога»; Тяньхэ требует доли",
+   "price_cr_per_kg": 9014761,
+   "price_shock_rule": "крупная находка (+Q кг) сбивает цену: P = P* x (1 + Q/q)^(-1/elasticity); монополия на пробирную палату удерживает цену выше P*",
+   "remaining_reserve_kg": 4425,
+   "years_to_depletion": 60.044
+  },
+  "median_result_cr": -1029035,
+  "official_names": {
+   "cyg61_kern": {
+    "lang": "en",
+    "meaning": "заявочный округ",
+    "name": "Claim District HD-19 «Farpoint»"
+   },
+   "delta_pav_karma": {
+    "lang": "sa",
+    "meaning": "Последние врата",
+    "name": "अन्त्यद्वार",
+    "translit": "Antyadvāra"
+   },
+   "eps_eri_harmony": {
+    "lang": "zh",
+    "meaning": "Небесный Колодец",
+    "name": "天井",
+    "translit": "Tiānjǐng"
+   },
+   "gj581_europa": {
+    "lang": "la",
+    "meaning": "край известного мира",
+    "name": "Ultima Thule"
+   },
+   "hd114783_hellas3": {
+    "lang": "el",
+    "meaning": "дальнее пограничье",
+    "name": "Ἐσχατιά",
+    "translit": "Eschatiá"
+   },
+   "hd20794_newindia": {
+    "lang": "hi",
+    "meaning": "Последние врата",
+    "name": "अन्त्यद्वार",
+    "translit": "Antyadvāra"
+   },
+   "hd40307_maland": {
+    "lang": "sw",
+    "meaning": "Дальние ворота",
+    "name": "Lango la Mbali"
+   },
+   "hd69830_verde": {
+    "lang": "pt",
+    "meaning": "Крайний порт",
+    "name": "Porto Extremo"
+   },
+   "lalande_hellas": {
+    "lang": "el",
+    "meaning": "дальнее пограничье",
+    "name": "Ἐσχατιά",
+    "translit": "Eschatiá"
+   },
+   "leo83_zion": {
+    "lang": "ru",
+    "meaning": "место искуса",
+    "name": "Пустыня Испытания"
+   },
+   "sol_authority": {
+    "lang": "en",
+    "meaning": "Меридианный предел",
+    "name": "Meridian Terminus"
+   },
+   "tau_ceti_cognium": {
+    "lang": "zh",
+    "meaning": "звёздный район «Лунные врата»",
+    "name": "月门星区",
+    "translit": "Yuèmén xīngqū"
+   },
+   "wolf359_citadel": {
+    "lang": "en",
+    "meaning": "Дальние ворота",
+    "name": "Far Gate"
+   }
+  },
+  "optimism_bias": 0.25,
+  "outcomes": [
+   {
+    "outcome": "ship lost",
+    "p": 0.049,
+    "value_cr": -2036173
+   },
+   {
+    "outcome": "nothing",
+    "p": 0.551,
+    "value_cr": 0
+   },
+   {
+    "outcome": "small find 0.1 kg",
+    "p": 0.3,
+    "value_cr": 631033
+   },
+   {
+    "outcome": "good find 0.6 kg",
+    "p": 0.08,
+    "value_cr": 3786199
+   },
+   {
+    "outcome": "jackpot: 3 kg or artifact",
+    "p": 0.02,
+    "value_cr": 18930997
+   }
+  ],
+  "pilot_names": [
+   {
+    "lang": "ru",
+    "name": "Жопа мира"
+   },
+   {
+    "also": [
+     "Bumfuck"
+    ],
+    "lang": "en",
+    "name": "the ass end of nowhere"
+   },
+   {
+    "lang": "zh",
+    "name": "月工门",
+    "note": "ребус: официальное 月门 («Лунные врата») с вставленным 工; 月 + 工 — это разобранный на части иероглиф 肛, и вся надпись читается как 肛门. Не словарное слово, а намеренно идиотская шутка пилотов; носители понимают её сразу.",
+    "translit": "yuè gōng mén"
+   },
+   {
+    "lang": "pt",
+    "name": "cu do mundo"
+   },
+   {
+    "lang": "el",
+    "name": "Κωλοχώρι",
+    "translit": "kolochóri"
+   },
+   {
+    "lang": "hi",
+    "name": "दुनिया का पिछवाड़ा",
+    "translit": "duniyā kā pichhvāṛā"
+   }
+  ],
+  "ships_lost_per_year": 25.978,
+  "story": {
+   "rush": "3104: в Агоре проданы первые 300 г лотосита (кристалл стабилизирует поле ядра). 3104-3126: золотая лихорадка — исследователи, старатели, Керн, Когниум, Тяньхэ, контрабандисты, культ «Путь Бесконечного Света», пираты, жулики, охотники за обломками.",
+   "versions": [
+    {
+     "source": "official (Kern)",
+     "text": "В 3091 разведка Керна, шедшая на повторяющийся сигнал, нашла в межзвёздном пространстве брошенный корабль-«лотос»; дальше, у HD 102195, — автоматический комплекс «Мандала» на карлике K2 и следы давней жизни. Экипажа нет."
+    },
+    {
+     "source": "freeband",
+     "text": "Это «Нирвана». Они не погибли, они ушли туда, где прыжок не работает, и иногда отвечают по радио."
+    },
+    {
+     "source": "Cognium science",
+     "text": "Корпус похож на NIRVANA-1, но его положение досветовой физикой не объясняется. Изотопный возраст корпуса не совпадает с годом старта. Вопрос открыт."
+    },
+    {
+     "source": "rumour",
+     "text": "Корпусов два. Второй никто не может найти дважды."
+    }
+   ]
+  }
+ },
+ "wrecks": {
+  "fields": [
+   {
+    "id": "wreck.008_009",
+    "kind": "route_graveyard",
+    "near": "точки выхода маяков Tau Ceti / Epsilon Eridani",
+    "ownership": "страховщики и владельцы (по праву системы)",
+    "salvage": "по лицензии системы",
+    "status": "PROPOSAL",
+    "wrecks": 5555
+   },
+   {
+    "id": "wreck.000_008",
+    "kind": "route_graveyard",
+    "near": "точки выхода маяков Sol (Солнце) / Tau Ceti",
+    "ownership": "страховщики и владельцы (по праву системы)",
+    "salvage": "по лицензии системы",
+    "status": "PROPOSAL",
+    "wrecks": 1253
+   },
+   {
+    "id": "wreck.000_004",
+    "kind": "route_graveyard",
+    "near": "точки выхода маяков Sol (Солнце) / Lalande 21185",
+    "ownership": "страховщики и владельцы (по праву системы)",
+    "salvage": "по лицензии системы",
+    "status": "PROPOSAL",
+    "wrecks": 1199
+   },
+   {
+    "id": "wreck.000_009",
+    "kind": "route_graveyard",
+    "near": "точки выхода маяков Sol (Солнце) / Epsilon Eridani",
+    "ownership": "страховщики и владельцы (по праву системы)",
+    "salvage": "по лицензии системы",
+    "status": "PROPOSAL",
+    "wrecks": 867
+   },
+   {
+    "id": "wreck.014_015",
+    "kind": "route_graveyard",
+    "near": "точки выхода маяков HD 20794 (82 G. Eridani) / HD 40307",
+    "ownership": "страховщики и владельцы (по праву системы)",
+    "salvage": "по лицензии системы",
+    "status": "PROPOSAL",
+    "wrecks": 616
+   },
+   {
+    "id": "wreck.000_014",
+    "kind": "route_graveyard",
+    "near": "точки выхода маяков Sol (Солнце) / HD 20794 (82 G. Eridani)",
+    "ownership": "страховщики и владельцы (по праву системы)",
+    "salvage": "по лицензии системы",
+    "status": "PROPOSAL",
+    "wrecks": 615
+   },
+   {
+    "id": "wreck.000_031",
+    "kind": "route_graveyard",
+    "near": "точки выхода маяков Sol (Солнце) / 61 Cygni",
+    "ownership": "страховщики и владельцы (по праву системы)",
+    "salvage": "по лицензии системы",
+    "status": "PROPOSAL",
+    "wrecks": 560
+   },
+   {
+    "id": "wreck.000_003",
+    "kind": "route_graveyard",
+    "near": "точки выхода маяков Sol (Солнце) / Wolf 359",
+    "ownership": "страховщики и владельцы (по праву системы)",
+    "salvage": "по лицензии системы",
+    "status": "PROPOSAL",
+    "wrecks": 501
+   },
+   {
+    "id": "wreck.strife_graveyard",
+    "kind": "war_graveyard",
+    "near": "Пояс Раздора, Эпсилон Эридана",
+    "ownership": "спорная (война 550 лет)",
+    "salvage": "клановое право: находка за нашедшим",
+    "status": "PROPOSAL",
+    "wrecks": 2568,
+    "zone": "hz.strife_graveyard"
+   },
+   {
+    "id": "wreck.lotus_sargasso",
+    "kind": "sargasso",
+    "near": "«Лотос»",
+    "ownership": "брошены (заявки на обломки)",
+    "salvage": "кто первый доберётся; Керн требует регистрации",
+    "status": "PROPOSAL",
+    "wrecks": 210,
+    "zone": "hz.lotus_sargasso"
+   },
+   {
+    "id": "wreck.gaia_ark",
+    "kind": "derelict",
+    "near": "Гайя, GJ 832",
+    "ownership": "GREEN-ARK-1 (канон)",
+    "salvage": "запрещён карантином",
+    "status": "CANON",
+    "wrecks": 1,
+    "zone": "hz.gaia_quarantine"
+   }
+  ],
+  "lost_civil_per_year": 726.4,
+  "lost_military_per_year": 64.0,
+  "persistence_years": 40.0,
+  "salvage_claim_fields": [
+   "wreck_id",
+   "claimant",
+   "basis (finder / owner / insurer / state / treaty)",
+   "filed_at_site",
+   "filed_year",
+   "law_family",
+   "status (filed / contested / granted / denied)"
+  ],
+  "status": "PROPOSAL"
+ }
+}

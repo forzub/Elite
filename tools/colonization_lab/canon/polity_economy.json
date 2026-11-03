@@ -495,6 +495,58 @@
     "recon_per_hostile_neighbour": 4,
     "tender_per_combatants": 8,
     "military_wage_factor": 1.6,
-    "crew_per_ship_year_overhead_cr": 30000
+    "crew_per_ship_year_overhead_cr": 30000,
+    "border_patrol_per_hostile_neighbour": 6,
+    "interceptor_per_key_node": 4,
+    "police_cutters_per_100m_internal_control": 30,
+    "quarantine_cutters_per_zone": 12,
+    "anti_piracy_cutters_per_problem": 10,
+    "militia_cutters_small_polity": 10,
+    "raiding_escorts": 4,
+    "deterrence_squadron_line_combatants": 4,
+    "deterrence_reach": {
+      "same_system": 1.0,
+      "one_jump": 0.6,
+      "farther": 0.25
+    },
+    "deterrence_posture_squadrons": 0.5,
+    "alliance_obligation_squadrons": 1.0,
+    "mothball_cost_share_per_year": 0.03,
+    "readiness_weights": {
+      "munitions": 0.16,
+      "strategic_stocks": 0.12,
+      "sensor_networks": 0.14,
+      "repair": 0.1,
+      "training": 0.08,
+      "reserve_crews": 0.08,
+      "bases": 0.07,
+      "impact_and_missile_defence": 0.07,
+      "research_development": 0.08,
+      "mobilisation_capacity": 0.04,
+      "mothballed_ships": 0.02,
+      "budget_reserve": 0.04
+    },
+    "readiness_role_bonus": {
+      "deterrence": {
+        "munitions": 0.06,
+        "mobilisation_capacity": 0.04
+      },
+      "impact_defence": {
+        "impact_and_missile_defence": 0.08
+      },
+      "intelligence": {
+        "sensor_networks": 0.06
+      },
+      "strategic_industry": {
+        "research_development": 0.06
+      },
+      "regime_survival": {
+        "strategic_stocks": 0.06
+      },
+      "beacon_security": {
+        "sensor_networks": 0.04
+      }
+    },
+    "note_deterrence": "Line combatants exist only for the deterrence task: key nodes (capital or every population centre >= 100 M, plus strategic installations of importance >= 0.7) x [worst threat (grievance/100 x reach x sqrt(GDP ratio), clamped 0.5..2) + 0.5 squadron posture per node for a deterrence doctrine] + 1 squadron for alliance obligations; squadron = 4 line combatants. The ship budget left after the tasks is NEVER turned into hulls: it goes to munitions, stocks, sensor nets, repair, training, reserve crews, bases, impact / missile defence, R&D, mobilisation capacity, mothballed ships and a budget reserve."
   }
 }

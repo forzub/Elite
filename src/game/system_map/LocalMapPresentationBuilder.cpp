@@ -496,6 +496,14 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
                 std::max(item.physicalSizeMeters, 1000.0)
             );
         }
+        // World sites (galaxy_details/world_sites): unobtrusive context
+        // markers on the Detail map - smaller glyph, no motion arrow.
+        if (object.kind.rfind("world_site:", 0) == 0)
+        {
+            item.velocityArrowMps = glm::dvec3(0.0);
+            item.glyphScale *= 0.55;
+            item.hitRadiusPx = 15.0 * item.glyphScale;
+        }
         // Card azimuth/elevation must describe the same motion regime as the
         // displayed speed.  When the Detail scene is a terminal spatial/local
         // view, use the relative motion vector re-expressed in world axes

@@ -48,6 +48,7 @@ import sys
 
 import endowment
 import lore_economy
+import lore_sites
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, "..", ".."))
@@ -123,6 +124,7 @@ class Data:
         self.unknowns = {u["id"]: u for u in self.F["unknowns"]}
         # economy / logistics / defence layer (world_economy.py), population history
         self.X = lore_economy.load()
+        self.SX = lore_sites.load()
         self.ST_E = endowment.load_endowment()
         with open(os.path.join(CANON, "population_history.json"), encoding="utf-8") as f:
             self.PH = json.load(f)
@@ -1239,6 +1241,7 @@ def build_docs(D):
         docs.append(colony_doc(D, u))
     docs += settlement_docs(D)
     docs += economy_docs(D)
+    docs += lore_sites.docs(D, sys.modules[__name__])
     docs += demography_docs(D)
     docs += politics_docs(D)
     docs += timeline_docs(D)
@@ -1271,7 +1274,7 @@ def _walk_strings(x, acc):
 
 def known_tokens(D):
     acc = set()
-    for obj in (D.F, D.MS, D.W, D.CU, D.ST, D.X or {}):
+    for obj in (D.F, D.MS, D.W, D.CU, D.ST, D.X or {}, D.SX or {}):
         _walk_strings(obj, acc)
     for u in D.pol_order:
         for s in D.pol[u].get("settlements", []):

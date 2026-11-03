@@ -40,7 +40,7 @@ struct TrafficShipClass
     double length = 0.0, width = 0.0, height = 0.0;
     double radius = 0.0;          // bounding sphere
     double dryMassKg = 0.0;
-    double cargoCapacityKg = 0.0;
+    double cargoCapacityKg = 0.0;  // NET payload (ShipCargoPassports)
     double mainAccel = 0.0;       // traffic burn, m/s^2
     double cruiseSpeed = 0.0;     // long legs
     double localSpeed = 0.0;      // hold / approach manoeuvres
@@ -48,6 +48,7 @@ struct TrafficShipClass
     double flipSeconds = 0.0;
     double serviceSeconds = 0.0;  // on the pad (unload + load + service)
     game::docking::DockSizeClass sizeClass = game::docking::DockSizeClass::Medium;
+    double containerTareKg = 0.0;  // tare of the loaded C20 places (gross = net + tare)
 };
 
 [[nodiscard]] const TrafficShipClass& trafficShipClass(TrafficShipKind kind);

@@ -1,0 +1,6835 @@
+{
+ "effects": {
+  "heavily_worn": {
+   "availability": 0.75,
+   "delay_probability": 0.17,
+   "failure_rate_x": 3.5,
+   "fuel_x": 1.12,
+   "insurance_x": 2.6,
+   "opex_x": 1.6,
+   "repair_days_per_y": 45,
+   "resale_share": 0.12
+  },
+  "mature": {
+   "availability": 0.92,
+   "delay_probability": 0.05,
+   "failure_rate_x": 1.0,
+   "fuel_x": 1.0,
+   "insurance_x": 1.0,
+   "opex_x": 1.0,
+   "repair_days_per_y": 14,
+   "resale_share": 0.55
+  },
+  "mothballed": {
+   "availability": 0.05,
+   "delay_probability": 0.0,
+   "failure_rate_x": 2.0,
+   "fuel_x": 1.05,
+   "insurance_x": 0.2,
+   "opex_x": 0.08,
+   "repair_days_per_y": 0,
+   "resale_share": 0.2
+  },
+  "new": {
+   "availability": 0.95,
+   "delay_probability": 0.03,
+   "failure_rate_x": 0.6,
+   "fuel_x": 0.98,
+   "insurance_x": 0.8,
+   "opex_x": 0.9,
+   "repair_days_per_y": 8,
+   "resale_share": 0.85
+  },
+  "old": {
+   "availability": 0.86,
+   "delay_probability": 0.09,
+   "failure_rate_x": 1.8,
+   "fuel_x": 1.05,
+   "insurance_x": 1.5,
+   "opex_x": 1.25,
+   "repair_days_per_y": 24,
+   "resale_share": 0.3
+  },
+  "reserve": {
+   "availability": 0.5,
+   "delay_probability": 0.0,
+   "failure_rate_x": 1.2,
+   "fuel_x": 1.0,
+   "insurance_x": 0.5,
+   "opex_x": 0.3,
+   "repair_days_per_y": 6,
+   "resale_share": 0.4
+  },
+  "restoration_project": {
+   "availability": 0.0,
+   "delay_probability": 0.0,
+   "failure_rate_x": 5.0,
+   "fuel_x": 1.2,
+   "insurance_x": 0.3,
+   "opex_x": 0.2,
+   "repair_days_per_y": 200,
+   "resale_share": 0.08
+  },
+  "scrap_candidate": {
+   "availability": 0.4,
+   "delay_probability": 0.3,
+   "failure_rate_x": 6.0,
+   "fuel_x": 1.2,
+   "insurance_x": 4.0,
+   "opex_x": 2.0,
+   "repair_days_per_y": 90,
+   "resale_share": 0.03
+  }
+ },
+ "pirate_fleet": {
+  "composition": {
+   "illegally_modified": 0.14,
+   "multi_donor": 0.05,
+   "old_bought": 0.2,
+   "reflagged": 0.07,
+   "restored_wreck": 0.22,
+   "stolen": 0.32
+  },
+  "note": "угнанные, восстановленные, старые, нелегально переделанные, перерегистрированные, собранные из нескольких доноров"
+ },
+ "polities": {
+  "cyg61_kern": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.869,
+     "delay_probability": 0.085,
+     "failure_rate_x": 1.717,
+     "fuel_x": 1.039,
+     "insurance_x": 1.46,
+     "opex_x": 1.193
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 20.7,
+    "states": {
+     "heavily_worn": 26.6,
+     "mature": 51.1,
+     "mothballed": 5.8,
+     "new": 13.7,
+     "old": 52.6,
+     "reserve": 8,
+     "restoration_project": 0.1,
+     "scrap_candidate": 2.1
+    },
+    "tier": "middle"
+   },
+   "escort_frigate": {
+    "effects": {
+     "availability": 0.869,
+     "delay_probability": 0.085,
+     "failure_rate_x": 1.717,
+     "fuel_x": 1.039,
+     "insurance_x": 1.46,
+     "opex_x": 1.193
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 20.7,
+    "states": {
+     "heavily_worn": 0.9,
+     "mature": 1.8,
+     "mothballed": 0.0,
+     "new": 0.5,
+     "old": 1.8,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.871,
+     "delay_probability": 0.084,
+     "failure_rate_x": 1.698,
+     "fuel_x": 1.038,
+     "insurance_x": 1.448,
+     "opex_x": 1.188
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 23.4,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.871,
+     "delay_probability": 0.084,
+     "failure_rate_x": 1.698,
+     "fuel_x": 1.038,
+     "insurance_x": 1.448,
+     "opex_x": 1.188
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 23.4,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.869,
+     "delay_probability": 0.085,
+     "failure_rate_x": 1.717,
+     "fuel_x": 1.039,
+     "insurance_x": 1.46,
+     "opex_x": 1.193
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 20.7,
+    "states": {
+     "heavily_worn": 2.6,
+     "mature": 5.0,
+     "mothballed": 0.0,
+     "new": 1.3,
+     "old": 5.1,
+     "reserve": 3,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.2
+    },
+    "tier": "middle"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.867,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.755,
+     "fuel_x": 1.04,
+     "insurance_x": 1.484,
+     "opex_x": 1.202
+    },
+    "jump_era_capped": false,
+    "max_age_y": 32.5,
+    "mean_age_y": 15.2,
+    "states": {
+     "heavily_worn": 12.8,
+     "mature": 22.2,
+     "mothballed": 0.0,
+     "new": 5.8,
+     "old": 24.2,
+     "reserve": 13,
+     "restoration_project": 0.1,
+     "scrap_candidate": 1.6
+    },
+    "tier": "middle"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.872,
+     "delay_probability": 0.083,
+     "failure_rate_x": 1.679,
+     "fuel_x": 1.037,
+     "insurance_x": 1.436,
+     "opex_x": 1.183
+    },
+    "jump_era_capped": false,
+    "max_age_y": 58.5,
+    "mean_age_y": 25.9,
+    "states": {
+     "heavily_worn": 5.5,
+     "mature": 11.7,
+     "mothballed": 1.3,
+     "new": 3.2,
+     "old": 11.5,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.4
+    },
+    "tier": "middle"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.871,
+     "delay_probability": 0.084,
+     "failure_rate_x": 1.698,
+     "fuel_x": 1.038,
+     "insurance_x": 1.448,
+     "opex_x": 1.188
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 23.4,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 2.2,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.871,
+     "delay_probability": 0.084,
+     "failure_rate_x": 1.698,
+     "fuel_x": 1.038,
+     "insurance_x": 1.448,
+     "opex_x": 1.188
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 23.4,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.871,
+     "delay_probability": 0.084,
+     "failure_rate_x": 1.698,
+     "fuel_x": 1.038,
+     "insurance_x": 1.448,
+     "opex_x": 1.188
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 23.4,
+    "states": {
+     "heavily_worn": 367.2,
+     "mature": 740.7,
+     "mothballed": 82.1,
+     "new": 201.4,
+     "old": 743.6,
+     "reserve": 103,
+     "restoration_project": 2.1,
+     "scrap_candidate": 26.9
+    },
+    "tier": "middle"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.871,
+     "delay_probability": 0.084,
+     "failure_rate_x": 1.698,
+     "fuel_x": 1.038,
+     "insurance_x": 1.448,
+     "opex_x": 1.188
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 23.4,
+    "states": {
+     "heavily_worn": 37.4,
+     "mature": 75.4,
+     "mothballed": 8.4,
+     "new": 20.5,
+     "old": 75.7,
+     "reserve": 11,
+     "restoration_project": 0.2,
+     "scrap_candidate": 2.8
+    },
+    "tier": "middle"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.868,
+     "delay_probability": 0.086,
+     "failure_rate_x": 1.736,
+     "fuel_x": 1.04,
+     "insurance_x": 1.472,
+     "opex_x": 1.198
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 18.0,
+    "states": {
+     "heavily_worn": 24.4,
+     "mature": 44.6,
+     "mothballed": 0.0,
+     "new": 11.8,
+     "old": 47.2,
+     "reserve": 26,
+     "restoration_project": 0.1,
+     "scrap_candidate": 2.5
+    },
+    "tier": "middle"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.868,
+     "delay_probability": 0.086,
+     "failure_rate_x": 1.736,
+     "fuel_x": 1.04,
+     "insurance_x": 1.472,
+     "opex_x": 1.198
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 18.0,
+    "states": {
+     "heavily_worn": 2.3,
+     "mature": 4.2,
+     "mothballed": 0.0,
+     "new": 1.1,
+     "old": 4.4,
+     "reserve": 3,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.2
+    },
+    "tier": "middle"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.869,
+     "delay_probability": 0.085,
+     "failure_rate_x": 1.717,
+     "fuel_x": 1.039,
+     "insurance_x": 1.46,
+     "opex_x": 1.193
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 20.7,
+    "states": {
+     "heavily_worn": 1.7,
+     "mature": 3.2,
+     "mothballed": 0.4,
+     "new": 0.9,
+     "old": 3.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   }
+  },
+  "delta_pav_freekarma": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.865,
+     "delay_probability": 0.088,
+     "failure_rate_x": 1.778,
+     "fuel_x": 1.042,
+     "insurance_x": 1.498,
+     "opex_x": 1.208
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 21.6,
+    "states": {
+     "heavily_worn": 42.0,
+     "mature": 68.6,
+     "mothballed": 8.2,
+     "new": 17.5,
+     "old": 76.9,
+     "reserve": 11,
+     "restoration_project": 0.2,
+     "scrap_candidate": 3.1
+    },
+    "tier": "middle"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.866,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.767,
+     "fuel_x": 1.041,
+     "insurance_x": 1.491,
+     "opex_x": 1.205
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 24.5,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.3,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.866,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.767,
+     "fuel_x": 1.041,
+     "insurance_x": 1.491,
+     "opex_x": 1.205
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 24.5,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.3,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.865,
+     "delay_probability": 0.088,
+     "failure_rate_x": 1.778,
+     "fuel_x": 1.042,
+     "insurance_x": 1.498,
+     "opex_x": 1.208
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 21.6,
+    "states": {
+     "heavily_worn": 3.9,
+     "mature": 6.4,
+     "mothballed": 0.0,
+     "new": 1.6,
+     "old": 7.1,
+     "reserve": 4,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.3
+    },
+    "tier": "middle"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.864,
+     "delay_probability": 0.089,
+     "failure_rate_x": 1.799,
+     "fuel_x": 1.043,
+     "insurance_x": 1.511,
+     "opex_x": 1.213
+    },
+    "jump_era_capped": false,
+    "max_age_y": 32.5,
+    "mean_age_y": 15.7,
+    "states": {
+     "heavily_worn": 17.4,
+     "mature": 26.9,
+     "mothballed": 0.0,
+     "new": 6.8,
+     "old": 31.0,
+     "reserve": 17,
+     "restoration_project": 0.1,
+     "scrap_candidate": 2.0
+    },
+    "tier": "middle"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.867,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.757,
+     "fuel_x": 1.041,
+     "insurance_x": 1.485,
+     "opex_x": 1.203
+    },
+    "jump_era_capped": false,
+    "max_age_y": 58.5,
+    "mean_age_y": 27.4,
+    "states": {
+     "heavily_worn": 14.0,
+     "mature": 24.2,
+     "mothballed": 2.8,
+     "new": 6.3,
+     "old": 26.4,
+     "reserve": 4,
+     "restoration_project": 0.1,
+     "scrap_candidate": 0.8
+    },
+    "tier": "middle"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.866,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.767,
+     "fuel_x": 1.041,
+     "insurance_x": 1.491,
+     "opex_x": 1.205
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 24.5,
+    "states": {
+     "heavily_worn": 1.8,
+     "mature": 3.0,
+     "mothballed": 3.5,
+     "new": 0.8,
+     "old": 3.4,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.866,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.767,
+     "fuel_x": 1.041,
+     "insurance_x": 1.491,
+     "opex_x": 1.205
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 24.5,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.3,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.866,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.767,
+     "fuel_x": 1.041,
+     "insurance_x": 1.491,
+     "opex_x": 1.205
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 24.5,
+    "states": {
+     "heavily_worn": 251.0,
+     "mature": 421.4,
+     "mothballed": 49.9,
+     "new": 108.7,
+     "old": 465.9,
+     "reserve": 63,
+     "restoration_project": 1.2,
+     "scrap_candidate": 16.4
+    },
+    "tier": "middle"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.866,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.767,
+     "fuel_x": 1.041,
+     "insurance_x": 1.491,
+     "opex_x": 1.205
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 24.5,
+    "states": {
+     "heavily_worn": 96.6,
+     "mature": 162.2,
+     "mothballed": 19.2,
+     "new": 41.8,
+     "old": 179.3,
+     "reserve": 24,
+     "restoration_project": 0.5,
+     "scrap_candidate": 6.3
+    },
+    "tier": "middle"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.865,
+     "delay_probability": 0.088,
+     "failure_rate_x": 1.788,
+     "fuel_x": 1.042,
+     "insurance_x": 1.505,
+     "opex_x": 1.211
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 18.7,
+    "states": {
+     "heavily_worn": 30.8,
+     "mature": 49.0,
+     "mothballed": 0.0,
+     "new": 12.4,
+     "old": 55.8,
+     "reserve": 30,
+     "restoration_project": 0.1,
+     "scrap_candidate": 3.0
+    },
+    "tier": "middle"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.865,
+     "delay_probability": 0.088,
+     "failure_rate_x": 1.788,
+     "fuel_x": 1.042,
+     "insurance_x": 1.505,
+     "opex_x": 1.211
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 18.7,
+    "states": {
+     "heavily_worn": 1.5,
+     "mature": 2.3,
+     "mothballed": 0.0,
+     "new": 0.6,
+     "old": 2.6,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.865,
+     "delay_probability": 0.088,
+     "failure_rate_x": 1.778,
+     "fuel_x": 1.042,
+     "insurance_x": 1.498,
+     "opex_x": 1.208
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 21.6,
+    "states": {
+     "heavily_worn": 4.7,
+     "mature": 7.7,
+     "mothballed": 0.9,
+     "new": 2.0,
+     "old": 8.6,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.3
+    },
+    "tier": "middle"
+   }
+  },
+  "delta_pav_karma": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.848,
+     "delay_probability": 0.1,
+     "failure_rate_x": 2.034,
+     "fuel_x": 1.053,
+     "insurance_x": 1.662,
+     "opex_x": 1.265
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 26.4,
+    "states": {
+     "heavily_worn": 160.0,
+     "mature": 139.4,
+     "mothballed": 19.4,
+     "new": 39.3,
+     "old": 146.2,
+     "reserve": 25,
+     "restoration_project": 2.4,
+     "scrap_candidate": 7.3
+    },
+    "tier": "poor"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.85,
+     "delay_probability": 0.099,
+     "failure_rate_x": 2.005,
+     "fuel_x": 1.052,
+     "insurance_x": 1.644,
+     "opex_x": 1.258
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 29.6,
+    "states": {
+     "heavily_worn": 0.6,
+     "mature": 0.6,
+     "mothballed": 0.0,
+     "new": 0.2,
+     "old": 0.6,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.85,
+     "delay_probability": 0.099,
+     "failure_rate_x": 2.005,
+     "fuel_x": 1.052,
+     "insurance_x": 1.644,
+     "opex_x": 1.258
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 29.6,
+    "states": {
+     "heavily_worn": 0.6,
+     "mature": 0.6,
+     "mothballed": 0.1,
+     "new": 0.2,
+     "old": 0.6,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.848,
+     "delay_probability": 0.1,
+     "failure_rate_x": 2.034,
+     "fuel_x": 1.053,
+     "insurance_x": 1.662,
+     "opex_x": 1.265
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 26.4,
+    "states": {
+     "heavily_worn": 21.8,
+     "mature": 19.0,
+     "mothballed": 0.0,
+     "new": 5.4,
+     "old": 19.9,
+     "reserve": 14,
+     "restoration_project": 0.3,
+     "scrap_candidate": 1.1
+    },
+    "tier": "poor"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.844,
+     "delay_probability": 0.103,
+     "failure_rate_x": 2.091,
+     "fuel_x": 1.056,
+     "insurance_x": 1.699,
+     "opex_x": 1.279
+    },
+    "jump_era_capped": false,
+    "max_age_y": 42.5,
+    "mean_age_y": 19.5,
+    "states": {
+     "heavily_worn": 96.2,
+     "mature": 74.4,
+     "mothballed": 0.0,
+     "new": 20.4,
+     "old": 82.1,
+     "reserve": 55,
+     "restoration_project": 1.4,
+     "scrap_candidate": 6.5
+    },
+    "tier": "poor"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.85,
+     "delay_probability": 0.099,
+     "failure_rate_x": 2.005,
+     "fuel_x": 1.052,
+     "insurance_x": 1.644,
+     "opex_x": 1.258
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 29.6,
+    "states": {
+     "heavily_worn": 4.8,
+     "mature": 4.4,
+     "mothballed": 6.1,
+     "new": 1.3,
+     "old": 4.5,
+     "reserve": 3,
+     "restoration_project": 0.1,
+     "scrap_candidate": 0.2
+    },
+    "tier": "poor"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.85,
+     "delay_probability": 0.099,
+     "failure_rate_x": 2.005,
+     "fuel_x": 1.052,
+     "insurance_x": 1.644,
+     "opex_x": 1.258
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 29.6,
+    "states": {
+     "heavily_worn": 879.3,
+     "mature": 813.1,
+     "mothballed": 110.2,
+     "new": 232.6,
+     "old": 831.0,
+     "reserve": 138,
+     "restoration_project": 13.8,
+     "scrap_candidate": 36.1
+    },
+    "tier": "poor"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.85,
+     "delay_probability": 0.099,
+     "failure_rate_x": 2.005,
+     "fuel_x": 1.052,
+     "insurance_x": 1.644,
+     "opex_x": 1.258
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 29.6,
+    "states": {
+     "heavily_worn": 736.0,
+     "mature": 680.7,
+     "mothballed": 92.3,
+     "new": 194.7,
+     "old": 695.6,
+     "reserve": 116,
+     "restoration_project": 11.5,
+     "scrap_candidate": 30.3
+    },
+    "tier": "poor"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.846,
+     "delay_probability": 0.101,
+     "failure_rate_x": 2.062,
+     "fuel_x": 1.054,
+     "insurance_x": 1.681,
+     "opex_x": 1.272
+    },
+    "jump_era_capped": false,
+    "max_age_y": 51.0,
+    "mean_age_y": 23.0,
+    "states": {
+     "heavily_worn": 256.8,
+     "mature": 210.8,
+     "mothballed": 0.0,
+     "new": 58.6,
+     "old": 226.8,
+     "reserve": 151,
+     "restoration_project": 3.8,
+     "scrap_candidate": 15.1
+    },
+    "tier": "poor"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.846,
+     "delay_probability": 0.101,
+     "failure_rate_x": 2.062,
+     "fuel_x": 1.054,
+     "insurance_x": 1.681,
+     "opex_x": 1.272
+    },
+    "jump_era_capped": false,
+    "max_age_y": 51.0,
+    "mean_age_y": 23.0,
+    "states": {
+     "heavily_worn": 1.7,
+     "mature": 1.4,
+     "mothballed": 0.0,
+     "new": 0.4,
+     "old": 1.5,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.848,
+     "delay_probability": 0.1,
+     "failure_rate_x": 2.034,
+     "fuel_x": 1.053,
+     "insurance_x": 1.662,
+     "opex_x": 1.265
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 26.4,
+    "states": {
+     "heavily_worn": 33.3,
+     "mature": 29.0,
+     "mothballed": 4.0,
+     "new": 8.2,
+     "old": 30.4,
+     "reserve": 6,
+     "restoration_project": 0.5,
+     "scrap_candidate": 1.6
+    },
+    "tier": "poor"
+   }
+  },
+  "eps_eri_harmony": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.354,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 689.4,
+     "mothballed": 34.1,
+     "new": 174.6,
+     "old": 842.0,
+     "reserve": 86,
+     "restoration_project": 1.7,
+     "scrap_candidate": 25.6
+    },
+    "tier": "rich"
+   },
+   "escort_frigate": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.354,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 274.4,
+     "mothballed": 0.0,
+     "new": 69.5,
+     "old": 335.1,
+     "reserve": 136,
+     "restoration_project": 0.7,
+     "scrap_candidate": 11.7
+    },
+    "tier": "rich"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.353,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 19.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 35.6,
+     "mothballed": 0.0,
+     "new": 9.0,
+     "old": 43.4,
+     "reserve": 18,
+     "restoration_project": 0.1,
+     "scrap_candidate": 1.3
+    },
+    "tier": "rich"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.353,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 19.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 6.9,
+     "mothballed": 0.3,
+     "new": 1.7,
+     "old": 8.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.2
+    },
+    "tier": "rich"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.354,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 52.5,
+     "mothballed": 0.0,
+     "new": 13.3,
+     "old": 64.2,
+     "reserve": 26,
+     "restoration_project": 0.1,
+     "scrap_candidate": 2.2
+    },
+    "tier": "rich"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.356,
+     "fuel_x": 1.023,
+     "insurance_x": 1.227,
+     "opex_x": 1.114
+    },
+    "jump_era_capped": false,
+    "max_age_y": 25.0,
+    "mean_age_y": 12.4,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 209.9,
+     "mothballed": 0.0,
+     "new": 53.0,
+     "old": 258.1,
+     "reserve": 105,
+     "restoration_project": 0.5,
+     "scrap_candidate": 12.5
+    },
+    "tier": "rich"
+   },
+   "jump_tanker": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.352,
+     "fuel_x": 1.023,
+     "insurance_x": 1.225,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.0,
+    "mean_age_y": 22.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 7.7,
+     "mothballed": 0.4,
+     "new": 2.0,
+     "old": 9.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.2
+    },
+    "tier": "rich"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.352,
+     "fuel_x": 1.023,
+     "insurance_x": 1.225,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.0,
+    "mean_age_y": 22.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 497.7,
+     "mothballed": 24.6,
+     "new": 126.5,
+     "old": 603.8,
+     "reserve": 62,
+     "restoration_project": 1.2,
+     "scrap_candidate": 14.3
+    },
+    "tier": "rich"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.353,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 19.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 8.1,
+     "mothballed": 287.5,
+     "new": 2.1,
+     "old": 9.9,
+     "reserve": 4,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.3
+    },
+    "tier": "rich"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.353,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 19.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 5.7,
+     "mothballed": 0.3,
+     "new": 1.4,
+     "old": 6.9,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.2
+    },
+    "tier": "rich"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.353,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 19.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 5075.9,
+     "mothballed": 250.9,
+     "new": 1287.7,
+     "old": 6179.3,
+     "reserve": 628,
+     "restoration_project": 12.5,
+     "scrap_candidate": 164.7
+    },
+    "tier": "rich"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.353,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 19.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 988.6,
+     "mothballed": 48.9,
+     "new": 250.8,
+     "old": 1203.5,
+     "reserve": 123,
+     "restoration_project": 2.4,
+     "scrap_candidate": 32.1
+    },
+    "tier": "rich"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.355,
+     "fuel_x": 1.023,
+     "insurance_x": 1.227,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 14.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 393.8,
+     "mothballed": 0.0,
+     "new": 99.5,
+     "old": 482.6,
+     "reserve": 196,
+     "restoration_project": 1.0,
+     "scrap_candidate": 19.6
+    },
+    "tier": "rich"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.355,
+     "fuel_x": 1.023,
+     "insurance_x": 1.227,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 14.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 2.8,
+     "mothballed": 0.0,
+     "new": 0.7,
+     "old": 3.5,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.354,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 48.9,
+     "mothballed": 2.4,
+     "new": 12.4,
+     "old": 59.7,
+     "reserve": 7,
+     "restoration_project": 0.1,
+     "scrap_candidate": 1.9
+    },
+    "tier": "rich"
+   }
+  },
+  "eps_eri_strife": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.325,
+     "fuel_x": 1.021,
+     "insurance_x": 1.209,
+     "opex_x": 1.104
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 16.6,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 205.7,
+     "mothballed": 9.7,
+     "new": 55.4,
+     "old": 225.0,
+     "reserve": 25,
+     "restoration_project": 0.5,
+     "scrap_candidate": 7.3
+    },
+    "tier": "rich"
+   },
+   "escort_frigate": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.325,
+     "fuel_x": 1.021,
+     "insurance_x": 1.209,
+     "opex_x": 1.104
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 16.6,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 117.6,
+     "mothballed": 0.0,
+     "new": 31.7,
+     "old": 128.7,
+     "reserve": 56,
+     "restoration_project": 0.3,
+     "scrap_candidate": 4.8
+    },
+    "tier": "rich"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.32,
+     "fuel_x": 1.021,
+     "insurance_x": 1.206,
+     "opex_x": 1.103
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 15.4,
+     "mothballed": 0.0,
+     "new": 4.2,
+     "old": 16.5,
+     "reserve": 8,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.6
+    },
+    "tier": "rich"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.32,
+     "fuel_x": 1.021,
+     "insurance_x": 1.206,
+     "opex_x": 1.103
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 2.6,
+     "mothballed": 0.1,
+     "new": 0.7,
+     "old": 2.7,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.325,
+     "fuel_x": 1.021,
+     "insurance_x": 1.209,
+     "opex_x": 1.104
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 16.6,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 16.5,
+     "mothballed": 0.0,
+     "new": 4.4,
+     "old": 18.1,
+     "reserve": 8,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.7
+    },
+    "tier": "rich"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.895,
+     "delay_probability": 0.067,
+     "failure_rate_x": 1.335,
+     "fuel_x": 1.021,
+     "insurance_x": 1.215,
+     "opex_x": 1.107
+    },
+    "jump_era_capped": false,
+    "max_age_y": 25.0,
+    "mean_age_y": 12.1,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 55.8,
+     "mothballed": 0.0,
+     "new": 14.7,
+     "old": 63.4,
+     "reserve": 27,
+     "restoration_project": 0.1,
+     "scrap_candidate": 3.2
+    },
+    "tier": "rich"
+   },
+   "jump_tanker": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.315,
+     "fuel_x": 1.02,
+     "insurance_x": 1.203,
+     "opex_x": 1.101
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.0,
+    "mean_age_y": 21.1,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 3.4,
+     "mothballed": 0.2,
+     "new": 0.9,
+     "old": 3.6,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.315,
+     "fuel_x": 1.02,
+     "insurance_x": 1.203,
+     "opex_x": 1.101
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.0,
+    "mean_age_y": 21.1,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 213.1,
+     "mothballed": 9.9,
+     "new": 58.6,
+     "old": 224.4,
+     "reserve": 25,
+     "restoration_project": 0.5,
+     "scrap_candidate": 5.8
+    },
+    "tier": "rich"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.32,
+     "fuel_x": 1.021,
+     "insurance_x": 1.206,
+     "opex_x": 1.103
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 3.0,
+     "mothballed": 67.9,
+     "new": 0.8,
+     "old": 3.2,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.32,
+     "fuel_x": 1.021,
+     "insurance_x": 1.206,
+     "opex_x": 1.103
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 4.7,
+     "mothballed": 0.2,
+     "new": 1.3,
+     "old": 5.0,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.32,
+     "fuel_x": 1.021,
+     "insurance_x": 1.206,
+     "opex_x": 1.103
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 1944.3,
+     "mothballed": 91.2,
+     "new": 528.8,
+     "old": 2086.9,
+     "reserve": 228,
+     "restoration_project": 4.6,
+     "scrap_candidate": 59.9
+    },
+    "tier": "rich"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.32,
+     "fuel_x": 1.021,
+     "insurance_x": 1.206,
+     "opex_x": 1.103
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 426.8,
+     "mothballed": 20.0,
+     "new": 116.1,
+     "old": 458.1,
+     "reserve": 51,
+     "restoration_project": 1.0,
+     "scrap_candidate": 13.2
+    },
+    "tier": "rich"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.895,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.33,
+     "fuel_x": 1.021,
+     "insurance_x": 1.212,
+     "opex_x": 1.106
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 14.4,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 113.0,
+     "mothballed": 0.0,
+     "new": 30.1,
+     "old": 125.9,
+     "reserve": 54,
+     "restoration_project": 0.3,
+     "scrap_candidate": 5.4
+    },
+    "tier": "rich"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.895,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.33,
+     "fuel_x": 1.021,
+     "insurance_x": 1.212,
+     "opex_x": 1.106
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 14.4,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 2.1,
+     "mothballed": 0.0,
+     "new": 0.6,
+     "old": 2.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.325,
+     "fuel_x": 1.021,
+     "insurance_x": 1.209,
+     "opex_x": 1.104
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 16.6,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 19.9,
+     "mothballed": 0.9,
+     "new": 5.4,
+     "old": 21.8,
+     "reserve": 3,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.7
+    },
+    "tier": "rich"
+   }
+  },
+  "gj581_europa": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.819,
+     "fuel_x": 1.044,
+     "insurance_x": 1.524,
+     "opex_x": 1.218
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 22.3,
+    "states": {
+     "heavily_worn": 60.3,
+     "mature": 88.6,
+     "mothballed": 11.0,
+     "new": 22.0,
+     "old": 105.1,
+     "reserve": 14,
+     "restoration_project": 0.3,
+     "scrap_candidate": 4.2
+    },
+    "tier": "middle"
+   },
+   "escort_frigate": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.819,
+     "fuel_x": 1.044,
+     "insurance_x": 1.524,
+     "opex_x": 1.218
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 22.3,
+    "states": {
+     "heavily_worn": 0.9,
+     "mature": 1.3,
+     "mothballed": 0.0,
+     "new": 0.3,
+     "old": 1.5,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.863,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.814,
+     "fuel_x": 1.043,
+     "insurance_x": 1.521,
+     "opex_x": 1.217
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 25.3,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.3,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.863,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.814,
+     "fuel_x": 1.043,
+     "insurance_x": 1.521,
+     "opex_x": 1.217
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 25.3,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.6,
+     "mothballed": 0.1,
+     "new": 0.2,
+     "old": 0.8,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.819,
+     "fuel_x": 1.044,
+     "insurance_x": 1.524,
+     "opex_x": 1.218
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 22.3,
+    "states": {
+     "heavily_worn": 5.7,
+     "mature": 8.3,
+     "mothballed": 0.0,
+     "new": 2.1,
+     "old": 9.9,
+     "reserve": 6,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.5
+    },
+    "tier": "middle"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.829,
+     "fuel_x": 1.044,
+     "insurance_x": 1.53,
+     "opex_x": 1.221
+    },
+    "jump_era_capped": false,
+    "max_age_y": 32.5,
+    "mean_age_y": 16.0,
+    "states": {
+     "heavily_worn": 24.6,
+     "mature": 35.3,
+     "mothballed": 0.0,
+     "new": 8.7,
+     "old": 42.4,
+     "reserve": 23,
+     "restoration_project": 0.1,
+     "scrap_candidate": 2.7
+    },
+    "tier": "middle"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.863,
+     "delay_probability": 0.089,
+     "failure_rate_x": 1.809,
+     "fuel_x": 1.043,
+     "insurance_x": 1.518,
+     "opex_x": 1.216
+    },
+    "jump_era_capped": false,
+    "max_age_y": 58.5,
+    "mean_age_y": 28.4,
+    "states": {
+     "heavily_worn": 1.5,
+     "mature": 2.3,
+     "mothballed": 0.3,
+     "new": 0.6,
+     "old": 2.7,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.863,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.814,
+     "fuel_x": 1.043,
+     "insurance_x": 1.521,
+     "opex_x": 1.217
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 25.3,
+    "states": {
+     "heavily_worn": 0.7,
+     "mature": 1.0,
+     "mothballed": 2.9,
+     "new": 0.2,
+     "old": 1.1,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.863,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.814,
+     "fuel_x": 1.043,
+     "insurance_x": 1.521,
+     "opex_x": 1.217
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 25.3,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.3,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.863,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.814,
+     "fuel_x": 1.043,
+     "insurance_x": 1.521,
+     "opex_x": 1.217
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 25.3,
+    "states": {
+     "heavily_worn": 256.8,
+     "mature": 381.9,
+     "mothballed": 47.4,
+     "new": 95.1,
+     "old": 450.2,
+     "reserve": 60,
+     "restoration_project": 1.2,
+     "scrap_candidate": 15.6
+    },
+    "tier": "middle"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.863,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.814,
+     "fuel_x": 1.043,
+     "insurance_x": 1.521,
+     "opex_x": 1.217
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 25.3,
+    "states": {
+     "heavily_worn": 89.6,
+     "mature": 133.2,
+     "mothballed": 16.5,
+     "new": 33.2,
+     "old": 157.0,
+     "reserve": 21,
+     "restoration_project": 0.4,
+     "scrap_candidate": 5.4
+    },
+    "tier": "middle"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.824,
+     "fuel_x": 1.044,
+     "insurance_x": 1.527,
+     "opex_x": 1.22
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 19.1,
+    "states": {
+     "heavily_worn": 43.4,
+     "mature": 62.9,
+     "mothballed": 0.0,
+     "new": 15.6,
+     "old": 75.2,
+     "reserve": 40,
+     "restoration_project": 0.2,
+     "scrap_candidate": 4.0
+    },
+    "tier": "middle"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.824,
+     "fuel_x": 1.044,
+     "insurance_x": 1.527,
+     "opex_x": 1.22
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 19.1,
+    "states": {
+     "heavily_worn": 1.5,
+     "mature": 2.2,
+     "mothballed": 0.0,
+     "new": 0.6,
+     "old": 2.7,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.819,
+     "fuel_x": 1.044,
+     "insurance_x": 1.524,
+     "opex_x": 1.218
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 22.3,
+    "states": {
+     "heavily_worn": 4.4,
+     "mature": 6.4,
+     "mothballed": 0.8,
+     "new": 1.6,
+     "old": 7.6,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.3
+    },
+    "tier": "middle"
+   }
+  },
+  "gj581_freeclans": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.872,
+     "delay_probability": 0.083,
+     "failure_rate_x": 1.687,
+     "fuel_x": 1.037,
+     "insurance_x": 1.441,
+     "opex_x": 1.185
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 20.3,
+    "states": {
+     "heavily_worn": 41.9,
+     "mature": 87.1,
+     "mothballed": 9.6,
+     "new": 23.9,
+     "old": 86.1,
+     "reserve": 12,
+     "restoration_project": 0.2,
+     "scrap_candidate": 3.6
+    },
+    "tier": "middle"
+   },
+   "escort_frigate": {
+    "effects": {
+     "availability": 0.872,
+     "delay_probability": 0.083,
+     "failure_rate_x": 1.687,
+     "fuel_x": 1.037,
+     "insurance_x": 1.441,
+     "opex_x": 1.185
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 20.3,
+    "states": {
+     "heavily_worn": 1.1,
+     "mature": 2.2,
+     "mothballed": 0.0,
+     "new": 0.6,
+     "old": 2.2,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.873,
+     "delay_probability": 0.082,
+     "failure_rate_x": 1.664,
+     "fuel_x": 1.036,
+     "insurance_x": 1.426,
+     "opex_x": 1.18
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 22.8,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.873,
+     "delay_probability": 0.082,
+     "failure_rate_x": 1.664,
+     "fuel_x": 1.036,
+     "insurance_x": 1.426,
+     "opex_x": 1.18
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 22.8,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.872,
+     "delay_probability": 0.083,
+     "failure_rate_x": 1.687,
+     "fuel_x": 1.037,
+     "insurance_x": 1.441,
+     "opex_x": 1.185
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 20.3,
+    "states": {
+     "heavily_worn": 3.3,
+     "mature": 6.9,
+     "mothballed": 0.0,
+     "new": 1.9,
+     "old": 6.8,
+     "reserve": 4,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.3
+    },
+    "tier": "middle"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.868,
+     "delay_probability": 0.086,
+     "failure_rate_x": 1.733,
+     "fuel_x": 1.039,
+     "insurance_x": 1.47,
+     "opex_x": 1.197
+    },
+    "jump_era_capped": false,
+    "max_age_y": 32.5,
+    "mean_age_y": 15.0,
+    "states": {
+     "heavily_worn": 15.8,
+     "mature": 29.0,
+     "mothballed": 0.0,
+     "new": 7.7,
+     "old": 30.6,
+     "reserve": 17,
+     "restoration_project": 0.1,
+     "scrap_candidate": 2.0
+    },
+    "tier": "middle"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.875,
+     "delay_probability": 0.081,
+     "failure_rate_x": 1.641,
+     "fuel_x": 1.035,
+     "insurance_x": 1.412,
+     "opex_x": 1.174
+    },
+    "jump_era_capped": false,
+    "max_age_y": 58.5,
+    "mean_age_y": 25.2,
+    "states": {
+     "heavily_worn": 1.6,
+     "mature": 3.8,
+     "mothballed": 0.4,
+     "new": 1.1,
+     "old": 3.5,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.873,
+     "delay_probability": 0.082,
+     "failure_rate_x": 1.664,
+     "fuel_x": 1.036,
+     "insurance_x": 1.426,
+     "opex_x": 1.18
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 22.8,
+    "states": {
+     "heavily_worn": 0.3,
+     "mature": 0.7,
+     "mothballed": 3.1,
+     "new": 0.2,
+     "old": 0.7,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.873,
+     "delay_probability": 0.082,
+     "failure_rate_x": 1.664,
+     "fuel_x": 1.036,
+     "insurance_x": 1.426,
+     "opex_x": 1.18
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 22.8,
+    "states": {
+     "heavily_worn": 223.2,
+     "mature": 493.7,
+     "mothballed": 53.1,
+     "new": 137.8,
+     "old": 472.3,
+     "reserve": 67,
+     "restoration_project": 1.3,
+     "scrap_candidate": 17.4
+    },
+    "tier": "middle"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.873,
+     "delay_probability": 0.082,
+     "failure_rate_x": 1.664,
+     "fuel_x": 1.036,
+     "insurance_x": 1.426,
+     "opex_x": 1.18
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 22.8,
+    "states": {
+     "heavily_worn": 98.1,
+     "mature": 216.9,
+     "mothballed": 23.3,
+     "new": 60.5,
+     "old": 207.5,
+     "reserve": 30,
+     "restoration_project": 0.6,
+     "scrap_candidate": 7.7
+    },
+    "tier": "middle"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.87,
+     "delay_probability": 0.085,
+     "failure_rate_x": 1.71,
+     "fuel_x": 1.038,
+     "insurance_x": 1.455,
+     "opex_x": 1.191
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 17.7,
+    "states": {
+     "heavily_worn": 28.5,
+     "mature": 55.7,
+     "mothballed": 0.0,
+     "new": 15.0,
+     "old": 56.8,
+     "reserve": 32,
+     "restoration_project": 0.2,
+     "scrap_candidate": 3.1
+    },
+    "tier": "middle"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.87,
+     "delay_probability": 0.085,
+     "failure_rate_x": 1.71,
+     "fuel_x": 1.038,
+     "insurance_x": 1.455,
+     "opex_x": 1.191
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 17.7,
+    "states": {
+     "heavily_worn": 0.9,
+     "mature": 1.8,
+     "mothballed": 0.0,
+     "new": 0.5,
+     "old": 1.8,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.872,
+     "delay_probability": 0.083,
+     "failure_rate_x": 1.687,
+     "fuel_x": 1.037,
+     "insurance_x": 1.441,
+     "opex_x": 1.185
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 20.3,
+    "states": {
+     "heavily_worn": 4.4,
+     "mature": 9.1,
+     "mothballed": 1.0,
+     "new": 2.5,
+     "old": 9.0,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.4
+    },
+    "tier": "middle"
+   }
+  },
+  "gj832_gaia_zone": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 29.8,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 34.0,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 34.0,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 34.0,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 34.0,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 29.8,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   }
+  },
+  "gj832_tianhe": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.5,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 499.6,
+     "mothballed": 25.0,
+     "new": 124.9,
+     "old": 624.5,
+     "reserve": 63,
+     "restoration_project": 1.2,
+     "scrap_candidate": 18.8
+    },
+    "tier": "rich"
+   },
+   "escort_frigate": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.5,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 2.4,
+     "mothballed": 0.0,
+     "new": 0.6,
+     "old": 3.0,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 20.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 1.6,
+     "mothballed": 0.0,
+     "new": 0.4,
+     "old": 2.0,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 20.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 2.0,
+     "mothballed": 0.1,
+     "new": 0.5,
+     "old": 2.5,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.5,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 41.2,
+     "mothballed": 0.0,
+     "new": 10.3,
+     "old": 51.5,
+     "reserve": 21,
+     "restoration_project": 0.1,
+     "scrap_candidate": 1.8
+    },
+    "tier": "rich"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 25.0,
+    "mean_age_y": 12.5,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 160.0,
+     "mothballed": 0.0,
+     "new": 40.0,
+     "old": 200.0,
+     "reserve": 80,
+     "restoration_project": 0.4,
+     "scrap_candidate": 9.6
+    },
+    "tier": "rich"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.0,
+    "mean_age_y": 22.5,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 5.2,
+     "mothballed": 0.3,
+     "new": 1.3,
+     "old": 6.5,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 20.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 8.4,
+     "mothballed": 10.6,
+     "new": 2.1,
+     "old": 10.5,
+     "reserve": 5,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.3
+    },
+    "tier": "rich"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 20.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.5,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 20.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 1474.4,
+     "mothballed": 73.7,
+     "new": 368.6,
+     "old": 1843.0,
+     "reserve": 185,
+     "restoration_project": 3.7,
+     "scrap_candidate": 48.4
+    },
+    "tier": "rich"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 20.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 585.6,
+     "mothballed": 29.3,
+     "new": 146.4,
+     "old": 732.0,
+     "reserve": 74,
+     "restoration_project": 1.5,
+     "scrap_candidate": 19.2
+    },
+    "tier": "rich"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 15.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 300.8,
+     "mothballed": 0.0,
+     "new": 75.2,
+     "old": 376.0,
+     "reserve": 151,
+     "restoration_project": 0.8,
+     "scrap_candidate": 15.1
+    },
+    "tier": "rich"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 15.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 2.8,
+     "mothballed": 0.0,
+     "new": 0.7,
+     "old": 3.5,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.5,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 30.8,
+     "mothballed": 1.5,
+     "new": 7.7,
+     "old": 38.5,
+     "reserve": 4,
+     "restoration_project": 0.1,
+     "scrap_candidate": 1.1
+    },
+    "tier": "rich"
+   }
+  },
+  "gj876_next": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 29.8,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 34.0,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 29.8,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 42.5,
+    "mean_age_y": 21.2,
+    "states": {
+     "heavily_worn": 0.8,
+     "mature": 0.5,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.6,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.791,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 34.0,
+    "states": {
+     "heavily_worn": 9.0,
+     "mature": 5.2,
+     "mothballed": 0.9,
+     "new": 1.3,
+     "old": 6.5,
+     "reserve": 2,
+     "restoration_project": 0.1,
+     "scrap_candidate": 0.3
+    },
+    "tier": "poor"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 34.0,
+    "states": {
+     "heavily_worn": 2.9,
+     "mature": 1.6,
+     "mothballed": 0.3,
+     "new": 0.4,
+     "old": 2.1,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 34.0,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 51.0,
+    "mean_age_y": 25.5,
+    "states": {
+     "heavily_worn": 0.8,
+     "mature": 0.5,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.6,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 29.8,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   }
+  },
+  "hd114783_hellas3": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.868,
+     "delay_probability": 0.086,
+     "failure_rate_x": 1.752,
+     "fuel_x": 1.039,
+     "insurance_x": 1.484,
+     "opex_x": 1.197
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 21.7,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.872,
+     "delay_probability": 0.083,
+     "failure_rate_x": 1.69,
+     "fuel_x": 1.036,
+     "insurance_x": 1.445,
+     "opex_x": 1.182
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 23.7,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.872,
+     "delay_probability": 0.083,
+     "failure_rate_x": 1.69,
+     "fuel_x": 1.036,
+     "insurance_x": 1.445,
+     "opex_x": 1.182
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 23.7,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.868,
+     "delay_probability": 0.086,
+     "failure_rate_x": 1.752,
+     "fuel_x": 1.039,
+     "insurance_x": 1.484,
+     "opex_x": 1.197
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 21.7,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.859,
+     "delay_probability": 0.093,
+     "failure_rate_x": 1.882,
+     "fuel_x": 1.046,
+     "insurance_x": 1.567,
+     "opex_x": 1.229
+    },
+    "jump_era_capped": false,
+    "max_age_y": 42.5,
+    "mean_age_y": 17.1,
+    "states": {
+     "heavily_worn": 0.3,
+     "mature": 0.3,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.872,
+     "delay_probability": 0.083,
+     "failure_rate_x": 1.69,
+     "fuel_x": 1.036,
+     "insurance_x": 1.445,
+     "opex_x": 1.182
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 23.7,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.872,
+     "delay_probability": 0.083,
+     "failure_rate_x": 1.69,
+     "fuel_x": 1.036,
+     "insurance_x": 1.445,
+     "opex_x": 1.182
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 23.7,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.872,
+     "delay_probability": 0.083,
+     "failure_rate_x": 1.69,
+     "fuel_x": 1.036,
+     "insurance_x": 1.445,
+     "opex_x": 1.182
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 23.7,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.872,
+     "delay_probability": 0.083,
+     "failure_rate_x": 1.69,
+     "fuel_x": 1.036,
+     "insurance_x": 1.445,
+     "opex_x": 1.182
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 23.7,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.863,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.816,
+     "fuel_x": 1.043,
+     "insurance_x": 1.525,
+     "opex_x": 1.213
+    },
+    "jump_era_capped": false,
+    "max_age_y": 51.0,
+    "mean_age_y": 19.5,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.3,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.863,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.816,
+     "fuel_x": 1.043,
+     "insurance_x": 1.525,
+     "opex_x": 1.213
+    },
+    "jump_era_capped": false,
+    "max_age_y": 51.0,
+    "mean_age_y": 19.5,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.3,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.868,
+     "delay_probability": 0.086,
+     "failure_rate_x": 1.752,
+     "fuel_x": 1.039,
+     "insurance_x": 1.484,
+     "opex_x": 1.197
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 21.7,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   }
+  },
+  "hd20794_hellas2": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.353,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 113.8,
+     "mothballed": 5.6,
+     "new": 28.9,
+     "old": 138.3,
+     "reserve": 15,
+     "restoration_project": 0.3,
+     "scrap_candidate": 4.2
+    },
+    "tier": "rich"
+   },
+   "escort_frigate": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.353,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 4.5,
+     "mothballed": 0.0,
+     "new": 1.1,
+     "old": 5.4,
+     "reserve": 3,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.2
+    },
+    "tier": "rich"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.352,
+     "fuel_x": 1.022,
+     "insurance_x": 1.225,
+     "opex_x": 1.112
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 19.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 1.2,
+     "mothballed": 0.0,
+     "new": 0.3,
+     "old": 1.5,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.352,
+     "fuel_x": 1.022,
+     "insurance_x": 1.225,
+     "opex_x": 1.112
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 19.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 0.8,
+     "mothballed": 0.0,
+     "new": 0.2,
+     "old": 1.0,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.353,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 9.7,
+     "mothballed": 0.0,
+     "new": 2.5,
+     "old": 11.8,
+     "reserve": 5,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.4
+    },
+    "tier": "rich"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.355,
+     "fuel_x": 1.023,
+     "insurance_x": 1.227,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 25.0,
+    "mean_age_y": 12.4,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 42.0,
+     "mothballed": 0.0,
+     "new": 10.6,
+     "old": 51.4,
+     "reserve": 21,
+     "restoration_project": 0.1,
+     "scrap_candidate": 2.5
+    },
+    "tier": "rich"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.351,
+     "fuel_x": 1.022,
+     "insurance_x": 1.224,
+     "opex_x": 1.112
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.0,
+    "mean_age_y": 22.2,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 46.7,
+     "mothballed": 2.3,
+     "new": 11.9,
+     "old": 56.4,
+     "reserve": 6,
+     "restoration_project": 0.1,
+     "scrap_candidate": 1.4
+    },
+    "tier": "rich"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.352,
+     "fuel_x": 1.022,
+     "insurance_x": 1.225,
+     "opex_x": 1.112
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 19.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 4.5,
+     "mothballed": 8.7,
+     "new": 1.1,
+     "old": 5.4,
+     "reserve": 3,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.352,
+     "fuel_x": 1.022,
+     "insurance_x": 1.225,
+     "opex_x": 1.112
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 19.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 1.6,
+     "mothballed": 0.1,
+     "new": 0.4,
+     "old": 2.0,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.352,
+     "fuel_x": 1.022,
+     "insurance_x": 1.225,
+     "opex_x": 1.112
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 19.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 667.6,
+     "mothballed": 32.9,
+     "new": 169.8,
+     "old": 808.6,
+     "reserve": 83,
+     "restoration_project": 1.6,
+     "scrap_candidate": 21.6
+    },
+    "tier": "rich"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.352,
+     "fuel_x": 1.022,
+     "insurance_x": 1.225,
+     "opex_x": 1.112
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 19.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 169.5,
+     "mothballed": 8.4,
+     "new": 43.1,
+     "old": 205.3,
+     "reserve": 21,
+     "restoration_project": 0.4,
+     "scrap_candidate": 5.5
+    },
+    "tier": "rich"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.354,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 14.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 73.6,
+     "mothballed": 0.0,
+     "new": 18.6,
+     "old": 89.8,
+     "reserve": 37,
+     "restoration_project": 0.2,
+     "scrap_candidate": 3.6
+    },
+    "tier": "rich"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.354,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 14.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 2.8,
+     "mothballed": 0.0,
+     "new": 0.7,
+     "old": 3.5,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.894,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.353,
+     "fuel_x": 1.023,
+     "insurance_x": 1.226,
+     "opex_x": 1.113
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 8.9,
+     "mothballed": 0.4,
+     "new": 2.3,
+     "old": 10.8,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.3
+    },
+    "tier": "rich"
+   }
+  },
+  "hd20794_newindia": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.321,
+     "fuel_x": 1.021,
+     "insurance_x": 1.206,
+     "opex_x": 1.103
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 16.5,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 449.3,
+     "mothballed": 21.1,
+     "new": 121.9,
+     "old": 484.8,
+     "reserve": 53,
+     "restoration_project": 1.1,
+     "scrap_candidate": 15.8
+    },
+    "tier": "rich"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.316,
+     "fuel_x": 1.02,
+     "insurance_x": 1.203,
+     "opex_x": 1.102
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 0.9,
+     "mothballed": 0.0,
+     "new": 0.2,
+     "old": 0.9,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.316,
+     "fuel_x": 1.02,
+     "insurance_x": 1.203,
+     "opex_x": 1.102
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 2.1,
+     "mothballed": 0.1,
+     "new": 0.6,
+     "old": 2.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.321,
+     "fuel_x": 1.021,
+     "insurance_x": 1.206,
+     "opex_x": 1.103
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 16.5,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 34.9,
+     "mothballed": 0.0,
+     "new": 9.5,
+     "old": 37.6,
+     "reserve": 17,
+     "restoration_project": 0.1,
+     "scrap_candidate": 1.4
+    },
+    "tier": "rich"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.895,
+     "delay_probability": 0.067,
+     "failure_rate_x": 1.332,
+     "fuel_x": 1.021,
+     "insurance_x": 1.213,
+     "opex_x": 1.107
+    },
+    "jump_era_capped": false,
+    "max_age_y": 25.0,
+    "mean_age_y": 12.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 139.7,
+     "mothballed": 0.0,
+     "new": 37.0,
+     "old": 157.2,
+     "reserve": 67,
+     "restoration_project": 0.3,
+     "scrap_candidate": 8.0
+    },
+    "tier": "rich"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.897,
+     "delay_probability": 0.065,
+     "failure_rate_x": 1.31,
+     "fuel_x": 1.02,
+     "insurance_x": 1.2,
+     "opex_x": 1.1
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.0,
+    "mean_age_y": 20.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 19.5,
+     "mothballed": 0.9,
+     "new": 5.4,
+     "old": 20.1,
+     "reserve": 3,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.6
+    },
+    "tier": "rich"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.316,
+     "fuel_x": 1.02,
+     "insurance_x": 1.203,
+     "opex_x": 1.102
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 5.1,
+     "mothballed": 4.7,
+     "new": 1.4,
+     "old": 5.4,
+     "reserve": 3,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.2
+    },
+    "tier": "rich"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.316,
+     "fuel_x": 1.02,
+     "insurance_x": 1.203,
+     "opex_x": 1.102
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 2.1,
+     "mothballed": 0.1,
+     "new": 0.6,
+     "old": 2.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.316,
+     "fuel_x": 1.02,
+     "insurance_x": 1.203,
+     "opex_x": 1.102
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 1884.7,
+     "mothballed": 87.9,
+     "new": 517.0,
+     "old": 1991.3,
+     "reserve": 220,
+     "restoration_project": 4.4,
+     "scrap_candidate": 57.6
+    },
+    "tier": "rich"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.316,
+     "fuel_x": 1.02,
+     "insurance_x": 1.203,
+     "opex_x": 1.102
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.8,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 1158.8,
+     "mothballed": 54.0,
+     "new": 317.9,
+     "old": 1224.3,
+     "reserve": 136,
+     "restoration_project": 2.7,
+     "scrap_candidate": 35.5
+    },
+    "tier": "rich"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.895,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.327,
+     "fuel_x": 1.021,
+     "insurance_x": 1.21,
+     "opex_x": 1.105
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 14.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 265.4,
+     "mothballed": 0.0,
+     "new": 71.1,
+     "old": 292.4,
+     "reserve": 126,
+     "restoration_project": 0.6,
+     "scrap_candidate": 12.6
+    },
+    "tier": "rich"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.895,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.327,
+     "fuel_x": 1.021,
+     "insurance_x": 1.21,
+     "opex_x": 1.105
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 14.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 2.1,
+     "mothballed": 0.0,
+     "new": 0.6,
+     "old": 2.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.321,
+     "fuel_x": 1.021,
+     "insurance_x": 1.206,
+     "opex_x": 1.103
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 16.5,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 54.5,
+     "mothballed": 2.6,
+     "new": 14.8,
+     "old": 58.8,
+     "reserve": 7,
+     "restoration_project": 0.1,
+     "scrap_candidate": 1.9
+    },
+    "tier": "rich"
+   }
+  },
+  "hd40307_firmament": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.897,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.311,
+     "fuel_x": 1.02,
+     "insurance_x": 1.2,
+     "opex_x": 1.1
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 16.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 95.0,
+     "mothballed": 4.4,
+     "new": 26.3,
+     "old": 98.7,
+     "reserve": 11,
+     "restoration_project": 0.2,
+     "scrap_candidate": 3.3
+    },
+    "tier": "rich"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.897,
+     "delay_probability": 0.065,
+     "failure_rate_x": 1.304,
+     "fuel_x": 1.02,
+     "insurance_x": 1.196,
+     "opex_x": 1.098
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.4,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 1.7,
+     "mothballed": 0.0,
+     "new": 0.5,
+     "old": 1.8,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.897,
+     "delay_probability": 0.065,
+     "failure_rate_x": 1.304,
+     "fuel_x": 1.02,
+     "insurance_x": 1.196,
+     "opex_x": 1.098
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.4,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 0.9,
+     "mothballed": 0.0,
+     "new": 0.2,
+     "old": 0.9,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.897,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.311,
+     "fuel_x": 1.02,
+     "insurance_x": 1.2,
+     "opex_x": 1.1
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 16.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 8.2,
+     "mothballed": 0.0,
+     "new": 2.3,
+     "old": 8.5,
+     "reserve": 4,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.3
+    },
+    "tier": "rich"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.325,
+     "fuel_x": 1.021,
+     "insurance_x": 1.209,
+     "opex_x": 1.104
+    },
+    "jump_era_capped": false,
+    "max_age_y": 25.0,
+    "mean_age_y": 11.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 38.5,
+     "mothballed": 0.0,
+     "new": 10.4,
+     "old": 42.2,
+     "reserve": 19,
+     "restoration_project": 0.1,
+     "scrap_candidate": 2.2
+    },
+    "tier": "rich"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.898,
+     "delay_probability": 0.065,
+     "failure_rate_x": 1.297,
+     "fuel_x": 1.019,
+     "insurance_x": 1.192,
+     "opex_x": 1.096
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.0,
+    "mean_age_y": 20.5,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 0.9,
+     "mothballed": 0.0,
+     "new": 0.3,
+     "old": 0.9,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.897,
+     "delay_probability": 0.065,
+     "failure_rate_x": 1.304,
+     "fuel_x": 1.02,
+     "insurance_x": 1.196,
+     "opex_x": 1.098
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.4,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 12.6,
+     "mothballed": 11.7,
+     "new": 3.6,
+     "old": 12.8,
+     "reserve": 6,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.5
+    },
+    "tier": "rich"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.897,
+     "delay_probability": 0.065,
+     "failure_rate_x": 1.304,
+     "fuel_x": 1.02,
+     "insurance_x": 1.196,
+     "opex_x": 1.098
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.4,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 445.3,
+     "mothballed": 20.4,
+     "new": 125.1,
+     "old": 450.6,
+     "reserve": 52,
+     "restoration_project": 1.0,
+     "scrap_candidate": 13.4
+    },
+    "tier": "rich"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.897,
+     "delay_probability": 0.065,
+     "failure_rate_x": 1.304,
+     "fuel_x": 1.02,
+     "insurance_x": 1.196,
+     "opex_x": 1.098
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.4,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 246.0,
+     "mothballed": 11.3,
+     "new": 69.1,
+     "old": 248.9,
+     "reserve": 29,
+     "restoration_project": 0.6,
+     "scrap_candidate": 7.4
+    },
+    "tier": "rich"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.318,
+     "fuel_x": 1.02,
+     "insurance_x": 1.205,
+     "opex_x": 1.102
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 14.1,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 61.1,
+     "mothballed": 0.0,
+     "new": 16.7,
+     "old": 65.2,
+     "reserve": 29,
+     "restoration_project": 0.1,
+     "scrap_candidate": 2.9
+    },
+    "tier": "rich"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.318,
+     "fuel_x": 1.02,
+     "insurance_x": 1.205,
+     "opex_x": 1.102
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 14.1,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 2.1,
+     "mothballed": 0.0,
+     "new": 0.6,
+     "old": 2.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.897,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.311,
+     "fuel_x": 1.02,
+     "insurance_x": 1.2,
+     "opex_x": 1.1
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 16.3,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 11.2,
+     "mothballed": 0.5,
+     "new": 3.1,
+     "old": 11.7,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.4
+    },
+    "tier": "rich"
+   }
+  },
+  "hd40307_maland": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.868,
+     "delay_probability": 0.086,
+     "failure_rate_x": 1.732,
+     "fuel_x": 1.039,
+     "insurance_x": 1.469,
+     "opex_x": 1.197
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 20.9,
+    "states": {
+     "heavily_worn": 93.3,
+     "mature": 172.0,
+     "mothballed": 19.7,
+     "new": 45.6,
+     "old": 181.1,
+     "reserve": 25,
+     "restoration_project": 0.5,
+     "scrap_candidate": 7.4
+    },
+    "tier": "middle"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.87,
+     "delay_probability": 0.085,
+     "failure_rate_x": 1.715,
+     "fuel_x": 1.038,
+     "insurance_x": 1.458,
+     "opex_x": 1.192
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 23.7,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.7,
+     "mothballed": 0.0,
+     "new": 0.2,
+     "old": 0.7,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.87,
+     "delay_probability": 0.085,
+     "failure_rate_x": 1.715,
+     "fuel_x": 1.038,
+     "insurance_x": 1.458,
+     "opex_x": 1.192
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 23.7,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.7,
+     "mothballed": 0.1,
+     "new": 0.2,
+     "old": 0.7,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.868,
+     "delay_probability": 0.086,
+     "failure_rate_x": 1.732,
+     "fuel_x": 1.039,
+     "insurance_x": 1.469,
+     "opex_x": 1.197
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 20.9,
+    "states": {
+     "heavily_worn": 7.8,
+     "mature": 14.3,
+     "mothballed": 0.0,
+     "new": 3.8,
+     "old": 15.1,
+     "reserve": 9,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.7
+    },
+    "tier": "middle"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.866,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.766,
+     "fuel_x": 1.041,
+     "insurance_x": 1.491,
+     "opex_x": 1.205
+    },
+    "jump_era_capped": false,
+    "max_age_y": 32.5,
+    "mean_age_y": 15.3,
+    "states": {
+     "heavily_worn": 35.3,
+     "mature": 59.6,
+     "mothballed": 0.0,
+     "new": 15.4,
+     "old": 65.7,
+     "reserve": 36,
+     "restoration_project": 0.2,
+     "scrap_candidate": 4.2
+    },
+    "tier": "middle"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.87,
+     "delay_probability": 0.085,
+     "failure_rate_x": 1.715,
+     "fuel_x": 1.038,
+     "insurance_x": 1.458,
+     "opex_x": 1.192
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 23.7,
+    "states": {
+     "heavily_worn": 2.8,
+     "mature": 5.3,
+     "mothballed": 6.0,
+     "new": 1.4,
+     "old": 5.5,
+     "reserve": 3,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.2
+    },
+    "tier": "middle"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.87,
+     "delay_probability": 0.085,
+     "failure_rate_x": 1.715,
+     "fuel_x": 1.038,
+     "insurance_x": 1.458,
+     "opex_x": 1.192
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 23.7,
+    "states": {
+     "heavily_worn": 422.1,
+     "mature": 813.3,
+     "mothballed": 91.6,
+     "new": 218.3,
+     "old": 836.4,
+     "reserve": 115,
+     "restoration_project": 2.3,
+     "scrap_candidate": 30.1
+    },
+    "tier": "middle"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.87,
+     "delay_probability": 0.085,
+     "failure_rate_x": 1.715,
+     "fuel_x": 1.038,
+     "insurance_x": 1.458,
+     "opex_x": 1.192
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 23.7,
+    "states": {
+     "heavily_worn": 233.7,
+     "mature": 450.3,
+     "mothballed": 50.7,
+     "new": 120.9,
+     "old": 463.1,
+     "reserve": 64,
+     "restoration_project": 1.3,
+     "scrap_candidate": 16.6
+    },
+    "tier": "middle"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.867,
+     "delay_probability": 0.086,
+     "failure_rate_x": 1.749,
+     "fuel_x": 1.04,
+     "insurance_x": 1.48,
+     "opex_x": 1.201
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 18.2,
+    "states": {
+     "heavily_worn": 61.9,
+     "mature": 109.0,
+     "mothballed": 0.0,
+     "new": 28.5,
+     "old": 117.5,
+     "reserve": 64,
+     "restoration_project": 0.3,
+     "scrap_candidate": 6.3
+    },
+    "tier": "middle"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.867,
+     "delay_probability": 0.086,
+     "failure_rate_x": 1.749,
+     "fuel_x": 1.04,
+     "insurance_x": 1.48,
+     "opex_x": 1.201
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 18.2,
+    "states": {
+     "heavily_worn": 1.4,
+     "mature": 2.4,
+     "mothballed": 0.0,
+     "new": 0.6,
+     "old": 2.6,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.868,
+     "delay_probability": 0.086,
+     "failure_rate_x": 1.732,
+     "fuel_x": 1.039,
+     "insurance_x": 1.469,
+     "opex_x": 1.197
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 20.9,
+    "states": {
+     "heavily_worn": 11.0,
+     "mature": 20.3,
+     "mothballed": 2.3,
+     "new": 5.4,
+     "old": 21.3,
+     "reserve": 3,
+     "restoration_project": 0.1,
+     "scrap_candidate": 0.8
+    },
+    "tier": "middle"
+   }
+  },
+  "hd69830_verde": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.898,
+     "delay_probability": 0.065,
+     "failure_rate_x": 1.298,
+     "fuel_x": 1.019,
+     "insurance_x": 1.193,
+     "opex_x": 1.096
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 16.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 105.5,
+     "mothballed": 4.8,
+     "new": 30.0,
+     "old": 104.5,
+     "reserve": 12,
+     "restoration_project": 0.2,
+     "scrap_candidate": 3.6
+    },
+    "tier": "rich"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.898,
+     "delay_probability": 0.064,
+     "failure_rate_x": 1.29,
+     "fuel_x": 1.019,
+     "insurance_x": 1.187,
+     "opex_x": 1.094
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 0.4,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.898,
+     "delay_probability": 0.065,
+     "failure_rate_x": 1.298,
+     "fuel_x": 1.019,
+     "insurance_x": 1.193,
+     "opex_x": 1.096
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 16.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 11.0,
+     "mothballed": 0.0,
+     "new": 3.1,
+     "old": 10.9,
+     "reserve": 5,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.5
+    },
+    "tier": "rich"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.896,
+     "delay_probability": 0.066,
+     "failure_rate_x": 1.316,
+     "fuel_x": 1.02,
+     "insurance_x": 1.203,
+     "opex_x": 1.102
+    },
+    "jump_era_capped": false,
+    "max_age_y": 25.0,
+    "mean_age_y": 11.7,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 30.0,
+     "mothballed": 0.0,
+     "new": 8.2,
+     "old": 31.8,
+     "reserve": 14,
+     "restoration_project": 0.1,
+     "scrap_candidate": 1.7
+    },
+    "tier": "rich"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.898,
+     "delay_probability": 0.064,
+     "failure_rate_x": 1.29,
+     "fuel_x": 1.019,
+     "insurance_x": 1.187,
+     "opex_x": 1.094
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 321.2,
+     "mothballed": 14.4,
+     "new": 92.9,
+     "old": 307.9,
+     "reserve": 37,
+     "restoration_project": 0.7,
+     "scrap_candidate": 9.5
+    },
+    "tier": "rich"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.898,
+     "delay_probability": 0.064,
+     "failure_rate_x": 1.29,
+     "fuel_x": 1.019,
+     "insurance_x": 1.187,
+     "opex_x": 1.094
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 18.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 145.0,
+     "mothballed": 6.5,
+     "new": 42.0,
+     "old": 139.0,
+     "reserve": 17,
+     "restoration_project": 0.3,
+     "scrap_candidate": 4.3
+    },
+    "tier": "rich"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.897,
+     "delay_probability": 0.065,
+     "failure_rate_x": 1.307,
+     "fuel_x": 1.02,
+     "insurance_x": 1.198,
+     "opex_x": 1.099
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 13.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 63.0,
+     "mothballed": 0.0,
+     "new": 17.6,
+     "old": 64.5,
+     "reserve": 29,
+     "restoration_project": 0.1,
+     "scrap_candidate": 2.9
+    },
+    "tier": "rich"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.897,
+     "delay_probability": 0.065,
+     "failure_rate_x": 1.307,
+     "fuel_x": 1.02,
+     "insurance_x": 1.198,
+     "opex_x": 1.099
+    },
+    "jump_era_capped": false,
+    "max_age_y": 30.0,
+    "mean_age_y": 13.9,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 1.3,
+     "mothballed": 0.0,
+     "new": 0.4,
+     "old": 1.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.898,
+     "delay_probability": 0.065,
+     "failure_rate_x": 1.298,
+     "fuel_x": 1.019,
+     "insurance_x": 1.193,
+     "opex_x": 1.096
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 16.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 7.5,
+     "mothballed": 0.3,
+     "new": 2.1,
+     "old": 7.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.2
+    },
+    "tier": "rich"
+   }
+  },
+  "lalande_hellas": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.832,
+     "fuel_x": 1.044,
+     "insurance_x": 1.532,
+     "opex_x": 1.222
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 22.4,
+    "states": {
+     "heavily_worn": 74.0,
+     "mature": 105.2,
+     "mothballed": 13.3,
+     "new": 25.9,
+     "old": 127.0,
+     "reserve": 17,
+     "restoration_project": 0.3,
+     "scrap_candidate": 5.0
+    },
+    "tier": "middle"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.829,
+     "fuel_x": 1.044,
+     "insurance_x": 1.53,
+     "opex_x": 1.221
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 25.6,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.3,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.829,
+     "fuel_x": 1.044,
+     "insurance_x": 1.53,
+     "opex_x": 1.221
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 25.6,
+    "states": {
+     "heavily_worn": 0.9,
+     "mature": 1.3,
+     "mothballed": 0.2,
+     "new": 0.3,
+     "old": 1.5,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.832,
+     "fuel_x": 1.044,
+     "insurance_x": 1.532,
+     "opex_x": 1.222
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 22.4,
+    "states": {
+     "heavily_worn": 6.7,
+     "mature": 9.5,
+     "mothballed": 0.0,
+     "new": 2.3,
+     "old": 11.5,
+     "reserve": 6,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.5
+    },
+    "tier": "middle"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.861,
+     "delay_probability": 0.091,
+     "failure_rate_x": 1.838,
+     "fuel_x": 1.045,
+     "insurance_x": 1.536,
+     "opex_x": 1.223
+    },
+    "jump_era_capped": false,
+    "max_age_y": 32.5,
+    "mean_age_y": 16.1,
+    "states": {
+     "heavily_worn": 29.2,
+     "mature": 40.9,
+     "mothballed": 0.0,
+     "new": 10.0,
+     "old": 49.8,
+     "reserve": 26,
+     "restoration_project": 0.1,
+     "scrap_candidate": 3.1
+    },
+    "tier": "middle"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.826,
+     "fuel_x": 1.044,
+     "insurance_x": 1.528,
+     "opex_x": 1.22
+    },
+    "jump_era_capped": false,
+    "max_age_y": 58.5,
+    "mean_age_y": 28.7,
+    "states": {
+     "heavily_worn": 12.8,
+     "mature": 18.5,
+     "mothballed": 2.3,
+     "new": 4.6,
+     "old": 22.1,
+     "reserve": 3,
+     "restoration_project": 0.1,
+     "scrap_candidate": 0.7
+    },
+    "tier": "middle"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.829,
+     "fuel_x": 1.044,
+     "insurance_x": 1.53,
+     "opex_x": 1.221
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 25.6,
+    "states": {
+     "heavily_worn": 1.1,
+     "mature": 1.6,
+     "mothballed": 1.9,
+     "new": 0.4,
+     "old": 1.9,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.829,
+     "fuel_x": 1.044,
+     "insurance_x": 1.53,
+     "opex_x": 1.221
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 25.6,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.3,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.829,
+     "fuel_x": 1.044,
+     "insurance_x": 1.53,
+     "opex_x": 1.221
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 25.6,
+    "states": {
+     "heavily_worn": 438.9,
+     "mature": 629.0,
+     "mothballed": 79.2,
+     "new": 154.9,
+     "old": 756.2,
+     "reserve": 99,
+     "restoration_project": 2.0,
+     "scrap_candidate": 26.0
+    },
+    "tier": "middle"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.829,
+     "fuel_x": 1.044,
+     "insurance_x": 1.53,
+     "opex_x": 1.221
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 25.6,
+    "states": {
+     "heavily_worn": 118.2,
+     "mature": 169.4,
+     "mothballed": 21.3,
+     "new": 41.7,
+     "old": 203.7,
+     "reserve": 27,
+     "restoration_project": 0.5,
+     "scrap_candidate": 7.0
+    },
+    "tier": "middle"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.861,
+     "delay_probability": 0.091,
+     "failure_rate_x": 1.835,
+     "fuel_x": 1.044,
+     "insurance_x": 1.534,
+     "opex_x": 1.222
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 19.3,
+    "states": {
+     "heavily_worn": 52.8,
+     "mature": 74.5,
+     "mothballed": 0.0,
+     "new": 18.3,
+     "old": 90.4,
+     "reserve": 48,
+     "restoration_project": 0.2,
+     "scrap_candidate": 4.8
+    },
+    "tier": "middle"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.861,
+     "delay_probability": 0.091,
+     "failure_rate_x": 1.835,
+     "fuel_x": 1.044,
+     "insurance_x": 1.534,
+     "opex_x": 1.222
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 19.3,
+    "states": {
+     "heavily_worn": 1.6,
+     "mature": 2.2,
+     "mothballed": 0.0,
+     "new": 0.5,
+     "old": 2.7,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.862,
+     "delay_probability": 0.09,
+     "failure_rate_x": 1.832,
+     "fuel_x": 1.044,
+     "insurance_x": 1.532,
+     "opex_x": 1.222
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 22.4,
+    "states": {
+     "heavily_worn": 5.8,
+     "mature": 8.2,
+     "mothballed": 1.0,
+     "new": 2.0,
+     "old": 9.9,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.4
+    },
+    "tier": "middle"
+   }
+  },
+  "lalande_mecca": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.866,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.769,
+     "fuel_x": 1.041,
+     "insurance_x": 1.492,
+     "opex_x": 1.206
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 21.5,
+    "states": {
+     "heavily_worn": 168.0,
+     "mature": 281.1,
+     "mothballed": 33.3,
+     "new": 72.4,
+     "old": 311.4,
+     "reserve": 42,
+     "restoration_project": 0.8,
+     "scrap_candidate": 12.5
+    },
+    "tier": "middle"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.867,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.757,
+     "fuel_x": 1.041,
+     "insurance_x": 1.485,
+     "opex_x": 1.203
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 24.4,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.7,
+     "mothballed": 0.0,
+     "new": 0.2,
+     "old": 0.7,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.867,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.757,
+     "fuel_x": 1.041,
+     "insurance_x": 1.485,
+     "opex_x": 1.203
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 24.4,
+    "states": {
+     "heavily_worn": 1.0,
+     "mature": 1.7,
+     "mothballed": 0.2,
+     "new": 0.4,
+     "old": 1.9,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.866,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.769,
+     "fuel_x": 1.041,
+     "insurance_x": 1.492,
+     "opex_x": 1.206
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 21.5,
+    "states": {
+     "heavily_worn": 14.5,
+     "mature": 24.3,
+     "mothballed": 0.0,
+     "new": 6.3,
+     "old": 26.9,
+     "reserve": 15,
+     "restoration_project": 0.1,
+     "scrap_candidate": 1.2
+    },
+    "tier": "middle"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.864,
+     "delay_probability": 0.089,
+     "failure_rate_x": 1.792,
+     "fuel_x": 1.042,
+     "insurance_x": 1.507,
+     "opex_x": 1.212
+    },
+    "jump_era_capped": false,
+    "max_age_y": 32.5,
+    "mean_age_y": 15.6,
+    "states": {
+     "heavily_worn": 61.4,
+     "mature": 96.6,
+     "mothballed": 0.0,
+     "new": 24.4,
+     "old": 110.5,
+     "reserve": 59,
+     "restoration_project": 0.3,
+     "scrap_candidate": 7.0
+    },
+    "tier": "middle"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.868,
+     "delay_probability": 0.086,
+     "failure_rate_x": 1.745,
+     "fuel_x": 1.04,
+     "insurance_x": 1.477,
+     "opex_x": 1.2
+    },
+    "jump_era_capped": false,
+    "max_age_y": 58.5,
+    "mean_age_y": 27.2,
+    "states": {
+     "heavily_worn": 3.9,
+     "mature": 6.9,
+     "mothballed": 0.8,
+     "new": 1.8,
+     "old": 7.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.2
+    },
+    "tier": "middle"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.867,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.757,
+     "fuel_x": 1.041,
+     "insurance_x": 1.485,
+     "opex_x": 1.203
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 24.4,
+    "states": {
+     "heavily_worn": 2.0,
+     "mature": 3.4,
+     "mothballed": 4.1,
+     "new": 0.9,
+     "old": 3.7,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.867,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.757,
+     "fuel_x": 1.041,
+     "insurance_x": 1.485,
+     "opex_x": 1.203
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 24.4,
+    "states": {
+     "heavily_worn": 0.2,
+     "mature": 0.3,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.867,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.757,
+     "fuel_x": 1.041,
+     "insurance_x": 1.485,
+     "opex_x": 1.203
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 24.4,
+    "states": {
+     "heavily_worn": 944.6,
+     "mature": 1630.1,
+     "mothballed": 191.0,
+     "new": 423.8,
+     "old": 1776.5,
+     "reserve": 239,
+     "restoration_project": 4.8,
+     "scrap_candidate": 62.6
+    },
+    "tier": "middle"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.867,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.757,
+     "fuel_x": 1.041,
+     "insurance_x": 1.485,
+     "opex_x": 1.203
+    },
+    "jump_era_capped": false,
+    "max_age_y": 52.0,
+    "mean_age_y": 24.4,
+    "states": {
+     "heavily_worn": 384.6,
+     "mature": 663.7,
+     "mothballed": 77.8,
+     "new": 172.6,
+     "old": 723.2,
+     "reserve": 98,
+     "restoration_project": 1.9,
+     "scrap_candidate": 25.5
+    },
+    "tier": "middle"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.865,
+     "delay_probability": 0.088,
+     "failure_rate_x": 1.78,
+     "fuel_x": 1.042,
+     "insurance_x": 1.5,
+     "opex_x": 1.209
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 18.6,
+    "states": {
+     "heavily_worn": 114.5,
+     "mature": 185.8,
+     "mothballed": 0.0,
+     "new": 47.5,
+     "old": 209.2,
+     "reserve": 112,
+     "restoration_project": 0.6,
+     "scrap_candidate": 11.2
+    },
+    "tier": "middle"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.865,
+     "delay_probability": 0.088,
+     "failure_rate_x": 1.78,
+     "fuel_x": 1.042,
+     "insurance_x": 1.5,
+     "opex_x": 1.209
+    },
+    "jump_era_capped": false,
+    "max_age_y": 39.0,
+    "mean_age_y": 18.6,
+    "states": {
+     "heavily_worn": 1.0,
+     "mature": 1.7,
+     "mothballed": 0.0,
+     "new": 0.4,
+     "old": 1.9,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "middle"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.866,
+     "delay_probability": 0.087,
+     "failure_rate_x": 1.769,
+     "fuel_x": 1.041,
+     "insurance_x": 1.492,
+     "opex_x": 1.206
+    },
+    "jump_era_capped": false,
+    "max_age_y": 45.5,
+    "mean_age_y": 21.5,
+    "states": {
+     "heavily_worn": 18.2,
+     "mature": 30.4,
+     "mothballed": 3.6,
+     "new": 7.8,
+     "old": 33.6,
+     "reserve": 5,
+     "restoration_project": 0.1,
+     "scrap_candidate": 1.4
+    },
+    "tier": "middle"
+   }
+  },
+  "leo83_zion": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 29.8,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 34.0,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 34.0,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 34.0,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 34.0,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.834,
+     "delay_probability": 0.11,
+     "failure_rate_x": 2.237,
+     "fuel_x": 1.063,
+     "insurance_x": 1.792,
+     "opex_x": 1.314
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 29.8,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   }
+  },
+  "proxima_outpost": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.906,
+     "delay_probability": 0.06,
+     "failure_rate_x": 1.193,
+     "fuel_x": 1.013,
+     "insurance_x": 1.128,
+     "opex_x": 1.064
+    },
+    "jump_era_capped": true,
+    "max_age_y": 26,
+    "mean_age_y": 12.7,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 397.4,
+     "mothballed": 29.1,
+     "new": 103.4,
+     "old": 227.2,
+     "reserve": 37,
+     "restoration_project": 3.6,
+     "scrap_candidate": 10.9
+    },
+    "tier": "poor"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.912,
+     "delay_probability": 0.056,
+     "failure_rate_x": 1.111,
+     "fuel_x": 1.008,
+     "insurance_x": 1.077,
+     "opex_x": 1.039
+    },
+    "jump_era_capped": true,
+    "max_age_y": 26,
+    "mean_age_y": 12.7,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 1.2,
+     "mothballed": 0.0,
+     "new": 0.3,
+     "old": 0.4,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.841,
+     "delay_probability": 0.105,
+     "failure_rate_x": 2.144,
+     "fuel_x": 1.058,
+     "insurance_x": 1.732,
+     "opex_x": 1.292
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 32.2,
+    "states": {
+     "heavily_worn": 1.5,
+     "mature": 1.0,
+     "mothballed": 0.2,
+     "new": 0.3,
+     "old": 1.2,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.84,
+     "delay_probability": 0.106,
+     "failure_rate_x": 2.156,
+     "fuel_x": 1.059,
+     "insurance_x": 1.74,
+     "opex_x": 1.294
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 28.4,
+    "states": {
+     "heavily_worn": 23.8,
+     "mature": 16.1,
+     "mothballed": 0.0,
+     "new": 4.3,
+     "old": 18.8,
+     "reserve": 13,
+     "restoration_project": 0.3,
+     "scrap_candidate": 1.1
+    },
+    "tier": "poor"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.838,
+     "delay_probability": 0.107,
+     "failure_rate_x": 2.179,
+     "fuel_x": 1.06,
+     "insurance_x": 1.755,
+     "opex_x": 1.3
+    },
+    "jump_era_capped": false,
+    "max_age_y": 42.5,
+    "mean_age_y": 20.6,
+    "states": {
+     "heavily_worn": 102.9,
+     "mature": 66.4,
+     "mothballed": 0.0,
+     "new": 17.5,
+     "old": 79.2,
+     "reserve": 54,
+     "restoration_project": 1.3,
+     "scrap_candidate": 6.4
+    },
+    "tier": "poor"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.912,
+     "delay_probability": 0.056,
+     "failure_rate_x": 1.111,
+     "fuel_x": 1.008,
+     "insurance_x": 1.077,
+     "opex_x": 1.039
+    },
+    "jump_era_capped": true,
+    "max_age_y": 26,
+    "mean_age_y": 12.7,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 9.3,
+     "mothballed": 5.9,
+     "new": 2.4,
+     "old": 3.3,
+     "reserve": 3,
+     "restoration_project": 0.1,
+     "scrap_candidate": 0.2
+    },
+    "tier": "poor"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.841,
+     "delay_probability": 0.105,
+     "failure_rate_x": 2.144,
+     "fuel_x": 1.058,
+     "insurance_x": 1.732,
+     "opex_x": 1.292
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 32.2,
+    "states": {
+     "heavily_worn": 1189.2,
+     "mature": 825.1,
+     "mothballed": 127.6,
+     "new": 220.5,
+     "old": 954.2,
+     "reserve": 160,
+     "restoration_project": 15.9,
+     "scrap_candidate": 41.9
+    },
+    "tier": "poor"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.841,
+     "delay_probability": 0.105,
+     "failure_rate_x": 2.144,
+     "fuel_x": 1.058,
+     "insurance_x": 1.732,
+     "opex_x": 1.292
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 32.2,
+    "states": {
+     "heavily_worn": 561.2,
+     "mature": 389.4,
+     "mothballed": 60.2,
+     "new": 104.1,
+     "old": 450.3,
+     "reserve": 76,
+     "restoration_project": 7.5,
+     "scrap_candidate": 19.8
+    },
+    "tier": "poor"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.899,
+     "delay_probability": 0.064,
+     "failure_rate_x": 1.28,
+     "fuel_x": 1.018,
+     "insurance_x": 1.181,
+     "opex_x": 1.091
+    },
+    "jump_era_capped": true,
+    "max_age_y": 26,
+    "mean_age_y": 12.7,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 351.2,
+     "mothballed": 0.0,
+     "new": 90.8,
+     "old": 307.9,
+     "reserve": 150,
+     "restoration_project": 3.8,
+     "scrap_candidate": 15.0
+    },
+    "tier": "poor"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.899,
+     "delay_probability": 0.064,
+     "failure_rate_x": 1.28,
+     "fuel_x": 1.018,
+     "insurance_x": 1.181,
+     "opex_x": 1.091
+    },
+    "jump_era_capped": true,
+    "max_age_y": 26,
+    "mean_age_y": 12.7,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 2.3,
+     "mothballed": 0.0,
+     "new": 0.6,
+     "old": 2.1,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.84,
+     "delay_probability": 0.106,
+     "failure_rate_x": 2.156,
+     "fuel_x": 1.059,
+     "insurance_x": 1.74,
+     "opex_x": 1.294
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 28.4,
+    "states": {
+     "heavily_worn": 6.8,
+     "mature": 4.6,
+     "mothballed": 0.7,
+     "new": 1.2,
+     "old": 5.4,
+     "reserve": 1,
+     "restoration_project": 0.1,
+     "scrap_candidate": 0.2
+    },
+    "tier": "poor"
+   }
+  },
+  "sol_authority": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.928,
+     "delay_probability": 0.045,
+     "failure_rate_x": 0.9,
+     "fuel_x": 0.995,
+     "insurance_x": 0.95,
+     "opex_x": 0.975
+    },
+    "jump_era_capped": true,
+    "max_age_y": 14,
+    "mean_age_y": 7.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 14774.2,
+     "mothballed": 394.0,
+     "new": 4924.8,
+     "old": 0.0,
+     "reserve": 985,
+     "restoration_project": 19.7,
+     "scrap_candidate": 295.5
+    },
+    "tier": "rich"
+   },
+   "escort_frigate": {
+    "effects": {
+     "availability": 0.928,
+     "delay_probability": 0.045,
+     "failure_rate_x": 0.9,
+     "fuel_x": 0.995,
+     "insurance_x": 0.95,
+     "opex_x": 0.975
+    },
+    "jump_era_capped": true,
+    "max_age_y": 14,
+    "mean_age_y": 7.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 40.5,
+     "mothballed": 0.0,
+     "new": 13.5,
+     "old": 0.0,
+     "reserve": 11,
+     "restoration_project": 0.1,
+     "scrap_candidate": 0.9
+    },
+    "tier": "rich"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.929,
+     "delay_probability": 0.044,
+     "failure_rate_x": 0.886,
+     "fuel_x": 0.994,
+     "insurance_x": 0.943,
+     "opex_x": 0.971
+    },
+    "jump_era_capped": true,
+    "max_age_y": 14,
+    "mean_age_y": 7.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 6.4,
+     "mothballed": 0.0,
+     "new": 2.6,
+     "old": 0.0,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 20.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 26.0,
+     "mothballed": 1.3,
+     "new": 6.5,
+     "old": 32.5,
+     "reserve": 4,
+     "restoration_project": 0.1,
+     "scrap_candidate": 0.8
+    },
+    "tier": "rich"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.5,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 64.4,
+     "mothballed": 0.0,
+     "new": 16.1,
+     "old": 80.5,
+     "reserve": 33,
+     "restoration_project": 0.2,
+     "scrap_candidate": 2.8
+    },
+    "tier": "rich"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 25.0,
+    "mean_age_y": 12.5,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 245.2,
+     "mothballed": 0.0,
+     "new": 61.3,
+     "old": 306.5,
+     "reserve": 123,
+     "restoration_project": 0.6,
+     "scrap_candidate": 14.7
+    },
+    "tier": "rich"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.93,
+     "delay_probability": 0.044,
+     "failure_rate_x": 0.872,
+     "fuel_x": 0.994,
+     "insurance_x": 0.936,
+     "opex_x": 0.968
+    },
+    "jump_era_capped": true,
+    "max_age_y": 14,
+    "mean_age_y": 7.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 641.9,
+     "mothballed": 18.9,
+     "new": 302.1,
+     "old": 0.0,
+     "reserve": 48,
+     "restoration_project": 0.9,
+     "scrap_candidate": 11.0
+    },
+    "tier": "rich"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.929,
+     "delay_probability": 0.044,
+     "failure_rate_x": 0.886,
+     "fuel_x": 0.994,
+     "insurance_x": 0.943,
+     "opex_x": 0.972
+    },
+    "jump_era_capped": true,
+    "max_age_y": 14,
+    "mean_age_y": 7.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 10.7,
+     "mothballed": 29.1,
+     "new": 4.3,
+     "old": 0.0,
+     "reserve": 3,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.2
+    },
+    "tier": "rich"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.929,
+     "delay_probability": 0.044,
+     "failure_rate_x": 0.886,
+     "fuel_x": 0.994,
+     "insurance_x": 0.943,
+     "opex_x": 0.972
+    },
+    "jump_era_capped": true,
+    "max_age_y": 14,
+    "mean_age_y": 7.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 23813.1,
+     "mothballed": 666.1,
+     "new": 9491.9,
+     "old": 0.0,
+     "reserve": 1666,
+     "restoration_project": 33.3,
+     "scrap_candidate": 437.1
+    },
+    "tier": "rich"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 20.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 17404.8,
+     "mothballed": 870.2,
+     "new": 4351.2,
+     "old": 21756.0,
+     "reserve": 2176,
+     "restoration_project": 43.5,
+     "scrap_candidate": 571.1
+    },
+    "tier": "rich"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 40.0,
+    "mean_age_y": 20.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 5930.4,
+     "mothballed": 296.5,
+     "new": 1482.6,
+     "old": 7413.0,
+     "reserve": 742,
+     "restoration_project": 14.8,
+     "scrap_candidate": 194.6
+    },
+    "tier": "rich"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.926,
+     "delay_probability": 0.046,
+     "failure_rate_x": 0.914,
+     "fuel_x": 0.996,
+     "insurance_x": 0.957,
+     "opex_x": 0.978
+    },
+    "jump_era_capped": true,
+    "max_age_y": 14,
+    "mean_age_y": 7.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 6159.1,
+     "mothballed": 0.0,
+     "new": 1686.9,
+     "old": 0.0,
+     "reserve": 1570,
+     "restoration_project": 7.8,
+     "scrap_candidate": 156.9
+    },
+    "tier": "rich"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.926,
+     "delay_probability": 0.046,
+     "failure_rate_x": 0.914,
+     "fuel_x": 0.996,
+     "insurance_x": 0.957,
+     "opex_x": 0.979
+    },
+    "jump_era_capped": true,
+    "max_age_y": 14,
+    "mean_age_y": 7.0,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 2.4,
+     "mothballed": 0.0,
+     "new": 0.6,
+     "old": 0.0,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "rich"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.893,
+     "delay_probability": 0.068,
+     "failure_rate_x": 1.36,
+     "fuel_x": 1.023,
+     "insurance_x": 1.23,
+     "opex_x": 1.115
+    },
+    "jump_era_capped": false,
+    "max_age_y": 35.0,
+    "mean_age_y": 17.5,
+    "states": {
+     "heavily_worn": 0.0,
+     "mature": 117.2,
+     "mothballed": 5.9,
+     "new": 29.3,
+     "old": 146.5,
+     "reserve": 15,
+     "restoration_project": 0.3,
+     "scrap_candidate": 4.4
+    },
+    "tier": "rich"
+   }
+  },
+  "tau_ceti_cognium": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.836,
+     "delay_probability": 0.109,
+     "failure_rate_x": 2.216,
+     "fuel_x": 1.062,
+     "insurance_x": 1.778,
+     "opex_x": 1.309
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 29.4,
+    "states": {
+     "heavily_worn": 498.5,
+     "mature": 298.1,
+     "mothballed": 49.6,
+     "new": 76.9,
+     "old": 367.5,
+     "reserve": 63,
+     "restoration_project": 6.2,
+     "scrap_candidate": 18.6
+    },
+    "tier": "poor"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.836,
+     "delay_probability": 0.109,
+     "failure_rate_x": 2.213,
+     "fuel_x": 1.062,
+     "insurance_x": 1.776,
+     "opex_x": 1.308
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 33.6,
+    "states": {
+     "heavily_worn": 0.8,
+     "mature": 0.5,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.6,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.836,
+     "delay_probability": 0.109,
+     "failure_rate_x": 2.213,
+     "fuel_x": 1.062,
+     "insurance_x": 1.776,
+     "opex_x": 1.308
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 33.6,
+    "states": {
+     "heavily_worn": 0.4,
+     "mature": 0.2,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.836,
+     "delay_probability": 0.109,
+     "failure_rate_x": 2.216,
+     "fuel_x": 1.062,
+     "insurance_x": 1.778,
+     "opex_x": 1.309
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 29.4,
+    "states": {
+     "heavily_worn": 49.4,
+     "mature": 29.6,
+     "mothballed": 0.0,
+     "new": 7.6,
+     "old": 36.4,
+     "reserve": 25,
+     "restoration_project": 0.6,
+     "scrap_candidate": 2.1
+    },
+    "tier": "poor"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.835,
+     "delay_probability": 0.109,
+     "failure_rate_x": 2.222,
+     "fuel_x": 1.062,
+     "insurance_x": 1.782,
+     "opex_x": 1.31
+    },
+    "jump_era_capped": false,
+    "max_age_y": 42.5,
+    "mean_age_y": 21.1,
+    "states": {
+     "heavily_worn": 202.4,
+     "mature": 119.6,
+     "mothballed": 0.0,
+     "new": 30.8,
+     "old": 148.2,
+     "reserve": 101,
+     "restoration_project": 2.5,
+     "scrap_candidate": 12.1
+    },
+    "tier": "poor"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.836,
+     "delay_probability": 0.109,
+     "failure_rate_x": 2.213,
+     "fuel_x": 1.062,
+     "insurance_x": 1.776,
+     "opex_x": 1.308
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 33.6,
+    "states": {
+     "heavily_worn": 6.8,
+     "mature": 4.1,
+     "mothballed": 6.8,
+     "new": 1.1,
+     "old": 5.0,
+     "reserve": 4,
+     "restoration_project": 0.1,
+     "scrap_candidate": 0.2
+    },
+    "tier": "poor"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.836,
+     "delay_probability": 0.109,
+     "failure_rate_x": 2.213,
+     "fuel_x": 1.062,
+     "insurance_x": 1.776,
+     "opex_x": 1.308
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 33.6,
+    "states": {
+     "heavily_worn": 5372.9,
+     "mature": 3233.2,
+     "mothballed": 536.6,
+     "new": 835.1,
+     "old": 3974.8,
+     "reserve": 671,
+     "restoration_project": 67.1,
+     "scrap_candidate": 176.1
+    },
+    "tier": "poor"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.836,
+     "delay_probability": 0.109,
+     "failure_rate_x": 2.213,
+     "fuel_x": 1.062,
+     "insurance_x": 1.776,
+     "opex_x": 1.308
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 33.6,
+    "states": {
+     "heavily_worn": 325.6,
+     "mature": 195.9,
+     "mothballed": 32.5,
+     "new": 50.6,
+     "old": 240.9,
+     "reserve": 41,
+     "restoration_project": 4.1,
+     "scrap_candidate": 10.7
+    },
+    "tier": "poor"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.836,
+     "delay_probability": 0.109,
+     "failure_rate_x": 2.219,
+     "fuel_x": 1.062,
+     "insurance_x": 1.78,
+     "opex_x": 1.31
+    },
+    "jump_era_capped": false,
+    "max_age_y": 51.0,
+    "mean_age_y": 25.2,
+    "states": {
+     "heavily_worn": 396.4,
+     "mature": 235.7,
+     "mothballed": 0.0,
+     "new": 60.7,
+     "old": 291.2,
+     "reserve": 197,
+     "restoration_project": 4.9,
+     "scrap_candidate": 19.7
+    },
+    "tier": "poor"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.836,
+     "delay_probability": 0.109,
+     "failure_rate_x": 2.219,
+     "fuel_x": 1.062,
+     "insurance_x": 1.78,
+     "opex_x": 1.31
+    },
+    "jump_era_capped": false,
+    "max_age_y": 51.0,
+    "mean_age_y": 25.2,
+    "states": {
+     "heavily_worn": 4.8,
+     "mature": 2.9,
+     "mothballed": 0.0,
+     "new": 0.7,
+     "old": 3.6,
+     "reserve": 3,
+     "restoration_project": 0.1,
+     "scrap_candidate": 0.2
+    },
+    "tier": "poor"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.836,
+     "delay_probability": 0.109,
+     "failure_rate_x": 2.216,
+     "fuel_x": 1.062,
+     "insurance_x": 1.778,
+     "opex_x": 1.309
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 29.4,
+    "states": {
+     "heavily_worn": 12.9,
+     "mature": 7.7,
+     "mothballed": 1.3,
+     "new": 2.0,
+     "old": 9.5,
+     "reserve": 2,
+     "restoration_project": 0.2,
+     "scrap_candidate": 0.5
+    },
+    "tier": "poor"
+   }
+  },
+  "wolf359_citadel": {
+   "cobrett_i_n1": {
+    "effects": {
+     "availability": 0.846,
+     "delay_probability": 0.102,
+     "failure_rate_x": 2.07,
+     "fuel_x": 1.055,
+     "insurance_x": 1.686,
+     "opex_x": 1.274
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 27.0,
+    "states": {
+     "heavily_worn": 189.2,
+     "mature": 152.9,
+     "mothballed": 22.0,
+     "new": 42.3,
+     "old": 165.6,
+     "reserve": 28,
+     "restoration_project": 2.8,
+     "scrap_candidate": 8.2
+    },
+    "tier": "poor"
+   },
+   "escort_frigate": {
+    "effects": {
+     "availability": 0.846,
+     "delay_probability": 0.102,
+     "failure_rate_x": 2.07,
+     "fuel_x": 1.055,
+     "insurance_x": 1.686,
+     "opex_x": 1.274
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 27.0,
+    "states": {
+     "heavily_worn": 16.9,
+     "mature": 13.6,
+     "mothballed": 0.0,
+     "new": 3.8,
+     "old": 14.8,
+     "reserve": 10,
+     "restoration_project": 0.2,
+     "scrap_candidate": 0.8
+    },
+    "tier": "poor"
+   },
+   "fleet_tender": {
+    "effects": {
+     "availability": 0.847,
+     "delay_probability": 0.101,
+     "failure_rate_x": 2.047,
+     "fuel_x": 1.054,
+     "insurance_x": 1.671,
+     "opex_x": 1.268
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 30.4,
+    "states": {
+     "heavily_worn": 3.0,
+     "mature": 2.6,
+     "mothballed": 0.0,
+     "new": 0.7,
+     "old": 2.7,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "gas_tanker": {
+    "effects": {
+     "availability": 0.847,
+     "delay_probability": 0.101,
+     "failure_rate_x": 2.047,
+     "fuel_x": 1.054,
+     "insurance_x": 1.671,
+     "opex_x": 1.268
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 30.4,
+    "states": {
+     "heavily_worn": 0.3,
+     "mature": 0.3,
+     "mothballed": 0.0,
+     "new": 0.1,
+     "old": 0.3,
+     "reserve": 1,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "impact_defence_tug": {
+    "effects": {
+     "availability": 0.846,
+     "delay_probability": 0.102,
+     "failure_rate_x": 2.07,
+     "fuel_x": 1.055,
+     "insurance_x": 1.686,
+     "opex_x": 1.274
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 27.0,
+    "states": {
+     "heavily_worn": 18.9,
+     "mature": 15.3,
+     "mothballed": 0.0,
+     "new": 4.2,
+     "old": 16.6,
+     "reserve": 11,
+     "restoration_project": 0.3,
+     "scrap_candidate": 0.9
+    },
+    "tier": "poor"
+   },
+   "interceptor": {
+    "effects": {
+     "availability": 0.843,
+     "delay_probability": 0.104,
+     "failure_rate_x": 2.118,
+     "fuel_x": 1.057,
+     "insurance_x": 1.716,
+     "opex_x": 1.285
+    },
+    "jump_era_capped": false,
+    "max_age_y": 42.5,
+    "mean_age_y": 19.8,
+    "states": {
+     "heavily_worn": 75.8,
+     "mature": 55.5,
+     "mothballed": 0.0,
+     "new": 15.0,
+     "old": 62.7,
+     "reserve": 42,
+     "restoration_project": 1.0,
+     "scrap_candidate": 5.0
+    },
+    "tier": "poor"
+   },
+   "jump_train": {
+    "effects": {
+     "availability": 0.849,
+     "delay_probability": 0.1,
+     "failure_rate_x": 2.023,
+     "fuel_x": 1.053,
+     "insurance_x": 1.656,
+     "opex_x": 1.263
+    },
+    "jump_era_capped": false,
+    "max_age_y": 76.5,
+    "mean_age_y": 33.7,
+    "states": {
+     "heavily_worn": 86.7,
+     "mature": 77.2,
+     "mothballed": 10.6,
+     "new": 21.9,
+     "old": 80.2,
+     "reserve": 14,
+     "restoration_project": 1.3,
+     "scrap_candidate": 3.1
+    },
+    "tier": "poor"
+   },
+   "line_combatant": {
+    "effects": {
+     "availability": 0.847,
+     "delay_probability": 0.101,
+     "failure_rate_x": 2.047,
+     "fuel_x": 1.054,
+     "insurance_x": 1.671,
+     "opex_x": 1.268
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 30.4,
+    "states": {
+     "heavily_worn": 6.0,
+     "mature": 5.1,
+     "mothballed": 28.3,
+     "new": 1.4,
+     "old": 5.4,
+     "reserve": 4,
+     "restoration_project": 0.1,
+     "scrap_candidate": 0.3
+    },
+    "tier": "poor"
+   },
+   "medium_freighter": {
+    "effects": {
+     "availability": 0.847,
+     "delay_probability": 0.101,
+     "failure_rate_x": 2.047,
+     "fuel_x": 1.054,
+     "insurance_x": 1.671,
+     "opex_x": 1.268
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 30.4,
+    "states": {
+     "heavily_worn": 4.7,
+     "mature": 4.0,
+     "mothballed": 0.6,
+     "new": 1.1,
+     "old": 4.2,
+     "reserve": 1,
+     "restoration_project": 0.1,
+     "scrap_candidate": 0.2
+    },
+    "tier": "poor"
+   },
+   "ocs4_lastochka": {
+    "effects": {
+     "availability": 0.847,
+     "delay_probability": 0.101,
+     "failure_rate_x": 2.047,
+     "fuel_x": 1.054,
+     "insurance_x": 1.671,
+     "opex_x": 1.268
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 30.4,
+    "states": {
+     "heavily_worn": 1482.1,
+     "mature": 1257.1,
+     "mothballed": 177.0,
+     "new": 352.3,
+     "old": 1333.4,
+     "reserve": 222,
+     "restoration_project": 22.1,
+     "scrap_candidate": 58.1
+    },
+    "tier": "poor"
+   },
+   "ore_tug": {
+    "effects": {
+     "availability": 0.847,
+     "delay_probability": 0.101,
+     "failure_rate_x": 2.047,
+     "fuel_x": 1.054,
+     "insurance_x": 1.671,
+     "opex_x": 1.268
+    },
+    "jump_era_capped": false,
+    "max_age_y": 68.0,
+    "mean_age_y": 30.4,
+    "states": {
+     "heavily_worn": 385.2,
+     "mature": 326.7,
+     "mothballed": 46.0,
+     "new": 91.6,
+     "old": 346.5,
+     "reserve": 58,
+     "restoration_project": 5.8,
+     "scrap_candidate": 15.1
+    },
+    "tier": "poor"
+   },
+   "patrol_cutter": {
+    "effects": {
+     "availability": 0.844,
+     "delay_probability": 0.103,
+     "failure_rate_x": 2.094,
+     "fuel_x": 1.056,
+     "insurance_x": 1.701,
+     "opex_x": 1.28
+    },
+    "jump_era_capped": false,
+    "max_age_y": 51.0,
+    "mean_age_y": 23.5,
+    "states": {
+     "heavily_worn": 136.3,
+     "mature": 104.9,
+     "mothballed": 0.0,
+     "new": 28.7,
+     "old": 116.0,
+     "reserve": 78,
+     "restoration_project": 1.9,
+     "scrap_candidate": 7.8
+    },
+    "tier": "poor"
+   },
+   "recon_picket": {
+    "effects": {
+     "availability": 0.844,
+     "delay_probability": 0.103,
+     "failure_rate_x": 2.094,
+     "fuel_x": 1.056,
+     "insurance_x": 1.701,
+     "opex_x": 1.28
+    },
+    "jump_era_capped": false,
+    "max_age_y": 51.0,
+    "mean_age_y": 23.5,
+    "states": {
+     "heavily_worn": 2.5,
+     "mature": 1.9,
+     "mothballed": 0.0,
+     "new": 0.5,
+     "old": 2.1,
+     "reserve": 2,
+     "restoration_project": 0.0,
+     "scrap_candidate": 0.1
+    },
+    "tier": "poor"
+   },
+   "service_tender": {
+    "effects": {
+     "availability": 0.846,
+     "delay_probability": 0.102,
+     "failure_rate_x": 2.07,
+     "fuel_x": 1.055,
+     "insurance_x": 1.686,
+     "opex_x": 1.274
+    },
+    "jump_era_capped": false,
+    "max_age_y": 59.5,
+    "mean_age_y": 27.0,
+    "states": {
+     "heavily_worn": 17.5,
+     "mature": 14.2,
+     "mothballed": 2.0,
+     "new": 3.9,
+     "old": 15.4,
+     "reserve": 3,
+     "restoration_project": 0.3,
+     "scrap_candidate": 0.8
+    },
+    "tier": "poor"
+   }
+  }
+ },
+ "registry_rule": "вторичный рынок, утиль и восстановление используют тот же ShipInstance и серийные агрегаты (без второго реестра); стадии: sold -> reflagged -> restoration -> scrapped; краденые агрегаты — legality reported_stolen / salvage_unregistered",
+ "rule": "корабль с прыжковым двигателем не старше подключения своей политии к сети (ядра появились в 2750-х); внутрисистемный флот может быть старше",
+ "secondary_market_cr": {
+  "cobrett_i_n1": {
+   "heavily_worn": 407235,
+   "mature": 1866492,
+   "new": 2884578,
+   "old": 1018086,
+   "scrap_candidate": 101809
+  },
+  "liner": {
+   "heavily_worn": 3122562,
+   "mature": 14311744,
+   "new": 22118149,
+   "old": 7806406,
+   "scrap_candidate": 780641
+  },
+  "medium_freighter": {
+   "heavily_worn": 1828929,
+   "mature": 8382593,
+   "new": 12954916,
+   "old": 4572323,
+   "scrap_candidate": 457232
+  },
+  "ocs4_lastochka": {
+   "heavily_worn": 236779,
+   "mature": 1085238,
+   "new": 1677186,
+   "old": 591948,
+   "scrap_candidate": 59195
+  }
+ },
+ "status": "PROPOSAL",
+ "used_ships_sold_rich_to_poor_y": 2539,
+ "world_states": {
+  "heavily_worn": 18578,
+  "mature": 109783,
+  "mothballed": 5902,
+  "new": 33050,
+  "old": 75518,
+  "reserve": 15409,
+  "restoration_project": 388,
+  "scrap_candidate": 3334
+ }
+}

@@ -1,0 +1,139 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Маяки как сеть связи; распространение новостей — Elite Lore</title><link rel="stylesheet" href="../style.css"></head><body><header><a href="../index.html">Оглавление</a></header><main class="wrap"><article id="content">
+<h1 id="маяки-как-сеть-связи-распространение-новостей">Маяки как сеть связи; распространение новостей</h1>
+<!-- GENERATED:legend BEGIN -->
+<blockquote>
+<p><strong>Статусы строк:</strong> <code>CANON</code> — есть в заметках автора (generation ships/*, fate.md, history.md, каталог); <code>PROPOSAL</code> — добавлено или пересчитано Claude / результат модели; <code>UNKNOWN</code> — намеренно без ответа, даже для автора. <strong>Видимость:</strong> <code>PUBLIC</code> — мир 3126 это знает или может знать; <code>AUTHOR TRUTH</code> — скрытая правда автора.</p>
+<p>Блоки <code>GENERATED</code> пишет только <code>tools/colonization_lab/lore_md.py</code> из машинного канона; текст вне них — ручной и сохраняется.</p>
+</blockquote>
+<!-- GENERATED:legend END -->
+<!-- GENERATED:comms BEGIN -->
+<p>Источник: <code>out/world_3126/comms_3126.json</code>, <code>world_events_3126.json</code>. Маяк — узел навигации, связи, синхронизации и локального покрытия.</p>
+<p>Диаметр сети для обычной новости — 1.75 сут; до самого дальнего фронтира от Сола — 4.029 сут (AUTHOR_TARGET ≤ 7.0).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Куда от Сола</th>
+<th>Обычная, сут</th>
+<th>Срочная, сут</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Epsilon Eridani</td>
+<td>0.106</td>
+<td>0.104</td>
+</tr>
+<tr>
+<td>Tau Ceti</td>
+<td>0.106</td>
+<td>0.104</td>
+</tr>
+<tr>
+<td>Gliese 357</td>
+<td>0.117</td>
+<td>0.104</td>
+</tr>
+<tr>
+<td>Gliese 436</td>
+<td>0.544</td>
+<td>0.208</td>
+</tr>
+<tr>
+<td>83 Leonis</td>
+<td>0.982</td>
+<td>0.312</td>
+</tr>
+<tr>
+<td>HD 114783</td>
+<td>1.419</td>
+<td>0.417</td>
+</tr>
+<tr>
+<td>dso.lotus</td>
+<td>2.505</td>
+<td>0.417</td>
+</tr>
+<tr>
+<td>HD 102195</td>
+<td>4.029</td>
+<td>0.521</td>
+</tr>
+<tr>
+<td>9 Ceti</td>
+<td>3.816</td>
+<td>0.417</td>
+</tr>
+<tr>
+<td>HD 93083</td>
+<td>3.649</td>
+<td>0.625</td>
+</tr>
+</tbody>
+</table></div>
+<p>Фронтиры (за краем сети: «Лотос», «Китовая Щель», «Ноль-Вега») не входят в диаметр сети: там почта ходит реже, а ретранслятор «Лотоса» часто молчит (задержка ребра x (2 - uptime)).</p>
+<p>Вне покрытия: вне покрытия: местное радио, корабль-корабль, станция, бедствие, направленная передача, кэш; при возврате — синхронизация сообщений, новостей, банка, ордеров, рынков, навигации, правового состояния.</p>
+<h3 id="пример-одно-событие-разные-знания">Пример: одно событие — разные знания</h3>
+<p>Правда (<code>EVT-3126-0001</code>): экспедиционный Cobrett «Мэй-Лин-2» — вышел из прыжка внутри мёртвой зоны «Лотоса», цел, экипаж 3, запасов на 19 суток, сигнал бедствия слабый.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Кто узнал</th>
+<th>Канал</th>
+<th>Источник</th>
+<th>Через, сут</th>
+<th>Уверенность</th>
+<th>Текст</th>
+<th>Язык</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dso.lotus</td>
+<td>local_radio</td>
+<td>сигнал бедствия</td>
+<td>0.008</td>
+<td>0.9</td>
+<td>Слабый сигнал бедствия из мёртвой зоны: «Мэй-Лин-2», трое живы.</td>
+<td>en</td>
+</tr>
+<tr>
+<td>site.019.porog</td>
+<td>official</td>
+<td>диспетчер «Лотоса»</td>
+<td>1.524</td>
+<td>0.8</td>
+<td>Экспедиционное судно не вышло на связь согласно плану.</td>
+<td>en</td>
+</tr>
+<tr>
+<td>site.019.troyan_market</td>
+<td>freeband</td>
+<td>пилоты</td>
+<td>1.649</td>
+<td>0.4</td>
+<td>Они нашли второй корабль, поэтому и застряли.</td>
+<td>zh</td>
+</tr>
+<tr>
+<td>lalande_hellas</td>
+<td>commercial</td>
+<td>страховой брокер Агоры</td>
+<td>2.19</td>
+<td>0.7</td>
+<td>Страховой случай: корпус и груз под вопросом, ставки по маршруту +2 %.</td>
+<td>el</td>
+</tr>
+<tr>
+<td>sol_authority</td>
+<td>official</td>
+<td>Управление Маяков (сводка)</td>
+<td>4.029</td>
+<td>0.6</td>
+<td>В районе HD 102195 пропало судно; спасательная операция организуется лицензиатом.</td>
+<td>en</td>
+</tr>
+</tbody>
+</table></div>
+<p>WorldTruth один; KnowledgeRecord у каждого держателя приходит с задержкой сети; новости = представление записей, а не отдельная истина; радио = звуковое представление тех же потоков (Public / Freeband).</p>
+<!-- GENERATED:comms END -->
+</article><footer class="path">Источник: <code>Notes/Lore/ECONOMY/COMMUNICATION.md</code></footer></main></body></html>

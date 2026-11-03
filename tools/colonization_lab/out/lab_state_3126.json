@@ -49,14 +49,14 @@
      "2750": 447361,
      "2900": 4841530,
      "3000": 28469670,
-     "3126": 139966984
+     "3126": 139963859
     },
     "rate": 1.247,
-    "ratio": 399.906
+    "ratio": 399.897
    },
    "knowledge": 0.962,
    "name": "Шахта Альфа",
-   "pop_3126": 139966984,
+   "pop_3126": 139963859,
    "pop_3126_authored": 350000,
    "regime": "corporate_board",
    "system": 31,
@@ -111,14 +111,14 @@
      "2750": 2672600,
      "2900": 35162549,
      "3000": 84433611,
-     "3126": 200070319
+     "3126": 200070311
     },
     "rate": 1.351,
     "ratio": 571.629
    },
    "knowledge": 0.973,
    "name": "Свободная Карма",
-   "pop_3126": 200070319,
+   "pop_3126": 200070311,
    "pop_3126_authored": 350000,
    "regime": "exile_republic",
    "system": 22,
@@ -235,14 +235,14 @@
      "2750": 102949962,
      "2900": 540341029,
      "3000": 1074649550,
-     "3126": 1371102075
+     "3126": 1371102748
     },
     "rate": 1.205,
     "ratio": 418.019
    },
    "knowledge": 1.0,
    "name": "Цветущая Гармония",
-   "pop_3126": 1371102075,
+   "pop_3126": 1371102748,
    "pop_3126_authored": 3280000,
    "regime": "sage_council",
    "system": 9,
@@ -297,14 +297,14 @@
      "2750": 1083008,
      "2900": 32667180,
      "3000": 111826768,
-     "3126": 348072330
+     "3126": 348072327
     },
     "rate": 1.638,
     "ratio": 7734.941
    },
    "knowledge": 0.972,
    "name": "Пояс Раздора / Вольные астероиды",
-   "pop_3126": 348072330,
+   "pop_3126": 348072327,
    "pop_3126_authored": 45000,
    "regime": "clan_contracts",
    "system": 9,
@@ -359,14 +359,14 @@
      "2750": 1555833,
      "2900": 45284291,
      "3000": 147685898,
-     "3126": 271947998
+     "3126": 271947994
     },
     "rate": 1.352,
     "ratio": 226.623
    },
    "knowledge": 0.971,
    "name": "Новая Европа",
-   "pop_3126": 271947998,
+   "pop_3126": 271947994,
    "pop_3126_authored": 1200000,
    "regime": "parliamentary_bureaucracy",
    "system": 10,
@@ -421,14 +421,14 @@
      "2750": 70384,
      "2900": 3167422,
      "3000": 28344104,
-     "3126": 200589133
+     "3126": 200589138
     },
     "rate": 1.798,
     "ratio": 2359.872
    },
    "knowledge": 0.958,
    "name": "Свободные поселения",
-   "pop_3126": 200589133,
+   "pop_3126": 200589138,
    "pop_3126_authored": 85000,
    "regime": "clan_contracts",
    "system": 10,
@@ -545,14 +545,14 @@
      "2750": 39002968,
      "2900": 398578642,
      "3000": 984824265,
-     "3126": 1058878197
+     "3126": 1058878366
     },
     "rate": 1.252,
     "ratio": 252.114
    },
    "knowledge": 0.991,
    "name": "Тяньхэ (Небесная Река)",
-   "pop_3126": 1058878197,
+   "pop_3126": 1058878366,
    "pop_3126_authored": 4200000,
    "regime": "party_technocracy",
    "system": 12,
@@ -680,7 +680,7 @@
    "pop_3126_authored": 12500,
    "regime": "litigating_city_states",
    "system": 37,
-   "wealth_per_100k": 2.45
+   "wealth_per_100k": 2.22
   },
   "hd20794_hellas2": {
    "caps": {
@@ -731,14 +731,14 @@
      "2750": 3928945,
      "2900": 70641340,
      "3000": 180831437,
-     "3126": 250016206
+     "3126": 250016201
     },
     "rate": 1.327,
     "ratio": 255.119
    },
    "knowledge": 0.977,
    "name": "Вторая Эллада",
-   "pop_3126": 250016206,
+   "pop_3126": 250016201,
    "pop_3126_authored": 980000,
    "regime": "corporate_democracy",
    "system": 14,
@@ -793,14 +793,14 @@
      "2750": 562220,
      "2900": 48383256,
      "3000": 245909262,
-     "3126": 903060113
+     "3126": 903060135
     },
     "rate": 1.767,
     "ratio": 820.964
    },
    "knowledge": 0.974,
    "name": "Новая Индия",
-   "pop_3126": 903060113,
+   "pop_3126": 903060135,
    "pop_3126_authored": 1100000,
    "regime": "merit_caste_republic",
    "system": 14,
@@ -855,14 +855,14 @@
      "2750": 27228,
      "2900": 2903824,
      "3000": 35479496,
-     "3126": 198279061
+     "3126": 198279067
     },
     "rate": 2.369,
     "ratio": 110.155
    },
    "knowledge": 0.951,
    "name": "Небесная Твердыня",
-   "pop_3126": 198279061,
+   "pop_3126": 198279067,
    "pop_3126_authored": 1800000,
    "regime": "party_technocracy",
    "system": 15,
@@ -917,14 +917,14 @@
      "2750": 384854,
      "2900": 19452656,
      "3000": 107040423,
-     "3126": 445615993
+     "3126": 445615996
     },
     "rate": 1.673,
     "ratio": 185.673
    },
    "knowledge": 0.96,
    "name": "Новая Маланд",
-   "pop_3126": 445615993,
+   "pop_3126": 445615996,
    "pop_3126_authored": 2400000,
    "regime": "council_of_chiefs",
    "system": 15,
@@ -979,14 +979,14 @@
      "2750": 146134,
      "2900": 4256464,
      "3000": 28730854,
-     "3126": 204780901
+     "3126": 204780898
     },
     "rate": 1.753,
     "ratio": 146.272
    },
    "knowledge": 0.947,
    "name": "Сельта-Верде",
-   "pop_3126": 204780901,
+   "pop_3126": 204780898,
    "pop_3126_authored": 1400000,
    "regime": "grandees_and_church",
    "system": 16,
@@ -1041,14 +1041,14 @@
      "2750": 12466235,
      "2900": 137123980,
      "3000": 246199106,
-     "3126": 327607484
+     "3126": 327607482
     },
     "rate": 1.113,
     "ratio": 218.405
    },
    "knowledge": 0.981,
    "name": "Новая Эллада / Агора",
-   "pop_3126": 327607484,
+   "pop_3126": 327607482,
    "pop_3126_authored": 1500000,
    "regime": "shareholder_agora",
    "system": 4,
@@ -1103,14 +1103,14 @@
      "2750": 19859781,
      "2900": 135568398,
      "3000": 308032888,
-     "3126": 799743555
+     "3126": 799743540
     },
     "rate": 1.224,
     "ratio": 444.302
    },
    "knowledge": 0.986,
    "name": "Новая Мекка",
-   "pop_3126": 799743555,
+   "pop_3126": 799743540,
    "pop_3126_authored": 1800000,
    "regime": "scholar_theocracy",
    "system": 4,
@@ -1176,7 +1176,7 @@
    "pop_3126_authored": 8900,
    "regime": "synod_theocracy",
    "system": 45,
-   "wealth_per_100k": 2.57
+   "wealth_per_100k": 2.4
   },
   "proxima_outpost": {
    "caps": {
@@ -1289,14 +1289,14 @@
      "2750": 19068487,
      "2900": 410820709,
      "3000": 1088781221,
-     "3126": 1356527898
+     "3126": 1356527906
     },
     "rate": 1.251,
     "ratio": 484.474
    },
    "knowledge": 0.989,
    "name": "Новый Шанхай",
-   "pop_3126": 1356527898,
+   "pop_3126": 1356527906,
    "pop_3126_authored": 2800000,
    "regime": "technocratic_meritocracy",
    "system": 8,
@@ -1373,104 +1373,104 @@
     "2850": 196467218,
     "2900": 236066407,
     "2950": 257279753,
-    "3000": 291112639,
-    "3050": 344875880,
-    "3100": 166236672
+    "3000": 291113457,
+    "3050": 344875882,
+    "3100": 166236671
    },
    "top_routes": [
     {
      "dst": "tau_ceti_cognium",
-     "people": 229633750,
+     "people": 229633761,
      "src": "earth_south"
     },
     {
      "dst": "eps_eri_harmony",
-     "people": 204387620,
+     "people": 204387900,
      "src": "lalande_mecca"
     },
     {
      "dst": "eps_eri_harmony",
-     "people": 161811276,
+     "people": 161811286,
      "src": "earth_south"
     },
     {
      "dst": "gj832_tianhe",
-     "people": 144519409,
+     "people": 144519416,
      "src": "earth_south"
     },
     {
      "dst": "hd20794_newindia",
-     "people": 116236426,
+     "people": 116236439,
      "src": "earth_south"
     },
     {
      "dst": "tau_ceti_cognium",
-     "people": 98946570,
+     "people": 98946564,
      "src": "earth_north"
     },
     {
      "dst": "eps_eri_harmony",
-     "people": 69829040,
+     "people": 69829034,
      "src": "earth_north"
     },
     {
      "dst": "gj832_tianhe",
-     "people": 62353119,
+     "people": 62353112,
      "src": "earth_north"
     },
     {
      "dst": "gj832_tianhe",
-     "people": 57654330,
+     "people": 57654448,
      "src": "eps_eri_strife"
     },
     {
      "dst": "eps_eri_harmony",
-     "people": 54167761,
+     "people": 54167832,
      "src": "delta_pav_freekarma"
     },
     {
      "dst": "lalande_hellas",
-     "people": 50988050,
+     "people": 50988052,
      "src": "earth_south"
     },
     {
      "dst": "hd20794_newindia",
-     "people": 50037849,
+     "people": 50037848,
      "src": "earth_north"
     },
     {
      "dst": "hd40307_maland",
-     "people": 38114356,
+     "people": 38114361,
      "src": "earth_south"
     },
     {
      "dst": "hd40307_firmament",
-     "people": 30089579,
+     "people": 30089584,
      "src": "earth_south"
     },
     {
      "dst": "eps_eri_harmony",
-     "people": 29832346,
+     "people": 29832404,
      "src": "hd69830_verde"
     },
     {
      "dst": "eps_eri_harmony",
-     "people": 29325497,
+     "people": 29325554,
      "src": "gj581_freeclans"
     },
     {
      "dst": "hd20794_hellas2",
-     "people": 26813437,
+     "people": 26813439,
      "src": "earth_south"
     },
     {
      "dst": "gj581_europa",
-     "people": 22700139,
+     "people": 22700140,
      "src": "earth_south"
     },
     {
      "dst": "lalande_hellas",
-     "people": 22151756,
+     "people": 22151752,
      "src": "earth_north"
     },
     {
@@ -1480,31 +1480,31 @@
     },
     {
      "dst": "cyg61_kern",
-     "people": 18430360,
+     "people": 18430079,
      "src": "lalande_mecca"
     },
     {
      "dst": "hd40307_maland",
-     "people": 16527698,
+     "people": 16527695,
      "src": "earth_north"
     },
     {
      "dst": "hd40307_firmament",
-     "people": 12980814,
+     "people": 12980813,
      "src": "earth_north"
     },
     {
      "dst": "hd20794_hellas2",
-     "people": 11915563,
+     "people": 11915559,
      "src": "earth_north"
     },
     {
      "dst": "gj581_europa",
-     "people": 10064225,
+     "people": 10064222,
      "src": "earth_north"
     }
    ],
-   "total": 1627500794
+   "total": 1627501612
   },
   "scale_3126": {
    "earth": {
@@ -1521,7 +1521,7 @@
    "off_sol": {
     "centre": 10000000000.0,
     "inside": true,
-    "model": 10087994167,
+    "model": 10087992674,
     "status": "AUTHOR_TARGET",
     "target": [
      8500000000.0,
@@ -1543,27 +1543,27 @@
   "sensitivity": {
    "baseline": {
     "earth": 11668961361,
-    "off_sol": 10087994167,
+    "off_sol": 10087992674,
     "top": [
      [
       "eps_eri_harmony",
-      1371102075
+      1371102748
      ],
      [
       "tau_ceti_cognium",
-      1356527898
+      1356527906
      ],
      [
       "gj832_tianhe",
-      1058878197
+      1058878366
      ],
      [
       "hd20794_newindia",
-      903060113
+      903060135
      ],
      [
       "lalande_mecca",
-      799743555
+      799743540
      ],
      [
       "delta_pav_karma",
@@ -1579,11 +1579,11 @@
      ],
      [
       "hd40307_maland",
-      445615993
+      445615996
      ],
      [
       "eps_eri_strife",
-      348072330
+      348072327
      ]
     ]
    },
@@ -2742,7 +2742,7 @@
       "net_migration_per_1000": 4.19,
       "pension_coverage": 0.698,
       "phase": "boom",
-      "pop": 57004416,
+      "pop": 57003458,
       "q5": 0.0001,
       "religious_share": 0.15,
       "space_index": 0.065,
@@ -2766,7 +2766,7 @@
       "net_migration_per_1000": 4.19,
       "pension_coverage": 0.699,
       "phase": "boom",
-      "pop": 78448769,
+      "pop": 78447106,
       "q5": 0.0001,
       "religious_share": 0.136,
       "space_index": 0.063,
@@ -2790,7 +2790,7 @@
       "net_migration_per_1000": 4.19,
       "pension_coverage": 0.7,
       "phase": "boom",
-      "pop": 106466386,
+      "pop": 106463987,
       "q5": 0.0001,
       "religious_share": 0.124,
       "space_index": 0.061,
@@ -2814,7 +2814,7 @@
       "net_migration_per_1000": 4.18,
       "pension_coverage": 0.7,
       "phase": "growth",
-      "pop": 139212909,
+      "pop": 139209800,
       "q5": 0.0001,
       "religious_share": 0.112,
       "space_index": 0.061,
@@ -2838,7 +2838,7 @@
       "net_migration_per_1000": 0.0,
       "pension_coverage": 0.7,
       "phase": "growth",
-      "pop": 139966984,
+      "pop": 139963859,
       "q5": 0.0001,
       "religious_share": 0.112,
       "space_index": 0.061,
@@ -2894,7 +2894,7 @@
       "housing_tier": 2,
       "income": 1.62,
       "net_migration_per_1000": 2.65,
-      "pop_end": 139966984,
+      "pop_end": 139963859,
       "pop_start": 523414,
       "start": 2760,
       "tfr": 2.85
@@ -2912,16 +2912,16 @@
     "founded": 2355,
     "habitat_3126": {
      "burrowed_moons_asteroids": 40790254,
-     "rotating_habitats": 92776729,
+     "rotating_habitats": 92773605,
      "surface_and_underground": 6400000
     },
     "intensity": 1.0492,
     "kind": "colony",
-    "migrants_in": 45469488,
-    "migrants_out": 840030,
+    "migrants_in": 45468821,
+    "migrants_out": 840830,
     "name": "Шахта Альфа",
     "owner": null,
-    "pop_3126": 139966984,
+    "pop_3126": 139963859,
     "system": 31,
     "target": [
      100000000.0,
@@ -3620,7 +3620,7 @@
       "net_migration_per_1000": -2.53,
       "pension_coverage": 0.7,
       "phase": "growth",
-      "pop": 146202157,
+      "pop": 146202154,
       "q5": 0.0001,
       "religious_share": 0.14,
       "space_index": 0.084,
@@ -3644,7 +3644,7 @@
       "net_migration_per_1000": -2.54,
       "pension_coverage": 0.7,
       "phase": "growth",
-      "pop": 173414567,
+      "pop": 173414561,
       "q5": 0.0001,
       "religious_share": 0.131,
       "space_index": 0.082,
@@ -3668,7 +3668,7 @@
       "net_migration_per_1000": -2.55,
       "pension_coverage": 0.7,
       "phase": "growth",
-      "pop": 198715063,
+      "pop": 198715056,
       "q5": 0.0001,
       "religious_share": 0.123,
       "space_index": 0.081,
@@ -3692,7 +3692,7 @@
       "net_migration_per_1000": -0.05,
       "pension_coverage": 0.7,
       "phase": "growth",
-      "pop": 200070319,
+      "pop": 200070311,
       "q5": 0.0001,
       "religious_share": 0.123,
       "space_index": 0.081,
@@ -3732,7 +3732,7 @@
       "housing_tier": 3,
       "income": 1.22,
       "net_migration_per_1000": -1.17,
-      "pop_end": 200070319,
+      "pop_end": 200070311,
       "pop_start": 54867,
       "start": 2520,
       "tfr": 3.36
@@ -3742,16 +3742,16 @@
     "founded": 2420,
     "habitat_3126": {
      "burrowed_moons_asteroids": 22104760,
-     "rotating_habitats": 175085559,
+     "rotating_habitats": 175085551,
      "surface_and_underground": 2880000
     },
     "intensity": 0.9937,
     "kind": "colony",
-    "migrants_in": 385480,
-    "migrants_out": 61388255,
+    "migrants_in": 385477,
+    "migrants_out": 61388254,
     "name": "Свободная Карма",
     "owner": null,
-    "pop_3126": 200070319,
+    "pop_3126": 200070311,
     "system": 22,
     "target": [
      150000000.0,
@@ -7887,7 +7887,7 @@
       "net_migration_per_1000": 1.78,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1226040545,
+      "pop": 1226040560,
       "q5": 0.0001,
       "religious_share": 0.115,
       "space_index": 0.09,
@@ -7911,7 +7911,7 @@
       "net_migration_per_1000": 2.0,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1270121402,
+      "pop": 1270121535,
       "q5": 0.0001,
       "religious_share": 0.106,
       "space_index": 0.089,
@@ -7935,7 +7935,7 @@
       "net_migration_per_1000": 2.29,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1317692628,
+      "pop": 1317692977,
       "q5": 0.0001,
       "religious_share": 0.099,
       "space_index": 0.087,
@@ -7959,7 +7959,7 @@
       "net_migration_per_1000": 2.29,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1372065170,
+      "pop": 1372065839,
       "q5": 0.0001,
       "religious_share": 0.094,
       "space_index": 0.085,
@@ -7983,7 +7983,7 @@
       "net_migration_per_1000": 0.0,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1371102075,
+      "pop": 1371102748,
       "q5": 0.0001,
       "religious_share": 0.094,
       "space_index": 0.084,
@@ -8055,7 +8055,7 @@
       "housing_tier": 3,
       "income": 2.65,
       "net_migration_per_1000": 2.1,
-      "pop_end": 1371102075,
+      "pop_end": 1371102748,
       "pop_start": 109333074,
       "start": 2752,
       "tfr": 2.19
@@ -8080,16 +8080,16 @@
     "founded": 2212,
     "habitat_3126": {
      "burrowed_moons_asteroids": 297590212,
-     "rotating_habitats": 1063271862,
+     "rotating_habitats": 1063272536,
      "surface_and_underground": 10240000
     },
     "intensity": 0.6066,
     "kind": "colony",
-    "migrants_in": 550102718,
+    "migrants_in": 550103187,
     "migrants_out": 0,
     "name": "Цветущая Гармония",
     "owner": null,
-    "pop_3126": 1371102075,
+    "pop_3126": 1371102748,
     "system": 9,
     "target": [
      1200000000.0,
@@ -8764,7 +8764,7 @@
       "net_migration_per_1000": -2.48,
       "pension_coverage": 0.3,
       "phase": "expansion",
-      "pop": 182541509,
+      "pop": 182541511,
       "q5": 0.0001,
       "religious_share": 0.125,
       "space_index": 0.101,
@@ -8788,7 +8788,7 @@
       "net_migration_per_1000": -2.48,
       "pension_coverage": 0.3,
       "phase": "expansion",
-      "pop": 229807054,
+      "pop": 229807055,
       "q5": 0.0001,
       "religious_share": 0.114,
       "space_index": 0.098,
@@ -8812,7 +8812,7 @@
       "net_migration_per_1000": -2.48,
       "pension_coverage": 0.3,
       "phase": "expansion",
-      "pop": 286977995,
+      "pop": 286977994,
       "q5": 0.0001,
       "religious_share": 0.104,
       "space_index": 0.096,
@@ -8836,7 +8836,7 @@
       "net_migration_per_1000": -2.48,
       "pension_coverage": 0.3,
       "phase": "growth",
-      "pop": 345072682,
+      "pop": 345072679,
       "q5": 0.0001,
       "religious_share": 0.095,
       "space_index": 0.095,
@@ -8860,7 +8860,7 @@
       "net_migration_per_1000": 0.03,
       "pension_coverage": 0.3,
       "phase": "growth",
-      "pop": 348072330,
+      "pop": 348072327,
       "q5": 0.0001,
       "religious_share": 0.094,
       "space_index": 0.095,
@@ -8900,7 +8900,7 @@
       "housing_tier": 2,
       "income": 1.34,
       "net_migration_per_1000": -0.82,
-      "pop_end": 348072330,
+      "pop_end": 348072327,
       "pop_start": 7270,
       "start": 2500,
       "tfr": 3.79
@@ -8924,16 +8924,16 @@
     "founded": 2405,
     "habitat_3126": {
      "burrowed_moons_asteroids": 72836920,
-     "rotating_habitats": 272675410,
+     "rotating_habitats": 272675407,
      "surface_and_underground": 2560000
     },
     "intensity": 0.9828,
     "kind": "colony",
-    "migrants_in": 2406616,
+    "migrants_in": 2406614,
     "migrants_out": 85663606,
     "name": "Пояс Раздора / Вольные астероиды",
     "owner": null,
-    "pop_3126": 348072330,
+    "pop_3126": 348072327,
     "system": 9,
     "target": [
      250000000.0,
@@ -9694,7 +9694,7 @@
       "education_cost": 0.857,
       "family_norm": 1.27,
       "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-      "income": 2.209,
+      "income": 2.208,
       "labour_value": 0.013,
       "net_migration_per_1000": 1.97,
       "pension_coverage": 1.0,
@@ -10510,7 +10510,7 @@
       "net_migration_per_1000": 1.18,
       "pension_coverage": 0.999,
       "phase": "growth",
-      "pop": 218293095,
+      "pop": 218293094,
       "q5": 0.0001,
       "religious_share": 0.139,
       "space_index": 0.105,
@@ -10534,7 +10534,7 @@
       "net_migration_per_1000": 1.11,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 244448944,
+      "pop": 244448941,
       "q5": 0.0001,
       "religious_share": 0.122,
       "space_index": 0.107,
@@ -10558,7 +10558,7 @@
       "net_migration_per_1000": 1.05,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 262144600,
+      "pop": 262144596,
       "q5": 0.0001,
       "religious_share": 0.107,
       "space_index": 0.109,
@@ -10582,7 +10582,7 @@
       "net_migration_per_1000": 0.75,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 271890970,
+      "pop": 271890966,
       "q5": 0.0001,
       "religious_share": 0.094,
       "space_index": 0.11,
@@ -10606,7 +10606,7 @@
       "net_migration_per_1000": 0.0,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 271947998,
+      "pop": 271947994,
       "q5": 0.0001,
       "religious_share": 0.093,
       "space_index": 0.11,
@@ -10662,7 +10662,7 @@
       "housing_tier": 3,
       "income": 1.77,
       "net_migration_per_1000": 2.15,
-      "pop_end": 271947998,
+      "pop_end": 271947994,
       "pop_start": 1959655,
       "start": 2760,
       "tfr": 2.75
@@ -10680,16 +10680,16 @@
     "founded": 2377,
     "habitat_3126": {
      "burrowed_moons_asteroids": 46192359,
-     "rotating_habitats": 220955639,
+     "rotating_habitats": 220955635,
      "surface_and_underground": 4800000
     },
     "intensity": 1.1219,
     "kind": "colony",
-    "migrants_in": 53160598,
+    "migrants_in": 53160596,
     "migrants_out": 560,
     "name": "Новая Европа",
     "owner": null,
-    "pop_3126": 271947998,
+    "pop_3126": 271947994,
     "system": 10,
     "target": [
      200000000.0,
@@ -11220,7 +11220,7 @@
       "net_migration_per_1000": -2.49,
       "pension_coverage": 0.299,
       "phase": "expansion",
-      "pop": 66598917,
+      "pop": 66598920,
       "q5": 0.0001,
       "religious_share": 0.153,
       "space_index": 0.195,
@@ -11244,7 +11244,7 @@
       "net_migration_per_1000": -2.5,
       "pension_coverage": 0.3,
       "phase": "expansion",
-      "pop": 98842751,
+      "pop": 98842755,
       "q5": 0.0001,
       "religious_share": 0.14,
       "space_index": 0.189,
@@ -11268,7 +11268,7 @@
       "net_migration_per_1000": -2.5,
       "pension_coverage": 0.3,
       "phase": "expansion",
-      "pop": 144476363,
+      "pop": 144476367,
       "q5": 0.0001,
       "religious_share": 0.13,
       "space_index": 0.184,
@@ -11292,7 +11292,7 @@
       "net_migration_per_1000": -2.51,
       "pension_coverage": 0.3,
       "phase": "expansion",
-      "pop": 197981500,
+      "pop": 197981505,
       "q5": 0.0001,
       "religious_share": 0.118,
       "space_index": 0.182,
@@ -11316,7 +11316,7 @@
       "net_migration_per_1000": 0.0,
       "pension_coverage": 0.3,
       "phase": "expansion",
-      "pop": 200589133,
+      "pop": 200589138,
       "q5": 0.0001,
       "religious_share": 0.117,
       "space_index": 0.182,
@@ -11356,7 +11356,7 @@
       "housing_tier": 2,
       "income": 1.25,
       "net_migration_per_1000": -1.81,
-      "pop_end": 200589133,
+      "pop_end": 200589138,
       "pop_start": 23396,
       "start": 2650,
       "tfr": 4.13
@@ -11374,16 +11374,16 @@
     "founded": 2574,
     "habitat_3126": {
      "burrowed_moons_asteroids": 19511247,
-     "rotating_habitats": 179477886,
+     "rotating_habitats": 179477891,
      "surface_and_underground": 1600000
     },
     "intensity": 1.5107,
     "kind": "colony",
     "migrants_in": 164790,
-    "migrants_out": 32594528,
+    "migrants_out": 32594529,
     "name": "Свободные поселения",
     "owner": null,
-    "pop_3126": 200589133,
+    "pop_3126": 200589138,
     "system": 10,
     "target": [
      150000000.0,
@@ -14050,7 +14050,7 @@
       "net_migration_per_1000": 0.8,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1108208318,
+      "pop": 1108208321,
       "q5": 0.0001,
       "religious_share": 0.103,
       "space_index": 0.119,
@@ -14074,7 +14074,7 @@
       "net_migration_per_1000": 0.81,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1104665686,
+      "pop": 1104665719,
       "q5": 0.0001,
       "religious_share": 0.091,
       "space_index": 0.12,
@@ -14098,7 +14098,7 @@
       "net_migration_per_1000": 0.86,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1087068468,
+      "pop": 1087068555,
       "q5": 0.0001,
       "religious_share": 0.08,
       "space_index": 0.118,
@@ -14122,7 +14122,7 @@
       "net_migration_per_1000": 0.63,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1060848410,
+      "pop": 1060848578,
       "q5": 0.0001,
       "religious_share": 0.07,
       "space_index": 0.116,
@@ -14146,7 +14146,7 @@
       "net_migration_per_1000": 0.0,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1058878197,
+      "pop": 1058878366,
       "q5": 0.0001,
       "religious_share": 0.07,
       "space_index": 0.116,
@@ -14218,7 +14218,7 @@
       "housing_tier": 3,
       "income": 2.4,
       "net_migration_per_1000": 1.78,
-      "pop_end": 1058878197,
+      "pop_end": 1058878366,
       "pop_start": 42483564,
       "start": 2752,
       "tfr": 2.37
@@ -14236,16 +14236,16 @@
     "founded": 2288,
     "habitat_3126": {
      "burrowed_moons_asteroids": 258013265,
-     "rotating_habitats": 794064932,
+     "rotating_habitats": 794065101,
      "surface_and_underground": 6800000
     },
     "intensity": 0.9713,
     "kind": "colony",
-    "migrants_in": 267707094,
+    "migrants_in": 267707212,
     "migrants_out": 0,
     "name": "Тяньхэ (Небесная Река)",
     "owner": null,
-    "pop_3126": 1058878197,
+    "pop_3126": 1058878366,
     "system": 12,
     "target": [
      900000000.0,
@@ -16240,24 +16240,24 @@
      },
      {
       "automation": 0.95,
-      "cbr": 19.3,
+      "cbr": 19.4,
       "cdr": 5.8,
-      "crowding": 0.905,
+      "crowding": 0.914,
       "e0": 94.0,
       "education_cost": 0.857,
       "family_norm": 2.32,
       "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-      "income": 3.248,
+      "income": 3.254,
       "labour_value": 0.013,
-      "net_migration_per_1000": 3.88,
+      "net_migration_per_1000": 6.51,
       "pension_coverage": 0.557,
-      "phase": "expansion",
-      "pop": 701,
+      "phase": "boom",
+      "pop": 713,
       "q5": 0.0001,
       "religious_share": 0.056,
-      "space_index": 0.101,
+      "space_index": 0.099,
       "tech_index": 1.959,
-      "tfr": 2.22,
+      "tfr": 2.21,
       "tfr_econ": 1.66,
       "urbanisation": 0.0,
       "year": 3050
@@ -16265,18 +16265,18 @@
      {
       "automation": 0.95,
       "cbr": 12.8,
-      "cdr": 5.0,
+      "cdr": 4.9,
       "crowding": 0.843,
       "e0": 94.0,
       "education_cost": 0.857,
       "family_norm": 2.04,
       "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-      "income": 2.619,
+      "income": 2.624,
       "labour_value": 0.012,
-      "net_migration_per_1000": 2.57,
+      "net_migration_per_1000": 2.54,
       "pension_coverage": 0.633,
       "phase": "growth",
-      "pop": 1006,
+      "pop": 1026,
       "q5": 0.0001,
       "religious_share": 0.054,
       "space_index": 0.14,
@@ -16295,12 +16295,12 @@
       "education_cost": 0.857,
       "family_norm": 1.89,
       "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-      "income": 2.523,
+      "income": 2.524,
       "labour_value": 0.012,
-      "net_migration_per_1000": 2.17,
+      "net_migration_per_1000": 2.14,
       "pension_coverage": 0.669,
       "phase": "stagnation",
-      "pop": 1192,
+      "pop": 1216,
       "q5": 0.0001,
       "religious_share": 0.05,
       "space_index": 0.157,
@@ -16313,18 +16313,18 @@
      {
       "automation": 0.95,
       "cbr": 12.0,
-      "cdr": 9.7,
+      "cdr": 9.8,
       "crowding": 0.794,
       "e0": 94.0,
       "education_cost": 0.857,
       "family_norm": 1.8,
       "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-      "income": 2.761,
+      "income": 2.76,
       "labour_value": 0.013,
-      "net_migration_per_1000": 9.23,
+      "net_migration_per_1000": 9.04,
       "pension_coverage": 0.685,
       "phase": "stagnation",
-      "pop": 1320,
+      "pop": 1346,
       "q5": 0.0001,
       "religious_share": 0.045,
       "space_index": 0.153,
@@ -16337,21 +16337,21 @@
      {
       "automation": 0.95,
       "cbr": 12.1,
-      "cdr": 9.6,
+      "cdr": 9.7,
       "crowding": 0.799,
       "e0": 94.0,
       "education_cost": 0.857,
       "family_norm": 1.8,
       "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-      "income": 2.777,
+      "income": 2.776,
       "labour_value": 0.012,
-      "net_migration_per_1000": 11.07,
+      "net_migration_per_1000": 10.84,
       "pension_coverage": 0.686,
       "phase": "boom",
-      "pop": 1338,
+      "pop": 1364,
       "q5": 0.0001,
       "religious_share": 0.045,
-      "space_index": 0.15,
+      "space_index": 0.151,
       "tech_index": 1.923,
       "tfr": 2.05,
       "tfr_econ": 1.66,
@@ -16368,11 +16368,11 @@
       "crowding": 0.84,
       "end": 3126,
       "era": "industrial_recovery",
-      "growth_pct": 1.097,
+      "growth_pct": 1.119,
       "housing_tier": 1,
-      "income": 2.82,
-      "net_migration_per_1000": 3.36,
-      "pop_end": 1338,
+      "income": 2.83,
+      "net_migration_per_1000": 3.46,
+      "pop_end": 1364,
       "pop_start": 521,
       "start": 3040,
       "tfr": 2.12
@@ -16391,15 +16391,15 @@
     "habitat_3126": {
      "burrowed_moons_asteroids": 0,
      "rotating_habitats": 0,
-     "surface_and_underground": 1338
+     "surface_and_underground": 1364
     },
     "intensity": null,
     "kind": "outpost",
-    "migrants_in": 236,
+    "migrants_in": 249,
     "migrants_out": 0,
     "name": "Лагерь «Кларион»",
     "owner": "cyg61_kern",
-    "pop_3126": 1338,
+    "pop_3126": 1364,
     "system": 37,
     "target": null,
     "tech_3126": {
@@ -16515,7 +16515,7 @@
       "crowding": 0.79,
       "end": 3126,
       "era": "sealed_habitat",
-      "growth_pct": 2.841,
+      "growth_pct": 2.842,
       "housing_tier": 1,
       "income": 1.67,
       "net_migration_per_1000": -0.82,
@@ -17242,7 +17242,7 @@
       "net_migration_per_1000": 0.56,
       "pension_coverage": 0.8,
       "phase": "stagnation",
-      "pop": 218890407,
+      "pop": 218890406,
       "q5": 0.0001,
       "religious_share": 0.107,
       "space_index": 0.111,
@@ -17266,7 +17266,7 @@
       "net_migration_per_1000": 0.49,
       "pension_coverage": 0.8,
       "phase": "stagnation",
-      "pop": 231907130,
+      "pop": 231907128,
       "q5": 0.0001,
       "religious_share": 0.094,
       "space_index": 0.11,
@@ -17290,7 +17290,7 @@
       "net_migration_per_1000": 0.43,
       "pension_coverage": 0.8,
       "phase": "stagnation",
-      "pop": 242360562,
+      "pop": 242360559,
       "q5": 0.0001,
       "religious_share": 0.084,
       "space_index": 0.108,
@@ -17314,7 +17314,7 @@
       "net_migration_per_1000": 0.09,
       "pension_coverage": 0.8,
       "phase": "stagnation",
-      "pop": 249825226,
+      "pop": 249825222,
       "q5": 0.0001,
       "religious_share": 0.074,
       "space_index": 0.107,
@@ -17338,7 +17338,7 @@
       "net_migration_per_1000": 0.0,
       "pension_coverage": 0.8,
       "phase": "stagnation",
-      "pop": 250016206,
+      "pop": 250016201,
       "q5": 0.0001,
       "religious_share": 0.074,
       "space_index": 0.107,
@@ -17394,7 +17394,7 @@
       "housing_tier": 3,
       "income": 2.05,
       "net_migration_per_1000": 1.68,
-      "pop_end": 250016206,
+      "pop_end": 250016201,
       "pop_start": 4865823,
       "start": 2760,
       "tfr": 2.56
@@ -17418,16 +17418,16 @@
     "founded": 2384,
     "habitat_3126": {
      "burrowed_moons_asteroids": 39249624,
-     "rotating_habitats": 206366582,
+     "rotating_habitats": 206366577,
      "surface_and_underground": 4400000
     },
     "intensity": 1.009,
     "kind": "colony",
-    "migrants_in": 39296803,
+    "migrants_in": 39296801,
     "migrants_out": 0,
     "name": "Вторая Эллада",
     "owner": null,
-    "pop_3126": 250016206,
+    "pop_3126": 250016201,
     "system": 14,
     "target": [
      200000000.0,
@@ -18030,7 +18030,7 @@
       "net_migration_per_1000": 1.67,
       "pension_coverage": 0.8,
       "phase": "growth",
-      "pop": 578289748,
+      "pop": 578289751,
       "q5": 0.0001,
       "religious_share": 0.132,
       "space_index": 0.074,
@@ -18054,7 +18054,7 @@
       "net_migration_per_1000": 1.46,
       "pension_coverage": 0.8,
       "phase": "growth",
-      "pop": 742478214,
+      "pop": 742478226,
       "q5": 0.0001,
       "religious_share": 0.122,
       "space_index": 0.072,
@@ -18078,7 +18078,7 @@
       "net_migration_per_1000": 0.33,
       "pension_coverage": 0.8,
       "phase": "growth",
-      "pop": 898445989,
+      "pop": 898446011,
       "q5": 0.0001,
       "religious_share": 0.11,
       "space_index": 0.073,
@@ -18102,7 +18102,7 @@
       "net_migration_per_1000": 0.0,
       "pension_coverage": 0.8,
       "phase": "growth",
-      "pop": 903060113,
+      "pop": 903060135,
       "q5": 0.0001,
       "religious_share": 0.11,
       "space_index": 0.073,
@@ -18158,7 +18158,7 @@
       "housing_tier": 3,
       "income": 1.99,
       "net_migration_per_1000": 5.48,
-      "pop_end": 903060113,
+      "pop_end": 903060135,
       "pop_start": 709926,
       "start": 2760,
       "tfr": 2.88
@@ -18182,16 +18182,16 @@
     "founded": 2523,
     "habitat_3126": {
      "burrowed_moons_asteroids": 35977773,
-     "rotating_habitats": 863482340,
+     "rotating_habitats": 863482361,
      "surface_and_underground": 3600000
     },
     "intensity": 0.8779,
     "kind": "colony",
-    "migrants_in": 166767013,
+    "migrants_in": 166767025,
     "migrants_out": 96731,
     "name": "Новая Индия",
     "owner": null,
-    "pop_3126": 903060113,
+    "pop_3126": 903060135,
     "system": 14,
     "target": [
      800000000.0,
@@ -18578,7 +18578,7 @@
       "net_migration_per_1000": 2.86,
       "pension_coverage": 0.999,
       "phase": "expansion",
-      "pop": 115173026,
+      "pop": 115173027,
       "q5": 0.0001,
       "religious_share": 0.156,
       "space_index": 0.157,
@@ -18602,7 +18602,7 @@
       "net_migration_per_1000": 2.5,
       "pension_coverage": 0.999,
       "phase": "growth",
-      "pop": 159151262,
+      "pop": 159151265,
       "q5": 0.0001,
       "religious_share": 0.151,
       "space_index": 0.154,
@@ -18626,7 +18626,7 @@
       "net_migration_per_1000": 0.56,
       "pension_coverage": 1.0,
       "phase": "growth",
-      "pop": 197167837,
+      "pop": 197167843,
       "q5": 0.0001,
       "religious_share": 0.143,
       "space_index": 0.156,
@@ -18650,7 +18650,7 @@
       "net_migration_per_1000": 0.0,
       "pension_coverage": 1.0,
       "phase": "growth",
-      "pop": 198279061,
+      "pop": 198279067,
       "q5": 0.0001,
       "religious_share": 0.143,
       "space_index": 0.156,
@@ -18690,7 +18690,7 @@
       "housing_tier": 3,
       "income": 1.82,
       "net_migration_per_1000": 9.33,
-      "pop_end": 198279061,
+      "pop_end": 198279067,
       "pop_start": 32258,
       "start": 2760,
       "tfr": 2.79
@@ -18708,16 +18708,16 @@
     "founded": 2742,
     "habitat_3126": {
      "burrowed_moons_asteroids": 39532194,
-     "rotating_habitats": 155546867,
+     "rotating_habitats": 155546874,
      "surface_and_underground": 3200000
     },
     "intensity": 1.2886,
     "kind": "colony",
-    "migrants_in": 43104624,
+    "migrants_in": 43104628,
     "migrants_out": 50987,
     "name": "Небесная Твердыня",
     "owner": null,
-    "pop_3126": 198279061,
+    "pop_3126": 198279067,
     "system": 15,
     "target": [
      150000000.0,
@@ -19344,7 +19344,7 @@
       "net_migration_per_1000": 0.24,
       "pension_coverage": 0.7,
       "phase": "growth",
-      "pop": 442637201,
+      "pop": 442637204,
       "q5": 0.0001,
       "religious_share": 0.148,
       "space_index": 0.074,
@@ -19368,7 +19368,7 @@
       "net_migration_per_1000": 0.0,
       "pension_coverage": 0.7,
       "phase": "growth",
-      "pop": 445615993,
+      "pop": 445615996,
       "q5": 0.0001,
       "religious_share": 0.148,
       "space_index": 0.074,
@@ -19424,7 +19424,7 @@
       "housing_tier": 3,
       "income": 1.73,
       "net_migration_per_1000": 3.57,
-      "pop_end": 445615993,
+      "pop_end": 445615996,
       "pop_start": 469722,
       "start": 2760,
       "tfr": 3.07
@@ -19448,16 +19448,16 @@
     "founded": 2542,
     "habitat_3126": {
      "burrowed_moons_asteroids": 47335776,
-     "rotating_habitats": 393480217,
+     "rotating_habitats": 393480220,
      "surface_and_underground": 4800000
     },
     "intensity": 0.9614,
     "kind": "colony",
-    "migrants_in": 54747167,
+    "migrants_in": 54747168,
     "migrants_out": 1678953,
     "name": "Новая Маланд",
     "owner": null,
-    "pop_3126": 445615993,
+    "pop_3126": 445615996,
     "system": 15,
     "target": [
      350000000.0,
@@ -19964,7 +19964,7 @@
       "net_migration_per_1000": -2.49,
       "pension_coverage": 0.597,
       "phase": "expansion",
-      "pop": 66361120,
+      "pop": 66361121,
       "q5": 0.0001,
       "religious_share": 0.437,
       "space_index": 0.258,
@@ -20012,7 +20012,7 @@
       "net_migration_per_1000": -2.5,
       "pension_coverage": 0.599,
       "phase": "expansion",
-      "pop": 146766923,
+      "pop": 146766922,
       "q5": 0.0001,
       "religious_share": 0.415,
       "space_index": 0.203,
@@ -20036,7 +20036,7 @@
       "net_migration_per_1000": -2.51,
       "pension_coverage": 0.6,
       "phase": "expansion",
-      "pop": 202099372,
+      "pop": 202099369,
       "q5": 0.0001,
       "religious_share": 0.404,
       "space_index": 0.164,
@@ -20060,7 +20060,7 @@
       "net_migration_per_1000": 0.0,
       "pension_coverage": 0.6,
       "phase": "expansion",
-      "pop": 204780901,
+      "pop": 204780898,
       "q5": 0.0001,
       "religious_share": 0.403,
       "space_index": 0.163,
@@ -20100,7 +20100,7 @@
       "housing_tier": 2,
       "income": 1.44,
       "net_migration_per_1000": -1.35,
-      "pop_end": 204780901,
+      "pop_end": 204780898,
       "pop_start": 64193,
       "start": 2680,
       "tfr": 3.85
@@ -20117,17 +20117,17 @@
     ],
     "founded": 2576,
     "habitat_3126": {
-     "burrowed_moons_asteroids": 187180901,
+     "burrowed_moons_asteroids": 187180898,
      "rotating_habitats": 0,
      "surface_and_underground": 17600000
     },
     "intensity": 1.372,
     "kind": "colony",
-    "migrants_in": 156663,
+    "migrants_in": 156661,
     "migrants_out": 33079877,
     "name": "Сельта-Верде",
     "owner": null,
-    "pop_3126": 204780901,
+    "pop_3126": 204780898,
     "system": 16,
     "target": [
      150000000.0,
@@ -21421,7 +21421,7 @@
       "net_migration_per_1000": 0.62,
       "pension_coverage": 0.8,
       "phase": "stagnation",
-      "pop": 285693818,
+      "pop": 285693819,
       "q5": 0.0001,
       "religious_share": 0.099,
       "space_index": 0.117,
@@ -21469,7 +21469,7 @@
       "net_migration_per_1000": 0.48,
       "pension_coverage": 0.8,
       "phase": "stagnation",
-      "pop": 316925420,
+      "pop": 316925418,
       "q5": 0.0001,
       "religious_share": 0.078,
       "space_index": 0.112,
@@ -21493,7 +21493,7 @@
       "net_migration_per_1000": 0.11,
       "pension_coverage": 0.8,
       "phase": "stagnation",
-      "pop": 327343650,
+      "pop": 327343648,
       "q5": 0.0001,
       "religious_share": 0.069,
       "space_index": 0.111,
@@ -21517,7 +21517,7 @@
       "net_migration_per_1000": 0.0,
       "pension_coverage": 0.8,
       "phase": "stagnation",
-      "pop": 327607484,
+      "pop": 327607482,
       "q5": 0.0001,
       "religious_share": 0.069,
       "space_index": 0.111,
@@ -21589,7 +21589,7 @@
       "housing_tier": 3,
       "income": 1.89,
       "net_migration_per_1000": 1.87,
-      "pop_end": 327607484,
+      "pop_end": 327607482,
       "pop_start": 13699186,
       "start": 2752,
       "tfr": 2.36
@@ -21607,16 +21607,16 @@
     "founded": 2197,
     "habitat_3126": {
      "burrowed_moons_asteroids": 22952473,
-     "rotating_habitats": 299055012,
+     "rotating_habitats": 299055010,
      "surface_and_underground": 5600000
     },
     "intensity": 1.1321,
     "kind": "colony",
-    "migrants_in": 73665956,
+    "migrants_in": 73665955,
     "migrants_out": 0,
     "name": "Новая Эллада / Агора",
     "owner": null,
-    "pop_3126": 327607484,
+    "pop_3126": 327607482,
     "system": 4,
     "target": [
      250000000.0,
@@ -22483,7 +22483,7 @@
       "net_migration_per_1000": -2.5,
       "pension_coverage": 0.8,
       "phase": "expansion",
-      "pop": 562484101,
+      "pop": 562484096,
       "q5": 0.0001,
       "religious_share": 0.398,
       "space_index": 0.097,
@@ -22507,7 +22507,7 @@
       "net_migration_per_1000": -2.5,
       "pension_coverage": 0.8,
       "phase": "expansion",
-      "pop": 683991481,
+      "pop": 683991470,
       "q5": 0.0001,
       "religious_share": 0.391,
       "space_index": 0.095,
@@ -22531,7 +22531,7 @@
       "net_migration_per_1000": -2.51,
       "pension_coverage": 0.8,
       "phase": "growth",
-      "pop": 794255254,
+      "pop": 794255240,
       "q5": 0.0001,
       "religious_share": 0.382,
       "space_index": 0.095,
@@ -22555,7 +22555,7 @@
       "net_migration_per_1000": 0.0,
       "pension_coverage": 0.8,
       "phase": "growth",
-      "pop": 799743555,
+      "pop": 799743540,
       "q5": 0.0001,
       "religious_share": 0.381,
       "space_index": 0.095,
@@ -22611,7 +22611,7 @@
       "housing_tier": 3,
       "income": 1.31,
       "net_migration_per_1000": -0.89,
-      "pop_end": 799743555,
+      "pop_end": 799743540,
       "pop_start": 147332,
       "start": 2450,
       "tfr": 3.17
@@ -22629,16 +22629,16 @@
     "founded": 2243,
     "habitat_3126": {
      "burrowed_moons_asteroids": 22753558,
-     "rotating_habitats": 758852717,
+     "rotating_habitats": 758852702,
      "surface_and_underground": 18137280
     },
     "intensity": 1.1194,
     "kind": "colony",
-    "migrants_in": 845228,
-    "migrants_out": 225615401,
+    "migrants_in": 845221,
+    "migrants_out": 225615399,
     "name": "Новая Мекка",
     "owner": null,
-    "pop_3126": 799743555,
+    "pop_3126": 799743540,
     "system": 4,
     "target": [
      700000000.0,
@@ -22677,8 +22677,8 @@
     "checkpoints": [
      {
       "automation": 0.95,
-      "cbr": 35.4,
-      "cdr": 0.3,
+      "cbr": 7.3,
+      "cdr": 0.1,
       "crowding": 0.889,
       "e0": 94.0,
       "education_cost": 0.857,
@@ -22686,10 +22686,10 @@
       "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
       "income": 3.863,
       "labour_value": 0.013,
-      "net_migration_per_1000": 7.57,
+      "net_migration_per_1000": 794.89,
       "pension_coverage": 0.506,
       "phase": "stagnation",
-      "pop": 209,
+      "pop": 1011,
       "q5": 0.0001,
       "religious_share": 0.051,
       "space_index": 0.072,
@@ -22701,121 +22701,121 @@
      },
      {
       "automation": 0.95,
-      "cbr": 26.2,
-      "cdr": 0.5,
-      "crowding": 0.941,
-      "e0": 94.0,
+      "cbr": 0.8,
+      "cdr": 16.5,
+      "crowding": 1.914,
+      "e0": 85.2,
       "education_cost": 0.857,
-      "family_norm": 2.39,
+      "family_norm": 2.37,
       "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-      "income": 3.455,
-      "labour_value": 0.013,
-      "net_migration_per_1000": 6.67,
+      "income": 3.742,
+      "labour_value": 0.0,
+      "net_migration_per_1000": 1.43,
       "pension_coverage": 0.533,
-      "phase": "boom",
-      "pop": 251,
-      "q5": 0.0001,
-      "religious_share": 0.054,
-      "space_index": 0.073,
+      "phase": "decline",
+      "pop": 912,
+      "q5": 0.0086,
+      "religious_share": 0.083,
+      "space_index": 0.018,
       "tech_index": 2.02,
-      "tfr": 2.23,
-      "tfr_econ": 1.61,
+      "tfr": 0.06,
+      "tfr_econ": 1.46,
       "urbanisation": 0.0,
       "year": 3050
      },
      {
       "automation": 0.95,
-      "cbr": 12.9,
-      "cdr": 3.6,
-      "crowding": 0.878,
+      "cbr": 10.1,
+      "cdr": 4.3,
+      "crowding": 0.861,
       "e0": 94.0,
       "education_cost": 0.857,
-      "family_norm": 2.05,
+      "family_norm": 2.02,
       "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-      "income": 2.744,
+      "income": 2.749,
       "labour_value": 0.012,
-      "net_migration_per_1000": 4.13,
+      "net_migration_per_1000": 2.39,
       "pension_coverage": 0.622,
-      "phase": "boom",
-      "pop": 405,
+      "phase": "growth",
+      "pop": 1213,
       "q5": 0.0001,
-      "religious_share": 0.055,
-      "space_index": 0.111,
+      "religious_share": 0.098,
+      "space_index": 0.115,
       "tech_index": 1.779,
-      "tfr": 2.09,
-      "tfr_econ": 1.62,
+      "tfr": 2.1,
+      "tfr_econ": 1.63,
       "urbanisation": 0.0,
       "year": 3075
      },
      {
       "automation": 0.95,
-      "cbr": 12.2,
-      "cdr": 9.0,
-      "crowding": 0.836,
+      "cbr": 11.0,
+      "cdr": 11.9,
+      "crowding": 0.803,
       "e0": 94.0,
       "education_cost": 0.857,
       "family_norm": 1.87,
       "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-      "income": 2.481,
+      "income": 2.237,
       "labour_value": 0.012,
-      "net_migration_per_1000": 3.3,
+      "net_migration_per_1000": 2.04,
       "pension_coverage": 0.664,
-      "phase": "growth",
-      "pop": 508,
+      "phase": "stagnation",
+      "pop": 1333,
       "q5": 0.0001,
-      "religious_share": 0.051,
-      "space_index": 0.135,
+      "religious_share": 0.086,
+      "space_index": 0.155,
       "tech_index": 1.78,
-      "tfr": 2.03,
-      "tfr_econ": 1.64,
+      "tfr": 2.07,
+      "tfr_econ": 1.7,
       "urbanisation": 0.0,
       "year": 3100
      },
      {
       "automation": 0.95,
       "cbr": 11.6,
-      "cdr": 9.9,
-      "crowding": 0.795,
+      "cdr": 12.2,
+      "crowding": 0.767,
       "e0": 94.0,
       "education_cost": 0.857,
-      "family_norm": 1.77,
+      "family_norm": 1.79,
       "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-      "income": 2.677,
+      "income": 2.581,
       "labour_value": 0.013,
       "net_migration_per_1000": 0.0,
       "pension_coverage": 0.683,
       "phase": "stagnation",
-      "pop": 558,
+      "pop": 1317,
       "q5": 0.0001,
-      "religious_share": 0.047,
-      "space_index": 0.141,
+      "religious_share": 0.076,
+      "space_index": 0.154,
       "tech_index": 1.907,
-      "tfr": 2.01,
-      "tfr_econ": 1.63,
+      "tfr": 2.06,
+      "tfr_econ": 1.67,
       "urbanisation": 0.0,
       "year": 3125
      },
      {
       "automation": 0.95,
       "cbr": 11.6,
-      "cdr": 9.9,
-      "crowding": 0.794,
+      "cdr": 12.1,
+      "crowding": 0.766,
       "e0": 94.0,
       "education_cost": 0.857,
-      "family_norm": 1.77,
+      "family_norm": 1.79,
       "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-      "income": 2.683,
+      "income": 2.594,
       "labour_value": 0.013,
       "net_migration_per_1000": 0.0,
       "pension_coverage": 0.684,
       "phase": "stagnation",
-      "pop": 559,
+      "pop": 1317,
       "q5": 0.0001,
-      "religious_share": 0.046,
-      "space_index": 0.141,
+      "religious_share": 0.075,
+      "space_index": 0.153,
       "tech_index": 1.912,
-      "tfr": 2.01,
-      "tfr_econ": 1.63,
+      "tfr": 2.05,
+      "tfr_econ": 1.67,
       "urbanisation": 0.0,
       "year": 3126
      }
@@ -22824,19 +22824,19 @@
     "eras": [
      {
       "automation": 0.95,
-      "cbr": 14.9,
-      "cdr": 5.8,
-      "crowding": 0.86,
+      "cbr": 10.6,
+      "cdr": 8.4,
+      "crowding": 0.92,
       "end": 3126,
       "era": "industrial_recovery",
-      "growth_pct": 1.215,
+      "growth_pct": 0.326,
       "housing_tier": 1,
-      "income": 2.81,
-      "net_migration_per_1000": 3.51,
-      "pop_end": 559,
-      "pop_start": 209,
+      "income": 2.8,
+      "net_migration_per_1000": 45.84,
+      "pop_end": 1317,
+      "pop_start": 1011,
       "start": 3045,
-      "tfr": 2.08
+      "tfr": 1.9
      }
     ],
     "events": [
@@ -22852,15 +22852,15 @@
     "habitat_3126": {
      "burrowed_moons_asteroids": 0,
      "rotating_habitats": 0,
-     "surface_and_underground": 559
+     "surface_and_underground": 1317
     },
     "intensity": null,
     "kind": "outpost",
-    "migrants_in": 113,
-    "migrants_out": 0,
+    "migrants_in": 995,
+    "migrants_out": 20,
     "name": "«Золотой Город»",
     "owner": "cyg61_kern",
-    "pop_3126": 559,
+    "pop_3126": 1317,
     "system": 45,
     "target": null,
     "tech_3126": {
@@ -25087,7 +25087,7 @@
       "net_migration_per_1000": 0.82,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1242243130,
+      "pop": 1242243129,
       "q5": 0.0001,
       "religious_share": 0.107,
       "space_index": 0.168,
@@ -25111,7 +25111,7 @@
       "net_migration_per_1000": 0.72,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1296612346,
+      "pop": 1296612347,
       "q5": 0.0001,
       "religious_share": 0.094,
       "space_index": 0.165,
@@ -25135,7 +25135,7 @@
       "net_migration_per_1000": 0.62,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1338150332,
+      "pop": 1338150337,
       "q5": 0.0001,
       "religious_share": 0.083,
       "space_index": 0.162,
@@ -25159,7 +25159,7 @@
       "net_migration_per_1000": 0.14,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1356631589,
+      "pop": 1356631598,
       "q5": 0.0001,
       "religious_share": 0.074,
       "space_index": 0.161,
@@ -25183,7 +25183,7 @@
       "net_migration_per_1000": 0.0,
       "pension_coverage": 1.0,
       "phase": "stagnation",
-      "pop": 1356527898,
+      "pop": 1356527906,
       "q5": 0.0001,
       "religious_share": 0.073,
       "space_index": 0.16,
@@ -25239,7 +25239,7 @@
       "housing_tier": 3,
       "income": 1.81,
       "net_migration_per_1000": 2.47,
-      "pop_end": 1356527898,
+      "pop_end": 1356527906,
       "pop_start": 21157629,
       "start": 2752,
       "tfr": 2.51
@@ -25271,16 +25271,16 @@
     "founded": 2233,
     "habitat_3126": {
      "burrowed_moons_asteroids": 4240117,
-     "rotating_habitats": 1352287781,
+     "rotating_habitats": 1352287790,
      "surface_and_underground": 0
     },
     "intensity": 1.1238,
     "kind": "colony",
-    "migrants_in": 329407422,
+    "migrants_in": 329407428,
     "migrants_out": 0,
     "name": "Новый Шанхай",
     "owner": null,
-    "pop_3126": 1356527898,
+    "pop_3126": 1356527906,
     "system": 8,
     "target": [
      1200000000.0,
@@ -26445,7 +26445,7 @@
    ],
    [
     "alliance",
-    21.2
+    22.7
    ],
    [
     "profiteering",
@@ -26469,7 +26469,7 @@
   "hd114783_hellas3": [
    [
     "neutrality",
-    29.3
+    27.3
    ],
    [
     "betrayal",
@@ -26525,7 +26525,7 @@
   "hd40307_maland": [
    [
     "alliance",
-    26.3
+    27.8
    ],
    [
     "profiteering",
@@ -26638,10 +26638,10 @@
  "earth_return": {
   "colonies": {
    "industrial_index": 29610.1,
-   "men_20_39": 2423309710,
-   "mobilisable_8pc": 193864777,
-   "pop": 10087896330,
-   "shipbuilding_index": 71895.1
+   "men_20_39": 2423309149,
+   "mobilisable_8pc": 193864732,
+   "pop": 10087894053,
+   "shipbuilding_index": 71895.0
   },
   "colony_hulls_per_year": 421.9,
   "earth": {
@@ -26751,27 +26751,27 @@
    {
     "id": "eps_eri_harmony",
     "industrial_index": 4737.7,
-    "pop": 1371102075
+    "pop": 1371102748
    },
    {
     "id": "gj832_tianhe",
     "industrial_index": 3467.2,
-    "pop": 1058878197
+    "pop": 1058878366
    },
    {
     "id": "tau_ceti_cognium",
     "industrial_index": 3445.3,
-    "pop": 1356527898
+    "pop": 1356527906
    },
    {
     "id": "hd20794_newindia",
     "industrial_index": 2932.2,
-    "pop": 903060113
+    "pop": 903060135
    },
    {
     "id": "lalande_mecca",
     "industrial_index": 2312.4,
-    "pop": 799743555
+    "pop": 799743540
    },
    {
     "id": "proxima_outpost",
@@ -26780,6 +26780,17 @@
    }
   ],
   "network_control": [
+   [
+    "cyg61_kern",
+    [
+     23,
+     24,
+     31,
+     37,
+     45
+    ],
+    39
+   ],
    [
     "tau_ceti_cognium",
     [
@@ -26794,7 +26805,21 @@
      53,
      54
     ],
-    19
+    25
+   ],
+   [
+    "wolf359_citadel",
+    [
+     3
+    ],
+    11
+   ],
+   [
+    "lalande_hellas",
+    [
+     4
+    ],
+    8
    ],
    [
     "hd20794_hellas2",
@@ -26802,23 +26827,6 @@
      57
     ],
     4
-   ],
-   [
-    "wolf359_citadel",
-    [
-     3
-    ],
-    3
-   ],
-   [
-    "cyg61_kern",
-    [
-     23,
-     31,
-     37,
-     45
-    ],
-    0
    ],
    [
     "delta_pav_freekarma",
@@ -26863,13 +26871,6 @@
     0
    ],
    [
-    "lalande_hellas",
-    [
-     4
-    ],
-    0
-   ],
-   [
     "sol_authority",
     [
      0
@@ -26883,11 +26884,11 @@
     "id": "eri_ice",
     "importance": 0.9,
     "name": "Ледовый комплекс облака комет",
-    "output": 43197.392,
+    "output": 43197.401,
     "owner": "eps_eri_harmony",
     "range": [
-     30238.17,
-     56156.61
+     30238.18,
+     56156.62
     ],
     "type": "ice_export"
    },
@@ -26896,11 +26897,11 @@
     "id": "eri_b1_mines",
     "importance": 0.8,
     "name": "Рудники eps Eri b I",
-    "output": 21411.603,
+    "output": 21411.593,
     "owner": "eps_eri_harmony",
     "range": [
-     14988.12,
-     27835.08
+     14988.11,
+     27835.07
     ],
     "type": "mine"
    },
@@ -26909,7 +26910,7 @@
     "id": "maland_rings",
     "importance": 1.0,
     "name": "Агрокольца Маланд («Житница»)",
-    "output": 12554.815,
+    "output": 12554.813,
     "owner": "hd40307_maland",
     "range": [
      8788.37,
@@ -26922,11 +26923,11 @@
     "id": "acen_farms",
     "importance": 0.8,
     "name": "Агрокупола Alpha Centauri B l",
-    "output": 11454.667,
+    "output": 11454.665,
     "owner": "proxima_outpost",
     "range": [
      8018.27,
-     14891.07
+     14891.06
     ],
     "type": "food_habitat"
    },
@@ -26935,11 +26936,11 @@
     "id": "eri_b_gas",
     "importance": 0.9,
     "name": "Платформы eps Eri b",
-    "output": 7946.183,
+    "output": 7946.192,
     "owner": "eps_eri_harmony",
     "range": [
      5562.33,
-     10330.04
+     10330.05
     ],
     "type": "gas_platform"
    },
@@ -26948,10 +26949,10 @@
     "id": "gj832b_gas",
     "importance": 0.9,
     "name": "Платформы GJ 832 b",
-    "output": 5168.191,
+    "output": 5168.193,
     "owner": "gj832_tianhe",
     "range": [
-     3617.73,
+     3617.74,
      6718.65
     ],
     "type": "gas_platform"
@@ -26961,7 +26962,7 @@
     "id": "hd20794d_gas",
     "importance": 0.8,
     "name": "Платформы HD 20794 d",
-    "output": 1399.976,
+    "output": 1399.977,
     "owner": "hd20794_hellas2",
     "range": [
      979.98,
@@ -27053,39 +27054,39 @@
     "volatiles": 0.0
    },
    "imports": {
-    "biotech": 11.681,
-    "components": 124.451,
+    "biotech": 11.68,
+    "components": 124.449,
     "drive_cores": 2.261,
     "electronics": 0.0,
     "food": 0.0,
-    "he3": 179.815,
+    "he3": 179.811,
     "hulls": 3.642,
     "isotopes": 10.132,
-    "metals": 414.415,
+    "metals": 414.406,
     "munitions": 5.213,
-    "precision": 32.116,
+    "precision": 32.115,
     "volatiles": 0.0
    },
    "made": {
-    "biotech": 39.367,
-    "components": 183.681,
+    "biotech": 39.366,
+    "components": 183.677,
     "drive_cores": 0.0,
-    "electronics": 112.601,
-    "food": 1855.045,
-    "he3": 96.158,
+    "electronics": 112.599,
+    "food": 1855.003,
+    "he3": 96.156,
     "hulls": 0.0,
     "isotopes": 0.512,
     "metals": 1.605,
     "munitions": 8.515,
-    "precision": 28.267,
-    "volatiles": 1690.065
+    "precision": 28.266,
+    "volatiles": 1690.027
    },
    "partners": {
-    "eps_eri_harmony": 1722.65,
-    "eps_eri_strife": 780.17,
-    "gj832_tianhe": 583.34,
-    "hd20794_newindia": 325.44,
-    "tau_ceti_cognium": 452.18
+    "eps_eri_harmony": 1722.62,
+    "eps_eri_strife": 780.19,
+    "gj832_tianhe": 583.33,
+    "hd20794_newindia": 325.43,
+    "tau_ceti_cognium": 452.17
    },
    "prices": {
     "biotech": 27.07,
@@ -27107,7 +27108,7 @@
     "biotech": 102.476,
     "components": 0.0,
     "drive_cores": 0.0,
-    "electronics": 21.543,
+    "electronics": 21.547,
     "food": 880.139,
     "he3": 0.0,
     "hulls": 0.815,
@@ -27156,7 +27157,7 @@
     "biotech": 20.63,
     "components": 3.61,
     "drive_cores": 275.33,
-    "electronics": 10.82,
+    "electronics": 10.83,
     "food": 1.55,
     "he3": 5.51,
     "hulls": 320.0,
@@ -27187,21 +27188,21 @@
     "components": 106.421,
     "drive_cores": 4.0,
     "electronics": 51.616,
-    "food": 3338.7,
+    "food": 3338.701,
     "he3": 1153.219,
     "hulls": 13.282,
     "isotopes": 27.956,
     "metals": 0.0,
     "munitions": 0.0,
     "precision": 0.0,
-    "volatiles": 3523.772
+    "volatiles": 3523.771
    },
    "made": {
     "biotech": 127.0,
     "components": 1659.398,
     "drive_cores": 0.0,
     "electronics": 787.53,
-    "food": 1842.99,
+    "food": 1842.989,
     "he3": 0.0,
     "hulls": 15.177,
     "isotopes": 14.392,
@@ -27214,8 +27215,8 @@
     "delta_pav_freekarma": 2987.91,
     "eps_eri_harmony": 3261.19,
     "gj832_tianhe": 10253.39,
-    "hd20794_hellas2": 2229.89,
-    "tau_ceti_cognium": 16845.92
+    "hd20794_hellas2": 2229.84,
+    "tau_ceti_cognium": 16845.91
    },
    "prices": {
     "biotech": 112.92,
@@ -27224,7 +27225,7 @@
     "electronics": 12.38,
     "food": 1.38,
     "he3": 5.51,
-    "hulls": 145.3,
+    "hulls": 145.31,
     "isotopes": 27.53,
     "metals": 1.87,
     "munitions": 15.47,
@@ -27237,21 +27238,21 @@
     "biotech": 0.0,
     "components": 0.0,
     "drive_cores": 0.0,
-    "electronics": 81.898,
-    "food": 9444.952,
-    "he3": 5586.868,
+    "electronics": 81.894,
+    "food": 9444.959,
+    "he3": 5586.875,
     "hulls": 121.811,
     "isotopes": 357.155,
-    "metals": 4146.813,
+    "metals": 4146.806,
     "munitions": 0.0,
     "precision": 46.475,
     "volatiles": 7575.32
    },
    "imports": {
-    "biotech": 182.245,
+    "biotech": 182.243,
     "components": 649.657,
     "drive_cores": 13.262,
-    "electronics": 416.095,
+    "electronics": 416.091,
     "food": 0.0,
     "he3": 0.0,
     "hulls": 0.0,
@@ -27263,23 +27264,23 @@
    },
    "made": {
     "biotech": 365.087,
-    "components": 3469.902,
+    "components": 3469.904,
     "drive_cores": 0.0,
-    "electronics": 1068.443,
-    "food": 27815.056,
-    "he3": 7946.183,
+    "electronics": 1068.444,
+    "food": 27815.072,
+    "he3": 7946.192,
     "hulls": 194.821,
     "isotopes": 407.574,
-    "metals": 21411.603,
+    "metals": 21411.593,
     "munitions": 84.129,
     "precision": 535.155,
-    "volatiles": 43197.392
+    "volatiles": 43197.401
    },
    "partners": {
-    "hd20794_newindia": 8987.49,
-    "lalande_mecca": 8673.72,
+    "hd20794_newindia": 8987.5,
+    "lalande_mecca": 8673.67,
     "proxima_outpost": 6689.9,
-    "tau_ceti_cognium": 37629.41,
+    "tau_ceti_cognium": 37629.29,
     "wolf359_citadel": 5971.38
    },
    "prices": {
@@ -27304,9 +27305,9 @@
     "drive_cores": 0.361,
     "electronics": 504.765,
     "food": 0.0,
-    "he3": 869.221,
+    "he3": 869.222,
     "hulls": 7.384,
-    "isotopes": 455.42,
+    "isotopes": 455.419,
     "metals": 0.0,
     "munitions": 16.499,
     "precision": 15.964,
@@ -27317,11 +27318,11 @@
     "components": 70.68,
     "drive_cores": 6.98,
     "electronics": 0.0,
-    "food": 3226.466,
+    "food": 3226.467,
     "he3": 0.0,
     "hulls": 0.0,
     "isotopes": 0.0,
-    "metals": 45.929,
+    "metals": 45.932,
     "munitions": 0.0,
     "precision": 11.143,
     "volatiles": 0.0
@@ -27330,22 +27331,22 @@
     "biotech": 206.464,
     "components": 1037.499,
     "drive_cores": 0.176,
-    "electronics": 836.778,
+    "electronics": 836.779,
     "food": 692.133,
-    "he3": 1948.753,
+    "he3": 1948.754,
     "hulls": 27.159,
     "isotopes": 562.196,
-    "metals": 2627.407,
+    "metals": 2627.405,
     "munitions": 54.319,
     "precision": 160.011,
-    "volatiles": 10593.897
+    "volatiles": 10593.895
    },
    "partners": {
     "eps_eri_harmony": 4931.56,
-    "lalande_mecca": 5794.99,
-    "proxima_outpost": 2331.61,
-    "tau_ceti_cognium": 15652.46,
-    "wolf359_citadel": 2202.94
+    "lalande_mecca": 5794.97,
+    "proxima_outpost": 2331.63,
+    "tau_ceti_cognium": 15652.41,
+    "wolf359_citadel": 2202.91
    },
    "prices": {
     "biotech": 20.63,
@@ -27372,7 +27373,7 @@
     "he3": 0.0,
     "hulls": 1.072,
     "isotopes": 0.0,
-    "metals": 267.259,
+    "metals": 267.258,
     "munitions": 3.979,
     "precision": 19.78,
     "volatiles": 0.0
@@ -27400,17 +27401,17 @@
     "he3": 70.236,
     "hulls": 6.141,
     "isotopes": 0.886,
-    "metals": 2113.731,
+    "metals": 2113.73,
     "munitions": 29.064,
-    "precision": 126.953,
+    "precision": 126.952,
     "volatiles": 150.179
    },
    "partners": {
-    "eps_eri_harmony": 2207.21,
+    "eps_eri_harmony": 2207.25,
     "lalande_mecca": 1664.06,
-    "proxima_outpost": 2172.88,
-    "tau_ceti_cognium": 2743.73,
-    "wolf359_citadel": 1866.19
+    "proxima_outpost": 2172.85,
+    "tau_ceti_cognium": 2743.75,
+    "wolf359_citadel": 1866.13
    },
    "prices": {
     "biotech": 18.36,
@@ -27430,9 +27431,9 @@
   "gj581_freeclans": {
    "exports": {
     "biotech": 153.776,
-    "components": 0.0,
+    "components": 0.008,
     "drive_cores": 0.0,
-    "electronics": 409.721,
+    "electronics": 409.724,
     "food": 0.0,
     "he3": 0.0,
     "hulls": 0.793,
@@ -27446,19 +27447,19 @@
     "biotech": 0.0,
     "components": 0.0,
     "drive_cores": 2.388,
-    "electronics": 91.043,
+    "electronics": 91.045,
     "food": 1044.029,
-    "he3": 320.6,
+    "he3": 320.599,
     "hulls": 7.279,
     "isotopes": 12.342,
-    "metals": 889.398,
+    "metals": 889.397,
     "munitions": 7.707,
     "precision": 33.975,
     "volatiles": 0.0
    },
    "made": {
     "biotech": 229.557,
-    "components": 816.66,
+    "components": 816.661,
     "drive_cores": 0.302,
     "electronics": 490.151,
     "food": 769.548,
@@ -27471,11 +27472,11 @@
     "volatiles": 2042.199
    },
    "partners": {
-    "eps_eri_harmony": 3116.44,
-    "gj832_tianhe": 1793.22,
-    "lalande_mecca": 1600.4,
+    "eps_eri_harmony": 3116.49,
+    "gj832_tianhe": 1793.16,
+    "lalande_mecca": 1600.42,
     "proxima_outpost": 2930.56,
-    "tau_ceti_cognium": 5918.15
+    "tau_ceti_cognium": 5918.12
    },
    "prices": {
     "biotech": 20.63,
@@ -27495,17 +27496,17 @@
   "gj832_tianhe": {
    "exports": {
     "biotech": 0.0,
-    "components": 299.612,
-    "drive_cores": 1.032,
+    "components": 299.611,
+    "drive_cores": 1.033,
     "electronics": 49.899,
-    "food": 5031.902,
-    "he3": 1841.787,
+    "food": 5031.898,
+    "he3": 1841.786,
     "hulls": 62.952,
     "isotopes": 0.0,
-    "metals": 496.329,
+    "metals": 496.33,
     "munitions": 0.0,
     "precision": 202.834,
-    "volatiles": 2695.852
+    "volatiles": 2695.851
    },
    "imports": {
     "biotech": 0.0,
@@ -27523,14 +27524,14 @@
    },
    "made": {
     "biotech": 415.414,
-    "components": 3968.401,
+    "components": 3968.402,
     "drive_cores": 0.0,
     "electronics": 1030.498,
-    "food": 18882.741,
-    "he3": 5168.191,
+    "food": 18882.742,
+    "he3": 5168.193,
     "hulls": 110.577,
     "isotopes": 0.677,
-    "metals": 11696.549,
+    "metals": 11696.548,
     "munitions": 96.631,
     "precision": 612.037,
     "volatiles": 18456.047
@@ -27538,9 +27539,9 @@
    "partners": {
     "delta_pav_karma": 10253.39,
     "hd20794_hellas2": 2638.11,
-    "hd20794_newindia": 4947.52,
+    "hd20794_newindia": 4947.51,
     "tau_ceti_cognium": 8200.84,
-    "wolf359_citadel": 4260.7
+    "wolf359_citadel": 4260.8
    },
    "prices": {
     "biotech": 22.93,
@@ -27638,17 +27639,17 @@
     "volatiles": 0.0
    },
    "imports": {
-    "biotech": 0.0,
-    "components": 0.0,
+    "biotech": 0.003,
+    "components": 0.009,
     "drive_cores": 0.0,
-    "electronics": 0.0,
+    "electronics": 0.004,
     "food": 0.0,
-    "he3": 0.0,
+    "he3": 0.014,
     "hulls": 0.0,
     "isotopes": 0.0,
     "metals": 0.0,
     "munitions": 0.0,
-    "precision": 0.0,
+    "precision": 0.004,
     "volatiles": 0.0
    },
    "made": {
@@ -27656,29 +27657,35 @@
     "components": 0.001,
     "drive_cores": 0.0,
     "electronics": 0.001,
-    "food": 0.031,
-    "he3": 0.014,
+    "food": 0.036,
+    "he3": 0.003,
     "hulls": 0.0,
     "isotopes": 0.002,
-    "metals": 0.024,
+    "metals": 0.028,
     "munitions": 0.0,
     "precision": 0.0,
-    "volatiles": 0.061
+    "volatiles": 0.074
    },
-   "partners": {},
+   "partners": {
+    "delta_pav_karma": 0.04,
+    "eps_eri_harmony": 0.04,
+    "gj832_tianhe": 0.06,
+    "hd40307_maland": 0.06,
+    "tau_ceti_cognium": 0.04
+   },
    "prices": {
-    "biotech": 137.1,
-    "components": 40.0,
-    "drive_cores": 2400.0,
-    "electronics": 46.11,
-    "food": 4.15,
-    "he3": 7.87,
-    "hulls": 320.0,
+    "biotech": 18.36,
+    "components": 11.03,
+    "drive_cores": 276.5,
+    "electronics": 11.01,
+    "food": 3.69,
+    "he3": 5.51,
+    "hulls": 226.04,
     "isotopes": 10.5,
-    "metals": 2.72,
-    "munitions": 88.65,
-    "precision": 200.0,
-    "volatiles": 1.47
+    "metals": 2.41,
+    "munitions": 13.78,
+    "precision": 25.79,
+    "volatiles": 1.31
    }
   },
   "hd20794_hellas2": {
@@ -27688,13 +27695,13 @@
     "drive_cores": 0.236,
     "electronics": 548.854,
     "food": 0.0,
-    "he3": 650.569,
+    "he3": 650.57,
     "hulls": 1.918,
     "isotopes": 174.562,
     "metals": 685.316,
     "munitions": 8.375,
     "precision": 210.714,
-    "volatiles": 1580.41
+    "volatiles": 1580.408
    },
    "imports": {
     "biotech": 0.0,
@@ -27716,20 +27723,20 @@
     "drive_cores": 0.0,
     "electronics": 847.573,
     "food": 447.392,
-    "he3": 1399.976,
+    "he3": 1399.977,
     "hulls": 11.983,
     "isotopes": 200.113,
     "metals": 2620.603,
     "munitions": 34.566,
     "precision": 367.746,
-    "volatiles": 3739.681
+    "volatiles": 3739.679
    },
    "partners": {
-    "eps_eri_harmony": 4351.8,
+    "eps_eri_harmony": 4351.77,
     "gj832_tianhe": 2638.11,
-    "hd40307_maland": 5411.75,
-    "lalande_mecca": 2579.87,
-    "tau_ceti_cognium": 5484.83
+    "hd40307_maland": 5411.73,
+    "lalande_mecca": 2579.89,
+    "tau_ceti_cognium": 5484.82
    },
    "prices": {
     "biotech": 20.63,
@@ -27749,7 +27756,7 @@
   "hd20794_newindia": {
    "exports": {
     "biotech": 0.0,
-    "components": 6541.266,
+    "components": 6541.271,
     "drive_cores": 0.854,
     "electronics": 113.379,
     "food": 0.0,
@@ -27766,35 +27773,35 @@
     "components": 0.0,
     "drive_cores": 16.649,
     "electronics": 161.868,
-    "food": 5136.585,
+    "food": 5136.586,
     "he3": 136.166,
     "hulls": 17.814,
     "isotopes": 0.0,
     "metals": 0.0,
     "munitions": 29.551,
     "precision": 26.127,
-    "volatiles": 1580.41
+    "volatiles": 1580.408
    },
    "made": {
     "biotech": 0.0,
-    "components": 8967.772,
+    "components": 8967.769,
     "drive_cores": 0.0,
     "electronics": 745.07,
-    "food": 3405.258,
+    "food": 3405.255,
     "he3": 2217.428,
     "hulls": 17.583,
     "isotopes": 374.022,
-    "metals": 12560.269,
-    "munitions": 84.479,
+    "metals": 12560.266,
+    "munitions": 84.478,
     "precision": 404.288,
-    "volatiles": 2043.155
+    "volatiles": 2043.153
    },
    "partners": {
-    "eps_eri_harmony": 8987.49,
-    "gj832_tianhe": 4947.52,
+    "eps_eri_harmony": 8987.5,
+    "gj832_tianhe": 4947.51,
     "lalande_mecca": 7158.69,
     "tau_ceti_cognium": 17334.52,
-    "wolf359_citadel": 6153.0
+    "wolf359_citadel": 6153.08
    },
    "prices": {
     "biotech": 52.34,
@@ -27818,7 +27825,7 @@
     "drive_cores": 0.0,
     "electronics": 421.359,
     "food": 0.0,
-    "he3": 316.327,
+    "he3": 316.33,
     "hulls": 1.173,
     "isotopes": 0.0,
     "metals": 377.83,
@@ -27855,11 +27862,11 @@
     "volatiles": 623.8
    },
    "partners": {
-    "eps_eri_harmony": 2254.13,
+    "eps_eri_harmony": 2254.11,
     "hd40307_maland": 7215.7,
     "hd69830_verde": 2070.21,
-    "proxima_outpost": 3912.02,
-    "tau_ceti_cognium": 3486.65
+    "proxima_outpost": 3912.07,
+    "tau_ceti_cognium": 3486.67
    },
    "prices": {
     "biotech": 20.63,
@@ -27888,7 +27895,7 @@
     "isotopes": 0.0,
     "metals": 0.0,
     "munitions": 4.232,
-    "precision": 23.741,
+    "precision": 23.737,
     "volatiles": 1204.372
    },
    "imports": {
@@ -27901,8 +27908,8 @@
     "hulls": 12.564,
     "isotopes": 34.542,
     "metals": 1843.501,
-    "munitions": 40.224,
-    "precision": 123.187,
+    "munitions": 40.223,
+    "precision": 123.183,
     "volatiles": 0.0
    },
    "made": {
@@ -27910,18 +27917,18 @@
     "components": 322.302,
     "drive_cores": 0.0,
     "electronics": 106.468,
-    "food": 12554.815,
+    "food": 12554.813,
     "he3": 941.768,
     "hulls": 0.0,
     "isotopes": 1.036,
     "metals": 49.856,
     "munitions": 11.052,
     "precision": 45.863,
-    "volatiles": 10109.37
+    "volatiles": 10109.369
    },
    "partners": {
-    "eps_eri_harmony": 2451.31,
-    "hd20794_hellas2": 5411.75,
+    "eps_eri_harmony": 2451.26,
+    "hd20794_hellas2": 5411.73,
     "hd20794_newindia": 4733.42,
     "hd40307_firmament": 7215.7,
     "tau_ceti_cognium": 3465.5
@@ -27948,7 +27955,7 @@
     "drive_cores": 0.183,
     "electronics": 6.261,
     "food": 0.0,
-    "he3": 0.0,
+    "he3": 0.01,
     "hulls": 0.0,
     "isotopes": 0.0,
     "metals": 0.0,
@@ -27975,20 +27982,20 @@
     "components": 192.056,
     "drive_cores": 0.0,
     "electronics": 98.755,
-    "food": 3677.253,
+    "food": 3677.252,
     "he3": 1326.706,
     "hulls": 2.439,
     "isotopes": 19.715,
-    "metals": 1228.742,
-    "munitions": 9.507,
+    "metals": 1228.741,
+    "munitions": 9.506,
     "precision": 29.62,
-    "volatiles": 3614.457
+    "volatiles": 3614.456
    },
    "partners": {
     "gj832_tianhe": 740.01,
-    "hd20794_hellas2": 692.02,
+    "hd20794_hellas2": 692.1,
     "hd40307_firmament": 2070.21,
-    "hd40307_maland": 782.5,
+    "hd40307_maland": 782.48,
     "tau_ceti_cognium": 1157.95
    },
    "prices": {
@@ -28027,21 +28034,21 @@
     "drive_cores": 3.73,
     "electronics": 0.0,
     "food": 0.0,
-    "he3": 344.682,
+    "he3": 344.681,
     "hulls": 17.045,
     "isotopes": 20.428,
-    "metals": 1518.479,
+    "metals": 1518.48,
     "munitions": 0.0,
     "precision": 0.0,
     "volatiles": 0.0
    },
    "made": {
     "biotech": 234.748,
-    "components": 1015.062,
+    "components": 1015.063,
     "drive_cores": 0.0,
     "electronics": 467.787,
     "food": 1915.939,
-    "he3": 326.425,
+    "he3": 326.426,
     "hulls": 0.0,
     "isotopes": 4.239,
     "metals": 119.41,
@@ -28050,10 +28057,10 @@
     "volatiles": 3297.523
    },
    "partners": {
-    "eps_eri_harmony": 5647.82,
+    "eps_eri_harmony": 5647.8,
     "gj832_tianhe": 704.69,
     "hd40307_maland": 1145.98,
-    "tau_ceti_cognium": 5182.04,
+    "tau_ceti_cognium": 5182.03,
     "wolf359_citadel": 776.53
    },
    "prices": {
@@ -28097,7 +28104,7 @@
     "isotopes": 89.302,
     "metals": 0.0,
     "munitions": 62.819,
-    "precision": 167.165,
+    "precision": 167.161,
     "volatiles": 227.421
    },
    "made": {
@@ -28105,26 +28112,26 @@
     "components": 223.613,
     "drive_cores": 8.887,
     "electronics": 155.186,
-    "food": 10002.832,
+    "food": 10002.83,
     "he3": 41.657,
     "hulls": 4.151,
     "isotopes": 0.541,
     "metals": 2805.921,
     "munitions": 11.703,
     "precision": 165.465,
-    "volatiles": 8760.829
+    "volatiles": 8760.826
    },
    "partners": {
-    "eps_eri_harmony": 8673.72,
-    "eps_eri_strife": 5794.99,
-    "gj832_tianhe": 2493.1,
-    "hd20794_hellas2": 2579.87,
+    "eps_eri_harmony": 8673.67,
+    "eps_eri_strife": 5794.97,
+    "gj832_tianhe": 2493.07,
+    "hd20794_hellas2": 2579.89,
     "hd20794_newindia": 7158.69
    },
    "prices": {
     "biotech": 39.66,
     "components": 4.59,
-    "drive_cores": 849.13,
+    "drive_cores": 849.12,
     "electronics": 11.01,
     "food": 1.67,
     "he3": 5.51,
@@ -28152,17 +28159,17 @@
     "volatiles": 0.0
    },
    "imports": {
-    "biotech": 0.0,
-    "components": 0.0,
+    "biotech": 0.002,
+    "components": 0.006,
     "drive_cores": 0.0,
-    "electronics": 0.0,
+    "electronics": 0.003,
     "food": 0.0,
-    "he3": 0.0,
+    "he3": 0.011,
     "hulls": 0.0,
     "isotopes": 0.0,
     "metals": 0.0,
     "munitions": 0.0,
-    "precision": 0.0,
+    "precision": 0.002,
     "volatiles": 0.0
    },
    "made": {
@@ -28170,29 +28177,35 @@
     "components": 0.002,
     "drive_cores": 0.0,
     "electronics": 0.001,
-    "food": 0.036,
-    "he3": 0.009,
+    "food": 0.042,
+    "he3": 0.002,
     "hulls": 0.0,
     "isotopes": 0.001,
-    "metals": 0.016,
+    "metals": 0.018,
     "munitions": 0.0,
     "precision": 0.0,
-    "volatiles": 0.041
+    "volatiles": 0.049
    },
-   "partners": {},
+   "partners": {
+    "delta_pav_karma": 0.03,
+    "gj832_tianhe": 0.03,
+    "hd40307_maland": 0.04,
+    "hd69830_verde": 0.03,
+    "tau_ceti_cognium": 0.03
+   },
    "prices": {
-    "biotech": 67.03,
-    "components": 24.67,
-    "drive_cores": 2400.0,
-    "electronics": 46.27,
-    "food": 2.91,
-    "he3": 8.62,
-    "hulls": 320.0,
+    "biotech": 18.36,
+    "components": 9.72,
+    "drive_cores": 276.91,
+    "electronics": 11.01,
+    "food": 2.61,
+    "he3": 5.51,
+    "hulls": 104.79,
     "isotopes": 10.5,
-    "metals": 3.11,
-    "munitions": 56.57,
-    "precision": 125.3,
-    "volatiles": 1.77
+    "metals": 2.76,
+    "munitions": 13.78,
+    "precision": 25.8,
+    "volatiles": 1.6
    }
   },
   "proxima_outpost": {
@@ -28201,18 +28214,18 @@
     "components": 0.0,
     "drive_cores": 0.64,
     "electronics": 61.014,
-    "food": 1827.004,
+    "food": 1827.005,
     "he3": 0.0,
     "hulls": 0.0,
     "isotopes": 0.0,
-    "metals": 497.968,
-    "munitions": 7.721,
+    "metals": 497.967,
+    "munitions": 7.72,
     "precision": 0.0,
     "volatiles": 776.305
    },
    "imports": {
-    "biotech": 32.872,
-    "components": 817.732,
+    "biotech": 32.871,
+    "components": 817.733,
     "drive_cores": 12.48,
     "electronics": 237.097,
     "food": 0.0,
@@ -28225,24 +28238,24 @@
     "volatiles": 0.0
    },
    "made": {
-    "biotech": 228.217,
-    "components": 725.379,
+    "biotech": 228.216,
+    "components": 725.378,
     "drive_cores": 0.027,
     "electronics": 350.84,
-    "food": 11454.667,
+    "food": 11454.665,
     "he3": 101.893,
     "hulls": 6.161,
     "isotopes": 0.059,
-    "metals": 3957.857,
+    "metals": 3957.855,
     "munitions": 73.849,
     "precision": 111.873,
-    "volatiles": 11146.2
+    "volatiles": 11146.197
    },
    "partners": {
     "eps_eri_harmony": 6689.9,
     "gj581_freeclans": 2930.56,
-    "hd20794_newindia": 3606.75,
-    "hd40307_firmament": 3912.02,
+    "hd20794_newindia": 3606.67,
+    "hd40307_firmament": 3912.07,
     "tau_ceti_cognium": 3744.14
    },
    "prices": {
@@ -28264,7 +28277,7 @@
    "exports": {
     "biotech": 0.0,
     "components": 0.0,
-    "drive_cores": 112.278,
+    "drive_cores": 112.277,
     "electronics": 0.0,
     "food": 0.0,
     "he3": 0.0,
@@ -28279,14 +28292,14 @@
     "biotech": 365.03,
     "components": 2421.079,
     "drive_cores": 0.0,
-    "electronics": 958.623,
+    "electronics": 958.621,
     "food": 2075.585,
     "he3": 2389.69,
     "hulls": 34.771,
-    "isotopes": 544.31,
+    "isotopes": 544.309,
     "metals": 2167.989,
     "munitions": 83.453,
-    "precision": 757.625,
+    "precision": 757.624,
     "volatiles": 7575.32
    },
    "made": {
@@ -28294,7 +28307,7 @@
     "components": 37.498,
     "drive_cores": 140.931,
     "electronics": 266.899,
-    "food": 10220.515,
+    "food": 10220.516,
     "he3": 0.0,
     "hulls": 4.005,
     "isotopes": 0.0,
@@ -28304,9 +28317,9 @@
     "volatiles": 0.132
    },
    "partners": {
-    "delta_pav_karma": 16845.92,
-    "eps_eri_harmony": 37629.41,
-    "eps_eri_strife": 15652.46,
+    "delta_pav_karma": 16845.91,
+    "eps_eri_harmony": 37629.29,
+    "eps_eri_strife": 15652.41,
     "gj832_tianhe": 8200.84,
     "hd20794_newindia": 17334.52
    },
@@ -28359,21 +28372,21 @@
     "components": 287.721,
     "drive_cores": 6.806,
     "electronics": 306.159,
-    "food": 5529.6,
+    "food": 5529.598,
     "he3": 0.0,
     "hulls": 9.035,
     "isotopes": 0.0,
     "metals": 2138.644,
     "munitions": 289.631,
     "precision": 44.375,
-    "volatiles": 3317.76
+    "volatiles": 3317.759
    },
    "partners": {
     "eps_eri_harmony": 5971.38,
-    "eps_eri_strife": 2202.94,
-    "gj581_europa": 1866.19,
-    "gj832_tianhe": 4260.7,
-    "hd20794_newindia": 6153.0
+    "eps_eri_strife": 2202.91,
+    "gj581_europa": 1866.13,
+    "gj832_tianhe": 4260.8,
+    "hd20794_newindia": 6153.08
    },
    "prices": {
     "biotech": 52.34,
@@ -37881,18 +37894,17 @@
      16,
      22,
      23,
+     24,
      25,
      30,
      31,
+     37,
+     41,
+     45,
      53,
      54,
      57,
      60
-    ],
-    [
-     37,
-     41,
-     45
     ]
    ],
    "hop": 32.0,
@@ -37911,6 +37923,7 @@
     16,
     22,
     23,
+    24,
     25,
     30,
     31,
@@ -38987,7 +39000,7 @@
    "culture": 22.5,
    "grievance": 0,
    "stance": "нейтрал",
-   "trade": 0.0
+   "trade": 0.4
   },
   "hd114783_hellas3|proxima_outpost": {
    "competition": 0,
@@ -40456,7 +40469,7 @@
      "price": 0.15
     },
     "food": {
-     "output": 0.0,
+     "output": -0.0,
      "price": -0.638
     },
     "he3": {
@@ -40645,11 +40658,11 @@
     },
     "food": {
      "output": null,
-     "price": 0.149
+     "price": 0.152
     },
     "he3": {
      "output": null,
-     "price": 0.15
+     "price": 0.149
     },
     "hulls": {
      "output": null,
@@ -40661,11 +40674,11 @@
     },
     "metals": {
      "output": null,
-     "price": 0.151
+     "price": 0.152
     },
     "munitions": {
      "output": null,
-     "price": 0.557
+     "price": 0.292
     },
     "precision": {
      "output": null,
@@ -40673,7 +40686,7 @@
     },
     "volatiles": {
      "output": 0.0,
-     "price": 0.15
+     "price": 0.145
     }
    },
    "hd20794_hellas2": {
@@ -41027,21 +41040,17 @@
      "output": null,
      "price": 0.15
     },
-    "electronics": {
-     "output": null,
-     "price": 0.15
-    },
     "food": {
      "output": null,
-     "price": 0.148
+     "price": 0.153
     },
     "he3": {
      "output": null,
-     "price": 0.15
+     "price": 0.149
     },
     "hulls": {
      "output": null,
-     "price": 0.15
+     "price": 7.908
     },
     "isotopes": {
      "output": null,
@@ -41049,11 +41058,11 @@
     },
     "metals": {
      "output": null,
-     "price": 0.151
+     "price": 0.149
     },
     "munitions": {
      "output": null,
-     "price": 1.182
+     "price": 8.16
     },
     "precision": {
      "output": null,
@@ -41061,7 +41070,7 @@
     },
     "volatiles": {
      "output": null,
-     "price": 0.153
+     "price": 0.15
     }
    },
    "proxima_outpost": {
@@ -41258,6 +41267,12 @@
     "biotech": {
      "output": 0.0,
      "price": -0.537
+    }
+   },
+   "leo83_zion": {
+    "biotech": {
+     "output": null,
+     "price": -0.496
     }
    },
    "proxima_outpost": {
@@ -41599,6 +41614,12 @@
      "price": 1.948
     }
    },
+   "hd114783_hellas3": {
+    "he3": {
+     "output": null,
+     "price": 0.123
+    }
+   },
    "hd20794_hellas2": {
     "he3": {
      "output": 0.0,
@@ -41638,6 +41659,12 @@
    "lalande_mecca": {
     "he3": {
      "output": 0.0,
+     "price": 0.123
+    }
+   },
+   "leo83_zion": {
+    "he3": {
+     "output": null,
      "price": 0.123
     }
    },
@@ -41935,6 +41962,12 @@
      "price": 0.124
     }
    },
+   "hd114783_hellas3": {
+    "electronics": {
+     "output": null,
+     "price": 0.805
+    }
+   },
    "hd20794_hellas2": {
     "munitions": {
      "output": 0.0,
@@ -41995,10 +42028,16 @@
      "price": 0.677
     }
    },
+   "leo83_zion": {
+    "electronics": {
+     "output": null,
+     "price": 0.766
+    }
+   },
    "proxima_outpost": {
     "hulls": {
      "output": 0.0,
-     "price": 1.878
+     "price": 1.879
     },
     "munitions": {
      "output": 0.0,
@@ -42091,6 +42130,12 @@
      "price": -0.111
     }
    },
+   "hd114783_hellas3": {
+    "electronics": {
+     "output": null,
+     "price": -0.111
+    }
+   },
    "hd20794_newindia": {
     "hulls": {
      "output": 0.0,
@@ -42123,6 +42168,12 @@
     "electronics": {
      "output": 0.0,
      "price": -0.468
+    }
+   },
+   "leo83_zion": {
+    "electronics": {
+     "output": null,
+     "price": -0.111
     }
    },
    "proxima_outpost": {
@@ -42219,6 +42270,12 @@
     "munitions": {
      "output": null,
      "price": 1.37
+    }
+   },
+   "hd114783_hellas3": {
+    "electronics": {
+     "output": null,
+     "price": 0.805
     }
    },
    "hd20794_hellas2": {
@@ -42323,6 +42380,12 @@
      "price": 0.323
     }
    },
+   "leo83_zion": {
+    "electronics": {
+     "output": null,
+     "price": 0.766
+    }
+   },
    "proxima_outpost": {
     "precision": {
      "output": 0.0,
@@ -42384,7 +42447,13 @@
    "delta_pav_freekarma": {
     "electronics": {
      "output": 0.0,
-     "price": 0.42
+     "price": 0.419
+    }
+   },
+   "hd114783_hellas3": {
+    "electronics": {
+     "output": null,
+     "price": 0.805
     }
    },
    "hd69830_verde": {
@@ -42397,6 +42466,12 @@
     "precision": {
      "output": 0.0,
      "price": 0.323
+    }
+   },
+   "leo83_zion": {
+    "electronics": {
+     "output": null,
+     "price": 0.766
     }
    },
    "proxima_outpost": {
@@ -42510,6 +42585,12 @@
     "munitions": {
      "output": 0.0,
      "price": 0.261
+    }
+   },
+   "hd114783_hellas3": {
+    "electronics": {
+     "output": null,
+     "price": 0.805
     }
    },
    "hd20794_hellas2": {
@@ -42800,6 +42881,16 @@
      "price": 1.109
     }
    },
+   "hd114783_hellas3": {
+    "drive_cores": {
+     "output": null,
+     "price": -0.11
+    },
+    "hulls": {
+     "output": null,
+     "price": 4.473
+    }
+   },
    "hd20794_hellas2": {
     "drive_cores": {
      "output": null,
@@ -42916,6 +43007,12 @@
     "precision": {
      "output": 0.0,
      "price": -0.111
+    }
+   },
+   "leo83_zion": {
+    "hulls": {
+     "output": null,
+     "price": 6.746
     }
    },
    "proxima_outpost": {
@@ -43164,6 +43261,24 @@
      "price": 1.457
     }
    },
+   "hd114783_hellas3": {
+    "drive_cores": {
+     "output": null,
+     "price": -0.11
+    },
+    "electronics": {
+     "output": null,
+     "price": 1.577
+    },
+    "he3": {
+     "output": null,
+     "price": 1.016
+    },
+    "hulls": {
+     "output": null,
+     "price": 4.473
+    }
+   },
    "hd20794_hellas2": {
     "drive_cores": {
      "output": null,
@@ -43328,6 +43443,20 @@
     "precision": {
      "output": 0.0,
      "price": 0.165
+    }
+   },
+   "leo83_zion": {
+    "electronics": {
+     "output": null,
+     "price": 1.516
+    },
+    "he3": {
+     "output": null,
+     "price": 2.283
+    },
+    "hulls": {
+     "output": null,
+     "price": 6.746
     }
    },
    "proxima_outpost": {
@@ -43600,6 +43729,24 @@
      "price": 1.457
     }
    },
+   "hd114783_hellas3": {
+    "drive_cores": {
+     "output": null,
+     "price": -0.11
+    },
+    "electronics": {
+     "output": null,
+     "price": 1.577
+    },
+    "he3": {
+     "output": null,
+     "price": 1.016
+    },
+    "hulls": {
+     "output": null,
+     "price": 4.473
+    }
+   },
    "hd20794_hellas2": {
     "drive_cores": {
      "output": null,
@@ -43764,6 +43911,20 @@
     "precision": {
      "output": 0.0,
      "price": 0.165
+    }
+   },
+   "leo83_zion": {
+    "electronics": {
+     "output": null,
+     "price": 1.516
+    },
+    "he3": {
+     "output": null,
+     "price": 2.283
+    },
+    "hulls": {
+     "output": null,
+     "price": 6.746
     }
    },
    "proxima_outpost": {
@@ -43979,7 +44140,7 @@
     },
     "munitions": {
      "output": -1.0,
-     "price": 7.48
+     "price": 7.481
     },
     "precision": {
      "output": -1.0,
@@ -43994,6 +44155,24 @@
     "hulls": {
      "output": null,
      "price": 4.473
+    }
+   },
+   "hd114783_hellas3": {
+    "drive_cores": {
+     "output": null,
+     "price": -0.11
+    },
+    "electronics": {
+     "output": null,
+     "price": -0.111
+    },
+    "hulls": {
+     "output": null,
+     "price": 6.748
+    },
+    "precision": {
+     "output": null,
+     "price": 0.124
     }
    },
    "hd20794_hellas2": {
@@ -44087,7 +44266,7 @@
    "lalande_mecca": {
     "drive_cores": {
      "output": -0.199,
-     "price": 1.448
+     "price": 1.447
     },
     "electronics": {
      "output": 0.0,
@@ -44100,6 +44279,16 @@
     "precision": {
      "output": 0.0,
      "price": -0.111
+    }
+   },
+   "leo83_zion": {
+    "electronics": {
+     "output": null,
+     "price": -0.111
+    },
+    "hulls": {
+     "output": null,
+     "price": 4.473
     }
    },
    "proxima_outpost": {
@@ -44242,7 +44431,7 @@
      "price": 0.169
     },
     "hulls": {
-     "output": 0.278,
+     "output": 0.277,
      "price": 4.474
     }
    },
@@ -44364,6 +44553,20 @@
      "price": 0.124
     }
    },
+   "hd114783_hellas3": {
+    "drive_cores": {
+     "output": null,
+     "price": -0.11
+    },
+    "electronics": {
+     "output": null,
+     "price": 0.805
+    },
+    "hulls": {
+     "output": null,
+     "price": 2.805
+    }
+   },
    "hd20794_hellas2": {
     "drive_cores": {
      "output": null,
@@ -44476,6 +44679,20 @@
     "precision": {
      "output": 0.0,
      "price": -0.111
+    }
+   },
+   "leo83_zion": {
+    "electronics": {
+     "output": null,
+     "price": 0.8
+    },
+    "hulls": {
+     "output": null,
+     "price": 3.383
+    },
+    "precision": {
+     "output": null,
+     "price": 0.124
     }
    },
    "proxima_outpost": {
@@ -44719,7 +44936,7 @@
     },
     "drive_cores": {
      "output": null,
-     "price": 1.919
+     "price": 1.921
     },
     "electronics": {
      "output": 0.0,
@@ -44762,6 +44979,20 @@
     "munitions": {
      "output": null,
      "price": 1.37
+    }
+   },
+   "hd114783_hellas3": {
+    "components": {
+     "output": null,
+     "price": 1.501
+    },
+    "drive_cores": {
+     "output": null,
+     "price": 4.493
+    },
+    "electronics": {
+     "output": null,
+     "price": 0.835
     }
    },
    "hd20794_hellas2": {
@@ -44926,6 +45157,24 @@
      "price": -0.111
     }
    },
+   "leo83_zion": {
+    "biotech": {
+     "output": null,
+     "price": -0.496
+    },
+    "components": {
+     "output": null,
+     "price": 5.12
+    },
+    "drive_cores": {
+     "output": null,
+     "price": 1.854
+    },
+    "electronics": {
+     "output": null,
+     "price": 0.8
+    }
+   },
    "proxima_outpost": {
     "biotech": {
      "output": 0.0,
@@ -44937,7 +45186,7 @@
     },
     "drive_cores": {
      "output": null,
-     "price": 6.512
+     "price": 6.458
     },
     "hulls": {
      "output": 0.0,
@@ -45140,6 +45389,16 @@
      "price": 1.37
     }
    },
+   "hd114783_hellas3": {
+    "electronics": {
+     "output": null,
+     "price": 0.805
+    },
+    "precision": {
+     "output": null,
+     "price": 0.124
+    }
+   },
    "hd20794_hellas2": {
     "metals": {
      "output": 0.0,
@@ -45272,6 +45531,12 @@
     "precision": {
      "output": 0.0,
      "price": 0.285
+    }
+   },
+   "leo83_zion": {
+    "electronics": {
+     "output": null,
+     "price": 0.766
     }
    },
    "proxima_outpost": {
@@ -45456,6 +45721,20 @@
      "price": 2.438
     }
    },
+   "hd114783_hellas3": {
+    "drive_cores": {
+     "output": null,
+     "price": -0.11
+    },
+    "electronics": {
+     "output": null,
+     "price": -0.111
+    },
+    "hulls": {
+     "output": null,
+     "price": 2.805
+    }
+   },
    "hd20794_hellas2": {
     "drive_cores": {
      "output": null,
@@ -45608,6 +45887,12 @@
     "precision": {
      "output": -0.074,
      "price": 0.971
+    }
+   },
+   "leo83_zion": {
+    "hulls": {
+     "output": null,
+     "price": 1.537
     }
    },
    "proxima_outpost": {
@@ -45808,6 +46093,20 @@
      "price": 2.438
     }
    },
+   "hd114783_hellas3": {
+    "drive_cores": {
+     "output": null,
+     "price": -0.11
+    },
+    "electronics": {
+     "output": null,
+     "price": -0.111
+    },
+    "hulls": {
+     "output": null,
+     "price": 2.805
+    }
+   },
    "hd20794_hellas2": {
     "drive_cores": {
      "output": null,
@@ -45960,6 +46259,12 @@
     "precision": {
      "output": -0.074,
      "price": 0.971
+    }
+   },
+   "leo83_zion": {
+    "hulls": {
+     "output": null,
+     "price": 1.537
     }
    },
    "proxima_outpost": {
@@ -46168,6 +46473,20 @@
      "price": 0.788
     }
    },
+   "hd114783_hellas3": {
+    "drive_cores": {
+     "output": null,
+     "price": 4.454
+    },
+    "hulls": {
+     "output": null,
+     "price": 0.858
+    },
+    "precision": {
+     "output": null,
+     "price": 0.124
+    }
+   },
    "hd20794_hellas2": {
     "drive_cores": {
      "output": null,
@@ -46256,6 +46575,20 @@
     "hulls": {
      "output": 0.0,
      "price": 6.756
+    }
+   },
+   "leo83_zion": {
+    "drive_cores": {
+     "output": null,
+     "price": 5.17
+    },
+    "hulls": {
+     "output": null,
+     "price": 0.948
+    },
+    "precision": {
+     "output": null,
+     "price": 0.124
     }
    },
    "proxima_outpost": {
@@ -46544,6 +46877,24 @@
      "price": 6.754
     }
    },
+   "hd114783_hellas3": {
+    "biotech": {
+     "output": null,
+     "price": -0.541
+    },
+    "drive_cores": {
+     "output": null,
+     "price": 6.722
+    },
+    "electronics": {
+     "output": null,
+     "price": -0.111
+    },
+    "hulls": {
+     "output": null,
+     "price": 6.748
+    }
+   },
    "hd20794_hellas2": {
     "biotech": {
      "output": 0.0,
@@ -46712,6 +47063,28 @@
     "precision": {
      "output": 0.0,
      "price": -0.111
+    }
+   },
+   "leo83_zion": {
+    "biotech": {
+     "output": null,
+     "price": -0.433
+    },
+    "components": {
+     "output": null,
+     "price": 1.118
+    },
+    "drive_cores": {
+     "output": null,
+     "price": 7.667
+    },
+    "electronics": {
+     "output": null,
+     "price": -0.111
+    },
+    "hulls": {
+     "output": null,
+     "price": 6.746
     }
    },
    "proxima_outpost": {
@@ -46952,6 +47325,20 @@
      "price": 6.754
     }
    },
+   "hd114783_hellas3": {
+    "drive_cores": {
+     "output": null,
+     "price": -0.11
+    },
+    "electronics": {
+     "output": null,
+     "price": 0.791
+    },
+    "hulls": {
+     "output": null,
+     "price": 6.748
+    }
+   },
    "hd20794_hellas2": {
     "drive_cores": {
      "output": null,
@@ -47048,6 +47435,16 @@
     "munitions": {
      "output": 0.0,
      "price": 0.123
+    }
+   },
+   "leo83_zion": {
+    "electronics": {
+     "output": null,
+     "price": 0.766
+    },
+    "hulls": {
+     "output": null,
+     "price": 6.746
     }
    },
    "proxima_outpost": {
@@ -47218,6 +47615,12 @@
     "electronics": {
      "output": 0.0,
      "price": -0.216
+    }
+   },
+   "leo83_zion": {
+    "electronics": {
+     "output": null,
+     "price": -0.111
     }
    },
    "proxima_outpost": {
@@ -47410,6 +47813,16 @@
      "price": 6.756
     }
    },
+   "leo83_zion": {
+    "electronics": {
+     "output": null,
+     "price": -0.111
+    },
+    "hulls": {
+     "output": null,
+     "price": 6.746
+    }
+   },
    "proxima_outpost": {
     "hulls": {
      "output": 0.804,
@@ -47549,7 +47962,7 @@
    "delta_pav_freekarma": {
     "hulls": {
      "output": 0.0,
-     "price": 2.39
+     "price": 2.389
     }
    },
    "delta_pav_karma": {
@@ -47646,6 +48059,12 @@
      "price": 1.571
     }
    },
+   "hd114783_hellas3": {
+    "hulls": {
+     "output": null,
+     "price": 1.744
+    }
+   },
    "hd20794_hellas2": {
     "electronics": {
      "output": 0.0,
@@ -47724,6 +48143,12 @@
      "price": 6.756
     }
    },
+   "leo83_zion": {
+    "hulls": {
+     "output": null,
+     "price": 6.746
+    }
+   },
    "proxima_outpost": {
     "electronics": {
      "output": 0.0,
@@ -47760,6 +48185,12 @@
     "hulls": {
      "output": -0.5,
      "price": 0.417
+    }
+   },
+   "hd114783_hellas3": {
+    "electronics": {
+     "output": null,
+     "price": 0.805
     }
    },
    "hd20794_newindia": {
@@ -47972,6 +48403,12 @@
     "hulls": {
      "output": null,
      "price": 6.754
+    }
+   },
+   "hd114783_hellas3": {
+    "electronics": {
+     "output": null,
+     "price": 0.954
     }
    },
    "hd20794_newindia": {
@@ -48378,7 +48815,7 @@
   "earth_fleet@hd114783_hellas3": [
    [
     "market_profiteering",
-    28.4,
+    27.4,
     "бизнес взвинчивает цены, государство теряет контроль",
     [
      [
@@ -48716,21 +49153,21 @@
     ]
    ],
    [
-    "scapegoat_purge",
-    43.7,
-    "найти внутреннего врага и устроить чистку",
+    "ration_mobilize",
+    50.8,
+    "пайки, мобилизация, «всё для фронта»",
     [
      [
-      "outsider_trust↓",
+      "collective_duty↑",
+      17.5
+     ],
+     [
+      "тяжесть",
       15.0
      ],
      [
-      "order_love↑",
-      10.0
-     ],
-     [
-      "grievance_memory↑",
-      6.0
+      "hardship_pride↑",
+      11.6
      ]
     ]
    ]
@@ -53076,11 +53513,11 @@
     "id": "cyg_b_i_gas",
     "importance": 0.6,
     "name": "Платформы 61 Cyg B i",
-    "output": 96.158,
+    "output": 96.156,
     "owner": "cyg61_kern",
     "range": [
      67.31,
-     125.01
+     125.0
     ],
     "type": "gas_platform"
    },
@@ -53092,8 +53529,8 @@
     "good": "hulls",
     "id": "cyg61_kern_fleet",
     "importance": 0.79,
-    "manpower_standing": 467224,
-    "manpower_total_war": 3737792,
+    "manpower_standing": 467213,
+    "manpower_total_war": 3737709,
     "name": "флот и мобилизационный резерв",
     "output": 0.0,
     "owner": "cyg61_kern",
@@ -53185,11 +53622,11 @@
     "id": "eri_ice",
     "importance": 0.9,
     "name": "Ледовый комплекс облака комет",
-    "output": 43197.392,
+    "output": 43197.401,
     "owner": "eps_eri_harmony",
     "range": [
-     30238.17,
-     56156.61
+     30238.18,
+     56156.62
     ],
     "type": "ice_export"
    },
@@ -53198,11 +53635,11 @@
     "id": "eri_b_gas",
     "importance": 0.9,
     "name": "Платформы eps Eri b",
-    "output": 7946.183,
+    "output": 7946.192,
     "owner": "eps_eri_harmony",
     "range": [
      5562.33,
-     10330.04
+     10330.05
     ],
     "type": "gas_platform"
    },
@@ -53224,11 +53661,11 @@
     "id": "eri_b1_mines",
     "importance": 0.8,
     "name": "Рудники eps Eri b I",
-    "output": 21411.603,
+    "output": 21411.593,
     "owner": "eps_eri_harmony",
     "range": [
-     14988.12,
-     27835.08
+     14988.11,
+     27835.07
     ],
     "type": "mine"
    },
@@ -53253,8 +53690,8 @@
     "good": "hulls",
     "id": "eps_eri_harmony_fleet",
     "importance": 0.88,
-    "manpower_standing": 4319961,
-    "manpower_total_war": 34559690,
+    "manpower_standing": 4319963,
+    "manpower_total_war": 34559711,
     "name": "флот и мобилизационный резерв",
     "output": 194.821,
     "owner": "eps_eri_harmony",
@@ -53391,10 +53828,10 @@
     "id": "gj832b_gas",
     "importance": 0.9,
     "name": "Платформы GJ 832 b",
-    "output": 5168.191,
+    "output": 5168.193,
     "owner": "gj832_tianhe",
     "range": [
-     3617.73,
+     3617.74,
      6718.65
     ],
     "type": "gas_platform"
@@ -53417,7 +53854,7 @@
     "id": "tianhe_refinery",
     "importance": 0.7,
     "name": "Комбинат GJ 832 b I",
-    "output": 11696.549,
+    "output": 11696.548,
     "owner": "gj832_tianhe",
     "range": [
      8187.58,
@@ -53446,8 +53883,8 @@
     "good": "hulls",
     "id": "gj832_tianhe_fleet",
     "importance": 0.91,
-    "manpower_standing": 3277402,
-    "manpower_total_war": 26219221,
+    "manpower_standing": 3277403,
+    "manpower_total_war": 26219227,
     "name": "флот и мобилизационный резерв",
     "output": 110.577,
     "owner": "gj832_tianhe",
@@ -53552,7 +53989,7 @@
     "id": "hd20794d_gas",
     "importance": 0.8,
     "name": "Платформы HD 20794 d",
-    "output": 1399.976,
+    "output": 1399.977,
     "owner": "hd20794_hellas2",
     "range": [
      979.98,
@@ -53578,11 +54015,11 @@
     "id": "kuiper_rights_h",
     "importance": 0.6,
     "name": "Водные права пояса Койпера",
-    "output": 3739.681,
+    "output": 3739.679,
     "owner": "hd20794_hellas2",
     "range": [
      2617.78,
-     4861.59
+     4861.58
     ],
     "type": "ice_export"
    },
@@ -53623,7 +54060,7 @@
     "id": "newindia_works",
     "importance": 0.6,
     "name": "Сборочные кольца",
-    "output": 8967.772,
+    "output": 8967.769,
     "owner": "hd20794_newindia",
     "range": [
      6277.44,
@@ -53640,7 +54077,7 @@
     "id": "hd20794_newindia_fleet",
     "importance": 0.84,
     "manpower_standing": 3065023,
-    "manpower_total_war": 24520187,
+    "manpower_total_war": 24520188,
     "name": "флот и мобилизационный резерв",
     "output": 17.583,
     "owner": "hd20794_newindia",
@@ -53713,7 +54150,7 @@
     "id": "maland_rings",
     "importance": 1.0,
     "name": "Агрокольца Маланд («Житница»)",
-    "output": 12554.815,
+    "output": 12554.813,
     "owner": "hd40307_maland",
     "range": [
      8788.37,
@@ -53784,7 +54221,7 @@
     "id": "verde_ice",
     "importance": 0.6,
     "name": "Ледовые поля облака комет",
-    "output": 3614.457,
+    "output": 3614.456,
     "owner": "hd69830_verde",
     "range": [
      2530.12,
@@ -53829,7 +54266,7 @@
     "id": "lalande_j_gas_h",
     "importance": 0.6,
     "name": "Платформы Lalande 21185 j (эллинская доля)",
-    "output": 326.425,
+    "output": 326.426,
     "owner": "lalande_hellas",
     "range": [
      228.5,
@@ -53900,7 +54337,7 @@
     "id": "mecca_farms",
     "importance": 0.5,
     "name": "Сады Lalande 21185 g",
-    "output": 10002.832,
+    "output": 10002.83,
     "owner": "lalande_mecca",
     "range": [
      7001.98,
@@ -53917,7 +54354,7 @@
     "id": "lalande_mecca_fleet",
     "importance": 0.84,
     "manpower_standing": 2701567,
-    "manpower_total_war": 21612538,
+    "manpower_total_war": 21612537,
     "name": "флот и мобилизационный резерв",
     "output": 4.151,
     "owner": "lalande_mecca",
@@ -53964,11 +54401,11 @@
     "id": "acen_farms",
     "importance": 0.8,
     "name": "Агрокупола Alpha Centauri B l",
-    "output": 11454.667,
+    "output": 11454.665,
     "owner": "proxima_outpost",
     "range": [
      8018.27,
-     14891.07
+     14891.06
     ],
     "type": "food_habitat"
    },
@@ -53990,7 +54427,7 @@
     "id": "proxima_d_mines",
     "importance": 0.5,
     "name": "Шахты Proxima Cen d",
-    "output": 3957.857,
+    "output": 3957.855,
     "owner": "proxima_outpost",
     "range": [
      2770.5,
@@ -54170,7 +54607,7 @@
      9
     ],
     "seller": "cyg61_kern",
-    "value": 42.196
+    "value": 42.195
    },
    {
     "alternatives": [],
@@ -54194,7 +54631,7 @@
      15
     ],
     "seller": "cyg61_kern",
-    "value": 34.783
+    "value": 34.782
    },
    {
     "alternatives": [
@@ -54218,7 +54655,7 @@
      4
     ],
     "seller": "cyg61_kern",
-    "value": 22.415
+    "value": 22.414
    },
    {
     "alternatives": [
@@ -54242,7 +54679,7 @@
      4
     ],
     "seller": "cyg61_kern",
-    "value": 8.735
+    "value": 8.734
    },
    {
     "alternatives": [
@@ -54266,7 +54703,7 @@
      60
     ],
     "seller": "cyg61_kern",
-    "value": 42.196
+    "value": 42.195
    },
    {
     "alternatives": [
@@ -54290,7 +54727,7 @@
      3
     ],
     "seller": "cyg61_kern",
-    "value": 105.49
+    "value": 105.488
    },
    {
     "alternatives": [],
@@ -54302,7 +54739,7 @@
     "hops": 0,
     "landed_cost": 1.31,
     "local_cost": 1.32,
-    "mass": 704.112,
+    "mass": 704.111,
     "reason": "same_system",
     "route": [
      22
@@ -54427,7 +54864,7 @@
      15
     ],
     "seller": "delta_pav_freekarma",
-    "value": 25.942
+    "value": 25.944
    },
    {
     "alternatives": [
@@ -54459,7 +54896,7 @@
      16
     ],
     "seller": "delta_pav_freekarma",
-    "value": 6.652
+    "value": 6.65
    },
    {
     "alternatives": [
@@ -54507,7 +54944,7 @@
      60
     ],
     "seller": "delta_pav_freekarma",
-    "value": 70.833
+    "value": 70.886
    },
    {
     "alternatives": [
@@ -54621,7 +55058,7 @@
      10
     ],
     "seller": "delta_pav_karma",
-    "value": 153.691
+    "value": 153.692
    },
    {
     "alternatives": [
@@ -54693,7 +55130,7 @@
      10
     ],
     "seller": "delta_pav_karma",
-    "value": 277.968
+    "value": 277.934
    },
    {
     "alternatives": [
@@ -54774,6 +55211,74 @@
      "eps_eri_harmony",
      "eps_eri_strife"
     ],
+    "break_even_freight": 11.8,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     3,
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "wolf359_citadel"
+    ],
+    "good": "munitions",
+    "hops": 4,
+    "landed_cost": 20.55,
+    "local_cost": 43.94,
+    "mass": 0.0,
+    "reason": "industrial_specialisation_military",
+    "route": [
+     22,
+     3,
+     24,
+     45,
+     37
+    ],
+    "seller": "delta_pav_karma",
+    "value": 0.002
+   },
+   {
+    "alternatives": [
+     "delta_pav_freekarma",
+     "eps_eri_harmony",
+     "gj581_europa",
+     "gj832_tianhe"
+    ],
+    "break_even_freight": 89.72,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     3,
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "wolf359_citadel"
+    ],
+    "good": "precision",
+    "hops": 4,
+    "landed_cost": 23.34,
+    "local_cost": 76.76,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     22,
+     3,
+     24,
+     45,
+     37
+    ],
+    "seller": "delta_pav_karma",
+    "value": 0.041
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "eps_eri_harmony",
+     "eps_eri_strife"
+    ],
     "break_even_freight": 0.0,
     "buyer": "hd20794_newindia",
     "choke_points": [],
@@ -54789,7 +55294,7 @@
      14
     ],
     "seller": "delta_pav_karma",
-    "value": 428.124
+    "value": 428.123
    },
    {
     "alternatives": [
@@ -54842,7 +55347,7 @@
      15
     ],
     "seller": "delta_pav_karma",
-    "value": 9.577
+    "value": 9.574
    },
    {
     "alternatives": [
@@ -54874,7 +55379,7 @@
      16
     ],
     "seller": "delta_pav_karma",
-    "value": 28.548
+    "value": 28.465
    },
    {
     "alternatives": [
@@ -54898,7 +55403,71 @@
      4
     ],
     "seller": "delta_pav_karma",
-    "value": 1395.396
+    "value": 1395.445
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "eps_eri_harmony",
+     "eps_eri_strife"
+    ],
+    "break_even_freight": 10.65,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     3,
+     24
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "wolf359_citadel"
+    ],
+    "good": "munitions",
+    "hops": 3,
+    "landed_cost": 19.64,
+    "local_cost": 34.87,
+    "mass": 0.0,
+    "reason": "industrial_specialisation_military",
+    "route": [
+     22,
+     3,
+     24,
+     45
+    ],
+    "seller": "delta_pav_karma",
+    "value": 0.001
+   },
+   {
+    "alternatives": [
+     "delta_pav_freekarma",
+     "eps_eri_harmony",
+     "gj581_europa",
+     "gj832_tianhe"
+    ],
+    "break_even_freight": 84.1,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     3,
+     24
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "wolf359_citadel"
+    ],
+    "good": "precision",
+    "hops": 3,
+    "landed_cost": 23.09,
+    "local_cost": 59.76,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     22,
+     3,
+     24,
+     45
+    ],
+    "seller": "delta_pav_karma",
+    "value": 0.027
    },
    {
     "alternatives": [
@@ -54970,7 +55539,7 @@
      8
     ],
     "seller": "delta_pav_karma",
-    "value": 373.684
+    "value": 373.685
    },
    {
     "alternatives": [
@@ -54994,7 +55563,7 @@
      8
     ],
     "seller": "delta_pav_karma",
-    "value": 49.137
+    "value": 49.145
    },
    {
     "alternatives": [
@@ -55018,7 +55587,7 @@
      8
     ],
     "seller": "delta_pav_karma",
-    "value": 14650.66
+    "value": 14650.656
    },
    {
     "alternatives": [
@@ -55042,7 +55611,7 @@
      3
     ],
     "seller": "delta_pav_karma",
-    "value": 726.259
+    "value": 726.258
    },
    {
     "alternatives": [
@@ -55064,7 +55633,7 @@
      31
     ],
     "seller": "eps_eri_harmony",
-    "value": 669.256
+    "value": 669.241
    },
    {
     "alternatives": [
@@ -55087,7 +55656,7 @@
      31
     ],
     "seller": "eps_eri_harmony",
-    "value": 182.372
+    "value": 182.367
    },
    {
     "alternatives": [
@@ -55103,14 +55672,14 @@
     "hops": 1,
     "landed_cost": 4.8,
     "local_cost": 5.83,
-    "mass": 414.415,
+    "mass": 414.406,
     "reason": "local_source_dearer",
     "route": [
      9,
      31
     ],
     "seller": "eps_eri_harmony",
-    "value": 828.831
+    "value": 828.812
    },
    {
     "alternatives": [
@@ -55187,13 +55756,13 @@
     "hops": 0,
     "landed_cost": 1.52,
     "local_cost": 1.85,
-    "mass": 2581.172,
+    "mass": 2581.173,
     "reason": "same_system",
     "route": [
      9
     ],
     "seller": "eps_eri_harmony",
-    "value": 4839.698
+    "value": 4839.7
    },
    {
     "alternatives": [],
@@ -55205,13 +55774,13 @@
     "hops": 0,
     "landed_cost": 0.77,
     "local_cost": 1.31,
-    "mass": 45.929,
+    "mass": 45.932,
     "reason": "same_system",
     "route": [
      9
     ],
     "seller": "eps_eri_harmony",
-    "value": 91.859
+    "value": 91.863
    },
    {
     "alternatives": [
@@ -55346,7 +55915,7 @@
      10
     ],
     "seller": "eps_eri_harmony",
-    "value": 171.029
+    "value": 171.086
    },
    {
     "alternatives": [],
@@ -55389,6 +55958,69 @@
     ],
     "seller": "eps_eri_harmony",
     "value": 0.059
+   },
+   {
+    "alternatives": [
+     "gj832_tianhe",
+     "hd69830_verde"
+    ],
+    "break_even_freight": 16.7,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     4,
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "lalande_hellas"
+    ],
+    "good": "he3",
+    "hops": 4,
+    "landed_cost": 3.52,
+    "local_cost": 10.0,
+    "mass": 0.0,
+    "reason": "local_source_dearer",
+    "route": [
+     9,
+     4,
+     24,
+     45,
+     37
+    ],
+    "seller": "eps_eri_harmony",
+    "value": 0.034
+   },
+   {
+    "alternatives": [
+     "gj832_tianhe"
+    ],
+    "break_even_freight": 88.19,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     4,
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "lalande_hellas"
+    ],
+    "good": "hulls",
+    "hops": 4,
+    "landed_cost": 22.49,
+    "local_cost": 84.03,
+    "mass": 0.0,
+    "reason": "industrial_specialisation_military",
+    "route": [
+     9,
+     4,
+     24,
+     45,
+     37
+    ],
+    "seller": "eps_eri_harmony",
+    "value": 0.007
    },
    {
     "alternatives": [
@@ -55450,14 +56082,14 @@
     "hops": 1,
     "landed_cost": 4.21,
     "local_cost": 1.5,
-    "mass": 2604.085,
+    "mass": 2604.089,
     "reason": "residual_shortfall",
     "route": [
      9,
      14
     ],
     "seller": "eps_eri_harmony",
-    "value": 4882.659
+    "value": 4882.667
    },
    {
     "alternatives": [
@@ -55479,7 +56111,7 @@
      14
     ],
     "seller": "eps_eri_harmony",
-    "value": 458.549
+    "value": 458.548
    },
    {
     "alternatives": [
@@ -55534,7 +56166,7 @@
      15
     ],
     "seller": "eps_eri_harmony",
-    "value": 285.47
+    "value": 285.471
    },
    {
     "alternatives": [
@@ -55556,7 +56188,7 @@
      4
     ],
     "seller": "eps_eri_harmony",
-    "value": 1340.514
+    "value": 1340.513
    },
    {
     "alternatives": [
@@ -55616,7 +56248,7 @@
     "hops": 1,
     "landed_cost": 4.64,
     "local_cost": 2.83,
-    "mass": 1518.479,
+    "mass": 1518.48,
     "reason": "residual_shortfall",
     "route": [
      9,
@@ -55666,7 +56298,7 @@
      4
     ],
     "seller": "eps_eri_harmony",
-    "value": 663.811
+    "value": 663.809
    },
    {
     "alternatives": [
@@ -55713,7 +56345,37 @@
      4
     ],
     "seller": "eps_eri_harmony",
-    "value": 399.912
+    "value": 399.856
+   },
+   {
+    "alternatives": [
+     "gj832_tianhe",
+     "hd69830_verde"
+    ],
+    "break_even_freight": 24.16,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     4,
+     24
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "lalande_hellas"
+    ],
+    "good": "he3",
+    "hops": 3,
+    "landed_cost": 3.34,
+    "local_cost": 10.25,
+    "mass": 0.0,
+    "reason": "local_source_dearer",
+    "route": [
+     9,
+     4,
+     24,
+     45
+    ],
+    "seller": "eps_eri_harmony",
+    "value": 0.026
    },
    {
     "alternatives": [
@@ -55756,7 +56418,7 @@
      60
     ],
     "seller": "eps_eri_harmony",
-    "value": 516.035
+    "value": 516.039
    },
    {
     "alternatives": [
@@ -55803,7 +56465,7 @@
      8
     ],
     "seller": "eps_eri_harmony",
-    "value": 982.778
+    "value": 982.731
    },
    {
     "alternatives": [
@@ -55868,7 +56530,7 @@
      8
     ],
     "seller": "eps_eri_harmony",
-    "value": 1289.266
+    "value": 1289.258
    },
    {
     "alternatives": [
@@ -55891,7 +56553,7 @@
      8
     ],
     "seller": "eps_eri_harmony",
-    "value": 5726.421
+    "value": 5726.428
    },
    {
     "alternatives": [
@@ -55936,7 +56598,7 @@
      8
     ],
     "seller": "eps_eri_harmony",
-    "value": 305.458
+    "value": 305.457
    },
    {
     "alternatives": [
@@ -56050,7 +56712,7 @@
      31
     ],
     "seller": "eps_eri_strife",
-    "value": 203.884
+    "value": 203.879
    },
    {
     "alternatives": [
@@ -56074,7 +56736,7 @@
      31
     ],
     "seller": "eps_eri_strife",
-    "value": 145.695
+    "value": 145.692
    },
    {
     "alternatives": [
@@ -56097,7 +56759,7 @@
      31
     ],
     "seller": "eps_eri_strife",
-    "value": 121.581
+    "value": 121.578
    },
    {
     "alternatives": [
@@ -56145,7 +56807,7 @@
      31
     ],
     "seller": "eps_eri_strife",
-    "value": 192.603
+    "value": 192.632
    },
    {
     "alternatives": [
@@ -56169,7 +56831,7 @@
      22
     ],
     "seller": "eps_eri_strife",
-    "value": 1.978
+    "value": 1.982
    },
    {
     "alternatives": [
@@ -56290,6 +56952,40 @@
    },
    {
     "alternatives": [
+     "eps_eri_harmony",
+     "gj832_tianhe",
+     "gj876_next",
+     "hd20794_hellas2"
+    ],
+    "break_even_freight": 13.22,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     4,
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "lalande_hellas"
+    ],
+    "good": "he3",
+    "hops": 4,
+    "landed_cost": 5.01,
+    "local_cost": 10.0,
+    "mass": 0.0,
+    "reason": "local_source_dearer",
+    "route": [
+     9,
+     4,
+     24,
+     45,
+     37
+    ],
+    "seller": "eps_eri_strife",
+    "value": 0.017
+   },
+   {
+    "alternatives": [
      "cyg61_kern",
      "delta_pav_freekarma",
      "delta_pav_karma",
@@ -56310,7 +57006,7 @@
      14
     ],
     "seller": "eps_eri_strife",
-    "value": 233.174
+    "value": 233.175
    },
    {
     "alternatives": [
@@ -56392,7 +57088,7 @@
      15
     ],
     "seller": "eps_eri_strife",
-    "value": 101.135
+    "value": 101.134
    },
    {
     "alternatives": [
@@ -56495,7 +57191,7 @@
      4
     ],
     "seller": "eps_eri_strife",
-    "value": 233.174
+    "value": 233.175
    },
    {
     "alternatives": [
@@ -56519,7 +57215,7 @@
      4
     ],
     "seller": "eps_eri_strife",
-    "value": 3765.435
+    "value": 3765.437
    },
    {
     "alternatives": [
@@ -56543,7 +57239,7 @@
      4
     ],
     "seller": "eps_eri_strife",
-    "value": 884.196
+    "value": 884.178
    },
    {
     "alternatives": [
@@ -56566,7 +57262,71 @@
      4
     ],
     "seller": "eps_eri_strife",
-    "value": 912.184
+    "value": 912.185
+   },
+   {
+    "alternatives": [
+     "eps_eri_harmony",
+     "gj832_tianhe",
+     "gj876_next",
+     "hd20794_hellas2"
+    ],
+    "break_even_freight": 19.3,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     4,
+     24
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "lalande_hellas"
+    ],
+    "good": "he3",
+    "hops": 3,
+    "landed_cost": 4.82,
+    "local_cost": 10.25,
+    "mass": 0.0,
+    "reason": "local_source_dearer",
+    "route": [
+     9,
+     4,
+     24,
+     45
+    ],
+    "seller": "eps_eri_strife",
+    "value": 0.013
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 12.02,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     4,
+     24
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "lalande_hellas"
+    ],
+    "good": "munitions",
+    "hops": 3,
+    "landed_cost": 18.85,
+    "local_cost": 34.87,
+    "mass": 0.0,
+    "reason": "industrial_specialisation_military",
+    "route": [
+     9,
+     4,
+     24,
+     45
+    ],
+    "seller": "eps_eri_strife",
+    "value": 0.001
    },
    {
     "alternatives": [
@@ -56637,7 +57397,7 @@
      60
     ],
     "seller": "eps_eri_strife",
-    "value": 35.653
+    "value": 35.656
    },
    {
     "alternatives": [
@@ -56661,7 +57421,7 @@
      8
     ],
     "seller": "eps_eri_strife",
-    "value": 699.523
+    "value": 699.524
    },
    {
     "alternatives": [
@@ -56685,7 +57445,7 @@
      8
     ],
     "seller": "eps_eri_strife",
-    "value": 2291.742
+    "value": 2291.743
    },
    {
     "alternatives": [
@@ -56708,7 +57468,7 @@
      8
     ],
     "seller": "eps_eri_strife",
-    "value": 10602.868
+    "value": 10602.838
    },
    {
     "alternatives": [
@@ -56732,7 +57492,7 @@
      8
     ],
     "seller": "eps_eri_strife",
-    "value": 47.374
+    "value": 47.37
    },
    {
     "alternatives": [
@@ -56803,7 +57563,7 @@
      3
     ],
     "seller": "eps_eri_strife",
-    "value": 206.496
+    "value": 206.468
    },
    {
     "alternatives": [
@@ -56820,14 +57580,14 @@
     "hops": 1,
     "landed_cost": 27.03,
     "local_cost": 27.35,
-    "mass": 0.118,
+    "mass": 0.117,
     "reason": "specialisation_high_value",
     "route": [
      10,
      31
     ],
     "seller": "gj581_europa",
-    "value": 73.46
+    "value": 73.426
    },
    {
     "alternatives": [
@@ -56875,7 +57635,7 @@
      9
     ],
     "seller": "gj581_europa",
-    "value": 173.693
+    "value": 173.727
    },
    {
     "alternatives": [],
@@ -56905,37 +57665,13 @@
     "hops": 0,
     "landed_cost": 3.44,
     "local_cost": 3.73,
-    "mass": 267.259,
+    "mass": 267.258,
     "reason": "same_system",
     "route": [
      10
     ],
     "seller": "gj581_europa",
-    "value": 534.519
-   },
-   {
-    "alternatives": [
-     "cyg61_kern",
-     "delta_pav_freekarma",
-     "eps_eri_harmony",
-     "eps_eri_strife"
-    ],
-    "break_even_freight": 31.1,
-    "buyer": "gj876_next",
-    "choke_points": [],
-    "controllers": [],
-    "good": "electronics",
-    "hops": 1,
-    "landed_cost": 11.52,
-    "local_cost": 13.85,
-    "mass": 0.0,
-    "reason": "specialisation_high_value",
-    "route": [
-     10,
-     13
-    ],
-    "seller": "gj581_europa",
-    "value": 0.0
+    "value": 534.517
    },
    {
     "alternatives": [
@@ -56960,6 +57696,37 @@
     ],
     "seller": "gj581_europa",
     "value": 0.101
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "eps_eri_harmony",
+     "eps_eri_strife"
+    ],
+    "break_even_freight": 82.34,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern"
+    ],
+    "good": "electronics",
+    "hops": 3,
+    "landed_cost": 11.76,
+    "local_cost": 31.33,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     10,
+     24,
+     45,
+     37
+    ],
+    "seller": "gj581_europa",
+    "value": 0.032
    },
    {
     "alternatives": [
@@ -57071,7 +57838,36 @@
      4
     ],
     "seller": "gj581_europa",
-    "value": 1664.062
+    "value": 1664.059
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "eps_eri_harmony",
+     "eps_eri_strife"
+    ],
+    "break_even_freight": 111.31,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     24
+    ],
+    "controllers": [
+     "cyg61_kern"
+    ],
+    "good": "electronics",
+    "hops": 2,
+    "landed_cost": 11.64,
+    "local_cost": 29.35,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     10,
+     24,
+     45
+    ],
+    "seller": "gj581_europa",
+    "value": 0.023
    },
    {
     "alternatives": [
@@ -57095,7 +57891,7 @@
      60
     ],
     "seller": "gj581_europa",
-    "value": 104.475
+    "value": 104.448
    },
    {
     "alternatives": [
@@ -57143,7 +57939,7 @@
      8
     ],
     "seller": "gj581_europa",
-    "value": 1418.011
+    "value": 1418.038
    },
    {
     "alternatives": [
@@ -57167,7 +57963,7 @@
      3
     ],
     "seller": "gj581_europa",
-    "value": 1593.174
+    "value": 1593.119
    },
    {
     "alternatives": [
@@ -57197,6 +57993,30 @@
     "alternatives": [
      "cyg61_kern",
      "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_strife"
+    ],
+    "break_even_freight": 0.0,
+    "buyer": "eps_eri_harmony",
+    "choke_points": [],
+    "controllers": [],
+    "good": "biotech",
+    "hops": 1,
+    "landed_cost": 22.5,
+    "local_cost": 16.38,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     10,
+     9
+    ],
+    "seller": "gj581_freeclans",
+    "value": 0.0
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
      "eps_eri_strife",
      "gj581_europa"
     ],
@@ -57215,7 +58035,7 @@
      9
     ],
     "seller": "gj581_freeclans",
-    "value": 1871.433
+    "value": 1871.434
    },
    {
     "alternatives": [],
@@ -57263,25 +58083,63 @@
     "alternatives": [
      "cyg61_kern",
      "delta_pav_freekarma",
-     "eps_eri_harmony",
-     "eps_eri_strife"
+     "delta_pav_karma",
+     "eps_eri_harmony"
     ],
-    "break_even_freight": 18.13,
-    "buyer": "gj876_next",
-    "choke_points": [],
-    "controllers": [],
-    "good": "electronics",
-    "hops": 1,
-    "landed_cost": 12.54,
-    "local_cost": 13.85,
+    "break_even_freight": 127.31,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern"
+    ],
+    "good": "biotech",
+    "hops": 3,
+    "landed_cost": 22.74,
+    "local_cost": 53.2,
     "mass": 0.0,
     "reason": "specialisation_high_value",
     "route": [
      10,
-     13
+     24,
+     45,
+     37
     ],
     "seller": "gj581_freeclans",
     "value": 0.0
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 2.96,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern"
+    ],
+    "good": "components",
+    "hops": 3,
+    "landed_cost": 9.99,
+    "local_cost": 14.42,
+    "mass": 0.001,
+    "reason": "specialisation_high_value",
+    "route": [
+     10,
+     24,
+     45,
+     37
+    ],
+    "seller": "gj581_freeclans",
+    "value": 0.023
    },
    {
     "alternatives": [
@@ -57313,7 +58171,7 @@
      15
     ],
     "seller": "gj581_freeclans",
-    "value": 411.576
+    "value": 411.602
    },
    {
     "alternatives": [
@@ -57337,7 +58195,7 @@
      4
     ],
     "seller": "gj581_freeclans",
-    "value": 1230.205
+    "value": 1230.206
    },
    {
     "alternatives": [
@@ -57385,7 +58243,36 @@
      4
     ],
     "seller": "gj581_freeclans",
-    "value": 290.739
+    "value": 290.767
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 2.87,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     24
+    ],
+    "controllers": [
+     "cyg61_kern"
+    ],
+    "good": "components",
+    "hops": 2,
+    "landed_cost": 8.48,
+    "local_cost": 11.23,
+    "mass": 0.001,
+    "reason": "specialisation_high_value",
+    "route": [
+     10,
+     24,
+     45
+    ],
+    "seller": "gj581_freeclans",
+    "value": 0.015
    },
    {
     "alternatives": [
@@ -57433,7 +58320,7 @@
      60
     ],
     "seller": "gj581_freeclans",
-    "value": 427.005
+    "value": 427.006
    },
    {
     "alternatives": [
@@ -57457,7 +58344,7 @@
      8
     ],
     "seller": "gj581_freeclans",
-    "value": 1845.308
+    "value": 1845.309
    },
    {
     "alternatives": [
@@ -57481,7 +58368,7 @@
      8
     ],
     "seller": "gj581_freeclans",
-    "value": 2515.035
+    "value": 2515.036
    },
    {
     "alternatives": [
@@ -57529,7 +58416,31 @@
      8
     ],
     "seller": "gj581_freeclans",
-    "value": 697.763
+    "value": 697.735
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 0.0,
+    "buyer": "wolf359_citadel",
+    "choke_points": [],
+    "controllers": [],
+    "good": "biotech",
+    "hops": 1,
+    "landed_cost": 22.47,
+    "local_cost": 20.48,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     10,
+     3
+    ],
+    "seller": "gj581_freeclans",
+    "value": 0.0
    },
    {
     "alternatives": [
@@ -57569,14 +58480,14 @@
     "hops": 1,
     "landed_cost": 4.78,
     "local_cost": 5.14,
-    "mass": 14.841,
+    "mass": 14.84,
     "reason": "specialisation_high_value",
     "route": [
      12,
      31
     ],
     "seller": "gj832_tianhe",
-    "value": 296.817
+    "value": 296.81
    },
    {
     "alternatives": [
@@ -57598,7 +58509,7 @@
      31
     ],
     "seller": "gj832_tianhe",
-    "value": 204.818
+    "value": 204.813
    },
    {
     "alternatives": [
@@ -57622,7 +58533,7 @@
      31
     ],
     "seller": "gj832_tianhe",
-    "value": 81.706
+    "value": 81.704
    },
    {
     "alternatives": [
@@ -57709,7 +58620,7 @@
      22
     ],
     "seller": "gj832_tianhe",
-    "value": 744.316
+    "value": 744.317
    },
    {
     "alternatives": [
@@ -57798,7 +58709,7 @@
      22
     ],
     "seller": "gj832_tianhe",
-    "value": 263.664
+    "value": 263.661
    },
    {
     "alternatives": [
@@ -57812,14 +58723,14 @@
     "hops": 1,
     "landed_cost": 3.4,
     "local_cost": 1.37,
-    "mass": 2695.852,
+    "mass": 2695.851,
     "reason": "residual_shortfall",
     "route": [
      12,
      22
     ],
     "seller": "gj832_tianhe",
-    "value": 2695.852
+    "value": 2695.851
    },
    {
     "alternatives": [
@@ -57843,7 +58754,7 @@
      9
     ],
     "seller": "gj832_tianhe",
-    "value": 92.858
+    "value": 92.857
    },
    {
     "alternatives": [
@@ -57887,7 +58798,7 @@
      10
     ],
     "seller": "gj832_tianhe",
-    "value": 155.807
+    "value": 155.808
    },
    {
     "alternatives": [
@@ -57972,14 +58883,14 @@
     "hops": 1,
     "landed_cost": 6.34,
     "local_cost": 3.73,
-    "mass": 124.171,
+    "mass": 124.172,
     "reason": "residual_shortfall",
     "route": [
      12,
      10
     ],
     "seller": "gj832_tianhe",
-    "value": 248.342
+    "value": 248.344
    },
    {
     "alternatives": [
@@ -58003,7 +58914,7 @@
      10
     ],
     "seller": "gj832_tianhe",
-    "value": 216.427
+    "value": 216.369
    },
    {
     "alternatives": [
@@ -58099,6 +59010,72 @@
    },
    {
     "alternatives": [
+     "eps_eri_harmony",
+     "tau_ceti_cognium"
+    ],
+    "break_even_freight": 79.91,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     3,
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "wolf359_citadel"
+    ],
+    "good": "hulls",
+    "hops": 4,
+    "landed_cost": 25.41,
+    "local_cost": 84.03,
+    "mass": 0.0,
+    "reason": "industrial_specialisation_military",
+    "route": [
+     12,
+     3,
+     24,
+     45,
+     37
+    ],
+    "seller": "gj832_tianhe",
+    "value": 0.006
+   },
+   {
+    "alternatives": [
+     "delta_pav_karma",
+     "eps_eri_harmony",
+     "hd20794_hellas2",
+     "hd20794_newindia"
+    ],
+    "break_even_freight": 95.71,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     3,
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "wolf359_citadel"
+    ],
+    "good": "precision",
+    "hops": 4,
+    "landed_cost": 20.41,
+    "local_cost": 76.76,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     12,
+     3,
+     24,
+     45,
+     37
+    ],
+    "seller": "gj832_tianhe",
+    "value": 0.05
+   },
+   {
+    "alternatives": [
      "delta_pav_freekarma",
      "delta_pav_karma",
      "eps_eri_harmony",
@@ -58112,14 +59089,14 @@
     "hops": 1,
     "landed_cost": 4.75,
     "local_cost": 1.5,
-    "mass": 1505.183,
+    "mass": 1505.18,
     "reason": "residual_shortfall",
     "route": [
      12,
      14
     ],
     "seller": "gj832_tianhe",
-    "value": 2822.218
+    "value": 2822.212
    },
    {
     "alternatives": [
@@ -58187,7 +59164,7 @@
      14
     ],
     "seller": "gj832_tianhe",
-    "value": 505.441
+    "value": 505.442
    },
    {
     "alternatives": [],
@@ -58211,7 +59188,7 @@
      15
     ],
     "seller": "gj832_tianhe",
-    "value": 309.74
+    "value": 309.757
    },
    {
     "alternatives": [
@@ -58238,7 +59215,7 @@
      15
     ],
     "seller": "gj832_tianhe",
-    "value": 127.18
+    "value": 127.178
    },
    {
     "alternatives": [
@@ -58267,7 +59244,7 @@
      15
     ],
     "seller": "gj832_tianhe",
-    "value": 503.241
+    "value": 503.135
    },
    {
     "alternatives": [
@@ -58417,7 +59394,7 @@
      4
     ],
     "seller": "gj832_tianhe",
-    "value": 377.029
+    "value": 377.024
    },
    {
     "alternatives": [
@@ -58441,7 +59418,39 @@
      4
     ],
     "seller": "gj832_tianhe",
-    "value": 308.614
+    "value": 308.586
+   },
+   {
+    "alternatives": [
+     "delta_pav_karma",
+     "eps_eri_harmony",
+     "hd20794_hellas2",
+     "hd20794_newindia"
+    ],
+    "break_even_freight": 92.21,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     3,
+     24
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "wolf359_citadel"
+    ],
+    "good": "precision",
+    "hops": 3,
+    "landed_cost": 20.17,
+    "local_cost": 59.76,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     12,
+     3,
+     24,
+     45
+    ],
+    "seller": "gj832_tianhe",
+    "value": 0.033
    },
    {
     "alternatives": [
@@ -58603,7 +59612,7 @@
      3
     ],
     "seller": "gj832_tianhe",
-    "value": 2805.826
+    "value": 2805.932
    },
    {
     "alternatives": [],
@@ -58671,30 +59680,6 @@
     ],
     "seller": "gj876_next",
     "value": 0.036
-   },
-   {
-    "alternatives": [
-     "eps_eri_harmony",
-     "eps_eri_strife",
-     "gj832_tianhe",
-     "hd20794_hellas2"
-    ],
-    "break_even_freight": null,
-    "buyer": "delta_pav_freekarma",
-    "choke_points": [],
-    "controllers": [],
-    "good": "he3",
-    "hops": 1,
-    "landed_cost": 4.51,
-    "local_cost": null,
-    "mass": 0.0,
-    "reason": "no_local_source",
-    "route": [
-     13,
-     22
-    ],
-    "seller": "gj876_next",
-    "value": 0.0
    },
    {
     "alternatives": [
@@ -58878,6 +59863,193 @@
     "value": 0.036
    },
    {
+    "alternatives": [],
+    "break_even_freight": null,
+    "buyer": "hd40307_maland",
+    "choke_points": [
+     45,
+     24,
+     25,
+     54
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "tau_ceti_cognium"
+    ],
+    "good": "drive_cores",
+    "hops": 5,
+    "landed_cost": null,
+    "local_cost": null,
+    "mass": 0.0,
+    "reason": "state_monopoly_or_own_design",
+    "route": [
+     37,
+     45,
+     24,
+     25,
+     54,
+     15
+    ],
+    "seller": "hd114783_hellas3",
+    "value": 0.002
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 0.0,
+    "buyer": "hd40307_maland",
+    "choke_points": [
+     45,
+     24,
+     25,
+     54
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "tau_ceti_cognium"
+    ],
+    "good": "precision",
+    "hops": 5,
+    "landed_cost": 78.61,
+    "local_cost": 23.45,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     37,
+     45,
+     24,
+     25,
+     54,
+     15
+    ],
+    "seller": "hd114783_hellas3",
+    "value": 0.003
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 0.0,
+    "buyer": "lalande_mecca",
+    "choke_points": [
+     45,
+     24
+    ],
+    "controllers": [
+     "cyg61_kern"
+    ],
+    "good": "hulls",
+    "hops": 3,
+    "landed_cost": 86.1,
+    "local_cost": 43.21,
+    "mass": 0.0,
+    "reason": "industrial_specialisation_military",
+    "route": [
+     37,
+     45,
+     24,
+     4
+    ],
+    "seller": "hd114783_hellas3",
+    "value": 0.001
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 0.0,
+    "buyer": "lalande_mecca",
+    "choke_points": [
+     45,
+     24
+    ],
+    "controllers": [
+     "cyg61_kern"
+    ],
+    "good": "precision",
+    "hops": 3,
+    "landed_cost": 78.21,
+    "local_cost": 17.05,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     37,
+     45,
+     24,
+     4
+    ],
+    "seller": "hd114783_hellas3",
+    "value": 0.003
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 0.0,
+    "buyer": "leo83_zion",
+    "choke_points": [],
+    "controllers": [],
+    "good": "hulls",
+    "hops": 1,
+    "landed_cost": 85.54,
+    "local_cost": 84.77,
+    "mass": 0.0,
+    "reason": "industrial_specialisation_military",
+    "route": [
+     37,
+     45
+    ],
+    "seller": "hd114783_hellas3",
+    "value": 0.001
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 0.0,
+    "buyer": "tau_ceti_cognium",
+    "choke_points": [
+     45,
+     24,
+     4
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "lalande_hellas"
+    ],
+    "good": "precision",
+    "hops": 4,
+    "landed_cost": 78.38,
+    "local_cost": 24.08,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     37,
+     45,
+     24,
+     4,
+     8
+    ],
+    "seller": "hd114783_hellas3",
+    "value": 0.003
+   },
+   {
     "alternatives": [
      "delta_pav_karma",
      "eps_eri_harmony",
@@ -58899,7 +60071,7 @@
      31
     ],
     "seller": "hd20794_hellas2",
-    "value": 266.099
+    "value": 266.093
    },
    {
     "alternatives": [
@@ -58946,7 +60118,7 @@
      22
     ],
     "seller": "hd20794_hellas2",
-    "value": 271.325
+    "value": 271.326
    },
    {
     "alternatives": [
@@ -58970,7 +60142,7 @@
      22
     ],
     "seller": "hd20794_hellas2",
-    "value": 16.46
+    "value": 16.412
    },
    {
     "alternatives": [
@@ -59065,7 +60237,7 @@
      9
     ],
     "seller": "hd20794_hellas2",
-    "value": 1583.622
+    "value": 1583.589
    },
    {
     "alternatives": [
@@ -59094,7 +60266,7 @@
      10
     ],
     "seller": "hd20794_hellas2",
-    "value": 243.472
+    "value": 243.494
    },
    {
     "alternatives": [
@@ -59152,7 +60324,7 @@
      10
     ],
     "seller": "hd20794_hellas2",
-    "value": 183.949
+    "value": 183.982
    },
    {
     "alternatives": [
@@ -59175,7 +60347,7 @@
      12
     ],
     "seller": "hd20794_hellas2",
-    "value": 2638.109
+    "value": 2638.11
    },
    {
     "alternatives": [
@@ -59235,13 +60407,13 @@
     "hops": 0,
     "landed_cost": 0.66,
     "local_cost": 0.8,
-    "mass": 1580.41,
+    "mass": 1580.408,
     "reason": "same_system",
     "route": [
      14
     ],
     "seller": "hd20794_hellas2",
-    "value": 1580.41
+    "value": 1580.408
    },
    {
     "alternatives": [
@@ -59324,14 +60496,14 @@
     "hops": 1,
     "landed_cost": 11.24,
     "local_cost": 12.15,
-    "mass": 2.938,
+    "mass": 2.937,
     "reason": "specialisation_high_value",
     "route": [
      14,
      15
     ],
     "seller": "hd20794_hellas2",
-    "value": 1762.511
+    "value": 1762.485
    },
    {
     "alternatives": [
@@ -59480,7 +60652,7 @@
      16
     ],
     "seller": "hd20794_hellas2",
-    "value": 692.02
+    "value": 692.103
    },
    {
     "alternatives": [
@@ -59528,7 +60700,7 @@
      4
     ],
     "seller": "hd20794_hellas2",
-    "value": 923.263
+    "value": 923.282
    },
    {
     "alternatives": [
@@ -59648,7 +60820,7 @@
      8
     ],
     "seller": "hd20794_hellas2",
-    "value": 2565.478
+    "value": 2565.479
    },
    {
     "alternatives": [
@@ -59672,7 +60844,7 @@
      8
     ],
     "seller": "hd20794_hellas2",
-    "value": 1144.237
+    "value": 1144.222
    },
    {
     "alternatives": [
@@ -59696,7 +60868,7 @@
      3
     ],
     "seller": "hd20794_hellas2",
-    "value": 414.046
+    "value": 414.099
    },
    {
     "alternatives": [
@@ -59720,7 +60892,7 @@
      3
     ],
     "seller": "hd20794_hellas2",
-    "value": 96.866
+    "value": 96.789
    },
    {
     "alternatives": [
@@ -59742,7 +60914,7 @@
      31
     ],
     "seller": "hd20794_newindia",
-    "value": 325.44
+    "value": 325.433
    },
    {
     "alternatives": [
@@ -59786,7 +60958,7 @@
      9
     ],
     "seller": "hd20794_newindia",
-    "value": 3248.287
+    "value": 3248.285
    },
    {
     "alternatives": [
@@ -59832,7 +61004,7 @@
      9
     ],
     "seller": "hd20794_newindia",
-    "value": 353.402
+    "value": 353.401
    },
    {
     "alternatives": [
@@ -59879,6 +61051,40 @@
     ],
     "seller": "hd20794_newindia",
     "value": 0.555
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "eps_eri_harmony",
+     "gj581_europa"
+    ],
+    "break_even_freight": 2.96,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     3,
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "wolf359_citadel"
+    ],
+    "good": "components",
+    "hops": 4,
+    "landed_cost": 8.91,
+    "local_cost": 14.42,
+    "mass": 0.001,
+    "reason": "specialisation_high_value",
+    "route": [
+     14,
+     3,
+     24,
+     45,
+     37
+    ],
+    "seller": "hd20794_newindia",
+    "value": 0.023
    },
    {
     "alternatives": [],
@@ -59982,7 +61188,7 @@
      15
     ],
     "seller": "hd20794_newindia",
-    "value": 1560.709
+    "value": 1560.71
    },
    {
     "alternatives": [
@@ -60035,6 +61241,38 @@
    {
     "alternatives": [
      "eps_eri_harmony",
+     "gj581_europa",
+     "gj581_freeclans",
+     "gj832_tianhe"
+    ],
+    "break_even_freight": 2.89,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     3,
+     24
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "wolf359_citadel"
+    ],
+    "good": "components",
+    "hops": 3,
+    "landed_cost": 7.4,
+    "local_cost": 11.23,
+    "mass": 0.001,
+    "reason": "specialisation_high_value",
+    "route": [
+     14,
+     3,
+     24,
+     45
+    ],
+    "seller": "hd20794_newindia",
+    "value": 0.015
+   },
+   {
+    "alternatives": [
+     "eps_eri_harmony",
      "gj832_tianhe"
     ],
     "break_even_freight": 1.99,
@@ -60045,14 +61283,14 @@
     "hops": 1,
     "landed_cost": 4.33,
     "local_cost": 4.69,
-    "mass": 162.31,
+    "mass": 162.311,
     "reason": "specialisation_high_value",
     "route": [
      14,
      60
     ],
     "seller": "hd20794_newindia",
-    "value": 3246.209
+    "value": 3246.211
    },
    {
     "alternatives": [
@@ -60069,14 +61307,14 @@
     "hops": 1,
     "landed_cost": 23.35,
     "local_cost": 24.95,
-    "mass": 0.272,
+    "mass": 0.271,
     "reason": "specialisation_high_value",
     "route": [
      14,
      60
     ],
     "seller": "hd20794_newindia",
-    "value": 169.733
+    "value": 169.653
    },
    {
     "alternatives": [
@@ -60162,14 +61400,14 @@
     "hops": 1,
     "landed_cost": 23.38,
     "local_cost": 25.65,
-    "mass": 1.378,
+    "mass": 1.379,
     "reason": "specialisation_high_value",
     "route": [
      14,
      3
     ],
     "seller": "hd20794_newindia",
-    "value": 861.538
+    "value": 861.616
    },
    {
     "alternatives": [
@@ -60198,7 +61436,7 @@
      31
     ],
     "seller": "hd40307_firmament",
-    "value": 116.807
+    "value": 116.804
    },
    {
     "alternatives": [
@@ -60256,7 +61494,7 @@
      31
     ],
     "seller": "hd40307_firmament",
-    "value": 188.993
+    "value": 188.989
    },
    {
     "alternatives": [
@@ -60285,7 +61523,7 @@
      22
     ],
     "seller": "hd40307_firmament",
-    "value": 106.074
+    "value": 106.122
    },
    {
     "alternatives": [
@@ -60314,7 +61552,7 @@
      9
     ],
     "seller": "hd40307_firmament",
-    "value": 1221.601
+    "value": 1221.605
    },
    {
     "alternatives": [
@@ -60343,7 +61581,7 @@
      9
     ],
     "seller": "hd40307_firmament",
-    "value": 838.439
+    "value": 838.415
    },
    {
     "alternatives": [
@@ -60410,35 +61648,6 @@
     "alternatives": [
      "cyg61_kern",
      "delta_pav_freekarma",
-     "delta_pav_karma",
-     "eps_eri_harmony"
-    ],
-    "break_even_freight": 0.0,
-    "buyer": "gj832_tianhe",
-    "choke_points": [
-     57
-    ],
-    "controllers": [
-     "hd20794_hellas2"
-    ],
-    "good": "biotech",
-    "hops": 2,
-    "landed_cost": 18.89,
-    "local_cost": 15.71,
-    "mass": 0.0,
-    "reason": "specialisation_high_value",
-    "route": [
-     15,
-     57,
-     12
-    ],
-    "seller": "hd40307_firmament",
-    "value": 0.0
-   },
-   {
-    "alternatives": [
-     "cyg61_kern",
-     "delta_pav_freekarma",
      "eps_eri_harmony",
      "eps_eri_strife"
     ],
@@ -60491,7 +61700,7 @@
      12
     ],
     "seller": "hd40307_firmament",
-    "value": 362.384
+    "value": 362.385
    },
    {
     "alternatives": [
@@ -60597,7 +61806,7 @@
      14
     ],
     "seller": "hd40307_firmament",
-    "value": 1148.191
+    "value": 1148.192
    },
    {
     "alternatives": [
@@ -60645,7 +61854,7 @@
      14
     ],
     "seller": "hd40307_firmament",
-    "value": 147.73
+    "value": 147.732
    },
    {
     "alternatives": [
@@ -60665,7 +61874,7 @@
      15
     ],
     "seller": "hd40307_firmament",
-    "value": 2265.047
+    "value": 2265.046
    },
    {
     "alternatives": [
@@ -60851,7 +62060,7 @@
      4
     ],
     "seller": "hd40307_firmament",
-    "value": 255.112
+    "value": 255.111
    },
    {
     "alternatives": [
@@ -60967,7 +62176,7 @@
      60
     ],
     "seller": "hd40307_firmament",
-    "value": 626.531
+    "value": 626.507
    },
    {
     "alternatives": [
@@ -60996,7 +62205,7 @@
      60
     ],
     "seller": "hd40307_firmament",
-    "value": 3009.401
+    "value": 3009.48
    },
    {
     "alternatives": [
@@ -61054,7 +62263,7 @@
      8
     ],
     "seller": "hd40307_firmament",
-    "value": 1718.738
+    "value": 1718.754
    },
    {
     "alternatives": [
@@ -61112,7 +62321,7 @@
      3
     ],
     "seller": "hd40307_firmament",
-    "value": 691.334
+    "value": 691.257
    },
    {
     "alternatives": [
@@ -61141,7 +62350,7 @@
      31
     ],
     "seller": "hd40307_maland",
-    "value": 116.807
+    "value": 116.804
    },
    {
     "alternatives": [],
@@ -61222,7 +62431,7 @@
      9
     ],
     "seller": "hd40307_maland",
-    "value": 2165.844
+    "value": 2165.79
    },
    {
     "alternatives": [
@@ -61257,6 +62466,42 @@
     "alternatives": [
      "eps_eri_harmony",
      "gj832_tianhe",
+     "hd20794_newindia",
+     "proxima_outpost"
+    ],
+    "break_even_freight": 105.3,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     54,
+     25,
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "tau_ceti_cognium"
+    ],
+    "good": "biotech",
+    "hops": 5,
+    "landed_cost": 15.33,
+    "local_cost": 53.2,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     15,
+     54,
+     25,
+     24,
+     45,
+     37
+    ],
+    "seller": "hd40307_maland",
+    "value": 0.051
+   },
+   {
+    "alternatives": [
+     "eps_eri_harmony",
+     "gj832_tianhe",
      "proxima_outpost"
     ],
     "break_even_freight": 25.4,
@@ -61274,7 +62519,7 @@
      14
     ],
     "seller": "hd40307_maland",
-    "value": 2126.483
+    "value": 2126.484
    },
    {
     "alternatives": [
@@ -61310,13 +62555,13 @@
     "hops": 0,
     "landed_cost": 0.84,
     "local_cost": 1.63,
-    "mass": 1589.373,
+    "mass": 1589.374,
     "reason": "same_system",
     "route": [
      15
     ],
     "seller": "hd40307_maland",
-    "value": 2980.075
+    "value": 2980.076
    },
    {
     "alternatives": [],
@@ -61479,7 +62724,41 @@
      4
     ],
     "seller": "hd40307_maland",
-    "value": 315.214
+    "value": 315.115
+   },
+   {
+    "alternatives": [
+     "eps_eri_harmony",
+     "gj832_tianhe",
+     "hd20794_newindia",
+     "proxima_outpost"
+    ],
+    "break_even_freight": 86.44,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     54,
+     25,
+     24
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "tau_ceti_cognium"
+    ],
+    "good": "biotech",
+    "hops": 4,
+    "landed_cost": 15.21,
+    "local_cost": 39.34,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     15,
+     54,
+     25,
+     24,
+     45
+    ],
+    "seller": "hd40307_maland",
+    "value": 0.032
    },
    {
     "alternatives": [
@@ -61507,7 +62786,7 @@
      60
     ],
     "seller": "hd40307_maland",
-    "value": 339.165
+    "value": 339.141
    },
    {
     "alternatives": [
@@ -61565,7 +62844,7 @@
      8
     ],
     "seller": "hd40307_maland",
-    "value": 1892.117
+    "value": 1892.115
    },
    {
     "alternatives": [
@@ -61594,7 +62873,7 @@
      8
     ],
     "seller": "hd40307_maland",
-    "value": 2.428
+    "value": 2.425
    },
    {
     "alternatives": [
@@ -61650,7 +62929,39 @@
      31
     ],
     "seller": "hd69830_verde",
-    "value": 8.867
+    "value": 8.886
+   },
+   {
+    "alternatives": [
+     "eps_eri_harmony",
+     "gj832_tianhe"
+    ],
+    "break_even_freight": 15.45,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     25,
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "tau_ceti_cognium"
+    ],
+    "good": "he3",
+    "hops": 4,
+    "landed_cost": 3.81,
+    "local_cost": 10.0,
+    "mass": 0.0,
+    "reason": "local_source_dearer",
+    "route": [
+     16,
+     25,
+     24,
+     45,
+     37
+    ],
+    "seller": "hd69830_verde",
+    "value": 0.034
    },
    {
     "alternatives": [],
@@ -61674,7 +62985,7 @@
      15
     ],
     "seller": "hd69830_verde",
-    "value": 46.18
+    "value": 46.162
    },
    {
     "alternatives": [
@@ -61765,6 +63076,36 @@
    },
    {
     "alternatives": [
+     "eps_eri_harmony",
+     "gj832_tianhe"
+    ],
+    "break_even_freight": 22.02,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     25,
+     24
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "tau_ceti_cognium"
+    ],
+    "good": "he3",
+    "hops": 3,
+    "landed_cost": 3.63,
+    "local_cost": 10.25,
+    "mass": 0.0,
+    "reason": "local_source_dearer",
+    "route": [
+     16,
+     25,
+     24,
+     45
+    ],
+    "seller": "hd69830_verde",
+    "value": 0.026
+   },
+   {
+    "alternatives": [
      "cyg61_kern",
      "delta_pav_freekarma",
      "delta_pav_karma",
@@ -61817,7 +63158,7 @@
      9
     ],
     "seller": "lalande_hellas",
-    "value": 561.733
+    "value": 561.706
    },
    {
     "alternatives": [
@@ -61842,6 +63183,37 @@
     ],
     "seller": "lalande_hellas",
     "value": 602.263
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 80.11,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern"
+    ],
+    "good": "electronics",
+    "hops": 3,
+    "landed_cost": 13.07,
+    "local_cost": 31.33,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     4,
+     24,
+     45,
+     37
+    ],
+    "seller": "lalande_hellas",
+    "value": 0.016
    },
    {
     "alternatives": [
@@ -61947,6 +63319,64 @@
     "alternatives": [
      "cyg61_kern",
      "delta_pav_freekarma",
+     "eps_eri_harmony",
+     "eps_eri_strife"
+    ],
+    "break_even_freight": 109.76,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     24
+    ],
+    "controllers": [
+     "cyg61_kern"
+    ],
+    "good": "electronics",
+    "hops": 2,
+    "landed_cost": 12.94,
+    "local_cost": 29.35,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     4,
+     24,
+     45
+    ],
+    "seller": "lalande_hellas",
+    "value": 0.012
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 105.25,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     24
+    ],
+    "controllers": [
+     "cyg61_kern"
+    ],
+    "good": "hulls",
+    "hops": 2,
+    "landed_cost": 45.46,
+    "local_cost": 84.77,
+    "mass": 0.0,
+    "reason": "industrial_specialisation_military",
+    "route": [
+     4,
+     24,
+     45
+    ],
+    "seller": "lalande_hellas",
+    "value": 0.009
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
      "delta_pav_karma",
      "eps_eri_harmony"
     ],
@@ -61965,7 +63395,7 @@
      60
     ],
     "seller": "lalande_hellas",
-    "value": 52.447
+    "value": 52.443
    },
    {
     "alternatives": [
@@ -62013,7 +63443,7 @@
      8
     ],
     "seller": "lalande_hellas",
-    "value": 125.626
+    "value": 125.627
    },
    {
     "alternatives": [
@@ -62037,7 +63467,7 @@
      8
     ],
     "seller": "lalande_hellas",
-    "value": 52.447
+    "value": 52.442
    },
    {
     "alternatives": [
@@ -62061,7 +63491,7 @@
      8
     ],
     "seller": "lalande_hellas",
-    "value": 3141.485
+    "value": 3141.486
    },
    {
     "alternatives": [
@@ -62085,7 +63515,7 @@
      3
     ],
     "seller": "lalande_hellas",
-    "value": 776.533
+    "value": 776.534
    },
    {
     "alternatives": [
@@ -62128,7 +63558,7 @@
      9
     ],
     "seller": "lalande_mecca",
-    "value": 305.458
+    "value": 305.457
    },
    {
     "alternatives": [
@@ -62179,6 +63609,186 @@
    },
    {
     "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 14.23,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [],
+    "controllers": [],
+    "good": "munitions",
+    "hops": 1,
+    "landed_cost": 36.23,
+    "local_cost": 43.94,
+    "mass": 0.0,
+    "reason": "industrial_specialisation_military",
+    "route": [
+     45,
+     37
+    ],
+    "seller": "leo83_zion",
+    "value": 0.0
+   },
+   {
+    "alternatives": [],
+    "break_even_freight": null,
+    "buyer": "hd40307_maland",
+    "choke_points": [
+     24,
+     25,
+     54
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "tau_ceti_cognium"
+    ],
+    "good": "drive_cores",
+    "hops": 4,
+    "landed_cost": null,
+    "local_cost": null,
+    "mass": 0.0,
+    "reason": "state_monopoly_or_own_design",
+    "route": [
+     45,
+     24,
+     25,
+     54,
+     15
+    ],
+    "seller": "leo83_zion",
+    "value": 0.001
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 0.0,
+    "buyer": "hd40307_maland",
+    "choke_points": [
+     24,
+     25,
+     54
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "tau_ceti_cognium"
+    ],
+    "good": "precision",
+    "hops": 4,
+    "landed_cost": 61.37,
+    "local_cost": 23.45,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     45,
+     24,
+     25,
+     54,
+     15
+    ],
+    "seller": "leo83_zion",
+    "value": 0.002
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 0.0,
+    "buyer": "lalande_mecca",
+    "choke_points": [
+     24
+    ],
+    "controllers": [
+     "cyg61_kern"
+    ],
+    "good": "precision",
+    "hops": 2,
+    "landed_cost": 60.97,
+    "local_cost": 17.05,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     45,
+     24,
+     4
+    ],
+    "seller": "leo83_zion",
+    "value": 0.002
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 0.0,
+    "buyer": "tau_ceti_cognium",
+    "choke_points": [
+     24,
+     4
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "lalande_hellas"
+    ],
+    "good": "hulls",
+    "hops": 3,
+    "landed_cost": 86.76,
+    "local_cost": 26.62,
+    "mass": 0.0,
+    "reason": "industrial_specialisation_military",
+    "route": [
+     45,
+     24,
+     4,
+     8
+    ],
+    "seller": "leo83_zion",
+    "value": 0.001
+   },
+   {
+    "alternatives": [
+     "cyg61_kern",
+     "delta_pav_freekarma",
+     "delta_pav_karma",
+     "eps_eri_harmony"
+    ],
+    "break_even_freight": 0.0,
+    "buyer": "tau_ceti_cognium",
+    "choke_points": [
+     24,
+     4
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "lalande_hellas"
+    ],
+    "good": "precision",
+    "hops": 3,
+    "landed_cost": 61.14,
+    "local_cost": 24.08,
+    "mass": 0.0,
+    "reason": "specialisation_high_value",
+    "route": [
+     45,
+     24,
+     4,
+     8
+    ],
+    "seller": "leo83_zion",
+    "value": 0.002
+   },
+   {
+    "alternatives": [
      "eps_eri_strife",
      "gj581_freeclans",
      "lalande_mecca",
@@ -62199,7 +63809,7 @@
      31
     ],
     "seller": "proxima_outpost",
-    "value": 109.002
+    "value": 108.978
    },
    {
     "alternatives": [
@@ -62223,7 +63833,7 @@
      22
     ],
     "seller": "proxima_outpost",
-    "value": 309.699
+    "value": 309.698
    },
    {
     "alternatives": [
@@ -62319,7 +63929,7 @@
      9
     ],
     "seller": "proxima_outpost",
-    "value": 83.128
+    "value": 83.152
    },
    {
     "alternatives": [
@@ -62408,14 +64018,14 @@
     "hops": 1,
     "landed_cost": 6.78,
     "local_cost": 3.73,
-    "mass": 497.968,
+    "mass": 497.967,
     "reason": "residual_shortfall",
     "route": [
      60,
      10
     ],
     "seller": "proxima_outpost",
-    "value": 995.935
+    "value": 995.934
    },
    {
     "alternatives": [
@@ -62439,7 +64049,7 @@
      14
     ],
     "seller": "proxima_outpost",
-    "value": 178.415
+    "value": 178.416
    },
    {
     "alternatives": [
@@ -62511,7 +64121,7 @@
      31
     ],
     "seller": "tau_ceti_cognium",
-    "value": 452.179
+    "value": 452.169
    },
    {
     "alternatives": [],
@@ -62549,7 +64159,7 @@
      22
     ],
     "seller": "tau_ceti_cognium",
-    "value": 1199.872
+    "value": 1199.855
    },
    {
     "alternatives": [],
@@ -62568,7 +64178,7 @@
      9
     ],
     "seller": "tau_ceti_cognium",
-    "value": 3863.437
+    "value": 3863.374
    },
    {
     "alternatives": [],
@@ -62587,7 +64197,7 @@
      9
     ],
     "seller": "tau_ceti_cognium",
-    "value": 2010.958
+    "value": 2010.934
    },
    {
     "alternatives": [],
@@ -62644,7 +64254,7 @@
      12
     ],
     "seller": "tau_ceti_cognium",
-    "value": 7149.875
+    "value": 7149.876
    },
    {
     "alternatives": [],
@@ -62664,6 +64274,35 @@
     ],
     "seller": "tau_ceti_cognium",
     "value": 0.385
+   },
+   {
+    "alternatives": [],
+    "break_even_freight": null,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     4,
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "lalande_hellas"
+    ],
+    "good": "drive_cores",
+    "hops": 4,
+    "landed_cost": 35.13,
+    "local_cost": null,
+    "mass": 0.0,
+    "reason": "state_monopoly_or_own_design",
+    "route": [
+     8,
+     4,
+     24,
+     45,
+     37
+    ],
+    "seller": "tau_ceti_cognium",
+    "value": 0.033
    },
    {
     "alternatives": [],
@@ -62818,6 +64457,33 @@
    },
    {
     "alternatives": [],
+    "break_even_freight": null,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     4,
+     24
+    ],
+    "controllers": [
+     "cyg61_kern",
+     "lalande_hellas"
+    ],
+    "good": "drive_cores",
+    "hops": 3,
+    "landed_cost": 35.1,
+    "local_cost": null,
+    "mass": 0.0,
+    "reason": "state_monopoly_or_own_design",
+    "route": [
+     8,
+     4,
+     24,
+     45
+    ],
+    "seller": "tau_ceti_cognium",
+    "value": 0.025
+   },
+   {
+    "alternatives": [],
     "break_even_freight": 37732.21,
     "buyer": "proxima_outpost",
     "choke_points": [],
@@ -62833,7 +64499,7 @@
      60
     ],
     "seller": "tau_ceti_cognium",
-    "value": 3744.142
+    "value": 3744.141
    },
    {
     "alternatives": [],
@@ -62871,7 +64537,7 @@
      31
     ],
     "seller": "wolf359_citadel",
-    "value": 44.066
+    "value": 44.065
    },
    {
     "alternatives": [
@@ -62974,6 +64640,32 @@
     "value": 0.021
    },
    {
+    "alternatives": [],
+    "break_even_freight": 20.85,
+    "buyer": "hd114783_hellas3",
+    "choke_points": [
+     24,
+     45
+    ],
+    "controllers": [
+     "cyg61_kern"
+    ],
+    "good": "munitions",
+    "hops": 3,
+    "landed_cost": 9.93,
+    "local_cost": 43.94,
+    "mass": 0.0,
+    "reason": "industrial_specialisation_military",
+    "route": [
+     3,
+     24,
+     45,
+     37
+    ],
+    "seller": "wolf359_citadel",
+    "value": 0.005
+   },
+   {
     "alternatives": [
      "cyg61_kern",
      "delta_pav_freekarma",
@@ -63043,7 +64735,31 @@
      16
     ],
     "seller": "wolf359_citadel",
-    "value": 8.877
+    "value": 8.875
+   },
+   {
+    "alternatives": [],
+    "break_even_freight": 23.94,
+    "buyer": "leo83_zion",
+    "choke_points": [
+     24
+    ],
+    "controllers": [
+     "cyg61_kern"
+    ],
+    "good": "munitions",
+    "hops": 2,
+    "landed_cost": 9.02,
+    "local_cost": 34.87,
+    "mass": 0.0,
+    "reason": "industrial_specialisation_military",
+    "route": [
+     3,
+     24,
+     45
+    ],
+    "seller": "wolf359_citadel",
+    "value": 0.003
    },
    {
     "alternatives": [
@@ -63086,7 +64802,7 @@
      60
     ],
     "seller": "wolf359_citadel",
-    "value": 143.28
+    "value": 143.277
    },
    {
     "alternatives": [
@@ -64458,6 +66174,11 @@
     }
    },
    "vanished": [
+    [
+     "cyg61_kern",
+     "eps_eri_harmony",
+     "components"
+    ],
     [
      "delta_pav_freekarma",
      "eps_eri_harmony",

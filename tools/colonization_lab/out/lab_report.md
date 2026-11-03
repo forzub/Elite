@@ -813,7 +813,7 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 | Свободные поселения | 2574 |  |  |  |  | 0.02 | 0.04 | 0.07 | 0.23 | 3.17 | 28.34 | 200.59 |
 | Свободная Карма | 2420 |  |  |  | 0.04 | 0.14 | 0.89 | 2.67 | 7.64 | 35.16 | 84.43 | 200.07 |
 | Небесная Твердыня | 2742 |  |  |  |  |  |  | 0.03 | 0.11 | 2.90 | 35.48 | 198.28 |
-| Шахта Альфа | 2355 |  |  | 0.02 | 0.03 | 0.06 | 0.22 | 0.45 | 1.11 | 4.84 | 28.47 | 139.97 |
+| Шахта Альфа | 2355 |  |  | 0.02 | 0.03 | 0.06 | 0.22 | 0.45 | 1.11 | 4.84 | 28.47 | 139.96 |
 | Провидение | 2314 |  |  | 0.00 | 0.01 | 0.02 | 0.06 | 0.11 | 0.16 | 0.29 | 0.21 | 0.10 |
 | Гелиевое поле Эпсилон Индейца | 2778 |  |  |  |  |  |  |  | 0.01 | 0.09 | 0.07 | 0.06 |
 
@@ -867,7 +867,7 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 | Цветущая Гармония | 2900 | 540.341 | 2.31 | 1.14 | 1.17 | 0.187 | 94.0 | 0.0001 | 14.4 | 8.0 | 2.43 | 0.864 | 0.089 | 0.013 | 1.0 | 0.95 | growth |
 | Цветущая Гармония | 3000 | 1074.650 | 1.88 | 1.13 | 1.14 | 0.136 | 94.0 | 0.0001 | 11.5 | 9.2 | 1.58 | 0.826 | 0.087 | 0.013 | 1.0 | 0.95 | stagnation |
 | Цветущая Гармония | 3100 | 1317.693 | 1.84 | 1.14 | 1.14 | 0.099 | 94.0 | 0.0001 | 10.5 | 11.1 | 2.29 | 0.788 | 0.087 | 0.013 | 1.0 | 0.95 | stagnation |
-| Цветущая Гармония | 3126 | 1371.102 | 1.82 | 1.13 | 1.14 | 0.094 | 94.0 | 0.0001 | 10.4 | 11.1 | 0.0 | 0.788 | 0.084 | 0.013 | 1.0 | 0.95 | stagnation |
+| Цветущая Гармония | 3126 | 1371.103 | 1.82 | 1.13 | 1.14 | 0.094 | 94.0 | 0.0001 | 10.4 | 11.1 | 0.0 | 0.788 | 0.084 | 0.013 | 1.0 | 0.95 | stagnation |
 | Пояс Раздора / Вольные астероиды | 2405 | 0.003 | 3.36 | 2.0 | 3.96 | 0.05 | 94.0 | 0.0001 | 34.6 | 0.9 | 0.0 | 0.741 | 0.197 | 0.014 | 0.494 | 0.95 | stagnation |
 | Пояс Раздора / Вольные астероиды | 2500 | 0.007 | 3.14 | 2.94 | 2.65 | 0.077 | 74.3 | 0.0563 | 20.4 | 10.6 | 0.0 | 0.925 | 0.22 | 0.267 | 0.185 | 0.437 | growth |
 | Пояс Раздора / Вольные астероиды | 2600 | 0.032 | 4.14 | 3.59 | 3.36 | 0.284 | 64.4 | 0.1132 | 28.5 | 11.4 | 0.0 | 1.101 | 0.211 | 0.354 | 0.067 | 0.255 | expansion |
@@ -886,7 +886,7 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 | Тяньхэ (Небесная Река) | 2800 | 93.125 | 2.9 | 1.39 | 1.53 | 0.304 | 94.0 | 0.0001 | 19.2 | 5.5 | 3.12 | 0.863 | 0.186 | 0.044 | 0.982 | 0.871 | expansion |
 | Тяньхэ (Небесная Река) | 2900 | 398.579 | 2.56 | 1.22 | 1.27 | 0.205 | 94.0 | 0.0001 | 16.4 | 6.8 | 2.14 | 0.865 | 0.116 | 0.013 | 0.999 | 0.95 | growth |
 | Тяньхэ (Небесная Река) | 3000 | 984.824 | 1.89 | 1.21 | 1.21 | 0.135 | 94.0 | 0.0001 | 11.9 | 8.4 | 0.9 | 0.815 | 0.112 | 0.013 | 1.0 | 0.95 | growth |
-| Тяньхэ (Небесная Река) | 3100 | 1087.068 | 1.84 | 1.22 | 1.22 | 0.08 | 94.0 | 0.0001 | 10.2 | 11.8 | 0.86 | 0.758 | 0.118 | 0.014 | 1.0 | 0.95 | stagnation |
+| Тяньхэ (Небесная Река) | 3100 | 1087.069 | 1.84 | 1.22 | 1.22 | 0.08 | 94.0 | 0.0001 | 10.2 | 11.8 | 0.86 | 0.758 | 0.118 | 0.014 | 1.0 | 0.95 | stagnation |
 | Тяньхэ (Небесная Река) | 3126 | 1058.878 | 1.83 | 1.22 | 1.22 | 0.07 | 94.0 | 0.0001 | 10.1 | 11.9 | 0.0 | 0.754 | 0.116 | 0.014 | 1.0 | 0.95 | stagnation |
 | Новая Индия | 2523 | 0.021 | 3.54 | 1.84 | 3.95 | 0.121 | 94.0 | 0.0001 | 36.4 | 0.9 | 0.0 | 0.742 | 0.143 | 0.014 | 0.509 | 0.95 | stagnation |
 | Новая Индия | 2600 | 0.054 | 2.59 | 1.92 | 2.07 | 0.135 | 84.1 | 0.0124 | 16.5 | 9.3 | 0.0 | 0.904 | 0.165 | 0.195 | 0.607 | 0.569 | growth |
@@ -988,7 +988,7 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 
 ### D.7 Миграция после гипера
 
-Всего переселилось (2750–3126): 1 627 500 794 человек.
+Всего переселилось (2750–3126): 1 627 501 612 человек.
 
 | полвека | людей |
 |---|---|
@@ -997,27 +997,27 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 | 2850 | 196 467 218 |
 | 2900 | 236 066 407 |
 | 2950 | 257 279 753 |
-| 3000 | 291 112 639 |
-| 3050 | 344 875 880 |
-| 3100 | 166 236 672 |
+| 3000 | 291 113 457 |
+| 3050 | 344 875 882 |
+| 3100 | 166 236 671 |
 
 | откуда | куда | людей |
 |---|---|---|
-| earth_south | tau_ceti_cognium | 229 633 750 |
-| lalande_mecca | eps_eri_harmony | 204 387 620 |
-| earth_south | eps_eri_harmony | 161 811 276 |
-| earth_south | gj832_tianhe | 144 519 409 |
-| earth_south | hd20794_newindia | 116 236 426 |
-| earth_north | tau_ceti_cognium | 98 946 570 |
-| earth_north | eps_eri_harmony | 69 829 040 |
-| earth_north | gj832_tianhe | 62 353 119 |
-| eps_eri_strife | gj832_tianhe | 57 654 330 |
-| delta_pav_freekarma | eps_eri_harmony | 54 167 761 |
-| earth_south | lalande_hellas | 50 988 050 |
-| earth_north | hd20794_newindia | 50 037 849 |
-| earth_south | hd40307_maland | 38 114 356 |
-| earth_south | hd40307_firmament | 30 089 579 |
-| hd69830_verde | eps_eri_harmony | 29 832 346 |
+| earth_south | tau_ceti_cognium | 229 633 761 |
+| lalande_mecca | eps_eri_harmony | 204 387 900 |
+| earth_south | eps_eri_harmony | 161 811 286 |
+| earth_south | gj832_tianhe | 144 519 416 |
+| earth_south | hd20794_newindia | 116 236 439 |
+| earth_north | tau_ceti_cognium | 98 946 564 |
+| earth_north | eps_eri_harmony | 69 829 034 |
+| earth_north | gj832_tianhe | 62 353 112 |
+| eps_eri_strife | gj832_tianhe | 57 654 448 |
+| delta_pav_freekarma | eps_eri_harmony | 54 167 832 |
+| earth_south | lalande_hellas | 50 988 052 |
+| earth_north | hd20794_newindia | 50 037 848 |
+| earth_south | hd40307_maland | 38 114 361 |
+| earth_south | hd40307_firmament | 30 089 584 |
+| hd69830_verde | eps_eri_harmony | 29 832 404 |
 
 ### D.8 Авторский масштаб 3126 и эпохи, которые его объясняют
 
@@ -1064,28 +1064,28 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 
 | колония | система | нас. 3126 (модель) | авторское | основание (нас.) | ср. рост %/год | режим | знание | богатство /100k | energy | extraction | metallurgy | manufacturing | electronics | bio | shipbuilding | military | research | флаг |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Новый Шанхай | Tau Ceti | 1,356,527,898 | 2,800,000 | 2233 (19124) | 1.251 | technocratic_meritocracy | 0.989 | 14.77 | 80 | 70 | 80 | 85 | 100 | 78 | 86 | 83 | 100 |  |
+| Новый Шанхай | Tau Ceti | 1,356,527,906 | 2,800,000 | 2233 (19124) | 1.251 | technocratic_meritocracy | 0.989 | 14.77 | 80 | 70 | 80 | 85 | 100 | 78 | 86 | 83 | 100 |  |
 | Красный Форпост | Proxima Centauri | 725,716,924 | 890,000 | 2150 (10168) | 1.145 | security_oligarchy | 0.975 | 7.76 | 80 | 83 | 79 | 83 | 81 | 91 | 82 | 95 | 80 |  |
-| Тяньхэ (Небесная Река) | Gliese 832 | 1,058,878,197 | 4,200,000 | 2288 (29361) | 1.252 | party_technocracy | 0.991 | 16.91 | 97 | 91 | 100 | 100 | 88 | 92 | 94 | 91 | 78 |  |
+| Тяньхэ (Небесная Река) | Gliese 832 | 1,058,878,366 | 4,200,000 | 2288 (29361) | 1.252 | party_technocracy | 0.991 | 16.91 | 97 | 91 | 100 | 100 | 88 | 92 | 94 | 91 | 78 |  |
 | Зона «Филоморфоз» | Gliese 832 | 2,363 | 45,000 | 2270 (11880) | -0.189 | none_quiet | 0.091 | - | 29 | 30 | 26 | 24 | 21 | 20 | 27 | 22 | 22 | конфликт с авторским каноном: модель 0.00 млн против 0.04 млн (×0.05) |
-| Новая Эллада / Агора | Lalande 21185 | 327,607,484 | 1,500,000 | 2197 (10553) | 1.113 | shareholder_agora | 0.981 | 17.83 | 78 | 81 | 78 | 81 | 79 | 79 | 80 | 80 | 92 |  |
-| Новая Мекка | Lalande 21185 | 799,743,555 | 1,800,000 | 2243 (16193) | 1.224 | scholar_theocracy | 0.986 | 5.12 | 80 | 81 | 80 | 82 | 85 | 84 | 80 | 84 | 93 |  |
-| Цветущая Гармония | Epsilon Eridani | 1,371,102,075 | 3,280,000 | 2212 (22557) | 1.205 | sage_council | 1.0 | 25.22 | 98 | 96 | 100 | 97 | 88 | 90 | 100 | 88 | 80 |  |
-| Пояс Раздора / Вольные астероиды | Epsilon Eridani | 348,072,330 | 45,000 | 2405 (2587) | 1.638 | clan_contracts | 0.972 | 24.23 | 85 | 96 | 86 | 75 | 80 | 77 | 89 | 77 | 86 |  |
+| Новая Эллада / Агора | Lalande 21185 | 327,607,482 | 1,500,000 | 2197 (10553) | 1.113 | shareholder_agora | 0.981 | 17.83 | 78 | 81 | 78 | 81 | 79 | 79 | 80 | 80 | 92 |  |
+| Новая Мекка | Lalande 21185 | 799,743,540 | 1,800,000 | 2243 (16193) | 1.224 | scholar_theocracy | 0.986 | 5.12 | 80 | 81 | 80 | 82 | 85 | 84 | 80 | 84 | 93 |  |
+| Цветущая Гармония | Epsilon Eridani | 1,371,102,748 | 3,280,000 | 2212 (22557) | 1.205 | sage_council | 1.0 | 25.22 | 98 | 96 | 100 | 97 | 88 | 90 | 100 | 88 | 80 |  |
+| Пояс Раздора / Вольные астероиды | Epsilon Eridani | 348,072,327 | 45,000 | 2405 (2587) | 1.638 | clan_contracts | 0.972 | 24.23 | 85 | 96 | 86 | 75 | 80 | 77 | 89 | 77 | 86 |  |
 | Цитадель | Wolf 359 | 545,459,819 | 650,000 | 2228 (11195) | 1.202 | security_oligarchy | 0.971 | 5.63 | 77 | 77 | 86 | 81 | 91 | 77 | 87 | 100 | 80 |  |
-| Новая Европа | Gliese 581 | 271,947,998 | 1,200,000 | 2377 (10873) | 1.352 | parliamentary_bureaucracy | 0.971 | 15.48 | 84 | 75 | 82 | 80 | 86 | 75 | 79 | 77 | 84 |  |
-| Свободные поселения | Gliese 581 | 200,589,133 | 85,000 | 2574 (9822) | 1.798 | clan_contracts | 0.958 | 13.29 | 77 | 82 | 77 | 76 | 81 | 74 | 79 | 76 | 82 |  |
-| Вторая Эллада | HD 20794 (82 G. Eridani) | 250,016,206 | 980,000 | 2384 (13248) | 1.327 | corporate_democracy | 0.977 | 25.48 | 86 | 85 | 86 | 78 | 87 | 78 | 86 | 78 | 90 |  |
-| Новая Индия | HD 20794 (82 G. Eridani) | 903,060,113 | 1,100,000 | 2523 (21254) | 1.767 | merit_caste_republic | 0.974 | 15.64 | 82 | 88 | 85 | 89 | 80 | 88 | 86 | 84 | 80 |  |
-| Новая Маланд | HD 40307 | 445,615,993 | 2,400,000 | 2542 (25408) | 1.673 | council_of_chiefs | 0.96 | 12.77 | 83 | 86 | 78 | 86 | 80 | 98 | 80 | 84 | 81 |  |
-| Небесная Твердыня | HD 40307 | 198,279,061 | 1,800,000 | 2742 (22235) | 2.369 | party_technocracy | 0.951 | 24.4 | 90 | 82 | 90 | 86 | 83 | 84 | 83 | 93 | 73 |  |
-| Сельта-Верде | HD 69830 | 204,780,901 | 1,400,000 | 2576 (13285) | 1.753 | grandees_and_church | 0.947 | 11.99 | 80 | 92 | 78 | 76 | 75 | 83 | 82 | 78 | 79 |  |
+| Новая Европа | Gliese 581 | 271,947,994 | 1,200,000 | 2377 (10873) | 1.352 | parliamentary_bureaucracy | 0.971 | 15.48 | 84 | 75 | 82 | 80 | 86 | 75 | 79 | 77 | 84 |  |
+| Свободные поселения | Gliese 581 | 200,589,138 | 85,000 | 2574 (9822) | 1.798 | clan_contracts | 0.958 | 13.29 | 77 | 82 | 77 | 76 | 81 | 74 | 79 | 76 | 82 |  |
+| Вторая Эллада | HD 20794 (82 G. Eridani) | 250,016,201 | 980,000 | 2384 (13248) | 1.327 | corporate_democracy | 0.977 | 25.48 | 86 | 85 | 86 | 78 | 87 | 78 | 86 | 78 | 90 |  |
+| Новая Индия | HD 20794 (82 G. Eridani) | 903,060,135 | 1,100,000 | 2523 (21254) | 1.767 | merit_caste_republic | 0.974 | 15.64 | 82 | 88 | 85 | 89 | 80 | 88 | 86 | 84 | 80 |  |
+| Новая Маланд | HD 40307 | 445,615,996 | 2,400,000 | 2542 (25408) | 1.673 | council_of_chiefs | 0.96 | 12.77 | 83 | 86 | 78 | 86 | 80 | 98 | 80 | 84 | 81 |  |
+| Небесная Твердыня | HD 40307 | 198,279,067 | 1,800,000 | 2742 (22235) | 2.369 | party_technocracy | 0.951 | 24.4 | 90 | 82 | 90 | 86 | 83 | 84 | 83 | 93 | 73 |  |
+| Сельта-Верде | HD 69830 | 204,780,898 | 1,400,000 | 2576 (13285) | 1.753 | grandees_and_church | 0.947 | 11.99 | 80 | 92 | 78 | 76 | 75 | 83 | 82 | 78 | 79 |  |
 | Новая Карма | Delta Pavonis | 740,339,479 | 1,750,000 | 2361 (23362) | 1.355 | caste_theocracy | 0.765 | 9.67 | 60 | 72 | 72 | 72 | 70 | 82 | 73 | 76 | 70 |  |
-| Свободная Карма | Delta Pavonis | 200,070,319 | 350,000 | 2420 (14372) | 1.351 | exile_republic | 0.973 | 14.44 | 68 | 80 | 79 | 81 | 77 | 84 | 80 | 82 | 76 |  |
+| Свободная Карма | Delta Pavonis | 200,070,311 | 350,000 | 2420 (14372) | 1.351 | exile_republic | 0.973 | 14.44 | 68 | 80 | 79 | 81 | 77 | 84 | 80 | 82 | 76 |  |
 | Провидение | Gliese 876 | 99,649 | 45,000 | 2314 (3288) | 0.42 | machine_oracle | 0.801 | 6.84 | 64 | 66 | 63 | 54 | 74 | 54 | 68 | 52 | 74 | конфликт с авторским каноном: модель 0.10 млн против 0.04 млн (×2.21) |
-| Шахта Альфа | 61 Cygni | 139,966,984 | 350,000 | 2355 (9309) | 1.247 | corporate_board | 0.962 | 11.89 | 80 | 82 | 75 | 78 | 79 | 74 | 74 | 78 | 80 |  |
-| Третья Эллада | HD 114783 | 12,983 | 12,500 | 3122 (11588) | 2.842 | litigating_city_states | 0.48 | 2.45 | 49 | 50 | 51 | 39 | 43 | 41 | 52 | 40 | 42 |  |
-| Святой Сион (на орбите) | 83 Leonis | 9,229 | 8,900 | 3126 (9229) | - | synod_theocracy | 0.466 | 2.57 | 54 | 48 | 54 | 46 | 45 | 50 | 51 | 46 | 34 |  |
+| Шахта Альфа | 61 Cygni | 139,963,859 | 350,000 | 2355 (9309) | 1.247 | corporate_board | 0.962 | 11.89 | 80 | 82 | 75 | 78 | 79 | 74 | 74 | 78 | 80 |  |
+| Третья Эллада | HD 114783 | 12,983 | 12,500 | 3122 (11588) | 2.842 | litigating_city_states | 0.48 | 2.22 | 49 | 50 | 51 | 39 | 43 | 41 | 52 | 40 | 42 |  |
+| Святой Сион (на орбите) | 83 Leonis | 9,229 | 8,900 | 3126 (9229) | - | synod_theocracy | 0.466 | 2.4 | 54 | 48 | 54 | 46 | 45 | 50 | 51 | 46 | 34 |  |
 
 ## 5. Экономика 3126 (условные единицы/год; цены относительно базовых)
 
@@ -1121,7 +1121,7 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 | delta_pav_karma | tau_ceti_cognium | precision | major (14650.7) | 1 | specialisation_high_value | delta_pav_freekarma, eps_eri_harmony, gj581_europa, gj832_tianhe |  |  | 13.73 |
 | hd20794_newindia | tau_ceti_cognium | components | major (12105.4) | 1 | specialisation_high_value | eps_eri_harmony, gj832_tianhe |  |  | 2.33 |
 | eps_eri_harmony | tau_ceti_cognium | he3 | major (11475.2) | 1 | no_local_source | gj832_tianhe, hd69830_verde |  |  |  |
-| eps_eri_strife | tau_ceti_cognium | isotopes | major (10602.9) | 1 | specialisation_high_value | eps_eri_harmony, hd20794_hellas2, hd20794_newindia |  |  | 28790.91 |
+| eps_eri_strife | tau_ceti_cognium | isotopes | major (10602.8) | 1 | specialisation_high_value | eps_eri_harmony, hd20794_hellas2, hd20794_newindia |  |  | 28790.91 |
 | eps_eri_harmony | tau_ceti_cognium | volatiles | major (7575.3) | 1 | local_source_dearer | eps_eri_strife |  |  | 2.2 |
 | hd20794_newindia | lalande_mecca | components | major (7158.7) | 1 | specialisation_high_value | eps_eri_harmony, gj832_tianhe, lalande_hellas, wolf359_citadel |  |  | 1.66 |
 | tau_ceti_cognium | gj832_tianhe | drive_cores | major (7149.9) | 1 | state_monopoly_or_own_design |  |  |  |  |
@@ -1142,10 +1142,10 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 | hd20794_newindia | proxima_outpost | components | medium (3246.2) | 1 | specialisation_high_value | eps_eri_harmony, gj832_tianhe |  |  | 1.99 |
 | lalande_hellas | tau_ceti_cognium | precision | medium (3141.5) | 1 | specialisation_high_value | delta_pav_karma, eps_eri_harmony, gj832_tianhe, hd20794_hellas2 |  |  | 29.43 |
 | eps_eri_harmony | lalande_hellas | metals | medium (3037.0) | 1 | residual_shortfall | eps_eri_strife, lalande_mecca, wolf359_citadel |  |  | 0.8 |
-| hd40307_firmament | proxima_outpost | precision | medium (3009.4) | 2 | specialisation_high_value | cyg61_kern, delta_pav_freekarma, delta_pav_karma, eps_eri_harmony | 14 | tau_ceti_cognium | 2.71 |
+| hd40307_firmament | proxima_outpost | precision | medium (3009.5) | 2 | specialisation_high_value | cyg61_kern, delta_pav_freekarma, delta_pav_karma, eps_eri_harmony | 14 | tau_ceti_cognium | 2.71 |
 | hd40307_maland | hd40307_firmament | food | medium (2980.1) | 0 | same_system |  |  |  |  |
 | gj832_tianhe | hd20794_newindia | food | medium (2822.2) | 1 | residual_shortfall | delta_pav_freekarma, delta_pav_karma, eps_eri_harmony, eps_eri_strife |  |  | 0.02 |
-| gj832_tianhe | wolf359_citadel | precision | medium (2805.8) | 1 | specialisation_high_value | delta_pav_karma, eps_eri_harmony, hd20794_hellas2, hd20794_newindia |  |  | 47.42 |
+| gj832_tianhe | wolf359_citadel | precision | medium (2805.9) | 1 | specialisation_high_value | delta_pav_karma, eps_eri_harmony, hd20794_hellas2, hd20794_newindia |  |  | 47.42 |
 | eps_eri_harmony | delta_pav_karma | he3 | medium (2772.3) | 1 | no_local_source | gj832_tianhe, hd69830_verde |  |  |  |
 | gj832_tianhe | delta_pav_karma | he3 | medium (2772.3) | 1 | no_local_source | eps_eri_harmony, hd69830_verde |  |  |  |
 | gj832_tianhe | delta_pav_karma | volatiles | medium (2695.9) | 1 | residual_shortfall | delta_pav_freekarma |  |  | 0.33 |
@@ -1163,6 +1163,7 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 
 ### T.3 Исчезнувшие потоки (были на старом рынке)
 
+- components: cyg61_kern → eps_eri_harmony
 - food: delta_pav_freekarma → eps_eri_harmony
 - components: delta_pav_freekarma → tau_ceti_cognium
 - food: delta_pav_karma → eps_eri_harmony
@@ -1495,19 +1496,19 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 | владелец | актив | тип | выпуск | диапазон | флот (корпуса) | мобил. резерв мирн./войн. |
 |---|---|---|---|---|---|---|
 | cyg61_kern | Биржа и страховой дом Керна | logistics_hub | 0.0 | [0.0, 0.0] | | |
-| cyg61_kern | Платформы 61 Cyg B i | gas_platform | 96.158 | [67.31, 125.01] | | |
-| cyg61_kern | флот и мобилизационный резерв | fleet | 0.0 | [0.0  0.0] | [0.0  0.0] | 467 224 / 3 737 792 |
+| cyg61_kern | Платформы 61 Cyg B i | gas_platform | 96.156 | [67.31, 125.0] | | |
+| cyg61_kern | флот и мобилизационный резерв | fleet | 0.0 | [0.0  0.0] | [0.0  0.0] | 467 213 / 3 737 709 |
 | delta_pav_freekarma | Маяк Дельты Павлина | jump_infrastructure | 0.0 | [0.0, 0.0] | | |
 | delta_pav_freekarma | флот и мобилизационный резерв | fleet | 0.0 | [0.0  0.0] | [0.0  0.0] | 652 503 / 5 220 028 |
 | delta_pav_karma | Храм Массива (криобанк генов) | research | 1040.558 | [728.39, 1352.72] | | |
 | delta_pav_karma | Рудники Delta Pavonis h | mine | 4447.206 | [3113.04, 5781.37] | | |
 | delta_pav_karma | флот и мобилизационный резерв | fleet | 15.177 | [10.62  19.73] | [114.6  229.2] | 2 426 603 / 19 412 831 |
-| eps_eri_harmony | Ледовый комплекс облака комет | ice_export | 43197.392 | [30238.17, 56156.61] | | |
-| eps_eri_harmony | Платформы eps Eri b | gas_platform | 7946.183 | [5562.33, 10330.04] | | |
+| eps_eri_harmony | Ледовый комплекс облака комет | ice_export | 43197.401 | [30238.18, 56156.62] | | |
+| eps_eri_harmony | Платформы eps Eri b | gas_platform | 7946.192 | [5562.33, 10330.05] | | |
 | eps_eri_harmony | Верфи Гармонии | shipyard | 194.821 | [136.37, 253.27] | | |
-| eps_eri_harmony | Рудники eps Eri b I | mine | 21411.603 | [14988.12, 27835.08] | | |
+| eps_eri_harmony | Рудники eps Eri b I | mine | 21411.593 | [14988.11, 27835.07] | | |
 | eps_eri_harmony | Ретрансляторная сеть (60 % межколониальной связи) | jump_infrastructure | 0.0 | [0.0, 0.0] | | |
-| eps_eri_harmony | флот и мобилизационный резерв | fleet | 194.821 | [136.37  253.27] | [1714.4  3428.9] | 4 319 961 / 34 559 690 |
+| eps_eri_harmony | флот и мобилизационный резерв | fleet | 194.821 | [136.37  253.27] | [1714.4  3428.9] | 4 319 963 / 34 559 711 |
 | eps_eri_strife | Чёрный рынок пояса | black_market | 0.0 | [0.0, 0.0] | | |
 | eps_eri_strife | флот и мобилизационный резерв | fleet | 27.159 | [19.01  35.31] | [209.9  419.9] | 1 116 464 / 8 931 717 |
 | gj581_europa | Реестр договоров и Арбитраж «Новый Брюссель» | legal_hub | 0.0 | [0.0, 0.0] | | |
@@ -1516,48 +1517,48 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 | gj581_europa | флот и мобилизационный резерв | fleet | 6.141 | [4.3  7.98] | [47.5  95.1] | 787 413 / 6 299 305 |
 | gj581_freeclans | Мастерские нелицензионных приводов | black_market | 0.0 | [0.0, 0.0] | | |
 | gj581_freeclans | флот и мобилизационный резерв | fleet | 3.024 | [2.12  3.93] | [23.1  46.2] | 672 845 / 5 382 761 |
-| gj832_tianhe | Платформы GJ 832 b | gas_platform | 5168.191 | [3617.73, 6718.65] | | |
+| gj832_tianhe | Платформы GJ 832 b | gas_platform | 5168.193 | [3617.74, 6718.65] | | |
 | gj832_tianhe | Массовые верфи Тяньхэ | shipyard | 110.577 | [77.4, 143.75] | | |
-| gj832_tianhe | Комбинат GJ 832 b I | refinery | 11696.549 | [8187.58, 15205.51] | | |
+| gj832_tianhe | Комбинат GJ 832 b I | refinery | 11696.548 | [8187.58, 15205.51] | | |
 | gj832_tianhe | Флот кордона «Филоморфоз» | fortress | 0.0 | [0.0, 0.0] | | |
-| gj832_tianhe | флот и мобилизационный резерв | fleet | 110.577 | [77.4  143.75] | [1001.8  2003.6] | 3 277 402 / 26 219 221 |
+| gj832_tianhe | флот и мобилизационный резерв | fleet | 110.577 | [77.4  143.75] | [1001.8  2003.6] | 3 277 403 / 26 219 227 |
 | gj876_next | Ядро «Провидца» | research | 0.016 | [0.01, 0.02] | | |
 | gj876_next | Концессии трёх гигантов GJ 876 (операторы — Когниум и Керн) | gas_platform | 0.237 | [0.17, 0.31] | | |
 | gj876_next | Концессионные рудники GJ 876 b I | mine | 0.409 | [0.29, 0.53] | | |
 | gj876_next | флот и мобилизационный резерв | fleet | 0.001 | [0.0  0.0] | [0.0  0.0] | 223 / 1 791 |
 | hd114783_hellas3 | Астероид-корабль «Одиссей» | station_core | 0.0 | [0.0, 0.0] | | |
 | hd114783_hellas3 | флот и мобилизационный резерв | fleet | 0.0 | [0.0  0.0] | [0.0  0.0] | 39 / 318 |
-| hd20794_hellas2 | Платформы HD 20794 d | gas_platform | 1399.976 | [979.98, 1819.97] | | |
+| hd20794_hellas2 | Платформы HD 20794 d | gas_platform | 1399.977 | [979.98, 1819.97] | | |
 | hd20794_hellas2 | Звёздный Университет | research | 367.746 | [257.42, 478.07] | | |
-| hd20794_hellas2 | Водные права пояса Койпера | ice_export | 3739.681 | [2617.78, 4861.59] | | |
+| hd20794_hellas2 | Водные права пояса Койпера | ice_export | 3739.679 | [2617.78, 4861.58] | | |
 | hd20794_hellas2 | флот и мобилизационный резерв | fleet | 11.983 | [8.39  15.58] | [93.1  186.2] | 727 565 / 5 820 521 |
 | hd20794_newindia | Платформы HD 20794 f | gas_platform | 2217.428 | [1552.2, 2882.66] | | |
-| hd20794_newindia | Сборочные кольца | factory | 8967.772 | [6277.44, 11658.1] | | |
-| hd20794_newindia | флот и мобилизационный резерв | fleet | 17.583 | [12.31  22.86] | [148.2  296.4] | 3 065 023 / 24 520 187 |
+| hd20794_newindia | Сборочные кольца | factory | 8967.769 | [6277.44, 11658.1] | | |
+| hd20794_newindia | флот и мобилизационный резерв | fleet | 17.583 | [12.31  22.86] | [148.2  296.4] | 3 065 023 / 24 520 188 |
 | hd40307_firmament | Платформы HD 40307 f (доля Твердыни) | gas_platform | 855.174 | [598.62, 1111.73] | | |
 | hd40307_firmament | Флотская база | fortress | 0.0 | [0.0, 0.0] | | |
 | hd40307_firmament | Рудники пояса | mine | 2592.636 | [1814.85, 3370.43] | | |
 | hd40307_firmament | флот и мобилизационный резерв | fleet | 9.647 | [6.75  12.54] | [89.8  179.6] | 727 568 / 5 820 551 |
-| hd40307_maland | Агрокольца Маланд («Житница») | food_habitat | 12554.815 | [8788.37, 16321.26] | | |
+| hd40307_maland | Агрокольца Маланд («Житница») | food_habitat | 12554.813 | [8788.37, 16321.26] | | |
 | hd40307_maland | Платформы HD 40307 f (доля Маланд) | gas_platform | 941.768 | [659.24, 1224.3] | | |
 | hd40307_maland | Внешний дозор | fortress | 0.0 | [0.0, 0.0] | | |
 | hd40307_maland | флот и мобилизационный резерв | fleet | 0.0 | [0.0  0.0] | [0.0  0.0] | 1 524 137 / 12 193 097 |
 | hd69830_verde | Платформы трёх гигантов HD 69830 | gas_platform | 1326.706 | [928.69, 1724.72] | | |
-| hd69830_verde | Ледовые поля облака комет | ice_export | 3614.457 | [2530.12, 4698.79] | | |
+| hd69830_verde | Ледовые поля облака комет | ice_export | 3614.456 | [2530.12, 4698.79] | | |
 | hd69830_verde | флот и мобилизационный резерв | fleet | 2.439 | [1.71  3.17] | [18.9  37.9] | 695 395 / 5 563 160 |
 | lalande_hellas | Агора — нейтральный порт и биржа | logistics_hub | 0.0 | [0.0, 0.0] | | |
-| lalande_hellas | Платформы Lalande 21185 j (эллинская доля) | gas_platform | 326.425 | [228.5, 424.35] | | |
+| lalande_hellas | Платформы Lalande 21185 j (эллинская доля) | gas_platform | 326.426 | [228.5, 424.35] | | |
 | lalande_hellas | Академия Новой Эллады | research | 414.605 | [290.22, 538.99] | | |
 | lalande_hellas | флот и мобилизационный резерв | fleet | 0.0 | [0.0  0.0] | [0.0  0.0] | 971 836 / 7 774 694 |
 | lalande_mecca | Обсерватория-вычислитель «Расад» | research | 165.465 | [115.83, 215.1] | | |
 | lalande_mecca | Платформы Lalande 21185 j (доля Мекки) | gas_platform | 41.657 | [29.16, 54.15] | | |
-| lalande_mecca | Сады Lalande 21185 g | food_habitat | 10002.832 | [7001.98, 13003.68] | | |
-| lalande_mecca | флот и мобилизационный резерв | fleet | 4.151 | [2.91  5.4] | [35.1  70.2] | 2 701 567 / 21 612 538 |
+| lalande_mecca | Сады Lalande 21185 g | food_habitat | 10002.83 | [7001.98, 13003.68] | | |
+| lalande_mecca | флот и мобилизационный резерв | fleet | 4.151 | [2.91  5.4] | [35.1  70.2] | 2 701 567 / 21 612 537 |
 | leo83_zion | флот и мобилизационный резерв | fleet | 0.0 | [0.0  0.0] | [0.0  0.0] | 37 / 297 |
 | proxima_outpost | Орбитальная крепость «Сварог» | fortress | 0.0 | [0.0, 0.0] | | |
-| proxima_outpost | Агрокупола Alpha Centauri B l | food_habitat | 11454.667 | [8018.27, 14891.07] | | |
+| proxima_outpost | Агрокупола Alpha Centauri B l | food_habitat | 11454.665 | [8018.27, 14891.06] | | |
 | proxima_outpost | Газовые платформы Proxima l | gas_platform | 101.893 | [71.32, 132.46] | | |
-| proxima_outpost | Шахты Proxima Cen d | mine | 3957.857 | [2770.5, 5145.21] | | |
+| proxima_outpost | Шахты Proxima Cen d | mine | 3957.855 | [2770.5, 5145.21] | | |
 | proxima_outpost | флот и мобилизационный резерв | fleet | 6.161 | [4.31  8.01] | [58.6  117.2] | 2 476 326 / 19 810 615 |
 | tau_ceti_cognium | Управление Маяков и фабрика ядер прыжка «Сычёвник» | jump_infrastructure | 140.931 | [98.65, 183.21] | | |
 | tau_ceti_cognium | Фабы Кольца Основателей | electronics_fab | 266.899 | [186.83, 346.97] | | |
@@ -1571,42 +1572,42 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 
 | колония | производит (топ) | импорт (топ) | экспорт (топ) | цены выше 1.5× базы | главные партнёры |
 |---|---|---|---|---|---|
-| Новый Шанхай | drive_cores 140.93, food 10220.52, electronics 266.90 | precision 757.63, isotopes 544.31, he3 2389.69 | drive_cores 112.28 | volatiles×2.7, metals×2.6, electronics×1.8, hulls×2.3, munitions×2.5, precision×2.7 | eps_eri_harmony, hd20794_newindia, delta_pav_karma |
-| Красный Форпост | food 11454.67, volatiles 11146.20, metals 3957.86 | he3 1296.66, components 817.73, precision 153.44 | food 1827.00, metals 497.97, volatiles 776.30 | hulls×2.6 | eps_eri_harmony, hd40307_firmament, tau_ceti_cognium |
+| Новый Шанхай | drive_cores 140.93, food 10220.52, electronics 266.90 | precision 757.62, isotopes 544.31, he3 2389.69 | drive_cores 112.28 | volatiles×2.7, metals×2.6, electronics×1.8, hulls×2.3, munitions×2.5, precision×2.7 | eps_eri_harmony, hd20794_newindia, delta_pav_karma |
+| Красный Форпост | food 11454.66, volatiles 11146.20, metals 3957.86 | he3 1296.66, components 817.73, precision 153.44 | food 1827.00, metals 497.97, volatiles 776.30 | hulls×2.6 | eps_eri_harmony, hd40307_firmament, tau_ceti_cognium |
 | Тяньхэ (Небесная Река) | he3 5168.19, food 18882.74, metals 11696.55 | drive_cores 23.83, isotopes 87.94, hulls 32.53 | he3 1841.79, food 5031.90, precision 202.83 | hulls×5.6 | delta_pav_karma, tau_ceti_cognium, hd20794_newindia |
 | Новая Эллада / Агора | precision 414.61, electronics 467.79, components 1015.06 | metals 1518.48, he3 344.68, drive_cores 3.73 | precision 171.50, biotech 112.14, electronics 79.81 | metals×2.2, food×1.9, hulls×5.6 | eps_eri_harmony, tau_ceti_cognium, hd40307_maland |
 | Новая Мекка | food 10002.83, volatiles 8760.83, metals 2805.92 | he3 1506.22, components 1431.74, electronics 452.46 | precision 14.65, hulls 3.35, drive_cores 0.38 | hulls×4.2, biotech×2.0, drive_cores×2.8 | eps_eri_harmony, hd20794_newindia, eps_eri_strife |
-| Цветущая Гармония | he3 7946.18, volatiles 43197.39, metals 21411.60 | electronics 416.10, drive_cores 13.26, biotech 182.25 | he3 5586.87, food 9444.95, isotopes 357.15 | hulls×5.6, drive_cores×8.0 | tau_ceti_cognium, hd20794_newindia, lalande_mecca |
-| Пояс Раздора / Вольные астероиды | isotopes 562.20, he3 1948.75, volatiles 10593.90 | food 3226.47, drive_cores 6.98, components 70.68 | isotopes 455.42, electronics 504.76, he3 869.22 | hulls×3.3 | tau_ceti_cognium, lalande_mecca, eps_eri_harmony |
+| Цветущая Гармония | he3 7946.19, volatiles 43197.40, metals 21411.59 | electronics 416.09, drive_cores 13.26, biotech 182.24 | he3 5586.87, food 9444.96, isotopes 357.15 | hulls×5.6, drive_cores×8.0 | tau_ceti_cognium, hd20794_newindia, lalande_mecca |
+| Пояс Раздора / Вольные астероиды | isotopes 562.20, he3 1948.75, volatiles 10593.90 | food 3226.47, drive_cores 6.98, components 70.68 | isotopes 455.42, electronics 504.77, he3 869.22 | hulls×3.3 | tau_ceti_cognium, lalande_mecca, eps_eri_harmony |
 | Цитадель | food 5529.60, munitions 289.63, metals 2138.64 | he3 1042.44, components 1025.86, precision 200.59 | munitions 174.82, electronics 54.05, precision 9.20 | volatiles×2.7, metals×1.6, hulls×4.2, biotech×2.6, drive_cores×1.7 | hd20794_newindia, eps_eri_harmony, gj832_tianhe |
 | Новая Европа | electronics 661.75, metals 2113.73, components 823.15 | he3 488.20, drive_cores 4.42, food 834.87 | electronics 441.34, metals 267.26, precision 19.78 | volatiles×2.4, hulls×8.0 | tau_ceti_cognium, eps_eri_harmony, proxima_outpost |
 | Свободные поселения | electronics 490.15, biotech 229.56, components 816.66 | he3 320.60, metals 889.40, food 1044.03 | electronics 409.72, biotech 153.78, precision 56.62 | metals×3.3, hulls×2.6 | tau_ceti_cognium, eps_eri_harmony, proxima_outpost |
 | Вторая Эллада | electronics 847.57, precision 367.75, he3 1399.98 | food 1579.66, drive_cores 4.59, components 59.82 | electronics 548.85, precision 210.71, isotopes 174.56 | hulls×5.6 | tau_ceti_cognium, hd40307_maland, eps_eri_harmony |
-| Новая Индия | components 8967.77, metals 12560.27, he3 2217.43 | food 5136.58, drive_cores 16.65, biotech 178.75 | components 6541.27, metals 780.35, electronics 113.38 | volatiles×3.2, hulls×8.0, biotech×2.6 | tau_ceti_cognium, eps_eri_harmony, lalande_mecca |
-| Новая Маланд | food 12554.82, biotech 571.46, volatiles 10109.37 | metals 1843.50, precision 123.19, components 569.96 | biotech 394.63, food 1986.72, volatiles 1204.37 | hulls×8.0 | hd40307_firmament, hd20794_hellas2, hd20794_newindia |
+| Новая Индия | components 8967.77, metals 12560.27, he3 2217.43 | food 5136.59, drive_cores 16.65, biotech 178.75 | components 6541.27, metals 780.35, electronics 113.38 | volatiles×3.2, hulls×8.0, biotech×2.6 | tau_ceti_cognium, eps_eri_harmony, lalande_mecca |
+| Новая Маланд | food 12554.81, biotech 571.46, volatiles 10109.37 | metals 1843.50, precision 123.18, components 569.96 | biotech 394.63, food 1986.72, volatiles 1204.37 | hulls×8.0 | hd40307_firmament, hd20794_hellas2, hd20794_newindia |
 | Небесная Твердыня | electronics 650.87, components 1438.29, precision 221.82 | food 1986.72, volatiles 1204.37, drive_cores 2.61 | electronics 421.36, precision 168.94, components 701.85 | hulls×8.0, drive_cores×8.0 | hd40307_maland, proxima_outpost, tau_ceti_cognium |
 | Сельта-Верде | he3 1326.71, food 3677.25, volatiles 3614.46 | precision 62.22, components 248.84, drive_cores 3.58 | precision 10.14, electronics 6.26, drive_cores 0.18 | hulls×2.6 | hd40307_firmament, tau_ceti_cognium, hd40307_maland |
 | Новая Карма | precision 1040.56, electronics 787.53, metals 4447.21 | he3 1153.22, food 3338.70, volatiles 3523.77 | precision 654.10, electronics 132.50, biotech 72.63 | hulls×3.6, biotech×5.6, drive_cores×8.0 | tau_ceti_cognium, gj832_tianhe, eps_eri_harmony |
 | Свободная Карма | food 3305.52, biotech 177.86, volatiles 3247.38 | he3 407.25, metals 792.05, drive_cores 2.69 | biotech 102.48, food 880.14, volatiles 827.92 | metals×2.1, hulls×8.0 | delta_pav_karma, gj832_tianhe, tau_ceti_cognium |
 | Провидение | he3 0.24, food 0.90, volatiles 1.17 | components 0.19, precision 0.02, biotech 0.03 | he3 0.16, electronics 0.01 | hulls×8.0 | cyg61_kern, gj832_tianhe, hd40307_maland |
-| Шахта Альфа | food 1855.04, volatiles 1690.07, electronics 112.60 | he3 179.82, metals 414.42, precision 32.12 | precision 4.22, biotech 4.22, drive_cores 0.12 | metals×2.5, hulls×5.6 | eps_eri_harmony, eps_eri_strife, gj832_tianhe |
-| Третья Эллада | he3 0.01, volatiles 0.06 |  |  | food×2.8, components×8.0, electronics×3.8, hulls×8.0, munitions×5.9, precision×8.0, biotech×6.9, drive_cores×8.0 |  |
-| Святой Сион (на орбите) | food 0.04, volatiles 0.04 |  |  | volatiles×1.8, metals×1.6, food×1.9, components×4.9, electronics×3.9, hulls×8.0, munitions×3.8, precision×5.0, biotech×3.4, drive_cores×8.0 |  |
+| Шахта Альфа | food 1855.00, volatiles 1690.03, electronics 112.60 | he3 179.81, metals 414.41, precision 32.12 | precision 4.22, biotech 4.22, drive_cores 0.12 | metals×2.5, hulls×5.6 | eps_eri_harmony, eps_eri_strife, gj832_tianhe |
+| Третья Эллада | volatiles 0.07, metals 0.03, food 0.04 | he3 0.01 |  | food×2.5, components×2.2, hulls×5.7 | gj832_tianhe, hd40307_maland, delta_pav_karma |
+| Святой Сион (на орбите) | food 0.04, volatiles 0.05, metals 0.02 | he3 0.01 |  | volatiles×1.6, food×1.7, components×1.9, hulls×2.6 | hd40307_maland, gj832_tianhe, tau_ceti_cognium |
 
 ## 6. Шоки: последствия через 8 лет (своя колония + 4 самых задетых соседа; |Δ| ≥ 15 %)
 
 ### earth_fleet@_all
 - hd40307_maland: biotech цена +15%; components цена +33%; drive_cores цена +29%; electronics цена +15%; food цена +15%; hulls цена +15%; isotopes цена +15%; metals цена +66%; munitions цена +902%; precision цена +15%
+- leo83_zion: biotech цена +15%; components цена +15%; drive_cores цена +15%; food цена +15%; hulls цена +791%; isotopes цена +15%; munitions цена +816%; precision цена +15%; volatiles цена +15%
 - lalande_hellas: biotech цена +15%; components цена +15%; drive_cores цена +15%; electronics цена +15%; food цена -20%; hulls цена +792%; isotopes цена +15%; munitions цена +447%; precision цена +15%; volatiles цена +16%
 - lalande_mecca: biotech цена +15%; components цена +15%; drive_cores цена +15%; food цена +15%; hulls цена +792%; isotopes цена +15%; munitions цена +57%; precision цена +15%
-- proxima_outpost: components цена +15%; drive_cores цена +15%; food цена +57%; hulls цена +724%; isotopes цена +15%; munitions цена +192%; volatiles цена +54%
 
 ### food_blight@delta_pav_karma
 - **delta_pav_karma**: biotech цена +1011%, выпуск -50%; food цена +87%, выпуск -52%
 - tau_ceti_cognium: biotech цена +172%
 - cyg61_kern: biotech цена -24%; food цена +79%
 - lalande_mecca: biotech цена -54%
-- hd69830_verde: biotech цена -23%
+- leo83_zion: biotech цена -50%
 
 ### food_blight@eps_eri_harmony
 - **eps_eri_harmony**: food цена +37%, выпуск -45%
@@ -1753,9 +1754,9 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 ### mine_destroyed@proxima_outpost
 - **proxima_outpost**: electronics цена +130%, выпуск -70%; hulls цена +1%, выпуск -96%; metals цена -11%, выпуск -70%; munitions цена +0%, выпуск -80%; precision цена +2%, выпуск -80%
 - tau_ceti_cognium: munitions цена +110%; precision цена +28%
+- hd114783_hellas3: electronics цена +80%
+- leo83_zion: electronics цена +77%
 - delta_pav_freekarma: electronics цена +42%
-- lalande_mecca: precision цена +32%
-- cyg61_kern: munitions цена +31%
 
 ### mine_destroyed@tau_ceti_cognium
 
@@ -1833,8 +1834,8 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 - **proxima_outpost**: components цена +144%; drive_cores цена +772%; electronics цена +42%; food цена -33%; he3 цена +771%; hulls цена +617%, выпуск -80%; isotopes цена +772%; metals цена -52%; munitions цена +34%; precision цена +98%
 - hd69830_verde: drive_cores цена +772%; hulls цена +154%, выпуск +100%
 - lalande_mecca: drive_cores цена +18%, выпуск +20%; electronics цена -40%; hulls цена +676%
+- leo83_zion: drive_cores цена +517%; hulls цена +95%
 - gj876_next: drive_cores цена +450%; he3 цена -65%; hulls цена +79%
-- cyg61_kern: drive_cores цена +347%; electronics цена -16%; food цена +58%; hulls цена +447%, выпуск +100%
 
 ### route_blocked@tau_ceti_cognium
 - **tau_ceti_cognium**: biotech цена +732%, выпуск -100%; components цена +772%, выпуск -100%; drive_cores цена +676%, выпуск -100%; electronics цена +675%, выпуск -100%; food цена +206%, выпуск -100%; he3 цена +771%; hulls цена +0%, выпуск -100%; isotopes цена +772%; metals цена +770%; munitions цена +543%, выпуск -100%; precision цена +273%, выпуск -100%; volatiles цена +770%
@@ -1848,7 +1849,7 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 - hd69830_verde: biotech цена -23%; hulls цена +676%, выпуск +100%; munitions цена +124%
 - lalande_mecca: hulls цена +676%
 - gj876_next: hulls цена +675%
-- tau_ceti_cognium: drive_cores цена +0%, выпуск +16%; hulls цена -88%; munitions цена +543%; precision цена -54%
+- hd114783_hellas3: electronics цена +79%; hulls цена +675%
 
 ### shipyard_destroyed@delta_pav_karma
 - **delta_pav_karma**: hulls цена -82%, выпуск -85%
@@ -1882,11 +1883,12 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 - **gj832_tianhe**: drive_cores цена +189%; hulls цена -65%, выпуск -85%
 - lalande_hellas: hulls цена +676%
 - lalande_mecca: drive_cores цена +0%, выпуск +20%; electronics цена -40%; hulls цена +676%
+- leo83_zion: hulls цена +675%
 - proxima_outpost: electronics цена -18%; hulls цена +617%
-- eps_eri_harmony: drive_cores цена -57%; electronics цена -27%; hulls цена +447%, выпуск -50%
 
 ### shipyard_destroyed@hd20794_newindia
 - **hd20794_newindia**: hulls цена +129%, выпуск -85%
+- hd114783_hellas3: electronics цена +80%
 - delta_pav_karma: hulls цена +42%, выпуск -50%
 
 ### shipyard_destroyed@hd40307_maland
@@ -2080,8 +2082,8 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 | Свободная Карма | бизнес взвинчивает цены, государство теряет контроль (34.6) | пайки, мобилизация, «всё для фронта» (25.2) | дефицит +12.0, rule_bending↑ +11.8, status_display↑ +5.9 |
 | Провидение | бизнес взвинчивает цены, государство теряет контроль (21.1) | уйти: семьи и кланы уезжают (20.5) | risk↑ +9.0, state_trust↓ +6.2, rule_bending↑ +4.2 |
 | Шахта Альфа | бизнес взвинчивает цены, государство теряет контроль (47.4) | спокойно докупить у соседей (29.5) | режим +12, дефицит +12.0, rule_bending↑ +7.5 |
-| Третья Эллада | бизнес взвинчивает цены, государство теряет контроль (28.4) | обойти, починить, достать «по знакомству» (19.3) | rule_bending↑ +8.6, state_trust↓ +7.3, status_display↑ +5.0 |
-| Святой Сион (на орбите) | молитва, пост, обряд очищения (52.6) | найти внутреннего врага и устроить чистку (43.7) | collective_duty↑ +20.0, режим +14, order_love↑ +10.0 |
+| Третья Эллада | бизнес взвинчивает цены, государство теряет контроль (27.4) | обойти, починить, достать «по знакомству» (19.3) | rule_bending↑ +8.6, state_trust↓ +7.3, status_display↑ +5.0 |
+| Святой Сион (на орбите) | молитва, пост, обряд очищения (52.6) | пайки, мобилизация, «всё для фронта» (50.8) | collective_duty↑ +20.0, режим +14, order_love↑ +10.0 |
 
 разных первых ответов: 6
 
@@ -2089,30 +2091,30 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 
 | показатель | Земля | все колонии-акторы | отношение |
 |---|---|---|---|
-| население | 11 668 961 361 | 10 087 896 330 | 1.2 |
+| население | 11 668 961 361 | 10 087 894 053 | 1.2 |
 | промышленный индекс (доход × люди) | 54 700.3 | 29 610.1 | 1.8 |
-| верфевой индекс | 222 899.5 | 71 895.1 | 3.1 |
-| люди 20–39 | 2 645 325 327 | 2 423 309 710 | 1.1 |
-| мобилизуемые (8 %) | 211 626 026 | 193 864 777 | 1.1 |
+| верфевой индекс | 222 899.5 | 71 895.0 | 3.1 |
+| люди 20–39 | 2 645 325 327 | 2 423 309 149 | 1.1 |
+| мобилизуемые (8 %) | 211 626 026 | 193 864 732 | 1.1 |
 
 - Выпуск корпусов колоний: 421.9 ед./год; потенциал Земли [392.4, 784.8] ед./год (×0.3–0.6: у Земли нет лицензионных ядер прыжка — только маяк из памятника HYPERION-1, 3112).
 - Восполнение флота колоний: ~13.1 лет при текущем выпуске.
 - Досягаемость с маяка Сола (прыжок ≤ 32.0 св. лет, нужен маяк у цели): Wolf 359 7.8, Lalande 21185 8.3, Tau Ceti 11.9, Epsilon Eridani 10.5, Gliese 581 20.3, Gliese 667 (A+B+C) 22.3, Gliese 832 16.2, Gliese 876 15.3, HD 20794 (82 G. Eridani) 19.7, Delta Pavonis 19.9, Gliese 892 21.4, Gliese 357 30.8, Epsilon Indi 11.8, 61 Cygni 11.4, Gliese 674 14.8, HD 10360 25.5, Proxima Centauri 4.2.
 - Контроль сети (оператор: маяки; сколько кратчайших маршрутов между акторами идёт через его узлы):
-  - tau_ceti_cognium: [8, 11, 13, 14, 17, 25, 30, 41, 53, 54] — 19
+  - cyg61_kern: [23, 24, 31, 37, 45] — 39
+  - tau_ceti_cognium: [8, 11, 13, 14, 17, 25, 30, 41, 53, 54] — 25
+  - wolf359_citadel: [3] — 11
+  - lalande_hellas: [4] — 8
   - hd20794_hellas2: [57] — 4
-  - wolf359_citadel: [3] — 3
-  - cyg61_kern: [23, 31, 37, 45] — 0
   - delta_pav_freekarma: [22] — 0
   - eps_eri_harmony: [9] — 0
   - gj581_europa: [10] — 0
   - gj832_tianhe: [12] — 0
   - hd40307_maland: [15] — 0
   - hd69830_verde: [16] — 0
-  - lalande_hellas: [4] — 0
   - sol_authority: [0] — 0
 - Главные колонии по промышленному индексу: eps_eri_harmony 1 371.10 млн / 4737.7, gj832_tianhe 1 058.88 млн / 3467.2, tau_ceti_cognium 1 356.53 млн / 3445.3, hd20794_newindia 903.06 млн / 2932.2, lalande_mecca 799.74 млн / 2312.4, proxima_outpost 725.72 млн / 2022.1
-- Стратегические активы (выпуск): Ледовый комплекс облака комет (eps_eri_harmony, 43197.392), Рудники eps Eri b I (eps_eri_harmony, 21411.603), Агрокольца Маланд («Житница») (hd40307_maland, 12554.815), Агрокупола Alpha Centauri B l (proxima_outpost, 11454.667), Платформы eps Eri b (eps_eri_harmony, 7946.183), Платформы GJ 832 b (gj832_tianhe, 5168.191), Платформы HD 20794 d (hd20794_hellas2, 1399.976), Платформы трёх гигантов HD 69830 (hd69830_verde, 1326.706), Бастион — арсенал и военная верфь (wolf359_citadel, 289.631), Фабы Кольца Основателей (tau_ceti_cognium, 266.899), Верфи Гармонии (eps_eri_harmony, 194.821), Обсерватория-вычислитель «Расад» (lalande_mecca, 165.465)
+- Стратегические активы (выпуск): Ледовый комплекс облака комет (eps_eri_harmony, 43197.401), Рудники eps Eri b I (eps_eri_harmony, 21411.593), Агрокольца Маланд («Житница») (hd40307_maland, 12554.813), Агрокупола Alpha Centauri B l (proxima_outpost, 11454.665), Платформы eps Eri b (eps_eri_harmony, 7946.192), Платформы GJ 832 b (gj832_tianhe, 5168.193), Платформы HD 20794 d (hd20794_hellas2, 1399.977), Платформы трёх гигантов HD 69830 (hd69830_verde, 1326.706), Бастион — арсенал и военная верфь (wolf359_citadel, 289.631), Фабы Кольца Основателей (tau_ceti_cognium, 266.899), Верфи Гармонии (eps_eri_harmony, 194.821), Обсерватория-вычислитель «Расад» (lalande_mecca, 165.465)
 
 Вывод модели: Земля по людям и промышленности на порядок больше всех колоний вместе; её узкое место — не заводы, а ядра прыжка, маяки у цели (их держат Когниум и колонии) и опыт межзвёздной логистики. Война — это борьба за сеть, а не за выпуск.
 
@@ -2120,7 +2122,7 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 
 - Новый Шанхай: alliance (30.0), mobilisation (17.7), negotiation (9.1)
 - Красный Форпост: mobilisation (33.0), preemptive_strike (27.4), profiteering (23.1)
-- Тяньхэ (Небесная Река): mobilisation (32.8), alliance (21.2), profiteering (14.1)
+- Тяньхэ (Небесная Река): mobilisation (32.8), alliance (22.7), profiteering (14.1)
 - Новая Эллада / Агора: profiteering (22.2), alliance (22.1), negotiation (18.2)
 - Новая Мекка: mobilisation (25.7), alliance (24.4), profiteering (17.2)
 - Цветущая Гармония: mobilisation (26.4), alliance (25.1), profiteering (20.0)
@@ -2130,14 +2132,14 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 - Свободные поселения: profiteering (23.8), alliance (15.9), betrayal (10.9)
 - Вторая Эллада: alliance (24.2), internal_split (15.4), profiteering (11.9)
 - Новая Индия: profiteering (24.7), alliance (22.6), betrayal (17.2)
-- Новая Маланд: alliance (26.3), profiteering (18.4), internal_split (17.4)
+- Новая Маланд: alliance (27.8), profiteering (18.4), internal_split (17.4)
 - Небесная Твердыня: mobilisation (24.5), alliance (15.1), profiteering (13.6)
 - Сельта-Верде: alliance (22.7), profiteering (18.5), negotiation (11.6)
 - Новая Карма: profiteering (25.7), betrayal (23.1), alliance (17.5)
 - Свободная Карма: profiteering (25.7), betrayal (21.6), alliance (14.4)
 - Провидение: alliance (15.4), internal_split (5.5), neutrality (5.2)
 - Шахта Альфа: profiteering (29.5), alliance (25.0), mobilisation (17.5)
-- Третья Эллада: neutrality (29.3), betrayal (16.6), internal_split (15.8)
+- Третья Эллада: neutrality (27.3), betrayal (16.6), internal_split (15.8)
 - Святой Сион (на орбите): neutrality (29.8), mobilisation (26.4), internal_split (0.5)
 
 ## 9. Отношения (торговля % оборота / культурная близость / обида / стойка)
@@ -2179,4 +2181,4 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 - 2850: прыжок ≤ 26.0 св. лет; компоненты: 4,8,9,10,11,12,13,14,15,22,30,31,53,57
 - 2900: прыжок ≤ 26.0 св. лет; компоненты: 3,4,8,9,10,11,12,13,14,15,16,22,23,25,30,31,53,54,57,60
 - 3000: прыжок ≤ 32.0 св. лет; компоненты: 3,4,8,9,10,11,12,13,14,15,16,22,23,25,30,31,53,54,57,60
-- 3126: прыжок ≤ 32.0 св. лет; компоненты: 0,3,4,8,9,10,11,12,13,14,15,16,22,23,25,30,31,53,54,57,60 | 37,41,45
+- 3126: прыжок ≤ 32.0 св. лет; компоненты: 0,3,4,8,9,10,11,12,13,14,15,16,22,23,24,25,30,31,37,41,45,53,54,57,60

@@ -1,0 +1,33 @@
+{
+  "description": "промежуточный прыжок 83 Leonis → HD 102195 (21 + 18 св. лет): док, заряд с танкеров, укрытие, ремонт, тайники",
+  "id": "dso.lotus",
+  "kind": "galaxy_object",
+  "name": "«Лотос»",
+  "object_type": "derelict",
+  "position_ly": {
+    "x": -78.255,
+    "y": 9.102,
+    "z": 3.96
+  },
+  "properties": {
+    "epoch_year": 3126.0,
+    "frame": "ICRS_heliocentric",
+    "polity": null,
+    "population": 340,
+    "provenance": {
+      "generator": "tools/colonization_lab/world_sites.py",
+      "status": "PROPOSAL"
+    },
+    "site_type": "derelict_hub",
+    "velocity_km_s": [
+      -1.657,
+      -0.099,
+      -37.964
+    ]
+  },
+  "schema_version": 1,
+  "tags": [
+    "world_site",
+    "derelict"
+  ]
+}

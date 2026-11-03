@@ -1,0 +1,301 @@
+{
+ "events": [
+  {
+   "id": "EVT-3126-0001",
+   "kind": "ship_missing",
+   "location": "hz.lotus_dead",
+   "status": "PROPOSAL",
+   "time": 3126.412,
+   "truth": {
+    "ship": "экспедиционный Cobrett «Мэй-Лин-2»",
+    "state": "вышел из прыжка внутри мёртвой зоны «Лотоса», цел, экипаж 3, запасов на 19 суток, сигнал бедствия слабый"
+   }
+  }
+ ],
+ "knowledge": [
+  {
+   "channel": "local_radio",
+   "classification": "public",
+   "confidence": 0.9,
+   "delay_days": 0.008,
+   "event": "EVT-3126-0001",
+   "freshness": "fresh",
+   "holder": "dso.lotus",
+   "language": "en",
+   "observed_at": 3126.412,
+   "received_at": 3126.41202,
+   "source": "сигнал бедствия",
+   "text": "Слабый сигнал бедствия из мёртвой зоны: «Мэй-Лин-2», трое живы."
+  },
+  {
+   "channel": "official",
+   "classification": "public",
+   "confidence": 0.8,
+   "delay_days": 1.524,
+   "event": "EVT-3126-0001",
+   "freshness": "fresh",
+   "holder": "site.019.porog",
+   "language": "en",
+   "observed_at": 3126.412,
+   "received_at": 3126.41617,
+   "source": "диспетчер «Лотоса»",
+   "text": "Экспедиционное судно не вышло на связь согласно плану."
+  },
+  {
+   "channel": "freeband",
+   "classification": "rumour",
+   "confidence": 0.4,
+   "delay_days": 1.649,
+   "event": "EVT-3126-0001",
+   "freshness": "fresh",
+   "holder": "site.019.troyan_market",
+   "language": "zh",
+   "observed_at": 3126.412,
+   "received_at": 3126.41651,
+   "source": "пилоты",
+   "text": "Они нашли второй корабль, поэтому и застряли."
+  },
+  {
+   "channel": "commercial",
+   "classification": "commercial",
+   "confidence": 0.7,
+   "delay_days": 2.19,
+   "event": "EVT-3126-0001",
+   "freshness": "stale",
+   "holder": "lalande_hellas",
+   "language": "el",
+   "observed_at": 3126.412,
+   "received_at": 3126.418,
+   "source": "страховой брокер Агоры",
+   "text": "Страховой случай: корпус и груз под вопросом, ставки по маршруту +2 %."
+  },
+  {
+   "channel": "official",
+   "classification": "public",
+   "confidence": 0.6,
+   "delay_days": 4.029,
+   "event": "EVT-3126-0001",
+   "freshness": "stale",
+   "holder": "sol_authority",
+   "language": "en",
+   "observed_at": 3126.412,
+   "received_at": 3126.42303,
+   "source": "Управление Маяков (сводка)",
+   "text": "В районе HD 102195 пропало судно; спасательная операция организуется лицензиатом."
+  }
+ ],
+ "rule": "WorldTruth один; KnowledgeRecord у каждого держателя приходит с задержкой сети; новости = представление записей, а не отдельная истина; радио = звуковое представление тех же потоков (Public / Freeband)",
+ "schemas": {
+  "Artifact": [
+   "id",
+   "name",
+   "found_at",
+   "found_year",
+   "provenance",
+   "claims",
+   "scientific_value",
+   "market_value_cr",
+   "known",
+   "unknown",
+   "hazard",
+   "fraud"
+  ],
+  "BeaconCommunicationNode": [
+   "id",
+   "kind",
+   "operator",
+   "coverage_ls",
+   "capacity_msgs_per_h",
+   "trust_authority",
+   "clock_sync",
+   "emergency_channel"
+  ],
+  "City": [
+   "id",
+   "name",
+   "body",
+   "population",
+   "role",
+   "surface",
+   "night_light",
+   "status"
+  ],
+  "DeepSpaceObject": [
+   "id",
+   "name",
+   "object_type",
+   "frame",
+   "epoch_year",
+   "position_ly",
+   "velocity_km_s",
+   "status"
+  ],
+  "Epidemic": [
+   "id",
+   "origin",
+   "incubation_days",
+   "transmission",
+   "severity",
+   "mortality",
+   "detectability",
+   "treatment",
+   "immunity",
+   "environmental_survival"
+  ],
+  "ExpeditionSupport": [
+   "cobrett_round_trip_charge_t",
+   "j20_tank",
+   "j20_tanks_needed",
+   "expedition_cost_cr",
+   "outcomes"
+  ],
+  "FleetAgeState": [
+   "tier",
+   "mean_age_y",
+   "max_age_y",
+   "states",
+   "effects"
+  ],
+  "HazardZone": [
+   "id",
+   "kind",
+   "name",
+   "shape",
+   "effects",
+   "knowledge"
+  ],
+  "Hub": [
+   "id",
+   "name",
+   "type",
+   "system",
+   "body",
+   "placement",
+   "polity",
+   "operator",
+   "population",
+   "purpose",
+   "docks",
+   "storage_t",
+   "repair",
+   "medical_beds",
+   "quarantine_beds",
+   "security_base",
+   "status"
+  ],
+  "Jurisdiction": [
+   "site",
+   "sovereign_polity",
+   "local_jurisdiction",
+   "applicable_law",
+   "enforcement",
+   "court",
+   "status"
+  ],
+  "KnowledgeRecord": [
+   "event",
+   "holder",
+   "source",
+   "observed_at",
+   "received_at",
+   "confidence",
+   "freshness",
+   "classification",
+   "channel",
+   "text",
+   "language"
+  ],
+  "LawProfile": [
+   "ru",
+   "courts",
+   "police",
+   "salvage_finder_share",
+   "registration",
+   "weapons",
+   "controlled_goods",
+   "search_seizure",
+   "private_security",
+   "extradition"
+  ],
+  "LocalAdministrator": [
+   "id",
+   "site",
+   "name",
+   "background",
+   "appointed",
+   "traits",
+   "oversight",
+   "effective_freedom",
+   "origin",
+   "status"
+  ],
+  "PassengerFlow": [
+   "link",
+   "pax_y",
+   "migrants_y",
+   "ship_class",
+   "ships",
+   "departures_y",
+   "wait_days_mean",
+   "fares_cr"
+  ],
+  "QuarantineState": [
+   "site",
+   "level",
+   "patrols",
+   "dock_control",
+   "ship_checks",
+   "holding_zones",
+   "supply",
+   "exceptions",
+   "illegal_routes_watched"
+  ],
+  "RareResourceDeposit": [
+   "id",
+   "anchor",
+   "zone",
+   "grade_g_per_t",
+   "reserve_kg",
+   "extracted_kg",
+   "difficulty",
+   "operator"
+  ],
+  "SalvageClaim": [
+   "wreck_id",
+   "claimant",
+   "basis",
+   "filed_at_site",
+   "filed_year",
+   "law_family",
+   "status"
+  ],
+  "Settlement": [
+   "id",
+   "name",
+   "type",
+   "system",
+   "body",
+   "placement",
+   "polity",
+   "population",
+   "status"
+  ],
+  "Spaceport": [
+   "id",
+   "name",
+   "type",
+   "body",
+   "placement",
+   "docks"
+  ],
+  "WorldEvent": [
+   "id",
+   "kind",
+   "truth",
+   "location",
+   "time",
+   "status"
+  ]
+ },
+ "status": "PROPOSAL"
+}

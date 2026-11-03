@@ -2,27 +2,27 @@
  "demography_sensitivity": {
   "baseline": {
    "earth": 11668961361,
-   "off_sol": 10087994167,
+   "off_sol": 10087992674,
    "top": [
     [
      "eps_eri_harmony",
-     1371102075
+     1371102748
     ],
     [
      "tau_ceti_cognium",
-     1356527898
+     1356527906
     ],
     [
      "gj832_tianhe",
-     1058878197
+     1058878366
     ],
     [
      "hd20794_newindia",
-     903060113
+     903060135
     ],
     [
      "lalande_mecca",
-     799743555
+     799743540
     ],
     [
      "delta_pav_karma",
@@ -38,11 +38,11 @@
     ],
     [
      "hd40307_maland",
-     445615993
+     445615996
     ],
     [
      "eps_eri_strife",
-     348072330
+     348072327
     ]
    ]
   },
@@ -144,10 +144,10 @@
    "basis": "model (demography.py / trade.py), not author canon",
    "colonies": {
     "industrial_index": 29610.1,
-    "men_20_39": 2423309710,
-    "mobilisable_8pc": 193864777,
-    "pop": 10087896330,
-    "shipbuilding_index": 71895.1
+    "men_20_39": 2423309149,
+    "mobilisable_8pc": 193864732,
+    "pop": 10087894053,
+    "shipbuilding_index": 71895.0
    },
    "colony_hulls_per_year": 421.9,
    "earth": {
@@ -257,27 +257,27 @@
     {
      "id": "eps_eri_harmony",
      "industrial_index": 4737.7,
-     "pop": 1371102075
+     "pop": 1371102748
     },
     {
      "id": "gj832_tianhe",
      "industrial_index": 3467.2,
-     "pop": 1058878197
+     "pop": 1058878366
     },
     {
      "id": "tau_ceti_cognium",
      "industrial_index": 3445.3,
-     "pop": 1356527898
+     "pop": 1356527906
     },
     {
      "id": "hd20794_newindia",
      "industrial_index": 2932.2,
-     "pop": 903060113
+     "pop": 903060135
     },
     {
      "id": "lalande_mecca",
      "industrial_index": 2312.4,
-     "pop": 799743555
+     "pop": 799743540
     },
     {
      "id": "proxima_outpost",
@@ -286,6 +286,17 @@
     }
    ],
    "network_control": [
+    [
+     "cyg61_kern",
+     [
+      23,
+      24,
+      31,
+      37,
+      45
+     ],
+     39
+    ],
     [
      "tau_ceti_cognium",
      [
@@ -300,7 +311,21 @@
       53,
       54
      ],
-     19
+     25
+    ],
+    [
+     "wolf359_citadel",
+     [
+      3
+     ],
+     11
+    ],
+    [
+     "lalande_hellas",
+     [
+      4
+     ],
+     8
     ],
     [
      "hd20794_hellas2",
@@ -308,23 +333,6 @@
       57
      ],
      4
-    ],
-    [
-     "wolf359_citadel",
-     [
-      3
-     ],
-     3
-    ],
-    [
-     "cyg61_kern",
-     [
-      23,
-      31,
-      37,
-      45
-     ],
-     0
     ],
     [
      "delta_pav_freekarma",
@@ -369,13 +377,6 @@
      0
     ],
     [
-     "lalande_hellas",
-     [
-      4
-     ],
-     0
-    ],
-    [
      "sol_authority",
      [
       0
@@ -390,11 +391,11 @@
      "id": "eri_ice",
      "importance": 0.9,
      "name": "Ледовый комплекс облака комет",
-     "output": 43197.392,
+     "output": 43197.401,
      "owner": "eps_eri_harmony",
      "range": [
-      30238.17,
-      56156.61
+      30238.18,
+      56156.62
      ],
      "type": "ice_export"
     },
@@ -403,11 +404,11 @@
      "id": "eri_b1_mines",
      "importance": 0.8,
      "name": "Рудники eps Eri b I",
-     "output": 21411.603,
+     "output": 21411.593,
      "owner": "eps_eri_harmony",
      "range": [
-      14988.12,
-      27835.08
+      14988.11,
+      27835.07
      ],
      "type": "mine"
     },
@@ -416,7 +417,7 @@
      "id": "maland_rings",
      "importance": 1.0,
      "name": "Агрокольца Маланд («Житница»)",
-     "output": 12554.815,
+     "output": 12554.813,
      "owner": "hd40307_maland",
      "range": [
       8788.37,
@@ -429,11 +430,11 @@
      "id": "acen_farms",
      "importance": 0.8,
      "name": "Агрокупола Alpha Centauri B l",
-     "output": 11454.667,
+     "output": 11454.665,
      "owner": "proxima_outpost",
      "range": [
       8018.27,
-      14891.07
+      14891.06
      ],
      "type": "food_habitat"
     },
@@ -442,11 +443,11 @@
      "id": "eri_b_gas",
      "importance": 0.9,
      "name": "Платформы eps Eri b",
-     "output": 7946.183,
+     "output": 7946.192,
      "owner": "eps_eri_harmony",
      "range": [
       5562.33,
-      10330.04
+      10330.05
      ],
      "type": "gas_platform"
     },
@@ -455,10 +456,10 @@
      "id": "gj832b_gas",
      "importance": 0.9,
      "name": "Платформы GJ 832 b",
-     "output": 5168.191,
+     "output": 5168.193,
      "owner": "gj832_tianhe",
      "range": [
-      3617.73,
+      3617.74,
       6718.65
      ],
      "type": "gas_platform"
@@ -468,7 +469,7 @@
      "id": "hd20794d_gas",
      "importance": 0.8,
      "name": "Платформы HD 20794 d",
-     "output": 1399.976,
+     "output": 1399.977,
      "owner": "hd20794_hellas2",
      "range": [
       979.98,
@@ -1155,11 +1156,11 @@
    "id": "cyg_b_i_gas",
    "importance": 0.6,
    "name": "Платформы 61 Cyg B i",
-   "output": 96.158,
+   "output": 96.156,
    "owner": "cyg61_kern",
    "range": [
     67.31,
-    125.01
+    125.0
    ],
    "status": "PROPOSAL",
    "type": "gas_platform",
@@ -1174,8 +1175,8 @@
    "good": "hulls",
    "id": "cyg61_kern_fleet",
    "importance": 0.79,
-   "manpower_standing": 467224,
-   "manpower_total_war": 3737792,
+   "manpower_standing": 467213,
+   "manpower_total_war": 3737709,
    "name": "флот и мобилизационный резерв",
    "output": 0.0,
    "owner": "cyg61_kern",
@@ -1285,11 +1286,11 @@
    "id": "eri_ice",
    "importance": 0.9,
    "name": "Ледовый комплекс облака комет",
-   "output": 43197.392,
+   "output": 43197.401,
    "owner": "eps_eri_harmony",
    "range": [
-    30238.17,
-    56156.61
+    30238.18,
+    56156.62
    ],
    "status": "PROPOSAL",
    "type": "ice_export",
@@ -1301,11 +1302,11 @@
    "id": "eri_b_gas",
    "importance": 0.9,
    "name": "Платформы eps Eri b",
-   "output": 7946.183,
+   "output": 7946.192,
    "owner": "eps_eri_harmony",
    "range": [
     5562.33,
-    10330.04
+    10330.05
    ],
    "status": "PROPOSAL",
    "type": "gas_platform",
@@ -1333,11 +1334,11 @@
    "id": "eri_b1_mines",
    "importance": 0.8,
    "name": "Рудники eps Eri b I",
-   "output": 21411.603,
+   "output": 21411.593,
    "owner": "eps_eri_harmony",
    "range": [
-    14988.12,
-    27835.08
+    14988.11,
+    27835.07
    ],
    "status": "PROPOSAL",
    "type": "mine",
@@ -1368,8 +1369,8 @@
    "good": "hulls",
    "id": "eps_eri_harmony_fleet",
    "importance": 0.88,
-   "manpower_standing": 4319961,
-   "manpower_total_war": 34559690,
+   "manpower_standing": 4319963,
+   "manpower_total_war": 34559711,
    "name": "флот и мобилизационный резерв",
    "output": 194.821,
    "owner": "eps_eri_harmony",
@@ -1533,10 +1534,10 @@
    "id": "gj832b_gas",
    "importance": 0.9,
    "name": "Платформы GJ 832 b",
-   "output": 5168.191,
+   "output": 5168.193,
    "owner": "gj832_tianhe",
    "range": [
-    3617.73,
+    3617.74,
     6718.65
    ],
    "status": "PROPOSAL",
@@ -1565,7 +1566,7 @@
    "id": "tianhe_refinery",
    "importance": 0.7,
    "name": "Комбинат GJ 832 b I",
-   "output": 11696.549,
+   "output": 11696.548,
    "owner": "gj832_tianhe",
    "range": [
     8187.58,
@@ -1600,8 +1601,8 @@
    "good": "hulls",
    "id": "gj832_tianhe_fleet",
    "importance": 0.91,
-   "manpower_standing": 3277402,
-   "manpower_total_war": 26219221,
+   "manpower_standing": 3277403,
+   "manpower_total_war": 26219227,
    "name": "флот и мобилизационный резерв",
    "output": 110.577,
    "owner": "gj832_tianhe",
@@ -1727,7 +1728,7 @@
    "id": "hd20794d_gas",
    "importance": 0.8,
    "name": "Платформы HD 20794 d",
-   "output": 1399.976,
+   "output": 1399.977,
    "owner": "hd20794_hellas2",
    "range": [
     979.98,
@@ -1759,11 +1760,11 @@
    "id": "kuiper_rights_h",
    "importance": 0.6,
    "name": "Водные права пояса Койпера",
-   "output": 3739.681,
+   "output": 3739.679,
    "owner": "hd20794_hellas2",
    "range": [
     2617.78,
-    4861.59
+    4861.58
    ],
    "status": "PROPOSAL",
    "type": "ice_export",
@@ -1813,7 +1814,7 @@
    "id": "newindia_works",
    "importance": 0.6,
    "name": "Сборочные кольца",
-   "output": 8967.772,
+   "output": 8967.769,
    "owner": "hd20794_newindia",
    "range": [
     6277.44,
@@ -1833,7 +1834,7 @@
    "id": "hd20794_newindia_fleet",
    "importance": 0.84,
    "manpower_standing": 3065023,
-   "manpower_total_war": 24520187,
+   "manpower_total_war": 24520188,
    "name": "флот и мобилизационный резерв",
    "output": 17.583,
    "owner": "hd20794_newindia",
@@ -1921,7 +1922,7 @@
    "id": "maland_rings",
    "importance": 1.0,
    "name": "Агрокольца Маланд («Житница»)",
-   "output": 12554.815,
+   "output": 12554.813,
    "owner": "hd40307_maland",
    "range": [
     8788.37,
@@ -2007,7 +2008,7 @@
    "id": "verde_ice",
    "importance": 0.6,
    "name": "Ледовые поля облака комет",
-   "output": 3614.457,
+   "output": 3614.456,
    "owner": "hd69830_verde",
    "range": [
     2530.12,
@@ -2061,7 +2062,7 @@
    "id": "lalande_j_gas_h",
    "importance": 0.6,
    "name": "Платформы Lalande 21185 j (эллинская доля)",
-   "output": 326.425,
+   "output": 326.426,
    "owner": "lalande_hellas",
    "range": [
     228.5,
@@ -2147,7 +2148,7 @@
    "id": "mecca_farms",
    "importance": 0.5,
    "name": "Сады Lalande 21185 g",
-   "output": 10002.832,
+   "output": 10002.83,
    "owner": "lalande_mecca",
    "range": [
     7001.98,
@@ -2167,7 +2168,7 @@
    "id": "lalande_mecca_fleet",
    "importance": 0.84,
    "manpower_standing": 2701567,
-   "manpower_total_war": 21612538,
+   "manpower_total_war": 21612537,
    "name": "флот и мобилизационный резерв",
    "output": 4.151,
    "owner": "lalande_mecca",
@@ -2223,11 +2224,11 @@
    "id": "acen_farms",
    "importance": 0.8,
    "name": "Агрокупола Alpha Centauri B l",
-   "output": 11454.667,
+   "output": 11454.665,
    "owner": "proxima_outpost",
    "range": [
     8018.27,
-    14891.07
+    14891.06
    ],
    "status": "PROPOSAL",
    "type": "food_habitat",
@@ -2255,7 +2256,7 @@
    "id": "proxima_d_mines",
    "importance": 0.5,
    "name": "Шахты Proxima Cen d",
-   "output": 3957.857,
+   "output": 3957.855,
    "owner": "proxima_outpost",
    "range": [
     2770.5,
@@ -13981,7 +13982,7 @@
      "net_migration_per_1000": 4.19,
      "pension_coverage": 0.698,
      "phase": "boom",
-     "pop": 57004416,
+     "pop": 57003458,
      "q5": 0.0001,
      "religious_share": 0.15,
      "space_index": 0.065,
@@ -14008,7 +14009,7 @@
      "net_migration_per_1000": 4.19,
      "pension_coverage": 0.699,
      "phase": "boom",
-     "pop": 78448769,
+     "pop": 78447106,
      "q5": 0.0001,
      "religious_share": 0.136,
      "space_index": 0.063,
@@ -14035,7 +14036,7 @@
      "net_migration_per_1000": 4.19,
      "pension_coverage": 0.7,
      "phase": "boom",
-     "pop": 106466386,
+     "pop": 106463987,
      "q5": 0.0001,
      "religious_share": 0.124,
      "space_index": 0.061,
@@ -14062,7 +14063,7 @@
      "net_migration_per_1000": 4.18,
      "pension_coverage": 0.7,
      "phase": "growth",
-     "pop": 139212909,
+     "pop": 139209800,
      "q5": 0.0001,
      "religious_share": 0.112,
      "space_index": 0.061,
@@ -14089,7 +14090,7 @@
      "net_migration_per_1000": 0.0,
      "pension_coverage": 0.7,
      "phase": "growth",
-     "pop": 139966984,
+     "pop": 139963859,
      "q5": 0.0001,
      "religious_share": 0.112,
      "space_index": 0.061,
@@ -14115,29 +14116,29 @@
     },
     "imports": {
      "biotech": 233.61,
-     "components": 622.26,
-     "drive_cores": 678.27,
-     "he3": 1078.89,
+     "components": 622.24,
+     "drive_cores": 678.25,
+     "he3": 1078.87,
      "hulls": 145.69,
      "isotopes": 303.95,
-     "metals": 828.83,
+     "metals": 828.81,
      "munitions": 78.19,
-     "precision": 802.9
+     "precision": 802.88
     },
     "inequality_gini": 0.5,
-    "labour": 70976926,
+    "labour": 70975346,
     "living_standard": 2.854,
     "production": {
-     "biotech": 787.34,
-     "components": 918.4,
-     "electronics": 1351.21,
-     "food": 2782.57,
-     "he3": 576.95,
+     "biotech": 787.32,
+     "components": 918.38,
+     "electronics": 1351.18,
+     "food": 2782.5,
+     "he3": 576.94,
      "isotopes": 15.37,
      "metals": 3.21,
      "munitions": 127.72,
-     "precision": 706.67,
-     "volatiles": 1690.07
+     "precision": 706.65,
+     "volatiles": 1690.03
     },
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD",
@@ -14163,8 +14164,8 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 45469488,
-    "out_total": 840030,
+    "in_total": 45468821,
+    "out_total": 840830,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -14175,7 +14176,7 @@
     "authored": 350000,
     "authored_status": "PROPOSAL",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 139966984,
+    "model": 139963859,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -14195,7 +14196,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Шахта Альфа",
-     "population": 64893783,
+     "population": 64892335,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -14209,7 +14210,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "61 Cygni B k — поселение",
-     "population": 32446892,
+     "population": 32446167,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -14223,7 +14224,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "61 Cygni A f — поселение",
-     "population": 21631261,
+     "population": 21630778,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -15047,7 +15048,7 @@
      "net_migration_per_1000": -2.53,
      "pension_coverage": 0.7,
      "phase": "growth",
-     "pop": 146202157,
+     "pop": 146202154,
      "q5": 0.0001,
      "religious_share": 0.14,
      "space_index": 0.084,
@@ -15074,7 +15075,7 @@
      "net_migration_per_1000": -2.54,
      "pension_coverage": 0.7,
      "phase": "growth",
-     "pop": 173414567,
+     "pop": 173414561,
      "q5": 0.0001,
      "religious_share": 0.131,
      "space_index": 0.082,
@@ -15101,7 +15102,7 @@
      "net_migration_per_1000": -2.55,
      "pension_coverage": 0.7,
      "phase": "growth",
-     "pop": 198715063,
+     "pop": 198715056,
      "q5": 0.0001,
      "religious_share": 0.123,
      "space_index": 0.081,
@@ -15128,7 +15129,7 @@
      "net_migration_per_1000": -0.05,
      "pension_coverage": 0.7,
      "phase": "growth",
-     "pop": 200070319,
+     "pop": 200070311,
      "q5": 0.0001,
      "religious_share": 0.123,
      "space_index": 0.081,
@@ -15149,7 +15150,7 @@
     ],
     "exports": {
      "biotech": 2049.52,
-     "electronics": 258.51,
+     "electronics": 258.57,
      "food": 1320.21,
      "hulls": 32.59,
      "volatiles": 827.92
@@ -15163,7 +15164,7 @@
      "metals": 1584.1
     },
     "inequality_gini": 0.35,
-    "labour": 96163222,
+    "labour": 96163219,
     "living_standard": 2.841,
     "production": {
      "biotech": 3557.24,
@@ -15192,8 +15193,8 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 385480,
-    "out_total": 61388255,
+    "in_total": 385477,
+    "out_total": 61388254,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -15204,7 +15205,7 @@
     "authored": 350000,
     "authored_status": "PROPOSAL",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 200070319,
+    "model": 200070311,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -15224,7 +15225,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Свободная Карма",
-     "population": 92759875,
+     "population": 92759872,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -15238,7 +15239,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Delta Pavonis j — поселение",
-     "population": 46379938,
+     "population": 46379936,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -15252,7 +15253,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Delta Pavonis K1 — поселение",
-     "population": 30919958,
+     "population": 30919957,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -16219,14 +16220,14 @@
     "exports": {
      "biotech": 1452.52,
      "electronics": 1590.03,
-     "hulls": 136.7,
+     "hulls": 136.71,
      "metals": 839.78,
      "munitions": 736.47,
      "precision": 16352.57
     },
     "imports": {
      "components": 532.1,
-     "drive_cores": 1199.87,
+     "drive_cores": 1199.86,
      "electronics": 619.4,
      "food": 5008.05,
      "he3": 6919.31,
@@ -16241,7 +16242,7 @@
      "biotech": 2540.0,
      "components": 8296.99,
      "electronics": 9450.36,
-     "food": 2764.49,
+     "food": 2764.48,
      "hulls": 607.07,
      "isotopes": 431.75,
      "metals": 8894.41,
@@ -17353,7 +17354,7 @@
      "net_migration_per_1000": 1.78,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1226040545,
+     "pop": 1226040560,
      "q5": 0.0001,
      "religious_share": 0.115,
      "space_index": 0.09,
@@ -17380,7 +17381,7 @@
      "net_migration_per_1000": 2.0,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1270121402,
+     "pop": 1270121535,
      "q5": 0.0001,
      "religious_share": 0.106,
      "space_index": 0.089,
@@ -17407,7 +17408,7 @@
      "net_migration_per_1000": 2.29,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1317692628,
+     "pop": 1317692977,
      "q5": 0.0001,
      "religious_share": 0.099,
      "space_index": 0.087,
@@ -17434,7 +17435,7 @@
      "net_migration_per_1000": 2.29,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1372065170,
+     "pop": 1372065839,
      "q5": 0.0001,
      "religious_share": 0.094,
      "space_index": 0.085,
@@ -17461,7 +17462,7 @@
      "net_migration_per_1000": 0.0,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1371102075,
+     "pop": 1371102748,
      "q5": 0.0001,
      "religious_share": 0.094,
      "space_index": 0.084,
@@ -17479,38 +17480,38 @@
     "basis": "model (demography.py / trade.py), not author canon",
     "dependencies": [],
     "exports": {
-     "electronics": 982.78,
-     "food": 14167.43,
-     "he3": 33521.21,
+     "electronics": 982.73,
+     "food": 14167.44,
+     "he3": 33521.25,
      "hulls": 4872.43,
      "isotopes": 10714.64,
-     "metals": 8293.63,
+     "metals": 8293.61,
      "precision": 1161.87,
      "volatiles": 7575.32
     },
     "imports": {
-     "biotech": 3644.9,
-     "components": 3248.29,
-     "drive_cores": 3978.71,
-     "electronics": 4993.14,
+     "biotech": 3644.85,
+     "components": 3248.28,
+     "drive_cores": 3978.65,
+     "electronics": 4993.09,
      "munitions": 962.77,
      "precision": 2062.77
     },
     "inequality_gini": 0.34,
-    "labour": 662069784,
+    "labour": 662070155,
     "living_standard": 3.455,
     "production": {
-     "biotech": 7301.73,
-     "components": 17349.51,
-     "electronics": 12821.31,
-     "food": 41722.58,
-     "he3": 47677.1,
+     "biotech": 7301.74,
+     "components": 17349.52,
+     "electronics": 12821.32,
+     "food": 41722.61,
+     "he3": 47677.15,
      "hulls": 7792.85,
-     "isotopes": 12227.22,
-     "metals": 42823.21,
+     "isotopes": 12227.23,
+     "metals": 42823.19,
      "munitions": 1261.93,
-     "precision": 13378.87,
-     "volatiles": 43197.39
+     "precision": 13378.88,
+     "volatiles": 43197.4
     },
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD",
@@ -17544,7 +17545,7 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 550102718,
+    "in_total": 550103187,
     "out_total": 0,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
@@ -17556,7 +17557,7 @@
     "authored": 3280000,
     "authored_status": "PROPOSAL",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 1371102075,
+    "model": 1371102748,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -17576,7 +17577,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Цветущая Гармония",
-     "population": 635692780,
+     "population": 635693092,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -17590,7 +17591,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Epsilon Eridani K3 — поселение",
-     "population": 317846390,
+     "population": 317846546,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -17604,7 +17605,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Epsilon Eridani K2 — поселение",
-     "population": 211897593,
+     "population": 211897697,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -18443,7 +18444,7 @@
      "net_migration_per_1000": -2.48,
      "pension_coverage": 0.3,
      "phase": "expansion",
-     "pop": 182541509,
+     "pop": 182541511,
      "q5": 0.0001,
      "religious_share": 0.125,
      "space_index": 0.101,
@@ -18470,7 +18471,7 @@
      "net_migration_per_1000": -2.48,
      "pension_coverage": 0.3,
      "phase": "expansion",
-     "pop": 229807054,
+     "pop": 229807055,
      "q5": 0.0001,
      "religious_share": 0.114,
      "space_index": 0.098,
@@ -18497,7 +18498,7 @@
      "net_migration_per_1000": -2.48,
      "pension_coverage": 0.3,
      "phase": "expansion",
-     "pop": 286977995,
+     "pop": 286977994,
      "q5": 0.0001,
      "religious_share": 0.104,
      "space_index": 0.096,
@@ -18524,7 +18525,7 @@
      "net_migration_per_1000": -2.48,
      "pension_coverage": 0.3,
      "phase": "growth",
-     "pop": 345072682,
+     "pop": 345072679,
      "q5": 0.0001,
      "religious_share": 0.095,
      "space_index": 0.095,
@@ -18551,7 +18552,7 @@
      "net_migration_per_1000": 0.03,
      "pension_coverage": 0.3,
      "phase": "growth",
-     "pop": 348072330,
+     "pop": 348072327,
      "q5": 0.0001,
      "religious_share": 0.094,
      "space_index": 0.095,
@@ -18574,7 +18575,7 @@
      "electronics": 6057.18,
      "he3": 5215.33,
      "hulls": 295.35,
-     "isotopes": 13662.6,
+     "isotopes": 13662.57,
      "munitions": 247.49,
      "precision": 399.1
     },
@@ -18586,15 +18587,15 @@
      "precision": 278.57
     },
     "inequality_gini": 0.48,
-    "labour": 167647152,
+    "labour": 167647151,
     "living_standard": 3.382,
     "production": {
      "biotech": 4129.28,
-     "components": 5187.49,
+     "components": 5187.5,
      "drive_cores": 52.72,
-     "electronics": 10041.34,
+     "electronics": 10041.35,
      "food": 1038.2,
-     "he3": 11692.52,
+     "he3": 11692.53,
      "hulls": 1086.36,
      "isotopes": 16865.88,
      "metals": 5254.81,
@@ -18633,7 +18634,7 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 2406616,
+    "in_total": 2406614,
     "out_total": 85663606,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
@@ -18645,7 +18646,7 @@
     "authored": 45000,
     "authored_status": "CANON",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 348072330,
+    "model": 348072327,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -18665,7 +18666,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Пояс Раздора / Вольные астероиды",
-     "population": 161378989,
+     "population": 161378988,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -18679,7 +18680,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Epsilon Eridani K3 — поселение",
-     "population": 80689495,
+     "population": 80689494,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -19602,7 +19603,7 @@
      "education_cost": 0.857,
      "family_norm": 1.27,
      "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-     "income": 2.209,
+     "income": 2.208,
      "labour_value": 0.013,
      "net_migration_per_1000": 1.97,
      "pension_coverage": 1.0,
@@ -20548,7 +20549,7 @@
      "net_migration_per_1000": 1.18,
      "pension_coverage": 0.999,
      "phase": "growth",
-     "pop": 218293095,
+     "pop": 218293094,
      "q5": 0.0001,
      "religious_share": 0.139,
      "space_index": 0.105,
@@ -20575,7 +20576,7 @@
      "net_migration_per_1000": 1.11,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 244448944,
+     "pop": 244448941,
      "q5": 0.0001,
      "religious_share": 0.122,
      "space_index": 0.107,
@@ -20602,7 +20603,7 @@
      "net_migration_per_1000": 1.05,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 262144600,
+     "pop": 262144596,
      "q5": 0.0001,
      "religious_share": 0.107,
      "space_index": 0.109,
@@ -20629,7 +20630,7 @@
      "net_migration_per_1000": 0.75,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 271890970,
+     "pop": 271890966,
      "q5": 0.0001,
      "religious_share": 0.094,
      "space_index": 0.11,
@@ -20656,7 +20657,7 @@
      "net_migration_per_1000": 0.0,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 271947998,
+     "pop": 271947994,
      "q5": 0.0001,
      "religious_share": 0.093,
      "space_index": 0.11,
@@ -20693,7 +20694,7 @@
      "volatiles": 986.22
     },
     "inequality_gini": 0.28,
-    "labour": 130040864,
+    "labour": 130040862,
     "living_standard": 2.816,
     "production": {
      "biotech": 748.69,
@@ -20732,7 +20733,7 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 53160598,
+    "in_total": 53160596,
     "out_total": 560,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
@@ -20744,7 +20745,7 @@
     "authored": 1200000,
     "authored_status": "CANON",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 271947998,
+    "model": 271947994,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -20764,7 +20765,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Новая Европа",
-     "population": 126084981,
+     "population": 126084979,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -20778,7 +20779,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Gliese 581 K1 — поселение",
-     "population": 63042491,
+     "population": 63042489,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -20792,7 +20793,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Gliese 581 K3 — поселение",
-     "population": 42028327,
+     "population": 42028326,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -21441,7 +21442,7 @@
      "net_migration_per_1000": -2.49,
      "pension_coverage": 0.299,
      "phase": "expansion",
-     "pop": 66598917,
+     "pop": 66598920,
      "q5": 0.0001,
      "religious_share": 0.153,
      "space_index": 0.195,
@@ -21468,7 +21469,7 @@
      "net_migration_per_1000": -2.5,
      "pension_coverage": 0.3,
      "phase": "expansion",
-     "pop": 98842751,
+     "pop": 98842755,
      "q5": 0.0001,
      "religious_share": 0.14,
      "space_index": 0.189,
@@ -21495,7 +21496,7 @@
      "net_migration_per_1000": -2.5,
      "pension_coverage": 0.3,
      "phase": "expansion",
-     "pop": 144476363,
+     "pop": 144476367,
      "q5": 0.0001,
      "religious_share": 0.13,
      "space_index": 0.184,
@@ -21522,7 +21523,7 @@
      "net_migration_per_1000": -2.51,
      "pension_coverage": 0.3,
      "phase": "expansion",
-     "pop": 197981500,
+     "pop": 197981505,
      "q5": 0.0001,
      "religious_share": 0.118,
      "space_index": 0.182,
@@ -21549,7 +21550,7 @@
      "net_migration_per_1000": 0.0,
      "pension_coverage": 0.3,
      "phase": "expansion",
-     "pop": 200589133,
+     "pop": 200589138,
      "q5": 0.0001,
      "religious_share": 0.117,
      "space_index": 0.182,
@@ -21568,7 +21569,7 @@
     "dependencies": [],
     "exports": {
      "biotech": 3075.51,
-     "electronics": 4916.66,
+     "electronics": 4916.69,
      "hulls": 31.7,
      "munitions": 242.57,
      "precision": 1415.51,
@@ -21576,20 +21577,20 @@
     },
     "imports": {
      "drive_cores": 716.34,
-     "electronics": 1092.52,
+     "electronics": 1092.54,
      "food": 1566.04,
      "he3": 1923.6,
      "hulls": 291.16,
      "isotopes": 370.27,
-     "metals": 1778.8,
+     "metals": 1778.79,
      "munitions": 115.61,
      "precision": 849.37
     },
     "inequality_gini": 0.48,
-    "labour": 97122436,
+    "labour": 97122438,
     "living_standard": 2.852,
     "production": {
-     "biotech": 4591.13,
+     "biotech": 4591.14,
      "components": 4083.3,
      "drive_cores": 90.72,
      "electronics": 5881.82,
@@ -21598,7 +21599,7 @@
      "hulls": 120.95,
      "isotopes": 115.41,
      "metals": 112.29,
-     "munitions": 425.4,
+     "munitions": 425.41,
      "precision": 2444.86,
      "volatiles": 2042.2
     },
@@ -21627,7 +21628,7 @@
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
     "in_total": 164790,
-    "out_total": 32594528,
+    "out_total": 32594529,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -21638,7 +21639,7 @@
     "authored": 85000,
     "authored_status": "CANON",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 200589133,
+    "model": 200589138,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -21658,7 +21659,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Свободные поселения",
-     "population": 93000416,
+     "population": 93000418,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -21672,7 +21673,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Gliese 581 K1 — поселение",
-     "population": 46500208,
+     "population": 46500209,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -24815,7 +24816,7 @@
      "net_migration_per_1000": 0.8,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1108208318,
+     "pop": 1108208321,
      "q5": 0.0001,
      "religious_share": 0.103,
      "space_index": 0.119,
@@ -24842,7 +24843,7 @@
      "net_migration_per_1000": 0.81,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1104665686,
+     "pop": 1104665719,
      "q5": 0.0001,
      "religious_share": 0.091,
      "space_index": 0.12,
@@ -24869,7 +24870,7 @@
      "net_migration_per_1000": 0.86,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1087068468,
+     "pop": 1087068555,
      "q5": 0.0001,
      "religious_share": 0.08,
      "space_index": 0.118,
@@ -24896,7 +24897,7 @@
      "net_migration_per_1000": 0.63,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1060848410,
+     "pop": 1060848578,
      "q5": 0.0001,
      "religious_share": 0.07,
      "space_index": 0.116,
@@ -24923,7 +24924,7 @@
      "net_migration_per_1000": 0.0,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1058878197,
+     "pop": 1058878366,
      "q5": 0.0001,
      "religious_share": 0.07,
      "space_index": 0.116,
@@ -24941,14 +24942,14 @@
     "basis": "model (demography.py / trade.py), not author canon",
     "dependencies": [],
     "exports": {
-     "components": 1498.06,
-     "drive_cores": 309.74,
+     "components": 1498.05,
+     "drive_cores": 309.76,
      "electronics": 598.79,
      "food": 7547.85,
-     "he3": 11050.72,
+     "he3": 11050.71,
      "hulls": 2518.07,
      "metals": 992.66,
-     "precision": 5070.85,
+     "precision": 5070.84,
      "volatiles": 2695.85
     },
     "imports": {
@@ -24959,14 +24960,14 @@
      "munitions": 708.37
     },
     "inequality_gini": 0.33,
-    "labour": 501192899,
+    "labour": 501192992,
     "living_standard": 3.274,
     "production": {
      "biotech": 8308.27,
      "components": 19842.01,
      "electronics": 12365.98,
      "food": 28324.11,
-     "he3": 31009.15,
+     "he3": 31009.16,
      "hulls": 4423.06,
      "isotopes": 20.31,
      "metals": 23393.1,
@@ -24998,7 +24999,7 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 267707094,
+    "in_total": 267707212,
     "out_total": 0,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
@@ -25010,7 +25011,7 @@
     "authored": 4200000,
     "authored_status": "CANON",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 1058878197,
+    "model": 1058878366,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -25030,7 +25031,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Тяньхэ (Небесная Река)",
-     "population": 490934437,
+     "population": 490934515,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -25044,7 +25045,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "GJ 832 b II — поселение",
-     "population": 245467218,
+     "population": 245467258,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -25058,7 +25059,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "GJ 832 b I — поселение",
-     "population": 163644812,
+     "population": 163644838,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -27583,25 +27584,25 @@
     {
      "automation": 0.95,
      "basis": "model (demography.py / trade.py), not author canon",
-     "cbr": 19.3,
+     "cbr": 19.4,
      "cdr": 5.8,
-     "crowding": 0.905,
+     "crowding": 0.914,
      "e0": 94.0,
      "education_cost": 0.857,
      "family_norm": 2.32,
      "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-     "income": 3.248,
+     "income": 3.254,
      "labour_value": 0.013,
-     "net_migration_per_1000": 3.88,
+     "net_migration_per_1000": 6.51,
      "pension_coverage": 0.557,
-     "phase": "expansion",
-     "pop": 701,
+     "phase": "boom",
+     "pop": 713,
      "q5": 0.0001,
      "religious_share": 0.056,
-     "space_index": 0.101,
+     "space_index": 0.099,
      "status": "PROPOSAL",
      "tech_index": 1.959,
-     "tfr": 2.22,
+     "tfr": 2.21,
      "tfr_econ": 1.66,
      "urbanisation": 0.0,
      "visibility": "PUBLIC_RECORD",
@@ -27611,18 +27612,18 @@
      "automation": 0.95,
      "basis": "model (demography.py / trade.py), not author canon",
      "cbr": 12.8,
-     "cdr": 5.0,
+     "cdr": 4.9,
      "crowding": 0.843,
      "e0": 94.0,
      "education_cost": 0.857,
      "family_norm": 2.04,
      "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-     "income": 2.619,
+     "income": 2.624,
      "labour_value": 0.012,
-     "net_migration_per_1000": 2.57,
+     "net_migration_per_1000": 2.54,
      "pension_coverage": 0.633,
      "phase": "growth",
-     "pop": 1006,
+     "pop": 1026,
      "q5": 0.0001,
      "religious_share": 0.054,
      "space_index": 0.14,
@@ -27644,12 +27645,12 @@
      "education_cost": 0.857,
      "family_norm": 1.89,
      "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-     "income": 2.523,
+     "income": 2.524,
      "labour_value": 0.012,
-     "net_migration_per_1000": 2.17,
+     "net_migration_per_1000": 2.14,
      "pension_coverage": 0.669,
      "phase": "stagnation",
-     "pop": 1192,
+     "pop": 1216,
      "q5": 0.0001,
      "religious_share": 0.05,
      "space_index": 0.157,
@@ -27665,18 +27666,18 @@
      "automation": 0.95,
      "basis": "model (demography.py / trade.py), not author canon",
      "cbr": 12.0,
-     "cdr": 9.7,
+     "cdr": 9.8,
      "crowding": 0.794,
      "e0": 94.0,
      "education_cost": 0.857,
      "family_norm": 1.8,
      "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-     "income": 2.761,
+     "income": 2.76,
      "labour_value": 0.013,
-     "net_migration_per_1000": 9.23,
+     "net_migration_per_1000": 9.04,
      "pension_coverage": 0.685,
      "phase": "stagnation",
-     "pop": 1320,
+     "pop": 1346,
      "q5": 0.0001,
      "religious_share": 0.045,
      "space_index": 0.153,
@@ -27692,21 +27693,21 @@
      "automation": 0.95,
      "basis": "model (demography.py / trade.py), not author canon",
      "cbr": 12.1,
-     "cdr": 9.6,
+     "cdr": 9.7,
      "crowding": 0.799,
      "e0": 94.0,
      "education_cost": 0.857,
      "family_norm": 1.8,
      "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-     "income": 2.777,
+     "income": 2.776,
      "labour_value": 0.012,
-     "net_migration_per_1000": 11.07,
+     "net_migration_per_1000": 10.84,
      "pension_coverage": 0.686,
      "phase": "boom",
-     "pop": 1338,
+     "pop": 1364,
      "q5": 0.0001,
      "religious_share": 0.045,
-     "space_index": 0.15,
+     "space_index": 0.151,
      "status": "PROPOSAL",
      "tech_index": 1.923,
      "tfr": 2.05,
@@ -27734,7 +27735,7 @@
    "kind": "outpost",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 236,
+    "in_total": 249,
     "out_total": 0,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
@@ -27746,7 +27747,7 @@
     "authored": 25000,
     "authored_status": null,
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 1338,
+    "model": 1364,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -27766,7 +27767,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Лагерь «Кларион»",
-     "population": 620,
+     "population": 632,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -27780,7 +27781,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "HD 114783 K2 — поселение",
-     "population": 310,
+     "population": 316,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -27794,7 +27795,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "HD 114783 K4 — поселение",
-     "population": 207,
+     "population": 211,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     }
@@ -27933,18 +27934,23 @@
     "basis": "model (demography.py / trade.py), not author canon",
     "dependencies": [],
     "exports": {},
-    "imports": {},
+    "imports": {
+     "biotech": 0.05,
+     "he3": 0.09,
+     "precision": 0.09
+    },
     "inequality_gini": 0.42,
     "labour": 7712,
     "living_standard": 1.611,
     "production": {
-     "he3": 0.08,
+     "food": 0.05,
      "isotopes": 0.05,
-     "volatiles": 0.06
+     "metals": 0.06,
+     "volatiles": 0.07
     },
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD",
-    "wealth_per_100k": 2.45
+    "wealth_per_100k": 2.22
    },
    "epidemics": 0,
    "events": [
@@ -28836,7 +28842,7 @@
      "net_migration_per_1000": 0.56,
      "pension_coverage": 0.8,
      "phase": "stagnation",
-     "pop": 218890407,
+     "pop": 218890406,
      "q5": 0.0001,
      "religious_share": 0.107,
      "space_index": 0.111,
@@ -28863,7 +28869,7 @@
      "net_migration_per_1000": 0.49,
      "pension_coverage": 0.8,
      "phase": "stagnation",
-     "pop": 231907130,
+     "pop": 231907128,
      "q5": 0.0001,
      "religious_share": 0.094,
      "space_index": 0.11,
@@ -28890,7 +28896,7 @@
      "net_migration_per_1000": 0.43,
      "pension_coverage": 0.8,
      "phase": "stagnation",
-     "pop": 242360562,
+     "pop": 242360559,
      "q5": 0.0001,
      "religious_share": 0.084,
      "space_index": 0.108,
@@ -28917,7 +28923,7 @@
      "net_migration_per_1000": 0.09,
      "pension_coverage": 0.8,
      "phase": "stagnation",
-     "pop": 249825226,
+     "pop": 249825222,
      "q5": 0.0001,
      "religious_share": 0.074,
      "space_index": 0.107,
@@ -28944,7 +28950,7 @@
      "net_migration_per_1000": 0.0,
      "pension_coverage": 0.8,
      "phase": "stagnation",
-     "pop": 250016206,
+     "pop": 250016201,
      "q5": 0.0001,
      "religious_share": 0.074,
      "space_index": 0.107,
@@ -28964,8 +28970,8 @@
     "exports": {
      "biotech": 662.31,
      "drive_cores": 70.65,
-     "electronics": 6586.24,
-     "he3": 3903.41,
+     "electronics": 6586.25,
+     "he3": 3903.42,
      "hulls": 76.74,
      "isotopes": 5236.85,
      "metals": 1370.63,
@@ -28980,7 +28986,7 @@
      "hulls": 275.01
     },
     "inequality_gini": 0.42,
-    "labour": 119152821,
+    "labour": 119152819,
     "living_standard": 3.113,
     "production": {
      "biotech": 2669.15,
@@ -29025,7 +29031,7 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 39296803,
+    "in_total": 39296801,
     "out_total": 0,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
@@ -29037,7 +29043,7 @@
     "authored": 980000,
     "authored_status": "CANON",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 250016206,
+    "model": 250016201,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -29057,7 +29063,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Вторая Эллада",
-     "population": 115916604,
+     "population": 115916602,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -29071,7 +29077,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "HD 20794 K2 — поселение",
-     "population": 57958302,
+     "population": 57958301,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -29085,7 +29091,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "HD 20794 K1 — поселение",
-     "population": 38638868,
+     "population": 38638867,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -29815,7 +29821,7 @@
      "net_migration_per_1000": 1.67,
      "pension_coverage": 0.8,
      "phase": "growth",
-     "pop": 578289748,
+     "pop": 578289751,
      "q5": 0.0001,
      "religious_share": 0.132,
      "space_index": 0.074,
@@ -29842,7 +29848,7 @@
      "net_migration_per_1000": 1.46,
      "pension_coverage": 0.8,
      "phase": "growth",
-     "pop": 742478214,
+     "pop": 742478226,
      "q5": 0.0001,
      "religious_share": 0.122,
      "space_index": 0.072,
@@ -29869,7 +29875,7 @@
      "net_migration_per_1000": 0.33,
      "pension_coverage": 0.8,
      "phase": "growth",
-     "pop": 898445989,
+     "pop": 898446011,
      "q5": 0.0001,
      "religious_share": 0.11,
      "space_index": 0.073,
@@ -29896,7 +29902,7 @@
      "net_migration_per_1000": 0.0,
      "pension_coverage": 0.8,
      "phase": "growth",
-     "pop": 903060113,
+     "pop": 903060135,
      "q5": 0.0001,
      "religious_share": 0.11,
      "space_index": 0.073,
@@ -29914,7 +29920,7 @@
     "basis": "model (demography.py / trade.py), not author canon",
     "dependencies": [],
     "exports": {
-     "components": 32706.33,
+     "components": 32706.36,
      "drive_cores": 256.14,
      "electronics": 1360.54,
      "hulls": 163.72,
@@ -29926,25 +29932,25 @@
      "drive_cores": 4994.66,
      "electronics": 1942.41,
      "food": 7704.88,
-     "he3": 817.0,
+     "he3": 816.99,
      "hulls": 712.56,
      "munitions": 443.26,
      "precision": 653.17,
      "volatiles": 1580.41
     },
     "inequality_gini": 0.4,
-    "labour": 448942604,
+    "labour": 448942616,
     "living_standard": 3.247,
     "production": {
-     "components": 44838.86,
-     "electronics": 8940.84,
-     "food": 5107.89,
+     "components": 44838.84,
+     "electronics": 8940.83,
+     "food": 5107.88,
      "he3": 13304.57,
      "hulls": 703.3,
-     "isotopes": 11220.66,
-     "metals": 25120.54,
+     "isotopes": 11220.65,
+     "metals": 25120.53,
      "munitions": 1267.18,
-     "precision": 10107.21,
+     "precision": 10107.2,
      "volatiles": 2043.15
     },
     "status": "PROPOSAL",
@@ -29977,7 +29983,7 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 166767013,
+    "in_total": 166767025,
     "out_total": 96731,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
@@ -29989,7 +29995,7 @@
     "authored": 1100000,
     "authored_status": "CANON",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 903060113,
+    "model": 903060135,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -30009,7 +30015,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Новая Индия",
-     "population": 418691507,
+     "population": 418691517,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -30023,7 +30029,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "HD 20794 K2 — поселение",
-     "population": 209345753,
+     "population": 209345759,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -30037,7 +30043,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "HD 20794 K1 — поселение",
-     "population": 139563836,
+     "population": 139563839,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -30510,7 +30516,7 @@
      "net_migration_per_1000": 2.86,
      "pension_coverage": 0.999,
      "phase": "expansion",
-     "pop": 115173026,
+     "pop": 115173027,
      "q5": 0.0001,
      "religious_share": 0.156,
      "space_index": 0.157,
@@ -30537,7 +30543,7 @@
      "net_migration_per_1000": 2.5,
      "pension_coverage": 0.999,
      "phase": "growth",
-     "pop": 159151262,
+     "pop": 159151265,
      "q5": 0.0001,
      "religious_share": 0.151,
      "space_index": 0.154,
@@ -30564,7 +30570,7 @@
      "net_migration_per_1000": 0.56,
      "pension_coverage": 1.0,
      "phase": "growth",
-     "pop": 197167837,
+     "pop": 197167843,
      "q5": 0.0001,
      "religious_share": 0.143,
      "space_index": 0.156,
@@ -30591,7 +30597,7 @@
      "net_migration_per_1000": 0.0,
      "pension_coverage": 1.0,
      "phase": "growth",
-     "pop": 198279061,
+     "pop": 198279067,
      "q5": 0.0001,
      "religious_share": 0.143,
      "space_index": 0.156,
@@ -30612,11 +30618,11 @@
      "biotech": 2613.32,
      "components": 3509.26,
      "electronics": 5056.31,
-     "he3": 1897.96,
+     "he3": 1897.98,
      "hulls": 46.92,
      "metals": 755.66,
      "munitions": 1354.03,
-     "precision": 4223.45
+     "precision": 4223.44
     },
     "imports": {
      "drive_cores": 784.44,
@@ -30626,7 +30632,7 @@
      "volatiles": 1204.37
     },
     "inequality_gini": 0.33,
-    "labour": 99551673,
+    "labour": 99551677,
     "living_standard": 3.075,
     "production": {
      "biotech": 4191.3,
@@ -30665,7 +30671,7 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 43104624,
+    "in_total": 43104628,
     "out_total": 50987,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
@@ -30677,7 +30683,7 @@
     "authored": 1800000,
     "authored_status": "CANON",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 198279061,
+    "model": 198279067,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -30697,7 +30703,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Небесная Твердыня",
-     "population": 91929383,
+     "population": 91929386,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -30711,7 +30717,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "HD 40307 K2 — поселение",
-     "population": 45964691,
+     "population": 45964693,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -30725,7 +30731,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "HD 40307 K3 — поселение",
-     "population": 30643128,
+     "population": 30643129,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -31482,7 +31488,7 @@
      "net_migration_per_1000": 0.24,
      "pension_coverage": 0.7,
      "phase": "growth",
-     "pop": 442637201,
+     "pop": 442637204,
      "q5": 0.0001,
      "religious_share": 0.148,
      "space_index": 0.074,
@@ -31509,7 +31515,7 @@
      "net_migration_per_1000": 0.0,
      "pension_coverage": 0.7,
      "phase": "growth",
-     "pop": 445615993,
+     "pop": 445615996,
      "q5": 0.0001,
      "religious_share": 0.148,
      "space_index": 0.074,
@@ -31533,7 +31539,7 @@
      "food": 2980.08,
      "hulls": 77.31,
      "munitions": 63.48,
-     "precision": 593.51,
+     "precision": 593.42,
      "volatiles": 1204.37
     },
     "imports": {
@@ -31544,13 +31550,13 @@
      "isotopes": 1036.26,
      "metals": 3687.0,
      "munitions": 603.35,
-     "precision": 3079.67
+     "precision": 3079.58
     },
     "inequality_gini": 0.38,
-    "labour": 220734140,
+    "labour": 220734141,
     "living_standard": 3.063,
     "production": {
-     "biotech": 11429.17,
+     "biotech": 11429.18,
      "components": 1611.51,
      "electronics": 1277.62,
      "food": 18832.22,
@@ -31591,7 +31597,7 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 54747167,
+    "in_total": 54747168,
     "out_total": 1678953,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
@@ -31603,7 +31609,7 @@
     "authored": 2400000,
     "authored_status": "CANON",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 445615993,
+    "model": 445615996,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -31623,7 +31629,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Новая Маланд",
-     "population": 206603779,
+     "population": 206603780,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -31637,7 +31643,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "HD 40307 K2 — поселение",
-     "population": 103301889,
+     "population": 103301890,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -31651,7 +31657,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "HD 40307 K3 — поселение",
-     "population": 68867926,
+     "population": 68867927,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -32273,7 +32279,7 @@
      "net_migration_per_1000": -2.49,
      "pension_coverage": 0.597,
      "phase": "expansion",
-     "pop": 66361120,
+     "pop": 66361121,
      "q5": 0.0001,
      "religious_share": 0.437,
      "space_index": 0.258,
@@ -32327,7 +32333,7 @@
      "net_migration_per_1000": -2.5,
      "pension_coverage": 0.599,
      "phase": "expansion",
-     "pop": 146766923,
+     "pop": 146766922,
      "q5": 0.0001,
      "religious_share": 0.415,
      "space_index": 0.203,
@@ -32354,7 +32360,7 @@
      "net_migration_per_1000": -2.51,
      "pension_coverage": 0.6,
      "phase": "expansion",
-     "pop": 202099372,
+     "pop": 202099369,
      "q5": 0.0001,
      "religious_share": 0.404,
      "space_index": 0.164,
@@ -32381,7 +32387,7 @@
      "net_migration_per_1000": 0.0,
      "pension_coverage": 0.6,
      "phase": "expansion",
-     "pop": 204780901,
+     "pop": 204780898,
      "q5": 0.0001,
      "religious_share": 0.403,
      "space_index": 0.163,
@@ -32401,19 +32407,20 @@
     "exports": {
      "drive_cores": 55.05,
      "electronics": 75.14,
+     "he3": 0.06,
      "precision": 253.56
     },
     "imports": {
      "biotech": 442.11,
      "components": 1244.22,
      "drive_cores": 1073.43,
-     "electronics": 751.95,
+     "electronics": 751.96,
      "hulls": 310.25,
-     "munitions": 187.15,
+     "munitions": 187.14,
      "precision": 1555.47
     },
     "inequality_gini": 0.52,
-    "labour": 99306801,
+    "labour": 99306799,
     "living_standard": 3.253,
     "production": {
      "biotech": 1092.25,
@@ -32452,7 +32459,7 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 156663,
+    "in_total": 156661,
     "out_total": 33079877,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
@@ -32464,7 +32471,7 @@
     "authored": 1400000,
     "authored_status": "CANON",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 204780901,
+    "model": 204780898,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -32484,7 +32491,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Сельта-Верде",
-     "population": 94943872,
+     "population": 94943871,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -32498,7 +32505,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "HD 69830 K2 — поселение",
-     "population": 47471936,
+     "population": 47471935,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -34034,7 +34041,7 @@
      "net_migration_per_1000": 0.62,
      "pension_coverage": 0.8,
      "phase": "stagnation",
-     "pop": 285693818,
+     "pop": 285693819,
      "q5": 0.0001,
      "religious_share": 0.099,
      "space_index": 0.117,
@@ -34088,7 +34095,7 @@
      "net_migration_per_1000": 0.48,
      "pension_coverage": 0.8,
      "phase": "stagnation",
-     "pop": 316925420,
+     "pop": 316925418,
      "q5": 0.0001,
      "religious_share": 0.078,
      "space_index": 0.112,
@@ -34115,7 +34122,7 @@
      "net_migration_per_1000": 0.11,
      "pension_coverage": 0.8,
      "phase": "stagnation",
-     "pop": 327343650,
+     "pop": 327343648,
      "q5": 0.0001,
      "religious_share": 0.069,
      "space_index": 0.111,
@@ -34142,7 +34149,7 @@
      "net_migration_per_1000": 0.0,
      "pension_coverage": 0.8,
      "phase": "stagnation",
-     "pop": 327607484,
+     "pop": 327607482,
      "q5": 0.0001,
      "religious_share": 0.069,
      "space_index": 0.111,
@@ -34175,12 +34182,12 @@
      "metals": 3036.96
     },
     "inequality_gini": 0.44,
-    "labour": 156202401,
+    "labour": 156202400,
     "living_standard": 2.812,
     "production": {
      "biotech": 4694.96,
      "components": 5075.31,
-     "electronics": 5613.44,
+     "electronics": 5613.45,
      "food": 2873.91,
      "he3": 1958.55,
      "isotopes": 127.18,
@@ -34213,7 +34220,7 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 73665956,
+    "in_total": 73665955,
     "out_total": 0,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
@@ -34225,7 +34232,7 @@
     "authored": 1500000,
     "authored_status": "CANON",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 327607484,
+    "model": 327607482,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -34245,7 +34252,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Новая Эллада / Агора",
-     "population": 151890743,
+     "population": 151890742,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -34273,7 +34280,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Lalande 21185 k — поселение",
-     "population": 50630248,
+     "population": 50630247,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -35300,7 +35307,7 @@
      "net_migration_per_1000": -2.5,
      "pension_coverage": 0.8,
      "phase": "expansion",
-     "pop": 562484101,
+     "pop": 562484096,
      "q5": 0.0001,
      "religious_share": 0.398,
      "space_index": 0.097,
@@ -35327,7 +35334,7 @@
      "net_migration_per_1000": -2.5,
      "pension_coverage": 0.8,
      "phase": "expansion",
-     "pop": 683991481,
+     "pop": 683991470,
      "q5": 0.0001,
      "religious_share": 0.391,
      "space_index": 0.095,
@@ -35354,7 +35361,7 @@
      "net_migration_per_1000": -2.51,
      "pension_coverage": 0.8,
      "phase": "growth",
-     "pop": 794255254,
+     "pop": 794255240,
      "q5": 0.0001,
      "religious_share": 0.382,
      "space_index": 0.095,
@@ -35381,7 +35388,7 @@
      "net_migration_per_1000": 0.0,
      "pension_coverage": 0.8,
      "phase": "growth",
-     "pop": 799743555,
+     "pop": 799743540,
      "q5": 0.0001,
      "religious_share": 0.381,
      "space_index": 0.095,
@@ -35409,14 +35416,14 @@
      "drive_cores": 1049.42,
      "electronics": 5429.5,
      "he3": 9037.3,
-     "hulls": 1106.58,
+     "hulls": 1106.57,
      "isotopes": 2679.07,
      "munitions": 942.28,
-     "precision": 4179.13,
+     "precision": 4179.02,
      "volatiles": 227.42
     },
     "inequality_gini": 0.36,
-    "labour": 387705330,
+    "labour": 387705322,
     "living_standard": 2.891,
     "production": {
      "biotech": 860.68,
@@ -35456,8 +35463,8 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 845228,
-    "out_total": 225615401,
+    "in_total": 845221,
+    "out_total": 225615399,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -35468,7 +35475,7 @@
     "authored": 1800000,
     "authored_status": "CANON",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 799743555,
+    "model": 799743540,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -35488,7 +35495,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Новая Мекка",
-     "population": 370790194,
+     "population": 370790187,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -35502,7 +35509,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Lalande 21185 h — поселение",
-     "population": 185395097,
+     "population": 185395093,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -35516,7 +35523,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Lalande 21185 k — поселение",
-     "population": 123596731,
+     "population": 123596729,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -35613,8 +35620,8 @@
     {
      "automation": 0.95,
      "basis": "model (demography.py / trade.py), not author canon",
-     "cbr": 35.4,
-     "cdr": 0.3,
+     "cbr": 7.3,
+     "cdr": 0.1,
      "crowding": 0.889,
      "e0": 94.0,
      "education_cost": 0.857,
@@ -35622,10 +35629,10 @@
      "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
      "income": 3.863,
      "labour_value": 0.013,
-     "net_migration_per_1000": 7.57,
+     "net_migration_per_1000": 794.89,
      "pension_coverage": 0.506,
      "phase": "stagnation",
-     "pop": 209,
+     "pop": 1011,
      "q5": 0.0001,
      "religious_share": 0.051,
      "space_index": 0.072,
@@ -35640,26 +35647,26 @@
     {
      "automation": 0.95,
      "basis": "model (demography.py / trade.py), not author canon",
-     "cbr": 26.2,
-     "cdr": 0.5,
-     "crowding": 0.941,
-     "e0": 94.0,
+     "cbr": 0.8,
+     "cdr": 16.5,
+     "crowding": 1.914,
+     "e0": 85.2,
      "education_cost": 0.857,
-     "family_norm": 2.39,
+     "family_norm": 2.37,
      "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-     "income": 3.455,
-     "labour_value": 0.013,
-     "net_migration_per_1000": 6.67,
+     "income": 3.742,
+     "labour_value": 0.0,
+     "net_migration_per_1000": 1.43,
      "pension_coverage": 0.533,
-     "phase": "boom",
-     "pop": 251,
-     "q5": 0.0001,
-     "religious_share": 0.054,
-     "space_index": 0.073,
+     "phase": "decline",
+     "pop": 912,
+     "q5": 0.0086,
+     "religious_share": 0.083,
+     "space_index": 0.018,
      "status": "PROPOSAL",
      "tech_index": 2.02,
-     "tfr": 2.23,
-     "tfr_econ": 1.61,
+     "tfr": 0.06,
+     "tfr_econ": 1.46,
      "urbanisation": 0.0,
      "visibility": "PUBLIC_RECORD",
      "year": 3050
@@ -35667,26 +35674,26 @@
     {
      "automation": 0.95,
      "basis": "model (demography.py / trade.py), not author canon",
-     "cbr": 12.9,
-     "cdr": 3.6,
-     "crowding": 0.878,
+     "cbr": 10.1,
+     "cdr": 4.3,
+     "crowding": 0.861,
      "e0": 94.0,
      "education_cost": 0.857,
-     "family_norm": 2.05,
+     "family_norm": 2.02,
      "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-     "income": 2.744,
+     "income": 2.749,
      "labour_value": 0.012,
-     "net_migration_per_1000": 4.13,
+     "net_migration_per_1000": 2.39,
      "pension_coverage": 0.622,
-     "phase": "boom",
-     "pop": 405,
+     "phase": "growth",
+     "pop": 1213,
      "q5": 0.0001,
-     "religious_share": 0.055,
-     "space_index": 0.111,
+     "religious_share": 0.098,
+     "space_index": 0.115,
      "status": "PROPOSAL",
      "tech_index": 1.779,
-     "tfr": 2.09,
-     "tfr_econ": 1.62,
+     "tfr": 2.1,
+     "tfr_econ": 1.63,
      "urbanisation": 0.0,
      "visibility": "PUBLIC_RECORD",
      "year": 3075
@@ -35694,26 +35701,26 @@
     {
      "automation": 0.95,
      "basis": "model (demography.py / trade.py), not author canon",
-     "cbr": 12.2,
-     "cdr": 9.0,
-     "crowding": 0.836,
+     "cbr": 11.0,
+     "cdr": 11.9,
+     "crowding": 0.803,
      "e0": 94.0,
      "education_cost": 0.857,
      "family_norm": 1.87,
      "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-     "income": 2.481,
+     "income": 2.237,
      "labour_value": 0.012,
-     "net_migration_per_1000": 3.3,
+     "net_migration_per_1000": 2.04,
      "pension_coverage": 0.664,
-     "phase": "growth",
-     "pop": 508,
+     "phase": "stagnation",
+     "pop": 1333,
      "q5": 0.0001,
-     "religious_share": 0.051,
-     "space_index": 0.135,
+     "religious_share": 0.086,
+     "space_index": 0.155,
      "status": "PROPOSAL",
      "tech_index": 1.78,
-     "tfr": 2.03,
-     "tfr_econ": 1.64,
+     "tfr": 2.07,
+     "tfr_econ": 1.7,
      "urbanisation": 0.0,
      "visibility": "PUBLIC_RECORD",
      "year": 3100
@@ -35722,25 +35729,25 @@
      "automation": 0.95,
      "basis": "model (demography.py / trade.py), not author canon",
      "cbr": 11.6,
-     "cdr": 9.9,
-     "crowding": 0.795,
+     "cdr": 12.2,
+     "crowding": 0.767,
      "e0": 94.0,
      "education_cost": 0.857,
-     "family_norm": 1.77,
+     "family_norm": 1.79,
      "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-     "income": 2.677,
+     "income": 2.581,
      "labour_value": 0.013,
      "net_migration_per_1000": 0.0,
      "pension_coverage": 0.683,
      "phase": "stagnation",
-     "pop": 558,
+     "pop": 1317,
      "q5": 0.0001,
-     "religious_share": 0.047,
-     "space_index": 0.141,
+     "religious_share": 0.076,
+     "space_index": 0.154,
      "status": "PROPOSAL",
      "tech_index": 1.907,
-     "tfr": 2.01,
-     "tfr_econ": 1.63,
+     "tfr": 2.06,
+     "tfr_econ": 1.67,
      "urbanisation": 0.0,
      "visibility": "PUBLIC_RECORD",
      "year": 3125
@@ -35749,25 +35756,25 @@
      "automation": 0.95,
      "basis": "model (demography.py / trade.py), not author canon",
      "cbr": 11.6,
-     "cdr": 9.9,
-     "crowding": 0.794,
+     "cdr": 12.1,
+     "crowding": 0.766,
      "e0": 94.0,
      "education_cost": 0.857,
-     "family_norm": 1.77,
+     "family_norm": 1.79,
      "habitat": "купола, лавовые трубки и укрытые поселения на твёрдых телах",
-     "income": 2.683,
+     "income": 2.594,
      "labour_value": 0.013,
      "net_migration_per_1000": 0.0,
      "pension_coverage": 0.684,
      "phase": "stagnation",
-     "pop": 559,
+     "pop": 1317,
      "q5": 0.0001,
-     "religious_share": 0.046,
-     "space_index": 0.141,
+     "religious_share": 0.075,
+     "space_index": 0.153,
      "status": "PROPOSAL",
      "tech_index": 1.912,
-     "tfr": 2.01,
-     "tfr_econ": 1.63,
+     "tfr": 2.05,
+     "tfr_econ": 1.67,
      "urbanisation": 0.0,
      "visibility": "PUBLIC_RECORD",
      "year": 3126
@@ -35791,8 +35798,8 @@
    "kind": "outpost",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 113,
-    "out_total": 0,
+    "in_total": 995,
+    "out_total": 20,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -35803,7 +35810,7 @@
     "authored": 6000,
     "authored_status": null,
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 559,
+    "model": 1317,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -35823,7 +35830,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "«Золотой Город»",
-     "population": 259,
+     "population": 610,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -35837,7 +35844,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "83 Leonis B i — поселение",
-     "population": 130,
+     "population": 305,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     },
@@ -35851,7 +35858,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "83 Leonis B j II — поселение",
-     "population": 86,
+     "population": 203,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "habitat"
     }
@@ -35936,17 +35943,19 @@
     "basis": "model (demography.py / trade.py), not author canon",
     "dependencies": [],
     "exports": {},
-    "imports": {},
+    "imports": {
+     "he3": 0.06,
+     "precision": 0.06
+    },
     "inequality_gini": 0.38,
     "labour": 6058,
     "living_standard": 1.605,
     "production": {
-     "food": 0.05,
-     "he3": 0.05
+     "food": 0.06
     },
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD",
-    "wealth_per_100k": 2.57
+    "wealth_per_100k": 2.4
    },
    "epidemics": 0,
    "events": [
@@ -37197,15 +37206,15 @@
      "drive_cores": 192.13,
      "electronics": 732.17,
      "food": 2740.51,
-     "metals": 995.94,
+     "metals": 995.93,
      "munitions": 115.81,
      "volatiles": 776.3
     },
     "imports": {
-     "biotech": 657.45,
+     "biotech": 657.42,
      "components": 4088.66,
      "drive_cores": 3744.14,
-     "electronics": 2845.16,
+     "electronics": 2845.17,
      "he3": 7779.95,
      "hulls": 702.38,
      "isotopes": 1629.73,
@@ -37226,7 +37235,7 @@
      "isotopes": 1.77,
      "metals": 7915.71,
      "munitions": 1107.73,
-     "precision": 2796.84,
+     "precision": 2796.83,
      "volatiles": 11146.2
     },
     "status": "PROPOSAL",
@@ -37663,7 +37672,7 @@
     },
     "min_automation": [
      3126,
-     0.7850431780679946
+     0.7850431151772276
     ],
     "status": "PROPOSAL",
     "status_by_domain": {
@@ -38593,7 +38602,7 @@
      "net_migration_per_1000": 0.82,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1242243130,
+     "pop": 1242243129,
      "q5": 0.0001,
      "religious_share": 0.107,
      "space_index": 0.168,
@@ -38620,7 +38629,7 @@
      "net_migration_per_1000": 0.72,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1296612346,
+     "pop": 1296612347,
      "q5": 0.0001,
      "religious_share": 0.094,
      "space_index": 0.165,
@@ -38647,7 +38656,7 @@
      "net_migration_per_1000": 0.62,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1338150332,
+     "pop": 1338150337,
      "q5": 0.0001,
      "religious_share": 0.083,
      "space_index": 0.162,
@@ -38674,7 +38683,7 @@
      "net_migration_per_1000": 0.14,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1356631589,
+     "pop": 1356631598,
      "q5": 0.0001,
      "religious_share": 0.074,
      "space_index": 0.161,
@@ -38701,7 +38710,7 @@
      "net_migration_per_1000": 0.0,
      "pension_coverage": 1.0,
      "phase": "stagnation",
-     "pop": 1356527898,
+     "pop": 1356527906,
      "q5": 0.0001,
      "religious_share": 0.073,
      "space_index": 0.16,
@@ -38721,28 +38730,28 @@
      "he3"
     ],
     "exports": {
-     "drive_cores": 33683.29
+     "drive_cores": 33683.24
     },
     "imports": {
      "biotech": 7300.59,
      "components": 12105.4,
-     "electronics": 11503.47,
+     "electronics": 11503.46,
      "food": 3113.38,
      "he3": 14338.14,
      "hulls": 1390.85,
-     "isotopes": 16329.29,
+     "isotopes": 16329.27,
      "metals": 4335.98,
-     "munitions": 1251.8,
-     "precision": 18940.63,
+     "munitions": 1251.79,
+     "precision": 18940.61,
      "volatiles": 7575.32
     },
     "inequality_gini": 0.4,
-    "labour": 645499587,
+    "labour": 645499592,
     "living_standard": 2.54,
     "production": {
      "biotech": 75.96,
      "components": 187.49,
-     "drive_cores": 42279.44,
+     "drive_cores": 42279.36,
      "electronics": 3202.78,
      "food": 15330.77,
      "hulls": 160.22,
@@ -38791,7 +38800,7 @@
    "kind": "colony",
    "migration": {
     "basis": "model (demography.py / trade.py), not author canon",
-    "in_total": 329407422,
+    "in_total": 329407428,
     "out_total": 0,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
@@ -38803,7 +38812,7 @@
     "authored": 2800000,
     "authored_status": "CANON",
     "basis": "model (demography.py / trade.py), not author canon",
-    "model": 1356527898,
+    "model": 1356527906,
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD"
    },
@@ -38823,7 +38832,7 @@
       "visibility": "PUBLIC_RECORD"
      },
      "name": "Новый Шанхай",
-     "population": 1153048713,
+     "population": 1153048720,
      "population_status": "PROPOSAL (model, Zipf)",
      "role": "capital"
     },
@@ -39985,7 +39994,7 @@
     "production": {
      "components": 1438.61,
      "drive_cores": 2041.82,
-     "electronics": 3673.9,
+     "electronics": 3673.91,
      "food": 8294.4,
      "hulls": 361.4,
      "metals": 4277.29,
@@ -40395,8 +40404,8 @@
  "status_counts": {
   "AUTHOR_TRUTH": 18,
   "CANON": 309,
-  "PROPOSAL": 290,
-  "PUBLIC_RECORD": 590,
+  "PROPOSAL": 291,
+  "PUBLIC_RECORD": 591,
   "UNKNOWN": 9
  },
  "status_legend": {
@@ -40431,7 +40440,7 @@
    ],
    "seller": "delta_pav_karma",
    "status": "PROPOSAL",
-   "value": 14650.66,
+   "value": 14650.656,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "major"
   },
@@ -40510,7 +40519,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 10602.868,
+   "value": 10602.838,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "major"
   },
@@ -40586,7 +40595,7 @@
    ],
    "seller": "tau_ceti_cognium",
    "status": "PROPOSAL",
-   "value": 7149.875,
+   "value": 7149.876,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "major"
   },
@@ -40613,7 +40622,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 5726.421,
+   "value": 5726.428,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "major"
   },
@@ -40709,7 +40718,7 @@
    "hops": 1,
    "landed_cost": 4.21,
    "local_cost": 1.5,
-   "mass": 2604.085,
+   "mass": 2604.089,
    "reason": "residual_shortfall",
    "route": [
     9,
@@ -40717,7 +40726,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 4882.659,
+   "value": 4882.667,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "major"
   },
@@ -40732,14 +40741,14 @@
    "hops": 0,
    "landed_cost": 1.52,
    "local_cost": 1.85,
-   "mass": 2581.172,
+   "mass": 2581.173,
    "reason": "same_system",
    "route": [
     9
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 4839.698,
+   "value": 4839.7,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "major"
   },
@@ -40813,7 +40822,7 @@
    ],
    "seller": "tau_ceti_cognium",
    "status": "PROPOSAL",
-   "value": 3863.437,
+   "value": 3863.374,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "major"
   },
@@ -40841,7 +40850,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 3765.435,
+   "value": 3765.437,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "major"
   },
@@ -40890,7 +40899,7 @@
    ],
    "seller": "tau_ceti_cognium",
    "status": "PROPOSAL",
-   "value": 3744.142,
+   "value": 3744.141,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "major"
   },
@@ -40941,7 +40950,7 @@
    ],
    "seller": "hd20794_newindia",
    "status": "PROPOSAL",
-   "value": 3248.287,
+   "value": 3248.285,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -40959,7 +40968,7 @@
    "hops": 1,
    "landed_cost": 4.33,
    "local_cost": 4.69,
-   "mass": 162.31,
+   "mass": 162.311,
    "reason": "specialisation_high_value",
    "route": [
     14,
@@ -40967,7 +40976,7 @@
    ],
    "seller": "hd20794_newindia",
    "status": "PROPOSAL",
-   "value": 3246.209,
+   "value": 3246.211,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -40995,7 +41004,7 @@
    ],
    "seller": "lalande_hellas",
    "status": "PROPOSAL",
-   "value": 3141.485,
+   "value": 3141.486,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41014,7 +41023,7 @@
    "hops": 1,
    "landed_cost": 4.64,
    "local_cost": 2.83,
-   "mass": 1518.479,
+   "mass": 1518.48,
    "reason": "residual_shortfall",
    "route": [
     9,
@@ -41055,7 +41064,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 3009.401,
+   "value": 3009.48,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41070,14 +41079,14 @@
    "hops": 0,
    "landed_cost": 0.84,
    "local_cost": 1.63,
-   "mass": 1589.373,
+   "mass": 1589.374,
    "reason": "same_system",
    "route": [
     15
    ],
    "seller": "hd40307_maland",
    "status": "PROPOSAL",
-   "value": 2980.075,
+   "value": 2980.076,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41097,7 +41106,7 @@
    "hops": 1,
    "landed_cost": 4.75,
    "local_cost": 1.5,
-   "mass": 1505.183,
+   "mass": 1505.18,
    "reason": "residual_shortfall",
    "route": [
     12,
@@ -41105,7 +41114,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 2822.218,
+   "value": 2822.212,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41133,7 +41142,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 2805.826,
+   "value": 2805.932,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41202,7 +41211,7 @@
    "hops": 1,
    "landed_cost": 3.4,
    "local_cost": 1.37,
-   "mass": 2695.852,
+   "mass": 2695.851,
    "reason": "residual_shortfall",
    "route": [
     12,
@@ -41210,7 +41219,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 2695.852,
+   "value": 2695.851,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41237,7 +41246,7 @@
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 2638.109,
+   "value": 2638.11,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41265,7 +41274,7 @@
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 2565.478,
+   "value": 2565.479,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41293,7 +41302,7 @@
    ],
    "seller": "gj581_freeclans",
    "status": "PROPOSAL",
-   "value": 2515.035,
+   "value": 2515.036,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41349,7 +41358,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 2291.742,
+   "value": 2291.743,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41373,7 +41382,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 2265.047,
+   "value": 2265.046,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41405,7 +41414,7 @@
    ],
    "seller": "hd40307_maland",
    "status": "PROPOSAL",
-   "value": 2165.844,
+   "value": 2165.79,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41432,7 +41441,7 @@
    ],
    "seller": "hd40307_maland",
    "status": "PROPOSAL",
-   "value": 2126.483,
+   "value": 2126.484,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41481,7 +41490,7 @@
    ],
    "seller": "tau_ceti_cognium",
    "status": "PROPOSAL",
-   "value": 2010.958,
+   "value": 2010.934,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41514,7 +41523,7 @@
    ],
    "seller": "hd40307_maland",
    "status": "PROPOSAL",
-   "value": 1892.117,
+   "value": 1892.115,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41542,7 +41551,7 @@
    ],
    "seller": "gj581_freeclans",
    "status": "PROPOSAL",
-   "value": 1871.433,
+   "value": 1871.434,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41570,7 +41579,7 @@
    ],
    "seller": "gj581_freeclans",
    "status": "PROPOSAL",
-   "value": 1845.308,
+   "value": 1845.309,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41643,7 +41652,7 @@
    "hops": 1,
    "landed_cost": 11.24,
    "local_cost": 12.15,
-   "mass": 2.938,
+   "mass": 2.937,
    "reason": "specialisation_high_value",
    "route": [
     14,
@@ -41651,7 +41660,7 @@
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 1762.511,
+   "value": 1762.485,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41684,7 +41693,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 1718.738,
+   "value": 1718.754,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41712,7 +41721,7 @@
    ],
    "seller": "gj581_europa",
    "status": "PROPOSAL",
-   "value": 1664.062,
+   "value": 1664.059,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41740,7 +41749,7 @@
    ],
    "seller": "gj581_europa",
    "status": "PROPOSAL",
-   "value": 1593.174,
+   "value": 1593.119,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41768,7 +41777,7 @@
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 1583.622,
+   "value": 1583.589,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41783,14 +41792,14 @@
    "hops": 0,
    "landed_cost": 0.66,
    "local_cost": 0.8,
-   "mass": 1580.41,
+   "mass": 1580.408,
    "reason": "same_system",
    "route": [
     14
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 1580.41,
+   "value": 1580.408,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41898,7 +41907,7 @@
    ],
    "seller": "hd20794_newindia",
    "status": "PROPOSAL",
-   "value": 1560.709,
+   "value": 1560.71,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -41982,7 +41991,7 @@
    ],
    "seller": "gj581_europa",
    "status": "PROPOSAL",
-   "value": 1418.011,
+   "value": 1418.038,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -42010,7 +42019,7 @@
    ],
    "seller": "delta_pav_karma",
    "status": "PROPOSAL",
-   "value": 1395.396,
+   "value": 1395.445,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -42141,7 +42150,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 1340.514,
+   "value": 1340.513,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -42179,7 +42188,7 @@
    "hops": 0,
    "landed_cost": 1.31,
    "local_cost": 1.32,
-   "mass": 704.112,
+   "mass": 704.111,
    "reason": "same_system",
    "route": [
     22
@@ -42211,7 +42220,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 1289.266,
+   "value": 1289.258,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -42377,7 +42386,7 @@
    ],
    "seller": "gj581_freeclans",
    "status": "PROPOSAL",
-   "value": 1230.205,
+   "value": 1230.206,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -42410,7 +42419,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 1221.601,
+   "value": 1221.605,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -42455,7 +42464,7 @@
    ],
    "seller": "tau_ceti_cognium",
    "status": "PROPOSAL",
-   "value": 1199.872,
+   "value": 1199.855,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -42563,7 +42572,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 1148.191,
+   "value": 1148.192,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -42624,7 +42633,7 @@
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 1144.237,
+   "value": 1144.222,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -42880,7 +42889,7 @@
    "hops": 1,
    "landed_cost": 6.78,
    "local_cost": 3.73,
-   "mass": 497.968,
+   "mass": 497.967,
    "reason": "residual_shortfall",
    "route": [
     60,
@@ -42888,7 +42897,7 @@
    ],
    "seller": "proxima_outpost",
    "status": "PROPOSAL",
-   "value": 995.935,
+   "value": 995.934,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -42949,7 +42958,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 982.778,
+   "value": 982.731,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -43030,7 +43039,7 @@
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 923.263,
+   "value": 923.282,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -43057,7 +43066,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 912.184,
+   "value": 912.185,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -43085,7 +43094,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 884.196,
+   "value": 884.178,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -43128,7 +43137,7 @@
    "hops": 1,
    "landed_cost": 23.38,
    "local_cost": 25.65,
-   "mass": 1.378,
+   "mass": 1.379,
    "reason": "specialisation_high_value",
    "route": [
     14,
@@ -43136,7 +43145,7 @@
    ],
    "seller": "hd20794_newindia",
    "status": "PROPOSAL",
-   "value": 861.538,
+   "value": 861.616,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -43277,7 +43286,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 838.439,
+   "value": 838.415,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -43296,7 +43305,7 @@
    "hops": 1,
    "landed_cost": 4.8,
    "local_cost": 5.83,
-   "mass": 414.415,
+   "mass": 414.406,
    "reason": "local_source_dearer",
    "route": [
     9,
@@ -43304,7 +43313,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 828.831,
+   "value": 828.812,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -43408,7 +43417,7 @@
    ],
    "seller": "lalande_hellas",
    "status": "PROPOSAL",
-   "value": 776.533,
+   "value": 776.534,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -43536,7 +43545,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 744.316,
+   "value": 744.317,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "medium"
   },
@@ -43620,7 +43629,7 @@
    ],
    "seller": "delta_pav_karma",
    "status": "PROPOSAL",
-   "value": 726.259,
+   "value": 726.258,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -43697,7 +43706,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 699.523,
+   "value": 699.524,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -43725,7 +43734,7 @@
    ],
    "seller": "gj581_freeclans",
    "status": "PROPOSAL",
-   "value": 697.763,
+   "value": 697.735,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -43761,7 +43770,7 @@
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 692.02,
+   "value": 692.103,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -43794,7 +43803,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 691.334,
+   "value": 691.257,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -43843,7 +43852,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 669.256,
+   "value": 669.241,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -43868,7 +43877,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 663.811,
+   "value": 663.809,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -43928,7 +43937,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 626.531,
+   "value": 626.507,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44121,7 +44130,7 @@
    ],
    "seller": "lalande_hellas",
    "status": "PROPOSAL",
-   "value": 561.733,
+   "value": 561.706,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44172,14 +44181,14 @@
    "hops": 0,
    "landed_cost": 3.44,
    "local_cost": 3.73,
-   "mass": 267.259,
+   "mass": 267.258,
    "reason": "same_system",
    "route": [
     10
    ],
    "seller": "gj581_europa",
    "status": "PROPOSAL",
-   "value": 534.519,
+   "value": 534.517,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44260,7 +44269,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 516.035,
+   "value": 516.039,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44288,7 +44297,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 505.441,
+   "value": 505.442,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44321,7 +44330,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 503.241,
+   "value": 503.135,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44408,7 +44417,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 458.549,
+   "value": 458.548,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44491,7 +44500,7 @@
    ],
    "seller": "tau_ceti_cognium",
    "status": "PROPOSAL",
-   "value": 452.179,
+   "value": 452.169,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44547,7 +44556,7 @@
    ],
    "seller": "delta_pav_karma",
    "status": "PROPOSAL",
-   "value": 428.124,
+   "value": 428.123,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44575,7 +44584,7 @@
    ],
    "seller": "gj581_freeclans",
    "status": "PROPOSAL",
-   "value": 427.005,
+   "value": 427.006,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44636,7 +44645,7 @@
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 414.046,
+   "value": 414.099,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44672,7 +44681,7 @@
    ],
    "seller": "gj581_freeclans",
    "status": "PROPOSAL",
-   "value": 411.576,
+   "value": 411.602,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44756,7 +44765,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 399.912,
+   "value": 399.856,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44894,7 +44903,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 377.029,
+   "value": 377.024,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -44922,7 +44931,7 @@
    ],
    "seller": "delta_pav_karma",
    "status": "PROPOSAL",
-   "value": 373.684,
+   "value": 373.685,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45064,7 +45073,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 362.384,
+   "value": 362.385,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45118,7 +45127,7 @@
    ],
    "seller": "hd20794_newindia",
    "status": "PROPOSAL",
-   "value": 353.402,
+   "value": 353.401,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45256,7 +45265,7 @@
    ],
    "seller": "hd40307_maland",
    "status": "PROPOSAL",
-   "value": 339.165,
+   "value": 339.141,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45282,7 +45291,7 @@
    ],
    "seller": "hd20794_newindia",
    "status": "PROPOSAL",
-   "value": 325.44,
+   "value": 325.433,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45315,7 +45324,7 @@
    ],
    "seller": "hd40307_maland",
    "status": "PROPOSAL",
-   "value": 315.214,
+   "value": 315.115,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45343,7 +45352,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 309.74,
+   "value": 309.757,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45371,7 +45380,7 @@
    ],
    "seller": "proxima_outpost",
    "status": "PROPOSAL",
-   "value": 309.699,
+   "value": 309.698,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45399,7 +45408,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 308.614,
+   "value": 308.586,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45427,7 +45436,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 305.458,
+   "value": 305.457,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45453,7 +45462,7 @@
    ],
    "seller": "lalande_mecca",
    "status": "PROPOSAL",
-   "value": 305.458,
+   "value": 305.457,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45494,7 +45503,7 @@
    "hops": 1,
    "landed_cost": 4.78,
    "local_cost": 5.14,
-   "mass": 14.841,
+   "mass": 14.84,
    "reason": "specialisation_high_value",
    "route": [
     12,
@@ -45502,7 +45511,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 296.817,
+   "value": 296.81,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45557,7 +45566,7 @@
    ],
    "seller": "gj581_freeclans",
    "status": "PROPOSAL",
-   "value": 290.739,
+   "value": 290.767,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45590,7 +45599,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 285.47,
+   "value": 285.471,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45651,7 +45660,7 @@
    ],
    "seller": "delta_pav_karma",
    "status": "PROPOSAL",
-   "value": 277.968,
+   "value": 277.934,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45736,7 +45745,7 @@
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 271.325,
+   "value": 271.326,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45797,7 +45806,7 @@
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 266.099,
+   "value": 266.093,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45876,7 +45885,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 263.664,
+   "value": 263.661,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45932,7 +45941,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 255.112,
+   "value": 255.111,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -45952,7 +45961,7 @@
    "hops": 1,
    "landed_cost": 6.34,
    "local_cost": 3.73,
-   "mass": 124.171,
+   "mass": 124.172,
    "reason": "residual_shortfall",
    "route": [
     12,
@@ -45960,7 +45969,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 248.342,
+   "value": 248.344,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -46112,7 +46121,7 @@
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 243.472,
+   "value": 243.494,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -46222,7 +46231,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 233.174,
+   "value": 233.175,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -46250,7 +46259,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 233.174,
+   "value": 233.175,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -46477,7 +46486,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 216.427,
+   "value": 216.369,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -46609,7 +46618,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 206.496,
+   "value": 206.468,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -46635,7 +46644,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 204.818,
+   "value": 204.813,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -46691,7 +46700,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 203.884,
+   "value": 203.879,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -46749,7 +46758,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 192.603,
+   "value": 192.632,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -46810,7 +46819,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 188.993,
+   "value": 188.989,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -46937,7 +46946,7 @@
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 183.949,
+   "value": 183.982,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -46998,7 +47007,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 182.372,
+   "value": 182.367,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47080,7 +47089,7 @@
    ],
    "seller": "proxima_outpost",
    "status": "PROPOSAL",
-   "value": 178.415,
+   "value": 178.416,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47108,7 +47117,7 @@
    ],
    "seller": "gj581_europa",
    "status": "PROPOSAL",
-   "value": 173.693,
+   "value": 173.727,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47169,7 +47178,7 @@
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 171.029,
+   "value": 171.086,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47189,7 +47198,7 @@
    "hops": 1,
    "landed_cost": 23.35,
    "local_cost": 24.95,
-   "mass": 0.272,
+   "mass": 0.271,
    "reason": "specialisation_high_value",
    "route": [
     14,
@@ -47197,7 +47206,7 @@
    ],
    "seller": "hd20794_newindia",
    "status": "PROPOSAL",
-   "value": 169.733,
+   "value": 169.653,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47279,7 +47288,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 155.807,
+   "value": 155.808,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47307,7 +47316,7 @@
    ],
    "seller": "delta_pav_karma",
    "status": "PROPOSAL",
-   "value": 153.691,
+   "value": 153.692,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47390,7 +47399,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 147.73,
+   "value": 147.732,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47451,7 +47460,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 145.695,
+   "value": 145.692,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47528,7 +47537,7 @@
    ],
    "seller": "wolf359_citadel",
    "status": "PROPOSAL",
-   "value": 143.28,
+   "value": 143.277,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47587,7 +47596,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 127.18,
+   "value": 127.178,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47615,7 +47624,7 @@
    ],
    "seller": "lalande_hellas",
    "status": "PROPOSAL",
-   "value": 125.626,
+   "value": 125.627,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47703,7 +47712,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 121.581,
+   "value": 121.578,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47820,7 +47829,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 116.807,
+   "value": 116.804,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47853,7 +47862,7 @@
    ],
    "seller": "hd40307_maland",
    "status": "PROPOSAL",
-   "value": 116.807,
+   "value": 116.804,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47906,7 +47915,7 @@
    ],
    "seller": "proxima_outpost",
    "status": "PROPOSAL",
-   "value": 109.002,
+   "value": 108.978,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47967,7 +47976,7 @@
    ],
    "seller": "hd40307_firmament",
    "status": "PROPOSAL",
-   "value": 106.074,
+   "value": 106.122,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -47995,7 +48004,7 @@
    ],
    "seller": "cyg61_kern",
    "status": "PROPOSAL",
-   "value": 105.49,
+   "value": 105.488,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48023,7 +48032,7 @@
    ],
    "seller": "gj581_europa",
    "status": "PROPOSAL",
-   "value": 104.475,
+   "value": 104.448,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48056,7 +48065,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 101.135,
+   "value": 101.134,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48084,7 +48093,7 @@
    ],
    "seller": "hd20794_hellas2",
    "status": "PROPOSAL",
-   "value": 96.866,
+   "value": 96.789,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48112,7 +48121,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 92.858,
+   "value": 92.857,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48127,14 +48136,14 @@
    "hops": 0,
    "landed_cost": 0.77,
    "local_cost": 1.31,
-   "mass": 45.929,
+   "mass": 45.932,
    "reason": "same_system",
    "route": [
     9
    ],
    "seller": "eps_eri_harmony",
    "status": "PROPOSAL",
-   "value": 91.859,
+   "value": 91.863,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48320,7 +48329,7 @@
    ],
    "seller": "proxima_outpost",
    "status": "PROPOSAL",
-   "value": 83.128,
+   "value": 83.152,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48348,7 +48357,7 @@
    ],
    "seller": "gj832_tianhe",
    "status": "PROPOSAL",
-   "value": 81.706,
+   "value": 81.704,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48563,7 +48572,7 @@
    "hops": 1,
    "landed_cost": 27.03,
    "local_cost": 27.35,
-   "mass": 0.118,
+   "mass": 0.117,
    "reason": "specialisation_high_value",
    "route": [
     10,
@@ -48571,7 +48580,7 @@
    ],
    "seller": "gj581_europa",
    "status": "PROPOSAL",
-   "value": 73.46,
+   "value": 73.426,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48599,7 +48608,7 @@
    ],
    "seller": "delta_pav_freekarma",
    "status": "PROPOSAL",
-   "value": 70.833,
+   "value": 70.886,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48795,7 +48804,7 @@
    ],
    "seller": "lalande_hellas",
    "status": "PROPOSAL",
-   "value": 52.447,
+   "value": 52.443,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48823,7 +48832,7 @@
    ],
    "seller": "lalande_hellas",
    "status": "PROPOSAL",
-   "value": 52.447,
+   "value": 52.442,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48851,7 +48860,7 @@
    ],
    "seller": "delta_pav_karma",
    "status": "PROPOSAL",
-   "value": 49.137,
+   "value": 49.145,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48879,7 +48888,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 47.374,
+   "value": 47.37,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48907,7 +48916,7 @@
    ],
    "seller": "hd69830_verde",
    "status": "PROPOSAL",
-   "value": 46.18,
+   "value": 46.162,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -48930,7 +48939,7 @@
    ],
    "seller": "wolf359_citadel",
    "status": "PROPOSAL",
-   "value": 44.066,
+   "value": 44.065,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -49022,7 +49031,7 @@
    ],
    "seller": "cyg61_kern",
    "status": "PROPOSAL",
-   "value": 42.196,
+   "value": 42.195,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -49050,7 +49059,7 @@
    ],
    "seller": "cyg61_kern",
    "status": "PROPOSAL",
-   "value": 42.196,
+   "value": 42.195,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -49200,7 +49209,7 @@
    ],
    "seller": "eps_eri_strife",
    "status": "PROPOSAL",
-   "value": 35.653,
+   "value": 35.656,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },
@@ -49228,7 +49237,7 @@
    ],
    "seller": "cyg61_kern",
    "status": "PROPOSAL",
-   "value": 34.783,
+   "value": 34.782,
    "visibility": "PUBLIC_RECORD",
    "volume_class": "minor"
   },

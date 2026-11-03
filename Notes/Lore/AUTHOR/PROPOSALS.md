@@ -9,7 +9,7 @@
 <!-- GENERATED:proposals BEGIN -->
 Всё, что добавлено или пересчитано Claude. Результаты модели (население, экономика, коридоры, технологии) — тоже PROPOSAL, но поштучно не перечислены.
 
-### beacons (24)
+### beacons (25)
 
 | Путь | Что | Основание | Статус |
 |---|---|---|---|
@@ -33,6 +33,7 @@
 | beacons/25@2860 | tau_ceti_cognium | год и оператор маяка — реконсиляция | PROPOSAL · PUBLIC |
 | beacons/16@2860 | hd69830_verde | год и оператор маяка — реконсиляция | PROPOSAL · PUBLIC |
 | beacons/17@2905 | tau_ceti_cognium | год и оператор маяка — реконсиляция | PROPOSAL · PUBLIC |
+| beacons/24@3036 | cyg61_kern | год и оператор маяка — реконсиляция | PROPOSAL · PUBLIC |
 | beacons/37@3040 | cyg61_kern | год и оператор маяка — реконсиляция | PROPOSAL · PUBLIC |
 | beacons/45@3045 | cyg61_kern | год и оператор маяка — реконсиляция | PROPOSAL · PUBLIC |
 | beacons/41@3050 | tau_ceti_cognium | год и оператор маяка — реконсиляция | PROPOSAL · PUBLIC |

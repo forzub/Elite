@@ -38,7 +38,22 @@ AU_M = 1.495978707e11
 
 def load_ship_economics():
     with open(os.path.join(HERE, "canon", "ship_economics.json"), encoding="utf-8") as f:
-        return json.load(f)
+        econ = json.load(f)
+    cm = econ["cargo_model"]
+    for sc in econ["ship_classes"].values():
+        sc["_c20_payload_t"] = cm["container_payload_t"]
+        sc["_c20_tare_t"] = cm["container_tare_t"]
+    return econ
+
+
+def cargo_gross_t(sc, net_t):
+    """Gross cargo mass = net payload + tare of the C20 containers it occupies (dense packing:
+    20 t per container). Ships without container places carry bulk / modules: gross = net."""
+    slots = sc.get("container_slots", 0)
+    if net_t <= 0.0 or not slots:
+        return max(0.0, net_t)
+    used = min(slots, math.ceil(net_t / sc.get("_c20_payload_t", 20.0) - 1e-9))
+    return net_t + used * sc.get("_c20_tare_t", 1.7)
 
 
 # ---------------------------------------------------------------- network
@@ -132,7 +147,7 @@ def insystem_leg(sc, rule, cargo_t=None):
     d = rule["mean_leg_au"] * AU_M
     a = sc.get("burn_accel_g", rule["burn_accel_g"]) * G
     t = 2.0 * math.sqrt(d / a)
-    mass_kg = (sc["dry_mass_t"] + sc["jump_tank_t"] + (sc["cargo_t"] if cargo_t is None else cargo_t)) * 1000.0
+    mass_kg = (sc["dry_mass_t"] + sc["jump_tank_t"] + cargo_gross_t(sc, sc["cargo_t"] if cargo_t is None else cargo_t)) * 1000.0
     thrust_fraction = min(1.0, mass_kg * a / (sc["thrust_mn"] * 1e6))
     energy = sc["drive_input_mw"] * 1e6 * thrust_fraction * t
     fuel_kg = energy / (rule["fuel_energy_j_per_kg"] * rule["plant_efficiency"])
@@ -146,12 +161,12 @@ def calibrate(econ, net):
     ref = econ["ship_classes"][jr["reference_class"]]
     mean_jump = net["trip_hop_mean_ly"]
     m_empty = ref["dry_mass_t"] + ref["jump_tank_t"]
-    m_full = m_empty + ref["cargo_t"]
+    m_full = m_empty + cargo_gross_t(ref, ref["cargo_t"])
     r = jr["target_mean_jumps_empty"] / jr["target_mean_jumps_full"]
     alpha = (m_full - r * m_empty) / (r - 1.0)
     kappa = alpha / envelope_m2(ref)
     q = ref["jump_tank_t"] / (jr["target_mean_jumps_empty"] * mean_jump * (alpha + m_empty))
-    m_ref = m_empty + 0.5 * ref["cargo_t"]
+    m_ref = m_empty + cargo_gross_t(ref, 0.5 * ref["cargo_t"])
     f_ref = q * mean_jump * (alpha + m_ref)
     leg_t, leg_fuel_kg = insystem_leg(ref, econ["insystem_rule"], 0.5 * ref["cargo_t"])
     leg_cost = leg_fuel_kg * econ["anchors"]["reactor_fuel_cr_per_kg"]
@@ -182,7 +197,7 @@ def jump_fuel_t(cal, econ, sc, total_mass_t, d_ly):
 def jump_profile(cal, econ, sc):
     """Consumable, energy and power of one network-mean jump at half load, kept apart."""
     jr = econ["jump_rule"]
-    m = sc["dry_mass_t"] + sc["jump_tank_t"] + 0.5 * sc["cargo_t"]
+    m = sc["dry_mass_t"] + sc["jump_tank_t"] + cargo_gross_t(sc, 0.5 * sc["cargo_t"])
     f = jump_fuel_t(cal, econ, sc, m, cal["mean_jump_ly"])
     energy = f * cal["jump_energy_per_charge_t_j"]
     charge_w = jr["charge_power_share_of_reactor"] * sc["reactor_mwe"] * 1e6
@@ -203,7 +218,7 @@ def insystem_profile(econ, sc):
     """Typical in-system leg (half load): burn time, reactor fuel and its cost, thermal load."""
     rule = econ["insystem_rule"]
     t, kg = insystem_leg(sc, rule, 0.5 * sc["cargo_t"])
-    m_kg = (sc["dry_mass_t"] + sc["jump_tank_t"] + 0.5 * sc["cargo_t"]) * 1000.0
+    m_kg = (sc["dry_mass_t"] + sc["jump_tank_t"] + cargo_gross_t(sc, 0.5 * sc["cargo_t"])) * 1000.0
     a = sc.get("burn_accel_g", rule["burn_accel_g"]) * G
     frac = min(1.0, m_kg * a / (sc["thrust_mn"] * 1e6))
     p_mw = sc["drive_input_mw"] * frac
@@ -223,7 +238,7 @@ def range_jumps(cal, econ, sc, cargo_fraction):
     if fuel <= 0.0:
         return 0.0
     jumps = 0.0
-    m = sc["dry_mass_t"] + fuel + cargo_fraction * sc["cargo_t"]
+    m = sc["dry_mass_t"] + fuel + cargo_gross_t(sc, cargo_fraction * sc["cargo_t"])
     while True:
         f = jump_fuel_t(cal, econ, sc, m, cal["mean_jump_ly"])
         if f > fuel:
@@ -242,7 +257,7 @@ def trip_cost(econ, cal, sc_key, hops_ly, cargo_t, cargo_value_cr):
     leg_s, leg_fuel = insystem_leg(sc, econ["insystem_rule"], cargo_t)
     leg_h = leg_s / 3600.0
     jumps = len(hops_ly)
-    m = sc["dry_mass_t"] + sc["jump_tank_t"] + cargo_t
+    m = sc["dry_mass_t"] + sc["jump_tank_t"] + cargo_gross_t(sc, cargo_t)
     jump_fuel = 0.0
     for d in hops_ly:
         f = jump_fuel_t(cal, econ, sc, m, d)
@@ -362,7 +377,10 @@ def compute():
         "calibration": {k: round(v, 6) if isinstance(v, float) else v for k, v in cal.items()},
         "build_cost": {k: build_cost(v) for k, v in sorted(econ["ship_classes"].items())},
         "cobrett_cargo": {"cargo_t_max": cob["cargo_t"], "cargo_m3": cob["cargo_m3"], "container_slots": cob["container_slots"],
-                          "typical_mixed_load_t": typical, "container": econ["cargo_model"]["container"]},
+                          "typical_mixed_load_t": typical, "container": econ["cargo_model"]["container"],
+                          "net_payload_t": cob["cargo_t"], "container_tare_t": round(cargo_gross_t(cob, cob["cargo_t"]) - cob["cargo_t"], 2),
+                          "gross_cargo_t": round(cargo_gross_t(cob, cob["cargo_t"]), 2),
+                          "typical_gross_t": round(typical + cob["container_slots"] * econ["cargo_model"]["container_tare_t"], 2)},
         "range_mean_jumps": {
             k: {"empty": range_jumps(cal, econ, v, 0.0), "half": range_jumps(cal, econ, v, 0.5),
                 "full": range_jumps(cal, econ, v, 1.0)}
@@ -396,7 +414,9 @@ def fmt(out):
          f"- nearest-neighbour mean {n['nearest_neighbour_mean_ly']} ly", "",
          "## Cobrett cargo (authoritative)", "",
          f"- {cc['container_slots']} x {cc['container']} places, {cc['cargo_m3']} m3, structural limit {cc['cargo_t_max']} t; "
-         f"typical mixed load {cc['typical_mixed_load_t']} t (volume-limited)", "",
+         f"typical mixed load {cc['typical_mixed_load_t']} t (volume-limited)",
+         f"- mass: net payload {cc['net_payload_t']} t + container tare {cc['container_tare_t']} t = gross {cc['gross_cargo_t']} t "
+         f"(typical mixed: {cc['typical_mixed_load_t']} t net, {cc['typical_gross_t']} t gross); the jump and burn equations use gross", "",
          "## Jump fuel", "",
          f"- rule: `fuel_t = q * d_ly * (kappa * A_envelope + M_total)`; q = {c['q_per_ly']} 1/ly, kappa = {c['kappa_t_per_m2']} t/m2 "
          f"(Cobrett field term {round(c['alpha_reference_t'], 1)} t)",
@@ -445,6 +465,35 @@ def fmt(out):
     return "\n".join(L) + "\n"
 
 
+# ---------------------------------------------------------------- runtime passports
+RUNTIME_PASSPORTS = {"cobrett_i_n1": "CobrettIN1Cargo", "ocs4_lastochka": "Ocs4Cargo"}
+
+
+def passport_check(econ=None):
+    """Runtime cargo passports (src/game/catalog/ships/ShipCargoPassports.h) and ship_economics.json
+    must state the same physical facts: dry mass, net payload, volume, C20 places and the C20 container."""
+    import re
+    econ = econ or load_ship_economics()
+    h = open(os.path.join(endow.ROOT, "src", "game", "catalog", "ships", "ShipCargoPassports.h"), encoding="utf-8").read()
+    errors = []
+    cm = econ["cargo_model"]
+    for name, key in (("C20PayloadTonnes", "container_payload_t"), ("C20VolumeM3", "container_volume_m3"), ("C20TareTonnes", "container_tare_t")):
+        m = re.search(r"%s\s*=\s*([0-9.]+)" % name, h)
+        if not m or abs(float(m.group(1)) - cm[key]) > 1e-9:
+            errors.append(f"{name} != cargo_model.{key}")
+    for cls, const in RUNTIME_PASSPORTS.items():
+        m = re.search(r"ShipCargoPassport\s+%s\s*\{\s*([0-9.]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*\}" % const, h)
+        if not m:
+            errors.append(f"{const} not found")
+            continue
+        sc = econ["ship_classes"][cls]
+        got = (float(m.group(1)) / 1000.0, int(m.group(2)), int(m.group(3)), int(m.group(4)))
+        want = (float(sc["dry_mass_t"]), int(sc["cargo_t"]), int(sc["cargo_m3"]), int(sc["container_slots"]))
+        if got != want:
+            errors.append(f"{cls}: runtime {got} != ship_economics {want}")
+    return errors
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=os.path.join(HERE, "out"))
@@ -460,6 +509,9 @@ def main():
             if not os.path.exists(p) or open(p, encoding="utf-8").read() != text:
                 print(f"STALE: {p}")
                 ok = False
+        for e in passport_check():
+            print(f"PASSPORT: {e}")
+            ok = False
         print("logistics check", "OK" if ok else "FAILED")
         return 0 if ok else 1
     os.makedirs(a.out, exist_ok=True)

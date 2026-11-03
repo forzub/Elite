@@ -2359,6 +2359,16 @@
    }
   },
   {
+   "system": 24,
+   "year": 3036,
+   "operator": "cyg61_kern",
+   "knowledge": {
+    "status": "PROPOSAL",
+    "visibility": "PUBLIC_RECORD",
+    "basis": "год и оператор маяка — реконсиляция"
+   }
+  },
+  {
    "system": 37,
    "year": 3040,
    "operator": "cyg61_kern",

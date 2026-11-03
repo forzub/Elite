@@ -22,7 +22,7 @@
   },
   {
    "check": "cargo_balance_identity",
-   "detail": "max relative residual 1.87e-16",
+   "detail": "max relative residual 2.17e-16",
    "ok": true
   },
   {
@@ -32,6 +32,21 @@
   },
   {
    "check": "infrastructure_covers_production",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "exports_within_installed_export_capacity",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "no_edge_beyond_max_hop",
+   "detail": "all edges <= 32.0 ly",
+   "ok": true
+  },
+  {
+   "check": "line_combatants_only_from_deterrence_task",
    "detail": "ok",
    "ok": true
   },

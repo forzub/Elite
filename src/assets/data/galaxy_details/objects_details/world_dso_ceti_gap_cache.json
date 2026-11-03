@@ -1,0 +1,33 @@
+{
+  "description": "заправка на дороге к поясу 9 Кита (33.1 св. лет — на 1.1 больше предела прыжка)",
+  "id": "dso.ceti_gap_cache",
+  "kind": "galaxy_object",
+  "name": "Склад «Китовая Щель»",
+  "object_type": "deep_space_station",
+  "position_ly": {
+    "x": 53.002,
+    "y": -1.897,
+    "z": -8.962
+  },
+  "properties": {
+    "epoch_year": 3126.0,
+    "frame": "ICRS_heliocentric",
+    "polity": "tau_ceti_cognium",
+    "population": 60,
+    "provenance": {
+      "generator": "tools/colonization_lab/world_sites.py",
+      "status": "PROPOSAL"
+    },
+    "site_type": "deep_space_refuel_point",
+    "velocity_km_s": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "schema_version": 1,
+  "tags": [
+    "world_site",
+    "deep_space_station"
+  ]
+}

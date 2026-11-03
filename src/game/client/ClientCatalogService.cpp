@@ -13,6 +13,8 @@ bool ClientCatalogService::loadLocalStarAtlas()
         return false;
 
     m_celestialRuntimes.initialize(m_starAtlas);
+    // presentation-only layer; maps work without it
+    m_worldSites.loadFromRuntimeOrSource();
     m_hasStarAtlas = true;
     m_hasCelestialSnapshot = false;
     return true;

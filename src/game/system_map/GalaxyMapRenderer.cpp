@@ -705,7 +705,9 @@ namespace
         const GalaxyHierarchyBox lodBox = viewState.hierarchyBox();
         const GalaxyHierarchyBox& lodBoxMargin = lodBox;
         const auto objectVisibleFromLevel = [](const std::string& type) {
-            if (type == "brown_dwarf" || type == "stellar_remnant")
+            // deep-space infrastructure (world sites) is strategic: visible from the overview
+            if (type == "brown_dwarf" || type == "stellar_remnant" || type == "deep_space_station" ||
+                type == "relay" || type == "derelict" || type == "generation_ship")
                 return 0;
             return 1;
         };
@@ -750,6 +752,10 @@ namespace
                      object.objectType == "rogue_moon") color = {0.55f, 0.42f, 0.36f, 0.8f};
             else if (object.objectType == "stellar_remnant") color = {0.72f, 0.82f, 1.0f, 0.85f};
             else if (object.objectType == "interstellar_comet") color = {0.55f, 0.9f, 0.9f, 0.8f};
+            // world sites (tools/colonization_lab/world_sites.py): civilisation, not nature
+            else if (object.objectType == "deep_space_station" || object.objectType == "relay") color = {1.0f, 0.74f, 0.3f, 0.95f};
+            else if (object.objectType == "derelict") color = {0.92f, 0.45f, 0.3f, 0.95f};
+            else if (object.objectType == "generation_ship") color = {0.85f, 0.85f, 0.5f, 0.9f};
 
             const float viewDepth =
                 std::max(0.1f, glm::dot(position - cameraPosition, -cameraDirection));

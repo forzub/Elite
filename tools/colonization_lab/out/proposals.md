@@ -2,11 +2,11 @@
 
 Генерируется `lab.py` из статусов `canon/*.json` (knowledge.py). CANON = есть в заметках автора; PROPOSAL = добавлено/пересчитано Claude или является результатом модели; UNKNOWN = намеренно без ответа. Видимость: PUBLIC_RECORD / AUTHOR_TRUTH.
 
-Счётчики: AUTHOR_TRUTH 18, CANON 309, PROPOSAL 290, PUBLIC_RECORD 590, UNKNOWN 9
+Счётчики: AUTHOR_TRUTH 18, CANON 309, PROPOSAL 291, PUBLIC_RECORD 591, UNKNOWN 9
 
 Все выходы модели (население 3126, экономика, коридоры, технологии) — PROPOSAL (model) и в этот список не перечисляются поштучно.
 
-## beacons (24)
+## beacons (25)
 
 | путь | статус | видимость | основание | что |
 |---|---|---|---|---|
@@ -30,6 +30,7 @@
 | beacons/25@2860 | PROPOSAL | PUBLIC_RECORD | год и оператор маяка — реконсиляция | tau_ceti_cognium |
 | beacons/16@2860 | PROPOSAL | PUBLIC_RECORD | год и оператор маяка — реконсиляция | hd69830_verde |
 | beacons/17@2905 | PROPOSAL | PUBLIC_RECORD | год и оператор маяка — реконсиляция | tau_ceti_cognium |
+| beacons/24@3036 | PROPOSAL | PUBLIC_RECORD | год и оператор маяка — реконсиляция | cyg61_kern |
 | beacons/37@3040 | PROPOSAL | PUBLIC_RECORD | год и оператор маяка — реконсиляция | cyg61_kern |
 | beacons/45@3045 | PROPOSAL | PUBLIC_RECORD | год и оператор маяка — реконсиляция | cyg61_kern |
 | beacons/41@3050 | PROPOSAL | PUBLIC_RECORD | год и оператор маяка — реконсиляция | tau_ceti_cognium |

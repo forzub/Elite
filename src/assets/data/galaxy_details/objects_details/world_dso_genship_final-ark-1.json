@@ -1,0 +1,33 @@
+{
+  "description": "missions.json FINAL-ARK-1 (in flight, share 0.85, arrival ~3236)",
+  "id": "dso.genship.final-ark-1",
+  "kind": "galaxy_object",
+  "name": "FINAL-ARK-1",
+  "object_type": "generation_ship",
+  "position_ly": {
+    "x": 0.466,
+    "y": 17.995,
+    "z": -31.208
+  },
+  "properties": {
+    "epoch_year": 3126.0,
+    "frame": "ICRS_heliocentric",
+    "polity": null,
+    "population": null,
+    "provenance": {
+      "generator": "tools/colonization_lab/world_sites.py",
+      "status": "PROPOSAL"
+    },
+    "site_type": null,
+    "velocity_km_s": [
+      223.944,
+      8654.721,
+      -15009.62
+    ]
+  },
+  "schema_version": 1,
+  "tags": [
+    "world_site",
+    "generation_ship"
+  ]
+}

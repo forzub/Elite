@@ -1,0 +1,533 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Флоты и классы кораблей 3126 — Elite Lore</title><link rel="stylesheet" href="../style.css"></head><body><header><a href="../index.html">Оглавление</a></header><main class="wrap"><article id="content">
+<h1 id="флоты-и-классы-кораблей-3126">Флоты и классы кораблей 3126</h1>
+<!-- GENERATED:legend BEGIN -->
+<blockquote>
+<p><strong>Статусы строк:</strong> <code>CANON</code> — есть в заметках автора (generation ships/*, fate.md, history.md, каталог); <code>PROPOSAL</code> — добавлено или пересчитано Claude / результат модели; <code>UNKNOWN</code> — намеренно без ответа, даже для автора. <strong>Видимость:</strong> <code>PUBLIC</code> — мир 3126 это знает или может знать; <code>AUTHOR TRUTH</code> — скрытая правда автора.</p>
+<p>Блоки <code>GENERATED</code> пишет только <code>tools/colonization_lab/lore_md.py</code> из машинного канона; текст вне них — ручной и сохраняется.</p>
+</blockquote>
+<!-- GENERATED:legend END -->
+<!-- GENERATED:fleets BEGIN -->
+<h3 id="грузоподъёмность-cobrett-единая-модель">Грузоподъёмность Cobrett (единая модель)</h3>
+<p>6 мест под контейнер C20 (до 20 т полезной массы, 23.3 м³, тара 1.7 т): 140 м³, предел конструкции 120 т. Обычный смешанный груз упирается в объём (~0.4 т/м³): типичная загрузка 56 т; плотный груз (металл, боеприпасы) — до 120 т. Источник для рантайма: <code>src/game/catalog/ships/ShipCargoPassports.h</code>; трафик больше не держит свою грузоподъёмность (<code>PROPOSAL</code>).</p>
+<h3 id="классы">Классы</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Класс</th>
+<th>Роль</th>
+<th>Назначение</th>
+<th>Сухая масса, т</th>
+<th>Груз, т</th>
+<th>м³</th>
+<th>C20</th>
+<th>Ускорение, g</th>
+<th>Экипаж</th>
+<th>Цена, Cr</th>
+<th>Срок, лет</th>
+<th>Прыжков на бак (пуст/пол/полн)</th>
+<th>Статус</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cobrett-I N1</td>
+<td>средний груз</td>
+<td>fast flexible freight: high-value cargo, urgent parts, courier, small charters; expensive per tonne</td>
+<td>260</td>
+<td>120</td>
+<td>140</td>
+<td>6</td>
+<td>1.0</td>
+<td>2</td>
+<td>3 393 621</td>
+<td>35</td>
+<td>3.0/2.73/2.5</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>фрейтер «Конвейер»</td>
+<td>средний груз</td>
+<td>secondary routes: containers, machinery, consumer goods, medical; 120 C20 places</td>
+<td>1 900</td>
+<td>2 400</td>
+<td>2 800</td>
+<td>120</td>
+<td>0.3</td>
+<td>6</td>
+<td>15 241 078</td>
+<td>40</td>
+<td>3.96/3.13/2.59</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>прыжковый поезд</td>
+<td>навал / контейнеры (поезда)</td>
+<td>trunk routes: bulk and containers in modules; the tug can drop and pick up modules at depots, so the expensive jump core is not idle while modules load</td>
+<td>10 800</td>
+<td>57 600</td>
+<td>140 000</td>
+<td>2880</td>
+<td>0.12</td>
+<td>12</td>
+<td>73 942 470</td>
+<td>45</td>
+<td>10.49/4.77/3.09</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>поезд-танкер</td>
+<td>танкер</td>
+<td>reactor fuel and jump charge to depots and importers; the same tug as the jump train, tank modules</td>
+<td>12 000</td>
+<td>50 000</td>
+<td>300 000</td>
+<td>0</td>
+<td>0.13</td>
+<td>12</td>
+<td>76 550 670</td>
+<td>45</td>
+<td>9.58/5.1/3.48</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>OCS-4 «Ласточка»</td>
+<td>челнок</td>
+<td>in-system cargo ORBIT ONLY: orbital hubs, depots, moons without atmosphere; 0.4 g, no landing gear / heat shield (cannot lift off Earth); 450 t gross = 409 t net + 24 C20 tare</td>
+<td>380</td>
+<td>409</td>
+<td>2 600</td>
+<td>24</td>
+<td>0.4</td>
+<td>3</td>
+<td>1 973 160</td>
+<td>40</td>
+<td>—</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>газовый танкер</td>
+<td>танкер</td>
+<td>He-3 / deuterium from gas-giant platforms to depots and ports</td>
+<td>900</td>
+<td>3 000</td>
+<td>19 000</td>
+<td>0</td>
+<td>0.18</td>
+<td>4</td>
+<td>4 186 161</td>
+<td>40</td>
+<td>—</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>рудный буксир</td>
+<td>буксир</td>
+<td>pushes ore / ice / construction rafts from asteroid mines to refineries; tows equipment and beacons; slow and strong</td>
+<td>700</td>
+<td>20 000</td>
+<td>0</td>
+<td>0</td>
+<td>0.02</td>
+<td>3</td>
+<td>2 104 704</td>
+<td>40</td>
+<td>—</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>сервисный тендер</td>
+<td>сервис</td>
+<td>repairs of mines, stations, beacons and ships in place; carries spare parts and a workshop</td>
+<td>500</td>
+<td>150</td>
+<td>600</td>
+<td>6</td>
+<td>0.4</td>
+<td>8</td>
+<td>1 890 714</td>
+<td>35</td>
+<td>—</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>патрульный катер</td>
+<td>патруль</td>
+<td>unified coast guard: customs and inspections, law enforcement, SAR, beacon watch, traffic control backup</td>
+<td>420</td>
+<td>20</td>
+<td>60</td>
+<td>0</td>
+<td>1.5</td>
+<td>9</td>
+<td>13 919 040</td>
+<td>30</td>
+<td>3.21/3.18/3.15</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>перехватчик</td>
+<td>перехватчик</td>
+<td>fast response inside a system: time-to-intercept of hostile ships, pirates, rogue fragments; short endurance</td>
+<td>140</td>
+<td>2</td>
+<td>6</td>
+<td>0</td>
+<td>4.0</td>
+<td>2</td>
+<td>9 460 800</td>
+<td>25</td>
+<td>—</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>эскортный фрегат</td>
+<td>эскорт</td>
+<td>convoy protection on routes: point defence, sensors, endurance to stay with trains; matches train acceleration with a large margin</td>
+<td>2 200</td>
+<td>80</td>
+<td>250</td>
+<td>0</td>
+<td>1.4</td>
+<td>40</td>
+<td>93 052 800</td>
+<td>35</td>
+<td>4.05/4.01/3.98</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>линейный ракетный корабль</td>
+<td>военный</td>
+<td>deterrence and war: long-range missiles, strong sensors, armour; the polity's main combat unit</td>
+<td>9 000</td>
+<td>300</td>
+<td>900</td>
+<td>0</td>
+<td>1.1</td>
+<td>160</td>
+<td>645 408 000</td>
+<td>40</td>
+<td>4.6/4.56/4.52</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>разведчик / РЭБ-пикет</td>
+<td>военный</td>
+<td>sensors, early warning at jump points, electronic warfare, beacon-network relay in war</td>
+<td>600</td>
+<td>10</td>
+<td>40</td>
+<td>0</td>
+<td>2.0</td>
+<td>14</td>
+<td>28 382 400</td>
+<td>30</td>
+<td>3.3/3.29/3.28</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>тендер флота</td>
+<td>военный</td>
+<td>endurance of a squadron away from bases: fuel, jump charge, munitions, repair</td>
+<td>5 000</td>
+<td>6 000</td>
+<td>9 000</td>
+<td>240</td>
+<td>0.35</td>
+<td>60</td>
+<td>59 292 000</td>
+<td>40</td>
+<td>5.18/4.02/3.31</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>буксир ПАО</td>
+<td>противоастероидная оборона</td>
+<td>planetary / habitat impact defence: detect, intercept, tow, divert or break dangerous rocks and debris; dual use (heavy rescue, beacon towing)</td>
+<td>1 600</td>
+<td>200</td>
+<td>500</td>
+<td>0</td>
+<td>1.6</td>
+<td>16</td>
+<td>29 743 200</td>
+<td>35</td>
+<td>—</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>surface_lifter</td>
+<td>surface_shuttle</td>
+<td>surface spaceport &lt;-&gt; low orbit: cargo in 12 C20 places or 12 passenger modules (P20); heat shield, landing legs, 2.5 g at lift-off</td>
+<td>620</td>
+<td>240</td>
+<td>280</td>
+<td>12</td>
+<td>2.5</td>
+<td>3</td>
+<td>5 868 080</td>
+<td>30</td>
+<td>—</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>liner</td>
+<td>passenger</td>
+<td>scheduled interstellar passenger service: 900 seats (60 cabin / 240 business / 600 economy), mail and 90 t of priority cargo</td>
+<td>2 600</td>
+<td>90</td>
+<td>300</td>
+<td>0</td>
+<td>0.3</td>
+<td>40</td>
+<td>26 021 352</td>
+<td>40</td>
+<td>3.81/3.78/3.76</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>colonist_transport</td>
+<td>passenger</td>
+<td>migration and evacuation: 5 000 berths (bunks, 30 % cold-sleep pods), slow and cheap per head; requisitioned in disasters</td>
+<td>6 500</td>
+<td>600</td>
+<td>2 000</td>
+<td>0</td>
+<td>0.18</td>
+<td>60</td>
+<td>42 218 316</td>
+<td>45</td>
+<td>4.5/4.42/4.35</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Тяжёлый перевозчик — не монолит, а <strong>прыжковый поезд</strong>: тягач-«Локомотив» с ядром прыжка + до 12 модулей по 4 800 т. Тягач оставляет модули на погрузке в депо и забирает готовые, поэтому дорогое ядро не простаивает; поле прыжка строится по оболочке, и длинный поезд платит в основном за массу (дёшево на тонну).</p>
+<h3 id="флоты-по-политиям">Флоты по политиям</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Полития</th>
+<th>Гражданских</th>
+<th>Безопасность</th>
+<th>Военных</th>
+<th>Новых/год</th>
+<th>Потерь/год</th>
+<th>Статус</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Шахта Альфа</td>
+<td>2 449</td>
+<td>142</td>
+<td>84</td>
+<td>117</td>
+<td>8</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Свободная Карма</td>
+<td>2 028</td>
+<td>167</td>
+<td>99</td>
+<td>90</td>
+<td>9</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новая Карма</td>
+<td>5 651</td>
+<td>819</td>
+<td>295</td>
+<td>310</td>
+<td>30</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Цветущая Гармония</td>
+<td>18 091</td>
+<td>1 106</td>
+<td>1 315</td>
+<td>679</td>
+<td>74</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Пояс Раздора / Вольные астероиды</td>
+<td>6 615</td>
+<td>308</td>
+<td>460</td>
+<td>296</td>
+<td>25</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новая Европа</td>
+<td>1 903</td>
+<td>223</td>
+<td>126</td>
+<td>82</td>
+<td>9</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Свободные поселения</td>
+<td>2 185</td>
+<td>175</td>
+<td>97</td>
+<td>118</td>
+<td>10</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Зона «Филоморфоз»</td>
+<td>6</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Тяньхэ (Небесная Река)</td>
+<td>6 495</td>
+<td>855</td>
+<td>438</td>
+<td>265</td>
+<td>35</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Провидение</td>
+<td>33</td>
+<td>3</td>
+<td>2</td>
+<td>2</td>
+<td>0</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Третья Эллада</td>
+<td>6</td>
+<td>2</td>
+<td>4</td>
+<td>1</td>
+<td>0</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Вторая Эллада</td>
+<td>2 488</td>
+<td>206</td>
+<td>136</td>
+<td>97</td>
+<td>11</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новая Индия</td>
+<td>8 333</td>
+<td>711</td>
+<td>353</td>
+<td>400</td>
+<td>38</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Небесная Твердыня</td>
+<td>1 835</td>
+<td>162</td>
+<td>129</td>
+<td>97</td>
+<td>9</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новая Маланд</td>
+<td>4 110</td>
+<td>358</td>
+<td>200</td>
+<td>205</td>
+<td>19</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Сельта-Верде</td>
+<td>1 306</td>
+<td>170</td>
+<td>73</td>
+<td>77</td>
+<td>7</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новая Эллада / Агора</td>
+<td>2 933</td>
+<td>266</td>
+<td>143</td>
+<td>115</td>
+<td>13</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новая Мекка</td>
+<td>7 668</td>
+<td>629</td>
+<td>310</td>
+<td>344</td>
+<td>33</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Святой Сион (на орбите)</td>
+<td>6</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Красный Форпост</td>
+<td>5 444</td>
+<td>813</td>
+<td>288</td>
+<td>252</td>
+<td>28</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Солнечная Администрация (Sol Authority)</td>
+<td>112 644</td>
+<td>8 007</td>
+<td>694</td>
+<td>3 886</td>
+<td>506</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Новый Шанхай</td>
+<td>15 503</td>
+<td>1 107</td>
+<td>532</td>
+<td>558</td>
+<td>56</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+<tr>
+<td>Цитадель</td>
+<td>6 457</td>
+<td>441</td>
+<td>292</td>
+<td>299</td>
+<td>26</td>
+<td><code>PROPOSAL</code> (модель)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Флот выводится из потоков: судов = т/год ÷ (полезная загрузка × гружёных рейсов в год), + резерв + ремонт; новых в год = списание (флот / срок) + потери + рост. Прыжковые двигатели для новых кораблей: 3183 в год; изготовители ядер: Новая Мекка (own), Новый Шанхай (state_secret), Цитадель (own).</p>
+<!-- GENERATED:fleets END -->
+<h2 id="как-выглядят-флоты">Как выглядят флоты</h2>
+<!-- NARRATIVE:fleet_story -->
+<p><em>TODO: окраска, традиции экипажей, где стоят поезда, чем пахнет челнок; классы и числа — из таблиц выше.</em></p>
+</article><footer class="path">Источник: <code>Notes/Lore/ECONOMY/FLEETS.md</code></footer></main></body></html>

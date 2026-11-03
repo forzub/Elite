@@ -6,6 +6,7 @@
 #include "src/world/celestial/CelestialRuntimeRegistry.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/world/celestial/CelestialTypes.h"
+#include "src/world/celestial/WorldSitesCatalog.h"
 
 namespace game::client
 {
@@ -44,6 +45,9 @@ public:
         double universeTimeSeconds
     ) const;
 
+    // GENERATED world sites (galaxy_details/world_sites); empty when absent.
+    const world::celestial::WorldSitesCatalog& worldSites() const { return m_worldSites; }
+
     game::network::CatalogMetadata localStarAtlasMetadata() const;
     const game::network::SnapshotMetadata& celestialMetadata() const;
 
@@ -55,5 +59,6 @@ private:
     world::celestial::StarAtlasDatabase m_starAtlas;
     world::celestial::CelestialRuntimeRegistry m_celestialRuntimes;
     world::celestial::CelestialSystemSnapshot m_celestialSnapshot;
+    world::celestial::WorldSitesCatalog m_worldSites;
 };
 }

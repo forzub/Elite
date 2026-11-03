@@ -6,74 +6,83 @@ the runtime descriptors.
 
 ## Network 3126 (beacons, max hop 32.0 ly)
 
-- systems 24, edges 140
-- edge length: mean 18.999 ly, median 18.863, min 4.062, max 31.592
-- **hops real trips use** (all-pairs shortest paths): mean **20.064 ly**
-- trip: mean 29.39 ly in 1.465 jumps (max 3)
-- nearest-neighbour mean 11.934 ly
+- systems 25, edges 145
+- edge length: mean 19.325 ly, median 19.121, min 4.062, max 31.592
+- **hops real trips use** (all-pairs shortest paths): mean **22.83 ly**
+- trip: mean 43.985 ly in 1.927 jumps (max 5)
+- nearest-neighbour mean 12.457 ly
 
 ## Cobrett cargo (authoritative)
 
 - 6 x C20 places, 140 m3, structural limit 120 t; typical mixed load 56 t (volume-limited)
+- mass: net payload 120 t + container tare 10.2 t = gross 130.2 t (typical mixed: 56 t net, 66.2 t gross); the jump and burn equations use gross
 
 ## Jump fuel
 
-- rule: `fuel_t = q * d_ly * (kappa * A_envelope + M_total)`; q = 8.3e-05 1/ly, kappa = 0.214797 t/m2 (Cobrett field term 337.0 t)
-- mean jump 20.064 ly of a half-loaded Cobrett (323.0 t): 1.1 t of charge
-- in-system leg: 75.2 h, 4.1 kg reactor fuel = 2485 Cr
-- derived jump charge price 5.65 Cr/kg -> mean jump 6212 Cr
+- rule: `fuel_t = q * d_ly * (kappa * A_envelope + M_total)`; q = 6.7e-05 1/ly, kappa = 0.247304 t/m2 (Cobrett field term 388.0 t)
+- mean jump 22.83 ly of a half-loaded Cobrett (328.1 t): 1.1 t of charge
+- in-system leg: 75.2 h, 4.2 kg reactor fuel = 2524 Cr
+- derived jump charge price 5.74 Cr/kg -> mean jump 6310 Cr
 
 | ship | mean jumps on a full tank: empty | half cargo | full cargo |
 |---|---:|---:|---:|
-| cobrett_i_n1 | 3.01 | 2.73 | 2.5 |
-| escort_frigate | 4.0 | 3.96 | 3.92 |
-| fleet_tender | 5.15 | 4.0 | 3.27 |
-| jump_tanker | 9.54 | 4.9 | 3.3 |
-| jump_train | 10.46 | 4.76 | 3.08 |
-| line_combatant | 4.52 | 4.48 | 4.43 |
-| medium_freighter | 3.97 | 3.14 | 2.59 |
-| patrol_cutter | 3.2 | 3.17 | 3.13 |
-| recon_picket | 3.29 | 3.27 | 3.26 |
+| cobrett_i_n1 | 3.0 | 2.73 | 2.5 |
+| colonist_transport | 4.5 | 4.42 | 4.35 |
+| escort_frigate | 4.05 | 4.01 | 3.98 |
+| fleet_tender | 5.18 | 4.02 | 3.31 |
+| jump_tanker | 9.58 | 5.1 | 3.48 |
+| jump_train | 10.49 | 4.77 | 3.09 |
+| line_combatant | 4.6 | 4.56 | 4.52 |
+| liner | 3.81 | 3.78 | 3.76 |
+| medium_freighter | 3.96 | 3.13 | 2.59 |
+| patrol_cutter | 3.21 | 3.18 | 3.15 |
+| recon_picket | 3.3 | 3.29 | 3.28 |
 
 Consumable / energy / power of one mean jump at half load (kept apart: the energy comes from the reactor while charging, the peak from the core's store during the discharge):
 
 | ship | field term t | mass t | charge t | kg/(ly*1000 t ship) | kg/(ly*1000 t cargo) | energy TJ | charge h | peak TW | Cr |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| cobrett_i_n1 | 337.0 | 323.0 | 1.1 | 169.735 | 913.74 | 27.0 | 6.0 | 13.5 | 6212 |
-| escort_frigate | 1984.7 | 2268.0 | 7.0879 | 155.76 | 8831.59 | 173.98 | 6.04 | 86.99 | 40027 |
-| fleet_tender | 5434.4 | 8090.0 | 22.5406 | 138.867 | 374.48 | 553.27 | 18.63 | 276.63 | 127293 |
-| jump_tanker | 14176.6 | 37420.0 | 85.9944 | 114.538 | 171.44 | 2110.77 | 29.32 | 1055.39 | 485634 |
-| jump_train | 13059.7 | 40020.0 | 88.4661 | 110.175 | 153.1 | 2171.44 | 30.16 | 1085.72 | 499593 |
-| line_combatant | 6862.8 | 9270.0 | 26.888 | 144.564 | 8934.07 | 659.98 | 6.11 | 329.99 | 151844 |
-| medium_freighter | 2620.5 | 3130.0 | 9.5842 | 152.614 | 398.07 | 235.25 | 26.14 | 117.62 | 54125 |
-| patrol_cutter | 513.8 | 435.0 | 1.5813 | 181.182 | 7881.41 | 38.81 | 4.54 | 19.41 | 8930 |
-| recon_picket | 673.6 | 612.0 | 2.1427 | 174.497 | 21358.4 | 52.59 | 5.31 | 26.3 | 12100 |
+| cobrett_i_n1 | 388.0 | 328.1 | 1.1 | 146.852 | 803.04 | 27.0 | 6.0 | 13.5 | 6310 |
+| colonist_transport | 10782.4 | 6920.0 | 27.1927 | 172.124 | 3970.32 | 667.46 | 32.24 | 333.73 | 155990 |
+| escort_frigate | 2285.1 | 2268.0 | 6.994 | 135.075 | 7658.77 | 171.67 | 5.96 | 85.84 | 40121 |
+| fleet_tender | 6256.8 | 8345.0 | 22.4298 | 117.732 | 327.49 | 550.55 | 18.54 | 275.27 | 128667 |
+| jump_tanker | 16322.1 | 37420.0 | 82.5531 | 96.633 | 144.64 | 2026.3 | 28.14 | 1013.15 | 473561 |
+| jump_train | 15036.1 | 42468.0 | 88.3319 | 91.107 | 134.34 | 2168.15 | 30.11 | 1084.07 | 506711 |
+| line_combatant | 7901.4 | 9270.0 | 26.3769 | 124.634 | 7702.41 | 647.43 | 5.99 | 323.72 | 151310 |
+| liner | 5070.7 | 2690.0 | 11.9212 | 194.117 | 11603.86 | 292.61 | 23.22 | 146.31 | 68385 |
+| medium_freighter | 3017.1 | 3232.0 | 9.5992 | 130.095 | 350.39 | 235.62 | 26.18 | 117.81 | 55066 |
+| patrol_cutter | 591.6 | 435.0 | 1.5769 | 158.783 | 6907.07 | 38.71 | 4.53 | 19.35 | 9046 |
+| recon_picket | 775.5 | 612.0 | 2.1314 | 152.549 | 18671.97 | 52.32 | 5.28 | 26.16 | 12227 |
 
 In-system propulsion (typical leg, half load):
 
 | ship | thrust MN | burn g | drive MW | leg h | reactor fuel kg | fuel Cr | heat MW | radiators MW | margin |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| cobrett_i_n1 | 9.56 | 1.0 | 1607 | 75.2 | 4.14 | 2485 | 1125 | 3400 | 3.02 |
+| cobrett_i_n1 | 9.56 | 1.0 | 1632 | 75.2 | 4.21 | 2524 | 1143 | 3400 | 2.98 |
+| colonist_transport | 18.0 | 0.18 | 13572 | 177.2 | 82.44 | 49466 | 9501 | 14000 | 1.47 |
 | escort_frigate | 32.0 | 1.4 | 29192 | 63.5 | 63.58 | 38149 | 20434 | 21000 | 1.03 |
-| fleet_tender | 35.0 | 0.35 | 23801 | 127.1 | 103.68 | 62207 | 16661 | 21000 | 1.26 |
+| fleet_tender | 35.0 | 0.35 | 24551 | 127.1 | 106.95 | 64168 | 17186 | 21000 | 1.22 |
 | gas_tanker | 7.0 | 0.18 | 3631 | 177.2 | 22.06 | 13234 | 2542 | 4200 | 1.65 |
 | impact_defence_tug | 28.0 | 1.6 | 24769 | 59.4 | 50.46 | 30278 | 17338 | 18000 | 1.04 |
 | interceptor | 6.2 | 4.0 | 8475 | 37.6 | 10.92 | 6552 | 5932 | 6700 | 1.13 |
 | jump_tanker | 90.0 | 0.13 | 37104 | 208.5 | 265.21 | 159124 | 25973 | 49000 | 1.89 |
-| jump_train | 90.0 | 0.12 | 36630 | 217.0 | 272.51 | 163504 | 25641 | 49000 | 1.91 |
+| jump_train | 90.0 | 0.12 | 38870 | 217.0 | 289.18 | 173506 | 27209 | 49000 | 1.8 |
 | line_combatant | 110.0 | 1.1 | 99998 | 71.7 | 245.71 | 147429 | 69999 | 77000 | 1.1 |
-| medium_freighter | 13.0 | 0.3 | 6375 | 137.2 | 30.0 | 17997 | 4463 | 6300 | 1.41 |
-| ocs4_lastochka | 3.3 | 0.4 | 1726 | 118.8 | 7.03 | 4220 | 1208 | 1700 | 1.41 |
+| liner | 12.0 | 0.3 | 7914 | 137.2 | 37.24 | 22342 | 5540 | 8000 | 1.44 |
+| medium_freighter | 13.0 | 0.3 | 6583 | 137.2 | 30.97 | 18584 | 4608 | 6300 | 1.37 |
+| ocs4_lastochka | 3.3 | 0.4 | 1721 | 118.8 | 7.01 | 4207 | 1205 | 1700 | 1.41 |
 | ore_tug | 4.0 | 0.02 | 1574 | 531.5 | 28.68 | 17209 | 1102 | 2100 | 1.91 |
 | patrol_cutter | 13.0 | 1.5 | 4430 | 61.4 | 9.32 | 5593 | 3101 | 6300 | 2.03 |
 | recon_picket | 12.0 | 2.0 | 10000 | 53.2 | 18.22 | 10934 | 7000 | 7000 | 1.0 |
-| service_tender | 3.0 | 0.4 | 1880 | 118.8 | 7.66 | 4595 | 1316 | 1800 | 1.37 |
+| service_tender | 3.0 | 0.4 | 1902 | 118.8 | 7.75 | 4650 | 1331 | 1800 | 1.35 |
+| surface_lifter | 22.0 | 2.5 | 21736 | 47.5 | 35.43 | 21257 | 15216 | 9000 | 0.59 |
 
 ## Build cost (production cost -> list price)
 
 | ship | components | labour | production | margin | tax | list |
 |---|---:|---:|---:|---:|---:|---:|
 | cobrett_i_n1 | 2490000 | 448200 | 2938200 | 293820 | 161601 | 3393621 |
+| colonist_transport | 31800000 | 5088000 | 36888000 | 3319920 | 2010396 | 42218316 |
 | escort_frigate | 71800000 | 14360000 | 86160000 | 6892800 | 0 | 93052800 |
 | fleet_tender | 45750000 | 9150000 | 54900000 | 4392000 | 0 | 59292000 |
 | gas_tanker | 3210000 | 481500 | 3691500 | 295320 | 199341 | 4186161 |
@@ -82,12 +91,14 @@ In-system propulsion (typical leg, half load):
 | jump_tanker | 58700000 | 8805000 | 67505000 | 5400400 | 3645270 | 76550670 |
 | jump_train | 56700000 | 8505000 | 65205000 | 5216400 | 3521070 | 73942470 |
 | line_combatant | 498000000 | 99600000 | 597600000 | 47808000 | 0 | 645408000 |
+| liner | 19600000 | 3136000 | 22736000 | 2046240 | 1239112 | 26021352 |
 | medium_freighter | 11480000 | 1836800 | 13316800 | 1198512 | 725766 | 15241078 |
 | ocs4_lastochka | 1500000 | 240000 | 1740000 | 139200 | 93960 | 1973160 |
 | ore_tug | 1600000 | 256000 | 1856000 | 148480 | 100224 | 2104704 |
 | patrol_cutter | 10740000 | 2148000 | 12888000 | 1031040 | 0 | 13919040 |
 | recon_picket | 21900000 | 4380000 | 26280000 | 2102400 | 0 | 28382400 |
 | service_tender | 1400000 | 252000 | 1652000 | 148680 | 90034 | 1890714 |
+| surface_lifter | 4420000 | 707200 | 5127200 | 461448 | 279432 | 5868080 |
 
 ## Trip cost examples (one loaded trip, two in-system legs + jumps)
 
@@ -95,8 +106,8 @@ In-system propulsion (typical leg, half load):
 
 | item | Cr |
 |---|---:|
-| jump_fuel | 1301 |
-| insystem_fuel | 4908 |
+| jump_fuel | 1162 |
+| insystem_fuel | 4987 |
 | maintenance_reserve | 3594 |
 | crew | 2905 |
 | hull_insurance | 1232 |
@@ -107,15 +118,15 @@ In-system propulsion (typical leg, half load):
 | customs | 6720 |
 | expected_loss | 1425 |
 | depreciation | 2934 |
-| **total** | **28252** |
-| per tonne | 504.5 |
+| **total** | **28191** |
+| per tonne | 503.4 |
 
 ### cobrett_i_n1 0->60: 1 jumps, 4.23 ly, 56 t worth 2000000 Cr, 6.85 days
 
 | item | Cr |
 |---|---:|
-| jump_fuel | 1301 |
-| insystem_fuel | 4908 |
+| jump_fuel | 1162 |
+| insystem_fuel | 4987 |
 | maintenance_reserve | 3594 |
 | crew | 2905 |
 | hull_insurance | 1232 |
@@ -126,15 +137,15 @@ In-system propulsion (typical leg, half load):
 | customs | 80000 |
 | expected_loss | 2157 |
 | depreciation | 2934 |
-| **total** | **109593** |
-| per tonne | 1957.0 |
+| **total** | **109532** |
+| per tonne | 1955.9 |
 
 ### cobrett_i_n1 0->60: 1 jumps, 4.23 ly, 120 t worth 132000 Cr, 6.85 days
 
 | item | Cr |
 |---|---:|
-| jump_fuel | 1428 |
-| insystem_fuel | 5893 |
+| jump_fuel | 1274 |
+| insystem_fuel | 6050 |
 | maintenance_reserve | 3594 |
 | crew | 2905 |
 | hull_insurance | 1232 |
@@ -145,15 +156,15 @@ In-system propulsion (typical leg, half load):
 | customs | 5280 |
 | expected_loss | 1410 |
 | depreciation | 2934 |
-| **total** | **29301** |
+| **total** | **29305** |
 | per tonne | 244.2 |
 
-### cobrett_i_n1 0->14: 1 jumps, 19.71 ly, 56 t worth 168000 Cr, 6.85 days
+### cobrett_i_n1 0->10: 1 jumps, 20.27 ly, 56 t worth 168000 Cr, 6.85 days
 
 | item | Cr |
 |---|---:|
-| jump_fuel | 6066 |
-| insystem_fuel | 4908 |
+| jump_fuel | 5571 |
+| insystem_fuel | 4987 |
 | maintenance_reserve | 3594 |
 | crew | 2905 |
 | hull_insurance | 1232 |
@@ -164,15 +175,15 @@ In-system propulsion (typical leg, half load):
 | customs | 6720 |
 | expected_loss | 1425 |
 | depreciation | 2934 |
-| **total** | **33017** |
-| per tonne | 589.6 |
+| **total** | **32601** |
+| per tonne | 582.2 |
 
-### cobrett_i_n1 0->14: 1 jumps, 19.71 ly, 56 t worth 2000000 Cr, 6.85 days
+### cobrett_i_n1 0->10: 1 jumps, 20.27 ly, 56 t worth 2000000 Cr, 6.85 days
 
 | item | Cr |
 |---|---:|
-| jump_fuel | 6066 |
-| insystem_fuel | 4908 |
+| jump_fuel | 5571 |
+| insystem_fuel | 4987 |
 | maintenance_reserve | 3594 |
 | crew | 2905 |
 | hull_insurance | 1232 |
@@ -183,15 +194,15 @@ In-system propulsion (typical leg, half load):
 | customs | 80000 |
 | expected_loss | 2157 |
 | depreciation | 2934 |
-| **total** | **114358** |
-| per tonne | 2042.1 |
+| **total** | **113941** |
+| per tonne | 2034.7 |
 
-### cobrett_i_n1 0->14: 1 jumps, 19.71 ly, 120 t worth 132000 Cr, 6.85 days
+### cobrett_i_n1 0->10: 1 jumps, 20.27 ly, 120 t worth 132000 Cr, 6.85 days
 
 | item | Cr |
 |---|---:|
-| jump_fuel | 6657 |
-| insystem_fuel | 5893 |
+| jump_fuel | 6112 |
+| insystem_fuel | 6050 |
 | maintenance_reserve | 3594 |
 | crew | 2905 |
 | hull_insurance | 1232 |
@@ -202,74 +213,74 @@ In-system propulsion (typical leg, half load):
 | customs | 5280 |
 | expected_loss | 1410 |
 | depreciation | 2934 |
-| **total** | **34531** |
-| per tonne | 287.8 |
+| **total** | **34142** |
+| per tonne | 284.5 |
 
-### cobrett_i_n1 0->16: 2 jumps, 46.91 ly, 56 t worth 168000 Cr, 7.1 days
+### cobrett_i_n1 0->37: 4 jumps, 94.49 ly, 56 t worth 168000 Cr, 7.6 days
 
 | item | Cr |
 |---|---:|
-| jump_fuel | 14422 |
-| insystem_fuel | 4908 |
-| maintenance_reserve | 3725 |
-| crew | 3011 |
-| hull_insurance | 1277 |
+| jump_fuel | 25913 |
+| insystem_fuel | 4987 |
+| maintenance_reserve | 3987 |
+| crew | 3223 |
+| hull_insurance | 1367 |
 | cargo_insurance | 672 |
 | port_fees | 768 |
 | cargo_handling | 1344 |
-| beacon_tolls | 900 |
+| beacon_tolls | 1800 |
 | customs | 6720 |
-| expected_loss | 2849 |
-| depreciation | 3041 |
-| **total** | **43637** |
-| per tonne | 779.2 |
+| expected_loss | 5699 |
+| depreciation | 3255 |
+| **total** | **59735** |
+| per tonne | 1066.7 |
 
-### cobrett_i_n1 0->16: 2 jumps, 46.91 ly, 56 t worth 2000000 Cr, 7.1 days
+### cobrett_i_n1 0->37: 4 jumps, 94.49 ly, 56 t worth 2000000 Cr, 7.6 days
 
 | item | Cr |
 |---|---:|
-| jump_fuel | 14422 |
-| insystem_fuel | 4908 |
-| maintenance_reserve | 3725 |
-| crew | 3011 |
-| hull_insurance | 1277 |
+| jump_fuel | 25913 |
+| insystem_fuel | 4987 |
+| maintenance_reserve | 3987 |
+| crew | 3223 |
+| hull_insurance | 1367 |
 | cargo_insurance | 8000 |
 | port_fees | 768 |
 | cargo_handling | 1344 |
-| beacon_tolls | 900 |
+| beacon_tolls | 1800 |
 | customs | 80000 |
-| expected_loss | 4315 |
-| depreciation | 3041 |
-| **total** | **125710** |
-| per tonne | 2244.8 |
+| expected_loss | 8630 |
+| depreciation | 3255 |
+| **total** | **143274** |
+| per tonne | 2558.5 |
 
-### cobrett_i_n1 0->16: 2 jumps, 46.91 ly, 120 t worth 132000 Cr, 7.1 days
+### cobrett_i_n1 0->37: 4 jumps, 94.49 ly, 120 t worth 132000 Cr, 7.6 days
 
 | item | Cr |
 |---|---:|
-| jump_fuel | 15829 |
-| insystem_fuel | 5893 |
-| maintenance_reserve | 3725 |
-| crew | 3011 |
-| hull_insurance | 1277 |
+| jump_fuel | 28427 |
+| insystem_fuel | 6050 |
+| maintenance_reserve | 3987 |
+| crew | 3223 |
+| hull_insurance | 1367 |
 | cargo_insurance | 528 |
 | port_fees | 768 |
 | cargo_handling | 2880 |
-| beacon_tolls | 900 |
+| beacon_tolls | 1800 |
 | customs | 5280 |
-| expected_loss | 2820 |
-| depreciation | 3041 |
-| **total** | **45952** |
-| per tonne | 382.9 |
+| expected_loss | 5641 |
+| depreciation | 3255 |
+| **total** | **63207** |
+| per tonne | 526.7 |
 
-### medium_freighter 0->14: 1 jumps, 19.71 ly, 2400 t worth 720000 Cr, 12.86 days
+### medium_freighter 0->10: 1 jumps, 20.27 ly, 2400 t worth 720000 Cr, 12.86 days
 
 | item | Cr |
 |---|---:|
-| jump_fuel | 64268 |
-| insystem_fuel | 49795 |
-| maintenance_reserve | 23864 |
-| crew | 14092 |
+| jump_fuel | 59076 |
+| insystem_fuel | 50816 |
+| maintenance_reserve | 23867 |
+| crew | 14093 |
 | hull_insurance | 6712 |
 | cargo_insurance | 2880 |
 | port_fees | 3720 |
@@ -277,35 +288,35 @@ In-system propulsion (typical leg, half load):
 | beacon_tolls | 450 |
 | customs | 28800 |
 | expected_loss | 6384 |
-| depreciation | 18643 |
-| **total** | **277207** |
-| per tonne | 115.5 |
+| depreciation | 18646 |
+| **total** | **273045** |
+| per tonne | 113.8 |
 
-### jump_train 0->14: 1 jumps, 19.71 ly, 57600 t worth 17280000 Cr, 19.67 days
+### jump_train 0->10: 1 jumps, 20.27 ly, 57600 t worth 17280000 Cr, 19.67 days
 
 | item | Cr |
 |---|---:|
-| jump_fuel | 757102 |
-| insystem_fuel | 562337 |
-| maintenance_reserve | 149446 |
-| crew | 38805 |
-| hull_insurance | 34871 |
+| jump_fuel | 694353 |
+| insystem_fuel | 602343 |
+| maintenance_reserve | 149430 |
+| crew | 38801 |
+| hull_insurance | 34867 |
 | cargo_insurance | 69120 |
 | port_fees | 19740 |
 | cargo_handling | 1382400 |
 | beacon_tolls | 450 |
 | customs | 691200 |
 | expected_loss | 36489 |
-| depreciation | 110700 |
-| **total** | **3852659** |
-| per tonne | 66.9 |
+| depreciation | 110689 |
+| **total** | **3829881** |
+| per tonne | 66.5 |
 
 ### ocs4_lastochka in-system (no jump): 0 jumps, 0 ly, 450.0 t worth 135000 Cr, 10.24 days
 
 | item | Cr |
 |---|---:|
 | jump_fuel | 0 |
-| insystem_fuel | 11578 |
+| insystem_fuel | 11735 |
 | maintenance_reserve | 2214 |
 | crew | 5385 |
 | hull_insurance | 590 |
@@ -316,8 +327,8 @@ In-system propulsion (typical leg, half load):
 | customs | 0 |
 | expected_loss | 0 |
 | depreciation | 1845 |
-| **total** | **33936** |
-| per tonne | 75.4 |
+| **total** | **34093** |
+| per tonne | 75.8 |
 
 ## Replacement-driven yard demand
 

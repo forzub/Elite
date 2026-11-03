@@ -15,7 +15,7 @@
 | — богатый пояс | 3 460 563 363 | PROPOSAL · PUBLIC (модель) |
 | — развивающийся пояс | 8 208 397 998 | PROPOSAL · PUBLIC (модель) |
 | Земля + Сол 3126, цель автора (AUTHOR_TARGET) | 10 000 000 000 + 1 600 000 000 | `AUTHOR_TARGET` |
-| Вне Сола (модель) | 10 087 994 167 | PROPOSAL · PUBLIC (модель) |
+| Вне Сола (модель) | 10 087 992 674 | PROPOSAL · PUBLIC (модель) |
 
 Земля, авторские точки:
 
@@ -32,24 +32,24 @@
 <!-- GENERATED:units BEGIN -->
 | Единица | Полития | Система | Модель 3126 | Авторское | СКР | Фаза | Статус |
 |---|---|---|---|---|---|---|---|
-| [Цветущая Гармония](../COLONIES/eps_eri_harmony.md) | Синь Хэ | Epsilon Eridani | 1 371 102 075 | 3 280 000 | 1.82 | stagnation | PROPOSAL · PUBLIC (модель) |
-| [Новый Шанхай](../COLONIES/tau_ceti_cognium.md) | Когниум | Tau Ceti | 1 356 527 898 | 2 800 000 | 1.96 | stagnation | PROPOSAL · PUBLIC (модель) |
-| [Тяньхэ (Небесная Река)](../COLONIES/gj832_tianhe.md) | Тяньхэ | Gliese 832 | 1 058 878 197 | 4 200 000 | 1.83 | stagnation | PROPOSAL · PUBLIC (модель) |
-| [Новая Индия](../COLONIES/hd20794_newindia.md) | Дхарма-Мандала (южная ветвь) | HD 20794 (82 G. Eridani) | 903 060 113 | 1 100 000 | 2.09 | growth | PROPOSAL · PUBLIC (модель) |
-| [Новая Мекка](../COLONIES/lalande_mecca.md) | Ильм-аль-Нуджум | Lalande 21185 | 799 743 555 | 1 800 000 | 2.36 | growth | PROPOSAL · PUBLIC (модель) |
+| [Цветущая Гармония](../COLONIES/eps_eri_harmony.md) | Синь Хэ | Epsilon Eridani | 1 371 102 748 | 3 280 000 | 1.82 | stagnation | PROPOSAL · PUBLIC (модель) |
+| [Новый Шанхай](../COLONIES/tau_ceti_cognium.md) | Когниум | Tau Ceti | 1 356 527 906 | 2 800 000 | 1.96 | stagnation | PROPOSAL · PUBLIC (модель) |
+| [Тяньхэ (Небесная Река)](../COLONIES/gj832_tianhe.md) | Тяньхэ | Gliese 832 | 1 058 878 366 | 4 200 000 | 1.83 | stagnation | PROPOSAL · PUBLIC (модель) |
+| [Новая Индия](../COLONIES/hd20794_newindia.md) | Дхарма-Мандала (южная ветвь) | HD 20794 (82 G. Eridani) | 903 060 135 | 1 100 000 | 2.09 | growth | PROPOSAL · PUBLIC (модель) |
+| [Новая Мекка](../COLONIES/lalande_mecca.md) | Ильм-аль-Нуджум | Lalande 21185 | 799 743 540 | 1 800 000 | 2.36 | growth | PROPOSAL · PUBLIC (модель) |
 | [Новая Карма](../COLONIES/delta_pav_karma.md) | Дхарма-Мандала (северная ветвь) | Delta Pavonis | 740 339 479 | 1 750 000 | 2.43 | growth | PROPOSAL · PUBLIC (модель) |
 | [Красный Форпост](../COLONIES/proxima_outpost.md) | Сварог | Proxima Centauri | 725 716 924 | 890 000 | 2.20 | growth | PROPOSAL · PUBLIC (модель) |
 | [Цитадель](../COLONIES/wolf359_citadel.md) | Скьёльдбург | Wolf 359 | 545 459 819 | 650 000 | 2.33 | growth | PROPOSAL · PUBLIC (модель) |
-| [Новая Маланд](../COLONIES/hd40307_maland.md) | Уджамаа-Джахи | HD 40307 | 445 615 993 | 2 400 000 | 2.24 | growth | PROPOSAL · PUBLIC (модель) |
-| [Пояс Раздора / Вольные астероиды](../COLONIES/eps_eri_strife.md) | Варпстанис | Epsilon Eridani | 348 072 330 | 45 000 | 2.56 | growth | PROPOSAL · PUBLIC (модель) |
-| [Новая Эллада / Агора](../COLONIES/lalande_hellas.md) | Агор-Прим | Lalande 21185 | 327 607 484 | 1 500 000 | 2.02 | stagnation | PROPOSAL · PUBLIC (модель) |
-| [Новая Европа](../COLONIES/gj581_europa.md) | Рестаурос | Gliese 581 | 271 947 998 | 1 200 000 | 1.95 | stagnation | PROPOSAL · PUBLIC (модель) |
-| [Вторая Эллада](../COLONIES/hd20794_hellas2.md) | Вторая Эллада | HD 20794 (82 G. Eridani) | 250 016 206 | 980 000 | 2.02 | stagnation | PROPOSAL · PUBLIC (модель) |
-| [Сельта-Верде](../COLONIES/hd69830_verde.md) | Сельта-Верде («Затерянный мир») | HD 69830 | 204 780 901 | 1 400 000 | 2.83 | expansion | PROPOSAL · PUBLIC (модель) |
-| [Свободные поселения](../COLONIES/gj581_freeclans.md) | кланы Свободного мира | Gliese 581 | 200 589 133 | 85 000 | 2.84 | expansion | PROPOSAL · PUBLIC (модель) |
-| [Свободная Карма](../COLONIES/delta_pav_freekarma.md) | Свободная Карма | Delta Pavonis | 200 070 319 | 350 000 | 2.43 | growth | PROPOSAL · PUBLIC (модель) |
-| [Небесная Твердыня](../COLONIES/hd40307_firmament.md) | Синь Хэ (дальняя провинция) | HD 40307 | 198 279 061 | 1 800 000 | 2.06 | growth | PROPOSAL · PUBLIC (модель) |
-| [Шахта Альфа](../COLONIES/cyg61_kern.md) | Проспекторат Керн | 61 Cygni | 139 966 984 | 350 000 | 2.02 | growth | PROPOSAL · PUBLIC (модель) |
+| [Новая Маланд](../COLONIES/hd40307_maland.md) | Уджамаа-Джахи | HD 40307 | 445 615 996 | 2 400 000 | 2.24 | growth | PROPOSAL · PUBLIC (модель) |
+| [Пояс Раздора / Вольные астероиды](../COLONIES/eps_eri_strife.md) | Варпстанис | Epsilon Eridani | 348 072 327 | 45 000 | 2.56 | growth | PROPOSAL · PUBLIC (модель) |
+| [Новая Эллада / Агора](../COLONIES/lalande_hellas.md) | Агор-Прим | Lalande 21185 | 327 607 482 | 1 500 000 | 2.02 | stagnation | PROPOSAL · PUBLIC (модель) |
+| [Новая Европа](../COLONIES/gj581_europa.md) | Рестаурос | Gliese 581 | 271 947 994 | 1 200 000 | 1.95 | stagnation | PROPOSAL · PUBLIC (модель) |
+| [Вторая Эллада](../COLONIES/hd20794_hellas2.md) | Вторая Эллада | HD 20794 (82 G. Eridani) | 250 016 201 | 980 000 | 2.02 | stagnation | PROPOSAL · PUBLIC (модель) |
+| [Сельта-Верде](../COLONIES/hd69830_verde.md) | Сельта-Верде («Затерянный мир») | HD 69830 | 204 780 898 | 1 400 000 | 2.83 | expansion | PROPOSAL · PUBLIC (модель) |
+| [Свободные поселения](../COLONIES/gj581_freeclans.md) | кланы Свободного мира | Gliese 581 | 200 589 138 | 85 000 | 2.84 | expansion | PROPOSAL · PUBLIC (модель) |
+| [Свободная Карма](../COLONIES/delta_pav_freekarma.md) | Свободная Карма | Delta Pavonis | 200 070 311 | 350 000 | 2.43 | growth | PROPOSAL · PUBLIC (модель) |
+| [Небесная Твердыня](../COLONIES/hd40307_firmament.md) | Синь Хэ (дальняя провинция) | HD 40307 | 198 279 067 | 1 800 000 | 2.06 | growth | PROPOSAL · PUBLIC (модель) |
+| [Шахта Альфа](../COLONIES/cyg61_kern.md) | Проспекторат Керн | 61 Cygni | 139 963 859 | 350 000 | 2.02 | growth | PROPOSAL · PUBLIC (модель) |
 | [Провидение](../COLONIES/gj876_next.md) | Культ Машины / Провидение | Gliese 876 | 99 649 | 45 000 | 2.15 | stagnation | PROPOSAL · PUBLIC (модель) |
 | [Гелиевое поле Эпсилон Индейца](../COLONIES/eps_indi_field.md) | Синь Хэ | Epsilon Indi | 62 214 | 30 000 | 1.86 | decline | PROPOSAL · PUBLIC (модель) |
 | [Третья Эллада](../COLONIES/hd114783_hellas3.md) | Третья Эллада | HD 114783 | 12 983 | 12 500 | 3.24 | expansion | PROPOSAL · PUBLIC (модель) |
@@ -61,8 +61,8 @@
 | [Фронтир HD 85512](../COLONIES/hd85512_frontier.md) | Когниум | HD 85512 | 2 417 | — | 1.81 | decline | PROPOSAL · PUBLIC (модель) |
 | [Зона «Филоморфоз»](../COLONIES/gj832_gaia_zone.md) | Вердензальб (остатки Гайи-Прим) | Gliese 832 | 2 363 | 45 000 | 2.39 | decline | PROPOSAL · PUBLIC (модель) |
 | [Фронтир Gliese 357](../COLONIES/gj357_frontier.md) | Когниум | Gliese 357 | 1 603 | — | 1.74 | decline | PROPOSAL · PUBLIC (модель) |
-| [Лагерь «Кларион»](../COLONIES/hd114783_claims.md) | Проспекторат Керн | HD 114783 | 1 338 | 25 000 | 2.05 | boom | PROPOSAL · PUBLIC (модель) |
-| [«Золотой Город»](../COLONIES/leo83_golden_city.md) | Проспекторат Керн | 83 Leonis | 559 | 6 000 | 2.01 | stagnation | PROPOSAL · PUBLIC (модель) |
+| [Лагерь «Кларион»](../COLONIES/hd114783_claims.md) | Проспекторат Керн | HD 114783 | 1 364 | 25 000 | 2.05 | boom | PROPOSAL · PUBLIC (модель) |
+| [«Золотой Город»](../COLONIES/leo83_golden_city.md) | Проспекторат Керн | 83 Leonis | 1 317 | 6 000 | 2.05 | stagnation | PROPOSAL · PUBLIC (модель) |
 | [Фронтир HD 104067](../COLONIES/hd104067_frontier.md) | Когниум | HD 104067 | 507 | — | 1.75 | stagnation | PROPOSAL · PUBLIC (модель) |
 | [Экспедиция Sigma² UMa](../COLONIES/sigma2uma_expedition.md) | Проспекторат Керн | Sigma² Ursae Majoris | 370 | 3 000 | 2.06 | stagnation | PROPOSAL · PUBLIC (модель) |
 | [Пост прослушивания у Барнарда](../COLONIES/barnard_post.md) | Скьёльдбург | Barnard's Star | 277 | 800 | 2.82 | growth | PROPOSAL · PUBLIC (модель) |
@@ -88,8 +88,8 @@
 | 2800 | 193 090 960 | 2.53 | 0.95 | growth |
 | 2900 | 540 341 029 | 2.31 | 0.95 | growth |
 | 3000 | 1 074 649 550 | 1.88 | 0.95 | stagnation |
-| 3100 | 1 317 692 628 | 1.84 | 0.95 | stagnation |
-| 3126 | 1 371 102 075 | 1.82 | 0.95 | stagnation |
+| 3100 | 1 317 692 977 | 1.84 | 0.95 | stagnation |
+| 3126 | 1 371 102 748 | 1.82 | 0.95 | stagnation |
 
 ### rich_low_fertility — [Тяньхэ (Небесная Река)](../COLONIES/gj832_tianhe.md)
 
@@ -106,8 +106,8 @@
 | 2800 | 93 125 069 | 2.90 | 0.87 | expansion |
 | 2900 | 398 578 642 | 2.56 | 0.95 | growth |
 | 3000 | 984 824 265 | 1.89 | 0.95 | growth |
-| 3100 | 1 087 068 468 | 1.84 | 0.95 | stagnation |
-| 3126 | 1 058 878 197 | 1.83 | 0.95 | stagnation |
+| 3100 | 1 087 068 555 | 1.84 | 0.95 | stagnation |
+| 3126 | 1 058 878 366 | 1.83 | 0.95 | stagnation |
 
 ### religious_high_fertility — [Новая Карма](../COLONIES/delta_pav_karma.md)
 
@@ -171,8 +171,8 @@
 | 2800 | 57 332 972 | 3.18 | 0.84 | boom |
 | 2900 | 410 820 709 | 2.87 | 0.95 | expansion |
 | 3000 | 1 088 781 221 | 2.05 | 0.95 | stagnation |
-| 3100 | 1 338 150 332 | 1.97 | 0.95 | stagnation |
-| 3126 | 1 356 527 898 | 1.96 | 0.95 | stagnation |
+| 3100 | 1 338 150 337 | 1.97 | 0.95 | stagnation |
+| 3126 | 1 356 527 906 | 1.96 | 0.95 | stagnation |
 <!-- GENERATED:trajectories END -->
 
 ## Конфликты: авторское население против модели
@@ -189,8 +189,8 @@
 | [Провидение](../COLONIES/gj876_next.md) | 99 649 | 45 000 | 2.21 | CANON · PUBLIC |
 | [Стратегические рудники Gliese 892](../COLONIES/gj892_kern.md) | 2 969 | 10 000 | 0.30 | PROPOSAL · PUBLIC |
 | [Реле HD 10360](../COLONIES/hd10360_relay.md) | 3 862 | 1 500 | 2.57 | PROPOSAL · PUBLIC |
-| [Лагерь «Кларион»](../COLONIES/hd114783_claims.md) | 1 338 | 25 000 | 0.05 | PROPOSAL · PUBLIC |
-| [«Золотой Город»](../COLONIES/leo83_golden_city.md) | 559 | 6 000 | 0.09 | PROPOSAL · PUBLIC |
+| [Лагерь «Кларион»](../COLONIES/hd114783_claims.md) | 1 364 | 25 000 | 0.05 | PROPOSAL · PUBLIC |
+| [«Золотой Город»](../COLONIES/leo83_golden_city.md) | 1 317 | 6 000 | 0.22 | PROPOSAL · PUBLIC |
 | [Экспедиция Sigma² UMa](../COLONIES/sigma2uma_expedition.md) | 370 | 3 000 | 0.12 | PROPOSAL · PUBLIC |
 <!-- GENERATED:conflicts END -->
 
@@ -265,7 +265,7 @@
 |---|---|---|---|---|
 | Земля | 9 960 563 363 | 9 000 000 000–11 000 000 000 | да | `AUTHOR_TARGET` |
 | Сол вне Земли | 1 708 397 998 | 1 200 000 000–2 000 000 000 | да | `AUTHOR_TARGET` |
-| вне Сола | 10 087 994 167 | 8 500 000 000–12 000 000 000 | да | `AUTHOR_TARGET` |
+| вне Сола | 10 087 992 674 | 8 500 000 000–12 000 000 000 | да | `AUTHOR_TARGET` |
 
 Эмигрантов с Земли 2752–3126: 1 186 255 980 (`PROPOSAL · PUBLIC (модель)`). Эпохи, которые объясняют масштаб, — в досье каждой политии (блок «История населения: эпохи»). Окна вербовки на Земле:
 

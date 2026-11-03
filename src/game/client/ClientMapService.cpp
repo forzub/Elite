@@ -7,6 +7,7 @@
 #include "src/game/client/ClientDetailMapBridge.h"
 #include "src/game/client/ClientHubMapBridge.h"
 #include "src/game/client/ClientWorldState.h"
+#include "src/game/client/ClientWorldSitesMapBridge.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 
 #include <algorithm>
@@ -185,6 +186,7 @@ bool ClientMapService::composeSystem(
         return false;
 
     rebuildSystemMapInfrastructureLayer(rebuilt, infrastructureSample);
+    appendSystemMapWorldSites(rebuilt, m_catalogs.worldSites(), sourceMetadata.universeTimeSeconds);
     rebuildSystemMapShipLayer(
         rebuilt,
         shipSample.ships,
@@ -297,6 +299,8 @@ bool ClientMapService::composeDetail(
     {
         return false;
     }
+    if (target.sceneKind == world::celestial::DetailSceneKind::CelestialBody)
+        appendDetailMapWorldSites(rebuilt, m_catalogs.worldSites(), sourceMetadata.universeTimeSeconds);
 
     m_detailMetadata = sourceMetadata;
     m_detailSnapshot = std::move(rebuilt);

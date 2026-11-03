@@ -53,6 +53,7 @@
 | 2860 | HD 85512 | Новый Шанхай | PROPOSAL · PUBLIC |
 | 2880 | Gliese 892 | Шахта Альфа | PROPOSAL · PUBLIC |
 | 2905 | TRAPPIST-1 | Новый Шанхай | PROPOSAL · PUBLIC |
+| 3036 | 24 | Шахта Альфа | PROPOSAL · PUBLIC |
 | 3040 | HD 114783 | Шахта Альфа | PROPOSAL · PUBLIC |
 | 3045 | 83 Leonis | Шахта Альфа | PROPOSAL · PUBLIC |
 | 3050 | HD 104067 | Новый Шанхай | PROPOSAL · PUBLIC |
@@ -82,7 +83,7 @@
 | 2850 | 14 | 1 | 26.0 |
 | 2900 | 20 | 1 | 26.0 |
 | 3000 | 20 | 1 | 32.0 |
-| 3126 | 24 | 2 | 32.0 |
+| 3126 | 25 | 1 | 32.0 |
 <!-- GENERATED:hyper END -->
 
 ## Как гипер изменил мир

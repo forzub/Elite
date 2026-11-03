@@ -320,12 +320,14 @@ const TrafficShipClass& trafficShipClass(TrafficShipKind kind)
         TrafficShipKind::CargoShuttle, "OCS-4 \"Lastochka\" orbital cargo shuttle",
         56.0, 18.0, 14.0, 0.5 * std::sqrt(56.0 * 56.0 + 18.0 * 18.0 + 14.0 * 14.0),
         Ocs4Cargo.dryMassKg, 1000.0 * Ocs4Cargo.cargoTonnes,
-        4.0, 200.0, 25.0, 1.2, 18.0, 900.0, game::docking::DockSizeClass::Medium};
+        4.0, 200.0, 25.0, 1.2, 18.0, 900.0, game::docking::DockSizeClass::Medium,
+        1000.0 * (catalog::ships::grossCargoTonnes(Ocs4Cargo) - Ocs4Cargo.cargoTonnes)};
     static const TrafficShipClass cobrett {
         TrafficShipKind::Cobrett, "Cobrett-I FRN-U N1",
         22.2, 26.0, 5.0, 0.5 * std::sqrt(22.2 * 22.2 + 26.0 * 26.0 + 5.0 * 5.0),
         CobrettIN1Cargo.dryMassKg, 1000.0 * CobrettIN1Cargo.cargoTonnes,
-        12.0, 300.0, 30.0, 2.0, 10.0, 240.0, game::docking::DockSizeClass::Medium};
+        12.0, 300.0, 30.0, 2.0, 10.0, 240.0, game::docking::DockSizeClass::Medium,
+        1000.0 * (catalog::ships::grossCargoTonnes(CobrettIN1Cargo) - CobrettIN1Cargo.cargoTonnes)};
     return kind == TrafficShipKind::CargoShuttle ? shuttle : cobrett;
 }
 
@@ -340,7 +342,7 @@ game::docking::DockingEnvelope dockingEnvelope(const TrafficShipClass& c)
     e.landingFootprintWidthMeters = c.width * 0.9;
     e.landingFootprintLengthMeters = c.length * 0.9;
     e.landingGearClearanceMeters = 1.0;
-    e.massKg = c.dryMassKg + c.cargoCapacityKg;
+    e.massKg = c.dryMassKg + c.cargoCapacityKg + c.containerTareKg;
     return e;
 }
 

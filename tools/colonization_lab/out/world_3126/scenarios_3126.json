@@ -8,12 +8,12 @@
      "imports_t_before": 0,
      "polity": "eps_eri_harmony",
      "price_index": 2.778,
-     "shortage_t_after": 215673027,
+     "shortage_t_after": 215661037,
      "shortage_t_before": 0
     },
     {
      "commodity": "metals",
-     "imports_t_after": 31307157,
+     "imports_t_after": 31303991,
      "imports_t_before": 0,
      "polity": "eps_eri_harmony",
      "price_index": 1.009,
@@ -22,152 +22,171 @@
     }
    ],
    "fleet_active_after": {
-    "eps_eri_harmony": 16486,
-    "eps_eri_strife": 9380,
-    "gj832_tianhe": 9410
+    "eps_eri_harmony": 16590,
+    "eps_eri_strife": 10737,
+    "gj832_tianhe": 7788
    },
    "fleet_active_before": {
-    "eps_eri_harmony": 19551,
-    "eps_eri_strife": 7775,
-    "gj832_tianhe": 9410
+    "eps_eri_harmony": 20512,
+    "eps_eri_strife": 7383,
+    "gj832_tianhe": 7788
    },
    "id": "major_mine_destroyed",
    "metrics": {
     "eps_eri_harmony": {
      "after": {
-      "avg_delivered_cr_per_t": 8646.4,
-      "import_delivered_cr": 840189648210,
-      "import_t": 97172693,
-      "re_export_t": 19620,
-      "ships_on_its_flows": 5607.4,
-      "shortage_t": 218327273
+      "avg_delivered_cr_per_t": 8592.2,
+      "import_delivered_cr": 834394248564,
+      "import_t": 97110902,
+      "re_export_t": 0,
+      "ships_on_its_flows": 5592.5,
+      "shortage_t": 218374144
      },
      "before": {
-      "avg_delivered_cr_per_t": 12213.7,
-      "import_delivered_cr": 804471660621,
-      "import_t": 65866074,
-      "re_export_t": 19620,
-      "ships_on_its_flows": 5901.0,
-      "shortage_t": 2654247
+      "avg_delivered_cr_per_t": 12136.7,
+      "import_delivered_cr": 798689702523,
+      "import_t": 65807556,
+      "re_export_t": 0,
+      "ships_on_its_flows": 5970.4,
+      "shortage_t": 2713107
      },
      "import_price_index": 0.708
     },
     "eps_eri_strife": {
      "after": {
-      "avg_delivered_cr_per_t": 12214.7,
-      "import_delivered_cr": 207729919787,
-      "import_t": 17006544,
+      "avg_delivered_cr_per_t": 10996.5,
+      "import_delivered_cr": 184100632318,
+      "import_t": 16741756,
       "re_export_t": 0,
-      "ships_on_its_flows": 2520.7,
-      "shortage_t": 666629
+      "ships_on_its_flows": 2157.9,
+      "shortage_t": 931233
      },
      "before": {
-      "avg_delivered_cr_per_t": 12214.0,
-      "import_delivered_cr": 207714118548,
-      "import_t": 17006222,
+      "avg_delivered_cr_per_t": 10996.2,
+      "import_delivered_cr": 184095851464,
+      "import_t": 16741716,
       "re_export_t": 0,
-      "ships_on_its_flows": 2319.7,
-      "shortage_t": 666629
+      "ships_on_its_flows": 1762.8,
+      "shortage_t": 930697
      },
      "import_price_index": 1.0
     },
     "gj832_tianhe": {
      "after": {
-      "avg_delivered_cr_per_t": 12023.6,
-      "import_delivered_cr": 608417193105,
-      "import_t": 50601903,
+      "avg_delivered_cr_per_t": 11974.3,
+      "import_delivered_cr": 603555722405,
+      "import_t": 50404147,
       "re_export_t": 0,
-      "ships_on_its_flows": 3749.4,
-      "shortage_t": 1995322
+      "ships_on_its_flows": 3688.2,
+      "shortage_t": 2039570
      },
      "before": {
-      "avg_delivered_cr_per_t": 12023.6,
-      "import_delivered_cr": 608417193105,
-      "import_t": 50601903,
+      "avg_delivered_cr_per_t": 11974.3,
+      "import_delivered_cr": 603555722405,
+      "import_t": 50404147,
       "re_export_t": 0,
-      "ships_on_its_flows": 3749.4,
-      "shortage_t": 1995322
+      "ships_on_its_flows": 3688.2,
+      "shortage_t": 2039570
      },
      "import_price_index": 1.0
     }
    },
    "recovery": {
-    "cobrett_trips": 8186,
-    "equipment_to_replace_t": 458400,
+    "cobrett_trips": 32658,
+    "equipment_to_replace_t": 1828800,
     "text": "замена оборудования: местные заводы + импорт машин; пока руда идёт из резервных выработок, цена металла выше",
-    "train_trips": 8,
-    "years": 3.1
+    "train_trips": 32,
+    "years": 6.6
    },
    "text": "Гармония: уничтожен крупнейший рудный комплекс пояса (−40 % руды, −25 % металла)"
   },
   {
-   "changes": [],
+   "changes": [
+    {
+     "commodity": "jump_charge",
+     "imports_t_after": 10023,
+     "imports_t_before": 17120,
+     "polity": "gj832_tianhe",
+     "price_index": 1.006,
+     "shortage_t_after": 0,
+     "shortage_t_before": 0
+    },
+    {
+     "commodity": "reactor_fuel",
+     "imports_t_after": 851,
+     "imports_t_before": 757,
+     "polity": "delta_pav_freekarma",
+     "price_index": 1.0,
+     "shortage_t_after": 0,
+     "shortage_t_before": 0
+    }
+   ],
    "fleet_active_after": {
-    "delta_pav_freekarma": 2396,
-    "gj832_tianhe": 9313,
-    "tau_ceti_cognium": 17822
+    "delta_pav_freekarma": 2359,
+    "gj832_tianhe": 7689,
+    "tau_ceti_cognium": 17142
    },
    "fleet_active_before": {
-    "delta_pav_freekarma": 2377,
-    "gj832_tianhe": 9410,
-    "tau_ceti_cognium": 17822
+    "delta_pav_freekarma": 2294,
+    "gj832_tianhe": 7788,
+    "tau_ceti_cognium": 17142
    },
    "id": "jump_beacon_lost",
    "metrics": {
     "delta_pav_freekarma": {
      "after": {
-      "avg_delivered_cr_per_t": 14102.6,
-      "import_delivered_cr": 111032673192,
-      "import_t": 7873216,
+      "avg_delivered_cr_per_t": 6912.7,
+      "import_delivered_cr": 50714124908,
+      "import_t": 7336346,
       "re_export_t": 0,
-      "ships_on_its_flows": 721.3,
-      "shortage_t": 239710
+      "ships_on_its_flows": 706.7,
+      "shortage_t": 769993
      },
      "before": {
-      "avg_delivered_cr_per_t": 14100.1,
-      "import_delivered_cr": 111011377243,
-      "import_t": 7873090,
+      "avg_delivered_cr_per_t": 6904.5,
+      "import_delivered_cr": 50649640136,
+      "import_t": 7335760,
       "re_export_t": 0,
-      "ships_on_its_flows": 714.3,
-      "shortage_t": 239710
+      "ships_on_its_flows": 685.9,
+      "shortage_t": 769991
      },
-     "import_price_index": 1.0
+     "import_price_index": 1.001
     },
     "gj832_tianhe": {
      "after": {
-      "avg_delivered_cr_per_t": 12110.7,
-      "import_delivered_cr": 612736177814,
-      "import_t": 50594516,
+      "avg_delivered_cr_per_t": 12066.5,
+      "import_delivered_cr": 608115405117,
+      "import_t": 50397006,
       "re_export_t": 0,
-      "ships_on_its_flows": 5204.1,
-      "shortage_t": 1995322
+      "ships_on_its_flows": 5147.1,
+      "shortage_t": 2039570
      },
      "before": {
-      "avg_delivered_cr_per_t": 12023.6,
-      "import_delivered_cr": 608417193105,
-      "import_t": 50601903,
+      "avg_delivered_cr_per_t": 11974.3,
+      "import_delivered_cr": 603555722405,
+      "import_t": 50404147,
       "re_export_t": 0,
-      "ships_on_its_flows": 3749.4,
-      "shortage_t": 1995322
+      "ships_on_its_flows": 3688.2,
+      "shortage_t": 2039570
      },
-     "import_price_index": 1.007
+     "import_price_index": 1.008
     },
     "tau_ceti_cognium": {
      "after": {
-      "avg_delivered_cr_per_t": 1727.9,
-      "import_delivered_cr": 1102233136674,
-      "import_t": 637898284,
+      "avg_delivered_cr_per_t": 1712.3,
+      "import_delivered_cr": 1091720145929,
+      "import_t": 637583194,
       "re_export_t": 0,
-      "ships_on_its_flows": 5830.7,
-      "shortage_t": 360601690
+      "ships_on_its_flows": 5790.4,
+      "shortage_t": 360630583
      },
      "before": {
-      "avg_delivered_cr_per_t": 1727.9,
-      "import_delivered_cr": 1102233136674,
-      "import_t": 637898284,
+      "avg_delivered_cr_per_t": 1712.3,
+      "import_delivered_cr": 1091720145929,
+      "import_t": 637583194,
       "re_export_t": 0,
-      "ships_on_its_flows": 5830.7,
-      "shortage_t": 360601690
+      "ships_on_its_flows": 5790.4,
+      "shortage_t": 360630583
      },
      "import_price_index": 1.0
     }
@@ -184,8 +203,8 @@
    "metrics": {
     "backlog_after_3y_dry_t": 0,
     "fleet_shortfall_share_after_3y": 0.0,
-    "lost_dry_t_y": 100468,
-    "spare_capacity_elsewhere_dry_t_y": 406253,
+    "lost_dry_t_y": 108889,
+    "spare_capacity_elsewhere_dry_t_y": 406618,
     "takers": [
      "sol_authority",
      "eps_eri_harmony",
@@ -202,8 +221,8 @@
    "changes": [
     {
      "commodity": "ore",
-     "imports_t_after": 158668158,
-     "imports_t_before": 149245335,
+     "imports_t_after": 158665773,
+     "imports_t_before": 149242950,
      "polity": "tau_ceti_cognium",
      "price_index": 1.0,
      "shortage_t_after": 0,
@@ -211,8 +230,8 @@
     },
     {
      "commodity": "construction",
-     "imports_t_after": 188830135,
-     "imports_t_before": 176207635,
+     "imports_t_after": 188830139,
+     "imports_t_before": 176207639,
      "polity": "tau_ceti_cognium",
      "price_index": 1.0,
      "shortage_t_after": 0,
@@ -220,29 +239,29 @@
     }
    ],
    "fleet_active_after": {
-    "tau_ceti_cognium": 18250
+    "tau_ceti_cognium": 17609
    },
    "fleet_active_before": {
-    "tau_ceti_cognium": 17822
+    "tau_ceti_cognium": 17142
    },
    "id": "habitat_disaster",
    "metrics": {
     "tau_ceti_cognium": {
      "after": {
-      "avg_delivered_cr_per_t": 1677.3,
-      "import_delivered_cr": 1112009253588,
-      "import_t": 662969249,
+      "avg_delivered_cr_per_t": 1662.3,
+      "import_delivered_cr": 1101500482105,
+      "import_t": 662654174,
       "re_export_t": 0,
-      "ships_on_its_flows": 5900.6,
-      "shortage_t": 361716286
+      "ships_on_its_flows": 5860.3,
+      "shortage_t": 361745179
      },
      "before": {
-      "avg_delivered_cr_per_t": 1727.9,
-      "import_delivered_cr": 1102233136674,
-      "import_t": 637898284,
+      "avg_delivered_cr_per_t": 1712.3,
+      "import_delivered_cr": 1091720145929,
+      "import_t": 637583194,
       "re_export_t": 0,
-      "ships_on_its_flows": 5830.7,
-      "shortage_t": 360601690
+      "ships_on_its_flows": 5790.4,
+      "shortage_t": 360630583
      },
      "import_price_index": 0.971
     }
@@ -256,9 +275,9 @@
      "recipient": "tau_ceti_cognium",
      "status_counts": [
       {
-       "absorbed_t": 5428296,
+       "absorbed_t": 6232488,
        "allocated_t": 27500000,
-       "arrived_t": 5713996,
+       "arrived_t": 6560514,
        "commodity": "construction",
        "pledged_t": 27500000,
        "route": [
@@ -266,8 +285,8 @@
         8
        ],
        "ship_class": "jump_train",
-       "shipped_t": 5771713,
-       "transport_cr": 263190125
+       "shipped_t": 6626782,
+       "transport_cr": 304169289
       },
       {
        "absorbed_t": 517275,
@@ -281,12 +300,12 @@
        ],
        "ship_class": "jump_train",
        "shipped_t": 550000,
-       "transport_cr": 26400000
+       "transport_cr": 26565000
       },
       {
-       "absorbed_t": 5381,
+       "absorbed_t": 2691,
        "allocated_t": 24000,
-       "arrived_t": 5665,
+       "arrived_t": 2832,
        "commodity": "medical",
        "pledged_t": 24000,
        "route": [
@@ -294,8 +313,8 @@
         8
        ],
        "ship_class": "medium_freighter",
-       "shipped_t": 5722,
-       "transport_cr": 2277328
+       "shipped_t": 2861,
+       "transport_cr": 1137519
       }
      ],
      "statuses": [
@@ -336,12 +355,12 @@
       ],
       "ship_class": "medium_freighter",
       "shipped_t": 5000,
-      "transport_cr": 790500
+      "transport_cr": 764000
      },
      {
-      "absorbed_t": 8788,
+      "absorbed_t": 4394,
       "allocated_t": 40000,
-      "arrived_t": 10339,
+      "arrived_t": 5169,
       "commodity": "machinery",
       "pledged_t": 40000,
       "route": [
@@ -350,13 +369,13 @@
        15
       ],
       "ship_class": "medium_freighter",
-      "shipped_t": 10550,
-      "transport_cr": 1926371
+      "shipped_t": 5275,
+      "transport_cr": 936811
      },
      {
-      "absorbed_t": 9416,
+      "absorbed_t": 4708,
       "allocated_t": 20000,
-      "arrived_t": 11077,
+      "arrived_t": 5539,
       "commodity": "weapons",
       "pledged_t": 20000,
       "route": [
@@ -365,8 +384,8 @@
        15
       ],
       "ship_class": "medium_freighter",
-      "shipped_t": 11303,
-      "transport_cr": 3952738
+      "shipped_t": 5652,
+      "transport_cr": 1946415
      }
     ],
     "statuses": [
@@ -382,80 +401,80 @@
   {
    "changes": [],
    "fleet_active_after": {
-    "eps_eri_harmony": 19509,
-    "hd40307_firmament": 2415,
-    "hd40307_maland": 5337
+    "eps_eri_harmony": 20465,
+    "hd40307_firmament": 2126,
+    "hd40307_maland": 4668
    },
    "fleet_active_before": {
-    "eps_eri_harmony": 19551,
-    "hd40307_firmament": 2415,
-    "hd40307_maland": 5337
+    "eps_eri_harmony": 20512,
+    "hd40307_firmament": 2126,
+    "hd40307_maland": 4668
    },
    "id": "war_sanctions_reexport",
    "metrics": {
     "eps_eri_harmony": {
      "after": {
-      "avg_delivered_cr_per_t": 12213.7,
-      "import_delivered_cr": 804470692845,
-      "import_t": 65866055,
-      "re_export_t": 19620,
-      "ships_on_its_flows": 5895.3,
-      "shortage_t": 2654247
+      "avg_delivered_cr_per_t": 12136.7,
+      "import_delivered_cr": 798688734771,
+      "import_t": 65807537,
+      "re_export_t": 0,
+      "ships_on_its_flows": 5964.8,
+      "shortage_t": 2713107
      },
      "before": {
-      "avg_delivered_cr_per_t": 12213.7,
-      "import_delivered_cr": 804471660621,
-      "import_t": 65866074,
-      "re_export_t": 19620,
-      "ships_on_its_flows": 5901.0,
-      "shortage_t": 2654247
+      "avg_delivered_cr_per_t": 12136.7,
+      "import_delivered_cr": 798689702523,
+      "import_t": 65807556,
+      "re_export_t": 0,
+      "ships_on_its_flows": 5970.4,
+      "shortage_t": 2713107
      },
      "import_price_index": 1.0
     },
     "hd40307_firmament": {
      "after": {
-      "avg_delivered_cr_per_t": 7030.2,
-      "import_delivered_cr": 127432211729,
-      "import_t": 18126468,
+      "avg_delivered_cr_per_t": 3673.5,
+      "import_delivered_cr": 64452367051,
+      "import_t": 17545126,
       "re_export_t": 0,
-      "ships_on_its_flows": 798.9,
-      "shortage_t": 362099
+      "ships_on_its_flows": 724.6,
+      "shortage_t": 917263
      },
      "before": {
-      "avg_delivered_cr_per_t": 7030.2,
-      "import_delivered_cr": 127432211729,
-      "import_t": 18126468,
+      "avg_delivered_cr_per_t": 3673.5,
+      "import_delivered_cr": 64452367051,
+      "import_t": 17545126,
       "re_export_t": 0,
-      "ships_on_its_flows": 798.9,
-      "shortage_t": 362099
+      "ships_on_its_flows": 724.6,
+      "shortage_t": 917263
      },
      "import_price_index": 1.0
     },
     "hd40307_maland": {
      "after": {
-      "avg_delivered_cr_per_t": 8548.0,
-      "import_delivered_cr": 344848808044,
-      "import_t": 40342623,
-      "re_export_t": 12574760,
-      "ships_on_its_flows": 1772.6,
-      "shortage_t": 812198
+      "avg_delivered_cr_per_t": 8376.2,
+      "import_delivered_cr": 336309915443,
+      "import_t": 40150702,
+      "re_export_t": 12462013,
+      "ships_on_its_flows": 1744.6,
+      "shortage_t": 942957
      },
      "before": {
-      "avg_delivered_cr_per_t": 6996.6,
-      "import_delivered_cr": 282261486757,
-      "import_t": 40342623,
+      "avg_delivered_cr_per_t": 6850.3,
+      "import_delivered_cr": 275042757283,
+      "import_t": 40150702,
       "re_export_t": 0,
-      "ships_on_its_flows": 1771.1,
-      "shortage_t": 812198
+      "ships_on_its_flows": 1743.1,
+      "shortage_t": 942957
      },
-     "import_price_index": 1.222
+     "import_price_index": 1.223
     }
    },
    "recovery": {
     "mobilisation": {
      "conversion": [
       {
-       "dry_t_y": 44840,
+       "dry_t_y": 47099,
        "from_": "civil yard",
        "months": 9,
        "to": "military transports / escorts"
@@ -514,22 +533,6 @@
       "markup": 1.25,
       "seller": "sol_authority",
       "tonnes": 9196248,
-      "via": "hd20794_newindia"
-     },
-     {
-      "buyer": "eps_eri_harmony",
-      "commodity": "controlled",
-      "markup": 1.25,
-      "seller": "eps_eri_strife",
-      "tonnes": 19620,
-      "via": "gj581_freeclans"
-     },
-     {
-      "buyer": "hd40307_maland",
-      "commodity": "weapons",
-      "markup": 1.25,
-      "seller": "sol_authority",
-      "tonnes": 112748,
       "via": "hd20794_newindia"
      }
     ],

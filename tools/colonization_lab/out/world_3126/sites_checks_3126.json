@@ -1,0 +1,80 @@
+{
+ "checks": [
+  {
+   "check": "one_id_one_object",
+   "detail": "500 ids",
+   "ok": true
+  },
+  {
+   "check": "site_bodies_exist_in_catalog",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "every_site_has_placement",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "access_chains_use_real_hops_only",
+   "detail": "frontier.worlds_ass max 30.753, frontier.ceti_chest max 25.603, frontier.vega_observatory max 18.304, kern_pocket max 30.753",
+   "ok": true
+  },
+  {
+   "check": "kern_pocket_reachable_without_exceptions",
+   "detail": "legs [30.641, 30.753, 30.407]",
+   "ok": true
+  },
+  {
+   "check": "deep_space_objects_have_world_lines",
+   "detail": "6 objects",
+   "ok": true
+  },
+  {
+   "check": "worlds_ass_is_max_risk_and_reward",
+   "detail": "frontier.worlds_ass: 250000000 / 0.189, frontier.ceti_chest: 2640000 / 0.016, frontier.vega_observatory: 2000000 / 0.006",
+   "ok": true
+  },
+  {
+   "check": "average_expedition_not_profitable",
+   "detail": "EV -257982 Cr, cost 1029035",
+   "ok": true
+  },
+  {
+   "check": "news_reaches_far_periphery_within_author_target",
+   "detail": "network diameter 1.75 d, Sol -> farthest frontier 4.029 d, target 7.0 d (AUTHOR_TARGET)",
+   "ok": true
+  },
+  {
+   "check": "migration_within_transport_capacity",
+   "detail": "demand 2424245 <= capacity 6005363 per year",
+   "ok": true
+  },
+  {
+   "check": "no_jump_ship_older_than_jump_drive",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "records_match_schemas",
+   "detail": "Hub / DeepSpaceObject / LocalAdministrator",
+   "ok": true
+  },
+  {
+   "check": "knowledge_never_before_truth",
+   "detail": "5 records",
+   "ok": true
+  },
+  {
+   "check": "every_site_has_jurisdiction",
+   "detail": "498 sites",
+   "ok": true
+  },
+  {
+   "check": "status_present",
+   "detail": "ok",
+   "ok": true
+  }
+ ],
+ "status": "PROPOSAL"
+}

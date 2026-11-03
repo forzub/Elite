@@ -104,27 +104,10 @@ def trade_graph(I):
             edges.setdefault(best[0], {})[s] = best[1]
             unbeaconed.add(tuple(sorted((s, best[0]))))
             nodes.add(s)
-    # pockets of the beacon network beyond the drive's regular hop (the far Kern frontier) are
-    # reached by expedition ships with extra tanks over the shortest gap (<= 45 ly): x3 cost
-    expedition = set()
-    main = component(edges, 0)
-    for n in sorted(nodes):
-        if n in main:
-            continue
-        comp = component(edges, n)
-        best = None
-        for a in sorted(comp):
-            for b in sorted(main):
-                d = lab_dist(I.E, a, b)
-                if d <= 45.0 and (best is None or d < best[2]):
-                    best = (a, b, d)
-        if best:
-            a, b, d = best
-            edges.setdefault(a, {})[b] = d
-            edges.setdefault(b, {})[a] = d
-            expedition.add(tuple(sorted((a, b))))
-            main |= comp
-    return edges, nodes, unbeaconed | expedition, expedition
+    # No range exceptions: a pocket the drive cannot reach with real hops (<= max_hop_ly through real
+    # systems / sites with beacons) stays disconnected and its demand stays unmet. The far Kern pocket
+    # is reached through the Kern staging depot at Gliese 436 (beacon 3036, canon/world_sites.json).
+    return edges, nodes, unbeaconed
 
 
 def component(edges, n):
@@ -367,11 +350,10 @@ def capability(I, p, c):
 
 # ---------------------------------------------------------------- transport
 class Transport:
-    def __init__(self, I, edges, unbeaconed, expedition):
+    def __init__(self, I, edges, unbeaconed):
         self.I = I
         self.edges = edges
         self.unb = unbeaconed
-        self.exped = expedition
         self.cache = {}
 
     def route(self, a, b, blocked=frozenset()):
@@ -406,26 +388,39 @@ class Transport:
             value = load * self.I.cat[c]["cost_cr_per_t"]
             tc = lg.trip_cost(self.I.SE, self.I.cal, sc_key, hops, load, value)
             unb = sum(1 for x, y in zip(path, path[1:]) if tuple(sorted((x, y))) in self.unb)
-            exp = sum(1 for x, y in zip(path, path[1:]) if tuple(sorted((x, y))) in self.exped)
             cost = tc["cr_per_tonne"] - tc["costs_cr"]["customs"] / load
-            cost *= (1.0 + 0.5 * (unb - exp) / max(1, len(hops))) * (1.0 + 2.0 * exp / max(1, len(hops)))
+            cost *= 1.0 + 0.5 * unb / max(1, len(hops))
             days = tc["trip_days"] * (1.0 + 0.4 * unb / max(1, len(hops)))
-            self.cache[key] = dict(cr_per_t=cost, trip=tc, trip_days=days, load=load, unbeaconed_hops=unb, expedition_hops=exp)
+            self.cache[key] = dict(cr_per_t=cost, trip=tc, trip_days=days, load=load, unbeaconed_hops=unb)
         return self.cache[key]
 
 
 # ---------------------------------------------------------------- the model
+EXPORT_CAPACITY = {
+    "ratio_per_year": 0.02,          # export plant a polity adds per year connected, as a share of its domestic output
+    "max_ratio_to_domestic": 3.0,    # an export economy saturates at ~3x its home market (after ~150 years)
+    "unconnected_year": 3126,        # without a beacon: no export industry
+    "pipeline_years": 3.0,           # construction pipeline = growth rate x 3 years ...
+    "pipeline_max": 0.15,            # ... at most 15 % of the installed plant
+    # network fuels: the plant was built FOR the network (fuel concessions, Beacon Authority contracts):
+    # a producer's export plant = its capability share of the network's import need x 1.15, ramped over 50 years
+    "network_goods": ("jump_charge", "reactor_fuel"),
+    "network_overcapacity": 1.15,
+    "network_ramp_years": 50.0,
+}
+
+
 class Model:
     def __init__(self, I, shock=None):
         self.I = I
         self.shock = shock or {}
-        self.edges, self.nodes, self.unb, self.exped = trade_graph(I)
+        self.edges, self.nodes, self.unb = trade_graph(I)
         if self.shock.get("lost_beacon") is not None:
             s = self.shock["lost_beacon"]
             # the bridge beacon is gone: jumps to / from s are unbeaconed (dearer, slower, riskier)
             for x in sorted(self.edges.get(s, {})):
                 self.unb.add(tuple(sorted((s, x))))
-        self.T = Transport(I, self.edges, self.unb, self.exped)
+        self.T = Transport(I, self.edges, self.unb)
         self.pols = build_polities(I)
         self.order = sorted(self.pols, key=lambda k: (-self.pols[k]["pop"], k))
 
@@ -468,10 +463,41 @@ class Model:
         self.balance()
         return self
 
+    # -- installed export capacity: an exporter can sell only what it has built (or is finishing) since it
+    #    joined the network; the trade solution never creates capacity
+    def export_capacity(self):
+        I = self.I
+        X = EXPORT_CAPACITY
+        self.exp_cap = {}
+        self.exp_installed = {}
+        net_need = {c: sum(self.need[k][c] * (1.0 - self.cap(p, c)) for k, p in self.pols.items() if not p["refuses"]) for c in X["network_goods"]}
+        cap_share = {}
+        for c in X["network_goods"]:
+            prod = {k: self.need[k][c] * self.cap(p, c) for k, p in self.pols.items() if self.cap(p, c) >= 0.9 and not p["refuses"]}
+            tot = sum(prod.values())
+            cap_share[c] = {k: v / tot for k, v in prod.items()} if tot > 0 else {}
+        for k, p in self.pols.items():
+            b = I.beacon_of.get(p["system"])
+            joined = b["year"] if b else X["unconnected_year"]
+            years = max(0, YEAR - joined)
+            ratio = min(X["max_ratio_to_domestic"], X["ratio_per_year"] * years)
+            pipeline = clamp(p["growth"] * X["pipeline_years"], 0.0, X["pipeline_max"])
+            self.exp_installed[k] = {}
+            self.exp_cap[k] = {}
+            for c in I.cats:
+                domestic = self.need[k][c] * self.cap(p, c)
+                inst = domestic * ratio
+                if c in X["network_goods"] and self.cap(p, c) >= 0.9 and not p["refuses"]:
+                    inst = max(inst, net_need[c] * cap_share[c].get(k, 0.0) * X["network_overcapacity"] * min(1.0, years / X["network_ramp_years"]))
+                self.exp_installed[k][c] = dict(installed_t_y=inst, under_construction_t_y=inst * pipeline, joined=joined)
+                self.exp_cap[k][c] = inst * (1.0 + 0.5 * pipeline)     # half of the pipeline comes online on average
+
     # -- interstellar trade: deficits filled from the cheapest delivered source
     def trade(self):
         I = self.I
         P = self.pols
+        self.export_capacity()
+        left = {k: dict(v) for k, v in self.exp_cap.items()}
         flows = []
         self.imports = {k: {c: 0.0 for c in I.cats} for k in P}
         self.exports = {k: {c: 0.0 for c in I.cats} for k in P}
@@ -491,7 +517,7 @@ class Model:
                     continue
                 offers = []
                 for q in exporters:
-                    if q == k:
+                    if q == k or left[q][c] <= 1.0:
                         continue
                     channel = "official"
                     blocked = frozenset()
@@ -535,11 +561,38 @@ class Model:
                     continue
                 split = [0.6, 0.3, 0.1][:len(offers)]
                 ssum = sum(split)
+                remaining = deficit
+                alloc = []
                 for w, o in zip(split, offers):
-                    tonnes = deficit * w / ssum
+                    q = o[1]
+                    take = min(deficit * w / ssum, left[q][c])
+                    alloc.append([take, o])
+                    remaining -= take
+                # what the preferred sources cannot ship goes to the next cheapest with capacity left
+                for o in offers:
+                    if remaining <= 1.0:
+                        break
+                    q = o[1]
+                    used = sum(a[0] for a in alloc if a[1][1] == q)
+                    extra = min(remaining, left[q][c] - used)
+                    if extra > 1.0:
+                        alloc.append([extra, o])
+                        remaining -= extra
+                if remaining > 1.0:
+                    self.unmet[k][c] += remaining          # no installed capacity anywhere: shortage, not magic
+                merged = {}
+                for take, o in alloc:
+                    if o[1] in merged:
+                        merged[o[1]][0] += take
+                    else:
+                        merged[o[1]] = [take, o]
+                for q in sorted(merged, key=lambda x: (merged[x][1][0], x)):
+                    tonnes, o = merged[q]
                     delivered, q, path, channel, via, t, tr = o
                     if tonnes < 1.0:
+                        self.unmet[k][c] += tonnes
                         continue
+                    left[q][c] -= tonnes
                     t = self.T.klass(c, tonnes)
                     tr = self.T.per_tonne(t, c, path)
                     flows.append(dict(seller=q, buyer=k, commodity=c, tonnes=tonnes, path=path, ship_class=t, channel=channel, via=via,
@@ -591,8 +644,12 @@ def asset_counts(M, k, fleet_k, yard_need_k, defence_k):
     for c, a in OUTPUT_ASSET.items():
         q = M.prod[k][c]
         cap = A[a]["capacity_t_y"]
-        n = math.ceil(q / (cap * util)) if q > 0.5 else 0
-        out[a] = dict(count=n, output_t_y=q, capacity_t_y=n * cap)
+        # plant = installed base (home market + export plant built since joining the network), not the output
+        ex = M.exp_installed[k][c]
+        base = M.need[k][c] * M.cap(p, c) + ex["installed_t_y"]
+        n = math.ceil(max(q, base) / (cap * util)) if max(q, base) > 0.5 else 0
+        out[a] = dict(count=n, output_t_y=q, capacity_t_y=n * cap, utilisation=round(q / (n * cap), 3) if n else 0.0,
+                      under_construction=math.ceil(ex["under_construction_t_y"] / cap) if ex["under_construction_t_y"] > 0.5 * cap else 0)
     # habitat construction yards: rotating / burrowed places built per year
     out["habitat_yard"] = dict(count=math.ceil(M.final[k]["construction"] * 0.6 / (A["habitat_yard"]["capacity_t_y"] * util)) if M.final[k]["construction"] > 0 else 0)
     # power: population + industry
@@ -782,8 +839,10 @@ STRUCT = {"ships_procurement_operations_crews": 0.30, "bases_infrastructure": 0.
 
 
 def defence(M, k, fleet_civil, route_tonnage, beacons_k):
-    """Security / defence budget = share of output from the doctrine and data; forces from tasks
-    (customs, SAR, beacons, impact defence, convoys, recon) first, deterrence from the rest."""
+    """Security / defence budget = share of output from the doctrine and data. Forces come ONLY from
+    tasks (SAR, customs, beacons, borders, piracy, quarantine, internal control, militia, population and
+    key-industry protection, impact defence, convoys, expeditionary, recon, deterrence). The ship line
+    left after the tasks goes to readiness items, never to extra hulls."""
     I = M.I
     p = M.pols[k]
     PE = I.PE
@@ -825,14 +884,13 @@ def defence(M, k, fleet_civil, route_tonnage, beacons_k):
     if not doc["roles"]:
         share = 0.001
     budget = share * p["gdp"]
-    # ---- task-based forces
+    # ---- forces from tasks only (the 15 tasks of the doctrine; no "spend the rest" hulls)
     arrivals = sum(f.get("trips_per_year", 0.0) for f in M.flows if f["buyer"] == k)
-    task = {}
-    task["patrol_cutter"] = beacons_k * T["patrol_per_beacon"] + arrivals / 1e4 * T["patrol_per_10k_arrivals"] + p["pop"] / 1e8 * T["patrol_per_100m_people_sar"]
     orbital_pop = orb * p["pop"]
-    task["interceptor"] = orbital_pop / 1e8 * T["interceptor_per_100m_orbital"] + (T["interceptor_threat_bonus"] if hostile else 0)
     belt = 1 if (E["belt_me"] > 0.001 or E["comet_me"] > 0.5) else 0
-    task["impact_defence_tug"] = orbital_pop / 1e8 * T["impact_tug_per_100m_orbital"] + belt * T["impact_tug_per_belt_system"] + 1
+    # key nodes to hold: capital, strategic installations, population centres of >= 100 M
+    centres = sum(1 for v in settlement_structure(I, p).values() if v >= 1e8)
+    key_nodes = max(1, centres) + sum(1 for a in p["assets"] if a.get("importance", 0) >= 0.7)
     risky = 0.0
     for f in M.flows:
         if f["seller"] != k:
@@ -843,11 +901,62 @@ def defence(M, k, fleet_civil, route_tonnage, beacons_k):
                 r = 1.0
         if f["ship_class"] in ("jump_train", "jump_tanker"):
             risky += f.get("trips_per_year", 0.0) * r
+    piracy_problems = sum(1 for pr in p["problems"] if "пират" in pr) + (1 if "piracy_suppression" in roles else 0)
+    # deterrence: key nodes x the worst credible threat (grievance x reach x relative economic weight)
+    threat_f = 0.0
+    for h in hostile:
+        o = M.pols.get(h["other"])
+        if not o:
+            continue
+        path = M.T.route(p["system"], o["system"]) if o["system"] != p["system"] else [p["system"]]
+        jumps = (len(path) - 1) if path else 99
+        R_ = T["deterrence_reach"]
+        reach = R_["same_system"] if jumps == 0 else R_["one_jump"] if jumps == 1 else R_["farther"]
+        weight = clamp(math.sqrt(max(o["gdp"], 1.0) / max(p["gdp"], 1.0)), 0.5, 2.0)
+        threat_f = max(threat_f, h["grievance"] / 100.0 * reach * weight)
+    squadrons = key_nodes * threat_f if hostile else 0.0
+    if "deterrence" in roles:
+        squadrons += T["deterrence_posture_squadrons"] * key_nodes
+    if "alliance_obligation" in roles:
+        squadrons += T["alliance_obligation_squadrons"]
+    tasks = []
+
+    def need(task_id, cls, n, why):
+        if n > 0.0:
+            tasks.append(dict(task=task_id, ship_class=cls, ships=n, why=why))
+
+    need("sar_customs", "patrol_cutter", arrivals / 1e4 * T["patrol_per_10k_arrivals"] + p["pop"] / 1e8 * T["patrol_per_100m_people_sar"],
+         "SAR и таможня: прибытия и население")
+    need("beacon_guard", "patrol_cutter", beacons_k * T["patrol_per_beacon"], "охрана своих маяков")
+    need("border_patrol", "patrol_cutter", len(hostile) * T["border_patrol_per_hostile_neighbour"], "граница с враждебными соседями")
+    need("anti_piracy", "patrol_cutter", piracy_problems * T["anti_piracy_cutters_per_problem"], "борьба с пиратством")
+    if "quarantine" in roles:
+        need("quarantine", "patrol_cutter", T["quarantine_cutters_per_zone"], "обеспечение карантина")
+    if "internal_control" in roles or "regime_survival" in roles:
+        need("internal_control", "patrol_cutter", p["pop"] / 1e8 * T["police_cutters_per_100m_internal_control"], "внутренний контроль режима")
+    if roles & {"clan_defence", "concession_guards", "smuggling"}:
+        need("militia", "patrol_cutter", T["militia_cutters_small_polity"], "ополчение / охрана концессий")
+    need("population_protection", "interceptor", orbital_pop / 1e8 * T["interceptor_per_100m_orbital"] + (T["interceptor_threat_bonus"] if hostile else 0),
+         "защита населения на орбите и в поясах")
+    need("key_industry", "interceptor", (key_nodes - 1) * T["interceptor_per_key_node"], "защита ключевых производств")
+    need("impact_defence", "impact_defence_tug", orbital_pop / 1e8 * T["impact_tug_per_100m_orbital"] + belt * T["impact_tug_per_belt_system"] + 1,
+         "противоастероидная оборона")
     sc = SE["escort_frigate"]
-    task["escort_frigate"] = risky * T["escort_days_per_risky_jump_trip"] / (365.0 * sc["utilisation"]) + (4 if "convoy_protection" in roles else 0)
-    task["recon_picket"] = len(hostile) * T["recon_per_hostile_neighbour"] + (2 if beacons_k else 0)
+    need("convoys", "escort_frigate", risky * T["escort_days_per_risky_jump_trip"] / (365.0 * sc["utilisation"]) + (4 if "convoy_protection" in roles else 0),
+         "конвои рискованных рейсов поездов")
+    if "raiding" in roles:
+        need("expeditionary", "escort_frigate", T["raiding_escorts"], "экспедиционные / рейдовые задачи")
+    need("recon", "recon_picket", len(hostile) * T["recon_per_hostile_neighbour"] + (2 if beacons_k else 0), "разведка у точек выхода")
+    need("deterrence", "line_combatant", squadrons * T["deterrence_squadron_line_combatants"],
+         f"сдерживание: {key_nodes} ключевых узлов x угроза {threat_f:.2f}" + (" + поза доктрины" if "deterrence" in roles else ""))
     if not doc["roles"]:
-        task = {x: 0.0 for x in task}
+        tasks = []
+    task = {}
+    for t in tasks:
+        task[t["ship_class"]] = task.get(t["ship_class"], 0.0) + t["ships"]
+    for cls in ("patrol_cutter", "interceptor", "impact_defence_tug", "escort_frigate", "recon_picket", "line_combatant"):
+        task.setdefault(cls, 0.0)
+    task["fleet_tender"] = (task["line_combatant"] + task["escort_frigate"]) / T["tender_per_combatants"]
     annual = {}
     for cls in ("patrol_cutter", "interceptor", "impact_defence_tug", "escort_frigate", "recon_picket", "line_combatant", "fleet_tender"):
         s = SE[cls]
@@ -857,15 +966,19 @@ def defence(M, k, fleet_civil, route_tonnage, beacons_k):
             s["crew"] * (I.SE["anchors"]["pilot_wage_cr_per_month"] * 12 * T["military_wage_factor"] + T["crew_per_ship_year_overhead_cr"]) + fuel
     ships_budget = budget * STRUCT["ships_procurement_operations_crews"]
     task_cost = sum(task[c] * annual[c] for c in task)
-    scale = 1.0 if task_cost <= ships_budget * 0.85 else ships_budget * 0.85 / task_cost
+    scale = 1.0 if task_cost <= ships_budget else ships_budget / task_cost
     forces = {c: task[c] * scale for c in task}
-    rest = ships_budget - task_cost * scale
-    # deterrence gets most of what the tasks leave; the rest stays in readiness (stocks, reserve crews)
-    deter_w = 0.7 if ("deterrence" in roles or "regime_survival" in roles) else 0.25
-    lc = rest * deter_w / (annual["line_combatant"] + annual["fleet_tender"] / T["tender_per_combatants"])
-    forces["line_combatant"] = lc
-    forces["fleet_tender"] = (lc + forces["escort_frigate"]) / T["tender_per_combatants"]
-    readiness = max(0.0, rest - lc * annual["line_combatant"] - forces["fleet_tender"] * annual["fleet_tender"])
+    rest = max(0.0, ships_budget - task_cost * scale)
+    # the rest of the ship line is not hulls: readiness items by doctrine weights
+    wts = dict(T["readiness_weights"])
+    for r in sorted(roles):
+        for item, add in T["readiness_role_bonus"].get(r, {}).items():
+            wts[item] += add
+    wsum = sum(wts.values())
+    readiness = {item: round(rest * w / wsum) for item, w in sorted(wts.items())}
+    lc_price = lg.build_cost(SE["line_combatant"])["list_price_cr"]
+    mothballed = min(readiness["mothballed_ships"] / (lc_price * T["mothball_cost_share_per_year"]),
+                     forces["line_combatant"] * 0.5 + forces["escort_frigate"] * 0.5)
     under = scale < 1.0
     structure = dict(STRUCT)
     total_ships = sum(forces.values())
@@ -873,10 +986,11 @@ def defence(M, k, fleet_civil, route_tonnage, beacons_k):
                  patrol=math.ceil((forces["patrol_cutter"] + forces["interceptor"] + forces["impact_defence_tug"]) / I.PE["asset_types"]["patrol_base"]["ships"]) if total_ships > 1 else 0)
     personnel = sum(forces[c] * SE[c]["crew"] for c in forces) * 1.8 + bases["military"] * 3000 + bases["patrol"] * 500
     st = {a: round(b * budget) for a, b in structure.items()}
-    st["readiness_reserve_from_ship_budget"] = round(readiness)
     return dict(share_of_output=round(share, 4), components={a: round(b, 4) for a, b in comps.items()}, budget_cr_y=budget,
                 why=doc["why"], roles=doc["roles"], hostile=hostile, task_ships={c: round(v, 1) for c, v in task.items()},
-                forces=forces, annual_cost_per_ship=annual, under_resourced=under, structure=st,
+                tasks=[dict(t, ships=round(t["ships"] * scale, 1)) for t in tasks], key_nodes=key_nodes, deterrence_threat=round(threat_f, 3),
+                forces=forces, annual_cost_per_ship=annual, under_resourced=under, structure=st, ship_line_unspent_cr_y=round(rest),
+                readiness=readiness, mothballed_hulls=round(mothballed, 1),
                 bases=bases, personnel=round(personnel), risky_train_trips=round(risky, 1), arrivals_per_year=round(arrivals))
 
 
@@ -1122,7 +1236,7 @@ def route_classes(M, route_tonnage, deff):
         cls = "trunk" if (t >= 2.0e7 or v >= 5.0e9) else "secondary" if (t >= 1.0e6 or v >= 5.0e8) else "feeder"
         guards = sorted({sysowner.get(s) for s in e if sysowner.get(s)})
         rows.append(dict(edge=list(e), names=[I.E[s]["name"] for s in e], ly=round(M.edges[e[0]][e[1]], 2), tonnes_y=round(t), value_cr_y=round(v),
-                         klass=cls, unbeaconed=e in M.unb, expedition=e in M.exped, guarded_by=guards,
+                         klass=cls, unbeaconed=e in M.unb, guarded_by=guards,
                          beacons_supporting=[f"BCN-{s:03d}-BR" for s in e if s in M.I.beacon_of]))
     return rows
 
@@ -1405,6 +1519,8 @@ def assemble(I, R, scen):
         def_out[k] = dict(share_of_output=d["share_of_output"], components=d["components"], budget_cr_y=round(d["budget_cr_y"]), why=d["why"],
                           roles=d["roles"], hostile=d["hostile"], task_ships=d["task_ships"],
                           forces={c: round(v, 1) for c, v in d["forces"].items()}, under_resourced=d["under_resourced"], structure=d["structure"],
+                          tasks=d["tasks"], key_nodes=d["key_nodes"], deterrence_threat=d["deterrence_threat"],
+                          ship_line_unspent_cr_y=d["ship_line_unspent_cr_y"], readiness=d["readiness"], mothballed_hulls=d["mothballed_hulls"],
                           bases=d["bases"], personnel=d["personnel"], risky_train_trips=d["risky_train_trips"], arrivals_per_year=d["arrivals_per_year"],
                           annual_cost_per_ship={c: round(v) for c, v in d["annual_cost_per_ship"].items()})
     flows = [dict(seller=f["seller"], buyer=f["buyer"], commodity=f["commodity"], tonnes_y=round(f["tonnes"]), value_cr_y=round(f["value_cr"]),
@@ -1541,6 +1657,17 @@ def checks(I, R, out):
             if M.prod[k][c] > cap + 1.0:
                 short.append(f"{k}:{c}")
     add("infrastructure_covers_production", not short, ",".join(short[:10]) or "ok")
+    # exports never exceed the installed (+ finishing) export plant
+    over = [f"{k}:{c}" for k in M.pols for c in I.cats if M.exports[k][c] > M.exp_cap[k][c] * (1 + 1e-9) + 1.0]
+    add("exports_within_installed_export_capacity", not over, ",".join(over[:10]) or "ok")
+    # no range exceptions in the route graph
+    hop = I.net["max_hop_ly"]
+    longer = sorted({tuple(sorted((a, b))) for a in M.edges for b, d in M.edges[a].items() if d > hop + 1e-9})
+    add("no_edge_beyond_max_hop", not longer, f"max hop {hop} ly; violations {longer}" if longer else f"all edges <= {hop} ly")
+    # line combatants come only from the deterrence task
+    bad_lc = [k for k in M.pols if abs(R["defence"][k]["forces"]["line_combatant"] -
+                                       sum(t["ships"] for t in R["defence"][k]["tasks"] if t["ship_class"] == "line_combatant")) > 0.2]
+    add("line_combatants_only_from_deterrence_task", not bad_lc, ",".join(bad_lc) or "ok")
     # transport capacity >= flows
     cap_t = {}
     for k, rows in R["census"].items():

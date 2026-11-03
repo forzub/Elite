@@ -205,6 +205,20 @@ add_subdirectory(src/world/navigation/trajectory)
 # static free-space topology, bounded local avoidance and the runtime planner
 # that converts those products into PilotSkillExecutor intent. It is shared by
 # client and headless server so Stage 12 cannot drift into two planners.
+# Orbital Transfer (hub -> hub around one body): pure planner + carrier law,
+# shared by the server executor, the client preview and the offline check.
+add_library(EliteOrbitalTransfer STATIC
+    src/game/navigation/orbital/OrbitalTransferPlanner.cpp
+)
+target_include_directories(EliteOrbitalTransfer PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+target_compile_features(EliteOrbitalTransfer PUBLIC cxx_std_17)
+
+add_executable(EliteOrbitalTransferCheck tools/navigation_runtime/OrbitalTransferCheck.cpp)
+target_link_libraries(EliteOrbitalTransferCheck PRIVATE EliteOrbitalTransfer nlohmann_json::nlohmann_json)
+
 add_library(EliteNavigationWorldRuntime STATIC
     src/world/navigation/map/NavigationMap.cpp
     src/world/navigation/space/NavigationSpace.cpp
@@ -241,6 +255,7 @@ target_include_directories(EliteNavigationWorldRuntime PUBLIC
 target_link_libraries(EliteNavigationWorldRuntime
     PUBLIC EliteNavigationGeometry
            EliteNavigationTrajectory
+           EliteOrbitalTransfer
 )
 
 # BITE is a pure diagnostic library. Its public API accepts compact DTOs and

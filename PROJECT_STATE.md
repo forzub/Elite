@@ -2484,10 +2484,15 @@ Restore point: tag restore/pre-order-2026-11-04-g.
   stated biosphere or open water (ada429ef). Planet Lab: Moon grey, Earth unchanged. (One earlier grey
   Planet Lab run stays unexplained - probably a different binary.)
 - The star map in run2 video was opened by the user (not a bug).
-- OPEN (user remark): from Earth the Moon is practically invisible and the Sun looks smaller than in life.
-  Measured: both are drawn at the true 0.53 deg (vertical FOV 70 deg / 720 px -> ~5 px disc); in Elite
-  style a small body is a black disc with a thin outline. Proposal: keep true size but draw small lit
-  bodies as a filled phase in Elite, and give the Sun a glare / bloom halo; optionally a narrower FOV.
+- User decision (2026-11-04): the Moon is Earth's signature and must be clearly visible; plausibility over
+  hard realism, physical sizes unchanged. Done (e106bc1d, contract CELESTIAL_RUNTIME_RENDERER.md 1):
+  cinematic apparent size - a small far body (> 8 R, full from 25 R) is drawn as if closer along the line of
+  sight, extra angular radius softmin(2 x true, 0.8 deg): Moon / Sun from Earth 0.26 -> ~0.57 deg, Earth
+  from the Moon 0.95 -> ~1.5 deg, moons over their planets likewise; nearer than 8 R exact. Sky discs: round
+  mesh, Elite fills the lit phase, Modern / Anime raise the lit side's exposure. Geometry check (true size,
+  option off) 22 PASS. Planet Lab PLANET_LAB_ONLY=sky shots (D:/tmp/elite_sky*). Game run4 (Elite): the
+  Moon disc on the nose grows through the transfer; at this game date the near side is unlit (new-moon
+  geometry), so from Earth it is a dark disc with its outline. Not human-accepted.
 - OPEN: J drive energy accounting (reactor / fuel), human flight of the autopilot, autopilot to bodies
   without terrain data, hub as an autopilot target, camera framing of the transfer (drone view).
 

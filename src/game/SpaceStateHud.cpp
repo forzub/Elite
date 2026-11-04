@@ -1583,11 +1583,13 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     std::string reference = motion.freeFlightReferenceId;
     if (const auto hub = m_client->world().hubs().find(reference); hub != m_client->world().hubs().end() && !hub->second.name.empty())
         reference = hub->second.name;
+    else if (const auto dot = reference.rfind('.'); dot != std::string::npos)
+        reference = reference.substr(dot + 1);   // a body id: system_0.Sol.Земля -> Земля
     const glm::dvec3 relative = motion.travelFrame.linearVelocityMps +
         motion.travelFrame.localToWorldVector(motion.localVelocityMps) - motion.freeFlightReferenceVelocityMps;
 
     std::ostringstream line1;
-    line1 << "J  СВОБОДНЫЙ ПОЛЁТ - скорость не локальная, без ограничения: "
+    line1 << "J  СВОБОДНЫЙ ПОЛЁТ - скорость относительно тела притяжения: "
           << std::fixed << std::setprecision(0) << glm::length(relative) << " м/с отн. " << reference;
     const char* thrust = motion.freeFlightThrust == 1 ? "ТЯГА ПОЛНАЯ" : motion.freeFlightThrust == 2 ? "ТОРМОЖЕНИЕ" : "ТЯГА ВЫКЛ";
     std::string line2 = std::string(thrust) + "   HOME тяга  ·  END торможение  ·  INSERT выкл  ·  Ctrl+J выход";
@@ -1608,6 +1610,61 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     text.textDrawPx(line1.str(), x + 20.0f, y + 22.0f, 17, glm::vec4(1.0f, 0.78f, 0.45f, 1.0f));
     text.textDrawPx(line2, x + 20.0f, y + 44.0f, 14,
                     motion.freeFlightCaptureRefusal ? glm::vec4(1.0f, 0.50f, 0.42f, 1.0f) : glm::vec4(0.86f, 0.80f, 0.70f, 0.95f));
+
+    // ---- orbit panel, lower right inside the HUD frame: 1st cosmic speed for this
+    // body and altitude, speed, altitude / minimum safe altitude; colours warn
+    // grey -> white -> yellow -> red -> crimson as the danger grows
+    if (!motion.freeFlightOrbitBodyId.empty())
+    {
+        const glm::vec4 grey(0.62f, 0.68f, 0.74f, 0.85f), white(0.96f, 0.97f, 1.0f, 1.0f), yellow(1.0f, 0.86f, 0.30f, 1.0f),
+            red(1.0f, 0.32f, 0.26f, 1.0f), crimson(0.72f, 0.04f, 0.10f, 1.0f);
+        const double safe = std::max(1.0, motion.freeFlightOrbitSafeAltM);
+        const double margin = (motion.freeFlightOrbitAltitudeM - safe) / safe;
+        const glm::vec4 altColour = margin < 0.0 ? crimson : margin < 0.3 ? red : margin < 1.0 ? yellow : margin < 2.0 ? white : grey;
+        const double ratio = motion.freeFlightOrbitCircularMps > 0.0 ? motion.freeFlightOrbitSpeedMps / motion.freeFlightOrbitCircularMps : 1.0;
+        const glm::vec4 speedColour = ratio < 0.80 ? crimson : ratio < 0.90 ? red : ratio < 0.97 ? yellow
+                                    : ratio < 0.995 ? white : motion.freeFlightOrbitSpeedMps > motion.freeFlightOrbitEscapeMps ? yellow : grey;
+        char a[96], b[96], c[96];
+        std::snprintf(a, sizeof a, "1-я косм.  %.2f км/с", motion.freeFlightOrbitCircularMps / 1000.0);
+        std::snprintf(b, sizeof b, "V  %.2f км/с   (%+.0f м/с верт.)", motion.freeFlightOrbitSpeedMps / 1000.0, motion.freeFlightOrbitRadialMps);
+        std::snprintf(c, sizeof c, "H  %.0f / %.0f м", motion.freeFlightOrbitAltitudeM, safe);
+        const float px = static_cast<float>(viewport.width) * 0.735f;
+        const float py = static_cast<float>(viewport.height) * 0.64f;
+        text.textDrawPx(a, px, py, 14, grey);
+        text.textDrawPx(b, px, py + 20.0f, 15, speedColour);
+        text.textDrawPx(c, px, py + 41.0f, 15, altColour);
+        if (motion.freeFlightOrbitDenseAltM > 0.0)
+        {
+            char d[64];
+            std::snprintf(d, sizeof d, "плотные слои  %.0f м", motion.freeFlightOrbitDenseAltM);
+            text.textDrawPx(d, px, py + 61.0f, 13, motion.freeFlightOrbitAltitudeM < motion.freeFlightOrbitDenseAltM ? crimson : grey);
+        }
+
+        // terminal warning: losing altitude toward the atmosphere / surface
+        std::string warning;
+        if (motion.freeFlightSurfaceState == 2)
+            warning = "КРУШЕНИЕ: удар о поверхность";
+        else if (motion.freeFlightSurfaceState == 1)
+            warning = "НА ПОВЕРХНОСТИ   HOME - взлёт";
+        else if (motion.freeFlightOrbitAltitudeM < motion.freeFlightOrbitDenseAltM && motion.freeFlightOrbitSpeedMps > 1500.0)
+            warning = "ПЛОТНЫЕ СЛОИ АТМОСФЕРЫ: нагрев и удар по корпусу";
+        else if (motion.freeFlightOrbitAltitudeM < safe && motion.freeFlightOrbitRadialMps < -1.0)
+        {
+            char low[128];
+            std::snprintf(low, sizeof low, "СНИЖЕНИЕ К ПОВЕРХНОСТИ: %.0f м/с вниз (посадка без вреда < 8 м/с, выживание < 34 м/с)",
+                          -motion.freeFlightOrbitRadialMps);
+            warning = low;
+        }
+        else if (motion.freeFlightOrbitRadialMps < -1.0 && motion.freeFlightOrbitPeriapsisAltM < safe)
+            warning = "ОПАСНОСТЬ СВАЛИВАНИЯ: перицентр ниже безопасной высоты - поднимите скорость";
+        if (!warning.empty())
+        {
+            const float ww = text.measureTextPx(warning, 18) + 40.0f;
+            const float wx = std::max(8.0f, (static_cast<float>(viewport.width) - ww) * 0.5f);
+            text.solidRectPx(wx, y + 64.0f, ww, 32.0f, glm::vec4(0.25f, 0.0f, 0.02f, 0.85f));
+            text.textDrawPx(warning, wx + 20.0f, y + 86.0f, 18, red);
+        }
+    }
     text.endFrame();
 }
 

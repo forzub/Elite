@@ -24,6 +24,7 @@ public:
     float farPlane() const { return m_far; }
 
     glm::vec3 position() const { return m_position; }
+    const glm::mat4& orientationMatrix() const { return m_orientation; }
 
 private:
     glm::vec3 m_position {0.0f, 0.0f, 0.0f};

@@ -1519,6 +1519,30 @@ void SpaceState::update(float dt)
             m_client->sendMessage(msg);
             std::cerr << "[DevFreeFlight] toggle sent" << std::endl;
         }
+        // DEV trace for 3 s after the toggle: the player's rendered position vs the hub
+        static double freeFlightTraceStart = -1.0;
+        if (freeFlightSent && freeFlightTraceStart < 0.0)
+            freeFlightTraceStart = startupElapsedMs(m_startupTotalBegin) / 1000.0;
+        if (freeFlightTraceStart >= 0.0 && m_client &&
+            startupElapsedMs(m_startupTotalBegin) / 1000.0 - freeFlightTraceStart < 3.0)
+        {
+            const auto it = m_client->world().ships().find(m_playerId.value);
+            const auto& hubs = m_client->world().hubs();
+            const auto hub = hubs.find("earth_orbital_hub");
+            if (it != m_client->world().ships().end() && hub != hubs.end())
+            {
+                const auto& r = it->second.renderTransform;
+                const auto& a = it->second.transform;
+                const glm::dvec3 hubW = world::coordinates::fullMeters(hub->second.worldPosition);
+                const glm::dvec3 rr = world::coordinates::fullMeters(r.worldPosition) - hubW;
+                const glm::dvec3 aa = world::coordinates::fullMeters(a.worldPosition) - hubW;
+                std::cerr << "[FFTrace] t=" << startupElapsedMs(m_startupTotalBegin) / 1000.0 - freeFlightTraceStart
+                          << " render_rel=(" << rr.x << "," << rr.y << "," << rr.z << ") auth_rel=(" << aa.x << "," << aa.y << "," << aa.z
+                          << ") ff=" << a.motion.freeFlight << " frame=" << a.motion.travelFrame.frameId
+                          << " render_frame=" << r.motion.travelFrame.frameId << " local=(" << r.motion.localPositionMeters.x << ","
+                          << r.motion.localPositionMeters.y << "," << r.motion.localPositionMeters.z << ")" << std::endl;
+            }
+        }
         // DEV: ELITE_DEV_FREE_FLIGHT_THRUST_AT=<s> latches full free-flight thrust (HOME) once.
         static const double freeThrustAtSeconds = [] {
             const char* v = std::getenv("ELITE_DEV_FREE_FLIGHT_THRUST_AT");
@@ -1532,10 +1556,12 @@ void SpaceState::update(float dt)
             game::network::ClientMessage msg;
             ClientShipCommand command;
             command.type = ClientShipCommand::SetFreeFlightThrust;
-            command.index = 1;
+            // ELITE_DEV_FREE_FLIGHT_THRUST_CMD=2 brakes (END) instead of full thrust
+            const char* cmdEnv = std::getenv("ELITE_DEV_FREE_FLIGHT_THRUST_CMD");
+            command.index = cmdEnv && *cmdEnv ? std::atoi(cmdEnv) : 1;
             msg.payload = command;
             m_client->sendMessage(msg);
-            std::cerr << "[DevFreeFlight] full thrust sent" << std::endl;
+            std::cerr << "[DevFreeFlight] thrust command " << command.index << " sent" << std::endl;
         }
 
         // DEV: ELITE_DEV_DRONE_VIEW_AT=<s> switches the flight view to the
@@ -2843,6 +2869,40 @@ void SpaceState::renderUI()
     }
 
     m_activeMainCamera = mainCam;
+
+    // J near a body: the hull shakes with the atmospheric deceleration and on
+    // every impact (dense-layer entry, surface contact)
+    if (m_client)
+    {
+        const auto it = m_client->world().ships().find(m_playerId.value);
+        if (it != m_client->world().ships().end() && it->second.transform.motion.freeFlight)
+        {
+            const auto& m = it->second.transform.motion;
+            if (m.freeFlightImpactSerial != m_jImpactSerialSeen)
+            {
+                if (m_jImpactSerialSeen != 0 || m.freeFlightImpactSerial > 0)
+                    m_jShakePulse = 1.0f;
+                m_jImpactSerialSeen = m.freeFlightImpactSerial;
+            }
+            const float drag = static_cast<float>(std::clamp(m.freeFlightDragMps2 / 30.0, 0.0, 1.0));
+            const float intensity = std::clamp(drag + m_jShakePulse, 0.0f, 1.5f);
+            static double lastShakeT = 0.0;
+            const double nowT = startupElapsedMs(m_startupTotalBegin) / 1000.0;
+            const float shakeDt = static_cast<float>(std::clamp(nowT - lastShakeT, 0.0, 0.1));
+            lastShakeT = nowT;
+            m_jShakePulse = std::max(0.0f, m_jShakePulse - shakeDt * 0.7f);
+            if (intensity > 0.002f)
+            {
+                const double t = startupElapsedMs(m_startupTotalBegin) / 1000.0;
+                const float a = 0.010f * intensity;
+                const float pitch = a * static_cast<float>(std::sin(t * 37.0) * 0.6 + std::sin(t * 91.0) * 0.4);
+                const float yaw = a * static_cast<float>(std::sin(t * 43.0 + 1.3) * 0.6 + std::sin(t * 77.0) * 0.4);
+                glm::mat4 shake = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1, 0, 0));
+                shake = glm::rotate(shake, yaw, glm::vec3(0, 1, 0));
+                mainCam->setOrientationMatrix(mainCam->orientationMatrix() * shake);
+            }
+        }
+    }
 
 
     // -------------------------------------------------

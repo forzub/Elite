@@ -28,9 +28,12 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <limits>
 
+#include "src/game/equipment/EquipmentDamage.h"
 #include "src/game/navigation/GravityFieldSystem.h"
 #include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/ship/core/ShipDynamics.h"
@@ -227,6 +230,10 @@ void GameSimulation::updateFreeFlights(double dt)
                 const double h = glm::length(glm::cross(r, v));
                 motion.freeFlightOrbitBodyId = primary->id;
                 motion.freeFlightOrbitAltitudeM = rLen - primary->radiusMeters;
+                // J speed is flown against the dominant body (HUD, alignment,
+                // brake): a planet near it, the star beyond its influence
+                motion.freeFlightReferenceId = primary->id;
+                motion.freeFlightReferenceVelocityMps = bodyVelocity;
                 motion.freeFlightOrbitSpeedMps = speed;
                 motion.freeFlightOrbitRadialMps = glm::dot(v, r) / rLen;
                 motion.freeFlightOrbitCircularMps = std::sqrt(mu / rLen);
@@ -251,6 +258,156 @@ void GameSimulation::updateFreeFlights(double dt)
             {
                 motion.freeFlightOrbitBodyId.clear();
             }
+            // DEV: ELITE_DEV_J_DROP="<altitude km>,<fraction of circular speed>" places the
+            // ship once at that altitude, horizontal, at that speed (atmosphere / impact tests)
+            if (primary && continuous && !f.devDropDone)
+            {
+                f.devDropDone = true;
+                if (const char* drop = std::getenv("ELITE_DEV_J_DROP"); drop && *drop)
+                {
+                    double altKm = 120.0, fraction = 0.9;
+                    std::sscanf(drop, "%lf,%lf", &altKm, &fraction);
+                    const glm::dvec3 bodyVelocity = (primary->centerMeters - f.lastPrimaryCenterMeters) / dt;
+                    const glm::dvec3 rHat = glm::normalize(frame.originMeters - primary->centerMeters);
+                    glm::dvec3 vRel = frame.linearVelocityMps - bodyVelocity;
+                    glm::dvec3 horizontal = vRel - rHat * glm::dot(vRel, rHat);
+                    horizontal = glm::length(horizontal) > 1e-6 ? glm::normalize(horizontal) : glm::dvec3(1, 0, 0);
+                    const double r = primary->radiusMeters + altKm * 1000.0;
+                    frame.originMeters = primary->centerMeters + rHat * r;
+                    frame.linearVelocityMps = bodyVelocity + horizontal * std::sqrt(primary->gravitationalParameterM3s2 / r) * fraction;
+                    std::cerr << "[FreeFlight] DEV drop: altitude " << altKm << " km, " << fraction << " x circular" << std::endl;
+                }
+            }
+
+            // ---- Assisted J: an orbital "aircraft" against the dominant body
+            if (primary && continuous && motion.freeFlightSurfaceState == 0)
+            {
+                const glm::dvec3 bodyVelocity = (primary->centerMeters - f.lastPrimaryCenterMeters) / dt;
+                const glm::dvec3 rHat = glm::normalize(frame.originMeters - primary->centerMeters);
+                glm::dvec3 v = frame.linearVelocityMps - bodyVelocity;
+                const auto& control = ship->core().control();
+                const bool steering = std::abs(control.pitchInput) > 0.05f || std::abs(control.yawInput) > 0.05f;
+                if (motion.localControlLaw == game::navigation::LocalFlightControlLaw::Assisted)
+                {
+                    // the hull holds the velocity (prograde) when the pilot does not steer:
+                    // thrust stays along the velocity while gravity bends the path
+                    if (!steering && motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::None &&
+                        motion.freeFlightThrust != 2)
+                        motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::ForwardToVelocity;
+                    if (steering && motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::ForwardToVelocity)
+                        motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
+                    // steering turns the horizontal velocity toward the nose heading at
+                    // the same speed (a banked turn); the vertical part is gravity's
+                    if (steering)
+                    {
+                        const glm::dvec3 nose = -glm::dvec3(tr.orientation[2]);
+                        glm::dvec3 noseH = nose - rHat * glm::dot(nose, rHat);
+                        const glm::dvec3 vR = rHat * glm::dot(v, rHat);
+                        const glm::dvec3 vH = v - vR;
+                        const double speedH = glm::length(vH);
+                        if (glm::length(noseH) > 1e-6 && speedH > 1.0)
+                        {
+                            noseH = glm::normalize(noseH);
+                            const glm::dvec3 wanted = noseH * speedH;
+                            glm::dvec3 dv = wanted - vH;
+                            const double maxDv = 20.0 * dt;   // lateral authority of the assisted turn
+                            if (glm::length(dv) > maxDv)
+                                dv *= maxDv / glm::length(dv);
+                            frame.linearVelocityMps += dv;
+                            v += dv;
+                        }
+                    }
+                }
+
+                // ---- atmosphere, dense layers, solid surface
+                const double atmosphereTop = std::max(0.0, primary->atmosphereRadiusMeters - primary->radiusMeters);
+                const double safeAlt = atmosphereTop > 0.0 ? atmosphereTop : std::max(1000.0, primary->radiusMeters * 0.001);
+                const double denseAlt = atmosphereTop * 0.55;
+                const double alt = motion.freeFlightOrbitAltitudeM;
+                motion.freeFlightOrbitSafeAltM = safeAlt;
+                motion.freeFlightOrbitDenseAltM = denseAlt;
+                motion.freeFlightDragMps2 = 0.0;
+                const double speed = glm::length(v);
+                if (atmosphereTop > 0.0 && alt < atmosphereTop && speed > 0.1)
+                {
+                    const double scaleHeight = atmosphereTop / 12.0;
+                    const double density01 = std::exp(-std::max(alt, 0.0) / scaleHeight);
+                    const double drag = std::min(1.2e-5 * density01 * speed * speed, speed / dt * 0.5);
+                    frame.linearVelocityMps -= v / speed * drag * dt;
+                    motion.freeFlightDragMps2 = drag;
+                    // dense layers at speed: an impact on entry, then heating damage
+                    const bool dense = alt < denseAlt && speed > 1500.0;
+                    if (dense && !f.insideDenseLayers)
+                    {
+                        ++motion.freeFlightImpactSerial;
+                        for (const auto& m : ship->core().descriptor().modules)
+                            if (m.subsystemId == "hull" || m.structuralKind == ModuleStructuralKind::StructuralFrame)
+                                ship->core().moduleRuntime().addEquipmentDamage(
+                                    m.moduleId, game::equipment::EquipmentDamageKind::Impact, 0.15);
+                        std::cerr << "[FreeFlight] ship " << it->first.value << ": DENSE LAYERS of " << primary->id << " at "
+                                  << speed / 1000.0 << " km/s, altitude " << alt / 1000.0 << " km - impact" << std::endl;
+                    }
+                    f.insideDenseLayers = dense;
+                    if (dense)
+                    {
+                        f.heatingDamageSeconds += dt;
+                        if (f.heatingDamageSeconds >= 1.0)
+                        {
+                            f.heatingDamageSeconds = 0.0;
+                            const double heat = std::min(0.25, drag / 400.0);
+                            for (const auto& m : ship->core().descriptor().modules)
+                                ship->core().moduleRuntime().addEquipmentDamage(
+                                    m.moduleId, game::equipment::EquipmentDamageKind::Thermal, heat);
+                        }
+                    }
+                }
+                else
+                {
+                    f.insideDenseLayers = false;
+                }
+
+                // solid ground and sea: contact by vertical speed (crush deceleration over ~2 m)
+                if (alt <= 0.0)
+                {
+                    const double vVert = -glm::dot(v, rHat);
+                    const double vHor = glm::length(v - rHat * glm::dot(v, rHat));
+                    const double crushG = vVert * vVert / (2.0 * 2.0) / 9.81;
+                    ++motion.freeFlightImpactSerial;
+                    if (vVert < 8.0 && vHor < 40.0)
+                        motion.freeFlightSurfaceState = 1;                 // landed
+                    else
+                    {
+                        const bool survivable = crushG < 30.0 && vHor < 150.0;
+                        motion.freeFlightSurfaceState = survivable ? 1 : 2;
+                        const double hit = survivable ? 0.35 : 1.0;
+                        for (const auto& m : ship->core().descriptor().modules)
+                            ship->core().moduleRuntime().addEquipmentDamage(
+                                m.moduleId, game::equipment::EquipmentDamageKind::Impact, hit);
+                    }
+                    std::cerr << "[FreeFlight] ship " << it->first.value << ": SURFACE CONTACT on " << primary->id
+                              << " vertical " << vVert << " m/s horizontal " << vHor << " m/s (" << crushG << " g) - "
+                              << (motion.freeFlightSurfaceState == 1 ? "landed / survivable" : "CRASH") << std::endl;
+                    // rest on the surface, moving with the body
+                    frame.originMeters = primary->centerMeters + rHat * primary->radiusMeters;
+                    frame.linearVelocityMps = bodyVelocity;
+                    motion.freeFlightThrust = 0;
+                    ship->core().refreshRuntimeState();
+                }
+            }
+            if (primary && motion.freeFlightSurfaceState != 0)
+            {
+                // on the surface: carried with the body until thrust lifts the ship off
+                const glm::dvec3 rHat = glm::normalize(frame.originMeters - primary->centerMeters);
+                const glm::dvec3 bodyVelocity = f.lastPrimaryId == primary->id && dt > 0.0
+                    ? (primary->centerMeters - f.lastPrimaryCenterMeters) / dt : frame.linearVelocityMps;
+                if (motion.freeFlightSurfaceState == 1 && motion.freeFlightThrust == 1)
+                    motion.freeFlightSurfaceState = 0;                     // lift off
+                else
+                {
+                    frame.originMeters = primary->centerMeters + rHat * (primary->radiusMeters + 1.0);
+                    frame.linearVelocityMps = bodyVelocity;
+                }
+            }
             f.lastPrimaryId = primary ? primary->id : std::string();
             f.lastPrimaryCenterMeters = primary ? primary->centerMeters : glm::dvec3(0.0);
         }
@@ -261,7 +418,7 @@ void GameSimulation::updateFreeFlights(double dt)
             {
                 f.lastLogSeconds = f.elapsedSeconds;
                 std::cerr << "[FreeFlight] ship " << it->first.value << ": " << (g1.primaryAltitudeMeters < 0.0 ? "BELOW THE SURFACE of " : "in the atmosphere of ")
-                          << g1.primaryBodyId << ", altitude " << g1.primaryAltitudeMeters / 1000.0 << " km (no atmosphere / impact model yet)\n";
+                          << g1.primaryBodyId << ", altitude " << g1.primaryAltitudeMeters / 1000.0 << " km" << std::endl;
             }
         }
         else if (f.elapsedSeconds - f.lastLogSeconds >= 5.0)

@@ -204,6 +204,9 @@ public:
         // the dominant body's centre one tick ago (its velocity by difference)
         std::string lastPrimaryId;
         glm::dvec3 lastPrimaryCenterMeters {0.0};
+        bool insideDenseLayers = false;
+        bool devDropDone = false;
+        double heatingDamageSeconds = 0.0;
     };
     bool toggleFreeFlight(EntityId shipId);
     void setFreeFlightThrust(EntityId shipId, int command);

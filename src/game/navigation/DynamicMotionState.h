@@ -112,6 +112,15 @@ struct DynamicMotionState
     double freeFlightOrbitPeriapsisAltM = 0.0;
     double freeFlightOrbitApoapsisAltM = 0.0;
     bool freeFlightOrbitBound = false;
+    // J near a body: minimum safe altitude (atmosphere top, airless: 0.1 % R),
+    // dense layers, current atmospheric deceleration, impact counter (dense
+    // layer entry / hard contact) and the surface state (0 flight, 1 landed,
+    // 2 crashed).
+    double freeFlightOrbitSafeAltM = 0.0;
+    double freeFlightOrbitDenseAltM = 0.0;
+    double freeFlightDragMps2 = 0.0;
+    std::uint32_t freeFlightImpactSerial = 0;
+    std::uint8_t freeFlightSurfaceState = 0;
 
     // True only while/after a real +/- Assisted trim. It lets the release edge
     // capture reached forward speed once without allowing keypad RCS or an

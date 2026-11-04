@@ -25,7 +25,20 @@ ImportedSurfaceField::ImportedSurfaceField(const BodySurfaceDescriptor& body,
     m_macroCutoffM = 2.0 * Pi * m_radius / static_cast<double>(w);
     m_detailAmplitudeM = std::clamp(body.reliefAmplitudeKm * 1000.0 * 0.12, 80.0, 1800.0);
     m_detailSpec = OctaveSpec {m_macroCutoffM, 1.92, 0.48, 18, 3.0};
-    m_detailBoundM = m_detailAmplitudeM * 3.0;
+    const SurfaceArchetype archetype = surfaceArchetype(body);
+    m_cratered = archetype == SurfaceArchetype::AirlessRocky || archetype == SurfaceArchetype::Icy;
+    if (m_cratered)
+    {
+        // impact gardening rounds the ground: low soft hills, craters carry the
+        // relief - from half the map texel (the map has the bigger ones) to 1.5 m
+        m_detailAmplitudeM = std::clamp(body.reliefAmplitudeKm * 1000.0 * 0.015, 20.0, 200.0);
+        const double density = std::clamp(body.craterDensity, 0.0, 1.0) *
+                               (1.0 - 0.6 * std::clamp(body.resurfacingRate, 0.0, 1.0));
+        m_craters.configure(layerSeed(m_seed, "imported_craters"), m_radius, m_macroCutoffM * 0.5, 1.5,
+                            std::max(density, 0.3));
+    }
+    // craters: a fresh bowl of r = macroCutoff/2 is ~0.2 x its diameter deep
+    m_detailBoundM = m_detailAmplitudeM * 3.0 + (m_cratered ? m_macroCutoffM * 0.25 : 0.0);
 }
 
 ImportedSurfaceField::Bilinear ImportedSurfaceField::locate(const glm::dvec3& dir) const
@@ -86,11 +99,25 @@ SurfaceSample ImportedSurfaceField::sample(const glm::dvec3& dir, double minWave
         // Rolling hills plus ridges, rougher on high ground (the curated
         // map's own elevation says where the mountains are).
         const double landWeight = m_maps->water.empty() ? 1.0 : smoothstep(0.0, 400.0, coast);
-        const double rugged = 0.35 + 0.65 * smoothstep(200.0, 2500.0, std::abs(macro));
         const double hills = fbm(m_seedDetail, dir, m_radius, m_detailSpec, 1.0e30, minWavelengthM).total;
-        const double ridges = ridgedMultifractal(m_seedDetail + 1, dir, m_radius, m_detailSpec, 1.0e30,
-                                                 minWavelengthM).total;
-        detail = (0.6 * hills + 0.9 * (ridges - 0.45) * rugged) * m_detailAmplitudeM * rugged * landWeight;
+        if (m_cratered)
+        {
+            const CraterSample c = m_craters.sample(dir, minWavelengthM);
+            detail = 0.6 * hills * m_detailAmplitudeM + c.heightM;
+            s.freshness = c.freshness;
+            if (c.insideCrater)
+            {
+                s.featureClass = FeatureClass::ImpactCrater;
+                s.featureId = c.craterId;
+            }
+        }
+        else
+        {
+            const double rugged = 0.35 + 0.65 * smoothstep(200.0, 2500.0, std::abs(macro));
+            const double ridges = ridgedMultifractal(m_seedDetail + 1, dir, m_radius, m_detailSpec, 1.0e30,
+                                                     minWavelengthM).total;
+            detail = (0.6 * hills + 0.9 * (ridges - 0.45) * rugged) * m_detailAmplitudeM * rugged * landWeight;
+        }
     }
     s.heightM = s.water ? std::min(macro, 0.0) : std::max(macro + detail, 0.5);
     if (m_maps->water.empty())
@@ -122,12 +149,25 @@ SurfaceAppearance ImportedSurfaceField::appearance(const SurfaceSample& s, const
         const double v = fbm(m_seedVariation, dir, m_radius, OctaveSpec {m_macroCutoffM * 0.5, 1.92, 0.5, 8, 0.0},
                              1.0e30, std::max(s.bandLimitM, 1.0))
                              .total;
-        c *= static_cast<float>(1.0 + 0.30 * v);
+        c *= static_cast<float>(1.0 + (m_cratered ? 0.12 : 0.30) * v);
         const float rock = static_cast<float>(smoothstep(0.08, 0.3, slope));
         c = glm::mix(c, glm::vec3(0.32f, 0.30f, 0.28f), rock * 0.5f);
+        // fresh ejecta: bright, immature regolith around young craters
+        if (m_cratered)
+            c *= 1.0f + 0.55f * s.freshness;
     }
     a.albedo = glm::clamp(c, glm::vec3(0.0f), glm::vec3(1.0f));
-    a.weights[static_cast<std::size_t>(s.water ? SurfaceMaterial::Ice : SurfaceMaterial::Rock)] = 1.0f;
+    if (s.water)
+        a.weights[static_cast<std::size_t>(SurfaceMaterial::Ice)] = 1.0f;
+    else if (m_cratered)
+    {
+        // regolith everywhere; bare rock on steep walls and fresh rims
+        const float rock = std::clamp(static_cast<float>(smoothstep(0.35, 0.7, slope)) + 0.6f * s.freshness, 0.0f, 1.0f);
+        a.weights[static_cast<std::size_t>(SurfaceMaterial::Regolith)] = 1.0f - rock;
+        a.weights[static_cast<std::size_t>(SurfaceMaterial::Rock)] = rock;
+    }
+    else
+        a.weights[static_cast<std::size_t>(SurfaceMaterial::Rock)] = 1.0f;
     return a;
 }
 
@@ -144,6 +184,30 @@ void importedHeightsFromGrey(const std::uint8_t* grey, int width, int height, do
         if (!out.water.empty() && out.water[i])
             hM = -3500.0;
         out.heightM[i] = static_cast<float>(hM);
+    }
+    // 8-bit signed sources (the Moon: +-10 km in 256 steps = 78 m) are terraced:
+    // two passes of a [1 2 1] blur (columns wrap, rows clamp) remove the steps
+    // that drew jagged contours; a texel is already ~5 km, nothing real is lost
+    if (signedRange && out.water.empty() && width > 2 && height > 2)
+    {
+        std::vector<float> tmp(out.heightM.size());
+        for (int pass = 0; pass < 2; ++pass)
+        {
+            for (int y = 0; y < height; ++y)
+                for (int x = 0; x < width; ++x)
+                {
+                    const auto at = [&](int xx) { return out.heightM[static_cast<std::size_t>(y) * width + ((xx + width) % width)]; };
+                    tmp[static_cast<std::size_t>(y) * width + x] = 0.25f * at(x - 1) + 0.5f * at(x) + 0.25f * at(x + 1);
+                }
+            for (int y = 0; y < height; ++y)
+                for (int x = 0; x < width; ++x)
+                {
+                    const auto at = [&](int yy) {
+                        return tmp[static_cast<std::size_t>(std::clamp(yy, 0, height - 1)) * width + x];
+                    };
+                    out.heightM[static_cast<std::size_t>(y) * width + x] = 0.25f * at(y - 1) + 0.5f * at(y) + 0.25f * at(y + 1);
+                }
+        }
     }
 }
 } // namespace world::celestial::surface

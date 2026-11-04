@@ -155,6 +155,7 @@ add_library(EliteCelestialSurface STATIC
     src/world/celestial/surface/SmallBodyField.cpp
     src/world/celestial/surface/CloudWeatherField.cpp
     src/world/celestial/surface/ImportedSurfaceField.cpp
+    src/world/celestial/surface/CraterLayer.cpp
     src/world/celestial/surface/GlobeBake.cpp
     src/world/celestial/surface/LocalTerrain.cpp
 )

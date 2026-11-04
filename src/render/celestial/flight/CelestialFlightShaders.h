@@ -189,7 +189,11 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
     {
         // Elite Classic: black opaque body, light grey vector lines.
         float coast = isGas > 0.5 ? 0.0 : lineMask(coastKm, 1.3);
-        float contour = isWater > 0.5 ? 0.0 : contourMask(heightKm / max(uContourKm, 1e-3), 0.9) * (lattice >= 0.0 ? 0.8 : 0.45);
+        float contourValue = heightKm / max(uContourKm, 1e-3);
+        float contour = isWater > 0.5 ? 0.0 : contourMask(contourValue, 0.9) * (lattice >= 0.0 ? 0.8 : 0.45);
+        // lines closer than a few pixels (fine contours far away, grazing ground)
+        // fade out instead of merging into a white moire
+        contour *= 1.0 - smoothstep(0.12, 0.35, fwidth(contourValue));
         if (isGas > 0.5)
             contour = contourMask(dot(land, vec3(0.3, 0.5, 0.2)) * 9.0, 1.0) * 0.6;
         // the local terrain (lattice >= 0) is what a landing pilot reads: its lines

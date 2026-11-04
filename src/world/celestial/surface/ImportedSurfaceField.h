@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "src/world/celestial/surface/BodySurfaceDescriptor.h"
+#include "src/world/celestial/surface/CraterLayer.h"
 #include "src/world/celestial/surface/SurfaceField.h"
 #include "src/world/celestial/surface/SurfaceNoise.h"
 
@@ -63,6 +64,10 @@ private:
     double m_detailBoundM = 0.0;
     double m_detailAmplitudeM = 100.0;
     OctaveSpec m_detailSpec;
+    // airless / icy bodies (the Moon): below the map's texel a cratered
+    // regolith landscape instead of the terrestrial hills-and-ridges detail
+    bool m_cratered = false;
+    CraterLayer m_craters;
 };
 
 // Equirect 8-bit grey heights -> metres. Ocean (water mask) texels keep

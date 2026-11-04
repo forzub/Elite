@@ -1275,7 +1275,14 @@ struct CelestialFlightRenderer::Impl
         terrain.set("uPixelAngle", static_cast<float>(pixelAngle));
         terrain.set("uHazeColour", rt.atmosphere.haze);
         terrain.set("uHazeDensity", hazeDensity);
-        terrain.set("uContourKm", static_cast<float>(rt.contourKm));
+        // Elite contours follow the eye: the body's relief / 6 from orbit, metres
+        // near the ground (2 % of the height over it, >= 5 m) - craters and
+        // small relief read as rings instead of falling between 1 km lines
+        {
+            const double groundHere = rt.field ? rt.field->sample(glm::normalize(cameraBody), 2000.0).heightM : 0.0;
+            const double above = std::max(1.0, glm::length(cameraBody) - b.radiusM - groundHere);
+            terrain.set("uContourKm", static_cast<float>(std::clamp(above * 0.02, 5.0, rt.contourKm * 1000.0) / 1000.0));
+        }
         terrain.set("uNaturalZones", naturalZones(rt) ? 1.0f : 0.0f);
         terrain.set("uDetailStrength", quality.detailNormals ? 0.35f : 0.0f);
         terrain.set("uFarFade", 0.0f);

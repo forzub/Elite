@@ -1173,6 +1173,29 @@ if(ELITE_BUILD_SERVER)
     if(WIN32)
         target_link_libraries(EliteShipThermalCheck PRIVATE ws2_32 mswsock)
     endif()
+
+    # Editor SOURCE folders of the catalog ships (primitive boxes per module from
+    # the runtime descriptors) + ship_models.json; --check verifies, writes nothing.
+    add_executable(EliteShipMeshExport
+        tools/ship_meshes/ShipPrimitiveMeshExport.cpp
+        ${ELITE_SERVER_SIMULATION_SOURCES}
+    )
+    target_include_directories(EliteShipMeshExport PRIVATE src "${CMAKE_SOURCE_DIR}")
+    target_link_libraries(EliteShipMeshExport PRIVATE
+        EliteNavigationGeometry
+        EliteNavigationWorldRuntime
+        EliteDockingInfrastructure
+        EliteManeuverDecision
+        EliteNavigationRuckig
+        EliteAssemblyGeometry
+        EliteRuntimeModelAssets
+        EliteBite
+        nlohmann_json::nlohmann_json
+        Threads::Threads
+    )
+    if(WIN32)
+        target_link_libraries(EliteShipMeshExport PRIVATE ws2_32 mswsock)
+    endif()
 endif()
 
 

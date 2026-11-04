@@ -178,6 +178,13 @@ PlanetSurfaceField::PlanetSurfaceField(const BodySurfaceDescriptor& body)
         m_craterClasses.push_back(c);
         cell /= 3.2;
     }
+    if ((m_archetype == SurfaceArchetype::AirlessRocky || m_archetype == SurfaceArchetype::Icy) &&
+        !m_craterClasses.empty() && density > 0.0)
+    {
+        const CraterClass& smallest = m_craterClasses.back();
+        m_smallCraters.configure(layerSeed(m_surfaceSeed, "small_craters"), m_radius,
+                                 smallest.cellM * smallest.minRadius, 1.5, std::max(density, 0.3), false);
+    }
 
     // Land threshold: the quantile of the continent signal that gives the
     // descriptor's land fraction (dry bodies: highland fraction 0.6).
@@ -744,10 +751,24 @@ SurfaceSample PlanetSurfaceField::sample(const glm::dvec3& dir, double minWavele
     {
         const double floorM = m_ocean ? std::min(0.5, seaLevel + 0.5) : -1.0e9;
         double h = std::max(total, floorM);
+        float craterRocks = 0.0f;
+        if (!m_smallCraters.empty())
+        {
+            const CraterSample c = m_smallCraters.sample(dir, minWavelengthM);
+            h += c.heightM;
+            s.freshness = std::max(s.freshness, c.freshness);
+            craterRocks = c.rockiness;
+            if (c.insideCrater && s.featureClass == FeatureClass::None)
+            {
+                s.featureClass = FeatureClass::ImpactCrater;
+                s.featureId = c.craterId;
+            }
+        }
         if (minWavelengthM < 8.0)
         {
-            // Rocks on steep / high / bare ground only.
-            const double rockiness = std::clamp(0.15 + 0.6 * t.ranges + (m_vegetation ? -0.1 : 0.2), 0.0, 0.8);
+            // Rocks on steep / high / bare ground only - and on fresh crater rims.
+            const double rockiness =
+                std::clamp(0.15 + 0.6 * t.ranges + (m_vegetation ? -0.1 : 0.2) + 0.5 * craterRocks, 0.0, 0.8);
             h += boulders(dir, minWavelengthM, rockiness);
         }
         s.heightM = h;

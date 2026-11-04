@@ -36,7 +36,9 @@ class CraterLayer
 {
 public:
     // density 0..1: 1 = saturated lunar highlands (descriptor crater_density)
-    void configure(std::uint64_t seed, double bodyRadiusM, double maxCraterRadiusM, double minCraterRadiusM, double density);
+    // boulders: add the 0.5 - 6 m blocks (a field that has its own leaves them off)
+    void configure(std::uint64_t seed, double bodyRadiusM, double maxCraterRadiusM, double minCraterRadiusM, double density,
+                   bool boulders = true);
     bool empty() const { return m_classes.empty(); }
 
     CraterSample sample(const glm::dvec3& dir, double minWavelengthM) const;
@@ -54,5 +56,6 @@ private:
     std::uint64_t m_seed = 0;
     std::uint64_t m_bouldersSeed = 0;
     double m_radius = 1.0;
+    bool m_withBoulders = true;
 };
 } // namespace world::celestial::surface

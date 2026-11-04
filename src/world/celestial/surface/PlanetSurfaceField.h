@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "src/world/celestial/surface/BodySurfaceDescriptor.h"
+#include "src/world/celestial/surface/CraterLayer.h"
 #include "src/world/celestial/surface/SurfaceField.h"
 #include "src/world/celestial/surface/SurfaceNoise.h"
 
@@ -120,6 +121,9 @@ private:
     double m_volcanoProbability = 0.0;
     double m_lakeProbability = 0.0;
     std::vector<CraterClass> m_craterClasses;
+    // airless / icy bodies: the crater population continued below the smallest
+    // class down to 1.5 m (the lunar landscape on every procedural moon)
+    CraterLayer m_smallCraters;
     double m_detailBoundM = 0.0;
 
     // Climate

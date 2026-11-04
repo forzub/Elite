@@ -69,6 +69,8 @@ namespace
             {0, "planet_saturn", "saturn"},        {0, "planet_mercury", "mercury"},
             {41, "planet_hd_104067_g", "proc_terrestrial"}, {41, "planet_hd_104067_d", "proc_lava"},
             {41, "planet_hd_104067_e", "proc_icy"}, {41, "planet_hd_104067_b", "proc_gas_giant"},
+            // a saturated, airless procedural moon (crater classes + the small-crater tail)
+            {47, "moon_hd_154345_b_ii", "proc_moon"},
         };
         return t;
     }

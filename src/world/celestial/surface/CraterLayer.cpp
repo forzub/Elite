@@ -14,9 +14,10 @@ constexpr double MaxRadiusOfCell = 0.38;
 }
 
 void CraterLayer::configure(std::uint64_t seed, double bodyRadiusM, double maxCraterRadiusM, double minCraterRadiusM,
-                            double density)
+                            double density, bool boulders)
 {
     m_classes.clear();
+    m_withBoulders = boulders;
     m_seed = seed;
     m_bouldersSeed = deriveSeed(seed, "boulders");
     m_radius = std::max(1.0, bodyRadiusM);
@@ -106,7 +107,8 @@ CraterSample CraterLayer::sample(const glm::dvec3& dir, double minWavelengthM) c
                     }
                 }
     }
-    out.heightM += boulders(dir, minWavelengthM, 0.03 + 0.6 * out.rockiness);
+    if (m_withBoulders)
+        out.heightM += boulders(dir, minWavelengthM, 0.03 + 0.6 * out.rockiness);
     return out;
 }
 

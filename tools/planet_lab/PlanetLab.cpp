@@ -124,6 +124,34 @@ int main(int argc, char** argv)
             return 0;
         }
 
+    // --probe-fine: 400 m eastward from each focus at 2 m steps, band 2 m (the
+    // ground-level relief: small craters, boulders) - min / max / mean slope
+    for (int i = 1; i < argc; ++i)
+        if (std::string(argv[i]) == "--probe-fine")
+        {
+            for (const auto& b : bodies)
+            {
+                const glm::dvec3 up = b.focusDir;
+                const glm::dvec3 east = glm::normalize(glm::cross(glm::dvec3(0, 1, 0), up));
+                double lo = 1e30, hi = -1e30, slope = 0.0, prev = 0.0;
+                std::printf("%s:", b.label.c_str());
+                for (int k = 0; k <= 200; ++k)
+                {
+                    const glm::dvec3 d = glm::normalize(up + east * (k * 2.0 / b.field->referenceRadiusM()));
+                    const double h = b.field->sample(d, 2.0).heightM;
+                    lo = std::min(lo, h);
+                    hi = std::max(hi, h);
+                    if (k > 0)
+                        slope += std::abs(h - prev) / 2.0;
+                    prev = h;
+                    if (k % 10 == 0)
+                        std::printf(" %.1f", h);
+                }
+                std::printf("\n  range %.2f m, mean |slope| %.3f\n", hi - lo, slope / 200.0);
+            }
+            return 0;
+        }
+
     if (checks || !record.empty() || !verify.empty())
         return planet_lab::runLabChecks(bodies, record, verify) == 0 ? 0 : 1;
     return planet_lab::runViewer(bodies, capture);

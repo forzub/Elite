@@ -2066,9 +2066,9 @@ Restore point: `restore/pre-hublist-freeflight-2026-11-03` (= ac71cfb6).
   station collision yet.
 - Not verified live: the turn-rate value itself; Newtonian Backspace (Assisted
   only in the input); OFF with no hub within 50 km.
-- Radar: the cockpit radar HUD is disabled by design
-  (`RuntimeFeatureFlags.h` RadarHudEnabled = false: the player slot holds the
-  TEST_IDEAL_RADAR sensor without presentation) - not a regression.
+- Radar: the cockpit radar HUD was disabled (`RuntimeFeatureFlags.h`
+  RadarHudEnabled = false) - superseded 2026-11-04 e: the scope now draws the
+  session-private scan (see that section).
 - Pending order (user, 2026-11-03, 60 sections): unify free flight, global
   autopilot, hub transfers and real ship components into one physics; it is
   written for main AFTER a generic ship / ShipDescriptor / equipment pass that
@@ -2316,6 +2316,28 @@ Restore point: tag restore/pre-ship-meshes-b-2026-11-04.
 - Not done: runtime still draws catalog ships from descriptor primitives (not from these OBJ / a compiled
   .elmodel); editor "open ship record -> load new mesh -> save as actual" flow (index source=authored is the
   hook); hangar interiors / parked craft geometry; human check of the editor list.
+
+### Player radar scope + user report "freezes / slow route / hull oscillation" (2026-11-04 e)
+- Radar (64dc8931): the cockpit PPI scope was off (`RadarHudEnabled = false`, recorded earlier as "by
+  design") and read the empty legacy `radarContacts`; the server sensor unit already produced the
+  session-private RadarScanReport. Now the scope draws those tracks (nothing when the radar module is
+  destroyed / unpowered), automatic 1-2-5 km scale, state line above the scope; navigation-sensor
+  contract updated (HUD allowed only when fed by the scan). GAME evidence: D:/tmp/elite_freeze_run1/
+  radar_30s.png - scope visible, "RADAR 1 km | 8 tracks" at the start hub. Blips only on sweep (not seen
+  in the single frame); human check pending.
+- User report after a docking flight: strong freezes passing the station, very long route computation,
+  vertical hull oscillation. A/B real-game flights (nav-stress:simple, D:/tmp/elite_freeze_run1, base =
+  restore/pre-generic-ships-2026-11-04, head = 64dc8931):
+  Assisted route worker 44.0 s (base) vs 44.8 s (head) - the slow Assisted planner is PRE-EXISTING
+  (Newtonian 1.08 / 1.07 s); the user's 55.9 s request (elite_docking_planner.log) was Assisted.
+  N1: DONE 230.6 / 234.0 s, max cross-track 15.0 / 20.6 m, hitches 0 / 1 (81 ms autopilot update);
+  A3: hitches 0 / 0, xtrack 24.1 / 25.2 m. Pitch command sign changes ~550 / ~465 per flight, mean
+  |omega| 0.266 / 0.270 - no new oscillation in the trace. Freezes NOT reproduced in the fixture;
+  the user's scene (normal start, hub traffic) not reproduced yet. OPEN: Assisted planner time (45 s);
+  user-visible vertical oscillation (needs the user's flight trace); freezes in the normal scene.
+- "Fatal error:" (empty message) at startup: reproduced twice when EliteGame was relaunched right after a
+  timeout-killed instance; a relaunch a minute later starts normally. No leftover Elite / WebView2
+  processes found. Root cause not proven.
 
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the

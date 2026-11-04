@@ -1,4 +1,5 @@
 #include "src/game/ship/core/ShipCoreInternal.h"
+#include "src/game/geometry/CatalogShipAssembly.h"
 
 
 using namespace game::ship::geometry;
@@ -163,9 +164,16 @@ void ShipCore::init(
     refreshDeviceState();
     refreshRuntimeState();
 
-    if (game::ship::geometry::AssemblyMeshLibrary::has(descriptor.typeId))
+    if (m_desc->catalog.valid())
     {
-        const auto& assembly = game::ship::geometry::AssemblyMeshLibrary::get(descriptor.typeId);
+        m_assemblyRuntime.init(
+            game::ship::geometry::catalogShipAssembly(*m_desc)
+        );
+    }
+    else if (game::ship::geometry::AssemblyMeshLibrary::has(m_desc->typeId))
+    {
+        const auto& assembly =
+            game::ship::geometry::AssemblyMeshLibrary::get(m_desc->typeId);
         m_assemblyRuntime.init(assembly);
     }
 

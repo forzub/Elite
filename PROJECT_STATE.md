@@ -2206,6 +2206,14 @@ passport-id identity, runtime check, Cobra on the same path; economics NOT rewri
   EliteShipCatalogCheck marks a full passport load with containers=containerSlots (OCS-4 = 24 boxes).
   The designer's field name mass.gross_t / accel_g_loaded still excludes C20 tare and is therefore
   semantically misleading; reconcile/rename it when the passport/economics layer is made authoritative.
+- Review correction after 5c971ead: catalog ships now use the same CPU CatalogShipAssembly on the
+  authoritative ShipCore side as on the client. Its primitive meshes are module-local with the module
+  origin at the passport placement, so detach/repair no longer depends on a legacy ObjectType /
+  AssemblyMeshLibrary entry. EliteShipCatalogCheck now requires the He-T12 car to spawn a detached
+  fragment at its passport position and to reattach with the parent's mass restored.
+- Detached-fragment limitation: ObjectDetachedFragmentRuntime is still a kinematic salvage/repair
+  representation, not an independent rigid body with its own mass/cargo state. Parent mass conservation
+  on detach is correct; world-level fragment mass/cargo conservation remains future work.
 - Known RCS granularity limit found in review: designs with 16 cluster units at 8 mount positions are
   represented as 8 damageable node-parent modules with 2x mass/authority each. Healthy mass/thrust is
   correct, but losing a node currently removes both co-located clusters together; unit-level 16-cluster

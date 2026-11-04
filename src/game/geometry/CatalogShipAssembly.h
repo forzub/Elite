@@ -108,13 +108,18 @@ inline void finish(MeshData& mesh)
             AssemblyModule m;
             m.id = b.moduleId;
             m.subsystemId = b.category;
+            // Passport primitive blocks are authored in ship-local coordinates.
+            // Give the module a real origin and keep its mesh module-local so
+            // the same ObjectAssembly also works for detached fragments.
+            m.localPosition = b.centerMeters;
             a.modules.push_back(std::move(m));
         }
         auto& module = a.modules[it->second];
         AssemblyMeshPart part;
         part.id = b.moduleId + "#" + std::to_string(module.meshes.size());
         const glm::vec3 colour = colourOf(b.category);
-        appendBox(part.lod0Mesh, b.centerMeters, b.halfSizeMeters, colour);
+        const glm::vec3 localCenter = b.centerMeters - module.localPosition;
+        appendBox(part.lod0Mesh, localCenter, b.halfSizeMeters, colour);
         finish(part.lod0Mesh);
         part.lod1Mesh = part.lod0Mesh;
         part.minBounds = part.rawMinBounds = part.lod0Mesh.minBounds;

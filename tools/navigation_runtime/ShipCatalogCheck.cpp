@@ -321,11 +321,23 @@ int main(int argc, char** argv)
             m->placement.massKg + carCargo * 1000.0 +
             (boxesAboard(load.cargoTonnes) - boxesAboard(load.cargoTonnes - carCargo)) *
                 catalog::ships::C20TareTonnes * 1000.0;
-        check(detached && std::abs((before - core->currentMassKg()) - carKg) < 1e-3 * carKg &&
-                  core->capabilities().effectivePhysics.forwardMainEngineAccelerationMps2 > aBefore,
-              "He-T12 train: detaching car " + car + " removes " + num((before - core->currentMassKg()) / 1000.0, 0) +
-                  " t (car + its cargo); acceleration " + num(aBefore / G0) + " -> " +
-                  num(core->capabilities().effectivePhysics.forwardMainEngineAccelerationMps2 / G0) + " g");
+        const bool fragmentSpawned =
+            core->detachedFragmentRuntime().hasFragment(car);
+        const auto* fragment =
+            core->detachedFragmentRuntime().findFragment(car);
+        const bool fragmentAtPassportPosition =
+            fragment &&
+            glm::length(fragment->homeCenterLocal - m->placement.centerMeters) < 1.0e-4f;
+        const double detachedMassKg = core->currentMassKg();
+        const bool reattached = core->debugReattachModuleById(car);
+        core->refreshRuntimeState();
+        check(detached && fragmentSpawned && fragmentAtPassportPosition &&
+                  std::abs((before - detachedMassKg) - carKg) < 1e-3 * carKg &&
+                  core->capabilities().effectivePhysics.forwardMainEngineAccelerationMps2 > aBefore &&
+                  reattached && std::abs(core->currentMassKg() - before) < 1e-6 * before,
+              "He-T12 train: detached car becomes a fragment at its passport position, removes " +
+                  num((before - detachedMassKg) / 1000.0, 0) +
+                  " t (car + cargo + C20), then reattaches with mass restored");
     }
 
     // ---- fixed-step propulsion on the production control path

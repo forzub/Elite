@@ -1,11 +1,27 @@
 // ShipCore: damage intake, module runtime / hit-volume sync, structure, repairs, capsule ejection and DEV module operations.
 
 #include "src/game/ship/core/ShipCoreInternal.h"
+#include "src/game/geometry/CatalogShipAssembly.h"
 
 using namespace game::ship::geometry;
 
 namespace game::ship::core
 {
+namespace
+{
+const game::ship::geometry::ObjectAssembly* runtimeAssemblyForDescriptor(
+    const ShipDescriptor& descriptor
+)
+{
+    if (descriptor.catalog.valid())
+        return &game::ship::geometry::catalogShipAssembly(descriptor);
+
+    if (game::ship::geometry::AssemblyMeshLibrary::has(descriptor.typeId))
+        return &game::ship::geometry::AssemblyMeshLibrary::get(descriptor.typeId);
+
+    return nullptr;
+}
+}
 
 
 
@@ -241,12 +257,8 @@ bool ShipCore::debugResetStructure()
     m_detachedFragmentRuntime.clear();
     m_repairJobRuntime.clear();
 
-    if (game::ship::geometry::AssemblyMeshLibrary::has(m_desc->typeId))
-    {
-        const auto& assembly =
-            game::ship::geometry::AssemblyMeshLibrary::get(m_desc->typeId);
-        m_assemblyRuntime.init(assembly);
-    }
+    if (const auto* assembly = runtimeAssemblyForDescriptor(*m_desc))
+        m_assemblyRuntime.init(*assembly);
 
     world::modules::ObjectRuntimeHitBuilder::rebuild(
         m_hitComponent,
@@ -552,11 +564,9 @@ ShipCore::buildMissingPartRequests() const
     if (!m_desc)
         return out;
 
-    if (!game::ship::geometry::AssemblyMeshLibrary::has(m_desc->typeId))
+    const auto* assembly = runtimeAssemblyForDescriptor(*m_desc);
+    if (!assembly)
         return out;
-
-    const auto& assembly =
-        game::ship::geometry::AssemblyMeshLibrary::get(m_desc->typeId);
 
     for (const auto& module : m_moduleRuntime.modules())
     {
@@ -572,7 +582,7 @@ ShipCore::buildMissingPartRequests() const
 
         const auto* assemblyModule =
             world::modules::findAssemblyModuleById(
-                assembly,
+                *assembly,
                 module.moduleId
             );
 
@@ -592,7 +602,7 @@ ShipCore::buildMissingPartRequests() const
 
         req.homeLocalModel =
             world::modules::buildAssemblyModuleHierarchicalLocalModel(
-                assembly,
+                *assembly,
                 m_assemblyRuntime,
                 module.moduleId
             );
@@ -980,17 +990,15 @@ void ShipCore::syncDetachedFragmentsFromModuleRuntime()
     if (!m_desc)
         return;
 
-    if (!game::ship::geometry::AssemblyMeshLibrary::has(m_desc->typeId))
+    const auto* assembly = runtimeAssemblyForDescriptor(*m_desc);
+    if (!assembly)
         return;
 
-    const auto& assembly =
-        game::ship::geometry::AssemblyMeshLibrary::get(m_desc->typeId);
-
-    const glm::mat4 ownerModel =    m_transform.orientation;
+    const glm::mat4 ownerModel = m_transform.orientation;
 
     m_detachedFragmentRuntime.syncFromDetachedModules(
         ownerModel,
-        assembly,
+        *assembly,
         m_assemblyRuntime,
         m_moduleRuntime,
         m_hitComponent

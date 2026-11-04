@@ -1,0 +1,131 @@
+{
+  "schema": "hub_modules/1",
+  "status": "PROPOSAL",
+  "note": "Из чего состоит хаб. Хаб = набор блоков, блок = набор модулей. Состав каждого хаба ВЫВОДИТСЯ (economy_live.py) из уже существующих данных площадки: тип (world_sites.site_types), docks, storage_t, population, level, repair, medical/quarantine_beds, а у хабов Сола — dock_sectors / dock_modules / passenger_terminals / cargo_terminals / service_berths / function из sol_network.json. Маяки тоже хабы: мост-маяки (beacons_3126.bridge, штат 40), навигационные ретрансляторы Сола (sites_3126.relays, без штата) и объекты глубокого космоса (world_sites.deep_space_objects). Челночный док = рантаймовый модуль HexDock hub_hex_dock_a (6 площадок + 6 мест ожидания; sol_network.dock_model). Числа — PROPOSAL.",
+  "blocks": {
+    "admin": "Администрация и жильё",
+    "passenger": "Пассажирский блок",
+    "cargo": "Грузовой блок",
+    "service": "Заправка, ремонт, отстойник",
+    "industry": "Производство",
+    "science": "Наука",
+    "military": "Военный блок",
+    "beacon": "Маяк"
+  },
+  "module_types": {
+    "admin_station": {"ru": "станция-администрация", "block": "admin", "staff": 40, "staff_level_a": 200, "function": "диспетчерская, офис оператора, доска объявлений, банк, суд/право, связь с маяком"},
+    "customs_post": {"ru": "таможенный пост", "block": "admin", "inspection_berths": 2, "inspection_berths_level_a": 4, "staff": 12, "function": "досмотр, пошлины, иммиграция, решение о допуске кораблей чужих блоков"},
+    "habitat": {"ru": "жилой модуль", "block": "admin", "beds": 2500, "function": "персонал и жители; маленькие хабы — один модуль на весь штат"},
+    "medical_bay": {"ru": "медблок", "block": "admin", "function": "больничные места (site.medical_beds)"},
+    "quarantine_ward": {"ru": "карантинный блок", "block": "admin", "function": "карантинные места (site.quarantine_beds), причалы выдержки"},
+    "market_exchange": {"ru": "биржа", "block": "admin", "function": "торговля товарами каталога; уровень рынка: full / local / supply"},
+    "shuttle_dock": {"ru": "челночный док (HexDock)", "block": "passenger", "pads": 6, "waiting": 6, "pad_cycles_day": 37, "function": "лифтеры и челноки поверхность ↔ орбита, хаб ↔ хаб; 22 ч работы / цикл 35 мин"},
+    "hotel": {"ru": "гостиница", "block": "passenger", "beds_per_liner_platform": 150, "beds_per_sol_terminal": 1200, "function": "транзитные пассажиры, экипажи, вахтовики в ожидании рейса"},
+    "liner_platform": {"ru": "платформы лайнеров", "block": "passenger", "function": "причалы межзвёздных/межпланетных лайнеров L-900 «Пилигрим» (900 мест) и транспортов «Исход»"},
+    "cargo_terminal": {"ru": "грузовой терминал", "block": "cargo", "docks": 8, "train_berths_level_a": 1, "teu_per_dock": 60, "function": "причалы фрейтеров и Cobrett, площадка контейнеров C20, у A-хабов — причал прыжкового поезда"},
+    "warehouse": {"ru": "склад", "block": "cargo", "storage_t": 100000, "function": "склады хаба (site.storage_t)"},
+    "refuel_dock": {"ru": "заправочный док", "block": "service", "docks": 6, "function": "реакторное топливо и заряд прыжка в баки кораблей"},
+    "fuel_terminal": {"ru": "топливный / газовый терминал", "block": "service", "tanker_berths": 2, "tank_t_per_berth": 1500, "function": "приём танкеров (газовый танкер 3 000 т, поезд-танкер), хранение D/He-3, заряда и газов"},
+    "service_dock": {"ru": "сервисный док", "block": "service", "docks": 6, "function": "ремонт и обслуживание (уровень site.repair)"},
+    "holding_area": {"ru": "отстойник", "block": "service", "function": "стоянка в ожидании окна, досмотра, решения таможни или карантина; сюда отправляют корабли чужих блоков"},
+    "ore_yard": {"ru": "рудный двор", "block": "industry", "tug_berths": 2, "function": "приём плотов руды и льда от буксиров, дробление, обогащение"},
+    "production_plant": {"ru": "производственный модуль", "block": "industry", "function": "металлургия, химия, сборка (по назначению хаба)"},
+    "gas_platform_link": {"ru": "узел газовых платформ", "block": "industry", "function": "сбор газа и He-3 с платформ в атмосфере гиганта"},
+    "shipyard_slip": {"ru": "стапель", "block": "industry", "function": "сборка и капремонт корпусов"},
+    "lab_module": {"ru": "лабораторный модуль", "block": "science", "staff": 30, "function": "наблюдения, исследования, образцы"},
+    "naval_berth": {"ru": "военный причал и арсенал", "block": "military", "function": "причалы кораблей флота, боезапас, топливо флота"},
+    "beacon_core": {"ru": "ядро маяка", "block": "beacon", "function": "навигационный маяк / ретранслятор: эфемериды, точное время, почта, рыночные бюллетени"}
+  },
+  "dock_split": {
+    "note": "Как распределить site.docks (площадки) по функциям для хабов без детальной разметки. Сумма = docks; остаток после округления уходит в первую ненулевую статью.",
+    "keys": ["shuttle", "liner", "cargo", "refuel", "service", "naval"],
+    "orbital_hub":            [0.40, 0.10, 0.25, 0.15, 0.10, 0.00],
+    "trade_hub":              [0.25, 0.10, 0.40, 0.15, 0.10, 0.00],
+    "planetary_surface_port": [0.55, 0.00, 0.25, 0.10, 0.10, 0.00],
+    "moon_hub":               [0.50, 0.00, 0.30, 0.10, 0.10, 0.00],
+    "belt_hub":               [0.30, 0.00, 0.40, 0.20, 0.10, 0.00],
+    "mining_hub":             [0.17, 0.00, 0.50, 0.17, 0.16, 0.00],
+    "industrial_hub":         [0.25, 0.00, 0.50, 0.125, 0.125, 0.00],
+    "military_hub":           [0.125, 0.00, 0.125, 0.125, 0.125, 0.50],
+    "quarantine_hub":         [0.50, 0.00, 0.17, 0.17, 0.16, 0.00],
+    "science_hub":            [0.50, 0.00, 0.00, 0.25, 0.25, 0.00],
+    "free_port":              [0.30, 0.00, 0.30, 0.15, 0.25, 0.00],
+    "deep_space_refuel_point":[0.25, 0.00, 0.00, 0.50, 0.25, 0.00],
+    "deep_space_relay":       [0.00, 0.00, 0.00, 0.50, 0.50, 0.00],
+    "derelict_hub":           [0.50, 0.00, 0.00, 0.00, 0.50, 0.00],
+    "abandoned_hub":          [0.00, 0.00, 0.00, 0.00, 0.00, 0.00]
+  },
+  "type_rules": {
+    "orbital_hub":            {"market": "full",   "customs": true,  "fuel_terminal": "level_a", "holding_min": 6},
+    "trade_hub":              {"market": "full",   "customs": true,  "fuel_terminal": "level_a", "holding_min": 8},
+    "planetary_surface_port": {"market": "full",   "customs": true,  "fuel_terminal": "no",      "holding_min": 4},
+    "moon_hub":               {"market": "local",  "customs": true,  "fuel_terminal": "no",      "holding_min": 4},
+    "belt_hub":               {"market": "full",   "customs": true,  "fuel_terminal": "yes",     "holding_min": 6, "special": ["ore_yard"]},
+    "mining_hub":             {"market": "local",  "customs": false, "fuel_terminal": "no",      "holding_min": 4, "special": ["ore_yard"]},
+    "industrial_hub":         {"market": "local",  "customs": false, "fuel_terminal": "no",      "holding_min": 4, "special": ["production_plant"]},
+    "military_hub":           {"market": "supply", "customs": true,  "fuel_terminal": "yes",     "holding_min": 6},
+    "quarantine_hub":         {"market": "supply", "customs": true,  "fuel_terminal": "no",      "holding_min": 20},
+    "science_hub":            {"market": "supply", "customs": false, "fuel_terminal": "no",      "holding_min": 2, "special": ["lab_module"]},
+    "free_port":              {"market": "black",  "customs": false, "fuel_terminal": "no",      "holding_min": 6},
+    "deep_space_refuel_point":{"market": "supply", "customs": false, "fuel_terminal": "yes",     "holding_min": 8},
+    "deep_space_relay":       {"market": "none",   "customs": false, "fuel_terminal": "no",      "holding_min": 2, "special": ["beacon_core"]},
+    "derelict_hub":           {"market": "none",   "customs": false, "fuel_terminal": "no",      "holding_min": 0},
+    "abandoned_hub":          {"market": "none",   "customs": false, "fuel_terminal": "no",      "holding_min": 0},
+    "beacon_bridge":          {"market": "supply", "customs": false, "fuel_terminal": "no",      "holding_min": 2, "special": ["beacon_core"]},
+    "beacon_relay":           {"market": "none",   "customs": false, "fuel_terminal": "no",      "holding_min": 0, "special": ["beacon_core"]}
+  },
+  "function_keywords": {
+    "note": "Подстрока в purpose / function / roles (без регистра) -> дополнительный модуль.",
+    "fuel_terminal": ["топлив", "газ", "he-3", "заряд прыжка", "fuel", "gas"],
+    "gas_platform_link": ["газовые платформы", "he-3", "gas"],
+    "ore_yard": ["рудник", "руд", "лёд", "ice", "mining"],
+    "shipyard_slip": ["верф", "shipyard", "стапел"],
+    "lab_module": ["наук", "science", "наблюдени", "observation"],
+    "naval_berth": ["военн", "defence", "кордон", "пикет"],
+    "quarantine_ward": ["карантин", "quarantine"],
+    "production_plant": ["металлург", "химич", "industry", "metallurgy", "chemicals", "промышлен"]
+  },
+  "port_staff": {
+    "note": "Наземный порт и хаб на луне в данных площадки несут население своего города; жилые модули самого хаба — только персонал порта.",
+    "types": ["planetary_surface_port", "moon_hub"],
+    "staff_per_dock": 150,
+    "storage_t_per_staff": 1000
+  },
+  "sol_detail_rule": {
+    "note": "Хабы Сола с разметкой (dock_modules > 0): челночные доки = dock_modules HexDock в dock_sectors секторах; пассажирские терминалы = passenger_terminals x (гостиница + платформы); грузовые = cargo_terminals; сервисные доки = service_berths; заправка = 6 доков на каждые 3 сектора (x2 при функции «топливо»).",
+    "liner_platforms_per_terminal": 1,
+    "liner_platforms_per_terminal_gateway": 2,
+    "refuel_docks_per_3_sectors": 6
+  },
+  "beacons": {
+    "bridge": {"site_type": "beacon_bridge", "type_ru": "мост-маяк", "docks": 3, "storage_t": 2000, "staff_from": "beacons_3126.bridge[].staff", "repair": "basic", "security": 0.3, "medical_beds": 2, "quarantine_beds": 1, "dock_split": [0.34, 0.0, 0.0, 0.33, 0.33, 0.0]},
+    "relay": {"site_type": "beacon_relay", "type_ru": "навигационный ретранслятор", "docks": 1, "storage_t": 50, "staff": 0, "repair": "none", "security": 0.1, "medical_beds": 0, "quarantine_beds": 0, "dock_split": [0.0, 0.0, 0.0, 0.0, 1.0, 0.0]}
+  },
+  "supply": {
+    "note": "Снабжение и вахты. Хаб считается удалённым (remote), если его тип в remote_types или в его системе нет хаба с полным рынком. Удалённые хабы и маяки сами не закупают на рынке: их оператор публикует заявки на доске родительского хаба (supply_parent).",
+    "remote_level_a_exempt": "хаб класса A (столица пояса, главная база) не вахтовый, даже если тип в remote_types",
+    "remote_types": ["mining_hub", "science_hub", "military_hub", "quarantine_hub", "deep_space_refuel_point", "deep_space_relay", "beacon_bridge", "beacon_relay"],
+    "rotation": {
+      "mining_hub":              {"share": 0.7, "period_days": 90},
+      "science_hub":             {"share": 0.8, "period_days": 120},
+      "military_hub":            {"share": 1.0, "period_days": 365},
+      "quarantine_hub":          {"share": 0.5, "period_days": 120},
+      "industrial_hub":          {"share": 0.3, "period_days": 180},
+      "deep_space_refuel_point": {"share": 0.8, "period_days": 120},
+      "deep_space_relay":        {"share": 1.0, "period_days": 180},
+      "beacon_bridge":           {"share": 1.0, "period_days": 180},
+      "beacon_relay":            {"share": 0.0, "period_days": 365, "maintenance_visit": true}
+    },
+    "kit_per_person_30d_t": {
+      "food_rations": 0.030,
+      "food_staples": 0.016,
+      "water": 0.010,
+      "oxygen": 0.002,
+      "pharmaceuticals": 0.0003,
+      "household_goods": 0.005,
+      "reactor_fuel": 0.00026
+    },
+    "kit_per_module_30d_t": {"spare_parts": 0.15, "life_support": 0.02},
+    "kit_basis": "еда 0.55 т/чел/год (commodities.food), вода — подпитка после рециркуляции ~30 % от 0.4 т/год, энергия 14 кВт/чел (polity_economy) при 3.5e14 Дж/кг и КПД 0.4 = 3.2 кг D/He-3 в год; запчасти — износ модулей"
+  }
+}

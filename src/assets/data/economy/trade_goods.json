@@ -1,0 +1,784 @@
+{
+ "container": {
+  "id": "C20",
+  "payload_t": 20.0,
+  "status": "PROPOSAL",
+  "tare_t": 1.7,
+  "volume_m3": 23.3
+ },
+ "do_not_edit": true,
+ "generated_by": "tools/colonization_lab/economy_live.py (copy of canon/trade_goods.json + base prices)",
+ "goods": [
+  {
+   "base_cr_t": 630.0,
+   "commodity": "food",
+   "density_t_m3": 0.65,
+   "group": "food",
+   "hazard": "A",
+   "id": "food_staples",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 0.7,
+   "ru": "Зерно и концентраты",
+   "share": 0.6,
+   "shelf_days": 720
+  },
+  {
+   "base_cr_t": 1260.0,
+   "commodity": "food",
+   "density_t_m3": 0.45,
+   "group": "food",
+   "hazard": "A",
+   "id": "food_fresh",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "needs": "reefer",
+   "price_factor": 1.4,
+   "ru": "Свежие продукты",
+   "share": 0.3,
+   "shelf_days": 20
+  },
+  {
+   "base_cr_t": 1620.0,
+   "commodity": "food",
+   "density_t_m3": 0.6,
+   "group": "food",
+   "hazard": "A",
+   "id": "food_rations",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 1.8,
+   "ru": "Пайки и консервы",
+   "share": 0.1,
+   "shelf_days": 1800
+  },
+  {
+   "base_cr_t": 20.0,
+   "commodity": "water_volatiles",
+   "density_t_m3": 0.95,
+   "group": "water_gas",
+   "hazard": "A",
+   "id": "water",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 0.8,
+   "ru": "Вода (лёд, очищенная)",
+   "share": 0.75
+  },
+  {
+   "base_cr_t": 35.0,
+   "commodity": "water_volatiles",
+   "density_t_m3": 0.8,
+   "group": "water_gas",
+   "hazard": "A",
+   "id": "tech_gases",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "needs": "tank",
+   "price_factor": 1.4,
+   "ru": "Технические газы (N2, CO2, NH3)",
+   "share": 0.2
+  },
+  {
+   "base_cr_t": 60.0,
+   "commodity": "water_volatiles",
+   "density_t_m3": 1.1,
+   "group": "water_gas",
+   "hazard": "A",
+   "id": "oxygen",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "needs": "tank",
+   "price_factor": 2.4,
+   "ru": "Кислород и дыхательные смеси",
+   "share": 0.05
+  },
+  {
+   "base_cr_t": 34.0,
+   "commodity": "ore",
+   "density_t_m3": 2.4,
+   "group": "ore",
+   "hazard": "A",
+   "id": "ore_common",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 0.85,
+   "ru": "Руда (железо, никель, алюминий)",
+   "share": 0.9
+  },
+  {
+   "base_cr_t": 96.0,
+   "commodity": "ore",
+   "density_t_m3": 2.4,
+   "group": "ore",
+   "hazard": "A",
+   "id": "ore_rare",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 2.4,
+   "ru": "Редкие и платиноидные руды",
+   "share": 0.1
+  },
+  {
+   "base_cr_t": 858.0,
+   "commodity": "metals",
+   "density_t_m3": 5.0,
+   "group": "metals",
+   "hazard": "A",
+   "id": "steel",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 0.78,
+   "ru": "Сталь и конструкционные сплавы",
+   "share": 0.55
+  },
+  {
+   "base_cr_t": 1320.0,
+   "commodity": "metals",
+   "density_t_m3": 3.0,
+   "group": "metals",
+   "hazard": "A",
+   "id": "light_alloys",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 1.2,
+   "ru": "Лёгкие сплавы (Al, Ti, Mg)",
+   "share": 0.3
+  },
+  {
+   "base_cr_t": 33000.0,
+   "commodity": "metals",
+   "density_t_m3": 12.0,
+   "group": "metals",
+   "hazard": "A",
+   "id": "precious_metals",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 30.0,
+   "ru": "Платиноиды и драгоценные металлы",
+   "share": 0.005
+  },
+  {
+   "base_cr_t": 385.0,
+   "commodity": "metals",
+   "density_t_m3": 1.5,
+   "group": "metals",
+   "hazard": "A",
+   "id": "scrap",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 0.35,
+   "ru": "Металлолом и утиль",
+   "share": 0.145
+  },
+  {
+   "base_cr_t": 1980.0,
+   "commodity": "chemicals",
+   "density_t_m3": 0.9,
+   "group": "chemicals",
+   "hazard": "C",
+   "id": "polymers",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 1.1,
+   "ru": "Полимеры и пластики",
+   "share": 0.45
+  },
+  {
+   "base_cr_t": 1530.0,
+   "commodity": "chemicals",
+   "density_t_m3": 0.9,
+   "group": "chemicals",
+   "hazard": "C",
+   "id": "industrial_chem",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "needs": "tank",
+   "price_factor": 0.85,
+   "ru": "Промышленная химия (кислоты, растворители)",
+   "share": 0.4
+  },
+  {
+   "base_cr_t": 1620.0,
+   "commodity": "chemicals",
+   "density_t_m3": 0.9,
+   "group": "chemicals",
+   "hazard": "B",
+   "id": "fertilizers",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 0.9,
+   "ru": "Удобрения и агрохимия",
+   "share": 0.15
+  },
+  {
+   "base_cr_t": 280.0,
+   "commodity": "construction",
+   "density_t_m3": 1.8,
+   "group": "construction",
+   "hazard": "A",
+   "id": "construction_bulk",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 0.8,
+   "ru": "Стройматериалы (панели, реголит-бетон)",
+   "share": 0.85
+  },
+  {
+   "base_cr_t": 770.0,
+   "commodity": "construction",
+   "density_t_m3": 0.5,
+   "group": "construction",
+   "hazard": "A",
+   "id": "habitat_modules",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 2.2,
+   "ru": "Жилые и шлюзовые модули",
+   "share": 0.15
+  },
+  {
+   "base_cr_t": 600000.0,
+   "commodity": "reactor_fuel",
+   "density_t_m3": 0.16,
+   "group": "fuel",
+   "hazard": "C",
+   "id": "reactor_fuel",
+   "legality": {
+    "faith": "legal",
+    "military": "restricted",
+    "open": "legal",
+    "strict": "restricted"
+   },
+   "needs": "tank",
+   "price_factor": 1.0,
+   "ru": "Реакторное топливо (D, He-3)",
+   "share": 1.0
+  },
+  {
+   "base_cr_t": 5080.0,
+   "commodity": "jump_charge",
+   "density_t_m3": 1.9,
+   "group": "fuel",
+   "hazard": "D",
+   "id": "jump_charge",
+   "legality": {
+    "faith": "restricted",
+    "military": "restricted",
+    "open": "restricted",
+    "strict": "restricted"
+   },
+   "price_factor": 1.0,
+   "ru": "Заряд прыжка",
+   "share": 1.0
+  },
+  {
+   "base_cr_t": 9000.0,
+   "commodity": "machinery",
+   "density_t_m3": 0.8,
+   "group": "machinery",
+   "hazard": "A",
+   "id": "industrial_machinery",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 1.0,
+   "ru": "Промышленное оборудование",
+   "share": 0.45
+  },
+  {
+   "base_cr_t": 8100.0,
+   "commodity": "machinery",
+   "density_t_m3": 0.8,
+   "group": "machinery",
+   "hazard": "A",
+   "id": "mining_equipment",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 0.9,
+   "ru": "Горное оборудование",
+   "share": 0.25
+  },
+  {
+   "base_cr_t": 10800.0,
+   "commodity": "machinery",
+   "density_t_m3": 0.8,
+   "group": "machinery",
+   "hazard": "A",
+   "id": "spare_parts",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 1.2,
+   "ru": "Запчасти и расходники",
+   "share": 0.2
+  },
+  {
+   "base_cr_t": 9900.0,
+   "commodity": "machinery",
+   "density_t_m3": 0.8,
+   "group": "machinery",
+   "hazard": "A",
+   "id": "life_support",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 1.1,
+   "ru": "Агрегаты жизнеобеспечения",
+   "share": 0.1
+  },
+  {
+   "base_cr_t": 108000.0,
+   "commodity": "electronics",
+   "density_t_m3": 0.35,
+   "group": "electronics",
+   "hazard": "A",
+   "id": "computing",
+   "legality": {
+    "faith": "legal",
+    "military": "restricted",
+    "open": "legal",
+    "strict": "restricted"
+   },
+   "price_factor": 0.9,
+   "ru": "Вычислители и электроника",
+   "share": 0.7
+  },
+  {
+   "base_cr_t": 156000.0,
+   "commodity": "electronics",
+   "density_t_m3": 0.35,
+   "group": "electronics",
+   "hazard": "A",
+   "id": "nav_sensors",
+   "legality": {
+    "faith": "legal",
+    "military": "restricted",
+    "open": "legal",
+    "strict": "restricted"
+   },
+   "price_factor": 1.3,
+   "ru": "Сенсоры и навигационные приборы",
+   "share": 0.3
+  },
+  {
+   "base_cr_t": 60000.0,
+   "commodity": "medical",
+   "density_t_m3": 0.4,
+   "group": "medical",
+   "hazard": "B",
+   "id": "pharmaceuticals",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 1.0,
+   "ru": "Лекарства",
+   "share": 0.5,
+   "shelf_days": 1000
+  },
+  {
+   "base_cr_t": 48000.0,
+   "commodity": "medical",
+   "density_t_m3": 0.4,
+   "group": "medical",
+   "hazard": "A",
+   "id": "medical_equipment",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 0.8,
+   "ru": "Медицинское оборудование",
+   "share": 0.35
+  },
+  {
+   "base_cr_t": 90000.0,
+   "commodity": "medical",
+   "density_t_m3": 0.4,
+   "group": "medical",
+   "hazard": "B",
+   "id": "vaccines_biotech",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "needs": "reefer",
+   "price_factor": 1.5,
+   "ru": "Вакцины и биокультуры",
+   "share": 0.15,
+   "shelf_days": 90
+  },
+  {
+   "base_cr_t": 4200.0,
+   "commodity": "consumer",
+   "density_t_m3": 0.3,
+   "group": "consumer",
+   "hazard": "A",
+   "id": "clothing",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 0.7,
+   "ru": "Одежда и текстиль",
+   "share": 0.35
+  },
+  {
+   "base_cr_t": 5400.0,
+   "commodity": "consumer",
+   "density_t_m3": 0.3,
+   "group": "consumer",
+   "hazard": "A",
+   "id": "household_goods",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 0.9,
+   "ru": "Бытовые товары",
+   "share": 0.45
+  },
+  {
+   "base_cr_t": 10800.0,
+   "commodity": "consumer",
+   "density_t_m3": 0.3,
+   "group": "consumer",
+   "hazard": "A",
+   "id": "consumer_electronics",
+   "legality": {
+    "faith": "legal",
+    "military": "legal",
+    "open": "legal",
+    "strict": "legal"
+   },
+   "price_factor": 1.8,
+   "ru": "Бытовая электроника",
+   "share": 0.2
+  },
+  {
+   "base_cr_t": 24000.0,
+   "commodity": "luxury",
+   "density_t_m3": 0.45,
+   "group": "luxury",
+   "hazard": "A",
+   "id": "alcohol_tobacco",
+   "legality": {
+    "faith": "banned",
+    "military": "restricted",
+    "open": "legal",
+    "strict": "restricted"
+   },
+   "price_factor": 0.6,
+   "ru": "Алкоголь и табак",
+   "share": 0.6
+  },
+  {
+   "base_cr_t": 64000.0,
+   "commodity": "luxury",
+   "density_t_m3": 0.45,
+   "group": "luxury",
+   "hazard": "A",
+   "id": "luxury_goods",
+   "legality": {
+    "faith": "banned",
+    "military": "restricted",
+    "open": "legal",
+    "strict": "restricted"
+   },
+   "price_factor": 1.6,
+   "ru": "Предметы роскоши и деликатесы",
+   "share": 0.4
+  },
+  {
+   "base_cr_t": 81000.0,
+   "commodity": "controlled",
+   "density_t_m3": 0.5,
+   "group": "controlled",
+   "hazard": "B",
+   "id": "narcotics",
+   "legality": {
+    "faith": "banned",
+    "military": "banned",
+    "open": "restricted",
+    "strict": "banned"
+   },
+   "price_factor": 0.9,
+   "ru": "Наркотики и стимуляторы",
+   "share": 0.95
+  },
+  {
+   "base_cr_t": 270000.0,
+   "commodity": "controlled",
+   "density_t_m3": 3.2,
+   "group": "controlled",
+   "hazard": "D",
+   "id": "lotosite",
+   "legality": {
+    "faith": "banned",
+    "military": "banned",
+    "open": "banned",
+    "strict": "banned"
+   },
+   "licence": "cordon_cognium",
+   "note": "канон фронтира «Лотос»: легальный вывоз только через кордон Когниума (пробирная палата «Порога»); всё прочее — контрабанда. Тоннаж ничтожен, цена — оценка PROPOSAL.",
+   "price_factor": 3.0,
+   "ru": "Лотосит (необработанный)",
+   "share": 0.05,
+   "stock_scale": 0.01
+  },
+  {
+   "base_cr_t": 63000.0,
+   "commodity": "weapons",
+   "density_t_m3": 1.1,
+   "group": "weapons",
+   "hazard": "E",
+   "id": "small_arms",
+   "legality": {
+    "faith": "restricted",
+    "military": "restricted",
+    "open": "restricted",
+    "strict": "restricted"
+   },
+   "price_factor": 1.4,
+   "ru": "Стрелковое оружие",
+   "share": 0.3
+  },
+  {
+   "base_cr_t": 37350.0,
+   "commodity": "weapons",
+   "density_t_m3": 1.1,
+   "group": "weapons",
+   "hazard": "E",
+   "id": "munitions",
+   "legality": {
+    "faith": "restricted",
+    "military": "restricted",
+    "open": "restricted",
+    "strict": "restricted"
+   },
+   "price_factor": 0.83,
+   "ru": "Боеприпасы и ракеты",
+   "share": 0.7
+  }
+ ],
+ "groups": [
+  {
+   "commodities": [
+    "food"
+   ],
+   "id": "food",
+   "ru": "Продовольствие"
+  },
+  {
+   "commodities": [
+    "water_volatiles"
+   ],
+   "id": "water_gas",
+   "ru": "Вода и газы"
+  },
+  {
+   "commodities": [
+    "ore"
+   ],
+   "id": "ore",
+   "ru": "Руда"
+  },
+  {
+   "commodities": [
+    "metals"
+   ],
+   "id": "metals",
+   "ru": "Металлы"
+  },
+  {
+   "commodities": [
+    "chemicals"
+   ],
+   "id": "chemicals",
+   "ru": "Химия"
+  },
+  {
+   "commodities": [
+    "construction"
+   ],
+   "id": "construction",
+   "ru": "Стройматериалы"
+  },
+  {
+   "commodities": [
+    "reactor_fuel",
+    "jump_charge"
+   ],
+   "id": "fuel",
+   "ru": "Топливо"
+  },
+  {
+   "commodities": [
+    "machinery"
+   ],
+   "id": "machinery",
+   "ru": "Машины и запчасти"
+  },
+  {
+   "commodities": [
+    "electronics"
+   ],
+   "id": "electronics",
+   "ru": "Электроника"
+  },
+  {
+   "commodities": [
+    "medical"
+   ],
+   "id": "medical",
+   "ru": "Медицина"
+  },
+  {
+   "commodities": [
+    "consumer"
+   ],
+   "id": "consumer",
+   "ru": "Потребительские товары"
+  },
+  {
+   "commodities": [
+    "luxury"
+   ],
+   "id": "luxury",
+   "ru": "Роскошь"
+  },
+  {
+   "commodities": [
+    "controlled"
+   ],
+   "id": "controlled",
+   "ru": "Подконтрольное"
+  },
+  {
+   "commodities": [
+    "weapons"
+   ],
+   "id": "weapons",
+   "ru": "Оружие"
+  }
+ ],
+ "note": "Торговый каталог игрока: 37 позиций в 14 группах. Это НЕ новая экономика: каждая позиция — доля одной из 15 категорий canon/commodities.json (поле commodity, id категорий не меняются). share = доля тоннажа категории; price_factor = цена позиции / cost_cr_per_t категории; для каждой категории sum(share)=1 и sum(share*price_factor)=1±0.06 (проверяет economy_live.py --check), поэтому балансы world_economy.py остаются в силе. Плотность и опасность по умолчанию — от категории; legality по умолчанию — от категории (семейства режимов open/strict/faith/military из commodities.regime_family). Корабельные агрегаты с серийными номерами (commodities.part_catalog) — отдельный рынок, сюда не входят. Пассажиры, вахты и почта — не товары, а виды заявок доски (economy_live.json → board).",
+ "regime_family": {
+  "caste_theocracy": "faith",
+  "clan_contracts": "open",
+  "corporate_board": "open",
+  "corporate_democracy": "open",
+  "council_of_chiefs": "strict",
+  "exile_republic": "open",
+  "grandees_and_church": "faith",
+  "litigating_city_states": "open",
+  "machine_oracle": "strict",
+  "merit_caste_republic": "strict",
+  "none_quiet": "strict",
+  "parliamentary_bureaucracy": "open",
+  "party_technocracy": "strict",
+  "sage_council": "strict",
+  "scholar_theocracy": "faith",
+  "security_oligarchy": "military",
+  "shareholder_agora": "open",
+  "sol_authority": "strict",
+  "synod_theocracy": "faith",
+  "technocratic_meritocracy": "open"
+ },
+ "schema": "trade_goods/1",
+ "status": "PROPOSAL",
+ "stock_scale_rule": "необязательный stock_scale < 1 уменьшает стартовый запас редкой позиции на рынке хаба (вес оборота), не меняя цену.",
+ "unit_rule": "Цена — Cr за тонну нетто; в UI для дорогих позиций (price >= 50 000 Cr/т) показывать Cr/кг. Объём считать по density_t_m3; место — контейнер C20 (20 т нетто, 23.3 м3, тара 1.7 т)."
+}

@@ -1,0 +1,231 @@
+{
+  "schema": "economy_live/1",
+  "status": "PROPOSAL",
+  "note": "Правила «живой» экономики уровня Operational (WORLD_ECONOMY_ARCHITECTURE §3): рынки хабов, тики, события, карантины, доска объявлений, возраст ценовой информации, блоки и таможня. Стартовое состояние рынков и состав хабов считает economy_live.py; сюда — только правила и константы. Деньги согласованы с ship_economics (Cobrett 0→Proxima: 6 C20, 28 191 Cr, 6.85 сут) и commodities.cost_cr_per_t.",
+
+  "tick": {
+    "market_period_h": 24,
+    "board_period_h": 24,
+    "strategic_period_days": 30,
+    "game_time": "часы игрового времени (как у orbital motion); шаг детерминирован: RNG = seed * 1000003 + crc32(hub_id + tick)",
+    "per_tick_order": [
+      "1. события: истечь / начать (events), применить множители",
+      "2. производство prod_t_day x mult -> stock",
+      "3. потребление cons_t_day x mult <- stock (дефицит копится в unmet, не уходит в минус)",
+      "4. прибытия виртуальных поставок (virtual_shipments) и доставок игрока/NPC",
+      "5. автозакупка: stock < reorder_share x target и цена выше паритета импорта -> виртуальная поставка из ближайшего источника по маршрутам, прибытие через travel_days",
+      "6. цена: target_price, затем сглаживание",
+      "7. порча: товары с shelf_days теряют stock / shelf_days в сутки сверх оборота",
+      "8. бюллетень цен публикуется в сеть маяков (snapshot) — см. price_info",
+      "9. доска: истёкшие заявки снять, новые сгенерировать (board.generation)"
+    ],
+    "cover_days": 30,
+    "reorder_share": 0.6,
+    "price_rule": {
+      "formula": "target_price = base_cr_t x local_mult x (target_t / max(stock_t, 0.05 x target_t)) ^ stock_exponent x event_mult x legality_mult",
+      "stock_exponent": 0.6,
+      "smoothing_per_tick": 0.35,
+      "clamp": [0.35, 4.0],
+      "clamp_black": [0.8, 8.0],
+      "base_cr_t": "commodities.cost_cr_per_t[commodity] x trade_goods.price_factor",
+      "strategic_link": "раз в strategic_period_days target_t и prod/cons пересчитываются из баланса world_economy (production, consumption, imports, unmet) — цена стремится к price_index той модели ((спрос/поставка)^2)",
+      "spread_by_market": {"full": 0.06, "local": 0.10, "supply": 0.18, "black": 0.25},
+      "buy_sell": "игрок продаёт хабу по price x (1 - spread/2), покупает по price x (1 + spread/2)",
+      "player_impact": "продажа игрока добавляет к stock; цена реагирует на следующем тике (без мгновенного обвала внутри одной сделки, кроме лимита: хаб покупает не больше 1.5 x target - stock)"
+    },
+    "local_mult_note": "Две части. scarcity (shortage / import / export / industry / hub_producer) задаёт СТАРТОВЫЙ запас: stock0 = target x scarcity^(-1/stock_exponent), поэтому формула тика сама даёт цену base x scarcity; в формуле тика local_mult = только structural (remote_hub, deep_space, jitter) — надбавка за доставку, не зависящая от запаса.",
+    "local_mult": {
+      "system_shortage": 1.35,
+      "system_import": 1.10,
+      "system_export": 0.88,
+      "system_industry": 0.92,
+      "hub_producer": 0.90,
+      "remote_hub": 1.20,
+      "deep_space": 1.50,
+      "jitter": 0.05,
+      "source": "sites_3126.systems[].shortages / imports / exports / industries (названия категорий commodities)"
+    },
+    "legality_mult": {"legal": 1.0, "restricted": 1.3, "banned_black": 2.5}
+  },
+
+  "events": {
+    "note": "Причины изменения цен. p_30d — вероятность начала на хабе за 30 суток (база; множится на условия). Эффекты — множители на prod / cons / цену / пропускную способность доков. Каждое событие пишется в журнал (EVENTS/EFFECTS) и может порождать заявки на досках.",
+    "types": {
+      "shortage":        {"ru": "дефицит",              "trigger": "stock < 0.3 x target", "price": "по формуле (до x4)", "board": "срочные заявки на поставку, награда x1.5"},
+      "surplus":         {"ru": "затоваривание",         "trigger": "stock > 2 x target", "price": "по формуле (до x0.35)", "board": "заявки на вывоз"},
+      "plant_accident":  {"ru": "авария на производстве", "p_30d": 0.03, "days": [3, 20], "where": "industrial_hub, mining_hub, belt_hub", "prod_mult": 0.0, "scope": "одна группа товаров хаба", "board": "запчасти, оборудование, медицина"},
+      "dock_strike":     {"ru": "забастовка доков",     "p_30d": 0.01, "days": [2, 10], "where": "регимы open/strict, уровень A/B", "dock_mult": 0.3, "price": "импорт x1.2, экспорт x0.9"},
+      "harvest_failure": {"ru": "неурожай",              "p_30d": 0.01, "days": [30, 120], "where": "аграрные хабы и системы с экспортом продовольствия", "goods": ["food_staples", "food_fresh"], "prod_mult": 0.5},
+      "epidemic":        {"ru": "эпидемия",              "p_30d": 0.004, "days": [14, 60], "where": "населённые хабы; x3 у карантинной зоны и фронтира", "starts": "quarantine", "cons_mult": {"pharmaceuticals": 3.0, "vaccines_biotech": 5.0, "medical_equipment": 1.5}},
+      "quarantine":      {"ru": "карантин",              "days": [14, 40], "rules": "quarantine", "price": "медицина x2-x5, свежие продукты не вывозятся"},
+      "blockade":        {"ru": "блокада",               "p_30d": 0.002, "days": [20, 180], "where": "пары с grievance >= 45 или каналом black", "effect": "канал между сторонами -> closed; импорт стратегических товаров x2; патрули x2"},
+      "piracy_wave":     {"ru": "пиратская волна",       "p_30d": 0.02, "days": [10, 45], "where": "системы с пиратским индексом > enclave_threshold (world_sites.piracy)", "effect": "риск маршрута x3, страховка x2, доставленные цены на конце маршрута x1.1-1.3, награды доски x1.5"},
+      "fuel_crunch":     {"ru": "нехватка топлива",      "p_30d": 0.01, "days": [5, 25], "where": "хабы без своего fuel_terminal или с задержкой танкера", "goods": ["reactor_fuel", "jump_charge"], "price_mult": 1.8},
+      "construction_boom": {"ru": "стройка / новый контракт", "p_30d": 0.015, "days": [60, 360], "goods": ["construction_bulk", "habitat_modules", "industrial_machinery", "steel"], "cons_mult": 1.6},
+      "festival":        {"ru": "праздник / паломничество", "p_30d": 0.02, "days": [3, 14], "where": "регимы faith — паломничество (world_sites.passengers.pilgrimage_regimes)", "goods": ["luxury_goods", "alcohol_tobacco", "food_fresh"], "cons_mult": 1.5, "board": "пассажиры x3"},
+      "beacon_outage":   {"ru": "отказ маяка",           "p_30d": 0.005, "days": [1, 10], "effect": "бюллетени системы не уходят: возраст цен растёт; доска показывает только местные заявки; навигация без эфемерид маяка"}
+    }
+  },
+
+  "quarantine": {
+    "levels": {
+      "watch":     {"ru": "наблюдение", "inspection_p": 1.0, "extra_delay_h": 4, "rules": "декларация здоровья, медосмотр экипажа"},
+      "quarantine":{"ru": "карантин",   "inspection_p": 1.0, "extra_delay_h": 24, "rules": "прибывающие пассажиры — выдержка 7-21 сут (quarantine_ward хаба или ближайший quarantine_hub); корабли ждут в отстойнике; вывоз food_fresh / vaccines_biotech / пассажиров запрещён; исходящие пассажирские рейсы отменены"},
+      "lockdown":  {"ru": "изоляция",   "inspection_p": 1.0, "extra_delay_h": 72, "rules": "стыкуются только медицинские и гуманитарные рейсы (relief) с разрешением; соседние хабы публикуют заявки relief с наградой x2"}
+    },
+    "escalation": "заболевшие > quarantine_beds -> следующий уровень; переполнение -> корабли ждут в holding_area; нет мест в отстойнике -> отказ в стыковке",
+    "lift": "через days из события при заболевших < 0.2 x quarantine_beds; уровень снижается на один шаг за тик-неделю",
+    "zones": "постоянные карантины канона (зона «Гайя», кордон «Лотос») — уровень lockdown навсегда; проход только по лицензии (world_sites.hazard_zones)"
+  },
+
+  "board": {
+    "note": "Доска объявлений хаба: что и куда доставить. Её держит admin_station каждого хаба с доками; у маяков и удалённых хабов своих заявок нет — их оператор публикует на доске родительского хаба (hub_modules.supply_parent).",
+    "kinds": {
+      "cargo":           {"ru": "груз",            "unit": "C20", "source": "дефицит / затоваривание / постоянные контракты концернов (industry.manufacturers)"},
+      "passengers":      {"ru": "пассажиры",       "unit": "чел.", "source": "passengers_3126: деловые, семейные, туризм, паломничество; класс cabin/business/economy/steerage"},
+      "crew_shift":      {"ru": "вахта / смена экипажа", "unit": "чел.", "source": "ротация удалённых хабов и маяков (hub_modules.supply.rotation); туда — новая смена, обратно — старая"},
+      "supply":          {"ru": "снабжение",       "unit": "т", "source": "комплект на 30 сут для удалённого хаба / маяка (supply.kit_*)"},
+      "courier_package": {"ru": "курьерская посылка", "unit": "шт.", "source": "документы, образцы, запчасть с серийным номером; масса < 1 т, срочно"},
+      "mail":            {"ru": "почта / носители", "unit": "шт.", "source": "только к хабам без связи (система 22, фронтир с uptime < 1)"},
+      "relief":          {"ru": "гуманитарный рейс", "unit": "т", "source": "карантин, авария, блокада; медицина, еда, кислород"}
+    },
+    "entry_schema": {
+      "id": "string, 'BRD-<hub>-<tick>-<n>'",
+      "kind": "cargo | passengers | crew_shift | supply | courier_package | mail | relief",
+      "posted_at_h": "number, игровое время публикации",
+      "expires_at_h": "number, снять с доски, если никто не взял",
+      "origin_hub": "site id (где взять)",
+      "destination_hub": "site id (куда доставить; кликабельно в UI)",
+      "goods": "trade_goods id | supply kit id | null",
+      "quantity": "number (т, C20, чел. или шт. — по kind.unit)",
+      "containers_c20": "int, места C20 (для людей — модули P20: 12 эконом / 8 бизнес)",
+      "pax_class": "cabin | business | economy | steerage | null",
+      "deadline_at_h": "number, крайний срок доставки",
+      "reward_cr": "int",
+      "advance_cr": "int, аванс при взятии",
+      "deposit_cr": "int, залог за стоимость груза (возвращается при доставке)",
+      "penalty_cr": "int, штраф за срыв",
+      "issuer": {"actor_id": "polity / company / hub operator id", "kind": "polity | company | hub_operator | military | private", "name": "string"},
+      "owner": "кто владеет грузом (обычно issuer)",
+      "legality": "legal | restricted | contraband",
+      "licence_required": "null | 'export_control' | 'cordon_cognium' | 'bloc_licence'",
+      "bloc_restriction": {"allowed_blocs": "[bloc id] | null (все)", "forbidden_blocs": "[bloc id]", "min_channel": "open | licensed | restricted"},
+      "risk": "0..1, опасность маршрута (пираты, зоны, блокада)",
+      "visibility": "public | bloc_only | reputation_gated | rumour",
+      "reason": "event id / 'rotation:<hub>' / 'contract:<company>'",
+      "status": "open | taken | delivered | failed | expired"
+    },
+    "generation": {
+      "entries_per_tick": "round(arrivals_day x 0.02 + 2), не меньше 3 и не больше 40 видимых; для хабов без arrivals_day: docks x 0.5",
+      "kind_weights_by_market": {
+        "full":   {"cargo": 0.55, "passengers": 0.25, "crew_shift": 0.07, "supply": 0.07, "courier_package": 0.06},
+        "local":  {"cargo": 0.55, "passengers": 0.10, "crew_shift": 0.15, "supply": 0.15, "courier_package": 0.05},
+        "supply": {"cargo": 0.20, "passengers": 0.05, "crew_shift": 0.35, "supply": 0.35, "courier_package": 0.05},
+        "black":  {"cargo": 0.60, "passengers": 0.15, "courier_package": 0.25}
+      },
+      "destination_pick": "груз — хаб с наибольшей разницей цен (target_price) в радиусе 3 прыжков; пассажиры — по гравитационной модели passengers_3126; вахта/снабжение — строго по расписанию удалённого хаба",
+      "rotation_posting": "за 14 сут до конца вахты: crew_shift (shift_size = staff x share) туда и обратно, supply на 30 сут; не взяли за 5 сут — награда x1.3, ещё 5 сут — оператор шлёт свой корабль (заявка снимается)",
+      "deadline_slack": [1.5, 3.0]
+    },
+    "reward": {
+      "formula": "reward = max(min_cr, (c20_jump_cr x jumps + c20_leg_cr x legs) x c20 x urgency x (1 + 2 x risk) x bloc_mult) + contraband_premium",
+      "c20_jump_cr": 4700,
+      "c20_leg_cr": 1300,
+      "min_cr": 1500,
+      "urgency": "1 + 0.5 x max(0, normal_travel_h / (deadline_h - now) - 0.5)",
+      "bloc_mult": {"open": 1.0, "licensed": 1.15, "restricted": 1.5, "black": 2.5},
+      "contraband_premium": "1.5 x стоимость груза по цене назначения",
+      "pax_fare_cr": {"per_jump": 600, "per_leg": 150, "class_mult": "world_sites.passengers.class_price_factor"},
+      "crew_shift_mult": 1.3,
+      "pax_formula": "reward = (per_jump x jumps + per_leg x legs) x class_mult x persons x (crew_shift_mult для вахты) x (1 + 2 x risk) x bloc_mult",
+      "advance_share": 0.2,
+      "penalty_share": 0.5,
+      "worked_examples": "examples[0]: 4 C20, 6 прыжков (0 -> 19 по сети маяков), 2 плеча: (4700x6 + 1300x2) x 4 x 1.5 (risk 0.25) x 1.15 (licensed) = 212 520; examples[1]: 40 вахтовиков, 2 прыжка: (600x2 + 150x2) x 1.3 x 40 x 1.2 = 93 600; examples[2]: 1 C20, 1 прыжок: 7 300 x 2.4 x 1.5 + 1.5 x 13 500 (стоимость 50 кг лотосита) = 46 530",
+      "deposit_share": "1.0 x стоимость груза (0 для снабжения своего оператора и вахт)",
+      "basis": "Cobrett 0->60: 6 C20, 1 прыжок + 2 плеча, расходы 28 191 Cr (logistics.trip_examples) -> 4 700 Cr за C20 на прыжок с маржой"
+    },
+    "examples": [
+      {"id": "BRD-earth_orbital_hub-412-3", "kind": "cargo", "posted_at_h": 9888, "expires_at_h": 9960, "origin_hub": "earth_orbital_hub", "destination_hub": "site.019.porog", "goods": "medical_equipment", "quantity": 36, "containers_c20": 4, "pax_class": null, "deadline_at_h": 10320, "reward_cr": 212520, "advance_cr": 42504, "deposit_cr": 1728000, "penalty_cr": 106260, "issuer": {"actor_id": "cyg61_kern", "kind": "company", "name": "Kern Logistics"}, "owner": "cyg61_kern", "legality": "legal", "licence_required": null, "bloc_restriction": {"allowed_blocs": null, "forbidden_blocs": ["citadel_compact"], "min_channel": "licensed"}, "risk": 0.25, "visibility": "public", "reason": "shortage:site.019.porog:medical", "status": "open"},
+      {"id": "BRD-site.024.pereval-412-1", "kind": "crew_shift", "posted_at_h": 9888, "expires_at_h": 10008, "origin_hub": "site.031.cyg61_kern.trade_hub01", "destination_hub": "beacon.BCN-024-BR", "goods": null, "quantity": 40, "containers_c20": 4, "pax_class": "economy", "deadline_at_h": 10224, "reward_cr": 93600, "advance_cr": 18720, "deposit_cr": 0, "penalty_cr": 46800, "issuer": {"actor_id": "cyg61_kern", "kind": "hub_operator", "name": "Управление маяков Керна"}, "owner": "cyg61_kern", "legality": "legal", "licence_required": null, "bloc_restriction": {"allowed_blocs": ["cognium_pool"], "forbidden_blocs": [], "min_channel": "open"}, "risk": 0.1, "visibility": "bloc_only", "reason": "rotation:beacon.BCN-024-BR", "status": "open"},
+      {"id": "BRD-dso.far_berth-412-7", "kind": "cargo", "posted_at_h": 9888, "expires_at_h": 9912, "origin_hub": "dso.far_berth", "destination_hub": "site.019.troyan_market", "goods": "lotosite", "quantity": 0.05, "containers_c20": 1, "pax_class": null, "deadline_at_h": 10100, "reward_cr": 46530, "advance_cr": 0, "deposit_cr": 0, "penalty_cr": 0, "issuer": {"actor_id": "unknown", "kind": "private", "name": "перекупщик"}, "owner": "unknown", "legality": "contraband", "licence_required": "cordon_cognium", "bloc_restriction": {"allowed_blocs": null, "forbidden_blocs": [], "min_channel": "restricted"}, "risk": 0.7, "visibility": "rumour", "reason": "contract:black", "status": "open"}
+    ]
+  },
+
+  "price_info": {
+    "note": "Почему цена на чужом хабе «4 дня назад». Каждый хаб публикует бюллетень (snapshot) раз в тик; бюллетень идёт по сети маяков очередью bulk. Игрок видит последний бюллетень, который УЖЕ дошёл до его текущего хаба / маяка.",
+    "delay_formula": "D(H -> O) = light_lag(H -> маяк своей системы) + relay_hop_processing_h + путь по рёбрам comms_3126.links с весом routine_hop_h x priority_factor[bulk] + light_lag(маяк -> O)",
+    "priority": "bulk",
+    "priority_factor": "world_sites.comms.priority_factor (flash 0, priority 0.25, routine 1, bulk 3)",
+    "age_formula": "age = now - t_k*, где t_k* = последний момент публикации с t_k + D <= now; в среднем age ~ D + market_period_h / 2",
+    "own_visit": "на хабе, где игрок стоит, цены точные (age = 0); после отлёта хранится последний увиденный снимок",
+    "disconnected": "система без связи (refuses_network, сейчас 22 — Новая Карма) и хабы с coverage=none: только со слов прибывших кораблей, age = время с последнего прибытия оттуда (типично 7-30 сут); метка «нет связи»",
+    "outage": "beacon_outage замораживает публикацию: возраст растёт без новых снимков",
+    "buy_fresh": "на бирже можно купить срочный запрос (priority): задержка x0.25/3 от bulk, цена 250 Cr за хаб в своей системе, 900 Cr — чужой системы",
+    "ui": "«Цены: 4 сут назад (через 3 маяка)»; цвет: < 1 сут — белый, 1-3 — жёлтый, > 3 — серый, нет связи — красный",
+    "runtime_data": "economy/price_info_delay_3126.json: матрица D_bulk_h между узлами сети и light_lag каждого хаба"
+  },
+
+  "blocs": {
+    "note": "Блоки — industry.blocs (8). Канал между блоками — industry.trade_channels (open / licensed / restricted / black) + closed. Обиды world.relations_anchor с grievance >= 70 понижают канал пары политий на ступень; grievance >= 45 делает возможной блокаду.",
+    "channels_order": ["open", "licensed", "restricted", "black", "closed"],
+    "matrix": {
+      "cognium_pool":    {"cognium_pool": "open", "heavenly_pact": "restricted", "lalande_league": "licensed", "southern_circle": "restricted", "citadel_compact": "black", "free_belts": "restricted", "sol": "licensed", "autarkies": "restricted"},
+      "heavenly_pact":   {"heavenly_pact": "open", "lalande_league": "licensed", "southern_circle": "restricted", "citadel_compact": "restricted", "free_belts": "black", "sol": "licensed", "autarkies": "restricted"},
+      "lalande_league":  {"lalande_league": "open", "southern_circle": "licensed", "citadel_compact": "restricted", "free_belts": "restricted", "sol": "licensed", "autarkies": "restricted"},
+      "southern_circle": {"southern_circle": "open", "citadel_compact": "restricted", "free_belts": "restricted", "sol": "licensed", "autarkies": "restricted"},
+      "citadel_compact": {"citadel_compact": "open", "free_belts": "restricted", "sol": "licensed", "autarkies": "restricted"},
+      "free_belts":      {"free_belts": "open", "sol": "restricted", "autarkies": "restricted"},
+      "sol":             {"sol": "open", "autarkies": "restricted"},
+      "autarkies":       {"autarkies": "restricted"}
+    },
+    "polity_overrides": {
+      "delta_pav_karma": {"all": "closed", "except": "relief", "why": "отказ от сети (refuses_network)"},
+      "gj832_gaia_zone": {"all": "closed", "except": "licensed_science", "why": "карантин «Гайя» (канон)"}
+    },
+    "ship_bloc": "блок корабля = блок политии регистрации (порт приписки) + лицензии на борту; у игрока — регистрация + репутация"
+  },
+
+  "customs": {
+    "note": "Решение таможни хаба о корабле чужого блока. Свой блок — всегда open. Вероятность — детерминированный бросок RNG(seed, hub, ship, day).",
+    "by_channel": {
+      "open":       {"admit_p": 0.99, "inspect_p": 0.05, "delay_h": 0.5, "fee_mult": 1.0, "holding": false, "goods": "всё легальное по режиму хаба"},
+      "licensed":   {"admit_p": 0.92, "inspect_p": 0.25, "delay_h": 2,   "fee_mult": 1.5, "holding": false, "goods": "стратегические (jump_charge, weapons, nav_sensors, computing) — только с экспортной лицензией"},
+      "restricted": {"admit_p": 0.65, "inspect_p": 0.70, "delay_h": 8,   "fee_mult": 2.5, "holding": true,  "goods": "только гражданские группы: food, water_gas, medical, consumer, construction, machinery (кроме mining_equipment)"},
+      "black":      {"admit_p": 0.10, "inspect_p": 1.00, "delay_h": 24,  "fee_mult": 4.0, "holding": true,  "goods": "только relief; остальное — изъятие restricted-товаров с вероятностью 0.3"},
+      "closed":     {"admit_p": 0.0,  "inspect_p": 1.00, "delay_h": 0,   "fee_mult": 0.0, "holding": false, "goods": "отказ; исключения — polity_overrides"}
+    },
+    "admit_formula": "p = admit_p[channel] x cargo_factor x standing_factor x alert_factor x papers_factor, clamp 0..1",
+    "cargo_factor": {"legal": 1.0, "restricted_with_licence": 1.0, "restricted_no_licence": 0.5, "banned_found": 0.0},
+    "standing_factor": "1 + standing / 200 (репутация у политии хаба, -100..100)",
+    "alert_factor": {"normal": 1.0, "tension": 0.7, "quarantine": "по quarantine.levels", "blockade": 0.0},
+    "papers_factor": {"bloc_licence": 1.25, "humanitarian_mandate": 2.0, "none": 1.0},
+    "fee": "пошлина = customs_share_of_cargo_value (ship_economics.fees, 0.04) x fee_mult",
+    "refusal": "отказ -> корабль уходит в отстойник (если holding) до решения или разворачивается; заявка доски с forbidden_blocs не может быть взята",
+    "contraband": "найдено при досмотре: изъятие + штраф 2 x стоимость + репутация -20; у free_port досмотра нет"
+  },
+
+  "patrols": {
+    "note": "Почему нужны патрули сектора: таможня видит только тех, кто пришёл в док. Патруль ловит в пространстве.",
+    "stop_p_per_leg": "0.02 + 0.25 x security(системы, среднее по хабам) x border_factor x alert_factor",
+    "border_factor": {"own_system": 1.0, "mixed_bloc_system": 2.0, "frontier": 0.5},
+    "mixed_bloc_systems": "системы, где хабы разных блоков: Эпсилон Эридана (Гармония / Пояс Раздора), GJ 581, HD 20794, HD 40307, Дельта Павлина, GJ 832, Лаланд (одна лига, но Мекка — другой блок)",
+    "outcome": "досмотр как customs.by_channel[канал владельца патруля к кораблю]; корабль чужого блока без лицензии — эскорт в отстойник ближайшего хаба или приказ покинуть систему",
+    "force_source": "patrol_cutter / interceptor из defence_3126 (задачи «таможня», «граница», «пиратство»)"
+  },
+
+  "market_state_schema": {
+    "file": "economy/market_state_3126.json",
+    "goods_order": "массивы выровнены по trade_goods.goods (id в goods_order файла)",
+    "per_hub": {
+      "hub": "site id",
+      "market": "full | local | supply | black",
+      "spread": "доля",
+      "price_cr": "[цена за т | null — не торгуется]",
+      "stock_t": "[т]",
+      "target_t": "[т, запас на cover_days]",
+      "flow_t_day": "[т/сут оборота: prod и cons по профилю хаба]",
+      "producer": "[ids товаров, которые хаб производит]"
+    },
+    "runtime_extra": "в рантайме добавляются: tick, published_at_h, unmet_t[], trend[] (+1/0/-1), active_events[]"
+  }
+}

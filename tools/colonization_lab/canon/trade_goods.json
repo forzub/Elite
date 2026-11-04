@@ -1,0 +1,79 @@
+{
+  "schema": "trade_goods/1",
+  "status": "PROPOSAL",
+  "note": "Торговый каталог игрока: 37 позиций в 14 группах. Это НЕ новая экономика: каждая позиция — доля одной из 15 категорий canon/commodities.json (поле commodity, id категорий не меняются). share = доля тоннажа категории; price_factor = цена позиции / cost_cr_per_t категории; для каждой категории sum(share)=1 и sum(share*price_factor)=1±0.06 (проверяет economy_live.py --check), поэтому балансы world_economy.py остаются в силе. Плотность и опасность по умолчанию — от категории; legality по умолчанию — от категории (семейства режимов open/strict/faith/military из commodities.regime_family). Корабельные агрегаты с серийными номерами (commodities.part_catalog) — отдельный рынок, сюда не входят. Пассажиры, вахты и почта — не товары, а виды заявок доски (economy_live.json → board).",
+  "stock_scale_rule": "необязательный stock_scale < 1 уменьшает стартовый запас редкой позиции на рынке хаба (вес оборота), не меняя цену.",
+  "unit_rule": "Цена — Cr за тонну нетто; в UI для дорогих позиций (price >= 50 000 Cr/т) показывать Cr/кг. Объём считать по density_t_m3; место — контейнер C20 (20 т нетто, 23.3 м3, тара 1.7 т).",
+  "groups": [
+    {"id": "food", "ru": "Продовольствие", "commodities": ["food"]},
+    {"id": "water_gas", "ru": "Вода и газы", "commodities": ["water_volatiles"]},
+    {"id": "ore", "ru": "Руда", "commodities": ["ore"]},
+    {"id": "metals", "ru": "Металлы", "commodities": ["metals"]},
+    {"id": "chemicals", "ru": "Химия", "commodities": ["chemicals"]},
+    {"id": "construction", "ru": "Стройматериалы", "commodities": ["construction"]},
+    {"id": "fuel", "ru": "Топливо", "commodities": ["reactor_fuel", "jump_charge"]},
+    {"id": "machinery", "ru": "Машины и запчасти", "commodities": ["machinery"]},
+    {"id": "electronics", "ru": "Электроника", "commodities": ["electronics"]},
+    {"id": "medical", "ru": "Медицина", "commodities": ["medical"]},
+    {"id": "consumer", "ru": "Потребительские товары", "commodities": ["consumer"]},
+    {"id": "luxury", "ru": "Роскошь", "commodities": ["luxury"]},
+    {"id": "controlled", "ru": "Подконтрольное", "commodities": ["controlled"]},
+    {"id": "weapons", "ru": "Оружие", "commodities": ["weapons"]}
+  ],
+  "goods": [
+    {"id": "food_staples", "ru": "Зерно и концентраты", "group": "food", "commodity": "food", "share": 0.60, "price_factor": 0.70, "density_t_m3": 0.65, "shelf_days": 720},
+    {"id": "food_fresh", "ru": "Свежие продукты", "group": "food", "commodity": "food", "share": 0.30, "price_factor": 1.40, "density_t_m3": 0.45, "shelf_days": 20, "needs": "reefer"},
+    {"id": "food_rations", "ru": "Пайки и консервы", "group": "food", "commodity": "food", "share": 0.10, "price_factor": 1.80, "density_t_m3": 0.6, "shelf_days": 1800},
+
+    {"id": "water", "ru": "Вода (лёд, очищенная)", "group": "water_gas", "commodity": "water_volatiles", "share": 0.75, "price_factor": 0.80, "density_t_m3": 0.95},
+    {"id": "tech_gases", "ru": "Технические газы (N2, CO2, NH3)", "group": "water_gas", "commodity": "water_volatiles", "share": 0.20, "price_factor": 1.40, "density_t_m3": 0.8, "needs": "tank"},
+    {"id": "oxygen", "ru": "Кислород и дыхательные смеси", "group": "water_gas", "commodity": "water_volatiles", "share": 0.05, "price_factor": 2.40, "density_t_m3": 1.1, "needs": "tank"},
+
+    {"id": "ore_common", "ru": "Руда (железо, никель, алюминий)", "group": "ore", "commodity": "ore", "share": 0.90, "price_factor": 0.85},
+    {"id": "ore_rare", "ru": "Редкие и платиноидные руды", "group": "ore", "commodity": "ore", "share": 0.10, "price_factor": 2.40},
+
+    {"id": "steel", "ru": "Сталь и конструкционные сплавы", "group": "metals", "commodity": "metals", "share": 0.55, "price_factor": 0.78, "density_t_m3": 5.0},
+    {"id": "light_alloys", "ru": "Лёгкие сплавы (Al, Ti, Mg)", "group": "metals", "commodity": "metals", "share": 0.30, "price_factor": 1.20, "density_t_m3": 3.0},
+    {"id": "precious_metals", "ru": "Платиноиды и драгоценные металлы", "group": "metals", "commodity": "metals", "share": 0.005, "price_factor": 30.0, "density_t_m3": 12.0},
+    {"id": "scrap", "ru": "Металлолом и утиль", "group": "metals", "commodity": "metals", "share": 0.145, "price_factor": 0.35, "density_t_m3": 1.5},
+
+    {"id": "polymers", "ru": "Полимеры и пластики", "group": "chemicals", "commodity": "chemicals", "share": 0.45, "price_factor": 1.10},
+    {"id": "industrial_chem", "ru": "Промышленная химия (кислоты, растворители)", "group": "chemicals", "commodity": "chemicals", "share": 0.40, "price_factor": 0.85, "needs": "tank"},
+    {"id": "fertilizers", "ru": "Удобрения и агрохимия", "group": "chemicals", "commodity": "chemicals", "share": 0.15, "price_factor": 0.90, "hazard": "B"},
+
+    {"id": "construction_bulk", "ru": "Стройматериалы (панели, реголит-бетон)", "group": "construction", "commodity": "construction", "share": 0.85, "price_factor": 0.80},
+    {"id": "habitat_modules", "ru": "Жилые и шлюзовые модули", "group": "construction", "commodity": "construction", "share": 0.15, "price_factor": 2.20, "density_t_m3": 0.5},
+
+    {"id": "reactor_fuel", "ru": "Реакторное топливо (D, He-3)", "group": "fuel", "commodity": "reactor_fuel", "share": 1.0, "price_factor": 1.0, "needs": "tank"},
+    {"id": "jump_charge", "ru": "Заряд прыжка", "group": "fuel", "commodity": "jump_charge", "share": 1.0, "price_factor": 1.0},
+
+    {"id": "industrial_machinery", "ru": "Промышленное оборудование", "group": "machinery", "commodity": "machinery", "share": 0.45, "price_factor": 1.00},
+    {"id": "mining_equipment", "ru": "Горное оборудование", "group": "machinery", "commodity": "machinery", "share": 0.25, "price_factor": 0.90},
+    {"id": "spare_parts", "ru": "Запчасти и расходники", "group": "machinery", "commodity": "machinery", "share": 0.20, "price_factor": 1.20},
+    {"id": "life_support", "ru": "Агрегаты жизнеобеспечения", "group": "machinery", "commodity": "machinery", "share": 0.10, "price_factor": 1.10},
+
+    {"id": "computing", "ru": "Вычислители и электроника", "group": "electronics", "commodity": "electronics", "share": 0.70, "price_factor": 0.90},
+    {"id": "nav_sensors", "ru": "Сенсоры и навигационные приборы", "group": "electronics", "commodity": "electronics", "share": 0.30, "price_factor": 1.30},
+
+    {"id": "pharmaceuticals", "ru": "Лекарства", "group": "medical", "commodity": "medical", "share": 0.50, "price_factor": 1.00, "shelf_days": 1000},
+    {"id": "medical_equipment", "ru": "Медицинское оборудование", "group": "medical", "commodity": "medical", "share": 0.35, "price_factor": 0.80, "hazard": "A"},
+    {"id": "vaccines_biotech", "ru": "Вакцины и биокультуры", "group": "medical", "commodity": "medical", "share": 0.15, "price_factor": 1.50, "shelf_days": 90, "needs": "reefer"},
+
+    {"id": "clothing", "ru": "Одежда и текстиль", "group": "consumer", "commodity": "consumer", "share": 0.35, "price_factor": 0.70},
+    {"id": "household_goods", "ru": "Бытовые товары", "group": "consumer", "commodity": "consumer", "share": 0.45, "price_factor": 0.90},
+    {"id": "consumer_electronics", "ru": "Бытовая электроника", "group": "consumer", "commodity": "consumer", "share": 0.20, "price_factor": 1.80},
+
+    {"id": "alcohol_tobacco", "ru": "Алкоголь и табак", "group": "luxury", "commodity": "luxury", "share": 0.60, "price_factor": 0.60},
+    {"id": "luxury_goods", "ru": "Предметы роскоши и деликатесы", "group": "luxury", "commodity": "luxury", "share": 0.40, "price_factor": 1.60},
+
+    {"id": "narcotics", "ru": "Наркотики и стимуляторы", "group": "controlled", "commodity": "controlled", "share": 0.95, "price_factor": 0.90},
+    {"id": "lotosite", "ru": "Лотосит (необработанный)", "group": "controlled", "commodity": "controlled", "share": 0.05, "price_factor": 3.00, "density_t_m3": 3.2, "hazard": "D",
+     "legality": {"open": "banned", "strict": "banned", "faith": "banned", "military": "banned"},
+     "licence": "cordon_cognium",
+     "stock_scale": 0.01,
+     "note": "канон фронтира «Лотос»: легальный вывоз только через кордон Когниума (пробирная палата «Порога»); всё прочее — контрабанда. Тоннаж ничтожен, цена — оценка PROPOSAL."},
+
+    {"id": "small_arms", "ru": "Стрелковое оружие", "group": "weapons", "commodity": "weapons", "share": 0.30, "price_factor": 1.40},
+    {"id": "munitions", "ru": "Боеприпасы и ракеты", "group": "weapons", "commodity": "weapons", "share": 0.70, "price_factor": 0.83}
+  ]
+}

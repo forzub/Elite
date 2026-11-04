@@ -2224,6 +2224,70 @@ passport-id identity, runtime check, Cobra on the same path; economics NOT rewri
   etc.); Cobrett manufacturer = Cobretty Corporation, historical origin Kobersberg-Braunauer
   Raumfahrzeugwerke - PROPOSAL until the author confirms.
 
+### Clean generic ships + F6 Shipyard + F7 Repair & Refit (user order 2026-11-04 c)
+Head checked first: review commits 5c971ead / 97f482af / e2d72b68 did not compile (`catalog::ships::C20PayloadTonnes`
+resolved to game::catalog inside the generic builder) and the train detach contract measured the "detached"
+acceleration after reattaching - both fixed (eda7e1f8), not reverted.
+
+- Mass ladder (106c1bce): one meaning in designer, runtime and lore - dry -> service (tanks, stores, crew) ->
+  net payload (cargo + passengers) + C20 tare in EVERY declared place (1.7 t from ship_economics cargo_model =
+  ShipCargoPassports.h) -> gross (everything aboard at a full passport load). `accel_g_light` renamed
+  `accel_g_service`; `mass.service_t / net_payload_t / container_tare_t / c20_tare_t` exported; runtime spawn
+  mass = service_t and full load = gross_t within 10 kg for all 21 models. The economics class model
+  (logistics.py cargo_gross_t) uses the same tare definition but its own class masses - reconciliation with the
+  passports still pending (by order: economics not rewritten).
+- RCS units (8f811f0d): several units per mount node, each its own damageable cluster module with its own three
+  nozzles; `RcsNozzleBank24` in the existing allocator sums the living units of each bank nozzle (24-nozzle
+  topology unchanged), ShipCore builds it once (`installedNewtonianRcsBank`) for capability and execution,
+  operating life per unit. He-T12: destroying one of the two clusters of a node halves that nozzle (8 -> 4 MN).
+- Detached mass (6adf44f0): `DetachedFragmentMass` (module dry, cargo it carried, C20 tare, total) on every
+  fragment from the same load rule as the parent (`cargoAboard`: holders carry the payload and their C20
+  places), replicated (snapshot schema 26). He-T12 car: 400 + 4800 + 408 = 5608 t = the parent's loss.
+  The fragment is still kinematic (no own rigid-body dynamics yet), but no mass disappears from the data.
+- Repair & Refit layer (64533b6a, `src/game/ship/refit/RepairRefit.*`): a throwaway ShipCore adopts the live
+  instance (modules, links, load, propulsion switch, service reactor / coolant / radiators), the operation is
+  applied with the same `ShipCore::serviceModule` an apply uses (`ObjectModuleRuntime::repairModule` - one
+  module, wear kept; `replaceModuleWithNewUnit` - new unit, reinstalls a detached one), both states measured by
+  the production capability / power / thermal / device code plus an 8 s fixed-step full burn (temperatures,
+  margins, coolant, emergency exchanger). Deltas, compatibility (category, fit, generator power, Assisted
+  gimbal), compatible catalog replacements, cost from passport price + repair doctrine through
+  `assets/data/ships/ship_market_rules.json`. Another product: exact preview on a descriptor copy, apply refused
+  until the per-instance configuration layer exists.
+- Network: `ClientShipCommand::RefitPreview / RefitApply` (+ `detail`, subject ship in `amount`), server
+  `GameSimulation::requestRefitPreview / applyRefit` (same owner only), `ShipSnapshot::refit` (ownership,
+  registration, preview, apply result; snapshot schema 27, protocol 23). Owned ships always replicate their
+  module graph. DEV lineup ships are owned by the player.
+- F6 Shipyard (`ShipyardPresentation`, `ServicePanelsRenderer`): all catalog models (right), card (left) with a
+  side / plan preview of the runtime primitive blocks, the passport / descriptor numbers, expandable passport,
+  seller offers of concrete instances (`ShipMarket.h`: passport id, condition, age, hours, wear, damage,
+  installed equipment, price, seller) - DEV mock stock; price: -20 % first sale, age / hours / wear / damage
+  decay, seller margin, never below scrap + reusable parts.
+- F7 Repair & Refit (`RepairRefitPresentation`): the player's ships with < >, functional side-view schematic of
+  every module placement coloured by its replicated state (clickable), groups (propulsion, generators, RCS,
+  service power, cooling, tanks, radar / comms, computer, life, jump, weapons, payload, docks, structure),
+  damaged-module list, module card (product, state, health, damage causes, wear, mass, power, position, repair
+  level, LRU, replace hours, price), Repair / Replace (previews from the server), compatible replacements,
+  DEV apply. Selecting a damaged module requests its repair preview at once.
+- Evidence (offline): EliteShipCatalogCheck PASS 227 (passport service / gross = runtime, RCS units, fragment
+  mass), EliteRepairRefitCheck PASS 9 (radar failed -> restored, drive destroyed 4.46 -> 6.70 m/s2 and burn,
+  generator at 57 %: 8 019 -> 9 900 MW and burn 5.52 -> 6.70 m/s2 - the capability alone did not show it,
+  incompatible rejected, N-2 -> N-10 range, preview never mutates the live ship, apply == preview after),
+  EliteServicePagesCheck PASS 7 (21 models one source, card values = runtime, offer ladder, real module ids,
+  failed radar, preview carried), EliteNavigationCapabilityCheck PASS 20, EliteShipThermalCheck PASS 9.
+- Evidence (real game, target machine, D:/tmp/elite_shipyard_run1, ELITE_CATALOG_SHIPS=C-120,He-T12 +
+  ELITE_CATALOG_DAMAGE=1 + ELITE_DEV_SERVICE_SCRIPT): F6 shows 21 models / C-120 card / 4 offers; F7 shows the
+  player's 3 ships, C-120 with the server-damaged drive (failed), generator (57 %) and radar (failed); radar
+  selected -> server preview "radar no -> yes, range 0 -> 2000 km, 33 840 Cr"; DEV apply -> "[Refit] apply
+  ... APPLIED", the replicated radar module becomes "in service 100 %". Not exercised by a human mouse yet.
+- Tests (full suite after the last commit): the same 8 red blocks as at restore/pre-generic-ships-2026-11-04
+  with the same messages (model asset link, world runtime interstellar medium, travel-frame ownership text
+  check, the 6 navigation runtime reds, interaction activation, SystemMapBehaviorTests abstract mock, feature
+  renderShipUi, client acceptance PlayerInputMapper); green: trajectory predictor, sensors, presentation,
+  multiplayer, headless build + smoke, main build + fast universe smoke, standalone runtime, network process.
+- Not done: per-instance configuration (installing another product), Remove / Install / Sell actions, real
+  payments and seller inventories, Shipyard purchase transaction, legacy Cobra modules have no passport
+  placement (F7 lists them, the schematic is empty for the Cobra hull), the human acceptance of F6 / F7.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

@@ -2583,6 +2583,11 @@ Restore point: tag restore/pre-order-2026-11-04-g.
 - OPEN:
   globe-level stair contours from the 8-bit relief bake; ejecta rays; the landing-friendly-areas / cracks / canyons
   / scarps / rocks terrain type (queued).
+- Follow-up (user: small craters deeper, bright ejecta): small craters fresher (youth exponent by size), d/D 0.05..0.2,
+  ejecta halo + rays to 5 R; space-weathering albedo on airless / icy (mature darker, fresh lighter toward white - the
+  multiply clipped at 1 on bright ice). Probe: albedo spread rocky 0.36..0.51, icy proc moon 0.64..0.68 (400 m line).
+  Visual: Modern ground ~3 % darker overall, halos soft (the Modern tone curve compresses highlights); the Elite vector
+  style shows no albedo at all - there the deeper small craters show only as contour rings. Not human-accepted.
 
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the

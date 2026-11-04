@@ -885,7 +885,7 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
             if(Input::instance().isKeyPressedOnce(GLFW_KEY_PAGE_DOWN))
             {
                 const auto& m=it->second.transform.motion;
-                const bool flying=m.freeFlightAutopilotPhase>=1 && m.freeFlightAutopilotPhase<=4;
+                const bool flying=m.freeFlightAutopilotPhase>=1 && m.freeFlightAutopilotPhase!=5;
                 game::network::ClientMessage msg;
                 ClientShipCommand command;
                 command.type=ClientShipCommand::FreeFlightAutopilot;

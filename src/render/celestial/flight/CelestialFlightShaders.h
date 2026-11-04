@@ -36,7 +36,9 @@ uniform vec3 uSunDir;        // world, towards the light
 uniform vec3 uSunColour;
 uniform vec3 uHazeColour;    // atmosphere tint (day sky at the horizon)
 uniform float uHazeDensity;  // 0 = airless
-uniform float uContourKm;    // Elite contour spacing
+uniform float uContourKm;    // Elite contour spacing (the fixed, coarse set)
+uniform float uContourFineKm;     // the next finer nested set (half the spacing) ...
+uniform float uContourFineWeight; // ... fading in as the eye comes down
 uniform float uNaturalZones; // 1: the body states life or open water (zone palette); 0: its real albedo
 uniform float uRimScale;     // Elite globe outline strength (the backdrop globe low over the ground: faint)
 uniform float uDetailStrength; // procedural micro relief (normal tilt)
@@ -189,11 +191,18 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
     {
         // Elite Classic: black opaque body, light grey vector lines.
         float coast = isGas > 0.5 ? 0.0 : lineMask(coastKm, 1.3);
-        float contourValue = heightKm / max(uContourKm, 1e-3);
+        float contourValue = heightKm / max(uContourKm, 1e-6);
         float contour = isWater > 0.5 ? 0.0 : contourMask(contourValue, 0.9) * (lattice >= 0.0 ? 0.8 : 0.45);
         // lines closer than a few pixels (fine contours far away, grazing ground)
         // fade out instead of merging into a white moire
         contour *= 1.0 - smoothstep(0.12, 0.35, fwidth(contourValue));
+        if (uContourFineWeight > 0.0 && isWater < 0.5)
+        {
+            float fineValue = heightKm / max(uContourFineKm, 1e-6);
+            float fine = contourMask(fineValue, 0.9) * (lattice >= 0.0 ? 0.8 : 0.45) * uContourFineWeight;
+            fine *= 1.0 - smoothstep(0.12, 0.35, fwidth(fineValue));
+            contour = max(contour, fine);
+        }
         if (isGas > 0.5)
             contour = contourMask(dot(land, vec3(0.3, 0.5, 0.2)) * 9.0, 1.0) * 0.6;
         // the local terrain (lattice >= 0) is what a landing pilot reads: its lines
@@ -201,9 +210,9 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
         bool terrainPass = lattice >= 0.0;
         float grid = terrainPass ? lattice * 0.65 : 0.0; // precomputed lattice line mask
         float nv = dot(nSphere, viewDir);
-        // relief standing past the sphere's limb (distant ridges seen low over the
-        // ground: nv < 0) is not the outline - it lit the whole far terrain as a white wall
-        float rim = nv < -max(fwidth(nv), 1e-5) * 1.6 ? 0.0 : rimMask(nv, 1.6);
+        // (the local terrain draws no outline at all - terrainPass below; the globe
+        // keeps the full limb: crater rims standing past the sphere belong to it)
+        float rim = rimMask(nv, 1.6);
         // The outline stays bright on the night side (a whole circle, as in
         // the vector original); surface lines dim with the light.
         float fade = 0.30 + 0.70 * day;

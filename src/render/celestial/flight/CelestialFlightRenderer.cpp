@@ -1275,13 +1275,22 @@ struct CelestialFlightRenderer::Impl
         terrain.set("uPixelAngle", static_cast<float>(pixelAngle));
         terrain.set("uHazeColour", rt.atmosphere.haze);
         terrain.set("uHazeDensity", hazeDensity);
-        // Elite contours follow the eye: the body's relief / 6 from orbit, metres
-        // near the ground (2 % of the height over it, >= 5 m) - craters and
-        // small relief read as rings instead of falling between 1 km lines
+        // Elite contours REFINE as the eye comes down, they never slide: spacings
+        // are nested powers of two (5, 10, 20 ... m up to the body's relief / 6);
+        // the coarse set stays fixed, the next finer set fades in between its
+        // lines (a smoothly varying spacing made the whole relief flow like water)
         {
             const double groundHere = rt.field ? rt.field->sample(glm::normalize(cameraBody), 2000.0).heightM : 0.0;
             const double above = std::max(1.0, glm::length(cameraBody) - b.radiusM - groundHere);
-            terrain.set("uContourKm", static_cast<float>(std::clamp(above * 0.02, 5.0, rt.contourKm * 1000.0) / 1000.0));
+            const double maxM = std::max(5.0, rt.contourKm * 1000.0);
+            const double wanted = std::clamp(above * 0.02, 5.0, maxM);
+            const double t = std::log2(wanted / 5.0);
+            const double level = std::floor(t);
+            const double coarse = std::min(maxM, 5.0 * std::exp2(level + 1.0));
+            const double fine = 5.0 * std::exp2(level);
+            terrain.set("uContourKm", static_cast<float>(coarse / 1000.0));
+            terrain.set("uContourFineKm", static_cast<float>(fine / 1000.0));
+            terrain.set("uContourFineWeight", coarse > fine ? static_cast<float>(1.0 - (t - level)) : 0.0f);
         }
         terrain.set("uNaturalZones", naturalZones(rt) ? 1.0f : 0.0f);
         terrain.set("uDetailStrength", quality.detailNormals ? 0.35f : 0.0f);
@@ -2010,6 +2019,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             globe.set("uHazeColour", atm.haze);
             globe.set("uHazeDensity", hazeDensity);
             globe.set("uContourKm", static_cast<float>(rt->contourKm));
+            globe.set("uContourFineWeight", 0.0f);
             globe.set("uNaturalZones", naturalZones(*rt) ? 1.0f : 0.0f);
             globe.set("uSkyDisc", static_cast<float>(it.skyDisc));
             // low over the terrain no outline at all: it drew a level line through the

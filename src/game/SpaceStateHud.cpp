@@ -1635,7 +1635,7 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
               << "  (в сфере её притяжения)";
     std::string thrust = motion.freeFlightThrust == 1 ? "ТЯГА ПОЛНАЯ" : motion.freeFlightThrust == 2 ? "ТОРМОЖЕНИЕ" : "ТЯГА ВЫКЛ";
     // the autopilot flies on the J drive, not on the latched main-engine command
-    if (motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase <= 4)
+    if (motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase != 5)
     {
         char drive[96];
         // signed along the velocity: "-" is braking (the speed falls), "+" the speed grows
@@ -1675,8 +1675,9 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         if (phase == 5)
             std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s", target.c_str(), phases[phase]);
         else
-            std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s   ·   до поверхности %s   ·   скорость %s   ·   ускорение %+.1f g",
-                          target.c_str(), phases[phase], jDistance(motion.freeFlightAutopilotRangeM).c_str(),
+            std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s   ·   %s %s   ·   скорость %s   ·   ускорение %+.1f g",
+                          target.c_str(), phases[phase], phase == 6 ? "до площадки" : "до поверхности",
+                          jDistance(motion.freeFlightAutopilotRangeM).c_str(),
                           jSpeed(motion.freeFlightAutopilotRelSpeedMps).c_str(), motion.freeFlightAutopilotAccelMps2 / 9.81);
         const float aw = text.measureTextPx(ap, 16) + 40.0f;
         const float ax = std::max(8.0f, (static_cast<float>(viewport.width) - aw) * 0.5f);
@@ -1764,7 +1765,7 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
             warning = "НА ПОВЕРХНОСТИ   HOME - взлёт";
         else if (motion.freeFlightDragMps2 > 9.81)
             warning = "ПЛОТНЫЕ СЛОИ АТМОСФЕРЫ: нагрев и удар по корпусу";
-        else if (motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase <= 4)
+        else if (motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase != 5)
             ;   // the autopilot flies the descent: its own panel tells the state
         else if (motion.freeFlightOrbitAltitudeM < 20000.0 && motion.freeFlightOrbitRadialMps < -1.0 &&
                  motion.freeFlightOrbitSpeedMps < 1500.0)

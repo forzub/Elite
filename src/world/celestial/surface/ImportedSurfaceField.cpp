@@ -185,29 +185,5 @@ void importedHeightsFromGrey(const std::uint8_t* grey, int width, int height, do
             hM = -3500.0;
         out.heightM[i] = static_cast<float>(hM);
     }
-    // 8-bit signed sources (the Moon: +-10 km in 256 steps = 78 m) are terraced:
-    // two passes of a [1 2 1] blur (columns wrap, rows clamp) remove the steps
-    // that drew jagged contours; a texel is already ~5 km, nothing real is lost
-    if (signedRange && out.water.empty() && width > 2 && height > 2)
-    {
-        std::vector<float> tmp(out.heightM.size());
-        for (int pass = 0; pass < 2; ++pass)
-        {
-            for (int y = 0; y < height; ++y)
-                for (int x = 0; x < width; ++x)
-                {
-                    const auto at = [&](int xx) { return out.heightM[static_cast<std::size_t>(y) * width + ((xx + width) % width)]; };
-                    tmp[static_cast<std::size_t>(y) * width + x] = 0.25f * at(x - 1) + 0.5f * at(x) + 0.25f * at(x + 1);
-                }
-            for (int y = 0; y < height; ++y)
-                for (int x = 0; x < width; ++x)
-                {
-                    const auto at = [&](int yy) {
-                        return tmp[static_cast<std::size_t>(std::clamp(yy, 0, height - 1)) * width + x];
-                    };
-                    out.heightM[static_cast<std::size_t>(y) * width + x] = 0.25f * at(y - 1) + 0.5f * at(y) + 0.25f * at(y + 1);
-                }
-        }
-    }
 }
 } // namespace world::celestial::surface

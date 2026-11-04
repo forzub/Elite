@@ -2384,6 +2384,38 @@ Restore point: tag restore/pre-order-2026-11-04-g.
 8. Navigation in J: orbit-relative velocity (direction vs the planet radius, gravity: falling and
    missing), star-relative outside planets - to explore with an interplanetary flight.
 
+### User order 2026-11-04 g - results (game evidence D:/tmp/elite_order_g_run1)
+1. Radar (f37a7a04): R cycles 20 / 50 / 150 km; J shows a 30-deg forward sector to 2 000 km
+   ("RADAR FWD"); episodic LCD interference every 45-120 s for 3-8 s. GAME: default "RADAR 20 km [R]".
+2. Player ship: the player flies Cobrett A3 (ASSISTED-I in the HUD); N1 in my earlier reports was the
+   acceptance harness's own Newtonian model, not the player's ship.
+3. Freezes (a0f330e3): user video = ~20 fps with 0.2-0.33 s stalls while the Earth limb is in view and
+   the Assisted route plans (65-86 s, elite_docking_planner.log). Cause found in repro (planet view +
+   docking request): terrain bake pool = hardware_concurrency - 2 = 10 normal-priority threads + route
+   worker on 6 physical cores. Pool = physical - 1 (max 6), pool + route worker below normal priority:
+   steady frame 34.4 -> 16.7 ms, worst 83 -> 34 ms. Hitch profiler always on -> D:/tmp/elite_hitches.log
+   every session. OPEN: Assisted planner time itself (45-86 s).
+4. Visual: Elite Classic grey planet at start fixed (61ec69c6: height 0 = a contour level before the
+   globe bake). J-entry hub desync NOT reproduced (rest + full thrust, 25 ms / 400 ms captures) - DEV
+   switches ELITE_DEV_FREE_FLIGHT_AT / _THRUST_AT kept (e34e7217). OPEN.
+5. Detail map: opaque planet, markers / labels behind bodies hidden, golden "игрок" marker (golden hub
+   cube when in a hub) (a0ba54eb); maps remember the last view - Detail per body, Hub per hub, Galaxy
+   (bac78746); repeatable procedural ring bodies by ring cell, density by screen size and optical depth
+   (68fd527b, Saturn). OPEN: asteroid-belt spatial cells. DEV SOL script: `detail`, enter aliases.
+   NOTE for scripts: ELITE_DEV_FRAME_CAPTURE / ELITE_DEV_MAP_SCRIPT count GLFW seconds, the SOL / DEV
+   switches count space-state seconds (~10 s later).
+6./7. Hubs + economy (e8461c41, subagent, PROPOSAL data only): 22 module types / 538 hubs with
+   composition + description; 37 goods in 14 groups; tick / price / events / quarantine rules;
+   bulletin-board schema; price info age over the comms network; 8-bloc customs matrix.
+   tools/colonization_lab/out/ECONOMY_LIVE_DESIGN.md. Author questions listed there (tick 24 h, bloc
+   matrix, lotos in catalog, 32 liner platforms at Vysokiy). No runtime / UI yet (board, clickable
+   destinations, ticks).
+8. J orbit HUD (0c19ded7): speed vs the dominant body, radial, circular / escape, H / Pe / Ap
+   (schema 29). Observation: the Earth hub moves 7.74 km/s at 422 km (circular 7.66) - a ship leaving
+   it is on a 422 x 733 km orbit.
+- Full suite after 0c19ded7: the same 8 baseline red blocks with the same messages; navigation sensor /
+  radar, multiplayer, network process, standalone runtime, headless + main builds PASS.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

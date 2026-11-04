@@ -2601,6 +2601,24 @@ Restore point: tag restore/pre-order-2026-11-04-g.
 - Earlier note (farg02, 87faa141): that fix kept the ship in the render-epoch frame until the crossing; this one fixes
   the crossing frame itself.
 
+### User order 2026-11-05 o (route planner + autopilot; then damage mechanics) - STARTED
+Scope as given (no questions, implement optimally, corrections after review):
+A. Planner + autopilot hub -> hub / orbit of a body, incl. other systems: at the finish match the hub's velocity and
+   leave J automatically, a stable position inside the hub bounds / on the new orbit; gravity obstacles and fields,
+   anomalies, safety through interstellar clouds / anomalies, gravity assists; Assisted and Newtonian, all 6 layouts.
+   UI: finish chosen on the map -> route-points info window buttons "official" / "unofficial" route -> planning,
+   J on, flight. The dashed network routes = GREEN corridors (preferred, official: safer, faster). Unofficial =
+   smuggling: away from outposts / patrol routes, through poor radar coverage; intermediate points may be hubs
+   (legal / illegal refuelling). Waypoint actions (now: refuel): arrive, J off, dock (the dock given with the point),
+   refuel, undock, J on, continue. A J on/off distance from hubs (collision avoidance). Zones: BLUE mandatory
+   passage, RED forbidden, GREEN preferred; a zone violation is an administrative penalty, not a collision.
+B. Then damage: collisions and weapons (lasers, missiles of different power; no fragmentation warheads - a common
+   tacit agreement: melting / burning-through warheads, the slug is destroyed or stuck in the ship). A shell ship in
+   view / in a duel becomes a full ship (hit volumes, modules). Hit volumes page in the mesh editor (exists) for
+   every part incl. hull plates and "patches"; parts tied to the frame by bars (destroying them detaches a part, they
+   carry impacts and break), plates joined by perimeter "sausages" (cut out to reach containers with their locks);
+   finish the part dependency tree / graph (existed). Example: the Cobra mesh.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

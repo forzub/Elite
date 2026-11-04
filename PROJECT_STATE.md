@@ -2519,6 +2519,26 @@ Restore point: tag restore/pre-order-2026-11-04-g.
   stops at 10.0 deg, 5 deg/s, 7664 -> 7654 m/s), roll2.log (a 1.5 s roll stays after release).
   Full suite not re-run for this change. The user allowed closing a running EliteGame.exe for my checks.
 
+### User order 2026-11-04 l (J reference frames, units, touchdown, signed acceleration)
+- J reference = the deepest body whose Laplace sphere of influence holds the ship, catalog parent (the
+  Earth-Moon pair is one system; the strongest-pull primary had switched to the Sun halfway to the Moon and
+  the Sun-parented Moon sphere came out 160 000 km). Live (D:/tmp/elite_soi): Earth -> Moon flown against
+  Earth until 69 773 km from the Moon, then the Moon; Earth -> Mars: Earth until ~925 000 km, then the root
+  (Sol): "глобальная скорость 13630 км/с (отн. Sol) · гравитация планет пренебрежима", altitude / 1st cosmic
+  dashes. Global speed includes Earth's orbital 29.8 km/s (28.2 km/s at the hub at rest vs Earth); at J
+  autopilot speeds (thousands of km/s) it is ~0.2 % and looks equal. Schema 33.
+- HUD units by magnitude (m/s -> km/s; m -> km -> thousand / million km -> AU) (7deda479).
+- Touchdown: the hull centre rested at ground + 1 m - half the hull sank into the surface. Now ground = max
+  terrain under the footprint (centre, nose/tail, sides) + half height + 0.5 m gear. Live t2.log: 1.64 m/s.
+- Autopilot acceleration is signed along the velocity: '+9117.7 g (разгон)', '-4078.5 g (торможение)'.
+- QUEUED (user, not started):
+  1. a believable Moon: from Earth a cratered ball, on the ground a lunar landscape (craters, ejecta,
+     regolith) - procedural, reusable for the many airless moons. NOTE: the game currently draws in the
+     Elite vector style (black bodies + lines); the Moon's albedo / relief show in Modern / Anime.
+  2. System Map flat (plan) as the main presentation; "sectors of interest": split the asteroid belt and
+     Saturn's rings into selectable sectors viewable in Details.
+  3. J drive energy (reactor / fuel) accounting; human feel of the stiff J steering.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

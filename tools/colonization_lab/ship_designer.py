@@ -100,7 +100,9 @@ def r(x, n=2):
 
 def compute():
     D = load("ship_designs.json")
-    E = load("ship_economics.json")["ship_classes"]
+    ECON = load("ship_economics.json")
+    E = ECON["ship_classes"]
+    C20_TARE_T = ECON["cargo_model"]["container_tare_t"]   # canonical empty C20 (runtime: ShipCargoPassports.h C20TareTonnes)
     I = load("industry.json")
     channels = load(os.path.join("..", "out", "world_3126", "industry_3126.json"))["channels"]
     R = D["rules"]
@@ -177,13 +179,21 @@ def compute():
         plo, phi = R["structure_share_by_form"].get(s["hull"]["form"], R["structure_share_plausible"])
         add("equipment_fits_dry_mass", lo <= share <= hi, f"hull structure {structure:.0f} t = {share:.0%} of dry {dry} t (possible {lo:.0%}-{hi:.0%})")
         add("hull_structure_share_typical", plo <= share <= phi, f"hull structure {share:.0%} of dry (typical {plo:.0%}-{phi:.0%})", "WARN")
-        gross = dry + s["cargo_t"] + fluids + consumables + 0.09 * persons   # 90 kg per person with kit
+        # Mass ladder (one meaning everywhere: designer, runtime ShipCore, economics):
+        #   dry     - hull + installed equipment, empty tanks
+        #   service - dry + full tanks + full stores + crew aboard (ready to fly, no payload)
+        #   net     - cargo payload (cargo_t) + passengers (90 kg with kit)
+        #   tare    - empty C20 boxes in EVERY declared place (a full passport load)
+        #   gross   - service + net + tare: everything aboard at a full passport load
+        service = dry + fluids + consumables + 0.09 * s["crew"]
+        container_tare = s["c20"] * C20_TARE_T
+        gross = service + s["cargo_t"] + 0.09 * s["passengers"] + container_tare
         thrust = drive["thrust_mn"] * lay["aft"]
-        a_dry = thrust * 1e6 / ((dry + fluids + consumables) * 1e3)
+        a_service = thrust * 1e6 / (service * 1e3)
         a_full = thrust * 1e6 / (gross * 1e3)
         target_g = s.get("burn_accel_g", cls["burn_accel_g"])
         add("thrust_meets_class_acceleration", a_full >= 0.85 * target_g * G0,
-            f"{thrust:.2f} MN: {a_full / G0:.2f} g loaded, {a_dry / G0:.2f} g light (class burn {target_g} g)")
+            f"{thrust:.2f} MN: {a_full / G0:.2f} g loaded, {a_service / G0:.2f} g in service (class burn {target_g} g)")
         tol = R["physics_tolerance"]
         add("thrust_near_class_target", abs(thrust / cls["thrust_mn"] - 1) <= tol, f"{thrust:.1f} MN vs class {cls['thrust_mn']} MN", "WARN")
 
@@ -374,10 +384,11 @@ def compute():
             hull=dict(s["hull"], structure_t=r(structure, 1)), crew=s["crew"], passengers=s["passengers"], cold_sleep=cold,
             payload=dict(cargo_t=s["cargo_t"], c20=s["c20"], passenger_places=pax_seats),
             endurance_days=s["endurance_days"], service_life_years=round(s["service_life_years"] * sx.get("life_x", 1.0)),
-            mass=dict(dry_t=dry, equipment_t=r(eq_mass, 1), structure_t=r(structure, 1), fluids_t=r(fluids, 1), consumables_t=r(consumables, 1),
-                      gross_t=r(gross, 1)),
+            mass=dict(dry_t=dry, equipment_t=r(eq_mass, 1), structure_t=r(structure, 1), fluids_t=r(fluids, 3), consumables_t=r(consumables, 3),
+                      service_t=r(service, 3), net_payload_t=r(s["cargo_t"] + 0.09 * s["passengers"], 2),
+                      container_tare_t=r(container_tare, 2), c20_tare_t=C20_TARE_T, gross_t=r(gross, 3)),
             propulsion=dict(drive=drive["id"], drives=n_drives, aft=lay["aft"], fore=lay["fore"], thrust_mn=r(thrust, 2),
-                            accel_g_loaded=r(a_full / G0, 3), accel_g_light=r(a_dry / G0, 3), class_burn_g=target_g,
+                            accel_g_loaded=r(a_full / G0, 3), accel_g_service=r(a_service / G0, 3), class_burn_g=target_g,
                             drive_emitter_diameter_m=r(emitter_d, 2), sustainable_thrust01=r(sustainable, 3)),
             power=dict(reactor=reactor["id"], generators=qty("reactor"), propulsion_mwe=prop_mwe, drive_input_mw=drive_input,
                        service_mwe=apu, hotel_mw=r(hotel, 1), rcs_mw=rcs_mw, reactor_pad_m2=pad_m2),
@@ -645,7 +656,7 @@ def report(D, prods, mfr, ships):
         core = next((prods[i["product"]]["model"] for i in s["installed"] if i["cat"] == "jump_core"), "—")
         pay = f"{s['payload']['cargo_t']} т" + (f", {s['passengers']} пасс." if s["passengers"] else "")
         L.append(f"| {s['name']}{'' if s['base'] else ' (вариант)'} | {s['cls']} | {s['manufacturer_name']} | {s['flight']['runtime_model']} | "
-                 f"{s['mass']['dry_t']} | {pay} | {s['propulsion']['thrust_mn']} | {s['propulsion']['accel_g_loaded']}/{s['propulsion']['accel_g_light']} | "
+                 f"{s['mass']['dry_t']} | {pay} | {s['propulsion']['thrust_mn']} | {s['propulsion']['accel_g_loaded']}/{s['propulsion']['accel_g_service']} | "
                  f"{s['power']['propulsion_mwe']} | {core} | {s['price']['list_cr'] / 1e6:.1f} | "
                  f"{'OK' if not bad else 'FAIL ' + str(len(bad))}{(' · WARN ' + str(len(warn))) if warn else ''} |")
     for s in ships:
@@ -658,8 +669,8 @@ def report(D, prods, mfr, ships):
               f"- Схема управления: {s['flight']['law']} {s['flight']['layout']} (рантайм `{s['flight']['runtime_model']}`, {s['flight']['runtime']}).",
               f"- Экипаж {s['crew']}, пассажиры {s['passengers']}{' (в анабиозе ' + str(s['cold_sleep']) + ')' if s['cold_sleep'] else ''}; "
               f"груз {s['payload']['cargo_t']} т, C20 {s['payload']['c20']}; автономность {s['endurance_days']} сут; ресурс {s['service_life_years']} лет.",
-              f"- Масса: сухая {s['mass']['dry_t']} т (оборудование {s['mass']['equipment_t']} т), полная {s['mass']['gross_t']} т.",
-              f"- Тяга {s['propulsion']['thrust_mn']} МН: {s['propulsion']['accel_g_loaded']} g гружёный, {s['propulsion']['accel_g_light']} g лёгкий; "
+              f"- Масса: сухая {s['mass']['dry_t']} т (оборудование {s['mass']['equipment_t']} т), в рабочем снаряжении {s['mass']['service_t']} т, полная {s['mass']['gross_t']} т (груз {s['mass']['net_payload_t']} т + тара C20 {s['mass']['container_tare_t']} т).",
+              f"- Тяга {s['propulsion']['thrust_mn']} МН: {s['propulsion']['accel_g_loaded']} g гружёный (полная масса), {s['propulsion']['accel_g_service']} g в рабочем снаряжении; "
               f"длительно допустимая доля тяги {s['propulsion']['sustainable_thrust01']}.",
               f"- Энергия: {s['power']['generators']} × {prods[s['power']['reactor']]['model']} = {s['power']['propulsion_mwe']} МВт; "
               f"бытовая нагрузка {s['power']['hotel_mw']} МВт от {s['power']['service_mwe']} МВт; площадка реактора {s['power']['reactor_pad_m2']} м².",
@@ -699,7 +710,7 @@ def catalog_page(prods, ships, svgs):
                 ("Корпус", f'{s["hull"]["form"]}, {" × ".join(str(x) for x in s["hull"]["envelope_m"])} м; {s["hull"]["structure"]}'),
                 ("Схема управления", f'{s["flight"]["law"]} {s["flight"]["layout"]}'),
                 ("Масса / нагрузка", f'сухая {s["mass"]["dry_t"]} т, груз {s["payload"]["cargo_t"]} т, C20 {s["payload"]["c20"]}, экипаж {s["crew"]}, пассажиры {s["passengers"]}'),
-                ("Тяга", f'{s["propulsion"]["thrust_mn"]} МН — {s["propulsion"]["accel_g_loaded"]} g гружёный, {s["propulsion"]["accel_g_light"]} g лёгкий'),
+                ("Тяга", f'{s["propulsion"]["thrust_mn"]} МН — {s["propulsion"]["accel_g_loaded"]} g гружёный, {s["propulsion"]["accel_g_service"]} g в рабочем снаряжении'),
                 ("Энергия / тепло", f'{s["power"]["propulsion_mwe"]} МВт двигательных, {s["power"]["service_mwe"]} МВт служебных; радиаторы {s["thermal"]["radiator_area_m2"]} м²'),
                 ("Цена", f'{s["price"]["list_cr"] / 1e6:.2f} млн Cr'),
                 ("Единичные точки отказа", ", ".join(s["schematic"]["single_points_of_failure"]) or "нет")]

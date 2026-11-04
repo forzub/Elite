@@ -96,7 +96,7 @@ struct ShipDesign
     int enduranceDays = 0;
     double thrustMN = 0.0;
     double accelLoadedG = 0.0;
-    double accelLightG = 0.0;
+    double accelServiceG = 0.0;   // thrust / service mass
     double sustainableThrust01 = 1.0;
     double driveEmitterDiameterM = 0.0;
     double propulsionMWe = 0.0;
@@ -111,6 +111,12 @@ struct ShipDesign
     double structureTonnes = 0.0;   // hull structure (dry - equipment)
     double fluidsTonnes = 0.0;      // tank capacity (jump charge, pellets, RCS gas, cargo fluids)
     double consumablesTonnes = 0.0; // life-support consumables for the endurance
+    // Mass ladder (ship_designer.py): dry -> service (tanks, stores, crew) -> + net payload
+    // (cargo, passengers) + C20 tare (every declared place) = gross (full passport load).
+    double serviceTonnes = 0.0;
+    double netPayloadTonnes = 0.0;
+    double containerTareTonnes = 0.0;
+    double c20TareTonnes = 0.0;
     double grossTonnes = 0.0;
     std::vector<ShipDesignInstalledItem> installed;
     std::vector<ShipDesignSchematicNode> schematicNodes;
@@ -209,7 +215,7 @@ public:
             const auto& prop = j.value("propulsion", nlohmann::json::object());
             s.thrustMN = prop.value("thrust_mn", 0.0);
             s.accelLoadedG = prop.value("accel_g_loaded", 0.0);
-            s.accelLightG = prop.value("accel_g_light", 0.0);
+            s.accelServiceG = prop.value("accel_g_service", 0.0);
             s.sustainableThrust01 = prop.value("sustainable_thrust01", 1.0);
             s.driveEmitterDiameterM = prop.value("drive_emitter_diameter_m", 0.0);
             const auto& pw = j.value("power", nlohmann::json::object());
@@ -227,6 +233,10 @@ public:
             s.structureTonnes = ms.value("structure_t", 0.0);
             s.fluidsTonnes = ms.value("fluids_t", 0.0);
             s.consumablesTonnes = ms.value("consumables_t", 0.0);
+            s.serviceTonnes = ms.value("service_t", 0.0);
+            s.netPayloadTonnes = ms.value("net_payload_t", 0.0);
+            s.containerTareTonnes = ms.value("container_tare_t", 0.0);
+            s.c20TareTonnes = ms.value("c20_tare_t", 0.0);
             s.grossTonnes = ms.value("gross_t", 0.0);
             for (const auto& it : j.value("installed", nlohmann::json::array()))
             {

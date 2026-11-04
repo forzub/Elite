@@ -4,26 +4,26 @@
 
 | Модель | Класс | Производитель | Схема | Сухая, т | Груз | Тяга, МН | g груж./лёгк. | Реакторы, МВт | Ядро | Цена, млн Cr | Проверки |
 |---|---|---|---|---:|---|---:|---|---:|---|---:|---|
-| Cobrett-I N1 | cobrett_i_n1 | Cobretty Corporation | NewtonianI | 260 | 120 т | 9.56 | 2.515/3.646 | 5000 | Я-0.5 | 4.0 | OK · WARN 2 |
-| Cobrett-I A3 (вариант) | cobrett_i_n1 | Cobretty Corporation | AssistedI | 260 | 110 т | 19.12 | 5.192/7.347 | 10000 | Я-0.5 | 4.9 | OK · WARN 3 |
-| OCS-4 «Ласточка» | ocs4_lastochka | Orbital Freight Union «Ural-Kourou» | NewtonianI | 380 | 409 т | 3.3 | 0.425/0.881 | 2600 | — | 2.3 | OK · WARN 3 |
-| SL-12 «Подъёмник» | surface_lifter | Orbital Freight Union «Ural-Kourou» | NewtonianY | 620 | 240 т, 144 пасс. | 21.99 | 2.551/3.584 | 27000 | — | 7.0 | OK · WARN 1 |
-| C-120 «Конвейер» | medium_freighter | Бхарат Ассембли | NewtonianY | 1900 | 2400 т | 12.99 | 0.305/0.683 | 9900 | М-5 | 14.9 | OK · WARN 3 |
-| Хэ-120 «Хуэйлю» (вариант) | medium_freighter | Верфи Гармонии | NewtonianI | 1900 | 2400 т | 13.0 | 0.305/0.683 | 10000 | Х-5 | 13.8 | OK · WARN 2 |
-| Хэ-Т12 «Локомотив» + 12 модулей | jump_train | Верфи Гармонии | NewtonianX | 10800 | 57600 т | 90.0 | 0.133/0.809 | 80000 | Х-80 | 89.9 | OK · WARN 2 |
+| Cobrett-I N1 | cobrett_i_n1 | Cobretty Corporation | NewtonianI | 260 | 120 т | 9.56 | 2.451/3.644 | 5000 | Я-0.5 | 4.0 | OK · WARN 2 |
+| Cobrett-I A3 (вариант) | cobrett_i_n1 | Cobretty Corporation | AssistedI | 260 | 110 т | 19.12 | 5.054/7.342 | 10000 | Я-0.5 | 4.9 | OK · WARN 3 |
+| OCS-4 «Ласточка» | ocs4_lastochka | Orbital Freight Union «Ural-Kourou» | NewtonianI | 380 | 409 т | 3.3 | 0.404/0.88 | 2600 | — | 2.3 | OK · WARN 3 |
+| SL-12 «Подъёмник» | surface_lifter | Orbital Freight Union «Ural-Kourou» | NewtonianY | 620 | 240 т, 144 пасс. | 21.99 | 2.494/3.583 | 27000 | — | 7.0 | OK · WARN 1 |
+| C-120 «Конвейер» | medium_freighter | Бхарат Ассембли | NewtonianY | 1900 | 2400 т | 12.99 | 0.292/0.683 | 9900 | М-5 | 14.9 | OK · WARN 3 |
+| Хэ-120 «Хуэйлю» (вариант) | medium_freighter | Верфи Гармонии | NewtonianI | 1900 | 2400 т | 13.0 | 0.292/0.683 | 10000 | Х-5 | 13.8 | OK · WARN 2 |
+| Хэ-Т12 «Локомотив» + 12 модулей | jump_train | Верфи Гармонии | NewtonianX | 10800 | 57600 т | 90.0 | 0.124/0.809 | 80000 | Х-80 | 89.9 | OK · WARN 2 |
 | Хэ-Т12Ц (поезд-танкер) | jump_tanker | Верфи Гармонии | NewtonianX | 12000 | 50000 т | 90.0 | 0.147/0.732 | 80000 | Х-80 | 93.5 | OK · WARN 2 |
 | ГТ-3000 «Титан» (вариант) | gas_tanker | Лунно-Марсианские верфи | NewtonianY | 900 | 3000 т | 6.99 | 0.182/0.782 | 6600 | — | 4.6 | OK · WARN 1 |
 | «Камень» (танкер из астероида) (вариант) | gas_tanker | Каменные доки Раздора | NewtonianI | 2400 | 6000 т | 3.3 | 0.04/0.14 | 2600 | — | 4.3 | OK · WARN 3 |
-| HT-20K «Мул» | ore_tug | Kern Heavy Mining | NewtonianX | 700 | 0 т | 4.0 | 0.571/0.572 | 3320 | — | 3.3 | OK · WARN 3 |
-| СТ-6 «Мастеровой» | service_tender | Лунно-Марсианские верфи | AssistedI | 500 | 150 т | 3.0 | 0.466/0.605 | 2800 | — | 2.6 | OK · WARN 3 |
-| ПК-30 «Страж» | patrol_cutter | Лунно-Марсианские верфи | AssistedI | 420 | 20 т, 6 пасс. | 13.0 | 2.926/3.071 | 9600 | Я-1 | 15.8 | OK · WARN 1 |
-| Б-4 «Сокол» | interceptor | Арсенал «Бастион» | AssistedX | 140 | 2 т | 6.2 | 4.383/4.45 | 10000 | — | 20.6 | OK · WARN 2 |
-| Хэ-Ф22 «Дунь» | escort_frigate | Верфи Гармонии | AssistedY | 2200 | 80 т | 32.1 | 1.385/1.436 | 32100 | Х-5 | 77.0 | OK · WARN 1 |
-| Б-90 «Цитадель» | line_combatant | Арсенал «Бастион» | NewtonianX | 9000 | 300 т | 110.0 | 1.148/1.187 | 120000 | Б-12 | 796.7 | OK · WARN 1 |
-| R-7 «Аргус» | recon_picket | Верфи Гипериона | NewtonianX | 600 | 10 т | 12.0 | 1.932/1.967 | 11000 | Я-1 | 37.0 | OK · WARN 1 |
-| Хэ-С240 «Тыловик» | fleet_tender | Верфи Гармонии | NewtonianY | 5000 | 6000 т | 39.0 | 0.354/0.763 | 32100 | Х-12 | 59.8 | OK · WARN 2 |
-| ПАО-7 «Щит» | impact_defence_tug | Лунно-Марсианские верфи | NewtonianX | 1600 | 200 т | 28.0 | 1.555/1.747 | 28000 | — | 33.1 | OK · WARN 1 |
-| L-900 «Пилигрим» | liner | Верфи Гипериона | NewtonianY | 2600 | 90 т, 900 пасс. | 12.0 | 0.407/0.432 | 15000 | Я-5 | 36.0 | OK · WARN 1 |
+| HT-20K «Мул» | ore_tug | Kern Heavy Mining | NewtonianX | 700 | 0 т | 4.0 | 0.571/0.571 | 3320 | — | 3.3 | OK · WARN 3 |
+| СТ-6 «Мастеровой» | service_tender | Лунно-Марсианские верфи | AssistedI | 500 | 150 т | 3.0 | 0.459/0.604 | 2800 | — | 2.6 | OK · WARN 3 |
+| ПК-30 «Страж» | patrol_cutter | Лунно-Марсианские верфи | AssistedI | 420 | 20 т, 6 пасс. | 13.0 | 2.926/3.065 | 9600 | Я-1 | 15.8 | OK · WARN 1 |
+| Б-4 «Сокол» | interceptor | Арсенал «Бастион» | AssistedX | 140 | 2 т | 6.2 | 4.383/4.445 | 10000 | — | 20.6 | OK · WARN 2 |
+| Хэ-Ф22 «Дунь» | escort_frigate | Верфи Гармонии | AssistedY | 2200 | 80 т | 32.1 | 1.385/1.434 | 32100 | Х-5 | 77.0 | OK · WARN 1 |
+| Б-90 «Цитадель» | line_combatant | Арсенал «Бастион» | NewtonianX | 9000 | 300 т | 110.0 | 1.148/1.185 | 120000 | Б-12 | 796.7 | OK · WARN 1 |
+| R-7 «Аргус» | recon_picket | Верфи Гипериона | NewtonianX | 600 | 10 т | 12.0 | 1.932/1.963 | 11000 | Я-1 | 37.0 | OK · WARN 1 |
+| Хэ-С240 «Тыловик» | fleet_tender | Верфи Гармонии | NewtonianY | 5000 | 6000 т | 39.0 | 0.342/0.762 | 32100 | Х-12 | 59.8 | OK · WARN 2 |
+| ПАО-7 «Щит» | impact_defence_tug | Лунно-Марсианские верфи | NewtonianX | 1600 | 200 т | 28.0 | 1.555/1.745 | 28000 | — | 33.1 | OK · WARN 1 |
+| L-900 «Пилигрим» | liner | Верфи Гипериона | NewtonianY | 2600 | 90 т, 900 пасс. | 12.0 | 0.407/0.431 | 15000 | Я-5 | 36.0 | OK · WARN 1 |
 | T-5000 «Исход» | colonist_transport | Бхарат Ассембли | NewtonianX | 6500 | 600 т, 5000 пасс. | 17.32 | 0.196/0.222 | 13200 | М-12 | 58.4 | OK · WARN 1 |
 
 ## Cobrett-I N1 (Cobrett-I N1)
@@ -34,8 +34,8 @@
 - Корпус: wedge, 22.2 × 26.0 × 5.0 м; несущий клиновидный монокок; алюминий-литиевый сплав, C-SiC обшивка; силовой набор 175.6 т.
 - Схема управления: Newtonian I (рантайм `NewtonianI`, existing:EliteCobraMk1:NewtonianI).
 - Экипаж 2, пассажиры 0; груз 120 т, C20 6; автономность 30 сут; ресурс 40 лет.
-- Масса: сухая 260 т (оборудование 84.4 т), полная 387.5 т.
-- Тяга 9.56 МН: 2.515 g гружёный, 3.646 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 260 т (оборудование 84.4 т), в рабочем снаряжении 267.54 т, полная 397.74 т (груз 120.0 т + тара C20 10.2 т).
+- Тяга 9.56 МН: 2.451 g гружёный (полная масса), 3.644 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 1 × ER-5 = 5000 МВт; бытовая нагрузка 4.3 МВт от 70 МВт; площадка реактора 120.4 м².
 - Охлаждение: 380 м² радиаторов при 1050 K = 235.7 МВт; контуры 180 МВт; излучатель двигателя ⌀ 2.74 м.
 - Цена: детали 2.27 млн, корпус 0.65 млн, прейскурант 3.99 млн Cr.
@@ -69,7 +69,7 @@
 - OK `generator_covers_group_demand` — 5000 MWe per group vs 4850 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 176 t = 68% of dry 260 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 68% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 9.56 MN: 2.52 g loaded, 3.65 g light (class burn 1.0 g)
+- OK `thrust_meets_class_acceleration` — 9.56 MN: 2.45 g loaded, 3.64 g in service (class burn 1.0 g)
 - OK `thrust_near_class_target` — 9.6 MN vs class 9.56 MN
 - OK `service_power_covers_hotel` — service 70 MWe vs hotel 4.3 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 24 RCS units on the 8-node Newtonian bank
@@ -78,7 +78,7 @@
 - OK `coolant_loops_carry_service_heat` — loops 180 MW vs service heat 9.6 MW
 - OK `radiators_reject_service_heat` — 380 m2 at 1050 K = 236 MW vs 9.6 MW
 - OK `jump_core_installed` — jump class needs a core
-- OK `jump_core_rating_covers_gross` — core 500 t vs gross 388 t
+- OK `jump_core_rating_covers_gross` — core 500 t vs gross 398 t
 - OK `jump_charge_capacity` — 3 t charge vs class 3.0 t
 - OK `life_support_capacity` — 4 places for 2 awake persons (0 in cold sleep)
 - OK `life_support_endurance` — 60 days vs endurance 30 days
@@ -98,8 +98,8 @@
 - Корпус: wedge, 22.2 × 26.0 × 5.0 м; несущий клиновидный монокок, гондолы двигателей; алюминий-литиевый сплав, C-SiC обшивка; силовой набор 119.7 т.
 - Схема управления: Assisted I (рантайм `AssistedI`, existing:EliteCobraMk1:AssistedI).
 - Экипаж 2, пассажиры 0; груз 110 т, C20 6; автономность 30 сут; ресурс 40 лет.
-- Масса: сухая 260 т (оборудование 140.3 т), полная 375.5 т.
-- Тяга 19.12 МН: 5.192 g гружёный, 7.347 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 260 т (оборудование 140.3 т), в рабочем снаряжении 265.54 т, полная 385.74 т (груз 110.0 т + тара C20 10.2 т).
+- Тяга 19.12 МН: 5.054 g гружёный (полная масса), 7.342 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 2 × ER-5 = 10000 МВт; бытовая нагрузка 4.3 МВт от 70 МВт; площадка реактора 120.4 м².
 - Охлаждение: 380 м² радиаторов при 1050 K = 235.7 МВт; контуры 180 МВт; излучатель двигателя ⌀ 2.74 м.
 - Цена: детали 2.98 млн, корпус 0.65 млн, прейскурант 4.95 млн Cr.
@@ -131,7 +131,7 @@
 - OK `generator_covers_group_demand` — 5000 MWe per group vs 4850 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 120 t = 46% of dry 260 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 46% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 19.12 MN: 5.19 g loaded, 7.35 g light (class burn 1.0 g)
+- OK `thrust_meets_class_acceleration` — 19.12 MN: 5.05 g loaded, 7.34 g in service (class burn 1.0 g)
 - WARN `thrust_near_class_target` — 19.1 MN vs class 9.56 MN
 - OK `service_power_covers_hotel` — service 70 MWe vs hotel 4.3 MW (+15 %)
 - OK `rcs_powered_from_propulsion_spare` — RCS 0 MW installed, 0 MW simultaneous, from propulsion spare 300 MW
@@ -139,7 +139,7 @@
 - OK `coolant_loops_carry_service_heat` — loops 180 MW vs service heat 9.6 MW
 - OK `radiators_reject_service_heat` — 380 m2 at 1050 K = 236 MW vs 9.6 MW
 - OK `jump_core_installed` — jump class needs a core
-- OK `jump_core_rating_covers_gross` — core 500 t vs gross 376 t
+- OK `jump_core_rating_covers_gross` — core 500 t vs gross 386 t
 - OK `jump_charge_capacity` — 3 t charge vs class 3.0 t
 - OK `life_support_capacity` — 4 places for 2 awake persons (0 in cold sleep)
 - OK `life_support_endurance` — 60 days vs endurance 30 days
@@ -159,8 +159,8 @@
 - Корпус: box, 56.0 × 18.0 × 14.0 м; ферма-хребет с открытыми гнёздами C20; сталь-титановая ферма; силовой набор 314.9 т.
 - Схема управления: Newtonian I (рантайм `NewtonianI`, generic).
 - Экипаж 3, пассажиры 0; груз 409 т, C20 24; автономность 7 сут; ресурс 40 лет.
-- Масса: сухая 380 т (оборудование 65.0 т), полная 791.4 т.
-- Тяга 3.3 МН: 0.425 g гружёный, 0.881 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 380 т (оборудование 65.0 т), в рабочем снаряжении 382.396 т, полная 832.196 т (груз 409.0 т + тара C20 40.8 т).
+- Тяга 3.3 МН: 0.404 g гружёный (полная масса), 0.88 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 1 × ЭР-2.6 = 2600 МВт; бытовая нагрузка 4.4 МВт от 20 МВт; площадка реактора 62.6 м².
 - Охлаждение: 100 м² радиаторов при 1050 K = 62.0 МВт; контуры 300 МВт; излучатель двигателя ⌀ 2.02 м.
 - Цена: детали 1.20 млн, корпус 0.52 млн, прейскурант 2.26 млн Cr.
@@ -190,7 +190,7 @@
 - OK `generator_covers_group_demand` — 2600 MWe per group vs 2400 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 315 t = 83% of dry 380 t (possible 15%-90%)
 - WARN `hull_structure_share_typical` — hull structure 83% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 3.30 MN: 0.43 g loaded, 0.88 g light (class burn 0.4 g)
+- OK `thrust_meets_class_acceleration` — 3.30 MN: 0.40 g loaded, 0.88 g in service (class burn 0.4 g)
 - OK `thrust_near_class_target` — 3.3 MN vs class 3.3 MN
 - OK `service_power_covers_hotel` — service 20 MWe vs hotel 4.4 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
@@ -217,8 +217,8 @@
 - Корпус: lifter, 48.0 × 16.0 × 16.0 м; цилиндрический корпус с теплозащитой и опорами; титан, абляционно-керамический экран; силовой набор 301.4 т.
 - Схема управления: Newtonian Y (рантайм `NewtonianY`, generic).
 - Экипаж 3, пассажиры 144; груз 240 т, C20 12; автономность 3 сут; ресурс 30 лет.
-- Масса: сухая 620 т (оборудование 318.6 т), полная 878.9 т.
-- Тяга 21.99 МН: 2.551 g гружёный, 3.584 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 620 т (оборудование 318.6 т), в рабочем снаряжении 625.916 т, полная 899.276 т (груз 252.96 т + тара C20 20.4 т).
+- Тяга 21.99 МН: 2.494 g гружёный (полная масса), 3.583 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 3 × SR-9 = 27000 МВт; бытовая нагрузка 12.8 МВт от 120 МВт; площадка реактора 216.7 м².
 - Охлаждение: 200 м² радиаторов при 1050 K = 124.1 МВт; контуры 600 МВт; излучатель двигателя ⌀ 4.3 м.
 - Цена: детали 4.48 млн, корпус 0.77 млн, прейскурант 6.96 млн Cr.
@@ -251,7 +251,7 @@
 - OK `generator_covers_group_demand` — 9000 MWe per group vs 8670 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 301 t = 49% of dry 620 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 49% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 21.99 MN: 2.55 g loaded, 3.58 g light (class burn 2.5 g)
+- OK `thrust_meets_class_acceleration` — 21.99 MN: 2.49 g loaded, 3.58 g in service (class burn 2.5 g)
 - OK `thrust_near_class_target` — 22.0 MN vs class 22.0 MN
 - OK `service_power_covers_hotel` — service 120 MWe vs hotel 12.8 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
@@ -278,8 +278,8 @@
 - Корпус: box, 95.0 × 30.0 × 26.0 м; ферма с 120 гнёздами C20, жилой модуль в носу; сталь, алюминий; силовой набор 1671.3 т.
 - Схема управления: Newtonian Y (рантайм `NewtonianY`, generic).
 - Экипаж 6, пассажиры 0; груз 2400 т, C20 120; автономность 40 сут; ресурс 36 лет.
-- Масса: сухая 1900 т (оборудование 228.7 т), полная 4340.0 т.
-- Тяга 12.99 МН: 0.305 g гружёный, 0.683 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 1900 т (оборудование 228.7 т), в рабочем снаряжении 1939.98 т, полная 4543.98 т (груз 2400.0 т + тара C20 204.0 т).
+- Тяга 12.99 МН: 0.292 g гружёный (полная масса), 0.683 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 3 × SR-3.3 = 9900 МВт; бытовая нагрузка 4.9 МВт от 60 МВт; площадка реактора 79.4 м².
 - Охлаждение: 200 м² радиаторов при 1050 K = 124.1 МВт; контуры 300 МВт; излучатель двигателя ⌀ 2.26 м.
 - Цена: детали 8.33 млн, корпус 2.88 млн, прейскурант 14.88 млн Cr.
@@ -311,7 +311,7 @@
 - OK `generator_covers_group_demand` — 3300 MWe per group vs 3000 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 1671 t = 88% of dry 1900 t (possible 15%-90%)
 - WARN `hull_structure_share_typical` — hull structure 88% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 12.99 MN: 0.31 g loaded, 0.68 g light (class burn 0.3 g)
+- OK `thrust_meets_class_acceleration` — 12.99 MN: 0.29 g loaded, 0.68 g in service (class burn 0.3 g)
 - OK `thrust_near_class_target` — 13.0 MN vs class 13.0 MN
 - OK `service_power_covers_hotel` — service 60 MWe vs hotel 4.9 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
@@ -320,7 +320,7 @@
 - OK `coolant_loops_carry_service_heat` — loops 300 MW vs service heat 10.9 MW
 - OK `radiators_reject_service_heat` — 200 m2 at 1050 K = 124 MW vs 10.9 MW
 - OK `jump_core_installed` — jump class needs a core
-- OK `jump_core_rating_covers_gross` — core 5000 t vs gross 4340 t
+- OK `jump_core_rating_covers_gross` — core 5000 t vs gross 4544 t
 - OK `jump_charge_capacity` — 30 t charge vs class 30.0 t
 - OK `life_support_capacity` — 20 places for 6 awake persons (0 in cold sleep)
 - OK `life_support_endurance` — 90 days vs endurance 40 days
@@ -340,8 +340,8 @@
 - Корпус: box, 98.0 × 32.0 × 28.0 м; стандартный однокорпусный короб «Хэ» с внутренними гнёздами; сталь; силовой набор 1632.7 т.
 - Схема управления: Newtonian I (рантайм `NewtonianI`, generic).
 - Экипаж 7, пассажиры 0; груз 2400 т, C20 120; автономность 40 сут; ресурс 40 лет.
-- Масса: сухая 1900 т (оборудование 267.4 т), полная 4340.3 т.
-- Тяга 13.0 МН: 0.305 g гружёный, 0.683 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 1900 т (оборудование 267.4 т), в рабочем снаряжении 1940.31 т, полная 4544.31 т (груз 2400.0 т + тара C20 204.0 т).
+- Тяга 13.0 МН: 0.292 g гружёный (полная масса), 0.683 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 1 × ТР-10 = 10000 МВт; бытовая нагрузка 7.6 МВт от 150 МВт; площадка реактора 267.8 м².
 - Охлаждение: 200 м² радиаторов при 1000 K = 99.8 МВт; контуры 600 МВт; излучатель двигателя ⌀ 4.04 м.
 - Цена: детали 7.87 млн, корпус 2.56 млн, прейскурант 13.85 млн Cr.
@@ -373,7 +373,7 @@
 - OK `generator_covers_group_demand` — 10000 MWe per group vs 9000 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 1633 t = 86% of dry 1900 t (possible 15%-90%)
 - WARN `hull_structure_share_typical` — hull structure 86% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 13.00 MN: 0.31 g loaded, 0.68 g light (class burn 0.3 g)
+- OK `thrust_meets_class_acceleration` — 13.00 MN: 0.29 g loaded, 0.68 g in service (class burn 0.3 g)
 - OK `thrust_near_class_target` — 13.0 MN vs class 13.0 MN
 - OK `service_power_covers_hotel` — service 150 MWe vs hotel 7.6 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
@@ -382,7 +382,7 @@
 - OK `coolant_loops_carry_service_heat` — loops 600 MW vs service heat 18.2 MW
 - OK `radiators_reject_service_heat` — 200 m2 at 1000 K = 100 MW vs 18.2 MW
 - OK `jump_core_installed` — jump class needs a core
-- OK `jump_core_rating_covers_gross` — core 5000 t vs gross 4340 t
+- OK `jump_core_rating_covers_gross` — core 5000 t vs gross 4544 t
 - OK `jump_charge_capacity` — 30 t charge vs class 30.0 t
 - OK `life_support_capacity` — 10 places for 7 awake persons (0 in cold sleep)
 - OK `life_support_endurance` — 60 days vs endurance 40 days
@@ -402,8 +402,8 @@
 - Корпус: train, 160.0 × 40.0 × 40.0 м; тягач с ядром прыжка и сцепкой 12 модулей (42×20×20 м); сталь; силовой набор 4784.9 т.
 - Схема управления: Newtonian X (рантайм `NewtonianX`, generic).
 - Экипаж 12, пассажиры 0; груз 57600 т, C20 2880; автономность 60 сут; ресурс 45 лет.
-- Масса: сухая 10800 т (оборудование 6015.1 т), полная 68945.4 т.
-- Тяга 90.0 МН: 0.133 g гружёный, 0.809 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 10800 т (оборудование 6015.1 т), в рабочем снаряжении 11345.4 т, полная 73841.4 т (груз 57600.0 т + тара C20 4896.0 т).
+- Тяга 90.0 МН: 0.124 g гружёный (полная масса), 0.809 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 4 × ТР-20 = 80000 МВт; бытовая нагрузка 26.4 МВт от 600 МВт; площадка реактора 535.6 м².
 - Охлаждение: 1000 м² радиаторов при 1000 K = 499.0 МВт; контуры 1200 МВт; излучатель двигателя ⌀ 5.63 м.
 - Цена: детали 56.13 млн, корпус 12.80 млн, прейскурант 89.89 млн Cr.
@@ -436,7 +436,7 @@
 - OK `generator_covers_group_demand` — 20000 MWe per group vs 17500 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 4785 t = 44% of dry 10800 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 44% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 90.00 MN: 0.13 g loaded, 0.81 g light (class burn 0.12 g)
+- OK `thrust_meets_class_acceleration` — 90.00 MN: 0.12 g loaded, 0.81 g in service (class burn 0.12 g)
 - OK `thrust_near_class_target` — 90.0 MN vs class 90.0 MN
 - OK `service_power_covers_hotel` — service 600 MWe vs hotel 26.4 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 16 RCS units on the 8-node Newtonian bank
@@ -445,7 +445,7 @@
 - OK `coolant_loops_carry_service_heat` — loops 1200 MW vs service heat 60.0 MW
 - OK `radiators_reject_service_heat` — 1000 m2 at 1000 K = 499 MW vs 60.0 MW
 - OK `jump_core_installed` — jump class needs a core
-- OK `jump_core_rating_covers_gross` — core 80000 t vs gross 68945 t
+- OK `jump_core_rating_covers_gross` — core 80000 t vs gross 73841 t
 - OK `jump_charge_capacity` — 420 t charge vs class 420.0 t
 - OK `life_support_capacity` — 60 places for 12 awake persons (0 in cold sleep)
 - OK `life_support_endurance` — 200 days vs endurance 60 days
@@ -466,8 +466,8 @@
 - Корпус: train, 160.0 × 40.0 × 40.0 м; тот же тягач «Локомотив» + 12 модулей-цистерн; сталь; силовой набор 4784.9 т.
 - Схема управления: Newtonian X (рантайм `NewtonianX`, generic).
 - Экипаж 12, пассажиры 0; груз 50000 т, C20 0; автономность 60 сут; ресурс 45 лет.
-- Масса: сухая 12000 т (оборудование 7215.1 т), полная 62545.4 т.
-- Тяга 90.0 МН: 0.147 g гружёный, 0.732 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 12000 т (оборудование 7215.1 т), в рабочем снаряжении 12545.4 т, полная 62545.4 т (груз 50000.0 т + тара C20 0.0 т).
+- Тяга 90.0 МН: 0.147 g гружёный (полная масса), 0.732 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 4 × ТР-20 = 80000 МВт; бытовая нагрузка 26.4 МВт от 600 МВт; площадка реактора 535.6 м².
 - Охлаждение: 1000 м² радиаторов при 1000 K = 499.0 МВт; контуры 1200 МВт; излучатель двигателя ⌀ 5.63 м.
 - Цена: детали 57.33 млн, корпус 14.40 млн, прейскурант 93.54 млн Cr.
@@ -500,7 +500,7 @@
 - OK `generator_covers_group_demand` — 20000 MWe per group vs 17500 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 4785 t = 40% of dry 12000 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 40% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 90.00 MN: 0.15 g loaded, 0.73 g light (class burn 0.13 g)
+- OK `thrust_meets_class_acceleration` — 90.00 MN: 0.15 g loaded, 0.73 g in service (class burn 0.13 g)
 - OK `thrust_near_class_target` — 90.0 MN vs class 90.0 MN
 - OK `service_power_covers_hotel` — service 600 MWe vs hotel 26.4 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 16 RCS units on the 8-node Newtonian bank
@@ -530,8 +530,8 @@
 - Корпус: cylinder, 110.0 × 30.0 × 30.0 м; три криоцистерны на хребте; сталь, теплоизоляция; силовой набор 632.3 т.
 - Схема управления: Newtonian Y (рантайм `NewtonianY`, generic).
 - Экипаж 4, пассажиры 0; груз 3000 т, C20 0; автономность 60 сут; ресурс 40 лет.
-- Масса: сухая 900 т (оборудование 267.7 т), полная 3911.8 т.
-- Тяга 6.99 МН: 0.182 g гружёный, 0.782 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 900 т (оборудование 267.7 т), в рабочем снаряжении 911.8 т, полная 3911.8 т (груз 3000.0 т + тара C20 0.0 т).
+- Тяга 6.99 МН: 0.182 g гружёный (полная масса), 0.782 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 3 × SR-2.2 = 6600 МВт; бытовая нагрузка 4.6 МВт от 60 МВт; площадка реактора 53.0 м².
 - Охлаждение: 150 м² радиаторов при 1050 K = 93.0 МВт; контуры 300 МВт; излучатель двигателя ⌀ 1.85 м.
 - Цена: детали 2.44 млн, корпус 1.10 млн, прейскурант 4.62 млн Cr.
@@ -561,7 +561,7 @@
 - OK `generator_covers_group_demand` — 2200 MWe per group vs 2000 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 632 t = 70% of dry 900 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 70% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 6.99 MN: 0.18 g loaded, 0.78 g light (class burn 0.18 g)
+- OK `thrust_meets_class_acceleration` — 6.99 MN: 0.18 g loaded, 0.78 g in service (class burn 0.18 g)
 - OK `thrust_near_class_target` — 7.0 MN vs class 7.0 MN
 - OK `service_power_covers_hotel` — service 60 MWe vs hotel 4.6 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
@@ -589,8 +589,8 @@
 - Корпус: asteroid, 60.0 × 45.0 × 40.0 м; выдолбленный каменный монолит, ферма двигателя; силикатная порода, стальная ферма; силовой набор 2338.6 т.
 - Схема управления: Newtonian I (рантайм `NewtonianI`, generic).
 - Экипаж 5, пассажиры 0; груз 6000 т, C20 0; автономность 90 сут; ресурс 21 лет.
-- Масса: сухая 2400 т (оборудование 61.4 т), полная 8409.2 т.
-- Тяга 3.3 МН: 0.04 g гружёный, 0.14 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 2400 т (оборудование 61.4 т), в рабочем снаряжении 2409.15 т, полная 8409.15 т (груз 6000.0 т + тара C20 0.0 т).
+- Тяга 3.3 МН: 0.04 g гружёный (полная масса), 0.14 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 1 × ЭР-2.6 = 2600 МВт; бытовая нагрузка 6.2 МВт от 20 МВт; площадка реактора 62.6 м².
 - Охлаждение: 100 м² радиаторов при 1050 K = 62.0 МВт; контуры 300 МВт; излучатель двигателя ⌀ 2.02 м.
 - Цена: детали 1.38 млн, корпус 1.91 млн, прейскурант 4.29 млн Cr.
@@ -618,7 +618,7 @@
 - OK `generator_covers_group_demand` — 2600 MWe per group vs 2400 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 2339 t = 97% of dry 2400 t (possible 50%-100%)
 - OK `hull_structure_share_typical` — hull structure 97% of dry (typical 50%-100%)
-- OK `thrust_meets_class_acceleration` — 3.30 MN: 0.04 g loaded, 0.14 g light (class burn 0.03 g)
+- OK `thrust_meets_class_acceleration` — 3.30 MN: 0.04 g loaded, 0.14 g in service (class burn 0.03 g)
 - WARN `thrust_near_class_target` — 3.3 MN vs class 7.0 MN
 - OK `service_power_covers_hotel` — service 20 MWe vs hotel 6.2 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
@@ -645,8 +645,8 @@
 - Корпус: tug, 60.0 × 25.0 × 25.0 м; открытая силовая рама, толкающая плита; сталь; силовой набор 563.5 т.
 - Схема управления: Newtonian X (рантайм `NewtonianX`, generic).
 - Экипаж 3, пассажиры 0; груз 0 т, C20 0; автономность 90 сут; ресурс 46 лет.
-- Масса: сухая 700 т (оборудование 136.5 т), полная 713.9 т.
-- Тяга 4.0 МН: 0.571 g гружёный, 0.572 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 700 т (оборудование 136.5 т), в рабочем снаряжении 713.89 т, полная 713.89 т (груз 0.0 т + тара C20 0.0 т).
+- Тяга 4.0 МН: 0.571 g гружёный (полная масса), 0.571 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 4 × ER-1 = 3320 МВт; бытовая нагрузка 6.2 МВт от 60 МВт; площадка реактора 20.0 м².
 - Охлаждение: 150 м² радиаторов при 1050 K = 93.0 МВт; контуры 300 МВт; излучатель двигателя ⌀ 1.2 м.
 - Цена: детали 1.87 млн, корпус 0.62 млн, прейскурант 3.29 млн Cr.
@@ -676,7 +676,7 @@
 - OK `generator_covers_group_demand` — 830 MWe per group vs 750 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 564 t = 80% of dry 700 t (possible 15%-90%)
 - WARN `hull_structure_share_typical` — hull structure 80% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 4.00 MN: 0.57 g loaded, 0.57 g light (class burn 0.02 g)
+- OK `thrust_meets_class_acceleration` — 4.00 MN: 0.57 g loaded, 0.57 g in service (class burn 0.02 g)
 - OK `thrust_near_class_target` — 4.0 MN vs class 4.0 MN
 - OK `service_power_covers_hotel` — service 60 MWe vs hotel 6.2 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
@@ -703,8 +703,8 @@
 - Корпус: box, 48.0 × 20.0 × 14.0 м; корпус с мастерской, складом запчастей и манипуляторами; алюминий, сталь; силовой набор 398.2 т.
 - Схема управления: Assisted I (рантайм `AssistedI`, generic).
 - Экипаж 8, пассажиры 0; груз 150 т, C20 6; автономность 30 сут; ресурс 35 лет.
-- Масса: сухая 500 т (оборудование 101.8 т), полная 656.2 т.
-- Тяга 3.0 МН: 0.466 g гружёный, 0.605 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 500 т (оборудование 101.8 т), в рабочем снаряжении 506.16 т, полная 666.36 т (груз 150.0 т + тара C20 10.2 т).
+- Тяга 3.0 МН: 0.459 g гружёный (полная масса), 0.604 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 2 × SR-1.4 = 2800 МВт; бытовая нагрузка 5.5 МВт от 60 МВт; площадка реактора 33.7 м².
 - Охлаждение: 150 м² радиаторов при 1050 K = 93.0 МВт; контуры 300 МВт; излучатель двигателя ⌀ 1.46 м.
 - Цена: детали 1.53 млн, корпус 0.38 млн, прейскурант 2.58 млн Cr.
@@ -736,7 +736,7 @@
 - OK `generator_covers_group_demand` — 1400 MWe per group vs 1250 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 398 t = 80% of dry 500 t (possible 15%-90%)
 - WARN `hull_structure_share_typical` — hull structure 80% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 3.00 MN: 0.47 g loaded, 0.61 g light (class burn 0.4 g)
+- OK `thrust_meets_class_acceleration` — 3.00 MN: 0.46 g loaded, 0.60 g in service (class burn 0.4 g)
 - OK `thrust_near_class_target` — 3.0 MN vs class 3.0 MN
 - OK `service_power_covers_hotel` — service 60 MWe vs hotel 5.5 MW (+15 %)
 - OK `rcs_powered_from_propulsion_spare` — RCS 0 MW installed, 0 MW simultaneous, from propulsion spare 300 MW
@@ -762,8 +762,8 @@
 - Корпус: flat, 34.0 × 22.0 × 8.0 м; плоский корпус, ангар досмотрового катера; титан, керамокомпозитная броня; силовой набор 200.7 т.
 - Схема управления: Assisted I (рантайм `AssistedI`, generic).
 - Экипаж 9, пассажиры 6; груз 20 т, C20 0; автономность 30 сут; ресурс 30 лет.
-- Масса: сухая 420 т (оборудование 219.3 т), полная 453.1 т.
-- Тяга 13.0 МН: 2.926 g гружёный, 3.071 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 420 т (оборудование 219.3 т), в рабочем снаряжении 432.51 т, полная 453.05 т (груз 20.54 т + тара C20 0.0 т).
+- Тяга 13.0 МН: 2.926 g гружёный (полная масса), 3.065 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 2 × SR-4.8 = 9600 МВт; бытовая нагрузка 27.6 МВт от 400 МВт; площадка реактора 115.6 м².
 - Охлаждение: 200 м² радиаторов при 1050 K = 124.1 МВт; контуры 600 МВт; излучатель двигателя ⌀ 2.68 м.
 - Цена: детали 10.62 млн, корпус 1.53 млн, прейскурант 15.75 млн Cr.
@@ -799,7 +799,7 @@
 - OK `generator_covers_group_demand` — 4800 MWe per group vs 4500 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 201 t = 48% of dry 420 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 48% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 13.00 MN: 2.93 g loaded, 3.07 g light (class burn 1.5 g)
+- OK `thrust_meets_class_acceleration` — 13.00 MN: 2.93 g loaded, 3.06 g in service (class burn 1.5 g)
 - OK `thrust_near_class_target` — 13.0 MN vs class 13.0 MN
 - OK `service_power_covers_hotel` — service 400 MWe vs hotel 27.6 MW (+15 %)
 - OK `rcs_powered_from_propulsion_spare` — RCS 0 MW installed, 0 MW simultaneous, from propulsion spare 600 MW
@@ -827,8 +827,8 @@
 - Корпус: dart, 18.0 × 12.0 × 4.0 м; плоская стрела, восемь гондол векторной тяги; титан, тяжёлая броня носа; силовой набор 26.5 т.
 - Схема управления: Assisted X (рантайм `AssistedX`, generic).
 - Экипаж 2, пассажиры 0; груз 2 т, C20 0; автономность 5 сут; ресурс 30 лет.
-- Масса: сухая 140 т (оборудование 113.5 т), полная 144.2 т.
-- Тяга 6.2 МН: 4.383 g гружёный, 4.45 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 140 т (оборудование 113.5 т), в рабочем снаряжении 142.24 т, полная 144.24 т (груз 2.0 т + тара C20 0.0 т).
+- Тяга 6.2 МН: 4.383 g гружёный (полная масса), 4.445 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 4 × ТР-2.6В = 10000 МВт; бытовая нагрузка 27.4 МВт от 40 МВт; площадка реактора 60.2 м².
 - Охлаждение: 300 м² радиаторов при 1050 K = 186.1 МВт; контуры 360 МВт; излучатель двигателя ⌀ 1.88 м.
 - Цена: детали 14.75 млн, корпус 1.12 млн, прейскурант 20.56 млн Cr.
@@ -857,7 +857,7 @@
 - OK `generator_covers_group_demand` — 2500 MWe per group vs 2375 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 26 t = 19% of dry 140 t (possible 15%-90%)
 - WARN `hull_structure_share_typical` — hull structure 19% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 6.20 MN: 4.38 g loaded, 4.45 g light (class burn 4.0 g)
+- OK `thrust_meets_class_acceleration` — 6.20 MN: 4.38 g loaded, 4.44 g in service (class burn 4.0 g)
 - OK `thrust_near_class_target` — 6.2 MN vs class 6.2 MN
 - OK `service_power_covers_hotel` — service 40 MWe vs hotel 27.4 MW (+15 %)
 - OK `rcs_powered_from_propulsion_spare` — RCS 0 MW installed, 0 MW simultaneous, from propulsion spare 500 MW
@@ -883,8 +883,8 @@
 - Корпус: cylinder, 85.0 × 30.0 × 18.0 м; стандартный корпус «Хэ» с бронепоясом; сталь, керамокомпозит; силовой набор 1337.1 т.
 - Схема управления: Assisted Y (рантайм `AssistedY`, generic).
 - Экипаж 40, пассажиры 0; груз 80 т, C20 0; автономность 90 сут; ресурс 35 лет.
-- Масса: сухая 2200 т (оборудование 862.9 т), полная 2363.2 т.
-- Тяга 32.1 МН: 1.385 g гружёный, 1.436 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 2200 т (оборудование 862.9 т), в рабочем снаряжении 2283.2 т, полная 2363.2 т (груз 80.0 т + тара C20 0.0 т).
+- Тяга 32.1 МН: 1.385 g гружёный (полная масса), 1.434 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 3 × ТР-11 = 32100 МВт; бытовая нагрузка 52.3 МВт от 1200 МВт; площадка реактора 286.5 м².
 - Охлаждение: 500 м² радиаторов при 1000 K = 249.5 МВт; контуры 1200 МВт; излучатель двигателя ⌀ 4.0 м.
 - Цена: детали 51.38 млн, корпус 8.00 млн, прейскурант 76.96 млн Cr.
@@ -920,7 +920,7 @@
 - OK `generator_covers_group_demand` — 10700 MWe per group vs 10000 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 1337 t = 61% of dry 2200 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 61% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 32.10 MN: 1.39 g loaded, 1.44 g light (class burn 1.4 g)
+- OK `thrust_meets_class_acceleration` — 32.10 MN: 1.39 g loaded, 1.43 g in service (class burn 1.4 g)
 - OK `thrust_near_class_target` — 32.1 MN vs class 32.0 MN
 - OK `service_power_covers_hotel` — service 1200 MWe vs hotel 52.3 MW (+15 %)
 - OK `rcs_powered_from_propulsion_spare` — RCS 1200 MW installed, 360 MW simultaneous, from propulsion spare 2100 MW
@@ -948,8 +948,8 @@
 - Корпус: cylinder, 180.0 × 45.0 × 35.0 м; бронированный корпус-цитадель, ВПУ по бортам; сталь, тяжёлая броня; силовой набор 5607.9 т.
 - Схема управления: Newtonian X (рантайм `NewtonianX`, generic).
 - Экипаж 160, пассажиры 0; груз 300 т, C20 0; автономность 180 сут; ресурс 48 лет.
-- Масса: сухая 9000 т (оборудование 3392.1 т), полная 9767.2 т.
-- Тяга 110.0 МН: 1.148 g гружёный, 1.187 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 9000 т (оборудование 3392.1 т), в рабочем снаряжении 9467.2 т, полная 9767.2 т (груз 300.0 т + тара C20 0.0 т).
+- Тяга 110.0 МН: 1.148 g гружёный (полная масса), 1.185 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 4 × ТР-30В = 120000 МВт; бытовая нагрузка 184.2 МВт от 1200 МВт; площадка реактора 722.2 м².
 - Охлаждение: 2000 м² радиаторов при 1000 K = 998.0 МВт; контуры 2400 МВт; излучатель двигателя ⌀ 6.4 м.
 - Цена: детали 505.57 млн, корпус 109.20 млн, прейскурант 796.74 млн Cr.
@@ -985,7 +985,7 @@
 - OK `generator_covers_group_demand` — 30000 MWe per group vs 27500 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 5608 t = 62% of dry 9000 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 62% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 110.00 MN: 1.15 g loaded, 1.19 g light (class burn 1.1 g)
+- OK `thrust_meets_class_acceleration` — 110.00 MN: 1.15 g loaded, 1.18 g in service (class burn 1.1 g)
 - OK `thrust_near_class_target` — 110.0 MN vs class 110.0 MN
 - OK `service_power_covers_hotel` — service 1200 MWe vs hotel 184.2 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 16 RCS units on the 8-node Newtonian bank
@@ -1014,8 +1014,8 @@
 - Корпус: flat, 40.0 × 26.0 × 8.0 м; плоский малозаметный корпус, выдвижная мачта; композит, поглощающее покрытие; силовой набор 379.9 т.
 - Схема управления: Newtonian X (рантайм `NewtonianX`, generic).
 - Экипаж 14, пассажиры 0; груз 10 т, C20 0; автономность 60 сут; ресурс 34 лет.
-- Масса: сухая 600 т (оборудование 220.2 т), полная 633.3 т.
-- Тяга 12.0 МН: 1.932 g гружёный, 1.967 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 600 т (оборудование 220.2 т), в рабочем снаряжении 623.3 т, полная 633.3 т (груз 10.0 т + тара C20 0.0 т).
+- Тяга 12.0 МН: 1.932 g гружёный (полная масса), 1.963 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 4 × ER-3 = 11000 МВт; бытовая нагрузка 68.5 МВт от 300 МВт; площадка реактора 66.2 м².
 - Охлаждение: 600 м² радиаторов при 1050 K = 372.2 МВт; контуры 360 МВт; излучатель двигателя ⌀ 1.86 м.
 - Цена: детали 25.55 млн, корпус 3.00 млн, прейскурант 37.01 млн Cr.
@@ -1052,7 +1052,7 @@
 - OK `generator_covers_group_demand` — 2750 MWe per group vs 2500 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 380 t = 63% of dry 600 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 63% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 12.00 MN: 1.93 g loaded, 1.97 g light (class burn 2.0 g)
+- OK `thrust_meets_class_acceleration` — 12.00 MN: 1.93 g loaded, 1.96 g in service (class burn 2.0 g)
 - OK `thrust_near_class_target` — 12.0 MN vs class 12.0 MN
 - OK `service_power_covers_hotel` — service 300 MWe vs hotel 68.5 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
@@ -1081,8 +1081,8 @@
 - Корпус: box, 150.0 × 40.0 × 35.0 м; стандартный корпус «Хэ», 240 гнёзд C20, ангар перехватчиков; сталь; силовой набор 3985.4 т.
 - Схема управления: Newtonian Y (рантайм `NewtonianY`, generic).
 - Экипаж 60, пассажиры 0; груз 6000 т, C20 240; автономность 180 сут; ресурс 40 лет.
-- Масса: сухая 5000 т (оборудование 1014.6 т), полная 11220.2 т.
-- Тяга 39.0 МН: 0.354 g гружёный, 0.763 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 5000 т (оборудование 1014.6 т), в рабочем снаряжении 5220.2 т, полная 11628.2 т (груз 6000.0 т + тара C20 408.0 т).
+- Тяга 39.0 МН: 0.342 g гружёный (полная масса), 0.762 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 3 × ТР-11 = 32100 МВт; бытовая нагрузка 35.3 МВт от 1200 МВт; площадка реактора 286.5 м².
 - Охлаждение: 600 м² радиаторов при 1000 K = 299.4 МВт; контуры 1200 МВт; излучатель двигателя ⌀ 4.04 м.
 - Цена: детали 36.51 млн, корпус 9.60 млн, прейскурант 59.76 млн Cr.
@@ -1119,7 +1119,7 @@
 - OK `generator_covers_group_demand` — 10700 MWe per group vs 9000 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 3985 t = 80% of dry 5000 t (possible 15%-90%)
 - WARN `hull_structure_share_typical` — hull structure 80% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 39.00 MN: 0.35 g loaded, 0.76 g light (class burn 0.35 g)
+- OK `thrust_meets_class_acceleration` — 39.00 MN: 0.34 g loaded, 0.76 g in service (class burn 0.35 g)
 - OK `thrust_near_class_target` — 39.0 MN vs class 35.0 MN
 - OK `service_power_covers_hotel` — service 1200 MWe vs hotel 35.3 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 16 RCS units on the 8-node Newtonian bank
@@ -1128,7 +1128,7 @@
 - OK `coolant_loops_carry_service_heat` — loops 1200 MW vs service heat 80.2 MW
 - OK `radiators_reject_service_heat` — 600 m2 at 1000 K = 299 MW vs 80.2 MW
 - OK `jump_core_installed` — jump class needs a core
-- OK `jump_core_rating_covers_gross` — core 12000 t vs gross 11220 t
+- OK `jump_core_rating_covers_gross` — core 12000 t vs gross 11628 t
 - OK `jump_charge_capacity` — 90 t charge vs class 90.0 t
 - OK `life_support_capacity` — 120 places for 60 awake persons (0 in cold sleep)
 - OK `life_support_endurance` — 200 days vs endurance 180 days
@@ -1148,8 +1148,8 @@
 - Корпус: tug, 70.0 × 30.0 × 30.0 м; силовая рама с тяжёлым захватом и пусковой ударников; сталь, броня носа; силовой набор 1007.3 т.
 - Схема управления: Newtonian X (рантайм `NewtonianX`, generic).
 - Экипаж 16, пассажиры 0; груз 200 т, C20 0; автономность 45 сут; ресурс 35 лет.
-- Масса: сухая 1600 т (оборудование 592.7 т), полная 1835.8 т.
-- Тяга 28.0 МН: 1.555 g гружёный, 1.747 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 1600 т (оборудование 592.7 т), в рабочем снаряжении 1635.76 т, полная 1835.76 т (груз 200.0 т + тара C20 0.0 т).
+- Тяга 28.0 МН: 1.555 g гружёный (полная масса), 1.745 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 4 × SR-7 = 28000 МВт; бытовая нагрузка 141.7 МВт от 400 МВт; площадка реактора 168.5 м².
 - Охлаждение: 700 м² радиаторов при 1050 K = 434.2 МВт; контуры 600 МВт; излучатель двигателя ⌀ 3.22 м.
 - Цена: детали 22.21 млн, корпус 3.31 млн, прейскурант 33.08 млн Cr.
@@ -1184,7 +1184,7 @@
 - OK `generator_covers_group_demand` — 7000 MWe per group vs 6500 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 1007 t = 63% of dry 1600 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 63% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 28.00 MN: 1.56 g loaded, 1.75 g light (class burn 1.6 g)
+- OK `thrust_meets_class_acceleration` — 28.00 MN: 1.56 g loaded, 1.75 g in service (class burn 1.6 g)
 - OK `thrust_near_class_target` — 28.0 MN vs class 28.0 MN
 - OK `service_power_covers_hotel` — service 400 MWe vs hotel 141.7 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
@@ -1211,8 +1211,8 @@
 - Корпус: cylinder, 150.0 × 34.0 × 28.0 м; модульный корпус: 9 пассажирских секций Agora на хребте; алюминий, композит; силовой набор 1550.8 т.
 - Схема управления: Newtonian Y (рантайм `NewtonianY`, generic).
 - Экипаж 40, пассажиры 900; груз 90 т, C20 0; автономность 30 сут; ресурс 46 лет.
-- Масса: сухая 2600 т (оборудование 1049.2 т), полная 3008.8 т.
-- Тяга 12.0 МН: 0.407 g гружёный, 0.432 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 2600 т (оборудование 1049.2 т), в рабочем снаряжении 2837.8 т, полная 3008.8 т (груз 171.0 т + тара C20 0.0 т).
+- Тяга 12.0 МН: 0.407 g гружёный (полная масса), 0.431 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 3 × ER-5 = 15000 МВт; бытовая нагрузка 42.5 МВт от 300 МВт; площадка реактора 120.4 м².
 - Охлаждение: 4000 м² радиаторов при 1050 K = 2481.3 МВт; контуры 360 МВт; излучатель двигателя ⌀ 2.35 м.
 - Цена: детали 20.59 млн, корпус 6.50 млн, прейскурант 35.96 млн Cr.
@@ -1246,7 +1246,7 @@
 - OK `generator_covers_group_demand` — 5000 MWe per group vs 4000 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 1551 t = 60% of dry 2600 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 60% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 12.00 MN: 0.41 g loaded, 0.43 g light (class burn 0.3 g)
+- OK `thrust_meets_class_acceleration` — 12.00 MN: 0.41 g loaded, 0.43 g in service (class burn 0.3 g)
 - OK `thrust_near_class_target` — 12.0 MN vs class 12.0 MN
 - OK `service_power_covers_hotel` — service 300 MWe vs hotel 42.5 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 16 RCS units on the 8-node Newtonian bank
@@ -1275,8 +1275,8 @@
 - Корпус: cylinder, 220.0 × 50.0 × 40.0 м; хребет с 7 секциями коек и 15 блоками анабиоза; сталь; силовой набор 3825.5 т.
 - Схема управления: Newtonian X (рантайм `NewtonianX`, generic).
 - Экипаж 60, пассажиры 5000 (в анабиозе 1500); груз 600 т, C20 0; автономность 60 сут; ресурс 40 лет.
-- Масса: сухая 6500 т (оборудование 2674.5 т), полная 8997.0 т.
-- Тяга 17.32 МН: 0.196 g гружёный, 0.222 g лёгкий; длительно допустимая доля тяги 1.0.
+- Масса: сухая 6500 т (оборудование 2674.5 т), в рабочем снаряжении 7947.0 т, полная 8997.0 т (груз 1050.0 т + тара C20 0.0 т).
+- Тяга 17.32 МН: 0.196 g гружёный (полная масса), 0.222 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 4 × SR-3.3 = 13200 МВт; бытовая нагрузка 148.4 МВт от 400 МВт; площадка реактора 79.4 м².
 - Охлаждение: 1000 м² радиаторов при 1050 K = 620.3 МВт; контуры 600 МВт; излучатель двигателя ⌀ 2.26 м.
 - Цена: детали 35.91 млн, корпус 8.10 млн, прейскурант 58.43 млн Cr.
@@ -1311,7 +1311,7 @@
 - OK `generator_covers_group_demand` — 3300 MWe per group vs 3000 MW demand
 - OK `equipment_fits_dry_mass` — hull structure 3826 t = 59% of dry 6500 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 59% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 17.32 MN: 0.20 g loaded, 0.22 g light (class burn 0.18 g)
+- OK `thrust_meets_class_acceleration` — 17.32 MN: 0.20 g loaded, 0.22 g in service (class burn 0.18 g)
 - OK `thrust_near_class_target` — 17.3 MN vs class 18.0 MN
 - OK `service_power_covers_hotel` — service 400 MWe vs hotel 148.4 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 16 RCS units on the 8-node Newtonian bank

@@ -49,8 +49,12 @@
     "equipment_t": 84.4,
     "structure_t": 175.6,
     "fluids_t": 7.0,
-    "consumables_t": 0.4,
-    "gross_t": 387.5
+    "consumables_t": 0.36,
+    "service_t": 267.54,
+    "net_payload_t": 120.0,
+    "container_tare_t": 10.2,
+    "c20_tare_t": 1.7,
+    "gross_t": 397.74
    },
    "propulsion": {
     "drive": "kb.drive.n1-axial",
@@ -58,8 +62,8 @@
     "aft": 1,
     "fore": 0,
     "thrust_mn": 9.56,
-    "accel_g_loaded": 2.515,
-    "accel_g_light": 3.646,
+    "accel_g_loaded": 2.451,
+    "accel_g_service": 3.644,
     "class_burn_g": 1.0,
     "drive_emitter_diameter_m": 2.74,
     "sustainable_thrust01": 1.0
@@ -1501,7 +1505,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "9.56 MN: 2.52 g loaded, 3.65 g light (class burn 1.0 g)"
+     "detail": "9.56 MN: 2.45 g loaded, 3.64 g in service (class burn 1.0 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -1555,7 +1559,7 @@
      "check": "jump_core_rating_covers_gross",
      "ok": true,
      "level": "OK",
-     "detail": "core 500 t vs gross 388 t"
+     "detail": "core 500 t vs gross 398 t"
     },
     {
      "check": "jump_charge_capacity",
@@ -1667,8 +1671,12 @@
     "equipment_t": 140.3,
     "structure_t": 119.7,
     "fluids_t": 5.0,
-    "consumables_t": 0.4,
-    "gross_t": 375.5
+    "consumables_t": 0.36,
+    "service_t": 265.54,
+    "net_payload_t": 110.0,
+    "container_tare_t": 10.2,
+    "c20_tare_t": 1.7,
+    "gross_t": 385.74
    },
    "propulsion": {
     "drive": "kb.drive.cr1-vector",
@@ -1676,8 +1684,8 @@
     "aft": 2,
     "fore": 2,
     "thrust_mn": 19.12,
-    "accel_g_loaded": 5.192,
-    "accel_g_light": 7.347,
+    "accel_g_loaded": 5.054,
+    "accel_g_service": 7.342,
     "class_burn_g": 1.0,
     "drive_emitter_diameter_m": 2.74,
     "sustainable_thrust01": 1.0
@@ -2956,7 +2964,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "19.12 MN: 5.19 g loaded, 7.35 g light (class burn 1.0 g)"
+     "detail": "19.12 MN: 5.05 g loaded, 7.34 g in service (class burn 1.0 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -3004,7 +3012,7 @@
      "check": "jump_core_rating_covers_gross",
      "ok": true,
      "level": "OK",
-     "detail": "core 500 t vs gross 376 t"
+     "detail": "core 500 t vs gross 386 t"
     },
     {
      "check": "jump_charge_capacity",
@@ -3116,8 +3124,12 @@
     "equipment_t": 65.0,
     "structure_t": 314.9,
     "fluids_t": 2.0,
-    "consumables_t": 0.1,
-    "gross_t": 791.4
+    "consumables_t": 0.126,
+    "service_t": 382.396,
+    "net_payload_t": 409.0,
+    "container_tare_t": 40.8,
+    "c20_tare_t": 1.7,
+    "gross_t": 832.196
    },
    "propulsion": {
     "drive": "ofu.drive.u33",
@@ -3125,8 +3137,8 @@
     "aft": 1,
     "fore": 0,
     "thrust_mn": 3.3,
-    "accel_g_loaded": 0.425,
-    "accel_g_light": 0.881,
+    "accel_g_loaded": 0.404,
+    "accel_g_service": 0.88,
     "class_burn_g": 0.4,
     "drive_emitter_diameter_m": 2.02,
     "sustainable_thrust01": 1.0
@@ -4321,7 +4333,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "3.30 MN: 0.43 g loaded, 0.88 g light (class burn 0.4 g)"
+     "detail": "3.30 MN: 0.40 g loaded, 0.88 g in service (class burn 0.4 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -4475,8 +4487,12 @@
     "equipment_t": 318.6,
     "structure_t": 301.4,
     "fluids_t": 3.0,
-    "consumables_t": 2.6,
-    "gross_t": 878.9
+    "consumables_t": 2.646,
+    "service_t": 625.916,
+    "net_payload_t": 252.96,
+    "container_tare_t": 20.4,
+    "c20_tare_t": 1.7,
+    "gross_t": 899.276
    },
    "propulsion": {
     "drive": "ofu.drive.u73l",
@@ -4484,8 +4500,8 @@
     "aft": 3,
     "fore": 0,
     "thrust_mn": 21.99,
-    "accel_g_loaded": 2.551,
-    "accel_g_light": 3.584,
+    "accel_g_loaded": 2.494,
+    "accel_g_service": 3.583,
     "class_burn_g": 2.5,
     "drive_emitter_diameter_m": 4.3,
     "sustainable_thrust01": 1.0
@@ -6041,7 +6057,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "21.99 MN: 2.55 g loaded, 3.58 g light (class burn 2.5 g)"
+     "detail": "21.99 MN: 2.49 g loaded, 3.58 g in service (class burn 2.5 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -6195,8 +6211,12 @@
     "equipment_t": 228.7,
     "structure_t": 1671.3,
     "fluids_t": 38.0,
-    "consumables_t": 1.4,
-    "gross_t": 4340.0
+    "consumables_t": 1.44,
+    "service_t": 1939.98,
+    "net_payload_t": 2400.0,
+    "container_tare_t": 204.0,
+    "c20_tare_t": 1.7,
+    "gross_t": 4543.98
    },
    "propulsion": {
     "drive": "ofu.drive.u43",
@@ -6204,8 +6224,8 @@
     "aft": 3,
     "fore": 0,
     "thrust_mn": 12.99,
-    "accel_g_loaded": 0.305,
-    "accel_g_light": 0.683,
+    "accel_g_loaded": 0.292,
+    "accel_g_service": 0.683,
     "class_burn_g": 0.3,
     "drive_emitter_diameter_m": 2.26,
     "sustainable_thrust01": 1.0
@@ -7692,7 +7712,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "12.99 MN: 0.31 g loaded, 0.68 g light (class burn 0.3 g)"
+     "detail": "12.99 MN: 0.29 g loaded, 0.68 g in service (class burn 0.3 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -7746,7 +7766,7 @@
      "check": "jump_core_rating_covers_gross",
      "ok": true,
      "level": "OK",
-     "detail": "core 5000 t vs gross 4340 t"
+     "detail": "core 5000 t vs gross 4544 t"
     },
     {
      "check": "jump_charge_capacity",
@@ -7858,8 +7878,12 @@
     "equipment_t": 267.4,
     "structure_t": 1632.7,
     "fluids_t": 38.0,
-    "consumables_t": 1.7,
-    "gross_t": 4340.3
+    "consumables_t": 1.68,
+    "service_t": 1940.31,
+    "net_payload_t": 2400.0,
+    "container_tare_t": 204.0,
+    "c20_tare_t": 1.7,
+    "gross_t": 4544.31
    },
    "propulsion": {
     "drive": "th.drive.tz13",
@@ -7867,8 +7891,8 @@
     "aft": 1,
     "fore": 0,
     "thrust_mn": 13.0,
-    "accel_g_loaded": 0.305,
-    "accel_g_light": 0.683,
+    "accel_g_loaded": 0.292,
+    "accel_g_service": 0.683,
     "class_burn_g": 0.3,
     "drive_emitter_diameter_m": 4.04,
     "sustainable_thrust01": 1.0
@@ -9285,7 +9309,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "13.00 MN: 0.31 g loaded, 0.68 g light (class burn 0.3 g)"
+     "detail": "13.00 MN: 0.29 g loaded, 0.68 g in service (class burn 0.3 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -9339,7 +9363,7 @@
      "check": "jump_core_rating_covers_gross",
      "ok": true,
      "level": "OK",
-     "detail": "core 5000 t vs gross 4340 t"
+     "detail": "core 5000 t vs gross 4544 t"
     },
     {
      "check": "jump_charge_capacity",
@@ -9451,8 +9475,12 @@
     "equipment_t": 6015.1,
     "structure_t": 4784.9,
     "fluids_t": 540.0,
-    "consumables_t": 4.3,
-    "gross_t": 68945.4
+    "consumables_t": 4.32,
+    "service_t": 11345.4,
+    "net_payload_t": 57600.0,
+    "container_tare_t": 4896.0,
+    "c20_tare_t": 1.7,
+    "gross_t": 73841.4
    },
    "propulsion": {
     "drive": "th.drive.tz23",
@@ -9460,8 +9488,8 @@
     "aft": 4,
     "fore": 0,
     "thrust_mn": 90.0,
-    "accel_g_loaded": 0.133,
-    "accel_g_light": 0.809,
+    "accel_g_loaded": 0.124,
+    "accel_g_service": 0.809,
     "class_burn_g": 0.12,
     "drive_emitter_diameter_m": 5.63,
     "sustainable_thrust01": 1.0
@@ -11060,7 +11088,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "90.00 MN: 0.13 g loaded, 0.81 g light (class burn 0.12 g)"
+     "detail": "90.00 MN: 0.12 g loaded, 0.81 g in service (class burn 0.12 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -11114,7 +11142,7 @@
      "check": "jump_core_rating_covers_gross",
      "ok": true,
      "level": "OK",
-     "detail": "core 80000 t vs gross 68945 t"
+     "detail": "core 80000 t vs gross 73841 t"
     },
     {
      "check": "jump_charge_capacity",
@@ -11232,7 +11260,11 @@
     "equipment_t": 7215.1,
     "structure_t": 4784.9,
     "fluids_t": 540.0,
-    "consumables_t": 4.3,
+    "consumables_t": 4.32,
+    "service_t": 12545.4,
+    "net_payload_t": 50000.0,
+    "container_tare_t": 0.0,
+    "c20_tare_t": 1.7,
     "gross_t": 62545.4
    },
    "propulsion": {
@@ -11242,7 +11274,7 @@
     "fore": 0,
     "thrust_mn": 90.0,
     "accel_g_loaded": 0.147,
-    "accel_g_light": 0.732,
+    "accel_g_service": 0.732,
     "class_burn_g": 0.13,
     "drive_emitter_diameter_m": 5.63,
     "sustainable_thrust01": 1.0
@@ -12841,7 +12873,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "90.00 MN: 0.15 g loaded, 0.73 g light (class burn 0.13 g)"
+     "detail": "90.00 MN: 0.15 g loaded, 0.73 g in service (class burn 0.13 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -13013,7 +13045,11 @@
     "equipment_t": 267.7,
     "structure_t": 632.3,
     "fluids_t": 10.0,
-    "consumables_t": 1.4,
+    "consumables_t": 1.44,
+    "service_t": 911.8,
+    "net_payload_t": 3000.0,
+    "container_tare_t": 0.0,
+    "c20_tare_t": 1.7,
     "gross_t": 3911.8
    },
    "propulsion": {
@@ -13023,7 +13059,7 @@
     "fore": 0,
     "thrust_mn": 6.99,
     "accel_g_loaded": 0.182,
-    "accel_g_light": 0.782,
+    "accel_g_service": 0.782,
     "class_burn_g": 0.18,
     "drive_emitter_diameter_m": 1.85,
     "sustainable_thrust01": 1.0
@@ -14310,7 +14346,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "6.99 MN: 0.18 g loaded, 0.78 g light (class burn 0.18 g)"
+     "detail": "6.99 MN: 0.18 g loaded, 0.78 g in service (class burn 0.18 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -14471,7 +14507,11 @@
     "structure_t": 2338.6,
     "fluids_t": 6.0,
     "consumables_t": 2.7,
-    "gross_t": 8409.2
+    "service_t": 2409.15,
+    "net_payload_t": 6000.0,
+    "container_tare_t": 0.0,
+    "c20_tare_t": 1.7,
+    "gross_t": 8409.15
    },
    "propulsion": {
     "drive": "ofu.drive.u33",
@@ -14480,7 +14520,7 @@
     "fore": 0,
     "thrust_mn": 3.3,
     "accel_g_loaded": 0.04,
-    "accel_g_light": 0.14,
+    "accel_g_service": 0.14,
     "class_burn_g": 0.03,
     "drive_emitter_diameter_m": 2.02,
     "sustainable_thrust01": 1.0
@@ -15567,7 +15607,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "3.30 MN: 0.04 g loaded, 0.14 g light (class burn 0.03 g)"
+     "detail": "3.30 MN: 0.04 g loaded, 0.14 g in service (class burn 0.03 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -15721,8 +15761,12 @@
     "equipment_t": 136.5,
     "structure_t": 563.5,
     "fluids_t": 12.0,
-    "consumables_t": 1.6,
-    "gross_t": 713.9
+    "consumables_t": 1.62,
+    "service_t": 713.89,
+    "net_payload_t": 0.0,
+    "container_tare_t": 0.0,
+    "c20_tare_t": 1.7,
+    "gross_t": 713.89
    },
    "propulsion": {
     "drive": "kern.drive.kt1",
@@ -15731,7 +15775,7 @@
     "fore": 0,
     "thrust_mn": 4.0,
     "accel_g_loaded": 0.571,
-    "accel_g_light": 0.572,
+    "accel_g_service": 0.571,
     "class_burn_g": 0.02,
     "drive_emitter_diameter_m": 1.2,
     "sustainable_thrust01": 1.0
@@ -17003,7 +17047,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "4.00 MN: 0.57 g loaded, 0.57 g light (class burn 0.02 g)"
+     "detail": "4.00 MN: 0.57 g loaded, 0.57 g in service (class burn 0.02 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -17157,8 +17201,12 @@
     "equipment_t": 101.8,
     "structure_t": 398.2,
     "fluids_t": 4.0,
-    "consumables_t": 1.4,
-    "gross_t": 656.2
+    "consumables_t": 1.44,
+    "service_t": 506.16,
+    "net_payload_t": 150.0,
+    "container_tare_t": 10.2,
+    "c20_tare_t": 1.7,
+    "gross_t": 666.36
    },
    "propulsion": {
     "drive": "ofu.drive.u15",
@@ -17166,8 +17214,8 @@
     "aft": 2,
     "fore": 2,
     "thrust_mn": 3.0,
-    "accel_g_loaded": 0.466,
-    "accel_g_light": 0.605,
+    "accel_g_loaded": 0.459,
+    "accel_g_service": 0.604,
     "class_burn_g": 0.4,
     "drive_emitter_diameter_m": 1.46,
     "sustainable_thrust01": 1.0
@@ -18452,7 +18500,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "3.00 MN: 0.47 g loaded, 0.61 g light (class burn 0.4 g)"
+     "detail": "3.00 MN: 0.46 g loaded, 0.60 g in service (class burn 0.4 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -18601,7 +18649,11 @@
     "structure_t": 200.7,
     "fluids_t": 9.0,
     "consumables_t": 2.7,
-    "gross_t": 453.1
+    "service_t": 432.51,
+    "net_payload_t": 20.54,
+    "container_tare_t": 0.0,
+    "c20_tare_t": 1.7,
+    "gross_t": 453.05
    },
    "propulsion": {
     "drive": "ofu.drive.u65m",
@@ -18610,7 +18662,7 @@
     "fore": 2,
     "thrust_mn": 13.0,
     "accel_g_loaded": 2.926,
-    "accel_g_light": 3.071,
+    "accel_g_service": 3.065,
     "class_burn_g": 1.5,
     "drive_emitter_diameter_m": 2.68,
     "sustainable_thrust01": 1.0
@@ -20303,7 +20355,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "13.00 MN: 2.93 g loaded, 3.07 g light (class burn 1.5 g)"
+     "detail": "13.00 MN: 2.93 g loaded, 3.06 g in service (class burn 1.5 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -20463,8 +20515,12 @@
     "equipment_t": 113.5,
     "structure_t": 26.5,
     "fluids_t": 2.0,
-    "consumables_t": 0.1,
-    "gross_t": 144.2
+    "consumables_t": 0.06,
+    "service_t": 142.24,
+    "net_payload_t": 2.0,
+    "container_tare_t": 0.0,
+    "c20_tare_t": 1.7,
+    "gross_t": 144.24
    },
    "propulsion": {
     "drive": "th.drive.tz16v",
@@ -20473,7 +20529,7 @@
     "fore": 4,
     "thrust_mn": 6.2,
     "accel_g_loaded": 4.383,
-    "accel_g_light": 4.45,
+    "accel_g_service": 4.445,
     "class_burn_g": 4.0,
     "drive_emitter_diameter_m": 1.88,
     "sustainable_thrust01": 1.0
@@ -21778,7 +21834,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "6.20 MN: 4.38 g loaded, 4.45 g light (class burn 4.0 g)"
+     "detail": "6.20 MN: 4.38 g loaded, 4.44 g in service (class burn 4.0 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -21927,6 +21983,10 @@
     "structure_t": 1337.1,
     "fluids_t": 58.0,
     "consumables_t": 21.6,
+    "service_t": 2283.2,
+    "net_payload_t": 80.0,
+    "container_tare_t": 0.0,
+    "c20_tare_t": 1.7,
     "gross_t": 2363.2
    },
    "propulsion": {
@@ -21936,7 +21996,7 @@
     "fore": 3,
     "thrust_mn": 32.1,
     "accel_g_loaded": 1.385,
-    "accel_g_light": 1.436,
+    "accel_g_service": 1.434,
     "class_burn_g": 1.4,
     "drive_emitter_diameter_m": 4.0,
     "sustainable_thrust01": 1.0
@@ -23896,7 +23956,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "32.10 MN: 1.39 g loaded, 1.44 g light (class burn 1.4 g)"
+     "detail": "32.10 MN: 1.39 g loaded, 1.43 g in service (class burn 1.4 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -24057,6 +24117,10 @@
     "structure_t": 5607.9,
     "fluids_t": 280.0,
     "consumables_t": 172.8,
+    "service_t": 9467.2,
+    "net_payload_t": 300.0,
+    "container_tare_t": 0.0,
+    "c20_tare_t": 1.7,
     "gross_t": 9767.2
    },
    "propulsion": {
@@ -24066,7 +24130,7 @@
     "fore": 0,
     "thrust_mn": 110.0,
     "accel_g_loaded": 1.148,
-    "accel_g_light": 1.187,
+    "accel_g_service": 1.185,
     "class_burn_g": 1.1,
     "drive_emitter_diameter_m": 6.4,
     "sustainable_thrust01": 1.0
@@ -26146,7 +26210,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "110.00 MN: 1.15 g loaded, 1.19 g light (class burn 1.1 g)"
+     "detail": "110.00 MN: 1.15 g loaded, 1.18 g in service (class burn 1.1 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -26312,7 +26376,11 @@
     "equipment_t": 220.2,
     "structure_t": 379.9,
     "fluids_t": 17.0,
-    "consumables_t": 5.0,
+    "consumables_t": 5.04,
+    "service_t": 623.3,
+    "net_payload_t": 10.0,
+    "container_tare_t": 0.0,
+    "c20_tare_t": 1.7,
     "gross_t": 633.3
    },
    "propulsion": {
@@ -26322,7 +26390,7 @@
     "fore": 0,
     "thrust_mn": 12.0,
     "accel_g_loaded": 1.932,
-    "accel_g_light": 1.967,
+    "accel_g_service": 1.963,
     "class_burn_g": 2.0,
     "drive_emitter_diameter_m": 1.86,
     "sustainable_thrust01": 1.0
@@ -28191,7 +28259,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "12.00 MN: 1.93 g loaded, 1.97 g light (class burn 2.0 g)"
+     "detail": "12.00 MN: 1.93 g loaded, 1.96 g in service (class burn 2.0 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -28358,7 +28426,11 @@
     "structure_t": 3985.4,
     "fluids_t": 150.0,
     "consumables_t": 64.8,
-    "gross_t": 11220.2
+    "service_t": 5220.2,
+    "net_payload_t": 6000.0,
+    "container_tare_t": 408.0,
+    "c20_tare_t": 1.7,
+    "gross_t": 11628.2
    },
    "propulsion": {
     "drive": "th.drive.tz13",
@@ -28366,8 +28438,8 @@
     "aft": 3,
     "fore": 0,
     "thrust_mn": 39.0,
-    "accel_g_loaded": 0.354,
-    "accel_g_light": 0.763,
+    "accel_g_loaded": 0.342,
+    "accel_g_service": 0.762,
     "class_burn_g": 0.35,
     "drive_emitter_diameter_m": 4.04,
     "sustainable_thrust01": 1.0
@@ -30349,7 +30421,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "39.00 MN: 0.35 g loaded, 0.76 g light (class burn 0.35 g)"
+     "detail": "39.00 MN: 0.34 g loaded, 0.76 g in service (class burn 0.35 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -30403,7 +30475,7 @@
      "check": "jump_core_rating_covers_gross",
      "ok": true,
      "level": "OK",
-     "detail": "core 12000 t vs gross 11220 t"
+     "detail": "core 12000 t vs gross 11628 t"
     },
     {
      "check": "jump_charge_capacity",
@@ -30515,8 +30587,12 @@
     "equipment_t": 592.7,
     "structure_t": 1007.3,
     "fluids_t": 30.0,
-    "consumables_t": 4.3,
-    "gross_t": 1835.8
+    "consumables_t": 4.32,
+    "service_t": 1635.76,
+    "net_payload_t": 200.0,
+    "container_tare_t": 0.0,
+    "c20_tare_t": 1.7,
+    "gross_t": 1835.76
    },
    "propulsion": {
     "drive": "ofu.drive.u70",
@@ -30525,7 +30601,7 @@
     "fore": 0,
     "thrust_mn": 28.0,
     "accel_g_loaded": 1.555,
-    "accel_g_light": 1.747,
+    "accel_g_service": 1.745,
     "class_burn_g": 1.6,
     "drive_emitter_diameter_m": 3.22,
     "sustainable_thrust01": 1.0
@@ -32243,7 +32319,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "28.00 MN: 1.56 g loaded, 1.75 g light (class burn 1.6 g)"
+     "detail": "28.00 MN: 1.56 g loaded, 1.75 g in service (class burn 1.6 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -32398,6 +32474,10 @@
     "structure_t": 1550.8,
     "fluids_t": 65.0,
     "consumables_t": 169.2,
+    "service_t": 2837.8,
+    "net_payload_t": 171.0,
+    "container_tare_t": 0.0,
+    "c20_tare_t": 1.7,
     "gross_t": 3008.8
    },
    "propulsion": {
@@ -32407,7 +32487,7 @@
     "fore": 0,
     "thrust_mn": 12.0,
     "accel_g_loaded": 0.407,
-    "accel_g_light": 0.432,
+    "accel_g_service": 0.431,
     "class_burn_g": 0.3,
     "drive_emitter_diameter_m": 2.35,
     "sustainable_thrust01": 1.0
@@ -34251,7 +34331,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "12.00 MN: 0.41 g loaded, 0.43 g light (class burn 0.3 g)"
+     "detail": "12.00 MN: 0.41 g loaded, 0.43 g in service (class burn 0.3 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -34418,6 +34498,10 @@
     "structure_t": 3825.5,
     "fluids_t": 160.0,
     "consumables_t": 1281.6,
+    "service_t": 7947.0,
+    "net_payload_t": 1050.0,
+    "container_tare_t": 0.0,
+    "c20_tare_t": 1.7,
     "gross_t": 8997.0
    },
    "propulsion": {
@@ -34427,7 +34511,7 @@
     "fore": 0,
     "thrust_mn": 17.32,
     "accel_g_loaded": 0.196,
-    "accel_g_light": 0.222,
+    "accel_g_service": 0.222,
     "class_burn_g": 0.18,
     "drive_emitter_diameter_m": 2.26,
     "sustainable_thrust01": 1.0
@@ -36463,7 +36547,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "17.32 MN: 0.20 g loaded, 0.22 g light (class burn 0.18 g)"
+     "detail": "17.32 MN: 0.20 g loaded, 0.22 g in service (class burn 0.18 g)"
     },
     {
      "check": "thrust_near_class_target",

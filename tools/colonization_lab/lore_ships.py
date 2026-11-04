@@ -46,10 +46,10 @@ def docs(D, lm):
          "`out/ships_3126/index.html`); рантайм: `assets/data/ships/ship_catalog_3126.json` → общий построитель `GenericShipDescriptorBuilder`. "
          "Одна каноническая модель на каждый из 17 классов (`FLEETS_AND_SHIPYARDS.md`) и варианты только там, где есть конструктивная или лорная причина. "
          "Физика — законы вселенной игры: двигательные площадки 6 МВт/м², излучение ×10, отходы двигателя = вход × (1 − КПД).", "",
-         lm.table(["Модель", "Класс", "Производитель (блок)", "Схема", "Сухая, т", "Нагрузка", "Тяга, МН", "g гружёный / лёгкий", "Ядро", "Цена, млн Cr"],
+         lm.table(["Модель", "Класс", "Производитель (блок)", "Схема", "Сухая, т", "Нагрузка", "Тяга, МН", "g полная / в снаряжении", "Ядро", "Цена, млн Cr"],
                   [(s["name"] + ("" if s["base"] else " — вариант"), s["cls"], f"{s['manufacturer_name']} ({s['bloc']})", f"{s['flight']['law']} {s['flight']['layout']}",
                     n(s["mass"]["dry_t"]), f"{n(s['payload']['cargo_t'])} т" + (f", {n(s['passengers'])} пасс." if s["passengers"] else ""),
-                    s["propulsion"]["thrust_mn"], f"{s['propulsion']['accel_g_loaded']} / {s['propulsion']['accel_g_light']}",
+                    s["propulsion"]["thrust_mn"], f"{s['propulsion']['accel_g_loaded']} / {s['propulsion']['accel_g_service']}",
                     next((prods[i["product"]]["model"] for i in s["installed"] if i["cat"] == "jump_core"), "—"), f"{s['price']['list_cr'] / 1e6:.1f}")
                    for s in ships]), "",
          "Похожие корабли у разных акторов — это не копии: школа блока меняет решение (C-120 Бхарат — три двигателя ОФУ и ядро Мизан; "
@@ -64,7 +64,9 @@ def docs(D, lm):
                   ("Схема управления", f"{s['flight']['law']} {s['flight']['layout']} (рантайм {s['flight']['runtime_model']})"),
                   ("Экипаж / пассажиры", f"{s['crew']} / {s['passengers']}" + (f" (анабиоз {s['cold_sleep']})" if s["cold_sleep"] else "")),
                   ("Груз", f"{n(s['payload']['cargo_t'])} т, C20 {s['payload']['c20']}"),
-                  ("Масса", f"сухая {n(s['mass']['dry_t'])} т (оборудование {n(s['mass']['equipment_t'])} т, силовой корпус {n(s['mass']['structure_t'])} т), полная {n(s['mass']['gross_t'])} т"),
+                  ("Масса", f"сухая {n(s['mass']['dry_t'])} т (оборудование {n(s['mass']['equipment_t'])} т, силовой корпус {n(s['mass']['structure_t'])} т), "
+                            f"в рабочем снаряжении {n(s['mass']['service_t'])} т, полная {n(s['mass']['gross_t'])} т "
+                            f"(груз и пассажиры {n(s['mass']['net_payload_t'])} т, тара C20 {s['mass']['container_tare_t']} т)"),
                   ("Тяга", f"{s['propulsion']['thrust_mn']} МН, {s['propulsion']['accel_g_loaded']} g гружёный; длительно {int(s['propulsion']['sustainable_thrust01'] * 100)} %"),
                   ("Энергия", f"{s['power']['generators']} × {prods[s['power']['reactor']]['model']} = {n(s['power']['propulsion_mwe'])} МВт; бытовая нагрузка {s['power']['hotel_mw']} МВт"),
                   ("Охлаждение", f"{n(s['thermal']['radiator_area_m2'])} м² радиаторов = {n(s['thermal']['radiator_mw'])} МВт; контуры {n(s['thermal']['coolant_capacity_mw'])} МВт"),

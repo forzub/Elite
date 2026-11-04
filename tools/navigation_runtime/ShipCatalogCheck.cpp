@@ -234,10 +234,13 @@ int main(int argc, char** argv)
                   (hasCore ? ", jump core " + num(d->catalog.jumpCoreRatingTonnes, 0) + " t" : ", no jump core (in-system)"));
 
         // ---- current mass and load
-        const double serviceKg = (s.dryMassTonnes + s.fluidsTonnes + s.consumablesTonnes + s.crew * 0.09) * 1000.0;
-        check(std::abs(core->currentMassKg() - serviceKg) < 1e-6 * serviceKg && std::abs(d->physics.massKg - s.dryMassTonnes * 1000.0) < 1.0,
-              s.id + ": in-service mass " + num(core->currentMassKg() / 1000.0, 1) + " t = dry " + num(s.dryMassTonnes, 0) +
-                  " + tanks + stores + crew");
+        // one mass ladder: the passport service mass IS the runtime spawn mass
+        const double serviceKg = s.serviceTonnes * 1000.0;
+        check(std::abs(core->currentMassKg() - serviceKg) < 10.0 && std::abs(d->physics.massKg - s.dryMassTonnes * 1000.0) < 1.0 &&
+                  std::abs(s.c20TareTonnes - ::catalog::ships::C20TareTonnes) < 1e-12 &&
+                  std::abs(s.grossTonnes - (s.serviceTonnes + s.netPayloadTonnes + s.containerTareTonnes)) < 0.02,
+              s.id + ": service mass " + num(core->currentMassKg() / 1000.0, 2) + " t = passport service_t; passport gross = service + net + C20 tare (" +
+                  num(s.c20TareTonnes, 1) + " t = runtime C20 tare)");
         const double aLight = core->capabilities().effectivePhysics.forwardMainEngineAccelerationMps2;
         auto full = game::ship::core::ShipCore::serviceLoad(*d);
         full.persons = s.crew + s.passengers;
@@ -248,20 +251,19 @@ int main(int argc, char** argv)
         full.containers = s.containerSlots;
         core->setLoad(full);
         const int boxes = s.containerSlots;
-        const double grossKg =
-            (s.grossTonnes + boxes * catalog::ships::C20TareTonnes) * 1000.0;
+        const double grossKg = s.grossTonnes * 1000.0;   // gross includes the C20 tare
         const double aFull = core->capabilities().effectivePhysics.forwardMainEngineAccelerationMps2;
         const double thrust = ratedThrustN(*d);
         const bool carries = s.cargoTonnes > 0.0 || s.passengers > 0;
-        if (std::abs(core->currentMassKg() - grossKg) >= std::max(1e-4 * grossKg, 100.0) || std::abs(aFull - thrust / core->currentMassKg()) >= 1e-3 * aFull ||
+        if (std::abs(core->currentMassKg() - grossKg) >= 10.0 || std::abs(aFull - thrust / core->currentMassKg()) >= 1e-3 * aFull ||
             std::abs(thrust - s.thrustMN * 1e6) >= 1e-3 * thrust)
             std::cout << "     detail: mass " << num(core->currentMassKg(), 1) << " kg vs " << num(grossKg, 1) << ", a " << aFull << " vs "
                       << thrust / core->currentMassKg() << ", thrust " << thrust << " vs passport " << s.thrustMN * 1e6 << std::endl;
-        // the passport gross is rounded to 0.1 t
-        check(std::abs(core->currentMassKg() - grossKg) < std::max(1e-4 * grossKg, 100.0) &&
+        // the passport gross is rounded to 0.01 t
+        check(std::abs(core->currentMassKg() - grossKg) < 10.0 &&
                   std::abs(aFull - thrust / core->currentMassKg()) < 1e-3 * aFull && (!carries || aFull < aLight * (1.0 - 1e-6)) &&
                   std::abs(thrust - s.thrustMN * 1e6) < 1e-3 * thrust,
-              s.id + ": loaded " + num(core->currentMassKg() / 1000.0, 0) + " t (gross " + num(s.grossTonnes, 0) + " + " +
+              s.id + ": loaded " + num(core->currentMassKg() / 1000.0, 0) + " t = passport gross " + num(s.grossTonnes, 2) + " t (incl. " +
                   std::to_string(boxes) + " C20 tare) -> " + num(aFull / G0) + " g vs " + num(aLight / G0) + " g in service");
 
         // ---- docks, cooling, hit volumes
@@ -307,7 +309,7 @@ int main(int argc, char** argv)
         const auto boxesAboard = [&](double cargo) {
             return std::min(
                 train->storage.containerSlots,
-                static_cast<int>(std::ceil(cargo / catalog::ships::C20PayloadTonnes))
+                static_cast<int>(std::ceil(cargo / ::catalog::ships::C20PayloadTonnes))
             );
         };
         const double aBefore = core->capabilities().effectivePhysics.forwardMainEngineAccelerationMps2;
@@ -320,7 +322,7 @@ int main(int argc, char** argv)
         const double carKg =
             m->placement.massKg + carCargo * 1000.0 +
             (boxesAboard(load.cargoTonnes) - boxesAboard(load.cargoTonnes - carCargo)) *
-                catalog::ships::C20TareTonnes * 1000.0;
+                ::catalog::ships::C20TareTonnes * 1000.0;
         const bool fragmentSpawned =
             core->detachedFragmentRuntime().hasFragment(car);
         const auto* fragment =

@@ -30,6 +30,41 @@
       "es": "CELDA",
       "ja": "セル"
     },
+    "cockpit.orbit": {
+      "en": "ORBIT",
+      "ru": "ОРБИТА",
+      "zh-Hans": "轨道",
+      "es": "ÓRBITA",
+      "ja": "軌道"
+    },
+    "cockpit.orbit.radial": {
+      "en": "RADIAL",
+      "ru": "РАД.",
+      "zh-Hans": "径向",
+      "es": "RADIAL",
+      "ja": "径方向"
+    },
+    "cockpit.orbit.circular": {
+      "en": "CIRC",
+      "ru": "КРУГ.",
+      "zh-Hans": "环绕",
+      "es": "CIRC",
+      "ja": "円軌道"
+    },
+    "cockpit.orbit.escape": {
+      "en": "ESC",
+      "ru": "2-Я КОСМ.",
+      "zh-Hans": "逃逸",
+      "es": "ESC",
+      "ja": "脱出"
+    },
+    "cockpit.orbit.escaping": {
+      "en": "ESCAPING",
+      "ru": "УХОД С ОРБИТЫ",
+      "zh-Hans": "逃逸中",
+      "es": "ESCAPANDO",
+      "ja": "脱出中"
+    },
     "cockpit.vrel": {
       "en": "VREL",
       "ru": "ОТН.СКОР",

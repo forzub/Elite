@@ -2874,6 +2874,47 @@ void SpaceState::renderUI()
                 *uiRoot,
                 telemetry
             );
+
+            // J: speed along the orbit of the dominant body - falling or
+            // climbing, circular / escape speed, periapsis / apoapsis
+            {
+                std::string line1, line2;
+                if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
+                {
+                    const auto& m = it->second.transform.motion;
+                    if (m.freeFlight && !m.freeFlightOrbitBodyId.empty())
+                    {
+                        std::string body = m.freeFlightOrbitBodyId;
+                        if (const auto dot = body.rfind('.'); dot != std::string::npos)
+                            body = body.substr(dot + 1);
+                        char a[160], b[160];
+                        std::snprintf(a, sizeof a, "%s %s: V %.2f km/s  %s %+.2f km/s  (%s %.2f / %s %.2f)",
+                                      localizedUiText(context().app, "cockpit.orbit", "ORBIT").c_str(), body.c_str(),
+                                      m.freeFlightOrbitSpeedMps / 1000.0,
+                                      localizedUiText(context().app, "cockpit.orbit.radial", "RADIAL").c_str(),
+                                      m.freeFlightOrbitRadialMps / 1000.0,
+                                      localizedUiText(context().app, "cockpit.orbit.circular", "CIRC").c_str(),
+                                      m.freeFlightOrbitCircularMps / 1000.0,
+                                      localizedUiText(context().app, "cockpit.orbit.escape", "ESC").c_str(),
+                                      m.freeFlightOrbitEscapeMps / 1000.0);
+                        if (m.freeFlightOrbitBound)
+                            std::snprintf(b, sizeof b, "H %.0f km   Pe %.0f km   Ap %.0f km%s",
+                                          m.freeFlightOrbitAltitudeM / 1000.0, m.freeFlightOrbitPeriapsisAltM / 1000.0,
+                                          m.freeFlightOrbitApoapsisAltM / 1000.0,
+                                          m.freeFlightOrbitPeriapsisAltM < 0.0 ? "   !" : "");
+                        else
+                            std::snprintf(b, sizeof b, "H %.0f km   Pe %.0f km   %s",
+                                          m.freeFlightOrbitAltitudeM / 1000.0, m.freeFlightOrbitPeriapsisAltM / 1000.0,
+                                          localizedUiText(context().app, "cockpit.orbit.escaping", "ESCAPING").c_str());
+                        line1 = a;
+                        line2 = b;
+                    }
+                }
+                for (const auto& [id, text] : {std::pair<const char*, const std::string*>{"main_orbit_1", &line1},
+                                               std::pair<const char*, const std::string*>{"main_orbit_2", &line2}})
+                    if (auto* label = dynamic_cast<UIText*>(uiRoot->findById(id)))
+                        label->label = *text;
+            }
             }
         }
     }

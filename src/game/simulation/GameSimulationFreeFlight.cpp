@@ -111,6 +111,7 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
         motion.freeFlightCaptureRefusal = 0;
         motion.freeFlightReferenceId.clear();
         motion.freeFlightReferenceVelocityMps = glm::dvec3(0.0);
+        motion.freeFlightOrbitBodyId.clear();
         if (motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::BackwardToVelocity)
             motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
         m_freeFlights.erase(active);
@@ -206,6 +207,53 @@ void GameSimulation::updateFreeFlights(double dt)
         f.peakSpeedMps = std::max(f.peakSpeedMps, speed);
         f.primaryBodyId = g1.primaryBodyId;
         f.primaryAltitudeMeters = g1.primaryAltitudeMeters;
+
+        // orbit relative to the dominant body (HUD: falling / climbing, circular speed, Pe / Ap)
+        {
+            const game::navigation::GravityBody* primary = nullptr;
+            for (const auto& body : m_gravityBodies)
+                if (body.id == g1.primaryBodyId)
+                    primary = &body;
+            const bool continuous = primary && f.lastPrimaryId == primary->id && dt > 0.0;
+            if (primary && continuous && primary->gravitationalParameterM3s2 > 0.0)
+            {
+                const double mu = primary->gravitationalParameterM3s2;
+                const glm::dvec3 bodyVelocity = (primary->centerMeters - f.lastPrimaryCenterMeters) / dt;
+                const glm::dvec3 r = frame.originMeters - primary->centerMeters;
+                const glm::dvec3 v = frame.linearVelocityMps - bodyVelocity;
+                const double rLen = std::max(1.0, glm::length(r));
+                const double speed = glm::length(v);
+                const double energy = 0.5 * speed * speed - mu / rLen;
+                const double h = glm::length(glm::cross(r, v));
+                motion.freeFlightOrbitBodyId = primary->id;
+                motion.freeFlightOrbitAltitudeM = rLen - primary->radiusMeters;
+                motion.freeFlightOrbitSpeedMps = speed;
+                motion.freeFlightOrbitRadialMps = glm::dot(v, r) / rLen;
+                motion.freeFlightOrbitCircularMps = std::sqrt(mu / rLen);
+                motion.freeFlightOrbitEscapeMps = std::sqrt(2.0 * mu / rLen);
+                motion.freeFlightOrbitBound = energy < 0.0;
+                if (motion.freeFlightOrbitBound)
+                {
+                    const double a = -mu / (2.0 * energy);
+                    const double e = std::sqrt(std::max(0.0, 1.0 + 2.0 * energy * h * h / (mu * mu)));
+                    motion.freeFlightOrbitPeriapsisAltM = a * (1.0 - e) - primary->radiusMeters;
+                    motion.freeFlightOrbitApoapsisAltM = a * (1.0 + e) - primary->radiusMeters;
+                }
+                else
+                {
+                    const double p = h * h / mu;   // hyperbola: periapsis only
+                    const double e = std::sqrt(std::max(0.0, 1.0 + 2.0 * energy * h * h / (mu * mu)));
+                    motion.freeFlightOrbitPeriapsisAltM = p / (1.0 + e) - primary->radiusMeters;
+                    motion.freeFlightOrbitApoapsisAltM = 0.0;
+                }
+            }
+            else if (!primary)
+            {
+                motion.freeFlightOrbitBodyId.clear();
+            }
+            f.lastPrimaryId = primary ? primary->id : std::string();
+            f.lastPrimaryCenterMeters = primary ? primary->centerMeters : glm::dvec3(0.0);
+        }
 
         if (g1.insideAtmosphere || (!g1.primaryBodyId.empty() && g1.primaryAltitudeMeters < 0.0))
         {

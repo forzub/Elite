@@ -99,6 +99,19 @@ struct DynamicMotionState
     // Last refused Ctrl+J OFF: 0 none, 1 no hub frame within the capture envelope,
     // 2 relative speed too high for a safe capture.
     std::uint8_t freeFlightCaptureRefusal = 0;
+    // Free flight orbit relative to the dominant gravity body (server, every
+    // tick): speed vs the body, radial component (+ climbing / - falling),
+    // circular and escape speed at this radius, periapsis / apoapsis altitude
+    // of the osculating orbit (bound only). Empty body id = no dominant body.
+    std::string freeFlightOrbitBodyId;
+    double freeFlightOrbitAltitudeM = 0.0;
+    double freeFlightOrbitSpeedMps = 0.0;
+    double freeFlightOrbitRadialMps = 0.0;
+    double freeFlightOrbitCircularMps = 0.0;
+    double freeFlightOrbitEscapeMps = 0.0;
+    double freeFlightOrbitPeriapsisAltM = 0.0;
+    double freeFlightOrbitApoapsisAltM = 0.0;
+    bool freeFlightOrbitBound = false;
 
     // True only while/after a real +/- Assisted trim. It lets the release edge
     // capture reached forward speed once without allowing keypad RCS or an

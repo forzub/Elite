@@ -144,6 +144,9 @@ void SpaceState::initHUD()
     uiRoot->addChild(makeTelemetryText("main_coord_y",    {mainTelemetryX, mainTelemetryY + mainTelemetryStep * 2.0f}));
     uiRoot->addChild(makeTelemetryText("main_coord_z",    {mainTelemetryX, mainTelemetryY + mainTelemetryStep * 3.0f}));
     uiRoot->addChild(makeTelemetryText("main_coord_v",    {mainTelemetryX, mainTelemetryY + mainTelemetryStep * 4.0f}));
+    // J (free flight): the orbit around the dominant body
+    uiRoot->addChild(makeTelemetryText("main_orbit_1",    {mainTelemetryX, mainTelemetryY + mainTelemetryStep * 5.0f}));
+    uiRoot->addChild(makeTelemetryText("main_orbit_2",    {mainTelemetryX, mainTelemetryY + mainTelemetryStep * 6.0f}));
 
 
     // ================== Radar HUD creation =========================

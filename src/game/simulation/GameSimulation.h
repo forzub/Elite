@@ -201,6 +201,9 @@ public:
         double elapsedSeconds = 0.0;
         std::string primaryBodyId;
         double primaryAltitudeMeters = 0.0;
+        // the dominant body's centre one tick ago (its velocity by difference)
+        std::string lastPrimaryId;
+        glm::dvec3 lastPrimaryCenterMeters {0.0};
     };
     bool toggleFreeFlight(EntityId shipId);
     void setFreeFlightThrust(EntityId shipId, int command);

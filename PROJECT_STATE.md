@@ -2456,6 +2456,41 @@ Restore point: tag restore/pre-order-2026-11-04-g.
 - OPEN: catalog surface pressure for rho0 (Mars / Venus use Earth's now); soft landing / splashdown not
   flown by a human; J Assisted steering not verified with real input; Moon test; terrain field memory.
 
+### User order 2026-11-04 j (Earth hub -> Moon flight in the game window, landing)
+- J autopilot (476ebb32): fly to a body and land. Server J drive on the free-flight frame (a game drive,
+  NOT the ship's main engine - the user asked "where does the acceleration come from with engines off":
+  the HUD thrust line now says "J-ПРИВОД АВТОПИЛОТА N g"; reactor / fuel do not pay for it yet). 1 g
+  doubling every 2 s up to 100 km/s2 (ELITE_J_AUTOPILOT_MAX_ACCEL), no speed cap, sqrt(2 a d) braking at
+  0.4 of the cap, d/6 s approach tail to 12 km above the body on the ship's side, the departure body is
+  never cut through; nose on the target during the transfer; level powered descent (belly down, nose to
+  the horizon, 40 m/s2) to ~1.5 m/s. Keys: O on a body selected on the System Map while in J, PgDn = land
+  here / cancel; DEV script autopilot:<moon|earth|mars|here|off>. Schema 32. Full suite after ada429ef:
+  the same 8 baseline red blocks.
+- Live Windows evidence (D:/tmp/elite_moon_run1..3, video D:/tmp/elite_moon_landing.mp4): Vysokiy (LEO
+  422 km) -> Moon: engaged, departure phase (Moon behind Earth), transfer peak ~4700 km/s, descent from
+  8-11 km at t+230 s, touchdown 1.53 / 1.62 / 1.62 m/s vertical, 0.0-0.2 m/s horizontal, slope 7.7 / 6.8 /
+  17 deg, rock, landed at t+279..287 s - three flights, three soft landings. Not a human acceptance.
+- User videos frag03 / frag04 + my run2: three defects found and fixed:
+  1. descent attitude nose-up (tail-sitter): the cockpit saw only sky -> level descent attitude;
+  2. "white sky" over the Moon (and Earth) low over the ground: the coarse displaced globe rose above the
+     camera (Modern) and Elite's silhouette lit distant ridges past the limb (nv < 0) -> low over the
+     local terrain the globe is a smooth backdrop sphere at the ground level under the camera; the Elite
+     rim is not drawn past the limb (d9ebd040, ada429ef; Planet Lab Moon/Earth near-surface checks);
+  3. hull shake on the airless Moon: a soft touchdown pulsed the impact shake; now only real impacts
+     (atmosphere comes from the catalog body; the Moon has none). Climbing out of rising ground is no
+     longer a "contact".
+- Modern / Anime natural-zone palette painted the Moon green with "snow" (zone heuristic read grey
+  regolith as vegetation; descriptor contract says no default greening) -> zones only for bodies with a
+  stated biosphere or open water (ada429ef). Planet Lab: Moon grey, Earth unchanged. (One earlier grey
+  Planet Lab run stays unexplained - probably a different binary.)
+- The star map in run2 video was opened by the user (not a bug).
+- OPEN (user remark): from Earth the Moon is practically invisible and the Sun looks smaller than in life.
+  Measured: both are drawn at the true 0.53 deg (vertical FOV 70 deg / 720 px -> ~5 px disc); in Elite
+  style a small body is a black disc with a thin outline. Proposal: keep true size but draw small lit
+  bodies as a filled phase in Elite, and give the Sun a glare / bloom halo; optionally a narrower FOV.
+- OPEN: J drive energy accounting (reactor / fuel), human flight of the autopilot, autopilot to bodies
+  without terrain data, hub as an autopilot target, camera framing of the transfer (drone view).
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

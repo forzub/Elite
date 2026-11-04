@@ -1600,8 +1600,12 @@ void SpaceState::update(float dt)
         static double freeFlightTraceStart = -1.0;
         if (freeFlightSent && freeFlightTraceStart < 0.0)
             freeFlightTraceStart = startupElapsedMs(m_startupTotalBegin) / 1000.0;
+        static const double freeFlightTraceSeconds = [] {
+            const char* v = std::getenv("ELITE_DEV_FF_TRACE_SECONDS");   // default 3 s
+            return v && *v ? std::atof(v) : 3.0;
+        }();
         if (freeFlightTraceStart >= 0.0 && m_client &&
-            startupElapsedMs(m_startupTotalBegin) / 1000.0 - freeFlightTraceStart < 3.0)
+            startupElapsedMs(m_startupTotalBegin) / 1000.0 - freeFlightTraceStart < freeFlightTraceSeconds)
         {
             const auto it = m_client->world().ships().find(m_playerId.value);
             const auto& hubs = m_client->world().hubs();
@@ -1613,7 +1617,16 @@ void SpaceState::update(float dt)
                 const glm::dvec3 hubW = world::coordinates::fullMeters(hub->second.worldPosition);
                 const glm::dvec3 rr = world::coordinates::fullMeters(r.worldPosition) - hubW;
                 const glm::dvec3 aa = world::coordinates::fullMeters(a.worldPosition) - hubW;
-                std::cerr << "[FFTrace] t=" << startupElapsedMs(m_startupTotalBegin) / 1000.0 - freeFlightTraceStart
+                // as DRAWN: the nearest scene object's (the station's) render position
+                double drawnDist = -1.0;
+                for (const auto& [oid, obj] : m_client->world().objects())
+                {
+                    const double dd = glm::length(world::coordinates::fullMeters(obj.renderWorldPosition) -
+                                                  world::coordinates::fullMeters(r.worldPosition));
+                    if (drawnDist < 0.0 || dd < drawnDist)
+                        drawnDist = dd;
+                }
+                std::cerr << "[FFTrace] drawn=" << drawnDist << " t=" << startupElapsedMs(m_startupTotalBegin) / 1000.0 - freeFlightTraceStart
                           << " render_rel=(" << rr.x << "," << rr.y << "," << rr.z << ") auth_rel=(" << aa.x << "," << aa.y << "," << aa.z
                           << ") ff=" << a.motion.freeFlight << " frame=" << a.motion.travelFrame.frameId
                           << " render_frame=" << r.motion.travelFrame.frameId << " local=(" << r.motion.localPositionMeters.x << ","

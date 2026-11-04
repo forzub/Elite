@@ -2589,6 +2589,18 @@ Restore point: tag restore/pre-order-2026-11-04-g.
   Visual: Modern ground ~3 % darker overall, halos soft (the Modern tone curve compresses highlights); the Elite vector
   style shows no albedo at all - there the deeper small craters show only as contour rings. Not human-accepted.
 
+### User video qwerty05 (2026-11-05): the hub jumps on a flight-mode change
+- Measured with the DEV FFTrace extended to the DRAWN distance (nearest scene object's render position vs the player's
+  render position; ELITE_DEV_FF_TRACE_SECONDS): steady 10 307.8 m except at the render-epoch frame crossing - J on
+  -1175 m, J off (hub capture) -1452 m, recovering over ~60 ms. ROOT CAUSE: sampleRenderReferenceFrame - when the
+  bracketing snapshots carry different frames, interpolateReferenceFramePresentation returns the new frame as of the
+  NEWER snapshot, (1 - alpha) * span ahead of the render epoch (~36 km/s heliocentric x ~35 ms). Fix: carry the new
+  frame back to the render epoch along its velocity; also no blend of old-frame / new-frame local positions on the
+  crossing frame. After: max drawn step 0.1 m through both changes (D:/tmp/elite_q5/run/t4.log). Full suite: the same
+  8 baseline red blocks. Not human-accepted.
+- Earlier note (farg02, 87faa141): that fix kept the ship in the render-epoch frame until the crossing; this one fixes
+  the crossing frame itself.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

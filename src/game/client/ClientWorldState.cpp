@@ -1137,11 +1137,24 @@ void ClientWorldState::update(
                 return fallback;
             }
 
-            return game::client::interpolateReferenceFramePresentation(
+            auto frame = game::client::interpolateReferenceFramePresentation(
                 oldIt->referenceFrame,
                 newIt->referenceFrame,
                 presentationWindow.interpolationAlpha
             );
+            // A frame change between the two snapshots: there is nothing to
+            // interpolate, the helper returns the new frame as it was at the NEWER
+            // snapshot - ahead of the render epoch by (1 - alpha) * span. At orbital /
+            // heliocentric speed that put the ship 1.2-1.5 km off the station drawn
+            // at render time for a few frames (the hub jumped on J on / off). Carry
+            // the new frame back to the render epoch along its own velocity.
+            if (!game::client::sameReferenceFrameIdentity(oldIt->referenceFrame, newIt->referenceFrame))
+            {
+                const double back =
+                    (1.0 - std::clamp(presentationWindow.interpolationAlpha, 0.0, 1.0)) * span;
+                frame.originMeters -= frame.velocityMetersPerSecond * back;
+            }
+            return frame;
         };
 
     for (auto& [id, ship] : m_ships)
@@ -1203,6 +1216,19 @@ void ClientWorldState::update(
                     ship.renderTransform.setWorldPositionMeters(presentationFrame.localToWorldPosition(local));
                     ship.signalPresentation.update(dt, ship.receptions);
                     continue;
+                }
+
+                // The render epoch has just crossed the change: the smoothing above
+                // blended a local position of the OLD frame (kilometres from the hub)
+                // with one of the NEW frame - for one frame the ship (camera) stood
+                // ~1.5-2 km off and the hub jumped. Enter the new frame at its own
+                // local state, no blend across frames.
+                if (presentationFrame.valid && previousRenderFrame.valid &&
+                    game::client::sameReferenceFrameIdentity(presentationFrame, ship.referenceFrame) &&
+                    !game::client::sameReferenceFrameIdentity(presentationFrame, previousRenderFrame))
+                {
+                    ship.renderTransform.motion.localPositionMeters = presentationTarget->motion.localPositionMeters;
+                    ship.renderTransform.motion.localVelocityMps = presentationTarget->motion.localVelocityMps;
                 }
 
                 ship.renderReferenceFrame =

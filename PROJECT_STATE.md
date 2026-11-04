@@ -2416,6 +2416,21 @@ Restore point: tag restore/pre-order-2026-11-04-g.
 - Full suite after 0c19ded7: the same 8 baseline red blocks with the same messages; navigation sensor /
   radar, multiplayer, network process, standalone runtime, headless + main builds PASS.
 
+### User order 2026-11-04 h ("belt asteroids and the rest"; the user approved the video-report format)
+- Belt (aa1859ea): a belt body's Detail = ~3 million km window on the annulus, star-fixed 100 000 km
+  cells seeded by (belt, sector, lane), screen-density LOD, edge arcs + arrow / distance to the star.
+  GAME: Sol main belt (2.67 AU).
+- Assisted route time (0ac359f4): the navigation runtime / geometry / trajectory libraries compile -O2
+  in every configuration (the game builds Debug -O0). Real game: Assisted worker 44.8 -> 3.3 s,
+  Newtonian 1.07 -> 0.52 s; N1 route identical (32 743.764 m), DONE 235 s, 0 violations.
+- F8 Trade (1e90f78a): deterministic EconomyModel on the generated economy data (market drift + events,
+  board 4-12 entries / hub / day, rewards by the rules, last known prices aged by the beacon-network
+  delay) and the native F8 page (board / market / system hubs, hub card, SHOW ON MAP). GAME at Vysokiy.
+- OPEN: trades (buy / sell / take an entry, credits, cargo), customs refusal at docking by bloc channel
+  and quarantine / blockade events, sector patrols, server ownership of the economy state once trades
+  exist; J-entry hub desync (needs the user's scenario / video).
+- Full suite after 1e90f78a: the same 8 baseline red blocks / failing tests with the same messages.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

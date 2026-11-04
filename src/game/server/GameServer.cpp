@@ -857,6 +857,10 @@ void GameServer::update(double dt)
                     m_simulation.setFreeFlightThrust(id, shipCmd.index);
                     break;
 
+                case ClientShipCommand::FreeFlightAutopilot:
+                    m_simulation.setFreeFlightAutopilot(id, shipCmd.target, shipCmd.index != 0);
+                    break;
+
                 case ClientShipCommand::RefitPreview:
                 case ClientShipCommand::RefitApply:
                 {

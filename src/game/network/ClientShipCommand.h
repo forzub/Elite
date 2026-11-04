@@ -22,7 +22,9 @@
             SetFreeFlightThrust,    // free flight: index 0 off (INSERT), 1 full (HOME), 2 brake (END)
             RefitPreview,           // F7: index = RefitOperationKind, target = module id, detail = product id,
                                     //     amount = subject ship entity id (0 = this ship)
-            RefitApply              // F7 DEV apply of the same operation (no payment yet)
+            RefitApply,             // F7 DEV apply of the same operation (no payment yet)
+            FreeFlightAutopilot     // J autopilot: index 1 = fly to `target` body and land (empty = the
+                                    //     dominant body: land here), index 0 = cancel
         };
         Type type;
 

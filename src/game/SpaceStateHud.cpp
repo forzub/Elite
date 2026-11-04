@@ -1591,8 +1591,15 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     std::ostringstream line1;
     line1 << "J  СВОБОДНЫЙ ПОЛЁТ - скорость относительно тела притяжения: "
           << std::fixed << std::setprecision(0) << glm::length(relative) << " м/с отн. " << reference;
-    const char* thrust = motion.freeFlightThrust == 1 ? "ТЯГА ПОЛНАЯ" : motion.freeFlightThrust == 2 ? "ТОРМОЖЕНИЕ" : "ТЯГА ВЫКЛ";
-    std::string line2 = std::string(thrust) + "   HOME тяга  ·  END торможение  ·  INSERT выкл  ·  Ctrl+J выход";
+    std::string thrust = motion.freeFlightThrust == 1 ? "ТЯГА ПОЛНАЯ" : motion.freeFlightThrust == 2 ? "ТОРМОЖЕНИЕ" : "ТЯГА ВЫКЛ";
+    // the autopilot flies on the J drive, not on the latched main-engine command
+    if (motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase <= 4)
+    {
+        char drive[96];
+        std::snprintf(drive, sizeof drive, "J-ПРИВОД АВТОПИЛОТА %.1f g", motion.freeFlightAutopilotAccelMps2 / 9.81);
+        thrust = drive;
+    }
+    std::string line2 = thrust + "   HOME тяга  ·  END торможение  ·  INSERT выкл  ·  PgDn посадка  ·  Ctrl+J выход";
     if (motion.freeFlightCaptureRefusal == 1)
         line2 = "Нет доступной локальной системы отсчёта (хаб дальше зоны захвата)   " + line2;
     else if (motion.freeFlightCaptureRefusal == 2)
@@ -1610,6 +1617,36 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     text.textDrawPx(line1.str(), x + 20.0f, y + 22.0f, 17, glm::vec4(1.0f, 0.78f, 0.45f, 1.0f));
     text.textDrawPx(line2, x + 20.0f, y + 44.0f, 14,
                     motion.freeFlightCaptureRefusal ? glm::vec4(1.0f, 0.50f, 0.42f, 1.0f) : glm::vec4(0.86f, 0.80f, 0.70f, 0.95f));
+
+    // ---- J autopilot: target, phase, height, speed, drive acceleration
+    if (motion.freeFlightAutopilotPhase != 0)
+    {
+        std::string target = motion.freeFlightAutopilotTargetId;
+        if (const auto dot = target.rfind('.'); dot != std::string::npos)
+            target = target.substr(dot + 1);
+        static const char* phases[] = {"", "уход от тела", "перелёт", "подход", "посадка", "на поверхности"};
+        const int phase = std::min<int>(motion.freeFlightAutopilotPhase, 5);
+        char ap[256];
+        const double h = motion.freeFlightAutopilotRangeM;
+        if (phase == 5)
+            std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s", target.c_str(), phases[phase]);
+        else
+            std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s   ·   высота %s %s   ·   скорость %.*f %s   ·   ускорение %.1f g",
+                          target.c_str(), phases[phase],
+                          h > 1.0e6 ? std::to_string(static_cast<long long>(h / 1000.0)).c_str() : std::to_string(static_cast<long long>(h)).c_str(),
+                          h > 1.0e6 ? "км" : "м",
+                          motion.freeFlightAutopilotRelSpeedMps > 10000.0 ? 0 : 1,
+                          motion.freeFlightAutopilotRelSpeedMps > 10000.0 ? motion.freeFlightAutopilotRelSpeedMps / 1000.0
+                                                                          : motion.freeFlightAutopilotRelSpeedMps,
+                          motion.freeFlightAutopilotRelSpeedMps > 10000.0 ? "км/с" : "м/с",
+                          motion.freeFlightAutopilotAccelMps2 / 9.81);
+        const float aw = text.measureTextPx(ap, 16) + 40.0f;
+        const float ax = std::max(8.0f, (static_cast<float>(viewport.width) - aw) * 0.5f);
+        const float ay = y + 104.0f;
+        text.solidRectPx(ax, ay, aw, 30.0f, glm::vec4(0.01f, 0.05f, 0.08f, 0.85f));
+        text.solidRectPx(ax, ay, aw, 2.0f, glm::vec4(0.30f, 0.80f, 1.0f, 0.95f));
+        text.textDrawPx(ap, ax + 20.0f, ay + 21.0f, 16, glm::vec4(0.62f, 0.90f, 1.0f, 1.0f));
+    }
 
     // ---- orbit panel, lower right inside the HUD frame: 1st cosmic speed for this
     // body and altitude, speed, altitude / minimum safe altitude; colours warn
@@ -1668,6 +1705,8 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
             warning = "НА ПОВЕРХНОСТИ   HOME - взлёт";
         else if (motion.freeFlightDragMps2 > 9.81)
             warning = "ПЛОТНЫЕ СЛОИ АТМОСФЕРЫ: нагрев и удар по корпусу";
+        else if (motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase <= 4)
+            ;   // the autopilot flies the descent: its own panel tells the state
         else if (motion.freeFlightOrbitAltitudeM < 20000.0 && motion.freeFlightOrbitRadialMps < -1.0 &&
                  motion.freeFlightOrbitSpeedMps < 1500.0)
         {

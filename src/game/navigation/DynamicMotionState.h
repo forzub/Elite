@@ -129,6 +129,13 @@ struct DynamicMotionState
     std::int16_t freeFlightGroundMaterial = -1;
     float freeFlightGroundSlopeDeg = 0.0f;
     std::uint8_t freeFlightGroundFeature = 0;
+    // J autopilot (fly to a body and land): 0 off, 1 departure (clearing the body left),
+    // 2 transfer (exponential thrust ramp / braking), 3 approach, 4 descent, 5 down
+    std::uint8_t freeFlightAutopilotPhase = 0;
+    std::string freeFlightAutopilotTargetId;
+    double freeFlightAutopilotRangeM = 0.0;        // to the target surface
+    double freeFlightAutopilotRelSpeedMps = 0.0;   // relative to the target body
+    float freeFlightAutopilotAccelMps2 = 0.0f;     // the autopilot's acceleration this tick
 
     // True only while/after a real +/- Assisted trim. It lets the release edge
     // capture reached forward speed once without allowing keypad RCS or an

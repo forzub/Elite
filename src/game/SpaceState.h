@@ -208,6 +208,8 @@ public:
 
     void setSystemMapDetailMode();
     void requestOrbitalTransfer(const std::string& targetHubId);
+    // J: fly to a body and land (empty = the dominant body)
+    void requestFreeFlightAutopilot(const std::string& bodyId);
 
     bool composeHubMapSnapshot(
         int systemId,

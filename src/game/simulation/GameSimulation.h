@@ -209,6 +209,14 @@ public:
         bool insideDenseLayers = false;
         bool devDropDone = false;
         double heatingDamageSeconds = 0.0;
+        // J autopilot to a body (empty = off)
+        std::string autopilotTargetId;
+        std::string autopilotDepartureId;
+        int autopilotPhase = 0;
+        double autopilotSeconds = 0.0;
+        double autopilotLastLogSeconds = -1.0e30;
+        bool autopilotHaveLastCenter = false;
+        glm::dvec3 autopilotLastTargetCenter {0.0};
     };
     bool toggleFreeFlight(EntityId shipId);
     // J terrain contact: ground (terrain or sea surface) height above the body
@@ -226,6 +234,8 @@ public:
         std::function<bool(const std::string& bodyId, const glm::dvec3& worldDirection, TerrainSample& ground)>;
     void setTerrainHeightProvider(TerrainHeightProvider provider) { m_terrainHeight = std::move(provider); }
     void setFreeFlightThrust(EntityId shipId, int command);
+    // J autopilot: fly to a body and land on it (empty id = the dominant body); engage false cancels
+    void setFreeFlightAutopilot(EntityId shipId, const std::string& bodyId, bool engage);
 
     // Repair & Refit (F7): a preview / DEV apply of one module operation on
     // a ship owned by the commanding ship's owner (subject 0 = that ship).
@@ -587,6 +597,7 @@ private:
     std::unordered_map<EntityId, ActiveOrbitalTransfer> m_orbitalTransfers;
     std::unordered_map<EntityId, ActiveFreeFlight> m_freeFlights;
     TerrainHeightProvider m_terrainHeight;
+    void updateFreeFlightAutopilot(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
 
     // Compatibility alias used by the current single-system navigation and
     // local-client presentation paths. Multiplayer authority lives in

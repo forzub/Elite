@@ -712,7 +712,19 @@ void SpaceState::handleInput()
 
         // O: Orbital Transfer to the hub selected on the map (same as the context-menu row).
         if (Input::instance().isKeyPressedOnce(GLFW_KEY_O))
-            m_systemMapRenderer.requestOrbitalTransferToSelectedHub();
+        {
+            bool inFreeFlight = false;
+            if (m_client)
+            {
+                const auto ship = m_client->world().ships().find(m_playerId.value);
+                inFreeFlight = ship != m_client->world().ships().end() && ship->second.transform.motion.freeFlight;
+            }
+            const std::string body = m_systemMapRenderer.selectedBodyId();
+            if (inFreeFlight && m_systemMapRenderer.selectedHubId().empty() && !body.empty())
+                requestFreeFlightAutopilot(body);
+            else
+                m_systemMapRenderer.requestOrbitalTransferToSelectedHub();
+        }
         if (const auto target = m_systemMapRenderer.consumeOrbitalTransferRequest())
             requestOrbitalTransfer(*target);
 
@@ -870,6 +882,17 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         const auto it=m_client->world().ships().find(m_playerId.value);
         if(it!=m_client->world().ships().end() && it->second.transform.motion.freeFlight)
         {
+            if(Input::instance().isKeyPressedOnce(GLFW_KEY_PAGE_DOWN))
+            {
+                const auto& m=it->second.transform.motion;
+                const bool flying=m.freeFlightAutopilotPhase>=1 && m.freeFlightAutopilotPhase<=4;
+                game::network::ClientMessage msg;
+                ClientShipCommand command;
+                command.type=ClientShipCommand::FreeFlightAutopilot;
+                command.index=flying ? 0 : 1;
+                msg.payload=command;
+                m_client->sendMessage(msg);
+            }
             int thrust=-1;
             if(Input::instance().isKeyPressedOnce(GLFW_KEY_HOME)) thrust=1;
             else if(Input::instance().isKeyPressedOnce(GLFW_KEY_END)) thrust=2;
@@ -1356,6 +1379,27 @@ void SpaceState::update(float dt)
                     m_systemMapRenderer.devZoom(std::atof(arg("zoom:").c_str()));
                 else if (cmd.rfind("transfer:", 0) == 0)
                     requestOrbitalTransfer(arg("transfer:"));
+                else if (cmd.rfind("autopilot:", 0) == 0)
+                {
+                    static const std::pair<const char*, const char*> bodies[] = {
+                        {"moon", "system_0.Sol.Земля.Луна"}, {"earth", "system_0.Sol.Земля"}, {"mars", "system_0.Sol.Марс"},
+                        {"here", ""}};
+                    std::string id = arg("autopilot:");
+                    for (const auto& [k, v] : bodies)
+                        if (id == k)
+                            id = v;
+                    if (id == "off")
+                    {
+                        game::network::ClientMessage msg;
+                        ClientShipCommand command;
+                        command.type = ClientShipCommand::FreeFlightAutopilot;
+                        command.index = 0;
+                        msg.payload = command;
+                        m_client->sendMessage(msg);
+                    }
+                    else
+                        requestFreeFlightAutopilot(id);
+                }
                 // the panel list: open it / pick a row (the same action a click on the row makes)
                 else if (cmd == "listopen")
                     m_inSessionPresentationRenderer.devOpenObjectList();

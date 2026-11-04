@@ -121,6 +121,14 @@ struct DynamicMotionState
     double freeFlightDragMps2 = 0.0;
     std::uint32_t freeFlightImpactSerial = 0;
     std::uint8_t freeFlightSurfaceState = 0;
+    // terrain / sea surface height above the body radius under the ship
+    // (the renderer's surface field; 0 until it is loaded or far above it)
+    double freeFlightGroundHeightM = 0.0;
+    // the ground under the ship: material (SurfaceMaterial; 100 water; -1 unknown),
+    // slope and terrain feature (FeatureClass: 3 = impact crater, 2 = mountains ...)
+    std::int16_t freeFlightGroundMaterial = -1;
+    float freeFlightGroundSlopeDeg = 0.0f;
+    std::uint8_t freeFlightGroundFeature = 0;
 
     // True only while/after a real +/- Assisted trim. It lets the release edge
     // capture reached forward speed once without allowing keypad RCS or an

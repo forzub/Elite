@@ -146,6 +146,7 @@ target_include_directories(EliteNavigationGeometry PUBLIC
 # clouds): deterministic fields, cube-sphere patches, streaming. No GL.
 add_library(EliteCelestialSurface STATIC
     src/core/ThreadPriority.cpp
+    src/world/celestial/surface/BodySurfaceFieldLoader.cpp
     src/world/celestial/surface/SurfaceNoise.cpp
     src/world/celestial/surface/SurfaceField.cpp
     src/world/celestial/surface/BodySurfaceDescriptor.cpp
@@ -263,6 +264,7 @@ target_link_libraries(EliteNavigationWorldRuntime
     PUBLIC EliteNavigationGeometry
            EliteNavigationTrajectory
            EliteOrbitalTransfer
+           EliteCelestialSurface   # J terrain contact: the renderer's surface field on the server
 )
 
 # Route planning / Assisted path optimisation is a numeric kernel like the

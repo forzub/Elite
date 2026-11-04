@@ -1642,6 +1642,24 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
             text.textDrawPx("мин.: сопротивление 0.1 м/с2 · плотные: 1 g", px, py + 79.0f, 11, grey);
         }
 
+        // the ground under the ship (when low): material, slope, terrain feature
+        if (motion.freeFlightGroundMaterial >= 0 && motion.freeFlightOrbitAltitudeM < 15000.0)
+        {
+            static const char* materials[] = {"скала", "базальт", "реголит", "песок / барханы", "грунт", "растительность",
+                                              "лёд", "снег", "соль", "лава"};
+            const char* material = motion.freeFlightGroundMaterial == 100 ? "вода"
+                : motion.freeFlightGroundMaterial < 10 ? materials[motion.freeFlightGroundMaterial] : "?";
+            const char* feature = motion.freeFlightGroundFeature == 3 ? "  ·  кратер"
+                : motion.freeFlightGroundFeature == 2 ? "  ·  горы"
+                : motion.freeFlightGroundFeature == 4 ? "  ·  вулкан" : "";
+            char g[160];
+            std::snprintf(g, sizeof g, "под нами: %s, уклон %.0f°%s  ·  над рельефом %.0f м", material,
+                          motion.freeFlightGroundSlopeDeg, feature,
+                          motion.freeFlightOrbitAltitudeM - motion.freeFlightGroundHeightM);
+            text.textDrawPx(g, px, py + 97.0f, 13,
+                            motion.freeFlightGroundSlopeDeg > 25.0f || motion.freeFlightGroundMaterial == 9 ? red : white);
+        }
+
         // terminal warning: losing altitude toward the atmosphere / surface
         std::string warning;
         if (motion.freeFlightSurfaceState == 2)

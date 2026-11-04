@@ -1,3 +1,7 @@
+#include <thread>
+
+#include "src/game/system_map/PlanetBodyOrientation.h"
+#include "src/world/celestial/surface/BodySurfaceFieldLoader.h"
 #include "GameServer.h"
 #include "src/core/RuntimeTrace.h"
 #include "src/game/network/ReplicationSnapshotMerge.h"
@@ -34,10 +38,20 @@
 
 
 
+struct GameServer::TerrainField
+{
+    std::atomic<bool> ready {false};
+    world::celestial::surface::LoadedBodySurface loaded;
+};
+
 GameServer::GameServer(std::size_t bootstrapPlayerSlotCount)
     : m_diagnostics{}
     , m_simulation(m_diagnostics)
 {
+        m_simulation.setTerrainHeightProvider(
+            [this](const std::string& bodyId, const glm::dvec3& worldDirection, GameSimulation::TerrainSample& ground) {
+                return terrainHeight(bodyId, worldDirection, ground);
+            });
 
         m_universeClock.reset();
         m_universeClock.setTimeScale(
@@ -2280,4 +2294,75 @@ double GameServer::debugUniverseTimeScale() const
 double GameServer::debugUniverseTimeConfiguredScale() const
 {
     return m_universeClock.configuredTimeScale();
+}
+
+
+bool GameServer::terrainHeight(const std::string& bodyId, const glm::dvec3& worldDirection, GameSimulation::TerrainSample& ground)
+{
+    const auto* snapshot = celestialSnapshotForSystem(m_appliedSimulationContextSystemId);
+    if (!snapshot)
+        return false;
+    const world::celestial::CelestialBodyState* body = nullptr;
+    for (const auto& b : snapshot->bodies)
+        if (b.id == bodyId)
+            body = &b;
+    if (!body || body->sourcePath.empty())
+        return false;
+
+    auto& slot = m_terrainFields[bodyId];
+    if (!slot)
+    {
+        // the same source the flight renderer loads: curated maps or the generated body
+        slot = std::make_shared<TerrainField>();
+        world::celestial::surface::BodySurfaceSource source;
+        source.id = bodyId;
+        source.descriptorPath = body->sourcePath;
+        source.radiusM = body->radiusKm * 1000.0;
+        world::celestial::surface::findImportedBodyMaps(".", snapshot->systemName, body->sourcePath, source);
+        std::thread([field = slot, source] {
+            world::celestial::surface::loadBodySurface(source, field->loaded);
+            field->ready.store(true, std::memory_order_release);
+            std::cerr << "[Terrain] " << source.id << ": surface field "
+                      << (field->loaded.field ? "loaded" : "FAILED " + field->loaded.error)
+                      << (source.importedHeightPath.empty() ? " (procedural)" : " (curated height map)") << std::endl;
+        }).detach();
+        return false;
+    }
+    if (!slot->ready.load(std::memory_order_acquire) || !slot->loaded.field)
+        return false;
+
+    // world -> body-fixed direction with the renderer's orientation (prime, north, east)
+    const auto o = game::system_map::makePlanetTextureOrientation(
+        body->axialTiltDeg, body->axisNodeDeg, body->rotationPhaseRad, body->textureLongitudeOffsetDeg);
+    const glm::dvec3 d = glm::normalize(worldDirection);
+    const glm::dvec3 dirBody(glm::dot(d, glm::dvec3(o.prime)), glm::dot(d, glm::dvec3(o.north)), glm::dot(d, glm::dvec3(o.east)));
+    const auto& field = *slot->loaded.field;
+    const glm::dvec3 n = glm::normalize(dirBody);
+    const auto sample = field.sample(n, 30.0);
+    // the sea is solid too: its surface over a sea-floor height
+    const bool water = sample.water && sample.waterLevelM >= sample.heightM;
+    ground.heightM = water ? sample.waterLevelM : sample.heightM;
+    // slope from two neighbours ~60 m away
+    const double radius = std::max(1.0, field.referenceRadiusM());
+    const double step = 60.0 / radius;
+    glm::dvec3 t1 = glm::normalize(glm::cross(n, std::abs(n.y) < 0.9 ? glm::dvec3(0, 1, 0) : glm::dvec3(1, 0, 0)));
+    const glm::dvec3 t2 = glm::cross(n, t1);
+    const double h1 = field.sample(glm::normalize(n + t1 * step), 30.0).heightM;
+    const double h2 = field.sample(glm::normalize(n + t2 * step), 30.0).heightM;
+    const double gradient = std::sqrt((h1 - sample.heightM) * (h1 - sample.heightM) + (h2 - sample.heightM) * (h2 - sample.heightM)) / 60.0;
+    ground.slopeDeg = water ? 0.0 : glm::degrees(std::atan(gradient));
+    // the dominant material of the rendered surface there
+    if (water)
+        ground.material = GameSimulation::TerrainWater;
+    else
+    {
+        const auto look = field.appearance(sample, n, gradient);
+        int best = 0;
+        for (int k = 1; k < static_cast<int>(look.weights.size()); ++k)
+            if (look.weights[static_cast<std::size_t>(k)] > look.weights[static_cast<std::size_t>(best)])
+                best = k;
+        ground.material = best;
+    }
+    ground.feature = static_cast<int>(sample.featureClass);
+    return true;
 }

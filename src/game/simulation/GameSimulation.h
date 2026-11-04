@@ -1,4 +1,6 @@
 #pragma once
+
+#include <functional>
 #include "src/game/simulation/ShipRefitSnapshot.h"
 #include "src/game/navigation/orbital/OrbitalTransferPlanner.h"
 #include <cstdint>
@@ -209,6 +211,20 @@ public:
         double heatingDamageSeconds = 0.0;
     };
     bool toggleFreeFlight(EntityId shipId);
+    // J terrain contact: ground (terrain or sea surface) height above the body
+    // radius in a world direction from the body centre; false = unknown (the
+    // field is still loading) -> the reference sphere is used.
+    struct TerrainSample
+    {
+        double heightM = 0.0;     // terrain or sea surface above the body radius
+        int material = -1;        // world::celestial::surface::SurfaceMaterial, TerrainWater = sea / lake
+        double slopeDeg = 0.0;
+        int feature = 0;          // world::celestial::surface::FeatureClass (crater, mountain range, ...)
+    };
+    static constexpr int TerrainWater = 100;
+    using TerrainHeightProvider =
+        std::function<bool(const std::string& bodyId, const glm::dvec3& worldDirection, TerrainSample& ground)>;
+    void setTerrainHeightProvider(TerrainHeightProvider provider) { m_terrainHeight = std::move(provider); }
     void setFreeFlightThrust(EntityId shipId, int command);
 
     // Repair & Refit (F7): a preview / DEV apply of one module operation on
@@ -570,6 +586,7 @@ private:
     std::unordered_map<std::string, world::hubs::OrbitalHubRuntime> m_orbitalHubs;
     std::unordered_map<EntityId, ActiveOrbitalTransfer> m_orbitalTransfers;
     std::unordered_map<EntityId, ActiveFreeFlight> m_freeFlights;
+    TerrainHeightProvider m_terrainHeight;
 
     // Compatibility alias used by the current single-system navigation and
     // local-client presentation paths. Multiplayer authority lives in

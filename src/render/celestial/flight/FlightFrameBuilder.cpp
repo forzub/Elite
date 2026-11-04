@@ -1,3 +1,4 @@
+#include "src/world/celestial/surface/BodySurfaceFieldLoader.h"
 #include "src/render/celestial/flight/FlightFrameBuilder.h"
 
 #include <algorithm>
@@ -78,33 +79,14 @@ const FlightFrameBuilder::Imported& FlightFrameBuilder::imported(const std::stri
     if (im.checked)
         return im;
     im.checked = true;
-    const std::string sys = celestialAssetFolder(systemName);
-    const std::string body = celestialAssetFolder(bodyFolderFromSource(sourcePath));
-    if (sys.empty() || body.empty())
-        return im;
-    try
-    {
-    const fs::path source = fs::path(m_root) / "assets/source/celestial" / sys / body;
-    const fs::path generated = fs::path(m_root) / "assets/generated/celestial" / sys / body;
-    std::error_code ec;
-    for (const fs::path& p : {source / "albedo_source.jpg", source / "albedo_source.png",
-                              generated / "lod/global/albedo_2048.tga"})
-        if (fs::exists(p, ec))
-        {
-            im.albedo = p.generic_string();
-            break;
-        }
-    if (!im.albedo.empty() && fs::exists(source / "height_source.png", ec))
-    {
-        im.height = (source / "height_source.png").generic_string();
-        heightRange(body, im.rangeM, im.heightSigned, im.waterFromHeight);
-    }
-    }
-    catch (const std::exception&)
-    {
-        im = Imported {};
-        im.checked = true;
-    }
+    // the same lookup the server terrain contact uses (BodySurfaceFieldLoader)
+    world::celestial::surface::BodySurfaceSource found;
+    world::celestial::surface::findImportedBodyMaps(m_root, systemName, sourcePath, found);
+    im.albedo = found.importedAlbedoPath;
+    im.height = found.importedHeightPath;
+    im.rangeM = found.importedHeightRangeM;
+    im.heightSigned = found.importedHeightSigned;
+    im.waterFromHeight = found.importedWaterFromHeight;
     return im;
 }
 

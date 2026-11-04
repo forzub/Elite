@@ -381,29 +381,52 @@ void GameSimulation::updateFreeFlights(double dt)
                     f.insideDenseLayers = false;
                 }
 
+                // the real ground under the ship (terrain / sea of the rendered field) when low
+                TerrainSample terrain;
+                const bool terrainKnown = alt < 15000.0 && m_terrainHeight && m_terrainHeight(primary->id, rHat, terrain);
+                const double ground = terrainKnown ? terrain.heightM : 0.0;
+                motion.freeFlightGroundHeightM = ground;
+                motion.freeFlightGroundMaterial = static_cast<std::int16_t>(terrainKnown ? terrain.material : -1);
+                motion.freeFlightGroundSlopeDeg = static_cast<float>(terrainKnown ? terrain.slopeDeg : 0.0);
+                motion.freeFlightGroundFeature = static_cast<std::uint8_t>(terrainKnown ? terrain.feature : 0);
+
                 // solid ground and sea: contact by vertical speed (crush deceleration over ~2 m)
-                if (alt <= 0.0)
+                if (alt <= ground)
                 {
                     const double vVert = -glm::dot(v, rHat);
                     const double vHor = glm::length(v - rHat * glm::dot(v, rHat));
-                    const double crushG = vVert * vVert / (2.0 * 2.0) / 9.81;
+                    // the ground decides: soft regolith / sand / snow / soil give way (~3 m),
+                    // rock / basalt / ice ~1.5 m, water a splashdown (~4 m, but the hull takes
+                    // a beating), lava is lethal; a steep slope tips the ship over
+                    const int material = terrainKnown ? terrain.material : 0;
+                    double crushM = 1.5;
+                    if (material == TerrainWater) crushM = 4.0;
+                    else if (material == 2 || material == 3 || material == 4 || material == 7) crushM = 3.0;   // regolith, sand, soil, snow
+                    const double crushG = vVert * vVert / (2.0 * crushM) / 9.81;
+                    const double slope = terrainKnown ? terrain.slopeDeg : 0.0;
+                    const bool lava = material == 9;
                     ++motion.freeFlightImpactSerial;
-                    if (vVert < 8.0 && vHor < 40.0)
+                    if (!lava && vVert < 8.0 && vHor < 40.0 && slope < 25.0 && material != TerrainWater)
                         motion.freeFlightSurfaceState = 1;                 // landed
                     else
                     {
-                        const bool survivable = crushG < 30.0 && vHor < 150.0;
+                        const bool survivable = !lava && crushG < 30.0 && vHor < 150.0;
                         motion.freeFlightSurfaceState = survivable ? 1 : 2;
-                        const double hit = survivable ? 0.35 : 1.0;
+                        double hit = survivable ? 0.35 : 1.0;
+                        if (survivable && slope >= 25.0)
+                            hit = std::max(hit, 0.5);                      // tipped over on the slope
+                        if (survivable && material == TerrainWater)
+                            hit = std::max(hit, 0.25);
                         for (const auto& m : ship->core().descriptor().modules)
                             ship->core().moduleRuntime().addEquipmentDamage(
                                 m.moduleId, game::equipment::EquipmentDamageKind::Impact, hit);
                     }
                     std::cerr << "[FreeFlight] ship " << it->first.value << ": SURFACE CONTACT on " << primary->id
-                              << " vertical " << vVert << " m/s horizontal " << vHor << " m/s (" << crushG << " g) - "
+                              << " vertical " << vVert << " m/s horizontal " << vHor << " m/s (" << crushG << " g), ground material "
+                              << material << " slope " << slope << " deg feature " << (terrainKnown ? terrain.feature : 0) << " - "
                               << (motion.freeFlightSurfaceState == 1 ? "landed / survivable" : "CRASH") << std::endl;
                     // rest on the surface, moving with the body
-                    frame.originMeters = primary->centerMeters + rHat * primary->radiusMeters;
+                    frame.originMeters = primary->centerMeters + rHat * (primary->radiusMeters + ground);
                     frame.linearVelocityMps = bodyVelocity;
                     motion.freeFlightThrust = 0;
                     ship->core().refreshRuntimeState();
@@ -419,7 +442,7 @@ void GameSimulation::updateFreeFlights(double dt)
                     motion.freeFlightSurfaceState = 0;                     // lift off
                 else
                 {
-                    frame.originMeters = primary->centerMeters + rHat * (primary->radiusMeters + 1.0);
+                    frame.originMeters = primary->centerMeters + rHat * (primary->radiusMeters + motion.freeFlightGroundHeightM + 1.0);
                     frame.linearVelocityMps = bodyVelocity;
                 }
             }

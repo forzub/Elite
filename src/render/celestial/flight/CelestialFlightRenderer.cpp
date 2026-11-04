@@ -26,6 +26,7 @@
 
 #include "src/render/bitmap/stb_image.h"
 #include "src/render/celestial/flight/CelestialFlightShaders.h"
+#include "src/world/celestial/surface/BodySurfaceFieldLoader.h"
 #include "src/world/celestial/surface/BodySurfaceDescriptor.h"
 #include "src/world/celestial/surface/CloudWeatherField.h"
 #include "src/world/celestial/surface/GlobeBake.h"
@@ -764,116 +765,26 @@ struct CelestialFlightRenderer::Impl
         rt.load = result;
         const FlightBody copy = src;
         pool.push(0, [result, copy] {
-            std::string error;
-            if (!surface::loadGeneratedBody(copy.descriptorPath, result->descriptor, &error))
+            // one surface loader for the renderer and the server's terrain contact
+            surface::BodySurfaceSource source;
+            source.id = copy.id;
+            source.descriptorPath = copy.descriptorPath;
+            source.radiusM = copy.radiusM;
+            source.importedAlbedoPath = copy.importedAlbedoPath;
+            source.importedHeightPath = copy.importedHeightPath;
+            source.importedHeightRangeM = copy.importedHeightRangeM;
+            source.importedHeightSigned = copy.importedHeightSigned;
+            source.importedWaterFromHeight = copy.importedWaterFromHeight;
+            surface::LoadedBodySurface loaded;
+            if (!surface::loadBodySurface(source, loaded))
             {
-                result->error = error;
+                result->error = loaded.error;
                 result->done = true;
                 return;
             }
+            result->descriptor = std::move(loaded.descriptor);
+            result->field = loaded.field;
             auto& d = result->descriptor;
-            d.radiusM = copy.radiusM;
-            if (!copy.importedAlbedoPath.empty())
-            {
-                d.source = surface::SurfaceSourceKind::ImportedRealData;
-                auto maps = std::make_shared<surface::ImportedSurfaceMaps>();
-                std::vector<std::uint8_t> rgb;
-                int w = 0, h = 0;
-                if (loadImage(copy.importedAlbedoPath, 3, rgb, w, h))
-                {
-                    maps->width = w;
-                    maps->height = h;
-                    maps->albedo.resize(static_cast<std::size_t>(w) * h);
-                    for (std::size_t i = 0; i < maps->albedo.size(); ++i)
-                        maps->albedo[i] = glm::pow(glm::vec3(rgb[i * 3], rgb[i * 3 + 1], rgb[i * 3 + 2]) / 255.0f,
-                                                   glm::vec3(2.2f));
-                }
-                std::vector<std::uint8_t> grey;
-                int hw = 0, hh = 0;
-                if (maps->width > 0 && !copy.importedHeightPath.empty() &&
-                    loadImage(copy.importedHeightPath, 1, grey, hw, hh))
-                {
-                    // Height grey on the albedo grid (nearest).
-                    const int w = maps->width, h = maps->height;
-                    std::vector<std::uint8_t> g(maps->albedo.size());
-                    for (int y = 0; y < h; ++y)
-                        for (int x = 0; x < w; ++x)
-                            g[static_cast<std::size_t>(y) * w + x] =
-                                grey[static_cast<std::size_t>(y * hh / h) * hw + static_cast<std::size_t>(x * hw / w)];
-                    if (copy.importedWaterFromHeight)
-                    {
-                        // Earth: the sea is the ocean colour of the albedo
-                        // (the DEM has no zero sea). The curated maps do not
-                        // share a longitude origin: the DEM is aligned by the
-                        // column shift whose low half agrees best with the
-                        // ocean.
-                        const auto oceanColour = [](const glm::vec3& c) {
-                            return c.b > 1.4f * c.r && c.b > 1.1f * c.g && (c.r + c.g + c.b) < 0.6f;
-                        };
-                        std::vector<std::uint8_t> sorted(g);
-                        std::nth_element(sorted.begin(), sorted.begin() + sorted.size() / 2, sorted.end());
-                        const std::uint8_t median = sorted[sorted.size() / 2];
-                        int bestShift = 0;
-                        long bestAgree = -1;
-                        for (int shift : {0, w / 4, w / 2, 3 * w / 4})
-                        {
-                            long agree = 0;
-                            for (int y = 0; y < h; y += 4)
-                                for (int x = 0; x < w; x += 4)
-                                {
-                                    const std::size_t ai = static_cast<std::size_t>(y) * w + x;
-                                    const std::size_t gi = static_cast<std::size_t>(y) * w + (x + shift) % w;
-                                    agree += (g[gi] <= median) == oceanColour(maps->albedo[ai]) ? 1 : 0;
-                                }
-                            if (agree > bestAgree)
-                            {
-                                bestAgree = agree;
-                                bestShift = shift;
-                            }
-                        }
-                        std::vector<std::uint8_t> shifted(g.size());
-                        for (int y = 0; y < h; ++y)
-                            for (int x = 0; x < w; ++x)
-                                shifted[static_cast<std::size_t>(y) * w + x] =
-                                    g[static_cast<std::size_t>(y) * w + (x + bestShift) % w];
-                        // Sea level grey: the low end of the land texels.
-                        std::vector<std::uint8_t> land;
-                        maps->water.assign(g.size(), 0);
-                        for (std::size_t i = 0; i < g.size(); ++i)
-                        {
-                            maps->water[i] = oceanColour(maps->albedo[i]) ? 1 : 0;
-                            if (!maps->water[i])
-                                land.push_back(shifted[i]);
-                        }
-                        std::uint8_t sea = 0;
-                        if (!land.empty())
-                        {
-                            std::nth_element(land.begin(), land.begin() + land.size() / 20, land.end());
-                            sea = land[land.size() / 20];
-                        }
-                        std::fprintf(stderr, "[CelestialFlight] %s: curated sea %.2f of the surface, DEM shift %d, sea grey %d\n",
-                                     copy.id.c_str(), 1.0 - static_cast<double>(land.size()) / g.size(), bestShift,
-                                     static_cast<int>(sea));
-                        maps->heightM.resize(g.size());
-                        for (std::size_t i = 0; i < g.size(); ++i)
-                            maps->heightM[i] = maps->water[i]
-                                ? -3500.0f
-                                : static_cast<float>(2.0 + std::max(0, shifted[i] - sea) / std::max(1.0, 255.0 - sea) *
-                                                                copy.importedHeightRangeM);
-                    }
-                    else
-                    {
-                        surface::ImportedSurfaceMaps heights;
-                        surface::importedHeightsFromGrey(g.data(), w, h, copy.importedHeightRangeM,
-                                                         copy.importedHeightSigned, heights);
-                        maps->heightM = std::move(heights.heightM);
-                    }
-                }
-                if (maps->width > 0)
-                    result->field = std::make_shared<surface::ImportedSurfaceField>(d, maps);
-            }
-            if (!result->field)
-                result->field = std::shared_ptr<surface::SurfaceField>(surface::makeSurfaceField(d).release());
             // Gas giants: the bands ARE the clouds (no weather shell over them).
             if (copy.kind != FlightBodyKind::GasGiant && d.surfacePressurePa > 50.0 && d.cloudPotential > 0.0)
             {

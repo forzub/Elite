@@ -1,6 +1,9 @@
 #pragma once
 
 #include <unordered_map>
+#include <atomic>
+#include <memory>
+#include <mutex>
 #include <deque>
 #include <cstddef>
 #include <cstdint>
@@ -308,6 +311,12 @@ private:
     world::time::UniverseClock m_universeClock;
     double m_lastUniverseTimeSeconds = 0.0;
     int m_appliedSimulationContextSystemId = -1;
+
+    // J terrain contact: the surface field of a body (the renderer's loader),
+    // loaded in the background on the first low pass, then sampled per tick.
+    struct TerrainField;
+    std::unordered_map<std::string, std::shared_ptr<TerrainField>> m_terrainFields;
+    bool terrainHeight(const std::string& bodyId, const glm::dvec3& worldDirection, GameSimulation::TerrainSample& ground);
     uint32_t m_snapshotInterval = 3;
     SimulationSnapshot m_lastSnapshot;
 

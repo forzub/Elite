@@ -265,6 +265,16 @@ target_link_libraries(EliteNavigationWorldRuntime
            EliteOrbitalTransfer
 )
 
+# Route planning / Assisted path optimisation is a numeric kernel like the
+# surface field: at -O0 an Assisted docking route took 45-86 s in Debug
+# (worker thread, the pilot waits). Optimised in every configuration; on
+# x86-64 without FMA the results are the same as -O0.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(EliteNavigationWorldRuntime PRIVATE -O2)
+    target_compile_options(EliteNavigationGeometry PRIVATE -O2)
+    target_compile_options(EliteNavigationTrajectory PRIVATE -O2)
+endif()
+
 # BITE is a pure diagnostic library. Its public API accepts compact DTOs and
 # returns diagnostic state/text; it has no dependency on ship/module/runtime,
 # rendering, networking or damage implementation.

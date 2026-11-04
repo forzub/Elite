@@ -50,7 +50,17 @@ inline FrameState& state()
 inline std::FILE* hitchLog()
 {
     static std::FILE* f = [] {
-        std::FILE* out = std::fopen("D:/tmp/elite_hitches.log", "w");
+        // appended per session (a later start must not erase the session with
+        // the problem); started over beyond 4 MB
+        const char* path = "D:/tmp/elite_hitches.log";
+        long size = 0;
+        if (std::FILE* probe = std::fopen(path, "rb"))
+        {
+            std::fseek(probe, 0, SEEK_END);
+            size = std::ftell(probe);
+            std::fclose(probe);
+        }
+        std::FILE* out = std::fopen(path, size > 4 * 1024 * 1024 ? "w" : "a");
         if (out)
         {
             const std::time_t t = std::time(nullptr);

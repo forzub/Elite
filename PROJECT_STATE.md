@@ -2546,6 +2546,24 @@ Restore point: tag restore/pre-order-2026-11-04-g.
   radius on the +5 km highlands misled). Landing glow: Elite terrain horizon rim faint, relief lines brighter,
   backdrop-globe outline faint low over terrain (user request). Not human-accepted.
 
+### User order 2026-11-04 m (landing autopilot module, planner, terrain for landing)
+- New module src/game/navigation/landing/LandingAutopilot.{h,cpp} (pure guidance, reusable): Pad mode (designated
+  body-fixed spot) and Wild mode (ring search for a flat spot of the hull's size: footprint slope <= 6 deg, height
+  spread, no water / lava). J autopilot plans the site AHEAD (from 200 000 km) and aims the approach above it; no
+  site -> no landing: circular orbit, wider search under the ground track every 3 s. Transit height grows with
+  speed; last 50 m straight down. Commands: autopilot:moon (wild), autopilot:moon@pad:<lat>,<lon>.
+- Live (D:/tmp/elite_landing): wild - site chosen at 190 312 km, 150 m from the approach point, slope 5.2 deg,
+  roughness 2.7 m; touchdown 1.63 m/s vertical, 0.19 m/s horizontal against the ground. Pad 3N 4E - aimed from
+  190 324 km; touchdown 1.57 / 0.21 m/s (the pad itself 11.5 deg: a random spot, pads are not graded).
+- Root causes fixed on the way: hovering at 2 km forever (velocity against the centre, the site turns ~4.4 m/s);
+  landed ship slid and sank (rest was world-fixed while the Moon turned; now body-fixed: altitude constant over
+  30 s); touchdown horizontal speed against the centre (Earth equator would crash); Elite outline line through
+  the HUD cross over the local terrain (removed).
+- My script bug on the way: a patch truncated LandingAutopilot.cpp (empty object, link error) - rewritten.
+- QUEUED (user idea, not started): terrain generation with landing-friendly areas (more on plains / deserts,
+  fewer in mountains) and a flat-with-features type: cracks, canyons, scarps (sharp cliffs), standing rocks /
+  boulders. Plus the believable Moon and the flat System Map with sectors.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

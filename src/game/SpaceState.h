@@ -337,9 +337,9 @@ private:
     //  ===========       HUD       ==========
     // =======================================
     RadarWidgetBase* m_radarWidget = nullptr;
-    // Cockpit radar scope scale (metres): automatic 1-2-5 steps up to the
-    // scene around the ship; 0 = not chosen yet.
+    // Cockpit radar scope scale (metres): R-selected range, 2 000 km forward in J.
     double m_radarDisplayRangeMeters = 0.0;
+    int m_radarRangeIndex = 0;   // 20 / 50 / 150 km (R)
     float m_radarSweepDegPerSec = 0.0f;
     SceneRenderer m_sceneRenderer;
     PreparedScene m_preparedScene;

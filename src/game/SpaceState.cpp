@@ -2587,47 +2587,39 @@ m_playerView->updateCockpitStateFromSnapshot(
             // the scope expects). A destroyed / unpowered radar shows nothing.
             const auto& sensors = m_client->navigationSensors();
             const bool radarOn = sensors.radarInstalled && sensors.radarOperational;
+            // Scope modes: around the ship at 20 / 50 / 150 km (R cycles);
+            // in J (free / global flight) a forward sector along the hull axis
+            // out to 2 000 km - early warning of what lies on the course.
+            static constexpr double ScopeRangesMeters[] = {20000.0, 50000.0, 150000.0};
+            constexpr double ForwardRangeMeters = 2.0e6;
+            constexpr double ForwardHalfAngleCos = 0.866;   // 30 deg half-angle
+            const bool ctrlHeld =
+                Input::instance().isKeyPressed(GLFW_KEY_LEFT_CONTROL) ||
+                Input::instance().isKeyPressed(GLFW_KEY_RIGHT_CONTROL);
+            if (!ctrlHeld && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
+                m_radarRangeIndex = (m_radarRangeIndex + 1) % 3;
+            const bool forwardScope = ship.transform.motion.freeFlight;
+            m_radarDisplayRangeMeters = forwardScope ? ForwardRangeMeters : ScopeRangesMeters[m_radarRangeIndex];
+
             std::vector<RadarContactView> views;
-            std::vector<double> ranges;
             if (radarOn && sensors.hasRadarScan)
             {
                 views.reserve(sensors.latestRadarScan.tracks.size());
                 for (const auto& t : sensors.latestRadarScan.tracks)
                 {
+                    if (forwardScope)
+                    {
+                        // sensor frame: -Z is the nose
+                        const double r = std::max(1.0, t.rangeMeters);
+                        if (t.rangeMeters > ForwardRangeMeters || -t.relativePositionMeters.z / r < ForwardHalfAngleCos)
+                            continue;
+                    }
                     views.push_back({
                         EntityId {static_cast<uint32_t>(t.trackId.value)},
                         glm::vec3(t.relativePositionMeters),
                         static_cast<int>(t.kind)
                     });
-                    ranges.push_back(t.rangeMeters);
                 }
-            }
-
-            // scale: the smallest 1-2-5 step holding every track of the local
-            // scene (within 30 km - a hub with its traffic), else the nearest
-            // one; farther tracks sit on the rim. Zoom out at once, zoom in
-            // only when the scene fits 2.5x smaller.
-            std::sort(ranges.begin(), ranges.end());
-            // no client-side cap: the scan already holds only what the
-            // installed radar (server sensor) sees; the client descriptor's
-            // radar range is a presentation preset, not the sensor range
-            const double maxRange = 1.0e7;
-            if (!ranges.empty() || m_radarDisplayRangeMeters <= 0.0)
-            {
-                double local = 0.0;
-                for (const double r : ranges)
-                    if (r <= 30000.0)
-                        local = r;
-                const double need = ranges.empty()
-                    ? 10000.0
-                    : (local > 0.0 ? local : ranges.front()) * 1.1;
-                double step = 1000.0;
-                for (int k = 0; step < need && step < maxRange; ++k)
-                    step *= (k % 3 == 1) ? 2.5 : 2.0;   // 1, 2, 5, 10, 20, 50 ... km
-                step = std::min(step, maxRange);
-                if (m_radarDisplayRangeMeters <= 0.0 || step > m_radarDisplayRangeMeters ||
-                    step * 2.5 <= m_radarDisplayRangeMeters)
-                    m_radarDisplayRangeMeters = step;
             }
             m_radarWidget->configureFromDesc(
                 m_radarSweepDegPerSec,
@@ -2661,7 +2653,7 @@ m_playerView->updateCockpitStateFromSnapshot(
                 else if (!radarOn)
                     std::snprintf(text, sizeof text, "RADAR: OFF (no power / damaged)");
                 else
-                    std::snprintf(text, sizeof text, "RADAR %.0f km  |  %zu tracks",
+                    std::snprintf(text, sizeof text, forwardScope ? "RADAR FWD %.0f km  |  %zu tracks" : "RADAR %.0f km  |  %zu tracks  [R]",
                                   m_radarDisplayRangeMeters / 1000.0, views.size());
                 label->label = text;
             }

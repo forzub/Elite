@@ -151,6 +151,42 @@ void RadarPPIWidget::update(float dt)
     }
 
     // ===== ВАЖНО: ОБНОВЛЯЕМ ЭФФЕКТЫ =====
+    // Episodic interference: now and then (45-120 s) one or two of the LCD
+    // glitches (lines, noise, tearing, interference, retention) run for 3-8 s.
+    if (auto* lcd = dynamic_cast<LCDEffect*>(m_effect.get()))
+    {
+        m_interferenceTimer -= dt;
+        if (m_interferenceTimer <= 0.0f)
+        {
+            const auto rnd = [] { return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX); };
+            lcd->enableCableLines(false);
+            lcd->enableImageRetention(false);
+            lcd->enableDigitalNoise(false);
+            lcd->enableTearing(false);
+            lcd->enableInterference(false);
+            if (m_interferenceOn)
+            {
+                m_interferenceOn = false;
+                m_interferenceTimer = 45.0f + 75.0f * rnd();
+            }
+            else
+            {
+                m_interferenceOn = true;
+                m_interferenceTimer = 3.0f + 5.0f * rnd();
+                const int kinds = 1 + static_cast<int>(rnd() * 1.999f);
+                for (int k = 0; k < kinds; ++k)
+                    switch (static_cast<int>(rnd() * 4.999f))
+                    {
+                    case 0: lcd->enableCableLines(true); break;
+                    case 1: lcd->enableDigitalNoise(true); break;
+                    case 2: lcd->enableTearing(true); break;
+                    case 3: lcd->enableInterference(true); break;
+                    default: lcd->enableImageRetention(true); break;
+                    }
+            }
+        }
+    }
+
     if (m_effect) {
         m_effect->update(dt);
     }

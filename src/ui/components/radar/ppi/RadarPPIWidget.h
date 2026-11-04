@@ -93,6 +93,9 @@ private:
     float m_time = 0.0f;
     // last content redraw into the render target (time, size)
     float m_contentTime = -1000.0f;
+    // episodic interference: time to the next switch, episode running
+    float m_interferenceTimer = 30.0f;
+    bool m_interferenceOn = false;
     int m_contentW = 0;
     int m_contentH = 0;
     float m_sweepWidthDeg = 3.0f;

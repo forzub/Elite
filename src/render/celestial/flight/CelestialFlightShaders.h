@@ -358,6 +358,14 @@ void main()
         emission = n.a;
         nr = normalize(uBodyToWorld * (n.xyz * 2.0 - 1.0));
     }
+    else if (uStyle == 0)
+    {
+        // Elite Classic before the first globe bake: no coast / contour data.
+        // Height 0 lies exactly on a contour level, so the contour mask (zero
+        // derivative) painted the whole disc grey ("white planet" for ~1 s
+        // at start): treat it as open sea - only the rim and the lattice.
+        coastKm = -1.0e6;
+    }
     // Micro relief below the texel (screen-footprint band limited) - land
     // only. The sea from the globe distance is a smooth surface: waves
     // (tens of metres) are far below a pixel there.

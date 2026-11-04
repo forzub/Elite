@@ -756,9 +756,7 @@ namespace
                 return;
 
             const auto& gpuAssembly =
-                render::geometry::AssemblyGpuLibrary::get(
-                    owner.assembly->typeId
-                );
+                render::geometry::AssemblyGpuLibrary::get(*owner.assembly);
 
             for (const auto& fragment : owner.detachedFragments)
             {
@@ -1246,9 +1244,7 @@ void SceneRenderer::prepareScene(
             }
 
             const auto& gpuAssembly =
-                render::geometry::AssemblyGpuLibrary::get(
-                    ship.assembly->typeId
-                );
+                render::geometry::AssemblyGpuLibrary::get(*ship.assembly);
 
             world::coordinates::WorldPosition shipRenderWorldPosition =
                 ship.renderTransform.worldPosition;
@@ -1354,9 +1350,7 @@ void SceneRenderer::prepareScene(
                 continue;
 
             const auto& gpuAssembly =
-                render::geometry::AssemblyGpuLibrary::get(
-                    obj.assembly->typeId
-                );
+                render::geometry::AssemblyGpuLibrary::get(*obj.assembly);
 
             world::coordinates::WorldPosition objectRenderWorldPosition =
                 obj.renderWorldPosition;
@@ -1515,9 +1509,7 @@ void SceneRenderer::prepareScene(
             ++traceShellsWithAssembly;
 
             const auto& gpuAssembly =
-                render::geometry::AssemblyGpuLibrary::get(
-                    ship.assembly->typeId
-                );
+                render::geometry::AssemblyGpuLibrary::get(*ship.assembly);
 
             const glm::mat4 shipModel =
                 world::coordinates::makeRenderModelMatrix(
@@ -1609,9 +1601,7 @@ void SceneRenderer::prepareScene(
                 continue;
 
             const auto& gpuAssembly =
-                render::geometry::AssemblyGpuLibrary::get(
-                    ship.assembly->typeId
-                );
+                render::geometry::AssemblyGpuLibrary::get(*ship.assembly);
 
             glm::mat4 shipModel =
                 world::coordinates::makeRenderModelMatrix(
@@ -2219,9 +2209,7 @@ profileAfterSetupMs = renderProfileNowMs();
         if (ship.assembly)
         {
             const auto& gpuAssembly =
-                render::geometry::AssemblyGpuLibrary::get(
-                    ship.assembly->typeId
-                );
+                render::geometry::AssemblyGpuLibrary::get(*ship.assembly);
 
             bool visible = frustum.sphereVisible(
                 ship.assembly->boundCenter,
@@ -2977,9 +2965,7 @@ if (policy.drawObjects)
         if (obj.assembly)
         {
             const auto& gpuAssembly =
-                render::geometry::AssemblyGpuLibrary::get(
-                    obj.assembly->typeId
-                );
+                render::geometry::AssemblyGpuLibrary::get(*obj.assembly);
 
         const glm::vec3 objectLocalPosition =
             world::coordinates::toRenderLocal(
@@ -4361,9 +4347,7 @@ void SceneRenderer::renderVisualDrones(
             continue;
 
         const auto& gpuAssembly =
-            render::geometry::AssemblyGpuLibrary::get(
-                drone.assembly->typeId
-            );
+            render::geometry::AssemblyGpuLibrary::get(*drone.assembly);
 
         glm::mat4 droneModel =
             world::coordinates::makeRenderModelMatrix(

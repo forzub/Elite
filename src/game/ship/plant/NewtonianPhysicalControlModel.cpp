@@ -4,22 +4,22 @@
 
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/plant/ShipPhysicalAuthorityMatrix.h"
-#include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
+#include "src/game/ship/plant/CanonicalActuatorLayouts.h"
 
 namespace game::ship::plant
 {
 namespace
 {
 
-// Native engine/RCS installation points are authored once in Cobra presets.
+// Slot structure of the six fixed models (plant::canonical).
 static const auto& NewtonianI =
-    game::ship::presets::cobra::propulsionSlots(
+    canonical::propulsionSlots(
         PhysicalControlModelId::NewtonianI);
 static const auto& NewtonianY =
-    game::ship::presets::cobra::propulsionSlots(
+    canonical::propulsionSlots(
         PhysicalControlModelId::NewtonianY);
 static const auto& NewtonianX =
-    game::ship::presets::cobra::propulsionSlots(
+    canonical::propulsionSlots(
         PhysicalControlModelId::NewtonianX);
 
 AuthorityContributionRow newtonianMainContributionRow(

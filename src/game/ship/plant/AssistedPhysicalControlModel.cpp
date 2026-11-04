@@ -4,22 +4,22 @@
 
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/plant/ShipPhysicalAuthorityMatrix.h"
-#include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
+#include "src/game/ship/plant/CanonicalActuatorLayouts.h"
 
 namespace game::ship::plant
 {
 namespace
 {
 
-// Native engine/RCS installation points are authored once in Cobra presets.
+// Slot structure of the six fixed models (plant::canonical).
 static const auto& AssistedI =
-    game::ship::presets::cobra::propulsionSlots(
+    canonical::propulsionSlots(
         PhysicalControlModelId::AssistedI);
 static const auto& AssistedY =
-    game::ship::presets::cobra::propulsionSlots(
+    canonical::propulsionSlots(
         PhysicalControlModelId::AssistedY);
 static const auto& AssistedX =
-    game::ship::presets::cobra::propulsionSlots(
+    canonical::propulsionSlots(
         PhysicalControlModelId::AssistedX);
 
 AuthorityContributionRow assistedContributionRow(

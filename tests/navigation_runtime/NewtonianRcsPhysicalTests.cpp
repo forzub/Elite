@@ -1,3 +1,4 @@
+#include "src/game/ship/presets/cobra/CobraNewtonianRcsNozzles.h"
 #include "src/game/equipment/rcs/presets/CobraArgonRcsTank.h"
 #include "src/game/ship/plant/NewtonianRcsAllocator.h"
 #include "src/game/equipment/engine/ManoeuvreEnginePreset.h"

@@ -15,13 +15,13 @@ namespace
 
     std::unordered_map<std::uint16_t, ResourcePtr> g_cache;
 
-    ObjectAssemblyGpuResources buildGpuResources(ObjectType typeId)
-    {
-        const auto& assembly =
-            game::ship::geometry::AssemblyMeshLibrary::get(typeId);
+    std::unordered_map<const game::ship::geometry::ObjectAssembly*, ResourcePtr> g_byAssembly;
 
+    ObjectAssemblyGpuResources buildGpuResources(
+        const game::ship::geometry::ObjectAssembly& assembly)
+    {
         ObjectAssemblyGpuResources gpu;
-        gpu.typeId = typeId;
+        gpu.typeId = assembly.typeId;
         gpu.modules.resize(assembly.modules.size());
 
         /*
@@ -67,7 +67,8 @@ const ObjectAssemblyGpuResources& AssemblyGpuLibrary::get(ObjectType typeId)
 
     auto resources =
         std::make_unique<ObjectAssemblyGpuResources>(
-            buildGpuResources(typeId)
+            buildGpuResources(
+                game::ship::geometry::AssemblyMeshLibrary::get(typeId))
         );
 
     const auto [insertedIt, inserted] =
@@ -79,6 +80,22 @@ const ObjectAssemblyGpuResources& AssemblyGpuLibrary::get(ObjectType typeId)
         );
 
     return *insertedIt->second;
+}
+
+const ObjectAssemblyGpuResources& AssemblyGpuLibrary::get(
+    const game::ship::geometry::ObjectAssembly& assembly)
+{
+    // Registered hull types keep their typeId cache; a catalog ship's
+    // procedural assembly (typeId None) is keyed by its never-destroyed
+    // CPU assembly.
+    if (assembly.typeId != ObjectType::None)
+        return get(assembly.typeId);
+    const auto it = g_byAssembly.find(&assembly);
+    if (it != g_byAssembly.end())
+        return *it->second;
+    auto resources =
+        std::make_unique<ObjectAssemblyGpuResources>(buildGpuResources(assembly));
+    return *g_byAssembly.emplace(&assembly, std::move(resources)).first->second;
 }
 
 } // namespace render::geometry

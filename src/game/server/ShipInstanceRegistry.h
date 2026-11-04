@@ -18,6 +18,8 @@ struct ShipInstanceRecord
     ShipInstanceId instanceId = 0;
     EntityId materializedEntityId {0};
     ObjectType typeId = ObjectType::None;
+    // Design passport id of a catalog ship (its stable model identity); empty for a legacy hull.
+    std::string catalogShipId;
     ShipRoleType roleType = ShipRoleType::Unknown;
     ActorId ownerActor = 0;
     std::string name;

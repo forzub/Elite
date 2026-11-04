@@ -176,7 +176,7 @@ inline std::string detailShipDisplayName(
         return game::diagnostics::hubMotionLabLabel(ship.motionLabKind);
     }
 
-    const auto& descriptor = ShipDescriptorRegistry::get(ship.typeId);
+    const auto& descriptor = ShipDescriptorRegistry::resolve(ship.typeId, ship.catalogShipId);
     return descriptor.identity.shipName.empty()
         ? "Ship " + std::to_string(ship.id.value)
         : descriptor.identity.shipName;
@@ -206,7 +206,7 @@ inline world::celestial::LocalSceneObject makeDetailShipObject(
         identifyLocalPlayer,
         localControlledEntityId
     );
-    const auto& descriptor = ShipDescriptorRegistry::get(ship.typeId);
+    const auto& descriptor = ShipDescriptorRegistry::resolve(ship.typeId, ship.catalogShipId);
     object.typeName = descriptor.identity.shipType.empty()
         ? "Ship"
         : descriptor.identity.shipType;

@@ -469,6 +469,10 @@ private:
 
     void initializeShipStateFlightTest();
     void updateShipStateFlightTest();
+    // DEV: ELITE_CATALOG_SHIPS=all | <passport id>[,<passport id>...] spawns
+    // catalog ships (real ShipCore from their design passports, primitive
+    // placeholder geometry) in a row ahead of the player.
+    void updateCatalogShipLineup();
     bool isShipStateFlightTestShip(EntityId id) const noexcept;
     void applyPhysicalCorridorHotStart();
 
@@ -568,6 +572,8 @@ private:
 
     // State/physics proving actor. It changes construction and degradation
     // continuously without resetting kinematics.
+    std::vector<std::string> m_catalogLineupRequest;
+    bool m_catalogLineupSpawned = false;
     bool m_shipStateFlightTestRequested = false;
     EntityId m_shipStateFlightTestShipId {0};
     double m_shipStateFlightTestStartSeconds = 0.0;

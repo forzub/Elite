@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -53,4 +54,8 @@ struct ShipLoadoutDefinition
     std::vector<ShipEngineReactorGroupDefinition> engineReactorGroups;
     // Individually installed fixed-direction RCS nozzles; empty if none.
     std::vector<ShipRcsNozzleMountDefinition> rcsNozzles;
+
+    // Key of this loadout's registered actuator topology (positions of its
+    // slots and nozzles); set by registerLoadoutTopology(). 0 = canonical.
+    std::uint64_t topologyKey = 0;
 };

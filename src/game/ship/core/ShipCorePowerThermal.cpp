@@ -331,8 +331,8 @@ void ShipCore::updateSystems(float dt)
         m_state.actuators.source ==
             game::ship::state::ShipActuatorStateSource::ModuleRuntime)
     {
-        const auto& nozzles=
-            game::ship::presets::cobra::newtonianRcsNozzles();
+        const auto nozzles=game::ship::rcsNozzleIds(
+            *m_desc,m_state.construction.physicalControlModel);
         const double coolantK=m_propulsionThermal.getTemperature();
         bool changed=false;
         for(std::size_t i=0;i<nozzles.size();++i)

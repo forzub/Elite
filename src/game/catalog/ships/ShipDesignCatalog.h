@@ -48,7 +48,14 @@ struct ShipDesignInstalledItem
     std::string productId;
     std::string category;
     int quantity = 0;
-    std::vector<glm::dvec3> positions;   // normalized body positions (+X right, +Y up, +Z aft)
+    std::vector<glm::dvec3> positions;   // normalized mount positions (+X right, +Y up, +Z aft)
+    std::vector<std::string> slots;      // runtime slot / generator group / RCS node id per position (actuators only)
+    struct Block
+    {
+        glm::dvec3 centerMeters {0.0};    // body frame, metres
+        glm::dvec3 sizeMeters {0.0};      // full extents x, y, z
+    };
+    std::vector<Block> blocks;           // primitive box per position (a bulk position holds its share of the units)
 };
 
 struct ShipDesignSchematicNode
@@ -101,6 +108,10 @@ struct ShipDesign
     double radiatorEmissivity = 0.9;
     double coolantCapacityMW = 0.0;
     std::string radiatorMaterial;
+    double structureTonnes = 0.0;   // hull structure (dry - equipment)
+    double fluidsTonnes = 0.0;      // tank capacity (jump charge, pellets, RCS gas, cargo fluids)
+    double consumablesTonnes = 0.0; // life-support consumables for the endurance
+    double grossTonnes = 0.0;
     std::vector<ShipDesignInstalledItem> installed;
     std::vector<ShipDesignSchematicNode> schematicNodes;
     std::vector<ShipDesignSchematicEdge> schematicEdges;
@@ -112,6 +123,14 @@ struct ShipDesign
             if (item.category == category)
                 return &item;
         return nullptr;
+    }
+    [[nodiscard]] std::vector<const ShipDesignInstalledItem*> allOf(const std::string& category) const
+    {
+        std::vector<const ShipDesignInstalledItem*> out;
+        for (const auto& item : installed)
+            if (item.category == category)
+                out.push_back(&item);
+        return out;
     }
     [[nodiscard]] int countOf(const std::string& category) const
     {
@@ -204,6 +223,11 @@ public:
             s.radiatorEmissivity = th.value("radiator_eps", 0.9);
             s.coolantCapacityMW = th.value("coolant_capacity_mw", 0.0);
             s.radiatorMaterial = th.value("radiator_material", std::string());
+            const auto& ms = j.value("mass", nlohmann::json::object());
+            s.structureTonnes = ms.value("structure_t", 0.0);
+            s.fluidsTonnes = ms.value("fluids_t", 0.0);
+            s.consumablesTonnes = ms.value("consumables_t", 0.0);
+            s.grossTonnes = ms.value("gross_t", 0.0);
             for (const auto& it : j.value("installed", nlohmann::json::array()))
             {
                 ShipDesignInstalledItem item;
@@ -214,6 +238,16 @@ public:
                 for (const auto& p : it.value("positions", nlohmann::json::array()))
                     if (p.size() == 3)
                         item.positions.push_back({p[0].get<double>(), p[1].get<double>(), p[2].get<double>()});
+                for (const auto& id : it.value("slots", nlohmann::json::array()))
+                    item.slots.push_back(id.get<std::string>());
+                for (const auto& b : it.value("blocks", nlohmann::json::array()))
+                {
+                    const auto& c = b.value("c", nlohmann::json::array());
+                    const auto& z = b.value("s", nlohmann::json::array());
+                    if (c.size() == 3 && z.size() == 3)
+                        item.blocks.push_back({{c[0].get<double>(), c[1].get<double>(), c[2].get<double>()},
+                                               {z[0].get<double>(), z[1].get<double>(), z[2].get<double>()}});
+                }
                 s.installed.push_back(std::move(item));
             }
             const auto& sc = j.value("schematic", nlohmann::json::object());

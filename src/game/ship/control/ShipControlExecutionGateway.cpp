@@ -8,6 +8,7 @@
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/plant/ShipPhysicalActuatorPlant.h"
 #include "src/game/ship/plant/ShipEngineControlMatrix.h"
+#include "src/game/ship/plant/ActuatorTopology.h"
 
 namespace game::ship::control
 {
@@ -454,7 +455,7 @@ ShipControlExecutionGateway::evaluateTranslationControl(
                 }
             }
             const auto& topology =
-                game::ship::plant::physicalControlSlots(model);
+                game::ship::plant::actuatorSlots(capabilities, model);
             glm::dvec3 force(0.0),torque(0.0);
             glm::dvec3 extents=capabilities.physicalActuatorHalfExtentsMeters;
             if(extents.x<=0.0 || extents.y<=0.0 || extents.z<=0.0)

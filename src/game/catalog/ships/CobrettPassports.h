@@ -9,10 +9,11 @@
 #include "src/game/catalog/power/KobraReactorPassports.h"
 #include "src/game/catalog/propulsion/KobraMainDrivePassports.h"
 #include "src/game/catalog/rcs/KobraRcsPassports.h"
-#include "src/game/ship/presets/cobra/CobraNewtonianRcsNozzles.h"
+#include "src/game/ship/plant/CanonicalActuatorLayouts.h"
 
-// Cobrett ship models of Cobretty Corporation (Second Hellas), founded as
-// Kobersberg-Braunauer Raumfahrzeugwerke GmbH - hence the KB-* stock numbers.
+// Cobrett ship models. Current company: Cobretty Corporation (Second Hellas);
+// historical origin: Kobersberg-Braunauer Raumfahrzeugwerke - hence the KB-*
+// stock numbers. PROPOSAL until the author confirms the manufacturer history.
 // Full design passports: tools/colonization_lab/canon/ship_designs.json.
 // N1 and A3 are DIFFERENT serial products/generations of the Cobrett-I line,
 // not one ship with a flight-law switch. They temporarily share the legacy
@@ -48,7 +49,7 @@ inline void appendRcsGroup(
     const std::string& groupCode)
 {
     out.push_back({groupCode, "Translational/rotational RCS group", "", ""});
-    const auto& nozzles = game::ship::presets::cobra::newtonianRcsNozzles();
+    const auto& nozzles = game::ship::plant::canonical::newtonianRcsNozzles();
     std::string node;
     int nodeIndex = 0;
     int nozzleIndex = 0;

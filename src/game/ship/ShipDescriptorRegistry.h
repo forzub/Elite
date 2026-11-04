@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <string>
 
 #include "src/game/ship/ShipDescriptor.h"
 // #include "src/game/ship/ShipTypeId.h"
@@ -10,6 +11,10 @@ class ShipDescriptorRegistry
 {
 public:
     static const ShipDescriptor& get(ObjectType id);
+
+    // A catalog ship (design passport id) resolves through the catalog
+    // registry; an empty id falls back to the legacy ObjectType hull.
+    static const ShipDescriptor& resolve(ObjectType id, const std::string& catalogShipId);
 
     static ObjectType mapShipToObjectType(ObjectType id)
     {

@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "src/game/ship/ShipDescriptor.h"
+#include "src/game/ship/plant/ActuatorTopology.h"
 #include "src/game/ship/capability/ShipCapabilitySnapshot.h"
 #include "src/game/ship/capability/WorkingThrustAxisAnalysis.h"
 #include "src/game/ship/core/ShipDynamics.h"
@@ -461,11 +462,18 @@ inline ShipCapabilitySnapshot makeCapability(
 
 inline void applyDescriptorActuatorGeometry(
     const ShipDescriptor& descriptor,
+    plant::PhysicalControlModelId model,
     ShipCapabilitySnapshot& capability
 ) noexcept
 {
     if (!capability.valid)
         return;
+
+    // This hull's own mount coordinates (its bound loadout's registered
+    // topology); every lever-arm consumer reads positions through this key.
+    const auto* loadout = descriptor.findLoadout(model);
+    capability.effectivePhysics.actuatorTopologyKey =
+        loadout ? loadout->topologyKey : 0;
 
     const auto& dims = descriptor.logicalDimensionsValue;
     if (dims.enabled &&
@@ -496,7 +504,8 @@ inline void applyMountedEngineAxialAuthority(
 {
     if (!capability.valid)
         return;
-    const auto& topology = plant::physicalControlSlots(model);
+    const auto& topology =
+        plant::actuatorSlots(capability.effectivePhysics, model);
     const auto& bindings = descriptor.physicalControl.slotModuleIds;
     if (bindings.size() != topology.size() ||
         projected.size() != topology.size())
@@ -779,7 +788,7 @@ inline ShipCapabilitySnapshot buildShipCapability(
             state
         )
     );
-    detail::applyDescriptorActuatorGeometry(descriptor, out);
+    detail::applyDescriptorActuatorGeometry(descriptor, model, out);
     return out;
 }
 
@@ -823,7 +832,7 @@ inline ShipCapabilitySnapshot buildShipCapability(
             state
         )
     );
-    detail::applyDescriptorActuatorGeometry(descriptor, out);
+    detail::applyDescriptorActuatorGeometry(descriptor, descriptor.physicalControlModel, out);
     applyMountedEngineAxialAuthority(
         descriptor, descriptor.physicalControlModel, state, out
     );
@@ -851,7 +860,7 @@ inline ShipCapabilitySnapshot buildShipCapability(
             state
         )
     );
-    detail::applyDescriptorActuatorGeometry(descriptor, out);
+    detail::applyDescriptorActuatorGeometry(descriptor, descriptor.physicalControlModel, out);
     applyMountedEngineAxialAuthority(
         descriptor, descriptor.physicalControlModel, state, out
     );
@@ -874,7 +883,7 @@ inline ShipCapabilitySnapshot buildHealthyShipCapability(
             plant::healthySlotState(topology)
         )
     );
-    detail::applyDescriptorActuatorGeometry(descriptor, out);
+    detail::applyDescriptorActuatorGeometry(descriptor, descriptor.physicalControlModel, out);
     return out;
 }
 

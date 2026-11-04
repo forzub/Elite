@@ -1,4 +1,5 @@
 #include "src/game/ship/plant/ShipPhysicalActuatorPlant.h"
+#include "src/game/ship/plant/ActuatorTopology.h"
 
 #include <algorithm>
 #include <array>
@@ -105,7 +106,7 @@ AllocationEvaluation evaluateTrimmedAllocation(
 ) noexcept
 {
     AllocationEvaluation out;
-    const auto& slots = physicalControlSlots(model);
+    const auto& slots = actuatorSlots(physics, model);
     if (state.size() != slots.size() ||
         slots.size() > MaxPhysicalSlots ||
         (mountedEngines && mountedEngines->size() != slots.size()))
@@ -394,7 +395,7 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
 {
     MainPropulsionTrimResult out;
 
-    const auto& slots = physicalControlSlots(model);
+    const auto& slots = actuatorSlots(physics, model);
     if (state.size() != slots.size() ||
         (mountedEngines && mountedEngines->size() != slots.size()))
         return out;
@@ -771,7 +772,7 @@ MainPropulsionReaction evaluateMainPropulsionReaction(
 {
     MainPropulsionReaction out;
 
-    const auto& slots = physicalControlSlots(model);
+    const auto& slots = actuatorSlots(physics, model);
     if (state.size() != slots.size())
         return out;
 

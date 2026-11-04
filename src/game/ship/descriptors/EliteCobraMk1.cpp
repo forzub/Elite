@@ -4,6 +4,7 @@
 #include "src/game/equipment/reactor/presets/CobraCobrettyER5PropulsionReactor.h"
 #include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
 #include "src/game/ship/presets/cobra/CobraLoadouts.h"
+#include "src/game/ship/ShipLoadoutTopology.h"
 #include "src/game/catalog/CatalogRegistry.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 #include "src/game/catalog/ships/ShipCargoPassports.h"
@@ -1338,6 +1339,10 @@ if (const char* rawModel =
 // The hull owns its six installable loadouts (topology, installed module
 // IDs, generator wiring, RCS mounts). Runtime binds one of them.
 desc.loadouts = game::ship::presets::cobra::cobraLoadouts();
+// Same path as every catalog hull: each loadout registers its actuator
+// topology (Cobra's coordinates are the canonical ones).
+for (auto& loadout : desc.loadouts)
+    game::ship::registerLoadoutTopology(loadout);
 
 // Catalog ship passports must describe modules actually installed here,
 // with the same technical equipment types.

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "src/game/ship/plant/ShipEngineControlMatrix.h"
+#include "src/game/ship/plant/ActuatorTopology.h"
 
 namespace game::ship::plant
 {
@@ -85,7 +86,8 @@ struct AssistedManeuverPrograms final
             !checkVector(shape.centerOfMassLocalMeters,
                          ship.centerOfMassLocalMeters) ||
             !checkVector(shape.physicalActuatorHalfExtentsMeters,
-                         ship.physicalActuatorHalfExtentsMeters))
+                         ship.physicalActuatorHalfExtentsMeters) ||
+            shape.actuatorTopologyKey!=ship.actuatorTopologyKey)
             return false;
         for (std::size_t i=0;i<count;++i)
         {
@@ -221,7 +223,7 @@ struct AssistedManeuverPrograms final
             return;
         count=mounted.size();
         shape=ship;
-        const auto& topology=physicalControlSlots(model);
+        const auto& topology=actuatorSlots(ship,model);
         glm::dvec3 extents=ship.physicalActuatorHalfExtentsMeters;
         if (extents.x<=0.0 || extents.y<=0.0 || extents.z<=0.0)
             extents=glm::dvec3(std::max(1.0f,ship.turnRadius));
@@ -395,7 +397,7 @@ struct AssistedManeuverPrograms final
             const double requested = std::max(
                 0.0, glm::dot(linearDemand, axis)
             );
-            const auto& topology = physicalControlSlots(selected);
+            const auto& topology = actuatorSlots(ship, selected);
             for (std::size_t i=0;i<count && requested>1.0e-9;++i)
             {
                 // The candidate was validated for THIS exact physical slot

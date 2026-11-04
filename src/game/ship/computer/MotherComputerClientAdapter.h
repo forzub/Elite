@@ -17,7 +17,7 @@
 #include "src/game/presentation/EngineLiveTelemetryPresentation.h"
 #include "src/game/presentation/ShipBitePresentation.h"
 #include "src/game/ship/ShipLoadoutTopology.h"
-#include "src/game/ship/presets/cobra/CobraNewtonianRcsNozzles.h"
+#include "src/game/ship/ShipLoadoutTopology.h"
 #include "src/game/equipment/EquipmentDamage.h"
 
 namespace game::ship::computer
@@ -334,8 +334,8 @@ namespace game::ship::computer
     {
         // Eight actual mount nodes, each with three installed nozzle modules.
         // Never use the obsolete 4/6/8 omnidirectional control-slot count.
-        const auto& nozzles =
-            game::ship::presets::cobra::newtonianRcsNozzles();
+        const auto nozzles=game::ship::rcsNozzleIds(
+            *ship.descriptor,ship.physicalControlModel);
         for(std::size_t group=0;group<8;++group)
         {
             MotherComputerRcsHudSlot rcs;

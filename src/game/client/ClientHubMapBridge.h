@@ -168,7 +168,7 @@ inline std::string hubMapShipDisplayName(
     if (ship.motionLabKind != game::diagnostics::HubMotionLabActorKind::None)
         return game::diagnostics::hubMotionLabLabel(ship.motionLabKind);
 
-    const auto& descriptor = ShipDescriptorRegistry::get(ship.typeId);
+    const auto& descriptor = ShipDescriptorRegistry::resolve(ship.typeId, ship.catalogShipId);
     return descriptor.identity.shipName.empty()
         ? "Ship " + std::to_string(ship.id.value)
         : descriptor.identity.shipName;
@@ -367,7 +367,7 @@ inline bool rebuildHubMapFromClientState(
             ? "player"
             : "entity:" + std::to_string(source.id.value);
         ship.name = hubMapShipDisplayName(source, isLocalPlayer);
-        const auto& shipDescriptor = ShipDescriptorRegistry::get(source.typeId);
+        const auto& shipDescriptor = ShipDescriptorRegistry::resolve(source.typeId, source.catalogShipId);
         ship.typeName = shipDescriptor.identity.shipType.empty()
             ? "Ship"
             : shipDescriptor.identity.shipType;

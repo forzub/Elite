@@ -1,6 +1,9 @@
 // GameSimulation: DEV scenarios and diagnostics: ship-state flight test, 500-ship herd, tier transition test, universe trajectory diagnostic, hub-motion / interplanetary-transfer labs, promo tracking, debug logs.
 
 #include "src/game/simulation/GameSimulationInternal.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/constants.hpp>
+#include "src/game/ship/descriptors/CatalogShipRegistry.h"
 
 
 
@@ -90,6 +93,89 @@ void GameSimulation::initializeShipStateFlightTest()
     std::cout
         << "[ShipStateFlight] spawned id=" << id.value
         << " continuous=1 reset_kinematics=0\n";
+}
+
+void GameSimulation::updateCatalogShipLineup()
+{
+    if (m_catalogLineupRequest.empty() || m_catalogLineupSpawned)
+        return;
+    const Ship* player = playerShip();
+    if (!player)
+        return;
+    const auto& ptr = player->core().transform();
+    if (ptr.motion.mode != game::navigation::MotionMode::HubTactical || !ptr.motion.travelFrame.valid)
+        return;
+    m_catalogLineupSpawned = true;
+
+    // A row across the player's view, 500 m + half the longest hull ahead.
+    std::vector<const ShipDescriptor*> lineup;
+    float longest = 0.0f, row = 0.0f;
+    for (const auto& id : m_catalogLineupRequest)
+    {
+        const auto* d = game::ship::descriptors::findCatalogShip(id);
+        if (!d)
+        {
+            std::cerr << "[CatalogLineup] skip " << id << ": "
+                      << game::ship::descriptors::CatalogShipRegistry::instance().errorOf(id) << "\n";
+            continue;
+        }
+        lineup.push_back(d);
+        longest = std::max(longest, d->logicalDimensionsValue.length);
+        row += d->logicalDimensionsValue.width + 30.0f;
+    }
+    const glm::dvec3 origin = world::coordinates::fullMeters(ptr.worldPosition);
+    const glm::dvec3 forward(ptr.forward()), right(ptr.right());
+    const double ahead = 500.0 + longest * 0.5;
+    double x = -0.5 * row;
+    std::uint32_t serial = 0;
+    for (const auto* d : lineup)
+    {
+        x += d->logicalDimensionsValue.width * 0.5 + 15.0;
+        const glm::dvec3 position = origin + forward * ahead + right * x;
+        x += d->logicalDimensionsValue.width * 0.5 + 15.0;
+
+        ShipInitData init;
+        init.visual.shipType = d->identity.shipType;
+        init.visual.shipName = d->identity.shipName;
+        init.registry.instanceId = 960000 + serial++;
+        init.registry.ownerName = "catalog lineup";
+        init.registry.registrationId = d->catalog.passportId;
+        init.registry.shipRole = ShipRoleType::Civilian;
+        const EntityId id = spawnShip(ShipRole::NPC, ptr.motion.systemId, *d, position, init, ptr.orientation);
+        Ship* ship = id.value ? getShip(id) : nullptr;
+        if (!ship)
+            continue;
+        auto& tr = ship->core().transform();
+        // Each ship owns its travel frame matched to the player's hub (the
+        // same placement as any hub-relative spawn), so the row orbits with
+        // the station instead of freezing a copy of the player's frame.
+        game::navigation::ReferenceFrame frame;
+        frame.type = game::navigation::ReferenceFrameType::OrbitalHub;
+        frame.systemId = ptr.motion.systemId;
+        frame.hubId = ptr.motion.hubId;
+        frame.localOffsetMeters = ptr.motion.localPositionMeters +
+                                  ptr.motion.travelFrame.worldToLocalVector(position - origin);
+        if (frame.hubId.empty() || !placeShipInReferenceFrame(id, frame))
+        {
+            tr.motion.mode = game::navigation::MotionMode::HubTactical;
+            tr.motion.travelFrame = ptr.motion.travelFrame;
+            tr.motion.localPositionMeters = tr.motion.travelFrame.worldToLocalPosition(position);
+            tr.motion.localVelocityMps = glm::dvec3(0.0);
+            tr.motion.worldVelocityMps = ptr.motion.worldVelocityMps;
+            tr.motion.referenceVelocityMps = ptr.motion.referenceVelocityMps;
+            tr.referenceVelocityMetersPerSecond = ptr.referenceVelocityMetersPerSecond;
+        }
+        // broadside to the player: the layout reads from the cockpit / drone view
+        tr.orientation = ptr.orientation * glm::rotate(glm::mat4(1.0f), glm::half_pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
+        std::cerr << "[CatalogLineup] spawned id=" << id.value << " " << d->catalog.passportId << " ("
+                  << d->identity.shipName << ") " << d->modules.size() << " modules, "
+                  << ship->core().currentMassKg() / 1000.0 << " t, radar "
+                  << ship->core().devices().radarRangeMeters / 1000.0 << " km, local "
+                  << tr.motion.localPositionMeters.x << " " << tr.motion.localPositionMeters.y << " "
+                  << tr.motion.localPositionMeters.z << " (player " << ptr.motion.localPositionMeters.x << " "
+                  << ptr.motion.localPositionMeters.y << " " << ptr.motion.localPositionMeters.z << ") frame "
+                  << tr.motion.travelFrame.frameId << " hub " << tr.motion.hubId << " km\n";
+    }
 }
 
 bool GameSimulation::isShipStateFlightTestShip(

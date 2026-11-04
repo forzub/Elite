@@ -195,6 +195,55 @@ static bool appendAuthoredLogicalHitVolumes(
 }
 
 
+static bool appendModulePlacementHitVolumes(
+    HitComponent& hitComponent,
+    const IObjectDescriptor& descriptor,
+    const ObjectModuleRuntime& moduleRuntime
+)
+{
+    bool any = false;
+    for (const auto& m : descriptor.moduleDescriptors())
+        if (m.enabled && m.placement.valid)
+        {
+            any = true;
+            break;
+        }
+    if (!any)
+        return false;
+
+    hitComponent.volumes.clear();
+    for (const auto& m : descriptor.moduleDescriptors())
+    {
+        if (!m.enabled || !m.placement.valid)
+            continue;
+        if (!moduleRuntime.moduleParticipatesInHits(m.moduleId))
+            continue;
+        const ObjectModuleState* state = moduleRuntime.findModule(m.moduleId);
+        if (!state)
+            continue;
+        HitVolume v;
+        v.zone = m.zone;
+        v.priority = m.hitPriority;
+        v.layerIndex = m.layerIndex;
+        v.center = m.placement.centerMeters;
+        v.halfSize = m.placement.halfSizeMeters;
+        v.orientation = glm::mat3(1.0f);
+        v.m_label = m.moduleId;
+        v.moduleId = m.moduleId;
+        v.subsystemId = m.subsystemId;
+        v.destructible = m.destructible;
+        v.health = state->health;
+        v.maxHealth = state->maxHealth;
+        v.armor = m.armor;
+        v.penetrationResistance = m.penetrationResistance;
+        v.destroyed = state->isDestroyedLike();
+        v.supportLinkVolume = false;
+        hitComponent.volumes.push_back(std::move(v));
+    }
+    return !hitComponent.volumes.empty();
+}
+
+
 static bool appendWholeObjectLogicalHitVolume(
     HitComponent& hitComponent,
     const IObjectDescriptor& descriptor
@@ -2353,6 +2402,11 @@ void ObjectRuntimeHitBuilder::rebuild(
 {
     if (!AssemblyMeshLibrary::has(typeId))
     {
+        // A hull without a mesh whose modules carry their passport placement
+        // (catalog ships): one hit volume per module box, health / destroyed
+        // from the module runtime on every rebuild.
+        if (appendModulePlacementHitVolumes(hitComponent, descriptor, moduleRuntime))
+            return;
         if (hitComponent.volumes.empty())
         {
             if (!appendAuthoredLogicalHitVolumes(

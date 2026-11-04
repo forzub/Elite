@@ -1,3 +1,4 @@
+#include "src/game/ship/descriptors/CatalogShipRegistry.h"
 #include "src/game/simulation/GameSimulationInternal.h"
 
 
@@ -13,6 +14,20 @@ GameSimulation::GameSimulation(
 
     m_shipStateFlightTestRequested =
         environmentFlagEnabled("ELITE_SHIP_STATE_FLIGHT_TEST");
+    if (const char* lineup = std::getenv("ELITE_CATALOG_SHIPS"); lineup && *lineup)
+    {
+        std::string all(lineup);
+        if (all == "all" || all == "1")
+            m_catalogLineupRequest = game::ship::descriptors::CatalogShipRegistry::instance().passportIds();
+        else
+            for (std::size_t at = 0; at <= all.size();)
+            {
+                const std::size_t comma = std::min(all.find(',', at), all.size());
+                if (comma > at)
+                    m_catalogLineupRequest.push_back(all.substr(at, comma - at));
+                at = comma + 1;
+            }
+    }
     m_physicalCorridorHotStartRequested =
         environmentFlagEnabled("ELITE_PHYSICAL_CORRIDOR_HOT_START");
     m_fiveHundredShipHerdRequested =
@@ -1699,6 +1714,7 @@ m_hubVelocityMetersPerSecond[hubId] =
     {
         applyPhysicalCorridorHotStart();
         updateShipStateFlightTest();
+        updateCatalogShipLineup();
         updateShipShells(dt);
         updateDockServiceTraffic(dt);
         updateShipSimulationDetail(dt);

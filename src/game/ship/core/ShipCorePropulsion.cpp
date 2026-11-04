@@ -373,8 +373,8 @@ void ShipCore::updateTranslationControl(float dt)
         const auto& runtime=
             static_cast<const world::modules::ObjectModuleRuntime&>(
                 m_moduleRuntime);
-        const auto& mounts =
-            game::ship::presets::cobra::newtonianRcsNozzles();
+        const auto mounts=game::ship::rcsNozzleIds(
+            desc,m_state.construction.physicalControlModel);
         for(std::size_t i=0;i<mounts.size();++i)
         {
             const std::string id(mounts[i].nozzleId);
@@ -419,6 +419,7 @@ void ShipCore::updateTranslationControl(float dt)
             m_state.control.controlTick
         };
         demand.centerOfMassLocalMeters=physics.centerOfMassLocalMeters;
+        demand.topologyKey=physics.actuatorTopologyKey;
         // Cancel the parasitic torque of a deflected main nozzle executed
         // this tick, so trajectory trims do not rotate the hull.
         demand.momentBodyNm-=rcsMotion.mainPropulsionTorqueBodyNm;

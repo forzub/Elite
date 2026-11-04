@@ -2,6 +2,7 @@
 // I/Y/X installed main-drive matrix. Outputs to D:/tmp on Windows.
 // This is an isolated deterministic actuator test, NOT a ShipCore/runtime
 // flight acceptance. The separate server flight trace covers that boundary.
+#include "src/game/ship/presets/cobra/CobraNewtonianRcsNozzles.h"
 #include "src/game/ship/plant/NewtonianRcsAllocator.h"
 #include "src/game/ship/plant/ShipEngineControlMatrix.h"
 #include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"

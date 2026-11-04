@@ -5,12 +5,13 @@
 #include <cstring>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
-#include "src/game/ship/presets/cobra/CobraNewtonianRcsNozzles.h"
-#include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
+#include "src/game/ship/plant/ActuatorTopology.h"
+#include "src/game/ship/plant/CanonicalActuatorLayouts.h"
 
 namespace game::ship
 {
@@ -43,7 +44,7 @@ engineReactorGroups(
             std::array<std::vector<ShipEngineReactorGroupDefinition>,6> out;
             for (std::size_t k = 0; k < out.size(); ++k)
             {
-                const auto& slots = presets::cobra::installationSlots(
+                const auto& slots = plant::canonical::installationSlots(
                     static_cast<plant::PhysicalControlModelId>(k));
                 for (const auto& slot : slots.engineReactors)
                 {
@@ -60,50 +61,98 @@ engineReactorGroups(
     return legacy[static_cast<std::size_t>(model)];
 }
 
-// Pure plant/capability code still reads the fixed physicalControlSlots()
-// and RCS nozzle tables by model. Until those consumers take the loadout,
-// a loadout must describe EXACTLY that topology, otherwise the server
-// would allocate against one geometry and project capability from another.
-inline void requireLoadoutMatchesLegacyTopology(
+// Installed module ids of the 24-nozzle Newtonian RCS bank of the loadout
+// bound for `model` (its own ids, e.g. "C-120-A5A1.rcs_fore_upper_left_x");
+// the canonical ids for loadout-less legacy/test descriptors. Views into the
+// descriptor / canonical table: valid while the descriptor lives.
+struct RcsNozzleIdView
+{
+    std::string_view nozzleId;
+    std::string_view nodeId;
+};
+
+[[nodiscard]] inline std::array<RcsNozzleIdView, 24> rcsNozzleIds(
+    const ShipDescriptor& descriptor,
+    plant::PhysicalControlModelId model
+)
+{
+    std::array<RcsNozzleIdView, 24> out {};
+    const auto* loadout = descriptor.findLoadout(model);
+    if (loadout && loadout->rcsNozzles.size() == out.size())
+    {
+        for (std::size_t i = 0; i < out.size(); ++i)
+            out[i] = {loadout->rcsNozzles[i].nozzleId, loadout->rcsNozzles[i].nodeId};
+        return out;
+    }
+    const auto& canonical = plant::canonical::newtonianRcsNozzles();
+    for (std::size_t i = 0; i < out.size(); ++i)
+        out[i] = {canonical[i].nozzleId, canonical[i].nodeId};
+    return out;
+}
+
+// A loadout must keep the STRUCTURE of its physical control model: the same
+// slot count, ids, roles, force directions and freedoms, and (with RCS) the
+// 24-nozzle bank's node/direction pattern. Mount coordinates are the ship's
+// own (design passport) and are free. Throws on a structural divergence.
+inline void requireLoadoutMatchesModelStructure(
     const ShipLoadoutDefinition& loadout
 )
 {
     const auto fail = [&](const char* what) {
         throw std::logic_error(
             "Loadout " + loadout.id +
-            " diverges from legacy topology: " + what);
+            " diverges from its physical model: " + what);
     };
-    const auto& legacy = plant::physicalControlSlots(loadout.legacyModelId);
-    if (loadout.propulsionSlots.size() != legacy.size())
+    const auto& model = plant::physicalControlSlots(loadout.legacyModelId);
+    if (loadout.propulsionSlots.size() != model.size())
         fail("slot count");
-    for (std::size_t i = 0; i < legacy.size(); ++i)
+    for (std::size_t i = 0; i < model.size(); ++i)
     {
         const auto& a = loadout.propulsionSlots[i];
-        const auto& b = legacy[i];
+        const auto& b = model[i];
         if (std::strcmp(a.id, b.id) != 0 ||
             a.role != b.role ||
-            a.normalizedPositionBody != b.normalizedPositionBody ||
             a.nominalForceDirectionBody != b.nominalForceDirectionBody ||
             a.freedom != b.freedom)
             fail("slot definition");
     }
-    if (loadout.propulsionModuleIds.size() != legacy.size())
+    if (loadout.propulsionModuleIds.size() != model.size())
         fail("module binding count");
 
     if (loadout.rcsNozzles.empty())
         return;
-    const auto& nozzles = presets::cobra::newtonianRcsNozzles();
+    const auto& nozzles = plant::canonical::newtonianRcsNozzles();
     if (loadout.rcsNozzles.size() != nozzles.size())
         fail("RCS nozzle count");
     for (std::size_t i = 0; i < nozzles.size(); ++i)
     {
         const auto& a = loadout.rcsNozzles[i];
         const auto& b = nozzles[i];
-        if (a.nozzleId != b.nozzleId ||
-            a.nodeId != b.nodeId ||
-            a.positionBody != b.positionBody ||
+        if (a.nodeId != b.nodeId ||
             a.forceDirectionBody != b.forceDirectionBody)
             fail("RCS nozzle definition");
     }
 }
+
+// Validates the loadout structure and registers its coordinates as the
+// actuator topology every lever-arm consumer reads (plant/ActuatorTopology.h).
+// The key is derived from the passport and loadout ids, so it is stable
+// across processes (autopilot case files keep it as raw bytes).
+inline void registerLoadoutTopology(ShipLoadoutDefinition& loadout)
+{
+    requireLoadoutMatchesModelStructure(loadout);
+    plant::ActuatorTopology topology;
+    topology.model = loadout.legacyModelId;
+    topology.slots = loadout.propulsionSlots;
+    if (loadout.rcsNozzles.size() == topology.rcs.size())
+        for (std::size_t i = 0; i < topology.rcs.size(); ++i)
+            topology.rcs[i] = {loadout.rcsNozzles[i].positionBody,
+                               loadout.rcsNozzles[i].forceDirectionBody};
+    else
+        topology.rcs = plant::canonicalRcsNozzleBank();
+    loadout.topologyKey = plant::actuatorTopologyKey(
+        loadout.shipPassportId + "|" + loadout.id);
+    plant::registerActuatorTopology(loadout.topologyKey, std::move(topology));
+}
+
 } // namespace game::ship

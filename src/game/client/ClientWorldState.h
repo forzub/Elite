@@ -60,6 +60,7 @@ struct ClientShipState
     ShipInstanceId                                  instanceId = 0;
     ShipRole                                        role;
     ObjectType                                      typeId;
+    std::string                                     catalogShipId;   // design passport id of a catalog ship
     game::ship::plant::PhysicalControlModelId       physicalControlModel =
         game::ship::plant::PhysicalControlModelId::AssistedI;
     std::uint64_t                                   acknowledgedControlTick = 0;

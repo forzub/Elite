@@ -12,6 +12,7 @@
 #include "src/game/equipment/engine/Engine.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
+#include "src/game/ship/plant/ActuatorTopology.h"
 
 namespace game::ship::plant
 {
@@ -112,7 +113,7 @@ inline void projectThrustCone(
 {
     constexpr std::size_t Max = EngineMatrixResult::MaxEngines;
     EngineMatrixResult out;
-    const auto& topology = physicalControlSlots(model);
+    const auto& topology = actuatorSlots(ship, model);
     if (topology.size() != mounted.size() || topology.size() > Max)
         return out;
 

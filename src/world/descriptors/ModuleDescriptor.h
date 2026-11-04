@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <glm/glm.hpp>
 
 #include "game/damage/HitVolume.h"
 #include "src/game/equipment/EquipmentDamage.h"
@@ -139,6 +140,19 @@ struct ModuleDescriptor
     // RCS working-gas tank (its fill is runtime motion state; damage to this
     // module reduces the usable capacity).
     std::optional<game::equipment::rcs::RcsGasTankDescriptor> gasTank;
+
+    // Physical placement in the canonical body frame (metres; +X right, +Y up,
+    // -Z forward): primitive box centre / half-size and the unit's dry mass.
+    // Catalog hulls without a mesh take damage location, centre of mass,
+    // inertia and their placeholder geometry from it. valid=false: geometry
+    // comes from the hull's assembly mesh (Cobra) or the module is abstract.
+    struct Placement
+    {
+        bool valid = false;
+        glm::vec3 centerMeters {0.0f};
+        glm::vec3 halfSizeMeters {0.0f};
+        double massKg = 0.0;
+    } placement;
 
     bool destroysParentIfCatastrophic = false;
     bool destroysWholeObjectIfCatastrophic = false;

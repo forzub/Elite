@@ -34,6 +34,7 @@ struct SystemMapShipSample
     ShipInstanceId instanceId = 0;
     ShipRole role = ShipRole::NPC;
     ObjectType typeId = ObjectType::None;
+    std::string catalogShipId;
     game::diagnostics::HubMotionLabActorKind motionLabKind =
         game::diagnostics::HubMotionLabActorKind::None;
     game::simulation::ShipSimulationTier simulationTier =
@@ -86,6 +87,7 @@ inline SystemMapShipSample makeSystemMapShipSample(
     out.instanceId = ship.instanceId;
     out.role = ship.role;
     out.typeId = ship.typeId;
+    out.catalogShipId = ship.catalogShipId;
     out.motionLabKind = ship.motionLabKind;
     out.simulationTier = ship.simulationTier;
     out.motionFidelity = ship.motionFidelity;

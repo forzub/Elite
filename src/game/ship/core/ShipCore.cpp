@@ -49,9 +49,9 @@ void ShipCore::init(
     m_cobraHardwareProfiles=nullptr;
     m_nativeDescriptor=&descriptor;
     m_desc=&descriptor;
-    if(descriptor.typeId==ObjectType::CobraMk1)
+    if(hasAllInstalledProfiles(descriptor))
     {
-        m_cobraHardwareProfiles=&cobraInstalledProfiles(descriptor);
+        m_cobraHardwareProfiles=&installedProfiles(descriptor);
         const auto idx=static_cast<std::size_t>(descriptor.physicalControlModel);
         m_desc=&(*m_cobraHardwareProfiles)[idx];
     }
@@ -154,6 +154,13 @@ void ShipCore::init(
     m_damageHandler.ship = this;
 
     initModuleRuntime();
+    // Live mass: dry hull of the attached modules + the in-service load
+    // (catalog hulls: crew, full tanks and stores; legacy hulls: as authored).
+    if (m_desc->catalog.valid() && m_desc->catalog.lifeSupportPowerMW > 0.0)
+        m_lifeSupport.setNominalPower(m_desc->catalog.lifeSupportPowerMW);
+    m_load = {};
+    setLoad(serviceLoad(*m_desc));
+    refreshDeviceState();
     refreshRuntimeState();
 
     if (game::ship::geometry::AssemblyMeshLibrary::has(descriptor.typeId))
@@ -198,6 +205,13 @@ void ShipCore::refreshRuntimeState()
 
     const std::uint64_t moduleRevision =
         m_moduleRuntime.revision();
+
+    // A detached (or re-attached) module changes the ship's mass properties.
+    if (m_massModuleRevision != moduleRevision)
+    {
+        recomputeMassProperties();
+        refreshDeviceState();
+    }
 
     if (m_lastModuleProjectionRevision == moduleRevision &&
         m_state.actuators.topologyMatches(
@@ -369,6 +383,9 @@ bool ShipCore::addCargo(int mass, int volume)
 
     m_cargo.mass.add(mass);
     m_cargo.volume.add(volume);
+    // the hold IS mass: capability / acceleration follow the mass revision
+    m_load.cargoTonnes = m_cargo.mass.value;
+    recomputeMassProperties();
     return true;
 }
 
@@ -379,6 +396,8 @@ bool ShipCore::removeCargo(int mass, int volume)
 
     m_cargo.mass.remove(mass);
     m_cargo.volume.remove(volume);
+    m_load.cargoTonnes = m_cargo.mass.value;
+    recomputeMassProperties();
     return true;
 }
 
@@ -462,8 +481,11 @@ void ShipCore::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
             // synthetic ideal sensor until a production radar backend is ready.
             // Consumers see only RadarScanReport and therefore do not change
             // when TEST_IDEAL_RADAR is replaced later.
+            // A catalog hull's radar passport already IS a sensor-backend
+            // radar with its own range (N-2: 2 000 km, PA-100: 100 000 km).
             const RadarDesc& radarDesc =
-                m_role == ShipRole::Player
+                m_role == ShipRole::Player &&
+                presets.radar->backendKind != game::RadarBackendKind::TestIdeal
                     ? game::TEST_IDEAL_RADAR
                     : *presets.radar;
 

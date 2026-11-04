@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 
 #include <glm/glm.hpp>
 
@@ -154,6 +155,11 @@ struct ShipParams
     // known / independent). APPENDED LAST: case files store ShipParams as
     // raw bytes and accept only appended fields.
     double newtonianRcsCombinedShare01 = 1.0;
+
+    // Registered actuator topology of the bound loadout (plant/ActuatorTopology.h):
+    // this hull's passport mount coordinates. A key, never a pointer, because
+    // case files store ShipParams as raw bytes. 0 = canonical coordinates.
+    std::uint64_t actuatorTopologyKey = 0;
 
 };
 

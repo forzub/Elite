@@ -37,6 +37,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         s.id = id;
         s.instanceId = ship.core().registry().instanceId;
         s.typeId = ship.core().desc().typeId;
+        s.catalogShipId = ship.core().desc().catalog.passportId;
         s.physicalControlModel =
             ship.core().state().construction.physicalControlModel;
         s.role = ship.core().role();
@@ -459,7 +460,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
     }
 
     // Lightweight shells publish only identity + transform. Client hydration
-    // resolves descriptor/assembly by typeId and receives no heavy graph.
+    // resolves descriptor/assembly by catalog id (catalog ships) or typeId
+    // and receives no heavy graph.
     for (const auto& [id, shell] : m_shipShells)
     {
         if (!shell.valid())
@@ -470,6 +472,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         s.instanceId = shell.registry.instanceId;
         s.role = ShipRole::NPC;
         s.typeId = shell.definition->typeId;
+        s.catalogShipId = shell.definition->catalog.passportId;
         s.simulationTier = shell.lifecycle.tier;
         s.motionFidelity =
             shell.lifecycle.motionFidelity;

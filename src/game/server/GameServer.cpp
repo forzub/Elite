@@ -360,6 +360,7 @@ m_simulation.setCelestialBodyKinematicStateAu(
             record.instanceId = registration.instanceId;
             record.materializedEntityId = entityId;
             record.typeId = core.desc().typeId;
+            record.catalogShipId = core.desc().catalog.passportId;
             record.roleType = registration.shipRole;
             record.ownerActor = registration.ownerActor;
             record.name = core.visualIdentity().shipName;

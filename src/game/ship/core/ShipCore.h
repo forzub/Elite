@@ -72,6 +72,34 @@
 namespace game::ship::core
 {
 
+// Live load of a ship: its CURRENT mass is the dry hull (attached modules)
+// plus these. Fill fractions are of the passport capacities.
+struct ShipLoadState
+{
+    double cargoTonnes = 0.0;        // payload in holds / C20 / train cars
+    int containers = -1;             // C20 boxes aboard (tare); -1 = as many as the cargo needs
+    int persons = 0;                 // crew + passengers aboard
+    double fluids01 = 0.0;           // tanks (jump charge, pellets, RCS gas, cargo fluids)
+    double consumables01 = 0.0;      // life-support stores
+};
+
+// Installed ship devices bound to their modules (catalog passports): a device
+// works while one of its modules is attached and alive.
+struct ShipDeviceState
+{
+    bool radar = false;
+    double radarRangeMeters = 0.0;
+    bool receiver = false;
+    bool transmitter = false;
+    bool transponder = false;
+    bool lifeSupport = false;
+    bool computer = false;
+    bool jumpCore = false;
+    double jumpCoreRatingTonnes = 0.0;
+    bool jumpMassWithinRating = false;
+    int dockPortsOperational = 0;
+};
+
 class ShipCore
 {
 public:
@@ -112,6 +140,22 @@ public:
     int  freeCargoVolume() const;
     bool addCargo(int mass, int volume);
     bool removeCargo(int mass, int volume);
+
+    // // ───────────────
+    // // Mass / load / devices (ShipCoreMass.cpp)
+    // // ───────────────
+    // Sets the live load and recomputes mass, centre of mass and inertia
+    // (capability, accelerations and navigation follow the mass revision).
+    void setLoad(const ShipLoadState& load);
+    const ShipLoadState& load() const { return m_load; }
+    // Loaded "in service" state of a catalog ship: crew aboard, full tanks
+    // and stores, no cargo. Legacy hulls stay at their descriptor mass.
+    static ShipLoadState serviceLoad(const ShipDescriptor& descriptor);
+    double currentMassKg() const { return m_state.massProperties.massKg; }
+    // Rebuilds mass properties from the attached modules and the load.
+    void recomputeMassProperties();
+    const ShipDeviceState& devices() const { return m_devices; }
+    void refreshDeviceState();
 
     // // ───────────────
     // // Equipment API
@@ -425,6 +469,9 @@ private:
     // ───────────────
     // Хранилища
     // ───────────────
+    ShipLoadState                               m_load;
+    ShipDeviceState                             m_devices;
+    std::uint64_t                               m_massModuleRevision = ~std::uint64_t{0};
     CargoBay                                    m_cargo;
     ShipInventory                               m_inventory;
     game::ShipEquipment                         m_equipment;

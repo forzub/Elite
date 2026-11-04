@@ -1,3 +1,4 @@
+#include "src/game/geometry/CatalogShipAssembly.h"
 #include "ClientWorldState.h"
 #include "src/game/client/ClientSpatialDomain.h"
 #include "src/game/client/ReferenceFramePresentation.h"
@@ -553,8 +554,9 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.simulationTier = s.simulationTier;
             state.motionFidelity = s.motionFidelity;
             state.materializedFidelity = s.materializedFidelity;
+            state.catalogShipId = s.catalogShipId;
             state.descriptor =
-                &ShipDescriptorRegistry::get(s.typeId);
+                &ShipDescriptorRegistry::resolve(s.typeId, s.catalogShipId);
                 // &ObjectDescriptorRegistry::get(s.typeId);
 
             state.transform       = s.transform;
@@ -598,7 +600,16 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
             // state.gpuMesh = &render::MeshLibrary::get(s.typeId);
 
-            if (!game::ship::geometry::AssemblyMeshLibrary::has(s.typeId))
+            if (!s.catalogShipId.empty())
+            {
+                // A catalog ship without a mesh: its passport primitive blocks.
+                state.assembly =
+                    &game::ship::geometry::catalogShipAssembly(*state.descriptor);
+                std::cerr << "[CatalogShip] client hydrated id=" << s.id.value << " " << s.catalogShipId
+                          << " tier=" << static_cast<int>(s.simulationTier) << " modules=" << state.assembly->modules.size()
+                          << " radius=" << state.assembly->boundRadius << '\n';
+            }
+            else if (!game::ship::geometry::AssemblyMeshLibrary::has(s.typeId))
             {
                 throw std::runtime_error(
                     "[ClientWorldState] missing assembly for ship typeId=" +
@@ -606,6 +617,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
                 );
             }
 
+            if (s.catalogShipId.empty())
             {
                 const auto phaseBegin = HydrateClock::now();
                 state.assembly =

@@ -69,8 +69,8 @@ ShipCore::capabilities() const
                 using game::equipment::engine::MountedEngine;
                 std::array<MountedEngine,24> mounted {};
                 const auto& definition=*m_state.construction.definition;
-                const auto& catalog=
-                    game::ship::presets::cobra::newtonianRcsNozzles();
+                const auto catalog=game::ship::rcsNozzleIds(
+                    definition,m_state.construction.physicalControlModel);
                 const auto& runtime=
                     static_cast<const world::modules::ObjectModuleRuntime&>(
                         m_moduleRuntime);
@@ -98,11 +98,12 @@ ShipCore::capabilities() const
                 const auto limits=
                     game::ship::plant::sampleNewtonianRcsSignedAuthority(
                         mounted,p.physicalActuatorHalfExtentsMeters,
-                        p.centerOfMassLocalMeters);
+                        p.centerOfMassLocalMeters,p.actuatorTopologyKey);
                 m_cachedNewtonianRcsPairFeasibility01=
                     game::ship::plant::newtonianRcsPairFeasibility01(
                         mounted,p.physicalActuatorHalfExtentsMeters,
-                        p.centerOfMassLocalMeters,limits);
+                        p.centerOfMassLocalMeters,limits,
+                        p.actuatorTopologyKey);
                 const double mass=std::max(1.0,p.massKg);
                 const glm::dvec3 angularInertia {
                     std::max(1.0,p.pitchInertiaKgM2),
@@ -301,7 +302,8 @@ void ShipCore::newtonianPropulsionPowerShares(double& mainShare01, double& rcsSh
     if (m_newtonianRcsPhysical)
     {
         double rcsDemand = 2.0; // argon pressure-recovery compressor
-        for (const auto& nozzle : game::ship::presets::cobra::newtonianRcsNozzles())
+        for (const auto& nozzle : game::ship::rcsNozzleIds(
+                 *m_state.construction.definition, model))
             rcsDemand += fullDemandMW(std::string(nozzle.nozzleId));
         rcsShare01 = std::clamp(totalAvailableMW / rcsDemand, 0.0, 1.0);
     }

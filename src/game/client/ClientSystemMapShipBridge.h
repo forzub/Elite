@@ -61,7 +61,7 @@ inline void rebuildSystemMapShipLayer(
         SystemMapObject object;
         object.id = ship.id;
         object.shipInstanceId = ship.instanceId;
-        const auto& descriptor = ShipDescriptorRegistry::get(ship.typeId);
+        const auto& descriptor = ShipDescriptorRegistry::resolve(ship.typeId, ship.catalogShipId);
         const bool isLocalPlayer = game::client::isLocalControlledEntity(
             ship.id,
             localControlledEntityId

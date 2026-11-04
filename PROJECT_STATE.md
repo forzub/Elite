@@ -2123,6 +2123,89 @@ descriptor / loadout; primitive placeholder geometry allowed.
 - Decision recorded: Cobrett manufacturer = Cobretty Corporation (Second Hellas), founded as
   Kobersberg-Braunauer Raumfahrzeugwerke (KB-* stock numbers); code comment and industry note agree.
 
+### Generic ships executable (user order 2026-11-04 b): passports -> real ShipCore for all 21 models
+Restore point: `restore/pre-generic-ships-2026-11-04`. Order: no Cobra topology in the generic path,
+real module hierarchy, passport positions in all physics, live mass, runtime devices, primitive geometry,
+passport-id identity, runtime check, Cobra on the same path; economics NOT rewritten yet.
+
+- Topology: the six fixed layouts moved from `presets/cobra` to `plant/CanonicalActuatorLayouts.h`
+  (Cobra headers are aliases). Slot STRUCTURE (count, ids, roles, directions, generator wiring, the
+  8-node x 3-nozzle RCS bank) stays the model; COORDINATES are the hull's own. `ShipLoadoutTopology.h`
+  `registerLoadoutTopology()` validates the structure (replaces requireLoadoutMatchesLegacyTopology)
+  and registers the loadout's mount positions (`plant/ActuatorTopology.h`, key = FNV(passport|loadout),
+  never a pointer: ShipParams is written raw into case files). `ShipParams::actuatorTopologyKey`
+  (appended) is set by the capability builder from the bound loadout; every lever-arm consumer reads
+  positions through it: capability axial authority, actuator plant (3 fns), engine control matrix,
+  preset manoeuvres (cache keyed by it), execution gateway r x F, Newtonian RCS allocator / authority /
+  pair feasibility (`NewtonianRcsDemand::topologyKey`). ShipCore nozzle module ids come from the bound
+  loadout (`rcsNozzleIds()`), not the Cobra table. The "all six loadouts" profile cache is generic
+  (`installedProfiles`, per descriptor), not `typeId == CobraMk1`.
+- Working-axis analysis: a CoM within a gimbal TRIM distance (|arm.z| tan(min(cone, 2 deg))) of an
+  opposite pair's segment counts as a balanced axial ray (real hulls are never exactly centred). Cobra
+  (CoM at origin) unchanged; legacy A3 with CoM shifted 0.02-0.2 m keeps 73.2-73.4 m/s2 (probe).
+- Passport (designer): `place()` writes runtime slot / generator-group / RCS-node ids and a primitive
+  block (centre, size in metres) per position; Cobrett keeps the canonical runtime coordinates (RCS
+  corners +-1, ER-5 skeleton). Canon fixes: Cobrett height 4.3 -> 5.0 m (= runtime), RCS clusters a
+  multiple of the 8-node bank (Kamen 6 -> 8, He-S240 12 -> 16, L-900 12 -> 16; new FAIL check
+  rcs_fills_newtonian_bank). Designer still 0 FAIL / 39 WARN; lore regenerated (lore_md OK, html 138).
+- Builder (`GenericShipDescriptorBuilder.h`, rewritten): hull.root (keel) -> hull.fore/mid/aft (load
+  bearing, support links) -> equipment by block z; RCS cluster block = parent of its node's 3 nozzle
+  modules (Cobrett: 24 nozzle units); every module has `ModuleDescriptor::placement` (box + mass); dry
+  mass / CoM / inertia tensor summed from the placements (structure = dry - equipment split keel 25 %
+  + sections 3 x 25 %); drives / reactor groups / nozzles at passport coordinates; existing runtime
+  products (CR-1, N1-AX, ER-5, FC-RCS, AT argon tank) use their runtime passports verbatim; devices
+  (`ShipDescriptor::catalog`): radar = sensor backend with the product range (N-2 2 000 km ... PA-100
+  100 000 km), receiver / transmitter from the comm product, transponder, life support (power, persons,
+  days), computer, jump core (rating, sealed), coolant loops, service reactors, docks; cargo holders
+  share the passport payload; `primitiveBlocks` (keel + one box per installed position) and
+  `meshPartIds` per module. `CatalogShipRegistry.h`: process registry by passport id.
+- ShipCore: `ShipCoreMass.cpp` - live mass = attached (not detached) module placements + load
+  (cargo in holders, C20 tare, people, tanks, stores); a detached holder leaves with its cargo;
+  recomputed on setLoad / addCargo / removeCargo / module revision; legacy hulls keep the authored tensor
+  (zero load = identical numbers). `serviceLoad()` (crew, full tanks and stores) at spawn for catalog
+  ships. `refreshDeviceState()`: radar / receiver / transmitter / life support / jump core follow their
+  modules; jump mass vs core rating. Player keeps a catalog radar (TestIdeal backend) instead of the
+  synthetic one.
+- Damage: hulls without a mesh get one hit volume per module placement (`ObjectRuntimeHitBuilder`),
+  health from ObjectModuleRuntime.
+- Identity: `ShipSnapshot::catalogShipId` (wire schema 25, protocol 22), `ShipInstanceRecord::
+  catalogShipId`, client `ShipDescriptorRegistry::resolve(typeId, catalogShipId)` (world state + map
+  bridges), procedural `CatalogShipAssembly.h` (box meshes, LOD proxy) and
+  `AssemblyGpuLibrary::get(const ObjectAssembly&)`; no ObjectType needed for catalog ships.
+- DEV spawn: `ELITE_CATALOG_SHIPS=all | id[,id...]` - row ahead of the player, each placed in the
+  player's hub frame (`placeShipInReferenceFrame`), broadside.
+- Evidence (offline): `EliteShipCatalogCheck` (now on the production ShipCore) PASS 227: per model -
+  identity / topology key, passport coordinates in the loadout, hierarchy (no missing parent, every chain
+  ends at hull.root, supports resolve), healthy slots + live generator groups (= passport MWe), devices
+  (radar range = passport), in-service mass, loaded mass = passport gross + C20 tare and lower
+  acceleration, docks / radiators / placement hit volumes, radar module destroyed -> radar off (second
+  set keeps it), drive destroyed -> less thrust; train car detached -> mass -car -its cargo -its C20,
+  acceleration up; fixed-step burns on the production control path (OCS-4, PK-30 Assisted capped by
+  its 1.5 g crew load, C-120 empty 6.70 / full 2.82 m/s2, He-T12 full 1.20, L-900 full 3.99, B-90
+  11.62, Cobrett N1 35.73, A3 71.8, B-4, ST-6) = thrust / live mass, spin < 0.02 rad/s; Cobrett
+  passport vs legacy Cobra (N1 and A3): slot coordinates, drives, 24 nozzles, generators, mass,
+  envelope, SR-70, radiators, C20 identical; NOTE A3 passport hold 110 t vs legacy 120 t (legacy one
+  hold for both generations); inertia passport/legacy 1.06/0.84/0.66 (N1) - summed boxes vs one uniform
+  box. `EliteNavigationCapabilityCheck` PASS 20, `EliteShipThermalCheck` PASS 9.
+- Evidence (real game, target machine, Debug, D:/tmp/elite_genship_run1): `ELITE_CATALOG_SHIPS=all`
+  spawned all 21 (log: modules, in-service mass, radar km), client hydrated all 21 with procedural
+  assemblies, the row is visible from the cockpit / drone view next to Vysokiy. Not flown by a human.
+- Tests (full suite tests/run_all_mingw64.sh, then the red blocks re-run at the restore point in a
+  worktree): 8 red blocks - model asset (link: compartments/presentation V4), world runtime
+  (interstellar medium), cross-timeline (travel-frame ownership text check), navigation runtime (6:
+  traffic_route_graph, client_route_autopilot, assisted_authority_contract, newtonian_execution_authority,
+  assisted_safe_course_recovery, ship_state), interaction activation, system map (SystemMapBehaviorTests
+  abstract mock), feature contracts (renderShipUi), client acceptance (PlayerInputMapper) - ALL identical
+  at `restore/pre-generic-ships-2026-11-04`. Caused by this pass and fixed: NewtonianRcsPhysicalTests /
+  NewtonianPhysicalDiagnosticsTests no longer compiled (the allocator stopped including the Cobra nozzle
+  header) - include added. Green: trajectory predictor, sensors, presentation, multiplayer, headless
+  build + smoke, main build + fast universe smoke, standalone runtime, network process.
+- Not done: the player cannot yet board a catalog ship (cockpit / view rely on the Cobra descriptor);
+  Assisted designs with RCS blocks (He-F22) carry them as hardware only (Assisted has no RCS bank);
+  Shipyard UI not started (by order); economics reconciliation pending (radiator_mw 3 400 for Cobrett
+  etc.); Cobrett manufacturer = Cobretty Corporation, historical origin Kobersberg-Braunauer
+  Raumfahrzeugwerke - PROPOSAL until the author confirms.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

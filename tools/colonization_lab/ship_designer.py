@@ -198,6 +198,10 @@ def compute():
         apu = total("service_reactor", "mwe")
         add("service_power_covers_hotel", apu >= 1.15 * hotel, f"service {apu:.0f} MWe vs hotel {hotel:.1f} MW (+15 %)")
         rcs_mw = total("rcs", "input_mw")
+        if s["law"] == "Newtonian":
+            # the runtime Newtonian RCS bank: 8 mount nodes x 3 fixed nozzles (24 nozzle units, or k clusters per node)
+            add("rcs_fills_newtonian_bank", qty("rcs") == 24 or (qty("rcs") > 0 and qty("rcs") % 8 == 0),
+                f"{qty('rcs')} RCS units on the 8-node Newtonian bank")
         rcs_peak = rcs_mw * R["rcs_simultaneous_share"]
         spare = prop_mwe - drive_input
         add("rcs_powered_from_propulsion_spare", rcs_peak <= max(spare, 0) + 1e-9 or rcs_mw == 0,
@@ -521,20 +525,64 @@ def svg_schematic(s, prods):
     return "\n".join(out)
 
 
+# Runtime slot ids of the six fixed layouts (src/game/ship/plant/CanonicalActuatorLayouts.h), in canonical order.
+SLOT_IDS = {
+    ("Newtonian", "I"): ["main_center"],
+    ("Newtonian", "Y"): ["main_top", "main_lower_left", "main_lower_right"],
+    ("Newtonian", "X"): ["main_upper_left", "main_upper_right", "main_lower_left", "main_lower_right"],
+    ("Assisted", "I"): ["aft_left", "aft_right", "fore_left", "fore_right"],
+    ("Assisted", "Y"): ["aft_top", "aft_lower_left", "aft_lower_right", "fore_top", "fore_lower_left", "fore_lower_right"],
+    ("Assisted", "X"): ["aft_upper_left", "aft_upper_right", "aft_lower_left", "aft_lower_right",
+                        "fore_upper_left", "fore_upper_right", "fore_lower_left", "fore_lower_right"],
+}
+GROUP_IDS = {"I": ["drive_center"], "Y": ["drive_top", "drive_lower_left", "drive_lower_right"],
+             "X": ["drive_upper_left", "drive_upper_right", "drive_lower_left", "drive_lower_right"]}
+ASSISTED_GROUP_IDS = {"I": ["drive_left", "drive_right"], "Y": GROUP_IDS["Y"], "X": GROUP_IDS["X"]}
+RCS_NODE_IDS = ["rcs_fore_upper_left", "rcs_fore_upper_right", "rcs_fore_lower_left", "rcs_fore_lower_right",
+                "rcs_aft_upper_left", "rcs_aft_upper_right", "rcs_aft_lower_left", "rcs_aft_lower_right"]
+# Equipment density (t/m3) and box aspect (w, h, l) of primitive blocks for products without an authored size.
+BLOCK = {
+    "drive": (1.6, (1, 1, 2.2)), "reactor": (2.2, (1, 1, 1.2)), "service_reactor": (2.2, (1, 1, 1)), "coolant_loop": (0.8, (2, 1, 1)),
+    "jump_core": (2.5, (1, 1, 1)), "tank": (0.9, (1, 1, 1.6)), "rcs": (1.0, (1, 1, 1)), "computer": (0.6, (1, 0.6, 1)),
+    "radar": (0.35, (1, 0.4, 1)), "comm": (0.4, (1, 0.5, 1)), "transponder": (0.5, (1, 1, 1)), "ecm": (0.4, (1, 0.5, 1.2)),
+    "sensor_mast": (0.3, (0.6, 2, 0.6)), "life_support": (0.45, (1.4, 0.8, 1)), "escape_capsule": (0.25, (1, 1, 1.4)),
+    "lifeboat": (0.15, (1, 0.7, 2.2)), "medbay": (0.2, (1.4, 0.7, 1)), "docking_port": (0.6, (1, 1, 0.5)),
+    "tow_rig": (1.2, (1.6, 1.6, 0.6)), "workshop": (0.25, (1.4, 0.8, 1)), "landing_gear": (1.5, (1, 1.4, 1)),
+    "weapon": (0.8, (1, 0.6, 1.6)), "armour": (7.8, (3, 2, 0.15)), "heat_shield": (2.0, (2, 0.1, 2)),
+}
+
+
+def _box(volume, aspect):
+    k = (max(volume, 1e-3) / (aspect[0] * aspect[1] * aspect[2])) ** (1 / 3)
+    return [aspect[0] * k, aspect[1] * k, aspect[2] * k]
+
+
 def place(s, prods):
-    """Normalized body positions (x right, y up, z +aft) for drawings and the runtime builder."""
+    """Normalized mount positions (x right, y up, z +aft), runtime slot ids and primitive blocks (metres) of every unit."""
     lay = s["flight"]["layout"]
-    assisted = s["flight"]["law"] == "Assisted"
+    law = s["flight"]["law"]
+    assisted = law == "Assisted"
+    existing = s["flight"]["runtime"].startswith("existing:")
+    L, W, H = s["hull"]["envelope_m"]
+    half = (W / 2, H / 2, L / 2)
     for it in s["installed"]:
         n = it["qty"]
         c = it["cat"]
+        p = prods[it["product"]]
+        slots = None
         if c == "drive":
             pts = (SLOT_POS[lay]["assisted_aft"] + SLOT_POS[lay]["assisted_fore"]) if assisted else SLOT_POS[lay]["aft"]
+            slots = SLOT_IDS[(law, lay)]
         elif c == "reactor":
             base = SLOT_POS[lay]["assisted_aft"] if assisted else SLOT_POS[lay]["aft"]
             pts = [(x * 0.7, y * 0.7, 0.55) for x, y, _ in base]
+            if existing:   # Cobrett: the installed runtime generator positions (canonical skeleton)
+                pts = [(0.0, 0.0, 0.65)] if not assisted else [(-0.7, 0.0, 0.0), (0.7, 0.0, 0.0)]
+            slots = (ASSISTED_GROUP_IDS if assisted else GROUP_IDS)[lay]
         elif c == "rcs":
-            pts = [(x, y, z) for z in (-0.9, 0.9) for y in (0.8, -0.8) for x in (-0.9, 0.9)][: max(1, min(n, 8))]
+            r = (1.0, 1.0, 1.0) if existing else (0.9, 0.8, 0.9)   # Cobrett: the canonical nozzle bank corners
+            pts = [(x * r[0], y * r[1], z * r[2]) for z in (-1, 1) for y in (1, -1) for x in (-1, 1)]
+            slots = RCS_NODE_IDS
         elif c == "radiator":
             pts = [(-1.0, 0, 0.3), (1.0, 0, 0.3)]
         else:
@@ -546,7 +594,43 @@ def place(s, prods):
             y = {"radar": 0.9, "sensor_mast": 1.0, "weapon": 0.8, "landing_gear": -1.0, "heat_shield": -0.9}.get(c, 0.0)
             k = min(n, 4)
             pts = [((j - (k - 1) / 2) * (0.5 if k > 1 else 0), y, z) for j in range(k)]
-        it["positions"] = [list(map(lambda v: round(v, 3), p)) for p in pts]
+        it["positions"] = [list(map(lambda v: round(v, 3), q)) for q in pts]
+        if slots is not None:
+            it["slots"] = slots[: len(pts)]
+
+        # ---- primitive blocks: one box per position; a bulk position carries its share of the units
+        per = n / len(pts)
+        if c == "radiator":
+            side = p.get("area_m2", 10.0) * n / 2
+            l = min(0.7 * L, max(2.0, side ** 0.5 * 1.5))
+            size = [min(0.45 * W, side / l), 0.25, l]
+        elif c == "container_rack":
+            size = _box(38.3 * per, (2.44, 2.59, 6.06))
+        elif c == "train_module":
+            size = _box((p.get("payload_t", p.get("capacity_t", 4800)) / 0.7 + p["mass_t"] / 2.0) * per, (1, 1, 2.5))
+        elif c == "passenger_module":
+            size = _box(4.0 * p.get("seats", 50) * per, (1.4, 1, 2))
+        elif c == "cryo_tank":
+            size = _box((p.get("capacity_t", 100) / 0.8) * per, (1, 1, 1.8))
+        elif c == "bulk_hold":
+            size = _box((p.get("capacity_t", 100) / 0.7) * per, (1.4, 1, 2))
+        elif c in ("hangar", "boat_bay", "drone_bay"):
+            size = _box(250.0 * max(1, p.get("craft_slots", p.get("drones", 2))) * per, (1.6, 0.8, 2))
+        elif c == "tank":
+            size = _box((p.get("capacity_t", 0) / 0.9 + p["mass_t"] / 2.0) * per, BLOCK["tank"][1])
+        else:
+            rho, aspect = BLOCK.get(c, (1.0, (1, 1, 1)))
+            size = _box(max(0.05, p["mass_t"] * per / rho), aspect)
+        size = [min(v, 0.95 * 2 * h) for v, h in zip(size, half)]
+        blocks = []
+        for q in pts:
+            ctr = [q[i] * half[i] for i in range(3)]
+            if c == "drive":
+                ctr[2] -= size[2] / 2 * (1 if q[2] > 0 else -1)   # the drive body sits inboard of its nozzle plane
+            if c != "rcs":   # boxes stay inside the hull envelope; RCS nodes keep their mount point on the skin
+                ctr = [max(-(half[i] - size[i] / 2), min(half[i] - size[i] / 2, ctr[i])) for i in range(3)]
+            blocks.append(dict(c=[round(v, 3) for v in ctr], s=[round(v, 3) for v in size]))
+        it["blocks"] = blocks
 
 
 # ------------------------------------------------------------------------------------------- outputs
@@ -636,9 +720,10 @@ def runtime_copy(D, prods, ships):
                     envelope_m=s["hull"]["envelope_m"], form=s["hull"]["form"], dry_mass_t=s["mass"]["dry_t"],
                     crew=s["crew"], passengers=s["passengers"], cargo_t=s["payload"]["cargo_t"], c20=s["payload"]["c20"],
                     propulsion=s["propulsion"], power=s["power"], thermal=s["thermal"], endurance_days=s["endurance_days"],
-                    installed=[dict(code=i["code"], product=i["product"], cat=i["cat"], qty=i["qty"], positions=i.get("positions", []))
+                    installed=[dict(code=i["code"], product=i["product"], cat=i["cat"], qty=i["qty"], positions=i.get("positions", []),
+                                    slots=i.get("slots", []), blocks=i.get("blocks", []))
                                for i in s["installed"]],
-                    schematic=s["schematic"]) for s in ships],
+                    mass=s["mass"], schematic=s["schematic"]) for s in ships],
     )
 
 

@@ -70,7 +70,7 @@
 <text x="70" y="159" fill="#e6eef6" text-anchor="middle">БТ-1 ×60</text>
 <text x="70" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A4A3 · station</text>
 <rect x="490" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="550" y="113" fill="#e6eef6" text-anchor="middle">RCS-4Т ×12</text>
+<text x="550" y="113" fill="#e6eef6" text-anchor="middle">RCS-4Т ×16</text>
 <text x="550" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A5A1 · crew</text>
 <rect x="650" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="710" y="67" fill="#e6eef6" text-anchor="middle">MC-C3 ×2</text>

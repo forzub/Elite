@@ -713,6 +713,7 @@ ELITE_WIRE_SCHEMA(
     v.instanceId,
     v.role,
     v.typeId,
+    v.catalogShipId,
     v.physicalControlModel,
     v.acknowledgedControlTick,
     v.motionLabKind,

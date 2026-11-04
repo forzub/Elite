@@ -151,6 +151,62 @@ struct ShipPowerThermalInstallationBinding
     double emergencySinkCloseAboveCritical01 = 0.97;
 };
 
+// Executable part of a catalog ship design passport (GenericShipDescriptorBuilder):
+// which installed modules ARE the ship's devices, and the facts of its load model.
+// Legacy hull descriptors (Cobra C++ descriptor) leave passportId empty.
+struct ShipCatalogRuntime
+{
+    // Stable runtime identity of a catalog ship (its passport id). Spawn,
+    // replication, the client and damage resolve the descriptor by it; no
+    // ObjectType is required.
+    std::string passportId;
+
+    // Device modules: a device works while one of its modules is attached
+    // and alive (radar range / signal / life support / jump follow damage).
+    std::vector<std::string> radarModuleIds;
+    std::vector<std::string> receiverModuleIds;
+    std::vector<std::string> transmitterModuleIds;
+    std::vector<std::string> transponderModuleIds;
+    std::vector<std::string> lifeSupportModuleIds;
+    std::vector<std::string> computerModuleIds;
+    std::vector<std::string> jumpCoreModuleIds;
+    std::vector<std::string> coolantLoopModuleIds;
+    std::vector<std::string> serviceReactorModuleIds;
+    std::vector<std::string> dockModuleIds;      // docking ports, bays, hangars
+
+    double radarRangeMeters = 0.0;
+    double jumpCoreRatingTonnes = 0.0;
+    bool jumpCoreSealed = false;
+    double lifeSupportPowerMW = 0.0;
+    int lifeSupportPersons = 0;
+    int lifeSupportDays = 0;
+    int crew = 0;
+    int passengers = 0;
+
+    // Load model: the ship's CURRENT mass is dry + these loads (ShipCore).
+    double fluidsCapacityTonnes = 0.0;        // tanks: jump charge, pellets, RCS gas, cargo fluids
+    double consumablesCapacityTonnes = 0.0;   // life-support stores for the endurance
+    double personMassTonnes = 0.09;           // a person with kit
+    double containerTareTonnes = 2.2;         // empty C20 container
+    std::vector<std::string> tankModuleIds;
+    std::vector<double> tankCapacityTonnes;
+    std::vector<std::string> cargoHolderModuleIds;   // C20 racks, bulk holds, cryo tanks, train cars
+    std::vector<double> cargoHolderCapacityTonnes;
+    std::vector<std::string> cabinModuleIds;         // where people and stores are (life support, passenger modules)
+
+    [[nodiscard]] bool valid() const noexcept { return !passportId.empty(); }
+};
+
+// Placeholder geometry of a hull without a mesh: one primitive box per
+// installed position (canonical body frame, metres), tied to its module.
+struct ShipPrimitiveBlock
+{
+    std::string moduleId;
+    std::string category;      // equipment category or "hull"
+    glm::vec3 centerMeters {0.0f};
+    glm::vec3 halfSizeMeters {0.0f};
+};
+
 struct CockpitData
 {
     bool enabled = false;
@@ -257,8 +313,10 @@ public:
     ShipIdentity        identity;
 
     // Physical ordinary-flight architecture. This selects exactly one of the
-    // six fixed Assisted/Newtonian I/Y/X models; individual ship descriptors
-    // tune ratings but are not allowed to author a private propulsion layout.
+    // six fixed Assisted/Newtonian I/Y/X models: its slot STRUCTURE (count,
+    // roles, directions, generator wiring) is fixed; the mount COORDINATES are
+    // the hull's own (design passport), registered by its loadout
+    // (ShipLoadoutTopology.h registerLoadoutTopology, plant/ActuatorTopology.h).
     game::ship::plant::PhysicalControlModelId physicalControlModel =
         game::ship::plant::PhysicalControlModelId::AssistedI;
 
@@ -330,6 +388,11 @@ public:
 
     // НОВОЕ: логические модули корабля
     std::vector<ModuleDescriptor>   modules;
+
+    // Catalog ship passport facts the runtime executes (empty for legacy hulls)
+    // and the placeholder geometry of a hull without a mesh.
+    ShipCatalogRuntime              catalog;
+    std::vector<ShipPrimitiveBlock> primitiveBlocks;
     
 
 private:

@@ -15,7 +15,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/equipment/engine/Engine.h"
-#include "src/game/ship/presets/cobra/CobraNewtonianRcsNozzles.h"
+#include "src/game/ship/plant/ActuatorTopology.h"
 
 namespace game::ship::plant
 {
@@ -31,6 +31,9 @@ struct NewtonianRcsDemand
     // Electrical MW remaining on the dedicated ship-services bus this tick.
     // Infinity is reserved for isolated unit tests that do not model a bus.
     double availableElectricalMW = std::numeric_limits<double>::infinity();
+    // Registered actuator topology of the ship (its passport nozzle
+    // positions, ActuatorTopology.h); 0 = canonical bank.
+    std::uint64_t topologyKey = 0;
 };
 
 struct NewtonianRcsResult
@@ -89,11 +92,10 @@ struct NewtonianRcsResult
 [[nodiscard]] inline NewtonianRcsResult allocateNewtonianRcs(
     const std::array<game::equipment::engine::MountedEngine, 24>& installed,
     const NewtonianRcsDemand& demand
-) noexcept
+)
 {
     NewtonianRcsResult out;
-    const auto& mounts =
-        game::ship::presets::cobra::newtonianRcsNozzles();
+    const auto& mounts = rcsNozzleBank(demand.topologyKey);
     std::array<glm::dvec3,24> forces {};
     std::array<glm::dvec3,24> moments {};
     std::array<double,24> cap {};
@@ -196,11 +198,12 @@ struct NewtonianRcsSignedAuthority
 sampleNewtonianRcsSignedAuthority(
     const std::array<game::equipment::engine::MountedEngine,24>& installed,
     const glm::dvec3& halfExtentsMeters,
-    const glm::dvec3& centerOfMassLocalMeters
-) noexcept
+    const glm::dvec3& centerOfMassLocalMeters,
+    std::uint64_t topologyKey = 0
+)
 {
     NewtonianRcsSignedAuthority authority;
-    const auto& mounts=game::ship::presets::cobra::newtonianRcsNozzles();
+    const auto& mounts=rcsNozzleBank(topologyKey);
     double totalForceN=0.0,totalMomentNm=0.0;
     for(std::size_t i=0;i<installed.size();++i)
     {
@@ -222,6 +225,7 @@ sampleNewtonianRcsSignedAuthority(
             NewtonianRcsDemand probe;
             probe.mountHalfExtentsM=halfExtentsMeters;
             probe.centerOfMassLocalMeters=centerOfMassLocalMeters;
+            probe.topologyKey=topologyKey;
             probe.tick=0;
             // 24 nozzles cannot generate a force/moment greater than
             // their entire individual force/moment magnitude sums.
@@ -261,7 +265,8 @@ sampleNewtonianRcsSignedAuthority(
     const std::array<game::equipment::engine::MountedEngine,24>& installed,
     const glm::dvec3& halfExtentsMeters,
     const glm::dvec3& centerOfMassLocalMeters,
-    const NewtonianRcsSignedAuthority& limits) noexcept
+    const NewtonianRcsSignedAuthority& limits,
+    std::uint64_t topologyKey = 0)
 {
     const auto limit=[&](int axis,int sign){
         return axis<3
@@ -280,6 +285,7 @@ sampleNewtonianRcsSignedAuthority(
                     NewtonianRcsDemand probe;
                     probe.mountHalfExtentsM=halfExtentsMeters;
                     probe.centerOfMassLocalMeters=centerOfMassLocalMeters;
+                    probe.topologyKey=topologyKey;
                     probe.tick=0;
                     const auto set=[&](int axis,int sign,double value){
                         if(axis<3) probe.forceBodyN[axis]=sign*value;

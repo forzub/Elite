@@ -66,12 +66,24 @@ inline bool conventionalAxialRayFeasible(
              std::isfinite(m.armFromComMeters.y) &&
              std::isfinite(m.armFromComMeters.z));
     };
+    // A real hull's CoM is never exactly on the motors' line (equipment,
+    // cargo, fuel). A CoM within a small TRIM distance of that line is still
+    // reached by gimballing the nozzles: each motor may tilt its thrust by at
+    // most min(its cone, MaxTrimRad), so its line of action shifts by
+    // |arm.z| * tan(tilt) at the CoM plane while the bank keeps pushing along
+    // -Z. Exactly-centred hulls (Cobra: CoM at the origin) are unaffected.
+    const auto trim=[](const ForwardMotorGeometry& m)
+    {
+        const double cone=std::isfinite(m.availableConeRad)
+            ? std::clamp(m.availableConeRad,0.0,0.0349) : 0.0;   // trim <= 2 deg
+        return std::abs(m.armFromComMeters.z)*std::tan(cone);
+    };
     const std::size_t n=motors.size();
     for(std::size_t i=0;i<n;++i)
     {
         if(!alive(motors[i])) continue;
         const auto a=motors[i].armFromComMeters;
-        if(std::hypot(a.x,a.y)<eps)
+        if(std::hypot(a.x,a.y)<std::max(eps,trim(motors[i])))
             return true;
         for(std::size_t j=i+1;j<n;++j)
         {
@@ -84,6 +96,18 @@ inline bool conventionalAxialRayFeasible(
             if(std::abs(determinant)<eps &&
                 dot < -eps)
                 return true;
+            // ... and so can a pair whose segment passes within the trim
+            // distance of the CoM (perpendicular offset, CoM between them).
+            const double abx=b.x-a.x, aby=b.y-a.y;
+            const double ab2=abx*abx+aby*aby;
+            if(ab2>eps)
+            {
+                const double along=-(a.x*abx+a.y*aby);   // (0 - a) . (b - a)
+                const double offset=std::abs(determinant)/std::sqrt(ab2);
+                if(along>=0.0 && along<=ab2 &&
+                    offset<=std::min(trim(motors[i]),trim(motors[j])))
+                    return true;
+            }
             for(std::size_t k=j+1;k<n;++k)
             {
                 if(!alive(motors[k])) continue;

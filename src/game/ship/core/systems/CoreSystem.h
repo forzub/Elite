@@ -28,6 +28,9 @@ public:
     void update(double dt);
 
     void setMode(Mode mode);
+    Mode mode() const { return m_mode; }
+    // Installed rating (catalog passports); the constructor value is the legacy default.
+    void setNominalPower(double powerMW) { m_nominalPowerMW = powerMW; }
 
     // ---- IPowerConsumer ----
     double getRequestedPower() const override;

@@ -221,10 +221,6 @@ target_include_directories(EliteSystemMapInfoCheck PRIVATE "${CMAKE_SOURCE_DIR}"
 target_compile_features(EliteSystemMapInfoCheck PRIVATE cxx_std_17)
 target_link_libraries(EliteSystemMapInfoCheck PRIVATE nlohmann_json::nlohmann_json)
 
-add_executable(EliteShipCatalogCheck tools/navigation_runtime/ShipCatalogCheck.cpp)
-target_include_directories(EliteShipCatalogCheck PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
-target_compile_features(EliteShipCatalogCheck PRIVATE cxx_std_17)
-target_link_libraries(EliteShipCatalogCheck PRIVATE nlohmann_json::nlohmann_json)
 
 add_executable(EliteOrbitalTransferCheck tools/navigation_runtime/OrbitalTransferCheck.cpp)
 target_link_libraries(EliteOrbitalTransferCheck PRIVATE EliteOrbitalTransfer nlohmann_json::nlohmann_json)
@@ -547,6 +543,7 @@ add_executable(EliteGame
     src/game/ship/core/ShipCoreCapability.cpp
     src/game/ship/core/ShipCorePropulsion.cpp
     src/game/ship/core/ShipCorePowerThermal.cpp
+    src/game/ship/core/ShipCoreMass.cpp
     src/game/ship/core/ShipCoreStatus.cpp
     src/game/ship/core/ShipCoreDamage.cpp
     
@@ -865,6 +862,7 @@ if(ELITE_BUILD_SERVER)
         src/game/ship/core/ShipCoreCapability.cpp
         src/game/ship/core/ShipCorePropulsion.cpp
         src/game/ship/core/ShipCorePowerThermal.cpp
+        src/game/ship/core/ShipCoreMass.cpp
         src/game/ship/core/ShipCoreStatus.cpp
         src/game/ship/core/ShipCoreDamage.cpp
         src/game/ship/core/PowerBus.cpp
@@ -1075,6 +1073,30 @@ if(ELITE_BUILD_SERVER)
     )
     target_include_directories(EliteGalaxyPointerCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
     target_link_libraries(EliteGalaxyPointerCheck PRIVATE nlohmann_json::nlohmann_json)
+
+    # DEV check: every catalog ship design is a real ShipCore through the ONE
+    # generic path (hierarchy, devices, live mass, fixed-step propulsion,
+    # Cobrett passport vs legacy Cobra).
+    add_executable(EliteShipCatalogCheck
+        tools/navigation_runtime/ShipCatalogCheck.cpp
+        ${ELITE_SERVER_SIMULATION_SOURCES}
+    )
+    target_include_directories(EliteShipCatalogCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
+    target_link_libraries(EliteShipCatalogCheck PRIVATE
+        EliteNavigationGeometry
+        EliteNavigationWorldRuntime
+        EliteDockingInfrastructure
+        EliteManeuverDecision
+        EliteNavigationRuckig
+        EliteAssemblyGeometry
+        EliteRuntimeModelAssets
+        EliteBite
+        nlohmann_json::nlohmann_json
+        Threads::Threads
+    )
+    if(WIN32)
+        target_link_libraries(EliteShipCatalogCheck PRIVATE ws2_32 mswsock)
+    endif()
 
     # DEV check: emergency thermal coupling on the production ShipCore.
     add_executable(EliteShipThermalCheck

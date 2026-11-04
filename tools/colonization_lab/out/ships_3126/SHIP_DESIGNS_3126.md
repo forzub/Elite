@@ -13,7 +13,7 @@
 | Хэ-Т12 «Локомотив» + 12 модулей | jump_train | Верфи Гармонии | NewtonianX | 10800 | 57600 т | 90.0 | 0.133/0.809 | 80000 | Х-80 | 89.9 | OK · WARN 2 |
 | Хэ-Т12Ц (поезд-танкер) | jump_tanker | Верфи Гармонии | NewtonianX | 12000 | 50000 т | 90.0 | 0.147/0.732 | 80000 | Х-80 | 93.5 | OK · WARN 2 |
 | ГТ-3000 «Титан» (вариант) | gas_tanker | Лунно-Марсианские верфи | NewtonianY | 900 | 3000 т | 6.99 | 0.182/0.782 | 6600 | — | 4.6 | OK · WARN 1 |
-| «Камень» (танкер из астероида) (вариант) | gas_tanker | Каменные доки Раздора | NewtonianI | 2400 | 6000 т | 3.3 | 0.04/0.14 | 2600 | — | 4.2 | OK · WARN 3 |
+| «Камень» (танкер из астероида) (вариант) | gas_tanker | Каменные доки Раздора | NewtonianI | 2400 | 6000 т | 3.3 | 0.04/0.14 | 2600 | — | 4.3 | OK · WARN 3 |
 | HT-20K «Мул» | ore_tug | Kern Heavy Mining | NewtonianX | 700 | 0 т | 4.0 | 0.571/0.572 | 3320 | — | 3.3 | OK · WARN 3 |
 | СТ-6 «Мастеровой» | service_tender | Лунно-Марсианские верфи | AssistedI | 500 | 150 т | 3.0 | 0.466/0.605 | 2800 | — | 2.6 | OK · WARN 3 |
 | ПК-30 «Страж» | patrol_cutter | Лунно-Марсианские верфи | AssistedI | 420 | 20 т, 6 пасс. | 13.0 | 2.926/3.071 | 9600 | Я-1 | 15.8 | OK · WARN 1 |
@@ -21,9 +21,9 @@
 | Хэ-Ф22 «Дунь» | escort_frigate | Верфи Гармонии | AssistedY | 2200 | 80 т | 32.1 | 1.385/1.436 | 32100 | Х-5 | 77.0 | OK · WARN 1 |
 | Б-90 «Цитадель» | line_combatant | Арсенал «Бастион» | NewtonianX | 9000 | 300 т | 110.0 | 1.148/1.187 | 120000 | Б-12 | 796.7 | OK · WARN 1 |
 | R-7 «Аргус» | recon_picket | Верфи Гипериона | NewtonianX | 600 | 10 т | 12.0 | 1.932/1.967 | 11000 | Я-1 | 37.0 | OK · WARN 1 |
-| Хэ-С240 «Тыловик» | fleet_tender | Верфи Гармонии | NewtonianY | 5000 | 6000 т | 39.0 | 0.354/0.763 | 32100 | Х-12 | 59.5 | OK · WARN 2 |
+| Хэ-С240 «Тыловик» | fleet_tender | Верфи Гармонии | NewtonianY | 5000 | 6000 т | 39.0 | 0.354/0.763 | 32100 | Х-12 | 59.8 | OK · WARN 2 |
 | ПАО-7 «Щит» | impact_defence_tug | Лунно-Марсианские верфи | NewtonianX | 1600 | 200 т | 28.0 | 1.555/1.747 | 28000 | — | 33.1 | OK · WARN 1 |
-| L-900 «Пилигрим» | liner | Верфи Гипериона | NewtonianY | 2600 | 90 т, 900 пасс. | 12.0 | 0.407/0.432 | 15000 | Я-5 | 35.9 | OK · WARN 1 |
+| L-900 «Пилигрим» | liner | Верфи Гипериона | NewtonianY | 2600 | 90 т, 900 пасс. | 12.0 | 0.407/0.432 | 15000 | Я-5 | 36.0 | OK · WARN 1 |
 | T-5000 «Исход» | colonist_transport | Бхарат Ассембли | NewtonianX | 6500 | 600 т, 5000 пасс. | 17.32 | 0.196/0.222 | 13200 | М-12 | 58.4 | OK · WARN 1 |
 
 ## Cobrett-I N1 (Cobrett-I N1)
@@ -31,7 +31,7 @@
 - Класс: `cobrett_i_n1`.
 - Производитель: Cobretty Corporation (hd20794_hellas2, блок cognium_pool, школа modular_premium); верфь: industrial_hub.
 - Назначение: быстрый гибкий фрахт: ценный и срочный груз, курьер, малый чартер.
-- Корпус: wedge, 22.2 × 26.0 × 4.3 м; несущий клиновидный монокок; алюминий-литиевый сплав, C-SiC обшивка; силовой набор 175.6 т.
+- Корпус: wedge, 22.2 × 26.0 × 5.0 м; несущий клиновидный монокок; алюминий-литиевый сплав, C-SiC обшивка; силовой набор 175.6 т.
 - Схема управления: Newtonian I (рантайм `NewtonianI`, existing:EliteCobraMk1:NewtonianI).
 - Экипаж 2, пассажиры 0; груз 120 т, C20 6; автономность 30 сут; ресурс 40 лет.
 - Масса: сухая 260 т (оборудование 84.4 т), полная 387.5 т.
@@ -72,6 +72,7 @@
 - OK `thrust_meets_class_acceleration` — 9.56 MN: 2.52 g loaded, 3.65 g light (class burn 1.0 g)
 - OK `thrust_near_class_target` — 9.6 MN vs class 9.56 MN
 - OK `service_power_covers_hotel` — service 70 MWe vs hotel 4.3 MW (+15 %)
+- OK `rcs_fills_newtonian_bank` — 24 RCS units on the 8-node Newtonian bank
 - OK `rcs_powered_from_propulsion_spare` — RCS 480 MW installed, 144 MW simultaneous, from propulsion spare 150 MW
 - OK `propulsion_power_near_class_target` — 5000 MWe vs class 5000 MWe
 - OK `coolant_loops_carry_service_heat` — loops 180 MW vs service heat 9.6 MW
@@ -94,7 +95,7 @@
 - Класс: `cobrett_i_n1` — вариант kb.ship.cobrett-i.frnu.n1: другое поколение линии с законом Assisted: широкий вектор тяги CR-1 в четырёх гондолах, два реактора ER-5 (уже существует в игре).
 - Производитель: Cobretty Corporation (hd20794_hellas2, блок cognium_pool, школа modular_premium); верфь: industrial_hub.
 - Назначение: как N1, для пилотов с законом Assisted; дороже в обслуживании.
-- Корпус: wedge, 22.2 × 26.0 × 4.3 м; несущий клиновидный монокок, гондолы двигателей; алюминий-литиевый сплав, C-SiC обшивка; силовой набор 119.7 т.
+- Корпус: wedge, 22.2 × 26.0 × 5.0 м; несущий клиновидный монокок, гондолы двигателей; алюминий-литиевый сплав, C-SiC обшивка; силовой набор 119.7 т.
 - Схема управления: Assisted I (рантайм `AssistedI`, existing:EliteCobraMk1:AssistedI).
 - Экипаж 2, пассажиры 0; груз 110 т, C20 6; автономность 30 сут; ресурс 40 лет.
 - Масса: сухая 260 т (оборудование 140.3 т), полная 375.5 т.
@@ -192,6 +193,7 @@
 - OK `thrust_meets_class_acceleration` — 3.30 MN: 0.43 g loaded, 0.88 g light (class burn 0.4 g)
 - OK `thrust_near_class_target` — 3.3 MN vs class 3.3 MN
 - OK `service_power_covers_hotel` — service 20 MWe vs hotel 4.4 MW (+15 %)
+- OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
 - OK `rcs_powered_from_propulsion_spare` — RCS 320 MW installed, 96 MW simultaneous, from propulsion spare 200 MW
 - OK `propulsion_power_near_class_target` — 2600 MWe vs class 2600 MWe
 - OK `coolant_loops_carry_service_heat` — loops 300 MW vs service heat 9.8 MW
@@ -252,6 +254,7 @@
 - OK `thrust_meets_class_acceleration` — 21.99 MN: 2.55 g loaded, 3.58 g light (class burn 2.5 g)
 - OK `thrust_near_class_target` — 22.0 MN vs class 22.0 MN
 - OK `service_power_covers_hotel` — service 120 MWe vs hotel 12.8 MW (+15 %)
+- OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
 - OK `rcs_powered_from_propulsion_spare` — RCS 320 MW installed, 96 MW simultaneous, from propulsion spare 990 MW
 - OK `propulsion_power_near_class_target` — 27000 MWe vs class 27000 MWe
 - OK `coolant_loops_carry_service_heat` — loops 600 MW vs service heat 28.4 MW
@@ -311,6 +314,7 @@
 - OK `thrust_meets_class_acceleration` — 12.99 MN: 0.31 g loaded, 0.68 g light (class burn 0.3 g)
 - OK `thrust_near_class_target` — 13.0 MN vs class 13.0 MN
 - OK `service_power_covers_hotel` — service 60 MWe vs hotel 4.9 MW (+15 %)
+- OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
 - OK `rcs_powered_from_propulsion_spare` — RCS 320 MW installed, 96 MW simultaneous, from propulsion spare 900 MW
 - OK `propulsion_power_near_class_target` — 9900 MWe vs class 10000 MWe
 - OK `coolant_loops_carry_service_heat` — loops 300 MW vs service heat 10.9 MW
@@ -372,6 +376,7 @@
 - OK `thrust_meets_class_acceleration` — 13.00 MN: 0.31 g loaded, 0.68 g light (class burn 0.3 g)
 - OK `thrust_near_class_target` — 13.0 MN vs class 13.0 MN
 - OK `service_power_covers_hotel` — service 150 MWe vs hotel 7.6 MW (+15 %)
+- OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
 - OK `rcs_powered_from_propulsion_spare` — RCS 1200 MW installed, 360 MW simultaneous, from propulsion spare 1000 MW
 - OK `propulsion_power_near_class_target` — 10000 MWe vs class 10000 MWe
 - OK `coolant_loops_carry_service_heat` — loops 600 MW vs service heat 18.2 MW
@@ -434,6 +439,7 @@
 - OK `thrust_meets_class_acceleration` — 90.00 MN: 0.13 g loaded, 0.81 g light (class burn 0.12 g)
 - OK `thrust_near_class_target` — 90.0 MN vs class 90.0 MN
 - OK `service_power_covers_hotel` — service 600 MWe vs hotel 26.4 MW (+15 %)
+- OK `rcs_fills_newtonian_bank` — 16 RCS units on the 8-node Newtonian bank
 - OK `rcs_powered_from_propulsion_spare` — RCS 2400 MW installed, 720 MW simultaneous, from propulsion spare 10000 MW
 - OK `propulsion_power_near_class_target` — 80000 MWe vs class 80000 MWe
 - OK `coolant_loops_carry_service_heat` — loops 1200 MW vs service heat 60.0 MW
@@ -497,6 +503,7 @@
 - OK `thrust_meets_class_acceleration` — 90.00 MN: 0.15 g loaded, 0.73 g light (class burn 0.13 g)
 - OK `thrust_near_class_target` — 90.0 MN vs class 90.0 MN
 - OK `service_power_covers_hotel` — service 600 MWe vs hotel 26.4 MW (+15 %)
+- OK `rcs_fills_newtonian_bank` — 16 RCS units on the 8-node Newtonian bank
 - OK `rcs_powered_from_propulsion_spare` — RCS 2400 MW installed, 720 MW simultaneous, from propulsion spare 10000 MW
 - OK `propulsion_power_near_class_target` — 80000 MWe vs class 80000 MWe
 - OK `coolant_loops_carry_service_heat` — loops 1200 MW vs service heat 60.0 MW
@@ -557,6 +564,7 @@
 - OK `thrust_meets_class_acceleration` — 6.99 MN: 0.18 g loaded, 0.78 g light (class burn 0.18 g)
 - OK `thrust_near_class_target` — 7.0 MN vs class 7.0 MN
 - OK `service_power_covers_hotel` — service 60 MWe vs hotel 4.6 MW (+15 %)
+- OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
 - OK `rcs_powered_from_propulsion_spare` — RCS 320 MW installed, 96 MW simultaneous, from propulsion spare 600 MW
 - OK `propulsion_power_near_class_target` — 6600 MWe vs class 6500 MWe
 - OK `coolant_loops_carry_service_heat` — loops 300 MW vs service heat 10.2 MW
@@ -578,14 +586,14 @@
 - Класс: `gas_tanker` — вариант sol.ship.gt-3000.titan: Вольные пояса: выдолбленный астероид как цистерна и щит, двигатель и реактор — восстановленные б/у ОФУ (лор Каменных доков).
 - Производитель: Каменные доки Раздора (eps_eri_strife, блок free_belts, школа hollowed_asteroid_and_refit); верфь: mining_hub.
 - Назначение: лёд и летучие внутри системы; каменная оболочка — защита от обломков; медленный и дешёвый.
-- Корпус: asteroid, 60.0 × 45.0 × 40.0 м; выдолбленный каменный монолит, ферма двигателя; силикатная порода, стальная ферма; силовой набор 2342.6 т.
+- Корпус: asteroid, 60.0 × 45.0 × 40.0 м; выдолбленный каменный монолит, ферма двигателя; силикатная порода, стальная ферма; силовой набор 2338.6 т.
 - Схема управления: Newtonian I (рантайм `NewtonianI`, generic).
 - Экипаж 5, пассажиры 0; груз 6000 т, C20 0; автономность 90 сут; ресурс 21 лет.
-- Масса: сухая 2400 т (оборудование 57.4 т), полная 8409.2 т.
+- Масса: сухая 2400 т (оборудование 61.4 т), полная 8409.2 т.
 - Тяга 3.3 МН: 0.04 g гружёный, 0.14 g лёгкий; длительно допустимая доля тяги 1.0.
 - Энергия: 1 × ЭР-2.6 = 2600 МВт; бытовая нагрузка 6.2 МВт от 20 МВт; площадка реактора 62.6 м².
 - Охлаждение: 100 м² радиаторов при 1050 K = 62.0 МВт; контуры 300 МВт; излучатель двигателя ⌀ 2.02 м.
-- Цена: детали 1.34 млн, корпус 1.91 млн, прейскурант 4.24 млн Cr.
+- Цена: детали 1.38 млн, корпус 1.91 млн, прейскурант 4.29 млн Cr.
 - Единичные точки отказа: КД-Т-A1A1, КД-Т-A2A1, КД-Т-A2A2, КД-Т-A3A2, КД-Т-A6A1, КД-Т-A6A2, КД-Т-A6A3, КД-Т-A7A1.
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
@@ -596,7 +604,7 @@
 | КД-Т-A3A1 | ЛМВ радиаторная секция (50 м2) | 2 | Лунно-Марсианские верфи | crew, LRU, 1.5 ч |
 | КД-Т-A3A2 | ЛМВ контур охлаждения (300 МВт) | 1 | Лунно-Марсианские верфи | station, LRU, 8 ч |
 | КД-Т-A4A1 | Бункер топливных таблеток D/He-3 (1 т) | 6 | Agora Modular | station, LRU, 6 ч |
-| КД-Т-A5A1 | Кластер RCS (4 сопла, поле) | 6 | Agora Modular | crew, LRU, 2 ч |
+| КД-Т-A5A1 | Кластер RCS (4 сопла, поле) | 8 | Agora Modular | crew, LRU, 2 ч |
 | КД-Т-A6A1 | Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
 | КД-Т-A6A2 | Kern радар обломков DR-5 (5 000 км) | 1 | Kern Heavy Mining | station, LRU, 6 ч |
 | КД-Т-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
@@ -608,12 +616,13 @@
 - OK `drives_fill_layout_slots` — 1 drives for NewtonianI (1 aft + 0 fore)
 - OK `one_generator_per_group` — 1 propulsion reactors for 1 groups
 - OK `generator_covers_group_demand` — 2600 MWe per group vs 2400 MW demand
-- OK `equipment_fits_dry_mass` — hull structure 2343 t = 98% of dry 2400 t (possible 50%-100%)
-- OK `hull_structure_share_typical` — hull structure 98% of dry (typical 50%-100%)
+- OK `equipment_fits_dry_mass` — hull structure 2339 t = 97% of dry 2400 t (possible 50%-100%)
+- OK `hull_structure_share_typical` — hull structure 97% of dry (typical 50%-100%)
 - OK `thrust_meets_class_acceleration` — 3.30 MN: 0.04 g loaded, 0.14 g light (class burn 0.03 g)
 - WARN `thrust_near_class_target` — 3.3 MN vs class 7.0 MN
 - OK `service_power_covers_hotel` — service 20 MWe vs hotel 6.2 MW (+15 %)
-- OK `rcs_powered_from_propulsion_spare` — RCS 240 MW installed, 72 MW simultaneous, from propulsion spare 200 MW
+- OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
+- OK `rcs_powered_from_propulsion_spare` — RCS 320 MW installed, 96 MW simultaneous, from propulsion spare 200 MW
 - WARN `propulsion_power_near_class_target` — 2600 MWe vs class 6500 MWe
 - OK `coolant_loops_carry_service_heat` — loops 300 MW vs service heat 13.7 MW
 - OK `radiators_reject_service_heat` — 100 m2 at 1050 K = 62 MW vs 13.7 MW
@@ -625,7 +634,7 @@
 - OK `passenger_places` — 0 places vs 0 passengers
 - OK `cargo_near_class_target` — 6000 t vs class 3000 t
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
-- OK `component_prices_near_class_model` — main_drive 0.26/0.33 M, reactor 0.33/0.44 M, electronics 0.35/0.08 M, life_support 0.16/0.03 M, rcs_thermal 0.21/0.17 M
+- OK `component_prices_near_class_model` — main_drive 0.26/0.33 M, reactor 0.33/0.44 M, electronics 0.35/0.08 M, life_support 0.16/0.03 M, rcs_thermal 0.25/0.17 M
 - WARN `no_single_point_of_failure_in_critical_functions` — КД-Т-A1A1, КД-Т-A2A1, КД-Т-A2A2, КД-Т-A3A2, КД-Т-A6A1, КД-Т-A6A3, КД-Т-A7A1
 
 ## HT-20K «Мул» (HT-20K)
@@ -670,6 +679,7 @@
 - OK `thrust_meets_class_acceleration` — 4.00 MN: 0.57 g loaded, 0.57 g light (class burn 0.02 g)
 - OK `thrust_near_class_target` — 4.0 MN vs class 4.0 MN
 - OK `service_power_covers_hotel` — service 60 MWe vs hotel 6.2 MW (+15 %)
+- OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
 - OK `rcs_powered_from_propulsion_spare` — RCS 320 MW installed, 96 MW simultaneous, from propulsion spare 320 MW
 - OK `propulsion_power_near_class_target` — 3320 MWe vs class 3300 MWe
 - OK `coolant_loops_carry_service_heat` — loops 300 MW vs service heat 13.7 MW
@@ -978,6 +988,7 @@
 - OK `thrust_meets_class_acceleration` — 110.00 MN: 1.15 g loaded, 1.19 g light (class burn 1.1 g)
 - OK `thrust_near_class_target` — 110.0 MN vs class 110.0 MN
 - OK `service_power_covers_hotel` — service 1200 MWe vs hotel 184.2 MW (+15 %)
+- OK `rcs_fills_newtonian_bank` — 16 RCS units on the 8-node Newtonian bank
 - OK `rcs_powered_from_propulsion_spare` — RCS 2400 MW installed, 720 MW simultaneous, from propulsion spare 10000 MW
 - OK `propulsion_power_near_class_target` — 120000 MWe vs class 120000 MWe
 - OK `coolant_loops_carry_service_heat` — loops 2400 MW vs service heat 418.6 MW
@@ -1044,6 +1055,7 @@
 - OK `thrust_meets_class_acceleration` — 12.00 MN: 1.93 g loaded, 1.97 g light (class burn 2.0 g)
 - OK `thrust_near_class_target` — 12.0 MN vs class 12.0 MN
 - OK `service_power_covers_hotel` — service 300 MWe vs hotel 68.5 MW (+15 %)
+- OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
 - OK `rcs_powered_from_propulsion_spare` — RCS 320 MW installed, 96 MW simultaneous, from propulsion spare 1000 MW
 - OK `propulsion_power_near_class_target` — 11000 MWe vs class 11000 MWe
 - OK `coolant_loops_carry_service_heat` — loops 360 MW vs service heat 152.2 MW
@@ -1066,14 +1078,14 @@
 - Класс: `fleet_tender`.
 - Производитель: Верфи Гармонии (eps_eri_harmony, блок heavenly_pact, школа standard_monohull); верфь: orbital.
 - Назначение: автономность эскадры вдали от баз: топливо, заряд прыжка, боеприпасы, ремонт.
-- Корпус: box, 150.0 × 40.0 × 35.0 м; стандартный корпус «Хэ», 240 гнёзд C20, ангар перехватчиков; сталь; силовой набор 4009.4 т.
+- Корпус: box, 150.0 × 40.0 × 35.0 м; стандартный корпус «Хэ», 240 гнёзд C20, ангар перехватчиков; сталь; силовой набор 3985.4 т.
 - Схема управления: Newtonian Y (рантайм `NewtonianY`, generic).
 - Экипаж 60, пассажиры 0; груз 6000 т, C20 240; автономность 180 сут; ресурс 40 лет.
-- Масса: сухая 5000 т (оборудование 990.6 т), полная 11220.2 т.
+- Масса: сухая 5000 т (оборудование 1014.6 т), полная 11220.2 т.
 - Тяга 39.0 МН: 0.354 g гружёный, 0.763 g лёгкий; длительно допустимая доля тяги 1.0.
 - Энергия: 3 × ТР-11 = 32100 МВт; бытовая нагрузка 35.3 МВт от 1200 МВт; площадка реактора 286.5 м².
 - Охлаждение: 600 м² радиаторов при 1000 K = 299.4 МВт; контуры 1200 МВт; излучатель двигателя ⌀ 4.04 м.
-- Цена: детали 36.33 млн, корпус 9.60 млн, прейскурант 59.52 млн Cr.
+- Цена: детали 36.51 млн, корпус 9.60 млн, прейскурант 59.76 млн Cr.
 - Единичные точки отказа: Хэ-С240-A4A1, Хэ-С240-A6A2.
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
@@ -1086,7 +1098,7 @@
 | Хэ-С240-A4A1 | Гармония Х-12 | 1 | Верфи Гармонии | factory |
 | Хэ-С240-A4A2 | Бак заряда прыжка (1 т) | 90 | Agora Modular | station, LRU, 6 ч |
 | Хэ-С240-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 60 | Agora Modular | station, LRU, 6 ч |
-| Хэ-С240-A5A1 | Тяжёлый кластер RCS (4 сопла) | 12 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
+| Хэ-С240-A5A1 | Тяжёлый кластер RCS (4 сопла) | 16 | Тяньхэ Тяжмаш | crew, LRU, 2 ч |
 | Хэ-С240-A6A1 | Синьчжи MotherComputer MC-C3 (флот) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
 | Хэ-С240-A6A2 | Синьчжи радар обзора N-10 (10 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
 | Хэ-С240-A6A3 | Синьчжи связной комплекс C-3 (флот, защищённый) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
@@ -1105,12 +1117,13 @@
 - OK `drives_fill_layout_slots` — 3 drives for NewtonianY (3 aft + 0 fore)
 - OK `one_generator_per_group` — 3 propulsion reactors for 3 groups
 - OK `generator_covers_group_demand` — 10700 MWe per group vs 9000 MW demand
-- OK `equipment_fits_dry_mass` — hull structure 4009 t = 80% of dry 5000 t (possible 15%-90%)
+- OK `equipment_fits_dry_mass` — hull structure 3985 t = 80% of dry 5000 t (possible 15%-90%)
 - WARN `hull_structure_share_typical` — hull structure 80% of dry (typical 30%-75%)
 - OK `thrust_meets_class_acceleration` — 39.00 MN: 0.35 g loaded, 0.76 g light (class burn 0.35 g)
 - OK `thrust_near_class_target` — 39.0 MN vs class 35.0 MN
 - OK `service_power_covers_hotel` — service 1200 MWe vs hotel 35.3 MW (+15 %)
-- OK `rcs_powered_from_propulsion_spare` — RCS 1800 MW installed, 540 MW simultaneous, from propulsion spare 5100 MW
+- OK `rcs_fills_newtonian_bank` — 16 RCS units on the 8-node Newtonian bank
+- OK `rcs_powered_from_propulsion_spare` — RCS 2400 MW installed, 720 MW simultaneous, from propulsion spare 5100 MW
 - OK `propulsion_power_near_class_target` — 32100 MWe vs class 33000 MWe
 - OK `coolant_loops_carry_service_heat` — loops 1200 MW vs service heat 80.2 MW
 - OK `radiators_reject_service_heat` — 600 m2 at 1000 K = 299 MW vs 80.2 MW
@@ -1124,7 +1137,7 @@
 - OK `passenger_places` — 0 places vs 0 passengers
 - OK `cargo_near_class_target` — 6000 t vs class 6000 t
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
-- WARN `component_prices_near_class_model` — main_drive 3.84/4.20 M, reactor 10.20/5.40 M, jump_drive 11.22/8.40 M, electronics 2.47/3.00 M, life_support 1.82/1.80 M, rcs_thermal 0.86/2.40 M, weapons 3.00/1.80 M
+- WARN `component_prices_near_class_model` — main_drive 3.84/4.20 M, reactor 10.20/5.40 M, jump_drive 11.22/8.40 M, electronics 2.47/3.00 M, life_support 1.82/1.80 M, rcs_thermal 1.04/2.40 M, weapons 3.00/1.80 M
 - OK `no_single_point_of_failure_in_critical_functions` — thrust / life / comms redundant
 
 ## ПАО-7 «Щит» (ПАО-7)
@@ -1174,6 +1187,7 @@
 - OK `thrust_meets_class_acceleration` — 28.00 MN: 1.56 g loaded, 1.75 g light (class burn 1.6 g)
 - OK `thrust_near_class_target` — 28.0 MN vs class 28.0 MN
 - OK `service_power_covers_hotel` — service 400 MWe vs hotel 141.7 MW (+15 %)
+- OK `rcs_fills_newtonian_bank` — 8 RCS units on the 8-node Newtonian bank
 - OK `rcs_powered_from_propulsion_spare` — RCS 1200 MW installed, 360 MW simultaneous, from propulsion spare 2000 MW
 - OK `propulsion_power_near_class_target` — 28000 MWe vs class 28000 MWe
 - OK `coolant_loops_carry_service_heat` — loops 600 MW vs service heat 315.0 MW
@@ -1194,14 +1208,14 @@
 - Класс: `liner`.
 - Производитель: Верфи Гипериона (tau_ceti_cognium, блок cognium_pool, школа modular_premium); верфь: orbital.
 - Назначение: регулярные межзвёздные рейсы: 900 мест (60 каюты / 240 бизнес / 600 эконом), почта и 90 т срочного груза.
-- Корпус: cylinder, 150.0 × 34.0 × 28.0 м; модульный корпус: 9 пассажирских секций Agora на хребте; алюминий, композит; силовой набор 1558.8 т.
+- Корпус: cylinder, 150.0 × 34.0 × 28.0 м; модульный корпус: 9 пассажирских секций Agora на хребте; алюминий, композит; силовой набор 1550.8 т.
 - Схема управления: Newtonian Y (рантайм `NewtonianY`, generic).
 - Экипаж 40, пассажиры 900; груз 90 т, C20 0; автономность 30 сут; ресурс 46 лет.
-- Масса: сухая 2600 т (оборудование 1041.2 т), полная 3008.8 т.
+- Масса: сухая 2600 т (оборудование 1049.2 т), полная 3008.8 т.
 - Тяга 12.0 МН: 0.407 g гружёный, 0.432 g лёгкий; длительно допустимая доля тяги 1.0.
 - Энергия: 3 × ER-5 = 15000 МВт; бытовая нагрузка 42.5 МВт от 300 МВт; площадка реактора 120.4 м².
 - Охлаждение: 4000 м² радиаторов при 1050 K = 2481.3 МВт; контуры 360 МВт; излучатель двигателя ⌀ 2.35 м.
-- Цена: детали 20.50 млн, корпус 6.50 млн, прейскурант 35.85 млн Cr.
+- Цена: детали 20.59 млн, корпус 6.50 млн, прейскурант 35.96 млн Cr.
 - Единичные точки отказа: L-900-A4A1, L-900-A6A2.
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
@@ -1214,7 +1228,7 @@
 | L-900-A4A1 | Ядро «Нулевая точка» Я-5 | 1 | Фабрика ядер Управления Маяков «Нулевая точка» | factory |
 | L-900-A4A2 | Бак заряда прыжка (1 т) | 45 | Agora Modular | station, LRU, 6 ч |
 | L-900-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 20 | Agora Modular | station, LRU, 6 ч |
-| L-900-A5A1 | Кластер RCS (4 сопла, поле) | 12 | Agora Modular | crew, LRU, 2 ч |
+| L-900-A5A1 | Кластер RCS (4 сопла, поле) | 16 | Agora Modular | crew, LRU, 2 ч |
 | L-900-A6A1 | Синьчжи MotherComputer MC-C3 (флот) | 2 | Синьчжи Электроникс | station, LRU, 4 ч |
 | L-900-A6A2 | Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
 | L-900-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 2 | Синьчжи Электроникс | crew, LRU, 2 ч |
@@ -1230,12 +1244,13 @@
 - OK `drives_fill_layout_slots` — 3 drives for NewtonianY (3 aft + 0 fore)
 - OK `one_generator_per_group` — 3 propulsion reactors for 3 groups
 - OK `generator_covers_group_demand` — 5000 MWe per group vs 4000 MW demand
-- OK `equipment_fits_dry_mass` — hull structure 1559 t = 60% of dry 2600 t (possible 15%-90%)
+- OK `equipment_fits_dry_mass` — hull structure 1551 t = 60% of dry 2600 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 60% of dry (typical 30%-75%)
 - OK `thrust_meets_class_acceleration` — 12.00 MN: 0.41 g loaded, 0.43 g light (class burn 0.3 g)
 - OK `thrust_near_class_target` — 12.0 MN vs class 12.0 MN
 - OK `service_power_covers_hotel` — service 300 MWe vs hotel 42.5 MW (+15 %)
-- OK `rcs_powered_from_propulsion_spare` — RCS 480 MW installed, 144 MW simultaneous, from propulsion spare 3000 MW
+- OK `rcs_fills_newtonian_bank` — 16 RCS units on the 8-node Newtonian bank
+- OK `rcs_powered_from_propulsion_spare` — RCS 640 MW installed, 192 MW simultaneous, from propulsion spare 3000 MW
 - OK `propulsion_power_near_class_target` — 15000 MWe vs class 14000 MWe
 - OK `coolant_loops_carry_service_heat` — loops 360 MW vs service heat 94.5 MW
 - OK `radiators_reject_service_heat` — 4000 m2 at 1050 K = 2481 MW vs 94.5 MW
@@ -1249,7 +1264,7 @@
 - OK `passenger_places` — 900 places vs 900 passengers
 - OK `cargo_near_class_target` — 90 t vs class 90 t
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
-- WARN `component_prices_near_class_model` — main_drive 1.90/2.38 M, reactor 1.70/3.00 M, jump_drive 5.13/6.00 M, electronics 0.96/1.12 M, life_support 6.64/4.50 M, rcs_thermal 1.72/1.00 M
+- WARN `component_prices_near_class_model` — main_drive 1.90/2.38 M, reactor 1.70/3.00 M, jump_drive 5.13/6.00 M, electronics 0.96/1.12 M, life_support 6.64/4.50 M, rcs_thermal 1.80/1.00 M
 - OK `no_single_point_of_failure_in_critical_functions` — thrust / life / comms redundant
 
 ## T-5000 «Исход» (T-5000)
@@ -1299,6 +1314,7 @@
 - OK `thrust_meets_class_acceleration` — 17.32 MN: 0.20 g loaded, 0.22 g light (class burn 0.18 g)
 - OK `thrust_near_class_target` — 17.3 MN vs class 18.0 MN
 - OK `service_power_covers_hotel` — service 400 MWe vs hotel 148.4 MW (+15 %)
+- OK `rcs_fills_newtonian_bank` — 16 RCS units on the 8-node Newtonian bank
 - OK `rcs_powered_from_propulsion_spare` — RCS 640 MW installed, 192 MW simultaneous, from propulsion spare 1200 MW
 - OK `propulsion_power_near_class_target` — 13200 MWe vs class 23000 MWe
 - OK `coolant_loops_carry_service_heat` — loops 600 MW vs service heat 329.9 MW

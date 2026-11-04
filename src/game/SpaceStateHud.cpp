@@ -1624,20 +1624,22 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         const double ratio = motion.freeFlightOrbitCircularMps > 0.0 ? motion.freeFlightOrbitSpeedMps / motion.freeFlightOrbitCircularMps : 1.0;
         const glm::vec4 speedColour = ratio < 0.80 ? crimson : ratio < 0.90 ? red : ratio < 0.97 ? yellow
                                     : ratio < 0.995 ? white : motion.freeFlightOrbitSpeedMps > motion.freeFlightOrbitEscapeMps ? yellow : grey;
-        char a[96], b[96], c[96];
+        char a[96], b[96], c[128];
         std::snprintf(a, sizeof a, "1-я косм.  %.2f км/с", motion.freeFlightOrbitCircularMps / 1000.0);
         std::snprintf(b, sizeof b, "V  %.2f км/с   (%+.0f м/с верт.)", motion.freeFlightOrbitSpeedMps / 1000.0, motion.freeFlightOrbitRadialMps);
-        std::snprintf(c, sizeof c, "H  %.0f / %.0f м", motion.freeFlightOrbitAltitudeM, safe);
-        const float px = static_cast<float>(viewport.width) * 0.735f;
+        std::snprintf(c, sizeof c, "H  %.0f м   мин. %.0f м", motion.freeFlightOrbitAltitudeM, safe);
+        const float px = static_cast<float>(viewport.width) * 0.70f;
         const float py = static_cast<float>(viewport.height) * 0.64f;
         text.textDrawPx(a, px, py, 14, grey);
         text.textDrawPx(b, px, py + 20.0f, 15, speedColour);
         text.textDrawPx(c, px, py + 41.0f, 15, altColour);
         if (motion.freeFlightOrbitDenseAltM > 0.0)
         {
-            char d[64];
-            std::snprintf(d, sizeof d, "плотные слои  %.0f м", motion.freeFlightOrbitDenseAltM);
+            char d[128];
+            std::snprintf(d, sizeof d, "плотные слои %.0f м   сопр. %.2f м/с2",
+                          motion.freeFlightOrbitDenseAltM, motion.freeFlightDragMps2);
             text.textDrawPx(d, px, py + 61.0f, 13, motion.freeFlightOrbitAltitudeM < motion.freeFlightOrbitDenseAltM ? crimson : grey);
+            text.textDrawPx("мин.: сопротивление 0.1 м/с2 · плотные: 1 g", px, py + 79.0f, 11, grey);
         }
 
         // terminal warning: losing altitude toward the atmosphere / surface
@@ -1646,14 +1648,20 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
             warning = "КРУШЕНИЕ: удар о поверхность";
         else if (motion.freeFlightSurfaceState == 1)
             warning = "НА ПОВЕРХНОСТИ   HOME - взлёт";
-        else if (motion.freeFlightOrbitAltitudeM < motion.freeFlightOrbitDenseAltM && motion.freeFlightOrbitSpeedMps > 1500.0)
+        else if (motion.freeFlightDragMps2 > 9.81)
             warning = "ПЛОТНЫЕ СЛОИ АТМОСФЕРЫ: нагрев и удар по корпусу";
-        else if (motion.freeFlightOrbitAltitudeM < safe && motion.freeFlightOrbitRadialMps < -1.0)
+        else if (motion.freeFlightOrbitAltitudeM < 20000.0 && motion.freeFlightOrbitRadialMps < -1.0 &&
+                 motion.freeFlightOrbitSpeedMps < 1500.0)
         {
             char low[128];
-            std::snprintf(low, sizeof low, "СНИЖЕНИЕ К ПОВЕРХНОСТИ: %.0f м/с вниз (посадка без вреда < 8 м/с, выживание < 34 м/с)",
-                          -motion.freeFlightOrbitRadialMps);
+            std::snprintf(low, sizeof low, "СНИЖЕНИЕ: %.0f м/с вниз  (посадка < 8, выживание < 34 м/с)", -motion.freeFlightOrbitRadialMps);
             warning = low;
+        }
+        else if (motion.freeFlightDragMps2 > 0.1)
+        {
+            char atm[128];
+            std::snprintf(atm, sizeof atm, "ВХОД В АТМОСФЕРУ: сопротивление %.1f м/с2 - скорость падает", motion.freeFlightDragMps2);
+            warning = atm;
         }
         else if (motion.freeFlightOrbitRadialMps < -1.0 && motion.freeFlightOrbitPeriapsisAltM < safe)
             warning = "ОПАСНОСТЬ СВАЛИВАНИЯ: перицентр ниже безопасной высоты - поднимите скорость";

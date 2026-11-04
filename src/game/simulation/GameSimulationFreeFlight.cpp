@@ -320,9 +320,24 @@ void GameSimulation::updateFreeFlights(double dt)
                 }
 
                 // ---- atmosphere, dense layers, solid surface
+                // Exponential atmosphere rho = rho0 exp(-h / H), H = top / 12 (Earth: 100 km
+                // top -> 8.3 km). rho0 = 1.225 kg/m3 for every body with an atmosphere until
+                // the server reads the catalog surface pressure. Drag a = rho v^2 / (2 beta),
+                // beta = m / (Cd A) = 800 kg/m2 (a blunt ship). The two thresholds are physical:
+                //   safe altitude  - drag at circular speed reaches 0.1 m/s2 (the orbit decays fast)
+                //   dense layers   - drag at circular speed reaches 1 g (heating, structural load)
+                // Earth: ~108 km / ~71 km. Airless bodies: a 0.1 % R (min 1 km) terrain margin.
+                constexpr double SeaLevelDensity = 1.225;
+                constexpr double BallisticCoefficient = 800.0;
                 const double atmosphereTop = std::max(0.0, primary->atmosphereRadiusMeters - primary->radiusMeters);
-                const double safeAlt = atmosphereTop > 0.0 ? atmosphereTop : std::max(1000.0, primary->radiusMeters * 0.001);
-                const double denseAlt = atmosphereTop * 0.55;
+                const double scaleHeight = atmosphereTop / 12.0;
+                const double vCircSurface = std::sqrt(primary->gravitationalParameterM3s2 / std::max(primary->radiusMeters, 1.0));
+                const auto dragThresholdAltitude = [&](double accel) {
+                    return scaleHeight * std::log(std::max(1.0, SeaLevelDensity * vCircSurface * vCircSurface /
+                                                                    (2.0 * BallisticCoefficient * accel)));
+                };
+                const double safeAlt = atmosphereTop > 0.0 ? dragThresholdAltitude(0.1) : std::max(1000.0, primary->radiusMeters * 0.001);
+                const double denseAlt = atmosphereTop > 0.0 ? dragThresholdAltitude(9.81) : 0.0;
                 const double alt = motion.freeFlightOrbitAltitudeM;
                 motion.freeFlightOrbitSafeAltM = safeAlt;
                 motion.freeFlightOrbitDenseAltM = denseAlt;
@@ -330,13 +345,13 @@ void GameSimulation::updateFreeFlights(double dt)
                 const double speed = glm::length(v);
                 if (atmosphereTop > 0.0 && alt < atmosphereTop && speed > 0.1)
                 {
-                    const double scaleHeight = atmosphereTop / 12.0;
-                    const double density01 = std::exp(-std::max(alt, 0.0) / scaleHeight);
-                    const double drag = std::min(1.2e-5 * density01 * speed * speed, speed / dt * 0.5);
+                    const double density = SeaLevelDensity * std::exp(-std::max(alt, 0.0) / scaleHeight);
+                    const double drag = std::min(density * speed * speed / (2.0 * BallisticCoefficient), speed / dt * 0.5);
                     frame.linearVelocityMps -= v / speed * drag * dt;
                     motion.freeFlightDragMps2 = drag;
                     // dense layers at speed: an impact on entry, then heating damage
-                    const bool dense = alt < denseAlt && speed > 1500.0;
+                    // dense layers: deceleration above 1 g - an impact on entry, then heating
+                    const bool dense = drag > 9.81;
                     if (dense && !f.insideDenseLayers)
                     {
                         ++motion.freeFlightImpactSerial;
@@ -354,7 +369,7 @@ void GameSimulation::updateFreeFlights(double dt)
                         if (f.heatingDamageSeconds >= 1.0)
                         {
                             f.heatingDamageSeconds = 0.0;
-                            const double heat = std::min(0.25, drag / 400.0);
+                            const double heat = std::min(0.25, drag / 400.0 * (speed / 3000.0));
                             for (const auto& m : ship->core().descriptor().modules)
                                 ship->core().moduleRuntime().addEquipmentDamage(
                                     m.moduleId, game::equipment::EquipmentDamageKind::Thermal, heat);

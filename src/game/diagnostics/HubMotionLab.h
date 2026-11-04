@@ -17,7 +17,7 @@ namespace game::diagnostics
     intentionally different: it is a presentation-only analytic reference that
     is evaluated directly from synchronized server time on the client.
 */
-inline constexpr bool HubMotionLabEnabled = true;
+inline constexpr bool HubMotionLabEnabled = false;   // debug lab off: its cube followed the player frame (J), per-frame CSV
 // Isolate the station and two docks for the new docking flight experiment.
 inline constexpr bool HubDockingFlightTestScene = true;
 inline constexpr const char* HubMotionLabHubId = "earth_orbital_hub";

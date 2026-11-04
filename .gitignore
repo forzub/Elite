@@ -48,7 +48,11 @@ id_ed25519*
 # Или более точечно (рекомендую):
 src/assets/generated/**/*.tga
 src/assets/generated/**/*.TGA
-/assets/
+# external asset tree: untracked, except the hub module SOURCE folders
+/assets/*
+!/assets/models/
+/assets/models/*
+!/assets/models/hub/
 /build/assets/generated/
 
 __pycache__/

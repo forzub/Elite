@@ -270,9 +270,10 @@ def write_boxes_header(mesh, path, namespace, func):
 
 if __name__ == '__main__':
     models = os.path.join(ROOT, 'src', 'assets', 'models')
+    hub = os.path.join(ROOT, 'assets', 'models', 'hub')   # hub module SOURCE folders (Model Asset Editor + runtime)
     dock, block, shuttle = hex_dock(), service_block(), cargo_shuttle()
-    dock.write(os.path.join(models, 'hub', 'guidance_test', 'hub_hex_dock.obj'))
-    block.write(os.path.join(models, 'hub', 'guidance_test', 'hub_dock_service_block.obj'))
+    dock.write(os.path.join(hub, 'hex-dock-a', 'LOD0', 'hub_hex_dock.obj'))
+    block.write(os.path.join(hub, 'dock-service-block', 'LOD0', 'hub_dock_service_block.obj'))
     shuttle.write(os.path.join(models, 'ships', 'orbital_cargo_shuttle.obj'))
     header_dir = os.path.join(ROOT, 'src', 'game', 'station', 'descriptors')
     write_boxes_header(dock, os.path.join(header_dir, 'HubHexDockCollision.generated.h'), 'game::station', 'hubHexDockCollisionBoxes')

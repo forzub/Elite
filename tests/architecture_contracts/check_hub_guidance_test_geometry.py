@@ -77,10 +77,10 @@ for module_id in ("hub_hex_dock_a", "guidance_dock_cylinder_b"):
             fail(f"{module_id}/{dock['id']} aperture must be wider than tall")
 
 for mesh_name, half_width, half_height, fmt in (
-    ("hub_hex_dock.obj", 80.0, 30.0, "{:.4f}"),
-    ("guidance_dock_cylinder.obj", 100.0, 60.0, "{:.6f}"),
+    ("hex-dock-a/LOD0/hub_hex_dock.obj", 80.0, 30.0, "{:.4f}"),
+    ("guidance-dock-cylinder/LOD0/guidance_dock_cylinder.obj", 100.0, 60.0, "{:.6f}"),
 ):
-    mesh = (ROOT / "src/assets/models/hub/guidance_test" / mesh_name).read_text(
+    mesh = (ROOT / "assets/models/hub" / mesh_name).read_text(
         encoding="utf-8", errors="replace"
     )
     if fmt.format(half_width) not in mesh or fmt.format(half_height) not in mesh:

@@ -384,7 +384,7 @@ OBJ must not require navigation-code changes.
 
 Wave 4 diagnostic assets live under:
 
-`assets/models/hub/guidance_test/`
+`assets/models/hub/<module>/LOD0/` (hub module SOURCE folders, tracked)
 
 and semantic anchors under:
 

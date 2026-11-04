@@ -637,7 +637,7 @@ void ObjectAssemblyRegistry::init()
                 {
                     sameMesh(
                         "guidance_dock_cube",
-                        "assets/models/hub/guidance_test/guidance_dock_cube.obj"
+                        "assets/models/hub/guidance-dock-cube/LOD0/guidance_dock_cube.obj"
                     )
                 },
                 false,
@@ -663,7 +663,7 @@ void ObjectAssemblyRegistry::init()
                 {
                     sameMesh(
                         "guidance_dock_cylinder",
-                        "assets/models/hub/guidance_test/guidance_dock_cylinder.obj"
+                        "assets/models/hub/guidance-dock-cylinder/LOD0/guidance_dock_cylinder.obj"
                     )
                 },
                 false,
@@ -693,10 +693,10 @@ void ObjectAssemblyRegistry::init()
             glm::vec3 baseColor; // model material colour (no MTL in these OBJs)
         } entries[] = {
             {ObjectType::HubHexDock, "hub_hex_dock_body", "hub_hex_dock",
-             "assets/models/hub/guidance_test/hub_hex_dock.obj", 30000.0f, "hub_dock",
+             "assets/models/hub/hex-dock-a/LOD0/hub_hex_dock.obj", 30000.0f, "hub_dock",
              glm::vec3(0.62f, 0.64f, 0.66f)},
             {ObjectType::HubDockServiceBlock, "hub_dock_service_block_body", "hub_dock_service_block",
-             "assets/models/hub/guidance_test/hub_dock_service_block.obj", 30000.0f, "hub_dock",
+             "assets/models/hub/dock-service-block/LOD0/hub_dock_service_block.obj", 30000.0f, "hub_dock",
              glm::vec3(0.52f, 0.54f, 0.56f)},
             {ObjectType::OrbitalCargoShuttle, "ocs4_hull", "orbital_cargo_shuttle",
              "assets/models/ships/orbital_cargo_shuttle.obj", 8000.0f, "ocs4",

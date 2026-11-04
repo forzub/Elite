@@ -13,7 +13,7 @@ namespace game::station
 /*
     Diagnostic hub modules for navigation/guidance development.
 
-    Geometry is intentionally external under assets/models/hub/guidance_test/.
+    Geometry is intentionally external under assets/models/hub/<module>/LOD0/.
     Replacing the OBJ changes presentation only; docking/guidance semantics are
     stored separately in assets/data/navigation/hub_semantic_anchors.json.
 */

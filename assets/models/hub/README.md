@@ -1,4 +1,16 @@
-# Hub guidance test meshes
+# Hub modules (SOURCE folders)
+
+One folder per hub module, editor source-folder layout (`<module>/LOD<N>/*.obj`,
+see `src/assets/models/SOURCE_LAYOUT.md`); the Model Asset Editor lists every
+folder here, the runtime loads the same OBJ files (copied with the external
+asset tree). This folder is tracked in git (the rest of `assets/` is not).
+
+- `hex-dock-a/` - Earth Orbital Hub rotating hexagonal dock (generated:
+  `tools/hub_meshes/generate_hub_dock_meshes.py`)
+- `dock-service-block/` - its fixed coaxial service block (generated, same script)
+- `guidance-dock-cube/`, `guidance-dock-cylinder/` - guidance test docks
+
+## Guidance test meshes
 
 These OBJ files are deliberately external diagnostic assets. C++ code references
 them by object type; docking gates, clearances and other semantic points are not

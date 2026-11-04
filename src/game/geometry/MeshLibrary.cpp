@@ -56,16 +56,16 @@ MeshGPU& MeshLibrary::get(ObjectType typeId)
             objPath = "assets/models/drones/repair_drone_debug.obj";
             break;
         case ObjectType::GuidanceDockCube:
-            objPath = "assets/models/hub/guidance_test/guidance_dock_cube.obj";
+            objPath = "assets/models/hub/guidance-dock-cube/LOD0/guidance_dock_cube.obj";
             break;
         case ObjectType::GuidanceDockCylinder:
-            objPath = "assets/models/hub/guidance_test/guidance_dock_cylinder.obj";
+            objPath = "assets/models/hub/guidance-dock-cylinder/LOD0/guidance_dock_cylinder.obj";
             break;
         case ObjectType::HubHexDock:
-            objPath = "assets/models/hub/guidance_test/hub_hex_dock.obj";
+            objPath = "assets/models/hub/hex-dock-a/LOD0/hub_hex_dock.obj";
             break;
         case ObjectType::HubDockServiceBlock:
-            objPath = "assets/models/hub/guidance_test/hub_dock_service_block.obj";
+            objPath = "assets/models/hub/dock-service-block/LOD0/hub_dock_service_block.obj";
             break;
         case ObjectType::OrbitalCargoShuttle:
             objPath = "assets/models/ships/orbital_cargo_shuttle.obj";

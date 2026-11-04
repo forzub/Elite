@@ -1161,6 +1161,9 @@ void ClientWorldState::update(
                     &m_localPredictedPresentationTarget;
             }
 
+            const ShipTransform previousRender = ship.renderTransform;
+            const auto previousRenderFrame = ship.renderReferenceFrame;
+
             ship.renderTransform =
                 smoothShipRenderTransform(
                     ship.renderTransform,
@@ -1174,6 +1177,33 @@ void ClientWorldState::update(
             {
                 const auto presentationFrame =
                     sampleRenderReferenceFrame(id);
+
+                // A frame change (e.g. J free flight re-bases the ship into its
+                // own frame) reaches the newest snapshot before the render
+                // epoch: the world is still drawn ~one interpolation window
+                // in the past, in the previous frame. Presenting the ship in
+                // the newest frame then put it at "now" while the hub stayed
+                // at "then" - kilometres apart at orbital speed (the hub
+                // vanished for ~0.3 s). Until the render epoch crosses the
+                // change, keep the ship in the frame the world is drawn in.
+                if (presentationFrame.valid &&
+                    !game::client::sameReferenceFrameIdentity(presentationFrame, ship.referenceFrame) &&
+                    game::client::sameReferenceFrameIdentity(presentationFrame, previousRenderFrame))
+                {
+                    const glm::dvec3 local =
+                        previousRender.motion.localPositionMeters +
+                        previousRender.motion.localVelocityMps * static_cast<double>(dt);
+                    const glm::mat4 orientation = ship.renderTransform.orientation;
+                    ship.renderTransform = previousRender;
+                    ship.renderTransform.orientation = orientation;
+                    ship.renderTransform.motion.localPositionMeters = local;
+                    ship.renderReferenceFrame = presentationFrame;
+                    ship.renderReferenceFrame.localPositionMeters = local;
+                    ship.renderReferenceFrame.localVelocityMetersPerSecond = previousRender.motion.localVelocityMps;
+                    ship.renderTransform.setWorldPositionMeters(presentationFrame.localToWorldPosition(local));
+                    ship.signalPresentation.update(dt, ship.receptions);
+                    continue;
+                }
 
                 ship.renderReferenceFrame =
                     game::client::sameReferenceFrameIdentity(

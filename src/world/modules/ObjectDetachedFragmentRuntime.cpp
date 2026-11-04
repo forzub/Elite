@@ -166,6 +166,19 @@ void ObjectDetachedFragmentRuntime::update(float dt)
     }
 }
 
+bool ObjectDetachedFragmentRuntime::setFragmentMass(
+    const std::string& moduleId,
+    const game::simulation::DetachedFragmentMass& mass)
+{
+    for (auto& f : m_fragments)
+        if (f.moduleId == moduleId)
+        {
+            f.mass = mass;
+            return true;
+        }
+    return false;
+}
+
 void ObjectDetachedFragmentRuntime::syncFromDetachedModules(
     const glm::mat4& ownerModel,
     const game::ship::geometry::ObjectAssembly& assembly,
@@ -338,6 +351,7 @@ ObjectDetachedFragmentRuntime::buildSnapshots(
         s.canReattach = f.canReattach;
 
         s.debugHitVolumes = f.debugHitVolumes;
+        s.mass = f.mass;
         out.push_back(std::move(s));
     }
 

@@ -50,6 +50,7 @@ struct ObjectDetachedFragmentRuntimeState
     std::vector<game::simulation::DebugHitVolumeSnapshot> debugHitVolumes;
     glm::mat4 homeLocalModel {1.0f};
     glm::vec3 homeCenterLocal {0.0f};
+    game::simulation::DetachedFragmentMass mass;
 
 
 
@@ -71,6 +72,9 @@ public:
         const ObjectModuleRuntime& moduleRuntime,
         const game::damage::HitComponent& hitComponent
     );
+
+    // Records what left the owner with this fragment (ShipCore load model).
+    bool setFragmentMass(const std::string& moduleId, const game::simulation::DetachedFragmentMass& mass);
 
     bool setFragmentMotion(
         const std::string& moduleId,

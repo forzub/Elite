@@ -1003,6 +1003,10 @@ void ShipCore::syncDetachedFragmentsFromModuleRuntime()
         m_moduleRuntime,
         m_hitComponent
     );
+    // what each new fragment took away from the ship (never lose mass)
+    for (const auto& f : m_detachedFragmentRuntime.fragments())
+        if (!f.mass.known)
+            m_detachedFragmentRuntime.setFragmentMass(f.moduleId, detachedModuleMass(f.moduleId));
 }
 
 void ShipCore::updateDetachedFragments(float dt)

@@ -156,6 +156,9 @@ public:
     // Rebuilds mass properties from the attached modules and the load.
     void recomputeMassProperties();
     const ShipDeviceState& devices() const { return m_devices; }
+    // Mass that left the ship with a detached module (its dry mass, the cargo
+    // and C20 tare it carried) - recorded on its detached fragment.
+    game::simulation::DetachedFragmentMass detachedModuleMass(const std::string& moduleId) const;
     void refreshDeviceState();
 
     // // ───────────────

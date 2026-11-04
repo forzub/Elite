@@ -332,16 +332,25 @@ int main(int argc, char** argv)
             glm::length(fragment->homeCenterLocal - m->placement.centerMeters) < 1.0e-4f &&
             glm::length(fragment->position - m->placement.centerMeters) < 1.0e-4f;
         const double detachedMassKg = core->currentMassKg();
+        // the fragment carries exactly the mass the ship lost (dry car + its cargo + its C20 tare)
+        const bool fragmentMass = fragment && fragment->mass.known &&
+                                  std::abs(fragment->mass.totalKg - (before - detachedMassKg)) < 1.0 &&
+                                  std::abs(fragment->mass.moduleDryKg - m->placement.massKg) < 1.0 &&
+                                  std::abs(fragment->mass.cargoKg - carCargo * 1000.0) < 1.0 && fragment->mass.containerTareKg > 0.0;
+        if (fragment)
+            std::cout << "     fragment mass: dry " << num(fragment->mass.moduleDryKg / 1000.0, 1) << " t + cargo "
+                      << num(fragment->mass.cargoKg / 1000.0, 1) << " t + C20 tare " << num(fragment->mass.containerTareKg / 1000.0, 1)
+                      << " t = " << num(fragment->mass.totalKg / 1000.0, 1) << " t" << std::endl;
         const double aDetached = core->capabilities().effectivePhysics.forwardMainEngineAccelerationMps2;
         const bool reattached = core->debugReattachModuleById(car);
         core->refreshRuntimeState();
-        check(detached && fragmentSpawned && fragmentAtPassportPosition &&
+        check(detached && fragmentSpawned && fragmentAtPassportPosition && fragmentMass &&
                   std::abs((before - detachedMassKg) - carKg) < 1e-3 * carKg &&
                   aDetached > aBefore &&
                   reattached && std::abs(core->currentMassKg() - before) < 1e-6 * before,
               "He-T12 train: detached car becomes a fragment at its passport position, removes " +
                   num((before - detachedMassKg) / 1000.0, 0) +
-                  " t (car + cargo + C20), then reattaches with mass restored");
+                  " t (car + cargo + C20) = the fragment's recorded mass, then reattaches with mass restored");
     }
 
     // ---- 16 RCS cluster units on 8 nodes: each unit is its own device

@@ -605,6 +605,15 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::DetachedFragmentMass,
+    v.moduleDryKg,
+    v.cargoKg,
+    v.containerTareKg,
+    v.totalKg,
+    v.known
+);
+
+ELITE_WIRE_SCHEMA(
     game::simulation::ObjectDetachedFragmentSnapshot,
     v.moduleId,
     v.originalModuleId,
@@ -620,8 +629,10 @@ ELITE_WIRE_SCHEMA(
     v.canReattach,
     v.debugHitVolumes,
     v.homeLocalModel,
-    v.homeCenterLocal
+    v.homeCenterLocal,
+    v.mass
 );
+
 
 ELITE_WIRE_SCHEMA(
     game::simulation::ObjectRepairJobSnapshot,

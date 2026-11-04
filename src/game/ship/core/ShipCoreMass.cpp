@@ -35,6 +35,38 @@ const ModuleDescriptor* findDescriptorModule(const ShipDescriptor& d, const std:
             return &m;
     return nullptr;
 }
+
+// Cargo and C20 boxes aboard for a set of attached holders: the holders carry
+// the payload and its C20 places; a detached holder takes its share of both.
+struct CargoAboard
+{
+    double cargoTonnes = 0.0;
+    int boxes = 0;
+};
+
+template<typename Attached>
+CargoAboard cargoAboard(const ShipDescriptor& d, const ShipLoadState& load, const Attached& attached)
+{
+    const auto& c = d.catalog;
+    double total = 0.0, aboard = 0.0;
+    for (std::size_t i = 0; i < c.cargoHolderModuleIds.size(); ++i)
+    {
+        total += c.cargoHolderCapacityTonnes[i];
+        if (attached(c.cargoHolderModuleIds[i]))
+            aboard += c.cargoHolderCapacityTonnes[i];
+    }
+    CargoAboard out;
+    out.cargoTonnes = c.cargoHolderModuleIds.empty() ? load.cargoTonnes : std::min(load.cargoTonnes, aboard);
+    const int slots = d.storage.containerSlots;
+    if (slots <= 0)
+        return out;
+    out.boxes = load.containers >= 0
+        ? std::min(load.containers, slots)
+        : std::min(slots, static_cast<int>(std::ceil(out.cargoTonnes / std::max(1, d.storage.containerPayloadTonnes))));
+    if (total > 0.0)
+        out.boxes = std::min(out.boxes, static_cast<int>(std::floor(slots * aboard / total + 1.0e-9)));
+    return out;
+}
 } // namespace
 
 ShipLoadState ShipCore::serviceLoad(const ShipDescriptor& descriptor)
@@ -111,21 +143,10 @@ void ShipCore::recomputeMassProperties()
     if (!placed)
         acc.add(d->physics.massKg, d->physics.centerOfMassLocalMeters, glm::dvec3(0.5));
 
-    // cargo: only what the attached holders can still carry
-    double cargoCapacityAttached = 0.0;
-    for (std::size_t i = 0; i < c.cargoHolderModuleIds.size(); ++i)
-        if (attached(c.cargoHolderModuleIds[i]))
-            cargoCapacityAttached += c.cargoHolderCapacityTonnes[i];
-    double cargoTonnes = m_load.cargoTonnes;
-    if (!c.cargoHolderModuleIds.empty())
-        cargoTonnes = std::min(cargoTonnes, cargoCapacityAttached);
-    const int boxes = d->storage.containerSlots > 0
-        ? (m_load.containers >= 0 ? std::min(m_load.containers, d->storage.containerSlots)
-                                  : std::min(d->storage.containerSlots,
-                                             static_cast<int>(std::ceil(cargoTonnes / std::max(1, d->storage.containerPayloadTonnes)))))
-        : 0;
+    // cargo and its C20 boxes: only what the attached holders still carry
+    const auto cargo = cargoAboard(*d, m_load, attached);
     spread(c.cargoHolderModuleIds, &c.cargoHolderCapacityTonnes,
-           (cargoTonnes + boxes * c.containerTareTonnes) * 1000.0);
+           (cargo.cargoTonnes + cargo.boxes * c.containerTareTonnes) * 1000.0);
     spread(c.tankModuleIds, &c.tankCapacityTonnes, m_load.fluids01 * c.fluidsCapacityTonnes * 1000.0);
     spread(c.cabinModuleIds, nullptr, m_load.consumables01 * c.consumablesCapacityTonnes * 1000.0 +
                                           m_load.persons * c.personMassTonnes * 1000.0);
@@ -162,6 +183,29 @@ void ShipCore::recomputeMassProperties()
     mp.centerOfMassLocalMeters = com;
     mp.inertiaTensorLocalKgM2 = inertia;
     mp.touch();
+}
+
+game::simulation::DetachedFragmentMass ShipCore::detachedModuleMass(const std::string& moduleId) const
+{
+    game::simulation::DetachedFragmentMass out;
+    const ShipDescriptor* d = m_state.construction.definition ? m_state.construction.definition : m_desc;
+    if (!d)
+        return out;
+    const auto& runtime = static_cast<const world::modules::ObjectModuleRuntime&>(m_moduleRuntime);
+    const auto attachedNow = [&](const std::string& id) {
+        const auto* st = runtime.findModule(id);
+        return !st || st->state != world::modules::ObjectModuleRuntimeState::Detached;
+    };
+    const auto withModule = [&](const std::string& id) { return id == moduleId || attachedNow(id); };
+    if (const auto* m = findDescriptorModule(*d, moduleId); m && m->placement.valid)
+        out.moduleDryKg = m->placement.massKg;
+    const auto before = cargoAboard(*d, m_load, withModule);
+    const auto after = cargoAboard(*d, m_load, attachedNow);
+    out.cargoKg = std::max(0.0, before.cargoTonnes - after.cargoTonnes) * 1000.0;
+    out.containerTareKg = std::max(0, before.boxes - after.boxes) * d->catalog.containerTareTonnes * 1000.0;
+    out.totalKg = out.moduleDryKg + out.cargoKg + out.containerTareKg;
+    out.known = true;
+    return out;
 }
 
 void ShipCore::refreshDeviceState()

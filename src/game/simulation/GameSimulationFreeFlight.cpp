@@ -317,7 +317,11 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     motion.freeFlightAutopilotTargetId = target->id;
     motion.freeFlightAutopilotRangeM = height;
     motion.freeFlightAutopilotRelSpeedMps = glm::length(w + dv);
-    motion.freeFlightAutopilotAccelMps2 = static_cast<float>(glm::length(accel));
+    // signed along the velocity: braking is a negative acceleration (the speed still
+    // grows while it is positive, however small)
+    const glm::dvec3 wAfter = w + dv;
+    motion.freeFlightAutopilotAccelMps2 = static_cast<float>(
+        glm::length(wAfter) > 1.0e-3 ? glm::dot(accel, glm::normalize(wAfter)) : glm::length(accel));
     if (f.autopilotSeconds - f.autopilotLastLogSeconds >= (phase == 4 ? 1.0 : 2.0))
     {
         f.autopilotLastLogSeconds = f.autopilotSeconds;
@@ -723,7 +727,30 @@ void GameSimulation::updateFreeFlights(double dt)
                 // the real ground under the ship (terrain / sea of the rendered field) when low
                 TerrainSample terrain;
                 const bool terrainKnown = alt < 15000.0 && m_terrainHeight && m_terrainHeight(primary->id, rHat, terrain);
-                const double ground = terrainKnown ? terrain.heightM : 0.0;
+                // The hull, not its centre, meets the ground: the highest terrain under
+                // the footprint (centre, nose / tail, both sides) plus the half height and
+                // a gear clearance - the centre at ground + 1 m sank half the hull (and
+                // the up-slope end) into the rendered surface.
+                double ground = terrainKnown ? terrain.heightM : 0.0;
+                {
+                    glm::dvec3 half = ship->core().effectivePhysics().physicalActuatorHalfExtentsMeters;
+                    if (half.x <= 0.0 || half.y <= 0.0 || half.z <= 0.0)
+                        half = glm::dvec3(8.0, 3.0, 15.0);
+                    if (terrainKnown && alt < ground + 2000.0)
+                    {
+                        const glm::dvec3 fwd = glm::dvec3(tr.forward()) - rHat * glm::dot(glm::dvec3(tr.forward()), rHat);
+                        const glm::dvec3 side = glm::cross(rHat, glm::length(fwd) > 1.0e-6 ? glm::normalize(fwd) : glm::dvec3(tr.right()));
+                        const glm::dvec3 nose = glm::length(fwd) > 1.0e-6 ? glm::normalize(fwd) : glm::cross(side, rHat);
+                        const double r = primary->radiusMeters;
+                        for (const glm::dvec3 offset : {nose * half.z, -nose * half.z, side * half.x, -side * half.x})
+                        {
+                            TerrainSample under;
+                            if (m_terrainHeight(primary->id, glm::normalize(rHat * r + offset), under))
+                                ground = std::max(ground, under.heightM);
+                        }
+                    }
+                    ground += half.y + 0.5;   // the hull bottom on its gear
+                }
                 motion.freeFlightGroundHeightM = ground;
                 motion.freeFlightGroundMaterial = static_cast<std::int16_t>(terrainKnown ? terrain.material : -1);
                 motion.freeFlightGroundSlopeDeg = static_cast<float>(terrainKnown ? terrain.slopeDeg : 0.0);
@@ -787,7 +814,7 @@ void GameSimulation::updateFreeFlights(double dt)
                     motion.freeFlightSurfaceState = 0;                     // lift off
                 else
                 {
-                    frame.originMeters = primary->centerMeters + rHat * (primary->radiusMeters + motion.freeFlightGroundHeightM + 1.0);
+                    frame.originMeters = primary->centerMeters + rHat * (primary->radiusMeters + motion.freeFlightGroundHeightM);
                     frame.linearVelocityMps = bodyVelocity;
                 }
             }

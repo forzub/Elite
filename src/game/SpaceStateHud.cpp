@@ -1638,7 +1638,9 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     if (motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase <= 4)
     {
         char drive[96];
-        std::snprintf(drive, sizeof drive, "J-ПРИВОД АВТОПИЛОТА %.1f g", motion.freeFlightAutopilotAccelMps2 / 9.81);
+        // signed along the velocity: "-" is braking (the speed falls), "+" the speed grows
+        std::snprintf(drive, sizeof drive, "J-ПРИВОД АВТОПИЛОТА %+.1f g %s", motion.freeFlightAutopilotAccelMps2 / 9.81,
+                      motion.freeFlightAutopilotAccelMps2 < -0.05f ? "(торможение)" : "(разгон)");
         thrust = drive;
     }
     std::string line2 = thrust + "   HOME тяга  ·  END торможение  ·  INSERT выкл  ·  PgDn посадка  ·  Ctrl+J выход";
@@ -1672,7 +1674,7 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         if (phase == 5)
             std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s", target.c_str(), phases[phase]);
         else
-            std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s   ·   до поверхности %s   ·   скорость %s   ·   ускорение %.1f g",
+            std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s   ·   до поверхности %s   ·   скорость %s   ·   ускорение %+.1f g",
                           target.c_str(), phases[phase], jDistance(motion.freeFlightAutopilotRangeM).c_str(),
                           jSpeed(motion.freeFlightAutopilotRelSpeedMps).c_str(), motion.freeFlightAutopilotAccelMps2 / 9.81);
         const float aw = text.measureTextPx(ap, 16) + 40.0f;

@@ -37,7 +37,7 @@ assert 'fragments.stageCheck' not in workspace
 assert 'fragments.stageCheck' not in structural
 assert "wizardStageCheckControls('semantics')" not in effects
 
-assert re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.86"',version), 'editor version must be 0.10.86'
+assert re.search(r'ModelAssetEditorVersion\s*=\s*"0.10.87"',version), 'editor version must be 0.10.87'
 print('MODEL ASSET EDITOR STAGE FOOTER LAYOUT: PASS')
 print(' - SOURCE through BUILD share one bottom-of-tab CHECK/BUILD footer')
 print(' - all supplemental authoring sections render above that footer')

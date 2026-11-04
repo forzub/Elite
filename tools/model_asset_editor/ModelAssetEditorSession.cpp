@@ -3012,20 +3012,21 @@ std::filesystem::path runtimeAssemblySourceDirectory(ObjectType type)
     }
 }
 
-std::vector<std::filesystem::path> discoverShipSourceDirectories(const std::filesystem::path& sourceRoot)
+// Every <top>/<folder> with LOD<N>/*.obj under the source root, sorted by name.
+std::vector<std::filesystem::path> discoverSourceDirectoriesUnder(const std::filesystem::path& sourceRoot, const char* top)
 {
     std::vector<std::filesystem::path> result;
-    const auto shipsRoot = resolveSourceFolderAssetRoot(sourceRoot, "ships");
-    if (shipsRoot.empty()) return result;
+    const auto topRoot = resolveSourceFolderAssetRoot(sourceRoot, top);
+    if (topRoot.empty()) return result;
 
     std::error_code ec;
     std::filesystem::directory_iterator it(
-        shipsRoot, std::filesystem::directory_options::skip_permission_denied, ec);
+        topRoot, std::filesystem::directory_options::skip_permission_denied, ec);
     const std::filesystem::directory_iterator end;
     for (; !ec && it != end; it.increment(ec))
     {
         if (!it->is_directory(ec)) continue;
-        const auto relative = std::filesystem::path("ships") / it->path().filename();
+        const auto relative = std::filesystem::path(top) / it->path().filename();
         if (sourceFolderAssetAvailable(sourceRoot, relative))
             result.push_back(relative.lexically_normal());
     }
@@ -3033,6 +3034,53 @@ std::vector<std::filesystem::path> discoverShipSourceDirectories(const std::file
         return lowerText(a.filename().string()) < lowerText(b.filename().string());
     });
     return result;
+}
+
+std::vector<std::filesystem::path> discoverShipSourceDirectories(const std::filesystem::path& sourceRoot)
+{
+    return discoverSourceDirectoriesUnder(sourceRoot, "ships");
+}
+
+// Hub module SOURCE folders: assets/models/hub/<module>/LOD<N>/*.obj.
+std::vector<std::filesystem::path> discoverHubSourceDirectories(const std::filesystem::path& sourceRoot)
+{
+    return discoverSourceDirectoriesUnder(sourceRoot, "hub");
+}
+
+// ships/ship_models.json (written by tools/ship_meshes EliteShipMeshExport):
+// folder -> the catalog passports it represents, their names and the source
+// kind (primitive = generated placeholder boxes, authored = hand-made mesh).
+// A missing or unreadable index leaves plain folder names.
+struct ShipModelIndexEntry
+{
+    std::vector<std::string> passportIds;
+    std::vector<std::string> names;
+    std::string source;
+};
+
+std::map<std::string, ShipModelIndexEntry> loadShipModelIndex(const std::filesystem::path& sourceRoot)
+{
+    std::map<std::string, ShipModelIndexEntry> out;
+    const auto shipsRoot = resolveSourceFolderAssetRoot(sourceRoot, "ships");
+    if (shipsRoot.empty()) return out;
+    try
+    {
+        std::ifstream file(shipsRoot / "ship_models.json", std::ios::binary);
+        if (!file) return out;
+        const auto index = json::parse(file);
+        for (const auto& e : index.value("ships", json::array()))
+        {
+            auto& entry = out[lowerText(e.value("folder", std::string()))];
+            entry.passportIds.push_back(e.value("passportId", std::string()));
+            entry.names.push_back(e.value("name", e.value("passportId", std::string())));
+            entry.source = e.value("source", std::string());
+        }
+    }
+    catch (...)
+    {
+        out.clear();
+    }
+    return out;
 }
 
 std::string catalogIdForShipFolder(const std::filesystem::path& directory)
@@ -3122,9 +3170,13 @@ ModelAssetEditorSession::ModelAssetEditorSession(
             CatalogSourceAuthority::Folder,
             CatalogBootstrapMode::RuntimeAssembly
         });
+        m_catalog.back().group = "ships";
         haveCanonicalCobra = true;
     }
 
+    // ships/ship_models.json names the folders of catalog ships (passports);
+    // the catalog id stays the folder id so existing working assets resume.
+    const auto shipIndex = loadShipModelIndex(m_sourceAssetsRoot);
     for (const auto& directory : discoverShipSourceDirectories(m_sourceAssetsRoot))
     {
         const bool runtime = !runtimeCobraDirectory.empty() &&
@@ -3139,6 +3191,19 @@ ModelAssetEditorSession::ModelAssetEditorSession(
             CatalogSourceAuthority::Folder,
             runtime ? CatalogBootstrapMode::RuntimeAssembly : CatalogBootstrapMode::Folder
         });
+        auto& entry = m_catalog.back();
+        entry.group = "ships";
+        if (const auto it = shipIndex.find(lowerText(directory.filename().string())); it != shipIndex.end())
+        {
+            std::string names;
+            for (const auto& name : it->second.names)
+                names += (names.empty() ? "" : ", ") + name;
+            entry.displayName = names + " — " + directory.filename().string() +
+                (it->second.source == "primitive" ? " (primitive)" : "");
+            entry.group = "catalog_ships";
+            entry.passportIds = it->second.passportIds;
+            entry.shipSource = it->second.source;
+        }
         haveCanonicalCobra = haveCanonicalCobra || runtime;
     }
     if (!haveCanonicalCobra)
@@ -3155,9 +3220,48 @@ ModelAssetEditorSession::ModelAssetEditorSession(
     // Station SOURCE is filesystem-authoritative: every OBJ directly in
     // stations/LOD<N>/ is a normal mesh; variants/**/*.obj are alternatives.
     m_catalog.push_back({"station", "Orbital Station", ObjectType::Station, "stations", CatalogSourceAuthority::Folder, CatalogBootstrapMode::Folder});
+    m_catalog.back().group = "station";
     m_catalog.push_back({"repair_drone_debug", "Repair Drone", ObjectType::RepairDroneDebug, {}, CatalogSourceAuthority::RuntimeAssembly, CatalogBootstrapMode::RuntimeAssembly});
-    m_catalog.push_back({"guidance_dock_cube", "Guidance Dock Cube", ObjectType::GuidanceDockCube, {}, CatalogSourceAuthority::RuntimeAssembly, CatalogBootstrapMode::RuntimeAssembly});
-    m_catalog.push_back({"guidance_dock_cylinder", "Guidance Dock Cylinder", ObjectType::GuidanceDockCylinder, {}, CatalogSourceAuthority::RuntimeAssembly, CatalogBootstrapMode::RuntimeAssembly});
+
+    // Hub modules: one folder each under hub/. Known modules keep their runtime
+    // object type (and the guidance docks their earlier catalog ids).
+    static const struct
+    {
+        const char* folder;
+        const char* id;
+        const char* label;
+        ObjectType type;
+    } knownHubModules[] = {
+        {"hex-dock-a", "hub_hex_dock", "Hub Hex Dock A", ObjectType::HubHexDock},
+        {"dock-service-block", "hub_dock_service_block", "Hub Dock Service Block", ObjectType::HubDockServiceBlock},
+        {"guidance-dock-cube", "guidance_dock_cube", "Guidance Dock Cube", ObjectType::GuidanceDockCube},
+        {"guidance-dock-cylinder", "guidance_dock_cylinder", "Guidance Dock Cylinder", ObjectType::GuidanceDockCylinder},
+    };
+    std::set<std::string> hubIds;
+    for (const auto& directory : discoverHubSourceDirectories(m_sourceAssetsRoot))
+    {
+        const auto folder = lowerText(directory.filename().string());
+        std::string id = "hub_" + folder;
+        for (char& c : id)
+            if (!std::isalnum(static_cast<unsigned char>(c))) c = '_';
+        std::string label = "Hub — " + directory.filename().string();
+        ObjectType type = ObjectType::None;
+        for (const auto& known : knownHubModules)
+            if (folder == known.folder)
+            {
+                id = known.id;
+                label = std::string(known.label) + " — " + directory.filename().string();
+                type = known.type;
+            }
+        m_catalog.push_back({id, label, type, directory, CatalogSourceAuthority::Folder, CatalogBootstrapMode::Folder});
+        m_catalog.back().group = "hub";
+        hubIds.insert(id);
+    }
+    // without the hub folders the guidance docks stay reachable through the runtime registry
+    if (!hubIds.count("guidance_dock_cube"))
+        m_catalog.push_back({"guidance_dock_cube", "Guidance Dock Cube", ObjectType::GuidanceDockCube, {}, CatalogSourceAuthority::RuntimeAssembly, CatalogBootstrapMode::RuntimeAssembly});
+    if (!hubIds.count("guidance_dock_cylinder"))
+        m_catalog.push_back({"guidance_dock_cylinder", "Guidance Dock Cylinder", ObjectType::GuidanceDockCylinder, {}, CatalogSourceAuthority::RuntimeAssembly, CatalogBootstrapMode::RuntimeAssembly});
 }
 
 std::filesystem::path ModelAssetEditorSession::compiledPath(const std::string& id) const
@@ -7260,7 +7364,10 @@ void ModelAssetEditorSession::sendCatalog()
             {"sourceDirectory", effectiveSourceDirectory.generic_string()},
             {"sourceRoot", sourceAvailable
                 ? resolveSourceFolderAssetRoot(m_sourceAssetsRoot, effectiveSourceDirectory).generic_string()
-                : std::string()}
+                : std::string()},
+            {"group", entry.group},
+            {"passportIds", entry.passportIds},
+            {"shipSource", entry.shipSource}
         });
     }
     m_server.broadcastText(json({

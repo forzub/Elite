@@ -1,3 +1,9 @@
+## 0.10.87 — catalog ships and hub modules in the model list (2026-11-04)
+
+- Ship folders named from `ships/ship_models.json` (written by `tools/ship_meshes` EliteShipMeshExport): catalog name(s), folder and `(primitive)` for generated placeholder sets; `passportIds` / `shipSource` / `group` travel in the catalog message. Catalog ids stay folder ids, so existing working assets resume.
+- Hub modules: every `hub/<module>/LOD<N>/*.obj` folder is a Folder source (hex dock, service block, guidance cube / cylinder keep their runtime object types; the guidance docks keep their catalog ids). The runtime-registry guidance entries remain only as a fallback without the folders.
+- Model select grouped: catalog ships, ship folders, hub modules, stations, runtime registry (localized group labels); an option's tooltip lists its passports.
+
 ## 0.10.73 — wave7E SEMANTICS effect extraction (2026-09-13)
 
 - Moved all 51 functions owned by logical module `semantics` into `effects/semantics.js` behind explicit `createSemanticsEffects(...)` ports.

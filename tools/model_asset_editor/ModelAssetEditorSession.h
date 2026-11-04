@@ -49,6 +49,12 @@ private:
         std::filesystem::path sourceDirectory;
         CatalogSourceAuthority sourceAuthority = CatalogSourceAuthority::RuntimeAssembly;
         CatalogBootstrapMode bootstrapMode = CatalogBootstrapMode::RuntimeAssembly;
+        // UI grouping (catalog_ships / ships / hub / station / runtime) and, for a
+        // ships/<folder> listed in ships/ship_models.json, the catalog passports it
+        // represents and whether it is a generated primitive set or an authored mesh.
+        std::string group = "runtime";
+        std::vector<std::string> passportIds;
+        std::string shipSource;
     };
 
     void sendCatalog();

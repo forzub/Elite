@@ -82,8 +82,8 @@ for token in ['request_catalog', 'request_settings', 'transfers.handleBinary', '
     if token not in runtime:
         fail(f'transport runtime lost integration {token}')
 
-if not re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.86"', version):
-    fail('editor version must be 0.10.86')
+if not re.search(r'ModelAssetEditorVersion\s*=\s*"0.10.87"', version):
+    fail('editor version must be 0.10.87')
 
 print('MODEL ASSET EDITOR TRANSPORT LAYERS: PASS')
 print(' - WebSocket lifecycle and reconnect are outside the HTML shell')

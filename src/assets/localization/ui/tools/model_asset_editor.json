@@ -61,6 +61,41 @@
       "es": "Seleccionar modelo…",
       "ja": "モデルを選択…"
     },
+    "model_editor.catalog.group.catalog_ships": {
+      "en": "Catalog ships",
+      "ru": "Корабли каталога",
+      "zh-Hans": "目录舰船",
+      "es": "Naves del catálogo",
+      "ja": "カタログ艦船"
+    },
+    "model_editor.catalog.group.ships": {
+      "en": "Ship folders",
+      "ru": "Папки кораблей",
+      "zh-Hans": "舰船文件夹",
+      "es": "Carpetas de naves",
+      "ja": "艦船フォルダー"
+    },
+    "model_editor.catalog.group.hub": {
+      "en": "Hub modules",
+      "ru": "Модули хаба",
+      "zh-Hans": "枢纽模块",
+      "es": "Módulos del hub",
+      "ja": "ハブモジュール"
+    },
+    "model_editor.catalog.group.station": {
+      "en": "Stations",
+      "ru": "Станции",
+      "zh-Hans": "空间站",
+      "es": "Estaciones",
+      "ja": "ステーション"
+    },
+    "model_editor.catalog.group.runtime": {
+      "en": "Runtime registry",
+      "ru": "Реестр рантайма",
+      "zh-Hans": "运行时注册表",
+      "es": "Registro de runtime",
+      "ja": "ランタイム登録"
+    },
     "model_editor.no_asset": {
       "en": "No asset",
       "ru": "Модель не выбрана",

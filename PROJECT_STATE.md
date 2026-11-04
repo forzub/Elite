@@ -2496,6 +2496,22 @@ Restore point: tag restore/pre-order-2026-11-04-g.
 - OPEN: J drive energy accounting (reactor / fuel), human flight of the autopilot, autopilot to bodies
   without terrain data, hub as an autopilot target, camera framing of the transfer (drone view).
 
+### User order 2026-11-04 k (J control, J off between planets, minimum altitude)
+- J steering: yaw / pitch turn the velocity (vs the dominant body) toward the nose in 3D at constant speed,
+  1.5 s time constant, 2..20 deg/s (J drive). The old horizontal-only 20 m/s2 turn was an arbitrary
+  placeholder (not an engine figure) and did nothing when flying radially away from the Moon. Live run
+  (D:/tmp/elite_jsteer/steer.log): 8 s yaw / 8 s pitch at 7664 m/s - speed kept (7641..7671 m/s), the
+  velocity follows the nose at 20 deg/s, pitch climbed 416 -> 505 km. The hull itself spins at the ship's
+  own yaw rate (~70 deg/s) under a held key - velocity lags behind it; human feel not yet verified.
+- J off anywhere: away from a hub (or too fast for its capture) the ship keeps its global motion in its own
+  ballistic frame (free fall under gravity) and the local speed starts at 0; J again -> free flight. Live
+  (local.log): 160.3 km/s global kept, local 0 -> 368 m/s after 5 s of '+', global unchanged by it.
+  OPEN: hub capture from the local frame only via J on / J off near the hub; HUD of the local frame does
+  not show the global motion.
+- "Why 100 000 km minimum": it was 109 309 m = 109 km (HUD printed metres). Reason: the altitude where
+  drag at circular speed reaches 0.1 m/s2 (the orbit decays fast). HUD now prints km above 10 km and the
+  reason (not visually re-checked in a capture yet).
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

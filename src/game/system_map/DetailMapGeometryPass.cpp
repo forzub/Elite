@@ -1,5 +1,6 @@
 #include "src/game/system_map/DetailMapGeometryPass.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
+#include "src/game/system_map/SystemMapRendererInternal.h"
 
 #include <algorithm>
 #include <array>
@@ -160,6 +161,8 @@ void DetailMapGeometryPass::renderScene(
             playerOrbitColor
         );
     }
+
+    drawRingAsteroids(planet, viewport);
 
     // Hub/ship/infrastructure markers are rendered by the shared tactical
     // object overlay. This geometry pass keeps celestial/orbit structure only.
@@ -481,6 +484,118 @@ void DetailMapGeometryPass::drawPlanetMapVelocityArrow(
 
     drawPlanetMapLine(a, b, color);
     drawPlanetMapCross(b, 4.0f, color);
+}
+
+namespace
+{
+// splitmix64: a stable hash -> the same cell always yields the same bodies
+std::uint64_t ringHash(std::uint64_t x)
+{
+    x += 0x9e3779b97f4a7c15ull;
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ull;
+    x = (x ^ (x >> 27)) * 0x94d049bb133111ebull;
+    return x ^ (x >> 31);
+}
+
+double ringUnit(std::uint64_t& state)
+{
+    state = ringHash(state);
+    return static_cast<double>(state >> 11) * (1.0 / 9007199254740992.0);
+}
+} // namespace
+
+void DetailMapGeometryPass::drawRingAsteroids(
+    const world::celestial::DetailMapSnapshot& planet,
+    const Viewport& viewport
+)
+{
+    if (planet.rings.empty() || planet.planetRadiusMeters <= 0.0)
+        return;
+
+    // ring plane: the same basis as the ring renderer (prime / tilted east)
+    const glm::dvec3 north = planetNorthAxisWorld(planet);
+    const glm::dvec3 prime = planetPrimeAxisWorld(north);
+    const glm::dvec3 east = planetEastAxisWorld(north, prime);
+    const double inclination = glm::radians(planet.ringPlaneInclinationOffsetDeg);
+    const glm::dvec3 axisX = prime;
+    const glm::dvec3 axisY = glm::normalize(east * std::cos(inclination) + north * std::sin(inclination));
+    const glm::dvec3 normal = glm::normalize(glm::cross(axisX, axisY));
+
+    const double pixelsPerMeter =
+        activeCamera().scale * activeCamera().state.zoom;
+    const glm::vec4 colour(0.74f, 0.71f, 0.64f, 0.85f);
+
+    std::uint64_t bodySeed = 1469598103934665603ull;
+    for (const char c : planet.planetBodyId)
+        bodySeed = (bodySeed ^ static_cast<unsigned char>(c)) * 1099511628211ull;
+
+    constexpr int SectorCount = 2048;
+    constexpr int LaneCount = 24;
+    constexpr int MaxPerCell = 8;
+    constexpr double PixelsPerBody = 22.0;   // ~one body per 22 x 22 px of ring
+
+    for (std::size_t ringIndex = 0; ringIndex < planet.rings.size(); ++ringIndex)
+    {
+        const auto& ring = planet.rings[ringIndex];
+        const double inner = ring.innerRadiusKm * 1000.0;
+        const double outer = ring.outerRadiusKm * 1000.0;
+        if (outer <= inner || inner <= 0.0)
+            continue;
+        // the whole ring below a few pixels: the ring texture says enough
+        if (outer * pixelsPerMeter < 40.0)
+            continue;
+
+        const double laneWidth = (outer - inner) / LaneCount;
+        for (int sector = 0; sector < SectorCount; ++sector)
+        {
+            const double a0 = glm::two_pi<double>() * sector / SectorCount;
+            for (int lane = 0; lane < LaneCount; ++lane)
+            {
+                const double rMid = inner + (lane + 0.5) * laneWidth;
+                const double aMid = a0 + glm::pi<double>() / SectorCount;
+                const glm::dvec3 centre = planet.planetCenterMeters +
+                    (axisX * std::cos(aMid) + axisY * std::sin(aMid)) * rMid;
+                const glm::dvec2 c = activeCamera().project(centre);
+                // cell footprint on screen (a perspective-free estimate)
+                const double cellPx = std::max(laneWidth, rMid * glm::two_pi<double>() / SectorCount) * pixelsPerMeter;
+                const double margin = cellPx + 8.0;
+                if (c.x < -margin || c.y < -margin || c.x > viewport.width + margin || c.y > viewport.height + margin)
+                    continue;
+
+                std::uint64_t state = bodySeed ^ ringHash((static_cast<std::uint64_t>(ringIndex) << 40) ^
+                                                          (static_cast<std::uint64_t>(sector) << 12) ^
+                                                          static_cast<std::uint64_t>(lane));
+                // bodies of this cell shown at the current zoom
+                // dense rings (high optical depth) show many bodies, dusty ones few
+                const double wanted = cellPx * cellPx / (PixelsPerBody * PixelsPerBody) *
+                    std::clamp(static_cast<double>(ring.opticalDepth) * 1.5, 0.03, 1.0);
+                int count = static_cast<int>(std::min<double>(MaxPerCell, std::floor(wanted)));
+                if (count == 0 && ringUnit(state) < wanted)
+                    count = 1;
+                for (int k = 0; k < count; ++k)
+                {
+                    const double u = ringUnit(state);
+                    const double v = ringUnit(state);
+                    const double w = ringUnit(state) - 0.5;
+                    const double size = ringUnit(state);
+                    const double a = a0 + glm::two_pi<double>() / SectorCount * u;
+                    const double r = inner + (lane + v) * laneWidth;
+                    const glm::dvec3 p = planet.planetCenterMeters +
+                        (axisX * std::cos(a) + axisY * std::sin(a)) * r +
+                        normal * (w * 0.002 * planet.planetRadiusMeters);   // a thin ring
+                    // behind the planet disc: hidden (planet is opaque)
+                    const glm::dvec3 rel = activeCamera().vectorToCamera(p - planet.planetCenterMeters);
+                    if (rel.z < 0.0 &&
+                        rel.x * rel.x + rel.y * rel.y < planet.planetRadiusMeters * planet.planetRadiusMeters)
+                        continue;
+                    const glm::dvec2 sp = activeCamera().project(p);
+                    // a few big bodies, many small ones (power law of the visible size)
+                    const float px = static_cast<float>(1.2 + 3.0 * std::pow(size, 6.0));
+                    drawPlanetMapCross(sp, px, colour);
+                }
+            }
+        }
+    }
 }
 
 void DetailMapGeometryPass::drawDetailMapOrbit3D(

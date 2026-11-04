@@ -66,6 +66,13 @@ private:
         double lenMeters
     );
 
+    // Repeatable procedural ring bodies (the same place always shows the same
+    // bodies): seeded per ring cell, density follows the screen size of a cell.
+    void drawRingAsteroids(
+        const world::celestial::DetailMapSnapshot& planet,
+        const Viewport& viewport
+    );
+
     void drawDetailMapOrbit3D(
         const world::celestial::DetailMapOrbit& orbit,
         const world::celestial::DetailMapSnapshot& snapshot,

@@ -1320,9 +1320,20 @@ void SpaceState::update(float dt)
                 else if (cmd.rfind("enter:", 0) == 0)
                 {
                     std::string id = arg("enter:");
-                    if (id == "earth") id = "system_0.Sol.Земля";
-                    else if (id == "mars") id = "system_0.Sol.Марс";
+                    static const std::pair<const char*, const char*> enterAliases[] = {
+                        {"earth", "system_0.Sol.Земля"}, {"mars", "system_0.Sol.Марс"}, {"jupiter", "system_0.Sol.Юпитер"},
+                        {"saturn", "system_0.Sol.Сатурн"}, {"belt", "system_0.Sol.asteroid_belt"}};
+                    for (const auto& [k, v] : enterAliases)
+                        if (id == k)
+                            id = v;
                     m_systemMapRenderer.devEnter(id);
+                }
+                else if (cmd == "detail")
+                {
+                    // the Details tab: the selected body's Detail map
+                    world::celestial::DetailTarget target;
+                    if (buildSelectedMapDetailTarget(target) && composeDetailMapSnapshot(target))
+                        m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Detail);
                 }
                 else if (cmd.rfind("hub:", 0) == 0)
                     m_systemMapRenderer.devFocusHub(arg("hub:"));

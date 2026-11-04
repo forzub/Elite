@@ -152,9 +152,13 @@ SurfaceAppearance ImportedSurfaceField::appearance(const SurfaceSample& s, const
         c *= static_cast<float>(1.0 + (m_cratered ? 0.12 : 0.30) * v);
         const float rock = static_cast<float>(smoothstep(0.08, 0.3, slope));
         c = glm::mix(c, glm::vec3(0.32f, 0.30f, 0.28f), rock * 0.5f);
-        // fresh ejecta: bright, immature regolith around young craters
+        // space weathering: mature regolith darker, fresh ejecta / rays lighter
+        // toward white (immature); the map's mean colour stays the reference
         if (m_cratered)
-            c *= 1.0f + 0.55f * s.freshness;
+        {
+            c *= 0.85f;
+            c += (glm::vec3(1.0f) - c) * (0.35f * s.freshness);
+        }
     }
     a.albedo = glm::clamp(c, glm::vec3(0.0f), glm::vec3(1.0f));
     if (s.water)

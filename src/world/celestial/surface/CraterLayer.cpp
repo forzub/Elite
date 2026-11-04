@@ -73,11 +73,30 @@ CraterSample CraterLayer::sample(const glm::dvec3& dir, double minWavelengthM) c
                         cls.cellM * (MinRadiusOfCell + (MaxRadiusOfCell - MinRadiusOfCell) * std::pow(unitFromHash(h, 4), 2.0));
                     const glm::dvec3 centre = glm::normalize(q) * m_radius;
                     const double r = glm::length(x - centre) / radius;
+                    if (r >= 5.0)
+                        continue;
+                    // age: small craters are young more often (they are erased fast and
+                    // made all the time), big ones mostly old and soft
+                    const double youth = 1.5 + 1.5 * std::clamp(std::log10(std::max(radius, 1.0) / 30.0), 0.0, 1.0);
+                    const double fresh = std::pow(unitFromHash(h, 5), youth);
+                    // fade: the class comes in as it becomes resolved (band limit)
+                    const double fade = std::clamp(radius * 2.0 / std::max(minWavelengthM, 1.0e-3) - 1.0, 0.0, 1.0);
+                    // bright rays of a fresh crater out to 5 radii: spokes of immature ejecta
+                    if (fresh > 0.55 && r > 0.9)
+                    {
+                        const glm::dvec3 n = glm::normalize(q);
+                        const glm::dvec3 t1 = glm::normalize(glm::cross(n, std::abs(n.y) < 0.9 ? glm::dvec3(0, 1, 0) : glm::dvec3(1, 0, 0)));
+                        const glm::dvec3 t2 = glm::cross(n, t1);
+                        const glm::dvec3 off = x - centre;
+                        const double theta = std::atan2(glm::dot(off, t2), glm::dot(off, t1));
+                        const double spokes = 5.0 + std::floor(unitFromHash(h, 6) * 6.0);
+                        const double ray = std::pow(std::max(0.0, std::cos(spokes * theta + unitFromHash(h, 7) * 6.2832)), 10.0);
+                        out.freshness = std::max(out.freshness, static_cast<float>(ray * std::clamp((5.0 - r) / 4.0, 0.0, 1.0) *
+                                                                                   (fresh - 0.55) / 0.45 * 0.8 * fade));
+                    }
                     if (r >= 3.0)
                         continue;
-                    // age: most craters are old and soft, a few fresh and sharp
-                    const double fresh = std::pow(unitFromHash(h, 5), 3.0);
-                    const double depth = radius * (0.06 + 0.34 * fresh);   // d/D 0.03 (old) .. 0.2 (fresh)
+                    const double depth = radius * (0.10 + 0.30 * fresh);   // d/D 0.05 (old) .. 0.2 (fresh)
                     const double rim = depth * (0.12 + 0.18 * fresh);
                     double hgt;
                     if (r < 1.0)
@@ -89,8 +108,6 @@ CraterSample CraterLayer::sample(const glm::dvec3& dir, double minWavelengthM) c
                     else
                         hgt = rim / (r * r * r);
                     hgt -= rim / 27.0;   // zero at 3 radii
-                    // band limit: fade the class in as it becomes resolved
-                    const double fade = std::clamp(radius * 2.0 / std::max(minWavelengthM, 1.0e-3) - 1.0, 0.0, 1.0);
                     out.heightM += hgt * fade;
                     if (r < 2.5)
                         out.freshness = std::max(out.freshness, static_cast<float>(fresh * (1.0 - r / 2.5) * fade));

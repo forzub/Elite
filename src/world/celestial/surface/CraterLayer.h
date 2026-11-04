@@ -15,10 +15,11 @@ namespace world::celestial::surface
     Classes of cells shrinking by 2x; one candidate crater per cell with a
     fixed probability, so the count per area grows as D^-2 (the cumulative
     size law of a cratered surface near equilibrium: few big craters, very
-    many small ones, small ones on top of big ones). Each crater has an age:
-    fresh ones are deep bowls (depth / diameter 0.2) with a sharp raised rim,
-    an ejecta blanket (rim / r^3 out to 3 radii), bright ejecta and blocks on
-    the rim; old ones are shallow, soft saucers. Band-limited: a class adds
+    many small ones, small ones on top of big ones). Each crater has an age -
+    small ones are young more often: fresh ones are deep bowls (depth /
+    diameter 0.2) with a sharp raised rim, an ejecta blanket (rim / r^3 out to
+    3 radii), a bright ejecta halo with rays to 5 radii and blocks on the rim;
+    old ones are shallow saucers (d/D 0.05). Band-limited: a class adds
     relief only where it is resolved (smooth fade), so every LOD is the same
     surface. Deterministic from the seed (identical on server and client).
 */

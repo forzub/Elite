@@ -895,8 +895,18 @@ SurfaceAppearance PlanetSurfaceField::appearance(const SurfaceSample& s, const g
             c = glm::mix(glm::vec3(0.36f, 0.34f, 0.18f), c, static_cast<float>(smoothstep(0.25, 0.6, s.moisture)));
         albedo += w[i] * c;
     }
-    // Fresh ejecta is bright; deterministic regional variation.
-    albedo *= 1.0f + 0.35f * s.freshness * (1.0f - w[m(SurfaceMaterial::Vegetation)]);
+    // Fresh ejecta is bright; deterministic regional variation. Airless / icy
+    // bodies: space weathering - the mature surface is darker (x0.72), fresh
+    // ejecta and rays are immature and lighter toward white (no saturation on
+    // bright ice, where multiplying clipped at 1 and showed nothing)
+    const bool airless = m_archetype == SurfaceArchetype::AirlessRocky || m_archetype == SurfaceArchetype::Icy;
+    if (airless)
+    {
+        albedo *= 0.72f;
+        albedo += (glm::vec3(1.0f) - albedo) * (0.35f * s.freshness);
+    }
+    else
+        albedo *= 1.0f + 0.35f * s.freshness * (1.0f - w[m(SurfaceMaterial::Vegetation)]);
     albedo *= static_cast<float>(1.0 + 0.14 * variation);
     a.albedo = glm::clamp(albedo, glm::vec3(0.0f), glm::vec3(1.0f));
     if (m_archetype == SurfaceArchetype::Volcanic && m_body.meanTemperatureK > 700.0)

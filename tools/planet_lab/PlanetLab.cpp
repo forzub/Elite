@@ -129,16 +129,34 @@ int main(int argc, char** argv)
     for (int i = 1; i < argc; ++i)
         if (std::string(argv[i]) == "--probe-fine")
         {
+            // optional "--at <lat> <lon>" (degrees, body-fixed: x prime, y north, z east)
+            bool at = false;
+            double latD = 0.0, lonD = 0.0;
+            for (int j = 1; j + 2 < argc; ++j)
+                if (std::string(argv[j]) == "--at")
+                {
+                    at = true;
+                    latD = std::atof(argv[j + 1]);
+                    lonD = std::atof(argv[j + 2]);
+                }
             for (const auto& b : bodies)
             {
-                const glm::dvec3 up = b.focusDir;
+                const double la = latD * 3.14159265358979 / 180.0, lo0 = lonD * 3.14159265358979 / 180.0;
+                const glm::dvec3 up = at ? glm::dvec3(std::cos(la) * std::cos(lo0), std::sin(la), std::cos(la) * std::sin(lo0))
+                                         : b.focusDir;
                 const glm::dvec3 east = glm::normalize(glm::cross(glm::dvec3(0, 1, 0), up));
                 double lo = 1e30, hi = -1e30, slope = 0.0, prev = 0.0;
+                float freshMax = 0.0f, albLo = 1.0f, albHi = 0.0f;
                 std::printf("%s:", b.label.c_str());
                 for (int k = 0; k <= 200; ++k)
                 {
                     const glm::dvec3 d = glm::normalize(up + east * (k * 2.0 / b.field->referenceRadiusM()));
-                    const double h = b.field->sample(d, 2.0).heightM;
+                    const auto smp = b.field->sample(d, 2.0);
+                    const double h = smp.heightM;
+                    freshMax = std::max(freshMax, smp.freshness);
+                    const float alb = b.field->appearance(smp, d, 0.05).albedo.r;
+                    albLo = std::min(albLo, alb);
+                    albHi = std::max(albHi, alb);
                     lo = std::min(lo, h);
                     hi = std::max(hi, h);
                     if (k > 0)
@@ -147,7 +165,7 @@ int main(int argc, char** argv)
                     if (k % 10 == 0)
                         std::printf(" %.1f", h);
                 }
-                std::printf("\n  range %.2f m, mean |slope| %.3f\n", hi - lo, slope / 200.0);
+                std::printf("\n  range %.2f m, mean |slope| %.3f, max freshness %.2f, albedo %.3f..%.3f\n", hi - lo, slope / 200.0, freshMax, albLo, albHi);
             }
             return 0;
         }

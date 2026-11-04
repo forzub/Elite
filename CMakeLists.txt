@@ -145,6 +145,7 @@ target_include_directories(EliteNavigationGeometry PUBLIC
 # Procedural surface generator (planets, moons, small bodies, gas giant decks,
 # clouds): deterministic fields, cube-sphere patches, streaming. No GL.
 add_library(EliteCelestialSurface STATIC
+    src/core/ThreadPriority.cpp
     src/world/celestial/surface/SurfaceNoise.cpp
     src/world/celestial/surface/SurfaceField.cpp
     src/world/celestial/surface/BodySurfaceDescriptor.cpp

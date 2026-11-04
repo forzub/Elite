@@ -168,7 +168,10 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
     // an inertial attitude would drift off the dock) - scripted captures.
     const char* observerEnv = std::getenv("ELITE_DEV_DOCK_OBSERVER");
     // =3: the held view from ~1.1 km in front of the hold "flower" (holds within +-22 deg).
-    const bool observerHold = observerEnv && (observerEnv[0] == '2' || observerEnv[0] == '3');
+    // =4: held at the =2 point but looking 45 deg down toward the planet limb
+    // (planet terrain / wireframe cost captures).
+    const bool observerPlanet = observerEnv && observerEnv[0] == '4';
+    const bool observerHold = observerEnv && (observerEnv[0] == '2' || observerEnv[0] == '3' || observerPlanet);
     const bool observerNear = observerEnv && observerEnv[0] == '3';
     if ((!m_dockObserverPlaced || observerHold) && observerEnv && (observerEnv[0] == '1' || observerHold))
     {
@@ -176,7 +179,15 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
                                                                    : glm::dvec3(700.0, 250.0, -2600.0));
         const glm::dvec3 look = origin + fixedBasis * (observerNear ? glm::dvec3(0.0, 0.0, -1500.0)
                                                                     : glm::dvec3(0.0, 0.0, -900.0));
-        const glm::dvec3 f = glm::normalize(look - eye);
+        glm::dvec3 f = glm::normalize(look - eye);
+        if (observerPlanet)
+            for (auto& [id, shipPtr] : m_ships)
+                if (shipPtr && isPlayerControlled(id))
+                    if (const auto* frame = hubNavigationFrame(shipPtr->core().transform().motion.hubId); frame && frame->valid)
+                    {
+                        f = glm::normalize(-frame->radialAxis + frame->progradeAxis);
+                        break;
+                    }
         const glm::dvec3 r = glm::normalize(glm::cross(f, fixedBasis[1]));
         const glm::dvec3 u = glm::cross(r, f);
         glm::mat4 orientation(1.0f);

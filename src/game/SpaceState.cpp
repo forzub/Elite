@@ -1458,6 +1458,28 @@ void SpaceState::update(float dt)
             }
         }
 
+        // DEV: ELITE_DEV_DOCK_REQUEST_AT=<s> requests automatic docking at the
+        // Earth hub hex dock once, in the normal scene (freeze captures).
+        static const double dockRequestAtSeconds = [] {
+            const char* v = std::getenv("ELITE_DEV_DOCK_REQUEST_AT");
+            return v && *v ? std::atof(v) : -1.0;
+        }();
+        static bool dockRequestSent = false;
+        if (dockRequestAtSeconds >= 0.0 && !dockRequestSent && m_client &&
+            startupElapsedMs(m_startupTotalBegin) / 1000.0 >= dockRequestAtSeconds)
+        {
+            dockRequestSent = true;
+            game::navigation::RouteTargetRef target;
+            target.kind = game::navigation::NavigationRouteAnchorKind::SemanticAnchor;
+            if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
+                target.systemId = it->second.transform.motion.systemId;
+            target.stableObjectId = "hub_hex_dock_a";
+            target.semanticAnchorId = "dock_gate_front";
+            const auto serial = m_navigationWorkspace.dockingRouteRequests().request(
+                target, game::navigation::DockingRouteRequest::Mode::Automatic);
+            std::cerr << "[DevDockRequest] request=" << serial << " target=hub_hex_dock_a:dock_gate_front" << '\n';
+        }
+
         // DEV: ELITE_DEV_DRONE_VIEW_AT=<s> switches the flight view to the
         // external drone camera once (style captures of the player ship).
         static const double droneAtSeconds = [] {

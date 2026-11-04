@@ -1,3 +1,4 @@
+#include "src/core/ThreadPriority.h"
 #include "src/render/celestial/flight/CelestialFlightRenderer.h"
 
 #include <glad/gl.h>
@@ -175,7 +176,10 @@ namespace
         {
             m_stop = false;
             for (int i = 0; i < threads; ++i)
-                m_threads.emplace_back([this] { run(); });
+                m_threads.emplace_back([this] {
+                    core::lowerCurrentThreadPriority();   // bakes never steal the frame's CPU
+                    run();
+                });
         }
         void stop()
         {
@@ -694,7 +698,9 @@ struct CelestialFlightRenderer::Impl
         timers.init();
         int threads = quality.workerThreads;
         if (threads <= 0)
-            threads = std::clamp(static_cast<int>(std::thread::hardware_concurrency()) - 2, 2, 12);
+            // physical cores minus one (logical / 2 - 1): the main, server and
+            // route threads keep a core each; hyper-threads add little to bakes
+            threads = std::clamp(static_cast<int>(std::thread::hardware_concurrency()) / 2 - 1, 2, 6);
         pool.start(threads);
         initialized = true;
         return true;

@@ -1,5 +1,6 @@
 // SpaceState: Docking / route-autopilot orchestration: route request, planning jobs, safe course, autopilot phases and the docking corridor publication.
 
+#include "src/core/ThreadPriority.h"
 #include "src/game/SpaceStateInternal.h"
 
 
@@ -2464,6 +2465,7 @@ void SpaceState::updateDockingAdvisory()
              compileTolerance,
              compileExecutionUniverseTimeSeconds]() mutable
             {
+                core::lowerCurrentThreadPriority();   // planning never steals the frame's CPU
                 const auto workerStarted =
                     std::chrono::steady_clock::now();
 

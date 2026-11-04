@@ -7,6 +7,7 @@
 #include "render/types/Viewport.h"
 #include "src/game/presentation/RepairRefitPresentation.h"
 #include "src/game/presentation/ShipyardPresentation.h"
+#include "src/game/presentation/TradePresentation.h"
 
 // Native F6 Shipyard and F7 Repair & Refit surfaces (same single OpenGL
 // presentation surface as every F1-F12 target). Immediate-mode: each render
@@ -24,7 +25,10 @@ enum class ServicePanelActionType
     RefitSelectModule,
     RefitPreviewRepair,
     RefitPreviewReplace,     // text = product id ("" = same product)
-    RefitApply
+    RefitApply,
+    TradeTab,                // text = "0" board / "1" market / "2" hubs
+    TradeSelectHub,          // text = hub id
+    TradeShowOnMap           // text = hub id
 };
 
 struct ServicePanelAction
@@ -38,6 +42,7 @@ class ServicePanelsRenderer
 public:
     void renderShipyard(const Viewport& viewport, const game::presentation::ShipyardPresentation& page);
     void renderRepairRefit(const Viewport& viewport, const game::presentation::RepairRefitPresentation& page);
+    void renderTrade(const Viewport& viewport, const game::presentation::TradePresentation& page);
 
     // Mouse in window pixels; returns the action of a fresh left press.
     std::optional<ServicePanelAction> handleInput(const Viewport& viewport, double mouseX, double mouseY, bool leftDown,
@@ -47,7 +52,7 @@ private:
     struct Hit
     {
         float x0 = 0, y0 = 0, x1 = 0, y1 = 0;
-        int scrollZone = 0;              // 1 = shipyard list, 2 = refit module list, 3 = right card
+        int scrollZone = 0;              // 1 = shipyard list, 2 = refit module list, 3 = right card, 4 = trade list
         ServicePanelAction action;
     };
     std::vector<Hit> m_hits;             // regions of the last rendered frame
@@ -61,5 +66,6 @@ private:
     float m_shipyardListScroll = 0.0f;
     float m_refitListScroll = 0.0f;
     float m_cardScroll = 0.0f;
+    float m_tradeListScroll = 0.0f;
 };
 } // namespace ui::presentation

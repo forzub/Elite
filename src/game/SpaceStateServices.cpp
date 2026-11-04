@@ -55,7 +55,75 @@ bool SpaceState::renderServicePage(const Viewport& viewport, ui::services::Servi
         m_servicePanels.renderRepairRefit(viewport, buildRepairRefitPage());
         return true;
     }
+    if (service == ui::services::ServiceUiId::Trade && m_client)
+    {
+        m_servicePanels.renderTrade(viewport, buildTradePage());
+        return true;
+    }
     return false;
+}
+
+game::presentation::TradePresentation SpaceState::buildTradePage()
+{
+    // the hub the player is in (hub frame), else the nearest replicated hub
+    std::string hubId;
+    bool atHub = false;
+    glm::dvec3 playerWorld(0.0);
+    int playerSystem = -1;
+    if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
+    {
+        const auto& tr = it->second.transform;
+        playerWorld = world::coordinates::fullMeters(tr.worldPosition);
+        playerSystem = tr.motion.systemId;
+        if (!tr.motion.hubId.empty() && !tr.motion.freeFlight)
+        {
+            hubId = tr.motion.hubId;
+            atHub = true;
+        }
+    }
+    if (hubId.empty())
+    {
+        double best = 1e300;
+        for (const auto& [id, hub] : m_client->world().hubs())
+        {
+            const double d = glm::length(world::coordinates::fullMeters(hub.worldPosition) - playerWorld);
+            if (d < best)
+            {
+                best = d;
+                hubId = id;
+            }
+        }
+    }
+
+    const auto distanceText = [&](const std::string& targetId) -> std::string {
+        const auto& hubs = m_client->world().hubs();
+        if (const auto it = hubs.find(targetId); it != hubs.end())
+        {
+            const double km = glm::length(world::coordinates::fullMeters(it->second.worldPosition) - playerWorld) / 1000.0;
+            char b[48];
+            std::snprintf(b, sizeof b, km < 100000.0 ? "%.0f km" : "%.2f млн км", km < 100000.0 ? km : km / 1.0e6);
+            return b;
+        }
+        const auto* target = game::economy::EconomyModel::instance().hub(targetId);
+        if (!target)
+            return {};
+        if (target->systemId == playerSystem)
+            return "в этой системе";
+        if (const auto* atlas = m_client->starAtlas())
+        {
+            const auto* a = atlas->findSystemSummary(playerSystem);
+            const auto* b = atlas->findSystemSummary(target->systemId);
+            if (a && b)
+            {
+                char buf[48];
+                std::snprintf(buf, sizeof buf, "%.2f св. лет", glm::length(glm::dvec3(b->positionLy) - glm::dvec3(a->positionLy)));
+                return buf;
+            }
+        }
+        return {};
+    };
+    return game::presentation::buildTradePresentation(hubId, atHub, m_client->universeTimeSeconds(), m_tradeTab, m_tradeHub,
+                                                      distanceText);
 }
 
 void SpaceState::sendRefitCommand(bool apply, const game::ship::refit::RefitOperation& operation)
@@ -78,7 +146,8 @@ void SpaceState::sendRefitCommand(bool apply, const game::ship::refit::RefitOper
 bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::ServiceUiId service)
 {
     using ui::presentation::ServicePanelActionType;
-    if (service != ui::services::ServiceUiId::Shipyard && service != ui::services::ServiceUiId::RepairRefit)
+    if (service != ui::services::ServiceUiId::Shipyard && service != ui::services::ServiceUiId::RepairRefit &&
+        service != ui::services::ServiceUiId::Trade)
         return false;
     GLFWwindow* window = glfwGetCurrentContext();
     if (!window)
@@ -90,6 +159,22 @@ bool SpaceState::handleServicePageInput(const Viewport& viewport, ui::services::
     const auto action = m_servicePanels.handleInput(viewport, mx, my, leftDown, scrollY);
     if (!action)
         return true;
+
+    if (service == ui::services::ServiceUiId::Trade)
+    {
+        if (action->type == ServicePanelActionType::TradeTab)
+            m_tradeTab = std::atoi(action->text.c_str());
+        else if (action->type == ServicePanelActionType::TradeSelectHub)
+            m_tradeHub = action->text;
+        else if (action->type == ServicePanelActionType::TradeShowOnMap && context().app)
+        {
+            // the System map focused on that hub (the same path as a list pick)
+            m_tradeHub = action->text;
+            m_systemMapRenderer.devFocusHub(action->text);
+            context().app->requestNavigationView(NavigationPresentationView::System);
+        }
+        return true;
+    }
 
     if (service == ui::services::ServiceUiId::Shipyard)
     {

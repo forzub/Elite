@@ -615,6 +615,8 @@ add_executable(EliteGame
     src/ui/presentation/InSessionPresentationRenderer.cpp
     src/ui/presentation/ServicePanelsRenderer.cpp
     src/game/presentation/ShipyardPresentation.cpp
+    src/game/presentation/TradePresentation.cpp
+    src/game/economy/EconomyModel.cpp
     src/game/presentation/RepairRefitPresentation.cpp
 
     src/game/client/ClientWorldState.cpp
@@ -1143,6 +1145,8 @@ if(ELITE_BUILD_SERVER)
     add_executable(EliteServicePagesCheck
         tools/navigation_runtime/ServicePagesCheck.cpp
         src/game/presentation/ShipyardPresentation.cpp
+    src/game/presentation/TradePresentation.cpp
+    src/game/economy/EconomyModel.cpp
         src/game/presentation/RepairRefitPresentation.cpp
         ${ELITE_SERVER_SIMULATION_SOURCES}
     )

@@ -1328,6 +1328,17 @@ void SpaceState::update(float dt)
                             id = v;
                     m_systemMapRenderer.devEnter(id);
                 }
+                // F8 Trade: the same actions a click makes
+                else if (cmd.rfind("tradetab:", 0) == 0)
+                    m_tradeTab = std::atoi(arg("tradetab:").c_str());
+                else if (cmd.rfind("tradehub:", 0) == 0)
+                    m_tradeHub = arg("tradehub:");
+                else if (cmd.rfind("trademap:", 0) == 0)
+                {
+                    m_tradeHub = arg("trademap:");
+                    m_systemMapRenderer.devFocusHub(m_tradeHub);
+                    context().app->requestNavigationView(NavigationPresentationView::System);
+                }
                 else if (cmd == "detail")
                 {
                     // the Details tab: the selected body's Detail map

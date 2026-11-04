@@ -1327,6 +1327,8 @@ if ((systemMapMode || serviceMode))
                     requestFlightView(FlightPresentationView::Drone);
                 else if (step.action == "f10")
                     requestNavigationView(NavigationPresentationView::System);
+                else if (step.action == "f8")
+                    requestServicePanel(ui::services::ServiceUiId::Trade);
                 else if (step.action == "f11")
                     requestNavigationView(NavigationPresentationView::Detail);
                 else if (step.action == "f12")

@@ -518,6 +518,208 @@ void ServicePanelsRenderer::renderRepairRefit(const Viewport& viewport, const ga
     glEnable(GL_DEPTH_TEST);
 }
 
+// ============================================================ F8 TRADE
+namespace
+{
+std::string priceText(double cr)
+{
+    // expensive goods per kg (trade_goods unit rule: >= 50 000 Cr/t)
+    if (cr >= 50000.0)
+        return grouped(cr / 1000.0) + " Cr/кг";
+    return grouped(cr) + " Cr/т";
+}
+
+std::string ageText(double hours)
+{
+    if (hours < 1.0)
+        return "только что";
+    if (hours < 48.0)
+        return fmt("%.0f ч назад", hours);
+    return fmt("%.1f сут назад", hours / 24.0);
+}
+
+const char* channelRu(const std::string& c)
+{
+    if (c == "open") return "открытый";
+    if (c == "licensed") return "по лицензии";
+    if (c == "restricted") return "ограниченный";
+    if (c == "black") return "чёрный";
+    if (c == "closed") return "закрыт";
+    return c.c_str();
+}
+} // namespace
+
+void ServicePanelsRenderer::renderTrade(const Viewport& viewport, const game::presentation::TradePresentation& page)
+{
+    if (viewport.width <= 0 || viewport.height <= 0)
+        return;
+    m_hits.clear();
+    m_zones.clear();
+    glViewport(viewport.x, viewport.y, viewport.width, viewport.height);
+    glScissor(viewport.x, viewport.y, viewport.width, viewport.height);
+    glDisable(GL_DEPTH_TEST);
+    auto& t = TextRenderer::instance();
+    t.beginFrameForViewport(viewport.width, viewport.height);
+    const float w = static_cast<float>(viewport.width), h = static_cast<float>(viewport.height);
+    const int px = std::clamp(static_cast<int>(h * 0.018f), 12, 17);
+    const int small = std::clamp(static_cast<int>(h * 0.015f), 11, 14);
+    const int big = std::clamp(static_cast<int>(h * 0.034f), 20, 34);
+    t.solidRectPx(0, 0, w, h, Bg);
+    t.solidRectPx(0, 0, w, 2, Line);
+    if (!page.valid)
+    {
+        t.textDrawPx("ТОРГОВЛЯ", 24, 18, big, Title);
+        t.textDrawPx("нет данных экономики или хаба поблизости", 24, 18 + big + 10, px, Muted);
+        t.endFrame();
+        return;
+    }
+    t.textDrawPx("ТОРГОВЛЯ — " + page.hubName, 24, 18, big, Title);
+    t.textDrawPx(std::string(page.atHub ? "F8  /  вы в хабе" : "F8  /  ближайший хаб") + "  ·  день " + std::to_string(page.day) +
+                     "  ·  доска объявлений, рынок, хабы системы", 24, 18 + big + 6, small, Muted);
+    if (!page.events.empty())
+    {
+        std::string ev = "События: ";
+        for (std::size_t i = 0; i < page.events.size(); ++i)
+            ev += (i ? ", " : "") + page.events[i].ru;
+        t.textDrawPx(ev, 24, 18 + big + 8 + small + 4, small, Warn);
+    }
+
+    // ---- tabs
+    const float tabY = 18.0f + big + 18.0f + 2.0f * small;
+    const char* tabs[] = {"ДОСКА ЗАЯВОК", "РЫНОК", "ХАБЫ СИСТЕМЫ"};
+    float tx = 24.0f;
+    for (int i = 0; i < 3; ++i)
+    {
+        const float tw = t.measureTextPx(tabs[i], px) + 24.0f;
+        t.solidRectPx(tx, tabY, tw, px * 1.8f, page.tab == i ? Selected : Panel);
+        t.textDrawPx(tabs[i], tx + 12, tabY + px * 0.35f, px, page.tab == i ? Title : Text);
+        m_hits.push_back({tx, tabY, tx + tw, tabY + px * 1.8f, 0, {ServicePanelActionType::TradeTab, std::to_string(i)}});
+        tx += tw + 8.0f;
+    }
+
+    // ---- left list
+    const float listX = 24.0f, listY = tabY + px * 2.4f, listW = w * 0.58f, listH = h - listY - 40.0f;
+    t.solidRectPx(listX, listY, listW, listH, Panel);
+    m_zones.push_back({4, listX, listY, listX + listW, listY + listH});
+    const float rowH = static_cast<float>(px) * 2.7f;
+    const auto& goods = game::economy::EconomyModel::instance().goods();
+    std::size_t rows = page.tab == 0 ? page.board.size() : page.tab == 1 ? page.market.size() : page.hubs.size();
+    const float maxScroll = std::max(0.0f, rowH * static_cast<float>(rows) - listH);
+    m_tradeListScroll = std::clamp(m_tradeListScroll, 0.0f, maxScroll);
+    std::size_t visibleRow = 0;
+    for (std::size_t i = 0; i < rows; ++i)
+    {
+        const float y = listY + rowH * static_cast<float>(visibleRow) - m_tradeListScroll;
+        if (page.tab == 1 && !page.market[i].traded)
+            continue;
+        ++visibleRow;
+        if (y < listY - 1.0f || y + rowH > listY + listH + 1.0f)
+            continue;
+        if (page.tab == 0)
+        {
+            const auto& r = page.board[i];
+            const bool sel = r.entry.destinationHub == page.selectedHub;
+            if (sel)
+                t.solidRectPx(listX, y, listW, rowH, Selected);
+            std::string what = r.entry.kindRu;
+            if (r.entry.kind == "cargo")
+                what += ": " + r.goodRu + ", " + std::to_string(r.entry.containersC20) + " x C20";
+            else if (r.entry.people > 0)
+                what += ": " + std::to_string(r.entry.people) + " чел.";
+            t.textDrawPx(what, listX + 10, y + 4, px, sel ? Title : Text);
+            const std::string dest = "-> " + r.destinationName + (r.destinationSystem.empty() ? "" : "  (" + r.destinationSystem + ")") +
+                                     "  ·  срок " + std::to_string(r.daysLeft) + " сут  ·  канал " + channelRu(r.entry.channel);
+            t.textDrawPx(dest, listX + 10, y + 6 + static_cast<float>(px), small, Muted);
+            const std::string reward = grouped(r.entry.rewardCr) + " Cr";
+            t.textDrawPx(reward, listX + listW - t.measureTextPx(reward, px) - 10, y + 4, px, Good);
+            m_hits.push_back({listX, y, listX + listW, y + rowH, 4, {ServicePanelActionType::TradeSelectHub, r.entry.destinationHub}});
+        }
+        else if (page.tab == 1)
+        {
+            const auto& q = page.market[i];
+            const auto& g = goods[static_cast<std::size_t>(q.good)];
+            t.textDrawPx(g.ru, listX + 10, y + 4, px, Text);
+            t.textDrawPx(g.groupRu + "  ·  запас " + grouped(q.stockT) + " т", listX + 10, y + 6 + static_cast<float>(px), small, Muted);
+            const std::string prices = "купить " + priceText(q.buyCr) + "   продать " + priceText(q.sellCr);
+            t.textDrawPx(prices, listX + listW - t.measureTextPx(prices, small) - 10, y + 4, small, Text);
+            const std::string drift = fmt("%+.0f %%", q.drift * 100.0);
+            t.textDrawPx(drift, listX + listW - t.measureTextPx(drift, small) - 10, y + 6 + static_cast<float>(px), small,
+                         q.drift > 0.05 ? Warn : q.drift < -0.05 ? Good : Muted);
+        }
+        else
+        {
+            const auto* hub = page.hubs[i];
+            const bool sel = hub->id == page.selectedHub;
+            if (sel)
+                t.solidRectPx(listX, y, listW, rowH, Selected);
+            t.textDrawPx(hub->name + (hub->id == page.hubId ? "  (здесь)" : ""), listX + 10, y + 4, px, sel ? Title : Text);
+            t.textDrawPx(hub->typeRu + "  ·  " + hub->ownerName, listX + 10, y + 6 + static_cast<float>(px), small, Muted);
+            m_hits.push_back({listX, y, listX + listW, y + rowH, 4, {ServicePanelActionType::TradeSelectHub, hub->id}});
+        }
+        t.solidRectPx(listX, y + rowH - 1, listW, 1, glm::vec4(0.2f, 0.3f, 0.4f, 0.5f));
+    }
+
+    // ---- right card: the selected hub
+    const float cx = listX + listW + 24.0f, cw = w - cx - 24.0f;
+    float y = listY;
+    const auto& c = page.card;
+    if (c.valid)
+    {
+        t.textDrawPx(c.info.name, cx, y, big, Text);
+        y += static_cast<float>(big) + 6;
+        t.textDrawPx(c.info.typeRu + "  ·  " + c.info.systemName, cx, y, small, Muted);
+        y += static_cast<float>(small) + 8;
+        const auto line = [&](const std::string& label, const std::string& value, const glm::vec4& col) {
+            t.textDrawPx(label, cx, y, small, Muted);
+            t.textDrawPx(value, cx + cw * 0.36f, y, small, col);
+            y += static_cast<float>(small) + 6;
+        };
+        line("Владелец", c.info.ownerName, Text);
+        if (!c.info.operatorName.empty())
+            line("Оператор", c.info.operatorName, Text);
+        line("Расстояние", c.distanceText.empty() ? "нет данных" : c.distanceText, Text);
+        line("Канал блоков", channelRu(c.channel), c.channel == "open" ? Good : c.channel == "licensed" ? Text : Warn);
+        line("Цены", c.connected ? ageText(c.infoAgeHours) : "нет связи", c.connected ? (c.infoAgeHours > 72.0 ? Warn : Text) : Bad);
+        if (!c.knownEvents.empty())
+        {
+            std::string ev;
+            for (std::size_t i = 0; i < c.knownEvents.size(); ++i)
+                ev += (i ? ", " : "") + c.knownEvents[i].ru;
+            line("События", ev, Warn);
+        }
+
+        // show on the map
+        const std::string mapLabel = "ПОКАЗАТЬ НА КАРТЕ";
+        const float bw = t.measureTextPx(mapLabel, px) + 28.0f, bh = px * 1.9f;
+        t.solidRectPx(cx, y + 4, bw, bh, Selected);
+        t.textDrawPx(mapLabel, cx + 14, y + 4 + px * 0.4f, px, Title);
+        m_hits.push_back({cx, y + 4, cx + bw, y + 4 + bh, 0, {ServicePanelActionType::TradeShowOnMap, c.info.id}});
+        y += bh + 16;
+
+        if (!c.knownPrices.empty())
+        {
+            t.textDrawPx("Последние известные цены", cx, y, px, Title);
+            y += static_cast<float>(px) + 6;
+            for (const auto& q : c.knownPrices)
+            {
+                if (y > h - 40.0f - static_cast<float>(small))
+                    break;
+                t.textDrawPx(goods[static_cast<std::size_t>(q.good)].ru, cx, y, small, Text);
+                const std::string p = priceText(q.sellCr);
+                t.textDrawPx(p, cx + cw - t.measureTextPx(p, small), y, small, Muted);
+                y += static_cast<float>(small) + 5;
+            }
+        }
+        if (!c.info.description.empty() && y < h - 80.0f)
+        {
+            y += 6;
+            t.textDrawPx(c.info.purpose, cx, y, small, Muted);
+        }
+    }
+    t.textDrawPx("Клик по заявке или хабу — карточка; колесо — прокрутка списка", 24, h - 26, small, Muted);
+    t.endFrame();
+}
+
 std::optional<ServicePanelAction> ServicePanelsRenderer::handleInput(const Viewport& viewport, double mouseX, double mouseY, bool leftDown,
                                                                       double scrollY)
 {
@@ -526,7 +728,8 @@ std::optional<ServicePanelAction> ServicePanelsRenderer::handleInput(const Viewp
         for (const auto& z : m_zones)
             if (x >= z.x0 && x <= z.x1 && y >= z.y0 && y <= z.y1)
             {
-                float& s = z.id == 1 ? m_shipyardListScroll : z.id == 2 ? m_refitListScroll : m_cardScroll;
+                float& s = z.id == 1 ? m_shipyardListScroll : z.id == 2 ? m_refitListScroll
+                         : z.id == 4 ? m_tradeListScroll : m_cardScroll;
                 s -= static_cast<float>(scrollY) * 40.0f;
                 s = std::max(0.0f, s);
             }

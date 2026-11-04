@@ -275,6 +275,7 @@ private:
     bool renderServicePage(const Viewport& viewport, ui::services::ServiceUiId service);
     bool handleServicePageInput(const Viewport& viewport, ui::services::ServiceUiId service);
     game::presentation::RepairRefitPresentation buildRepairRefitPage();
+    game::presentation::TradePresentation buildTradePage();
     void sendRefitCommand(bool apply, const game::ship::refit::RefitOperation& operation);
     void applyNativeSystemMapPanelAction(
         const game::presentation::SystemMapPanelAction& action
@@ -611,6 +612,9 @@ private:
     std::string m_refitModule;
     std::uint32_t m_refitSeenApplySerial = 0;
     game::ship::refit::RefitOperation m_refitLastOperation;
+    // F8 Trade: tab (0 board / 1 market / 2 hubs) and the hub on the card
+    int m_tradeTab = 0;
+    std::string m_tradeHub;
 
 
     // std::unique_ptr<game::debug::DebugServer>       m_debugServer;

@@ -327,7 +327,8 @@ int main(int argc, char** argv)
             core->detachedFragmentRuntime().findFragment(car);
         const bool fragmentAtPassportPosition =
             fragment &&
-            glm::length(fragment->homeCenterLocal - m->placement.centerMeters) < 1.0e-4f;
+            glm::length(fragment->homeCenterLocal - m->placement.centerMeters) < 1.0e-4f &&
+            glm::length(fragment->position - m->placement.centerMeters) < 1.0e-4f;
         const double detachedMassKg = core->currentMassKg();
         const bool reattached = core->debugReattachModuleById(car);
         core->refreshRuntimeState();

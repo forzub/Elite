@@ -2339,6 +2339,29 @@ Restore point: tag restore/pre-ship-meshes-b-2026-11-04.
   timeout-killed instance; a relaunch a minute later starts normally. No leftover Elite / WebView2
   processes found. Root cause not proven.
 
+### Radar scope fixes + orphaned WebView2 / "Fatal error" (2026-11-04 f)
+- User: scope blinks, one blip that keeps vanishing, no station / docks, nearby ships invisible; asked
+  for a simple game radar and whether it is heavy. Root causes: (1) the PPI latch lit a blip only when
+  the 1400 deg/s sweep passed within 3 deg (23 deg per frame -> ~1 revolution in 4), faded in 0.23 s;
+  (2) my 64dc8931 capped the scale at the client descriptor's 1 km LCD preset; (3) the server sensor
+  read only materialized ships - traffic shells (hub traffic) were never radar truth.
+- Fix (0a8cae1d + 5efb79b9, the server half was first lost to a probe revert): traffic shells in the
+  truth, track kind ship / structure (snapshot schema 28), every track drawn every frame (sweep only
+  brightens), structures amber squares, beyond-scale tracks on the rim, scale = 1-2-5 step holding the
+  tracks within 30 km, content redraw <= 30 Hz, sweep 180 deg/s, DEV ELITE_DEV_RADAR_LOG.
+  Detection stays the simple game rule (server: in range of the installed radar, 2 Hz); the legacy
+  perception radar (RCS / lock) stays off. GAME evidence D:/tmp/elite_radar_run2: 15 tracks (ships +
+  structures), scale 20 km at the start hub, stable between frames (final_scope.png).
+- Cost (temporary probes, reverted): server sensor 0.0036 ms / tick; scope 0.2 ms CPU + 0.07 ms GPU per
+  frame (GL timer query; an earlier 1.9 ms figure was a glFinish sync artefact).
+- Orphans (46ba1fb3): after a kill / crash EliteGame left its msedgewebview2 browser on the shared
+  profile (%APPDATA%/EliteGame.exe - the per-pid WEBVIEW2_USER_DATA_FOLDER is ignored by the webview
+  loader, 985 empty folders); the next start died with an empty "Fatal error" (webview error -3). A
+  normal window close leaves nothing. Now main() puts EliteGame in a kill-on-close job object: 0 orphans
+  after a kill, immediate relaunch starts. Fatal message names the exception type / webview code.
+- Full suite: the same 8 baseline red blocks; NAVIGATION SENSOR + IDEAL RADAR, multiplayer, network
+  process, standalone runtime PASS. Human check of the scope pending.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

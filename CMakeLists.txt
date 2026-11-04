@@ -544,6 +544,7 @@ add_executable(EliteGame
     src/game/ship/core/ShipCorePropulsion.cpp
     src/game/ship/core/ShipCorePowerThermal.cpp
     src/game/ship/core/ShipCoreMass.cpp
+    src/game/ship/refit/RepairRefit.cpp
     src/game/ship/core/ShipCoreStatus.cpp
     src/game/ship/core/ShipCoreDamage.cpp
     
@@ -863,6 +864,7 @@ if(ELITE_BUILD_SERVER)
         src/game/ship/core/ShipCorePropulsion.cpp
         src/game/ship/core/ShipCorePowerThermal.cpp
         src/game/ship/core/ShipCoreMass.cpp
+        src/game/ship/refit/RepairRefit.cpp
         src/game/ship/core/ShipCoreStatus.cpp
         src/game/ship/core/ShipCoreDamage.cpp
         src/game/ship/core/PowerBus.cpp
@@ -1096,6 +1098,28 @@ if(ELITE_BUILD_SERVER)
     )
     if(WIN32)
         target_link_libraries(EliteShipCatalogCheck PRIVATE ws2_32 mswsock)
+    endif()
+
+    # DEV check: Repair & Refit previews on the production ShipCore (F7 contracts).
+    add_executable(EliteRepairRefitCheck
+        tools/navigation_runtime/RepairRefitCheck.cpp
+        ${ELITE_SERVER_SIMULATION_SOURCES}
+    )
+    target_include_directories(EliteRepairRefitCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
+    target_link_libraries(EliteRepairRefitCheck PRIVATE
+        EliteNavigationGeometry
+        EliteNavigationWorldRuntime
+        EliteDockingInfrastructure
+        EliteManeuverDecision
+        EliteNavigationRuckig
+        EliteAssemblyGeometry
+        EliteRuntimeModelAssets
+        EliteBite
+        nlohmann_json::nlohmann_json
+        Threads::Threads
+    )
+    if(WIN32)
+        target_link_libraries(EliteRepairRefitCheck PRIVATE ws2_32 mswsock)
     endif()
 
     # DEV check: emergency thermal coupling on the production ShipCore.

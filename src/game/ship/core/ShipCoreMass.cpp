@@ -208,6 +208,53 @@ game::simulation::DetachedFragmentMass ShipCore::detachedModuleMass(const std::s
     return out;
 }
 
+bool ShipCore::serviceModule(const std::string& moduleId, bool replaceWithNewUnit)
+{
+    if (!m_desc)
+        return false;
+    const bool detached = m_detachedFragmentRuntime.hasFragment(moduleId);
+    const bool ok = replaceWithNewUnit ? m_moduleRuntime.replaceModuleWithNewUnit(moduleId)
+                                       : m_moduleRuntime.repairModule(moduleId);
+    if (!ok)
+        return false;
+    if (detached && replaceWithNewUnit)
+    {
+        m_structuralLinkRuntime.restoreLinksTouchingModule(moduleId);
+        m_detachedFragmentRuntime.removeFragment(moduleId);   // the old unit stays where it drifted; a new one is fitted
+    }
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent, m_desc->typeId, *m_desc, m_moduleRuntime, m_structuralLinkRuntime, m_assemblyRuntime);
+    m_hitVolumesDirty = false;
+    recomputeMassProperties();
+    refreshDeviceState();
+    refreshRuntimeState();
+    return true;
+}
+
+void ShipCore::adoptInstanceState(const ShipCore& source)
+{
+    m_moduleRuntime = source.m_moduleRuntime;
+    m_structuralLinkRuntime = source.m_structuralLinkRuntime;
+    m_load = source.m_load;
+    m_cargo = source.m_cargo;
+    m_propulsionReactorsOn = source.m_propulsionReactorsOn;
+    m_propulsionReactorsStartupRemainingSeconds = source.m_propulsionReactorsStartupRemainingSeconds;
+    m_reactor = source.m_reactor;
+    m_thermal = source.m_thermal;
+    m_propulsionThermal = source.m_propulsionThermal;
+    m_cooling = source.m_cooling;
+    m_emergencyBridge = source.m_emergencyBridge;
+    m_lastModuleProjectionRevision = ~std::uint64_t{0};
+    m_massModuleRevision = ~std::uint64_t{0};
+    m_cachedCapability = {};
+    m_assistedManeuvers = {};
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent, m_desc->typeId, *m_desc, m_moduleRuntime, m_structuralLinkRuntime, m_assemblyRuntime);
+    recomputeMassProperties();
+    refreshDeviceState();
+    refreshRuntimeState();
+}
+
 void ShipCore::refreshDeviceState()
 {
     const ShipDescriptor* d = m_desc;

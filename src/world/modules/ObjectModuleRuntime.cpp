@@ -927,6 +927,68 @@ void ObjectModuleRuntime::restoreAncestors(int index)
     }
 }
 
+namespace
+{
+bool parentAttached(const std::vector<ObjectModuleState>& modules, const ObjectModuleState& m)
+{
+    if (m.parentIndex < 0)
+        return true;
+    const auto& p = modules[static_cast<std::size_t>(m.parentIndex)];
+    return p.state == ObjectModuleRuntimeState::Attached || p.state == ObjectModuleRuntimeState::Hanging;
+}
+}
+
+bool ObjectModuleRuntime::repairModule(const std::string& moduleId)
+{
+    const int index = findModuleIndex(moduleId);
+    if (index < 0)
+        return false;
+    auto& m = m_modules[static_cast<std::size_t>(index)];
+    if (!parentAttached(m_modules, m) || m.state == ObjectModuleRuntimeState::Detached)
+        return false;
+    m.state = ObjectModuleRuntimeState::Attached;
+    m.health = m.maxHealth;
+    const double wear = m.equipmentDamage.accumulated.wear01;
+    m.equipmentDamage.accumulated = {};
+    m.equipmentDamage.accumulated.wear01 = wear;
+    m.engineReactorOperating.damage = {};
+    m.engineReactorOperating.damage.wear01 = wear;
+    m.engineReactorOperating.padIntegrity01 = 1.0;
+    for (auto& link : m.supportLinks)
+    {
+        link.health = link.maxHealth;
+        link.destroyed = false;
+    }
+    ++m_revision;
+    return true;
+}
+
+bool ObjectModuleRuntime::replaceModuleWithNewUnit(const std::string& moduleId)
+{
+    const int index = findModuleIndex(moduleId);
+    if (index < 0)
+        return false;
+    auto& m = m_modules[static_cast<std::size_t>(index)];
+    if (!parentAttached(m_modules, m))
+        return false;
+    m.state = ObjectModuleRuntimeState::Attached;
+    m.health = m.maxHealth;
+    m.equipmentDamage.accumulated = {};
+    const double engineTemperature = m.engineOperating.temperatureK;
+    m.engineOperating = {};
+    m.engineOperating.temperatureK = engineTemperature;
+    const double reactorTemperature = m.engineReactorOperating.temperatureK;
+    m.engineReactorOperating = {};
+    m.engineReactorOperating.temperatureK = reactorTemperature;
+    for (auto& link : m.supportLinks)
+    {
+        link.health = link.maxHealth;
+        link.destroyed = false;
+    }
+    ++m_revision;
+    return true;
+}
+
 void ObjectModuleRuntime::restoreModuleBranch(const std::string& moduleId)
 {
     int index = findModuleIndex(moduleId);

@@ -118,6 +118,10 @@ struct ShipDesign
     double containerTareTonnes = 0.0;
     double c20TareTonnes = 0.0;
     double grossTonnes = 0.0;
+    double priceListCr = 0.0;       // new-ship list price (passport price.list_cr)
+    double pricePartsCr = 0.0;      // installed equipment at product prices
+    std::string purpose;
+    int serviceLifeYears = 0;
     std::vector<ShipDesignInstalledItem> installed;
     std::vector<ShipDesignSchematicNode> schematicNodes;
     std::vector<ShipDesignSchematicEdge> schematicEdges;
@@ -155,7 +159,8 @@ public:
     {
         static const ShipDesignCatalog* catalog = [] {
             auto* c = new ShipDesignCatalog();      // intentionally never destroyed (descriptors view its strings)
-            c->load("assets/data/ships/ship_catalog_3126.json");
+            // runtime layout first; repository layout for DEV checks run from the repo root
+            c->load("assets/data/ships/ship_catalog_3126.json") || c->load("src/assets/data/ships/ship_catalog_3126.json");
             return c;
         }();
         return *catalog;
@@ -238,6 +243,11 @@ public:
             s.containerTareTonnes = ms.value("container_tare_t", 0.0);
             s.c20TareTonnes = ms.value("c20_tare_t", 0.0);
             s.grossTonnes = ms.value("gross_t", 0.0);
+            const auto& pr = j.value("price", nlohmann::json::object());
+            s.priceListCr = pr.value("list_cr", 0.0);
+            s.pricePartsCr = pr.value("parts_cr", 0.0);
+            s.purpose = j.value("purpose", std::string());
+            s.serviceLifeYears = j.value("service_life_years", 0);
             for (const auto& it : j.value("installed", nlohmann::json::array()))
             {
                 ShipDesignInstalledItem item;

@@ -92,6 +92,17 @@ public:
     void disableSubtree(int index);
 
     void restoreModuleBranch(const std::string& moduleId);
+
+    // Repair & Refit on ONE installed module (not its ancestors / children):
+    //  repair  - structure to full health, functional damage causes cleared
+    //            except wear (wear needs an overhaul or a new unit);
+    //  replace - a new unit of the same type: health, all damage causes,
+    //            wear and operating history reset; a detached module is
+    //            reinstalled in place.
+    // Returns false when the module is unknown or its parent is not attached
+    // (repair the parent first).
+    bool repairModule(const std::string& moduleId);
+    bool replaceModuleWithNewUnit(const std::string& moduleId);
     void restoreSubtree(int index);
     void restoreAncestors(int index);
 

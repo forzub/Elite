@@ -734,7 +734,8 @@ def runtime_copy(D, prods, ships):
                     installed=[dict(code=i["code"], product=i["product"], cat=i["cat"], qty=i["qty"], positions=i.get("positions", []),
                                     slots=i.get("slots", []), blocks=i.get("blocks", []))
                                for i in s["installed"]],
-                    mass=s["mass"], schematic=s["schematic"]) for s in ships],
+                    mass=s["mass"], price=s["price"], purpose=s["purpose"], manufacturer_id=s["manufacturer"],
+                    service_life_years=s["service_life_years"], cold_sleep=s["cold_sleep"], schematic=s["schematic"]) for s in ships],
     )
 
 

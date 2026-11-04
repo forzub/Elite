@@ -1,0 +1,25 @@
+{
+ "schema": "elite.ship_market_rules.v1",
+ "status": "PROPOSAL",
+ "note": "Data-driven seam for Shipyard (F6) offers and Repair & Refit (F7) cost estimates. Prices of ships and parts come from the design passports (ship_catalog_3126.json: price.list_cr, product price_cr); these rules only turn them into market and service prices. To be replaced / fed by the economy layer.",
+ "depreciation": {
+  "first_sale_loss01": 0.20,
+  "age_halflife_years": 14.0,
+  "hours_halflife": 60000.0,
+  "wear_value_loss01": 0.6,
+  "scrap_cr_per_tonne": 180.0,
+  "salvage_component_share01": 0.25
+ },
+ "sellers": [
+  {"id": "manufacturer", "name_ru": "Официальный производитель", "name_en": "Manufacturer (new)", "price_x": 1.00, "age_years": [0, 0], "wear01": [0.0, 0.0], "damage01": [0.0, 0.0]},
+  {"id": "used_dealer", "name_ru": "Вторичный рынок", "name_en": "Used dealer", "price_x": 1.05, "age_years": [3, 15], "wear01": [0.05, 0.30], "damage01": [0.0, 0.05]},
+  {"id": "cheap_used", "name_ru": "Дешёвый подержанный", "name_en": "Cheap used", "price_x": 0.90, "age_years": [15, 35], "wear01": [0.30, 0.60], "damage01": [0.05, 0.30]},
+  {"id": "salvage", "name_ru": "Свалка / salvage", "name_en": "Salvage yard", "price_x": 0.70, "age_years": [25, 60], "wear01": [0.55, 0.85], "damage01": [0.30, 0.80]}
+ ],
+ "repair": {
+  "labour_cr_per_hour": {"crew": 60.0, "station": 140.0, "yard": 320.0, "factory": 900.0},
+  "default_hours": {"crew": 2.0, "station": 6.0, "yard": 24.0, "factory": 120.0},
+  "repair_material_share01": 0.55,
+  "replace_labour_x": 1.0
+ }
+}

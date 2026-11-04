@@ -156,6 +156,18 @@ public:
     // Rebuilds mass properties from the attached modules and the load.
     void recomputeMassProperties();
     const ShipDeviceState& devices() const { return m_devices; }
+
+    // Repair & Refit on one installed module (ObjectModuleRuntime repair /
+    // new unit); hit volumes, mass, devices and capability follow. A new unit
+    // also reinstalls a detached module (its fragment is discarded).
+    bool serviceModule(const std::string& moduleId, bool replaceWithNewUnit);
+    // Preview support: take over another ship's live instance state (module
+    // runtime, structural links, load, propulsion switch, service reactor /
+    // coolant / radiators) so the SAME code computes its consequences on a
+    // throwaway ShipCore without touching the live one.
+    void adoptInstanceState(const ShipCore& source);
+    double propulsionCoolantTemperatureK() const { return m_propulsionThermal.getTemperature(); }
+    bool propulsionReactorsOn() const { return m_propulsionReactorsOn; }
     // Mass that left the ship with a detached module (its dry mass, the cargo
     // and C20 tare it carried) - recorded on its detached fragment.
     game::simulation::DetachedFragmentMass detachedModuleMass(const std::string& moduleId) const;

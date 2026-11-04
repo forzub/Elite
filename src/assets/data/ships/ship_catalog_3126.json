@@ -2475,6 +2475,33 @@
     "c20_tare_t": 1.7,
     "gross_t": 397.74
    },
+   "price": {
+    "parts_cr": 2275000,
+    "hull_cr": 650000,
+    "list_cr": 3986000.0,
+    "groups_cr": {
+     "main_drive": 380000,
+     "reactor": 520000,
+     "rcs_thermal": 293000,
+     "jump_drive": 649000,
+     "electronics": 198000,
+     "life_support": 75000,
+     "weapons": 120000
+    },
+    "class_target_cr": {
+     "main_drive": 475000,
+     "reactor": 575000,
+     "jump_drive": 762500,
+     "electronics": 237500,
+     "life_support": 87500,
+     "rcs_thermal": 175000,
+     "weapons": 150000
+    }
+   },
+   "purpose": "быстрый гибкий фрахт: ценный и срочный груз, курьер, малый чартер",
+   "manufacturer_id": "mfr.cobretty",
+   "service_life_years": 40,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -3747,6 +3774,33 @@
     "c20_tare_t": 1.7,
     "gross_t": 385.74
    },
+   "price": {
+    "parts_cr": 2980000,
+    "hull_cr": 650000,
+    "list_cr": 4947000.0,
+    "groups_cr": {
+     "main_drive": 760000,
+     "reactor": 980000,
+     "rcs_thermal": 173000,
+     "jump_drive": 634000,
+     "electronics": 198000,
+     "life_support": 75000,
+     "weapons": 120000
+    },
+    "class_target_cr": {
+     "main_drive": 475000,
+     "reactor": 575000,
+     "jump_drive": 762500,
+     "electronics": 237500,
+     "life_support": 87500,
+     "rcs_thermal": 175000,
+     "weapons": 150000
+    }
+   },
+   "purpose": "как N1, для пилотов с законом Assisted; дороже в обслуживании",
+   "manufacturer_id": "mfr.cobretty",
+   "service_life_years": 40,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -4956,6 +5010,32 @@
     "c20_tare_t": 1.7,
     "gross_t": 832.196
    },
+   "price": {
+    "parts_cr": 1197000,
+    "hull_cr": 518500,
+    "list_cr": 2257000.0,
+    "groups_cr": {
+     "main_drive": 260000,
+     "reactor": 325000,
+     "rcs_thermal": 250000,
+     "jump_drive": 6000,
+     "electronics": 198000,
+     "life_support": 48000
+    },
+    "class_target_cr": {
+     "main_drive": 221000,
+     "reactor": 255000,
+     "jump_drive": 0,
+     "electronics": 93500,
+     "life_support": 51000,
+     "rcs_thermal": 136000,
+     "weapons": 0
+    }
+   },
+   "purpose": "только орбита ↔ хабы и депо (без посадки, без прыжка)",
+   "manufacturer_id": "mfr.ofu",
+   "service_life_years": 40,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -6411,6 +6491,32 @@
     "c20_tare_t": 1.7,
     "gross_t": 899.276
    },
+   "price": {
+    "parts_cr": 4478000,
+    "hull_cr": 765000,
+    "list_cr": 6961000.0,
+    "groups_cr": {
+     "main_drive": 1200000,
+     "reactor": 1640000,
+     "rcs_thermal": 340000,
+     "jump_drive": 9000,
+     "electronics": 336000,
+     "life_support": 78000
+    },
+    "class_target_cr": {
+     "main_drive": 1020000,
+     "reactor": 1275000,
+     "jump_drive": 0,
+     "electronics": 170000,
+     "life_support": 187000,
+     "rcs_thermal": 340000,
+     "weapons": 0
+    }
+   },
+   "purpose": "космопорт на поверхности ↔ низкая орбита: 12 мест C20 или 12 модулей P20 (144 пассажира)",
+   "manufacturer_id": "mfr.ofu",
+   "service_life_years": 30,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -7831,6 +7937,32 @@
     "c20_tare_t": 1.7,
     "gross_t": 4543.98
    },
+   "price": {
+    "parts_cr": 8327000,
+    "hull_cr": 2880000,
+    "list_cr": 14879000.0,
+    "groups_cr": {
+     "main_drive": 1590000,
+     "reactor": 1969000,
+     "rcs_thermal": 280000,
+     "jump_drive": 3804000,
+     "electronics": 178000,
+     "life_support": 156000
+    },
+    "class_target_cr": {
+     "main_drive": 1440000,
+     "reactor": 1710000,
+     "jump_drive": 3240000,
+     "electronics": 378000,
+     "life_support": 144000,
+     "rcs_thermal": 540000,
+     "weapons": 0
+    }
+   },
+   "purpose": "вторичные межзвёздные трассы: контейнеры, машины, товары, медикаменты",
+   "manufacturer_id": "mfr.bharat",
+   "service_life_years": 36,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -9193,6 +9325,32 @@
     "c20_tare_t": 1.7,
     "gross_t": 4544.31
    },
+   "price": {
+    "parts_cr": 7871000,
+    "hull_cr": 2560000,
+    "list_cr": 13848000.0,
+    "groups_cr": {
+     "main_drive": 1280000,
+     "reactor": 1660000,
+     "rcs_thermal": 498000,
+     "jump_drive": 3804000,
+     "electronics": 198000,
+     "life_support": 81000
+    },
+    "class_target_cr": {
+     "main_drive": 1280000,
+     "reactor": 1520000,
+     "jump_drive": 2880000,
+     "electronics": 336000,
+     "life_support": 128000,
+     "rcs_thermal": 480000,
+     "weapons": 0
+    }
+   },
+   "purpose": "как C-120 для флотов Пакта; ремонт в любом порту блока",
+   "manufacturer_id": "mfr.harmony_yards",
+   "service_life_years": 40,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -10710,6 +10868,33 @@
     "c20_tare_t": 1.7,
     "gross_t": 73841.4
    },
+   "price": {
+    "parts_cr": 56128000,
+    "hull_cr": 12800000,
+    "list_cr": 89889000.0,
+    "groups_cr": {
+     "main_drive": 6000000,
+     "reactor": 8600000,
+     "rcs_thermal": 1140000,
+     "jump_drive": 24880000,
+     "electronics": 898000,
+     "life_support": 760000,
+     "weapons": 3000000
+    },
+    "class_target_cr": {
+     "main_drive": 4800000,
+     "reactor": 6400000,
+     "jump_drive": 17600000,
+     "electronics": 960000,
+     "life_support": 400000,
+     "rcs_thermal": 2400000,
+     "weapons": 0
+    }
+   },
+   "purpose": "магистрали: навал и контейнеры в модулях; тягач оставляет модули в депо и забирает готовые",
+   "manufacturer_id": "mfr.harmony_yards",
+   "service_life_years": 45,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -12253,6 +12438,33 @@
     "c20_tare_t": 1.7,
     "gross_t": 62545.4
    },
+   "price": {
+    "parts_cr": 57328000,
+    "hull_cr": 14400000,
+    "list_cr": 93540000.0,
+    "groups_cr": {
+     "main_drive": 6000000,
+     "reactor": 8600000,
+     "rcs_thermal": 1140000,
+     "jump_drive": 24880000,
+     "electronics": 898000,
+     "life_support": 760000,
+     "weapons": 3000000
+    },
+    "class_target_cr": {
+     "main_drive": 4800000,
+     "reactor": 6400000,
+     "jump_drive": 17600000,
+     "electronics": 960000,
+     "life_support": 400000,
+     "rcs_thermal": 2400000,
+     "weapons": 0
+    }
+   },
+   "purpose": "топливо реакторов и заряд прыжка к депо и импортёрам",
+   "manufacturer_id": "mfr.harmony_yards",
+   "service_life_years": 45,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -13574,6 +13786,32 @@
     "c20_tare_t": 1.7,
     "gross_t": 3911.8
    },
+   "price": {
+    "parts_cr": 2437000,
+    "hull_cr": 1105000,
+    "list_cr": 4619000.0,
+    "groups_cr": {
+     "main_drive": 600000,
+     "reactor": 871000,
+     "rcs_thermal": 265000,
+     "jump_drive": 30000,
+     "electronics": 198000,
+     "life_support": 63000
+    },
+    "class_target_cr": {
+     "main_drive": 510000,
+     "reactor": 680000,
+     "jump_drive": 0,
+     "electronics": 127500,
+     "life_support": 51000,
+     "rcs_thermal": 255000,
+     "weapons": 0
+    }
+   },
+   "purpose": "He-3 и дейтерий с платформ Юпитера и Сатурна к депо и портам",
+   "manufacturer_id": "mfr.sol_mass_yards",
+   "service_life_years": 40,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -14650,6 +14888,32 @@
     "c20_tare_t": 1.7,
     "gross_t": 8409.15
    },
+   "price": {
+    "parts_cr": 1384000,
+    "hull_cr": 1906667,
+    "list_cr": 4291000.0,
+    "groups_cr": {
+     "main_drive": 260000,
+     "reactor": 325000,
+     "rcs_thermal": 250000,
+     "jump_drive": 18000,
+     "electronics": 350000,
+     "life_support": 156000
+    },
+    "class_target_cr": {
+     "main_drive": 330000,
+     "reactor": 440000,
+     "jump_drive": 0,
+     "electronics": 82500,
+     "life_support": 33000,
+     "rcs_thermal": 165000,
+     "weapons": 0
+    }
+   },
+   "purpose": "лёд и летучие внутри системы; каменная оболочка — защита от обломков; медленный и дешёвый",
+   "manufacturer_id": "mfr.stone_docks",
+   "service_life_years": 21,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -15833,6 +16097,32 @@
     "c20_tare_t": 1.7,
     "gross_t": 713.89
    },
+   "price": {
+    "parts_cr": 1872000,
+    "hull_cr": 625000,
+    "list_cr": 3285000.0,
+    "groups_cr": {
+     "main_drive": 400000,
+     "reactor": 490000,
+     "rcs_thermal": 265000,
+     "jump_drive": 36000,
+     "electronics": 358000,
+     "life_support": 138000
+    },
+    "class_target_cr": {
+     "main_drive": 500000,
+     "reactor": 525000,
+     "jump_drive": 0,
+     "electronics": 100000,
+     "life_support": 50000,
+     "rcs_thermal": 200000,
+     "weapons": 0
+    }
+   },
+   "purpose": "толкает плоты руды и льда (до 20 000 т) от рудников к заводам; буксирует оборудование и маяки",
+   "manufacturer_id": "mfr.kern_heavy",
+   "service_life_years": 46,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -17033,6 +17323,32 @@
     "c20_tare_t": 1.7,
     "gross_t": 666.36
    },
+   "price": {
+    "parts_cr": 1531000,
+    "hull_cr": 382500,
+    "list_cr": 2584000.0,
+    "groups_cr": {
+     "main_drive": 260000,
+     "reactor": 370000,
+     "rcs_thermal": 105000,
+     "jump_drive": 12000,
+     "electronics": 198000,
+     "life_support": 161000
+    },
+    "class_target_cr": {
+     "main_drive": 221000,
+     "reactor": 255000,
+     "jump_drive": 0,
+     "electronics": 136000,
+     "life_support": 76500,
+     "rcs_thermal": 119000,
+     "weapons": 0
+    }
+   },
+   "purpose": "ремонт рудников, станций, маяков и кораблей на месте; запчасти и мастерская",
+   "manufacturer_id": "mfr.sol_mass_yards",
+   "service_life_years": 35,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -18548,6 +18864,33 @@
     "c20_tare_t": 1.7,
     "gross_t": 453.05
    },
+   "price": {
+    "parts_cr": 10625000,
+    "hull_cr": 1530000,
+    "list_cr": 15753000.0,
+    "groups_cr": {
+     "main_drive": 1400000,
+     "reactor": 2140000,
+     "rcs_thermal": 180000,
+     "jump_drive": 1842000,
+     "electronics": 2466000,
+     "life_support": 242000,
+     "weapons": 1900000
+    },
+    "class_target_cr": {
+     "main_drive": 1190000,
+     "reactor": 1445000,
+     "jump_drive": 1530000,
+     "electronics": 1530000,
+     "life_support": 204000,
+     "rcs_thermal": 510000,
+     "weapons": 1190000
+    }
+   },
+   "purpose": "береговая охрана: таможня и досмотр, полиция, SAR, охрана маяков",
+   "manufacturer_id": "mfr.sol_mass_yards",
+   "service_life_years": 30,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -19973,6 +20316,33 @@
     "c20_tare_t": 1.7,
     "gross_t": 144.24
    },
+   "price": {
+    "parts_cr": 14747000,
+    "hull_cr": 1120000,
+    "list_cr": 20564000.0,
+    "groups_cr": {
+     "main_drive": 1840000,
+     "reactor": 1650000,
+     "rcs_thermal": 185000,
+     "jump_drive": 6000,
+     "electronics": 8866000,
+     "life_support": 100000,
+     "weapons": 2100000
+    },
+    "class_target_cr": {
+     "main_drive": 1820000,
+     "reactor": 2240000,
+     "jump_drive": 0,
+     "electronics": 1680000,
+     "life_support": 112000,
+     "rcs_thermal": 728000,
+     "weapons": 2520000
+    }
+   },
+   "purpose": "быстрый ответ в системе: перехват пиратов и нарушителей, камней и обломков; короткая автономность",
+   "manufacturer_id": "mfr.bastion",
+   "service_life_years": 30,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -21697,6 +22067,33 @@
     "c20_tare_t": 1.7,
     "gross_t": 2363.2
    },
+   "price": {
+    "parts_cr": 51384000,
+    "hull_cr": 8000000,
+    "list_cr": 76962000.0,
+    "groups_cr": {
+     "main_drive": 7020000,
+     "reactor": 10200000,
+     "rcs_thermal": 660000,
+     "jump_drive": 3858000,
+     "electronics": 2916000,
+     "life_support": 1680000,
+     "weapons": 24600000
+    },
+    "class_target_cr": {
+     "main_drive": 5600000,
+     "reactor": 7200000,
+     "jump_drive": 8320000,
+     "electronics": 9600000,
+     "life_support": 1440000,
+     "rcs_thermal": 2880000,
+     "weapons": 14400000
+    }
+   },
+   "purpose": "охрана конвоев: ПРО, сенсоры, автономность наравне с поездами",
+   "manufacturer_id": "mfr.harmony_yards",
+   "service_life_years": 35,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -23713,6 +24110,33 @@
     "c20_tare_t": 1.7,
     "gross_t": 9767.2
    },
+   "price": {
+    "parts_cr": 505566000,
+    "hull_cr": 109200000,
+    "list_cr": 796737000.0,
+    "groups_cr": {
+     "main_drive": 42000000,
+     "reactor": 58200000,
+     "rcs_thermal": 1560000,
+     "jump_drive": 67200000,
+     "electronics": 44416000,
+     "life_support": 6780000,
+     "weapons": 285000000
+    },
+    "class_target_cr": {
+     "main_drive": 58800000,
+     "reactor": 79800000,
+     "jump_drive": 92400000,
+     "electronics": 117600000,
+     "life_support": 16800000,
+     "rcs_thermal": 33600000,
+     "weapons": 189000000
+    }
+   },
+   "purpose": "сдерживание и война: дальние ракеты, сильные сенсоры, броня; главная боевая единица Цитадели",
+   "manufacturer_id": "mfr.bastion",
+   "service_life_years": 48,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -25485,6 +25909,33 @@
     "c20_tare_t": 1.7,
     "gross_t": 633.3
    },
+   "price": {
+    "parts_cr": 25555000,
+    "hull_cr": 3000000,
+    "list_cr": 37007000.0,
+    "groups_cr": {
+     "main_drive": 1800000,
+     "reactor": 2520000,
+     "rcs_thermal": 450000,
+     "jump_drive": 1872000,
+     "electronics": 17716000,
+     "life_support": 392000,
+     "weapons": 600000
+    },
+    "class_target_cr": {
+     "main_drive": 2250000,
+     "reactor": 2750000,
+     "jump_drive": 3250000,
+     "electronics": 13750000,
+     "life_support": 500000,
+     "rcs_thermal": 1125000,
+     "weapons": 750000
+    }
+   },
+   "purpose": "сенсоры и раннее предупреждение у точек выхода, РЭБ, ретрансляция сети маяков в войну",
+   "manufacturer_id": "mfr.hyperion",
+   "service_life_years": 34,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -27422,6 +27873,33 @@
     "c20_tare_t": 1.7,
     "gross_t": 11628.2
    },
+   "price": {
+    "parts_cr": 36510000,
+    "hull_cr": 9600000,
+    "list_cr": 59759000.0,
+    "groups_cr": {
+     "main_drive": 3840000,
+     "reactor": 10200000,
+     "rcs_thermal": 1044000,
+     "jump_drive": 11220000,
+     "electronics": 2466000,
+     "life_support": 1820000,
+     "weapons": 3000000
+    },
+    "class_target_cr": {
+     "main_drive": 4200000,
+     "reactor": 5400000,
+     "jump_drive": 8400000,
+     "electronics": 3000000,
+     "life_support": 1800000,
+     "rcs_thermal": 2400000,
+     "weapons": 1800000
+    }
+   },
+   "purpose": "автономность эскадры вдали от баз: топливо, заряд прыжка, боеприпасы, ремонт",
+   "manufacturer_id": "mfr.harmony_yards",
+   "service_life_years": 40,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -29131,6 +29609,33 @@
     "c20_tare_t": 1.7,
     "gross_t": 1835.76
    },
+   "price": {
+    "parts_cr": 22206000,
+    "hull_cr": 3315000,
+    "list_cr": 33075000.0,
+    "groups_cr": {
+     "main_drive": 4500000,
+     "reactor": 6140000,
+     "rcs_thermal": 690000,
+     "jump_drive": 90000,
+     "electronics": 2686000,
+     "life_support": 1540000,
+     "weapons": 5550000
+    },
+    "class_target_cr": {
+     "main_drive": 3825000,
+     "reactor": 4845000,
+     "jump_drive": 0,
+     "electronics": 2295000,
+     "life_support": 510000,
+     "rcs_thermal": 1530000,
+     "weapons": 3187500
+    }
+   },
+   "purpose": "защита планет и обитаемых станций: обнаружить, перехватить, увести, отклонить или раздробить камень; тяжёлое спасение",
+   "manufacturer_id": "mfr.sol_mass_yards",
+   "service_life_years": 35,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -30929,6 +31434,32 @@
     "c20_tare_t": 1.7,
     "gross_t": 3008.8
    },
+   "price": {
+    "parts_cr": 20585000,
+    "hull_cr": 6500000,
+    "list_cr": 35959000.0,
+    "groups_cr": {
+     "main_drive": 1899000,
+     "reactor": 1700000,
+     "rcs_thermal": 1800000,
+     "jump_drive": 5130000,
+     "electronics": 956000,
+     "life_support": 6640000
+    },
+    "class_target_cr": {
+     "main_drive": 2375000,
+     "reactor": 3000000,
+     "jump_drive": 6000000,
+     "electronics": 1125000,
+     "life_support": 4500000,
+     "rcs_thermal": 1000000,
+     "weapons": 0
+    }
+   },
+   "purpose": "регулярные межзвёздные рейсы: 900 мест (60 каюты / 240 бизнес / 600 эконом), почта и 90 т срочного груза",
+   "manufacturer_id": "mfr.hyperion",
+   "service_life_years": 46,
+   "cold_sleep": 0,
    "schematic": {
     "nodes": [
      {
@@ -32882,6 +33413,32 @@
     "c20_tare_t": 1.7,
     "gross_t": 8997.0
    },
+   "price": {
+    "parts_cr": 35908000,
+    "hull_cr": 8100000,
+    "list_cr": 58426000.0,
+    "groups_cr": {
+     "main_drive": 2120000,
+     "reactor": 2972000,
+     "rcs_thermal": 740000,
+     "jump_drive": 9040000,
+     "electronics": 296000,
+     "life_support": 14670000
+    },
+    "class_target_cr": {
+     "main_drive": 2340000,
+     "reactor": 3420000,
+     "jump_drive": 7380000,
+     "electronics": 720000,
+     "life_support": 5580000,
+     "rcs_thermal": 1080000,
+     "weapons": 0
+    }
+   },
+   "purpose": "миграция и эвакуация: 5 000 мест (70 % койки, 30 % анабиоз), медленно и дёшево на человека; реквизируется при бедствиях",
+   "manufacturer_id": "mfr.bharat",
+   "service_life_years": 40,
+   "cold_sleep": 1500,
    "schematic": {
     "nodes": [
      {

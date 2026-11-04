@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <glad/gl.h>
 
 #include <string>
@@ -949,6 +950,13 @@ private:
     std::vector<MapHistoryEntry> m_mapHistory;
     std::optional<MapHistoryEntry> m_pendingHistoryRestore;
     std::optional<game::system_map::GalaxyMapBookmark> m_pendingGalaxyBookmark;
+    // Last view of every map: returning continues the inspection where it was
+    // left (Detail by body, Hub by hub, Galaxy as one view).
+    std::map<std::string, game::system_map::DetailCameraState> m_detailCameraMemory;
+    std::map<std::string, game::system_map::DetailCameraState> m_hubCameraMemory;
+    std::string m_detailMemoryKey;
+    std::string m_hubMemoryKey;
+    bool m_galaxyViewEntered = false;
 
     // Context menu (right click / Ctrl + click) and its pointer state.
     game::system_map::MapContextMenu m_contextMenu;

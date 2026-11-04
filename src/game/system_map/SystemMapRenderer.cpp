@@ -204,16 +204,26 @@ void SystemMapRenderer::onGalaxyMapEntered(
     const world::celestial::PlayerNavigationState& navigation
 )
 {
+    // Re-entering the Galaxy map continues from the last view.
+    std::optional<game::system_map::GalaxyMapBookmark> lastView;
+    if (m_galaxyViewEntered)
+        lastView = m_galaxyView.bookmark();
+
     m_galaxyView.onEntered(
         galaxy,
         navigation
     );
+    m_galaxyViewEntered = true;
 
     // Back history: the saved Galaxy view replaces the entry framing.
     if (m_pendingGalaxyBookmark)
     {
         m_galaxyView.restoreBookmark(*m_pendingGalaxyBookmark);
         m_pendingGalaxyBookmark.reset();
+    }
+    else if (lastView)
+    {
+        m_galaxyView.restoreBookmark(*lastView);
     }
 }
 
@@ -320,6 +330,12 @@ void SystemMapRenderer::setMode(Mode mode)
     recordMapHistory(previousMode, mode);
     m_contextMenu.close();
 
+    // remember the view being left (per body / hub)
+    if (previousMode == Mode::Detail && !m_detailMemoryKey.empty())
+        m_detailCameraMemory[m_detailMemoryKey] = m_detailView.camera();
+    if (previousMode == Mode::Hub && !m_hubMemoryKey.empty())
+        m_hubCameraMemory[m_hubMemoryKey] = m_hubView.camera();
+
     if (previousMode == Mode::Detail)
     {
         auto& systemState = m_systemView.state();
@@ -365,6 +381,8 @@ void SystemMapRenderer::setMode(Mode mode)
         );
         m_detailPresentation =
             game::system_map::DetailMapPresentation{};
+        // the body key is taken from the first shown frame (render)
+        m_detailMemoryKey.clear();
     }
 
     if (m_modeState.current() == Mode::Hub)
@@ -380,6 +398,11 @@ void SystemMapRenderer::setMode(Mode mode)
         m_hubView.beginScene();
         m_hubPresentation =
             game::system_map::HubMapPresentation{};
+        m_hubMemoryKey = !m_detailView.state().selectedHubId.empty()
+            ? m_detailView.state().selectedHubId
+            : m_systemView.state().selectedHubId;
+        if (const auto it = m_hubCameraMemory.find(m_hubMemoryKey); it != m_hubCameraMemory.end())
+            m_hubView.restoreCamera(it->second);
     }
 
     applyMapHistoryRestore(mode);
@@ -468,6 +491,19 @@ void SystemMapRenderer::render(
 
     if (m_modeState.current() == Mode::Detail)
     {
+        // The body actually shown keys the remembered view: a new body (first
+        // frame after entering, or a body change inside Detail) saves the old
+        // view and continues the new body's last view.
+        if (planet.valid && !planet.planetBodyId.empty() && planet.planetBodyId != m_detailMemoryKey)
+        {
+            if (!m_detailMemoryKey.empty())
+                m_detailCameraMemory[m_detailMemoryKey] = m_detailView.camera();
+            m_detailMemoryKey = planet.planetBodyId;
+            if (const auto it = m_detailCameraMemory.find(m_detailMemoryKey); it != m_detailCameraMemory.end())
+                m_detailView.restoreCamera(it->second);
+            m_detailFrameDirty = true;
+        }
+
         if (!m_detailFramePrepared || m_detailFrameDirty)
         {
             m_detailPresentation =

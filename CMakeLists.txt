@@ -506,6 +506,7 @@ add_executable(EliteGame
     src/game/navigation/DockingCorridorPresentation.cpp
     src/game/SpaceStateMaps.cpp
     src/game/SpaceStateHud.cpp
+    src/game/SpaceStateServices.cpp
     src/game/SpaceStateDevPanel.cpp
 
     src/game/equipment/signalNode/processing/SignalReceiver.cpp
@@ -587,6 +588,7 @@ add_executable(EliteGame
     src/game/simulation/GameSimulationDockTraffic.cpp
     src/game/simulation/GameSimulationOrbitalTransfer.cpp
     src/game/simulation/GameSimulationFreeFlight.cpp
+    src/game/simulation/GameSimulationRefit.cpp
     src/game/simulation/GameSimulationDevScenarios.cpp
     src/game/simulation/GameSimulationReplication.cpp
     src/game/simulation/GameSimulationActivation.cpp
@@ -600,6 +602,9 @@ add_executable(EliteGame
     src/game/presentation/StarSystemLabelPresentation.cpp
     src/game/presentation/SystemMapPanelPresentation.cpp
     src/ui/presentation/InSessionPresentationRenderer.cpp
+    src/ui/presentation/ServicePanelsRenderer.cpp
+    src/game/presentation/ShipyardPresentation.cpp
+    src/game/presentation/RepairRefitPresentation.cpp
 
     src/game/client/ClientWorldState.cpp
     src/game/client/ClientNavigationPlanningSnapshotFactory.cpp
@@ -881,6 +886,7 @@ if(ELITE_BUILD_SERVER)
         src/game/simulation/GameSimulationDockTraffic.cpp
         src/game/simulation/GameSimulationOrbitalTransfer.cpp
         src/game/simulation/GameSimulationFreeFlight.cpp
+        src/game/simulation/GameSimulationRefit.cpp
         src/game/simulation/GameSimulationDevScenarios.cpp
         src/game/simulation/GameSimulationReplication.cpp
         src/game/simulation/GameSimulationActivation.cpp
@@ -1120,6 +1126,30 @@ if(ELITE_BUILD_SERVER)
     )
     if(WIN32)
         target_link_libraries(EliteRepairRefitCheck PRIVATE ws2_32 mswsock)
+    endif()
+
+    # DEV check: F6 Shipyard / F7 Repair & Refit page models from one source.
+    add_executable(EliteServicePagesCheck
+        tools/navigation_runtime/ServicePagesCheck.cpp
+        src/game/presentation/ShipyardPresentation.cpp
+        src/game/presentation/RepairRefitPresentation.cpp
+        ${ELITE_SERVER_SIMULATION_SOURCES}
+    )
+    target_include_directories(EliteServicePagesCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
+    target_link_libraries(EliteServicePagesCheck PRIVATE
+        EliteNavigationGeometry
+        EliteNavigationWorldRuntime
+        EliteDockingInfrastructure
+        EliteManeuverDecision
+        EliteNavigationRuckig
+        EliteAssemblyGeometry
+        EliteRuntimeModelAssets
+        EliteBite
+        nlohmann_json::nlohmann_json
+        Threads::Threads
+    )
+    if(WIN32)
+        target_link_libraries(EliteServicePagesCheck PRIVATE ws2_32 mswsock)
     endif()
 
     # DEV check: emergency thermal coupling on the production ShipCore.

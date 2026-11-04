@@ -718,6 +718,36 @@ ELITE_WIRE_SCHEMA(
     v.stationControlled
 );
 
+ELITE_WIRE_ENUM_RANGE(
+    game::ship::refit::RefitOperationKind,
+    game::ship::refit::RefitOperationKind::Repair,
+    game::ship::refit::RefitOperationKind::Install);
+
+ELITE_WIRE_SCHEMA(game::ship::refit::RefitOperation, v.kind, v.moduleId, v.productId);
+
+ELITE_WIRE_SCHEMA(
+    game::ship::refit::RefitShipMetrics,
+    v.valid, v.massTonnes, v.forwardAccelerationMps2, v.reverseAccelerationMps2, v.rcsAccelerationMps2,
+    v.angularAccelerationRadPerSec2, v.mainEnginesOperational, v.mainEnginesInstalled, v.propulsionPowerAvailableMW,
+    v.propulsionPowerRatedMW, v.servicePowerOutputMW, v.burnAccelerationMps2, v.burnSeconds, v.maxEngineTemperatureK,
+    v.engineThermalMargin01, v.maxReactorTemperatureK, v.reactorThermalMargin01, v.serviceCoolantK, v.serviceCoolantCriticalK,
+    v.propulsionCoolantK, v.emergencyCoolingMW, v.radar, v.radarRangeKm, v.receiver, v.transmitter, v.transponder,
+    v.lifeSupport, v.computer, v.jumpCore, v.jumpMassWithinRating, v.docksOperational, v.moduleState, v.moduleHealth01,
+    v.moduleDamage01, v.moduleWear01);
+
+ELITE_WIRE_SCHEMA(game::ship::refit::RefitDelta, v.key, v.labelRu, v.unit, v.before, v.after, v.flag);
+
+ELITE_WIRE_SCHEMA(game::ship::refit::RefitCost, v.repairLevel, v.labourHours, v.labourCr, v.materialCr, v.totalCr);
+
+ELITE_WIRE_SCHEMA(
+    game::ship::refit::RefitPreview,
+    v.ok, v.error, v.operation, v.before, v.after, v.deltas, v.cost, v.applicable, v.applyNote);
+
+ELITE_WIRE_SCHEMA(
+    game::simulation::ShipRefitSnapshot,
+    v.owned, v.ownerActor, v.registrationId, v.shipName, v.previewSerial, v.previewValid, v.preview,
+    v.applySerial, v.applyResult);
+
 ELITE_WIRE_SCHEMA(
     ShipSnapshot,
     v.id,
@@ -741,7 +771,8 @@ ELITE_WIRE_SCHEMA(
     v.controlAuthorityTelemetry,
     v.graph,
     v.dockDispatcher,
-    v.traffic
+    v.traffic,
+    v.refit
 );
 
 ELITE_WIRE_SCHEMA(

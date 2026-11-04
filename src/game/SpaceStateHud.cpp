@@ -1134,11 +1134,12 @@ void SpaceState::renderInSessionPresentationOverlay()
 
     if (target.mode == GameUiMode::ServicePanel)
     {
-        m_inSessionPresentationRenderer.renderServicePanel(
-            vp,
-            loc,
-            target.service
-        );
+        if (!renderServicePage(vp, target.service))
+            m_inSessionPresentationRenderer.renderServicePanel(
+                vp,
+                loc,
+                target.service
+            );
         renderUiLanguageIndicator(vp);
         renderNavigationStressOverlay(vp);
         game::presentation::TemporaryShortcutStrip::render(vp, loc);

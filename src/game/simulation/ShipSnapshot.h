@@ -1,4 +1,5 @@
 #pragma once
+#include "src/game/simulation/ShipRefitSnapshot.h"
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -98,4 +99,6 @@ struct ShipSnapshot
     game::simulation::ObjectGraphSnapshot                graph;
     game::simulation::ShipDockDispatcherSnapshot          dockDispatcher;
     game::simulation::ShipTrafficSnapshot                 traffic;
+    // Owned ships only: ownership + the Repair & Refit preview (F7).
+    game::simulation::ShipRefitSnapshot                   refit;
 };

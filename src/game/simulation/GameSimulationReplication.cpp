@@ -38,6 +38,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         s.instanceId = ship.core().registry().instanceId;
         s.typeId = ship.core().desc().typeId;
         s.catalogShipId = ship.core().desc().catalog.passportId;
+        s.refit = refitSnapshotFor(id);
         s.physicalControlModel =
             ship.core().state().construction.physicalControlModel;
         s.role = ship.core().role();
@@ -171,8 +172,12 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
 
 
 
+        // The player's own fleet always carries its module graph: Repair &
+        // Refit (F7) works on the real installed modules of every owned ship.
+        const auto ownerActor = ship.core().registry().ownerActor;
+        const bool ownedFleet = ownerActor != 0 && ownerActor != ActorIds::Unknown();
         const bool detailedReplication =
-            shipUsesDetailedSimulation(id);
+            shipUsesDetailedSimulation(id) || ownedFleet;
 
         if (detailedReplication)
         {

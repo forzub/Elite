@@ -843,6 +843,22 @@ void GameServer::update(double dt)
                     m_simulation.setFreeFlightThrust(id, shipCmd.index);
                     break;
 
+                case ClientShipCommand::RefitPreview:
+                case ClientShipCommand::RefitApply:
+                {
+                    game::ship::refit::RefitOperation op;
+                    op.kind = static_cast<game::ship::refit::RefitOperationKind>(
+                        std::clamp(shipCmd.index, 0, static_cast<int>(game::ship::refit::RefitOperationKind::Install)));
+                    op.moduleId = shipCmd.target;
+                    op.productId = shipCmd.detail;
+                    const EntityId subject {static_cast<std::uint32_t>(std::max(0.0, shipCmd.amount))};
+                    if (shipCmd.type == ClientShipCommand::RefitPreview)
+                        m_simulation.requestRefitPreview(id, subject, op);
+                    else
+                        m_simulation.applyRefit(id, subject, op);
+                    break;
+                }
+
                 case ClientShipCommand::InjectEquipmentFailure:
                 {
                     // A deliberate test fault on this player's authoritative

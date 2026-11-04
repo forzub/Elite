@@ -592,6 +592,13 @@ void SpaceState::handleInput()
     }
 
     if (context().app &&
+        context().app->gameUiMode() == GameUiMode::ServicePanel)
+    {
+        if (handleServicePageInput(context().viewport(), context().app->gameUiTarget().service))
+            return;
+    }
+
+    if (context().app &&
         context().app->gameUiMode() == GameUiMode::SystemMap)
     {
         if (m_client)
@@ -1392,6 +1399,60 @@ void SpaceState::update(float dt)
                         std::cerr << '\n';
                     }
                 }
+            }
+        }
+
+        // DEV: ELITE_DEV_SERVICE_SCRIPT=<s> opens F6 at s, F7 at s+6, steps to
+        // the next owned ship, selects its radar module (preview requested
+        // by the selection), and applies the repair at s+14 (frame captures
+        // are taken by ELITE_DEV_FRAME_CAPTURE).
+        static const double serviceAtSeconds = [] {
+            const char* v = std::getenv("ELITE_DEV_SERVICE_SCRIPT");
+            return v && *v ? std::atof(v) : -1.0;
+        }();
+        static int serviceStep = 0;
+        if (serviceAtSeconds >= 0.0 && m_client && context().app)
+        {
+            const double t = startupElapsedMs(m_startupTotalBegin) / 1000.0 - serviceAtSeconds;
+            if (serviceStep == 0 && t >= 0.0)
+            {
+                ++serviceStep;
+                context().app->requestServicePanel(ui::services::ServiceUiId::Shipyard);
+                std::cerr << "[ServiceScript] F6" << '\n';
+            }
+            else if (serviceStep == 1 && t >= 6.0)
+            {
+                ++serviceStep;
+                context().app->requestServicePanel(ui::services::ServiceUiId::RepairRefit);
+                std::cerr << "[ServiceScript] F7" << '\n';
+            }
+            else if (serviceStep == 2 && t >= 8.0)
+            {
+                ++serviceStep;
+                const auto page = buildRepairRefitPage();
+                if (page.ships.size() > 1)
+                    m_refitShip = page.ships[1].id;
+                const auto next = buildRepairRefitPage();
+                for (const auto& m : next.modules)
+                    if (m.group == "sensors" && m.failed())
+                    {
+                        m_refitModule = m.moduleId;
+                        sendRefitCommand(false, {game::ship::refit::RefitOperationKind::Repair, m.moduleId, {}});
+                        break;
+                    }
+                std::cerr << "[ServiceScript] ship " << m_refitShip.value << " module " << m_refitModule << '\n';
+            }
+            else if (serviceStep == 3 && t >= 14.0)
+            {
+                ++serviceStep;
+                const auto page = buildRepairRefitPage();
+                if (page.previewForSelection && page.preview.ok && page.preview.applicable)
+                {
+                    if (const auto it = m_client->world().ships().find(m_refitShip.value); it != m_client->world().ships().end())
+                        m_refitSeenApplySerial = it->second.refit.applySerial;
+                    sendRefitCommand(true, page.preview.operation);
+                }
+                std::cerr << "[ServiceScript] apply preview ok=" << page.preview.ok << " deltas=" << page.preview.deltas.size() << '\n';
             }
         }
 

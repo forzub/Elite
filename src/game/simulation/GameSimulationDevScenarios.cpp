@@ -139,6 +139,7 @@ void GameSimulation::updateCatalogShipLineup()
         init.visual.shipName = d->identity.shipName;
         init.registry.instanceId = 960000 + serial++;
         init.registry.ownerName = "catalog lineup";
+        init.registry.ownerActor = ActorIds::Player();   // the player fleet: F7 lists them
         init.registry.registrationId = d->catalog.passportId;
         init.registry.shipRole = ShipRoleType::Civilian;
         const EntityId id = spawnShip(ShipRole::NPC, ptr.motion.systemId, *d, position, init, ptr.orientation);
@@ -164,6 +165,21 @@ void GameSimulation::updateCatalogShipLineup()
             tr.motion.worldVelocityMps = ptr.motion.worldVelocityMps;
             tr.motion.referenceVelocityMps = ptr.motion.referenceVelocityMps;
             tr.referenceVelocityMetersPerSecond = ptr.referenceVelocityMetersPerSecond;
+        }
+        // DEV ELITE_CATALOG_DAMAGE=1: real ObjectModuleRuntime damage for F7 -
+        // radar destroyed, first propulsion generator at 57 %, first drive destroyed
+        if (const char* damage = std::getenv("ELITE_CATALOG_DAMAGE"); damage && *damage == '1')
+        {
+            auto& core = ship->core();
+            if (!d->catalog.radarModuleIds.empty())
+                core.debugDestroyModuleById(d->catalog.radarModuleIds.front());
+            if (!d->powerThermalInstallation.engineReactorModuleIds.empty())
+                core.moduleRuntime().addEquipmentDamage(d->powerThermalInstallation.engineReactorModuleIds.front(),
+                                                        game::equipment::EquipmentDamageKind::Impact, 0.57);
+            if (!d->mainPropulsion.aftEngineModuleIds.empty())
+                core.debugDestroyModuleById(d->mainPropulsion.aftEngineModuleIds.front());
+            core.refreshRuntimeState();
+            core.refreshDeviceState();
         }
         // broadside to the player: the layout reads from the cockpit / drone view
         tr.orientation = ptr.orientation * glm::rotate(glm::mat4(1.0f), glm::half_pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));

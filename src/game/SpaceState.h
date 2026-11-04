@@ -1,4 +1,5 @@
 #pragma once
+#include "src/ui/presentation/ServicePanelsRenderer.h"
 
 #include <cstdint>
 #include <string>
@@ -269,6 +270,12 @@ private:
     game::presentation::SystemMapPanelPresentation
     buildNativeSystemMapPanelPresentation();
     bool handleNativeSystemMapPanelInput(const Viewport& viewport);
+
+    // F6 Shipyard / F7 Repair & Refit (SpaceStateServices.cpp)
+    bool renderServicePage(const Viewport& viewport, ui::services::ServiceUiId service);
+    bool handleServicePageInput(const Viewport& viewport, ui::services::ServiceUiId service);
+    game::presentation::RepairRefitPresentation buildRepairRefitPage();
+    void sendRefitCommand(bool apply, const game::ship::refit::RefitOperation& operation);
     void applyNativeSystemMapPanelAction(
         const game::presentation::SystemMapPanelAction& action
     );
@@ -592,6 +599,14 @@ private:
         std::make_shared<std::atomic<int>>(0);
     SystemMapRenderer m_systemMapRenderer;
     ui::presentation::InSessionPresentationRenderer m_inSessionPresentationRenderer;
+    ui::presentation::ServicePanelsRenderer m_servicePanels;
+    std::string m_shipyardModel;
+    bool m_shipyardPassport = false;
+    EntityId m_refitShip {0};
+    std::string m_refitGroup;
+    std::string m_refitModule;
+    std::uint32_t m_refitSeenApplySerial = 0;
+    game::ship::refit::RefitOperation m_refitLastOperation;
 
 
     // std::unique_ptr<game::debug::DebugServer>       m_debugServer;

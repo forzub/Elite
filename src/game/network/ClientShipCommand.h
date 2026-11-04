@@ -19,7 +19,10 @@
             RequestOrbitalTransfer, // hub -> hub Orbital Transfer to `target` (orbital hub id)
             CancelOrbitalTransfer,  // stop the active transfer: the carrier coasts on gravity
             ToggleFreeFlight,       // Ctrl+J: free flight (global frame, no speed envelope) on / off
-            SetFreeFlightThrust     // free flight: index 0 off (INSERT), 1 full (HOME), 2 brake (END)
+            SetFreeFlightThrust,    // free flight: index 0 off (INSERT), 1 full (HOME), 2 brake (END)
+            RefitPreview,           // F7: index = RefitOperationKind, target = module id, detail = product id,
+                                    //     amount = subject ship entity id (0 = this ship)
+            RefitApply              // F7 DEV apply of the same operation (no payment yet)
         };
         Type type;
 
@@ -29,5 +32,8 @@
 
         // RequestOrbitalTransfer: destination orbital hub id
         std::string target;
+
+        // RefitPreview / RefitApply: replacement product id
+        std::string detail;
 
     };

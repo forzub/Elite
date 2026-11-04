@@ -1,4 +1,5 @@
 #pragma once
+#include "src/game/simulation/ShipRefitSnapshot.h"
 #include "src/game/navigation/orbital/OrbitalTransferPlanner.h"
 #include <cstdint>
 
@@ -203,6 +204,13 @@ public:
     };
     bool toggleFreeFlight(EntityId shipId);
     void setFreeFlightThrust(EntityId shipId, int command);
+
+    // Repair & Refit (F7): a preview / DEV apply of one module operation on
+    // a ship owned by the commanding ship's owner (subject 0 = that ship).
+    // Results are published in the subject's ShipSnapshot::refit.
+    void requestRefitPreview(EntityId commandingShip, EntityId subject, const game::ship::refit::RefitOperation& operation);
+    void applyRefit(EntityId commandingShip, EntityId subject, const game::ship::refit::RefitOperation& operation);
+    [[nodiscard]] game::simulation::ShipRefitSnapshot refitSnapshotFor(EntityId ship) const;
     const ActiveFreeFlight* freeFlight(EntityId shipId) const;
     const ActiveOrbitalTransfer* orbitalTransfer(EntityId shipId) const;
     // This ship's dispatcher status (phase None when unknown to the dock).
@@ -572,6 +580,7 @@ private:
 
     // State/physics proving actor. It changes construction and degradation
     // continuously without resetting kinematics.
+    std::unordered_map<std::uint32_t, game::simulation::ShipRefitSnapshot> m_refitPublications;
     std::vector<std::string> m_catalogLineupRequest;
     bool m_catalogLineupSpawned = false;
     bool m_shipStateFlightTestRequested = false;

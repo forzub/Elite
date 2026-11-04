@@ -1385,6 +1385,23 @@ void SpaceState::update(float dt)
                     m_systemMapRenderer.devZoom(std::atof(arg("zoom:").c_str()));
                 else if (cmd.rfind("transfer:", 0) == 0)
                     requestOrbitalTransfer(arg("transfer:"));
+                else if (cmd.rfind("leg:", 0) == 0)
+                {
+                    // DEV: "leg:hub:<id>" | "leg:orbit:<moon|earth|mars>:<alt km>"
+                    std::string spec = arg("leg:");
+                    static const std::pair<const char*, const char*> bodies[] = {
+                        {"orbit:moon:", "orbit:system_0.Sol.Земля.Луна:"}, {"orbit:earth:", "orbit:system_0.Sol.Земля:"},
+                        {"orbit:mars:", "orbit:system_0.Sol.Марс:"}};
+                    for (const auto& [k, v] : bodies)
+                        if (spec.rfind(k, 0) == 0)
+                            spec = v + spec.substr(std::char_traits<char>::length(k));
+                    game::network::ClientMessage msg;
+                    ClientShipCommand command;
+                    command.type = ClientShipCommand::RouteLeg;
+                    command.target = spec;
+                    msg.payload = command;
+                    m_client->sendMessage(msg);
+                }
                 else if (cmd.rfind("autopilot:", 0) == 0)
                 {
                     static const std::pair<const char*, const char*> bodies[] = {

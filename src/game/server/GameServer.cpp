@@ -871,6 +871,27 @@ void GameServer::update(double dt)
                     m_simulation.setFreeFlightThrust(id, shipCmd.index);
                     break;
 
+                case ClientShipCommand::RouteLeg:
+                {
+                    GameSimulation::FreeFlightLeg leg;
+                    const std::string& t = shipCmd.target;
+                    if (t.rfind("hub:", 0) == 0)
+                    {
+                        leg.kind = GameSimulation::FreeFlightLeg::Kind::Hub;
+                        leg.hubId = t.substr(4);
+                    }
+                    else if (t.rfind("orbit:", 0) == 0)
+                    {
+                        leg.kind = GameSimulation::FreeFlightLeg::Kind::Orbit;
+                        const std::string rest = t.substr(6);
+                        const auto colon = rest.rfind(':');
+                        leg.bodyId = rest.substr(0, colon);
+                        leg.orbitAltitudeM = colon == std::string::npos ? 100000.0 : std::atof(rest.c_str() + colon + 1) * 1000.0;
+                    }
+                    m_simulation.startFreeFlightLeg(id, leg);
+                    break;
+                }
+
                 case ClientShipCommand::FreeFlightAutopilot:
                     m_simulation.setFreeFlightAutopilot(id, shipCmd.target, shipCmd.index != 0, shipCmd.detail);
                     break;

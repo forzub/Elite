@@ -1669,8 +1669,9 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         if (const auto dot = target.rfind('.'); dot != std::string::npos)
             target = target.substr(dot + 1);
         static const char* phases[] = {"", "уход от тела", "перелёт", "подход", "снижение на площадку", "на поверхности",
-                                       "к площадке", "выбор площадки", "орбита: нет ровной площадки, поиск"};
-        const int phase = std::min<int>(motion.freeFlightAutopilotPhase, 8);
+                                       "к площадке", "выбор площадки", "орбита: нет ровной площадки, поиск",
+                                       "выход из зоны хаба (J мягко)"};
+        const int phase = std::min<int>(motion.freeFlightAutopilotPhase, 9);
         char ap[256];
         if (phase == 5)
             std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s", target.c_str(), phases[phase]);

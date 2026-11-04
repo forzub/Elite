@@ -196,6 +196,16 @@ public:
     // Ctrl+J free flight (GameSimulationFreeFlight.cpp): on - the travel frame is detached and
     // carries the ship's global motion under gravity; off - the ship is re-based into the
     // nearest hub frame with its actual relative position and velocity.
+    // One leg of a route flown on the J drive (GameSimulationRoute.cpp).
+    struct FreeFlightLeg
+    {
+        enum class Kind { Hub, Orbit, Point };
+        Kind kind = Kind::Hub;
+        std::string hubId;              // Hub
+        std::string bodyId;             // Orbit
+        double orbitAltitudeM = 0.0;    // Orbit
+        glm::dvec3 pointWorld {0.0};    // Point
+    };
     struct ActiveFreeFlight
     {
         std::string sourceHubId;
@@ -224,6 +234,16 @@ public:
         game::navigation::landing::LandingRequest landingRequest;
         game::navigation::landing::LandingAutopilot landing;
         bool landingStarted = false;
+        // a route leg (hub / orbit / point) flown by the route autopilot
+        FreeFlightLeg leg;
+        bool legActive = false;
+        bool legArrived = false;
+        double legSeconds = 0.0;
+        double legLastLog = -1.0e30;
+        double legDriveStartSeconds = -1.0;
+        std::string legDepartureHubId;
+        bool legHaveLastBody = false;
+        glm::dvec3 legLastBodyCentre {0.0};
         double landingPlanSeconds = 0.0;
         // landed: the touchdown spot, body-fixed (it turns with the body)
         bool landedBodyKnown = false;
@@ -257,6 +277,8 @@ public:
     void setFreeFlightThrust(EntityId shipId, int command);
     // J autopilot: fly to a body and land on it (empty id = the dominant body); engage false cancels
     void setFreeFlightAutopilot(EntityId shipId, const std::string& bodyId, bool engage, const std::string& landingSpec = {});
+    // Route autopilot: fly one leg (enters J if needed); finishes matched and leaves J.
+    bool startFreeFlightLeg(EntityId shipId, const FreeFlightLeg& leg);
 
     // Repair & Refit (F7): a preview / DEV apply of one module operation on
     // a ship owned by the commanding ship's owner (subject 0 = that ship).
@@ -620,6 +642,8 @@ private:
     TerrainHeightProvider m_terrainHeight;
     BodyOrientationProvider m_bodyOrientation;
     void updateFreeFlightAutopilot(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
+    void updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
+    std::vector<EntityId> m_pendingJExit;   // legs that arrived: J off after the free-flight pass
 
     // Compatibility alias used by the current single-system navigation and
     // local-client presentation paths. Multiplayer authority lives in

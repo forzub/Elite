@@ -46,6 +46,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <utility>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -579,6 +580,11 @@ void GameSimulation::updateFreeFlights(double dt)
 {
     if (dt <= 0.0)
         return;
+    // route legs that arrived last tick leave J now (a hub capture or the local
+    // ballistic frame) - outside the pass below, which iterates m_freeFlights
+    for (const EntityId id : std::exchange(m_pendingJExit, {}))
+        if (m_freeFlights.count(id))
+            (void)toggleFreeFlight(id);
     for (auto it = m_freeFlights.begin(); it != m_freeFlights.end();)
     {
         Ship* ship = getShip(it->first);
@@ -613,6 +619,13 @@ void GameSimulation::updateFreeFlights(double dt)
         {
             // local flight inside the falling frame: nothing is folded, the frame
             // carries the global motion, the flight laws own the local state
+            f.elapsedSeconds += dt;
+            if (f.elapsedSeconds - f.lastLogSeconds >= 10.0)
+            {
+                f.lastLogSeconds = f.elapsedSeconds;
+                std::cerr << "[FreeFlight] ship " << it->first.value << " local frame: altitude over " << g1.primaryBodyId << " "
+                          << g1.primaryAltitudeMeters / 1000.0 << " km" << std::endl;
+            }
             ++it;
             continue;
         }
@@ -711,7 +724,8 @@ void GameSimulation::updateFreeFlights(double dt)
                 glm::dvec3 v = frame.linearVelocityMps - bodyVelocity;
                 const auto& control = ship->core().control();
                 const bool steering = std::abs(control.pitchInput) > 0.05f || std::abs(control.yawInput) > 0.05f;
-                if (motion.localControlLaw == game::navigation::LocalFlightControlLaw::Assisted && f.autopilotTargetId.empty())
+                if (motion.localControlLaw == game::navigation::LocalFlightControlLaw::Assisted && f.autopilotTargetId.empty() &&
+                    !f.legActive)
                 {
                     // the hull holds the velocity (prograde) when the pilot does not steer:
                     // thrust stays along the velocity while gravity bends the path
@@ -973,6 +987,9 @@ void GameSimulation::updateFreeFlights(double dt)
                 f.lastBasis = basis;
                 f.lastBasisBodyId = primary->id;
             }
+            // ---- route leg (hub / orbit / point)
+            if (f.legActive && motion.freeFlightSurfaceState == 0)
+                updateFreeFlightLeg(it->first, *ship, f, dt);
             // ---- J autopilot
             if (!f.autopilotTargetId.empty())
             {

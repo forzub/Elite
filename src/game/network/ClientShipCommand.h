@@ -23,8 +23,9 @@
             RefitPreview,           // F7: index = RefitOperationKind, target = module id, detail = product id,
                                     //     amount = subject ship entity id (0 = this ship)
             RefitApply,             // F7 DEV apply of the same operation (no payment yet)
-            FreeFlightAutopilot     // J autopilot: index 1 = fly to `target` body and land (empty = the
+            FreeFlightAutopilot,    // J autopilot: index 1 = fly to `target` body and land (empty = the
                                     //     dominant body: land here), index 0 = cancel
+            RouteLeg                // route autopilot leg: target "hub:<id>" | "orbit:<body>:<alt km>"
         };
         Type type;
 

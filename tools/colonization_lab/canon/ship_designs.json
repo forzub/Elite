@@ -1438,7 +1438,12 @@
    "craft_slots": 1,
    "craft": "boarding_boat",
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "craft_envelope_m": [
+    9.0,
+    4.0,
+    3.0
+   ]
   },
   {
    "id": "std.bay.drone4",
@@ -1462,6 +1467,21 @@
    "price_cr": 1500000,
    "craft_slots": 2,
    "craft": "interceptor",
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "craft_ship": "bastion.ship.b-4.sokol"
+  },
+  {
+   "id": "bastion.bay.hangar4",
+   "cat": "hangar",
+   "mfr": "mfr.bastion",
+   "name": "Ангар перехватчиков (4 места)",
+   "model": "АП-4",
+   "mass_t": 300,
+   "price_cr": 2800000,
+   "craft_slots": 4,
+   "craft": "interceptor",
+   "craft_ship": "bastion.ship.b-4.sokol",
    "overhaul_h": 40000,
    "life_h": 100000
   },
@@ -3586,6 +3606,11 @@
      "V",
      "std.med.bay",
      3
+    ],
+    [
+     "BH",
+     "bastion.bay.hangar4",
+     1
     ],
     [
      "B",

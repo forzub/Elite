@@ -19,7 +19,7 @@
 | ПК-30 «Страж» | patrol_cutter | Лунно-Марсианские верфи | AssistedI | 420 | 20 т, 6 пасс. | 13.0 | 2.926/3.065 | 9600 | Я-1 | 15.8 | OK · WARN 1 |
 | Б-4 «Сокол» | interceptor | Арсенал «Бастион» | AssistedX | 140 | 2 т | 6.2 | 4.383/4.445 | 10000 | — | 20.6 | OK · WARN 2 |
 | Хэ-Ф22 «Дунь» | escort_frigate | Верфи Гармонии | AssistedY | 2200 | 80 т | 32.1 | 1.385/1.434 | 32100 | Х-5 | 77.0 | OK · WARN 1 |
-| Б-90 «Цитадель» | line_combatant | Арсенал «Бастион» | NewtonianX | 9000 | 300 т | 110.0 | 1.148/1.185 | 120000 | Б-12 | 796.7 | OK · WARN 1 |
+| Б-90 «Цитадель» | line_combatant | Арсенал «Бастион» | NewtonianX | 9000 | 300 т | 110.0 | 1.148/1.185 | 120000 | Б-12 | 800.4 | OK · WARN 1 |
 | R-7 «Аргус» | recon_picket | Верфи Гипериона | NewtonianX | 600 | 10 т | 12.0 | 1.932/1.963 | 11000 | Я-1 | 37.0 | OK · WARN 1 |
 | Хэ-С240 «Тыловик» | fleet_tender | Верфи Гармонии | NewtonianY | 5000 | 6000 т | 39.0 | 0.342/0.762 | 32100 | Х-12 | 59.8 | OK · WARN 2 |
 | ПАО-7 «Щит» | impact_defence_tug | Лунно-Марсианские верфи | NewtonianX | 1600 | 200 т | 28.0 | 1.555/1.745 | 28000 | — | 33.1 | OK · WARN 1 |
@@ -818,6 +818,7 @@
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
 - WARN `component_prices_near_class_model` — main_drive 1.40/1.19 M, reactor 2.14/1.45 M, jump_drive 1.84/1.53 M, electronics 2.47/1.53 M, life_support 0.24/0.20 M, rcs_thermal 0.18/0.51 M, weapons 1.90/1.19 M
 - OK `no_single_point_of_failure_in_critical_functions` — thrust / life / comms redundant
+- OK `craft_bay_fit` — АК-1: 1 x boarding_boat -> bay 8.0 x 6.0 x 15.0 m in hull 22.0 x 8.0 x 34.0 m
 
 ## Б-4 «Сокол» (Б-4)
 
@@ -939,20 +940,21 @@
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
 - WARN `component_prices_near_class_model` — main_drive 7.02/5.60 M, reactor 10.20/7.20 M, jump_drive 3.86/8.32 M, electronics 2.92/9.60 M, life_support 1.68/1.44 M, rcs_thermal 0.66/2.88 M, weapons 24.60/14.40 M
 - OK `no_single_point_of_failure_in_critical_functions` — thrust / life / comms redundant
+- OK `craft_bay_fit` — АК-1: 1 x boarding_boat -> bay 8.0 x 6.0 x 15.0 m in hull 30.0 x 18.0 x 85.0 m
 
 ## Б-90 «Цитадель» (Б-90)
 
 - Класс: `line_combatant`.
 - Производитель: Арсенал «Бастион» (wolf359_citadel, блок citadel_compact, школа heavy_military); верфь: military_hub.
 - Назначение: сдерживание и война: дальние ракеты, сильные сенсоры, броня; главная боевая единица Цитадели.
-- Корпус: cylinder, 180.0 × 45.0 × 35.0 м; бронированный корпус-цитадель, ВПУ по бортам; сталь, тяжёлая броня; силовой набор 5607.9 т.
+- Корпус: cylinder, 180.0 × 45.0 × 35.0 м; бронированный корпус-цитадель, ВПУ по бортам; сталь, тяжёлая броня; силовой набор 5307.9 т.
 - Схема управления: Newtonian X (рантайм `NewtonianX`, generic).
 - Экипаж 160, пассажиры 0; груз 300 т, C20 0; автономность 180 сут; ресурс 48 лет.
-- Масса: сухая 9000 т (оборудование 3392.1 т), в рабочем снаряжении 9467.2 т, полная 9767.2 т (груз 300.0 т + тара C20 0.0 т).
+- Масса: сухая 9000 т (оборудование 3692.1 т), в рабочем снаряжении 9467.2 т, полная 9767.2 т (груз 300.0 т + тара C20 0.0 т).
 - Тяга 110.0 МН: 1.148 g гружёный (полная масса), 1.185 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 4 × ТР-30В = 120000 МВт; бытовая нагрузка 184.2 МВт от 1200 МВт; площадка реактора 722.2 м².
 - Охлаждение: 2000 м² радиаторов при 1000 K = 998.0 МВт; контуры 2400 МВт; излучатель двигателя ⌀ 6.4 м.
-- Цена: детали 505.57 млн, корпус 109.20 млн, прейскурант 796.74 млн Cr.
+- Цена: детали 508.37 млн, корпус 109.20 млн, прейскурант 800.37 млн Cr.
 - Единичные точки отказа: Б-90-A4A1.
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
@@ -973,8 +975,9 @@
 | Б-90-A7A1 | Terra Habitat ЖО T-200 (флот) | 2 | Terra Habitat | station, LRU, 10 ч |
 | Б-90-A7A2 | Спасательная шлюпка (20 мест, 10 суток) | 9 | Agora Modular | station, LRU, 8 ч |
 | Б-90-A7A3 | Медотсек (4 койки) | 3 | Консорциум «Евро-Хабитат» | station, LRU, 6 ч |
-| Б-90-A9A1 | Отсек дронов (4 сервисных дрона) | 2 | Agora Modular | station, LRU, 8 ч |
-| Б-90-A9A2 | Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
+| Б-90-A9A1 | Ангар перехватчиков (4 места) | 1 | Арсенал «Бастион» | yard |
+| Б-90-A9A2 | Отсек дронов (4 сервисных дрона) | 2 | Agora Modular | station, LRU, 8 ч |
+| Б-90-A9A3 | Стыковочный узел (стандарт хабов) | 2 | Agora Modular | station, LRU, 8 ч |
 | Б-90-A11A1 | Бастион ВПУ-16 дальних ракет | 6 | Арсенал «Бастион» | station, LRU, 10 ч |
 | Б-90-A11A2 | Бастион турель ПРО БТ-4 | 12 | Арсенал «Бастион» | station, LRU, 10 ч |
 | Б-90-A12A1 | Броня Бастиона тяжёлая (1 т) | 1600 | Арсенал «Бастион» | yard, LRU, 2 ч |
@@ -983,8 +986,8 @@
 - OK `drives_fill_layout_slots` — 4 drives for NewtonianX (4 aft + 0 fore)
 - OK `one_generator_per_group` — 4 propulsion reactors for 4 groups
 - OK `generator_covers_group_demand` — 30000 MWe per group vs 27500 MW demand
-- OK `equipment_fits_dry_mass` — hull structure 5608 t = 62% of dry 9000 t (possible 15%-90%)
-- OK `hull_structure_share_typical` — hull structure 62% of dry (typical 30%-75%)
+- OK `equipment_fits_dry_mass` — hull structure 5308 t = 59% of dry 9000 t (possible 15%-90%)
+- OK `hull_structure_share_typical` — hull structure 59% of dry (typical 30%-75%)
 - OK `thrust_meets_class_acceleration` — 110.00 MN: 1.15 g loaded, 1.18 g in service (class burn 1.1 g)
 - OK `thrust_near_class_target` — 110.0 MN vs class 110.0 MN
 - OK `service_power_covers_hotel` — service 1200 MWe vs hotel 184.2 MW (+15 %)
@@ -1005,6 +1008,7 @@
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
 - WARN `component_prices_near_class_model` — main_drive 42.00/58.80 M, reactor 58.20/79.80 M, jump_drive 67.20/92.40 M, electronics 44.42/117.60 M, life_support 6.78/16.80 M, rcs_thermal 1.56/33.60 M, weapons 285.00/189.00 M
 - OK `no_single_point_of_failure_in_critical_functions` — thrust / life / comms redundant
+- OK `craft_bay_fit` — АП-4: 4 x bastion.ship.b-4.sokol -> bay 30.0 x 7.0 x 45.0 m in hull 45.0 x 35.0 x 180.0 m
 
 ## R-7 «Аргус» (R-7)
 
@@ -1139,6 +1143,7 @@
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
 - WARN `component_prices_near_class_model` — main_drive 3.84/4.20 M, reactor 10.20/5.40 M, jump_drive 11.22/8.40 M, electronics 2.47/3.00 M, life_support 1.82/1.80 M, rcs_thermal 1.04/2.40 M, weapons 3.00/1.80 M
 - OK `no_single_point_of_failure_in_critical_functions` — thrust / life / comms redundant
+- OK `craft_bay_fit` — АП-2: 2 x bastion.ship.b-4.sokol -> bay 30.0 x 7.0 x 24.0 m in hull 40.0 x 35.0 x 150.0 m
 
 ## ПАО-7 «Щит» (ПАО-7)
 

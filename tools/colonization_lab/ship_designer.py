@@ -568,8 +568,22 @@ def _box(volume, aspect):
     return [aspect[0] * k, aspect[1] * k, aspect[2] * k]
 
 
-def place(s, prods):
-    """Normalized mount positions (x right, y up, z +aft), runtime slot ids and primitive blocks (metres) of every unit."""
+def craft_bay_size(p, envelopes):
+    """Inner volume (w, h, l metres) of a bay that carries craft: the carried ship's envelope (catalog design
+    `craft_ship`, else the product's `craft_envelope_m`), parked two abreast with deck clearance and walls."""
+    env = envelopes.get(p.get("craft_ship")) or p.get("craft_envelope_m")
+    if not env:
+        return None
+    cl, cw, ch = env
+    n = max(1, p.get("craft_slots", 1))
+    cols = min(n, 2)
+    rows = -(-n // cols)
+    return [cols * (cw + 2.0) + 2.0, ch + 3.0, rows * (cl + 3.0) + 3.0]
+
+
+def place(s, prods, envelopes):
+    """Normalized mount positions (x right, y up, z +aft), runtime slot ids and primitive blocks (metres) of every unit.
+    `envelopes`: design id -> hull envelope (L, W, H), so a carrier's bay is sized by the craft it carries."""
     lay = s["flight"]["layout"]
     law = s["flight"]["law"]
     assisted = law == "Assisted"
@@ -602,7 +616,7 @@ def place(s, prods):
                  "medbay": -0.5, "container_rack": 0.0, "passenger_module": -0.1, "train_module": 0.5, "cryo_tank": 0.0, "bulk_hold": 0.1,
                  "docking_port": -1.0, "boat_bay": 0.2, "drone_bay": 0.25, "hangar": 0.1, "tow_rig": -1.0, "workshop": -0.2, "heat_shield": 0.0,
                  "landing_gear": 0.6, "weapon": -0.3, "armour": -0.95}.get(c, 0.0)
-            y = {"radar": 0.9, "sensor_mast": 1.0, "weapon": 0.8, "landing_gear": -1.0, "heat_shield": -0.9}.get(c, 0.0)
+            y = {"radar": 0.9, "sensor_mast": 1.0, "weapon": 0.8, "landing_gear": -1.0, "heat_shield": -0.9, "hangar": -0.55}.get(c, 0.0)
             k = min(n, 4)
             pts = [((j - (k - 1) / 2) * (0.5 if k > 1 else 0), y, z) for j in range(k)]
         it["positions"] = [list(map(lambda v: round(v, 3), q)) for q in pts]
@@ -625,6 +639,12 @@ def place(s, prods):
             size = _box((p.get("capacity_t", 100) / 0.8) * per, (1, 1, 1.8))
         elif c == "bulk_hold":
             size = _box((p.get("capacity_t", 100) / 0.7) * per, (1.4, 1, 2))
+        elif c in ("hangar", "boat_bay") and craft_bay_size(p, envelopes):
+            size = craft_bay_size(p, envelopes)
+            fits = all(v <= 0.95 * 2 * h for v, h in zip(size, half))
+            s["checks"].append(dict(check="craft_bay_fit", ok=fits, level="OK" if fits else "FAIL",
+                                    detail=f"{p['model']}: {p.get('craft_slots', 1)} x {p.get('craft_ship') or p.get('craft')} "
+                                           f"-> bay {size[0]:.1f} x {size[1]:.1f} x {size[2]:.1f} m in hull {W} x {H} x {L} m"))
         elif c in ("hangar", "boat_bay", "drone_bay"):
             size = _box(250.0 * max(1, p.get("craft_slots", p.get("drones", 2))) * per, (1.6, 0.8, 2))
         elif c == "tank":
@@ -744,8 +764,9 @@ def main():
     ap.add_argument("--check", action="store_true")
     a = ap.parse_args()
     D, prods, mfr, ships = compute()
+    envelopes = {s["id"]: s["hull"]["envelope_m"] for s in ships}
     for s in ships:
-        place(s, prods)
+        place(s, prods, envelopes)
     files = {
         os.path.join(OUT, "ship_designs_3126.json"): json.dumps(dict(status="PROPOSAL", ships=ships), ensure_ascii=False, indent=1) + "\n",
         os.path.join(OUT, "SHIP_DESIGNS_3126.md"): report(D, prods, mfr, ships),

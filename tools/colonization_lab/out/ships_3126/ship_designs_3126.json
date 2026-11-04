@@ -19565,9 +19565,9 @@
         3.4
        ],
        "s": [
-        7.368,
-        3.684,
-        9.21
+        8.0,
+        6.0,
+        15.0
        ]
       }
      ]
@@ -20464,6 +20464,12 @@
      "ok": true,
      "level": "OK",
      "detail": "thrust / life / comms redundant"
+    },
+    {
+     "check": "craft_bay_fit",
+     "ok": true,
+     "level": "OK",
+     "detail": "АК-1: 1 x boarding_boat -> bay 8.0 x 6.0 x 15.0 m in hull 22.0 x 8.0 x 34.0 m"
     }
    ]
   },
@@ -23082,9 +23088,9 @@
         8.5
        ],
        "s": [
-        7.368,
-        3.684,
-        9.21
+        8.0,
+        6.0,
+        15.0
        ]
       }
      ]
@@ -24065,6 +24071,12 @@
      "ok": true,
      "level": "OK",
      "detail": "thrust / life / comms redundant"
+    },
+    {
+     "check": "craft_bay_fit",
+     "ok": true,
+     "level": "OK",
+     "detail": "АК-1: 1 x boarding_boat -> bay 8.0 x 6.0 x 15.0 m in hull 30.0 x 18.0 x 85.0 m"
     }
    ]
   },
@@ -24099,7 +24111,7 @@
     ],
     "structure": "бронированный корпус-цитадель, ВПУ по бортам",
     "material": "сталь, тяжёлая броня",
-    "structure_t": 5607.9
+    "structure_t": 5307.9
    },
    "crew": 160,
    "passengers": 0,
@@ -24113,8 +24125,8 @@
    "service_life_years": 48,
    "mass": {
     "dry_t": 9000,
-    "equipment_t": 3392.1,
-    "structure_t": 5607.9,
+    "equipment_t": 3692.1,
+    "structure_t": 5307.9,
     "fluids_t": 280.0,
     "consumables_t": 172.8,
     "service_t": 9467.2,
@@ -24157,9 +24169,9 @@
     "radiator_material": "elite.material.radiator.c-sic.v1"
    },
    "price": {
-    "parts_cr": 505566000,
+    "parts_cr": 508366000,
     "hull_cr": 109200000,
-    "list_cr": 796737000.0,
+    "list_cr": 800366000.0,
     "groups_cr": {
      "main_drive": 42000000,
      "reactor": 58200000,
@@ -25263,11 +25275,41 @@
      ]
     },
     {
+     "key": "BH",
+     "product": "bastion.bay.hangar4",
+     "cat": "hangar",
+     "qty": 1,
+     "code": "Б-90-A9A1",
+     "assembly": "A9",
+     "extra": {},
+     "positions": [
+      [
+       0.0,
+       -0.55,
+       0.1
+      ]
+     ],
+     "blocks": [
+      {
+       "c": [
+        0.0,
+        -9.625,
+        9.0
+       ],
+       "s": [
+        30.0,
+        7.0,
+        45.0
+       ]
+      }
+     ]
+    },
+    {
      "key": "B",
      "product": "std.bay.drone4",
      "cat": "drone_bay",
      "qty": 2,
-     "code": "Б-90-A9A1",
+     "code": "Б-90-A9A2",
      "assembly": "A9",
      "extra": {},
      "positions": [
@@ -25314,7 +25356,7 @@
      "product": "std.dock.collar",
      "cat": "docking_port",
      "qty": 2,
-     "code": "Б-90-A9A2",
+     "code": "Б-90-A9A3",
      "assembly": "A9",
      "extra": {},
      "positions": [
@@ -25828,6 +25870,20 @@
      },
      {
       "code": "Б-90-A9A1",
+      "product": "bastion.bay.hangar4",
+      "name": "Ангар перехватчиков (4 места)",
+      "cat": "hangar",
+      "qty": 1,
+      "assembly": "A9",
+      "repair_level": "yard",
+      "line_replaceable": false,
+      "replace_hours": 0,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "condition": "new"
+     },
+     {
+      "code": "Б-90-A9A2",
       "product": "std.bay.drone4",
       "name": "Отсек дронов (4 сервисных дрона)",
       "cat": "drone_bay",
@@ -25841,7 +25897,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A9A2",
+      "code": "Б-90-A9A3",
       "product": "std.dock.collar",
       "name": "Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
@@ -25957,6 +26013,11 @@
       "net": "power_service",
       "src": "Б-90-A2A2",
       "dst": "Б-90-A9A2"
+     },
+     {
+      "net": "power_service",
+      "src": "Б-90-A2A2",
+      "dst": "Б-90-A9A3"
      },
      {
       "net": "power_service",
@@ -26198,13 +26259,13 @@
      "check": "equipment_fits_dry_mass",
      "ok": true,
      "level": "OK",
-     "detail": "hull structure 5608 t = 62% of dry 9000 t (possible 15%-90%)"
+     "detail": "hull structure 5308 t = 59% of dry 9000 t (possible 15%-90%)"
     },
     {
      "check": "hull_structure_share_typical",
      "ok": true,
      "level": "OK",
-     "detail": "hull structure 62% of dry (typical 30%-75%)"
+     "detail": "hull structure 59% of dry (typical 30%-75%)"
     },
     {
      "check": "thrust_meets_class_acceleration",
@@ -26325,6 +26386,12 @@
      "ok": true,
      "level": "OK",
      "detail": "thrust / life / comms redundant"
+    },
+    {
+     "check": "craft_bay_fit",
+     "ok": true,
+     "level": "OK",
+     "detail": "АП-4: 4 x bastion.ship.b-4.sokol -> bay 30.0 x 7.0 x 45.0 m in hull 45.0 x 35.0 x 180.0 m"
     }
    ]
   },
@@ -29557,7 +29624,7 @@
      "positions": [
       [
        0.0,
-       0.0,
+       -0.55,
        0.1
       ]
      ],
@@ -29565,13 +29632,13 @@
       {
        "c": [
         0.0,
-        0.0,
+        -9.625,
         7.5
        ],
        "s": [
-        9.283,
-        4.642,
-        11.604
+        30.0,
+        7.0,
+        24.0
        ]
       }
      ]
@@ -30536,6 +30603,12 @@
      "ok": true,
      "level": "OK",
      "detail": "thrust / life / comms redundant"
+    },
+    {
+     "check": "craft_bay_fit",
+     "ok": true,
+     "level": "OK",
+     "detail": "АП-2: 2 x bastion.ship.b-4.sokol -> bay 30.0 x 7.0 x 24.0 m in hull 40.0 x 35.0 x 150.0 m"
     }
    ]
   },

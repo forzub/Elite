@@ -1601,6 +1601,28 @@ void GameServer::updateNavigationSensorDevices(double universeTimeSeconds)
                     targetTransform.motion.worldVelocityMps;
                 row.radarCrossSection =
                     targetPtr->core().desc().radarCrossSection;
+                row.kind = game::radar::RadarTrackKindShip;
+                truth.push_back(row);
+            }
+
+            // Compact traffic shells (hub dock traffic, route traffic) are
+            // ships too: without them the hub traffic is invisible.
+            for (const auto& [shellId, shell] : m_simulation.shipShells())
+            {
+                if (!shell.valid() ||
+                    shell.transform.motion.systemId != observerSystemId)
+                {
+                    continue;
+                }
+
+                game::radar::TestIdealRadarTruthContact row;
+                row.sourceKey = ShipTruthKeyPrefix |
+                    (static_cast<std::uint64_t>(shellId.value) &
+                     TruthKeyPayloadMask);
+                row.worldPosition = shell.transform.worldPosition;
+                row.worldVelocityMps = shell.transform.motion.worldVelocityMps;
+                row.radarCrossSection = shell.definition->radarCrossSection;
+                row.kind = game::radar::RadarTrackKindShip;
                 truth.push_back(row);
             }
 
@@ -1616,6 +1638,7 @@ void GameServer::updateNavigationSensorDevices(double universeTimeSeconds)
                 row.worldPosition = object.worldPosition;
                 row.worldVelocityMps = glm::dvec3(object.linearVelocity);
                 row.radarCrossSection = 1.0;
+                row.kind = game::radar::RadarTrackKindStructure;
                 truth.push_back(row);
             }
 

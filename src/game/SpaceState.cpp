@@ -970,6 +970,10 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         m_inputMapper.update(m_playerControl, currentLocalControlLaw, playerFreeFlight);
         if (m_devThrustUntilMs > 0.0 && startupElapsedMs(m_startupTotalBegin) < m_devThrustUntilMs)
             m_playerControl.targetSpeedRate = 1.0f;      // DEV map script "thrust:<s>": '+' held
+        if (m_devYawUntilMs > 0.0 && startupElapsedMs(m_startupTotalBegin) < m_devYawUntilMs)
+            m_playerControl.yawInput = 1.0f;             // DEV "yaw:<s>": yaw key held
+        if (m_devPitchUntilMs > 0.0 && startupElapsedMs(m_startupTotalBegin) < m_devPitchUntilMs)
+            m_playerControl.pitchInput = 1.0f;           // DEV "pitch:<s>": pitch key held
         m_client->submitInput(m_playerControl);
     }
 
@@ -1440,6 +1444,22 @@ void SpaceState::update(float dt)
                 }
                 else if (cmd.rfind("thrust:", 0) == 0)
                     m_devThrustUntilMs = startupElapsedMs(m_startupTotalBegin) + std::atof(arg("thrust:").c_str()) * 1000.0;
+                else if (cmd.rfind("yaw:", 0) == 0)
+                    m_devYawUntilMs = startupElapsedMs(m_startupTotalBegin) + std::atof(arg("yaw:").c_str()) * 1000.0;
+                else if (cmd.rfind("pitch:", 0) == 0)
+                    m_devPitchUntilMs = startupElapsedMs(m_startupTotalBegin) + std::atof(arg("pitch:").c_str()) * 1000.0;
+                else if (cmd == "jstate")
+                {
+                    // DEV: global (frame) and local speed of the player ship
+                    const auto shipIt = m_client->world().ships().find(m_playerId.value);
+                    if (shipIt != m_client->world().ships().end())
+                    {
+                        const auto& mo = shipIt->second.transform.motion;
+                        std::cerr << "[DevJState] freeFlight " << mo.freeFlight << " frame " << mo.travelFrame.frameId
+                                  << " global " << glm::length(mo.travelFrame.linearVelocityMps) / 1000.0 << " km/s, local "
+                                  << glm::length(mo.localVelocityMps) << " m/s" << std::endl;
+                    }
+                }
                 else if (cmd == "report")
                 {
                     const auto ids = m_systemMapRenderer.devVisibleObjectIds();

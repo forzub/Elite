@@ -31,11 +31,13 @@
 // (SharedShipPhysics). The pilot's velocity reference is the source hub's
 // world velocity (HUD vector, Backspace exit, brake) - not the heliocentric one.
 //
-// Leaving free flight is a capture: only a hub whose capture envelope contains
-// the ship (FreeFlightCaptureRadiusMeters) and only below the safe capture
-// speed (the tactical envelope). Otherwise the ship stays in free flight and
-// the refusal is replicated for the HUD. A capture re-bases the ship into the
+// Leaving free flight near a hub is a capture: only a hub whose capture
+// envelope contains the ship (FreeFlightCaptureRadiusMeters) and only below
+// the safe capture speed (the tactical envelope); it re-bases the ship into the
 // hub frame with its actual relative position and velocity (no snap).
+// Anywhere else J off keeps the global motion in the ship's own ballistic frame
+// (non-rotating, free fall under gravity) and the pilot flies locally from rest
+// inside it: global and local speed are separate (user order 2026-11-04).
 #include "src/game/simulation/GameSimulation.h"
 
 #include <algorithm>
@@ -281,7 +283,13 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
     auto& tr = ship->core().transform();
     auto& motion = tr.motion;
 
-    const auto active = m_freeFlights.find(shipId);
+    auto active = m_freeFlights.find(shipId);
+    if (active != m_freeFlights.end() && active->second.localFrame)
+    {
+        // J again from the local ballistic frame: back to free flight (re-based below)
+        m_freeFlights.erase(active);
+        active = m_freeFlights.end();
+    }
     if (active != m_freeFlights.end())
     {
         // off = a capture: the nearest hub whose capture envelope contains the ship, at a safe speed
@@ -302,22 +310,32 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
                 nearestVel = frame.velocityMetersPerSecond;
             }
         }
-        if (nearest.empty() || best > FreeFlightCaptureRadiusMeters)
-        {
-            motion.freeFlightCaptureRefusal = 1;
-            std::cerr << "[FreeFlight] ship " << shipId.value << ": no local reference frame (nearest hub " << nearest << " at "
-                      << best / 1000.0 << " km, capture envelope " << FreeFlightCaptureRadiusMeters / 1000.0
-                      << " km); staying in free flight" << std::endl;
-            return false;
-        }
-        const double relSpeed = glm::length(shipVel - nearestVel);
+        const double relSpeed = nearest.empty() ? 0.0 : glm::length(shipVel - nearestVel);
         const double safeSpeed = game::ship::controlledSpeedLimitMps(ship->core().effectivePhysics());
-        if (relSpeed > safeSpeed)
+        if (nearest.empty() || best > FreeFlightCaptureRadiusMeters || relSpeed > safeSpeed)
         {
-            motion.freeFlightCaptureRefusal = 2;
-            std::cerr << "[FreeFlight] ship " << shipId.value << ": UNSAFE capture by " << nearest << " - " << relSpeed
-                      << " m/s relative at " << best / 1000.0 << " km (safe <= " << safeSpeed << " m/s); staying in free flight" << std::endl;
-            return false;
+            // No hub can take the ship: it keeps its global motion in its own
+            // ballistic frame (non-rotating, falling freely under gravity) and the
+            // pilot flies locally from rest inside it - global and local speed apart.
+            auto& f = active->second;
+            f.localFrame = true;
+            f.autopilotTargetId.clear();
+            f.autopilotPhase = 0;
+            motion.travelFrame.originMeters = shipWorld;
+            motion.travelFrame.linearVelocityMps = shipVel;
+            motion.localPositionMeters = glm::dvec3(0.0);
+            motion.localVelocityMps = glm::dvec3(0.0);
+            motion.freeFlight = false;
+            motion.freeFlightThrust = 0;
+            motion.freeFlightCaptureRefusal = 0;
+            motion.freeFlightAutopilotPhase = 0;
+            if (motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::BackwardToVelocity ||
+                motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::ForwardToVelocity)
+                motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
+            std::cerr << "[FreeFlight] ship " << shipId.value << " OFF -> local ballistic frame: global speed "
+                      << glm::length(shipVel) / 1000.0 << " km/s kept, local speed 0 (nearest hub " << nearest << " at "
+                      << best / 1000.0 << " km, " << relSpeed << " m/s relative)" << std::endl;
+            return true;
         }
         std::cerr << "[FreeFlight] ship " << shipId.value << " OFF after " << active->second.elapsedSeconds << " s, peak "
                   << active->second.peakSpeedMps / 1000.0 << " km/s; nearest hub " << nearest << " at " << best / 1000.0 << " km\n";
@@ -389,7 +407,7 @@ void GameSimulation::updateFreeFlights(double dt)
     for (auto it = m_freeFlights.begin(); it != m_freeFlights.end();)
     {
         Ship* ship = getShip(it->first);
-        if (!ship || !ship->core().transform().motion.freeFlight)
+        if (!ship || (!ship->core().transform().motion.freeFlight && !it->second.localFrame))
         {
             it = m_freeFlights.erase(it);
             continue;
@@ -399,11 +417,15 @@ void GameSimulation::updateFreeFlights(double dt)
         auto& motion = tr.motion;
         auto& frame = motion.travelFrame;
 
-        // 1. fold last tick's local motion into the frame (non-rotating frame: a pure translation)
-        frame.originMeters = frame.localToWorldPosition(motion.localPositionMeters);
-        frame.linearVelocityMps = frame.localToWorldVelocity(motion.localPositionMeters, motion.localVelocityMps);
-        motion.localPositionMeters = glm::dvec3(0.0);
-        motion.localVelocityMps = glm::dvec3(0.0);
+        // 1. fold last tick's local motion into the frame (non-rotating frame: a pure
+        //    translation) - not in the local ballistic frame, where the local state is the pilot's
+        if (!f.localFrame)
+        {
+            frame.originMeters = frame.localToWorldPosition(motion.localPositionMeters);
+            frame.linearVelocityMps = frame.localToWorldVelocity(motion.localPositionMeters, motion.localVelocityMps);
+            motion.localPositionMeters = glm::dvec3(0.0);
+            motion.localVelocityMps = glm::dvec3(0.0);
+        }
 
         // 2. the frame advances by its velocity under the real gravity of all bodies (velocity Verlet)
         const auto g0 = game::navigation::GravityFieldSystem::sample(frame.originMeters, m_gravityBodies);
@@ -412,6 +434,13 @@ void GameSimulation::updateFreeFlights(double dt)
         frame.linearVelocityMps += 0.5 * (g0.accelerationMps2 + g1.accelerationMps2) * dt;
         frame.linearAccelerationMps2 = g1.accelerationMps2;
         frame.valid = true;
+        if (f.localFrame)
+        {
+            // local flight inside the falling frame: nothing is folded, the frame
+            // carries the global motion, the flight laws own the local state
+            ++it;
+            continue;
+        }
 
         // the reference hub moves on its orbit: keep its current velocity
         if (const auto* hub = hubNavigationFrame(motion.freeFlightReferenceId); hub && hub->valid)
@@ -508,25 +537,38 @@ void GameSimulation::updateFreeFlights(double dt)
                         motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::ForwardToVelocity;
                     if (steering && motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::ForwardToVelocity)
                         motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
-                    // steering turns the horizontal velocity toward the nose heading at
-                    // the same speed (a banked turn); the vertical part is gravity's
+                    // Steering (yaw and pitch) flies like an aircraft, not like Newton:
+                    // the velocity against the body turns toward the nose at the same
+                    // speed - gradually (time constant 1.5 s, 2..20 deg/s) - in 3D, so
+                    // it works climbing straight away from a body too. The J drive
+                    // supplies the turn (no speed loss, no lateral cap).
                     if (steering)
                     {
-                        const glm::dvec3 nose = -glm::dvec3(tr.orientation[2]);
-                        glm::dvec3 noseH = nose - rHat * glm::dot(nose, rHat);
-                        const glm::dvec3 vR = rHat * glm::dot(v, rHat);
-                        const glm::dvec3 vH = v - vR;
-                        const double speedH = glm::length(vH);
-                        if (glm::length(noseH) > 1e-6 && speedH > 1.0)
+                        const glm::dvec3 nose = glm::normalize(-glm::dvec3(tr.orientation[2]));
+                        const double speedRel = glm::length(v);
+                        if (speedRel > 1.0)
                         {
-                            noseH = glm::normalize(noseH);
-                            const glm::dvec3 wanted = noseH * speedH;
-                            glm::dvec3 dv = wanted - vH;
-                            const double maxDv = 20.0 * dt;   // lateral authority of the assisted turn
-                            if (glm::length(dv) > maxDv)
-                                dv *= maxDv / glm::length(dv);
-                            frame.linearVelocityMps += dv;
-                            v += dv;
+                            const glm::dvec3 vHat = v / speedRel;
+                            const double angle = std::acos(std::clamp(glm::dot(vHat, nose), -1.0, 1.0));
+                            if (angle > 1.0e-5)
+                            {
+                                const double rate = std::clamp(angle / 1.5, glm::radians(2.0), glm::radians(20.0));
+                                const double step = std::min(angle, rate * dt);
+                                glm::dvec3 axis = glm::cross(vHat, nose);
+                                if (glm::length(axis) < 1.0e-9)
+                                    axis = glm::dvec3(tr.up());   // nose straight back: turn over the top
+                                axis = glm::normalize(axis);
+                                // Rodrigues rotation of vHat about axis by step (axis is perpendicular to vHat)
+                                const glm::dvec3 turned = vHat * std::cos(step) + glm::cross(axis, vHat) * std::sin(step);
+                                const glm::dvec3 dv = turned * speedRel - v;
+                                frame.linearVelocityMps += dv;
+                                v += dv;
+                                if (std::fmod(f.elapsedSeconds, 1.0) < dt)
+                                    std::cerr << "[FreeFlight] ship " << it->first.value << " steering: velocity "
+                                              << glm::degrees(angle) << " deg off the nose, turning "
+                                              << glm::degrees(rate) << " deg/s at " << speedRel << " m/s vs " << primary->id
+                                              << std::endl;
+                            }
                         }
                     }
                 }

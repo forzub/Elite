@@ -705,6 +705,8 @@ private:
     bool m_hasSystemMapSnapshot = false;
     bool m_systemMapShowsEmptySector = false;
     double m_devThrustUntilMs = 0.0;
+    double m_devYawUntilMs = 0.0;
+    double m_devPitchUntilMs = 0.0;
     int m_nextEmptySystemMapId = -2;
     double m_systemMapLiveRefreshTimer = 0.0;
     double m_detailMapLiveRefreshTimer = 0.0;

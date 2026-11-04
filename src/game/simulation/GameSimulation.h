@@ -209,6 +209,9 @@ public:
         bool insideDenseLayers = false;
         bool devDropDone = false;
         double heatingDamageSeconds = 0.0;
+        // J off away from a hub: the ship flies in its own ballistic frame (global
+        // motion under gravity) with ordinary local flight from rest inside it
+        bool localFrame = false;
         // J autopilot to a body (empty = off)
         std::string autopilotTargetId;
         std::string autopilotDepartureId;

@@ -1664,7 +1664,17 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         char a[96], b[96], c[128];
         std::snprintf(a, sizeof a, "1-я косм.  %.2f км/с", motion.freeFlightOrbitCircularMps / 1000.0);
         std::snprintf(b, sizeof b, "V  %.2f км/с   (%+.0f м/с верт.)", motion.freeFlightOrbitSpeedMps / 1000.0, motion.freeFlightOrbitRadialMps);
-        std::snprintf(c, sizeof c, "H  %.0f м   мин. %.0f м", motion.freeFlightOrbitAltitudeM, safe);
+        // kilometres above 10 km (109309 m read as "100 000 km"); the minimum is the
+        // altitude where drag at orbital speed reaches 0.1 m/s2 (airless: a terrain margin)
+        const auto altText = [](double m) {
+            char t[48];
+            if (std::abs(m) >= 10000.0)
+                std::snprintf(t, sizeof t, "%.1f км", m / 1000.0);
+            else
+                std::snprintf(t, sizeof t, "%.0f м", m);
+            return std::string(t);
+        };
+        std::snprintf(c, sizeof c, "H  %s   мин. %s", altText(motion.freeFlightOrbitAltitudeM).c_str(), altText(safe).c_str());
         const float px = static_cast<float>(viewport.width) * 0.70f;
         const float py = static_cast<float>(viewport.height) * 0.64f;
         text.textDrawPx(a, px, py, 14, grey);
@@ -1673,10 +1683,11 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         if (motion.freeFlightOrbitDenseAltM > 0.0)
         {
             char d[128];
-            std::snprintf(d, sizeof d, "плотные слои %.0f м   сопр. %.2f м/с2",
-                          motion.freeFlightOrbitDenseAltM, motion.freeFlightDragMps2);
+            std::snprintf(d, sizeof d, "плотные слои %.1f км   сопр. %.2f м/с2",
+                          motion.freeFlightOrbitDenseAltM / 1000.0, motion.freeFlightDragMps2);
             text.textDrawPx(d, px, py + 61.0f, 13, motion.freeFlightOrbitAltitudeM < motion.freeFlightOrbitDenseAltM ? crimson : grey);
-            text.textDrawPx("мин.: сопротивление 0.1 м/с2 · плотные: 1 g", px, py + 79.0f, 11, grey);
+            text.textDrawPx("мин. = где сопротивление на орбитальной скорости 0.1 м/с2 (орбита быстро гаснет); плотные = 1 g",
+                            px, py + 79.0f, 11, grey);
         }
 
         // the ground under the ship (when low): material, slope, terrain feature

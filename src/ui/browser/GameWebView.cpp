@@ -123,7 +123,20 @@ void GameWebView::start(
 
     try
     {
-        auto* w = new webview::webview(false, parentHwnd);
+        // webview::exception carries its code, often with an empty message
+        // (-3 = no controller: e.g. an orphaned WebView2 browser of a killed
+        // EliteGame still holds the shared profile - see the job object in main).
+        webview::webview* w = nullptr;
+        try
+        {
+            w = new webview::webview(false, parentHwnd);
+        }
+        catch (const webview::exception& e)
+        {
+            throw std::runtime_error(
+                "GameWebView create failed: webview error " +
+                std::to_string(static_cast<int>(e.error().code())) + " " + e.what());
+        }
 
         HWND widgetHwnd = nullptr;
         try

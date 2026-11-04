@@ -1,3 +1,5 @@
+#include <system_error>
+#include <typeinfo>
 #include <cmath>
 #include "src/core/RuntimeTrace.h"
 #include "src/core/JsonNumericLocale.h"
@@ -595,9 +597,34 @@ bool parseCelestialBakeOptions(
 
 
 
+#ifdef _WIN32
+// Child processes (the WebView2 browser of the game UI) must not outlive
+// EliteGame: after a crash / kill they kept the shared WebView2 profile and
+// the next start failed ("Fatal error", webview error -3). A kill-on-close
+// job ends them with this process however it exits. Best effort: a launcher
+// job that forbids nesting just leaves the old behaviour.
+static void bindChildProcessesToThisProcessLifetime()
+{
+    HANDLE job = CreateJobObjectW(nullptr, nullptr);
+    if (!job)
+        return;
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits {};
+    limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+    if (!SetInformationJobObject(job, JobObjectExtendedLimitInformation, &limits, sizeof(limits)) ||
+        !AssignProcessToJobObject(job, GetCurrentProcess()))
+    {
+        std::cerr << "[Startup] child-process job not set (Win32 error " << GetLastError() << ")\n";
+        CloseHandle(job);
+        return;
+    }
+    // the handle stays open for the process lifetime; the OS closes it at exit
+}
+#endif
+
 int main(int argc, char** argv)
 {
 #ifdef _WIN32
+    bindChildProcessesToThisProcessLifetime();
     if (core::runtimeTraceEnabled())
         std::cerr
             << "[M8E-XPROC][process] pid=" << GetCurrentProcessId()
@@ -927,7 +954,11 @@ int main(int argc, char** argv)
     }
     catch (const std::exception& e)
     {
-        std::cerr << "Fatal error: " << e.what() << std::endl;
+        // the type tells an empty-message failure apart (filesystem, system_error, json ...)
+        std::cerr << "Fatal error: " << e.what() << " [" << typeid(e).name() << "]";
+        if (const auto* sys = dynamic_cast<const std::system_error*>(&e))
+            std::cerr << " code=" << sys->code().value() << " (" << sys->code().category().name() << ")";
+        std::cerr << std::endl;
         return -1;
     }
 

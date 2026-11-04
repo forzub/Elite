@@ -1480,6 +1480,42 @@ void SpaceState::update(float dt)
             std::cerr << "[DevDockRequest] request=" << serial << " target=hub_hex_dock_a:dock_gate_front" << '\n';
         }
 
+        // DEV: ELITE_DEV_FREE_FLIGHT_AT=<s> toggles free flight (J) once.
+        static const double freeFlightAtSeconds = [] {
+            const char* v = std::getenv("ELITE_DEV_FREE_FLIGHT_AT");
+            return v && *v ? std::atof(v) : -1.0;
+        }();
+        static bool freeFlightSent = false;
+        if (freeFlightAtSeconds >= 0.0 && !freeFlightSent && m_client &&
+            startupElapsedMs(m_startupTotalBegin) / 1000.0 >= freeFlightAtSeconds)
+        {
+            freeFlightSent = true;
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type = ClientShipCommand::ToggleFreeFlight;
+            msg.payload = command;
+            m_client->sendMessage(msg);
+            std::cerr << "[DevFreeFlight] toggle sent" << std::endl;
+        }
+        // DEV: ELITE_DEV_FREE_FLIGHT_THRUST_AT=<s> latches full free-flight thrust (HOME) once.
+        static const double freeThrustAtSeconds = [] {
+            const char* v = std::getenv("ELITE_DEV_FREE_FLIGHT_THRUST_AT");
+            return v && *v ? std::atof(v) : -1.0;
+        }();
+        static bool freeThrustSent = false;
+        if (freeThrustAtSeconds >= 0.0 && !freeThrustSent && m_client &&
+            startupElapsedMs(m_startupTotalBegin) / 1000.0 >= freeThrustAtSeconds)
+        {
+            freeThrustSent = true;
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type = ClientShipCommand::SetFreeFlightThrust;
+            command.index = 1;
+            msg.payload = command;
+            m_client->sendMessage(msg);
+            std::cerr << "[DevFreeFlight] full thrust sent" << std::endl;
+        }
+
         // DEV: ELITE_DEV_DRONE_VIEW_AT=<s> switches the flight view to the
         // external drone camera once (style captures of the player ship).
         static const double droneAtSeconds = [] {

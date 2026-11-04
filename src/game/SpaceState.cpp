@@ -727,6 +727,8 @@ void SpaceState::handleInput()
         }
         if (const auto target = m_systemMapRenderer.consumeOrbitalTransferRequest())
             requestOrbitalTransfer(*target);
+        if (const int launch = m_systemMapRenderer.consumeRouteLaunchRequest())
+            launchPlannedRoute(launch == 1);
 
         // G: optional cube overlay (hybrid System Map); arrows walk sibling cubes in the screen plane.
         if (Input::instance().isKeyPressedOnce(GLFW_KEY_G))
@@ -1385,6 +1387,56 @@ void SpaceState::update(float dt)
                     m_systemMapRenderer.devZoom(std::atof(arg("zoom:").c_str()));
                 else if (cmd.rfind("transfer:", 0) == 0)
                     requestOrbitalTransfer(arg("transfer:"));
+                else if (cmd == "route:official" || cmd == "route:unofficial")
+                    launchPlannedRoute(cmd == "route:official");
+                else if (cmd.rfind("finish:", 0) == 0 || cmd.rfind("via:", 0) == 0)
+                {
+                    // DEV: "finish:hub:<id>" | "finish:body:<moon|earth|mars>" | "via:hub:<id>[:refuel]"
+                    const bool isFinish = cmd.rfind("finish:", 0) == 0;
+                    std::string spec = arg(isFinish ? "finish:" : "via:");
+                    std::string action;
+                    if (spec.size() > 7 && spec.compare(spec.size() - 7, 7, ":refuel") == 0)
+                    {
+                        action = "refuel";
+                        spec.resize(spec.size() - 7);
+                    }
+                    game::navigation::RouteTargetRef target;
+                    world::coordinates::WorldPosition where;
+                    std::string name = spec;
+                    if (spec.rfind("hub:", 0) == 0)
+                    {
+                        target.kind = game::navigation::NavigationRouteAnchorKind::Hub;
+                        target.stableObjectId = spec.substr(4);
+                        if (const auto h = m_client->world().hubs().find(target.stableObjectId); h != m_client->world().hubs().end())
+                        {
+                            where = h->second.worldPosition;
+                            name = h->second.name;
+                        }
+                    }
+                    else if (spec.rfind("body:", 0) == 0)
+                    {
+                        static const std::pair<const char*, const char*> bodies[] = {
+                            {"moon", "system_0.Sol.Земля.Луна"}, {"earth", "system_0.Sol.Земля"}, {"mars", "system_0.Sol.Марс"}};
+                        std::string id = spec.substr(5);
+                        for (const auto& [k, v] : bodies)
+                            if (id == k)
+                                id = v;
+                        target.kind = game::navigation::NavigationRouteAnchorKind::CelestialBody;
+                        target.stableObjectId = id;
+                        if (const auto* snap = m_client->celestialSnapshot())
+                            for (const auto& b : snap->bodies)
+                                if (b.id == id)
+                                    where = world::coordinates::makeWorldPositionFromMeters(b.worldMeters);
+                    }
+                    target.systemId = 0;
+                    auto& plan = m_navigationWorkspace.routePlan();
+                    auto& w = plan.rememberCandidate(target, "dev:" + spec, where, std::string(), name);
+                    if (w.role != (isFinish ? game::navigation::NavigationWaypointRole::Finish
+                                            : game::navigation::NavigationWaypointRole::Intermediate))
+                        plan.toggleRole(w.id, isFinish ? game::navigation::NavigationWaypointRole::Finish
+                                                       : game::navigation::NavigationWaypointRole::Intermediate);
+                    w.stopAction = action;
+                }
                 else if (cmd.rfind("leg:", 0) == 0)
                 {
                     // DEV: "leg:hub:<id>" | "leg:orbit:<moon|earth|mars>:<alt km>"
@@ -2665,6 +2717,7 @@ void SpaceState::update(float dt)
     {
         updateDockingAdvisory();
     }
+    updateZoneViolations(dt);
 
     m_perfDockingGuidanceMs = nowMs() - dockingGuidanceStartMs;
     core::hitch::mark("docking_guidance");

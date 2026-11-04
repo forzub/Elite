@@ -1,3 +1,4 @@
+#include "src/game/navigation/route/RoutePlanner.h"
 #include <thread>
 
 #include "src/game/system_map/PlanetBodyOrientation.h"
@@ -888,7 +889,45 @@ void GameServer::update(double dt)
                         leg.bodyId = rest.substr(0, colon);
                         leg.orbitAltitudeM = colon == std::string::npos ? 100000.0 : std::atof(rest.c_str() + colon + 1) * 1000.0;
                     }
-                    m_simulation.startFreeFlightLeg(id, leg);
+                    if (!shipCmd.detail.empty())
+                    {
+                        // a planned route: legs separated by '|'
+                        std::vector<GameSimulation::FreeFlightLeg> legs;
+                        const auto points = game::navigation::route::decodeRoute(shipCmd.detail);
+                        double remaining = 0.0;
+                        for (std::size_t k = 0; k < points.size(); ++k)
+                        {
+                            const auto& p = points[k];
+                            GameSimulation::FreeFlightLeg l;
+                            l.kind = p.kind == game::navigation::route::RoutePoint::Kind::Hub     ? GameSimulation::FreeFlightLeg::Kind::Hub
+                                   : p.kind == game::navigation::route::RoutePoint::Kind::Orbit ? GameSimulation::FreeFlightLeg::Kind::Orbit
+                                                                                                  : GameSimulation::FreeFlightLeg::Kind::Point;
+                            l.hubId = p.hubId;
+                            l.bodyId = p.bodyId;
+                            l.orbitAltitudeM = p.orbitAltitudeM;
+                            l.pointWorld = p.worldM;
+                            l.passThrough = p.kind == game::navigation::route::RoutePoint::Kind::Point && !p.stop;
+                            l.action = p.action;
+                            legs.push_back(l);
+                        }
+                        // the rest of the route after each pass-through point (straight-line
+                        // estimate on the server's own positions: hubs / bodies are sent by id)
+                        std::vector<glm::dvec3> at(points.size());
+                        for (std::size_t k = 0; k < points.size(); ++k)
+                            at[k] = m_simulation.routePointWorld(legs[k]);
+                        for (std::size_t k = legs.size(); k-- > 1;)
+                        {
+                            remaining += glm::length(at[k] - at[k - 1]);
+                            legs[k - 1].remainingAfterM = remaining;
+                            if (!legs[k - 1].passThrough)
+                                remaining = 0.0;
+                        }
+                        m_simulation.startRoute(id, std::move(legs));
+                    }
+                    else if (shipCmd.index == 0)
+                        m_simulation.cancelRoute(id);
+                    else
+                        m_simulation.startFreeFlightLeg(id, leg);
                     break;
                 }
 

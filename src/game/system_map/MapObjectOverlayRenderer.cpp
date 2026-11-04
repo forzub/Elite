@@ -630,6 +630,10 @@ std::string MapObjectOverlayRenderer::text(
     if (key == "set_rendezvous") return textProfile.setRendezvous;
     if (key == "cancel_waypoint") return textProfile.cancelWaypoint;
     if (key == "set_finish") return textProfile.setFinish;
+    if (key == "route_official") return textProfile.routeOfficial;
+    if (key == "route_unofficial") return textProfile.routeUnofficial;
+    if (key == "route_refuel_on") return textProfile.routeRefuelOn;
+    if (key == "route_refuel_off") return textProfile.routeRefuelOff;
     if (key == "cancel_finish") return textProfile.cancelFinish;
     if (key == "set_intermediate") return textProfile.setIntermediate;
     if (key == "cancel_intermediate") return textProfile.cancelIntermediate;

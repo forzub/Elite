@@ -47,6 +47,7 @@ bool GameSimulation::startFreeFlightLeg(EntityId shipId, const FreeFlightLeg& le
     if (!ship)
         return false;
     auto& motion = ship->core().transform().motion;
+    const bool alreadyInJ = motion.freeFlight;   // a route continuing past a guide point
     if (!motion.freeFlight && !toggleFreeFlight(shipId))
     {
         std::cerr << "[Route] ship " << shipId.value << ": cannot enter J for the leg" << std::endl;
@@ -61,7 +62,8 @@ bool GameSimulation::startFreeFlightLeg(EntityId shipId, const FreeFlightLeg& le
     f.legActive = true;
     f.legSeconds = 0.0;
     f.legLastLog = -1.0e30;
-    f.legDriveStartSeconds = -1.0;
+    // continuing in J (past a guide point): the drive stays at full strength
+    f.legDriveStartSeconds = alreadyInJ ? -1000.0 : -1.0;
     f.legHaveLastBody = false;
     f.legArrived = false;
     f.legDepartureHubId = f.sourceHubId;   // the hub left on entering J
@@ -147,9 +149,9 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
     const auto* depHub = hubNavigationFrame(f.legDepartureHubId);
     const double fromDep = depHub && depHub->valid ? glm::length(frame.originMeters - depHub->originMeters) : 1.0e30;
     const bool nearDeparture = fromDep < HubJBoundaryM && leg.hubId != f.legDepartureHubId;
-    if (!nearDeparture && f.legDriveStartSeconds < 0.0)
+    if (!nearDeparture && f.legDriveStartSeconds == -1.0)
         f.legDriveStartSeconds = f.legSeconds;
-    const double driveSeconds = f.legDriveStartSeconds < 0.0 ? 0.0 : f.legSeconds - f.legDriveStartSeconds;
+    const double driveSeconds = f.legDriveStartSeconds == -1.0 ? 0.0 : f.legSeconds - f.legDriveStartSeconds;
     double limit = nearDeparture ? GentleAccelMps2 : std::min(MaxDriveMps2, 9.81 * std::exp2(driveSeconds / 2.0));
 
     // ---- obstacles: never through a planet / moon - go round the first one in the way
@@ -177,8 +179,10 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
         }
     }
 
-    const double braking = std::sqrt(2.0 * 0.4 * MaxDriveMps2 * d);
-    const double tail = d / ApproachTauS;
+    // a pass-through guide point: brake for the rest of the route, not for the point
+    const double dEff = d + (leg.passThrough ? leg.remainingAfterM : 0.0);
+    const double braking = std::sqrt(2.0 * 0.4 * MaxDriveMps2 * dEff);
+    const double tail = dEff / ApproachTauS;
     double speed = std::min(braking, tail);
     if (nearDeparture)
         speed = std::min(speed, GentleSpeedMps);
@@ -236,8 +240,22 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
                   << glm::length(accel) << " m/s2" << std::endl;
     }
 
+    // ---- a guide point passed: the route goes on in J (no stop, no matching)
+    // passed when within 1 % of the rest of the route, 20 km .. 2000 km (a blue gate is
+    // ~15 000 km wide, a corridor guide is passed close to its axis)
+    if (leg.passThrough && d < std::clamp(0.01 * leg.remainingAfterM, 20000.0, 2.0e6))
+    {
+        f.legActive = false;
+        std::cerr << "[Route] ship " << shipId.value << ": passed a guide point at " << d / 1000.0 << " km, "
+                  << glm::length(wAfter) / 1000.0 << " km/s" << std::endl;
+        if (auto r = m_routes.find(shipId); r != m_routes.end())
+            r->second.legDone = true;
+        return;
+    }
     // ---- finish: matched to the destination -> leave J
-    const bool there = d < 1500.0 && glm::length(wAfter) < 20.0;
+    // an orbit is entered precisely (3 m/s: a 20 m/s error made it ~1 % eccentric)
+    const bool there = leg.kind == FreeFlightLeg::Kind::Orbit ? d < 500.0 && glm::length(wAfter) < 3.0
+                                                              : d < 1500.0 && glm::length(wAfter) < 20.0;
     if (there)
     {
         f.legActive = false;
@@ -245,5 +263,114 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
         std::cerr << "[Route] ship " << shipId.value << ": ARRIVED after " << f.legSeconds << " s, " << d << " m from the aim, "
                   << glm::length(wAfter) << " m/s vs destination - leaving J" << std::endl;
         m_pendingJExit.push_back(shipId);
+        if (auto r = m_routes.find(shipId); r != m_routes.end())
+        {
+            r->second.legDone = true;
+            r->second.waitingExit = true;
+        }
+    }
+}
+
+glm::dvec3 GameSimulation::routePointWorld(const FreeFlightLeg& leg) const
+{
+    if (leg.kind == FreeFlightLeg::Kind::Hub)
+    {
+        const auto it = m_hubNavigationFrames.find(leg.hubId);
+        return it != m_hubNavigationFrames.end() ? it->second.originMeters : leg.pointWorld;
+    }
+    if (leg.kind == FreeFlightLeg::Kind::Orbit)
+        for (const auto& b : m_gravityBodies)
+            if (b.id == leg.bodyId)
+                return b.centerMeters;
+    return leg.pointWorld;
+}
+
+bool GameSimulation::startRoute(EntityId shipId, std::vector<FreeFlightLeg> legs)
+{
+    if (legs.empty())
+        return false;
+    ActiveRoute route;
+    route.legs = std::move(legs);
+    m_routes[shipId] = route;
+    std::cerr << "[Route] ship " << shipId.value << ": ROUTE of " << m_routes[shipId].legs.size() << " legs:";
+    for (const auto& l : m_routes[shipId].legs)
+        std::cerr << " [" << (l.kind == FreeFlightLeg::Kind::Hub ? "hub " + l.hubId : l.kind == FreeFlightLeg::Kind::Orbit ? "orbit " + l.bodyId : std::string("point"))
+                  << (l.passThrough ? " pass" : " stop") << (l.action.empty() ? "" : " " + l.action) << ", rest "
+                  << l.remainingAfterM / 1000.0 << " km]";
+    std::cerr << std::endl;
+    if (!startFreeFlightLeg(shipId, m_routes[shipId].legs.front()))
+    {
+        m_routes.erase(shipId);
+        return false;
+    }
+    return true;
+}
+
+void GameSimulation::cancelRoute(EntityId shipId)
+{
+    if (m_routes.erase(shipId))
+        std::cerr << "[Route] ship " << shipId.value << ": route cancelled" << std::endl;
+    if (const auto it = m_freeFlights.find(shipId); it != m_freeFlights.end())
+        it->second.legActive = false;
+}
+
+void GameSimulation::updateRoutes(double dt)
+{
+    for (auto it = m_routes.begin(); it != m_routes.end();)
+    {
+        const EntityId id = it->first;
+        ActiveRoute& route = it->second;
+        Ship* ship = getShip(id);
+        if (!ship)
+        {
+            it = m_routes.erase(it);
+            continue;
+        }
+        if (!route.legDone)
+        {
+            ++it;
+            continue;
+        }
+        const FreeFlightLeg& done = route.legs[route.index];
+        // a stop: wait for the J exit (hub capture / local frame), then its action
+        if (route.waitingExit && ship->core().transform().motion.freeFlight)
+        {
+            ++it;
+            continue;
+        }
+        route.waitingExit = false;
+        if (!done.passThrough && done.action == "refuel")
+        {
+            // the waypoint action at the hub. PROPOSAL: the dock is not flown yet (automatic
+            // docking exists only at Vysokiy's dock module) and ships carry no fuel model -
+            // the service is a timed stay at the hub: dock, refuel, undock.
+            if (route.serviceSeconds < 0.0)
+            {
+                route.serviceSeconds = 0.0;
+                std::cerr << "[Route] ship " << id.value << ": at " << done.hubId << " - docking for refuel" << std::endl;
+            }
+            route.serviceSeconds += dt;
+            if (route.serviceSeconds < 20.0)
+            {
+                ++it;
+                continue;
+            }
+            std::cerr << "[Route] ship " << id.value << ": refuelled at " << done.hubId << ", undocked" << std::endl;
+        }
+        route.serviceSeconds = -1.0;
+        route.legDone = false;
+        if (++route.index >= route.legs.size())
+        {
+            std::cerr << "[Route] ship " << id.value << ": ROUTE COMPLETE" << std::endl;
+            it = m_routes.erase(it);
+            continue;
+        }
+        if (!startFreeFlightLeg(id, route.legs[route.index]))
+        {
+            std::cerr << "[Route] ship " << id.value << ": cannot start leg " << route.index << " - route stopped" << std::endl;
+            it = m_routes.erase(it);
+            continue;
+        }
+        ++it;
     }
 }

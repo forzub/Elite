@@ -1110,6 +1110,7 @@ m_systemMapRenderer.render(
     renderUiLanguageIndicator(vp);
     renderNavigationStressOverlay(vp);
     renderFreeFlightBanner(vp);
+    renderZoneViolationBanner(vp);
     if (context().app)
     {
         game::presentation::TemporaryShortcutStrip::render(

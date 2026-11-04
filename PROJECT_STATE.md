@@ -2619,6 +2619,35 @@ B. Then damage: collisions and weapons (lasers, missiles of different power; no 
    carry impacts and break), plates joined by perimeter "sausages" (cut out to reach containers with their locks);
    finish the part dependency tree / graph (existed). Example: the Cobra mesh.
 
+#### A - results (2026-11-05), live Windows runs D:/tmp/elite_route1, D:/tmp/elite_route2
+- Route autopilot legs (GameSimulationRoute.cpp, 43eb2b67): hub (arrive 12 km from it with its velocity, automatic
+  J exit = hub capture, at rest in the hub frame), orbit (circular, J exit into the free-falling local frame), point.
+  Hub J boundary 20 km: gentle departure (<= 1 g, <= 300 m/s against the departure hub). Bodies gone round (R + 150 km
+  / atmosphere + 50 km, never below the destination's altitude - Vysokiy -> Tikhiy first went THROUGH Earth).
+- Route planner (src/game/navigation/route/RoutePlanner.*) + zones data (src/assets/data/navigation/route_zones.json:
+  blue gate Earth-Moon at the Earth-Moon midpoint 15 000 km, red "range behind the Moon" 25 000 km, green capsule
+  corridor Vysokiy-Tikhiy 600 km; hub radar 3000 km). Official: green corridor guides, blue gate between the gate's
+  bodies, around red. Unofficial: around hub radar, red and blue (no customs). Server route sequencer: pass-through
+  guide points (braking for the rest of the route), stops leave J; action "refuel" = PROPOSAL timed 20 s stay at the hub
+  (no dock flight: automatic docking exists only at Vysokiy's dock module; ships have no fuel model).
+- Map UI: finish info window "ЛЕТЕТЬ: ОФИЦИАЛЬНЫЙ / НЕОФИЦИАЛЬНЫЙ МАРШРУТ", intermediate hub "ЗАПРАВКА ЗДЕСЬ: ДА/НЕТ";
+  the planned route drawn as the transfer line. DEV script: via:hub:<id>[:refuel], finish:hub:<id>|body:<moon>,
+  route:official|unofficial, leg:hub:<id>|orbit:<body>:<km>.
+- Zone watch (client): red zone entry / blue gate skipped -> "АДМИНИСТРАТИВНОЕ НАРУШЕНИЕ ... штраф N кр" banner, a
+  fines record (no bank yet).
+- Live: official Vysokiy -> (corridor) -> Tikhiy refuel -> (blue gate) -> Moon orbit 100 km: complete, gate passed (no
+  fine), orbit held ~104 -> 101 km over 150 s (20 m/s entry error; now 3 m/s / 500 m); unofficial Vysokiy -> Moon
+  orbit: around the gate, fined "пропущен обязательный створ" 2500 cr, orbit entry 18 m / 3 m/s.
+- NOT DONE / honest gaps: interstellar legs (no inter-system movement exists in the game at all - a separate stage:
+  jump / interstellar environment); gravity assists (the J drive dwarfs gravity; the planner flies direct); interstellar
+  clouds / anomaly safety (InterstellarNavigationEnvironment exists, unused - with the interstellar stage); real dock
+  flight + fuel for "refuel"; Newtonian vs Assisted: the J route drive acts on the free-flight frame, the same for all
+  six layouts (Assisted / Newtonian x I / Y / X) - not flown with a Newtonian ship yet; zones not drawn on the map yet;
+  the sites network routes (41, site-to-site) are not runtime hubs - only the zone-file corridor is green so far.
+- Full suite after the route work: the same 8 baseline red blocks.
+- Pre-existing: every EliteGame run killed by `timeout` ends with a [CRASH] in opengl32.dll after a WebView2 "Failed
+  to unregister class" - shutdown under kill, seen in all earlier logs; not from this work.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

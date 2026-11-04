@@ -205,6 +205,19 @@ public:
         std::string bodyId;             // Orbit
         double orbitAltitudeM = 0.0;    // Orbit
         glm::dvec3 pointWorld {0.0};    // Point
+        bool passThrough = false;       // a guide point of a route: fly through, no stop
+        double remainingAfterM = 0.0;   // route length after this leg (braking for pass-through)
+        std::string action;             // at a stop: "refuel"
+    };
+    // A planned route: legs in order (route planner -> RouteLeg command)
+    struct ActiveRoute
+    {
+        std::vector<FreeFlightLeg> legs;
+        std::size_t index = 0;
+        bool legDone = false;
+        bool waitingExit = false;
+        double serviceSeconds = -1.0;   // a stop action running (refuel)
+        double idleSeconds = 0.0;
     };
     struct ActiveFreeFlight
     {
@@ -279,6 +292,15 @@ public:
     void setFreeFlightAutopilot(EntityId shipId, const std::string& bodyId, bool engage, const std::string& landingSpec = {});
     // Route autopilot: fly one leg (enters J if needed); finishes matched and leaves J.
     bool startFreeFlightLeg(EntityId shipId, const FreeFlightLeg& leg);
+    // A whole route (legs in order): flies them, stops / actions included.
+    bool startRoute(EntityId shipId, std::vector<FreeFlightLeg> legs);
+    glm::dvec3 routePointWorld(const FreeFlightLeg& leg) const;
+    void cancelRoute(EntityId shipId);
+    const ActiveRoute* activeRoute(EntityId shipId) const
+    {
+        const auto it = m_routes.find(shipId);
+        return it == m_routes.end() ? nullptr : &it->second;
+    }
 
     // Repair & Refit (F7): a preview / DEV apply of one module operation on
     // a ship owned by the commanding ship's owner (subject 0 = that ship).
@@ -644,6 +666,8 @@ private:
     void updateFreeFlightAutopilot(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
     void updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
     std::vector<EntityId> m_pendingJExit;   // legs that arrived: J off after the free-flight pass
+    std::unordered_map<EntityId, ActiveRoute> m_routes;
+    void updateRoutes(double dt);
 
     // Compatibility alias used by the current single-system navigation and
     // local-client presentation paths. Multiplayer authority lives in

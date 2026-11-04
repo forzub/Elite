@@ -1077,6 +1077,30 @@ inline std::vector<game::system_map::MapObjectPanelAction> waypointPanelActions(
         actions.push_back(std::move(finish));
     }
 
+    // an intermediate hub: stop there to refuel (dock, refuel, undock) or fly past
+    if (isWaypoint && waypoint.target.kind == game::navigation::NavigationRouteAnchorKind::Hub)
+    {
+        game::system_map::MapObjectPanelAction refuel;
+        refuel.key = "toggle_refuel";
+        refuel.labelKey = waypoint.stopAction == "refuel" ? "route_refuel_on" : "route_refuel_off";
+        refuel.active = waypoint.stopAction == "refuel";
+        actions.push_back(std::move(refuel));
+    }
+
+    // the finish: plan and fly - the official route (green corridors, blue gates)
+    // or the unofficial one (smuggling: away from hubs' radar, no gates)
+    if (isFinish)
+    {
+        game::system_map::MapObjectPanelAction official;
+        official.key = "route_official";
+        official.labelKey = "route_official";
+        actions.push_back(std::move(official));
+        game::system_map::MapObjectPanelAction unofficial;
+        unofficial.key = "route_unofficial";
+        unofficial.labelKey = "route_unofficial";
+        actions.push_back(std::move(unofficial));
+    }
+
     return actions;
 }
 } // namespace system_map_renderer_detail

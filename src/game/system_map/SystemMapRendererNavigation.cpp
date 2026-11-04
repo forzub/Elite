@@ -1300,6 +1300,14 @@ void SystemMapRenderer::applyWaypointAction(
             game::navigation::NavigationWaypointRole::Intermediate
         );
     }
+    else if (actionKey == "toggle_refuel")
+    {
+        waypoint->stopAction = waypoint->stopAction == "refuel" ? std::string() : std::string("refuel");
+    }
+    else if (actionKey == "route_official" || actionKey == "route_unofficial")
+    {
+        m_pendingRouteLaunch = actionKey == "route_official" ? 1 : 2;
+    }
 }
 
 std::optional<game::system_map::MapIntent>

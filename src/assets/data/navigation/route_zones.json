@@ -1,0 +1,53 @@
+{
+  "schema": "elite.route_zones.v1",
+  "notes": [
+    "Navigation zones for the route planner (official / unofficial routes) and the zone-violation check.",
+    "colour: blue = mandatory passage (a gate an official flight between the listed bodies must pass),",
+    "        red  = forbidden (no route through it; entering it is an administrative violation),",
+    "        green = preferred corridor (official routes follow it when it runs their way).",
+    "A violation is an administrative penalty (fine, record), never a collision.",
+    "anchor.kind: hub (runtime hub id) | body (celestial body id) | lagrange (primary, secondary, fraction of the",
+    "primary->secondary distance from the primary). shape: sphere (anchor, radius_km) | capsule (anchor, anchor_b, radius_km)."
+  ],
+  "zones": [
+    {
+      "id": "gate.sol.earth_moon",
+      "name": "Таможенный створ Земля–Луна",
+      "colour": "blue",
+      "system_id": 0,
+      "shape": "sphere",
+      "anchor": { "kind": "lagrange", "primary": "system_0.Sol.Земля", "secondary": "system_0.Sol.Земля.Луна", "fraction": 0.5 },
+      "radius_km": 15000,
+      "gate_between": ["system_0.Sol.Земля", "system_0.Sol.Земля.Луна"],
+      "fine_cr": 2500,
+      "authority": "Солнечная Администрация, таможня"
+    },
+    {
+      "id": "red.sol.moon_far_range",
+      "name": "Закрытая зона: полигон ВКС за Луной",
+      "colour": "red",
+      "system_id": 0,
+      "shape": "sphere",
+      "anchor": { "kind": "lagrange", "primary": "system_0.Sol.Земля", "secondary": "system_0.Sol.Земля.Луна", "fraction": 1.17 },
+      "radius_km": 25000,
+      "fine_cr": 10000,
+      "authority": "Военно-космические силы"
+    },
+    {
+      "id": "green.sol.leo_ring",
+      "name": "Коридор Высокий – Тихий",
+      "colour": "green",
+      "system_id": 0,
+      "shape": "capsule",
+      "anchor": { "kind": "hub", "id": "earth_orbital_hub" },
+      "anchor_b": { "kind": "hub", "id": "earth_hub.tikhiy" },
+      "radius_km": 600,
+      "fine_cr": 0,
+      "authority": "Диспетчерская Высокого"
+    }
+  ],
+  "watch": {
+    "notes": "Unofficial (smuggling) routes keep this far from every hub: its radar / patrol coverage.",
+    "hub_radar_km": 3000
+  }
+}

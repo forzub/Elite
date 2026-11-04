@@ -24,6 +24,10 @@ struct NavigationMapTextProfile
     std::string setRendezvous;
     std::string cancelWaypoint;
     std::string setFinish;
+    std::string routeOfficial = "ЛЕТЕТЬ: ОФИЦИАЛЬНЫЙ МАРШРУТ";
+    std::string routeUnofficial = "ЛЕТЕТЬ: НЕОФИЦИАЛЬНЫЙ МАРШРУТ";
+    std::string routeRefuelOn = "ЗАПРАВКА ЗДЕСЬ: ДА";
+    std::string routeRefuelOff = "ЗАПРАВКА ЗДЕСЬ: НЕТ";
     std::string cancelFinish;
     std::string setIntermediate;
     std::string cancelIntermediate;

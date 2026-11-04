@@ -585,6 +585,7 @@ void GameSimulation::updateFreeFlights(double dt)
     for (const EntityId id : std::exchange(m_pendingJExit, {}))
         if (m_freeFlights.count(id))
             (void)toggleFreeFlight(id);
+    updateRoutes(dt);
     for (auto it = m_freeFlights.begin(); it != m_freeFlights.end();)
     {
         Ship* ship = getShip(it->first);

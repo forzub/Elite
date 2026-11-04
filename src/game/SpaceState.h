@@ -1,4 +1,7 @@
 #pragma once
+#include <map>
+#include <set>
+#include "src/game/navigation/route/RoutePlanner.h"
 #include "src/ui/presentation/ServicePanelsRenderer.h"
 
 #include <cstdint>
@@ -708,6 +711,19 @@ private:
     double m_devYawUntilMs = 0.0;
     double m_devPitchUntilMs = 0.0;
     double m_devRollUntilMs = 0.0;
+    // route launch (map finish -> official / unofficial) and the zone watch
+    void launchPlannedRoute(bool official);
+    void updateZoneViolations(double dt);
+    void renderZoneViolationBanner(const Viewport& viewport);
+    game::navigation::route::AnchorResolver routeAnchorResolver() const;
+    bool m_routeOfficial = true;
+    std::set<std::string> m_routeGatePassed;
+    std::map<std::string, bool> m_zoneInside;
+    std::string m_lastZoneBody;
+    double m_zoneCheckSeconds = 0.0;
+    double m_violationShowSeconds = 0.0;
+    std::string m_violationText;
+    double m_finesTotalCr = 0.0;   // administrative fines (a record; the bank comes later)
     int m_nextEmptySystemMapId = -2;
     double m_systemMapLiveRefreshTimer = 0.0;
     double m_detailMapLiveRefreshTimer = 0.0;

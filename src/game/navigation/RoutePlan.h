@@ -180,6 +180,8 @@ struct NavigationWaypoint
 
     bool showOnHud = true;
     NavigationArrivalProfile arrival;
+    // what to do at this point when the route stops there ("refuel"; empty = fly past)
+    std::string stopAction;
 
     // Latest presentation fallback. It is not semantic identity.
     world::coordinates::WorldPosition worldPosition;

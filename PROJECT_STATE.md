@@ -2431,6 +2431,31 @@ Restore point: tag restore/pre-order-2026-11-04-g.
   exist; J-entry hub desync (needs the user's scenario / video).
 - Full suite after 1e90f78a: the same 8 baseline red blocks / failing tests with the same messages.
 
+### User order 2026-11-04 i (video fragments, J mode as orbital flight, atmosphere, terrain)
+- frag01 (full automatic docking, 6.7 min): 28-29 unique fps, longest pause 0.13 s - the freezes are
+  gone (was ~20 fps with 0.33 s stalls). The session hitch log was overwritten by a later start; it now
+  appends (c.f. HitchProfiler).
+- farg02 hub jump (87faa141): at J entry the station vanished for 8 frames. Root cause (DEV FFTrace): the
+  world is drawn one interpolation window in the past; the newest snapshot already carried the ship's new
+  free-flight frame and the player was presented at 'now' in it - ~10 km from the hub drawn at 'then'.
+  The player now stays in the render-epoch frame until it crosses the change. Trace: player-hub distance
+  21-24 km throughout (was a 10-12 km dip for 0.35 s).
+- J mode (9ee86c53, 5497cf37): speed / alignment / brake against the dominant gravity body; Assisted holds
+  the nose on the velocity (prograde) without input and turns the horizontal velocity toward the nose when
+  steering (20 m/s2); HUD lower right: 1st cosmic speed, V (+vertical), H / min safe, dense layers, drag,
+  colour ramp; warnings (stall, atmosphere entry, dense layers, low descent, crash / landed); physical
+  drag rho0 exp(-h/H) v^2 / (2 * 800 kg/m2); safe altitude = drag 0.1 m/s2 at circular speed (Earth
+  109 km), dense layers = 1 g (71 km); dense-layer impact + heating damage, camera shake; solid ground and
+  sea. HubMotionLab debug lab (its cube followed the player frame) switched off.
+- Terrain contact (5493b942): the renderer's surface loading moved to BodySurfaceFieldLoader (shared);
+  the server samples the same field (Earth DEM / curated maps / procedural PlanetSurfaceField) with the
+  renderer's orientation: ground height, slope, material (rock, regolith, sand/dunes, ice, water, lava),
+  feature (crater, ranges). Landing tolerance by ground; HUD 'below us'. Earth verified (rock, 2.1 km
+  terrain, crash at 131 m/s). Moon / other bodies: same path, not flown yet.
+- Snapshot schema 31. Full suite after 5497cf37: the same 8 baseline red blocks.
+- OPEN: catalog surface pressure for rho0 (Mars / Venus use Earth's now); soft landing / splashdown not
+  flown by a human; J Assisted steering not verified with real input; Moon test; terrain field memory.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

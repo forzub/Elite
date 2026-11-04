@@ -1941,7 +1941,12 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             }
         }
 
-        // Globe (under the terrain: stencil).
+        // Globe (under the terrain: stencil). Low over the ground the local terrain
+        // covers past the horizon and the globe has nothing to add - drawn there its
+        // coarse displaced relief rose above the camera and, seen at grazing angles,
+        // lit the sky as a flat white wall (Elite silhouette / Modern lit relief).
+        const bool lowOverTerrain = !rt->levels.empty() && it.dist - b.radiusM < 0.05 * b.radiusM;
+        if (!lowOverTerrain)
         {
             ScopedTimer timer(timers, TGlobes);
             globe.use();

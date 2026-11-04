@@ -192,7 +192,9 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
             contour = contourMask(dot(land, vec3(0.3, 0.5, 0.2)) * 9.0, 1.0) * 0.6;
         float grid = lattice >= 0.0 ? lattice * 0.35 : 0.0; // precomputed lattice line mask
         float nv = dot(nSphere, viewDir);
-        float rim = rimMask(nv, 1.6);
+        // relief standing past the sphere's limb (distant ridges seen low over the
+        // ground: nv < 0) is not the outline - it lit the whole far terrain as a white wall
+        float rim = nv < -max(fwidth(nv), 1e-5) * 1.6 ? 0.0 : rimMask(nv, 1.6);
         // The outline stays bright on the night side (a whole circle, as in
         // the vector original); surface lines dim with the light.
         float fade = 0.30 + 0.70 * day;

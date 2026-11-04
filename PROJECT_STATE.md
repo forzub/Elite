@@ -2511,6 +2511,13 @@ Restore point: tag restore/pre-order-2026-11-04-g.
 - "Why 100 000 km minimum": it was 109 309 m = 109 km (HUD printed metres). Reason: the altitude where
   drag at circular speed reaches 0.1 m/s2 (the orbit decays fast). HUD now prints km above 10 km and the
   reason (not visually re-checked in a capture yet).
+- Follow-up (user video qwert01: the hull swung freely in J; "roll is blocked"): Assisted J now steers
+  stiffly - hull pitch / yaw <= 4 deg/s, nose lead over the velocity limited to 10 deg (the velocity's
+  inertia), velocity follows at angle / 2 s (~5 deg/s held), speed kept; not while braking or below
+  50 m/s; Newtonian J unchanged (free hull). Roll was swallowed by the prograde hold (alignment owned the
+  attitude while only pitch / yaw counted as steering) - roll now releases it. Live: steer2.log (lead
+  stops at 10.0 deg, 5 deg/s, 7664 -> 7654 m/s), roll2.log (a 1.5 s roll stays after release).
+  Full suite not re-run for this change. The user allowed closing a running EliteGame.exe for my checks.
 
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the

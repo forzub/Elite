@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 
+#include "src/game/equipment/data/radars.h"
 #include "SpaceState.h"
 #include "src/game/RuntimeFeatureFlags.h"
 #include "core/StateStack.h"
@@ -153,8 +154,15 @@ void SpaceState::initHUD()
     {
         if (desc.defaultEquipment.radar.has_value())
         {
+            // the scope look comes from the radar desc; a radar without a
+            // visual profile is drawn with the standard LCD scope
             const game::RadarDesc& radarDesc =
-                desc.defaultEquipment.radar.value();
+                desc.defaultEquipment.radar->visual
+                    ? desc.defaultEquipment.radar.value()
+                    : game::PPI_LCD_RADAR;
+            m_radarMaxRangeMeters = desc.defaultEquipment.radar->maxRange;
+            m_radarDisplayRangeMeters = 0.0;
+            m_radarSweepDegPerSec = radarDesc.sweepSpeedDegPerSec;
 
             auto radar = RadarWidgetFactory::create(
                 radarDesc.type,
@@ -179,6 +187,14 @@ void SpaceState::initHUD()
             );
 
             uiRoot->addChild(std::move(radar));
+
+            // scope scale / state line just above the scope
+            auto rangeText = makeTelemetryText(
+                "radar_range",
+                {desc.radarMount.normalizedPosition.x - desc.radarMount.normalizedSize.x * 0.5f,
+                 desc.radarMount.normalizedPosition.y - desc.radarMount.normalizedSize.y * 0.5f - 0.022f});
+            rangeText->color = {0.2f, 0.8f, 1.0f, 0.55f};
+            uiRoot->addChild(std::move(rangeText));
         }
     }
 

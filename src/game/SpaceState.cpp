@@ -1,4 +1,6 @@
 #include "src/game/SpaceStateInternal.h"
+#include <algorithm>
+#include <cstdio>
 
 
 
@@ -2580,18 +2582,61 @@ m_playerView->updateCockpitStateFromSnapshot(
                 ship.renderTransform.orientation
             );
 
+            // Tracks of the player's installed radar: the server sensor unit
+            // publishes them session-private (sensor-local metres, the frame
+            // the scope expects). A destroyed / unpowered radar shows nothing.
+            const auto& sensors = m_client->navigationSensors();
+            const bool radarOn = sensors.radarInstalled && sensors.radarOperational;
             std::vector<RadarContactView> views;
-            views.reserve(ship.radarContacts.size());
-
-            for (const auto& c : ship.radarContacts)
+            std::vector<double> ranges;
+            if (radarOn && sensors.hasRadarScan)
             {
-                views.push_back({
-                    c.id,
-                    c.localPosition
-                });
+                views.reserve(sensors.latestRadarScan.tracks.size());
+                for (const auto& t : sensors.latestRadarScan.tracks)
+                {
+                    views.push_back({
+                        EntityId {static_cast<uint32_t>(t.trackId.value)},
+                        glm::vec3(t.relativePositionMeters)
+                    });
+                    ranges.push_back(t.rangeMeters);
+                }
             }
 
+            // scale: the smallest 1-2-5 step holding the 3 nearest tracks;
+            // zoom out at once, zoom in only when they fit 2.5x smaller
+            std::sort(ranges.begin(), ranges.end());
+            const double maxRange = m_radarMaxRangeMeters > 0.0 ? m_radarMaxRangeMeters : 1.0e6;
+            if (!ranges.empty() || m_radarDisplayRangeMeters <= 0.0)
+            {
+                const double need = ranges.empty()
+                    ? 10000.0
+                    : ranges[std::min<std::size_t>(2, ranges.size() - 1)] * 1.15;
+                double step = 1000.0;
+                for (int k = 0; step < need && step < maxRange; ++k)
+                    step *= (k % 3 == 1) ? 2.5 : 2.0;   // 1, 2, 5, 10, 20, 50 ... km
+                step = std::min(step, maxRange);
+                if (m_radarDisplayRangeMeters <= 0.0 || step > m_radarDisplayRangeMeters ||
+                    step * 2.5 <= m_radarDisplayRangeMeters)
+                    m_radarDisplayRangeMeters = step;
+            }
+            m_radarWidget->configureFromDesc(
+                m_radarSweepDegPerSec,
+                static_cast<float>(m_radarDisplayRangeMeters)
+            );
             m_radarWidget->setContacts(views);
+
+            if (auto* label = dynamic_cast<UIText*>(uiRoot->findById("radar_range")))
+            {
+                char text[96];
+                if (!sensors.radarInstalled)
+                    std::snprintf(text, sizeof text, "RADAR: NOT INSTALLED");
+                else if (!radarOn)
+                    std::snprintf(text, sizeof text, "RADAR: OFF (no power / damaged)");
+                else
+                    std::snprintf(text, sizeof text, "RADAR %.0f km  |  %zu tracks",
+                                  m_radarDisplayRangeMeters / 1000.0, views.size());
+                label->label = text;
+            }
         }
     }
 

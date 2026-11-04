@@ -66,8 +66,16 @@ for token in (
 if "RadarSimulationEnabled = true" in runtime_flags:
     fail("legacy all-ships radar simulation was re-enabled instead of using the test unit")
 
+# The cockpit scope may be on only when it draws the session-private scan
+# (SpaceState reads navigationSensors) and never the legacy radarContacts.
 if "RadarHudEnabled = true" in runtime_flags:
-    fail("test radar accidentally enabled the legacy radar HUD")
+    space_state = read("src/game/SpaceState.cpp")
+    scope = space_state[space_state.find("RadarHudEnabled"):]
+    scope = scope[:scope.find("uiRoot->update(dt)")]
+    if "navigationSensors()" not in scope or "latestRadarScan.tracks" not in scope:
+        fail("radar HUD enabled but not fed by the session-private RadarScanReport")
+    if "radarContacts" in scope:
+        fail("radar HUD reads legacy radarContacts")
 
 for path in (ROOT / "src/ui").rglob("*.cpp"):
     if "navigationSensors" in path.read_text(encoding="utf-8", errors="replace"):

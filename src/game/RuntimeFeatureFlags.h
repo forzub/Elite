@@ -7,8 +7,9 @@ namespace game::runtime
 // discrete session-private RadarScanReport data without using this old path.
 inline constexpr bool RadarSimulationEnabled = false;
 
-// The test sensor intentionally has no radar HUD/presentation.
-inline constexpr bool RadarHudEnabled = false;
+// Cockpit radar scope: draws the player's session-private RadarScanReport
+// (server sensor unit of the installed radar), never legacy radarContacts.
+inline constexpr bool RadarHudEnabled = true;
 
 // General world-signal labels are intentionally disabled while their final
 // presentation contract is unresolved. Hub-map/close-navigation labels and

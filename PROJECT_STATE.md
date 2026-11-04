@@ -2538,6 +2538,13 @@ Restore point: tag restore/pre-order-2026-11-04-g.
   2. System Map flat (plan) as the main presentation; "sectors of interest": split the asteroid belt and
      Saturn's rings into selectable sectors viewable in Details.
   3. J drive energy (reactor / fuel) accounting; human feel of the stiff J steering.
+- Follow-up (user video qwerty02, "the ship sank under the Moon"): ROOT CAUSE - updateFreeFlights ran before
+  rebuildNavigationGravityContext, so J flew against last tick's bodies; the snapshot carried this tick's Moon:
+  ~0.01 s x 29.2 km/s heliocentric = ~300 m. Measured (ELITE_TRACE_CELESTIAL + DEV jstate): rendered camera
+  4888 m vs server 5183 m before; 4174.9 vs 4177.3 m after (camera offset). The hull-footprint touchdown is a
+  separate, also valid fix. HUD near the ground: "H 19 м над грунтом (4190 м над ср. радиусом)" (H over the mean
+  radius on the +5 km highlands misled). Landing glow: Elite terrain horizon rim faint, relief lines brighter,
+  backdrop-globe outline faint low over terrain (user request). Not human-accepted.
 
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the

@@ -206,6 +206,44 @@ glm::dvec3 hubLocalToWorldMeters(
         snapshot.hubWorldAxes.z * localMeters.z;
 }
 
+// Hidden behind a body (the map planet, a moon) from the map camera: the
+// eye -> point segment enters the sphere before reaching the point. The map
+// camera looks along -Z from z = +D (perspective) or from infinity (ortho).
+bool occludedBySphere(
+    const LocalMapCameraSnapshot& camera,
+    const glm::dvec3& pointMeters,
+    const glm::dvec3& centreMeters,
+    double radiusMeters)
+{
+    if (radiusMeters <= 0.0)
+        return false;
+    const glm::dvec3 p = camera.pointToCamera(pointMeters);
+    const glm::dvec3 c = camera.pointToCamera(centreMeters);
+    const double eps = radiusMeters * 1.0e-3;   // surface sites on the near side stay visible
+    if (!camera.perspectiveEnabled)
+    {
+        const double dx = p.x - c.x;
+        const double dy = p.y - c.y;
+        const double d2 = dx * dx + dy * dy;
+        if (d2 >= radiusMeters * radiusMeters)
+            return false;
+        return p.z < c.z + std::sqrt(radiusMeters * radiusMeters - d2) - eps;
+    }
+    const glm::dvec3 eye(0.0, 0.0, std::max(camera.perspectiveCameraDistanceMeters, 1.0));
+    const glm::dvec3 segment = p - eye;
+    const double length = glm::length(segment);
+    if (length <= 0.0)
+        return false;
+    const glm::dvec3 dir = segment / length;
+    const glm::dvec3 oc = eye - c;
+    const double b = glm::dot(oc, dir);
+    const double disc = b * b - (glm::dot(oc, oc) - radiusMeters * radiusMeters);
+    if (disc <= 0.0)
+        return false;
+    const double t = -b - std::sqrt(disc);
+    return t > 0.0 && t < length - eps;
+}
+
 bool visibleInViewport(
     const glm::dvec2& point,
     const Viewport& viewport,
@@ -412,6 +450,33 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
             spatialCameraDistanceMeters
         );
 
+    // Labels / glyphs behind the planet (or another body of the scene) are
+    // not drawn: the planet is opaque on the Detail map.
+    const auto occludedByDetailBodies = [&](const glm::dvec3& positionMeters)
+    {
+        if (occludedBySphere(presentation.camera, positionMeters,
+                             snapshot.planetCenterMeters, snapshot.planetRadiusMeters))
+            return true;
+        for (const auto& body : snapshot.scene.objects)
+            if (body.valid &&
+                body.objectClass == world::celestial::DetailObjectClass::CelestialBody &&
+                occludedBySphere(presentation.camera, positionMeters,
+                                 body.positionMeters, body.boundingRadiusMeters))
+                return true;
+        return false;
+    };
+
+    // The player in a hub: the hub cube is drawn golden with the player badge
+    // (the ship itself is inside it); otherwise the ship gets the badge.
+    std::string playerHubId;
+    std::string playerBadge;
+    for (const auto& object : snapshot.scene.objects)
+        if (object.valid && object.player)
+        {
+            playerHubId = object.parentStableId;
+            playerBadge = object.name;
+        }
+
     for (const auto& object : snapshot.scene.objects)
     {
         if (!object.valid ||
@@ -442,8 +507,16 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
             );
         item.hasTrackingWorldPosition = true;
         item.factionColor = localObjectColor(object);
+        if (object.player && playerHubId.empty())
+            item.badge = playerBadge;
+        if (!playerHubId.empty() && object.kind == "hub" && object.stableId == playerHubId)
+        {
+            item.factionColor = glm::vec4(1.00f, 0.78f, 0.28f, 0.98f);
+            item.badge = playerBadge;
+        }
         item.screenPx = presentation.camera.project(object.positionMeters);
-        item.visible = visibleInViewport(item.screenPx, viewport);
+        item.visible = visibleInViewport(item.screenPx, viewport) &&
+                       !occludedByDetailBodies(object.positionMeters);
         item.physicalSizeMeters = localObjectPhysicalSizeMeters(object);
 
         const double perspective = presentation.camera.perspectiveFactor(
@@ -544,7 +617,8 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
             projected.x >= 0.0 &&
             projected.y >= 0.0 &&
             projected.x <= viewport.width &&
-            projected.y <= viewport.height;
+            projected.y <= viewport.height &&
+            !occludedByDetailBodies(object.positionMeters);
         point.screenRadiusPx = 15.0f;
 
         presentation.frame.hubScreenPoints.push_back(

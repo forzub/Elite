@@ -212,6 +212,7 @@ inline world::celestial::LocalSceneObject makeDetailShipObject(
         : descriptor.identity.shipType;
     object.sizeMeters = glm::dvec3(descriptor.getMeshSizeMeters());
     object.kind = playerPresentation ? "player" : "ship";
+    object.player = playerPresentation;
     object.parentStableId = ship.hubId;
     object.objectClass = world::celestial::DetailObjectClass::Ship;
     object.origin = world::celestial::DetailObjectOrigin::Runtime;

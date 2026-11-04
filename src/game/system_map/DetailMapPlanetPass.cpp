@@ -686,8 +686,9 @@ void DetailMapPlanetPass::drawPlanetTexturedGlobe(
     draw.opacity =
         1.0f;
 
+    // The Detail map planet is a solid body: nothing behind it shows through.
     draw.blending =
-        true;
+        false;
 
     draw.useHorizonFade =
         false;

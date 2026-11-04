@@ -1687,7 +1687,12 @@ void SpaceState::applyClientCatalogLocalization()
         }
 
         for (auto& object : m_detailMapSnapshot.scene.objects)
+        {
             localizeSceneObject(object, m_detailMapSnapshot.systemId);
+            // the player's marker reads "player" (golden badge on the Detail map)
+            if (object.player)
+                object.name = loc.text("overlay.player_marker", "player");
+        }
     }
 
     if (m_hasHubMapSnapshot && m_hubMapSnapshot.valid)

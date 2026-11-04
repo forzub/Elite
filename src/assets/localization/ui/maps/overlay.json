@@ -9,6 +9,13 @@
       "es": "JUGADOR",
       "ja": "プレイヤー"
     },
+    "overlay.player_marker": {
+      "en": "player",
+      "ru": "игрок",
+      "zh-Hans": "玩家",
+      "es": "jugador",
+      "ja": "プレイヤー"
+    },
     "overlay.selected": {
       "en": "SELECTED",
       "ru": "ВЫБРАНО",

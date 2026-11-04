@@ -90,6 +90,11 @@ struct FlightRenderQuality
     bool asteroids = true;
     bool rings = true;
     bool detailNormals = true;
+    // Cinematic apparent size: small far bodies in the sky (the Moon and the Sun
+    // from Earth, Earth from the Moon, moons over their planets) are drawn a
+    // little larger than their true angular size - as the eye perceives them -
+    // without touching their physical size or position (off: geometry checks).
+    bool cinematicApparentSize = true;
     std::size_t textureBudgetBytes = 512u * 1024u * 1024u;
     int workerThreads = 0;         // 0 = hardware - 2
 };

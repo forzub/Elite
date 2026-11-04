@@ -1691,6 +1691,8 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
         glm::dvec3 rel;
         double dist;
         double pxRadius;
+        double trueDist;   // physical distance (flux, haze); dist / rel may be the cinematic one
+        double skyDisc;    // 0..1: drawn at the cinematic apparent size (a body in the sky)
     };
     std::vector<Item> items;
     items.reserve(frame.bodies.size());
@@ -1699,7 +1701,29 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
         const glm::dvec3 rel = b.positionM - frame.cameraPositionM;
         const double d = std::max(1.0, glm::length(rel));
         const double ang = std::asin(std::min(1.0, b.radiusM / d));
-        items.push_back(Item {&b, rel, d, ang / pixelAngle});
+        // Cinematic apparent size (quality.cinematicApparentSize): a body seen as a
+        // small disc far away is drawn as if it were closer along the same line of
+        // sight, so every pass (globe, atmosphere, clouds, rings, sun disc) grows
+        // together and the physics keeps the true size. Extra angular radius =
+        // softmin(2 x true, 0.8 deg), faded in between 8 and 25 body radii: the Moon
+        // and the Sun from Earth 0.26 -> ~0.57 deg, Earth from the Moon 0.95 ->
+        // ~1.5 deg; nearer than 8 R the body is exactly true (landing, terrain).
+        double shown = ang;
+        double fade = 0.0;
+        if (quality.cinematicApparentSize && ang < 0.5)
+        {
+            const double cap = glm::radians(0.8);
+            const double boost = 2.0 * ang;
+            fade = glm::smoothstep(8.0, 25.0, d / std::max(1.0, b.radiusM));
+            shown = ang + boost * cap / (boost + cap) * fade;
+        }
+        if (shown > ang + 1.0e-9)
+        {
+            const double virtualDist = b.radiusM / std::sin(shown);
+            items.push_back(Item {&b, rel * (virtualDist / d), virtualDist, shown / pixelAngle, d, fade});
+        }
+        else
+            items.push_back(Item {&b, rel, d, ang / pixelAngle, d, 0.0});
     }
     std::sort(items.begin(), items.end(),
               [](const Item& a, const Item& b) { return a.dist - a.body->radiusM > b.dist - b.body->radiusM; });
@@ -1860,7 +1884,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
                 {
                     // Modern / Anime: the light bloom around the disc (flux).
                     const double flux = b.luminositySolar /
-                                        std::max(1.0e-12, it.dist * it.dist / (MetresPerAu * MetresPerAu));
+                                        std::max(1.0e-12, it.trueDist * it.trueDist / (MetresPerAu * MetresPerAu));
                     const float glow = static_cast<float>(
                         std::clamp(26.0 * std::pow(flux, 0.22) * height / 1080.0 + it.pxRadius * 3.0, 4.0,
                                    static_cast<double>(maxPointSize)));
@@ -1886,7 +1910,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
                 glBindVertexArray(0);
                 ++stats.globeBodies;
             }
-            const double flux = b.luminositySolar / std::max(1.0e-12, it.dist * it.dist / (MetresPerAu * MetresPerAu));
+            const double flux = b.luminositySolar / std::max(1.0e-12, it.trueDist * it.trueDist / (MetresPerAu * MetresPerAu));
             const float size = static_cast<float>(
                 std::clamp(26.0 * std::pow(flux, 0.22) * height / 1080.0 + it.pxRadius * 3.0, 4.0, 900.0));
             const float intensity = static_cast<float>(std::clamp(0.35 + 0.25 * std::log10(1.0 + flux * 1.0e4), 0.2, 1.0));
@@ -1905,7 +1929,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             const glm::vec3 albedo = rt && rt->globe.size ? rt->globe.meanAlbedo : glm::vec3(0.4f);
             const glm::vec3 toCam = glm::vec3(-glm::normalize(it.rel));
             const float phase = 0.5f + 0.5f * glm::dot(toCam, sunDir);
-            const double flux = 0.3 * (b.radiusM / it.dist) * (b.radiusM / it.dist) * phase *
+            const double flux = 0.3 * (b.radiusM / it.trueDist) * (b.radiusM / it.trueDist) * phase *
                                 std::max(0.05f, glm::length(sunColour));
             const float intensity = static_cast<float>(std::clamp(std::log10(std::max(flux, 1.0e-30) / 1.0e-15) / 4.0,
                                                                   0.0, 1.0));
@@ -1980,6 +2004,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             globe.set("uHazeDensity", hazeDensity);
             globe.set("uContourKm", static_cast<float>(rt->contourKm));
             globe.set("uNaturalZones", naturalZones(*rt) ? 1.0f : 0.0f);
+            globe.set("uSkyDisc", static_cast<float>(it.skyDisc));
             const double texel = tex ? b.radiusM * 1.5708 / rt->globe.size : 0.0;
             globe.set("uMicroWavelength", quality.detailNormals && tex ? static_cast<float>(texel * 0.6) : 0.0f);
             globe.set("uDetailStrength", 0.25f);
@@ -2011,7 +2036,8 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             glCullFace(GL_BACK);
             glFrontFace(GL_CCW);
             glDisable(GL_BLEND);
-            const IndexedMesh& m = it.pxRadius > 60.0 ? sphereHigh : sphereLow;
+            // a small sky disc: round, not an octagon
+            const IndexedMesh& m = it.pxRadius > 60.0 || it.skyDisc > 0.0 ? sphereHigh : sphereLow;
             glBindVertexArray(m.vao);
             glDrawElements(GL_TRIANGLES, m.count, GL_UNSIGNED_INT, nullptr);
             glBindVertexArray(0);

@@ -329,6 +329,7 @@ uniform float uHasClouds;
 uniform float uIsGas;
 uniform float uPixelAngle;
 uniform float uRadius;
+uniform float uSkyDisc;      // 0..1: a small far body in the sky (cinematic apparent size)
 uniform vec3 uFlat;          // colour while the texture bakes
 uniform float uHasTexture;
 uniform float uZoneBias;     // albedo mip bias for the natural zones (continental scale)
@@ -384,6 +385,17 @@ void main()
     float alpha;
     vec3 col = shadeSurface(land, water, coastKm, heightKm, emission, 0.0, nr, ns, v, dist, -1.0, uIsGas,
                             shadow, alpha);
+    if (uSkyDisc > 0.0)
+    {
+        // A body in the night sky reads as the dark-adapted eye sees it: Elite
+        // fills its lit phase (a black disc with a hairline was invisible),
+        // Modern / Anime raise its exposure (the Moon is bright, not regolith grey).
+        float lit = smoothstep(-0.05, 0.12, dot(ns, normalize(uSunDir)));
+        if (uStyle == 0)
+            col = max(col, uLineColour * lit * 0.55 * uSkyDisc);
+        else
+            col = min(col * (1.0 + 1.4 * uSkyDisc * lit), vec3(1.0));   // the night side stays dark
+    }
     fragColour = vec4(col, 1.0);
     writeLogDepth();
 }

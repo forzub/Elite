@@ -448,6 +448,56 @@ namespace
                     }
             }
         }
+        // Sky (PLANET_LAB_ONLY=sky): the Moon and the Sun from a low Earth orbit and
+        // Earth from just above the Moon - each true size and cinematic apparent size.
+        if (wanted("sky") && lab.selectSystem(0, t0))
+        {
+            const wc::CelestialBodyState* earth = lab.body("planet_earth");
+            const wc::CelestialBodyState* moon = lab.body("moon_moon");
+            if (earth && moon)
+            {
+                const glm::dvec3 e = earth->worldMeters, m = moon->worldMeters;
+                const double Re = earth->radiusKm * 1000.0, Rm = moon->radiusKm * 1000.0;
+                const glm::dvec3 toMoon = glm::normalize(m - e);
+                const glm::dvec3 side = glm::normalize(glm::cross(toMoon, glm::dvec3(0, 1, 0)));
+                struct Shot { const char* name; glm::dvec3 pos; glm::dvec3 look; };
+                // a LEO pilot 422 km up, 50 deg around from the sub-Moon point (Earth limb low in view)
+                const glm::dvec3 leo = e + glm::normalize(toMoon * std::cos(0.87) + side * std::sin(0.87)) * (Re + 422000.0);
+                const glm::dvec3 lunar = m - toMoon * (Rm + 2000.0) + side * (Rm * 0.05);
+                const glm::dvec3 sunDir = lab.sunDirection(*earth);
+                // the Sun from the day side of the orbit, 60 deg off the sub-solar point
+                const glm::dvec3 perp = glm::normalize(glm::cross(sunDir, glm::dvec3(0, 1, 0)));
+                const glm::dvec3 day = e + glm::normalize(sunDir * std::cos(1.05) + perp * std::sin(1.05)) * (Re + 422000.0);
+                const Shot shots[] = {{"moon_from_leo", leo, glm::normalize(m - leo)},
+                                      {"sun_from_leo", day, sunDir},
+                                      {"earth_from_moon", lunar, glm::normalize(e - lunar)}};
+                for (const auto style : styles)
+                    for (const Shot& shot : shots)
+                        for (int cinematic = 0; cinematic < 2; ++cinematic)
+                        {
+                            cf::FlightRenderQuality q = r.quality();
+                            q.cinematicApparentSize = cinematic != 0;
+                            r.setQuality(q);
+                            r.setStyle(style);
+                            Camera c;
+                            c.pos = shot.pos;
+                            c.fwd = shot.look;
+                            c.up = glm::normalize(glm::cross(glm::cross(c.fwd, glm::dvec3(0, 1, 0)), c.fwd));
+                            converge(lab, r, c, win, w, h, 30.0);
+                            lab.frame(r, c, w, h);
+                            glFinish();
+                            std::vector<unsigned char> rgb;
+                            readPixels(w, h, rgb);
+                            const std::string name = std::string("flight_sky_") + shot.name + "_" +
+                                                     cf::celestialRenderStyleId(style) + (cinematic ? "_cinematic" : "_true") + ".png";
+                            writePng(dir + "/" + name, w, h, rgb);
+                            std::printf("%s\n", name.c_str());
+                        }
+                cf::FlightRenderQuality q = r.quality();
+                q.cinematicApparentSize = true;
+                r.setQuality(q);
+            }
+        }
         // Travel Earth -> Moon: the same world at shrinking / growing sizes.
         if (wanted("travel") && lab.selectSystem(0, t0))
         {
@@ -602,6 +652,7 @@ namespace
         q.atmosphere = false;
         q.clouds = false;
         q.rings = false;
+        q.cinematicApparentSize = false;   // the check measures the TRUE silhouettes
         r.setQuality(q);
         for (const char* stem : {"moon_moon", "planet_mars", "planet_jupiter"})
         {
@@ -676,6 +727,7 @@ namespace
         q.atmosphere = true;
         q.clouds = true;
         q.rings = true;
+        q.cinematicApparentSize = true;
         r.setQuality(q);
         // 2. Ephemeris: positions follow the velocities, spins turn the right way.
         {

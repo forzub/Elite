@@ -13,7 +13,15 @@ Hosts: the game (`SceneRenderer`, pass 0.25) and Planet Lab
   (system-local metres, the frame of the ship positions); radius from the
   catalog; orientation = `makePlanetTextureOrientation` (the maps' own
   function: tilt, node, spin phase, texture longitude offset).
-- The renderer never moves or scales a body. The camera sits at the origin
+- The renderer never moves or scales a body - with one deliberate exception,
+  the cinematic apparent size (user decision 2026-11-04, plausibility over
+  hard realism): a body seen as a small disc far away (> 8 radii, full from
+  25) is drawn as if closer along the same line of sight, extra angular
+  radius softmin(2 x true, 0.8 deg). The Moon and the Sun from Earth look
+  ~0.57 deg instead of 0.26, Earth from the Moon ~1.5 deg instead of 0.95.
+  Physics, maps, positions and the near views are untouched; fluxes use the
+  true distance; `FlightRenderQuality::cinematicApparentSize` (the geometry
+  check below runs with it off). The camera sits at the origin
   (camera-relative double maths, float only after subtraction); depth is
   logarithmic (written per fragment), far plane 1e13 m.
 - Checked (`--flight-check`): silhouettes of the Moon, Mars and Jupiter at

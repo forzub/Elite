@@ -330,11 +330,12 @@ int main(int argc, char** argv)
             glm::length(fragment->homeCenterLocal - m->placement.centerMeters) < 1.0e-4f &&
             glm::length(fragment->position - m->placement.centerMeters) < 1.0e-4f;
         const double detachedMassKg = core->currentMassKg();
+        const double aDetached = core->capabilities().effectivePhysics.forwardMainEngineAccelerationMps2;
         const bool reattached = core->debugReattachModuleById(car);
         core->refreshRuntimeState();
         check(detached && fragmentSpawned && fragmentAtPassportPosition &&
                   std::abs((before - detachedMassKg) - carKg) < 1e-3 * carKg &&
-                  core->capabilities().effectivePhysics.forwardMainEngineAccelerationMps2 > aBefore &&
+                  aDetached > aBefore &&
                   reattached && std::abs(core->currentMassKg() - before) < 1e-6 * before,
               "He-T12 train: detached car becomes a fragment at its passport position, removes " +
                   num((before - detachedMassKg) / 1000.0, 0) +

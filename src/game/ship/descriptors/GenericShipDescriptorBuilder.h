@@ -807,7 +807,7 @@ struct MassSum
     d.storage.cargoMass = static_cast<int>(std::lround(s.cargoTonnes));
     d.storage.cargoVolume = static_cast<int>(std::lround(s.containerSlots * 38.3 + s.cargoTonnes * 1.4));
     d.storage.containerSlots = s.containerSlots;
-    d.storage.containerPayloadTonnes = catalog::ships::C20PayloadTonnes;
+    d.storage.containerPayloadTonnes = ::catalog::ships::C20PayloadTonnes;
     d.survival.hasEscapePod = s.countOf("escape_capsule") + s.countOf("lifeboat") > 0;
     d.survival.hasNanokitBay = s.countOf("medbay") > 0;
     for (const auto& item : s.installed)

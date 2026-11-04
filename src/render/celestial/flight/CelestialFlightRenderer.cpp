@@ -1244,6 +1244,13 @@ struct CelestialFlightRenderer::Impl
         }
     }
 
+    // The zone palette (forest / plains / snow) only where the body states life
+    // or open water (BodySurfaceDescriptor: "no default greening").
+    static bool naturalZones(const BodyRuntime& rt)
+    {
+        return rt.descriptor.biosphere != "none" || rt.descriptor.oceanCoverage > 0.0;
+    }
+
     void drawTerrain(BodyRuntime& rt, const FlightBody& b, const glm::mat3& toWorld, const glm::dvec3& centreRel,
                      const glm::dvec3& cameraBody, const glm::mat4& viewProj, double pixelAngle,
                      const glm::vec3& sunDir, const glm::vec3& sunColour, float hazeDensity)
@@ -1269,6 +1276,7 @@ struct CelestialFlightRenderer::Impl
         terrain.set("uHazeColour", rt.atmosphere.haze);
         terrain.set("uHazeDensity", hazeDensity);
         terrain.set("uContourKm", static_cast<float>(rt.contourKm));
+        terrain.set("uNaturalZones", naturalZones(rt) ? 1.0f : 0.0f);
         terrain.set("uDetailStrength", quality.detailNormals ? 0.35f : 0.0f);
         terrain.set("uFarFade", 0.0f);
         const double finest = surface::terrain_chart::spacingM(rt.levels.begin()->first, b.radiusM);
@@ -1941,12 +1949,19 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             }
         }
 
-        // Globe (under the terrain: stencil). Low over the ground the local terrain
-        // covers past the horizon and the globe has nothing to add - drawn there its
-        // coarse displaced relief rose above the camera and, seen at grazing angles,
-        // lit the sky as a flat white wall (Elite silhouette / Modern lit relief).
+        // Globe (under the terrain: stencil). Low over the ground its coarse
+        // displaced relief rose above the camera and, seen at grazing angles, lit
+        // the sky as a flat white wall (Elite silhouette / Modern lit relief).
+        // There it is only the far backdrop past the local terrain: a smooth
+        // sphere at the ground level under the camera (sea / horizon continue).
         const bool lowOverTerrain = !rt->levels.empty() && it.dist - b.radiusM < 0.05 * b.radiusM;
-        if (!lowOverTerrain)
+        double backdropRadius = b.radiusM;
+        if (lowOverTerrain)
+        {
+            const double groundHere = rt->field->sample(glm::normalize(cameraBody), 2000.0).heightM;
+            const double above = std::max(0.0, it.dist - b.radiusM - groundHere);
+            backdropRadius = b.radiusM + groundHere - std::max(30.0, above * 0.02);
+        }
         {
             ScopedTimer timer(timers, TGlobes);
             globe.use();
@@ -1954,16 +1969,17 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             globe.set("uViewProj", viewProj);
             globe.set("uBodyToWorld", toWorld);
             globe.set("uCentre", glm::vec3(it.rel));
-            globe.set("uRadius", static_cast<float>(b.radiusM));
+            globe.set("uRadius", static_cast<float>(backdropRadius));
             const bool tex = rt->globe.size > 0;
             globe.set("uHasTexture", tex ? 1.0f : 0.0f);
-            globe.set("uDisplace", tex && b.kind == FlightBodyKind::Solid ? 1.0f : 0.0f);
+            globe.set("uDisplace", tex && b.kind == FlightBodyKind::Solid && !lowOverTerrain ? 1.0f : 0.0f);
             globe.set("uIsGas", b.kind == FlightBodyKind::GasGiant ? 1.0f : 0.0f);
             globe.set("uFlat", rt->globe.size ? rt->globe.meanAlbedo : glm::vec3(0.35f));
             globe.set("uPixelAngle", static_cast<float>(pixelAngle));
             globe.set("uHazeColour", atm.haze);
             globe.set("uHazeDensity", hazeDensity);
             globe.set("uContourKm", static_cast<float>(rt->contourKm));
+            globe.set("uNaturalZones", naturalZones(*rt) ? 1.0f : 0.0f);
             const double texel = tex ? b.radiusM * 1.5708 / rt->globe.size : 0.0;
             globe.set("uMicroWavelength", quality.detailNormals && tex ? static_cast<float>(texel * 0.6) : 0.0f);
             globe.set("uDetailStrength", 0.25f);

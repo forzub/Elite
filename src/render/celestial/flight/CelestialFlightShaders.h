@@ -37,6 +37,7 @@ uniform vec3 uSunColour;
 uniform vec3 uHazeColour;    // atmosphere tint (day sky at the horizon)
 uniform float uHazeDensity;  // 0 = airless
 uniform float uContourKm;    // Elite contour spacing
+uniform float uNaturalZones; // 1: the body states life or open water (zone palette); 0: its real albedo
 uniform float uDetailStrength; // procedural micro relief (normal tilt)
 uniform float uFarFade;        // 0 near .. 1 small disc: less contrast far away
 
@@ -223,8 +224,10 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
             vec3(0.78, 0.66, 0.42),   // dry: ochre / sand
             vec3(0.54, 0.39, 0.24));  // mountains: warm brown
         vec3 seaCol = mix(vec3(0.15, 0.42, 0.66), vec3(0.08, 0.26, 0.54), deepSea);
-        vec3 base = isGas > 0.5 ? posterize(pow(max(albedo, vec3(0.0)), vec3(1.0 / 2.2)), 6.0)
-                                : mix(landCol, seaCol, isWater);
+        // a dead world (no stated biosphere / sea: the Moon, Mercury) keeps its own
+        // albedo - the zone palette read its grey as vegetation and snow
+        vec3 base = isGas > 0.5 || uNaturalZones < 0.5 ? posterize(pow(max(albedo, vec3(0.0)), vec3(1.0 / 2.2)), 6.0)
+                                                       : mix(landCol, seaCol, isWater);
         float l = dot(normalize(mix(nSphere, nRelief, 0.15)), L);
         float lit = smoothstep(0.08, 0.14, l);
         float halfT = smoothstep(-0.08, -0.02, l);
@@ -259,7 +262,7 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
         vec3(0.12, 0.17, 0.045),  // plains
         vec3(0.42, 0.29, 0.13),   // dry
         vec3(0.17, 0.12, 0.075)); // mountains
-    vec3 landCol = mix(landZone, albedo, 0.35);
+    vec3 landCol = uNaturalZones > 0.5 ? mix(landZone, albedo, 0.35) : albedo;
     vec3 seaCol = mix(vec3(0.010, 0.055, 0.15), vec3(0.003, 0.018, 0.075), deepSea);
     vec3 base = isGas > 0.5 ? albedo : mix(landCol, seaCol, isWater);
     float wrap = clamp((dot(normalize(mix(nSphere, nRelief, 0.6)), L) + 0.08) / 1.08, 0.0, 1.0);

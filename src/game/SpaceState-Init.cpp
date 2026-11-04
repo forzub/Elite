@@ -160,7 +160,6 @@ void SpaceState::initHUD()
                 desc.defaultEquipment.radar->visual
                     ? desc.defaultEquipment.radar.value()
                     : game::PPI_LCD_RADAR;
-            m_radarMaxRangeMeters = desc.defaultEquipment.radar->maxRange;
             m_radarDisplayRangeMeters = 0.0;
             m_radarSweepDegPerSec = radarDesc.sweepSpeedDegPerSec;
 

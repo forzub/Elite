@@ -127,6 +127,7 @@ void TestIdealRadarUnit::captureMeasurement(
 
         RadarTrackReport measured;
         measured.trackId = track.publicId;
+        measured.kind = truth.kind;
         measured.relativePositionMeters =
             sensorFromWorld * relativeWorld + track.positionBiasMeters;
         measured.relativeVelocityMps =

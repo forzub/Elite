@@ -37,7 +37,14 @@ struct RadarTrackReport
     double positionUncertaintyMeters = 0.0;
     double velocityUncertaintyMps = 0.0;
     double confidence = 0.0;
+
+    // What the echo is, for the scope symbol: RadarTrackKind* values.
+    std::uint8_t kind = 0;
 };
+
+inline constexpr std::uint8_t RadarTrackKindUnknown = 0;
+inline constexpr std::uint8_t RadarTrackKindShip = 1;
+inline constexpr std::uint8_t RadarTrackKindStructure = 2;   // station, dock, hub module
 
 struct RadarScanReport
 {

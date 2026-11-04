@@ -2596,21 +2596,31 @@ m_playerView->updateCockpitStateFromSnapshot(
                 {
                     views.push_back({
                         EntityId {static_cast<uint32_t>(t.trackId.value)},
-                        glm::vec3(t.relativePositionMeters)
+                        glm::vec3(t.relativePositionMeters),
+                        static_cast<int>(t.kind)
                     });
                     ranges.push_back(t.rangeMeters);
                 }
             }
 
-            // scale: the smallest 1-2-5 step holding the 3 nearest tracks;
-            // zoom out at once, zoom in only when they fit 2.5x smaller
+            // scale: the smallest 1-2-5 step holding every track of the local
+            // scene (within 30 km - a hub with its traffic), else the nearest
+            // one; farther tracks sit on the rim. Zoom out at once, zoom in
+            // only when the scene fits 2.5x smaller.
             std::sort(ranges.begin(), ranges.end());
-            const double maxRange = m_radarMaxRangeMeters > 0.0 ? m_radarMaxRangeMeters : 1.0e6;
+            // no client-side cap: the scan already holds only what the
+            // installed radar (server sensor) sees; the client descriptor's
+            // radar range is a presentation preset, not the sensor range
+            const double maxRange = 1.0e7;
             if (!ranges.empty() || m_radarDisplayRangeMeters <= 0.0)
             {
+                double local = 0.0;
+                for (const double r : ranges)
+                    if (r <= 30000.0)
+                        local = r;
                 const double need = ranges.empty()
                     ? 10000.0
-                    : ranges[std::min<std::size_t>(2, ranges.size() - 1)] * 1.15;
+                    : (local > 0.0 ? local : ranges.front()) * 1.1;
                 double step = 1000.0;
                 for (int k = 0; step < need && step < maxRange; ++k)
                     step *= (k % 3 == 1) ? 2.5 : 2.0;   // 1, 2, 5, 10, 20, 50 ... km
@@ -2624,6 +2634,24 @@ m_playerView->updateCockpitStateFromSnapshot(
                 static_cast<float>(m_radarDisplayRangeMeters)
             );
             m_radarWidget->setContacts(views);
+
+            // DEV: ELITE_DEV_RADAR_LOG=1 prints the scan (range / kind / bearing) every 5 s
+            static const bool radarLog = [] {
+                const char* v = std::getenv("ELITE_DEV_RADAR_LOG");
+                return v && *v == '1';
+            }();
+            static double radarLogTimer = 0.0;
+            radarLogTimer += dt;
+            if (radarLog && radarLogTimer >= 5.0 && sensors.hasRadarScan)
+            {
+                radarLogTimer = 0.0;
+                std::cerr << "[RadarScope] on=" << radarOn << " scale_m=" << m_radarDisplayRangeMeters
+                          << " tracks=" << sensors.latestRadarScan.tracks.size() << '\n';
+                for (const auto& t : sensors.latestRadarScan.tracks)
+                    std::cerr << "  track=" << t.trackId.value << " kind=" << int(t.kind) << " range_m=" << t.rangeMeters
+                              << " rel=(" << t.relativePositionMeters.x << "," << t.relativePositionMeters.y << ","
+                              << t.relativePositionMeters.z << ")" << '\n';
+            }
 
             if (auto* label = dynamic_cast<UIText*>(uiRoot->findById("radar_range")))
             {

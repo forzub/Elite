@@ -338,9 +338,8 @@ private:
     // =======================================
     RadarWidgetBase* m_radarWidget = nullptr;
     // Cockpit radar scope scale (metres): automatic 1-2-5 steps up to the
-    // installed radar range; 0 = not chosen yet.
+    // scene around the ship; 0 = not chosen yet.
     double m_radarDisplayRangeMeters = 0.0;
-    double m_radarMaxRangeMeters = 0.0;
     float m_radarSweepDegPerSec = 0.0f;
     SceneRenderer m_sceneRenderer;
     PreparedScene m_preparedScene;

@@ -130,7 +130,8 @@ void RadarPPIWidget::update(float dt)
         if (diff > 180.0f)
             diff = 360.0f - diff;
 
-        if (diff < m_sweepWidthDeg)
+        // the sweep advances ~20 deg per frame: widen the hit window to one frame step
+        if (diff < std::max(m_sweepWidthDeg, m_sweepSpeed * dt))
         {
             contact.lastHitTime = m_time;
             contact.latchedLocal = local;
@@ -259,9 +260,33 @@ void RadarPPIWidget::renderRadarContent(float px, float py, float pw, float ph)
     int fboH = std::max(1, std::min(2048, static_cast<int>(ph)));
     m_renderTarget.ensureSize(fboW, fboH);
 
+    m_centerX = fboW * 0.5f;
+    m_centerY = fboH * 0.5f;
+    m_radius = std::max(fboW, fboH) * 0.45f;
+
+    // shader time (LCD effects) advances every frame
+    static float lastTime = 0.0f;
+    float dt = m_time - lastTime;
+    if (dt > 0.1f) dt = 1.0f/60.0f;
+    m_shaderTime += dt;
+    lastTime = m_time;
+
+    // The scope content (background, graticule, tracks, sweep) is redrawn at
+    // most ContentHz; other frames only present the cached texture through
+    // the LCD shader. Tracks change at the scan rate (2 Hz) anyway.
+    constexpr float ContentHz = 30.0f;
+    const bool redrawContent =
+        fboW != m_contentW || fboH != m_contentH ||
+        m_time < m_contentTime || m_time - m_contentTime >= 1.0f / ContentHz;
+
     // =========================================================================
     // 1. РЕНДЕР В FBO (текущий кадр) - ВСЕГДА РАБОТАЕТ
     // ========================================================================= 
+    if (redrawContent)
+    {
+    m_contentTime = m_time;
+    m_contentW = fboW;
+    m_contentH = fboH;
     m_renderTarget.bind();
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -274,17 +299,6 @@ void RadarPPIWidget::renderRadarContent(float px, float py, float pw, float ph)
     elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
     elite::render::core_legacy::pushMatrix();
     elite::render::core_legacy::loadIdentity();
-
-    m_centerX = fboW * 0.5f;
-    m_centerY = fboH * 0.5f;
-    m_radius = std::max(fboW, fboH) * 0.45f;
-
-    // Обновляем время шейдера
-    static float lastTime = 0.0f;
-    float dt = m_time - lastTime;
-    if (dt > 0.1f) dt = 1.0f/60.0f;
-    m_shaderTime += dt;
-    lastTime = m_time;
 
     // Рисуем компоненты
     renderBackground();
@@ -334,6 +348,7 @@ void RadarPPIWidget::renderRadarContent(float px, float py, float pw, float ph)
     
     // Отвязываем основной FBO
     m_renderTarget.unbind();
+    }
     
     // =========================================================================
     // 3. ВЫВОД НА ЭКРАН - ВСЕГДА РАБОТАЕТ
@@ -454,36 +469,62 @@ void RadarPPIWidget::renderContacts()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
+    // Game scope: every track is drawn every frame at its current position
+    // (the sweep only brightens it); tracks beyond the scale sit dimmed on
+    // the rim so their bearing stays visible. Structures: amber square.
     for (const auto& pair : m_ppiContacts)
     {
         const PPIContact& contact = pair.second;
-        float age = m_time - contact.lastHitTime;
-        float intensity = 1.0f - (age / fadeDuration);
+        const float age = m_time - contact.lastHitTime;
+        const float glow = std::clamp(1.0f - age / fadeDuration, 0.0f, 1.0f);
 
-        if (intensity <= 0.0f)
-            continue;
-
-        intensity = std::clamp(intensity, 0.0f, 1.0f);
-        glm::vec4 finalColor = m_visualConfig.contact.color;
-
-        const glm::vec3& local = contact.latchedLocal;
+        const glm::vec3& local = contact.data.Position;
         float horizontalDist = std::sqrt(local.x * local.x + local.z * local.z);
+        const bool beyond = horizontalDist > m_displayRange;
+        const bool structure = contact.data.kind == 2;
 
-        if (horizontalDist > m_displayRange)
-            continue;
+        glm::vec4 finalColor = structure ? glm::vec4(1.0f, 0.70f, 0.25f, 0.9f) : m_visualConfig.contact.color;
+        finalColor.a = std::clamp(finalColor.a * (beyond ? 0.45f : 0.75f + 0.25f * glow), 0.0f, 1.0f);
 
-        float radial = horizontalDist / m_displayRange;
+        float radial = beyond ? 1.0f : horizontalDist / m_displayRange;
         float azimuth = std::atan2(local.x, local.z);
 
         float baseX = m_centerX + std::sin(azimuth) * radial * usableRadius;
         float baseY = m_centerY - std::cos(azimuth) * radial * usableRadius * m_visualConfig.background.perspective;
 
-        float heightNorm = local.y / m_displayRange;
+        float heightNorm = beyond ? 0.0f : local.y / m_displayRange;
         heightNorm = std::clamp(heightNorm, -1.0f, 1.0f);
         float heightOffset = heightNorm * usableRadius * m_visualConfig.contact.verticalScale;
         float finalY = baseY + heightOffset;
 
         elite::render::core_legacy::color4f(finalColor.r, finalColor.g, finalColor.b, finalColor.a);
+
+        if (beyond)
+        {
+            const float d = m_visualConfig.contact.boxSize * 0.6f;
+            elite::render::core_legacy::begin(GL_LINE_LOOP);
+            elite::render::core_legacy::vertex2f(baseX, baseY - d);
+            elite::render::core_legacy::vertex2f(baseX + d, baseY);
+            elite::render::core_legacy::vertex2f(baseX, baseY + d);
+            elite::render::core_legacy::vertex2f(baseX - d, baseY);
+            elite::render::core_legacy::end();
+            continue;
+        }
+        if (structure)
+        {
+            const float b = m_visualConfig.contact.boxSize * 1.6f;
+            elite::render::core_legacy::begin(GL_LINES);
+            elite::render::core_legacy::vertex2f(baseX, baseY);
+            elite::render::core_legacy::vertex2f(baseX, finalY);
+            elite::render::core_legacy::end();
+            elite::render::core_legacy::begin(GL_QUADS);
+            elite::render::core_legacy::vertex2f(baseX - b, finalY - b);
+            elite::render::core_legacy::vertex2f(baseX + b, finalY - b);
+            elite::render::core_legacy::vertex2f(baseX + b, finalY + b);
+            elite::render::core_legacy::vertex2f(baseX - b, finalY + b);
+            elite::render::core_legacy::end();
+            continue;
+        }
 
         // Горизонтальная линия
         elite::render::core_legacy::begin(GL_LINES);

@@ -91,6 +91,10 @@ private:
 
     // Время и состояние
     float m_time = 0.0f;
+    // last content redraw into the render target (time, size)
+    float m_contentTime = -1000.0f;
+    int m_contentW = 0;
+    int m_contentH = 0;
     float m_sweepWidthDeg = 3.0f;
     std::unordered_map<EntityId, PPIContact> m_ppiContacts;
 

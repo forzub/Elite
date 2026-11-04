@@ -12,6 +12,7 @@ struct RadarContactView
 {
     EntityId id;
     glm::vec3 Position;
+    int kind = 0;   // game::radar::RadarTrackKind*: 1 ship, 2 structure
 };
 
 

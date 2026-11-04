@@ -853,7 +853,8 @@ ELITE_WIRE_SCHEMA(
     v.rangeMeters,
     v.positionUncertaintyMeters,
     v.velocityUncertaintyMps,
-    v.confidence
+    v.confidence,
+    v.kind
 );
 
 ELITE_WIRE_SCHEMA(

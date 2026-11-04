@@ -216,6 +216,7 @@ public:
     // This ship's dispatcher status (phase None when unknown to the dock).
     game::docking::traffic::DockTrafficShipStatus dockDispatcherStatus(EntityId shipId) const;
     std::size_t shipShellCount() const noexcept { return m_shipShells.size(); }
+    const std::unordered_map<EntityId, game::simulation::ShipShellState>& shipShells() const noexcept { return m_shipShells; }
 
     EntityId spawnStation(
         ObjectType type,

@@ -261,7 +261,7 @@ const RadarDesc PPI_LCD_RADAR = []()
     // требования к платформе
     desc.requiredPowerCapacity = 50.0;
     desc.requiredMountSize = 1.0;
-    desc.sweepSpeedDegPerSec = 1400.0;
+    desc.sweepSpeedDegPerSec = 180.0;               // 2 s per revolution (game scope)
 
     desc.type = RadarType::PPI;                       
     desc.visualProfile = RadarVisualProfile::LCD;

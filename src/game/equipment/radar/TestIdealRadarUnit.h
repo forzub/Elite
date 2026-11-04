@@ -25,6 +25,7 @@ struct TestIdealRadarTruthContact
     world::coordinates::WorldPosition worldPosition;
     glm::dvec3 worldVelocityMps {0.0};
     double radarCrossSection = 1.0;
+    std::uint8_t kind = RadarTrackKindUnknown;
 };
 
 class TestIdealRadarUnit

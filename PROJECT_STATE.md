@@ -2564,6 +2564,22 @@ Restore point: tag restore/pre-order-2026-11-04-g.
   fewer in mountains) and a flat-with-features type: cracks, canyons, scarps (sharp cliffs), standing rocks /
   boulders. Plus the believable Moon and the flat System Map with sectors.
 
+### User order 2026-11-04 n (lunar landscape: craters and surface)
+- Root cause of the "mountains, no craters" Moon: the curated map is 2048x1024 (5.3 km/texel, 8-bit +-10 km) and
+  below the texel ImportedSurfaceField added terrestrial hills + ridges with +-960 m amplitude (relief 8 km x 0.12).
+- New reusable CraterLayer (src/world/celestial/surface): crater population 2.6 km .. 1.5 m radius, D^-2 law
+  (halving cells, 85 % filled at density 1), fresh deep bowls / old shallow saucers, rim, ejecta to 3 R, bright
+  ejecta, blocks and 0.5-6 m boulders on fresh rims; band-limited, deterministic (server = client). Airless / icy
+  imported bodies: soft low hills + craters, regolith (rock on steep walls / fresh rims). Server ground: regolith.
+- Elite style: contours follow the eye in NESTED power-of-two spacings (refine, never slide - the user saw the
+  relief "flow like water" with a smoothly varying spacing); dense lines fade instead of a moire.
+- Planet Lab captures (D:/tmp/elite_lunar1): Modern near surface shows craters with rims; Elite approach shows
+  crater rings. Game: landing on regolith 1.64 m/s (D:/tmp/elite_lunar_landing.mp4, 110 s from the descent).
+  Geometry check 22 PASS (an 8-bit map blur I tried failed it 21/22 - removed). Not human-accepted.
+- OPEN: procedural airless moons (PlanetSurfaceField) still stop at ~16 m craters - give them the CraterLayer tail;
+  globe-level stair contours from the 8-bit relief bake; ejecta rays; the landing-friendly-areas / cracks / canyons
+  / scarps / rocks terrain type (queued).
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

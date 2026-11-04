@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdio>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
@@ -163,6 +164,7 @@ void DetailMapGeometryPass::renderScene(
     }
 
     drawRingAsteroids(planet, viewport);
+    drawBeltAsteroids(planet, viewport);
 
     // Hub/ship/infrastructure markers are rendered by the shared tactical
     // object overlay. This geometry pass keeps celestial/orbit structure only.
@@ -593,6 +595,132 @@ void DetailMapGeometryPass::drawRingAsteroids(
                     const float px = static_cast<float>(1.2 + 3.0 * std::pow(size, 6.0));
                     drawPlanetMapCross(sp, px, colour);
                 }
+            }
+        }
+    }
+}
+
+void DetailMapGeometryPass::drawBeltAsteroids(
+    const world::celestial::DetailMapSnapshot& planet,
+    const Viewport& viewport
+)
+{
+    if (!planet.asteroidBelt || planet.beltOuterMeters <= planet.beltInnerMeters)
+        return;
+
+    // star-fixed polar cells of ~100 000 km x 100 000 km
+    const glm::dvec3 n = glm::normalize(planet.beltNormal);
+    glm::dvec3 axisX = glm::normalize(glm::cross(n, glm::dvec3(0.0, 0.0, 1.0)));
+    if (!std::isfinite(axisX.x))
+        axisX = glm::dvec3(1.0, 0.0, 0.0);
+    const glm::dvec3 axisY = glm::normalize(glm::cross(n, axisX));
+    const double inner = planet.beltInnerMeters;
+    const double outer = planet.beltOuterMeters;
+    constexpr double CellMeters = 1.0e8;
+    const int LaneCount = std::max(1, static_cast<int>((outer - inner) / CellMeters));
+    const double laneWidth = (outer - inner) / LaneCount;
+    const double midRadius = 0.5 * (inner + outer);
+    const int sectorCount = std::max(64, static_cast<int>(glm::two_pi<double>() * midRadius / CellMeters));
+
+    // the viewed window: the belt point +- (view half width) along the orbit
+    const double pixelsPerMeter = activeCamera().scale * activeCamera().state.zoom;
+    const double viewHalfMeters = 0.75 * std::max(viewport.width, viewport.height) / std::max(pixelsPerMeter, 1e-18);
+    const glm::dvec3 rel = planet.planetCenterMeters - planet.beltCenterMeters;
+    const double theta0 = std::atan2(glm::dot(rel, axisY), glm::dot(rel, axisX));
+    const double halfSpan = std::min(glm::pi<double>(), viewHalfMeters / std::max(midRadius, 1.0) + 2.0 * glm::two_pi<double>() / sectorCount);
+    const int s0 = static_cast<int>(std::floor((theta0 - halfSpan) / glm::two_pi<double>() * sectorCount));
+    const int s1 = static_cast<int>(std::ceil((theta0 + halfSpan) / glm::two_pi<double>() * sectorCount));
+    const double rView = glm::length(rel - n * glm::dot(rel, n));
+    const int lane0 = std::max(0, static_cast<int>(std::floor((rView - viewHalfMeters - inner) / laneWidth)) - 1);
+    const int lane1 = std::min(LaneCount - 1, static_cast<int>(std::ceil((rView + viewHalfMeters - inner) / laneWidth)) + 1);
+    if (static_cast<double>(s1 - s0) * std::max(0, lane1 - lane0) > 60000.0)
+        return;   // too far out: the System map draws the belt
+
+    std::uint64_t bodySeed = 1469598103934665603ull;
+    for (const char c : planet.planetBodyId)
+        bodySeed = (bodySeed ^ static_cast<unsigned char>(c)) * 1099511628211ull;
+
+    // orientation: the belt edges (arcs) and the direction to the star
+    {
+        const glm::vec4 edge(0.55f, 0.62f, 0.72f, 0.45f);
+        for (const double radius : {inner, outer})
+        {
+            glm::dvec2 previous {0.0};
+            for (int i = 0; i <= 96; ++i)
+            {
+                const double a = theta0 - halfSpan + 2.0 * halfSpan * i / 96.0;
+                const glm::dvec2 q = activeCamera().project(
+                    planet.beltCenterMeters + (axisX * std::cos(a) + axisY * std::sin(a)) * radius);
+                if (i > 0)
+                    drawPlanetMapLine(previous, q, edge);
+                previous = q;
+            }
+        }
+        const glm::dvec2 here = activeCamera().project(planet.planetCenterMeters);
+        const glm::dvec2 star = activeCamera().project(planet.beltCenterMeters);
+        glm::dvec2 dir = star - here;
+        if (glm::length(dir) > 1.0)
+        {
+            dir = glm::normalize(dir);
+            const double len = 0.38 * std::min(viewport.width, viewport.height);
+            const glm::dvec2 tip = here + dir * len;
+            const glm::vec4 arrow(1.0f, 0.86f, 0.45f, 0.75f);
+            drawPlanetMapLine(here + dir * 20.0, tip, arrow);
+            const glm::dvec2 side(-dir.y, dir.x);
+            drawPlanetMapLine(tip, tip - dir * 12.0 + side * 6.0, arrow);
+            drawPlanetMapLine(tip, tip - dir * 12.0 - side * 6.0, arrow);
+            auto& text = TextRenderer::instance();
+            text.beginFrameForViewport(viewport.width, viewport.height);
+            char label[48];
+            std::snprintf(label, sizeof label, "* %.2f AU",
+                          glm::length(planet.planetCenterMeters - planet.beltCenterMeters) / 1.495978707e11);
+            text.textDrawPx(label,
+                            static_cast<float>(tip.x + 8.0), static_cast<float>(tip.y - 7.0), 13, arrow);
+            text.endFrame();
+        }
+    }
+
+    const glm::vec4 colour(0.70f, 0.66f, 0.58f, 0.85f);
+    constexpr int MaxPerCell = 12;
+    constexpr double PixelsPerBody = 26.0;
+    for (int sRaw = s0; sRaw <= s1; ++sRaw)
+    {
+        const int sector = ((sRaw % sectorCount) + sectorCount) % sectorCount;
+        const double a0 = glm::two_pi<double>() * sector / sectorCount;
+        const double arc = glm::two_pi<double>() / sectorCount;
+        for (int lane = lane0; lane <= lane1; ++lane)
+        {
+            // denser in the middle of the belt (Kirkwood-free bell profile)
+            const double laneMid = (lane + 0.5) / static_cast<double>(LaneCount);
+            const double profile = std::exp(-std::pow((laneMid - 0.5) / 0.22, 2.0));
+            const double rMid = inner + (lane + 0.5) * laneWidth;
+            const glm::dvec3 centre = planet.beltCenterMeters +
+                (axisX * std::cos(a0 + 0.5 * arc) + axisY * std::sin(a0 + 0.5 * arc)) * rMid;
+            const glm::dvec2 c = activeCamera().project(centre);
+            const double cellPx = std::max(laneWidth, rMid * arc) * pixelsPerMeter;
+            const double margin = cellPx + 8.0;
+            if (c.x < -margin || c.y < -margin || c.x > viewport.width + margin || c.y > viewport.height + margin)
+                continue;
+            std::uint64_t state = bodySeed ^ ringHash((static_cast<std::uint64_t>(sector) << 16) ^
+                                                      static_cast<std::uint64_t>(lane) ^ 0xB317ull << 48);
+            const double wanted = cellPx * cellPx / (PixelsPerBody * PixelsPerBody) * profile;
+            int count = static_cast<int>(std::min<double>(MaxPerCell, std::floor(wanted)));
+            if (count == 0 && ringUnit(state) < wanted)
+                count = 1;
+            for (int k = 0; k < count; ++k)
+            {
+                const double u = ringUnit(state);
+                const double v = ringUnit(state);
+                const double w = ringUnit(state) - 0.5;
+                const double size = ringUnit(state);
+                const double a = a0 + arc * u;
+                const double r = inner + (lane + v) * laneWidth;
+                const glm::dvec3 p = planet.beltCenterMeters +
+                    (axisX * std::cos(a) + axisY * std::sin(a)) * r +
+                    n * (w * 2.0 * planet.beltHalfThicknessMeters * profile);
+                const glm::dvec2 sp = activeCamera().project(p);
+                const float px = static_cast<float>(1.2 + 3.5 * std::pow(size, 7.0));
+                drawPlanetMapCross(sp, px, colour);
             }
         }
     }

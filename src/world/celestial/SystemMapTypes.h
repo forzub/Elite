@@ -457,6 +457,15 @@ struct DetailMapSnapshot
     SystemMapRingVisualProfile ringVisual;
     std::vector<SystemMapRing> rings;
 
+    // Asteroid belt Details: a window on the belt annulus around its star,
+    // filled with repeatable procedural bodies (DetailMapGeometryPass).
+    bool asteroidBelt = false;
+    glm::dvec3 beltCenterMeters {0.0};
+    glm::dvec3 beltNormal {0.0, 1.0, 0.0};
+    double beltInnerMeters = 0.0;
+    double beltOuterMeters = 0.0;
+    double beltHalfThicknessMeters = 0.0;
+
     // Unified local-scene inventory. Object class, role and parent identity
     // decide how an item is rendered and interacted with.
     LocalSceneInventory scene;

@@ -517,6 +517,22 @@ inline bool buildClientCelestialBodyDetail(
             out.rings.push_back(toSystemMapRing(ring));
     }
 
+    if (body->type == BodyType::AsteroidBelt)
+    {
+        // the belt annulus: around its star in the system plane (XZ, as the
+        // System map draws it), width +-20 % of the radius, thin (+-2 %)
+        const auto* star = findDetailBodyState(celestial, body->parentId);
+        out.asteroidBelt = true;
+        out.beltCenterMeters = star ? star->worldMeters : glm::dvec3(0.0);
+        out.beltNormal = glm::dvec3(0.0, 1.0, 0.0);
+        glm::dvec3 radial = out.planetCenterMeters - out.beltCenterMeters;
+        radial -= out.beltNormal * glm::dot(radial, out.beltNormal);
+        const double r = glm::length(radial);
+        out.beltInnerMeters = r * 0.80;
+        out.beltOuterMeters = r * 1.20;
+        out.beltHalfThicknessMeters = r * 0.02;
+    }
+
     out.valid = true;
     out.hasCentralBody = true;
     out.scene.anchorClass = DetailObjectClass::CelestialBody;

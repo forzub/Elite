@@ -73,6 +73,13 @@ private:
         const Viewport& viewport
     );
 
+    // Repeatable procedural asteroid-belt bodies in star-fixed cells around
+    // the viewed belt point (same place -> same bodies).
+    void drawBeltAsteroids(
+        const world::celestial::DetailMapSnapshot& planet,
+        const Viewport& viewport
+    );
+
     void drawDetailMapOrbit3D(
         const world::celestial::DetailMapOrbit& orbit,
         const world::celestial::DetailMapSnapshot& snapshot,

@@ -323,6 +323,9 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
         return presentation;
 
     double maxRadiusMeters = snapshot.planetRadiusMeters;
+    // asteroid belt: a local window on the belt (bodies fill it procedurally)
+    if (snapshot.asteroidBelt)
+        maxRadiusMeters = std::max(maxRadiusMeters, 3.0e9);
 
     for (const auto& orbit : snapshot.hubOrbits)
     {

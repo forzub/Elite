@@ -289,6 +289,7 @@ ELITE_WIRE_SCHEMA(
     v.freeFlightGroundMaterial,
     v.freeFlightGroundSlopeDeg,
     v.freeFlightGroundFeature,
+    v.freeFlightReferenceIsRoot,
     v.freeFlightAutopilotPhase,
     v.freeFlightAutopilotTargetId,
     v.freeFlightAutopilotRangeM,

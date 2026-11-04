@@ -60,6 +60,58 @@ namespace
 // HubCaptureEnvelope (PROPOSAL until hubs carry their own traffic-control radius): the hub's
 // approach / traffic zone in which its frame may capture a ship.
 constexpr double FreeFlightCaptureRadiusMeters = 50000.0;
+
+// J reference body (patched conics): the deepest body whose sphere of influence
+// contains the point - Laplace r = d(parent) * (mu / mu_parent)^0.4. The parent
+// is the catalog one ("...Земля.Луна" belongs to "...Земля": the Earth-Moon pair
+// is one system, the Sun is not part of it even though it pulls the Moon
+// harder); a planet's parent is the star. Earth's sphere ~925 000 km, the
+// Moon's ~66 000 km. Beyond every planet's sphere the root (the star) holds the
+// ship: planetary gravity negligible, the speed is the solar-system one.
+const game::navigation::GravityBody* referenceBody(const glm::dvec3& point,
+                                                   const std::vector<game::navigation::GravityBody>& bodies, bool& isRoot)
+{
+    const game::navigation::GravityBody* root = nullptr;
+    for (const auto& b : bodies)
+        if (b.gravitationalParameterM3s2 > 0.0 && (!root || b.gravitationalParameterM3s2 > root->gravitationalParameterM3s2))
+            root = &b;
+    const auto byId = [&](const std::string& id) -> const game::navigation::GravityBody* {
+        for (const auto& b : bodies)
+            if (b.id == id)
+                return &b;
+        return nullptr;
+    };
+    const game::navigation::GravityBody* best = root;
+    double bestSphere = std::numeric_limits<double>::infinity();
+    for (const auto& b : bodies)
+    {
+        if (&b == root || b.gravitationalParameterM3s2 <= 0.0)
+            continue;
+        // the catalog parent: the nearest enclosing id that is a body, else the star
+        const game::navigation::GravityBody* parent = nullptr;
+        for (std::string id = b.id; !parent;)
+        {
+            const auto dot = id.rfind('.');
+            if (dot == std::string::npos)
+                break;
+            id.resize(dot);
+            parent = byId(id);
+        }
+        if (!parent || parent->gravitationalParameterM3s2 <= b.gravitationalParameterM3s2)
+            parent = root;
+        if (!parent)
+            continue;
+        const double sphere = glm::length(parent->centerMeters - b.centerMeters) *
+                              std::pow(b.gravitationalParameterM3s2 / parent->gravitationalParameterM3s2, 0.4);
+        if (sphere < bestSphere && glm::length(point - b.centerMeters) < sphere)
+        {
+            bestSphere = sphere;
+            best = &b;
+        }
+    }
+    isRoot = best == root;
+    return best;
+}
 }
 
 void GameSimulation::setFreeFlightThrust(EntityId shipId, int command)
@@ -449,15 +501,23 @@ void GameSimulation::updateFreeFlights(double dt)
         f.elapsedSeconds += dt;
         const double speed = glm::length(frame.linearVelocityMps);
         f.peakSpeedMps = std::max(f.peakSpeedMps, speed);
-        f.primaryBodyId = g1.primaryBodyId;
-        f.primaryAltitudeMeters = g1.primaryAltitudeMeters;
+        bool referenceIsRoot = false;
+        const game::navigation::GravityBody* reference = referenceBody(frame.originMeters, m_gravityBodies, referenceIsRoot);
+        f.primaryBodyId = reference ? reference->id : g1.primaryBodyId;
+        f.primaryAltitudeMeters = reference ? glm::length(frame.originMeters - reference->centerMeters) - reference->radiusMeters
+                                            : g1.primaryAltitudeMeters;
+        motion.freeFlightReferenceIsRoot = referenceIsRoot ? 1 : 0;
 
-        // orbit relative to the dominant body (HUD: falling / climbing, circular speed, Pe / Ap)
+        // orbit relative to the reference body (sphere of influence) (HUD: falling / climbing, circular speed, Pe / Ap)
         {
-            const game::navigation::GravityBody* primary = nullptr;
-            for (const auto& body : m_gravityBodies)
-                if (body.id == g1.primaryBodyId)
-                    primary = &body;
+            // the J reference: speed, altitude, orbit, atmosphere and ground are all
+            // against the body whose sphere of influence holds the ship
+            const game::navigation::GravityBody* primary = reference;
+            if (primary && f.lastPrimaryId != primary->id)
+                std::cerr << "[FreeFlight] ship " << it->first.value << ": reference body -> " << primary->id
+                          << (referenceIsRoot ? " (root: planetary gravity negligible, global speed)" : " (its sphere of influence)")
+                          << " at " << glm::length(frame.originMeters - primary->centerMeters) / 1000.0 << " km from its centre"
+                          << std::endl;
             const bool continuous = primary && f.lastPrimaryId == primary->id && dt > 0.0;
             if (primary && continuous && primary->gravitationalParameterM3s2 > 0.0)
             {
@@ -471,8 +531,8 @@ void GameSimulation::updateFreeFlights(double dt)
                 const double h = glm::length(glm::cross(r, v));
                 motion.freeFlightOrbitBodyId = primary->id;
                 motion.freeFlightOrbitAltitudeM = rLen - primary->radiusMeters;
-                // J speed is flown against the dominant body (HUD, alignment,
-                // brake): a planet near it, the star beyond its influence
+                // J speed is flown against the reference body (HUD, alignment,
+                // brake): Earth all the way to the Moon, the Moon inside its sphere, the star (global speed) between the planets
                 motion.freeFlightReferenceId = primary->id;
                 motion.freeFlightReferenceVelocityMps = bodyVelocity;
                 motion.freeFlightOrbitSpeedMps = speed;
@@ -520,7 +580,7 @@ void GameSimulation::updateFreeFlights(double dt)
                 }
             }
 
-            // ---- Assisted J: an orbital "aircraft" against the dominant body
+            // ---- Assisted J: an orbital "aircraft" against the reference body
             if (primary && continuous && motion.freeFlightSurfaceState == 0)
             {
                 const glm::dvec3 bodyVelocity = (primary->centerMeters - f.lastPrimaryCenterMeters) / dt;

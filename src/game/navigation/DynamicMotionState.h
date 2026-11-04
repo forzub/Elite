@@ -131,6 +131,9 @@ struct DynamicMotionState
     std::uint8_t freeFlightGroundFeature = 0;
     // J autopilot (fly to a body and land): 0 off, 1 departure (clearing the body left),
     // 2 transfer (exponential thrust ramp / braking), 3 approach, 4 descent, 5 down
+    // 1: no planet's sphere of influence holds the ship - the reference is the
+    // star, planetary gravity negligible: global speed, no altitude (HUD dashes)
+    std::uint8_t freeFlightReferenceIsRoot = 0;
     std::uint8_t freeFlightAutopilotPhase = 0;
     std::string freeFlightAutopilotTargetId;
     double freeFlightAutopilotRangeM = 0.0;        // to the target surface

@@ -1570,6 +1570,41 @@ void SpaceState::renderNavigationStressOverlay(
 }
 
 
+namespace
+{
+// J HUD units by magnitude: m/s -> km/s; m -> km -> thousand / million km -> AU
+std::string jSpeed(double mps, bool signedValue = false)
+{
+    char t[48];
+    const double a = std::abs(mps);
+    const char* sign = signedValue ? (mps < 0.0 ? "-" : "+") : (mps < 0.0 ? "-" : "");
+    if (a < 1000.0)
+        std::snprintf(t, sizeof t, "%s%.0f м/с", sign, a);
+    else if (a < 100000.0)
+        std::snprintf(t, sizeof t, "%s%.2f км/с", sign, a / 1000.0);
+    else
+        std::snprintf(t, sizeof t, "%s%.0f км/с", sign, a / 1000.0);
+    return t;
+}
+
+std::string jDistance(double m)
+{
+    char t[48];
+    const double a = std::abs(m);
+    if (a < 10000.0)
+        std::snprintf(t, sizeof t, "%.0f м", m);
+    else if (a < 1.0e7)
+        std::snprintf(t, sizeof t, "%.1f км", m / 1000.0);
+    else if (a < 1.0e9)
+        std::snprintf(t, sizeof t, "%.0f тыс. км", m / 1.0e6);
+    else if (a < 1.5e10)
+        std::snprintf(t, sizeof t, "%.2f млн км", m / 1.0e9);
+    else
+        std::snprintf(t, sizeof t, "%.3f а.е.", m / 1.495978707e11);
+    return t;
+}
+}
+
 void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
 {
     if (!m_client || viewport.width <= 0 || viewport.height <= 0)
@@ -1588,9 +1623,16 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     const glm::dvec3 relative = motion.travelFrame.linearVelocityMps +
         motion.travelFrame.localToWorldVector(motion.localVelocityMps) - motion.freeFlightReferenceVelocityMps;
 
+    // the reference is the body whose sphere of influence holds the ship; beyond
+    // every planet's sphere it is the star and the speed is the global one
+    const bool global = motion.freeFlightReferenceIsRoot != 0;
     std::ostringstream line1;
-    line1 << "J  СВОБОДНЫЙ ПОЛЁТ - скорость относительно тела притяжения: "
-          << std::fixed << std::setprecision(0) << glm::length(relative) << " м/с отн. " << reference;
+    if (global)
+        line1 << "J  СВОБОДНЫЙ ПОЛЁТ - глобальная скорость " << jSpeed(glm::length(relative)) << " (отн. " << reference
+              << ")  ·  гравитация планет пренебрежима";
+    else
+        line1 << "J  СВОБОДНЫЙ ПОЛЁТ - скорость " << jSpeed(glm::length(relative)) << " отн. " << reference
+              << "  (в сфере её притяжения)";
     std::string thrust = motion.freeFlightThrust == 1 ? "ТЯГА ПОЛНАЯ" : motion.freeFlightThrust == 2 ? "ТОРМОЖЕНИЕ" : "ТЯГА ВЫКЛ";
     // the autopilot flies on the J drive, not on the latched main-engine command
     if (motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase <= 4)
@@ -1627,19 +1669,12 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         static const char* phases[] = {"", "уход от тела", "перелёт", "подход", "посадка", "на поверхности"};
         const int phase = std::min<int>(motion.freeFlightAutopilotPhase, 5);
         char ap[256];
-        const double h = motion.freeFlightAutopilotRangeM;
         if (phase == 5)
             std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s", target.c_str(), phases[phase]);
         else
-            std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s   ·   высота %s %s   ·   скорость %.*f %s   ·   ускорение %.1f g",
-                          target.c_str(), phases[phase],
-                          h > 1.0e6 ? std::to_string(static_cast<long long>(h / 1000.0)).c_str() : std::to_string(static_cast<long long>(h)).c_str(),
-                          h > 1.0e6 ? "км" : "м",
-                          motion.freeFlightAutopilotRelSpeedMps > 10000.0 ? 0 : 1,
-                          motion.freeFlightAutopilotRelSpeedMps > 10000.0 ? motion.freeFlightAutopilotRelSpeedMps / 1000.0
-                                                                          : motion.freeFlightAutopilotRelSpeedMps,
-                          motion.freeFlightAutopilotRelSpeedMps > 10000.0 ? "км/с" : "м/с",
-                          motion.freeFlightAutopilotAccelMps2 / 9.81);
+            std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s   ·   до поверхности %s   ·   скорость %s   ·   ускорение %.1f g",
+                          target.c_str(), phases[phase], jDistance(motion.freeFlightAutopilotRangeM).c_str(),
+                          jSpeed(motion.freeFlightAutopilotRelSpeedMps).c_str(), motion.freeFlightAutopilotAccelMps2 / 9.81);
         const float aw = text.measureTextPx(ap, 16) + 40.0f;
         const float ax = std::max(8.0f, (static_cast<float>(viewport.width) - aw) * 0.5f);
         const float ay = y + 104.0f;
@@ -1662,31 +1697,34 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         const glm::vec4 speedColour = ratio < 0.80 ? crimson : ratio < 0.90 ? red : ratio < 0.97 ? yellow
                                     : ratio < 0.995 ? white : motion.freeFlightOrbitSpeedMps > motion.freeFlightOrbitEscapeMps ? yellow : grey;
         char a[96], b[96], c[128];
-        std::snprintf(a, sizeof a, "1-я косм.  %.2f км/с", motion.freeFlightOrbitCircularMps / 1000.0);
-        std::snprintf(b, sizeof b, "V  %.2f км/с   (%+.0f м/с верт.)", motion.freeFlightOrbitSpeedMps / 1000.0, motion.freeFlightOrbitRadialMps);
-        // kilometres above 10 km (109309 m read as "100 000 km"); the minimum is the
-        // altitude where drag at orbital speed reaches 0.1 m/s2 (airless: a terrain margin)
-        const auto altText = [](double m) {
-            char t[48];
-            if (std::abs(m) >= 10000.0)
-                std::snprintf(t, sizeof t, "%.1f км", m / 1000.0);
-            else
-                std::snprintf(t, sizeof t, "%.0f м", m);
-            return std::string(t);
-        };
-        std::snprintf(c, sizeof c, "H  %s   мин. %s", altText(motion.freeFlightOrbitAltitudeM).c_str(), altText(safe).c_str());
+        // units by magnitude (109309 m was read as "100 000 km"); the minimum is the
+        // altitude where drag at orbital speed reaches 0.1 m/s2 (airless: a terrain
+        // margin). Beyond every planet's sphere: altitude and 1st cosmic are dashes.
+        if (global)
+        {
+            std::snprintf(a, sizeof a, "1-я косм.  —");
+            std::snprintf(b, sizeof b, "V  %s  (глобальная)", jSpeed(motion.freeFlightOrbitSpeedMps).c_str());
+            std::snprintf(c, sizeof c, "H  —");
+        }
+        else
+        {
+            std::snprintf(a, sizeof a, "1-я косм.  %s", jSpeed(motion.freeFlightOrbitCircularMps).c_str());
+            std::snprintf(b, sizeof b, "V  %s   (%s верт.)", jSpeed(motion.freeFlightOrbitSpeedMps).c_str(),
+                          jSpeed(motion.freeFlightOrbitRadialMps, true).c_str());
+            std::snprintf(c, sizeof c, "H  %s   мин. %s", jDistance(motion.freeFlightOrbitAltitudeM).c_str(), jDistance(safe).c_str());
+        }
         const float px = static_cast<float>(viewport.width) * 0.70f;
         const float py = static_cast<float>(viewport.height) * 0.64f;
         text.textDrawPx(a, px, py, 14, grey);
-        text.textDrawPx(b, px, py + 20.0f, 15, speedColour);
-        text.textDrawPx(c, px, py + 41.0f, 15, altColour);
+        text.textDrawPx(b, px, py + 20.0f, 15, global ? white : speedColour);
+        text.textDrawPx(c, px, py + 41.0f, 15, global ? grey : altColour);
         if (motion.freeFlightOrbitDenseAltM > 0.0)
         {
             char d[128];
             std::snprintf(d, sizeof d, "плотные слои %.1f км   сопр. %.2f м/с2",
                           motion.freeFlightOrbitDenseAltM / 1000.0, motion.freeFlightDragMps2);
             text.textDrawPx(d, px, py + 61.0f, 13, motion.freeFlightOrbitAltitudeM < motion.freeFlightOrbitDenseAltM ? crimson : grey);
-            text.textDrawPx("мин. = где сопротивление на орбитальной скорости 0.1 м/с2 (орбита быстро гаснет); плотные = 1 g",
+            text.textDrawPx("мин.: сопр. 0.1 м/с2 на орб. скорости · плотные: 1 g",
                             px, py + 79.0f, 11, grey);
         }
 
@@ -1731,7 +1769,7 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
             std::snprintf(atm, sizeof atm, "ВХОД В АТМОСФЕРУ: сопротивление %.1f м/с2 - скорость падает", motion.freeFlightDragMps2);
             warning = atm;
         }
-        else if (motion.freeFlightOrbitRadialMps < -1.0 && motion.freeFlightOrbitPeriapsisAltM < safe)
+        else if (!global && motion.freeFlightOrbitRadialMps < -1.0 && motion.freeFlightOrbitPeriapsisAltM < safe)
             warning = "ОПАСНОСТЬ СВАЛИВАНИЯ: перицентр ниже безопасной высоты - поднимите скорость";
         if (!warning.empty())
         {

@@ -2576,7 +2576,11 @@ Restore point: tag restore/pre-order-2026-11-04-g.
 - Planet Lab captures (D:/tmp/elite_lunar1): Modern near surface shows craters with rims; Elite approach shows
   crater rings. Game: landing on regolith 1.64 m/s (D:/tmp/elite_lunar_landing.mp4, 110 s from the descent).
   Geometry check 22 PASS (an 8-bit map blur I tried failed it 21/22 - removed). Not human-accepted.
-- OPEN: procedural airless moons (PlanetSurfaceField) still stop at ~16 m craters - give them the CraterLayer tail;
+- DONE (user: "give the crater layer to procedural moons"): PlanetSurfaceField AirlessRocky / Icy get the CraterLayer
+  below their smallest class (~28-95 m) down to 1.5 m (no second boulder set). Measured with Planet Lab --probe-fine on
+  the airless 'rocky' body: mean |slope| 0.150 -> 0.165, heights change ~1 m (mostly old shallow pits) - a subtle
+  ground-level effect; Planet Lab proc_moon (system 47) frames differ by a few pixels at 220 m. Not human-accepted.
+- OPEN:
   globe-level stair contours from the 8-bit relief bake; ejecta rays; the landing-friendly-areas / cracks / canyons
   / scarps / rocks terrain type (queued).
 

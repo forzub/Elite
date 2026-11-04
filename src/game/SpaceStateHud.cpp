@@ -1713,7 +1713,14 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
             std::snprintf(a, sizeof a, "1-я косм.  %s", jSpeed(motion.freeFlightOrbitCircularMps).c_str());
             std::snprintf(b, sizeof b, "V  %s   (%s верт.)", jSpeed(motion.freeFlightOrbitSpeedMps).c_str(),
                           jSpeed(motion.freeFlightOrbitRadialMps, true).c_str());
-            std::snprintf(c, sizeof c, "H  %s   мин. %s", jDistance(motion.freeFlightOrbitAltitudeM).c_str(), jDistance(safe).c_str());
+            // near the ground the height that matters is above the ground (under the
+            // hull); H over the mean radius (the Moon's highlands are +5 km) misled
+            if (motion.freeFlightGroundMaterial >= 0 && motion.freeFlightOrbitAltitudeM < 15000.0)
+                std::snprintf(c, sizeof c, "H  %s над грунтом   (%s над ср. радиусом)",
+                              jDistance(motion.freeFlightOrbitAltitudeM - motion.freeFlightGroundHeightM).c_str(),
+                              jDistance(motion.freeFlightOrbitAltitudeM).c_str());
+            else
+                std::snprintf(c, sizeof c, "H  %s   мин. %s", jDistance(motion.freeFlightOrbitAltitudeM).c_str(), jDistance(safe).c_str());
         }
         const float px = static_cast<float>(viewport.width) * 0.70f;
         const float py = static_cast<float>(viewport.height) * 0.64f;

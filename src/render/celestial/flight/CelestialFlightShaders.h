@@ -38,6 +38,7 @@ uniform vec3 uHazeColour;    // atmosphere tint (day sky at the horizon)
 uniform float uHazeDensity;  // 0 = airless
 uniform float uContourKm;    // Elite contour spacing
 uniform float uNaturalZones; // 1: the body states life or open water (zone palette); 0: its real albedo
+uniform float uRimScale;     // Elite globe outline strength (the backdrop globe low over the ground: faint)
 uniform float uDetailStrength; // procedural micro relief (normal tilt)
 uniform float uFarFade;        // 0 near .. 1 small disc: less contrast far away
 
@@ -188,10 +189,13 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
     {
         // Elite Classic: black opaque body, light grey vector lines.
         float coast = isGas > 0.5 ? 0.0 : lineMask(coastKm, 1.3);
-        float contour = isWater > 0.5 ? 0.0 : contourMask(heightKm / max(uContourKm, 1e-3), 0.9) * 0.45;
+        float contour = isWater > 0.5 ? 0.0 : contourMask(heightKm / max(uContourKm, 1e-3), 0.9) * (lattice >= 0.0 ? 0.8 : 0.45);
         if (isGas > 0.5)
             contour = contourMask(dot(land, vec3(0.3, 0.5, 0.2)) * 9.0, 1.0) * 0.6;
-        float grid = lattice >= 0.0 ? lattice * 0.35 : 0.0; // precomputed lattice line mask
+        // the local terrain (lattice >= 0) is what a landing pilot reads: its lines
+        // brighter, its horizon rim a faint hairline instead of a glowing band
+        bool terrainPass = lattice >= 0.0;
+        float grid = terrainPass ? lattice * 0.65 : 0.0; // precomputed lattice line mask
         float nv = dot(nSphere, viewDir);
         // relief standing past the sphere's limb (distant ridges seen low over the
         // ground: nv < 0) is not the outline - it lit the whole far terrain as a white wall
@@ -201,7 +205,7 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
         float fade = 0.30 + 0.70 * day;
         float lines = max(max(coast, contour), grid) * fade;
         float far = uHazeDensity > 0.0 ? exp(-dist * uHazeDensity * 0.3) : 1.0;
-        return uLineColour * max(lines * mix(0.35, 1.0, far), rim * 0.9);
+        return uLineColour * max(lines * mix(terrainPass ? 0.6 : 0.35, 1.0, far), rim * (terrainPass ? 0.2 : 0.9 * uRimScale));
     }
 
     vec3 albedo = mix(land, water, isWater);

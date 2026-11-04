@@ -1472,6 +1472,11 @@ m_hubVelocityMetersPerSecond[hubId] =
         // Orbital Transfer frames move first (carrier on the orbital clock), then every ship's
         // world pose is re-materialised from its travel frame.
         updateOrbitalTransfers();
+        // J flies against the bodies of THIS epoch: the gravity context below was
+        // still last tick's, so a ship resting on the Moon was placed one tick
+        // behind it (0.01 s x 29 km/s heliocentric ~ 300 m) and drawn under the
+        // rendered surface. Refresh it first (it is rebuilt again further down).
+        rebuildNavigationGravityContext();
         updateFreeFlights(dt);
         updateShipReferenceFrames(dt);
     }

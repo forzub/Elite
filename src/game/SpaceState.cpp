@@ -1461,7 +1461,8 @@ void SpaceState::update(float dt)
                         const auto& mo = shipIt->second.transform.motion;
                         std::cerr << "[DevJState] freeFlight " << mo.freeFlight << " frame " << mo.travelFrame.frameId
                                   << " global " << glm::length(mo.travelFrame.linearVelocityMps) / 1000.0 << " km/s, local "
-                                  << glm::length(mo.localVelocityMps) << " m/s, up (" << shipIt->second.transform.up().x << ", "
+                                  << glm::length(mo.localVelocityMps) << " m/s, server altitude " << mo.freeFlightOrbitAltitudeM
+                                  << " m (sphere), ground+hull " << mo.freeFlightGroundHeightM << " m, up (" << shipIt->second.transform.up().x << ", "
                                   << shipIt->second.transform.up().y << ", " << shipIt->second.transform.up().z << ")" << std::endl;
                     }
                 }

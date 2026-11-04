@@ -532,42 +532,67 @@ void GameSimulation::updateFreeFlights(double dt)
                 {
                     // the hull holds the velocity (prograde) when the pilot does not steer:
                     // thrust stays along the velocity while gravity bends the path
-                    if (!steering && motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::None &&
+                    // roll is free: it releases the prograde hold like steering does (the
+                    // alignment owns the whole attitude and swallowed the roll input), but
+                    // it does not bend the velocity
+                    const bool rolling = std::abs(control.rollInput) > 0.05f;
+                    if (!steering && !rolling && motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::None &&
                         motion.freeFlightThrust != 2)
                         motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::ForwardToVelocity;
-                    if (steering && motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::ForwardToVelocity)
+                    if ((steering || rolling) &&
+                        motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::ForwardToVelocity)
                         motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
-                    // Steering (yaw and pitch) flies like an aircraft, not like Newton:
-                    // the velocity against the body turns toward the nose at the same
-                    // speed - gradually (time constant 1.5 s, 2..20 deg/s) - in 3D, so
-                    // it works climbing straight away from a body too. The J drive
-                    // supplies the turn (no speed loss, no lateral cap).
-                    if (steering)
+                    // Assisted J steers like bending the main velocity, not like Newton:
+                    // the hull turns stiffly (pitch / yaw rate <= 4 deg/s) and may lead the
+                    // velocity by at most 10 deg - the velocity's inertia holds it there;
+                    // the velocity against the body follows the nose at the same speed
+                    // (angle / 2 s, so ~4 deg/s in a held turn), in 3D, by the J drive.
+                    // (Newtonian J keeps the free hull: thrust direction does the turning.)
+                    // Not while braking (END flips the hull) and not slower than 50 m/s
+                    // (hovering / landing: the velocity has no inertia to bend).
+                    if (motion.freeFlightThrust != 2 &&
+                        motion.velocityAlignmentMode != game::navigation::VelocityAlignmentMode::BackwardToVelocity &&
+                        glm::length(v) > 50.0)
                     {
-                        const glm::dvec3 nose = glm::normalize(-glm::dvec3(tr.orientation[2]));
+                        constexpr double HullRate = 4.0 * 3.14159265358979 / 180.0;
+                        constexpr double LeadLimit = 10.0 * 3.14159265358979 / 180.0;
+                        const double pr = tr.pitchRate, yr = tr.yawRate;
+                        const double turn = std::sqrt(pr * pr + yr * yr);
+                        if (turn > HullRate)
+                        {
+                            tr.pitchRate = static_cast<float>(pr * HullRate / turn);
+                            tr.yawRate = static_cast<float>(yr * HullRate / turn);
+                        }
                         const double speedRel = glm::length(v);
+                        glm::dvec3 nose = glm::normalize(glm::dvec3(tr.forward()));
                         if (speedRel > 1.0)
                         {
                             const glm::dvec3 vHat = v / speedRel;
-                            const double angle = std::acos(std::clamp(glm::dot(vHat, nose), -1.0, 1.0));
-                            if (angle > 1.0e-5)
+                            double angle = std::acos(std::clamp(glm::dot(vHat, nose), -1.0, 1.0));
+                            glm::dvec3 axis = glm::cross(vHat, nose);
+                            if (glm::length(axis) < 1.0e-9)
+                                axis = glm::dvec3(tr.up());
+                            axis = glm::normalize(axis);
+                            if (angle > LeadLimit)
                             {
-                                const double rate = std::clamp(angle / 1.5, glm::radians(2.0), glm::radians(20.0));
+                                // the velocity's inertia: the nose stops at the lead limit
+                                tr.orientation = glm::rotate(glm::mat4(1.0f), static_cast<float>(-(angle - LeadLimit)),
+                                                             glm::vec3(axis)) * tr.orientation;
+                                tr.pitchRate = tr.yawRate = 0.0f;
+                                angle = LeadLimit;
+                            }
+                            if (steering && angle > 1.0e-5)
+                            {
+                                const double rate = std::max(glm::radians(0.5), angle / 2.0);
                                 const double step = std::min(angle, rate * dt);
-                                glm::dvec3 axis = glm::cross(vHat, nose);
-                                if (glm::length(axis) < 1.0e-9)
-                                    axis = glm::dvec3(tr.up());   // nose straight back: turn over the top
-                                axis = glm::normalize(axis);
-                                // Rodrigues rotation of vHat about axis by step (axis is perpendicular to vHat)
                                 const glm::dvec3 turned = vHat * std::cos(step) + glm::cross(axis, vHat) * std::sin(step);
                                 const glm::dvec3 dv = turned * speedRel - v;
                                 frame.linearVelocityMps += dv;
                                 v += dv;
                                 if (std::fmod(f.elapsedSeconds, 1.0) < dt)
-                                    std::cerr << "[FreeFlight] ship " << it->first.value << " steering: velocity "
-                                              << glm::degrees(angle) << " deg off the nose, turning "
-                                              << glm::degrees(rate) << " deg/s at " << speedRel << " m/s vs " << primary->id
-                                              << std::endl;
+                                    std::cerr << "[FreeFlight] ship " << it->first.value << " steering: nose leads the velocity by "
+                                              << glm::degrees(angle) << " deg, velocity turning " << glm::degrees(rate)
+                                              << " deg/s at " << speedRel << " m/s vs " << primary->id << std::endl;
                             }
                         }
                     }

@@ -344,6 +344,31 @@ int main(int argc, char** argv)
                   " t (car + cargo + C20), then reattaches with mass restored");
     }
 
+    // ---- 16 RCS cluster units on 8 nodes: each unit is its own device
+    if (const auto* train = CatalogShipRegistry::instance().find("harmony.ship.he-t12.lokomotiv"))
+    {
+        auto core = spawn(*train);
+        const auto bank = core->installedNewtonianRcsBank(false);
+        const double healthy = bank.availableThrustN(0, 0);
+        bool twoUnits = true;
+        for (std::size_t i = 0; i < 24; ++i)
+            twoUnits = twoUnits && bank.count[i] == 2;
+        // node rcs_fore_upper_left: kill its first cluster unit only
+        const std::string unit1 = train->loadouts.front().rcsNozzles[0].unitNozzleIds.front();
+        const auto* nozzle = moduleOf(*train, unit1);
+        const std::string cluster1 = nozzle ? nozzle->parentModuleId : std::string();
+        const bool destroyed = core->debugDestroyModuleById(cluster1);
+        core->refreshRuntimeState();
+        const auto after = core->installedNewtonianRcsBank(false);
+        const double remaining = after.availableThrustN(0, 0);
+        const std::string unit2 = train->loadouts.front().rcsNozzles[0].unitNozzleIds.back();
+        const auto* state2 = core->moduleRuntime().findModule(unit2);
+        check(twoUnits && destroyed && healthy > 0.0 && std::abs(remaining - 0.5 * healthy) < 1e-6 * healthy &&
+                  state2 && state2->health > 0.0f,
+              "He-T12: 16 RCS clusters = 2 units per node, each with its own nozzles; destroying " + cluster1 +
+                  " leaves the second unit (" + num(healthy / 1e6, 1) + " -> " + num(remaining / 1e6, 1) + " MN on that nozzle)");
+    }
+
     // ---- fixed-step propulsion on the production control path
     struct Case
     {

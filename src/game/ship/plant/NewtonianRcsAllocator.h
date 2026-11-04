@@ -19,6 +19,57 @@
 
 namespace game::ship::plant
 {
+// The installed units behind each of the 24 bank nozzles. A mount node may
+// carry several RCS units (e.g. 16 cluster blocks on 8 nodes): each unit is
+// its own damageable module with its own nozzle, and a bank nozzle's
+// authority is the SUM of its living units (one fails, the other still
+// pushes). The common case is one unit per nozzle (implicit conversion).
+inline constexpr std::size_t MaxRcsUnitsPerNozzle = 4;
+struct RcsNozzleBank24
+{
+    std::array<std::array<game::equipment::engine::MountedEngine, MaxRcsUnitsPerNozzle>, 24> units {};
+    std::array<std::uint8_t, 24> count {};
+
+    RcsNozzleBank24() = default;
+    RcsNozzleBank24(const std::array<game::equipment::engine::MountedEngine, 24>& single) noexcept
+    {
+        for (std::size_t i = 0; i < 24; ++i)
+        {
+            units[i][0] = single[i];
+            count[i] = 1;
+        }
+    }
+
+    [[nodiscard]] double availableThrustN(std::size_t i, std::uint64_t tick) const noexcept
+    {
+        double n = 0.0;
+        for (std::size_t u = 0; u < count[i]; ++u)
+            n += std::max(0.0, game::equipment::engine::Engine(units[i][u]).instantaneousAvailableThrustNewtons(tick));
+        return n;
+    }
+
+    struct Sample
+    {
+        glm::dvec3 forceBodyNewtons {0.0};
+        double consumedElectricalMW = 0.0;
+        double generatedWasteHeatMW = 0.0;
+    };
+    // Every living unit of the nozzle runs at the same throttle.
+    [[nodiscard]] Sample execute(std::size_t i, double throttle01, const glm::dvec3& direction, std::uint64_t tick) const noexcept
+    {
+        Sample out;
+        for (std::size_t u = 0; u < count[i]; ++u)
+        {
+            const game::equipment::engine::Engine actuator(units[i][u]);
+            const auto sample = actuator.execute({throttle01, direction, tick});
+            out.forceBodyNewtons += sample.forceBodyNewtons;
+            out.consumedElectricalMW += sample.consumedElectricalMW;
+            out.generatedWasteHeatMW += sample.generatedWasteHeatMW;
+        }
+        return out;
+    }
+};
+
 struct NewtonianRcsDemand
 {
     glm::dvec3 forceBodyN {0.0};
@@ -90,7 +141,7 @@ struct NewtonianRcsResult
 // The returned physical wrench, not the request, is the only executable
 // result. A single damaged nozzle simply reduces its own force column.
 [[nodiscard]] inline NewtonianRcsResult allocateNewtonianRcs(
-    const std::array<game::equipment::engine::MountedEngine, 24>& installed,
+    const RcsNozzleBank24& installed,
     const NewtonianRcsDemand& demand
 )
 {
@@ -104,9 +155,7 @@ struct NewtonianRcsResult
     double momentScale=0.0;
     for (std::size_t i=0; i<24; ++i)
     {
-        const game::equipment::engine::Engine engine(installed[i]);
-        cap[i]=std::max(0.0,
-            engine.instantaneousAvailableThrustNewtons(demand.tick));
+        cap[i]=installed.availableThrustN(i,demand.tick);
         out.availabilityN[i]=cap[i];
         const auto& mount=mounts[i];
         const glm::dvec3 r=mount.positionBody *
@@ -153,11 +202,8 @@ struct NewtonianRcsResult
     double requestedMW=0.0;
     for(std::size_t i=0;i<24;++i)
     {
-        const game::equipment::engine::Engine actuator(installed[i]);
-        const game::equipment::engine::EngineCommand command {
-            out.throttle01[i],mounts[i].forceDirectionBody,demand.tick
-        };
-        requestedMW+=std::max(0.0,actuator.execute(command).consumedElectricalMW);
+        requestedMW+=std::max(0.0,installed.execute(
+            i,out.throttle01[i],mounts[i].forceDirectionBody,demand.tick).consumedElectricalMW);
     }
     double electricalScale=1.0;
     if(std::isfinite(demand.availableElectricalMW) && requestedMW>1.0e-12)
@@ -166,11 +212,8 @@ struct NewtonianRcsResult
     for(std::size_t i=0;i<24;++i)
     {
         out.throttle01[i]*=electricalScale;
-        const game::equipment::engine::Engine actuator(installed[i]);
-        const game::equipment::engine::EngineCommand command {
-            out.throttle01[i],mounts[i].forceDirectionBody,demand.tick
-        };
-        const auto sample=actuator.execute(command);
+        const auto sample=installed.execute(
+            i,out.throttle01[i],mounts[i].forceDirectionBody,demand.tick);
         out.deliveredForceN+=sample.forceBodyNewtons;
         const glm::dvec3 r=mounts[i].positionBody *
             demand.mountHalfExtentsM - demand.centerOfMassLocalMeters;
@@ -196,7 +239,7 @@ struct NewtonianRcsSignedAuthority
 
 [[nodiscard]] inline NewtonianRcsSignedAuthority
 sampleNewtonianRcsSignedAuthority(
-    const std::array<game::equipment::engine::MountedEngine,24>& installed,
+    const RcsNozzleBank24& installed,
     const glm::dvec3& halfExtentsMeters,
     const glm::dvec3& centerOfMassLocalMeters,
     std::uint64_t topologyKey = 0
@@ -205,11 +248,9 @@ sampleNewtonianRcsSignedAuthority(
     NewtonianRcsSignedAuthority authority;
     const auto& mounts=rcsNozzleBank(topologyKey);
     double totalForceN=0.0,totalMomentNm=0.0;
-    for(std::size_t i=0;i<installed.size();++i)
+    for(std::size_t i=0;i<24;++i)
     {
-        const game::equipment::engine::Engine engine(installed[i]);
-        const double capacity=std::max(
-            0.0,engine.instantaneousAvailableThrustNewtons(0));
+        const double capacity=installed.availableThrustN(i,0);
         totalForceN+=capacity;
         const glm::dvec3 lever=
             mounts[i].positionBody*halfExtentsMeters-
@@ -262,7 +303,7 @@ sampleNewtonianRcsSignedAuthority(
 // requested component over all pairs (1 = the per-axis limits can be used
 // together, < 1 = the axes share nozzles and cannot both be at full).
 [[nodiscard]] inline double newtonianRcsPairFeasibility01(
-    const std::array<game::equipment::engine::MountedEngine,24>& installed,
+    const RcsNozzleBank24& installed,
     const glm::dvec3& halfExtentsMeters,
     const glm::dvec3& centerOfMassLocalMeters,
     const NewtonianRcsSignedAuthority& limits,

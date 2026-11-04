@@ -28,6 +28,10 @@ struct ShipRcsNozzleMountDefinition
 {
     std::string nozzleId;
     std::string nodeId;
+    // Every installed unit nozzle that pushes along this bank nozzle (one
+    // per RCS unit on the node, each its own damageable module). Empty =
+    // the single unit nozzleId. The bank nozzle authority is their sum.
+    std::vector<std::string> unitNozzleIds;
     glm::dvec3 positionBody {0.0};
     glm::dvec3 forceDirectionBody {0.0};
 };

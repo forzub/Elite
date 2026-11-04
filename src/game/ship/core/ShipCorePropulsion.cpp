@@ -368,32 +368,11 @@ void ShipCore::updateTranslationControl(float dt)
         m_newtonianRcsPhysical=true;
         rcsMotion.installedRcsPlantExecuted=true;
         using game::equipment::engine::MountedEngine;
-        std::array<MountedEngine,24> installed {};
+        const auto installed=installedNewtonianRcsBank(true);
         const auto& desc=*m_state.construction.definition;
         const auto& runtime=
             static_cast<const world::modules::ObjectModuleRuntime&>(
                 m_moduleRuntime);
-        const auto mounts=game::ship::rcsNozzleIds(
-            desc,m_state.construction.physicalControlModel);
-        for(std::size_t i=0;i<mounts.size();++i)
-        {
-            const std::string id(mounts[i].nozzleId);
-            const auto def=std::find_if(
-                desc.modules.begin(),desc.modules.end(),
-                [&](const auto& module){return module.moduleId==id;});
-            const auto* state=runtime.findModule(id);
-            if(def==desc.modules.end() || !def->engine || !state)
-                continue; // Missing equipment is a ZERO-thrust column.
-            installed[i]={
-                &*def->engine,&state->equipmentDamage,
-                &state->engineOperating,mounts[i].nozzleId,
-                state->state ==
-                    world::modules::ObjectModuleRuntimeState::Attached &&
-                state->health>0.0f &&
-                m_propulsionReactorsOn &&
-                m_propulsionReactorsStartupRemainingSeconds<=0.0
-            };
-        }
 
         const glm::dvec3 oldRcsWorld=rcsMotion.manoeuvreAccelerationMps2;
         const glm::dvec3 right(m_transform.right());
@@ -481,9 +460,8 @@ void ShipCore::updateTranslationControl(float dt)
             1.0e-9,game::ship::angularAccelerationLimitRadPerSec2(physics));
         bool nozzleCanActuallyFire=false;
         if(demand.availableElectricalMW>1.0e-9)
-            for(std::size_t i=0;i<installed.size();++i)
-                if(game::equipment::engine::Engine(installed[i]).
-                    instantaneousAvailableThrustNewtons(demand.tick)>1.0e-9)
+            for(std::size_t i=0;i<24;++i)
+                if(installed.availableThrustN(i,demand.tick)>1.0e-9)
                 {
                     nozzleCanActuallyFire=true;
                     break;

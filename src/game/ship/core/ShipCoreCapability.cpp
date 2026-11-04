@@ -67,33 +67,7 @@ ShipCore::capabilities() const
                     game::ship::plant::PhysicalControlFamily::Newtonian)
             {
                 using game::equipment::engine::MountedEngine;
-                std::array<MountedEngine,24> mounted {};
-                const auto& definition=*m_state.construction.definition;
-                const auto catalog=game::ship::rcsNozzleIds(
-                    definition,m_state.construction.physicalControlModel);
-                const auto& runtime=
-                    static_cast<const world::modules::ObjectModuleRuntime&>(
-                        m_moduleRuntime);
-                for(std::size_t i=0;i<catalog.size();++i)
-                {
-                    const std::string id(catalog[i].nozzleId);
-                    const auto item=std::find_if(
-                        definition.modules.begin(),definition.modules.end(),
-                        [&](const auto& m){return m.moduleId==id;});
-                    const auto* state=runtime.findModule(id);
-                    if(item==definition.modules.end() ||
-                        !item->engine || !state)
-                        continue;
-                    mounted[i]={
-                        &*item->engine,
-                        &state->equipmentDamage,
-                        &state->engineOperating,
-                        catalog[i].nozzleId,
-                        state->state ==
-                            world::modules::ObjectModuleRuntimeState::Attached &&
-                        state->health>0.0f
-                    };
-                }
+                const auto mounted=installedNewtonianRcsBank(false);
                 auto& p=out.effectivePhysics;
                 const auto limits=
                     game::ship::plant::sampleNewtonianRcsSignedAuthority(
@@ -172,6 +146,41 @@ ShipCore::newtonianRcsGasTank(double& capacity01) const
                 state->health > 0.0f)
         : 0.0;
     return &*def->gasTank;
+}
+
+game::ship::plant::RcsNozzleBank24
+ShipCore::installedNewtonianRcsBank(bool requirePropulsionPower) const
+{
+    // The 24 bank nozzles and, behind each, every installed unit nozzle
+    // (one per RCS unit on the node); a dead unit is a zero column of its own.
+    game::ship::plant::RcsNozzleBank24 bank;
+    const auto& desc=*m_state.construction.definition;
+    const auto& runtime=
+        static_cast<const world::modules::ObjectModuleRuntime&>(m_moduleRuntime);
+    const auto units=game::ship::rcsNozzleUnitIds(
+        desc,m_state.construction.physicalControlModel);
+    const bool powered=!requirePropulsionPower ||
+        (m_propulsionReactorsOn && m_propulsionReactorsStartupRemainingSeconds<=0.0);
+    for(std::size_t i=0;i<units.size();++i)
+    {
+        for(const auto& view:units[i])
+        {
+            if(bank.count[i]>=game::ship::plant::MaxRcsUnitsPerNozzle)
+                break;
+            const std::string id(view);
+            const auto def=std::find_if(desc.modules.begin(),desc.modules.end(),
+                [&](const auto& m){return m.moduleId==id;});
+            const auto* state=runtime.findModule(id);
+            if(def==desc.modules.end() || !def->engine || !state)
+                continue; // Missing equipment is a ZERO-thrust column.
+            bank.units[i][bank.count[i]++]={
+                &*def->engine,&state->equipmentDamage,&state->engineOperating,view,
+                state->state==world::modules::ObjectModuleRuntimeState::Attached &&
+                    state->health>0.0f && powered
+            };
+        }
+    }
+    return bank;
 }
 
 double ShipCore::newtonianRcsGasThrustShare01() const
@@ -302,9 +311,10 @@ void ShipCore::newtonianPropulsionPowerShares(double& mainShare01, double& rcsSh
     if (m_newtonianRcsPhysical)
     {
         double rcsDemand = 2.0; // argon pressure-recovery compressor
-        for (const auto& nozzle : game::ship::rcsNozzleIds(
+        for (const auto& nozzle : game::ship::rcsNozzleUnitIds(
                  *m_state.construction.definition, model))
-            rcsDemand += fullDemandMW(std::string(nozzle.nozzleId));
+            for (const auto& unit : nozzle)
+                rcsDemand += fullDemandMW(std::string(unit));
         rcsShare01 = std::clamp(totalAvailableMW / rcsDemand, 0.0, 1.0);
     }
 }

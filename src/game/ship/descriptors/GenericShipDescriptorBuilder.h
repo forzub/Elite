@@ -318,7 +318,9 @@ struct MassSum
     std::vector<ModuleDescriptor> equipment;
     std::map<std::string, std::string> driveBySlot, reactorBySlot, nozzleByNode;   // slot / node -> module id
     std::map<std::string, glm::dvec3> driveSlotPos, reactorSlotPos, rcsNodePos;    // normalized mount positions
-    std::map<std::string, std::string> rcsNodeParent;                               // node -> cluster block module
+    std::map<std::string, std::string> rcsNodeParent;                               // node -> first cluster unit module
+    std::map<std::string, std::vector<std::string>> nozzleUnitsByNode;               // bank nozzle -> every unit nozzle module
+    std::vector<ShipPrimitiveBlock> rcsBlocks;                                       // one box per cluster unit
     const ShipDesignInstalledItem* rcsItem = nullptr;
     double equipmentKg = 0.0;
     for (const auto& item : s.installed)
@@ -352,53 +354,69 @@ struct MassSum
         if (item.category == "rcs")
         {
             rcsItem = &item;
-            // one block per node: nozzle units (24 FC-RCS) or k cluster blocks per node
+            // per node: nozzle units (24 FC-RCS: one module per nozzle) or k cluster
+            // units, EACH its own damageable module with its own three nozzles; a
+            // bank nozzle's authority is the sum of its node's living units.
             const bool nozzleUnits = p.text("runtime_preset") == "cobra.rcs.electric.fixed.v1" || item.quantity == 24;
             const int nodes = static_cast<int>(item.positions.size());
-            const double unitsPerNode = static_cast<double>(item.quantity) / std::max(1, nodes);
+            const int unitsPerNode = nozzleUnits ? 1 : std::max(1, item.quantity / std::max(1, nodes));
             for (int n = 0; n < nodes; ++n)
             {
                 const std::string node = n < static_cast<int>(item.slots.size()) ? item.slots[n] : ("rcs_node_" + std::to_string(n));
                 const auto& block = item.blocks[n];
                 rcsNodePos[node] = item.positions[n];
-                std::string parent;
-                if (!nozzleUnits)
+                const glm::dvec3 unitSize = nozzleUnits ? block.sizeMeters : block.sizeMeters / std::cbrt(static_cast<double>(unitsPerNode));
+                for (int j = 0; j < unitsPerNode; ++j)
                 {
-                    auto cluster = makeModule(item.code + "." + node, block.centerMeters, block.sizeMeters, p.massTonnes * unitsPerNode * 1000.0);
-                    cluster.moduleClass = item.productId;
-                    parent = cluster.moduleId;
-                    rcsNodeParent[node] = parent;
-                    mass.add(cluster.placement.massKg, block.centerMeters, block.sizeMeters * 0.5);
-                    equipmentKg += cluster.placement.massKg;
-                    equipment.push_back(std::move(cluster));
-                }
-                if (assisted)
-                    continue;      // Assisted flight has no RCS bank: the blocks are installed hardware only
-                for (const auto& nozzle : game::ship::plant::canonical::newtonianRcsNozzles())
-                {
-                    if (nozzle.nodeId != node)
-                        continue;
-                    const double nozzleKg = nozzleUnits ? p.massTonnes * 1000.0 : 0.0;   // a cluster's mass is its block
-                    auto unit = makeModule(rcsNozzleModuleId(item.code, nozzle.nozzleId), block.centerMeters,
-                                           block.sizeMeters * (nozzleUnits ? 0.6 : 0.4), nozzleKg);
-                    unit.subsystemId = "propulsion.rcs";
-                    unit.moduleClass = nozzleUnits ? item.productId : "manoeuvre_nozzle";
-                    unit.attachmentType = ModuleAttachmentType::SurfaceMounted;
-                    unit.repairable = true;
-                    unit.salvageable = true;
-                    if (!parent.empty())
+                    // co-located units sit side by side along the hull axis
+                    glm::dvec3 centre = block.centerMeters;
+                    centre.z += (j - (unitsPerNode - 1) * 0.5) * unitSize.z;
+                    const std::string unitId = item.code + "." + node + (unitsPerNode > 1 ? "." + std::to_string(j + 1) : std::string());
+                    std::string parent;
+                    if (!nozzleUnits)
                     {
-                        unit.parentModuleId = parent;
-                        unit.supportModuleIds = {parent};
+                        auto cluster = makeModule(unitId, centre, unitSize, p.massTonnes * 1000.0);
+                        cluster.moduleClass = item.productId;
+                        parent = cluster.moduleId;
+                        if (j == 0)
+                            rcsNodeParent[node] = parent;
+                        rcsBlocks.push_back({parent, item.category, detail::toVec3(centre), detail::toVec3(unitSize * 0.5)});
+                        mass.add(cluster.placement.massKg, centre, unitSize * 0.5);
+                        equipmentKg += cluster.placement.massKg;
+                        equipment.push_back(std::move(cluster));
                     }
-                    unit.engine = detail::nozzleFrom(p, nozzleUnits ? 1.0 : unitsPerNode);
-                    nozzleByNode[std::string(nozzle.nozzleId)] = unit.moduleId;
-                    if (nozzleKg > 0.0)
+                    if (assisted)
+                        continue;      // Assisted flight has no RCS bank: the blocks are installed hardware only
+                    for (const auto& nozzle : game::ship::plant::canonical::newtonianRcsNozzles())
                     {
-                        mass.add(nozzleKg, block.centerMeters, block.sizeMeters * 0.3);
-                        equipmentKg += nozzleKg;
+                        if (nozzle.nodeId != node)
+                            continue;
+                        const double nozzleKg = nozzleUnits ? p.massTonnes * 1000.0 : 0.0;   // a cluster's mass is its block
+                        const std::string nozzleId = unitsPerNode > 1
+                            ? unitId + "_" + std::string(1, nozzle.nozzleId.back())
+                            : rcsNozzleModuleId(item.code, nozzle.nozzleId);
+                        auto unit = makeModule(nozzleId, centre, unitSize * (nozzleUnits ? 0.6 : 0.4), nozzleKg);
+                        unit.subsystemId = "propulsion.rcs";
+                        unit.moduleClass = nozzleUnits ? item.productId : "manoeuvre_nozzle";
+                        unit.attachmentType = ModuleAttachmentType::SurfaceMounted;
+                        unit.repairable = true;
+                        unit.salvageable = true;
+                        if (!parent.empty())
+                        {
+                            unit.parentModuleId = parent;
+                            unit.supportModuleIds = {parent};
+                        }
+                        unit.engine = detail::nozzleFrom(p, 1.0);
+                        if (j == 0)
+                            nozzleByNode[std::string(nozzle.nozzleId)] = unit.moduleId;
+                        nozzleUnitsByNode[std::string(nozzle.nozzleId)].push_back(unit.moduleId);
+                        if (nozzleKg > 0.0)
+                        {
+                            mass.add(nozzleKg, centre, unitSize * 0.3);
+                            equipmentKg += nozzleKg;
+                        }
+                        equipment.push_back(std::move(unit));
                     }
-                    equipment.push_back(std::move(unit));
                 }
             }
             continue;
@@ -508,9 +526,11 @@ struct MassSum
         {
             std::string moduleId;
             if (item.category == "rcs")
-                moduleId = !rcsNodeParent.empty() && k < item.slots.size() && rcsNodeParent.count(item.slots[k])
-                               ? rcsNodeParent[item.slots[k]]
-                               : (k < item.slots.size() && nozzleByNode.count(item.slots[k] + "_x") ? nozzleByNode[item.slots[k] + "_x"] : std::string());
+            {
+                if (!rcsBlocks.empty())
+                    continue;      // cluster units: one box per unit, added below
+                moduleId = k < item.slots.size() && nozzleByNode.count(item.slots[k] + "_x") ? nozzleByNode[item.slots[k] + "_x"] : std::string();
+            }
             else
             {
                 const int count = moduleCountOf(item);
@@ -520,6 +540,8 @@ struct MassSum
             d.primitiveBlocks.push_back({moduleId, item.category, detail::toVec3(item.blocks[k].centerMeters),
                                          detail::toVec3(item.blocks[k].sizeMeters * 0.5)});
         }
+
+    d.primitiveBlocks.insert(d.primitiveBlocks.end(), rcsBlocks.begin(), rcsBlocks.end());
 
     // the placeholder part ids of each module ("<module>#<k>", CatalogShipAssembly.h):
     // a destroyed / detached module hides its own boxes on the client
@@ -607,6 +629,7 @@ struct MassSum
         {
             ShipRcsNozzleMountDefinition mount;
             mount.nozzleId = nozzleByNode[std::string(nozzle.nozzleId)];
+            mount.unitNozzleIds = nozzleUnitsByNode[std::string(nozzle.nozzleId)];
             mount.nodeId = std::string(nozzle.nodeId);
             mount.positionBody = rcsNodePos[mount.nodeId];
             mount.forceDirectionBody = nozzle.forceDirectionBody;

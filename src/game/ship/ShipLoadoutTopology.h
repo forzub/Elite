@@ -90,6 +90,27 @@ struct RcsNozzleIdView
     return out;
 }
 
+// All installed unit nozzle module ids behind each bank nozzle (several RCS
+// units on one node), same order as rcsNozzleIds().
+[[nodiscard]] inline std::array<std::vector<std::string_view>, 24> rcsNozzleUnitIds(
+    const ShipDescriptor& descriptor,
+    plant::PhysicalControlModelId model
+)
+{
+    std::array<std::vector<std::string_view>, 24> out {};
+    const auto* loadout = descriptor.findLoadout(model);
+    const auto ids = rcsNozzleIds(descriptor, model);
+    for (std::size_t i = 0; i < out.size(); ++i)
+    {
+        if (loadout && loadout->rcsNozzles.size() == out.size() && !loadout->rcsNozzles[i].unitNozzleIds.empty())
+            for (const auto& id : loadout->rcsNozzles[i].unitNozzleIds)
+                out[i].push_back(id);
+        else
+            out[i].push_back(ids[i].nozzleId);
+    }
+    return out;
+}
+
 // A loadout must keep the STRUCTURE of its physical control model: the same
 // slot count, ids, roles, force directions and freedoms, and (with RCS) the
 // 24-nozzle bank's node/direction pattern. Mount coordinates are the ship's

@@ -8,6 +8,7 @@
 #include <string>
 #include "src/world/modules/ObjectModuleRuntime.h"
 #include "src/game/equipment/rcs/RcsGasTankUnit.h"
+#include "src/game/ship/plant/NewtonianRcsAllocator.h"
 
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/game/ship/ShipVisualIdentity.h"
@@ -308,6 +309,10 @@ public:
     const game::equipment::rcs::RcsGasTankDescriptor*
         newtonianRcsGasTank(double& capacity01) const;
     double newtonianRcsGasThrustShare01() const;
+    // The installed Newtonian RCS bank: per bank nozzle, every living unit
+    // nozzle module (several RCS units may share one mount node).
+    game::ship::plant::RcsNozzleBank24 installedNewtonianRcsBank(
+        bool requirePropulsionPower) const;
     const RadarModule&                          radar() const               { return m_equipment.radar; }   
 
     const ReactorSystem&                        reactor() const               { return m_reactor; }  

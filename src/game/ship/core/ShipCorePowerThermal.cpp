@@ -331,13 +331,15 @@ void ShipCore::updateSystems(float dt)
         m_state.actuators.source ==
             game::ship::state::ShipActuatorStateSource::ModuleRuntime)
     {
-        const auto nozzles=game::ship::rcsNozzleIds(
+        const auto nozzles=game::ship::rcsNozzleUnitIds(
             *m_desc,m_state.construction.physicalControlModel);
         const double coolantK=m_propulsionThermal.getTemperature();
         bool changed=false;
         for(std::size_t i=0;i<nozzles.size();++i)
+        for(const auto& unit:nozzles[i])
         {
-            const std::string id(nozzles[i].nozzleId);
+            // every unit of a bank nozzle runs at the bank nozzle's duty
+            const std::string id(unit);
             const auto definition=std::find_if(
                 m_desc->modules.begin(),m_desc->modules.end(),
                 [&](const auto& module){return module.moduleId==id;});

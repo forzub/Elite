@@ -34,6 +34,7 @@
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"
 #include "src/game/ship/ShipLoadout.h"
+#include "src/game/catalog/ships/ShipCargoPassports.h"
 
 
 struct ShipIdentity
@@ -187,7 +188,7 @@ struct ShipCatalogRuntime
     double fluidsCapacityTonnes = 0.0;        // tanks: jump charge, pellets, RCS gas, cargo fluids
     double consumablesCapacityTonnes = 0.0;   // life-support stores for the endurance
     double personMassTonnes = 0.09;           // a person with kit
-    double containerTareTonnes = 2.2;         // empty C20 container
+    double containerTareTonnes = catalog::ships::C20TareTonnes; // canonical empty C20 container
     std::vector<std::string> tankModuleIds;
     std::vector<double> tankCapacityTonnes;
     std::vector<std::string> cargoHolderModuleIds;   // C20 racks, bulk holds, cryo tanks, train cars

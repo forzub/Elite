@@ -2177,11 +2177,12 @@ passport-id identity, runtime check, Cobra on the same path; economics NOT rewri
 - Evidence (offline): `EliteShipCatalogCheck` (now on the production ShipCore) PASS 227: per model -
   identity / topology key, passport coordinates in the loadout, hierarchy (no missing parent, every chain
   ends at hull.root, supports resolve), healthy slots + live generator groups (= passport MWe), devices
-  (radar range = passport), in-service mass, loaded mass = passport gross + C20 tare and lower
+  (radar range = passport), in-service mass, loaded mass = passport base gross + canonical C20 tare
+  (1.7 t from ShipCargoPassports; a full passport load occupies every declared C20 slot) and lower
   acceleration, docks / radiators / placement hit volumes, radar module destroyed -> radar off (second
   set keeps it), drive destroyed -> less thrust; train car detached -> mass -car -its cargo -its C20,
   acceleration up; fixed-step burns on the production control path (OCS-4, PK-30 Assisted capped by
-  its 1.5 g crew load, C-120 empty 6.70 / full 2.82 m/s2, He-T12 full 1.20, L-900 full 3.99, B-90
+  its 1.5 g crew load, C-120 empty 6.70 / full ~2.86 m/s2, He-T12 full ~1.22, L-900 full 3.99, B-90
   11.62, Cobrett N1 35.73, A3 71.8, B-4, ST-6) = thrust / live mass, spin < 0.02 rad/s; Cobrett
   passport vs legacy Cobra (N1 and A3): slot coordinates, drives, 24 nozzles, generators, mass,
   envelope, SR-70, radiators, C20 identical; NOTE A3 passport hold 110 t vs legacy 120 t (legacy one
@@ -2200,6 +2201,15 @@ passport-id identity, runtime check, Cobra on the same path; economics NOT rewri
   NewtonianPhysicalDiagnosticsTests no longer compiled (the allocator stopped including the Cobra nozzle
   header) - include added. Green: trajectory predictor, sensors, presentation, multiplayer, headless
   build + smoke, main build + fast universe smoke, standalone runtime, network process.
+- Review correction after 24f40671: generic runtime no longer invents a 2.2 t C20 tare. Both payload
+  (20 t) and tare (1.7 t) now come from the pre-existing authoritative ShipCargoPassports.h contract;
+  EliteShipCatalogCheck marks a full passport load with containers=containerSlots (OCS-4 = 24 boxes).
+  The designer's field name mass.gross_t / accel_g_loaded still excludes C20 tare and is therefore
+  semantically misleading; reconcile/rename it when the passport/economics layer is made authoritative.
+- Known RCS granularity limit found in review: designs with 16 cluster units at 8 mount positions are
+  represented as 8 damageable node-parent modules with 2x mass/authority each. Healthy mass/thrust is
+  correct, but losing a node currently removes both co-located clusters together; unit-level 16-cluster
+  damage requires a follow-up representation change.
 - Not done: the player cannot yet board a catalog ship (cockpit / view rely on the Cobra descriptor);
   Assisted designs with RCS blocks (He-F22) carry them as hardware only (Assisted has no RCS bank);
   Shipyard UI not started (by order); economics reconciliation pending (radiator_mw 3 400 for Cobrett

@@ -24,6 +24,7 @@
 #include <sstream>
 
 #include "src/game/navigation/DynamicMotionState.h"
+#include "src/game/catalog/ships/ShipCargoPassports.h"
 #include "src/game/ship/ShipInitData.h"
 #include "src/game/ship/core/ShipCore.h"
 #include "src/game/ship/descriptors/CatalogShipRegistry.h"
@@ -241,9 +242,14 @@ int main(int argc, char** argv)
         auto full = game::ship::core::ShipCore::serviceLoad(*d);
         full.persons = s.crew + s.passengers;
         full.cargoTonnes = s.cargoTonnes;
+        // "Full passport load" means every declared C20 place is occupied.
+        // This matters for mass-limited hulls such as OCS-4: 409 t net is
+        // spread across 24 containers, not packed into the minimum 21.
+        full.containers = s.containerSlots;
         core->setLoad(full);
-        const int boxes = std::min(s.containerSlots, static_cast<int>(std::ceil(s.cargoTonnes / 20.0)));
-        const double grossKg = (s.grossTonnes + boxes * 2.2) * 1000.0;
+        const int boxes = s.containerSlots;
+        const double grossKg =
+            (s.grossTonnes + boxes * catalog::ships::C20TareTonnes) * 1000.0;
         const double aFull = core->capabilities().effectivePhysics.forwardMainEngineAccelerationMps2;
         const double thrust = ratedThrustN(*d);
         const bool carries = s.cargoTonnes > 0.0 || s.passengers > 0;
@@ -299,7 +305,10 @@ int main(int argc, char** argv)
         core->setLoad(load);
         const double before = core->currentMassKg();
         const auto boxesAboard = [&](double cargo) {
-            return std::min(train->storage.containerSlots, static_cast<int>(std::ceil(cargo / 20.0)));
+            return std::min(
+                train->storage.containerSlots,
+                static_cast<int>(std::ceil(cargo / catalog::ships::C20PayloadTonnes))
+            );
         };
         const double aBefore = core->capabilities().effectivePhysics.forwardMainEngineAccelerationMps2;
         const std::string car = train->catalog.cargoHolderModuleIds.front();
@@ -308,8 +317,10 @@ int main(int argc, char** argv)
         const auto* m = moduleOf(*train, car);
         const double carCargo = train->catalog.cargoHolderCapacityTonnes.front();
         // the car leaves with its cargo and the C20 boxes that carried it
-        const double carKg = m->placement.massKg + carCargo * 1000.0 +
-                             (boxesAboard(load.cargoTonnes) - boxesAboard(load.cargoTonnes - carCargo)) * 2200.0;
+        const double carKg =
+            m->placement.massKg + carCargo * 1000.0 +
+            (boxesAboard(load.cargoTonnes) - boxesAboard(load.cargoTonnes - carCargo)) *
+                catalog::ships::C20TareTonnes * 1000.0;
         check(detached && std::abs((before - core->currentMassKg()) - carKg) < 1e-3 * carKg &&
                   core->capabilities().effectivePhysics.forwardMainEngineAccelerationMps2 > aBefore,
               "He-T12 train: detaching car " + car + " removes " + num((before - core->currentMassKg()) / 1000.0, 0) +

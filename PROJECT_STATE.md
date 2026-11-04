@@ -2362,6 +2362,28 @@ Restore point: tag restore/pre-ship-meshes-b-2026-11-04.
 - Full suite: the same 8 baseline red blocks; NAVIGATION SENSOR + IDEAL RADAR, multiplayer, network
   process, standalone runtime PASS. Human check of the scope pending.
 
+### User order 2026-11-04 g (accepted radar; queued work, in this order)
+Restore point: tag restore/pre-order-2026-11-04-g.
+1. Radar: episodic interference (the LCD glitch effects) from time to time; R cycles the scope range
+   20 / 50 / 150 km; in J (global) mode the radar looks only forward along the course to 2 000 km
+   (early hazard warning).
+2. Player ship identity: the player flies Cobrett A3 (Assisted) - my reports said N1; verify.
+3. Freezes: user video D:/tmp/freez01.mp4 (suspect: planet).
+4. Visual: "Elite classic" render - planet white for ~1 s at start; entering J the hub disappears and
+   then catches up the ship (time desync, as before).
+5. Details map: player position = golden marker "игрок" (hub cube golden when the player is in a hub);
+   planets opaque; labels behind a planet hidden; every map remembers its last view; rings / belts:
+   repeatable procedural asteroids (same place -> same asteroids).
+6. Hubs: describe the module composition next to the hub functions (shuttle dock 10 pads + hotel +
+   10 interstellar passenger platforms; admin station; one staff habitat; fuel dock 6; service dock 6;
+   fuel / gas terminal; cargo terminal (more docks); holding area).
+7. Economy: 30-40 grouped commodities; per-hub bulletin board for couriers / carriers (clickable
+   destination and hub list -> map, distance, owner, last known prices with network delay); ticks and
+   price drivers, quarantines, blocs (customs may turn ships away), sector patrols; supply / crew
+   delivery to remote hubs - beacons are hubs.
+8. Navigation in J: orbit-relative velocity (direction vs the planet radius, gravity: falling and
+   missing), star-relative outside planets - to explore with an interplanetary flight.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

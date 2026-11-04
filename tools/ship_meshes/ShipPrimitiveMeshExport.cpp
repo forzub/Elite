@@ -10,7 +10,8 @@
 // from the index. Folders are written ONLY for index entries with
 // "source": "primitive" (or new passports whose folder does not exist yet);
 // an "authored" entry (hand-made mesh, e.g. the existing Cobrett folders) and
-// any folder the index does not own are never touched. Replacing a primitive
+// any folder the index does not own (unless every OBJ in it carries this tool's
+// header) are never touched. Replacing a primitive
 // set by an authored mesh = put the new OBJ files in the folder and set the
 // entry's source to "authored".
 //
@@ -161,6 +162,21 @@ std::string readText(const fs::path& p)
 
 int drift = 0;
 
+// a folder this tool wrote: every OBJ of every LOD carries the exporter header
+bool writtenByExporter(const fs::path& dir)
+{
+    std::error_code ec;
+    int objs = 0;
+    for (const auto& f : fs::recursive_directory_iterator(dir, ec))
+        if (f.path().extension() == ".obj")
+        {
+            ++objs;
+            if (readText(f.path()).rfind("# EliteShipMeshExport", 0) != 0)
+                return false;
+        }
+    return objs > 0;
+}
+
 void emit(const fs::path& p, const std::string& text, bool check)
 {
     std::error_code ec;
@@ -211,8 +227,11 @@ int main(int argc, char** argv)
         json entry = json::object();
         if (const auto it = previous.find(s.id); it != previous.end())
             entry = it->second;
+        // a ship flying an existing hand-made descriptor keeps its authored mesh folder
+        // (assets/ is untracked: the default must survive a lost index)
         const bool existingRuntime = s.runtime.rfind("existing:", 0) == 0;
-        const std::string folder = entry.value("folder", folderOf(s.id));
+        const std::string authoredDefault = s.runtime.rfind("existing:EliteCobraMk1:", 0) == 0 ? "cobretty-mk1-int" : folderOf(s.id);
+        const std::string folder = entry.value("folder", existingRuntime ? authoredDefault : folderOf(s.id));
         const std::string source = entry.value("source", existingRuntime ? "authored" : "primitive");
         entry["folder"] = folder;
         entry["passportId"] = s.id;
@@ -249,7 +268,7 @@ int main(int argc, char** argv)
             ships.push_back(entry);
             continue;
         }
-        if (previous.find(s.id) == previous.end() && fs::exists(dir, ec))
+        if (previous.find(s.id) == previous.end() && fs::exists(dir, ec) && !writtenByExporter(dir))
         {
             std::cout << "FAIL " << dir.generic_string() << " exists but the index does not own it - not touched\n";
             return 2;

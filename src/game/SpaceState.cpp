@@ -1391,6 +1391,13 @@ void SpaceState::update(float dt)
                         {"moon", "system_0.Sol.Земля.Луна"}, {"earth", "system_0.Sol.Земля"}, {"mars", "system_0.Sol.Марс"},
                         {"here", ""}};
                     std::string id = arg("autopilot:");
+                    // "autopilot:moon@pad:<lat>,<lon>" lands on a pad; plain = wild site search
+                    std::string landingSpec;
+                    if (const auto at = id.find('@'); at != std::string::npos)
+                    {
+                        landingSpec = id.substr(at + 1);
+                        id.resize(at);
+                    }
                     for (const auto& [k, v] : bodies)
                         if (id == k)
                             id = v;
@@ -1404,7 +1411,7 @@ void SpaceState::update(float dt)
                         m_client->sendMessage(msg);
                     }
                     else
-                        requestFreeFlightAutopilot(id);
+                        requestFreeFlightAutopilot(id, landingSpec);
                 }
                 // the panel list: open it / pick a row (the same action a click on the row makes)
                 else if (cmd == "listopen")

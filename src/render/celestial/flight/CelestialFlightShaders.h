@@ -205,7 +205,7 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
         float fade = 0.30 + 0.70 * day;
         float lines = max(max(coast, contour), grid) * fade;
         float far = uHazeDensity > 0.0 ? exp(-dist * uHazeDensity * 0.3) : 1.0;
-        return uLineColour * max(lines * mix(terrainPass ? 0.6 : 0.35, 1.0, far), rim * (terrainPass ? 0.2 : 0.9 * uRimScale));
+        return uLineColour * max(lines * mix(terrainPass ? 0.6 : 0.35, 1.0, far), rim * (terrainPass ? 0.0 : 0.9 * uRimScale));
     }
 
     vec3 albedo = mix(land, water, isWater);

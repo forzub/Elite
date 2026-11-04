@@ -2005,7 +2005,10 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             globe.set("uContourKm", static_cast<float>(rt->contourKm));
             globe.set("uNaturalZones", naturalZones(*rt) ? 1.0f : 0.0f);
             globe.set("uSkyDisc", static_cast<float>(it.skyDisc));
-            globe.set("uRimScale", lowOverTerrain ? 0.2f : 1.0f);
+            // low over the terrain no outline at all: it drew a level line through the
+            // HUD cross (the horizon of the smooth backdrop sphere); the relief lines
+            // carry the horizon's shape
+            globe.set("uRimScale", lowOverTerrain ? 0.0f : 1.0f);
             const double texel = tex ? b.radiusM * 1.5708 / rt->globe.size : 0.0;
             globe.set("uMicroWavelength", quality.detailNormals && tex ? static_cast<float>(texel * 0.6) : 0.0f);
             globe.set("uDetailStrength", 0.25f);

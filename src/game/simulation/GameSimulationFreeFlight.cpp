@@ -130,7 +130,7 @@ void GameSimulation::setFreeFlightThrust(EntityId shipId, int command)
               << (command == 1 ? "FULL (HOME)" : command == 2 ? "BRAKE (END)" : "OFF (INSERT)") << std::endl;
 }
 
-void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& bodyId, bool engage)
+void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& bodyId, bool engage, const std::string& landingSpec)
 {
     Ship* ship = getShip(shipId);
     const auto active = m_freeFlights.find(shipId);
@@ -157,6 +157,17 @@ void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& 
     }
     f.autopilotTargetId = target;
     f.autopilotDepartureId = f.primaryBodyId;
+    // landing: "pad:<lat>,<lon>" (degrees, body-fixed) or a wild-terrain site search
+    f.landingRequest = game::navigation::landing::LandingRequest {};
+    f.landingStarted = false;
+    double lat = 0.0, lon = 0.0;
+    if (landingSpec.rfind("pad:", 0) == 0 && std::sscanf(landingSpec.c_str() + 4, "%lf,%lf", &lat, &lon) == 2)
+    {
+        const double la = glm::radians(lat), lo = glm::radians(lon);
+        f.landingRequest.mode = game::navigation::landing::LandingMode::Pad;
+        // body basis (prime, north, east)
+        f.landingRequest.padBodyDirection = glm::dvec3(std::cos(la) * std::cos(lo), std::sin(la), std::cos(la) * std::sin(lo));
+    }
     f.autopilotPhase = 2;
     f.autopilotSeconds = 0.0;
     f.autopilotHaveLastCenter = false;
@@ -170,7 +181,10 @@ void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& 
         motion.freeFlightSurfaceState = 0;   // lift off: the autopilot climbs away
     }
     std::cerr << "[Autopilot] ship " << shipId.value << ": ENGAGED -> " << target << " (departure " << f.autopilotDepartureId
-              << ")" << std::endl;
+              << "), landing "
+              << (f.landingRequest.mode == game::navigation::landing::LandingMode::Pad ? "on a pad " + landingSpec
+                                                                                       : std::string("wild: flat-site search"))
+              << std::endl;
 }
 
 void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt)
@@ -221,16 +235,113 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     glm::dvec3 wanted(0.0);
     double limit = ramp;
     int phase = f.autopilotPhase;
+    int shownPhase = phase;
+    double shownRange = height;
+    glm::dvec3 landingNose(0.0), landingUp(0.0);
     if (phase == 4)
     {
-        const double h = std::max(0.0, height);
-        const double down = std::max(1.5, std::min({400.0, std::sqrt(2.0 * 15.0 * h), h / 4.0}));
-        wanted = -up * down;
+        // the landing module (game::navigation::landing): site planner + transit + descent
+        namespace landing = game::navigation::landing;
+        glm::dmat3 worldFromBody(1.0);
+        if (m_bodyOrientation)
+            (void)m_bodyOrientation(target->id, worldFromBody);
+        const auto probe = [&](const glm::dvec3& bodyDirection, landing::TerrainPoint& out) {
+            TerrainSample s;
+            if (!m_terrainHeight || !m_terrainHeight(target->id, worldFromBody * bodyDirection, s))
+                return false;
+            out.heightM = s.heightM;
+            out.slopeDeg = s.slopeDeg;
+            out.material = s.material;
+            return true;
+        };
+        glm::dvec3 hull = ship.core().effectivePhysics().physicalActuatorHalfExtentsMeters;
+        if (hull.x <= 0.0 || hull.y <= 0.0 || hull.z <= 0.0)
+            hull = glm::dvec3(8.0, 3.0, 15.0);
+        if (!f.landingStarted)
+        {
+            f.landing.start(f.landingRequest, glm::transpose(worldFromBody) * up);
+            f.landingStarted = true;
+        }
+        const bool hadSite = f.landing.site().valid;
+        landing::LandingInput in;
+        in.bodyCentreM = target->centerMeters;
+        in.bodyVelocityMps = targetVelocity;
+        in.worldFromBody = worldFromBody;
+        in.bodyRadiusM = target->radiusMeters;
+        in.bodyMuM3s2 = target->gravitationalParameterM3s2;
+        in.shipPositionM = frame.originMeters;
+        in.shipVelocityMps = frame.linearVelocityMps;
+        in.shipForward = glm::dvec3(tr.forward());
+        in.hullHalfExtentsM = hull;
+        in.groundUnderShipM = ground;
+        in.dt = dt;
+        const landing::LandingCommand cmd = f.landing.step(in, probe);
+        if (!hadSite && f.landing.site().valid)
+        {
+            const auto& site = f.landing.site();
+            std::cerr << "[Autopilot] ship " << shipId.value << ": landing site ("
+                      << (f.landingRequest.mode == landing::LandingMode::Pad ? "pad" : "wild search") << ") "
+                      << site.offsetM << " m from the start, slope " << site.slopeDeg << " deg, roughness "
+                      << site.roughnessM << " m, ground " << site.heightM << " m, material " << site.material << " - "
+                      << f.landing.status() << std::endl;
+        }
+        wanted = w + cmd.deltaVelocityMps;
         limit = DescentAccelMps2;
+        landingNose = cmd.noseWorld;
+        landingUp = cmd.upWorld;
+        const auto lp = f.landing.phase();
+        shownPhase = lp == landing::LandingPhase::Planning ? 7 : lp == landing::LandingPhase::Orbit ? 8
+                   : lp == landing::LandingPhase::Transit ? 6 : 4;
+        shownRange = lp == landing::LandingPhase::Transit ? cmd.distanceToSiteM : cmd.heightAboveGroundM;
     }
     else
     {
-        const glm::dvec3 aim = target->centerMeters + up * (target->radiusMeters + AimAltitudeM);
+        // choose the landing site AHEAD (from 200 000 km: the terrain loads in the
+        // background) and aim the approach above it - the lander lands where it chose
+        glm::dvec3 aimDirection = up;
+        {
+            namespace landing = game::navigation::landing;
+            glm::dmat3 worldFromBody(1.0);
+            if (m_bodyOrientation)
+                (void)m_bodyOrientation(target->id, worldFromBody);
+            if (rLen < 2.0e8)
+            {
+                f.landingPlanSeconds -= dt;
+                if (!f.landing.site().valid && f.landingPlanSeconds <= 0.0)
+                {
+                    f.landingPlanSeconds = 2.0;
+                    const auto probe = [&](const glm::dvec3& bodyDirection, landing::TerrainPoint& out) {
+                        TerrainSample s;
+                        if (!m_terrainHeight || !m_terrainHeight(target->id, worldFromBody * bodyDirection, s))
+                            return false;
+                        out.heightM = s.heightM;
+                        out.slopeDeg = s.slopeDeg;
+                        out.material = s.material;
+                        return true;
+                    };
+                    glm::dvec3 hull = ship.core().effectivePhysics().physicalActuatorHalfExtentsMeters;
+                    if (hull.x <= 0.0 || hull.y <= 0.0 || hull.z <= 0.0)
+                        hull = glm::dvec3(8.0, 3.0, 15.0);
+                    if (!f.landingStarted)
+                    {
+                        f.landing.start(f.landingRequest, glm::transpose(worldFromBody) * up);
+                        f.landingStarted = true;
+                    }
+                    if (f.landing.planAhead(glm::transpose(worldFromBody) * up, target->radiusMeters, hull, probe))
+                    {
+                        const auto& site = f.landing.site();
+                        std::cerr << "[Autopilot] ship " << shipId.value << ": landing site chosen AHEAD at "
+                                  << height / 1000.0 << " km ("
+                                  << (f.landingRequest.mode == landing::LandingMode::Pad ? "pad" : "wild search") << "): "
+                                  << site.offsetM << " m from the approach point, slope " << site.slopeDeg << " deg, roughness "
+                                  << site.roughnessM << " m, ground " << site.heightM << " m" << std::endl;
+                    }
+                }
+            }
+            if (f.landing.site().valid)
+                aimDirection = glm::normalize(worldFromBody * f.landing.site().bodyDirection);
+        }
+        const glm::dvec3 aim = target->centerMeters + aimDirection * (target->radiusMeters + AimAltitudeM);
         const glm::dvec3 toAim = aim - frame.originMeters;
         const double d = glm::length(toAim);
         glm::dvec3 dir = d > 1e-3 ? toAim / d : glm::dvec3(0.0);
@@ -247,6 +358,19 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
                     side = glm::cross(dir, std::abs(dir.z) < 0.9 ? glm::dvec3(0, 0, 1) : glm::dvec3(1, 0, 0));
                 dir = glm::normalize(side);
                 phase = 1;
+            }
+        }
+        // never through the target either (an aim point on its far side): go round
+        if (phase == 2 && d > 1.0)
+        {
+            const glm::dvec3 s = frame.originMeters - target->centerMeters;
+            const double t = std::clamp(-glm::dot(s, toAim) / (d * d), 0.0, 1.0);
+            if (t < 0.98 && glm::length(s + toAim * t) < target->radiusMeters + AimAltitudeM * 0.5)
+            {
+                glm::dvec3 side = s - dir * glm::dot(s, dir);
+                if (glm::length(side) < 1.0)
+                    side = glm::cross(dir, std::abs(dir.z) < 0.9 ? glm::dvec3(0, 0, 1) : glm::dvec3(1, 0, 0));
+                dir = glm::normalize(glm::normalize(side) + dir * 0.2);
             }
         }
         const double braking = std::sqrt(2.0 * 0.4 * maxAccel * d);
@@ -277,13 +401,8 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     glm::dvec3 noseWanted(0.0), upWanted = glm::dvec3(tr.up());
     if (phase == 4)
     {
-        glm::dvec3 heading = glm::dvec3(tr.forward()) - up * glm::dot(glm::dvec3(tr.forward()), up);
-        if (glm::length(heading) < 1.0e-3)
-            heading = glm::dvec3(tr.up()) - up * glm::dot(glm::dvec3(tr.up()), up);   // nose was vertical
-        if (glm::length(heading) < 1.0e-3)
-            heading = glm::cross(up, std::abs(up.z) < 0.9 ? glm::dvec3(0, 0, 1) : glm::dvec3(1, 0, 0));
-        noseWanted = glm::normalize(heading);
-        upWanted = up;
+        noseWanted = landingNose;   // level: belly down, nose to the horizon (the module's heading)
+        upWanted = landingUp;
     }
     else
     {
@@ -313,9 +432,9 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
         tr.pitchRate = tr.yawRate = tr.rollRate = 0.0f;
     }
 
-    motion.freeFlightAutopilotPhase = static_cast<std::uint8_t>(phase);
+    motion.freeFlightAutopilotPhase = static_cast<std::uint8_t>(shownPhase);
     motion.freeFlightAutopilotTargetId = target->id;
-    motion.freeFlightAutopilotRangeM = height;
+    motion.freeFlightAutopilotRangeM = shownRange;
     motion.freeFlightAutopilotRelSpeedMps = glm::length(w + dv);
     // signed along the velocity: braking is a negative acceleration (the speed still
     // grows while it is positive, however small)
@@ -762,8 +881,20 @@ void GameSimulation::updateFreeFlights(double dt)
                 // solid ground and sea: contact by vertical speed (crush deceleration over ~2 m)
                 else if (alt <= ground)
                 {
-                    const double vVert = -glm::dot(v, rHat);
-                    const double vHor = glm::length(v - rHat * glm::dot(v, rHat));
+                    // against the turning ground, not the body centre (Earth's equator
+                    // moves 465 m/s: every landing there counted as a crash)
+                    glm::dvec3 vg = v;
+                    {
+                        glm::dmat3 basisNow(1.0);
+                        if (m_bodyOrientation && m_bodyOrientation(primary->id, basisNow) && f.haveLastBasis &&
+                            f.lastBasisBodyId == primary->id && dt > 0.0)
+                        {
+                            const glm::dvec3 r = frame.originMeters - primary->centerMeters;
+                            vg -= (basisNow * glm::transpose(f.lastBasis) * r - r) / dt;
+                        }
+                    }
+                    const double vVert = -glm::dot(vg, rHat);
+                    const double vHor = glm::length(vg - rHat * glm::dot(vg, rHat));
                     // the ground decides: soft regolith / sand / snow / soil give way (~3 m),
                     // rock / basalt / ice ~1.5 m, water a splashdown (~4 m, but the hull takes
                     // a beating), lava is lethal; a steep slope tips the ship over
@@ -797,8 +928,14 @@ void GameSimulation::updateFreeFlights(double dt)
                               << " vertical " << vVert << " m/s horizontal " << vHor << " m/s (" << crushG << " g), ground material "
                               << material << " slope " << slope << " deg feature " << (terrainKnown ? terrain.feature : 0) << " - "
                               << (motion.freeFlightSurfaceState == 1 ? "landed / survivable" : "CRASH") << std::endl;
-                    // rest on the surface, moving with the body
+                    // rest on the surface, moving with the body (body-fixed: it turns with it)
                     frame.originMeters = primary->centerMeters + rHat * (primary->radiusMeters + ground);
+                    {
+                        glm::dmat3 worldFromBody(1.0);
+                        f.landedBodyKnown = m_bodyOrientation && m_bodyOrientation(primary->id, worldFromBody);
+                        f.landedBodyDirection = glm::transpose(worldFromBody) * rHat;
+                        f.landedGroundM = ground;
+                    }
                     frame.linearVelocityMps = bodyVelocity;
                     motion.freeFlightThrust = 0;
                     ship->core().refreshRuntimeState();
@@ -814,9 +951,27 @@ void GameSimulation::updateFreeFlights(double dt)
                     motion.freeFlightSurfaceState = 0;                     // lift off
                 else
                 {
-                    frame.originMeters = primary->centerMeters + rHat * (primary->radiusMeters + motion.freeFlightGroundHeightM);
+                    // body-fixed rest: the spot it touched down on turns with the body (a
+                    // world-fixed direction let the Moon turn under it - the ship slid
+                    // over the relief and sank where the ground was higher)
+                    glm::dvec3 restDir = rHat;
+                    double restGround = motion.freeFlightGroundHeightM;
+                    glm::dmat3 worldFromBody(1.0);
+                    if (f.landedBodyKnown && m_bodyOrientation && m_bodyOrientation(primary->id, worldFromBody))
+                    {
+                        restDir = glm::normalize(worldFromBody * f.landedBodyDirection);
+                        restGround = f.landedGroundM;
+                    }
+                    frame.originMeters = primary->centerMeters + restDir * (primary->radiusMeters + restGround);
                     frame.linearVelocityMps = bodyVelocity;
                 }
+            }
+            if (primary)
+            {
+                glm::dmat3 basis(1.0);
+                f.haveLastBasis = m_bodyOrientation && m_bodyOrientation(primary->id, basis);
+                f.lastBasis = basis;
+                f.lastBasisBodyId = primary->id;
             }
             // ---- J autopilot
             if (!f.autopilotTargetId.empty())

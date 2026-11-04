@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/game/navigation/landing/LandingAutopilot.h"
 #include <functional>
 #include "src/game/simulation/ShipRefitSnapshot.h"
 #include "src/game/navigation/orbital/OrbitalTransferPlanner.h"
@@ -219,6 +220,19 @@ public:
         double autopilotSeconds = 0.0;
         double autopilotLastLogSeconds = -1.0e30;
         bool autopilotHaveLastCenter = false;
+        // the landing module (planner + transit + descent) once the approach is over
+        game::navigation::landing::LandingRequest landingRequest;
+        game::navigation::landing::LandingAutopilot landing;
+        bool landingStarted = false;
+        double landingPlanSeconds = 0.0;
+        // landed: the touchdown spot, body-fixed (it turns with the body)
+        bool landedBodyKnown = false;
+        glm::dvec3 landedBodyDirection {0.0};
+        double landedGroundM = 0.0;
+        // the reference body's basis one tick ago (surface velocity = its turn)
+        bool haveLastBasis = false;
+        glm::dmat3 lastBasis {1.0};
+        std::string lastBasisBodyId;
         glm::dvec3 autopilotLastTargetCenter {0.0};
     };
     bool toggleFreeFlight(EntityId shipId);
@@ -236,9 +250,13 @@ public:
     using TerrainHeightProvider =
         std::function<bool(const std::string& bodyId, const glm::dvec3& worldDirection, TerrainSample& ground)>;
     void setTerrainHeightProvider(TerrainHeightProvider provider) { m_terrainHeight = std::move(provider); }
+    // body-fixed basis of a body in the world (columns prime, north, east - the
+    // renderer's / terrain's orientation): landing sites turn with the body
+    using BodyOrientationProvider = std::function<bool(const std::string& bodyId, glm::dmat3& worldFromBody)>;
+    void setBodyOrientationProvider(BodyOrientationProvider provider) { m_bodyOrientation = std::move(provider); }
     void setFreeFlightThrust(EntityId shipId, int command);
     // J autopilot: fly to a body and land on it (empty id = the dominant body); engage false cancels
-    void setFreeFlightAutopilot(EntityId shipId, const std::string& bodyId, bool engage);
+    void setFreeFlightAutopilot(EntityId shipId, const std::string& bodyId, bool engage, const std::string& landingSpec = {});
 
     // Repair & Refit (F7): a preview / DEV apply of one module operation on
     // a ship owned by the commanding ship's owner (subject 0 = that ship).
@@ -600,6 +618,7 @@ private:
     std::unordered_map<EntityId, ActiveOrbitalTransfer> m_orbitalTransfers;
     std::unordered_map<EntityId, ActiveFreeFlight> m_freeFlights;
     TerrainHeightProvider m_terrainHeight;
+    BodyOrientationProvider m_bodyOrientation;
     void updateFreeFlightAutopilot(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
 
     // Compatibility alias used by the current single-system navigation and

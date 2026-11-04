@@ -52,6 +52,20 @@ GameServer::GameServer(std::size_t bootstrapPlayerSlotCount)
             [this](const std::string& bodyId, const glm::dvec3& worldDirection, GameSimulation::TerrainSample& ground) {
                 return terrainHeight(bodyId, worldDirection, ground);
             });
+        m_simulation.setBodyOrientationProvider([this](const std::string& bodyId, glm::dmat3& worldFromBody) {
+            const auto* snapshot = celestialSnapshotForSystem(m_appliedSimulationContextSystemId);
+            if (!snapshot)
+                return false;
+            for (const auto& b : snapshot->bodies)
+                if (b.id == bodyId)
+                {
+                    const auto o = game::system_map::makePlanetTextureOrientation(b.axialTiltDeg, b.axisNodeDeg,
+                                                                                  b.rotationPhaseRad, b.textureLongitudeOffsetDeg);
+                    worldFromBody = glm::dmat3(glm::dvec3(o.prime), glm::dvec3(o.north), glm::dvec3(o.east));
+                    return true;
+                }
+            return false;
+        });
 
         m_universeClock.reset();
         m_universeClock.setTimeScale(
@@ -858,7 +872,7 @@ void GameServer::update(double dt)
                     break;
 
                 case ClientShipCommand::FreeFlightAutopilot:
-                    m_simulation.setFreeFlightAutopilot(id, shipCmd.target, shipCmd.index != 0);
+                    m_simulation.setFreeFlightAutopilot(id, shipCmd.target, shipCmd.index != 0, shipCmd.detail);
                     break;
 
                 case ClientShipCommand::RefitPreview:

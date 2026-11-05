@@ -124,6 +124,14 @@ inline void appendRcsGroup(
             {"36A3", "Ship service reactor", "ship_service_reactor", ""});
         p.assemblies.push_back(
             {"36A4", "Common cooling", "ship_common_cooling", ""});
+        // Cobrett jump system. The design data already carried the Z-0.5 core;
+        // keep it in the C++ installation passport as a first-class replaceable
+        // assembly as well, so repair/spares cannot lose the jump drive.
+        p.assemblies.push_back({"36A5", "Cobrett jump system", "", ""});
+        p.assemblies.push_back({"36A5A1", "Jump core Z-0.5",
+            "ship_jump_core", "um.core.z05"});
+        p.assemblies.push_back({"36A5A2", "Jump-charge tank",
+            "ship_jump_charge_tank", "std.tank.jumpcharge"});
         return p;
     }();
     return passport;
@@ -179,6 +187,9 @@ inline void appendRcsGroup(
             {"37A2A3", "Left fore main engine", "ship_fore_engine_L", engine},
             {"37A3", "Ship service reactor", "ship_service_reactor", ""},
             {"37A4", "Common cooling", "ship_common_cooling", ""},
+            {"37A5", "Cobrett jump system", "", ""},
+            {"37A5A1", "Jump core Z-0.5", "ship_jump_core", "um.core.z05"},
+            {"37A5A2", "Jump-charge tank", "ship_jump_charge_tank", "std.tank.jumpcharge"},
         };
         return p;
     }();

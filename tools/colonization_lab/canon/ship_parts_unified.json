@@ -1,0 +1,3786 @@
+{
+  "schema": "elite.ship_parts_unified.v1",
+  "status": "PROPOSAL/model",
+  "source_head": "722a7ec18500b4335ec94e9246f9c1f794c149ac",
+  "source": "tools/colonization_lab/canon/ship_designs.json",
+  "purpose": "Canonical replaceable-unit catalogue for spares, repair, ship construction and later frame integration.",
+  "geometry_rule": {
+    "status": "PROPOSAL/model",
+    "note": "Dimensions are equipment replaceable-unit envelopes, not hull frames. Cobrett runtime geometry anchors are preserved; other sizes are scaled from declared mass/power using the same effective-density philosophy as ship_designer.py.",
+    "cobrett_anchors": {
+      "cr1_thermal_emitter_diameter_m": 5,
+      "er5_cooling_pad_side_m": 11
+    },
+    "frame_passports": "DEFERRED"
+  },
+  "standardization": {
+    "legacy_skus": 121,
+    "canonical_skus": 102,
+    "removed_by_unification": 19,
+    "major_technical_lru_skus": 66,
+    "mission_survival_weapon_and_payload_skus": 36,
+    "policy": [
+      "A more powerful standard drive may replace a weaker unit and is software/power limited to the ship's rated thrust/input.",
+      "Large reactor ratings may be built from parallel banks of a smaller standard reactor; bank power is limited to the ship passport rating.",
+      "Standardization never changes the ship's rated thrust or required electrical input without an explicit later design decision.",
+      "Frame and mount geometry are deliberately not canonical yet; only equipment envelopes and service clearances are provided."
+    ],
+    "legacy_resolution": {
+      "kb.drive.n1-axial": {
+        "canonical_id": "kb.drive.n1-axial",
+        "quantity_multiplier": 1
+      },
+      "kb.drive.cr1-vector": {
+        "canonical_id": "kb.drive.cr1-vector",
+        "quantity_multiplier": 1
+      },
+      "ofu.drive.u33": {
+        "canonical_id": "ofu.drive.u33",
+        "quantity_multiplier": 1
+      },
+      "ofu.drive.u73l": {
+        "canonical_id": "ofu.drive.u73l",
+        "quantity_multiplier": 1
+      },
+      "ofu.drive.u43": {
+        "canonical_id": "ofu.drive.u70",
+        "quantity_multiplier": 1,
+        "reason": "У-70 derated; one Sol axial family replaces U-43",
+        "operating_limit": {
+          "rated_thrust_fraction": 0.6186,
+          "rated_input_power_fraction": 0.4615
+        }
+      },
+      "ofu.drive.u15": {
+        "canonical_id": "ofu.drive.u65m",
+        "quantity_multiplier": 1,
+        "reason": "У-65М wide-vector unit derated for service tender",
+        "operating_limit": {
+          "rated_thrust_fraction": 0.2308,
+          "rated_input_power_fraction": 0.2778
+        }
+      },
+      "ofu.drive.u65m": {
+        "canonical_id": "ofu.drive.u65m",
+        "quantity_multiplier": 1
+      },
+      "ofu.drive.u70": {
+        "canonical_id": "ofu.drive.u70",
+        "quantity_multiplier": 1
+      },
+      "ofu.drive.u23": {
+        "canonical_id": "ofu.drive.u33",
+        "quantity_multiplier": 1,
+        "reason": "У-33 derated to the U-23 operating point",
+        "operating_limit": {
+          "rated_thrust_fraction": 0.7061,
+          "rated_input_power_fraction": 0.8333
+        }
+      },
+      "th.drive.tz13": {
+        "canonical_id": "th.drive.tz28",
+        "quantity_multiplier": 1,
+        "reason": "ТЦ-28 derated for medium freighter; same heavy axial family",
+        "operating_limit": {
+          "rated_thrust_fraction": 0.4727,
+          "rated_input_power_fraction": 0.3273
+        }
+      },
+      "th.drive.tz23": {
+        "canonical_id": "th.drive.tz28",
+        "quantity_multiplier": 1,
+        "reason": "ТЦ-28 derated for jump train",
+        "operating_limit": {
+          "rated_thrust_fraction": 0.8182,
+          "rated_input_power_fraction": 0.6364
+        }
+      },
+      "th.drive.tz11": {
+        "canonical_id": "th.drive.tz11",
+        "quantity_multiplier": 1
+      },
+      "th.drive.tz16v": {
+        "canonical_id": "th.drive.tz16v",
+        "quantity_multiplier": 1
+      },
+      "th.drive.tz28": {
+        "canonical_id": "th.drive.tz28",
+        "quantity_multiplier": 1
+      },
+      "kern.drive.kt1": {
+        "canonical_id": "kern.drive.kt1",
+        "quantity_multiplier": 1
+      },
+      "hyp.drive.hd4": {
+        "canonical_id": "kb.drive.n1-axial",
+        "quantity_multiplier": 1,
+        "reason": "Cognium-pool axial standard; N1 derated to 4 MN",
+        "operating_limit": {
+          "rated_thrust_fraction": 0.4184,
+          "rated_input_power_fraction": 0.8247
+        }
+      },
+      "hyp.drive.hd3": {
+        "canonical_id": "kb.drive.n1-axial",
+        "quantity_multiplier": 1,
+        "reason": "Cognium-pool axial standard; N1 derated to 3 MN",
+        "operating_limit": {
+          "rated_thrust_fraction": 0.3138,
+          "rated_input_power_fraction": 0.5155
+        }
+      },
+      "kb.reactor.er5": {
+        "canonical_id": "kb.reactor.er5",
+        "quantity_multiplier": 1
+      },
+      "kb.reactor.er3": {
+        "canonical_id": "kb.reactor.er5",
+        "quantity_multiplier": 1,
+        "reason": "ER-5 derated to 2.75 GW",
+        "operating_limit": {
+          "bank_rated_output_fraction": 0.55
+        }
+      },
+      "kb.reactor.er1": {
+        "canonical_id": "kb.reactor.er1",
+        "quantity_multiplier": 1
+      },
+      "ofu.reactor.er26": {
+        "canonical_id": "srw.reactor.sr48",
+        "quantity_multiplier": 1,
+        "reason": "Sol SR-4.8 common propulsion reactor derated to 2.6 GW",
+        "operating_limit": {
+          "bank_rated_output_fraction": 0.5417
+        }
+      },
+      "srw.reactor.sr9": {
+        "canonical_id": "srw.reactor.sr48",
+        "quantity_multiplier": 2,
+        "reason": "two SR-4.8 in parallel, 9.6 GW installed / 9 GW rated",
+        "operating_limit": {
+          "bank_rated_output_fraction": 0.9375
+        }
+      },
+      "srw.reactor.sr33": {
+        "canonical_id": "srw.reactor.sr48",
+        "quantity_multiplier": 1,
+        "reason": "SR-4.8 derated to 3.3 GW",
+        "operating_limit": {
+          "bank_rated_output_fraction": 0.6875
+        }
+      },
+      "srw.reactor.sr14": {
+        "canonical_id": "srw.reactor.sr48",
+        "quantity_multiplier": 1,
+        "reason": "SR-4.8 derated to 1.4 GW",
+        "operating_limit": {
+          "bank_rated_output_fraction": 0.2917
+        }
+      },
+      "srw.reactor.sr48": {
+        "canonical_id": "srw.reactor.sr48",
+        "quantity_multiplier": 1
+      },
+      "srw.reactor.sr7": {
+        "canonical_id": "srw.reactor.sr48",
+        "quantity_multiplier": 2,
+        "reason": "two SR-4.8 in parallel, 9.6 GW installed / 7 GW rated",
+        "operating_limit": {
+          "bank_rated_output_fraction": 0.7292
+        }
+      },
+      "srw.reactor.sr22": {
+        "canonical_id": "srw.reactor.sr48",
+        "quantity_multiplier": 1,
+        "reason": "SR-4.8 derated to 2.2 GW",
+        "operating_limit": {
+          "bank_rated_output_fraction": 0.4583
+        }
+      },
+      "th.reactor.tr10": {
+        "canonical_id": "th.reactor.tr10",
+        "quantity_multiplier": 1
+      },
+      "th.reactor.tr20": {
+        "canonical_id": "th.reactor.tr10",
+        "quantity_multiplier": 2,
+        "reason": "two TR-10 in parallel",
+        "operating_limit": {
+          "bank_rated_output_fraction": 1
+        }
+      },
+      "th.reactor.tr11": {
+        "canonical_id": "th.reactor.tr10",
+        "quantity_multiplier": 2,
+        "reason": "two TR-10 in parallel and derated to 10.7 GW total",
+        "operating_limit": {
+          "bank_rated_output_fraction": 0.535
+        }
+      },
+      "th.reactor.tr26v": {
+        "canonical_id": "th.reactor.tr26v",
+        "quantity_multiplier": 1
+      },
+      "th.reactor.tr30": {
+        "canonical_id": "th.reactor.tr10",
+        "quantity_multiplier": 3,
+        "reason": "three TR-10 in parallel",
+        "operating_limit": {
+          "bank_rated_output_fraction": 1
+        }
+      },
+      "kb.apu.s70": {
+        "canonical_id": "kb.apu.s150",
+        "quantity_multiplier": 1,
+        "reason": "SR-150 derated to 70 MW",
+        "operating_limit": {
+          "bank_rated_output_fraction": 0.4667
+        }
+      },
+      "ofu.apu.s20": {
+        "canonical_id": "srw.apu.s60",
+        "quantity_multiplier": 1,
+        "reason": "Sol S-60 common service reactor derated to 20 MW",
+        "operating_limit": {
+          "bank_rated_output_fraction": 0.3333
+        }
+      },
+      "srw.apu.s60": {
+        "canonical_id": "srw.apu.s60",
+        "quantity_multiplier": 1
+      },
+      "srw.apu.s200": {
+        "canonical_id": "srw.apu.s200",
+        "quantity_multiplier": 1
+      },
+      "th.apu.s150": {
+        "canonical_id": "th.apu.s150",
+        "quantity_multiplier": 1
+      },
+      "th.apu.s600": {
+        "canonical_id": "th.apu.s600",
+        "quantity_multiplier": 1
+      },
+      "kb.apu.s150": {
+        "canonical_id": "kb.apu.s150",
+        "quantity_multiplier": 1
+      },
+      "kb.rad.cs-panel": {
+        "canonical_id": "kb.rad.cs-panel",
+        "quantity_multiplier": 1
+      },
+      "th.rad.panel50": {
+        "canonical_id": "th.rad.panel50",
+        "quantity_multiplier": 1
+      },
+      "sol.rad.panel50": {
+        "canonical_id": "sol.rad.panel50",
+        "quantity_multiplier": 1
+      },
+      "kb.cool.loop200": {
+        "canonical_id": "kb.cool.loop200",
+        "quantity_multiplier": 1
+      },
+      "th.cool.loop600": {
+        "canonical_id": "th.cool.loop600",
+        "quantity_multiplier": 1
+      },
+      "sol.cool.loop300": {
+        "canonical_id": "sol.cool.loop300",
+        "quantity_multiplier": 1
+      },
+      "um.core.z05": {
+        "canonical_id": "um.core.z05",
+        "quantity_multiplier": 1
+      },
+      "um.core.z1": {
+        "canonical_id": "um.core.z1",
+        "quantity_multiplier": 1
+      },
+      "um.core.z5": {
+        "canonical_id": "um.core.z5",
+        "quantity_multiplier": 1
+      },
+      "mizan.core.m5": {
+        "canonical_id": "kapehu.core.k5",
+        "quantity_multiplier": 1,
+        "reason": "former legacy id mizan.core.m5; Pacific/Tauranga canonical replacement"
+      },
+      "mizan.core.m12": {
+        "canonical_id": "kapehu.core.k12",
+        "quantity_multiplier": 1,
+        "reason": "former legacy id mizan.core.m12; Pacific/Tauranga canonical replacement"
+      },
+      "harmony.core.h5": {
+        "canonical_id": "harmony.core.h5",
+        "quantity_multiplier": 1
+      },
+      "harmony.core.h12": {
+        "canonical_id": "harmony.core.h12",
+        "quantity_multiplier": 1
+      },
+      "harmony.core.h80": {
+        "canonical_id": "harmony.core.h80",
+        "quantity_multiplier": 1
+      },
+      "bastion.core.b12": {
+        "canonical_id": "bastion.core.b12",
+        "quantity_multiplier": 1
+      },
+      "std.tank.jumpcharge": {
+        "canonical_id": "std.tank.jumpcharge",
+        "quantity_multiplier": 1
+      },
+      "std.tank.pellets": {
+        "canonical_id": "std.tank.pellets",
+        "quantity_multiplier": 1
+      },
+      "kb.rcs.fc-nozzle": {
+        "canonical_id": "kb.rcs.fc-nozzle",
+        "quantity_multiplier": 1
+      },
+      "kb.rcs.argon-tank": {
+        "canonical_id": "kb.rcs.argon-tank",
+        "quantity_multiplier": 1
+      },
+      "std.rcs.cluster": {
+        "canonical_id": "std.rcs.cluster",
+        "quantity_multiplier": 1
+      },
+      "std.rcs.cluster_h": {
+        "canonical_id": "std.rcs.cluster_h",
+        "quantity_multiplier": 1
+      },
+      "xz.mc.c1": {
+        "canonical_id": "xz.mc.c1",
+        "quantity_multiplier": 1
+      },
+      "xz.mc.c3": {
+        "canonical_id": "xz.mc.c3",
+        "quantity_multiplier": 1
+      },
+      "mizan.mc.m1": {
+        "canonical_id": "kapehu.mc.k1",
+        "quantity_multiplier": 1,
+        "reason": "former legacy id mizan.mc.m1; Pacific/Tauranga canonical replacement"
+      },
+      "bastion.mc.w1": {
+        "canonical_id": "bastion.mc.w1",
+        "quantity_multiplier": 1
+      },
+      "hyp.mc.r1": {
+        "canonical_id": "hyp.mc.r1",
+        "quantity_multiplier": 1
+      },
+      "xz.radar.n2": {
+        "canonical_id": "xz.radar.n2",
+        "quantity_multiplier": 1
+      },
+      "xz.radar.n10": {
+        "canonical_id": "xz.radar.n10",
+        "quantity_multiplier": 1
+      },
+      "bastion.radar.s50": {
+        "canonical_id": "bastion.radar.s50",
+        "quantity_multiplier": 1
+      },
+      "hyp.radar.pa100": {
+        "canonical_id": "hyp.radar.pa100",
+        "quantity_multiplier": 1
+      },
+      "kern.radar.deb5": {
+        "canonical_id": "kern.radar.deb5",
+        "quantity_multiplier": 1
+      },
+      "xz.comm.c1": {
+        "canonical_id": "xz.comm.c1",
+        "quantity_multiplier": 1
+      },
+      "xz.comm.c3": {
+        "canonical_id": "xz.comm.c3",
+        "quantity_multiplier": 1
+      },
+      "bastion.comm.w1": {
+        "canonical_id": "bastion.comm.w1",
+        "quantity_multiplier": 1
+      },
+      "um.xpdr.t1": {
+        "canonical_id": "um.xpdr.t1",
+        "quantity_multiplier": 1
+      },
+      "hyp.ecm.e1": {
+        "canonical_id": "hyp.ecm.e1",
+        "quantity_multiplier": 1
+      },
+      "hyp.relay.r1": {
+        "canonical_id": "hyp.relay.r1",
+        "quantity_multiplier": 1
+      },
+      "eurohab.ls.l4": {
+        "canonical_id": "eurohab.ls.l4",
+        "quantity_multiplier": 1
+      },
+      "eurohab.ls.l20": {
+        "canonical_id": "eurohab.ls.l20",
+        "quantity_multiplier": 1
+      },
+      "eurohab.ls.l200": {
+        "canonical_id": "eurohab.ls.l200",
+        "quantity_multiplier": 1
+      },
+      "terra.ls.t10": {
+        "canonical_id": "terra.ls.t10",
+        "quantity_multiplier": 1
+      },
+      "terra.ls.t60": {
+        "canonical_id": "terra.ls.t60",
+        "quantity_multiplier": 1
+      },
+      "terra.ls.t200": {
+        "canonical_id": "terra.ls.t200",
+        "quantity_multiplier": 1
+      },
+      "uhuru.ls.u500": {
+        "canonical_id": "uhuru.ls.u500",
+        "quantity_multiplier": 1
+      },
+      "ofu.ls.o4": {
+        "canonical_id": "ofu.ls.o4",
+        "quantity_multiplier": 1
+      },
+      "kb.surv.capsule2": {
+        "canonical_id": "kb.surv.capsule2",
+        "quantity_multiplier": 1
+      },
+      "std.surv.pod4": {
+        "canonical_id": "std.surv.pod4",
+        "quantity_multiplier": 1
+      },
+      "std.surv.boat20": {
+        "canonical_id": "std.surv.boat20",
+        "quantity_multiplier": 1
+      },
+      "std.surv.refuge100": {
+        "canonical_id": "std.surv.refuge100",
+        "quantity_multiplier": 1
+      },
+      "std.med.bay": {
+        "canonical_id": "std.med.bay",
+        "quantity_multiplier": 1
+      },
+      "std.cargo.c20lock": {
+        "canonical_id": "std.cargo.c20lock",
+        "quantity_multiplier": 1
+      },
+      "ofu.cargo.p20": {
+        "canonical_id": "ofu.cargo.p20",
+        "quantity_multiplier": 1
+      },
+      "std.cabin.hold6": {
+        "canonical_id": "std.cabin.hold6",
+        "quantity_multiplier": 1
+      },
+      "agora.hab.pax100": {
+        "canonical_id": "agora.hab.pax100",
+        "quantity_multiplier": 1
+      },
+      "bharat.hab.bunk500": {
+        "canonical_id": "bharat.hab.bunk500",
+        "quantity_multiplier": 1
+      },
+      "uhuru.cryo.pod100": {
+        "canonical_id": "uhuru.cryo.pod100",
+        "quantity_multiplier": 1
+      },
+      "harmony.mod.cargo4800": {
+        "canonical_id": "harmony.mod.cargo4800",
+        "quantity_multiplier": 1
+      },
+      "harmony.mod.tank4200": {
+        "canonical_id": "harmony.mod.tank4200",
+        "quantity_multiplier": 1
+      },
+      "sol.cryo.t1000": {
+        "canonical_id": "sol.cryo.t1000",
+        "quantity_multiplier": 1
+      },
+      "std.cargo.hold100": {
+        "canonical_id": "std.cargo.hold100",
+        "quantity_multiplier": 1
+      },
+      "std.dock.collar": {
+        "canonical_id": "std.dock.collar",
+        "quantity_multiplier": 1
+      },
+      "std.bay.boat": {
+        "canonical_id": "std.bay.boat",
+        "quantity_multiplier": 1
+      },
+      "std.bay.drone4": {
+        "canonical_id": "std.bay.drone4",
+        "quantity_multiplier": 1
+      },
+      "harmony.bay.hangar2": {
+        "canonical_id": "harmony.bay.hangar2",
+        "quantity_multiplier": 1
+      },
+      "bastion.bay.hangar4": {
+        "canonical_id": "bastion.bay.hangar4",
+        "quantity_multiplier": 1
+      },
+      "ofu.lift.shield": {
+        "canonical_id": "ofu.lift.shield",
+        "quantity_multiplier": 1
+      },
+      "ofu.lift.gear": {
+        "canonical_id": "ofu.lift.gear",
+        "quantity_multiplier": 1
+      },
+      "kern.tow.raft20k": {
+        "canonical_id": "kern.tow.raft20k",
+        "quantity_multiplier": 1
+      },
+      "kern.tow.heavy": {
+        "canonical_id": "kern.tow.heavy",
+        "quantity_multiplier": 1
+      },
+      "sol.workshop.w1": {
+        "canonical_id": "sol.workshop.w1",
+        "quantity_multiplier": 1
+      },
+      "std.armour.ceramic": {
+        "canonical_id": "std.armour.ceramic",
+        "quantity_multiplier": 1
+      },
+      "bastion.armour.heavy": {
+        "canonical_id": "bastion.armour.heavy",
+        "quantity_multiplier": 1
+      },
+      "hyp.mast.s1": {
+        "canonical_id": "hyp.mast.s1",
+        "quantity_multiplier": 1
+      },
+      "kb.wpn.pd1": {
+        "canonical_id": "kb.wpn.pd1",
+        "quantity_multiplier": 1
+      },
+      "fa.wpn.coil30": {
+        "canonical_id": "fa.wpn.coil30",
+        "quantity_multiplier": 1
+      },
+      "fa.wpn.pd2": {
+        "canonical_id": "fa.wpn.pd2",
+        "quantity_multiplier": 1
+      },
+      "harmony.wpn.pd3": {
+        "canonical_id": "harmony.wpn.pd3",
+        "quantity_multiplier": 1
+      },
+      "harmony.wpn.vls8": {
+        "canonical_id": "harmony.wpn.vls8",
+        "quantity_multiplier": 1
+      },
+      "bastion.wpn.coil10": {
+        "canonical_id": "bastion.wpn.coil10",
+        "quantity_multiplier": 1
+      },
+      "bastion.wpn.vls16": {
+        "canonical_id": "bastion.wpn.vls16",
+        "quantity_multiplier": 1
+      },
+      "bastion.wpn.pd4": {
+        "canonical_id": "bastion.wpn.pd4",
+        "quantity_multiplier": 1
+      },
+      "kern.md.impactor": {
+        "canonical_id": "kern.md.impactor",
+        "quantity_multiplier": 1
+      }
+    }
+  },
+  "component_manufacturers": {
+    "mfr.kapehu_systems": {
+      "name": "Kāpehu Navigation Systems / Капеху",
+      "polity": "lalande_mecca",
+      "cooperation_group": "southern_circle",
+      "note": "Canonical Pacific replacement for the legacy mfr.mizan component-maker identity."
+    }
+  },
+  "counts_by_category": {
+    "passenger_module": 5,
+    "armour": 2,
+    "hangar": 2,
+    "comm": 4,
+    "jump_core": 9,
+    "computer": 5,
+    "radar": 5,
+    "weapon": 9,
+    "life_support": 8,
+    "train_module": 2,
+    "ecm": 1,
+    "sensor_mast": 1,
+    "service_reactor": 5,
+    "coolant_loop": 3,
+    "drive": 10,
+    "radiator": 3,
+    "tank": 3,
+    "rcs": 3,
+    "reactor": 5,
+    "escape_capsule": 2,
+    "tow_rig": 2,
+    "landing_gear": 1,
+    "heat_shield": 1,
+    "cryo_tank": 1,
+    "workshop": 1,
+    "boat_bay": 1,
+    "drone_bay": 1,
+    "container_rack": 1,
+    "bulk_hold": 1,
+    "docking_port": 1,
+    "medbay": 1,
+    "lifeboat": 2,
+    "transponder": 1
+  },
+  "parts": [
+    {
+      "id": "agora.hab.pax100",
+      "cat": "passenger_module",
+      "mfr": "mfr.agora_modular",
+      "name": "Пассажирская секция Agora (100 мест)",
+      "model": "PS-100",
+      "mass_t": 28,
+      "price_cr": 260000,
+      "seats": 100,
+      "overhaul_h": 60000,
+      "life_h": 150000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          7.319,
+          5.228,
+          10.455
+        ],
+        "service_clearance_m": [
+          8.2,
+          5.86,
+          11.71
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "lalande_open_market"
+    },
+    {
+      "id": "bastion.armour.heavy",
+      "cat": "armour",
+      "mfr": "mfr.bastion",
+      "name": "Броня Бастиона тяжёлая (1 т)",
+      "model": "БТ-1",
+      "mass_t": 1,
+      "price_cr": 60000,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.567,
+          1.045,
+          0.078
+        ],
+        "service_clearance_m": [
+          1.76,
+          1.17,
+          0.09
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "citadel_compact"
+    },
+    {
+      "id": "bastion.bay.hangar4",
+      "cat": "hangar",
+      "mfr": "mfr.bastion",
+      "name": "Ангар перехватчиков (4 места)",
+      "model": "АП-4",
+      "mass_t": 300,
+      "price_cr": 2800000,
+      "craft_slots": 4,
+      "craft": "interceptor",
+      "craft_ship": "bastion.ship.b-4.sokol",
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          12.429,
+          6.214,
+          15.536
+        ],
+        "service_clearance_m": [
+          13.92,
+          6.96,
+          17.4
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "citadel_compact"
+    },
+    {
+      "id": "bastion.comm.w1",
+      "cat": "comm",
+      "mfr": "mfr.bastion",
+      "name": "Бастион связь БС-1",
+      "model": "БС-1",
+      "mass_t": 3,
+      "price_cr": 3000000,
+      "power_mw": 3,
+      "range_ls": 60,
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.466,
+          1.233,
+          2.466
+        ],
+        "service_clearance_m": [
+          2.76,
+          1.38,
+          2.76
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "citadel_compact"
+    },
+    {
+      "id": "bastion.core.b12",
+      "cat": "jump_core",
+      "mfr": "mfr.bastion",
+      "name": "Бастион Б-12",
+      "model": "Б-12",
+      "mass_t": 90,
+      "price_cr": 66000000,
+      "rating_t": 12000,
+      "sealed": true,
+      "notes": "военные ядра собственной разработки; не экспортируются",
+      "overhaul_h": 60000,
+      "life_h": 120000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.302,
+          3.302,
+          3.302
+        ],
+        "service_clearance_m": [
+          3.7,
+          3.7,
+          3.7
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "citadel_compact"
+    },
+    {
+      "id": "bastion.mc.w1",
+      "cat": "computer",
+      "mfr": "mfr.bastion",
+      "name": "Бастион боевой вычислитель БВ-1",
+      "model": "БВ-1",
+      "mass_t": 4,
+      "price_cr": 1200000,
+      "power_mw": 3,
+      "grade": "military",
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.231,
+          1.339,
+          2.231
+        ],
+        "service_clearance_m": [
+          2.5,
+          1.5,
+          2.5
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "citadel_compact"
+    },
+    {
+      "id": "bastion.radar.s50",
+      "cat": "radar",
+      "mfr": "mfr.bastion",
+      "name": "Бастион радар обзора С-50 (50 000 км)",
+      "model": "С-50",
+      "mass_t": 22,
+      "price_cr": 18000000,
+      "range_km": 50000,
+      "power_mw": 40,
+      "runtime_backend": "TestIdeal",
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          5.396,
+          2.159,
+          5.396
+        ],
+        "service_clearance_m": [
+          6.04,
+          2.42,
+          6.04
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "citadel_compact"
+    },
+    {
+      "id": "bastion.wpn.coil10",
+      "cat": "weapon",
+      "mfr": "mfr.bastion",
+      "name": "Бастион скорострельная пушка БП-10",
+      "model": "БП-10",
+      "mass_t": 2.5,
+      "price_cr": 900000,
+      "kind": "coilgun",
+      "power_mw": 12,
+      "overhaul_h": 30000,
+      "life_h": 60000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.482,
+          0.889,
+          2.371
+        ],
+        "service_clearance_m": [
+          1.66,
+          1,
+          2.66
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "citadel_compact"
+    },
+    {
+      "id": "bastion.wpn.pd4",
+      "cat": "weapon",
+      "mfr": "mfr.bastion",
+      "name": "Бастион турель ПРО БТ-4",
+      "model": "БТ-4",
+      "mass_t": 6,
+      "price_cr": 4500000,
+      "kind": "point_defence",
+      "power_mw": 15,
+      "overhaul_h": 30000,
+      "life_h": 60000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.984,
+          1.191,
+          3.175
+        ],
+        "service_clearance_m": [
+          2.22,
+          1.33,
+          3.56
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "citadel_compact"
+    },
+    {
+      "id": "bastion.wpn.vls16",
+      "cat": "weapon",
+      "mfr": "mfr.bastion",
+      "name": "Бастион ВПУ-16 дальних ракет",
+      "model": "ВПУ-16",
+      "mass_t": 60,
+      "price_cr": 22500000,
+      "kind": "missile_cells",
+      "cells": 16,
+      "power_mw": 2,
+      "overhaul_h": 30000,
+      "life_h": 60000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          4.275,
+          2.565,
+          6.84
+        ],
+        "service_clearance_m": [
+          4.79,
+          2.87,
+          7.66
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "citadel_compact"
+    },
+    {
+      "id": "bharat.hab.bunk500",
+      "cat": "passenger_module",
+      "mfr": "mfr.bharat",
+      "name": "Секция переселенцев (500 коек)",
+      "model": "СП-500",
+      "mass_t": 85,
+      "price_cr": 300000,
+      "seats": 500,
+      "overhaul_h": 60000,
+      "life_h": 150000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          12.515,
+          8.939,
+          17.878
+        ],
+        "service_clearance_m": [
+          14.02,
+          10.01,
+          20.02
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "southern_circle"
+    },
+    {
+      "id": "eurohab.ls.l20",
+      "cat": "life_support",
+      "mfr": "mfr.eurohab",
+      "name": "Евро-Хабитат ЖО L-20",
+      "model": "L-20",
+      "mass_t": 7,
+      "price_cr": 120000,
+      "persons": 20,
+      "days": 90,
+      "power_mw": 0.4,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.365,
+          1.923,
+          2.404
+        ],
+        "service_clearance_m": [
+          3.77,
+          2.15,
+          2.69
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "eurohab.ls.l200",
+      "cat": "life_support",
+      "mfr": "mfr.eurohab",
+      "name": "Евро-Хабитат ЖО L-200 (лайнер)",
+      "model": "L-200",
+      "mass_t": 45,
+      "price_cr": 700000,
+      "persons": 200,
+      "days": 40,
+      "power_mw": 4,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          6.257,
+          3.576,
+          4.47
+        ],
+        "service_clearance_m": [
+          7.01,
+          4.01,
+          5.01
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "eurohab.ls.l4",
+      "cat": "life_support",
+      "mfr": "mfr.eurohab",
+      "name": "Евро-Хабитат ЖО L-4 (4 чел.)",
+      "model": "L-4",
+      "mass_t": 2,
+      "price_cr": 35000,
+      "persons": 4,
+      "days": 60,
+      "power_mw": 0.08,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.216,
+          1.267,
+          1.583
+        ],
+        "service_clearance_m": [
+          2.48,
+          1.42,
+          1.77
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "fa.wpn.coil30",
+      "cat": "weapon",
+      "mfr": "mfr.firmament_armour",
+      "name": "Твердыня магнитная пушка КП-30",
+      "model": "КП-30",
+      "mass_t": 6,
+      "price_cr": 700000,
+      "kind": "coilgun",
+      "power_mw": 25,
+      "overhaul_h": 30000,
+      "life_h": 60000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.984,
+          1.191,
+          3.175
+        ],
+        "service_clearance_m": [
+          2.22,
+          1.33,
+          3.56
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "fa.wpn.pd2",
+      "cat": "weapon",
+      "mfr": "mfr.firmament_armour",
+      "name": "Твердыня турель ПРО ПТ-2",
+      "model": "ПТ-2",
+      "mass_t": 3,
+      "price_cr": 600000,
+      "kind": "point_defence",
+      "power_mw": 8,
+      "overhaul_h": 30000,
+      "life_h": 60000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.575,
+          0.945,
+          2.52
+        ],
+        "service_clearance_m": [
+          1.76,
+          1.06,
+          2.82
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "harmony.bay.hangar2",
+      "cat": "hangar",
+      "mfr": "mfr.harmony_yards",
+      "name": "Ангар перехватчиков (2 места)",
+      "model": "АП-2",
+      "mass_t": 160,
+      "price_cr": 1500000,
+      "craft_slots": 2,
+      "craft": "interceptor",
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "craft_ship": "bastion.ship.b-4.sokol",
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          10.079,
+          5.04,
+          12.599
+        ],
+        "service_clearance_m": [
+          11.29,
+          5.64,
+          14.11
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "harmony.core.h12",
+      "cat": "jump_core",
+      "mfr": "mfr.harmony_yards",
+      "name": "Гармония Х-12",
+      "model": "Х-12",
+      "mass_t": 80,
+      "price_cr": 10500000,
+      "rating_t": 12000,
+      "sealed": true,
+      "overhaul_h": 60000,
+      "life_h": 120000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.175,
+          3.175,
+          3.175
+        ],
+        "service_clearance_m": [
+          3.56,
+          3.56,
+          3.56
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "harmony.core.h5",
+      "cat": "jump_core",
+      "mfr": "mfr.harmony_yards",
+      "name": "Гармония Х-5 (сборка из блоков Когниума)",
+      "model": "Х-5",
+      "mass_t": 38,
+      "price_cr": 3600000,
+      "rating_t": 5000,
+      "sealed": true,
+      "notes": "запечатанные блоки «Нулевой точки», собранные на Гармонии",
+      "overhaul_h": 60000,
+      "life_h": 120000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.477,
+          2.477,
+          2.477
+        ],
+        "service_clearance_m": [
+          2.77,
+          2.77,
+          2.77
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "harmony.core.h80",
+      "cat": "jump_core",
+      "mfr": "mfr.harmony_yards",
+      "name": "Гармония Х-80 (тягач поезда)",
+      "model": "Х-80",
+      "mass_t": 320,
+      "price_cr": 22000000,
+      "rating_t": 80000,
+      "sealed": true,
+      "overhaul_h": 60000,
+      "life_h": 120000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          5.04,
+          5.04,
+          5.04
+        ],
+        "service_clearance_m": [
+          5.64,
+          5.64,
+          5.64
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "harmony.mod.cargo4800",
+      "cat": "train_module",
+      "mfr": "mfr.harmony_yards",
+      "name": "Модуль поезда грузовой (4 800 т, 240 C20)",
+      "model": "МП-4800",
+      "mass_t": 400,
+      "price_cr": 900000,
+      "payload_t": 4800,
+      "c20_slots": 240,
+      "overhaul_h": 60000,
+      "life_h": 150000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          14.133,
+          14.133,
+          35.332
+        ],
+        "service_clearance_m": [
+          15.83,
+          15.83,
+          39.57
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "harmony.mod.tank4200",
+      "cat": "train_module",
+      "mfr": "mfr.harmony_yards",
+      "name": "Модуль поезда-цистерна (4 170 т)",
+      "model": "МЦ-4200",
+      "mass_t": 500,
+      "price_cr": 1000000,
+      "payload_t": 4170,
+      "overhaul_h": 60000,
+      "life_h": 150000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          13.541,
+          13.541,
+          33.852
+        ],
+        "service_clearance_m": [
+          15.17,
+          15.17,
+          37.91
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "harmony.wpn.pd3",
+      "cat": "weapon",
+      "mfr": "mfr.harmony_yards",
+      "name": "Гармония турель ПРО ПТ-3",
+      "model": "ПТ-3",
+      "mass_t": 5,
+      "price_cr": 1500000,
+      "kind": "point_defence",
+      "power_mw": 12,
+      "overhaul_h": 30000,
+      "life_h": 60000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.867,
+          1.12,
+          2.988
+        ],
+        "service_clearance_m": [
+          2.09,
+          1.25,
+          3.35
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "harmony.wpn.vls8",
+      "cat": "weapon",
+      "mfr": "mfr.harmony_yards",
+      "name": "Гармония пусковая ВПУ-8 (8 ракет)",
+      "model": "ВПУ-8",
+      "mass_t": 24,
+      "price_cr": 4500000,
+      "kind": "missile_cells",
+      "cells": 8,
+      "power_mw": 1,
+      "overhaul_h": 30000,
+      "life_h": 60000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.15,
+          1.89,
+          5.04
+        ],
+        "service_clearance_m": [
+          3.53,
+          2.12,
+          5.64
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "hyp.ecm.e1",
+      "cat": "ecm",
+      "mfr": "mfr.hyperion",
+      "name": "Hyperion комплекс РЭБ E-1",
+      "model": "E-1",
+      "mass_t": 8,
+      "price_cr": 3000000,
+      "power_mw": 30,
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.218,
+          1.609,
+          3.862
+        ],
+        "service_clearance_m": [
+          3.6,
+          1.8,
+          4.33
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "hyp.mast.s1",
+      "cat": "sensor_mast",
+      "mfr": "mfr.hyperion",
+      "name": "Hyperion выдвижная сенсорная мачта",
+      "model": "SM-1",
+      "mass_t": 6,
+      "price_cr": 1800000,
+      "power_mw": 2,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.817,
+          6.057,
+          1.817
+        ],
+        "service_clearance_m": [
+          2.04,
+          6.78,
+          2.04
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "hyp.mc.r1",
+      "cat": "computer",
+      "mfr": "mfr.hyperion",
+      "name": "Hyperion разведывательный вычислитель HR-1",
+      "model": "HR-1",
+      "mass_t": 3,
+      "price_cr": 3000000,
+      "power_mw": 4,
+      "grade": "military",
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.027,
+          1.216,
+          2.027
+        ],
+        "service_clearance_m": [
+          2.27,
+          1.36,
+          2.27
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "hyp.radar.pa100",
+      "cat": "radar",
+      "mfr": "mfr.hyperion",
+      "name": "Hyperion пассивная решётка PA-100 + активный режим",
+      "model": "PA-100",
+      "mass_t": 12,
+      "price_cr": 4500000,
+      "range_km": 100000,
+      "power_mw": 12,
+      "runtime_backend": "TestIdeal",
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          4.409,
+          1.764,
+          4.409
+        ],
+        "service_clearance_m": [
+          4.94,
+          1.98,
+          4.94
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "hyp.relay.r1",
+      "cat": "comm",
+      "mfr": "mfr.hyperion",
+      "name": "Hyperion полевой ретранслятор R-1 (сеть маяков в войну)",
+      "model": "R-1",
+      "mass_t": 4,
+      "price_cr": 1200000,
+      "power_mw": 5,
+      "range_ls": 120,
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.714,
+          1.357,
+          2.714
+        ],
+        "service_clearance_m": [
+          3.04,
+          1.52,
+          3.04
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kapehu.core.k12",
+      "cat": "jump_core",
+      "mfr": "mfr.kapehu_systems",
+      "name": "Капеху K-12",
+      "model": "K-12",
+      "mass_t": 80,
+      "price_cr": 8200000,
+      "rating_t": 12000,
+      "sealed": true,
+      "overhaul_h": 60000,
+      "life_h": 120000,
+      "legacy_id": "mizan.core.m12",
+      "notes": "former legacy id mizan.core.m12; Pacific/Tauranga canonical replacement",
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.175,
+          3.175,
+          3.175
+        ],
+        "service_clearance_m": [
+          3.56,
+          3.56,
+          3.56
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "southern_circle"
+    },
+    {
+      "id": "kapehu.core.k5",
+      "cat": "jump_core",
+      "mfr": "mfr.kapehu_systems",
+      "name": "Капеху K-5",
+      "model": "K-5",
+      "mass_t": 40,
+      "price_cr": 3600000,
+      "rating_t": 5000,
+      "sealed": true,
+      "notes": "собственная математика вне стандарта Когниума; совместим только с ядрами Мизан при ремонте; former legacy id mizan.core.m5; Pacific/Tauranga canonical replacement",
+      "overhaul_h": 60000,
+      "life_h": 120000,
+      "legacy_id": "mizan.core.m5",
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.52,
+          2.52,
+          2.52
+        ],
+        "service_clearance_m": [
+          2.82,
+          2.82,
+          2.82
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "southern_circle"
+    },
+    {
+      "id": "kapehu.mc.k1",
+      "cat": "computer",
+      "mfr": "mfr.kapehu_systems",
+      "name": "Капеху бортовой вычислитель K-1",
+      "model": "K-1",
+      "mass_t": 1,
+      "price_cr": 70000,
+      "power_mw": 0.5,
+      "grade": "civil",
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "legacy_id": "mizan.mc.m1",
+      "notes": "former legacy id mizan.mc.m1; Pacific/Tauranga canonical replacement",
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.406,
+          0.843,
+          1.406
+        ],
+        "service_clearance_m": [
+          1.57,
+          0.94,
+          1.57
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "southern_circle"
+    },
+    {
+      "id": "kb.apu.s150",
+      "cat": "service_reactor",
+      "mfr": "mfr.cobretty",
+      "name": "Cobretty SR-150",
+      "model": "SR-150",
+      "mass_t": 12,
+      "price_cr": 160000,
+      "mwe": 150,
+      "eff": 0.45,
+      "overhaul_h": 40000,
+      "life_h": 80000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.76,
+          1.76,
+          1.76
+        ],
+        "service_clearance_m": [
+          1.97,
+          1.97,
+          1.97
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kb.cool.loop200",
+      "cat": "coolant_loop",
+      "mfr": "mfr.cobretty",
+      "name": "Cobretty coolant loop + pump (180 MW)",
+      "model": "CL-180",
+      "mass_t": 3,
+      "price_cr": 40000,
+      "capacity_mw": 180,
+      "pump_mw": 2,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.466,
+          1.233,
+          1.233
+        ],
+        "service_clearance_m": [
+          2.76,
+          1.38,
+          1.38
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kb.drive.cr1-vector",
+      "cat": "drive",
+      "mfr": "mfr.cobretty",
+      "name": "Cobretty CR-1 Vector Main Drive",
+      "model": "CR-1",
+      "mass_t": 14,
+      "price_cr": 190000,
+      "thrust_mn": 9.56,
+      "input_mw": 4850,
+      "eff": 0.9855,
+      "gimbal_deg": 75,
+      "overhaul_h": 30000,
+      "life_h": 50000,
+      "runtime_preset": "elite.engine.cobretty.cr1-vector.v1",
+      "existing": true,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          5,
+          5,
+          6.5
+        ],
+        "service_clearance_m": [
+          5.6,
+          5.6,
+          7.28
+        ],
+        "nozzle_or_emitter_diameter_m": 5,
+        "anchor": "runtime CR-1 emitter Ø5.0 m",
+        "basis": [
+          "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kb.drive.n1-axial",
+      "cat": "drive",
+      "mfr": "mfr.cobretty",
+      "name": "Cobretty N1 Axial Main Drive",
+      "model": "N1-AX",
+      "mass_t": 14,
+      "price_cr": 380000,
+      "thrust_mn": 9.56,
+      "input_mw": 4850,
+      "eff": 0.9855,
+      "gimbal_deg": 4,
+      "overhaul_h": 30000,
+      "life_h": 50000,
+      "runtime_preset": "elite.engine.kobra.n1-axial.v1",
+      "existing": true,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          5,
+          5,
+          6.5
+        ],
+        "service_clearance_m": [
+          5.6,
+          5.6,
+          7.28
+        ],
+        "nozzle_or_emitter_diameter_m": 5,
+        "anchor": "Cobrett N1/CR-1 common-family scale",
+        "basis": [
+          "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kb.rad.cs-panel",
+      "cat": "radiator",
+      "mfr": "mfr.cobretty",
+      "name": "Cobretty C-SiC radiator panel set (10 m2)",
+      "model": "RP-10",
+      "mass_t": 0.12,
+      "price_cr": 3500,
+      "area_m2": 10,
+      "temp_k": 1050,
+      "eps": 0.9,
+      "material": "elite.material.radiator.c-sic.v1",
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.24,
+          0.15,
+          4.47
+        ],
+        "deployed_area_m2": 10,
+        "service_clearance_m": [
+          2.35,
+          0.5,
+          4.7
+        ],
+        "basis": [
+          "panel face area equals declared radiating area; thickness is service envelope"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kb.rcs.argon-tank",
+      "cat": "tank",
+      "mfr": "mfr.cobretty",
+      "name": "Cobretty argon RCS tank",
+      "model": "AR-T",
+      "mass_t": 1.5,
+      "price_cr": 15000,
+      "fluid": "argon",
+      "capacity_t": 2,
+      "existing": true,
+      "overhaul_h": 20000,
+      "life_h": 40000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.229,
+          1.229,
+          1.967
+        ],
+        "service_clearance_m": [
+          1.38,
+          1.38,
+          2.2
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kb.rcs.fc-nozzle",
+      "cat": "rcs",
+      "mfr": "mfr.cobretty",
+      "name": "Cobretty field-coupled RCS nozzle",
+      "model": "FC-RCS",
+      "mass_t": 0.4,
+      "price_cr": 5000,
+      "thrust_mn": 0.5,
+      "input_mw": 20,
+      "eff": 0.94,
+      "runtime_preset": "cobra.rcs.electric.fixed.v1",
+      "existing": true,
+      "overhaul_h": 20000,
+      "life_h": 40000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          0.737,
+          0.737,
+          0.737
+        ],
+        "service_clearance_m": [
+          0.83,
+          0.83,
+          0.83
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kb.reactor.er1",
+      "cat": "reactor",
+      "mfr": "mfr.cobretty",
+      "name": "Cobretty ER-1",
+      "model": "ER-1",
+      "mass_t": 5,
+      "price_cr": 105000,
+      "mwe": 830,
+      "eff": 0.9,
+      "overhaul_h": 30000,
+      "life_h": 50000,
+      "startup_s": 420,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.34,
+          2.34,
+          2.92
+        ],
+        "service_clearance_m": [
+          2.69,
+          2.69,
+          3.36
+        ],
+        "cooling_pad_side_m": 4.48,
+        "cooling_pad_thickness_m": 0.25,
+        "anchor": "ER-5 cooling-pad scaling by waste heat",
+        "basis": [
+          "reactor housing scales with mass; cooling interface scales with thermal waste"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kb.reactor.er5",
+      "cat": "reactor",
+      "mfr": "mfr.cobretty",
+      "name": "Cobretty ER-5 Propulsion Reactor",
+      "model": "ER-5",
+      "mass_t": 25,
+      "price_cr": 460000,
+      "mwe": 5000,
+      "eff": 0.9,
+      "runtime_preset": "elite.reactor.cobra.cobretty.er5.v1",
+      "existing": true,
+      "overhaul_h": 30000,
+      "life_h": 50000,
+      "startup_s": 420,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          4,
+          4,
+          5
+        ],
+        "service_clearance_m": [
+          4.6,
+          4.6,
+          5.75
+        ],
+        "cooling_pad_side_m": 11,
+        "cooling_pad_thickness_m": 0.25,
+        "anchor": "runtime ER-5 padSideM = 11.0 m",
+        "basis": [
+          "reactor housing scales with mass; cooling interface scales with thermal waste"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kb.surv.capsule2",
+      "cat": "escape_capsule",
+      "mfr": "mfr.cobretty",
+      "name": "Cobretty катапультируемая капсула кабины (2 места)",
+      "model": "EC-2",
+      "mass_t": 2.5,
+      "price_cr": 40000,
+      "seats": 2,
+      "existing": true,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.926,
+          1.926,
+          2.696
+        ],
+        "service_clearance_m": [
+          2.16,
+          2.16,
+          3.02
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kb.wpn.pd1",
+      "cat": "weapon",
+      "mfr": "mfr.cobretty",
+      "name": "Cobretty PD-1 оборонительная турель",
+      "model": "PD-1",
+      "mass_t": 1.5,
+      "price_cr": 120000,
+      "kind": "point_defence",
+      "power_mw": 3,
+      "overhaul_h": 30000,
+      "life_h": 60000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.25,
+          0.75,
+          2
+        ],
+        "service_clearance_m": [
+          1.4,
+          0.84,
+          2.24
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kern.drive.kt1",
+      "cat": "drive",
+      "mfr": "mfr.kern_heavy",
+      "name": "Kern KT-1 Tug Drive",
+      "model": "KT-1",
+      "mass_t": 2.5,
+      "price_cr": 100000,
+      "thrust_mn": 1,
+      "input_mw": 750,
+      "eff": 0.982,
+      "gimbal_deg": 8,
+      "overhaul_h": 40000,
+      "life_h": 70000,
+      "notes": "тихоходный, ресурсный: буксировка неделями",
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.82,
+          2.82,
+          3.66
+        ],
+        "service_clearance_m": [
+          3.16,
+          3.16,
+          4.1
+        ],
+        "nozzle_or_emitter_diameter_m": 2.82,
+        "anchor": "scaled by installed mass",
+        "basis": [
+          "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kern.md.impactor",
+      "cat": "weapon",
+      "mfr": "mfr.kern_heavy",
+      "name": "Kern пусковая ударников МД-40 (масс-драйвер)",
+      "model": "МД-40",
+      "mass_t": 90,
+      "price_cr": 3750000,
+      "kind": "mass_driver",
+      "power_mw": 400,
+      "notes": "гражданское двойное назначение: отклонение и дробление камней",
+      "overhaul_h": 30000,
+      "life_h": 60000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          4.894,
+          2.936,
+          7.83
+        ],
+        "service_clearance_m": [
+          5.48,
+          3.29,
+          8.77
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kern.radar.deb5",
+      "cat": "radar",
+      "mfr": "mfr.kern_heavy",
+      "name": "Kern радар обломков DR-5 (5 000 км)",
+      "model": "DR-5",
+      "mass_t": 3,
+      "price_cr": 220000,
+      "range_km": 5000,
+      "power_mw": 2,
+      "runtime_backend": "TestIdeal",
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.778,
+          1.111,
+          2.778
+        ],
+        "service_clearance_m": [
+          3.11,
+          1.24,
+          3.11
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kern.tow.heavy",
+      "cat": "tow_rig",
+      "mfr": "mfr.kern_heavy",
+      "name": "Kern тяжёлый захват (обломки, камни)",
+      "model": "TR-H",
+      "mass_t": 80,
+      "price_cr": 600000,
+      "tow_t": 50000,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          5.623,
+          5.623,
+          2.109
+        ],
+        "service_clearance_m": [
+          6.3,
+          6.3,
+          2.36
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "kern.tow.raft20k",
+      "cat": "tow_rig",
+      "mfr": "mfr.kern_heavy",
+      "name": "Kern буксирная рама плота (20 000 т)",
+      "model": "TR-20K",
+      "mass_t": 60,
+      "price_cr": 160000,
+      "tow_t": 20000,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          5.109,
+          5.109,
+          1.916
+        ],
+        "service_clearance_m": [
+          5.72,
+          5.72,
+          2.15
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "ofu.cargo.p20",
+      "cat": "passenger_module",
+      "mfr": "mfr.ofu",
+      "name": "Пассажирский модуль P20 (12 мест, своё ЖО на сутки, отстреливаемый)",
+      "model": "P20",
+      "mass_t": 4.5,
+      "price_cr": 50000,
+      "seats": 12,
+      "ls_persons": 12,
+      "ls_days": 1,
+      "survival_seats": 12,
+      "power_mw": 0.2,
+      "overhaul_h": 60000,
+      "life_h": 150000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.61,
+          2.578,
+          5.157
+        ],
+        "service_clearance_m": [
+          4.04,
+          2.89,
+          5.78
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "ofu.drive.u33",
+      "cat": "drive",
+      "mfr": "mfr.ofu",
+      "name": "Урал-33",
+      "model": "У-33",
+      "mass_t": 6,
+      "price_cr": 260000,
+      "thrust_mn": 3.3,
+      "input_mw": 2400,
+      "eff": 0.984,
+      "gimbal_deg": 6,
+      "overhaul_h": 30000,
+      "life_h": 50000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.77,
+          3.77,
+          4.9
+        ],
+        "service_clearance_m": [
+          4.22,
+          4.22,
+          5.49
+        ],
+        "nozzle_or_emitter_diameter_m": 3.77,
+        "anchor": "scaled by installed mass",
+        "basis": [
+          "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "ofu.drive.u65m",
+      "cat": "drive",
+      "mfr": "mfr.ofu",
+      "name": "Урал-65М (служебный)",
+      "model": "У-65М",
+      "mass_t": 9,
+      "price_cr": 350000,
+      "thrust_mn": 6.5,
+      "input_mw": 4500,
+      "eff": 0.985,
+      "gimbal_deg": 60,
+      "overhaul_h": 30000,
+      "life_h": 50000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          4.32,
+          4.32,
+          5.61
+        ],
+        "service_clearance_m": [
+          4.84,
+          4.84,
+          6.28
+        ],
+        "nozzle_or_emitter_diameter_m": 4.32,
+        "anchor": "scaled by installed mass",
+        "basis": [
+          "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "ofu.drive.u70",
+      "cat": "drive",
+      "mfr": "mfr.ofu",
+      "name": "Урал-70",
+      "model": "У-70",
+      "mass_t": 11,
+      "price_cr": 1125000,
+      "thrust_mn": 7,
+      "input_mw": 6500,
+      "eff": 0.985,
+      "gimbal_deg": 8,
+      "overhaul_h": 30000,
+      "life_h": 50000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          4.61,
+          4.61,
+          6
+        ],
+        "service_clearance_m": [
+          5.16,
+          5.16,
+          6.72
+        ],
+        "nozzle_or_emitter_diameter_m": 4.61,
+        "anchor": "scaled by installed mass",
+        "basis": [
+          "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "ofu.drive.u73l",
+      "cat": "drive",
+      "mfr": "mfr.ofu",
+      "name": "Урал-73Л (подъёмный)",
+      "model": "У-73Л",
+      "mass_t": 13,
+      "price_cr": 400000,
+      "thrust_mn": 7.33,
+      "input_mw": 8670,
+      "eff": 0.98,
+      "gimbal_deg": 10,
+      "notes": "форсированный подъёмный двигатель: старт с поверхности при 2.5 g, высокая удельная мощность",
+      "overhaul_h": 30000,
+      "life_h": 50000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          4.88,
+          4.88,
+          6.34
+        ],
+        "service_clearance_m": [
+          5.47,
+          5.47,
+          7.1
+        ],
+        "nozzle_or_emitter_diameter_m": 4.88,
+        "anchor": "scaled by installed mass",
+        "basis": [
+          "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "ofu.lift.gear",
+      "cat": "landing_gear",
+      "mfr": "mfr.ofu",
+      "name": "Посадочные опоры (4)",
+      "model": "ПО-4",
+      "mass_t": 18,
+      "price_cr": 40000,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.047,
+          2.865,
+          2.047
+        ],
+        "service_clearance_m": [
+          2.29,
+          3.21,
+          2.29
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "ofu.lift.shield",
+      "cat": "heat_shield",
+      "mfr": "mfr.ofu",
+      "name": "Теплозащитный экран подъёмника",
+      "model": "ТЗ-12",
+      "mass_t": 30,
+      "price_cr": 180000,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          6.694,
+          0.335,
+          6.694
+        ],
+        "service_clearance_m": [
+          7.5,
+          0.38,
+          7.5
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "ofu.ls.o4",
+      "cat": "life_support",
+      "mfr": "mfr.ofu",
+      "name": "ОФУ ЖО О-4 (челнок)",
+      "model": "О-4",
+      "mass_t": 1.5,
+      "price_cr": 30000,
+      "persons": 4,
+      "days": 14,
+      "power_mw": 0.06,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.014,
+          1.151,
+          1.438
+        ],
+        "service_clearance_m": [
+          2.26,
+          1.29,
+          1.61
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "sol.cool.loop300",
+      "cat": "coolant_loop",
+      "mfr": "mfr.sol_mass_yards",
+      "name": "ЛМВ контур охлаждения (300 МВт)",
+      "model": "КО-300",
+      "mass_t": 5,
+      "price_cr": 60000,
+      "capacity_mw": 300,
+      "pump_mw": 3,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.924,
+          1.462,
+          1.462
+        ],
+        "service_clearance_m": [
+          3.27,
+          1.64,
+          1.64
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "sol.cryo.t1000",
+      "cat": "cryo_tank",
+      "mfr": "mfr.sol_mass_yards",
+      "name": "Криоцистерна He-3/D (1 000 т)",
+      "model": "КЦ-1000",
+      "mass_t": 60,
+      "price_cr": 120000,
+      "capacity_t": 1000,
+      "overhaul_h": 60000,
+      "life_h": 150000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          8.855,
+          8.855,
+          15.94
+        ],
+        "service_clearance_m": [
+          9.92,
+          9.92,
+          17.85
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "sol.rad.panel50",
+      "cat": "radiator",
+      "mfr": "mfr.sol_mass_yards",
+      "name": "ЛМВ радиаторная секция (50 м2)",
+      "model": "РС-50С",
+      "mass_t": 0.65,
+      "price_cr": 15000,
+      "area_m2": 50,
+      "temp_k": 1050,
+      "eps": 0.9,
+      "material": "elite.material.radiator.c-sic.v1",
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          5,
+          0.15,
+          10
+        ],
+        "deployed_area_m2": 50,
+        "service_clearance_m": [
+          5.25,
+          0.5,
+          10.5
+        ],
+        "basis": [
+          "panel face area equals declared radiating area; thickness is service envelope"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "sol.workshop.w1",
+      "cat": "workshop",
+      "mfr": "mfr.sol_mass_yards",
+      "name": "Мастерская сервисного тендера (2 бригады)",
+      "model": "МС-1",
+      "mass_t": 35,
+      "price_cr": 180000,
+      "power_mw": 0.8,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          7,
+          4,
+          5
+        ],
+        "service_clearance_m": [
+          7.84,
+          4.48,
+          5.6
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "srw.apu.s200",
+      "cat": "service_reactor",
+      "mfr": "mfr.sol_reactor",
+      "name": "Sol Reactor Works S-200",
+      "model": "S-200",
+      "mass_t": 16,
+      "price_cr": 220000,
+      "mwe": 200,
+      "eff": 0.45,
+      "overhaul_h": 40000,
+      "life_h": 80000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.937,
+          1.937,
+          1.937
+        ],
+        "service_clearance_m": [
+          2.17,
+          2.17,
+          2.17
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "srw.apu.s60",
+      "cat": "service_reactor",
+      "mfr": "mfr.sol_reactor",
+      "name": "Sol Reactor Works S-60",
+      "model": "S-60",
+      "mass_t": 6,
+      "price_cr": 70000,
+      "mwe": 60,
+      "eff": 0.45,
+      "overhaul_h": 40000,
+      "life_h": 80000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.397,
+          1.397,
+          1.397
+        ],
+        "service_clearance_m": [
+          1.56,
+          1.56,
+          1.56
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "srw.reactor.sr48",
+      "cat": "reactor",
+      "mfr": "mfr.sol_reactor",
+      "name": "Sol Reactor Works SR-4.8",
+      "model": "SR-4.8",
+      "mass_t": 22,
+      "price_cr": 850000,
+      "mwe": 4800,
+      "eff": 0.9,
+      "overhaul_h": 30000,
+      "life_h": 50000,
+      "startup_s": 420,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.83,
+          3.83,
+          4.79
+        ],
+        "service_clearance_m": [
+          4.4,
+          4.4,
+          5.51
+        ],
+        "cooling_pad_side_m": 10.78,
+        "cooling_pad_thickness_m": 0.25,
+        "anchor": "ER-5 cooling-pad scaling by waste heat",
+        "basis": [
+          "reactor housing scales with mass; cooling interface scales with thermal waste"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "std.armour.ceramic",
+      "cat": "armour",
+      "mfr": "mfr.firmament_armour",
+      "name": "Броня керамокомпозитная (1 т)",
+      "model": "БК-1",
+      "mass_t": 1,
+      "price_cr": 30000,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.567,
+          1.045,
+          0.078
+        ],
+        "service_clearance_m": [
+          1.76,
+          1.17,
+          0.09
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "std.bay.boat",
+      "cat": "boat_bay",
+      "mfr": "mfr.sol_mass_yards",
+      "name": "Ангар досмотрового катера (1 катер)",
+      "model": "АК-1",
+      "mass_t": 18,
+      "price_cr": 400000,
+      "craft_slots": 1,
+      "craft": "boarding_boat",
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "craft_envelope_m": [
+        9,
+        4,
+        3
+      ],
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          4.866,
+          2.433,
+          6.082
+        ],
+        "service_clearance_m": [
+          5.45,
+          2.72,
+          6.81
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "std.bay.drone4",
+      "cat": "drone_bay",
+      "mfr": "mfr.agora_modular",
+      "name": "Отсек дронов (4 сервисных дрона)",
+      "model": "ОД-4",
+      "mass_t": 6,
+      "price_cr": 180000,
+      "drones": 4,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.374,
+          1.687,
+          4.217
+        ],
+        "service_clearance_m": [
+          3.78,
+          1.89,
+          4.72
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "lalande_open_market"
+    },
+    {
+      "id": "std.cabin.hold6",
+      "cat": "passenger_module",
+      "mfr": "mfr.sol_mass_yards",
+      "name": "Камера для задержанных и спасённых (6 мест)",
+      "model": "КЗ-6",
+      "mass_t": 3,
+      "price_cr": 30000,
+      "seats": 6,
+      "overhaul_h": 60000,
+      "life_h": 150000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.865,
+          2.047,
+          4.093
+        ],
+        "service_clearance_m": [
+          3.21,
+          2.29,
+          4.58
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "std.cargo.c20lock",
+      "cat": "container_rack",
+      "mfr": "mfr.agora_modular",
+      "name": "Стойка C20 (замки и рельсы, 1 место)",
+      "model": "C20-R",
+      "mass_t": 0.5,
+      "price_cr": 2500,
+      "c20_slots": 1,
+      "overhaul_h": 60000,
+      "life_h": 150000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.44,
+          2.59,
+          6.06
+        ],
+        "service_clearance_m": [
+          2.73,
+          2.9,
+          6.79
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "lalande_open_market"
+    },
+    {
+      "id": "std.cargo.hold100",
+      "cat": "bulk_hold",
+      "mfr": "mfr.agora_modular",
+      "name": "Грузовой отсек (100 т, 300 м3)",
+      "model": "ГО-100",
+      "mass_t": 6,
+      "price_cr": 20000,
+      "capacity_t": 100,
+      "overhaul_h": 60000,
+      "life_h": 150000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          5.192,
+          3.709,
+          7.418
+        ],
+        "service_clearance_m": [
+          5.82,
+          4.15,
+          8.31
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "lalande_open_market"
+    },
+    {
+      "id": "std.dock.collar",
+      "cat": "docking_port",
+      "mfr": "mfr.agora_modular",
+      "name": "Стыковочный узел (стандарт хабов)",
+      "model": "СУ-1",
+      "mass_t": 1.5,
+      "price_cr": 25000,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.71,
+          1.71,
+          0.855
+        ],
+        "service_clearance_m": [
+          1.92,
+          1.92,
+          0.96
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "lalande_open_market"
+    },
+    {
+      "id": "std.med.bay",
+      "cat": "medbay",
+      "mfr": "mfr.eurohab",
+      "name": "Медотсек (4 койки)",
+      "model": "МО-4",
+      "mass_t": 3,
+      "price_cr": 80000,
+      "beds": 4,
+      "power_mw": 0.05,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.476,
+          1.738,
+          2.483
+        ],
+        "service_clearance_m": [
+          3.89,
+          1.95,
+          2.78
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "std.rcs.cluster",
+      "cat": "rcs",
+      "mfr": "mfr.agora_modular",
+      "name": "Кластер RCS (4 сопла, поле)",
+      "model": "RCS-4",
+      "mass_t": 2,
+      "price_cr": 20000,
+      "thrust_mn": 1,
+      "input_mw": 40,
+      "eff": 0.94,
+      "overhaul_h": 20000,
+      "life_h": 40000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.26,
+          1.26,
+          1.26
+        ],
+        "service_clearance_m": [
+          1.41,
+          1.41,
+          1.41
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "lalande_open_market"
+    },
+    {
+      "id": "std.rcs.cluster_h",
+      "cat": "rcs",
+      "mfr": "mfr.tianhe_heavy",
+      "name": "Тяжёлый кластер RCS (4 сопла)",
+      "model": "RCS-4Т",
+      "mass_t": 6,
+      "price_cr": 45000,
+      "thrust_mn": 4,
+      "input_mw": 150,
+      "eff": 0.93,
+      "overhaul_h": 20000,
+      "life_h": 40000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.817,
+          1.817,
+          1.817
+        ],
+        "service_clearance_m": [
+          2.04,
+          2.04,
+          2.04
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "std.surv.boat20",
+      "cat": "lifeboat",
+      "mfr": "mfr.agora_modular",
+      "name": "Спасательная шлюпка (20 мест, 10 суток)",
+      "model": "СШ-20",
+      "mass_t": 6,
+      "price_cr": 60000,
+      "seats": 20,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.962,
+          2.073,
+          6.515
+        ],
+        "service_clearance_m": [
+          3.32,
+          2.32,
+          7.3
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "lalande_open_market"
+    },
+    {
+      "id": "std.surv.pod4",
+      "cat": "escape_capsule",
+      "mfr": "mfr.agora_modular",
+      "name": "Спасательная капсула (4 места)",
+      "model": "СК-4",
+      "mass_t": 1.6,
+      "price_cr": 18000,
+      "seats": 4,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.66,
+          1.66,
+          2.324
+        ],
+        "service_clearance_m": [
+          1.86,
+          1.86,
+          2.6
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "lalande_open_market"
+    },
+    {
+      "id": "std.surv.refuge100",
+      "cat": "lifeboat",
+      "mfr": "mfr.bharat",
+      "name": "Спасательный модуль-убежище (100 мест)",
+      "model": "СМ-100",
+      "mass_t": 12,
+      "price_cr": 90000,
+      "seats": 100,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.731,
+          2.612,
+          8.209
+        ],
+        "service_clearance_m": [
+          4.18,
+          2.93,
+          9.19
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "southern_circle"
+    },
+    {
+      "id": "std.tank.jumpcharge",
+      "cat": "tank",
+      "mfr": "mfr.agora_modular",
+      "name": "Бак заряда прыжка (1 т)",
+      "model": "БЗ-1",
+      "mass_t": 0.35,
+      "price_cr": 6000,
+      "fluid": "jump_charge",
+      "capacity_t": 1,
+      "overhaul_h": 60000,
+      "life_h": 120000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          0.93,
+          0.93,
+          1.488
+        ],
+        "service_clearance_m": [
+          1.04,
+          1.04,
+          1.67
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "lalande_open_market"
+    },
+    {
+      "id": "std.tank.pellets",
+      "cat": "tank",
+      "mfr": "mfr.agora_modular",
+      "name": "Бункер топливных таблеток D/He-3 (1 т)",
+      "model": "БТ-1",
+      "mass_t": 0.25,
+      "price_cr": 3000,
+      "fluid": "fusion_pellets",
+      "capacity_t": 1,
+      "overhaul_h": 60000,
+      "life_h": 120000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          0.918,
+          0.918,
+          1.468
+        ],
+        "service_clearance_m": [
+          1.03,
+          1.03,
+          1.64
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "lalande_open_market"
+    },
+    {
+      "id": "terra.ls.t10",
+      "cat": "life_support",
+      "mfr": "mfr.terra_habitat",
+      "name": "Terra Habitat ЖО T-10",
+      "model": "T-10",
+      "mass_t": 4,
+      "price_cr": 45000,
+      "persons": 10,
+      "days": 60,
+      "power_mw": 0.2,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.793,
+          1.596,
+          1.995
+        ],
+        "service_clearance_m": [
+          3.13,
+          1.79,
+          2.23
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "terra.ls.t200",
+      "cat": "life_support",
+      "mfr": "mfr.terra_habitat",
+      "name": "Terra Habitat ЖО T-200 (флот)",
+      "model": "T-200",
+      "mass_t": 70,
+      "price_cr": 3000000,
+      "persons": 200,
+      "days": 200,
+      "power_mw": 4,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          7.25,
+          4.143,
+          5.179
+        ],
+        "service_clearance_m": [
+          8.12,
+          4.64,
+          5.8
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "terra.ls.t60",
+      "cat": "life_support",
+      "mfr": "mfr.terra_habitat",
+      "name": "Terra Habitat ЖО T-60 (флот)",
+      "model": "T-60",
+      "mass_t": 22,
+      "price_cr": 700000,
+      "persons": 60,
+      "days": 200,
+      "power_mw": 1.2,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          4.929,
+          2.817,
+          3.521
+        ],
+        "service_clearance_m": [
+          5.52,
+          3.16,
+          3.94
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "sol_industrial"
+    },
+    {
+      "id": "th.apu.s150",
+      "cat": "service_reactor",
+      "mfr": "mfr.tianhe_heavy",
+      "name": "Тяньхэ СР-150",
+      "model": "СР-150",
+      "mass_t": 15,
+      "price_cr": 140000,
+      "mwe": 150,
+      "eff": 0.42,
+      "overhaul_h": 40000,
+      "life_h": 80000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.896,
+          1.896,
+          1.896
+        ],
+        "service_clearance_m": [
+          2.12,
+          2.12,
+          2.12
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "th.apu.s600",
+      "cat": "service_reactor",
+      "mfr": "mfr.tianhe_heavy",
+      "name": "Тяньхэ СР-600",
+      "model": "СР-600",
+      "mass_t": 45,
+      "price_cr": 600000,
+      "mwe": 600,
+      "eff": 0.44,
+      "overhaul_h": 40000,
+      "life_h": 80000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.735,
+          2.735,
+          2.735
+        ],
+        "service_clearance_m": [
+          3.06,
+          3.06,
+          3.06
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "th.cool.loop600",
+      "cat": "coolant_loop",
+      "mfr": "mfr.tianhe_heavy",
+      "name": "Тяньхэ контур охлаждения (600 МВт)",
+      "model": "КО-600",
+      "mass_t": 9,
+      "price_cr": 90000,
+      "capacity_mw": 600,
+      "pump_mw": 6,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.557,
+          1.778,
+          1.778
+        ],
+        "service_clearance_m": [
+          3.98,
+          1.99,
+          1.99
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "th.drive.tz11",
+      "cat": "drive",
+      "mfr": "mfr.tianhe_heavy",
+      "name": "Тяньхэ ТЦ-11",
+      "model": "ТЦ-11",
+      "mass_t": 16,
+      "price_cr": 1170000,
+      "thrust_mn": 10.7,
+      "input_mw": 10000,
+      "eff": 0.985,
+      "gimbal_deg": 40,
+      "overhaul_h": 30000,
+      "life_h": 50000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          5.23,
+          5.23,
+          6.8
+        ],
+        "service_clearance_m": [
+          5.86,
+          5.86,
+          7.62
+        ],
+        "nozzle_or_emitter_diameter_m": 5.23,
+        "anchor": "scaled by installed mass",
+        "basis": [
+          "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "th.drive.tz16v",
+      "cat": "drive",
+      "mfr": "mfr.tianhe_heavy",
+      "name": "Тяньхэ ТЦ-1.6В (военная поставка)",
+      "model": "ТЦ-1.6В",
+      "mass_t": 2.6,
+      "price_cr": 230000,
+      "thrust_mn": 1.55,
+      "input_mw": 2375,
+      "eff": 0.986,
+      "gimbal_deg": 60,
+      "notes": "экспорт Пакту Цитадели по лицензии; форсированный, короткий ресурс",
+      "overhaul_h": 8000,
+      "life_h": 15000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.85,
+          2.85,
+          3.71
+        ],
+        "service_clearance_m": [
+          3.19,
+          3.19,
+          4.16
+        ],
+        "nozzle_or_emitter_diameter_m": 2.85,
+        "anchor": "scaled by installed mass",
+        "basis": [
+          "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "th.drive.tz28",
+      "cat": "drive",
+      "mfr": "mfr.tianhe_heavy",
+      "name": "Тяньхэ ТЦ-28В",
+      "model": "ТЦ-28В",
+      "mass_t": 40,
+      "price_cr": 10500000,
+      "thrust_mn": 27.5,
+      "input_mw": 27500,
+      "eff": 0.986,
+      "gimbal_deg": 6,
+      "notes": "военный вариант с бронированным кожухом",
+      "overhaul_h": 30000,
+      "life_h": 50000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          7.09,
+          7.09,
+          9.22
+        ],
+        "service_clearance_m": [
+          7.94,
+          7.94,
+          10.33
+        ],
+        "nozzle_or_emitter_diameter_m": 7.09,
+        "anchor": "scaled by installed mass",
+        "basis": [
+          "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "th.rad.panel50",
+      "cat": "radiator",
+      "mfr": "mfr.tianhe_heavy",
+      "name": "Тяньхэ радиаторная секция (50 м2)",
+      "model": "РС-50",
+      "mass_t": 0.75,
+      "price_cr": 12000,
+      "area_m2": 50,
+      "temp_k": 1000,
+      "eps": 0.88,
+      "material": "elite.material.radiator.c-sic.v1",
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          5,
+          0.15,
+          10
+        ],
+        "deployed_area_m2": 50,
+        "service_clearance_m": [
+          5.25,
+          0.5,
+          10.5
+        ],
+        "basis": [
+          "panel face area equals declared radiating area; thickness is service envelope"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "th.reactor.tr10",
+      "cat": "reactor",
+      "mfr": "mfr.tianhe_heavy",
+      "name": "Тяньхэ ТР-10",
+      "model": "ТР-10",
+      "mass_t": 48,
+      "price_cr": 1520000,
+      "mwe": 10000,
+      "eff": 0.89,
+      "overhaul_h": 30000,
+      "life_h": 50000,
+      "startup_s": 420,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          4.97,
+          4.97,
+          6.21
+        ],
+        "service_clearance_m": [
+          5.72,
+          5.72,
+          7.14
+        ],
+        "cooling_pad_side_m": 16.41,
+        "cooling_pad_thickness_m": 0.25,
+        "anchor": "ER-5 cooling-pad scaling by waste heat",
+        "basis": [
+          "reactor housing scales with mass; cooling interface scales with thermal waste"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "th.reactor.tr26v",
+      "cat": "reactor",
+      "mfr": "mfr.tianhe_heavy",
+      "name": "Тяньхэ ТР-2.6В",
+      "model": "ТР-2.6В",
+      "mass_t": 11,
+      "price_cr": 400000,
+      "mwe": 2500,
+      "eff": 0.9,
+      "overhaul_h": 8000,
+      "life_h": 15000,
+      "startup_s": 420,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.04,
+          3.04,
+          3.8
+        ],
+        "service_clearance_m": [
+          3.5,
+          3.5,
+          4.37
+        ],
+        "cooling_pad_side_m": 7.78,
+        "cooling_pad_thickness_m": 0.25,
+        "anchor": "ER-5 cooling-pad scaling by waste heat",
+        "basis": [
+          "reactor housing scales with mass; cooling interface scales with thermal waste"
+        ]
+      },
+      "cooperation_group": "heavenly_pact"
+    },
+    {
+      "id": "uhuru.cryo.pod100",
+      "cat": "passenger_module",
+      "mfr": "mfr.uhuru_bio",
+      "name": "Блок анабиоза (100 капсул)",
+      "model": "АБ-100",
+      "mass_t": 22,
+      "price_cr": 250000,
+      "seats": 100,
+      "cold_sleep": true,
+      "overhaul_h": 60000,
+      "life_h": 150000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          7.319,
+          5.228,
+          10.455
+        ],
+        "service_clearance_m": [
+          8.2,
+          5.86,
+          11.71
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "southern_circle"
+    },
+    {
+      "id": "uhuru.ls.u500",
+      "cat": "life_support",
+      "mfr": "mfr.uhuru_bio",
+      "name": "Uhuru ЖО U-500 (биорегенерация)",
+      "model": "U-500",
+      "mass_t": 95,
+      "price_cr": 1200000,
+      "persons": 500,
+      "days": 60,
+      "power_mw": 8,
+      "overhaul_h": 40000,
+      "life_h": 100000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          8.027,
+          4.587,
+          5.734
+        ],
+        "service_clearance_m": [
+          8.99,
+          5.14,
+          6.42
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "southern_circle"
+    },
+    {
+      "id": "um.core.z05",
+      "cat": "jump_core",
+      "mfr": "mfr.um_core_fab",
+      "name": "Ядро «Нулевая точка» Я-0.5",
+      "model": "Я-0.5",
+      "mass_t": 6,
+      "price_cr": 610000,
+      "rating_t": 500,
+      "sealed": true,
+      "overhaul_h": 60000,
+      "life_h": 120000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.339,
+          1.339,
+          1.339
+        ],
+        "service_clearance_m": [
+          1.5,
+          1.5,
+          1.5
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "um.core.z1",
+      "cat": "jump_core",
+      "mfr": "mfr.um_core_fab",
+      "name": "Ядро «Нулевая точка» Я-1",
+      "model": "Я-1",
+      "mass_t": 10,
+      "price_cr": 1800000,
+      "rating_t": 1000,
+      "sealed": true,
+      "overhaul_h": 60000,
+      "life_h": 120000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.587,
+          1.587,
+          1.587
+        ],
+        "service_clearance_m": [
+          1.78,
+          1.78,
+          1.78
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "um.core.z5",
+      "cat": "jump_core",
+      "mfr": "mfr.um_core_fab",
+      "name": "Ядро «Нулевая точка» Я-5",
+      "model": "Я-5",
+      "mass_t": 35,
+      "price_cr": 4800000,
+      "rating_t": 5000,
+      "sealed": true,
+      "overhaul_h": 60000,
+      "life_h": 120000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.41,
+          2.41,
+          2.41
+        ],
+        "service_clearance_m": [
+          2.7,
+          2.7,
+          2.7
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "um.xpdr.t1",
+      "cat": "transponder",
+      "mfr": "mfr.um_core_fab",
+      "name": "Транспондер Управления Маяков Т-1",
+      "model": "Т-1",
+      "mass_t": 0.05,
+      "price_cr": 8000,
+      "power_mw": 0.02,
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          0.464,
+          0.464,
+          0.464
+        ],
+        "service_clearance_m": [
+          0.52,
+          0.52,
+          0.52
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "xz.comm.c1",
+      "cat": "comm",
+      "mfr": "mfr.xinzhi",
+      "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
+      "model": "C-1",
+      "mass_t": 0.6,
+      "price_cr": 40000,
+      "power_mw": 0.3,
+      "range_ls": 10,
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.442,
+          0.721,
+          1.442
+        ],
+        "service_clearance_m": [
+          1.62,
+          0.81,
+          1.62
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "xz.comm.c3",
+      "cat": "comm",
+      "mfr": "mfr.xinzhi",
+      "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
+      "model": "C-3",
+      "mass_t": 2,
+      "price_cr": 600000,
+      "power_mw": 2,
+      "range_ls": 60,
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.154,
+          1.077,
+          2.154
+        ],
+        "service_clearance_m": [
+          2.41,
+          1.21,
+          2.41
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "xz.mc.c1",
+      "cat": "computer",
+      "mfr": "mfr.xinzhi",
+      "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
+      "model": "MC-C1",
+      "mass_t": 0.8,
+      "price_cr": 90000,
+      "power_mw": 0.4,
+      "grade": "civil",
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.305,
+          0.783,
+          1.305
+        ],
+        "service_clearance_m": [
+          1.46,
+          0.88,
+          1.46
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "xz.mc.c3",
+      "cat": "computer",
+      "mfr": "mfr.xinzhi",
+      "name": "Синьчжи MotherComputer MC-C3 (флот)",
+      "model": "MC-C3",
+      "mass_t": 2.5,
+      "price_cr": 400000,
+      "power_mw": 1.5,
+      "grade": "fleet",
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.908,
+          1.145,
+          1.908
+        ],
+        "service_clearance_m": [
+          2.14,
+          1.28,
+          2.14
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "xz.radar.n10",
+      "cat": "radar",
+      "mfr": "mfr.xinzhi",
+      "name": "Синьчжи радар обзора N-10 (10 000 км)",
+      "model": "N-10",
+      "mass_t": 4,
+      "price_cr": 450000,
+      "range_km": 10000,
+      "power_mw": 4,
+      "runtime_backend": "TestIdeal",
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          3.057,
+          1.223,
+          3.057
+        ],
+        "service_clearance_m": [
+          3.42,
+          1.37,
+          3.42
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    },
+    {
+      "id": "xz.radar.n2",
+      "cat": "radar",
+      "mfr": "mfr.xinzhi",
+      "name": "Синьчжи навигационный радар N-2 (2 000 км)",
+      "model": "N-2",
+      "mass_t": 1.2,
+      "price_cr": 60000,
+      "range_km": 2000,
+      "power_mw": 0.6,
+      "runtime_backend": "TestIdeal",
+      "overhaul_h": 40000,
+      "life_h": 90000,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          2.047,
+          0.819,
+          2.047
+        ],
+        "service_clearance_m": [
+          2.29,
+          0.92,
+          2.29
+        ],
+        "basis": [
+          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+        ]
+      },
+      "cooperation_group": "cognium_pool"
+    }
+  ]
+}

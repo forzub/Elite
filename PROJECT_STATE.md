@@ -3003,3 +3003,17 @@ order - ask for it again if it is not in the session.
 - After the user's review: the separate stage INTERSTELLAR NAVIGATION
   (connected domain, ephemerides, gravity, InterstellarNavigationEnvironment
   hazards, icy fields, rogue objects, refuelling, ship-specific risk).
+
+
+### User order 2026-11-05 w - fleet engineering context, unified spares and ship passports
+Status: DATA FOUNDATION / PROPOSAL-model; frame passports deliberately deferred.
+- Engineering inventory frozen as context: 18 economic classes -> 19 engineering types (Cobrett N1 and A3 are distinct propulsion architectures) -> 21 current model passports.
+- 10 ship integrators grouped into 6 industrial-cooperation ecosystems: Sol, Cognium pool, Heavenly Pact, Southern circle, Citadel compact, Free Belts. Cross-group scores describe industrial compatibility/supply, not ideology.
+- New machine-readable sources: canon/fleet_engineering_context.json, canon/ship_parts_unified.json, canon/ship_passports_3126.json. Human context: Notes/Lore/ECONOMY/FLEET_ENGINEERING_CONTEXT.md.
+- Spare-parts unification: 121 legacy product SKUs -> 102 canonical replaceable SKUs (66 major technical LRUs + 36 mission/survival/weapon/payload modules). Drives 17 -> 10; propulsion reactors 15 -> 5; service reactors 7 -> 5.
+- Accepted engineering rule: a larger standard engine may be derated to the ship rating; reactor power may be composed from parallel banks of the same smaller standard reactor. Rated ship thrust/power are unchanged in this pass.
+- All 102 canonical parts have equipment envelope + service-clearance geometry. Cobrett anchors: CR-1 emitter dia 5 m, ER-5 cooling pad 11 x 11 m; other dimensions are PROPOSAL/model scaling by mass/power using ship_designer.py-style effective densities.
+- Southern-circle legacy component names mizan.* are not canonical in the new parts database: they resolve to kapehu.core.k5 / kapehu.core.k12 / kapehu.mc.k1; legacy ids are migration aliases only.
+- Cobrett N1/A3 jump installation is explicit in both the engineering passport and CobrettPassports.h: Z-0.5 jump core + jump-charge tank.
+- Not done: hull/frame passports, exact mount coordinates for future 3D models, runtime migration to unified parts, flight-performance rebalance.
+- Static data invariants checked before commit: engineering types=19, model passports=21, canonical SKUs=102; every passport BOM resolves to a canonical part and every canonical part has geometry.

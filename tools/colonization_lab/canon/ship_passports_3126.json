@@ -1,0 +1,5518 @@
+{
+  "schema": "elite.ship_passports_3126.v1",
+  "status": "PROPOSAL/model",
+  "source_head": "722a7ec18500b4335ec94e9246f9c1f794c149ac",
+  "count": 21,
+  "engineering_type_count": 19,
+  "note": "Equipment BOMs are standardized for spare-parts simulation. Frame/structure passports are deferred.",
+  "passports": [
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "kb.ship.cobrett-i.frnu.n1",
+      "engineering_type": "cobrett_n1",
+      "economic_class": "cobrett_i_n1",
+      "name": "Cobrett-I N1",
+      "manufacturer": "mfr.cobretty",
+      "cooperation_group": "cognium_pool",
+      "purpose": "быстрый гибкий фрахт: ценный и срочный груз, курьер, малый чартер",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          22.2,
+          26,
+          5
+        ],
+        "form": "wedge",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "I",
+        "installed_main_engines": 1,
+        "simultaneous_main_engines": 1,
+        "rated_directional_thrust_mn": 9.56,
+        "rated_propulsion_input_mw": 4850,
+        "standardized_reactor_capacity_mw": 5000
+      },
+      "jump_system": {
+        "fitted": true,
+        "cores": [
+          {
+            "part_id": "um.core.z05",
+            "qty": 1,
+            "rating_t": 500
+          }
+        ],
+        "jump_charge_tanks": 3,
+        "note": "Cobrett jump system explicit in engineering passport and C++ catalog installation tree."
+      },
+      "service_power_capacity_mw": 150,
+      "mass": {
+        "standardized_parts_delta_t": 6,
+        "dry_estimated_after_standardization_t": 6,
+        "delta_fraction": 6,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "kb.drive.n1-axial",
+          "part_id": "kb.drive.n1-axial",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "drive",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.drive.n1-axial"
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "kb.reactor.er5",
+          "part_id": "kb.reactor.er5",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "reactor",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.reactor.er5"
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "kb.apu.s70",
+          "part_id": "kb.apu.s150",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "service_reactor",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.apu.s150",
+          "standardization": {
+            "canonical_id": "kb.apu.s150",
+            "quantity_multiplier": 1,
+            "reason": "SR-150 derated to 70 MW",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.4667
+            }
+          }
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "kb.rad.cs-panel",
+          "part_id": "kb.rad.cs-panel",
+          "qty": 38,
+          "source_qty": 38,
+          "category": "radiator",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.rad.cs-panel"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "kb.cool.loop200",
+          "part_id": "kb.cool.loop200",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.cool.loop200"
+        },
+        {
+          "slot_code": "J",
+          "legacy_part_id": "um.core.z05",
+          "part_id": "um.core.z05",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "jump_core",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.core.z05"
+        },
+        {
+          "slot_code": "JT",
+          "legacy_part_id": "std.tank.jumpcharge",
+          "part_id": "std.tank.jumpcharge",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.jumpcharge"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "kb.rcs.fc-nozzle",
+          "part_id": "kb.rcs.fc-nozzle",
+          "qty": 24,
+          "source_qty": 24,
+          "category": "rcs",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.rcs.fc-nozzle"
+        },
+        {
+          "slot_code": "QT",
+          "legacy_part_id": "kb.rcs.argon-tank",
+          "part_id": "kb.rcs.argon-tank",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "tank",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.rcs.argon-tank"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c1",
+          "part_id": "xz.mc.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c1"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n2",
+          "part_id": "xz.radar.n2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n2"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "eurohab.ls.l4",
+          "part_id": "eurohab.ls.l4",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "life_support",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "eurohab.ls.l4"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "kb.surv.capsule2",
+          "part_id": "kb.surv.capsule2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "escape_capsule",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.surv.capsule2"
+        },
+        {
+          "slot_code": "C",
+          "legacy_part_id": "std.cargo.c20lock",
+          "part_id": "std.cargo.c20lock",
+          "qty": 6,
+          "source_qty": 6,
+          "category": "container_rack",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.cargo.c20lock"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        },
+        {
+          "slot_code": "W",
+          "legacy_part_id": "kb.wpn.pd1",
+          "part_id": "kb.wpn.pd1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "weapon",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.wpn.pd1"
+        }
+      ],
+      "unique_spare_skus": 19,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "kb.ship.cobrett-i.frnu-inta.a3",
+      "engineering_type": "cobrett_a3",
+      "economic_class": "cobrett_i_n1",
+      "name": "Cobrett-I A3",
+      "manufacturer": "mfr.cobretty",
+      "cooperation_group": "cognium_pool",
+      "purpose": "как N1, для пилотов с законом Assisted; дороже в обслуживании",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          22.2,
+          26,
+          5
+        ],
+        "form": "wedge",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Assisted",
+        "layout": "I",
+        "installed_main_engines": 4,
+        "simultaneous_main_engines": 2,
+        "rated_directional_thrust_mn": 19.12,
+        "rated_propulsion_input_mw": 9700,
+        "standardized_reactor_capacity_mw": 10000
+      },
+      "jump_system": {
+        "fitted": true,
+        "cores": [
+          {
+            "part_id": "um.core.z05",
+            "qty": 1,
+            "rating_t": 500
+          }
+        ],
+        "jump_charge_tanks": 3,
+        "note": "Cobrett jump system explicit in engineering passport and C++ catalog installation tree."
+      },
+      "service_power_capacity_mw": 150,
+      "mass": {
+        "standardized_parts_delta_t": 6,
+        "dry_estimated_after_standardization_t": 6,
+        "delta_fraction": 6,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "kb.drive.cr1-vector",
+          "part_id": "kb.drive.cr1-vector",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "drive",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.drive.cr1-vector"
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "kb.reactor.er5",
+          "part_id": "kb.reactor.er5",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "reactor",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.reactor.er5"
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "kb.apu.s70",
+          "part_id": "kb.apu.s150",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "service_reactor",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.apu.s150",
+          "standardization": {
+            "canonical_id": "kb.apu.s150",
+            "quantity_multiplier": 1,
+            "reason": "SR-150 derated to 70 MW",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.4667
+            }
+          }
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "kb.rad.cs-panel",
+          "part_id": "kb.rad.cs-panel",
+          "qty": 38,
+          "source_qty": 38,
+          "category": "radiator",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.rad.cs-panel"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "kb.cool.loop200",
+          "part_id": "kb.cool.loop200",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.cool.loop200"
+        },
+        {
+          "slot_code": "J",
+          "legacy_part_id": "um.core.z05",
+          "part_id": "um.core.z05",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "jump_core",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.core.z05"
+        },
+        {
+          "slot_code": "JT",
+          "legacy_part_id": "std.tank.jumpcharge",
+          "part_id": "std.tank.jumpcharge",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.jumpcharge"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c1",
+          "part_id": "xz.mc.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c1"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n2",
+          "part_id": "xz.radar.n2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n2"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "eurohab.ls.l4",
+          "part_id": "eurohab.ls.l4",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "life_support",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "eurohab.ls.l4"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "kb.surv.capsule2",
+          "part_id": "kb.surv.capsule2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "escape_capsule",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.surv.capsule2"
+        },
+        {
+          "slot_code": "C",
+          "legacy_part_id": "std.cargo.c20lock",
+          "part_id": "std.cargo.c20lock",
+          "qty": 6,
+          "source_qty": 6,
+          "category": "container_rack",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.cargo.c20lock"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        },
+        {
+          "slot_code": "W",
+          "legacy_part_id": "kb.wpn.pd1",
+          "part_id": "kb.wpn.pd1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "weapon",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.wpn.pd1"
+        }
+      ],
+      "unique_spare_skus": 17,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "ofu.ship.ocs-4.lastochka",
+      "engineering_type": "ocs4_lastochka",
+      "economic_class": "ocs4_lastochka",
+      "name": "OCS-4 «Ласточка»",
+      "manufacturer": "mfr.ofu",
+      "cooperation_group": "sol_industrial",
+      "purpose": "только орбита ↔ хабы и депо (без посадки, без прыжка)",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          56,
+          18,
+          14
+        ],
+        "form": "box",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "I",
+        "installed_main_engines": 1,
+        "simultaneous_main_engines": 1,
+        "rated_directional_thrust_mn": 3.3,
+        "rated_propulsion_input_mw": 2400,
+        "standardized_reactor_capacity_mw": 4800
+      },
+      "jump_system": {
+        "fitted": false,
+        "cores": [],
+        "jump_charge_tanks": 0,
+        "note": null
+      },
+      "service_power_capacity_mw": 60,
+      "mass": {
+        "standardized_parts_delta_t": 12.5,
+        "dry_estimated_after_standardization_t": 12.5,
+        "delta_fraction": 12.5,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "ofu.drive.u33",
+          "part_id": "ofu.drive.u33",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "drive",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.drive.u33"
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "ofu.reactor.er26",
+          "part_id": "srw.reactor.sr48",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.reactor.sr48",
+          "standardization": {
+            "canonical_id": "srw.reactor.sr48",
+            "quantity_multiplier": 1,
+            "reason": "Sol SR-4.8 common propulsion reactor derated to 2.6 GW",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.5417
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "ofu.apu.s20",
+          "part_id": "srw.apu.s60",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "service_reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.apu.s60",
+          "standardization": {
+            "canonical_id": "srw.apu.s60",
+            "quantity_multiplier": 1,
+            "reason": "Sol S-60 common service reactor derated to 20 MW",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.3333
+            }
+          }
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "sol.rad.panel50",
+          "part_id": "sol.rad.panel50",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "radiator",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "sol.cool.loop300",
+          "part_id": "sol.cool.loop300",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.cool.loop300"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster",
+          "part_id": "std.rcs.cluster",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "rcs",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.rcs.cluster"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c1",
+          "part_id": "xz.mc.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c1"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n2",
+          "part_id": "xz.radar.n2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n2"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "ofu.ls.o4",
+          "part_id": "ofu.ls.o4",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "life_support",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.ls.o4"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.pod4",
+          "part_id": "std.surv.pod4",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "escape_capsule",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.pod4"
+        },
+        {
+          "slot_code": "C",
+          "legacy_part_id": "std.cargo.c20lock",
+          "part_id": "std.cargo.c20lock",
+          "qty": 24,
+          "source_qty": 24,
+          "category": "container_rack",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.cargo.c20lock"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        }
+      ],
+      "unique_spare_skus": 15,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "ofu.ship.sl-12.podyomnik",
+      "engineering_type": "surface_lifter",
+      "economic_class": "surface_lifter",
+      "name": "SL-12 «Подъёмник»",
+      "manufacturer": "mfr.ofu",
+      "cooperation_group": "sol_industrial",
+      "purpose": "космопорт на поверхности ↔ низкая орбита: 12 мест C20 или 12 модулей P20 (144 пассажира)",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          48,
+          16,
+          16
+        ],
+        "form": "lifter",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "Y",
+        "installed_main_engines": 3,
+        "simultaneous_main_engines": 3,
+        "rated_directional_thrust_mn": 21.99,
+        "rated_propulsion_input_mw": 26010,
+        "standardized_reactor_capacity_mw": 28800
+      },
+      "jump_system": {
+        "fitted": false,
+        "cores": [],
+        "jump_charge_tanks": 0,
+        "note": null
+      },
+      "service_power_capacity_mw": 120,
+      "mass": {
+        "standardized_parts_delta_t": 12,
+        "dry_estimated_after_standardization_t": 12,
+        "delta_fraction": 12,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "ofu.drive.u73l",
+          "part_id": "ofu.drive.u73l",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "drive",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.drive.u73l"
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "srw.reactor.sr9",
+          "part_id": "srw.reactor.sr48",
+          "qty": 6,
+          "source_qty": 3,
+          "category": "reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.reactor.sr48",
+          "standardization": {
+            "canonical_id": "srw.reactor.sr48",
+            "quantity_multiplier": 2,
+            "reason": "two SR-4.8 in parallel, 9.6 GW installed / 9 GW rated",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.9375
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "srw.apu.s60",
+          "part_id": "srw.apu.s60",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "service_reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.apu.s60"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "sol.rad.panel50",
+          "part_id": "sol.rad.panel50",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "radiator",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "sol.cool.loop300",
+          "part_id": "sol.cool.loop300",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.cool.loop300"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster",
+          "part_id": "std.rcs.cluster",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "rcs",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.rcs.cluster"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c1",
+          "part_id": "xz.mc.c1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c1"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n2",
+          "part_id": "xz.radar.n2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n2"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "ofu.ls.o4",
+          "part_id": "ofu.ls.o4",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "life_support",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.ls.o4"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.pod4",
+          "part_id": "std.surv.pod4",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "escape_capsule",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.pod4"
+        },
+        {
+          "slot_code": "C",
+          "legacy_part_id": "std.cargo.c20lock",
+          "part_id": "std.cargo.c20lock",
+          "qty": 12,
+          "source_qty": 12,
+          "category": "container_rack",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.cargo.c20lock"
+        },
+        {
+          "slot_code": "P",
+          "legacy_part_id": "ofu.cargo.p20",
+          "part_id": "ofu.cargo.p20",
+          "qty": 12,
+          "source_qty": 12,
+          "category": "passenger_module",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.cargo.p20"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        },
+        {
+          "slot_code": "Z",
+          "legacy_part_id": "ofu.lift.shield",
+          "part_id": "ofu.lift.shield",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "heat_shield",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.lift.shield"
+        },
+        {
+          "slot_code": "G",
+          "legacy_part_id": "ofu.lift.gear",
+          "part_id": "ofu.lift.gear",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "landing_gear",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.lift.gear"
+        }
+      ],
+      "unique_spare_skus": 18,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "bharat.ship.c-120.konveyer",
+      "engineering_type": "medium_freighter",
+      "economic_class": "medium_freighter",
+      "name": "C-120 «Конвейер»",
+      "manufacturer": "mfr.bharat",
+      "cooperation_group": "southern_circle",
+      "purpose": "вторичные межзвёздные трассы: контейнеры, машины, товары, медикаменты",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          95,
+          30,
+          26
+        ],
+        "form": "box",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "Y",
+        "installed_main_engines": 3,
+        "simultaneous_main_engines": 3,
+        "rated_directional_thrust_mn": 12.99,
+        "rated_propulsion_input_mw": 9000,
+        "standardized_reactor_capacity_mw": 14400
+      },
+      "jump_system": {
+        "fitted": true,
+        "cores": [
+          {
+            "part_id": "kapehu.core.k5",
+            "qty": 1,
+            "rating_t": 5000
+          }
+        ],
+        "jump_charge_tanks": 30,
+        "note": null
+      },
+      "service_power_capacity_mw": 60,
+      "mass": {
+        "standardized_parts_delta_t": 28.5,
+        "dry_estimated_after_standardization_t": 28.5,
+        "delta_fraction": 28.5,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "ofu.drive.u43",
+          "part_id": "ofu.drive.u70",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "drive",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.drive.u70",
+          "standardization": {
+            "canonical_id": "ofu.drive.u70",
+            "quantity_multiplier": 1,
+            "reason": "У-70 derated; one Sol axial family replaces U-43",
+            "operating_limit": {
+              "rated_thrust_fraction": 0.6186,
+              "rated_input_power_fraction": 0.4615
+            }
+          }
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "srw.reactor.sr33",
+          "part_id": "srw.reactor.sr48",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.reactor.sr48",
+          "standardization": {
+            "canonical_id": "srw.reactor.sr48",
+            "quantity_multiplier": 1,
+            "reason": "SR-4.8 derated to 3.3 GW",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.6875
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "srw.apu.s60",
+          "part_id": "srw.apu.s60",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "service_reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.apu.s60"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "sol.rad.panel50",
+          "part_id": "sol.rad.panel50",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "radiator",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "sol.cool.loop300",
+          "part_id": "sol.cool.loop300",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.cool.loop300"
+        },
+        {
+          "slot_code": "J",
+          "legacy_part_id": "mizan.core.m5",
+          "part_id": "kapehu.core.k5",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "jump_core",
+          "manufacturer": "mfr.kapehu_systems",
+          "cooperation_group": "southern_circle",
+          "geometry_ref": "kapehu.core.k5",
+          "standardization": {
+            "canonical_id": "kapehu.core.k5",
+            "quantity_multiplier": 1,
+            "reason": "former legacy id mizan.core.m5; Pacific/Tauranga canonical replacement"
+          }
+        },
+        {
+          "slot_code": "JT",
+          "legacy_part_id": "std.tank.jumpcharge",
+          "part_id": "std.tank.jumpcharge",
+          "qty": 30,
+          "source_qty": 30,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.jumpcharge"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster",
+          "part_id": "std.rcs.cluster",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "rcs",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.rcs.cluster"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "mizan.mc.m1",
+          "part_id": "kapehu.mc.k1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "computer",
+          "manufacturer": "mfr.kapehu_systems",
+          "cooperation_group": "southern_circle",
+          "geometry_ref": "kapehu.mc.k1",
+          "standardization": {
+            "canonical_id": "kapehu.mc.k1",
+            "quantity_multiplier": 1,
+            "reason": "former legacy id mizan.mc.m1; Pacific/Tauranga canonical replacement"
+          }
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n2",
+          "part_id": "xz.radar.n2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n2"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "eurohab.ls.l20",
+          "part_id": "eurohab.ls.l20",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "life_support",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "eurohab.ls.l20"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.pod4",
+          "part_id": "std.surv.pod4",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "escape_capsule",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.pod4"
+        },
+        {
+          "slot_code": "C",
+          "legacy_part_id": "std.cargo.c20lock",
+          "part_id": "std.cargo.c20lock",
+          "qty": 120,
+          "source_qty": 120,
+          "category": "container_rack",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.cargo.c20lock"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        }
+      ],
+      "unique_spare_skus": 17,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "harmony.ship.he-120",
+      "engineering_type": "medium_freighter",
+      "economic_class": "medium_freighter",
+      "name": "Хэ-120 «Хуэйлю»",
+      "manufacturer": "mfr.harmony_yards",
+      "cooperation_group": "heavenly_pact",
+      "purpose": "как C-120 для флотов Пакта; ремонт в любом порту блока",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          98,
+          32,
+          28
+        ],
+        "form": "box",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "I",
+        "installed_main_engines": 1,
+        "simultaneous_main_engines": 1,
+        "rated_directional_thrust_mn": 13,
+        "rated_propulsion_input_mw": 9000,
+        "standardized_reactor_capacity_mw": 10000
+      },
+      "jump_system": {
+        "fitted": true,
+        "cores": [
+          {
+            "part_id": "harmony.core.h5",
+            "qty": 1,
+            "rating_t": 5000
+          }
+        ],
+        "jump_charge_tanks": 30,
+        "note": null
+      },
+      "service_power_capacity_mw": 150,
+      "mass": {
+        "standardized_parts_delta_t": 19,
+        "dry_estimated_after_standardization_t": 19,
+        "delta_fraction": 19,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "th.drive.tz13",
+          "part_id": "th.drive.tz28",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "drive",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.drive.tz28",
+          "standardization": {
+            "canonical_id": "th.drive.tz28",
+            "quantity_multiplier": 1,
+            "reason": "ТЦ-28 derated for medium freighter; same heavy axial family",
+            "operating_limit": {
+              "rated_thrust_fraction": 0.4727,
+              "rated_input_power_fraction": 0.3273
+            }
+          }
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "th.reactor.tr10",
+          "part_id": "th.reactor.tr10",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "reactor",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.reactor.tr10"
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "th.apu.s150",
+          "part_id": "th.apu.s150",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "service_reactor",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.apu.s150"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "th.rad.panel50",
+          "part_id": "th.rad.panel50",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "radiator",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "th.cool.loop600",
+          "part_id": "th.cool.loop600",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.cool.loop600"
+        },
+        {
+          "slot_code": "J",
+          "legacy_part_id": "harmony.core.h5",
+          "part_id": "harmony.core.h5",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "jump_core",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "harmony.core.h5"
+        },
+        {
+          "slot_code": "JT",
+          "legacy_part_id": "std.tank.jumpcharge",
+          "part_id": "std.tank.jumpcharge",
+          "qty": 30,
+          "source_qty": 30,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.jumpcharge"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster_h",
+          "part_id": "std.rcs.cluster_h",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "rcs",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "std.rcs.cluster_h"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c1",
+          "part_id": "xz.mc.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c1"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n2",
+          "part_id": "xz.radar.n2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n2"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "terra.ls.t10",
+          "part_id": "terra.ls.t10",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "life_support",
+          "manufacturer": "mfr.terra_habitat",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "terra.ls.t10"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.pod4",
+          "part_id": "std.surv.pod4",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "escape_capsule",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.pod4"
+        },
+        {
+          "slot_code": "C",
+          "legacy_part_id": "std.cargo.c20lock",
+          "part_id": "std.cargo.c20lock",
+          "qty": 120,
+          "source_qty": 120,
+          "category": "container_rack",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.cargo.c20lock"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        }
+      ],
+      "unique_spare_skus": 17,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "harmony.ship.he-t12.lokomotiv",
+      "engineering_type": "jump_train",
+      "economic_class": "jump_train",
+      "name": "Хэ-Т12 «Локомотив» + 12 модулей",
+      "manufacturer": "mfr.harmony_yards",
+      "cooperation_group": "heavenly_pact",
+      "purpose": "магистрали: навал и контейнеры в модулях; тягач оставляет модули в депо и забирает готовые",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          160,
+          40,
+          40
+        ],
+        "form": "train",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "X",
+        "installed_main_engines": 4,
+        "simultaneous_main_engines": 4,
+        "rated_directional_thrust_mn": 90,
+        "rated_propulsion_input_mw": 70000,
+        "standardized_reactor_capacity_mw": 80000
+      },
+      "jump_system": {
+        "fitted": true,
+        "cores": [
+          {
+            "part_id": "harmony.core.h80",
+            "qty": 1,
+            "rating_t": 80000
+          }
+        ],
+        "jump_charge_tanks": 420,
+        "note": null
+      },
+      "service_power_capacity_mw": 600,
+      "mass": {
+        "standardized_parts_delta_t": 48,
+        "dry_estimated_after_standardization_t": 48,
+        "delta_fraction": 48,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "th.drive.tz23",
+          "part_id": "th.drive.tz28",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "drive",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.drive.tz28",
+          "standardization": {
+            "canonical_id": "th.drive.tz28",
+            "quantity_multiplier": 1,
+            "reason": "ТЦ-28 derated for jump train",
+            "operating_limit": {
+              "rated_thrust_fraction": 0.8182,
+              "rated_input_power_fraction": 0.6364
+            }
+          }
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "th.reactor.tr20",
+          "part_id": "th.reactor.tr10",
+          "qty": 8,
+          "source_qty": 4,
+          "category": "reactor",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.reactor.tr10",
+          "standardization": {
+            "canonical_id": "th.reactor.tr10",
+            "quantity_multiplier": 2,
+            "reason": "two TR-10 in parallel",
+            "operating_limit": {
+              "bank_rated_output_fraction": 1
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "th.apu.s600",
+          "part_id": "th.apu.s600",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "service_reactor",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.apu.s600"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "th.rad.panel50",
+          "part_id": "th.rad.panel50",
+          "qty": 20,
+          "source_qty": 20,
+          "category": "radiator",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "th.cool.loop600",
+          "part_id": "th.cool.loop600",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.cool.loop600"
+        },
+        {
+          "slot_code": "J",
+          "legacy_part_id": "harmony.core.h80",
+          "part_id": "harmony.core.h80",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "jump_core",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "harmony.core.h80"
+        },
+        {
+          "slot_code": "JT",
+          "legacy_part_id": "std.tank.jumpcharge",
+          "part_id": "std.tank.jumpcharge",
+          "qty": 420,
+          "source_qty": 420,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.jumpcharge"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 120,
+          "source_qty": 120,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster_h",
+          "part_id": "std.rcs.cluster_h",
+          "qty": 16,
+          "source_qty": 16,
+          "category": "rcs",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "std.rcs.cluster_h"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c3",
+          "part_id": "xz.mc.c3",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c3"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n10",
+          "part_id": "xz.radar.n10",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n10"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "terra.ls.t60",
+          "part_id": "terra.ls.t60",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "life_support",
+          "manufacturer": "mfr.terra_habitat",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "terra.ls.t60"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.boat20",
+          "part_id": "std.surv.boat20",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "lifeboat",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.boat20"
+        },
+        {
+          "slot_code": "U",
+          "legacy_part_id": "harmony.mod.cargo4800",
+          "part_id": "harmony.mod.cargo4800",
+          "qty": 12,
+          "source_qty": 12,
+          "category": "train_module",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "harmony.mod.cargo4800"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        },
+        {
+          "slot_code": "W",
+          "legacy_part_id": "harmony.wpn.pd3",
+          "part_id": "harmony.wpn.pd3",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "weapon",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "harmony.wpn.pd3"
+        }
+      ],
+      "unique_spare_skus": 18,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "harmony.ship.he-t12c.tanker",
+      "engineering_type": "jump_tanker",
+      "economic_class": "jump_tanker",
+      "name": "Хэ-Т12Ц (поезд-танкер)",
+      "manufacturer": "mfr.harmony_yards",
+      "cooperation_group": "heavenly_pact",
+      "purpose": "топливо реакторов и заряд прыжка к депо и импортёрам",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          160,
+          40,
+          40
+        ],
+        "form": "train",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "X",
+        "installed_main_engines": 4,
+        "simultaneous_main_engines": 4,
+        "rated_directional_thrust_mn": 90,
+        "rated_propulsion_input_mw": 70000,
+        "standardized_reactor_capacity_mw": 80000
+      },
+      "jump_system": {
+        "fitted": true,
+        "cores": [
+          {
+            "part_id": "harmony.core.h80",
+            "qty": 1,
+            "rating_t": 80000
+          }
+        ],
+        "jump_charge_tanks": 420,
+        "note": null
+      },
+      "service_power_capacity_mw": 600,
+      "mass": {
+        "standardized_parts_delta_t": 48,
+        "dry_estimated_after_standardization_t": 48,
+        "delta_fraction": 48,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "th.drive.tz23",
+          "part_id": "th.drive.tz28",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "drive",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.drive.tz28",
+          "standardization": {
+            "canonical_id": "th.drive.tz28",
+            "quantity_multiplier": 1,
+            "reason": "ТЦ-28 derated for jump train",
+            "operating_limit": {
+              "rated_thrust_fraction": 0.8182,
+              "rated_input_power_fraction": 0.6364
+            }
+          }
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "th.reactor.tr20",
+          "part_id": "th.reactor.tr10",
+          "qty": 8,
+          "source_qty": 4,
+          "category": "reactor",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.reactor.tr10",
+          "standardization": {
+            "canonical_id": "th.reactor.tr10",
+            "quantity_multiplier": 2,
+            "reason": "two TR-10 in parallel",
+            "operating_limit": {
+              "bank_rated_output_fraction": 1
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "th.apu.s600",
+          "part_id": "th.apu.s600",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "service_reactor",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.apu.s600"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "th.rad.panel50",
+          "part_id": "th.rad.panel50",
+          "qty": 20,
+          "source_qty": 20,
+          "category": "radiator",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "th.cool.loop600",
+          "part_id": "th.cool.loop600",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.cool.loop600"
+        },
+        {
+          "slot_code": "J",
+          "legacy_part_id": "harmony.core.h80",
+          "part_id": "harmony.core.h80",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "jump_core",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "harmony.core.h80"
+        },
+        {
+          "slot_code": "JT",
+          "legacy_part_id": "std.tank.jumpcharge",
+          "part_id": "std.tank.jumpcharge",
+          "qty": 420,
+          "source_qty": 420,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.jumpcharge"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 120,
+          "source_qty": 120,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster_h",
+          "part_id": "std.rcs.cluster_h",
+          "qty": 16,
+          "source_qty": 16,
+          "category": "rcs",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "std.rcs.cluster_h"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c3",
+          "part_id": "xz.mc.c3",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c3"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n10",
+          "part_id": "xz.radar.n10",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n10"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "terra.ls.t60",
+          "part_id": "terra.ls.t60",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "life_support",
+          "manufacturer": "mfr.terra_habitat",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "terra.ls.t60"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.boat20",
+          "part_id": "std.surv.boat20",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "lifeboat",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.boat20"
+        },
+        {
+          "slot_code": "U",
+          "legacy_part_id": "harmony.mod.tank4200",
+          "part_id": "harmony.mod.tank4200",
+          "qty": 12,
+          "source_qty": 12,
+          "category": "train_module",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "harmony.mod.tank4200"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        },
+        {
+          "slot_code": "W",
+          "legacy_part_id": "harmony.wpn.pd3",
+          "part_id": "harmony.wpn.pd3",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "weapon",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "harmony.wpn.pd3"
+        }
+      ],
+      "unique_spare_skus": 18,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "sol.ship.gt-3000.titan",
+      "engineering_type": "gas_tanker",
+      "economic_class": "gas_tanker",
+      "name": "ГТ-3000 «Титан»",
+      "manufacturer": "mfr.sol_mass_yards",
+      "cooperation_group": "sol_industrial",
+      "purpose": "He-3 и дейтерий с платформ Юпитера и Сатурна к депо и портам",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          110,
+          30,
+          30
+        ],
+        "form": "cylinder",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "Y",
+        "installed_main_engines": 3,
+        "simultaneous_main_engines": 3,
+        "rated_directional_thrust_mn": 6.99,
+        "rated_propulsion_input_mw": 6000,
+        "standardized_reactor_capacity_mw": 14400
+      },
+      "jump_system": {
+        "fitted": false,
+        "cores": [],
+        "jump_charge_tanks": 0,
+        "note": null
+      },
+      "service_power_capacity_mw": 60,
+      "mass": {
+        "standardized_parts_delta_t": 39,
+        "dry_estimated_after_standardization_t": 39,
+        "delta_fraction": 39,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "ofu.drive.u23",
+          "part_id": "ofu.drive.u33",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "drive",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.drive.u33",
+          "standardization": {
+            "canonical_id": "ofu.drive.u33",
+            "quantity_multiplier": 1,
+            "reason": "У-33 derated to the U-23 operating point",
+            "operating_limit": {
+              "rated_thrust_fraction": 0.7061,
+              "rated_input_power_fraction": 0.8333
+            }
+          }
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "srw.reactor.sr22",
+          "part_id": "srw.reactor.sr48",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.reactor.sr48",
+          "standardization": {
+            "canonical_id": "srw.reactor.sr48",
+            "quantity_multiplier": 1,
+            "reason": "SR-4.8 derated to 2.2 GW",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.4583
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "srw.apu.s60",
+          "part_id": "srw.apu.s60",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "service_reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.apu.s60"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "sol.rad.panel50",
+          "part_id": "sol.rad.panel50",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "radiator",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "sol.cool.loop300",
+          "part_id": "sol.cool.loop300",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.cool.loop300"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 10,
+          "source_qty": 10,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster",
+          "part_id": "std.rcs.cluster",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "rcs",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.rcs.cluster"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c1",
+          "part_id": "xz.mc.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c1"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n2",
+          "part_id": "xz.radar.n2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n2"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "terra.ls.t10",
+          "part_id": "terra.ls.t10",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "life_support",
+          "manufacturer": "mfr.terra_habitat",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "terra.ls.t10"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.pod4",
+          "part_id": "std.surv.pod4",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "escape_capsule",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.pod4"
+        },
+        {
+          "slot_code": "U",
+          "legacy_part_id": "sol.cryo.t1000",
+          "part_id": "sol.cryo.t1000",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "cryo_tank",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.cryo.t1000"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        }
+      ],
+      "unique_spare_skus": 15,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "stone.ship.kamen.tanker",
+      "engineering_type": "gas_tanker",
+      "economic_class": "gas_tanker",
+      "name": "«Камень» (танкер из астероида)",
+      "manufacturer": "mfr.stone_docks",
+      "cooperation_group": "free_belts",
+      "purpose": "лёд и летучие внутри системы; каменная оболочка — защита от обломков; медленный и дешёвый",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          60,
+          45,
+          40
+        ],
+        "form": "asteroid",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "I",
+        "installed_main_engines": 1,
+        "simultaneous_main_engines": 1,
+        "rated_directional_thrust_mn": 3.3,
+        "rated_propulsion_input_mw": 2400,
+        "standardized_reactor_capacity_mw": 4800
+      },
+      "jump_system": {
+        "fitted": false,
+        "cores": [],
+        "jump_charge_tanks": 0,
+        "note": null
+      },
+      "service_power_capacity_mw": 60,
+      "mass": {
+        "dry_original_t": 2400,
+        "standardized_parts_delta_t": 12.5,
+        "dry_estimated_after_standardization_t": 2412.5,
+        "delta_fraction": 0.0052,
+        "frame_revalidation_required": false
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "ofu.drive.u33",
+          "part_id": "ofu.drive.u33",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "drive",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.drive.u33"
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "ofu.reactor.er26",
+          "part_id": "srw.reactor.sr48",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.reactor.sr48",
+          "standardization": {
+            "canonical_id": "srw.reactor.sr48",
+            "quantity_multiplier": 1,
+            "reason": "Sol SR-4.8 common propulsion reactor derated to 2.6 GW",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.5417
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "ofu.apu.s20",
+          "part_id": "srw.apu.s60",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "service_reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.apu.s60",
+          "standardization": {
+            "canonical_id": "srw.apu.s60",
+            "quantity_multiplier": 1,
+            "reason": "Sol S-60 common service reactor derated to 20 MW",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.3333
+            }
+          }
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "sol.rad.panel50",
+          "part_id": "sol.rad.panel50",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "radiator",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "sol.cool.loop300",
+          "part_id": "sol.cool.loop300",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.cool.loop300"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 6,
+          "source_qty": 6,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster",
+          "part_id": "std.rcs.cluster",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "rcs",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.rcs.cluster"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c1",
+          "part_id": "xz.mc.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c1"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "kern.radar.deb5",
+          "part_id": "kern.radar.deb5",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.kern_heavy",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kern.radar.deb5"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "eurohab.ls.l20",
+          "part_id": "eurohab.ls.l20",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "life_support",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "eurohab.ls.l20"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.pod4",
+          "part_id": "std.surv.pod4",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "escape_capsule",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.pod4"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        }
+      ],
+      "unique_spare_skus": 13,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "kern.ship.ht-20k.mul",
+      "engineering_type": "ore_tug",
+      "economic_class": "ore_tug",
+      "name": "HT-20K «Мул»",
+      "manufacturer": "mfr.kern_heavy",
+      "cooperation_group": "cognium_pool",
+      "purpose": "толкает плоты руды и льда (до 20 000 т) от рудников к заводам; буксирует оборудование и маяки",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          60,
+          25,
+          25
+        ],
+        "form": "tug",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "X",
+        "installed_main_engines": 4,
+        "simultaneous_main_engines": 4,
+        "rated_directional_thrust_mn": 4,
+        "rated_propulsion_input_mw": 3000,
+        "standardized_reactor_capacity_mw": 3320
+      },
+      "jump_system": {
+        "fitted": false,
+        "cores": [],
+        "jump_charge_tanks": 0,
+        "note": null
+      },
+      "service_power_capacity_mw": 60,
+      "mass": {
+        "standardized_parts_delta_t": 0,
+        "dry_estimated_after_standardization_t": 0,
+        "delta_fraction": 0,
+        "frame_revalidation_required": false
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "kern.drive.kt1",
+          "part_id": "kern.drive.kt1",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "drive",
+          "manufacturer": "mfr.kern_heavy",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kern.drive.kt1"
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "kb.reactor.er1",
+          "part_id": "kb.reactor.er1",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "reactor",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.reactor.er1"
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "srw.apu.s60",
+          "part_id": "srw.apu.s60",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "service_reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.apu.s60"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "sol.rad.panel50",
+          "part_id": "sol.rad.panel50",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "radiator",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "sol.cool.loop300",
+          "part_id": "sol.cool.loop300",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.cool.loop300"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 12,
+          "source_qty": 12,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster",
+          "part_id": "std.rcs.cluster",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "rcs",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.rcs.cluster"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c1",
+          "part_id": "xz.mc.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c1"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "kern.radar.deb5",
+          "part_id": "kern.radar.deb5",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.kern_heavy",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kern.radar.deb5"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "eurohab.ls.l20",
+          "part_id": "eurohab.ls.l20",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "life_support",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "eurohab.ls.l20"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.pod4",
+          "part_id": "std.surv.pod4",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "escape_capsule",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.pod4"
+        },
+        {
+          "slot_code": "X",
+          "legacy_part_id": "kern.tow.raft20k",
+          "part_id": "kern.tow.raft20k",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "tow_rig",
+          "manufacturer": "mfr.kern_heavy",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kern.tow.raft20k"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        }
+      ],
+      "unique_spare_skus": 15,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "sol.ship.st-6.masterovoy",
+      "engineering_type": "service_tender",
+      "economic_class": "service_tender",
+      "name": "СТ-6 «Мастеровой»",
+      "manufacturer": "mfr.sol_mass_yards",
+      "cooperation_group": "sol_industrial",
+      "purpose": "ремонт рудников, станций, маяков и кораблей на месте; запчасти и мастерская",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          48,
+          20,
+          14
+        ],
+        "form": "box",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Assisted",
+        "layout": "I",
+        "installed_main_engines": 4,
+        "simultaneous_main_engines": 2,
+        "rated_directional_thrust_mn": 3,
+        "rated_propulsion_input_mw": 2500,
+        "standardized_reactor_capacity_mw": 9600
+      },
+      "jump_system": {
+        "fitted": false,
+        "cores": [],
+        "jump_charge_tanks": 0,
+        "note": null
+      },
+      "service_power_capacity_mw": 60,
+      "mass": {
+        "standardized_parts_delta_t": 52,
+        "dry_estimated_after_standardization_t": 52,
+        "delta_fraction": 52,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "ofu.drive.u15",
+          "part_id": "ofu.drive.u65m",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "drive",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.drive.u65m",
+          "standardization": {
+            "canonical_id": "ofu.drive.u65m",
+            "quantity_multiplier": 1,
+            "reason": "У-65М wide-vector unit derated for service tender",
+            "operating_limit": {
+              "rated_thrust_fraction": 0.2308,
+              "rated_input_power_fraction": 0.2778
+            }
+          }
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "srw.reactor.sr14",
+          "part_id": "srw.reactor.sr48",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.reactor.sr48",
+          "standardization": {
+            "canonical_id": "srw.reactor.sr48",
+            "quantity_multiplier": 1,
+            "reason": "SR-4.8 derated to 1.4 GW",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.2917
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "srw.apu.s60",
+          "part_id": "srw.apu.s60",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "service_reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.apu.s60"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "sol.rad.panel50",
+          "part_id": "sol.rad.panel50",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "radiator",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "sol.cool.loop300",
+          "part_id": "sol.cool.loop300",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.cool.loop300"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c1",
+          "part_id": "xz.mc.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c1"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n2",
+          "part_id": "xz.radar.n2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n2"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "terra.ls.t10",
+          "part_id": "terra.ls.t10",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "life_support",
+          "manufacturer": "mfr.terra_habitat",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "terra.ls.t10"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.pod4",
+          "part_id": "std.surv.pod4",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "escape_capsule",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.pod4"
+        },
+        {
+          "slot_code": "V",
+          "legacy_part_id": "std.med.bay",
+          "part_id": "std.med.bay",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "medbay",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "std.med.bay"
+        },
+        {
+          "slot_code": "C",
+          "legacy_part_id": "std.cargo.c20lock",
+          "part_id": "std.cargo.c20lock",
+          "qty": 6,
+          "source_qty": 6,
+          "category": "container_rack",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.cargo.c20lock"
+        },
+        {
+          "slot_code": "B",
+          "legacy_part_id": "std.bay.drone4",
+          "part_id": "std.bay.drone4",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "drone_bay",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.bay.drone4"
+        },
+        {
+          "slot_code": "X",
+          "legacy_part_id": "sol.workshop.w1",
+          "part_id": "sol.workshop.w1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "workshop",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.workshop.w1"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        }
+      ],
+      "unique_spare_skus": 17,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "sol.ship.pk-30.strazh",
+      "engineering_type": "patrol_cutter",
+      "economic_class": "patrol_cutter",
+      "name": "ПК-30 «Страж»",
+      "manufacturer": "mfr.sol_mass_yards",
+      "cooperation_group": "sol_industrial",
+      "purpose": "береговая охрана: таможня и досмотр, полиция, SAR, охрана маяков",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          34,
+          22,
+          8
+        ],
+        "form": "flat",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Assisted",
+        "layout": "I",
+        "installed_main_engines": 4,
+        "simultaneous_main_engines": 2,
+        "rated_directional_thrust_mn": 13,
+        "rated_propulsion_input_mw": 9000,
+        "standardized_reactor_capacity_mw": 9600
+      },
+      "jump_system": {
+        "fitted": true,
+        "cores": [
+          {
+            "part_id": "um.core.z1",
+            "qty": 1,
+            "rating_t": 1000
+          }
+        ],
+        "jump_charge_tanks": 5,
+        "note": null
+      },
+      "service_power_capacity_mw": 400,
+      "mass": {
+        "standardized_parts_delta_t": 0,
+        "dry_estimated_after_standardization_t": 0,
+        "delta_fraction": 0,
+        "frame_revalidation_required": false
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "ofu.drive.u65m",
+          "part_id": "ofu.drive.u65m",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "drive",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.drive.u65m"
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "srw.reactor.sr48",
+          "part_id": "srw.reactor.sr48",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.reactor.sr48"
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "srw.apu.s200",
+          "part_id": "srw.apu.s200",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "service_reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.apu.s200"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "sol.rad.panel50",
+          "part_id": "sol.rad.panel50",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "radiator",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "sol.cool.loop300",
+          "part_id": "sol.cool.loop300",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.cool.loop300"
+        },
+        {
+          "slot_code": "J",
+          "legacy_part_id": "um.core.z1",
+          "part_id": "um.core.z1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "jump_core",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.core.z1"
+        },
+        {
+          "slot_code": "JT",
+          "legacy_part_id": "std.tank.jumpcharge",
+          "part_id": "std.tank.jumpcharge",
+          "qty": 5,
+          "source_qty": 5,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.jumpcharge"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c3",
+          "part_id": "xz.mc.c3",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c3"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n10",
+          "part_id": "xz.radar.n10",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n10"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c3",
+          "part_id": "xz.comm.c3",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c3"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "terra.ls.t10",
+          "part_id": "terra.ls.t10",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "life_support",
+          "manufacturer": "mfr.terra_habitat",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "terra.ls.t10"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.pod4",
+          "part_id": "std.surv.pod4",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "escape_capsule",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.pod4"
+        },
+        {
+          "slot_code": "V",
+          "legacy_part_id": "std.med.bay",
+          "part_id": "std.med.bay",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "medbay",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "std.med.bay"
+        },
+        {
+          "slot_code": "P",
+          "legacy_part_id": "std.cabin.hold6",
+          "part_id": "std.cabin.hold6",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "passenger_module",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "std.cabin.hold6"
+        },
+        {
+          "slot_code": "B",
+          "legacy_part_id": "std.bay.boat",
+          "part_id": "std.bay.boat",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "boat_bay",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "std.bay.boat"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        },
+        {
+          "slot_code": "W",
+          "legacy_part_id": "fa.wpn.coil30",
+          "part_id": "fa.wpn.coil30",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "weapon",
+          "manufacturer": "mfr.firmament_armour",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "fa.wpn.coil30"
+        },
+        {
+          "slot_code": "WP",
+          "legacy_part_id": "fa.wpn.pd2",
+          "part_id": "fa.wpn.pd2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "weapon",
+          "manufacturer": "mfr.firmament_armour",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "fa.wpn.pd2"
+        },
+        {
+          "slot_code": "A",
+          "legacy_part_id": "std.armour.ceramic",
+          "part_id": "std.armour.ceramic",
+          "qty": 20,
+          "source_qty": 20,
+          "category": "armour",
+          "manufacturer": "mfr.firmament_armour",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "std.armour.ceramic"
+        }
+      ],
+      "unique_spare_skus": 21,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "bastion.ship.b-4.sokol",
+      "engineering_type": "interceptor",
+      "economic_class": "interceptor",
+      "name": "Б-4 «Сокол»",
+      "manufacturer": "mfr.bastion",
+      "cooperation_group": "citadel_compact",
+      "purpose": "быстрый ответ в системе: перехват пиратов и нарушителей, камней и обломков; короткая автономность",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          18,
+          12,
+          4
+        ],
+        "form": "dart",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Assisted",
+        "layout": "X",
+        "installed_main_engines": 8,
+        "simultaneous_main_engines": 4,
+        "rated_directional_thrust_mn": 6.2,
+        "rated_propulsion_input_mw": 9500,
+        "standardized_reactor_capacity_mw": 10000
+      },
+      "jump_system": {
+        "fitted": false,
+        "cores": [],
+        "jump_charge_tanks": 0,
+        "note": null
+      },
+      "service_power_capacity_mw": 120,
+      "mass": {
+        "standardized_parts_delta_t": 7,
+        "dry_estimated_after_standardization_t": 7,
+        "delta_fraction": 7,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "th.drive.tz16v",
+          "part_id": "th.drive.tz16v",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "drive",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.drive.tz16v"
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "th.reactor.tr26v",
+          "part_id": "th.reactor.tr26v",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "reactor",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.reactor.tr26v"
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "ofu.apu.s20",
+          "part_id": "srw.apu.s60",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "service_reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.apu.s60",
+          "standardization": {
+            "canonical_id": "srw.apu.s60",
+            "quantity_multiplier": 1,
+            "reason": "Sol S-60 common service reactor derated to 20 MW",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.3333
+            }
+          }
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "kb.rad.cs-panel",
+          "part_id": "kb.rad.cs-panel",
+          "qty": 30,
+          "source_qty": 30,
+          "category": "radiator",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.rad.cs-panel"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "kb.cool.loop200",
+          "part_id": "kb.cool.loop200",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.cool.loop200"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "bastion.mc.w1",
+          "part_id": "bastion.mc.w1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "computer",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "geometry_ref": "bastion.mc.w1"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n10",
+          "part_id": "xz.radar.n10",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n10"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "bastion.comm.w1",
+          "part_id": "bastion.comm.w1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "comm",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "geometry_ref": "bastion.comm.w1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "ofu.ls.o4",
+          "part_id": "ofu.ls.o4",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "life_support",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.ls.o4"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "kb.surv.capsule2",
+          "part_id": "kb.surv.capsule2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "escape_capsule",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.surv.capsule2"
+        },
+        {
+          "slot_code": "W",
+          "legacy_part_id": "bastion.wpn.coil10",
+          "part_id": "bastion.wpn.coil10",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "weapon",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "geometry_ref": "bastion.wpn.coil10"
+        },
+        {
+          "slot_code": "A",
+          "legacy_part_id": "bastion.armour.heavy",
+          "part_id": "bastion.armour.heavy",
+          "qty": 5,
+          "source_qty": 5,
+          "category": "armour",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "geometry_ref": "bastion.armour.heavy"
+        }
+      ],
+      "unique_spare_skus": 14,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "harmony.ship.he-f22.dun",
+      "engineering_type": "escort_frigate",
+      "economic_class": "escort_frigate",
+      "name": "Хэ-Ф22 «Дунь»",
+      "manufacturer": "mfr.harmony_yards",
+      "cooperation_group": "heavenly_pact",
+      "purpose": "охрана конвоев: ПРО, сенсоры, автономность наравне с поездами",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          85,
+          30,
+          18
+        ],
+        "form": "cylinder",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Assisted",
+        "layout": "Y",
+        "installed_main_engines": 6,
+        "simultaneous_main_engines": 3,
+        "rated_directional_thrust_mn": 32.1,
+        "rated_propulsion_input_mw": 30000,
+        "standardized_reactor_capacity_mw": 60000
+      },
+      "jump_system": {
+        "fitted": true,
+        "cores": [
+          {
+            "part_id": "harmony.core.h5",
+            "qty": 1,
+            "rating_t": 5000
+          }
+        ],
+        "jump_charge_tanks": 28,
+        "note": null
+      },
+      "service_power_capacity_mw": 1200,
+      "mass": {
+        "standardized_parts_delta_t": 138,
+        "dry_estimated_after_standardization_t": 138,
+        "delta_fraction": 138,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "th.drive.tz11",
+          "part_id": "th.drive.tz11",
+          "qty": 6,
+          "source_qty": 6,
+          "category": "drive",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.drive.tz11"
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "th.reactor.tr11",
+          "part_id": "th.reactor.tr10",
+          "qty": 6,
+          "source_qty": 3,
+          "category": "reactor",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.reactor.tr10",
+          "standardization": {
+            "canonical_id": "th.reactor.tr10",
+            "quantity_multiplier": 2,
+            "reason": "two TR-10 in parallel and derated to 10.7 GW total",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.535
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "th.apu.s600",
+          "part_id": "th.apu.s600",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "service_reactor",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.apu.s600"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "th.rad.panel50",
+          "part_id": "th.rad.panel50",
+          "qty": 10,
+          "source_qty": 10,
+          "category": "radiator",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "th.cool.loop600",
+          "part_id": "th.cool.loop600",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.cool.loop600"
+        },
+        {
+          "slot_code": "J",
+          "legacy_part_id": "harmony.core.h5",
+          "part_id": "harmony.core.h5",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "jump_core",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "harmony.core.h5"
+        },
+        {
+          "slot_code": "JT",
+          "legacy_part_id": "std.tank.jumpcharge",
+          "part_id": "std.tank.jumpcharge",
+          "qty": 28,
+          "source_qty": 28,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.jumpcharge"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 30,
+          "source_qty": 30,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster_h",
+          "part_id": "std.rcs.cluster_h",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "rcs",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "std.rcs.cluster_h"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c3",
+          "part_id": "xz.mc.c3",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c3"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n10",
+          "part_id": "xz.radar.n10",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n10"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c3",
+          "part_id": "xz.comm.c3",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c3"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "terra.ls.t60",
+          "part_id": "terra.ls.t60",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "life_support",
+          "manufacturer": "mfr.terra_habitat",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "terra.ls.t60"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.boat20",
+          "part_id": "std.surv.boat20",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "lifeboat",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.boat20"
+        },
+        {
+          "slot_code": "V",
+          "legacy_part_id": "std.med.bay",
+          "part_id": "std.med.bay",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "medbay",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "std.med.bay"
+        },
+        {
+          "slot_code": "B",
+          "legacy_part_id": "std.bay.boat",
+          "part_id": "std.bay.boat",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "boat_bay",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "std.bay.boat"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        },
+        {
+          "slot_code": "W",
+          "legacy_part_id": "harmony.wpn.vls8",
+          "part_id": "harmony.wpn.vls8",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "weapon",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "harmony.wpn.vls8"
+        },
+        {
+          "slot_code": "WP",
+          "legacy_part_id": "harmony.wpn.pd3",
+          "part_id": "harmony.wpn.pd3",
+          "qty": 6,
+          "source_qty": 6,
+          "category": "weapon",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "harmony.wpn.pd3"
+        },
+        {
+          "slot_code": "A",
+          "legacy_part_id": "std.armour.ceramic",
+          "part_id": "std.armour.ceramic",
+          "qty": 220,
+          "source_qty": 220,
+          "category": "armour",
+          "manufacturer": "mfr.firmament_armour",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "std.armour.ceramic"
+        }
+      ],
+      "unique_spare_skus": 21,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "bastion.ship.b-90.tsitadel",
+      "engineering_type": "line_combatant",
+      "economic_class": "line_combatant",
+      "name": "Б-90 «Цитадель»",
+      "manufacturer": "mfr.bastion",
+      "cooperation_group": "citadel_compact",
+      "purpose": "сдерживание и война: дальние ракеты, сильные сенсоры, броня; главная боевая единица Цитадели",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          180,
+          45,
+          35
+        ],
+        "form": "cylinder",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "X",
+        "installed_main_engines": 4,
+        "simultaneous_main_engines": 4,
+        "rated_directional_thrust_mn": 110,
+        "rated_propulsion_input_mw": 110000,
+        "standardized_reactor_capacity_mw": 120000
+      },
+      "jump_system": {
+        "fitted": true,
+        "cores": [
+          {
+            "part_id": "bastion.core.b12",
+            "qty": 1,
+            "rating_t": 12000
+          }
+        ],
+        "jump_charge_tanks": 120,
+        "note": null
+      },
+      "service_power_capacity_mw": 1200,
+      "mass": {
+        "standardized_parts_delta_t": 76,
+        "dry_estimated_after_standardization_t": 76,
+        "delta_fraction": 76,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "th.drive.tz28",
+          "part_id": "th.drive.tz28",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "drive",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.drive.tz28"
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "th.reactor.tr30",
+          "part_id": "th.reactor.tr10",
+          "qty": 12,
+          "source_qty": 4,
+          "category": "reactor",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.reactor.tr10",
+          "standardization": {
+            "canonical_id": "th.reactor.tr10",
+            "quantity_multiplier": 3,
+            "reason": "three TR-10 in parallel",
+            "operating_limit": {
+              "bank_rated_output_fraction": 1
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "th.apu.s600",
+          "part_id": "th.apu.s600",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "service_reactor",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.apu.s600"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "th.rad.panel50",
+          "part_id": "th.rad.panel50",
+          "qty": 40,
+          "source_qty": 40,
+          "category": "radiator",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "th.cool.loop600",
+          "part_id": "th.cool.loop600",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.cool.loop600"
+        },
+        {
+          "slot_code": "J",
+          "legacy_part_id": "bastion.core.b12",
+          "part_id": "bastion.core.b12",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "jump_core",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "geometry_ref": "bastion.core.b12"
+        },
+        {
+          "slot_code": "JT",
+          "legacy_part_id": "std.tank.jumpcharge",
+          "part_id": "std.tank.jumpcharge",
+          "qty": 120,
+          "source_qty": 120,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.jumpcharge"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 160,
+          "source_qty": 160,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster_h",
+          "part_id": "std.rcs.cluster_h",
+          "qty": 16,
+          "source_qty": 16,
+          "category": "rcs",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "std.rcs.cluster_h"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "bastion.mc.w1",
+          "part_id": "bastion.mc.w1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "computer",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "geometry_ref": "bastion.mc.w1"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "bastion.radar.s50",
+          "part_id": "bastion.radar.s50",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "radar",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "geometry_ref": "bastion.radar.s50"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "bastion.comm.w1",
+          "part_id": "bastion.comm.w1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "comm",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "geometry_ref": "bastion.comm.w1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "terra.ls.t200",
+          "part_id": "terra.ls.t200",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "life_support",
+          "manufacturer": "mfr.terra_habitat",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "terra.ls.t200"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.boat20",
+          "part_id": "std.surv.boat20",
+          "qty": 9,
+          "source_qty": 9,
+          "category": "lifeboat",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.boat20"
+        },
+        {
+          "slot_code": "V",
+          "legacy_part_id": "std.med.bay",
+          "part_id": "std.med.bay",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "medbay",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "std.med.bay"
+        },
+        {
+          "slot_code": "BH",
+          "legacy_part_id": "bastion.bay.hangar4",
+          "part_id": "bastion.bay.hangar4",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "hangar",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "geometry_ref": "bastion.bay.hangar4"
+        },
+        {
+          "slot_code": "B",
+          "legacy_part_id": "std.bay.drone4",
+          "part_id": "std.bay.drone4",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "drone_bay",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.bay.drone4"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        },
+        {
+          "slot_code": "W",
+          "legacy_part_id": "bastion.wpn.vls16",
+          "part_id": "bastion.wpn.vls16",
+          "qty": 6,
+          "source_qty": 6,
+          "category": "weapon",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "geometry_ref": "bastion.wpn.vls16"
+        },
+        {
+          "slot_code": "WP",
+          "legacy_part_id": "bastion.wpn.pd4",
+          "part_id": "bastion.wpn.pd4",
+          "qty": 12,
+          "source_qty": 12,
+          "category": "weapon",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "geometry_ref": "bastion.wpn.pd4"
+        },
+        {
+          "slot_code": "A",
+          "legacy_part_id": "bastion.armour.heavy",
+          "part_id": "bastion.armour.heavy",
+          "qty": 1600,
+          "source_qty": 1600,
+          "category": "armour",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "geometry_ref": "bastion.armour.heavy"
+        }
+      ],
+      "unique_spare_skus": 22,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "hyp.ship.r-7.argus",
+      "engineering_type": "recon_picket",
+      "economic_class": "recon_picket",
+      "name": "R-7 «Аргус»",
+      "manufacturer": "mfr.hyperion",
+      "cooperation_group": "cognium_pool",
+      "purpose": "сенсоры и раннее предупреждение у точек выхода, РЭБ, ретрансляция сети маяков в войну",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          40,
+          26,
+          8
+        ],
+        "form": "flat",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "X",
+        "installed_main_engines": 4,
+        "simultaneous_main_engines": 4,
+        "rated_directional_thrust_mn": 12,
+        "rated_propulsion_input_mw": 10000,
+        "standardized_reactor_capacity_mw": 20000
+      },
+      "jump_system": {
+        "fitted": true,
+        "cores": [
+          {
+            "part_id": "um.core.z1",
+            "qty": 1,
+            "rating_t": 1000
+          }
+        ],
+        "jump_charge_tanks": 7,
+        "note": null
+      },
+      "service_power_capacity_mw": 300,
+      "mass": {
+        "standardized_parts_delta_t": 78,
+        "dry_estimated_after_standardization_t": 78,
+        "delta_fraction": 78,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "hyp.drive.hd3",
+          "part_id": "kb.drive.n1-axial",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "drive",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.drive.n1-axial",
+          "standardization": {
+            "canonical_id": "kb.drive.n1-axial",
+            "quantity_multiplier": 1,
+            "reason": "Cognium-pool axial standard; N1 derated to 3 MN",
+            "operating_limit": {
+              "rated_thrust_fraction": 0.3138,
+              "rated_input_power_fraction": 0.5155
+            }
+          }
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "kb.reactor.er3",
+          "part_id": "kb.reactor.er5",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "reactor",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.reactor.er5",
+          "standardization": {
+            "canonical_id": "kb.reactor.er5",
+            "quantity_multiplier": 1,
+            "reason": "ER-5 derated to 2.75 GW",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.55
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "kb.apu.s150",
+          "part_id": "kb.apu.s150",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "service_reactor",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.apu.s150"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "kb.rad.cs-panel",
+          "part_id": "kb.rad.cs-panel",
+          "qty": 60,
+          "source_qty": 60,
+          "category": "radiator",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.rad.cs-panel"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "kb.cool.loop200",
+          "part_id": "kb.cool.loop200",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.cool.loop200"
+        },
+        {
+          "slot_code": "J",
+          "legacy_part_id": "um.core.z1",
+          "part_id": "um.core.z1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "jump_core",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.core.z1"
+        },
+        {
+          "slot_code": "JT",
+          "legacy_part_id": "std.tank.jumpcharge",
+          "part_id": "std.tank.jumpcharge",
+          "qty": 7,
+          "source_qty": 7,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.jumpcharge"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 10,
+          "source_qty": 10,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster",
+          "part_id": "std.rcs.cluster",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "rcs",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.rcs.cluster"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "hyp.mc.r1",
+          "part_id": "hyp.mc.r1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "computer",
+          "manufacturer": "mfr.hyperion",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "hyp.mc.r1"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "hyp.radar.pa100",
+          "part_id": "hyp.radar.pa100",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.hyperion",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "hyp.radar.pa100"
+        },
+        {
+          "slot_code": "SM",
+          "legacy_part_id": "hyp.mast.s1",
+          "part_id": "hyp.mast.s1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "sensor_mast",
+          "manufacturer": "mfr.hyperion",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "hyp.mast.s1"
+        },
+        {
+          "slot_code": "SE",
+          "legacy_part_id": "hyp.ecm.e1",
+          "part_id": "hyp.ecm.e1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "ecm",
+          "manufacturer": "mfr.hyperion",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "hyp.ecm.e1"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c3",
+          "part_id": "xz.comm.c3",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c3"
+        },
+        {
+          "slot_code": "SY",
+          "legacy_part_id": "hyp.relay.r1",
+          "part_id": "hyp.relay.r1",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "comm",
+          "manufacturer": "mfr.hyperion",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "hyp.relay.r1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "eurohab.ls.l20",
+          "part_id": "eurohab.ls.l20",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "life_support",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "eurohab.ls.l20"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.pod4",
+          "part_id": "std.surv.pod4",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "escape_capsule",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.pod4"
+        },
+        {
+          "slot_code": "V",
+          "legacy_part_id": "std.med.bay",
+          "part_id": "std.med.bay",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "medbay",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "std.med.bay"
+        },
+        {
+          "slot_code": "B",
+          "legacy_part_id": "std.bay.drone4",
+          "part_id": "std.bay.drone4",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "drone_bay",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.bay.drone4"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        },
+        {
+          "slot_code": "WP",
+          "legacy_part_id": "fa.wpn.pd2",
+          "part_id": "fa.wpn.pd2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "weapon",
+          "manufacturer": "mfr.firmament_armour",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "fa.wpn.pd2"
+        }
+      ],
+      "unique_spare_skus": 22,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "harmony.ship.he-s240.tylovik",
+      "engineering_type": "fleet_tender",
+      "economic_class": "fleet_tender",
+      "name": "Хэ-С240 «Тыловик»",
+      "manufacturer": "mfr.harmony_yards",
+      "cooperation_group": "heavenly_pact",
+      "purpose": "автономность эскадры вдали от баз: топливо, заряд прыжка, боеприпасы, ремонт",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          150,
+          40,
+          35
+        ],
+        "form": "box",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "Y",
+        "installed_main_engines": 3,
+        "simultaneous_main_engines": 3,
+        "rated_directional_thrust_mn": 39,
+        "rated_propulsion_input_mw": 27000,
+        "standardized_reactor_capacity_mw": 60000
+      },
+      "jump_system": {
+        "fitted": true,
+        "cores": [
+          {
+            "part_id": "harmony.core.h12",
+            "qty": 1,
+            "rating_t": 12000
+          }
+        ],
+        "jump_charge_tanks": 90,
+        "note": null
+      },
+      "service_power_capacity_mw": 1200,
+      "mass": {
+        "standardized_parts_delta_t": 195,
+        "dry_estimated_after_standardization_t": 195,
+        "delta_fraction": 195,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "th.drive.tz13",
+          "part_id": "th.drive.tz28",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "drive",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.drive.tz28",
+          "standardization": {
+            "canonical_id": "th.drive.tz28",
+            "quantity_multiplier": 1,
+            "reason": "ТЦ-28 derated for medium freighter; same heavy axial family",
+            "operating_limit": {
+              "rated_thrust_fraction": 0.4727,
+              "rated_input_power_fraction": 0.3273
+            }
+          }
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "th.reactor.tr11",
+          "part_id": "th.reactor.tr10",
+          "qty": 6,
+          "source_qty": 3,
+          "category": "reactor",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.reactor.tr10",
+          "standardization": {
+            "canonical_id": "th.reactor.tr10",
+            "quantity_multiplier": 2,
+            "reason": "two TR-10 in parallel and derated to 10.7 GW total",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.535
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "th.apu.s600",
+          "part_id": "th.apu.s600",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "service_reactor",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.apu.s600"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "th.rad.panel50",
+          "part_id": "th.rad.panel50",
+          "qty": 12,
+          "source_qty": 12,
+          "category": "radiator",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "th.cool.loop600",
+          "part_id": "th.cool.loop600",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "th.cool.loop600"
+        },
+        {
+          "slot_code": "J",
+          "legacy_part_id": "harmony.core.h12",
+          "part_id": "harmony.core.h12",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "jump_core",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "harmony.core.h12"
+        },
+        {
+          "slot_code": "JT",
+          "legacy_part_id": "std.tank.jumpcharge",
+          "part_id": "std.tank.jumpcharge",
+          "qty": 90,
+          "source_qty": 90,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.jumpcharge"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 60,
+          "source_qty": 60,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster_h",
+          "part_id": "std.rcs.cluster_h",
+          "qty": 16,
+          "source_qty": 16,
+          "category": "rcs",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "std.rcs.cluster_h"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c3",
+          "part_id": "xz.mc.c3",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c3"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n10",
+          "part_id": "xz.radar.n10",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n10"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c3",
+          "part_id": "xz.comm.c3",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c3"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "terra.ls.t60",
+          "part_id": "terra.ls.t60",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "life_support",
+          "manufacturer": "mfr.terra_habitat",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "terra.ls.t60"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.boat20",
+          "part_id": "std.surv.boat20",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "lifeboat",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.boat20"
+        },
+        {
+          "slot_code": "V",
+          "legacy_part_id": "std.med.bay",
+          "part_id": "std.med.bay",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "medbay",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "std.med.bay"
+        },
+        {
+          "slot_code": "C",
+          "legacy_part_id": "std.cargo.c20lock",
+          "part_id": "std.cargo.c20lock",
+          "qty": 240,
+          "source_qty": 240,
+          "category": "container_rack",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.cargo.c20lock"
+        },
+        {
+          "slot_code": "B",
+          "legacy_part_id": "harmony.bay.hangar2",
+          "part_id": "harmony.bay.hangar2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "hangar",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "harmony.bay.hangar2"
+        },
+        {
+          "slot_code": "BD",
+          "legacy_part_id": "std.bay.drone4",
+          "part_id": "std.bay.drone4",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "drone_bay",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.bay.drone4"
+        },
+        {
+          "slot_code": "X",
+          "legacy_part_id": "sol.workshop.w1",
+          "part_id": "sol.workshop.w1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "workshop",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.workshop.w1"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        },
+        {
+          "slot_code": "WP",
+          "legacy_part_id": "harmony.wpn.pd3",
+          "part_id": "harmony.wpn.pd3",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "weapon",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "harmony.wpn.pd3"
+        }
+      ],
+      "unique_spare_skus": 22,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "sol.ship.pao-7.shchit",
+      "engineering_type": "impact_defence_tug",
+      "economic_class": "impact_defence_tug",
+      "name": "ПАО-7 «Щит»",
+      "manufacturer": "mfr.sol_mass_yards",
+      "cooperation_group": "sol_industrial",
+      "purpose": "защита планет и обитаемых станций: обнаружить, перехватить, увести, отклонить или раздробить камень; тяжёлое спасение",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          70,
+          30,
+          30
+        ],
+        "form": "tug",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "X",
+        "installed_main_engines": 4,
+        "simultaneous_main_engines": 4,
+        "rated_directional_thrust_mn": 28,
+        "rated_propulsion_input_mw": 26000,
+        "standardized_reactor_capacity_mw": 38400
+      },
+      "jump_system": {
+        "fitted": false,
+        "cores": [],
+        "jump_charge_tanks": 0,
+        "note": null
+      },
+      "service_power_capacity_mw": 400,
+      "mass": {
+        "standardized_parts_delta_t": 48,
+        "dry_estimated_after_standardization_t": 48,
+        "delta_fraction": 48,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "ofu.drive.u70",
+          "part_id": "ofu.drive.u70",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "drive",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.drive.u70"
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "srw.reactor.sr7",
+          "part_id": "srw.reactor.sr48",
+          "qty": 8,
+          "source_qty": 4,
+          "category": "reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.reactor.sr48",
+          "standardization": {
+            "canonical_id": "srw.reactor.sr48",
+            "quantity_multiplier": 2,
+            "reason": "two SR-4.8 in parallel, 9.6 GW installed / 7 GW rated",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.7292
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "srw.apu.s200",
+          "part_id": "srw.apu.s200",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "service_reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.apu.s200"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "sol.rad.panel50",
+          "part_id": "sol.rad.panel50",
+          "qty": 14,
+          "source_qty": 14,
+          "category": "radiator",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "sol.cool.loop300",
+          "part_id": "sol.cool.loop300",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.cool.loop300"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 30,
+          "source_qty": 30,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster_h",
+          "part_id": "std.rcs.cluster_h",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "rcs",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "std.rcs.cluster_h"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c3",
+          "part_id": "xz.mc.c3",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c3"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "kern.radar.deb5",
+          "part_id": "kern.radar.deb5",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.kern_heavy",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kern.radar.deb5"
+        },
+        {
+          "slot_code": "SR2",
+          "legacy_part_id": "xz.radar.n10",
+          "part_id": "xz.radar.n10",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n10"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c3",
+          "part_id": "xz.comm.c3",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c3"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "terra.ls.t60",
+          "part_id": "terra.ls.t60",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "life_support",
+          "manufacturer": "mfr.terra_habitat",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "terra.ls.t60"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.boat20",
+          "part_id": "std.surv.boat20",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "lifeboat",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.boat20"
+        },
+        {
+          "slot_code": "V",
+          "legacy_part_id": "std.med.bay",
+          "part_id": "std.med.bay",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "medbay",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "std.med.bay"
+        },
+        {
+          "slot_code": "B",
+          "legacy_part_id": "std.bay.drone4",
+          "part_id": "std.bay.drone4",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "drone_bay",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.bay.drone4"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        },
+        {
+          "slot_code": "X",
+          "legacy_part_id": "kern.tow.heavy",
+          "part_id": "kern.tow.heavy",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "tow_rig",
+          "manufacturer": "mfr.kern_heavy",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kern.tow.heavy"
+        },
+        {
+          "slot_code": "W",
+          "legacy_part_id": "kern.md.impactor",
+          "part_id": "kern.md.impactor",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "weapon",
+          "manufacturer": "mfr.kern_heavy",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kern.md.impactor"
+        },
+        {
+          "slot_code": "A",
+          "legacy_part_id": "std.armour.ceramic",
+          "part_id": "std.armour.ceramic",
+          "qty": 60,
+          "source_qty": 60,
+          "category": "armour",
+          "manufacturer": "mfr.firmament_armour",
+          "cooperation_group": "heavenly_pact",
+          "geometry_ref": "std.armour.ceramic"
+        }
+      ],
+      "unique_spare_skus": 20,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "hyp.ship.l-900.piligrim",
+      "engineering_type": "liner",
+      "economic_class": "liner",
+      "name": "L-900 «Пилигрим»",
+      "manufacturer": "mfr.hyperion",
+      "cooperation_group": "cognium_pool",
+      "purpose": "регулярные межзвёздные рейсы: 900 мест (60 каюты / 240 бизнес / 600 эконом), почта и 90 т срочного груза",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          150,
+          34,
+          28
+        ],
+        "form": "cylinder",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "Y",
+        "installed_main_engines": 3,
+        "simultaneous_main_engines": 3,
+        "rated_directional_thrust_mn": 12,
+        "rated_propulsion_input_mw": 12000,
+        "standardized_reactor_capacity_mw": 15000
+      },
+      "jump_system": {
+        "fitted": true,
+        "cores": [
+          {
+            "part_id": "um.core.z5",
+            "qty": 1,
+            "rating_t": 5000
+          }
+        ],
+        "jump_charge_tanks": 45,
+        "note": null
+      },
+      "service_power_capacity_mw": 300,
+      "mass": {
+        "standardized_parts_delta_t": 24,
+        "dry_estimated_after_standardization_t": 24,
+        "delta_fraction": 24,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "hyp.drive.hd4",
+          "part_id": "kb.drive.n1-axial",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "drive",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.drive.n1-axial",
+          "standardization": {
+            "canonical_id": "kb.drive.n1-axial",
+            "quantity_multiplier": 1,
+            "reason": "Cognium-pool axial standard; N1 derated to 4 MN",
+            "operating_limit": {
+              "rated_thrust_fraction": 0.4184,
+              "rated_input_power_fraction": 0.8247
+            }
+          }
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "kb.reactor.er5",
+          "part_id": "kb.reactor.er5",
+          "qty": 3,
+          "source_qty": 3,
+          "category": "reactor",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.reactor.er5"
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "kb.apu.s150",
+          "part_id": "kb.apu.s150",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "service_reactor",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.apu.s150"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "kb.rad.cs-panel",
+          "part_id": "kb.rad.cs-panel",
+          "qty": 400,
+          "source_qty": 400,
+          "category": "radiator",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.rad.cs-panel"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "kb.cool.loop200",
+          "part_id": "kb.cool.loop200",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "kb.cool.loop200"
+        },
+        {
+          "slot_code": "J",
+          "legacy_part_id": "um.core.z5",
+          "part_id": "um.core.z5",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "jump_core",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.core.z5"
+        },
+        {
+          "slot_code": "JT",
+          "legacy_part_id": "std.tank.jumpcharge",
+          "part_id": "std.tank.jumpcharge",
+          "qty": 45,
+          "source_qty": 45,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.jumpcharge"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 20,
+          "source_qty": 20,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster",
+          "part_id": "std.rcs.cluster",
+          "qty": 16,
+          "source_qty": 16,
+          "category": "rcs",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.rcs.cluster"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "xz.mc.c3",
+          "part_id": "xz.mc.c3",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "computer",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.mc.c3"
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n2",
+          "part_id": "xz.radar.n2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n2"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "eurohab.ls.l200",
+          "part_id": "eurohab.ls.l200",
+          "qty": 5,
+          "source_qty": 5,
+          "category": "life_support",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "eurohab.ls.l200"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.boat20",
+          "part_id": "std.surv.boat20",
+          "qty": 47,
+          "source_qty": 47,
+          "category": "lifeboat",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.surv.boat20"
+        },
+        {
+          "slot_code": "V",
+          "legacy_part_id": "std.med.bay",
+          "part_id": "std.med.bay",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "medbay",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "std.med.bay"
+        },
+        {
+          "slot_code": "P",
+          "legacy_part_id": "agora.hab.pax100",
+          "part_id": "agora.hab.pax100",
+          "qty": 9,
+          "source_qty": 9,
+          "category": "passenger_module",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "agora.hab.pax100"
+        },
+        {
+          "slot_code": "C",
+          "legacy_part_id": "std.cargo.hold100",
+          "part_id": "std.cargo.hold100",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "bulk_hold",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.cargo.hold100"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        }
+      ],
+      "unique_spare_skus": 19,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    },
+    {
+      "schema": "elite.ship_passport.engineering.v1",
+      "status": "PROPOSAL/model",
+      "id": "bharat.ship.t-5000.iskhod",
+      "engineering_type": "colonist_transport",
+      "economic_class": "colonist_transport",
+      "name": "T-5000 «Исход»",
+      "manufacturer": "mfr.bharat",
+      "cooperation_group": "southern_circle",
+      "purpose": "миграция и эвакуация: 5 000 мест (70 % койки, 30 % анабиоз), медленно и дёшево на человека; реквизируется при бедствиях",
+      "frame": {
+        "status": "DEFERRED",
+        "envelope_m": [
+          220,
+          50,
+          40
+        ],
+        "form": "cylinder",
+        "note": "frame/structural passport will be authored during model build"
+      },
+      "flight": {
+        "law": "Newtonian",
+        "layout": "X",
+        "installed_main_engines": 4,
+        "simultaneous_main_engines": 4,
+        "rated_directional_thrust_mn": 17.32,
+        "rated_propulsion_input_mw": 12000,
+        "standardized_reactor_capacity_mw": 19200
+      },
+      "jump_system": {
+        "fitted": true,
+        "cores": [
+          {
+            "part_id": "kapehu.core.k12",
+            "qty": 1,
+            "rating_t": 12000
+          }
+        ],
+        "jump_charge_tanks": 120,
+        "note": null
+      },
+      "service_power_capacity_mw": 400,
+      "mass": {
+        "standardized_parts_delta_t": 38,
+        "dry_estimated_after_standardization_t": 38,
+        "delta_fraction": 38,
+        "frame_revalidation_required": true
+      },
+      "bom": [
+        {
+          "slot_code": "D",
+          "legacy_part_id": "ofu.drive.u43",
+          "part_id": "ofu.drive.u70",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "drive",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "ofu.drive.u70",
+          "standardization": {
+            "canonical_id": "ofu.drive.u70",
+            "quantity_multiplier": 1,
+            "reason": "У-70 derated; one Sol axial family replaces U-43",
+            "operating_limit": {
+              "rated_thrust_fraction": 0.6186,
+              "rated_input_power_fraction": 0.4615
+            }
+          }
+        },
+        {
+          "slot_code": "R",
+          "legacy_part_id": "srw.reactor.sr33",
+          "part_id": "srw.reactor.sr48",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.reactor.sr48",
+          "standardization": {
+            "canonical_id": "srw.reactor.sr48",
+            "quantity_multiplier": 1,
+            "reason": "SR-4.8 derated to 3.3 GW",
+            "operating_limit": {
+              "bank_rated_output_fraction": 0.6875
+            }
+          }
+        },
+        {
+          "slot_code": "S",
+          "legacy_part_id": "srw.apu.s200",
+          "part_id": "srw.apu.s200",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "service_reactor",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "srw.apu.s200"
+        },
+        {
+          "slot_code": "T",
+          "legacy_part_id": "sol.rad.panel50",
+          "part_id": "sol.rad.panel50",
+          "qty": 20,
+          "source_qty": 20,
+          "category": "radiator",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.rad.panel50"
+        },
+        {
+          "slot_code": "L",
+          "legacy_part_id": "sol.cool.loop300",
+          "part_id": "sol.cool.loop300",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "coolant_loop",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "geometry_ref": "sol.cool.loop300"
+        },
+        {
+          "slot_code": "J",
+          "legacy_part_id": "mizan.core.m12",
+          "part_id": "kapehu.core.k12",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "jump_core",
+          "manufacturer": "mfr.kapehu_systems",
+          "cooperation_group": "southern_circle",
+          "geometry_ref": "kapehu.core.k12",
+          "standardization": {
+            "canonical_id": "kapehu.core.k12",
+            "quantity_multiplier": 1,
+            "reason": "former legacy id mizan.core.m12; Pacific/Tauranga canonical replacement"
+          }
+        },
+        {
+          "slot_code": "JT",
+          "legacy_part_id": "std.tank.jumpcharge",
+          "part_id": "std.tank.jumpcharge",
+          "qty": 120,
+          "source_qty": 120,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.jumpcharge"
+        },
+        {
+          "slot_code": "F",
+          "legacy_part_id": "std.tank.pellets",
+          "part_id": "std.tank.pellets",
+          "qty": 40,
+          "source_qty": 40,
+          "category": "tank",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.tank.pellets"
+        },
+        {
+          "slot_code": "Q",
+          "legacy_part_id": "std.rcs.cluster",
+          "part_id": "std.rcs.cluster",
+          "qty": 16,
+          "source_qty": 16,
+          "category": "rcs",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.rcs.cluster"
+        },
+        {
+          "slot_code": "M",
+          "legacy_part_id": "mizan.mc.m1",
+          "part_id": "kapehu.mc.k1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "computer",
+          "manufacturer": "mfr.kapehu_systems",
+          "cooperation_group": "southern_circle",
+          "geometry_ref": "kapehu.mc.k1",
+          "standardization": {
+            "canonical_id": "kapehu.mc.k1",
+            "quantity_multiplier": 1,
+            "reason": "former legacy id mizan.mc.m1; Pacific/Tauranga canonical replacement"
+          }
+        },
+        {
+          "slot_code": "SR",
+          "legacy_part_id": "xz.radar.n2",
+          "part_id": "xz.radar.n2",
+          "qty": 1,
+          "source_qty": 1,
+          "category": "radar",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.radar.n2"
+        },
+        {
+          "slot_code": "SC",
+          "legacy_part_id": "xz.comm.c1",
+          "part_id": "xz.comm.c1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "comm",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "xz.comm.c1"
+        },
+        {
+          "slot_code": "SX",
+          "legacy_part_id": "um.xpdr.t1",
+          "part_id": "um.xpdr.t1",
+          "qty": 2,
+          "source_qty": 2,
+          "category": "transponder",
+          "manufacturer": "mfr.um_core_fab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "um.xpdr.t1"
+        },
+        {
+          "slot_code": "H",
+          "legacy_part_id": "uhuru.ls.u500",
+          "part_id": "uhuru.ls.u500",
+          "qty": 8,
+          "source_qty": 8,
+          "category": "life_support",
+          "manufacturer": "mfr.uhuru_bio",
+          "cooperation_group": "southern_circle",
+          "geometry_ref": "uhuru.ls.u500"
+        },
+        {
+          "slot_code": "E",
+          "legacy_part_id": "std.surv.refuge100",
+          "part_id": "std.surv.refuge100",
+          "qty": 51,
+          "source_qty": 51,
+          "category": "lifeboat",
+          "manufacturer": "mfr.bharat",
+          "cooperation_group": "southern_circle",
+          "geometry_ref": "std.surv.refuge100"
+        },
+        {
+          "slot_code": "V",
+          "legacy_part_id": "std.med.bay",
+          "part_id": "std.med.bay",
+          "qty": 6,
+          "source_qty": 6,
+          "category": "medbay",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "geometry_ref": "std.med.bay"
+        },
+        {
+          "slot_code": "P",
+          "legacy_part_id": "bharat.hab.bunk500",
+          "part_id": "bharat.hab.bunk500",
+          "qty": 7,
+          "source_qty": 7,
+          "category": "passenger_module",
+          "manufacturer": "mfr.bharat",
+          "cooperation_group": "southern_circle",
+          "geometry_ref": "bharat.hab.bunk500"
+        },
+        {
+          "slot_code": "PC",
+          "legacy_part_id": "uhuru.cryo.pod100",
+          "part_id": "uhuru.cryo.pod100",
+          "qty": 15,
+          "source_qty": 15,
+          "category": "passenger_module",
+          "manufacturer": "mfr.uhuru_bio",
+          "cooperation_group": "southern_circle",
+          "geometry_ref": "uhuru.cryo.pod100"
+        },
+        {
+          "slot_code": "C",
+          "legacy_part_id": "std.cargo.hold100",
+          "part_id": "std.cargo.hold100",
+          "qty": 6,
+          "source_qty": 6,
+          "category": "bulk_hold",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.cargo.hold100"
+        },
+        {
+          "slot_code": "K",
+          "legacy_part_id": "std.dock.collar",
+          "part_id": "std.dock.collar",
+          "qty": 4,
+          "source_qty": 4,
+          "category": "docking_port",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "geometry_ref": "std.dock.collar"
+        }
+      ],
+      "unique_spare_skus": 20,
+      "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
+    }
+  ]
+}

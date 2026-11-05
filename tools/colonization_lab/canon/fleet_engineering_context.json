@@ -1,0 +1,950 @@
+{
+  "schema": "elite.fleet_engineering_context.v1",
+  "status": "PROPOSAL/model",
+  "source_head": "722a7ec18500b4335ec94e9246f9c1f794c149ac",
+  "decision": "Use 19 engineering ship types. There are 21 current model passports because some engineering types have manufacturer/architecture variants.",
+  "counts": {
+    "economic_classes": 18,
+    "engineering_types": 19,
+    "model_passports": 21,
+    "ship_integrators": 10,
+    "cooperation_groups": 6,
+    "canonical_spare_skus": 102
+  },
+  "engineering_types": [
+    {
+      "id": "cobrett_a3",
+      "economic_class": "cobrett_i_n1",
+      "models": [
+        "kb.ship.cobrett-i.frnu-inta.a3"
+      ],
+      "variants": [
+        {
+          "model": "kb.ship.cobrett-i.frnu-inta.a3",
+          "name": "Cobrett-I A3",
+          "manufacturer": "mfr.cobretty",
+          "law": "Assisted",
+          "layout": "I",
+          "main_engine_count": 4,
+          "jump": true
+        }
+      ]
+    },
+    {
+      "id": "cobrett_n1",
+      "economic_class": "cobrett_i_n1",
+      "models": [
+        "kb.ship.cobrett-i.frnu.n1"
+      ],
+      "variants": [
+        {
+          "model": "kb.ship.cobrett-i.frnu.n1",
+          "name": "Cobrett-I N1",
+          "manufacturer": "mfr.cobretty",
+          "law": "Newtonian",
+          "layout": "I",
+          "main_engine_count": 1,
+          "jump": true
+        }
+      ]
+    },
+    {
+      "id": "colonist_transport",
+      "economic_class": "colonist_transport",
+      "models": [
+        "bharat.ship.t-5000.iskhod"
+      ],
+      "variants": [
+        {
+          "model": "bharat.ship.t-5000.iskhod",
+          "name": "T-5000 «Исход»",
+          "manufacturer": "mfr.bharat",
+          "law": "Newtonian",
+          "layout": "X",
+          "main_engine_count": 4,
+          "jump": true
+        }
+      ]
+    },
+    {
+      "id": "escort_frigate",
+      "economic_class": "escort_frigate",
+      "models": [
+        "harmony.ship.he-f22.dun"
+      ],
+      "variants": [
+        {
+          "model": "harmony.ship.he-f22.dun",
+          "name": "Хэ-Ф22 «Дунь»",
+          "manufacturer": "mfr.harmony_yards",
+          "law": "Assisted",
+          "layout": "Y",
+          "main_engine_count": 6,
+          "jump": true
+        }
+      ]
+    },
+    {
+      "id": "fleet_tender",
+      "economic_class": "fleet_tender",
+      "models": [
+        "harmony.ship.he-s240.tylovik"
+      ],
+      "variants": [
+        {
+          "model": "harmony.ship.he-s240.tylovik",
+          "name": "Хэ-С240 «Тыловик»",
+          "manufacturer": "mfr.harmony_yards",
+          "law": "Newtonian",
+          "layout": "Y",
+          "main_engine_count": 3,
+          "jump": true
+        }
+      ]
+    },
+    {
+      "id": "gas_tanker",
+      "economic_class": "gas_tanker",
+      "models": [
+        "sol.ship.gt-3000.titan",
+        "stone.ship.kamen.tanker"
+      ],
+      "variants": [
+        {
+          "model": "sol.ship.gt-3000.titan",
+          "name": "ГТ-3000 «Титан»",
+          "manufacturer": "mfr.sol_mass_yards",
+          "law": "Newtonian",
+          "layout": "Y",
+          "main_engine_count": 3,
+          "jump": false
+        },
+        {
+          "model": "stone.ship.kamen.tanker",
+          "name": "«Камень» (танкер из астероида)",
+          "manufacturer": "mfr.stone_docks",
+          "law": "Newtonian",
+          "layout": "I",
+          "main_engine_count": 1,
+          "jump": false
+        }
+      ]
+    },
+    {
+      "id": "impact_defence_tug",
+      "economic_class": "impact_defence_tug",
+      "models": [
+        "sol.ship.pao-7.shchit"
+      ],
+      "variants": [
+        {
+          "model": "sol.ship.pao-7.shchit",
+          "name": "ПАО-7 «Щит»",
+          "manufacturer": "mfr.sol_mass_yards",
+          "law": "Newtonian",
+          "layout": "X",
+          "main_engine_count": 4,
+          "jump": false
+        }
+      ]
+    },
+    {
+      "id": "interceptor",
+      "economic_class": "interceptor",
+      "models": [
+        "bastion.ship.b-4.sokol"
+      ],
+      "variants": [
+        {
+          "model": "bastion.ship.b-4.sokol",
+          "name": "Б-4 «Сокол»",
+          "manufacturer": "mfr.bastion",
+          "law": "Assisted",
+          "layout": "X",
+          "main_engine_count": 8,
+          "jump": false
+        }
+      ]
+    },
+    {
+      "id": "jump_tanker",
+      "economic_class": "jump_tanker",
+      "models": [
+        "harmony.ship.he-t12c.tanker"
+      ],
+      "variants": [
+        {
+          "model": "harmony.ship.he-t12c.tanker",
+          "name": "Хэ-Т12Ц (поезд-танкер)",
+          "manufacturer": "mfr.harmony_yards",
+          "law": "Newtonian",
+          "layout": "X",
+          "main_engine_count": 4,
+          "jump": true
+        }
+      ]
+    },
+    {
+      "id": "jump_train",
+      "economic_class": "jump_train",
+      "models": [
+        "harmony.ship.he-t12.lokomotiv"
+      ],
+      "variants": [
+        {
+          "model": "harmony.ship.he-t12.lokomotiv",
+          "name": "Хэ-Т12 «Локомотив» + 12 модулей",
+          "manufacturer": "mfr.harmony_yards",
+          "law": "Newtonian",
+          "layout": "X",
+          "main_engine_count": 4,
+          "jump": true
+        }
+      ]
+    },
+    {
+      "id": "line_combatant",
+      "economic_class": "line_combatant",
+      "models": [
+        "bastion.ship.b-90.tsitadel"
+      ],
+      "variants": [
+        {
+          "model": "bastion.ship.b-90.tsitadel",
+          "name": "Б-90 «Цитадель»",
+          "manufacturer": "mfr.bastion",
+          "law": "Newtonian",
+          "layout": "X",
+          "main_engine_count": 4,
+          "jump": true
+        }
+      ]
+    },
+    {
+      "id": "liner",
+      "economic_class": "liner",
+      "models": [
+        "hyp.ship.l-900.piligrim"
+      ],
+      "variants": [
+        {
+          "model": "hyp.ship.l-900.piligrim",
+          "name": "L-900 «Пилигрим»",
+          "manufacturer": "mfr.hyperion",
+          "law": "Newtonian",
+          "layout": "Y",
+          "main_engine_count": 3,
+          "jump": true
+        }
+      ]
+    },
+    {
+      "id": "medium_freighter",
+      "economic_class": "medium_freighter",
+      "models": [
+        "bharat.ship.c-120.konveyer",
+        "harmony.ship.he-120"
+      ],
+      "variants": [
+        {
+          "model": "bharat.ship.c-120.konveyer",
+          "name": "C-120 «Конвейер»",
+          "manufacturer": "mfr.bharat",
+          "law": "Newtonian",
+          "layout": "Y",
+          "main_engine_count": 3,
+          "jump": true
+        },
+        {
+          "model": "harmony.ship.he-120",
+          "name": "Хэ-120 «Хуэйлю»",
+          "manufacturer": "mfr.harmony_yards",
+          "law": "Newtonian",
+          "layout": "I",
+          "main_engine_count": 1,
+          "jump": true
+        }
+      ]
+    },
+    {
+      "id": "ocs4_lastochka",
+      "economic_class": "ocs4_lastochka",
+      "models": [
+        "ofu.ship.ocs-4.lastochka"
+      ],
+      "variants": [
+        {
+          "model": "ofu.ship.ocs-4.lastochka",
+          "name": "OCS-4 «Ласточка»",
+          "manufacturer": "mfr.ofu",
+          "law": "Newtonian",
+          "layout": "I",
+          "main_engine_count": 1,
+          "jump": false
+        }
+      ]
+    },
+    {
+      "id": "ore_tug",
+      "economic_class": "ore_tug",
+      "models": [
+        "kern.ship.ht-20k.mul"
+      ],
+      "variants": [
+        {
+          "model": "kern.ship.ht-20k.mul",
+          "name": "HT-20K «Мул»",
+          "manufacturer": "mfr.kern_heavy",
+          "law": "Newtonian",
+          "layout": "X",
+          "main_engine_count": 4,
+          "jump": false
+        }
+      ]
+    },
+    {
+      "id": "patrol_cutter",
+      "economic_class": "patrol_cutter",
+      "models": [
+        "sol.ship.pk-30.strazh"
+      ],
+      "variants": [
+        {
+          "model": "sol.ship.pk-30.strazh",
+          "name": "ПК-30 «Страж»",
+          "manufacturer": "mfr.sol_mass_yards",
+          "law": "Assisted",
+          "layout": "I",
+          "main_engine_count": 4,
+          "jump": true
+        }
+      ]
+    },
+    {
+      "id": "recon_picket",
+      "economic_class": "recon_picket",
+      "models": [
+        "hyp.ship.r-7.argus"
+      ],
+      "variants": [
+        {
+          "model": "hyp.ship.r-7.argus",
+          "name": "R-7 «Аргус»",
+          "manufacturer": "mfr.hyperion",
+          "law": "Newtonian",
+          "layout": "X",
+          "main_engine_count": 4,
+          "jump": true
+        }
+      ]
+    },
+    {
+      "id": "service_tender",
+      "economic_class": "service_tender",
+      "models": [
+        "sol.ship.st-6.masterovoy"
+      ],
+      "variants": [
+        {
+          "model": "sol.ship.st-6.masterovoy",
+          "name": "СТ-6 «Мастеровой»",
+          "manufacturer": "mfr.sol_mass_yards",
+          "law": "Assisted",
+          "layout": "I",
+          "main_engine_count": 4,
+          "jump": false
+        }
+      ]
+    },
+    {
+      "id": "surface_lifter",
+      "economic_class": "surface_lifter",
+      "models": [
+        "ofu.ship.sl-12.podyomnik"
+      ],
+      "variants": [
+        {
+          "model": "ofu.ship.sl-12.podyomnik",
+          "name": "SL-12 «Подъёмник»",
+          "manufacturer": "mfr.ofu",
+          "law": "Newtonian",
+          "layout": "Y",
+          "main_engine_count": 3,
+          "jump": false
+        }
+      ]
+    }
+  ],
+  "ship_integrators": [
+    {
+      "id": "mfr.ofu",
+      "name": "Orbital Freight Union «Ural-Kourou»",
+      "group": "sol_industrial"
+    },
+    {
+      "id": "mfr.sol_mass_yards",
+      "name": "Лунно-Марсианские верфи",
+      "group": "sol_industrial"
+    },
+    {
+      "id": "mfr.cobretty",
+      "name": "Cobretty / KB",
+      "group": "cognium_pool"
+    },
+    {
+      "id": "mfr.hyperion",
+      "name": "Верфи Гипериона",
+      "group": "cognium_pool"
+    },
+    {
+      "id": "mfr.kern_heavy",
+      "name": "Kern Heavy Mining",
+      "group": "cognium_pool"
+    },
+    {
+      "id": "mfr.harmony_yards",
+      "name": "Верфи Гармонии",
+      "group": "heavenly_pact"
+    },
+    {
+      "id": "mfr.tianhe_heavy",
+      "name": "Тяньхэ Тяжмаш / Массовые верфи Тяньхэ",
+      "group": "heavenly_pact"
+    },
+    {
+      "id": "mfr.bharat",
+      "name": "Бхарат Ассембли",
+      "group": "southern_circle"
+    },
+    {
+      "id": "mfr.bastion",
+      "name": "Арсенал «Бастион»",
+      "group": "citadel_compact"
+    },
+    {
+      "id": "mfr.stone_docks",
+      "name": "Каменные доки Раздора",
+      "group": "free_belts"
+    }
+  ],
+  "cooperation_groups": {
+    "sol_industrial": {
+      "ru": "Сол — массовая промышленная кооперация",
+      "integrators": [
+        "mfr.ofu",
+        "mfr.sol_mass_yards"
+      ],
+      "component_partners": [
+        "mfr.sol_reactor",
+        "mfr.terra_habitat",
+        "mfr.agora_modular",
+        "mfr.xinzhi",
+        "mfr.um_core_fab"
+      ],
+      "closeness_internal": 5,
+      "rule": "ОФУ и Лунно-Марсианские верфи используют общие земные стандарты интерфейсов; реакторы SRW и жилые системы Terra Habitat считаются штатной кооперацией."
+    },
+    "cognium_pool": {
+      "ru": "Пул Когниума — модульная высокотехнологичная кооперация",
+      "integrators": [
+        "mfr.cobretty",
+        "mfr.hyperion",
+        "mfr.kern_heavy"
+      ],
+      "component_partners": [
+        "mfr.xinzhi",
+        "mfr.um_core_fab",
+        "mfr.eurohab",
+        "mfr.agora_modular"
+      ],
+      "closeness_internal": 4,
+      "rule": "Общие интерфейсы, ядра «Нулевой точки» и электроника Синьчжи; фирмы сохраняют собственные силовые и специальные изделия."
+    },
+    "heavenly_pact": {
+      "ru": "Небесный пакт — единая тяжёлая промышленная школа",
+      "integrators": [
+        "mfr.harmony_yards",
+        "mfr.tianhe_heavy"
+      ],
+      "component_partners": [
+        "mfr.tianhe_heavy",
+        "mfr.xinzhi",
+        "mfr.agora_modular"
+      ],
+      "closeness_internal": 5,
+      "rule": "Гармония проектирует и собирает корабли; Тяньхэ — серийные двигатели, реакторы, тепловые системы и лицензионная сборка."
+    },
+    "southern_circle": {
+      "ru": "Южный круг — лицензионная сборка с собственными ядрами",
+      "integrators": [
+        "mfr.bharat"
+      ],
+      "component_partners": [
+        "mfr.kapehu_systems",
+        "mfr.uhuru_bio",
+        "mfr.agora_modular"
+      ],
+      "closeness_internal": 4,
+      "rule": "Бхарат — интегратор корпусов; Тауранга/Капеху — прыжковые ядра и бортовая математика; Маланд — биосистемы."
+    },
+    "citadel_compact": {
+      "ru": "Пакт Цитадели — военная школа",
+      "integrators": [
+        "mfr.bastion"
+      ],
+      "component_partners": [
+        "mfr.tianhe_heavy",
+        "mfr.agora_modular"
+      ],
+      "closeness_internal": 5,
+      "rule": "Бастион интегрирует корпус, оружие, боевую электронику и своё ядро; силовые реакторы/двигатели могут идти серийными поставками Тяньхэ."
+    },
+    "free_belts": {
+      "ru": "Свободные пояса — ремонт, переделки и донорские корпуса",
+      "integrators": [
+        "mfr.stone_docks"
+      ],
+      "component_partners": [
+        "mfr.agora_modular"
+      ],
+      "closeness_internal": 3,
+      "rule": "Не полный серийный цикл: восстановление, refit, донорские агрегаты и выдолбленные астероиды; стандартизация ниже."
+    }
+  },
+  "industrial_cooperation_matrix": {
+    "mfr.ofu": {
+      "mfr.ofu": {
+        "score": 5,
+        "basis": "одна производственная группа"
+      },
+      "mfr.sol_mass_yards": {
+        "score": 5,
+        "basis": "одна производственная группа"
+      },
+      "mfr.cobretty": {
+        "score": 4,
+        "basis": "плотная гражданская кооперация; Сол лицензирует ядра Когниума"
+      },
+      "mfr.hyperion": {
+        "score": 4,
+        "basis": "плотная гражданская кооперация; Сол лицензирует ядра Когниума"
+      },
+      "mfr.kern_heavy": {
+        "score": 4,
+        "basis": "плотная гражданская кооперация; Сол лицензирует ядра Когниума"
+      },
+      "mfr.harmony_yards": {
+        "score": 3,
+        "basis": "нормальная промышленная торговля, но разные стандарты"
+      },
+      "mfr.tianhe_heavy": {
+        "score": 3,
+        "basis": "нормальная промышленная торговля, но разные стандарты"
+      },
+      "mfr.bharat": {
+        "score": 3,
+        "basis": "гражданские поставки и сборка без общей платформы"
+      },
+      "mfr.bastion": {
+        "score": 2,
+        "basis": "ограниченная военная кооперация; гражданские узлы доступны шире"
+      },
+      "mfr.stone_docks": {
+        "score": 2,
+        "basis": "рынок ремонта и б/у, без совместных программ"
+      }
+    },
+    "mfr.sol_mass_yards": {
+      "mfr.ofu": {
+        "score": 5,
+        "basis": "одна производственная группа"
+      },
+      "mfr.sol_mass_yards": {
+        "score": 5,
+        "basis": "одна производственная группа"
+      },
+      "mfr.cobretty": {
+        "score": 4,
+        "basis": "плотная гражданская кооперация; Сол лицензирует ядра Когниума"
+      },
+      "mfr.hyperion": {
+        "score": 4,
+        "basis": "плотная гражданская кооперация; Сол лицензирует ядра Когниума"
+      },
+      "mfr.kern_heavy": {
+        "score": 4,
+        "basis": "плотная гражданская кооперация; Сол лицензирует ядра Когниума"
+      },
+      "mfr.harmony_yards": {
+        "score": 3,
+        "basis": "нормальная промышленная торговля, но разные стандарты"
+      },
+      "mfr.tianhe_heavy": {
+        "score": 3,
+        "basis": "нормальная промышленная торговля, но разные стандарты"
+      },
+      "mfr.bharat": {
+        "score": 3,
+        "basis": "гражданские поставки и сборка без общей платформы"
+      },
+      "mfr.bastion": {
+        "score": 2,
+        "basis": "ограниченная военная кооперация; гражданские узлы доступны шире"
+      },
+      "mfr.stone_docks": {
+        "score": 2,
+        "basis": "рынок ремонта и б/у, без совместных программ"
+      }
+    },
+    "mfr.cobretty": {
+      "mfr.ofu": {
+        "score": 4,
+        "basis": "плотная гражданская кооперация; Сол лицензирует ядра Когниума"
+      },
+      "mfr.sol_mass_yards": {
+        "score": 4,
+        "basis": "плотная гражданская кооперация; Сол лицензирует ядра Когниума"
+      },
+      "mfr.cobretty": {
+        "score": 4,
+        "basis": "одна производственная группа"
+      },
+      "mfr.hyperion": {
+        "score": 4,
+        "basis": "одна производственная группа"
+      },
+      "mfr.kern_heavy": {
+        "score": 4,
+        "basis": "одна производственная группа"
+      },
+      "mfr.harmony_yards": {
+        "score": 3,
+        "basis": "ядра/электроника и тяжёлая промышленность связаны торговлей, но школы конкурируют"
+      },
+      "mfr.tianhe_heavy": {
+        "score": 3,
+        "basis": "ядра/электроника и тяжёлая промышленность связаны торговлей, но школы конкурируют"
+      },
+      "mfr.bharat": {
+        "score": 2,
+        "basis": "технологическая конкуренция вокруг прыжковых ядер; гражданская совместимость частичная"
+      },
+      "mfr.bastion": {
+        "score": 1,
+        "basis": "стратегическое недоверие, только отдельные совместимые гражданские узлы"
+      },
+      "mfr.stone_docks": {
+        "score": 2,
+        "basis": "б/у и серый рынок совместимых узлов"
+      }
+    },
+    "mfr.hyperion": {
+      "mfr.ofu": {
+        "score": 4,
+        "basis": "плотная гражданская кооперация; Сол лицензирует ядра Когниума"
+      },
+      "mfr.sol_mass_yards": {
+        "score": 4,
+        "basis": "плотная гражданская кооперация; Сол лицензирует ядра Когниума"
+      },
+      "mfr.cobretty": {
+        "score": 4,
+        "basis": "одна производственная группа"
+      },
+      "mfr.hyperion": {
+        "score": 4,
+        "basis": "одна производственная группа"
+      },
+      "mfr.kern_heavy": {
+        "score": 4,
+        "basis": "одна производственная группа"
+      },
+      "mfr.harmony_yards": {
+        "score": 3,
+        "basis": "ядра/электроника и тяжёлая промышленность связаны торговлей, но школы конкурируют"
+      },
+      "mfr.tianhe_heavy": {
+        "score": 3,
+        "basis": "ядра/электроника и тяжёлая промышленность связаны торговлей, но школы конкурируют"
+      },
+      "mfr.bharat": {
+        "score": 2,
+        "basis": "технологическая конкуренция вокруг прыжковых ядер; гражданская совместимость частичная"
+      },
+      "mfr.bastion": {
+        "score": 1,
+        "basis": "стратегическое недоверие, только отдельные совместимые гражданские узлы"
+      },
+      "mfr.stone_docks": {
+        "score": 2,
+        "basis": "б/у и серый рынок совместимых узлов"
+      }
+    },
+    "mfr.kern_heavy": {
+      "mfr.ofu": {
+        "score": 4,
+        "basis": "плотная гражданская кооперация; Сол лицензирует ядра Когниума"
+      },
+      "mfr.sol_mass_yards": {
+        "score": 4,
+        "basis": "плотная гражданская кооперация; Сол лицензирует ядра Когниума"
+      },
+      "mfr.cobretty": {
+        "score": 4,
+        "basis": "одна производственная группа"
+      },
+      "mfr.hyperion": {
+        "score": 4,
+        "basis": "одна производственная группа"
+      },
+      "mfr.kern_heavy": {
+        "score": 4,
+        "basis": "одна производственная группа"
+      },
+      "mfr.harmony_yards": {
+        "score": 3,
+        "basis": "ядра/электроника и тяжёлая промышленность связаны торговлей, но школы конкурируют"
+      },
+      "mfr.tianhe_heavy": {
+        "score": 3,
+        "basis": "ядра/электроника и тяжёлая промышленность связаны торговлей, но школы конкурируют"
+      },
+      "mfr.bharat": {
+        "score": 2,
+        "basis": "технологическая конкуренция вокруг прыжковых ядер; гражданская совместимость частичная"
+      },
+      "mfr.bastion": {
+        "score": 1,
+        "basis": "стратегическое недоверие, только отдельные совместимые гражданские узлы"
+      },
+      "mfr.stone_docks": {
+        "score": 2,
+        "basis": "б/у и серый рынок совместимых узлов"
+      }
+    },
+    "mfr.harmony_yards": {
+      "mfr.ofu": {
+        "score": 3,
+        "basis": "нормальная промышленная торговля, но разные стандарты"
+      },
+      "mfr.sol_mass_yards": {
+        "score": 3,
+        "basis": "нормальная промышленная торговля, но разные стандарты"
+      },
+      "mfr.cobretty": {
+        "score": 3,
+        "basis": "ядра/электроника и тяжёлая промышленность связаны торговлей, но школы конкурируют"
+      },
+      "mfr.hyperion": {
+        "score": 3,
+        "basis": "ядра/электроника и тяжёлая промышленность связаны торговлей, но школы конкурируют"
+      },
+      "mfr.kern_heavy": {
+        "score": 3,
+        "basis": "ядра/электроника и тяжёлая промышленность связаны торговлей, но школы конкурируют"
+      },
+      "mfr.harmony_yards": {
+        "score": 5,
+        "basis": "одна производственная группа"
+      },
+      "mfr.tianhe_heavy": {
+        "score": 5,
+        "basis": "одна производственная группа"
+      },
+      "mfr.bharat": {
+        "score": 3,
+        "basis": "региональная промышленная торговля, собственные стандарты сохраняются"
+      },
+      "mfr.bastion": {
+        "score": 3,
+        "basis": "существующая поставка силовых агрегатов Тяньхэ для Бастиона"
+      },
+      "mfr.stone_docks": {
+        "score": 2,
+        "basis": "гражданские и восстановленные агрегаты"
+      }
+    },
+    "mfr.tianhe_heavy": {
+      "mfr.ofu": {
+        "score": 3,
+        "basis": "нормальная промышленная торговля, но разные стандарты"
+      },
+      "mfr.sol_mass_yards": {
+        "score": 3,
+        "basis": "нормальная промышленная торговля, но разные стандарты"
+      },
+      "mfr.cobretty": {
+        "score": 3,
+        "basis": "ядра/электроника и тяжёлая промышленность связаны торговлей, но школы конкурируют"
+      },
+      "mfr.hyperion": {
+        "score": 3,
+        "basis": "ядра/электроника и тяжёлая промышленность связаны торговлей, но школы конкурируют"
+      },
+      "mfr.kern_heavy": {
+        "score": 3,
+        "basis": "ядра/электроника и тяжёлая промышленность связаны торговлей, но школы конкурируют"
+      },
+      "mfr.harmony_yards": {
+        "score": 5,
+        "basis": "одна производственная группа"
+      },
+      "mfr.tianhe_heavy": {
+        "score": 5,
+        "basis": "одна производственная группа"
+      },
+      "mfr.bharat": {
+        "score": 3,
+        "basis": "региональная промышленная торговля, собственные стандарты сохраняются"
+      },
+      "mfr.bastion": {
+        "score": 3,
+        "basis": "существующая поставка силовых агрегатов Тяньхэ для Бастиона"
+      },
+      "mfr.stone_docks": {
+        "score": 2,
+        "basis": "гражданские и восстановленные агрегаты"
+      }
+    },
+    "mfr.bharat": {
+      "mfr.ofu": {
+        "score": 3,
+        "basis": "гражданские поставки и сборка без общей платформы"
+      },
+      "mfr.sol_mass_yards": {
+        "score": 3,
+        "basis": "гражданские поставки и сборка без общей платформы"
+      },
+      "mfr.cobretty": {
+        "score": 2,
+        "basis": "технологическая конкуренция вокруг прыжковых ядер; гражданская совместимость частичная"
+      },
+      "mfr.hyperion": {
+        "score": 2,
+        "basis": "технологическая конкуренция вокруг прыжковых ядер; гражданская совместимость частичная"
+      },
+      "mfr.kern_heavy": {
+        "score": 2,
+        "basis": "технологическая конкуренция вокруг прыжковых ядер; гражданская совместимость частичная"
+      },
+      "mfr.harmony_yards": {
+        "score": 3,
+        "basis": "региональная промышленная торговля, собственные стандарты сохраняются"
+      },
+      "mfr.tianhe_heavy": {
+        "score": 3,
+        "basis": "региональная промышленная торговля, собственные стандарты сохраняются"
+      },
+      "mfr.bharat": {
+        "score": 4,
+        "basis": "одна производственная группа"
+      },
+      "mfr.bastion": {
+        "score": 1,
+        "basis": "почти нет стратегической кооперации"
+      },
+      "mfr.stone_docks": {
+        "score": 2,
+        "basis": "ремонт/б/у без общей программы"
+      }
+    },
+    "mfr.bastion": {
+      "mfr.ofu": {
+        "score": 2,
+        "basis": "ограниченная военная кооперация; гражданские узлы доступны шире"
+      },
+      "mfr.sol_mass_yards": {
+        "score": 2,
+        "basis": "ограниченная военная кооперация; гражданские узлы доступны шире"
+      },
+      "mfr.cobretty": {
+        "score": 1,
+        "basis": "стратегическое недоверие, только отдельные совместимые гражданские узлы"
+      },
+      "mfr.hyperion": {
+        "score": 1,
+        "basis": "стратегическое недоверие, только отдельные совместимые гражданские узлы"
+      },
+      "mfr.kern_heavy": {
+        "score": 1,
+        "basis": "стратегическое недоверие, только отдельные совместимые гражданские узлы"
+      },
+      "mfr.harmony_yards": {
+        "score": 3,
+        "basis": "существующая поставка силовых агрегатов Тяньхэ для Бастиона"
+      },
+      "mfr.tianhe_heavy": {
+        "score": 3,
+        "basis": "существующая поставка силовых агрегатов Тяньхэ для Бастиона"
+      },
+      "mfr.bharat": {
+        "score": 1,
+        "basis": "почти нет стратегической кооперации"
+      },
+      "mfr.bastion": {
+        "score": 5,
+        "basis": "одна производственная группа"
+      },
+      "mfr.stone_docks": {
+        "score": 1,
+        "basis": "военные системы закрыты; совместимость в основном через гражданские доноры"
+      }
+    },
+    "mfr.stone_docks": {
+      "mfr.ofu": {
+        "score": 2,
+        "basis": "рынок ремонта и б/у, без совместных программ"
+      },
+      "mfr.sol_mass_yards": {
+        "score": 2,
+        "basis": "рынок ремонта и б/у, без совместных программ"
+      },
+      "mfr.cobretty": {
+        "score": 2,
+        "basis": "б/у и серый рынок совместимых узлов"
+      },
+      "mfr.hyperion": {
+        "score": 2,
+        "basis": "б/у и серый рынок совместимых узлов"
+      },
+      "mfr.kern_heavy": {
+        "score": 2,
+        "basis": "б/у и серый рынок совместимых узлов"
+      },
+      "mfr.harmony_yards": {
+        "score": 2,
+        "basis": "гражданские и восстановленные агрегаты"
+      },
+      "mfr.tianhe_heavy": {
+        "score": 2,
+        "basis": "гражданские и восстановленные агрегаты"
+      },
+      "mfr.bharat": {
+        "score": 2,
+        "basis": "ремонт/б/у без общей программы"
+      },
+      "mfr.bastion": {
+        "score": 1,
+        "basis": "военные системы закрыты; совместимость в основном через гражданские доноры"
+      },
+      "mfr.stone_docks": {
+        "score": 3,
+        "basis": "одна производственная группа"
+      }
+    }
+  },
+  "component_compatibility_rules": {
+    "same_group": "default compatible if interface/rating permits",
+    "cross_group": "requires political access plus matching interface; score is industrial cooperation, not diplomatic friendship",
+    "derating": "permitted",
+    "parallel_reactor_banks": "permitted",
+    "jump_core": "sealed strategic module; no field-level internal repair",
+    "frame": "not part of this pass"
+  },
+  "source_of_truth": {
+    "current_ship_designs": "tools/colonization_lab/canon/ship_designs.json",
+    "current_ship_economics": "tools/colonization_lab/canon/ship_economics.json",
+    "unified_parts": "tools/colonization_lab/canon/ship_parts_unified.json",
+    "engineering_passports": "tools/colonization_lab/canon/ship_passports_3126.json"
+  }
+}

@@ -2981,6 +2981,21 @@ order - ask for it again if it is not in the session.
   (Europa "исламский мир"), (d) machine ids lalande_mecca / mecca_farms kept for compatibility, (e) dated archives
   (PROJECT_STATE history, LEGACY_HISTORY_IMPORT), (f) unrelated substrings (барабан, заработок, font files).
 
+### User design decisions 2026-11-05 w (jump mechanics, space warfare) - DESIGN ACCEPTED, NOT IMPLEMENTED
+- Documents (repo root): SPACE_WARFARE_DOCTRINE.md (analysis of space sims / SF / strategy articles mapped onto the 3126
+  world: no cover -> ambiguity instead of stealth, war for nodes (beacons, depots, yards), logistics first, doctrine
+  groups by bloc; PROPOSAL) and JUMP_MECHANICS.md (the accepted jump / J design).
+- Accepted by the author: one decoupling field, three regimes (main drive, J, jump); J cap 0.8-0.9 c and J acceleration
+  up to ~1e5 g (inner system <= 1 h); in-system short jumps along system beacons / green corridors to the outer planets;
+  no beacon = lottery (exceptions: local smuggler knowledge, pirate beacon frequency + cipher, old self-propelled
+  beacons); administrative zones red / blue / green with the transponder rule (on -> automatic fine, off -> police);
+  automatic velocity sync to the local frame on exit (small residual error, planner hint, no autopilot); two planners
+  (visible promise + hidden server-side deterministic result, honest 3 sigma along beacons).
+- Defaults pending author review (PROPOSAL): star sump catches deep interstellar steps only; interstellar jump lasts hours;
+  jump charge visible in-system; after a sump ejection J or a new charge; L4/L5 naturally safe, a beacon improves precision.
+- Next (not started): implementation slices - data (sumps / jump limits / medium currents from the catalogue), visible
+  planner, hidden server roll, exit sync, zones + transponder, J cap / acceleration / energy accounting.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

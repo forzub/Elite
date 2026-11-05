@@ -47,6 +47,106 @@ void ShipCore::applyDamage(const game::damage::DamageEvent& event)
         result.volume ? result.volume->moduleId : std::string {};
 
     m_damageHandler.handleDamage(result);
+    afterVolumeDamage(result.volume, healthBefore, maxHealth, damagedModuleId, event.type, event.worldPosition);
+}
+
+bool ShipCore::applyVolumeDamage(
+    const std::string& volumeKey,
+    double healthLoss,
+    game::damage::DamageType type,
+    const world::coordinates::WorldPosition& where
+)
+{
+    using namespace game::damage;
+    HitVolume* volume = nullptr;
+    for (auto& v : m_hitComponent.volumes)
+        if ((v.supportLinkVolume ? "link::" + v.supportLinkId : "module::" + v.moduleId) == volumeKey)
+        {
+            volume = &v;
+            break;
+        }
+    if (!volume || volume->destroyed || healthLoss <= 0.0)
+        return false;
+    const float healthBefore = volume->health;
+    const float maxHealth = volume->maxHealth;
+    const std::string moduleId = volume->moduleId;
+    volume->health = std::max(0.0f, volume->health - static_cast<float>(healthLoss));
+    if (volume->health <= 0.0f)
+        volume->destroyed = true;
+    const bool destroyed = volume->destroyed;
+    afterVolumeDamage(volume, healthBefore, maxHealth, moduleId, type, where);
+    return destroyed;
+}
+
+int ShipCore::applyPartImpulse(const std::string& moduleId, double impulseKNs, int depth)
+{
+    // The load a part puts on the links that hold it: shared by the live ones;
+    // over a link's tolerance it breaks, below it the link fatigues
+    // (health lost ~ (load / tolerance)^2). What the links carry goes on to
+    // the part they hold on to, halved, up to three links deep.
+    if (impulseKNs <= 0.0 || depth > 3)
+        return 0;
+    std::vector<world::modules::StructuralLinkState*> holding;
+    for (auto& l : m_structuralLinkRuntime.links())
+        if (l.moduleAId == moduleId && l.isAlive())
+            holding.push_back(&l);
+    if (holding.empty())
+        return 0;
+    const double load = impulseKNs / static_cast<double>(holding.size());
+    int broken = 0;
+    std::vector<std::string> next;
+    for (auto* l : holding)
+    {
+        const double ratio = load / std::max(1.0f, l->impulseTolerance);
+        const bool breaks = ratio >= 1.0;
+        const float health = breaks ? 0.0f : std::max(0.0f, l->health - static_cast<float>(l->maxHealth * 0.5 * ratio * ratio));
+        m_structuralLinkRuntime.setLinkHealth(l->id, health, breaks || health <= 0.0f);
+        m_moduleRuntime.setSupportLinkHealth(moduleId, l->id, health, breaks || health <= 0.0f);
+        if (breaks || health <= 0.0f)
+        {
+            ++broken;
+            std::cout << "[ShipDamage] link broken: " << l->id << " load " << load << " kN s (tolerance "
+                      << l->impulseTolerance << ")\n";
+        }
+        else
+            next.push_back(l->moduleBId);
+    }
+    for (const auto& support : next)
+        broken += applyPartImpulse(support, load * 0.5, depth + 1);
+    if (depth == 0)
+    {
+        m_moduleRuntime.reevaluateStructuralStates(&m_structuralLinkRuntime);
+        syncDetachedFragmentsFromModuleRuntime();
+        if (m_desc)
+        {
+            world::modules::ObjectRuntimeHitBuilder::rebuild(m_hitComponent, m_desc->typeId, *m_desc, m_moduleRuntime,
+                                                             m_structuralLinkRuntime, m_assemblyRuntime);
+            m_hitVolumesDirty = false;
+        }
+        refreshRuntimeState();
+    }
+    return broken;
+}
+
+void ShipCore::afterVolumeDamage(
+    const game::damage::HitVolume* volume,
+    float healthBefore,
+    float maxHealth,
+    const std::string& damagedModuleId,
+    game::damage::DamageType damageType,
+    const world::coordinates::WorldPosition& worldPosition
+)
+{
+    using namespace game::damage;
+    struct
+    {
+        const HitVolume* volume;
+    } result {volume};
+    struct
+    {
+        DamageType type;
+        world::coordinates::WorldPosition worldPosition;
+    } event {damageType, worldPosition};
 
     // Functional equipment damage records the CAUSE of actual health loss.
     // The amount is normalized from the real hit-volume loss; sensitivity
@@ -334,6 +434,32 @@ void ShipCore::initModuleRuntime()
 void ShipCore::syncDestroyedModulesFromHitVolumes()
 {
     bool supportChanged = false;
+
+    // A part burnt to nothing holds nothing: every link that rests on it
+    // fails (its link hit volume too, or the mirror below would revive it),
+    // so what it carried loses that support.
+    for (const auto& dead : m_hitComponent.volumes)
+    {
+        if (dead.supportLinkVolume || !dead.destroyed)
+            continue;
+        for (const auto& link : m_structuralLinkRuntime.links())
+            if (link.moduleBId == dead.moduleId && link.isAlive())
+                for (auto& lv : m_hitComponent.volumes)
+                    if (lv.supportLinkVolume && lv.supportLinkId == link.id)
+                    {
+                        lv.health = 0.0f;
+                        lv.destroyed = true;
+                    }
+        for (const auto& link : m_structuralLinkRuntime.links())
+            if (link.moduleBId == dead.moduleId && link.isAlive())
+            {
+                const std::string linkId = link.id;
+                const std::string heldId = link.moduleAId;
+                m_structuralLinkRuntime.setLinkHealth(linkId, 0.0f, true);
+                m_moduleRuntime.setSupportLinkHealth(heldId, linkId, 0.0f, true);
+                supportChanged = true;
+            }
+    }
 
     for (const auto& volume : m_hitComponent.volumes)
     {

@@ -872,6 +872,19 @@ void GameServer::update(double dt)
                     m_simulation.setFreeFlightThrust(id, shipCmd.index);
                     break;
 
+                case ClientShipCommand::FireWeapon:
+                    // 0 laser off, 1 laser on, 2 missile, 3 / 4 next laser / missile type (DEV),
+                    // 5 DEV combat target `amount` m ahead
+                    if (shipCmd.index == 0 || shipCmd.index == 1)
+                        m_simulation.setLaserFiring(id, shipCmd.index == 1);
+                    else if (shipCmd.index == 2)
+                        m_simulation.launchMissile(id);
+                    else if (shipCmd.index == 3 || shipCmd.index == 4)
+                        m_simulation.cycleCombatWeapon(id, shipCmd.index == 4);
+                    else if (shipCmd.index == 5)
+                        m_simulation.spawnCombatTarget(id, shipCmd.amount > 0.0 ? shipCmd.amount : 400.0);
+                    break;
+
                 case ClientShipCommand::RouteLeg:
                 {
                     GameSimulation::FreeFlightLeg leg;

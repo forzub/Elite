@@ -773,6 +773,19 @@ ELITE_WIRE_SCHEMA(
     v.applySerial, v.applyResult);
 
 ELITE_WIRE_SCHEMA(
+    game::simulation::CombatBeamSnapshot,
+    v.from, v.to, v.powerMW, v.hit, v.colour);
+ELITE_WIRE_SCHEMA(
+    game::simulation::CombatMissileSnapshot,
+    v.id, v.position, v.velocityMps, v.specId);
+ELITE_WIRE_SCHEMA(
+    game::simulation::CombatImpactSnapshot,
+    v.serial, v.where, v.energyMJ, v.kind, v.moduleId);
+ELITE_WIRE_SCHEMA(
+    game::simulation::ShipCombatSnapshot,
+    v.laserId, v.missileId, v.missiles, v.laserFiring, v.beams, v.missilesInFlight, v.impacts);
+
+ELITE_WIRE_SCHEMA(
     ShipSnapshot,
     v.id,
     v.instanceId,
@@ -796,7 +809,8 @@ ELITE_WIRE_SCHEMA(
     v.graph,
     v.dockDispatcher,
     v.traffic,
-    v.refit
+    v.refit,
+    v.combat
 );
 
 ELITE_WIRE_SCHEMA(

@@ -342,6 +342,14 @@ public:
     game::damage::HitComponent& getHitComponent(){ return m_hitComponent; }
     const game::damage::HitComponent& getHitComponent() const{ return m_hitComponent; }
     void applyDamage(const game::damage::DamageEvent& event);
+    // Combat model (game::combat): health lost by one hit volume ("module::<id>" /
+    // "link::<id>"); equipment damage, destroyed modules, structure and the
+    // hit-volume rebuild as applyDamage. True when the volume is destroyed.
+    bool applyVolumeDamage(const std::string& volumeKey, double healthLoss, game::damage::DamageType type,
+                           const world::coordinates::WorldPosition& where);
+    // A load on a part (kN s): the links holding it break over their tolerance
+    // or fatigue; what they carry goes on to their supports. Broken link count.
+    int applyPartImpulse(const std::string& moduleId, double impulseKNs, int depth = 0);
 
     bool debugDestroyModuleById(const std::string& moduleId);
     bool debugRestoreModuleById(const std::string& moduleId);
@@ -370,6 +378,9 @@ public:
 
     void initModuleRuntime();
     void syncDestroyedModulesFromHitVolumes();
+    void afterVolumeDamage(const game::damage::HitVolume* volume, float healthBefore, float maxHealth,
+                           const std::string& damagedModuleId, game::damage::DamageType damageType,
+                           const world::coordinates::WorldPosition& worldPosition);
 
     const game::damage::HitComponent& hitComponent() const { return m_hitComponent; }
     game::damage::HitComponent& hitComponent() { return m_hitComponent; }

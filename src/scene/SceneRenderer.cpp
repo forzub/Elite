@@ -2597,6 +2597,86 @@ profileAfterSetupMs = renderProfileNowMs();
     profileAfterRealShipsMs = renderProfileNowMs();
 }
 
+// ============================================================
+// 1C. COMBAT: laser beams, missiles in flight, impact flashes
+// (server combat snapshot of every ship)
+// ============================================================
+if (m_initialized)
+{
+    // each impact flashes for 0.6 s from the moment this client first sees it
+    static std::unordered_map<std::uint32_t, double> impactSeenAt;
+    const double now = glfwGetTime();
+    m_debugLines->begin();
+    bool any = false;
+    for (const auto& [shipId, ship] : ships)
+    {
+        const auto& combat = ship.combat;
+        for (const auto& beam : combat.beams)
+        {
+            if (beam.powerMW <= 0.0f)
+                continue;
+            const glm::vec3 a = world::coordinates::toRenderLocal(beam.from, frame);
+            const glm::vec3 b = world::coordinates::toRenderLocal(beam.to, frame);
+            const glm::vec4 core(glm::min(beam.colour + glm::vec3(0.5f), glm::vec3(1.0f)), 1.0f);
+            const glm::vec4 glow(beam.colour, 0.55f);
+            // a bundle: the bright core and a halo a few beam widths around it
+            const glm::vec3 axis = glm::normalize(b - a + glm::vec3(1.0e-6f));
+            const glm::vec3 side = glm::normalize(glm::cross(axis, std::abs(axis.y) < 0.9f ? glm::vec3(0, 1, 0) : glm::vec3(1, 0, 0)));
+            const glm::vec3 up = glm::cross(side, axis);
+            m_debugLines->addLine(a, b, core);
+            for (int k = 0; k < 4; ++k)
+            {
+                const float ang = 1.5707963f * static_cast<float>(k);
+                const glm::vec3 off = (side * std::cos(ang) + up * std::sin(ang)) * 0.12f;
+                m_debugLines->addLine(a + off, b + off, glow);
+            }
+            if (beam.hit)
+            {
+                const glm::vec4 spark(1.0f, 0.95f, 0.7f, 1.0f);
+                const float s = 0.6f;
+                m_debugLines->addLine(b - side * s, b + side * s, spark);
+                m_debugLines->addLine(b - up * s, b + up * s, spark);
+            }
+            any = true;
+        }
+        for (const auto& m : combat.missilesInFlight)
+        {
+            const glm::vec3 p = world::coordinates::toRenderLocal(m.position, frame);
+            const glm::vec3 dir = glm::length(m.velocityMps) > 0.0f ? glm::normalize(m.velocityMps) : glm::vec3(0, 0, -1);
+            const glm::vec4 body(1.0f, 1.0f, 1.0f, 1.0f);
+            const glm::vec4 flame(1.0f, 0.6f, 0.2f, 0.8f);
+            m_debugLines->addLine(p - dir * 1.5f, p + dir * 1.5f, body);
+            m_debugLines->addLine(p - dir * 1.5f, p - dir * 25.0f, flame);
+            any = true;
+        }
+        for (const auto& imp : combat.impacts)
+        {
+            auto seen = impactSeenAt.find(imp.serial);
+            if (seen == impactSeenAt.end())
+                seen = impactSeenAt.emplace(imp.serial, now).first;
+            const double age = now - seen->second;
+            if (age > 0.6)
+                continue;
+            const glm::vec3 p = world::coordinates::toRenderLocal(imp.where, frame);
+            const float r = (imp.kind >= 2 ? 3.0f : 1.0f) * (1.0f + static_cast<float>(age) * 4.0f);
+            const glm::vec4 c = imp.kind == 1 ? glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)
+                              : imp.kind >= 2 ? glm::vec4(1.0f, 0.75f, 0.3f, 1.0f) : glm::vec4(1.0f, 0.5f, 0.2f, 0.8f);
+            const glm::vec4 fade(glm::vec3(c), c.a * static_cast<float>(1.0 - age / 0.6));
+            m_debugLines->addLine(p - glm::vec3(r, 0, 0), p + glm::vec3(r, 0, 0), fade);
+            m_debugLines->addLine(p - glm::vec3(0, r, 0), p + glm::vec3(0, r, 0), fade);
+            m_debugLines->addLine(p - glm::vec3(0, 0, r), p + glm::vec3(0, 0, r), fade);
+            any = true;
+        }
+    }
+    if (any)
+    {
+        m_debugLines->end(proj * renderView);
+        m_lastStats.drawCalls += 1;
+    }
+    if (impactSeenAt.size() > 4096)
+        impactSeenAt.clear();
+}
+
 
 
 

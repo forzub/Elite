@@ -1479,6 +1479,7 @@ m_hubVelocityMetersPerSecond[hubId] =
         rebuildNavigationGravityContext();
         updateFreeFlights(dt);
         updateShipReferenceFrames(dt);
+        updateCombat(dt);
     }
 
     if (!trajectoryDebugMode)
@@ -1744,7 +1745,7 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (isHubMotionLabShip(id) || isDockStationControlledShip(id))
                 continue;
 
-            if (isInterplanetaryTransferLabShip(id))
+            if (isInterplanetaryTransferLabShip(id) || m_combatTargetDummies.count(id))
                 continue;
 
             Ship& ship = *shipPtr;

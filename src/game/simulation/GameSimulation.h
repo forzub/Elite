@@ -57,6 +57,8 @@
 
 #include <cstdio>
 #include "src/game/traffic/DockServiceTraffic.h"
+#include "src/game/combat/Penetration.h"
+#include "src/game/simulation/ShipCombatSnapshot.h"
 
 
 class StateContext;
@@ -301,6 +303,22 @@ public:
         const auto it = m_routes.find(shipId);
         return it == m_routes.end() ? nullptr : &it->second;
     }
+
+    // ---- combat (GameSimulationCombat.cpp): lasers, missiles, hits on hit volumes
+    struct CombatLoadout
+    {
+        std::string laserId, missileId;
+        int missiles = 0;
+    };
+    void setLaserFiring(EntityId shipId, bool firing);
+    // A missile at the ship nearest the boresight inside the seeker cone (none: unguided).
+    bool launchMissile(EntityId shipId);
+    // DEV: next laser / missile type of the catalog
+    void cycleCombatWeapon(EntityId shipId, bool missile);
+    // DEV: a Cobra Mk I target `distanceM` ahead of the ship, broadside, in its hub frame
+    EntityId spawnCombatTarget(EntityId nearShipId, double distanceM);
+    CombatLoadout& combatLoadout(EntityId shipId);
+    game::simulation::ShipCombatSnapshot combatSnapshotFor(EntityId shipId) const;
 
     // Repair & Refit (F7): a preview / DEV apply of one module operation on
     // a ship owned by the commanding ship's owner (subject 0 = that ship).
@@ -668,6 +686,40 @@ private:
     std::vector<EntityId> m_pendingJExit;   // legs that arrived: J off after the free-flight pass
     std::unordered_map<EntityId, ActiveRoute> m_routes;
     void updateRoutes(double dt);
+
+    // combat state
+    struct CombatMissile
+    {
+        std::uint32_t id = 0;
+        EntityId shooter, target;
+        std::string specId;
+        glm::dvec3 positionW {0.0}, velocityW {0.0};
+        glm::dvec3 heading {0.0, 0.0, -1.0};
+        double ageS = 0.0;
+        double closestM = 1.0e18;   // closest approach to the target so far
+        bool passReported = false;
+    };
+    struct CombatTrack
+    {
+        glm::dvec3 positionW {0.0}, velocityW {0.0};
+        bool valid = false;
+    };
+    void updateCombat(double dt);
+    void flushCombatDamage(EntityId targetId, game::damage::DamageType type, const world::coordinates::WorldPosition& where);
+    void recordCombatImpact(EntityId targetId, const world::coordinates::WorldPosition& where, double energyMJ,
+                            std::uint8_t kind, const std::string& moduleId);
+    std::unordered_map<EntityId, CombatLoadout> m_combatLoadouts;
+    std::unordered_set<EntityId> m_laserFiring;
+    // DEV targets: passive hulls, no NPC pilot
+    std::unordered_set<EntityId> m_combatTargetDummies;
+    std::unordered_map<EntityId, game::combat::BurnState> m_burnStates;
+    std::unordered_map<EntityId, double> m_burnFlushSeconds;
+    std::unordered_map<EntityId, std::vector<game::simulation::CombatBeamSnapshot>> m_combatBeams;
+    std::unordered_map<EntityId, std::vector<game::simulation::CombatImpactSnapshot>> m_combatImpacts;
+    std::unordered_map<EntityId, CombatTrack> m_combatTracks;
+    std::vector<CombatMissile> m_combatMissiles;
+    std::uint32_t m_nextCombatSerial = 1;
+    double m_combatClockS = 0.0;
 
     // Compatibility alias used by the current single-system navigation and
     // local-client presentation paths. Multiplayer authority lives in

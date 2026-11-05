@@ -25,7 +25,9 @@
             RefitApply,             // F7 DEV apply of the same operation (no payment yet)
             FreeFlightAutopilot,    // J autopilot: index 1 = fly to `target` body and land (empty = the
                                     //     dominant body: land here), index 0 = cancel
-            RouteLeg                // route autopilot leg: target "hub:<id>" | "orbit:<body>:<alt km>"
+            RouteLeg,               // route autopilot leg: target "hub:<id>" | "orbit:<body>:<alt km>"
+            FireWeapon              // index 0 laser off, 1 laser on, 2 missile, 3 / 4 next laser / missile
+                                    //     type (DEV), 5 DEV combat target `amount` m ahead
         };
         Type type;
 

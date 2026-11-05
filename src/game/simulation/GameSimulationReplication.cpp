@@ -39,6 +39,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         s.typeId = ship.core().desc().typeId;
         s.catalogShipId = ship.core().desc().catalog.passportId;
         s.refit = refitSnapshotFor(id);
+        s.combat = combatSnapshotFor(id);
         s.physicalControlModel =
             ship.core().state().construction.physicalControlModel;
         s.role = ship.core().role();

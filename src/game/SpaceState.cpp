@@ -878,6 +878,33 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         return;
     }
 
+    // Weapons: SPACE held = lasers (the server fires every live muzzle along the
+    // hull's axis), M = missile at the ship nearest the boresight, ',' / '.' =
+    // next laser / missile type (DEV, weapons.json).
+    if(m_client)
+    {
+        const bool space=Input::instance().isKeyPressed(GLFW_KEY_SPACE);
+        const auto sendFire=[&](int index){
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type=ClientShipCommand::FireWeapon;
+            command.index=index;
+            msg.payload=command;
+            m_client->sendMessage(msg);
+        };
+        if(space!=m_laserKeyDown)
+        {
+            m_laserKeyDown=space;
+            sendFire(space ? 1 : 0);
+        }
+        if(Input::instance().isKeyPressedOnce(GLFW_KEY_M) && !ctrlDown)
+            sendFire(2);
+        if(Input::instance().isKeyPressedOnce(GLFW_KEY_COMMA))
+            sendFire(3);
+        if(Input::instance().isKeyPressedOnce(GLFW_KEY_PERIOD))
+            sendFire(4);
+    }
+
     // Free flight: HOME full thrust, END brake (flip and burn), INSERT thrust off (server-latched).
     if(m_client)
     {
@@ -1492,6 +1519,20 @@ void SpaceState::update(float dt)
                     action.objectId = arg("list:");
                     m_inSessionPresentationRenderer.devOpenObjectList(false);   // a row click closes the list
                     applyNativeSystemMapPanelAction(action);
+                }
+                // DEV combat: "fire:on" | "fire:off" | "missile" | "laser:next" | "missile:next" | "target:<m>"
+                else if (cmd == "fire:on" || cmd == "fire:off" || cmd == "missile" || cmd == "laser:next" ||
+                         cmd == "missile:next" || cmd.rfind("target:", 0) == 0)
+                {
+                    game::network::ClientMessage msg;
+                    ClientShipCommand command;
+                    command.type = ClientShipCommand::FireWeapon;
+                    command.index = cmd == "fire:off" ? 0 : cmd == "fire:on" ? 1 : cmd == "missile" ? 2
+                                  : cmd == "laser:next" ? 3 : cmd == "missile:next" ? 4 : 5;
+                    if (command.index == 5)
+                        command.amount = std::atof(arg("target:").c_str());
+                    msg.payload = command;
+                    m_client->sendMessage(msg);
                 }
                 // Ctrl+J free flight; hold '+' for N seconds (the keys a pilot presses)
                 else if (cmd == "freeflight")

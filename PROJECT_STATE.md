@@ -2667,6 +2667,74 @@ Slices (each: offline check on production code, then live Windows evidence):
 - B5 editor: hit-volume page per part incl. plates and patches, bars (frame mounts), seam "sausages", container locks;
   .elmodel COLL/STRL into the runtime; dependency tree / graph on the Cobra.
 
+#### B1 - WRITTEN, NOT COMPILED (2026-11-05; uncommitted working tree)
+Auto-mode permission classifier began refusing every shell command (build, run, commit) mid-slice; file edits still
+worked. Everything below is source only - no compile, no check run, no live evidence yet.
+- Cobra audit (EliteDamageCheck --dump, run from build/ for assets/): 172 runtime hit volumes (panels, frame CF/CB/FL/FR/
+  reactor, engines, tanks, lasers, cockpit, radar, control units, auto panel seams placed as thin boxes = the
+  "sausages"); 102 structural links; the support-link (bar) volumes are NOT placed (centre 0, 0.05 m) - B5 must place
+  them; hull 260 t. The old ShipCore::applyDamage ignored the hull's orientation (world offset, not rotated) - the
+  combat path rotates into the hull basis itself.
+- New: src/assets/data/combat/weapons.json (3 lasers 1.5 / 4 / 10 MW, 3 missiles: shaped 30 / 90 MJ, slug 40 kg;
+  material constants), src/game/combat/WeaponCatalog.*, src/game/combat/Penetration.* (ray vs OBB volumes, spot heat with
+  conduction, burn-through holes, armour reflection, shaped jet / slug walk, stuck slugs),
+  src/game/simulation/ShipCombatSnapshot.h + ShipSnapshot.combat (wire schema 34), GameSimulationCombat.cpp (lasers from
+  WeaponMuzzle attachments converging on the boresight target, damage flush 0.2 s / on burn-through, missiles with
+  seeker cone + lateral-velocity nulling guidance + system gravity, contact by segment vs hit volumes, momentum to the
+  hull, part impulse to the struck part; shell under fire -> Combat activation claim + materialize + promote; DEV
+  target Cobra), ShipCore::applyVolumeDamage / applyPartImpulse / afterVolumeDamage (applyDamage tail shared),
+  ClientShipCommand::FireWeapon (0 off, 1 on, 2 missile, 3/4 next type, 5 DEV target), keys SPACE (hold) / M / , / .,
+  DEV script fire:on|fire:off|missile|laser:next|missile:next|target:<m>, SceneRenderer 1C beams / missiles / impact
+  flashes, tools/combat/DamageCheck.cpp (EliteDamageCheck, headless_server build) with PASS/FAIL checks.
+- Next: compile (build/headless_server EliteDamageCheck, build EliteGame), run the check, fix, live run with
+  target:400 + fire:on + missile, commit; then B2/B3 per the plan.
+
+#### B1 - COMPILED, OFFLINE PASS, LIVE PARTIAL (2026-11-05; still uncommitted)
+- Compile fixes: a broken string literal in ShipCoreDamage.cpp (applyPartImpulse log).
+- EliteDamageCheck (build/headless_server, run from build/): 0 failures after two fixes -
+  (1) weapons.json missing in build/assets until the client build copied assets;
+  (2) dependency tree: a part burnt to zero did not release what it holds (frame FL has DisableOnly -> state Disabled,
+  links ignore the support's state; the link hit-volume mirror in syncDestroyedModulesFromHitVolumes then revived any
+  broken link). Fix: syncDestroyedModulesFromHitVolumes first kills every link whose support (moduleB) volume is
+  destroyed, with its link hit volume -> laser L detaches when frame FL is destroyed. Pulse laser burns the side panel
+  in 11.95 s, military 10 MW in 0.67 s, 0.18 MW never; 30 MJ jet spent inside; 40 kg slug stuck at 1.2 km/s, out at 6.
+- Full suite after these changes: the same 8 baseline red blocks (model asset, world runtime, cross-timeline,
+  navigation runtime (same 6), interaction activation, system map, feature contracts, client acceptance).
+- LIVE (build/EliteGame.exe --dev-direct-flight --diagnostic-scenario nav-stress:simple, Newtonian-I,
+  ELITE_DEV_SOL_MAP_SCRIPT, stderr D:/tmp/elite_b1_stderr.txt):
+  - root cause 1: the DEV target Cobra was flown by the NPC AI (20 m/s away, 6 -> 47 deg off the boresight).
+    Fix: m_combatTargetDummies, skipped in the NPC AI loop (GameSimulation.cpp) -> target stays at 400 m, vLocal 0.
+  - LIVE VERIFIED: military laser burns through Cobra panels (ship_panel_top_LF / CB / RB / RF BURN-THROUGH logs);
+    target on the boresight (0.2-0.5 deg drift from the scenario ship's own slow rotation).
+  - root cause 2: missiles launched with zero world velocity (tracks only kept while fighting) -> fixed, tracks are
+    always kept. Missiles now lock target 12 but MISS: closest approach 61-79 m (hull radius 19 m) within ~1 s.
+    Suspect: finite-difference velocities of hub-tactical ships are noisy / inconsistent (launch-velocity diagnostic
+    added, not yet run - the auto-mode classifier blocked shell commands again).
+  - DEV diagnostics in GameSimulationCombat.cpp (1 Hz laser line, MISS DIAG, missile t+N, passed-target, launch diag)
+    - trim the noisy ones before commit.
+- Next: run the launch diag; take ship velocities from motion (referenceVelocity + frame local velocity) instead of
+  finite differences if they disagree; re-run missiles; trim diagnostics; commit; beep.
+- PAUSED by the user (2026-11-05): damage work stops here. The B1 working tree must first be committed as a WIP
+  checkpoint (status: compiled, offline PASS, laser LIVE, missiles miss - NOT accepted) before the next order starts.
+
+### User order 2026-11-05 p - political order revision (PROPOSAL, not CANON) - NOT STARTED
+Full revision of the 3126 political structure: separate ideological bloc / economic integration / technology access /
+sanctions (now mixed in tools/colonization_lab/canon/industry.json); polity 3126 vs historical actor
+(src/assets/data/galaxy/actors.json, ~14 old actors) vs economic unit (~23) vs province / special zone;
+hd40307_firmament = far province of Xin He (economic unit, not sovereign); gj832_gaia_zone = quarantine zone;
+blocs: Cognium pool (tau_ceti_cognium, cyg61_kern, hd20794_hellas2, delta_pav_freekarma), Celestial pact
+(eps_eri_harmony, gj832_tianhe + firmament province), Lalande League (lalande_hellas, gj581_europa, hd114783_hellas3 as
+low-integration associate; hd69830_verde removed), Southern circle (hd20794_newindia, hd40307_maland, lalande_mecca),
+Citadel pact (wolf359_citadel, proxima_outpost), Free belts (eps_eri_strife, gj581_freeclans), Sol separate pole;
+non-aligned (not a bloc; "autarkies" only as a migration label): hd69830_verde, gj876_next, delta_pav_karma,
+leo83_zion (arrives 3126). Access matrix by category (civilian, industrial, dual_use, military, strategic,
+people_finance_data; 0 open .. 4 closed), sanctions as a separate overlay derived from history, explicit special
+exceptions (Kern, Agora, Mecca, Providence, Verde) as data. All new decisions marked PROPOSAL_PENDING_AUTHOR_REVIEW;
+existing author CANON kept. Regenerate lore with the existing generators; sync Notes/Lore/POLITICS/*,
+Notes/Economy/POLITICAL_ECONOMY.md, manufacturers / ship bloc metadata; programmatic listing of polities / units /
+provinces / zones / bloc membership; restore tag first; commit, no push. The user's full text is the source of the
+order - ask for it again if it is not in the session.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

@@ -1,0 +1,23 @@
+{
+  "schema": "elite.weapons.v1",
+  "note": "Lasers burn a spot (heat with conduction losses, burn-through holes); missiles carry burning-through warheads only: a shaped (melting) jet that is spent in the hull, or a kinetic slug that is destroyed when spent, stuck where it stops or flies out. No fragmentation warheads (a common tacit agreement). Volume health lost = absorbed MJ x health_per_mj.",
+  "materials": {
+    "reflect_armour_scale": 25.0,
+    "cooling_mw": 0.15,
+    "burn_mj_per_pen": 0.5,
+    "health_per_mj": 2.0,
+    "slug_pen_factor": 1.6,
+    "spot_merge_m": 0.6
+  },
+  "lasers": [
+    { "id": "laser.pulse_1",     "name": "Импульсный лазер 1,5 МВт", "power_mw": 1.5,  "duty": 0.5, "pulse_hz": 4.0, "range_km": 3.0, "beam_radius_m": 0.08, "colour": [1.0, 0.25, 0.15] },
+    { "id": "laser.beam_4",      "name": "Лучевой лазер 4 МВт",      "power_mw": 4.0,  "duty": 1.0, "pulse_hz": 0.0, "range_km": 4.0, "beam_radius_m": 0.10, "colour": [0.3, 1.0, 0.35] },
+    { "id": "laser.military_10", "name": "Военный лазер 10 МВт",     "power_mw": 10.0, "duty": 1.0, "pulse_hz": 0.0, "range_km": 5.0, "beam_radius_m": 0.12, "colour": [0.45, 0.6, 1.0] }
+  ],
+  "missiles": [
+    { "id": "missile.needle",   "name": "Ракета «Игла» (прожигающая)",            "warhead": "shaped", "jet_mj": 30.0, "mass_kg": 60.0,  "accel_mps2": 300.0, "max_speed_mps": 1500.0, "fuel_s": 12.0, "turn_dps": 90.0, "seeker_deg": 30.0, "range_km": 8.0 },
+    { "id": "missile.thermite", "name": "Ракета «Термит» (прожигающая, тяжёлая)", "warhead": "shaped", "jet_mj": 90.0, "mass_kg": 160.0, "accel_mps2": 180.0, "max_speed_mps": 1100.0, "fuel_s": 16.0, "turn_dps": 50.0, "seeker_deg": 25.0, "range_km": 10.0 },
+    { "id": "missile.crowbar",  "name": "Ракета «Лом» (кинетическая болванка)",   "warhead": "slug",   "slug_kg": 40.0, "mass_kg": 90.0,  "accel_mps2": 400.0, "max_speed_mps": 2200.0, "fuel_s": 9.0,  "turn_dps": 70.0, "seeker_deg": 25.0, "range_km": 9.0 }
+  ],
+  "default_loadout": { "laser": "laser.pulse_1", "missile": "missile.needle", "missiles": 4 }
+}

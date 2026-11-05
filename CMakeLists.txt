@@ -604,6 +604,9 @@ add_executable(EliteGame
     src/game/simulation/GameSimulationOrbitalTransfer.cpp
     src/game/simulation/GameSimulationFreeFlight.cpp
     src/game/simulation/GameSimulationRoute.cpp
+    src/game/simulation/GameSimulationCombat.cpp
+    src/game/combat/WeaponCatalog.cpp
+    src/game/combat/Penetration.cpp
     src/game/navigation/route/RoutePlanner.cpp
     src/game/navigation/landing/LandingAutopilot.cpp
     src/game/simulation/GameSimulationRefit.cpp
@@ -907,6 +910,9 @@ if(ELITE_BUILD_SERVER)
         src/game/simulation/GameSimulationOrbitalTransfer.cpp
         src/game/simulation/GameSimulationFreeFlight.cpp
         src/game/simulation/GameSimulationRoute.cpp
+        src/game/simulation/GameSimulationCombat.cpp
+        src/game/combat/WeaponCatalog.cpp
+        src/game/combat/Penetration.cpp
         src/game/navigation/route/RoutePlanner.cpp
         src/game/navigation/landing/LandingAutopilot.cpp
         src/game/simulation/GameSimulationRefit.cpp
@@ -1149,6 +1155,28 @@ if(ELITE_BUILD_SERVER)
     )
     if(WIN32)
         target_link_libraries(EliteRepairRefitCheck PRIVATE ws2_32 mswsock)
+    endif()
+
+    # DEV check: the damage model (penetration, beams, missiles, collisions) on the production Cobra.
+    add_executable(EliteDamageCheck
+        tools/combat/DamageCheck.cpp
+        ${ELITE_SERVER_SIMULATION_SOURCES}
+    )
+    target_include_directories(EliteDamageCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
+    target_link_libraries(EliteDamageCheck PRIVATE
+        EliteNavigationGeometry
+        EliteNavigationWorldRuntime
+        EliteDockingInfrastructure
+        EliteManeuverDecision
+        EliteNavigationRuckig
+        EliteAssemblyGeometry
+        EliteRuntimeModelAssets
+        EliteBite
+        nlohmann_json::nlohmann_json
+        Threads::Threads
+    )
+    if(WIN32)
+        target_link_libraries(EliteDamageCheck PRIVATE ws2_32 mswsock)
     endif()
 
     # DEV check: F6 Shipyard / F7 Repair & Refit page models from one source.

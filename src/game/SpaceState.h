@@ -711,6 +711,7 @@ private:
     double m_devYawUntilMs = 0.0;
     double m_devPitchUntilMs = 0.0;
     double m_devRollUntilMs = 0.0;
+    bool m_laserKeyDown = false;   // SPACE held: lasers on (FireWeapon 1 / 0 on the edges)
     // route launch (map finish -> official / unofficial) and the zone watch
     void launchPlannedRoute(bool official);
     void updateZoneViolations(double dt);

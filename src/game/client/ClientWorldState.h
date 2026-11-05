@@ -62,6 +62,7 @@ struct ClientShipState
     ObjectType                                      typeId;
     std::string                                     catalogShipId;   // design passport id of a catalog ship
     game::simulation::ShipRefitSnapshot             refit;           // owned ships: ownership + Repair & Refit preview
+    game::simulation::ShipCombatSnapshot            combat;          // beams / missiles / recent impacts
     game::ship::plant::PhysicalControlModelId       physicalControlModel =
         game::ship::plant::PhysicalControlModelId::AssistedI;
     std::uint64_t                                   acknowledgedControlTick = 0;

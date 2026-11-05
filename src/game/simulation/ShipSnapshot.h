@@ -25,6 +25,7 @@
 // #include "src/game/geometry/MeshData.h"
 
 #include "src/game/simulation/ObjectGraphSnapshot.h"
+#include "src/game/simulation/ShipCombatSnapshot.h"
 
 namespace game::simulation
 {
@@ -101,4 +102,6 @@ struct ShipSnapshot
     game::simulation::ShipTrafficSnapshot                 traffic;
     // Owned ships only: ownership + the Repair & Refit preview (F7).
     game::simulation::ShipRefitSnapshot                   refit;
+    // Weapons / hits: beams this tick, own missiles in flight, recent impacts.
+    game::simulation::ShipCombatSnapshot                  combat;
 };

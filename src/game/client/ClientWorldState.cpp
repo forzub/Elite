@@ -583,6 +583,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.dockDispatcher = s.dockDispatcher;
             state.traffic = s.traffic;
             state.refit = s.refit;
+            state.combat = s.combat;
             {
                 const auto phaseBegin = HydrateClock::now();
                 applyGraphSnapshot(
@@ -678,6 +679,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.dockDispatcher = s.dockDispatcher;
             state.traffic = s.traffic;
             state.refit = s.refit;
+            state.combat = s.combat;
             {
                 const auto phaseBegin = HydrateClock::now();
                 applyGraphSnapshot(

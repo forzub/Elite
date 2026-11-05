@@ -3017,3 +3017,16 @@ Status: DATA FOUNDATION / PROPOSAL-model; frame passports deliberately deferred.
 - Cobrett N1/A3 jump installation is explicit in both the engineering passport and CobrettPassports.h: Z-0.5 jump core + jump-charge tank.
 - Not done: hull/frame passports, exact mount coordinates for future 3D models, runtime migration to unified parts, flight-performance rebalance.
 - Static data invariants checked: engineering types=19, model passports=21, canonical SKUs=102; every passport BOM resolves to a canonical part and every canonical part has geometry. Dry-mass deltas use ship override or ship_economics class mass; 3 passports exceed the 5% mass-delta threshold and are flagged for frame revalidation.
+
+
+### User order 2026-11-05 x - interactive HTML ship/parts reference
+Status: DONE / static engineering reference.
+- Added Notes/html/ship_reference/: index.html, ship.html, style.css, app.js, data.js, README.md. No server is required; open index.html directly.
+- Main view groups ships by industrial/political bloc and manufacturer; right pane shows passport, design language, weapons and replacements; one-click detail page opens the ship assembly.
+- Ship page presents functional equipment tree rooted at 35 with A1 propulsion, A2 manoeuvring/RCS, A3 cooling, A4 power, A5 jump, A6 avionics/sensors, A7 comms, A8 life support, A9 cargo/passenger, A10 survival, A11 service/docking/tow, A12 weapons, A13 protection/landing.
+- Part view prioritises equipment envelope + service clearance and renders an automatic schematic sketch from dimensions; reactor cooling pads, radiators and weapon/missile sub-passports get specialised annotations.
+- Design-language doctrine is stored in fleet_engineering_context.json per cooperation group and per ship integrator (modular vs monolithic, cost/technology, maintainability, visual signature, redundancy).
+- ship_parts_unified.json carries a same-group replacement and a foreign/enemy functional analogue where one exists; external analogue is explicitly not assumed plug-and-play.
+- ship_passports_3126.json carries inherited design language, ship-level standard/foreign analogue, functional groups and weapon summary.
+- canon/weapon_system_reference.json bridges ship weapon hardware to combat weapons.json. Current laser/missile dynamics remain from combat data; physical missile/emitter dimensions and mount bindings are PROPOSAL/model for model construction.
+- Cobrett PD-1 is presented as a twin-emitter mount (proposal) to reconcile the engineering BOM with the legacy runtime's two laser hardpoints; legacy missile capacity=4 remains visibly flagged because a separate VLS-4 hardware passport is not yet authored.

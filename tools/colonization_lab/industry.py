@@ -66,6 +66,8 @@ class Inputs:
         self.jt = {j["unit"]: j for j in self.W["jump_technology"]}
         # actual jump-core flows of the trade model (lab.py -> trade.py, gated by political.py)
         st = jload(os.path.join(HERE, "out", "lab_state_3126.json"))
+        self.core_autonomy = st.get("core_autonomy", {})
+        self.strategic_flows = [c for c in st["trade"]["corridors"] if c["good"] == "drive_cores" and c["value"] > 0.05]
         self.core_flows = {}
         for c in st["trade"]["corridors"]:
             if c["good"] == "drive_cores" and c["value"] > 0.5:
@@ -358,6 +360,25 @@ def checks(I, out):
     # trade-model core flows must be legal under the political order (no closed channel, no resale)
     illegal = [f"{q}->{k} {x['channel']}" for k, rows in out["supply"].items() for x in rows["jump_core"].get("flow_sources", []) for q in [x["source"]] if x["channel"] in ("closed", "black")]
     add("trade_core_flows_legal", not illegal, ",".join(illegal) or "all drive_cores flows of trade.py run through open / licensed / restricted strategic channels")
+    PO = I.PO
+    lic = PO.licences[0]
+    bad_lic = [f"{c['seller']}->{c['buyer']}" for c in I.strategic_flows if PO.actor_of(c["seller"]) == lic["licensor"] and c["buyer"] in PO.unit_actor and c["buyer"] not in lic["holders"]]
+    add("cognium_core_flows_only_to_licence_holders", not bad_lic, ",".join(bad_lic) or f"holders: {', '.join(sorted(lic['holders']))}")
+    karma = [f"{c['seller']}->{c['buyer']}" for c in I.strategic_flows if "delta_pav_karma" in (c["seller"], c["buyer"])]
+    add("new_karma_no_strategic_trade", not karma, ",".join(karma) or "ok")
+    cit_out = [f"wolf359_citadel->{c['buyer']}" for c in I.strategic_flows if c["seller"] == "wolf359_citadel" and PO.bloc_of_unit(c["buyer"]) != "citadel_compact"]
+    add("citadel_serial_cores_stay_in_pact", not cit_out, ",".join(cit_out) or "ok")
+    sv = [c for c in I.strategic_flows if c["buyer"] == "proxima_outpost"]
+    sv_cit = sum(c["value"] for c in sv if c["seller"] == "wolf359_citadel")
+    sv_tot = sum(c["value"] for c in sv)
+    add("svarog_serial_from_citadel_with_own_copies", sv_tot > 0 and sv_cit / sv_tot >= 0.6 and I.jt["proxima_outpost"]["how"] == "stolen",
+        f"Citadel share {sv_cit / sv_tot if sv_tot else 0:.2f} of Svarog core imports; own pirated copies (jump_technology how = stolen)")
+    mec = [c for c in I.strategic_flows if c["buyer"] == "lalande_mecca"]
+    add("mecca_core_technology_own", I.jt["lalande_mecca"]["how"] == "own" and "lalande_mecca" not in lic["holders"] and not mec,
+        "own jump mathematics; not a licence holder; no imported cores")
+    sc = I.core_autonomy.get("southern_circle", {})
+    add("southern_circle_survives_cognium_cutoff", bool(sc.get("survives")),
+        f"peacetime Mecca share {sc.get('maker_share')} (target {sc.get('target_share')}); after cutoff {sc.get('cutoff', {}).get('members_coverage')}, mobilised {sc.get('cutoff_mobilised', {}).get('members_coverage')}")
     resale = [f"{x['source']}->{k}" for k, rows in out["supply"].items() for x in rows["jump_core"].get("flow_sources", []) if out["capability"][x["source"]]["blocks"]["jump_core"]["level"] != "concern"]
     add("trade_core_flows_from_makers_only", not resale, ",".join(resale) or "ok")
     pact = out["fleet_uniformity"]["heavenly_pact"]

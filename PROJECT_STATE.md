@@ -2795,6 +2795,33 @@ Terminology (user 2026-11-05): **actor = acting party, node of political force**
   economy_live, ship_designer (21 ships 0 FAIL 39 WARN), lore_md, lore_html (139), calibrate_population - all rc=0;
   lab.py twice -> sha256 98f58fd0... IDENTICAL.
 
+#### Plausibility pass 2026-11-05 r (on top of 00c55971) - SOURCE + GENERATORS PASS, still PROPOSAL_PENDING_AUTHOR_REVIEW
+- Author decision: Mecca's own jump mathematics -> CANON (world.json jump_technology; knowledge.py follows status).
+  Asymmetry kept: own knowledge and core design, imported precision / electronics / isotopes (trade.py INPUTS).
+- Core capacity: jump_technology.capacity_x (calibrated PROPOSAL): Mecca 2.5, Citadel 2.0. Bloc procurement quota
+  (political_order blocs.*.strategic_procurement, read by trade.py via lab.PoliticalTradeAccess.preferred): Southern circle
+  30 % of member core demand reserved for Mecca, overpay up to x1.6; Citadel pact 85 % for Citadel, x2.0.
+  lab.core_autonomy_scenarios -> lab_state core_autonomy: peacetime Mecca share of the circle's external demand 0.53 (author
+  guide 20-40 %), Cognium cut-off 0.12 coverage, mobilised 0.68 (Mecca civil output -22 %) -> survives. The flow model is
+  path-sensitive here (x2.2: share 0.19, mobilised 0.57 -> fails); kept 2.5 = lowest tested value that survives. Svarog: 100 %
+  of imported cores from Citadel, own pirated copies tiny (emergency capability).
+- New data: interim_arrangements (83 Leonis status quo, unstable, outcome UNKNOWN; real lever = Kern operates beacon
+  BCN-045-BR, so the supply corridor is revocable; arbitration seat itself disputed), licence accession (Third Hellas
+  negotiating with conditions; Novo-Thebaid not applying, Synod split), cognium_pool.coordination (collective strategic /
+  dual-use / IP, civilian national), fault_lines per bloc, free-belts risk details, self_interest of Kern / Agora /
+  Providence / Verde / Mecca, sanctions_rule + evasion per measure (dual-use 4 -> 3 for Harmony-Strife, Karma split,
+  Maland-Firmament; full closure needs full_closure_reason).
+- Checks added: political (36): sanctions_realistically_leaky, no_pool_wide_embargo_on_karma, thebaid_kern_interim_open_no_sanctions,
+  newcomers_not_licensed_yet; industry (16): cognium_core_flows_only_to_licence_holders, new_karma_no_strategic_trade,
+  citadel_serial_cores_stay_in_pact, svarog_serial_from_citadel_with_own_copies, mecca_core_technology_own,
+  southern_circle_survives_cognium_cutoff; lore_md --check: check_core_claims (hand-written core-source sentences vs
+  political.py; proven on the old Mecca / New India texts).
+- Narratives fixed (found by the lint or by hand): lalande_mecca (buyers incl. New Karma, monoculture), hd20794_newindia
+  (Citadel cores / main buyer / collapse scenario), gj832_tianhe, eps_eri_harmony, hd69830_verde, lalande_hellas,
+  hd20794_hellas2, delta_pav_karma (cores from Citadel / Mecca); POLITICAL_ORDER story (Mecca quota + mobilisation,
+  Svarog-Citadel lever, Kern / Agora / Providence / Verde self-interest, 83 Leonis interim order, Third Hellas accession).
+- Gates: all colonization_lab checks rc=0; lab.py twice sha256 75c06541... IDENTICAL. No C++ change.
+
 Original order text (summary):
 Full revision of the 3126 political structure: separate ideological bloc / economic integration / technology access /
 sanctions (now mixed in tools/colonization_lab/canon/industry.json); polity 3126 vs historical actor

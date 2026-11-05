@@ -1006,26 +1006,54 @@ def political_order_doc(D):
         if v.get("obligations"):
             g.append(f"- Обязательства: {v['obligations']}. Чего блок не означает: {v['does_not_mean']}.")
         if v.get("risk"):
-            g.append(f"- Риск для внешних: юридический {v['risk']['legal_risk']}, страховка ×{v['risk']['insurance_x']}, {v['risk']['provenance']}.")
+            r = v["risk"]
+            g.append(f"- Риск для внешних: юридический {r['legal_risk']}, страховка ×{r['insurance_x']}, {r['provenance']}" +
+                     "".join(f"; {r[k]}" for k in ("availability", "quality", "counterfeit", "stolen_property", "compatibility", "seller", "insurance", "strategic") if r.get(k)) + ".")
+        if v.get("coordination"):
+            c = v["coordination"]
+            g.append(f"- Коллективно: {', '.join(c['collective'])}. Национально: {c['national']}. Аналог: {c['analogy']}.")
+        if v.get("strategic_procurement"):
+            sp = v["strategic_procurement"]
+            g.append(f"- Закупочная квота ядер: {int(100 * sp['floor_share'])} % спроса членов — за {D.pname(sp['maker'])}, переплата до ×{sp['price_tolerance_x']}. {sp['why']}.")
+        if v.get("fault_lines"):
+            f = v["fault_lines"]
+            g.append(f"- Линии разлома: слабый не уходит, потому что {f['weak_stays_because']}; сильный терпит, потому что {f['strong_tolerates_because']}; "
+                     f"зарабатывает — {f['profits']}; платит — {f['pays']}; недоволен — {f['resents']}; обходит — {f['cheats']}; расколется, если {f['splits_if']}.")
         g.append("")
     g += ["### Неприсоединившиеся (не блок, не союзники друг другу)", "",
           table(["Актор", "Тип", "Почему вне блоков", "На чём держится независимость", "С кем торгует", "Что ограничено", "Для игрока"],
                 [(pl(a), O.P["nonaligned_types"][O.actors[a]["nonaligned"]]["ru"], O.P["nonaligned"][a]["why_outside"], O.P["nonaligned"][a]["independence"],
                   O.P["nonaligned"][a]["trades_with"], O.P["nonaligned"][a]["restricted"], O.P["nonaligned"][a]["player_role"]) for a in O.nonaligned()]), "",
           "### Особые положения (явные исключения)", "",
-          table(["Актор", "Роль", "Почему", "Потолок доступа", "Для игрока", "Статус"],
-                [(D.pname(e["actor"]), e["ru"], e["why"], ", ".join(f"{O.P['categories'][c]['ru']} ≤ {O.P['access_scale'][str(l)]['ru']}" for c, l in e["cap"].items()), e["player_role"], po_tag(e["status"])) for e in O.exceptions]), "",
+          table(["Актор", "Роль", "Почему", "Как пользуется положением", "Потолок доступа", "Для игрока", "Статус"],
+                [(D.pname(e["actor"]), e["ru"], e["why"], e.get("self_interest", "—"), ", ".join(f"{O.P['categories'][c]['ru']} ≤ {O.P['access_scale'][str(l)]['ru']}" for c, l in e["cap"].items()), e["player_role"], po_tag(e["status"])) for e in O.exceptions]), "",
           "### Лицензии", "",
           table(["Лицензия", "Лицензиар", "Категория", "Держатели", "Не держателю", "Для игрока", "Статус"],
                 [(L["ru"], D.pname(L["licensor"]), O.P["categories"][L["category"]]["ru"], ", ".join(D.pname(u) for u in sorted(L["holders"])),
                   O.P["access_scale"][str(L["non_holder_level"])]["ru"], L["player_role"], po_tag(L["status"])) for L in O.licences]), "",
-          "Основание: " + "; ".join(L["basis"] for L in O.licences) + ".", "",
+          "Основание: " + "; ".join(L["basis"] for L in O.licences) + ".", ""] + [
+          f"- Присоединение — {D.pname(u)}: {a['ru']}" + (f"; хочет, потому что {a['wants']}" if a.get("wants") else "") +
+          (f"; условия: {', '.join(a['conditions'])}" if a.get("conditions") else "") + f". {a['politics']}." for L in O.licences for u, a in L.get("accession", {}).items()] + ["",
+          "### Временный порядок у 83 Leonis (Ново-Фиваида — Керн)", ""] + sum([[
+          f"{x['ru']} — {po_tag(x['status'])}.", "",
+          f"- Керн сохраняет: {'; '.join(x['kern_keeps'])}.", f"- Фиваида получает: {'; '.join(x['thebaid_gets'])}.", f"- Заморожено: {x['frozen']}.",
+          f"- Арбитраж: {x['arbitration']}.", f"- Настоящий рычаг: {x['real_lever']}.",
+          f"- Керн не хочет: {'; '.join(x['kern_motives']['does_not_want'])}; хочет: {'; '.join(x['kern_motives']['wants'])}.",
+          f"- Синод не хочет: {'; '.join(x['synod_motives']['does_not_want'])}; нуждается: {'; '.join(x['synod_motives']['needs'])}.",
+          f"- Для игрока: {'; '.join(x['player_hooks'])}.", f"- Исход: {x['outcome']}. Аналог: {x['analogy']}.", ""] for x in O.P.get("interim_arrangements", [])], []) + [
+          "### Проверка автономии по ядрам (модель потоков)", "",
+          table(["Блок", "Свой производитель", "Доля внешнего спроса в мирное время", "Ориентир", "После отключения лицензиара", "С мобилизацией", "Цена гражданского выпуска производителя", "Выживает"],
+                [(O.blocs[r["bloc"]]["ru"], D.pname(r["maker"]), fl(r["maker_share"], 2) if r.get("maker_share") is not None else "—", "–".join(str(x) for x in r["target_share"]),
+                  fl(r.get("cutoff", {}).get("members_coverage"), 2) if r.get("cutoff") else "—", fl(r.get("cutoff_mobilised", {}).get("members_coverage"), 2) if r.get("cutoff_mobilised") else "—",
+                  ", ".join(f"{k} {100 * v:+.0f} %" for k, v in r.get("cutoff_mobilised", {}).get("maker_civil_output_change", {}).items()) or "—",
+                  ("да" if r.get("survives") else "нет") if "survives" in r else "—") for r in D.S.get("core_autonomy", {}).values()]), "",
+          O.P["core_autonomy"]["note"] + ".", "",
           "### Санкции и ограничения (отдельный слой, выведен из истории)", "",
-          f"Для игрока: {O.P['sanctions_player_role']}.", "",
-          table(["Мера", "Кто", "Против", "С года", "Категории", "Основание", "Статус"],
+          f"Для игрока: {O.P['sanctions_player_role']}.", "", f"{O.P['sanctions_rule']['ru']} Обход: {O.P['sanctions_rule']['evasion']}. Аналог: {O.P['sanctions_rule']['analogy']}.", "",
+          table(["Мера", "Кто", "Против", "С года", "Категории", "Основание", "Как обходят", "Статус"],
                 [(s["kind"] + (" (временно)" if s.get("temporary") else ""), D.pname(s["from"]) + (f" [{', '.join(D.pname(u) for u in s['units_from'])}]" if s.get("units_from") else ""),
                   D.pname(s["to"]) + (f" [{', '.join(D.pname(u) for u in s['units_to'])}]" if s.get("units_to") else ""), s["since"],
-                  ", ".join(f"{O.P['categories'][c]['ru']} ≥ {O.P['access_scale'][str(l)]['ru']}" for c, l in s["level"].items()), s["basis"], po_tag(s["status"])) for s in O.sanctions]), "",
+                  ", ".join(f"{O.P['categories'][c]['ru']} ≥ {O.P['access_scale'][str(l)]['ru']}" for c, l in s["level"].items()), s["basis"], s.get("evasion", "—"), po_tag(s["status"])) for s in O.sanctions]), "",
           "Напряжения без мер:", ""] + [f"- {D.pname(t['pair'][0])} — {D.pname(t['pair'][1])} (с {t['since']}): {t['text']} ({po_tag(t['status'])})." for t in O.P["tensions_without_measures"]] + [
           "", "### Доступ между столицами (продавец → покупатель)", "",
           "Цифры — шесть категорий по порядку: " + ", ".join(O.P["categories"][c]["ru"] for c in O.cats) + ". Шкала: " + "; ".join(f"{k} — {v['ru']}" for k, v in O.P["access_scale"].items()) + ".", ""]
@@ -1584,10 +1612,46 @@ def run(write):
             if rel not in spec and BEGIN_RE.search(text):
                 problems.append(f"{rel}: сгенерированный файл без спецификации (сущность исчезла из данных?)")
             check_text(D, rel, text, tokens, prefixes, ents, hidden, problems)
+            check_core_claims(D, rel, text, problems)
             n = len(re.findall(r"<!-- NARRATIVE:[^>]+-->\n_TODO:", text))
             if n:
                 todo[rel] = n
     return D, docs, problems, written, unchanged, todo
+
+
+# ---------------------------------------------------------------- narrative jump-core claims vs political.py
+CORE_MAKER_RE = {"wolf359_citadel": r"Цитадел", "lalande_mecca": r"Мекк", "tau_ceti_cognium": r"(Когниум|Нов(ый|ого) Шанха)"}
+GEN_BLOCK_RE = re.compile(r"<!-- GENERATED:[^ ]+ BEGIN -->.*?<!-- GENERATED:[^ ]+ END -->", re.S)
+
+
+def check_core_claims(D, rel, text, problems):
+    """Hand-written (non-GENERATED) sentences that name a jump-core source must match the political order.
+    Machine-checkable patterns only: in a colony dossier 'ядра ... от / из / у / импорт ... <maker>' (the maker must
+    be able to sell strategic goods to that unit), and anywhere 'ядра <maker> ... уходят / идут / продают ... <unit>'
+    (in the maker's own dossier the maker is implicit). Sentences about smuggling or explicit denials are skipped."""
+    O = D.PO
+    hand = GEN_BLOCK_RE.sub(lambda m: "\n" * m.group(0).count("\n"), text)   # keep line numbers
+    unit = rel[len("COLONIES/"):-3] if rel.startswith("COLONIES/") else None
+    names = {u: D.pname(u) for u in O.units}
+    for ln, line in enumerate(hand.split("\n"), 1):
+        for sent in re.split(r"(?<=[.;])\s", line.replace("|", " ")):
+            low = sent.lower()
+            if "ядр" not in low or any(x in low for x in ("контраб", "не продают", "не выход", "за пакт")):
+                continue
+            if unit in O.unit_actor:
+                for maker, rx in CORE_MAKER_RE.items():
+                    if maker == unit:
+                        continue
+                    if re.search(r"(?i)ядр[а-я]*[^;]{0,40}(\bот\b|\bиз\b|импорт|\bу\b)[^;]{0,25}" + rx, sent) and O.access(maker, unit)["strategic"] >= 4:
+                        problems.append(f"{rel}:{ln}: ядра «от {maker}» для {unit} — по политическому порядку канал закрыт")
+            for maker, rx in CORE_MAKER_RE.items():
+                if not (re.search(r"(?i)ядра[^;]{0,12}" + rx, sent) or unit == maker):
+                    continue
+                for u, nm in names.items():
+                    stem = nm.split(" (")[0][:-1] if len(nm) > 4 else nm
+                    if u != maker and re.search(r"(?i)ядра[^;]{0,40}(уход|ид[уё]т|продаю)[^;]{0,60}(" + re.escape(stem) + "|" + re.escape(u) + r"\.md)", sent) \
+                            and O.access(maker, u)["strategic"] >= 4:
+                        problems.append(f"{rel}:{ln}: «ядра {maker} уходят в {u}» — по политическому порядку канал закрыт")
 
 
 def main():

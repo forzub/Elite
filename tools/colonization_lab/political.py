@@ -314,6 +314,22 @@ def checks(O):
                                                       if O.bloc_of_unit(u) != "citadel_compact" and u not in O.zones() and u != "delta_pav_karma"))
     no_role = [f"bloc:{b}" for b, v in O.blocs.items() if not v.get("player_role")] + [f"nonaligned:{x}" for x in O.nonaligned() if not O.P["nonaligned"][x].get("player_role")] +         [f"unit:{u}" for u, v in O.P["units"].items() if not v.get("player_role")] + [f"exception:{e['id']}" for e in O.exceptions if not e.get("player_role")] +         [f"licence:{L['id']}" for L in O.licences if not L.get("player_role")] + ([] if O.P.get("sanctions_player_role") else ["sanctions"])
     add("every_element_has_player_role", not no_role, ",".join(no_role) or "Chekhov's gun: all blocs, non-aligned, units, exceptions, licences, sanctions")
+    leaky = []
+    for sc in O.sanctions:
+        why = sc.get("full_closure_reason", {})
+        for c, l in sc["level"].items():
+            if c in ("civilian_goods", "industrial", "dual_use") and l >= 4 and c not in why:
+                leaky.append(f"{sc['id']}:{c}")
+            if c == "civilian_goods" and l >= 3 and c not in why:
+                leaky.append(f"{sc['id']}:{c}")
+    add("sanctions_realistically_leaky", not leaky and all(sc.get("evasion") for sc in O.sanctions), ",".join(leaky) or "civilian / industrial / dual-use never fully closed without a stated reason; every measure has an evasion route")
+    add("no_pool_wide_embargo_on_karma", [sc["from"] for sc in O.sanctions if "delta_pav_karma" in (sc["from"], sc["to"])] == ["delta_pav_karma"],
+        "only Free Karma's own measure; pool coordinates strategic / dual-use / IP, civilian trade is national")
+    ia = O.P.get("interim_arrangements", [])
+    add("thebaid_kern_interim_open_no_sanctions", ia and ia[0]["outcome"].startswith("UNKNOWN") and ia[0].get("player_hooks")
+        and not [sc for sc in O.sanctions if "leo83_zion" in (sc["from"], sc["to"])])
+    acc = O.licences[0].get("accession", {})
+    add("newcomers_not_licensed_yet", all(u not in O.licences[0]["holders"] for u in acc) and acc.get("hd114783_hellas3", {}).get("status") != acc.get("leo83_zion", {}).get("status"))
     add("free_belts_military_only_grey", all(a(u, b)["military"] >= 3 for u in O.bloc_units("free_belts") for b in O.units if O.bloc_of_unit(b) != "free_belts"))
     return res
 

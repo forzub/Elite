@@ -23,7 +23,7 @@
 | Мужчины 20–39 | 2 645 325 327 | 2 423 309 149 | 1.1 |
 | Мобилизуемые (8 %) | 211 626 026 | 193 864 732 | 1.1 |
 
-Корпуса в год: колонии 507.8, Земля 472.3–944.5; восполнение флота колоний — 13.2 лет. Прыжок ≤ 32.0 св. лет, нужен маяк у цели.
+Корпуса в год: колонии 478.9, Земля 445.5–890.9; восполнение флота колоний — 13.2 лет. Прыжок ≤ 32.0 св. лет, нужен маяк у цели.
 
 Досягаемость с маяка Сола:
 
@@ -62,43 +62,43 @@
 
 | Актив | Владелец | Товар | Выпуск |
 |---|---|---|---|
-| Ледовый комплекс облака комет | Цветущая Гармония | вода/летучие | 39932.5 |
-| Рудники eps Eri b I | Цветущая Гармония | металлы | 21189.7 |
-| Агрокольца Маланд («Житница») | Новая Маланд | пища | 12267.3 |
-| Агрокупола Alpha Centauri B l | Красный Форпост | пища | 11118.5 |
-| Платформы eps Eri b | Цветущая Гармония | He-3 | 8159.3 |
-| Платформы GJ 832 b | Тяньхэ (Небесная Река) | He-3 | 5057.0 |
-| Платформы HD 20794 d | Вторая Эллада | He-3 | 1407.2 |
-| Платформы трёх гигантов HD 69830 | Сельта-Верде | He-3 | 1327.7 |
-| Бастион — арсенал и военная верфь | Цитадель | боеприпасы | 324.5 |
-| Верфи Гармонии | Цветущая Гармония | корпуса | 308.2 |
-| Фабы Кольца Основателей | Новый Шанхай | электроника | 299.8 |
-| Обсерватория-вычислитель «Расад» | Новая Мекка | точная механика | 202.7 |
+| Ледовый комплекс облака комет | Цветущая Гармония | вода/летучие | 39839.6 |
+| Рудники eps Eri b I | Цветущая Гармония | металлы | 21460.2 |
+| Агрокольца Маланд («Житница») | Новая Маланд | пища | 12292.3 |
+| Агрокупола Alpha Centauri B l | Красный Форпост | пища | 11117.9 |
+| Платформы eps Eri b | Цветущая Гармония | He-3 | 8155.3 |
+| Платформы GJ 832 b | Тяньхэ (Небесная Река) | He-3 | 5057.3 |
+| Платформы HD 20794 d | Вторая Эллада | He-3 | 1405.3 |
+| Платформы трёх гигантов HD 69830 | Сельта-Верде | He-3 | 1331.6 |
+| Фабы Кольца Основателей | Новый Шанхай | электроника | 821.2 |
+| Верфи Гармонии | Цветущая Гармония | корпуса | 289.7 |
+| Бастион — арсенал и военная верфь | Цитадель | боеприпасы | 176.2 |
+| Управление Маяков и фабрика ядер прыжка «Сычёвник» | Новый Шанхай | ядра прыжка | 116.5 |
 
 Вероятные реакции колоний на «Возвращение» (топ-3, вероятности модели):
 
 | Колония | Реакции |
 |---|---|
-| Шахта Альфа | profiteering 29.5 %, alliance 20.5 %, mobilisation 17.5 % |
-| Свободная Карма | profiteering 25.7 %, betrayal 21.6 %, alliance 17.4 % |
+| Шахта Альфа | profiteering 29.5 %, alliance 23.5 %, mobilisation 17.5 % |
+| Свободная Карма | profiteering 25.7 %, betrayal 21.6 %, alliance 15.9 % |
 | Новая Карма | betrayal 23.1 %, profiteering 17.7 %, internal_split 13.0 % |
-| Цветущая Гармония | alliance 28.1 %, mobilisation 26.4 %, profiteering 20.0 % |
+| Цветущая Гармония | alliance 26.6 %, mobilisation 26.4 %, profiteering 20.0 % |
 | Пояс Раздора / Вольные астероиды | profiteering 25.2 %, alliance 23.5 %, internal_split 18.6 % |
-| Новая Европа | alliance 24.5 %, negotiation 21.4 %, mobilisation 6.2 % |
-| Свободные поселения | profiteering 23.8 %, alliance 17.4 %, betrayal 10.9 % |
-| Тяньхэ (Небесная Река) | mobilisation 32.8 %, alliance 19.7 %, profiteering 14.1 % |
-| Провидение | alliance 16.9 %, internal_split 5.5 %, profiteering 4.3 % |
-| Третья Эллада | neutrality 28.3 %, betrayal 16.6 %, internal_split 15.8 % |
+| Новая Европа | alliance 27.5 %, negotiation 21.4 %, mobilisation 6.2 % |
+| Свободные поселения | profiteering 23.8 %, alliance 15.9 %, betrayal 10.9 % |
+| Тяньхэ (Небесная Река) | mobilisation 32.8 %, alliance 21.2 %, profiteering 14.1 % |
+| Провидение | alliance 13.9 %, neutrality 6.2 %, internal_split 5.5 % |
+| Третья Эллада | neutrality 26.3 %, betrayal 16.6 %, internal_split 15.8 % |
 | Вторая Эллада | alliance 24.2 %, internal_split 15.4 %, profiteering 11.9 % |
-| Новая Индия | profiteering 24.7 %, alliance 24.1 %, betrayal 17.2 % |
+| Новая Индия | alliance 25.6 %, betrayal 17.2 %, profiteering 16.7 % |
 | Небесная Твердыня | mobilisation 24.5 %, profiteering 13.6 %, alliance 12.1 % |
-| Новая Маланд | profiteering 18.4 %, internal_split 17.4 %, mobilisation 16.2 % |
-| Сельта-Верде | profiteering 26.5 %, alliance 22.7 %, negotiation 11.6 % |
-| Новая Эллада / Агора | alliance 26.6 %, profiteering 22.2 %, negotiation 18.2 % |
-| Новая Мекка | mobilisation 25.7 %, alliance 21.4 %, preemptive_strike 9.5 % |
-| Ново-Фиваида | neutrality 29.8 %, mobilisation 26.4 %, internal_split 0.5 % |
-| Красный Форпост | mobilisation 33.0 %, preemptive_strike 27.4 %, betrayal 15.5 % |
-| Новый Шанхай | alliance 25.5 %, mobilisation 17.7 %, negotiation 9.1 % |
+| Новая Маланд | alliance 21.8 %, profiteering 18.4 %, internal_split 17.4 % |
+| Сельта-Верде | profiteering 26.5 %, alliance 21.2 %, negotiation 11.6 % |
+| Новая Эллада / Агора | alliance 23.6 %, profiteering 22.2 %, negotiation 18.2 % |
+| Новая Мекка | mobilisation 25.7 %, alliance 24.4 %, preemptive_strike 9.5 % |
+| Ново-Фиваида | neutrality 28.8 %, mobilisation 26.4 %, internal_split 0.5 % |
+| Красный Форпост | mobilisation 33.0 %, preemptive_strike 27.4 %, alliance 16.5 % |
+| Новый Шанхай | alliance 27.0 %, mobilisation 17.7 %, negotiation 9.1 % |
 | Цитадель | preemptive_strike 28.0 %, mobilisation 22.9 %, betrayal 15.5 % |
 
 [СПОЙЛЕР] Открытый вопрос о ядрах прыжка Земли — [AUTHOR/QUEST_TRUTHS.md](../AUTHOR/QUEST_TRUTHS.md).

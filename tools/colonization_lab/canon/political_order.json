@@ -10,53 +10,186 @@
   "UNKNOWN": "намеренно без ответа"
  },
  "layers": {
-  "historical_actor": {"ru": "исторический актор (старый слой галактики)", "source": "src/assets/data/galaxy/actors.json + subactors.json",
-                       "meaning": "14 культурно-политических сил ранней редакции мира (ids 1..14) и 2 подактора Дхарма-Мандалы; рантайм GalaxyDatabase использует их для владения системами и узлами (dominantActor, owner). Это НЕ реестр акторов 3126: часть записей — предшественники или основатели (Дхарма-Мандала -> Новая Карма + Новая Индия; Вердензальб -> Зона «Филоморфоз»), часть ещё не прибыла (Ново-Фиваида id 10 — та же община в пути к первой цели GJ 667 C c; в 3126 — актор leo83_zion). Связь с акторами 3126 — поле historical_actor ниже.",
-                       "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "actor": {"ru": "актор 3126 — действующее лицо, узел политической силы, суверенный политический субъект", "source": "этот файл: actors",
-            "meaning": "участвует в дипломатии, блоках, санкциях; владеет одной или несколькими экономическими единицами"},
-  "economic_unit": {"ru": "экономическая единица", "source": "tools/colonization_lab/canon/world.json colonies + sol_authority",
-                    "meaning": "единица демографии, экономики, флота, рынков (23 единицы); принадлежит актору как ядро, провинция или специальная зона"},
-  "province": {"ru": "провинция", "meaning": "экономическая единица актора вне его метрополии; наследует блок и внешнюю политику актора, кроме локальных конфликтов и собственной региональной администрации"},
-  "special_zone": {"ru": "специальная зона", "meaning": "не актор и не член блока; внешний режим определяется карантином, кордоном и научными лицензиями, а не дипломатией"}
+  "historical_actor": {
+   "ru": "исторический актор (старый слой галактики)",
+   "source": "src/assets/data/galaxy/actors.json + subactors.json",
+   "meaning": "14 культурно-политических сил ранней редакции мира (ids 1..14) и 2 подактора Дхарма-Мандалы; рантайм GalaxyDatabase использует их для владения системами и узлами (dominantActor, owner). Это НЕ реестр акторов 3126: часть записей — предшественники или основатели (Дхарма-Мандала -> Новая Карма + Новая Индия; Вердензальб -> Зона «Филоморфоз»), часть ещё не прибыла (Ново-Фиваида id 10 — та же община в пути к первой цели GJ 667 C c; в 3126 — актор leo83_zion). Связь с акторами 3126 — поле historical_actor ниже.",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "actor": {
+   "ru": "актор 3126 — действующее лицо, узел политической силы, суверенный политический субъект",
+   "source": "этот файл: actors",
+   "meaning": "участвует в дипломатии, блоках, санкциях; владеет одной или несколькими экономическими единицами"
+  },
+  "economic_unit": {
+   "ru": "экономическая единица",
+   "source": "tools/colonization_lab/canon/world.json colonies + sol_authority",
+   "meaning": "единица демографии, экономики, флота, рынков (23 единицы); принадлежит актору как ядро, провинция или специальная зона"
+  },
+  "province": {
+   "ru": "провинция",
+   "meaning": "экономическая единица актора вне его метрополии; наследует блок и внешнюю политику актора, кроме локальных конфликтов и собственной региональной администрации"
+  },
+  "special_zone": {
+   "ru": "специальная зона",
+   "meaning": "не актор и не член блока; внешний режим определяется карантином, кордоном и научными лицензиями, а не дипломатией"
+  }
  },
  "access_scale": {
-  "0": {"id": "open", "ru": "открыто", "channel": "open", "meaning": "обычная торговля и обмен"},
-  "1": {"id": "licensed", "ru": "по лицензии", "channel": "licensed", "meaning": "разрешено по умолчанию, с экспортной лицензией / контролем конечного использования"},
-  "2": {"id": "restricted", "ru": "ограничено", "channel": "restricted", "meaning": "только по отдельному решению, долгие проверки, посредники"},
-  "3": {"id": "sanctions_indirect", "ru": "санкции / косвенно", "channel": "black", "meaning": "прямого канала нет: реэкспорт, третьи страны, серый и чёрный рынок"},
-  "4": {"id": "closed", "ru": "закрыто", "channel": "closed", "meaning": "канала нет вовсе"}
+  "0": {
+   "id": "open",
+   "ru": "открыто",
+   "channel": "open",
+   "meaning": "обычная торговля и обмен"
+  },
+  "1": {
+   "id": "licensed",
+   "ru": "по лицензии",
+   "channel": "licensed",
+   "meaning": "разрешено по умолчанию, с экспортной лицензией / контролем конечного использования"
+  },
+  "2": {
+   "id": "restricted",
+   "ru": "ограничено",
+   "channel": "restricted",
+   "meaning": "только по отдельному решению, долгие проверки, посредники"
+  },
+  "3": {
+   "id": "sanctions_indirect",
+   "ru": "санкции / косвенно",
+   "channel": "black",
+   "meaning": "прямого канала нет: реэкспорт, третьи страны, серый и чёрный рынок"
+  },
+  "4": {
+   "id": "closed",
+   "ru": "закрыто",
+   "channel": "closed",
+   "meaning": "канала нет вовсе"
+  }
  },
  "categories": {
-  "order": ["civilian_goods", "industrial", "dual_use", "military", "strategic", "people_finance_data"],
-  "civilian_goods": {"ru": "гражданские товары", "what": "еда, вода и газы, бытовые товары, медицина, обычные материалы, руда, металлы, химия, стройматериалы, реакторное топливо (He-3)"},
-  "industrial": {"ru": "промышленность", "what": "станки, реакторы общего назначения, материалы, гражданские запчасти, производственное и станционное оборудование, корпуса"},
-  "dual_use": {"ru": "двойное назначение", "what": "двигатели, радары, сенсоры, вычислители, связь, некоторые энергетические системы, заряд прыжка"},
-  "military": {"ru": "военное", "what": "оружие, ПРО, военные радары, РЭБ, боевые компьютеры, броня, военные корпуса"},
-  "strategic": {"ru": "стратегическое", "what": "прыжковые ядра, математика прыжка, маяковая технология, управление сетью, лотосит, особые секреты"},
-  "people_finance_data": {"ru": "люди, финансы, данные", "what": "миграция, банковские расчёты, капитал, научный обмен, лицензии, данные"},
-  "goods_group": {"food": "civilian_goods", "water_gas": "civilian_goods", "ore": "civilian_goods", "metals": "civilian_goods", "chemicals": "civilian_goods",
-                  "construction": "civilian_goods", "fuel": "civilian_goods", "machinery": "industrial", "electronics": "dual_use", "medical": "civilian_goods",
-                  "consumer": "civilian_goods", "luxury": "civilian_goods", "controlled": "civilian_goods", "weapons": "military"},
-  "goods_override": {"jump_charge": "dual_use", "habitat_modules": "industrial", "consumer_electronics": "civilian_goods", "lotosite": "strategic"},
+  "order": [
+   "civilian_goods",
+   "industrial",
+   "dual_use",
+   "military",
+   "strategic",
+   "people_finance_data"
+  ],
+  "civilian_goods": {
+   "ru": "гражданские товары",
+   "what": "еда, вода и газы, бытовые товары, медицина, обычные материалы, руда, металлы, химия, стройматериалы, реакторное топливо (He-3)"
+  },
+  "industrial": {
+   "ru": "промышленность",
+   "what": "станки, реакторы общего назначения, материалы, гражданские запчасти, производственное и станционное оборудование, корпуса"
+  },
+  "dual_use": {
+   "ru": "двойное назначение",
+   "what": "двигатели, радары, сенсоры, вычислители, связь, некоторые энергетические системы, заряд прыжка"
+  },
+  "military": {
+   "ru": "военное",
+   "what": "оружие, ПРО, военные радары, РЭБ, боевые компьютеры, броня, военные корпуса"
+  },
+  "strategic": {
+   "ru": "стратегическое",
+   "what": "прыжковые ядра, математика прыжка, маяковая технология, управление сетью, лотосит, особые секреты"
+  },
+  "people_finance_data": {
+   "ru": "люди, финансы, данные",
+   "what": "миграция, банковские расчёты, капитал, научный обмен, лицензии, данные"
+  },
+  "goods_group": {
+   "food": "civilian_goods",
+   "water_gas": "civilian_goods",
+   "ore": "civilian_goods",
+   "metals": "civilian_goods",
+   "chemicals": "civilian_goods",
+   "construction": "civilian_goods",
+   "fuel": "civilian_goods",
+   "machinery": "industrial",
+   "electronics": "dual_use",
+   "medical": "civilian_goods",
+   "consumer": "civilian_goods",
+   "luxury": "civilian_goods",
+   "controlled": "civilian_goods",
+   "weapons": "military"
+  },
+  "goods_override": {
+   "jump_charge": "dual_use",
+   "habitat_modules": "industrial",
+   "consumer_electronics": "civilian_goods",
+   "lotosite": "strategic"
+  },
   "legality_layer": "Доступ (эта шкала) и легальность — разные слои. Легальность товара — canon/trade_goods.json legality по семейству режима хаба (commodities.json regime_family: open / strict / faith / military). Наркотики (narcotics) по доступу — civilian_goods: физически ходят как гражданский груз, а запрещены или ограничены законом конкретного хаба; оружейное эмбарго их не касается. Лотосит — стратегический (демпферы ядер) и запрещён везде. Контрабанда = товар, нелегальный в хабе назначения, при любом канале доступа.",
-  "end_use_controlled": ["strategic"],
+  "end_use_controlled": [
+   "strategic"
+  ],
   "end_use_note": "товары с контролем конечного использования (запечатанные ядра) экспортирует только производитель; перепродажа держателем лицензии третьим сторонам запрещена (торговая модель lab.py / trade.py)",
-  "lab_trade_good": {"volatiles": "civilian_goods", "he3": "civilian_goods", "metals": "civilian_goods", "food": "civilian_goods", "biotech": "civilian_goods",
-                     "components": "industrial", "hulls": "industrial", "precision": "industrial", "electronics": "dual_use", "isotopes": "dual_use",
-                     "munitions": "military", "drive_cores": "strategic"},
-  "trade_markup_by_level": [0.0, 0.05, 0.25, 0.6, null],
+  "lab_trade_good": {
+   "volatiles": "civilian_goods",
+   "he3": "civilian_goods",
+   "metals": "civilian_goods",
+   "food": "civilian_goods",
+   "biotech": "civilian_goods",
+   "components": "industrial",
+   "hulls": "industrial",
+   "precision": "industrial",
+   "electronics": "dual_use",
+   "isotopes": "dual_use",
+   "munitions": "military",
+   "drive_cores": "strategic"
+  },
+  "trade_markup_by_level": [
+   0.0,
+   0.05,
+   0.25,
+   0.6,
+   null
+  ],
   "trade_markup_note": "надбавка к цене поставки в модели потоков trade.py: лицензия, проверки и посредники, серый рынок / реэкспорт; 4 — потока нет",
-  "industry_block": {"hull_structure": "industrial", "jump_core": "strategic", "reactor": "industrial", "main_drive": "dual_use", "thermal": "industrial",
-                     "avionics": "dual_use", "life_support": "industrial", "rcs": "industrial", "weapons": "military", "cargo_modules": "industrial",
-                     "drill_heads": "industrial", "ore_processors": "industrial", "mass_drivers": "industrial", "tug_drives": "industrial",
-                     "scoop_platforms": "industrial", "he3_separators": "industrial", "cryo_tanks": "industrial", "pressure_segments": "industrial",
-                     "rotating_rings": "industrial", "dock_modules": "industrial", "reactor_modules": "industrial", "radiator_arrays": "industrial",
-                     "agro_life_modules": "industrial", "shielding": "industrial", "habitat_cabins": "industrial"},
-  "ship_product_cat": {"weapon": "military", "armour": "military", "ecm": "military", "jump_core": "strategic",
-                       "drive": "dual_use", "radar": "dual_use", "computer": "dual_use", "comm": "dual_use", "sensor_mast": "dual_use", "transponder": "industrial",
-                       "transponder_note": "транспондер Управления Маяков Т-1 — обязательный гражданский стандарт сети маяков, выдаётся каждому пользователю сети (в т.ч. Цитадели); не двойное назначение",
-                       "default": "industrial"}
+  "industry_block": {
+   "hull_structure": "industrial",
+   "jump_core": "strategic",
+   "reactor": "industrial",
+   "main_drive": "dual_use",
+   "thermal": "industrial",
+   "avionics": "dual_use",
+   "life_support": "industrial",
+   "rcs": "industrial",
+   "weapons": "military",
+   "cargo_modules": "industrial",
+   "drill_heads": "industrial",
+   "ore_processors": "industrial",
+   "mass_drivers": "industrial",
+   "tug_drives": "industrial",
+   "scoop_platforms": "industrial",
+   "he3_separators": "industrial",
+   "cryo_tanks": "industrial",
+   "pressure_segments": "industrial",
+   "rotating_rings": "industrial",
+   "dock_modules": "industrial",
+   "reactor_modules": "industrial",
+   "radiator_arrays": "industrial",
+   "agro_life_modules": "industrial",
+   "shielding": "industrial",
+   "habitat_cabins": "industrial"
+  },
+  "ship_product_cat": {
+   "weapon": "military",
+   "armour": "military",
+   "ecm": "military",
+   "jump_core": "strategic",
+   "drive": "dual_use",
+   "radar": "dual_use",
+   "computer": "dual_use",
+   "comm": "dual_use",
+   "sensor_mast": "dual_use",
+   "transponder": "industrial",
+   "transponder_note": "транспондер Управления Маяков Т-1 — обязательный гражданский стандарт сети маяков, выдаётся каждому пользователю сети (в т.ч. Цитадели); не двойное назначение",
+   "default": "industrial"
+  }
  },
  "headline_channel_rule": "Один канал пары для рантайма (economy_rules.json blocs.matrix, доска заявок): по худшему из двух направлений; civilian 4 -> closed, civilian 3 -> black, industrial >= 2 -> restricted, industrial 1 или dual_use >= 2 -> licensed, иначе open. Точная картина — по категориям (out/world_3126/political_order_3126.json).",
  "resolution": [
@@ -69,170 +202,724 @@
   "7. Транзит: если санкция закрыла (4) гражданскую или промышленную категорию, а транзитный хаб (exception kind transit_hub) имеет <= 1 с обеими сторонами, остаётся 3 (косвенно, через хаб)."
  ],
  "actors": {
-  "tau_ceti_cognium": {"ru": "Когниум", "seat": "tau_ceti_cognium", "units": ["tau_ceti_cognium"], "historical_actor": 1, "bloc": "cognium_pool", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "cyg61_kern": {"ru": "Проспекторат Керн", "seat": "cyg61_kern", "units": ["cyg61_kern"], "historical_actor": 6, "bloc": "cognium_pool", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "hd20794_hellas2": {"ru": "Вторая Эллада", "seat": "hd20794_hellas2", "units": ["hd20794_hellas2"], "historical_actor": null, "bloc": "cognium_pool", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "delta_pav_freekarma": {"ru": "Свободная Карма", "seat": "delta_pav_freekarma", "units": ["delta_pav_freekarma"], "historical_actor": "8/2002", "bloc": "cognium_pool", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "eps_eri_harmony": {"ru": "Синь Хэ", "seat": "eps_eri_harmony", "units": ["eps_eri_harmony", "hd40307_firmament"], "historical_actor": 2, "bloc": "heavenly_pact", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "gj832_tianhe": {"ru": "Тяньхэ", "seat": "gj832_tianhe", "units": ["gj832_tianhe"], "historical_actor": null, "bloc": "heavenly_pact", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "lalande_hellas": {"ru": "Агор-Прим", "seat": "lalande_hellas", "units": ["lalande_hellas"], "historical_actor": 5, "bloc": "lalande_league", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "gj581_europa": {"ru": "Рестаурос", "seat": "gj581_europa", "units": ["gj581_europa"], "historical_actor": 11, "bloc": "lalande_league", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "hd114783_hellas3": {"ru": "Третья Эллада", "seat": "hd114783_hellas3", "units": ["hd114783_hellas3"], "historical_actor": null, "bloc": "lalande_league", "membership": "associate",
-                       "membership_note": "идеологически и дипломатически — Лига Лаланд; экономическая интеграция низкая: ассоциированный член, присоединение / реинтеграция с 3122 идёт (прибыла 3122, технологически отстала)", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "hd20794_newindia": {"ru": "Новая Индия (Дхарма-Мандала, южная ветвь)", "seat": "hd20794_newindia", "units": ["hd20794_newindia"], "historical_actor": 8, "bloc": "southern_circle", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "hd40307_maland": {"ru": "Уджамаа-Джахи (Новая Маланд)", "seat": "hd40307_maland", "units": ["hd40307_maland"], "historical_actor": 3, "bloc": "southern_circle", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "lalande_mecca": {"ru": "Ильм-аль-Нуджум (Новая Мекка)", "seat": "lalande_mecca", "units": ["lalande_mecca"], "historical_actor": 7, "bloc": "southern_circle", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "wolf359_citadel": {"ru": "Скьёльдбург (Цитадель)", "seat": "wolf359_citadel", "units": ["wolf359_citadel"], "historical_actor": 4, "bloc": "citadel_compact", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "proxima_outpost": {"ru": "Сварог (Красный Форпост)", "seat": "proxima_outpost", "units": ["proxima_outpost"], "historical_actor": null, "bloc": "citadel_compact", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "eps_eri_strife": {"ru": "Варпстанис (Пояс Раздора)", "seat": "eps_eri_strife", "units": ["eps_eri_strife"], "historical_actor": 12, "bloc": "free_belts", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "gj581_freeclans": {"ru": "Свободные поселения (кланы Свободного мира)", "seat": "gj581_freeclans", "units": ["gj581_freeclans"], "historical_actor": null, "bloc": "free_belts", "membership": "full", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "sol_authority": {"ru": "Сол", "seat": "sol_authority", "units": ["sol_authority"], "historical_actor": null, "bloc": "sol", "membership": "pole", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "hd69830_verde": {"ru": "Сельта-Верде", "seat": "hd69830_verde", "units": ["hd69830_verde"], "historical_actor": 13, "bloc": null, "nonaligned": "resource_neutral", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "gj876_next": {"ru": "Провидение (Культ Машины)", "seat": "gj876_next", "units": ["gj876_next"], "historical_actor": null, "bloc": null, "nonaligned": "strategic_multivector", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "delta_pav_karma": {"ru": "Новая Карма (Дхарма-Мандала, северная ветвь)", "seat": "delta_pav_karma", "units": ["delta_pav_karma"], "historical_actor": "8/2001", "bloc": null, "nonaligned": "ideological_isolationist", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"},
-  "leo83_zion": {"ru": "Ново-Фиваида", "short": "Фиваида", "government": "Синод Ново-Фиваиды", "legacy_id_note": "machine id leo83_zion — legacy, оставлен ради стабильности; отображаемое имя — Ново-Фиваида (решение автора 2026-11-05; «Ново-Фиваида» не используется)",
-                 "seat": "leo83_zion", "units": ["leo83_zion"], "historical_actor": 10,
-                 "historical_line": "Ново-Фиваида (actors.json id 10: аскетическая христианская община, «Ледяная Вера», ковчег NEW-JERUSALEM-1) -> старт ковчега, цель — «ледяная луна» GJ 667 C c (её и помнит ранний слой: systems.json «Ледяная система Ново-Фиваиды», nodes.json «аскетическая столица») -> 2291: Земля сообщает, что цель не ледяная луна, Синод на разгоне меняет цель на 83 Leonis (missions.json, PROPOSAL реконсиляции B9) -> перелёт около 856 лет -> прибытие к 83 Leonis в 3126 -> современный актор Ново-Фиваида под властью Синода. Ранний слой описывает несостоявшуюся цель, а не владение 3126",
-                 "bloc": null, "nonaligned": "newcomer_religious", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"}
+  "tau_ceti_cognium": {
+   "ru": "Когниум",
+   "seat": "tau_ceti_cognium",
+   "units": [
+    "tau_ceti_cognium"
+   ],
+   "historical_actor": 1,
+   "bloc": "cognium_pool",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "cyg61_kern": {
+   "ru": "Проспекторат Керн",
+   "seat": "cyg61_kern",
+   "units": [
+    "cyg61_kern"
+   ],
+   "historical_actor": 6,
+   "bloc": "cognium_pool",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "hd20794_hellas2": {
+   "ru": "Вторая Эллада",
+   "seat": "hd20794_hellas2",
+   "units": [
+    "hd20794_hellas2"
+   ],
+   "historical_actor": null,
+   "bloc": "cognium_pool",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "delta_pav_freekarma": {
+   "ru": "Свободная Карма",
+   "seat": "delta_pav_freekarma",
+   "units": [
+    "delta_pav_freekarma"
+   ],
+   "historical_actor": "8/2002",
+   "bloc": "cognium_pool",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "eps_eri_harmony": {
+   "ru": "Синь Хэ",
+   "seat": "eps_eri_harmony",
+   "units": [
+    "eps_eri_harmony",
+    "hd40307_firmament"
+   ],
+   "historical_actor": 2,
+   "bloc": "heavenly_pact",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "gj832_tianhe": {
+   "ru": "Тяньхэ",
+   "seat": "gj832_tianhe",
+   "units": [
+    "gj832_tianhe"
+   ],
+   "historical_actor": null,
+   "bloc": "heavenly_pact",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "lalande_hellas": {
+   "ru": "Агор-Прим",
+   "seat": "lalande_hellas",
+   "units": [
+    "lalande_hellas"
+   ],
+   "historical_actor": 5,
+   "bloc": "lalande_league",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "gj581_europa": {
+   "ru": "Рестаурос",
+   "seat": "gj581_europa",
+   "units": [
+    "gj581_europa"
+   ],
+   "historical_actor": 11,
+   "bloc": "lalande_league",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "hd114783_hellas3": {
+   "ru": "Третья Эллада",
+   "seat": "hd114783_hellas3",
+   "units": [
+    "hd114783_hellas3"
+   ],
+   "historical_actor": null,
+   "bloc": "lalande_league",
+   "membership": "associate",
+   "membership_note": "идеологически и дипломатически — Лига Лаланд; экономическая интеграция низкая: ассоциированный член, присоединение / реинтеграция с 3122 идёт (прибыла 3122, технологически отстала)",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "hd20794_newindia": {
+   "ru": "Новая Индия (Дхарма-Мандала, южная ветвь)",
+   "seat": "hd20794_newindia",
+   "units": [
+    "hd20794_newindia"
+   ],
+   "historical_actor": 8,
+   "bloc": "southern_circle",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "hd40307_maland": {
+   "ru": "Уджамаа-Джахи (Новая Маланд)",
+   "seat": "hd40307_maland",
+   "units": [
+    "hd40307_maland"
+   ],
+   "historical_actor": 3,
+   "bloc": "southern_circle",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "lalande_mecca": {
+   "ru": "Ильм-аль-Нуджум (Новая Мекка)",
+   "seat": "lalande_mecca",
+   "units": [
+    "lalande_mecca"
+   ],
+   "historical_actor": 7,
+   "bloc": "southern_circle",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "wolf359_citadel": {
+   "ru": "Скьёльдбург (Цитадель)",
+   "seat": "wolf359_citadel",
+   "units": [
+    "wolf359_citadel"
+   ],
+   "historical_actor": 4,
+   "bloc": "citadel_compact",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "proxima_outpost": {
+   "ru": "Сварог (Красный Форпост)",
+   "seat": "proxima_outpost",
+   "units": [
+    "proxima_outpost"
+   ],
+   "historical_actor": null,
+   "bloc": "citadel_compact",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "eps_eri_strife": {
+   "ru": "Варпстанис (Пояс Раздора)",
+   "seat": "eps_eri_strife",
+   "units": [
+    "eps_eri_strife"
+   ],
+   "historical_actor": 12,
+   "bloc": "free_belts",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "gj581_freeclans": {
+   "ru": "Свободные поселения (кланы Свободного мира)",
+   "seat": "gj581_freeclans",
+   "units": [
+    "gj581_freeclans"
+   ],
+   "historical_actor": null,
+   "bloc": "free_belts",
+   "membership": "full",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "sol_authority": {
+   "ru": "Сол",
+   "seat": "sol_authority",
+   "units": [
+    "sol_authority"
+   ],
+   "historical_actor": null,
+   "bloc": "sol",
+   "membership": "pole",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "hd69830_verde": {
+   "ru": "Сельта-Верде",
+   "seat": "hd69830_verde",
+   "units": [
+    "hd69830_verde"
+   ],
+   "historical_actor": 13,
+   "bloc": null,
+   "nonaligned": "resource_neutral",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "gj876_next": {
+   "ru": "Провидение (Культ Машины)",
+   "seat": "gj876_next",
+   "units": [
+    "gj876_next"
+   ],
+   "historical_actor": null,
+   "bloc": null,
+   "nonaligned": "strategic_multivector",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "delta_pav_karma": {
+   "ru": "Новая Карма (Дхарма-Мандала, северная ветвь)",
+   "seat": "delta_pav_karma",
+   "units": [
+    "delta_pav_karma"
+   ],
+   "historical_actor": "8/2001",
+   "bloc": null,
+   "nonaligned": "ideological_isolationist",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  },
+  "leo83_zion": {
+   "ru": "Ново-Фиваида",
+   "short": "Фиваида",
+   "government": "Синод Ново-Фиваиды",
+   "legacy_id_note": "machine id leo83_zion — legacy, оставлен ради стабильности; отображаемое имя — Ново-Фиваида (решение автора 2026-11-05; «Ново-Фиваида» не используется)",
+   "seat": "leo83_zion",
+   "units": [
+    "leo83_zion"
+   ],
+   "historical_actor": 10,
+   "historical_line": "Ново-Фиваида (actors.json id 10: аскетическая христианская община, «Ледяная Вера», ковчег NEW-JERUSALEM-1) -> старт ковчега, цель — «ледяная луна» GJ 667 C c (её и помнит ранний слой: systems.json «Ледяная система Ново-Фиваиды», nodes.json «аскетическая столица») -> 2291: Земля сообщает, что цель не ледяная луна, Синод на разгоне меняет цель на 83 Leonis (missions.json, PROPOSAL реконсиляции B9) -> перелёт около 856 лет -> прибытие к 83 Leonis в 3126 -> современный актор Ново-Фиваида под властью Синода. Ранний слой описывает несостоявшуюся цель, а не владение 3126",
+   "bloc": null,
+   "nonaligned": "newcomer_religious",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  }
  },
  "units": {
   "hd40307_firmament": {
-   "player_role": "фронт холодной войны с Маланд: досмотры, военные патрули, запреты на военное и двойное назначение именно здесь, а не во всём Синь Хэ","kind": "province", "actor": "eps_eri_harmony", "ru": "Небесная Твердыня — дальняя провинция Синь Хэ",
-                        "status": "CANON", "basis": "world.json polity «Синь Хэ (дальняя провинция)» (CANON)",
-                        "inherits": "блок, дипломатия и глобальная политика Синь Хэ",
-                        "local": "собственная региональная администрация; холодная война с Новой Маланд (с 2680) — локальный конфликт, санкции — только на уровне провинции"},
+   "player_role": "фронт холодной войны с Маланд: досмотры, военные патрули, запреты на военное и двойное назначение именно здесь, а не во всём Синь Хэ",
+   "kind": "province",
+   "actor": "eps_eri_harmony",
+   "ru": "Небесная Твердыня — дальняя провинция Синь Хэ",
+   "status": "CANON",
+   "basis": "world.json polity «Синь Хэ (дальняя провинция)» (CANON)",
+   "inherits": "блок, дипломатия и глобальная политика Синь Хэ",
+   "local": "собственная региональная администрация; холодная война с Новой Маланд (с 2680) — локальный конфликт, санкции — только на уровне провинции"
+  },
   "gj832_gaia_zone": {
-   "player_role": "кордон: вход только по научной лицензии, контрабанда и нарушение карантина — преступление; задания экспедиций и кордона","kind": "special_zone", "zone_type": "quarantine_exclusion", "actor": null, "ru": "Зона «Филоморфоз» — карантинная территория, остатки Гайи-Прим, биологическая аномальная зона",
-                      "status": "PROPOSAL_PENDING_AUTHOR_REVIEW", "basis": "карантин Тяньхэ с 2510 (CANON); world.json economic_actor = false",
-                      "regime": "внешние отношения определяет биобезопасность: научные лицензии, карантин, кордон, запрет обычной торговли и миграции; «защищает» не договор, а то, что нормальные государства не хотят открывать эту дверь",
-                      "cordon": "gj832_tianhe"}
+   "player_role": "кордон: вход только по научной лицензии, контрабанда и нарушение карантина — преступление; задания экспедиций и кордона",
+   "kind": "special_zone",
+   "zone_type": "quarantine_exclusion",
+   "actor": null,
+   "ru": "Зона «Филоморфоз» — карантинная территория, остатки Гайи-Прим, биологическая аномальная зона",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "basis": "карантин Тяньхэ с 2510 (CANON); world.json economic_actor = false",
+   "regime": "внешние отношения определяет биобезопасность: научные лицензии, карантин, кордон, запрет обычной торговли и миграции; «защищает» не договор, а то, что нормальные государства не хотят открывать эту дверь",
+   "cordon": "gj832_tianhe"
+  }
  },
  "blocs": {
   "cognium_pool": {
    "player_role": "лицензии, страховка и кредит Керна, лучшие модульные корабли и запчасти; дорогие, но надёжные рынки; споры о ИС и инспекции — источник контрактов и штрафов",
-   "ru": "Технократический пул Когниума", "kind": "alliance", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "ru": "Технократический пул Когниума",
+   "kind": "alliance",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
    "ideology": "технологический рационализм; контракт вместо традиционной лояльности; меритократия и корпоративное управление; сильное право собственности; лицензирование и стандартизация технологий; высокая цена компетенции; относительная свобода экономической инициативы; очень жёсткая охрана стратегической интеллектуальной собственности",
    "not": "не провинции Когниума и не «Запад / США»: Когниум — технологический центр, остальные — самостоятельные акторы",
    "integration": "high",
-   "formed": {"status": "PROPOSAL_PENDING_AUTHOR_REVIEW", "when": "складывается между Конвенцией Маяков 2790 и Всеобщей лицензией 2850 вокруг держателей глубоких лицензий (Керн — маяк 2790, Свободная Карма — 2795, Вторая Эллада — 2850, Cobretty)", "date_canon": false},
+   "formed": {
+    "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+    "when": "складывается между Конвенцией Маяков 2790 и Всеобщей лицензией 2850 вокруг держателей глубоких лицензий (Керн — маяк 2790, Свободная Карма — 2795, Вторая Эллада — 2850, Cobretty)",
+    "date_canon": false
+   },
    "obligations": "общие технические стандарты и лицензионный режим Управления Маяков; взаимный доступ к рынкам и капиталу; совместная охрана ИС",
    "does_not_mean": "общей армии и общей внешней политики нет; Когниум не распоряжается флотами и финансами членов",
-   "internal": {"civilian_goods": 0, "industrial": 0, "dual_use": 1, "military": 1, "strategic": 2, "people_finance_data": 0},
-   "export": {"civilian_goods": 0, "industrial": 0, "dual_use": 1, "military": 2, "strategic": 2, "people_finance_data": 1},
-   "import": {"civilian_goods": 0, "industrial": 0, "dual_use": 1, "military": 2, "strategic": 2, "people_finance_data": 1},
-   "technology_policy": "охотно продаёт гражданские технологии и лицензии; стратегическое — только запечатанные ядра по Всеобщей лицензии 2850 (продукт, не знание); математика прыжка и маяковая технология не передаются никому, даже внутри пула"
+   "internal": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 1,
+    "military": 1,
+    "strategic": 2,
+    "people_finance_data": 0
+   },
+   "export": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 1,
+    "military": 2,
+    "strategic": 2,
+    "people_finance_data": 1
+   },
+   "import": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 1,
+    "military": 2,
+    "strategic": 2,
+    "people_finance_data": 1
+   },
+   "technology_policy": "охотно продаёт гражданские технологии и лицензии; стратегическое — только запечатанные ядра по Всеобщей лицензии 2850 (продукт, не знание); математика прыжка и маяковая технология не передаются никому, даже внутри пула",
+   "coordination": {
+    "collective": [
+     "запрет передачи стратегических технологий",
+     "контроль двойного назначения",
+     "защита интеллектуальной собственности",
+     "запрет обхода лицензий"
+    ],
+    "national": "гражданскую торговлю каждый член решает сам: Керн ищет лазейки, если на них можно заработать; Вторая Эллада продаёт разрешённое оборудование; Когниум делает вид, что не замечает, пока это не касается стратегического сектора; Свободная Карма держит против Новой Кармы режим жёстче всех — из-за исторической ненависти",
+    "analogy": "CoCom: общий список запретов, национальные исключения и вечные споры о них"
+   },
+   "fault_lines": {
+    "weak_stays_because": "без лицензий и страховки Керна их флот стоит",
+    "strong_tolerates_because": "Когниуму нужны рынки, верфи Второй Эллады и деньги Керна",
+    "profits": "Управление Маяков (рента), Керн (кредит и страховка)",
+    "pays": "покупатели ядер и Вторая Эллада (роялти)",
+    "resents": "Вторая Эллада — роялти и инспекции; Керн — что тайна ядер не его",
+    "cheats": "Керн — гражданская торговля в обход политических симпатий",
+    "splits_if": "Когниум поднимет ренту или Керн найдёт другого лицензиара"
+   }
   },
   "heavenly_pact": {
    "player_role": "дешёвые стандартные корпуса «Хэ», ремонт в любом порту пакта; строгие разрешения на двойное назначение; соперничество Гармонии и Тяньхэ даёт заказы обеих сторон",
-   "ru": "Небесный пакт", "kind": "alliance", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "ru": "Небесный пакт",
+   "kind": "alliance",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
    "ideology": "государственная технократия; коллективная ответственность; иерархическое управление; планирование стратегических отраслей; государственные промышленные концерны; единые технические стандарты; инфраструктура и долгие программы; стабильность выше индивидуальной инициативы",
    "not": "Твердыня — не отдельный член, а провинция Синь Хэ; спор двух китайских линий (Гармония — Тяньхэ) внутри пакта не исчез",
    "integration": "very_high",
-   "formed": {"status": "PROPOSAL_PENDING_AUTHOR_REVIEW", "when": "после маяка Тяньхэ 2785: договор о единых стандартах корпусов «Хэ», реакторов Тяньхэ и сборке ядер из запечатанных блоков; точная дата не следует из канона", "date_canon": false},
+   "formed": {
+    "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+    "when": "после маяка Тяньхэ 2785: договор о единых стандартах корпусов «Хэ», реакторов Тяньхэ и сборке ядер из запечатанных блоков; точная дата не следует из канона",
+    "date_canon": false
+   },
    "obligations": "единые стандарты, общая ремонтная сеть, разделение труда концернов (Верфи Гармонии — корпуса, Тяньхэ Тяжмаш — реакторы и двигатели)",
    "does_not_mean": "Тяньхэ не подчиняется Синь Хэ; общая внешняя политика — по согласованию, не автоматически",
-   "internal": {"civilian_goods": 0, "industrial": 0, "dual_use": 0, "military": 1, "strategic": 1, "people_finance_data": 1},
-   "export": {"civilian_goods": 0, "industrial": 1, "dual_use": 2, "military": 2, "strategic": 4, "people_finance_data": 2},
-   "import": {"civilian_goods": 0, "industrial": 1, "dual_use": 1, "military": 2, "strategic": 1, "people_finance_data": 2},
-   "technology_policy": "самый стандартизированный блок; наружу — гражданское открыто, промышленность по лицензии, двойное назначение ограничено, военное сильно ограничено (только межгосударственным решением по каждой сделке; так Сол получает броню и орудия Твердыни), стратегическое — только по политическому решению"
+   "internal": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 0,
+    "military": 1,
+    "strategic": 1,
+    "people_finance_data": 1
+   },
+   "export": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "dual_use": 2,
+    "military": 2,
+    "strategic": 4,
+    "people_finance_data": 2
+   },
+   "import": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "dual_use": 1,
+    "military": 2,
+    "strategic": 1,
+    "people_finance_data": 2
+   },
+   "technology_policy": "самый стандартизированный блок; наружу — гражданское открыто, промышленность по лицензии, двойное назначение ограничено, военное сильно ограничено (только межгосударственным решением по каждой сделке; так Сол получает броню и орудия Твердыни), стратегическое — только по политическому решению",
+   "fault_lines": {
+    "weak_stays_because": "Тяньхэ без верфей Гармонии — клиент Когниума",
+    "strong_tolerates_because": "Гармонии нужны реакторы Тяньхэ",
+    "profits": "государственные концерны обеих линий",
+    "pays": "население — дорогие стандарты и мало выбора",
+    "resents": "Тяньхэ — роль младшего; Гармония — «догматики» Тяньхэ",
+    "cheats": "обе стороны держат собственные резервы ядер и тайно торгуются с Когниумом",
+    "splits_if": "одна из линий получит прямой канал ядер в обход другой"
+   }
   },
   "lalande_league": {
    "player_role": "самые открытые рынки, реестры и арбитраж: регистрация корабля, суд по контрактам, страхование споров; Третья Эллада — новичок, которому нужно всё",
-   "ru": "Лига Лаланд", "kind": "alliance", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "ru": "Лига Лаланд",
+   "kind": "alliance",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
    "ideology": "верховенство договора; юридический институционализм; арбитраж; парламентские и акционерные формы управления; торговая открытость; многосторонние стандарты; право собственности; слабая милитаризация; сила через правила, реестры, посредничество и рынки",
    "not": "не копия современной Европы; Сельта-Верде в Лигу не входит (неприсоединившаяся)",
    "integration": "high_core_low_associate",
-   "formed": {"status": "PROPOSAL_PENDING_AUTHOR_REVIEW", "when": "Агора (нейтральный порт) и Реестр «Новый Брюссель» Новой Европы; Третья Эллада — ассоциированный член с 3122", "date_canon": false},
+   "formed": {
+    "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+    "when": "Агора (нейтральный порт) и Реестр «Новый Брюссель» Новой Европы; Третья Эллада — ассоциированный член с 3122",
+    "date_canon": false
+   },
    "obligations": "взаимное признание реестров и арбитража Агоры; общие открытые стандарты интерфейсов; свободное движение капитала и данных",
    "does_not_mean": "общего флота нет; Третья Эллада не взаимозаменяема экономически с Агорой",
-   "internal": {"civilian_goods": 0, "industrial": 0, "dual_use": 0, "military": 1, "strategic": 2, "people_finance_data": 0},
-   "associate_internal": {"civilian_goods": 0, "industrial": 1, "dual_use": 1, "military": 2, "strategic": 2, "people_finance_data": 1},
-   "export": {"civilian_goods": 0, "industrial": 0, "dual_use": 1, "military": 2, "strategic": 3, "people_finance_data": 0},
-   "import": {"civilian_goods": 0, "industrial": 0, "dual_use": 1, "military": 1, "strategic": 1, "people_finance_data": 0},
-   "technology_policy": "самый открытый режим торговли, финансов, данных и гражданской промышленности; военное и стратегическое защищено"
+   "internal": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 0,
+    "military": 1,
+    "strategic": 2,
+    "people_finance_data": 0
+   },
+   "associate_internal": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "dual_use": 1,
+    "military": 2,
+    "strategic": 2,
+    "people_finance_data": 1
+   },
+   "export": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 1,
+    "military": 2,
+    "strategic": 3,
+    "people_finance_data": 0
+   },
+   "import": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 1,
+    "military": 1,
+    "strategic": 1,
+    "people_finance_data": 0
+   },
+   "technology_policy": "самый открытый режим торговли, финансов, данных и гражданской промышленности; военное и стратегическое защищено",
+   "fault_lines": {
+    "weak_stays_because": "Третьей Элладе нужен суд против Керна",
+    "strong_tolerates_because": "Агоре нужна легитимность реестра Новой Европы, Европе — порт Агоры",
+    "profits": "Агора — комиссии; Новая Европа — сборы реестра; юристы обеих",
+    "pays": "клиенты арбитража и Третья Эллада (условия вступления)",
+    "resents": "Новая Европа — что торговля идёт мимо её правил",
+    "cheats": "Агора нарушает дух собственных правил, когда речь о крупной комиссии",
+    "splits_if": "блокада Лаланд или открытая ставка Агоры на одну сторону"
+   }
   },
   "southern_circle": {
+   "strategic_procurement": {
+    "maker": "lalande_mecca",
+    "floor_share": 0.3,
+    "price_tolerance_x": 1.6,
+    "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+    "why": "квота круга: Новая Индия и Маланд резервируют часть закупок ядер за Меккой и переплачивают за неё — как оборонные закупки у национального производителя; держит мекканский завод загруженным и не даёт Когниуму задушить круг одним вентилем. Сборщики и страховщики Новой Индии квоту не любят и добиваются исключений"
+   },
    "player_role": "свои ядра Мекки как альтернатива лицензии Когниума; разные законы у каждого члена (кастовая республика, совет вождей, теократия) — разные правила таможни",
-   "ru": "Южный круг", "kind": "alliance", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "ru": "Южный круг",
+   "kind": "alliance",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
    "ideology": "цивилизационный суверенитет; неприятие внешнего патернализма; отказ от одного универсального стандарта развития; невмешательство; право общества на свою политическую и религиозную модель; технологическая независимость крупных полюсов; сотрудничество без идеологической унификации",
    "motto": "«Мы можем совершенно по-разному управлять собой, но никто извне не будет объяснять нам, как правильно жить»",
    "not": "не единый хозяйственный механизм; внутренние режимы (меритократическая кастовая республика, совет вождей, учёная теократия) различны",
    "integration": "medium",
-   "formed": {"status": "PROPOSAL_PENDING_AUTHOR_REVIEW", "when": "вокруг собственной математики прыжка Новой Мекки (ядра вне стандарта Когниума, с 2800): для крупных рынков и сборочных заводов Новой Индии и Маланд — источник ядер без полной зависимости от лицензий Когниума", "date_canon": false},
+   "formed": {
+    "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+    "when": "вокруг собственной математики прыжка Новой Мекки (ядра вне стандарта Когниума, с 2800): для крупных рынков и сборочных заводов Новой Индии и Маланд — источник ядер без полной зависимости от лицензий Когниума",
+    "date_canon": false
+   },
    "obligations": "невмешательство; координация стратегической технологии через Мекку; взаимные рынки без требования общих стандартов",
    "does_not_mean": "общей армии, общих стандартов и общей идеологии нет",
-   "internal": {"civilian_goods": 0, "industrial": 1, "dual_use": 1, "military": 2, "strategic": 1, "people_finance_data": 1},
-   "export": {"civilian_goods": 0, "industrial": 1, "dual_use": 2, "military": 2, "strategic": 4, "people_finance_data": 1},
-   "import": {"civilian_goods": 0, "industrial": 1, "dual_use": 1, "military": 1, "strategic": 2, "people_finance_data": 1},
-   "technology_policy": "государства сохраняют свои стандарты; двойное и военное — двусторонние решения; стратегическое — собственная технология Мекки: внешние ядра (лицензия Когниума 2850 у Новой Индии и Маланд сохраняется) — только по отдельному решению, свои ядра круга в приоритете"
+   "internal": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "dual_use": 1,
+    "military": 2,
+    "strategic": 1,
+    "people_finance_data": 1
+   },
+   "export": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "dual_use": 2,
+    "military": 2,
+    "strategic": 4,
+    "people_finance_data": 1
+   },
+   "import": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "dual_use": 1,
+    "military": 1,
+    "strategic": 1,
+    "people_finance_data": 1
+   },
+   "technology_policy": "государства сохраняют свои стандарты; двойное и военное — двусторонние решения; стратегическое — собственная технология Мекки: ядра Когниума по лицензии 2850 дешевле и массовее, но квота круга (strategic_procurement) держит заметную долю за Меккой",
+   "fault_lines": {
+    "weak_stays_because": "Маланд нужны мекканские ядра против Твердыни",
+    "strong_tolerates_because": "Мекке нужны рынки Новой Индии для своего завода",
+    "profits": "мекканский завод и учёные, сборщики Новой Индии",
+    "pays": "Новая Индия и Маланд — квота дороже ядер Когниума",
+    "resents": "сборщики и страховщики Новой Индии — квоту",
+    "cheats": "Новая Индия добивается исключений из квоты и тихо закупает больше у Когниума",
+    "splits_if": "Когниум предложит Новой Индии особые условия лицензии"
+   }
   },
   "citadel_compact": {
+   "strategic_procurement": {
+    "maker": "wolf359_citadel",
+    "floor_share": 0.85,
+    "price_tolerance_x": 2.0,
+    "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+    "why": "серийные ядра Сварог берёт у Цитадели — это рычаг Цитадели; свои пиратские копии Сварога хуже по ресурсу и страховке, но держат аварийную автономию, поэтому Сварог их развивает и торгуется"
+   },
    "player_role": "закрытые военные рынки, досмотры и отказ от инспекций; гражданский груз и сырьё сюда возить можно, оружие и вычислители — нет",
-   "ru": "Пакт Цитадели", "kind": "alliance", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "ru": "Пакт Цитадели",
+   "kind": "alliance",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
    "ideology": "безопасность выше открытости; суверенитет выше международных инспекций; жёсткие границы; высокая роль вооружённых сил; подозрение к внешним институтам; стратегическая автономия; готовность жить беднее ради независимости; силовая элита при разной внутренней форме",
    "not": "не герметичная крепость: сырьё и часть гражданской продукции ввозятся",
    "integration": "medium",
-   "formed": {"status": "PROPOSAL", "when": "Линия отказников 2870 (Сварог — Цитадель, прямая нелицензионная линия; PROPOSAL в RELATIONS.md)", "date_canon": false},
+   "formed": {
+    "status": "PROPOSAL",
+    "when": "Линия отказников 2870 (Сварог — Цитадель, прямая нелицензионная линия; PROPOSAL в RELATIONS.md)",
+    "date_canon": false
+   },
    "obligations": "ядра Цитадели — только внутри пакта; взаимная безопасность; отказ от инспекций Конвенции",
    "does_not_mean": "Сварог не провинция Цитадели; ядра «Бастиона» никому вне пакта не продаются",
-   "internal": {"civilian_goods": 0, "industrial": 1, "dual_use": 1, "military": 1, "strategic": 1, "people_finance_data": 2},
-   "export": {"civilian_goods": 0, "industrial": 1, "dual_use": 3, "military": 4, "strategic": 4, "people_finance_data": 3},
-   "import": {"civilian_goods": 0, "industrial": 1, "dual_use": 2, "military": 2, "strategic": 4, "people_finance_data": 3},
-   "technology_policy": "своя гипертехнология (Цитадель, 2855) и нелицензионные / альтернативные решения Сварога; военное, вычислительное, стратегическое и данные закрыты; инспекций нет"
+   "internal": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "dual_use": 1,
+    "military": 1,
+    "strategic": 1,
+    "people_finance_data": 2
+   },
+   "export": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "dual_use": 3,
+    "military": 4,
+    "strategic": 4,
+    "people_finance_data": 3
+   },
+   "import": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "dual_use": 2,
+    "military": 2,
+    "strategic": 4,
+    "people_finance_data": 3
+   },
+   "technology_policy": "своя гипертехнология (Цитадель, 2855) и нелицензионные / альтернативные решения Сварога; военное, вычислительное, стратегическое и данные закрыты; инспекций нет",
+   "fault_lines": {
+    "weak_stays_because": "серийные ядра Сварогу даёт только Цитадель",
+    "strong_tolerates_because": "Сварог — передовой рубеж у Земли и рынок Бастиона",
+    "profits": "Бастион и силовые элиты обеих",
+    "pays": "население — бедность ради автономии",
+    "resents": "Сварог — зависимость от ядер Цитадели",
+    "cheats": "Сварог развивает свои копии и торгуется с Поясом",
+    "splits_if": "Сварог получит хорошие копии или канал от Земли"
+   }
   },
   "free_belts": {
-   "player_role": "серый и чёрный рынок, salvage, переделка техники без вопросов; дёшево и доступно, но высокий юридический риск, страховка ×2, проблемы с серийниками",
-   "ru": "Вольные пояса", "kind": "space", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "player_role": "дёшево, быстро и без вопросов — зато риск: случайный ассортимент, подделки, краденое, несовместимые запчасти, нет страховки, проблемы с законом после покупки; salvage и переделка техники",
+   "ru": "Вольные пояса",
+   "kind": "space",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
    "ideology": "клановый суверенитет; договор вместо государства; неприятие внешних реестров; слабые налоги или их нет; серый и чёрный рынок; salvage; переделка техники; слабое признание патентного права; высокая личная свобода при низкой институциональной защите",
    "not": "не государственный альянс, а идеологическое и экономическое пространство",
    "integration": "low_formal_high_informal",
-   "formed": {"status": "PROPOSAL", "when": "после утечки спецификаций 2862 (CANON: кланы выкладывают спецификации «для всех») — общий рынок краденой и скопированной техники", "date_canon": false},
+   "formed": {
+    "status": "PROPOSAL",
+    "when": "после утечки спецификаций 2862 (CANON: кланы выкладывают спецификации «для всех») — общий рынок краденой и скопированной техники",
+    "date_canon": false
+   },
    "obligations": "клановые договоры; рынок без вопросов",
    "does_not_mean": "общего правительства, флота и внешней политики нет",
-   "internal": {"civilian_goods": 0, "industrial": 0, "dual_use": 1, "military": 2, "strategic": 2, "people_finance_data": 1},
-   "export": {"civilian_goods": 0, "industrial": 1, "dual_use": 3, "military": 3, "strategic": 3, "people_finance_data": 2},
-   "import": {"civilian_goods": 0, "industrial": 0, "dual_use": 0, "military": 0, "strategic": 1, "people_finance_data": 1},
-   "risk": {"legal_risk": "high", "insurance_x": 2.0, "provenance": "сомнительное происхождение, серийники и документы — проблема"},
-   "technology_policy": "внутренние стандарты слабые, огромная кустарная адаптация; стратегическое — краденое или скопированное, когда удаётся"
+   "internal": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 1,
+    "military": 2,
+    "strategic": 2,
+    "people_finance_data": 1
+   },
+   "export": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "dual_use": 3,
+    "military": 3,
+    "strategic": 3,
+    "people_finance_data": 2
+   },
+   "import": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 0,
+    "military": 0,
+    "strategic": 1,
+    "people_finance_data": 1
+   },
+   "risk": {
+    "legal_risk": "high",
+    "insurance_x": 2.0,
+    "provenance": "сомнительное происхождение, серийники и документы — проблема",
+    "availability": "случайная: товар есть сегодня и исчезает завтра",
+    "quality": "непредсказуемая; военная техника бывает повреждённой",
+    "counterfeit": "можно купить подделку",
+    "stolen_property": "можно купить краденое и получить проблемы с законом у прежнего владельца",
+    "compatibility": "запчасти часто несовместимы",
+    "seller": "продавец может исчезнуть",
+    "insurance": "страховки нет",
+    "strategic": "стратегическое — копии и части, не стабильная промышленная цепочка"
+   },
+   "technology_policy": "внутренние стандарты слабые, огромная кустарная адаптация; стратегическое — краденое или скопированное, когда удаётся",
+   "fault_lines": {
+    "weak_stays_because": "общего договора нет — выходить не из чего",
+    "strong_tolerates_because": "Пояс Раздора и Свободные поселения торгуют одним краденым",
+    "profits": "перекупщики, кланы-посредники",
+    "pays": "покупатели — подделки и отсутствие страховки",
+    "resents": "кланы друг друга",
+    "cheats": "все",
+    "splits_if": "наведение порядка одним из соседей"
+   }
   },
   "sol": {
    "player_role": "гигантский рынок и массовый конвейер внутрисистемного флота; собственная финансовая система; ворота Земли",
-   "ru": "Сол", "kind": "pole", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "ru": "Сол",
+   "kind": "pole",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
    "ideology": "собственный великий политико-экономический полюс: гигантская внутренняя экономика, большая автономность, массовое производство, свои интересы",
    "not": "не член Когниумского пула: лицензионная зависимость по ядрам (свои ядра — UNKNOWN у автора) — не политическое подчинение",
    "integration": "n/a",
-   "formed": {"status": "CANON", "when": "в сети с 3112 (конец Кордона)", "date_canon": true},
-   "internal": {"civilian_goods": 0, "industrial": 0, "dual_use": 0, "military": 0, "strategic": 0, "people_finance_data": 0},
-   "export": {"civilian_goods": 0, "industrial": 1, "dual_use": 2, "military": 2, "strategic": 4, "people_finance_data": 1},
-   "import": {"civilian_goods": 0, "industrial": 0, "dual_use": 1, "military": 2, "strategic": 1, "people_finance_data": 2},
-   "technology_policy": "гражданское широко открыто, промышленность — открыто / по лицензии, двойное — под контролем, военное ограничено, стратегическое защищено; собственная крупная финансовая система"
+   "formed": {
+    "status": "CANON",
+    "when": "в сети с 3112 (конец Кордона)",
+    "date_canon": true
+   },
+   "internal": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 0,
+    "military": 0,
+    "strategic": 0,
+    "people_finance_data": 0
+   },
+   "export": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "dual_use": 2,
+    "military": 2,
+    "strategic": 4,
+    "people_finance_data": 1
+   },
+   "import": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 1,
+    "military": 2,
+    "strategic": 1,
+    "people_finance_data": 2
+   },
+   "technology_policy": "гражданское широко открыто, промышленность — открыто / по лицензии, двойное — под контролем, военное ограничено, стратегическое защищено; собственная крупная финансовая система",
+   "fault_lines": {
+    "weak_stays_because": "—",
+    "strong_tolerates_because": "—",
+    "profits": "конвейер и финансы Сола",
+    "pays": "зависимость от лицензии Когниума",
+    "resents": "элиты Сола — роль клиента по ядрам",
+    "cheats": "UNKNOWN (свои ядра Земли не раскрыты)",
+    "splits_if": "—"
+   }
   }
  },
  "nonaligned_types": {
-  "resource_neutral": {"ru": "ресурсный нейтрал / многовекторный поставщик"},
-  "strategic_multivector": {"ru": "многовекторный стратегический нейтрал"},
-  "ideological_isolationist": {"ru": "идеологический изоляционист"},
-  "newcomer_religious": {"ru": "новоприбывший религиозный неприсоединившийся актор"}
+  "resource_neutral": {
+   "ru": "ресурсный нейтрал / многовекторный поставщик"
+  },
+  "strategic_multivector": {
+   "ru": "многовекторный стратегический нейтрал"
+  },
+  "ideological_isolationist": {
+   "ru": "идеологический изоляционист"
+  },
+  "newcomer_religious": {
+   "ru": "новоприбывший религиозный неприсоединившийся актор"
+  }
  },
  "nonaligned": {
   "note": "Неприсоединившиеся — не блок и не союзники друг другу. Старый ярлык industry.json «autarkies» удалён (миграция 2026-11-05); отношения каждого — собственный профиль.",
   "hd69830_verde": {
    "player_role": "топливо и He-3 для всех сторон; пёстрый парк чужой техники — спрос на запчасти любых стандартов",
    "why_outside": "три газовых гиганта и сильная сырьевая база He-3; удалённость; слабая своя промышленность; нет гегемонических амбиций — продавать топливо всем выгоднее членства",
-   "independence": "нейтралитет полезен нескольким блокам сразу; захват или санкционная изоляция рвут поставки и дают больше проблем, чем выгоды",
+   "independence": "He-3 и газ нужны нескольким покупателям, удалённость и слабая привлекательность оккупации; рента нейтралитета достаётся грандам, церкви и посредникам — им есть что терять при любом союзе",
    "trades_with": "со всеми: He-3, газ, лёд; покупает оборудование разных стандартов — пёстрый парк техники",
    "restricted": "военное и стратегическое — как у продавцов",
-   "export": {"civilian_goods": 0, "industrial": 0, "dual_use": 1, "military": 2, "strategic": 4, "people_finance_data": 1},
-   "import": {"civilian_goods": 0, "industrial": 0, "dual_use": 1, "military": 1, "strategic": 1, "people_finance_data": 1}
+   "export": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 1,
+    "military": 2,
+    "strategic": 4,
+    "people_finance_data": 1
+   },
+   "import": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 1,
+    "military": 1,
+    "strategic": 1,
+    "people_finance_data": 1
+   }
   },
   "gj876_next": {
    "player_role": "концессии и доступ к Оракулу по лицензии; площадка, где блоки торгуют друг с другом и интригуют против друг друга",
    "why_outside": "чрезвычайно богатая система GJ 876, три газовых гиганта, крупные концессии, ресурсы нужны нескольким блокам; «Провидец» (Оракул) — уникальный вычислительный актив",
-   "independence": "каждый крупный игрок уже имеет там интересы (концессии Когниума и Керна) и боится, что попытка захватить всё передаст актив конкуренту или уничтожит баланс; Провидение сознательно играет блоки друг против друга",
+   "independence": "у нескольких сторон уже есть концессии (Когниум, Керн); никто не хочет, чтобы конкурент получил всё; захват может разрушить инфраструктуру и сделать Оракул бесполезным или недоступным; война дороже сделки. Провидение сознательно играет этим балансом",
    "trades_with": "со всеми крупными пространствами; концессионеры — Когниум и Керн",
    "restricted": "доступ к Оракулу — по лицензии; стратегическое — нет",
-   "export": {"civilian_goods": 0, "industrial": 0, "dual_use": 1, "military": 2, "strategic": 3, "people_finance_data": 1},
-   "import": {"civilian_goods": 0, "industrial": 0, "dual_use": 1, "military": 1, "strategic": 1, "people_finance_data": 1}
+   "export": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 1,
+    "military": 2,
+    "strategic": 3,
+    "people_finance_data": 1
+   },
+   "import": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 1,
+    "military": 1,
+    "strategic": 1,
+    "people_finance_data": 1
+   }
   },
   "delta_pav_karma": {
    "player_role": "закрытый рынок: продаёт точную механику через посредников, впускает мало; торговля с ней — через Свободную Карму или посредников и с надбавкой",
@@ -240,8 +927,22 @@
    "independence": "защищает прежде всего невыгодность захвата: стратегический выигрыш мал, газового гиганта и топливного приза нет, общество трудно интегрировать, оккупация дорога политически и административно, конфликт со Свободной Кармой и внешняя реакция делают вмешательство ещё менее привлекательным; супероружия нет",
    "trades_with": "ограниченно, через посредников: точная механика наружу, пища и вода внутри системы от Свободной Кармы; маяк системы держит Свободная Карма",
    "restricted": "люди, данные, инспекции, внешние технологии; стратегического и военного обмена нет",
-   "export": {"civilian_goods": 2, "industrial": 2, "dual_use": 3, "military": 4, "strategic": 4, "people_finance_data": 4},
-   "import": {"civilian_goods": 2, "industrial": 3, "dual_use": 4, "military": 4, "strategic": 4, "people_finance_data": 4}
+   "export": {
+    "civilian_goods": 2,
+    "industrial": 2,
+    "dual_use": 3,
+    "military": 4,
+    "strategic": 4,
+    "people_finance_data": 4
+   },
+   "import": {
+    "civilian_goods": 2,
+    "industrial": 3,
+    "dual_use": 4,
+    "military": 4,
+    "strategic": 4,
+    "people_finance_data": 4
+   }
   },
   "leo83_zion": {
    "player_role": "кризис 3126 в реальном времени: снабжение ковчега Ново-Фиваиды у 83 Leonis, контракты Керна у «Золотого Города», посредничество, разрешения на посадку; рынок без лицензии на ядра — старые корабли и запчасти",
@@ -250,98 +951,515 @@
    "crisis_3126": "для Синода это наконец дом — обетованная земля 83 Leonis B h; для Керна и современного права — давно описанная, оценённая, зарегистрированная и освоенная система со станцией «Золотой Город» (с 3045). Войны, санкций и международного режима нет",
    "trades_with": "всё, что нужно колонии на орбите, у всех, кто продаёт; рядом интересы Керна («Золотой Город»)",
    "restricted": "люди и данные — по воле Синода; к Всеобщей лицензии 2850 не присоединена — ядер Когниума не получает",
-   "export": {"civilian_goods": 0, "industrial": 1, "dual_use": 2, "military": 3, "strategic": 4, "people_finance_data": 2},
-   "import": {"civilian_goods": 0, "industrial": 0, "dual_use": 1, "military": 1, "strategic": 2, "people_finance_data": 2}
+   "export": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "dual_use": 2,
+    "military": 3,
+    "strategic": 4,
+    "people_finance_data": 2
+   },
+   "import": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 1,
+    "military": 1,
+    "strategic": 2,
+    "people_finance_data": 2
+   }
   }
  },
  "zone_profiles": {
   "gj832_gaia_zone": {
-   "export": {"civilian_goods": 4, "industrial": 4, "dual_use": 4, "military": 4, "strategic": 4, "people_finance_data": 2},
-   "import": {"civilian_goods": 3, "industrial": 4, "dual_use": 4, "military": 4, "strategic": 4, "people_finance_data": 2},
+   "export": {
+    "civilian_goods": 4,
+    "industrial": 4,
+    "dual_use": 4,
+    "military": 4,
+    "strategic": 4,
+    "people_finance_data": 2
+   },
+   "import": {
+    "civilian_goods": 3,
+    "industrial": 4,
+    "dual_use": 4,
+    "military": 4,
+    "strategic": 4,
+    "people_finance_data": 2
+   },
    "note": "people_finance_data 2 — только научные лицензии (licensed_science); ввоз гражданского 3 — снабжение кордона и экспедиций"
   }
  },
  "exceptions": [
-  {"id": "kern_finance_bridge", "player_role": "кредит, страховка и финансирование рейса доступны почти везде, даже у противников пула; не открывает стратегических и военных технологий", "actor": "cyg61_kern", "kind": "finance_bridge", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+  {
+   "id": "kern_finance_bridge",
+   "player_role": "кредит, страховка и финансирование рейса доступны почти везде, даже у противников пула; не открывает стратегических и военных технологий",
+   "actor": "cyg61_kern",
+   "kind": "finance_bridge",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
    "ru": "Керн: почти глобальная финансовая роль — кредит, страхование, крупные концессии, финансирование внешней торговли",
    "why": "его терпят даже те, кто его не любит: альтернативная финансовая инфраструктура хуже или дороже",
-   "cap": {"civilian_goods": 0, "industrial": 1, "people_finance_data": 1}, "scope": {"all_actors": true, "except_actors": ["delta_pav_karma"]}, "direction": "both"},
-  {"id": "agora_neutral_port", "player_role": "транзит и перевалка гражданского и промышленного груза между враждующими; секретную технологию через Агору не провезти", "actor": "lalande_hellas", "kind": "transit_hub", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "cap": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "people_finance_data": 1
+   },
+   "scope": {
+    "all_actors": true,
+    "except_actors": [
+     "delta_pav_karma"
+    ]
+   },
+   "direction": "both",
+   "self_interest": "Керн пользуется положением: долговое давление, страховые исключения, кредит под закупки у своих, концессии, захват залога, арбитраж в удобной юрисдикции, финансирование обеих сторон конфликта, дорогой кредит тем, кому негде взять, давление через рейтинг риска. Разрушать клиента невыгодно — выгодно, чтобы он жил, работал и был должен"
+  },
+  {
+   "id": "agora_neutral_port",
+   "player_role": "транзит и перевалка гражданского и промышленного груза между враждующими; секретную технологию через Агору не провезти",
+   "actor": "lalande_hellas",
+   "kind": "transit_hub",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
    "ru": "Агора: нейтральный порт, биржа, транзит, арбитраж, площадка переговоров",
    "why": "её нейтралитет полезен всем; закрывать или уничтожать Агору невыгодно даже противникам",
-   "cap": {"civilian_goods": 0, "industrial": 1, "dual_use": 2, "people_finance_data": 0}, "scope": {"all_actors": true, "except_actors": ["delta_pav_karma"]}, "direction": "both",
-   "transit_categories": ["civilian_goods", "industrial"]},
-  {"id": "mecca_jump_math", "player_role": "второй, независимый от Когниума источник ядер для Южного круга", "actor": "lalande_mecca", "kind": "strategic_autonomy", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
-   "ru": "Новая Мекка: собственная математика прыжка вне стандарта Когниума — стратегическая основа автономии Южного круга",
+   "cap": {
+    "civilian_goods": 0,
+    "industrial": 1,
+    "dual_use": 2,
+    "people_finance_data": 0
+   },
+   "scope": {
+    "all_actors": true,
+    "except_actors": [
+     "delta_pav_karma"
+    ]
+   },
+   "direction": "both",
+   "transit_categories": [
+    "civilian_goods",
+    "industrial"
+   ],
+   "self_interest": "нейтралитет — товар: комиссии, портовые сборы, арбитраж, биржа, посредничество, страхование, транзит, политический капитал. Принципиальность Агоры совпадает с коммерческим интересом достаточно часто, чтобы соседи были циничны"
+  },
+  {
+   "id": "mecca_jump_math",
+   "player_role": "второй, независимый от Когниума источник ядер для Южного круга",
+   "actor": "lalande_mecca",
+   "kind": "strategic_autonomy",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "ru": "Новая Мекка: собственная математика прыжка вне стандарта Когниума (CANON, решение автора 2026-11-05) — стратегическая основа автономии Южного круга; знание своё, станки и электроника частично чужие",
    "why": "Южный круг не зависит полностью от лицензий Когниума",
-   "cap": {"strategic": 1}, "scope": {"blocs": ["southern_circle"]}, "direction": "seller"},
-  {"id": "providence_multivector", "player_role": "одна площадка, где можно торговать со всеми крупными блоками; санкций не снимает", "actor": "gj876_next", "kind": "multivector_neutral", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "cap": {
+    "strategic": 1
+   },
+   "scope": {
+    "blocs": [
+     "southern_circle"
+    ]
+   },
+   "direction": "seller",
+   "self_interest": "мекканские ядра дороже и менее массовые, зато политически независимы; учёная элита Мекки держит знание в узком кругу — это и её власть внутри страны"
+  },
+  {
+   "id": "providence_multivector",
+   "player_role": "одна площадка, где можно торговать со всеми крупными блоками; санкций не снимает",
+   "actor": "gj876_next",
+   "kind": "multivector_neutral",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
    "ru": "Провидение: нейтральная ресурсная и интеллектуальная площадка, балансирует крупные блоки друг против друга",
    "why": "концессии Когниума и Керна; Оракул; ресурсы GJ 876 нужны всем",
-   "cap": {"civilian_goods": 0, "industrial": 0, "dual_use": 1, "people_finance_data": 1}, "scope": {"all_actors": true, "except_actors": ["delta_pav_karma"]}, "direction": "both",
-   "concession_holders": ["tau_ceti_cognium", "cyg61_kern"]},
-  {"id": "verde_fuel_supplier", "player_role": "топливо и He-3 продаются всем, даже при чужих конфликтах", "actor": "hd69830_verde", "kind": "fuel_supplier", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "cap": {
+    "civilian_goods": 0,
+    "industrial": 0,
+    "dual_use": 1,
+    "people_finance_data": 1
+   },
+   "scope": {
+    "all_actors": true,
+    "except_actors": [
+     "delta_pav_karma"
+    ]
+   },
+   "direction": "both",
+   "concession_holders": [
+    "tau_ceti_cognium",
+    "cyg61_kern"
+   ],
+   "self_interest": "концессию продлить одному, научный доступ дать другому, кредит взять у третьего, контрольного пакета не дать никому: каждому выгоднее терпеть Провидение, чем позволить другому его забрать"
+  },
+  {
+   "id": "verde_fuel_supplier",
+   "player_role": "топливо и He-3 продаются всем, даже при чужих конфликтах",
+   "actor": "hd69830_verde",
+   "kind": "fuel_supplier",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
    "ru": "Сельта-Верде: нейтральный поставщик топлива и He-3",
    "why": "многовекторность выгоднее членства",
-   "cap": {"civilian_goods": 0, "industrial": 1}, "scope": {"all_actors": true, "except_actors": ["delta_pav_karma"]}, "direction": "both"}
+   "cap": {
+    "civilian_goods": 0,
+    "industrial": 1
+   },
+   "scope": {
+    "all_actors": true,
+    "except_actors": [
+     "delta_pav_karma"
+    ]
+   },
+   "direction": "both",
+   "self_interest": "нейтралитет кормит элиты: гранды и церковь делят концессии и семейные договоры, посредники берут свою долю, разные цены для разных покупателей, коррупция — обычное дело; не «Швейцария газа», а газовая рента"
+  }
  ],
  "licences": [
-  {"id": "universal_jump_licence_2850", "player_role": "кто может легально купить ядро прыжка Когниума; не держатели живут на своих ядрах, ядрах Цитадели или Мекки, копиях или старом флоте", "ru": "Всеобщая лицензия 2850 (ядра прыжка Управления Маяков)", "licensor": "tau_ceti_cognium", "category": "strategic",
-   "holders_from_jump_how": ["licensed"],
-   "extra_holders": {"sol_authority": "ядра покупает по лицензии Когниума (industry_schools; свои ядра Земли — UNKNOWN у автора)"},
-   "non_holder_level": 4, "status": "CANON",
+  {
+   "id": "universal_jump_licence_2850",
+   "player_role": "кто может легально купить ядро прыжка Когниума; не держатели живут на своих ядрах, ядрах Цитадели или Мекки, копиях или старом флоте",
+   "ru": "Всеобщая лицензия 2850 (ядра прыжка Управления Маяков)",
+   "licensor": "tau_ceti_cognium",
+   "category": "strategic",
+   "holders_from_jump_how": [
+    "licensed"
+   ],
+   "extra_holders": {
+    "sol_authority": "ядра покупает по лицензии Когниума (industry_schools; свои ядра Земли — UNKNOWN у автора)"
+   },
+   "non_holder_level": 4,
+   "status": "CANON",
    "basis": "2850: технология лицензирована всем колониям, кроме Цитадели и Новой Кармы (CANON); Сварог отказался ради суверенитета (CANON); держатели — единицы с world.json jump_technology how = licensed. Не держатели: Цитадель и Мекка (свои ядра; у Мекки — PROPOSAL), Сварог, Пояс Раздора, Свободные поселения (копии после утечки 2862), Новая Карма (отказ от сети), Третья Эллада и Ново-Фиваида (прибыли после 3122, доступа ещё нет)",
-   "note": "Когниум продаёт запечатанные ядра только держателям; не держатель получает strategic = 4 от Когниума независимо от блока и исключений"}
+   "note": "Когниум продаёт запечатанные ядра только держателям; не держатель получает strategic = 4 от Когниума независимо от блока и исключений",
+   "accession": {
+    "hd114783_hellas3": {
+     "status": "negotiating",
+     "ru": "переговоры о присоединении",
+     "wants": "отчаянно нужны современные корабли; элиты хотят модернизации; Лига втягивает её в свои институты; Керн и Когниум видят рынок",
+     "conditions": [
+      "инспекции и технический аудит",
+      "современные транспондеры Т-1",
+      "регистрация флота",
+      "замена части старого оборудования",
+      "соблюдение экспортного контроля",
+      "урегулирование части имущественных претензий к Керну"
+     ],
+     "politics": "одни полисы хотят лицензию, другие считают её капитуляцией перед Керном; чиновники Лиги используют вступление для давления; компании заранее делят будущие контракты — торг, взятки, отсрочки"
+    },
+    "leo83_zion": {
+     "status": "not_applying",
+     "ru": "не подаёт",
+     "politics": "Синод расколот: одни — без гипера не выжить; другие — гипер «врата без благодати», он разрушит изоляцию, уведёт молодёжь и сломает власть Синода. Будущая политическая линия, не решённый вопрос"
+    }
+   }
+  }
  ],
+ "core_autonomy": {
+  "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+  "note": "Проверка заявленной стратегической автономии на модели потоков (lab.py core_autonomy_scenarios): доля внешнего спроса блока на ядра, которую в мирное время закрывает свой производитель, и покрытие после отключения ядер лицензиара (обычный и мобилизационный режим: перераспределение труда производителя в ядра ценой гражданского выпуска, износ = потеря выхода). Мощность производителя калибруется полем world.json jump_technology.capacity_x.",
+  "cases": {
+   "southern_circle": {
+    "bloc": "southern_circle",
+    "maker": "lalande_mecca",
+    "cut_licensor": "tau_ceti_cognium",
+    "peacetime_share_target": [
+     0.2,
+     0.4
+    ],
+    "survival_coverage": 0.6,
+    "mobilisation": {
+     "alloc_x": 2.5,
+     "wear_output_x": 0.85
+    }
+   },
+   "citadel_compact": {
+    "bloc": "citadel_compact",
+    "maker": "wolf359_citadel",
+    "cut_licensor": null,
+    "peacetime_share_target": [
+     0.6,
+     1.0
+    ],
+    "survival_coverage": 0.6,
+    "mobilisation": {
+     "alloc_x": 1.0,
+     "wear_output_x": 1.0
+    }
+   }
+  }
+ },
  "sanctions_player_role": "закрытые категории товаров на этой паре: досмотры, конфискация, контрабанда и серые маршруты для игрока",
  "sanctions": [
-  {"id": "cognium_citadel_tech_denial", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW", "kind": "technology_denial",
-   "from": "tau_ceti_cognium", "to": "wolf359_citadel", "mutual": true, "since": 2855,
+  {
+   "id": "cognium_citadel_tech_denial",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "kind": "technology_denial",
+   "from": "tau_ceti_cognium",
+   "to": "wolf359_citadel",
+   "mutual": true,
+   "since": 2855,
    "basis": "relations_anchor wolf359_citadel — tau_ceti_cognium (2855, CANON): Цитадель подозревает гипер и отказывается от инспекций; вне Всеобщей лицензии 2850 (CANON)",
-   "level": {"dual_use": 3, "military": 4, "strategic": 4, "people_finance_data": 3}},
-  {"id": "cognium_svarog_licence_revoked", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW", "kind": "technology_denial",
-   "from": "tau_ceti_cognium", "to": "proxima_outpost", "mutual": true, "since": 2850,
+   "level": {
+    "dual_use": 3,
+    "military": 4,
+    "strategic": 4,
+    "people_finance_data": 3
+   },
+   "evasion": "электроника и вычислители — через Агору и Пояс; ядер нет совсем"
+  },
+  {
+   "id": "cognium_svarog_licence_revoked",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "kind": "technology_denial",
+   "from": "tau_ceti_cognium",
+   "to": "proxima_outpost",
+   "mutual": true,
+   "since": 2850,
    "basis": "relations_anchor proxima_outpost — tau_ceti_cognium (2850, CANON): отказ от лицензии ради суверенитета; пиратские копии — нарушение ИС Когниума",
-   "level": {"dual_use": 3, "military": 4, "strategic": 4}},
-  {"id": "harmony_strife_embargo", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW", "kind": "embargo",
-   "from": "eps_eri_harmony", "to": "eps_eri_strife", "mutual": true, "since": 2575, "units_from": ["eps_eri_harmony"],
+   "level": {
+    "dual_use": 3,
+    "military": 4,
+    "strategic": 4
+   },
+   "evasion": "запчасти двойного назначения — через Пояс Раздора; копии ядер Сварог делает сам"
+  },
+  {
+   "id": "harmony_strife_embargo",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "kind": "embargo",
+   "from": "eps_eri_harmony",
+   "to": "eps_eri_strife",
+   "mutual": true,
+   "since": 2575,
+   "units_from": [
+    "eps_eri_harmony"
+   ],
    "basis": "relations_anchor eps_eri_harmony — eps_eri_strife (2575, CANON): беглецы HOMEWARD-1; для Гармонии Пояс — «свой Тайвань»",
-   "level": {"industrial": 2, "dual_use": 4, "military": 4, "strategic": 4, "people_finance_data": 3}},
-  {"id": "karma_split_closure", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW", "kind": "embargo",
-   "from": "delta_pav_karma", "to": "delta_pav_freekarma", "mutual": true, "since": 2420,
+   "level": {
+    "industrial": 2,
+    "dual_use": 3,
+    "military": 4,
+    "strategic": 4,
+    "people_finance_data": 3
+   },
+   "evasion": "одна система: контрабанда постоянна, гражданское идёт открыто, двойное — серыми рейсами"
+  },
+  {
+   "id": "karma_split_closure",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "kind": "embargo",
+   "from": "delta_pav_karma",
+   "to": "delta_pav_freekarma",
+   "mutual": true,
+   "since": 2420,
    "basis": "relations_anchor delta_pav_karma — delta_pav_freekarma (2420, CANON): исход нечистых; пища и вода внутри системы всё же идут от Свободной Кармы",
-   "level": {"industrial": 3, "dual_use": 4, "military": 4, "strategic": 4, "people_finance_data": 4}},
-  {"id": "maland_firmament_cold_war", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW", "kind": "local_cold_war",
-   "from": "hd40307_maland", "to": "eps_eri_harmony", "mutual": true, "since": 2680, "units_to": ["hd40307_firmament"],
+   "level": {
+    "industrial": 3,
+    "dual_use": 3,
+    "military": 4,
+    "strategic": 4,
+    "people_finance_data": 4
+   },
+   "evasion": "пища и вода Свободной Кармы идут Новой Карме вопреки ненависти: голод дороже гордости",
+   "full_closure_reason": {
+    "people_finance_data": "исход 2420: обе стороны закрыли границу для людей и денег; Новая Карма сама закрыта для данных и миграции"
+   }
+  },
+  {
+   "id": "maland_firmament_cold_war",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "kind": "local_cold_war",
+   "from": "hd40307_maland",
+   "to": "eps_eri_harmony",
+   "mutual": true,
+   "since": 2680,
+   "units_to": [
+    "hd40307_firmament"
+   ],
    "basis": "relations_anchor hd40307_maland — hd40307_firmament (2680, CANON): стычка ~1 000 погибших, холодная война; локально — метрополия Синь Хэ не под санкцией",
-   "level": {"civilian_goods": 2, "industrial": 3, "dual_use": 4, "military": 4, "strategic": 4, "people_finance_data": 3}},
-  {"id": "hellas2_newindia_water_war_residue", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW", "kind": "arms_denial",
-   "from": "hd20794_hellas2", "to": "hd20794_newindia", "mutual": true, "since": 2580,
+   "level": {
+    "civilian_goods": 2,
+    "industrial": 3,
+    "dual_use": 3,
+    "military": 4,
+    "strategic": 4,
+    "people_finance_data": 3
+   },
+   "evasion": "гражданское и часть промышленного — через Вторую Элладу (реле HD 10360 продаёт обеим сторонам)"
+  },
+  {
+   "id": "hellas2_newindia_water_war_residue",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "kind": "arms_denial",
+   "from": "hd20794_hellas2",
+   "to": "hd20794_newindia",
+   "mutual": true,
+   "since": 2580,
    "basis": "relations_anchor hd20794_hellas2 — hd20794_newindia (2580, CANON): Война за воду; водные права пояса Койпера до сих пор спорны",
-   "level": {"dual_use": 2, "military": 4}},
-  {"id": "kern_hellas3_claims_freeze", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW", "kind": "financial_restriction", "temporary": true,
-   "from": "cyg61_kern", "to": "hd114783_hellas3", "mutual": true, "since": 3122,
+   "level": {
+    "dual_use": 2,
+    "military": 4
+   },
+   "evasion": "старый оружейный запрет, который никто не считает разумным, но отменить его унизительно для обеих"
+  },
+  {
+   "id": "kern_hellas3_claims_freeze",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "kind": "financial_restriction",
+   "temporary": true,
+   "from": "cyg61_kern",
+   "to": "hd114783_hellas3",
+   "mutual": true,
+   "since": 3122,
    "basis": "relations_anchor hd114783_hellas3 — cyg61_kern (3122, CANON): заявки на систему, застолбленную Одиссеем в 2290 по земному праву; спор ждёт арбитража",
-   "level": {"industrial": 2, "people_finance_data": 3}},
-  {"id": "europa_freeclans_registry_dispute", "status": "PROPOSAL_PENDING_AUTHOR_REVIEW", "kind": "registry_dispute",
-   "from": "gj581_europa", "to": "gj581_freeclans", "mutual": true, "since": 2620,
+   "level": {
+    "industrial": 2,
+    "people_finance_data": 3
+   },
+   "evasion": "кредит Третья Эллада ищет через Агору и Сол — дороже"
+  },
+  {
+   "id": "europa_freeclans_registry_dispute",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "kind": "registry_dispute",
+   "from": "gj581_europa",
+   "to": "gj581_freeclans",
+   "mutual": true,
+   "since": 2620,
    "basis": "relations_anchor gj581_europa — gj581_freeclans (2620, CANON): протекторат; кланы не признают реестр; утечка спецификаций 2862 вышла из протектората",
-   "level": {"dual_use": 3, "military": 3}}
+   "level": {
+    "dual_use": 3,
+    "military": 3
+   },
+   "evasion": "кланы продают двойное назначение через Пояс; Новая Европа делает вид, что протекторат работает"
+  }
  ],
  "tensions_without_measures": [
-  {"pair": ["leo83_zion", "cyg61_kern"], "since": 3126, "status": "CANON", "text": "Ново-Фиваида прибыла к своей обетованной земле, где уже стоит «Золотой Город» Керна; кризис только начинается — мер нет, урегулирование не определено (вопрос автору)"},
-  {"pair": ["lalande_hellas", "lalande_mecca"], "since": 2243, "status": "PROPOSAL", "text": "одна бедная система на двоих; соперничество без санкций, разные блоки"},
-  {"pair": ["wolf359_citadel", "lalande_mecca"], "since": 2355, "status": "CANON", "text": "подозрение по IRON-SHIELD-2; сейчас нейтралитет"},
-  {"pair": ["eps_eri_harmony", "gj832_tianhe"], "since": 2790, "status": "CANON", "text": "две китайские линии внутри одного пакта"},
-  {"pair": ["tau_ceti_cognium", "gj832_tianhe"], "since": 2790, "status": "CANON", "text": "старая обида и лицензионная рента; мер нет"},
-  {"pair": ["gj832_tianhe", "gj832_gaia_zone"], "since": 2510, "status": "CANON", "text": "карантин — режим зоны, не санкция"}
+  {
+   "pair": [
+    "leo83_zion",
+    "cyg61_kern"
+   ],
+   "since": 3126,
+   "status": "CANON",
+   "text": "Ново-Фиваида прибыла к своей обетованной земле, где уже стоит «Золотой Город» Керна; кризис только начинается — мер нет, урегулирование не определено (вопрос автору)"
+  },
+  {
+   "pair": [
+    "lalande_hellas",
+    "lalande_mecca"
+   ],
+   "since": 2243,
+   "status": "PROPOSAL",
+   "text": "одна бедная система на двоих; соперничество без санкций, разные блоки"
+  },
+  {
+   "pair": [
+    "wolf359_citadel",
+    "lalande_mecca"
+   ],
+   "since": 2355,
+   "status": "CANON",
+   "text": "подозрение по IRON-SHIELD-2; сейчас нейтралитет"
+  },
+  {
+   "pair": [
+    "eps_eri_harmony",
+    "gj832_tianhe"
+   ],
+   "since": 2790,
+   "status": "CANON",
+   "text": "две китайские линии внутри одного пакта"
+  },
+  {
+   "pair": [
+    "tau_ceti_cognium",
+    "gj832_tianhe"
+   ],
+   "since": 2790,
+   "status": "CANON",
+   "text": "старая обида и лицензионная рента; мер нет"
+  },
+  {
+   "pair": [
+    "gj832_tianhe",
+    "gj832_gaia_zone"
+   ],
+   "since": 2510,
+   "status": "CANON",
+   "text": "карантин — режим зоны, не санкция"
+  }
  ],
  "open_questions": [
-  "Политическое урегулирование кризиса Ново-Фиваида — Керн после прибытия в 3126 году (до решения автора мер нет).",
-  "Собственная математика прыжка Мекки (world.json jump_technology — PROPOSAL): принять в CANON или отклонить? При отклонении Южный круг теряет независимый источник ядер (см. отчёт POLITICAL_ORDER.md).",
-  "Присоединение новоприбывших (Третья Эллада, Ново-Фиваида) к Всеобщей лицензии 2850: когда и на каких условиях?",
-  "Свободная Карма в пуле Когниума при конфликте с Новой Кармой: поддерживает ли пул эмбарго коллективно?",
-  "Нелицензионные ядра Сварога: входят ли в общий стратегический обмен Пакта Цитадели или Сварог только покупает у Цитадели?",
-  "Свои ядра Земли / Сола — UNKNOWN у автора; лицензионная зависимость сохранена."
- ]
+  "Исход кризиса Ново-Фиваида — Керн: временный порядок записан, конец открыт (UNKNOWN).",
+  "Свои ядра Земли / Сола — UNKNOWN (сознательно не раскрыто).",
+  "Если автор хочет, чтобы Мекка закрывала 20–40 % внешнего спроса круга, модель потоков даёт либо ~53 % (capacity_x 2.5, круг выживает при отключении), либо ~19 % (2.2, круг не выживает: 57 %) — выбрать приоритет: доля или живучесть."
+ ],
+ "interim_arrangements": [
+  {
+   "id": "leo83_status_quo_3126",
+   "parties": [
+    "leo83_zion",
+    "cyg61_kern"
+   ],
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "since": 3126,
+   "stable": false,
+   "ru": "Временный порядок у 83 Leonis (неустойчивое соглашение, не мир)",
+   "kern_keeps": [
+    "существующие объекты и «Золотой Город»",
+    "права собственности и регистрацию (не отказывается)",
+    "эксплуатацию станции и концессий",
+    "требования признать долги, портовые и маячные сборы, прежние договоры"
+   ],
+   "thebaid_gets": [
+    "право высадки",
+    "временно зарезервированный участок 83 Leonis B h",
+    "коридор снабжения",
+    "не признаёт окончательно претензии Керна на всю систему"
+   ],
+   "frozen": "новые крупные сделки с землёй вокруг спорного участка заморожены",
+   "arbitration": "место арбитража само спорно: Керн тянет дело на свою Биржу, Синод не доверяет коммерческим судам; рабочий компромисс — комиссия по процедуре Лиги Лаланд в Агоре, но без принудительной силы",
+   "real_lever": "коридор снабжения физически проходит через маяк BCN-045-BR, оператор которого — Керн: Керн «даёт» коридор и берёт за него сборы, поэтому его уступки обратимы",
+   "kern_motives": {
+    "does_not_want": [
+     "славы выселителя 8 900 паломников",
+     "уничтожения будущих клиентов",
+     "дорогой силовой операции",
+     "вмешательства конкурентов (Когниум, Лига)"
+    ],
+    "wants": [
+     "землю",
+     "контракты и инфраструктурные платежи",
+     "кредиты",
+     "зависимость Фиваиды"
+    ]
+   },
+   "synod_motives": {
+    "does_not_want": [
+     "признать, что 856 лет летели к чужой собственности",
+     "потерять власть после открытия миру",
+     "массовой эмиграции молодёжи"
+    ],
+    "needs": [
+     "медикаменты",
+     "оборудование",
+     "топливо",
+     "современные материалы",
+     "возможно кредиты"
+    ]
+   },
+   "player_hooks": [
+    "перевозки и гуманитарные грузы на ковчег",
+    "геодезия спорного участка",
+    "доставка юридических документов",
+    "охрана и сопровождение переговорщиков",
+    "контрабанда мимо сборов Керна",
+    "работа на Керн и работа на Синод",
+    "расследование провокаций",
+    "радикалы с обеих сторон"
+   ],
+   "outcome": "UNKNOWN — исход не решён заранее",
+   "analogy": "временные «статус-кво» на спорной земле (status quo святых мест, мораторий Антарктического договора): держатся, пока сторонам дороже ломать, чем терпеть"
+  }
+ ],
+ "sanctions_rule": {
+  "ru": "Санкции редко герметичны: стратегическое и военное можно почти закрыть; гражданское обычно течёт; промышленное идёт через посредников; двойное назначение — главный рай серых схем. Полное закрытие (4) гражданского, промышленного или двойного назначения требует названной причины (full_closure_reason).",
+  "evasion": "обход стоит дороже (надбавка уровня 3), дольше, рискованнее, создаёт посредников и иногда ухудшает качество",
+  "analogy": "эмбарго против Ирана, СССР (CoCom), ЕС–Китай по оружию с 1989: оружие закрыто десятилетиями, станки и электроника — через третьи страны"
+ }
 }

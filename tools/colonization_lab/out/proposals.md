@@ -2,7 +2,7 @@
 
 Генерируется `lab.py` из статусов `canon/*.json` (knowledge.py). CANON = есть в заметках автора; PROPOSAL = добавлено/пересчитано Claude или является результатом модели; UNKNOWN = намеренно без ответа. Видимость: PUBLIC_RECORD / AUTHOR_TRUTH.
 
-Счётчики: AUTHOR_TRUTH 17, CANON 310, PROPOSAL 291, PUBLIC_RECORD 591, UNKNOWN 7
+Счётчики: AUTHOR_TRUTH 17, CANON 311, PROPOSAL 290, PUBLIC_RECORD 591, UNKNOWN 7
 
 Все выходы модели (население 3126, экономика, коридоры, технологии) — PROPOSAL (model) и в этот список не перечисляются поштучно.
 
@@ -230,7 +230,7 @@
 | jump_chronology/3040 | PROPOSAL | PUBLIC_RECORD | реконсиляция (часть III) | Керн и Когниум ставят экспедиционные маяки в глубоком кусте (HD 114783, 83 Leonis, HD 104067) — без связи с ядром (разры |
 | jump_chronology/3112 | PROPOSAL | PUBLIC_RECORD | реконсиляция (часть III) | Земля запускает собственный маяк и флотскую программу |
 
-## jump_technology (11)
+## jump_technology (10)
 
 | путь | статус | видимость | основание | что |
 |---|---|---|---|---|
@@ -241,7 +241,6 @@
 | jump_technology/cyg61_kern@2790 | PROPOSAL | PUBLIC_RECORD | маяк 2790 | маяк 2790 |
 | jump_technology/delta_pav_freekarma@2795 | PROPOSAL | PUBLIC_RECORD | маяк 2795 | маяк 2795 |
 | jump_technology/lalande_hellas@2800 | PROPOSAL | PUBLIC_RECORD | маяк 2800 | маяк 2800 |
-| jump_technology/lalande_mecca@2800 | PROPOSAL | PUBLIC_RECORD | собственная математика прыжка — вне стандарта Когниума | собственная математика прыжка — вне стандарта Когниума |
 | jump_technology/gj581_europa@2805 | PROPOSAL | PUBLIC_RECORD | маяк 2805 | маяк 2805 |
 | jump_technology/eps_eri_strife@2862 | PROPOSAL | PUBLIC_RECORD | пиратство после утечки 2862 | пиратство после утечки 2862 |
 | jump_technology/proxima_outpost@2862 | PROPOSAL | PUBLIC_RECORD | отказ от лицензии (CANON); пиратские копии после 2862 — допущение | отказ от лицензии (CANON); пиратские копии после 2862 — допущение |

@@ -517,8 +517,18 @@ class PoliticalTradeAccess:
         self.unit = {a["id"]: (a["id"] if a["id"] in self.PO.unit_actor else a.get("owner")) for a in actors}
         self._m = {}
 
+    def closed_copy(self, closed):
+        """Scenario copy: closed = set of (seller_unit, buyer_unit, good) forced to level 4."""
+        o = PoliticalTradeAccess.__new__(PoliticalTradeAccess)
+        o.__dict__.update(self.__dict__)
+        o._m = {}
+        o.closed = set(closed)
+        return o
+
     def level(self, seller, buyer, g):
         s, b = self.unit.get(seller), self.unit.get(buyer)
+        if (s, b, g) in getattr(self, "closed", ()):
+            return 4
         if s is None or b is None or s not in self.PO.unit_actor or b not in self.PO.unit_actor:
             return 0
         return self.PO.access(s, b)[self.cat[g]]
@@ -531,6 +541,66 @@ class PoliticalTradeAccess:
 
     def end_use(self, g):
         return self.cat[g] in self.end
+
+    def preferred(self, buyer, g):
+        """(maker_id, floor_share, price_tolerance_x) when the buyer's bloc reserves strategic demand for its own maker."""
+        if self.cat[g] != "strategic":
+            return None
+        u = self.unit.get(buyer)
+        b = self.PO.bloc_of_unit(u) if u in self.PO.unit_actor else None
+        sp = self.PO.blocs[b].get("strategic_procurement") if b else None
+        if not sp or sp["maker"] == u:
+            return None
+        return sp["maker"], sp["floor_share"], sp["price_tolerance_x"]
+
+
+def core_autonomy_scenarios(econ, base, actors, profiles, E, g3126, relations, pol_access, ctrl):
+    """Strategic autonomy of blocs with their own core maker (political_order core_autonomy):
+    peacetime share of the bloc's external core demand covered by the bloc maker, and coverage of the
+    bloc's core consumption after the licensor's cores are cut off - normal and mobilised maker."""
+    PO = pol_access.PO
+    spec = PO.P.get("core_autonomy", {})
+    out = {}
+    for name, cfg in sorted(spec.get("cases", {}).items()):
+        maker, licensor = cfg["maker"], cfg["cut_licensor"]
+        members = [u for u in PO.bloc_units(cfg["bloc"]) if u != maker and u in econ._byid]
+        ext = sum(base["imp"][u]["drive_cores"] for u in members)
+        from_maker = sum(q for (s_, b_, g_), q in base["pair"].items() if g_ == "drive_cores" and s_ == maker and b_ in members)
+        row = dict(bloc=cfg["bloc"], maker=maker, members=members, external_demand=round(ext, 3), from_maker=round(from_maker, 3),
+                   maker_share=round(from_maker / ext, 3) if ext > 0 else None, target_share=cfg["peacetime_share_target"],
+                   peacetime_coverage={u: round(min(1.5, (base["made"][u]["drive_cores"] + base["imp"][u]["drive_cores"] - base["exp"][u]["drive_cores"])
+                                                    / econ.consumption(econ._byid[u])["drive_cores"]), 3) for u in members + [maker]})
+
+        def run(mobilise):
+            acc = pol_access.closed_copy({(licensor, u, "drive_cores") for u in members})
+            e2 = trade.Economy(actors, profiles, E, g3126, access=acc)
+            e2.stock = json.loads(json.dumps(econ.stock))
+            if mobilise:
+                a = e2.alloc[maker]
+                a["drive_cores"] *= cfg["mobilisation"]["alloc_x"]
+                t = sum(a.values())
+                e2.alloc[maker] = {g: v / t for g, v in a.items()}
+                e2.mult[maker]["drive_cores"] *= cfg["mobilisation"]["wear_output_x"]
+            snap = e2.snapshot(e2.run(14, relations), years=6)
+            cov = {}
+            for u in members + [maker]:
+                c = e2._byid[u]
+                need = e2.consumption(c)["drive_cores"]
+                have = snap["made"][u]["drive_cores"] + snap["imp"][u]["drive_cores"] - snap["exp"][u]["drive_cores"]
+                cov[u] = round(min(1.5, have / need), 3) if need > 0 else None
+            members_need = sum(e2.consumption(e2._byid[u])["drive_cores"] for u in members)
+            members_have = sum(snap["imp"][u]["drive_cores"] for u in members)
+            civil = {g: round(snap["made"][maker][g] / ctrl["made"][maker][g] - 1, 3) for g in ("components", "electronics", "precision", "food")
+                     if ctrl["made"][maker][g] > 0.05}
+            price = round(snap["prices"][members[0]]["drive_cores"] / ctrl["prices"][members[0]]["drive_cores"] - 1, 3) if members else None
+            return dict(coverage=cov, members_coverage=round(members_have / members_need, 3) if members_need else None,
+                        maker_civil_output_change=civil, member_core_price_change=price)
+        if licensor:
+            row["cutoff"] = run(False)
+            row["cutoff_mobilised"] = run(True)
+            row["survives"] = (row["cutoff_mobilised"]["members_coverage"] or 0) >= cfg["survival_coverage"]
+        out[name] = row
+    return out
 
 class LegacyEconomy:
     """The pre-2026-11-02 market (per-capita demand, transport cost independent of mass), kept only to
@@ -958,7 +1028,7 @@ def run(seed):
     core = {}
     for j in W["jump_technology"]:
         if j["how"] in CORE_HOW:
-            core[j["unit"]] = max(core.get(j["unit"], 0.0), CORE_HOW[j["how"]] * j["level"])
+            core[j["unit"]] = max(core.get(j["unit"], 0.0), CORE_HOW[j["how"]] * j["level"] * j.get("capacity_x", 1.0))
     actors = [c for c in cols_rt if c.get("economic_actor", True)] + extra
     for a in actors:
         a["core_maker"] = core.get(a["id"], 0.0)
@@ -1047,6 +1117,7 @@ def run(seed):
                 if d:
                     deltas[c["id"]] = d
             shock_out[f"{sh['id']}@{cid}"] = deltas
+    core_autonomy = core_autonomy_scenarios(econ, base, actors, profiles, E, g3126, relations, pol_access, ctrl)
     social = {}
     for sh in SHOCKS:
         for c in eco:
@@ -1095,7 +1166,7 @@ def run(seed):
     return dict(seed=seed, E=E, missions=missions, voyages=voyages, sanity=sanity, cols=cols_rt, profiles=profiles, growth=growth,
                 base=base, wealth=wealth, rel=rel, shocks=shock_out, social=social, earth=earth, net=net, world=W,
                 units=units, earth_hist=earth_hist, sens=sens, corridors=corridors, flow_diff=flow_diff, legacy=lbase,
-                actors=actors, assets=assets, earth_return=ret, migration=migr, econ=econ, tmax=tmax)
+                actors=actors, assets=assets, earth_return=ret, migration=migr, econ=econ, tmax=tmax, core_autonomy=core_autonomy)
 
 
 def compare_flows(lbase, base, cmap):
@@ -1208,7 +1279,8 @@ def earth_return(units, actors, base, profiles, W, E, g3126, assets, tmax):
 
 def to_json(R):
     out = dict(seed=R["seed"], missions={}, colonies={}, economy={}, relations=R["rel"], shocks=R["shocks"],
-               social=R["social"], earth_3126=R["earth"], network={str(k): v for k, v in R["net"].items()}, sanity=R["sanity"])
+               social=R["social"], earth_3126=R["earth"], network={str(k): v for k, v in R["net"].items()}, sanity=R["sanity"],
+               core_autonomy=R["core_autonomy"])
     for mid, v in sorted(R["voyages"].items()):
         out["missions"][mid] = dict(events=v.events, flags=v.flags, avg_c=None if v.avg_c is None else round(v.avg_c, 4),
                                     required_watch=getattr(v, "req_watch", None), cycles_needed=round(getattr(v, "cycles_needed", 0.0), 2),

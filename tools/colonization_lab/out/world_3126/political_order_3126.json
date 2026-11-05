@@ -600,15 +600,14 @@
    "levels": [
     2,
     3,
-    4,
+    3,
     4,
     4,
     4
    ],
    "why": [
     "max(export seller, import buyer)",
-    "karma_split_closure industrial=3",
-    "karma_split_closure dual_use=4"
+    "karma_split_closure industrial=3"
    ]
   },
   "delta_pav_karma|eps_eri_harmony": {
@@ -915,7 +914,7 @@
    "levels": [
     0,
     2,
-    4,
+    3,
     4,
     4,
     3
@@ -923,7 +922,7 @@
    "why": [
     "max(export seller, import buyer)",
     "harmony_strife_embargo industrial=2",
-    "harmony_strife_embargo dual_use=4",
+    "harmony_strife_embargo dual_use=3",
     "harmony_strife_embargo military=4",
     "harmony_strife_embargo people_finance_data=3"
    ]
@@ -1210,7 +1209,7 @@
    "levels": [
     0,
     2,
-    4,
+    3,
     4,
     4,
     3
@@ -1218,7 +1217,6 @@
    "why": [
     "max(export seller, import buyer)",
     "harmony_strife_embargo industrial=2",
-    "harmony_strife_embargo dual_use=4",
     "harmony_strife_embargo military=4",
     "harmony_strife_embargo strategic=4",
     "harmony_strife_embargo people_finance_data=3"
@@ -3969,7 +3967,7 @@
    "levels": [
     2,
     3,
-    4,
+    3,
     4,
     4,
     3
@@ -3978,7 +3976,7 @@
     "max(export seller, import buyer)",
     "maland_firmament_cold_war civilian_goods=2",
     "maland_firmament_cold_war industrial=3",
-    "maland_firmament_cold_war dual_use=4",
+    "maland_firmament_cold_war dual_use=3",
     "maland_firmament_cold_war military=4",
     "maland_firmament_cold_war people_finance_data=3"
    ]
@@ -4263,7 +4261,7 @@
    "levels": [
     2,
     3,
-    4,
+    3,
     4,
     4,
     3
@@ -4272,7 +4270,7 @@
     "max(export seller, import buyer)",
     "maland_firmament_cold_war civilian_goods=2",
     "maland_firmament_cold_war industrial=3",
-    "maland_firmament_cold_war dual_use=4",
+    "maland_firmament_cold_war dual_use=3",
     "maland_firmament_cold_war military=4",
     "maland_firmament_cold_war people_finance_data=3"
    ]
@@ -7171,6 +7169,26 @@
   {
    "check": "every_element_has_player_role",
    "detail": "Chekhov's gun: all blocs, non-aligned, units, exceptions, licences, sanctions",
+   "ok": true
+  },
+  {
+   "check": "sanctions_realistically_leaky",
+   "detail": "civilian / industrial / dual-use never fully closed without a stated reason; every measure has an evasion route",
+   "ok": true
+  },
+  {
+   "check": "no_pool_wide_embargo_on_karma",
+   "detail": "only Free Karma's own measure; pool coordinates strategic / dual-use / IP, civilian trade is national",
+   "ok": true
+  },
+  {
+   "check": "thebaid_kern_interim_open_no_sanctions",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "newcomers_not_licensed_yet",
+   "detail": "",
    "ok": true
   },
   {

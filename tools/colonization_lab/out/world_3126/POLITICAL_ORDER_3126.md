@@ -45,11 +45,11 @@ nonaligned (4): delta_pav_karma (ideological_isolationist), gj876_next (strategi
 | продавец \ покупатель | tau_ceti_cognium | eps_eri_harmony | lalande_hellas | hd20794_newindia | wolf359_citadel | eps_eri_strife | sol_authority | delta_pav_karma | gj876_next | hd69830_verde | leo83_zion | gj832_gaia_zone |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | tau_ceti_cognium | — | 011222 | 001220 | 011221 | 013443 | 001241 | 001222 | 234444 | 001221 | 001221 | 001242 | 344442 |
-| eps_eri_harmony | 012242 | — | 012240 | 012242 | 012243 | 024443 | 012242 | 234444 | 001241 | 012242 | 012242 | 344442 |
+| eps_eri_harmony | 012242 | — | 012240 | 012242 | 012243 | 023443 | 012242 | 234444 | 001241 | 012242 | 012242 | 344442 |
 | lalande_hellas | 001230 | 011230 | — | 011230 | 012240 | 001230 | 001230 | 234444 | 001230 | 001230 | 001230 | 344442 |
 | hd20794_newindia | 012241 | 012242 | 012240 | — | 012243 | 012241 | 012242 | 234444 | 001241 | 012241 | 012242 | 344442 |
 | wolf359_citadel | 013443 | 013443 | 012440 | 013443 | — | 013443 | 013443 | 234444 | 001441 | 013443 | 013443 | 344443 |
-| eps_eri_strife | 013332 | 024443 | 012330 | 013332 | 013343 | — | 013332 | 234444 | 001331 | 013332 | 013332 | 344442 |
+| eps_eri_strife | 013332 | 023443 | 012330 | 013332 | 013343 | — | 013332 | 234444 | 001331 | 013332 | 013332 | 344442 |
 | sol_authority | 012241 | 012242 | 012240 | 012241 | 012243 | 012241 | — | 234444 | 001241 | 012241 | 012242 | 344442 |
 | delta_pav_karma | 223444 | 223444 | 223444 | 223444 | 223444 | 223444 | 223444 | — | 223444 | 223444 | 223444 | 344444 |
 | gj876_next | 001231 | 001231 | 001230 | 001231 | 001241 | 001231 | 001231 | 234444 | — | 001231 | 001231 | 344442 |
@@ -90,4 +90,8 @@ nonaligned (4): delta_pav_karma (ideological_isolationist), gj876_next (strategi
 - OK providence_does_not_lift_sanctions: 
 - OK citadel_civilian_open_strategic_closed: 
 - OK every_element_has_player_role: Chekhov's gun: all blocs, non-aligned, units, exceptions, licences, sanctions
+- OK sanctions_realistically_leaky: civilian / industrial / dual-use never fully closed without a stated reason; every measure has an evasion route
+- OK no_pool_wide_embargo_on_karma: only Free Karma's own measure; pool coordinates strategic / dual-use / IP, civilian trade is national
+- OK thebaid_kern_interim_open_no_sanctions: 
+- OK newcomers_not_licensed_yet: 
 - OK free_belts_military_only_grey: 

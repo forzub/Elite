@@ -5430,7 +5430,7 @@
   },
   "delta_pav_freekarma|delta_pav_karma": {
    "civilian_goods": "restricted",
-   "dual_use": "closed",
+   "dual_use": "black",
    "industrial": "black",
    "military": "closed",
    "people_finance_data": "closed",
@@ -5814,7 +5814,7 @@
   },
   "eps_eri_harmony|eps_eri_strife": {
    "civilian_goods": "open",
-   "dual_use": "closed",
+   "dual_use": "black",
    "industrial": "restricted",
    "military": "closed",
    "people_finance_data": "black",
@@ -5990,7 +5990,7 @@
   },
   "eps_eri_strife|eps_eri_harmony": {
    "civilian_goods": "open",
-   "dual_use": "closed",
+   "dual_use": "black",
    "industrial": "restricted",
    "military": "closed",
    "people_finance_data": "black",
@@ -7734,7 +7734,7 @@
   },
   "hd40307_firmament|hd40307_maland": {
    "civilian_goods": "restricted",
-   "dual_use": "closed",
+   "dual_use": "black",
    "industrial": "black",
    "military": "closed",
    "people_finance_data": "black",
@@ -7910,7 +7910,7 @@
   },
   "hd40307_maland|hd40307_firmament": {
    "civilian_goods": "restricted",
-   "dual_use": "closed",
+   "dual_use": "black",
    "industrial": "black",
    "military": "closed",
    "people_finance_data": "black",
@@ -9490,6 +9490,36 @@
   {
    "check": "trade_core_flows_legal",
    "detail": "all drive_cores flows of trade.py run through open / licensed / restricted strategic channels",
+   "ok": true
+  },
+  {
+   "check": "cognium_core_flows_only_to_licence_holders",
+   "detail": "holders: cyg61_kern, delta_pav_freekarma, eps_eri_harmony, gj581_europa, gj832_tianhe, gj876_next, hd20794_hellas2, hd20794_newindia, hd40307_firmament, hd40307_maland, hd69830_verde, lalande_hellas, sol_authority, tau_ceti_cognium",
+   "ok": true
+  },
+  {
+   "check": "new_karma_no_strategic_trade",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "citadel_serial_cores_stay_in_pact",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "svarog_serial_from_citadel_with_own_copies",
+   "detail": "Citadel share 1.00 of Svarog core imports; own pirated copies (jump_technology how = stolen)",
+   "ok": true
+  },
+  {
+   "check": "mecca_core_technology_own",
+   "detail": "own jump mathematics; not a licence holder; no imported cores",
+   "ok": true
+  },
+  {
+   "check": "southern_circle_survives_cognium_cutoff",
+   "detail": "peacetime Mecca share 0.533 (target [0.2, 0.4]); after cutoff 0.124, mobilised 0.678",
    "ok": true
   },
   {
@@ -13003,9 +13033,9 @@
     "channel": "licensed",
     "flow_sources": [
      {
-      "channel": "restricted",
+      "channel": "licensed",
       "share": 1.0,
-      "source": "tau_ceti_cognium"
+      "source": "lalande_mecca"
      }
     ],
     "level": "import",
@@ -14846,6 +14876,13 @@
    "jump_core": {
     "category": "strategic",
     "channel": "licensed",
+    "flow_sources": [
+     {
+      "channel": "licensed",
+      "share": 1.0,
+      "source": "wolf359_citadel"
+     }
+    ],
     "level": "parts",
     "note": "плюс свои пиратские копии (jump_technology how = stolen)",
     "source": "wolf359_citadel",

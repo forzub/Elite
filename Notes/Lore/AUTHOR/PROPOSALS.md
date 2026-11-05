@@ -239,7 +239,7 @@
 | jump_chronology/3040 | Керн и Когниум ставят экспедиционные маяки в глубоком кусте (HD 114783, 83 Leonis, HD 104067) — без связи с ядром (разрыв > 32 св. лет) | реконсиляция (часть III) | PROPOSAL · PUBLIC |
 | jump_chronology/3112 | Земля запускает собственный маяк и флотскую программу | реконсиляция (часть III) | PROPOSAL · PUBLIC |
 
-### jump_technology (10)
+### jump_technology (9)
 
 | Путь | Что | Основание | Статус |
 |---|---|---|---|
@@ -249,7 +249,6 @@
 | jump_technology/cyg61_kern@2790 | маяк 2790 | маяк 2790 | PROPOSAL · PUBLIC |
 | jump_technology/delta_pav_freekarma@2795 | маяк 2795 | маяк 2795 | PROPOSAL · PUBLIC |
 | jump_technology/lalande_hellas@2800 | маяк 2800 | маяк 2800 | PROPOSAL · PUBLIC |
-| jump_technology/lalande_mecca@2800 | собственная математика прыжка — вне стандарта Когниума | собственная математика прыжка — вне стандарта Когниума | PROPOSAL · PUBLIC |
 | jump_technology/gj581_europa@2805 | маяк 2805 | маяк 2805 | PROPOSAL · PUBLIC |
 | jump_technology/eps_eri_strife@2862 | пиратство после утечки 2862 | пиратство после утечки 2862 | PROPOSAL · PUBLIC |
 | jump_technology/proxima_outpost@2862 | отказ от лицензии (CANON); пиратские копии после 2862 — допущение | отказ от лицензии (CANON); пиратские копии после 2862 — допущение | PROPOSAL · PUBLIC |

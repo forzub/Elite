@@ -11,33 +11,31 @@
 
 | Покупатель | Товар | Поставщик | Класс | Узкие места | Статус |
 |---|---|---|---|---|---|
-| [Свободная Карма](../COLONIES/delta_pav_freekarma.md) | He-3 | Вторая Эллада | medium | — | PROPOSAL · PUBLIC (модель) |
-| [Свободная Карма](../COLONIES/delta_pav_freekarma.md) | He-3 | Пояс Раздора / Вольные астероиды | minor | — | PROPOSAL · PUBLIC (модель) |
-| [Свободная Карма](../COLONIES/delta_pav_freekarma.md) | He-3 | Тяньхэ (Небесная Река) | minor | — | PROPOSAL · PUBLIC (модель) |
+| [Свободная Карма](../COLONIES/delta_pav_freekarma.md) | He-3 | Тяньхэ (Небесная Река) | medium | — | PROPOSAL · PUBLIC (модель) |
+| [Свободная Карма](../COLONIES/delta_pav_freekarma.md) | He-3 | Вторая Эллада | minor | — | PROPOSAL · PUBLIC (модель) |
 | [Свободная Карма](../COLONIES/delta_pav_freekarma.md) | He-3 | Цветущая Гармония | minor | — | PROPOSAL · PUBLIC (модель) |
-| [Новая Карма](../COLONIES/delta_pav_karma.md) | He-3 | Вторая Эллада | medium | — | PROPOSAL · PUBLIC (модель) |
+| [Новая Карма](../COLONIES/delta_pav_karma.md) | He-3 | Тяньхэ (Небесная Река) | major | — | PROPOSAL · PUBLIC (модель) |
 | [Новая Карма](../COLONIES/delta_pav_karma.md) | He-3 | Цветущая Гармония | medium | — | PROPOSAL · PUBLIC (модель) |
-| [Новая Карма](../COLONIES/delta_pav_karma.md) | He-3 | Пояс Раздора / Вольные астероиды | medium | — | PROPOSAL · PUBLIC (модель) |
-| [Новая Карма](../COLONIES/delta_pav_karma.md) | He-3 | Тяньхэ (Небесная Река) | medium | — | PROPOSAL · PUBLIC (модель) |
+| [Новая Карма](../COLONIES/delta_pav_karma.md) | He-3 | Вторая Эллада | medium | — | PROPOSAL · PUBLIC (модель) |
 | [Новый Шанхай](../COLONIES/tau_ceti_cognium.md) | He-3 | Цветущая Гармония | major | — | PROPOSAL · PUBLIC (модель) |
-| [Новый Шанхай](../COLONIES/tau_ceti_cognium.md) | He-3 | Сельта-Верде | medium | Gliese 357, Proxima Centauri | PROPOSAL · PUBLIC (модель) |
 | [Новый Шанхай](../COLONIES/tau_ceti_cognium.md) | He-3 | Небесная Твердыня | medium | HD 20794 (82 G. Eridani) | PROPOSAL · PUBLIC (модель) |
-| [Новый Шанхай](../COLONIES/tau_ceti_cognium.md) | He-3 | Тяньхэ (Небесная Река) | minor | — | PROPOSAL · PUBLIC (модель) |
+| [Новый Шанхай](../COLONIES/tau_ceti_cognium.md) | He-3 | Пояс Раздора / Вольные астероиды | medium | — | PROPOSAL · PUBLIC (модель) |
+| [Новый Шанхай](../COLONIES/tau_ceti_cognium.md) | He-3 | Сельта-Верде | medium | Gliese 357, Proxima Centauri | PROPOSAL · PUBLIC (модель) |
 | [Цитадель](../COLONIES/wolf359_citadel.md) | He-3 | Цветущая Гармония | major | — | PROPOSAL · PUBLIC (модель) |
 | [Цитадель](../COLONIES/wolf359_citadel.md) | He-3 | Пояс Раздора / Вольные астероиды | medium | — | PROPOSAL · PUBLIC (модель) |
-| [Цитадель](../COLONIES/wolf359_citadel.md) | He-3 | Тяньхэ (Небесная Река) | medium | — | PROPOSAL · PUBLIC (модель) |
+| [Цитадель](../COLONIES/wolf359_citadel.md) | He-3 | Вторая Эллада | medium | — | PROPOSAL · PUBLIC (модель) |
 
 Узкие места сети (системы-перевалки на маршрутах):
 
 | Система | Коридоров | Стоимость через узел | Контролёр | Товары | Статус |
 |---|---|---|---|---|---|
-| HD 20794 (82 G. Eridani) | 22 | 28371.8 | Новый Шанхай | биотех, ядра прыжка, электроника, He-3, корпуса, изотопы, боеприпасы, точная механика | PROPOSAL · PUBLIC (модель) |
-| Gliese 357 | 20 | 6530.3 | ?, Новый Шанхай, Цитадель | биотех, ядра прыжка, электроника, He-3, корпуса, боеприпасы, точная механика | PROPOSAL · PUBLIC (модель) |
-| Proxima Centauri | 12 | 5011.8 | ?, Новый Шанхай | биотех, ядра прыжка, электроника, He-3, корпуса, изотопы, точная механика | PROPOSAL · PUBLIC (модель) |
-| HD 85512 | 6 | 1738.6 | Новый Шанхай | биотех, компоненты, электроника, корпуса, боеприпасы | PROPOSAL · PUBLIC (модель) |
-| Wolf 359 | 7 | 987.2 | Новый Шанхай, Цитадель | электроника, корпуса, боеприпасы, точная механика | PROPOSAL · PUBLIC (модель) |
-| HD 10360 | 3 | 862.7 | Вторая Эллада, Новый Шанхай | биотех, электроника, корпуса | PROPOSAL · PUBLIC (модель) |
-| Gliese 674 | 2 | 804.8 | Вторая Эллада, Новый Шанхай | биотех, электроника | PROPOSAL · PUBLIC (модель) |
+| HD 20794 (82 G. Eridani) | 27 | 26822.3 | Новый Шанхай | биотех, ядра прыжка, электроника, He-3, корпуса, изотопы, боеприпасы, точная механика | PROPOSAL · PUBLIC (модель) |
+| Gliese 357 | 19 | 8055.8 | ?, Новый Шанхай, Цитадель | биотех, ядра прыжка, электроника, He-3, корпуса, боеприпасы, точная механика | PROPOSAL · PUBLIC (модель) |
+| Proxima Centauri | 16 | 6700.2 | ?, Новый Шанхай | биотех, ядра прыжка, электроника, He-3, корпуса, изотопы, точная механика | PROPOSAL · PUBLIC (модель) |
+| HD 10360 | 4 | 2347.5 | Вторая Эллада, Новый Шанхай | биотех, корпуса, боеприпасы, точная механика | PROPOSAL · PUBLIC (модель) |
+| HD 85512 | 3 | 1668.9 | Новый Шанхай | биотех, компоненты, боеприпасы | PROPOSAL · PUBLIC (модель) |
+| Wolf 359 | 2 | 423.4 | Новый Шанхай | биотех, электроника | PROPOSAL · PUBLIC (модель) |
+| Gliese 674 | 2 | 65.8 | Вторая Эллада, Новый Шанхай | биотех, боеприпасы | PROPOSAL · PUBLIC (модель) |
 
 Контроль сети маяков (сколько кратчайших маршрутов между акторами идёт через узлы оператора):
 
@@ -60,31 +58,36 @@
 
 | Покупатель | Товар | Поставщик | Класс | Статус |
 |---|---|---|---|---|
+| Шахта Альфа | ядра прыжка | Новый Шанхай | medium | PROPOSAL · PUBLIC (модель) |
 | Шахта Альфа | металлы | Цветущая Гармония | medium | PROPOSAL · PUBLIC (модель) |
 | Свободная Карма | ядра прыжка | Новый Шанхай | medium | PROPOSAL · PUBLIC (модель) |
-| Новая Карма | корпуса | Цветущая Гармония | medium | PROPOSAL · PUBLIC (модель) |
+| Новая Карма | компоненты | Новая Индия | major | PROPOSAL · PUBLIC (модель) |
 | Цветущая Гармония | компоненты | Новая Индия | major | PROPOSAL · PUBLIC (модель) |
 | Цветущая Гармония | ядра прыжка | Новый Шанхай | major | PROPOSAL · PUBLIC (модель) |
 | Новая Европа | ядра прыжка | Новый Шанхай | medium | PROPOSAL · PUBLIC (модель) |
 | Новая Европа | пища | Красный Форпост | medium | PROPOSAL · PUBLIC (модель) |
-| Свободные поселения | точная механика | Новая Эллада / Агора | medium | PROPOSAL · PUBLIC (модель) |
 | Тяньхэ (Небесная Река) | ядра прыжка | Новый Шанхай | major | PROPOSAL · PUBLIC (модель) |
 | Вторая Эллада | ядра прыжка | Новый Шанхай | medium | PROPOSAL · PUBLIC (модель) |
-| Новая Индия | ядра прыжка | Новый Шанхай | major | PROPOSAL · PUBLIC (модель) |
+| Новая Индия | биотех | Новая Маланд | medium | PROPOSAL · PUBLIC (модель) |
+| Новая Индия | ядра прыжка | Новая Мекка | medium | PROPOSAL · PUBLIC (модель) |
+| Новая Индия | электроника | Новая Европа | medium | PROPOSAL · PUBLIC (модель) |
 | Новая Индия | пища | Цветущая Гармония | major | PROPOSAL · PUBLIC (модель) |
-| Новая Индия | корпуса | Тяньхэ (Небесная Река) | medium | PROPOSAL · PUBLIC (модель) |
+| Новая Индия | корпуса | Цветущая Гармония | medium | PROPOSAL · PUBLIC (модель) |
 | Небесная Твердыня | ядра прыжка | Новый Шанхай | medium | PROPOSAL · PUBLIC (модель) |
+| Новая Маланд | компоненты | Новая Индия | medium | PROPOSAL · PUBLIC (модель) |
 | Новая Маланд | ядра прыжка | Новый Шанхай | medium | PROPOSAL · PUBLIC (модель) |
-| Новая Маланд | корпуса | Цветущая Гармония | medium | PROPOSAL · PUBLIC (модель) |
+| Новая Маланд | точная механика | Тяньхэ (Небесная Река) | medium | PROPOSAL · PUBLIC (модель) |
 | Сельта-Верде | компоненты | Небесная Твердыня | medium | PROPOSAL · PUBLIC (модель) |
 | Сельта-Верде | ядра прыжка | Новый Шанхай | medium | PROPOSAL · PUBLIC (модель) |
 | Новая Эллада / Агора | ядра прыжка | Новый Шанхай | medium | PROPOSAL · PUBLIC (модель) |
 | Новая Эллада / Агора | металлы | Цветущая Гармония | major | PROPOSAL · PUBLIC (модель) |
+| Красный Форпост | компоненты | Новая Индия | major | PROPOSAL · PUBLIC (модель) |
 | Красный Форпост | корпуса | Цветущая Гармония | medium | PROPOSAL · PUBLIC (модель) |
 | Новый Шанхай | компоненты | Новая Индия | major | PROPOSAL · PUBLIC (модель) |
-| Новый Шанхай | пища | Цветущая Гармония | major | PROPOSAL · PUBLIC (модель) |
+| Новый Шанхай | пища | Цветущая Гармония | medium | PROPOSAL · PUBLIC (модель) |
 | Новый Шанхай | металлы | Цветущая Гармония | major | PROPOSAL · PUBLIC (модель) |
 | Новый Шанхай | вода/летучие | Цветущая Гармония | major | PROPOSAL · PUBLIC (модель) |
+| Цитадель | биотех | Новая Маланд | medium | PROPOSAL · PUBLIC (модель) |
 <!-- GENERATED:dependencies END -->
 
 ## Рычаги давления

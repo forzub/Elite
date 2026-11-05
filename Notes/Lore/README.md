@@ -35,7 +35,7 @@ python lore_md.py --check     # блоки совпадают с данными,
 ## Счётчики статусов машинного канона
 
 <!-- GENERATED:counts BEGIN -->
-`AUTHOR TRUTH` 17, `CANON` 310, `PROPOSAL` 291, `PUBLIC` 591, `UNKNOWN` 7. Схема данных: `elite.colonization_lab.lore_facts.v1`, seed 3126, сценарий `baseline`.
+`AUTHOR TRUTH` 17, `CANON` 311, `PROPOSAL` 290, `PUBLIC` 591, `UNKNOWN` 7. Схема данных: `elite.colonization_lab.lore_facts.v1`, seed 3126, сценарий `baseline`.
 <!-- GENERATED:counts END -->
 
 ## Оглавление

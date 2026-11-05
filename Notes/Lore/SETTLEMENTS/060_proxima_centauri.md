@@ -15,9 +15,9 @@
 | Proxima Centauri k — поселение | Proxima Centauri | Proxima Centauri k | — | 168 234 378 | поселение | [Красный Форпост](../COLONIES/proxima_outpost.md) | — | — | — | PROPOSAL · PUBLIC |
 | Proxima Cen b — поселение | Proxima Centauri | Proxima Cen b | — | 112 156 252 | поселение | [Красный Форпост](../COLONIES/proxima_outpost.md) | — | — | — | PROPOSAL · PUBLIC |
 | Орбитальная крепость «Сварог» | Proxima Centauri | Proxima Centauri j (орбита) | — | — | крепость | [Красный Форпост](../COLONIES/proxima_outpost.md) | — | 0.90 | — | PROPOSAL · PUBLIC |
-| Агрокупола Alpha Centauri B l | Proxima Centauri | Proxima Centauri k | — | — | агрохабитат | [Красный Форпост](../COLONIES/proxima_outpost.md) | пища | 0.80 | выпуск 11118.45 [7782.92–14453.99] | PROPOSAL · PUBLIC |
-| Газовые платформы Proxima l | Proxima Centauri | Proxima Centauri l | — | — | газовые платформы (He-3) | [Красный Форпост](../COLONIES/proxima_outpost.md) | He-3 | 0.60 | выпуск 96.71 [67.70–125.72] | PROPOSAL · PUBLIC |
-| Шахты Proxima Cen d | Proxima Centauri | Proxima Centauri j (орбита) | — | — | рудник | [Красный Форпост](../COLONIES/proxima_outpost.md) | металлы | 0.50 | выпуск 3867.90 [2707.53–5028.27] | PROPOSAL · PUBLIC |
+| Агрокупола Alpha Centauri B l | Proxima Centauri | Proxima Centauri k | — | — | агрохабитат | [Красный Форпост](../COLONIES/proxima_outpost.md) | пища | 0.80 | выпуск 11117.86 [7782.50–14453.21] | PROPOSAL · PUBLIC |
+| Газовые платформы Proxima l | Proxima Centauri | Proxima Centauri l | — | — | газовые платформы (He-3) | [Красный Форпост](../COLONIES/proxima_outpost.md) | He-3 | 0.60 | выпуск 96.83 [67.78–125.88] | PROPOSAL · PUBLIC |
+| Шахты Proxima Cen d | Proxima Centauri | Proxima Centauri j (орбита) | — | — | рудник | [Красный Форпост](../COLONIES/proxima_outpost.md) | металлы | 0.50 | выпуск 3880.14 [2716.10–5044.19] | PROPOSAL · PUBLIC |
 <!-- GENERATED:registry END -->
 
 ## Места (рассказ)

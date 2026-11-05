@@ -1064,28 +1064,28 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 
 | колония | система | нас. 3126 (модель) | авторское | основание (нас.) | ср. рост %/год | режим | знание | богатство /100k | energy | extraction | metallurgy | manufacturing | electronics | bio | shipbuilding | military | research | флаг |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Новый Шанхай | Tau Ceti | 1,356,527,906 | 2,800,000 | 2233 (19124) | 1.251 | technocratic_meritocracy | 0.989 | 13.68 | 80 | 70 | 80 | 85 | 100 | 78 | 86 | 83 | 100 |  |
-| Красный Форпост | Proxima Centauri | 725,716,924 | 890,000 | 2150 (10168) | 1.145 | security_oligarchy | 0.975 | 7.7 | 80 | 83 | 79 | 83 | 81 | 91 | 82 | 95 | 80 |  |
-| Тяньхэ (Небесная Река) | Gliese 832 | 1,058,878,366 | 4,200,000 | 2288 (29361) | 1.252 | party_technocracy | 0.991 | 17.19 | 97 | 91 | 100 | 100 | 88 | 92 | 94 | 91 | 78 |  |
+| Новый Шанхай | Tau Ceti | 1,356,527,906 | 2,800,000 | 2233 (19124) | 1.251 | technocratic_meritocracy | 0.989 | 14.43 | 80 | 70 | 80 | 85 | 100 | 78 | 86 | 83 | 100 |  |
+| Красный Форпост | Proxima Centauri | 725,716,924 | 890,000 | 2150 (10168) | 1.145 | security_oligarchy | 0.975 | 7.73 | 80 | 83 | 79 | 83 | 81 | 91 | 82 | 95 | 80 |  |
+| Тяньхэ (Небесная Река) | Gliese 832 | 1,058,878,366 | 4,200,000 | 2288 (29361) | 1.252 | party_technocracy | 0.991 | 16.96 | 97 | 91 | 100 | 100 | 88 | 92 | 94 | 91 | 78 |  |
 | Зона «Филоморфоз» | Gliese 832 | 2,363 | 45,000 | 2270 (11880) | -0.189 | none_quiet | 0.091 | - | 29 | 30 | 26 | 24 | 21 | 20 | 27 | 22 | 22 | конфликт с авторским каноном: модель 0.00 млн против 0.04 млн (×0.05) |
-| Новая Эллада / Агора | Lalande 21185 | 327,607,482 | 1,500,000 | 2197 (10553) | 1.113 | shareholder_agora | 0.981 | 18.96 | 78 | 81 | 78 | 81 | 79 | 79 | 80 | 80 | 92 |  |
-| Новая Мекка | Lalande 21185 | 799,743,540 | 1,800,000 | 2243 (16193) | 1.224 | scholar_theocracy | 0.986 | 5.43 | 80 | 81 | 80 | 82 | 85 | 84 | 80 | 84 | 93 |  |
-| Цветущая Гармония | Epsilon Eridani | 1,371,102,748 | 3,280,000 | 2212 (22557) | 1.205 | sage_council | 1.0 | 25.95 | 98 | 96 | 100 | 97 | 88 | 90 | 100 | 88 | 80 |  |
-| Пояс Раздора / Вольные астероиды | Epsilon Eridani | 348,072,327 | 45,000 | 2405 (2587) | 1.638 | clan_contracts | 0.972 | 24.06 | 85 | 96 | 86 | 75 | 80 | 77 | 89 | 77 | 86 |  |
-| Цитадель | Wolf 359 | 545,459,819 | 650,000 | 2228 (11195) | 1.202 | security_oligarchy | 0.971 | 5.65 | 77 | 77 | 86 | 81 | 91 | 77 | 87 | 100 | 80 |  |
-| Новая Европа | Gliese 581 | 271,947,994 | 1,200,000 | 2377 (10873) | 1.352 | parliamentary_bureaucracy | 0.971 | 16.23 | 84 | 75 | 82 | 80 | 86 | 75 | 79 | 77 | 84 |  |
-| Свободные поселения | Gliese 581 | 200,589,138 | 85,000 | 2574 (9822) | 1.798 | clan_contracts | 0.958 | 11.13 | 77 | 82 | 77 | 76 | 81 | 74 | 79 | 76 | 82 |  |
-| Вторая Эллада | HD 20794 (82 G. Eridani) | 250,016,201 | 980,000 | 2384 (13248) | 1.327 | corporate_democracy | 0.977 | 27.29 | 86 | 85 | 86 | 78 | 87 | 78 | 86 | 78 | 90 |  |
-| Новая Индия | HD 20794 (82 G. Eridani) | 903,060,135 | 1,100,000 | 2523 (21254) | 1.767 | merit_caste_republic | 0.974 | 18.12 | 82 | 88 | 85 | 89 | 80 | 88 | 86 | 84 | 80 |  |
-| Новая Маланд | HD 40307 | 445,615,996 | 2,400,000 | 2542 (25408) | 1.673 | council_of_chiefs | 0.96 | 12.94 | 83 | 86 | 78 | 86 | 80 | 98 | 80 | 84 | 81 |  |
-| Небесная Твердыня | HD 40307 | 198,279,067 | 1,800,000 | 2742 (22235) | 2.369 | party_technocracy | 0.951 | 23.08 | 90 | 82 | 90 | 86 | 83 | 84 | 83 | 93 | 73 |  |
-| Сельта-Верде | HD 69830 | 204,780,898 | 1,400,000 | 2576 (13285) | 1.753 | grandees_and_church | 0.947 | 12.94 | 80 | 92 | 78 | 76 | 75 | 83 | 82 | 78 | 79 |  |
-| Новая Карма | Delta Pavonis | 740,339,479 | 1,750,000 | 2361 (23362) | 1.355 | caste_theocracy | 0.765 | 6.07 | 60 | 72 | 72 | 72 | 70 | 82 | 73 | 76 | 70 |  |
-| Свободная Карма | Delta Pavonis | 200,070,311 | 350,000 | 2420 (14372) | 1.351 | exile_republic | 0.973 | 12.97 | 68 | 80 | 79 | 81 | 77 | 84 | 80 | 82 | 76 |  |
-| Провидение | Gliese 876 | 99,649 | 45,000 | 2314 (3288) | 0.42 | machine_oracle | 0.801 | 6.41 | 64 | 66 | 63 | 54 | 74 | 54 | 68 | 52 | 74 | конфликт с авторским каноном: модель 0.10 млн против 0.04 млн (×2.21) |
-| Шахта Альфа | 61 Cygni | 139,963,859 | 350,000 | 2355 (9309) | 1.247 | corporate_board | 0.962 | 12.23 | 80 | 82 | 75 | 78 | 79 | 74 | 74 | 78 | 80 |  |
+| Новая Эллада / Агора | Lalande 21185 | 327,607,482 | 1,500,000 | 2197 (10553) | 1.113 | shareholder_agora | 0.981 | 18.68 | 78 | 81 | 78 | 81 | 79 | 79 | 80 | 80 | 92 |  |
+| Новая Мекка | Lalande 21185 | 799,743,540 | 1,800,000 | 2243 (16193) | 1.224 | scholar_theocracy | 0.986 | 4.68 | 80 | 81 | 80 | 82 | 85 | 84 | 80 | 84 | 93 |  |
+| Цветущая Гармония | Epsilon Eridani | 1,371,102,748 | 3,280,000 | 2212 (22557) | 1.205 | sage_council | 1.0 | 26.03 | 98 | 96 | 100 | 97 | 88 | 90 | 100 | 88 | 80 |  |
+| Пояс Раздора / Вольные астероиды | Epsilon Eridani | 348,072,327 | 45,000 | 2405 (2587) | 1.638 | clan_contracts | 0.972 | 24.04 | 85 | 96 | 86 | 75 | 80 | 77 | 89 | 77 | 86 |  |
+| Цитадель | Wolf 359 | 545,459,819 | 650,000 | 2228 (11195) | 1.202 | security_oligarchy | 0.971 | 4.37 | 77 | 77 | 86 | 81 | 91 | 77 | 87 | 100 | 80 |  |
+| Новая Европа | Gliese 581 | 271,947,994 | 1,200,000 | 2377 (10873) | 1.352 | parliamentary_bureaucracy | 0.971 | 16.52 | 84 | 75 | 82 | 80 | 86 | 75 | 79 | 77 | 84 |  |
+| Свободные поселения | Gliese 581 | 200,589,138 | 85,000 | 2574 (9822) | 1.798 | clan_contracts | 0.958 | 11.66 | 77 | 82 | 77 | 76 | 81 | 74 | 79 | 76 | 82 |  |
+| Вторая Эллада | HD 20794 (82 G. Eridani) | 250,016,201 | 980,000 | 2384 (13248) | 1.327 | corporate_democracy | 0.977 | 26.83 | 86 | 85 | 86 | 78 | 87 | 78 | 86 | 78 | 90 |  |
+| Новая Индия | HD 20794 (82 G. Eridani) | 903,060,135 | 1,100,000 | 2523 (21254) | 1.767 | merit_caste_republic | 0.974 | 18.41 | 82 | 88 | 85 | 89 | 80 | 88 | 86 | 84 | 80 |  |
+| Новая Маланд | HD 40307 | 445,615,996 | 2,400,000 | 2542 (25408) | 1.673 | council_of_chiefs | 0.96 | 13.2 | 83 | 86 | 78 | 86 | 80 | 98 | 80 | 84 | 81 |  |
+| Небесная Твердыня | HD 40307 | 198,279,067 | 1,800,000 | 2742 (22235) | 2.369 | party_technocracy | 0.951 | 22.29 | 90 | 82 | 90 | 86 | 83 | 84 | 83 | 93 | 73 |  |
+| Сельта-Верде | HD 69830 | 204,780,898 | 1,400,000 | 2576 (13285) | 1.753 | grandees_and_church | 0.947 | 13.3 | 80 | 92 | 78 | 76 | 75 | 83 | 82 | 78 | 79 |  |
+| Новая Карма | Delta Pavonis | 740,339,479 | 1,750,000 | 2361 (23362) | 1.355 | caste_theocracy | 0.765 | 5.95 | 60 | 72 | 72 | 72 | 70 | 82 | 73 | 76 | 70 |  |
+| Свободная Карма | Delta Pavonis | 200,070,311 | 350,000 | 2420 (14372) | 1.351 | exile_republic | 0.973 | 12.95 | 68 | 80 | 79 | 81 | 77 | 84 | 80 | 82 | 76 |  |
+| Провидение | Gliese 876 | 99,649 | 45,000 | 2314 (3288) | 0.42 | machine_oracle | 0.801 | 6.37 | 64 | 66 | 63 | 54 | 74 | 54 | 68 | 52 | 74 | конфликт с авторским каноном: модель 0.10 млн против 0.04 млн (×2.21) |
+| Шахта Альфа | 61 Cygni | 139,963,859 | 350,000 | 2355 (9309) | 1.247 | corporate_board | 0.962 | 12.2 | 80 | 82 | 75 | 78 | 79 | 74 | 74 | 78 | 80 |  |
 | Третья Эллада | HD 114783 | 12,983 | 12,500 | 3122 (11588) | 2.842 | litigating_city_states | 0.48 | 2.3 | 49 | 50 | 51 | 39 | 43 | 41 | 52 | 40 | 42 |  |
-| Ново-Фиваида | 83 Leonis | 9,229 | 8,900 | 3126 (9229) | - | synod_theocracy | 0.466 | 2.44 | 54 | 48 | 54 | 46 | 45 | 50 | 51 | 46 | 34 |  |
+| Ново-Фиваида | 83 Leonis | 9,229 | 8,900 | 3126 (9229) | - | synod_theocracy | 0.466 | 2.45 | 54 | 48 | 54 | 46 | 45 | 50 | 51 | 46 | 34 |  |
 
 ## 5. Экономика 3126 (условные единицы/год; цены относительно базовых)
 
@@ -1099,67 +1099,67 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 
 | товар | было % | стало % |
 |---|---|---|
-| biotech | 0.0 | 7.8 |
-| components | 12.0 | 13.4 |
-| drive_cores | 0.0 | 9.3 |
-| electronics | 15.9 | 10.7 |
-| food | 15.5 | 6.6 |
-| he3 | 14.4 | 18.3 |
-| hulls | 4.1 | 2.5 |
-| isotopes | 0.0 | 8.5 |
-| metals | 19.1 | 5.1 |
-| munitions | 2.6 | 0.5 |
-| precision | 0.0 | 13.2 |
-| volatiles | 16.5 | 4.1 |
+| biotech | 0.0 | 7.6 |
+| components | 12.0 | 13.8 |
+| drive_cores | 0.0 | 8.5 |
+| electronics | 15.9 | 10.1 |
+| food | 15.5 | 6.7 |
+| he3 | 14.4 | 18.4 |
+| hulls | 4.1 | 3.1 |
+| isotopes | 0.0 | 8.9 |
+| metals | 19.1 | 5.3 |
+| munitions | 2.6 | 0.8 |
+| precision | 0.0 | 12.7 |
+| volatiles | 16.5 | 4.2 |
 
-Навалочные (вода/летучие, металл, пища): 51.1 % → 15.8 % стоимости оборота.
+Навалочные (вода/летучие, металл, пища): 51.1 % → 16.2 % стоимости оборота.
 
 ### T.2 Главные коридоры
 
 | продавец | покупатель | товар | объём | прыжков | причина | альтернативы | узкие места | контролёр | break-even фрахт |
 |---|---|---|---|---|---|---|---|---|---|
-| hd20794_newindia | tau_ceti_cognium | components | major (12127.3) | 1 | specialisation_high_value | eps_eri_harmony, gj832_tianhe |  |  | 2.33 |
-| eps_eri_harmony | tau_ceti_cognium | he3 | major (8614.3) | 1 | no_local_source | gj832_tianhe, hd69830_verde |  |  |  |
-| gj832_tianhe | tau_ceti_cognium | precision | major (8093.4) | 1 | specialisation_high_value | delta_pav_karma, eps_eri_harmony, hd20794_hellas2, hd20794_newindia |  |  | 46.43 |
-| hd20794_hellas2 | tau_ceti_cognium | electronics | major (8027.9) | 1 | specialisation_high_value | cyg61_kern, delta_pav_freekarma, eps_eri_harmony, eps_eri_strife |  |  | 0.0 |
-| eps_eri_harmony | tau_ceti_cognium | volatiles | major (7575.5) | 1 | local_source_dearer | eps_eri_strife |  |  | 2.2 |
-| tau_ceti_cognium | eps_eri_harmony | drive_cores | major (7534.3) | 1 | state_monopoly_or_own_design |  |  |  |  |
-| tau_ceti_cognium | gj832_tianhe | drive_cores | major (7156.2) | 1 | state_monopoly_or_own_design |  |  |  |  |
-| hd20794_newindia | tau_ceti_cognium | isotopes | major (6084.8) | 1 | specialisation_high_value | eps_eri_harmony, eps_eri_strife, hd20794_hellas2 |  |  | 20301.52 |
-| hd20794_newindia | lalande_mecca | components | major (5721.6) | 1 | specialisation_high_value | eps_eri_harmony, gj832_tianhe, lalande_hellas, wolf359_citadel |  |  | 1.66 |
-| eps_eri_harmony | lalande_mecca | he3 | major (5422.9) | 1 | local_source_dearer | gj832_tianhe, hd69830_verde |  |  | 47.06 |
-| delta_pav_karma | tau_ceti_cognium | precision | major (5014.0) | 1 | specialisation_high_value | delta_pav_freekarma, eps_eri_harmony, gj581_europa, gj832_tianhe |  |  | 13.73 |
-| tau_ceti_cognium | hd20794_newindia | drive_cores | major (4998.6) | 1 | state_monopoly_or_own_design |  |  |  |  |
-| eps_eri_harmony | eps_eri_strife | food | major (4782.9) | 0 | same_system |  |  |  |  |
-| eps_eri_harmony | proxima_outpost | he3 | major (4678.6) | 1 | local_source_dearer | gj832_tianhe, hd69830_verde |  |  | 60.17 |
-| eps_eri_harmony | tau_ceti_cognium | metals | major (4362.8) | 1 | local_source_dearer | eps_eri_strife |  |  | 5.66 |
-| hd40307_maland | tau_ceti_cognium | biotech | major (4313.0) | 2 | specialisation_high_value | eps_eri_harmony, gj832_tianhe, hd20794_newindia, proxima_outpost | 14 | tau_ceti_cognium | 47.18 |
-| hd20794_newindia | wolf359_citadel | components | major (4128.1) | 1 | specialisation_high_value | eps_eri_harmony, gj832_tianhe, lalande_mecca |  |  | 1.86 |
-| gj581_freeclans | lalande_mecca | biotech | major (4051.8) | 1 | specialisation_high_value | cyg61_kern, delta_pav_freekarma, delta_pav_karma, eps_eri_harmony |  |  | 0.0 |
-| eps_eri_harmony | hd20794_newindia | food | major (3966.8) | 1 | residual_shortfall | delta_pav_freekarma, delta_pav_karma, eps_eri_strife, gj832_tianhe |  |  | 0.0 |
-| hd40307_firmament | tau_ceti_cognium | precision | major (3827.1) | 2 | specialisation_high_value | cyg61_kern, delta_pav_freekarma, delta_pav_karma, eps_eri_harmony | 14 | tau_ceti_cognium | 0.0 |
-| eps_eri_harmony | wolf359_citadel | he3 | major (3759.0) | 1 | no_local_source | gj832_tianhe, hd69830_verde |  |  |  |
-| hd40307_firmament | tau_ceti_cognium | electronics | major (3738.0) | 2 | specialisation_high_value | cyg61_kern, delta_pav_freekarma, eps_eri_harmony, eps_eri_strife | 14 | tau_ceti_cognium | 0.0 |
-| gj832_tianhe | lalande_mecca | he3 | major (3615.2) | 1 | local_source_dearer | eps_eri_harmony, hd69830_verde |  |  | 32.85 |
-| hd20794_newindia | eps_eri_harmony | components | major (3495.0) | 1 | specialisation_high_value | gj832_tianhe |  |  | 0.77 |
-| eps_eri_strife | lalande_mecca | electronics | major (3494.4) | 1 | specialisation_high_value | cyg61_kern, delta_pav_freekarma, eps_eri_harmony, gj581_europa |  |  | 0.0 |
-| eps_eri_strife | tau_ceti_cognium | isotopes | major (3399.6) | 1 | specialisation_high_value | eps_eri_harmony, hd20794_hellas2, hd20794_newindia |  |  | 28790.91 |
-| hd20794_newindia | proxima_outpost | components | major (3199.7) | 1 | specialisation_high_value | eps_eri_harmony, gj832_tianhe |  |  | 1.99 |
-| hd40307_maland | hd40307_firmament | food | major (3175.0) | 0 | same_system |  |  |  |  |
-| eps_eri_harmony | lalande_hellas | metals | major (3136.5) | 1 | residual_shortfall | eps_eri_strife, lalande_mecca, wolf359_citadel |  |  | 0.8 |
-| hd40307_maland | hd20794_newindia | biotech | major (3114.5) | 1 | specialisation_high_value | eps_eri_harmony, gj832_tianhe, proxima_outpost |  |  | 25.4 |
-| eps_eri_harmony | tau_ceti_cognium | food | major (3113.6) | 1 | residual_shortfall | eps_eri_strife, proxima_outpost |  |  | 0.25 |
-| hd20794_newindia | tau_ceti_cognium | precision | major (3105.4) | 1 | specialisation_high_value | delta_pav_freekarma, delta_pav_karma, eps_eri_harmony, gj581_europa |  |  | 10.26 |
-| eps_eri_harmony | tau_ceti_cognium | isotopes | major (3104.8) | 1 | specialisation_high_value | eps_eri_strife, hd20794_hellas2, hd20794_newindia |  |  | 28794.7 |
-| gj581_freeclans | tau_ceti_cognium | electronics | major (3089.9) | 1 | specialisation_high_value | cyg61_kern, delta_pav_freekarma, eps_eri_harmony, eps_eri_strife |  |  | 0.0 |
-| hd20794_newindia | delta_pav_karma | components | medium (2996.8) | 1 | specialisation_high_value | delta_pav_freekarma, eps_eri_harmony, gj832_tianhe |  |  | 3.48 |
-| hd69830_verde | tau_ceti_cognium | he3 | medium (2863.0) | 3 | no_local_source | eps_eri_harmony, gj832_tianhe | 25, 60 | ?, tau_ceti_cognium |  |
-| hd40307_firmament | eps_eri_harmony | biotech | medium (2718.2) | 2 | specialisation_high_value | cyg61_kern, delta_pav_freekarma, delta_pav_karma, eps_eri_strife | 14 | tau_ceti_cognium | 0.0 |
-| eps_eri_harmony | hd20794_newindia | volatiles | medium (2637.2) | 1 | residual_shortfall | eps_eri_strife, hd20794_hellas2 |  |  | 0.19 |
-| hd20794_hellas2 | delta_pav_karma | he3 | medium (2609.2) | 1 | no_local_source | eps_eri_harmony, eps_eri_strife, gj832_tianhe, gj876_next |  |  |  |
-| hd40307_firmament | tau_ceti_cognium | he3 | medium (2496.7) | 2 | no_local_source | eps_eri_harmony, eps_eri_strife, gj832_tianhe, gj876_next | 14 | tau_ceti_cognium |  |
+| hd20794_newindia | tau_ceti_cognium | components | major (12453.0) | 1 | specialisation_high_value | eps_eri_harmony, gj832_tianhe |  |  | 2.33 |
+| eps_eri_harmony | tau_ceti_cognium | he3 | major (10090.5) | 1 | no_local_source | gj832_tianhe, hd69830_verde |  |  |  |
+| eps_eri_harmony | tau_ceti_cognium | volatiles | major (7579.7) | 1 | local_source_dearer | eps_eri_strife |  |  | 2.2 |
+| eps_eri_harmony | tau_ceti_cognium | isotopes | major (7448.4) | 1 | specialisation_high_value | eps_eri_strife, hd20794_hellas2, hd20794_newindia |  |  | 28794.7 |
+| tau_ceti_cognium | gj832_tianhe | drive_cores | major (7147.1) | 1 | state_monopoly_or_own_design | lalande_mecca |  |  |  |
+| hd20794_hellas2 | tau_ceti_cognium | precision | major (6975.1) | 1 | specialisation_high_value | delta_pav_karma, eps_eri_harmony, gj832_tianhe, hd20794_newindia |  |  | 29.36 |
+| hd20794_newindia | lalande_mecca | components | major (6394.3) | 1 | specialisation_high_value | eps_eri_harmony, gj832_tianhe, lalande_hellas, wolf359_citadel |  |  | 1.66 |
+| lalande_hellas | tau_ceti_cognium | precision | major (5501.4) | 1 | specialisation_high_value | delta_pav_karma, eps_eri_harmony, gj832_tianhe, hd20794_hellas2 |  |  | 29.43 |
+| eps_eri_harmony | lalande_mecca | he3 | major (5499.5) | 1 | local_source_dearer | gj832_tianhe, hd69830_verde |  |  | 47.06 |
+| tau_ceti_cognium | eps_eri_harmony | drive_cores | major (5189.0) | 1 | state_monopoly_or_own_design | lalande_mecca |  |  |  |
+| eps_eri_harmony | tau_ceti_cognium | metals | major (4844.3) | 1 | local_source_dearer | eps_eri_strife |  |  | 5.66 |
+| eps_eri_harmony | eps_eri_strife | food | major (4773.1) | 0 | same_system |  |  |  |  |
+| eps_eri_harmony | proxima_outpost | he3 | major (4678.1) | 1 | local_source_dearer | gj832_tianhe, hd69830_verde |  |  | 60.17 |
+| gj832_tianhe | delta_pav_karma | he3 | major (4526.2) | 1 | no_local_source | eps_eri_harmony, hd69830_verde |  |  |  |
+| eps_eri_strife | lalande_mecca | electronics | major (4328.7) | 1 | specialisation_high_value | cyg61_kern, delta_pav_freekarma, eps_eri_harmony, gj581_europa |  |  | 0.0 |
+| hd20794_newindia | wolf359_citadel | components | major (4162.9) | 1 | specialisation_high_value | eps_eri_harmony, gj832_tianhe, lalande_mecca |  |  | 1.86 |
+| hd20794_newindia | proxima_outpost | components | major (4001.4) | 1 | specialisation_high_value | eps_eri_harmony, gj832_tianhe |  |  | 1.99 |
+| eps_eri_harmony | hd20794_newindia | food | major (3966.1) | 1 | residual_shortfall | delta_pav_freekarma, delta_pav_karma, eps_eri_strife, gj832_tianhe |  |  | 0.0 |
+| hd20794_newindia | tau_ceti_cognium | isotopes | major (3907.3) | 1 | specialisation_high_value | eps_eri_harmony, eps_eri_strife, hd20794_hellas2 |  |  | 20301.52 |
+| hd20794_newindia | delta_pav_karma | components | major (3747.8) | 1 | specialisation_high_value | delta_pav_freekarma, eps_eri_harmony, gj832_tianhe |  |  | 3.48 |
+| eps_eri_harmony | wolf359_citadel | he3 | major (3717.8) | 1 | no_local_source | gj832_tianhe, hd69830_verde |  |  |  |
+| hd40307_maland | eps_eri_harmony | biotech | major (3260.2) | 2 | specialisation_high_value | gj832_tianhe, hd20794_newindia, proxima_outpost | 14 | tau_ceti_cognium | 13.43 |
+| hd40307_maland | hd40307_firmament | food | major (3169.3) | 0 | same_system |  |  |  |  |
+| hd20794_newindia | eps_eri_harmony | components | major (3159.6) | 1 | specialisation_high_value | gj832_tianhe |  |  | 0.77 |
+| gj581_freeclans | tau_ceti_cognium | biotech | major (3148.7) | 1 | specialisation_high_value | cyg61_kern, delta_pav_freekarma, delta_pav_karma, eps_eri_harmony |  |  | 0.0 |
+| eps_eri_harmony | lalande_hellas | metals | major (3122.4) | 1 | residual_shortfall | eps_eri_strife, lalande_mecca, wolf359_citadel |  |  | 0.8 |
+| eps_eri_harmony | tau_ceti_cognium | food | medium (3099.4) | 1 | residual_shortfall | eps_eri_strife, proxima_outpost |  |  | 0.25 |
+| hd40307_firmament | wolf359_citadel | precision | medium (3090.5) | 2 | specialisation_high_value | cyg61_kern, delta_pav_freekarma, delta_pav_karma, eps_eri_harmony | 14 | tau_ceti_cognium | 4.98 |
+| hd40307_maland | wolf359_citadel | biotech | medium (3002.4) | 2 | specialisation_high_value | eps_eri_harmony, gj832_tianhe, hd20794_newindia, proxima_outpost | 14 | tau_ceti_cognium | 40.34 |
+| hd20794_newindia | hd40307_maland | components | medium (2762.4) | 1 | specialisation_high_value | hd40307_firmament |  |  | 1.26 |
+| lalande_mecca | hd20794_newindia | drive_cores | medium (2691.0) | 1 | state_monopoly_or_own_design | tau_ceti_cognium |  |  |  |
+| eps_eri_strife | tau_ceti_cognium | isotopes | medium (2662.6) | 1 | specialisation_high_value | eps_eri_harmony, hd20794_hellas2, hd20794_newindia |  |  | 28790.91 |
+| eps_eri_harmony | hd20794_newindia | volatiles | medium (2640.2) | 1 | residual_shortfall | eps_eri_strife, hd20794_hellas2 |  |  | 0.19 |
+| gj832_tianhe | lalande_mecca | precision | medium (2451.0) | 1 | specialisation_high_value | delta_pav_karma, eps_eri_harmony, hd20794_hellas2, hd20794_newindia |  |  | 0.0 |
+| tau_ceti_cognium | hd40307_maland | drive_cores | medium (2356.4) | 2 | state_monopoly_or_own_design | lalande_mecca | 14 | tau_ceti_cognium |  |
+| hd20794_newindia | lalande_mecca | isotopes | medium (2281.7) | 1 | specialisation_high_value | eps_eri_harmony, eps_eri_strife, hd20794_hellas2 |  |  | 777.41 |
+| hd40307_firmament | tau_ceti_cognium | electronics | medium (2243.3) | 2 | specialisation_high_value | cyg61_kern, delta_pav_freekarma, eps_eri_harmony, eps_eri_strife | 14 | tau_ceti_cognium | 0.0 |
+| gj832_tianhe | hd40307_maland | precision | medium (2206.4) | 2 | specialisation_high_value | delta_pav_karma, eps_eri_harmony, hd20794_hellas2, hd20794_newindia | 57 | hd20794_hellas2 | 16.16 |
+| hd40307_firmament | tau_ceti_cognium | he3 | medium (2059.0) | 2 | no_local_source | eps_eri_harmony, eps_eri_strife, gj832_tianhe, gj876_next | 14 | tau_ceti_cognium |  |
+| eps_eri_harmony | lalande_mecca | precision | medium (1980.3) | 1 | specialisation_high_value | delta_pav_karma, gj832_tianhe, hd20794_hellas2, hd20794_newindia |  |  | 0.0 |
 
-Остаточные навалочные потоки, где свой источник дешевле (модельный остаток, а не коридор): 12; их суммарная доля 7.6 % оборота.
+Остаточные навалочные потоки, где свой источник дешевле (модельный остаток, а не коридор): 14; их суммарная доля 7.8 % оборота.
 
 ### T.3 Исчезнувшие потоки (были на старом рынке)
 
@@ -1174,9 +1174,7 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 - hulls: eps_eri_harmony → gj581_europa
 - volatiles: eps_eri_harmony → gj581_europa
 - volatiles: eps_eri_harmony → gj832_tianhe
-- hulls: eps_eri_harmony → hd20794_hellas2
 - metals: eps_eri_harmony → hd20794_hellas2
-- hulls: eps_eri_harmony → hd20794_newindia
 - metals: eps_eri_harmony → hd20794_newindia
 - hulls: eps_eri_harmony → hd40307_firmament
 - metals: eps_eri_harmony → hd40307_firmament
@@ -1186,7 +1184,6 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 - hulls: eps_eri_harmony → hd69830_verde
 - metals: eps_eri_harmony → hd69830_verde
 - volatiles: eps_eri_harmony → lalande_hellas
-- hulls: eps_eri_harmony → lalande_mecca
 - metals: eps_eri_harmony → lalande_mecca
 - volatiles: eps_eri_harmony → lalande_mecca
 - metals: eps_eri_harmony → proxima_outpost
@@ -1201,23 +1198,27 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 - components: gj581_europa → wolf359_citadel
 - metals: gj832_tianhe → cyg61_kern
 - metals: gj832_tianhe → delta_pav_freekarma
-- hulls: gj832_tianhe → delta_pav_karma
+- components: gj832_tianhe → delta_pav_karma
 - metals: gj832_tianhe → delta_pav_karma
 - components: gj832_tianhe → eps_eri_harmony
 - metals: gj832_tianhe → gj581_europa
 - components: gj832_tianhe → hd20794_hellas2
 - metals: gj832_tianhe → hd20794_hellas2
+- hulls: gj832_tianhe → hd20794_newindia
 - metals: gj832_tianhe → hd20794_newindia
 - hulls: gj832_tianhe → hd40307_firmament
 - hulls: gj832_tianhe → hd40307_maland
+- components: gj832_tianhe → proxima_outpost
+- he3: gj832_tianhe → proxima_outpost
 - hulls: gj832_tianhe → proxima_outpost
 - metals: gj832_tianhe → proxima_outpost
 - components: gj832_tianhe → tau_ceti_cognium
+- he3: gj832_tianhe → tau_ceti_cognium
 - metals: gj876_next → cyg61_kern
 - volatiles: hd20794_hellas2 → hd40307_maland
 - he3: hd20794_hellas2 → tau_ceti_cognium
-- components: hd20794_newindia → hd20794_hellas2
 - components: hd20794_newindia → hd69830_verde
+- components: hd40307_firmament → hd40307_maland
 - he3: hd40307_firmament → hd40307_maland
 - munitions: hd40307_firmament → hd40307_maland
 - food: hd40307_maland → eps_eri_harmony
@@ -1228,8 +1229,6 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 - food: hd40307_maland → tau_ceti_cognium
 - he3: hd69830_verde → hd40307_maland
 - he3: hd69830_verde → lalande_hellas
-- he3: hd69830_verde → lalande_mecca
-- he3: hd69830_verde → proxima_outpost
 - he3: hd69830_verde → wolf359_citadel
 - components: lalande_hellas → eps_eri_harmony
 - components: lalande_hellas → hd69830_verde
@@ -1286,14 +1285,15 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 ### T.4 Появившиеся потоки
 
 - volatiles: delta_pav_freekarma → delta_pav_karma
-- biotech: delta_pav_freekarma → hd69830_verde
+- biotech: delta_pav_freekarma → lalande_mecca
+- precision: delta_pav_freekarma → lalande_mecca
+- precision: delta_pav_karma → hd69830_verde
+- biotech: delta_pav_karma → lalande_mecca
+- precision: delta_pav_karma → lalande_mecca
 - precision: delta_pav_karma → tau_ceti_cognium
-- biotech: delta_pav_karma → wolf359_citadel
 - he3: eps_eri_harmony → cyg61_kern
 - hulls: eps_eri_harmony → cyg61_kern
-- isotopes: eps_eri_harmony → cyg61_kern
 - he3: eps_eri_harmony → delta_pav_freekarma
-- hulls: eps_eri_harmony → delta_pav_freekarma
 - isotopes: eps_eri_harmony → delta_pav_freekarma
 - he3: eps_eri_harmony → delta_pav_karma
 - food: eps_eri_harmony → eps_eri_strife
@@ -1301,604 +1301,621 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 - isotopes: eps_eri_harmony → gj581_europa
 - he3: eps_eri_harmony → gj581_freeclans
 - hulls: eps_eri_harmony → gj581_freeclans
+- hulls: eps_eri_harmony → gj832_tianhe
 - isotopes: eps_eri_harmony → gj832_tianhe
 - food: eps_eri_harmony → hd20794_hellas2
 - food: eps_eri_harmony → hd20794_newindia
 - he3: eps_eri_harmony → hd20794_newindia
 - isotopes: eps_eri_harmony → hd40307_firmament
-- isotopes: eps_eri_harmony → hd40307_maland
+- isotopes: eps_eri_harmony → lalande_hellas
 - isotopes: eps_eri_harmony → lalande_mecca
 - precision: eps_eri_harmony → lalande_mecca
 - isotopes: eps_eri_harmony → proxima_outpost
+- electronics: eps_eri_harmony → tau_ceti_cognium
 - food: eps_eri_harmony → tau_ceti_cognium
 - hulls: eps_eri_harmony → tau_ceti_cognium
 - isotopes: eps_eri_harmony → tau_ceti_cognium
-- precision: eps_eri_harmony → tau_ceti_cognium
 - he3: eps_eri_harmony → wolf359_citadel
 - isotopes: eps_eri_harmony → wolf359_citadel
 - he3: eps_eri_strife → cyg61_kern
-- he3: eps_eri_strife → delta_pav_freekarma
-- he3: eps_eri_strife → delta_pav_karma
 - biotech: eps_eri_strife → gj581_europa
-- he3: eps_eri_strife → gj581_europa
 - electronics: eps_eri_strife → gj581_freeclans
-- he3: eps_eri_strife → gj581_freeclans
 - isotopes: eps_eri_strife → gj581_freeclans
-- electronics: eps_eri_strife → hd20794_newindia
+- biotech: eps_eri_strife → gj832_tianhe
+- he3: eps_eri_strife → hd20794_newindia
 - electronics: eps_eri_strife → hd40307_maland
+- munitions: eps_eri_strife → hd40307_maland
 - he3: eps_eri_strife → lalande_hellas
-- isotopes: eps_eri_strife → lalande_hellas
+- biotech: eps_eri_strife → lalande_mecca
 - electronics: eps_eri_strife → lalande_mecca
+- he3: eps_eri_strife → lalande_mecca
+- precision: eps_eri_strife → lalande_mecca
 - biotech: eps_eri_strife → proxima_outpost
 - electronics: eps_eri_strife → proxima_outpost
 - he3: eps_eri_strife → proxima_outpost
-- biotech: eps_eri_strife → tau_ceti_cognium
-- electronics: eps_eri_strife → tau_ceti_cognium
+- he3: eps_eri_strife → tau_ceti_cognium
 - isotopes: eps_eri_strife → tau_ceti_cognium
 - munitions: eps_eri_strife → tau_ceti_cognium
-- precision: eps_eri_strife → tau_ceti_cognium
-- biotech: eps_eri_strife → wolf359_citadel
 - electronics: eps_eri_strife → wolf359_citadel
 - he3: eps_eri_strife → wolf359_citadel
 - electronics: gj581_europa → eps_eri_harmony
+- components: gj581_europa → gj581_freeclans
 - metals: gj581_europa → gj581_freeclans
-- electronics: gj581_europa → hd40307_maland
+- electronics: gj581_europa → gj832_tianhe
+- electronics: gj581_europa → hd20794_newindia
 - electronics: gj581_europa → hd69830_verde
-- precision: gj581_europa → hd69830_verde
-- electronics: gj581_europa → lalande_mecca
-- precision: gj581_europa → lalande_mecca
+- biotech: gj581_europa → lalande_mecca
+- electronics: gj581_europa → tau_ceti_cognium
 - precision: gj581_europa → tau_ceti_cognium
 - electronics: gj581_europa → wolf359_citadel
-- biotech: gj581_freeclans → eps_eri_harmony
+- components: gj581_freeclans → cyg61_kern
+- electronics: gj581_freeclans → eps_eri_harmony
 - volatiles: gj581_freeclans → gj581_europa
-- electronics: gj581_freeclans → gj832_tianhe
-- biotech: gj581_freeclans → lalande_mecca
+- components: gj581_freeclans → lalande_mecca
 - electronics: gj581_freeclans → lalande_mecca
-- precision: gj581_freeclans → lalande_mecca
+- munitions: gj581_freeclans → lalande_mecca
 - electronics: gj581_freeclans → proxima_outpost
-- precision: gj581_freeclans → proxima_outpost
-- electronics: gj581_freeclans → tau_ceti_cognium
-- biotech: gj581_freeclans → wolf359_citadel
-- electronics: gj581_freeclans → wolf359_citadel
-- components: gj832_tianhe → cyg61_kern
-- he3: gj832_tianhe → cyg61_kern
-- hulls: gj832_tianhe → delta_pav_freekarma
-- hulls: gj832_tianhe → gj581_europa
-- hulls: gj832_tianhe → gj581_freeclans
-- he3: gj832_tianhe → hd20794_newindia
-- biotech: gj832_tianhe → hd69830_verde
-- components: gj832_tianhe → lalande_hellas
-- he3: gj832_tianhe → lalande_hellas
-- components: gj832_tianhe → lalande_mecca
-- he3: gj832_tianhe → lalande_mecca
-- biotech: gj832_tianhe → proxima_outpost
-- precision: gj832_tianhe → tau_ceti_cognium
-- biotech: gj832_tianhe → wolf359_citadel
-- components: gj832_tianhe → wolf359_citadel
-- he3: gj832_tianhe → wolf359_citadel
-- biotech: hd20794_hellas2 → cyg61_kern
-- isotopes: hd20794_hellas2 → cyg61_kern
-- precision: hd20794_hellas2 → cyg61_kern
+- biotech: gj581_freeclans → tau_ceti_cognium
+- munitions: gj581_freeclans → tau_ceti_cognium
+- precision: gj581_freeclans → tau_ceti_cognium
+- components: gj581_freeclans → wolf359_citadel
+- hulls: gj832_tianhe → cyg61_kern
+- precision: gj832_tianhe → delta_pav_freekarma
+- electronics: gj832_tianhe → eps_eri_harmony
+- precision: gj832_tianhe → eps_eri_harmony
+- hulls: gj832_tianhe → eps_eri_strife
+- biotech: gj832_tianhe → gj581_europa
+- precision: gj832_tianhe → gj581_freeclans
+- precision: gj832_tianhe → hd40307_maland
+- precision: gj832_tianhe → hd69830_verde
+- hulls: gj832_tianhe → lalande_hellas
+- biotech: gj832_tianhe → lalande_mecca
+- precision: gj832_tianhe → lalande_mecca
+- precision: gj832_tianhe → proxima_outpost
+- electronics: gj832_tianhe → wolf359_citadel
+- precision: gj832_tianhe → wolf359_citadel
+- he3: hd20794_hellas2 → cyg61_kern
 - he3: hd20794_hellas2 → delta_pav_freekarma
 - isotopes: hd20794_hellas2 → delta_pav_freekarma
-- precision: hd20794_hellas2 → delta_pav_freekarma
 - he3: hd20794_hellas2 → delta_pav_karma
 - biotech: hd20794_hellas2 → eps_eri_harmony
-- precision: hd20794_hellas2 → eps_eri_harmony
-- biotech: hd20794_hellas2 → gj581_europa
+- electronics: hd20794_hellas2 → eps_eri_harmony
+- he3: hd20794_hellas2 → gj581_europa
 - isotopes: hd20794_hellas2 → gj581_europa
+- he3: hd20794_hellas2 → gj581_freeclans
 - biotech: hd20794_hellas2 → gj832_tianhe
+- electronics: hd20794_hellas2 → gj832_tianhe
 - isotopes: hd20794_hellas2 → gj832_tianhe
 - volatiles: hd20794_hellas2 → hd20794_newindia
-- isotopes: hd20794_hellas2 → hd40307_firmament
+- electronics: hd20794_hellas2 → hd40307_maland
 - isotopes: hd20794_hellas2 → hd40307_maland
 - metals: hd20794_hellas2 → hd40307_maland
-- precision: hd20794_hellas2 → hd40307_maland
+- he3: hd20794_hellas2 → lalande_hellas
 - isotopes: hd20794_hellas2 → lalande_hellas
+- biotech: hd20794_hellas2 → lalande_mecca
 - isotopes: hd20794_hellas2 → lalande_mecca
-- precision: hd20794_hellas2 → lalande_mecca
 - isotopes: hd20794_hellas2 → proxima_outpost
-- precision: hd20794_hellas2 → proxima_outpost
 - electronics: hd20794_hellas2 → tau_ceti_cognium
+- munitions: hd20794_hellas2 → tau_ceti_cognium
 - precision: hd20794_hellas2 → tau_ceti_cognium
+- he3: hd20794_hellas2 → wolf359_citadel
 - isotopes: hd20794_hellas2 → wolf359_citadel
-- precision: hd20794_hellas2 → wolf359_citadel
 - components: hd20794_newindia → cyg61_kern
 - components: hd20794_newindia → delta_pav_freekarma
-- biotech: hd20794_newindia → eps_eri_harmony
+- precision: hd20794_newindia → eps_eri_harmony
+- precision: hd20794_newindia → gj581_freeclans
+- isotopes: hd20794_newindia → gj832_tianhe
 - food: hd20794_newindia → hd20794_hellas2
+- electronics: hd20794_newindia → hd40307_maland
+- isotopes: hd20794_newindia → hd40307_maland
 - metals: hd20794_newindia → hd40307_maland
-- electronics: hd20794_newindia → lalande_mecca
+- precision: hd20794_newindia → hd69830_verde
 - isotopes: hd20794_newindia → lalande_mecca
-- biotech: hd20794_newindia → tau_ceti_cognium
+- precision: hd20794_newindia → lalande_mecca
+- isotopes: hd20794_newindia → proxima_outpost
+- precision: hd20794_newindia → proxima_outpost
 - isotopes: hd20794_newindia → tau_ceti_cognium
-- precision: hd20794_newindia → tau_ceti_cognium
-- biotech: hd20794_newindia → wolf359_citadel
-- biotech: hd40307_firmament → eps_eri_harmony
-- precision: hd40307_firmament → eps_eri_harmony
+- isotopes: hd20794_newindia → wolf359_citadel
+- precision: hd20794_newindia → wolf359_citadel
+- electronics: hd40307_firmament → eps_eri_harmony
+- munitions: hd40307_firmament → eps_eri_harmony
+- he3: hd40307_firmament → hd20794_newindia
 - metals: hd40307_firmament → hd40307_maland
+- biotech: hd40307_firmament → lalande_mecca
 - munitions: hd40307_firmament → lalande_mecca
-- electronics: hd40307_firmament → proxima_outpost
+- precision: hd40307_firmament → proxima_outpost
+- biotech: hd40307_firmament → tau_ceti_cognium
 - electronics: hd40307_firmament → tau_ceti_cognium
 - he3: hd40307_firmament → tau_ceti_cognium
 - munitions: hd40307_firmament → tau_ceti_cognium
-- precision: hd40307_firmament → tau_ceti_cognium
-- electronics: hd40307_firmament → wolf359_citadel
+- precision: hd40307_firmament → wolf359_citadel
+- biotech: hd40307_maland → cyg61_kern
+- biotech: hd40307_maland → eps_eri_harmony
 - biotech: hd40307_maland → hd20794_newindia
 - biotech: hd40307_maland → hd69830_verde
+- biotech: hd40307_maland → lalande_mecca
 - electronics: hd40307_maland → lalande_mecca
-- biotech: hd40307_maland → tau_ceti_cognium
-- precision: hd40307_maland → tau_ceti_cognium
+- biotech: hd40307_maland → proxima_outpost
+- biotech: hd40307_maland → wolf359_citadel
+- biotech: hd69830_verde → lalande_mecca
+- precision: hd69830_verde → lalande_mecca
 - he3: hd69830_verde → tau_ceti_cognium
+- biotech: lalande_hellas → eps_eri_harmony
 - biotech: lalande_hellas → gj581_europa
-- electronics: lalande_hellas → gj581_freeclans
-- precision: lalande_hellas → gj581_freeclans
-- biotech: lalande_hellas → gj832_tianhe
-- biotech: lalande_hellas → hd20794_newindia
-- precision: lalande_hellas → hd40307_maland
-- precision: lalande_hellas → hd69830_verde
+- biotech: lalande_hellas → hd69830_verde
+- biotech: lalande_hellas → lalande_mecca
 - volatiles: lalande_hellas → lalande_mecca
-- precision: lalande_hellas → proxima_outpost
+- biotech: lalande_hellas → proxima_outpost
 - electronics: lalande_hellas → tau_ceti_cognium
 - munitions: lalande_hellas → tau_ceti_cognium
-- biotech: lalande_hellas → wolf359_citadel
-- precision: lalande_hellas → wolf359_citadel
+- precision: lalande_hellas → tau_ceti_cognium
+- drive_cores: lalande_mecca → hd20794_newindia
+- biotech: lalande_mecca → tau_ceti_cognium
+- precision: lalande_mecca → tau_ceti_cognium
 - volatiles: proxima_outpost → gj581_europa
 - food: proxima_outpost → gj581_freeclans
 - metals: proxima_outpost → gj581_freeclans
 - biotech: proxima_outpost → lalande_mecca
-- biotech: proxima_outpost → wolf359_citadel
 - drive_cores: tau_ceti_cognium → cyg61_kern
 - drive_cores: tau_ceti_cognium → delta_pav_freekarma
 - drive_cores: tau_ceti_cognium → eps_eri_harmony
 - drive_cores: tau_ceti_cognium → gj581_europa
 - drive_cores: tau_ceti_cognium → gj832_tianhe
 - drive_cores: tau_ceti_cognium → hd20794_hellas2
-- drive_cores: tau_ceti_cognium → hd20794_newindia
 - drive_cores: tau_ceti_cognium → hd40307_firmament
 - drive_cores: tau_ceti_cognium → hd40307_maland
 - drive_cores: tau_ceti_cognium → hd69830_verde
 - drive_cores: tau_ceti_cognium → lalande_hellas
-- biotech: wolf359_citadel → eps_eri_harmony
-- biotech: wolf359_citadel → proxima_outpost
-- electronics: wolf359_citadel → proxima_outpost
-- munitions: wolf359_citadel → proxima_outpost
 
 ### T.5 Верфи, добыча, стратегические активы (диапазоны выпуска, условные единицы)
 
 | владелец | актив | тип | выпуск | диапазон | флот (корпуса) | мобил. резерв мирн./войн. |
 |---|---|---|---|---|---|---|
 | cyg61_kern | Биржа и страховой дом Керна | logistics_hub | 0.0 | [0.0, 0.0] | | |
-| cyg61_kern | Платформы 61 Cyg B i | gas_platform | 98.747 | [69.12, 128.37] | | |
-| cyg61_kern | флот и мобилизационный резерв | fleet | 1.02 | [0.71  1.33] | [8.0  16.0] | 467 213 / 3 737 709 |
+| cyg61_kern | Платформы 61 Cyg B i | gas_platform | 98.268 | [68.79, 127.75] | | |
+| cyg61_kern | флот и мобилизационный резерв | fleet | 0.0 | [0.0  0.0] | [0.0  0.0] | 467 213 / 3 737 709 |
 | delta_pav_freekarma | Маяк Дельты Павлина | jump_infrastructure | 0.0 | [0.0, 0.0] | | |
-| delta_pav_freekarma | флот и мобилизационный резерв | fleet | 3.191 | [2.23  4.15] | [26.1  52.3] | 652 503 / 5 220 028 |
-| delta_pav_karma | Храм Массива (криобанк генов) | research | 380.156 | [266.11, 494.2] | | |
-| delta_pav_karma | Рудники Delta Pavonis h | mine | 2473.107 | [1731.17, 3215.04] | | |
+| delta_pav_freekarma | флот и мобилизационный резерв | fleet | 3.153 | [2.21  4.1] | [25.8  51.6] | 652 503 / 5 220 028 |
+| delta_pav_karma | Храм Массива (криобанк генов) | research | 379.883 | [265.92, 493.85] | | |
+| delta_pav_karma | Рудники Delta Pavonis h | mine | 2477.419 | [1734.19, 3220.64] | | |
 | delta_pav_karma | флот и мобилизационный резерв | fleet | 0.0 | [0.0  0.0] | [0.0  0.0] | 2 426 603 / 19 412 831 |
-| eps_eri_harmony | Ледовый комплекс облака комет | ice_export | 39932.547 | [27952.78, 51912.31] | | |
-| eps_eri_harmony | Платформы eps Eri b | gas_platform | 8159.307 | [5711.52, 10607.1] | | |
-| eps_eri_harmony | Верфи Гармонии | shipyard | 308.163 | [215.71, 400.61] | | |
-| eps_eri_harmony | Рудники eps Eri b I | mine | 21189.657 | [14832.76, 27546.55] | | |
+| eps_eri_harmony | Ледовый комплекс облака комет | ice_export | 39839.62 | [27887.73, 51791.51] | | |
+| eps_eri_harmony | Платформы eps Eri b | gas_platform | 8155.28 | [5708.7, 10601.86] | | |
+| eps_eri_harmony | Верфи Гармонии | shipyard | 289.692 | [202.78, 376.6] | | |
+| eps_eri_harmony | Рудники eps Eri b I | mine | 21460.172 | [15022.12, 27898.22] | | |
 | eps_eri_harmony | Ретрансляторная сеть (60 % межколониальной связи) | jump_infrastructure | 0.0 | [0.0, 0.0] | | |
-| eps_eri_harmony | флот и мобилизационный резерв | fleet | 308.163 | [215.71  400.61] | [2711.8  5423.7] | 4 319 963 / 34 559 711 |
+| eps_eri_harmony | флот и мобилизационный резерв | fleet | 289.692 | [202.78  376.6] | [2549.3  5098.6] | 4 319 963 / 34 559 711 |
 | eps_eri_strife | Чёрный рынок пояса | black_market | 0.0 | [0.0, 0.0] | | |
-| eps_eri_strife | флот и мобилизационный резерв | fleet | 4.338 | [3.04  5.64] | [33.5  67.1] | 1 116 464 / 8 931 717 |
+| eps_eri_strife | флот и мобилизационный резерв | fleet | 1.277 | [0.89  1.66] | [9.9  19.7] | 1 116 464 / 8 931 717 |
 | gj581_europa | Реестр договоров и Арбитраж «Новый Брюссель» | legal_hub | 0.0 | [0.0, 0.0] | | |
-| gj581_europa | Платформы Gliese 581 i | gas_platform | 71.73 | [50.21, 93.25] | | |
-| gj581_europa | Агромодули | food_habitat | 1746.993 | [1222.9, 2271.09] | | |
-| gj581_europa | флот и мобилизационный резерв | fleet | 6.441 | [4.51  8.37] | [49.9  99.7] | 787 413 / 6 299 305 |
+| gj581_europa | Платформы Gliese 581 i | gas_platform | 72.468 | [50.73, 94.21] | | |
+| gj581_europa | Агромодули | food_habitat | 1750.452 | [1225.32, 2275.59] | | |
+| gj581_europa | флот и мобилизационный резерв | fleet | 6.461 | [4.52  8.4] | [50.0  100.0] | 787 413 / 6 299 305 |
 | gj581_freeclans | Мастерские нелицензионных приводов | black_market | 0.0 | [0.0, 0.0] | | |
-| gj581_freeclans | флот и мобилизационный резерв | fleet | 1.458 | [1.02  1.9] | [11.1  22.3] | 672 845 / 5 382 761 |
-| gj832_tianhe | Платформы GJ 832 b | gas_platform | 5056.989 | [3539.89, 6574.09] | | |
-| gj832_tianhe | Массовые верфи Тяньхэ | shipyard | 111.116 | [77.78, 144.45] | | |
-| gj832_tianhe | Комбинат GJ 832 b I | refinery | 11907.403 | [8335.18, 15479.62] | | |
+| gj581_freeclans | флот и мобилизационный резерв | fleet | 0.444 | [0.31  0.58] | [3.4  6.8] | 672 845 / 5 382 761 |
+| gj832_tianhe | Платформы GJ 832 b | gas_platform | 5057.317 | [3540.12, 6574.51] | | |
+| gj832_tianhe | Массовые верфи Тяньхэ | shipyard | 110.337 | [77.24, 143.44] | | |
+| gj832_tianhe | Комбинат GJ 832 b I | refinery | 11927.8 | [8349.46, 15506.14] | | |
 | gj832_tianhe | Флот кордона «Филоморфоз» | fortress | 0.0 | [0.0, 0.0] | | |
-| gj832_tianhe | флот и мобилизационный резерв | fleet | 111.116 | [77.78  144.45] | [1006.7  2013.4] | 3 277 403 / 26 219 227 |
-| gj876_next | Ядро «Провидца» | research | 0.018 | [0.01, 0.02] | | |
-| gj876_next | Концессии трёх гигантов GJ 876 (операторы — Когниум и Керн) | gas_platform | 0.224 | [0.16, 0.29] | | |
-| gj876_next | Концессионные рудники GJ 876 b I | mine | 0.407 | [0.29, 0.53] | | |
+| gj832_tianhe | флот и мобилизационный резерв | fleet | 110.337 | [77.24  143.44] | [999.7  1999.3] | 3 277 403 / 26 219 227 |
+| gj876_next | Ядро «Провидца» | research | 0.019 | [0.01, 0.02] | | |
+| gj876_next | Концессии трёх гигантов GJ 876 (операторы — Когниум и Керн) | gas_platform | 0.222 | [0.16, 0.29] | | |
+| gj876_next | Концессионные рудники GJ 876 b I | mine | 0.406 | [0.28, 0.53] | | |
 | gj876_next | флот и мобилизационный резерв | fleet | 0.001 | [0.0  0.0] | [0.0  0.0] | 223 / 1 791 |
 | hd114783_hellas3 | Астероид-корабль «Одиссей» | station_core | 0.0 | [0.0, 0.0] | | |
 | hd114783_hellas3 | флот и мобилизационный резерв | fleet | 0.0 | [0.0  0.0] | [0.0  0.0] | 39 / 318 |
-| hd20794_hellas2 | Платформы HD 20794 d | gas_platform | 1407.242 | [985.07, 1829.42] | | |
-| hd20794_hellas2 | Звёздный Университет | research | 440.92 | [308.64, 573.2] | | |
-| hd20794_hellas2 | Водные права пояса Койпера | ice_export | 3384.212 | [2368.95, 4399.48] | | |
-| hd20794_hellas2 | флот и мобилизационный резерв | fleet | 12.37 | [8.66  16.08] | [96.1  192.2] | 727 565 / 5 820 521 |
-| hd20794_newindia | Платформы HD 20794 f | gas_platform | 2200.14 | [1540.1, 2860.18] | | |
-| hd20794_newindia | Сборочные кольца | factory | 9513.463 | [6659.42, 12367.5] | | |
-| hd20794_newindia | флот и мобилизационный резерв | fleet | 17.916 | [12.54  23.29] | [151.0  302.1] | 3 065 023 / 24 520 188 |
-| hd40307_firmament | Платформы HD 40307 f (доля Твердыни) | gas_platform | 703.009 | [492.11, 913.91] | | |
+| hd20794_hellas2 | Платформы HD 20794 d | gas_platform | 1405.321 | [983.73, 1826.92] | | |
+| hd20794_hellas2 | Звёздный Университет | research | 454.408 | [318.09, 590.73] | | |
+| hd20794_hellas2 | Водные права пояса Койпера | ice_export | 3373.393 | [2361.38, 4385.41] | | |
+| hd20794_hellas2 | флот и мобилизационный резерв | fleet | 12.265 | [8.59  15.95] | [95.3  190.6] | 727 565 / 5 820 521 |
+| hd20794_newindia | Платформы HD 20794 f | gas_platform | 2207.289 | [1545.1, 2869.48] | | |
+| hd20794_newindia | Сборочные кольца | factory | 9580.608 | [6706.43, 12454.79] | | |
+| hd20794_newindia | флот и мобилизационный резерв | fleet | 26.771 | [18.74  34.8] | [225.7  451.4] | 3 065 023 / 24 520 188 |
+| hd40307_firmament | Платформы HD 40307 f (доля Твердыни) | gas_platform | 700.568 | [490.4, 910.74] | | |
 | hd40307_firmament | Флотская база | fortress | 0.0 | [0.0, 0.0] | | |
-| hd40307_firmament | Рудники пояса | mine | 2449.643 | [1714.75, 3184.54] | | |
-| hd40307_firmament | флот и мобилизационный резерв | fleet | 8.144 | [5.7  10.59] | [75.8  151.6] | 727 568 / 5 820 551 |
-| hd40307_maland | Агрокольца Маланд («Житница») | food_habitat | 12267.345 | [8587.14, 15947.55] | | |
-| hd40307_maland | Платформы HD 40307 f (доля Маланд) | gas_platform | 931.233 | [651.86, 1210.6] | | |
+| hd40307_firmament | Рудники пояса | mine | 2454.625 | [1718.24, 3191.01] | | |
+| hd40307_firmament | флот и мобилизационный резерв | fleet | 8.059 | [5.64  10.48] | [75.0  150.1] | 727 568 / 5 820 551 |
+| hd40307_maland | Агрокольца Маланд («Житница») | food_habitat | 12292.308 | [8604.62, 15980.0] | | |
+| hd40307_maland | Платформы HD 40307 f (доля Маланд) | gas_platform | 923.243 | [646.27, 1200.22] | | |
 | hd40307_maland | Внешний дозор | fortress | 0.0 | [0.0, 0.0] | | |
 | hd40307_maland | флот и мобилизационный резерв | fleet | 0.0 | [0.0  0.0] | [0.0  0.0] | 1 524 137 / 12 193 097 |
-| hd69830_verde | Платформы трёх гигантов HD 69830 | gas_platform | 1327.68 | [929.38, 1725.98] | | |
-| hd69830_verde | Ледовые поля облака комет | ice_export | 3591.409 | [2513.99, 4668.83] | | |
-| hd69830_verde | флот и мобилизационный резерв | fleet | 2.507 | [1.75  3.26] | [19.5  38.9] | 695 395 / 5 563 160 |
+| hd69830_verde | Платформы трёх гигантов HD 69830 | gas_platform | 1331.58 | [932.11, 1731.05] | | |
+| hd69830_verde | Ледовые поля облака комет | ice_export | 3595.964 | [2517.17, 4674.75] | | |
+| hd69830_verde | флот и мобилизационный резерв | fleet | 2.497 | [1.75  3.25] | [19.4  38.7] | 695 395 / 5 563 160 |
 | lalande_hellas | Агора — нейтральный порт и биржа | logistics_hub | 0.0 | [0.0, 0.0] | | |
-| lalande_hellas | Платформы Lalande 21185 j (эллинская доля) | gas_platform | 316.519 | [221.56, 411.47] | | |
-| lalande_hellas | Академия Новой Эллады | research | 479.528 | [335.67, 623.39] | | |
-| lalande_hellas | флот и мобилизационный резерв | fleet | 12.295 | [8.61  15.98] | [98.5  197.0] | 971 836 / 7 774 694 |
-| lalande_mecca | Обсерватория-вычислитель «Расад» | research | 202.683 | [141.88, 263.49] | | |
-| lalande_mecca | Платформы Lalande 21185 j (доля Мекки) | gas_platform | 42.78 | [29.95, 55.61] | | |
-| lalande_mecca | Сады Lalande 21185 g | food_habitat | 10003.979 | [7002.79, 13005.17] | | |
-| lalande_mecca | флот и мобилизационный резерв | fleet | 4.378 | [3.06  5.69] | [37.0  74.0] | 2 701 567 / 21 612 537 |
+| lalande_hellas | Платформы Lalande 21185 j (эллинская доля) | gas_platform | 313.205 | [219.24, 407.17] | | |
+| lalande_hellas | Академия Новой Эллады | research | 489.691 | [342.78, 636.6] | | |
+| lalande_hellas | флот и мобилизационный резерв | fleet | 0.0 | [0.0  0.0] | [0.0  0.0] | 971 836 / 7 774 694 |
+| lalande_mecca | Обсерватория-вычислитель «Расад» | research | 48.822 | [34.18, 63.47] | | |
+| lalande_mecca | Платформы Lalande 21185 j (доля Мекки) | gas_platform | 9.985 | [6.99, 12.98] | | |
+| lalande_mecca | Сады Lalande 21185 g | food_habitat | 10013.049 | [7009.13, 13016.96] | | |
+| lalande_mecca | флот и мобилизационный резерв | fleet | 1.015 | [0.71  1.32] | [8.6  17.1] | 2 701 567 / 21 612 537 |
 | leo83_zion | флот и мобилизационный резерв | fleet | 0.0 | [0.0  0.0] | [0.0  0.0] | 37 / 297 |
 | proxima_outpost | Орбитальная крепость «Сварог» | fortress | 0.0 | [0.0, 0.0] | | |
-| proxima_outpost | Агрокупола Alpha Centauri B l | food_habitat | 11118.451 | [7782.92, 14453.99] | | |
-| proxima_outpost | Газовые платформы Proxima l | gas_platform | 96.708 | [67.7, 125.72] | | |
-| proxima_outpost | Шахты Proxima Cen d | mine | 3867.9 | [2707.53, 5028.27] | | |
-| proxima_outpost | флот и мобилизационный резерв | fleet | 0.609 | [0.43  0.79] | [5.8  11.6] | 2 476 326 / 19 810 615 |
-| tau_ceti_cognium | Управление Маяков и фабрика ядер прыжка «Сычёвник» | jump_infrastructure | 99.378 | [69.56, 129.19] | | |
-| tau_ceti_cognium | Фабы Кольца Основателей | electronics_fab | 299.753 | [209.83, 389.68] | | |
-| tau_ceti_cognium | Верфь «Гиперион» | shipyard | 4.277 | [2.99, 5.56] | | |
+| proxima_outpost | Агрокупола Alpha Centauri B l | food_habitat | 11117.856 | [7782.5, 14453.21] | | |
+| proxima_outpost | Газовые платформы Proxima l | gas_platform | 96.829 | [67.78, 125.88] | | |
+| proxima_outpost | Шахты Proxima Cen d | mine | 3880.145 | [2716.1, 5044.19] | | |
+| proxima_outpost | флот и мобилизационный резерв | fleet | 0.178 | [0.12  0.23] | [1.7  3.4] | 2 476 326 / 19 810 615 |
+| tau_ceti_cognium | Управление Маяков и фабрика ядер прыжка «Сычёвник» | jump_infrastructure | 116.526 | [81.57, 151.48] | | |
+| tau_ceti_cognium | Фабы Кольца Основателей | electronics_fab | 821.196 | [574.84, 1067.55] | | |
+| tau_ceti_cognium | Верфь «Гиперион» | shipyard | 12.405 | [8.68, 16.13] | | |
 | tau_ceti_cognium | Орбитальная биржа Нового Шанхая | logistics_hub | 0.0 | [0.0, 0.0] | | |
-| tau_ceti_cognium | флот и мобилизационный резерв | fleet | 4.277 | [2.99  5.56] | [35.3  70.7] | 4 050 794 / 32 406 358 |
-| wolf359_citadel | Бастион — арсенал и военная верфь | arsenal_shipyard | 324.514 | [227.16, 421.87] | | |
-| wolf359_citadel | Рудники пылевого диска | mine | 2205.309 | [1543.72, 2866.9] | | |
+| tau_ceti_cognium | флот и мобилизационный резерв | fleet | 12.405 | [8.68  16.13] | [102.5  204.9] | 4 050 794 / 32 406 358 |
+| wolf359_citadel | Бастион — арсенал и военная верфь | arsenal_shipyard | 176.248 | [123.37, 229.12] | | |
+| wolf359_citadel | Рудники пылевого диска | mine | 1883.378 | [1318.36, 2448.39] | | |
 | wolf359_citadel | Закрытый архив Совета (Хранилище) | intel | 0.0 | [0.0, 0.0] | | |
-| wolf359_citadel | флот и мобилизационный резерв | fleet | 9.529 | [6.67  12.39] | [95.3  190.6] | 2 085 748 / 16 685 984 |
+| wolf359_citadel | флот и мобилизационный резерв | fleet | 4.391 | [3.07  5.71] | [43.9  87.8] | 2 085 748 / 16 685 984 |
 
 | колония | производит (топ) | импорт (топ) | экспорт (топ) | цены выше 1.5× базы | главные партнёры |
 |---|---|---|---|---|---|
-| Новый Шанхай | drive_cores 99.38, food 10220.76, electronics 299.75 | precision 1074.14, electronics 1301.55, he3 2390.06 | drive_cores 94.12 | volatiles×2.7, metals×2.6, hulls×8.0, biotech×2.2 | eps_eri_harmony, hd20794_newindia, gj832_tianhe |
-| Красный Форпост | food 11118.45, volatiles 10682.69, metals 3867.90 | he3 1299.62, components 799.92, precision 89.35 | food 1843.26, metals 901.67, volatiles 778.59 | hulls×8.0, drive_cores×8.0 | eps_eri_harmony, gj581_freeclans, gj832_tianhe |
-| Тяньхэ (Небесная Река) | he3 5056.99, food 18779.35, metals 11907.40 | drive_cores 23.85, isotopes 87.96, biotech 22.03 | he3 1866.36, precision 323.74, components 909.35 | hulls×5.6 | tau_ceti_cognium, lalande_mecca, proxima_outpost |
-| Новая Эллада / Агора | precision 479.53, electronics 489.90, biotech 264.98 | metals 1568.23, he3 361.57, drive_cores 3.32 | precision 247.86, biotech 113.04, electronics 45.32 | metals×2.5, food×2.0, drive_cores×2.6 | eps_eri_harmony, wolf359_citadel, tau_ceti_cognium |
-| Новая Мекка | food 10003.98, volatiles 8099.29, metals 2841.81 | he3 1506.35, components 1430.40, electronics 480.87 |  | volatiles×1.6, hulls×2.3, munitions×2.0 | eps_eri_harmony, hd20794_newindia, gj832_tianhe |
-| Цветущая Гармония | he3 8159.31, metals 21189.66, food 28230.82 | drive_cores 25.11, biotech 189.19, components 699.01 | he3 4978.62, food 8701.35, isotopes 346.17 | munitions×1.7, drive_cores×2.7 | tau_ceti_cognium, hd20794_newindia, lalande_mecca |
-| Пояс Раздора / Вольные астероиды | isotopes 572.95, he3 2001.27, electronics 928.13 | food 3188.57, metals 43.31, hulls 1.31 | electronics 708.98, he3 916.39, isotopes 138.00 | food×2.0, hulls×2.7, drive_cores×8.0 | tau_ceti_cognium, eps_eri_harmony, lalande_mecca |
-| Цитадель | food 5512.12, munitions 324.51, metals 2205.31 | he3 1044.16, components 1032.04, biotech 202.89 | electronics 36.83, biotech 16.22, munitions 10.48 | volatiles×2.8, metals×1.6, hulls×4.0, precision×1.7, drive_cores×1.7 | eps_eri_harmony, hd20794_newindia, lalande_hellas |
-| Новая Европа | electronics 729.93, components 898.82, metals 2129.20 | he3 490.80, drive_cores 4.43, food 839.82 | electronics 392.90, precision 41.60, metals 212.15 | volatiles×2.4, hulls×8.0 | eps_eri_harmony, proxima_outpost, lalande_mecca |
-| Свободные поселения | biotech 267.99, electronics 265.45, components 551.02 | metals 1586.51, he3 306.48, food 1053.88 | electronics 388.25, biotech 227.52, precision 24.74 | munitions×5.6, drive_cores×7.8 | lalande_mecca, proxima_outpost, tau_ceti_cognium |
-| Вторая Эллада | electronics 920.18, precision 440.92, he3 1407.24 | food 1585.04, drive_cores 4.61, components 46.28 | electronics 668.99, precision 302.10, isotopes 141.49 | hulls×5.6 | tau_ceti_cognium, hd40307_maland, delta_pav_karma |
-| Новая Индия | components 9513.46, metals 13112.05, he3 2200.14 | drive_cores 16.66, food 2644.57, biotech 186.36 | components 6810.98, isotopes 231.36, precision 124.22 | volatiles×2.0, hulls×8.0 | tau_ceti_cognium, eps_eri_harmony, lalande_mecca |
-| Новая Маланд | food 12267.34, biotech 657.79, volatiles 9962.66 | metals 1904.15, components 537.77, electronics 214.29 | biotech 379.00, food 2116.69, precision 25.57 | munitions×8.0, precision×2.6, drive_cores×2.4 | tau_ceti_cognium, hd20794_newindia, hd40307_firmament |
-| Небесная Твердыня | electronics 577.89, components 1264.17, precision 217.51 | food 2116.69, drive_cores 3.86, isotopes 15.23 | electronics 415.68, precision 164.17, biotech 143.79 | hulls×5.6 | tau_ceti_cognium, hd40307_maland, eps_eri_harmony |
-| Сельта-Верде | he3 1327.68, food 3663.06, volatiles 3591.41 | components 272.51, precision 51.42, drive_cores 2.39 | he3 477.17, electronics 12.69, biotech 6.76 | hulls×5.6, drive_cores×8.0 | tau_ceti_cognium, hd40307_firmament, lalande_hellas |
-| Новая Карма | food 7020.62, precision 380.16, volatiles 6267.49 | he3 1087.15, components 749.20, hulls 28.46 | precision 200.56, biotech 22.21 | electronics×2.6, munitions×1.6, isotopes×5.4, drive_cores×8.0 | tau_ceti_cognium, hd20794_newindia, hd20794_hellas2 |
-| Свободная Карма | food 2885.32, volatiles 2696.78, metals 1273.79 | he3 403.35, drive_cores 2.44, isotopes 12.21 | biotech 20.04, electronics 19.02, volatiles 179.10 | hulls×5.6, drive_cores×2.7 | hd20794_hellas2, tau_ceti_cognium, eps_eri_harmony |
-| Провидение | food 0.91, he3 0.22, volatiles 1.16 | components 0.19, biotech 0.03, precision 0.01 | metals 0.10 | hulls×2.6, munitions×2.2, drive_cores×8.0 | hd20794_newindia, gj832_tianhe, eps_eri_strife |
-| Шахта Альфа | food 1812.16, volatiles 1636.61, electronics 124.89 | he3 178.69, metals 433.43, components 115.57 | biotech 2.99, precision 2.11, hulls 1.12 | metals×2.5, drive_cores×8.0 | eps_eri_harmony, gj832_tianhe, tau_ceti_cognium |
-| Третья Эллада | volatiles 0.07, metals 0.03, food 0.04 | he3 0.01 |  | food×2.5, components×2.2, munitions×2.1, precision×2.3, drive_cores×8.0 | eps_eri_harmony, eps_eri_strife, gj581_freeclans |
-| Ново-Фиваида | food 0.04, volatiles 0.05, metals 0.02 | he3 0.01 |  | volatiles×1.7, food×1.7, components×1.9, hulls×2.6, munitions×1.8, precision×2.0, drive_cores×8.0 | eps_eri_harmony, gj581_freeclans, lalande_hellas |
+| Новый Шанхай | drive_cores 116.53, food 10234.45, electronics 821.20 | precision 672.62, he3 2398.67, isotopes 467.28 | drive_cores 76.60 | volatiles×2.7, metals×2.6, precision×2.6, biotech×1.9 | eps_eri_harmony, hd20794_newindia, hd20794_hellas2 |
+| Красный Форпост | food 11117.86, volatiles 10675.52, metals 3880.14 | he3 1299.47, components 800.28, precision 131.40 | food 1828.25, metals 905.97, volatiles 777.39 | hulls×8.0, drive_cores×8.0 | eps_eri_harmony, hd20794_newindia, gj581_freeclans |
+| Тяньхэ (Небесная Река) | he3 5057.32, food 18795.70, metals 11927.80 | drive_cores 23.82, isotopes 87.96, electronics 117.14 | he3 1478.71, precision 352.02, hulls 55.28 | hulls×5.6 | tau_ceti_cognium, delta_pav_karma, lalande_mecca |
+| Новая Эллада / Агора | precision 489.69, electronics 454.70, biotech 264.89 | metals 1561.18, he3 359.51, drive_cores 5.58 | precision 220.05, biotech 112.38, electronics 33.54 | metals×2.2, food×2.0, hulls×2.6 | tau_ceti_cognium, eps_eri_harmony, lalande_mecca |
+| Новая Мекка | food 10013.05, volatiles 8058.75, metals 2583.29 | he3 1527.63, precision 322.34, components 1510.09 | drive_cores 8.97, precision 20.11, biotech 24.33 | volatiles×1.6, hulls×8.0, munitions×2.4, drive_cores×4.6 | hd20794_newindia, eps_eri_harmony, eps_eri_strife |
+| Цветущая Гармония | he3 8155.28, metals 21460.17, food 28238.60 | drive_cores 17.30, electronics 413.05, biotech 183.91 | he3 4912.44, food 8684.23, isotopes 394.07 | munitions×1.5, drive_cores×8.0 | tau_ceti_cognium, hd20794_newindia, lalande_mecca |
+| Пояс Раздора / Вольные астероиды | isotopes 575.55, he3 2015.24, electronics 876.63 | food 3182.05, hulls 9.87 | electronics 649.73, he3 1142.57, isotopes 104.43 | food×2.0, hulls×8.0, drive_cores×8.0 | lalande_mecca, eps_eri_harmony, tau_ceti_cognium |
+| Цитадель | food 5552.83, metals 1883.38, volatiles 3082.31 | he3 1032.72, components 1040.71, precision 195.13 | drive_cores 0.41 | volatiles×2.8, hulls×2.0, drive_cores×2.2 | eps_eri_harmony, hd20794_newindia, hd40307_firmament |
+| Новая Европа | electronics 691.70, components 911.52, metals 2139.11 | he3 490.73, biotech 71.08, drive_cores 4.43 | electronics 458.47, precision 46.80, components 110.33 | volatiles×2.4, hulls×8.0 | tau_ceti_cognium, gj832_tianhe, proxima_outpost |
+| Свободные поселения | biotech 282.29, electronics 259.61, components 599.91 | metals 1633.55, he3 304.03, food 1040.09 | electronics 340.79, biotech 162.89, components 493.11 | electronics×1.5, hulls×8.0, munitions×5.6, drive_cores×8.0 | proxima_outpost, tau_ceti_cognium, lalande_mecca |
+| Вторая Эллада | precision 454.41, electronics 861.92, he3 1405.32 | food 1583.63, drive_cores 4.60, hulls 6.88 | precision 279.00, electronics 534.09, isotopes 140.89 | hulls×5.6 | tau_ceti_cognium, hd40307_maland, eps_eri_harmony |
+| Новая Индия | components 9580.61, metals 13196.55, he3 2207.29 | food 2644.07, volatiles 3601.95, drive_cores 8.97 | components 7470.97, isotopes 277.40, precision 144.21 | volatiles×2.0, drive_cores×8.0 | tau_ceti_cognium, lalande_mecca, eps_eri_harmony |
+| Новая Маланд | food 12292.31, biotech 658.83, volatiles 9955.60 | metals 1899.31, electronics 240.66, components 552.48 | biotech 513.16, food 2112.86, electronics 42.46 | hulls×8.0 | hd20794_newindia, hd40307_firmament, hd20794_hellas2 |
+| Небесная Твердыня | electronics 540.16, components 1264.57, precision 223.69 | food 2112.86, drive_cores 3.86, isotopes 15.23 | precision 171.14, electronics 310.49, he3 377.04 | hulls×5.6 | tau_ceti_cognium, hd40307_maland, wolf359_citadel |
+| Сельта-Верде | he3 1331.58, food 3667.73, volatiles 3595.96 | precision 55.24, components 271.41, drive_cores 3.58 | he3 699.53, precision 10.14, biotech 10.14 | electronics×1.6, hulls×5.6 | lalande_mecca, tau_ceti_cognium, proxima_outpost |
+| Новая Карма | food 7027.60, precision 379.88, volatiles 6273.09 | he3 1087.12, components 749.56, hulls 28.46 | precision 133.49, biotech 20.54 | electronics×2.9, isotopes×5.4, drive_cores×8.0 | gj832_tianhe, hd20794_newindia, eps_eri_harmony |
+| Свободная Карма | food 2890.90, volatiles 2702.61, metals 1275.62 | he3 403.31, drive_cores 3.30, isotopes 12.23 | biotech 20.47, volatiles 175.81, precision 6.17 | hulls×8.0 | gj832_tianhe, tau_ceti_cognium, hd20794_hellas2 |
+| Провидение | food 0.92, he3 0.22, volatiles 1.16 | components 0.19, biotech 0.03, precision 0.02 | metals 0.11 | hulls×8.0, munitions×5.3 | hd20794_newindia, hd40307_maland, gj832_tianhe |
+| Шахта Альфа | food 1812.45, volatiles 1636.34, electronics 116.57 | he3 178.65, metals 432.52, drive_cores 2.26 | biotech 6.33, electronics 9.61, hulls 1.12 | metals×2.5, hulls×5.6 | eps_eri_harmony, tau_ceti_cognium, hd20794_hellas2 |
+| Третья Эллада | volatiles 0.07, metals 0.03, food 0.04 | he3 0.01 |  | food×2.5, components×2.2, electronics×1.8, hulls×5.7, munitions×5.0, drive_cores×8.0 | gj581_freeclans, hd40307_firmament, eps_eri_harmony |
+| Ново-Фиваида | food 0.04, volatiles 0.04, metals 0.02 | he3 0.01 |  | volatiles×1.8, food×1.7, components×1.9, hulls×2.6, munitions×3.2, drive_cores×8.0 | eps_eri_strife, eps_eri_harmony, gj581_freeclans |
 
 ## 6. Шоки: последствия через 8 лет (своя колония + 4 самых задетых соседа; |Δ| ≥ 15 %)
 
 ### earth_fleet@_all
-- delta_pav_karma: biotech цена +15%; components цена +15%; drive_cores цена +15%; electronics цена +15%; hulls цена +902%; isotopes цена +15%; metals цена +15%; munitions цена +118%; precision цена +15%; volatiles цена +15%
-- tau_ceti_cognium: biotech цена +15%; components цена +15%; drive_cores цена +15%; electronics цена +15%; food цена +15%; hulls цена +902%; isotopes цена +15%; munitions цена +646%; precision цена +15%; volatiles цена +15%
-- lalande_hellas: biotech цена +91%; components цена +15%; drive_cores цена +15%; electronics цена +15%; food цена -21%; hulls цена +35%; isotopes цена +15%; munitions цена +345%; precision цена +15%; volatiles цена +16%
-- hd114783_hellas3: biotech цена +15%; components цена +15%; drive_cores цена +15%; electronics цена +15%; food цена +15%; hulls цена -79%; isotopes цена +15%; metals цена +15%; munitions цена +330%; volatiles цена +15%
+- hd40307_maland: biotech цена +15%; components цена +32%; drive_cores цена -30%; electronics цена +15%; food цена +15%; hulls цена +902%, выпуск -100%; isotopes цена +15%; metals цена +40%; munitions цена +792%; precision цена +86%
+- wolf359_citadel: biotech цена +15%; components цена +15%; drive_cores цена +15%; electronics цена +15%; food цена +31%; hulls цена +902%; isotopes цена +15%; metals цена +15%; munitions цена +15%; precision цена +46%; volatiles цена +33%
+- leo83_zion: biotech цена +15%; components цена +15%; drive_cores цена +15%; electronics цена +15%; food цена +15%; hulls цена +901%; isotopes цена +15%; metals цена +15%; munitions цена +660%; precision цена +15%; volatiles цена +15%
+- tau_ceti_cognium: biotech цена +22%; components цена +15%; drive_cores цена +196%; electronics цена +59%; food цена +15%; hulls цена +144%; isotopes цена +15%; munitions цена +894%; precision цена +15%; volatiles цена +15%
 
 ### food_blight@delta_pav_karma
-- **delta_pav_karma**: food цена +88%, выпуск -45%; volatiles цена -38%
-- delta_pav_freekarma: food цена +140%
+- **delta_pav_karma**: food цена +41%, выпуск -45%; volatiles цена -38%
+- delta_pav_freekarma: food цена +163%
 
 ### food_blight@eps_eri_harmony
-- **eps_eri_harmony**: food цена +58%, выпуск -45%
-- gj581_freeclans: food цена +196%
-- eps_eri_strife: food цена +116%
-- delta_pav_freekarma: food цена +29%
-- gj581_europa: food цена +28%
+- **eps_eri_harmony**: food цена +59%, выпуск -45%
+- eps_eri_strife: food цена +115%
+- gj832_tianhe: food цена +21%
 
 ### food_blight@eps_eri_strife
 - **eps_eri_strife**: food цена +0%, выпуск -45%
 
 ### food_blight@gj581_europa
-- **gj581_europa**: food цена +145%, выпуск -37%
-- gj581_freeclans: food цена +74%
+- **gj581_europa**: food цена +91%, выпуск -37%
 
 ### food_blight@gj832_tianhe
-- **gj832_tianhe**: food цена +60%, выпуск -45%
+- **gj832_tianhe**: food цена +58%, выпуск -45%
 
 ### food_blight@hd20794_newindia
 - **hd20794_newindia**: biotech цена +0%, выпуск -100%; food цена -37%, выпуск -42%; volatiles цена +20%
-- gj581_europa: biotech цена +154%
-- gj581_freeclans: biotech цена +131%
-- hd114783_hellas3: biotech цена +112%
-- wolf359_citadel: biotech цена +79%
+- gj581_europa: biotech цена +185%
+- gj581_freeclans: biotech цена +140%
+- lalande_hellas: biotech цена +66%
+- tau_ceti_cognium: biotech цена +58%
 
 ### food_blight@hd40307_maland
 - **hd40307_maland**: food цена +0%, выпуск -45%
 
 ### food_blight@lalande_hellas
 - **lalande_hellas**: food цена -54%, выпуск -45%
-- gj581_freeclans: food цена +196%
-- cyg61_kern: food цена +43%
-- gj581_europa: food цена +28%
-- proxima_outpost: food цена +19%
+- cyg61_kern: food цена +48%
+- proxima_outpost: food цена +34%
 
 ### food_blight@lalande_mecca
-- **lalande_mecca**: food цена +52%, выпуск -45%; volatiles цена -39%
+- **lalande_mecca**: food цена +52%, выпуск -45%; volatiles цена -38%
 
 ### food_blight@proxima_outpost
-- **proxima_outpost**: food цена +86%, выпуск -45%; volatiles цена -24%
-- gj581_freeclans: food цена +196%
-- gj581_europa: food цена +28%
+- **proxima_outpost**: food цена +110%, выпуск -45%; volatiles цена -25%
 - delta_pav_freekarma: food цена +26%
-- wolf359_citadel: biotech цена +0%, выпуск +50%
+- tau_ceti_cognium: biotech цена -24%
+- eps_eri_harmony: biotech цена +17%
+- wolf359_citadel: biotech цена -4%, выпуск +50%
 
 ### food_blight@tau_ceti_cognium
-- **tau_ceti_cognium**: biotech цена -4%, выпуск +50%; food цена -65%, выпуск -18%; volatiles цена +189%
-- eps_eri_harmony: food цена +18%
+- **tau_ceti_cognium**: biotech цена -25%, выпуск +50%; food цена -65%, выпуск -18%; volatiles цена +189%
+- eps_eri_harmony: biotech цена +17%; food цена +19%
 
 ### food_blight@wolf359_citadel
-- **wolf359_citadel**: biotech цена -7%, выпуск +150%; food цена +52%, выпуск -39%; volatiles цена -16%
-- lalande_hellas: biotech цена +66%
-- tau_ceti_cognium: biotech цена -44%
+- **wolf359_citadel**: biotech цена -4%, выпуск +150%; food цена +52%, выпуск -39%; volatiles цена -15%
+- tau_ceti_cognium: biotech цена -24%
+- eps_eri_harmony: biotech цена +17%
 
 ### gas_platform_captured@delta_pav_karma
 
 ### gas_platform_captured@eps_eri_harmony
-- **eps_eri_harmony**: he3 цена +162%, выпуск -80%
-- wolf359_citadel: he3 цена +517%
-- lalande_mecca: he3 цена +416%
+- **eps_eri_harmony**: he3 цена +156%, выпуск -80%
+- wolf359_citadel: he3 цена +516%
 - proxima_outpost: he3 цена +314%
-- gj581_europa: hulls цена +298%, выпуск -50%
+- gj581_europa: he3 цена +243%
+- hd20794_hellas2: he3 цена +195%
 
 ### gas_platform_captured@eps_eri_strife
-- **eps_eri_strife**: he3 цена +60%, выпуск -80%
-- hd69830_verde: he3 цена +41%
-- hd40307_firmament: he3 цена -24%
-- eps_eri_harmony: he3 цена +18%
+- **eps_eri_strife**: he3 цена -11%, выпуск -80%
+- eps_eri_harmony: he3 цена +25%
+- gj832_tianhe: he3 цена +19%
 
 ### gas_platform_captured@gj581_europa
 - **gj581_europa**: he3 цена +0%, выпуск -80%
+- hd20794_hellas2: he3 цена +61%
+- eps_eri_strife: he3 цена -45%
 
 ### gas_platform_captured@gj832_tianhe
-- **gj832_tianhe**: he3 цена +162%, выпуск -80%
-- hd69830_verde: he3 цена +195%
-- hd20794_hellas2: he3 цена +132%
-- gj876_next: he3 цена +107%
-- eps_eri_harmony: he3 цена +80%
+- **gj832_tianhe**: he3 цена +136%, выпуск -80%
+- hd20794_hellas2: he3 цена +195%
+- eps_eri_harmony: he3 цена +52%
+- eps_eri_strife: he3 цена -45%
+- hd69830_verde: he3 цена +41%
 
 ### gas_platform_captured@hd20794_newindia
 - **hd20794_newindia**: he3 цена +0%, выпуск -80%
-- hd69830_verde: he3 цена +195%
-- eps_eri_strife: he3 цена -26%
-- hd40307_firmament: he3 цена -19%
-- hd20794_hellas2: he3 цена +18%
+- hd20794_hellas2: he3 цена +61%
+- eps_eri_strife: he3 цена -45%
 
 ### gas_platform_captured@hd40307_maland
-- **hd40307_maland**: he3 цена +25%, выпуск -80%
-- hd20794_hellas2: he3 цена +68%
+- **hd40307_maland**: he3 цена +15%, выпуск -80%
+- hd20794_hellas2: he3 цена +46%
+- eps_eri_strife: he3 цена -45%
 
 ### gas_platform_captured@lalande_hellas
 - **lalande_hellas**: he3 цена +0%, выпуск -80%
+- eps_eri_strife: he3 цена -45%
+- hd20794_hellas2: he3 цена +15%
 
 ### gas_platform_captured@lalande_mecca
 - **lalande_mecca**: he3 цена +0%, выпуск -80%
 
 ### gas_platform_captured@proxima_outpost
 - **proxima_outpost**: he3 цена +0%, выпуск -80%
+- hd20794_hellas2: he3 цена +61%
+- eps_eri_strife: he3 цена -45%
 
 ### gas_platform_captured@tau_ceti_cognium
 
 ### gas_platform_captured@wolf359_citadel
 
 ### mine_destroyed@delta_pav_karma
-- **delta_pav_karma**: electronics цена +206%, выпуск -60%; metals цена +17%, выпуск -70%; munitions цена +397%, выпуск -60%; precision цена +26%, выпуск -60%
-- lalande_hellas: precision цена +447%
-- delta_pav_freekarma: metals цена +164%
-- cyg61_kern: precision цена +154%
-- gj876_next: precision цена +41%
+- **delta_pav_karma**: electronics цена +176%, выпуск -60%; hulls цена -65%; metals цена +19%, выпуск -70%; munitions цена +453%, выпуск -60%; precision цена +26%, выпуск -60%
+- leo83_zion: hulls цена +771%
+- wolf359_citadel: hulls цена +656%; precision цена +54%
+- hd69830_verde: electronics цена -43%; hulls цена +193%
+- delta_pav_freekarma: hulls цена -44%; metals цена +171%
 
 ### mine_destroyed@eps_eri_harmony
-- **eps_eri_harmony**: metals цена +73%, выпуск -70%
+- **eps_eri_harmony**: metals цена +47%, выпуск -70%
 
 ### mine_destroyed@eps_eri_strife
-- **eps_eri_strife**: metals цена +0%, выпуск -70%
+- **eps_eri_strife**: metals цена +9%, выпуск -70%
 
 ### mine_destroyed@gj581_europa
-- **gj581_europa**: drive_cores цена -65%; electronics цена +115%, выпуск -59%; hulls цена +464%, выпуск -50%; metals цена +296%, выпуск -70%; munitions цена +447%, выпуск -60%; precision цена +87%, выпуск -60%
-- cyg61_kern: drive_cores цена -62%; electronics цена +129%; hulls цена +772%; precision цена +154%
-- tau_ceti_cognium: hulls цена +772%
-- hd40307_firmament: drive_cores цена -65%; hulls цена +409%
-- delta_pav_freekarma: drive_cores цена -65%; hulls цена +276%
+- **gj581_europa**: electronics цена +70%, выпуск -58%; hulls цена -28%, выпуск -100%; metals цена +296%, выпуск -70%; munitions цена +447%, выпуск -60%; precision цена +42%, выпуск -60%
+- gj876_next: drive_cores цена +205%; electronics цена +16%; hulls цена +772%
+- hd40307_maland: drive_cores цена +205%; hulls цена +772%, выпуск -100%
+- hd69830_verde: drive_cores цена +205%; hulls цена +772%, выпуск -50%
+- leo83_zion: hulls цена +771%; isotopes цена -42%
 
 ### mine_destroyed@gj832_tianhe
-- **gj832_tianhe**: metals цена +139%, выпуск -70%
-- delta_pav_freekarma: metals цена +46%
+- **gj832_tianhe**: metals цена +89%, выпуск -70%
+- delta_pav_freekarma: metals цена +20%
 
 ### mine_destroyed@hd20794_newindia
-- **hd20794_newindia**: components цена -11%, выпуск -30%; electronics цена +0%, выпуск -60%; hulls цена +0%, выпуск -50%; metals цена +170%, выпуск -70%; munitions цена -26%, выпуск -60%; precision цена +17%, выпуск -60%
-- hd40307_maland: components цена +15%, выпуск -48%; electronics цена -11%, выпуск -50%; hulls цена -52%; metals цена +116%; munitions цена +676%, выпуск -50%; precision цена +154%, выпуск -50%
-- lalande_hellas: hulls цена +17%; precision цена +447%
-- hd40307_firmament: components цена +195%
-- gj876_next: munitions цена +174%; precision цена +72%
+- **hd20794_newindia**: components цена +148%, выпуск -38%; electronics цена -10%, выпуск -80%; hulls цена +443%, выпуск -50%; metals цена +74%, выпуск -70%; munitions цена -17%, выпуск -80%; precision цена +557%, выпуск -80%
+- leo83_zion: hulls цена +771%; munitions цена +248%
+- wolf359_citadel: hulls цена +656%; precision цена +54%
+- tau_ceti_cognium: drive_cores цена +158%; electronics цена +78%; hulls цена +112%; munitions цена +648%
+- hd40307_maland: components цена +15%, выпуск -48%; electronics цена -11%, выпуск -50%; hulls цена +624%; metals цена +116%; munitions цена +66%, выпуск -50%; precision цена +447%, выпуск -50%
 
 ### mine_destroyed@hd40307_maland
-- **hd40307_maland**: metals цена +2%, выпуск -70%
+- **hd40307_maland**: metals цена +3%, выпуск -70%
 
 ### mine_destroyed@lalande_hellas
 - **lalande_hellas**: metals цена +0%, выпуск -70%
 
 ### mine_destroyed@lalande_mecca
-- **lalande_mecca**: metals цена -24%, выпуск -70%
+- **lalande_mecca**: metals цена -19%, выпуск -70%
 
 ### mine_destroyed@proxima_outpost
-- **proxima_outpost**: electronics цена +318%, выпуск -60%; hulls цена +0%, выпуск -60%; metals цена +302%, выпуск -70%; munitions цена +0%, выпуск -60%; precision цена +96%, выпуск -60%
-- cyg61_kern: drive_cores цена -61%; precision цена +154%
-- eps_eri_strife: electronics цена +89%
-- gj876_next: drive_cores цена -65%
-- hd20794_newindia: drive_cores цена -37%; precision цена +17%
+- **proxima_outpost**: electronics цена +288%, выпуск -60%; hulls цена +0%, выпуск -60%; metals цена +302%, выпуск -70%; munitions цена +53%, выпуск -60%; precision цена +185%, выпуск -60%
+- leo83_zion: hulls цена +771%
+- wolf359_citadel: hulls цена +656%
+- hd69830_verde: electronics цена -43%; hulls цена +193%
+- tau_ceti_cognium: drive_cores цена +158%; hulls цена +112%
 
 ### mine_destroyed@tau_ceti_cognium
+- **tau_ceti_cognium**: metals цена +0%, выпуск -70%
 
 ### mine_destroyed@wolf359_citadel
-- **wolf359_citadel**: electronics цена -1%, выпуск -19%; hulls цена +98%, выпуск -80%; metals цена -42%, выпуск -70%; munitions цена +0%, выпуск -80%; precision цена -11%, выпуск -80%
-- hd114783_hellas3: precision цена -55%
-- leo83_zion: precision цена -48%
-- gj832_tianhe: precision цена +37%
-- hd69830_verde: precision цена -18%
+- **wolf359_citadel**: drive_cores цена -47%, выпуск +77%; hulls цена +656%; metals цена -33%, выпуск -70%; munitions цена +0%, выпуск -37%; precision цена +34%, выпуск -80%
+- leo83_zion: hulls цена +771%
+- hd69830_verde: electronics цена -43%; hulls цена +193%
+- tau_ceti_cognium: drive_cores цена +158%; hulls цена +112%
+- cyg61_kern: electronics цена -44%; hulls цена -82%
 
 ### route_blocked@delta_pav_karma
-- **delta_pav_karma**: components цена +772%, выпуск -100%; he3 цена +771%; hulls цена +772%; metals цена -31%; precision цена -66%
-- delta_pav_freekarma: biotech цена -47%; components цена +772%, выпуск -100%; drive_cores цена +205%; electronics цена -37%; he3 цена +771%; hulls цена +276%, выпуск -100%; isotopes цена +275%
-- gj832_tianhe: components цена +16%; drive_cores цена +189%; hulls цена -82%, выпуск +50%; precision цена +37%
-- cyg61_kern: drive_cores цена -62%; hulls цена +185%; precision цена +154%
-- gj581_europa: biotech цена +154%; drive_cores цена -65%; hulls цена -16%, выпуск +50%
+- **delta_pav_karma**: components цена +772%, выпуск -100%; he3 цена +771%; hulls цена +206%; metals цена -30%; precision цена -66%
+- delta_pav_freekarma: biotech цена -50%; components цена +772%, выпуск -100%; drive_cores цена +205%; electronics цена -22%; he3 цена +771%; hulls цена +336%, выпуск -100%; isotopes цена +277%; munitions цена -31%
+- tau_ceti_cognium: biotech цена -18%; drive_cores цена +158%; electronics цена +33%; hulls цена +112%
+- lalande_mecca: drive_cores цена -38%, выпуск +36%; electronics цена +35%; precision цена +134%
+- gj832_tianhe: drive_cores цена +82%; hulls цена -89%
 
 ### route_blocked@eps_eri_harmony
-- **eps_eri_harmony**: drive_cores цена +200%; food цена -42%; hulls цена +835%, выпуск -100%; isotopes цена -22%; precision цена -22%
-- cyg61_kern: he3 цена +53%; hulls цена +398%; isotopes цена +772%; munitions цена +128%; precision цена +154%
-- hd40307_firmament: biotech цена -46%; he3 цена +82%; hulls цена +8%, выпуск +100%; isotopes цена +772%
-- delta_pav_karma: components цена +0%, выпуск -40%; he3 цена +107%; hulls цена +772%; precision цена -32%
-- gj832_tianhe: drive_cores цена +772%; food цена +106%; he3 цена +195%; hulls цена +0%, выпуск +50%; isotopes цена +484%; precision цена +37%
+- **eps_eri_harmony**: biotech цена +37%; drive_cores цена +200%; electronics цена -23%; food цена -42%; hulls цена +676%, выпуск -100%; isotopes цена -22%; precision цена -31%
+- wolf359_citadel: biotech цена -4%, выпуск -100%; components цена +0%, выпуск -20%; drive_cores цена +308%, выпуск -24%; he3 цена +185%; hulls цена +656%, выпуск -20%; isotopes цена +772%; precision цена +81%; volatiles цена +16%
+- eps_eri_strife: biotech цена -29%; electronics цена -66%; he3 цена -66%; hulls цена +772%; munitions цена -66%; precision цена -48%
+- gj876_next: drive_cores цена +205%; electronics цена +25%; he3 цена +78%; hulls цена +772%; isotopes цена +92%; munitions цена +482%; volatiles цена +149%
+- hd40307_maland: drive_cores цена +205%; he3 цена +32%; hulls цена +772%, выпуск -100%; isotopes цена +167%; precision цена -22%
 
 ### route_blocked@eps_eri_strife
-- **eps_eri_strife**: biotech цена +39%; electronics цена -36%; he3 цена -39%; munitions цена -64%; precision цена -46%
-- eps_eri_harmony: drive_cores цена +200%; food цена -42%; hulls цена +835%, выпуск -100%; isotopes цена -22%; precision цена -22%
-- cyg61_kern: he3 цена +53%; hulls цена +398%; isotopes цена +772%; munitions цена +128%; precision цена +154%
-- hd40307_firmament: biotech цена -46%; he3 цена +82%; hulls цена +8%, выпуск +100%; isotopes цена +772%
-- delta_pav_karma: components цена +0%, выпуск -40%; he3 цена +107%; hulls цена +772%; precision цена -32%
+- **eps_eri_strife**: biotech цена -29%; electronics цена -66%; he3 цена -66%; hulls цена +772%; munitions цена -66%; precision цена -48%
+- wolf359_citadel: biotech цена -4%, выпуск -100%; components цена +0%, выпуск -20%; drive_cores цена +308%, выпуск -24%; he3 цена +185%; hulls цена +656%, выпуск -20%; isotopes цена +772%; precision цена +81%; volatiles цена +16%
+- gj876_next: drive_cores цена +205%; electronics цена +25%; he3 цена +78%; hulls цена +772%; isotopes цена +92%; munitions цена +482%; volatiles цена +149%
+- hd40307_maland: drive_cores цена +205%; he3 цена +32%; hulls цена +772%, выпуск -100%; isotopes цена +167%; precision цена -22%
+- hd69830_verde: drive_cores цена +205%; electronics цена -43%; he3 цена +195%; hulls цена +772%; isotopes цена +83%; precision цена +87%
 
 ### route_blocked@gj581_europa
-- **gj581_europa**: biotech цена -11%, выпуск -100%; components цена +102%, выпуск -20%; drive_cores цена +204%; electronics цена -66%; food цена +145%, выпуск -77%; he3 цена +723%; hulls цена +464%, выпуск -100%; isotopes цена +772%; volatiles цена +49%
-- gj581_freeclans: biotech цена -22%; components цена +1083%, выпуск -96%; electronics цена +138%, выпуск -100%; food цена +196%; he3 цена +249%; hulls цена +772%, выпуск -100%; isotopes цена +292%; metals цена +91%; munitions цена +205%, выпуск -100%; precision цена -11%, выпуск -100%
-- hd40307_firmament: drive_cores цена -65%; hulls цена +409%
-- tau_ceti_cognium: electronics цена +24%; hulls цена +350%; munitions цена +42%
-- hd69830_verde: drive_cores цена -65%; hulls цена +198%, выпуск -33%
+- **gj581_europa**: biotech цена +0%, выпуск -100%; components цена +112%, выпуск -20%; drive_cores цена +204%; electronics цена -66%; food цена +91%, выпуск -77%; he3 цена +718%; hulls цена +460%, выпуск -100%; isotopes цена +772%; volatiles цена +49%
+- tau_ceti_cognium: biotech цена +58%; drive_cores цена +158%, выпуск -9%; electronics цена +772%; hulls цена +112%; munitions цена +183%
+- gj581_freeclans: biotech цена -19%; components цена +78%, выпуск -96%; electronics цена +119%, выпуск -100%; he3 цена +241%; hulls цена +772%, выпуск -100%; isotopes цена +225%; metals цена +97%; munitions цена +190%, выпуск -100%; precision цена +125%, выпуск -100%
+- lalande_hellas: biotech цена +50%; drive_cores цена +264%; electronics цена +43%; food цена -31%; hulls цена -29%
+- wolf359_citadel: drive_cores цена +0%, выпуск +40%; hulls цена +209%; precision цена +54%; volatiles цена -62%
 
 ### route_blocked@gj832_tianhe
-- **gj832_tianhe**: biotech цена -24%; components цена -31%; drive_cores цена +772%; electronics цена -17%; hulls цена +42%, выпуск -100%; isotopes цена +772%; precision цена -54%
-- cyg61_kern: drive_cores цена -62%; hulls цена +515%; precision цена +154%
-- hd69830_verde: components цена +52%; electronics цена +17%; he3 цена +195%; isotopes цена -40%; precision цена +23%
-- hd20794_hellas2: drive_cores цена +187%; he3 цена +18%; hulls цена -82%, выпуск +50%; isotopes цена -58%
-- delta_pav_karma: hulls цена +185%
+- **gj832_tianhe**: biotech цена -27%; components цена -18%; drive_cores цена +82%; hulls цена +42%, выпуск -100%; isotopes цена +772%; precision цена -66%
+- gj876_next: drive_cores цена +205%; hulls цена +772%; precision цена +91%
+- cyg61_kern: drive_cores цена -50%; electronics цена -42%; hulls цена +42%; precision цена +154%
+- wolf359_citadel: hulls цена +146%; precision цена +112%
+- lalande_mecca: drive_cores цена -35%, выпуск +71%; electronics цена +35%; precision цена +134%
 
 ### route_blocked@hd20794_newindia
-- **hd20794_newindia**: biotech цена +353%, выпуск -100%; components цена -24%; drive_cores цена +447%; food цена +103%, выпуск -42%; hulls цена +42%, выпуск -100%; precision цена -44%; volatiles цена +36%
-- eps_eri_harmony: components цена +44%; drive_cores цена +200%; electronics цена -16%; food цена -33%; hulls цена +835%, выпуск -33%; isotopes цена +21%
-- cyg61_kern: components цена +153%; drive_cores цена +230%; electronics цена +129%; hulls цена +772%; precision цена +154%
-- delta_pav_karma: components цена +222%; hulls цена +772%
-- gj832_tianhe: components цена +98%; drive_cores цена +772%; he3 цена +19%; hulls цена +42%, выпуск -50%; precision цена +37%
+- **hd20794_newindia**: biotech цена +346%, выпуск -100%; components цена -16%; drive_cores цена +205%; food цена +104%, выпуск -42%; hulls цена +772%, выпуск -100%; precision цена -46%; volatiles цена +36%
+- eps_eri_strife: biotech цена -29%; components цена +85%; he3 цена -45%; hulls цена +772%; precision цена +23%
+- hd20794_hellas2: biotech цена +34%; drive_cores цена +203%; electronics цена -66%; hulls цена +772%, выпуск -100%; isotopes цена -66%; metals цена -36%; munitions цена -66%; precision цена -66%
+- lalande_mecca: components цена +772%; drive_cores цена -42%, выпуск +72%; electronics цена +34%; hulls цена -86%; munitions цена -70%; precision цена +143%, выпуск -11%
+- wolf359_citadel: components цена +123%; drive_cores цена -47%, выпуск +44%; electronics цена +71%; hulls цена +656%; munitions цена +0%, выпуск -42%; precision цена +91%, выпуск -60%
 
 ### route_blocked@hd40307_maland
-- **hd40307_maland**: biotech цена -66%; components цена +15%, выпуск -95%; drive_cores цена +205%; electronics цена +675%, выпуск -100%; hulls цена +300%, выпуск -100%; isotopes цена +772%; metals цена +71%; munitions цена +676%, выпуск -100%; precision цена -11%, выпуск -100%
-- hd40307_firmament: biotech цена -66%; components цена +162%; drive_cores цена +204%; electronics цена -66%; he3 цена -38%; hulls цена +622%, выпуск -100%; isotopes цена +772%; munitions цена -66%; precision цена -52%
-- delta_pav_karma: biotech цена +26%; hulls цена +772%
-- eps_eri_harmony: biotech цена +48%; drive_cores цена -42%; hulls цена +560%; isotopes цена -19%
-- gj832_tianhe: drive_cores цена +189%; hulls цена -82%, выпуск +50%; precision цена +37%
+- **hd40307_maland**: biotech цена -66%; components цена +15%, выпуск -95%; drive_cores цена +205%; electronics цена -11%, выпуск -100%; hulls цена +772%, выпуск -100%; isotopes цена +772%; metals цена +71%; munitions цена +676%, выпуск -100%; precision цена -11%, выпуск -100%
+- hd40307_firmament: biotech цена -66%; components цена +17%; drive_cores цена +204%; electronics цена -45%; he3 цена -24%; hulls цена +567%, выпуск -100%; isotopes цена +772%; munitions цена -66%; precision цена -57%
+- leo83_zion: hulls цена +515%; isotopes цена -42%; munitions цена +248%
+- hd20794_newindia: biotech цена +515%; electronics цена +33%; hulls цена +115%; precision цена +20%
+- gj876_next: hulls цена +195%; munitions цена +482%
 
 ### route_blocked@lalande_hellas
-- **lalande_hellas**: biotech цена +66%; components цена +772%, выпуск -90%; drive_cores цена +772%; electronics цена +654%, выпуск -100%; he3 цена +112%; hulls цена +17%, выпуск -100%; isotopes цена +321%; metals цена +770%; munitions цена +630%, выпуск -100%; precision цена +676%, выпуск -100%
-- lalande_mecca: components цена +643%; drive_cores цена +153%, выпуск -99%; electronics цена +304%; he3 цена +771%; isotopes цена +772%; precision цена +68%, выпуск -17%
-- cyg61_kern: drive_cores цена -62%; electronics цена -16%; hulls цена +772%; munitions цена +128%; precision цена +154%
-- tau_ceti_cognium: biotech цена -60%; munitions цена +734%
-- hd40307_maland: drive_cores цена -49%; electronics цена -27%; hulls цена +300%, выпуск -100%
+- **lalande_hellas**: biotech цена +66%; components цена +772%, выпуск -91%; drive_cores цена +264%; electronics цена +675%, выпуск -100%; he3 цена +114%; isotopes цена +325%; metals цена +770%; munitions цена +676%, выпуск -100%; precision цена +676%, выпуск -100%
+- lalande_mecca: biotech цена +93%; components цена +772%; drive_cores цена +626%, выпуск -100%; electronics цена +353%; he3 цена +771%; isotopes цена +772%; precision цена +572%, выпуск -18%
+- leo83_zion: electronics цена -49%; hulls цена +515%; isotopes цена -42%
+- hd20794_hellas2: biotech цена +34%; drive_cores цена -65%; electronics цена -47%; hulls цена +515%
+- eps_eri_strife: electronics цена -31%; he3 цена -66%; hulls цена +402%; munitions цена -31%
 
 ### route_blocked@lalande_mecca
-- **lalande_mecca**: components цена +643%; drive_cores цена +153%, выпуск -99%; electronics цена +304%; he3 цена +771%; isotopes цена +772%; precision цена +68%, выпуск -17%
-- cyg61_kern: drive_cores цена -62%; electronics цена -16%; hulls цена +772%; munitions цена +128%; precision цена +154%
-- lalande_hellas: biotech цена +66%; components цена +772%, выпуск -90%; drive_cores цена +772%; electronics цена +654%, выпуск -100%; he3 цена +112%; hulls цена +17%, выпуск -100%; isotopes цена +321%; metals цена +770%; munitions цена +630%, выпуск -100%; precision цена +676%, выпуск -100%
-- tau_ceti_cognium: biotech цена -60%; munitions цена +734%
-- hd40307_maland: drive_cores цена -49%; electronics цена -27%; hulls цена +300%, выпуск -100%
+- **lalande_mecca**: biotech цена +93%; components цена +772%; drive_cores цена +626%, выпуск -100%; electronics цена +353%; he3 цена +771%; isotopes цена +772%; precision цена +572%, выпуск -18%
+- lalande_hellas: biotech цена +66%; components цена +772%, выпуск -91%; drive_cores цена +264%; electronics цена +675%, выпуск -100%; he3 цена +114%; isotopes цена +325%; metals цена +770%; munitions цена +676%, выпуск -100%; precision цена +676%, выпуск -100%
+- leo83_zion: electronics цена -49%; hulls цена +515%; isotopes цена -42%
+- hd20794_hellas2: biotech цена +34%; drive_cores цена -65%; electronics цена -47%; hulls цена +515%
+- eps_eri_strife: electronics цена -31%; he3 цена -66%; hulls цена +402%; munitions цена -31%
 
 ### route_blocked@proxima_outpost
-- **proxima_outpost**: biotech цена +26%; components цена +144%; electronics цена +45%; food цена -38%; he3 цена +771%; isotopes цена +772%; metals цена -46%; munitions цена +31%; precision цена +40%; volatiles цена -26%
-- cyg61_kern: drive_cores цена +230%; hulls цена +772%
-- tau_ceti_cognium: hulls цена +772%
-- hd40307_firmament: drive_cores цена -65%; electronics цена -46%; he3 цена -38%; hulls цена +409%
-- gj581_europa: drive_cores цена -65%; food цена +28%; hulls цена +298%; precision цена -17%
+- **proxima_outpost**: biotech цена +15%; components цена +144%; food цена -31%; he3 цена +771%; isotopes цена +772%; metals цена -46%; precision цена +99%; volatiles цена -27%
+- eps_eri_strife: electronics цена -45%; he3 цена -45%; hulls цена +402%
+- gj876_next: hulls цена +195%
+- hd40307_maland: drive_cores цена -39%; hulls цена +121%
+- hd114783_hellas3: hulls цена -88%
 
 ### route_blocked@tau_ceti_cognium
-- **tau_ceti_cognium**: biotech цена +206%, выпуск -100%; components цена +772%, выпуск -100%; drive_cores цена +10%, выпуск -100%; electronics цена +772%, выпуск -100%; food цена +206%, выпуск -100%; he3 цена +771%; hulls цена +772%, выпуск -100%; isotopes цена +772%; metals цена +770%; munitions цена +734%, выпуск -100%; precision цена +772%, выпуск -100%; volatiles цена +770%
-- eps_eri_harmony: drive_cores цена +200%; electronics цена -16%; food цена -24%; hulls цена +835%, выпуск -100%; isotopes цена -22%; munitions цена -24%; precision цена -22%
-- cyg61_kern: drive_cores цена +230%; electronics цена -20%; hulls цена +772%
-- delta_pav_karma: hulls цена +772%; precision цена -65%
-- gj832_tianhe: biotech цена -24%; components цена -21%; drive_cores цена +772%; electronics цена -30%; hulls цена +42%, выпуск -100%; precision цена -52%
+- **tau_ceti_cognium**: biotech цена +383%, выпуск -100%; components цена +772%, выпуск -100%; drive_cores цена +676%, выпуск -100%; electronics цена +772%, выпуск -100%; food цена +206%, выпуск -100%; he3 цена +771%; hulls цена +112%, выпуск -100%; isotopes цена +772%; metals цена +770%; munitions цена +764%, выпуск -100%; precision цена +772%, выпуск -100%; volatiles цена +770%
+- eps_eri_strife: biotech цена -52%; electronics цена -66%; he3 цена -66%; hulls цена +772%; munitions цена -18%; precision цена -45%
+- gj876_next: drive_cores цена +205%; he3 цена +29%; hulls цена +772%; munitions цена +130%
+- hd20794_hellas2: biotech цена -31%; drive_cores цена +203%; electronics цена -50%; hulls цена +772%, выпуск -100%; precision цена -64%
+- hd40307_maland: components цена +15%, выпуск -48%; drive_cores цена -65%; electronics цена -11%, выпуск -50%; hulls цена +772%; metals цена +71%; munitions цена -11%, выпуск -50%; precision цена -11%, выпуск -50%
 
 ### route_blocked@wolf359_citadel
-- **wolf359_citadel**: biotech цена +707%, выпуск -100%; components цена +772%, выпуск -100%; drive_cores цена +364%, выпуск -100%; electronics цена +34%; he3 цена +771%; hulls цена +98%, выпуск -100%; isotopes цена +772%; metals цена -44%; munitions цена +0%, выпуск -54%; precision цена +362%, выпуск -100%; volatiles цена +16%
-- tau_ceti_cognium: biotech цена -61%; drive_cores цена +0%, выпуск +15%; hulls цена +772%
-- leo83_zion: electronics цена +93%; precision цена -54%
-- hd114783_hellas3: hulls цена -84%; isotopes цена -27%; precision цена -60%
-- gj581_europa: drive_cores цена -65%
+- **wolf359_citadel**: biotech цена +733%, выпуск -100%; components цена +772%, выпуск -100%; drive_cores цена +308%, выпуск -100%; electronics цена +185%; he3 цена +771%; hulls цена +772%, выпуск -100%; isotopes цена +772%; metals цена -23%; munitions цена +0%, выпуск -58%; precision цена +609%, выпуск -100%; volatiles цена +16%
+- leo83_zion: components цена +108%; hulls цена +185%
+- gj581_freeclans: hulls цена +127%
+- gj876_next: drive_cores цена -65%; hulls цена +104%
+- lalande_mecca: drive_cores цена -33%, выпуск +69%; electronics цена +31%; hulls цена -88%
 
 ### shipyard_destroyed@delta_pav_karma
 
 ### shipyard_destroyed@eps_eri_harmony
-- **eps_eri_harmony**: components цена -23%; hulls цена +120%, выпуск -85%
-- cyg61_kern: hulls цена +772%; precision цена +27%
-- tau_ceti_cognium: hulls цена +772%
-- hd40307_firmament: drive_cores цена -65%; electronics цена -46%; he3 цена -30%; hulls цена +622%
-- gj581_europa: drive_cores цена -65%; hulls цена +298%
+- **eps_eri_harmony**: components цена -25%; electronics цена -23%; hulls цена +84%, выпуск -85%
+- eps_eri_strife: he3 цена -45%; hulls цена +772%
+- leo83_zion: hulls цена +771%
+- wolf359_citadel: hulls цена +656%
+- hd20794_newindia: drive_cores цена +95%; hulls цена +556%
 
 ### shipyard_destroyed@eps_eri_strife
-- **eps_eri_strife**: components цена +36%
-- gj581_freeclans: components цена -32%
+- **eps_eri_strife**: —
+- cyg61_kern: electronics цена -44%
+- hd69830_verde: electronics цена -43%
+- proxima_outpost: electronics цена -40%
+- tau_ceti_cognium: electronics цена +21%
 
 ### shipyard_destroyed@gj581_europa
-- **gj581_europa**: hulls цена +319%, выпуск -78%
-- hd40307_firmament: drive_cores цена +204%; hulls цена +622%
-- lalande_hellas: drive_cores цена +108%; hulls цена +17%
-- leo83_zion: hulls цена -88%
-- hd114783_hellas3: hulls цена -84%
+- **gj581_europa**: components цена +18%; hulls цена -36%, выпуск -85%
+- leo83_zion: components цена +108%; hulls цена +515%
+- gj581_freeclans: components цена +23%; electronics цена -16%; hulls цена +259%
+- delta_pav_karma: hulls цена +206%
+- gj876_next: hulls цена +195%
 
 ### shipyard_destroyed@gj832_tianhe
-- **gj832_tianhe**: hulls цена +42%, выпуск -85%; precision цена +37%
-- cyg61_kern: drive_cores цена +230%; hulls цена +772%
-- delta_pav_karma: hulls цена +772%
-- tau_ceti_cognium: hulls цена +772%
-- hd40307_firmament: drive_cores цена -65%; electronics цена -46%; hulls цена +622%
+- **gj832_tianhe**: drive_cores цена -40%; hulls цена -84%, выпуск -85%
+- eps_eri_strife: he3 цена -45%; hulls цена +772%
+- hd20794_hellas2: drive_cores цена +203%; he3 цена +60%; hulls цена +515%
+- gj581_europa: drive_cores цена +204%; hulls цена +460%
+- delta_pav_freekarma: drive_cores цена +205%; hulls цена +336%
 
 ### shipyard_destroyed@hd20794_newindia
-- **hd20794_newindia**: drive_cores цена +79%; hulls цена -82%, выпуск -78%
-- hd40307_firmament: electronics цена -46%; hulls цена +622%
-- gj581_europa: drive_cores цена +204%; hulls цена +298%
-- leo83_zion: electronics цена +93%; hulls цена -87%
-- eps_eri_strife: electronics цена +89%
+- **hd20794_newindia**: hulls цена +0%, выпуск -85%
+- leo83_zion: hulls цена +515%
+- gj581_freeclans: hulls цена +259%
+- delta_pav_karma: hulls цена +206%
+- gj876_next: hulls цена +195%
 
 ### shipyard_destroyed@hd40307_maland
-- **hd40307_maland**: hulls цена +277%, выпуск -85%
+- **hd40307_maland**: hulls цена +0%, выпуск -85%
+- tau_ceti_cognium: electronics цена +20%; hulls цена +112%
+- cyg61_kern: electronics цена -44%
+- hd69830_verde: electronics цена -43%
+- proxima_outpost: electronics цена -40%
 
 ### shipyard_destroyed@lalande_hellas
-- **lalande_hellas**: drive_cores цена +176%; hulls цена +17%, выпуск -100%
-- hd40307_firmament: electronics цена -24%; hulls цена +622%
-- gj581_europa: drive_cores цена +204%; hulls цена +298%
-- proxima_outpost: hulls цена -88%
-- leo83_zion: hulls цена -87%
+- **lalande_hellas**: drive_cores цена +15%; electronics цена +21%
+- cyg61_kern: electronics цена -44%
+- hd69830_verde: electronics цена -43%
+- proxima_outpost: electronics цена -40%
+- tau_ceti_cognium: electronics цена +21%
 
 ### shipyard_destroyed@lalande_mecca
 - **lalande_mecca**: hulls цена +0%, выпуск -85%
+- eps_eri_strife: he3 цена -45%
+- eps_eri_harmony: he3 цена +25%
 
 ### shipyard_destroyed@proxima_outpost
+- eps_eri_strife: he3 цена -45%
+- hd69830_verde: electronics цена -43%
+- eps_eri_harmony: he3 цена +24%
 
 ### shipyard_destroyed@tau_ceti_cognium
-- **tau_ceti_cognium**: hulls цена +0%, выпуск -85%
-- hd40307_firmament: drive_cores цена -65%; hulls цена +409%
-- lalande_hellas: hulls цена +17%
-- hd69830_verde: hulls цена +0%, выпуск -33%
+- **tau_ceti_cognium**: hulls цена +112%, выпуск -85%
+- leo83_zion: hulls цена +515%
+- delta_pav_karma: hulls цена +206%
+- hd40307_maland: hulls цена +91%
+- hd114783_hellas3: hulls цена -88%
 
 ### shipyard_destroyed@wolf359_citadel
-- **wolf359_citadel**: hulls цена +98%, выпуск -85%
+- **wolf359_citadel**: hulls цена +0%, выпуск -85%
+- hd69830_verde: electronics цена -43%
 
 ## 7. Социальный ответ на одинаковый шок
 
 ### mine_destroyed — главный рудник/комбинат уничтожен (металлы −70 %)
 | колония | 1-й ответ | 2-й ответ | почему (главные члены) |
 |---|---|---|---|
-| Новый Шанхай | спокойно докупить у соседей (35.5) | обойти, починить, достать «по знакомству» (18.6) | альтернативные поставщики +16.0, режим +6, outsider_trust↑ +5.2 |
+| Новый Шанхай | спокойно докупить у соседей (35.7) | обойти, починить, достать «по знакомству» (18.6) | альтернативные поставщики +16.0, режим +6, outsider_trust↑ +5.2 |
 | Красный Форпост | бизнес взвинчивает цены, государство теряет контроль (33.7) | найти внутреннего врага и устроить чистку (31.1) | дефицит +12.0, rule_bending↑ +10.4, state_trust↓ +5.6 |
-| Тяньхэ (Небесная Река) | найти внутреннего врага и устроить чистку (43.3) | пайки, мобилизация, «всё для фронта» (41.8) | grievance_memory↑ +9.9, outsider_trust↓ +9.2, order_love↑ +8.8 |
+| Тяньхэ (Небесная Река) | найти внутреннего врага и устроить чистку (42.1) | пайки, мобилизация, «всё для фронта» (39.3) | grievance_memory↑ +9.9, outsider_trust↓ +9.2, order_love↑ +8.8 |
 | Новая Эллада / Агора | спокойно докупить у соседей (50.5) | бизнес взвинчивает цены, государство теряет контроль (28.9) | альтернативные поставщики +16.0, outsider_trust↑ +10.7, hospitality↑ +9.9 |
-| Новая Мекка | спокойно докупить у соседей (23.2) | молитва, пост, обряд очищения (18.0) | альтернативные поставщики +16.0, hospitality↑ +8.7, outsider_trust↓ -1.7 |
-| Цветущая Гармония | комиссия, регламент, решение через годы (28.1) | найти внутреннего врага и устроить чистку (26.7) | formalism↑ +8.5, clock_time↑ +6.9, режим +6 |
-| Пояс Раздора / Вольные астероиды | уйти: семьи и кланы уезжают (34.6) | бизнес взвинчивает цены, государство теряет контроль (33.8) | risk↑ +15.4, collective_duty↓ +10.3, режим +8 |
-| Цитадель | найти внутреннего врага и устроить чистку (34.5) | месть и удар по виновнику (24.0) | outsider_trust↓ +14.3, режим +10, grievance_memory↑ +6.5 |
+| Новая Мекка | спокойно докупить у соседей (23.0) | молитва, пост, обряд очищения (18.0) | альтернативные поставщики +16.0, hospitality↑ +8.7, outsider_trust↓ -1.7 |
+| Цветущая Гармония | комиссия, регламент, решение через годы (28.1) | найти внутреннего врага и устроить чистку (26.1) | formalism↑ +8.5, clock_time↑ +6.9, режим +6 |
+| Пояс Раздора / Вольные астероиды | уйти: семьи и кланы уезжают (34.6) | бизнес взвинчивает цены, государство теряет контроль (34.2) | risk↑ +15.4, collective_duty↓ +10.3, режим +8 |
+| Цитадель | найти внутреннего врага и устроить чистку (34.2) | месть и удар по виновнику (24.0) | outsider_trust↓ +14.3, режим +10, grievance_memory↑ +6.5 |
 | Новая Европа | комиссия, регламент, решение через годы (46.4) | спокойно докупить у соседей (27.1) | formalism↑ +24.1, режим +14, тип шока +4 |
 | Свободные поселения | бизнес взвинчивает цены, государство теряет контроль (29.9) | уйти: семьи и кланы уезжают (26.8) | state_trust↓ +9.0, режим +8, rule_bending↑ +5.9 |
-| Вторая Эллада | спокойно докупить у соседей (35.0) | бизнес взвинчивает цены, государство теряет контроль (18.7) | альтернативные поставщики +16.0, богатство +6.5, режим +4 |
-| Новая Индия | обойти, починить, достать «по знакомству» (32.6) | бизнес взвинчивает цены, государство теряет контроль (27.7) | improvisation↑ +15.2, rule_bending↑ +9.3, kin_first↑ +7.0 |
-| Новая Маланд | спокойно докупить у соседей (28.8) | обойти, починить, достать «по знакомству» (23.3) | альтернативные поставщики +16.0, hospitality↑ +7.8, режим +4 |
-| Небесная Твердыня | найти внутреннего врага и устроить чистку (40.4) | пайки, мобилизация, «всё для фронта» (34.8) | outsider_trust↓ +11.1, order_love↑ +8.5, grievance_memory↑ +7.5 |
-| Сельта-Верде | обойти, починить, достать «по знакомству» (40.1) | спокойно докупить у соседей (34.0) | improvisation↑ +14.5, rule_bending↑ +11.4, kin_first↑ +7.0 |
+| Вторая Эллада | спокойно докупить у соседей (34.9) | бизнес взвинчивает цены, государство теряет контроль (18.7) | альтернативные поставщики +16.0, богатство +6.4, режим +4 |
+| Новая Индия | обойти, починить, достать «по знакомству» (32.6) | бизнес взвинчивает цены, государство теряет контроль (23.9) | improvisation↑ +15.2, rule_bending↑ +9.3, kin_first↑ +7.0 |
+| Новая Маланд | спокойно докупить у соседей (28.9) | обойти, починить, достать «по знакомству» (23.3) | альтернативные поставщики +16.0, hospitality↑ +7.8, режим +4 |
+| Небесная Твердыня | найти внутреннего врага и устроить чистку (40.4) | пайки, мобилизация, «всё для фронта» (35.1) | outsider_trust↓ +11.1, order_love↑ +8.5, grievance_memory↑ +7.5 |
+| Сельта-Верде | обойти, починить, достать «по знакомству» (40.1) | спокойно докупить у соседей (34.1) | improvisation↑ +14.5, rule_bending↑ +11.4, kin_first↑ +7.0 |
 | Новая Карма | найти внутреннего врага и устроить чистку (34.8) | обойти, починить, достать «по знакомству» (28.1) | outsider_trust↓ +10.5, режим +8, power_distance↑ +6.6 |
 | Свободная Карма | обойти, починить, достать «по знакомству» (28.1) | бизнес взвинчивает цены, государство теряет контроль (22.6) | improvisation↑ +14.6, rule_bending↑ +10.1, formalism↑ -7.6 |
 | Провидение | уйти: семьи и кланы уезжают (20.5) | бизнес взвинчивает цены, государство теряет контроль (19.5) | risk↑ +17.9, kin_first↓ -6.0, collective_duty↓ +5.5 |
@@ -1911,21 +1928,21 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 ### gas_platform_captured — газовая платформа захвачена (He-3 −80 %)
 | колония | 1-й ответ | 2-й ответ | почему (главные члены) |
 |---|---|---|---|
-| Новый Шанхай | спокойно докупить у соседей (35.5) | месть и удар по виновнику (18.8) | альтернативные поставщики +16.0, режим +6, outsider_trust↑ +5.2 |
+| Новый Шанхай | спокойно докупить у соседей (35.7) | месть и удар по виновнику (18.8) | альтернативные поставщики +16.0, режим +6, outsider_trust↑ +5.2 |
 | Красный Форпост | месть и удар по виновнику (34.7) | обойти, починить, достать «по знакомству» (21.9) | тип шока +10, grievance_memory↑ +8.5, военный потенциал +7.0 |
-| Тяньхэ (Небесная Река) | пайки, мобилизация, «всё для фронта» (48.9) | найти внутреннего врага и устроить чистку (40.9) | режим +12, hardship_pride↑ +11.9, collective_duty↑ +11.1 |
+| Тяньхэ (Небесная Река) | пайки, мобилизация, «всё для фронта» (47.7) | найти внутреннего врага и устроить чистку (40.2) | режим +12, hardship_pride↑ +11.9, collective_duty↑ +11.1 |
 | Новая Эллада / Агора | спокойно докупить у соседей (50.5) | бизнес взвинчивает цены, государство теряет контроль (28.9) | альтернативные поставщики +16.0, outsider_trust↑ +10.7, hospitality↑ +9.9 |
-| Новая Мекка | спокойно докупить у соседей (23.2) | молитва, пост, обряд очищения (18.0) | альтернативные поставщики +16.0, hospitality↑ +8.7, outsider_trust↓ -1.7 |
-| Цветущая Гармония | найти внутреннего врага и устроить чистку (25.9) | пайки, мобилизация, «всё для фронта» (24.4) | order_love↑ +7.5, grievance_memory↑ +7.5, power_distance↑ +5.6 |
-| Пояс Раздора / Вольные астероиды | бизнес взвинчивает цены, государство теряет контроль (36.2) | уйти: семьи и кланы уезжают (34.6) | state_trust↓ +8.9, режим +8, risk↑ +7.7 |
+| Новая Мекка | спокойно докупить у соседей (23.0) | молитва, пост, обряд очищения (18.0) | альтернативные поставщики +16.0, hospitality↑ +8.7, outsider_trust↓ -1.7 |
+| Цветущая Гармония | найти внутреннего врага и устроить чистку (25.8) | комиссия, регламент, решение через годы (24.1) | order_love↑ +7.5, grievance_memory↑ +7.5, power_distance↑ +5.6 |
+| Пояс Раздора / Вольные астероиды | уйти: семьи и кланы уезжают (34.6) | бизнес взвинчивает цены, государство теряет контроль (34.2) | risk↑ +15.4, collective_duty↓ +10.3, режим +8 |
 | Цитадель | месть и удар по виновнику (34.0) | найти внутреннего врага и устроить чистку (30.4) | тип шока +10, военный потенциал +8.0, grievance_memory↑ +7.6 |
 | Новая Европа | комиссия, регламент, решение через годы (42.4) | спокойно докупить у соседей (27.1) | formalism↑ +24.1, режим +14, clock_time↑ +3.3 |
 | Свободные поселения | бизнес взвинчивает цены, государство теряет контроль (29.9) | уйти: семьи и кланы уезжают (26.8) | state_trust↓ +9.0, режим +8, rule_bending↑ +5.9 |
-| Вторая Эллада | спокойно докупить у соседей (35.0) | бизнес взвинчивает цены, государство теряет контроль (18.7) | альтернативные поставщики +16.0, богатство +6.5, режим +4 |
+| Вторая Эллада | спокойно докупить у соседей (34.9) | бизнес взвинчивает цены, государство теряет контроль (18.7) | альтернативные поставщики +16.0, богатство +6.4, режим +4 |
 | Новая Индия | обойти, починить, достать «по знакомству» (28.6) | бизнес взвинчивает цены, государство теряет контроль (20.9) | improvisation↑ +15.2, rule_bending↑ +9.3, kin_first↑ +7.0 |
-| Новая Маланд | месть и удар по виновнику (32.0) | спокойно докупить у соседей (28.8) | тип шока +10, grievance_memory↑ +7.1, военный потенциал +4.8 |
-| Небесная Твердыня | пайки, мобилизация, «всё для фронта» (40.8) | найти внутреннего врага и устроить чистку (37.4) | режим +12, hardship_pride↑ +11.4, collective_duty↑ +11.1 |
-| Сельта-Верде | обойти, починить, достать «по знакомству» (36.1) | спокойно докупить у соседей (34.0) | improvisation↑ +14.5, rule_bending↑ +11.4, kin_first↑ +7.0 |
+| Новая Маланд | месть и удар по виновнику (32.0) | спокойно докупить у соседей (28.9) | тип шока +10, grievance_memory↑ +7.1, военный потенциал +4.8 |
+| Небесная Твердыня | пайки, мобилизация, «всё для фронта» (41.1) | найти внутреннего врага и устроить чистку (37.4) | режим +12, hardship_pride↑ +11.4, collective_duty↑ +11.1 |
+| Сельта-Верде | обойти, починить, достать «по знакомству» (36.1) | спокойно докупить у соседей (34.1) | improvisation↑ +14.5, rule_bending↑ +11.4, kin_first↑ +7.0 |
 | Новая Карма | найти внутреннего врага и устроить чистку (31.3) | обойти, починить, достать «по знакомству» (24.1) | outsider_trust↓ +10.5, режим +8, power_distance↑ +6.6 |
 | Свободная Карма | обойти, починить, достать «по знакомству» (24.1) | бизнес взвинчивает цены, государство теряет контроль (22.6) | improvisation↑ +14.6, rule_bending↑ +10.1, formalism↑ -7.6 |
 | Провидение | уйти: семьи и кланы уезжают (20.5) | бизнес взвинчивает цены, государство теряет контроль (19.5) | risk↑ +17.9, kin_first↓ -6.0, collective_duty↓ +5.5 |
@@ -1938,22 +1955,22 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 ### food_blight — грибок в агрокуполах (пища −45 %)
 | колония | 1-й ответ | 2-й ответ | почему (главные члены) |
 |---|---|---|---|
-| Новый Шанхай | спокойно докупить у соседей (35.5) | обойти, починить, достать «по знакомству» (18.6) | альтернативные поставщики +16.0, режим +6, outsider_trust↑ +5.2 |
-| Красный Форпост | обойти, починить, достать «по знакомству» (25.9) | найти внутреннего врага и устроить чистку (25.8) | improvisation↑ +12.8, rule_bending↑ +8.9, kin_first↑ +5.2 |
+| Новый Шанхай | спокойно докупить у соседей (35.7) | обойти, починить, достать «по знакомству» (18.6) | альтернативные поставщики +16.0, режим +6, outsider_trust↑ +5.2 |
+| Красный Форпост | найти внутреннего врага и устроить чистку (26.4) | бизнес взвинчивает цены, государство теряет контроль (26.1) | режим +10, grievance_memory↑ +7.3, outsider_trust↓ +5.1 |
 | Тяньхэ (Небесная Река) | пайки, мобилизация, «всё для фронта» (41.8) | найти внутреннего врага и устроить чистку (41.3) | режим +12, hardship_pride↑ +11.9, collective_duty↑ +11.1 |
 | Новая Эллада / Агора | спокойно докупить у соседей (50.5) | бизнес взвинчивает цены, государство теряет контроль (31.0) | альтернативные поставщики +16.0, outsider_trust↑ +10.7, hospitality↑ +9.9 |
-| Новая Мекка | молитва, пост, обряд очищения (24.0) | спокойно докупить у соседей (23.2) | режим +8, collective_duty↑ +6.2, тип шока +6 |
+| Новая Мекка | молитва, пост, обряд очищения (24.0) | спокойно докупить у соседей (23.0) | режим +8, collective_duty↑ +6.2, тип шока +6 |
 | Цветущая Гармония | найти внутреннего врага и устроить чистку (26.3) | комиссия, регламент, решение через годы (24.1) | order_love↑ +7.5, grievance_memory↑ +7.5, power_distance↑ +5.6 |
 | Пояс Раздора / Вольные астероиды | уйти: семьи и кланы уезжают (34.6) | бизнес взвинчивает цены, государство теряет контроль (33.8) | risk↑ +15.4, collective_duty↓ +10.3, режим +8 |
 | Цитадель | найти внутреннего врага и устроить чистку (34.7) | месть и удар по виновнику (24.0) | outsider_trust↓ +14.3, режим +10, grievance_memory↑ +6.5 |
 | Новая Европа | комиссия, регламент, решение через годы (42.4) | спокойно докупить у соседей (27.1) | formalism↑ +24.1, режим +14, clock_time↑ +3.3 |
 | Свободные поселения | бизнес взвинчивает цены, государство теряет контроль (29.9) | уйти: семьи и кланы уезжают (26.8) | state_trust↓ +9.0, режим +8, rule_bending↑ +5.9 |
-| Вторая Эллада | спокойно докупить у соседей (35.0) | бизнес взвинчивает цены, государство теряет контроль (18.7) | альтернативные поставщики +16.0, богатство +6.5, режим +4 |
+| Вторая Эллада | спокойно докупить у соседей (34.9) | бизнес взвинчивает цены, государство теряет контроль (18.7) | альтернативные поставщики +16.0, богатство +6.4, режим +4 |
 | Новая Индия | обойти, починить, достать «по знакомству» (32.6) | бизнес взвинчивает цены, государство теряет контроль (22.4) | improvisation↑ +15.2, rule_bending↑ +9.3, kin_first↑ +7.0 |
-| Новая Маланд | спокойно докупить у соседей (28.8) | обойти, починить, достать «по знакомству» (23.3) | альтернативные поставщики +16.0, hospitality↑ +7.8, режим +4 |
-| Небесная Твердыня | найти внутреннего врага и устроить чистку (40.4) | пайки, мобилизация, «всё для фронта» (38.8) | outsider_trust↓ +11.1, order_love↑ +8.5, grievance_memory↑ +7.5 |
-| Сельта-Верде | обойти, починить, достать «по знакомству» (40.1) | спокойно докупить у соседей (34.0) | improvisation↑ +14.5, rule_bending↑ +11.4, kin_first↑ +7.0 |
-| Новая Карма | найти внутреннего врага и устроить чистку (36.5) | обойти, починить, достать «по знакомству» (28.1) | outsider_trust↓ +10.5, режим +8, power_distance↑ +6.6 |
+| Новая Маланд | спокойно докупить у соседей (28.9) | обойти, починить, достать «по знакомству» (23.3) | альтернативные поставщики +16.0, hospitality↑ +7.8, режим +4 |
+| Небесная Твердыня | найти внутреннего врага и устроить чистку (40.4) | пайки, мобилизация, «всё для фронта» (39.1) | outsider_trust↓ +11.1, order_love↑ +8.5, grievance_memory↑ +7.5 |
+| Сельта-Верде | обойти, починить, достать «по знакомству» (40.1) | спокойно докупить у соседей (34.1) | improvisation↑ +14.5, rule_bending↑ +11.4, kin_first↑ +7.0 |
+| Новая Карма | найти внутреннего врага и устроить чистку (35.4) | обойти, починить, достать «по знакомству» (28.1) | outsider_trust↓ +10.5, режим +8, power_distance↑ +6.6 |
 | Свободная Карма | обойти, починить, достать «по знакомству» (28.1) | бизнес взвинчивает цены, государство теряет контроль (22.6) | improvisation↑ +14.6, rule_bending↑ +10.1, formalism↑ -7.6 |
 | Провидение | уйти: семьи и кланы уезжают (20.5) | бизнес взвинчивает цены, государство теряет контроль (19.5) | risk↑ +17.9, kin_first↓ -6.0, collective_duty↓ +5.5 |
 | Шахта Альфа | бизнес взвинчивает цены, государство теряет контроль (35.4) | спокойно докупить у соседей (29.6) | режим +12, rule_bending↑ +7.5, state_trust↓ +6.2 |
@@ -1965,21 +1982,21 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 ### shipyard_destroyed — верфь уничтожена (корпуса −85 %)
 | колония | 1-й ответ | 2-й ответ | почему (главные члены) |
 |---|---|---|---|
-| Новый Шанхай | спокойно докупить у соседей (35.5) | бизнес взвинчивает цены, государство теряет контроль (15.1) | альтернативные поставщики +16.0, режим +6, outsider_trust↑ +5.2 |
+| Новый Шанхай | спокойно докупить у соседей (35.7) | бизнес взвинчивает цены, государство теряет контроль (19.6) | альтернативные поставщики +16.0, режим +6, outsider_trust↑ +5.2 |
 | Красный Форпост | месть и удар по виновнику (27.7) | найти внутреннего врага и устроить чистку (24.6) | grievance_memory↑ +8.5, военный потенциал +7.0, режим +6 |
-| Тяньхэ (Небесная Река) | найти внутреннего врага и устроить чистку (41.9) | пайки, мобилизация, «всё для фронта» (36.9) | grievance_memory↑ +9.9, outsider_trust↓ +9.2, order_love↑ +8.8 |
-| Новая Эллада / Агора | спокойно докупить у соседей (50.5) | бизнес взвинчивает цены, государство теряет контроль (29.6) | альтернативные поставщики +16.0, outsider_trust↑ +10.7, hospitality↑ +9.9 |
-| Новая Мекка | спокойно докупить у соседей (23.2) | молитва, пост, обряд очищения (18.0) | альтернативные поставщики +16.0, hospitality↑ +8.7, outsider_trust↓ -1.7 |
-| Цветущая Гармония | найти внутреннего врага и устроить чистку (28.9) | комиссия, регламент, решение через годы (28.1) | order_love↑ +7.5, grievance_memory↑ +7.5, power_distance↑ +5.6 |
+| Тяньхэ (Небесная Река) | найти внутреннего врага и устроить чистку (42.9) | пайки, мобилизация, «всё для фронта» (39.1) | grievance_memory↑ +9.9, outsider_trust↓ +9.2, order_love↑ +8.8 |
+| Новая Эллада / Агора | спокойно докупить у соседей (50.5) | бизнес взвинчивает цены, государство теряет контроль (28.9) | альтернативные поставщики +16.0, outsider_trust↑ +10.7, hospitality↑ +9.9 |
+| Новая Мекка | спокойно докупить у соседей (23.0) | молитва, пост, обряд очищения (18.0) | альтернативные поставщики +16.0, hospitality↑ +8.7, outsider_trust↓ -1.7 |
+| Цветущая Гармония | комиссия, регламент, решение через годы (28.1) | найти внутреннего врага и устроить чистку (28.0) | formalism↑ +8.5, clock_time↑ +6.9, режим +6 |
 | Пояс Раздора / Вольные астероиды | уйти: семьи и кланы уезжают (34.6) | бизнес взвинчивает цены, государство теряет контроль (33.8) | risk↑ +15.4, collective_duty↓ +10.3, режим +8 |
-| Цитадель | найти внутреннего врага и устроить чистку (36.9) | месть и удар по виновнику (27.0) | outsider_trust↓ +14.3, режим +10, grievance_memory↑ +6.5 |
+| Цитадель | найти внутреннего врага и устроить чистку (34.4) | месть и удар по виновнику (27.0) | outsider_trust↓ +14.3, режим +10, grievance_memory↑ +6.5 |
 | Новая Европа | комиссия, регламент, решение через годы (46.4) | спокойно докупить у соседей (27.1) | formalism↑ +24.1, режим +14, тип шока +4 |
 | Свободные поселения | бизнес взвинчивает цены, государство теряет контроль (29.9) | уйти: семьи и кланы уезжают (26.8) | state_trust↓ +9.0, режим +8, rule_bending↑ +5.9 |
-| Вторая Эллада | спокойно докупить у соседей (35.0) | бизнес взвинчивает цены, государство теряет контроль (18.7) | альтернативные поставщики +16.0, богатство +6.5, режим +4 |
-| Новая Индия | обойти, починить, достать «по знакомству» (28.6) | бизнес взвинчивает цены, государство теряет контроль (24.2) | improvisation↑ +15.2, rule_bending↑ +9.3, kin_first↑ +7.0 |
-| Новая Маланд | спокойно докупить у соседей (28.8) | бизнес взвинчивает цены, государство теряет контроль (28.4) | альтернативные поставщики +16.0, hospitality↑ +7.8, режим +4 |
-| Небесная Твердыня | найти внутреннего врага и устроить чистку (41.4) | пайки, мобилизация, «всё для фронта» (34.8) | outsider_trust↓ +11.1, order_love↑ +8.5, grievance_memory↑ +7.5 |
-| Сельта-Верде | обойти, починить, достать «по знакомству» (36.1) | спокойно докупить у соседей (34.0) | improvisation↑ +14.5, rule_bending↑ +11.4, kin_first↑ +7.0 |
+| Вторая Эллада | спокойно докупить у соседей (34.9) | бизнес взвинчивает цены, государство теряет контроль (18.7) | альтернативные поставщики +16.0, богатство +6.4, режим +4 |
+| Новая Индия | обойти, починить, достать «по знакомству» (28.6) | бизнес взвинчивает цены, государство теряет контроль (20.9) | improvisation↑ +15.2, rule_bending↑ +9.3, kin_first↑ +7.0 |
+| Новая Маланд | спокойно докупить у соседей (28.9) | месть и удар по виновнику (25.0) | альтернативные поставщики +16.0, hospitality↑ +7.8, режим +4 |
+| Небесная Твердыня | найти внутреннего врага и устроить чистку (41.4) | пайки, мобилизация, «всё для фронта» (35.1) | outsider_trust↓ +11.1, order_love↑ +8.5, grievance_memory↑ +7.5 |
+| Сельта-Верде | обойти, починить, достать «по знакомству» (36.1) | спокойно докупить у соседей (34.1) | improvisation↑ +14.5, rule_bending↑ +11.4, kin_first↑ +7.0 |
 | Новая Карма | найти внутреннего врага и устроить чистку (35.3) | обойти, починить, достать «по знакомству» (24.1) | outsider_trust↓ +10.5, режим +8, power_distance↑ +6.6 |
 | Свободная Карма | обойти, починить, достать «по знакомству» (24.1) | бизнес взвинчивает цены, государство теряет контроль (22.6) | improvisation↑ +14.6, rule_bending↑ +10.1, formalism↑ -7.6 |
 | Провидение | уйти: семьи и кланы уезжают (20.5) | бизнес взвинчивает цены, государство теряет контроль (19.5) | risk↑ +17.9, kin_first↓ -6.0, collective_duty↓ +5.5 |
@@ -1998,7 +2015,7 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 | Новая Эллада / Агора | бизнес взвинчивает цены, государство теряет контроль (40.9) | обойти, починить, достать «по знакомству» (30.2) | дефицит +12.0, rule_bending↑ +10.0, state_trust↓ +7.7 |
 | Новая Мекка | пайки, мобилизация, «всё для фронта» (32.2) | бизнес взвинчивает цены, государство теряет контроль (21.6) | тяжесть +15.0, тип шока +6, collective_duty↑ +5.4 |
 | Цветущая Гармония | пайки, мобилизация, «всё для фронта» (41.7) | найти внутреннего врага и устроить чистку (29.4) | тяжесть +15.0, тип шока +6, power_distance↑ +5.6 |
-| Пояс Раздора / Вольные астероиды | бизнес взвинчивает цены, государство теряет контроль (36.4) | уйти: семьи и кланы уезжают (26.6) | state_trust↓ +8.9, режим +8, risk↑ +7.7 |
+| Пояс Раздора / Вольные астероиды | бизнес взвинчивает цены, государство теряет контроль (45.8) | уйти: семьи и кланы уезжают (26.6) | дефицит +12.0, state_trust↓ +8.9, режим +8 |
 | Цитадель | найти внутреннего врага и устроить чистку (37.9) | бизнес взвинчивает цены, государство теряет контроль (28.5) | outsider_trust↓ +14.3, режим +10, тяжесть +7.5 |
 | Новая Европа | комиссия, регламент, решение через годы (42.4) | пайки, мобилизация, «всё для фронта» (13.9) | formalism↑ +24.1, режим +14, clock_time↑ +3.3 |
 | Свободные поселения | бизнес взвинчивает цены, государство теряет контроль (29.9) | обойти, починить, достать «по знакомству» (23.7) | state_trust↓ +9.0, режим +8, rule_bending↑ +5.9 |
@@ -2019,29 +2036,29 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 ### earth_fleet — Земля объявляет «Возвращение»: угроза войны
 | колония | 1-й ответ | 2-й ответ | почему (главные члены) |
 |---|---|---|---|
-| Новый Шанхай | спокойно докупить у соседей (35.5) | бизнес взвинчивает цены, государство теряет контроль (27.1) | альтернативные поставщики +16.0, режим +6, outsider_trust↑ +5.2 |
-| Красный Форпост | месть и удар по виновнику (26.7) | бизнес взвинчивает цены, государство теряет контроль (23.6) | grievance_memory↑ +8.5, военный потенциал +7.0, режим +6 |
-| Тяньхэ (Небесная Река) | пайки, мобилизация, «всё для фронта» (46.7) | найти внутреннего врага и устроить чистку (39.8) | режим +12, hardship_pride↑ +11.9, collective_duty↑ +11.1 |
-| Новая Эллада / Агора | спокойно докупить у соседей (50.5) | бизнес взвинчивает цены, государство теряет контроль (40.9) | альтернативные поставщики +16.0, outsider_trust↑ +10.7, hospitality↑ +9.9 |
-| Новая Мекка | спокойно докупить у соседей (23.2) | пайки, мобилизация, «всё для фронта» (20.9) | альтернативные поставщики +16.0, hospitality↑ +8.7, outsider_trust↓ -1.7 |
+| Новый Шанхай | спокойно докупить у соседей (35.7) | бизнес взвинчивает цены, государство теряет контроль (27.1) | альтернативные поставщики +16.0, режим +6, outsider_trust↑ +5.2 |
+| Красный Форпост | месть и удар по виновнику (26.7) | бизнес взвинчивает цены, государство теряет контроль (24.8) | grievance_memory↑ +8.5, военный потенциал +7.0, режим +6 |
+| Тяньхэ (Небесная Река) | пайки, мобилизация, «всё для фронта» (46.8) | найти внутреннего врага и устроить чистку (39.8) | режим +12, hardship_pride↑ +11.9, collective_duty↑ +11.1 |
+| Новая Эллада / Агора | спокойно докупить у соседей (50.5) | бизнес взвинчивает цены, государство теряет контроль (36.5) | альтернативные поставщики +16.0, outsider_trust↑ +10.7, hospitality↑ +9.9 |
+| Новая Мекка | спокойно докупить у соседей (23.0) | молитва, пост, обряд очищения (18.0) | альтернативные поставщики +16.0, hospitality↑ +8.7, outsider_trust↓ -1.7 |
 | Цветущая Гармония | найти внутреннего врага и устроить чистку (24.8) | комиссия, регламент, решение через годы (24.1) | order_love↑ +7.5, grievance_memory↑ +7.5, power_distance↑ +5.6 |
-| Пояс Раздора / Вольные астероиды | бизнес взвинчивает цены, государство теряет контроль (39.7) | уйти: семьи и кланы уезжают (34.6) | state_trust↓ +8.9, режим +8, risk↑ +7.7 |
-| Цитадель | найти внутреннего врага и устроить чистку (31.9) | месть и удар по виновнику (26.0) | outsider_trust↓ +14.3, режим +10, grievance_memory↑ +6.5 |
+| Пояс Раздора / Вольные астероиды | бизнес взвинчивает цены, государство теряет контроль (45.8) | уйти: семьи и кланы уезжают (34.6) | дефицит +12.0, state_trust↓ +8.9, режим +8 |
+| Цитадель | найти внутреннего врага и устроить чистку (37.9) | бизнес взвинчивает цены, государство теряет контроль (28.5) | outsider_trust↓ +14.3, режим +10, тяжесть +7.5 |
 | Новая Европа | комиссия, регламент, решение через годы (42.4) | спокойно докупить у соседей (27.1) | formalism↑ +24.1, режим +14, clock_time↑ +3.3 |
-| Свободные поселения | бизнес взвинчивает цены, государство теряет контроль (31.1) | уйти: семьи и кланы уезжают (26.8) | state_trust↓ +9.0, режим +8, rule_bending↑ +5.9 |
-| Вторая Эллада | спокойно докупить у соседей (35.0) | бизнес взвинчивает цены, государство теряет контроль (22.1) | альтернативные поставщики +16.0, богатство +6.5, режим +4 |
-| Новая Индия | обойти, починить, достать «по знакомству» (28.6) | бизнес взвинчивает цены, государство теряет контроль (25.7) | improvisation↑ +15.2, rule_bending↑ +9.3, kin_first↑ +7.0 |
-| Новая Маланд | спокойно докупить у соседей (28.8) | месть и удар по виновнику (24.0) | альтернативные поставщики +16.0, hospitality↑ +7.8, режим +4 |
-| Небесная Твердыня | пайки, мобилизация, «всё для фронта» (41.6) | найти внутреннего врага и устроить чистку (37.8) | режим +12, hardship_pride↑ +11.4, collective_duty↑ +11.1 |
-| Сельта-Верде | обойти, починить, достать «по знакомству» (36.1) | спокойно докупить у соседей (34.0) | improvisation↑ +14.5, rule_bending↑ +11.4, kin_first↑ +7.0 |
-| Новая Карма | найти внутреннего врага и устроить чистку (38.8) | бизнес взвинчивает цены, государство теряет контроль (34.6) | outsider_trust↓ +10.5, режим +8, тяжесть +7.5 |
-| Свободная Карма | бизнес взвинчивает цены, государство теряет контроль (27.4) | обойти, починить, достать «по знакомству» (24.1) | rule_bending↑ +11.8, status_display↑ +5.9, state_trust↓ +4.8 |
+| Свободные поселения | бизнес взвинчивает цены, государство теряет контроль (41.9) | уйти: семьи и кланы уезжают (26.8) | дефицит +12.0, state_trust↓ +9.0, режим +8 |
+| Вторая Эллада | спокойно докупить у соседей (34.9) | бизнес взвинчивает цены, государство теряет контроль (22.1) | альтернативные поставщики +16.0, богатство +6.4, режим +4 |
+| Новая Индия | бизнес взвинчивает цены, государство теряет контроль (30.7) | обойти, починить, достать «по знакомству» (28.6) | rule_bending↑ +10.8, дефицит +9.7, status_display↑ +5.9 |
+| Новая Маланд | пайки, мобилизация, «всё для фронта» (32.2) | бизнес взвинчивает цены, государство теряет контроль (29.3) | тяжесть +15.0, collective_duty↑ +6.5, тип шока +6 |
+| Небесная Твердыня | пайки, мобилизация, «всё для фронта» (44.1) | найти внутреннего врага и устроить чистку (38.9) | режим +12, hardship_pride↑ +11.4, collective_duty↑ +11.1 |
+| Сельта-Верде | бизнес взвинчивает цены, государство теряет контроль (40.4) | обойти, починить, достать «по знакомству» (36.1) | rule_bending↑ +13.3, дефицит +12.0, state_trust↓ +7.9 |
+| Новая Карма | найти внутреннего врага и устроить чистку (34.3) | бизнес взвинчивает цены, государство теряет контроль (27.4) | outsider_trust↓ +10.5, режим +8, power_distance↑ +6.6 |
+| Свободная Карма | бизнес взвинчивает цены, государство теряет контроль (27.3) | обойти, починить, достать «по знакомству» (24.1) | rule_bending↑ +11.8, status_display↑ +5.9, state_trust↓ +4.8 |
 | Провидение | бизнес взвинчивает цены, государство теряет контроль (31.5) | уйти: семьи и кланы уезжают (20.5) | дефицит +12.0, risk↑ +9.0, state_trust↓ +6.2 |
-| Шахта Альфа | бизнес взвинчивает цены, государство теряет контроль (45.4) | спокойно докупить у соседей (29.6) | режим +12, дефицит +10.1, rule_bending↑ +7.5 |
-| Третья Эллада | бизнес взвинчивает цены, государство теряет контроль (38.2) | обойти, починить, достать «по знакомству» (19.3) | дефицит +12.0, rule_bending↑ +8.6, state_trust↓ +7.3 |
-| Ново-Фиваида | молитва, пост, обряд очищения (52.6) | найти внутреннего врага и устроить чистку (43.7) | collective_duty↑ +20.0, режим +14, order_love↑ +10.0 |
+| Шахта Альфа | бизнес взвинчивает цены, государство теряет контроль (39.1) | спокойно докупить у соседей (29.6) | режим +12, rule_bending↑ +7.5, state_trust↓ +6.2 |
+| Третья Эллада | бизнес взвинчивает цены, государство теряет контроль (26.8) | обойти, починить, достать «по знакомству» (19.3) | rule_bending↑ +8.6, state_trust↓ +7.3, status_display↑ +5.0 |
+| Ново-Фиваида | молитва, пост, обряд очищения (52.6) | пайки, мобилизация, «всё для фронта» (50.8) | collective_duty↑ +20.0, режим +14, order_love↑ +10.0 |
 
-разных первых ответов: 8
+разных первых ответов: 7
 
 ## E. «Возвращение Земли» 3126 на новом мире
 
@@ -2053,7 +2070,7 @@ baseline = F9 (наследуемая склонность к семье) + F10 
 | люди 20–39 | 2 645 325 327 | 2 423 309 149 | 1.1 |
 | мобилизуемые (8 %) | 211 626 026 | 193 864 732 | 1.1 |
 
-- Выпуск корпусов колоний: 507.8 ед./год; потенциал Земли [472.3, 944.5] ед./год (×0.3–0.6: у Земли нет лицензионных ядер прыжка — только маяк из памятника HYPERION-1, 3112).
+- Выпуск корпусов колоний: 478.9 ед./год; потенциал Земли [445.5, 890.9] ед./год (×0.3–0.6: у Земли нет лицензионных ядер прыжка — только маяк из памятника HYPERION-1, 3112).
 - Восполнение флота колоний: ~13.2 лет при текущем выпуске.
 - Досягаемость с маяка Сола (прыжок ≤ 32.0 св. лет, нужен маяк у цели): Wolf 359 7.8, Lalande 21185 8.3, Tau Ceti 11.9, Epsilon Eridani 10.5, Gliese 581 20.3, Gliese 667 (A+B+C) 22.3, Gliese 832 16.2, Gliese 876 15.3, HD 20794 (82 G. Eridani) 19.7, Delta Pavonis 19.9, Gliese 892 21.4, Gliese 357 30.8, Epsilon Indi 11.8, 61 Cygni 11.4, Gliese 674 14.8, HD 10360 25.5, Proxima Centauri 4.2.
 - Контроль сети (оператор: маяки; сколько кратчайших маршрутов между акторами идёт через его узлы):
@@ -2070,62 +2087,64 @@ baseline = F9 (наследуемая склонность к семье) + F10 
   - hd69830_verde: [16] — 0
   - sol_authority: [0] — 0
 - Главные колонии по промышленному индексу: eps_eri_harmony 1 371.10 млн / 4737.7, gj832_tianhe 1 058.88 млн / 3467.2, tau_ceti_cognium 1 356.53 млн / 3445.3, hd20794_newindia 903.06 млн / 2932.2, lalande_mecca 799.74 млн / 2312.4, proxima_outpost 725.72 млн / 2022.1
-- Стратегические активы (выпуск): Ледовый комплекс облака комет (eps_eri_harmony, 39932.547), Рудники eps Eri b I (eps_eri_harmony, 21189.657), Агрокольца Маланд («Житница») (hd40307_maland, 12267.345), Агрокупола Alpha Centauri B l (proxima_outpost, 11118.451), Платформы eps Eri b (eps_eri_harmony, 8159.307), Платформы GJ 832 b (gj832_tianhe, 5056.989), Платформы HD 20794 d (hd20794_hellas2, 1407.242), Платформы трёх гигантов HD 69830 (hd69830_verde, 1327.68), Бастион — арсенал и военная верфь (wolf359_citadel, 324.514), Верфи Гармонии (eps_eri_harmony, 308.163), Фабы Кольца Основателей (tau_ceti_cognium, 299.753), Обсерватория-вычислитель «Расад» (lalande_mecca, 202.683)
+- Стратегические активы (выпуск): Ледовый комплекс облака комет (eps_eri_harmony, 39839.62), Рудники eps Eri b I (eps_eri_harmony, 21460.172), Агрокольца Маланд («Житница») (hd40307_maland, 12292.308), Агрокупола Alpha Centauri B l (proxima_outpost, 11117.856), Платформы eps Eri b (eps_eri_harmony, 8155.28), Платформы GJ 832 b (gj832_tianhe, 5057.317), Платформы HD 20794 d (hd20794_hellas2, 1405.321), Платформы трёх гигантов HD 69830 (hd69830_verde, 1331.58), Фабы Кольца Основателей (tau_ceti_cognium, 821.196), Верфи Гармонии (eps_eri_harmony, 289.692), Бастион — арсенал и военная верфь (wolf359_citadel, 176.248), Управление Маяков и фабрика ядер прыжка «Сычёвник» (tau_ceti_cognium, 116.526)
 
 Вывод модели: Земля по людям и промышленности на порядок больше всех колоний вместе; её узкое место — не заводы, а ядра прыжка, маяки у цели (их держат Когниум и колонии) и опыт межзвёздной логистики. Война — это борьба за сеть, а не за выпуск.
 
 ## 8. Реакция на Землю-3126 (топ-3)
 
-- Новый Шанхай: alliance (25.5), mobilisation (17.7), negotiation (9.1)
-- Красный Форпост: mobilisation (33.0), preemptive_strike (27.4), betrayal (15.5)
-- Тяньхэ (Небесная Река): mobilisation (32.8), alliance (19.7), profiteering (14.1)
-- Новая Эллада / Агора: alliance (26.6), profiteering (22.2), negotiation (18.2)
-- Новая Мекка: mobilisation (25.7), alliance (21.4), preemptive_strike (9.5)
-- Цветущая Гармония: alliance (28.1), mobilisation (26.4), profiteering (20.0)
+- Новый Шанхай: alliance (27.0), mobilisation (17.7), negotiation (9.1)
+- Красный Форпост: mobilisation (33.0), preemptive_strike (27.4), alliance (16.5)
+- Тяньхэ (Небесная Река): mobilisation (32.8), alliance (21.2), profiteering (14.1)
+- Новая Эллада / Агора: alliance (23.6), profiteering (22.2), negotiation (18.2)
+- Новая Мекка: mobilisation (25.7), alliance (24.4), preemptive_strike (9.5)
+- Цветущая Гармония: alliance (26.6), mobilisation (26.4), profiteering (20.0)
 - Пояс Раздора / Вольные астероиды: profiteering (25.2), alliance (23.5), internal_split (18.6)
 - Цитадель: preemptive_strike (28.0), mobilisation (22.9), betrayal (15.5)
-- Новая Европа: alliance (24.5), negotiation (21.4), mobilisation (6.2)
-- Свободные поселения: profiteering (23.8), alliance (17.4), betrayal (10.9)
+- Новая Европа: alliance (27.5), negotiation (21.4), mobilisation (6.2)
+- Свободные поселения: profiteering (23.8), alliance (15.9), betrayal (10.9)
 - Вторая Эллада: alliance (24.2), internal_split (15.4), profiteering (11.9)
-- Новая Индия: profiteering (24.7), alliance (24.1), betrayal (17.2)
-- Новая Маланд: profiteering (18.4), internal_split (17.4), mobilisation (16.2)
+- Новая Индия: alliance (25.6), betrayal (17.2), profiteering (16.7)
+- Новая Маланд: alliance (21.8), profiteering (18.4), internal_split (17.4)
 - Небесная Твердыня: mobilisation (24.5), profiteering (13.6), alliance (12.1)
-- Сельта-Верде: profiteering (26.5), alliance (22.7), negotiation (11.6)
+- Сельта-Верде: profiteering (26.5), alliance (21.2), negotiation (11.6)
 - Новая Карма: betrayal (23.1), profiteering (17.7), internal_split (13.0)
-- Свободная Карма: profiteering (25.7), betrayal (21.6), alliance (17.4)
-- Провидение: alliance (16.9), internal_split (5.5), profiteering (4.3)
-- Шахта Альфа: profiteering (29.5), alliance (20.5), mobilisation (17.5)
-- Третья Эллада: neutrality (28.3), betrayal (16.6), internal_split (15.8)
-- Ново-Фиваида: neutrality (29.8), mobilisation (26.4), internal_split (0.5)
+- Свободная Карма: profiteering (25.7), betrayal (21.6), alliance (15.9)
+- Провидение: alliance (13.9), neutrality (6.2), internal_split (5.5)
+- Шахта Альфа: profiteering (29.5), alliance (23.5), mobilisation (17.5)
+- Третья Эллада: neutrality (26.3), betrayal (16.6), internal_split (15.8)
+- Ново-Фиваида: neutrality (28.8), mobilisation (26.4), internal_split (0.5)
 
 ## 9. Отношения (торговля % оборота / культурная близость / обида / стойка)
 
 - cyg61_kern|hd114783_hellas3: торговля 0.0 %, культура 53.7, обида 50, конкуренция 0 → соперник
 - cyg61_kern|leo83_zion: торговля 0.0 %, культура 30.7, обида 40, конкуренция 0 → соперник
 - delta_pav_freekarma|delta_pav_karma: торговля 1.1 %, культура 88.8, обида 80, конкуренция 60 → враг-сосед
-- eps_eri_harmony|eps_eri_strife: торговля 5.0 %, культура 19.1, обида 70, конкуренция 60 → враг-сосед
-- eps_eri_harmony|gj832_tianhe: торговля 4.1 %, культура 78.9, обида 25, конкуренция 0 → нейтрал
-- eps_eri_harmony|hd20794_newindia: торговля 11.4 %, культура 56.6, обида 0, конкуренция 0 → нейтрал
-- eps_eri_harmony|lalande_hellas: торговля 29.1 %, культура 34.2, обида 0, конкуренция 0 → партнёр
-- eps_eri_harmony|lalande_mecca: торговля 21.8 %, культура 58.9, обида 0, конкуренция 0 → партнёр
-- eps_eri_harmony|proxima_outpost: торговля 25.5 %, культура 56.0, обида 0, конкуренция 0 → партнёр
-- eps_eri_harmony|tau_ceti_cognium: торговля 28.5 %, культура 57.6, обида 0, конкуренция 0 → партнёр
-- eps_eri_strife|lalande_mecca: торговля 10.1 %, культура 22.7, обида 0, конкуренция 0 → нейтрал
-- eps_eri_strife|wolf359_citadel: торговля 11.3 %, культура 55.6, обида 0, конкуренция 0 → нейтрал
-- gj581_europa|gj581_freeclans: торговля 5.4 %, культура 48.8, обида 35, конкуренция 60 → соперник
-- gj581_freeclans|lalande_mecca: торговля 13.8 %, культура 37.1, обида 0, конкуренция 0 → нейтрал
-- gj581_freeclans|proxima_outpost: торговля 15.6 %, культура 51.3, обида 0, конкуренция 0 → партнёр
-- gj832_tianhe|lalande_mecca: торговля 15.1 %, культура 50.1, обида 0, конкуренция 0 → партнёр
-- gj832_tianhe|proxima_outpost: торговля 13.9 %, культура 51.0, обида 0, конкуренция 0 → нейтрал
-- gj832_tianhe|tau_ceti_cognium: торговля 11.8 %, культура 47.2, обида 20, конкуренция 0 → нейтрал
-- hd20794_hellas2|hd20794_newindia: торговля 7.4 %, культура 49.7, обида 55, конкуренция 60 → соперник
-- hd20794_newindia|lalande_mecca: торговля 21.3 %, культура 68.9, обида 0, конкуренция 0 → партнёр
-- hd20794_newindia|proxima_outpost: торговля 12.6 %, культура 78.6, обида 0, конкуренция 0 → нейтрал
-- hd20794_newindia|tau_ceti_cognium: торговля 20.1 %, культура 50.6, обида 0, конкуренция 0 → партнёр
-- hd20794_newindia|wolf359_citadel: торговля 21.1 %, культура 39.6, обида 0, конкуренция 0 → партнёр
-- hd40307_firmament|hd40307_maland: торговля 18.0 %, культура 47.9, обида 75, конкуренция 60 → враг-сосед
-- lalande_hellas|lalande_mecca: торговля 1.1 %, культура 51.3, обида 30, конкуренция 60 → соперник
-- lalande_hellas|wolf359_citadel: торговля 19.1 %, культура 38.7, обида 0, конкуренция 0 → партнёр
+- delta_pav_karma|gj832_tianhe: торговля 14.6 %, культура 51.2, обида 0, конкуренция 0 → нейтрал
+- eps_eri_harmony|eps_eri_strife: торговля 4.7 %, культура 19.1, обида 70, конкуренция 60 → враг-сосед
+- eps_eri_harmony|gj832_tianhe: торговля 5.8 %, культура 78.9, обида 25, конкуренция 0 → нейтрал
+- eps_eri_harmony|hd20794_newindia: торговля 12.1 %, культура 56.6, обида 0, конкуренция 0 → нейтрал
+- eps_eri_harmony|lalande_hellas: торговля 30.9 %, культура 34.2, обида 0, конкуренция 0 → партнёр
+- eps_eri_harmony|lalande_mecca: торговля 18.2 %, культура 58.9, обида 0, конкуренция 0 → партнёр
+- eps_eri_harmony|proxima_outpost: торговля 24.4 %, культура 56.0, обида 0, конкуренция 0 → партнёр
+- eps_eri_harmony|tau_ceti_cognium: торговля 36.2 %, культура 57.6, обида 0, конкуренция 0 → партнёр
+- eps_eri_strife|lalande_mecca: торговля 16.6 %, культура 22.7, обида 0, конкуренция 0 → партнёр
+- eps_eri_strife|proxima_outpost: торговля 10.5 %, культура 32.1, обида 0, конкуренция 0 → нейтрал
+- eps_eri_strife|wolf359_citadel: торговля 11.2 %, культура 55.6, обида 0, конкуренция 0 → нейтрал
+- gj581_europa|gj581_freeclans: торговля 7.6 %, культура 48.8, обида 35, конкуренция 60 → соперник
+- gj581_freeclans|proxima_outpost: торговля 16.0 %, культура 51.3, обида 0, конкуренция 0 → партнёр
+- gj832_tianhe|tau_ceti_cognium: торговля 6.4 %, культура 47.2, обида 20, конкуренция 0 → нейтрал
+- hd20794_hellas2|hd20794_newindia: торговля 8.0 %, культура 49.7, обида 55, конкуренция 60 → соперник
+- hd20794_hellas2|hd40307_maland: торговля 13.1 %, культура 61.7, обида 0, конкуренция 0 → нейтрал
+- hd20794_newindia|hd40307_maland: торговля 10.8 %, культура 71.3, обида 0, конкуренция 0 → нейтрал
+- hd20794_newindia|lalande_mecca: торговля 27.3 %, культура 68.9, обида 0, конкуренция 0 → партнёр
+- hd20794_newindia|proxima_outpost: торговля 19.9 %, культура 78.6, обида 0, конкуренция 0 → партнёр
+- hd20794_newindia|tau_ceti_cognium: торговля 14.7 %, культура 50.6, обида 0, конкуренция 0 → нейтрал
+- hd20794_newindia|wolf359_citadel: торговля 18.7 %, культура 39.6, обида 0, конкуренция 0 → партнёр
+- hd40307_firmament|hd40307_maland: торговля 13.3 %, культура 47.9, обида 75, конкуренция 60 → враг-сосед
+- hd40307_firmament|wolf359_citadel: торговля 12.2 %, культура 40.3, обида 0, конкуренция 0 → нейтрал
+- hd40307_maland|wolf359_citadel: торговля 11.9 %, культура 49.7, обида 0, конкуренция 0 → нейтрал
+- lalande_hellas|lalande_mecca: торговля 7.8 %, культура 51.3, обида 30, конкуренция 60 → соперник
 - lalande_mecca|wolf359_citadel: торговля 0.0 %, культура 41.5, обида 25, конкуренция 0 → нейтрал
 - proxima_outpost|tau_ceti_cognium: торговля 0.0 %, культура 56.2, обида 30, конкуренция 0 → соперник
 - tau_ceti_cognium|wolf359_citadel: торговля 0.0 %, культура 65.1, обида 45, конкуренция 0 → соперник

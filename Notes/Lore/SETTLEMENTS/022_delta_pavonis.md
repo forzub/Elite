@@ -18,8 +18,8 @@
 | Новая Карма | Delta Pavonis | Delta Pavonis k | 2361 (полития) | 343 248 304 | столица | [Новая Карма](../COLONIES/delta_pav_karma.md) | — | — | — | PROPOSAL · PUBLIC |
 | Delta Pavonis j — поселение | Delta Pavonis | Delta Pavonis j | — | 171 624 152 | поселение | [Новая Карма](../COLONIES/delta_pav_karma.md) | — | — | — | PROPOSAL · PUBLIC |
 | Delta Pavonis K1 — поселение | Delta Pavonis | Delta Pavonis K1 | — | 114 416 101 | поселение | [Новая Карма](../COLONIES/delta_pav_karma.md) | — | — | — | PROPOSAL · PUBLIC |
-| Храм Массива (криобанк генов) | Delta Pavonis | Delta Pavonis k (орбита) | — | — | наука | [Новая Карма](../COLONIES/delta_pav_karma.md) | точная механика | 0.70 | выпуск 380.16 [266.11–494.20] | PROPOSAL · PUBLIC |
-| Рудники Delta Pavonis h | Delta Pavonis | Delta Pavonis k (орбита) | — | — | рудник | [Новая Карма](../COLONIES/delta_pav_karma.md) | металлы | 0.50 | выпуск 2473.11 [1731.17–3215.04] | PROPOSAL · PUBLIC |
+| Храм Массива (криобанк генов) | Delta Pavonis | Delta Pavonis k (орбита) | — | — | наука | [Новая Карма](../COLONIES/delta_pav_karma.md) | точная механика | 0.70 | выпуск 379.88 [265.92–493.85] | PROPOSAL · PUBLIC |
+| Рудники Delta Pavonis h | Delta Pavonis | Delta Pavonis k (орбита) | — | — | рудник | [Новая Карма](../COLONIES/delta_pav_karma.md) | металлы | 0.50 | выпуск 2477.42 [1734.19–3220.64] | PROPOSAL · PUBLIC |
 <!-- GENERATED:registry END -->
 
 ## Места (рассказ)

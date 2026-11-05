@@ -289,11 +289,30 @@ class Economy:
                         continue                  # end-use controlled: only the producer exports
                     delivered = self.price(sid, g) * (1 + griev / 200) * (1 + mk) + self.freight(g, cost)
                     offers.append((delivered, sid, surplus))
-                for delivered, sid, surplus in sorted(offers):
+                # bloc procurement quota (political_order blocs.*.strategic_procurement): a share of the
+                # gap is reserved for the bloc's own maker, which may charge up to price_tolerance_x more
+                pref = self.access.preferred(buyer, g) if self.access is not None else None
+                order = sorted(offers)
+                if pref:
+                    maker, floor, tol = pref
+                    quota = gap * floor
+                    for delivered, sid, surplus in order:
+                        if sid != maker or quota <= 0 or delivered > self.price(buyer, g) * 1.15 * tol:
+                            continue
+                        q = min(quota, surplus)
+                        self.stock[sid][g] -= q
+                        self.stock[buyer][g] += q
+                        gap -= q
+                        quota -= q
+                        flows.append((g, sid, buyer, q, delivered))
+                    order = [(d, sid, (sp if sid != maker else self.stock[sid][g] - self.need(self._byid[sid])[g] * 1.1)) for d, sid, sp in order]
+                for delivered, sid, surplus in order:
                     if gap <= 0:
                         break
                     if delivered > self.price(buyer, g) * 1.15:
                         break
+                    if surplus <= 0:
+                        continue
                     q = min(gap, surplus)
                     self.stock[sid][g] -= q
                     self.stock[buyer][g] += q

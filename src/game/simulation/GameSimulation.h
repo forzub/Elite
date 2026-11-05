@@ -243,6 +243,7 @@ public:
         std::string autopilotDepartureId;
         int autopilotPhase = 0;
         double autopilotSeconds = 0.0;
+        double autopilotRampSeconds = 0.0;   // the drive ramp: counts only outside the J keep-out
         double autopilotLastLogSeconds = -1.0e30;
         bool autopilotHaveLastCenter = false;
         // the landing module (planner + transit + descent) once the approach is over
@@ -683,6 +684,16 @@ private:
     BodyOrientationProvider m_bodyOrientation;
     void updateFreeFlightAutopilot(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
     void updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
+    // J keep-out (JDrive.h): the nearest hub / station / beacon or other ship whose keep-out holds a world point
+    struct JKeepOutHit
+    {
+        std::string objectId;
+        glm::dvec3 positionMeters {0.0};
+        glm::dvec3 velocityMps {0.0};
+        double distanceMeters = 0.0;
+        bool ship = false;
+    };
+    bool jKeepOut(EntityId shipId, int systemId, const glm::dvec3& worldMeters, JKeepOutHit& hit) const;
     std::vector<EntityId> m_pendingJExit;   // legs that arrived: J off after the free-flight pass
     std::unordered_map<EntityId, ActiveRoute> m_routes;
     void updateRoutes(double dt);

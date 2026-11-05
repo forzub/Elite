@@ -2,7 +2,7 @@
 // an orbit of a body, a point - on the J drive and finishes each one matched to
 // the destination's motion.
 //
-//   hub    - arrive inside the hub's J boundary (HubJBoundaryM) with its velocity,
+//   hub    - arrive at the edge of the hub keep-out (HubArrivalM) with its velocity,
 //            leave J automatically (a hub capture: the ship is re-based into the
 //            hub frame at rest - a stable position within the hub bounds); a
 //            waypoint action (refuel) then runs at the hub's dock;
@@ -12,15 +12,18 @@
 //            falls freely under gravity: the orbit holds by itself;
 //   point  - arrive at rest against the dominant body at a world point.
 //
-// Departure from a hub: inside its J boundary the drive is gentle (<= 1 g, <=
-// 300 m/s against the hub) - no J manoeuvres near traffic; the full drive (1 g
-// doubling every 2 s up to the cap) only outside it. Every massive body on the
+// Near any object (hub, station, beacon, another ship - the J keep-out, JDrive.h)
+// the J field does not work: the drive is gentle (<= 1 g, <= 300 m/s against that
+// object) and pushes out of the keep-out; the full drive (1 g doubling every 2 s
+// up to ~1e5 g, speed cap 0.9 c) only outside it. A hub is reached at the edge of
+// its keep-out (HubArrivalM), where J ends in a hub capture. Every massive body on the
 // way is gone round (the line to the aim may not pass within R + 150 km / the
 // atmosphere + 50 km of a planet / moon, nor below the destination's altitude), the speed profile is the J autopilot's: sqrt(2 a d) braking at
 // 0.4 of the cap and an exponential tail d / 6 s against the destination.
 // The planner (game::navigation::route) decides the waypoints; this file only
 // flies them.
 #include "src/game/simulation/GameSimulation.h"
+#include "src/game/simulation/JDrive.h"
 
 #include <algorithm>
 #include <cmath>
@@ -33,12 +36,12 @@
 
 namespace
 {
-constexpr double HubJBoundaryM = 20000.0;      // J on / off distance from a hub (traffic safety)
-constexpr double HubArrivalM = 12000.0;        // the aim inside the boundary, on the approach side
-constexpr double GentleAccelMps2 = 9.81;
-constexpr double GentleSpeedMps = 300.0;
+namespace jd = game::simulation::jdrive;
+constexpr double HubArrivalM = jd::KeepOutObjectM + 5000.0;   // the aim just outside the keep-out, on the approach side
+constexpr double GentleAccelMps2 = jd::GentleAccelMps2;
+constexpr double GentleSpeedMps = jd::GentleSpeedMps;
 constexpr double ApproachTauS = 6.0;
-constexpr double MaxDriveMps2 = 100000.0;
+constexpr double MaxDriveMps2 = jd::MaxAccelMps2;
 }
 
 bool GameSimulation::startFreeFlightLeg(EntityId shipId, const FreeFlightLeg& leg)
@@ -145,10 +148,11 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
     glm::dvec3 dir = d > 1.0e-3 ? toAim / d : glm::dvec3(0.0);
     const glm::dvec3 w = frame.linearVelocityMps - targetVel;
 
-    // ---- the drive: gentle inside the departure hub's J boundary, then 1 g doubling every 2 s
-    const auto* depHub = hubNavigationFrame(f.legDepartureHubId);
-    const double fromDep = depHub && depHub->valid ? glm::length(frame.originMeters - depHub->originMeters) : 1.0e30;
-    const bool nearDeparture = fromDep < HubJBoundaryM && leg.hubId != f.legDepartureHubId;
+    // ---- the drive: gentle inside any object's keep-out (no J field there), then 1 g doubling every 2 s
+    JKeepOutHit keep;
+    const bool inKeepOut = jKeepOut(shipId, motion.systemId, frame.originMeters, keep);
+    const bool nearDeparture = inKeepOut && !(leg.kind == FreeFlightLeg::Kind::Hub && keep.objectId == leg.hubId && f.legSeconds > 1.0 &&
+                                              keep.objectId != f.legDepartureHubId);
     if (!nearDeparture && f.legDriveStartSeconds == -1.0)
         f.legDriveStartSeconds = f.legSeconds;
     const double driveSeconds = f.legDriveStartSeconds == -1.0 ? 0.0 : f.legSeconds - f.legDriveStartSeconds;
@@ -183,20 +187,20 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
     const double dEff = d + (leg.passThrough ? leg.remainingAfterM : 0.0);
     const double braking = std::sqrt(2.0 * 0.4 * MaxDriveMps2 * dEff);
     const double tail = dEff / ApproachTauS;
-    double speed = std::min(braking, tail);
+    double speed = std::min({braking, tail, jd::SpeedCapMps});
     if (nearDeparture)
         speed = std::min(speed, GentleSpeedMps);
     if (phase == 2 && tail < braking)
         phase = 3;
     glm::dvec3 wanted = dir * speed;
     glm::dvec3 dv = wanted - w;
-    if (nearDeparture && depHub)
+    if (nearDeparture)
     {
-        // inside the departure hub's J boundary: a slow climb out AGAINST THAT HUB
-        // (its traffic), not against the destination - the destination's speed is
-        // matched only after the boundary
-        const glm::dvec3 away = glm::normalize(frame.originMeters - depHub->originMeters + dir * 1.0);
-        const glm::dvec3 wDep = frame.linearVelocityMps - depHub->velocityMetersPerSecond;
+        // inside an object's keep-out: a slow climb out AGAINST THAT OBJECT (its
+        // traffic), not against the destination - the destination's speed is
+        // matched only after the keep-out
+        const glm::dvec3 away = glm::normalize(frame.originMeters - keep.positionMeters + dir * 1.0);
+        const glm::dvec3 wDep = frame.linearVelocityMps - keep.velocityMps;
         dv = away * GentleSpeedMps - wDep;
     }
     const double maxDv = limit * dt;

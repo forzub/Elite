@@ -2999,6 +2999,24 @@ order - ask for it again if it is not in the session.
 - Next (not started): implementation slices - data (sumps / jump limits / medium currents from the catalogue), visible
   planner, hidden server roll, exit sync, zones + transponder, J cap / acceleration / energy accounting.
 
+### User order 2026-11-05 x - J drive slice 1 (cap, acceleration, keep-out) - CODE + LIVE MOON RUN
+- src/game/simulation/JDrive.h: J figures - max acceleration ~1e5 g (980 665 m/s2, autopilot and route), speed cap
+  0.9 c against the J reference body (autopilot / route setpoints and a hard clamp on every J flight), keep-out 20 km
+  around hubs / stations / beacons (m_hubNavigationFrames) and 5 km around other ships: inside it no J field - a gentle
+  push (<= 1 g, <= 300 m/s against that object) out first; the drive ramp (1 g doubling every 2 s) restarts outside.
+  Route: the departure-hub boundary generalised to the keep-out; hub arrival aim moved to 25 km (outside the keep-out,
+  inside the 50 km capture). HUD: refusal code 3 "J-поле не работает рядом с объектами".
+- LIVE (build/EliteGame --dev-direct-flight, ELITE_DEV_SOL_MAP_SCRIPT 8:freeflight;10:autopilot:moon, D:/tmp/elite_j10):
+  gentle 1 g / 300 m/s out of the Earth Orbital Hub keep-out (~48 s), ramp from 1 g outside, full 980 665 m/s2 at
+  ~t+80 s, peak ~14 700 km/s, transfer ~130 s, descent, LANDED on the Moon after 242.9 s (1.42 m/s vertical).
+  NOT yet: a flight long enough to hit the 0.9 c cap (Earth -> Mars), full test suite, energy accounting.
+- AUTHOR CORRECTION (same day): J must end at an ORBIT point; descent, landing and the climb to orbit go on the MAIN
+  ENGINES - otherwise "no J near objects" contradicts landing on J. Bodies were left out of the keep-out in this slice
+  (the J landing still flies the 40 m/s2 J descent). Next slice: a J floor per body (proposal: max(top of the
+  atmosphere + 50 km, 0.05 R, 50 km): Earth ~320 km - LEO hubs at ~420 km stay above it, Moon ~90 km, Mars ~170 km);
+  body autopilot = J to a parking orbit above the floor -> J off into the ballistic frame -> landing / ascent on the
+  ship's real main engines (needs the landing module on the main-engine flight path, outside J).
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

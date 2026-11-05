@@ -1649,6 +1649,8 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         line2 = "Нет доступной локальной системы отсчёта (хаб дальше зоны захвата)   " + line2;
     else if (motion.freeFlightCaptureRefusal == 2)
         line2 = "Захват невозможен: слишком высокая скорость относительно хаба   " + line2;
+    else if (motion.freeFlightCaptureRefusal == 3)
+        line2 = "J-поле не работает рядом с объектами: отход на мягкой тяге   " + line2;
 
     auto& text = TextRenderer::instance();
     text.beginFrameForViewport(viewport.width, viewport.height);

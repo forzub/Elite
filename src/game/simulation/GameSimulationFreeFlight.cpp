@@ -16,8 +16,10 @@
 //
 // J autopilot (O on a body on the System Map, PAGE DOWN = land here): the ship
 // flies itself to a body and lands. Its acceleration ramps exponentially (1 g
-// doubling every 2 s up to ELITE_J_AUTOPILOT_MAX_ACCEL, default 100 km/s2 - a
-// game drive, no speed cap, thrust both ways: the nose stays on the target);
+// doubling every 2 s up to ELITE_J_AUTOPILOT_MAX_ACCEL, default ~1e5 g, JDrive.h -
+// the J drive, speed cap 0.9 c, thrust both ways: the nose stays on the target);
+// near any object (hub, station, beacon, ship: JDrive.h keep-out) the J field does
+// not work - the drive is a gentle push out of the keep-out first;
 // the velocity setpoint toward a point 12 km above the body on the ship's side
 // is sqrt(2 a d) (braking at 0.4 of the cap) with an exponential approach tail
 // d / 6 s; the departure body is never cut through. Then a powered vertical
@@ -39,6 +41,7 @@
 // (non-rotating, free fall under gravity) and the pilot flies locally from rest
 // inside it: global and local speed are separate (user order 2026-11-04).
 #include "src/game/simulation/GameSimulation.h"
+#include "src/game/simulation/JDrive.h"
 
 #include <algorithm>
 #include <cmath>
@@ -115,6 +118,42 @@ const game::navigation::GravityBody* referenceBody(const glm::dvec3& point,
 }
 }
 
+bool GameSimulation::jKeepOut(EntityId shipId, int systemId, const glm::dvec3& worldMeters, JKeepOutHit& hit) const
+{
+    namespace jd = game::simulation::jdrive;
+    bool found = false;
+    double best = std::numeric_limits<double>::infinity();
+    for (const auto& [hubId, frame] : m_hubNavigationFrames)
+    {
+        if (!frame.valid || frame.systemId != systemId)
+            continue;
+        const double d = glm::length(frame.originMeters - worldMeters);
+        if (d < jd::KeepOutObjectM && d < best)
+        {
+            best = d;
+            hit = JKeepOutHit {hubId, frame.originMeters, frame.velocityMetersPerSecond, d, false};
+            found = true;
+        }
+    }
+    for (const auto& [id, other] : m_ships)
+    {
+        if (id == shipId || !other)
+            continue;
+        const auto& m = other->core().transform().motion;
+        if (m.systemId != systemId || !m.travelFrame.valid)
+            continue;
+        const glm::dvec3 p = m.travelFrame.localToWorldPosition(m.localPositionMeters);
+        const double d = glm::length(p - worldMeters);
+        if (d < jd::KeepOutShipM && d < best)
+        {
+            best = d;
+            hit = JKeepOutHit {"ship " + std::to_string(id.value), p, m.travelFrame.localToWorldVelocity(m.localPositionMeters, m.localVelocityMps), d, true};
+            found = true;
+        }
+    }
+    return found;
+}
+
 void GameSimulation::setFreeFlightThrust(EntityId shipId, int command)
 {
     Ship* ship = getShip(shipId);
@@ -171,6 +210,7 @@ void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& 
     }
     f.autopilotPhase = 2;
     f.autopilotSeconds = 0.0;
+    f.autopilotRampSeconds = 0.0;
     f.autopilotHaveLastCenter = false;
     f.autopilotLastLogSeconds = -1.0e30;
     motion.freeFlightThrust = 0;
@@ -218,7 +258,7 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     static const double maxAccel = [] {
         const char* v = std::getenv("ELITE_J_AUTOPILOT_MAX_ACCEL");
         const double a = v && *v ? std::atof(v) : 0.0;
-        return a > 0.0 ? a : 100000.0;
+        return a > 0.0 ? a : game::simulation::jdrive::MaxAccelMps2;
     }();
     constexpr double AimAltitudeM = 12000.0;
     constexpr double ApproachTauS = 6.0;
@@ -231,7 +271,7 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     const double ground = motion.freeFlightOrbitBodyId == target->id ? motion.freeFlightGroundHeightM : 0.0;
     const double height = rLen - target->radiusMeters - ground;
     // the drive: 1 g doubling every 2 s up to the cap
-    const double ramp = std::min(maxAccel, 9.81 * std::exp2(f.autopilotSeconds / 2.0));
+    const double ramp = std::min(maxAccel, 9.81 * std::exp2(f.autopilotRampSeconds / 2.0));
 
     glm::dvec3 wanted(0.0);
     double limit = ramp;
@@ -388,8 +428,29 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     }
     f.autopilotPhase = phase;
 
+    // the J speed cap (0.9 c against the target)
+    if (glm::length(wanted) > game::simulation::jdrive::SpeedCapMps)
+        wanted *= game::simulation::jdrive::SpeedCapMps / glm::length(wanted);
     // deadbeat velocity servo within the drive's authority (gravity was integrated this tick)
     glm::dvec3 dv = wanted - w;
+    // no J field near objects: a gentle push out of the nearest keep-out (not in the
+    // powered descent, which already flies on a 4 g main-drive-like authority)
+    if (JKeepOutHit hit; phase != 4 && jKeepOut(shipId, motion.systemId, frame.originMeters, hit))
+    {
+        namespace jd = game::simulation::jdrive;
+        const glm::dvec3 off = frame.originMeters - hit.positionMeters;
+        const glm::dvec3 away = glm::length(off) > 1.0 ? glm::normalize(off) : glm::dvec3(tr.forward());
+        dv = hit.velocityMps + away * jd::GentleSpeedMps - frame.linearVelocityMps;
+        limit = std::min(limit, jd::GentleAccelMps2);
+        motion.freeFlightCaptureRefusal = 3;
+        f.autopilotRampSeconds = 0.0;   // the full drive ramps from 1 g again outside the keep-out
+    }
+    else
+    {
+        if (motion.freeFlightCaptureRefusal == 3)
+            motion.freeFlightCaptureRefusal = 0;
+        f.autopilotRampSeconds += dt;
+    }
     const double maxDv = limit * dt;
     if (glm::length(dv) > maxDv)
         dv *= maxDv / glm::length(dv);
@@ -1006,6 +1067,14 @@ void GameSimulation::updateFreeFlights(double dt)
                     f.autopilotPhase = 0;
                     motion.freeFlightAutopilotPhase = 5;
                 }
+            }
+            // the J speed cap: the field does not carry the ship above 0.9 c against the reference body
+            if (primary && f.lastPrimaryId == primary->id && dt > 0.0)
+            {
+                const glm::dvec3 refVel = (primary->centerMeters - f.lastPrimaryCenterMeters) / dt;
+                const glm::dvec3 rel = frame.linearVelocityMps - refVel;
+                if (glm::length(rel) > game::simulation::jdrive::SpeedCapMps)
+                    frame.linearVelocityMps = refVel + rel * (game::simulation::jdrive::SpeedCapMps / glm::length(rel));
             }
             f.lastPrimaryId = primary ? primary->id : std::string();
             f.lastPrimaryCenterMeters = primary ? primary->centerMeters : glm::dvec3(0.0);

@@ -3075,8 +3075,60 @@ order - ask for it again if it is not in the session.
   shows meanwhile). Pre-existing, not fixed: staircase contours on the terrain mesh close in; Modern style soft at near
   orbit (magnified globe). Planet Lab --check: 1 FAIL "rocky coastline landmark id changes 3443" - identical without
   these changes (baseline red, procedural body). EliteServicePagesCheck PASS (run from build/).
+- (see bb below for the normal-flight landing that followed)
 - LIVE on the new relief (D:/tmp/elite_j10/moonvis): BELLY-DOWN, ON ORBIT 86.89 km, LANDED 526.7 s, contact
   1.45 m/s vertical / 0.09 m/s horizontal, slope 4.6 deg. Author visual acceptance of the Moon in the game: PENDING.
+
+### User order 2026-11-05 bb - landing in NORMAL flight (J off on the parking orbit) - IN PROGRESS, PAUSED BY THE AUTHOR, NOT COMMITTED
+- Author: "у тебя скорость 400 м/с как в обычном режиме, а ты пользуешься J"; "переводи посадку в обычный режим полёта".
+- Code (uncommitted, builds): J ends on the parking orbit; J-off below a body's J floor = BODY FRAME (travel frame moves
+  with the ground under the ship, local velocity = velocity over the ground, server folds law motion + gravity and
+  splits each tick; contact / rest / lift-off shared with J); landing virtual pilot SurfaceLandingPilot.h emitting
+  ordinary controls of the ship's NATIVE law (Assisted: level hull, target speed via +/-, lift input; Newtonian: main
+  + per-axis RCS + attitude); pilot controls override the input before the flight step; the J-container descent
+  (old phase 4) deleted; manual J-off below the floor also enters the body frame. DEV trace ELITE_DEV_BODY_TRACE.
+- LIVE failures (D:/tmp/elite_j10/normal1..7), root causes:
+  normal1/2: Newtonian tail-down pilot, nose ~17-57 deg off, horizontal never < 2 m/s -> module never left Transit;
+  normal3: CRASH 673 m/s - the pilot FORCED the Newtonian law on an Assisted plant (dev ship): main requested 73.5,
+  delivered ~0 (author saw HUD "control Newtonian, engine group Assisted", sideways); fixed: the native law only;
+  normal4: Assisted pilot, retrograde/prograde nose flip at 30 m/s horizontal (~110 deg swings); fixed: nose along the
+  needed horizontal velocity change, blended;
+  normal5: at the 500 m/s controlled envelope the law admits no speed-growing thrust -> engines 0, falling; fixed:
+  wanted velocity capped at 0.9 x envelope;
+  normal6: stable, but cruises ~400 m/s at 55-65 km for 500+ s without reaching the site (distance not logged);
+  normal7 stopped at the author's request.
+- Author (2026-11-05): an ARCHITECTURE bug found - without a hub, J-off loses the velocity reference (relative speed
+  0) while J flies against the body; the author is deciding how to resolve it. Open contradiction raised: orbital
+  speed (1639 m/s) vs the 500 m/s normal-flight envelope (options: orbit legitimate in normal flight / orbit = J only).
+- Next: wait for the author's architecture decision; nothing accepted.
+
+### Author decision 2026-11-05 cc - flight architecture: engines, flight modes, velocity references (replaces the bb frame design)
+- ONE physics (global state, star systems at rest in our 0). Modes change only what is called ZERO velocity (HUD,
+  the Assisted reference, the envelope), never the motion; a reference switch gives no impulse (Assisted re-captures
+  its target as the current velocity in the new reference; the nose is not slewed by the switch).
+- Engines: normal (~7 g) / J (huge g) - J becomes an ENGINE SWITCH only; + the jump. References switch AUTOMATICALLY.
+- Velocity references: (1) interplanetary/interstellar - global; (2) inside a body's sphere of influence
+  (r = a (m/M)^0.4, smallest containing sphere, hysteresis) - relative to the body; (3) STABILIZATION - holding a
+  reference trajectory: a ballistic orbit point, a hub (its orbit), or a point on the surface (rotates with the body;
+  thrust holds it against g) - surface = a kind of stabilization reference, not a fourth frame. The HUD names the
+  reference (SPACE / body / ORBIT / GROUND / HUB).
+- Flight modes: NORMAL (no speed limit) / STABILIZATION (current velocity = 0, manoeuvres within the 500 m/s envelope;
+  the author keeps 500: combat comfort, manoeuvres in a bounded volume around the reference; with a hub as the visual
+  reference neither fall nor escape; without one the ship may fall / escape - known, accepted). Stabilization turns
+  on automatically on a closed orbit (periapsis above surface / atmosphere, inside the sphere, no thrust for N s) + a
+  STABILIZATION ON/OFF button. Without stabilization the 500 m/s are not a limit (orbit = 1st cosmic is legitimate).
+- Assisted under gravity: the target velocity follows the BALLISTIC continuation (falls with g) - with no input the
+  ship follows its orbit, thrust only for the pilot's commands; on a surface reference it holds against g. Assisted
+  rule: main thrust along the current velocity of the active reference; Backspace = partial Newtonian without '+'.
+- Landing goals: (a) wild landing (soil sample, rescue): a map point or the autopilot picks a flat spot from the
+  terrain field; (b) settlement: a map mark (surface sites already have lat/lon in WorldSitesCatalog), a generated
+  settlement by conditions (airless body / asteroid: underground entrances, 2-3 small domes, antenna, pad; asteroid:
+  a passage in the rocks + pad), deterministic on server and client from one source; "land" -> the ship finds the pad,
+  or the player clicks the map. Orbit insertion phased by the J autopilot: the plane through the site, the insertion
+  point upstream of the site by the descent arc (site position at landing time) - no waiting for the site to come under.
+- Next: slices 1 reference selection + J as an engine switch + HUD label; 2 Assisted ballistic rule, envelope only in
+  stabilization, button + auto-on; 3 landing over these (map point / flat spot); 4 site-phased insertion; 5 settlements
+  (marker, generation, pad). The uncommitted bb body-frame code is reused as the surface reference; nothing accepted.
 
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the

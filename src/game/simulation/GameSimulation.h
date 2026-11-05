@@ -274,7 +274,31 @@ public:
         glm::dmat3 lastBasis {1.0};
         std::string lastBasisBodyId;
         glm::dvec3 autopilotLastTargetCenter {0.0};
+        // J off near a body (below its J floor): NORMAL flight against the body's surface. The
+        // travel frame moves with the ground under the ship, so the local velocity the flight
+        // laws see is the velocity over the ground; every tick the server folds what the laws
+        // did into the ship's world motion, applies real gravity, and splits it again.
+        bool bodyFrame = false;
+        std::string bodyFrameId;
+        bool bodyHavePrevious = false;
+        glm::dvec3 bodyPreviousCentre {0.0};
+        bool bodyPreviousBasisValid = false;
+        glm::dmat3 bodyPreviousBasis {1.0};
+        bool bodyLiftOff = false;            // the laws pushed the ship off the ground this tick
+        glm::dvec3 bodyTraceLocalStart {0.0};  // DEV trace: the local velocity handed to the laws
+        // the landing virtual pilot of normal flight: ordinary Newtonian controls, applied
+        // before the flight step (they override the pilot's input while it flies)
+        bool pilotActive = false;
+        bool pilotRestoreLaw = false;
+        ShipControlState pilotControl {};
+        game::navigation::LocalFlightControlLaw lawBeforeLanding = game::navigation::LocalFlightControlLaw::Assisted;
+        double pilotLastLogSeconds = -1.0e30;
     };
+    // J off below a body's J floor: normal flight against its surface (see bodyFrame)
+    void enterBodyFrame(EntityId shipId, Ship& ship, ActiveFreeFlight& f, const game::navigation::GravityBody& body,
+                        const glm::dvec3& bodyVelocityMps);
+    void updateSurfaceLanding(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
+    void applySurfaceLandingPilots();
     bool toggleFreeFlight(EntityId shipId);
     // J terrain contact: ground (terrain or sea surface) height above the body
     // radius in a world direction from the body centre; false = unknown (the

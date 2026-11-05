@@ -1,4 +1,4 @@
-"""Naming layer 3126: the single reader of canon/naming.json (+ canon/remote_systems.json).
+"""Naming layer 3126: the single reader of canon/naming.json.
 
 Identity is a machine id (unit id, system:<StarAtlas id>, star:<HYG id>, body:..., site:<settlement id or
 runtime site id>, mission:<code>); a name is a property of it. Every other place that shows a name is a
@@ -37,6 +37,9 @@ GALAXY_DETAILS = os.path.join(ROOT, "src", "assets", "data", "galaxy_details")
 HYG = os.path.join(ROOT, "src", "assets", "data", "galaxy", "real_star_catalog.json")
 LEGACY_EXTRA = {9: ("gj832_gaia_zone", "polity"), 14: ("gj832_gaia_zone", "colony")}   # legacy actors without a 3126 actor
 LY_PER_PC = 3.261564
+FOMALHAUT_ID = 61
+LEXIE_BODY = "system_61.Fomalhaut.Lexie"
+LEXIE_ENTITY = "body:" + LEXIE_BODY
 YEAR = 3126
 
 
@@ -56,7 +59,6 @@ def _cyr(s):
 class Names:
     def __init__(self):
         self.N = _load(os.path.join(CANON, "naming.json"))
-        self.R = _load(os.path.join(CANON, "remote_systems.json"))
         self.E = self.N["entities"]
         self.units = [k for k, v in self.E.items() if v.get("type") == "unit"]
 
@@ -233,6 +235,8 @@ def mirrors(NM):
             nh = b.get("naming_history") or {}
             la["nameOrigin"] = nh.get("reason") if nh.get("reason") and nh.get("reason") != "AUTHOR_UNSPECIFIED" else "UNKNOWN (имя автора; происхождение не задано)"
             la["naming"] = f"canon/naming.json → {kind}:{uid}"
+            for k, v in (b.get("legacy_actor_profile") or {}).items():
+                la[k] = v
     A["layer"] = ("ИСТОРИЧЕСКИЙ СЛОЙ ранней редакции мира (GalaxyDatabase, сейчас не загружается). CANON здесь только id и доказанная связь "
                   "с актором 3126 (political_order.json historical_actor). Поля name / selfName / altNames / nameOrigin — зеркало canon/naming.json "
                   "(пишет tools/colonization_lab/naming.py --write); остальные описания — легаси, не канон.")
@@ -262,14 +266,14 @@ def fortuna(NM):
     import world_economy as WE
     W = _load(os.path.join(CANON, "world.json"))
     L = _load(os.path.join(HERE, "out", "logistics.json"))
-    sysrec = NM.R["systems"]["system:fomalhaut"]
+    sysrec = fomalhaut_system()
     star = hyg_star(113368)
     F = tuple(star["position_ly"])
     atlas = atlas_systems()
     beacons = {b["system"]: b for b in W["beacons"] if b["year"] <= YEAR}
     inhabited = {c["system"] for c in W["colonies"]} | {0}
     hop = max(h for y, h in W["max_hop_ly"] if y <= YEAR)
-    dist = sorted((math.dist(F, v["pos"]), sid) for sid, v in atlas.items())
+    dist = sorted((math.dist(F, v["pos"]), sid) for sid, v in atlas.items() if sid != FOMALHAUT_ID)
     near = [dict(system=sid, name=atlas[sid]["name"], ly=round(d, 2), beacon=sid in beacons, inhabited=sid in inhabited,
                  operator=(beacons.get(sid) or {}).get("operator")) for d, sid in dist[:8]]
     stage = next(n for n in near if n["beacon"])
@@ -297,8 +301,10 @@ def fortuna(NM):
         star=dict(id="star:HIP_113368", hyg=star["id"], hd=star["hd"], hip=star["hip"], gl=star["gl"], bf=star["bf"], name=star["name"],
                   constellation=star["constellation"], v_mag_catalog=star["visual_magnitude"], spectral_catalog=star["spectral_type"],
                   distance_ly_catalog=round(star["distance_ly"], 2), position_ly=[round(x, 3) for x in F]),
-        observations=sysrec["observations"],
-        visible_from_earth=dict(v_mag=sysrec["observations"]["v_mag"]["value"], note="одна из ~20 ярчайших звёзд неба Земли; видна невооружённым глазом с юга и средних широт севера"),
+        catalog=dict(system_id=FOMALHAUT_ID, dir="src/assets/data/galaxy_details/systems/061_fomalhaut", atlas_visible=sysrec["atlas_visible"],
+                     bodies=len(fomalhaut_bodies()), reservoirs=[r["name"] for r in fomalhaut_reservoirs()]),
+        observations=sysrec["observational_reference"],
+        visible_from_earth=dict(v_mag=sysrec["observational_reference"]["v_mag"]["value"], note="одна из ~20 ярчайших звёзд неба Земли; видна невооружённым глазом с юга и средних широт севера"),
         max_hop_ly_3126=hop,
         nearest=near,
         staging=stage,
@@ -306,7 +312,7 @@ def fortuna(NM):
         within_max_hop=dict(stage=stage["ly"] <= hop, sol=sol <= hop),
         commercial_unbeaconed_limit_ly=WE.UNBEACONED_MAX_LY,
         in_commercial_network=stage["ly"] <= WE.UNBEACONED_MAX_LY,
-        destination_beacon=sysrec["infrastructure_3126"]["beacon"],
+        destination_beacon=FOMALHAUT_ID in beacons,
         jump_error=err, jump_error_reference=ref,
         tanks=tanks,
         verdict=[
@@ -321,26 +327,73 @@ def fortuna(NM):
         ])
 
 
+def fomalhaut_system():
+    return _load(os.path.join(GALAXY_DETAILS, "systems", "061_fomalhaut", "system.json"))
+
+
+def fomalhaut_bodies():
+    return [_load(p) for p in sorted(glob.glob(os.path.join(GALAXY_DETAILS, "systems", "061_fomalhaut", "generated", "bodies", "*.json")))]
+
+
+def fomalhaut_reservoirs():
+    return [_load(p) for p in sorted(glob.glob(os.path.join(GALAXY_DETAILS, "systems", "061_fomalhaut", "generated", "reservoirs", "*.json")))]
+
+
+def lexie_body():
+    return next(b for b in fomalhaut_bodies() if b["id"] == LEXIE_BODY)
+
+
 def compute(NM):
-    lexie = NM.R["systems"]["system:fomalhaut"]["bodies"]["body:fomalhaut.lexie"]
+    b = lexie_body()
+    o, ph, th, at, ge, spn = b["orbit"], b["physical"], b["thermal"], b["atmosphere"], b["geophysics"], b["spin"]
+    physical = dict(
+        a_au=o["semi_major_axis_au"], e=o["eccentricity"], period_years=round(o["period_days"] / 365.25, 2),
+        mass_earth=ph["mass_earth"], radius_km=round(ph["radius_km"]), surface_gravity_g=round(ph["surface_gravity_ms2"] / 9.80665, 2),
+        instellation_earth=round(th["instellation_earth"], 3), equilibrium_temperature_k=round(th["equilibrium_temperature_k"]),
+        surface_temperature_k=dict(mean=th["mean_surface_temperature_k"], min=round(th["min_surface_temperature_k"]), max=round(th["max_surface_temperature_k"])),
+        atmosphere=dict(surface_pressure_bar=round(at["surface_pressure_pa"] / 1e5, 3), composition=at["composition"], breathable=b["extra"]["breathable"]),
+        hydrosphere=ge["hydrosphere"], tectonics=ge["tectonic_regime"], volcanism=ge["volcanism"], magnetic_field_earth=round(ge["magnetic_field_earth"], 2),
+        biosphere=ge["biosphere"], rotation_hours=spn["rotation_period_hours"], axial_tilt_deg=spn["obliquity_deg"],
+        terrain=b["surface_generation"]["terrain_profile"], environment_preset=b["environment_preset_id"],
+        neighbours=[f"{x['designation']} {x['orbit']['semi_major_axis_au']:.2f} а. е." for x in fomalhaut_bodies()
+                    if x["kind"] == "planet" and x["id"] != LEXIE_BODY and abs(x["orbit"]["semi_major_axis_au"] - o["semi_major_axis_au"]) < 2.5])
     return dict(schema="elite.naming.v1", generated_by="tools/colonization_lab/naming.py", status=NM.N["status"],
                 entities=len(NM.E), units=len(NM.units),
-                verdicts={k: sum(1 for e in NM.E.values() for b in ([e.get("colony"), e.get("polity")] if e.get("type") == "unit" else [e]) if b and b.get("verdict") == k)
+                verdicts={k: sum(1 for e in NM.E.values() for bb in ([e.get("colony"), e.get("polity")] if e.get("type") == "unit" else [e]) if bb and bb.get("verdict") == k)
                           for k in NM.N["verdicts"]},
                 fortuna=fortuna(NM),
-                lexie=dict(id="body:fomalhaut.lexie", names={k: NM.resolve("body:fomalhaut.lexie", k) for k in ("en", "ru", "zh-Hans")},
-                          translit=NM.E["body:fomalhaut.lexie"]["names"]["zh_translit"], physical={k: v for k, v in lexie.items() if k not in ("compatibility",)}))
+                lexie=dict(id=LEXIE_ENTITY, runtime_body_id=LEXIE_BODY, names={k: NM.resolve(LEXIE_ENTITY, k) for k in ("en", "ru", "zh-Hans")},
+                           translit=NM.E[LEXIE_ENTITY]["names"]["zh_translit"], physical=physical))
 
 
 # ---------------------------------------------------------------- checks
-def retired_patterns(NM):
-    pats = []
-    for n in NM.N["retired_authoring_names"]["names"]:
-        if n.isascii():   # Latin forms: whole words only, machine ids (lalande_mecca, mecca_farms) are not display text
-            pats.append(re.compile(r"(?<![\w.-])" + re.escape(n) + r"(?![\w])", re.I))
-        else:
-            pats.append(re.compile(r"(?<![\w-])" + re.escape(n)))
-    return pats
+def _pat(n):
+    if n.isascii():   # Latin forms: whole words only, machine ids (lalande_mecca, mecca_farms) are not display text
+        return re.compile(r"(?<![\w.-])" + re.escape(n) + r"(?![\w])", re.I)
+    return re.compile(r"(?<![\w-])" + re.escape(n))
+
+
+class Retired:
+    """Entity-aware ban of retired authoring names (canon/naming.json retired_authoring_names):
+    unique names are banned anywhere in the current display layer; contextual words (the real Mecca, the
+    Islamic world, historical caliphates) only in a line that also names a current Lalande 21185 entity,
+    and in any name of a current entity."""
+
+    def __init__(self, NM):
+        r = NM.N["retired_authoring_names"]
+        self.unique = [(n, _pat(n)) for n in r["unique"]]
+        self.contextual = [(n, _pat(n)) for n in r["contextual"]]
+        self.context = [_pat(n) for n in r["context"]]
+
+    def text_hits(self, text):
+        hits = [m.group(0) for _, rx in self.unique for m in [rx.search(text)] if m]
+        for line in text.split("\n"):
+            if any(c.search(line) for c in self.context):
+                hits += [m.group(0) for _, rx in self.contextual for m in [rx.search(line)] if m]
+        return hits
+
+    def name_hits(self, name):
+        return [m.group(0) for _, rx in self.unique + self.contextual for m in [rx.search(name or "")] if m]
 
 
 DISPLAY_SCAN = [
@@ -349,6 +402,9 @@ DISPLAY_SCAN = [
     ("runtime", os.path.join(ROOT, "src", "assets", "data", "galaxy", "generation_ships.json")),
     ("runtime", os.path.join(ROOT, "src", "assets", "data", "galaxy", "actors.json")),
     ("runtime", os.path.join(ROOT, "src", "assets", "data", "galaxy", "subactors.json")),
+    ("runtime", os.path.join(ROOT, "src", "assets", "data", "galaxy", "nodes.json")),
+    ("runtime", os.path.join(ROOT, "src", "assets", "data", "galaxy", "routes.json")),
+    ("runtime", os.path.join(ROOT, "src", "assets", "data", "galaxy", "systems.json")),
     ("runtime", os.path.join(ROOT, "src", "assets", "data", "initial_world_state.json")),
     ("lore", os.path.join(ROOT, "Notes", "Lore", "**", "*.md")),
     ("lore", os.path.join(ROOT, "Notes", "History", "**", "*.md")),
@@ -375,7 +431,7 @@ def checks(NM, mirror_texts=None):
     # 2 + 11
     bad = []
     for eid, e in NM.E.items():
-        if eid.startswith("system:") and eid != "system:fomalhaut" and int(eid.split(":")[1]) not in atlas:
+        if eid.startswith("system:") and int(eid.split(":")[1]) not in atlas:
             bad.append(eid)
         for ref in [e.get("system"), e.get("star")]:
             if ref and ref not in NM.E and ref not in ("system:" + str(i) for i in atlas):
@@ -395,8 +451,8 @@ def checks(NM, mirror_texts=None):
     for eid in NM.E:
         if eid.startswith("site:") and eid[5:] not in site_ids and eid[5:] not in rt_ids:
             bad.append(eid)
-    if "system:fomalhaut" not in NM.R["systems"]:
-        bad.append("system:fomalhaut physics")
+    bodies = {b["id"] for b in fomalhaut_bodies()}
+    bad += [eid for eid in NM.E if eid.startswith("body:") and eid[5:] not in bodies]
     add("t02_t11_ids_resolve", not bad, f"сущностей {len(NM.E)}; битые ссылки: {bad}")
     # 3
     if mirror_texts is not None:
@@ -426,19 +482,30 @@ def checks(NM, mirror_texts=None):
             if k == "polity" and u != "proxima_outpost" and NM.native_of(b)["lang"] == "ru":
                 bad.append(f"{u}: русский эндоним у нерусских основателей")
     add("t05_t06_resolver_native_ru_en_and_endonyms", not bad, f"единиц {len(NM.units)}; проблемы: {bad}")
-    # 7 + 23
-    pats = retired_patterns(NM)
+    # 7 + 23: retired names, entity-aware
+    RT = Retired(NM)
     hits = []
     files = 0
     for kind, g in DISPLAY_SCAN:
-        for p in sorted(glob.glob(g, recursive=True)):
+        for p_ in sorted(glob.glob(g, recursive=True)):
             files += 1
-            txt = open(p, encoding="utf-8", errors="replace").read()
-            for rx in pats:
-                m = rx.search(txt)
-                if m:
-                    hits.append(f"{os.path.relpath(p, ROOT)}: «{m.group(0)}»")
-    add("t07_t23_no_retired_names_in_display_layer", not hits, f"файлов {files}; найдено: {hits[:12]}{' …' if len(hits) > 12 else ''}")
+            h = RT.text_hits(open(p_, encoding="utf-8", errors="replace").read())
+            if h:
+                hits.append(f"{os.path.relpath(p_, ROOT)}: «{h[0]}»")
+    table = NM.runtime_table()["names"].values()
+    names = [r.get(k) for r in table for k in ("ru", "en", "native", "label_ru")]
+    names += [x for r in table for x in r.get("slang", [])]
+    names += [s_["name"] for rows in S["polities"].values() for s_ in rows]
+    try:
+        names += [h.get(k) for h in _load(os.path.join(ROOT, "src", "assets", "data", "economy", "hub_modules_3126.json"))["hubs"] for k in ("name", "owner_name")]
+    except OSError:
+        pass
+    hits += [f"имя текущей сущности: «{n}»" for n in names if n and RT.name_hits(n)]
+    add("t07_t23_no_retired_names_in_display_layer", not hits, f"файлов {files}, имён {len(names)}; найдено: {hits[:12]}{' …' if len(hits) > 12 else ''}")
+    probe_fail = ["Тауранга, бывшая Новая Мекка", "столица Капеху — Мекка", "VAKA-MOANA-1 (прежде AL-QUDS-1)"]
+    probe_pass = ["паломничество в Мекку на Земле в XXI веке", "не отстать от США, Китая и исламского мира", "исторические исламские халифаты Земли"]
+    ok = all(RT.text_hits(x) for x in probe_fail) and not any(RT.text_hits(x) for x in probe_pass) and RT.name_hits("Новая Мекка")
+    add("t07b_retired_names_entity_aware", ok, "старое имя Тауранги в текущей сущности — ловится; реальная Мекка / исламский мир Земли — допустимы")
     # 8
     bad = []
     for u in NM.units:
@@ -475,12 +542,12 @@ def checks(NM, mirror_texts=None):
           and all(NM.lookup(x) == ["star:HIP_113368"] for x in ("Fomalhaut", "α Piscis Austrini", "HD 216956", "HIP 113368", "Фомальгаут", "北落師門")))
     add("t13_fomalhaut_one_star_identity", ok, f"HYG {hy and hy['id']}: HD {hy and hy['hd']}, {hy and hy['bf']}, {hy and hy['constellation']} (Piscis Austrinus / Южная Рыба)")
     # 14 15
-    add("t14_fortuna_is_fomalhaut_system", NM.lookup("Fortuna") == ["system:fomalhaut"] == NM.lookup("Фортуна") and NM.E["system:fomalhaut"]["star"] == "star:HIP_113368",
-        "Fortuna / Фортуна → system:fomalhaut → star:HIP_113368")
-    add("t15_mingyun_zhi_lun_is_fortuna", NM.lookup("命運之輪") == ["system:fomalhaut"] == NM.lookup("命运之轮") == NM.lookup("Mìngyùn zhī lún"), "命運之輪 / 命运之轮 / Mìngyùn zhī lún → system:fomalhaut")
+    add("t14_fortuna_is_fomalhaut_system", NM.lookup("Fortuna") == [f"system:{FOMALHAUT_ID}"] == NM.lookup("Фортуна") and NM.E[f"system:{FOMALHAUT_ID}"]["star"] == "star:HIP_113368",
+        f"Fortuna / Фортуна → system:{FOMALHAUT_ID} (StarAtlas, atlas_visible) → star:HIP_113368")
+    add("t15_mingyun_zhi_lun_is_fortuna", NM.lookup("命運之輪") == [f"system:{FOMALHAUT_ID}"] == NM.lookup("命运之轮") == NM.lookup("Mìngyùn zhī lún"), f"命運之輪 / 命运之轮 / Mìngyùn zhī lún → system:{FOMALHAUT_ID}")
     # 16 17
-    add("t16_lexi_one_planet", all(NM.lookup(x) == ["body:fomalhaut.lexie"] for x in ("Lexie", "Лекси", "柏辛", "Bǎixīn")), "Lexie / Лекси / 柏辛 / Bǎixīn → body:fomalhaut.lexie")
-    nh = NM.E["body:fomalhaut.lexie"]["naming_history"]
+    add("t16_lexi_one_planet", all(NM.lookup(x) == [LEXIE_ENTITY] for x in ("Lexie", "Лекси", "柏辛", "Bǎixīn")), f"Lexie / Лекси / 柏辛 / Bǎixīn → {LEXIE_ENTITY}")
+    nh = NM.E[LEXIE_ENTITY]["naming_history"]
     add("t17_lexi_history_author_unspecified", nh == {"status": "AUTHOR_UNSPECIFIED", "origin": "UNKNOWN"}, f"{nh}")
     # 18
     cu = _load(os.path.join(CANON, "cultures.json"))["cultures"]
@@ -539,6 +606,59 @@ def checks(NM, mirror_texts=None):
     bad22 = [f"{eid}.{k}" for eid, e in NM.E.items() for b in ([e.get("colony"), e.get("polity")] if e.get("type") == "unit" else [e])
              if b for k, v in b.items() if isinstance(v, dict) and v.get("lang") in ("nb", "nn", "non") and _cyr(v.get("text"))]
     add("t22_no_russian_in_nordic_endonyms", not bad22, f"{bad22}")
+    # 16b: the author's spelling is Lexie, never Lexi
+    lexi = re.compile(r"(?<![\w])Lexi(?![\w])")
+    scan = DISPLAY_SCAN + [("data", os.path.join(GALAXY_DETAILS, "systems", "061_fomalhaut", "**", "*.json")),
+                           ("data", os.path.join(ROOT, "src", "assets", "localization", "world", "star_systems", "fomalhaut.json")),
+                           ("data", os.path.join(ROOT, "src", "assets", "data", "naming", "*.json")),
+                           ("data", os.path.join(CANON, "*.json"))]
+    bad = [os.path.relpath(p_, ROOT) for kind, g in scan for p_ in sorted(glob.glob(g, recursive=True))
+           if lexi.search(open(p_, encoding="utf-8", errors="replace").read())]
+    add("t16b_lexie_spelling", not bad and NM.resolve(LEXIE_ENTITY, "en") == "Lexie" and lexie_body()["designation"] == "Lexie",
+        f"Lexie (не Lexi) в каноне, каталоге, локализации, runtime и лоре; найдено «Lexi»: {bad}")
+    # 24: legacy actor 7 carries the Pacific branch, not the retired one
+    A = _load(LEGACY_ACTORS)
+    a7 = next(x for x in A["actors"] if x["id"] == 7)
+    txt7 = json.dumps({k: a7.get(k) for k in ("ideology", "culture", "description", "tags")}, ensure_ascii=False)
+    add("t24_legacy_actor7_pacific", not re.search(r"(?i)араб|ислам|халиф|улем|theocr|теократ(?!ия»)", txt7.replace("не теократия", ""))
+        and "navigator_council" in a7.get("tags", []), f"actors.json id 7: {a7.get('ideology')} / {a7.get('culture')}")
+    # 25: the current Tauranga state is a navigator council, not a theocracy
+    col = next(c for c in W["colonies"] if c["id"] == "lalande_mecca")
+    import lab as _lab
+    bad = []
+    if col["regime_3126"] != "navigator_council" or _lab.REGIME_FAMILY.get("navigator_council") == "theocratic":
+        bad.append("regime")
+    if _load(os.path.join(CANON, "world_sites.json"))["regime_law"].get("navigator_council") == "religious_law":
+        bad.append("regime_law: тип власти не задаёт религиозное право")
+    for rel in ("Notes/Lore/COLONIES/lalande_mecca.md", "Notes/Lore/SHIPS/VAKA-MOANA-1.md", "Notes/Lore/POLITICS/POLITICAL_ORDER.md",
+                "Notes/History/COLONIZATION_CANON_3126.md", "src/assets/data/galaxy/systems.json", "src/assets/data/galaxy/nodes.json"):
+        for ln, line in enumerate(open(os.path.join(ROOT, rel), encoding="utf-8").read().split("\n"), 1):
+            low = line.replace("не теократ", "")
+            if re.search(r"(?i)теократ", low) and (re.search(r"Тауранг|Капеху", low) or rel in ("Notes/Lore/COLONIES/lalande_mecca.md", "Notes/Lore/SHIPS/VAKA-MOANA-1.md")):
+                bad.append(f"{rel}:{ln}")
+    pol = json.dumps(P, ensure_ascii=False)
+    bad += [m.group(0) for m in re.finditer(r"[^.;]{0,60}учёная теократия[^.;]{0,20}", pol)]
+    lp = col.get("law_policy") or {}
+    add("t25_tauranga_not_theocracy", not bad and lp.get("law_family") == "religious_law" and lp.get("goods_policy") == "faith",
+        f"режим navigator_council; религиозно-консервативная политика общества — world.json law_policy ({lp.get('law_family')}, {lp.get('goods_policy')}); проблемы: {bad[:6]}")
+    # 26: industrial heritage numbers are model state, not canon
+    bad = [c["id"] for c in W["colonies"] if not c.get("industrial_heritage")
+           or c.get("field_status", {}).get("industrial_heritage", {}).get("status") != "PROPOSAL/model"]
+    add("t26_industrial_heritage_proposal_model", not bad, f"колоний {len(W['colonies'])}; без статуса PROPOSAL/model: {bad}")
+    # 27: Fomalhaut is a flight-catalogue system (StarAtlas), on the maps, with Lexie as an authored body
+    sysdoc = fomalhaut_system()
+    hy = hyg_star(113368)
+    loc = _load(os.path.join(ROOT, "src", "assets", "localization", "world", "star_systems", "fomalhaut.json"))
+    q = sysdoc["position_ly"]
+    lx = lexie_body()
+    key = f"{FOMALHAUT_ID}:{LEXIE_BODY}"
+    ok = (sysdoc["id"] == FOMALHAUT_ID and sysdoc["catalog_scope"] == "local" and sysdoc["atlas_visible"] and sysdoc["route_target"]
+          and math.dist((q["x"], q["y"], q["z"]), tuple(hy["position_ly"])) < 0.01 and lx["origin"] == "observed_anchor"
+          and key in loc["bodies"] and loc["bodies"][key]["ru"] == "Лекси"
+          and _load(os.path.join(GALAXY_DETAILS, "systems", "061_fomalhaut", "generated", "system.json"))["stability_passed"]
+          and not any(b["kind"] == "planet" and b["physical"]["mass_earth"] > 317.8 for b in fomalhaut_bodies()))
+    add("t27_fomalhaut_in_flight_catalog", ok, f"StarAtlas id {FOMALHAUT_ID}: позиция = HYG, на картах, {len(fomalhaut_bodies())} тел, "
+                                                f"устойчивость PASS, гигантов > 1 M_Jup нет; Лекси — авторское тело {LEXIE_BODY}")
     # language map consistency
     lm = _load(os.path.join(CANON, "world_sites.json"))["languages"]["culture_to_language"]
     add("territory_language_matches_endonyms", lm.get("nordic_pmc") == "nb" and lm.get("pacific_polynesian") == "mi" and lm.get("christian_traditionalist") == "en",

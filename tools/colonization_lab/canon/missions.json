@@ -1702,11 +1702,11 @@
     }
    },
    "motives": {
-    "civilisational_insurance": 0.3,
-    "religion": 0.25,
-    "elite_capital_flight": 0.2,
-    "prestige": 0.15,
-    "scientific_vanity": 0.1
+    "civilisational_insurance": 0.45,
+    "prestige": 0.2,
+    "scientific_vanity": 0.2,
+    "religion": 0.1,
+    "ideology": 0.05
    },
    "dark_comedy": "Острова, которые уходили под воду из-за моря, оплатили свой ковчег, перекопав дно того же моря.",
    "anchors": [
@@ -1729,7 +1729,8 @@
      "type": "reconciliation",
      "text": "Фоно корабля (fono, совет): навигаторы и вожди делят власть",
      "effects": {
-      "faithful.power": 10,
+      "patricians.power": 5,
+      "scientists.power": 5,
       "*.grievance": -10
      },
      "knowledge": {
@@ -1795,7 +1796,8 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "fate.md / досье"
     }
-   }
+   },
+   "motives_basis": "досье 10. VAKA-MOANA-1.md (2026-11-05): страховка цивилизации затапливаемых островов, престиж малых стран, наука и навигация; религия — церковные общины, через которые набирали добровольцев, а не причина запуска; отток капитала элит снят (наследие прежней ветви)"
   },
   {
    "id": "NEXT-1",

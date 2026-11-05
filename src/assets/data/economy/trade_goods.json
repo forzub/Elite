@@ -766,7 +766,7 @@
   "litigating_city_states": "open",
   "machine_oracle": "strict",
   "merit_caste_republic": "strict",
-  "navigator_council": "faith",
+  "navigator_council": "strict",
   "none_quiet": "strict",
   "parliamentary_bureaucracy": "open",
   "party_technocracy": "strict",

@@ -1,0 +1,146 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 61,
+  "name": "Fomalhaut",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x651bc5c95db591b1",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "planet_surface": 0,
+      "resources": 1
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.0030600712397005816,
+      0.0011434076955782672,
+      -0.006976738706232663
+    ],
+    "galactocentric_radius_kpc": 8.176940008703479,
+    "height_above_plane_kpc": 0.013823261293767337,
+    "population_metallicity_mean_feh": -0.04981640052220875,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10793691002191932,
+    "formation_environment_density": 0.8137317515808606,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "fomalhaut",
+      "id": "system_61.Fomalhaut",
+      "name": "Fomalhaut",
+      "alternative_names": [
+        "α Piscis Austrini",
+        "Фомальгаут",
+        "HD 216956"
+      ],
+      "spectral_type": "A4V",
+      "stage": "main_sequence",
+      "seed": "0xd810db2627274a23",
+      "mass_solar": 1.92,
+      "initial_mass_solar": 1.92,
+      "radius_solar": 1.842,
+      "teff_k": 8590.0,
+      "luminosity_solar": 16.63,
+      "metallicity_feh": 0.1736076227844653,
+      "age_gyr": 0.44,
+      "main_sequence_lifetime_gyr": 1.991690775432753,
+      "rotation_period_days": 1.8468783738956995,
+      "mu_m3s2": 2.5480788479999997e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "literature",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "Mamajek 2012 (440 ± 40 Myr)",
+        "luminosity_solar": "Mamajek 2012; Hipparcos; Wikipedia Fomalhaut (retrieved 2026-11-05)",
+        "mass_solar": "Mamajek 2012; Hipparcos; Wikipedia Fomalhaut (retrieved 2026-11-05)",
+        "radius_solar": "Mamajek 2012; Hipparcos; Wikipedia Fomalhaut (retrieved 2026-11-05)",
+        "teff_k": "Mamajek 2012; Hipparcos; Wikipedia Fomalhaut (retrieved 2026-11-05)"
+      },
+      "extra": {
+        "companions_note": "TW PsA (K4 V, 0.28 pc) and LP 876-10 (M4 V, 0.77 pc) are separate catalogue stars, not members of this local system",
+        "legacy_type_label": "A4V — бело-голубая звезда главной последовательности"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "fomalhaut",
+      "gas_mass_solar": 0.04617476249820542,
+      "solid_mass_earth": 259.2526140771255,
+      "dust_to_gas": 0.019985380498980892,
+      "inner_edge_au": 0.10635248027717642,
+      "characteristic_radius_au": 19.401844386798054,
+      "outer_truncation_au": 277.14010520053534,
+      "lifetime_myr": 2.4772791024653995,
+      "snow_line_au": 9.95328,
+      "turbulence_alpha": 0.0004863985511336225,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "fomalhaut:compact_rocky",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_fomalhaut",
+      "passed": true,
+      "detail": "planets=11 attempts=1 rv_limit=50m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

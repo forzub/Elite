@@ -33,7 +33,7 @@
       "distance": 10.5,
       "kind": 0,
       "dominantActor": 2,
-      "description": "Столичная система Синь Хэ.",
+      "description": "Столичная система Синьхэ.",
       "tags": ["capital", "superpower"]
     },
     {
@@ -43,7 +43,7 @@
       "distance": 11.8,
       "kind": 0,
       "dominantActor": 3,
-      "description": "Столичная система Уджамаа-Джахи.",
+      "description": "Столичная система Содружества Уджамаа.",
       "tags": ["capital", "superpower"]
     },
     {
@@ -53,7 +53,7 @@
       "distance": 7.9,
       "kind": 0,
       "dominantActor": 4,
-      "description": "Система-крепость Скьёльдбурга.",
+      "description": "Система-крепость Скьольдборга.",
       "tags": ["capital", "military"]
     },
     {
@@ -63,7 +63,7 @@
       "distance": 21.4,
       "kind": 0,
       "dominantActor": 5,
-      "description": "Торговая столица Агор-Прим.",
+      "description": "Торговая столица Новой Эллады.",
       "tags": ["capital", "trade_hub"]
     },
     {
@@ -83,8 +83,8 @@
       "distance": 8.3,
       "kind": 0,
       "dominantActor": 7,
-      "description": "Духовная столица Ильм-аль-Нуджум.",
-      "tags": ["capital", "religious"]
+      "description": "Столица Капеху (Тауранга): совет навигаторов и обсерватория-вычислитель Фаре.",
+      "tags": ["capital", "science"]
     },
     {
       "id": 8,
@@ -103,7 +103,7 @@
       "distance": 20.2,
       "kind": 0,
       "dominantActor": 9,
-      "description": "Изолированная столица Вердензальба.",
+      "description": "Изолированная столица остатков Гайи-Прайм.",
       "tags": ["capital", "isolation"]
     },
     {
@@ -123,7 +123,7 @@
       "distance": 20.3,
       "kind": 0,
       "dominantActor": 11,
-      "description": "Столичная система Рестауроса.",
+      "description": "Столичная система Союза Новой Европы.",
       "tags": ["capital", "stagnation"]
     },
     {
@@ -133,7 +133,7 @@
       "distance": 31.6,
       "kind": 0,
       "dominantActor": 13,
-      "description": "Лесная система Сельта-Верде.",
+      "description": "Лесная система Сельва-Верде.",
       "tags": ["capital", "bioworld"]
     },
     {
@@ -176,7 +176,7 @@
       "distance": 9.6,
       "kind": 1,
       "dominantActor": 2,
-      "description": "Сельскохозяйственная колония Синь Хэ.",
+      "description": "Сельскохозяйственная колония Синьхэ.",
       "tags": ["colony", "agriculture"]
     },
     {
@@ -186,7 +186,7 @@
       "distance": 11.7,
       "kind": 1,
       "dominantActor": 2,
-      "description": "Пенитенциарная колония Синь Хэ.",
+      "description": "Пенитенциарная колония Синьхэ.",
       "tags": ["colony", "prison"]
     },
     {
@@ -226,7 +226,7 @@
       "distance": 4.2,
       "kind": 1,
       "dominantActor": 7,
-      "description": "Научно-миссионерская база Ильм-аль-Нуджум.",
+      "description": "Научная база Капеху.",
       "tags": ["colony", "research"]
     },
 
@@ -239,7 +239,7 @@
       "distance": 11.2,
       "kind": 2,
       "dominantActor": 5,
-      "description": "Крупный торговый хаб Агор-Прим.",
+      "description": "Крупный торговый хаб Новой Эллады.",
       "tags": ["hub", "trade"]
     },
     {
@@ -259,7 +259,7 @@
       "distance": 8.7,
       "kind": 2,
       "dominantActor": 4,
-      "description": "Военный транзитный узел Скьёльдбурга.",
+      "description": "Военный транзитный узел Скьольдборга.",
       "tags": ["hub", "military"]
     },
     {

@@ -56,10 +56,10 @@ TAG = "PROPOSAL"
 
 # corruption baseline by legal family (PROPOSAL): how much the system tolerates private deals
 CORRUPTION_BASE = {"technocratic_civil": 0.15, "confucian_administrative": 0.22, "party_administrative": 0.32, "sol_codified": 0.25,
-                   "theocratic": 0.3, "corporate": 0.35, "city_state_arbitration": 0.28, "parliamentary_civil": 0.2,
+                   "religious_law": 0.3, "corporate": 0.35, "city_state_arbitration": 0.28, "parliamentary_civil": 0.2,
                    "military_administration": 0.42, "clan_law": 0.45, "customary_council": 0.32, "machine_oracle": 0.05, "none": 0.85}
 INSTITUTIONS = {"technocratic_civil": 0.85, "confucian_administrative": 0.85, "party_administrative": 0.75, "sol_codified": 0.8,
-                "theocratic": 0.65, "corporate": 0.6, "city_state_arbitration": 0.6, "parliamentary_civil": 0.75,
+                "religious_law": 0.65, "corporate": 0.6, "city_state_arbitration": 0.6, "parliamentary_civil": 0.75,
                 "military_administration": 0.7, "clan_law": 0.35, "customary_council": 0.55, "machine_oracle": 0.9, "none": 0.05}
 
 
@@ -146,7 +146,8 @@ class Inputs:
     def law_family(self, k):
         if k is None:
             return "none"
-        return self.WS["regime_law"].get(self.regime(k), "none")
+        lp = (self.colony.get(k) or {}).get("law_policy") or {}     # social-religious law policy of the society (world.json)
+        return lp.get("law_family") or self.WS["regime_law"].get(self.regime(k), "none")
 
     def system_of(self, k):
         return 0 if k == SOL else self.pol[k]["system"]
@@ -762,7 +763,7 @@ def social_state(I, s, comms_site, piracy_sys, eco):
     pir = piracy_sys.get(s["system"], 0.0) if s["system"] is not None else 0.6
     corruption = clamp(CORRUPTION_BASE[fam] + 0.3 * isolation * (1 - INSTITUTIONS[fam]) + (0.25 if s["type"] in ("free_port", "pirate_enclave") else 0.0))
     crime = clamp(0.1 + 0.6 * pir + 0.3 * corruption + (0.3 if s["type"] in ("free_port", "pirate_enclave") else 0.0) - 0.2 * inst)
-    cohesion = clamp(0.4 + 0.3 * INSTITUTIONS[fam] + (0.15 if fam in ("theocratic", "confucian_administrative") else 0.0) - 0.3 * boom - 0.2 * crime)
+    cohesion = clamp(0.4 + 0.3 * INSTITUTIONS[fam] + (0.15 if fam in ("religious_law", "confucian_administrative") else 0.0) - 0.3 * boom - 0.2 * crime)
     trust = clamp(0.2 + 0.5 * inst - 0.5 * corruption + 0.2 * cohesion)
     hostile = [g for (a, b), g in I.rel.items() if k in (a, b) and g >= 30]
     volatility = clamp(0.1 + (max(hostile) / 100.0 if hostile else 0.0) * 0.6 + 0.3 * boom + 0.2 * (1 - cohesion))
@@ -926,7 +927,7 @@ def law_model(I, sites, comms):
             elif o == "unlawful_salvage":
                 row[o] = "возврат + штраф" if L["salvage_finder_share"] < 0.5 else "спор в арбитраже"
             elif o == "quarantine_violation":
-                row[o] = "тюрьма" if fam in ("confucian_administrative", "party_administrative", "military_administration", "theocratic") else "штраф, принудительная изоляция"
+                row[o] = "тюрьма" if fam in ("confucian_administrative", "party_administrative", "military_administration", "religious_law") else "штраф, принудительная изоляция"
             elif o == "restricted_weapons":
                 row[o] = {"forbidden": "тюрьма", "military_only": "трибунал", "licensed": "конфискация + штраф", "allowed": "нет"}.get(L["weapons"], "штраф")
             elif o == "illegal_docking":

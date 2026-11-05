@@ -3609,11 +3609,11 @@
         "arrival_population": 15600,
         "avg_speed_c": 0.1001,
         "motives": {
-          "civilisational_insurance": 0.3,
-          "religion": 0.25,
-          "elite_capital_flight": 0.2,
-          "prestige": 0.15,
-          "scientific_vanity": 0.1
+          "civilisational_insurance": 0.45,
+          "prestige": 0.2,
+          "scientific_vanity": 0.2,
+          "religion": 0.1,
+          "ideology": 0.05
         },
         "fate_3126": "arrived",
         "ship_state_3126": "station_core",

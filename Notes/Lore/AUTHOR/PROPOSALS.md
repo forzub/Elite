@@ -39,7 +39,7 @@
 | beacons/41@3050 | tau_ceti_cognium | год и оператор маяка — реконсиляция | PROPOSAL · PUBLIC |
 | beacons/0@3112 | sol_authority | год и оператор маяка — реконсиляция | PROPOSAL · PUBLIC |
 
-### colonies (125)
+### colonies (126)
 
 | Путь | Что | Основание | Статус |
 |---|---|---|---|
@@ -72,6 +72,7 @@
 | colonies/lalande_mecca/assets | assets | активы и их важность — реконсиляция/экономика | PROPOSAL · PUBLIC |
 | colonies/lalande_mecca/culture_drift | culture_drift | гипотеза Colonycore v2 | PROPOSAL · PUBLIC |
 | colonies/lalande_mecca/demography | demography | входы причинной демографии (допущения F1–F12) | PROPOSAL · PUBLIC |
+| colonies/lalande_mecca/law_policy | law_policy | социально-религиозная правовая политика общества, отдельно от типа власти (regime_3126) | PROPOSAL · PUBLIC |
 | colonies/lalande_mecca/pop_3126_model | pop_3126_model | результат модели demography.py, не канон | PROPOSAL · PUBLIC |
 | colonies/lalande_mecca/regime_3126 | regime_3126 | машинная метка режима по досье (Claude) | PROPOSAL · PUBLIC |
 | colonies/eps_eri_harmony/assets | assets | активы и их важность — реконсиляция/экономика | PROPOSAL · PUBLIC |

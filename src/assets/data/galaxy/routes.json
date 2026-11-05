@@ -64,12 +64,12 @@
       "tags": ["trade", "corporate"] },
 
     { "id": 15, "a": 28, "b": 16, "distance": 0.0, "restricted": false, "dangerLevel": 0.2,
-      "description": "Связь к колонии Синь Хэ (Глизе 687)",
+      "description": "Связь к колонии Синьхэ (Глизе 687)",
       "tags": ["colony"] },
 
     { "id": 16, "a": 7,  "b": 26, "distance": 0.0, "restricted": false, "dangerLevel": 0.2,
-      "description": "Доступ Ильм-аль-Нуджум к Северному альянсу",
-      "tags": ["religious", "science"] },
+      "description": "Доступ Капеху к Северному альянсу",
+      "tags": ["science"] },
 
     
 
@@ -78,7 +78,7 @@
       "tags": ["trade"] },
 
     { "id": 18, "a": 23, "b": 9,  "distance": 0.0, "restricted": true,  "dangerLevel": 0.3,
-      "description": "Доступ к Вердензальбу (по разрешению)",
+      "description": "Доступ к остаткам Гайи-Прайм (по разрешению)",
       "tags": ["restricted", "isolation"] },
 
     { "id": 19, "a": 5,  "b": 8,  "distance": 0.0, "restricted": false, "dangerLevel": 0.2,
@@ -90,7 +90,7 @@
       "tags": ["trade"] },
 
     { "id": 21, "a": 24, "b": 11, "distance": 0.0, "restricted": false, "dangerLevel": 0.4,
-      "description": "Доступ к Рестауросу",
+      "description": "Доступ к Союзу Новой Европы",
       "tags": ["trade", "stagnation"] },
 
    

@@ -1,8 +1,17 @@
 {
  "entities": 53,
  "fortuna": {
+  "catalog": {
+   "atlas_visible": true,
+   "bodies": 16,
+   "dir": "src/assets/data/galaxy_details/systems/061_fomalhaut",
+   "reservoirs": [
+    "Fomalhaut debris disk"
+   ],
+   "system_id": 61
+  },
   "commercial_unbeaconed_limit_ly": 8.0,
-  "destination_beacon": null,
+  "destination_beacon": false,
   "in_commercial_network": false,
   "jump_error": [
    {
@@ -135,6 +144,7 @@
     "value": 440
    },
    "chinese_name": "北落師門",
+   "colony_era_name": "Fortuna",
    "companions": [
     {
      "abs_v_mag": 7.08,
@@ -188,6 +198,7 @@
     "source": "Hipparcos, van Leeuwen 2007 (параллакс 129.81 ± 0.47 mas)",
     "value": 7.7
    },
+   "gameplay_policy": "Fomalhaut b (cs1) is a dust cloud, not a planet; the designation stays reserved. Lexie and the procedural bodies are PROPOSAL, chosen to stay below the 2026 detection limits.",
    "luminosity_lsun": {
     "err": 0.48,
     "value": 16.63
@@ -230,7 +241,8 @@
    "v_mag": {
     "source": "Hipparcos / SIMBAD",
     "value": 1.16
-   }
+   },
+   "zh_colony_exonym": "命運之輪 / 命运之轮 (Mìngyùn zhī lún)"
   },
   "sol_direct_ly": 25.13,
   "staging": {
@@ -334,7 +346,7 @@
  },
  "generated_by": "tools/colonization_lab/naming.py",
  "lexie": {
-  "id": "body:fomalhaut.lexie",
+  "id": "body:system_61.Fomalhaut.Lexie",
   "names": {
    "en": "Lexie",
    "ru": "Лекси",
@@ -344,30 +356,42 @@
    "a_au": 4.4,
    "atmosphere": {
     "breathable": false,
-    "composition": "N2 + CO2 (около 2 %) + водяной пар; кислорода биосферы нет — системе 440 млн лет",
-    "surface_pressure_bar": 1.4
+    "composition": {
+     "Ar": 0.009,
+     "CO2": 0.02,
+     "H2O": 0.003,
+     "N2": 0.968
+    },
+    "surface_pressure_bar": 1.419
    },
-   "axial_tilt_deg": 19,
-   "biosphere": "не обнаружена (обследования 3126 неполны)",
+   "axial_tilt_deg": 19.0,
+   "biosphere": "none",
    "e": 0.04,
-   "equilibrium_temperature_k": 246,
-   "hydrosphere": "океаны, около 65 % поверхности",
+   "environment_preset": "terrestrial_temperate",
+   "equilibrium_temperature_k": 245,
+   "hydrosphere": "surface_ocean",
    "instellation_earth": 0.86,
-   "kind": "planet",
+   "magnetic_field_earth": 1.28,
    "mass_earth": 1.3,
-   "mean_surface_temperature_k": 283,
+   "neighbours": [
+    "Fomalhaut h 2.12 а. е.",
+    "Fomalhaut i 2.89 а. е.",
+    "Fomalhaut j 6.00 а. е."
+   ],
    "period_years": 6.66,
-   "radius_earth": 1.08,
-   "resources": "ничего уникального (решение автора: не награда, не ресурс, не повод)",
-   "rotation_hours": 31,
-   "sky": {
-    "note": "бело-голубое солнце вдвое меньше земного на небе; оранжевая TW PsA — ярче любой звезды неба Земли, кроме Сириуса и Канопуса; тёплая внутренняя пыль даёт яркий зодиакальный свет",
-    "sun_angular_diameter_deg": 0.223,
-    "tw_psa_apparent_mag": -0.68
+   "radius_km": 6888,
+   "rotation_hours": 31.0,
+   "surface_gravity_g": 1.11,
+   "surface_temperature_k": {
+    "max": 299,
+    "mean": 283.0,
+    "min": 263
    },
-   "status": "PROPOSAL (параметры); существование — CANON",
-   "surface_gravity_g": 1.11
+   "tectonics": "mobile_lid",
+   "terrain": "plate_tectonic_continents",
+   "volcanism": "high"
   },
+  "runtime_body_id": "system_61.Fomalhaut.Lexie",
   "translit": "Bǎixīn"
  },
  "schema": "elite.naming.v1",

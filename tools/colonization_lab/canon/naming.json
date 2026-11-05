@@ -14,10 +14,26 @@
   "VERIFY": "нужна дополнительная проверка"
  },
  "languages": {
-  "en": "английский", "ru": "русский", "zh-Hans": "китайский (упрощённое письмо)", "zh-Hant": "китайский (традиционное письмо)",
-  "wuu": "шанхайский (у)", "el": "новогреческий", "grc": "древнегреческий", "nb": "норвежский букмол", "nn": "норвежский нюнорск",
-  "non": "древнескандинавский (только церемониальный и исторический слой)", "hi": "хинди", "sa": "санскрит", "sw": "суахили",
-  "pt": "португальский", "fr": "французский", "la": "латынь", "mi": "маори (te reo Māori)", "sm": "самоанский", "to": "тонганский", "haw": "гавайский"
+  "en": "английский",
+  "ru": "русский",
+  "zh-Hans": "китайский (упрощённое письмо)",
+  "zh-Hant": "китайский (традиционное письмо)",
+  "wuu": "шанхайский (у)",
+  "el": "новогреческий",
+  "grc": "древнегреческий",
+  "nb": "норвежский букмол",
+  "nn": "норвежский нюнорск",
+  "non": "древнескандинавский (только церемониальный и исторический слой)",
+  "hi": "хинди",
+  "sa": "санскрит",
+  "sw": "суахили",
+  "pt": "португальский",
+  "fr": "французский",
+  "la": "латынь",
+  "mi": "маори (te reo Māori)",
+  "sm": "самоанский",
+  "to": "тонганский",
+  "haw": "гавайский"
  },
  "language_rules": {
   "non_is_not_modern": "Old Norse (non) допустим только для kind = ceremonial / motto / historical / mythological; современные эндонимы норвежской ветви — nb или nn",
@@ -26,8 +42,7 @@
   "nordic_standards": "административный язык Скьольдборга вырос из букмола; старые поселения вахтовиков из Вестланна держат нюнорск (hamn, jarn, ikkje); флот пишет сокращениями (nb)"
  },
  "retired_authoring_names": {
-  "note": "Имена, снятые решением автора 2026-11-05. Это не история мира: в мире 3126 их никогда не было. Им запрещено появляться в текущем отображаемом слое (runtime, Notes/Lore, сгенерированные документы); проверка naming.py.",
-  "names": ["Новая Мекка", "Ильм-аль-Нуджум", "Аль-Кудс", "AL-QUDS", "Нуджум", "ильмит", "Мекк", "Mecca", "Расад", "Исламская лига", "Islamic League", "Халифат", "халифат", "улем", "Улем", "Агор-Прим", "Рестаурос", "Вердензальб", "Уджамаа-Джахи", "Скьёльдбург", "Сельта-Верде", "Вторая Эллада", "NEW-HELLAS-1", "Святой Сион"],
+  "note": "Имена, снятые решением автора 2026-11-05. Это не история мира: в мире 3126 их никогда не было. Запрет entity-aware: unique — имена, существовавшие только как снятые колониальные сущности, запрещены во всём текущем отображаемом слое; contextual — обычные слова (реальная Мекка, исламский мир, исторические халифаты допустимы), запрещены только как имя или описание текущей сущности Лаланд 21185 (строка с маркером context) и в любом имени текущей сущности (runtime-таблица, хабы, поселения).",
   "map": {
    "lalande_mecca": "Новая Мекка / Ильм-аль-Нуджум → Тауранга / Капеху (замена культурной ветви)",
    "mission:AL-QUDS-1": "AL-QUDS-1 → VAKA-MOANA-1",
@@ -40,317 +55,1936 @@
    "wolf359_citadel": "Скьёльдбург → Скьольдборг",
    "hd69830_verde": "Сельта-Верде → Сельва-Верде",
    "leo83_zion": "Святой Сион → Ново-Фиваида"
-  }
+  },
+  "unique": [
+   "Новая Мекка",
+   "Новой Мекки",
+   "Новую Мекку",
+   "Новой Мекке",
+   "Новой Меккой",
+   "Ильм-аль-Нуджум",
+   "Нуджум",
+   "ильмит",
+   "Аль-Кудс",
+   "AL-QUDS",
+   "Расад",
+   "Агор-Прим",
+   "Рестаурос",
+   "Вердензальб",
+   "Уджамаа-Джахи",
+   "Скьёльдбург",
+   "Сельта-Верде",
+   "Вторая Эллада",
+   "Второй Эллады",
+   "NEW-HELLAS-1",
+   "Святой Сион",
+   "Аль-Нур",
+   "Ан-Нур",
+   "Космического Халифата",
+   "Космический Халифат"
+  ],
+  "contextual": [
+   "Мекк",
+   "Mecca",
+   "Исламская лига",
+   "Islamic League",
+   "Халифат",
+   "халифат",
+   "улем",
+   "Улем",
+   "мечет",
+   "эмир",
+   "Эмир"
+  ],
+  "context": [
+   "Тауранг",
+   "Капеху",
+   "Kāpehu",
+   "Tauranga",
+   "VAKA-MOANA",
+   "Вака-Моана",
+   "lalande_mecca",
+   "Фаре-Татаи",
+   "Whare Tātai"
+  ]
  },
  "entities": {
   "tau_ceti_cognium": {
-   "type": "unit", "system": "system:8",
+   "type": "unit",
+   "system": "system:8",
    "colony": {
     "verdict": "NORMALIZE",
-    "endonym": {"text": "新上海", "lang": "zh-Hans", "translit": "Xīn Shànghǎi", "pron": "мандарин [ɕín ʂâŋxài]; по-шанхайски 上海 ≈ «Заанхе» [zɑ̃hɛ] (VERIFY)"},
-    "exonyms": {"ru": "Синь-Шанхай", "en": "New Shanghai", "zh-Hant": "新上海"},
-    "aliases": [{"text": "Новый Шанхай", "kind": "historical_exonym", "lang": "ru", "used_by": "старые русские переводы и документы", "valid_until": null}],
-    "naming_history": {"status": "PROPOSAL", "named_by": "GENESIS-1 (сингапурско-шанхайская диаспора)", "registry": "Академия Нового Шанхая", "reason": "город назвали те, кто ушёл и от Пекина, и от Вашингтона; столица не равна политии"}
+    "endonym": {
+     "text": "新上海",
+     "lang": "zh-Hans",
+     "translit": "Xīn Shànghǎi",
+     "pron": "мандарин [ɕín ʂâŋxài]; по-шанхайски 上海 ≈ «Заанхе» [zɑ̃hɛ] (VERIFY)"
+    },
+    "exonyms": {
+     "ru": "Синь-Шанхай",
+     "en": "New Shanghai",
+     "zh-Hant": "新上海"
+    },
+    "aliases": [
+     {
+      "text": "Новый Шанхай",
+      "kind": "historical_exonym",
+      "lang": "ru",
+      "used_by": "старые русские переводы и документы",
+      "valid_until": null
+     }
+    ],
+    "naming_history": {
+     "status": "PROPOSAL",
+     "named_by": "GENESIS-1 (сингапурско-шанхайская диаспора)",
+     "registry": "Академия Нового Шанхая",
+     "reason": "город назвали те, кто ушёл и от Пекина, и от Вашингтона; столица не равна политии"
+    }
    },
    "polity": {
     "verdict": "KEEP",
-    "endonym": {"text": "Cognium", "lang": "en", "pron": "[ˈkɒɡniəm]"},
-    "exonyms": {"ru": "Когниум", "en": "Cognium"},
-    "demonym": {"en": "Cognites", "ru": "когниты"},
-    "aliases": [{"text": "Алгоритм", "kind": "hostile", "lang": "ru", "used_by": "соседи"}],
-    "naming_history": {"status": "AUTHOR_UNSPECIFIED", "reason": "имя автора; прежняя этимология «cognitive + axium» отброшена (axium — не латинское слово); форма латинизирующая, ср. лат. cognitio"}
+    "endonym": {
+     "text": "Cognium",
+     "lang": "en",
+     "pron": "[ˈkɒɡniəm]"
+    },
+    "exonyms": {
+     "ru": "Когниум",
+     "en": "Cognium"
+    },
+    "demonym": {
+     "en": "Cognites",
+     "ru": "когниты"
+    },
+    "aliases": [
+     {
+      "text": "Алгоритм",
+      "kind": "hostile",
+      "lang": "ru",
+      "used_by": "соседи"
+     }
+    ],
+    "naming_history": {
+     "status": "AUTHOR_UNSPECIFIED",
+     "reason": "имя автора; прежняя этимология «cognitive + axium» отброшена (axium — не латинское слово); форма латинизирующая, ср. лат. cognitio"
+    }
    }
   },
   "proxima_outpost": {
-   "type": "unit", "system": "system:60",
-   "colony": {"verdict": "KEEP", "endonym": {"text": "Красный Форпост", "lang": "ru"}, "exonyms": {"ru": "Красный Форпост", "en": "Red Outpost"},
-    "naming_history": {"status": "CANON", "named_by": "SVAROG-1 (Россия, Индия, Казахстан, Узбекистан); русский здесь — язык основателей", "reason": "AUTHOR_UNSPECIFIED"}},
-   "polity": {"verdict": "KEEP", "label_ru": "Сварог (Красный Форпост)", "endonym": {"text": "Сварог", "lang": "ru"}, "exonyms": {"ru": "Сварог", "en": "Svarog"},
-    "naming_history": {"status": "CANON", "named_by": "SVAROG-1", "reason": "имя корабля"}}
+   "type": "unit",
+   "system": "system:60",
+   "colony": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "Красный Форпост",
+     "lang": "ru"
+    },
+    "exonyms": {
+     "ru": "Красный Форпост",
+     "en": "Red Outpost"
+    },
+    "naming_history": {
+     "status": "CANON",
+     "named_by": "SVAROG-1 (Россия, Индия, Казахстан, Узбекистан); русский здесь — язык основателей",
+     "reason": "AUTHOR_UNSPECIFIED"
+    }
+   },
+   "polity": {
+    "verdict": "KEEP",
+    "label_ru": "Сварог (Красный Форпост)",
+    "endonym": {
+     "text": "Сварог",
+     "lang": "ru"
+    },
+    "exonyms": {
+     "ru": "Сварог",
+     "en": "Svarog"
+    },
+    "naming_history": {
+     "status": "CANON",
+     "named_by": "SVAROG-1",
+     "reason": "имя корабля"
+    }
+   }
   },
   "gj832_tianhe": {
-   "type": "unit", "system": "system:12",
-   "colony": {"verdict": "KEEP", "endonym": {"text": "天河", "lang": "zh-Hans", "translit": "Tiānhé", "pron": "[tʰjɛ́n xɤ̌]"},
-    "exonyms": {"ru": "Тяньхэ", "en": "Tianhe"},
-    "aliases": [{"text": "Небесная Река", "kind": "translation", "lang": "ru"}],
-    "naming_history": {"status": "CANON", "named_by": "TIANHE-1 (天河一号, государственный проект КНР)", "reason": "天河 = Млечный Путь, «небесная река»; не путать с 天和 — модуль станции «Гармония небес»"}},
-   "polity": {"verdict": "KEEP", "endonym": {"text": "天河", "lang": "zh-Hans", "translit": "Tiānhé"}, "exonyms": {"ru": "Тяньхэ", "en": "Tianhe"}}
+   "type": "unit",
+   "system": "system:12",
+   "colony": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "天河",
+     "lang": "zh-Hans",
+     "translit": "Tiānhé",
+     "pron": "[tʰjɛ́n xɤ̌]"
+    },
+    "exonyms": {
+     "ru": "Тяньхэ",
+     "en": "Tianhe"
+    },
+    "aliases": [
+     {
+      "text": "Небесная Река",
+      "kind": "translation",
+      "lang": "ru"
+     }
+    ],
+    "naming_history": {
+     "status": "CANON",
+     "named_by": "TIANHE-1 (天河一号, государственный проект КНР)",
+     "reason": "天河 = Млечный Путь, «небесная река»; не путать с 天和 — модуль станции «Гармония небес»"
+    }
+   },
+   "polity": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "天河",
+     "lang": "zh-Hans",
+     "translit": "Tiānhé"
+    },
+    "exonyms": {
+     "ru": "Тяньхэ",
+     "en": "Tianhe"
+    }
+   }
   },
   "gj832_gaia_zone": {
-   "type": "unit", "system": "system:12",
-   "colony": {"verdict": "KEEP", "endonym": {"text": "Philomorphosis Zone", "lang": "en"}, "exonyms": {"ru": "Зона «Филоморфоз»", "en": "Philomorphosis Zone"},
-    "naming_history": {"status": "AUTHOR_UNSPECIFIED", "reason": "научная неологизация учёных Гайи (греч. φιλο- + μόρφωσις); прежняя этимология «скачкообразное изменение формы» не подтверждена — термин чисто внутримировой"}},
-   "polity": {"verdict": "RENAME", "endonym": {"text": "Gaia Prime remnant", "lang": "en"}, "exonyms": {"ru": "остатки Гайи-Прайм", "en": "Gaia Prime remnant"},
-    "naming_history": {"status": "PROPOSAL", "named_by": "GREEN-ARK-1 (экологическое движение, английский)", "reason": "прежнее имя было псевдонемецким гибридом (werden + Salbe) — у англоязычных основателей нет причины так называться"}}
+   "type": "unit",
+   "system": "system:12",
+   "colony": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "Philomorphosis Zone",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Зона «Филоморфоз»",
+     "en": "Philomorphosis Zone"
+    },
+    "naming_history": {
+     "status": "AUTHOR_UNSPECIFIED",
+     "reason": "научная неологизация учёных Гайи (греч. φιλο- + μόρφωσις); прежняя этимология «скачкообразное изменение формы» не подтверждена — термин чисто внутримировой"
+    }
+   },
+   "polity": {
+    "verdict": "RENAME",
+    "endonym": {
+     "text": "Gaia Prime remnant",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "остатки Гайи-Прайм",
+     "en": "Gaia Prime remnant"
+    },
+    "naming_history": {
+     "status": "PROPOSAL",
+     "named_by": "GREEN-ARK-1 (экологическое движение, английский)",
+     "reason": "прежнее имя было псевдонемецким гибридом (werden + Salbe) — у англоязычных основателей нет причины так называться"
+    }
+   }
   },
   "lalande_hellas": {
-   "type": "unit", "system": "system:4",
-   "colony": {"verdict": "NORMALIZE", "endonym": {"text": "Αγορά", "lang": "el", "translit": "Agorá", "pron": "[aɣoˈra]"}, "exonyms": {"ru": "Агора", "en": "Agora"},
-    "naming_history": {"status": "PROPOSAL", "named_by": "HERACLES-1 (греки, итальянцы, иберийцы, магрибинцы; ведущая культура греческая)", "reason": "кольца первой стоянки стали рынком задолго до города"}},
-   "polity": {"verdict": "RENAME", "label_ru": "Новая Эллада (Агора)", "endonym": {"text": "Νέα Ελλάδα", "lang": "el", "translit": "Néa Elláda", "pron": "[ˈnea eˈlaða]"},
-    "formal": {"text": "Δημοκρατία της Νέας Ελλάδος", "lang": "el", "translit": "Dimokratía tis Néas Elládos", "note": "официальный стиль держит кафаревусный генитив Ελλάδος"},
-    "exonyms": {"ru": "Новая Эллада", "en": "New Hellas"}, "demonym": {"el": "Νεοέλληνες", "ru": "новоэллины", "en": "New Hellenes"},
-    "naming_history": {"status": "PROPOSAL", "reason": "прежнее имя смешивало греческое «агора» с латинским primus; грек так государство не назовёт"}}
+   "type": "unit",
+   "system": "system:4",
+   "colony": {
+    "verdict": "NORMALIZE",
+    "endonym": {
+     "text": "Αγορά",
+     "lang": "el",
+     "translit": "Agorá",
+     "pron": "[aɣoˈra]"
+    },
+    "exonyms": {
+     "ru": "Агора",
+     "en": "Agora"
+    },
+    "naming_history": {
+     "status": "PROPOSAL",
+     "named_by": "HERACLES-1 (греки, итальянцы, иберийцы, магрибинцы; ведущая культура греческая)",
+     "reason": "кольца первой стоянки стали рынком задолго до города"
+    }
+   },
+   "polity": {
+    "verdict": "RENAME",
+    "label_ru": "Новая Эллада (Агора)",
+    "endonym": {
+     "text": "Νέα Ελλάδα",
+     "lang": "el",
+     "translit": "Néa Elláda",
+     "pron": "[ˈnea eˈlaða]"
+    },
+    "formal": {
+     "text": "Δημοκρατία της Νέας Ελλάδος",
+     "lang": "el",
+     "translit": "Dimokratía tis Néas Elládos",
+     "note": "официальный стиль держит кафаревусный генитив Ελλάδος"
+    },
+    "exonyms": {
+     "ru": "Новая Эллада",
+     "en": "New Hellas"
+    },
+    "demonym": {
+     "el": "Νεοέλληνες",
+     "ru": "новоэллины",
+     "en": "New Hellenes"
+    },
+    "naming_history": {
+     "status": "PROPOSAL",
+     "reason": "прежнее имя смешивало греческое «агора» с латинским primus; грек так государство не назовёт"
+    }
+   }
   },
   "lalande_mecca": {
-   "type": "unit", "system": "system:4", "legacy_id_note": "machine id lalande_mecca сохранён ради безопасной миграции; игрок его не видит",
-   "colony": {"verdict": "RENAME", "endonym": {"text": "Tauranga", "lang": "mi", "pron": "[ˈtau.ɾa.ŋa]"}, "exonyms": {"ru": "Тауранга", "en": "Tauranga"},
-    "aliases": [{"text": "the Anchorage", "kind": "slang", "lang": "en", "used_by": "пилоты сети"}, {"text": "Якорь", "kind": "slang", "lang": "ru", "used_by": "русскоязычные пилоты"}],
-    "naming_history": {"status": "PROPOSAL", "first_arrival": "VAKA-MOANA-1, 2243", "named_by": "экипаж VAKA-MOANA-1", "reason": "tauranga (маори) — стоянка, якорная, место высадки каноэ; так назвали точку швартовки корабля, город вырос вокруг неё"}},
-   "polity": {"verdict": "RENAME", "label_ru": "Капеху (Тауранга)", "endonym": {"text": "Te Kāpehu", "lang": "mi", "pron": "[tɛ ˈkaːpɛhu]"},
-    "formal": {"text": "Te Whakaminenga o Te Kāpehu", "lang": "mi", "note": "whakaminenga — собрание, конфедерация (ср. Te Whakaminenga 1835 года)"},
-    "short": {"ru": "Капеху"},
-    "exonyms": {"ru": "Капеху", "en": "the Compass"}, "formal_exonyms": {"ru": "Конфедерация Капеху", "en": "Compass Confederation"},
-    "demonym": {"mi": "ngāi Kāpehu", "ru": "капеху (нескл.)", "en": "Kāpehu people"},
-    "aliases": [{"text": "Компас", "kind": "slang", "lang": "ru", "used_by": "пилоты"}],
-    "naming_history": {"status": "PROPOSAL", "named_by": "учредительное собрание колонии", "reason": "kāpehu whetū — звёздный компас (современная маорийская форма компаса Мау Пиайлуга и Нааинои Томпсона); государство назвало себя инструментом, которым его предки нашли дорогу"}}
+   "type": "unit",
+   "system": "system:4",
+   "legacy_id_note": "machine id lalande_mecca сохранён ради безопасной миграции; игрок его не видит",
+   "colony": {
+    "verdict": "RENAME",
+    "endonym": {
+     "text": "Tauranga",
+     "lang": "mi",
+     "pron": "[ˈtau.ɾa.ŋa]"
+    },
+    "exonyms": {
+     "ru": "Тауранга",
+     "en": "Tauranga"
+    },
+    "aliases": [
+     {
+      "text": "the Anchorage",
+      "kind": "slang",
+      "lang": "en",
+      "used_by": "пилоты сети"
+     },
+     {
+      "text": "Якорь",
+      "kind": "slang",
+      "lang": "ru",
+      "used_by": "русскоязычные пилоты"
+     }
+    ],
+    "naming_history": {
+     "status": "PROPOSAL",
+     "first_arrival": "VAKA-MOANA-1, 2243",
+     "named_by": "экипаж VAKA-MOANA-1",
+     "reason": "tauranga (маори) — стоянка, якорная, место высадки каноэ; так назвали точку швартовки корабля, город вырос вокруг неё"
+    }
+   },
+   "polity": {
+    "verdict": "RENAME",
+    "label_ru": "Капеху (Тауранга)",
+    "legacy_actor_profile": {
+     "ideology": "Совет навигаторов и фоно вождей; религиозно-консервативное общество островных общин, не теократия",
+     "culture": "Тихоокеанская навигационная наука: Аотеароа, Полинезия, Меланезия",
+     "description": "Научный центр навигации и прыжковой математики (этак-фреймы). Собственные ядра прыжка вне стандарта Когниума; станки, электроника и изотопы — импорт. Не стремятся к экспансии.",
+     "tags": [
+      "navigator_council",
+      "science",
+      "regional_power"
+     ]
+    },
+    "endonym": {
+     "text": "Te Kāpehu",
+     "lang": "mi",
+     "pron": "[tɛ ˈkaːpɛhu]"
+    },
+    "formal": {
+     "text": "Te Whakaminenga o Te Kāpehu",
+     "lang": "mi",
+     "note": "whakaminenga — собрание, конфедерация (ср. Te Whakaminenga 1835 года)"
+    },
+    "short": {
+     "ru": "Капеху"
+    },
+    "exonyms": {
+     "ru": "Капеху",
+     "en": "the Compass"
+    },
+    "formal_exonyms": {
+     "ru": "Конфедерация Капеху",
+     "en": "Compass Confederation"
+    },
+    "demonym": {
+     "mi": "ngāi Kāpehu",
+     "ru": "капеху (нескл.)",
+     "en": "Kāpehu people"
+    },
+    "aliases": [
+     {
+      "text": "Компас",
+      "kind": "slang",
+      "lang": "ru",
+      "used_by": "пилоты"
+     }
+    ],
+    "naming_history": {
+     "status": "PROPOSAL",
+     "named_by": "учредительное собрание колонии",
+     "reason": "kāpehu whetū — звёздный компас (современная маорийская форма компаса Мау Пиайлуга и Нааинои Томпсона); государство назвало себя инструментом, которым его предки нашли дорогу"
+    }
+   }
   },
   "eps_eri_harmony": {
-   "type": "unit", "system": "system:9",
-   "colony": {"verdict": "EXONYM", "endonym": {"text": "盛和", "lang": "zh-Hans", "translit": "Shènghé", "pron": "[ʂɤ̂ŋ xɤ̌]"}, "exonyms": {"ru": "Цветущая Гармония", "en": "Blooming Harmony"},
-    "naming_history": {"status": "PROPOSAL", "named_by": "CELESTIAL-DESTINY-1 (天命一号)", "reason": "русское имя автора — перевод; китайская форма — «процветающая гармония» (VERIFY стилистику)"}},
-   "polity": {"verdict": "NORMALIZE", "endonym": {"text": "新和", "lang": "zh-Hans", "translit": "Xīnhé", "pron": "[ɕín xɤ̌]"},
-    "formal": {"text": "新和联邦", "lang": "zh-Hans", "translit": "Xīnhé Liánbāng"},
-    "exonyms": {"ru": "Синьхэ", "en": "Xinhe"}, "formal_exonyms": {"ru": "Федерация Синьхэ", "en": "Federation of New Harmony"},
-    "demonym": {"zh-Hans": "新和人", "ru": "синьхэйцы", "en": "Xinhe people"},
-    "aliases": [{"text": "Синь Хэ", "kind": "historical_exonym", "lang": "ru", "used_by": "старое раздельное написание", "valid_until": null}],
-    "naming_history": {"status": "PROPOSAL", "reason": "新 = новый, 和 = гармония (эхо 和谐社会); прежняя этимология «ядро / река» отброшена: 河 «река» — другой иероглиф. Русское написание слитно по Палладию. Совпадение с реальным уездом 新和县 (сокращение 新疆和平) — VERIFY"}}
+   "type": "unit",
+   "system": "system:9",
+   "colony": {
+    "verdict": "EXONYM",
+    "endonym": {
+     "text": "盛和",
+     "lang": "zh-Hans",
+     "translit": "Shènghé",
+     "pron": "[ʂɤ̂ŋ xɤ̌]"
+    },
+    "exonyms": {
+     "ru": "Цветущая Гармония",
+     "en": "Blooming Harmony"
+    },
+    "naming_history": {
+     "status": "PROPOSAL",
+     "named_by": "CELESTIAL-DESTINY-1 (天命一号)",
+     "reason": "русское имя автора — перевод; китайская форма — «процветающая гармония» (VERIFY стилистику)"
+    }
+   },
+   "polity": {
+    "verdict": "NORMALIZE",
+    "endonym": {
+     "text": "新和",
+     "lang": "zh-Hans",
+     "translit": "Xīnhé",
+     "pron": "[ɕín xɤ̌]"
+    },
+    "formal": {
+     "text": "新和联邦",
+     "lang": "zh-Hans",
+     "translit": "Xīnhé Liánbāng"
+    },
+    "exonyms": {
+     "ru": "Синьхэ",
+     "en": "Xinhe"
+    },
+    "formal_exonyms": {
+     "ru": "Федерация Синьхэ",
+     "en": "Federation of New Harmony"
+    },
+    "demonym": {
+     "zh-Hans": "新和人",
+     "ru": "синьхэйцы",
+     "en": "Xinhe people"
+    },
+    "aliases": [
+     {
+      "text": "Синь Хэ",
+      "kind": "historical_exonym",
+      "lang": "ru",
+      "used_by": "старое раздельное написание",
+      "valid_until": null
+     }
+    ],
+    "naming_history": {
+     "status": "PROPOSAL",
+     "reason": "新 = новый, 和 = гармония (эхо 和谐社会); прежняя этимология «ядро / река» отброшена: 河 «река» — другой иероглиф. Русское написание слитно по Палладию. Совпадение с реальным уездом 新和县 (сокращение 新疆和平) — VERIFY"
+    }
+   }
   },
   "eps_eri_strife": {
-   "type": "unit", "system": "system:9",
-   "colony": {"verdict": "NORMALIZE", "endonym": {"text": "Strife Belt", "lang": "en"}, "exonyms": {"ru": "Пояс Раздора", "en": "Strife Belt"},
-    "aliases": [{"text": "Free Asteroids", "kind": "slang", "lang": "en"}, {"text": "Вольные астероиды", "kind": "slang", "lang": "ru"}]},
-   "polity": {"verdict": "SLANG", "label_ru": "Варпстанис (Пояс Раздора)", "endonym": {"text": "Warpstanis", "lang": "en", "pron": "[ˈwɔːpstɑːnɪs]"}, "exonyms": {"ru": "Варпстанис", "en": "Warpstanis"},
-    "demonym": {"en": "warpies", "ru": "варпы"},
-    "naming_history": {"status": "AUTHOR_UNSPECIFIED", "reason": "кривой пилотский английский (warp + -stan) — в вольном поясе это нормально"}}
+   "type": "unit",
+   "system": "system:9",
+   "colony": {
+    "verdict": "NORMALIZE",
+    "endonym": {
+     "text": "Strife Belt",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Пояс Раздора",
+     "en": "Strife Belt"
+    },
+    "aliases": [
+     {
+      "text": "Free Asteroids",
+      "kind": "slang",
+      "lang": "en"
+     },
+     {
+      "text": "Вольные астероиды",
+      "kind": "slang",
+      "lang": "ru"
+     }
+    ]
+   },
+   "polity": {
+    "verdict": "SLANG",
+    "label_ru": "Варпстанис (Пояс Раздора)",
+    "endonym": {
+     "text": "Warpstanis",
+     "lang": "en",
+     "pron": "[ˈwɔːpstɑːnɪs]"
+    },
+    "exonyms": {
+     "ru": "Варпстанис",
+     "en": "Warpstanis"
+    },
+    "demonym": {
+     "en": "warpies",
+     "ru": "варпы"
+    },
+    "naming_history": {
+     "status": "AUTHOR_UNSPECIFIED",
+     "reason": "кривой пилотский английский (warp + -stan) — в вольном поясе это нормально"
+    }
+   }
   },
   "wolf359_citadel": {
-   "type": "unit", "system": "system:3",
-   "colony": {"verdict": "EXONYM", "endonym": {"text": "Skjoldborg", "lang": "nb", "pron": "[ˈʂɔlːbɔrɡ] (d немая, skj = ш)"},
-    "exonyms": {"ru": "Цитадель", "en": "the Citadel"},
-    "aliases": [{"text": "Скьольдборг", "kind": "transliteration", "lang": "ru"}, {"text": "Борг", "kind": "slang", "lang": "ru", "used_by": "пилоты"}, {"text": "Щит", "kind": "slang", "lang": "ru", "used_by": "пилоты"},
-     {"text": "the Borg", "kind": "hostile", "lang": "en", "used_by": "чужие пилоты: Borg у Wolf 359 — реликт старого телесериала, «сопротивление бесполезно»"}],
-    "naming_history": {"status": "PROPOSAL", "named_by": "ЧВК «Skjold» (охрана IRON-SHIELD-1, выходцы из офшорной охраны Северного моря)", "reason": "skjoldborg (букмол и нюнорск) — «стена щитов»; город назван строем, а не замком"}},
-   "polity": {"verdict": "NORMALIZE", "label_ru": "Скьольдборг (Цитадель)", "endonym": {"text": "Skjoldborg", "lang": "nb", "pron": "[ˈʂɔlːbɔrɡ]"},
-    "formal": {"text": "Protektoratet Skjoldborg", "lang": "nb"},
-    "ceremonial": {"text": "Skjaldborg", "lang": "non", "kind": "ceremonial"},
-    "exonyms": {"ru": "Скьольдборг", "en": "Skjoldborg"}, "formal_exonyms": {"ru": "Протекторат Скьольдборг", "en": "Skjoldborg Protectorate"},
-    "demonym": {"nb": "skjoldborgere", "ru": "скьольдборгцы", "en": "Skjoldborgers"},
-    "naming_history": {"status": "PROPOSAL", "reason": "прежняя русская форма смешивала древнесканд. Skjöldr и немецкое -burg; правильная современная норвежская форма — skjoldborg. Русская практическая транскрипция по правилам — «Шолльборг»; принята распространённая побуквенная «Скьольдборг» (ср. «Скьольд»)"}}
+   "type": "unit",
+   "system": "system:3",
+   "colony": {
+    "verdict": "EXONYM",
+    "endonym": {
+     "text": "Skjoldborg",
+     "lang": "nb",
+     "pron": "[ˈʂɔlːbɔrɡ] (d немая, skj = ш)"
+    },
+    "exonyms": {
+     "ru": "Цитадель",
+     "en": "the Citadel"
+    },
+    "aliases": [
+     {
+      "text": "Скьольдборг",
+      "kind": "transliteration",
+      "lang": "ru"
+     },
+     {
+      "text": "Борг",
+      "kind": "slang",
+      "lang": "ru",
+      "used_by": "пилоты"
+     },
+     {
+      "text": "Щит",
+      "kind": "slang",
+      "lang": "ru",
+      "used_by": "пилоты"
+     },
+     {
+      "text": "the Borg",
+      "kind": "hostile",
+      "lang": "en",
+      "used_by": "чужие пилоты: Borg у Wolf 359 — реликт старого телесериала, «сопротивление бесполезно»"
+     }
+    ],
+    "naming_history": {
+     "status": "PROPOSAL",
+     "named_by": "ЧВК «Skjold» (охрана IRON-SHIELD-1, выходцы из офшорной охраны Северного моря)",
+     "reason": "skjoldborg (букмол и нюнорск) — «стена щитов»; город назван строем, а не замком"
+    }
+   },
+   "polity": {
+    "verdict": "NORMALIZE",
+    "label_ru": "Скьольдборг (Цитадель)",
+    "endonym": {
+     "text": "Skjoldborg",
+     "lang": "nb",
+     "pron": "[ˈʂɔlːbɔrɡ]"
+    },
+    "formal": {
+     "text": "Protektoratet Skjoldborg",
+     "lang": "nb"
+    },
+    "ceremonial": {
+     "text": "Skjaldborg",
+     "lang": "non",
+     "kind": "ceremonial"
+    },
+    "exonyms": {
+     "ru": "Скьольдборг",
+     "en": "Skjoldborg"
+    },
+    "formal_exonyms": {
+     "ru": "Протекторат Скьольдборг",
+     "en": "Skjoldborg Protectorate"
+    },
+    "demonym": {
+     "nb": "skjoldborgere",
+     "ru": "скьольдборгцы",
+     "en": "Skjoldborgers"
+    },
+    "naming_history": {
+     "status": "PROPOSAL",
+     "reason": "прежняя русская форма смешивала древнесканд. Skjöldr и немецкое -burg; правильная современная норвежская форма — skjoldborg. Русская практическая транскрипция по правилам — «Шолльборг»; принята распространённая побуквенная «Скьольдборг» (ср. «Скьольд»)"
+    }
+   }
   },
   "gj581_europa": {
-   "type": "unit", "system": "system:10",
-   "colony": {"verdict": "KEEP", "endonym": {"text": "Nouvelle-Europe", "lang": "fr"}, "exonyms": {"ru": "Новая Европа", "en": "New Europe"}},
-   "polity": {"verdict": "RENAME", "endonym": {"text": "Union de la Nouvelle-Europe", "lang": "fr"},
-    "exonyms": {"ru": "Союз Новой Европы", "en": "Union of New Europe"},
-    "aliases": [{"text": "la Restauration", "kind": "political_label", "lang": "fr", "used_by": "сами: доктрина восстановления европейского порядка"},
-     {"text": "Ресторан", "kind": "slang", "lang": "ru", "used_by": "пилоты: от Restauration и долгих обедов чиновников"}, {"text": "the Restaurant", "kind": "slang", "lang": "en"}],
-    "naming_history": {"status": "PROPOSAL", "reason": "прежнее имя (Re + Tauros) — не греческое и не латинское слово; доктрина реставрации естественно называется по-французски (ср. Реставрация Бурбонов)"}}
+   "type": "unit",
+   "system": "system:10",
+   "colony": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "Nouvelle-Europe",
+     "lang": "fr"
+    },
+    "exonyms": {
+     "ru": "Новая Европа",
+     "en": "New Europe"
+    }
+   },
+   "polity": {
+    "verdict": "RENAME",
+    "endonym": {
+     "text": "Union de la Nouvelle-Europe",
+     "lang": "fr"
+    },
+    "exonyms": {
+     "ru": "Союз Новой Европы",
+     "en": "Union of New Europe"
+    },
+    "aliases": [
+     {
+      "text": "la Restauration",
+      "kind": "political_label",
+      "lang": "fr",
+      "used_by": "сами: доктрина восстановления европейского порядка"
+     },
+     {
+      "text": "Ресторан",
+      "kind": "slang",
+      "lang": "ru",
+      "used_by": "пилоты: от Restauration и долгих обедов чиновников"
+     },
+     {
+      "text": "the Restaurant",
+      "kind": "slang",
+      "lang": "en"
+     }
+    ],
+    "naming_history": {
+     "status": "PROPOSAL",
+     "reason": "прежнее имя (Re + Tauros) — не греческое и не латинское слово; доктрина реставрации естественно называется по-французски (ср. Реставрация Бурбонов)"
+    }
+   }
   },
   "gj581_freeclans": {
-   "type": "unit", "system": "system:10",
-   "colony": {"verdict": "KEEP", "endonym": {"text": "Free Settlements", "lang": "en"}, "exonyms": {"ru": "Свободные поселения", "en": "Free Settlements"}},
-   "polity": {"verdict": "KEEP", "endonym": {"text": "Free World clans", "lang": "en"}, "exonyms": {"ru": "кланы Свободного мира", "en": "Free World clans"}, "label_ru": "Свободные поселения (кланы Свободного мира)"}
+   "type": "unit",
+   "system": "system:10",
+   "colony": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "Free Settlements",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Свободные поселения",
+     "en": "Free Settlements"
+    }
+   },
+   "polity": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "Free World clans",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "кланы Свободного мира",
+     "en": "Free World clans"
+    },
+    "label_ru": "Свободные поселения (кланы Свободного мира)"
+   }
   },
   "hd20794_hellas2": {
-   "type": "unit", "system": "system:14",
-   "colony": {"verdict": "RENAME", "endonym": {"text": "Homestead", "lang": "en", "pron": "[ˈhoʊmstɛd]"}, "exonyms": {"ru": "Хомстед", "en": "Homestead"},
-    "aliases": [{"text": "the Stead", "kind": "slang", "lang": "en", "used_by": "местные"}, {"text": "Хомяк", "kind": "slang", "lang": "ru", "used_by": "русскоязычные пилоты"}],
-    "naming_history": {"status": "PROPOSAL", "named_by": "HOMESTEAD-1 (США, Канада, Мексика)", "reason": "прежнее «эллинское» имя у североамериканского консорциума без греков ничем не объяснялось; homestead — надел для опоздавших (Homestead Act 1862, Dominion Lands Act 1872), ровно мотив миссии «мы опоздали к Мэйфлауэру»"}},
-   "polity": {"verdict": "RENAME", "endonym": {"text": "Homestead", "lang": "en"}, "formal": {"text": "Homestead Commonwealth", "lang": "en"}, "exonyms": {"ru": "Хомстед", "en": "Homestead"}, "formal_exonyms": {"ru": "Содружество Хомстед", "en": "Homestead Commonwealth"},
-    "demonym": {"en": "Steaders", "ru": "хомстедцы"}}
+   "type": "unit",
+   "system": "system:14",
+   "colony": {
+    "verdict": "RENAME",
+    "endonym": {
+     "text": "Homestead",
+     "lang": "en",
+     "pron": "[ˈhoʊmstɛd]"
+    },
+    "exonyms": {
+     "ru": "Хомстед",
+     "en": "Homestead"
+    },
+    "aliases": [
+     {
+      "text": "the Stead",
+      "kind": "slang",
+      "lang": "en",
+      "used_by": "местные"
+     },
+     {
+      "text": "Хомяк",
+      "kind": "slang",
+      "lang": "ru",
+      "used_by": "русскоязычные пилоты"
+     }
+    ],
+    "naming_history": {
+     "status": "PROPOSAL",
+     "named_by": "HOMESTEAD-1 (США, Канада, Мексика)",
+     "reason": "прежнее «эллинское» имя у североамериканского консорциума без греков ничем не объяснялось; homestead — надел для опоздавших (Homestead Act 1862, Dominion Lands Act 1872), ровно мотив миссии «мы опоздали к Мэйфлауэру»"
+    }
+   },
+   "polity": {
+    "verdict": "RENAME",
+    "endonym": {
+     "text": "Homestead",
+     "lang": "en"
+    },
+    "formal": {
+     "text": "Homestead Commonwealth",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Хомстед",
+     "en": "Homestead"
+    },
+    "formal_exonyms": {
+     "ru": "Содружество Хомстед",
+     "en": "Homestead Commonwealth"
+    },
+    "demonym": {
+     "en": "Steaders",
+     "ru": "хомстедцы"
+    }
+   }
   },
   "hd20794_newindia": {
-   "type": "unit", "system": "system:14",
-   "colony": {"verdict": "EXONYM", "endonym": {"text": "नया भारत", "lang": "hi", "translit": "Nayā Bhārat", "pron": "[nəˈjaː ˈbʱaːrət]"},
-    "formal": {"text": "नव भारत", "lang": "sa", "translit": "Nava Bhārata"},
-    "exonyms": {"ru": "Новая Индия", "en": "New India"},
-    "naming_history": {"status": "PROPOSAL", "named_by": "DHARMA-2", "reason": "«Новая Индия» — внешняя калька; сами говорят Bhārat"}},
-   "polity": {"verdict": "NORMALIZE", "endonym": {"text": "दक्षिण धर्ममण्डल", "lang": "sa", "translit": "Dakṣiṇa Dharmamaṇḍala"},
-    "exonyms": {"ru": "Дхарма-Мандала (южная ветвь)", "en": "Southern Dharmamandala"}, "label_ru": "Новая Индия (Дхарма-Мандала, южная ветвь)",
-    "naming_history": {"status": "PROPOSAL", "reason": "धर्म — закон, долг; मण्डल — круг, область; санскритский составной корректен"}}
+   "type": "unit",
+   "system": "system:14",
+   "colony": {
+    "verdict": "EXONYM",
+    "endonym": {
+     "text": "नया भारत",
+     "lang": "hi",
+     "translit": "Nayā Bhārat",
+     "pron": "[nəˈjaː ˈbʱaːrət]"
+    },
+    "formal": {
+     "text": "नव भारत",
+     "lang": "sa",
+     "translit": "Nava Bhārata"
+    },
+    "exonyms": {
+     "ru": "Новая Индия",
+     "en": "New India"
+    },
+    "naming_history": {
+     "status": "PROPOSAL",
+     "named_by": "DHARMA-2",
+     "reason": "«Новая Индия» — внешняя калька; сами говорят Bhārat"
+    }
+   },
+   "polity": {
+    "verdict": "NORMALIZE",
+    "endonym": {
+     "text": "दक्षिण धर्ममण्डल",
+     "lang": "sa",
+     "translit": "Dakṣiṇa Dharmamaṇḍala"
+    },
+    "exonyms": {
+     "ru": "Дхарма-Мандала (южная ветвь)",
+     "en": "Southern Dharmamandala"
+    },
+    "label_ru": "Новая Индия (Дхарма-Мандала, южная ветвь)",
+    "naming_history": {
+     "status": "PROPOSAL",
+     "reason": "धर्म — закон, долг; मण्डल — круг, область; санскритский составной корректен"
+    }
+   }
   },
   "hd40307_maland": {
-   "type": "unit", "system": "system:15",
-   "colony": {"verdict": "VERIFY", "endonym": {"text": "Maland Mpya", "lang": "sw"}, "exonyms": {"ru": "Новая Маланд", "en": "New Maland"},
-    "naming_history": {"status": "AUTHOR_UNSPECIFIED", "reason": "«Маланд» — имя автора, происхождение не задано; в суахили такого слова нет — не выдумываем; mpya = «новая»"}},
-   "polity": {"verdict": "NORMALIZE", "endonym": {"text": "Jumuiya ya Ujamaa", "lang": "sw", "pron": "[dʒuˈmuja ja udʒaˈmaa]"},
-    "exonyms": {"ru": "Содружество Уджамаа", "en": "Ujamaa Community"}, "label_ru": "Содружество Уджамаа (Новая Маланд)",
-    "demonym": {"sw": "wanaujamaa", "ru": "уджамаа (нескл.)", "en": "Ujamaa people"},
-    "naming_history": {"status": "PROPOSAL", "reason": "ujamaa (суах.) — братство, общинность (политика Ньерере); jumuiya — содружество (ср. Jumuiya ya Afrika Mashariki). «Jahi» в словарях суахили не засвидетельствовано (это англоязычное «африканское» имя для детей) — снято. Суахили — рабочий язык АС с 2022"}}
+   "type": "unit",
+   "system": "system:15",
+   "colony": {
+    "verdict": "VERIFY",
+    "endonym": {
+     "text": "Maland Mpya",
+     "lang": "sw"
+    },
+    "exonyms": {
+     "ru": "Новая Маланд",
+     "en": "New Maland"
+    },
+    "naming_history": {
+     "status": "AUTHOR_UNSPECIFIED",
+     "reason": "«Маланд» — имя автора, происхождение не задано; в суахили такого слова нет — не выдумываем; mpya = «новая»"
+    }
+   },
+   "polity": {
+    "verdict": "NORMALIZE",
+    "endonym": {
+     "text": "Jumuiya ya Ujamaa",
+     "lang": "sw",
+     "pron": "[dʒuˈmuja ja udʒaˈmaa]"
+    },
+    "exonyms": {
+     "ru": "Содружество Уджамаа",
+     "en": "Ujamaa Community"
+    },
+    "label_ru": "Содружество Уджамаа (Новая Маланд)",
+    "demonym": {
+     "sw": "wanaujamaa",
+     "ru": "уджамаа (нескл.)",
+     "en": "Ujamaa people"
+    },
+    "naming_history": {
+     "status": "PROPOSAL",
+     "reason": "ujamaa (суах.) — братство, общинность (политика Ньерере); jumuiya — содружество (ср. Jumuiya ya Afrika Mashariki). «Jahi» в словарях суахили не засвидетельствовано (это англоязычное «африканское» имя для детей) — снято. Суахили — рабочий язык АС с 2022"
+    }
+   }
   },
   "hd40307_firmament": {
-   "type": "unit", "system": "system:15",
-   "colony": {"verdict": "EXONYM", "endonym": {"text": "天垒", "lang": "zh-Hans", "translit": "Tiānlěi", "pron": "[tʰjɛ́n lèi]"}, "exonyms": {"ru": "Небесная Твердыня", "en": "Celestial Rampart"},
-    "naming_history": {"status": "PROPOSAL", "named_by": "CELESTIAL-DESTINY-2 (天命二号)", "reason": "по астеризму 天壘城 «Небесные валы» (созвездие Водолея в китайской астрономии); твердыня = вал, крепость"}},
-   "polity": {"verdict": "NORMALIZE", "endonym": {"text": "天垒省", "lang": "zh-Hans", "translit": "Tiānlěi Shěng"}, "exonyms": {"ru": "Синьхэ (провинция Тяньлэй)", "en": "Tianlei Province (Xinhe)"}}
+   "type": "unit",
+   "system": "system:15",
+   "colony": {
+    "verdict": "EXONYM",
+    "endonym": {
+     "text": "天垒",
+     "lang": "zh-Hans",
+     "translit": "Tiānlěi",
+     "pron": "[tʰjɛ́n lèi]"
+    },
+    "exonyms": {
+     "ru": "Небесная Твердыня",
+     "en": "Celestial Rampart"
+    },
+    "naming_history": {
+     "status": "PROPOSAL",
+     "named_by": "CELESTIAL-DESTINY-2 (天命二号)",
+     "reason": "по астеризму 天壘城 «Небесные валы» (созвездие Водолея в китайской астрономии); твердыня = вал, крепость"
+    }
+   },
+   "polity": {
+    "verdict": "NORMALIZE",
+    "endonym": {
+     "text": "天垒省",
+     "lang": "zh-Hans",
+     "translit": "Tiānlěi Shěng"
+    },
+    "exonyms": {
+     "ru": "Синьхэ (провинция Тяньлэй)",
+     "en": "Tianlei Province (Xinhe)"
+    }
+   }
   },
   "hd69830_verde": {
-   "type": "unit", "system": "system:16",
-   "colony": {"verdict": "NORMALIZE", "endonym": {"text": "Selva Verde", "lang": "pt", "pron": "[ˈsɛwvɐ ˈveɾdʒi]"}, "exonyms": {"ru": "Сельва-Верде", "en": "Selva Verde"},
-    "aliases": [{"text": "Затерянный мир", "kind": "historical", "lang": "ru", "used_by": "эпоха до контакта 2810"}],
-    "naming_history": {"status": "PROPOSAL", "named_by": "AMAZONIA-1 (Бразилия и андские страны)", "reason": "«Сельта» — опечатка; selva (порт.) — сельва, тропический лес"}},
-   "polity": {"verdict": "NORMALIZE", "endonym": {"text": "Selva Verde", "lang": "pt"}, "exonyms": {"ru": "Сельва-Верде", "en": "Selva Verde"}, "demonym": {"pt": "selva-verdenses", "ru": "сельвавердцы"}}
+   "type": "unit",
+   "system": "system:16",
+   "colony": {
+    "verdict": "NORMALIZE",
+    "endonym": {
+     "text": "Selva Verde",
+     "lang": "pt",
+     "pron": "[ˈsɛwvɐ ˈveɾdʒi]"
+    },
+    "exonyms": {
+     "ru": "Сельва-Верде",
+     "en": "Selva Verde"
+    },
+    "aliases": [
+     {
+      "text": "Затерянный мир",
+      "kind": "historical",
+      "lang": "ru",
+      "used_by": "эпоха до контакта 2810"
+     }
+    ],
+    "naming_history": {
+     "status": "PROPOSAL",
+     "named_by": "AMAZONIA-1 (Бразилия и андские страны)",
+     "reason": "«Сельта» — опечатка; selva (порт.) — сельва, тропический лес"
+    }
+   },
+   "polity": {
+    "verdict": "NORMALIZE",
+    "endonym": {
+     "text": "Selva Verde",
+     "lang": "pt"
+    },
+    "exonyms": {
+     "ru": "Сельва-Верде",
+     "en": "Selva Verde"
+    },
+    "demonym": {
+     "pt": "selva-verdenses",
+     "ru": "сельвавердцы"
+    }
+   }
   },
   "delta_pav_karma": {
-   "type": "unit", "system": "system:22",
-   "colony": {"verdict": "EXONYM", "endonym": {"text": "कर्मभूमि", "lang": "hi", "translit": "Karmabhūmi", "pron": "[kərməˈbʱuːmi]"},
-    "short": {"text": "Karma", "lang": "hi"}, "exonyms": {"ru": "Новая Карма", "en": "New Karma"},
-    "naming_history": {"status": "PROPOSAL", "named_by": "DHARMA-1", "reason": "कर्मभूमि — «земля деяния и долга» (ср. роман Премчанда, 1932); сокращение «Karma» снаружи превратилось в «Новую Карму»"}},
-   "polity": {"verdict": "NORMALIZE", "endonym": {"text": "उत्तर धर्ममण्डल", "lang": "sa", "translit": "Uttara Dharmamaṇḍala"}, "exonyms": {"ru": "Дхарма-Мандала (северная ветвь)", "en": "Northern Dharmamandala"}, "label_ru": "Новая Карма (Дхарма-Мандала, северная ветвь)"}
+   "type": "unit",
+   "system": "system:22",
+   "colony": {
+    "verdict": "EXONYM",
+    "endonym": {
+     "text": "कर्मभूमि",
+     "lang": "hi",
+     "translit": "Karmabhūmi",
+     "pron": "[kərməˈbʱuːmi]"
+    },
+    "short": {
+     "text": "Karma",
+     "lang": "hi"
+    },
+    "exonyms": {
+     "ru": "Новая Карма",
+     "en": "New Karma"
+    },
+    "naming_history": {
+     "status": "PROPOSAL",
+     "named_by": "DHARMA-1",
+     "reason": "कर्मभूमि — «земля деяния и долга» (ср. роман Премчанда, 1932); сокращение «Karma» снаружи превратилось в «Новую Карму»"
+    }
+   },
+   "polity": {
+    "verdict": "NORMALIZE",
+    "endonym": {
+     "text": "उत्तर धर्ममण्डल",
+     "lang": "sa",
+     "translit": "Uttara Dharmamaṇḍala"
+    },
+    "exonyms": {
+     "ru": "Дхарма-Мандала (северная ветвь)",
+     "en": "Northern Dharmamandala"
+    },
+    "label_ru": "Новая Карма (Дхарма-Мандала, северная ветвь)"
+   }
   },
   "delta_pav_freekarma": {
-   "type": "unit", "system": "system:22",
-   "colony": {"verdict": "EXONYM", "endonym": {"text": "स्वतंत्र कर्मभूमि", "lang": "hi", "translit": "Svatantra Karmabhūmi"}, "exonyms": {"ru": "Свободная Карма", "en": "Free Karma"}},
-   "polity": {"verdict": "EXONYM", "endonym": {"text": "स्वतंत्र कर्मभूमि", "lang": "hi", "translit": "Svatantra Karmabhūmi"}, "exonyms": {"ru": "Свободная Карма", "en": "Free Karma"}}
+   "type": "unit",
+   "system": "system:22",
+   "colony": {
+    "verdict": "EXONYM",
+    "endonym": {
+     "text": "स्वतंत्र कर्मभूमि",
+     "lang": "hi",
+     "translit": "Svatantra Karmabhūmi"
+    },
+    "exonyms": {
+     "ru": "Свободная Карма",
+     "en": "Free Karma"
+    }
+   },
+   "polity": {
+    "verdict": "EXONYM",
+    "endonym": {
+     "text": "स्वतंत्र कर्मभूमि",
+     "lang": "hi",
+     "translit": "Svatantra Karmabhūmi"
+    },
+    "exonyms": {
+     "ru": "Свободная Карма",
+     "en": "Free Karma"
+    }
+   }
   },
   "gj876_next": {
-   "type": "unit", "system": "system:13",
-   "colony": {"verdict": "KEEP", "endonym": {"text": "Providence", "lang": "en"}, "exonyms": {"ru": "Провидение", "en": "Providence"}},
-   "polity": {"verdict": "KEEP", "endonym": {"text": "Providence", "lang": "en"}, "exonyms": {"ru": "Провидение", "en": "Providence"}, "label_ru": "Провидение (Культ Машины)",
-    "aliases": [{"text": "Культ Машины", "kind": "hostile", "lang": "ru"}, {"text": "the Machine Cult", "kind": "hostile", "lang": "en"}]}
+   "type": "unit",
+   "system": "system:13",
+   "colony": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "Providence",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Провидение",
+     "en": "Providence"
+    }
+   },
+   "polity": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "Providence",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Провидение",
+     "en": "Providence"
+    },
+    "label_ru": "Провидение (Культ Машины)",
+    "aliases": [
+     {
+      "text": "Культ Машины",
+      "kind": "hostile",
+      "lang": "ru"
+     },
+     {
+      "text": "the Machine Cult",
+      "kind": "hostile",
+      "lang": "en"
+     }
+    ]
+   }
   },
   "cyg61_kern": {
-   "type": "unit", "system": "system:31",
-   "colony": {"verdict": "KEEP", "endonym": {"text": "Mine Alpha", "lang": "en"}, "exonyms": {"ru": "Шахта Альфа", "en": "Mine Alpha"},
-    "aliases": [{"text": "Minalpha", "kind": "slang", "lang": "en", "used_by": "местные: рабочий код стал топонимом"}, {"text": "Миналфа", "kind": "slang", "lang": "ru"}]},
-   "polity": {"verdict": "KEEP", "endonym": {"text": "Kern Prospectorate", "lang": "en"}, "exonyms": {"ru": "Проспекторат Керн", "en": "Kern Prospectorate"}}
+   "type": "unit",
+   "system": "system:31",
+   "colony": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "Mine Alpha",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Шахта Альфа",
+     "en": "Mine Alpha"
+    },
+    "aliases": [
+     {
+      "text": "Minalpha",
+      "kind": "slang",
+      "lang": "en",
+      "used_by": "местные: рабочий код стал топонимом"
+     },
+     {
+      "text": "Миналфа",
+      "kind": "slang",
+      "lang": "ru"
+     }
+    ]
+   },
+   "polity": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "Kern Prospectorate",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Проспекторат Керн",
+     "en": "Kern Prospectorate"
+    }
+   }
   },
   "hd114783_hellas3": {
-   "type": "unit", "system": "system:37",
-   "colony": {"verdict": "KEEP", "endonym": {"text": "Τρίτη Ελλάδα", "lang": "el", "translit": "Tríti Elláda", "pron": "[ˈtriti eˈlaða]"}, "exonyms": {"ru": "Третья Эллада", "en": "Third Hellas"},
-    "naming_history": {"status": "PROPOSAL", "named_by": "ODYSSEY-1 (Греция, Италия, Испания, Португалия)", "reason": "счёт греческий: первая — Эллада на Земле, вторая — Новая Эллада у Лаланд 21185, третья — эта"}},
-   "polity": {"verdict": "KEEP", "endonym": {"text": "Τρίτη Ελλάδα", "lang": "el"}, "exonyms": {"ru": "Третья Эллада", "en": "Third Hellas"}}
+   "type": "unit",
+   "system": "system:37",
+   "colony": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "Τρίτη Ελλάδα",
+     "lang": "el",
+     "translit": "Tríti Elláda",
+     "pron": "[ˈtriti eˈlaða]"
+    },
+    "exonyms": {
+     "ru": "Третья Эллада",
+     "en": "Third Hellas"
+    },
+    "naming_history": {
+     "status": "PROPOSAL",
+     "named_by": "ODYSSEY-1 (Греция, Италия, Испания, Португалия)",
+     "reason": "счёт греческий: первая — Эллада на Земле, вторая — Новая Эллада у Лаланд 21185, третья — эта"
+    }
+   },
+   "polity": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "Τρίτη Ελλάδα",
+     "lang": "el"
+    },
+    "exonyms": {
+     "ru": "Третья Эллада",
+     "en": "Third Hellas"
+    }
+   }
   },
   "leo83_zion": {
-   "type": "unit", "system": "system:45", "legacy_id_note": "machine id leo83_zion сохранён",
-   "colony": {"verdict": "RENAME", "endonym": {"text": "New Thebaid", "lang": "en"}, "liturgical": {"text": "Νέα Θηβαΐς", "lang": "el"},
-    "exonyms": {"ru": "Ново-Фиваида", "en": "New Thebaid"},
-    "naming_history": {"status": "CANON", "reason": "решение автора 2026-11-05: Фиваида — пустыня ранних отшельников; рабочий язык ковчега английский, литургия греческая и латинская"}},
-   "polity": {"verdict": "RENAME", "endonym": {"text": "New Thebaid", "lang": "en"}, "formal": {"text": "Synod of New Thebaid", "lang": "en"}, "exonyms": {"ru": "Ново-Фиваида", "en": "New Thebaid"},
-    "formal_exonyms": {"ru": "Синод Ново-Фиваиды", "en": "Synod of New Thebaid"}, "short": {"ru": "Фиваида"}}
+   "type": "unit",
+   "system": "system:45",
+   "legacy_id_note": "machine id leo83_zion сохранён",
+   "colony": {
+    "verdict": "RENAME",
+    "endonym": {
+     "text": "New Thebaid",
+     "lang": "en"
+    },
+    "liturgical": {
+     "text": "Νέα Θηβαΐς",
+     "lang": "el"
+    },
+    "exonyms": {
+     "ru": "Ново-Фиваида",
+     "en": "New Thebaid"
+    },
+    "naming_history": {
+     "status": "CANON",
+     "reason": "решение автора 2026-11-05: Фиваида — пустыня ранних отшельников; рабочий язык ковчега английский, литургия греческая и латинская"
+    }
+   },
+   "polity": {
+    "verdict": "RENAME",
+    "endonym": {
+     "text": "New Thebaid",
+     "lang": "en"
+    },
+    "formal": {
+     "text": "Synod of New Thebaid",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Ново-Фиваида",
+     "en": "New Thebaid"
+    },
+    "formal_exonyms": {
+     "ru": "Синод Ново-Фиваиды",
+     "en": "Synod of New Thebaid"
+    },
+    "short": {
+     "ru": "Фиваида"
+    }
+   }
   },
   "sol_authority": {
-   "type": "unit", "system": "system:0",
-   "polity": {"verdict": "KEEP", "endonym": {"text": "Sol Authority", "lang": "en"}, "exonyms": {"ru": "Сол", "en": "Sol Authority"}, "formal_exonyms": {"ru": "Солнечная Администрация", "en": "Sol Authority"}}
+   "type": "unit",
+   "system": "system:0",
+   "polity": {
+    "verdict": "KEEP",
+    "endonym": {
+     "text": "Sol Authority",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Сол",
+     "en": "Sol Authority"
+    },
+    "formal_exonyms": {
+     "ru": "Солнечная Администрация",
+     "en": "Sol Authority"
+    }
+   }
   },
-
-  "system:3": {"type": "system", "catalog": "Wolf 359", "local": {"text": "Ulven", "lang": "nb", "pron": "[ˈʉ̀lvən]"}, "exonyms": {"ru": "Ульвен"}, "verdict": "KEEP",
-   "naming_history": {"status": "PROPOSAL", "discovered_by": "Макс Вольф, фотопластинки 1917–1918 (каталог Wolf)", "named_by": "норвежские поселенцы", "reason": "народная этимология: каталожный Wolf стал ulv — «волк»; Ulven — «Волк»"}},
-  "system:4": {"type": "system", "catalog": "Lalande 21185", "verdict": "KEEP",
-   "local_by": [{"text": "Te Rā Hou", "lang": "mi", "used_by": "Капеху", "meaning": "новое солнце"}, {"text": "Λαλάνδη", "lang": "el", "used_by": "Новая Эллада"}],
-   "naming_history": {"status": "PROPOSAL", "reason": "звезда 7.5m — у неё нет традиционного имени; две культуры одной системы называют её по-своему"}},
-  "system:8": {"type": "system", "catalog": "Tau Ceti", "traditional": {"text": "天倉五", "lang": "zh-Hant", "translit": "Tiāncāng wǔ", "simplified": "天仓五", "meaning": "пятая звезда Квадратной житницы"},
-   "local": {"text": "天仓", "lang": "zh-Hans", "translit": "Tiāncāng"}, "verdict": "KEEP"},
-  "system:9": {"type": "system", "catalog": "Epsilon Eridani", "traditional": {"text": "天苑四", "lang": "zh-Hant", "translit": "Tiānyuàn sì", "meaning": "четвёртая звезда Небесных лугов"}, "local": {"text": "天苑", "lang": "zh-Hans", "translit": "Tiānyuàn"}, "verdict": "KEEP"},
-  "system:fomalhaut": {"type": "system", "star": "star:HIP_113368", "verdict": "KEEP", "status": "CANON",
-   "names": {"colony_era": {"text": "Fortuna", "lang": "la"}, "exonyms": {"ru": "Фортуна", "en": "Fortuna", "zh-Hant": "命運之輪", "zh-Hans": "命运之轮"},
-    "zh_translit": "Mìngyùn zhī lún", "zh_meaning": "Колесо судьбы / Колесо Фортуны"},
-   "naming_history": {"status": "AUTHOR_UNSPECIFIED", "reason": "имя системы и китайский экзоним — решение автора; происхождение не задано"}},
-  "star:HIP_113368": {"type": "star", "status": "CANON", "catalog_ids": {"proper": "Fomalhaut", "bayer": "α Piscis Austrini", "flamsteed": "24 Piscis Austrini", "hd": "HD 216956", "hip": "HIP 113368", "gl": "Gl 881", "hyg": "HIP_113368"},
-   "traditional": {"text": "北落師門", "lang": "zh-Hant", "simplified": "北落师门", "translit": "Běiluòshīmén", "meaning": "Ворота Северного военного лагеря"},
-   "exonyms": {"ru": "Фомальгаут", "en": "Fomalhaut"}, "constellation": {"la": "Piscis Austrinus", "ru": "Южная Рыба", "iau": "PsA"},
-   "naming_history": {"status": "CANON", "reason": "араб. fam al-ḥūt «рот рыбы» — реальная астрономическая этимология XXI века, к колониальной арабской ветви отношения не имеет"}},
-  "body:fomalhaut.lexie": {"type": "planet", "system": "system:fomalhaut", "status": "CANON",
-   "names": {"international": {"text": "Lexie", "lang": "en"}, "exonyms": {"ru": "Лекси", "en": "Lexie", "zh-Hans": "柏辛", "zh-Hant": "柏辛"}, "zh_translit": "Bǎixīn"},
-   "naming_history": {"status": "AUTHOR_UNSPECIFIED", "origin": "UNKNOWN"}},
-
-  "site:wolf359_citadel.habitat1": {"type": "settlement", "body": "Wolf 359 c", "verdict": "RENAME",
-   "endonym": {"text": "Nyhamn", "lang": "nn", "pron": "[ˈnŷːhɑmn]"}, "formal": {"text": "Nyhavn", "lang": "nb", "note": "запись реестра на букмоле; жители говорят и пишут на нюнорске — две формы разных языков, не два официальных имени одного"},
-   "exonyms": {"ru": "Нюхамн", "en": "Nyhamn"}, "naming_history": {"status": "PROPOSAL", "named_by": "вахтовики из Вестланна", "reason": "«новая гавань»; hamn — нюнорск, havn — букмол"}},
-  "site:wolf359_citadel.habitat2": {"type": "settlement", "body": "Wolf 359 f", "verdict": "RENAME",
-   "endonym": {"text": "Jarnvik", "lang": "nn"}, "formal": {"text": "Jernvik", "lang": "nb"}, "exonyms": {"ru": "Ярнвик", "en": "Jarnvik"},
-   "naming_history": {"status": "PROPOSAL", "reason": "«железная бухта» (jarn — нюнорск, jern — букмол): у мира f нет моря, бухтой назвали кратер с рудой"}},
-  "site:wolf359_citadel.bastion": {"type": "military_yard", "verdict": "RENAME",
-   "endonym": {"text": "Mjølner", "lang": "nb", "pron": "[ˈmjœ̂lnər]"}, "ceremonial": {"text": "Mjǫllnir", "lang": "non", "kind": "mythological"},
-   "exonyms": {"ru": "Мьёльнер — арсенал и военная верфь", "en": "Mjølner Arsenal and Naval Yard"},
-   "naming_history": {"status": "PROPOSAL", "reason": "молот Тора — оружейный завод; функция совпадает с мифом"}},
-  "site:wolf359_citadel.wolf_mines": {"type": "mine", "verdict": "RENAME", "endonym": {"text": "Gruve 7", "lang": "nb"}, "exonyms": {"ru": "Груве-7 (рудники пылевого диска)", "en": "Gruve 7"},
-   "naming_history": {"status": "PROPOSAL", "reason": "рабочий номер шахты, как Gruve 7 на Шпицбергене; номер пережил первоначальную нумерацию"}},
-  "site:wolf359_citadel.archive_vault": {"type": "archive", "verdict": "EXONYM", "endonym": {"text": "Arkivhvelvet", "lang": "nb"}, "exonyms": {"ru": "Хранилище LAST-LIGHT", "en": "LAST-LIGHT Vault"},
-   "naming_history": {"status": "PROPOSAL", "reason": "«архивный свод», по образцу Svalbard globale frøhvelv; русское имя автора — экзоним"}},
-  "site:site.003.wolf359_citadel.military_hub01": {"type": "military_hub", "verdict": "RENAME", "endonym": {"text": "Heimdal vaktstasjon", "lang": "nb"}, "ceremonial": {"text": "Heimdallr", "lang": "non", "kind": "mythological"},
-   "exonyms": {"ru": "Хеймдаль — сторожевая станция", "en": "Heimdal Watch Station"},
-   "naming_history": {"status": "PROPOSAL", "reason": "страж Биврёста, который слышит, как растёт трава: радар и наблюдение"}},
-  "site:beacon.BCN-003-BR": {"type": "beacon", "verdict": "RENAME", "endonym": {"text": "Bifrost-varden", "lang": "nb"}, "ceremonial": {"text": "Bifrǫst", "lang": "non", "kind": "mythological"},
-   "exonyms": {"ru": "Биврёст — мост-маяк BCN-003-BR", "en": "Bifrost Beacon BCN-003-BR"},
-   "naming_history": {"status": "PROPOSAL", "reason": "мост богов — мост-маяк; varde — каменный знак и сигнальный костёр на берегу"}},
-  "place:wolf359.asteroid_2": {"type": "asteroid", "system": "system:3", "verdict": "SLANG", "catalog": {"text": "IS-2", "lang": "en", "note": "объект IRON-SHIELD-2 в пылевом диске Wolf 359"},
-   "endonym": {"text": "Toeren", "lang": "nb", "pron": "[ˈtuːərən]"}, "exonyms": {"ru": "Тоэрен", "en": "Toeren"},
-   "naming_history": {"status": "PROPOSAL", "reason": "«Двойка»: код «астероид № 2» стал именем; причина потерь IRON-SHIELD-2 остаётся UNKNOWN"}},
-
-  "site:lalande_mecca.rasad": {"type": "research", "verdict": "RENAME", "endonym": {"text": "Te Whare Tātai Arorangi", "lang": "mi", "pron": "[tɛ ˈfaɾɛ ˈtaːtai ˈaɾɔɾaŋi]"},
-   "exonyms": {"ru": "Обсерватория-вычислитель Фаре-Татаи", "en": "House of Star Lore (observatory-computer)"},
-   "aliases": [{"text": "Фаре", "kind": "slang", "lang": "ru"}, {"text": "the Whare", "kind": "slang", "lang": "en"}],
-   "naming_history": {"status": "PROPOSAL", "reason": "whare — дом; tātai arorangi — астрономия (kōkōrangi само по себе — сорт кумары, «tohunga kōkōrangi» — астроном). Здесь сформулирована геометрия этак-фреймов"}},
-  "site:lalande_mecca.lalande_j_gas_m": {"type": "gas_platform", "verdict": "RENAME", "endonym": {"text": "Ngā Papa o Lalande 21185 j", "lang": "mi"}, "exonyms": {"ru": "Платформы Lalande 21185 j (доля Капеху)", "en": "Lalande 21185 j platforms (Kāpehu share)"}},
-  "site:lalande_mecca.mecca_farms": {"type": "food_habitat", "verdict": "RENAME", "endonym": {"text": "Ngā Māra Kai", "lang": "mi"}, "exonyms": {"ru": "Огороды Мара-Каи (Lalande 21185 g)", "en": "Māra Kai gardens"},
-   "naming_history": {"status": "PROPOSAL", "reason": "māra kai — огород, сад, где растёт еда"}},
-  "site:lalande_hellas.agora": {"type": "free_port", "verdict": "NORMALIZE", "endonym": {"text": "Σταυροδρόμι", "lang": "el", "translit": "Stavrodrómi", "pron": "[stavroˈðromi]"},
-   "exonyms": {"ru": "Ставродроми — нейтральный порт и биржа", "en": "Stavrodromi (Crossroads) free port"},
-   "aliases": [{"text": "Перекрёсток", "kind": "translation", "lang": "ru"}],
-   "naming_history": {"status": "PROPOSAL", "reason": "σταυροδρόμι — перекрёсток; прежнее «Агора» оставлено столице"}},
-  "site:tau_ceti_cognium.beacon_authority": {"type": "jump_infrastructure", "verdict": "EXONYM", "endonym": {"text": "the Owlery", "lang": "en"},
-   "exonyms": {"ru": "Управление Маяков и фабрика ядер прыжка «Сычёвник»", "en": "the Owlery", "zh-Hans": "鸮舍"},
-   "naming_history": {"status": "AUTHOR_UNSPECIFIED", "reason": "русское авторское «Сычёвник» — экзоним английского Owlery"}},
-  "site:gj581_europa.registry": {"type": "registry", "verdict": "EXONYM", "endonym": {"text": "Registre des traités et Arbitrage « Nouveau-Bruxelles »", "lang": "fr"}, "exonyms": {"ru": "Реестр договоров и Арбитраж «Новый Брюссель»", "en": "Treaty Registry and Arbitration “New Brussels”"}},
-  "site:delta_pav_karma.gene_temple": {"type": "gene_bank", "verdict": "RENAME", "endonym": {"text": "बीज मन्दिर", "lang": "hi", "translit": "Bīj Mandir"}, "exonyms": {"ru": "Храм Семени (криобанк генов)", "en": "Seed Temple (gene cryobank)"},
-   "naming_history": {"status": "PROPOSAL", "reason": "«Храм Массива» — бессмысленная калька; बीज — семя, मन्दिर — храм"}},
-  "site:leo83_zion.capital": {"type": "settlement", "verdict": "RENAME", "endonym": {"text": "New Thebaid (orbital ark)", "lang": "en"}, "exonyms": {"ru": "Ново-Фиваида (ковчег на орбите)", "en": "New Thebaid (orbital ark)"}},
-  "site:leo83_golden_city.capital": {"type": "settlement", "verdict": "KEEP", "endonym": {"text": "Golden City", "lang": "en"}, "exonyms": {"ru": "«Золотой Город»", "en": "Golden City"},
-   "aliases": [{"text": "Golden Debt", "kind": "slang", "lang": "en", "used_by": "шахтёры Керна"}, {"text": "Золотой Долг", "kind": "slang", "lang": "ru", "used_by": "пилоты"}]},
-
-  "mission:VAKA-MOANA-1": {"type": "mission", "former_ids": ["AL-QUDS-1"], "former_legacy": "drop", "former_legacy_note": "легаси-тексты прежней ветви не экспортируются: в мире 3126 её не было", "verdict": "RENAME",
-   "endonym": {"text": "Vaka Moana", "lang": "to", "note": "тонганское / раротонганское vaka (прапол. *waka) — океанское каноэ"}, "exonyms": {"ru": "Вака-Моана", "en": "Vaka Moana"},
-   "naming_history": {"status": "PROPOSAL", "reason": "общеполинезийское «океанский корабль» вместо маорийского waka: имя не должно было принадлежать одной стране консорциума"}},
-  "mission:HOMESTEAD-1": {"type": "mission", "former_ids": ["NEW-HELLAS-1"], "verdict": "RENAME", "endonym": {"text": "Homestead", "lang": "en"}, "exonyms": {"ru": "Хомстед", "en": "Homestead"}},
-  "mission:CELESTIAL-DESTINY-1": {"type": "mission", "verdict": "NORMALIZE", "endonym": {"text": "天命一号", "lang": "zh-Hans", "translit": "Tiānmìng Yīhào"}, "exonyms": {"ru": "Небесная Судьба", "en": "Celestial Destiny"},
-   "naming_history": {"status": "PROPOSAL", "reason": "天命 — Мандат Неба; англ. код CELESTIAL-DESTINY — вольный экспортный перевод, китайские госпроекты называют себя пиньинем (ср. Tianwen, Shenzhou)"}},
-  "mission:CELESTIAL-DESTINY-2": {"type": "mission", "verdict": "NORMALIZE", "endonym": {"text": "天命二号", "lang": "zh-Hans", "translit": "Tiānmìng Èrhào"}, "exonyms": {"ru": "Небесная Судьба-2", "en": "Celestial Destiny 2"}},
-  "mission:TIANHE-1": {"type": "mission", "verdict": "NORMALIZE", "endonym": {"text": "天河一号", "lang": "zh-Hans", "translit": "Tiānhé Yīhào"}, "exonyms": {"ru": "Тяньхэ-1", "en": "Tianhe-1"}},
-  "mission:IRON-SHIELD-1": {"type": "mission", "verdict": "EXONYM", "endonym": {"text": "Jernskjold", "lang": "nb", "note": "охрана ЧВК Skjold звала корабль по-норвежски; английский код — код заказчиков"}, "exonyms": {"ru": "Айрон Шилд-1", "en": "Iron Shield"}}
+  "system:3": {
+   "type": "system",
+   "catalog": "Wolf 359",
+   "local": {
+    "text": "Ulven",
+    "lang": "nb",
+    "pron": "[ˈʉ̀lvən]"
+   },
+   "exonyms": {
+    "ru": "Ульвен"
+   },
+   "verdict": "KEEP",
+   "naming_history": {
+    "status": "PROPOSAL",
+    "discovered_by": "Макс Вольф, фотопластинки 1917–1918 (каталог Wolf)",
+    "named_by": "норвежские поселенцы",
+    "reason": "народная этимология: каталожный Wolf стал ulv — «волк»; Ulven — «Волк»"
+   }
+  },
+  "system:4": {
+   "type": "system",
+   "catalog": "Lalande 21185",
+   "verdict": "KEEP",
+   "local_by": [
+    {
+     "text": "Te Rā Hou",
+     "lang": "mi",
+     "used_by": "Капеху",
+     "meaning": "новое солнце"
+    },
+    {
+     "text": "Λαλάνδη",
+     "lang": "el",
+     "used_by": "Новая Эллада"
+    }
+   ],
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "звезда 7.5m — у неё нет традиционного имени; две культуры одной системы называют её по-своему"
+   }
+  },
+  "system:8": {
+   "type": "system",
+   "catalog": "Tau Ceti",
+   "traditional": {
+    "text": "天倉五",
+    "lang": "zh-Hant",
+    "translit": "Tiāncāng wǔ",
+    "simplified": "天仓五",
+    "meaning": "пятая звезда Квадратной житницы"
+   },
+   "local": {
+    "text": "天仓",
+    "lang": "zh-Hans",
+    "translit": "Tiāncāng"
+   },
+   "verdict": "KEEP"
+  },
+  "system:9": {
+   "type": "system",
+   "catalog": "Epsilon Eridani",
+   "traditional": {
+    "text": "天苑四",
+    "lang": "zh-Hant",
+    "translit": "Tiānyuàn sì",
+    "meaning": "четвёртая звезда Небесных лугов"
+   },
+   "local": {
+    "text": "天苑",
+    "lang": "zh-Hans",
+    "translit": "Tiānyuàn"
+   },
+   "verdict": "KEEP"
+  },
+  "system:61": {
+   "type": "system",
+   "star": "star:HIP_113368",
+   "verdict": "KEEP",
+   "status": "CANON",
+   "names": {
+    "colony_era": {
+     "text": "Fortuna",
+     "lang": "la"
+    },
+    "exonyms": {
+     "ru": "Фортуна",
+     "en": "Fortuna",
+     "zh-Hant": "命運之輪",
+     "zh-Hans": "命运之轮"
+    },
+    "zh_translit": "Mìngyùn zhī lún",
+    "zh_meaning": "Колесо судьбы / Колесо Фортуны"
+   },
+   "naming_history": {
+    "status": "AUTHOR_UNSPECIFIED",
+    "reason": "имя системы и китайский экзоним — решение автора; происхождение не задано"
+   }
+  },
+  "star:HIP_113368": {
+   "type": "star",
+   "status": "CANON",
+   "catalog_ids": {
+    "proper": "Fomalhaut",
+    "bayer": "α Piscis Austrini",
+    "flamsteed": "24 Piscis Austrini",
+    "hd": "HD 216956",
+    "hip": "HIP 113368",
+    "gl": "Gl 881",
+    "hyg": "HIP_113368"
+   },
+   "traditional": {
+    "text": "北落師門",
+    "lang": "zh-Hant",
+    "simplified": "北落师门",
+    "translit": "Běiluòshīmén",
+    "meaning": "Ворота Северного военного лагеря"
+   },
+   "exonyms": {
+    "ru": "Фомальгаут",
+    "en": "Fomalhaut"
+   },
+   "constellation": {
+    "la": "Piscis Austrinus",
+    "ru": "Южная Рыба",
+    "iau": "PsA"
+   },
+   "naming_history": {
+    "status": "CANON",
+    "reason": "араб. fam al-ḥūt «рот рыбы» — реальная астрономическая этимология XXI века, к колониальной арабской ветви отношения не имеет"
+   }
+  },
+  "body:system_61.Fomalhaut.Lexie": {
+   "type": "planet",
+   "system": "system:61",
+   "status": "CANON",
+   "names": {
+    "international": {
+     "text": "Lexie",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Лекси",
+     "en": "Lexie",
+     "zh-Hans": "柏辛",
+     "zh-Hant": "柏辛"
+    },
+    "zh_translit": "Bǎixīn"
+   },
+   "naming_history": {
+    "status": "AUTHOR_UNSPECIFIED",
+    "origin": "UNKNOWN"
+   }
+  },
+  "site:wolf359_citadel.habitat1": {
+   "type": "settlement",
+   "body": "Wolf 359 c",
+   "verdict": "RENAME",
+   "endonym": {
+    "text": "Nyhamn",
+    "lang": "nn",
+    "pron": "[ˈnŷːhɑmn]"
+   },
+   "formal": {
+    "text": "Nyhavn",
+    "lang": "nb",
+    "note": "запись реестра на букмоле; жители говорят и пишут на нюнорске — две формы разных языков, не два официальных имени одного"
+   },
+   "exonyms": {
+    "ru": "Нюхамн",
+    "en": "Nyhamn"
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "named_by": "вахтовики из Вестланна",
+    "reason": "«новая гавань»; hamn — нюнорск, havn — букмол"
+   }
+  },
+  "site:wolf359_citadel.habitat2": {
+   "type": "settlement",
+   "body": "Wolf 359 f",
+   "verdict": "RENAME",
+   "endonym": {
+    "text": "Jarnvik",
+    "lang": "nn"
+   },
+   "formal": {
+    "text": "Jernvik",
+    "lang": "nb"
+   },
+   "exonyms": {
+    "ru": "Ярнвик",
+    "en": "Jarnvik"
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "«железная бухта» (jarn — нюнорск, jern — букмол): у мира f нет моря, бухтой назвали кратер с рудой"
+   }
+  },
+  "site:wolf359_citadel.bastion": {
+   "type": "military_yard",
+   "verdict": "RENAME",
+   "endonym": {
+    "text": "Mjølner",
+    "lang": "nb",
+    "pron": "[ˈmjœ̂lnər]"
+   },
+   "ceremonial": {
+    "text": "Mjǫllnir",
+    "lang": "non",
+    "kind": "mythological"
+   },
+   "exonyms": {
+    "ru": "Мьёльнер — арсенал и военная верфь",
+    "en": "Mjølner Arsenal and Naval Yard"
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "молот Тора — оружейный завод; функция совпадает с мифом"
+   }
+  },
+  "site:wolf359_citadel.wolf_mines": {
+   "type": "mine",
+   "verdict": "RENAME",
+   "endonym": {
+    "text": "Gruve 7",
+    "lang": "nb"
+   },
+   "exonyms": {
+    "ru": "Груве-7 (рудники пылевого диска)",
+    "en": "Gruve 7"
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "рабочий номер шахты, как Gruve 7 на Шпицбергене; номер пережил первоначальную нумерацию"
+   }
+  },
+  "site:wolf359_citadel.archive_vault": {
+   "type": "archive",
+   "verdict": "EXONYM",
+   "endonym": {
+    "text": "Arkivhvelvet",
+    "lang": "nb"
+   },
+   "exonyms": {
+    "ru": "Хранилище LAST-LIGHT",
+    "en": "LAST-LIGHT Vault"
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "«архивный свод», по образцу Svalbard globale frøhvelv; русское имя автора — экзоним"
+   }
+  },
+  "site:site.003.wolf359_citadel.military_hub01": {
+   "type": "military_hub",
+   "verdict": "RENAME",
+   "endonym": {
+    "text": "Heimdal vaktstasjon",
+    "lang": "nb"
+   },
+   "ceremonial": {
+    "text": "Heimdallr",
+    "lang": "non",
+    "kind": "mythological"
+   },
+   "exonyms": {
+    "ru": "Хеймдаль — сторожевая станция",
+    "en": "Heimdal Watch Station"
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "страж Биврёста, который слышит, как растёт трава: радар и наблюдение"
+   }
+  },
+  "site:beacon.BCN-003-BR": {
+   "type": "beacon",
+   "verdict": "RENAME",
+   "endonym": {
+    "text": "Bifrost-varden",
+    "lang": "nb"
+   },
+   "ceremonial": {
+    "text": "Bifrǫst",
+    "lang": "non",
+    "kind": "mythological"
+   },
+   "exonyms": {
+    "ru": "Биврёст — мост-маяк BCN-003-BR",
+    "en": "Bifrost Beacon BCN-003-BR"
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "мост богов — мост-маяк; varde — каменный знак и сигнальный костёр на берегу"
+   }
+  },
+  "place:wolf359.asteroid_2": {
+   "type": "asteroid",
+   "system": "system:3",
+   "verdict": "SLANG",
+   "catalog": {
+    "text": "IS-2",
+    "lang": "en",
+    "note": "объект IRON-SHIELD-2 в пылевом диске Wolf 359"
+   },
+   "endonym": {
+    "text": "Toeren",
+    "lang": "nb",
+    "pron": "[ˈtuːərən]"
+   },
+   "exonyms": {
+    "ru": "Тоэрен",
+    "en": "Toeren"
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "«Двойка»: код «астероид № 2» стал именем; причина потерь IRON-SHIELD-2 остаётся UNKNOWN"
+   }
+  },
+  "site:lalande_mecca.rasad": {
+   "type": "research",
+   "verdict": "RENAME",
+   "endonym": {
+    "text": "Te Whare Tātai Arorangi",
+    "lang": "mi",
+    "pron": "[tɛ ˈfaɾɛ ˈtaːtai ˈaɾɔɾaŋi]"
+   },
+   "exonyms": {
+    "ru": "Обсерватория-вычислитель Фаре-Татаи",
+    "en": "House of Star Lore (observatory-computer)"
+   },
+   "aliases": [
+    {
+     "text": "Фаре",
+     "kind": "slang",
+     "lang": "ru"
+    },
+    {
+     "text": "the Whare",
+     "kind": "slang",
+     "lang": "en"
+    }
+   ],
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "whare — дом; tātai arorangi — астрономия (kōkōrangi само по себе — сорт кумары, «tohunga kōkōrangi» — астроном). Здесь сформулирована геометрия этак-фреймов"
+   }
+  },
+  "site:lalande_mecca.lalande_j_gas_m": {
+   "type": "gas_platform",
+   "verdict": "RENAME",
+   "endonym": {
+    "text": "Ngā Papa o Lalande 21185 j",
+    "lang": "mi"
+   },
+   "exonyms": {
+    "ru": "Платформы Lalande 21185 j (доля Капеху)",
+    "en": "Lalande 21185 j platforms (Kāpehu share)"
+   }
+  },
+  "site:lalande_mecca.mecca_farms": {
+   "type": "food_habitat",
+   "verdict": "RENAME",
+   "endonym": {
+    "text": "Ngā Māra Kai",
+    "lang": "mi"
+   },
+   "exonyms": {
+    "ru": "Огороды Мара-Каи (Lalande 21185 g)",
+    "en": "Māra Kai gardens"
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "māra kai — огород, сад, где растёт еда"
+   }
+  },
+  "site:lalande_hellas.agora": {
+   "type": "free_port",
+   "verdict": "NORMALIZE",
+   "endonym": {
+    "text": "Σταυροδρόμι",
+    "lang": "el",
+    "translit": "Stavrodrómi",
+    "pron": "[stavroˈðromi]"
+   },
+   "exonyms": {
+    "ru": "Ставродроми — нейтральный порт и биржа",
+    "en": "Stavrodromi (Crossroads) free port"
+   },
+   "aliases": [
+    {
+     "text": "Перекрёсток",
+     "kind": "translation",
+     "lang": "ru"
+    }
+   ],
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "σταυροδρόμι — перекрёсток; прежнее «Агора» оставлено столице"
+   }
+  },
+  "site:tau_ceti_cognium.beacon_authority": {
+   "type": "jump_infrastructure",
+   "verdict": "EXONYM",
+   "endonym": {
+    "text": "the Owlery",
+    "lang": "en"
+   },
+   "exonyms": {
+    "ru": "Управление Маяков и фабрика ядер прыжка «Сычёвник»",
+    "en": "the Owlery",
+    "zh-Hans": "鸮舍"
+   },
+   "naming_history": {
+    "status": "AUTHOR_UNSPECIFIED",
+    "reason": "русское авторское «Сычёвник» — экзоним английского Owlery"
+   }
+  },
+  "site:gj581_europa.registry": {
+   "type": "registry",
+   "verdict": "EXONYM",
+   "endonym": {
+    "text": "Registre des traités et Arbitrage « Nouveau-Bruxelles »",
+    "lang": "fr"
+   },
+   "exonyms": {
+    "ru": "Реестр договоров и Арбитраж «Новый Брюссель»",
+    "en": "Treaty Registry and Arbitration “New Brussels”"
+   }
+  },
+  "site:delta_pav_karma.gene_temple": {
+   "type": "gene_bank",
+   "verdict": "RENAME",
+   "endonym": {
+    "text": "बीज मन्दिर",
+    "lang": "hi",
+    "translit": "Bīj Mandir"
+   },
+   "exonyms": {
+    "ru": "Храм Семени (криобанк генов)",
+    "en": "Seed Temple (gene cryobank)"
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "«Храм Массива» — бессмысленная калька; बीज — семя, मन्दिर — храм"
+   }
+  },
+  "site:leo83_zion.capital": {
+   "type": "settlement",
+   "verdict": "RENAME",
+   "endonym": {
+    "text": "New Thebaid (orbital ark)",
+    "lang": "en"
+   },
+   "exonyms": {
+    "ru": "Ново-Фиваида (ковчег на орбите)",
+    "en": "New Thebaid (orbital ark)"
+   }
+  },
+  "site:leo83_golden_city.capital": {
+   "type": "settlement",
+   "verdict": "KEEP",
+   "endonym": {
+    "text": "Golden City",
+    "lang": "en"
+   },
+   "exonyms": {
+    "ru": "«Золотой Город»",
+    "en": "Golden City"
+   },
+   "aliases": [
+    {
+     "text": "Golden Debt",
+     "kind": "slang",
+     "lang": "en",
+     "used_by": "шахтёры Керна"
+    },
+    {
+     "text": "Золотой Долг",
+     "kind": "slang",
+     "lang": "ru",
+     "used_by": "пилоты"
+    }
+   ]
+  },
+  "mission:VAKA-MOANA-1": {
+   "type": "mission",
+   "former_ids": [
+    "AL-QUDS-1"
+   ],
+   "former_legacy": "drop",
+   "former_legacy_note": "легаси-тексты прежней ветви не экспортируются: в мире 3126 её не было",
+   "verdict": "RENAME",
+   "endonym": {
+    "text": "Vaka Moana",
+    "lang": "to",
+    "note": "тонганское / раротонганское vaka (прапол. *waka) — океанское каноэ"
+   },
+   "exonyms": {
+    "ru": "Вака-Моана",
+    "en": "Vaka Moana"
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "общеполинезийское «океанский корабль» вместо маорийского waka: имя не должно было принадлежать одной стране консорциума"
+   }
+  },
+  "mission:HOMESTEAD-1": {
+   "type": "mission",
+   "former_ids": [
+    "NEW-HELLAS-1"
+   ],
+   "verdict": "RENAME",
+   "endonym": {
+    "text": "Homestead",
+    "lang": "en"
+   },
+   "exonyms": {
+    "ru": "Хомстед",
+    "en": "Homestead"
+   }
+  },
+  "mission:CELESTIAL-DESTINY-1": {
+   "type": "mission",
+   "verdict": "NORMALIZE",
+   "endonym": {
+    "text": "天命一号",
+    "lang": "zh-Hans",
+    "translit": "Tiānmìng Yīhào"
+   },
+   "exonyms": {
+    "ru": "Небесная Судьба",
+    "en": "Celestial Destiny"
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "reason": "天命 — Мандат Неба; англ. код CELESTIAL-DESTINY — вольный экспортный перевод, китайские госпроекты называют себя пиньинем (ср. Tianwen, Shenzhou)"
+   }
+  },
+  "mission:CELESTIAL-DESTINY-2": {
+   "type": "mission",
+   "verdict": "NORMALIZE",
+   "endonym": {
+    "text": "天命二号",
+    "lang": "zh-Hans",
+    "translit": "Tiānmìng Èrhào"
+   },
+   "exonyms": {
+    "ru": "Небесная Судьба-2",
+    "en": "Celestial Destiny 2"
+   }
+  },
+  "mission:TIANHE-1": {
+   "type": "mission",
+   "verdict": "NORMALIZE",
+   "endonym": {
+    "text": "天河一号",
+    "lang": "zh-Hans",
+    "translit": "Tiānhé Yīhào"
+   },
+   "exonyms": {
+    "ru": "Тяньхэ-1",
+    "en": "Tianhe-1"
+   }
+  },
+  "mission:IRON-SHIELD-1": {
+   "type": "mission",
+   "verdict": "EXONYM",
+   "endonym": {
+    "text": "Jernskjold",
+    "lang": "nb",
+    "note": "охрана ЧВК Skjold звала корабль по-норвежски; английский код — код заказчиков"
+   },
+   "exonyms": {
+    "ru": "Айрон Шилд-1",
+    "en": "Iron Shield"
+   }
+  }
  },
-
  "heraldry": {
   "note": "Машинное описание; изображений пока нет. status PROPOSAL. hidden_code — только у нескольких крупных политий.",
-  "tau_ceti_cognium": {"tradition": "corporate_identity", "flag": "белое поле, в центре тонкое чёрное кольцо с разрывом на 1 часе; под кольцом три красные точки в ряд", "seal": "кольцо-орбита вокруг иероглифа 知 (знание), по кругу латинский девиз Cognoscere ut navigare", "space_marking": "чёрное кольцо с разрывом на светлом корпусе, номер серии внутри", "founder_emblem": "три точки — три основателя (MAYFLOWER-2, GENESIS-1, TRADERS-GUILD-1)", "hidden_code": "разрыв кольца на 1 часе — направление на Сол с Тау Кита в плоскости колец; красный — от логотипа сингапурского консорциума SpaceArk"},
-  "proxima_outpost": {"tradition": "slavic_soviet_successor", "flag": "красное поле, у древка белый вертикальный клин с чёрным коловратом-шестернёй", "seal": "солнце-коловрат Сварога над наковальней", "space_marking": "красная звезда с белой окантовкой и литерой С", "founder_emblem": "силуэт SVAROG-1 в круге из трёх полос (Россия, Индия, Центральная Азия)"},
-  "gj832_tianhe": {"tradition": "chinese_state", "flag": "красное поле, в кантоне золотая дуга Млечного Пути из пяти звёзд", "seal": "круглая государственная печать 天河 с рисовыми колосьями и шестернёй, по образцу государственного герба КНР", "space_marking": "золотая дуга и знаки 天河 на красной полосе", "founder_emblem": "天河一号 печатью чжуаньшу"},
-  "gj832_gaia_zone": {"tradition": "none_quarantine", "flag": "нет; карантинный знак кордона: жёлтый шестиугольник с зелёным листом и чёрной косой чертой", "seal": "нет", "space_marking": "мигающий жёлтый маяк кордона", "founder_emblem": "зелёный ковчег GREEN-ARK-1 (исторический)"},
-  "lalande_hellas": {"tradition": "greek_modern", "flag": "девять голубых и белых полос, в кантоне белый греческий крест, над ним золотое кольцо", "seal": "сова на амфоре и весы рынка, надпись ΝΕΑ ΕΛΛΑΣ", "space_marking": "голубой меандр по кромке корпуса", "founder_emblem": "палица Геракла (HERACLES-1)"},
-  "lalande_mecca": {"tradition": "pacific_navigation", "flag": "глубокий синий фон, белый звёздный компас из 32 домов; на восходе (слева) красный треугольник niho taniwha", "seal": "кольцо компаса с силуэтом vaka по нижней дуге и надписью TE KĀPEHU", "space_marking": "белая звезда-ромб с красной зубчатой полосой niho taniwha вдоль борта", "founder_emblem": "двухкорпусное каноэ VAKA-MOANA-1 под звездой", "hidden_code": "13 белых точек по кольцу — 13 тихоокеанских государств и обществ консорциума"},
-  "eps_eri_harmony": {"tradition": "chinese_state", "flag": "красное поле, жёлтый круг с иероглифом 和, вокруг пять малых звёзд", "seal": "печать 新和 с цветущей сливой и шестернёй", "space_marking": "жёлтый круг 和 на красном", "founder_emblem": "天命 печатью", "hidden_code": "пять звёзд — реликт флага КНР; официально теперь «пять стихий»"},
-  "eps_eri_strife": {"tradition": "anarchist_anti_heraldry", "flag": "флага нет принципиально; на станциях рисуют чёрно-жёлтую диагональ и чужие логотипы, перечёркнутые крестом", "seal": "нет", "space_marking": "у каждого своя; часто чёрный змей «Don't tread on me» поверх старой регистрации", "founder_emblem": "краудфандинговый QR старой кампании FREE-VENTURE-1, который больше никуда не ведёт"},
-  "wolf359_citadel": {"tradition": "nordic_military", "flag": "тёмно-серое поле, стальной синий скандинавский крест, сдвинутый к древку, в перекрестье круглый щит", "seal": "четыре щита, сомкнутые краями (skjoldborg), девиз на древнескандинавском Skjaldborg heldr — «Стена щитов держит» (VERIFY грамматику)", "space_marking": "белый круг, рассечённый крестом на четыре сектора, с номером борта на букмоле (BS = Borgskip)", "founder_emblem": "логотип ЧВК Skjold — круглый щит с умбоном", "hidden_code": "четыре сектора щита — четыре когорты основателей (северяне, сверхбогатые, русские, американцы); рун нет — PMC писала латиницей"},
-  "gj581_europa": {"tradition": "eu_bureaucratic", "flag": "синее поле, кольцо из двенадцати золотых звёзд, внутри тринадцатая — белая", "seal": "печать Союза с ключом и раскрытой книгой", "space_marking": "кольцо звёзд и код реестра", "founder_emblem": "EUROPA-1 под флагом ЕС", "hidden_code": "белая звезда — Новая Европа как «тринадцатая» после двенадцати звёзд старого флага; на Земле число звёзд никогда не значило число стран"},
-  "gj581_freeclans": {"tradition": "clan_marks", "flag": "общего нет; у каждого клана свой знак на рыжем поле", "seal": "нет", "space_marking": "клановый знак и открытая схема привода", "founder_emblem": "разорванная цепь FREE-WORLD-1"},
-  "hd20794_hellas2": {"tradition": "north_american_civic", "flag": "зелёное поле, белая полоса-межа, жёлтая восьмиконечная звезда (82 Эридана) над межой", "seal": "плуг и межевой столб, девиз «Late, Not Last»", "space_marking": "жёлтая звезда и регистр HSC", "founder_emblem": "силуэт HOMESTEAD-1 с тремя полосами флагов США, Канады, Мексики"},
-  "hd20794_newindia": {"tradition": "indian_state", "flag": "шафран, белый, зелёный горизонтально; в центре синее колесо с 24 спицами, одна спица золотая", "seal": "львиная капитель с колесом дхармы, надпись नव भारत", "space_marking": "триколор по стабилизатору", "founder_emblem": "DHARMA-2 с лотосом", "hidden_code": "золотая спица — Новая Индия как часть колеса старого флага"},
-  "hd40307_maland": {"tradition": "african_union", "flag": "зелёное поле, золотое кольцо из 55 малых звёзд, в центре барабан-нгома", "seal": "щит-масаи с двумя скрещёнными копьями над мотыгой, девиз Ujamaa ni nguvu («Единство — сила»)", "space_marking": "зелёно-золотая полоса и барабан", "founder_emblem": "UHURU-2 под факелом свободы"},
-  "hd40307_firmament": {"tradition": "chinese_state", "flag": "флаг Синьхэ с белой зубчатой стеной внизу", "seal": "печать 天垒省", "space_marking": "зубчатая белая стена на красном", "founder_emblem": "天命二号 печатью"},
-  "hd69830_verde": {"tradition": "latin_american", "flag": "зелёное поле, жёлтая волна реки, в кантоне синий круг с тремя звёздами", "seal": "сейба (священное дерево) с корнями-реками", "space_marking": "жёлтая волна на зелёном", "founder_emblem": "AMAZONIA-1 в листьях", "hidden_code": "три звезды — три планеты-гиганта HD 69830"},
-  "delta_pav_karma": {"tradition": "indian_religious", "flag": "шафрановое поле с белым колесом дхармы", "seal": "закрытый лотос над колесом", "space_marking": "белое колесо", "founder_emblem": "DHARMA-1"},
-  "delta_pav_freekarma": {"tradition": "indian_rebel", "flag": "шафрановое поле, колесо дхармы с вынутой спицей", "seal": "нет — отказ от печатей прародины", "space_marking": "колесо без спицы", "founder_emblem": "DHARMA-1, перечёркнутый наискось", "hidden_code": "вынутая спица — та, что ушла от северной ветви"},
-  "gj876_next": {"tradition": "techno_religious", "flag": "чёрное поле, белая точка и восемь линий от неё", "seal": "глаз-объектив «Провидца»", "space_marking": "точка с восемью лучами", "founder_emblem": "логотип NEXT-1"},
-  "cyg61_kern": {"tradition": "corporate_identity", "flag": "корпоративный: оранжевый квадрат с чёрной буквой K-кайлом", "seal": "печать совета акционеров", "space_marking": "оранжевая K и номер лицензии", "founder_emblem": "логотип NeoMining Corp"},
-  "hd114783_hellas3": {"tradition": "greek_modern", "flag": "синее поле, белый крест; в кантоне три белые полосы", "seal": "корабль Одиссея, надпись ΤΡΙΤΗ ΕΛΛΑΔΑ", "space_marking": "три полосы", "founder_emblem": "астероид-корабль ODYSSEY-1", "hidden_code": "три полосы — три Эллады"},
-  "leo83_zion": {"tradition": "christian_monastic", "flag": "белое поле, синий восьмиконечный крест над тремя волнами льда", "seal": "печать Синода: крест, пустыня, звезда", "space_marking": "синий крест", "founder_emblem": "NEW-JERUSALEM-1"},
-  "sol_authority": {"tradition": "earth_civic", "flag": "тёмно-синее поле с белым кругом Земли и жёлтым кольцом орбиты", "seal": "печать Солнечной Администрации", "space_marking": "жёлтое кольцо", "founder_emblem": "нет"}
+  "tau_ceti_cognium": {
+   "tradition": "corporate_identity",
+   "flag": "белое поле, в центре тонкое чёрное кольцо с разрывом на 1 часе; под кольцом три красные точки в ряд",
+   "seal": "кольцо-орбита вокруг иероглифа 知 (знание), по кругу латинский девиз Cognoscere ut navigare",
+   "space_marking": "чёрное кольцо с разрывом на светлом корпусе, номер серии внутри",
+   "founder_emblem": "три точки — три основателя (MAYFLOWER-2, GENESIS-1, TRADERS-GUILD-1)",
+   "hidden_code": "разрыв кольца на 1 часе — направление на Сол с Тау Кита в плоскости колец; красный — от логотипа сингапурского консорциума SpaceArk"
+  },
+  "proxima_outpost": {
+   "tradition": "slavic_soviet_successor",
+   "flag": "красное поле, у древка белый вертикальный клин с чёрным коловратом-шестернёй",
+   "seal": "солнце-коловрат Сварога над наковальней",
+   "space_marking": "красная звезда с белой окантовкой и литерой С",
+   "founder_emblem": "силуэт SVAROG-1 в круге из трёх полос (Россия, Индия, Центральная Азия)"
+  },
+  "gj832_tianhe": {
+   "tradition": "chinese_state",
+   "flag": "красное поле, в кантоне золотая дуга Млечного Пути из пяти звёзд",
+   "seal": "круглая государственная печать 天河 с рисовыми колосьями и шестернёй, по образцу государственного герба КНР",
+   "space_marking": "золотая дуга и знаки 天河 на красной полосе",
+   "founder_emblem": "天河一号 печатью чжуаньшу"
+  },
+  "gj832_gaia_zone": {
+   "tradition": "none_quarantine",
+   "flag": "нет; карантинный знак кордона: жёлтый шестиугольник с зелёным листом и чёрной косой чертой",
+   "seal": "нет",
+   "space_marking": "мигающий жёлтый маяк кордона",
+   "founder_emblem": "зелёный ковчег GREEN-ARK-1 (исторический)"
+  },
+  "lalande_hellas": {
+   "tradition": "greek_modern",
+   "flag": "девять голубых и белых полос, в кантоне белый греческий крест, над ним золотое кольцо",
+   "seal": "сова на амфоре и весы рынка, надпись ΝΕΑ ΕΛΛΑΣ",
+   "space_marking": "голубой меандр по кромке корпуса",
+   "founder_emblem": "палица Геракла (HERACLES-1)"
+  },
+  "lalande_mecca": {
+   "tradition": "pacific_navigation",
+   "flag": "глубокий синий фон, белый звёздный компас из 32 домов; на восходе (слева) красный треугольник niho taniwha",
+   "seal": "кольцо компаса с силуэтом vaka по нижней дуге и надписью TE KĀPEHU",
+   "space_marking": "белая звезда-ромб с красной зубчатой полосой niho taniwha вдоль борта",
+   "founder_emblem": "двухкорпусное каноэ VAKA-MOANA-1 под звездой",
+   "hidden_code": "13 белых точек по кольцу — 13 тихоокеанских государств и обществ консорциума"
+  },
+  "eps_eri_harmony": {
+   "tradition": "chinese_state",
+   "flag": "красное поле, жёлтый круг с иероглифом 和, вокруг пять малых звёзд",
+   "seal": "печать 新和 с цветущей сливой и шестернёй",
+   "space_marking": "жёлтый круг 和 на красном",
+   "founder_emblem": "天命 печатью",
+   "hidden_code": "пять звёзд — реликт флага КНР; официально теперь «пять стихий»"
+  },
+  "eps_eri_strife": {
+   "tradition": "anarchist_anti_heraldry",
+   "flag": "флага нет принципиально; на станциях рисуют чёрно-жёлтую диагональ и чужие логотипы, перечёркнутые крестом",
+   "seal": "нет",
+   "space_marking": "у каждого своя; часто чёрный змей «Don't tread on me» поверх старой регистрации",
+   "founder_emblem": "краудфандинговый QR старой кампании FREE-VENTURE-1, который больше никуда не ведёт"
+  },
+  "wolf359_citadel": {
+   "tradition": "nordic_military",
+   "flag": "тёмно-серое поле, стальной синий скандинавский крест, сдвинутый к древку, в перекрестье круглый щит",
+   "seal": "четыре щита, сомкнутые краями (skjoldborg), девиз на древнескандинавском Skjaldborg heldr — «Стена щитов держит» (VERIFY грамматику)",
+   "space_marking": "белый круг, рассечённый крестом на четыре сектора, с номером борта на букмоле (BS = Borgskip)",
+   "founder_emblem": "логотип ЧВК Skjold — круглый щит с умбоном",
+   "hidden_code": "четыре сектора щита — четыре когорты основателей (северяне, сверхбогатые, русские, американцы); рун нет — PMC писала латиницей"
+  },
+  "gj581_europa": {
+   "tradition": "eu_bureaucratic",
+   "flag": "синее поле, кольцо из двенадцати золотых звёзд, внутри тринадцатая — белая",
+   "seal": "печать Союза с ключом и раскрытой книгой",
+   "space_marking": "кольцо звёзд и код реестра",
+   "founder_emblem": "EUROPA-1 под флагом ЕС",
+   "hidden_code": "белая звезда — Новая Европа как «тринадцатая» после двенадцати звёзд старого флага; на Земле число звёзд никогда не значило число стран"
+  },
+  "gj581_freeclans": {
+   "tradition": "clan_marks",
+   "flag": "общего нет; у каждого клана свой знак на рыжем поле",
+   "seal": "нет",
+   "space_marking": "клановый знак и открытая схема привода",
+   "founder_emblem": "разорванная цепь FREE-WORLD-1"
+  },
+  "hd20794_hellas2": {
+   "tradition": "north_american_civic",
+   "flag": "зелёное поле, белая полоса-межа, жёлтая восьмиконечная звезда (82 Эридана) над межой",
+   "seal": "плуг и межевой столб, девиз «Late, Not Last»",
+   "space_marking": "жёлтая звезда и регистр HSC",
+   "founder_emblem": "силуэт HOMESTEAD-1 с тремя полосами флагов США, Канады, Мексики"
+  },
+  "hd20794_newindia": {
+   "tradition": "indian_state",
+   "flag": "шафран, белый, зелёный горизонтально; в центре синее колесо с 24 спицами, одна спица золотая",
+   "seal": "львиная капитель с колесом дхармы, надпись नव भारत",
+   "space_marking": "триколор по стабилизатору",
+   "founder_emblem": "DHARMA-2 с лотосом",
+   "hidden_code": "золотая спица — Новая Индия как часть колеса старого флага"
+  },
+  "hd40307_maland": {
+   "tradition": "african_union",
+   "flag": "зелёное поле, золотое кольцо из 55 малых звёзд, в центре барабан-нгома",
+   "seal": "щит-масаи с двумя скрещёнными копьями над мотыгой, девиз Ujamaa ni nguvu («Единство — сила»)",
+   "space_marking": "зелёно-золотая полоса и барабан",
+   "founder_emblem": "UHURU-2 под факелом свободы"
+  },
+  "hd40307_firmament": {
+   "tradition": "chinese_state",
+   "flag": "флаг Синьхэ с белой зубчатой стеной внизу",
+   "seal": "печать 天垒省",
+   "space_marking": "зубчатая белая стена на красном",
+   "founder_emblem": "天命二号 печатью"
+  },
+  "hd69830_verde": {
+   "tradition": "latin_american",
+   "flag": "зелёное поле, жёлтая волна реки, в кантоне синий круг с тремя звёздами",
+   "seal": "сейба (священное дерево) с корнями-реками",
+   "space_marking": "жёлтая волна на зелёном",
+   "founder_emblem": "AMAZONIA-1 в листьях",
+   "hidden_code": "три звезды — три планеты-гиганта HD 69830"
+  },
+  "delta_pav_karma": {
+   "tradition": "indian_religious",
+   "flag": "шафрановое поле с белым колесом дхармы",
+   "seal": "закрытый лотос над колесом",
+   "space_marking": "белое колесо",
+   "founder_emblem": "DHARMA-1"
+  },
+  "delta_pav_freekarma": {
+   "tradition": "indian_rebel",
+   "flag": "шафрановое поле, колесо дхармы с вынутой спицей",
+   "seal": "нет — отказ от печатей прародины",
+   "space_marking": "колесо без спицы",
+   "founder_emblem": "DHARMA-1, перечёркнутый наискось",
+   "hidden_code": "вынутая спица — та, что ушла от северной ветви"
+  },
+  "gj876_next": {
+   "tradition": "techno_religious",
+   "flag": "чёрное поле, белая точка и восемь линий от неё",
+   "seal": "глаз-объектив «Провидца»",
+   "space_marking": "точка с восемью лучами",
+   "founder_emblem": "логотип NEXT-1"
+  },
+  "cyg61_kern": {
+   "tradition": "corporate_identity",
+   "flag": "корпоративный: оранжевый квадрат с чёрной буквой K-кайлом",
+   "seal": "печать совета акционеров",
+   "space_marking": "оранжевая K и номер лицензии",
+   "founder_emblem": "логотип NeoMining Corp"
+  },
+  "hd114783_hellas3": {
+   "tradition": "greek_modern",
+   "flag": "синее поле, белый крест; в кантоне три белые полосы",
+   "seal": "корабль Одиссея, надпись ΤΡΙΤΗ ΕΛΛΑΔΑ",
+   "space_marking": "три полосы",
+   "founder_emblem": "астероид-корабль ODYSSEY-1",
+   "hidden_code": "три полосы — три Эллады"
+  },
+  "leo83_zion": {
+   "tradition": "christian_monastic",
+   "flag": "белое поле, синий восьмиконечный крест над тремя волнами льда",
+   "seal": "печать Синода: крест, пустыня, звезда",
+   "space_marking": "синий крест",
+   "founder_emblem": "NEW-JERUSALEM-1"
+  },
+  "sol_authority": {
+   "tradition": "earth_civic",
+   "flag": "тёмно-синее поле с белым кругом Земли и жёлтым кольцом орбиты",
+   "seal": "печать Солнечной Администрации",
+   "space_marking": "жёлтое кольцо",
+   "founder_emblem": "нет"
+  }
  },
-
  "pop_culture_relics": [
-  {"text": "Ватман", "kind": "spacer_slang", "lang": "ru", "from": "Batman", "used_for": "ночной патруль Скьольдборга; так зовут перехватчики, которые выходят только во тьме у Ульвена", "status": "PROPOSAL"},
-  {"text": "Хулк", "kind": "miners_nickname", "lang": "ru", "from": "Hulk", "used_for": "тяжёлый буксир-крушитель астероидов на Груве-7", "status": "PROPOSAL"},
-  {"text": "Саперман", "kind": "children_nickname", "lang": "ru", "from": "Superman", "used_for": "детское прозвище пилота спасательной службы, который вытащил людей из пожара на Миналфе", "status": "PROPOSAL"},
-  {"text": "Око Саурона / Sauron's Eye", "kind": "pilot_nickname", "lang": "en", "from": "Tolkien, Eye of Sauron", "used_for": "красная звезда HD 102195 сквозь искажение у горячего железа; у русских пилотов — «Саурово око»", "status": "PROPOSAL"},
-  {"text": "Солярис", "kind": "pilot_nickname", "lang": "ru", "from": "Lem, Solaris", "used_for": "ядро «Провидца» у Gliese 876: машину, которая отвечает не на те вопросы", "status": "PROPOSAL"},
-  {"text": "Stainless Steel Rat", "kind": "smugglers_nickname", "lang": "en", "from": "Harrison", "used_for": "ремонтный причал Чёрного рынка Пояса Раздора; русские — «Крыса»", "status": "PROPOSAL"},
-  {"text": "Amber", "kind": "cultural_relic", "lang": "en", "from": "Zelazny", "used_for": "архивный уровень Хранилища LAST-LIGHT, где лежит «единственная настоящая копия» Земли; остальные — тени", "status": "PROPOSAL"}
+  {
+   "text": "Ватман",
+   "kind": "spacer_slang",
+   "lang": "ru",
+   "from": "Batman",
+   "used_for": "ночной патруль Скьольдборга; так зовут перехватчики, которые выходят только во тьме у Ульвена",
+   "status": "PROPOSAL"
+  },
+  {
+   "text": "Хулк",
+   "kind": "miners_nickname",
+   "lang": "ru",
+   "from": "Hulk",
+   "used_for": "тяжёлый буксир-крушитель астероидов на Груве-7",
+   "status": "PROPOSAL"
+  },
+  {
+   "text": "Саперман",
+   "kind": "children_nickname",
+   "lang": "ru",
+   "from": "Superman",
+   "used_for": "детское прозвище пилота спасательной службы, который вытащил людей из пожара на Миналфе",
+   "status": "PROPOSAL"
+  },
+  {
+   "text": "Око Саурона / Sauron's Eye",
+   "kind": "pilot_nickname",
+   "lang": "en",
+   "from": "Tolkien, Eye of Sauron",
+   "used_for": "красная звезда HD 102195 сквозь искажение у горячего железа; у русских пилотов — «Саурово око»",
+   "status": "PROPOSAL"
+  },
+  {
+   "text": "Солярис",
+   "kind": "pilot_nickname",
+   "lang": "ru",
+   "from": "Lem, Solaris",
+   "used_for": "ядро «Провидца» у Gliese 876: машину, которая отвечает не на те вопросы",
+   "status": "PROPOSAL"
+  },
+  {
+   "text": "Stainless Steel Rat",
+   "kind": "smugglers_nickname",
+   "lang": "en",
+   "from": "Harrison",
+   "used_for": "ремонтный причал Чёрного рынка Пояса Раздора; русские — «Крыса»",
+   "status": "PROPOSAL"
+  },
+  {
+   "text": "Amber",
+   "kind": "cultural_relic",
+   "lang": "en",
+   "from": "Zelazny",
+   "used_for": "архивный уровень Хранилища LAST-LIGHT, где лежит «единственная настоящая копия» Земли; остальные — тени",
+   "status": "PROPOSAL"
+  }
  ],
  "future_figures": [
-  {"name": "Sione Leota", "lang": "sm", "era": "2470-е", "role": "математик Фаре-Татаи; первая формализация этак-фреймов: корабль неподвижен, звёзды движутся", "status": "PROPOSAL"},
-  {"name": "Ingrid Haugland", "lang": "nb", "era": "2610-е", "role": "командир охраны, при ней Скьольдборг перестал быть охраной и стал протекторатом", "status": "PROPOSAL"},
-  {"name": "Kofi Mensah-Ruto", "lang": "sw", "era": "2560-е", "role": "агроном агроколец Маланд; «житница» названа его шуткой", "status": "PROPOSAL"}
+  {
+   "name": "Sione Leota",
+   "lang": "sm",
+   "era": "2470-е",
+   "role": "математик Фаре-Татаи; первая формализация этак-фреймов: корабль неподвижен, звёзды движутся",
+   "status": "PROPOSAL"
+  },
+  {
+   "name": "Ingrid Haugland",
+   "lang": "nb",
+   "era": "2610-е",
+   "role": "командир охраны, при ней Скьольдборг перестал быть охраной и стал протекторатом",
+   "status": "PROPOSAL"
+  },
+  {
+   "name": "Kofi Mensah-Ruto",
+   "lang": "sw",
+   "era": "2560-е",
+   "role": "агроном агроколец Маланд; «житница» названа его шуткой",
+   "status": "PROPOSAL"
+  }
  ],
  "verify": [
   "盛和 как китайское имя столицы «Цветущая Гармония» — стилистика",
@@ -361,6 +1995,6 @@
   "skjoldborgere — норвежский демоним",
   "Toeren — разговорное norsk «двойка»",
   "имена кораблей каталога (Б-4 «Сокол» у Цитадели, C-120 «Конвейер» у Бхарата, Хэ-С240 «Тыловик» у Гармонии, HT-20K «Мул» у Керна): русские имена у нерусских производителей; живут в реестре моделей рендеринга (assets/models/ships/ship_models.json) — вне этого прохода",
-  "Fomalhaut как система полёта: каталог StarAtlas её не содержит; материализация требует EliteUniverseGenerator и пересборки межзвёздных ячеек навигации — вне этого прохода"
+  "Fomalhaut в каталоге полёта (StarAtlas id 61, 2026-11-05): промежуточный пояс JWST (~78 а. е.) не моделируется отдельным резервуаром — генератор создал один диск обломков, ему присвоено главное кольцо ALMA 136–150 а. е."
  ]
 }

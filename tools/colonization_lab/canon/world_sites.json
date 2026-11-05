@@ -1324,7 +1324,7 @@
       "extradition": "treaty",
       "death_penalty": false
     },
-    "theocratic": {
+    "religious_law": {
       "ru": "религиозное право",
       "courts": "религиозные суды",
       "police": "государственная + религиозная стража",
@@ -1447,9 +1447,9 @@
     "sage_council": "confucian_administrative",
     "party_technocracy": "party_administrative",
     "sol_authority": "sol_codified",
-    "navigator_council": "theocratic",
-    "caste_theocracy": "theocratic",
-    "synod_theocracy": "theocratic",
+    "navigator_council": "customary_council",
+    "caste_theocracy": "religious_law",
+    "synod_theocracy": "religious_law",
     "grandees_and_church": "parliamentary_civil",
     "corporate_board": "corporate",
     "corporate_democracy": "parliamentary_civil",
@@ -1812,7 +1812,7 @@
         "company_manager",
         "local_notable"
       ],
-      "theocratic": [
+      "religious_law": [
         "cleric",
         "career_bureaucrat",
         "political_appointee"

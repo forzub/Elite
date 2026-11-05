@@ -165,7 +165,7 @@ REGIME = {  # pension state capacity, policy style, emigration barrier, immigrat
     "party_technocracy": dict(state=1.0, policy="planner", exitb=0.6, entryb=0.6, build=0.04, gini=0.33),
     "sage_council": dict(state=1.0, policy="planner", exitb=0.4, entryb=0.4, build=0.04, gini=0.34),
     "shareholder_agora": dict(state=0.8, policy="neutral", exitb=0.0, entryb=0.1, build=0.01, gini=0.44),
-    "navigator_council": dict(state=0.8, policy="faith", exitb=0.2, entryb=0.6, build=0.01, gini=0.36),
+    "navigator_council": dict(state=0.8, policy="neutral", exitb=0.2, entryb=0.6, build=0.01, gini=0.36),
     "parliamentary_bureaucracy": dict(state=1.1, policy="family", exitb=0.0, entryb=0.3, build=0.0, gini=0.28),
     "corporate_democracy": dict(state=0.8, policy="neutral", exitb=0.0, entryb=0.25, build=0.01, gini=0.42),
     "merit_caste_republic": dict(state=0.8, policy="family", exitb=0.1, entryb=0.4, build=0.01, gini=0.40),
@@ -413,6 +413,8 @@ class Unit:
         c = self.marginal_cost()
         self.crowd = P / max(self.H, 1.0)
         reg = REGIME.get(self.regime, REGIME["shareholder_agora"])
+        if getattr(self, "family_policy", None):
+            reg = dict(reg, policy=self.family_policy)
         # construction follows demand: almost only maintenance while habitats stand half empty
         s = 0.012 + 0.17 * clamp((self.crowd - 0.75) / 0.35) + reg["build"] * clamp((self.crowd - 0.7) / 0.3)
         if self.quarantined:
@@ -573,6 +575,7 @@ def build_units(world, missions, voyages, E, culture_of, regime_of):
         u = Unit(c["id"], c["name"], "colony", c["system"], E, c["regime_3126"], culture_of(c["id"]), c["founded"],
                  c["demography"]["religious_share"], site_share=c["demography"].get("site_share", 1.0))
         u.refuses_network = bool(c["demography"].get("refuses_network", False))
+        u.family_policy = (c.get("law_policy") or {}).get("family_policy")   # social-religious policy, not the type of power
         u.norm = c["demography"].get("norm_at_founding", 4.0)
         units[u.id] = u
     for o in world["outposts"] + world.get("frontier_pools", []):

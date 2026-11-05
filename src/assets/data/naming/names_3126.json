@@ -2,7 +2,7 @@
  "do_not_edit": true,
  "generated_by": "tools/colonization_lab/naming.py (from canon/naming.json)",
  "names": {
-  "body:fomalhaut.lexie": {
+  "body:system_61.Fomalhaut.Lexie": {
    "en": "Lexie",
    "native": "Lexie",
    "native_lang": "en",
@@ -550,6 +550,14 @@
    "native_lang": null,
    "ru": null
   },
+  "system:61": {
+   "en": "Fortuna",
+   "native": "Fortuna",
+   "native_lang": "la",
+   "ru": "Фортуна",
+   "zh-Hans": "命运之轮",
+   "zh-Hant": "命運之輪"
+  },
   "system:8": {
    "en": null,
    "native": "天仓",
@@ -563,14 +571,6 @@
    "native_lang": "zh-Hans",
    "ru": null,
    "translit": "Tiānyuàn"
-  },
-  "system:fomalhaut": {
-   "en": "Fortuna",
-   "native": "Fortuna",
-   "native_lang": "la",
-   "ru": "Фортуна",
-   "zh-Hans": "命运之轮",
-   "zh-Hant": "命運之輪"
   }
  },
  "note": "id -> имена. Отображение в игре: stable ID -> этот резолвер -> строка на языке интерфейса. colony:<unit> — столица / колония, polity:<unit> — полития.",

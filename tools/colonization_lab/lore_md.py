@@ -1437,7 +1437,7 @@ def naming_docs(D):
     g += ["", "### Места и площадки", ""]
     srows = []
     for eid, e in sorted(NM.E.items()):
-        if eid.startswith(("site:", "place:", "system:")) and eid != "system:fomalhaut":
+        if eid.startswith(("site:", "place:", "system:")) and eid != "system:61":
             n = NM.native_of(e) or {}
             al = ", ".join(f"{a['text']} ({a['kind']})" for a in e.get("aliases", []))
             srows.append((f"`{eid}`", n.get("text", e.get("catalog", "—")), n.get("lang", "—"), n.get("pron", "—"),
@@ -1492,6 +1492,8 @@ def naming_docs(D):
     sp = lambda v: f"{v:,}".replace(",", " ")
     g = ["Статус: система Fortuna у реальной звезды Fomalhaut и планета Lexie / Лекси / 柏辛 — `CANON` (решение автора 2026-11-05). "
          "Физика звезды — наблюдения XXI века; параметры Лекси — `PROPOSAL`, совместимые с ограничениями. "
+         f"Система — в каталоге полёта и на картах: StarAtlas id {fo['catalog']['system_id']} (`{fo['catalog']['dir']}`), {fo['catalog']['bodies']} тел, "
+         f"{', '.join(fo['catalog']['reservoirs'])}; тела сгенерированы `EliteUniverseGenerator`, Лекси — авторское тело (`observed/planet_lexie.json`). "
          "Доступность считает `naming.py` из позиции HYG, сети маяков 3126 и калибровки прыжка.", "",
          "### Звезда", "", table(["Поле", "Значение"], star_rows), "",
          "### Имя системы", "",

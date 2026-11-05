@@ -37586,7 +37586,7 @@
    "unrecorded_losses": 4681
   },
   "VAKA-MOANA-1": {
-   "arrival_tendency": "theocratic",
+   "arrival_tendency": "oligarchic",
    "avg_c": 0.1001,
    "cohorts": {
     "engineers": {
@@ -37595,15 +37595,15 @@
     },
     "faithful": {
      "grievance": 0.0,
-     "power": 12.0
+     "power": 2.0
     },
     "patricians": {
      "grievance": 0.0,
-     "power": 3.0
+     "power": 8.0
     },
     "scientists": {
      "grievance": 0.0,
-     "power": 2.0
+     "power": 7.0
     },
     "settlers": {
      "grievance": 0.0,
@@ -37644,7 +37644,7 @@
      "deaths": 0,
      "knowledge": 1.0,
      "pop": 18000,
-     "regime_tendency": "theocratic",
+     "regime_tendency": "oligarchic",
      "source": "canon",
      "text": "старт: 18000 чел., крио 0 %",
      "type": "launch",
@@ -37656,7 +37656,7 @@
      "deaths": 800,
      "knowledge": 0.988,
      "pop": 17746,
-     "regime_tendency": "theocratic",
+     "regime_tendency": "oligarchic",
      "source": "anchor",
      "text": "Спор делегаций о конституции корабля: столкновения фракций",
      "type": "factional_conflict",
@@ -37668,7 +37668,7 @@
      "deaths": 0,
      "knowledge": 0.985,
      "pop": 17879,
-     "regime_tendency": "theocratic",
+     "regime_tendency": "oligarchic",
      "source": "simulated",
      "text": "попытка мятежа вахты, подавлена/разрешена переговорами",
      "type": "mutiny_attempt",
@@ -37680,7 +37680,7 @@
      "deaths": 0,
      "knowledge": 0.982,
      "pop": 18013,
-     "regime_tendency": "theocratic",
+     "regime_tendency": "oligarchic",
      "source": "anchor",
      "text": "Фоно корабля (fono, совет): навигаторы и вожди делят власть",
      "type": "reconciliation",
@@ -37692,7 +37692,7 @@
      "deaths": 0,
      "knowledge": 0.979,
      "pop": 18148,
-     "regime_tendency": "theocratic",
+     "regime_tendency": "oligarchic",
      "source": "simulated",
      "text": "цикл анекдотов о капитане и о Земле",
      "type": "joke_cycle",
@@ -37704,7 +37704,7 @@
      "deaths": 0,
      "knowledge": 0.962,
      "pop": 18981,
-     "regime_tendency": "theocratic",
+     "regime_tendency": "oligarchic",
      "source": "simulated",
      "text": "попытка мятежа вахты, подавлена/разрешена переговорами",
      "type": "mutiny_attempt",
@@ -37716,7 +37716,7 @@
      "deaths": 0,
      "knowledge": 0.951,
      "pop": 15600,
-     "regime_tendency": "theocratic",
+     "regime_tendency": "oligarchic",
      "source": "anchor",
      "text": "Lalande 21185 — система уже занята Новой Элладой (с 2197)",
      "type": "arrival",

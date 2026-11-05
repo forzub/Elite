@@ -82,7 +82,7 @@
       "securityLevel": -1.0,
       "techLevel": -1.0,
       "economicValue": -1.0,
-      "description": "Столица Синь Хэ. Центр иерархического управления конфедерацией.",
+      "description": "Столица Синьхэ. Центр иерархического управления конфедерацией.",
       "locationText": "Планета Ли (Эпсилон Эридана b)",
       "tags": ["capital"]
     },
@@ -134,7 +134,7 @@
       "securityLevel": -1.0,
       "techLevel": -1.0,
       "economicValue": -1.0,
-      "description": "Столичный мир Уджамаа-Джахи. Центр демографической и военной экспансии.",
+      "description": "Столичный мир Содружества Уджамаа. Центр демографической и военной экспансии.",
       "locationText": "Планета Ухуру (Эпсилон Индейца b)",
       "tags": ["capital", "demographic"]
     },
@@ -187,7 +187,7 @@
       "securityLevel": -1.0,
       "techLevel": -1.0,
       "economicValue": -1.0,
-      "description": "Орбитальная столица Скьёльдбурга.",
+      "description": "Орбитальная столица Скьольдборга.",
       "locationText": "Вольф 359",
       "tags": ["capital", "fortress"]
     },
@@ -204,7 +204,7 @@
       "securityLevel": -1.0,
       "techLevel": -1.0,
       "economicValue": -1.0,
-      "description": "Военно-промышленный анклав Скьёльдбурга.",
+      "description": "Военно-промышленный анклав Скьольдборга.",
       "locationText": "Мир «Йотунхейм», сектор «Грамр», система Лаланд 21185",
       "tags": ["military", "condominium"]
     },
@@ -264,7 +264,7 @@
 
     {
       "id": 1401,
-      "name": "Город Аль-Нур",
+      "name": "Тауранга",
       "type": 0,
       "role": 0,
       "roleText": "СТОЛИЦА",
@@ -275,13 +275,13 @@
       "securityLevel": -1.0,
       "techLevel": -1.0,
       "economicValue": -1.0,
-      "description": "Духовная и научная столица Космического Халифата.",
+      "description": "Столица Капеху: совет навигаторов и школы этак-фреймов.",
       "locationText": "Лаланд 21185 b",
-      "tags": ["capital", "religious"]
+      "tags": ["capital", "science"]
     },
     {
       "id": 1402,
-      "name": "Йотунхейм — Сектор «Ан-Нур»",
+      "name": "Йотунхейм — сектор Тауранги",
       "type": 0,
       "role": 4,
       "roleText": "СОВМЕСТНОЕ ГОСУДАРСТВО",
@@ -292,16 +292,16 @@
       "securityLevel": -1.0,
       "techLevel": -1.0,
       "economicValue": -1.0,
-      "description": "Научно-религиозный округ Ильм-аль-Нуджум.",
-      "locationText": "Мир «Йотунхейм», сектор «Ан-Нур», система Лаланд 21185",
-      "tags": ["science", "theocracy"]
+      "description": "Научный округ Капеху.",
+      "locationText": "Мир «Йотунхейм», сектор Тауранги, система Лаланд 21185",
+      "tags": ["science", "navigator_council"]
     },
     {
       "id": 1403,
-      "name": "Обсерватория «Расад ат-Таухид»",
+      "name": "Обсерватория-вычислитель «Фаре» (Te Whare Tātai Arorangi)",
       "type": 1,
       "role": 4,
-      "roleText": "НАУЧНО-МИССИОНЕРСКИЙ АВАНПОСТ",
+      "roleText": "НАУЧНЫЙ АВАНПОСТ",
       "systemId": 21,
       "owner": 7,
       "controller": 0,
@@ -309,9 +309,9 @@
       "securityLevel": -1.0,
       "techLevel": -1.0,
       "economicValue": -1.0,
-      "description": "Миссионерская и научная станция.",
+      "description": "Научная станция навигаторов Капеху.",
       "locationText": "Система Проксима Центавра",
-      "tags": ["science", "mission"]
+      "tags": ["science", "navigation"]
     },
 
 
@@ -329,7 +329,7 @@
       "securityLevel": -1.0,
       "techLevel": -1.0,
       "economicValue": -1.0,
-      "description": "Центральный биоурбанистический узел Вердензальба.",
+      "description": "Центральный биоурбанистический узел остатков Гайи-Прайм.",
       "locationText": "82 Эридана / GJ 832 c",
       "tags": ["biotech", "isolation"]
     },
@@ -363,7 +363,7 @@
       "securityLevel": -1.0,
       "techLevel": -1.0,
       "economicValue": -1.0,
-      "description": "Столичный мир Рестауроса.",
+      "description": "Столичный мир Союза Новой Европы.",
       "locationText": "GJ 581 g",
       "tags": ["capital", "stagnation"]
     },
@@ -380,7 +380,7 @@
       "securityLevel": -1.0,
       "techLevel": -1.0,
       "economicValue": -1.0,
-      "description": "Столица изолированной колонии Сельта-Верде.",
+      "description": "Столица изолированной колонии Сельва-Верде.",
       "locationText": "HD 69830 d",
       "tags": ["bioworld", "isolation"]
     },

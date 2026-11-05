@@ -2919,7 +2919,7 @@ order - ask for it again if it is not in the session.
 - Fortuna: Fomalhaut / α Piscis Austrini / HD 216956 / HIP 113368 / Gl 881, Piscis Austrinus / Южная Рыба, 7.70 pc =
   25.13 ly, V 1.16, A4 V (HYG A3V), 北落師門; colony-era name Fortuna, zh exonym 命運之輪 / 命运之轮 (Mìngyùn zhī lún). Not in
   the StarAtlas flight catalogue (visible in the sky via HYG). canon/remote_systems.json holds physics; accessibility is
-  computed: nearest beacon Gliese 876 (Providence, 11.15 ly), Sol 25.13 ly (max hop 32), outside the 8-ly commercial
+  computed (superseded 2026-11-05 u: Fomalhaut is now StarAtlas system 61, see below): nearest beacon Gliese 876 (Providence, 11.15 ly), Sol 25.13 ly (max hop 32), outside the 8-ly commercial
   unbeaconed limit, no beacon / fuel / repair / SAR, exit error x17 vs a beacon pair growing with ephemeris age (3σ 26 372
   km fresh, 1.9 M km at 120 years), Cobrett round trip 0.36 tank from Providence, 0.81 from Sol (no reserve -> extra tank
   or cache). Lexie / Лекси / 柏辛 / Bǎixīn = body:fomalhaut.lexie (spelling corrected by the user to Lexie), naming history
@@ -2933,6 +2933,53 @@ order - ask for it again if it is not in the session.
   navigation-cell regeneration - outside this pass.
 - Gates: all colonization_lab checks rc=0 (naming 23/23, political, industry, lore_md, lore_html 142, calibrate_population,
   check-dataset, check-lore); lab.py twice IDENTICAL (sha256 f59e9182...); EliteServicePagesCheck PASS.
+
+### User orders 2026-11-05 u (Fomalhaut system on the maps, Lexie generated) + v (final naming / political-economic cleanup after 51e9aacc) - DONE (one commit, not pushed)
+- POLITICAL / ECONOMIC LAYER 3126: CLOSED / ACCEPTED. Structure = CANON (political_order.json); numeric simulation and
+  calibration = PROPOSAL/model. Further changes only for a new gameplay need or a factual error.
+- Fomalhaut is FLYABLE-CATALOGUE data, not world-data-only: StarAtlas local system id 61
+  (src/assets/data/galaxy_details/systems/061_fomalhaut: system.json with observational_reference, stars/fomalhaut.json,
+  observed/planet_lexie.json), materialised by EliteUniverseGenerator (16 bodies + debris disk = ALMA main ring
+  136.3-149.8 au; stability PASS; no planet > 1 M_Jup; Lexie at 4.4 au, 1.3 M_E, 262-299 K, plate-tectonic continents,
+  surface ocean, N2/CO2 1.4 bar, not breathable, preset terrestrial_temperate), atlas_visible + route_target, position = HYG
+  HIP 113368 (merged with the sky star, no duplicate), localization world/star_systems/fomalhaut.json (Лекси / 柏辛).
+  Interstellar cells unchanged (Fomalhaut already inside the navigation domain); generator determinism 62 systems, 0 differ.
+  EliteServicePagesCheck §7 loads StarAtlasDatabase: 61 local systems, Fomalhaut on the maps, Lexie present -> PASS;
+  client --dev-direct-flight loads with no catalogue error. NOT done: a live jump to Fomalhaut and a visual check of the
+  Galaxy / System map. canon/remote_systems.json removed (physics now in the catalogue, one source); naming ids
+  system:61 and body:system_61.Fomalhaut.Lexie.
+- Endowment scale fix: endowment.py ranked resource indices over all catalogue systems, so adding an empty system moved
+  every colony (Tauranga share 0.533 -> 0.331, off-Sol population -2.4 %). Now ranks are taken against a fixed reference
+  set (canon/endowment_scale.json: the 60 systems of the calibrated catalogue); later systems are placed on that scale.
+  Economy, colonies and demography are byte-identical to 51e9aacc.
+- Lexie spelling: no `Lexi` anywhere (check t16b).
+- Former AL-QUDS semantics removed: legacy actors.json id 7 ideology / culture / description / tags mirrored from
+  naming.json polity.legacy_actor_profile (navigator council, Pacific navigation science); political_order texts and the
+  Tauranga dossier no longer say "учёная теократия"; population_history story rewritten; legacy GalaxyDatabase
+  nodes / routes / systems.json (Аль-Нур, Ан-Нур, Космический Халифат, Расад ат-Таухид, retired polity names) fixed;
+  TRADERS-GUILD-1 crew "один грек и один таурангец".
+- Type of power vs social-religious law: law family key theocratic -> religious_law (same parameters; still used by the
+  real theocracies New Karma and Novo-Thebaid). navigator_council defaults are neutral (law customary_council, goods strict,
+  family policy neutral, REGIME_FAMILY technocratic); Tauranga's religious-conservative law is the explicit colony field
+  world.json lalande_mecca.law_policy {law_family religious_law, goods_policy faith, family_policy faith} read by
+  world_sites, industry, economy_live, world_economy and demography. Outputs unchanged.
+- VAKA-MOANA-1 motives from the new dossier: civilisational_insurance 0.45, prestige 0.2, scientific_vanity 0.2,
+  religion 0.1 (church communities as the recruiting network, not the reason), ideology 0.05; elite_capital_flight
+  removed; the 2185 fono raises patricians + scientists (not "faithful"). Voyage regime tendency is now "олигархия".
+  Demography unchanged (colony culture uses cohort shares, not power).
+- Retired-name ban is entity-aware: unique names of the retired colonial entities banned anywhere in the display layer;
+  contextual words (Мекка, исламский, халифат, улем...) banned only next to a current Lalande entity and in any current
+  entity name; real Mecca / the Islamic world of Earth history allowed (Europa motive text restored). Probes both ways (t07b).
+- industrial_heritage: field_status status PROPOSAL/model, generated by knowledge.py (t26); culture does not set it (t19b).
+- Gates: colonization_lab all checks rc=0, naming 29/29 (t07b, t16b, t24, t25, t26, t27 new), lab.py twice IDENTICAL,
+  Southern circle 0.533 / mobilised 0.678 / cutoff 0.124 (= 51e9aacc), EliteServicePagesCheck PASS (economy by id +
+  atlas), EliteGalaxyPointerCheck / EliteMapPointerCheck / EliteNavigationCapabilityCheck PASS, universe generator
+  determinism PASS. CI: the repository has no CI configuration (.github/workflows absent); all results are local.
+- Semantic grep (AL-QUDS / Мекк / Mecca / араб / ислам / теократ / theocr / улем / халифат / caliph): remaining hits are
+  (a) the rule lists themselves (naming.json retired_authoring_names, naming.py checks), (b) real theocracies (New Karma
+  caste_theocracy, Novo-Thebaid synod_theocracy, Gaia legacy actor, AMAZONIA voyage tendency), (c) Earth history
+  (Europa "исламский мир"), (d) machine ids lalande_mecca / mecca_farms kept for compatibility, (e) dated archives
+  (PROJECT_STATE history, LEGACY_HISTORY_IMPORT), (f) unrelated substrings (барабан, заработок, font files).
 
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the

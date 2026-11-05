@@ -104,6 +104,11 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
     },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
+    },
     "name": {
      "status": "CANON",
      "visibility": "PUBLIC_RECORD",
@@ -214,6 +219,11 @@
      "status": "PROPOSAL",
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
+    },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
     },
     "name": {
      "status": "CANON",
@@ -333,6 +343,11 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
     },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
+    },
     "name": {
      "status": "CANON",
      "visibility": "PUBLIC_RECORD",
@@ -411,6 +426,11 @@
      "status": "PROPOSAL",
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
+    },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
     },
     "name": {
      "status": "PROPOSAL",
@@ -521,6 +541,11 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
     },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
+    },
     "name": {
      "status": "CANON",
      "visibility": "PUBLIC_RECORD",
@@ -625,6 +650,16 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
     },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
+    },
+    "law_policy": {
+     "status": "PROPOSAL",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "социально-религиозная правовая политика общества, отдельно от типа власти (regime_3126)"
+    },
     "name": {
      "status": "CANON",
      "visibility": "PUBLIC_RECORD",
@@ -641,6 +676,13 @@
     "military": 15.54,
     "research": 11.09,
     "shipbuilding": 12.47
+   },
+   "law_policy": {
+    "law_family": "religious_law",
+    "goods_policy": "faith",
+    "family_policy": "faith",
+    "status": "PROPOSAL",
+    "basis": "социально-религиозная правовая политика общества, не тип власти: воскресное право по образцу Тонги и Самоа и вес церковных общин островов (VAKA-MOANA-1). Власть — совет навигаторов и фоно вождей (regime_3126 navigator_council); это не теократия. Значения — те же, что у прежней калибровки"
    }
   },
   {
@@ -756,6 +798,11 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
     },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
+    },
     "name": {
      "status": "CANON",
      "visibility": "PUBLIC_RECORD",
@@ -845,6 +892,11 @@
      "status": "PROPOSAL",
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
+    },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
     },
     "name": {
      "status": "PROPOSAL",
@@ -957,6 +1009,11 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
     },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
+    },
     "name": {
      "status": "CANON",
      "visibility": "PUBLIC_RECORD",
@@ -1064,6 +1121,11 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
     },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
+    },
     "name": {
      "status": "CANON",
      "visibility": "PUBLIC_RECORD",
@@ -1152,6 +1214,11 @@
      "status": "PROPOSAL",
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
+    },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
     },
     "name": {
      "status": "PROPOSAL",
@@ -1256,6 +1323,11 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
     },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
+    },
     "name": {
      "status": "CANON",
      "visibility": "PUBLIC_RECORD",
@@ -1351,6 +1423,11 @@
      "status": "PROPOSAL",
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
+    },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
     },
     "name": {
      "status": "CANON",
@@ -1460,6 +1537,11 @@
      "status": "PROPOSAL",
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
+    },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
     },
     "name": {
      "status": "PROPOSAL",
@@ -1571,6 +1653,11 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
     },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
+    },
     "name": {
      "status": "PROPOSAL",
      "visibility": "PUBLIC_RECORD",
@@ -1673,6 +1760,11 @@
      "status": "PROPOSAL",
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
+    },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
     },
     "name": {
      "status": "PROPOSAL",
@@ -1778,6 +1870,11 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
     },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
+    },
     "name": {
      "status": "CANON",
      "visibility": "PUBLIC_RECORD",
@@ -1866,6 +1963,11 @@
      "status": "PROPOSAL",
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
+    },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
     },
     "name": {
      "status": "PROPOSAL",
@@ -1971,6 +2073,11 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
     },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
+    },
     "name": {
      "status": "PROPOSAL",
      "visibility": "PUBLIC_RECORD",
@@ -2066,6 +2173,11 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
     },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
+    },
     "name": {
      "status": "PROPOSAL",
      "visibility": "PUBLIC_RECORD",
@@ -2153,6 +2265,11 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
     },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
+    },
     "name": {
      "status": "CANON",
      "visibility": "PUBLIC_RECORD",
@@ -2231,6 +2348,11 @@
      "status": "PROPOSAL",
      "visibility": "PUBLIC_RECORD",
      "basis": "результат модели demography.py, не канон"
+    },
+    "industrial_heritage": {
+     "status": "PROPOSAL/model",
+     "visibility": "PUBLIC_RECORD",
+     "basis": "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет"
     },
     "name": {
      "status": "CANON",

@@ -170,6 +170,23 @@
    "theft": "тюрьма",
    "unlawful_salvage": "возврат + штраф"
   },
+  "religious_law": {
+   "assault": "тюрьма",
+   "beacon_sabotage": "тюрьма, конфискация корабля (Конвенция)",
+   "contraband": "конфискация груза + штраф",
+   "customs_evasion": "конфискация груза + штраф",
+   "false_transponder": "арест корабля",
+   "forged_registration": "арест корабля",
+   "illegal_docking": "штраф, арест на стоянке",
+   "murder": "смертная казнь",
+   "navigation_interference": "тюрьма, конфискация корабля (Конвенция)",
+   "piracy": "смертная казнь",
+   "quarantine_violation": "тюрьма",
+   "restricted_weapons": "конфискация + штраф",
+   "smuggling": "конфискация груза + штраф",
+   "theft": "тюрьма",
+   "unlawful_salvage": "возврат + штраф"
+  },
   "sol_codified": {
    "assault": "тюрьма",
    "beacon_sabotage": "тюрьма, конфискация корабля (Конвенция)",
@@ -199,23 +216,6 @@
    "navigation_interference": "тюрьма, конфискация корабля (Конвенция)",
    "piracy": "тюрьма, конфискация",
    "quarantine_violation": "штраф, принудительная изоляция",
-   "restricted_weapons": "конфискация + штраф",
-   "smuggling": "конфискация груза + штраф",
-   "theft": "тюрьма",
-   "unlawful_salvage": "возврат + штраф"
-  },
-  "theocratic": {
-   "assault": "тюрьма",
-   "beacon_sabotage": "тюрьма, конфискация корабля (Конвенция)",
-   "contraband": "конфискация груза + штраф",
-   "customs_evasion": "конфискация груза + штраф",
-   "false_transponder": "арест корабля",
-   "forged_registration": "арест корабля",
-   "illegal_docking": "штраф, арест на стоянке",
-   "murder": "смертная казнь",
-   "navigation_interference": "тюрьма, конфискация корабля (Конвенция)",
-   "piracy": "смертная казнь",
-   "quarantine_violation": "тюрьма",
    "restricted_weapons": "конфискация + штраф",
    "smuggling": "конфискация груза + штраф",
    "theft": "тюрьма",
@@ -1261,7 +1261,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1283,7 +1283,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1305,7 +1305,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1327,7 +1327,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1349,7 +1349,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1371,7 +1371,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1393,7 +1393,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1415,7 +1415,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1437,7 +1437,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1459,7 +1459,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1481,7 +1481,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1503,7 +1503,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1525,7 +1525,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1547,7 +1547,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1569,7 +1569,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1591,7 +1591,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1613,7 +1613,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1635,7 +1635,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1657,7 +1657,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1679,7 +1679,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1701,7 +1701,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1723,7 +1723,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -1745,7 +1745,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7663,7 +7663,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7685,7 +7685,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7707,7 +7707,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7729,7 +7729,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7751,7 +7751,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7773,7 +7773,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7795,7 +7795,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7817,7 +7817,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7839,7 +7839,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7861,7 +7861,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7883,7 +7883,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7905,7 +7905,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7927,7 +7927,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7949,7 +7949,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7971,7 +7971,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -7993,7 +7993,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8015,7 +8015,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8037,7 +8037,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8059,7 +8059,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8081,7 +8081,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8103,7 +8103,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8125,7 +8125,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8147,7 +8147,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8169,7 +8169,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8191,7 +8191,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8213,7 +8213,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8235,7 +8235,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8257,7 +8257,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8279,7 +8279,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8301,7 +8301,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8323,7 +8323,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8345,7 +8345,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8367,7 +8367,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",
@@ -8389,7 +8389,7 @@
    "weapons": "licensed"
   },
   {
-   "applicable_law": "theocratic",
+   "applicable_law": "religious_law",
    "applicable_law_ru": "религиозное право",
    "competing_claims": [],
    "controlled_goods": "very_strict",

@@ -1,0 +1,36 @@
+{
+  "schema": "elite.star.v2",
+  "key": "fomalhaut",
+  "name": "Fomalhaut",
+  "alternative_names": [
+    "α Piscis Austrini",
+    "Фомальгаут",
+    "HD 216956"
+  ],
+  "spectral_type": "A4V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 1.92,
+    "source": "Mamajek 2012; Hipparcos; Wikipedia Fomalhaut (retrieved 2026-11-05)"
+  },
+  "radius_solar": {
+    "value": 1.842,
+    "source": "Mamajek 2012; Hipparcos; Wikipedia Fomalhaut (retrieved 2026-11-05)"
+  },
+  "teff_k": {
+    "value": 8590,
+    "source": "Mamajek 2012; Hipparcos; Wikipedia Fomalhaut (retrieved 2026-11-05)"
+  },
+  "luminosity_solar": {
+    "value": 16.63,
+    "source": "Mamajek 2012; Hipparcos; Wikipedia Fomalhaut (retrieved 2026-11-05)"
+  },
+  "age_gyr": {
+    "value": 0.44,
+    "source": "Mamajek 2012 (440 ± 40 Myr)"
+  },
+  "extra": {
+    "legacy_type_label": "A4V — бело-голубая звезда главной последовательности",
+    "companions_note": "TW PsA (K4 V, 0.28 pc) and LP 876-10 (M4 V, 0.77 pc) are separate catalogue stars, not members of this local system"
+  }
+}

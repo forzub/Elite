@@ -101,7 +101,7 @@
     "fire_crew_per_1000_on_stations": 2.5, "fire_crew_per_1000_surface": 1.0,
     "rescue_tug_per_100_arrivals_day": 1.0, "search_ships_per_beacon_system": 0.5, "hospital_ships_per_100m": 2.0, "hazmat_teams_per_quarantine_hub": 4,
     "organisation_by_law": {"technocratic_civil": "государственная служба спасения", "confucian_administrative": "государственная служба + народные дружины", "party_administrative": "государственная служба",
-                            "sol_codified": "Береговая служба Сола", "theocratic": "государственная + религиозные братства", "corporate": "корпоративная служба по контрактам",
+                            "sol_codified": "Береговая служба Сола", "religious_law": "государственная + религиозные братства", "corporate": "корпоративная служба по контрактам",
                             "city_state_arbitration": "городские службы + частные спасатели за долю", "parliamentary_civil": "государственная + добровольцы", "military_administration": "военная спасательная служба",
                             "clan_law": "клановые артели (спасение за долю груза)", "customary_council": "государственная + общинные дружины", "machine_oracle": "концессионер", "none": "никто; частники за плату"},
     "salvage_share_for_private": {"clan_law": 0.5, "city_state_arbitration": 0.25, "corporate": 0.2, "none": 1.0}

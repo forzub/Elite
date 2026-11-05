@@ -5,7 +5,8 @@ Reads src/assets/data/galaxy_details (the authoritative physical catalog) and
 reuses the scoring of tools/universe_generator/resource_audit.py, so the lab
 never invents resources a system does not have.
 
-Indices (all 0..1, percentile rank over the 60 local systems, Sol included):
+Indices (all 0..1, percentile rank on a fixed reference scale: the 60 local systems of canon/endowment_scale.json,
+Sol included; a system added to the catalog later is placed on that scale and does not move it):
   water       accessible water ice
   volatiles   giants + comet clouds + water (hydrogen, nitrogen, carbon gases)
   he3         helium-3 reachable in giant atmospheres (aneutronic drive fuel)
@@ -74,10 +75,14 @@ def raw_system(d):
     )
 
 
-def _rank(values):
-    order = sorted(values)
+def _rank(values, ref):
+    """Percentile of each value on the reference scale (values of the reference systems only)."""
+    order = sorted(ref)
     n = len(order)
     return [(sum(1 for o in order if o < v) + 0.5 * sum(1 for o in order if o == v)) / n for v in values]
+
+
+SCALE = os.path.join(HERE, "canon", "endowment_scale.json")
 
 
 def load_endowment(catalog=CATALOG):
@@ -93,7 +98,9 @@ def load_endowment(catalog=CATALOG):
         "agri": [r["agri"] for r in raws],
         "settle": [r["settle"] for r in raws],
     }
-    ranks = {k: _rank(v) for k, v in keys.items()}
+    ref_ids = set(_load(SCALE)["reference_system_ids"])
+    is_ref = [r["id"] in ref_ids for r in raws]
+    ranks = {k: _rank(v, [x for x, f in zip(v, is_ref) if f]) for k, v in keys.items()}
     out = {}
     for i, r in enumerate(raws):
         r = dict(r)

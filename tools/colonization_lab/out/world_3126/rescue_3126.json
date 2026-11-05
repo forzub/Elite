@@ -29,7 +29,7 @@
    "fire_damage_personnel": 1824179,
    "hazmat_teams": 4,
    "hospital_ships": 14.807,
-   "law_family": "theocratic",
+   "law_family": "religious_law",
    "organisation": "государственная + религиозные братства",
    "private_salvage_share": 0.0,
    "rescue_tugs": 1.0,
@@ -209,7 +209,7 @@
    "fire_damage_personnel": 1972173,
    "hazmat_teams": 4,
    "hospital_ships": 15.995,
-   "law_family": "theocratic",
+   "law_family": "religious_law",
    "organisation": "государственная + религиозные братства",
    "private_salvage_share": 0.0,
    "rescue_tugs": 7.837,
@@ -221,7 +221,7 @@
    "fire_damage_personnel": 9,
    "hazmat_teams": 0,
    "hospital_ships": 0.0,
-   "law_family": "theocratic",
+   "law_family": "religious_law",
    "organisation": "государственная + религиозные братства",
    "private_salvage_share": 0.0,
    "rescue_tugs": 1.0,
@@ -612,161 +612,161 @@
   },
   {
    "fire_crew_on_site": 84187,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.city01"
   },
   {
    "fire_crew_on_site": 421,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.port01"
   },
   {
    "fire_crew_on_site": 42094,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.city02"
   },
   {
    "fire_crew_on_site": 210,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.port02"
   },
   {
    "fire_crew_on_site": 70156,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.city03"
   },
   {
    "fire_crew_on_site": 140,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.port03"
   },
   {
    "fire_crew_on_site": 22,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.trade_hub01"
   },
   {
    "fire_crew_on_site": 6,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 13.028,
    "site": "site.022.delta_pav_karma.mining_hub01"
   },
   {
    "fire_crew_on_site": 6,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 13.028,
    "site": "site.022.delta_pav_karma.mining_hub02"
   },
   {
    "fire_crew_on_site": 6,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 13.028,
    "site": "site.022.delta_pav_karma.mining_hub03"
   },
   {
    "fire_crew_on_site": 6,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 13.028,
    "site": "site.022.delta_pav_karma.mining_hub04"
   },
   {
    "fire_crew_on_site": 6,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 13.028,
    "site": "site.022.delta_pav_karma.mining_hub05"
   },
   {
    "fire_crew_on_site": 6,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 13.028,
    "site": "site.022.delta_pav_karma.mining_hub06"
   },
   {
    "fire_crew_on_site": 30,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.industrial_hub01"
   },
   {
    "fire_crew_on_site": 30,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.industrial_hub02"
   },
   {
    "fire_crew_on_site": 30,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.industrial_hub03"
   },
   {
    "fire_crew_on_site": 30,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.industrial_hub04"
   },
   {
    "fire_crew_on_site": 30,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.industrial_hub05"
   },
   {
    "fire_crew_on_site": 30,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.industrial_hub06"
   },
   {
    "fire_crew_on_site": 15,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.military_hub01"
   },
   {
    "fire_crew_on_site": 2,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.science_hub01"
   },
   {
    "fire_crew_on_site": 2,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.science_hub02"
   },
   {
    "fire_crew_on_site": 2,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.022.delta_pav_karma.quarantine01"
@@ -2649,238 +2649,238 @@
   },
   {
    "fire_crew_on_site": 90152,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.city01"
   },
   {
    "fire_crew_on_site": 451,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.port01"
   },
   {
    "fire_crew_on_site": 45076,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.city02"
   },
   {
    "fire_crew_on_site": 225,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.port02"
   },
   {
    "fire_crew_on_site": 30051,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.city03"
   },
   {
    "fire_crew_on_site": 150,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.port03"
   },
   {
    "fire_crew_on_site": 960,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.city04"
   },
   {
    "fire_crew_on_site": 22538,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.city05"
   },
   {
    "fire_crew_on_site": 113,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.port05"
   },
   {
    "fire_crew_on_site": 22,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.trade_hub01"
   },
   {
    "fire_crew_on_site": 22,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.trade_hub02"
   },
   {
    "fire_crew_on_site": 6,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 13.028,
    "site": "site.004.lalande_mecca.mining_hub01"
   },
   {
    "fire_crew_on_site": 6,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 13.028,
    "site": "site.004.lalande_mecca.mining_hub02"
   },
   {
    "fire_crew_on_site": 6,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 13.028,
    "site": "site.004.lalande_mecca.mining_hub03"
   },
   {
    "fire_crew_on_site": 6,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 13.028,
    "site": "site.004.lalande_mecca.mining_hub04"
   },
   {
    "fire_crew_on_site": 6,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 13.028,
    "site": "site.004.lalande_mecca.mining_hub05"
   },
   {
    "fire_crew_on_site": 6,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 13.028,
    "site": "site.004.lalande_mecca.mining_hub06"
   },
   {
    "fire_crew_on_site": 30,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.industrial_hub01"
   },
   {
    "fire_crew_on_site": 30,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.industrial_hub02"
   },
   {
    "fire_crew_on_site": 30,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.industrial_hub03"
   },
   {
    "fire_crew_on_site": 30,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.industrial_hub04"
   },
   {
    "fire_crew_on_site": 30,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.industrial_hub05"
   },
   {
    "fire_crew_on_site": 30,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.industrial_hub06"
   },
   {
    "fire_crew_on_site": 15,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.military_hub01"
   },
   {
    "fire_crew_on_site": 2,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.science_hub01"
   },
   {
    "fire_crew_on_site": 2,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.science_hub02"
   },
   {
    "fire_crew_on_site": 2,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.004.lalande_mecca.quarantine01"
   },
   {
    "fire_crew_on_site": 5,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.045.leo83_zion.city01"
   },
   {
    "fire_crew_on_site": 2,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.045.leo83_zion.city02"
   },
   {
    "fire_crew_on_site": 4,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.045.leo83_zion.city03"
   },
   {
    "fire_crew_on_site": 22,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.045.leo83_zion.trade_hub01"
   },
   {
    "fire_crew_on_site": 6,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 69.117,
    "site": "site.045.leo83_zion.mining_hub01"
   },
   {
    "fire_crew_on_site": 30,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.045.leo83_zion.industrial_hub01"
   },
   {
    "fire_crew_on_site": 2,
-   "law": "theocratic",
+   "law": "religious_law",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
    "site": "site.045.leo83_zion.science_hub01"

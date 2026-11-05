@@ -7,7 +7,7 @@
 <!-- GENERATED:legend END -->
 
 <!-- GENERATED:fortuna BEGIN -->
-Статус: система Fortuna у реальной звезды Fomalhaut и планета Lexie / Лекси / 柏辛 — `CANON` (решение автора 2026-11-05). Физика звезды — наблюдения XXI века; параметры Лекси — `PROPOSAL`, совместимые с ограничениями. Доступность считает `naming.py` из позиции HYG, сети маяков 3126 и калибровки прыжка.
+Статус: система Fortuna у реальной звезды Fomalhaut и планета Lexie / Лекси / 柏辛 — `CANON` (решение автора 2026-11-05). Физика звезды — наблюдения XXI века; параметры Лекси — `PROPOSAL`, совместимые с ограничениями. Система — в каталоге полёта и на картах: StarAtlas id 61 (`src/assets/data/galaxy_details/systems/061_fomalhaut`), 16 тел, Fomalhaut debris disk; тела сгенерированы `EliteUniverseGenerator`, Лекси — авторское тело (`observed/planet_lexie.json`). Доступность считает `naming.py` из позиции HYG, сети маяков 3126 и калибровки прыжка.
 
 ### Звезда
 
@@ -81,27 +81,29 @@ Fortuna / Фортуна; китайский экзоним эпохи коло�
 
 | Поле | Значение |
 |---|---|
-| ID | `body:fomalhaut.lexie` |
+| ID | `body:system_61.Fomalhaut.Lexie` |
 | Имена | Lexie / Лекси / 柏辛 (Bǎixīn) |
 | История имени | AUTHOR_UNSPECIFIED |
-| status | PROPOSAL (параметры); существование — CANON |
-| kind | planet |
 | a_au | 4.4 |
 | e | 0.04 |
 | period_years | 6.66 |
 | mass_earth | 1.3 |
-| radius_earth | 1.08 |
+| radius_km | 6888 |
 | surface_gravity_g | 1.11 |
 | instellation_earth | 0.86 |
-| equilibrium_temperature_k | 246 |
-| mean_surface_temperature_k | 283 |
-| atmosphere | {"surface_pressure_bar": 1.4, "composition": "N2 + CO2 (около 2 %) + водяной пар; кислорода биосферы нет — системе 440 млн лет", "breathable": false} |
-| hydrosphere | океаны, около 65 % поверхности |
-| biosphere | не обнаружена (обследования 3126 неполны) |
-| rotation_hours | 31 |
-| axial_tilt_deg | 19 |
-| sky | {"sun_angular_diameter_deg": 0.223, "tw_psa_apparent_mag": -0.68, "note": "бело-голубое солнце вдвое меньше земного на небе; оранжевая TW PsA — ярче любой звезды неба Земли, кроме Сириуса и Канопуса; тёплая внутренняя пыль даёт яркий зодиакальный свет"} |
-| resources | ничего уникального (решение автора: не награда, не ресурс, не повод) |
+| equilibrium_temperature_k | 245 |
+| surface_temperature_k | {"mean": 283.0, "min": 263, "max": 299} |
+| atmosphere | {"surface_pressure_bar": 1.419, "composition": {"N2": 0.968, "CO2": 0.02, "Ar": 0.009, "H2O": 0.003}, "breathable": false} |
+| hydrosphere | surface_ocean |
+| tectonics | mobile_lid |
+| volcanism | high |
+| magnetic_field_earth | 1.28 |
+| biosphere | none |
+| rotation_hours | 31.0 |
+| axial_tilt_deg | 19.0 |
+| terrain | plate_tectonic_continents |
+| environment_preset | terrestrial_temperate |
+| neighbours | ["Fomalhaut h 2.12 а. е.", "Fomalhaut i 2.89 а. е.", "Fomalhaut j 6.00 а. е."] |
 
 Лекси — не ресурс, не тайна и не награда. Она просто далеко, и она красивая.
 <!-- GENERATED:fortuna END -->

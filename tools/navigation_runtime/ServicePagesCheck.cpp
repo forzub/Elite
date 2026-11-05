@@ -21,6 +21,7 @@
 #include <nlohmann/json.hpp>
 
 #include "src/game/economy/EconomyModel.h"
+#include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/game/presentation/RepairRefitPresentation.h"
 #include "src/game/presentation/ShipyardPresentation.h"
 #include "src/game/ship/ShipInitData.h"
@@ -226,6 +227,23 @@ int main()
             check(eco.channel(cog->id, cit->id) != "open" && eco.channel(cog->id, cit->id) != "closed", "Cognium - Citadel: civilian trade possible, not open (" + eco.channel(cog->id, cit->id) + ")");
             check(eco.channel(zone->id, cog->id) == "closed", "quarantine zone closed to ordinary trade");
         }
+    }
+
+    // ---- 7. Fomalhaut / Fortuna in the flight catalogue (StarAtlasDatabase, the same loader as client and server)
+    {
+        world::celestial::StarAtlasDatabase atlas;
+        const bool loaded = atlas.loadFromRuntimeOrSource();
+        const auto* summary = loaded ? atlas.findSystemSummary(61) : nullptr;
+        const auto* system = loaded ? atlas.findSystem(61) : nullptr;
+        bool lexie = false;
+        if (system)
+            for (const auto& b : system->bodies)
+                if (b.id == "system_61.Fomalhaut.Lexie")
+                    lexie = true;
+        check(loaded && summary && summary->name == "Fomalhaut" && summary->atlasVisible && summary->routeTarget,
+              "star atlas loads " + std::to_string(loaded ? atlas.systems().size() : 0) + " local systems; Fomalhaut (61) is on the maps and a route target");
+        check(lexie, "Fomalhaut system holds planet Lexie (system_61.Fomalhaut.Lexie), " +
+                         std::to_string(system ? system->bodies.size() : 0) + " bodies");
     }
 
     std::cout << (failures ? "SERVICE PAGES CHECK: FAILED (" + std::to_string(failures) + ")" : "SERVICE PAGES CHECK: PASS") << "\n";

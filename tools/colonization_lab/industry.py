@@ -302,7 +302,8 @@ def rescue(I, cap):
         st = e["settlement_structure"]
         surface = sum(v for a, v in st.items() if "поверхность" in a or "подзем" in a or "Земля" in a)
         stations = e["population"] - surface
-        fam = I.WS["regime_law"].get(I.col.get(k, {}).get("regime_3126", "sol_authority" if k == SOL else "none_quiet"), "none") if k != SOL else "sol_codified"
+        fam = ((I.col.get(k, {}).get("law_policy") or {}).get("law_family")
+               or I.WS["regime_law"].get(I.col.get(k, {}).get("regime_3126", "sol_authority" if k == SOL else "none_quiet"), "none")) if k != SOL else "sol_codified"
         sar_cutters = sum(t["ships"] for t in D[k]["tasks"] if t["task"] == "sar_customs") * 0.5
         arrivals_day = D[k]["arrivals_per_year"] / 365.0
         beacons = 1 if e.get("system") is not None else 0

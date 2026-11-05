@@ -26,7 +26,7 @@
 
 ```bash
 cd tools/colonization_lab
-python naming.py --write             # слой имён: canon/naming.json (+ remote_systems.json) -> зеркала имён в world / political_order / settlements / population_history / legacy actors.json, runtime src/assets/data/naming/names_3126.json, out/world_3126/naming_3126.json (Фортуна, Лекси); --check — 23 проверки имён
+python naming.py --write             # слой имён: canon/naming.json (+ каталог galaxy_details для Фомальгаута) -> зеркала имён в world / political_order / settlements / population_history / legacy actors.json, runtime src/assets/data/naming/names_3126.json, out/world_3126/naming_3126.json (Фортуна, Лекси); --check — 23 проверки имён
 python lab.py                        # канон: seed 3126 -> out/
 python lab.py --seed 7 --out D:/tmp/elite_x  # другой seed меняет только заполняющие события и эпидемии, не якоря
 python lab.py --check-dataset        # runtime generation_ships.json не разошёлся с каноном (включая статусы)?

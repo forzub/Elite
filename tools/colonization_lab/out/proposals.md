@@ -2,7 +2,7 @@
 
 Генерируется `lab.py` из статусов `canon/*.json` (knowledge.py). CANON = есть в заметках автора; PROPOSAL = добавлено/пересчитано Claude или является результатом модели; UNKNOWN = намеренно без ответа. Видимость: PUBLIC_RECORD / AUTHOR_TRUTH.
 
-Счётчики: AUTHOR_TRUTH 17, CANON 314, PROPOSAL 287, PUBLIC_RECORD 591, UNKNOWN 7
+Счётчики: AUTHOR_TRUTH 17, CANON 314, PROPOSAL 288, PROPOSAL/model 22, PUBLIC_RECORD 614, UNKNOWN 7
 
 Все выходы модели (население 3126, экономика, коридоры, технологии) — PROPOSAL (model) и в этот список не перечисляются поштучно.
 
@@ -36,44 +36,52 @@
 | beacons/41@3050 | PROPOSAL | PUBLIC_RECORD | год и оператор маяка — реконсиляция | tau_ceti_cognium |
 | beacons/0@3112 | PROPOSAL | PUBLIC_RECORD | год и оператор маяка — реконсиляция | sol_authority |
 
-## colonies (125)
+## colonies (148)
 
 | путь | статус | видимость | основание | что |
 |---|---|---|---|---|
 | colonies/tau_ceti_cognium/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/tau_ceti_cognium/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/tau_ceti_cognium/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/tau_ceti_cognium/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/tau_ceti_cognium/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/tau_ceti_cognium/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/proxima_outpost/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/proxima_outpost/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/proxima_outpost/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/proxima_outpost/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/proxima_outpost/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/proxima_outpost/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/gj832_tianhe/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/gj832_tianhe/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/gj832_tianhe/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/gj832_tianhe/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/gj832_tianhe/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/gj832_tianhe/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/gj832_gaia_zone/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/gj832_gaia_zone/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/gj832_gaia_zone/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/gj832_gaia_zone/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/gj832_gaia_zone/name | PROPOSAL | PUBLIC_RECORD | имя дано реконсиляцией / старой веткой | name |
 | colonies/gj832_gaia_zone/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/gj832_gaia_zone/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/lalande_hellas/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/lalande_hellas/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/lalande_hellas/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/lalande_hellas/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/lalande_hellas/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/lalande_hellas/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/lalande_mecca/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/lalande_mecca/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/lalande_mecca/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/lalande_mecca/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
+| colonies/lalande_mecca/law_policy | PROPOSAL | PUBLIC_RECORD | социально-религиозная правовая политика общества, отдельно от типа власти (regime_3126) | law_policy |
 | colonies/lalande_mecca/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/lalande_mecca/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/eps_eri_harmony/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/eps_eri_harmony/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/eps_eri_harmony/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/eps_eri_harmony/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/eps_eri_harmony/pop_3126_authored | PROPOSAL | PUBLIC_RECORD | реконсиляция (разделение/пересчёт) | pop_3126_authored |
 | colonies/eps_eri_harmony/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/eps_eri_harmony/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
@@ -81,62 +89,73 @@
 | colonies/eps_eri_strife/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/eps_eri_strife/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/eps_eri_strife/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/eps_eri_strife/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/eps_eri_strife/name | PROPOSAL | PUBLIC_RECORD | имя дано реконсиляцией / старой веткой | name |
 | colonies/eps_eri_strife/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/eps_eri_strife/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/wolf359_citadel/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/wolf359_citadel/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/wolf359_citadel/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/wolf359_citadel/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/wolf359_citadel/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/wolf359_citadel/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/gj581_europa/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/gj581_europa/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/gj581_europa/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/gj581_europa/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/gj581_europa/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/gj581_europa/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/gj581_freeclans/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/gj581_freeclans/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/gj581_freeclans/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/gj581_freeclans/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/gj581_freeclans/name | PROPOSAL | PUBLIC_RECORD | имя дано реконсиляцией / старой веткой | name |
 | colonies/gj581_freeclans/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/gj581_freeclans/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/hd20794_hellas2/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/hd20794_hellas2/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/hd20794_hellas2/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/hd20794_hellas2/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/hd20794_hellas2/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/hd20794_hellas2/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/hd20794_newindia/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/hd20794_newindia/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/hd20794_newindia/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/hd20794_newindia/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/hd20794_newindia/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/hd20794_newindia/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/hd40307_maland/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/hd40307_maland/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/hd40307_maland/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/hd40307_maland/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/hd40307_maland/name | PROPOSAL | PUBLIC_RECORD | имя дано реконсиляцией / старой веткой | name |
 | colonies/hd40307_maland/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/hd40307_maland/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/hd40307_firmament/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/hd40307_firmament/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/hd40307_firmament/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/hd40307_firmament/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/hd40307_firmament/name | PROPOSAL | PUBLIC_RECORD | имя дано реконсиляцией / старой веткой | name |
 | colonies/hd40307_firmament/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/hd40307_firmament/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/hd69830_verde/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/hd69830_verde/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/hd69830_verde/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/hd69830_verde/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/hd69830_verde/name | PROPOSAL | PUBLIC_RECORD | имя дано реконсиляцией / старой веткой | name |
 | colonies/hd69830_verde/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/hd69830_verde/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/delta_pav_karma/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/delta_pav_karma/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/delta_pav_karma/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/delta_pav_karma/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/delta_pav_karma/pop_3126_authored | PROPOSAL | PUBLIC_RECORD | реконсиляция (разделение/пересчёт) | pop_3126_authored |
 | colonies/delta_pav_karma/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/delta_pav_karma/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/delta_pav_freekarma/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/delta_pav_freekarma/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/delta_pav_freekarma/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/delta_pav_freekarma/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/delta_pav_freekarma/name | PROPOSAL | PUBLIC_RECORD | имя дано реконсиляцией / старой веткой | name |
 | colonies/delta_pav_freekarma/pop_3126_authored | PROPOSAL | PUBLIC_RECORD | реконсиляция (разделение/пересчёт) | pop_3126_authored |
 | colonies/delta_pav_freekarma/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
@@ -144,12 +163,14 @@
 | colonies/gj876_next/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/gj876_next/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/gj876_next/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/gj876_next/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/gj876_next/name | PROPOSAL | PUBLIC_RECORD | имя дано реконсиляцией / старой веткой | name |
 | colonies/gj876_next/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/gj876_next/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/cyg61_kern/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/cyg61_kern/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/cyg61_kern/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/cyg61_kern/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/cyg61_kern/name | PROPOSAL | PUBLIC_RECORD | имя дано реконсиляцией / старой веткой | name |
 | colonies/cyg61_kern/pop_3126_authored | PROPOSAL | PUBLIC_RECORD | реконсиляция (разделение/пересчёт) | pop_3126_authored |
 | colonies/cyg61_kern/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
@@ -157,12 +178,14 @@
 | colonies/hd114783_hellas3/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/hd114783_hellas3/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/hd114783_hellas3/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/hd114783_hellas3/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/hd114783_hellas3/pop_3126_authored | PROPOSAL | PUBLIC_RECORD | реконсиляция (разделение/пересчёт) | pop_3126_authored |
 | colonies/hd114783_hellas3/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/hd114783_hellas3/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/leo83_zion/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/leo83_zion/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/leo83_zion/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
+| colonies/leo83_zion/industrial_heritage | PROPOSAL/model | PUBLIC_RECORD | явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет | industrial_heritage |
 | colonies/leo83_zion/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/leo83_zion/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 

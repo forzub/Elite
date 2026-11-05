@@ -168,6 +168,7 @@ def build_polities(I):
         u = U[c["id"]]
         last = u["checkpoints"][-1] if u["checkpoints"] else {}
         pols[c["id"]] = dict(id=c["id"], name=c["name"], polity=c["polity"], system=c["system"], regime=c["regime_3126"],
+                             goods_policy=(c.get("law_policy") or {}).get("goods_policy"),
                              pop=float(u["pop_3126"]), income=last.get("income", 1.0), automation=last.get("automation", 0.5),
                              tech={d: v / tmax[d] if tmax[d] else 0.0 for d, v in u["tech_3126"].items()},
                              habitat=dict(u["habitat_3126"]), sites=[], assets=c["assets"], problems=c["problems"],
@@ -346,7 +347,7 @@ def capability(I, p, c):
         return clamp(0.45 + 0.35 * e["agri"])
     if c == "controlled":
         blk = any(a["type"] == "black_market" for a in p["assets"])
-        return 1.0 if blk else (0.5 if I.C["regime_family"].get(p["regime"]) == "open" else 0.2)
+        return 1.0 if blk else (0.5 if (p.get("goods_policy") or I.C["regime_family"].get(p["regime"])) == "open" else 0.2)
     if c == "weapons":
         return clamp(0.2 + 0.8 * t.get("military", 0.0))
     return 1.0
@@ -1566,7 +1567,7 @@ def motives(I, M, R, k):
     imp = sum(f["value_cr"] for f in M.flows if f["buyer"] == k)
     single = sum(1 for v in R_vul_single(M, k))
     hostile = [g for (a, b), g in I.rel.items() if k in (a, b)]
-    fam = I.C["regime_family"].get(p["regime"], "open")
+    fam = p.get("goods_policy") or I.C["regime_family"].get(p["regime"], "open")
     return dict(security=round(min(1.0, max(hostile or [0]) / 80.0), 2), trade_dependence=round(min(1.0, 20 * imp / max(p["gdp"], 1)), 2),
                 resource_dependence=round(min(1.0, single / 4.0), 2), alliance_obligation=0.6 if k in ("eps_eri_harmony", "hd40307_firmament") else 0.2,
                 prestige_ideology={"faith": 0.8, "military": 0.7, "strict": 0.5, "open": 0.3}[fam],

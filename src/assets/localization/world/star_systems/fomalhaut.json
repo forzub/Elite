@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "61",
+  "names": {
+    "en": "Fomalhaut",
+    "ru": "Фомальгаут",
+    "zh-Hans": "北落师门",
+    "es": "Fomalhaut",
+    "ja": "フォーマルハウト"
+  },
+  "bodies": {
+    "61:system_61.Fomalhaut": {
+      "en": "Fomalhaut",
+      "ru": "Фомальгаут",
+      "zh-Hans": "北落师门",
+      "es": "Fomalhaut",
+      "ja": "フォーマルハウト"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_K1": {
+      "en": "Fomalhaut K1",
+      "ru": "Фомальгаут K1",
+      "zh-Hans": "北落师门 K1",
+      "es": "Fomalhaut K1",
+      "ja": "フォーマルハウト K1"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_K2": {
+      "en": "Fomalhaut K2",
+      "ru": "Фомальгаут K2",
+      "zh-Hans": "北落师门 K2",
+      "es": "Fomalhaut K2",
+      "ja": "フォーマルハウト K2"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_K3": {
+      "en": "Fomalhaut K3",
+      "ru": "Фомальгаут K3",
+      "zh-Hans": "北落师门 K3",
+      "es": "Fomalhaut K3",
+      "ja": "フォーマルハウト K3"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_c": {
+      "en": "Fomalhaut c",
+      "ru": "Фомальгаут c",
+      "zh-Hans": "北落师门 c",
+      "es": "Fomalhaut c",
+      "ja": "フォーマルハウト c"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_d": {
+      "en": "Fomalhaut d",
+      "ru": "Фомальгаут d",
+      "zh-Hans": "北落师门 d",
+      "es": "Fomalhaut d",
+      "ja": "フォーマルハウト d"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_e": {
+      "en": "Fomalhaut e",
+      "ru": "Фомальгаут e",
+      "zh-Hans": "北落师门 e",
+      "es": "Fomalhaut e",
+      "ja": "フォーマルハウト e"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_f": {
+      "en": "Fomalhaut f",
+      "ru": "Фомальгаут f",
+      "zh-Hans": "北落师门 f",
+      "es": "Fomalhaut f",
+      "ja": "フォーマルハウト f"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_g": {
+      "en": "Fomalhaut g",
+      "ru": "Фомальгаут g",
+      "zh-Hans": "北落师门 g",
+      "es": "Fomalhaut g",
+      "ja": "フォーマルハウト g"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_h": {
+      "en": "Fomalhaut h",
+      "ru": "Фомальгаут h",
+      "zh-Hans": "北落师门 h",
+      "es": "Fomalhaut h",
+      "ja": "フォーマルハウト h"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_i": {
+      "en": "Fomalhaut i",
+      "ru": "Фомальгаут i",
+      "zh-Hans": "北落师门 i",
+      "es": "Fomalhaut i",
+      "ja": "フォーマルハウト i"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_j": {
+      "en": "Fomalhaut j",
+      "ru": "Фомальгаут j",
+      "zh-Hans": "北落师门 j",
+      "es": "Fomalhaut j",
+      "ja": "フォーマルハウト j"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_k": {
+      "en": "Fomalhaut k",
+      "ru": "Фомальгаут k",
+      "zh-Hans": "北落师门 k",
+      "es": "Fomalhaut k",
+      "ja": "フォーマルハウト k"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_k.Fomalhaut_k_I": {
+      "en": "Fomalhaut k I",
+      "ru": "Фомальгаут k I",
+      "zh-Hans": "北落师门 k I",
+      "es": "Fomalhaut k I",
+      "ja": "フォーマルハウト k I"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_l": {
+      "en": "Fomalhaut l",
+      "ru": "Фомальгаут l",
+      "zh-Hans": "北落师门 l",
+      "es": "Fomalhaut l",
+      "ja": "フォーマルハウト l"
+    },
+    "61:system_61.Fomalhaut.Fomalhaut_l.Fomalhaut_l_I": {
+      "en": "Fomalhaut l I",
+      "ru": "Фомальгаут l I",
+      "zh-Hans": "北落师门 l I",
+      "es": "Fomalhaut l I",
+      "ja": "フォーマルハウト l I"
+    },
+    "61:system_61.Fomalhaut.Lexie": {
+      "en": "Lexie",
+      "ru": "Лекси",
+      "zh-Hans": "柏辛",
+      "es": "Lexie",
+      "ja": "レキシー"
+    },
+    "61:system_61.Fomalhaut.debris_disk": {
+      "en": "Fomalhaut debris disk",
+      "ru": "Диск обломков Фомальгаут",
+      "zh-Hans": "北落师门碎屑盘",
+      "es": "Disco de escombros de Fomalhaut",
+      "ja": "フォーマルハウトデブリ円盤"
+    }
+  }
+}

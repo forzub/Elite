@@ -170,6 +170,11 @@ def annotate_world(W, T, MS):
               "culture_drift": k(P, PUB, "гипотеза Colonycore v2"),
               "demography": k(P, PUB, "входы причинной демографии (допущения F1–F12)"),
               "pop_3126_model": k(P, PUB, "результат модели demography.py, не канон")}
+        if c.get("industrial_heritage"):
+            fs["industrial_heritage"] = k("PROPOSAL/model", PUB, "явное промышленное состояние 3126 (9 отраслей, очки способности): числа — калибровка модели, "
+                                          "профиль принятой экономики 2026-11-05 (9d44bee5); структура «промышленность отдельно от культуры» — CANON; культура его не вычисляет")
+        if c.get("law_policy"):
+            fs["law_policy"] = k(P, PUB, "социально-религиозная правовая политика общества, отдельно от типа власти (regime_3126)")
         if c["id"] in AUTHOR_NAMES:
             fs["name"] = k(C, PUB, AUTHOR_NAMES[c["id"]])
         elif c.get("name") and c["name"] in every:

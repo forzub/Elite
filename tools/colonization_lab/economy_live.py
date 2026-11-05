@@ -104,6 +104,7 @@ class Inputs:
         self.bloc_of = {u: self.PO.access_key(u) for u in self.PO.units}
         self.regime_of = {c["id"]: c.get("regime_3126") for c in self.W["colonies"]}
         self.regime_of["sol_authority"] = "sol_authority"
+        self.law_policy = {c["id"]: (c.get("law_policy") or {}) for c in self.W["colonies"]}
         self.polity_name = {}
         for s in self.sites_doc["sites"]:
             if s.get("polity") and s.get("polity_name"):
@@ -120,6 +121,9 @@ class Inputs:
 
 
 def regime_family(I, polity):
+    gp = (I.law_policy.get(polity) or {}).get("goods_policy")       # explicit social-religious goods policy (world.json)
+    if gp:
+        return gp
     reg = I.regime_of.get(polity)
     return I.CM["regime_family"].get(reg, "open") if reg else "open"
 

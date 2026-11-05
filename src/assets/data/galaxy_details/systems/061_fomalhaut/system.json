@@ -1,0 +1,171 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 61,
+  "name": "Fomalhaut",
+  "slug": "fomalhaut",
+  "alternative_names": [
+    "Fomalhaut",
+    "α Piscis Austrini",
+    "24 Piscis Austrini",
+    "HD 216956",
+    "HIP 113368",
+    "Gl 881",
+    "Фомальгаут",
+    "北落師門",
+    "Fortuna",
+    "Фортуна",
+    "命運之輪"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": 21.0388,
+    "y": -5.8691,
+    "z": -12.4192
+  },
+  "position_source": "hyg hip=113368 (ICRS J2000; Hipparcos van Leeuwen 2007 parallax 129.81 mas)",
+  "stellar_hierarchy": {
+    "star": "fomalhaut"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 50.0,
+      "source": "rapidly rotating A star (v sin i ~ 93 km/s): precision RV insensitive to Earth- and super-Earth-mass planets"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "rapidly rotating A star: sparse RV monitoring"
+    },
+    "source": "JWST NIRCam (Ygouf et al. 2024): planets above ~1 M_Jup excluded beyond ~1 arcsec (7.7 au); MMT M-band excludes gas giants within ~40 au"
+  },
+  "reserved_designations": [
+    "Fomalhaut b"
+  ],
+  "observed_reservoirs": {
+    "debris_disk": {
+      "inner_au": 136.3,
+      "outer_au": 149.8,
+      "source": "ALMA, MacGregor et al. 2017: the main ring (inner edge 136.3 au, width 13.5 au); the JWST intermediate belt (gap at ~78 au) is not modelled as a separate reservoir"
+    }
+  },
+  "observational_reference": {
+    "distance_pc": {
+      "value": 7.7,
+      "err": 0.03,
+      "source": "Hipparcos, van Leeuwen 2007 (параллакс 129.81 ± 0.47 mas)"
+    },
+    "distance_ly": {
+      "value": 25.13,
+      "err": 0.09
+    },
+    "v_mag": {
+      "value": 1.16,
+      "source": "Hipparcos / SIMBAD"
+    },
+    "spectral_type": {
+      "value": "A4 V",
+      "note": "в HYG v4.1 записано A3V"
+    },
+    "mass_msun": {
+      "value": 1.92,
+      "err": 0.02
+    },
+    "luminosity_lsun": {
+      "value": 16.63,
+      "err": 0.48
+    },
+    "radius_rsun": {
+      "value": 1.842,
+      "err": 0.019
+    },
+    "teff_k": {
+      "value": 8590
+    },
+    "age_myr": {
+      "value": 440,
+      "err": 40,
+      "source": "Mamajek 2012"
+    },
+    "ra_j2000": "22h57m39.0465s",
+    "dec_j2000": "-29d37m20.050s",
+    "constellation": "PsA",
+    "companions": [
+      {
+        "id": "star:TW_PsA",
+        "designation": "Fomalhaut B / TW Piscis Austrini",
+        "spectral_type": "K4 V",
+        "separation_pc": 0.28,
+        "abs_v_mag": 7.08
+      },
+      {
+        "id": "star:LP_876-10",
+        "designation": "Fomalhaut C / LP 876-10",
+        "spectral_type": "M4 V",
+        "separation_pc": 0.77,
+        "note": "собственный диск обломков (JWST NIRCam, Lawson et al. 2024)"
+      }
+    ],
+    "disks": [
+      {
+        "kind": "main_ring",
+        "inner_edge_au": 136.3,
+        "width_au": 13.5,
+        "eccentricity": 0.12,
+        "inclination_deg": 65.6,
+        "source": "ALMA, MacGregor et al. 2017"
+      },
+      {
+        "kind": "intermediate_belt",
+        "gap_inner_au": 78,
+        "source": "JWST MIRI, Gáspár et al. 2023",
+        "note": "наклонён относительно внешнего кольца"
+      },
+      {
+        "kind": "inner_warm_disk",
+        "source": "JWST MIRI, Gáspár et al. 2023"
+      }
+    ],
+    "transients": [
+      {
+        "id": "cs1",
+        "former_name": "Fomalhaut b",
+        "status": "не планета: расширяющееся облако пыли после столкновения планетезималей, к 2014 рассеялось",
+        "source": "Gáspár & Rieke 2020, PNAS"
+      },
+      {
+        "id": "cs2",
+        "status": "второе облако столкновения, появилось на снимках HST 2023, видно в 2025",
+        "source": "Kalas et al. 2025, Science, doi 10.1126/science.adu6266"
+      }
+    ],
+    "disputed": [
+      {
+        "what": "Great Dust Cloud во внешнем кольце (JWST 2023)",
+        "status": "возможно фоновый объект (Kennedy et al. 2023; Ygouf et al. 2024)"
+      }
+    ],
+    "planet_limits": {
+      "imaging": "JWST NIRCam (Ygouf et al. 2024, AJ 167, 26): планеты массивнее ~1 M_Jup исключены на большей части области диска (за ~1″ ≈ 7.7 а. е.); MMT M-band исключает газовые гиганты внутри ~40 а. е.",
+      "rv": "быстро вращающаяся A-звезда: точность лучевых скоростей не позволяет обнаружить планеты земной массы",
+      "conclusion": "планета в несколько масс Земли на ~4 а. е. текущими данными не обнаружима и не исключена"
+    },
+    "chinese_name": "北落師門",
+    "retrieved": "2026-11-05",
+    "colony_era_name": "Fortuna",
+    "zh_colony_exonym": "命運之輪 / 命运之轮 (Mìngyùn zhī lún)",
+    "gameplay_policy": "Fomalhaut b (cs1) is a dust cloud, not a planet; the designation stays reserved. Lexie and the procedural bodies are PROPOSAL, chosen to stay below the 2026 detection limits."
+  },
+  "lore": {
+    "stellar_description": "Молодая бело-голубая звезда A4 V с кольцом обломков; система Фортуна. Известна, видна с Земли, никому не нужна: маяка нет, топлива нет, спасателей нет.",
+    "infrastructure_3126": {
+      "beacon": null,
+      "population": 0,
+      "fuel": null,
+      "repair": null,
+      "sar": null,
+      "status": "CANON (решение автора: система известна, никому не нужна)"
+    },
+    "strategic_role": "нет: не база, не контрабанда, не ресурс, не тайна (решение автора)"
+  }
+}

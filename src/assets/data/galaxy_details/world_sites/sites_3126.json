@@ -25293,7 +25293,7 @@
     "Руда и сырые минералы",
     "Строительные материалы и модули"
    ],
-   "law_family": "theocratic",
+   "law_family": "religious_law",
    "name": "Lalande 21185",
    "other_actors": [
     {
@@ -25646,7 +25646,7 @@
     "Вода и летучие",
     "Строительные материалы и модули"
    ],
-   "law_family": "theocratic",
+   "law_family": "religious_law",
    "name": "Delta Pavonis",
    "other_actors": [
     {
@@ -25761,7 +25761,7 @@
     "Продовольствие и органика",
     "Руда и сырые минералы"
    ],
-   "law_family": "theocratic",
+   "law_family": "religious_law",
    "name": "83 Leonis",
    "other_actors": [],
    "population": 9229,

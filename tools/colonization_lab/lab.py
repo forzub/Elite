@@ -359,7 +359,7 @@ class Voyage:
 REGIME_FAMILY = {
     "technocratic_meritocracy": "technocratic", "security_oligarchy": "security", "party_technocracy": "party",
     "shareholder_agora": "assembly", "eco_assembly": "assembly", "caste_theocracy": "theocratic",
-    "navigator_council": "theocratic", "machine_oracle": "technocratic", "parliamentary_bureaucracy": "assembly",
+    "navigator_council": "technocratic", "machine_oracle": "technocratic", "parliamentary_bureaucracy": "assembly",
     "corporate_board": "oligarchic", "corporate_democracy": "assembly", "synod_theocracy": "theocratic",
     "council_of_chiefs": "assembly", "litigating_city_states": "assembly", "grandees_and_church": "oligarchic",
     "clan_contracts": "clan", "merit_caste_republic": "technocratic", "sage_council": "technocratic",

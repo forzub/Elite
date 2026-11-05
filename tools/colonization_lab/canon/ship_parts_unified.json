@@ -669,7 +669,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "lalande_open_market"
+      "cooperation_group": "lalande_open_market",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "uhuru.cryo.pod100",
+          "name": "Блок анабиоза (100 капсул)",
+          "manufacturer": "mfr.uhuru_bio",
+          "cooperation_group": "southern_circle",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "bastion.armour.heavy",
@@ -697,7 +708,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "citadel_compact"
+      "cooperation_group": "citadel_compact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "std.armour.ceramic",
+          "name": "Броня керамокомпозитная (1 т)",
+          "manufacturer": "mfr.firmament_armour",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "bastion.bay.hangar4",
@@ -728,7 +750,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "citadel_compact"
+      "cooperation_group": "citadel_compact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "harmony.bay.hangar2",
+          "name": "Ангар перехватчиков (2 места)",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "bastion.comm.w1",
@@ -758,7 +791,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "citadel_compact"
+      "cooperation_group": "citadel_compact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "xz.comm.c3",
+          "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "bastion.core.b12",
@@ -789,7 +833,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "citadel_compact"
+      "cooperation_group": "citadel_compact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "harmony.core.h12",
+          "name": "Гармония Х-12",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "bastion.mc.w1",
@@ -819,7 +874,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "citadel_compact"
+      "cooperation_group": "citadel_compact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "hyp.mc.r1",
+          "name": "Hyperion разведывательный вычислитель HR-1",
+          "manufacturer": "mfr.hyperion",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "bastion.radar.s50",
@@ -850,7 +916,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "citadel_compact"
+      "cooperation_group": "citadel_compact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "hyp.radar.pa100",
+          "name": "Hyperion пассивная решётка PA-100 + активный режим",
+          "manufacturer": "mfr.hyperion",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "bastion.wpn.coil10",
@@ -880,7 +957,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "citadel_compact"
+      "cooperation_group": "citadel_compact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "fa.wpn.coil30",
+          "name": "Твердыня магнитная пушка КП-30",
+          "manufacturer": "mfr.firmament_armour",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "bastion.wpn.pd4",
@@ -910,7 +998,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "citadel_compact"
+      "cooperation_group": "citadel_compact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "harmony.wpn.pd3",
+          "name": "Гармония турель ПРО ПТ-3",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "bastion.wpn.vls16",
@@ -941,7 +1040,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "citadel_compact"
+      "cooperation_group": "citadel_compact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "harmony.wpn.vls8",
+          "name": "Гармония пусковая ВПУ-8 (8 ракет)",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "bharat.hab.bunk500",
@@ -970,7 +1080,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "southern_circle"
+      "cooperation_group": "southern_circle",
+      "replacements": {
+        "standard": {
+          "part_id": "uhuru.cryo.pod100",
+          "name": "Блок анабиоза (100 капсул)",
+          "manufacturer": "mfr.uhuru_bio",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "agora.hab.pax100",
+          "name": "Пассажирская секция Agora (100 мест)",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "eurohab.ls.l20",
@@ -1001,7 +1128,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "eurohab.ls.l4",
+          "name": "Евро-Хабитат ЖО L-4 (4 чел.)",
+          "manufacturer": "mfr.eurohab",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "terra.ls.t10",
+          "name": "Terra Habitat ЖО T-10",
+          "manufacturer": "mfr.terra_habitat",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "eurohab.ls.l200",
@@ -1032,7 +1176,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "eurohab.ls.l20",
+          "name": "Евро-Хабитат ЖО L-20",
+          "manufacturer": "mfr.eurohab",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "terra.ls.t200",
+          "name": "Terra Habitat ЖО T-200 (флот)",
+          "manufacturer": "mfr.terra_habitat",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "eurohab.ls.l4",
@@ -1063,7 +1224,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "eurohab.ls.l20",
+          "name": "Евро-Хабитат ЖО L-20",
+          "manufacturer": "mfr.eurohab",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "ofu.ls.o4",
+          "name": "ОФУ ЖО О-4 (челнок)",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "fa.wpn.coil30",
@@ -1093,7 +1271,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "bastion.wpn.coil10",
+          "name": "Бастион скорострельная пушка БП-10",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "fa.wpn.pd2",
@@ -1123,7 +1312,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": {
+          "part_id": "harmony.wpn.pd3",
+          "name": "Гармония турель ПРО ПТ-3",
+          "manufacturer": "mfr.harmony_yards",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.wpn.pd4",
+          "name": "Бастион турель ПРО БТ-4",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "harmony.bay.hangar2",
@@ -1154,7 +1360,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "bastion.bay.hangar4",
+          "name": "Ангар перехватчиков (4 места)",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "harmony.core.h12",
@@ -1184,7 +1401,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": {
+          "part_id": "harmony.core.h5",
+          "name": "Гармония Х-5 (сборка из блоков Когниума)",
+          "manufacturer": "mfr.harmony_yards",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.core.b12",
+          "name": "Бастион Б-12",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "harmony.core.h5",
@@ -1215,7 +1449,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": {
+          "part_id": "harmony.core.h12",
+          "name": "Гармония Х-12",
+          "manufacturer": "mfr.harmony_yards",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "kapehu.core.k5",
+          "name": "Капеху K-5",
+          "manufacturer": "mfr.kapehu_systems",
+          "cooperation_group": "southern_circle",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "harmony.core.h80",
@@ -1245,7 +1496,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": {
+          "part_id": "harmony.core.h12",
+          "name": "Гармония Х-12",
+          "manufacturer": "mfr.harmony_yards",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.core.b12",
+          "name": "Бастион Б-12",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "harmony.mod.cargo4800",
@@ -1275,7 +1543,17 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": {
+          "part_id": "harmony.mod.tank4200",
+          "name": "Модуль поезда-цистерна (4 170 т)",
+          "manufacturer": "mfr.harmony_yards",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "harmony.mod.tank4200",
@@ -1304,7 +1582,17 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": {
+          "part_id": "harmony.mod.cargo4800",
+          "name": "Модуль поезда грузовой (4 800 т, 240 C20)",
+          "manufacturer": "mfr.harmony_yards",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "harmony.wpn.pd3",
@@ -1334,7 +1622,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": {
+          "part_id": "fa.wpn.pd2",
+          "name": "Твердыня турель ПРО ПТ-2",
+          "manufacturer": "mfr.firmament_armour",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.wpn.pd4",
+          "name": "Бастион турель ПРО БТ-4",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "harmony.wpn.vls8",
@@ -1365,7 +1670,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "bastion.wpn.vls16",
+          "name": "Бастион ВПУ-16 дальних ракет",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "hyp.ecm.e1",
@@ -1394,7 +1710,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "hyp.mast.s1",
@@ -1423,7 +1743,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "hyp.mc.r1",
@@ -1453,7 +1777,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "xz.mc.c3",
+          "name": "Синьчжи MotherComputer MC-C3 (флот)",
+          "manufacturer": "mfr.xinzhi",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.mc.w1",
+          "name": "Бастион боевой вычислитель БВ-1",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "hyp.radar.pa100",
@@ -1484,7 +1825,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "xz.radar.n10",
+          "name": "Синьчжи радар обзора N-10 (10 000 км)",
+          "manufacturer": "mfr.xinzhi",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.radar.s50",
+          "name": "Бастион радар обзора С-50 (50 000 км)",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "hyp.relay.r1",
@@ -1514,7 +1872,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "xz.comm.c3",
+          "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
+          "manufacturer": "mfr.xinzhi",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.comm.w1",
+          "name": "Бастион связь БС-1",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kapehu.core.k12",
@@ -1546,7 +1921,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "southern_circle"
+      "cooperation_group": "southern_circle",
+      "replacements": {
+        "standard": {
+          "part_id": "kapehu.core.k5",
+          "name": "Капеху K-5",
+          "manufacturer": "mfr.kapehu_systems",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.core.b12",
+          "name": "Бастион Б-12",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kapehu.core.k5",
@@ -1578,7 +1970,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "southern_circle"
+      "cooperation_group": "southern_circle",
+      "replacements": {
+        "standard": {
+          "part_id": "kapehu.core.k12",
+          "name": "Капеху K-12",
+          "manufacturer": "mfr.kapehu_systems",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "harmony.core.h5",
+          "name": "Гармония Х-5 (сборка из блоков Когниума)",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kapehu.mc.k1",
@@ -1610,7 +2019,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "southern_circle"
+      "cooperation_group": "southern_circle",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "xz.mc.c1",
+          "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
+          "manufacturer": "mfr.xinzhi",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kb.apu.s150",
@@ -1640,7 +2060,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "th.apu.s150",
+          "name": "Тяньхэ СР-150",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kb.cool.loop200",
@@ -1668,7 +2099,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "sol.cool.loop300",
+          "name": "ЛМВ контур охлаждения (300 МВт)",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kb.drive.cr1-vector",
@@ -1704,7 +2146,18 @@
           "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "th.drive.tz11",
+          "name": "Тяньхэ ТЦ-11",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kb.drive.n1-axial",
@@ -1740,7 +2193,24 @@
           "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "kern.drive.kt1",
+          "name": "Kern KT-1 Tug Drive",
+          "manufacturer": "mfr.kern_heavy",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "ofu.drive.u73l",
+          "name": "Урал-73Л (подъёмный)",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kb.rad.cs-panel",
@@ -1771,7 +2241,18 @@
           "panel face area equals declared radiating area; thickness is service envelope"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "sol.rad.panel50",
+          "name": "ЛМВ радиаторная секция (50 м2)",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kb.rcs.argon-tank",
@@ -1802,7 +2283,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "std.tank.jumpcharge",
+          "name": "Бак заряда прыжка (1 т)",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kb.rcs.fc-nozzle",
@@ -1835,7 +2327,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "std.rcs.cluster",
+          "name": "Кластер RCS (4 сопла, поле)",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kb.reactor.er1",
@@ -1869,7 +2372,24 @@
           "reactor housing scales with mass; cooling interface scales with thermal waste"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "kb.reactor.er5",
+          "name": "Cobretty ER-5 Propulsion Reactor",
+          "manufacturer": "mfr.cobretty",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "th.reactor.tr26v",
+          "name": "Тяньхэ ТР-2.6В",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kb.reactor.er5",
@@ -1905,7 +2425,24 @@
           "reactor housing scales with mass; cooling interface scales with thermal waste"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "kb.reactor.er1",
+          "name": "Cobretty ER-1",
+          "manufacturer": "mfr.cobretty",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "srw.reactor.sr48",
+          "name": "Sol Reactor Works SR-4.8",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kb.surv.capsule2",
@@ -1935,7 +2472,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "std.surv.pod4",
+          "name": "Спасательная капсула (4 места)",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kb.wpn.pd1",
@@ -1965,7 +2513,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "fa.wpn.pd2",
+          "name": "Твердыня турель ПРО ПТ-2",
+          "manufacturer": "mfr.firmament_armour",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kern.drive.kt1",
@@ -2000,7 +2559,24 @@
           "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "kb.drive.n1-axial",
+          "name": "Cobretty N1 Axial Main Drive",
+          "manufacturer": "mfr.cobretty",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "ofu.drive.u33",
+          "name": "Урал-33",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kern.md.impactor",
@@ -2031,7 +2607,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "kern.radar.deb5",
@@ -2062,7 +2642,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "xz.radar.n10",
+          "name": "Синьчжи радар обзора N-10 (10 000 км)",
+          "manufacturer": "mfr.xinzhi",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.radar.s50",
+          "name": "Бастион радар обзора С-50 (50 000 км)",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "kern.tow.heavy",
@@ -2091,7 +2688,17 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "kern.tow.raft20k",
+          "name": "Kern буксирная рама плота (20 000 т)",
+          "manufacturer": "mfr.kern_heavy",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "kern.tow.raft20k",
@@ -2120,7 +2727,17 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "kern.tow.heavy",
+          "name": "Kern тяжёлый захват (обломки, камни)",
+          "manufacturer": "mfr.kern_heavy",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "ofu.cargo.p20",
@@ -2153,7 +2770,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": {
+          "part_id": "std.cabin.hold6",
+          "name": "Камера для задержанных и спасённых (6 мест)",
+          "manufacturer": "mfr.sol_mass_yards",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "uhuru.cryo.pod100",
+          "name": "Блок анабиоза (100 капсул)",
+          "manufacturer": "mfr.uhuru_bio",
+          "cooperation_group": "southern_circle",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "ofu.drive.u33",
@@ -2187,7 +2821,24 @@
           "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": {
+          "part_id": "ofu.drive.u70",
+          "name": "Урал-70",
+          "manufacturer": "mfr.ofu",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "kb.drive.n1-axial",
+          "name": "Cobretty N1 Axial Main Drive",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "ofu.drive.u65m",
@@ -2221,7 +2872,18 @@
           "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "kb.drive.cr1-vector",
+          "name": "Cobretty CR-1 Vector Main Drive",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "ofu.drive.u70",
@@ -2255,7 +2917,24 @@
           "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": {
+          "part_id": "ofu.drive.u73l",
+          "name": "Урал-73Л (подъёмный)",
+          "manufacturer": "mfr.ofu",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "kb.drive.n1-axial",
+          "name": "Cobretty N1 Axial Main Drive",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "ofu.drive.u73l",
@@ -2290,7 +2969,24 @@
           "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": {
+          "part_id": "ofu.drive.u70",
+          "name": "Урал-70",
+          "manufacturer": "mfr.ofu",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "kb.drive.n1-axial",
+          "name": "Cobretty N1 Axial Main Drive",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "ofu.lift.gear",
@@ -2318,7 +3014,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "ofu.lift.shield",
@@ -2346,7 +3046,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "ofu.ls.o4",
@@ -2377,7 +3081,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": {
+          "part_id": "terra.ls.t10",
+          "name": "Terra Habitat ЖО T-10",
+          "manufacturer": "mfr.terra_habitat",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "eurohab.ls.l4",
+          "name": "Евро-Хабитат ЖО L-4 (4 чел.)",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "sol.cool.loop300",
@@ -2405,7 +3126,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "kb.cool.loop200",
+          "name": "Cobretty coolant loop + pump (180 MW)",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "sol.cryo.t1000",
@@ -2434,7 +3166,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "sol.rad.panel50",
@@ -2465,7 +3201,18 @@
           "panel face area equals declared radiating area; thickness is service envelope"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "th.rad.panel50",
+          "name": "Тяньхэ радиаторная секция (50 м2)",
+          "manufacturer": "mfr.tianhe_heavy",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "sol.workshop.w1",
@@ -2494,7 +3241,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "srw.apu.s200",
@@ -2524,7 +3275,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": {
+          "part_id": "srw.apu.s60",
+          "name": "Sol Reactor Works S-60",
+          "manufacturer": "mfr.sol_reactor",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "kb.apu.s150",
+          "name": "Cobretty SR-150",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "srw.apu.s60",
@@ -2554,7 +3322,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": {
+          "part_id": "srw.apu.s200",
+          "name": "Sol Reactor Works S-200",
+          "manufacturer": "mfr.sol_reactor",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "kb.apu.s150",
+          "name": "Cobretty SR-150",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "srw.reactor.sr48",
@@ -2588,7 +3373,18 @@
           "reactor housing scales with mass; cooling interface scales with thermal waste"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "kb.reactor.er5",
+          "name": "Cobretty ER-5 Propulsion Reactor",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "std.armour.ceramic",
@@ -2616,7 +3412,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "bastion.armour.heavy",
+          "name": "Броня Бастиона тяжёлая (1 т)",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "std.bay.boat",
@@ -2651,7 +3458,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "std.bay.drone4",
@@ -2680,7 +3491,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "lalande_open_market"
+      "cooperation_group": "lalande_open_market",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "std.cabin.hold6",
@@ -2709,7 +3524,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": {
+          "part_id": "ofu.cargo.p20",
+          "name": "Пассажирский модуль P20 (12 мест, своё ЖО на сутки, отстреливаемый)",
+          "manufacturer": "mfr.ofu",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "uhuru.cryo.pod100",
+          "name": "Блок анабиоза (100 капсул)",
+          "manufacturer": "mfr.uhuru_bio",
+          "cooperation_group": "southern_circle",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "std.cargo.c20lock",
@@ -2738,7 +3570,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "lalande_open_market"
+      "cooperation_group": "lalande_open_market",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "std.cargo.hold100",
@@ -2767,7 +3603,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "lalande_open_market"
+      "cooperation_group": "lalande_open_market",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "std.dock.collar",
@@ -2795,7 +3635,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "lalande_open_market"
+      "cooperation_group": "lalande_open_market",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "std.med.bay",
@@ -2825,7 +3669,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "std.rcs.cluster",
@@ -2856,7 +3704,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "lalande_open_market"
+      "cooperation_group": "lalande_open_market",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "kb.rcs.fc-nozzle",
+          "name": "Cobretty field-coupled RCS nozzle",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "std.rcs.cluster_h",
@@ -2887,7 +3746,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "std.rcs.cluster",
+          "name": "Кластер RCS (4 сопла, поле)",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "std.surv.boat20",
@@ -2916,7 +3786,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "lalande_open_market"
+      "cooperation_group": "lalande_open_market",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "std.surv.refuge100",
+          "name": "Спасательный модуль-убежище (100 мест)",
+          "manufacturer": "mfr.bharat",
+          "cooperation_group": "southern_circle",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "std.surv.pod4",
@@ -2945,7 +3826,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "lalande_open_market"
+      "cooperation_group": "lalande_open_market",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "kb.surv.capsule2",
+          "name": "Cobretty катапультируемая капсула кабины (2 места)",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "std.surv.refuge100",
@@ -2974,7 +3866,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "southern_circle"
+      "cooperation_group": "southern_circle",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "std.surv.boat20",
+          "name": "Спасательная шлюпка (20 мест, 10 суток)",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "std.tank.jumpcharge",
@@ -3004,7 +3907,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "lalande_open_market"
+      "cooperation_group": "lalande_open_market",
+      "replacements": {
+        "standard": {
+          "part_id": "std.tank.pellets",
+          "name": "Бункер топливных таблеток D/He-3 (1 т)",
+          "manufacturer": "mfr.agora_modular",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "kb.rcs.argon-tank",
+          "name": "Cobretty argon RCS tank",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "std.tank.pellets",
@@ -3034,7 +3954,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "lalande_open_market"
+      "cooperation_group": "lalande_open_market",
+      "replacements": {
+        "standard": {
+          "part_id": "std.tank.jumpcharge",
+          "name": "Бак заряда прыжка (1 т)",
+          "manufacturer": "mfr.agora_modular",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "kb.rcs.argon-tank",
+          "name": "Cobretty argon RCS tank",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "terra.ls.t10",
@@ -3065,7 +4002,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": {
+          "part_id": "ofu.ls.o4",
+          "name": "ОФУ ЖО О-4 (челнок)",
+          "manufacturer": "mfr.ofu",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "eurohab.ls.l20",
+          "name": "Евро-Хабитат ЖО L-20",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "terra.ls.t200",
@@ -3096,7 +4050,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": {
+          "part_id": "terra.ls.t60",
+          "name": "Terra Habitat ЖО T-60 (флот)",
+          "manufacturer": "mfr.terra_habitat",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "uhuru.ls.u500",
+          "name": "Uhuru ЖО U-500 (биорегенерация)",
+          "manufacturer": "mfr.uhuru_bio",
+          "cooperation_group": "southern_circle",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "terra.ls.t60",
@@ -3127,7 +4098,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "sol_industrial"
+      "cooperation_group": "sol_industrial",
+      "replacements": {
+        "standard": {
+          "part_id": "terra.ls.t200",
+          "name": "Terra Habitat ЖО T-200 (флот)",
+          "manufacturer": "mfr.terra_habitat",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "eurohab.ls.l200",
+          "name": "Евро-Хабитат ЖО L-200 (лайнер)",
+          "manufacturer": "mfr.eurohab",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "th.apu.s150",
@@ -3157,7 +4145,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": {
+          "part_id": "th.apu.s600",
+          "name": "Тяньхэ СР-600",
+          "manufacturer": "mfr.tianhe_heavy",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "kb.apu.s150",
+          "name": "Cobretty SR-150",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "th.apu.s600",
@@ -3187,7 +4192,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": {
+          "part_id": "th.apu.s150",
+          "name": "Тяньхэ СР-150",
+          "manufacturer": "mfr.tianhe_heavy",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "srw.apu.s200",
+          "name": "Sol Reactor Works S-200",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "th.cool.loop600",
@@ -3215,7 +4237,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "sol.cool.loop300",
+          "name": "ЛМВ контур охлаждения (300 МВт)",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "th.drive.tz11",
@@ -3249,7 +4282,24 @@
           "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": {
+          "part_id": "th.drive.tz16v",
+          "name": "Тяньхэ ТЦ-1.6В (военная поставка)",
+          "manufacturer": "mfr.tianhe_heavy",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "kb.drive.cr1-vector",
+          "name": "Cobretty CR-1 Vector Main Drive",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "th.drive.tz16v",
@@ -3284,7 +4334,24 @@
           "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": {
+          "part_id": "th.drive.tz11",
+          "name": "Тяньхэ ТЦ-11",
+          "manufacturer": "mfr.tianhe_heavy",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "ofu.drive.u65m",
+          "name": "Урал-65М (служебный)",
+          "manufacturer": "mfr.ofu",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "th.drive.tz28",
@@ -3319,7 +4386,18 @@
           "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "kb.drive.n1-axial",
+          "name": "Cobretty N1 Axial Main Drive",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "th.rad.panel50",
@@ -3350,7 +4428,18 @@
           "panel face area equals declared radiating area; thickness is service envelope"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "sol.rad.panel50",
+          "name": "ЛМВ радиаторная секция (50 м2)",
+          "manufacturer": "mfr.sol_mass_yards",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "th.reactor.tr10",
@@ -3384,7 +4473,24 @@
           "reactor housing scales with mass; cooling interface scales with thermal waste"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": {
+          "part_id": "th.reactor.tr26v",
+          "name": "Тяньхэ ТР-2.6В",
+          "manufacturer": "mfr.tianhe_heavy",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "kb.reactor.er5",
+          "name": "Cobretty ER-5 Propulsion Reactor",
+          "manufacturer": "mfr.cobretty",
+          "cooperation_group": "cognium_pool",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "th.reactor.tr26v",
@@ -3418,7 +4524,24 @@
           "reactor housing scales with mass; cooling interface scales with thermal waste"
         ]
       },
-      "cooperation_group": "heavenly_pact"
+      "cooperation_group": "heavenly_pact",
+      "replacements": {
+        "standard": {
+          "part_id": "th.reactor.tr10",
+          "name": "Тяньхэ ТР-10",
+          "manufacturer": "mfr.tianhe_heavy",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "srw.reactor.sr48",
+          "name": "Sol Reactor Works SR-4.8",
+          "manufacturer": "mfr.sol_reactor",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "uhuru.cryo.pod100",
@@ -3448,7 +4571,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "southern_circle"
+      "cooperation_group": "southern_circle",
+      "replacements": {
+        "standard": {
+          "part_id": "bharat.hab.bunk500",
+          "name": "Секция переселенцев (500 коек)",
+          "manufacturer": "mfr.bharat",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "agora.hab.pax100",
+          "name": "Пассажирская секция Agora (100 мест)",
+          "manufacturer": "mfr.agora_modular",
+          "cooperation_group": "lalande_open_market",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "uhuru.ls.u500",
@@ -3479,7 +4619,18 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "southern_circle"
+      "cooperation_group": "southern_circle",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": {
+          "part_id": "terra.ls.t200",
+          "name": "Terra Habitat ЖО T-200 (флот)",
+          "manufacturer": "mfr.terra_habitat",
+          "cooperation_group": "sol_industrial",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "um.core.z05",
@@ -3509,7 +4660,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "um.core.z1",
+          "name": "Ядро «Нулевая точка» Я-1",
+          "manufacturer": "mfr.um_core_fab",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "harmony.core.h5",
+          "name": "Гармония Х-5 (сборка из блоков Когниума)",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "um.core.z1",
@@ -3539,7 +4707,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "um.core.z05",
+          "name": "Ядро «Нулевая точка» Я-0.5",
+          "manufacturer": "mfr.um_core_fab",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "harmony.core.h5",
+          "name": "Гармония Х-5 (сборка из блоков Когниума)",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "um.core.z5",
@@ -3569,7 +4754,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "um.core.z1",
+          "name": "Ядро «Нулевая точка» Я-1",
+          "manufacturer": "mfr.um_core_fab",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "harmony.core.h5",
+          "name": "Гармония Х-5 (сборка из блоков Когниума)",
+          "manufacturer": "mfr.harmony_yards",
+          "cooperation_group": "heavenly_pact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "um.xpdr.t1",
@@ -3598,7 +4800,11 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": null,
+        "hostile_or_foreign": null
+      }
     },
     {
       "id": "xz.comm.c1",
@@ -3628,7 +4834,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "xz.comm.c3",
+          "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
+          "manufacturer": "mfr.xinzhi",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.comm.w1",
+          "name": "Бастион связь БС-1",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "xz.comm.c3",
@@ -3658,7 +4881,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "hyp.relay.r1",
+          "name": "Hyperion полевой ретранслятор R-1 (сеть маяков в войну)",
+          "manufacturer": "mfr.hyperion",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.comm.w1",
+          "name": "Бастион связь БС-1",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "xz.mc.c1",
@@ -3688,7 +4928,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "xz.mc.c3",
+          "name": "Синьчжи MotherComputer MC-C3 (флот)",
+          "manufacturer": "mfr.xinzhi",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "kapehu.mc.k1",
+          "name": "Капеху бортовой вычислитель K-1",
+          "manufacturer": "mfr.kapehu_systems",
+          "cooperation_group": "southern_circle",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "xz.mc.c3",
@@ -3718,7 +4975,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "hyp.mc.r1",
+          "name": "Hyperion разведывательный вычислитель HR-1",
+          "manufacturer": "mfr.hyperion",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.mc.w1",
+          "name": "Бастион боевой вычислитель БВ-1",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "xz.radar.n10",
@@ -3749,7 +5023,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "kern.radar.deb5",
+          "name": "Kern радар обломков DR-5 (5 000 км)",
+          "manufacturer": "mfr.kern_heavy",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.radar.s50",
+          "name": "Бастион радар обзора С-50 (50 000 км)",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     },
     {
       "id": "xz.radar.n2",
@@ -3780,7 +5071,24 @@
           "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
         ]
       },
-      "cooperation_group": "cognium_pool"
+      "cooperation_group": "cognium_pool",
+      "replacements": {
+        "standard": {
+          "part_id": "kern.radar.deb5",
+          "name": "Kern радар обломков DR-5 (5 000 км)",
+          "manufacturer": "mfr.kern_heavy",
+          "fit": "functional_analog",
+          "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
+        },
+        "hostile_or_foreign": {
+          "part_id": "bastion.radar.s50",
+          "name": "Бастион радар обзора С-50 (50 000 км)",
+          "manufacturer": "mfr.bastion",
+          "cooperation_group": "citadel_compact",
+          "fit": "adapter_or_refit_required",
+          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
+        }
+      }
     }
   ]
 }

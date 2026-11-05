@@ -2360,9 +2360,12 @@
    "id": "NEW-JERUSALEM-1",
    "aliases": [
     "Новый Иерусалим",
-    "Святой Сион",
+    "Ново-Фиваида",
     "Ледяная Вера"
    ],
+   "retired_aliases": {
+    "Святой Сион": "рабочее имя колонии до 2026-11-05; решение автора — не использовать, колония и полития называются Ново-Фиваида"
+   },
    "wave": "III",
    "canon_status": "canon",
    "sponsor": "Christian fundamentalists: evangelicals, traditionalist Catholic orders, Orthodox conservatives",

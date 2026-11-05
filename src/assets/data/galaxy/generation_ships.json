@@ -1018,7 +1018,7 @@
         },
         "aliases": [
           "Новый Иерусалим",
-          "Святой Сион",
+          "Ново-Фиваида",
           "Ледяная Вера"
         ],
         "wave": "III",
@@ -1045,7 +1045,7 @@
         "ship_note": "на парковочной орбите 83 Leonis B h",
         "location_3126": 45,
         "living_aboard_3126": 8900,
-        "owner_3126": "Синод",
+        "owner_3126": "Синод Ново-Фиваиды",
         "findable": true,
         "author_knows_truth": true,
         "colony": "leo83_zion",

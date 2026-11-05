@@ -24,7 +24,7 @@
 | [EUROPA-1](EUROPA-1.md) | Европа-1 | II | 2250 | Gliese 581 | 2377 | 12 000 | 10 500 | arrived | [Новая Европа](../COLONIES/gj581_europa.md) | CANON · PUBLIC |
 | [NEW-HELLAS-1](NEW-HELLAS-1.md) | Новая Эллада (корабль) | III | 2260 | HD 20794 (82 G. Eridani) | 2384 | 15 000 | 12 800 | arrived | [Вторая Эллада](../COLONIES/hd20794_hellas2.md) | CANON · PUBLIC |
 | [RESOURCER-1](RESOURCER-1.md) | Ресурсер-1 | II | 2260 | 61 Cygni | 2355 | 10 000 | 9 000 | arrived | [Шахта Альфа](../COLONIES/cyg61_kern.md) | CANON · PUBLIC |
-| [NEW-JERUSALEM-1](NEW-JERUSALEM-1.md) | Новый Иерусалим | III | 2270 | 83 Leonis | 3126 | 12 000 | 8 900 | arrived_3126 | [Святой Сион (на орбите)](../COLONIES/leo83_zion.md) | CANON · PUBLIC |
+| [NEW-JERUSALEM-1](NEW-JERUSALEM-1.md) | Новый Иерусалим | III | 2270 | 83 Leonis | 3126 | 12 000 | 8 900 | arrived_3126 | [Ново-Фиваида](../COLONIES/leo83_zion.md) | CANON · PUBLIC |
 | [UHURU-2](UHURU-2.md) | Ухуру-2 | III | 2280 | HD 40307 | 2542 | 30 000 | 24 500 | arrived | [Новая Маланд](../COLONIES/hd40307_maland.md) | CANON · PUBLIC |
 | [ODYSSEY-1](ODYSSEY-1.md) | Одиссей | III | 2290 | HD 114783 | 3122 | 15 000 | 11 200 | arrived_3122 | [Третья Эллада](../COLONIES/hd114783_hellas3.md) | CANON · PUBLIC |
 | [NIRVANA-1](NIRVANA-1.md) | Нирвана-1 | III | 2300 | 100062 | — | 3 500 | — | [спойлер: см. досье] | — | CANON · PUBLIC |

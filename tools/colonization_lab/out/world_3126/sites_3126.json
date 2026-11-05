@@ -1396,7 +1396,7 @@
    "body": "system_24.Gliese_436.Gliese_436_K1",
    "docks": 4,
    "founded": 3034,
-   "history": "Поставлено в 3034-3036, когда Керн готовил заявки у HD 114783 и 83 Leonis: прыжок Gliese 357 → 83 Leonis (37.9 св. лет) невозможен при пределе 32, а через Gliese 436 — два прыжка по 30.6 и 30.8. Без «Перевала» нет ни Третьей Эллады, ни Святого Сиона.",
+   "history": "Поставлено в 3034-3036, когда Керн готовил заявки у HD 114783 и 83 Leonis: прыжок Gliese 357 → 83 Leonis (37.9 св. лет) невозможен при пределе 32, а через Gliese 436 — два прыжка по 30.6 и 30.8. Без «Перевала» нет ни Третьей Эллады, ни Ново-Фиваиды.",
    "id": "site.024.pereval",
    "language": "en",
    "legal": "lawful",
@@ -13739,12 +13739,12 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 14.3,
-   "name": "Святой Сион (на орбите)",
+   "name": "Ново-Фиваида (ковчег на орбите)",
    "night_light": {
     "pop": 4783,
     "source": "population"
    },
-   "operator": "Святой Сион (на орбите)",
+   "operator": "Ново-Фиваида",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -13782,7 +13782,7 @@
     "pop": 2391,
     "source": "population"
    },
-   "operator": "Святой Сион (на орбите)",
+   "operator": "Ново-Фиваида",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -13820,7 +13820,7 @@
     "pop": 1594,
     "source": "population"
    },
-   "operator": "Святой Сион (на орбите)",
+   "operator": "Ново-Фиваида",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -13857,8 +13857,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 22.5,
-   "name": "Святой Сион (на орбите): торговый хаб 1",
-   "operator": "Святой Сион (на орбите)",
+   "name": "Ново-Фиваида: торговый хаб 1",
+   "operator": "Ново-Фиваида",
    "placement": {
     "orbit": {
      "altitude_km": 72354
@@ -13890,8 +13890,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Святой Сион (на орбите): горнодобывающий хаб 1",
-   "operator": "Святой Сион (на орбите)",
+   "name": "Ново-Фиваида: горнодобывающий хаб 1",
+   "operator": "Ново-Фиваида",
    "placement": {
     "belt": {
      "longitude_deg": 34.59,
@@ -13924,8 +13924,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Святой Сион (на орбите): промышленный хаб 1",
-   "operator": "Святой Сион (на орбите)",
+   "name": "Ново-Фиваида: промышленный хаб 1",
+   "operator": "Ново-Фиваида",
    "placement": {
     "orbit": {
      "altitude_km": 121768
@@ -13957,8 +13957,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Святой Сион (на орбите): научный хаб 1",
-   "operator": "Святой Сион (на орбите)",
+   "name": "Ново-Фиваида: научный хаб 1",
+   "operator": "Ново-Фиваида",
    "placement": {
     "orbit": {
      "altitude_km": 73078

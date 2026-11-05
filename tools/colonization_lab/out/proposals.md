@@ -2,7 +2,7 @@
 
 Генерируется `lab.py` из статусов `canon/*.json` (knowledge.py). CANON = есть в заметках автора; PROPOSAL = добавлено/пересчитано Claude или является результатом модели; UNKNOWN = намеренно без ответа. Видимость: PUBLIC_RECORD / AUTHOR_TRUTH.
 
-Счётчики: AUTHOR_TRUTH 17, CANON 309, PROPOSAL 292, PUBLIC_RECORD 591, UNKNOWN 7
+Счётчики: AUTHOR_TRUTH 17, CANON 310, PROPOSAL 291, PUBLIC_RECORD 591, UNKNOWN 7
 
 Все выходы модели (население 3126, экономика, коридоры, технологии) — PROPOSAL (model) и в этот список не перечисляются поштучно.
 
@@ -36,7 +36,7 @@
 | beacons/41@3050 | PROPOSAL | PUBLIC_RECORD | год и оператор маяка — реконсиляция | tau_ceti_cognium |
 | beacons/0@3112 | PROPOSAL | PUBLIC_RECORD | год и оператор маяка — реконсиляция | sol_authority |
 
-## colonies (128)
+## colonies (127)
 
 | путь | статус | видимость | основание | что |
 |---|---|---|---|---|
@@ -165,7 +165,6 @@
 | colonies/leo83_zion/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/leo83_zion/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/leo83_zion/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
-| colonies/leo83_zion/name | PROPOSAL | PUBLIC_RECORD | имя дано реконсиляцией / старой веткой | name |
 | colonies/leo83_zion/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/leo83_zion/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 

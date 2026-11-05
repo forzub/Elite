@@ -140,9 +140,9 @@
 | Epsilon Eridani — Delta Pavonis | 22.45 | 0.00 | 0.0 | feeder | — | Новая Карма, Цветущая Гармония | BCN-009-BR, BCN-022-BR | `PROPOSAL` (модель) |
 | HD 20794 (82 G. Eridani) — 61 Cygni | 26.91 | 0.00 | 0.0 | feeder | — | Шахта Альфа, Вторая Эллада | BCN-014-BR, BCN-031-BR | `PROPOSAL` (модель) |
 | HD 20794 (82 G. Eridani) — Proxima Centauri | 18.97 | 0.00 | 0.0 | feeder | — | Вторая Эллада, Красный Форпост | BCN-014-BR | `PROPOSAL` (модель) |
-| Gliese 436 — 83 Leonis | 30.75 | 0.00 | 0.0 | feeder | — | Святой Сион (на орбите) | BCN-024-BR, BCN-045-BR | `PROPOSAL` (модель) |
+| Gliese 436 — 83 Leonis | 30.75 | 0.00 | 0.0 | feeder | — | Ново-Фиваида | BCN-024-BR, BCN-045-BR | `PROPOSAL` (модель) |
 | Lalande 21185 — Gliese 436 | 25.03 | 0.00 | 0.0 | feeder | — | Новая Эллада / Агора | BCN-004-BR, BCN-024-BR | `PROPOSAL` (модель) |
-| HD 114783 — 83 Leonis | 30.41 | 0.00 | 0.0 | feeder | — | Третья Эллада, Святой Сион (на орбите) | BCN-037-BR, BCN-045-BR | `PROPOSAL` (модель) |
+| HD 114783 — 83 Leonis | 30.41 | 0.00 | 0.0 | feeder | — | Третья Эллада, Ново-Фиваида | BCN-037-BR, BCN-045-BR | `PROPOSAL` (модель) |
 | Gliese 832 — Gliese 876 | 10.38 | 0.00 | 0.0 | feeder | — | Тяньхэ (Небесная Река), Провидение | BCN-012-BR, BCN-013-BR | `PROPOSAL` (модель) |
 | Gliese 581 — Proxima Centauri | 18.23 | 0.00 | 0.0 | feeder | — | Новая Европа, Красный Форпост | BCN-010-BR | `PROPOSAL` (модель) |
 | Wolf 359 — Gliese 436 | 26.04 | 0.00 | 0.0 | feeder | — | Цитадель | BCN-003-BR, BCN-024-BR | `PROPOSAL` (модель) |

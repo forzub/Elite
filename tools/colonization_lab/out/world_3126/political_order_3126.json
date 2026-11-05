@@ -6193,11 +6193,12 @@
     0,
     1,
     2,
-    2,
+    4,
     1
    ],
    "why": [
-    "max(export seller, import buyer)"
+    "max(export seller, import buyer)",
+    "universal_jump_licence_2850: buyer not a holder -> strategic=4"
    ]
   },
   "tau_ceti_cognium|gj581_europa": {
@@ -6219,11 +6220,12 @@
     0,
     1,
     2,
-    2,
+    4,
     1
    ],
    "why": [
-    "max(export seller, import buyer)"
+    "max(export seller, import buyer)",
+    "universal_jump_licence_2850: buyer not a holder -> strategic=4"
    ]
   },
   "tau_ceti_cognium|gj832_gaia_zone": {
@@ -6271,11 +6273,12 @@
     0,
     1,
     2,
-    2,
+    4,
     1
    ],
    "why": [
-    "max(export seller, import buyer)"
+    "max(export seller, import buyer)",
+    "universal_jump_licence_2850: buyer not a holder -> strategic=4"
    ]
   },
   "tau_ceti_cognium|hd20794_hellas2": {
@@ -6363,11 +6366,12 @@
     1,
     1,
     2,
-    2,
+    4,
     1
    ],
    "why": [
-    "max(export seller, import buyer)"
+    "max(export seller, import buyer)",
+    "universal_jump_licence_2850: buyer not a holder -> strategic=4"
    ]
   },
   "tau_ceti_cognium|leo83_zion": {
@@ -6376,11 +6380,12 @@
     0,
     1,
     2,
-    2,
+    4,
     2
    ],
    "why": [
-    "max(export seller, import buyer)"
+    "max(export seller, import buyer)",
+    "universal_jump_licence_2850: buyer not a holder -> strategic=4"
    ]
   },
   "tau_ceti_cognium|proxima_outpost": {
@@ -7115,6 +7120,61 @@
   },
   {
    "check": "nonaligned_not_mutual_allies",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "cognium_cores_only_to_licence_holders",
+   "detail": "ok",
+   "ok": true
+  },
+  {
+   "check": "no_cognium_cores_for_refusers_and_copiers",
+   "detail": "proxima_outpost,eps_eri_strife,gj581_freeclans,delta_pav_karma",
+   "ok": true
+  },
+  {
+   "check": "own_core_makers_not_licence_buyers",
+   "detail": "tau_ceti_cognium,lalande_mecca,wolf359_citadel",
+   "ok": true
+  },
+  {
+   "check": "controlled_goods_not_military",
+   "detail": "only the weapons group is military; narcotics = civilian_goods + legality layer",
+   "ok": true
+  },
+  {
+   "check": "transit_never_strategic",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "finance_bridge_no_strategic_cap",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "kern_cannot_sell_strategic_to_citadel",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "providence_does_not_lift_sanctions",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "citadel_civilian_open_strategic_closed",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "every_element_has_player_role",
+   "detail": "Chekhov's gun: all blocs, non-aligned, units, exceptions, licences, sanctions",
+   "ok": true
+  },
+  {
+   "check": "free_belts_military_only_grey",
    "detail": "",
    "ok": true
   }

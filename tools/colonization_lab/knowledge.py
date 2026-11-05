@@ -53,6 +53,8 @@ MISSION_PROPOSAL = {"GENESIS-1": "реконсиляция A2 (идея стар
 AUTHOR_TRUTH_MISSIONS = {"GAIA-2": "живые «тихие» и пустой корабль", "DEEP-SEEK-1": "уничтожен автономным роем CD-2",
                          "LAST-LIGHT-1": "груз: архив Хартий и верительные грамоты Земли", "GREEN-ARK-1": "симбионт из корабельного микробиома",
                          "NIRVANA-1": "2680: складка поля перенесла корабль в поле «Лотоса» за HD 104067; экипаж погиб от синдрома поля к 2712; «Лотос» = NIRVANA-1 (решение автора 2026-11-03; детали — PROPOSAL)"}
+# author decisions on display names that are not (yet) in the author's note corpus
+AUTHOR_NAMES = {"leo83_zion": "решение автора 2026-11-05: Ново-Фиваида (исторический актор actors.json id 10); «Святой Сион» не используется"}
 UNKNOWNS = [
     dict(id="IRON-SHIELD-2.cause", text="что случилось с IRON-SHIELD-2 (3 000 человек, 2355)", status=U, visibility=AT),
     dict(id="UBUNTU-1.cause", text="причина гибели UBUNTU-1 («огни»)", status=U, visibility=AT),
@@ -168,7 +170,9 @@ def annotate_world(W, T, MS):
               "culture_drift": k(P, PUB, "гипотеза Colonycore v2"),
               "demography": k(P, PUB, "входы причинной демографии (допущения F1–F12)"),
               "pop_3126_model": k(P, PUB, "результат модели demography.py, не канон")}
-        if c.get("name") and c["name"] in every:
+        if c["id"] in AUTHOR_NAMES:
+            fs["name"] = k(C, PUB, AUTHOR_NAMES[c["id"]])
+        elif c.get("name") and c["name"] in every:
             fs["name"] = k(C, PUB, "имя есть в заметках автора")
         else:
             fs["name"] = k(P, PUB, "имя дано реконсиляцией / старой веткой")

@@ -44,7 +44,7 @@ nonaligned (4): delta_pav_karma (ideological_isolationist), gj876_next (strategi
 
 | продавец \ покупатель | tau_ceti_cognium | eps_eri_harmony | lalande_hellas | hd20794_newindia | wolf359_citadel | eps_eri_strife | sol_authority | delta_pav_karma | gj876_next | hd69830_verde | leo83_zion | gj832_gaia_zone |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| tau_ceti_cognium | — | 011222 | 001220 | 011221 | 013443 | 001221 | 001222 | 234444 | 001221 | 001221 | 001222 | 344442 |
+| tau_ceti_cognium | — | 011222 | 001220 | 011221 | 013443 | 001241 | 001222 | 234444 | 001221 | 001221 | 001242 | 344442 |
 | eps_eri_harmony | 012242 | — | 012240 | 012242 | 012243 | 024443 | 012242 | 234444 | 001241 | 012242 | 012242 | 344442 |
 | lalande_hellas | 001230 | 011230 | — | 011230 | 012240 | 001230 | 001230 | 234444 | 001230 | 001230 | 001230 | 344442 |
 | hd20794_newindia | 012241 | 012242 | 012240 | — | 012243 | 012241 | 012242 | 234444 | 001241 | 012241 | 012242 | 344442 |
@@ -80,3 +80,14 @@ nonaligned (4): delta_pav_karma (ideological_isolationist), gj876_next (strategi
 - OK southern_circle_less_integrated_than_pact: 
 - OK zone_closed_to_ordinary_trade: 
 - OK nonaligned_not_mutual_allies: 
+- OK cognium_cores_only_to_licence_holders: ok
+- OK no_cognium_cores_for_refusers_and_copiers: proxima_outpost,eps_eri_strife,gj581_freeclans,delta_pav_karma
+- OK own_core_makers_not_licence_buyers: tau_ceti_cognium,lalande_mecca,wolf359_citadel
+- OK controlled_goods_not_military: only the weapons group is military; narcotics = civilian_goods + legality layer
+- OK transit_never_strategic: 
+- OK finance_bridge_no_strategic_cap: 
+- OK kern_cannot_sell_strategic_to_citadel: 
+- OK providence_does_not_lift_sanctions: 
+- OK citadel_civilian_open_strategic_closed: 
+- OK every_element_has_player_role: Chekhov's gun: all blocs, non-aligned, units, exceptions, licences, sanctions
+- OK free_belts_military_only_grey: 

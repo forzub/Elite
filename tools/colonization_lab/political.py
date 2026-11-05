@@ -49,6 +49,14 @@ class Order:
                 self.unit_actor[u] = None
         self.exceptions = P["exceptions"]
         self.sanctions = P["sanctions"]
+        self.jump = {j["unit"]: j for j in self.W["jump_technology"]}
+        self.licences = []
+        for L in P.get("licences", []):
+            holders = {j["unit"] for j in self.W["jump_technology"] if j["how"] in L["holders_from_jump_how"]}
+            holders |= set(L.get("extra_holders", {}))
+            holders |= set(self.actors[L["licensor"]]["units"])
+            self.licences.append(dict(L, holders=holders))
+        self._cache = {}
 
     # ------------------------------------------------------------ membership
     def actor_of(self, unit):
@@ -116,8 +124,20 @@ class Order:
             return ba == s["from"] and sa == s["to"] and (not s.get("units_from") or buyer in s["units_from"]) and (not s.get("units_to") or seller in s["units_to"])
         return False
 
+    def licence_holder(self, licence_id, unit):
+        L = next(x for x in self.licences if x["id"] == licence_id)
+        return unit in L["holders"]
+
     def access(self, seller, buyer, trace=False):
         """Directional access seller unit -> buyer unit per category (0..4)."""
+        if not trace:
+            k = (seller, buyer)
+            if k not in self._cache:
+                self._cache[k] = self._access(seller, buyer, False)
+            return dict(self._cache[k])
+        return self._access(seller, buyer, True)
+
+    def _access(self, seller, buyer, trace=False):
         why = []
         if seller == buyer or (self.actor_of(seller) and self.actor_of(seller) == self.actor_of(buyer)):
             lv = {c: 0 for c in self.cats}
@@ -143,6 +163,11 @@ class Order:
                     if lv[c] > cap:
                         lv[c] = cap
                         why.append(f"{ex['id']} caps {c}={cap}")
+        # licence layer: the licensor sells its licensed category only to licence holders
+        for L in self.licences:
+            if self.actor_of(seller) == L["licensor"] and buyer not in L["holders"] and lv[L["category"]] < L["non_holder_level"]:
+                lv[L["category"]] = L["non_holder_level"]
+                why.append(f"{L['id']}: buyer not a holder -> {L['category']}={L['non_holder_level']}")
         raised_closed = set()
         for s in self.sanctions:
             if not self._sanction_hits(s, seller, buyer):
@@ -266,6 +291,30 @@ def checks(O):
     add("southern_circle_less_integrated_than_pact", sum(O.blocs["southern_circle"]["internal"].values()) > sum(O.blocs["heavenly_pact"]["internal"].values()))
     add("zone_closed_to_ordinary_trade", all(a(u, z)["civilian_goods"] >= 3 and a(z, u)["civilian_goods"] == 4 for z in O.zones() for u in O.units if u != z))
     add("nonaligned_not_mutual_allies", all(O.access_key(x) != O.access_key(y) for x in O.nonaligned() for y in O.nonaligned() if x != y))
+    # jump cores: who may legally obtain a strategic product from whom (licence + own technology + sanctions)
+    strat_ok = {(s, b) for s in O.units for b in O.units if s != b and a(s, b)["strategic"] <= 2}
+    bad = []
+    for s, b in sorted(strat_ok):
+        jt = O.jump.get(s)
+        if O.actor_of(s) == "tau_ceti_cognium" and O.jump.get(b, {}).get("how") in ("own", "stolen", None) and b not in O.licences[0]["extra_holders"]:
+            bad.append(f"{s}->{b}")
+    add("cognium_cores_only_to_licence_holders", not bad, ",".join(bad[:8]) or "ok")
+    refusers = [u for u in O.units if O.jump.get(u, {}).get("how") == "stolen" or u == "delta_pav_karma"]
+    add("no_cognium_cores_for_refusers_and_copiers", all(a("tau_ceti_cognium", u)["strategic"] >= 4 for u in refusers if u != "tau_ceti_cognium"), ",".join(refusers))
+    own = [u for u in O.units if O.jump.get(u, {}).get("how") in ("own", "state_secret")]
+    add("own_core_makers_not_licence_buyers", all(a("tau_ceti_cognium", u)["strategic"] >= 4 for u in own if u != "tau_ceti_cognium"), ",".join(own))
+    cat = O.P["categories"]
+    mil_goods = [g for g, c in cat["goods_override"].items() if c == "military"] + [g for g, c in cat["goods_group"].items() if c == "military" and g != "weapons"]
+    add("controlled_goods_not_military", not mil_goods, ",".join(mil_goods) or "only the weapons group is military; narcotics = civilian_goods + legality layer")
+    add("transit_never_strategic", all("strategic" not in e.get("transit_categories", []) and "military" not in e.get("transit_categories", []) for e in O.exceptions))
+    add("finance_bridge_no_strategic_cap", all(c not in e["cap"] for e in O.exceptions if e["kind"] in ("finance_bridge", "transit_hub", "multivector_neutral", "fuel_supplier") for c in ("strategic", "military")))
+    add("kern_cannot_sell_strategic_to_citadel", a("cyg61_kern", "wolf359_citadel")["strategic"] >= 3 and a("cyg61_kern", "wolf359_citadel")["military"] >= 2)
+    add("providence_does_not_lift_sanctions", all(a("gj876_next", u)["strategic"] >= 3 for u in O.units if u != "gj876_next"))
+    add("citadel_civilian_open_strategic_closed", all(a(u, "wolf359_citadel")["civilian_goods"] <= 1 and a("wolf359_citadel", u)["strategic"] == 4 for u in O.units
+                                                      if O.bloc_of_unit(u) != "citadel_compact" and u not in O.zones() and u != "delta_pav_karma"))
+    no_role = [f"bloc:{b}" for b, v in O.blocs.items() if not v.get("player_role")] + [f"nonaligned:{x}" for x in O.nonaligned() if not O.P["nonaligned"][x].get("player_role")] +         [f"unit:{u}" for u, v in O.P["units"].items() if not v.get("player_role")] + [f"exception:{e['id']}" for e in O.exceptions if not e.get("player_role")] +         [f"licence:{L['id']}" for L in O.licences if not L.get("player_role")] + ([] if O.P.get("sanctions_player_role") else ["sanctions"])
+    add("every_element_has_player_role", not no_role, ",".join(no_role) or "Chekhov's gun: all blocs, non-aligned, units, exceptions, licences, sanctions")
+    add("free_belts_military_only_grey", all(a(u, b)["military"] >= 3 for u in O.bloc_units("free_belts") for b in O.units if O.bloc_of_unit(b) != "free_belts"))
     return res
 
 

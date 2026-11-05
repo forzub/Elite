@@ -503,6 +503,35 @@ L_ASSET_GOOD = {"gas_platform": "he3", "ice_export": "volatiles", "mine": "metal
               "factory": "components", "electronics_fab": "electronics", "shipyard": "hulls", "arsenal_shipyard": "munitions"}
 
 
+
+class PoliticalTradeAccess:
+    """Bridge trade.py -> political.py: outposts trade under their owner's political status."""
+
+    def __init__(self, W, actors):
+        import political
+        self.PO = political.Order(W=W)
+        C = self.PO.P["categories"]
+        self.cat = C["lab_trade_good"]
+        self.mk = C["trade_markup_by_level"]
+        self.end = set(C.get("end_use_controlled", []))
+        self.unit = {a["id"]: (a["id"] if a["id"] in self.PO.unit_actor else a.get("owner")) for a in actors}
+        self._m = {}
+
+    def level(self, seller, buyer, g):
+        s, b = self.unit.get(seller), self.unit.get(buyer)
+        if s is None or b is None or s not in self.PO.unit_actor or b not in self.PO.unit_actor:
+            return 0
+        return self.PO.access(s, b)[self.cat[g]]
+
+    def markup(self, seller, buyer, g):
+        k = (seller, buyer, g)
+        if k not in self._m:
+            self._m[k] = self.mk[self.level(seller, buyer, g)]
+        return self._m[k]
+
+    def end_use(self, g):
+        return self.cat[g] in self.end
+
 class LegacyEconomy:
     """The pre-2026-11-02 market (per-capita demand, transport cost independent of mass), kept only to
     list which flows vanished / appeared with the causal populations and the mass-based freight."""
@@ -957,8 +986,9 @@ def run(seed):
         relations[tuple(sorted((r["a"], r["b"])))] = r["grievance"]
     g3126 = beacon_graph(W, E, YEAR_END)
     operators = {b["system"]: b["operator"] for b in W["beacons"]}
-    # ---- new economy
-    econ = trade.Economy(actors, profiles, E, g3126)
+    # ---- new economy (flows gated by the political order: political.py)
+    pol_access = PoliticalTradeAccess(W, actors)
+    econ = trade.Economy(actors, profiles, E, g3126, access=pol_access)
     hist = econ.run(30, relations)
     base = econ.snapshot(hist)
     corridors = econ.corridors(base, operators, min_value=0.0)
@@ -995,7 +1025,7 @@ def run(seed):
     targets = [c["id"] for c in sorted(econ.cols, key=lambda c: (-c["pop"], c["id"]))[:12]]
 
     def scenario(sh, cid):
-        e2 = trade.Economy(actors, profiles, E, g3126)
+        e2 = trade.Economy(actors, profiles, E, g3126, access=pol_access)
         e2.stock = json.loads(json.dumps(econ.stock))
         e2.run(5, relations)
         if sh:

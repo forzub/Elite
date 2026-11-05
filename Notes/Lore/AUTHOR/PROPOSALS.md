@@ -39,7 +39,7 @@
 | beacons/41@3050 | tau_ceti_cognium | год и оператор маяка — реконсиляция | PROPOSAL · PUBLIC |
 | beacons/0@3112 | sol_authority | год и оператор маяка — реконсиляция | PROPOSAL · PUBLIC |
 
-### colonies (128)
+### colonies (127)
 
 | Путь | Что | Основание | Статус |
 |---|---|---|---|
@@ -168,7 +168,6 @@
 | colonies/leo83_zion/assets | assets | активы и их важность — реконсиляция/экономика | PROPOSAL · PUBLIC |
 | colonies/leo83_zion/culture_drift | culture_drift | гипотеза Colonycore v2 | PROPOSAL · PUBLIC |
 | colonies/leo83_zion/demography | demography | входы причинной демографии (допущения F1–F12) | PROPOSAL · PUBLIC |
-| colonies/leo83_zion/name | name | имя дано реконсиляцией / старой веткой | PROPOSAL · PUBLIC |
 | colonies/leo83_zion/pop_3126_model | pop_3126_model | результат модели demography.py, не канон | PROPOSAL · PUBLIC |
 | colonies/leo83_zion/regime_3126 | regime_3126 | машинная метка режима по досье (Claude) | PROPOSAL · PUBLIC |
 
@@ -395,7 +394,7 @@
 | Новая Эллада / Агора | 6 | Новая Эллада / Агора, Lalande 21185 h — поселение, Lalande 21185 k — поселение, Агора — нейтральный порт и биржа, Платформы Lalande 21185 j (эллинская доля), Академия Новой Эллады |
 | Новая Мекка | 6 | Новая Мекка, Lalande 21185 h — поселение, Lalande 21185 k — поселение, Обсерватория-вычислитель «Расад», Платформы Lalande 21185 j (доля Мекки), Сады Lalande 21185 g |
 | «Золотой Город» | 3 | «Золотой Город», 83 Leonis B i — поселение, 83 Leonis B j II — поселение |
-| Святой Сион (на орбите) | 3 | Святой Сион (на орбите), 83 Leonis B i — поселение, 83 Leonis B j II — поселение |
+| Ново-Фиваида | 3 | Ново-Фиваида (ковчег на орбите), 83 Leonis B i — поселение, 83 Leonis B j II — поселение |
 | Красный Форпост | 7 | Красный Форпост, Proxima Centauri k — поселение, Proxima Cen b — поселение, Орбитальная крепость «Сварог», Агрокупола Alpha Centauri B l, Газовые платформы Proxima l, Шахты Proxima Cen d |
 | Экспедиция Sigma² UMa | 3 | Экспедиция Sigma² UMa, Sigma² UMa A h II — поселение, Sigma² UMa A h III — поселение |
 | Новый Шанхай | 5 | Новый Шанхай, Управление Маяков и фабрика ядер прыжка «Сычёвник», Фабы Кольца Основателей, Верфь «Гиперион», Орбитальная биржа Нового Шанхая |

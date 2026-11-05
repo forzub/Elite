@@ -9,7 +9,11 @@ Differences from the legacy market (kept in lab.py as LegacyEconomy for comparis
   * high-value goods: precision equipment, biotech/catalysts, rare isotopes, jump cores
     (a state secret of the Beacon Authority; own designs at New Mecca and the Citadel;
     pirate copies after the 2862 leak);
-  * corridors carry reason, alternatives, choke points (intermediate beacons) and controllers.
+  * corridors carry reason, alternatives, choke points (intermediate beacons) and controllers;
+  * political access (political.py, canon/political_order.json): every flow seller -> buyer is
+    gated by the access level of the good's category (licence, own technology, sanctions,
+    exceptions): level 4 = no flow, 1..3 = price markup (licence, checks / brokers, grey market);
+    end-use-controlled categories (sealed jump cores) are exported only by their producer.
 Deterministic: sorted iteration only.
 """
 import json
@@ -80,7 +84,9 @@ class Economy:
     """actors: list of dicts {id, system, pop, income, assets, regime, core_maker (0..1)};
     prof: id -> {caps}; E: endowment; graph: (nodes, edges, hop)."""
 
-    def __init__(self, actors, prof, E, graph):
+    def __init__(self, actors, prof, E, graph, access=None):
+        """access: optional object with level(seller_id, buyer_id, good) -> 0..4 and end_use(good) -> bool."""
+        self.access = access
         self.cols = actors
         self.prof = prof
         self.E = E
@@ -159,9 +165,10 @@ class Economy:
                         continue
                     cost, hops, _ = self.transport(s["system"], c["system"])
                     sc = self.unit_cost(s["id"], g, effs)
-                    if cost is None or sc is None:
+                    mk = self.markup(s["id"], cid, g)
+                    if cost is None or sc is None or mk is None:
                         continue
-                    landed = sc + self.freight(g, cost)
+                    landed = sc * (1 + mk) + self.freight(g, cost)
                     if best is None or landed < best[0]:
                         best = (landed, s["id"], cost)
                 self.local_vs_import[(cid, g)] = (loc, best)
@@ -203,6 +210,12 @@ class Economy:
                 self.alloc[cid] = {g: max(fixed.get(g, 0.0), (1 - tf) * rest[g] / tr) for g in GOODS}
                 t = sum(self.alloc[cid].values())
                 self.alloc[cid] = {g: v / t for g, v in self.alloc[cid].items()}
+
+    def markup(self, seller, buyer, g):
+        """Political markup on a flow seller -> buyer of good g; None = no legal or grey channel."""
+        if self.access is None:
+            return 0.0
+        return self.access.markup(seller, buyer, g)
 
     def raw(self, c):
         L = self.L(c)
@@ -269,7 +282,12 @@ class Economy:
                     griev = relations.get(tuple(sorted((buyer, sid))), 0)
                     if griev >= 85:
                         continue
-                    delivered = self.price(sid, g) * (1 + griev / 200) + self.freight(g, cost)
+                    mk = self.markup(sid, buyer, g)
+                    if mk is None:
+                        continue                  # closed by political access (licence, sanctions, own policy)
+                    if self.access is not None and self.access.end_use(g) and self.unit_cost(sid, g) is None:
+                        continue                  # end-use controlled: only the producer exports
+                    delivered = self.price(sid, g) * (1 + griev / 200) * (1 + mk) + self.freight(g, cost)
                     offers.append((delivered, sid, surplus))
                 for delivered, sid, surplus in sorted(offers):
                     if gap <= 0:

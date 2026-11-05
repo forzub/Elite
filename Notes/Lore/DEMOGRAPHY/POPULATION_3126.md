@@ -54,7 +54,7 @@
 | [Гелиевое поле Эпсилон Индейца](../COLONIES/eps_indi_field.md) | Синь Хэ | Epsilon Indi | 62 214 | 30 000 | 1.86 | decline | PROPOSAL · PUBLIC (модель) |
 | [Третья Эллада](../COLONIES/hd114783_hellas3.md) | Третья Эллада | HD 114783 | 12 983 | 12 500 | 3.24 | expansion | PROPOSAL · PUBLIC (модель) |
 | [Фронтир Gliese 674](../COLONIES/gj674_frontier.md) | Когниум | Gliese 674 | 12 134 | — | 1.89 | stagnation | PROPOSAL · PUBLIC (модель) |
-| [Святой Сион (на орбите)](../COLONIES/leo83_zion.md) | Синод | 83 Leonis | 9 229 | 8 900 | 3.56 | stagnation | PROPOSAL · PUBLIC (модель) |
+| [Ново-Фиваида](../COLONIES/leo83_zion.md) | Синод Ново-Фиваиды | 83 Leonis | 9 229 | 8 900 | 3.56 | stagnation | PROPOSAL · PUBLIC (модель) |
 | [Узел Убунту (ретранслятор у обломков)](../COLONIES/gj667_ubuntu_node.md) | Когниум | Gliese 667 (A+B+C) | 7 226 | 2 000 | 1.87 | stagnation | PROPOSAL · PUBLIC (модель) |
 | [Реле HD 10360](../COLONIES/hd10360_relay.md) | Вторая Эллада | HD 10360 | 3 862 | 1 500 | 2.04 | stagnation | PROPOSAL · PUBLIC (модель) |
 | [Стратегические рудники Gliese 892](../COLONIES/gj892_kern.md) | Проспекторат Керн | Gliese 892 | 2 969 | 10 000 | 2.06 | stagnation | PROPOSAL · PUBLIC (модель) |

@@ -64,6 +64,12 @@ class Inputs:
         self.bloc_of = {u: self.PO.bloc_of_unit(u) for u in self.PO.units}
         self.cat_of_block = self.PO.P["categories"]["industry_block"]
         self.jt = {j["unit"]: j for j in self.W["jump_technology"]}
+        # actual jump-core flows of the trade model (lab.py -> trade.py, gated by political.py)
+        st = jload(os.path.join(HERE, "out", "lab_state_3126.json"))
+        self.core_flows = {}
+        for c in st["trade"]["corridors"]:
+            if c["good"] == "drive_cores" and c["value"] > 0.5:
+                self.core_flows.setdefault(c["buyer"], {})[c["seller"]] = self.core_flows.get(c["buyer"], {}).get(c["seller"], 0.0) + c["value"]
 
     def system(self, k):
         return 0 if k == SOL else self.eco[k]["system"]
@@ -192,8 +198,16 @@ def supply(I, cap, ch):
                     top = [o for o in offers if o[0] == offers[0][0]][:3]
                     w = [0.5, 0.3, 0.2][:len(top)]
                     rows[blk]["sources"] = [dict(source=o[2], channel=o[3], share=r3(x / sum(w))) for o, x in zip(top, w)]
+            elif blk == "jump_core" and I.jt.get(k, {}).get("how") == "stolen":
+                rows[blk] = dict(source=k, channel="own", category="strategic", level=c["level"], note="пиратские копии после утечки 2862 (jump_technology how = stolen)")
             else:
                 rows[blk] = dict(source=None, channel="none", level=c["level"])
+            if blk == "jump_core" and I.jt.get(k, {}).get("how") == "stolen" and rows[blk]["source"] != k:
+                rows[blk]["note"] = "плюс свои пиратские копии (jump_technology how = stolen)"
+            if blk == "jump_core" and I.core_flows.get(k):
+                fl = I.core_flows[k]
+                tot = sum(fl.values())
+                rows[blk]["flow_sources"] = [dict(source=q, share=r3(v / tot), channel=ch[f"{k}|{q}"]["strategic"]) for q, v in sorted(fl.items(), key=lambda kv: (-kv[1], kv[0]))]
         out[k] = rows
     return out
 
@@ -341,6 +355,11 @@ def checks(I, out):
     add("every_block_has_a_source", not nosrc, ",".join(nosrc[:8]) or "ok")
     exp_cit = [k for k, rows in out["supply"].items() if rows["jump_core"]["source"] == "wolf359_citadel" and k != "wolf359_citadel" and out["capability"][k]["bloc"] != "citadel_compact"]
     add("citadel_cores_not_exported", not exp_cit, ",".join(exp_cit) or "ok")
+    # trade-model core flows must be legal under the political order (no closed channel, no resale)
+    illegal = [f"{q}->{k} {x['channel']}" for k, rows in out["supply"].items() for x in rows["jump_core"].get("flow_sources", []) for q in [x["source"]] if x["channel"] in ("closed", "black")]
+    add("trade_core_flows_legal", not illegal, ",".join(illegal) or "all drive_cores flows of trade.py run through open / licensed / restricted strategic channels")
+    resale = [f"{x['source']}->{k}" for k, rows in out["supply"].items() for x in rows["jump_core"].get("flow_sources", []) if out["capability"][x["source"]]["blocks"]["jump_core"]["level"] != "concern"]
+    add("trade_core_flows_from_makers_only", not resale, ",".join(resale) or "ok")
     pact = out["fleet_uniformity"]["heavenly_pact"]
     league = out["fleet_uniformity"]["lalande_league"]
     add("allied_fleets_uniform", pact["main_maker_share"] >= 0.6 and league["main_maker_share"] < pact["main_maker_share"],

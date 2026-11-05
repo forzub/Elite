@@ -1942,8 +1942,8 @@
   },
   {
    "id": "leo83_zion",
-   "name": "Святой Сион (на орбите)",
-   "polity": "Синод",
+   "name": "Ново-Фиваида",
+   "polity": "Синод Ново-Фиваиды",
    "system": 45,
    "founders": [
     "NEW-JERUSALEM-1"
@@ -2002,9 +2002,9 @@
      "basis": "результат модели demography.py, не канон"
     },
     "name": {
-     "status": "PROPOSAL",
+     "status": "CANON",
      "visibility": "PUBLIC_RECORD",
-     "basis": "имя дано реконсиляцией / старой веткой"
+     "basis": "решение автора 2026-11-05: Ново-Фиваида (исторический актор actors.json id 10); «Святой Сион» не используется"
     }
    }
   }

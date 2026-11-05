@@ -1389,12 +1389,7 @@
    "produced": [],
    "sold": [
     {
-     "imports_from": [
-      {
-       "channel": "restricted",
-       "source": "tau_ceti_cognium"
-      }
-     ],
+     "imports_from": [],
      "own_exports": [
       "hull_structure",
       "drill_heads",
@@ -1484,10 +1479,6 @@
       },
       {
        "channel": "open",
-       "source": "tau_ceti_cognium"
-      },
-      {
-       "channel": "restricted",
        "source": "tau_ceti_cognium"
       }
      ],
@@ -1962,10 +1953,6 @@
       {
        "channel": "open",
        "source": "tau_ceti_cognium"
-      },
-      {
-       "channel": "restricted",
-       "source": "tau_ceti_cognium"
       }
      ],
      "own_exports": [],
@@ -1989,10 +1976,6 @@
       },
       {
        "channel": "open",
-       "source": "tau_ceti_cognium"
-      },
-      {
-       "channel": "restricted",
        "source": "tau_ceti_cognium"
       }
      ],
@@ -6155,7 +6138,7 @@
    "industrial": "open",
    "military": "restricted",
    "people_finance_data": "licensed",
-   "strategic": "restricted"
+   "strategic": "closed"
   },
   "eps_eri_strife|wolf359_citadel": {
    "civilian_goods": "open",
@@ -6523,7 +6506,7 @@
    "industrial": "open",
    "military": "restricted",
    "people_finance_data": "licensed",
-   "strategic": "restricted"
+   "strategic": "closed"
   },
   "gj581_freeclans|wolf359_citadel": {
    "civilian_goods": "open",
@@ -7259,7 +7242,7 @@
    "industrial": "open",
    "military": "restricted",
    "people_finance_data": "licensed",
-   "strategic": "restricted"
+   "strategic": "closed"
   },
   "hd114783_hellas3|wolf359_citadel": {
    "civilian_goods": "open",
@@ -8547,7 +8530,7 @@
    "industrial": "licensed",
    "military": "restricted",
    "people_finance_data": "licensed",
-   "strategic": "restricted"
+   "strategic": "closed"
   },
   "lalande_mecca|wolf359_citadel": {
    "civilian_goods": "open",
@@ -8731,7 +8714,7 @@
    "industrial": "open",
    "military": "restricted",
    "people_finance_data": "restricted",
-   "strategic": "restricted"
+   "strategic": "closed"
   },
   "leo83_zion|wolf359_citadel": {
    "civilian_goods": "open",
@@ -9505,6 +9488,16 @@
    "ok": true
   },
   {
+   "check": "trade_core_flows_legal",
+   "detail": "all drive_cores flows of trade.py run through open / licensed / restricted strategic channels",
+   "ok": true
+  },
+  {
+   "check": "trade_core_flows_from_makers_only",
+   "detail": "ok",
+   "ok": true
+  },
+  {
    "check": "allied_fleets_uniform",
    "detail": "Pact main hull maker 0.744 (uniform), League 0.625 (many vendors)",
    "ok": true
@@ -10087,6 +10080,13 @@
    "jump_core": {
     "category": "strategic",
     "channel": "restricted",
+    "flow_sources": [
+     {
+      "channel": "restricted",
+      "share": 1.0,
+      "source": "tau_ceti_cognium"
+     }
+    ],
     "level": "import",
     "source": "tau_ceti_cognium",
     "via": null
@@ -10256,6 +10256,13 @@
    "jump_core": {
     "category": "strategic",
     "channel": "restricted",
+    "flow_sources": [
+     {
+      "channel": "restricted",
+      "share": 1.0,
+      "source": "tau_ceti_cognium"
+     }
+    ],
     "level": "import",
     "source": "tau_ceti_cognium",
     "via": null
@@ -10669,10 +10676,10 @@
    },
    "jump_core": {
     "category": "strategic",
-    "channel": "restricted",
+    "channel": "own",
     "level": "parts",
-    "source": "tau_ceti_cognium",
-    "via": null
+    "note": "пиратские копии после утечки 2862 (jump_technology how = stolen)",
+    "source": "eps_eri_strife"
    },
    "life_support": {
     "channel": "own",
@@ -10887,6 +10894,13 @@
    "jump_core": {
     "category": "strategic",
     "channel": "restricted",
+    "flow_sources": [
+     {
+      "channel": "restricted",
+      "share": 1.0,
+      "source": "tau_ceti_cognium"
+     }
+    ],
     "level": "import",
     "source": "tau_ceti_cognium",
     "via": null
@@ -11294,10 +11308,10 @@
    },
    "jump_core": {
     "category": "strategic",
-    "channel": "restricted",
+    "channel": "own",
     "level": "parts",
-    "source": "tau_ceti_cognium",
-    "via": null
+    "note": "пиратские копии после утечки 2862 (jump_technology how = stolen)",
+    "source": "gj581_freeclans"
    },
    "life_support": {
     "category": "industrial",
@@ -11718,6 +11732,13 @@
    "jump_core": {
     "category": "strategic",
     "channel": "licensed",
+    "flow_sources": [
+     {
+      "channel": "restricted",
+      "share": 1.0,
+      "source": "tau_ceti_cognium"
+     }
+    ],
     "level": "import",
     "source": "eps_eri_harmony",
     "via": null
@@ -12521,11 +12542,9 @@
     "via": null
    },
    "jump_core": {
-    "category": "strategic",
-    "channel": "restricted",
+    "channel": "none",
     "level": "import",
-    "source": "tau_ceti_cognium",
-    "via": null
+    "source": null
    },
    "life_support": {
     "category": "industrial",
@@ -12822,6 +12841,13 @@
    "jump_core": {
     "category": "strategic",
     "channel": "restricted",
+    "flow_sources": [
+     {
+      "channel": "restricted",
+      "share": 1.0,
+      "source": "tau_ceti_cognium"
+     }
+    ],
     "level": "import",
     "source": "tau_ceti_cognium",
     "via": null
@@ -12975,6 +13001,13 @@
    "jump_core": {
     "category": "strategic",
     "channel": "licensed",
+    "flow_sources": [
+     {
+      "channel": "restricted",
+      "share": 1.0,
+      "source": "tau_ceti_cognium"
+     }
+    ],
     "level": "import",
     "source": "lalande_mecca",
     "via": null
@@ -13122,6 +13155,13 @@
    "jump_core": {
     "category": "strategic",
     "channel": "open",
+    "flow_sources": [
+     {
+      "channel": "restricted",
+      "share": 1.0,
+      "source": "tau_ceti_cognium"
+     }
+    ],
     "level": "import",
     "source": "eps_eri_harmony",
     "via": null
@@ -13277,6 +13317,13 @@
    "jump_core": {
     "category": "strategic",
     "channel": "licensed",
+    "flow_sources": [
+     {
+      "channel": "restricted",
+      "share": 1.0,
+      "source": "tau_ceti_cognium"
+     }
+    ],
     "level": "import",
     "source": "lalande_mecca",
     "via": null
@@ -13527,6 +13574,13 @@
    "jump_core": {
     "category": "strategic",
     "channel": "restricted",
+    "flow_sources": [
+     {
+      "channel": "restricted",
+      "share": 1.0,
+      "source": "tau_ceti_cognium"
+     }
+    ],
     "level": "import",
     "source": "tau_ceti_cognium",
     "via": null
@@ -13915,6 +13969,13 @@
    "jump_core": {
     "category": "strategic",
     "channel": "restricted",
+    "flow_sources": [
+     {
+      "channel": "restricted",
+      "share": 1.0,
+      "source": "tau_ceti_cognium"
+     }
+    ],
     "level": "import",
     "source": "tau_ceti_cognium",
     "via": null
@@ -14466,11 +14527,9 @@
     "via": null
    },
    "jump_core": {
-    "category": "strategic",
-    "channel": "restricted",
+    "channel": "none",
     "level": "import",
-    "source": "tau_ceti_cognium",
-    "via": null
+    "source": null
    },
    "life_support": {
     "category": "industrial",
@@ -14788,6 +14847,7 @@
     "category": "strategic",
     "channel": "licensed",
     "level": "parts",
+    "note": "плюс свои пиратские копии (jump_technology how = stolen)",
     "source": "wolf359_citadel",
     "via": null
    },

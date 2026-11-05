@@ -50,6 +50,8 @@
 - OK core_makers_match_jump_lineage: ['lalande_mecca', 'tau_ceti_cognium', 'wolf359_citadel'] == ['lalande_mecca', 'tau_ceti_cognium', 'wolf359_citadel']
 - OK every_block_has_a_source: ok
 - OK citadel_cores_not_exported: ok
+- OK trade_core_flows_legal: all drive_cores flows of trade.py run through open / licensed / restricted strategic channels
+- OK trade_core_flows_from_makers_only: ok
 - OK allied_fleets_uniform: Pact main hull maker 0.744 (uniform), League 0.625 (many vendors)
 - OK production_sites_exist: 43 sites
 - OK rescue_covers_every_site: 513 sites

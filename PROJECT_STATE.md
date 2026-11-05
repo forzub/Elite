@@ -2761,6 +2761,40 @@ Terminology (user 2026-11-05): **actor = acting party, node of political force**
 - Next: author review of every bloc / actor / sanction / exception (open_questions in political_order.json); promote
   accepted rows to CANON; then decide on the lab.py trade-model core flows; then resume damage B1 (missiles miss).
 
+#### Correction pass 2026-11-05 q (on top of 0f5a0bda) - SOURCE + GENERATORS PASS, still PROPOSAL_PENDING_AUTHOR_REVIEW
+- Author decisions: "Святой Сион" retired -> **Ново-Фиваида** (short: Фиваида; government: Синод). Machine id `leo83_zion`
+  kept (legacy). Linked to historical actor actors.json id 10 (same community: ark NEW-JERUSALEM-1, first target GJ 667 C c
+  = the legacy systems.json "Ледяная система Ново-Фиваиды"; 2291 target change to 83 Leonis; arrival 3126). Name status
+  CANON via knowledge.py AUTHOR_NAMES; missions.json keeps "Святой Сион" only under retired_aliases. Renamed in world.json,
+  settlements.json, missions.json aliases, political_order.json, world_sites.json, hand Notes (RELATIONS, COLONIZATION_CANON,
+  COLONYCORE_V2, fate.md heading, dossiers, TECHNOLOGY, MINES, EARTH_3126), regenerated lore / html / runtime sites.
+- Design rule (author): Chekhov's gun - every political element carries `player_role` (blocs, non-aligned, province, zone,
+  exceptions, licence, sanctions); political.py check every_element_has_player_role. No secret ruling societies.
+- Jump cores: new licence layer `licences.universal_jump_licence_2850` (holders = world.json jump_technology how=licensed +
+  Sol; non-holders get strategic 4 from Cognium: Citadel, Mecca, Svarog, Strife, Freeclans, Karma, Third Hellas, Novo-Thebaid).
+  trade.py flows are now gated by political.py (lab.PoliticalTradeAccess: category per good, level 4 = no flow, markups
+  0 / 5 / 25 / 60 %, end-use-controlled strategic goods exported only by their producer). Result: Cognium cores no longer go
+  to Mecca, Svarog, Karma, Citadel, Strife, Freeclans; core resale by non-makers gone; Citadel munitions no longer reach
+  Cognium. industry.py reads the trade core flows (flow_sources) + checks trade_core_flows_legal / _from_makers_only;
+  stolen lineage -> own pirated copies. Southern circle import strategic 1 -> 2.
+  Model limit (not tuned): Mecca makes 15.3 core units/y and consumes them; New India / Maland still buy the bulk from Cognium
+  (legal: 2850 licence holders, "restricted").
+- narcotics: access category civilian_goods; legality stays in trade_goods.legality x hub regime family (legality_layer);
+  lotosite strategic; check controlled_goods_not_military.
+- Sanity: Karma is no longer anyone's >15 % partner (RELATIONS partner narrative + per-actor table rewritten from the new
+  flows; STRATEGIC_DEPENDENCIES "precision from Karma" / "cores for the outcast" rows fixed; Maland / Mecca dossiers fixed).
+  New checks: kern_cannot_sell_strategic_to_citadel, providence_does_not_lift_sanctions, transit_never_strategic,
+  finance_bridge_no_strategic_cap, citadel_civilian_open_strategic_closed, free_belts_military_only_grey, cognium cores only
+  to licence holders, no cores for refusers / copiers, own core makers not licence buyers.
+- POLITICAL_ORDER.md narrative "Как сложился порядок" written (no TODO; no invented exact bloc dates).
+- Runtime audit: GalaxyDatabase (actors/subactors/systems/nodes/routes) is compiled but never loaded (SpaceState / GameServer
+  comments); ownerActor (ActorIds::Player() = 1) is only an opaque same-owner token, never resolved to actors.json (where id 1
+  = Cognium) - latent clash only if the legacy DB is ever loaded. In-game owner / operator labels come from sites_3126
+  (polity 3126). No C++ change, nothing compiled; runtime JSON regenerated with the same shape.
+- Gates: lab --check-dataset / --check-lore, logistics, world_economy, world_sites, political (40 checks), industry,
+  economy_live, ship_designer (21 ships 0 FAIL 39 WARN), lore_md, lore_html (139), calibrate_population - all rc=0;
+  lab.py twice -> sha256 98f58fd0... IDENTICAL.
+
 Original order text (summary):
 Full revision of the 3126 political structure: separate ideological bloc / economic integration / technology access /
 sanctions (now mixed in tools/colonization_lab/canon/industry.json); polity 3126 vs historical actor

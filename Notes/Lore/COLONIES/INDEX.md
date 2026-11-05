@@ -35,7 +35,7 @@
 | Сварог | [Красный Форпост](proxima_outpost.md) | колония | Proxima Centauri | 2150 | 725 716 924 | 890 000 | security_oligarchy | CANON · PUBLIC |
 | Свободная Карма | [Свободная Карма](delta_pav_freekarma.md) | колония | Delta Pavonis | 2420 | 200 070 311 | 350 000 | exile_republic | CANON · PUBLIC |
 | Сельта-Верде («Затерянный мир») | [Сельта-Верде](hd69830_verde.md) | колония | HD 69830 | 2576 | 204 780 898 | 1 400 000 | grandees_and_church | CANON · PUBLIC |
-| Синод | [Святой Сион (на орбите)](leo83_zion.md) | колония | 83 Leonis | 3126 | 9 229 | 8 900 | synod_theocracy | CANON · PUBLIC |
+| Синод Ново-Фиваиды | [Ново-Фиваида](leo83_zion.md) | колония | 83 Leonis | 3126 | 9 229 | 8 900 | synod_theocracy | CANON · PUBLIC |
 | Синь Хэ | [Цветущая Гармония](eps_eri_harmony.md) | колония | Epsilon Eridani | 2212 | 1 371 102 748 | 3 280 000 | sage_council | CANON · PUBLIC |
 | Синь Хэ | [Гелиевое поле Эпсилон Индейца](eps_indi_field.md) | аванпост | Epsilon Indi | 2778 | 62 214 | 30 000 | — | PROPOSAL · PUBLIC |
 | Синь Хэ (дальняя провинция) | [Небесная Твердыня](hd40307_firmament.md) | колония | HD 40307 | 2742 | 198 279 067 | 1 800 000 | party_technocracy | CANON · PUBLIC |

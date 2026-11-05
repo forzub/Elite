@@ -11,14 +11,14 @@
 <!-- GENERATED:summary BEGIN -->
 | Поле | Значение | Статус |
 |---|---|---|
-| ID / имена | NEW-JERUSALEM-1, Новый Иерусалим, Святой Сион, Ледяная Вера | CANON · PUBLIC |
+| ID / имена | NEW-JERUSALEM-1, Новый Иерусалим, Ново-Фиваида, Ледяная Вера | CANON · PUBLIC |
 | Волна | III | CANON · PUBLIC |
 | Спонсор | Christian fundamentalists: evangelicals, traditionalist Catholic orders, Orthodox conservatives | CANON · PUBLIC |
 | Старт | 2270, Sol | CANON · PUBLIC |
 | Цель | 83 Leonis | CANON · PUBLIC |
 | Прибытие | 3126 | CANON · PUBLIC |
 | Длительность полёта, лет | 856 | CANON · PUBLIC |
-| Колония | [Святой Сион (на орбите)](../COLONIES/leo83_zion.md) | CANON · PUBLIC |
+| Колония | [Ново-Фиваида](../COLONIES/leo83_zion.md) | CANON · PUBLIC |
 | Источники | 14. NEW-JERUSALEM-1.md; fate.md §10 | — |
 <!-- GENERATED:summary END -->
 

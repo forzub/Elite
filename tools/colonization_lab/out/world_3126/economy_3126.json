@@ -5695,7 +5695,7 @@
    "cities": [
     {
      "body": "83 Leonis B h",
-     "name": "Святой Сион (на орбите)",
+     "name": "Ново-Фиваида (ковчег на орбите)",
      "pop": 4783,
      "role": "столица",
      "status": "PROPOSAL"
@@ -5761,8 +5761,8 @@
     "status": "PROPOSAL",
     "trade_dependence": 0.62
    },
-   "name": "Святой Сион (на орбите)",
-   "polity": "Синод",
+   "name": "Ново-Фиваида",
+   "polity": "Синод Ново-Фиваиды",
    "population": 9229,
    "regime": "synod_theocracy",
    "settlement_structure": {

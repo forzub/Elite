@@ -954,7 +954,8 @@ def political_status_block(D, path, uid):
             g.append(f"Блок: **{b['ru']}** — {mem}" + (f" ({v['membership_note']})" if v.get("membership_note") else "") + f". Идеология блока: {b['ideology']}. Статус: {po_tag(v['status'])}.")
         else:
             n = O.P["nonaligned"][a]
-            g.append(f"**Неприсоединившийся** — {O.P['nonaligned_types'][v['nonaligned']]['ru']}. Почему вне блоков: {n['why_outside']}. Независимость держится на том, что {n['independence']}. Статус: {po_tag(v['status'])}.")
+            g.append(f"**Неприсоединившийся** — {O.P['nonaligned_types'][v['nonaligned']]['ru']}. Почему вне блоков: {n['why_outside']}. Независимость держится на том, что {n['independence']}." +
+                     (f" Кризис 3126: {n['crisis_3126']}." if n.get("crisis_3126") else "") + f" Для игрока: {n['player_role']}. Статус: {po_tag(v['status'])}.")
         ex = [e for e in O.exceptions if e["actor"] == a]
         for e in ex:
             g.append(f"Особое положение: {e['ru']} — {e['why']} ({po_tag(e['status'])}).")
@@ -983,8 +984,9 @@ def political_order_doc(D):
                [(O.actors[a]["ru"], ", ".join(pl(u) for u in O.actors[a]["units"]), O.blocs[O.actors[a]["bloc"]]["ru"] if O.actors[a]["bloc"] else "вне блоков: " + O.P["nonaligned_types"][O.actors[a]["nonaligned"]]["ru"],
                  O.actors[a].get("membership") or "—", O.actors[a]["historical_actor"] if O.actors[a]["historical_actor"] is not None else "—", po_tag(O.actors[a]["status"])) for a in O.actors]), "",
          "### Провинции и специальные зоны", "",
-         table(["Единица", "Тип", "Чья", "Суть", "Статус"],
-               [(pl(u), O.P["units"][u]["kind"], D.pname(O.P["units"][u]["actor"]) if O.P["units"][u]["actor"] else "—", O.P["units"][u]["ru"], po_tag(O.P["units"][u]["status"])) for u in O.P["units"]]), "",
+         table(["Единица", "Тип", "Чья", "Суть", "Для игрока", "Статус"],
+               [(pl(u), O.P["units"][u]["kind"], D.pname(O.P["units"][u]["actor"]) if O.P["units"][u]["actor"] else "—", O.P["units"][u]["ru"], O.P["units"][u]["player_role"], po_tag(O.P["units"][u]["status"])) for u in O.P["units"]]), "",
+         "**Принцип.** " + O.P["design_rule"], "",
          "### Блоки", ""]
     for b, v in O.blocs.items():
         mem = ", ".join(pl(m) + (" (ассоц.)" if O.actors[m].get("membership") == "associate" else "") for m in O.bloc_members(b))
@@ -994,6 +996,7 @@ def political_order_doc(D):
               f"- Идеология: {v['ideology']}." + (f" Формула: {v['motto']}." if v.get("motto") else ""),
               f"- Чем НЕ является: {v['not']}.",
               f"- Интеграция: `{v['integration']}`. Технологическая политика: {v['technology_policy']}.",
+              f"- Для игрока: {v['player_role']}.",
               f"- Внутри: {po_levels(O, v['internal'])}.",
               f"- Наружу (экспорт): {po_levels(O, v['export'])}; ввоз: {po_levels(O, v['import'])}."]
         if v.get("associate_internal"):
@@ -1006,13 +1009,19 @@ def political_order_doc(D):
             g.append(f"- Риск для внешних: юридический {v['risk']['legal_risk']}, страховка ×{v['risk']['insurance_x']}, {v['risk']['provenance']}.")
         g.append("")
     g += ["### Неприсоединившиеся (не блок, не союзники друг другу)", "",
-          table(["Актор", "Тип", "Почему вне блоков", "На чём держится независимость", "С кем торгует", "Что ограничено"],
+          table(["Актор", "Тип", "Почему вне блоков", "На чём держится независимость", "С кем торгует", "Что ограничено", "Для игрока"],
                 [(pl(a), O.P["nonaligned_types"][O.actors[a]["nonaligned"]]["ru"], O.P["nonaligned"][a]["why_outside"], O.P["nonaligned"][a]["independence"],
-                  O.P["nonaligned"][a]["trades_with"], O.P["nonaligned"][a]["restricted"]) for a in O.nonaligned()]), "",
+                  O.P["nonaligned"][a]["trades_with"], O.P["nonaligned"][a]["restricted"], O.P["nonaligned"][a]["player_role"]) for a in O.nonaligned()]), "",
           "### Особые положения (явные исключения)", "",
-          table(["Актор", "Роль", "Почему", "Потолок доступа", "Статус"],
-                [(D.pname(e["actor"]), e["ru"], e["why"], ", ".join(f"{O.P['categories'][c]['ru']} ≤ {O.P['access_scale'][str(l)]['ru']}" for c, l in e["cap"].items()), po_tag(e["status"])) for e in O.exceptions]), "",
+          table(["Актор", "Роль", "Почему", "Потолок доступа", "Для игрока", "Статус"],
+                [(D.pname(e["actor"]), e["ru"], e["why"], ", ".join(f"{O.P['categories'][c]['ru']} ≤ {O.P['access_scale'][str(l)]['ru']}" for c, l in e["cap"].items()), e["player_role"], po_tag(e["status"])) for e in O.exceptions]), "",
+          "### Лицензии", "",
+          table(["Лицензия", "Лицензиар", "Категория", "Держатели", "Не держателю", "Для игрока", "Статус"],
+                [(L["ru"], D.pname(L["licensor"]), O.P["categories"][L["category"]]["ru"], ", ".join(D.pname(u) for u in sorted(L["holders"])),
+                  O.P["access_scale"][str(L["non_holder_level"])]["ru"], L["player_role"], po_tag(L["status"])) for L in O.licences]), "",
+          "Основание: " + "; ".join(L["basis"] for L in O.licences) + ".", "",
           "### Санкции и ограничения (отдельный слой, выведен из истории)", "",
+          f"Для игрока: {O.P['sanctions_player_role']}.", "",
           table(["Мера", "Кто", "Против", "С года", "Категории", "Основание", "Статус"],
                 [(s["kind"] + (" (временно)" if s.get("temporary") else ""), D.pname(s["from"]) + (f" [{', '.join(D.pname(u) for u in s['units_from'])}]" if s.get("units_from") else ""),
                   D.pname(s["to"]) + (f" [{', '.join(D.pname(u) for u in s['units_to'])}]" if s.get("units_to") else ""), s["since"],

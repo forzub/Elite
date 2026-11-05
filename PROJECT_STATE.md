@@ -2791,7 +2791,7 @@ Terminology (user 2026-11-05): **actor = acting party, node of political force**
   comments); ownerActor (ActorIds::Player() = 1) is only an opaque same-owner token, never resolved to actors.json (where id 1
   = Cognium) - latent clash only if the legacy DB is ever loaded. In-game owner / operator labels come from sites_3126
   (polity 3126). No C++ change, nothing compiled; runtime JSON regenerated with the same shape.
-- Gates: lab --check-dataset / --check-lore, logistics, world_economy, world_sites, political (40 checks), industry,
+- Gates: lab --check-dataset / --check-lore, logistics, world_economy, world_sites, political (32 checks), industry,
   economy_live, ship_designer (21 ships 0 FAIL 39 WARN), lore_md, lore_html (139), calibrate_population - all rc=0;
   lab.py twice -> sha256 98f58fd0... IDENTICAL.
 

@@ -1,0 +1,200 @@
+{
+  "schema": "elite.ship_weapon_reference.v1",
+  "status": "PROPOSAL/model where marked; combat values copied from src/assets/data/combat/weapons.json",
+  "combat_source": "src/assets/data/combat/weapons.json",
+  "bindings": {
+    "kb.wpn.pd1": {
+      "system": "laser_point_defence",
+      "laser_id": "laser.pulse_1",
+      "emitters_per_mount": 2,
+      "note": "Twin-emitter interpretation reconciles one PD-1 mount with two legacy Cobrett laser hardpoints; PROPOSAL/model."
+    },
+    "fa.wpn.pd2": {
+      "system": "laser_point_defence",
+      "laser_id": "laser.beam_4",
+      "emitters_per_mount": 1,
+      "note": "PROPOSAL/model binding."
+    },
+    "harmony.wpn.pd3": {
+      "system": "laser_point_defence",
+      "laser_id": "laser.beam_4",
+      "emitters_per_mount": 2,
+      "note": "Two emitters inside the turret power budget; PROPOSAL/model."
+    },
+    "bastion.wpn.pd4": {
+      "system": "laser_point_defence",
+      "laser_id": "laser.military_10",
+      "emitters_per_mount": 1,
+      "note": "PROPOSAL/model binding."
+    },
+    "harmony.wpn.vls8": {
+      "system": "missile_launcher",
+      "cells_per_mount": 8,
+      "compatible_missiles": [
+        "missile.needle",
+        "missile.thermite",
+        "missile.crowbar"
+      ],
+      "note": "Universal cells for current missile types; PROPOSAL/model."
+    },
+    "bastion.wpn.vls16": {
+      "system": "missile_launcher",
+      "cells_per_mount": 16,
+      "compatible_missiles": [
+        "missile.needle",
+        "missile.thermite",
+        "missile.crowbar"
+      ],
+      "note": "Universal cells for current missile types; PROPOSAL/model."
+    },
+    "fa.wpn.coil30": {
+      "system": "coilgun",
+      "note": "Projectile passport not yet authored."
+    },
+    "bastion.wpn.coil10": {
+      "system": "coilgun",
+      "note": "Projectile passport not yet authored."
+    },
+    "kern.md.impactor": {
+      "system": "mass_driver",
+      "note": "Impactor ammunition passport not yet authored."
+    }
+  },
+  "lasers": [
+    {
+      "id": "laser.pulse_1",
+      "name": "Импульсный лазер 1,5 МВт",
+      "power_mw": 1.5,
+      "duty": 0.5,
+      "pulse_hz": 4,
+      "range_km": 3,
+      "beam_radius_m": 0.08,
+      "colour": [
+        1,
+        0.25,
+        0.15
+      ],
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          0.8,
+          0.6,
+          1.2
+        ],
+        "note": "Emitter package; turret housing is in ship_parts_unified.json."
+      }
+    },
+    {
+      "id": "laser.beam_4",
+      "name": "Лучевой лазер 4 МВт",
+      "power_mw": 4,
+      "duty": 1,
+      "pulse_hz": 0,
+      "range_km": 4,
+      "beam_radius_m": 0.1,
+      "colour": [
+        0.3,
+        1,
+        0.35
+      ],
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.1,
+          0.8,
+          1.6
+        ],
+        "note": "Emitter package; turret housing is in ship_parts_unified.json."
+      }
+    },
+    {
+      "id": "laser.military_10",
+      "name": "Военный лазер 10 МВт",
+      "power_mw": 10,
+      "duty": 1,
+      "pulse_hz": 0,
+      "range_km": 5,
+      "beam_radius_m": 0.12,
+      "colour": [
+        0.45,
+        0.6,
+        1
+      ],
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "envelope_m": [
+          1.5,
+          1,
+          2.2
+        ],
+        "note": "Emitter package; turret housing is in ship_parts_unified.json."
+      }
+    }
+  ],
+  "missiles": [
+    {
+      "id": "missile.needle",
+      "name": "Ракета «Игла» (прожигающая)",
+      "warhead": "shaped",
+      "jet_mj": 30,
+      "mass_kg": 60,
+      "accel_mps2": 300,
+      "max_speed_mps": 1500,
+      "fuel_s": 12,
+      "turn_dps": 90,
+      "seeker_deg": 30,
+      "range_km": 8,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "length_m": 2.2,
+        "diameter_m": 0.22,
+        "note": "Packaging estimate for model construction; combat dynamics remain from weapons.json."
+      }
+    },
+    {
+      "id": "missile.thermite",
+      "name": "Ракета «Термит» (прожигающая, тяжёлая)",
+      "warhead": "shaped",
+      "jet_mj": 90,
+      "mass_kg": 160,
+      "accel_mps2": 180,
+      "max_speed_mps": 1100,
+      "fuel_s": 16,
+      "turn_dps": 50,
+      "seeker_deg": 25,
+      "range_km": 10,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "length_m": 3,
+        "diameter_m": 0.32,
+        "note": "Packaging estimate for model construction; combat dynamics remain from weapons.json."
+      }
+    },
+    {
+      "id": "missile.crowbar",
+      "name": "Ракета «Лом» (кинетическая болванка)",
+      "warhead": "slug",
+      "slug_kg": 40,
+      "mass_kg": 90,
+      "accel_mps2": 400,
+      "max_speed_mps": 2200,
+      "fuel_s": 9,
+      "turn_dps": 70,
+      "seeker_deg": 25,
+      "range_km": 9,
+      "geometry": {
+        "status": "PROPOSAL/model",
+        "length_m": 2.5,
+        "diameter_m": 0.24,
+        "note": "Packaging estimate for model construction; combat dynamics remain from weapons.json."
+      }
+    }
+  ],
+  "legacy_cobrett": {
+    "laser_hardpoints": 2,
+    "missile_capacity": 4,
+    "default_laser": "laser.pulse_1",
+    "default_missile": "missile.needle",
+    "note": "Legacy runtime: two laser modules and missileCapacity=4."
+  }
+}

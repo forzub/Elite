@@ -2993,7 +2993,7 @@ order - ask for it again if it is not in the session.
   (visible promise + hidden server-side deterministic result, honest 3 sigma along beacons).
 - Author answers (same day): the star catches both interstellar and in-system jump steps (in-system jumps route around
   it via waypoints); the jump is instantaneous (screen ripple, new sky; HYPERION-1's 3 days = charging + in-system
-  flights); charging is not visible; J is never mandatory; J and jump are forbidden near ANY object, a beacon included
+  flights); charging is not visible, but the jump itself gives a detectable burst at departure AND arrival (place and time, not the destination); J is never mandatory; J and jump are forbidden near ANY object, a beacon included
   (fly away first). Still parameters: star capture radius (inner planets must stay reachable), keep-out distances by
   object mass / size, L4/L5 safety (default: natural, a beacon improves precision).
 - Next (not started): implementation slices - data (sumps / jump limits / medium currents from the catalogue), visible

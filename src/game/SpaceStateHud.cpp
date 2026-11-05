@@ -1651,6 +1651,12 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         line2 = "Захват невозможен: слишком высокая скорость относительно хаба   " + line2;
     else if (motion.freeFlightCaptureRefusal == 3)
         line2 = "J-поле не работает рядом с объектами: отход на мягкой тяге   " + line2;
+    else if (motion.freeFlightCaptureRefusal == 4)
+        line2 = "Ниже пола J: маршевые двигатели   " + line2;
+    else if (motion.freeFlightCaptureRefusal == 5)
+        line2 = "Посадка невозможна: тяги маршевых не хватит, чтобы сесть и взлететь   " + line2;
+    else if (motion.freeFlightCaptureRefusal == 6)
+        line2 = "Посадка невозможна: атмосфера - садятся только челноки   " + line2;
 
     auto& text = TextRenderer::instance();
     text.beginFrameForViewport(viewport.width, viewport.height);

@@ -199,13 +199,20 @@ LandingCommand LandingAutopilot::step(const LandingInput& in, const TerrainProbe
         wanted = along * vCirc + up * vz;
     }
 
+    // braking profiles inside the real authority: half of what is left after gravity
+    const double authority = in.authorityMps2 > 0.0 ? in.authorityMps2 : AuthorityMps2;
+    const double gSurface = in.bodyMuM3s2 > 0.0 && rLen > 0.0 ? in.bodyMuM3s2 / (rLen * rLen) : 0.0;
+    const double net = std::max(0.3, authority - gSurface);
+    const double transitAccel = std::min(TransitAccelMps2, 0.5 * net);
+    const double descentBrake = std::min(15.0, 0.5 * net);
+
     glm::dvec3 toSiteH(0.0);
     double dh = 0.0;
     if (m_site.valid && (m_phase == LandingPhase::Transit || m_phase == LandingPhase::Descent))
     {
         const glm::dvec3 siteDir = glm::normalize(in.worldFromBody * m_site.bodyDirection);
-        const glm::dvec3 siteTop =
-            in.bodyCentreM + siteDir * (in.bodyRadiusM + m_site.heightM + in.hullHalfExtentsM.y + 0.5);
+            const double halfHeight = in.touchdownHalfHeightM > 0.0 ? in.touchdownHalfHeightM : in.hullHalfExtentsM.y;
+        const glm::dvec3 siteTop = in.bodyCentreM + siteDir * (in.bodyRadiusM + m_site.heightM + halfHeight + 0.5);
         if (m_haveLastSiteTop && in.dt > 0.0)
             w = in.shipVelocityMps - (siteTop - m_lastSiteTop) / in.dt;
         m_lastSiteTop = siteTop;
@@ -216,7 +223,7 @@ LandingCommand LandingAutopilot::step(const LandingInput& in, const TerrainProbe
         const double aboveSite = -glm::dot(toSite, up);   // hull bottom over the site's touchdown height
         if (m_phase == LandingPhase::Transit)
         {
-            const double vh = std::min({TransitSpeedCapMps, std::sqrt(2.0 * TransitAccelMps2 * dh), dh / 4.0});
+            const double vh = std::min({TransitSpeedCapMps, std::sqrt(2.0 * transitAccel * dh), dh / 4.0});
             // the faster, the higher over the relief (10 s of flight): a short hop low,
             // a long one high
             const glm::dvec3 whNow = w - up * glm::dot(w, up);
@@ -233,7 +240,7 @@ LandingCommand LandingAutopilot::step(const LandingInput& in, const TerrainProbe
         {
             // over the site: the lower of the site height and the ground under the hull
             const double h = std::max(0.0, std::min(aboveSite, agl));
-            double down = std::max(1.5, std::min({400.0, std::sqrt(2.0 * 15.0 * h), h / 4.0}));
+            double down = std::max(1.5, std::min({400.0, std::sqrt(2.0 * descentBrake * h), h / 4.0}));
             glm::dvec3 hold = toSiteH / 2.0;
             if (glm::length(hold) > 20.0)
                 hold *= 20.0 / glm::length(hold);
@@ -245,7 +252,8 @@ LandingCommand LandingAutopilot::step(const LandingInput& in, const TerrainProbe
     }
 
     glm::dvec3 dv = wanted - w;
-    const double maxDv = AuthorityMps2 * std::max(in.dt, 1.0e-6);
+    cmd.velocityErrorMps = dv;
+    const double maxDv = authority * std::max(in.dt, 1.0e-6);
     if (glm::length(dv) > maxDv)
         dv *= maxDv / glm::length(dv);
     cmd.deltaVelocityMps = dv;

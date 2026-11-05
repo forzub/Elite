@@ -244,6 +244,9 @@ public:
         int autopilotPhase = 0;
         double autopilotSeconds = 0.0;
         double autopilotRampSeconds = 0.0;   // the drive ramp: counts only outside the J keep-out
+        double orbitCoastSeconds = 0.0;      // landing: the coast on the parking orbit before the de-orbit
+        glm::dvec3 orbitNormal {0.0};        // landing: the parking orbit plane, fixed once (zero = not yet)
+        bool orbitAcquire = false;           // landing: close to the orbit - aim at its nearest point
         double autopilotLastLogSeconds = -1.0e30;
         bool autopilotHaveLastCenter = false;
         // the landing module (planner + transit + descent) once the approach is over

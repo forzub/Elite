@@ -3017,6 +3017,31 @@ order - ask for it again if it is not in the session.
   body autopilot = J to a parking orbit above the floor -> J off into the ballistic frame -> landing / ascent on the
   ship's real main engines (needs the landing module on the main-engine flight path, outside J).
 
+### User order 2026-11-05 y - J floor, landing from orbit on the main engines - CODE + LIVE MOON RUNS
+- J floor per body (JDrive.h floorAltitudeM = max(atmosphere top + 50 km, 0.05 R, 50 km); Moon 86.87 km): below it no J
+  field - the autopilot flies on the ship's own main engines (mainEngineAccelMps2: forward main-engine acceleration,
+  legacy fallback the linear g envelope): a thrust-axis lander (acceleration = velocity error / 1 s + gravity
+  compensation; the nose turns toward it at the hull's own pitch rate; thrust = its projection on the nose, within the
+  real thrust) - tail down while hovering. Leaving a body below its floor: a straight 400 m/s climb against it first.
+- Landing checks at engage: main engines >= 1.3 x surface gravity (land AND take off again), else REFUSED (HUD code 5);
+  a body with an atmosphere takes only class surface_lifter (HUD code 6). Route orbit legs are raised to the floor.
+- Landing sequence (author: "по касательной на орбиту, стабилизироваться, садиться с орбиты"): J to a circular
+  parking orbit at the floor, in the plane of the approach and the site, the main-engine braking distance before the
+  site (insertion tangential; close to the orbit the aim is the nearest point of the orbit circle - a fixed point
+  had an equilibrium 6 s x v_orb short of it); J off, 15 s coast; de-orbit and landing on the main engines.
+  LandingAutopilot takes the real authority (braking profiles scale with authority - gravity) and the hull half height
+  along the vertical; ground contact uses the hull projected on the vertical (tail-down legs).
+- J transfer attitude: the nose along the velocity against the target (prograde) instead of at the target centre
+  (user: "нос болтается"); main-engine pointing ignores per-tick noise.
+- LIVE (D:/tmp/elite_j10): orbit3 - ON ORBIT 86.98 km at 1638.95 m/s (circular 1638.9), coast 15 s, de-orbit,
+  LANDED 524.9 s, contact 1.73 m/s vertical / 0.13 m/s horizontal; orbit4 (insertion tolerance 5 m/s) - ON ORBIT
+  86.89 km, vertical -5.2 m/s. Earlier failures recorded: floor2 hard contact 18.4 m/s (per-tick axis projection of a
+  deadbeat servo wasted thrust sideways - replaced by the thrust-axis lander); orbit/orbit2 hung ~10 km short of a
+  fixed insertion point at ~5 m/s (fixed by the orbit-circle aim).
+- NOT done: atmospheric (aircraft-mode, corridor) landing for shuttles; take-off from the surface to orbit not flown;
+  belly-down landings / lay-down and stand-up of a hull (author question - analysis in the reply); 0.9 c cap not hit
+  live; full test suite; J energy accounting.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

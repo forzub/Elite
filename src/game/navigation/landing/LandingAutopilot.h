@@ -99,11 +99,16 @@ struct LandingInput
     glm::dvec3 hullHalfExtentsM {8.0, 3.0, 15.0};
     double groundUnderShipM = 0.0;       // hull bottom height above the radius under the ship (caller's contact ground)
     double dt = 0.0;
+    // the lander's real authority (main engines, m/s2) and the hull's half height along the
+    // local vertical (tail down: half the length); <= 0 = the legacy 40 m/s2 / half.y
+    double authorityMps2 = 0.0;
+    double touchdownHalfHeightM = 0.0;
 };
 
 struct LandingCommand
 {
     glm::dvec3 deltaVelocityMps {0.0};   // apply to the ship's world velocity this tick
+    glm::dvec3 velocityErrorMps {0.0};   // the unclamped wanted - current velocity (for a thrust-axis lander)
     glm::dvec3 noseWorld {0.0};          // wanted attitude (level: nose to the horizon)
     glm::dvec3 upWorld {0.0};
     double accelerationMps2 = 0.0;

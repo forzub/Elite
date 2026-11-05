@@ -127,7 +127,8 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
         }
         const glm::dvec3 rel = frame.originMeters - body->centerMeters;
         const glm::dvec3 up = glm::length(rel) > 1.0 ? glm::normalize(rel) : glm::dvec3(0, 1, 0);
-        const double r = body->radiusMeters + leg.orbitAltitudeM;
+        // J ends above the body's J floor: a lower orbit is raised to it
+        const double r = body->radiusMeters + std::max(leg.orbitAltitudeM, jd::floorAltitudeM(body->radiusMeters, body->atmosphereRadiusMeters));
         // prograde: the ship's own motion across the radius (else any perpendicular)
         const glm::dvec3 w = frame.linearVelocityMps - bodyVel;
         glm::dvec3 along = w - up * glm::dot(w, up);

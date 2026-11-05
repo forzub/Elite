@@ -1,3 +1,4 @@
+#include "src/world/celestial/settlements/SurfaceSettlementLayout.h"
 #include "src/game/SpaceStateInternal.h"
 #include <algorithm>
 #include <cstdio>
@@ -720,7 +721,13 @@ void SpaceState::handleInput()
                 inFreeFlight = ship != m_client->world().ships().end() && ship->second.transform.motion.freeFlight;
             }
             const std::string body = m_systemMapRenderer.selectedBodyId();
-            if (inFreeFlight && m_systemMapRenderer.selectedHubId().empty() && !body.empty())
+            const std::string object = m_systemMapRenderer.activeObjectId();
+            // a surface settlement: fly there and land on its pad (from a hub too - the server
+            // leaves the stabilization itself)
+            if (object.rfind("site:", 0) == 0 &&
+                !world::celestial::settlements::surfaceSettlementBody(object.substr(5)).empty())
+                requestFreeFlightAutopilot({}, object);
+            else if (inFreeFlight && m_systemMapRenderer.selectedHubId().empty() && !body.empty())
                 requestFreeFlightAutopilot(body);
             else
                 m_systemMapRenderer.requestOrbitalTransferToSelectedHub();
@@ -1490,7 +1497,8 @@ void SpaceState::update(float dt)
                         {"moon", "system_0.Sol.Земля.Луна"}, {"earth", "system_0.Sol.Земля"}, {"mars", "system_0.Sol.Марс"},
                         {"here", ""}};
                     std::string id = arg("autopilot:");
-                    // "autopilot:moon@pad:<lat>,<lon>" lands on a pad; plain = wild site search
+                    // "autopilot:moon@pad:<lat>,<lon>" lands on a pad, "autopilot:moon@site:<site id>" at a
+                    // settlement; plain = wild site search
                     std::string landingSpec;
                     if (const auto at = id.find('@'); at != std::string::npos)
                     {

@@ -3201,6 +3201,27 @@ order - ask for it again if it is not in the session.
   the contact log; footprint + 4 corners (the 26 m wide Cobra). land5: LANDED 1.57 / 0.06 m/s, slope 3.4 deg.
   The visual result (no sinking) is NOT checked - the author's look in game is the gate.
 
+### Slice cc-5a 2026-11-06 - landing at a settlement: pads in the terrain, "site:<id>" autopilot - LIVE 1 of 1, NOT ACCEPTED
+- Author: "что дальше - посадка возле поселения". Data: the Moon's surface sites in WorldSitesCatalog (Шеклтон -89.6 /
+  129.0, Имбриум 32.8 / -15.6; the map and the autopilot share the lat / lon -> body direction convention).
+- src/world/celestial/settlements/SurfaceSettlementLayout.h (header-only, deterministic from the site id / population /
+  body radius): airless bodies - an entrance at the catalog point, 2-3 domes 75-125 m out, an antenna mast 120 m, pads
+  in a row along the settlement axis from 320 m (1 / 2 / 3 by population); small bodies (< 400 km) - a rock passage and
+  pads from 150 m. Player role: the pads are where the player lands (trade / missions / rescue), the structures mark the
+  settlement from the approach. The catalog is loaded once (call_once, never throws out of it).
+- src/world/celestial/surface/SettledSurfaceField.h: the field decorator - flat discs (the 30 m relief at each centre,
+  smoothstep blend 0.8 r, min 25 m) under the pads and footprints; applied once in loadBodySurface (the ONE field of the
+  renderer and the server), airless bodies only (surface pressure < 100 Pa: Earth would have got 52 domed settlements).
+- Autopilot: landingSpec "site:<catalog id>" -> the body from the catalog, LandingMode::Pad on pad 1; engaging from a
+  hub leaves the stabilization itself; the departure body is set at once (was empty when engaged from a hub). Map: O on
+  a surface settlement = land there. DEV: autopilot:moon@site:<id>. "BELOW THE SURFACE" now against the sampled terrain
+  (a mare lies below the reference sphere - Imbrium's pad at -506.6 m logged it falsely).
+- LIVE site1 (Имбриум from the Earth hub): pad checked from 173 979 km (roughness 0 m, slope 0.93 deg), orbit 240 s,
+  hand-over 1.95 km / 58 m / 80 m/s, LANDED 1.52 / 0.14 m/s, 0.045 m from the pad centre, 632 s. site2 (short): only the
+  Moon gets settlements; Шеклтон pad 1 chosen, departure = Earth. Not flown: Шеклтон (polar) to touchdown.
+- Next: slice cc-5b - the structures rendered on the surface (pad with markings / lights, entrance, domes, antenna),
+  then the author's look; small bodies; atmosphere styles.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

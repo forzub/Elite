@@ -85,6 +85,7 @@
 #include "src/game/navigation/GravityFieldSystem.h"
 #include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/navigation/landing/SurfaceLandingPilot.h"
+#include "src/world/celestial/settlements/SurfaceSettlementLayout.h"
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/game/ship/core/ShipDynamics.h"
@@ -230,6 +231,13 @@ void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& 
 {
     Ship* ship = getShip(shipId);
     auto active = m_freeFlights.find(shipId);
+    if (ship && engage && active == m_freeFlights.end())
+    {
+        // in a hub frame (stabilization): the autopilot leaves it itself - normal flight first
+        if (!toggleStabilization(shipId))
+            return;
+        active = m_freeFlights.find(shipId);
+    }
     if (!ship || active == m_freeFlights.end())
         return;
     auto& motion = ship->core().transform().motion;
@@ -257,7 +265,16 @@ void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& 
             return;
     }
     auto& f = active->second;
-    const std::string target = bodyId.empty() ? f.primaryBodyId : bodyId;
+    // a settlement ("site:<catalog id>"): its body from the catalog
+    const bool toSettlement = landingSpec.rfind("site:", 0) == 0;
+    const std::string settlementBody = toSettlement ? world::celestial::settlements::surfaceSettlementBody(landingSpec.substr(5))
+                                                    : std::string();
+    if (toSettlement && settlementBody.empty())
+    {
+        std::cerr << "[Autopilot] ship " << shipId.value << ": no surface settlement '" << landingSpec.substr(5) << "'" << std::endl;
+        return;
+    }
+    const std::string target = toSettlement ? settlementBody : bodyId.empty() ? f.primaryBodyId : bodyId;
     const bool known = std::any_of(m_gravityBodies.begin(), m_gravityBodies.end(),
                                    [&](const game::navigation::GravityBody& b) { return b.id == target; });
     if (target.empty() || !known)
@@ -303,11 +320,35 @@ void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& 
     }
     f.autopilotTargetId = target;
     f.autopilotDepartureId = f.primaryBodyId;
+    if (f.autopilotDepartureId.empty())
+    {
+        // engaged from a hub (normal flight began this tick): the body of the sphere of influence now
+        bool root = false;
+        const glm::dvec3 here = motion.travelFrame.localToWorldPosition(motion.localPositionMeters);
+        if (const auto* b = referenceBody(here, m_gravityBodies, root); b && !root)
+            f.autopilotDepartureId = b->id;
+    }
     // landing: "pad:<lat>,<lon>" (degrees, body-fixed) or a wild-terrain site search
     f.landingRequest = game::navigation::landing::LandingRequest {};
     f.landingStarted = false;
     double lat = 0.0, lon = 0.0;
-    if (landingSpec.rfind("pad:", 0) == 0 && std::sscanf(landingSpec.c_str() + 4, "%lf,%lf", &lat, &lon) == 2)
+    if (toSettlement)
+    {
+        double radius = 0.0;
+        for (const auto& b : m_gravityBodies)
+            if (b.id == target)
+                radius = b.radiusMeters;
+        for (const auto& layout : world::celestial::settlements::surfaceSettlementsOn(target, radius))
+            if (layout.siteId == landingSpec.substr(5))
+                if (const auto* pad = layout.pad(1))
+                {
+                    f.landingRequest.mode = game::navigation::landing::LandingMode::Pad;
+                    f.landingRequest.padBodyDirection = pad->bodyDirection;
+                    std::cerr << "[Autopilot] ship " << shipId.value << ": landing at the settlement " << layout.name << " ("
+                              << layout.siteId << "), pad 1" << std::endl;
+                }
+    }
+    else if (landingSpec.rfind("pad:", 0) == 0 && std::sscanf(landingSpec.c_str() + 4, "%lf,%lf", &lat, &lon) == 2)
     {
         const double la = glm::radians(lat), lo = glm::radians(lon);
         f.landingRequest.mode = game::navigation::landing::LandingMode::Pad;
@@ -1809,7 +1850,13 @@ void GameSimulation::updateFreeFlights(double dt)
                     std::cerr << "[Autopilot] ship " << it->first.value << ": "
                               << (motion.freeFlightSurfaceState == 1 ? "LANDED on " : "CRASHED on ") << f.autopilotTargetId << " after "
                               << f.autopilotSeconds << " s; ground material " << motion.freeFlightGroundMaterial << ", slope "
-                              << motion.freeFlightGroundSlopeDeg << " deg" << std::endl;
+                              << motion.freeFlightGroundSlopeDeg << " deg";
+                    if (f.landing.site().valid && f.landedBodyKnown && primary)
+                        std::cerr << ", " << std::acos(std::clamp(glm::dot(glm::normalize(f.landedBodyDirection),
+                                                                           glm::normalize(f.landing.site().bodyDirection)), -1.0, 1.0)) *
+                                                 primary->radiusMeters
+                                  << " m from the chosen site";
+                    std::cerr << std::endl;
                     f.autopilotTargetId.clear();
                     f.autopilotPhase = 0;
                     motion.freeFlightAutopilotPhase = 5;
@@ -1856,12 +1903,15 @@ void GameSimulation::updateFreeFlights(double dt)
             }
         }
 
-        if (g1.insideAtmosphere || (!g1.primaryBodyId.empty() && g1.primaryAltitudeMeters < 0.0))
+        // below the ground (the terrain when it is sampled - a mare lies below the reference sphere)
+        const double groundRef = motion.freeFlightGroundMaterial >= 0 ? motion.freeFlightGroundHeightM - 5.0 : 0.0;
+        const bool belowGround = !g1.primaryBodyId.empty() && g1.primaryAltitudeMeters < groundRef;
+        if (g1.insideAtmosphere || belowGround)
         {
             if (f.elapsedSeconds - f.lastLogSeconds >= 2.0)
             {
                 f.lastLogSeconds = f.elapsedSeconds;
-                std::cerr << "[FreeFlight] ship " << it->first.value << ": " << (g1.primaryAltitudeMeters < 0.0 ? "BELOW THE SURFACE of " : "in the atmosphere of ")
+                std::cerr << "[FreeFlight] ship " << it->first.value << ": " << (belowGround ? "BELOW THE SURFACE of " : "in the atmosphere of ")
                           << g1.primaryBodyId << ", altitude " << g1.primaryAltitudeMeters / 1000.0 << " km" << std::endl;
             }
         }

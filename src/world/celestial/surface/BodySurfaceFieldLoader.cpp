@@ -1,4 +1,5 @@
 #include "src/world/celestial/surface/BodySurfaceFieldLoader.h"
+#include "src/world/celestial/surface/SettledSurfaceField.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -223,6 +224,21 @@ bool loadBodySurface(const BodySurfaceSource& source, LoadedBodySurface& out)
     }
     if (!out.field)
         out.field = std::shared_ptr<SurfaceField>(makeSurfaceField(d).release());
+    // the surface settlements of this body: flat pads / footprints in the ONE field the renderer
+    // draws and the server collides with
+    // airless bodies only: the style (an entrance under the ground, domes, an antenna) is theirs;
+    // bodies with an atmosphere (only shuttles land) get their own style later
+    if (out.field && out.field->solidSurface() && d.surfacePressurePa < 100.0)
+    {
+        const auto layouts = settlements::surfaceSettlementsOn(source.id, d.radiusM);
+        if (!layouts.empty())
+        {
+            auto settled = std::make_shared<SettledSurfaceField>(out.field, layouts);
+            std::fprintf(stderr, "[Settlements] %s: %zu surface settlement(s), %zu flattened footprints\n", source.id.c_str(),
+                         layouts.size(), settled->discCount());
+            out.field = std::move(settled);
+        }
+    }
     return out.field != nullptr;
 }
 } // namespace world::celestial::surface

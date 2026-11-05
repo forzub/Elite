@@ -2648,6 +2648,25 @@ B. Then damage: collisions and weapons (lasers, missiles of different power; no 
 - Pre-existing: every EliteGame run killed by `timeout` ends with a [CRASH] in opengl32.dll after a WebView2 "Failed
   to unregister class" - shutdown under kill, seen in all earlier logs; not from this work.
 
+#### B - plan (2026-11-05, started after A; restore tag restore-before-damage)
+Infrastructure audit: runtime hit volumes come from ObjectRuntimeHitBuilder (module OBBs from mesh parts, auto
+PanelSeam links between panels with link volumes, frame mounts); structural links + detach propagation exist
+(ObjectModuleRuntime / ObjectStructuralLinkRuntime / ObjectDetachedFragmentRuntime, fragments replicated);
+ShipCore::applyDamage existed with NO production caller; no weapons, no ship-ship collision (src/physics/Collision.h
+empty); two conflicting game::damage::DamageType enums (DamageType.h unused); editor .elmodel COLL/STRL/HITR data
+never read by the runtime; shell tiers exist, the Combat claim is never emitted.
+Slices (each: offline check on production code, then live Windows evidence):
+- B1 combat core: weapons data (src/assets/data/combat/weapons.json), penetration model (beam heat at a spot with
+  cooling, burn-through holes, armour reflection; units 1 health = 1 MJ), laser fire command, server beams, beams in
+  the snapshot, client fire key + beam render, DEV target ship, EliteDamageCheck.
+- B2 missiles: projectile sim with guidance; warheads shaped (melting jet, consumed) and kinetic slug (destroyed when
+  spent / stuck in the volume where it stops / leaves the hull); momentum to the hull and the struck part.
+- B3 collisions: ship-ship OBB (SAT) contacts, impulse + separation, lost energy as damage, inertial loads through
+  structural links (break -> detach); ship-hub later.
+- B4 shell -> full ship on fire / missile lock / duel range (Combat claim).
+- B5 editor: hit-volume page per part incl. plates and patches, bars (frame mounts), seam "sausages", container locks;
+  .elmodel COLL/STRL into the runtime; dependency tree / graph on the Cobra.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

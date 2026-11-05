@@ -1,0 +1,746 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Имена 3126: эндонимы, экзонимы, сленг — Elite Lore</title><link rel="stylesheet" href="../style.css"></head><body><header><a href="../index.html">Оглавление</a></header><main class="wrap"><article id="content">
+<h1 id="имена-3126-эндонимы-экзонимы-сленг">Имена 3126: эндонимы, экзонимы, сленг</h1>
+<!-- GENERATED:legend BEGIN -->
+<blockquote>
+<p><strong>Статусы строк:</strong> <code>CANON</code> — есть в заметках автора (generation ships/*, fate.md, history.md, каталог); <code>PROPOSAL</code> — добавлено или пересчитано Claude / результат модели; <code>UNKNOWN</code> — намеренно без ответа, даже для автора. <strong>Видимость:</strong> <code>PUBLIC</code> — мир 3126 это знает или может знать; <code>AUTHOR TRUTH</code> — скрытая правда автора.</p>
+<p>Блоки <code>GENERATED</code> пишет только <code>tools/colonization_lab/lore_md.py</code> из машинного канона; текст вне них — ручной и сохраняется.</p>
+</blockquote>
+<!-- GENERATED:legend END -->
+<!-- GENERATED:naming BEGIN -->
+<p>Источник: <code>tools/colonization_lab/canon/naming.json</code> → <code>naming.py</code> (резолвер, зеркала, проверки) → <code>src/assets/data/naming/names_3126.json</code> (runtime: stable ID → имя). Поля имён в <code>world.json</code>, <code>political_order.json</code>, <code>settlements.json</code> и легаси <code>actors.json</code> — зеркала, их пишет <code>naming.py --write</code>.</p>
+<p><strong>Правило.</strong> Русский — язык разработки и локализации, не язык галактики. Эндоним идёт от тех, кто реально назвал объект; русская форма — экзоним. Каталожные имена звёзд (proper / Bayer / Flamsteed / HD / GJ / HIP) не уничтожаются: имя эпохи колоний ложится поверх.</p>
+<p>Статус: архитектура и решения автора — <code>CANON</code>; этимологии, цепочки именования и геральдика — <code>PROPOSAL</code>, если не сказано иначе.</p>
+<h3 id="основные-акторы">Основные акторы</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Основатели</th>
+<th>Языки (полития / столица)</th>
+<th>Звезда (каталог)</th>
+<th>Местное имя системы</th>
+<th>Эндоним политии</th>
+<th>Столица (эндоним)</th>
+<th>RU (полития / столица)</th>
+<th>Вердикт</th>
+<th>Что было не так</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tau_ceti_cognium</code></td>
+<td>MAYFLOWER-2, GENESIS-1, TRADERS-GUILD-1</td>
+<td>en / zh-Hans</td>
+<td>Tau Ceti</td>
+<td>天仓</td>
+<td>Cognium</td>
+<td>新上海</td>
+<td>Когниум / Синь-Шанхай</td>
+<td>KEEP / NORMALIZE</td>
+<td>город назвали те, кто ушёл и от Пекина, и от Вашингтона; столица не равна политии</td>
+</tr>
+<tr>
+<td><code>proxima_outpost</code></td>
+<td>SVAROG-1</td>
+<td>ru / ru</td>
+<td>Proxima Centauri</td>
+<td>—</td>
+<td>Сварог</td>
+<td>Красный Форпост</td>
+<td>Сварог / Красный Форпост</td>
+<td>KEEP / KEEP</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>gj832_tianhe</code></td>
+<td>TIANHE-1</td>
+<td>zh-Hans / zh-Hans</td>
+<td>Gliese 832</td>
+<td>—</td>
+<td>天河</td>
+<td>天河</td>
+<td>Тяньхэ / Тяньхэ</td>
+<td>KEEP / KEEP</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>gj832_gaia_zone</code></td>
+<td>GREEN-ARK-1</td>
+<td>en / en</td>
+<td>Gliese 832</td>
+<td>—</td>
+<td>Gaia Prime remnant</td>
+<td>Philomorphosis Zone</td>
+<td>остатки Гайи-Прайм / Зона «Филоморфоз»</td>
+<td>RENAME / KEEP</td>
+<td>прежнее имя было псевдонемецким гибридом (werden + Salbe) — у англоязычных основателей нет причины так называться</td>
+</tr>
+<tr>
+<td><code>lalande_hellas</code></td>
+<td>HERACLES-1</td>
+<td>el / el</td>
+<td>Lalande 21185</td>
+<td>Te Rā Hou, Λαλάνδη</td>
+<td>Νέα Ελλάδα</td>
+<td>Αγορά</td>
+<td>Новая Эллада / Агора</td>
+<td>RENAME / NORMALIZE</td>
+<td>прежнее имя смешивало греческое «агора» с латинским primus; грек так государство не назовёт; кольца первой стоянки стали рынком задолго до города</td>
+</tr>
+<tr>
+<td><code>lalande_mecca</code></td>
+<td>VAKA-MOANA-1</td>
+<td>mi / mi</td>
+<td>Lalande 21185</td>
+<td>Te Rā Hou, Λαλάνδη</td>
+<td>Te Kāpehu</td>
+<td>Tauranga</td>
+<td>Капеху / Тауранга</td>
+<td>RENAME / RENAME</td>
+<td>kāpehu whetū — звёздный компас (современная маорийская форма компаса Мау Пиайлуга и Нааинои Томпсона); государство назвало себя инструментом, которым его предки нашли дорогу; tauranga (маори) — стоянка, якорная, место высадки каноэ; так назвали точку швартовки корабля, город вырос вокруг неё</td>
+</tr>
+<tr>
+<td><code>eps_eri_harmony</code></td>
+<td>CELESTIAL-DESTINY-1, HOMEWARD-1</td>
+<td>zh-Hans / zh-Hans</td>
+<td>Epsilon Eridani</td>
+<td>天苑</td>
+<td>新和</td>
+<td>盛和</td>
+<td>Синьхэ / Цветущая Гармония</td>
+<td>NORMALIZE / EXONYM</td>
+<td>新 = новый, 和 = гармония (эхо 和谐社会); прежняя этимология «ядро / река» отброшена: 河 «река» — другой иероглиф. Русское написание слитно по Палладию. Совпадение с реальным уездом 新和县 (сокращение 新疆和平) — VERIFY</td>
+</tr>
+<tr>
+<td><code>eps_eri_strife</code></td>
+<td>FREE-VENTURE-1, HOMEWARD-1</td>
+<td>en / en</td>
+<td>Epsilon Eridani</td>
+<td>天苑</td>
+<td>Warpstanis</td>
+<td>Strife Belt</td>
+<td>Варпстанис / Пояс Раздора</td>
+<td>SLANG / NORMALIZE</td>
+<td>кривой пилотский английский (warp + -stan) — в вольном поясе это нормально</td>
+</tr>
+<tr>
+<td><code>wolf359_citadel</code></td>
+<td>IRON-SHIELD-1</td>
+<td>nb / nb</td>
+<td>Wolf 359</td>
+<td>Ulven</td>
+<td>Skjoldborg</td>
+<td>Skjoldborg</td>
+<td>Скьольдборг / Цитадель</td>
+<td>NORMALIZE / EXONYM</td>
+<td>прежняя русская форма смешивала древнесканд. Skjöldr и немецкое -burg; правильная современная норвежская форма — skjoldborg. Русская практическая транскрипция по правилам — «Шолльборг»; принята распространённая побуквенная «Скьольдборг» (ср. «Скьольд»)</td>
+</tr>
+<tr>
+<td><code>gj581_europa</code></td>
+<td>EUROPA-1</td>
+<td>fr / fr</td>
+<td>Gliese 581</td>
+<td>—</td>
+<td>Union de la Nouvelle-Europe</td>
+<td>Nouvelle-Europe</td>
+<td>Союз Новой Европы / Новая Европа</td>
+<td>RENAME / KEEP</td>
+<td>прежнее имя (Re + Tauros) — не греческое и не латинское слово; доктрина реставрации естественно называется по-французски (ср. Реставрация Бурбонов)</td>
+</tr>
+<tr>
+<td><code>gj581_freeclans</code></td>
+<td>FREE-WORLD-1</td>
+<td>en / en</td>
+<td>Gliese 581</td>
+<td>—</td>
+<td>Free World clans</td>
+<td>Free Settlements</td>
+<td>кланы Свободного мира / Свободные поселения</td>
+<td>KEEP / KEEP</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>hd20794_hellas2</code></td>
+<td>HOMESTEAD-1</td>
+<td>en / en</td>
+<td>HD 20794 (82 G. Eridani)</td>
+<td>—</td>
+<td>Homestead</td>
+<td>Homestead</td>
+<td>Хомстед / Хомстед</td>
+<td>RENAME / RENAME</td>
+<td>прежнее «эллинское» имя у североамериканского консорциума без греков ничем не объяснялось; homestead — надел для опоздавших (Homestead Act 1862, Dominion Lands Act 1872), ровно мотив миссии «мы опоздали к Мэйфлауэру»</td>
+</tr>
+<tr>
+<td><code>hd20794_newindia</code></td>
+<td>DHARMA-2</td>
+<td>sa / hi</td>
+<td>HD 20794 (82 G. Eridani)</td>
+<td>—</td>
+<td>दक्षिण धर्ममण्डल</td>
+<td>नया भारत</td>
+<td>Дхарма-Мандала (южная ветвь) / Новая Индия</td>
+<td>NORMALIZE / EXONYM</td>
+<td>धर्म — закон, долг; मण्डल — круг, область; санскритский составной корректен</td>
+</tr>
+<tr>
+<td><code>hd40307_maland</code></td>
+<td>UHURU-2</td>
+<td>sw / sw</td>
+<td>HD 40307</td>
+<td>—</td>
+<td>Jumuiya ya Ujamaa</td>
+<td>Maland Mpya</td>
+<td>Содружество Уджамаа / Новая Маланд</td>
+<td>NORMALIZE / VERIFY</td>
+<td>ujamaa (суах.) — братство, общинность (политика Ньерере); jumuiya — содружество (ср. Jumuiya ya Afrika Mashariki). «Jahi» в словарях суахили не засвидетельствовано (это англоязычное «африканское» имя для детей) — снято. Суахили — рабочий язык АС с 2022; «Маланд» — имя автора, происхождение не задано; в суахили такого слова нет — не выдумываем; mpya = «новая»</td>
+</tr>
+<tr>
+<td><code>hd40307_firmament</code></td>
+<td>CELESTIAL-DESTINY-2</td>
+<td>zh-Hans / zh-Hans</td>
+<td>HD 40307</td>
+<td>—</td>
+<td>天垒省</td>
+<td>天垒</td>
+<td>Синьхэ (провинция Тяньлэй) / Небесная Твердыня</td>
+<td>NORMALIZE / EXONYM</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>hd69830_verde</code></td>
+<td>AMAZONIA-1</td>
+<td>pt / pt</td>
+<td>HD 69830</td>
+<td>—</td>
+<td>Selva Verde</td>
+<td>Selva Verde</td>
+<td>Сельва-Верде / Сельва-Верде</td>
+<td>NORMALIZE / NORMALIZE</td>
+<td>«Сельта» — опечатка; selva (порт.) — сельва, тропический лес</td>
+</tr>
+<tr>
+<td><code>delta_pav_karma</code></td>
+<td>DHARMA-1</td>
+<td>sa / hi</td>
+<td>Delta Pavonis</td>
+<td>—</td>
+<td>उत्तर धर्ममण्डल</td>
+<td>कर्मभूमि</td>
+<td>Дхарма-Мандала (северная ветвь) / Новая Карма</td>
+<td>NORMALIZE / EXONYM</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>delta_pav_freekarma</code></td>
+<td>DHARMA-1</td>
+<td>hi / hi</td>
+<td>Delta Pavonis</td>
+<td>—</td>
+<td>स्वतंत्र कर्मभूमि</td>
+<td>स्वतंत्र कर्मभूमि</td>
+<td>Свободная Карма / Свободная Карма</td>
+<td>EXONYM / EXONYM</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>gj876_next</code></td>
+<td>NEXT-1</td>
+<td>en / en</td>
+<td>Gliese 876</td>
+<td>—</td>
+<td>Providence</td>
+<td>Providence</td>
+<td>Провидение / Провидение</td>
+<td>KEEP / KEEP</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>cyg61_kern</code></td>
+<td>RESOURCER-1</td>
+<td>en / en</td>
+<td>61 Cygni</td>
+<td>—</td>
+<td>Kern Prospectorate</td>
+<td>Mine Alpha</td>
+<td>Проспекторат Керн / Шахта Альфа</td>
+<td>KEEP / KEEP</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>hd114783_hellas3</code></td>
+<td>ODYSSEY-1</td>
+<td>el / el</td>
+<td>HD 114783</td>
+<td>—</td>
+<td>Τρίτη Ελλάδα</td>
+<td>Τρίτη Ελλάδα</td>
+<td>Третья Эллада / Третья Эллада</td>
+<td>KEEP / KEEP</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>leo83_zion</code></td>
+<td>NEW-JERUSALEM-1</td>
+<td>en / en</td>
+<td>83 Leonis</td>
+<td>—</td>
+<td>New Thebaid</td>
+<td>New Thebaid</td>
+<td>Ново-Фиваида / Ново-Фиваида</td>
+<td>RENAME / RENAME</td>
+<td>решение автора 2026-11-05: Фиваида — пустыня ранних отшельников; рабочий язык ковчега английский, литургия греческая и латинская</td>
+</tr>
+<tr>
+<td><code>sol_authority</code></td>
+<td>—</td>
+<td>en</td>
+<td>Sol (Солнце)</td>
+<td>—</td>
+<td>Sol Authority</td>
+<td>—</td>
+<td>Сол</td>
+<td>KEEP</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="языковой-слой">Языковой слой</h3>
+<ul>
+<li><code>non_is_not_modern</code> — Old Norse (non) допустим только для kind = ceremonial / motto / historical / mythological; современные эндонимы норвежской ветви — nb или nn</li>
+<li><code>nordic_endonym_not_russian</code> — у эндонима nb / nn / non не может быть кириллицы</li>
+<li><code>pacific_lingua_franca</code> — te reo Māori — государственный и топонимический язык Капеху; английский — второй (торговля, сеть); самоанский, тонганский, гавайский — общинные и топонимические вкрапления</li>
+<li><code>nordic_standards</code> — административный язык Скьольдборга вырос из букмола; старые поселения вахтовиков из Вестланна держат нюнорск (hamn, jarn, ikkje); флот пишет сокращениями (nb)</li>
+</ul>
+<h3 id="места-и-площадки">Места и площадки</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Эндоним</th>
+<th>Язык</th>
+<th>Произношение</th>
+<th>RU</th>
+<th>EN</th>
+<th>Сленг и другие формы</th>
+<th>Почему так</th>
+<th>Вердикт</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>place:wolf359.asteroid_2</code></td>
+<td>Toeren</td>
+<td>nb</td>
+<td>[ˈtuːərən]</td>
+<td>Тоэрен</td>
+<td>Toeren</td>
+<td>—</td>
+<td>«Двойка»: код «астероид № 2» стал именем; причина потерь IRON-SHIELD-2 остаётся UNKNOWN</td>
+<td>SLANG</td>
+</tr>
+<tr>
+<td><code>site:beacon.BCN-003-BR</code></td>
+<td>Bifrost-varden</td>
+<td>nb</td>
+<td>—</td>
+<td>Биврёст — мост-маяк BCN-003-BR</td>
+<td>Bifrost Beacon BCN-003-BR</td>
+<td>—</td>
+<td>мост богов — мост-маяк; varde — каменный знак и сигнальный костёр на берегу</td>
+<td>RENAME</td>
+</tr>
+<tr>
+<td><code>site:delta_pav_karma.gene_temple</code></td>
+<td>बीज मन्दिर</td>
+<td>hi</td>
+<td>—</td>
+<td>Храм Семени (криобанк генов)</td>
+<td>Seed Temple (gene cryobank)</td>
+<td>—</td>
+<td>«Храм Массива» — бессмысленная калька; बीज — семя, मन्दिर — храм</td>
+<td>RENAME</td>
+</tr>
+<tr>
+<td><code>site:gj581_europa.registry</code></td>
+<td>Registre des traités et Arbitrage « Nouveau-Bruxelles »</td>
+<td>fr</td>
+<td>—</td>
+<td>Реестр договоров и Арбитраж «Новый Брюссель»</td>
+<td>Treaty Registry and Arbitration “New Brussels”</td>
+<td>—</td>
+<td>—</td>
+<td>EXONYM</td>
+</tr>
+<tr>
+<td><code>site:lalande_hellas.agora</code></td>
+<td>Σταυροδρόμι</td>
+<td>el</td>
+<td>[stavroˈðromi]</td>
+<td>Ставродроми — нейтральный порт и биржа</td>
+<td>Stavrodromi (Crossroads) free port</td>
+<td>Перекрёсток (translation)</td>
+<td>σταυροδρόμι — перекрёсток; прежнее «Агора» оставлено столице</td>
+<td>NORMALIZE</td>
+</tr>
+<tr>
+<td><code>site:lalande_mecca.lalande_j_gas_m</code></td>
+<td>Ngā Papa o Lalande 21185 j</td>
+<td>mi</td>
+<td>—</td>
+<td>Платформы Lalande 21185 j (доля Капеху)</td>
+<td>Lalande 21185 j platforms (Kāpehu share)</td>
+<td>—</td>
+<td>—</td>
+<td>RENAME</td>
+</tr>
+<tr>
+<td><code>site:lalande_mecca.mecca_farms</code></td>
+<td>Ngā Māra Kai</td>
+<td>mi</td>
+<td>—</td>
+<td>Огороды Мара-Каи (Lalande 21185 g)</td>
+<td>Māra Kai gardens</td>
+<td>—</td>
+<td>māra kai — огород, сад, где растёт еда</td>
+<td>RENAME</td>
+</tr>
+<tr>
+<td><code>site:lalande_mecca.rasad</code></td>
+<td>Te Whare Tātai Arorangi</td>
+<td>mi</td>
+<td>[tɛ ˈfaɾɛ ˈtaːtai ˈaɾɔɾaŋi]</td>
+<td>Обсерватория-вычислитель Фаре-Татаи</td>
+<td>House of Star Lore (observatory-computer)</td>
+<td>Фаре (slang), the Whare (slang)</td>
+<td>whare — дом; tātai arorangi — астрономия (kōkōrangi само по себе — сорт кумары, «tohunga kōkōrangi» — астроном). Здесь сформулирована геометрия этак-фреймов</td>
+<td>RENAME</td>
+</tr>
+<tr>
+<td><code>site:leo83_golden_city.capital</code></td>
+<td>Golden City</td>
+<td>en</td>
+<td>—</td>
+<td>«Золотой Город»</td>
+<td>Golden City</td>
+<td>Golden Debt (slang), Золотой Долг (slang)</td>
+<td>—</td>
+<td>KEEP</td>
+</tr>
+<tr>
+<td><code>site:leo83_zion.capital</code></td>
+<td>New Thebaid (orbital ark)</td>
+<td>en</td>
+<td>—</td>
+<td>Ново-Фиваида (ковчег на орбите)</td>
+<td>New Thebaid (orbital ark)</td>
+<td>—</td>
+<td>—</td>
+<td>RENAME</td>
+</tr>
+<tr>
+<td><code>site:site.003.wolf359_citadel.military_hub01</code></td>
+<td>Heimdal vaktstasjon</td>
+<td>nb</td>
+<td>—</td>
+<td>Хеймдаль — сторожевая станция</td>
+<td>Heimdal Watch Station</td>
+<td>—</td>
+<td>страж Биврёста, который слышит, как растёт трава: радар и наблюдение</td>
+<td>RENAME</td>
+</tr>
+<tr>
+<td><code>site:tau_ceti_cognium.beacon_authority</code></td>
+<td>the Owlery</td>
+<td>en</td>
+<td>—</td>
+<td>Управление Маяков и фабрика ядер прыжка «Сычёвник»</td>
+<td>the Owlery</td>
+<td>—</td>
+<td>русское авторское «Сычёвник» — экзоним английского Owlery</td>
+<td>EXONYM</td>
+</tr>
+<tr>
+<td><code>site:wolf359_citadel.archive_vault</code></td>
+<td>Arkivhvelvet</td>
+<td>nb</td>
+<td>—</td>
+<td>Хранилище LAST-LIGHT</td>
+<td>LAST-LIGHT Vault</td>
+<td>—</td>
+<td>«архивный свод», по образцу Svalbard globale frøhvelv; русское имя автора — экзоним</td>
+<td>EXONYM</td>
+</tr>
+<tr>
+<td><code>site:wolf359_citadel.bastion</code></td>
+<td>Mjølner</td>
+<td>nb</td>
+<td>[ˈmjœ̂lnər]</td>
+<td>Мьёльнер — арсенал и военная верфь</td>
+<td>Mjølner Arsenal and Naval Yard</td>
+<td>—</td>
+<td>молот Тора — оружейный завод; функция совпадает с мифом</td>
+<td>RENAME</td>
+</tr>
+<tr>
+<td><code>site:wolf359_citadel.habitat1</code></td>
+<td>Nyhamn</td>
+<td>nn</td>
+<td>[ˈnŷːhɑmn]</td>
+<td>Нюхамн</td>
+<td>Nyhamn</td>
+<td>—</td>
+<td>«новая гавань»; hamn — нюнорск, havn — букмол</td>
+<td>RENAME</td>
+</tr>
+<tr>
+<td><code>site:wolf359_citadel.habitat2</code></td>
+<td>Jarnvik</td>
+<td>nn</td>
+<td>—</td>
+<td>Ярнвик</td>
+<td>Jarnvik</td>
+<td>—</td>
+<td>«железная бухта» (jarn — нюнорск, jern — букмол): у мира f нет моря, бухтой назвали кратер с рудой</td>
+<td>RENAME</td>
+</tr>
+<tr>
+<td><code>site:wolf359_citadel.wolf_mines</code></td>
+<td>Gruve 7</td>
+<td>nb</td>
+<td>—</td>
+<td>Груве-7 (рудники пылевого диска)</td>
+<td>Gruve 7</td>
+<td>—</td>
+<td>рабочий номер шахты, как Gruve 7 на Шпицбергене; номер пережил первоначальную нумерацию</td>
+<td>RENAME</td>
+</tr>
+<tr>
+<td><code>system:3</code></td>
+<td>Ulven</td>
+<td>nb</td>
+<td>[ˈʉ̀lvən]</td>
+<td>Ульвен</td>
+<td>—</td>
+<td>—</td>
+<td>народная этимология: каталожный Wolf стал ulv — «волк»; Ulven — «Волк»</td>
+<td>KEEP</td>
+</tr>
+<tr>
+<td><code>system:4</code></td>
+<td>Lalande 21185</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>звезда 7.5m — у неё нет традиционного имени; две культуры одной системы называют её по-своему</td>
+<td>KEEP</td>
+</tr>
+<tr>
+<td><code>system:8</code></td>
+<td>天仓</td>
+<td>zh-Hans</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>KEEP</td>
+</tr>
+<tr>
+<td><code>system:9</code></td>
+<td>天苑</td>
+<td>zh-Hans</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>KEEP</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="миссии">Миссии</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Собственное имя</th>
+<th>Язык</th>
+<th>RU</th>
+<th>Почему</th>
+<th>Вердикт</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CELESTIAL-DESTINY-1</code></td>
+<td>天命一号</td>
+<td>zh-Hans</td>
+<td>Небесная Судьба</td>
+<td>天命 — Мандат Неба; англ. код CELESTIAL-DESTINY — вольный экспортный перевод, китайские госпроекты называют себя пиньинем (ср. Tianwen, Shenzhou)</td>
+<td>NORMALIZE</td>
+</tr>
+<tr>
+<td><code>CELESTIAL-DESTINY-2</code></td>
+<td>天命二号</td>
+<td>zh-Hans</td>
+<td>Небесная Судьба-2</td>
+<td>—</td>
+<td>NORMALIZE</td>
+</tr>
+<tr>
+<td><code>HOMESTEAD-1</code></td>
+<td>Homestead</td>
+<td>en</td>
+<td>Хомстед</td>
+<td>—</td>
+<td>RENAME</td>
+</tr>
+<tr>
+<td><code>IRON-SHIELD-1</code></td>
+<td>Jernskjold</td>
+<td>nb</td>
+<td>Айрон Шилд-1</td>
+<td>—</td>
+<td>EXONYM</td>
+</tr>
+<tr>
+<td><code>TIANHE-1</code></td>
+<td>天河一号</td>
+<td>zh-Hans</td>
+<td>Тяньхэ-1</td>
+<td>—</td>
+<td>NORMALIZE</td>
+</tr>
+<tr>
+<td><code>VAKA-MOANA-1</code></td>
+<td>Vaka Moana</td>
+<td>to</td>
+<td>Вака-Моана</td>
+<td>общеполинезийское «океанский корабль» вместо маорийского waka: имя не должно было принадлежать одной стране консорциума</td>
+<td>RENAME</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="реликты-массовой-культуры">Реликты массовой культуры</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Форма</th>
+<th>Вид</th>
+<th>Язык</th>
+<th>Откуда</th>
+<th>Что так зовут</th>
+<th>Статус</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ватман</td>
+<td>spacer_slang</td>
+<td>ru</td>
+<td>Batman</td>
+<td>ночной патруль Скьольдборга; так зовут перехватчики, которые выходят только во тьме у Ульвена</td>
+<td>PROPOSAL</td>
+</tr>
+<tr>
+<td>Хулк</td>
+<td>miners_nickname</td>
+<td>ru</td>
+<td>Hulk</td>
+<td>тяжёлый буксир-крушитель астероидов на Груве-7</td>
+<td>PROPOSAL</td>
+</tr>
+<tr>
+<td>Саперман</td>
+<td>children_nickname</td>
+<td>ru</td>
+<td>Superman</td>
+<td>детское прозвище пилота спасательной службы, который вытащил людей из пожара на Миналфе</td>
+<td>PROPOSAL</td>
+</tr>
+<tr>
+<td>Око Саурона / Sauron's Eye</td>
+<td>pilot_nickname</td>
+<td>en</td>
+<td>Tolkien, Eye of Sauron</td>
+<td>красная звезда HD 102195 сквозь искажение у горячего железа; у русских пилотов — «Саурово око»</td>
+<td>PROPOSAL</td>
+</tr>
+<tr>
+<td>Солярис</td>
+<td>pilot_nickname</td>
+<td>ru</td>
+<td>Lem, Solaris</td>
+<td>ядро «Провидца» у Gliese 876: машину, которая отвечает не на те вопросы</td>
+<td>PROPOSAL</td>
+</tr>
+<tr>
+<td>Stainless Steel Rat</td>
+<td>smugglers_nickname</td>
+<td>en</td>
+<td>Harrison</td>
+<td>ремонтный причал Чёрного рынка Пояса Раздора; русские — «Крыса»</td>
+<td>PROPOSAL</td>
+</tr>
+<tr>
+<td>Amber</td>
+<td>cultural_relic</td>
+<td>en</td>
+<td>Zelazny</td>
+<td>архивный уровень Хранилища LAST-LIGHT, где лежит «единственная настоящая копия» Земли; остальные — тени</td>
+<td>PROPOSAL</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="люди-xxiiixxix-веков-в-именах">Люди XXIII–XXIX веков в именах</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Имя</th>
+<th>Язык</th>
+<th>Эпоха</th>
+<th>Роль</th>
+<th>Статус</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sione Leota</td>
+<td>sm</td>
+<td>2470-е</td>
+<td>математик Фаре-Татаи; первая формализация этак-фреймов: корабль неподвижен, звёзды движутся</td>
+<td>PROPOSAL</td>
+</tr>
+<tr>
+<td>Ingrid Haugland</td>
+<td>nb</td>
+<td>2610-е</td>
+<td>командир охраны, при ней Скьольдборг перестал быть охраной и стал протекторатом</td>
+<td>PROPOSAL</td>
+</tr>
+<tr>
+<td>Kofi Mensah-Ruto</td>
+<td>sw</td>
+<td>2560-е</td>
+<td>агроном агроколец Маланд; «житница» названа его шуткой</td>
+<td>PROPOSAL</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="verify">VERIFY</h3>
+<ul>
+<li>盛和 как китайское имя столицы «Цветущая Гармония» — стилистика</li>
+<li>新和: совпадает с реальным уездом 新和县 (сокращение 新疆和平); оставлено как «новая гармония»</li>
+<li>шанхайское произношение 上海 «Заанхе»</li>
+<li>Maland: происхождение у автора не задано; Maland Mpya — грамматика суахили</li>
+<li>Skjaldborg heldr — грамматика древнескандинавского девиза</li>
+<li>skjoldborgere — норвежский демоним</li>
+<li>Toeren — разговорное norsk «двойка»</li>
+<li>имена кораблей каталога (Б-4 «Сокол» у Цитадели, C-120 «Конвейер» у Бхарата, Хэ-С240 «Тыловик» у Гармонии, HT-20K «Мул» у Керна): русские имена у нерусских производителей; живут в реестре моделей рендеринга (assets/models/ships/ship_models.json) — вне этого прохода</li>
+<li>Fomalhaut как система полёта: каталог StarAtlas её не содержит; материализация требует EliteUniverseGenerator и пересборки межзвёздных ячеек навигации — вне этого прохода</li>
+</ul>
+<!-- GENERATED:naming END -->
+</article><footer class="path">Источник: <code>Notes/Lore/CULTURE/NAMING.md</code></footer></main></body></html>

@@ -37,17 +37,17 @@
   },
   {
    "check": "average_expedition_not_profitable",
-   "detail": "average visitor EV -424034 Cr, run cost 191573",
+   "detail": "average visitor EV -424017 Cr, run cost 191573",
    "ok": true
   },
   {
    "check": "rare_successes_make_the_profit",
-   "detail": "best segment 861034 Cr > 0, average -424034 Cr < 0",
+   "detail": "best segment 861033 Cr > 0, average -424017 Cr < 0",
    "ok": true
   },
   {
    "check": "networks_self_source_cheaper_than_buying",
-   "detail": "connected 333324 < buy 777250 < informed 941793 Cr/g",
+   "detail": "connected 333323 < buy 777250 < informed 941793 Cr/g",
    "ok": true
   },
   {
@@ -67,7 +67,7 @@
   },
   {
    "check": "lotosite_price_in_author_target",
-   "detail": "3109001 Cr/g, target [2000000, 5000000] (AUTHOR_TARGET); = 0.916 Cobrett-I",
+   "detail": "3108998 Cr/g, target [2000000, 5000000] (AUTHOR_TARGET); = 0.916 Cobrett-I",
    "ok": true
   },
   {
@@ -132,7 +132,7 @@
   },
   {
    "check": "sol.earth_demand_within_orbital_capacity",
-   "detail": "demand 398 422 533 legs/y <= 80 % of capacity 642 855 411",
+   "detail": "demand 398 422 537 legs/y <= 80 % of capacity 642 967 468",
    "ok": true
   },
   {
@@ -142,7 +142,7 @@
   },
   {
    "check": "sol.surface_traffic_conserved",
-   "detail": "398 422 533 of 398 422 533",
+   "detail": "398 422 537 of 398 422 537",
    "ok": true
   },
   {
@@ -167,7 +167,7 @@
   },
   {
    "check": "sol.earth_capacity_ge_demand_plus_reserve",
-   "detail": "57 069 movements/day vs capacity 92 238 (utilisation 0.62)",
+   "detail": "57 060 movements/day vs capacity 92 238 (utilisation 0.62)",
    "ok": true
   },
   {
@@ -187,7 +187,7 @@
   },
   {
    "check": "migration_within_transport_capacity",
-   "detail": "demand 2424245 <= capacity 6005363 per year",
+   "detail": "demand 2424243 <= capacity 6005480 per year",
    "ok": true
   },
   {

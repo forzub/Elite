@@ -1,4 +1,4 @@
-# Пост прослушивания у Барнарда (Скьёльдбург)
+# Пост прослушивания у Барнарда (Скьольдборг)
 
 <!-- GENERATED:legend BEGIN -->
 > **Статусы строк:** `CANON` — есть в заметках автора (generation ships/*, fate.md, history.md, каталог); `PROPOSAL` — добавлено или пересчитано Claude / результат модели; `UNKNOWN` — намеренно без ответа, даже для автора. **Видимость:** `PUBLIC` — мир 3126 это знает или может знать; `AUTHOR TRUTH` — скрытая правда автора.
@@ -13,7 +13,7 @@
 |---|---|---|
 | ID | `barnard_post` | PROPOSAL · PUBLIC |
 | Тип | аванпост | PROPOSAL · PUBLIC |
-| Полития | Скьёльдбург | PROPOSAL · PUBLIC |
+| Полития | Скьольдборг | PROPOSAL · PUBLIC |
 | Владелец | [Цитадель](wolf359_citadel.md) | PROPOSAL · PUBLIC |
 | Система | Barnard's Star (#2) | PROPOSAL · PUBLIC |
 | Основана | 2860 | PROPOSAL · PUBLIC |

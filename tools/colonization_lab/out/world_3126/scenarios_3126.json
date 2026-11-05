@@ -8,12 +8,12 @@
      "imports_t_before": 0,
      "polity": "eps_eri_harmony",
      "price_index": 2.778,
-     "shortage_t_after": 215661037,
+     "shortage_t_after": 215668783,
      "shortage_t_before": 0
     },
     {
      "commodity": "metals",
-     "imports_t_after": 31303991,
+     "imports_t_after": 31305004,
      "imports_t_before": 0,
      "polity": "eps_eri_harmony",
      "price_index": 1.009,
@@ -35,58 +35,58 @@
    "metrics": {
     "eps_eri_harmony": {
      "after": {
-      "avg_delivered_cr_per_t": 8592.2,
-      "import_delivered_cr": 834394248564,
-      "import_t": 97110902,
+      "avg_delivered_cr_per_t": 8592.1,
+      "import_delivered_cr": 834407617262,
+      "import_t": 97112922,
       "re_export_t": 0,
-      "ships_on_its_flows": 5592.5,
-      "shortage_t": 218374144
+      "ships_on_its_flows": 5592.6,
+      "shortage_t": 218381932
      },
      "before": {
       "avg_delivered_cr_per_t": 12136.7,
-      "import_delivered_cr": 798689702523,
-      "import_t": 65807556,
+      "import_delivered_cr": 798701913450,
+      "import_t": 65808563,
       "re_export_t": 0,
       "ships_on_its_flows": 5970.4,
-      "shortage_t": 2713107
+      "shortage_t": 2713148
      },
      "import_price_index": 0.708
     },
     "eps_eri_strife": {
      "after": {
-      "avg_delivered_cr_per_t": 10996.5,
-      "import_delivered_cr": 184100632318,
-      "import_t": 16741756,
+      "avg_delivered_cr_per_t": 10995.6,
+      "import_delivered_cr": 184083822452,
+      "import_t": 16741598,
       "re_export_t": 0,
       "ships_on_its_flows": 2157.9,
-      "shortage_t": 931233
+      "shortage_t": 931369
      },
      "before": {
-      "avg_delivered_cr_per_t": 10996.2,
-      "import_delivered_cr": 184095851464,
-      "import_t": 16741716,
+      "avg_delivered_cr_per_t": 10995.3,
+      "import_delivered_cr": 184079041663,
+      "import_t": 16741558,
       "re_export_t": 0,
       "ships_on_its_flows": 1762.8,
-      "shortage_t": 930697
+      "shortage_t": 930833
      },
      "import_price_index": 1.0
     },
     "gj832_tianhe": {
      "after": {
       "avg_delivered_cr_per_t": 11974.3,
-      "import_delivered_cr": 603555722405,
-      "import_t": 50404147,
+      "import_delivered_cr": 603558444640,
+      "import_t": 50404374,
       "re_export_t": 0,
       "ships_on_its_flows": 3688.2,
-      "shortage_t": 2039570
+      "shortage_t": 2039579
      },
      "before": {
       "avg_delivered_cr_per_t": 11974.3,
-      "import_delivered_cr": 603555722405,
-      "import_t": 50404147,
+      "import_delivered_cr": 603558444640,
+      "import_t": 50404374,
       "re_export_t": 0,
       "ships_on_its_flows": 3688.2,
-      "shortage_t": 2039570
+      "shortage_t": 2039579
      },
      "import_price_index": 1.0
     }
@@ -136,16 +136,16 @@
     "delta_pav_freekarma": {
      "after": {
       "avg_delivered_cr_per_t": 6912.7,
-      "import_delivered_cr": 50714124908,
-      "import_t": 7336346,
+      "import_delivered_cr": 50714133583,
+      "import_t": 7336348,
       "re_export_t": 0,
       "ships_on_its_flows": 706.7,
       "shortage_t": 769993
      },
      "before": {
       "avg_delivered_cr_per_t": 6904.5,
-      "import_delivered_cr": 50649640136,
-      "import_t": 7335760,
+      "import_delivered_cr": 50649649216,
+      "import_t": 7335762,
       "re_export_t": 0,
       "ships_on_its_flows": 685.9,
       "shortage_t": 769991
@@ -155,38 +155,38 @@
     "gj832_tianhe": {
      "after": {
       "avg_delivered_cr_per_t": 12066.5,
-      "import_delivered_cr": 608115405117,
-      "import_t": 50397006,
+      "import_delivered_cr": 608118148367,
+      "import_t": 50397234,
       "re_export_t": 0,
       "ships_on_its_flows": 5147.1,
-      "shortage_t": 2039570
+      "shortage_t": 2039579
      },
      "before": {
       "avg_delivered_cr_per_t": 11974.3,
-      "import_delivered_cr": 603555722405,
-      "import_t": 50404147,
+      "import_delivered_cr": 603558444640,
+      "import_t": 50404374,
       "re_export_t": 0,
       "ships_on_its_flows": 3688.2,
-      "shortage_t": 2039570
+      "shortage_t": 2039579
      },
      "import_price_index": 1.008
     },
     "tau_ceti_cognium": {
      "after": {
       "avg_delivered_cr_per_t": 1712.3,
-      "import_delivered_cr": 1091723398031,
-      "import_t": 637583316,
+      "import_delivered_cr": 1091725809887,
+      "import_t": 637584704,
       "re_export_t": 0,
       "ships_on_its_flows": 5790.4,
-      "shortage_t": 360630584
+      "shortage_t": 360631384
      },
      "before": {
       "avg_delivered_cr_per_t": 1712.3,
-      "import_delivered_cr": 1091723398031,
-      "import_t": 637583316,
+      "import_delivered_cr": 1091725809887,
+      "import_t": 637584704,
       "re_export_t": 0,
       "ships_on_its_flows": 5790.4,
-      "shortage_t": 360630584
+      "shortage_t": 360631384
      },
      "import_price_index": 1.0
     }
@@ -204,7 +204,7 @@
     "backlog_after_3y_dry_t": 0,
     "fleet_shortfall_share_after_3y": 0.0,
     "lost_dry_t_y": 108889,
-    "spare_capacity_elsewhere_dry_t_y": 406565,
+    "spare_capacity_elsewhere_dry_t_y": 406564,
     "takers": [
      "sol_authority",
      "eps_eri_harmony",
@@ -221,8 +221,8 @@
    "changes": [
     {
      "commodity": "ore",
-     "imports_t_after": 158665774,
-     "imports_t_before": 149242951,
+     "imports_t_after": 158666095,
+     "imports_t_before": 149243272,
      "polity": "tau_ceti_cognium",
      "price_index": 1.0,
      "shortage_t_after": 0,
@@ -230,8 +230,8 @@
     },
     {
      "commodity": "construction",
-     "imports_t_after": 188830139,
-     "imports_t_before": 176207639,
+     "imports_t_after": 188830516,
+     "imports_t_before": 176208016,
      "polity": "tau_ceti_cognium",
      "price_index": 1.0,
      "shortage_t_after": 0,
@@ -249,19 +249,19 @@
     "tau_ceti_cognium": {
      "after": {
       "avg_delivered_cr_per_t": 1662.3,
-      "import_delivered_cr": 1101503525593,
-      "import_t": 662654287,
+      "import_delivered_cr": 1101505937449,
+      "import_t": 662655676,
       "re_export_t": 0,
       "ships_on_its_flows": 5860.3,
-      "shortage_t": 361745180
+      "shortage_t": 361745980
      },
      "before": {
       "avg_delivered_cr_per_t": 1712.3,
-      "import_delivered_cr": 1091723398031,
-      "import_t": 637583316,
+      "import_delivered_cr": 1091725809887,
+      "import_t": 637584704,
       "re_export_t": 0,
       "ships_on_its_flows": 5790.4,
-      "shortage_t": 360630584
+      "shortage_t": 360631384
      },
      "import_price_index": 0.971
     }
@@ -403,69 +403,69 @@
    "fleet_active_after": {
     "eps_eri_harmony": 20465,
     "hd40307_firmament": 2126,
-    "hd40307_maland": 4668
+    "hd40307_maland": 4669
    },
    "fleet_active_before": {
     "eps_eri_harmony": 20512,
     "hd40307_firmament": 2126,
-    "hd40307_maland": 4668
+    "hd40307_maland": 4669
    },
    "id": "war_sanctions_reexport",
    "metrics": {
     "eps_eri_harmony": {
      "after": {
       "avg_delivered_cr_per_t": 12136.7,
-      "import_delivered_cr": 798688734771,
-      "import_t": 65807537,
+      "import_delivered_cr": 798700945651,
+      "import_t": 65808543,
       "re_export_t": 0,
       "ships_on_its_flows": 5964.9,
-      "shortage_t": 2713107
+      "shortage_t": 2713148
      },
      "before": {
       "avg_delivered_cr_per_t": 12136.7,
-      "import_delivered_cr": 798689702523,
-      "import_t": 65807556,
+      "import_delivered_cr": 798701913450,
+      "import_t": 65808563,
       "re_export_t": 0,
       "ships_on_its_flows": 5970.4,
-      "shortage_t": 2713107
+      "shortage_t": 2713148
      },
      "import_price_index": 1.0
     },
     "hd40307_firmament": {
      "after": {
       "avg_delivered_cr_per_t": 3673.5,
-      "import_delivered_cr": 64452367051,
-      "import_t": 17545126,
+      "import_delivered_cr": 64452943308,
+      "import_t": 17545290,
       "re_export_t": 0,
       "ships_on_its_flows": 724.6,
-      "shortage_t": 917263
+      "shortage_t": 917271
      },
      "before": {
       "avg_delivered_cr_per_t": 3673.5,
-      "import_delivered_cr": 64452367051,
-      "import_t": 17545126,
+      "import_delivered_cr": 64452943308,
+      "import_t": 17545290,
       "re_export_t": 0,
       "ships_on_its_flows": 724.6,
-      "shortage_t": 917263
+      "shortage_t": 917271
      },
      "import_price_index": 1.0
     },
     "hd40307_maland": {
      "after": {
       "avg_delivered_cr_per_t": 8376.2,
-      "import_delivered_cr": 336309915443,
-      "import_t": 40150702,
-      "re_export_t": 12462013,
+      "import_delivered_cr": 336325292256,
+      "import_t": 40152594,
+      "re_export_t": 12462580,
       "ships_on_its_flows": 1744.6,
-      "shortage_t": 942957
+      "shortage_t": 942999
      },
      "before": {
       "avg_delivered_cr_per_t": 6850.3,
-      "import_delivered_cr": 275042757283,
-      "import_t": 40150702,
+      "import_delivered_cr": 275055346329,
+      "import_t": 40152594,
       "re_export_t": 0,
-      "ships_on_its_flows": 1743.1,
-      "shortage_t": 942957
+      "ships_on_its_flows": 1743.2,
+      "shortage_t": 942999
      },
      "import_price_index": 1.223
     }
@@ -474,7 +474,7 @@
     "mobilisation": {
      "conversion": [
       {
-       "dry_t_y": 47099,
+       "dry_t_y": 47116,
        "from_": "civil yard",
        "months": 9,
        "to": "military transports / escorts"
@@ -508,7 +508,7 @@
       "commodity": "machinery",
       "markup": 1.25,
       "seller": "sol_authority",
-      "tonnes": 1483664,
+      "tonnes": 1483731,
       "via": "hd20794_newindia"
      },
      {
@@ -516,7 +516,7 @@
       "commodity": "electronics",
       "markup": 1.25,
       "seller": "sol_authority",
-      "tonnes": 1092383,
+      "tonnes": 1092433,
       "via": "hd20794_newindia"
      },
      {
@@ -524,7 +524,7 @@
       "commodity": "medical",
       "markup": 1.25,
       "seller": "sol_authority",
-      "tonnes": 689719,
+      "tonnes": 689750,
       "via": "hd20794_newindia"
      },
      {
@@ -532,7 +532,7 @@
       "commodity": "consumer",
       "markup": 1.25,
       "seller": "sol_authority",
-      "tonnes": 9196248,
+      "tonnes": 9196666,
       "via": "hd20794_newindia"
      }
     ],

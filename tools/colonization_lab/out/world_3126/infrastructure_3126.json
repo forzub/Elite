@@ -229,7 +229,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 27746354,
+     "annual_output_t": 27731849,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 66,
@@ -239,18 +239,18 @@
      "estimated_reserve_index": 3.153,
      "excavation_sites": 198,
      "grade": 0.11,
-     "mined_volume_m3_y": 11560981,
+     "mined_volume_m3_y": 11554937,
      "power_mw": 2640,
      "reactor_fuel_t_y": 0.6,
      "resource": "ore",
      "security": "частная охрана",
      "spare_parts_t_y": 27720,
-     "storage_t": 1520348,
+     "storage_t": 1519553,
      "transport": "челноки и рельсовые катапульты",
      "workers": 7920
     },
     {
-     "annual_output_t": 136750861,
+     "annual_output_t": 136692988,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 33,
@@ -260,13 +260,13 @@
      "estimated_reserve_index": 4.514,
      "excavation_sites": 99,
      "grade": 0.23,
-     "mined_volume_m3_y": 143948275,
+     "mined_volume_m3_y": 143887356,
      "power_mw": 2970,
      "reactor_fuel_t_y": 0.67,
      "resource": "water_volatiles",
      "security": "частная охрана",
      "spare_parts_t_y": 23760,
-     "storage_t": 7493198,
+     "storage_t": 7490027,
      "transport": "челноки и рельсовые катапульты",
      "workers": 6600
     }
@@ -426,7 +426,7 @@
     }
    },
    "shipyards": {
-    "civil_dry_t_y": 53969,
+    "civil_dry_t_y": 53926,
     "has_yard_tech": true,
     "jump_drives_y": 18.0,
     "military_dry_t_y": 7553
@@ -667,7 +667,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 170787942,
+     "annual_output_t": 170787974,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 402,
@@ -677,18 +677,18 @@
      "estimated_reserve_index": 3.873,
      "excavation_sites": 1206,
      "grade": 0.49,
-     "mined_volume_m3_y": 71161642,
+     "mined_volume_m3_y": 71161656,
      "power_mw": 16080,
      "reactor_fuel_t_y": 3.62,
      "resource": "ore",
      "security": "патрули полиции",
      "spare_parts_t_y": 168840,
-     "storage_t": 9358243,
+     "storage_t": 9358245,
      "transport": "челноки и рельсовые катапульты",
      "workers": 48240
     },
     {
-     "annual_output_t": 199011946,
+     "annual_output_t": 199011982,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 47,
@@ -698,13 +698,13 @@
      "estimated_reserve_index": 5.58,
      "excavation_sites": 141,
      "grade": 0.57,
-     "mined_volume_m3_y": 209486259,
+     "mined_volume_m3_y": 209486296,
      "power_mw": 4230,
      "reactor_fuel_t_y": 0.95,
      "resource": "water_volatiles",
      "security": "патрули полиции",
      "spare_parts_t_y": 33840,
-     "storage_t": 10904764,
+     "storage_t": 10904766,
      "transport": "челноки и рельсовые катапульты",
      "workers": 9400
     }
@@ -1268,7 +1268,7 @@
       {
        "id": "gene_temple",
        "importance": 0.7,
-       "name": "Храм Массива (криобанк генов)"
+       "name": "Храм Семени (криобанк генов)"
       }
      ],
      "total": 85
@@ -1531,7 +1531,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 744130960,
+     "annual_output_t": 744153795,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 1505,
@@ -1541,18 +1541,18 @@
      "estimated_reserve_index": 6.298,
      "excavation_sites": 4515,
      "grade": 0.94,
-     "mined_volume_m3_y": 310054567,
+     "mined_volume_m3_y": 310064081,
      "power_mw": 60200,
      "reactor_fuel_t_y": 13.57,
      "resource": "ore",
      "security": "патрули полиции",
      "spare_parts_t_y": 632100,
-     "storage_t": 40774299,
+     "storage_t": 40775550,
      "transport": "рудные буксиры (плоты)",
      "workers": 180600
     },
     {
-     "annual_output_t": 1288635247,
+     "annual_output_t": 1288656656,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 304,
@@ -1562,13 +1562,13 @@
      "estimated_reserve_index": 6.133,
      "excavation_sites": 912,
      "grade": 0.99,
-     "mined_volume_m3_y": 1356458155,
+     "mined_volume_m3_y": 1356480691,
      "power_mw": 27360,
      "reactor_fuel_t_y": 6.17,
      "resource": "water_volatiles",
      "security": "патрули полиции",
      "spare_parts_t_y": 218880,
-     "storage_t": 70610151,
+     "storage_t": 70611324,
      "transport": "рудные буксиры (плоты)",
      "workers": 60800
     }
@@ -1740,7 +1740,7 @@
     }
    },
    "shipyards": {
-    "civil_dry_t_y": 595786,
+    "civil_dry_t_y": 595788,
     "has_yard_tech": true,
     "jump_drives_y": 183.9,
     "military_dry_t_y": 121666
@@ -1981,7 +1981,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 375358988,
+     "annual_output_t": 375358614,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 778,
@@ -1991,18 +1991,18 @@
      "estimated_reserve_index": 6.298,
      "excavation_sites": 2334,
      "grade": 0.94,
-     "mined_volume_m3_y": 156399578,
+     "mined_volume_m3_y": 156399422,
      "power_mw": 31120,
      "reactor_fuel_t_y": 7.01,
      "resource": "ore",
      "security": "частная охрана",
      "spare_parts_t_y": 326760,
-     "storage_t": 20567616,
+     "storage_t": 20567595,
      "transport": "рудные буксиры (плоты)",
      "workers": 93360
     },
     {
-     "annual_output_t": 349193407,
+     "annual_output_t": 349192969,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 83,
@@ -2012,13 +2012,13 @@
      "estimated_reserve_index": 6.133,
      "excavation_sites": 249,
      "grade": 0.99,
-     "mined_volume_m3_y": 367572008,
+     "mined_volume_m3_y": 367571546,
      "power_mw": 7470,
      "reactor_fuel_t_y": 1.68,
      "resource": "water_volatiles",
      "security": "частная охрана",
      "spare_parts_t_y": 59760,
-     "storage_t": 19133885,
+     "storage_t": 19133861,
      "transport": "рудные буксиры (плоты)",
      "workers": 16600
     }
@@ -2413,7 +2413,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 95495223,
+     "annual_output_t": 95495187,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 225,
@@ -2423,18 +2423,18 @@
      "estimated_reserve_index": 3.762,
      "excavation_sites": 675,
      "grade": 0.29,
-     "mined_volume_m3_y": 39789676,
+     "mined_volume_m3_y": 39789661,
      "power_mw": 9000,
      "reactor_fuel_t_y": 2.03,
      "resource": "ore",
      "security": "патрули полиции",
      "spare_parts_t_y": 94500,
-     "storage_t": 5232615,
+     "storage_t": 5232613,
      "transport": "челноки и рельсовые катапульты",
      "workers": 27000
     },
     {
-     "annual_output_t": 257527201,
+     "annual_output_t": 257527203,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 61,
@@ -2444,7 +2444,7 @@
      "estimated_reserve_index": 5.495,
      "excavation_sites": 183,
      "grade": 0.39,
-     "mined_volume_m3_y": 271081264,
+     "mined_volume_m3_y": 271081266,
      "power_mw": 5490,
      "reactor_fuel_t_y": 1.24,
      "resource": "water_volatiles",
@@ -2857,7 +2857,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 186716229,
+     "annual_output_t": 186711164,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 440,
@@ -2867,18 +2867,18 @@
      "estimated_reserve_index": 3.762,
      "excavation_sites": 1320,
      "grade": 0.29,
-     "mined_volume_m3_y": 77798429,
+     "mined_volume_m3_y": 77796318,
      "power_mw": 17600,
      "reactor_fuel_t_y": 3.97,
      "resource": "ore",
      "security": "частная охрана",
      "spare_parts_t_y": 184800,
-     "storage_t": 10231026,
+     "storage_t": 10230749,
      "transport": "челноки и рельсовые катапульты",
      "workers": 52800
     },
     {
-     "annual_output_t": 214505812,
+     "annual_output_t": 214500281,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 51,
@@ -2888,13 +2888,13 @@
      "estimated_reserve_index": 5.495,
      "excavation_sites": 153,
      "grade": 0.39,
-     "mined_volume_m3_y": 225795591,
+     "mined_volume_m3_y": 225789770,
      "power_mw": 4590,
      "reactor_fuel_t_y": 1.03,
      "resource": "water_volatiles",
      "security": "частная охрана",
      "spare_parts_t_y": 36720,
-     "storage_t": 11753743,
+     "storage_t": 11753440,
      "transport": "челноки и рельсовые катапульты",
      "workers": 10200
     }
@@ -3716,7 +3716,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 377305287,
+     "annual_output_t": 377307295,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 888,
@@ -3726,18 +3726,18 @@
      "estimated_reserve_index": 4.494,
      "excavation_sites": 2664,
      "grade": 0.74,
-     "mined_volume_m3_y": 157210536,
+     "mined_volume_m3_y": 157211373,
      "power_mw": 35520,
      "reactor_fuel_t_y": 8.01,
      "resource": "ore",
      "security": "патрули полиции",
      "spare_parts_t_y": 372960,
-     "storage_t": 20674262,
+     "storage_t": 20674372,
      "transport": "рудные буксиры (плоты)",
      "workers": 106560
     },
     {
-     "annual_output_t": 977308309,
+     "annual_output_t": 977312758,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 230,
@@ -3747,13 +3747,13 @@
      "estimated_reserve_index": 5.493,
      "excavation_sites": 690,
      "grade": 0.38,
-     "mined_volume_m3_y": 1028745588,
+     "mined_volume_m3_y": 1028750272,
      "power_mw": 20700,
      "reactor_fuel_t_y": 4.67,
      "resource": "water_volatiles",
      "security": "патрули полиции",
      "spare_parts_t_y": 165600,
-     "storage_t": 53551140,
+     "storage_t": 53551384,
      "transport": "рудные буксиры (плоты)",
      "workers": 46000
     }
@@ -4166,7 +4166,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 95044,
+     "annual_output_t": 95040,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 1,
@@ -4176,7 +4176,7 @@
      "estimated_reserve_index": 7.375,
      "excavation_sites": 3,
      "grade": 0.91,
-     "mined_volume_m3_y": 39602,
+     "mined_volume_m3_y": 39600,
      "power_mw": 40,
      "reactor_fuel_t_y": 0.01,
      "resource": "ore",
@@ -4187,7 +4187,7 @@
      "workers": 120
     },
     {
-     "annual_output_t": 90478,
+     "annual_output_t": 90475,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 1,
@@ -4197,7 +4197,7 @@
      "estimated_reserve_index": 5.966,
      "excavation_sites": 3,
      "grade": 0.88,
-     "mined_volume_m3_y": 95240,
+     "mined_volume_m3_y": 95237,
      "power_mw": 90,
      "reactor_fuel_t_y": 0.02,
      "resource": "water_volatiles",
@@ -5044,7 +5044,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 124921731,
+     "annual_output_t": 124919575,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 294,
@@ -5054,18 +5054,18 @@
      "estimated_reserve_index": 4.553,
      "excavation_sites": 882,
      "grade": 0.66,
-     "mined_volume_m3_y": 52050721,
+     "mined_volume_m3_y": 52049823,
      "power_mw": 11760,
      "reactor_fuel_t_y": 2.65,
      "resource": "ore",
      "security": "патрули полиции",
      "spare_parts_t_y": 123480,
-     "storage_t": 6845026,
+     "storage_t": 6844908,
      "transport": "челноки и рельсовые катапульты",
      "workers": 35280
     },
     {
-     "annual_output_t": 235132378,
+     "annual_output_t": 235128761,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 56,
@@ -5075,13 +5075,13 @@
      "estimated_reserve_index": 5.603,
      "excavation_sites": 168,
      "grade": 0.62,
-     "mined_volume_m3_y": 247507767,
+     "mined_volume_m3_y": 247503959,
      "power_mw": 5040,
      "reactor_fuel_t_y": 1.14,
      "resource": "water_volatiles",
      "security": "патрули полиции",
      "spare_parts_t_y": 40320,
-     "storage_t": 12883966,
+     "storage_t": 12883768,
      "transport": "челноки и рельсовые катапульты",
      "workers": 11200
     }
@@ -5488,7 +5488,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 1043215655,
+     "annual_output_t": 1043215998,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 2455,
@@ -5498,18 +5498,18 @@
      "estimated_reserve_index": 4.553,
      "excavation_sites": 7365,
      "grade": 0.66,
-     "mined_volume_m3_y": 434673190,
+     "mined_volume_m3_y": 434673332,
      "power_mw": 98200,
      "reactor_fuel_t_y": 22.14,
      "resource": "ore",
      "security": "патрули полиции",
      "spare_parts_t_y": 1031100,
-     "storage_t": 57162502,
+     "storage_t": 57162520,
      "transport": "челноки и рельсовые катапульты",
      "workers": 294600
     },
     {
-     "annual_output_t": 929181835,
+     "annual_output_t": 929182180,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 219,
@@ -5519,13 +5519,13 @@
      "estimated_reserve_index": 5.603,
      "excavation_sites": 657,
      "grade": 0.62,
-     "mined_volume_m3_y": 978086142,
+     "mined_volume_m3_y": 978086505,
      "power_mw": 19710,
      "reactor_fuel_t_y": 4.44,
      "resource": "water_volatiles",
      "security": "патрули полиции",
      "spare_parts_t_y": 157680,
-     "storage_t": 50914073,
+     "storage_t": 50914092,
      "transport": "челноки и рельсовые катапульты",
      "workers": 43800
     }
@@ -5926,7 +5926,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 205667240,
+     "annual_output_t": 205669297,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 484,
@@ -5936,18 +5936,18 @@
      "estimated_reserve_index": 3.813,
      "excavation_sites": 1452,
      "grade": 0.39,
-     "mined_volume_m3_y": 85694683,
+     "mined_volume_m3_y": 85695540,
      "power_mw": 19360,
      "reactor_fuel_t_y": 4.36,
      "resource": "ore",
      "security": "патрули полиции",
      "spare_parts_t_y": 203280,
-     "storage_t": 11269438,
+     "storage_t": 11269550,
      "transport": "челноки и рельсовые катапульты",
      "workers": 58080
     },
     {
-     "annual_output_t": 204133627,
+     "annual_output_t": 204135455,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 49,
@@ -5957,13 +5957,13 @@
      "estimated_reserve_index": 5.56,
      "excavation_sites": 147,
      "grade": 0.54,
-     "mined_volume_m3_y": 214877502,
+     "mined_volume_m3_y": 214879426,
      "power_mw": 4410,
      "reactor_fuel_t_y": 0.99,
      "resource": "water_volatiles",
      "security": "патрули полиции",
      "spare_parts_t_y": 35280,
-     "storage_t": 11185404,
+     "storage_t": 11185504,
      "transport": "челноки и рельсовые катапульты",
      "workers": 9800
     }
@@ -6370,7 +6370,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 463271880,
+     "annual_output_t": 463294685,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 1091,
@@ -6380,18 +6380,18 @@
      "estimated_reserve_index": 3.813,
      "excavation_sites": 3273,
      "grade": 0.39,
-     "mined_volume_m3_y": 193029950,
+     "mined_volume_m3_y": 193039452,
      "power_mw": 43640,
      "reactor_fuel_t_y": 9.84,
      "resource": "ore",
      "security": "патрули полиции",
      "spare_parts_t_y": 458220,
-     "storage_t": 25384761,
+     "storage_t": 25386010,
      "transport": "челноки и рельсовые катапульты",
      "workers": 130920
     },
     {
-     "annual_output_t": 458834802,
+     "annual_output_t": 458855936,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 108,
@@ -6401,13 +6401,13 @@
      "estimated_reserve_index": 5.56,
      "excavation_sites": 324,
      "grade": 0.54,
-     "mined_volume_m3_y": 482984002,
+     "mined_volume_m3_y": 483006248,
      "power_mw": 9720,
      "reactor_fuel_t_y": 2.19,
      "resource": "water_volatiles",
      "security": "патрули полиции",
      "spare_parts_t_y": 77760,
-     "storage_t": 25141633,
+     "storage_t": 25142791,
      "transport": "челноки и рельсовые катапульты",
      "workers": 21600
     }
@@ -6573,7 +6573,7 @@
     }
    },
    "shipyards": {
-    "civil_dry_t_y": 78499,
+    "civil_dry_t_y": 78527,
     "has_yard_tech": true,
     "jump_drives_y": 44.3,
     "military_dry_t_y": 20797
@@ -6814,7 +6814,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 93862759,
+     "annual_output_t": 93862766,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 221,
@@ -6824,7 +6824,7 @@
      "estimated_reserve_index": 3.867,
      "excavation_sites": 663,
      "grade": 0.64,
-     "mined_volume_m3_y": 39109483,
+     "mined_volume_m3_y": 39109486,
      "power_mw": 8840,
      "reactor_fuel_t_y": 1.99,
      "resource": "ore",
@@ -6835,7 +6835,7 @@
      "workers": 26520
     },
     {
-     "annual_output_t": 191574029,
+     "annual_output_t": 191574046,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 46,
@@ -6845,13 +6845,13 @@
      "estimated_reserve_index": 5.51,
      "excavation_sites": 138,
      "grade": 0.42,
-     "mined_volume_m3_y": 201656872,
+     "mined_volume_m3_y": 201656891,
      "power_mw": 4140,
      "reactor_fuel_t_y": 0.93,
      "resource": "water_volatiles",
      "security": "патрули полиции",
      "spare_parts_t_y": 33120,
-     "storage_t": 10497207,
+     "storage_t": 10497208,
      "transport": "рудные буксиры (плоты)",
      "workers": 9200
     }
@@ -7252,7 +7252,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 176018520,
+     "annual_output_t": 176011533,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 384,
@@ -7262,18 +7262,18 @@
      "estimated_reserve_index": 3.849,
      "excavation_sites": 1152,
      "grade": 0.44,
-     "mined_volume_m3_y": 73341050,
+     "mined_volume_m3_y": 73338139,
      "power_mw": 15360,
      "reactor_fuel_t_y": 3.46,
      "resource": "ore",
      "security": "патрули полиции",
      "spare_parts_t_y": 161280,
-     "storage_t": 9644850,
+     "storage_t": 9644468,
      "transport": "челноки и рельсовые катапульты",
      "workers": 46080
     },
     {
-     "annual_output_t": 255608483,
+     "annual_output_t": 255608353,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 61,
@@ -7283,13 +7283,13 @@
      "estimated_reserve_index": 2.698,
      "excavation_sites": 183,
      "grade": 0.06,
-     "mined_volume_m3_y": 269061562,
+     "mined_volume_m3_y": 269061424,
      "power_mw": 5490,
      "reactor_fuel_t_y": 1.24,
      "resource": "water_volatiles",
      "security": "патрули полиции",
      "spare_parts_t_y": 43920,
-     "storage_t": 14005944,
+     "storage_t": 14005937,
      "transport": "челноки и рельсовые катапульты",
      "workers": 12200
     }
@@ -7443,7 +7443,7 @@
       {
        "id": "agora",
        "importance": 1.0,
-       "name": "Агора — нейтральный порт и биржа"
+       "name": "Ставродроми — нейтральный порт и биржа"
       }
      ],
      "total": 1
@@ -7696,7 +7696,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 740650134,
+     "annual_output_t": 740655271,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 1733,
@@ -7706,18 +7706,18 @@
      "estimated_reserve_index": 3.849,
      "excavation_sites": 5199,
      "grade": 0.44,
-     "mined_volume_m3_y": 308604222,
+     "mined_volume_m3_y": 308606363,
      "power_mw": 69320,
      "reactor_fuel_t_y": 15.63,
      "resource": "ore",
      "security": "патрули полиции",
      "spare_parts_t_y": 727860,
-     "storage_t": 40583569,
+     "storage_t": 40583850,
      "transport": "челноки и рельсовые катапульты",
      "workers": 207960
     },
     {
-     "annual_output_t": 667891769,
+     "annual_output_t": 667898334,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 158,
@@ -7727,13 +7727,13 @@
      "estimated_reserve_index": 2.698,
      "excavation_sites": 474,
      "grade": 0.06,
-     "mined_volume_m3_y": 703043967,
+     "mined_volume_m3_y": 703050878,
      "power_mw": 14220,
      "reactor_fuel_t_y": 3.21,
      "resource": "water_volatiles",
      "security": "патрули полиции",
      "spare_parts_t_y": 113760,
-     "storage_t": 36596809,
+     "storage_t": 36597169,
      "transport": "челноки и рельсовые катапульты",
      "workers": 31600
     }
@@ -7745,7 +7745,7 @@
       {
        "id": "mecca_farms",
        "importance": 0.5,
-       "name": "Сады Lalande 21185 g"
+       "name": "Огороды Мара-Каи (Lalande 21185 g)"
       }
      ],
      "total": 1733
@@ -7811,7 +7811,7 @@
       {
        "id": "lalande_j_gas_m",
        "importance": 0.6,
-       "name": "Платформы Lalande 21185 j (доля Мекки)"
+       "name": "Платформы Lalande 21185 j (доля Капеху)"
       }
      ],
      "total": 145
@@ -7877,7 +7877,7 @@
       {
        "id": "rasad",
        "importance": 0.8,
-       "name": "Обсерватория-вычислитель «Расад»"
+       "name": "Обсерватория-вычислитель Фаре-Татаи"
       }
      ],
      "total": 118
@@ -9017,7 +9017,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 3456786608,
+     "annual_output_t": 3456772967,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 2583,
@@ -9027,18 +9027,18 @@
      "estimated_reserve_index": 7.102,
      "excavation_sites": 7749,
      "grade": 0.89,
-     "mined_volume_m3_y": 1440327753,
+     "mined_volume_m3_y": 1440322069,
      "power_mw": 103320,
      "reactor_fuel_t_y": 23.29,
      "resource": "ore",
      "security": "патрули полиции",
      "spare_parts_t_y": 1084860,
-     "storage_t": 189412965,
+     "storage_t": 189412217,
      "transport": "рудные буксиры (плоты)",
      "workers": 309960
     },
     {
-     "annual_output_t": 11134569520,
+     "annual_output_t": 11134569845,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 839,
@@ -9048,13 +9048,13 @@
      "estimated_reserve_index": 5.444,
      "excavation_sites": 2517,
      "grade": 0.34,
-     "mined_volume_m3_y": 11720599494,
+     "mined_volume_m3_y": 11720599837,
      "power_mw": 75510,
      "reactor_fuel_t_y": 17.02,
      "resource": "water_volatiles",
      "security": "патрули полиции",
      "spare_parts_t_y": 604080,
-     "storage_t": 610113398,
+     "storage_t": 610113416,
      "transport": "рудные буксиры (плоты)",
      "workers": 167800
     }
@@ -9202,7 +9202,7 @@
     }
    },
    "shipyards": {
-    "civil_dry_t_y": 3176522,
+    "civil_dry_t_y": 3176512,
     "has_yard_tech": true,
     "jump_drives_y": 2146.7000000000003,
     "military_dry_t_y": 190237
@@ -9443,7 +9443,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 57350281,
+     "annual_output_t": 57350404,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 135,
@@ -9453,18 +9453,18 @@
      "estimated_reserve_index": 2.512,
      "excavation_sites": 405,
      "grade": 0.06,
-     "mined_volume_m3_y": 23895950,
+     "mined_volume_m3_y": 23896002,
      "power_mw": 5400,
      "reactor_fuel_t_y": 1.22,
      "resource": "ore",
      "security": "патрули полиции",
      "spare_parts_t_y": 56700,
-     "storage_t": 3142481,
+     "storage_t": 3142488,
      "transport": "челноки и рельсовые катапульты",
      "workers": 16200
     },
     {
-     "annual_output_t": 692525574,
+     "annual_output_t": 692527112,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 163,
@@ -9474,13 +9474,13 @@
      "estimated_reserve_index": 2.861,
      "excavation_sites": 489,
      "grade": 0.07,
-     "mined_volume_m3_y": 728974289,
+     "mined_volume_m3_y": 728975907,
      "power_mw": 14670,
      "reactor_fuel_t_y": 3.31,
      "resource": "water_volatiles",
      "security": "патрули полиции",
      "spare_parts_t_y": 117360,
-     "storage_t": 37946607,
+     "storage_t": 37946691,
      "transport": "челноки и рельсовые катапульты",
      "workers": 32600
     }
@@ -9634,7 +9634,7 @@
       {
        "id": "ns_exchange",
        "importance": 0.5,
-       "name": "Орбитальная биржа Нового Шанхая"
+       "name": "Орбитальная биржа Синь-Шанхая"
       }
      ],
      "total": 7
@@ -9887,7 +9887,7 @@
    },
    "mines": [
     {
-     "annual_output_t": 476775566,
+     "annual_output_t": 476775568,
      "asset": "mine",
      "automation": 0.95,
      "base_modules": 1122,
@@ -9897,7 +9897,7 @@
      "estimated_reserve_index": 3.009,
      "excavation_sites": 3366,
      "grade": 0.62,
-     "mined_volume_m3_y": 198656486,
+     "mined_volume_m3_y": 198656487,
      "power_mw": 44880,
      "reactor_fuel_t_y": 10.12,
      "resource": "ore",
@@ -9908,7 +9908,7 @@
      "workers": 134640
     },
     {
-     "annual_output_t": 327187486,
+     "annual_output_t": 327187487,
      "asset": "ice_mine",
      "automation": 0.95,
      "base_modules": 77,
@@ -9918,13 +9918,13 @@
      "estimated_reserve_index": 3.016,
      "excavation_sites": 231,
      "grade": 0.12,
-     "mined_volume_m3_y": 344407880,
+     "mined_volume_m3_y": 344407882,
      "power_mw": 6930,
      "reactor_fuel_t_y": 1.56,
      "resource": "water_volatiles",
      "security": "патрули полиции",
      "spare_parts_t_y": 55440,
-     "storage_t": 17928081,
+     "storage_t": 17928082,
      "transport": "рудные буксиры (плоты)",
      "workers": 15400
     }
@@ -10021,7 +10021,7 @@
       {
        "id": "archive_vault",
        "importance": 0.4,
-       "name": "Закрытый архив Совета (Хранилище)"
+       "name": "Хранилище LAST-LIGHT"
       }
      ],
      "total": 3
@@ -10032,7 +10032,7 @@
       {
        "id": "bastion",
        "importance": 1.0,
-       "name": "Бастион — арсенал и военная верфь"
+       "name": "Мьёльнер — арсенал и военная верфь"
       }
      ],
      "total": 1
@@ -10043,7 +10043,7 @@
       {
        "id": "wolf_mines",
        "importance": 0.6,
-       "name": "Рудники пылевого диска"
+       "name": "Груве-7 (рудники пылевого диска)"
       }
      ],
      "total": 1122

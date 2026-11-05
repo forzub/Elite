@@ -1077,7 +1077,7 @@
       "found_at": "dso.lotus",
       "found_year": 3098,
       "finder": "спасатели Керна",
-      "custody": "Когниум (Научная служба), Новый Шанхай",
+      "custody": "Когниум (Научная служба), Синь-Шанхай",
       "provenance": [
         "корпус «Лотоса»",
         "Керн (3098)",
@@ -1239,7 +1239,7 @@
     "culture_to_language": {
       "american_frontier": "en",
       "canadian": "en",
-      "nordic_pmc": "en",
+      "nordic_pmc": "nb",
       "global_ultrarich": "en",
       "eu_bureaucratic": "fr",
       "crypto_libertarian": "en",
@@ -1249,7 +1249,6 @@
       "russian": "ru",
       "central_asian": "ru",
       "indian": "hi",
-      "pakistani": "ur",
       "chinese_state": "zh",
       "chinese_diaspora": "zh",
       "greek": "el",
@@ -1259,16 +1258,18 @@
       "andean": "es",
       "brazilian": "pt",
       "maghrebi": "ar",
-      "gulf_arab": "ar",
       "malay_indonesian": "ms",
       "west_african": "sw",
       "east_african": "sw",
       "southern_african": "sw",
-      "christian_traditionalist": "ru",
-      "neo_buddhist": "en"
+      "christian_traditionalist": "en",
+      "neo_buddhist": "en",
+      "pacific_polynesian": "mi",
+      "pacific_melanesian": "tpi",
+      "aotearoa_nz": "en"
     },
     "network_lingua_franca": "en",
-    "note": "Язык территории = язык крупнейшей культуры основателей; второй язык — язык сети (пилотский английский). Сообщения идут на языке территории; перевод у игрока: знание / хороший переводчик / плохой автоматический / нет."
+    "note": "Язык территории = язык крупнейшей культуры основателей; второй язык — язык сети (пилотский английский). Сообщения идут на языке территории; перевод у игрока: знание / хороший переводчик / плохой автоматический / нет. Норвежская ветвь: nb (административный букмол; нюнорск — у старых поселений, см. canon/naming.json). Ново-Фиваида — английский (рабочий язык ковчега), не русский. Капеху — маори (mi)."
   },
   "law_profiles": {
     "technocratic_civil": {
@@ -1446,7 +1447,7 @@
     "sage_council": "confucian_administrative",
     "party_technocracy": "party_administrative",
     "sol_authority": "sol_codified",
-    "scholar_theocracy": "theocratic",
+    "navigator_council": "theocratic",
     "caste_theocracy": "theocratic",
     "synod_theocracy": "theocratic",
     "grandees_and_church": "parliamentary_civil",
@@ -1540,7 +1541,7 @@
       "administrative": 0.0002
     },
     "pilgrimage_regimes": [
-      "scholar_theocracy",
+      "navigator_council",
       "caste_theocracy",
       "synod_theocracy",
       "sage_council"

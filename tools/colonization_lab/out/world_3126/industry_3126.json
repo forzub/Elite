@@ -9513,7 +9513,7 @@
    "ok": true
   },
   {
-   "check": "mecca_core_technology_own",
+   "check": "tauranga_core_technology_own",
    "detail": "own jump mathematics; not a licence holder; no imported cores",
    "ok": true
   },
@@ -9524,7 +9524,7 @@
   },
   {
    "check": "southern_circle_peacetime_share_in_accepted_range",
-   "detail": "peacetime Mecca share 0.533 in accepted range [0.45, 0.6] (author 2026-11-05)",
+   "detail": "peacetime Tauranga share 0.533 in accepted range [0.45, 0.6] (author 2026-11-05)",
    "ok": true
   },
   {
@@ -9568,7 +9568,7 @@
    "price_x": 0.9,
    "ru": "сборка из комплектов по лицензии",
    "variety": "medium",
-   "what": "корпуса и модули свои, ядра и электроника — по лицензии или из Мекки; крупные сборочные заводы"
+   "what": "корпуса и модули свои, ядра и электроника — по лицензии или из Тауранги; крупные сборочные заводы"
   },
   "mass_production": {
    "life_x": 1.0,
@@ -9655,7 +9655,7 @@
    "main_maker_share": 0.744,
    "shares": {
     "Верфи Гармонии": 0.744,
-    "верфи Тяньхэ (Небесная Река)": 0.256
+    "верфи Тяньхэ": 0.256
    },
    "variety": "low"
   },
@@ -9695,7 +9695,7 @@
    "shares": {
     "Бхарат Ассембли": 0.414,
     "верфи Новая Маланд": 0.206,
-    "верфи Новая Мекка": 0.38
+    "верфи Тауранга": 0.38
    },
    "variety": "medium"
   }
@@ -9842,7 +9842,7 @@
    "id": "mfr.bharat",
    "kind": "corporation",
    "name": "Бхарат Ассембли",
-   "note": "крупнейшие сборочные заводы Южного круга; корпуса по лицензии, ядра — Мекка или Когниум",
+   "note": "крупнейшие сборочные заводы Южного круга; корпуса по лицензии, ядра — Тауранга или Когниум",
    "plant": "industrial_hub",
    "polity": "hd20794_newindia"
   },

@@ -6,11 +6,11 @@
    "name": "агломерация «Токио»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 1276977152,
+    "pop": 1276977164,
     "radius_km": 199.9,
     "source": "population"
    },
-   "population": 1276977152,
+   "population": 1276977164,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -29,11 +29,11 @@
    "name": "агломерация «Дели»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 616739311,
+    "pop": 616739317,
     "radius_km": 144.1,
     "source": "population"
    },
-   "population": 616739311,
+   "population": 616739317,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -52,11 +52,11 @@
    "name": "агломерация «Шанхай»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 402907924,
+    "pop": 402907928,
     "radius_km": 119.0,
     "source": "population"
    },
-   "population": 402907924,
+   "population": 402907928,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -75,11 +75,11 @@
    "name": "агломерация «Сан-Паулу»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 297865453,
+    "pop": 297865456,
     "radius_km": 103.8,
     "source": "population"
    },
-   "population": 297865453,
+   "population": 297865456,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -98,11 +98,11 @@
    "name": "агломерация «Мехико»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 235648468,
+    "pop": 235648471,
     "radius_km": 93.5,
     "source": "population"
    },
-   "population": 235648468,
+   "population": 235648471,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -121,11 +121,11 @@
    "name": "агломерация «Каир»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 194591700,
+    "pop": 194591702,
     "radius_km": 85.7,
     "source": "population"
    },
-   "population": 194591700,
+   "population": 194591702,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -144,11 +144,11 @@
    "name": "агломерация «Мумбаи»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 165512266,
+    "pop": 165512267,
     "radius_km": 79.7,
     "source": "population"
    },
-   "population": 165512266,
+   "population": 165512267,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -167,11 +167,11 @@
    "name": "агломерация «Пекин»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 143859531,
+    "pop": 143859532,
     "radius_km": 74.8,
     "source": "population"
    },
-   "population": 143859531,
+   "population": 143859532,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -190,11 +190,11 @@
    "name": "агломерация «Дакка»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 127124275,
+    "pop": 127124277,
     "radius_km": 70.8,
     "source": "population"
    },
-   "population": 127124275,
+   "population": 127124277,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -213,11 +213,11 @@
    "name": "агломерация «Осака»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 113810708,
+    "pop": 113810709,
     "radius_km": 67.4,
     "source": "population"
    },
-   "population": 113810708,
+   "population": 113810709,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -236,11 +236,11 @@
    "name": "агломерация «Нью-Йорк»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 102972393,
+    "pop": 102972394,
     "radius_km": 64.4,
     "source": "population"
    },
-   "population": 102972393,
+   "population": 102972394,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -259,11 +259,11 @@
    "name": "агломерация «Карачи»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 93981596,
+    "pop": 93981597,
     "radius_km": 61.8,
     "source": "population"
    },
-   "population": 93981596,
+   "population": 93981597,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -282,11 +282,11 @@
    "name": "агломерация «Буэнос-Айрес»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 86405742,
+    "pop": 86405743,
     "radius_km": 59.5,
     "source": "population"
    },
-   "population": 86405742,
+   "population": 86405743,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -305,11 +305,11 @@
    "name": "агломерация «Чунцин»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 79937155,
+    "pop": 79937156,
     "radius_km": 57.5,
     "source": "population"
    },
-   "population": 79937155,
+   "population": 79937156,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -351,11 +351,11 @@
    "name": "агломерация «Калькутта»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 69479573,
+    "pop": 69479574,
     "radius_km": 53.9,
     "source": "population"
    },
-   "population": 69479573,
+   "population": 69479574,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -443,11 +443,11 @@
    "name": "агломерация «Тяньцзинь»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 54966948,
+    "pop": 54966949,
     "radius_km": 48.5,
     "source": "population"
    },
-   "population": 54966948,
+   "population": 54966949,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -466,11 +466,11 @@
    "name": "агломерация «Киншаса»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 52221923,
+    "pop": 52221924,
     "radius_km": 47.4,
     "source": "population"
    },
-   "population": 52221923,
+   "population": 52221924,
    "role": "megacity",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -489,11 +489,11 @@
    "name": "агломерация «Гуанчжоу»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 49732387,
+    "pop": 49732388,
     "radius_km": 46.4,
     "source": "population"
    },
-   "population": 49732387,
+   "population": 49732388,
    "role": "city",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -512,11 +512,11 @@
    "name": "агломерация «Лос-Анджелес»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 47464498,
+    "pop": 47464499,
     "radius_km": 45.4,
     "source": "population"
    },
-   "population": 47464498,
+   "population": 47464499,
    "role": "city",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -581,11 +581,11 @@
    "name": "агломерация «Лахор»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 41731222,
+    "pop": 41731223,
     "radius_km": 42.9,
     "source": "population"
    },
-   "population": 41731222,
+   "population": 41731223,
    "role": "city",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -604,11 +604,11 @@
    "name": "агломерация «Бангалор»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 40109862,
+    "pop": 40109863,
     "radius_km": 42.1,
     "source": "population"
    },
-   "population": 40109862,
+   "population": 40109863,
    "role": "city",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -811,11 +811,11 @@
    "name": "агломерация «Хайдарабад»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 29652785,
+    "pop": 29652786,
     "radius_km": 36.8,
     "source": "population"
    },
-   "population": 29652785,
+   "population": 29652786,
    "role": "city",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -972,11 +972,11 @@
    "name": "агломерация «Хошимин»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 24606012,
+    "pop": 24606013,
     "radius_km": 33.8,
     "source": "population"
    },
-   "population": 24606012,
+   "population": 24606013,
    "role": "city",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -1041,11 +1041,11 @@
    "name": "агломерация «Куала-Лумпур»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 22923841,
+    "pop": 22923842,
     "radius_km": 32.8,
     "source": "population"
    },
-   "population": 22923841,
+   "population": 22923842,
    "role": "city",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -1133,11 +1133,11 @@
    "name": "агломерация «Шэньян»",
    "naming": "PROPOSAL (историческое название региона; имя 3126 — решение автора)",
    "night_light": {
-    "pop": 21002191,
+    "pop": 21002192,
     "radius_km": 31.5,
     "source": "population"
    },
-   "population": 21002191,
+   "population": 21002192,
    "role": "city",
    "spaceport": true,
    "status": "PROPOSAL",
@@ -1384,7 +1384,7 @@
    "body": "system_0.Sol.Земля",
    "id": "city.000.earth.rest",
    "name": "прочие поселения Земли",
-   "population": 4482253513,
+   "population": 4482253557,
    "role": "aggregate",
    "status": "PROPOSAL"
   }
@@ -1983,10 +1983,10 @@
    "language": "en",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 58901.5,
+   "medical_beds": 58877.3,
    "name": "Шахта Альфа",
    "night_light": {
-    "pop": 19633845,
+    "pop": 19625779,
     "source": "population"
    },
    "operator": "Шахта Альфа",
@@ -2001,9 +2001,9 @@
     }
    },
    "polity": "cyg61_kern",
-   "population": 19633845,
+   "population": 19625779,
    "purpose": "столица",
-   "quarantine_beds": 7853.5,
+   "quarantine_beds": 7850.3,
    "repair": "full",
    "security_base": 0.6,
    "source": "economy.cities",
@@ -2021,10 +2021,10 @@
    "language": "en",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 29450.8,
+   "medical_beds": 29438.7,
    "name": "61 Cygni B k — поселение",
    "night_light": {
-    "pop": 9816922,
+    "pop": 9812890,
     "source": "population"
    },
    "operator": "Шахта Альфа",
@@ -2039,9 +2039,9 @@
     }
    },
    "polity": "cyg61_kern",
-   "population": 9816922,
+   "population": 9812890,
    "purpose": "крупный город",
-   "quarantine_beds": 3926.8,
+   "quarantine_beds": 3925.2,
    "repair": "full",
    "security_base": 0.6,
    "source": "economy.cities",
@@ -2059,10 +2059,10 @@
    "language": "en",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 19633.8,
+   "medical_beds": 19625.8,
    "name": "61 Cygni A f — поселение",
    "night_light": {
-    "pop": 6544615,
+    "pop": 6541926,
     "source": "population"
    },
    "operator": "Шахта Альфа",
@@ -2077,9 +2077,9 @@
     }
    },
    "polity": "cyg61_kern",
-   "population": 6544615,
+   "population": 6541926,
    "purpose": "крупный город",
-   "quarantine_beds": 2617.8,
+   "quarantine_beds": 2616.8,
    "repair": "full",
    "security_base": 0.6,
    "source": "economy.cities",
@@ -2432,7 +2432,7 @@
    "medical_beds": 80172.8,
    "name": "Свободная Карма",
    "night_light": {
-    "pop": 26724253,
+    "pop": 26724257,
     "source": "population"
    },
    "operator": "Свободная Карма",
@@ -2447,7 +2447,7 @@
     }
    },
    "polity": "delta_pav_freekarma",
-   "population": 26724253,
+   "population": 26724257,
    "purpose": "столица",
    "quarantine_beds": 10689.7,
    "repair": "full",
@@ -2499,7 +2499,7 @@
    "medical_beds": 40086.4,
    "name": "Delta Pavonis j — поселение",
    "night_light": {
-    "pop": 13362126,
+    "pop": 13362129,
     "source": "population"
    },
    "operator": "Свободная Карма",
@@ -2514,7 +2514,7 @@
     }
    },
    "polity": "delta_pav_freekarma",
-   "population": 13362126,
+   "population": 13362129,
    "purpose": "крупный город",
    "quarantine_beds": 5344.9,
    "repair": "full",
@@ -2537,7 +2537,7 @@
    "medical_beds": 22270.2,
    "name": "Delta Pavonis K1 — поселение",
    "night_light": {
-    "pop": 8908084,
+    "pop": 8908086,
     "source": "population"
    },
    "operator": "Свободная Карма",
@@ -2552,7 +2552,7 @@
     }
    },
    "polity": "delta_pav_freekarma",
-   "population": 8908084,
+   "population": 8908086,
    "purpose": "крупный город",
    "quarantine_beds": 3563.2,
    "repair": "basic",
@@ -3794,10 +3794,10 @@
    "language": "zh",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 364276.4,
+   "medical_beds": 364282.0,
    "name": "Цветущая Гармония",
    "night_light": {
-    "pop": 145710577,
+    "pop": 145712805,
     "source": "population"
    },
    "operator": "Цветущая Гармония",
@@ -3812,9 +3812,9 @@
     }
    },
    "polity": "eps_eri_harmony",
-   "population": 145710577,
+   "population": 145712805,
    "purpose": "столица",
-   "quarantine_beds": 58284.2,
+   "quarantine_beds": 58285.1,
    "repair": "basic",
    "security_base": 0.5,
    "source": "economy.cities",
@@ -3841,7 +3841,7 @@
     }
    },
    "polity": "eps_eri_harmony",
-   "population": 291421,
+   "population": 291425,
    "purpose": "порт над поселением: челноки поверхность ↔ орбита, таможня",
    "quarantine_beds": 145.7,
    "repair": "full",
@@ -3861,10 +3861,10 @@
    "language": "zh",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 182138.2,
+   "medical_beds": 182141.0,
    "name": "Epsilon Eridani K3 — поселение",
    "night_light": {
-    "pop": 72855289,
+    "pop": 72856403,
     "source": "population"
    },
    "operator": "Цветущая Гармония",
@@ -3879,9 +3879,9 @@
     }
    },
    "polity": "eps_eri_harmony",
-   "population": 72855289,
+   "population": 72856403,
    "purpose": "крупный город",
-   "quarantine_beds": 29142.1,
+   "quarantine_beds": 29142.6,
    "repair": "basic",
    "security_base": 0.5,
    "source": "economy.cities",
@@ -3908,7 +3908,7 @@
     }
    },
    "polity": "eps_eri_harmony",
-   "population": 145710,
+   "population": 145712,
    "purpose": "порт над поселением: челноки поверхность ↔ орбита, таможня",
    "quarantine_beds": 72.9,
    "repair": "full",
@@ -3928,10 +3928,10 @@
    "language": "zh",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 121425.5,
+   "medical_beds": 121427.3,
    "name": "Epsilon Eridani K2 — поселение",
    "night_light": {
-    "pop": 48570192,
+    "pop": 48570935,
     "source": "population"
    },
    "operator": "Цветущая Гармония",
@@ -3946,9 +3946,9 @@
     }
    },
    "polity": "eps_eri_harmony",
-   "population": 48570192,
+   "population": 48570935,
    "purpose": "крупный город",
-   "quarantine_beds": 19428.1,
+   "quarantine_beds": 19428.4,
    "repair": "basic",
    "security_base": 0.5,
    "source": "economy.cities",
@@ -3975,7 +3975,7 @@
     }
    },
    "polity": "eps_eri_harmony",
-   "population": 97140,
+   "population": 97141,
    "purpose": "порт над поселением: челноки поверхность ↔ орбита, таможня",
    "quarantine_beds": 48.6,
    "repair": "full",
@@ -4907,13 +4907,13 @@
    "language": "zh",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 108235.2,
-   "name": "Пояс Раздора / Вольные астероиды",
+   "medical_beds": 108235.1,
+   "name": "Пояс Раздора",
    "night_light": {
-    "pop": 43294098,
+    "pop": 43294045,
     "source": "population"
    },
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "operator": "Пояс Раздора",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -4925,7 +4925,7 @@
     }
    },
    "polity": "eps_eri_strife",
-   "population": 43294098,
+   "population": 43294045,
    "purpose": "столица",
    "quarantine_beds": 17317.6,
    "repair": "basic",
@@ -4946,8 +4946,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 216.5,
-   "name": "Пояс Раздора / Вольные астероиды: орбитальный порт",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: орбитальный порт",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 384
@@ -4977,10 +4977,10 @@
    "medical_beds": 54117.6,
    "name": "Epsilon Eridani K3 — поселение",
    "night_light": {
-    "pop": 21647049,
+    "pop": 21647022,
     "source": "population"
    },
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "operator": "Пояс Раздора",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -4992,7 +4992,7 @@
     }
    },
    "polity": "eps_eri_strife",
-   "population": 21647049,
+   "population": 21647022,
    "purpose": "крупный город",
    "quarantine_beds": 8658.8,
    "repair": "basic",
@@ -5014,7 +5014,7 @@
    "map_level": "system",
    "medical_beds": 108.2,
    "name": "Epsilon Eridani K3 — поселение: орбитальный порт",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 412
@@ -5044,10 +5044,10 @@
    "medical_beds": 36078.4,
    "name": "Epsilon Eridani K2 — поселение",
    "night_light": {
-    "pop": 14431366,
+    "pop": 14431348,
     "source": "population"
    },
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "operator": "Пояс Раздора",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -5059,7 +5059,7 @@
     }
    },
    "polity": "eps_eri_strife",
-   "population": 14431366,
+   "population": 14431348,
    "purpose": "крупный город",
    "quarantine_beds": 5772.5,
    "repair": "basic",
@@ -5085,8 +5085,8 @@
    "level": "B",
    "map_level": "detail",
    "medical_beds": 22.5,
-   "name": "Пояс Раздора / Вольные астероиды: торговый хаб 1",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: торговый хаб 1",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 51171
@@ -5119,8 +5119,8 @@
    "level": "B",
    "map_level": "detail",
    "medical_beds": 22.5,
-   "name": "Пояс Раздора / Вольные астероиды: торговый хаб 2",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: торговый хаб 2",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 9823
@@ -5152,8 +5152,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Пояс Раздора / Вольные астероиды: горнодобывающий хаб 1",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: горнодобывающий хаб 1",
+   "operator": "Пояс Раздора",
    "placement": {
     "belt": {
      "longitude_deg": 324.72,
@@ -5186,8 +5186,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Пояс Раздора / Вольные астероиды: горнодобывающий хаб 2",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: горнодобывающий хаб 2",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 7325
@@ -5219,8 +5219,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Пояс Раздора / Вольные астероиды: горнодобывающий хаб 3",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: горнодобывающий хаб 3",
+   "operator": "Пояс Раздора",
    "placement": {
     "belt": {
      "longitude_deg": 285.71,
@@ -5253,8 +5253,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Пояс Раздора / Вольные астероиды: горнодобывающий хаб 4",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: горнодобывающий хаб 4",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 14932
@@ -5286,8 +5286,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Пояс Раздора / Вольные астероиды: горнодобывающий хаб 5",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: горнодобывающий хаб 5",
+   "operator": "Пояс Раздора",
    "placement": {
     "belt": {
      "longitude_deg": 277.91,
@@ -5320,8 +5320,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Пояс Раздора / Вольные астероиды: горнодобывающий хаб 6",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: горнодобывающий хаб 6",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 8387
@@ -5353,8 +5353,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Пояс Раздора / Вольные астероиды: промышленный хаб 1",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: промышленный хаб 1",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 171490
@@ -5386,8 +5386,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Пояс Раздора / Вольные астероиды: промышленный хаб 2",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: промышленный хаб 2",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 15775
@@ -5419,8 +5419,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Пояс Раздора / Вольные астероиды: промышленный хаб 3",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: промышленный хаб 3",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 8477
@@ -5452,8 +5452,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Пояс Раздора / Вольные астероиды: промышленный хаб 4",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: промышленный хаб 4",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 4444
@@ -5485,8 +5485,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Пояс Раздора / Вольные астероиды: промышленный хаб 5",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: промышленный хаб 5",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 127142
@@ -5518,8 +5518,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Пояс Раздора / Вольные астероиды: промышленный хаб 6",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: промышленный хаб 6",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 12319
@@ -5552,8 +5552,8 @@
    "level": "B",
    "map_level": "detail",
    "medical_beds": 36.0,
-   "name": "Пояс Раздора / Вольные астероиды: военный хаб 1",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: военный хаб 1",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 165247
@@ -5586,8 +5586,8 @@
    "level": "B",
    "map_level": "detail",
    "medical_beds": 36.0,
-   "name": "Пояс Раздора / Вольные астероиды: военный хаб 2",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: военный хаб 2",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 10621
@@ -5619,8 +5619,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Пояс Раздора / Вольные астероиды: научный хаб 1",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: научный хаб 1",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 177802
@@ -5648,8 +5648,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 36.0,
-   "name": "Пояс Раздора / Вольные астероиды: карантинная станция",
-   "operator": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора: карантинная станция",
+   "operator": "Пояс Раздора",
    "placement": {
     "orbit": {
      "altitude_km": 223394
@@ -5679,7 +5679,7 @@
    "medical_beds": 104691.7,
    "name": "Новая Европа",
    "night_light": {
-    "pop": 34897236,
+    "pop": 34897238,
     "source": "population"
    },
    "operator": "Новая Европа",
@@ -5694,7 +5694,7 @@
     }
    },
    "polity": "gj581_europa",
-   "population": 34897236,
+   "population": 34897238,
    "purpose": "столица",
    "quarantine_beds": 13958.9,
    "repair": "full",
@@ -5746,7 +5746,7 @@
    "medical_beds": 43621.5,
    "name": "Gliese 581 K1 — поселение",
    "night_light": {
-    "pop": 17448618,
+    "pop": 17448619,
     "source": "population"
    },
    "operator": "Новая Европа",
@@ -5761,7 +5761,7 @@
     }
    },
    "polity": "gj581_europa",
-   "population": 17448618,
+   "population": 17448619,
    "purpose": "крупный город",
    "quarantine_beds": 6979.4,
    "repair": "basic",
@@ -5784,7 +5784,7 @@
    "medical_beds": 29081.0,
    "name": "Gliese 581 K3 — поселение",
    "night_light": {
-    "pop": 11632412,
+    "pop": 11632413,
     "source": "population"
    },
    "operator": "Новая Европа",
@@ -5799,7 +5799,7 @@
     }
    },
    "polity": "gj581_europa",
-   "population": 11632412,
+   "population": 11632413,
    "purpose": "крупный город",
    "quarantine_beds": 4653.0,
    "repair": "basic",
@@ -6359,10 +6359,10 @@
    "language": "en",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 80359.2,
+   "medical_beds": 80357.2,
    "name": "Свободные поселения",
    "night_light": {
-    "pop": 26786416,
+    "pop": 26785734,
     "source": "population"
    },
    "operator": "Свободные поселения",
@@ -6377,9 +6377,9 @@
     }
    },
    "polity": "gj581_freeclans",
-   "population": 26786416,
+   "population": 26785734,
    "purpose": "столица",
-   "quarantine_beds": 10714.6,
+   "quarantine_beds": 10714.3,
    "repair": "full",
    "security_base": 0.6,
    "source": "economy.cities",
@@ -6406,7 +6406,7 @@
     }
    },
    "polity": "gj581_freeclans",
-   "population": 53572,
+   "population": 53571,
    "purpose": "порт над поселением: челноки поверхность ↔ орбита, таможня",
    "quarantine_beds": 26.8,
    "repair": "full",
@@ -6426,10 +6426,10 @@
    "language": "en",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 33483.0,
+   "medical_beds": 33482.2,
    "name": "Gliese 581 K1 — поселение",
    "night_light": {
-    "pop": 13393208,
+    "pop": 13392867,
     "source": "population"
    },
    "operator": "Свободные поселения",
@@ -6444,9 +6444,9 @@
     }
    },
    "polity": "gj581_freeclans",
-   "population": 13393208,
+   "population": 13392867,
    "purpose": "крупный город",
-   "quarantine_beds": 5357.3,
+   "quarantine_beds": 5357.1,
    "repair": "basic",
    "security_base": 0.5,
    "source": "economy.cities",
@@ -6464,10 +6464,10 @@
    "language": "en",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 22322.0,
+   "medical_beds": 22321.4,
    "name": "Gliese 581 K3 — поселение",
    "night_light": {
-    "pop": 8928805,
+    "pop": 8928578,
     "source": "population"
    },
    "operator": "Свободные поселения",
@@ -6482,9 +6482,9 @@
     }
    },
    "polity": "gj581_freeclans",
-   "population": 8928805,
+   "population": 8928578,
    "purpose": "крупный город",
-   "quarantine_beds": 3571.5,
+   "quarantine_beds": 3571.4,
    "repair": "basic",
    "security_base": 0.5,
    "source": "economy.cities",
@@ -7211,13 +7211,13 @@
    "language": "zh",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 289253.1,
-   "name": "Тяньхэ (Небесная Река)",
+   "medical_beds": 289254.4,
+   "name": "Тяньхэ",
    "night_light": {
-    "pop": 115701222,
+    "pop": 115701744,
     "source": "population"
    },
-   "operator": "Тяньхэ (Небесная Река)",
+   "operator": "Тяньхэ",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -7229,9 +7229,9 @@
     }
    },
    "polity": "gj832_tianhe",
-   "population": 115701222,
+   "population": 115701744,
    "purpose": "столица",
-   "quarantine_beds": 46280.5,
+   "quarantine_beds": 46280.7,
    "repair": "basic",
    "security_base": 0.5,
    "source": "economy.cities",
@@ -7250,15 +7250,15 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 578.5,
-   "name": "Тяньхэ (Небесная Река): орбитальный порт",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: орбитальный порт",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 590
     }
    },
    "polity": "gj832_tianhe",
-   "population": 231402,
+   "population": 231403,
    "purpose": "порт над поселением: челноки поверхность ↔ орбита, таможня",
    "quarantine_beds": 115.7,
    "repair": "full",
@@ -7278,13 +7278,13 @@
    "language": "zh",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 144626.5,
+   "medical_beds": 144627.2,
    "name": "GJ 832 b II — поселение",
    "night_light": {
-    "pop": 57850611,
+    "pop": 57850872,
     "source": "population"
    },
-   "operator": "Тяньхэ (Небесная Река)",
+   "operator": "Тяньхэ",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -7296,9 +7296,9 @@
     }
    },
    "polity": "gj832_tianhe",
-   "population": 57850611,
+   "population": 57850872,
    "purpose": "крупный город",
-   "quarantine_beds": 23140.2,
+   "quarantine_beds": 23140.3,
    "repair": "basic",
    "security_base": 0.5,
    "source": "economy.cities",
@@ -7318,7 +7318,7 @@
    "map_level": "system",
    "medical_beds": 289.3,
    "name": "GJ 832 b II — поселение: орбитальный порт",
-   "operator": "Тяньхэ (Небесная Река)",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 575
@@ -7345,13 +7345,13 @@
    "language": "zh",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 96417.7,
+   "medical_beds": 96418.1,
    "name": "GJ 832 b I — поселение",
    "night_light": {
-    "pop": 38567074,
+    "pop": 38567248,
     "source": "population"
    },
-   "operator": "Тяньхэ (Небесная Река)",
+   "operator": "Тяньхэ",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -7363,9 +7363,9 @@
     }
    },
    "polity": "gj832_tianhe",
-   "population": 38567074,
+   "population": 38567248,
    "purpose": "крупный город",
-   "quarantine_beds": 15426.8,
+   "quarantine_beds": 15426.9,
    "repair": "basic",
    "security_base": 0.5,
    "source": "economy.cities",
@@ -7385,7 +7385,7 @@
    "map_level": "system",
    "medical_beds": 192.8,
    "name": "GJ 832 b I — поселение: орбитальный порт",
-   "operator": "Тяньхэ (Небесная Река)",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 555
@@ -7418,7 +7418,7 @@
     "pop": 1311464,
     "source": "population"
    },
-   "operator": "Тяньхэ (Небесная Река)",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 84859
@@ -7450,8 +7450,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 22.5,
-   "name": "Тяньхэ (Небесная Река): торговый хаб 1",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: торговый хаб 1",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 105262
@@ -7483,8 +7483,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Тяньхэ (Небесная Река): горнодобывающий хаб 1",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: горнодобывающий хаб 1",
+   "operator": "Тяньхэ",
    "placement": {
     "belt": {
      "longitude_deg": 218.5,
@@ -7517,8 +7517,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Тяньхэ (Небесная Река): горнодобывающий хаб 2",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: горнодобывающий хаб 2",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 4841
@@ -7550,8 +7550,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Тяньхэ (Небесная Река): горнодобывающий хаб 3",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: горнодобывающий хаб 3",
+   "operator": "Тяньхэ",
    "placement": {
     "belt": {
      "longitude_deg": 249.76,
@@ -7584,8 +7584,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Тяньхэ (Небесная Река): горнодобывающий хаб 4",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: горнодобывающий хаб 4",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 8099
@@ -7617,8 +7617,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Тяньхэ (Небесная Река): горнодобывающий хаб 5",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: горнодобывающий хаб 5",
+   "operator": "Тяньхэ",
    "placement": {
     "belt": {
      "longitude_deg": 273.44,
@@ -7651,8 +7651,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Тяньхэ (Небесная Река): горнодобывающий хаб 6",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: горнодобывающий хаб 6",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 12096
@@ -7684,8 +7684,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Тяньхэ (Небесная Река): промышленный хаб 1",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: промышленный хаб 1",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 140450
@@ -7717,8 +7717,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Тяньхэ (Небесная Река): промышленный хаб 2",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: промышленный хаб 2",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 12528
@@ -7750,8 +7750,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Тяньхэ (Небесная Река): промышленный хаб 3",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: промышленный хаб 3",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 6854
@@ -7783,8 +7783,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Тяньхэ (Небесная Река): промышленный хаб 4",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: промышленный хаб 4",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 4262
@@ -7816,8 +7816,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Тяньхэ (Небесная Река): промышленный хаб 5",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: промышленный хаб 5",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 153097
@@ -7849,8 +7849,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Тяньхэ (Небесная Река): промышленный хаб 6",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: промышленный хаб 6",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 12195
@@ -7882,8 +7882,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 36.0,
-   "name": "Тяньхэ (Небесная Река): военный хаб 1",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: военный хаб 1",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 115280
@@ -7915,8 +7915,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Тяньхэ (Небесная Река): научный хаб 1",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: научный хаб 1",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 127831
@@ -7948,8 +7948,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Тяньхэ (Небесная Река): научный хаб 2",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: научный хаб 2",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 9222
@@ -7981,8 +7981,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Тяньхэ (Небесная Река): научный хаб 3",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: научный хаб 3",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 7260
@@ -8010,8 +8010,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 36.0,
-   "name": "Тяньхэ (Небесная Река): карантинная станция",
-   "operator": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ: карантинная станция",
+   "operator": "Тяньхэ",
    "placement": {
     "orbit": {
      "altitude_km": 212148
@@ -8041,7 +8041,7 @@
    "medical_beds": 150.6,
    "name": "Провидение",
    "night_light": {
-    "pop": 50215,
+    "pop": 50213,
     "source": "population"
    },
    "operator": "Провидение",
@@ -8056,7 +8056,7 @@
     }
    },
    "polity": "gj876_next",
-   "population": 50215,
+   "population": 50213,
    "purpose": "столица",
    "quarantine_beds": 20.1,
    "repair": "full",
@@ -8079,7 +8079,7 @@
    "medical_beds": 75.3,
    "name": "Gliese 876 f — поселение",
    "night_light": {
-    "pop": 25107,
+    "pop": 25106,
     "source": "population"
    },
    "operator": "Провидение",
@@ -8094,7 +8094,7 @@
     }
    },
    "polity": "gj876_next",
-   "population": 25107,
+   "population": 25106,
    "purpose": "крупный город",
    "quarantine_beds": 10.0,
    "repair": "full",
@@ -8565,13 +8565,13 @@
    "language": "en",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 81077.3,
-   "name": "Вторая Эллада",
+   "medical_beds": 81076.0,
+   "name": "Хомстед",
    "night_light": {
-    "pop": 32430910,
+    "pop": 32430416,
     "source": "population"
    },
-   "operator": "Вторая Эллада",
+   "operator": "Хомстед",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -8583,9 +8583,9 @@
     }
    },
    "polity": "hd20794_hellas2",
-   "population": 32430910,
+   "population": 32430416,
    "purpose": "столица",
-   "quarantine_beds": 12972.4,
+   "quarantine_beds": 12972.2,
    "repair": "basic",
    "security_base": 0.5,
    "source": "economy.cities",
@@ -8604,15 +8604,15 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 162.2,
-   "name": "Вторая Эллада: орбитальный порт",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: орбитальный порт",
+   "operator": "Хомстед",
    "placement": {
     "orbit": {
      "altitude_km": 392
     }
    },
    "polity": "hd20794_hellas2",
-   "population": 64861,
+   "population": 64860,
    "purpose": "порт над поселением: челноки поверхность ↔ орбита, таможня",
    "quarantine_beds": 32.4,
    "repair": "full",
@@ -8632,13 +8632,13 @@
    "language": "en",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 40538.6,
+   "medical_beds": 40538.0,
    "name": "HD 20794 K2 — поселение",
    "night_light": {
-    "pop": 16215455,
+    "pop": 16215208,
     "source": "population"
    },
-   "operator": "Вторая Эллада",
+   "operator": "Хомстед",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -8650,9 +8650,9 @@
     }
    },
    "polity": "hd20794_hellas2",
-   "population": 16215455,
+   "population": 16215208,
    "purpose": "крупный город",
-   "quarantine_beds": 6486.2,
+   "quarantine_beds": 6486.1,
    "repair": "basic",
    "security_base": 0.5,
    "source": "economy.cities",
@@ -8670,13 +8670,13 @@
    "language": "en",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 27025.8,
+   "medical_beds": 27025.3,
    "name": "HD 20794 K1 — поселение",
    "night_light": {
-    "pop": 10810303,
+    "pop": 10810139,
     "source": "population"
    },
-   "operator": "Вторая Эллада",
+   "operator": "Хомстед",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -8688,7 +8688,7 @@
     }
    },
    "polity": "hd20794_hellas2",
-   "population": 10810303,
+   "population": 10810139,
    "purpose": "крупный город",
    "quarantine_beds": 4324.1,
    "repair": "basic",
@@ -8714,7 +8714,7 @@
     "pop": 308067,
     "source": "population"
    },
-   "operator": "Вторая Эллада",
+   "operator": "Хомстед",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -8751,8 +8751,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 22.5,
-   "name": "Вторая Эллада: торговый хаб 1",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: торговый хаб 1",
+   "operator": "Хомстед",
    "placement": {
     "orbit": {
      "altitude_km": 37451
@@ -8784,8 +8784,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Вторая Эллада: горнодобывающий хаб 1",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: горнодобывающий хаб 1",
+   "operator": "Хомстед",
    "placement": {
     "belt": {
      "longitude_deg": 123.8,
@@ -8818,8 +8818,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Вторая Эллада: горнодобывающий хаб 2",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: горнодобывающий хаб 2",
+   "operator": "Хомстед",
    "placement": {
     "orbit": {
      "altitude_km": 16066
@@ -8851,8 +8851,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Вторая Эллада: горнодобывающий хаб 3",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: горнодобывающий хаб 3",
+   "operator": "Хомстед",
    "placement": {
     "belt": {
      "longitude_deg": 191.44,
@@ -8885,8 +8885,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Вторая Эллада: горнодобывающий хаб 4",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: горнодобывающий хаб 4",
+   "operator": "Хомстед",
    "placement": {
     "orbit": {
      "altitude_km": 6131
@@ -8918,8 +8918,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Вторая Эллада: горнодобывающий хаб 5",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: горнодобывающий хаб 5",
+   "operator": "Хомстед",
    "placement": {
     "belt": {
      "longitude_deg": 219.28,
@@ -8952,8 +8952,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Вторая Эллада: горнодобывающий хаб 6",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: горнодобывающий хаб 6",
+   "operator": "Хомстед",
    "placement": {
     "orbit": {
      "altitude_km": 28746
@@ -8985,8 +8985,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Вторая Эллада: промышленный хаб 1",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: промышленный хаб 1",
+   "operator": "Хомстед",
    "placement": {
     "orbit": {
      "altitude_km": 19826
@@ -9018,8 +9018,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Вторая Эллада: промышленный хаб 2",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: промышленный хаб 2",
+   "operator": "Хомстед",
    "placement": {
     "orbit": {
      "altitude_km": 33947
@@ -9051,8 +9051,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Вторая Эллада: промышленный хаб 3",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: промышленный хаб 3",
+   "operator": "Хомстед",
    "placement": {
     "orbit": {
      "altitude_km": 21000
@@ -9084,8 +9084,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Вторая Эллада: промышленный хаб 4",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: промышленный хаб 4",
+   "operator": "Хомстед",
    "placement": {
     "orbit": {
      "altitude_km": 7584
@@ -9117,8 +9117,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Вторая Эллада: промышленный хаб 5",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: промышленный хаб 5",
+   "operator": "Хомстед",
    "placement": {
     "orbit": {
      "altitude_km": 29074
@@ -9150,8 +9150,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 36.0,
-   "name": "Вторая Эллада: военный хаб 1",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: военный хаб 1",
+   "operator": "Хомстед",
    "placement": {
     "orbit": {
      "altitude_km": 39274
@@ -9183,8 +9183,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Вторая Эллада: научный хаб 1",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: научный хаб 1",
+   "operator": "Хомстед",
    "placement": {
     "orbit": {
      "altitude_km": 15804
@@ -9212,8 +9212,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 36.0,
-   "name": "Вторая Эллада: карантинная станция",
-   "operator": "Вторая Эллада",
+   "name": "Хомстед: карантинная станция",
+   "operator": "Хомстед",
    "placement": {
     "orbit": {
      "altitude_km": 48887
@@ -9240,10 +9240,10 @@
    "language": "hi",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 251053.4,
+   "medical_beds": 251053.5,
    "name": "Новая Индия",
    "night_light": {
-    "pop": 100421375,
+    "pop": 100421413,
     "source": "population"
    },
    "operator": "Новая Индия",
@@ -9258,7 +9258,7 @@
     }
    },
    "polity": "hd20794_newindia",
-   "population": 100421375,
+   "population": 100421413,
    "purpose": "столица",
    "quarantine_beds": 40168.6,
    "repair": "basic",
@@ -9307,10 +9307,10 @@
    "language": "hi",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 125526.7,
+   "medical_beds": 125526.8,
    "name": "HD 20794 K2 — поселение",
    "night_light": {
-    "pop": 50210688,
+    "pop": 50210707,
     "source": "population"
    },
    "operator": "Новая Индия",
@@ -9325,7 +9325,7 @@
     }
    },
    "polity": "hd20794_newindia",
-   "population": 50210688,
+   "population": 50210707,
    "purpose": "крупный город",
    "quarantine_beds": 20084.3,
    "repair": "basic",
@@ -9377,7 +9377,7 @@
    "medical_beds": 83684.5,
    "name": "HD 20794 K1 — поселение",
    "night_light": {
-    "pop": 33473792,
+    "pop": 33473804,
     "source": "population"
    },
    "operator": "Новая Индия",
@@ -9392,7 +9392,7 @@
     }
    },
    "polity": "hd20794_newindia",
-   "population": 33473792,
+   "population": 33473804,
    "purpose": "крупный город",
    "quarantine_beds": 13389.5,
    "repair": "basic",
@@ -10072,10 +10072,10 @@
    "language": "zh",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 79550.9,
+   "medical_beds": 79551.6,
    "name": "Небесная Твердыня",
    "night_light": {
-    "pop": 26516962,
+    "pop": 26517195,
     "source": "population"
    },
    "operator": "Небесная Твердыня",
@@ -10090,9 +10090,9 @@
     }
    },
    "polity": "hd40307_firmament",
-   "population": 26516962,
+   "population": 26517195,
    "purpose": "столица",
-   "quarantine_beds": 10606.8,
+   "quarantine_beds": 10606.9,
    "repair": "full",
    "security_base": 0.6,
    "source": "economy.cities",
@@ -10119,7 +10119,7 @@
     }
    },
    "polity": "hd40307_firmament",
-   "population": 53033,
+   "population": 53034,
    "purpose": "порт над поселением: челноки поверхность ↔ орбита, таможня",
    "quarantine_beds": 26.5,
    "repair": "full",
@@ -10139,10 +10139,10 @@
    "language": "zh",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 33146.2,
+   "medical_beds": 33146.5,
    "name": "HD 40307 K2 — поселение",
    "night_light": {
-    "pop": 13258481,
+    "pop": 13258597,
     "source": "population"
    },
    "operator": "Небесная Твердыня",
@@ -10157,7 +10157,7 @@
     }
    },
    "polity": "hd40307_firmament",
-   "population": 13258481,
+   "population": 13258597,
    "purpose": "крупный город",
    "quarantine_beds": 5303.4,
    "repair": "basic",
@@ -10177,10 +10177,10 @@
    "language": "zh",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 22097.5,
+   "medical_beds": 22097.7,
    "name": "HD 40307 K3 — поселение",
    "night_light": {
-    "pop": 8838987,
+    "pop": 8839065,
     "source": "population"
    },
    "operator": "Небесная Твердыня",
@@ -10195,7 +10195,7 @@
     }
    },
    "polity": "hd40307_firmament",
-   "population": 8838987,
+   "population": 8839065,
    "purpose": "крупный город",
    "quarantine_beds": 3535.6,
    "repair": "basic",
@@ -10717,10 +10717,10 @@
    "language": "sw",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 161323.6,
+   "medical_beds": 161330.9,
    "name": "Новая Маланд",
    "night_light": {
-    "pop": 53774530,
+    "pop": 53776977,
     "source": "population"
    },
    "operator": "Новая Маланд",
@@ -10735,9 +10735,9 @@
     }
    },
    "polity": "hd40307_maland",
-   "population": 53774530,
+   "population": 53776977,
    "purpose": "столица",
-   "quarantine_beds": 21509.8,
+   "quarantine_beds": 21510.8,
    "repair": "full",
    "security_base": 0.6,
    "source": "economy.cities",
@@ -10764,7 +10764,7 @@
     }
    },
    "polity": "hd40307_maland",
-   "population": 107549,
+   "population": 107553,
    "purpose": "порт над поселением: челноки поверхность ↔ орбита, таможня",
    "quarantine_beds": 53.8,
    "repair": "full",
@@ -10784,10 +10784,10 @@
    "language": "sw",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 67218.2,
+   "medical_beds": 67221.2,
    "name": "HD 40307 K2 — поселение",
    "night_light": {
-    "pop": 26887265,
+    "pop": 26888488,
     "source": "population"
    },
    "operator": "Новая Маланд",
@@ -10802,9 +10802,9 @@
     }
    },
    "polity": "hd40307_maland",
-   "population": 26887265,
+   "population": 26888488,
    "purpose": "крупный город",
-   "quarantine_beds": 10754.9,
+   "quarantine_beds": 10755.4,
    "repair": "basic",
    "security_base": 0.5,
    "source": "economy.cities",
@@ -10831,7 +10831,7 @@
     }
    },
    "polity": "hd40307_maland",
-   "population": 53774,
+   "population": 53776,
    "purpose": "порт над поселением: челноки поверхность ↔ орбита, таможня",
    "quarantine_beds": 26.9,
    "repair": "full",
@@ -10851,10 +10851,10 @@
    "language": "sw",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 44812.1,
+   "medical_beds": 44814.1,
    "name": "HD 40307 K3 — поселение",
    "night_light": {
-    "pop": 17924843,
+    "pop": 17925659,
     "source": "population"
    },
    "operator": "Новая Маланд",
@@ -10869,9 +10869,9 @@
     }
    },
    "polity": "hd40307_maland",
-   "population": 17924843,
+   "population": 17925659,
    "purpose": "крупный город",
-   "quarantine_beds": 7169.9,
+   "quarantine_beds": 7170.3,
    "repair": "basic",
    "security_base": 0.5,
    "source": "economy.cities",
@@ -10889,10 +10889,10 @@
    "language": "sw",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 33609.1,
+   "medical_beds": 33610.6,
    "name": "Агрокольца Маланд («Житница»)",
    "night_light": {
-    "pop": 13443633,
+    "pop": 13444244,
     "source": "population"
    },
    "operator": "Новая Маланд",
@@ -10907,9 +10907,9 @@
     }
    },
    "polity": "hd40307_maland",
-   "population": 13443633,
+   "population": 13444244,
    "purpose": "аграрный город",
-   "quarantine_beds": 5377.5,
+   "quarantine_beds": 5377.7,
    "repair": "basic",
    "security_base": 0.5,
    "source": "economy.cities",
@@ -11527,12 +11527,12 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 81812.3,
-   "name": "Сельта-Верде",
+   "name": "Сельва-Верде",
    "night_light": {
-    "pop": 27270756,
+    "pop": 27270759,
     "source": "population"
    },
-   "operator": "Сельта-Верде",
+   "operator": "Сельва-Верде",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -11544,7 +11544,7 @@
     }
    },
    "polity": "hd69830_verde",
-   "population": 27270756,
+   "population": 27270759,
    "purpose": "столица",
    "quarantine_beds": 10908.3,
    "repair": "full",
@@ -11565,8 +11565,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 136.4,
-   "name": "Сельта-Верде: орбитальный порт",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: орбитальный порт",
+   "operator": "Сельва-Верде",
    "placement": {
     "orbit": {
      "altitude_km": 1011
@@ -11596,10 +11596,10 @@
    "medical_beds": 34088.4,
    "name": "HD 69830 K2 — поселение",
    "night_light": {
-    "pop": 13635378,
+    "pop": 13635379,
     "source": "population"
    },
-   "operator": "Сельта-Верде",
+   "operator": "Сельва-Верде",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -11611,7 +11611,7 @@
     }
    },
    "polity": "hd69830_verde",
-   "population": 13635378,
+   "population": 13635379,
    "purpose": "крупный город",
    "quarantine_beds": 5454.2,
    "repair": "basic",
@@ -11634,10 +11634,10 @@
    "medical_beds": 22725.6,
    "name": "HD 69830 K4 — поселение",
    "night_light": {
-    "pop": 9090252,
+    "pop": 9090253,
     "source": "population"
    },
-   "operator": "Сельта-Верде",
+   "operator": "Сельва-Верде",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -11649,7 +11649,7 @@
     }
    },
    "polity": "hd69830_verde",
-   "population": 9090252,
+   "population": 9090253,
    "purpose": "крупный город",
    "quarantine_beds": 3636.1,
    "repair": "basic",
@@ -11675,7 +11675,7 @@
     "pop": 248660,
     "source": "population"
    },
-   "operator": "Сельта-Верде",
+   "operator": "Сельва-Верде",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -11712,8 +11712,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 22.5,
-   "name": "Сельта-Верде: торговый хаб 1",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: торговый хаб 1",
+   "operator": "Сельва-Верде",
    "placement": {
     "orbit": {
      "altitude_km": 104821
@@ -11745,8 +11745,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Сельта-Верде: горнодобывающий хаб 1",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: горнодобывающий хаб 1",
+   "operator": "Сельва-Верде",
    "placement": {
     "belt": {
      "longitude_deg": 288.54,
@@ -11779,8 +11779,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Сельта-Верде: горнодобывающий хаб 2",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: горнодобывающий хаб 2",
+   "operator": "Сельва-Верде",
    "placement": {
     "orbit": {
      "altitude_km": 42342
@@ -11812,8 +11812,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Сельта-Верде: горнодобывающий хаб 3",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: горнодобывающий хаб 3",
+   "operator": "Сельва-Верде",
    "placement": {
     "belt": {
      "longitude_deg": 303.9,
@@ -11846,8 +11846,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Сельта-Верде: горнодобывающий хаб 4",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: горнодобывающий хаб 4",
+   "operator": "Сельва-Верде",
    "placement": {
     "orbit": {
      "altitude_km": 17050
@@ -11879,8 +11879,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Сельта-Верде: горнодобывающий хаб 5",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: горнодобывающий хаб 5",
+   "operator": "Сельва-Верде",
    "placement": {
     "belt": {
      "longitude_deg": 267.17,
@@ -11913,8 +11913,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Сельта-Верде: промышленный хаб 1",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: промышленный хаб 1",
+   "operator": "Сельва-Верде",
    "placement": {
     "orbit": {
      "altitude_km": 100953
@@ -11946,8 +11946,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Сельта-Верде: промышленный хаб 2",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: промышленный хаб 2",
+   "operator": "Сельва-Верде",
    "placement": {
     "orbit": {
      "altitude_km": 29375
@@ -11979,8 +11979,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Сельта-Верде: промышленный хаб 3",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: промышленный хаб 3",
+   "operator": "Сельва-Верде",
    "placement": {
     "orbit": {
      "altitude_km": 34018
@@ -12012,8 +12012,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Сельта-Верде: промышленный хаб 4",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: промышленный хаб 4",
+   "operator": "Сельва-Верде",
    "placement": {
     "orbit": {
      "altitude_km": 20395
@@ -12045,8 +12045,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 36.0,
-   "name": "Сельта-Верде: военный хаб 1",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: военный хаб 1",
+   "operator": "Сельва-Верде",
    "placement": {
     "orbit": {
      "altitude_km": 86231
@@ -12078,8 +12078,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Сельта-Верде: научный хаб 1",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: научный хаб 1",
+   "operator": "Сельва-Верде",
    "placement": {
     "orbit": {
      "altitude_km": 137367
@@ -12107,8 +12107,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 36.0,
-   "name": "Сельта-Верде: карантинная станция",
-   "operator": "Сельта-Верде",
+   "name": "Сельва-Верде: карантинная станция",
+   "operator": "Сельва-Верде",
    "placement": {
     "orbit": {
      "altitude_km": 220169
@@ -12135,13 +12135,13 @@
    "language": "el",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 123170.6,
-   "name": "Новая Эллада / Агора",
+   "medical_beds": 123170.5,
+   "name": "Агора",
    "night_light": {
-    "pop": 41056850,
+    "pop": 41056830,
     "source": "population"
    },
-   "operator": "Новая Эллада / Агора",
+   "operator": "Агора",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -12153,7 +12153,7 @@
     }
    },
    "polity": "lalande_hellas",
-   "population": 41056850,
+   "population": 41056830,
    "purpose": "столица",
    "quarantine_beds": 16422.7,
    "repair": "full",
@@ -12174,8 +12174,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 205.3,
-   "name": "Новая Эллада / Агора: орбитальный порт",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: орбитальный порт",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 958
@@ -12202,13 +12202,13 @@
    "language": "el",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 61585.3,
+   "medical_beds": 61585.2,
    "name": "Lalande 21185 h — поселение",
    "night_light": {
-    "pop": 20528425,
+    "pop": 20528415,
     "source": "population"
    },
-   "operator": "Новая Эллада / Агора",
+   "operator": "Агора",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -12220,7 +12220,7 @@
     }
    },
    "polity": "lalande_hellas",
-   "population": 20528425,
+   "population": 20528415,
    "purpose": "крупный город",
    "quarantine_beds": 8211.4,
    "repair": "full",
@@ -12242,7 +12242,7 @@
    "map_level": "system",
    "medical_beds": 102.6,
    "name": "Lalande 21185 h — поселение: орбитальный порт",
-   "operator": "Новая Эллада / Агора",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 1153
@@ -12269,13 +12269,13 @@
    "language": "el",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 41056.9,
+   "medical_beds": 41056.8,
    "name": "Lalande 21185 k — поселение",
    "night_light": {
-    "pop": 13685617,
+    "pop": 13685610,
     "source": "population"
    },
-   "operator": "Новая Эллада / Агора",
+   "operator": "Агора",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -12287,7 +12287,7 @@
     }
    },
    "polity": "lalande_hellas",
-   "population": 13685617,
+   "population": 13685610,
    "purpose": "крупный город",
    "quarantine_beds": 5474.2,
    "repair": "full",
@@ -12313,7 +12313,7 @@
     "pop": 376786,
     "source": "population"
    },
-   "operator": "Новая Эллада / Агора",
+   "operator": "Агора",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -12350,8 +12350,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 22.5,
-   "name": "Новая Эллада / Агора: торговый хаб 1",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: торговый хаб 1",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 27601
@@ -12383,8 +12383,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новая Эллада / Агора: горнодобывающий хаб 1",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: горнодобывающий хаб 1",
+   "operator": "Агора",
    "placement": {
     "belt": {
      "longitude_deg": 63.07,
@@ -12417,8 +12417,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новая Эллада / Агора: горнодобывающий хаб 2",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: горнодобывающий хаб 2",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 21605
@@ -12450,8 +12450,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новая Эллада / Агора: горнодобывающий хаб 3",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: горнодобывающий хаб 3",
+   "operator": "Агора",
    "placement": {
     "belt": {
      "longitude_deg": 350.45,
@@ -12484,8 +12484,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новая Эллада / Агора: горнодобывающий хаб 4",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: горнодобывающий хаб 4",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 11393
@@ -12517,8 +12517,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новая Эллада / Агора: горнодобывающий хаб 5",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: горнодобывающий хаб 5",
+   "operator": "Агора",
    "placement": {
     "belt": {
      "longitude_deg": 90.78,
@@ -12551,8 +12551,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новая Эллада / Агора: горнодобывающий хаб 6",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: горнодобывающий хаб 6",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 14808
@@ -12584,8 +12584,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новая Эллада / Агора: промышленный хаб 1",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: промышленный хаб 1",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 29087
@@ -12617,8 +12617,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новая Эллада / Агора: промышленный хаб 2",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: промышленный хаб 2",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 7656
@@ -12650,8 +12650,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новая Эллада / Агора: промышленный хаб 3",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: промышленный хаб 3",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 18340
@@ -12683,8 +12683,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новая Эллада / Агора: промышленный хаб 4",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: промышленный хаб 4",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 15035
@@ -12716,8 +12716,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новая Эллада / Агора: промышленный хаб 5",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: промышленный хаб 5",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 6251
@@ -12749,8 +12749,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 36.0,
-   "name": "Новая Эллада / Агора: военный хаб 1",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: военный хаб 1",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 16602
@@ -12782,8 +12782,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Новая Эллада / Агора: научный хаб 1",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: научный хаб 1",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 14416
@@ -12811,8 +12811,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 36.0,
-   "name": "Новая Эллада / Агора: карантинная станция",
-   "operator": "Новая Эллада / Агора",
+   "name": "Агора: карантинная станция",
+   "operator": "Агора",
    "placement": {
     "orbit": {
      "altitude_km": 36703
@@ -12836,16 +12836,16 @@
    "body": "system_4.Lalande_21185.Lalande_21185_m",
    "docks": 12,
    "id": "site.004.lalande_mecca.city01",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 270453.5,
-   "name": "Новая Мекка",
+   "medical_beds": 270456.1,
+   "name": "Тауранга",
    "night_light": {
-    "pop": 90151155,
+    "pop": 90152037,
     "source": "population"
    },
-   "operator": "Новая Мекка",
+   "operator": "Тауранга",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -12857,9 +12857,9 @@
     }
    },
    "polity": "lalande_mecca",
-   "population": 90151155,
+   "population": 90152037,
    "purpose": "столица",
-   "quarantine_beds": 36060.5,
+   "quarantine_beds": 36060.8,
    "repair": "full",
    "security_base": 0.6,
    "source": "economy.cities",
@@ -12874,19 +12874,19 @@
    "body": "system_4.Lalande_21185.Lalande_21185_m",
    "docks": 24,
    "id": "site.004.lalande_mecca.port01",
-   "language": "ms",
+   "language": "mi",
    "level": "A",
    "map_level": "system",
    "medical_beds": 450.8,
-   "name": "Новая Мекка: орбитальный порт",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: орбитальный порт",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 958
     }
    },
    "polity": "lalande_mecca",
-   "population": 180302,
+   "population": 180304,
    "purpose": "порт над поселением: челноки поверхность ↔ орбита, таможня",
    "quarantine_beds": 90.2,
    "repair": "full",
@@ -12903,16 +12903,16 @@
    "body": "system_4.Lalande_21185.Lalande_21185_h",
    "docks": 12,
    "id": "site.004.lalande_mecca.city02",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 135226.7,
+   "medical_beds": 135228.1,
    "name": "Lalande 21185 h — поселение",
    "night_light": {
-    "pop": 45075577,
+    "pop": 45076019,
     "source": "population"
    },
-   "operator": "Новая Мекка",
+   "operator": "Тауранга",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -12924,9 +12924,9 @@
     }
    },
    "polity": "lalande_mecca",
-   "population": 45075577,
+   "population": 45076019,
    "purpose": "крупный город",
-   "quarantine_beds": 18030.2,
+   "quarantine_beds": 18030.4,
    "repair": "full",
    "security_base": 0.6,
    "source": "economy.cities",
@@ -12941,19 +12941,19 @@
    "body": "system_4.Lalande_21185.Lalande_21185_h",
    "docks": 24,
    "id": "site.004.lalande_mecca.port02",
-   "language": "ms",
+   "language": "mi",
    "level": "A",
    "map_level": "system",
    "medical_beds": 225.4,
    "name": "Lalande 21185 h — поселение: орбитальный порт",
-   "operator": "Новая Мекка",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 1153
     }
    },
    "polity": "lalande_mecca",
-   "population": 90151,
+   "population": 90152,
    "purpose": "порт над поселением: челноки поверхность ↔ орбита, таможня",
    "quarantine_beds": 45.1,
    "repair": "full",
@@ -12970,16 +12970,16 @@
    "body": "system_4.Lalande_21185.Lalande_21185_k",
    "docks": 12,
    "id": "site.004.lalande_mecca.city03",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 90151.2,
+   "medical_beds": 90152.0,
    "name": "Lalande 21185 k — поселение",
    "night_light": {
-    "pop": 30050385,
+    "pop": 30050679,
     "source": "population"
    },
-   "operator": "Новая Мекка",
+   "operator": "Тауранга",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -12991,9 +12991,9 @@
     }
    },
    "polity": "lalande_mecca",
-   "population": 30050385,
+   "population": 30050679,
    "purpose": "крупный город",
-   "quarantine_beds": 12020.2,
+   "quarantine_beds": 12020.3,
    "repair": "full",
    "security_base": 0.6,
    "source": "economy.cities",
@@ -13008,19 +13008,19 @@
    "body": "system_4.Lalande_21185.Lalande_21185_k",
    "docks": 24,
    "id": "site.004.lalande_mecca.port03",
-   "language": "ms",
+   "language": "mi",
    "level": "A",
    "map_level": "system",
    "medical_beds": 150.3,
    "name": "Lalande 21185 k — поселение: орбитальный порт",
-   "operator": "Новая Мекка",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 851
     }
    },
    "polity": "lalande_mecca",
-   "population": 60100,
+   "population": 60101,
    "purpose": "порт над поселением: челноки поверхность ↔ орбита, таможня",
    "quarantine_beds": 30.1,
    "repair": "full",
@@ -13037,16 +13037,16 @@
    "body": "system_4.Lalande_21185.Lalande_21185_j",
    "docks": 12,
    "id": "site.004.lalande_mecca.city04",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 2879.0,
-   "name": "Платформы Lalande 21185 j (доля Мекки)",
+   "name": "Платформы Lalande 21185 j (доля Капеху)",
    "night_light": {
     "pop": 959679,
     "source": "population"
    },
-   "operator": "Новая Мекка",
+   "operator": "Тауранга",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -13075,16 +13075,16 @@
    "body": "system_4.Lalande_21185.Lalande_21185_h",
    "docks": 12,
    "id": "site.004.lalande_mecca.city05",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 67613.4,
-   "name": "Сады Lalande 21185 g",
+   "medical_beds": 67614.0,
+   "name": "Огороды Мара-Каи (Lalande 21185 g)",
    "night_light": {
-    "pop": 22537789,
+    "pop": 22538009,
     "source": "population"
    },
-   "operator": "Новая Мекка",
+   "operator": "Тауранга",
    "placement": {
     "surface": {
      "elevation_ref": "terrain_surface",
@@ -13096,9 +13096,9 @@
     }
    },
    "polity": "lalande_mecca",
-   "population": 22537789,
+   "population": 22538009,
    "purpose": "аграрный город",
-   "quarantine_beds": 9015.1,
+   "quarantine_beds": 9015.2,
    "repair": "full",
    "security_base": 0.6,
    "source": "economy.cities",
@@ -13113,19 +13113,19 @@
    "body": "system_4.Lalande_21185.Lalande_21185_h",
    "docks": 24,
    "id": "site.004.lalande_mecca.port05",
-   "language": "ms",
+   "language": "mi",
    "level": "A",
    "map_level": "system",
    "medical_beds": 112.7,
-   "name": "Сады Lalande 21185 g: орбитальный порт",
-   "operator": "Новая Мекка",
+   "name": "Огороды Мара-Каи (Lalande 21185 g): орбитальный порт",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 1153
     }
    },
    "polity": "lalande_mecca",
-   "population": 45075,
+   "population": 45076,
    "purpose": "порт над поселением: челноки поверхность ↔ орбита, таможня",
    "quarantine_beds": 22.5,
    "repair": "full",
@@ -13146,12 +13146,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_j",
    "docks": 30,
    "id": "site.004.lalande_mecca.trade_hub01",
-   "language": "ms",
+   "language": "mi",
    "level": "A",
    "map_level": "system",
    "medical_beds": 22.5,
-   "name": "Новая Мекка: торговый хаб 1",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: торговый хаб 1",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 28371
@@ -13179,12 +13179,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_h",
    "docks": 30,
    "id": "site.004.lalande_mecca.trade_hub02",
-   "language": "ms",
+   "language": "mi",
    "level": "A",
    "map_level": "system",
    "medical_beds": 22.5,
-   "name": "Новая Мекка: торговый хаб 2",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: торговый хаб 2",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 25559
@@ -13212,12 +13212,12 @@
    "body": "system_4.Lalande_21185.kuiper_belt",
    "docks": 6,
    "id": "site.004.lalande_mecca.mining_hub01",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новая Мекка: горнодобывающий хаб 1",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: горнодобывающий хаб 1",
+   "operator": "Тауранга",
    "placement": {
     "belt": {
      "longitude_deg": 159.94,
@@ -13246,12 +13246,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_h",
    "docks": 6,
    "id": "site.004.lalande_mecca.mining_hub02",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новая Мекка: горнодобывающий хаб 2",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: горнодобывающий хаб 2",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 14207
@@ -13279,12 +13279,12 @@
    "body": "system_4.Lalande_21185.kuiper_belt",
    "docks": 6,
    "id": "site.004.lalande_mecca.mining_hub03",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новая Мекка: горнодобывающий хаб 3",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: горнодобывающий хаб 3",
+   "operator": "Тауранга",
    "placement": {
     "belt": {
      "longitude_deg": 94.81,
@@ -13313,12 +13313,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_g",
    "docks": 6,
    "id": "site.004.lalande_mecca.mining_hub04",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новая Мекка: горнодобывающий хаб 4",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: горнодобывающий хаб 4",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 11002
@@ -13346,12 +13346,12 @@
    "body": "system_4.Lalande_21185.kuiper_belt",
    "docks": 6,
    "id": "site.004.lalande_mecca.mining_hub05",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новая Мекка: горнодобывающий хаб 5",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: горнодобывающий хаб 5",
+   "operator": "Тауранга",
    "placement": {
     "belt": {
      "longitude_deg": 89.56,
@@ -13380,12 +13380,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_h",
    "docks": 6,
    "id": "site.004.lalande_mecca.mining_hub06",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новая Мекка: горнодобывающий хаб 6",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: горнодобывающий хаб 6",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 22213
@@ -13413,12 +13413,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_j",
    "docks": 8,
    "id": "site.004.lalande_mecca.industrial_hub01",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новая Мекка: промышленный хаб 1",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: промышленный хаб 1",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 15154
@@ -13446,12 +13446,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_h",
    "docks": 8,
    "id": "site.004.lalande_mecca.industrial_hub02",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новая Мекка: промышленный хаб 2",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: промышленный хаб 2",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 25195
@@ -13479,12 +13479,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_m",
    "docks": 8,
    "id": "site.004.lalande_mecca.industrial_hub03",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новая Мекка: промышленный хаб 3",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: промышленный хаб 3",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 8265
@@ -13512,12 +13512,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_g",
    "docks": 8,
    "id": "site.004.lalande_mecca.industrial_hub04",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новая Мекка: промышленный хаб 4",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: промышленный хаб 4",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 15109
@@ -13545,12 +13545,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_j",
    "docks": 8,
    "id": "site.004.lalande_mecca.industrial_hub05",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новая Мекка: промышленный хаб 5",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: промышленный хаб 5",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 16811
@@ -13578,12 +13578,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_h",
    "docks": 8,
    "id": "site.004.lalande_mecca.industrial_hub06",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новая Мекка: промышленный хаб 6",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: промышленный хаб 6",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 16094
@@ -13611,12 +13611,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_j",
    "docks": 16,
    "id": "site.004.lalande_mecca.military_hub01",
-   "language": "ms",
+   "language": "mi",
    "level": "A",
    "map_level": "system",
    "medical_beds": 36.0,
-   "name": "Новая Мекка: военный хаб 1",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: военный хаб 1",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 20624
@@ -13644,12 +13644,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_j",
    "docks": 4,
    "id": "site.004.lalande_mecca.science_hub01",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Новая Мекка: научный хаб 1",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: научный хаб 1",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 23131
@@ -13677,12 +13677,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_h",
    "docks": 4,
    "id": "site.004.lalande_mecca.science_hub02",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Новая Мекка: научный хаб 2",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: научный хаб 2",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 14188
@@ -13706,12 +13706,12 @@
    "body": "system_4.Lalande_21185.Lalande_21185_j",
    "docks": 6,
    "id": "site.004.lalande_mecca.quarantine01",
-   "language": "ms",
+   "language": "mi",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 36.0,
-   "name": "Новая Мекка: карантинная станция",
-   "operator": "Новая Мекка",
+   "name": "Тауранга: карантинная станция",
+   "operator": "Тауранга",
    "placement": {
     "orbit": {
      "altitude_km": 36703
@@ -13735,7 +13735,7 @@
    "body": "system_45.83_Leonis_B.83_Leonis_B_h",
    "docks": 12,
    "id": "site.045.leo83_zion.city01",
-   "language": "ru",
+   "language": "en",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 14.3,
@@ -13773,7 +13773,7 @@
    "body": "system_45.83_Leonis_B.83_Leonis_B_i",
    "docks": 12,
    "id": "site.045.leo83_zion.city02",
-   "language": "ru",
+   "language": "en",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 7.2,
@@ -13811,7 +13811,7 @@
    "body": "system_45.83_Leonis_B.83_Leonis_B_j.83_Leonis_B_j_II",
    "docks": 10,
    "id": "site.045.leo83_zion.city03",
-   "language": "ru",
+   "language": "en",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 4.0,
@@ -13853,7 +13853,7 @@
    "body": "system_45.83_Leonis_B.83_Leonis_B_j",
    "docks": 30,
    "id": "site.045.leo83_zion.trade_hub01",
-   "language": "ru",
+   "language": "en",
    "level": "A",
    "map_level": "system",
    "medical_beds": 22.5,
@@ -13886,7 +13886,7 @@
    "body": "system_45.83_Leonis_B.asteroid_belt",
    "docks": 6,
    "id": "site.045.leo83_zion.mining_hub01",
-   "language": "ru",
+   "language": "en",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
@@ -13920,7 +13920,7 @@
    "body": "system_45.83_Leonis_B.83_Leonis_B_j",
    "docks": 8,
    "id": "site.045.leo83_zion.industrial_hub01",
-   "language": "ru",
+   "language": "en",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
@@ -13953,7 +13953,7 @@
    "body": "system_45.83_Leonis_B.83_Leonis_B_j",
    "docks": 4,
    "id": "site.045.leo83_zion.science_hub01",
-   "language": "ru",
+   "language": "en",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
@@ -14760,8 +14760,8 @@
    "merged": [
     "site.008.tau_ceti_cognium.trade_hub04"
    ],
-   "name": "Новый Шанхай: торговый хаб 1",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: торговый хаб 1",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 7449
@@ -14796,8 +14796,8 @@
    "merged": [
     "site.008.tau_ceti_cognium.trade_hub05"
    ],
-   "name": "Новый Шанхай: торговый хаб 2",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: торговый хаб 2",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 11136
@@ -14832,8 +14832,8 @@
    "merged": [
     "site.008.tau_ceti_cognium.trade_hub06"
    ],
-   "name": "Новый Шанхай: торговый хаб 3",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: торговый хаб 3",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 13011
@@ -14866,8 +14866,8 @@
    "level": "B",
    "map_level": "detail",
    "medical_beds": 22.5,
-   "name": "Новый Шанхай: торговый хаб 4",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: торговый хаб 4",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 5273
@@ -14900,8 +14900,8 @@
    "level": "B",
    "map_level": "detail",
    "medical_beds": 22.5,
-   "name": "Новый Шанхай: торговый хаб 5",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: торговый хаб 5",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 6191
@@ -14934,8 +14934,8 @@
    "level": "B",
    "map_level": "detail",
    "medical_beds": 22.5,
-   "name": "Новый Шанхай: торговый хаб 6",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: торговый хаб 6",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 11214
@@ -14967,8 +14967,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новый Шанхай: горнодобывающий хаб 1",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: горнодобывающий хаб 1",
+   "operator": "Синь-Шанхай",
    "placement": {
     "belt": {
      "longitude_deg": 358.53,
@@ -15001,8 +15001,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новый Шанхай: горнодобывающий хаб 2",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: горнодобывающий хаб 2",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 13046
@@ -15034,8 +15034,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новый Шанхай: горнодобывающий хаб 3",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: горнодобывающий хаб 3",
+   "operator": "Синь-Шанхай",
    "placement": {
     "belt": {
      "longitude_deg": 203.54,
@@ -15068,8 +15068,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новый Шанхай: горнодобывающий хаб 4",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: горнодобывающий хаб 4",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 6687
@@ -15101,8 +15101,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
-   "name": "Новый Шанхай: горнодобывающий хаб 5",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: горнодобывающий хаб 5",
+   "operator": "Синь-Шанхай",
    "placement": {
     "belt": {
      "longitude_deg": 241.63,
@@ -15135,8 +15135,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новый Шанхай: промышленный хаб 1",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: промышленный хаб 1",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 10018
@@ -15168,8 +15168,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новый Шанхай: промышленный хаб 2",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: промышленный хаб 2",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 10926
@@ -15201,8 +15201,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новый Шанхай: промышленный хаб 3",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: промышленный хаб 3",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 5323
@@ -15234,8 +15234,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новый Шанхай: промышленный хаб 4",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: промышленный хаб 4",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 10124
@@ -15267,8 +15267,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новый Шанхай: промышленный хаб 5",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: промышленный хаб 5",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 5460
@@ -15300,8 +15300,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
-   "name": "Новый Шанхай: промышленный хаб 6",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: промышленный хаб 6",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 14056
@@ -15333,8 +15333,8 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 36.0,
-   "name": "Новый Шанхай: военный хаб 1",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: военный хаб 1",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 10169
@@ -15366,8 +15366,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Новый Шанхай: научный хаб 1",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: научный хаб 1",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 12954
@@ -15399,8 +15399,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Новый Шанхай: научный хаб 2",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: научный хаб 2",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 5119
@@ -15432,8 +15432,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Новый Шанхай: научный хаб 3",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: научный хаб 3",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 5571
@@ -15465,8 +15465,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
-   "name": "Новый Шанхай: научный хаб 4",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: научный хаб 4",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 9087
@@ -15494,8 +15494,8 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 36.0,
-   "name": "Новый Шанхай: карантинная станция",
-   "operator": "Новый Шанхай",
+   "name": "Синь-Шанхай: карантинная станция",
+   "operator": "Синь-Шанхай",
    "placement": {
     "orbit": {
      "altitude_km": 19136
@@ -15519,13 +15519,13 @@
    "body": "system_3.Wolf_359.Wolf_359_e",
    "docks": 12,
    "id": "site.003.wolf359_citadel.city01",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 192771.1,
    "name": "Цитадель",
    "night_light": {
-    "pop": 64257026,
+    "pop": 64257027,
     "source": "population"
    },
    "operator": "Цитадель",
@@ -15540,7 +15540,7 @@
     }
    },
    "polity": "wolf359_citadel",
-   "population": 64257026,
+   "population": 64257027,
    "purpose": "столица",
    "quarantine_beds": 25702.8,
    "repair": "full",
@@ -15557,7 +15557,7 @@
    "body": "system_3.Wolf_359.Wolf_359_e",
    "docks": 24,
    "id": "site.003.wolf359_citadel.port01",
-   "language": "en",
+   "language": "nb",
    "level": "A",
    "map_level": "system",
    "medical_beds": 321.3,
@@ -15586,11 +15586,11 @@
    "body": "system_3.Wolf_359.Wolf_359_c",
    "docks": 12,
    "id": "site.003.wolf359_citadel.city02",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 96385.5,
-   "name": "Wolf 359 c — поселение",
+   "name": "Нюхамн",
    "night_light": {
     "pop": 32128513,
     "source": "population"
@@ -15624,11 +15624,11 @@
    "body": "system_3.Wolf_359.Wolf_359_c",
    "docks": 24,
    "id": "site.003.wolf359_citadel.port02",
-   "language": "en",
+   "language": "nb",
    "level": "A",
    "map_level": "system",
    "medical_beds": 160.6,
-   "name": "Wolf 359 c — поселение: орбитальный порт",
+   "name": "Нюхамн: орбитальный порт",
    "operator": "Цитадель",
    "placement": {
     "orbit": {
@@ -15653,11 +15653,11 @@
    "body": "system_3.Wolf_359.Wolf_359_f",
    "docks": 12,
    "id": "site.003.wolf359_citadel.city03",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 64257.0,
-   "name": "Wolf 359 f — поселение",
+   "name": "Ярнвик",
    "night_light": {
     "pop": 21419009,
     "source": "population"
@@ -15691,11 +15691,11 @@
    "body": "system_3.Wolf_359.Wolf_359_f",
    "docks": 24,
    "id": "site.003.wolf359_citadel.port03",
-   "language": "en",
+   "language": "nb",
    "level": "A",
    "map_level": "system",
    "medical_beds": 107.1,
-   "name": "Wolf 359 f — поселение: орбитальный порт",
+   "name": "Ярнвик: орбитальный порт",
    "operator": "Цитадель",
    "placement": {
     "orbit": {
@@ -15720,7 +15720,7 @@
    "body": "system_3.Wolf_359.Wolf_359_c",
    "docks": 12,
    "id": "site.003.wolf359_citadel.city04",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3212.8,
@@ -15762,7 +15762,7 @@
    "body": "system_3.Wolf_359.Wolf_359_c",
    "docks": 30,
    "id": "site.003.wolf359_citadel.trade_hub01",
-   "language": "en",
+   "language": "nb",
    "level": "A",
    "map_level": "system",
    "medical_beds": 22.5,
@@ -15795,7 +15795,7 @@
    "body": "system_3.Wolf_359.Wolf_359_e",
    "docks": 30,
    "id": "site.003.wolf359_citadel.trade_hub02",
-   "language": "en",
+   "language": "nb",
    "level": "A",
    "map_level": "system",
    "medical_beds": 22.5,
@@ -15828,7 +15828,7 @@
    "body": "system_3.Wolf_359.Wolf_359_c",
    "docks": 6,
    "id": "site.003.wolf359_citadel.mining_hub01",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
@@ -15861,7 +15861,7 @@
    "body": "system_3.Wolf_359.Wolf_359_e",
    "docks": 6,
    "id": "site.003.wolf359_citadel.mining_hub02",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
@@ -15894,7 +15894,7 @@
    "body": "system_3.Wolf_359.Wolf_359_f",
    "docks": 6,
    "id": "site.003.wolf359_citadel.mining_hub03",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
@@ -15927,7 +15927,7 @@
    "body": "system_3.Wolf_359.Wolf_359_d",
    "docks": 6,
    "id": "site.003.wolf359_citadel.mining_hub04",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
@@ -15960,7 +15960,7 @@
    "body": "system_3.Wolf_359.Wolf_359_c",
    "docks": 6,
    "id": "site.003.wolf359_citadel.mining_hub05",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
@@ -15993,7 +15993,7 @@
    "body": "system_3.Wolf_359.Wolf_359_e",
    "docks": 6,
    "id": "site.003.wolf359_citadel.mining_hub06",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.8,
@@ -16026,7 +16026,7 @@
    "body": "system_3.Wolf_359.Wolf_359_c",
    "docks": 8,
    "id": "site.003.wolf359_citadel.industrial_hub01",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
@@ -16059,7 +16059,7 @@
    "body": "system_3.Wolf_359.Wolf_359_e",
    "docks": 8,
    "id": "site.003.wolf359_citadel.industrial_hub02",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
@@ -16092,7 +16092,7 @@
    "body": "system_3.Wolf_359.Wolf_359_f",
    "docks": 8,
    "id": "site.003.wolf359_citadel.industrial_hub03",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
@@ -16125,7 +16125,7 @@
    "body": "system_3.Wolf_359.Wolf_359_d",
    "docks": 8,
    "id": "site.003.wolf359_citadel.industrial_hub04",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
@@ -16158,7 +16158,7 @@
    "body": "system_3.Wolf_359.Wolf_359_c",
    "docks": 8,
    "id": "site.003.wolf359_citadel.industrial_hub05",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
@@ -16191,7 +16191,7 @@
    "body": "system_3.Wolf_359.Wolf_359_e",
    "docks": 8,
    "id": "site.003.wolf359_citadel.industrial_hub06",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 24.0,
@@ -16224,11 +16224,11 @@
    "body": "system_3.Wolf_359.Wolf_359_c",
    "docks": 16,
    "id": "site.003.wolf359_citadel.military_hub01",
-   "language": "en",
+   "language": "nb",
    "level": "A",
    "map_level": "system",
    "medical_beds": 36.0,
-   "name": "Цитадель: военный хаб 1",
+   "name": "Хеймдаль — сторожевая станция",
    "operator": "Цитадель",
    "placement": {
     "orbit": {
@@ -16257,7 +16257,7 @@
    "body": "system_3.Wolf_359.Wolf_359_c",
    "docks": 4,
    "id": "site.003.wolf359_citadel.science_hub01",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
@@ -16290,7 +16290,7 @@
    "body": "system_3.Wolf_359.Wolf_359_e",
    "docks": 4,
    "id": "site.003.wolf359_citadel.science_hub02",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.2,
@@ -16319,7 +16319,7 @@
    "body": "system_3.Wolf_359.Wolf_359_c",
    "docks": 6,
    "id": "site.003.wolf359_citadel.quarantine01",
-   "language": "en",
+   "language": "nb",
    "level": "C",
    "map_level": "detail",
    "medical_beds": 36.0,
@@ -16353,7 +16353,7 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.0,
-   "name": "вольный порт Пояс Раздора / Вольные астероиды",
+   "name": "вольный порт Пояс Раздора",
    "operator": "держатели причалов",
    "placement": {
     "belt": {
@@ -16446,7 +16446,7 @@
    "level": "C",
    "map_level": "detail",
    "medical_beds": 3.0,
-   "name": "вольный порт Новая Эллада / Агора",
+   "name": "вольный порт Агора",
    "operator": "держатели причалов",
    "placement": {
     "belt": {
@@ -16607,7 +16607,7 @@
    "docks": 10,
    "founded": 2860,
    "id": "site.002.barnard_post",
-   "language": "en",
+   "language": "nb",
    "legal": "lawful",
    "level": "A",
    "map_level": "system",
@@ -16862,7 +16862,7 @@
    "type_ru": "хаб пояса"
   },
   {
-   "arrivals_day": 5517,
+   "arrivals_day": 5515,
    "body": "system_0.Sol.Земля",
    "cargo_t_day": 172776,
    "cargo_terminals": 3,
@@ -16889,15 +16889,15 @@
    "legacy_ids": [],
    "level": "A",
    "map_level": "system",
-   "medical_beds": 314.5,
-   "movements_day": 11034,
+   "medical_beds": 314.4,
+   "movements_day": 11029,
    "name": "Высокий",
    "name_basis": "плоскость 51.6° унаследована от станций XXI века, удобных с Байконура; «Высокий» — старое прозвище станции Кордона, перешедшее к новому хабу",
    "operator": "Портовая служба Высокого (Sol Authority)",
    "owner": "sol_authority",
    "pads_per_module": 6,
    "passenger_terminals": 16,
-   "passengers_day": 623987,
+   "passengers_day": 623488,
    "placement": {
     "orbit": {
      "altitude_km": 420,
@@ -16907,7 +16907,7 @@
     }
    },
    "polity": "sol_authority",
-   "population": 125804,
+   "population": 125761,
    "purpose": "первый хаб Реставрации; межзвёздные ворота, таможня Сола, пересадка",
    "quarantine_beds": 62.9,
    "repair": "full",
@@ -16935,10 +16935,10 @@
    ],
    "type": "orbital_hub",
    "type_ru": "орбитальный хаб",
-   "utilisation": 0.62
+   "utilisation": 0.619
   },
   {
-   "arrivals_day": 9461,
+   "arrivals_day": 9460,
    "body": "system_0.Sol.Земля",
    "cargo_t_day": 265479,
    "cargo_terminals": 4,
@@ -16960,14 +16960,14 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 429.5,
-   "movements_day": 18923,
+   "movements_day": 18921,
    "name": "Тихий",
    "name_basis": "по океану, над которым проходит большая часть его окон с Токио",
    "operator": "Тихоокеанская компания орбитальных перевозок",
    "owner": "sol_authority",
    "pads_per_module": 6,
    "passenger_terminals": 21,
-   "passengers_day": 821308,
+   "passengers_day": 821196,
    "placement": {
     "orbit": {
      "altitude_km": 505,
@@ -16977,7 +16977,7 @@
     }
    },
    "polity": "sol_authority",
-   "population": 171806,
+   "population": 171788,
    "purpose": "главный пассажирский хаб плоскости 36° — агломерации Токио, Осаки, Нагои, Сеула, Тегерана",
    "quarantine_beds": 85.9,
    "repair": "full",
@@ -17006,7 +17006,7 @@
    "utilisation": 0.622
   },
   {
-   "arrivals_day": 7287,
+   "arrivals_day": 7286,
    "body": "system_0.Sol.Земля",
    "cargo_t_day": 160432,
    "cargo_terminals": 3,
@@ -17028,14 +17028,14 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 331.6,
-   "movements_day": 14573,
+   "movements_day": 14572,
    "name": "Канаверал",
    "name_basis": "мыс на 28.5° с.ш.: исторический старт к Марсу",
    "operator": "Атлантическая портовая компания",
    "owner": "sol_authority",
    "pads_per_module": 6,
    "passenger_terminals": 25,
-   "passengers_day": 988157,
+   "passengers_day": 988089,
    "placement": {
     "orbit": {
      "altitude_km": 485,
@@ -17045,7 +17045,7 @@
     }
    },
    "polity": "sol_authority",
-   "population": 132660,
+   "population": 132649,
    "purpose": "пассажирский комплекс полосы 21-32° (Дели, Шанхай, Каир, Сан-Паулу через терминал «Тропик») и вылеты к Марсу",
    "quarantine_beds": 66.3,
    "repair": "full",
@@ -17075,7 +17075,7 @@
    "utilisation": 0.622
   },
   {
-   "arrivals_day": 2073,
+   "arrivals_day": 2072,
    "body": "system_0.Sol.Земля",
    "cargo_t_day": 99443,
    "cargo_terminals": 2,
@@ -17105,7 +17105,7 @@
    "owner": "sol_authority",
    "pads_per_module": 6,
    "passenger_terminals": 4,
-   "passengers_day": 158320,
+   "passengers_day": 158299,
    "placement": {
     "orbit": {
      "altitude_km": 495,
@@ -17115,7 +17115,7 @@
     }
    },
    "polity": "sol_authority",
-   "population": 38808,
+   "population": 38804,
    "purpose": "грузовой и логистический комплекс, тяжёлые модули; пассажиры 10-20° через терминал «Шрихарикота»",
    "quarantine_beds": 19.4,
    "repair": "full",
@@ -17168,14 +17168,14 @@
    "level": "A",
    "map_level": "system",
    "medical_beds": 165.7,
-   "movements_day": 7197,
+   "movements_day": 7196,
    "name": "Куру",
    "name_basis": "космодром Гвианы на 5.2° с.ш.",
    "operator": "Экваториальная топливная компания",
    "owner": "sol_authority",
    "pads_per_module": 6,
    "passenger_terminals": 18,
-   "passengers_day": 699790,
+   "passengers_day": 699783,
    "placement": {
     "orbit": {
      "altitude_km": 560,
@@ -17185,7 +17185,7 @@
     }
    },
    "polity": "sol_authority",
-   "population": 66270,
+   "population": 66268,
    "purpose": "экваториальный хаб: вылеты к Луне и планетам, топливо, полоса 0–6° (Лагос, Киншаса, Джакарта, Богота)",
    "quarantine_beds": 33.1,
    "repair": "full",
@@ -17305,7 +17305,7 @@
    "owner": "sol_authority",
    "pads_per_module": 6,
    "passenger_terminals": 2,
-   "passengers_day": 50116,
+   "passengers_day": 50110,
    "placement": {
     "orbit": {
      "altitude_km": 790,
@@ -17315,7 +17315,7 @@
     }
    },
    "polity": "sol_authority",
-   "population": 11861,
+   "population": 11860,
    "purpose": "полярный комплекс: спасательная служба Земли, наука, единственная плоскость северных городов (терминал «Меридиан»)",
    "quarantine_beds": 23.7,
    "repair": "basic",
@@ -17502,7 +17502,7 @@
     }
    },
    "polity": "sol_authority",
-   "population": 84565701,
+   "population": 84565713,
    "purpose": "главный город Луны у кратера вечной тени: лёд, энергия на вечном свету",
    "quarantine_beds": 33826.3,
    "repair": "full",
@@ -17543,7 +17543,7 @@
    "legacy_ids": [],
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 138380.2,
+   "medical_beds": 138380.3,
    "movements_day": 3040,
    "name": "Имбриум",
    "name_basis": null,
@@ -17560,7 +17560,7 @@
     }
    },
    "polity": "sol_authority",
-   "population": 46126746,
+   "population": 46126752,
    "purpose": "реголитовые заводы и масс-драйвер Моря Дождей",
    "quarantine_beds": 18450.7,
    "repair": "full",
@@ -17917,7 +17917,7 @@
     }
    },
    "polity": "sol_authority",
-   "population": 70471417,
+   "population": 70471427,
    "purpose": "крупнейший город Марса у вулканов Тарсиса: экваториальный космопорт",
    "quarantine_beds": 28188.6,
    "repair": "full",
@@ -17975,7 +17975,7 @@
     }
    },
    "polity": "sol_authority",
-   "population": 70471417,
+   "population": 70471427,
    "purpose": "город на дне равнины Эллады (самое высокое давление на Марсе): агрокупола",
    "quarantine_beds": 28188.6,
    "repair": "full",
@@ -18146,7 +18146,7 @@
    "legacy_ids": [],
    "level": "C",
    "map_level": "detail",
-   "medical_beds": 563771.3,
+   "medical_beds": 563771.4,
    "movements_day": 1395,
    "name": "Ахуна",
    "name_basis": null,
@@ -18173,7 +18173,7 @@
     }
    },
    "polity": "sol_authority",
-   "population": 187923780,
+   "population": 187923806,
    "purpose": "подлёдный город Цереры у горы Ахуна",
    "quarantine_beds": 75169.5,
    "repair": "full",
@@ -18434,7 +18434,7 @@
     }
    },
    "polity": "sol_authority",
-   "population": 5125194,
+   "population": 5125195,
    "purpose": "город-поезд на терминаторе у бассейна Калорис: металлы, солнечная энергия",
    "quarantine_beds": 2050.1,
    "repair": "full",

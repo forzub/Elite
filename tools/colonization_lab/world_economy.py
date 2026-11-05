@@ -84,6 +84,8 @@ class Inputs:
 
 
 # ---------------------------------------------------------------- network with unbeaconed links
+UNBEACONED_MAX_LY = 8.0   # longest commercial link into a system without a beacon (navigation model)
+
 def trade_graph(I):
     """Beacon graph of 3126 plus short unbeaconed links (<= 8 ly) for inhabited systems without a
     beacon that do not refuse the network (jumps without a beacon are allowed, only less precise
@@ -99,7 +101,7 @@ def trade_graph(I):
         best = None
         for n in sorted(nodes):
             d = lab_dist(I.E, s, n)
-            if d <= 8.0 and (best is None or d < best[1]):
+            if d <= UNBEACONED_MAX_LY and (best is None or d < best[1]):
                 best = (n, d)
         if best:
             edges.setdefault(s, {})[best[0]] = best[1]

@@ -328,61 +328,61 @@
   "cyg61_kern": {
    "balance": {
     "chemicals": {
-     "consumption": 15197016,
+     "consumption": 15190775,
      "exports": 0,
-     "imports": 759851,
+     "imports": 759539,
      "losses": 0,
-     "production": 14437165,
+     "production": 14431236,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 90993526,
+     "consumption": 90945416,
      "exports": 0,
-     "imports": 19017647,
+     "imports": 19007592,
      "losses": 0,
-     "production": 71975879,
+     "production": 71937824,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 16382576,
+     "consumption": 16375846,
      "exports": 0,
-     "imports": 2777319,
+     "imports": 2776178,
      "losses": 0,
-     "production": 13605257,
+     "production": 13599668,
      "stock_change": 0,
      "unmet": 0
     },
     "controlled": {
-     "consumption": 3413,
+     "consumption": 3412,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 3413,
+     "production": 3412,
      "stock_change": 0,
-     "unmet": 3413
+     "unmet": 3412
     },
     "electronics": {
-     "consumption": 252703,
+     "consumption": 252599,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 252703,
+     "production": 252599,
      "stock_change": 0,
-     "unmet": 332522
+     "unmet": 332385
     },
     "food": {
-     "consumption": 77290854,
-     "exports": 10410501,
-     "imports": 2770877,
+     "consumption": 77259102,
+     "exports": 10410572,
+     "imports": 2769739,
      "losses": 20821,
-     "production": 84951299,
+     "production": 84920756,
      "stock_change": 0,
      "unmet": 0
     },
     "jump_charge": {
-     "consumption": 40606,
+     "consumption": 40605,
      "exports": 0,
      "imports": 14569,
      "losses": 0,
@@ -391,104 +391,104 @@
      "unmet": 0
     },
     "luxury": {
-     "consumption": 299828,
+     "consumption": 299705,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 299828,
+     "production": 299705,
      "stock_change": 0,
-     "unmet": 246257
+     "unmet": 246156
     },
     "machinery": {
-     "consumption": 1399699,
+     "consumption": 1399124,
      "exports": 0,
-     "imports": 463916,
+     "imports": 463725,
      "losses": 0,
-     "production": 935783,
+     "production": 935398,
      "stock_change": 0,
      "unmet": 0
     },
     "medical": {
-     "consumption": 546086,
+     "consumption": 545862,
      "exports": 0,
-     "imports": 208299,
+     "imports": 208213,
      "losses": 0,
-     "production": 337787,
+     "production": 337648,
      "stock_change": 0,
      "unmet": 0
     },
     "metals": {
-     "consumption": 21687025,
+     "consumption": 21675996,
      "exports": 0,
-     "imports": 15061430,
+     "imports": 15053770,
      "losses": 0,
-     "production": 6625595,
+     "production": 6622226,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 71585020,
+     "consumption": 71547598,
      "exports": 0,
-     "imports": 43838666,
+     "imports": 43815749,
      "losses": 0,
-     "production": 27746354,
+     "production": 27731849,
      "stock_change": 0,
      "unmet": 0
     },
     "reactor_fuel": {
-     "consumption": 1175,
+     "consumption": 1174,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 1175,
+     "production": 1174,
      "stock_change": 0,
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 136750861,
+     "consumption": 136692988,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 136750861,
+     "production": 136692988,
      "stock_change": 0,
      "unmet": 0
     },
     "weapons": {
-     "consumption": 43525,
+     "consumption": 43507,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 43525,
+     "production": 43507,
      "stock_change": 0,
-     "unmet": 22290
+     "unmet": 22281
     }
    },
    "cities": [
     {
      "body": "61 Cygni B j",
      "name": "Шахта Альфа",
-     "pop": 19633845,
+     "pop": 19625779,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "61 Cygni B k",
      "name": "61 Cygni B k — поселение",
-     "pop": 9816922,
+     "pop": 9812890,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "61 Cygni A f",
      "name": "61 Cygni A f — поселение",
-     "pop": 6544615,
+     "pop": 6541926,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "61 Cygni B j (орбита)",
      "name": "Биржа и страховой дом Керна",
-     "pop": 654461,
+     "pop": 654193,
      "role": "орбитальный порт / биржа",
      "status": "PROPOSAL"
     },
@@ -502,38 +502,38 @@
     {
      "body": "—",
      "name": "прочие поселения (695)",
-     "pop": 103152425,
+     "pop": 103109979,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 19633845,
+    "largest_city": 19625779,
     "settlements_total": 700
    },
-   "exports_cr_y": 9369450959,
+   "exports_cr_y": 9369514706,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 232932272,
-    "jump_charge_imports_t_y": 14569.3,
-    "jump_charge_local_t_y": 26036.4,
-    "jump_charge_t_y": 40605.7,
+    "jump_charge_cost_cr_y": 232930977,
+    "jump_charge_imports_t_y": 14569.2,
+    "jump_charge_local_t_y": 26036.2,
+    "jump_charge_t_y": 40605.4,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 745970798,
+    "reactor_fuel_cost_cr_y": 745643403,
     "reactor_fuel_imports_t_y": 0.0,
-    "reactor_fuel_local_t_y": 1174.8,
-    "reactor_fuel_power_t_y": 527.7,
-    "reactor_fuel_ships_t_y": 715.6,
-    "reactor_fuel_t_y": 1243.3,
+    "reactor_fuel_local_t_y": 1174.4,
+    "reactor_fuel_power_t_y": 527.5,
+    "reactor_fuel_ships_t_y": 715.2,
+    "reactor_fuel_t_y": 1242.7,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
-    "strategic_reserve_charge_t": 10012.4,
-    "strategic_reserve_reactor_t": 306.6
+    "strategic_reserve_charge_t": 10012.3,
+    "strategic_reserve_reactor_t": 306.4
    },
-   "gdp_cr_y": 2596581225329,
+   "gdp_cr_y": 2595514524278,
    "gdp_per_capita_cr": 18551,
    "growth_per_year": 0.01182,
-   "imports_cr_y": 62249920018,
+   "imports_cr_y": 62221776025,
    "income_index": 2.854,
    "motives": {
     "alliance_obligation": 0.2,
@@ -548,17 +548,17 @@
    },
    "name": "Шахта Альфа",
    "polity": "Проспекторат Керн",
-   "population": 139969879,
+   "population": 139912378,
    "regime": "corporate_board",
    "settlement_structure": {
     "аванпост: «Золотой Город»": 1317,
     "аванпост: Лагерь «Кларион»": 1364,
-    "аванпост: Стратегические рудники Gliese 892": 2969,
+    "аванпост: Стратегические рудники Gliese 892": 2968,
     "аванпост: Экспедиция Sigma² UMa": 370,
     "астероидные поселения": 16386597,
-    "вращающиеся цилиндры": 64941523,
+    "вращающиеся цилиндры": 64901273,
     "выработки в лунах": 24403657,
-    "орбитальные кольца и станции": 27832082,
+    "орбитальные кольца и станции": 27814831,
     "поверхность (купола, открытые поселения)": 2560000,
     "подземные поселения (лавовые трубки, шахтные города)": 3840000
    },
@@ -635,29 +635,29 @@
   "delta_pav_freekarma": {
    "balance": {
     "chemicals": {
-     "consumption": 21892128,
+     "consumption": 21892132,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 21892128,
+     "production": 21892132,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 104134810,
+     "consumption": 104134830,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 104134810,
+     "production": 104134830,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 23363553,
+     "consumption": 23363557,
      "exports": 0,
      "imports": 3900445,
      "losses": 0,
-     "production": 19463108,
+     "production": 19463111,
      "stock_change": 0,
      "unmet": 0
     },
@@ -680,11 +680,11 @@
      "unmet": 468377
     },
     "food": {
-     "consumption": 110567181,
-     "exports": 23338111,
+     "consumption": 110567201,
+     "exports": 23338189,
      "imports": 1702735,
      "losses": 46676,
-     "production": 132249234,
+     "production": 132249331,
      "stock_change": 0,
      "unmet": 0
     },
@@ -693,7 +693,7 @@
      "exports": 0,
      "imports": 15224,
      "losses": 0,
-     "production": 73703,
+     "production": 73704,
      "stock_change": 0,
      "unmet": 0
     },
@@ -711,7 +711,7 @@
      "exports": 0,
      "imports": 651485,
      "losses": 0,
-     "production": 1349218,
+     "production": 1349219,
      "stock_change": 0,
      "unmet": 0
     },
@@ -725,20 +725,20 @@
      "unmet": 0
     },
     "metals": {
-     "consumption": 31364323,
+     "consumption": 31364329,
      "exports": 1,
      "imports": 772581,
      "losses": 0,
-     "production": 30591743,
+     "production": 30591749,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 170787942,
+     "consumption": 170787974,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 170787942,
+     "production": 170787974,
      "stock_change": 0,
      "unmet": 0
     },
@@ -752,11 +752,11 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 199011946,
+     "consumption": 199011982,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 199011946,
+     "production": 199011982,
      "stock_change": 0,
      "unmet": 0
     },
@@ -774,52 +774,52 @@
     {
      "body": "Delta Pavonis k",
      "name": "Свободная Карма",
-     "pop": 26724253,
+     "pop": 26724257,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "Delta Pavonis j",
      "name": "Delta Pavonis j — поселение",
-     "pop": 13362126,
+     "pop": 13362129,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Delta Pavonis K1",
      "name": "Delta Pavonis K1 — поселение",
-     "pop": 8908084,
+     "pop": 8908086,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Delta Pavonis k (орбита)",
      "name": "Маяк Дельты Павлина",
-     "pop": 890808,
+     "pop": 890809,
      "role": "маячная станция",
      "status": "PROPOSAL"
     },
     {
      "body": "—",
      "name": "прочие поселения (997)",
-     "pop": 150185040,
+     "pop": 150185065,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 26724253,
+    "largest_city": 26724257,
     "settlements_total": 1001
    },
-   "exports_cr_y": 21004300779,
+   "exports_cr_y": 21004371222,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 510129623,
-    "jump_charge_imports_t_y": 15224.4,
-    "jump_charge_local_t_y": 73703.4,
-    "jump_charge_t_y": 88927.8,
+    "jump_charge_cost_cr_y": 510131245,
+    "jump_charge_imports_t_y": 15224.5,
+    "jump_charge_local_t_y": 73703.6,
+    "jump_charge_t_y": 88928.1,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 985411725,
+    "reactor_fuel_cost_cr_y": 985411791,
     "reactor_fuel_imports_t_y": 757.4,
     "reactor_fuel_local_t_y": 766.3,
     "reactor_fuel_power_t_y": 781.8,
@@ -827,13 +827,13 @@
     "reactor_fuel_t_y": 1642.4,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
-    "strategic_reserve_charge_t": 21927.4,
+    "strategic_reserve_charge_t": 21927.5,
     "strategic_reserve_reactor_t": 405.0
    },
-   "gdp_cr_y": 3694598398082,
-   "gdp_per_capita_cr": 18466,
+   "gdp_cr_y": 3694599044409,
+   "gdp_per_capita_cr": 18467,
    "growth_per_year": 0.00645,
-   "imports_cr_y": 49732087992,
+   "imports_cr_y": 49732096907,
    "income_index": 2.841,
    "motives": {
     "alliance_obligation": 0.2,
@@ -848,13 +848,13 @@
    },
    "name": "Свободная Карма",
    "polity": "Свободная Карма",
-   "population": 200070311,
+   "population": 200070346,
    "regime": "exile_republic",
    "settlement_structure": {
     "астероидные поселения": 11157837,
-    "вращающиеся цилиндры": 122559886,
+    "вращающиеся цилиндры": 122559909,
     "выработки в лунах": 10946923,
-    "орбитальные кольца и станции": 52525665,
+    "орбитальные кольца и станции": 52525676,
     "поверхность (купола, открытые поселения)": 1152000,
     "подземные поселения (лавовые трубки, шахтные города)": 1728000
    },
@@ -1090,7 +1090,7 @@
     },
     {
      "body": "Delta Pavonis k (орбита)",
-     "name": "Храм Массива (криобанк генов)",
+     "name": "Храм Семени (криобанк генов)",
      "pop": 701559,
      "role": "научное поселение",
      "status": "PROPOSAL"
@@ -1192,29 +1192,29 @@
   "eps_eri_harmony": {
    "balance": {
     "chemicals": {
-     "consumption": 155863245,
-     "exports": 74028551,
+     "consumption": 155865623,
+     "exports": 74028623,
      "imports": 0,
      "losses": 148057,
-     "production": 230039854,
+     "production": 230042303,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 340906112,
-     "exports": 123315453,
+     "consumption": 340919883,
+     "exports": 123315718,
      "imports": 0,
      "losses": 246631,
-     "production": 464468195,
+     "production": 464482232,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 176577088,
+     "consumption": 176579789,
      "exports": 0,
-     "imports": 28380723,
+     "imports": 28381157,
      "losses": 0,
-     "production": 148196365,
+     "production": 148198632,
      "stock_change": 0,
      "unmet": 0
     },
@@ -1225,77 +1225,77 @@
      "losses": 0,
      "production": 14715,
      "stock_change": 0,
-     "unmet": 58859
+     "unmet": 58860
     },
     "electronics": {
-     "consumption": 6323464,
+     "consumption": 6323561,
      "exports": 0,
-     "imports": 3400389,
+     "imports": 3400441,
      "losses": 0,
-     "production": 2923075,
+     "production": 2923120,
      "stock_change": 0,
      "unmet": 0
     },
     "food": {
-     "consumption": 757477523,
-     "exports": 45447039,
-     "imports": 27155569,
+     "consumption": 757489106,
+     "exports": 45447132,
+     "imports": 27155984,
      "losses": 90894,
-     "production": 775859887,
+     "production": 775871148,
      "stock_change": 0,
      "unmet": 0
     },
     "jump_charge": {
-     "consumption": 1536851,
-     "exports": 5766040,
+     "consumption": 1536846,
+     "exports": 5765978,
      "imports": 0,
      "losses": 11532,
-     "production": 7314423,
+     "production": 7314357,
      "stock_change": 0,
      "unmet": 0
     },
     "luxury": {
-     "consumption": 3231655,
+     "consumption": 3231704,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 3231655,
+     "production": 3231704,
      "stock_change": 0,
-     "unmet": 2654248
+     "unmet": 2654289
     },
     "machinery": {
-     "consumption": 13711650,
+     "consumption": 13711859,
      "exports": 0,
-     "imports": 4273043,
+     "imports": 4273109,
      "losses": 0,
-     "production": 9438606,
+     "production": 9438751,
      "stock_change": 0,
      "unmet": 0
     },
     "medical": {
-     "consumption": 5885903,
+     "consumption": 5885993,
      "exports": 0,
-     "imports": 2128554,
+     "imports": 2128587,
      "losses": 0,
-     "production": 3757349,
+     "production": 3757406,
      "stock_change": 0,
      "unmet": 0
     },
     "metals": {
-     "consumption": 125277811,
-     "exports": 58053081,
+     "consumption": 125281863,
+     "exports": 58051002,
      "imports": 0,
-     "losses": 116106,
-     "production": 183446998,
+     "losses": 116102,
+     "production": 183448968,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 639523273,
-     "exports": 104398889,
+     "consumption": 639545880,
+     "exports": 104399117,
      "imports": 0,
      "losses": 208798,
-     "production": 744130960,
+     "production": 744153795,
      "stock_change": 0,
      "unmet": 0
     },
@@ -1309,20 +1309,20 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 1288635247,
+     "consumption": 1288656656,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 1288635247,
+     "production": 1288656656,
      "stock_change": 0,
      "unmet": 0
     },
     "weapons": {
-     "consumption": 1459859,
+     "consumption": 1459881,
      "exports": 0,
-     "imports": 469278,
+     "imports": 469285,
      "losses": 0,
-     "production": 990581,
+     "production": 990596,
      "stock_change": 0,
      "unmet": 0
     }
@@ -1331,21 +1331,21 @@
     {
      "body": "Epsilon Eridani K4",
      "name": "Цветущая Гармония",
-     "pop": 145710577,
+     "pop": 145712805,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "Epsilon Eridani K3",
      "name": "Epsilon Eridani K3 — поселение",
-     "pop": 72855289,
+     "pop": 72856403,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Epsilon Eridani K2",
      "name": "Epsilon Eridani K2 — поселение",
-     "pop": 48570192,
+     "pop": 48570935,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
@@ -1380,45 +1380,45 @@
     {
      "body": "Epsilon Eridani K4 (орбита)",
      "name": "Ретрансляторная сеть (60 % межколониальной связи)",
-     "pop": 4857019,
+     "pop": 4857094,
      "role": "маячная станция",
      "status": "PROPOSAL"
     },
     {
      "body": "—",
      "name": "прочие поселения (6848)",
-     "pop": 1092062017,
+     "pop": 1092078825,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 145710577,
+    "largest_city": 145712805,
     "settlements_total": 6856
    },
-   "exports_cr_y": 317788547629,
+   "exports_cr_y": 317786263524,
    "fuel": {
     "depots": 3,
-    "jump_charge_cost_cr_y": 8964940296,
+    "jump_charge_cost_cr_y": 8964912511,
     "jump_charge_imports_t_y": 0.0,
-    "jump_charge_local_t_y": 1548383.0,
-    "jump_charge_t_y": 1562803.5,
+    "jump_charge_local_t_y": 1548378.4,
+    "jump_charge_t_y": 1562798.7,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 9973895522,
+    "reactor_fuel_cost_cr_y": 9973935224,
     "reactor_fuel_imports_t_y": 0.0,
-    "reactor_fuel_local_t_y": 15755.2,
-    "reactor_fuel_power_t_y": 5236.6,
+    "reactor_fuel_local_t_y": 15755.3,
+    "reactor_fuel_power_t_y": 5236.7,
     "reactor_fuel_ships_t_y": 11386.6,
     "reactor_fuel_t_y": 16623.2,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
-    "strategic_reserve_charge_t": 385348.8,
+    "strategic_reserve_charge_t": 385347.6,
     "strategic_reserve_reactor_t": 4098.9
    },
-   "gdp_cr_y": 30792937134115,
+   "gdp_cr_y": 30793408022975,
    "gdp_per_capita_cr": 22458,
    "growth_per_year": 0.00147,
-   "imports_cr_y": 790059149268,
+   "imports_cr_y": 790071228221,
    "income_index": 3.455,
    "motives": {
     "alliance_obligation": 0.6,
@@ -1432,15 +1432,15 @@
     "trade_dependence": 0.51
    },
    "name": "Цветущая Гармония",
-   "polity": "Синь Хэ",
-   "population": 1371164962,
+   "polity": "Синьхэ",
+   "population": 1371185930,
    "regime": "sage_council",
    "settlement_structure": {
-    "аванпост: Гелиевое поле Эпсилон Индейца": 62214,
+    "аванпост: Гелиевое поле Эпсилон Индейца": 62215,
     "астероидные поселения": 190340650,
-    "вращающиеся цилиндры": 744290775,
+    "вращающиеся цилиндры": 744305451,
     "выработки в лунах": 107249562,
-    "орбитальные кольца и станции": 318981761,
+    "орбитальные кольца и станции": 318988051,
     "поверхность (купола, открытые поселения)": 4096000,
     "подземные поселения (лавовые трубки, шахтные города)": 6144000
    },
@@ -1511,35 +1511,35 @@
   "eps_eri_strife": {
    "balance": {
     "chemicals": {
-     "consumption": 39281376,
-     "exports": 29466964,
+     "consumption": 39281327,
+     "exports": 29466998,
      "imports": 0,
      "losses": 58934,
-     "production": 68807273,
+     "production": 68807259,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 199070930,
-     "exports": 52862292,
+     "consumption": 199070643,
+     "exports": 52862405,
      "imports": 0,
      "losses": 105725,
-     "production": 252038947,
+     "production": 252038772,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 44348294,
+     "consumption": 44348239,
      "exports": 0,
-     "imports": 7424971,
+     "imports": 7424962,
      "losses": 0,
-     "production": 36923322,
+     "production": 36923277,
      "stock_change": 0,
      "unmet": 0
     },
     "controlled": {
      "consumption": 18478,
-     "exports": 56142,
+     "exports": 56141,
      "imports": 0,
      "losses": 112,
      "production": 74732,
@@ -1547,74 +1547,74 @@
      "unmet": 0
     },
     "electronics": {
-     "consumption": 1428148,
+     "consumption": 1428009,
      "exports": 0,
-     "imports": 729704,
+     "imports": 729566,
      "losses": 0,
-     "production": 698444,
+     "production": 698443,
      "stock_change": 0,
-     "unmet": 154433
+     "unmet": 154570
     },
     "food": {
-     "consumption": 192273379,
-     "exports": 14985743,
-     "imports": 6893001,
-     "losses": 29971,
-     "production": 200396092,
+     "consumption": 192273142,
+     "exports": 14985774,
+     "imports": 6892992,
+     "losses": 29972,
+     "production": 200395895,
      "stock_change": 0,
      "unmet": 0
     },
     "jump_charge": {
-     "consumption": 616502,
-     "exports": 2492252,
+     "consumption": 616500,
+     "exports": 2492225,
      "imports": 0,
-     "losses": 4985,
-     "production": 3113739,
+     "losses": 4984,
+     "production": 3113709,
      "stock_change": 0,
      "unmet": 0
     },
     "luxury": {
-     "consumption": 811648,
+     "consumption": 811647,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 811648,
+     "production": 811647,
      "stock_change": 0,
-     "unmet": 666629
+     "unmet": 666628
     },
     "machinery": {
-     "consumption": 3480723,
+     "consumption": 3480719,
      "exports": 0,
-     "imports": 1137167,
+     "imports": 1137165,
      "losses": 0,
-     "production": 2343557,
+     "production": 2343554,
      "stock_change": 0,
      "unmet": 0
     },
     "medical": {
-     "consumption": 1478276,
+     "consumption": 1478275,
      "exports": 0,
-     "imports": 556873,
+     "imports": 556872,
      "losses": 0,
-     "production": 921404,
+     "production": 921402,
      "stock_change": 0,
      "unmet": 0
     },
     "metals": {
-     "consumption": 59733408,
-     "exports": 21742325,
+     "consumption": 59733324,
+     "exports": 21741603,
      "imports": 0,
-     "losses": 43485,
-     "production": 81519217,
+     "losses": 43483,
+     "production": 81518410,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 330496557,
-     "exports": 44772885,
+     "consumption": 330496086,
+     "exports": 44772981,
      "imports": 0,
      "losses": 89546,
-     "production": 375358988,
+     "production": 375358614,
      "stock_change": 0,
      "unmet": 0
     },
@@ -1628,11 +1628,11 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 349193407,
+     "consumption": 349192969,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 349193407,
+     "production": 349192969,
      "stock_change": 0,
      "unmet": 0
     },
@@ -1643,73 +1643,73 @@
      "losses": 0,
      "production": 217970,
      "stock_change": 0,
-     "unmet": 109636
+     "unmet": 109635
     }
    },
    "cities": [
     {
      "body": "Epsilon Eridani K4",
-     "name": "Пояс Раздора / Вольные астероиды",
-     "pop": 43294098,
+     "name": "Пояс Раздора",
+     "pop": 43294045,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "Epsilon Eridani K3",
      "name": "Epsilon Eridani K3 — поселение",
-     "pop": 21647049,
+     "pop": 21647022,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Epsilon Eridani K2",
      "name": "Epsilon Eridani K2 — поселение",
-     "pop": 14431366,
+     "pop": 14431348,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Epsilon Eridani K4 (орбита)",
      "name": "Чёрный рынок пояса",
-     "pop": 1443137,
+     "pop": 1443135,
      "role": "вольный порт",
      "status": "PROPOSAL"
     },
     {
      "body": "—",
      "name": "прочие поселения (1737)",
-     "pop": 267256677,
+     "pop": 267256349,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 43294098,
+    "largest_city": 43294045,
     "settlements_total": 1741
    },
-   "exports_cr_y": 129815049728,
+   "exports_cr_y": 129814242960,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 3601235628,
+    "jump_charge_cost_cr_y": 3601224529,
     "jump_charge_imports_t_y": 0.0,
-    "jump_charge_local_t_y": 621486.3,
-    "jump_charge_t_y": 627781.5,
+    "jump_charge_local_t_y": 621484.4,
+    "jump_charge_t_y": 627779.6,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 3468293943,
+    "reactor_fuel_cost_cr_y": 3468293133,
     "reactor_fuel_imports_t_y": 0.0,
-    "reactor_fuel_local_t_y": 5485.1,
+    "reactor_fuel_local_t_y": 5485.0,
     "reactor_fuel_power_t_y": 1393.0,
     "reactor_fuel_ships_t_y": 4387.5,
     "reactor_fuel_t_y": 5780.5,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
-    "strategic_reserve_charge_t": 154795.4,
+    "strategic_reserve_charge_t": 154795.0,
     "strategic_reserve_reactor_t": 1425.3
    },
-   "gdp_cr_y": 7651673964441,
+   "gdp_cr_y": 7651664555717,
    "gdp_per_capita_cr": 21983,
    "growth_per_year": 0.00849,
-   "imports_cr_y": 181964911007,
+   "imports_cr_y": 181948200248,
    "income_index": 3.382,
    "motives": {
     "alliance_obligation": 0.2,
@@ -1722,15 +1722,15 @@
     "status": "PROPOSAL",
     "trade_dependence": 0.48
    },
-   "name": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора",
    "polity": "Варпстанис",
-   "population": 348072327,
+   "population": 348071899,
    "regime": "clan_contracts",
    "settlement_structure": {
     "астероидные поселения": 46586971,
-    "вращающиеся цилиндры": 190872785,
+    "вращающиеся цилиндры": 190872485,
     "выработки в лунах": 26249949,
-    "орбитальные кольца и станции": 81802622,
+    "орбитальные кольца и станции": 81802494,
     "поверхность (купола, открытые поселения)": 1024000,
     "подземные поселения (лавовые трубки, шахтные города)": 1536000
    },
@@ -1789,29 +1789,29 @@
   "gj581_europa": {
    "balance": {
     "chemicals": {
-     "consumption": 29465878,
+     "consumption": 29465879,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 29465878,
+     "production": 29465879,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 88399438,
+     "consumption": 88399400,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 88399438,
+     "production": 88399400,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 31617156,
+     "consumption": 31617157,
      "exports": 0,
-     "imports": 5299522,
+     "imports": 5299523,
      "losses": 0,
-     "production": 26317634,
+     "production": 26317635,
      "stock_change": 0,
      "unmet": 0
     },
@@ -1834,11 +1834,11 @@
      "unmet": 632229
     },
     "food": {
-     "consumption": 150165602,
-     "exports": 2382565,
+     "consumption": 150165608,
+     "exports": 2382504,
      "imports": 5383437,
      "losses": 4765,
-     "production": 147169495,
+     "production": 147169440,
      "stock_change": 0,
      "unmet": 0
     },
@@ -1879,22 +1879,22 @@
      "unmet": 0
     },
     "metals": {
-     "consumption": 29248280,
+     "consumption": 29248271,
      "exports": 0,
-     "imports": 10925060,
+     "imports": 10925057,
      "losses": 0,
-     "production": 18323220,
+     "production": 18323214,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 95495223,
+     "consumption": 95495187,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 95495223,
+     "production": 95495187,
      "stock_change": 0,
-     "unmet": 25018688
+     "unmet": 25018679
     },
     "reactor_fuel": {
      "consumption": 1456,
@@ -1906,11 +1906,11 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 257527201,
+     "consumption": 257527203,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 257527201,
+     "production": 257527203,
      "stock_change": 0,
      "unmet": 0
     },
@@ -1928,21 +1928,21 @@
     {
      "body": "Gliese 581 h",
      "name": "Новая Европа",
-     "pop": 34897236,
+     "pop": 34897238,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "Gliese 581 K1",
      "name": "Gliese 581 K1 — поселение",
-     "pop": 17448618,
+     "pop": 17448619,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Gliese 581 K3",
      "name": "Gliese 581 K3 — поселение",
-     "pop": 11632412,
+     "pop": 11632413,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
@@ -1970,24 +1970,24 @@
     {
      "body": "—",
      "name": "прочие поселения (1354)",
-     "pop": 197761989,
+     "pop": 197761996,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 34897236,
+    "largest_city": 34897238,
     "settlements_total": 1360
    },
-   "exports_cr_y": 2144308079,
+   "exports_cr_y": 2144253442,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 28557293,
+    "jump_charge_cost_cr_y": 28557294,
     "jump_charge_imports_t_y": 1667.7,
     "jump_charge_local_t_y": 3310.5,
     "jump_charge_t_y": 4978.2,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 949844645,
+    "reactor_fuel_cost_cr_y": 949844666,
     "reactor_fuel_imports_t_y": 0.0,
     "reactor_fuel_local_t_y": 1456.0,
     "reactor_fuel_power_t_y": 1019.2,
@@ -1998,10 +1998,10 @@
     "strategic_reserve_charge_t": 1227.5,
     "strategic_reserve_reactor_t": 390.3
    },
-   "gdp_cr_y": 4977736082176,
+   "gdp_cr_y": 4977736283520,
    "gdp_per_capita_cr": 18304,
    "growth_per_year": 0.00289,
-   "imports_cr_y": 80522841372,
+   "imports_cr_y": 80522840387,
    "income_index": 2.816,
    "motives": {
     "alliance_obligation": 0.2,
@@ -2015,14 +2015,14 @@
     "trade_dependence": 0.32
    },
    "name": "Новая Европа",
-   "polity": "Рестаурос",
-   "population": 271947994,
+   "polity": "Союз Новой Европы",
+   "population": 271948005,
    "regime": "parliamentary_bureaucracy",
    "settlement_structure": {
     "астероидные поселения": 17533856,
-    "вращающиеся цилиндры": 154668944,
+    "вращающиеся цилиндры": 154668952,
     "выработки в лунах": 28658503,
-    "орбитальные кольца и станции": 66286691,
+    "орбитальные кольца и станции": 66286694,
     "поверхность (купола, открытые поселения)": 1920000,
     "подземные поселения (лавовые трубки, шахтные города)": 2880000
    },
@@ -2087,56 +2087,56 @@
   "gj581_freeclans": {
    "balance": {
     "chemicals": {
-     "consumption": 21760638,
+     "consumption": 21760084,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 21760638,
+     "production": 21760084,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 187766390,
+     "consumption": 187761282,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 187766390,
+     "production": 187761282,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 23469443,
+     "consumption": 23468845,
      "exports": 0,
-     "imports": 4003446,
+     "imports": 4003344,
      "losses": 0,
-     "production": 19465998,
+     "production": 19465502,
      "stock_change": 0,
      "unmet": 0
     },
     "controlled": {
      "consumption": 9779,
-     "exports": 29975,
+     "exports": 29974,
      "imports": 0,
      "losses": 60,
-     "production": 39814,
+     "production": 39813,
      "stock_change": 0,
      "unmet": 0
     },
     "electronics": {
-     "consumption": 360536,
+     "consumption": 360527,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 360536,
+     "production": 360527,
      "stock_change": 0,
-     "unmet": 477573
+     "unmet": 477561
     },
     "food": {
-     "consumption": 110764095,
+     "consumption": 110761273,
      "exports": 3230062,
-     "imports": 3970893,
+     "imports": 3970792,
      "losses": 6460,
-     "production": 110029724,
+     "production": 110027003,
      "stock_change": 0,
      "unmet": 0
     },
@@ -2150,49 +2150,49 @@
      "unmet": 0
     },
     "luxury": {
-     "consumption": 429530,
+     "consumption": 429519,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 429530,
+     "production": 429519,
      "stock_change": 0,
-     "unmet": 352785
+     "unmet": 352776
     },
     "machinery": {
-     "consumption": 2005891,
+     "consumption": 2005840,
      "exports": 0,
-     "imports": 669582,
+     "imports": 669565,
      "losses": 0,
-     "production": 1336309,
+     "production": 1336275,
      "stock_change": 0,
      "unmet": 0
     },
     "medical": {
-     "consumption": 782315,
+     "consumption": 782295,
      "exports": 0,
-     "imports": 300090,
+     "imports": 300082,
      "losses": 0,
-     "production": 482225,
+     "production": 482212,
      "stock_change": 0,
      "unmet": 0
     },
     "metals": {
-     "consumption": 52221150,
+     "consumption": 52219739,
      "exports": 0,
-     "imports": 19659483,
+     "imports": 19658952,
      "losses": 0,
-     "production": 32561667,
+     "production": 32560787,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 186716229,
+     "consumption": 186711164,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 186716229,
+     "production": 186711164,
      "stock_change": 0,
-     "unmet": 48917578
+     "unmet": 48916251
     },
     "reactor_fuel": {
      "consumption": 1257,
@@ -2204,74 +2204,74 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 214505812,
+     "consumption": 214500281,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 214505812,
+     "production": 214500281,
      "stock_change": 0,
      "unmet": 0
     },
     "weapons": {
-     "consumption": 65209,
+     "consumption": 65208,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 65209,
+     "production": 65208,
      "stock_change": 0,
-     "unmet": 33710
+     "unmet": 33709
     }
    },
    "cities": [
     {
      "body": "Gliese 581 h",
      "name": "Свободные поселения",
-     "pop": 26786416,
+     "pop": 26785734,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "Gliese 581 K1",
      "name": "Gliese 581 K1 — поселение",
-     "pop": 13393208,
+     "pop": 13392867,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Gliese 581 K3",
      "name": "Gliese 581 K3 — поселение",
-     "pop": 8928805,
+     "pop": 8928578,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Gliese 581 h (орбита)",
      "name": "Мастерские нелицензионных приводов",
-     "pop": 892881,
+     "pop": 892858,
      "role": "вольный порт",
      "status": "PROPOSAL"
     },
     {
      "body": "—",
      "name": "прочие поселения (999)",
-     "pop": 150587828,
+     "pop": 150583990,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 26786416,
+    "largest_city": 26785734,
     "settlements_total": 1003
    },
-   "exports_cr_y": 5604824801,
+   "exports_cr_y": 5604756217,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 28849942,
+    "jump_charge_cost_cr_y": 28849535,
     "jump_charge_imports_t_y": 1684.8,
     "jump_charge_local_t_y": 3344.4,
     "jump_charge_t_y": 5029.2,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 834676157,
+    "reactor_fuel_cost_cr_y": 834666480,
     "reactor_fuel_imports_t_y": 0.0,
     "reactor_fuel_local_t_y": 1256.7,
     "reactor_fuel_power_t_y": 802.5,
@@ -2282,10 +2282,10 @@
     "strategic_reserve_charge_t": 1240.1,
     "strategic_reserve_reactor_t": 343.0
    },
-   "gdp_cr_y": 3718521440244,
+   "gdp_cr_y": 3718426692526,
    "gdp_per_capita_cr": 18538,
    "growth_per_year": 0.01451,
-   "imports_cr_y": 73260108955,
+   "imports_cr_y": 73258208976,
    "income_index": 2.852,
    "motives": {
     "alliance_obligation": 0.2,
@@ -2300,13 +2300,13 @@
    },
    "name": "Свободные поселения",
    "polity": "кланы Свободного мира",
-   "population": 200589138,
+   "population": 200584027,
    "regime": "clan_contracts",
    "settlement_structure": {
     "астероидные поселения": 7406147,
-    "вращающиеся цилиндры": 125634524,
+    "вращающиеся цилиндры": 125630946,
     "выработки в лунах": 12105100,
-    "орбитальные кольца и станции": 53843367,
+    "орбитальные кольца и станции": 53841834,
     "поверхность (купола, открытые поселения)": 640000,
     "подземные поселения (лавовые трубки, шахтные города)": 960000
    },
@@ -2576,7 +2576,7 @@
     "trade_dependence": 1.0
    },
    "name": "Зона «Филоморфоз»",
-   "polity": "Вердензальб (остатки Гайи-Прим)",
+   "polity": "остатки Гайи-Прайм",
    "population": 2363,
    "regime": "none_quiet",
    "settlement_structure": {
@@ -2627,29 +2627,29 @@
   "gj832_tianhe": {
    "balance": {
     "chemicals": {
-     "consumption": 118569204,
+     "consumption": 118569739,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 118569204,
+     "production": 118569739,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 187758959,
+     "consumption": 187760010,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 187758959,
+     "production": 187760010,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 132741289,
+     "consumption": 132741888,
      "exports": 0,
-     "imports": 21627210,
+     "imports": 21627308,
      "losses": 0,
-     "production": 111114079,
+     "production": 111114580,
      "stock_change": 0,
      "unmet": 0
     },
@@ -2663,20 +2663,20 @@
      "unmet": 44247
     },
     "electronics": {
-     "consumption": 4743575,
+     "consumption": 4743596,
      "exports": 0,
-     "imports": 2581019,
+     "imports": 2581031,
      "losses": 0,
-     "production": 2162556,
+     "production": 2162566,
      "stock_change": 0,
      "unmet": 0
     },
     "food": {
-     "consumption": 584887145,
+     "consumption": 584889783,
      "exports": 511440,
-     "imports": 20968204,
+     "imports": 20968299,
      "losses": 1023,
-     "production": 564431403,
+     "production": 564433947,
      "stock_change": 0,
      "unmet": 0
     },
@@ -2690,47 +2690,47 @@
      "unmet": 0
     },
     "luxury": {
-     "consumption": 2429387,
+     "consumption": 2429398,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 2429387,
+     "production": 2429398,
      "stock_change": 0,
-     "unmet": 1995323
+     "unmet": 1995332
     },
     "machinery": {
-     "consumption": 10588784,
+     "consumption": 10588831,
      "exports": 0,
-     "imports": 3352271,
+     "imports": 3352286,
      "losses": 0,
-     "production": 7236513,
+     "production": 7236546,
      "stock_change": 0,
      "unmet": 0
     },
     "medical": {
-     "consumption": 4424710,
+     "consumption": 4424730,
      "exports": 0,
-     "imports": 1622041,
+     "imports": 1622048,
      "losses": 0,
-     "production": 2802669,
+     "production": 2802682,
      "stock_change": 0,
      "unmet": 0
     },
     "metals": {
-     "consumption": 76835630,
-     "exports": 3522005,
+     "consumption": 76836027,
+     "exports": 3521952,
      "imports": 0,
      "losses": 7044,
-     "production": 80364679,
+     "production": 80365023,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 377305287,
+     "consumption": 377307295,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 377305287,
+     "production": 377307295,
      "stock_change": 0,
      "unmet": 0
     },
@@ -2744,20 +2744,20 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 977308309,
+     "consumption": 977312758,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 977308309,
+     "production": 977312758,
      "stock_change": 0,
      "unmet": 0
     },
     "weapons": {
-     "consumption": 725111,
+     "consumption": 725115,
      "exports": 0,
-     "imports": 236281,
+     "imports": 236282,
      "losses": 0,
-     "production": 488830,
+     "production": 488832,
      "stock_change": 0,
      "unmet": 0
     }
@@ -2765,22 +2765,22 @@
    "cities": [
     {
      "body": "GJ 832 b III",
-     "name": "Тяньхэ (Небесная Река)",
-     "pop": 115701222,
+     "name": "Тяньхэ",
+     "pop": 115701744,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "GJ 832 b II",
      "name": "GJ 832 b II — поселение",
-     "pop": 57850611,
+     "pop": 57850872,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "GJ 832 b I",
      "name": "GJ 832 b I — поселение",
-     "pop": 38567074,
+     "pop": 38567248,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
@@ -2808,31 +2808,31 @@
     {
      "body": "GJ 832 b III (орбита)",
      "name": "Флот кордона «Филоморфоз»",
-     "pop": 1928354,
+     "pop": 1928362,
      "role": "военная база",
      "status": "PROPOSAL"
     },
     {
      "body": "—",
      "name": "прочие поселения (5288)",
-     "pop": 840896713,
+     "pop": 840900525,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 115701222,
+    "largest_city": 115701744,
     "settlements_total": 5295
    },
-   "exports_cr_y": 4740221914,
+   "exports_cr_y": 4740163271,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 206981284,
+    "jump_charge_cost_cr_y": 206980442,
     "jump_charge_imports_t_y": 17120.3,
-    "jump_charge_local_t_y": 18922.5,
-    "jump_charge_t_y": 36081.8,
+    "jump_charge_local_t_y": 18922.4,
+    "jump_charge_t_y": 36081.6,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 3552889312,
+    "reactor_fuel_cost_cr_y": 3552898357,
     "reactor_fuel_imports_t_y": 0.0,
     "reactor_fuel_local_t_y": 5434.0,
     "reactor_fuel_power_t_y": 3962.4,
@@ -2840,13 +2840,13 @@
     "reactor_fuel_t_y": 5921.5,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 180,
-    "strategic_reserve_charge_t": 17793.8,
+    "strategic_reserve_charge_t": 17793.7,
     "strategic_reserve_reactor_t": 2920.2
    },
-   "gdp_cr_y": 22533990506846,
+   "gdp_cr_y": 22534092166183,
    "gdp_per_capita_cr": 21281,
    "growth_per_year": -0.0006,
-   "imports_cr_y": 596569466521,
+   "imports_cr_y": 596572157247,
    "income_index": 3.274,
    "motives": {
     "alliance_obligation": 0.2,
@@ -2859,15 +2859,15 @@
     "status": "PROPOSAL",
     "trade_dependence": 0.53
    },
-   "name": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ",
    "polity": "Тяньхэ",
-   "population": 1058878366,
+   "population": 1058883143,
    "regime": "party_technocracy",
    "settlement_structure": {
     "астероидные поселения": 175417296,
-    "вращающиеся цилиндры": 555845571,
+    "вращающиеся цилиндры": 555848915,
     "выработки в лунах": 82595969,
-    "орбитальные кольца и станции": 238219530,
+    "орбитальные кольца и станции": 238220963,
     "поверхность (купола, открытые поселения)": 2720000,
     "подземные поселения (лавовые трубки, шахтные города)": 4080000
    },
@@ -2939,24 +2939,24 @@
    "balance": {
     "chemicals": {
      "consumption": 11201,
-     "exports": 33603,
+     "exports": 33602,
      "imports": 0,
      "losses": 67,
-     "production": 44871,
+     "production": 44869,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 9965,
-     "exports": 29895,
+     "consumption": 9964,
+     "exports": 29894,
      "imports": 0,
      "losses": 60,
-     "production": 39919,
+     "production": 39918,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 11315,
+     "consumption": 11314,
      "exports": 0,
      "imports": 2359,
      "losses": 0,
@@ -2983,20 +2983,20 @@
      "unmet": 265
     },
     "food": {
-     "consumption": 55013,
-     "exports": 159121,
+     "consumption": 55010,
+     "exports": 159115,
      "imports": 1972,
      "losses": 318,
-     "production": 212480,
+     "production": 212472,
      "stock_change": 0,
      "unmet": 0
     },
     "jump_charge": {
      "consumption": 3693,
-     "exports": 15232,
+     "exports": 15231,
      "imports": 0,
      "losses": 30,
-     "production": 18956,
+     "production": 18955,
      "stock_change": 0,
      "unmet": 0
     },
@@ -3029,19 +3029,19 @@
     },
     "metals": {
      "consumption": 5234,
-     "exports": 15703,
+     "exports": 15702,
      "imports": 0,
      "losses": 31,
-     "production": 20969,
+     "production": 20968,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 23725,
-     "exports": 71176,
+     "consumption": 23724,
+     "exports": 71173,
      "imports": 0,
      "losses": 142,
-     "production": 95044,
+     "production": 95040,
      "stock_change": 0,
      "unmet": 0
     },
@@ -3055,11 +3055,11 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 90478,
+     "consumption": 90475,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 90478,
+     "production": 90475,
      "stock_change": 0,
      "unmet": 0
     },
@@ -3077,14 +3077,14 @@
     {
      "body": "Gliese 876 g",
      "name": "Провидение",
-     "pop": 50215,
+     "pop": 50213,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "Gliese 876 f",
      "name": "Gliese 876 f — поселение",
-     "pop": 25107,
+     "pop": 25106,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
@@ -3119,24 +3119,24 @@
     {
      "body": "—",
      "name": "прочие поселения (0)",
-     "pop": 4983,
+     "pop": 4982,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 99649,
+    "largest_city": 99645,
     "settlements_total": 1
    },
-   "exports_cr_y": 347354270,
+   "exports_cr_y": 347339780,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 22458184,
+    "jump_charge_cost_cr_y": 22457262,
     "jump_charge_imports_t_y": 0.0,
-    "jump_charge_local_t_y": 3723.8,
-    "jump_charge_t_y": 3915.0,
+    "jump_charge_local_t_y": 3723.6,
+    "jump_charge_t_y": 3914.8,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 13168254,
+    "reactor_fuel_cost_cr_y": 13168246,
     "reactor_fuel_imports_t_y": 0.0,
     "reactor_fuel_local_t_y": 20.0,
     "reactor_fuel_power_t_y": 1.4,
@@ -3147,10 +3147,10 @@
     "strategic_reserve_charge_t": 965.3,
     "strategic_reserve_reactor_t": 5.4
    },
-   "gdp_cr_y": 1739771891,
+   "gdp_cr_y": 1739702055,
    "gdp_per_capita_cr": 17459,
    "growth_per_year": -0.00489,
-   "imports_cr_y": 30300172,
+   "imports_cr_y": 30298956,
    "income_index": 2.686,
    "motives": {
     "alliance_obligation": 0.2,
@@ -3164,16 +3164,16 @@
     "trade_dependence": 0.35
    },
    "name": "Провидение",
-   "polity": "Культ Машины / Провидение",
-   "population": 99649,
+   "polity": "Провидение",
+   "population": 99645,
    "regime": "machine_oracle",
    "settlement_structure": {
     "астероидные поселения": 0,
     "вращающиеся цилиндры": 0,
     "выработки в лунах": 0,
     "орбитальные кольца и станции": 0,
-    "поверхность (купола, открытые поселения)": 39860,
-    "подземные поселения (лавовые трубки, шахтные города)": 59789
+    "поверхность (купола, открытые поселения)": 39858,
+    "подземные поселения (лавовые трубки, шахтные города)": 59787
    },
    "status": "PROPOSAL",
    "system": 13,
@@ -3484,29 +3484,29 @@
   "hd20794_hellas2": {
    "balance": {
     "chemicals": {
-     "consumption": 27682325,
+     "consumption": 27681904,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 27682325,
+     "production": 27681904,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 68597018,
+     "consumption": 68595803,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 68597018,
+     "production": 68595803,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 30562230,
+     "consumption": 30561764,
      "exports": 0,
-     "imports": 5075918,
+     "imports": 5075840,
      "losses": 0,
-     "production": 25486312,
+     "production": 25485924,
      "stock_change": 0,
      "unmet": 0
     },
@@ -3520,74 +3520,74 @@
      "unmet": 6367
     },
     "electronics": {
-     "consumption": 485592,
+     "consumption": 485584,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 485592,
+     "production": 485584,
      "stock_change": 0,
-     "unmet": 605898
+     "unmet": 605889
     },
     "food": {
-     "consumption": 138086160,
-     "exports": 21783207,
-     "imports": 4950389,
-     "losses": 43566,
-     "production": 154962545,
+     "consumption": 138084054,
+     "exports": 21783513,
+     "imports": 4950313,
+     "losses": 43567,
+     "production": 154960821,
      "stock_change": 0,
      "unmet": 0
     },
     "jump_charge": {
-     "consumption": 106569,
-     "exports": 62578,
+     "consumption": 106572,
+     "exports": 62577,
      "imports": 0,
      "losses": 125,
-     "production": 169272,
+     "production": 169274,
      "stock_change": 0,
      "unmet": 0
     },
     "luxury": {
-     "consumption": 559340,
+     "consumption": 559331,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 559340,
+     "production": 559331,
      "stock_change": 0,
-     "unmet": 459401
+     "unmet": 459394
     },
     "machinery": {
-     "consumption": 2500201,
+     "consumption": 2500163,
      "exports": 0,
-     "imports": 809291,
+     "imports": 809279,
      "losses": 0,
-     "production": 1690909,
+     "production": 1690884,
      "stock_change": 0,
      "unmet": 0
     },
     "medical": {
-     "consumption": 1018741,
+     "consumption": 1018725,
      "exports": 0,
-     "imports": 380475,
+     "imports": 380469,
      "losses": 0,
-     "production": 638266,
+     "production": 638257,
      "stock_change": 0,
      "unmet": 0
     },
     "metals": {
-     "consumption": 24032443,
-     "exports": 16640718,
+     "consumption": 24032035,
+     "exports": 16641323,
      "imports": 0,
-     "losses": 33281,
-     "production": 40706443,
+     "losses": 33283,
+     "production": 40706641,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 124921731,
+     "consumption": 124919575,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 124921731,
+     "production": 124919575,
      "stock_change": 0,
      "unmet": 0
     },
@@ -3601,43 +3601,43 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 235132378,
+     "consumption": 235128761,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 235132378,
+     "production": 235128761,
      "stock_change": 0,
      "unmet": 0
     },
     "weapons": {
-     "consumption": 98691,
+     "consumption": 98689,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 98691,
+     "production": 98689,
      "stock_change": 0,
-     "unmet": 49045
+     "unmet": 49044
     }
    },
    "cities": [
     {
      "body": "HD 20794 K3",
-     "name": "Вторая Эллада",
-     "pop": 32430910,
+     "name": "Хомстед",
+     "pop": 32430416,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "HD 20794 K2",
      "name": "HD 20794 K2 — поселение",
-     "pop": 16215455,
+     "pop": 16215208,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "HD 20794 K1",
      "name": "HD 20794 K1 — поселение",
-     "pop": 10810303,
+     "pop": 10810139,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
@@ -3651,7 +3651,7 @@
     {
      "body": "HD 20794 K3 (орбита)",
      "name": "Звёздный Университет",
-     "pop": 270258,
+     "pop": 270253,
      "role": "научное поселение",
      "status": "PROPOSAL"
     },
@@ -3665,24 +3665,24 @@
     {
      "body": "—",
      "name": "прочие поселения (1245)",
-     "pop": 189677003,
+     "pop": 189674101,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 32430910,
+    "largest_city": 32430416,
     "settlements_total": 1251
    },
-   "exports_cr_y": 38273013607,
+   "exports_cr_y": 38273947254,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 615114128,
+    "jump_charge_cost_cr_y": 615132624,
     "jump_charge_imports_t_y": 0.0,
-    "jump_charge_local_t_y": 106694.3,
-    "jump_charge_t_y": 107229.1,
+    "jump_charge_local_t_y": 106697.5,
+    "jump_charge_t_y": 107232.3,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 1296087290,
+    "reactor_fuel_cost_cr_y": 1296080072,
     "reactor_fuel_imports_t_y": 0.0,
     "reactor_fuel_local_t_y": 2030.9,
     "reactor_fuel_power_t_y": 949.8,
@@ -3690,13 +3690,13 @@
     "reactor_fuel_t_y": 2160.1,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
-    "strategic_reserve_charge_t": 26440.1,
+    "strategic_reserve_charge_t": 26440.8,
     "strategic_reserve_reactor_t": 532.6
    },
-   "gdp_cr_y": 5059030964774,
+   "gdp_cr_y": 5058953830860,
    "gdp_per_capita_cr": 20234,
    "growth_per_year": 0.00175,
-   "imports_cr_y": 65022950480,
+   "imports_cr_y": 65021959090,
    "income_index": 3.113,
    "motives": {
     "alliance_obligation": 0.2,
@@ -3709,16 +3709,16 @@
     "status": "PROPOSAL",
     "trade_dependence": 0.26
    },
-   "name": "Вторая Эллада",
-   "polity": "Вторая Эллада",
-   "population": 250020063,
+   "name": "Хомстед",
+   "polity": "Хомстед",
+   "population": 250016251,
    "regime": "corporate_democracy",
    "settlement_structure": {
-    "аванпост: Реле HD 10360": 3862,
+    "аванпост: Реле HD 10360": 3860,
     "астероидные поселения": 13699626,
-    "вращающиеся цилиндры": 144456604,
+    "вращающиеся цилиндры": 144453937,
     "выработки в лунах": 25549998,
-    "орбитальные кольца и станции": 61909973,
+    "орбитальные кольца и станции": 61908830,
     "поверхность (купола, открытые поселения)": 1760000,
     "подземные поселения (лавовые трубки, шахтные города)": 2640000
    },
@@ -3771,29 +3771,29 @@
   "hd20794_newindia": {
    "balance": {
     "chemicals": {
-     "consumption": 100710190,
+     "consumption": 100710229,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 100710190,
+     "production": 100710229,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 641700153,
+     "consumption": 641700361,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 641700153,
+     "production": 641700361,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 112740105,
+     "consumption": 112740147,
      "exports": 0,
-     "imports": 18832262,
+     "imports": 18832270,
      "losses": 0,
-     "production": 93907842,
+     "production": 93907878,
      "stock_change": 0,
      "unmet": 0
     },
@@ -3807,74 +3807,74 @@
      "unmet": 37580
     },
     "electronics": {
-     "consumption": 4020055,
+     "consumption": 4020056,
      "exports": 0,
-     "imports": 2235980,
+     "imports": 2235981,
      "losses": 0,
-     "production": 1784074,
+     "production": 1784075,
      "stock_change": 0,
      "unmet": 0
     },
     "food": {
-     "consumption": 498802856,
-     "exports": 6794784,
-     "imports": 17882082,
+     "consumption": 498803045,
+     "exports": 6794869,
+     "imports": 17882089,
      "losses": 13590,
-     "production": 487729147,
+     "production": 487729415,
      "stock_change": 0,
      "unmet": 0
     },
     "jump_charge": {
-     "consumption": 60873,
+     "consumption": 60874,
      "exports": 12254,
      "imports": 0,
      "losses": 25,
-     "production": 73152,
+     "production": 73153,
      "stock_change": 0,
      "unmet": 0
     },
     "luxury": {
-     "consumption": 2063332,
+     "consumption": 2063333,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 2063332,
+     "production": 2063333,
      "stock_change": 0,
      "unmet": 1694672
     },
     "machinery": {
-     "consumption": 9030601,
+     "consumption": 9030605,
      "exports": 0,
-     "imports": 2942559,
+     "imports": 2942560,
      "losses": 0,
-     "production": 6088042,
+     "production": 6088045,
      "stock_change": 0,
      "unmet": 0
     },
     "medical": {
-     "consumption": 3758003,
+     "consumption": 3758005,
      "exports": 0,
      "imports": 1412420,
      "losses": 0,
-     "production": 2345584,
+     "production": 2345585,
      "stock_change": 0,
      "unmet": 0
     },
     "metals": {
-     "consumption": 185632984,
-     "exports": 8281730,
+     "consumption": 185633045,
+     "exports": 8282032,
      "imports": 0,
-     "losses": 16563,
-     "production": 193931277,
+     "losses": 16564,
+     "production": 193931642,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 1043215655,
+     "consumption": 1043215998,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 1043215655,
+     "production": 1043215998,
      "stock_change": 0,
      "unmet": 0
     },
@@ -3888,43 +3888,43 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 929181835,
+     "consumption": 929182180,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 929181835,
+     "production": 929182180,
      "stock_change": 0,
      "unmet": 0
     },
     "weapons": {
-     "consumption": 547127,
+     "consumption": 547118,
      "exports": 0,
-     "imports": 168090,
+     "imports": 168081,
      "losses": 0,
      "production": 379037,
      "stock_change": 0,
-     "unmet": 21905
+     "unmet": 21914
     }
    },
    "cities": [
     {
      "body": "HD 20794 K3",
      "name": "Новая Индия",
-     "pop": 100421375,
+     "pop": 100421413,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "HD 20794 K2",
      "name": "HD 20794 K2 — поселение",
-     "pop": 50210688,
+     "pop": 50210707,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "HD 20794 K1",
      "name": "HD 20794 K1 — поселение",
-     "pop": 33473792,
+     "pop": 33473804,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
@@ -3945,24 +3945,24 @@
     {
      "body": "—",
      "name": "прочие поселения (4511)",
-     "pop": 716614624,
+     "pop": 716614897,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 100421375,
+    "largest_city": 100421413,
     "settlements_total": 4516
    },
-   "exports_cr_y": 15287460266,
+   "exports_cr_y": 15287869911,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 350105455,
+    "jump_charge_cost_cr_y": 350114441,
     "jump_charge_imports_t_y": 0.0,
-    "jump_charge_local_t_y": 60897.4,
-    "jump_charge_t_y": 61031.8,
+    "jump_charge_local_t_y": 60899.0,
+    "jump_charge_t_y": 61033.3,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 3537333428,
+    "reactor_fuel_cost_cr_y": 3537334075,
     "reactor_fuel_imports_t_y": 0.0,
     "reactor_fuel_local_t_y": 5273.3,
     "reactor_fuel_power_t_y": 3633.5,
@@ -3970,13 +3970,13 @@
     "reactor_fuel_t_y": 5895.6,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
-    "strategic_reserve_charge_t": 15048.9,
+    "strategic_reserve_charge_t": 15049.3,
     "strategic_reserve_reactor_t": 1453.7
    },
-   "gdp_cr_y": 19059535679242,
+   "gdp_cr_y": 19059542897324,
    "gdp_per_capita_cr": 21106,
    "growth_per_year": 0.00937,
-   "imports_cr_y": 516197362944,
+   "imports_cr_y": 516197162631,
    "income_index": 3.247,
    "motives": {
     "alliance_obligation": 0.2,
@@ -3991,13 +3991,13 @@
    },
    "name": "Новая Индия",
    "polity": "Дхарма-Мандала (южная ветвь)",
-   "population": 903060135,
+   "population": 903060477,
    "regime": "merit_caste_republic",
    "settlement_structure": {
     "астероидные поселения": 12557624,
-    "вращающиеся цилиндры": 604437653,
+    "вращающиеся цилиндры": 604437893,
     "выработки в лунах": 23420149,
-    "орбитальные кольца и станции": 259044708,
+    "орбитальные кольца и станции": 259044811,
     "поверхность (купола, открытые поселения)": 1440000,
     "подземные поселения (лавовые трубки, шахтные города)": 2160000
    },
@@ -4062,29 +4062,29 @@
   "hd40307_firmament": {
    "balance": {
     "chemicals": {
-     "consumption": 21817852,
+     "consumption": 21818043,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 21817852,
+     "production": 21818043,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 143739672,
+     "consumption": 143741121,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 143739672,
+     "production": 143741121,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 24089071,
+     "consumption": 24089282,
      "exports": 0,
-     "imports": 4148321,
+     "imports": 4148358,
      "losses": 0,
-     "production": 19940749,
+     "production": 19940924,
      "stock_change": 0,
      "unmet": 0
     },
@@ -4098,20 +4098,20 @@
      "unmet": 8030
     },
     "electronics": {
-     "consumption": 366176,
+     "consumption": 366179,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 366176,
+     "production": 366179,
      "stock_change": 0,
-     "unmet": 493148
+     "unmet": 493152
     },
     "food": {
-     "consumption": 109504552,
+     "consumption": 109505512,
      "exports": 405493,
-     "imports": 3925738,
+     "imports": 3925773,
      "losses": 811,
-     "production": 105985118,
+     "production": 105986044,
      "stock_change": 0,
      "unmet": 0
     },
@@ -4125,47 +4125,47 @@
      "unmet": 0
     },
     "luxury": {
-     "consumption": 440870,
+     "consumption": 440874,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 440870,
+     "production": 440874,
      "stock_change": 0,
-     "unmet": 362099
+     "unmet": 362102
     },
     "machinery": {
-     "consumption": 1982791,
+     "consumption": 1982808,
      "exports": 0,
-     "imports": 669127,
+     "imports": 669133,
      "losses": 0,
-     "production": 1313664,
+     "production": 1313676,
      "stock_change": 0,
      "unmet": 0
     },
     "medical": {
-     "consumption": 802969,
+     "consumption": 802976,
      "exports": 0,
-     "imports": 311124,
+     "imports": 311127,
      "losses": 0,
-     "production": 491845,
+     "production": 491849,
      "stock_change": 0,
      "unmet": 0
     },
     "metals": {
-     "consumption": 41314215,
+     "consumption": 41314625,
      "exports": 0,
-     "imports": 8486256,
+     "imports": 8486340,
      "losses": 0,
-     "production": 32827959,
+     "production": 32828285,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 205667240,
+     "consumption": 205669297,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 205667240,
+     "production": 205669297,
      "stock_change": 0,
      "unmet": 0
     },
@@ -4179,20 +4179,20 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 204133627,
+     "consumption": 204135455,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 204133627,
+     "production": 204135455,
      "stock_change": 0,
      "unmet": 0
     },
     "weapons": {
-     "consumption": 102850,
+     "consumption": 102851,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 102850,
+     "production": 102851,
      "stock_change": 0,
      "unmet": 53987
     }
@@ -4201,21 +4201,21 @@
     {
      "body": "HD 40307 k",
      "name": "Небесная Твердыня",
-     "pop": 26516962,
+     "pop": 26517195,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "HD 40307 K2",
      "name": "HD 40307 K2 — поселение",
-     "pop": 13258481,
+     "pop": 13258597,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "HD 40307 K3",
      "name": "HD 40307 K3 — поселение",
-     "pop": 8838987,
+     "pop": 8839065,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
@@ -4229,7 +4229,7 @@
     {
      "body": "HD 40307 k (орбита)",
      "name": "Флотская база",
-     "pop": 441949,
+     "pop": 441953,
      "role": "военная база",
      "status": "PROPOSAL"
     },
@@ -4243,26 +4243,26 @@
     {
      "body": "—",
      "name": "прочие поселения (986)",
-     "pop": 148722736,
+     "pop": 148724044,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 26516962,
+    "largest_city": 26517195,
     "settlements_total": 992
    },
-   "exports_cr_y": 364943854,
+   "exports_cr_y": 364943888,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 64590108,
+    "jump_charge_cost_cr_y": 64590200,
     "jump_charge_imports_t_y": 4560.1,
     "jump_charge_local_t_y": 6699.5,
     "jump_charge_t_y": 11259.6,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 864199509,
+    "reactor_fuel_cost_cr_y": 864202801,
     "reactor_fuel_imports_t_y": 0.0,
-    "reactor_fuel_local_t_y": 1311.8,
+    "reactor_fuel_local_t_y": 1311.9,
     "reactor_fuel_power_t_y": 787.4,
     "reactor_fuel_ships_t_y": 652.9,
     "reactor_fuel_t_y": 1440.3,
@@ -4271,10 +4271,10 @@
     "strategic_reserve_charge_t": 5552.7,
     "strategic_reserve_reactor_t": 710.3
    },
-   "gdp_cr_y": 3963102851662,
+   "gdp_cr_y": 3963137609925,
    "gdp_per_capita_cr": 19988,
    "growth_per_year": 0.01178,
-   "imports_cr_y": 62470723760,
+   "imports_cr_y": 62471282134,
    "income_index": 3.075,
    "motives": {
     "alliance_obligation": 0.6,
@@ -4288,14 +4288,14 @@
     "trade_dependence": 0.32
    },
    "name": "Небесная Твердыня",
-   "polity": "Синь Хэ (дальняя провинция)",
-   "population": 198279067,
+   "polity": "Синьхэ (провинция Тяньлэй)",
+   "population": 198280806,
    "regime": "party_technocracy",
    "settlement_structure": {
     "астероидные поселения": 16495578,
-    "вращающиеся цилиндры": 108882812,
+    "вращающиеся цилиндры": 108884028,
     "выработки в лунах": 23036616,
-    "орбитальные кольца и станции": 46664062,
+    "орбитальные кольца и станции": 46664584,
     "поверхность (купола, открытые поселения)": 1280000,
     "подземные поселения (лавовые трубки, шахтные города)": 1920000
    },
@@ -4360,29 +4360,29 @@
   "hd40307_maland": {
    "balance": {
     "chemicals": {
-     "consumption": 49046542,
+     "consumption": 49048774,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 49046542,
+     "production": 49048774,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 323254703,
+     "consumption": 323270701,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 323254703,
+     "production": 323270701,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 54032478,
+     "consumption": 54034937,
      "exports": 0,
-     "imports": 9196248,
+     "imports": 9196666,
      "losses": 0,
-     "production": 44836231,
+     "production": 44838271,
      "stock_change": 0,
      "unmet": 0
     },
@@ -4393,23 +4393,23 @@
      "losses": 0,
      "production": 4503,
      "stock_change": 0,
-     "unmet": 18011
+     "unmet": 18012
     },
     "electronics": {
-     "consumption": 1928998,
+     "consumption": 1929086,
      "exports": 0,
-     "imports": 1092383,
+     "imports": 1092433,
      "losses": 0,
-     "production": 836615,
+     "production": 836653,
      "stock_change": 0,
      "unmet": 0
     },
     "food": {
-     "consumption": 246102178,
+     "consumption": 246113375,
      "exports": 0,
-     "imports": 8822763,
+     "imports": 8823165,
      "losses": 0,
-     "production": 237279415,
+     "production": 237290211,
      "stock_change": 0,
      "unmet": 0
     },
@@ -4423,47 +4423,47 @@
      "unmet": 0
     },
     "luxury": {
-     "consumption": 988884,
+     "consumption": 988929,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 988884,
+     "production": 988929,
      "stock_change": 0,
-     "unmet": 812198
+     "unmet": 812235
     },
     "machinery": {
-     "consumption": 4456160,
+     "consumption": 4456363,
      "exports": 0,
-     "imports": 1483664,
+     "imports": 1483731,
      "losses": 0,
-     "production": 2972496,
+     "production": 2972632,
      "stock_change": 0,
      "unmet": 0
     },
     "medical": {
-     "consumption": 1801083,
+     "consumption": 1801165,
      "exports": 0,
-     "imports": 689719,
+     "imports": 689750,
      "losses": 0,
-     "production": 1111364,
+     "production": 1111415,
      "stock_change": 0,
      "unmet": 0
     },
     "metals": {
-     "consumption": 92922480,
+     "consumption": 92927030,
      "exports": 0,
-     "imports": 18861983,
+     "imports": 18862907,
      "losses": 0,
-     "production": 74060496,
+     "production": 74064123,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 463271880,
+     "consumption": 463294685,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 463271880,
+     "production": 463294685,
      "stock_change": 0,
      "unmet": 0
     },
@@ -4477,50 +4477,50 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 458834802,
+     "consumption": 458855936,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 458834802,
+     "production": 458855936,
      "stock_change": 0,
      "unmet": 0
     },
     "weapons": {
-     "consumption": 218476,
+     "consumption": 218486,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 218476,
+     "production": 218486,
      "stock_change": 0,
-     "unmet": 112748
+     "unmet": 112753
     }
    },
    "cities": [
     {
      "body": "HD 40307 k",
      "name": "Новая Маланд",
-     "pop": 53774530,
+     "pop": 53776977,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "HD 40307 K2",
      "name": "HD 40307 K2 — поселение",
-     "pop": 26887265,
+     "pop": 26888488,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "HD 40307 K3",
      "name": "HD 40307 K3 — поселение",
-     "pop": 17924843,
+     "pop": 17925659,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "HD 40307 K2",
      "name": "Агрокольца Маланд («Житница»)",
-     "pop": 13443633,
+     "pop": 13444244,
      "role": "аграрный город",
      "status": "PROPOSAL"
     },
@@ -4534,45 +4534,45 @@
     {
      "body": "HD 40307 k (орбита)",
      "name": "Внешний дозор",
-     "pop": 896242,
+     "pop": 896283,
      "role": "военная база",
      "status": "PROPOSAL"
     },
     {
      "body": "—",
      "name": "прочие поселения (2223)",
-     "pop": 332128468,
+     "pop": 332143605,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 53774530,
+    "largest_city": 53776977,
     "settlements_total": 2229
    },
    "exports_cr_y": 0,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 55847940,
-    "jump_charge_imports_t_y": 3942.9,
-    "jump_charge_local_t_y": 5792.7,
-    "jump_charge_t_y": 9735.6,
+    "jump_charge_cost_cr_y": 55848985,
+    "jump_charge_imports_t_y": 3943.0,
+    "jump_charge_local_t_y": 5792.8,
+    "jump_charge_t_y": 9735.8,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 1715454904,
+    "reactor_fuel_cost_cr_y": 1715598942,
     "reactor_fuel_imports_t_y": 0.0,
     "reactor_fuel_local_t_y": 2572.2,
     "reactor_fuel_power_t_y": 1768.9,
-    "reactor_fuel_ships_t_y": 1090.2,
-    "reactor_fuel_t_y": 2859.1,
+    "reactor_fuel_ships_t_y": 1090.4,
+    "reactor_fuel_t_y": 2859.3,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
     "strategic_reserve_charge_t": 2400.6,
     "strategic_reserve_reactor_t": 705.0
    },
-   "gdp_cr_y": 8871991672362,
+   "gdp_cr_y": 8872395337475,
    "gdp_per_capita_cr": 19910,
    "growth_per_year": 0.01048,
-   "imports_cr_y": 269708230273,
+   "imports_cr_y": 269720573202,
    "income_index": 3.063,
    "motives": {
     "alliance_obligation": 0.2,
@@ -4586,14 +4586,14 @@
     "trade_dependence": 0.61
    },
    "name": "Новая Маланд",
-   "polity": "Уджамаа-Джахи",
-   "population": 445615996,
+   "polity": "Содружество Уджамаа",
+   "population": 445636271,
    "regime": "council_of_chiefs",
    "settlement_structure": {
     "астероидные поселения": 19751775,
-    "вращающиеся цилиндры": 275436154,
+    "вращающиеся цилиндры": 275450346,
     "выработки в лунах": 27584001,
-    "орбитальные кольца и станции": 118044066,
+    "орбитальные кольца и станции": 118050149,
     "поверхность (купола, открытые поселения)": 1920000,
     "подземные поселения (лавовые трубки, шахтные города)": 2880000
    },
@@ -4664,29 +4664,29 @@
   "hd69830_verde": {
    "balance": {
     "chemicals": {
-     "consumption": 22743544,
+     "consumption": 22743546,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 22743544,
+     "production": 22743546,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 50571733,
+     "consumption": 50571737,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 50571733,
+     "production": 50571737,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 25588928,
+     "consumption": 25588930,
      "exports": 0,
-     "imports": 4431089,
+     "imports": 4431090,
      "losses": 0,
-     "production": 21157839,
+     "production": 21157841,
      "stock_change": 0,
      "unmet": 0
     },
@@ -4709,11 +4709,11 @@
      "unmet": 523677
     },
     "food": {
-     "consumption": 113108276,
+     "consumption": 113108287,
      "exports": 0,
      "imports": 4054932,
      "losses": 0,
-     "production": 109053345,
+     "production": 109053355,
      "stock_change": 0,
      "unmet": 0
     },
@@ -4754,20 +4754,20 @@
      "unmet": 0
     },
     "metals": {
-     "consumption": 18269545,
+     "consumption": 18269547,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 18269545,
+     "production": 18269547,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 93862759,
+     "consumption": 93862766,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 93862759,
+     "production": 93862766,
      "stock_change": 0,
      "unmet": 0
     },
@@ -4781,11 +4781,11 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 191574029,
+     "consumption": 191574046,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 191574029,
+     "production": 191574046,
      "stock_change": 0,
      "unmet": 0
     },
@@ -4802,22 +4802,22 @@
    "cities": [
     {
      "body": "HD 69830 l",
-     "name": "Сельта-Верде",
-     "pop": 27270756,
+     "name": "Сельва-Верде",
+     "pop": 27270759,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "HD 69830 K2",
      "name": "HD 69830 K2 — поселение",
-     "pop": 13635378,
+     "pop": 13635379,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "HD 69830 K4",
      "name": "HD 69830 K4 — поселение",
-     "pop": 9090252,
+     "pop": 9090253,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
@@ -4838,24 +4838,24 @@
     {
      "body": "—",
      "name": "прочие поселения (1019)",
-     "pop": 154287192,
+     "pop": 154287206,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 27270756,
+    "largest_city": 27270759,
     "settlements_total": 1024
    },
    "exports_cr_y": 0,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 19299215,
+    "jump_charge_cost_cr_y": 19299216,
     "jump_charge_imports_t_y": 29.6,
     "jump_charge_local_t_y": 3334.7,
     "jump_charge_t_y": 3364.3,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 673965361,
+    "reactor_fuel_cost_cr_y": 673965397,
     "reactor_fuel_imports_t_y": 0.0,
     "reactor_fuel_local_t_y": 1024.4,
     "reactor_fuel_power_t_y": 771.9,
@@ -4866,10 +4866,10 @@
     "strategic_reserve_charge_t": 829.6,
     "strategic_reserve_reactor_t": 277.0
    },
-   "gdp_cr_y": 4329989697761,
-   "gdp_per_capita_cr": 21144,
+   "gdp_cr_y": 4329990099507,
+   "gdp_per_capita_cr": 21145,
    "growth_per_year": 0.01483,
-   "imports_cr_y": 56435312069,
+   "imports_cr_y": 56435317305,
    "income_index": 3.253,
    "motives": {
     "alliance_obligation": 0.2,
@@ -4882,14 +4882,14 @@
     "status": "PROPOSAL",
     "trade_dependence": 0.26
    },
-   "name": "Сельта-Верде",
-   "polity": "Сельта-Верде («Затерянный мир»)",
-   "population": 204780898,
+   "name": "Сельва-Верде",
+   "polity": "Сельва-Верде",
+   "population": 204780917,
    "regime": "grandees_and_church",
    "settlement_structure": {
-    "астероидные поселения": 95553021,
+    "астероидные поселения": 95553031,
     "вращающиеся цилиндры": 0,
-    "выработки в лунах": 91627877,
+    "выработки в лунах": 91627886,
     "орбитальные кольца и станции": 0,
     "поверхность (купола, открытые поселения)": 7040000,
     "подземные поселения (лавовые трубки, шахтные города)": 10560000
@@ -4943,29 +4943,29 @@
   "lalande_hellas": {
    "balance": {
     "chemicals": {
-     "consumption": 34377839,
+     "consumption": 34377817,
      "exports": 0,
-     "imports": 7425613,
+     "imports": 7425609,
      "losses": 0,
-     "production": 26952226,
+     "production": 26952209,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 97829234,
-     "exports": 5705294,
+     "consumption": 97829178,
+     "exports": 5702278,
      "imports": 0,
-     "losses": 11411,
-     "production": 103545939,
+     "losses": 11405,
+     "production": 103542860,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 38061166,
+     "consumption": 38061148,
      "exports": 0,
-     "imports": 6284963,
+     "imports": 6284960,
      "losses": 0,
-     "production": 31776203,
+     "production": 31776188,
      "stock_change": 0,
      "unmet": 0
     },
@@ -4985,23 +4985,23 @@
      "losses": 0,
      "production": 609945,
      "stock_change": 0,
-     "unmet": 751827
+     "unmet": 751826
     },
     "food": {
-     "consumption": 181034062,
+     "consumption": 181033975,
      "exports": 0,
-     "imports": 30250792,
+     "imports": 30250777,
      "losses": 0,
-     "production": 150783270,
+     "production": 150783198,
      "stock_change": 0,
      "unmet": 0
     },
     "jump_charge": {
-     "consumption": 74022,
+     "consumption": 73986,
      "exports": 0,
-     "imports": 21378,
+     "imports": 21367,
      "losses": 0,
-     "production": 52645,
+     "production": 52619,
      "stock_change": 0,
      "unmet": 0
     },
@@ -5015,16 +5015,16 @@
      "unmet": 405605
     },
     "machinery": {
-     "consumption": 3276075,
+     "consumption": 3276073,
      "exports": 0,
      "imports": 1053382,
      "losses": 0,
-     "production": 2222693,
+     "production": 2222691,
      "stock_change": 0,
      "unmet": 0
     },
     "medical": {
-     "consumption": 1268706,
+     "consumption": 1268705,
      "exports": 0,
      "imports": 471372,
      "losses": 0,
@@ -5033,20 +5033,20 @@
      "unmet": 0
     },
     "metals": {
-     "consumption": 33105091,
+     "consumption": 33105070,
      "exports": 0,
-     "imports": 3617543,
+     "imports": 3617541,
      "losses": 0,
-     "production": 29487548,
+     "production": 29487529,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 162840617,
-     "exports": 13151600,
+     "consumption": 162840518,
+     "exports": 13144725,
      "imports": 0,
-     "losses": 26303,
-     "production": 176018520,
+     "losses": 26289,
+     "production": 176011533,
      "stock_change": 0,
      "unmet": 0
     },
@@ -5060,13 +5060,13 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 255608483,
+     "consumption": 255608353,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 255608483,
+     "production": 255608353,
      "stock_change": 0,
-     "unmet": 25898657
+     "unmet": 25898644
     },
     "weapons": {
      "consumption": 71460,
@@ -5081,29 +5081,29 @@
    "cities": [
     {
      "body": "Lalande 21185 m",
-     "name": "Новая Эллада / Агора",
-     "pop": 41056850,
+     "name": "Агора",
+     "pop": 41056830,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "Lalande 21185 h",
      "name": "Lalande 21185 h — поселение",
-     "pop": 20528425,
+     "pop": 20528415,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Lalande 21185 k",
      "name": "Lalande 21185 k — поселение",
-     "pop": 13685617,
+     "pop": 13685610,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Lalande 21185 m (орбита)",
-     "name": "Агора — нейтральный порт и биржа",
-     "pop": 1368562,
+     "name": "Ставродроми — нейтральный порт и биржа",
+     "pop": 1368561,
      "role": "орбитальный порт / биржа",
      "status": "PROPOSAL"
     },
@@ -5124,24 +5124,24 @@
     {
      "body": "—",
      "name": "прочие поселения (1633)",
-     "pop": 250249102,
+     "pop": 250248982,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 41056850,
+    "largest_city": 41056830,
     "settlements_total": 1639
    },
-   "exports_cr_y": 4033598937,
+   "exports_cr_y": 4032268155,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 425182014,
-    "jump_charge_imports_t_y": 21377.6,
-    "jump_charge_local_t_y": 52644.5,
-    "jump_charge_t_y": 74119.4,
+    "jump_charge_cost_cr_y": 424977260,
+    "jump_charge_imports_t_y": 21367.3,
+    "jump_charge_local_t_y": 52619.1,
+    "jump_charge_t_y": 74083.7,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 1340645157,
+    "reactor_fuel_cost_cr_y": 1340644858,
     "reactor_fuel_imports_t_y": 0.0,
     "reactor_fuel_local_t_y": 2088.6,
     "reactor_fuel_power_t_y": 1223.9,
@@ -5149,13 +5149,13 @@
     "reactor_fuel_t_y": 2234.4,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
-    "strategic_reserve_charge_t": 18276.0,
-    "strategic_reserve_reactor_t": 551.0
+    "strategic_reserve_charge_t": 18267.2,
+    "strategic_reserve_reactor_t": 550.9
    },
-   "gdp_cr_y": 5988009555996,
+   "gdp_cr_y": 5988006668072,
    "gdp_per_capita_cr": 18278,
    "growth_per_year": 0.0018,
-   "imports_cr_y": 120152260440,
+   "imports_cr_y": 120152147621,
    "income_index": 2.812,
    "motives": {
     "alliance_obligation": 0.2,
@@ -5168,15 +5168,15 @@
     "status": "PROPOSAL",
     "trade_dependence": 0.4
    },
-   "name": "Новая Эллада / Агора",
-   "polity": "Агор-Прим",
-   "population": 327607482,
+   "name": "Агора",
+   "polity": "Новая Эллада",
+   "population": 327607324,
    "regime": "shareholder_agora",
    "settlement_structure": {
     "астероидные поселения": 15793325,
-    "вращающиеся цилиндры": 209338507,
+    "вращающиеся цилиндры": 209338396,
     "выработки в лунах": 7159148,
-    "орбитальные кольца и станции": 89716503,
+    "орбитальные кольца и станции": 89716455,
     "поверхность (купола, открытые поселения)": 2240000,
     "подземные поселения (лавовые трубки, шахтные города)": 3360000
    },
@@ -5247,29 +5247,29 @@
   "lalande_mecca": {
    "balance": {
     "chemicals": {
-     "consumption": 84433517,
+     "consumption": 84434342,
      "exports": 0,
-     "imports": 18237640,
+     "imports": 18237818,
      "losses": 0,
-     "production": 66195877,
+     "production": 66196524,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 477525572,
-     "exports": 1901765,
+     "consumption": 477530408,
+     "exports": 1900759,
      "imports": 0,
-     "losses": 3804,
-     "production": 479431140,
+     "losses": 3802,
+     "production": 479434969,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 94209653,
+     "consumption": 94210575,
      "exports": 0,
-     "imports": 15448490,
+     "imports": 15448642,
      "losses": 0,
-     "production": 78761163,
+     "production": 78761934,
      "stock_change": 0,
      "unmet": 0
     },
@@ -5280,77 +5280,77 @@
      "losses": 0,
      "production": 7851,
      "stock_change": 0,
-     "unmet": 31403
+     "unmet": 31404
     },
     "electronics": {
-     "consumption": 3371547,
+     "consumption": 3371580,
      "exports": 0,
-     "imports": 1845648,
+     "imports": 1845666,
      "losses": 0,
-     "production": 1525899,
+     "production": 1525914,
      "stock_change": 0,
      "unmet": 0
     },
     "food": {
-     "consumption": 441964373,
+     "consumption": 441968699,
      "exports": 0,
-     "imports": 73852247,
+     "imports": 73852970,
      "losses": 0,
-     "production": 368112126,
+     "production": 368115730,
      "stock_change": 0,
      "unmet": 0
     },
     "jump_charge": {
-     "consumption": 36666,
+     "consumption": 36654,
      "exports": 0,
-     "imports": 10589,
+     "imports": 10586,
      "losses": 0,
-     "production": 26077,
+     "production": 26069,
      "stock_change": 0,
      "unmet": 0
     },
     "luxury": {
-     "consumption": 2136361,
+     "consumption": 2136382,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 2136361,
+     "production": 2136382,
      "stock_change": 0,
-     "unmet": 1003961
+     "unmet": 1003971
     },
     "machinery": {
-     "consumption": 7997435,
+     "consumption": 7997514,
      "exports": 0,
-     "imports": 2550820,
+     "imports": 2550845,
      "losses": 0,
-     "production": 5446615,
+     "production": 5446668,
      "stock_change": 0,
      "unmet": 0
     },
     "medical": {
-     "consumption": 3140322,
+     "consumption": 3140353,
      "exports": 0,
-     "imports": 1158637,
+     "imports": 1158648,
      "losses": 0,
-     "production": 1981685,
+     "production": 1981704,
      "stock_change": 0,
      "unmet": 0
     },
     "metals": {
-     "consumption": 140778500,
+     "consumption": 140779917,
      "exports": 0,
-     "imports": 15156750,
+     "imports": 15156903,
      "losses": 0,
-     "production": 125621750,
+     "production": 125623015,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 736257499,
-     "exports": 4383867,
+     "consumption": 736264933,
+     "exports": 4381575,
      "imports": 0,
-     "losses": 8768,
-     "production": 740650134,
+     "losses": 8763,
+     "production": 740655271,
      "stock_change": 0,
      "unmet": 0
     },
@@ -5364,102 +5364,102 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 667891769,
+     "consumption": 667898334,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 667891769,
+     "production": 667898334,
      "stock_change": 0,
-     "unmet": 67671853
+     "unmet": 67672518
     },
     "weapons": {
-     "consumption": 216589,
+     "consumption": 216591,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 216589,
+     "production": 216591,
      "stock_change": 0,
-     "unmet": 105697
+     "unmet": 105698
     }
    },
    "cities": [
     {
      "body": "Lalande 21185 m",
-     "name": "Новая Мекка",
-     "pop": 90151155,
+     "name": "Тауранга",
+     "pop": 90152037,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "Lalande 21185 h",
      "name": "Lalande 21185 h — поселение",
-     "pop": 45075577,
+     "pop": 45076019,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Lalande 21185 k",
      "name": "Lalande 21185 k — поселение",
-     "pop": 30050385,
+     "pop": 30050679,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Lalande 21185 m (орбита)",
-     "name": "Обсерватория-вычислитель «Расад»",
-     "pop": 751260,
+     "name": "Обсерватория-вычислитель Фаре-Татаи",
+     "pop": 751267,
      "role": "научное поселение",
      "status": "PROPOSAL"
     },
     {
      "body": "Lalande 21185 j",
-     "name": "Платформы Lalande 21185 j (доля Мекки)",
+     "name": "Платформы Lalande 21185 j (доля Капеху)",
      "pop": 959679,
      "role": "газовые платформы",
      "status": "PROPOSAL"
     },
     {
      "body": "Lalande 21185 h",
-     "name": "Сады Lalande 21185 g",
-     "pop": 22537789,
+     "name": "Огороды Мара-Каи (Lalande 21185 g)",
+     "pop": 22538009,
      "role": "аграрный город",
      "status": "PROPOSAL"
     },
     {
      "body": "—",
      "name": "прочие поселения (3993)",
-     "pop": 610217695,
+     "pop": 610223679,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 90151155,
+    "largest_city": 90152037,
     "settlements_total": 3999
    },
-   "exports_cr_y": 1596313315,
+   "exports_cr_y": 1595869721,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 210595584,
-    "jump_charge_imports_t_y": 10589.3,
-    "jump_charge_local_t_y": 26077.1,
-    "jump_charge_t_y": 36711.8,
+    "jump_charge_cost_cr_y": 210527716,
+    "jump_charge_imports_t_y": 10585.8,
+    "jump_charge_local_t_y": 26068.7,
+    "jump_charge_t_y": 36700.0,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 3048540836,
+    "reactor_fuel_cost_cr_y": 3048555660,
     "reactor_fuel_imports_t_y": 0.0,
     "reactor_fuel_local_t_y": 4619.6,
-    "reactor_fuel_power_t_y": 3107.9,
+    "reactor_fuel_power_t_y": 3108.0,
     "reactor_fuel_ships_t_y": 1973.0,
     "reactor_fuel_t_y": 5080.9,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
-    "strategic_reserve_charge_t": 9052.2,
+    "strategic_reserve_charge_t": 9049.3,
     "strategic_reserve_reactor_t": 1252.8
    },
-   "gdp_cr_y": 15028380731910,
-   "gdp_per_capita_cr": 18792,
+   "gdp_cr_y": 15028527850563,
+   "gdp_per_capita_cr": 18791,
    "growth_per_year": 0.00725,
-   "imports_cr_y": 522665257593,
+   "imports_cr_y": 522670360152,
    "income_index": 2.891,
    "motives": {
     "alliance_obligation": 0.2,
@@ -5472,15 +5472,15 @@
     "status": "PROPOSAL",
     "trade_dependence": 0.7
    },
-   "name": "Новая Мекка",
-   "polity": "Ильм-аль-Нуджум",
-   "population": 799743540,
-   "regime": "scholar_theocracy",
+   "name": "Тауранга",
+   "polity": "Капеху",
+   "population": 799751369,
+   "regime": "navigator_council",
    "settlement_structure": {
     "астероидные поселения": 15656454,
-    "вращающиеся цилиндры": 531196891,
+    "вращающиеся цилиндры": 531202372,
     "выработки в лунах": 7097104,
-    "орбитальные кольца и станции": 227655811,
+    "орбитальные кольца и станции": 227658159,
     "поверхность (купола, открытые поселения)": 7254912,
     "подземные поселения (лавовые трубки, шахтные города)": 10882368
    },
@@ -5762,7 +5762,7 @@
     "trade_dependence": 0.62
    },
    "name": "Ново-Фиваида",
-   "polity": "Синод Ново-Фиваиды",
+   "polity": "Ново-Фиваида",
    "population": 9229,
    "regime": "synod_theocracy",
    "settlement_structure": {
@@ -6130,110 +6130,110 @@
   "sol_authority": {
    "balance": {
     "chemicals": {
-     "consumption": 1560532073,
-     "exports": 47753155,
+     "consumption": 1560532118,
+     "exports": 47753072,
      "imports": 0,
      "losses": 95506,
-     "production": 1608380734,
+     "production": 1608380696,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 1264544592,
-     "exports": 11410588,
+     "consumption": 1264544654,
+     "exports": 11404555,
      "imports": 0,
-     "losses": 22821,
-     "production": 1275978001,
+     "losses": 22809,
+     "production": 1275972018,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 1732498816,
-     "exports": 185867692,
+     "consumption": 1732498866,
+     "exports": 185867560,
      "imports": 0,
      "losses": 371735,
-     "production": 1918738243,
+     "production": 1918738161,
      "stock_change": 0,
-     "unmet": 17905564
+     "unmet": 17905565
     },
     "controlled": {
-     "consumption": 231984,
+     "consumption": 231983,
      "exports": 0,
-     "imports": 86117,
+     "imports": 86116,
      "losses": 0,
      "production": 145867,
      "stock_change": 0,
-     "unmet": 497351
+     "unmet": 497352
     },
     "electronics": {
-     "consumption": 63435154,
-     "exports": 17761843,
+     "consumption": 63435156,
+     "exports": 17761844,
      "imports": 0,
      "losses": 35524,
-     "production": 81232521,
+     "production": 81232524,
      "stock_change": 0,
      "unmet": 2514184
     },
     "food": {
-     "consumption": 6466132363,
-     "exports": 191913588,
-     "imports": 10669118,
+     "consumption": 6466132549,
+     "exports": 191913655,
+     "imports": 10669119,
      "losses": 383827,
-     "production": 6647760660,
+     "production": 6647760913,
      "stock_change": 0,
      "unmet": 0
     },
     "jump_charge": {
-     "consumption": 7926816,
+     "consumption": 7926738,
      "exports": 0,
-     "imports": 7926816,
+     "imports": 7926738,
      "losses": 0,
      "production": 0,
      "stock_change": 0,
      "unmet": 0
     },
     "luxury": {
-     "consumption": 46003544,
+     "consumption": 46003546,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 46003544,
+     "production": 46003546,
      "stock_change": 0,
-     "unmet": 12343268
+     "unmet": 12343269
     },
     "machinery": {
-     "consumption": 116689614,
-     "exports": 30089998,
+     "consumption": 116689617,
+     "exports": 30089966,
      "imports": 0,
      "losses": 60180,
-     "production": 146839792,
+     "production": 146839763,
      "stock_change": 0,
      "unmet": 0
     },
     "medical": {
-     "consumption": 57003895,
-     "exports": 13939689,
+     "consumption": 57003897,
+     "exports": 13939679,
      "imports": 0,
      "losses": 27879,
-     "production": 70971464,
+     "production": 70971456,
      "stock_change": 0,
      "unmet": 1342917
     },
     "metals": {
-     "consumption": 795390496,
-     "exports": 34166578,
+     "consumption": 795390525,
+     "exports": 34161867,
      "imports": 0,
-     "losses": 68333,
-     "production": 829625408,
+     "losses": 68324,
+     "production": 829620716,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 3430430801,
-     "exports": 26303200,
+     "consumption": 3430430938,
+     "exports": 26289450,
      "imports": 0,
-     "losses": 52606,
-     "production": 3456786608,
+     "losses": 52579,
+     "production": 3456772967,
      "stock_change": 0,
      "unmet": 0
     },
@@ -6247,11 +6247,11 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 11134569520,
+     "consumption": 11134569845,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 11134569520,
+     "production": 11134569845,
      "stock_change": 0,
      "unmet": 0
     },
@@ -6269,38 +6269,38 @@
     {
      "body": "—",
      "name": "прочие поселения (58345)",
-     "pop": 11668961361,
+     "pop": 11668961697,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 1010173338,
+    "largest_city": 1010173368,
     "settlements_total": 58345
    },
-   "exports_cr_y": 4704934720180,
+   "exports_cr_y": 4704925169389,
    "fuel": {
     "depots": 11,
-    "jump_charge_cost_cr_y": 45542058063,
-    "jump_charge_imports_t_y": 7926815.5,
+    "jump_charge_cost_cr_y": 45541613280,
+    "jump_charge_imports_t_y": 7926738.0,
     "jump_charge_local_t_y": 0.0,
-    "jump_charge_t_y": 7939070.1,
+    "jump_charge_t_y": 7938992.6,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 50614227126,
+    "reactor_fuel_cost_cr_y": 50614114892,
     "reactor_fuel_imports_t_y": 0.0,
     "reactor_fuel_local_t_y": 83283.7,
     "reactor_fuel_power_t_y": 39730.0,
-    "reactor_fuel_ships_t_y": 44627.0,
-    "reactor_fuel_t_y": 84357.0,
+    "reactor_fuel_ships_t_y": 44626.8,
+    "reactor_fuel_t_y": 84356.9,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 90,
-    "strategic_reserve_charge_t": 1957578.9,
-    "strategic_reserve_reactor_t": 20800.4
+    "strategic_reserve_charge_t": 1957559.8,
+    "strategic_reserve_reactor_t": 20800.3
    },
-   "gdp_cr_y": 355563113342463,
+   "gdp_cr_y": 355563123578871,
    "gdp_per_capita_cr": 30471,
    "growth_per_year": -0.00013,
-   "imports_cr_y": 57620937492,
+   "imports_cr_y": 57620469156,
    "income_index": 4.688,
    "motives": {
     "alliance_obligation": 0.2,
@@ -6315,17 +6315,17 @@
    },
    "name": "Солнечная Администрация (Sol Authority)",
    "polity": "Солнечная Администрация (Sol Authority)",
-   "population": 11668961361,
+   "population": 11668961697,
    "regime": "sol_authority",
    "settlement_structure": {
-    "Земля: поверхность": 9960563363,
-    "Сол: Луна и точки Лагранжа": 461267459,
-    "Сол: Марс": 512519399,
-    "Сол: Меркурий": 51251940,
-    "Сол: внешние поселения": 34167960,
-    "Сол: пояс и Церера": 341679600,
-    "Сол: система Сатурна": 102503880,
-    "Сол: система Юпитера": 205007760
+    "Земля: поверхность": 9960563461,
+    "Сол: Луна и точки Лагранжа": 461267524,
+    "Сол: Марс": 512519471,
+    "Сол: Меркурий": 51251947,
+    "Сол: внешние поселения": 34167965,
+    "Сол: пояс и Церера": 341679647,
+    "Сол: система Сатурна": 102503894,
+    "Сол: система Юпитера": 205007788
    },
    "status": "PROPOSAL",
    "system": 0,
@@ -6361,29 +6361,29 @@
   "tau_ceti_cognium": {
    "balance": {
     "chemicals": {
-     "consumption": 138941243,
+     "consumption": 138941552,
      "exports": 0,
-     "imports": 71693682,
+     "imports": 71693841,
      "losses": 0,
-     "production": 67247562,
+     "production": 67247711,
      "stock_change": 0,
      "unmet": 0
     },
     "construction": {
-     "consumption": 383894639,
+     "consumption": 383895460,
      "exports": 0,
-     "imports": 176207639,
+     "imports": 176208016,
      "losses": 0,
-     "production": 207687000,
+     "production": 207687444,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 149786908,
+     "consumption": 149787241,
      "exports": 0,
-     "imports": 24461732,
+     "imports": 24461786,
      "losses": 0,
-     "production": 125325176,
+     "production": 125325455,
      "stock_change": 0,
      "unmet": 0
     },
@@ -6397,20 +6397,20 @@
      "unmet": 31206
     },
     "electronics": {
-     "consumption": 5391755,
+     "consumption": 5391767,
      "exports": 0,
-     "imports": 2939654,
+     "imports": 2939660,
      "losses": 0,
-     "production": 2452102,
+     "production": 2452107,
      "stock_change": 0,
      "unmet": 0
     },
     "food": {
-     "consumption": 748928220,
+     "consumption": 748929885,
      "exports": 0,
-     "imports": 139188310,
+     "imports": 139188619,
      "losses": 0,
-     "production": 609739910,
+     "production": 609741266,
      "stock_change": 0,
      "unmet": 0
     },
@@ -6424,47 +6424,47 @@
      "unmet": 0
     },
     "luxury": {
-     "consumption": 2741350,
+     "consumption": 2741356,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 2741350,
+     "production": 2741356,
      "stock_change": 0,
-     "unmet": 2251547
+     "unmet": 2251552
     },
     "machinery": {
-     "consumption": 13565518,
+     "consumption": 13565548,
      "exports": 0,
-     "imports": 4306346,
+     "imports": 4306356,
      "losses": 0,
-     "production": 9259172,
+     "production": 9259192,
      "stock_change": 0,
      "unmet": 0
     },
     "medical": {
-     "consumption": 4992897,
+     "consumption": 4992908,
      "exports": 0,
-     "imports": 1834630,
+     "imports": 1834634,
      "losses": 0,
-     "production": 3158267,
+     "production": 3158274,
      "stock_change": 0,
      "unmet": 0
     },
     "metals": {
-     "consumption": 86582793,
+     "consumption": 86582981,
      "exports": 0,
-     "imports": 67453939,
+     "imports": 67454086,
      "losses": 0,
-     "production": 19128854,
+     "production": 19128895,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 206593232,
+     "consumption": 206593676,
      "exports": 0,
-     "imports": 149242951,
+     "imports": 149243272,
      "losses": 0,
-     "production": 57350281,
+     "production": 57350404,
      "stock_change": 0,
      "unmet": 0
     },
@@ -6478,20 +6478,20 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 692525574,
+     "consumption": 692527112,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 692525574,
+     "production": 692527112,
      "stock_change": 0,
-     "unmet": 358347831
+     "unmet": 358348627
     },
     "weapons": {
-     "consumption": 696907,
+     "consumption": 696909,
      "exports": 0,
-     "imports": 227624,
+     "imports": 227625,
      "losses": 0,
-     "production": 469283,
+     "production": 469284,
      "stock_change": 0,
      "unmet": 0
     }
@@ -6499,15 +6499,15 @@
    "cities": [
     {
      "body": "Tau Ceti (орбитальные кольца)",
-     "name": "Новый Шанхай",
-     "pop": 144321844,
+     "name": "Синь-Шанхай",
+     "pop": 144322165,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "Tau Ceti (орбитальные кольца) (орбита)",
      "name": "Управление Маяков и фабрика ядер прыжка «Сычёвник»",
-     "pop": 4810728,
+     "pop": 4810739,
      "role": "маячная станция",
      "status": "PROPOSAL"
     },
@@ -6527,32 +6527,32 @@
     },
     {
      "body": "Tau Ceti (орбитальные кольца) (орбита)",
-     "name": "Орбитальная биржа Нового Шанхая",
-     "pop": 4810728,
+     "name": "Орбитальная биржа Синь-Шанхая",
+     "pop": 4810739,
      "role": "орбитальный порт / биржа",
      "status": "PROPOSAL"
     },
     {
      "body": "—",
      "name": "прочие поселения (6778)",
-     "pop": 1199708551,
+     "pop": 1199711224,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 144321844,
+    "largest_city": 144322165,
     "settlements_total": 6783
    },
    "exports_cr_y": 0,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 129949425,
+    "jump_charge_cost_cr_y": 129949553,
     "jump_charge_imports_t_y": 19228.1,
     "jump_charge_local_t_y": 3425.2,
     "jump_charge_t_y": 22653.3,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 5129622904,
+    "reactor_fuel_cost_cr_y": 5129628615,
     "reactor_fuel_imports_t_y": 7581.6,
     "reactor_fuel_local_t_y": 540.7,
     "reactor_fuel_power_t_y": 4825.3,
@@ -6563,10 +6563,10 @@
     "strategic_reserve_charge_t": 5585.7,
     "strategic_reserve_reactor_t": 2108.1
    },
-   "gdp_cr_y": 22396670102430,
+   "gdp_cr_y": 22396719896590,
    "gdp_per_capita_cr": 16510,
    "growth_per_year": 0.00116,
-   "imports_cr_y": 1059413327818,
+   "imports_cr_y": 1059415669092,
    "income_index": 2.54,
    "motives": {
     "alliance_obligation": 0.2,
@@ -6579,9 +6579,9 @@
     "status": "PROPOSAL",
     "trade_dependence": 0.95
    },
-   "name": "Новый Шанхай",
+   "name": "Синь-Шанхай",
    "polity": "Когниум",
-   "population": 1356551793,
+   "population": 1356554809,
    "regime": "technocratic_meritocracy",
    "settlement_structure": {
     "аванпост: Узел Убунту (ретранслятор у обломков)": 7226,
@@ -6590,9 +6590,9 @@
     "аванпост: Фронтир HD 104067": 507,
     "аванпост: Фронтир HD 85512": 2417,
     "астероидные поселения": 4240117,
-    "вращающиеся цилиндры": 946601453,
+    "вращающиеся цилиндры": 946603564,
     "выработки в лунах": 0,
-    "орбитальные кольца и станции": 405686337,
+    "орбитальные кольца и станции": 405687242,
     "поверхность (купола, открытые поселения)": 0,
     "подземные поселения (лавовые трубки, шахтные города)": 0
    },
@@ -6678,16 +6678,16 @@
      "unmet": 0
     },
     "construction": {
-     "consumption": 287101224,
+     "consumption": 287101226,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 287101224,
+     "production": 287101226,
      "stock_change": 0,
      "unmet": 0
     },
     "consumer": {
-     "consumption": 63190557,
+     "consumption": 63190558,
      "exports": 0,
      "imports": 10585665,
      "losses": 0,
@@ -6714,11 +6714,11 @@
      "unmet": 0
     },
     "food": {
-     "consumption": 301421925,
-     "exports": 53153880,
+     "consumption": 301421927,
+     "exports": 53153864,
      "imports": 4898106,
      "losses": 106308,
-     "production": 349784007,
+     "production": 349783991,
      "stock_change": 0,
      "unmet": 0
     },
@@ -6759,20 +6759,20 @@
      "unmet": 0
     },
     "metals": {
-     "consumption": 86188971,
-     "exports": 34776337,
+     "consumption": 86188972,
+     "exports": 34776106,
      "imports": 0,
-     "losses": 69553,
-     "production": 121034861,
+     "losses": 69552,
+     "production": 121034630,
      "stock_change": 0,
      "unmet": 0
     },
     "ore": {
-     "consumption": 476775566,
+     "consumption": 476775568,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 476775566,
+     "production": 476775568,
      "stock_change": 0,
      "unmet": 0
     },
@@ -6786,11 +6786,11 @@
      "unmet": 0
     },
     "water_volatiles": {
-     "consumption": 327187486,
+     "consumption": 327187487,
      "exports": 0,
      "imports": 0,
      "losses": 0,
-     "production": 327187486,
+     "production": 327187487,
      "stock_change": 0,
      "unmet": 157534716
     },
@@ -6808,34 +6808,34 @@
     {
      "body": "Wolf 359 e",
      "name": "Цитадель",
-     "pop": 64257026,
+     "pop": 64257027,
      "role": "столица",
      "status": "PROPOSAL"
     },
     {
      "body": "Wolf 359 c",
-     "name": "Wolf 359 c — поселение",
+     "name": "Нюхамн",
      "pop": 32128513,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Wolf 359 f",
-     "name": "Wolf 359 f — поселение",
+     "name": "Ярнвик",
      "pop": 21419009,
      "role": "крупный город",
      "status": "PROPOSAL"
     },
     {
      "body": "Wolf 359 e (орбита)",
-     "name": "Бастион — арсенал и военная верфь",
+     "name": "Мьёльнер — арсенал и военная верфь",
      "pop": 661216,
      "role": "военная верфь",
      "status": "PROPOSAL"
     },
     {
      "body": "Wolf 359 e (орбита)",
-     "name": "Рудники пылевого диска",
+     "name": "Груве-7 (рудники пылевого диска)",
      "pop": 661216,
      "role": "шахтёрский посёлок",
      "status": "PROPOSAL"
@@ -6850,24 +6850,24 @@
     {
      "body": "—",
      "name": "прочие поселения (2722)",
-     "pop": 425262166,
+     "pop": 425262167,
      "role": "агрегат",
      "status": "PROPOSAL"
     }
    ],
    "city_stats": {
-    "largest_city": 64257026,
+    "largest_city": 64257027,
     "settlements_total": 2728
    },
-   "exports_cr_y": 86092462563,
+   "exports_cr_y": 86092193782,
    "fuel": {
     "depots": 2,
-    "jump_charge_cost_cr_y": 1938278510,
-    "jump_charge_imports_t_y": 302281.3,
-    "jump_charge_local_t_y": 35463.2,
-    "jump_charge_t_y": 337888.3,
+    "jump_charge_cost_cr_y": 1938273394,
+    "jump_charge_imports_t_y": 302280.5,
+    "jump_charge_local_t_y": 35463.1,
+    "jump_charge_t_y": 337887.4,
     "jump_charge_unmet_t_y": 0.0,
-    "reactor_fuel_cost_cr_y": 3003969135,
+    "reactor_fuel_cost_cr_y": 3003969139,
     "reactor_fuel_imports_t_y": 4196.3,
     "reactor_fuel_local_t_y": 513.2,
     "reactor_fuel_power_t_y": 2096.0,
@@ -6875,13 +6875,13 @@
     "reactor_fuel_t_y": 5006.6,
     "reactor_fuel_unmet_t_y": 0.0,
     "reserve_days": 180,
-    "strategic_reserve_charge_t": 166629.9,
+    "strategic_reserve_charge_t": 166629.4,
     "strategic_reserve_reactor_t": 2469.0
    },
-   "gdp_cr_y": 9913191784704,
+   "gdp_cr_y": 9913191821052,
    "gdp_per_capita_cr": 18174,
    "growth_per_year": 0.00938,
-   "imports_cr_y": 357173844020,
+   "imports_cr_y": 357173841185,
    "income_index": 2.796,
    "motives": {
     "alliance_obligation": 0.2,
@@ -6895,15 +6895,15 @@
     "trade_dependence": 0.72
    },
    "name": "Цитадель",
-   "polity": "Скьёльдбург",
-   "population": 545460096,
+   "polity": "Скьольдборг",
+   "population": 545460098,
    "regime": "security_oligarchy",
    "settlement_structure": {
     "аванпост: Пост прослушивания у Барнарда": 277,
     "астероидные поселения": 164976099,
     "вращающиеся цилиндры": 238349905,
     "выработки в лунах": 19004977,
-    "орбитальные кольца и станции": 102149959,
+    "орбитальные кольца и станции": 102149960,
     "поверхность (купола, открытые поселения)": 8391552,
     "подземные поселения (лавовые трубки, шахтные города)": 12587328
    },
@@ -7090,10 +7090,10 @@
     "role": "medium_cargo"
    },
    "ocs4_lastochka": {
-    "active": 110734,
+    "active": 110732,
     "family": "civil",
     "lost_per_year": 232.5,
-    "new_per_year": 3501.3,
+    "new_per_year": 3501.2,
     "repair": 7765,
     "reserve": 5550,
     "retired_per_year": 2907.3,
@@ -7103,7 +7103,7 @@
     "active": 34952,
     "family": "civil",
     "lost_per_year": 146.9,
-    "new_per_year": 1210.1,
+    "new_per_year": 1210.0,
     "repair": 2812,
     "reserve": 1763,
     "retired_per_year": 918.1,
@@ -7140,67 +7140,67 @@
     "role": "maintenance"
    }
   },
-  "gdp_cr_y": 548022003923348,
+  "gdp_cr_y": 548021979598821,
   "goods": {
    "chemicals": {
-    "consumption": 2653680323,
-    "interstellar": 151282273,
-    "production": 2653982887
+    "consumption": 2653679596,
+    "interstellar": 151282294,
+    "production": 2653982160
    },
    "construction": {
-    "consumption": 5856302864,
-    "interstellar": 195225286,
-    "production": 5856693315
+    "consumption": 5856286272,
+    "interstellar": 195215608,
+    "production": 5856676703
    },
    "consumer": {
-    "consumption": 2911318117,
-    "interstellar": 185867692,
-    "production": 2911689853
+    "consumption": 2911317574,
+    "interstellar": 185867560,
+    "production": 2911689310
    },
    "controlled": {
-    "consumption": 390297,
-    "interstellar": 86117,
-    "production": 390469
+    "consumption": 390295,
+    "interstellar": 86116,
+    "production": 390467
    },
    "electronics": {
-    "consumption": 100002899,
-    "interstellar": 17761843,
-    "production": 100038423
+    "consumption": 100002897,
+    "interstellar": 17761844,
+    "production": 100038421
    },
    "food": {
-    "consumption": 12031987813,
-    "interstellar": 374519470,
-    "production": 12032736852
+    "consumption": 12031983591,
+    "interstellar": 374520118,
+    "production": 12032732631
    },
    "jump_charge": {
-    "consumption": 10938384,
-    "interstellar": 8348357,
-    "production": 10955080
+    "consumption": 10938256,
+    "interstellar": 8348265,
+    "production": 10954953
    },
    "luxury": {
-    "consumption": 69512872,
+    "consumption": 69512867,
     "interstellar": 0,
-    "production": 69512872
+    "production": 69512867
    },
    "machinery": {
-    "consumption": 214325309,
-    "interstellar": 30089998,
-    "production": 214385489
+    "consumption": 214325233,
+    "interstellar": 30089966,
+    "production": 214385413
    },
    "medical": {
-    "consumption": 95673453,
-    "interstellar": 13939689,
-    "production": 95701332
+    "consumption": 95673435,
+    "interstellar": 13939679,
+    "production": 95701314
    },
    "metals": {
-    "consumption": 2147792341,
-    "interstellar": 177198479,
-    "production": 2148146738
+    "consumption": 2147790492,
+    "interstellar": 177191589,
+    "production": 2148144875
    },
    "ore": {
-    "consumption": 10194718399,
-    "interstellar": 193081617,
-    "production": 10195104562
+    "consumption": 10194731026,
+    "interstellar": 193059021,
+    "production": 10195117144
    },
    "reactor_fuel": {
     "consumption": 152677,
@@ -7208,14 +7208,14 @@
     "production": 152702
    },
    "water_volatiles": {
-    "consumption": 19973622153,
+    "consumption": 19973612212,
     "interstellar": 0,
-    "production": 19973622153
+    "production": 19973612212
    },
    "weapons": {
-    "consumption": 9487873,
+    "consumption": 9487883,
     "interstellar": 1101273,
-    "production": 9490076
+    "production": 9490086
    }
   },
   "infrastructure": {
@@ -7389,13 +7389,13 @@
    }
   },
   "interstellar_flows": 261,
-  "interstellar_tonnes_y": 1348514629,
-  "interstellar_value_cr_y": 5341403367354,
+  "interstellar_tonnes_y": 1348475867,
+  "interstellar_value_cr_y": 5341389963696,
   "population": {
-   "earth": 9960563363,
-   "off_sol": 10087992674,
-   "sol_outside_earth": 1708397998,
-   "total": 21756954035
+   "earth": 9960563461,
+   "off_sol": 10087984673,
+   "sol_outside_earth": 1708398236,
+   "total": 21756946370
   }
  },
  "year": 3126

@@ -1,0 +1,578 @@
+{
+ "do_not_edit": true,
+ "generated_by": "tools/colonization_lab/naming.py (from canon/naming.json)",
+ "names": {
+  "body:fomalhaut.lexie": {
+   "en": "Lexie",
+   "native": "Lexie",
+   "native_lang": "en",
+   "ru": "Лекси",
+   "zh-Hans": "柏辛",
+   "zh-Hant": "柏辛"
+  },
+  "colony:cyg61_kern": {
+   "en": "Mine Alpha",
+   "native": "Mine Alpha",
+   "native_lang": "en",
+   "ru": "Шахта Альфа",
+   "slang": [
+    "Minalpha",
+    "Миналфа"
+   ]
+  },
+  "colony:delta_pav_freekarma": {
+   "en": "Free Karma",
+   "native": "स्वतंत्र कर्मभूमि",
+   "native_lang": "hi",
+   "ru": "Свободная Карма",
+   "translit": "Svatantra Karmabhūmi"
+  },
+  "colony:delta_pav_karma": {
+   "en": "New Karma",
+   "native": "कर्मभूमि",
+   "native_lang": "hi",
+   "pron": "[kərməˈbʱuːmi]",
+   "ru": "Новая Карма",
+   "translit": "Karmabhūmi"
+  },
+  "colony:eps_eri_harmony": {
+   "en": "Blooming Harmony",
+   "native": "盛和",
+   "native_lang": "zh-Hans",
+   "pron": "[ʂɤ̂ŋ xɤ̌]",
+   "ru": "Цветущая Гармония",
+   "translit": "Shènghé"
+  },
+  "colony:eps_eri_strife": {
+   "en": "Strife Belt",
+   "native": "Strife Belt",
+   "native_lang": "en",
+   "ru": "Пояс Раздора",
+   "slang": [
+    "Free Asteroids",
+    "Вольные астероиды"
+   ]
+  },
+  "colony:gj581_europa": {
+   "en": "New Europe",
+   "native": "Nouvelle-Europe",
+   "native_lang": "fr",
+   "ru": "Новая Европа"
+  },
+  "colony:gj581_freeclans": {
+   "en": "Free Settlements",
+   "native": "Free Settlements",
+   "native_lang": "en",
+   "ru": "Свободные поселения"
+  },
+  "colony:gj832_gaia_zone": {
+   "en": "Philomorphosis Zone",
+   "native": "Philomorphosis Zone",
+   "native_lang": "en",
+   "ru": "Зона «Филоморфоз»"
+  },
+  "colony:gj832_tianhe": {
+   "en": "Tianhe",
+   "native": "天河",
+   "native_lang": "zh-Hans",
+   "pron": "[tʰjɛ́n xɤ̌]",
+   "ru": "Тяньхэ",
+   "translit": "Tiānhé"
+  },
+  "colony:gj876_next": {
+   "en": "Providence",
+   "native": "Providence",
+   "native_lang": "en",
+   "ru": "Провидение"
+  },
+  "colony:hd114783_hellas3": {
+   "en": "Third Hellas",
+   "native": "Τρίτη Ελλάδα",
+   "native_lang": "el",
+   "pron": "[ˈtriti eˈlaða]",
+   "ru": "Третья Эллада",
+   "translit": "Tríti Elláda"
+  },
+  "colony:hd20794_hellas2": {
+   "en": "Homestead",
+   "native": "Homestead",
+   "native_lang": "en",
+   "pron": "[ˈhoʊmstɛd]",
+   "ru": "Хомстед",
+   "slang": [
+    "the Stead",
+    "Хомяк"
+   ]
+  },
+  "colony:hd20794_newindia": {
+   "en": "New India",
+   "native": "नया भारत",
+   "native_lang": "hi",
+   "pron": "[nəˈjaː ˈbʱaːrət]",
+   "ru": "Новая Индия",
+   "translit": "Nayā Bhārat"
+  },
+  "colony:hd40307_firmament": {
+   "en": "Celestial Rampart",
+   "native": "天垒",
+   "native_lang": "zh-Hans",
+   "pron": "[tʰjɛ́n lèi]",
+   "ru": "Небесная Твердыня",
+   "translit": "Tiānlěi"
+  },
+  "colony:hd40307_maland": {
+   "en": "New Maland",
+   "native": "Maland Mpya",
+   "native_lang": "sw",
+   "ru": "Новая Маланд"
+  },
+  "colony:hd69830_verde": {
+   "en": "Selva Verde",
+   "native": "Selva Verde",
+   "native_lang": "pt",
+   "pron": "[ˈsɛwvɐ ˈveɾdʒi]",
+   "ru": "Сельва-Верде"
+  },
+  "colony:lalande_hellas": {
+   "en": "Agora",
+   "native": "Αγορά",
+   "native_lang": "el",
+   "pron": "[aɣoˈra]",
+   "ru": "Агора",
+   "translit": "Agorá"
+  },
+  "colony:lalande_mecca": {
+   "en": "Tauranga",
+   "native": "Tauranga",
+   "native_lang": "mi",
+   "pron": "[ˈtau.ɾa.ŋa]",
+   "ru": "Тауранга",
+   "slang": [
+    "the Anchorage",
+    "Якорь"
+   ]
+  },
+  "colony:leo83_zion": {
+   "en": "New Thebaid",
+   "native": "New Thebaid",
+   "native_lang": "en",
+   "ru": "Ново-Фиваида"
+  },
+  "colony:proxima_outpost": {
+   "en": "Red Outpost",
+   "native": "Красный Форпост",
+   "native_lang": "ru",
+   "ru": "Красный Форпост"
+  },
+  "colony:tau_ceti_cognium": {
+   "en": "New Shanghai",
+   "native": "新上海",
+   "native_lang": "zh-Hans",
+   "pron": "мандарин [ɕín ʂâŋxài]; по-шанхайски 上海 ≈ «Заанхе» [zɑ̃hɛ] (VERIFY)",
+   "ru": "Синь-Шанхай",
+   "translit": "Xīn Shànghǎi",
+   "zh-Hant": "新上海"
+  },
+  "colony:wolf359_citadel": {
+   "en": "the Citadel",
+   "native": "Skjoldborg",
+   "native_lang": "nb",
+   "pron": "[ˈʂɔlːbɔrɡ] (d немая, skj = ш)",
+   "ru": "Цитадель",
+   "slang": [
+    "Борг",
+    "Щит",
+    "the Borg"
+   ]
+  },
+  "mission:CELESTIAL-DESTINY-1": {
+   "en": "Celestial Destiny",
+   "native": "天命一号",
+   "native_lang": "zh-Hans",
+   "ru": "Небесная Судьба",
+   "translit": "Tiānmìng Yīhào"
+  },
+  "mission:CELESTIAL-DESTINY-2": {
+   "en": "Celestial Destiny 2",
+   "native": "天命二号",
+   "native_lang": "zh-Hans",
+   "ru": "Небесная Судьба-2",
+   "translit": "Tiānmìng Èrhào"
+  },
+  "mission:HOMESTEAD-1": {
+   "en": "Homestead",
+   "native": "Homestead",
+   "native_lang": "en",
+   "ru": "Хомстед"
+  },
+  "mission:IRON-SHIELD-1": {
+   "en": "Iron Shield",
+   "native": "Jernskjold",
+   "native_lang": "nb",
+   "ru": "Айрон Шилд-1"
+  },
+  "mission:TIANHE-1": {
+   "en": "Tianhe-1",
+   "native": "天河一号",
+   "native_lang": "zh-Hans",
+   "ru": "Тяньхэ-1",
+   "translit": "Tiānhé Yīhào"
+  },
+  "mission:VAKA-MOANA-1": {
+   "en": "Vaka Moana",
+   "native": "Vaka Moana",
+   "native_lang": "to",
+   "ru": "Вака-Моана"
+  },
+  "place:wolf359.asteroid_2": {
+   "en": "Toeren",
+   "native": "Toeren",
+   "native_lang": "nb",
+   "pron": "[ˈtuːərən]",
+   "ru": "Тоэрен"
+  },
+  "polity:cyg61_kern": {
+   "en": "Kern Prospectorate",
+   "label_ru": "Проспекторат Керн",
+   "native": "Kern Prospectorate",
+   "native_lang": "en",
+   "ru": "Проспекторат Керн"
+  },
+  "polity:delta_pav_freekarma": {
+   "en": "Free Karma",
+   "label_ru": "Свободная Карма",
+   "native": "स्वतंत्र कर्मभूमि",
+   "native_lang": "hi",
+   "ru": "Свободная Карма",
+   "translit": "Svatantra Karmabhūmi"
+  },
+  "polity:delta_pav_karma": {
+   "en": "Northern Dharmamandala",
+   "label_ru": "Новая Карма (Дхарма-Мандала, северная ветвь)",
+   "native": "उत्तर धर्ममण्डल",
+   "native_lang": "sa",
+   "ru": "Дхарма-Мандала (северная ветвь)",
+   "translit": "Uttara Dharmamaṇḍala"
+  },
+  "polity:eps_eri_harmony": {
+   "en": "Xinhe",
+   "label_ru": "Синьхэ",
+   "native": "新和",
+   "native_lang": "zh-Hans",
+   "pron": "[ɕín xɤ̌]",
+   "ru": "Синьхэ",
+   "translit": "Xīnhé"
+  },
+  "polity:eps_eri_strife": {
+   "en": "Warpstanis",
+   "label_ru": "Варпстанис (Пояс Раздора)",
+   "native": "Warpstanis",
+   "native_lang": "en",
+   "pron": "[ˈwɔːpstɑːnɪs]",
+   "ru": "Варпстанис"
+  },
+  "polity:gj581_europa": {
+   "en": "Union of New Europe",
+   "label_ru": "Союз Новой Европы",
+   "native": "Union de la Nouvelle-Europe",
+   "native_lang": "fr",
+   "ru": "Союз Новой Европы",
+   "slang": [
+    "Ресторан",
+    "the Restaurant"
+   ]
+  },
+  "polity:gj581_freeclans": {
+   "en": "Free World clans",
+   "label_ru": "Свободные поселения (кланы Свободного мира)",
+   "native": "Free World clans",
+   "native_lang": "en",
+   "ru": "кланы Свободного мира"
+  },
+  "polity:gj832_gaia_zone": {
+   "en": "Gaia Prime remnant",
+   "label_ru": "остатки Гайи-Прайм",
+   "native": "Gaia Prime remnant",
+   "native_lang": "en",
+   "ru": "остатки Гайи-Прайм"
+  },
+  "polity:gj832_tianhe": {
+   "en": "Tianhe",
+   "label_ru": "Тяньхэ",
+   "native": "天河",
+   "native_lang": "zh-Hans",
+   "ru": "Тяньхэ",
+   "translit": "Tiānhé"
+  },
+  "polity:gj876_next": {
+   "en": "Providence",
+   "label_ru": "Провидение (Культ Машины)",
+   "native": "Providence",
+   "native_lang": "en",
+   "ru": "Провидение",
+   "slang": [
+    "Культ Машины",
+    "the Machine Cult"
+   ]
+  },
+  "polity:hd114783_hellas3": {
+   "en": "Third Hellas",
+   "label_ru": "Третья Эллада",
+   "native": "Τρίτη Ελλάδα",
+   "native_lang": "el",
+   "ru": "Третья Эллада"
+  },
+  "polity:hd20794_hellas2": {
+   "en": "Homestead",
+   "label_ru": "Хомстед",
+   "native": "Homestead",
+   "native_lang": "en",
+   "ru": "Хомстед"
+  },
+  "polity:hd20794_newindia": {
+   "en": "Southern Dharmamandala",
+   "label_ru": "Новая Индия (Дхарма-Мандала, южная ветвь)",
+   "native": "दक्षिण धर्ममण्डल",
+   "native_lang": "sa",
+   "ru": "Дхарма-Мандала (южная ветвь)",
+   "translit": "Dakṣiṇa Dharmamaṇḍala"
+  },
+  "polity:hd40307_firmament": {
+   "en": "Tianlei Province (Xinhe)",
+   "label_ru": "Синьхэ (провинция Тяньлэй)",
+   "native": "天垒省",
+   "native_lang": "zh-Hans",
+   "ru": "Синьхэ (провинция Тяньлэй)",
+   "translit": "Tiānlěi Shěng"
+  },
+  "polity:hd40307_maland": {
+   "en": "Ujamaa Community",
+   "label_ru": "Содружество Уджамаа (Новая Маланд)",
+   "native": "Jumuiya ya Ujamaa",
+   "native_lang": "sw",
+   "pron": "[dʒuˈmuja ja udʒaˈmaa]",
+   "ru": "Содружество Уджамаа"
+  },
+  "polity:hd69830_verde": {
+   "en": "Selva Verde",
+   "label_ru": "Сельва-Верде",
+   "native": "Selva Verde",
+   "native_lang": "pt",
+   "ru": "Сельва-Верде"
+  },
+  "polity:lalande_hellas": {
+   "en": "New Hellas",
+   "label_ru": "Новая Эллада (Агора)",
+   "native": "Νέα Ελλάδα",
+   "native_lang": "el",
+   "pron": "[ˈnea eˈlaða]",
+   "ru": "Новая Эллада",
+   "translit": "Néa Elláda"
+  },
+  "polity:lalande_mecca": {
+   "en": "the Compass",
+   "label_ru": "Капеху (Тауранга)",
+   "native": "Te Kāpehu",
+   "native_lang": "mi",
+   "pron": "[tɛ ˈkaːpɛhu]",
+   "ru": "Капеху",
+   "slang": [
+    "Компас"
+   ]
+  },
+  "polity:leo83_zion": {
+   "en": "New Thebaid",
+   "label_ru": "Ново-Фиваида",
+   "native": "New Thebaid",
+   "native_lang": "en",
+   "ru": "Ново-Фиваида"
+  },
+  "polity:proxima_outpost": {
+   "en": "Svarog",
+   "label_ru": "Сварог (Красный Форпост)",
+   "native": "Сварог",
+   "native_lang": "ru",
+   "ru": "Сварог"
+  },
+  "polity:sol_authority": {
+   "en": "Sol Authority",
+   "label_ru": "Сол",
+   "native": "Sol Authority",
+   "native_lang": "en",
+   "ru": "Сол"
+  },
+  "polity:tau_ceti_cognium": {
+   "en": "Cognium",
+   "label_ru": "Когниум",
+   "native": "Cognium",
+   "native_lang": "en",
+   "pron": "[ˈkɒɡniəm]",
+   "ru": "Когниум",
+   "slang": [
+    "Алгоритм"
+   ]
+  },
+  "polity:wolf359_citadel": {
+   "en": "Skjoldborg",
+   "label_ru": "Скьольдборг (Цитадель)",
+   "native": "Skjoldborg",
+   "native_lang": "nb",
+   "pron": "[ˈʂɔlːbɔrɡ]",
+   "ru": "Скьольдборг"
+  },
+  "site:beacon.BCN-003-BR": {
+   "en": "Bifrost Beacon BCN-003-BR",
+   "native": "Bifrost-varden",
+   "native_lang": "nb",
+   "ru": "Биврёст — мост-маяк BCN-003-BR"
+  },
+  "site:delta_pav_karma.gene_temple": {
+   "en": "Seed Temple (gene cryobank)",
+   "native": "बीज मन्दिर",
+   "native_lang": "hi",
+   "ru": "Храм Семени (криобанк генов)",
+   "translit": "Bīj Mandir"
+  },
+  "site:gj581_europa.registry": {
+   "en": "Treaty Registry and Arbitration “New Brussels”",
+   "native": "Registre des traités et Arbitrage « Nouveau-Bruxelles »",
+   "native_lang": "fr",
+   "ru": "Реестр договоров и Арбитраж «Новый Брюссель»"
+  },
+  "site:lalande_hellas.agora": {
+   "en": "Stavrodromi (Crossroads) free port",
+   "native": "Σταυροδρόμι",
+   "native_lang": "el",
+   "pron": "[stavroˈðromi]",
+   "ru": "Ставродроми — нейтральный порт и биржа",
+   "translit": "Stavrodrómi"
+  },
+  "site:lalande_mecca.lalande_j_gas_m": {
+   "en": "Lalande 21185 j platforms (Kāpehu share)",
+   "native": "Ngā Papa o Lalande 21185 j",
+   "native_lang": "mi",
+   "ru": "Платформы Lalande 21185 j (доля Капеху)"
+  },
+  "site:lalande_mecca.mecca_farms": {
+   "en": "Māra Kai gardens",
+   "native": "Ngā Māra Kai",
+   "native_lang": "mi",
+   "ru": "Огороды Мара-Каи (Lalande 21185 g)"
+  },
+  "site:lalande_mecca.rasad": {
+   "en": "House of Star Lore (observatory-computer)",
+   "native": "Te Whare Tātai Arorangi",
+   "native_lang": "mi",
+   "pron": "[tɛ ˈfaɾɛ ˈtaːtai ˈaɾɔɾaŋi]",
+   "ru": "Обсерватория-вычислитель Фаре-Татаи",
+   "slang": [
+    "Фаре",
+    "the Whare"
+   ]
+  },
+  "site:leo83_golden_city.capital": {
+   "en": "Golden City",
+   "native": "Golden City",
+   "native_lang": "en",
+   "ru": "«Золотой Город»",
+   "slang": [
+    "Golden Debt",
+    "Золотой Долг"
+   ]
+  },
+  "site:leo83_zion.capital": {
+   "en": "New Thebaid (orbital ark)",
+   "native": "New Thebaid (orbital ark)",
+   "native_lang": "en",
+   "ru": "Ново-Фиваида (ковчег на орбите)"
+  },
+  "site:site.003.wolf359_citadel.military_hub01": {
+   "en": "Heimdal Watch Station",
+   "native": "Heimdal vaktstasjon",
+   "native_lang": "nb",
+   "ru": "Хеймдаль — сторожевая станция"
+  },
+  "site:tau_ceti_cognium.beacon_authority": {
+   "en": "the Owlery",
+   "native": "the Owlery",
+   "native_lang": "en",
+   "ru": "Управление Маяков и фабрика ядер прыжка «Сычёвник»",
+   "zh-Hans": "鸮舍"
+  },
+  "site:wolf359_citadel.archive_vault": {
+   "en": "LAST-LIGHT Vault",
+   "native": "Arkivhvelvet",
+   "native_lang": "nb",
+   "ru": "Хранилище LAST-LIGHT"
+  },
+  "site:wolf359_citadel.bastion": {
+   "en": "Mjølner Arsenal and Naval Yard",
+   "native": "Mjølner",
+   "native_lang": "nb",
+   "pron": "[ˈmjœ̂lnər]",
+   "ru": "Мьёльнер — арсенал и военная верфь"
+  },
+  "site:wolf359_citadel.habitat1": {
+   "en": "Nyhamn",
+   "native": "Nyhamn",
+   "native_lang": "nn",
+   "pron": "[ˈnŷːhɑmn]",
+   "ru": "Нюхамн"
+  },
+  "site:wolf359_citadel.habitat2": {
+   "en": "Jarnvik",
+   "native": "Jarnvik",
+   "native_lang": "nn",
+   "ru": "Ярнвик"
+  },
+  "site:wolf359_citadel.wolf_mines": {
+   "en": "Gruve 7",
+   "native": "Gruve 7",
+   "native_lang": "nb",
+   "ru": "Груве-7 (рудники пылевого диска)"
+  },
+  "star:HIP_113368": {
+   "en": "Fomalhaut",
+   "native": "Fomalhaut",
+   "native_lang": "en",
+   "ru": "Фомальгаут"
+  },
+  "system:3": {
+   "en": null,
+   "native": "Ulven",
+   "native_lang": "nb",
+   "pron": "[ˈʉ̀lvən]",
+   "ru": "Ульвен"
+  },
+  "system:4": {
+   "en": null,
+   "native": null,
+   "native_lang": null,
+   "ru": null
+  },
+  "system:8": {
+   "en": null,
+   "native": "天仓",
+   "native_lang": "zh-Hans",
+   "ru": null,
+   "translit": "Tiāncāng"
+  },
+  "system:9": {
+   "en": null,
+   "native": "天苑",
+   "native_lang": "zh-Hans",
+   "ru": null,
+   "translit": "Tiānyuàn"
+  },
+  "system:fomalhaut": {
+   "en": "Fortuna",
+   "native": "Fortuna",
+   "native_lang": "la",
+   "ru": "Фортуна",
+   "zh-Hans": "命运之轮",
+   "zh-Hant": "命運之輪"
+  }
+ },
+ "note": "id -> имена. Отображение в игре: stable ID -> этот резолвер -> строка на языке интерфейса. colony:<unit> — столица / колония, polity:<unit> — полития.",
+ "schema": "elite.naming.runtime.v1"
+}

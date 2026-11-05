@@ -34,6 +34,7 @@ struct HubEconomyInfo
     std::string ownerName;
     std::string operatorName;
     std::string bloc;
+    std::string actor;         // stable 3126 actor / unit id (canon/naming.json resolves its names)
     std::string market;        // full / supply / ... / none
     std::string purpose;
     std::string description;

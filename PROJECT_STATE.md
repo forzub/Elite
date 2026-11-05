@@ -2870,6 +2870,70 @@ Notes/Economy/POLITICAL_ECONOMY.md, manufacturers / ship bloc metadata; programm
 provinces / zones / bloc membership; restore tag first; commit, no push. The user's full text is the source of the
 order - ask for it again if it is not in the session.
 
+### User order 2026-11-05 t - TOPONYMY / ENDONYMS / EXONYMS / HERALDRY - DONE (commit, not pushed)
+- Scope: cultural shell only. Political / economic layer 3126 stays CLOSED: blocs, dependencies, sanctions, licences,
+  population, industrial structure, jump-tech balance and the Southern-circle core maker are unchanged (machine ids too).
+- Naming source of truth: tools/colonization_lab/canon/naming.json (entities by stable id: unit colony / polity,
+  system:<StarAtlas id>, star:<HYG id>, body:..., site:<settlement or runtime id>, place:..., mission:<code>; endonym /
+  formal / exonyms / aliases with kind + valid_from / valid_until / naming_history / verdict KEEP..VERIFY; heraldry;
+  retired_authoring_names). naming.py (reader + resolver + 23 checks) writes the MIRRORS: world.json name / polity /
+  asset names, political_order.json actors ru / government / short, settlements.json, population_history.json
+  author_name, legacy src/assets/data/galaxy/actors.json display fields, runtime src/assets/data/naming/names_3126.json,
+  out/world_3126/naming_3126.json. world_sites.py and economy_live.py resolve site / hub names by id. Pipeline: naming.py
+  --write first (README). lore_md renders CULTURE/NAMING.md, CULTURE/HERALDRY.md, FRONTIER/FORTUNA.md and now refreshes
+  document titles from data.
+- Former Arabic branch removed (author decision): AL-QUDS-1 -> VAKA-MOANA-1 (Pacific Voyaging Compact: Aotearoa NZ,
+  Hawaii, Samoa, Tonga, Fiji, Cook Is., Kiribati, Nauru, Tuvalu, PNG, Solomon Is., Vanuatu, FSM; seabed-nodule royalties,
+  loss-and-damage funds, diaspora bonds). Capital Tauranga / Тауранга (mi: anchorage), polity Te Kāpehu / Капеху ("the
+  Compass", formal Te Whakaminenga o Te Kāpehu), observatory Te Whare Tātai Arorangi, jump mathematics = "etak frames"
+  (science, not myth). Machine id lalande_mecca kept. Dates, population, cohorts, regime parameters, fate kept; regime key
+  scholar_theocracy -> navigator_council (same parameters). Culture vectors gulf_arab / pakistani removed; new
+  pacific_polynesian / pacific_melanesian / aotearoa_nz (PROPOSAL priors). The legacy runtime record of AL-QUDS-1 is not
+  exported (naming.json former_legacy = drop); NEW-HELLAS-1 -> HOMESTEAD-1 (Second Hellas -> Homestead / Хомстед).
+- MODEL CAUSALITY FIX (user decision 2026-11-05, "not 1-3"): the honest Pacific culture vector collapsed Tauranga's core
+  output (peacetime share 0.533 -> 0.0) because capabilities had a direct culture term (0.25 x culture axes) amplified by
+  the cubic comparative-advantage allocation. Rejected (documented): culture tuning, capacity_x tuning (chaotic:
+  0.29 / 0.18 / 0.45), market-order change, labour reservation (input-limited 11.8 cores), removing the culture term for
+  all (Cognium -20 %, Citadel cores 8.2 -> 2.0), culture as a uniform level (Cognium -19 %, Free settlements -33 %).
+  Chosen: industrial capability is a separate state - world.json colonies[].industrial_heritage (9 sectors, capability
+  points; PROPOSAL/model, the sectoral profile of the accepted 9d44bee5 economy, same method for every colony; outposts
+  inherit the owner's). lab.colony_profile: caps = 45 tech + industrial_heritage + 18 endowment + scale + 0.5 bias;
+  culture is the social profile and acts on industry only through history (demography / technology). CAP_CULTURE removed.
+  Result with the honest Pacific culture: drive_cores made Cognium 116.53, Tauranga 16.67, Citadel 8.23; Southern circle
+  consumption Tauranga 16.74 / New India 20.47 / Maland 9.67; external demand 16.83 = Tauranga 8.97 + Cognium 7.86;
+  share 0.533 (in [0.45, 0.60], not hard-coded), cutoff 0.124, mobilised 0.678; every actor's output value within 0.1 %
+  of 9d44bee5. Tauranga bottlenecks: isotopes 100 % imported, electronics 94 %, precision 87 %. The 30 % quota only
+  distributes existing output. Not done: core_maker is still a works-capacity multiplier on the research base
+  (now part of the explicit industrial state, documented), not an installed physical capacity in cores / year.
+- Nordic layer: Citadel / Skjoldborg (nb [ˈʂɔlːbɔrɡ], formal Protektoratet Skjoldborg, ON ceremonial Skjaldborg; RU
+  «Скьольдборг» / exonym «Цитадель»; slang Борг, Щит, the Borg). Wolf 359 local name Ulven (folk etymology of Max Wolf's
+  catalogue). Nyhamn (nn) / Nyhavn (nb registry), Jarnvik / Jernvik, Mjølner arsenal, Gruve 7, Arkivhvelvet, Heimdal
+  vaktstasjon, Bifrost-varden (beacon BCN-003-BR), Toeren (asteroid IS-2). Territory language nordic_pmc -> nb
+  (Novo-Thebaid christian_traditionalist -> en, not ru). Old Norse only ceremonial (check t21).
+- Other corrections: Синь Хэ -> Синьхэ 新和 (old "core / river" etymology rejected; the real county 新和县 noted as VERIFY);
+  Firmament endonym 天垒 (asterism 天壘城); missions 天命一号 / 天命二号 / 天河一号; Tau Ceti 天倉五 kept, local 天仓, capital
+  新上海 / RU Синь-Шанхай (historical Новый Шанхай); Агор-Прим -> Новая Эллада (polity Νέα Ελλάδα, capital Αγορά, free port
+  Σταυροδρόμι); Рестаурос -> Союз Новой Европы (la Restauration, slang «Ресторан»); Вердензальб -> остатки Гайи-Прайм;
+  Уджамаа-Джахи -> Содружество Уджамаа (Jumuiya ya Ujamaa; "jahi" not attested); Сельта-Верде -> Сельва-Верде; Indian
+  endonyms नया भारत, कर्मभूमि, धर्ममण्डल; Novo-Thebaid legacy note fixed ("прежнее название «Святой Сион» больше не используется").
+- Fortuna: Fomalhaut / α Piscis Austrini / HD 216956 / HIP 113368 / Gl 881, Piscis Austrinus / Южная Рыба, 7.70 pc =
+  25.13 ly, V 1.16, A4 V (HYG A3V), 北落師門; colony-era name Fortuna, zh exonym 命運之輪 / 命运之轮 (Mìngyùn zhī lún). Not in
+  the StarAtlas flight catalogue (visible in the sky via HYG). canon/remote_systems.json holds physics; accessibility is
+  computed: nearest beacon Gliese 876 (Providence, 11.15 ly), Sol 25.13 ly (max hop 32), outside the 8-ly commercial
+  unbeaconed limit, no beacon / fuel / repair / SAR, exit error x17 vs a beacon pair growing with ephemeris age (3σ 26 372
+  km fresh, 1.9 M km at 120 years), Cobrett round trip 0.36 tank from Providence, 0.81 from Sol (no reserve -> extra tank
+  or cache). Lexie / Лекси / 柏辛 / Bǎixīn = body:fomalhaut.lexie (spelling corrected by the user to Lexie), naming history
+  AUTHOR_UNSPECIFIED; PROPOSAL physics 1.3 M⊕ at 4.4 AU, 0.86 S⊕, ~283 K, oceans, N2/CO2 1.4 bar, not breathable;
+  compatible with JWST / RV limits; no reward, no resource.
+- Runtime: EconomyModel HubEconomyInfo gets `actor`; EliteServicePagesCheck §6 finds hubs by actor id and compares owner
+  names with names_3126.json (province hubs run under their actor) -> PASS.
+- VERIFY (open): 盛和, 新和 vs 新和县, Shanghainese 上海, Maland origin + Maland Mpya, Skjaldborg heldr, skjoldborgere,
+  Toeren; Russian ship names of non-Russian makers (Б-4 «Сокол», C-120 «Конвейер», Хэ-С240 «Тыловик», HT-20K «Мул») live in
+  the render model registry - outside this pass; Fomalhaut as a flyable system needs EliteUniverseGenerator +
+  navigation-cell regeneration - outside this pass.
+- Gates: all colonization_lab checks rc=0 (naming 23/23, political, industry, lore_md, lore_html 142, calibrate_population,
+  check-dataset, check-lore); lab.py twice IDENTICAL (sha256 f59e9182...); EliteServicePagesCheck PASS.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

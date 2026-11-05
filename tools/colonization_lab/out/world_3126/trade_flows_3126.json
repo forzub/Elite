@@ -6,19 +6,19 @@
    "commodity": "electronics",
    "delivered_cr_per_t": 120701.8,
    "jumps": 1,
-   "loaded_trips_y": 4082.1,
+   "loaded_trips_y": 4082.2,
    "path": [
     0,
     9
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 399.51,
+   "ships": 399.52,
    "status": "PROPOSAL",
-   "tonnes_y": 3400389,
+   "tonnes_y": 3400441,
    "transport_cr_per_t": 687.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 408046649101,
+   "value_cr_y": 408052888637,
    "via": null
   },
   {
@@ -36,10 +36,10 @@
    "ship_class": "medium_freighter",
    "ships": 345.38,
    "status": "PROPOSAL",
-   "tonnes_y": 2939654,
+   "tonnes_y": 2939660,
    "transport_cr_per_t": 690.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 352758463293,
+   "value_cr_y": 352759247575,
    "via": null
   },
   {
@@ -55,12 +55,12 @@
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 303.24,
+   "ships": 303.25,
    "status": "PROPOSAL",
-   "tonnes_y": 2581019,
+   "tonnes_y": 2581031,
    "transport_cr_per_t": 700.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 309722314844,
+   "value_cr_y": 309723712119,
    "via": null
   },
   {
@@ -78,10 +78,10 @@
    "ship_class": "medium_freighter",
    "ships": 262.71,
    "status": "PROPOSAL",
-   "tonnes_y": 2235980,
+   "tonnes_y": 2235981,
    "transport_cr_per_t": 708.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 268317659750,
+   "value_cr_y": 268317761390,
    "via": null
   },
   {
@@ -99,10 +99,10 @@
    "ship_class": "medium_freighter",
    "ships": 216.85,
    "status": "PROPOSAL",
-   "tonnes_y": 1845648,
+   "tonnes_y": 1845666,
    "transport_cr_per_t": 681.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 221477733538,
+   "value_cr_y": 221479901642,
    "via": null
   },
   {
@@ -132,19 +132,19 @@
    "commodity": "consumer",
    "delivered_cr_per_t": 6160.5,
    "jumps": 1,
-   "loaded_trips_y": 39748.9,
+   "loaded_trips_y": 39749.5,
    "path": [
     0,
     9
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 3890.19,
+   "ships": 3890.25,
    "status": "PROPOSAL",
-   "tonnes_y": 28380723,
+   "tonnes_y": 28381157,
    "transport_cr_per_t": 205.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 170284338828,
+   "value_cr_y": 170286942834,
    "via": null
   },
   {
@@ -165,7 +165,7 @@
    "tonnes_y": 1266452,
    "transport_cr_per_t": 680.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 151974225343,
+   "value_cr_y": 151974225883,
    "via": null
   },
   {
@@ -174,19 +174,19 @@
    "commodity": "consumer",
    "delivered_cr_per_t": 6164.4,
    "jumps": 1,
-   "loaded_trips_y": 34260.1,
+   "loaded_trips_y": 34260.2,
    "path": [
     0,
     8
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 3353.01,
+   "ships": 3353.02,
    "status": "PROPOSAL",
-   "tonnes_y": 24461732,
+   "tonnes_y": 24461786,
    "transport_cr_per_t": 208.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 146770391270,
+   "value_cr_y": 146770717582,
    "via": null
   },
   {
@@ -203,12 +203,12 @@
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 139.22,
+   "ships": 139.23,
    "status": "PROPOSAL",
-   "tonnes_y": 1092383,
+   "tonnes_y": 1092433,
    "transport_cr_per_t": 832.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 131085958676,
+   "value_cr_y": 131091922936,
    "via": null
   },
   {
@@ -217,19 +217,19 @@
    "commodity": "consumer",
    "delivered_cr_per_t": 6176.4,
    "jumps": 1,
-   "loaded_trips_y": 30290.2,
+   "loaded_trips_y": 30290.3,
    "path": [
     0,
     12
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 2964.48,
+   "ships": 2964.49,
    "status": "PROPOSAL",
-   "tonnes_y": 21627210,
+   "tonnes_y": 21627308,
    "transport_cr_per_t": 220.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 129763261795,
+   "value_cr_y": 129763847207,
    "via": null
   },
   {
@@ -245,12 +245,12 @@
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 218.82,
+   "ships": 218.83,
    "status": "PROPOSAL",
-   "tonnes_y": 2128554,
+   "tonnes_y": 2128587,
    "transport_cr_per_t": 408.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 127713254121,
+   "value_cr_y": 127715207126,
    "via": null
   },
   {
@@ -268,10 +268,10 @@
    "ship_class": "medium_freighter",
    "ships": 2581.37,
    "status": "PROPOSAL",
-   "tonnes_y": 18832262,
+   "tonnes_y": 18832270,
    "transport_cr_per_t": 230.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 112993574505,
+   "value_cr_y": 112993617297,
    "via": null
   },
   {
@@ -289,10 +289,10 @@
    "ship_class": "medium_freighter",
    "ships": 188.61,
    "status": "PROPOSAL",
-   "tonnes_y": 1834630,
+   "tonnes_y": 1834634,
    "transport_cr_per_t": 411.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 110077793453,
+   "value_cr_y": 110078038187,
    "via": null
   },
   {
@@ -310,10 +310,10 @@
    "ship_class": "medium_freighter",
    "ships": 166.75,
    "status": "PROPOSAL",
-   "tonnes_y": 1622041,
+   "tonnes_y": 1622048,
    "transport_cr_per_t": 420.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 97322446347,
+   "value_cr_y": 97322885405,
    "via": null
   },
   {
@@ -322,19 +322,19 @@
    "commodity": "consumer",
    "delivered_cr_per_t": 6154.4,
    "jumps": 1,
-   "loaded_trips_y": 21636.5,
+   "loaded_trips_y": 21636.8,
    "path": [
     0,
     4
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 2117.55,
+   "ships": 2117.57,
    "status": "PROPOSAL",
-   "tonnes_y": 15448490,
+   "tonnes_y": 15448642,
    "transport_cr_per_t": 199.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 92690942247,
+   "value_cr_y": 92691849635,
    "via": null
   },
   {
@@ -352,10 +352,10 @@
    "ship_class": "jump_train",
    "ships": 138.01,
    "status": "PROPOSAL",
-   "tonnes_y": 50151974,
+   "tonnes_y": 50152087,
    "transport_cr_per_t": 52.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 90273553428,
+   "value_cr_y": 90273756749,
    "via": null
   },
   {
@@ -364,19 +364,19 @@
    "commodity": "electronics",
    "delivered_cr_per_t": 120701.8,
    "jumps": 1,
-   "loaded_trips_y": 876.0,
+   "loaded_trips_y": 875.8,
    "path": [
     0,
     9
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 85.73,
+   "ships": 85.72,
    "status": "PROPOSAL",
-   "tonnes_y": 729704,
+   "tonnes_y": 729566,
    "transport_cr_per_t": 687.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 87564509715,
+   "value_cr_y": 87547915033,
    "via": null
   },
   {
@@ -397,7 +397,7 @@
    "tonnes_y": 1412420,
    "transport_cr_per_t": 427.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 84745180879,
+   "value_cr_y": 84745212973,
    "via": null
   },
   {
@@ -436,10 +436,10 @@
    "ship_class": "jump_train",
    "ships": 229.81,
    "status": "PROPOSAL",
-   "tonnes_y": 83512986,
+   "tonnes_y": 83513171,
    "transport_cr_per_t": 52.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 75161687192,
+   "value_cr_y": 75161854298,
    "via": null
   },
   {
@@ -457,10 +457,10 @@
    "ship_class": "medium_freighter",
    "ships": 119.11,
    "status": "PROPOSAL",
-   "tonnes_y": 1158637,
+   "tonnes_y": 1158648,
    "transport_cr_per_t": 403.6,
    "unbeaconed_hops": 0,
-   "value_cr_y": 69518206685,
+   "value_cr_y": 69518887226,
    "via": null
   },
   {
@@ -481,7 +481,7 @@
    "tonnes_y": 10585665,
    "transport_cr_per_t": 197.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 63513991569,
+   "value_cr_y": 63513991802,
    "via": null
   },
   {
@@ -511,7 +511,7 @@
    "commodity": "consumer",
    "delivered_cr_per_t": 6278.6,
    "jumps": 2,
-   "loaded_trips_y": 12879.9,
+   "loaded_trips_y": 12880.5,
    "path": [
     0,
     14,
@@ -519,12 +519,12 @@
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 1367.39,
+   "ships": 1367.45,
    "status": "PROPOSAL",
-   "tonnes_y": 9196248,
+   "tonnes_y": 9196666,
    "transport_cr_per_t": 318.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 55177486272,
+   "value_cr_y": 55179996782,
    "via": null
   },
   {
@@ -542,10 +542,10 @@
    "ship_class": "jump_train",
    "ships": 129.89,
    "status": "PROPOSAL",
-   "tonnes_y": 47202054,
+   "tonnes_y": 47202157,
    "transport_cr_per_t": 49.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 51922259597,
+   "value_cr_y": 51922373198,
    "via": null
   },
   {
@@ -566,7 +566,7 @@
    "tonnes_y": 793925,
    "transport_cr_per_t": 402.6,
    "unbeaconed_hops": 0,
-   "value_cr_y": 47635493677,
+   "value_cr_y": 47635493851,
    "via": null
   },
   {
@@ -584,10 +584,10 @@
    "ship_class": "medium_freighter",
    "ships": 1017.75,
    "status": "PROPOSAL",
-   "tonnes_y": 7424971,
+   "tonnes_y": 7424962,
    "transport_cr_per_t": 205.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 44549828843,
+   "value_cr_y": 44549774063,
    "via": null
   },
   {
@@ -605,10 +605,10 @@
    "ship_class": "jump_train",
    "ships": 339.33,
    "status": "PROPOSAL",
-   "tonnes_y": 123315453,
+   "tonnes_y": 123315718,
    "transport_cr_per_t": 45.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 43160408452,
+   "value_cr_y": 43160501269,
    "via": null
   },
   {
@@ -629,7 +629,7 @@
    "tonnes_y": 23179837,
    "transport_cr_per_t": 53.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 41723706928,
+   "value_cr_y": 41723707066,
    "via": null
   },
   {
@@ -648,10 +648,10 @@
    "ship_class": "medium_freighter",
    "ships": 76.92,
    "status": "PROPOSAL",
-   "tonnes_y": 689719,
+   "tonnes_y": 689750,
    "transport_cr_per_t": 519.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 41383114704,
+   "value_cr_y": 41384997586,
    "via": null
   },
   {
@@ -667,12 +667,12 @@
    ],
    "seller": "sol_authority",
    "ship_class": "jump_train",
-   "ships": 121.93,
+   "ships": 121.94,
    "status": "PROPOSAL",
-   "tonnes_y": 44311348,
+   "tonnes_y": 44311782,
    "transport_cr_per_t": 50.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 39880213208,
+   "value_cr_y": 39880603611,
    "via": null
   },
   {
@@ -690,10 +690,10 @@
    "ship_class": "medium_freighter",
    "ships": 221.35,
    "status": "PROPOSAL",
-   "tonnes_y": 4306346,
+   "tonnes_y": 4306356,
    "transport_cr_per_t": 134.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 38757116253,
+   "value_cr_y": 38757202421,
    "via": null
   },
   {
@@ -711,10 +711,10 @@
    "ship_class": "jump_train",
    "ships": 59.19,
    "status": "PROPOSAL",
-   "tonnes_y": 21508104,
+   "tonnes_y": 21508152,
    "transport_cr_per_t": 52.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 38714588088,
+   "value_cr_y": 38714674161,
    "via": null
   },
   {
@@ -723,19 +723,19 @@
    "commodity": "machinery",
    "delivered_cr_per_t": 9029.5,
    "jumps": 1,
-   "loaded_trips_y": 2244.2,
+   "loaded_trips_y": 2244.3,
    "path": [
     0,
     9
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 219.64,
+   "ships": 219.65,
    "status": "PROPOSAL",
-   "tonnes_y": 4273043,
+   "tonnes_y": 4273109,
    "transport_cr_per_t": 132.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 38457389345,
+   "value_cr_y": 38457977439,
    "via": null
   },
   {
@@ -753,10 +753,10 @@
    "ship_class": "medium_freighter",
    "ships": 861.49,
    "status": "PROPOSAL",
-   "tonnes_y": 6284963,
+   "tonnes_y": 6284960,
    "transport_cr_per_t": 199.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 37709776130,
+   "value_cr_y": 37709757943,
    "via": null
   },
   {
@@ -774,10 +774,10 @@
    "ship_class": "jump_train",
    "ships": 114.9,
    "status": "PROPOSAL",
-   "tonnes_y": 41756493,
+   "tonnes_y": 41756586,
    "transport_cr_per_t": 48.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 37580843596,
+   "value_cr_y": 37580927149,
    "via": null
   },
   {
@@ -786,7 +786,7 @@
    "commodity": "medical",
    "delivered_cr_per_t": 60135.5,
    "jumps": 1,
-   "loaded_trips_y": 585.0,
+   "loaded_trips_y": 584.9,
    "path": [
     0,
     9
@@ -795,10 +795,10 @@
    "ship_class": "medium_freighter",
    "ships": 57.25,
    "status": "PROPOSAL",
-   "tonnes_y": 556873,
+   "tonnes_y": 556872,
    "transport_cr_per_t": 408.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 33412371632,
+   "value_cr_y": 33412330548,
    "via": null
   },
   {
@@ -816,10 +816,10 @@
    "ship_class": "medium_freighter",
    "ships": 726.41,
    "status": "PROPOSAL",
-   "tonnes_y": 5299522,
+   "tonnes_y": 5299523,
    "transport_cr_per_t": 231.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 31797134180,
+   "value_cr_y": 31797135466,
    "via": null
   },
   {
@@ -828,19 +828,19 @@
    "commodity": "consumer",
    "delivered_cr_per_t": 6186.3,
    "jumps": 1,
-   "loaded_trips_y": 7109.1,
+   "loaded_trips_y": 7109.0,
    "path": [
     0,
     14
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 695.76,
+   "ships": 695.75,
    "status": "PROPOSAL",
-   "tonnes_y": 5075918,
+   "tonnes_y": 5075840,
    "transport_cr_per_t": 230.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 30455507042,
+   "value_cr_y": 30455042694,
    "via": null
   },
   {
@@ -849,7 +849,7 @@
    "commodity": "machinery",
    "delivered_cr_per_t": 9037.0,
    "jumps": 1,
-   "loaded_trips_y": 1760.6,
+   "loaded_trips_y": 1760.7,
    "path": [
     0,
     12
@@ -858,10 +858,10 @@
    "ship_class": "medium_freighter",
    "ships": 172.31,
    "status": "PROPOSAL",
-   "tonnes_y": 3352271,
+   "tonnes_y": 3352286,
    "transport_cr_per_t": 139.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 30170435643,
+   "value_cr_y": 30170571753,
    "via": null
   },
   {
@@ -882,7 +882,7 @@
    "tonnes_y": 471372,
    "transport_cr_per_t": 403.6,
    "unbeaconed_hops": 0,
-   "value_cr_y": 28282332097,
+   "value_cr_y": 28282318457,
    "via": null
   },
   {
@@ -900,10 +900,10 @@
    "ship_class": "jump_tanker",
    "ships": 16.84,
    "status": "PROPOSAL",
-   "tonnes_y": 5533539,
+   "tonnes_y": 5533485,
    "transport_cr_per_t": 71.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 28110376170,
+   "value_cr_y": 28110105567,
    "via": null
   },
   {
@@ -922,10 +922,10 @@
    "ship_class": "medium_freighter",
    "ships": 658.86,
    "status": "PROPOSAL",
-   "tonnes_y": 4431089,
+   "tonnes_y": 4431090,
    "transport_cr_per_t": 319.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 26586535164,
+   "value_cr_y": 26586537631,
    "via": null
   },
   {
@@ -943,10 +943,10 @@
    "ship_class": "medium_freighter",
    "ships": 151.25,
    "status": "PROPOSAL",
-   "tonnes_y": 2942559,
+   "tonnes_y": 2942560,
    "transport_cr_per_t": 143.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 26483032227,
+   "value_cr_y": 26483042257,
    "via": null
   },
   {
@@ -963,12 +963,12 @@
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 616.81,
+   "ships": 616.82,
    "status": "PROPOSAL",
-   "tonnes_y": 4148321,
+   "tonnes_y": 4148358,
    "transport_cr_per_t": 318.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 24889927104,
+   "value_cr_y": 24890145400,
    "via": null
   },
   {
@@ -977,19 +977,19 @@
    "commodity": "consumer",
    "delivered_cr_per_t": 6187.9,
    "jumps": 1,
-   "loaded_trips_y": 5607.1,
+   "loaded_trips_y": 5606.9,
    "path": [
     0,
     10
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 548.76,
+   "ships": 548.74,
    "status": "PROPOSAL",
-   "tonnes_y": 4003446,
+   "tonnes_y": 4003344,
    "transport_cr_per_t": 231.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 24020675078,
+   "value_cr_y": 24020063033,
    "via": null
   },
   {
@@ -1010,7 +1010,7 @@
    "tonnes_y": 397464,
    "transport_cr_per_t": 429.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 23847850635,
+   "value_cr_y": 23847851599,
    "via": null
   },
   {
@@ -1031,7 +1031,7 @@
    "tonnes_y": 3900445,
    "transport_cr_per_t": 230.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 23402668897,
+   "value_cr_y": 23402672991,
    "via": null
   },
   {
@@ -1049,10 +1049,10 @@
    "ship_class": "medium_freighter",
    "ships": 131.12,
    "status": "PROPOSAL",
-   "tonnes_y": 2550820,
+   "tonnes_y": 2550845,
    "transport_cr_per_t": 129.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 22957383353,
+   "value_cr_y": 22957608092,
    "via": null
   },
   {
@@ -1070,10 +1070,10 @@
    "ship_class": "medium_freighter",
    "ships": 39.11,
    "status": "PROPOSAL",
-   "tonnes_y": 380475,
+   "tonnes_y": 380469,
    "transport_cr_per_t": 427.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 22828472661,
+   "value_cr_y": 22828124600,
    "via": null
   },
   {
@@ -1091,10 +1091,10 @@
    "ship_class": "jump_train",
    "ships": 55.69,
    "status": "PROPOSAL",
-   "tonnes_y": 20236182,
+   "tonnes_y": 20236226,
    "transport_cr_per_t": 49.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 22259799835,
+   "value_cr_y": 22259848216,
    "via": null
   },
   {
@@ -1133,10 +1133,10 @@
    "ship_class": "medium_freighter",
    "ships": 22.51,
    "status": "PROPOSAL",
-   "tonnes_y": 469278,
+   "tonnes_y": 469285,
    "transport_cr_per_t": 286.6,
    "unbeaconed_hops": 0,
-   "value_cr_y": 21117505598,
+   "value_cr_y": 21117826170,
    "via": null
   },
   {
@@ -1157,7 +1157,7 @@
    "tonnes_y": 11589919,
    "transport_cr_per_t": 58.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 20861853464,
+   "value_cr_y": 20861853533,
    "via": null
   },
   {
@@ -1175,10 +1175,10 @@
    "ship_class": "jump_train",
    "ships": 60.97,
    "status": "PROPOSAL",
-   "tonnes_y": 22155674,
+   "tonnes_y": 22155891,
    "transport_cr_per_t": 47.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 19940106604,
+   "value_cr_y": 19940301806,
    "via": null
   },
   {
@@ -1200,7 +1200,7 @@
    "tonnes_y": 332332,
    "transport_cr_per_t": 520.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 19939901373,
+   "value_cr_y": 19939903223,
    "via": null
   },
   {
@@ -1218,10 +1218,10 @@
    "ship_class": "jump_train",
    "ships": 30.11,
    "status": "PROPOSAL",
-   "tonnes_y": 10942584,
+   "tonnes_y": 10942691,
    "transport_cr_per_t": 54.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 19696650804,
+   "value_cr_y": 19696843214,
    "via": null
   },
   {
@@ -1240,10 +1240,10 @@
    "ship_class": "medium_freighter",
    "ships": 34.7,
    "status": "PROPOSAL",
-   "tonnes_y": 311124,
+   "tonnes_y": 311127,
    "transport_cr_per_t": 519.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 18667445328,
+   "value_cr_y": 18667609050,
    "via": null
   },
   {
@@ -1261,10 +1261,10 @@
    "ship_class": "jump_train",
    "ships": 145.46,
    "status": "PROPOSAL",
-   "tonnes_y": 52862292,
+   "tonnes_y": 52862405,
    "transport_cr_per_t": 45.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 18501802113,
+   "value_cr_y": 18501841712,
    "via": null
   },
   {
@@ -1282,10 +1282,10 @@
    "ship_class": "medium_freighter",
    "ships": 30.85,
    "status": "PROPOSAL",
-   "tonnes_y": 300090,
+   "tonnes_y": 300082,
    "transport_cr_per_t": 429.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 18005402267,
+   "value_cr_y": 18004943491,
    "via": null
   },
   {
@@ -1306,7 +1306,7 @@
    "tonnes_y": 292533,
    "transport_cr_per_t": 428.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 17552001673,
+   "value_cr_y": 17552004744,
    "via": null
   },
   {
@@ -1324,10 +1324,10 @@
    "ship_class": "jump_train",
    "ships": 51.92,
    "status": "PROPOSAL",
-   "tonnes_y": 18867620,
+   "tonnes_y": 18867706,
    "transport_cr_per_t": 49.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 16980858433,
+   "value_cr_y": 16980935055,
    "via": null
   },
   {
@@ -1336,19 +1336,19 @@
    "commodity": "consumer",
    "delivered_cr_per_t": 6162.9,
    "jumps": 1,
-   "loaded_trips_y": 3889.8,
+   "loaded_trips_y": 3888.2,
    "path": [
     0,
     31
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 380.69,
+   "ships": 380.54,
    "status": "PROPOSAL",
-   "tonnes_y": 2777319,
+   "tonnes_y": 2776178,
    "transport_cr_per_t": 207.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 16663912708,
+   "value_cr_y": 16657067010,
    "via": null
   },
   {
@@ -1366,10 +1366,10 @@
    "ship_class": "jump_train",
    "ships": 49.95,
    "status": "PROPOSAL",
-   "tonnes_y": 18150475,
+   "tonnes_y": 18150466,
    "transport_cr_per_t": 50.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 16335427556,
+   "value_cr_y": 16335419678,
    "via": null
   },
   {
@@ -1390,7 +1390,7 @@
    "tonnes_y": 1783215,
    "transport_cr_per_t": 128.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 16048933724,
+   "value_cr_y": 16048933783,
    "via": null
   },
   {
@@ -1429,10 +1429,10 @@
    "ship_class": "jump_train",
    "ships": 44.84,
    "status": "PROPOSAL",
-   "tonnes_y": 16293342,
+   "tonnes_y": 16293591,
    "transport_cr_per_t": 51.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 14664007365,
+   "value_cr_y": 14664231608,
    "via": null
   },
   {
@@ -1441,7 +1441,7 @@
    "commodity": "machinery",
    "delivered_cr_per_t": 9086.4,
    "jumps": 2,
-   "loaded_trips_y": 779.2,
+   "loaded_trips_y": 779.3,
    "path": [
     0,
     14,
@@ -1451,10 +1451,10 @@
    "ship_class": "medium_freighter",
    "ships": 82.73,
    "status": "PROPOSAL",
-   "tonnes_y": 1483664,
+   "tonnes_y": 1483731,
    "transport_cr_per_t": 186.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 13352972315,
+   "value_cr_y": 13353579860,
    "via": null
   },
   {
@@ -1472,10 +1472,10 @@
    "ship_class": "jump_train",
    "ships": 32.46,
    "status": "PROPOSAL",
-   "tonnes_y": 11795690,
+   "tonnes_y": 11795371,
    "transport_cr_per_t": 57.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 12975258887,
+   "value_cr_y": 12974908159,
    "via": null
   },
   {
@@ -1493,10 +1493,10 @@
    "ship_class": "jump_train",
    "ships": 38.3,
    "status": "PROPOSAL",
-   "tonnes_y": 13918831,
+   "tonnes_y": 13918862,
    "transport_cr_per_t": 48.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 12526947865,
+   "value_cr_y": 12526975716,
    "via": null
   },
   {
@@ -1505,7 +1505,7 @@
    "commodity": "medical",
    "delivered_cr_per_t": 60137.4,
    "jumps": 1,
-   "loaded_trips_y": 218.8,
+   "loaded_trips_y": 218.7,
    "path": [
     0,
     31
@@ -1514,10 +1514,10 @@
    "ship_class": "medium_freighter",
    "ships": 21.41,
    "status": "PROPOSAL",
-   "tonnes_y": 208299,
+   "tonnes_y": 208213,
    "transport_cr_per_t": 410.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 12497934531,
+   "value_cr_y": 12492800257,
    "via": null
   },
   {
@@ -1535,10 +1535,10 @@
    "ship_class": "jump_train",
    "ships": 31.14,
    "status": "PROPOSAL",
-   "tonnes_y": 11317190,
+   "tonnes_y": 11317744,
    "transport_cr_per_t": 61.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 12448908903,
+   "value_cr_y": 12449518526,
    "via": null
   },
   {
@@ -1556,10 +1556,10 @@
    "ship_class": "jump_tanker",
    "ships": 7.24,
    "status": "PROPOSAL",
-   "tonnes_y": 2378045,
+   "tonnes_y": 2378021,
    "transport_cr_per_t": 71.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 12080466822,
+   "value_cr_y": 12080348712,
    "via": null
   },
   {
@@ -1598,10 +1598,10 @@
    "ship_class": "medium_freighter",
    "ships": 11.34,
    "status": "PROPOSAL",
-   "tonnes_y": 236281,
+   "tonnes_y": 236282,
    "transport_cr_per_t": 293.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 10632652897,
+   "value_cr_y": 10632700873,
    "via": null
   },
   {
@@ -1619,10 +1619,10 @@
    "ship_class": "medium_freighter",
    "ships": 10.92,
    "status": "PROPOSAL",
-   "tonnes_y": 227624,
+   "tonnes_y": 227625,
    "transport_cr_per_t": 288.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 10243085945,
+   "value_cr_y": 10243108718,
    "via": null
   },
   {
@@ -1640,10 +1640,10 @@
    "ship_class": "medium_freighter",
    "ships": 58.45,
    "status": "PROPOSAL",
-   "tonnes_y": 1137167,
+   "tonnes_y": 1137165,
    "transport_cr_per_t": 132.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 10234500253,
+   "value_cr_y": 10234487668,
    "via": null
   },
   {
@@ -1661,10 +1661,10 @@
    "ship_class": "jump_train",
    "ships": 25.02,
    "status": "PROPOSAL",
-   "tonnes_y": 9094050,
+   "tonnes_y": 9094142,
    "transport_cr_per_t": 48.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 10003454996,
+   "value_cr_y": 10003555730,
    "via": null
   },
   {
@@ -1673,19 +1673,19 @@
    "commodity": "metals",
    "delivered_cr_per_t": 1141.6,
    "jumps": 1,
-   "loaded_trips_y": 184.6,
+   "loaded_trips_y": 184.5,
    "path": [
     0,
     31
    ],
    "seller": "sol_authority",
    "ship_class": "jump_train",
-   "ships": 24.87,
+   "ships": 24.85,
    "status": "PROPOSAL",
-   "tonnes_y": 9036858,
+   "tonnes_y": 9032262,
    "transport_cr_per_t": 52.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 9940543871,
+   "value_cr_y": 9935488190,
    "via": null
   },
   {
@@ -1703,10 +1703,10 @@
    "ship_class": "jump_train",
    "ships": 15.06,
    "status": "PROPOSAL",
-   "tonnes_y": 5471292,
+   "tonnes_y": 5471345,
    "transport_cr_per_t": 58.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 9848325402,
+   "value_cr_y": 9848421607,
    "via": null
   },
   {
@@ -1723,10 +1723,10 @@
    "ship_class": "jump_train",
    "ships": 27.65,
    "status": "PROPOSAL",
-   "tonnes_y": 10729249,
+   "tonnes_y": 10729254,
    "transport_cr_per_t": 43.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 9656324498,
+   "value_cr_y": 9656328155,
    "via": null
   },
   {
@@ -1747,7 +1747,7 @@
    "tonnes_y": 1053382,
    "transport_cr_per_t": 129.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 9480440244,
+   "value_cr_y": 9480435671,
    "via": null
   },
   {
@@ -1765,10 +1765,10 @@
    "ship_class": "jump_train",
    "ships": 24.97,
    "status": "PROPOSAL",
-   "tonnes_y": 9075238,
+   "tonnes_y": 9075233,
    "transport_cr_per_t": 47.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 8167713778,
+   "value_cr_y": 8167709839,
    "via": null
   },
   {
@@ -1786,10 +1786,10 @@
    "ship_class": "jump_train",
    "ships": 12.26,
    "status": "PROPOSAL",
-   "tonnes_y": 4455368,
+   "tonnes_y": 4455365,
    "transport_cr_per_t": 54.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 8019662262,
+   "value_cr_y": 8019657208,
    "via": null
   },
   {
@@ -1810,7 +1810,7 @@
    "tonnes_y": 889636,
    "transport_cr_per_t": 144.6,
    "unbeaconed_hops": 0,
-   "value_cr_y": 8006725231,
+   "value_cr_y": 8006725555,
    "via": null
   },
   {
@@ -1849,10 +1849,10 @@
    "ship_class": "medium_freighter",
    "ships": 8.06,
    "status": "PROPOSAL",
-   "tonnes_y": 168090,
+   "tonnes_y": 168081,
    "transport_cr_per_t": 297.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 7564041420,
+   "value_cr_y": 7563648456,
    "via": null
   },
   {
@@ -1870,10 +1870,10 @@
    "ship_class": "jump_train",
    "ships": 22.42,
    "status": "PROPOSAL",
-   "tonnes_y": 8146671,
+   "tonnes_y": 8146795,
    "transport_cr_per_t": 54.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 7332003682,
+   "value_cr_y": 7332115804,
    "via": null
   },
   {
@@ -1891,10 +1891,10 @@
    "ship_class": "medium_freighter",
    "ships": 41.6,
    "status": "PROPOSAL",
-   "tonnes_y": 809291,
+   "tonnes_y": 809279,
    "transport_cr_per_t": 143.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 7283620833,
+   "value_cr_y": 7283509781,
    "via": null
   },
   {
@@ -1912,10 +1912,10 @@
    "ship_class": "jump_train",
    "ships": 18.04,
    "status": "PROPOSAL",
-   "tonnes_y": 6555036,
+   "tonnes_y": 6555034,
    "transport_cr_per_t": 57.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 7210539762,
+   "value_cr_y": 7210537508,
    "via": null
   },
   {
@@ -1936,7 +1936,7 @@
    "tonnes_y": 3863306,
    "transport_cr_per_t": 58.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 6953951155,
+   "value_cr_y": 6953951178,
    "via": null
   },
   {
@@ -1954,10 +1954,10 @@
    "ship_class": "jump_train",
    "ships": 20.32,
    "status": "PROPOSAL",
-   "tonnes_y": 7385225,
+   "tonnes_y": 7385297,
    "transport_cr_per_t": 54.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 6646702201,
+   "value_cr_y": 6646767269,
    "via": null
   },
   {
@@ -1975,10 +1975,10 @@
    "ship_class": "jump_train",
    "ships": 16.23,
    "status": "PROPOSAL",
-   "tonnes_y": 5897845,
+   "tonnes_y": 5897686,
    "transport_cr_per_t": 58.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 6487629444,
+   "value_cr_y": 6487454079,
    "via": null
   },
   {
@@ -2000,7 +2000,7 @@
    "tonnes_y": 695476,
    "transport_cr_per_t": 187.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 6259286594,
+   "value_cr_y": 6259287175,
    "via": null
   },
   {
@@ -2018,10 +2018,10 @@
    "ship_class": "jump_train",
    "ships": 15.57,
    "status": "PROPOSAL",
-   "tonnes_y": 5658595,
+   "tonnes_y": 5658872,
    "transport_cr_per_t": 61.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 6224454451,
+   "value_cr_y": 6224759263,
    "via": null
   },
   {
@@ -2039,10 +2039,10 @@
    "ship_class": "medium_freighter",
    "ships": 34.42,
    "status": "PROPOSAL",
-   "tonnes_y": 669582,
+   "tonnes_y": 669565,
    "transport_cr_per_t": 144.6,
    "unbeaconed_hops": 0,
-   "value_cr_y": 6026237919,
+   "value_cr_y": 6026084371,
    "via": null
   },
   {
@@ -2061,10 +2061,10 @@
    "ship_class": "medium_freighter",
    "ships": 37.31,
    "status": "PROPOSAL",
-   "tonnes_y": 669127,
+   "tonnes_y": 669133,
    "transport_cr_per_t": 186.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 6022139790,
+   "value_cr_y": 6022192607,
    "via": null
   },
   {
@@ -2085,7 +2085,7 @@
    "tonnes_y": 651485,
    "transport_cr_per_t": 144.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 5863361694,
+   "value_cr_y": 5863362720,
    "via": null
   },
   {
@@ -2106,7 +2106,7 @@
    "tonnes_y": 6401471,
    "transport_cr_per_t": 49.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 5761323936,
+   "value_cr_y": 5761324101,
    "via": null
   },
   {
@@ -2145,10 +2145,10 @@
    "ship_class": "jump_train",
    "ships": 14.01,
    "status": "PROPOSAL",
-   "tonnes_y": 5091754,
+   "tonnes_y": 5091804,
    "transport_cr_per_t": 61.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 5600929001,
+   "value_cr_y": 5600984531,
    "via": null
   },
   {
@@ -2166,10 +2166,10 @@
    "ship_class": "cobrett_i_n1",
    "ships": 57.12,
    "status": "PROPOSAL",
-   "tonnes_y": 56142,
+   "tonnes_y": 56141,
    "transport_cr_per_t": 725.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 5052739285,
+   "value_cr_y": 5052733075,
    "via": null
   },
   {
@@ -2187,10 +2187,10 @@
    "ship_class": "jump_train",
    "ships": 12.51,
    "status": "PROPOSAL",
-   "tonnes_y": 4547025,
+   "tonnes_y": 4547071,
    "transport_cr_per_t": 50.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 5001727498,
+   "value_cr_y": 5001777865,
    "via": null
   },
   {
@@ -2199,7 +2199,7 @@
    "commodity": "metals",
    "delivered_cr_per_t": 1145.0,
    "jumps": 1,
-   "loaded_trips_y": 92.3,
+   "loaded_trips_y": 92.2,
    "path": [
     9,
     31
@@ -2208,10 +2208,10 @@
    "ship_class": "jump_train",
    "ships": 12.43,
    "status": "PROPOSAL",
-   "tonnes_y": 4518429,
+   "tonnes_y": 4516131,
    "transport_cr_per_t": 56.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 4970271936,
+   "value_cr_y": 4967744095,
    "via": null
   },
   {
@@ -2229,10 +2229,10 @@
    "ship_class": "jump_train",
    "ships": 14.76,
    "status": "PROPOSAL",
-   "tonnes_y": 5364625,
+   "tonnes_y": 5364627,
    "transport_cr_per_t": 56.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 4828162249,
+   "value_cr_y": 4828164078,
    "via": null
   },
   {
@@ -2250,10 +2250,10 @@
    "ship_class": "jump_train",
    "ships": 14.57,
    "status": "PROPOSAL",
-   "tonnes_y": 5293658,
+   "tonnes_y": 5293899,
    "transport_cr_per_t": 61.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 4764292067,
+   "value_cr_y": 4764508836,
    "via": null
   },
   {
@@ -2271,10 +2271,10 @@
    "ship_class": "jump_train",
    "ships": 287.28,
    "status": "PROPOSAL",
-   "tonnes_y": 104398889,
+   "tonnes_y": 104399117,
    "transport_cr_per_t": 44.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 4175955578,
+   "value_cr_y": 4175964679,
    "via": null
   },
   {
@@ -2283,19 +2283,19 @@
    "commodity": "machinery",
    "delivered_cr_per_t": 9030.6,
    "jumps": 1,
-   "loaded_trips_y": 243.7,
+   "loaded_trips_y": 243.6,
    "path": [
     0,
     31
    ],
    "seller": "sol_authority",
    "ship_class": "medium_freighter",
-   "ships": 23.85,
+   "ships": 23.84,
    "status": "PROPOSAL",
-   "tonnes_y": 463916,
+   "tonnes_y": 463725,
    "transport_cr_per_t": 133.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 4175243574,
+   "value_cr_y": 4173528343,
    "via": null
   },
   {
@@ -2313,10 +2313,10 @@
    "ship_class": "jump_train",
    "ships": 6.13,
    "status": "PROPOSAL",
-   "tonnes_y": 2227684,
+   "tonnes_y": 2227683,
    "transport_cr_per_t": 58.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 4009831131,
+   "value_cr_y": 4009828604,
    "via": null
   },
   {
@@ -2325,19 +2325,19 @@
    "commodity": "construction",
    "delivered_cr_per_t": 397.2,
    "jumps": 1,
-   "loaded_trips_y": 233.1,
+   "loaded_trips_y": 232.9,
    "path": [
     0,
     31
    ],
    "seller": "sol_authority",
    "ship_class": "jump_train",
-   "ships": 31.4,
+   "ships": 31.38,
    "status": "PROPOSAL",
-   "tonnes_y": 11410588,
+   "tonnes_y": 11404555,
    "transport_cr_per_t": 49.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 3993705851,
+   "value_cr_y": 3991594292,
    "via": null
   },
   {
@@ -2376,10 +2376,10 @@
    "ship_class": "jump_train",
    "ships": 11.38,
    "status": "PROPOSAL",
-   "tonnes_y": 4135800,
+   "tonnes_y": 4135795,
    "transport_cr_per_t": 51.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 3722220339,
+   "value_cr_y": 3722215762,
    "via": null
   },
   {
@@ -2397,10 +2397,10 @@
    "ship_class": "jump_train",
    "ships": 9.02,
    "status": "PROPOSAL",
-   "tonnes_y": 3277518,
+   "tonnes_y": 3277517,
    "transport_cr_per_t": 58.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 3605269881,
+   "value_cr_y": 3605268754,
    "via": null
   },
   {
@@ -2418,10 +2418,10 @@
    "ship_class": "jump_train",
    "ships": 5.02,
    "status": "PROPOSAL",
-   "tonnes_y": 1823764,
+   "tonnes_y": 1823782,
    "transport_cr_per_t": 58.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 3282775134,
+   "value_cr_y": 3282807202,
    "via": null
   },
   {
@@ -2442,7 +2442,7 @@
    "tonnes_y": 5248,
    "transport_cr_per_t": 2915.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 3148581733,
+   "value_cr_y": 3148585593,
    "via": null
   },
   {
@@ -2462,7 +2462,7 @@
    "tonnes_y": 3230062,
    "transport_cr_per_t": 43.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2907055894,
+   "value_cr_y": 2907056011,
    "via": null
   },
   {
@@ -2483,7 +2483,7 @@
    "tonnes_y": 3200736,
    "transport_cr_per_t": 51.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2880661968,
+   "value_cr_y": 2880662051,
    "via": null
   },
   {
@@ -2501,10 +2501,10 @@
    "ship_class": "jump_train",
    "ships": 7.01,
    "status": "PROPOSAL",
-   "tonnes_y": 2545877,
+   "tonnes_y": 2545902,
    "transport_cr_per_t": 61.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2800464500,
+   "value_cr_y": 2800492266,
    "via": null
   },
   {
@@ -2522,10 +2522,10 @@
    "ship_class": "jump_train",
    "ships": 8.32,
    "status": "PROPOSAL",
-   "tonnes_y": 3025079,
+   "tonnes_y": 3025078,
    "transport_cr_per_t": 54.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2722571259,
+   "value_cr_y": 2722569946,
    "via": null
   },
   {
@@ -2543,10 +2543,10 @@
    "ship_class": "cobrett_i_n1",
    "ships": 30.5,
    "status": "PROPOSAL",
-   "tonnes_y": 29975,
+   "tonnes_y": 29974,
    "transport_cr_per_t": 765.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2697768908,
+   "value_cr_y": 2697700205,
    "via": null
   },
   {
@@ -2563,10 +2563,10 @@
    "ship_class": "jump_train",
    "ships": 7.65,
    "status": "PROPOSAL",
-   "tonnes_y": 2970233,
+   "tonnes_y": 2970188,
    "transport_cr_per_t": 43.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2673209966,
+   "value_cr_y": 2673169209,
    "via": null
   },
   {
@@ -2587,7 +2587,7 @@
    "tonnes_y": 2938864,
    "transport_cr_per_t": 49.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2644977395,
+   "value_cr_y": 2644977405,
    "via": null
   },
   {
@@ -2626,10 +2626,10 @@
    "ship_class": "jump_train",
    "ships": 7.47,
    "status": "PROPOSAL",
-   "tonnes_y": 2715557,
+   "tonnes_y": 2715598,
    "transport_cr_per_t": 52.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2444001227,
+   "value_cr_y": 2444038601,
    "via": null
   },
   {
@@ -2647,10 +2647,10 @@
    "ship_class": "jump_train",
    "ships": 5.97,
    "status": "PROPOSAL",
-   "tonnes_y": 2170526,
+   "tonnes_y": 2170525,
    "transport_cr_per_t": 48.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2387578492,
+   "value_cr_y": 2387576997,
    "via": null
   },
   {
@@ -2668,10 +2668,10 @@
    "ship_class": "jump_train",
    "ships": 7.28,
    "status": "PROPOSAL",
-   "tonnes_y": 2646829,
+   "tonnes_y": 2646949,
    "transport_cr_per_t": 61.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2382146033,
+   "value_cr_y": 2382254418,
    "via": null
   },
   {
@@ -2693,7 +2693,7 @@
    "tonnes_y": 2432959,
    "transport_cr_per_t": 74.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2189663124,
+   "value_cr_y": 2189663327,
    "via": null
   },
   {
@@ -2711,10 +2711,10 @@
    "ship_class": "jump_train",
    "ships": 5.41,
    "status": "PROPOSAL",
-   "tonnes_y": 1965948,
+   "tonnes_y": 1965895,
    "transport_cr_per_t": 60.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2162543148,
+   "value_cr_y": 2162484693,
    "via": null
   },
   {
@@ -2731,10 +2731,10 @@
    "ship_class": "jump_train",
    "ships": 6.14,
    "status": "PROPOSAL",
-   "tonnes_y": 2382536,
+   "tonnes_y": 2382475,
    "transport_cr_per_t": 43.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2144282111,
+   "value_cr_y": 2144227475,
    "via": null
   },
   {
@@ -2752,10 +2752,10 @@
    "ship_class": "jump_train",
    "ships": 6.48,
    "status": "PROPOSAL",
-   "tonnes_y": 2355443,
+   "tonnes_y": 2355464,
    "transport_cr_per_t": 61.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2119898621,
+   "value_cr_y": 2119917214,
    "via": null
   },
   {
@@ -2774,10 +2774,10 @@
    "ship_class": "jump_train",
    "ships": 5.52,
    "status": "PROPOSAL",
-   "tonnes_y": 1886198,
+   "tonnes_y": 1886291,
    "transport_cr_per_t": 70.6,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2074818150,
+   "value_cr_y": 2074919754,
    "via": null
   },
   {
@@ -2793,12 +2793,12 @@
    ],
    "seller": "lalande_hellas",
    "ship_class": "jump_train",
-   "ships": 15.7,
+   "ships": 15.69,
    "status": "PROPOSAL",
-   "tonnes_y": 5705294,
+   "tonnes_y": 5702278,
    "transport_cr_per_t": 51.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1996852925,
+   "value_cr_y": 1995797146,
    "via": null
   },
   {
@@ -2858,10 +2858,10 @@
    "ship_class": "jump_train",
    "ships": 5.77,
    "status": "PROPOSAL",
-   "tonnes_y": 2096820,
+   "tonnes_y": 2096830,
    "transport_cr_per_t": 54.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1887138372,
+   "value_cr_y": 1887146885,
    "via": null
   },
   {
@@ -2879,10 +2879,10 @@
    "ship_class": "jump_train",
    "ships": 5.69,
    "status": "PROPOSAL",
-   "tonnes_y": 2067900,
+   "tonnes_y": 2067898,
    "transport_cr_per_t": 54.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1861110169,
+   "value_cr_y": 1861107881,
    "via": null
   },
   {
@@ -2900,10 +2900,10 @@
    "ship_class": "jump_train",
    "ships": 123.2,
    "status": "PROPOSAL",
-   "tonnes_y": 44772885,
+   "tonnes_y": 44772981,
    "transport_cr_per_t": 44.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1790915408,
+   "value_cr_y": 1790919259,
    "via": null
   },
   {
@@ -2921,10 +2921,10 @@
    "ship_class": "jump_train",
    "ships": 4.17,
    "status": "PROPOSAL",
-   "tonnes_y": 1515675,
+   "tonnes_y": 1515690,
    "transport_cr_per_t": 55.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1667242499,
+   "value_cr_y": 1667259288,
    "via": null
   },
   {
@@ -2933,7 +2933,7 @@
    "commodity": "metals",
    "delivered_cr_per_t": 1145.0,
    "jumps": 1,
-   "loaded_trips_y": 30.8,
+   "loaded_trips_y": 30.7,
    "path": [
     9,
     31
@@ -2942,10 +2942,10 @@
    "ship_class": "jump_train",
    "ships": 4.14,
    "status": "PROPOSAL",
-   "tonnes_y": 1506143,
+   "tonnes_y": 1505377,
    "transport_cr_per_t": 56.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1656757312,
+   "value_cr_y": 1655914698,
    "via": null
   },
   {
@@ -2963,10 +2963,10 @@
    "ship_class": "jump_train",
    "ships": 4.92,
    "status": "PROPOSAL",
-   "tonnes_y": 1788208,
+   "tonnes_y": 1788209,
    "transport_cr_per_t": 56.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1609387416,
+   "value_cr_y": 1609388026,
    "via": null
   },
   {
@@ -2984,10 +2984,10 @@
    "ship_class": "jump_train",
    "ships": 4.9,
    "status": "PROPOSAL",
-   "tonnes_y": 1780493,
+   "tonnes_y": 1779702,
    "transport_cr_per_t": 51.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1602443331,
+   "value_cr_y": 1601731949,
    "via": null
   },
   {
@@ -3008,7 +3008,7 @@
    "tonnes_y": 2518,
    "transport_cr_per_t": 2909.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1510682015,
+   "value_cr_y": 1510682017,
    "via": null
   },
   {
@@ -3029,7 +3029,7 @@
    "tonnes_y": 1615031,
    "transport_cr_per_t": 57.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1453527947,
+   "value_cr_y": 1453528006,
    "via": null
   },
   {
@@ -3050,7 +3050,7 @@
    "tonnes_y": 2274,
    "transport_cr_per_t": 2915.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1364690585,
+   "value_cr_y": 1364692229,
    "via": null
   },
   {
@@ -3071,7 +3071,7 @@
    "tonnes_y": 742561,
    "transport_cr_per_t": 58.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1336610377,
+   "value_cr_y": 1336609535,
    "via": null
   },
   {
@@ -3089,10 +3089,10 @@
    "ship_class": "jump_train",
    "ships": 4.09,
    "status": "PROPOSAL",
-   "tonnes_y": 1485117,
+   "tonnes_y": 1485094,
    "transport_cr_per_t": 56.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1336604983,
+   "value_cr_y": 1336584604,
    "via": null
   },
   {
@@ -3113,7 +3113,7 @@
    "tonnes_y": 1469432,
    "transport_cr_per_t": 59.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1322488698,
+   "value_cr_y": 1322488703,
    "via": null
   },
   {
@@ -3134,7 +3134,7 @@
    "tonnes_y": 1092506,
    "transport_cr_per_t": 60.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1201756627,
+   "value_cr_y": 1201756251,
    "via": null
   },
   {
@@ -3152,10 +3152,10 @@
    "ship_class": "jump_train",
    "ships": 2.99,
    "status": "PROPOSAL",
-   "tonnes_y": 1085263,
+   "tonnes_y": 1085262,
    "transport_cr_per_t": 50.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1193789246,
+   "value_cr_y": 1193788499,
    "via": null
   },
   {
@@ -3177,7 +3177,7 @@
    "tonnes_y": 1216480,
    "transport_cr_per_t": 70.6,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1094831562,
+   "value_cr_y": 1094831663,
    "via": null
   },
   {
@@ -3195,10 +3195,10 @@
    "ship_class": "jump_train",
    "ships": 3.28,
    "status": "PROPOSAL",
-   "tonnes_y": 1191268,
+   "tonnes_y": 1191237,
    "transport_cr_per_t": 57.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1072141056,
+   "value_cr_y": 1072113737,
    "via": null
   },
   {
@@ -3216,10 +3216,10 @@
    "ship_class": "jump_train",
    "ships": 3.24,
    "status": "PROPOSAL",
-   "tonnes_y": 1177721,
+   "tonnes_y": 1177732,
    "transport_cr_per_t": 61.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1059949311,
+   "value_cr_y": 1059958607,
    "via": null
   },
   {
@@ -3228,19 +3228,19 @@
    "commodity": "ore",
    "delivered_cr_per_t": 89.5,
    "jumps": 1,
-   "loaded_trips_y": 537.2,
+   "loaded_trips_y": 537.0,
    "path": [
     0,
     31
    ],
    "seller": "sol_authority",
    "ship_class": "jump_train",
-   "ships": 72.38,
+   "ships": 72.34,
    "status": "PROPOSAL",
-   "tonnes_y": 26303200,
+   "tonnes_y": 26289450,
    "transport_cr_per_t": 48.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1052127993,
+   "value_cr_y": 1051577983,
    "via": null
   },
   {
@@ -3261,7 +3261,7 @@
    "tonnes_y": 1066912,
    "transport_cr_per_t": 51.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 960220656,
+   "value_cr_y": 960220684,
    "via": null
   },
   {
@@ -3280,10 +3280,10 @@
    "ship_class": "jump_train",
    "ships": 2.48,
    "status": "PROPOSAL",
-   "tonnes_y": 848626,
+   "tonnes_y": 848634,
    "transport_cr_per_t": 70.6,
    "unbeaconed_hops": 0,
-   "value_cr_y": 933488167,
+   "value_cr_y": 933497422,
    "via": null
   },
   {
@@ -3301,10 +3301,10 @@
    "ship_class": "medium_freighter",
    "ships": 8.7,
    "status": "PROPOSAL",
-   "tonnes_y": 181369,
+   "tonnes_y": 181368,
    "transport_cr_per_t": 116.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 921353486,
+   "value_cr_y": 921351031,
    "via": null
   },
   {
@@ -3325,7 +3325,7 @@
    "tonnes_y": 1021641,
    "transport_cr_per_t": 56.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 919476681,
+   "value_cr_y": 919476842,
    "via": null
   },
   {
@@ -3343,10 +3343,10 @@
    "ship_class": "jump_train",
    "ships": 1.25,
    "status": "PROPOSAL",
-   "tonnes_y": 455910,
+   "tonnes_y": 455723,
    "transport_cr_per_t": 55.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 820638869,
+   "value_cr_y": 820301857,
    "via": null
   },
   {
@@ -3365,10 +3365,10 @@
    "ship_class": "jump_train",
    "ships": 2.58,
    "status": "PROPOSAL",
-   "tonnes_y": 882276,
+   "tonnes_y": 882316,
    "transport_cr_per_t": 74.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 794048678,
+   "value_cr_y": 794084806,
    "via": null
   },
   {
@@ -3389,7 +3389,7 @@
    "tonnes_y": 1259,
    "transport_cr_per_t": 2909.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 755341007,
+   "value_cr_y": 755341008,
    "via": null
   },
   {
@@ -3407,10 +3407,10 @@
    "ship_class": "jump_train",
    "ships": 2.29,
    "status": "PROPOSAL",
-   "tonnes_y": 831263,
+   "tonnes_y": 830922,
    "transport_cr_per_t": 55.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 748136817,
+   "value_cr_y": 747829475,
    "via": null
   },
   {
@@ -3428,10 +3428,10 @@
    "ship_class": "jump_train",
    "ships": 5.23,
    "status": "PROPOSAL",
-   "tonnes_y": 1901765,
+   "tonnes_y": 1900759,
    "transport_cr_per_t": 51.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 665617642,
+   "value_cr_y": 665265715,
    "via": null
   },
   {
@@ -3470,10 +3470,10 @@
    "ship_class": "jump_train",
    "ships": 1.9,
    "status": "PROPOSAL",
-   "tonnes_y": 689300,
+   "tonnes_y": 689299,
    "transport_cr_per_t": 52.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 620370056,
+   "value_cr_y": 620369294,
    "via": null
   },
   {
@@ -3482,19 +3482,19 @@
    "commodity": "ore",
    "delivered_cr_per_t": 91.9,
    "jumps": 1,
-   "loaded_trips_y": 268.6,
+   "loaded_trips_y": 268.5,
    "path": [
     4,
     31
    ],
    "seller": "lalande_hellas",
    "ship_class": "jump_train",
-   "ships": 36.19,
+   "ships": 36.17,
    "status": "PROPOSAL",
-   "tonnes_y": 13151600,
+   "tonnes_y": 13144725,
    "transport_cr_per_t": 50.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 526063997,
+   "value_cr_y": 525788992,
    "via": null
   },
   {
@@ -3515,7 +3515,7 @@
    "tonnes_y": 463549,
    "transport_cr_per_t": 50.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 509903509,
+   "value_cr_y": 509903606,
    "via": null
   },
   {
@@ -3536,7 +3536,7 @@
    "tonnes_y": 538344,
    "transport_cr_per_t": 56.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 484509316,
+   "value_cr_y": 484509335,
    "via": null
   },
   {
@@ -3557,7 +3557,7 @@
    "tonnes_y": 90684,
    "transport_cr_per_t": 116.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 460676743,
+   "value_cr_y": 460675516,
    "via": null
   },
   {
@@ -3578,7 +3578,7 @@
    "tonnes_y": 510820,
    "transport_cr_per_t": 49.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 459738340,
+   "value_cr_y": 459738421,
    "via": null
   },
   {
@@ -3596,10 +3596,10 @@
    "ship_class": "jump_train",
    "ships": 1.36,
    "status": "PROPOSAL",
-   "tonnes_y": 495039,
+   "tonnes_y": 495031,
    "transport_cr_per_t": 56.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 445534994,
+   "value_cr_y": 445528201,
    "via": null
   },
   {
@@ -3620,7 +3620,7 @@
    "tonnes_y": 489811,
    "transport_cr_per_t": 54.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 440829566,
+   "value_cr_y": 440829568,
    "via": null
   },
   {
@@ -3638,10 +3638,10 @@
    "ship_class": "jump_train",
    "ships": 0.63,
    "status": "PROPOSAL",
-   "tonnes_y": 227955,
+   "tonnes_y": 227862,
    "transport_cr_per_t": 59.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 410319434,
+   "value_cr_y": 410150929,
    "via": null
   },
   {
@@ -3662,7 +3662,7 @@
    "tonnes_y": 676,
    "transport_cr_per_t": 2924.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 405719979,
+   "value_cr_y": 405720010,
    "via": null
   },
   {
@@ -3683,7 +3683,7 @@
    "tonnes_y": 361754,
    "transport_cr_per_t": 55.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 397929749,
+   "value_cr_y": 397929500,
    "via": null
   },
   {
@@ -3705,7 +3705,7 @@
    "tonnes_y": 405493,
    "transport_cr_per_t": 76.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 364943854,
+   "value_cr_y": 364943888,
    "via": null
   },
   {
@@ -3723,10 +3723,10 @@
    "ship_class": "jump_train",
    "ships": 1.09,
    "status": "PROPOSAL",
-   "tonnes_y": 397089,
+   "tonnes_y": 397079,
    "transport_cr_per_t": 56.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 357380352,
+   "value_cr_y": 357371246,
    "via": null
   },
   {
@@ -3745,10 +3745,10 @@
    "ship_class": "jump_train",
    "ships": 1.15,
    "status": "PROPOSAL",
-   "tonnes_y": 392574,
+   "tonnes_y": 392577,
    "transport_cr_per_t": 74.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 353316437,
+   "value_cr_y": 353319536,
    "via": null
   },
   {
@@ -3769,7 +3769,7 @@
    "tonnes_y": 231774,
    "transport_cr_per_t": 57.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 254951754,
+   "value_cr_y": 254951803,
    "via": null
   },
   {
@@ -3808,10 +3808,10 @@
    "ship_class": "jump_train",
    "ships": 12.06,
    "status": "PROPOSAL",
-   "tonnes_y": 4383867,
+   "tonnes_y": 4381575,
    "transport_cr_per_t": 50.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 175354666,
+   "value_cr_y": 175262997,
    "via": null
   },
   {
@@ -3832,7 +3832,7 @@
    "tonnes_y": 30228,
    "transport_cr_per_t": 127.1,
    "unbeaconed_hops": 0,
-   "value_cr_y": 153558914,
+   "value_cr_y": 153558505,
    "via": null
   },
   {
@@ -3853,7 +3853,7 @@
    "tonnes_y": 170273,
    "transport_cr_per_t": 142.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 153246113,
+   "value_cr_y": 153246140,
    "via": null
   },
   {
@@ -3871,10 +3871,10 @@
    "ship_class": "medium_freighter",
    "ships": 11.9,
    "status": "PROPOSAL",
-   "tonnes_y": 159121,
+   "tonnes_y": 159115,
    "transport_cr_per_t": 125.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 143209242,
+   "value_cr_y": 143203494,
    "via": null
   },
   {
@@ -3890,12 +3890,12 @@
    ],
    "seller": "eps_eri_strife",
    "ship_class": "medium_freighter",
-   "ships": 3.65,
+   "ships": 3.64,
    "status": "PROPOSAL",
-   "tonnes_y": 75985,
+   "tonnes_y": 75954,
    "transport_cr_per_t": 104.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 136773145,
+   "value_cr_y": 136716976,
    "via": null
   },
   {
@@ -3916,7 +3916,7 @@
    "tonnes_y": 77258,
    "transport_cr_per_t": 103.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 84983918,
+   "value_cr_y": 84983934,
    "via": null
   },
   {
@@ -3934,10 +3934,10 @@
    "ship_class": "medium_freighter",
    "ships": 0.73,
    "status": "PROPOSAL",
-   "tonnes_y": 15232,
+   "tonnes_y": 15231,
    "transport_cr_per_t": 116.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 77379748,
+   "value_cr_y": 77374761,
    "via": null
   },
   {
@@ -3955,10 +3955,10 @@
    "ship_class": "medium_freighter",
    "ships": 0.62,
    "status": "PROPOSAL",
-   "tonnes_y": 12827,
+   "tonnes_y": 12820,
    "transport_cr_per_t": 117.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 65158871,
+   "value_cr_y": 65127446,
    "via": null
   },
   {
@@ -3976,10 +3976,10 @@
    "ship_class": "medium_freighter",
    "ships": 1.61,
    "status": "PROPOSAL",
-   "tonnes_y": 33603,
+   "tonnes_y": 33602,
    "transport_cr_per_t": 96.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 60485444,
+   "value_cr_y": 60482961,
    "via": null
   },
   {
@@ -4021,7 +4021,7 @@
    "tonnes_y": 10272,
    "transport_cr_per_t": 119.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 52182766,
+   "value_cr_y": 52182621,
    "via": null
   },
   {
@@ -4042,7 +4042,7 @@
    "tonnes_y": 9135,
    "transport_cr_per_t": 121.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 46404091,
+   "value_cr_y": 46404248,
    "via": null
   },
   {
@@ -4063,7 +4063,7 @@
    "tonnes_y": 76,
    "transport_cr_per_t": 2979.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 45441526,
+   "value_cr_y": 45441529,
    "via": null
   },
   {
@@ -4084,7 +4084,7 @@
    "tonnes_y": 8742,
    "transport_cr_per_t": 118.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 44407303,
+   "value_cr_y": 44406975,
    "via": null
   },
   {
@@ -4105,7 +4105,7 @@
    "tonnes_y": 59,
    "transport_cr_per_t": 2937.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 35696298,
+   "value_cr_y": 35696274,
    "via": null
   },
   {
@@ -4123,10 +4123,10 @@
    "ship_class": "medium_freighter",
    "ships": 0.31,
    "status": "PROPOSAL",
-   "tonnes_y": 6413,
+   "tonnes_y": 6410,
    "transport_cr_per_t": 117.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 32579436,
+   "value_cr_y": 32563723,
    "via": null
   },
   {
@@ -4144,10 +4144,10 @@
    "ship_class": "medium_freighter",
    "ships": 0.3,
    "status": "PROPOSAL",
-   "tonnes_y": 6354,
+   "tonnes_y": 6351,
    "transport_cr_per_t": 117.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 32276053,
+   "value_cr_y": 32265578,
    "via": null
   },
   {
@@ -4210,7 +4210,7 @@
    "tonnes_y": 5136,
    "transport_cr_per_t": 119.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 26091383,
+   "value_cr_y": 26091311,
    "via": null
   },
   {
@@ -4231,7 +4231,7 @@
    "tonnes_y": 4567,
    "transport_cr_per_t": 121.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 23202046,
+   "value_cr_y": 23202124,
    "via": null
   },
   {
@@ -4252,7 +4252,7 @@
    "tonnes_y": 4371,
    "transport_cr_per_t": 118.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 22203652,
+   "value_cr_y": 22203488,
    "via": null
   },
   {
@@ -4270,10 +4270,10 @@
    "ship_class": "medium_freighter",
    "ships": 0.75,
    "status": "PROPOSAL",
-   "tonnes_y": 15703,
+   "tonnes_y": 15702,
    "transport_cr_per_t": 92.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 17273351,
+   "value_cr_y": 17272640,
    "via": null
   },
   {
@@ -4291,10 +4291,10 @@
    "ship_class": "medium_freighter",
    "ships": 0.15,
    "status": "PROPOSAL",
-   "tonnes_y": 3177,
+   "tonnes_y": 3176,
    "transport_cr_per_t": 117.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 16138027,
+   "value_cr_y": 16132789,
    "via": null
   },
   {
@@ -4315,7 +4315,7 @@
    "tonnes_y": 2359,
    "transport_cr_per_t": 577.3,
    "unbeaconed_hops": 0,
-   "value_cr_y": 14152556,
+   "value_cr_y": 14151988,
    "via": null
   },
   {
@@ -4378,7 +4378,7 @@
    "tonnes_y": 2366,
    "transport_cr_per_t": 130.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 12018014,
+   "value_cr_y": 12018261,
    "via": null
   },
   {
@@ -4396,10 +4396,10 @@
    "ship_class": "medium_freighter",
    "ships": 0.1,
    "status": "PROPOSAL",
-   "tonnes_y": 2138,
+   "tonnes_y": 2137,
    "transport_cr_per_t": 129.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 10859812,
+   "value_cr_y": 10854574,
    "via": null
   },
   {
@@ -4420,7 +4420,7 @@
    "tonnes_y": 177,
    "transport_cr_per_t": 688.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 10614417,
+   "value_cr_y": 10613991,
    "via": null
   },
   {
@@ -4438,10 +4438,10 @@
    "ship_class": "medium_freighter",
    "ships": 1.43,
    "status": "PROPOSAL",
-   "tonnes_y": 29895,
+   "tonnes_y": 29894,
    "transport_cr_per_t": 89.6,
    "unbeaconed_hops": 0,
-   "value_cr_y": 10463145,
+   "value_cr_y": 10462725,
    "via": null
   },
   {
@@ -4483,7 +4483,7 @@
    "tonnes_y": 1712,
    "transport_cr_per_t": 120.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 8697128,
+   "value_cr_y": 8697104,
    "via": null
   },
   {
@@ -4504,7 +4504,7 @@
    "tonnes_y": 1522,
    "transport_cr_per_t": 125.4,
    "unbeaconed_hops": 0,
-   "value_cr_y": 7734015,
+   "value_cr_y": 7734041,
    "via": null
   },
   {
@@ -4525,7 +4525,7 @@
    "tonnes_y": 1457,
    "transport_cr_per_t": 130.9,
    "unbeaconed_hops": 0,
-   "value_cr_y": 7401217,
+   "value_cr_y": 7401163,
    "via": null
   },
   {
@@ -4567,7 +4567,7 @@
    "tonnes_y": 1183,
    "transport_cr_per_t": 130.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 6009007,
+   "value_cr_y": 6009130,
    "via": null
   },
   {
@@ -4588,7 +4588,7 @@
    "tonnes_y": 1059,
    "transport_cr_per_t": 129.7,
    "unbeaconed_hops": 0,
-   "value_cr_y": 5379342,
+   "value_cr_y": 5377596,
    "via": null
   },
   {
@@ -4672,7 +4672,7 @@
    "tonnes_y": 418,
    "transport_cr_per_t": 275.5,
    "unbeaconed_hops": 0,
-   "value_cr_y": 3758216,
+   "value_cr_y": 3758066,
    "via": null
   },
   {
@@ -4731,10 +4731,10 @@
    "ship_class": "medium_freighter",
    "ships": 3.41,
    "status": "PROPOSAL",
-   "tonnes_y": 71176,
+   "tonnes_y": 71173,
    "transport_cr_per_t": 88.2,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2847042,
+   "value_cr_y": 2846925,
    "via": null
   },
   {
@@ -4820,7 +4820,7 @@
    "tonnes_y": 394,
    "transport_cr_per_t": 152.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 2003002,
+   "value_cr_y": 2003043,
    "via": null
   },
   {
@@ -4912,7 +4912,7 @@
    "tonnes_y": 1183,
    "transport_cr_per_t": 128.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 1064990,
+   "value_cr_y": 1064947,
    "via": null
   },
   {
@@ -5048,7 +5048,7 @@
    "tonnes_y": 592,
    "transport_cr_per_t": 119.8,
    "unbeaconed_hops": 0,
-   "value_cr_y": 532495,
+   "value_cr_y": 532474,
    "via": null
   },
   {
@@ -5137,7 +5137,7 @@
    "tonnes_y": 197,
    "transport_cr_per_t": 125.0,
    "unbeaconed_hops": 0,
-   "value_cr_y": 177498,
+   "value_cr_y": 177491,
    "via": null
   },
   {
@@ -5556,7 +5556,7 @@
    ],
    "tonnes_y": 46949849,
    "unbeaconed": false,
-   "value_cr_y": 329554432907
+   "value_cr_y": 329554434228
   },
   {
    "beacons_supporting": [
@@ -5577,9 +5577,9 @@
     "Sol (Солнце)",
     "Lalande 21185"
    ],
-   "tonnes_y": 112306109,
+   "tonnes_y": 112306885,
    "unbeaconed": false,
-   "value_cr_y": 572251346984
+   "value_cr_y": 572255910858
   },
   {
    "beacons_supporting": [
@@ -5600,9 +5600,9 @@
     "Sol (Солнце)",
     "Tau Ceti"
    ],
-   "tonnes_y": 117282972,
+   "tonnes_y": 117283233,
    "unbeaconed": false,
-   "value_cr_y": 733768537405
+   "value_cr_y": 733770168781
   },
   {
    "beacons_supporting": [
@@ -5623,9 +5623,9 @@
     "Sol (Солнце)",
     "Epsilon Eridani"
    ],
-   "tonnes_y": 81165217,
+   "tonnes_y": 81165826,
    "unbeaconed": false,
-   "value_cr_y": 1008851040040
+   "value_cr_y": 1008845866977
   },
   {
    "beacons_supporting": [
@@ -5646,9 +5646,9 @@
     "Sol (Солнце)",
     "Gliese 581"
    ],
-   "tonnes_y": 23571378,
+   "tonnes_y": 23571060,
    "unbeaconed": false,
-   "value_cr_y": 127020362545
+   "value_cr_y": 127018868297
   },
   {
    "beacons_supporting": [
@@ -5669,9 +5669,9 @@
     "Sol (Солнце)",
     "Gliese 832"
    ],
-   "tonnes_y": 31515702,
+   "tonnes_y": 31515844,
    "unbeaconed": false,
-   "value_cr_y": 579498777029
+   "value_cr_y": 579501391373
   },
   {
    "beacons_supporting": [
@@ -5692,9 +5692,9 @@
     "Sol (Солнце)",
     "Gliese 876"
    ],
-   "tonnes_y": 19369,
+   "tonnes_y": 19368,
    "unbeaconed": false,
-   "value_cr_y": 106969927
+   "value_cr_y": 106963752
   },
   {
    "beacons_supporting": [
@@ -5715,9 +5715,9 @@
     "Sol (Солнце)",
     "HD 20794 (82 G. Eridani)"
    ],
-   "tonnes_y": 57572171,
+   "tonnes_y": 57572712,
    "unbeaconed": false,
-   "value_cr_y": 858562265853
+   "value_cr_y": 858572556693
   },
   {
    "beacons_supporting": [
@@ -5738,9 +5738,9 @@
     "Sol (Солнце)",
     "Delta Pavonis"
    ],
-   "tonnes_y": 5866104,
+   "tonnes_y": 5866105,
    "unbeaconed": false,
-   "value_cr_y": 47737508945
+   "value_cr_y": 47737517296
   },
   {
    "beacons_supporting": [
@@ -5760,9 +5760,9 @@
     "Sol (Солнце)",
     "Gliese 357"
    ],
-   "tonnes_y": 7891856,
+   "tonnes_y": 7891857,
    "unbeaconed": false,
-   "value_cr_y": 54975386256
+   "value_cr_y": 54975391356
   },
   {
    "beacons_supporting": [
@@ -5783,9 +5783,9 @@
     "Sol (Солнце)",
     "61 Cygni"
    ],
-   "tonnes_y": 52436583,
+   "tonnes_y": 52409809,
    "unbeaconed": false,
-   "value_cr_y": 50746550730
+   "value_cr_y": 50724089882
   },
   {
    "beacons_supporting": [
@@ -5828,9 +5828,9 @@
     "Wolf 359",
     "Lalande 21185"
    ],
-   "tonnes_y": 42499264,
+   "tonnes_y": 42499567,
    "unbeaconed": false,
-   "value_cr_y": 42764876892
+   "value_cr_y": 42765167397
   },
   {
    "beacons_supporting": [
@@ -5851,9 +5851,9 @@
     "Wolf 359",
     "Epsilon Eridani"
    ],
-   "tonnes_y": 26429686,
+   "tonnes_y": 26429808,
    "unbeaconed": false,
-   "value_cr_y": 38831913624
+   "value_cr_y": 38832019868
   },
   {
    "beacons_supporting": [
@@ -5874,9 +5874,9 @@
     "Wolf 359",
     "Gliese 581"
    ],
-   "tonnes_y": 19286159,
+   "tonnes_y": 19285828,
    "unbeaconed": false,
-   "value_cr_y": 21027688316
+   "value_cr_y": 21027326248
   },
   {
    "beacons_supporting": [
@@ -5899,7 +5899,7 @@
    ],
    "tonnes_y": 30260,
    "unbeaconed": false,
-   "value_cr_y": 153719138
+   "value_cr_y": 153718728
   },
   {
    "beacons_supporting": [
@@ -5922,7 +5922,7 @@
    ],
    "tonnes_y": 1639705,
    "unbeaconed": false,
-   "value_cr_y": 1475734811
+   "value_cr_y": 1475734843
   },
   {
    "beacons_supporting": [
@@ -5966,7 +5966,7 @@
    ],
    "tonnes_y": 1216506,
    "unbeaconed": false,
-   "value_cr_y": 1094966920
+   "value_cr_y": 1094967021
   },
   {
    "beacons_supporting": [
@@ -5987,9 +5987,9 @@
     "Wolf 359",
     "61 Cygni"
    ],
-   "tonnes_y": 831263,
+   "tonnes_y": 830922,
    "unbeaconed": false,
-   "value_cr_y": 748136817
+   "value_cr_y": 747829475
   },
   {
    "beacons_supporting": [
@@ -6032,9 +6032,9 @@
     "Lalande 21185",
     "Epsilon Eridani"
    ],
-   "tonnes_y": 12171786,
+   "tonnes_y": 12171858,
    "unbeaconed": false,
-   "value_cr_y": 20690315698
+   "value_cr_y": 20690394292
   },
   {
    "beacons_supporting": [
@@ -6055,9 +6055,9 @@
     "Lalande 21185",
     "HD 20794 (82 G. Eridani)"
    ],
-   "tonnes_y": 3197,
+   "tonnes_y": 3195,
    "unbeaconed": false,
-   "value_cr_y": 16239154
+   "value_cr_y": 16232171
   },
   {
    "beacons_supporting": [
@@ -6100,9 +6100,9 @@
     "Lalande 21185",
     "61 Cygni"
    ],
-   "tonnes_y": 35552829,
+   "tonnes_y": 35539711,
    "unbeaconed": false,
-   "value_cr_y": 12733162690
+   "value_cr_y": 12731452065
   },
   {
    "beacons_supporting": [
@@ -6123,9 +6123,9 @@
     "Tau Ceti",
     "Epsilon Eridani"
    ],
-   "tonnes_y": 520147985,
+   "tonnes_y": 520149119,
    "unbeaconed": false,
-   "value_cr_y": 325508257247
+   "value_cr_y": 325508970900
   },
   {
    "beacons_supporting": [
@@ -6146,9 +6146,9 @@
     "Tau Ceti",
     "Gliese 876"
    ],
-   "tonnes_y": 150436,
+   "tonnes_y": 150430,
    "unbeaconed": false,
-   "value_cr_y": 126765279
+   "value_cr_y": 126761525
   },
   {
    "beacons_supporting": [
@@ -6217,7 +6217,7 @@
    ],
    "tonnes_y": 1712,
    "unbeaconed": false,
-   "value_cr_y": 8697128
+   "value_cr_y": 8697104
   },
   {
    "beacons_supporting": [
@@ -6238,9 +6238,9 @@
     "Epsilon Eridani",
     "HD 20794 (82 G. Eridani)"
    ],
-   "tonnes_y": 6140531,
+   "tonnes_y": 6140673,
    "unbeaconed": false,
-   "value_cr_y": 6076997154
+   "value_cr_y": 6077144665
   },
   {
    "beacons_supporting": [
@@ -6263,7 +6263,7 @@
    ],
    "tonnes_y": 1522,
    "unbeaconed": false,
-   "value_cr_y": 7734015
+   "value_cr_y": 7734041
   },
   {
    "beacons_supporting": [
@@ -6284,9 +6284,9 @@
     "Epsilon Eridani",
     "61 Cygni"
    ],
-   "tonnes_y": 6341625,
+   "tonnes_y": 6338436,
    "unbeaconed": false,
-   "value_cr_y": 7240732781
+   "value_cr_y": 7237137160
   },
   {
    "beacons_supporting": [
@@ -6329,9 +6329,9 @@
     "Gliese 581",
     "Gliese 832"
    ],
-   "tonnes_y": 3058454,
+   "tonnes_y": 3058401,
    "unbeaconed": false,
-   "value_cr_y": 3364299775
+   "value_cr_y": 3364240944
   },
   {
    "beacons_supporting": [
@@ -6398,7 +6398,7 @@
    ],
    "tonnes_y": 592,
    "unbeaconed": false,
-   "value_cr_y": 532495
+   "value_cr_y": 532474
   },
   {
    "beacons_supporting": [
@@ -6421,7 +6421,7 @@
    ],
    "tonnes_y": 15408,
    "unbeaconed": false,
-   "value_cr_y": 78274149
+   "value_cr_y": 78273932
   },
   {
    "beacons_supporting": [
@@ -6442,9 +6442,9 @@
     "Gliese 832",
     "Delta Pavonis"
    ],
-   "tonnes_y": 19842686,
+   "tonnes_y": 19842772,
    "unbeaconed": false,
-   "value_cr_y": 18359487924
+   "value_cr_y": 18359564755
   },
   {
    "beacons_supporting": [
@@ -6465,9 +6465,9 @@
     "Gliese 876",
     "61 Cygni"
    ],
-   "tonnes_y": 159319,
+   "tonnes_y": 159312,
    "unbeaconed": false,
-   "value_cr_y": 143386741
+   "value_cr_y": 143380985
   },
   {
    "beacons_supporting": [
@@ -6488,9 +6488,9 @@
     "HD 20794 (82 G. Eridani)",
     "HD 40307"
    ],
-   "tonnes_y": 57695828,
+   "tonnes_y": 57697884,
    "unbeaconed": false,
-   "value_cr_y": 332178954033
+   "value_cr_y": 332191855336
   },
   {
    "beacons_supporting": [
@@ -6511,9 +6511,9 @@
     "HD 20794 (82 G. Eridani)",
     "Delta Pavonis"
    ],
-   "tonnes_y": 2606057,
+   "tonnes_y": 2606051,
    "unbeaconed": false,
-   "value_cr_y": 2509905746
+   "value_cr_y": 2509899866
   },
   {
    "beacons_supporting": [
@@ -6536,7 +6536,7 @@
    ],
    "tonnes_y": 1457,
    "unbeaconed": false,
-   "value_cr_y": 7401217
+   "value_cr_y": 7401163
   },
   {
    "beacons_supporting": [
@@ -6580,7 +6580,7 @@
    ],
    "tonnes_y": 405493,
    "unbeaconed": false,
-   "value_cr_y": 364943854
+   "value_cr_y": 364943888
   },
   {
    "beacons_supporting": [
@@ -6600,9 +6600,9 @@
     "HD 69830",
     "Gliese 357"
    ],
-   "tonnes_y": 9108365,
+   "tonnes_y": 9108366,
    "unbeaconed": false,
-   "value_cr_y": 56070368215
+   "value_cr_y": 56070373417
   },
   {
    "beacons_supporting": [
@@ -6624,7 +6624,7 @@
    ],
    "tonnes_y": 405493,
    "unbeaconed": false,
-   "value_cr_y": 364943854
+   "value_cr_y": 364943888
   },
   {
    "beacons_supporting": [

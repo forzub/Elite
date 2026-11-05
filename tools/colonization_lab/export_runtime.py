@@ -103,10 +103,21 @@ def build():
     canon = {m["id"]: m for m in MS["missions"]}
     retired = {r["id"]: r["reason"] for r in MS["retired"]}
     legacy = read_legacy(RUNTIME)
+    # mission renames come from the naming layer (canon/naming.json mission:<id>.former_ids); a replaced
+    # cultural branch (former_legacy = drop) leaves no legacy record behind
+    NM = json.load(open(os.path.join(HERE, "canon", "naming.json"), encoding="utf-8"))["entities"]
+    renamed, dropped = {}, set()
+    for eid, e in NM.items():
+        if eid.startswith("mission:"):
+            for f in e.get("former_ids", []):
+                (dropped.add(f) if e.get("former_legacy") == "drop" else renamed.__setitem__(f, eid[8:]))
     out = []
     seen = set()
     for s in legacy:
+        if s["id"] in dropped or s.get("legacy_values") is False:
+            continue                      # dropped branch / canon-only entry of a previous export (rebuilt below)
         s = dict(s)
+        s["id"] = renamed.get(s["id"], s["id"])
         cid = LEGACY_TO_CANON.get(s["id"], s["id"])
         s["legacy_values"] = True
         if cid in canon:

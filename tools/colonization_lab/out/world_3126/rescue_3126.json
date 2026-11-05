@@ -2,14 +2,14 @@
  "note": "SAR-катера — половина задачи «SAR и таможня» обороны; пожарные и аварийные команды — по населению станций и поверхности; поиск — межзвёздный, у маячных систем",
  "polities": {
   "cyg61_kern": {
-   "fire_damage_personnel": 340325,
+   "fire_damage_personnel": 340181,
    "hazmat_teams": 4,
-   "hospital_ships": 2.799,
+   "hospital_ships": 2.798,
    "law_family": "corporate",
    "organisation": "корпоративная служба по контрактам",
    "private_salvage_share": 0.2,
    "rescue_tugs": 1.692,
-   "sar_cutters": 43.25,
+   "sar_cutters": 43.2,
    "search_ships": 2.5,
    "status": "PROPOSAL"
   },
@@ -38,19 +38,19 @@
    "status": "PROPOSAL"
   },
   "eps_eri_harmony": {
-   "fire_damage_personnel": 3412552,
+   "fire_damage_personnel": 3412605,
    "hazmat_teams": 4,
-   "hospital_ships": 27.423,
+   "hospital_ships": 27.424,
    "law_family": "confucian_administrative",
    "organisation": "государственная служба + народные дружины",
    "private_salvage_share": 0.0,
    "rescue_tugs": 13.451,
-   "sar_cutters": 421.15,
+   "sar_cutters": 421.2,
    "search_ships": 0.5,
    "status": "PROPOSAL"
   },
   "eps_eri_strife": {
-   "fire_damage_personnel": 866341,
+   "fire_damage_personnel": 866340,
    "hazmat_teams": 4,
    "hospital_ships": 6.961,
    "law_family": "clan_law",
@@ -74,7 +74,7 @@
    "status": "PROPOSAL"
   },
   "gj581_freeclans": {
-   "fire_damage_personnel": 499073,
+   "fire_damage_personnel": 499060,
    "hazmat_teams": 4,
    "hospital_ships": 4.012,
    "law_family": "clan_law",
@@ -98,7 +98,7 @@
    "status": "PROPOSAL"
   },
   "gj832_tianhe": {
-   "fire_damage_personnel": 2636996,
+   "fire_damage_personnel": 2637008,
    "hazmat_teams": 4,
    "hospital_ships": 21.178,
    "law_family": "party_administrative",
@@ -134,7 +134,7 @@
    "status": "PROPOSAL"
   },
   "hd20794_hellas2": {
-   "fire_damage_personnel": 618450,
+   "fire_damage_personnel": 618441,
    "hazmat_teams": 4,
    "hospital_ships": 5.0,
    "law_family": "parliamentary_civil",
@@ -146,7 +146,7 @@
    "status": "PROPOSAL"
   },
   "hd20794_newindia": {
-   "fire_damage_personnel": 2252250,
+   "fire_damage_personnel": 2252251,
    "hazmat_teams": 4,
    "hospital_ships": 18.061,
    "law_family": "parliamentary_civil",
@@ -158,7 +158,7 @@
    "status": "PROPOSAL"
   },
   "hd40307_firmament": {
-   "fire_damage_personnel": 490898,
+   "fire_damage_personnel": 490902,
    "hazmat_teams": 4,
    "hospital_ships": 3.966,
    "law_family": "party_administrative",
@@ -170,13 +170,13 @@
    "status": "PROPOSAL"
   },
   "hd40307_maland": {
-   "fire_damage_personnel": 1106840,
+   "fire_damage_personnel": 1106891,
    "hazmat_teams": 4,
-   "hospital_ships": 8.912,
+   "hospital_ships": 8.913,
    "law_family": "customary_council",
    "organisation": "государственная + общинные дружины",
    "private_salvage_share": 0.0,
-   "rescue_tugs": 4.455,
+   "rescue_tugs": 4.456,
    "sar_cutters": 136.95,
    "search_ships": 0.5,
    "status": "PROPOSAL"
@@ -194,7 +194,7 @@
    "status": "PROPOSAL"
   },
   "lalande_hellas": {
-   "fire_damage_personnel": 810619,
+   "fire_damage_personnel": 810618,
    "hazmat_teams": 4,
    "hospital_ships": 6.552,
    "law_family": "city_state_arbitration",
@@ -206,7 +206,7 @@
    "status": "PROPOSAL"
   },
   "lalande_mecca": {
-   "fire_damage_personnel": 1972153,
+   "fire_damage_personnel": 1972173,
    "hazmat_teams": 4,
    "hospital_ships": 15.995,
    "law_family": "theocratic",
@@ -242,7 +242,7 @@
    "status": "PROPOSAL"
   },
   "sol_authority": {
-   "fire_damage_personnel": 14231558,
+   "fire_damage_personnel": 14231559,
    "hazmat_teams": 4,
    "hospital_ships": 233.379,
    "law_family": "sol_codified",
@@ -254,7 +254,7 @@
    "status": "PROPOSAL"
   },
   "tau_ceti_cognium": {
-   "fire_damage_personnel": 3391379,
+   "fire_damage_personnel": 3391387,
    "hazmat_teams": 8,
    "hospital_ships": 27.131,
    "law_family": "technocratic_civil",
@@ -394,21 +394,21 @@
    "site": "dso.garden"
   },
   {
-   "fire_crew_on_site": 19634,
+   "fire_crew_on_site": 19626,
    "law": "corporate",
    "responder": "корпоративная служба по контрактам",
    "response_h": 3.006,
    "site": "site.031.cyg61_kern.city01"
   },
   {
-   "fire_crew_on_site": 9817,
+   "fire_crew_on_site": 9813,
    "law": "corporate",
    "responder": "корпоративная служба по контрактам",
    "response_h": 3.006,
    "site": "site.031.cyg61_kern.city02"
   },
   {
-   "fire_crew_on_site": 6545,
+   "fire_crew_on_site": 6542,
    "law": "corporate",
    "responder": "корпоративная служба по контрактам",
    "response_h": 3.006,
@@ -772,7 +772,7 @@
    "site": "site.022.delta_pav_karma.quarantine01"
   },
   {
-   "fire_crew_on_site": 364276,
+   "fire_crew_on_site": 364282,
    "law": "confucian_administrative",
    "responder": "государственная служба + народные дружины",
    "response_h": 3.006,
@@ -786,7 +786,7 @@
    "site": "site.009.eps_eri_harmony.port01"
   },
   {
-   "fire_crew_on_site": 182138,
+   "fire_crew_on_site": 182141,
    "law": "confucian_administrative",
    "responder": "государственная служба + народные дружины",
    "response_h": 3.006,
@@ -800,7 +800,7 @@
    "site": "site.009.eps_eri_harmony.port02"
   },
   {
-   "fire_crew_on_site": 121425,
+   "fire_crew_on_site": 121427,
    "law": "confucian_administrative",
    "responder": "государственная служба + народные дружины",
    "response_h": 3.006,
@@ -1318,14 +1318,14 @@
    "site": "site.010.gj581_freeclans.port01"
   },
   {
-   "fire_crew_on_site": 33483,
+   "fire_crew_on_site": 33482,
    "law": "clan_law",
    "responder": "клановые артели (спасение за долю груза)",
    "response_h": 3.006,
    "site": "site.010.gj581_freeclans.city02"
   },
   {
-   "fire_crew_on_site": 22322,
+   "fire_crew_on_site": 22321,
    "law": "clan_law",
    "responder": "клановые артели (спасение за долю груза)",
    "response_h": 3.006,
@@ -1479,7 +1479,7 @@
    "site": "site.012.gj832_gaia_zone.science_hub01"
   },
   {
-   "fire_crew_on_site": 289253,
+   "fire_crew_on_site": 289254,
    "law": "party_administrative",
    "responder": "государственная служба",
    "response_h": 3.006,
@@ -1759,7 +1759,7 @@
    "site": "site.037.hd114783_hellas3.science_hub01"
   },
   {
-   "fire_crew_on_site": 81077,
+   "fire_crew_on_site": 81076,
    "law": "parliamentary_civil",
    "responder": "государственная + добровольцы",
    "response_h": 3.006,
@@ -1773,14 +1773,14 @@
    "site": "site.014.hd20794_hellas2.port01"
   },
   {
-   "fire_crew_on_site": 40539,
+   "fire_crew_on_site": 40538,
    "law": "parliamentary_civil",
    "responder": "государственная + добровольцы",
    "response_h": 3.006,
    "site": "site.014.hd20794_hellas2.city02"
   },
   {
-   "fire_crew_on_site": 27026,
+   "fire_crew_on_site": 27025,
    "law": "parliamentary_civil",
    "responder": "государственная + добровольцы",
    "response_h": 3.006,
@@ -1899,7 +1899,7 @@
    "site": "site.014.hd20794_hellas2.quarantine01"
   },
   {
-   "fire_crew_on_site": 251053,
+   "fire_crew_on_site": 251054,
    "law": "parliamentary_civil",
    "responder": "государственная + добровольцы",
    "response_h": 3.006,
@@ -1927,7 +1927,7 @@
    "site": "site.014.hd20794_newindia.port02"
   },
   {
-   "fire_crew_on_site": 83684,
+   "fire_crew_on_site": 83685,
    "law": "parliamentary_civil",
    "responder": "государственная + добровольцы",
    "response_h": 3.006,
@@ -2095,7 +2095,7 @@
    "site": "site.015.hd40307_firmament.city02"
   },
   {
-   "fire_crew_on_site": 22097,
+   "fire_crew_on_site": 22098,
    "law": "party_administrative",
    "responder": "государственная служба",
    "response_h": 3.006,
@@ -2207,7 +2207,7 @@
    "site": "site.015.hd40307_firmament.quarantine01"
   },
   {
-   "fire_crew_on_site": 53775,
+   "fire_crew_on_site": 53777,
    "law": "customary_council",
    "responder": "государственная + общинные дружины",
    "response_h": 3.006,
@@ -2221,7 +2221,7 @@
    "site": "site.015.hd40307_maland.port01"
   },
   {
-   "fire_crew_on_site": 67218,
+   "fire_crew_on_site": 67221,
    "law": "customary_council",
    "responder": "государственная + общинные дружины",
    "response_h": 3.006,
@@ -2235,14 +2235,14 @@
    "site": "site.015.hd40307_maland.port02"
   },
   {
-   "fire_crew_on_site": 44812,
+   "fire_crew_on_site": 44814,
    "law": "customary_council",
    "responder": "государственная + общинные дружины",
    "response_h": 3.006,
    "site": "site.015.hd40307_maland.city03"
   },
   {
-   "fire_crew_on_site": 33609,
+   "fire_crew_on_site": 33611,
    "law": "customary_council",
    "responder": "государственная + общинные дружины",
    "response_h": 3.006,
@@ -2648,7 +2648,7 @@
    "site": "site.004.lalande_hellas.quarantine01"
   },
   {
-   "fire_crew_on_site": 90151,
+   "fire_crew_on_site": 90152,
    "law": "theocratic",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
@@ -2676,7 +2676,7 @@
    "site": "site.004.lalande_mecca.port02"
   },
   {
-   "fire_crew_on_site": 30050,
+   "fire_crew_on_site": 30051,
    "law": "theocratic",
    "responder": "государственная + религиозные братства",
    "response_h": 3.006,
@@ -3495,14 +3495,14 @@
    "site": "site.041.hd104067_frontier"
   },
   {
-   "fire_crew_on_site": 315,
+   "fire_crew_on_site": 314,
    "law": "sol_codified",
    "responder": "Береговая служба Сола",
    "response_h": 3.006,
    "site": "earth_orbital_hub"
   },
   {
-   "fire_crew_on_site": 430,
+   "fire_crew_on_site": 429,
    "law": "sol_codified",
    "responder": "Береговая служба Сола",
    "response_h": 3.006,

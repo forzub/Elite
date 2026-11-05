@@ -39,7 +39,7 @@
 | beacons/41@3050 | tau_ceti_cognium | год и оператор маяка — реконсиляция | PROPOSAL · PUBLIC |
 | beacons/0@3112 | sol_authority | год и оператор маяка — реконсиляция | PROPOSAL · PUBLIC |
 
-### colonies (127)
+### colonies (125)
 
 | Путь | Что | Основание | Статус |
 |---|---|---|---|
@@ -56,7 +56,6 @@
 | colonies/gj832_tianhe/assets | assets | активы и их важность — реконсиляция/экономика | PROPOSAL · PUBLIC |
 | colonies/gj832_tianhe/culture_drift | culture_drift | гипотеза Colonycore v2 | PROPOSAL · PUBLIC |
 | colonies/gj832_tianhe/demography | demography | входы причинной демографии (допущения F1–F12) | PROPOSAL · PUBLIC |
-| colonies/gj832_tianhe/name | name | имя дано реконсиляцией / старой веткой | PROPOSAL · PUBLIC |
 | colonies/gj832_tianhe/pop_3126_model | pop_3126_model | результат модели demography.py, не канон | PROPOSAL · PUBLIC |
 | colonies/gj832_tianhe/regime_3126 | regime_3126 | машинная метка режима по досье (Claude) | PROPOSAL · PUBLIC |
 | colonies/gj832_gaia_zone/assets | assets | активы и их важность — реконсиляция/экономика | PROPOSAL · PUBLIC |
@@ -68,7 +67,6 @@
 | colonies/lalande_hellas/assets | assets | активы и их важность — реконсиляция/экономика | PROPOSAL · PUBLIC |
 | colonies/lalande_hellas/culture_drift | culture_drift | гипотеза Colonycore v2 | PROPOSAL · PUBLIC |
 | colonies/lalande_hellas/demography | demography | входы причинной демографии (допущения F1–F12) | PROPOSAL · PUBLIC |
-| colonies/lalande_hellas/name | name | имя дано реконсиляцией / старой веткой | PROPOSAL · PUBLIC |
 | colonies/lalande_hellas/pop_3126_model | pop_3126_model | результат модели demography.py, не канон | PROPOSAL · PUBLIC |
 | colonies/lalande_hellas/regime_3126 | regime_3126 | машинная метка режима по досье (Claude) | PROPOSAL · PUBLIC |
 | colonies/lalande_mecca/assets | assets | активы и их важность — реконсиляция/экономика | PROPOSAL · PUBLIC |
@@ -82,7 +80,7 @@
 | colonies/eps_eri_harmony/pop_3126_authored | pop_3126_authored | реконсиляция (разделение/пересчёт) | PROPOSAL · PUBLIC |
 | colonies/eps_eri_harmony/pop_3126_model | pop_3126_model | результат модели demography.py, не канон | PROPOSAL · PUBLIC |
 | colonies/eps_eri_harmony/regime_3126 | regime_3126 | машинная метка режима по досье (Claude) | PROPOSAL · PUBLIC |
-| colonies/eps_eri_strife | Пояс Раздора / Вольные астероиды | основатель FREE-VENTURE-1: PROPOSAL | PROPOSAL · PUBLIC |
+| colonies/eps_eri_strife | Пояс Раздора | основатель FREE-VENTURE-1: PROPOSAL | PROPOSAL · PUBLIC |
 | colonies/eps_eri_strife/assets | assets | активы и их важность — реконсиляция/экономика | PROPOSAL · PUBLIC |
 | colonies/eps_eri_strife/culture_drift | culture_drift | гипотеза Colonycore v2 | PROPOSAL · PUBLIC |
 | colonies/eps_eri_strife/demography | demography | входы причинной демографии (допущения F1–F12) | PROPOSAL · PUBLIC |
@@ -227,7 +225,7 @@
 
 | Путь | Что | Основание | Статус |
 |---|---|---|---|
-| jump_chronology/2583 | Академия Нового Шанхая публикует теорему о схлопывании интервала; сигнал доходит до Земли в 2595 — отсюда «изобретён в 2595» в FAREWELL-1 | реконсиляция (часть III) | PROPOSAL · PUBLIC |
+| jump_chronology/2583 | Академия Синь-Шанхая публикует теорему о схлопывании интервала; сигнал доходит до Земли в 2595 — отсюда «изобретён в 2595» в FAREWELL-1 | реконсиляция (часть III) | PROPOSAL · PUBLIC |
 | jump_chronology/2752 | HYPERION-2: гиперпространство — среда с градиентами; без маяков прыжок — лотерея; изобретён маяк | реконсиляция (часть III) | PROPOSAL · PUBLIC |
 | jump_chronology/2755 | Маяк Тау Кита; 2760 — Эпсилон Эридана (Гармония первая получает связь, 5.5 св. года) | реконсиляция (часть III) | PROPOSAL · PUBLIC |
 | jump_chronology/2765 | Концессия GJ 876: Провидение отдаёт гиганты Когниуму в обмен на вычислительное ядро нового поколения | реконсиляция (часть III) | PROPOSAL · PUBLIC |
@@ -265,13 +263,13 @@
 | missions/GENESIS-1/launch_year | launch_year | год не найден в источниках миссии | PROPOSAL · PUBLIC |
 | missions/GENESIS-1/population | population | число из досье (реконсиляция C1: стартовые численности по S1) | PROPOSAL · PUBLIC |
 | missions/GENESIS-1/anchors/2263/arrival | Прибытие к Тау Кита; «Старшие семьи» Мэйфлауэра против «Новой крови» | не найдено в источниках | PROPOSAL · PUBLIC |
-| missions/GENESIS-1/anchors/2270/merger | Слияние двух колоний; главный хаб GENESIS-1 даёт имя городу — «Новый Шанхай» | событие миссии-предложения | PROPOSAL · PUBLIC |
+| missions/GENESIS-1/anchors/2270/merger | Слияние двух колоний; главный хаб GENESIS-1 даёт имя городу — «Синь-Шанхай» | событие миссии-предложения | PROPOSAL · PUBLIC |
 | missions/UBUNTU-1/anchors/2790/found | Гипер-разведка Когниума находит обломки в поясе GJ 667. Тел нет. | реконсиляция B20: обломки найдены гипер-разведкой | PROPOSAL · PUBLIC |
 | missions/CELESTIAL-DESTINY-1/arrival_year | arrival_year | пересчитано по каталогу и потолку скорости; авторское 2172 | PROPOSAL · PUBLIC |
 | missions/CELESTIAL-DESTINY-1/anchors/2212/arrival | Эпсилон Эридана: поселения на спутниках eps Eri b и в поясе | пересчитано по каталогу и потолку скорости; авторское 2172 | PROPOSAL · PUBLIC |
 | missions/GREEN-ARK-1/arrival_year | arrival_year | пересчитано по каталогу и потолку скорости; авторское 2190 | PROPOSAL · PUBLIC |
 | missions/GREEN-ARK-1/fate | fate | скрытая правда (реконсиляция): симбионт из корабельного микробиома | PROPOSAL · AUTHOR TRUTH |
-| missions/GREEN-ARK-1/anchors/2270/arrival | GJ 832: сад-купола на GJ 832 b I и в поясе («Гайя-Прим») | пересчитано по каталогу и потолку скорости; авторское 2190 | PROPOSAL · PUBLIC |
+| missions/GREEN-ARK-1/anchors/2270/arrival | GJ 832: сад-купола на GJ 832 b I и в поясе («Гайя-Прайм») | пересчитано по каталогу и потолку скорости; авторское 2190 | PROPOSAL · PUBLIC |
 | missions/GREEN-ARK-1/anchors/2480/ecology_failure/hidden_truth | симбионт вырос из корабельного микробиома («успокаивающий» штамм биотех-партнёра) | объяснение реконсиляции; публично — официальная версия | PROPOSAL · AUTHOR TRUTH |
 | missions/GREEN-ARK-1/anchors/2510/quarantine | Тяньхэ объявляет зону «Филоморфоз» | год не найден в источниках миссии | PROPOSAL · PUBLIC |
 | missions/DHARMA-1/arrival_year | arrival_year | пересчитано по каталогу и потолку скорости; авторское 2210 | PROPOSAL · PUBLIC |
@@ -280,8 +278,8 @@
 | missions/IRON-SHIELD-1/arrival_year | arrival_year | пересчитано по каталогу и потолку скорости; авторское 2185 | PROPOSAL · PUBLIC |
 | missions/IRON-SHIELD-1/anchors/2215/class_conflict | Восстание каторжников за статус детей; подавлено ЧВК | год не найден в источниках миссии | PROPOSAL · PUBLIC |
 | missions/IRON-SHIELD-1/anchors/2228/arrival | Вольф 359: астероид-крепость (пояс-диск) | пересчитано по каталогу и потолку скорости; авторское 2185 | PROPOSAL · PUBLIC |
-| missions/AL-QUDS-1/arrival_year | arrival_year | пересчитано по каталогу и потолку скорости; авторское 2195 | PROPOSAL · PUBLIC |
-| missions/AL-QUDS-1/anchors/2243/arrival | Lalande 21185 — система уже занята Новой Элладой (с 2197) | пересчитано по каталогу и потолку скорости; авторское 2195 | PROPOSAL · PUBLIC |
+| missions/VAKA-MOANA-1/arrival_year | arrival_year | пересчитано по каталогу и потолку скорости; авторское 2195 | PROPOSAL · PUBLIC |
+| missions/VAKA-MOANA-1/anchors/2243/arrival | Lalande 21185 — система уже занята Новой Элладой (с 2197) | пересчитано по каталогу и потолку скорости; авторское 2195 | PROPOSAL · PUBLIC |
 | missions/NEXT-1/arrival_year | arrival_year | пересчитано по каталогу и потолку скорости; авторское 2230 | PROPOSAL · PUBLIC |
 | missions/NEXT-1/anchors/2218/purge | Отступники / Чистые / Еретики подавлены Советом Архитекторов и ИИ | год не найден в источниках миссии | PROPOSAL · PUBLIC |
 | missions/NEXT-1/anchors/2314/arrival | GJ 876: жёсткая посадка модуля на спутник GJ 876 b I; ядро ИИ уцелело | пересчитано по каталогу и потолку скорости; авторское 2230 | PROPOSAL · PUBLIC |
@@ -289,9 +287,9 @@
 | missions/EUROPA-1/anchors/2318/reform | Конфликт поколений; комиссия меняет цвет бюллетеней | год не найден в источниках миссии | PROPOSAL · PUBLIC |
 | missions/EUROPA-1/anchors/2377/arrival | GJ 581: орбитальная колонизация (g не подтверждена) | пересчитано по каталогу и потолку скорости; авторское 2325 | PROPOSAL · PUBLIC |
 | missions/RESOURCER-1/arrival_population | arrival_population | модель вахты/крио (реконсиляция C2) | PROPOSAL · PUBLIC |
-| missions/NEW-HELLAS-1/arrival_year | arrival_year | пересчитано по каталогу и потолку скорости; авторское 2380 | PROPOSAL · PUBLIC |
-| missions/NEW-HELLAS-1/anchors/2365/sleeper_return | Спящие владельцы просыпаются с идеологией 2260 и встречают коллективистов-корабельных | год не найден в источниках миссии | PROPOSAL · PUBLIC |
-| missions/NEW-HELLAS-1/anchors/2384/arrival | HD 20794: спутники гиганта d | пересчитано по каталогу и потолку скорости; авторское 2380 | PROPOSAL · PUBLIC |
+| missions/HOMESTEAD-1/arrival_year | arrival_year | пересчитано по каталогу и потолку скорости; авторское 2380 | PROPOSAL · PUBLIC |
+| missions/HOMESTEAD-1/anchors/2365/sleeper_return | Спящие владельцы просыпаются с идеологией 2260 и встречают коллективистов-корабельных | год не найден в источниках миссии | PROPOSAL · PUBLIC |
+| missions/HOMESTEAD-1/anchors/2384/arrival | HD 20794: спутники гиганта d | пересчитано по каталогу и потолку скорости; авторское 2380 | PROPOSAL · PUBLIC |
 | missions/NEW-JERUSALEM-1/anchors/2291/target_change | Земля сообщает: цель GJ 667 C c не ледяная луна. Синод на разгоне меняет цель на 83 Leonis (Лев от колена Иудина); крейсерская скорость снижена ради запаса | реконсиляция B9: смена цели на разгоне | PROPOSAL · PUBLIC |
 | missions/NEW-JERUSALEM-1/anchors/2375/sleeper_return | Пробуждение высшего клира: конфликт с корабельными и компромисс | год не найден в источниках миссии | PROPOSAL · PUBLIC |
 | missions/UHURU-2/arrival_year | arrival_year | не найдено в источниках | PROPOSAL · PUBLIC |
@@ -312,7 +310,7 @@
 | missions/FREE-VENTURE-1/anchors/2440/clan_fragmentation | Гражданская война модулей: «Пояс Раздора» | событие миссии-предложения | PROPOSAL · PUBLIC |
 | missions/DHARMA-2/arrival_year | arrival_year | не найдено в источниках | PROPOSAL · PUBLIC |
 | missions/DHARMA-2/anchors/2490/sleeper_return | Патриции просыпаются после 90 лет и пытаются вернуть порядок; синтез | год не найден в источниках миссии | PROPOSAL · PUBLIC |
-| missions/DHARMA-2/anchors/2523/arrival | HD 20794: Вторая Эллада уже здесь 140 лет | не найдено в источниках | PROPOSAL · PUBLIC |
+| missions/DHARMA-2/anchors/2523/arrival | HD 20794: Хомстед уже здесь 140 лет | не найдено в источниках | PROPOSAL · PUBLIC |
 | missions/FREE-WORLD-1/arrival_year | arrival_year | пересчитано по каталогу и потолку скорости; авторское 2570 | PROPOSAL · PUBLIC |
 | missions/FREE-WORLD-1/anchors/2535/schism | Проснувшиеся патриции требуют «чистой» анархии; 800 человек отстыковывают модуль «Exit» — судьба неизвестна | год не найден в источниках миссии | PROPOSAL · PUBLIC |
 | missions/FREE-WORLD-1/anchors/2574/arrival | GJ 581, рядом с Новой Европой | пересчитано по каталогу и потолку скорости; авторское 2570 | PROPOSAL · PUBLIC |
@@ -328,7 +326,7 @@
 | missions/DEEP-SEEK-1/launch_year | launch_year | год не найден в источниках миссии | PROPOSAL · PUBLIC |
 | missions/DEEP-SEEK-1/anchors/2615/institution | Совет Специалистов рядом с Советом Семей | год не найден в источниках миссии | PROPOSAL · PUBLIC |
 | missions/HYPERION-1/anchors/2752/hyperion_2 | HYPERION-2: гиперпространство — среда с градиентами и течениями; без маяков прыжок — лотерея | год не найден в источниках миссии | PROPOSAL · PUBLIC |
-| missions/TRADERS-GUILD-1 | Lalande colonies (New Hellas + New Mecca): first inter-colony sublight courier | реконсиляция A6 (идея старой ветки) | PROPOSAL · PUBLIC |
+| missions/TRADERS-GUILD-1 | Lalande colonies (New Hellas + Tauranga (Te Kāpehu)): first inter-colony sublight courier | реконсиляция A6 (идея старой ветки) | PROPOSAL · PUBLIC |
 | missions/TRADERS-GUILD-1/arrival_year | arrival_year | не найдено в источниках | PROPOSAL · PUBLIC |
 | missions/TRADERS-GUILD-1/fate | fate | fate.md / досье | PROPOSAL · PUBLIC |
 | missions/TRADERS-GUILD-1/launch_year | launch_year | год в generation ships.md (A) | PROPOSAL · PUBLIC |
@@ -354,12 +352,6 @@
 | outposts/leo83_golden_city | «Золотой Город» | аванпост гипер-эпохи (реконсиляция) | PROPOSAL · PUBLIC |
 | outposts/sigma2uma_expedition | Экспедиция Sigma² UMa | аванпост гипер-эпохи (реконсиляция) | PROPOSAL · PUBLIC |
 
-### relations (1)
-
-| Путь | Что | Основание | Статус |
-|---|---|---|---|
-| relations/lalande_hellas/lalande_mecca | Одна бедная система на двоих | величина обиды — Claude | PROPOSAL · PUBLIC |
-
 ### settlements (153)
 
 | Полития | Записей | Поселения |
@@ -367,9 +359,9 @@
 | Пост прослушивания у Барнарда | 3 | Пост прослушивания у Барнарда, Barnard's Star h — поселение, Barnard's Star k — поселение |
 | Шахта Альфа | 5 | Шахта Альфа, 61 Cygni B k — поселение, 61 Cygni A f — поселение, Биржа и страховой дом Керна, Платформы 61 Cyg B i |
 | Свободная Карма | 4 | Свободная Карма, Delta Pavonis j — поселение, Delta Pavonis K1 — поселение, Маяк Дельты Павлина |
-| Новая Карма | 5 | Новая Карма, Delta Pavonis j — поселение, Delta Pavonis K1 — поселение, Храм Массива (криобанк генов), Рудники Delta Pavonis h |
+| Новая Карма | 5 | Новая Карма, Delta Pavonis j — поселение, Delta Pavonis K1 — поселение, Храм Семени (криобанк генов), Рудники Delta Pavonis h |
 | Цветущая Гармония | 8 | Цветущая Гармония, Epsilon Eridani K3 — поселение, Epsilon Eridani K2 — поселение, Ледовый комплекс облака комет, Платформы eps Eri b, Верфи Гармонии, Рудники eps Eri b I, Ретрансляторная сеть (60 % межколониальной связи) |
-| Пояс Раздора / Вольные астероиды | 4 | Пояс Раздора / Вольные астероиды, Epsilon Eridani K3 — поселение, Epsilon Eridani K2 — поселение, Чёрный рынок пояса |
+| Пояс Раздора | 4 | Пояс Раздора, Epsilon Eridani K3 — поселение, Epsilon Eridani K2 — поселение, Чёрный рынок пояса |
 | Гелиевое поле Эпсилон Индейца | 3 | Гелиевое поле Эпсилон Индейца, Epsilon Indi Bb e — поселение, Epsilon Indi Ba d — поселение |
 | Фронтир Gliese 357 | 3 | Фронтир Gliese 357, Gliese 357 m — поселение, Gliese 357 n — поселение |
 | Новая Европа | 6 | Новая Европа, Gliese 581 K1 — поселение, Gliese 581 K3 — поселение, Реестр договоров и Арбитраж «Новый Брюссель», Платформы Gliese 581 i, Агромодули |
@@ -377,25 +369,25 @@
 | Узел Убунту (ретранслятор у обломков) | 3 | Узел Убунту (ретранслятор у обломков), Gliese 667 A u — поселение, Gliese 667 A s — поселение |
 | Фронтир Gliese 674 | 3 | Фронтир Gliese 674, Gliese 674 j — поселение, Gliese 674 K3 — поселение |
 | Зона «Филоморфоз» | 3 | Зона «Филоморфоз», GJ 832 b II — поселение, GJ 832 b I — поселение |
-| Тяньхэ (Небесная Река) | 7 | Тяньхэ (Небесная Река), GJ 832 b II — поселение, GJ 832 b I — поселение, Платформы GJ 832 b, Массовые верфи Тяньхэ, Комбинат GJ 832 b I, Флот кордона «Филоморфоз» |
+| Тяньхэ | 7 | Тяньхэ, GJ 832 b II — поселение, GJ 832 b I — поселение, Платформы GJ 832 b, Массовые верфи Тяньхэ, Комбинат GJ 832 b I, Флот кордона «Филоморфоз» |
 | Провидение | 6 | Провидение, Gliese 876 f — поселение, Gliese 876 K2 — поселение, Ядро «Провидца», Концессии трёх гигантов GJ 876 (операторы — Когниум и Керн), Концессионные рудники GJ 876 b I |
 | Стратегические рудники Gliese 892 | 3 | Стратегические рудники Gliese 892, HD 219134 h I — поселение, Gliese 892 A1 — поселение |
 | Реле HD 10360 | 3 | Реле HD 10360, p Eridani A n — поселение, p Eridani A o — поселение |
 | Фронтир HD 104067 | 3 | Фронтир HD 104067, HD 104067 j — поселение, HD 104067 i — поселение |
 | Лагерь «Кларион» | 3 | Лагерь «Кларион», HD 114783 K2 — поселение, HD 114783 K4 — поселение |
 | Третья Эллада | 4 | Третья Эллада, HD 114783 K2 — поселение, HD 114783 K4 — поселение, Астероид-корабль «Одиссей» |
-| Вторая Эллада | 6 | Вторая Эллада, HD 20794 K2 — поселение, HD 20794 K1 — поселение, Платформы HD 20794 d, Звёздный Университет, Водные права пояса Койпера |
+| Хомстед | 6 | Хомстед, HD 20794 K2 — поселение, HD 20794 K1 — поселение, Платформы HD 20794 d, Звёздный Университет, Водные права пояса Койпера |
 | Новая Индия | 5 | Новая Индия, HD 20794 K2 — поселение, HD 20794 K1 — поселение, Платформы HD 20794 f, Сборочные кольца |
 | Небесная Твердыня | 6 | Небесная Твердыня, HD 40307 K2 — поселение, HD 40307 K3 — поселение, Платформы HD 40307 f (доля Твердыни), Флотская база, Рудники пояса |
 | Новая Маланд | 6 | Новая Маланд, HD 40307 K2 — поселение, HD 40307 K3 — поселение, Агрокольца Маланд («Житница»), Платформы HD 40307 f (доля Маланд), Внешний дозор |
-| Сельта-Верде | 5 | Сельта-Верде, HD 69830 K2 — поселение, HD 69830 K4 — поселение, Платформы трёх гигантов HD 69830, Ледовые поля облака комет |
+| Сельва-Верде | 5 | Сельва-Верде, HD 69830 K2 — поселение, HD 69830 K4 — поселение, Платформы трёх гигантов HD 69830, Ледовые поля облака комет |
 | Фронтир HD 85512 | 3 | Фронтир HD 85512, HD 85512 K2 — поселение, HD 85512 K3 — поселение |
-| Новая Эллада / Агора | 6 | Новая Эллада / Агора, Lalande 21185 h — поселение, Lalande 21185 k — поселение, Агора — нейтральный порт и биржа, Платформы Lalande 21185 j (эллинская доля), Академия Новой Эллады |
-| Новая Мекка | 6 | Новая Мекка, Lalande 21185 h — поселение, Lalande 21185 k — поселение, Обсерватория-вычислитель «Расад», Платформы Lalande 21185 j (доля Мекки), Сады Lalande 21185 g |
+| Агора | 6 | Агора, Lalande 21185 h — поселение, Lalande 21185 k — поселение, Ставродроми — нейтральный порт и биржа, Платформы Lalande 21185 j (эллинская доля), Академия Новой Эллады |
+| Тауранга | 6 | Тауранга, Lalande 21185 h — поселение, Lalande 21185 k — поселение, Обсерватория-вычислитель Фаре-Татаи, Платформы Lalande 21185 j (доля Капеху), Огороды Мара-Каи (Lalande 21185 g) |
 | «Золотой Город» | 3 | «Золотой Город», 83 Leonis B i — поселение, 83 Leonis B j II — поселение |
 | Ново-Фиваида | 3 | Ново-Фиваида (ковчег на орбите), 83 Leonis B i — поселение, 83 Leonis B j II — поселение |
 | Красный Форпост | 7 | Красный Форпост, Proxima Centauri k — поселение, Proxima Cen b — поселение, Орбитальная крепость «Сварог», Агрокупола Alpha Centauri B l, Газовые платформы Proxima l, Шахты Proxima Cen d |
 | Экспедиция Sigma² UMa | 3 | Экспедиция Sigma² UMa, Sigma² UMa A h II — поселение, Sigma² UMa A h III — поселение |
-| Новый Шанхай | 5 | Новый Шанхай, Управление Маяков и фабрика ядер прыжка «Сычёвник», Фабы Кольца Основателей, Верфь «Гиперион», Орбитальная биржа Нового Шанхая |
-| Цитадель | 6 | Цитадель, Wolf 359 c — поселение, Wolf 359 f — поселение, Бастион — арсенал и военная верфь, Рудники пылевого диска, Хранилище LAST-LIGHT |
+| Синь-Шанхай | 5 | Синь-Шанхай, Управление Маяков и фабрика ядер прыжка «Сычёвник», Фабы Кольца Основателей, Верфь «Гиперион», Орбитальная биржа Синь-Шанхая |
+| Цитадель | 6 | Цитадель, Нюхамн, Ярнвик, Мьёльнер — арсенал и военная верфь, Груве-7 (рудники пылевого диска), Хранилище LAST-LIGHT |
 <!-- GENERATED:proposals END -->

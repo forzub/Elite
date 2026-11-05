@@ -96,7 +96,7 @@
   },
   {
    "check": "earth_demand_within_orbital_capacity",
-   "detail": "demand 398 422 533 legs/y <= 80 % of capacity 642 855 411",
+   "detail": "demand 398 422 537 legs/y <= 80 % of capacity 642 967 468",
    "ok": true
   },
   {
@@ -106,7 +106,7 @@
   },
   {
    "check": "surface_traffic_conserved",
-   "detail": "398 422 533 of 398 422 533",
+   "detail": "398 422 537 of 398 422 537",
    "ok": true
   },
   {
@@ -131,7 +131,7 @@
   },
   {
    "check": "earth_capacity_ge_demand_plus_reserve",
-   "detail": "57 069 movements/day vs capacity 92 238 (utilisation 0.62)",
+   "detail": "57 060 movements/day vs capacity 92 238 (utilisation 0.62)",
    "ok": true
   },
   {
@@ -166,10 +166,10 @@
   "dock_modules": 488,
   "dock_sectors": 44,
   "movement_capacity_day": 92238,
-  "movements_day": 57069,
+  "movements_day": 57060,
   "pads": 2928,
   "passenger_terminals": 87,
-  "passengers_day": 3344144,
+  "passengers_day": 3343431,
   "reserve": 0.381,
   "service_movements_day": 2426,
   "utilisation": 0.619
@@ -177,7 +177,7 @@
  "earth_hubs": [
   {
    "altitude_km": 420,
-   "arrivals_day": 5517,
+   "arrivals_day": 5515,
    "cargo_lifter_flights_day": 899.873,
    "cargo_t_day": 172776,
    "cargo_terminals": 3,
@@ -194,10 +194,10 @@
     "administration"
    ],
    "history": "Построен Властью Сола к открытию маяка (3112) на месте старой станции Кордона; через него проходят все рейсы Земли в сеть. Станция Кордона (2790–3108) сама стояла в плоскости станций Реставрации 51.6°.",
-   "hub_shuttle_flights_day": 1457.596,
+   "hub_shuttle_flights_day": 1455.623,
    "id": "earth_orbital_hub",
    "inclination_deg": 51.64,
-   "interstellar_or_interplanetary_departures_day": 279.839,
+   "interstellar_or_interplanetary_departures_day": 279.416,
    "knowledge": {
     "basis": "станция существует в рантайме (initial_world_state.json, HexDockFacility); имя и численность — PROPOSAL",
     "status": "CANON",
@@ -206,22 +206,22 @@
    "lan_deg": 0,
    "legacy_ids": [],
    "level": "A",
-   "movements_day": 11034,
+   "movements_day": 11029,
    "name": "Высокий",
    "name_basis": "плоскость 51.6° унаследована от станций XXI века, удобных с Байконура; «Высокий» — старое прозвище станции Кордона, перешедшее к новому хабу",
    "operator": "Портовая служба Высокого (Sol Authority)",
    "owner": "sol_authority",
-   "pad_cycle_min_mean": 43.59,
+   "pad_cycle_min_mean": 43.587,
    "pads_per_module": 6,
    "passenger_terminals": 16,
-   "passengers_day": 623987,
-   "peak_utilisation": 0.837,
+   "passengers_day": 623488,
+   "peak_utilisation": 0.836,
    "period_min": 92.824,
    "phase_deg": 35,
    "player_start": true,
-   "population": 125804,
+   "population": 125761,
    "profile": "gateway",
-   "queue_wait_min": 1.464,
+   "queue_wait_min": 1.462,
    "role_ru": "первый хаб Реставрации; межзвёздные ворота, таможня Сола, пересадка",
    "roles": [
     "межзвёздные ворота",
@@ -232,7 +232,7 @@
    "service_berths": 6,
    "service_flights_day": 308.528,
    "speed_km_s": 7.661,
-   "surface_legs_y": 101351426,
+   "surface_legs_y": 101351427,
    "surface_pax_flights_day": 2571.066,
    "terminals": [
     {
@@ -243,11 +243,11 @@
     }
    ],
    "type": "orbital_hub",
-   "utilisation": 0.62
+   "utilisation": 0.619
   },
   {
    "altitude_km": 505,
-   "arrivals_day": 9461,
+   "arrivals_day": 9460,
    "cargo_lifter_flights_day": 1382.701,
    "cargo_t_day": 265479,
    "cargo_terminals": 4,
@@ -261,26 +261,26 @@
     "passenger",
     "cargo"
    ],
-   "hub_shuttle_flights_day": 3654.129,
+   "hub_shuttle_flights_day": 3653.096,
    "id": "earth_hub.tikhiy",
    "inclination_deg": 36.2,
    "interstellar_or_interplanetary_departures_day": 0.0,
    "lan_deg": 120,
    "legacy_ids": [],
    "level": "A",
-   "movements_day": 18923,
+   "movements_day": 18921,
    "name": "Тихий",
    "name_basis": "по океану, над которым проходит большая часть его окон с Токио",
    "operator": "Тихоокеанская компания орбитальных перевозок",
    "owner": "sol_authority",
-   "pad_cycle_min_mean": 36.722,
+   "pad_cycle_min_mean": 36.723,
    "pads_per_module": 6,
    "passenger_terminals": 21,
-   "passengers_day": 821308,
+   "passengers_day": 821196,
    "peak_utilisation": 0.84,
    "period_min": 94.572,
    "phase_deg": 250,
-   "population": 171806,
+   "population": 171788,
    "profile": "passenger_mega",
    "queue_wait_min": 1.04,
    "role_ru": "главный пассажирский хаб плоскости 36° — агломерации Токио, Осаки, Нагои, Сеула, Тегерана",
@@ -290,7 +290,7 @@
    "service_berths": 8,
    "service_flights_day": 474.069,
    "speed_km_s": 7.614,
-   "surface_legs_y": 155731594,
+   "surface_legs_y": 155731595,
    "surface_pax_flights_day": 3950.573,
    "terminals": [
     {
@@ -305,7 +305,7 @@
   },
   {
    "altitude_km": 485,
-   "arrivals_day": 7287,
+   "arrivals_day": 7286,
    "cargo_lifter_flights_day": 835.585,
    "cargo_t_day": 160432,
    "cargo_terminals": 3,
@@ -319,26 +319,26 @@
     "passenger",
     "interplanetary"
    ],
-   "hub_shuttle_flights_day": 3208.625,
+   "hub_shuttle_flights_day": 3208.001,
    "id": "earth_hub.canaveral",
    "inclination_deg": 31.6,
-   "interstellar_or_interplanetary_departures_day": 568.574,
+   "interstellar_or_interplanetary_departures_day": 568.575,
    "lan_deg": 60,
    "legacy_ids": [],
    "level": "A",
-   "movements_day": 14573,
+   "movements_day": 14572,
    "name": "Канаверал",
    "name_basis": "мыс на 28.5° с.ш.: исторический старт к Марсу",
    "operator": "Атлантическая портовая компания",
    "owner": "sol_authority",
-   "pad_cycle_min_mean": 44.639,
+   "pad_cycle_min_mean": 44.64,
    "pads_per_module": 6,
    "passenger_terminals": 25,
-   "passengers_day": 988157,
+   "passengers_day": 988089,
    "peak_utilisation": 0.84,
    "period_min": 94.16,
    "phase_deg": 140,
-   "population": 132660,
+   "population": 132649,
    "profile": "passenger",
    "queue_wait_min": 1.306,
    "role_ru": "пассажирский комплекс полосы 21-32° (Дели, Шанхай, Каир, Сан-Паулу через терминал «Тропик») и вылеты к Марсу",
@@ -349,7 +349,7 @@
    "service_berths": 5,
    "service_flights_day": 286.486,
    "speed_km_s": 7.625,
-   "surface_legs_y": 94110691,
+   "surface_legs_y": 94110692,
    "surface_pax_flights_day": 2387.384,
    "terminals": [
     {
@@ -364,7 +364,7 @@
   },
   {
    "altitude_km": 495,
-   "arrivals_day": 2073,
+   "arrivals_day": 2072,
    "cargo_lifter_flights_day": 517.933,
    "cargo_t_day": 99443,
    "cargo_terminals": 2,
@@ -379,7 +379,7 @@
     "cargo",
     "passenger"
    ],
-   "hub_shuttle_flights_day": 726.018,
+   "hub_shuttle_flights_day": 725.824,
    "id": "earth_hub.wenchang",
    "inclination_deg": 19.8,
    "interstellar_or_interplanetary_departures_day": 0.0,
@@ -391,14 +391,14 @@
    "name_basis": "космодром на Хайнане, 19.6° с.ш.",
    "operator": "Вэньчан Хэви",
    "owner": "sol_authority",
-   "pad_cycle_min_mean": 39.496,
+   "pad_cycle_min_mean": 39.497,
    "pads_per_module": 6,
    "passenger_terminals": 4,
-   "passengers_day": 158320,
+   "passengers_day": 158299,
    "peak_utilisation": 0.821,
    "period_min": 94.366,
    "phase_deg": 200,
-   "population": 38808,
+   "population": 38804,
    "profile": "cargo",
    "queue_wait_min": 2.144,
    "role_ru": "грузовой и логистический комплекс, тяжёлые модули; пассажиры 10-20° через терминал «Шрихарикота»",
@@ -409,7 +409,7 @@
    "service_berths": 2,
    "service_flights_day": 88.789,
    "speed_km_s": 7.619,
-   "surface_legs_y": 29167026,
+   "surface_legs_y": 29167027,
    "surface_pax_flights_day": 739.904,
    "terminals": [
     {
@@ -439,26 +439,26 @@
     "fuel",
     "passenger"
    ],
-   "hub_shuttle_flights_day": 2705.115,
+   "hub_shuttle_flights_day": 2705.058,
    "id": "earth_hub.kourou",
    "inclination_deg": 6.0,
-   "interstellar_or_interplanetary_departures_day": 568.574,
+   "interstellar_or_interplanetary_departures_day": 568.575,
    "lan_deg": 90,
    "legacy_ids": [],
    "level": "A",
-   "movements_day": 7197,
+   "movements_day": 7196,
    "name": "Куру",
    "name_basis": "космодром Гвианы на 5.2° с.ш.",
    "operator": "Экваториальная топливная компания",
    "owner": "sol_authority",
-   "pad_cycle_min_mean": 49.949,
+   "pad_cycle_min_mean": 49.95,
    "pads_per_module": 6,
    "passenger_terminals": 18,
-   "passengers_day": 699790,
+   "passengers_day": 699783,
    "peak_utilisation": 0.839,
    "period_min": 95.709,
    "phase_deg": 330,
-   "population": 66270,
+   "population": 66268,
    "profile": "interplanetary",
    "queue_wait_min": 1.961,
    "role_ru": "экваториальный хаб: вылеты к Луне и планетам, топливо, полоса 0–6° (Лагос, Киншаса, Джакарта, Богота)",
@@ -549,7 +549,7 @@
     "passenger",
     "sar"
    ],
-   "hub_shuttle_flights_day": 226.678,
+   "hub_shuttle_flights_day": 226.616,
    "id": "earth_hub.aurora",
    "inclination_deg": 98.6,
    "interstellar_or_interplanetary_departures_day": 0.0,
@@ -561,14 +561,14 @@
    "name_basis": "по полярным сияниям, над которыми идёт каждый виток",
    "operator": "Служба наблюдения Земли",
    "owner": "sol_authority",
-   "pad_cycle_min_mean": 36.639,
+   "pad_cycle_min_mean": 36.64,
    "pads_per_module": 6,
    "passenger_terminals": 2,
-   "passengers_day": 50116,
+   "passengers_day": 50110,
    "peak_utilisation": 0.799,
    "period_min": 100.513,
    "phase_deg": 170,
-   "population": 11861,
+   "population": 11860,
    "profile": "science",
    "queue_wait_min": 3.613,
    "role_ru": "полярный комплекс: спасательная служба Земли, наука, единственная плоскость северных городов (терминал «Меридиан»)",
@@ -676,7 +676,7 @@
    "operator": "Лунные порты",
    "owner": "sol_authority",
    "pads_per_module": 6,
-   "population": 84565701,
+   "population": 84565713,
    "region": "earth_cislunar",
    "role_ru": "главный город Луны у кратера вечной тени: лёд, энергия на вечном свету",
    "surface": {
@@ -708,7 +708,7 @@
    "operator": "Лунная горная компания",
    "owner": "sol_authority",
    "pads_per_module": 6,
-   "population": 46126746,
+   "population": 46126752,
    "region": "earth_cislunar",
    "role_ru": "реголитовые заводы и масс-драйвер Моря Дождей",
    "surface": {
@@ -892,7 +892,7 @@
    "operator": "Город Новый Тарсис",
    "owner": "sol_authority",
    "pads_per_module": 6,
-   "population": 70471417,
+   "population": 70471427,
    "region": "mars",
    "role_ru": "крупнейший город Марса у вулканов Тарсиса: экваториальный космопорт",
    "surface": {
@@ -924,7 +924,7 @@
    "operator": "Город Эллада",
    "owner": "sol_authority",
    "pads_per_module": 6,
-   "population": 70471417,
+   "population": 70471427,
    "region": "mars",
    "role_ru": "город на дне равнины Эллады (самое высокое давление на Марсе): агрокупола",
    "surface": {
@@ -1024,7 +1024,7 @@
    "operator": "Город Ахуна",
    "owner": "sol_authority",
    "pads_per_module": 6,
-   "population": 187923780,
+   "population": 187923806,
    "region": "belt",
    "role_ru": "подлёдный город Цереры у горы Ахуна",
    "surface": {
@@ -1183,7 +1183,7 @@
    "operator": "Солнечная металлургическая компания",
    "owner": "sol_authority",
    "pads_per_module": 6,
-   "population": 5125194,
+   "population": 5125195,
    "region": "mercury",
    "role_ru": "город-поезд на терминаторе у бассейна Калорис: металлы, солнечная энергия",
    "surface": {
@@ -1581,8 +1581,8 @@
    "utilisation": 0.035
   }
  ],
- "interplanetary_pax_y": 466941753,
- "interstellar_pax_y": 68945306,
+ "interplanetary_pax_y": 466941813,
+ "interstellar_pax_y": 68841015,
  "major_by_region": {
   "belt": 5,
   "deep_space": 1,
@@ -2003,13 +2003,13 @@
   }
  },
  "region_population": {
-  "belt": 341679600,
-  "earth_cislunar": 461267459,
-  "jupiter": 205007760,
-  "mars": 512519399,
-  "mercury": 51251940,
-  "outer": 34167960,
-  "saturn": 102503880,
+  "belt": 341679647,
+  "earth_cislunar": 461267524,
+  "jupiter": 205007788,
+  "mars": 512519471,
+  "mercury": 51251947,
+  "outer": 34167965,
+  "saturn": 102503894,
   "venus": 0
  },
  "regions": {
@@ -2290,22 +2290,22 @@
    "destination": "site.000.sol.eml1",
    "disruption": "none",
    "distance_au": 0.003,
-   "flights_day": 936.108,
+   "flights_day": 936.109,
    "hazard": "none",
    "id": "route.sol.pax.earth_cislunar",
    "origin": "earth_orbital_hub",
-   "pax_y": 230633730,
+   "pax_y": 230633762,
    "ship_class": "liner",
    "status": "PROPOSAL",
    "travel_days": 1.5,
    "type": "passenger"
   },
   {
-   "cargo_t_y": 70449958,
+   "cargo_t_y": 70449680,
    "destination": "earth_hub.wenchang",
    "disruption": "none",
    "distance_au": 0.003,
-   "flights_day": 111.698,
+   "flights_day": 111.697,
    "hazard": "none",
    "id": "route.sol.cargo.earth_cislunar",
    "origin": "site.000.sol.imbrium",
@@ -2322,14 +2322,14 @@
    "hazard": "none",
    "id": "route.sol.pax.mars",
    "origin": "earth_hub.kourou",
-   "pax_y": 256259700,
+   "pax_y": 256259736,
    "ship_class": "liner",
    "status": "PROPOSAL",
    "travel_days": 5.282,
    "type": "passenger"
   },
   {
-   "cargo_t_y": 53323105,
+   "cargo_t_y": 53322895,
    "destination": "earth_hub.wenchang",
    "disruption": "none",
    "distance_au": 1.024,
@@ -2350,18 +2350,18 @@
    "hazard": "none",
    "id": "route.sol.pax.belt",
    "origin": "earth_hub.kourou",
-   "pax_y": 170839800,
+   "pax_y": 170839824,
    "ship_class": "liner",
    "status": "PROPOSAL",
    "travel_days": 7.864,
    "type": "passenger"
   },
   {
-   "cargo_t_y": 214263695,
+   "cargo_t_y": 214262850,
    "destination": "earth_hub.wenchang",
    "disruption": "none",
    "distance_au": 2.27,
-   "flights_day": 339.713,
+   "flights_day": 339.712,
    "hazard": "none",
    "id": "route.sol.cargo.belt",
    "origin": "site.000.sol.ceres",
@@ -2378,14 +2378,14 @@
    "hazard": "none",
    "id": "route.sol.pax.mercury",
    "origin": "earth_hub.kourou",
-   "pax_y": 25625970,
+   "pax_y": 25625974,
    "ship_class": "liner",
    "status": "PROPOSAL",
    "travel_days": 4.688,
    "type": "passenger"
   },
   {
-   "cargo_t_y": 66536071,
+   "cargo_t_y": 66535808,
    "destination": "earth_hub.wenchang",
    "disruption": "none",
    "distance_au": 0.806,
@@ -2406,18 +2406,18 @@
    "hazard": "none",
    "id": "route.sol.pax.jupiter",
    "origin": "earth_hub.kourou",
-   "pax_y": 102503880,
+   "pax_y": 102503894,
    "ship_class": "liner",
    "status": "PROPOSAL",
    "travel_days": 11.32,
    "type": "passenger"
   },
   {
-   "cargo_t_y": 57708234,
+   "cargo_t_y": 57708006,
    "destination": "earth_hub.wenchang",
    "disruption": "none",
    "distance_au": 4.703,
-   "flights_day": 91.496,
+   "flights_day": 91.495,
    "hazard": "none",
    "id": "route.sol.cargo.jupiter",
    "origin": "site.000.sol.callisto",
@@ -2448,14 +2448,14 @@
    "hazard": "none",
    "id": "route.sol.pax.saturn",
    "origin": "earth_hub.kourou",
-   "pax_y": 51251940,
+   "pax_y": 51251947,
    "ship_class": "liner",
    "status": "PROPOSAL",
    "travel_days": 15.692,
    "type": "passenger"
   },
   {
-   "cargo_t_y": 43523994,
+   "cargo_t_y": 43523822,
    "destination": "earth_hub.wenchang",
    "disruption": "none",
    "distance_au": 9.037,
@@ -2490,14 +2490,14 @@
    "hazard": "none",
    "id": "route.sol.pax.outer",
    "origin": "earth_hub.kourou",
-   "pax_y": 17083980,
+   "pax_y": 17083982,
    "ship_class": "liner",
    "status": "PROPOSAL",
    "travel_days": 22.566,
    "type": "passenger"
   },
   {
-   "cargo_t_y": 12712934,
+   "cargo_t_y": 12712884,
    "destination": "earth_hub.wenchang",
    "disruption": "none",
    "distance_au": 18.69,
@@ -2539,7 +2539,7 @@
    "type": "passenger"
   },
   {
-   "cargo_t_y": 77777699,
+   "cargo_t_y": 77777392,
    "destination": "site.000.sol.ceres",
    "disruption": "none",
    "distance_au": 0.45,
@@ -2553,7 +2553,7 @@
    "type": "mining"
   },
   {
-   "cargo_t_y": 77777699,
+   "cargo_t_y": 77777392,
    "destination": "site.000.sol.ceres",
    "disruption": "none",
    "distance_au": 1.2,
@@ -2567,7 +2567,7 @@
    "type": "mining"
   },
   {
-   "cargo_t_y": 77777699,
+   "cargo_t_y": 77777392,
    "destination": "site.000.sol.ceres",
    "disruption": "none",
    "distance_au": 0.5,
@@ -2581,7 +2581,7 @@
    "type": "mining"
   },
   {
-   "cargo_t_y": 103703598,
+   "cargo_t_y": 103703189,
    "destination": "site.000.sol.mars_phobos",
    "disruption": "none",
    "distance_au": 1.25,
@@ -2602,7 +2602,7 @@
    "hazard": "none",
    "id": "route.earth.aurora--canaveral",
    "mix": {
-    "interplanetary": 3289771,
+    "interplanetary": 3289772,
     "transfer": 176812
    },
    "origin": "earth_hub.aurora",
@@ -2621,7 +2621,7 @@
    "hazard": "none",
    "id": "route.earth.aurora--kourou",
    "mix": {
-    "interplanetary": 3289771,
+    "interplanetary": 3289772,
     "transfer": 16355
    },
    "origin": "earth_hub.aurora",
@@ -2672,16 +2672,16 @@
    "cargo_t_y": 0,
    "destination": "earth_orbital_hub",
    "disruption": "none",
-   "flights_day": 46.057,
+   "flights_day": 45.995,
    "hazard": "none",
    "id": "route.earth.aurora--earth_orbital_hub",
    "mix": {
-    "interstellar": 1619148,
+    "interstellar": 1616698,
     "service": 6000,
     "transfer": 190415
    },
    "origin": "earth_hub.aurora",
-   "pax_y": 1815563,
+   "pax_y": 1813114,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2696,11 +2696,11 @@
    "hazard": "none",
    "id": "route.earth.canaveral--kourou",
    "mix": {
-    "interplanetary": 36149276,
+    "interplanetary": 36149281,
     "transfer": 164496
    },
    "origin": "earth_hub.canaveral",
-   "pax_y": 36313773,
+   "pax_y": 36313777,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2715,11 +2715,11 @@
    "hazard": "none",
    "id": "route.earth.canaveral--tikhiy",
    "mix": {
-    "interplanetary": 54754120,
+    "interplanetary": 54754126,
     "transfer": 2942807
    },
    "origin": "earth_hub.canaveral",
-   "pax_y": 57696927,
+   "pax_y": 57696934,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2734,11 +2734,11 @@
    "hazard": "none",
    "id": "route.earth.canaveral--wenchang",
    "mix": {
-    "interplanetary": 10254919,
+    "interplanetary": 10254920,
     "transfer": 551159
    },
    "origin": "earth_hub.canaveral",
-   "pax_y": 10806078,
+   "pax_y": 10806080,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2749,15 +2749,15 @@
    "cargo_t_y": 0,
    "destination": "earth_orbital_hub",
    "disruption": "none",
-   "flights_day": 461.711,
+   "flights_day": 461.086,
    "hazard": "none",
    "id": "route.earth.canaveral--earth_orbital_hub",
    "mix": {
-    "interstellar": 16285450,
+    "interstellar": 16260816,
     "transfer": 1915203
    },
    "origin": "earth_hub.canaveral",
-   "pax_y": 18200654,
+   "pax_y": 18176019,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2791,11 +2791,11 @@
    "hazard": "none",
    "id": "route.earth.kourou--tikhiy",
    "mix": {
-    "interplanetary": 54754120,
+    "interplanetary": 54754126,
     "transfer": 272203
    },
    "origin": "earth_hub.kourou",
-   "pax_y": 55026323,
+   "pax_y": 55026330,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2810,11 +2810,11 @@
    "hazard": "none",
    "id": "route.earth.kourou--wenchang",
    "mix": {
-    "interplanetary": 10254919,
+    "interplanetary": 10254920,
     "transfer": 50981
    },
    "origin": "earth_hub.kourou",
-   "pax_y": 10305900,
+   "pax_y": 10305901,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2825,15 +2825,15 @@
    "cargo_t_y": 0,
    "destination": "earth_orbital_hub",
    "disruption": "none",
-   "flights_day": 42.707,
+   "flights_day": 42.649,
    "hazard": "none",
    "id": "route.earth.kourou--earth_orbital_hub",
    "mix": {
-    "interstellar": 1506369,
+    "interstellar": 1504090,
     "transfer": 177152
    },
    "origin": "earth_hub.kourou",
-   "pax_y": 1683521,
+   "pax_y": 1681242,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2862,15 +2862,15 @@
    "cargo_t_y": 0,
    "destination": "earth_orbital_hub",
    "disruption": "none",
-   "flights_day": 764.026,
+   "flights_day": 762.992,
    "hazard": "none",
    "id": "route.earth.tikhiy--earth_orbital_hub",
    "mix": {
-    "interstellar": 26948683,
+    "interstellar": 26907918,
     "transfer": 3169222
    },
    "origin": "earth_hub.tikhiy",
-   "pax_y": 30117905,
+   "pax_y": 30077140,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2881,15 +2881,15 @@
    "cargo_t_y": 0,
    "destination": "earth_orbital_hub",
    "disruption": "none",
-   "flights_day": 143.095,
+   "flights_day": 142.901,
    "hazard": "none",
    "id": "route.earth.wenchang--earth_orbital_hub",
    "mix": {
-    "interstellar": 5047228,
+    "interstellar": 5039594,
     "transfer": 593565
    },
    "origin": "earth_hub.wenchang",
-   "pax_y": 5640793,
+   "pax_y": 5633159,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "transfer": "orbital_transfer",
@@ -2903,7 +2903,7 @@
    "hazard": "none",
    "id": "route.luna.luna_orbit--shackleton",
    "origin": "site.000.sol.luna_orbit",
-   "pax_y": 138380238,
+   "pax_y": 138380257,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "travel_days": 0.2,
@@ -2916,7 +2916,7 @@
    "hazard": "none",
    "id": "route.luna.luna_orbit--imbrium",
    "origin": "site.000.sol.luna_orbit",
-   "pax_y": 55352095,
+   "pax_y": 55352103,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "travel_days": 0.2,
@@ -2925,11 +2925,11 @@
   {
    "destination": "site.000.sol.luna_orbit",
    "disruption": "none",
-   "flights_day": 5616.651,
+   "flights_day": 5616.652,
    "hazard": "none",
    "id": "route.luna.eml1--luna_orbit",
    "origin": "site.000.sol.eml1",
-   "pax_y": 221408380,
+   "pax_y": 221408412,
    "ship_class": "surface_lifter",
    "status": "PROPOSAL",
    "travel_days": 1.0,
@@ -2940,28 +2940,28 @@
  "surface": {
   "allocation": {
    "earth_hub.aurora": 9356763,
-   "earth_hub.canaveral": 94110691,
+   "earth_hub.canaveral": 94110692,
    "earth_hub.kourou": 8705033,
-   "earth_hub.tikhiy": 155731594,
-   "earth_hub.wenchang": 29167026,
-   "earth_orbital_hub": 101351426
+   "earth_hub.tikhiy": 155731595,
+   "earth_hub.wenchang": 29167027,
+   "earth_orbital_hub": 101351427
   },
   "by_city": {
    "city.000.earth.001": {
     "earth_hub.aurora": 1547765,
-    "earth_hub.tikhiy": 65418931,
+    "earth_hub.tikhiy": 65418932,
     "earth_orbital_hub": 25904370
    },
    "city.000.earth.002": {
     "earth_hub.aurora": 387658,
-    "earth_hub.canaveral": 21592983,
+    "earth_hub.canaveral": 21592984,
     "earth_hub.tikhiy": 16385035,
     "earth_orbital_hub": 6488092
    },
    "city.000.earth.003": {
     "earth_hub.aurora": 253252,
     "earth_hub.canaveral": 14106421,
-    "earth_hub.tikhiy": 10704134,
+    "earth_hub.tikhiy": 10704135,
     "earth_orbital_hub": 4238587
    },
    "city.000.earth.004": {
@@ -3007,7 +3007,7 @@
    },
    "city.000.earth.011": {
     "earth_hub.aurora": 422228,
-    "earth_orbital_hub": 7066673
+    "earth_orbital_hub": 7066674
    },
    "city.000.earth.012": {
     "earth_hub.aurora": 59073,
@@ -3297,12 +3297,12 @@
   },
   "cities": 60,
   "legs_day": 1091569,
-  "legs_y": 398422533,
+  "legs_y": 398422537,
   "lifter_flights_day": 10107,
   "lifter_seats": 144,
   "load_factor": 0.75,
   "note": "остальная Земля (города вне 60 агломераций) летает с той же смесью широт",
-  "pop_cities": 5478309821,
-  "pop_rest": 4482253513
+  "pop_cities": 5478309871,
+  "pop_rest": 4482253557
  }
 }

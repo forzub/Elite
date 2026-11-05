@@ -359,7 +359,7 @@ class Voyage:
 REGIME_FAMILY = {
     "technocratic_meritocracy": "technocratic", "security_oligarchy": "security", "party_technocracy": "party",
     "shareholder_agora": "assembly", "eco_assembly": "assembly", "caste_theocracy": "theocratic",
-    "scholar_theocracy": "theocratic", "machine_oracle": "technocratic", "parliamentary_bureaucracy": "assembly",
+    "navigator_council": "theocratic", "machine_oracle": "technocratic", "parliamentary_bureaucracy": "assembly",
     "corporate_board": "oligarchic", "corporate_democracy": "assembly", "synod_theocracy": "theocratic",
     "council_of_chiefs": "assembly", "litigating_city_states": "assembly", "grandees_and_church": "oligarchic",
     "clan_contracts": "clan", "merit_caste_republic": "technocratic", "sage_council": "technocratic",
@@ -368,26 +368,24 @@ REGIME_FAMILY = {
 
 # ---------------------------------------------------------------- colonies
 CAPS = ["energy", "extraction", "metallurgy", "manufacturing", "electronics", "bio", "shipbuilding", "military", "research"]
-CAP_CULTURE = {
-    "energy": {"order_love": 0.5, "clock_time": 0.5},
-    "extraction": {"improvisation": 0.4, "risk": 0.3, "hardship_pride": 0.3},
-    "metallurgy": {"clock_time": 0.4, "thrift": 0.3, "order_love": 0.3},
-    "manufacturing": {"collective_duty": 0.35, "clock_time": 0.3, "thrift": 0.2, "power_distance": 0.15},
-    "electronics": {"clock_time": 0.35, "order_love": 0.3, "say_no": 0.2, "formalism": 0.15},
-    "bio": {"collective_duty": 0.4, "kin_first": 0.3, "hardship_pride": 0.3},
-    "shipbuilding": {"clock_time": 0.35, "order_love": 0.3, "improvisation": 0.35},
-    "military": {"hardship_pride": 0.3, "power_distance": 0.25, "collective_duty": 0.2, "grievance_memory": 0.25},
-    "research": {"say_no": 0.3, "irony_to_power": 0.2, "risk": 0.2, "outsider_trust": 0.3},
-}
 CAP_ENDOW = {"extraction": ("volatiles", "metals", "he3"), "metallurgy": ("metals", "strategic"),
              "bio": ("agri", "water"), "energy": ("he3",), "shipbuilding": ("metals",)}
 ERA_K = {"I": 0.55, "II": 0.62, "III": 0.70, "IV": 0.72, "hyper": 0.9}
 
 
+HERITAGE_NEUTRAL = 12.5   # capability points of a sector without a recorded industrial history
+
+
+def industrial_heritage(col):
+    h = col.get("industrial_heritage") or {}
+    return {cap: h.get(cap, HERITAGE_NEUTRAL) for cap in CAPS}
+
+
 def colony_profile(col, voyages, E, missions, pop=None, tech_rel=None):
     """Culture (founders + colony-era drift) and capabilities. With tech_rel (causal demography:
-    domain level relative to the best polity) capabilities come from technology, culture,
-    endowment and size; without it the legacy formula (authored population) is used."""
+    domain level relative to the best polity) capabilities come from technology, the explicit industrial
+    heritage (world.json), endowment, size and specialisation (bias); without it the legacy formula
+    (authored population) is used. Culture is the social profile; it does not enter capabilities directly."""
     founders = [voyages[f] for f in col["founders"] if f in voyages and voyages[f].arrival]
     if not founders:
         founders = [voyages[f] for f in col["founders"] if f in voyages]
@@ -420,20 +418,22 @@ def colony_profile(col, voyages, E, missions, pop=None, tech_rel=None):
     conv = 0.0 if hy is None else min(1.0, (YEAR_END - hy) / 300.0)
     know = k0 + (0.95 - k0) * conv * 0.8
     pop = col["pop_3126"] if pop is None else pop
+    # industrial capability is a separate state (world.json industrial_heritage: the sectoral profile the
+    # colony's history built - institutions, schools, plants, policy); culture is the social profile and
+    # acts on industry only through history (demography / technology), never directly
+    heritage = industrial_heritage(col)
     caps = {}
     if tech_rel is not None:
         for cap in CAPS:
-            cult = sum(w * cv[a] for a, w in CAP_CULTURE[cap].items())
             end = sum(e[k] for k in CAP_ENDOW.get(cap, ())) / max(1, len(CAP_ENDOW.get(cap, ()))) if cap in CAP_ENDOW else 0.5
-            val = 45 * tech_rel[cap] + 0.25 * cult + 18 * end + 4.0 * math.log10(max(pop, 1e3) / 1e5) + 0.5 * col["bias"].get(cap, 0)
+            val = 45 * tech_rel[cap] + heritage[cap] + 18 * end + 4.0 * math.log10(max(pop, 1e3) / 1e5) + 0.5 * col["bias"].get(cap, 0)
             caps[cap] = round(clamp(val), 1)
         know = sum(tech_rel[c] for c in CAPS) / len(CAPS)
         return dict(culture=cv, knowledge=round(know, 3), caps=caps)
     scale = 8.0 * math.log10(max(pop, 1e3) / 1e4)
     for cap in CAPS:
-        cult = sum(w * cv[a] for a, w in CAP_CULTURE[cap].items())
         end = sum(e[k] for k in CAP_ENDOW.get(cap, ())) / max(1, len(CAP_ENDOW.get(cap, ()))) if cap in CAP_ENDOW else 0.5
-        val = 35 * know + 0.25 * cult + 18 * end + scale + col["bias"].get(cap, 0)
+        val = 35 * know + heritage[cap] + 18 * end + scale + col["bias"].get(cap, 0)
         caps[cap] = round(clamp(val), 1)
     return dict(culture=cv, knowledge=round(know, 3), caps=caps)
 
@@ -859,7 +859,7 @@ REGIME_RESP = {
     "shareholder_agora": {"buy_from_neighbors": 8, "market_profiteering": 6},
     "corporate_board": {"market_profiteering": 12},
     "corporate_democracy": {"market_profiteering": 6, "buy_from_neighbors": 4},
-    "scholar_theocracy": {"pray_ritual": 8, "committee_procedure": 4},
+    "navigator_council": {"pray_ritual": 8, "committee_procedure": 4},
     "caste_theocracy": {"pray_ritual": 10, "scapegoat_purge": 8},
     "synod_theocracy": {"pray_ritual": 14},
     "machine_oracle": {"committee_procedure": 6, "informal_fix": -6},
@@ -1022,6 +1022,7 @@ def run(seed):
         own = cmap[o["owners"][0]]
         a = dict(id=o["id"], name=o["name"], polity=own["polity"], owner=own["id"], system=o["system"], founders=own["founders"],
                  regime_3126=own["regime_3126"], bias={}, assets=OUTPOST_ASSETS.get(o["id"], []), culture_drift={},
+                 industrial_heritage=o.get("industrial_heritage") or own.get("industrial_heritage"),
                  hyper_year=o["founded"], founded=o["founded"], pop_3126=int(round(u.P())), pop=u.P(), income=u.y, economic_actor=True)
         profiles[o["id"]] = colony_profile(a, voyages, E, missions, pop=u.P(), tech_rel={d: u.tech[d] / tmax[d] for d in demo.DOMAINS})
         extra.append(a)

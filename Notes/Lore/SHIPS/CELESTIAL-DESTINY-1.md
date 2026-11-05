@@ -11,7 +11,7 @@
 <!-- GENERATED:summary BEGIN -->
 | Поле | Значение | Статус |
 |---|---|---|
-| ID / имена | CELESTIAL-DESTINY-1, Небесная Судьба, Целестиал Дестини-1 | CANON · PUBLIC |
+| ID / имена | CELESTIAL-DESTINY-1, Небесная Судьба, 天命一号, Tianming-1 | CANON · PUBLIC |
 | Волна | I | CANON · PUBLIC |
 | Спонсор | PRC (second state ship) - a fast ark: 'arrive first' | CANON · PUBLIC |
 | Старт | 2125, Sol | CANON · PUBLIC |
@@ -19,7 +19,7 @@
 | Прибытие | 2212 (в досье было 2172) | PROPOSAL · PUBLIC |
 | Длительность полёта, лет | 87 | PROPOSAL · PUBLIC |
 | Колония | [Цветущая Гармония](../COLONIES/eps_eri_harmony.md) | CANON · PUBLIC |
-| Источники | 06. CELESTIAL-DESTINY-1.md; fate.md §5; actors.json Синь Хэ | — |
+| Источники | 06. CELESTIAL-DESTINY-1.md; fate.md §5; actors.json Синьхэ | — |
 <!-- GENERATED:summary END -->
 
 ## Причины полёта

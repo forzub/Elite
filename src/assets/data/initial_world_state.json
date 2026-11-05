@@ -29,11 +29,11 @@
       "model_family": "command_station",
       "traffic_profile": {
         "profile": "gateway",
-        "arrivals_day": 5517,
+        "arrivals_day": 5515,
         "dock_sectors": 9,
         "dock_modules": 98,
         "surface_pax_flights_day": 2571.066,
-        "hub_shuttle_flights_day": 1457.596
+        "hub_shuttle_flights_day": 1455.623
       },
       "motion": {
         "type": "parent_orbit",
@@ -81,11 +81,11 @@
       "model_family": "command_station",
       "traffic_profile": {
         "profile": "passenger_mega",
-        "arrivals_day": 9461,
+        "arrivals_day": 9460,
         "dock_sectors": 12,
         "dock_modules": 141,
         "surface_pax_flights_day": 3950.573,
-        "hub_shuttle_flights_day": 3654.129
+        "hub_shuttle_flights_day": 3653.096
       },
       "motion": {
         "type": "parent_orbit",
@@ -133,11 +133,11 @@
       "model_family": "command_station",
       "traffic_profile": {
         "profile": "passenger",
-        "arrivals_day": 7287,
+        "arrivals_day": 7286,
         "dock_sectors": 11,
         "dock_modules": 132,
         "surface_pax_flights_day": 2387.384,
-        "hub_shuttle_flights_day": 3208.625
+        "hub_shuttle_flights_day": 3208.001
       },
       "motion": {
         "type": "parent_orbit",
@@ -185,11 +185,11 @@
       "model_family": "command_station",
       "traffic_profile": {
         "profile": "cargo",
-        "arrivals_day": 2073,
+        "arrivals_day": 2072,
         "dock_sectors": 3,
         "dock_modules": 34,
         "surface_pax_flights_day": 739.904,
-        "hub_shuttle_flights_day": 726.018
+        "hub_shuttle_flights_day": 725.824
       },
       "motion": {
         "type": "parent_orbit",
@@ -241,7 +241,7 @@
         "dock_sectors": 7,
         "dock_modules": 73,
         "surface_pax_flights_day": 220.828,
-        "hub_shuttle_flights_day": 2705.115
+        "hub_shuttle_flights_day": 2705.058
       },
       "motion": {
         "type": "parent_orbit",
@@ -345,7 +345,7 @@
         "dock_sectors": 1,
         "dock_modules": 9,
         "surface_pax_flights_day": 237.361,
-        "hub_shuttle_flights_day": 226.678
+        "hub_shuttle_flights_day": 226.616
       },
       "motion": {
         "type": "parent_orbit",

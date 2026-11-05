@@ -34,6 +34,9 @@ import sys
 import endowment as endow
 import sol_network
 import lab
+import naming
+
+NAMER = naming.Names()
 import logistics as lg
 import lotus_model
 
@@ -427,6 +430,7 @@ def build_sites(I, dsos):
     # beacon relays as deep-space infrastructure records (for comms) are in comms; abandoned hubs: declining outposts
     for s in sites:
         s["language"] = I.language(s["polity"]) if s["polity"] else I.WS["languages"]["network_lingua_franca"]
+        s["name"] = NAMER.site_name(s["id"], s["name"])   # stable id -> naming resolver (canon/naming.json)
     return sites
 
 

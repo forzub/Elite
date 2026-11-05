@@ -94,7 +94,7 @@
     "Керн (находка)",
     "Когниум (покупатель)"
    ],
-   "custody": "Когниум (Научная служба), Новый Шанхай",
+   "custody": "Когниум (Научная служба), Синь-Шанхай",
    "finder": "спасатели Керна",
    "found_at": "dso.lotus",
    "found_year": 3098,
@@ -1732,7 +1732,7 @@
   ],
   "cobrett_round_trip_charge_t": 4.042,
   "cobrett_tank_t": 3.0,
-  "expected_value_cr": -424034,
+  "expected_value_cr": -424017,
   "expedition_cost_cr": {
    "berth_fees": 20000,
    "charge_and_fuel": 35145,
@@ -1765,7 +1765,7 @@
   "lotus": {
    "after_primary_exhausted": {
     "note": "после исчерпания тел NIRVANA-1 материал даёт только живое сырьё: цена растёт, ёмкость «Сада» становится узким местом — давление строить новые «Сады»",
-    "price_cr_per_g": 46488177,
+    "price_cr_per_g": 46488148,
     "refined_g_y": 1.996,
     "victims_y": 49.664
    },
@@ -1866,12 +1866,12 @@
      }
     ]
    },
-   "bribe_pool_cr_y": 3036435,
+   "bribe_pool_cr_y": 3036420,
    "buying_vs_self": {
-    "civilisation_retail_cr_per_g": 3109001,
+    "civilisation_retail_cr_per_g": 3108998,
     "note": "у внешнего периметра материал дороже, чем обходится рейс «со связями»; рейс с купленной картой — дороже покупки: поэтому вынос держат сети, а одиночки гибнут или продают за бесценок",
     "outer_perimeter_buy_cr_per_g": 777250,
-    "self_sourcing_connected_cr_per_g": 333324,
+    "self_sourcing_connected_cr_per_g": 333323,
     "self_sourcing_informed_cr_per_g": 941793
    },
    "corruption": {
@@ -1886,7 +1886,7 @@
        "role": "досмотровый инспектор"
       },
       {
-       "cost_of_honesty_cr_y": 236167,
+       "cost_of_honesty_cr_y": 236166,
        "expected_corrupt_share": 0.75,
        "illicit_cr_y": 337381,
        "legal_salary_cr_y": 80000,
@@ -1928,7 +1928,7 @@
      ],
      "inner_anomaly": [
       {
-       "cost_of_honesty_cr_y": 96154,
+       "cost_of_honesty_cr_y": 96153,
        "expected_corrupt_share": 0.737,
        "illicit_cr_y": 101214,
        "legal_salary_cr_y": 60000,
@@ -2027,7 +2027,7 @@
       }
      ]
     },
-    "cargo_cr": 1686905,
+    "cargo_cr": 1686903,
     "formula": "pressure = illicit income per year / legal salary per year x (1 - audit) x isolation x fragmentation; corrupt share = p / (1 + p)",
     "note": "не все продажны: доля — ожидание по роли; честные офицеры, врачи и следователи есть, но ближе к полю честность стоит дороже"
    },
@@ -2118,7 +2118,7 @@
      "year": 3121.2
     }
    ],
-   "price_cr_per_g": 3109001,
+   "price_cr_per_g": 3108998,
    "price_in_target": true,
    "price_target_cr_per_g": [
     2000000,
@@ -2177,8 +2177,8 @@
     }
    },
    "raids": {
-    "average_ev_cr": -424034,
-    "body_value_retail_cr": 2249207,
+    "average_ev_cr": -424017,
+    "body_value_retail_cr": 2249205,
     "run_cost_cr": 191573,
     "segments": [
      {
@@ -2192,7 +2192,7 @@
       "perceived_ev_cr": -38315,
       "price_per_body": 8997,
       "ru": "наивные (без карты, без связей)",
-      "runs_y": 32.295,
+      "runs_y": 32.294,
       "segment": "naive",
       "stage1_risk": 0.13
      },
@@ -2213,14 +2213,14 @@
      },
      {
       "bodies": 2.674,
-      "bribe_cr": 202429,
+      "bribe_cr": 202428,
       "corridor": "known_safe",
-      "ev_cr": 861034,
+      "ev_cr": 861033,
       "map_cr": 120000,
       "p_caught": 0.081,
       "p_ship_lost": 0.03,
-      "perceived_ev_cr": 928671,
-      "price_per_body": 562302,
+      "perceived_ev_cr": 928670,
+      "price_per_body": 562301,
       "ru": "со связями (свежая карта, взятка, своя лаборатория)",
       "runs_y": 15,
       "segment": "connected",
@@ -2261,7 +2261,7 @@
      "owner": "tau_ceti_cognium",
      "ship_class": "escort_frigate",
      "ships": 4,
-     "unofficial_income_cr_y": 155848,
+     "unofficial_income_cr_y": 155847,
      "works_in_field": true
     },
     {
@@ -2283,7 +2283,7 @@
      "owner": "tau_ceti_cognium",
      "ship_class": "patrol_cutter",
      "ships": 2,
-     "unofficial_income_cr_y": 374035,
+     "unofficial_income_cr_y": 374033,
      "works_in_field": true
     },
     {
@@ -2306,7 +2306,7 @@
      "owner": "cyg61_kern",
      "ship_class": "patrol_cutter",
      "ships": 3,
-     "unofficial_income_cr_y": 927295,
+     "unofficial_income_cr_y": 927290,
      "works_in_field": true
     },
     {
@@ -2328,7 +2328,7 @@
      "owner": "cyg61_kern",
      "ship_class": "patrol_cutter",
      "ships": 2,
-     "unofficial_income_cr_y": 592222,
+     "unofficial_income_cr_y": 592219,
      "works_in_field": false
     },
     {
@@ -2350,7 +2350,7 @@
      "owner": "hd114783_hellas3",
      "ship_class": "interceptor",
      "ships": 2,
-     "unofficial_income_cr_y": 987036,
+     "unofficial_income_cr_y": 987031,
      "works_in_field": true
     },
     {
@@ -2406,7 +2406,7 @@
     "fleet": [
      {
       "avoided_loss_cr_y": 23728464,
-      "cost_cr_y": 226893,
+      "cost_cr_y": 226892,
       "exposure_days_y": 120,
       "fitted": true,
       "g_per_ship": 0.6,
@@ -2537,7 +2537,7 @@
      "стабилизаторы стоят на 23.8 кораблях; без них кордон не досматривает внутри поля, а SAR не вытаскивает застрявших",
      "у рейдеров вставок почти нет (несовместимые ядра, учёт Когниума): поэтому они гибнут чаще кордона"
     ],
-    "small_insert_price_cr": 932700
+    "small_insert_price_cr": 932699
    },
    "status": "PROPOSAL",
    "stock": {
@@ -2585,7 +2585,7 @@
      "connected": 15,
      "cover_story": 12.918,
      "informed": 0.0,
-     "naive": 32.295
+     "naive": 32.294
     },
     "raids_y": 60.212,
     "refined_g_y": 45.827,

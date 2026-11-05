@@ -26,6 +26,7 @@
 
 ```bash
 cd tools/colonization_lab
+python naming.py --write             # слой имён: canon/naming.json (+ remote_systems.json) -> зеркала имён в world / political_order / settlements / population_history / legacy actors.json, runtime src/assets/data/naming/names_3126.json, out/world_3126/naming_3126.json (Фортуна, Лекси); --check — 23 проверки имён
 python lab.py                        # канон: seed 3126 -> out/
 python lab.py --seed 7 --out D:/tmp/elite_x  # другой seed меняет только заполняющие события и эпидемии, не якоря
 python lab.py --check-dataset        # runtime generation_ships.json не разошёлся с каноном (включая статусы)?
@@ -112,7 +113,8 @@ seed=3126 missions=36 colonies=22 earth=11668961361 off_sol=10087992674 sha256=1
 
 ## Синхронизация Markdown и runtime
 
-Источник истины — `canon/*.json`. Порядок обновления:
+Источник истины — `canon/*.json`. Имена — только `canon/naming.json`: поля имён в остальных файлах — зеркала, их пишет `naming.py --write`. Промышленный профиль колонии — явное состояние `world.json industrial_heritage` (не культура: культурный вектор — социальный профиль и фактор истории, в способности напрямую не входит). Порядок обновления:
+0. `python naming.py --write` (если менялись имена; в конце цепочки — ещё раз, для проверки);
 1. `python knowledge.py --write` (если менялся канон);
 2. `python lab.py`;
 3. `python export_runtime.py --write`;

@@ -18,7 +18,7 @@
 | Цель | Epsilon Eridani | PROPOSAL · PUBLIC |
 | Прибытие | 2405 | PROPOSAL · PUBLIC |
 | Длительность полёта, лет | 70 | PROPOSAL · PUBLIC |
-| Колония | [Пояс Раздора / Вольные астероиды](../COLONIES/eps_eri_strife.md) | PROPOSAL · PUBLIC |
+| Колония | [Пояс Раздора](../COLONIES/eps_eri_strife.md) | PROPOSAL · PUBLIC |
 | Источники | generation_ships.json FREE-VENTURE-1; generation ships.md (A); 29. HOMEWARD-1.md (обломки FREE-VENTURE-1) | — |
 <!-- GENERATED:summary END -->
 

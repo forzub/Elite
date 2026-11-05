@@ -36,13 +36,13 @@
 | 2700 | 8 564 118 365 | 2 035 451 907 | 6 528 666 459 | 2.13 | 94.0 | growth / stagnation |
 | 2750 | 9 483 693 892 | 2 394 054 039 | 7 089 639 853 | 2.13 | 94.0 | growth / stagnation |
 | 2800 | 10 352 463 766 | 2 815 650 232 | 7 536 813 535 | 2.13 | 94.0 | growth / stagnation |
-| 2850 | 10 972 698 492 | 3 217 508 472 | 7 755 190 020 | 2.09 | 94.0 | stagnation / stagnation |
-| 2900 | 11 441 875 876 | 3 439 863 964 | 8 002 011 912 | 2.07 | 94.0 | stagnation / stagnation |
-| 2950 | 11 693 971 104 | 3 515 299 287 | 8 178 671 817 | 2.06 | 94.0 | stagnation / stagnation |
-| 3000 | 11 853 833 587 | 3 538 444 977 | 8 315 388 610 | 2.06 | 94.0 | stagnation / stagnation |
-| 3050 | 11 783 919 872 | 3 537 031 849 | 8 246 888 023 | 2.05 | 94.0 | stagnation / stagnation |
-| 3100 | 11 807 363 350 | 3 515 175 822 | 8 292 187 528 | 2.02 | 94.0 | stagnation / stagnation |
-| 3126 | 11 668 961 361 | 3 460 563 363 | 8 208 397 998 | 1.87 | 94.0 | stagnation / stagnation |
+| 2850 | 10 972 698 606 | 3 217 508 505 | 7 755 190 102 | 2.09 | 94.0 | stagnation / stagnation |
+| 2900 | 11 441 876 173 | 3 439 864 051 | 8 002 012 122 | 2.07 | 94.0 | stagnation / stagnation |
+| 2950 | 11 693 971 414 | 3 515 299 377 | 8 178 672 036 | 2.06 | 94.0 | stagnation / stagnation |
+| 3000 | 11 853 833 904 | 3 538 445 069 | 8 315 388 835 | 2.06 | 94.0 | stagnation / stagnation |
+| 3050 | 11 783 920 196 | 3 537 031 944 | 8 246 888 253 | 2.05 | 94.0 | stagnation / stagnation |
+| 3100 | 11 807 363 686 | 3 515 175 920 | 8 292 187 766 | 2.02 | 94.0 | stagnation / stagnation |
+| 3126 | 11 668 961 697 | 3 460 563 461 | 8 208 398 236 | 1.87 | 94.0 | stagnation / stagnation |
 
 Катастрофы и шоки Земли (величины — допущения модели):
 
@@ -73,10 +73,10 @@
 | 2135 | [GREEN-ARK-1](../SHIPS/GREEN-ARK-1.md) | Ecological movement + foundations; hidden partner: a food-biotech conglomerate that supplied the closed-loop microbiome | 12 000 | CANON · PUBLIC |
 | 2140 | [DHARMA-1](../SHIPS/DHARMA-1.md) | India: state + caste funds | 30 000 | CANON · PUBLIC |
 | 2150 | [IRON-SHIELD-1](../SHIPS/IRON-SHIELD-1.md) | Ultra-rich families + critical-infrastructure owners; Nordic private military company 'Skjold' runs security | 12 000 | CANON · PUBLIC |
-| 2160 | [AL-QUDS-1](../SHIPS/AL-QUDS-1.md) | Islamic League (UAE, Saudi Arabia, Qatar, Malaysia, Indonesia, Pakistan) | 18 000 | CANON · PUBLIC |
+| 2160 | [VAKA-MOANA-1](../SHIPS/VAKA-MOANA-1.md) | Pacific Voyaging Compact: Aotearoa New Zealand (Crown + iwi trusts), Hawaiʻi, Samoa, Tonga, Fiji, Cook Islands, Kiribati, Nauru, Tuvalu, Papua New Guinea, Solomon Islands, Vanuatu, FSM; seabed-nodule royalties (Clarion-Clipperton Zone), climate loss-and-damage funds, diaspora bonds | 18 000 | CANON · PUBLIC |
 | 2175 | [NEXT-1](../SHIPS/NEXT-1.md) | Transhumanists: biohackers, AI labs, crypto money | 6 000 | CANON · PUBLIC |
 | 2250 | [EUROPA-1](../SHIPS/EUROPA-1.md) | European Union (state project) | 12 000 | CANON · PUBLIC |
-| 2260 | [NEW-HELLAS-1](../SHIPS/NEW-HELLAS-1.md) | North American consortium (USA, Canada, Mexico), private + state funds | 15 000 | CANON · PUBLIC |
+| 2260 | [HOMESTEAD-1](../SHIPS/HOMESTEAD-1.md) | North American consortium (USA, Canada, Mexico), private + state funds | 15 000 | CANON · PUBLIC |
 | 2260 | [RESOURCER-1](../SHIPS/RESOURCER-1.md) | NeoMining Corp and other mining corporations | 10 000 | CANON · PUBLIC |
 | 2270 | [NEW-JERUSALEM-1](../SHIPS/NEW-JERUSALEM-1.md) | Christian fundamentalists: evangelicals, traditionalist Catholic orders, Orthodox conservatives | 12 000 | CANON · PUBLIC |
 | 2280 | [UHURU-2](../SHIPS/UHURU-2.md) | African Union (second ship of the programme; why UHURU-1 never flew is a PROPOSAL, see anchors) | 30 000 | CANON · PUBLIC |
@@ -160,8 +160,8 @@
 | [HERACLES-1](../SHIPS/HERACLES-1.md) | Греция, Италия, Испания, Кипр, Мальта: судовладельцы + региональные фонды ЕС | безработица, фронтир, бегство капитала; «обойти Брюссель — на деньги Брюсселя» | средиземноморские верфи |
 | [CELESTIAL-DESTINY-1](../SHIPS/CELESTIAL-DESTINY-1.md) | КНР, второй госкорабль | гонка и страх, что систему займут: «прилететь первыми» | — |
 | [IRON-SHIELD-1](../SHIPS/IRON-SHIELD-1.md) | сверхбогатые семьи и владельцы критической инфраструктуры | бегство капитала, бункер для своих | ЧВК «Skjold» |
-| [AL-QUDS-1](../SHIPS/AL-QUDS-1.md) | ОАЭ, Саудовская Аравия, Катар, Малайзия, Индонезия, Пакистан | страховка правящих семей на случай конца нефти | — |
-| [EUROPA-1](../SHIPS/EUROPA-1.md) | ЕС | «музей Европы», не отстать от США, Китая и исламского мира | — |
+| [VAKA-MOANA-1](../SHIPS/VAKA-MOANA-1.md) | ОАЭ, Саудовская Аравия, Катар, Малайзия, Индонезия, Пакистан | страховка правящих семей на случай конца нефти | — |
+| [EUROPA-1](../SHIPS/EUROPA-1.md) | ЕС | «музей Европы», не отстать от США, Китая и Индии | — |
 | [RESOURCER-1](../SHIPS/RESOURCER-1.md) | NeoMining Corp и другие горнодобывающие корпорации | страх, что займут, и вера в проспект «пояс стоит триллионы» о поясе массой 0.0027 Земли [PROPOSAL] | авторы проспекта |
 
 Реконсиляция [PROPOSAL] формулирует тон эпохи так: «блестящие инженеры строят великолепные машины для довольно идиотских политических целей».
@@ -182,7 +182,7 @@
 - **Молодёжный навес Африки и Южной Азии.** К 2065–2085 годам на Земле 1.2–1.5 млрд молодых людей 15–30 лет, 60–70 % из них — в Африке и Южной Азии. Проще отправить их к звёздам, чем дать им работу.
 - **Конец нефти** превратил суверенные фонды Персидского залива и Казахстана в якорных инвесторов.
 - **Старение Китая** сделало ковчег «страховкой цивилизации».
-- **Гонка.** Каждый американский старт рождал китайский ответ, и наоборот; затем — африканский, индийский, исламский, европейский. Вторая волна прямо определена мотивом «нельзя отдать звёзды конкурентам».
+- **Гонка.** Каждый американский старт рождал китайский ответ, и наоборот; затем — африканский, индийский, тихоокеанский, европейский. Вторая волна прямо определена мотивом «нельзя отдать звёзды конкурентам».
 - **Цифровой концлагерь.** К 2300 году Земля — «цифровой концлагерь», и «улететь» становится мемом и культурным кодом (волна III).
 
 ### 7. Почему именно эти цели
@@ -226,9 +226,9 @@
 |---|---|
 | [Цветущая Гармония](../COLONIES/eps_eri_harmony.md) | 2 601 843 |
 | [Тяньхэ (Небесная Река)](../COLONIES/gj832_tianhe.md) | 1 091 536 |
-| [Новая Мекка](../COLONIES/lalande_mecca.md) | 885 207 |
+| [Тауранга](../COLONIES/lalande_mecca.md) | 885 207 |
 | [Пояс Раздора / Вольные астероиды](../COLONIES/eps_eri_strife.md) | 824 538 |
-| [Вторая Эллада](../COLONIES/hd20794_hellas2.md) | 808 380 |
+| [Хомстед](../COLONIES/hd20794_hellas2.md) | 808 380 |
 | [Свободная Карма](../COLONIES/delta_pav_freekarma.md) | 806 109 |
 
 **Кордон Сола (2790)** [PROPOSAL] — часть Конвенции Маяков: Земля исключена из сети. Публичные причины:

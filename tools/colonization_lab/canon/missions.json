@@ -283,7 +283,7 @@
     {
      "year": 2270,
      "type": "merger",
-     "text": "Слияние двух колоний; главный хаб GENESIS-1 даёт имя городу — «Новый Шанхай»",
+     "text": "Слияние двух колоний; главный хаб GENESIS-1 даёт имя городу — «Синь-Шанхай»",
      "knowledge": {
       "status": "PROPOSAL",
       "visibility": "PUBLIC_RECORD",
@@ -295,7 +295,7 @@
    "fate": {
     "status": "arrived",
     "ship": "station_core",
-    "ship_note": "ядро станции «Новый Шанхай»",
+    "ship_note": "ядро станции «Синь-Шанхай»",
     "findable": true
    },
    "colony": "tau_ceti_cognium",
@@ -510,7 +510,8 @@
   {
    "id": "TIANHE-1",
    "aliases": [
-    "Тянь Хэ"
+    "Тяньхэ",
+    "天河一号"
    ],
    "wave": "I",
    "canon_status": "canon",
@@ -620,7 +621,7 @@
     {
      "year": 2288,
      "type": "arrival",
-     "text": "GJ 832: в системе уже 18 лет живёт Гайя-Прим",
+     "text": "GJ 832: в системе уже 18 лет живёт Гайя-Прайм",
      "pop_after": 28400,
      "knowledge": {
       "status": "CANON",
@@ -1010,7 +1011,8 @@
    "id": "CELESTIAL-DESTINY-1",
    "aliases": [
     "Небесная Судьба",
-    "Целестиал Дестини-1"
+    "天命一号",
+    "Tianming-1"
    ],
    "wave": "I",
    "canon_status": "canon",
@@ -1113,7 +1115,7 @@
    "sources": [
     "06. CELESTIAL-DESTINY-1.md",
     "fate.md §5",
-    "actors.json Синь Хэ"
+    "actors.json Синьхэ"
    ],
    "knowledge": {
     "status": "CANON",
@@ -1215,7 +1217,7 @@
     {
      "year": 2270,
      "type": "arrival",
-     "text": "GJ 832: сад-купола на GJ 832 b I и в поясе («Гайя-Прим»)",
+     "text": "GJ 832: сад-купола на GJ 832 b I и в поясе («Гайя-Прайм»)",
      "pop_after": 11500,
      "authored": 2190,
      "knowledge": {
@@ -1435,7 +1437,7 @@
    "fate": {
     "status": "arrived",
     "ship": "orbit_temple",
-    "ship_note": "корабль на орбите — Храм Массива, доступ только высшим",
+    "ship_note": "корабль на орбите — Храм Семени, доступ только высшим",
     "findable": true
    },
    "colony": "delta_pav_karma",
@@ -1481,6 +1483,7 @@
    "id": "IRON-SHIELD-1",
    "aliases": [
     "Айрон Шилд-1",
+    "Jernskjold",
     "Цитадель"
    ],
    "wave": "II",
@@ -1610,7 +1613,7 @@
    "sources": [
     "09. IRON-SHIELD-1.md",
     "fate.md §6",
-    "actors.json Скьёльдбург"
+    "actors.json Скьольдборг"
    ],
    "knowledge": {
     "status": "CANON",
@@ -1646,18 +1649,18 @@
    }
   },
   {
-   "id": "AL-QUDS-1",
+   "id": "VAKA-MOANA-1",
    "aliases": [
-    "Аль-Кудс-1",
-    "Новая Мекка"
+    "Вака-Моана",
+    "Vaka Moana"
    ],
    "wave": "II",
    "canon_status": "canon",
-   "sponsor": "Islamic League (UAE, Saudi Arabia, Qatar, Malaysia, Indonesia, Pakistan)",
+   "sponsor": "Pacific Voyaging Compact: Aotearoa New Zealand (Crown + iwi trusts), Hawaiʻi, Samoa, Tonga, Fiji, Cook Islands, Kiribati, Nauru, Tuvalu, Papua New Guinea, Solomon Islands, Vanuatu, FSM; seabed-nodule royalties (Clarion-Clipperton Zone), climate loss-and-damage funds, diaspora bonds",
    "cultures": {
-    "gulf_arab": 0.35,
-    "malay_indonesian": 0.4,
-    "pakistani": 0.25
+    "aotearoa_nz": 0.35,
+    "pacific_polynesian": 0.4,
+    "pacific_melanesian": 0.25
    },
    "launch_year": 2160,
    "source_system": 0,
@@ -1678,7 +1681,7 @@
      "share": 0.17,
      "awake": 1.0,
      "culture": {
-      "gulf_arab": 1.0
+      "pacific_polynesian": 1.0
      }
     },
     "faithful": {
@@ -1705,12 +1708,12 @@
     "prestige": 0.15,
     "scientific_vanity": 0.1
    },
-   "dark_comedy": "Нефтяные фонды страховали правящие семьи от конца нефти кораблём, который летел на термоядерном топливе, купленном за нефть.",
+   "dark_comedy": "Острова, которые уходили под воду из-за моря, оплатили свой ковчег, перекопав дно того же моря.",
    "anchors": [
     {
      "year": 2178,
-     "type": "religious_conflict",
-     "text": "Спор улемов: столкновения фракций",
+     "type": "factional_conflict",
+     "text": "Спор делегаций о конституции корабля: столкновения фракций",
      "deaths": 800,
      "effects": {
       "cohesion": -15
@@ -1724,7 +1727,7 @@
     {
      "year": 2185,
      "type": "reconciliation",
-     "text": "Звёздный совет богословов",
+     "text": "Фоно корабля (fono, совет): навигаторы и вожди делят власть",
      "effects": {
       "faithful.power": 10,
       "*.grievance": -10
@@ -1748,18 +1751,18 @@
      }
     }
    ],
-   "arrival_regime": "scholar_theocracy",
+   "arrival_regime": "navigator_council",
    "fate": {
     "status": "arrived",
     "ship": "station_core",
-    "ship_note": "купол SANCTUM — мечеть-обсерватория «Расад»",
+    "ship_note": "купол станции — обсерватория-вычислитель Te Whare Tātai Arorangi («Фаре»)",
     "findable": true
    },
    "colony": "lalande_mecca",
    "sources": [
-    "10. AL-QUDS-1.md",
+    "10. VAKA-MOANA-1.md",
     "fate.md §7",
-    "actors.json Ильм-аль-Нуджум"
+    "canon/naming.json lalande_mecca"
    ],
    "knowledge": {
     "status": "CANON",
@@ -1770,7 +1773,7 @@
     "launch_year": {
      "status": "CANON",
      "visibility": "PUBLIC_RECORD",
-     "basis": "год в 10. AL-QUDS-1.md"
+     "basis": "год в 10. VAKA-MOANA-1.md"
     },
     "population": {
      "status": "CANON",
@@ -2057,7 +2060,7 @@
    "sources": [
     "12. EUROPA-1.md",
     "fate.md §8",
-    "actors.json Рестаурос"
+    "actors.json Союз Новой Европы"
    ],
    "knowledge": {
     "status": "CANON",
@@ -2210,10 +2213,10 @@
    }
   },
   {
-   "id": "NEW-HELLAS-1",
+   "id": "HOMESTEAD-1",
    "aliases": [
-    "Новая Эллада (корабль)",
-    "Вторая Эллада"
+    "Хомстед",
+    "Homestead"
    ],
    "wave": "III",
    "canon_status": "canon",
@@ -2262,7 +2265,7 @@
     "internal_problems": 0.15,
     "stupid": 0.2
    },
-   "dark_comedy": "Опоздавшие к Мэйфлауэру назвали корабль греческим именем, чтобы «звучало старше».",
+   "dark_comedy": "Опоздавшие к Мэйфлауэру назвали корабль законом о наделах — и прилетели туда, где лучшие наделы уже были заняты.",
    "anchors": [
     {
      "year": 2310,
@@ -2275,7 +2278,7 @@
      "knowledge": {
       "status": "CANON",
       "visibility": "PUBLIC_RECORD",
-      "basis": "год в 13. NEW-HELLAS-1.md, fate.md"
+      "basis": "год в 13. HOMESTEAD-1.md, fate.md"
      }
     },
     {
@@ -2320,7 +2323,7 @@
    },
    "colony": "hd20794_hellas2",
    "sources": [
-    "13. NEW-HELLAS-1.md",
+    "13. HOMESTEAD-1.md",
     "fate.md §9"
    ],
    "knowledge": {
@@ -2332,7 +2335,7 @@
     "launch_year": {
      "status": "CANON",
      "visibility": "PUBLIC_RECORD",
-     "basis": "год в 13. NEW-HELLAS-1.md"
+     "basis": "год в 13. HOMESTEAD-1.md"
     },
     "population": {
      "status": "CANON",
@@ -2364,7 +2367,7 @@
     "Ледяная Вера"
    ],
    "retired_aliases": {
-    "Святой Сион": "рабочее имя колонии до 2026-11-05; решение автора — не использовать, колония и полития называются Ново-Фиваида"
+    "Ново-Фиваида": "рабочее имя колонии до 2026-11-05; решение автора — не использовать, колония и полития называются Ново-Фиваида"
    },
    "wave": "III",
    "canon_status": "canon",
@@ -3277,7 +3280,7 @@
     {
      "year": 2523,
      "type": "arrival",
-     "text": "HD 20794: Вторая Эллада уже здесь 140 лет",
+     "text": "HD 20794: Хомстед уже здесь 140 лет",
      "pop_after": 20500,
      "knowledge": {
       "status": "PROPOSAL",
@@ -3288,7 +3291,7 @@
     {
      "year": 2580,
      "type": "war",
-     "text": "Война за воду со Второй Элладой, 3 года",
+     "text": "Война за воду со Хомстедом, 3 года",
      "deaths": 700,
      "knowledge": {
       "status": "CANON",
@@ -3510,7 +3513,7 @@
    "id": "CELESTIAL-DESTINY-2",
    "aliases": [
     "Небесная Твердыня",
-    "Небесная твердыня-2",
+    "天命二号",
     "Третья Гармония"
    ],
    "wave": "III",
@@ -4658,7 +4661,7 @@
    "fate": {
     "status": "museum",
     "ship": "museum",
-    "ship_note": "музей в Новом Шанхае; у Сола — сброшенный тогда маяк-памятник",
+    "ship_note": "музей в Синь-Шанхае; у Сола — сброшенный тогда маяк-памятник",
     "findable": true
    },
    "colony": null,
@@ -4697,10 +4700,10 @@
    ],
    "wave": "III",
    "canon_status": "provisional",
-   "sponsor": "Lalande colonies (New Hellas + New Mecca): first inter-colony sublight courier",
+   "sponsor": "Lalande colonies (New Hellas + Tauranga (Te Kāpehu)): first inter-colony sublight courier",
    "cultures": {
     "greek": 0.5,
-    "gulf_arab": 0.5
+    "pacific_polynesian": 0.5
    },
    "launch_year": 2385,
    "source_system": 4,
@@ -4732,7 +4735,7 @@
     "frontier_myth": 0.2,
     "name_in_history": 0.2
    },
-   "dark_comedy": "Везли «самое ценное в Лаланде»: семена, патентные архивы и рецепт кофе по-гречески, который в Новом Шанхае объявили турецким.",
+   "dark_comedy": "Везли «самое ценное в Лаланде»: семена, патентные архивы и рецепт кофе по-гречески, который в Синь-Шанхае объявили турецким.",
    "anchors": [
     {
      "year": 2512,
@@ -4749,7 +4752,7 @@
    "fate": {
     "status": "arrived",
     "ship": "museum",
-    "ship_note": "музей в Новом Шанхае",
+    "ship_note": "музей в Синь-Шанхае",
     "findable": true
    },
    "colony": "tau_ceti_cognium",

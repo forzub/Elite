@@ -2,7 +2,7 @@
 
 Генерируется `lab.py` из статусов `canon/*.json` (knowledge.py). CANON = есть в заметках автора; PROPOSAL = добавлено/пересчитано Claude или является результатом модели; UNKNOWN = намеренно без ответа. Видимость: PUBLIC_RECORD / AUTHOR_TRUTH.
 
-Счётчики: AUTHOR_TRUTH 17, CANON 311, PROPOSAL 290, PUBLIC_RECORD 591, UNKNOWN 7
+Счётчики: AUTHOR_TRUTH 17, CANON 314, PROPOSAL 287, PUBLIC_RECORD 591, UNKNOWN 7
 
 Все выходы модели (население 3126, экономика, коридоры, технологии) — PROPOSAL (model) и в этот список не перечисляются поштучно.
 
@@ -36,7 +36,7 @@
 | beacons/41@3050 | PROPOSAL | PUBLIC_RECORD | год и оператор маяка — реконсиляция | tau_ceti_cognium |
 | beacons/0@3112 | PROPOSAL | PUBLIC_RECORD | год и оператор маяка — реконсиляция | sol_authority |
 
-## colonies (127)
+## colonies (125)
 
 | путь | статус | видимость | основание | что |
 |---|---|---|---|---|
@@ -53,7 +53,6 @@
 | colonies/gj832_tianhe/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/gj832_tianhe/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/gj832_tianhe/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
-| colonies/gj832_tianhe/name | PROPOSAL | PUBLIC_RECORD | имя дано реконсиляцией / старой веткой | name |
 | colonies/gj832_tianhe/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/gj832_tianhe/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/gj832_gaia_zone/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
@@ -65,7 +64,6 @@
 | colonies/lalande_hellas/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/lalande_hellas/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/lalande_hellas/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
-| colonies/lalande_hellas/name | PROPOSAL | PUBLIC_RECORD | имя дано реконсиляцией / старой веткой | name |
 | colonies/lalande_hellas/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/lalande_hellas/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
 | colonies/lalande_mecca/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
@@ -79,7 +77,7 @@
 | colonies/eps_eri_harmony/pop_3126_authored | PROPOSAL | PUBLIC_RECORD | реконсиляция (разделение/пересчёт) | pop_3126_authored |
 | colonies/eps_eri_harmony/pop_3126_model | PROPOSAL | PUBLIC_RECORD | результат модели demography.py, не канон | pop_3126_model |
 | colonies/eps_eri_harmony/regime_3126 | PROPOSAL | PUBLIC_RECORD | машинная метка режима по досье (Claude) | regime_3126 |
-| colonies/eps_eri_strife | PROPOSAL | PUBLIC_RECORD | основатель FREE-VENTURE-1: PROPOSAL | Пояс Раздора / Вольные астероиды |
+| colonies/eps_eri_strife | PROPOSAL | PUBLIC_RECORD | основатель FREE-VENTURE-1: PROPOSAL | Пояс Раздора |
 | colonies/eps_eri_strife/assets | PROPOSAL | PUBLIC_RECORD | активы и их важность — реконсиляция/экономика | assets |
 | colonies/eps_eri_strife/culture_drift | PROPOSAL | PUBLIC_RECORD | гипотеза Colonycore v2 | culture_drift |
 | colonies/eps_eri_strife/demography | PROPOSAL | PUBLIC_RECORD | входы причинной демографии (допущения F1–F12) | demography |
@@ -218,7 +216,7 @@
 
 | путь | статус | видимость | основание | что |
 |---|---|---|---|---|
-| jump_chronology/2583 | PROPOSAL | PUBLIC_RECORD | реконсиляция (часть III) | Академия Нового Шанхая публикует теорему о схлопывании интервала; сигнал доходит до Земли в 2595 — отсюда «изобретён в 2 |
+| jump_chronology/2583 | PROPOSAL | PUBLIC_RECORD | реконсиляция (часть III) | Академия Синь-Шанхая публикует теорему о схлопывании интервала; сигнал доходит до Земли в 2595 — отсюда «изобретён в 259 |
 | jump_chronology/2752 | PROPOSAL | PUBLIC_RECORD | реконсиляция (часть III) | HYPERION-2: гиперпространство — среда с градиентами; без маяков прыжок — лотерея; изобретён маяк |
 | jump_chronology/2755 | PROPOSAL | PUBLIC_RECORD | реконсиляция (часть III) | Маяк Тау Кита; 2760 — Эпсилон Эридана (Гармония первая получает связь, 5.5 св. года) |
 | jump_chronology/2765 | PROPOSAL | PUBLIC_RECORD | реконсиляция (часть III) | Концессия GJ 876: Провидение отдаёт гиганты Когниуму в обмен на вычислительное ядро нового поколения |
@@ -257,14 +255,14 @@
 | missions/GENESIS-1/launch_year | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | launch_year |
 | missions/GENESIS-1/population | PROPOSAL | PUBLIC_RECORD | число из досье (реконсиляция C1: стартовые численности по S1) | population |
 | missions/GENESIS-1/anchors/2263/arrival | PROPOSAL | PUBLIC_RECORD | не найдено в источниках | Прибытие к Тау Кита; «Старшие семьи» Мэйфлауэра против «Новой крови» |
-| missions/GENESIS-1/anchors/2270/merger | PROPOSAL | PUBLIC_RECORD | событие миссии-предложения | Слияние двух колоний; главный хаб GENESIS-1 даёт имя городу — «Новый Шанхай» |
+| missions/GENESIS-1/anchors/2270/merger | PROPOSAL | PUBLIC_RECORD | событие миссии-предложения | Слияние двух колоний; главный хаб GENESIS-1 даёт имя городу — «Синь-Шанхай» |
 | missions/UBUNTU-1/fate | UNKNOWN | AUTHOR_TRUTH | неизвестно даже автору | fate |
 | missions/UBUNTU-1/anchors/2790/found | PROPOSAL | PUBLIC_RECORD | реконсиляция B20: обломки найдены гипер-разведкой | Гипер-разведка Когниума находит обломки в поясе GJ 667. Тел нет. |
 | missions/CELESTIAL-DESTINY-1/arrival_year | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2172 | arrival_year |
 | missions/CELESTIAL-DESTINY-1/anchors/2212/arrival | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2172 | Эпсилон Эридана: поселения на спутниках eps Eri b и в поясе |
 | missions/GREEN-ARK-1/arrival_year | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2190 | arrival_year |
 | missions/GREEN-ARK-1/fate | PROPOSAL | AUTHOR_TRUTH | скрытая правда (реконсиляция): симбионт из корабельного микробиома | fate |
-| missions/GREEN-ARK-1/anchors/2270/arrival | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2190 | GJ 832: сад-купола на GJ 832 b I и в поясе («Гайя-Прим») |
+| missions/GREEN-ARK-1/anchors/2270/arrival | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2190 | GJ 832: сад-купола на GJ 832 b I и в поясе («Гайя-Прайм») |
 | missions/GREEN-ARK-1/anchors/2480/ecology_failure/hidden_truth | PROPOSAL | AUTHOR_TRUTH | объяснение реконсиляции; публично — официальная версия | симбионт вырос из корабельного микробиома («успокаивающий» штамм биотех-партнёра) |
 | missions/GREEN-ARK-1/anchors/2510/quarantine | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Тяньхэ объявляет зону «Филоморфоз» |
 | missions/DHARMA-1/arrival_year | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2210 | arrival_year |
@@ -273,8 +271,8 @@
 | missions/IRON-SHIELD-1/arrival_year | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2185 | arrival_year |
 | missions/IRON-SHIELD-1/anchors/2215/class_conflict | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Восстание каторжников за статус детей; подавлено ЧВК |
 | missions/IRON-SHIELD-1/anchors/2228/arrival | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2185 | Вольф 359: астероид-крепость (пояс-диск) |
-| missions/AL-QUDS-1/arrival_year | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2195 | arrival_year |
-| missions/AL-QUDS-1/anchors/2243/arrival | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2195 | Lalande 21185 — система уже занята Новой Элладой (с 2197) |
+| missions/VAKA-MOANA-1/arrival_year | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2195 | arrival_year |
+| missions/VAKA-MOANA-1/anchors/2243/arrival | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2195 | Lalande 21185 — система уже занята Новой Элладой (с 2197) |
 | missions/NEXT-1/arrival_year | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2230 | arrival_year |
 | missions/NEXT-1/anchors/2218/purge | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Отступники / Чистые / Еретики подавлены Советом Архитекторов и ИИ |
 | missions/NEXT-1/anchors/2314/arrival | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2230 | GJ 876: жёсткая посадка модуля на спутник GJ 876 b I; ядро ИИ уцелело |
@@ -282,9 +280,9 @@
 | missions/EUROPA-1/anchors/2318/reform | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Конфликт поколений; комиссия меняет цвет бюллетеней |
 | missions/EUROPA-1/anchors/2377/arrival | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2325 | GJ 581: орбитальная колонизация (g не подтверждена) |
 | missions/RESOURCER-1/arrival_population | PROPOSAL | PUBLIC_RECORD | модель вахты/крио (реконсиляция C2) | arrival_population |
-| missions/NEW-HELLAS-1/arrival_year | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2380 | arrival_year |
-| missions/NEW-HELLAS-1/anchors/2365/sleeper_return | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Спящие владельцы просыпаются с идеологией 2260 и встречают коллективистов-корабельных |
-| missions/NEW-HELLAS-1/anchors/2384/arrival | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2380 | HD 20794: спутники гиганта d |
+| missions/HOMESTEAD-1/arrival_year | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2380 | arrival_year |
+| missions/HOMESTEAD-1/anchors/2365/sleeper_return | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Спящие владельцы просыпаются с идеологией 2260 и встречают коллективистов-корабельных |
+| missions/HOMESTEAD-1/anchors/2384/arrival | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2380 | HD 20794: спутники гиганта d |
 | missions/NEW-JERUSALEM-1/anchors/2291/target_change | PROPOSAL | PUBLIC_RECORD | реконсиляция B9: смена цели на разгоне | Земля сообщает: цель GJ 667 C c не ледяная луна. Синод на разгоне меняет цель на 83 Leonis (Лев от колена Иудина); крейс |
 | missions/NEW-JERUSALEM-1/anchors/2375/sleeper_return | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Пробуждение высшего клира: конфликт с корабельными и компромисс |
 | missions/UHURU-2/arrival_year | PROPOSAL | PUBLIC_RECORD | не найдено в источниках | arrival_year |
@@ -305,7 +303,7 @@
 | missions/FREE-VENTURE-1/anchors/2440/clan_fragmentation | PROPOSAL | PUBLIC_RECORD | событие миссии-предложения | Гражданская война модулей: «Пояс Раздора» |
 | missions/DHARMA-2/arrival_year | PROPOSAL | PUBLIC_RECORD | не найдено в источниках | arrival_year |
 | missions/DHARMA-2/anchors/2490/sleeper_return | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Патриции просыпаются после 90 лет и пытаются вернуть порядок; синтез |
-| missions/DHARMA-2/anchors/2523/arrival | PROPOSAL | PUBLIC_RECORD | не найдено в источниках | HD 20794: Вторая Эллада уже здесь 140 лет |
+| missions/DHARMA-2/anchors/2523/arrival | PROPOSAL | PUBLIC_RECORD | не найдено в источниках | HD 20794: Хомстед уже здесь 140 лет |
 | missions/FREE-WORLD-1/arrival_year | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2570 | arrival_year |
 | missions/FREE-WORLD-1/anchors/2535/schism | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Проснувшиеся патриции требуют «чистой» анархии; 800 человек отстыковывают модуль «Exit» — судьба неизвестна |
 | missions/FREE-WORLD-1/anchors/2574/arrival | PROPOSAL | PUBLIC_RECORD | пересчитано по каталогу и потолку скорости; авторское 2570 | GJ 581, рядом с Новой Европой |
@@ -323,7 +321,7 @@
 | missions/DEEP-SEEK-1/anchors/2615/institution | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | Совет Специалистов рядом с Советом Семей |
 | missions/FAREWELL-1/fate | UNKNOWN | AUTHOR_TRUTH | неизвестно даже автору | fate |
 | missions/HYPERION-1/anchors/2752/hyperion_2 | PROPOSAL | PUBLIC_RECORD | год не найден в источниках миссии | HYPERION-2: гиперпространство — среда с градиентами и течениями; без маяков прыжок — лотерея |
-| missions/TRADERS-GUILD-1 | PROPOSAL | PUBLIC_RECORD | реконсиляция A6 (идея старой ветки) | Lalande colonies (New Hellas + New Mecca): first inter-colony sublight courier |
+| missions/TRADERS-GUILD-1 | PROPOSAL | PUBLIC_RECORD | реконсиляция A6 (идея старой ветки) | Lalande colonies (New Hellas + Tauranga (Te Kāpehu)): first inter-colony sublight courier |
 | missions/TRADERS-GUILD-1/arrival_year | PROPOSAL | PUBLIC_RECORD | не найдено в источниках | arrival_year |
 | missions/TRADERS-GUILD-1/fate | PROPOSAL | PUBLIC_RECORD | fate.md / досье | fate |
 | missions/TRADERS-GUILD-1/launch_year | PROPOSAL | PUBLIC_RECORD | год в generation ships.md (A) | launch_year |
@@ -348,12 +346,6 @@
 | outposts/hd114783_claims | PROPOSAL | PUBLIC_RECORD | аванпост гипер-эпохи (реконсиляция) | Лагерь «Кларион» |
 | outposts/leo83_golden_city | PROPOSAL | PUBLIC_RECORD | аванпост гипер-эпохи (реконсиляция) | «Золотой Город» |
 | outposts/sigma2uma_expedition | PROPOSAL | PUBLIC_RECORD | аванпост гипер-эпохи (реконсиляция) | Экспедиция Sigma² UMa |
-
-## relations (1)
-
-| путь | статус | видимость | основание | что |
-|---|---|---|---|---|
-| relations/lalande_hellas|lalande_mecca | PROPOSAL | PUBLIC_RECORD | величина обиды — Claude | Одна бедная система на двоих |
 
 ## unknowns (4)
 

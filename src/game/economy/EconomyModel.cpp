@@ -154,6 +154,7 @@ void EconomyModel::load()
         i.ownerName = str(h, "owner_name");
         i.operatorName = str(h, "operator");
         i.bloc = str(h, "bloc");
+        i.actor = str(h, "actor");
         i.market = str(h, "market");
         i.purpose = str(h, "purpose");
         i.description = str(h, "description_ru");

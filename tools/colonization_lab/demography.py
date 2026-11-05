@@ -165,7 +165,7 @@ REGIME = {  # pension state capacity, policy style, emigration barrier, immigrat
     "party_technocracy": dict(state=1.0, policy="planner", exitb=0.6, entryb=0.6, build=0.04, gini=0.33),
     "sage_council": dict(state=1.0, policy="planner", exitb=0.4, entryb=0.4, build=0.04, gini=0.34),
     "shareholder_agora": dict(state=0.8, policy="neutral", exitb=0.0, entryb=0.1, build=0.01, gini=0.44),
-    "scholar_theocracy": dict(state=0.8, policy="faith", exitb=0.2, entryb=0.6, build=0.01, gini=0.36),
+    "navigator_council": dict(state=0.8, policy="faith", exitb=0.2, entryb=0.6, build=0.01, gini=0.36),
     "parliamentary_bureaucracy": dict(state=1.1, policy="family", exitb=0.0, entryb=0.3, build=0.0, gini=0.28),
     "corporate_democracy": dict(state=0.8, policy="neutral", exitb=0.0, entryb=0.25, build=0.01, gini=0.42),
     "merit_caste_republic": dict(state=0.8, policy="family", exitb=0.1, entryb=0.4, build=0.01, gini=0.40),

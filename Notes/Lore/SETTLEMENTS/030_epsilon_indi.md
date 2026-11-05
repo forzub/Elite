@@ -12,7 +12,7 @@
 | Название | Система | Тело / орбита / пояс | Основано | Население | Назначение | Владелец | Отрасль | Стратег. важность | Состояние 3126 | Статус |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Гелиевое поле Эпсилон Индейца | Epsilon Indi | Epsilon Indi Bb c | 2778 (полития) | 28 845 | столица | [Гелиевое поле Эпсилон Индейца](../COLONIES/eps_indi_field.md) | — | — | — | PROPOSAL · PUBLIC |
-| Epsilon Indi Bb e — поселение | Epsilon Indi | Epsilon Indi Bb e | — | 14 422 | поселение | [Гелиевое поле Эпсилон Индейца](../COLONIES/eps_indi_field.md) | — | — | — | PROPOSAL · PUBLIC |
+| Epsilon Indi Bb e — поселение | Epsilon Indi | Epsilon Indi Bb e | — | 14 423 | поселение | [Гелиевое поле Эпсилон Индейца](../COLONIES/eps_indi_field.md) | — | — | — | PROPOSAL · PUBLIC |
 | Epsilon Indi Ba d — поселение | Epsilon Indi | Epsilon Indi Ba d | — | 9 615 | поселение | [Гелиевое поле Эпсилон Индейца](../COLONIES/eps_indi_field.md) | — | — | — | PROPOSAL · PUBLIC |
 <!-- GENERATED:registry END -->
 
@@ -36,7 +36,7 @@
 
 | Полития / аванпост | Население | Выпуск, трлн Cr | Статус |
 |---|---|---|---|
-| Цветущая Гармония | 62 214 | — | `PROPOSAL` (модель) |
+| Цветущая Гармония | 62 215 | — | `PROPOSAL` (модель) |
 
 Маяки: мост 1  торговых узлов 0  станционных 0  ретрансляторов трассы 0  военных 0  удалённых научных 1; всего 2  содержание 0.11 млрд Cr/год (`PROPOSAL` (модель)).
 <!-- GENERATED:system_economy_3126 END -->

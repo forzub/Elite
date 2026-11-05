@@ -190,7 +190,7 @@
    },
    {
     "id": "delta_pav_karma.gene_temple",
-    "name": "Храм Массива (криобанк генов)",
+    "name": "Храм Семени (криобанк генов)",
     "role": "research",
     "body": "Delta Pavonis k (орбита)",
     "kind": "industrial_site",
@@ -314,7 +314,7 @@
   "eps_eri_strife": [
    {
     "id": "eps_eri_strife.capital",
-    "name": "Пояс Раздора / Вольные астероиды",
+    "name": "Пояс Раздора",
     "role": "capital",
     "body": "Epsilon Eridani K4",
     "kind": "habitat_city",
@@ -678,7 +678,7 @@
   "gj832_tianhe": [
    {
     "id": "gj832_tianhe.capital",
-    "name": "Тяньхэ (Небесная Река)",
+    "name": "Тяньхэ",
     "role": "capital",
     "body": "GJ 832 b III",
     "kind": "habitat_city",
@@ -1040,7 +1040,7 @@
   "hd20794_hellas2": [
    {
     "id": "hd20794_hellas2.capital",
-    "name": "Вторая Эллада",
+    "name": "Хомстед",
     "role": "capital",
     "body": "HD 20794 K3",
     "kind": "habitat_city",
@@ -1324,7 +1324,7 @@
   "hd69830_verde": [
    {
     "id": "hd69830_verde.capital",
-    "name": "Сельта-Верде",
+    "name": "Сельва-Верде",
     "role": "capital",
     "body": "HD 69830 l",
     "kind": "habitat_city",
@@ -1424,7 +1424,7 @@
   "lalande_hellas": [
    {
     "id": "lalande_hellas.capital",
-    "name": "Новая Эллада / Агора",
+    "name": "Агора",
     "role": "capital",
     "body": "Lalande 21185 m",
     "kind": "habitat_city",
@@ -1460,7 +1460,7 @@
    },
    {
     "id": "lalande_hellas.agora",
-    "name": "Агора — нейтральный порт и биржа",
+    "name": "Ставродроми — нейтральный порт и биржа",
     "role": "logistics_hub",
     "body": "Lalande 21185 m (орбита)",
     "kind": "industrial_site",
@@ -1498,7 +1498,7 @@
   "lalande_mecca": [
    {
     "id": "lalande_mecca.capital",
-    "name": "Новая Мекка",
+    "name": "Тауранга",
     "role": "capital",
     "body": "Lalande 21185 m",
     "kind": "habitat_city",
@@ -1534,7 +1534,7 @@
    },
    {
     "id": "lalande_mecca.rasad",
-    "name": "Обсерватория-вычислитель «Расад»",
+    "name": "Обсерватория-вычислитель Фаре-Татаи",
     "role": "research",
     "body": "Lalande 21185 m (орбита)",
     "kind": "industrial_site",
@@ -1546,7 +1546,7 @@
    },
    {
     "id": "lalande_mecca.lalande_j_gas_m",
-    "name": "Платформы Lalande 21185 j (доля Мекки)",
+    "name": "Платформы Lalande 21185 j (доля Капеху)",
     "role": "gas_platform",
     "body": "Lalande 21185 j",
     "kind": "industrial_site",
@@ -1558,7 +1558,7 @@
    },
    {
     "id": "lalande_mecca.mecca_farms",
-    "name": "Сады Lalande 21185 g",
+    "name": "Огороды Мара-Каи (Lalande 21185 g)",
     "role": "food_habitat",
     "body": "Lalande 21185 h",
     "kind": "industrial_site",
@@ -1772,7 +1772,7 @@
   "tau_ceti_cognium": [
    {
     "id": "tau_ceti_cognium.capital",
-    "name": "Новый Шанхай",
+    "name": "Синь-Шанхай",
     "role": "capital",
     "body": "Tau Ceti (орбитальные кольца)",
     "kind": "habitat_city",
@@ -1820,7 +1820,7 @@
    },
    {
     "id": "tau_ceti_cognium.ns_exchange",
-    "name": "Орбитальная биржа Нового Шанхая",
+    "name": "Орбитальная биржа Синь-Шанхая",
     "role": "logistics_hub",
     "body": "Tau Ceti (орбитальные кольца) (орбита)",
     "kind": "industrial_site",
@@ -1846,7 +1846,7 @@
    },
    {
     "id": "wolf359_citadel.habitat1",
-    "name": "Wolf 359 c — поселение",
+    "name": "Нюхамн",
     "role": "habitat",
     "body": "Wolf 359 c",
     "kind": "habitat_town",
@@ -1858,7 +1858,7 @@
    },
    {
     "id": "wolf359_citadel.habitat2",
-    "name": "Wolf 359 f — поселение",
+    "name": "Ярнвик",
     "role": "habitat",
     "body": "Wolf 359 f",
     "kind": "habitat_town",
@@ -1870,7 +1870,7 @@
    },
    {
     "id": "wolf359_citadel.bastion",
-    "name": "Бастион — арсенал и военная верфь",
+    "name": "Мьёльнер — арсенал и военная верфь",
     "role": "arsenal_shipyard",
     "body": "Wolf 359 e (орбита)",
     "kind": "military_site",
@@ -1882,7 +1882,7 @@
    },
    {
     "id": "wolf359_citadel.wolf_mines",
-    "name": "Рудники пылевого диска",
+    "name": "Груве-7 (рудники пылевого диска)",
     "role": "mine",
     "body": "Wolf 359 e (орбита)",
     "kind": "industrial_site",

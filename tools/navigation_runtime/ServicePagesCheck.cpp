@@ -9,12 +9,16 @@
 //   4. a destroyed radar shows as failed (module + sensors group);
 //   5. the page carries the server preview: radar restored in "after";
 //   6. F8 Trade data smoke: the runtime economy (assets/data/economy, generated
-//      from canon/political_order.json) loads, the 3126 polities appear under
-//      their current names (no retired "Holy Zion"), bloc channels resolve.
+//      from canon/political_order.json) loads; hubs are found by stable actor id
+//      and their owner names equal the naming resolver (assets/data/naming,
+//      generated from canon/naming.json); no retired name; bloc channels resolve.
 #include <cmath>
+#include <fstream>
 #include <iostream>
 #include <set>
 #include <sstream>
+
+#include <nlohmann/json.hpp>
 
 #include "src/game/economy/EconomyModel.h"
 #include "src/game/presentation/RepairRefitPresentation.h"
@@ -144,52 +148,78 @@ int main()
                                                     c120->mainPropulsion.aftEngineModuleIds.front(), 0);
     check(!other.previewForSelection, "a preview is shown only for the module it was computed for");
 
-    // ---- 6. F8 Trade runtime data smoke (political / economic order 3126)
+    // ---- 6. F8 Trade runtime data smoke (political / economic order 3126), by stable id:
+    //      hub.actor (unit id) -> naming resolver (assets/data/naming/names_3126.json) -> display name
     {
         const auto& eco = game::economy::EconomyModel::instance();
         check(eco.loaded() && eco.goods().size() >= 30, "economy runtime loads (goods " + std::to_string(eco.goods().size()) + ")");
-        std::size_t hubs = 0;
-        bool retired = false;
-        auto ownerIn = [&](int sys, const std::string& name, const game::economy::HubEconomyInfo** first) {
-            bool hit = false;
-            for (const auto* h : eco.hubsOfSystem(sys))
-                if (h->ownerName.find(name) != std::string::npos)
-                {
-                    hit = true;
-                    if (first && !*first)
-                        *first = h;
-                }
-            return hit;
+        nlohmann::json names;
+        for (const std::string path : {"assets/data/naming/names_3126.json", "src/assets/data/naming/names_3126.json"})
+        {
+            std::ifstream f(path);
+            if (f)
+            {
+                names = nlohmann::json::parse(f, nullptr, false);
+                break;
+            }
+        }
+        const bool namesLoaded = names.is_object() && names.contains("names") && names["names"].is_object();
+        check(namesLoaded, "naming resolver table loads (" + std::to_string(namesLoaded ? names["names"].size() : 0) + " ids)");
+        auto resolve = [&](const std::string& id, const char* field) {
+            if (!namesLoaded || !names["names"].contains(id) || !names["names"][id].contains(field) || !names["names"][id][field].is_string())
+                return std::string();
+            return names["names"][id][field].get<std::string>();
         };
+        std::size_t hubs = 0, orphans = 0;
         for (int sys = 0; sys < 400; ++sys)
             for (const auto* h : eco.hubsOfSystem(sys))
             {
                 ++hubs;
-                for (const auto* text : {&h->name, &h->ownerName, &h->operatorName, &h->description})
-                    if (text->find("Сион") != std::string::npos)   // "Сион"
-                        retired = true;
+                if (!h->actor.empty() && resolve("polity:" + h->actor, "ru").empty())
+                    ++orphans;
             }
         check(hubs >= 500, "economy hubs in star systems: " + std::to_string(hubs));
-        check(!retired, "no hub shows the retired name of Leo 83 (Novo-Thebaid)");
-        const game::economy::HubEconomyInfo *cog = nullptr, *mecca = nullptr, *india = nullptr, *cit = nullptr, *svarog = nullptr,
+        check(orphans == 0, "every hub actor id resolves to a name (" + std::to_string(orphans) + " unresolved)");
+        // a hub of the actor in its home system whose owner shows the resolver's current colony name
+        // (a province runs under its actor: Celestial Rampart hubs belong to Xinhe, owner = the province colony)
+        auto hubOf = [&](int sys, const std::string& actor, const game::economy::HubEconomyInfo** out, const std::string& unit = std::string()) {
+            const std::string colony = resolve("colony:" + (unit.empty() ? actor : unit), "ru");
+            for (const auto* h : eco.hubsOfSystem(sys))
+                if (h->actor == actor && !colony.empty() && h->ownerName == colony)
+                {
+                    *out = h;
+                    return true;
+                }
+            return false;
+        };
+        const game::economy::HubEconomyInfo *cog = nullptr, *tauranga = nullptr, *india = nullptr, *cit = nullptr, *svarog = nullptr,
                                             *thebaid = nullptr, *firm = nullptr, *zone = nullptr;
-        const bool names = ownerIn(8, "Новый Шанхай", &cog)      // Новый Шанхай
-                           && ownerIn(4, "Новая Мекка", &mecca)        // Новая Мекка
-                           && ownerIn(14, "Новая Индия", &india)      // Новая Индия
-                           && ownerIn(3, "Цитадель", &cit)                          // Цитадель
-                           && ownerIn(60, "Красный Форпост", &svarog)   // Красный Форпост
-                           && ownerIn(45, "Ново-Фиваида", &thebaid)   // Ново-Фиваида
-                           && ownerIn(15, "Твердыня", &firm);                       // Твердыня
+        const bool found = hubOf(8, "tau_ceti_cognium", &cog) && hubOf(4, "lalande_mecca", &tauranga) && hubOf(14, "hd20794_newindia", &india) &&
+                           hubOf(3, "wolf359_citadel", &cit) && hubOf(60, "proxima_outpost", &svarog) && hubOf(45, "leo83_zion", &thebaid) &&
+                           hubOf(15, "eps_eri_harmony", &firm, "hd40307_firmament");
         for (const auto* h : eco.hubsOfSystem(12))
             if (h->bloc.rfind("zone:", 0) == 0 && !zone)
                 zone = h;
-        check(names && zone, "hubs of New Shanghai, New Mecca, New India, Citadel, Svarog, Novo-Thebaid, Firmament and the Philomorphosis zone found");
-        if (names && zone)
+        check(found && zone, "hubs found by actor id; owner shows the resolver name: " + resolve("colony:tau_ceti_cognium", "ru") + ", " +
+                                 resolve("colony:lalande_mecca", "ru") + " (" + resolve("colony:lalande_mecca", "native") + "), " +
+                                 resolve("colony:hd20794_newindia", "ru") + ", " + resolve("colony:wolf359_citadel", "ru") + " (" +
+                                 resolve("colony:wolf359_citadel", "native") + "), " + resolve("colony:proxima_outpost", "ru") + ", " +
+                                 resolve("colony:leo83_zion", "ru") + ", " + resolve("colony:hd40307_firmament", "ru") + "; quarantine zone");
+        // retired authoring names (canon/naming.json retired_authoring_names) never reach a hub
+        bool retired = false;
+        for (const char* old : {"Мекк", "Сион", "Нуджум", "AL-QUDS", "Вторая Эллада", "Скьёльдбург"})
+            for (int sys = 0; sys < 400; ++sys)
+                for (const auto* h : eco.hubsOfSystem(sys))
+                    for (const auto* text : {&h->name, &h->ownerName, &h->operatorName, &h->description})
+                        if (text->find(old) != std::string::npos)
+                            retired = true;
+        check(!retired, "no hub shows a retired name");
+        if (found && zone)
         {
-            std::cout << "  blocs: Cognium " << cog->bloc << ", Mecca " << mecca->bloc << ", Citadel " << cit->bloc << ", Svarog " << svarog->bloc
+            std::cout << "  blocs: Cognium " << cog->bloc << ", Tauranga " << tauranga->bloc << ", Citadel " << cit->bloc << ", Svarog " << svarog->bloc
                       << ", Thebaid " << thebaid->bloc << ", Firmament " << firm->bloc << ", zone " << zone->bloc << "\n";
-            check(mecca->bloc == "southern_circle" && india->bloc == "southern_circle" && eco.channel(mecca->id, india->id) == "open",
-                  "Southern circle: Mecca - New India open");
+            check(tauranga->bloc == "southern_circle" && india->bloc == "southern_circle" && eco.channel(tauranga->id, india->id) == "open",
+                  "Southern circle: Tauranga - New India open");
             check(cit->bloc == "citadel_compact" && svarog->bloc == "citadel_compact", "Citadel and Svarog in the Citadel pact");
             check(firm->bloc == "heavenly_pact", "Celestial Firmament (province of Xin He) runs under the Celestial pact");
             check(thebaid->bloc == "nonaligned:leo83_zion", "Novo-Thebaid non-aligned");

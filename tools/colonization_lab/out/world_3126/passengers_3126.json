@@ -7,28 +7,28 @@
  },
  "earth_visa_window_y": 1000000.0,
  "evacuation_new_shanghai": {
-  "capacity_people_per_day": 568785,
+  "capacity_people_per_day": 568815,
   "days": 2.11,
   "note": "резерв переселенческих транспортов мира + реквизиция 25 % лайнеров; рейс ~3 суток туда-обратно до соседней системы",
   "people": 1200000.0
  },
  "fleet": {
-  "cobrett_i_n1_pax": 121.9,
+  "cobrett_i_n1_pax": 122.5,
   "colonist_transport": 109.7,
-  "liner": 7291.3,
+  "liner": 7291.7,
   "surface_lifter": 2447.2
  },
- "interstellar_trips_y": 91239811,
+ "interstellar_trips_y": 91239784,
  "links": 232,
- "migrants_y": 2402148,
- "migration_capacity_y": 6005363,
- "migration_demand_y": 2424245,
+ "migrants_y": 2402147,
+ "migration_capacity_y": 6005480,
+ "migration_demand_y": 2424243,
  "migration_limited": false,
  "military_rotation_y": 277092,
  "od_top": [
   {
-   "colonist_transports": 11.506,
-   "departures_y": 17806,
+   "colonist_transports": 11.586,
+   "departures_y": 18263,
    "fares_cr": {
     "business": 1094,
     "cabin": 2982,
@@ -42,66 +42,66 @@
     "tau_ceti_cognium"
    ],
    "migrant_fare_cr": 191,
-   "migrants_y": 256222,
-   "pax_y": 12018973,
+   "migrants_y": 257995,
+   "pax_y": 12327279,
    "ship_class": "liner",
-   "ships": 957.545,
+   "ships": 982.108,
    "wait_days_mean": 0.01
   },
   {
    "colonist_transports": 10.814,
-   "departures_y": 13169,
+   "departures_y": 13426,
    "fares_cr": {
     "business": 1077,
     "cabin": 2938,
     "economy": 490,
     "steerage": 220
    },
-   "headway_days": 0.028,
+   "headway_days": 0.027,
    "jumps": 1.0,
    "link": [
     "eps_eri_harmony",
     "sol_authority"
    ],
    "migrant_fare_cr": 188,
-   "migrants_y": 240804,
-   "pax_y": 8889123,
+   "migrants_y": 240808,
+   "pax_y": 9062383,
    "ship_class": "liner",
-   "ships": 708.192,
+   "ships": 721.995,
    "wait_days_mean": 0.014
   },
   {
    "colonist_transports": 8.177,
-   "departures_y": 10079,
+   "departures_y": 10288,
    "fares_cr": {
     "business": 1142,
     "cabin": 3114,
     "economy": 519,
     "steerage": 234
    },
-   "headway_days": 0.036,
+   "headway_days": 0.035,
    "jumps": 1.0,
    "link": [
     "gj832_tianhe",
     "sol_authority"
    ],
    "migrant_fare_cr": 199,
-   "migrants_y": 182093,
-   "pax_y": 6803290,
+   "migrants_y": 182094,
+   "pax_y": 6944113,
    "ship_class": "liner",
-   "ships": 542.015,
+   "ships": 553.234,
    "wait_days_mean": 0.018
   },
   {
    "colonist_transports": 6.907,
-   "departures_y": 8730,
+   "departures_y": 8914,
    "fares_cr": {
     "business": 1182,
     "cabin": 3224,
     "economy": 537,
     "steerage": 242
    },
-   "headway_days": 0.042,
+   "headway_days": 0.041,
    "jumps": 1.0,
    "link": [
     "hd20794_newindia",
@@ -109,109 +109,109 @@
    ],
    "migrant_fare_cr": 206,
    "migrants_y": 153816,
-   "pax_y": 5892938,
+   "pax_y": 6016902,
    "ship_class": "liner",
-   "ships": 469.487,
-   "wait_days_mean": 0.021
+   "ships": 479.363,
+   "wait_days_mean": 0.02
   },
   {
-   "colonist_transports": 4.525,
-   "departures_y": 8115,
-   "fares_cr": {
-    "business": 1047,
-    "cabin": 2855,
-    "economy": 476,
-    "steerage": 214
-   },
-   "headway_days": 0.045,
-   "jumps": 1.0,
-   "link": [
-    "sol_authority",
-    "wolf359_citadel"
-   ],
-   "migrant_fare_cr": 182,
-   "migrants_y": 100764,
-   "pax_y": 5477910,
-   "ship_class": "liner",
-   "ships": 436.422,
-   "wait_days_mean": 0.022
-  },
-  {
-   "colonist_transports": 6.097,
-   "departures_y": 8049,
+   "colonist_transports": 6.098,
+   "departures_y": 8215,
    "fares_cr": {
     "business": 1053,
     "cabin": 2871,
     "economy": 478,
     "steerage": 215
    },
-   "headway_days": 0.045,
+   "headway_days": 0.044,
    "jumps": 1.0,
    "link": [
     "lalande_mecca",
     "sol_authority"
    ],
    "migrant_fare_cr": 183,
-   "migrants_y": 135780,
-   "pax_y": 5432763,
+   "migrants_y": 135782,
+   "pax_y": 5545290,
    "ship_class": "liner",
-   "ships": 432.825,
-   "wait_days_mean": 0.023
+   "ships": 441.79,
+   "wait_days_mean": 0.022
   },
   {
    "colonist_transports": 5.683,
-   "departures_y": 7367,
+   "departures_y": 7522,
    "fares_cr": {
     "business": 1006,
     "cabin": 2745,
     "economy": 457,
     "steerage": 206
    },
-   "headway_days": 0.05,
+   "headway_days": 0.049,
    "jumps": 1.0,
    "link": [
     "proxima_outpost",
     "sol_authority"
    ],
    "migrant_fare_cr": 175,
-   "migrants_y": 126557,
-   "pax_y": 4972954,
+   "migrants_y": 126558,
+   "pax_y": 5077026,
    "ship_class": "liner",
-   "ships": 396.193,
-   "wait_days_mean": 0.025
+   "ships": 404.484,
+   "wait_days_mean": 0.024
   },
   {
-   "colonist_transports": 1.958,
-   "departures_y": 4099,
+   "colonist_transports": 4.255,
+   "departures_y": 5878,
+   "fares_cr": {
+    "business": 1047,
+    "cabin": 2855,
+    "economy": 476,
+    "steerage": 214
+   },
+   "headway_days": 0.062,
+   "jumps": 1.0,
+   "link": [
+    "sol_authority",
+    "wolf359_citadel"
+   ],
+   "migrant_fare_cr": 182,
+   "migrants_y": 94760,
+   "pax_y": 3967901,
+   "ship_class": "liner",
+   "ships": 316.121,
+   "wait_days_mean": 0.031
+  },
+  {
+   "colonist_transports": 1.968,
+   "departures_y": 4207,
    "fares_cr": {
     "business": 1182,
     "cabin": 3224,
     "economy": 537,
     "steerage": 242
    },
-   "headway_days": 0.089,
+   "headway_days": 0.087,
    "jumps": 1.0,
    "link": [
     "hd20794_hellas2",
     "sol_authority"
    ],
    "migrant_fare_cr": 206,
-   "migrants_y": 43611,
-   "pax_y": 2766898,
+   "migrants_y": 43831,
+   "pax_y": 2839748,
    "ship_class": "liner",
-   "ships": 220.437,
-   "wait_days_mean": 0.045
+   "ships": 226.241,
+   "wait_days_mean": 0.043
   },
   {
    "colonist_transports": 2.728,
-   "departures_y": 3937,
+   "departures_y": 4023,
    "fares_cr": {
     "business": 1077,
     "cabin": 2938,
     "economy": 490,
     "steerage": 220
    },
-   "headway_days": 0.093,
+   "headway_days": 0.091,
    "jumps": 1.0,
    "link": [
     "eps_eri_strife",
@@ -219,21 +219,21 @@
    ],
    "migrant_fare_cr": 188,
    "migrants_y": 60741,
-   "pax_y": 2657413,
+   "pax_y": 2715227,
    "ship_class": "liner",
-   "ships": 211.715,
-   "wait_days_mean": 0.046
+   "ships": 216.321,
+   "wait_days_mean": 0.045
   },
   {
    "colonist_transports": 2.414,
-   "departures_y": 3594,
+   "departures_y": 3675,
    "fares_cr": {
     "business": 1053,
     "cabin": 2871,
     "economy": 478,
     "steerage": 215
    },
-   "headway_days": 0.102,
+   "headway_days": 0.099,
    "jumps": 1.0,
    "link": [
     "lalande_hellas",
@@ -241,109 +241,109 @@
    ],
    "migrant_fare_cr": 183,
    "migrants_y": 53749,
-   "pax_y": 2425870,
+   "pax_y": 2480948,
    "ship_class": "liner",
-   "ships": 193.268,
-   "wait_days_mean": 0.051
+   "ships": 197.656,
+   "wait_days_mean": 0.05
   },
   {
-   "colonist_transports": 1.645,
-   "departures_y": 3481,
+   "colonist_transports": 1.655,
+   "departures_y": 3573,
    "fares_cr": {
     "business": 1188,
     "cabin": 3241,
     "economy": 540,
     "steerage": 243
    },
-   "headway_days": 0.105,
+   "headway_days": 0.102,
    "jumps": 1.0,
    "link": [
     "gj581_freeclans",
     "sol_authority"
    ],
    "migrant_fare_cr": 208,
-   "migrants_y": 36636,
-   "pax_y": 2349609,
+   "migrants_y": 36859,
+   "pax_y": 2411762,
    "ship_class": "liner",
-   "ships": 187.192,
-   "wait_days_mean": 0.052
+   "ships": 192.144,
+   "wait_days_mean": 0.051
   },
   {
    "colonist_transports": 2.112,
-   "departures_y": 3174,
+   "departures_y": 3244,
    "fares_cr": {
     "business": 1188,
     "cabin": 3241,
     "economy": 540,
     "steerage": 243
    },
-   "headway_days": 0.115,
+   "headway_days": 0.112,
    "jumps": 1.0,
    "link": [
     "gj581_europa",
     "sol_authority"
    ],
    "migrant_fare_cr": 208,
-   "migrants_y": 47034,
-   "pax_y": 2142544,
+   "migrants_y": 47035,
+   "pax_y": 2190002,
    "ship_class": "liner",
-   "ships": 170.695,
-   "wait_days_mean": 0.057
+   "ships": 174.476,
+   "wait_days_mean": 0.056
   },
   {
-   "colonist_transports": 3.582,
-   "departures_y": 2725,
+   "colonist_transports": 3.583,
+   "departures_y": 2772,
    "fares_cr": {
     "business": 1581,
     "cabin": 4313,
     "economy": 719,
     "steerage": 323
    },
-   "headway_days": 0.134,
+   "headway_days": 0.132,
    "jumps": 2.0,
    "link": [
     "hd40307_maland",
     "sol_authority"
    ],
    "migrant_fare_cr": 276,
-   "migrants_y": 74370,
-   "pax_y": 1839601,
+   "migrants_y": 74373,
+   "pax_y": 1870989,
    "ship_class": "liner",
-   "ships": 156.8,
-   "wait_days_mean": 0.067
+   "ships": 159.475,
+   "wait_days_mean": 0.066
   },
   {
-   "colonist_transports": 1.148,
-   "departures_y": 2577,
+   "colonist_transports": 1.155,
+   "departures_y": 2645,
    "fares_cr": {
     "business": 1087,
     "cabin": 2966,
     "economy": 494,
     "steerage": 222
    },
-   "headway_days": 0.142,
+   "headway_days": 0.138,
    "jumps": 1.0,
    "link": [
     "cyg61_kern",
     "sol_authority"
    ],
    "migrant_fare_cr": 189,
-   "migrants_y": 25571,
-   "pax_y": 1739412,
+   "migrants_y": 25716,
+   "pax_y": 1785115,
    "ship_class": "liner",
-   "ships": 138.578,
-   "wait_days_mean": 0.071
+   "ships": 142.219,
+   "wait_days_mean": 0.069
   },
   {
    "colonist_transports": 1.534,
-   "departures_y": 2429,
+   "departures_y": 2484,
    "fares_cr": {
     "business": 1185,
     "cabin": 3230,
     "economy": 538,
     "steerage": 242
    },
-   "headway_days": 0.15,
+   "headway_days": 0.147,
    "jumps": 1.0,
    "link": [
     "delta_pav_freekarma",
@@ -351,10 +351,10 @@
    ],
    "migrant_fare_cr": 207,
    "migrants_y": 34164,
-   "pax_y": 1639513,
+   "pax_y": 1676637,
    "ship_class": "liner",
-   "ships": 130.619,
-   "wait_days_mean": 0.075
+   "ships": 133.577,
+   "wait_days_mean": 0.073
   },
   {
    "colonist_transports": 1.766,
@@ -372,22 +372,22 @@
     "gj832_tianhe"
    ],
    "migrant_fare_cr": 203,
-   "migrants_y": 39315,
-   "pax_y": 1182229,
+   "migrants_y": 39316,
+   "pax_y": 1182253,
    "ship_class": "liner",
-   "ships": 94.188,
+   "ships": 94.19,
    "wait_days_mean": 0.104
   },
   {
    "colonist_transports": 1.8,
-   "departures_y": 1511,
+   "departures_y": 1536,
    "fares_cr": {
     "business": 1586,
     "cabin": 4324,
     "economy": 721,
     "steerage": 324
    },
-   "headway_days": 0.241,
+   "headway_days": 0.238,
    "jumps": 2.0,
    "link": [
     "hd69830_verde",
@@ -395,43 +395,43 @@
    ],
    "migrant_fare_cr": 277,
    "migrants_y": 37377,
-   "pax_y": 1020194,
+   "pax_y": 1037004,
    "ship_class": "liner",
-   "ships": 86.957,
-   "wait_days_mean": 0.121
+   "ships": 88.39,
+   "wait_days_mean": 0.119
   },
   {
-   "colonist_transports": 1.355,
-   "departures_y": 1348,
+   "colonist_transports": 1.365,
+   "departures_y": 1357,
    "fares_cr": {
     "business": 1020,
     "cabin": 2783,
     "economy": 464,
     "steerage": 209
    },
-   "headway_days": 0.271,
+   "headway_days": 0.269,
    "jumps": 1.0,
    "link": [
     "eps_eri_harmony",
     "tau_ceti_cognium"
    ],
    "migrant_fare_cr": 177,
-   "migrants_y": 30182,
-   "pax_y": 910082,
+   "migrants_y": 30395,
+   "pax_y": 916206,
    "ship_class": "liner",
-   "ships": 72.506,
-   "wait_days_mean": 0.135
+   "ships": 72.994,
+   "wait_days_mean": 0.134
   },
   {
    "colonist_transports": 1.55,
-   "departures_y": 1298,
+   "departures_y": 1323,
    "fares_cr": {
     "business": 1581,
     "cabin": 4313,
     "economy": 719,
     "steerage": 323
    },
-   "headway_days": 0.281,
+   "headway_days": 0.276,
    "jumps": 2.0,
    "link": [
     "hd40307_firmament",
@@ -439,10 +439,10 @@
    ],
    "migrant_fare_cr": 276,
    "migrants_y": 32175,
-   "pax_y": 876301,
+   "pax_y": 892689,
    "ship_class": "liner",
-   "ships": 74.692,
-   "wait_days_mean": 0.141
+   "ships": 76.089,
+   "wait_days_mean": 0.138
   },
   {
    "colonist_transports": 1.009,
@@ -460,33 +460,33 @@
     "hd20794_newindia"
    ],
    "migrant_fare_cr": 192,
-   "migrants_y": 22466,
-   "pax_y": 676442,
+   "migrants_y": 22467,
+   "pax_y": 676453,
    "ship_class": "liner",
-   "ships": 53.892,
+   "ships": 53.893,
    "wait_days_mean": 0.182
   },
   {
-   "colonist_transports": 1.04,
-   "departures_y": 984,
+   "colonist_transports": 1.048,
+   "departures_y": 991,
    "fares_cr": {
     "business": 1123,
     "cabin": 3064,
     "economy": 511,
     "steerage": 230
    },
-   "headway_days": 0.371,
+   "headway_days": 0.368,
    "jumps": 1.0,
    "link": [
     "gj832_tianhe",
     "tau_ceti_cognium"
    ],
    "migrant_fare_cr": 196,
-   "migrants_y": 23164,
-   "pax_y": 664025,
+   "migrants_y": 23337,
+   "pax_y": 668997,
    "ship_class": "liner",
-   "ships": 52.903,
-   "wait_days_mean": 0.186
+   "ships": 53.299,
+   "wait_days_mean": 0.184
   },
   {
    "colonist_transports": 0.902,
@@ -505,9 +505,9 @@
    ],
    "migrant_fare_cr": 198,
    "migrants_y": 20082,
-   "pax_y": 629232,
+   "pax_y": 629248,
    "ship_class": "liner",
-   "ships": 50.131,
+   "ships": 50.132,
    "wait_days_mean": 0.196
   },
   {
@@ -527,7 +527,7 @@
    ],
    "migrant_fare_cr": 176,
    "migrants_y": 20288,
-   "pax_y": 612316,
+   "pax_y": 612322,
    "ship_class": "liner",
    "ships": 48.783,
    "wait_days_mean": 0.201
@@ -549,54 +549,54 @@
    ],
    "migrant_fare_cr": 191,
    "migrants_y": 19023,
-   "pax_y": 572516,
+   "pax_y": 572526,
    "ship_class": "liner",
-   "ships": 45.612,
+   "ships": 45.613,
    "wait_days_mean": 0.215
   },
   {
-   "colonist_transports": 0.889,
-   "departures_y": 840,
+   "colonist_transports": 0.896,
+   "departures_y": 847,
    "fares_cr": {
     "business": 1093,
     "cabin": 2981,
     "economy": 497,
     "steerage": 224
    },
-   "headway_days": 0.434,
+   "headway_days": 0.431,
    "jumps": 1.0,
    "link": [
     "hd20794_newindia",
     "tau_ceti_cognium"
    ],
    "migrant_fare_cr": 190,
-   "migrants_y": 19790,
-   "pax_y": 567305,
+   "migrants_y": 19942,
+   "pax_y": 571680,
    "ship_class": "liner",
-   "ships": 45.197,
-   "wait_days_mean": 0.217
+   "ships": 45.545,
+   "wait_days_mean": 0.215
   },
   {
-   "colonist_transports": 0.793,
-   "departures_y": 785,
+   "colonist_transports": 0.799,
+   "departures_y": 791,
    "fares_cr": {
     "business": 1174,
     "cabin": 3201,
     "economy": 534,
     "steerage": 240
    },
-   "headway_days": 0.465,
+   "headway_days": 0.461,
    "jumps": 1.0,
    "link": [
     "lalande_mecca",
     "tau_ceti_cognium"
    ],
    "migrant_fare_cr": 205,
-   "migrants_y": 17656,
-   "pax_y": 530072,
+   "migrants_y": 17794,
+   "pax_y": 534046,
    "ship_class": "liner",
-   "ships": 42.231,
-   "wait_days_mean": 0.232
+   "ships": 42.547,
+   "wait_days_mean": 0.231
   },
   {
    "colonist_transports": 0.776,
@@ -615,85 +615,85 @@
    ],
    "migrant_fare_cr": 202,
    "migrants_y": 17273,
-   "pax_y": 495161,
+   "pax_y": 495164,
    "ship_class": "liner",
    "ships": 39.449,
    "wait_days_mean": 0.249
   },
   {
-   "colonist_transports": 0.771,
-   "departures_y": 729,
-   "fares_cr": {
-    "business": 1168,
-    "cabin": 3185,
-    "economy": 531,
-    "steerage": 239
-   },
-   "headway_days": 0.501,
-   "jumps": 1.0,
-   "link": [
-    "tau_ceti_cognium",
-    "wolf359_citadel"
-   ],
-   "migrant_fare_cr": 204,
-   "migrants_y": 17165,
-   "pax_y": 492065,
-   "ship_class": "liner",
-   "ships": 39.203,
-   "wait_days_mean": 0.25
-  },
-  {
-   "colonist_transports": 0.753,
-   "departures_y": 712,
+   "colonist_transports": 0.759,
+   "departures_y": 718,
    "fares_cr": {
     "business": 1110,
     "cabin": 3027,
     "economy": 505,
     "steerage": 227
    },
-   "headway_days": 0.512,
+   "headway_days": 0.508,
    "jumps": 1.0,
    "link": [
     "proxima_outpost",
     "tau_ceti_cognium"
    ],
    "migrant_fare_cr": 193,
-   "migrants_y": 16774,
-   "pax_y": 480852,
+   "migrants_y": 16902,
+   "pax_y": 484525,
    "ship_class": "liner",
-   "ships": 38.309,
-   "wait_days_mean": 0.256
+   "ships": 38.602,
+   "wait_days_mean": 0.254
   },
   {
-   "colonist_transports": 0.736,
-   "departures_y": 696,
+   "colonist_transports": 0.739,
+   "departures_y": 699,
    "fares_cr": {
     "business": 1015,
     "cabin": 2768,
     "economy": 461,
     "steerage": 208
    },
-   "headway_days": 0.525,
+   "headway_days": 0.522,
    "jumps": 0,
    "link": [
     "hd20794_hellas2",
     "hd20794_newindia"
    ],
    "migrant_fare_cr": 176,
-   "migrants_y": 16380,
-   "pax_y": 469568,
+   "migrants_y": 16456,
+   "pax_y": 471742,
    "ship_class": "liner",
-   "ships": 37.41,
-   "wait_days_mean": 0.262
+   "ships": 37.583,
+   "wait_days_mean": 0.261
+  },
+  {
+   "colonist_transports": 0.693,
+   "departures_y": 684,
+   "fares_cr": {
+    "business": 1232,
+    "cabin": 3360,
+    "economy": 560,
+    "steerage": 252
+   },
+   "headway_days": 0.533,
+   "jumps": 1.0,
+   "link": [
+    "gj832_tianhe",
+    "lalande_mecca"
+   ],
+   "migrant_fare_cr": 215,
+   "migrants_y": 15426,
+   "pax_y": 461864,
+   "ship_class": "liner",
+   "ships": 36.796,
+   "wait_days_mean": 0.267
   }
  ],
  "refugees_y": 22097,
  "reserve": {
-  "cobrett_i_n1_pax": 14.6,
+  "cobrett_i_n1_pax": 14.7,
   "colonist_transport": 13.2,
   "liner": 875.0,
   "surface_lifter": 293.7
  },
  "status": "PROPOSAL",
- "surface_orbit_trips_y": 405173280
+ "surface_orbit_trips_y": 405173284
 }

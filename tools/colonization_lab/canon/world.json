@@ -1,10 +1,10 @@
 {
  "schema": "elite.colonization_lab.world.v1",
- "note": "Colonies, hyper-era outposts, beacon network, relation anchors, jump chronology, Earth anchor and the inputs of the causal demography (demography.py). pop_3126_authored is the AUTHORED population (fate.md or reconciliation); it is NOT a target any more: the lab computes populations causally and reports disagreements as conflicts. Every item carries a knowledge status (see knowledge.py).",
+ "note": "Colonies, hyper-era outposts, beacon network, relation anchors, jump chronology, Earth anchor and the inputs of the causal demography (demography.py). pop_3126_authored is the AUTHORED population (fate.md or reconciliation); it is NOT a target any more: the lab computes populations causally and reports disagreements as conflicts. Every item carries a knowledge status (see knowledge.py). industrial_heritage — явный отраслевой профиль колонии в 3126 (промышленное состояние, не культура); культура (cultures.json) — социальный профиль и исторический фактор демографии / технологий.",
  "colonies": [
   {
    "id": "tau_ceti_cognium",
-   "name": "Новый Шанхай",
+   "name": "Синь-Шанхай",
    "polity": "Когниум",
    "system": 8,
    "founders": [
@@ -46,7 +46,7 @@
     {
      "id": "ns_exchange",
      "type": "logistics_hub",
-     "name": "Орбитальная биржа Нового Шанхая",
+     "name": "Орбитальная биржа Синь-Шанхая",
      "importance": 0.5,
      "good": null
     }
@@ -109,6 +109,17 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя есть в заметках автора"
     }
+   },
+   "industrial_heritage": {
+    "bio": 13.29,
+    "electronics": 17.54,
+    "energy": 19.31,
+    "extraction": 15.92,
+    "manufacturing": 14.64,
+    "metallurgy": 17.89,
+    "military": 12.52,
+    "research": 15.82,
+    "shipbuilding": 18.42
    }
   },
   {
@@ -209,11 +220,22 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя есть в заметках автора"
     }
+   },
+   "industrial_heritage": {
+    "bio": 16.48,
+    "electronics": 12.74,
+    "energy": 12.36,
+    "extraction": 17.44,
+    "manufacturing": 14.35,
+    "metallurgy": 13.05,
+    "military": 16.8,
+    "research": 11.6,
+    "shipbuilding": 15.24
    }
   },
   {
    "id": "gj832_tianhe",
-   "name": "Тяньхэ (Небесная Река)",
+   "name": "Тяньхэ",
    "polity": "Тяньхэ",
    "system": 12,
    "founders": [
@@ -260,7 +282,7 @@
    "problems": [
     "подозрение в использовании симбионта Гайи (биопацификация)",
     "крупнейшее население — крупнейшая потребность в летучих",
-    "старая обида на Гайю-Прим и Синь Хэ"
+    "старая обида на Гайю-Прим и Синьхэ"
    ],
    "culture_drift": {
     "grievance_memory": 8,
@@ -312,16 +334,27 @@
      "basis": "результат модели demography.py, не канон"
     },
     "name": {
-     "status": "PROPOSAL",
+     "status": "CANON",
      "visibility": "PUBLIC_RECORD",
-     "basis": "имя дано реконсиляцией / старой веткой"
+     "basis": "имя есть в заметках автора"
     }
+   },
+   "industrial_heritage": {
+    "bio": 20.34,
+    "electronics": 18.6,
+    "energy": 22.37,
+    "extraction": 16.38,
+    "manufacturing": 21.25,
+    "metallurgy": 22.72,
+    "military": 20.89,
+    "research": 8.24,
+    "shipbuilding": 20.0
    }
   },
   {
    "id": "gj832_gaia_zone",
    "name": "Зона «Филоморфоз»",
-   "polity": "Вердензальб (остатки Гайи-Прим)",
+   "polity": "остатки Гайи-Прайм",
    "system": 12,
    "founders": [
     "GREEN-ARK-1"
@@ -384,12 +417,23 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя дано реконсиляцией / старой веткой"
     }
+   },
+   "industrial_heritage": {
+    "bio": 15.91,
+    "electronics": 16.59,
+    "energy": 16.26,
+    "extraction": 16.61,
+    "manufacturing": 17.33,
+    "metallurgy": 17.93,
+    "military": 14.34,
+    "research": 16.62,
+    "shipbuilding": 17.14
    }
   },
   {
    "id": "lalande_hellas",
-   "name": "Новая Эллада / Агора",
-   "polity": "Агор-Прим",
+   "name": "Агора",
+   "polity": "Новая Эллада",
    "system": 4,
    "founders": [
     "HERACLES-1"
@@ -405,7 +449,7 @@
     {
      "id": "agora",
      "type": "logistics_hub",
-     "name": "Агора — нейтральный порт и биржа",
+     "name": "Ставродроми — нейтральный порт и биржа",
      "importance": 1.0,
      "good": null
     },
@@ -426,7 +470,7 @@
    ],
    "problems": [
     "бедная система (вода 0.06)",
-    "напряжённый мир с Новой Меккой",
+    "напряжённый мир с Таурангой",
     "жизнь с транзита"
    ],
    "culture_drift": {
@@ -478,22 +522,33 @@
      "basis": "результат модели demography.py, не канон"
     },
     "name": {
-     "status": "PROPOSAL",
+     "status": "CANON",
      "visibility": "PUBLIC_RECORD",
-     "basis": "имя дано реконсиляцией / старой веткой"
+     "basis": "имя есть в заметках автора"
     }
+   },
+   "industrial_heritage": {
+    "bio": 14.14,
+    "electronics": 12.31,
+    "energy": 10.7,
+    "extraction": 15.6,
+    "manufacturing": 10.95,
+    "metallurgy": 11.19,
+    "military": 12.9,
+    "research": 17.09,
+    "shipbuilding": 13.7
    }
   },
   {
    "id": "lalande_mecca",
-   "name": "Новая Мекка",
-   "polity": "Ильм-аль-Нуджум",
+   "name": "Тауранга",
+   "polity": "Капеху",
    "system": 4,
    "founders": [
-    "AL-QUDS-1"
+    "VAKA-MOANA-1"
    ],
    "founded": 2243,
-   "regime_3126": "scholar_theocracy",
+   "regime_3126": "navigator_council",
    "hyper_year": 2800,
    "bias": {
     "research": 25,
@@ -503,28 +558,28 @@
     {
      "id": "rasad",
      "type": "research",
-     "name": "Обсерватория-вычислитель «Расад»",
+     "name": "Обсерватория-вычислитель Фаре-Татаи",
      "importance": 0.8,
      "good": null
     },
     {
      "id": "lalande_j_gas_m",
      "type": "gas_platform",
-     "name": "Платформы Lalande 21185 j (доля Мекки)",
+     "name": "Платформы Lalande 21185 j (доля Капеху)",
      "importance": 0.6,
      "good": "he3"
     },
     {
      "id": "mecca_farms",
      "type": "food_habitat",
-     "name": "Сады Lalande 21185 g",
+     "name": "Огороды Мара-Каи (Lalande 21185 g)",
      "importance": 0.5,
      "good": "food"
     }
    ],
    "problems": [
     "хронический импорт воды",
-    "напряжённый мир с Элладой",
+    "напряжённый мир с Новой Элладой",
     "собственная математика прыжка — вне стандарта Когниума"
    ],
    "pop_3126_authored": 1800000,
@@ -537,7 +592,7 @@
    "knowledge": {
     "status": "CANON",
     "visibility": "PUBLIC_RECORD",
-    "basis": "основатель AL-QUDS-1: CANON"
+    "basis": "основатель VAKA-MOANA-1: CANON"
    },
    "field_status": {
     "pop_3126_authored": {
@@ -575,12 +630,23 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя есть в заметках автора"
     }
+   },
+   "industrial_heritage": {
+    "bio": 17.13,
+    "electronics": 11.44,
+    "energy": 11.55,
+    "extraction": 13.79,
+    "manufacturing": 13.12,
+    "metallurgy": 11.13,
+    "military": 15.54,
+    "research": 11.09,
+    "shipbuilding": 12.47
    }
   },
   {
    "id": "eps_eri_harmony",
    "name": "Цветущая Гармония",
-   "polity": "Синь Хэ",
+   "polity": "Синьхэ",
    "system": 9,
    "founders": [
     "CELESTIAL-DESTINY-1",
@@ -646,7 +712,7 @@
     "hardship_pride": -18
    },
    "culture_drift_reason": "главный экспортёр ядра и оператор ретрансляторов, богатейшая система ядра: за 900 лет «обуржуазились» (так их дразнят Тяньхэ и Твердыня); соседство с контрабандой Пояса Раздора",
-   "regime_note": "Совет Мудрецов-инженеров (actors.json Синь Хэ): «Прогресс через стабильность»; партия растворилась в инженерной меритократии",
+   "regime_note": "Совет Мудрецов-инженеров (actors.json Синьхэ): «Прогресс через стабильность»; партия растворилась в инженерной меритократии",
    "pop_3126_authored": 3280000,
    "demography": {
     "religious_share": 0.05,
@@ -695,11 +761,22 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя есть в заметках автора"
     }
+   },
+   "industrial_heritage": {
+    "bio": 16.45,
+    "electronics": 17.72,
+    "energy": 21.55,
+    "extraction": 14.21,
+    "manufacturing": 19.17,
+    "metallurgy": 21.54,
+    "military": 17.43,
+    "research": 9.97,
+    "shipbuilding": 19.41
    }
   },
   {
    "id": "eps_eri_strife",
-   "name": "Пояс Раздора / Вольные астероиды",
+   "name": "Пояс Раздора",
    "polity": "Варпстанис",
    "system": 9,
    "founders": [
@@ -774,12 +851,23 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя дано реконсиляцией / старой веткой"
     }
+   },
+   "industrial_heritage": {
+    "bio": 7.55,
+    "electronics": 13.33,
+    "energy": 12.21,
+    "extraction": 17.54,
+    "manufacturing": 8.15,
+    "metallurgy": 12.54,
+    "military": 7.88,
+    "research": 18.69,
+    "shipbuilding": 14.33
    }
   },
   {
    "id": "wolf359_citadel",
    "name": "Цитадель",
-   "polity": "Скьёльдбург",
+   "polity": "Скьольдборг",
    "system": 3,
    "founders": [
     "IRON-SHIELD-1"
@@ -797,21 +885,21 @@
     {
      "id": "bastion",
      "type": "arsenal_shipyard",
-     "name": "Бастион — арсенал и военная верфь",
+     "name": "Мьёльнер — арсенал и военная верфь",
      "importance": 1.0,
      "good": "munitions"
     },
     {
      "id": "wolf_mines",
      "type": "mine",
-     "name": "Рудники пылевого диска",
+     "name": "Груве-7 (рудники пылевого диска)",
      "importance": 0.6,
      "good": "metals"
     },
     {
      "id": "archive_vault",
      "type": "intel",
-     "name": "Закрытый архив Совета (Хранилище)",
+     "name": "Хранилище LAST-LIGHT",
      "importance": 0.4,
      "good": null
     }
@@ -874,12 +962,23 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя есть в заметках автора"
     }
+   },
+   "industrial_heritage": {
+    "bio": 11.26,
+    "electronics": 18.13,
+    "energy": 18.41,
+    "extraction": 14.28,
+    "manufacturing": 13.55,
+    "metallurgy": 16.18,
+    "military": 12.99,
+    "research": 12.29,
+    "shipbuilding": 16.91
    }
   },
   {
    "id": "gj581_europa",
    "name": "Новая Европа",
-   "polity": "Рестаурос",
+   "polity": "Союз Новой Европы",
    "system": 10,
    "founders": [
     "EUROPA-1"
@@ -970,6 +1069,17 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя есть в заметках автора"
     }
+   },
+   "industrial_heritage": {
+    "bio": 11.35,
+    "electronics": 19.29,
+    "energy": 18.55,
+    "extraction": 10.11,
+    "manufacturing": 13.84,
+    "metallurgy": 17.5,
+    "military": 10.98,
+    "research": 15.28,
+    "shipbuilding": 16.03
    }
   },
   {
@@ -1048,15 +1158,26 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя дано реконсиляцией / старой веткой"
     }
+   },
+   "industrial_heritage": {
+    "bio": 11.56,
+    "electronics": 13.12,
+    "energy": 12.28,
+    "extraction": 17.65,
+    "manufacturing": 10.85,
+    "metallurgy": 13.47,
+    "military": 11.01,
+    "research": 16.59,
+    "shipbuilding": 14.52
    }
   },
   {
    "id": "hd20794_hellas2",
-   "name": "Вторая Эллада",
-   "polity": "Вторая Эллада",
+   "name": "Хомстед",
+   "polity": "Хомстед",
    "system": 14,
    "founders": [
-    "NEW-HELLAS-1"
+    "HOMESTEAD-1"
    ],
    "founded": 2384,
    "regime_3126": "corporate_democracy",
@@ -1102,7 +1223,7 @@
    "knowledge": {
     "status": "CANON",
     "visibility": "PUBLIC_RECORD",
-    "basis": "основатель NEW-HELLAS-1: CANON"
+    "basis": "основатель HOMESTEAD-1: CANON"
    },
    "field_status": {
     "pop_3126_authored": {
@@ -1140,6 +1261,17 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя есть в заметках автора"
     }
+   },
+   "industrial_heritage": {
+    "bio": 11.76,
+    "electronics": 15.54,
+    "energy": 16.03,
+    "extraction": 15.84,
+    "manufacturing": 11.93,
+    "metallurgy": 14.77,
+    "military": 11.07,
+    "research": 15.82,
+    "shipbuilding": 16.4
    }
   },
   {
@@ -1225,12 +1357,23 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя есть в заметках автора"
     }
+   },
+   "industrial_heritage": {
+    "bio": 15.7,
+    "electronics": 10.99,
+    "energy": 10.02,
+    "extraction": 17.05,
+    "manufacturing": 12.65,
+    "metallurgy": 12.09,
+    "military": 15.62,
+    "research": 10.95,
+    "shipbuilding": 14.02
    }
   },
   {
    "id": "hd40307_maland",
    "name": "Новая Маланд",
-   "polity": "Уджамаа-Джахи",
+   "polity": "Содружество Уджамаа",
    "system": 15,
    "founders": [
     "UHURU-2"
@@ -1323,12 +1466,23 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя дано реконсиляцией / старой веткой"
     }
+   },
+   "industrial_heritage": {
+    "bio": 18.27,
+    "electronics": 13.59,
+    "energy": 13.26,
+    "extraction": 18.0,
+    "manufacturing": 14.39,
+    "metallurgy": 13.23,
+    "military": 17.03,
+    "research": 14.52,
+    "shipbuilding": 15.31
    }
   },
   {
    "id": "hd40307_firmament",
    "name": "Небесная Твердыня",
-   "polity": "Синь Хэ (дальняя провинция)",
+   "polity": "Синьхэ (провинция Тяньлэй)",
    "system": 15,
    "founders": [
     "CELESTIAL-DESTINY-2"
@@ -1365,7 +1519,7 @@
    ],
    "problems": [
     "рост за счёт переселенцев Гармонии",
-    "обязательство перед метрополией Синь Хэ",
+    "обязательство перед метрополией Синьхэ",
     "рой собственного конвоя"
    ],
    "culture_drift": {
@@ -1422,12 +1576,23 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя дано реконсиляцией / старой веткой"
     }
+   },
+   "industrial_heritage": {
+    "bio": 20.29,
+    "electronics": 18.56,
+    "energy": 22.2,
+    "extraction": 16.41,
+    "manufacturing": 21.05,
+    "metallurgy": 22.03,
+    "military": 20.59,
+    "research": 7.84,
+    "shipbuilding": 19.89
    }
   },
   {
    "id": "hd69830_verde",
-   "name": "Сельта-Верде",
-   "polity": "Сельта-Верде («Затерянный мир»)",
+   "name": "Сельва-Верде",
+   "polity": "Сельва-Верде",
    "system": 16,
    "founders": [
     "AMAZONIA-1"
@@ -1514,6 +1679,17 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя дано реконсиляцией / старой веткой"
     }
+   },
+   "industrial_heritage": {
+    "bio": 15.38,
+    "electronics": 10.67,
+    "energy": 10.19,
+    "extraction": 17.02,
+    "manufacturing": 11.2,
+    "metallurgy": 10.46,
+    "military": 12.69,
+    "research": 14.38,
+    "shipbuilding": 14.08
    }
   },
   {
@@ -1536,7 +1712,7 @@
     {
      "id": "gene_temple",
      "type": "research",
-     "name": "Храм Массива (криобанк генов)",
+     "name": "Храм Семени (криобанк генов)",
      "importance": 0.7,
      "good": null
     },
@@ -1607,6 +1783,17 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя есть в заметках автора"
     }
+   },
+   "industrial_heritage": {
+    "bio": 15.75,
+    "electronics": 11.32,
+    "energy": 10.51,
+    "extraction": 16.99,
+    "manufacturing": 13.01,
+    "metallurgy": 12.6,
+    "military": 16.61,
+    "research": 8.8,
+    "shipbuilding": 14.19
    }
   },
   {
@@ -1685,12 +1872,23 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя дано реконсиляцией / старой веткой"
     }
+   },
+   "industrial_heritage": {
+    "bio": 15.75,
+    "electronics": 11.32,
+    "energy": 10.51,
+    "extraction": 16.99,
+    "manufacturing": 12.71,
+    "metallurgy": 12.6,
+    "military": 15.8,
+    "research": 10.52,
+    "shipbuilding": 14.19
    }
   },
   {
    "id": "gj876_next",
    "name": "Провидение",
-   "polity": "Культ Машины / Провидение",
+   "polity": "Провидение",
    "system": 13,
    "founders": [
     "NEXT-1"
@@ -1778,6 +1976,17 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя дано реконсиляцией / старой веткой"
     }
+   },
+   "industrial_heritage": {
+    "bio": 7.48,
+    "electronics": 13.59,
+    "energy": 12.62,
+    "extraction": 18.65,
+    "manufacturing": 9.38,
+    "metallurgy": 12.13,
+    "military": 7.37,
+    "research": 18.56,
+    "shipbuilding": 15.84
    }
   },
   {
@@ -1862,6 +2071,17 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя дано реконсиляцией / старой веткой"
     }
+   },
+   "industrial_heritage": {
+    "bio": 13.54,
+    "electronics": 14.75,
+    "energy": 14.56,
+    "extraction": 17.64,
+    "manufacturing": 12.91,
+    "metallurgy": 13.92,
+    "military": 13.57,
+    "research": 15.57,
+    "shipbuilding": 16.39
    }
   },
   {
@@ -1938,12 +2158,23 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "имя есть в заметках автора"
     }
+   },
+   "industrial_heritage": {
+    "bio": 14.45,
+    "electronics": 15.62,
+    "energy": 14.82,
+    "extraction": 15.18,
+    "manufacturing": 12.1,
+    "metallurgy": 15.19,
+    "military": 12.53,
+    "research": 14.5,
+    "shipbuilding": 16.05
    }
   },
   {
    "id": "leo83_zion",
    "name": "Ново-Фиваида",
-   "polity": "Синод Ново-Фиваиды",
+   "polity": "Ново-Фиваида",
    "system": 45,
    "founders": [
     "NEW-JERUSALEM-1"
@@ -2006,6 +2237,17 @@
      "visibility": "PUBLIC_RECORD",
      "basis": "решение автора 2026-11-05: Ново-Фиваида (исторический актор actors.json id 10); «Святой Сион» не используется"
     }
+   },
+   "industrial_heritage": {
+    "bio": 22.4,
+    "electronics": 18.74,
+    "energy": 20.0,
+    "extraction": 15.64,
+    "manufacturing": 20.41,
+    "metallurgy": 20.3,
+    "military": 20.4,
+    "research": 8.3,
+    "shipbuilding": 17.82
    }
   }
  ],
@@ -2464,7 +2706,7 @@
   },
   {
    "year": 2583,
-   "event": "Академия Нового Шанхая публикует теорему о схлопывании интервала; сигнал доходит до Земли в 2595 — отсюда «изобретён в 2595» в FAREWELL-1",
+   "event": "Академия Синь-Шанхая публикует теорему о схлопывании интервала; сигнал доходит до Земли в 2595 — отсюда «изобретён в 2595» в FAREWELL-1",
    "knowledge": {
     "status": "PROPOSAL",
     "visibility": "PUBLIC_RECORD",
@@ -2648,9 +2890,9 @@
    "since": 2243,
    "text": "Одна бедная система на двоих",
    "knowledge": {
-    "status": "PROPOSAL",
+    "status": "CANON",
     "visibility": "PUBLIC_RECORD",
-    "basis": "величина обиды — Claude"
+    "basis": "событие в заметках; величина обиды — Claude"
    }
   },
   {

@@ -277,6 +277,9 @@ def refresh(old, doc):
         stale.append(bid)
         return ""
     new = BLOCK_RE.sub(sub, old)
+    if new.startswith("# ") and doc.title:      # the title is data (names come from canon/naming.json)
+        nl = new.find("\n")
+        new = f"# {doc.title}" + (new[nl:] if nl >= 0 else "\n")
     missing = [b for b, _ in doc.blocks() if b not in seen]
     if missing:
         new = new.rstrip("\n") + "\n\n" + "\n\n".join(block(b, want[b]) for b in missing) + "\n"
@@ -1043,7 +1046,7 @@ def political_order_doc(D):
           f"- Синод не хочет: {'; '.join(x['synod_motives']['does_not_want'])}; нуждается: {'; '.join(x['synod_motives']['needs'])}.",
           f"- Для игрока: {'; '.join(x['player_hooks'])}.", f"- Исход: {x['outcome']}. Аналог: {x['analogy']}.", ""] for x in O.P.get("interim_arrangements", [])], []) + [
           "### Проверка автономии по ядрам (модель потоков, PROPOSAL · модель)", "",
-          "Стратегическая автономия — не автаркия: Когниум остаётся более дешёвым и массовым поставщиком, а Мекка зависит от ввозных точной механики, электроники, изотопов и оборудования. Автономия означает лишь, что блок нельзя мгновенно задушить одним каналом.", "",
+          "Стратегическая автономия — не автаркия: Когниум остаётся более дешёвым и массовым поставщиком, а Тауранга зависит от ввозных точной механики, электроники, изотопов и оборудования. Автономия означает лишь, что блок нельзя мгновенно задушить одним каналом.", "",
           table(["Блок", "Свой производитель", "Доля внешнего спроса в мирное время", "Принятый диапазон", "После отключения лицензиара", "С мобилизацией", "Цена гражданского выпуска производителя", "Выживает"],
                 [(O.blocs[r["bloc"]]["ru"], D.pname(r["maker"]), fl(r["maker_share"], 2) if r.get("maker_share") is not None else "—", "–".join(str(x) for x in r["expected_share"]),
                   fl(r.get("cutoff", {}).get("members_coverage"), 2) if r.get("cutoff") else "—", fl(r.get("cutoff_mobilised", {}).get("members_coverage"), 2) if r.get("cutoff_mobilised") else "—",
@@ -1388,6 +1391,132 @@ def data_gaps(D):
 
 
 # ---------------------------------------------------------------- assemble
+# ---------------------------------------------------------------- NAMING / HERALDRY / FORTUNA
+def naming_docs(D):
+    import naming
+    NM = naming.Names()
+    N = NM.N
+    atlas = naming.atlas_systems()
+    col = {c["id"]: c for c in D.W["colonies"]}
+    docs = []
+
+    def lang(b):
+        return (NM.native_of(b) or {}).get("lang", "—")
+
+    path = "CULTURE/NAMING.md"
+    d = new_doc(D, path, "Имена 3126: эндонимы, экзонимы, сленг", "culture")
+    rows = []
+    for u in NM.units:
+        e = NM.E[u]
+        c, p = e.get("colony") or {}, e.get("polity") or {}
+        sysid = int(e["system"].split(":")[1])
+        star = atlas.get(sysid, {}).get("name", "—")
+        loc = NM.E.get(e["system"], {})
+        local = (loc.get("local") or {}).get("text") or ", ".join(x["text"] for x in loc.get("local_by", [])) or "—"
+        why = []
+        if p.get("verdict") != "KEEP":
+            why.append((p.get("naming_history") or {}).get("reason"))
+        if c.get("verdict") in ("RENAME", "NORMALIZE", "VERIFY"):
+            why.append((c.get("naming_history") or {}).get("reason"))
+        why = "; ".join(x for x in why if x and x != "AUTHOR_UNSPECIFIED") or "—"
+        rows.append((f"`{u}`", ", ".join(col[u]["founders"]) if u in col else "—",
+                     f"{lang(p)} / {lang(c)}" if c else lang(p), star, local,
+                     (NM.native_of(p) or {}).get("text", "—"), (NM.native_of(c) or {}).get("text", "—") if c else "—",
+                     f"{p.get('exonyms', {}).get('ru', '—')} / {c.get('exonyms', {}).get('ru', '—')}" if c else p.get("exonyms", {}).get("ru", "—"),
+                     f"{p.get('verdict', '—')} / {c.get('verdict', '—')}" if c else p.get("verdict", "—"), why))
+    g = ["Источник: `tools/colonization_lab/canon/naming.json` → `naming.py` (резолвер, зеркала, проверки) → `src/assets/data/naming/names_3126.json` "
+         "(runtime: stable ID → имя). Поля имён в `world.json`, `political_order.json`, `settlements.json` и легаси `actors.json` — зеркала, их пишет `naming.py --write`.", "",
+         "**Правило.** Русский — язык разработки и локализации, не язык галактики. Эндоним идёт от тех, кто реально назвал объект; русская форма — экзоним. "
+         "Каталожные имена звёзд (proper / Bayer / Flamsteed / HD / GJ / HIP) не уничтожаются: имя эпохи колоний ложится поверх.", "",
+         "Статус: архитектура и решения автора — `CANON`; этимологии, цепочки именования и геральдика — `PROPOSAL`, если не сказано иначе.", "",
+         "### Основные акторы", "",
+         table(["ID", "Основатели", "Языки (полития / столица)", "Звезда (каталог)", "Местное имя системы", "Эндоним политии",
+                "Столица (эндоним)", "RU (полития / столица)", "Вердикт", "Что было не так"], rows), "",
+         "### Языковой слой", ""]
+    g += [f"- `{k}` — {v}" for k, v in N["language_rules"].items()]
+    g += ["", "### Места и площадки", ""]
+    srows = []
+    for eid, e in sorted(NM.E.items()):
+        if eid.startswith(("site:", "place:", "system:")) and eid != "system:fomalhaut":
+            n = NM.native_of(e) or {}
+            al = ", ".join(f"{a['text']} ({a['kind']})" for a in e.get("aliases", []))
+            srows.append((f"`{eid}`", n.get("text", e.get("catalog", "—")), n.get("lang", "—"), n.get("pron", "—"),
+                          e.get("exonyms", {}).get("ru", "—"), e.get("exonyms", {}).get("en", "—"), al or "—",
+                          (e.get("naming_history") or {}).get("reason", "—"), e.get("verdict", "—")))
+    g += [table(["ID", "Эндоним", "Язык", "Произношение", "RU", "EN", "Сленг и другие формы", "Почему так", "Вердикт"], srows), "",
+          "### Миссии", ""]
+    mrows = [(f"`{eid[8:]}`", (NM.native_of(e) or {}).get("text", "—"), (NM.native_of(e) or {}).get("lang", "—"), e.get("exonyms", {}).get("ru", "—"),
+              (e.get("naming_history") or {}).get("reason", "—"), e.get("verdict", "—"))
+             for eid, e in sorted(NM.E.items()) if eid.startswith("mission:")]
+    g += [table(["Код", "Собственное имя", "Язык", "RU", "Почему", "Вердикт"], mrows), "",
+          "### Реликты массовой культуры", "",
+          table(["Форма", "Вид", "Язык", "Откуда", "Что так зовут", "Статус"],
+                [(x["text"], x["kind"], x["lang"], x["from"], x["used_for"], po_tag(x["status"])) for x in N["pop_culture_relics"]]), "",
+          "### Люди XXIII–XXIX веков в именах", "",
+          table(["Имя", "Язык", "Эпоха", "Роль", "Статус"], [(x["name"], x["lang"], x["era"], x["role"], po_tag(x["status"])) for x in N["future_figures"]]), "",
+          "### VERIFY", ""] + [f"- {x}" for x in N["verify"]]
+    d.gen("naming", "\n".join(g))
+    docs.append(d)
+
+    path = "CULTURE/HERALDRY.md"
+    d = new_doc(D, path, "Геральдика 3126: флаги, печати, знаки", "culture")
+    H = N["heraldry"]
+    g = [H["note"], "",
+         table(["Полития", "Традиция", "Флаг", "Печать / эмблема", "Космический и военный знак", "Знак основателей", "Скрытый код"],
+               [(NM.polity_label_ru(k) or k, v["tradition"], v["flag"], v["seal"], v["space_marking"], v["founder_emblem"], v.get("hidden_code", "—"))
+                for k, v in H.items() if k != "note"])]
+    d.gen("heraldry", "\n".join(g))
+    docs.append(d)
+
+    path = "FRONTIER/FORTUNA.md"
+    d = new_doc(D, path, "Фортуна у Фомальгаута и планета Лекси", "frontier")
+    F = naming.compute(NM)
+    fo, lx = F["fortuna"], F["lexie"]
+    ob = fo["observations"]
+    st = NM.E["star:HIP_113368"]
+    tr = st["traditional"]
+    star_rows = [
+        ("Имена каталога", ", ".join(f"{k}: {v}" for k, v in st["catalog_ids"].items())),
+        ("Созвездие", "Piscis Austrinus / Южная Рыба (PsA)"),
+        ("Китайское традиционное имя", f"{tr['text']} / {tr['simplified']} {tr['translit']} — «{tr['meaning']}»"),
+        ("Расстояние", f"{ob['distance_pc']['value']} ± {ob['distance_pc']['err']} пк = {ob['distance_ly']['value']} св. лет ({ob['distance_pc']['source']})"),
+        ("Блеск", f"V = {ob['v_mag']['value']}: видна с Земли невооружённым глазом"),
+        ("Звезда", f"{ob['spectral_type']['value']}; {ob['mass_msun']['value']} M☉, {ob['luminosity_lsun']['value']} L☉, {ob['radius_rsun']['value']} R☉, "
+                   f"{ob['teff_k']['value']} K; возраст {ob['age_myr']['value']} ± {ob['age_myr']['err']} млн лет"),
+        ("Координаты J2000", f"{ob['ra_j2000']}, {ob['dec_j2000']}; ICRS, св. лет от Сола: {fo['star']['position_ly']}"),
+        ("Спутники", "; ".join(f"{c['designation']}, {c['spectral_type']}, {c['separation_pc']} пк" for c in ob["companions"])),
+        ("Диски", "; ".join(f"{x['kind']} ({x['source']})" for x in ob["disks"])),
+        ("Fomalhaut b", f"{ob['transients'][0]['status']} ({ob['transients'][0]['source']}); {ob['transients'][1]['id']}: {ob['transients'][1]['status']}"),
+        ("Ограничения на планеты", f"{ob['planet_limits']['imaging']}; {ob['planet_limits']['rv']}. {ob['planet_limits']['conclusion']}"),
+    ]
+    sp = lambda v: f"{v:,}".replace(",", " ")
+    g = ["Статус: система Fortuna у реальной звезды Fomalhaut и планета Lexie / Лекси / 柏辛 — `CANON` (решение автора 2026-11-05). "
+         "Физика звезды — наблюдения XXI века; параметры Лекси — `PROPOSAL`, совместимые с ограничениями. "
+         "Доступность считает `naming.py` из позиции HYG, сети маяков 3126 и калибровки прыжка.", "",
+         "### Звезда", "", table(["Поле", "Значение"], star_rows), "",
+         "### Имя системы", "",
+         "Fortuna / Фортуна; китайский экзоним эпохи колоний — 命運之輪 / 命运之轮 (Mìngyùn zhī lún), «Колесо судьбы». "
+         "Традиционное китайское имя звезды хранится отдельно (北落師門). Происхождение имени — `AUTHOR_UNSPECIFIED`.", "",
+         "### Дорога", "",
+         table(["Ближайшая система", "Св. лет", "Маяк", "Населена", "Оператор маяка"],
+               [(n["name"], n["ly"], "да" if n["beacon"] else "нет", "да" if n["inhabited"] else "нет", n["operator"] or "—") for n in fo["nearest"]]), "",
+         f"Максимальное плечо прыжка 3126: {fo['max_hop_ly_3126']} св. лет; прямо с Сола — {fo['sol_direct_ly']} св. лет; "
+         f"коммерческая связь без маяка — не длиннее {fo['commercial_unbeaconed_limit_ly']} св. лет; маяка в системе нет.", "",
+         table(["Откуда", "Св. лет", "Возраст эфемерид, лет", "σ выхода, км", "Коробка 3σ, км"],
+               [(x["from_"], x["ly"], x["ephemeris_age_years"], sp(x["sigma_km"]), sp(x["box_3sigma_km"])) for x in fo["jump_error"]]), "",
+         f"Для сравнения: между двумя маяками на {fo['jump_error_reference'][0]['ly']} св. лет σ ≈ {fo['jump_error_reference'][0]['sigma_km']} км.", "",
+         table(["Класс", "Дальность с половинной загрузкой, св. лет", "Круг от Провидения, доля бака", "Круг прямо от Сола, доля бака"],
+               [(k, v["range_half_load_ly"], v["round_trip_from_stage_share"], v["round_trip_from_sol_share"]) for k, v in fo["tanks"].items()]), "",
+         "**Вывод модели:**", ""] + [f"- {x}" for x in fo["verdict"]] + ["",
+         "### Лекси", "",
+         table(["Поле", "Значение"], [("ID", f"`{lx['id']}`"), ("Имена", f"Lexie / Лекси / 柏辛 ({lx['translit']})"), ("История имени", "AUTHOR_UNSPECIFIED")] +
+               [(k, json.dumps(v, ensure_ascii=False) if isinstance(v, (dict, list)) else v) for k, v in lx["physical"].items()]), "",
+         "Лекси — не ресурс, не тайна и не награда. Она просто далеко, и она красивая."]
+    d.gen("fortuna", "\n".join(g))
+    docs.append(d)
+    return docs
+
+
 def build_docs(D):
     docs = []
     for mid in D.mission_order:
@@ -1404,6 +1533,7 @@ def build_docs(D):
     docs += politics_docs(D)
     docs += timeline_docs(D)
     docs += author_docs(D)
+    docs += naming_docs(D)
     docs.append(readme_doc(D, list(docs)))
     return sorted(docs, key=lambda x: x.path)
 
@@ -1623,7 +1753,7 @@ def run(write):
 
 
 # ---------------------------------------------------------------- narrative jump-core claims vs political.py
-CORE_MAKER_RE = {"wolf359_citadel": r"Цитадел", "lalande_mecca": r"Мекк", "tau_ceti_cognium": r"(Когниум|Нов(ый|ого) Шанха)"}
+CORE_MAKER_RE = {"wolf359_citadel": r"Цитадел", "lalande_mecca": r"(Тауранг|Капеху)", "tau_ceti_cognium": r"(Когниум|Синь-Шанха)"}
 GEN_BLOCK_RE = re.compile(r"<!-- GENERATED:[^ ]+ BEGIN -->.*?<!-- GENERATED:[^ ]+ END -->", re.S)
 
 

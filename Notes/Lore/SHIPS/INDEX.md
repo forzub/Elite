@@ -9,29 +9,29 @@
 <!-- GENERATED:index BEGIN -->
 | ID | Имя | Волна | Старт | Цель | Прибытие | Людей на старте | На прибытии | Итог | Колония | Статус |
 |---|---|---|---|---|---|---|---|---|---|---|
-| [MAYFLOWER-2](MAYFLOWER-2.md) | Мэйфлауэр II | I | 2088 | Tau Ceti | 2233 | 25 000 | 18 500 | arrived | [Новый Шанхай](../COLONIES/tau_ceti_cognium.md) | CANON · PUBLIC |
+| [MAYFLOWER-2](MAYFLOWER-2.md) | Мэйфлауэр II | I | 2088 | Tau Ceti | 2233 | 25 000 | 18 500 | arrived | [Синь-Шанхай](../COLONIES/tau_ceti_cognium.md) | CANON · PUBLIC |
 | [SVAROG-1](SVAROG-1.md) | Сварог | I | 2095 | Proxima Centauri | 2150 | 15 000 | 9 800 | arrived | [Красный Форпост](../COLONIES/proxima_outpost.md) | CANON · PUBLIC |
-| [TIANHE-1](TIANHE-1.md) | Тянь Хэ | I | 2098 | Gliese 832 | 2288 | 35 000 | 28 400 | arrived | [Тяньхэ (Небесная Река)](../COLONIES/gj832_tianhe.md) | CANON · PUBLIC |
+| [TIANHE-1](TIANHE-1.md) | Тяньхэ | I | 2098 | Gliese 832 | 2288 | 35 000 | 28 400 | arrived | [Тяньхэ](../COLONIES/gj832_tianhe.md) | CANON · PUBLIC |
 | [UBUNTU-1](UBUNTU-1.md) | Убунту | I | 2105 | Gliese 667 (A+B+C) | — | 25 000 | — | [спойлер: см. досье] | — | CANON · PUBLIC |
-| [HERACLES-1](HERACLES-1.md) | Геракл | I | 2112 | Lalande 21185 | 2197 | 12 000 | 10 200 | arrived | [Новая Эллада / Агора](../COLONIES/lalande_hellas.md) | CANON · PUBLIC |
-| [GENESIS-1](GENESIS-1.md) | GENESIS-1 | I | 2120 | Tau Ceti | 2263 | 18 000 | 15 800 | arrived | [Новый Шанхай](../COLONIES/tau_ceti_cognium.md) | PROPOSAL · PUBLIC |
+| [HERACLES-1](HERACLES-1.md) | Геракл | I | 2112 | Lalande 21185 | 2197 | 12 000 | 10 200 | arrived | [Агора](../COLONIES/lalande_hellas.md) | CANON · PUBLIC |
+| [GENESIS-1](GENESIS-1.md) | GENESIS-1 | I | 2120 | Tau Ceti | 2263 | 18 000 | 15 800 | arrived | [Синь-Шанхай](../COLONIES/tau_ceti_cognium.md) | PROPOSAL · PUBLIC |
 | [CELESTIAL-DESTINY-1](CELESTIAL-DESTINY-1.md) | Небесная Судьба | I | 2125 | Epsilon Eridani | 2212 | 25 000 | 21 800 | arrived | [Цветущая Гармония](../COLONIES/eps_eri_harmony.md) | CANON · PUBLIC |
 | [GREEN-ARK-1](GREEN-ARK-1.md) | Грин Арк-1 | I | 2135 | Gliese 832 | 2270 | 12 000 | 11 500 | [спойлер: см. досье] | [Зона «Филоморфоз»](../COLONIES/gj832_gaia_zone.md) | CANON · PUBLIC |
 | [DHARMA-1](DHARMA-1.md) | Дхарма-1 | I | 2140 | Delta Pavonis | 2361 | 30 000 | 22 500 | arrived | [Новая Карма](../COLONIES/delta_pav_karma.md) | CANON · PUBLIC |
 | [IRON-SHIELD-1](IRON-SHIELD-1.md) | Айрон Шилд-1 | II | 2150 | Wolf 359 | 2228 | 12 000 | 10 800 | arrived | [Цитадель](../COLONIES/wolf359_citadel.md) | CANON · PUBLIC |
-| [AL-QUDS-1](AL-QUDS-1.md) | Аль-Кудс-1 | II | 2160 | Lalande 21185 | 2243 | 18 000 | 15 600 | arrived | [Новая Мекка](../COLONIES/lalande_mecca.md) | CANON · PUBLIC |
+| [VAKA-MOANA-1](VAKA-MOANA-1.md) | Вака-Моана | II | 2160 | Lalande 21185 | 2243 | 18 000 | 15 600 | arrived | [Тауранга](../COLONIES/lalande_mecca.md) | CANON · PUBLIC |
 | [NEXT-1](NEXT-1.md) | Некст-1 | II | 2175 | Gliese 876 | 2314 | 6 000 | 3 200 | arrived | [Провидение](../COLONIES/gj876_next.md) | CANON · PUBLIC |
 | [EUROPA-1](EUROPA-1.md) | Европа-1 | II | 2250 | Gliese 581 | 2377 | 12 000 | 10 500 | arrived | [Новая Европа](../COLONIES/gj581_europa.md) | CANON · PUBLIC |
-| [NEW-HELLAS-1](NEW-HELLAS-1.md) | Новая Эллада (корабль) | III | 2260 | HD 20794 (82 G. Eridani) | 2384 | 15 000 | 12 800 | arrived | [Вторая Эллада](../COLONIES/hd20794_hellas2.md) | CANON · PUBLIC |
+| [HOMESTEAD-1](HOMESTEAD-1.md) | Хомстед | III | 2260 | HD 20794 (82 G. Eridani) | 2384 | 15 000 | 12 800 | arrived | [Хомстед](../COLONIES/hd20794_hellas2.md) | CANON · PUBLIC |
 | [RESOURCER-1](RESOURCER-1.md) | Ресурсер-1 | II | 2260 | 61 Cygni | 2355 | 10 000 | 9 000 | arrived | [Шахта Альфа](../COLONIES/cyg61_kern.md) | CANON · PUBLIC |
 | [NEW-JERUSALEM-1](NEW-JERUSALEM-1.md) | Новый Иерусалим | III | 2270 | 83 Leonis | 3126 | 12 000 | 8 900 | arrived_3126 | [Ново-Фиваида](../COLONIES/leo83_zion.md) | CANON · PUBLIC |
 | [UHURU-2](UHURU-2.md) | Ухуру-2 | III | 2280 | HD 40307 | 2542 | 30 000 | 24 500 | arrived | [Новая Маланд](../COLONIES/hd40307_maland.md) | CANON · PUBLIC |
 | [ODYSSEY-1](ODYSSEY-1.md) | Одиссей | III | 2290 | HD 114783 | 3122 | 15 000 | 11 200 | arrived_3122 | [Третья Эллада](../COLONIES/hd114783_hellas3.md) | CANON · PUBLIC |
 | [NIRVANA-1](NIRVANA-1.md) | Нирвана-1 | III | 2300 | 100062 | — | 3 500 | — | [спойлер: см. досье] | — | CANON · PUBLIC |
-| [AMAZONIA-1](AMAZONIA-1.md) | Амазония-1 | III | 2320 | HD 69830 | 2576 | 15 000 | 12 800 | arrived | [Сельта-Верде](../COLONIES/hd69830_verde.md) | CANON · PUBLIC |
-| [FREE-VENTURE-1](FREE-VENTURE-1.md) | Фри-Венчур-1 | III | 2335 | Epsilon Eridani | 2405 | 2 800 | 2 500 | arrived_fragmented | [Пояс Раздора / Вольные астероиды](../COLONIES/eps_eri_strife.md) | PROPOSAL · PUBLIC |
+| [AMAZONIA-1](AMAZONIA-1.md) | Амазония-1 | III | 2320 | HD 69830 | 2576 | 15 000 | 12 800 | arrived | [Сельва-Верде](../COLONIES/hd69830_verde.md) | CANON · PUBLIC |
+| [FREE-VENTURE-1](FREE-VENTURE-1.md) | Фри-Венчур-1 | III | 2335 | Epsilon Eridani | 2405 | 2 800 | 2 500 | arrived_fragmented | [Пояс Раздора](../COLONIES/eps_eri_strife.md) | PROPOSAL · PUBLIC |
 | [IRON-SHIELD-2](IRON-SHIELD-2.md) | Айрон Шилд-2 | III | 2355 | Wolf 359 | — | 3 000 | — | [спойлер: см. досье] | — | CANON · PUBLIC |
-| [TRADERS-GUILD-1](TRADERS-GUILD-1.md) | TRADER'S-GUILD-1 | III | 2385 | Tau Ceti | 2512 | 800 | 760 | arrived | [Новый Шанхай](../COLONIES/tau_ceti_cognium.md) | PROPOSAL · PUBLIC |
+| [TRADERS-GUILD-1](TRADERS-GUILD-1.md) | TRADER'S-GUILD-1 | III | 2385 | Tau Ceti | 2512 | 800 | 760 | arrived | [Синь-Шанхай](../COLONIES/tau_ceti_cognium.md) | PROPOSAL · PUBLIC |
 | [DHARMA-2](DHARMA-2.md) | Дхарма-2 | III | 2400 | HD 20794 (82 G. Eridani) | 2523 | 25 000 | 20 500 | arrived | [Новая Индия](../COLONIES/hd20794_newindia.md) | CANON · PUBLIC |
 | [FREE-WORLD-1](FREE-WORLD-1.md) | Свободный мир | III | 2450 | Gliese 581 | 2574 | 12 000 | 9 500 | arrived_fragmented | [Свободные поселения](../COLONIES/gj581_freeclans.md) | CANON · PUBLIC |
 | [CELESTIAL-DESTINY-2](CELESTIAL-DESTINY-2.md) | Небесная Твердыня | III | 2480 | HD 40307 | 2742 | 25 000 | 21 500 | arrived | [Небесная Твердыня](../COLONIES/hd40307_firmament.md) | CANON · PUBLIC |

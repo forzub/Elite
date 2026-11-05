@@ -35,7 +35,7 @@ python lore_md.py --check     # блоки совпадают с данными,
 ## Счётчики статусов машинного канона
 
 <!-- GENERATED:counts BEGIN -->
-`AUTHOR TRUTH` 17, `CANON` 311, `PROPOSAL` 290, `PUBLIC` 591, `UNKNOWN` 7. Схема данных: `elite.colonization_lab.lore_facts.v1`, seed 3126, сценарий `baseline`.
+`AUTHOR TRUTH` 17, `CANON` 314, `PROPOSAL` 287, `PUBLIC` 591, `UNKNOWN` 7. Схема данных: `elite.colonization_lab.lore_facts.v1`, seed 3126, сценарий `baseline`.
 <!-- GENERATED:counts END -->
 
 ## Оглавление
@@ -45,9 +45,10 @@ python lore_md.py --check     # блоки совпадают с данными,
 |---|---|---|
 | [AUTHOR/](AUTHOR/HIDDEN_CANON.md) | 5 | [HIDDEN_CANON.md](AUTHOR/HIDDEN_CANON.md), [MISSING_SHIPS.md](AUTHOR/MISSING_SHIPS.md), [PROPOSALS.md](AUTHOR/PROPOSALS.md), [QUEST_TRUTHS.md](AUTHOR/QUEST_TRUTHS.md), [WORLDS_ASS_TRUTH.md](AUTHOR/WORLDS_ASS_TRUTH.md); AUTHOR/SHIPS/ — 1 скрыт. досье [СПОЙЛЕР] |
 | [COLONIES/](COLONIES/INDEX.md) | 35 | см. INDEX.md |
+| [CULTURE/](CULTURE/HERALDRY.md) | 2 | [HERALDRY.md](CULTURE/HERALDRY.md), [NAMING.md](CULTURE/NAMING.md) |
 | [DEMOGRAPHY/](DEMOGRAPHY/MODEL.md) | 2 | [MODEL.md](DEMOGRAPHY/MODEL.md), [POPULATION_3126.md](DEMOGRAPHY/POPULATION_3126.md) |
 | [ECONOMY/](ECONOMY/BEACONS_AND_NAVIGATION.md) | 20 | см. INDEX.md |
-| [FRONTIER/](FRONTIER/FRONTIERS_AND_DEEP_SPACE.md) | 2 | [FRONTIERS_AND_DEEP_SPACE.md](FRONTIER/FRONTIERS_AND_DEEP_SPACE.md), [WORLDS_ASS.md](FRONTIER/WORLDS_ASS.md) |
+| [FRONTIER/](FRONTIER/FORTUNA.md) | 3 | [FORTUNA.md](FRONTIER/FORTUNA.md), [FRONTIERS_AND_DEEP_SPACE.md](FRONTIER/FRONTIERS_AND_DEEP_SPACE.md), [WORLDS_ASS.md](FRONTIER/WORLDS_ASS.md) |
 | [POLITICS/](POLITICS/EARTH_3126.md) | 5 | [EARTH_3126.md](POLITICS/EARTH_3126.md), [LAW_AND_JURISDICTION.md](POLITICS/LAW_AND_JURISDICTION.md), [POLITICAL_ORDER.md](POLITICS/POLITICAL_ORDER.md), [RELATIONS.md](POLITICS/RELATIONS.md), [WARS.md](POLITICS/WARS.md) |
 | [SETTLEMENTS/](SETTLEMENTS/INDEX.md) | 26 | см. INDEX.md |
 | [SHIPS/](SHIPS/INDEX.md) | 36 | см. INDEX.md |

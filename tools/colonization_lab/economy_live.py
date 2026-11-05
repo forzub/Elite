@@ -18,6 +18,7 @@ price_info_delay_3126.json.
     python economy_live.py            # compute, write out/ and the runtime copies
     python economy_live.py --check    # recompute, compare with the files, run the consistency checks
 """
+import naming
 import political
 import argparse
 import hashlib
@@ -27,6 +28,8 @@ import math
 import os
 import sys
 import zlib
+
+NAMER = naming.Names()
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, "..", ".."))
@@ -171,6 +174,8 @@ def hub_records(I):
                          security=br["security"], medical_beds=0, quarantine_beds=0, arrivals_day=None, dock_sectors=None,
                          dock_modules=None, passenger_terminals=None, cargo_terminals=None, service_berths=None, legal=None,
                          hidden=False, known_to_player="public"))
+    for h in hubs:   # stable id -> naming resolver (canon/naming.json)
+        h["name"] = NAMER.site_name(h["id"], h["name"])
     return hubs
 
 

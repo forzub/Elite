@@ -281,7 +281,7 @@ def checks(O):
     # behaviour checks the order is meant to have
     a = O.access
     add("citadel_strategic_closed_outside_pact", all(a("wolf359_citadel", u)["strategic"] == 4 for u in O.units if O.bloc_of_unit(u) != "citadel_compact"))
-    add("mecca_strategic_for_southern_circle", all(a("lalande_mecca", u)["strategic"] <= 1 for u in O.bloc_units("southern_circle")))
+    add("tauranga_strategic_for_southern_circle", all(a("lalande_mecca", u)["strategic"] <= 1 for u in O.bloc_units("southern_circle")))
     add("cognium_cores_reach_sol_league_pact", all(a("tau_ceti_cognium", u)["strategic"] <= 2 for u in ("sol_authority", "lalande_hellas", "gj581_europa", "eps_eri_harmony")))
     add("kern_finance_crosses_blocs", all(a("cyg61_kern", u)["people_finance_data"] <= 1 for u in O.units if u not in O.zones() and u not in ("delta_pav_karma", "hd114783_hellas3", "cyg61_kern")),
         "Kern finance <= licensed with everyone except Karma (isolation), Third Hellas (claims freeze), zones")
@@ -317,7 +317,7 @@ def checks(O):
         "top-level CANON; no structural element pending review")
     add("no_open_design_questions", not O.P["open_questions"] and {u["id"] for u in O.P.get("author_unknowns", [])} == {"leo83_crisis_outcome", "sol_own_jump_cores"})
     mecca = O.jump.get("lalande_mecca", {})
-    add("mecca_own_math_canon", mecca.get("how") == "own" and mecca.get("status") == "CANON" and "PROPOSAL" not in O.P["licences"][0]["basis"].split("Мекка")[1][:80])
+    add("tauranga_own_math_canon", mecca.get("how") == "own" and mecca.get("status") == "CANON" and "PROPOSAL" not in O.P["licences"][0]["basis"].split("Тауранга")[1][:80])
     hs = next(s for s in O.sanctions if s["id"] == "harmony_strife_embargo")
     add("harmony_strife_dual_use_grey_not_closed", hs["level"]["dual_use"] == 3 and O.access("eps_eri_harmony", "eps_eri_strife")["dual_use"] == 3)
     add("every_element_has_player_role", not no_role, ",".join(no_role) or "Chekhov's gun: all blocs, non-aligned, units, exceptions, licences, sanctions")

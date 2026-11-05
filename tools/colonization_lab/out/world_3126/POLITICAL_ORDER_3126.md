@@ -71,7 +71,7 @@ nonaligned (4): delta_pav_karma (ideological_isolationist), gj876_next (strategi
 - OK exceptions_reference_actors: 
 - OK sanctions_derived_from_relations_anchor: 8 measures
 - OK citadel_strategic_closed_outside_pact: 
-- OK mecca_strategic_for_southern_circle: 
+- OK tauranga_strategic_for_southern_circle: 
 - OK cognium_cores_reach_sol_league_pact: 
 - OK kern_finance_crosses_blocs: Kern finance <= licensed with everyone except Karma (isolation), Third Hellas (claims freeze), zones
 - OK agora_more_open_than_league_peer: 
@@ -91,7 +91,7 @@ nonaligned (4): delta_pav_karma (ideological_isolationist), gj876_next (strategi
 - OK citadel_civilian_open_strategic_closed: 
 - OK order_accepted_canon: top-level CANON; no structural element pending review
 - OK no_open_design_questions: 
-- OK mecca_own_math_canon: 
+- OK tauranga_own_math_canon: 
 - OK harmony_strife_dual_use_grey_not_closed: 
 - OK every_element_has_player_role: Chekhov's gun: all blocs, non-aligned, units, exceptions, licences, sanctions
 - OK sanctions_realistically_leaky: civilian / industrial / dual-use never fully closed without a stated reason; every measure has an evasion route

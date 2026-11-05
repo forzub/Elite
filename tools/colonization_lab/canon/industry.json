@@ -3,7 +3,7 @@
   "status": "PROPOSAL",
   "note": "Industrial geography of 3126: who can design and build ships, equipment and station modules, who only assembles or makes parts, who buys, from whom and through which channel. Political blocs, access per category and sanctions are NOT here: canon/political_order.json (political.py) is their only source; this file holds industrial schools, manufacturers are named only when major; everything else is counted. industry.py turns this + the economy + the sites into out/world_3126/industry_3126.json and rescue_3126.json.",
   "industrial_schools": {
-    "note": "Промышленная традиция и стандарты каждой экономической единицы: конструкторская школа и предпочтительный источник ядер. Это следствие истории, цепочек поставок и рынка, а НЕ политический блок: принадлежность к блокам, каналы доступа и санкции — только canon/political_order.json (political.py). Миграция 2026-11-05: значения перенесены из прежних industry.blocs без изменений, кроме Сельта-Верде (из Лиги Лаланд -> своей школы нет, пёстрый парк). Статус PROPOSAL.",
+    "note": "Промышленная традиция и стандарты каждой экономической единицы: конструкторская школа и предпочтительный источник ядер. Это следствие истории, цепочек поставок и рынка, а НЕ политический блок: принадлежность к блокам, каналы доступа и санкции — только canon/political_order.json (political.py). Миграция 2026-11-05: значения перенесены из прежних industry.blocs без изменений, кроме Сельва-Верде (из Лиги Лаланд -> своей школы нет, пёстрый парк). Статус PROPOSAL.",
     "units": {
       "tau_ceti_cognium": {"design": "modular_premium", "core_source": "tau_ceti_cognium"},
       "cyg61_kern": {"design": "modular_premium", "core_source": "tau_ceti_cognium"},
@@ -34,7 +34,7 @@
     "modular_premium": {"ru": "дорогие модульные", "what": "мало семейств корпусов, много модулей C20/P20 и сменных секций; дорого, высокое качество, долгий ресурс", "price_x": 1.25, "life_x": 1.15, "variety": "medium"},
     "standard_monohull": {"ru": "простые однокорпусные", "what": "государственные стандартные корпуса, мало типов, крупные серии, ремонт где угодно в блоке; дёшево, тяжелее", "price_x": 0.8, "life_x": 1.0, "variety": "low"},
     "modular_civil_many_vendors": {"ru": "модульные гражданские, много фирм", "what": "общие стандарты интерфейсов, десятки фирм, пёстрый флот", "price_x": 1.05, "life_x": 1.0, "variety": "high"},
-    "licensed_kit_assembly": {"ru": "сборка из комплектов по лицензии", "what": "корпуса и модули свои, ядра и электроника — по лицензии или из Мекки; крупные сборочные заводы", "price_x": 0.9, "life_x": 0.9, "variety": "medium"},
+    "licensed_kit_assembly": {"ru": "сборка из комплектов по лицензии", "what": "корпуса и модули свои, ядра и электроника — по лицензии или из Тауранги; крупные сборочные заводы", "price_x": 0.9, "life_x": 0.9, "variety": "medium"},
     "heavy_military": {"ru": "тяжёлые военные", "what": "бронированные корпуса, военные стандарты, гражданские — по остаточному принципу", "price_x": 1.4, "life_x": 1.2, "variety": "low"},
     "hollowed_asteroid_and_refit": {"ru": "выдолбленные астероиды и переделки", "what": "танкеры, склады и жильё в выдолбленных астероидах; корабли — переделки б/у и доноров", "price_x": 0.55, "life_x": 0.7, "variety": "chaotic"},
     "mass_production": {"ru": "массовый конвейер", "what": "огромные серии внутрисистемных кораблей и станционных модулей; прыжковые — по лицензии", "price_x": 0.85, "life_x": 1.0, "variety": "medium"},
@@ -73,7 +73,7 @@
      "note": "станционные секции по открытому стандарту; десятки малых фирм вокруг"},
     {"id": "mfr.eurohab", "name": "Консорциум «Евро-Хабитат»", "polity": "gj581_europa", "kind": "consortium", "groups": ["agro_life_modules", "life_support", "habitat_cabins"], "plant": "industrial_hub"},
     {"id": "mfr.bharat", "name": "Бхарат Ассембли", "polity": "hd20794_newindia", "kind": "corporation", "groups": ["hull_structure", "cargo_modules", "pressure_segments", "cryo_tanks"], "plant": "industrial_hub",
-     "note": "крупнейшие сборочные заводы Южного круга; корпуса по лицензии, ядра — Мекка или Когниум"},
+     "note": "крупнейшие сборочные заводы Южного круга; корпуса по лицензии, ядра — Тауранга или Когниум"},
     {"id": "mfr.mizan", "name": "Дар аль-Мизан", "polity": "lalande_mecca", "kind": "state_concern", "groups": ["jump_core", "avionics"], "plant": "industrial_hub",
      "note": "ядра собственной математики (вне стандарта Когниума); экспорт в Южный круг"},
     {"id": "mfr.uhuru_bio", "name": "Uhuru Bio-Systems", "polity": "hd40307_maland", "kind": "cooperative", "groups": ["life_support", "agro_life_modules"], "plant": "industrial_hub"},

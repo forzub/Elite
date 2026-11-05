@@ -7077,7 +7077,7 @@
    "ok": true
   },
   {
-   "check": "mecca_strategic_for_southern_circle",
+   "check": "tauranga_strategic_for_southern_circle",
    "detail": "",
    "ok": true
   },
@@ -7177,7 +7177,7 @@
    "ok": true
   },
   {
-   "check": "mecca_own_math_canon",
+   "check": "tauranga_own_math_canon",
    "detail": "",
    "ok": true
   },

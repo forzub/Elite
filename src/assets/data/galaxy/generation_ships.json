@@ -94,7 +94,7 @@
         },
         "fate_3126": "arrived",
         "ship_state_3126": "station_core",
-        "ship_note": "ядро станции «Новый Шанхай»",
+        "ship_note": "ядро станции «Синь-Шанхай»",
         "location_3126": 8,
         "living_aboard_3126": 0,
         "owner_3126": "Когниум",
@@ -175,7 +175,8 @@
         },
         "aliases": [
           "Небесная Судьба",
-          "Целестиал Дестини-1"
+          "天命一号",
+          "Tianming-1"
         ],
         "wave": "I",
         "sponsor": "PRC (second state ship) - a fast ark: 'arrive first'",
@@ -202,14 +203,14 @@
         "ship_note": "разобран на первые станции; носовой щит «Мандала» — памятник",
         "location_3126": 9,
         "living_aboard_3126": 0,
-        "owner_3126": "Синь Хэ",
+        "owner_3126": "Синьхэ",
         "findable": true,
         "author_knows_truth": true,
         "colony": "eps_eri_harmony",
         "sources": [
           "06. CELESTIAL-DESTINY-1.md",
           "fate.md §5",
-          "actors.json Синь Хэ"
+          "actors.json Синьхэ"
         ]
       },
       "status_3126": "КОЛОНИЯ"
@@ -308,7 +309,7 @@
         "ship_note": "корабль на орбите GJ 832 b как памятник-сад; внутри цветёт",
         "location_3126": 12,
         "living_aboard_3126": 0,
-        "owner_3126": "Вердензальб (остатки Гайи-Прим)",
+        "owner_3126": "остатки Гайи-Прайм",
         "findable": true,
         "author_knows_truth": true,
         "colony": "gj832_gaia_zone",
@@ -412,7 +413,7 @@
         },
         "fate_3126": "arrived",
         "ship_state_3126": "orbit_temple",
-        "ship_note": "корабль на орбите — Храм Массива, доступ только высшим",
+        "ship_note": "корабль на орбите — Храм Семени, доступ только высшим",
         "location_3126": 22,
         "living_aboard_3126": 0,
         "owner_3126": "Дхарма-Мандала (северная ветвь)",
@@ -493,6 +494,7 @@
         },
         "aliases": [
           "Айрон Шилд-1",
+          "Jernskjold",
           "Цитадель"
         ],
         "wave": "II",
@@ -520,119 +522,14 @@
         "ship_note": "ядро крепости «Бастион»",
         "location_3126": 3,
         "living_aboard_3126": 0,
-        "owner_3126": "Скьёльдбург",
+        "owner_3126": "Скьольдборг",
         "findable": true,
         "author_knows_truth": true,
         "colony": "wolf359_citadel",
         "sources": [
           "09. IRON-SHIELD-1.md",
           "fate.md §6",
-          "actors.json Скьёльдбург"
-        ]
-      },
-      "status_3126": "КОЛОНИЯ"
-    },
-    {
-      "id": "AL-QUDS-1",
-      "wave": "early",
-      "launchYear": 2160,
-      "arrival": {
-        "year": 2195,
-        "mode": "sublight",
-        "note": null
-      },
-      "sender": "Исламская лига",
-      "crew": 6500,
-      "target": "Лаланд 21185 b (8.3 св. лет)",
-      "status_3024": "ДЕРЖАВА",
-      "geometry": {
-        "form": "Октагон (восьмигранная призма)",
-        "parameters": {
-          "length_m": 2400,
-          "diameter_m": 700
-        }
-      },
-      "mass": {
-        "dry_mln_tons": 15,
-        "full_mln_tons": 19
-      },
-      "habitat_volume_mln_m3": 1.7,
-      "architecture": "Восемь граней символизируют восемь врат рая. Внутри — геометрически идеальные сады, библиотеки и обсерватории. Вращение создаёт гравитацию от 0.3g на «полюсах» до 0.8g на «экваторе».",
-      "special_feature": "«Киберка»: носовой модуль, где богословы-математики работали с квантовыми компьютерами, выводя «уравнения творения». Именно здесь были заложены основы их уникальной гиперфизики.",
-      "fate": "**Новая Мекка.** Уникальный синтез веры и разума. Их учёные-богословы увидели в законах физики проявление божественного замысла, что привело к глубоким, но осторожным технологическим прорывам. Их гипердвигатели работают на иных математических принципах. Общество стабильно, духовно и уверено в своей исключительности. Они – могущественные, но сдержанные игроки, предпочитающие влияние прямой экспансии. **[ПРИЧИНА УСПЕХА: Сильная объединяющая идеология, снимающая противоречие между наукой и верой; большая стартовая популяция с высокой социальной сплочённостью.]**",
-      "legacy_values": true,
-      "canon": {
-        "id": "AL-QUDS-1",
-        "status": "canon",
-        "knowledge": {
-          "status": "CANON",
-          "visibility": "PUBLIC_RECORD",
-          "basis": "миссия есть в заметках автора"
-        },
-        "field_status": {
-          "launch_year": {
-            "status": "CANON",
-            "visibility": "PUBLIC_RECORD",
-            "basis": "год в 10. AL-QUDS-1.md"
-          },
-          "population": {
-            "status": "CANON",
-            "visibility": "PUBLIC_RECORD",
-            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
-          },
-          "arrival_year": {
-            "status": "PROPOSAL",
-            "visibility": "PUBLIC_RECORD",
-            "basis": "пересчитано по каталогу и потолку скорости; авторское 2195"
-          },
-          "arrival_population": {
-            "status": "CANON",
-            "visibility": "PUBLIC_RECORD",
-            "basis": "fate.md"
-          },
-          "fate": {
-            "status": "CANON",
-            "visibility": "PUBLIC_RECORD",
-            "basis": "fate.md / досье"
-          }
-        },
-        "aliases": [
-          "Аль-Кудс-1",
-          "Новая Мекка"
-        ],
-        "wave": "II",
-        "sponsor": "Islamic League (UAE, Saudi Arabia, Qatar, Malaysia, Indonesia, Pakistan)",
-        "launch_year": 2160,
-        "source_system": 0,
-        "target_system": 4,
-        "final_system": 4,
-        "population": 18000,
-        "cryo_share": 0.0,
-        "awake_watch": 18000,
-        "birth_policy": "generation",
-        "arrival_year": 2243,
-        "arrival_population": 15600,
-        "avg_speed_c": 0.1001,
-        "motives": {
-          "civilisational_insurance": 0.3,
-          "religion": 0.25,
-          "elite_capital_flight": 0.2,
-          "prestige": 0.15,
-          "scientific_vanity": 0.1
-        },
-        "fate_3126": "arrived",
-        "ship_state_3126": "station_core",
-        "ship_note": "купол SANCTUM — мечеть-обсерватория «Расад»",
-        "location_3126": 4,
-        "living_aboard_3126": 0,
-        "owner_3126": "Ильм-аль-Нуджум",
-        "findable": true,
-        "author_knows_truth": true,
-        "colony": "lalande_mecca",
-        "sources": [
-          "10. AL-QUDS-1.md",
-          "fate.md §7",
-          "actors.json Ильм-аль-Нуджум"
+          "actors.json Скьольдборг"
         ]
       },
       "status_3126": "КОЛОНИЯ"
@@ -730,7 +627,7 @@
         "ship_note": "разбитый посадочный модуль — святилище «Провидца»",
         "location_3126": 13,
         "living_aboard_3126": 0,
-        "owner_3126": "Культ Машины / Провидение",
+        "owner_3126": "Провидение",
         "findable": true,
         "author_knows_truth": true,
         "colony": "gj876_next",
@@ -835,14 +732,14 @@
         "ship_note": "решётка GRID+SWARM разобрана на узлы станции «Новый Брюссель»",
         "location_3126": 10,
         "living_aboard_3126": 0,
-        "owner_3126": "Рестаурос",
+        "owner_3126": "Союз Новой Европы",
         "findable": true,
         "author_knows_truth": true,
         "colony": "gj581_europa",
         "sources": [
           "12. EUROPA-1.md",
           "fate.md §8",
-          "actors.json Рестаурос"
+          "actors.json Союз Новой Европы"
         ]
       },
       "status_3126": "КОЛОНИЯ"
@@ -1045,7 +942,7 @@
         "ship_note": "на парковочной орбите 83 Leonis B h",
         "location_3126": 45,
         "living_aboard_3126": 8900,
-        "owner_3126": "Синод Ново-Фиваиды",
+        "owner_3126": "Ново-Фиваида",
         "findable": true,
         "author_knows_truth": true,
         "colony": "leo83_zion",
@@ -1419,7 +1316,7 @@
         "ship_note": "",
         "location_3126": 16,
         "living_aboard_3126": 0,
-        "owner_3126": "Сельта-Верде («Затерянный мир»)",
+        "owner_3126": "Сельва-Верде",
         "findable": true,
         "author_knows_truth": true,
         "colony": "hd69830_verde",
@@ -1601,7 +1498,7 @@
         },
         "aliases": [
           "Небесная Твердыня",
-          "Небесная твердыня-2",
+          "天命二号",
           "Третья Гармония"
         ],
         "wave": "III",
@@ -1629,7 +1526,7 @@
         "ship_note": "",
         "location_3126": 15,
         "living_aboard_3126": 0,
-        "owner_3126": "Синь Хэ (дальняя провинция)",
+        "owner_3126": "Синьхэ (провинция Тяньлэй)",
         "findable": true,
         "author_knows_truth": true,
         "colony": "hd40307_firmament",
@@ -1904,7 +1801,7 @@
           "Первый гипердоговор (legacy name)"
         ],
         "wave": "III",
-        "sponsor": "Lalande colonies (New Hellas + New Mecca): first inter-colony sublight courier",
+        "sponsor": "Lalande colonies (New Hellas + Tauranga (Te Kāpehu)): first inter-colony sublight courier",
         "launch_year": 2385,
         "source_system": 4,
         "target_system": 8,
@@ -1924,7 +1821,7 @@
         },
         "fate_3126": "arrived",
         "ship_state_3126": "museum",
-        "ship_note": "музей в Новом Шанхае",
+        "ship_note": "музей в Синь-Шанхае",
         "location_3126": 8,
         "living_aboard_3126": 0,
         "owner_3126": "Когниум",
@@ -2499,7 +2396,7 @@
         "ship_note": "модули — ядро поясной станции Гармонии",
         "location_3126": 9,
         "living_aboard_3126": 0,
-        "owner_3126": "Синь Хэ",
+        "owner_3126": "Синьхэ",
         "findable": true,
         "author_knows_truth": true,
         "colony": "eps_eri_harmony",
@@ -2762,7 +2659,7 @@
         },
         "fate_3126": "museum",
         "ship_state_3126": "museum",
-        "ship_note": "музей в Новом Шанхае; у Сола — сброшенный тогда маяк-памятник",
+        "ship_note": "музей в Синь-Шанхае; у Сола — сброшенный тогда маяк-памятник",
         "location_3126": 8,
         "living_aboard_3126": 0,
         "owner_3126": null,
@@ -3097,7 +2994,8 @@
           }
         },
         "aliases": [
-          "Тянь Хэ"
+          "Тяньхэ",
+          "天河一号"
         ],
         "wave": "I",
         "sponsor": "PRC state project: state corporations, CNSA, Party",
@@ -3293,7 +3191,7 @@
         "ship_note": "кольца стали первой Агорой",
         "location_3126": 4,
         "living_aboard_3126": 0,
-        "owner_3126": "Агор-Прим",
+        "owner_3126": "Новая Эллада",
         "findable": true,
         "author_knows_truth": true,
         "colony": "lalande_hellas",
@@ -3304,7 +3202,7 @@
       }
     },
     {
-      "id": "NEW-HELLAS-1",
+      "id": "HOMESTEAD-1",
       "wave": "middle",
       "launchYear": 2260,
       "arrival": {
@@ -3318,7 +3216,7 @@
       "status_3126": "КОЛОНИЯ",
       "legacy_values": true,
       "canon": {
-        "id": "NEW-HELLAS-1",
+        "id": "HOMESTEAD-1",
         "status": "canon",
         "knowledge": {
           "status": "CANON",
@@ -3329,7 +3227,7 @@
           "launch_year": {
             "status": "CANON",
             "visibility": "PUBLIC_RECORD",
-            "basis": "год в 13. NEW-HELLAS-1.md"
+            "basis": "год в 13. HOMESTEAD-1.md"
           },
           "population": {
             "status": "CANON",
@@ -3353,8 +3251,8 @@
           }
         },
         "aliases": [
-          "Новая Эллада (корабль)",
-          "Вторая Эллада"
+          "Хомстед",
+          "Homestead"
         ],
         "wave": "III",
         "sponsor": "North American consortium (USA, Canada, Mexico), private + state funds",
@@ -3381,12 +3279,12 @@
         "ship_note": "",
         "location_3126": 14,
         "living_aboard_3126": 0,
-        "owner_3126": "Вторая Эллада",
+        "owner_3126": "Хомстед",
         "findable": true,
         "author_knows_truth": true,
         "colony": "hd20794_hellas2",
         "sources": [
-          "13. NEW-HELLAS-1.md",
+          "13. HOMESTEAD-1.md",
           "fate.md §9"
         ]
       }
@@ -3470,7 +3368,7 @@
         "ship_note": "",
         "location_3126": 15,
         "living_aboard_3126": 0,
-        "owner_3126": "Уджамаа-Джахи",
+        "owner_3126": "Содружество Уджамаа",
         "findable": true,
         "author_knows_truth": true,
         "colony": "hd40307_maland",
@@ -3641,6 +3539,95 @@
         "sources": [
           "24. KEPLER-1.md",
           "fate.md §23"
+        ]
+      }
+    },
+    {
+      "id": "VAKA-MOANA-1",
+      "wave": "early",
+      "launchYear": 2160,
+      "arrival": {
+        "year": 2243,
+        "mode": "sublight",
+        "note": null
+      },
+      "sender": "Pacific Voyaging Compact: Aotearoa New Zealand (Crown + iwi trusts), Hawaiʻi, Samoa, Tonga, Fiji, Cook Islands, Kiribati, Nauru, Tuvalu, Papua New Guinea, Solomon Islands, Vanuatu, FSM; seabed-nodule royalties (Clarion-Clipperton Zone), climate loss-and-damage funds, diaspora bonds",
+      "crew": 18000,
+      "target": "4",
+      "status_3126": "КОЛОНИЯ",
+      "legacy_values": false,
+      "canon": {
+        "id": "VAKA-MOANA-1",
+        "status": "canon",
+        "knowledge": {
+          "status": "CANON",
+          "visibility": "PUBLIC_RECORD",
+          "basis": "миссия есть в заметках автора"
+        },
+        "field_status": {
+          "launch_year": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "год в 10. VAKA-MOANA-1.md"
+          },
+          "population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "число из досье (реконсиляция C1: стартовые численности по S1)"
+          },
+          "arrival_year": {
+            "status": "PROPOSAL",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "пересчитано по каталогу и потолку скорости; авторское 2195"
+          },
+          "arrival_population": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md"
+          },
+          "fate": {
+            "status": "CANON",
+            "visibility": "PUBLIC_RECORD",
+            "basis": "fate.md / досье"
+          }
+        },
+        "aliases": [
+          "Вака-Моана",
+          "Vaka Moana"
+        ],
+        "wave": "II",
+        "sponsor": "Pacific Voyaging Compact: Aotearoa New Zealand (Crown + iwi trusts), Hawaiʻi, Samoa, Tonga, Fiji, Cook Islands, Kiribati, Nauru, Tuvalu, Papua New Guinea, Solomon Islands, Vanuatu, FSM; seabed-nodule royalties (Clarion-Clipperton Zone), climate loss-and-damage funds, diaspora bonds",
+        "launch_year": 2160,
+        "source_system": 0,
+        "target_system": 4,
+        "final_system": 4,
+        "population": 18000,
+        "cryo_share": 0.0,
+        "awake_watch": 18000,
+        "birth_policy": "generation",
+        "arrival_year": 2243,
+        "arrival_population": 15600,
+        "avg_speed_c": 0.1001,
+        "motives": {
+          "civilisational_insurance": 0.3,
+          "religion": 0.25,
+          "elite_capital_flight": 0.2,
+          "prestige": 0.15,
+          "scientific_vanity": 0.1
+        },
+        "fate_3126": "arrived",
+        "ship_state_3126": "station_core",
+        "ship_note": "купол станции — обсерватория-вычислитель Te Whare Tātai Arorangi («Фаре»)",
+        "location_3126": 4,
+        "living_aboard_3126": 0,
+        "owner_3126": "Капеху",
+        "findable": true,
+        "author_knows_truth": true,
+        "colony": "lalande_mecca",
+        "sources": [
+          "10. VAKA-MOANA-1.md",
+          "fate.md §7",
+          "canon/naming.json lalande_mecca"
         ]
       }
     }

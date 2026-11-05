@@ -22,7 +22,7 @@
   },
   {
    "check": "cargo_balance_identity",
-   "detail": "max relative residual 2.17e-16",
+   "detail": "max relative residual 1.97e-16",
    "ok": true
   },
   {

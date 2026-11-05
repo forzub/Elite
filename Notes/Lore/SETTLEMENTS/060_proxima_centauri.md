@@ -15,9 +15,9 @@
 | Proxima Centauri k — поселение | Proxima Centauri | Proxima Centauri k | — | 168 234 378 | поселение | [Красный Форпост](../COLONIES/proxima_outpost.md) | — | — | — | PROPOSAL · PUBLIC |
 | Proxima Cen b — поселение | Proxima Centauri | Proxima Cen b | — | 112 156 252 | поселение | [Красный Форпост](../COLONIES/proxima_outpost.md) | — | — | — | PROPOSAL · PUBLIC |
 | Орбитальная крепость «Сварог» | Proxima Centauri | Proxima Centauri j (орбита) | — | — | крепость | [Красный Форпост](../COLONIES/proxima_outpost.md) | — | 0.90 | — | PROPOSAL · PUBLIC |
-| Агрокупола Alpha Centauri B l | Proxima Centauri | Proxima Centauri k | — | — | агрохабитат | [Красный Форпост](../COLONIES/proxima_outpost.md) | пища | 0.80 | выпуск 11117.86 [7782.50–14453.21] | PROPOSAL · PUBLIC |
-| Газовые платформы Proxima l | Proxima Centauri | Proxima Centauri l | — | — | газовые платформы (He-3) | [Красный Форпост](../COLONIES/proxima_outpost.md) | He-3 | 0.60 | выпуск 96.83 [67.78–125.88] | PROPOSAL · PUBLIC |
-| Шахты Proxima Cen d | Proxima Centauri | Proxima Centauri j (орбита) | — | — | рудник | [Красный Форпост](../COLONIES/proxima_outpost.md) | металлы | 0.50 | выпуск 3880.14 [2716.10–5044.19] | PROPOSAL · PUBLIC |
+| Агрокупола Alpha Centauri B l | Proxima Centauri | Proxima Centauri k | — | — | агрохабитат | [Красный Форпост](../COLONIES/proxima_outpost.md) | пища | 0.80 | выпуск 11117.20 [7782.04–14452.36] | PROPOSAL · PUBLIC |
+| Газовые платформы Proxima l | Proxima Centauri | Proxima Centauri l | — | — | газовые платформы (He-3) | [Красный Форпост](../COLONIES/proxima_outpost.md) | He-3 | 0.60 | выпуск 96.81 [67.77–125.85] | PROPOSAL · PUBLIC |
+| Шахты Proxima Cen d | Proxima Centauri | Proxima Centauri j (орбита) | — | — | рудник | [Красный Форпост](../COLONIES/proxima_outpost.md) | металлы | 0.50 | выпуск 3879.75 [2715.82–5043.67] | PROPOSAL · PUBLIC |
 <!-- GENERATED:registry END -->
 
 ## Места (рассказ)
@@ -72,7 +72,7 @@
 | Цветущая Гармония | Красный Форпост | Химия и полимеры | 4.36 | прыжковый поезд | официальный | `PROPOSAL` (модель) |
 | Цитадель | Красный Форпост | Металлы и сплавы | 5.16 | прыжковый поезд | официальный | `PROPOSAL` (модель) |
 | Солнечная Администрация (Sol Authority) | Красный Форпост | Продовольствие и органика | 4.31 | прыжковый поезд | официальный | `PROPOSAL` (модель) |
-| Пояс Раздора / Вольные астероиды | Красный Форпост | Химия и полимеры | 1.45 | прыжковый поезд | официальный | `PROPOSAL` (модель) |
+| Пояс Раздора | Красный Форпост | Химия и полимеры | 1.45 | прыжковый поезд | официальный | `PROPOSAL` (модель) |
 | Цитадель | Красный Форпост | Продовольствие и органика | 2.15 | прыжковый поезд | официальный | `PROPOSAL` (модель) |
 | Цветущая Гармония | Красный Форпост | Металлы и сплавы | 1.72 | прыжковый поезд | официальный | `PROPOSAL` (модель) |
 <!-- GENERATED:system_economy_3126 END -->

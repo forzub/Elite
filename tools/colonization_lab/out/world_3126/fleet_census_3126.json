@@ -101,8 +101,8 @@
     "role": "medium_cargo"
    },
    "ocs4_lastochka": {
-    "active": 2053,
-    "dry_t_new_per_year": 31804,
+    "active": 2052,
+    "dry_t_new_per_year": 31789,
     "family": "civil",
     "lost_per_year": 4.3,
     "new_per_year": 83.7,
@@ -112,11 +112,11 @@
     "role": "shuttle"
    },
    "ore_tug": {
-    "active": 209,
-    "dry_t_new_per_year": 6286,
+    "active": 208,
+    "dry_t_new_per_year": 6258,
     "family": "civil",
     "lost_per_year": 0.9,
-    "new_per_year": 9.0,
+    "new_per_year": 8.9,
     "repair": 17,
     "reserve": 11,
     "retired_per_year": 5.5,
@@ -504,7 +504,7 @@
    },
    "jump_train": {
     "active": 1228,
-    "dry_t_new_per_year": 371895,
+    "dry_t_new_per_year": 371897,
     "family": "civil",
     "lost_per_year": 3.9,
     "new_per_year": 34.4,
@@ -2032,8 +2032,8 @@
     "role": "shuttle"
    },
    "ore_tug": {
-    "active": 1268,
-    "dry_t_new_per_year": 36808,
+    "active": 1269,
+    "dry_t_new_per_year": 36836,
     "family": "civil",
     "lost_per_year": 5.3,
     "new_per_year": 52.6,
@@ -2759,11 +2759,11 @@
     "role": "medium_cargo"
    },
    "ocs4_lastochka": {
-    "active": 43512,
-    "dry_t_new_per_year": 468759,
+    "active": 43511,
+    "dry_t_new_per_year": 468749,
     "family": "civil",
     "lost_per_year": 91.4,
-    "new_per_year": 1233.6,
+    "new_per_year": 1233.5,
     "repair": 3046,
     "reserve": 2176,
     "retired_per_year": 1142.2,
@@ -3197,10 +3197,10 @@
    "role": "medium_cargo"
   },
   "ocs4_lastochka": {
-   "active": 110734,
+   "active": 110732,
    "family": "civil",
    "lost_per_year": 232.5,
-   "new_per_year": 3501.3,
+   "new_per_year": 3501.2,
    "repair": 7765,
    "reserve": 5550,
    "retired_per_year": 2907.3,
@@ -3210,7 +3210,7 @@
    "active": 34952,
    "family": "civil",
    "lost_per_year": 146.9,
-   "new_per_year": 1210.1,
+   "new_per_year": 1210.0,
    "repair": 2812,
    "reserve": 1763,
    "retired_per_year": 918.1,

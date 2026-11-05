@@ -374,7 +374,7 @@ def checks(I, out):
     add("svarog_serial_from_citadel_with_own_copies", sv_tot > 0 and sv_cit / sv_tot >= 0.6 and I.jt["proxima_outpost"]["how"] == "stolen",
         f"Citadel share {sv_cit / sv_tot if sv_tot else 0:.2f} of Svarog core imports; own pirated copies (jump_technology how = stolen)")
     mec = [c for c in I.strategic_flows if c["buyer"] == "lalande_mecca"]
-    add("mecca_core_technology_own", I.jt["lalande_mecca"]["how"] == "own" and "lalande_mecca" not in lic["holders"] and not mec,
+    add("tauranga_core_technology_own", I.jt["lalande_mecca"]["how"] == "own" and "lalande_mecca" not in lic["holders"] and not mec,
         "own jump mathematics; not a licence holder; no imported cores")
     sc = I.core_autonomy.get("southern_circle", {})
     add("southern_circle_survives_cognium_cutoff", bool(sc.get("survives")),
@@ -382,7 +382,7 @@ def checks(I, out):
     lo, hi = sc.get("expected_share") or (None, None)
     sh = sc.get("maker_share")
     add("southern_circle_peacetime_share_in_accepted_range", sh is not None and lo <= sh <= hi,
-        f"peacetime Mecca share {sh} in accepted range [{lo}, {hi}] (author 2026-11-05)")
+        f"peacetime Tauranga share {sh} in accepted range [{lo}, {hi}] (author 2026-11-05)")
     resale = [f"{x['source']}->{k}" for k, rows in out["supply"].items() for x in rows["jump_core"].get("flow_sources", []) if out["capability"][x["source"]]["blocks"]["jump_core"]["level"] != "concern"]
     add("trade_core_flows_from_makers_only", not resale, ",".join(resale) or "ok")
     pact = out["fleet_uniformity"]["heavenly_pact"]

@@ -1,4 +1,4 @@
-# Политический порядок 3126 (PROPOSAL_PENDING_AUTHOR_REVIEW)
+# Политический порядок 3126 (CANON)
 
 Сгенерировано `tools/colonization_lab/political.py` из `canon/political_order.json`.
 
@@ -15,27 +15,27 @@ bloc citadel_compact [alliance, integration medium] members 2: proxima_outpost, 
 bloc free_belts [space, integration low_formal_high_informal] members 2: eps_eri_strife, gj581_freeclans; units: eps_eri_strife, gj581_freeclans
 bloc sol [pole, integration n/a] members 1: sol_authority; units: sol_authority
 nonaligned (4): delta_pav_karma (ideological_isolationist), gj876_next (strategic_multivector), hd69830_verde (resource_neutral), leo83_zion (newcomer_religious)
-  actor cyg61_kern: bloc cognium_pool, units ['cyg61_kern'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor delta_pav_freekarma: bloc cognium_pool, units ['delta_pav_freekarma'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor delta_pav_karma: bloc NONALIGNED:ideological_isolationist, units ['delta_pav_karma'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor eps_eri_harmony: bloc heavenly_pact, units ['eps_eri_harmony', 'hd40307_firmament'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor eps_eri_strife: bloc free_belts, units ['eps_eri_strife'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor gj581_europa: bloc lalande_league, units ['gj581_europa'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor gj581_freeclans: bloc free_belts, units ['gj581_freeclans'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor gj832_tianhe: bloc heavenly_pact, units ['gj832_tianhe'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor gj876_next: bloc NONALIGNED:strategic_multivector, units ['gj876_next'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor hd114783_hellas3: bloc lalande_league, units ['hd114783_hellas3'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor hd20794_hellas2: bloc cognium_pool, units ['hd20794_hellas2'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor hd20794_newindia: bloc southern_circle, units ['hd20794_newindia'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor hd40307_maland: bloc southern_circle, units ['hd40307_maland'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor hd69830_verde: bloc NONALIGNED:resource_neutral, units ['hd69830_verde'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor lalande_hellas: bloc lalande_league, units ['lalande_hellas'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor lalande_mecca: bloc southern_circle, units ['lalande_mecca'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor leo83_zion: bloc NONALIGNED:newcomer_religious, units ['leo83_zion'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor proxima_outpost: bloc citadel_compact, units ['proxima_outpost'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor sol_authority: bloc sol, units ['sol_authority'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor tau_ceti_cognium: bloc cognium_pool, units ['tau_ceti_cognium'], status PROPOSAL_PENDING_AUTHOR_REVIEW
-  actor wolf359_citadel: bloc citadel_compact, units ['wolf359_citadel'], status PROPOSAL_PENDING_AUTHOR_REVIEW
+  actor cyg61_kern: bloc cognium_pool, units ['cyg61_kern'], status CANON
+  actor delta_pav_freekarma: bloc cognium_pool, units ['delta_pav_freekarma'], status CANON
+  actor delta_pav_karma: bloc NONALIGNED:ideological_isolationist, units ['delta_pav_karma'], status CANON
+  actor eps_eri_harmony: bloc heavenly_pact, units ['eps_eri_harmony', 'hd40307_firmament'], status CANON
+  actor eps_eri_strife: bloc free_belts, units ['eps_eri_strife'], status CANON
+  actor gj581_europa: bloc lalande_league, units ['gj581_europa'], status CANON
+  actor gj581_freeclans: bloc free_belts, units ['gj581_freeclans'], status CANON
+  actor gj832_tianhe: bloc heavenly_pact, units ['gj832_tianhe'], status CANON
+  actor gj876_next: bloc NONALIGNED:strategic_multivector, units ['gj876_next'], status CANON
+  actor hd114783_hellas3: bloc lalande_league, units ['hd114783_hellas3'], status CANON
+  actor hd20794_hellas2: bloc cognium_pool, units ['hd20794_hellas2'], status CANON
+  actor hd20794_newindia: bloc southern_circle, units ['hd20794_newindia'], status CANON
+  actor hd40307_maland: bloc southern_circle, units ['hd40307_maland'], status CANON
+  actor hd69830_verde: bloc NONALIGNED:resource_neutral, units ['hd69830_verde'], status CANON
+  actor lalande_hellas: bloc lalande_league, units ['lalande_hellas'], status CANON
+  actor lalande_mecca: bloc southern_circle, units ['lalande_mecca'], status CANON
+  actor leo83_zion: bloc NONALIGNED:newcomer_religious, units ['leo83_zion'], status CANON
+  actor proxima_outpost: bloc citadel_compact, units ['proxima_outpost'], status CANON
+  actor sol_authority: bloc sol, units ['sol_authority'], status CANON
+  actor tau_ceti_cognium: bloc cognium_pool, units ['tau_ceti_cognium'], status CANON
+  actor wolf359_citadel: bloc citadel_compact, units ['wolf359_citadel'], status CANON
 ```
 
 ## Доступ между столицами блоков и неприсоединившимися (продавец → покупатель)
@@ -89,6 +89,10 @@ nonaligned (4): delta_pav_karma (ideological_isolationist), gj876_next (strategi
 - OK kern_cannot_sell_strategic_to_citadel: 
 - OK providence_does_not_lift_sanctions: 
 - OK citadel_civilian_open_strategic_closed: 
+- OK order_accepted_canon: top-level CANON; no structural element pending review
+- OK no_open_design_questions: 
+- OK mecca_own_math_canon: 
+- OK harmony_strife_dual_use_grey_not_closed: 
 - OK every_element_has_player_role: Chekhov's gun: all blocs, non-aligned, units, exceptions, licences, sanctions
 - OK sanctions_realistically_leaky: civilian / industrial / dual-use never fully closed without a stated reason; every measure has an evasion route
 - OK no_pool_wide_embargo_on_karma: only Free Karma's own measure; pool coordinates strategic / dual-use / IP, civilian trade is national

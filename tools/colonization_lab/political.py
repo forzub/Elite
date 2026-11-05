@@ -313,6 +313,13 @@ def checks(O):
     add("citadel_civilian_open_strategic_closed", all(a(u, "wolf359_citadel")["civilian_goods"] <= 1 and a("wolf359_citadel", u)["strategic"] == 4 for u in O.units
                                                       if O.bloc_of_unit(u) != "citadel_compact" and u not in O.zones() and u != "delta_pav_karma"))
     no_role = [f"bloc:{b}" for b, v in O.blocs.items() if not v.get("player_role")] + [f"nonaligned:{x}" for x in O.nonaligned() if not O.P["nonaligned"][x].get("player_role")] +         [f"unit:{u}" for u, v in O.P["units"].items() if not v.get("player_role")] + [f"exception:{e['id']}" for e in O.exceptions if not e.get("player_role")] +         [f"licence:{L['id']}" for L in O.licences if not L.get("player_role")] + ([] if O.P.get("sanctions_player_role") else ["sanctions"])
+    add("order_accepted_canon", O.P["status"] == "CANON" and "PROPOSAL_PENDING_AUTHOR_REVIEW" not in json.dumps({k: v for k, v in O.P.items() if k != "status_legend"}, ensure_ascii=False),
+        "top-level CANON; no structural element pending review")
+    add("no_open_design_questions", not O.P["open_questions"] and {u["id"] for u in O.P.get("author_unknowns", [])} == {"leo83_crisis_outcome", "sol_own_jump_cores"})
+    mecca = O.jump.get("lalande_mecca", {})
+    add("mecca_own_math_canon", mecca.get("how") == "own" and mecca.get("status") == "CANON" and "PROPOSAL" not in O.P["licences"][0]["basis"].split("Мекка")[1][:80])
+    hs = next(s for s in O.sanctions if s["id"] == "harmony_strife_embargo")
+    add("harmony_strife_dual_use_grey_not_closed", hs["level"]["dual_use"] == 3 and O.access("eps_eri_harmony", "eps_eri_strife")["dual_use"] == 3)
     add("every_element_has_player_role", not no_role, ",".join(no_role) or "Chekhov's gun: all blocs, non-aligned, units, exceptions, licences, sanctions")
     leaky = []
     for sc in O.sanctions:
@@ -354,7 +361,7 @@ def compute(O=None):
 
 def md(O, doc, chk):
     LV = {int(k): v["ru"] for k, v in O.P["access_scale"].items()}
-    L = ["# Политический порядок 3126 (PROPOSAL_PENDING_AUTHOR_REVIEW)", "", "Сгенерировано `tools/colonization_lab/political.py` из `canon/political_order.json`.", "", "```text"] + listing(O) + ["```", "",
+    L = [f"# Политический порядок 3126 ({O.P['status']})", "", "Сгенерировано `tools/colonization_lab/political.py` из `canon/political_order.json`.", "", "```text"] + listing(O) + ["```", "",
          "## Доступ между столицами блоков и неприсоединившимися (продавец → покупатель)", "",
          "Шкала: " + "; ".join(f"{k} {v}" for k, v in LV.items()) + ". Порядок категорий: " + ", ".join(O.cats) + ".", ""]
     seats = [next(a for a, v in O.actors.items() if v["bloc"] == b) for b in O.blocs] + O.nonaligned() + O.zones()

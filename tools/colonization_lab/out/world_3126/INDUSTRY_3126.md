@@ -56,7 +56,8 @@
 - OK citadel_serial_cores_stay_in_pact: ok
 - OK svarog_serial_from_citadel_with_own_copies: Citadel share 1.00 of Svarog core imports; own pirated copies (jump_technology how = stolen)
 - OK mecca_core_technology_own: own jump mathematics; not a licence holder; no imported cores
-- OK southern_circle_survives_cognium_cutoff: peacetime Mecca share 0.533 (target [0.2, 0.4]); after cutoff 0.124, mobilised 0.678
+- OK southern_circle_survives_cognium_cutoff: Cognium cut-off: coverage 0.124, mobilised 0.678 (criterion >= survival_coverage)
+- OK southern_circle_peacetime_share_in_accepted_range: peacetime Mecca share 0.533 in accepted range [0.45, 0.6] (author 2026-11-05)
 - OK trade_core_flows_from_makers_only: ok
 - OK allied_fleets_uniform: Pact main hull maker 0.744 (uniform), League 0.625 (many vendors)
 - OK production_sites_exist: 43 sites

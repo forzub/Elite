@@ -925,7 +925,7 @@ PO_TAG = "PROPOSAL · на проверке автора"
 
 
 def po_tag(st):
-    return {"PROPOSAL_PENDING_AUTHOR_REVIEW": PO_TAG, "CANON": "CANON", "PROPOSAL": "PROPOSAL", "UNKNOWN": "UNKNOWN"}.get(st, st)
+    return {"PROPOSAL_PENDING_AUTHOR_REVIEW": PO_TAG, "CANON": "CANON", "PROPOSAL": "PROPOSAL", "UNKNOWN": "UNKNOWN", "PROPOSAL/model": "PROPOSAL · модель"}.get(st, st)
 
 
 def po_levels(O, lv):
@@ -974,7 +974,8 @@ def political_order_doc(D):
     d = new_doc(D, path, "Политический порядок 3126: акторы, блоки, неприсоединившиеся, доступ и санкции", "politics")
     pl = lambda u: link(path, f"COLONIES/{u}.md", D.pname(u)) if u in D.pol else D.pname(u)
     g = ["Источник: `tools/colonization_lab/canon/political_order.json` → `political.py` → `out/world_3126/political_order_3126.json`. "
-         f"Весь новый порядок — `{PO_TAG}` (PROPOSAL_PENDING_AUTHOR_REVIEW), кроме строк с пометкой CANON.", "",
+         "Статус: структура (акторы, единицы, блоки, неприсоединившиеся, доступ, лицензии, санкции, особые роли, стартовый порядок 83 Leonis) — **CANON** (решение автора 2026-11-05). "
+         "Численные результаты симуляции (доли торговли, объёмы, калибровки, сценарии) — `PROPOSAL · модель`; происхождение блоков и даты — `PROPOSAL`.", "",
          "**Слои.** Актор — действующее лицо, узел политической силы (суверенный субъект 3126). Экономическая единица — единица демографии, экономики и рынков. "
          "Провинция — единица актора вне метрополии. Специальная зона — не актор и не член блока. Старые `actors.json` / `subactors.json` (14 + 2) — исторический слой ранней редакции мира, не реестр 3126.", "",
          f"Акторов 3126: **{len(O.actors)}**; экономических единиц: **{len(O.units)}**; провинций: {len(O.provinces())}; специальных зон: {len(O.zones())}; "
@@ -1041,9 +1042,10 @@ def political_order_doc(D):
           f"- Керн не хочет: {'; '.join(x['kern_motives']['does_not_want'])}; хочет: {'; '.join(x['kern_motives']['wants'])}.",
           f"- Синод не хочет: {'; '.join(x['synod_motives']['does_not_want'])}; нуждается: {'; '.join(x['synod_motives']['needs'])}.",
           f"- Для игрока: {'; '.join(x['player_hooks'])}.", f"- Исход: {x['outcome']}. Аналог: {x['analogy']}.", ""] for x in O.P.get("interim_arrangements", [])], []) + [
-          "### Проверка автономии по ядрам (модель потоков)", "",
-          table(["Блок", "Свой производитель", "Доля внешнего спроса в мирное время", "Ориентир", "После отключения лицензиара", "С мобилизацией", "Цена гражданского выпуска производителя", "Выживает"],
-                [(O.blocs[r["bloc"]]["ru"], D.pname(r["maker"]), fl(r["maker_share"], 2) if r.get("maker_share") is not None else "—", "–".join(str(x) for x in r["target_share"]),
+          "### Проверка автономии по ядрам (модель потоков, PROPOSAL · модель)", "",
+          "Стратегическая автономия — не автаркия: Когниум остаётся более дешёвым и массовым поставщиком, а Мекка зависит от ввозных точной механики, электроники, изотопов и оборудования. Автономия означает лишь, что блок нельзя мгновенно задушить одним каналом.", "",
+          table(["Блок", "Свой производитель", "Доля внешнего спроса в мирное время", "Принятый диапазон", "После отключения лицензиара", "С мобилизацией", "Цена гражданского выпуска производителя", "Выживает"],
+                [(O.blocs[r["bloc"]]["ru"], D.pname(r["maker"]), fl(r["maker_share"], 2) if r.get("maker_share") is not None else "—", "–".join(str(x) for x in r["expected_share"]),
                   fl(r.get("cutoff", {}).get("members_coverage"), 2) if r.get("cutoff") else "—", fl(r.get("cutoff_mobilised", {}).get("members_coverage"), 2) if r.get("cutoff_mobilised") else "—",
                   ", ".join(f"{k} {100 * v:+.0f} %" for k, v in r.get("cutoff_mobilised", {}).get("maker_civil_output_change", {}).items()) or "—",
                   ("да" if r.get("survives") else "нет") if "survives" in r else "—") for r in D.S.get("core_autonomy", {}).values()]), "",
@@ -1060,7 +1062,8 @@ def political_order_doc(D):
     seats = [next(a for a, v in O.actors.items() if v["bloc"] == b) for b in O.blocs] + O.nonaligned() + O.zones()
     g.append(table(["продавец \\ покупатель"] + [D.pname(s) for s in seats],
                    [(D.pname(s),) + tuple("—" if s == b else "".join(str(O.access(s, b)[c]) for c in O.cats) for b in seats) for s in seats]))
-    g += ["", "Правило разрешения: " + " ".join(O.P["resolution"]), "", "### Открытые вопросы автору", ""] + [f"- {q}" for q in O.P["open_questions"]]
+    g += ["", "Правило разрешения: " + " ".join(O.P["resolution"]), "", "### Намеренно неизвестно (UNKNOWN мира)", ""] + [f"- {u['text']}." for u in O.P.get("author_unknowns", [])]
+    g += ["", "Открытых вопросов политико-экономической архитектуры нет." if not O.P["open_questions"] else "### Открытые вопросы автору"] + [f"- {q}" for q in O.P["open_questions"]]
     d.gen("political_order", "\n".join(g))
     d.narr("order_story", "Как сложился порядок (рассказ)", "объяснение блоков существующей историей; новые факты — только с пометкой [PROPOSAL].")
     return d

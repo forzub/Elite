@@ -114,7 +114,7 @@
   "note": "Блоки, каналы и доступ по категориям — НЕ здесь: единственный источник — canon/political_order.json (political.py). economy_live.py пишет в рантайм (src/assets/data/economy/economy_rules.json) производные blocs.matrix (один канал на пару групп доступа: блок, nonaligned:<актор>, zone:<единица>; headline_channel_rule) и political_access (точная матрица единица -> единица по шести категориям). Прежняя ручная матрица 8 блоков и polity_overrides (Новая Карма closed except relief, «Гайя» closed except licensed_science) удалены 2026-11-05: их смысл теперь — профили nonaligned.delta_pav_karma и zone_profiles.gj832_gaia_zone.",
   "rule": "Один канал пары для рантайма (economy_rules.json blocs.matrix, доска заявок): по худшему из двух направлений; civilian 4 -> closed, civilian 3 -> black, industrial >= 2 -> restricted, industrial 1 или dual_use >= 2 -> licensed, иначе open. Точная картина — по категориям (out/world_3126/political_order_3126.json).",
   "ship_bloc": "блок корабля = блок политии регистрации (порт приписки) + лицензии на борту; у игрока — регистрация + репутация",
-  "status": "PROPOSAL_PENDING_AUTHOR_REVIEW"
+  "status": "CANON"
  },
  "blocs_members": {
   "citadel_compact": [

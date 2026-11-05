@@ -9519,7 +9519,12 @@
   },
   {
    "check": "southern_circle_survives_cognium_cutoff",
-   "detail": "peacetime Mecca share 0.533 (target [0.2, 0.4]); after cutoff 0.124, mobilised 0.678",
+   "detail": "Cognium cut-off: coverage 0.124, mobilised 0.678 (criterion >= survival_coverage)",
+   "ok": true
+  },
+  {
+   "check": "southern_circle_peacetime_share_in_accepted_range",
+   "detail": "peacetime Mecca share 0.533 in accepted range [0.45, 0.6] (author 2026-11-05)",
    "ok": true
   },
   {

@@ -567,7 +567,7 @@ def core_autonomy_scenarios(econ, base, actors, profiles, E, g3126, relations, p
         ext = sum(base["imp"][u]["drive_cores"] for u in members)
         from_maker = sum(q for (s_, b_, g_), q in base["pair"].items() if g_ == "drive_cores" and s_ == maker and b_ in members)
         row = dict(bloc=cfg["bloc"], maker=maker, members=members, external_demand=round(ext, 3), from_maker=round(from_maker, 3),
-                   maker_share=round(from_maker / ext, 3) if ext > 0 else None, target_share=cfg["peacetime_share_target"],
+                   maker_share=round(from_maker / ext, 3) if ext > 0 else None, expected_share=cfg["expected_peacetime_share"],
                    peacetime_coverage={u: round(min(1.5, (base["made"][u]["drive_cores"] + base["imp"][u]["drive_cores"] - base["exp"][u]["drive_cores"])
                                                     / econ.consumption(econ._byid[u])["drive_cores"]), 3) for u in members + [maker]})
 

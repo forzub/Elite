@@ -1368,6 +1368,10 @@
  "core_autonomy": {
   "citadel_compact": {
    "bloc": "citadel_compact",
+   "expected_share": [
+    0.6,
+    1.0
+   ],
    "external_demand": 0.41,
    "from_maker": 0.41,
    "maker": "wolf359_citadel",
@@ -1378,11 +1382,7 @@
    "peacetime_coverage": {
     "proxima_outpost": 0.027,
     "wolf359_citadel": 0.643
-   },
-   "target_share": [
-    0.6,
-    1.0
-   ]
+   }
   },
   "southern_circle": {
    "bloc": "southern_circle",
@@ -1416,6 +1416,10 @@
     "member_core_price_change": -0.65,
     "members_coverage": 0.678
    },
+   "expected_share": [
+    0.45,
+    0.6
+   ],
    "external_demand": 16.825,
    "from_maker": 8.97,
    "maker": "lalande_mecca",
@@ -1429,11 +1433,7 @@
     "hd40307_maland": 0.813,
     "lalande_mecca": 0.46
    },
-   "survives": true,
-   "target_share": [
-    0.2,
-    0.4
-   ]
+   "survives": true
   }
  },
  "demography": {

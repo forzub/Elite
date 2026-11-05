@@ -6727,7 +6727,7 @@
    "bloc": "cognium_pool",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "cyg61_kern"
    ]
@@ -6736,7 +6736,7 @@
    "bloc": "cognium_pool",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "delta_pav_freekarma"
    ]
@@ -6745,7 +6745,7 @@
    "bloc": null,
    "membership": null,
    "nonaligned": "ideological_isolationist",
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "delta_pav_karma"
    ]
@@ -6754,7 +6754,7 @@
    "bloc": "heavenly_pact",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "eps_eri_harmony",
     "hd40307_firmament"
@@ -6764,7 +6764,7 @@
    "bloc": "free_belts",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "eps_eri_strife"
    ]
@@ -6773,7 +6773,7 @@
    "bloc": "lalande_league",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "gj581_europa"
    ]
@@ -6782,7 +6782,7 @@
    "bloc": "free_belts",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "gj581_freeclans"
    ]
@@ -6791,7 +6791,7 @@
    "bloc": "heavenly_pact",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "gj832_tianhe"
    ]
@@ -6800,7 +6800,7 @@
    "bloc": null,
    "membership": null,
    "nonaligned": "strategic_multivector",
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "gj876_next"
    ]
@@ -6809,7 +6809,7 @@
    "bloc": "lalande_league",
    "membership": "associate",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "hd114783_hellas3"
    ]
@@ -6818,7 +6818,7 @@
    "bloc": "cognium_pool",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "hd20794_hellas2"
    ]
@@ -6827,7 +6827,7 @@
    "bloc": "southern_circle",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "hd20794_newindia"
    ]
@@ -6836,7 +6836,7 @@
    "bloc": "southern_circle",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "hd40307_maland"
    ]
@@ -6845,7 +6845,7 @@
    "bloc": null,
    "membership": null,
    "nonaligned": "resource_neutral",
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "hd69830_verde"
    ]
@@ -6854,7 +6854,7 @@
    "bloc": "lalande_league",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "lalande_hellas"
    ]
@@ -6863,7 +6863,7 @@
    "bloc": "southern_circle",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "lalande_mecca"
    ]
@@ -6872,7 +6872,7 @@
    "bloc": null,
    "membership": null,
    "nonaligned": "newcomer_religious",
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "leo83_zion"
    ]
@@ -6881,7 +6881,7 @@
    "bloc": "citadel_compact",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "proxima_outpost"
    ]
@@ -6890,7 +6890,7 @@
    "bloc": "sol",
    "membership": "pole",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "sol_authority"
    ]
@@ -6899,7 +6899,7 @@
    "bloc": "cognium_pool",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "tau_ceti_cognium"
    ]
@@ -6908,7 +6908,7 @@
    "bloc": "citadel_compact",
    "membership": "full",
    "nonaligned": null,
-   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "status": "CANON",
    "units": [
     "wolf359_citadel"
    ]
@@ -7167,6 +7167,26 @@
    "ok": true
   },
   {
+   "check": "order_accepted_canon",
+   "detail": "top-level CANON; no structural element pending review",
+   "ok": true
+  },
+  {
+   "check": "no_open_design_questions",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "mecca_own_math_canon",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "harmony_strife_dual_use_grey_not_closed",
+   "detail": "",
+   "ok": true
+  },
+  {
    "check": "every_element_has_player_role",
    "detail": "Chekhov's gun: all blocs, non-aligned, units, exceptions, licences, sanctions",
    "ok": true
@@ -7323,7 +7343,7 @@
  "special_zones": [
   "gj832_gaia_zone"
  ],
- "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+ "status": "CANON",
  "units": {
   "cyg61_kern": {
    "access_key": "cognium_pool",

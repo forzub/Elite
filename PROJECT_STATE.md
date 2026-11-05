@@ -2822,6 +2822,36 @@ Terminology (user 2026-11-05): **actor = acting party, node of political force**
   Svarog-Citadel lever, Kern / Agora / Providence / Verde self-interest, 83 Leonis interim order, Third Hellas accession).
 - Gates: all colonization_lab checks rc=0; lab.py twice sha256 75c06541... IDENTICAL. No C++ change.
 
+#### Acceptance pass 2026-11-05 s - POLITICAL/ECONOMIC ORDER 3126 ACCEPTED / CLOSED
+- Author accepted the structure: canon/political_order.json status = CANON (actors 21, units / province / zone, blocs,
+  non-aligned, access profiles, licence layer incl. accession state, sanctions as now, Kern / Agora / Providence / Verde
+  roles, Southern-circle procurement policy, Citadel pact + Svarog dependency, 83 Leonis interim order as the 3126 start
+  state). Kept PROPOSAL: bloc genesis / dates (formed.*). Kept PROPOSAL/model: core_autonomy numbers, capacity_x,
+  procurement floor / tolerance, trade.py shares and volumes, scenarios. Mecca own jump mathematics CANON everywhere.
+- Southern circle: peacetime_share_target [0.2, 0.4] replaced by expected_peacetime_share [0.45, 0.60] (accepted
+  calibration capacity_x 2.5 -> 0.533) + acceptance text; industry checks southern_circle_peacetime_share_in_accepted_range
+  and southern_circle_survives_cognium_cutoff (0.678 mobilised). Texts say autonomy != autarky (Mecca imports precision,
+  electronics, isotopes, equipment).
+- open_questions = [] ; author_unknowns: leo83_crisis_outcome, sol_own_jump_cores (UNKNOWN on purpose).
+- Licence 2850 wording: historical rule (majority of colonies then, except Citadel and New Karma) vs the 3126 holder list
+  computed from world.json (licence basis + RELATIONS text). Harmony-Strife dual-use described as grey (level 3), not closed.
+- Mixed documents: POLITICAL_ECONOMY.md / INDUSTRY_AND_RESCUE.md state "structure CANON, numbers PROPOSAL/model".
+- political.py checks 40 (new: order_accepted_canon, no_open_design_questions, mecca_own_math_canon,
+  harmony_strife_dual_use_grey_not_closed).
+- Runtime smoke: build/EliteGame ninja (assets re-copied); EliteGame --dev-direct-flight with ELITE_DEV_SOL_MAP_SCRIPT
+  (System Map, trade tabs, Detail map) - data loads, no JSON / economy errors; graceful close clean (a [CRASH] in opengl32
+  appears only when the process is killed by timeout). Economy is lazily loaded only by the F8 Trade panel, so the data
+  smoke is in EliteServicePagesCheck §6 (DEV tool, build/headless_server, run from build/): 37 goods, 538 hubs, names
+  New Shanghai / New Mecca / New India / Citadel / Red Outpost / Novo-Thebaid / Firmament found, no retired "Zion",
+  blocs Mecca + New India southern_circle (open), Citadel + Svarog citadel_compact, Firmament heavenly_pact,
+  Thebaid nonaligned, Cognium-Citadel licensed, quarantine zone closed -> PASS. Not done: visual check of other systems'
+  owner labels in the System Map UI (the DEV map script works only in the start system Sol).
+- GUARD (technical debt, not a blocker): ActorIds::Player() = 1 collides with historical actor 1 = Cognium in
+  actors.json. GalaxyDatabase is not loaded today; before re-connecting the legacy GalaxyDatabase separate the
+  PlayerActorId / HistoricalActorId namespaces.
+- Gates: all colonization_lab checks rc=0; lab.py twice sha256 fb41f9d4... IDENTICAL; EliteServicePagesCheck PASS.
+- Next task is no longer a political revision (damage B1 missiles miss remains paused, see stage B).
+
 Original order text (summary):
 Full revision of the 3126 political structure: separate ideological bloc / economic integration / technology access /
 sanctions (now mixed in tools/colonization_lab/canon/industry.json); polity 3126 vs historical actor

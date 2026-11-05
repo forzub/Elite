@@ -378,7 +378,11 @@ def checks(I, out):
         "own jump mathematics; not a licence holder; no imported cores")
     sc = I.core_autonomy.get("southern_circle", {})
     add("southern_circle_survives_cognium_cutoff", bool(sc.get("survives")),
-        f"peacetime Mecca share {sc.get('maker_share')} (target {sc.get('target_share')}); after cutoff {sc.get('cutoff', {}).get('members_coverage')}, mobilised {sc.get('cutoff_mobilised', {}).get('members_coverage')}")
+        f"Cognium cut-off: coverage {sc.get('cutoff', {}).get('members_coverage')}, mobilised {sc.get('cutoff_mobilised', {}).get('members_coverage')} (criterion >= survival_coverage)")
+    lo, hi = sc.get("expected_share") or (None, None)
+    sh = sc.get("maker_share")
+    add("southern_circle_peacetime_share_in_accepted_range", sh is not None and lo <= sh <= hi,
+        f"peacetime Mecca share {sh} in accepted range [{lo}, {hi}] (author 2026-11-05)")
     resale = [f"{x['source']}->{k}" for k, rows in out["supply"].items() for x in rows["jump_core"].get("flow_sources", []) if out["capability"][x["source"]]["blocks"]["jump_core"]["level"] != "concern"]
     add("trade_core_flows_from_makers_only", not resale, ",".join(resale) or "ok")
     pact = out["fleet_uniformity"]["heavenly_pact"]

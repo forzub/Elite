@@ -7,12 +7,16 @@
 //      descriptor / passport say, recomputed independently here;
 //   3. Repair & Refit lists the real module ids of the ship instance;
 //   4. a destroyed radar shows as failed (module + sensors group);
-//   5. the page carries the server preview: radar restored in "after".
+//   5. the page carries the server preview: radar restored in "after";
+//   6. F8 Trade data smoke: the runtime economy (assets/data/economy, generated
+//      from canon/political_order.json) loads, the 3126 polities appear under
+//      their current names (no retired "Holy Zion"), bloc channels resolve.
 #include <cmath>
 #include <iostream>
 #include <set>
 #include <sstream>
 
+#include "src/game/economy/EconomyModel.h"
 #include "src/game/presentation/RepairRefitPresentation.h"
 #include "src/game/presentation/ShipyardPresentation.h"
 #include "src/game/ship/ShipInitData.h"
@@ -139,6 +143,60 @@ int main()
     const auto other = buildRepairRefitPresentation({{EntityId {7}, c120, &modules, &refit}}, EntityId {7}, {},
                                                     c120->mainPropulsion.aftEngineModuleIds.front(), 0);
     check(!other.previewForSelection, "a preview is shown only for the module it was computed for");
+
+    // ---- 6. F8 Trade runtime data smoke (political / economic order 3126)
+    {
+        const auto& eco = game::economy::EconomyModel::instance();
+        check(eco.loaded() && eco.goods().size() >= 30, "economy runtime loads (goods " + std::to_string(eco.goods().size()) + ")");
+        std::size_t hubs = 0;
+        bool retired = false;
+        auto ownerIn = [&](int sys, const std::string& name, const game::economy::HubEconomyInfo** first) {
+            bool hit = false;
+            for (const auto* h : eco.hubsOfSystem(sys))
+                if (h->ownerName.find(name) != std::string::npos)
+                {
+                    hit = true;
+                    if (first && !*first)
+                        *first = h;
+                }
+            return hit;
+        };
+        for (int sys = 0; sys < 400; ++sys)
+            for (const auto* h : eco.hubsOfSystem(sys))
+            {
+                ++hubs;
+                for (const auto* text : {&h->name, &h->ownerName, &h->operatorName, &h->description})
+                    if (text->find("Сион") != std::string::npos)   // "Сион"
+                        retired = true;
+            }
+        check(hubs >= 500, "economy hubs in star systems: " + std::to_string(hubs));
+        check(!retired, "no hub shows the retired name of Leo 83 (Novo-Thebaid)");
+        const game::economy::HubEconomyInfo *cog = nullptr, *mecca = nullptr, *india = nullptr, *cit = nullptr, *svarog = nullptr,
+                                            *thebaid = nullptr, *firm = nullptr, *zone = nullptr;
+        const bool names = ownerIn(8, "Новый Шанхай", &cog)      // Новый Шанхай
+                           && ownerIn(4, "Новая Мекка", &mecca)        // Новая Мекка
+                           && ownerIn(14, "Новая Индия", &india)      // Новая Индия
+                           && ownerIn(3, "Цитадель", &cit)                          // Цитадель
+                           && ownerIn(60, "Красный Форпост", &svarog)   // Красный Форпост
+                           && ownerIn(45, "Ново-Фиваида", &thebaid)   // Ново-Фиваида
+                           && ownerIn(15, "Твердыня", &firm);                       // Твердыня
+        for (const auto* h : eco.hubsOfSystem(12))
+            if (h->bloc.rfind("zone:", 0) == 0 && !zone)
+                zone = h;
+        check(names && zone, "hubs of New Shanghai, New Mecca, New India, Citadel, Svarog, Novo-Thebaid, Firmament and the Philomorphosis zone found");
+        if (names && zone)
+        {
+            std::cout << "  blocs: Cognium " << cog->bloc << ", Mecca " << mecca->bloc << ", Citadel " << cit->bloc << ", Svarog " << svarog->bloc
+                      << ", Thebaid " << thebaid->bloc << ", Firmament " << firm->bloc << ", zone " << zone->bloc << "\n";
+            check(mecca->bloc == "southern_circle" && india->bloc == "southern_circle" && eco.channel(mecca->id, india->id) == "open",
+                  "Southern circle: Mecca - New India open");
+            check(cit->bloc == "citadel_compact" && svarog->bloc == "citadel_compact", "Citadel and Svarog in the Citadel pact");
+            check(firm->bloc == "heavenly_pact", "Celestial Firmament (province of Xin He) runs under the Celestial pact");
+            check(thebaid->bloc == "nonaligned:leo83_zion", "Novo-Thebaid non-aligned");
+            check(eco.channel(cog->id, cit->id) != "open" && eco.channel(cog->id, cit->id) != "closed", "Cognium - Citadel: civilian trade possible, not open (" + eco.channel(cog->id, cit->id) + ")");
+            check(eco.channel(zone->id, cog->id) == "closed", "quarantine zone closed to ordinary trade");
+        }
+    }
 
     std::cout << (failures ? "SERVICE PAGES CHECK: FAILED (" + std::to_string(failures) + ")" : "SERVICE PAGES CHECK: PASS") << "\n";
     return failures ? 1 : 0;

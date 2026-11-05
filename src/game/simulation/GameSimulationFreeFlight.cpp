@@ -363,6 +363,11 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     f.autopilotHaveLastCenter = true;
     if (!haveVelocity)
         return;
+    if (f.autopilotPhase == 11)
+    {
+        updateNormalDescent(shipId, ship, f, *target, targetVelocity, dt);
+        return;
+    }
     f.autopilotSeconds += dt;
 
     static const double maxAccel = [] {
@@ -406,16 +411,17 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
         }
         if (f.orbitCoastSeconds >= 15.0 && f.landing.site().valid)
         {
-            // J OFF: the de-orbit and the landing are normal flight (the body frame)
-            std::cerr << "[Autopilot] ship " << shipId.value << ": J OFF on the orbit at " << height / 1000.0
-                      << " km after " << f.autopilotSeconds << " s - de-orbit and landing in NORMAL flight" << std::endl;
-            enterBodyFrame(shipId, ship, f, *target, targetVelocity);
-            f.autopilotPhase = 10;
-            // the landing pilot's first command now: the next flight step is already its own
-            updateSurfaceLanding(shipId, ship, f, dt);
+            // the orbit held (stabilization), now the de-orbit: NORMAL flight on the main engines
+            // (no envelope - the orbital speed is braked by the pilot's ordinary controls)
+            std::cerr << "[Autopilot] ship " << shipId.value << ": orbit held " << f.orbitCoastSeconds << " s at "
+                      << height / 1000.0 << " km - DE-ORBIT in NORMAL flight (main engines)" << std::endl;
+            f.autopilotPhase = 11;
+            f.descentNose = glm::dvec3(0.0);
+            f.lawBeforeLanding = motion.localControlLaw;
+            updateNormalDescent(shipId, ship, f, *target, targetVelocity, dt);
             return;
         }
-        motion.freeFlightAutopilotPhase = 8;
+        motion.freeFlightAutopilotPhase = 12;
         motion.freeFlightAutopilotTargetId = target->id;
         motion.freeFlightAutopilotRangeM = height;
         motion.freeFlightAutopilotRelSpeedMps = glm::length(w);
@@ -677,6 +683,132 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     }
 }
 
+void GameSimulation::updateNormalDescent(EntityId shipId, Ship& ship, ActiveFreeFlight& f, const game::navigation::GravityBody& body,
+                                         const glm::dvec3& bodyVelocityMps, double dt)
+{
+    namespace landing = game::navigation::landing;
+    auto& tr = ship.core().transform();
+    auto& motion = tr.motion;
+    auto& frame = motion.travelFrame;
+    if (dt <= 0.0 || !f.landing.site().valid)
+        return;
+    f.autopilotSeconds += dt;
+    const ShipParams params = game::ship::telemetry::applyAuthorityToControlParams(ship.core().effectivePhysics(),
+                                                                                   ship.core().controlAuthorityTelemetry());
+    const glm::dvec3 rel = frame.originMeters - body.centerMeters;
+    const double rLen = std::max(1.0, glm::length(rel));
+    const glm::dvec3 up = rel / rLen;
+    glm::dmat3 worldFromBody(1.0);
+    const bool basis = m_bodyOrientation && m_bodyOrientation(body.id, worldFromBody);
+    const auto& site = f.landing.site();
+    const glm::dvec3 siteDir = glm::normalize(worldFromBody * site.bodyDirection);
+    // over the ground: the body's velocity and its turn under the ship
+    glm::dvec3 groundVel = bodyVelocityMps;
+    if (basis && f.haveLastBasis && f.lastBasisBodyId == body.id)
+        groundVel += (worldFromBody * glm::transpose(f.lastBasis) * rel - rel) / dt;
+    const glm::dvec3 v = frame.linearVelocityMps - groundVel;
+    const double vz = glm::dot(v, up);
+    const glm::dvec3 vhVec = v - up * vz;
+    const double vh = glm::length(vhVec);
+    // the ground: the terrain under the ship when it is sampled (low), else the site's
+    const bool terrainKnown = motion.freeFlightOrbitBodyId == body.id && motion.freeFlightGroundMaterial >= 0;
+    const double groundM = terrainKnown ? motion.freeFlightGroundHeightM : site.heightM + halfHeightAlong(ship, up);
+    const double h = rLen - body.radiusMeters - groundM;
+    // to the site along the surface
+    const double arc = std::acos(std::clamp(glm::dot(up, siteDir), -1.0, 1.0)) * body.radiusMeters;
+    glm::dvec3 toSite = siteDir - up * glm::dot(siteDir, up);
+    toSite = glm::length(toSite) > 1.0e-12 ? glm::normalize(toSite) : (vh > 1.0 ? vhVec / vh : glm::dvec3(tr.forward()));
+    const double mainAccel = std::max(1.0, landing::surfaceMainEngineAccelMps2(params));
+    const double g = body.gravitationalParameterM3s2 / (rLen * rLen);
+
+    // the wanted velocity over the ground: toward the site, braking at 35 % of the main engine
+    // (the rest holds the weight and the corrections), an approach tail arc / 15 s; down along a
+    // glide that reaches the hand-over height as the arc closes
+    constexpr double HandoverHeightM = 1500.0;
+    constexpr double HandoverArcM = 1500.0;
+    // never faster than the circular speed here: the descent only brakes the orbit
+    const double vhWanted = std::min({std::sqrt(2.0 * 0.35 * mainAccel * arc), arc / 15.0,
+                                      std::sqrt(body.gravitationalParameterM3s2 / rLen)});
+    const double tgo = std::max(10.0, (arc - 0.5 * HandoverArcM) / std::max(vh, 30.0));
+    double vzWanted = std::clamp(-(h - HandoverHeightM) / tgo, -250.0, 60.0);
+    if (h < 800.0)
+        vzWanted = std::max(vzWanted, 5.0);   // never toward the ground this low in normal flight
+    const glm::dvec3 vWanted = toSite * vhWanted + up * vzWanted;
+    const glm::dvec3 err = vWanted - v;
+    const double errZ = glm::dot(err, up);
+    // acceleration: horizontal tau 4 s, vertical 3 s, plus the weight less the orbital lift (v_h^2 / r)
+    const glm::dvec3 aH = (err - up * errZ) / 4.0;
+    const double aZ = errZ / 3.0 + g - vh * vh / rLen;
+    glm::dvec3 a = aH + up * aZ;
+    const double cap = 0.95 * mainAccel;
+    if (glm::length(a) > cap)
+    {
+        // the vertical first (it keeps the ship off the ground), the horizontal gets the rest
+        const double z = std::clamp(aZ, -cap, cap);
+        const double room = std::sqrt(std::max(0.0, cap * cap - z * z));
+        a = up * z + (glm::length(aH) > room ? aH * (room / glm::length(aH)) : aH);
+    }
+    if (glm::length(a) > 0.5)
+        f.descentNose = glm::normalize(a);
+    const glm::dvec3 noseHint = glm::length(f.descentNose) > 0.5 ? f.descentNose : (vh > 1.0 ? -vhVec / vh : glm::dvec3(tr.forward()));
+
+    landing::SurfacePilotRequest rq;
+    rq.actualVelocityMps = v;
+    rq.desiredVelocityMps = vWanted;
+    rq.gravityMps2 = -up * g;
+    rq.upLocal = up;
+    rq.headingHint = toSite;
+    rq.forward = glm::dvec3(tr.forward());
+    rq.right = glm::dvec3(tr.right());
+    rq.up = glm::dvec3(tr.up());
+    rq.pitchRateRadPerSec = tr.pitchRate;
+    rq.yawRateRadPerSec = tr.yawRate;
+    rq.rollRateRadPerSec = tr.rollRate;
+    rq.bellyDown = true;
+    rq.dt = dt;
+    landing::SurfacePilotResult pilot = landing::flyNormalFlightThrust(rq, params, a, noseHint);
+    const auto native = game::ship::plant::nativeFlightLaw(ship.core().desc().physicalControlModel);
+    if (motion.localControlLaw != native)
+    {
+        pilot.control.localControlLawCommandValid = true;
+        pilot.control.requestedLocalControlLaw = native;
+    }
+    if (!f.pilotActive)
+        std::cerr << "[Autopilot] ship " << shipId.value << ": de-orbit pilot ON (normal flight, main engines along the nose, law "
+                  << (native == game::navigation::LocalFlightControlLaw::Assisted ? "Assisted" : "Newtonian") << ")" << std::endl;
+    f.pilotActive = true;
+    f.pilotControl = pilot.control;
+
+    motion.freeFlightAutopilotPhase = 11;
+    motion.freeFlightAutopilotTargetId = body.id;
+    motion.freeFlightAutopilotRangeM = arc;
+    motion.freeFlightAutopilotRelSpeedMps = glm::length(v);
+    motion.freeFlightAutopilotAccelMps2 = static_cast<float>(glm::length(motion.mainEngineAccelerationMps2));
+    if (f.autopilotSeconds - f.pilotLastLogSeconds >= 2.0)
+    {
+        f.pilotLastLogSeconds = f.autopilotSeconds;
+        const double noseOff = glm::degrees(std::acos(std::clamp(glm::dot(pilot.noseWanted, glm::normalize(rq.forward)), -1.0, 1.0)));
+        std::cerr << "[Autopilot] ship " << shipId.value << " DE-ORBIT t+" << f.autopilotSeconds << " s: height " << h
+                  << " m (ground " << (terrainKnown ? "sampled" : "site") << "), to the site " << arc / 1000.0 << " km, horizontal "
+                  << vh << " m/s (wanted " << vhWanted << "), vertical " << vz << " m/s (wanted " << vzWanted << "), accel wanted "
+                  << glm::length(a) << " m/s2, main " << pilot.mainCommand * 100.0 << " % -> " << glm::length(motion.mainEngineAccelerationMps2)
+                  << " m/s2, nose off " << noseOff << " deg" << std::endl;
+    }
+
+    // hand-over: low and slow near the site -> stabilization against the ground (the 500 m/s
+    // envelope over the surface), where the landing module flies the touchdown
+    if ((arc < 2.0 * HandoverArcM && glm::length(v) < 80.0 && h < 1.7 * HandoverHeightM) ||
+        (h < 600.0 && glm::length(v) < 450.0))
+    {
+        std::cerr << "[Autopilot] ship " << shipId.value << ": HAND-OVER to the ground stabilization at height " << h << " m, "
+                  << arc << " m from the site, " << glm::length(v) << " m/s over the ground after " << f.autopilotSeconds << " s"
+                  << std::endl;
+        enterBodyFrame(shipId, ship, f, body, bodyVelocityMps);
+        f.autopilotPhase = 10;
+        updateSurfaceLanding(shipId, ship, f, dt);
+    }
+}
+
 void GameSimulation::enterBodyFrame(EntityId shipId, Ship& ship, ActiveFreeFlight& f, const game::navigation::GravityBody& body,
                                     const glm::dvec3& bodyVelocityMps)
 {
@@ -693,6 +825,10 @@ void GameSimulation::enterBodyFrame(EntityId shipId, Ship& ship, ActiveFreeFligh
     f.bodyPreviousBasisValid = m_bodyOrientation && m_bodyOrientation(body.id, f.bodyPreviousBasis);
     frame.originMeters = shipWorld;
     frame.linearVelocityMps = bodyVelocityMps;   // the turn of the ground joins on the next split
+    // the body frame folds and splits world vectors directly (local == world): an identity basis.
+    // The frame inherited the hub's basis at the normal-flight start; with it the laws saw a
+    // rotated velocity (live 2026-11-06: the terminal pilot pushed away from the site to 490 m/s).
+    frame.localToWorldBasis = glm::dmat3(1.0);
     frame.linearAccelerationMps2 = glm::dvec3(0.0);
     frame.angularVelocityWorldRadPerSecond = glm::dvec3(0.0);
     frame.angularAccelerationWorldRadPerSecond2 = glm::dvec3(0.0);
@@ -803,7 +939,16 @@ void GameSimulation::updateSurfaceLanding(EntityId shipId, Ship& ship, ActiveFre
     // the ship's native law (its physical control model): the plant executes only that law
     const auto native = game::ship::plant::nativeFlightLaw(ship.core().desc().physicalControlModel);
     const bool assisted = native == game::navigation::LocalFlightControlLaw::Assisted;
-    landing::SurfacePilotResult pilot = assisted ? landing::flySurfaceLandingAssisted(rq, params, motion.targetForwardSpeedMps)
+    // Assisted flies the terminal part in its Backspace mode (no speed servo: the keypad axes are
+    // the vectoring main's accelerations) - the speed servo along the nose turned the hull's
+    // levelling into a 170 m/s horizontal run (live, 2026-11-06)
+    if (assisted && motion.localControlLaw == native && !motion.assistedFreeRotation)
+    {
+        motion.assistedFreeRotation = true;
+        motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
+        f.pilotFreeRotation = true;
+    }
+    landing::SurfacePilotResult pilot = assisted ? landing::flySurfaceLandingVectoring(rq, params)
                                                  : landing::flySurfaceLanding(rq, params);
     if (motion.localControlLaw != native)
     {
@@ -857,6 +1002,11 @@ void GameSimulation::applySurfaceLandingPilots()
         else if (f.pilotRestoreLaw)
         {
             f.pilotRestoreLaw = false;
+            if (f.pilotFreeRotation)
+            {
+                ship->core().transform().motion.assistedFreeRotation = false;
+                f.pilotFreeRotation = false;
+            }
             if (ship->core().transform().motion.localControlLaw == f.lawBeforeLanding)
                 continue;
             ShipControlState restore {};

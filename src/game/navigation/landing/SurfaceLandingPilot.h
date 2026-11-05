@@ -178,6 +178,75 @@ inline SurfacePilotResult flySurfaceLandingAssisted(const SurfacePilotRequest& r
     return out;
 }
 
+// Assisted in the Backspace mode (free rotation - "partial Newtonian" without '+', author
+// 2026-11-05): no speed servo, the keypad axes (forward / strafe / lift) are accelerations of the
+// vectoring main (assistedLateralStabilizationAccelerationLimit). The landing's terminal flight in
+// the ground stabilization: the hull level, belly down, the nose toward the site; the wanted
+// velocity is held axis by axis against gravity - turning the hull changes no velocity.
+inline SurfacePilotResult flySurfaceLandingVectoring(const SurfacePilotRequest& rq, const ShipParams& p)
+{
+    SurfacePilotResult out;
+    const glm::dvec3 upL = glm::normalize(rq.upLocal);
+    glm::dvec3 heading = rq.headingHint - upL * glm::dot(rq.headingHint, upL);
+    if (glm::length(heading) < 1.0e-3)
+        heading = rq.forward - upL * glm::dot(rq.forward, upL);
+    if (glm::length(heading) < 1.0e-3)
+        heading = rq.up - upL * glm::dot(rq.up, upL);
+    heading = glm::normalize(heading);
+    out.noseWanted = heading;
+    surfaceAttitudeInputs(rq, p, heading, upL, out.control);
+    const double authority = std::max(1.0e-6, game::ship::assistedLateralStabilizationAccelerationLimitMps2(p));
+    const glm::dvec3 err = rq.desiredVelocityMps - rq.actualVelocityMps;
+    const double errZ = glm::dot(err, upL);
+    // horizontal tau 2 s, vertical 1 s, plus the weight
+    const glm::dvec3 a = (err - upL * errZ) / 2.0 + upL * errZ - rq.gravityMps2;
+    double fi = glm::dot(a, glm::normalize(rq.forward)) / authority;
+    double si = glm::dot(a, glm::normalize(rq.right)) / authority;
+    double li = glm::dot(a, glm::normalize(rq.up)) / authority;
+    const double n = std::sqrt(fi * fi + si * si + li * li);
+    if (n > 1.0)
+    {
+        fi /= n;
+        si /= n;
+        li /= n;
+    }
+    out.control.forwardInput = static_cast<float>(fi);
+    out.control.strafeInput = static_cast<float>(si);
+    out.control.liftInput = static_cast<float>(li);
+    out.control.targetSpeedRate = 0.0f;
+    out.wantedAccelerationMps2 = a;
+    out.mainCommand = std::min(1.0, n);
+    return out;
+}
+
+// NORMAL flight (author 2026-11-05 cc: no speed envelope; the de-orbit and the braking toward the
+// site): both laws drive the main engine along the nose ('+' = targetSpeedRate 0..1, the
+// DynamicMotionSystem freeFlight branch). The hull points the wanted acceleration (belly toward the
+// ground) and the engine fires as the nose comes onto it - under thrust the hull turns slowly (the
+// crew jerk limit), so the engine waits for the alignment instead of pushing sideways.
+inline SurfacePilotResult flyNormalFlightThrust(const SurfacePilotRequest& rq, const ShipParams& p, const glm::dvec3& wantedAccelMps2,
+                                                const glm::dvec3& noseHint)
+{
+    SurfacePilotResult out;
+    const double mainMax = std::max(1.0e-6, surfaceMainEngineAccelMps2(p));
+    const double a = glm::length(wantedAccelMps2);
+    glm::dvec3 nose = a > 0.5 ? wantedAccelMps2 / a : noseHint;
+    if (glm::length(nose) < 1.0e-6)
+        nose = rq.forward;
+    nose = glm::normalize(nose);
+    out.noseWanted = nose;
+    surfaceAttitudeInputs(rq, p, nose, rq.upLocal, out.control);
+    const double align = glm::dot(glm::normalize(rq.forward), nose);
+    const double lo = std::cos(glm::radians(20.0)), hi = std::cos(glm::radians(4.0));
+    const double t = std::clamp((align - lo) / (hi - lo), 0.0, 1.0);
+    const double gate = t * t * (3.0 - 2.0 * t);
+    const double command = a > 0.5 ? std::clamp(a / mainMax, 0.0, 1.0) * gate : 0.0;
+    out.control.targetSpeedRate = static_cast<float>(command);
+    out.mainCommand = command;
+    out.wantedAccelerationMps2 = wantedAccelMps2;
+    return out;
+}
+
 inline SurfacePilotResult flySurfaceLanding(const SurfacePilotRequest& rq, const ShipParams& p)
 {
     SurfacePilotResult out;

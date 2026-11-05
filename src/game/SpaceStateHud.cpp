@@ -1709,7 +1709,7 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     text.textDrawPx(line1.str(), x + 20.0f, y + 22.0f, 17, glm::vec4(1.0f, 0.78f, 0.45f, 1.0f));
     text.textDrawPx(line2, x + 20.0f, y + 44.0f, 14,
                     motion.freeFlightCaptureRefusal ? glm::vec4(1.0f, 0.50f, 0.42f, 1.0f) : glm::vec4(0.86f, 0.80f, 0.70f, 0.95f));
-    if (!motion.freeFlight)
+    if (!motion.freeFlight && motion.freeFlightAutopilotPhase == 0)
         return;
 
     // ---- J autopilot: target, phase, height, speed, drive acceleration
@@ -1720,14 +1720,15 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
             target = target.substr(dot + 1);
         static const char* phases[] = {"", "уход от тела", "перелёт", "подход", "снижение на площадку", "на поверхности",
                                        "к площадке", "выбор площадки", "орбита: нет ровной площадки, поиск",
-                                       "выход из зоны хаба (J мягко)"};
-        const int phase = std::min<int>(motion.freeFlightAutopilotPhase, 9);
+                                       "выход из зоны хаба (J мягко)", "стабилизация над грунтом",
+                                       "сход с орбиты (нормальный полёт, маршевые)", "на орбите (стабилизация), ждём схода"};
+        const int phase = std::min<int>(motion.freeFlightAutopilotPhase, 12);
         char ap[256];
         if (phase == 5)
             std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s", target.c_str(), phases[phase]);
         else
             std::snprintf(ap, sizeof ap, "АВТОПИЛОТ -> %s:  %s   ·   %s %s   ·   скорость %s   ·   ускорение %+.1f g",
-                          target.c_str(), phases[phase], phase == 6 ? "до площадки" : "до поверхности",
+                          target.c_str(), phases[phase], phase == 6 || phase == 11 ? "до площадки" : "до поверхности",
                           jDistance(motion.freeFlightAutopilotRangeM).c_str(),
                           jSpeed(motion.freeFlightAutopilotRelSpeedMps).c_str(), motion.freeFlightAutopilotAccelMps2 / 9.81);
         const float aw = text.measureTextPx(ap, 16) + 40.0f;
@@ -1738,6 +1739,8 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         text.textDrawPx(ap, ax + 20.0f, ay + 21.0f, 16, glm::vec4(0.62f, 0.90f, 1.0f, 1.0f));
     }
 
+    if (!motion.freeFlight)
+        return;
     // ---- orbit panel, lower right inside the HUD frame: 1st cosmic speed for this
     // body and altitude, speed, altitude / minimum safe altitude; colours warn
     // grey -> white -> yellow -> red -> crimson as the danger grows

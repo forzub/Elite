@@ -3163,6 +3163,36 @@ order - ask for it again if it is not in the session.
 - Next: slice 2 is mostly in place (envelope only in stabilization, Assisted ballistic in normal flight); then slice 3 -
   the landing over the new modes (J to the orbit -> stabilization -> normal flight de-orbit -> ground stabilization).
 
+### Slice cc-3 2026-11-06 - landing over the new modes - LIVE: 2 of 2 soft landings on the Moon, NOT ACCEPTED (author)
+- Chain: J autopilot to the parking orbit at the J floor (86.8 km, 1639 m/s) -> phase 9 orbit hold 15 s (normal flight
+  without thrust = ballistic; HUD "на орбите (стабилизация)") -> phase 11 DE-ORBIT in NORMAL flight -> HAND-OVER ->
+  phase 10 GROUND STABILIZATION (body frame, 500 m/s envelope) -> touchdown by the landing module (Transit / Descent).
+- Phase 11 (updateNormalDescent, GameSimulationFreeFlight.cpp; pilot flyNormalFlightThrust, SurfaceLandingPilot.h):
+  ordinary controls only - the hull points the wanted acceleration, '+' = main along the nose, gated by the alignment
+  (cos 20 -> 4 deg; under thrust the hull turns slowly, crew jerk limit). Wanted velocity over the ground: toward the site
+  min(sqrt(2 0.35 a_main arc), arc / 15 s, circular speed), down along a glide reaching 1500 m as the arc closes (tgo),
+  never down below 800 m; a = horizontal err / 4 s + vertical err / 3 s + g - v_h^2 / r, the vertical first within
+  0.95 a_main. Hand-over: arc < 3 km, < 80 m/s, height < 2.55 km (or < 600 m and < 450 m/s).
+- Phase 10 terminal, Assisted plants: the pilot puts Assisted into the Backspace mode (assistedFreeRotation: no speed
+  servo, keypad axes = vectoring-main accelerations) - flySurfaceLandingVectoring: hull level belly down, nose to the
+  site, per-axis velocity hold against gravity (tau 2 s horizontal, 1 s vertical); released when the pilot stops.
+  Newtonian plants keep flySurfaceLanding.
+- ROOT CAUSE found (also behind bb normal1..7): the body frame folded / split WORLD vectors into the local velocity
+  directly while the frame kept the hub's localToWorldBasis inherited at the normal-flight start - the laws saw a
+  rotated velocity (land2: the terminal pilot pushed away from the site to 490 m/s, envelope cut, CRASH 82 / 495 m/s).
+  Fixed: enterBodyFrame sets an identity basis (the frame is non-rotating; local == world).
+- LIVE (D:/tmp/elite_cc1): land1 FAIL - de-orbit good (hovered over the site at 4 km, 69 m / 5 m/s), the old Assisted
+  terminal pilot ran away (speed servo along the rotating nose, 170 m/s) then circled 20-50 m up for minutes; also the
+  descent first accelerated (wanted 2032 > 1639 m/s) -> capped at circular speed. land2 CRASH (the basis bug above).
+  land3 PASS: LANDED vertical 1.45 m/s, horizontal 0.12 m/s over the ground, regolith, slope 2.4 deg, 575 s.
+  land4 PASS (repeat): LANDED 1.45 / 0.13 m/s, slope 2.2 deg, 575 s; hand-over 1.95 km, 69 m, 80 m/s in both.
+  Screenshot (terminal): banner "СТАБИЛИЗАЦИЯ НАД ГРУНТОМ Луна - скорость над грунтом", autopilot panel "к площадке".
+- Open: the terminal module measures velocity against the body centre (the Moon's turn 4.6 m/s shows as horizontal
+  speed; contact uses the ground); the hand-over arrives at ~150 m/s vertical (h/4 profile) - steep but within the
+  envelope; tail-down vs belly-down: phase 11 flies tail-down (nose = thrust), the terminal belly-down; Newtonian
+  plants, a body with faster rotation, an atmosphere (shuttle corridor) and the take-off not flown yet.
+- Next: the author's in-game check of the landing (PgDn on the Moon); then slice 4 (site-phased orbit insertion).
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

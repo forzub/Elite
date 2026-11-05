@@ -300,11 +300,17 @@ public:
         bool autoStabilizeArmed = false;
         bool lastBound = true;
         double coastSeconds = 0.0;
+        glm::dvec3 descentNose {0.0};        // landing phase 11: the last commanded thrust direction
+        bool pilotFreeRotation = false;      // the landing pilot put Assisted into the Backspace mode
     };
     // J off below a body's J floor: normal flight against its surface (see bodyFrame)
     void enterBodyFrame(EntityId shipId, Ship& ship, ActiveFreeFlight& f, const game::navigation::GravityBody& body,
                         const glm::dvec3& bodyVelocityMps);
     void updateSurfaceLanding(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
+    // landing phase 11: the de-orbit and the braking toward the site in NORMAL flight (main engines,
+    // ordinary controls), handed over to the ground stabilization (phase 10) low and slow near the site
+    void updateNormalDescent(EntityId shipId, Ship& ship, ActiveFreeFlight& f, const game::navigation::GravityBody& body,
+                             const glm::dvec3& bodyVelocityMps, double dt);
     void applySurfaceLandingPilots();
     bool toggleFreeFlight(EntityId shipId);
     // Flight architecture (author 2026-11-05 cc). Stabilization on / off: off = NORMAL flight

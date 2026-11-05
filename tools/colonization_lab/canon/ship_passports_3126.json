@@ -50,9 +50,10 @@
       "service_power_capacity_mw": 150,
       "mass": {
         "standardized_parts_delta_t": 6,
-        "dry_estimated_after_standardization_t": 6,
-        "delta_fraction": 6,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 266,
+        "delta_fraction": 0.0231,
+        "frame_revalidation_required": false,
+        "dry_original_t": 260
       },
       "bom": [
         {
@@ -320,9 +321,10 @@
       "service_power_capacity_mw": 150,
       "mass": {
         "standardized_parts_delta_t": 6,
-        "dry_estimated_after_standardization_t": 6,
-        "delta_fraction": 6,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 266,
+        "delta_fraction": 0.0231,
+        "frame_revalidation_required": false,
+        "dry_original_t": 260
       },
       "bom": [
         {
@@ -562,9 +564,10 @@
       "service_power_capacity_mw": 60,
       "mass": {
         "standardized_parts_delta_t": 12.5,
-        "dry_estimated_after_standardization_t": 12.5,
-        "delta_fraction": 12.5,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 392.5,
+        "delta_fraction": 0.0329,
+        "frame_revalidation_required": false,
+        "dry_original_t": 380
       },
       "bom": [
         {
@@ -790,9 +793,10 @@
       "service_power_capacity_mw": 120,
       "mass": {
         "standardized_parts_delta_t": 12,
-        "dry_estimated_after_standardization_t": 12,
-        "delta_fraction": 12,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 632,
+        "delta_fraction": 0.0194,
+        "frame_revalidation_required": false,
+        "dry_original_t": 620
       },
       "bom": [
         {
@@ -1049,9 +1053,10 @@
       "service_power_capacity_mw": 60,
       "mass": {
         "standardized_parts_delta_t": 28.5,
-        "dry_estimated_after_standardization_t": 28.5,
-        "delta_fraction": 28.5,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 1928.5,
+        "delta_fraction": 0.015,
+        "frame_revalidation_required": false,
+        "dry_original_t": 1900
       },
       "bom": [
         {
@@ -1316,9 +1321,10 @@
       "service_power_capacity_mw": 150,
       "mass": {
         "standardized_parts_delta_t": 19,
-        "dry_estimated_after_standardization_t": 19,
-        "delta_fraction": 19,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 1919,
+        "delta_fraction": 0.01,
+        "frame_revalidation_required": false,
+        "dry_original_t": 1900
       },
       "bom": [
         {
@@ -1565,9 +1571,10 @@
       "service_power_capacity_mw": 600,
       "mass": {
         "standardized_parts_delta_t": 48,
-        "dry_estimated_after_standardization_t": 48,
-        "delta_fraction": 48,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 10848,
+        "delta_fraction": 0.0044,
+        "frame_revalidation_required": false,
+        "dry_original_t": 10800
       },
       "bom": [
         {
@@ -1833,9 +1840,10 @@
       "service_power_capacity_mw": 600,
       "mass": {
         "standardized_parts_delta_t": 48,
-        "dry_estimated_after_standardization_t": 48,
-        "delta_fraction": 48,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 12048,
+        "delta_fraction": 0.004,
+        "frame_revalidation_required": false,
+        "dry_original_t": 12000
       },
       "bom": [
         {
@@ -2095,9 +2103,10 @@
       "service_power_capacity_mw": 60,
       "mass": {
         "standardized_parts_delta_t": 39,
-        "dry_estimated_after_standardization_t": 39,
-        "delta_fraction": 39,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 939,
+        "delta_fraction": 0.0433,
+        "frame_revalidation_required": false,
+        "dry_original_t": 900
       },
       "bom": [
         {
@@ -2531,9 +2540,10 @@
       "service_power_capacity_mw": 60,
       "mass": {
         "standardized_parts_delta_t": 0,
-        "dry_estimated_after_standardization_t": 0,
+        "dry_estimated_after_standardization_t": 700,
         "delta_fraction": 0,
-        "frame_revalidation_required": false
+        "frame_revalidation_required": false,
+        "dry_original_t": 700
       },
       "bom": [
         {
@@ -2743,9 +2753,10 @@
       "service_power_capacity_mw": 60,
       "mass": {
         "standardized_parts_delta_t": 52,
-        "dry_estimated_after_standardization_t": 52,
-        "delta_fraction": 52,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 552,
+        "delta_fraction": 0.104,
+        "frame_revalidation_required": true,
+        "dry_original_t": 500
       },
       "bom": [
         {
@@ -3000,9 +3011,10 @@
       "service_power_capacity_mw": 400,
       "mass": {
         "standardized_parts_delta_t": 0,
-        "dry_estimated_after_standardization_t": 0,
+        "dry_estimated_after_standardization_t": 420,
         "delta_fraction": 0,
-        "frame_revalidation_required": false
+        "frame_revalidation_required": false,
+        "dry_original_t": 420
       },
       "bom": [
         {
@@ -3278,9 +3290,10 @@
       "service_power_capacity_mw": 120,
       "mass": {
         "standardized_parts_delta_t": 7,
-        "dry_estimated_after_standardization_t": 7,
-        "delta_fraction": 7,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 147,
+        "delta_fraction": 0.05,
+        "frame_revalidation_required": false,
+        "dry_original_t": 140
       },
       "bom": [
         {
@@ -3493,9 +3506,10 @@
       "service_power_capacity_mw": 1200,
       "mass": {
         "standardized_parts_delta_t": 138,
-        "dry_estimated_after_standardization_t": 138,
-        "delta_fraction": 138,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 2338,
+        "delta_fraction": 0.0627,
+        "frame_revalidation_required": true,
+        "dry_original_t": 2200
       },
       "bom": [
         {
@@ -3785,9 +3799,10 @@
       "service_power_capacity_mw": 1200,
       "mass": {
         "standardized_parts_delta_t": 76,
-        "dry_estimated_after_standardization_t": 76,
-        "delta_fraction": 76,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 9076,
+        "delta_fraction": 0.0084,
+        "frame_revalidation_required": false,
+        "dry_original_t": 9000
       },
       "bom": [
         {
@@ -4088,9 +4103,10 @@
       "service_power_capacity_mw": 300,
       "mass": {
         "standardized_parts_delta_t": 78,
-        "dry_estimated_after_standardization_t": 78,
-        "delta_fraction": 78,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 678,
+        "delta_fraction": 0.13,
+        "frame_revalidation_required": true,
+        "dry_original_t": 600
       },
       "bom": [
         {
@@ -4400,9 +4416,10 @@
       "service_power_capacity_mw": 1200,
       "mass": {
         "standardized_parts_delta_t": 195,
-        "dry_estimated_after_standardization_t": 195,
-        "delta_fraction": 195,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 5195,
+        "delta_fraction": 0.039,
+        "frame_revalidation_required": false,
+        "dry_original_t": 5000
       },
       "bom": [
         {
@@ -4706,9 +4723,10 @@
       "service_power_capacity_mw": 400,
       "mass": {
         "standardized_parts_delta_t": 48,
-        "dry_estimated_after_standardization_t": 48,
-        "delta_fraction": 48,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 1648,
+        "delta_fraction": 0.03,
+        "frame_revalidation_required": false,
+        "dry_original_t": 1600
       },
       "bom": [
         {
@@ -4987,9 +5005,10 @@
       "service_power_capacity_mw": 300,
       "mass": {
         "standardized_parts_delta_t": 24,
-        "dry_estimated_after_standardization_t": 24,
-        "delta_fraction": 24,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 2624,
+        "delta_fraction": 0.0092,
+        "frame_revalidation_required": false,
+        "dry_original_t": 2600
       },
       "bom": [
         {
@@ -5258,9 +5277,10 @@
       "service_power_capacity_mw": 400,
       "mass": {
         "standardized_parts_delta_t": 38,
-        "dry_estimated_after_standardization_t": 38,
-        "delta_fraction": 38,
-        "frame_revalidation_required": true
+        "dry_estimated_after_standardization_t": 6538,
+        "delta_fraction": 0.0058,
+        "frame_revalidation_required": false,
+        "dry_original_t": 6500
       },
       "bom": [
         {
@@ -5514,5 +5534,10 @@
       "unique_spare_skus": 20,
       "geometry_source": "tools/colonization_lab/canon/ship_parts_unified.json"
     }
-  ]
+  ],
+  "validation": {
+    "status": "PASS",
+    "note": "Dry-mass baseline resolved as ship override, else ship_economics class dry_mass_t.",
+    "frame_revalidation_required_count": 3
+  }
 }

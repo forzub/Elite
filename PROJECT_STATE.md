@@ -3016,4 +3016,4 @@ Status: DATA FOUNDATION / PROPOSAL-model; frame passports deliberately deferred.
 - Southern-circle legacy component names mizan.* are not canonical in the new parts database: they resolve to kapehu.core.k5 / kapehu.core.k12 / kapehu.mc.k1; legacy ids are migration aliases only.
 - Cobrett N1/A3 jump installation is explicit in both the engineering passport and CobrettPassports.h: Z-0.5 jump core + jump-charge tank.
 - Not done: hull/frame passports, exact mount coordinates for future 3D models, runtime migration to unified parts, flight-performance rebalance.
-- Static data invariants checked before commit: engineering types=19, model passports=21, canonical SKUs=102; every passport BOM resolves to a canonical part and every canonical part has geometry.
+- Static data invariants checked: engineering types=19, model passports=21, canonical SKUs=102; every passport BOM resolves to a canonical part and every canonical part has geometry. Dry-mass deltas use ship override or ship_economics class mass; 3 passports exceed the 5% mass-delta threshold and are flagged for frame revalidation.

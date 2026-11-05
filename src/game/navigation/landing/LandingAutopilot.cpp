@@ -227,7 +227,9 @@ LandingCommand LandingAutopilot::step(const LandingInput& in, const TerrainProbe
             // the faster, the higher over the relief (10 s of flight): a short hop low,
             // a long one high
             const glm::dvec3 whNow = w - up * glm::dot(w, up);
-            const double cruise = std::max(CruiseHeightM, glm::length(whNow) * 10.0);
+            // a glide path (~8.5 deg) toward the site: the ship comes down ALONG the surface and
+            // reaches the site low and slow; far away the cruise height over the relief holds
+            const double cruise = std::min(std::max(CruiseHeightM, glm::length(whNow) * 10.0), std::max(30.0, 0.15 * dh));
             const double vz = std::clamp((cruise - agl) / 5.0, -150.0, 150.0);
             wanted = (dh > 1.0e-3 ? toSiteH / dh * vh : glm::dvec3(0.0)) + up * vz;
             if (dh < DescentStartM && glm::length(whNow) < 2.0)

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
+#include <memory>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -17,7 +19,8 @@ namespace world::celestial::surface
     size law of a cratered surface near equilibrium: few big craters, very
     many small ones, small ones on top of big ones). Each crater has an age -
     small ones are young more often: fresh ones are deep bowls (depth /
-    diameter 0.2) with a sharp raised rim, an ejecta blanket (rim / r^3 out to
+    diameter 0.2; complex craters above ~15 km diameter shallower,
+    d ~ 1.04 km x D_km^0.3) with a sharp raised rim, an ejecta blanket (rim / r^3 out to
     3 radii), a bright ejecta halo with rays to 5 radii and blocks on the rim;
     old ones are shallow saucers (d/D 0.05). Band-limited: a class adds
     relief only where it is resolved (smooth fade), so every LOD is the same
@@ -41,6 +44,10 @@ public:
     void configure(std::uint64_t seed, double bodyRadiusM, double maxCraterRadiusM, double minCraterRadiusM, double density,
                    bool boulders = true);
     bool empty() const { return m_classes.empty(); }
+    // optional 0..1 density factor at a crater centre (e.g. maria: a younger,
+    // less cratered surface); tabulated once on a 3D grid of directions (no trig
+    // per crater); deterministic, the same on server and client
+    void setDensityModulation(const std::function<double(const glm::dvec3&)>& f);
 
     CraterSample sample(const glm::dvec3& dir, double minWavelengthM) const;
 
@@ -58,5 +65,8 @@ private:
     std::uint64_t m_bouldersSeed = 0;
     double m_radius = 1.0;
     bool m_withBoulders = true;
+    static constexpr int DensityGrid = 48;            // cells per axis over [-1, 1]^3
+    std::shared_ptr<const std::vector<float>> m_density; // nearest cell of the unit direction
+    double densityAt(const glm::dvec3& unitDir) const;
 };
 } // namespace world::celestial::surface

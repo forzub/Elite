@@ -247,6 +247,7 @@ public:
         double orbitCoastSeconds = 0.0;      // landing: the coast on the parking orbit before the de-orbit
         glm::dvec3 orbitNormal {0.0};        // landing: the parking orbit plane, fixed once (zero = not yet)
         bool orbitAcquire = false;           // landing: close to the orbit - aim at its nearest point
+        bool bellyLanding = false;           // landing: the ventral thrusters hold the weight - belly down
         double autopilotLastLogSeconds = -1.0e30;
         bool autopilotHaveLastCenter = false;
         // the landing module (planner + transit + descent) once the approach is over

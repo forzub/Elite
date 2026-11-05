@@ -125,6 +125,18 @@ const game::navigation::GravityBody* referenceBody(const glm::dvec3& point,
 
 namespace
 {
+// the ship's ventral (body +Y) manoeuvre-thruster acceleration: the lift for a belly-down
+// hover / landing; the per-axis telemetry, else the scalar RCS authority
+double ventralThrustMps2(const Ship& ship)
+{
+    const auto p = ship.core().effectivePhysics();
+    if (p.newtonianRcsPositiveMps2.y > 0.0)
+        return p.newtonianRcsPositiveMps2.y;
+    if (p.manoeuvreThrusterAccel > 0.0f)
+        return p.manoeuvreThrusterAccel;
+    return std::max(0.0, static_cast<double>(p.strafeAccel));   // a legacy descriptor: its lateral thrusters
+}
+
 // the ship's own main-engine acceleration (forward drive); a legacy descriptor without it
 // falls back to its linear g envelope
 double mainEngineAccelMps2(const Ship& ship)
@@ -249,8 +261,11 @@ void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& 
                       << " g vs surface gravity " << gSurface / 9.81 << " g (need x" << jd::LandingThrustToWeightMin << ")" << std::endl;
             return;
         }
+        f.bellyLanding = ventralThrustMps2(*ship) >= jd::LandingThrustToWeightMin * gSurface;
         std::cerr << "[Autopilot] ship " << shipId.value << ": landing check " << target << " - main engines " << main / 9.81
-                  << " g vs surface " << gSurface / 9.81 << " g, J floor " << jd::floorAltitudeM(b.radiusMeters, b.atmosphereRadiusMeters) / 1000.0
+                  << " g, ventral thrusters " << ventralThrustMps2(*ship) / 9.81 << " g vs surface " << gSurface / 9.81 << " g -> "
+                  << (f.bellyLanding ? "BELLY-DOWN landing" : "tail-down landing (the ventral thrusters cannot hold the weight)")
+                  << ", J floor " << jd::floorAltitudeM(b.radiusMeters, b.atmosphereRadiusMeters) / 1000.0
                   << " km" << std::endl;
     }
     f.autopilotTargetId = target;
@@ -614,7 +629,21 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
         thrustWanted = velocityError / TauS - gravity;
         const glm::dvec3 noseNow = glm::normalize(glm::dvec3(tr.forward()));
         const double reverse = ship.core().effectivePhysics().reverseMainEngineAvailable ? -limit : 0.0;
-        dv = noseNow * (std::clamp(glm::dot(thrustWanted, noseNow), reverse, limit) * dt);
+        if (f.bellyLanding && phase == 4 && floorBody == target)
+        {
+            // belly down: the ventral thrusters hold the weight, the main engine (along the nose)
+            // brakes / drives along the surface, the side thrusters trim
+            const glm::dvec3 upNow = glm::normalize(glm::dvec3(tr.up()));
+            const glm::dvec3 rightNow = glm::normalize(glm::dvec3(tr.right()));
+            const double ventral = ventralThrustMps2(ship);
+            const double lateral = ventralThrustMps2(ship);
+            const double aNose = std::clamp(glm::dot(thrustWanted, noseNow), reverse, limit);
+            const double aUp = std::clamp(glm::dot(thrustWanted, upNow), -ventral, ventral);
+            const double aSide = std::clamp(glm::dot(thrustWanted, rightNow), -lateral, lateral);
+            dv = (noseNow * aNose + upNow * aUp + rightNow * aSide) * dt;
+        }
+        else
+            dv = noseNow * (std::clamp(glm::dot(thrustWanted, noseNow), reverse, limit) * dt);
     }
     else if (motion.freeFlightCaptureRefusal == 4)
         motion.freeFlightCaptureRefusal = 0;
@@ -633,6 +662,25 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
         // main engines: the nose points the thrust it needs (tail down while hovering)
         const glm::dvec3 upLocal = glm::normalize(frame.originMeters - (floorBody ? floorBody->centerMeters : target->centerMeters));
         noseWanted = glm::length(thrustWanted) > 0.05 ? glm::normalize(thrustWanted) : upLocal;
+        if (f.bellyLanding && phase == 4 && floorBody == target)
+        {
+            // belly down, the hull level; braking fast: the nose against the horizontal motion
+            // (the main engine brakes) unless a reverse engine brakes nose-first; slow: the nose
+            // forward along the track. A weight the ventral thrusters cannot hold: the nose rises
+            // so the main engine takes the rest.
+            const glm::dvec3 vh = w - upLocal * glm::dot(w, upLocal);
+            const bool reverseEngine = ship.core().effectivePhysics().reverseMainEngineAvailable;
+            glm::dvec3 heading = glm::length(landingNose) > 0.5 ? landingNose : glm::dvec3(tr.forward());
+            if (glm::length(vh) > 30.0)
+                heading = reverseEngine ? glm::normalize(vh) : -glm::normalize(vh);
+            heading = heading - upLocal * glm::dot(heading, upLocal);
+            heading = glm::length(heading) > 1.0e-6 ? glm::normalize(heading) : glm::dvec3(tr.forward());
+            const double ventral = ventralThrustMps2(ship);
+            const double deficit = std::max(0.0, glm::dot(thrustWanted, upLocal) - ventral);
+            const double pitch = std::min(0.7, std::asin(std::clamp(deficit / std::max(1.0, mainAccel), 0.0, 1.0)));
+            noseWanted = glm::normalize(heading * std::cos(pitch) + upLocal * std::sin(pitch));
+            upWanted = upLocal;
+        }
     }
     else if (phase == 4)
     {

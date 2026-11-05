@@ -253,11 +253,16 @@ namespace
         NearOrbit,
         Approach,
         NearSurface,
+        MidSpace,    // 3 R out: the globe fills a good part of the screen
+        PreTerrain,  // 0.65 R: the old local-terrain activation (0.6 R)
+        PostTerrain, // 0.55 R
+        LowGlobe,    // 0.30 R, looking down at 35 deg
+        TerrainOn,   // 0.15 R, looking down at 35 deg
         ViewCount
     };
     const char* viewName(int v)
     {
-        static const char* n[] = {"far_space", "near_orbit", "approach", "near_surface"};
+        static const char* n[] = {"far_space", "near_orbit", "approach", "near_surface", "mid_space", "pre_terrain", "post_terrain", "low_globe", "terrain_on"};
         return n[v];
     }
 
@@ -273,9 +278,10 @@ namespace
         const glm::dvec3 n = ax * siteBodyOut;
         const glm::dvec3 side = glm::normalize(glm::cross(n, sunWorld));
         Camera c;
-        if (view == FarSpace)
+        if (view == FarSpace || view == MidSpace || view == PreTerrain || view == PostTerrain)
         {
-            c.pos = b.worldMeters + glm::normalize(n * 0.8 + side * 0.6) * R * 30.0;
+            const double dist = view == FarSpace ? 30.0 : view == MidSpace ? 4.0 : view == PreTerrain ? 1.65 : 1.55;
+            c.pos = b.worldMeters + glm::normalize(n * 0.8 + side * 0.6) * R * dist;
             c.fwd = glm::normalize(b.worldMeters - c.pos);
             c.up = glm::normalize(glm::cross(glm::cross(c.fwd, glm::dvec3(0, 1, 0)), c.fwd));
             return c;
@@ -284,10 +290,11 @@ namespace
         if (field)
             ground = std::max(0.0, field->sample(siteBodyOut, 1000.0).heightM);
         const bool solid = field && field->solidSurface();
-        double alt = view == NearOrbit ? 0.06 * R : view == Approach ? 0.004 * R : std::max(220.0, 3.0e-5 * R);
+        double alt = view == NearOrbit ? 0.06 * R : view == Approach ? 0.004 * R : view == LowGlobe ? 0.30 * R
+                     : view == TerrainOn ? 0.15 * R : std::max(220.0, 3.0e-5 * R);
         if (!solid && view == NearSurface)
             alt = 0.0012 * R;
-        const double pitch = (view == NearOrbit ? 24.0 : view == Approach ? 13.0 : 5.0) * Pi / 180.0;
+        const double pitch = (view == NearOrbit ? 24.0 : view == Approach ? 13.0 : view == LowGlobe || view == TerrainOn ? 35.0 : 5.0) * Pi / 180.0;
         c.pos = b.worldMeters + n * (R + ground + alt);
         c.fwd = glm::normalize(side * std::cos(pitch) - n * std::sin(pitch));
         c.up = glm::normalize(n - c.fwd * glm::dot(n, c.fwd));

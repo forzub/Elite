@@ -86,7 +86,11 @@ LocalTerrainPlan planLocalTerrain(const glm::dvec3& cameraBody, double groundHei
     const glm::dvec3 nadir = cameraBody / r;
     const double ground = radiusM + groundHeightM;
     plan.altitudeM = std::max(0.5, r - ground);
-    if (plan.altitudeM > settings.activationAltitudeRadii * radiusM)
+    double activation = settings.activationAltitudeRadii * radiusM;
+    if (settings.globeTexelM > 0.0)
+        activation = std::min(activation, 0.5 * settings.globeTexelM /
+                                              std::max(1.0e-9, settings.pixelAngleRad * settings.nadirCellPixels));
+    if (plan.altitudeM > activation)
         return plan;
     plan.horizonM = std::sqrt(std::max(0.0, r * r - ground * ground));
 
@@ -112,8 +116,12 @@ LocalTerrainPlan planLocalTerrain(const glm::dvec3& cameraBody, double groundHei
     const double half = settings.cells * 0.5;
     const double reach = std::min(plan.horizonM * 1.15 + plan.altitudeM, radiusM * 0.8);
     plan.coarsestLevel = plan.finestLevel;
+    // a ring of level k keeps ~half / k cells per radian of view: past the level whose
+    // cell is the globe texel the globe is the finer surface - it shows there (the
+    // terrain stencils only its own footprint)
     while (plan.coarsestLevel - plan.finestLevel + 1 < settings.maxLevels &&
-           half * terrain_chart::spacingM(plan.coarsestLevel, radiusM) < reach)
+           half * terrain_chart::spacingM(plan.coarsestLevel, radiusM) < reach &&
+           (settings.globeTexelM <= 0.0 || terrain_chart::spacingM(plan.coarsestLevel + 1, radiusM) <= settings.globeTexelM))
         ++plan.coarsestLevel;
     for (int k = plan.finestLevel; k <= plan.coarsestLevel; ++k)
     {

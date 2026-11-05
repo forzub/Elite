@@ -34,17 +34,93 @@ ImportedSurfaceField::ImportedSurfaceField(const BodySurfaceDescriptor& body,
         m_detailAmplitudeM = std::clamp(body.reliefAmplitudeKm * 1000.0 * 0.015, 20.0, 200.0);
         const double density = std::clamp(body.craterDensity, 0.0, 1.0) *
                                (1.0 - 0.6 * std::clamp(body.resurfacingRate, 0.0, 1.0));
-        m_craters.configure(layerSeed(m_seed, "imported_craters"), m_radius, m_macroCutoffM * 0.5, 1.5,
+        // craters from ~3 % of the radius (52 km on the Moon) down to 1.5 m: the
+        // map keeps only the basins and maria (low-passed below), the visible
+        // crater population is this layer at every distance
+        m_maxCraterRadiusM = std::max(m_macroCutoffM * 0.5, 0.03 * m_radius);
+        m_craters.configure(layerSeed(m_seed, "imported_craters"), m_radius, m_maxCraterRadiusM, 1.5,
                             std::max(density, 0.3));
+        if (m_maps && !m_maps->albedo.empty())
+        {
+            double sum = 0.0;
+            for (const glm::vec3& c : m_maps->albedo)
+                sum += 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+            m_meanAlbedoLum = sum / static_cast<double>(m_maps->albedo.size());
+            m_craters.setDensityModulation([this](const glm::dvec3& d) { return craterDensityAt(d); });
+        }
+        if (m_maps && !m_maps->heightM.empty())
+        {
+            // the basins only: a 4x box down-sample, then a separable gaussian of
+            // sigma 5 coarse texels (~110 km on the Moon; longitude wraps)
+            const int fw = m_maps->width, fh = m_maps->height;
+            const int w = std::max(1, fw / 4), h = std::max(1, fh / 4);
+            std::vector<float> coarse(static_cast<std::size_t>(w) * h, 0.0f);
+            for (int y = 0; y < h; ++y)
+                for (int x = 0; x < w; ++x)
+                {
+                    double acc = 0.0;
+                    int n = 0;
+                    for (int j = 0; j < 4; ++j)
+                        for (int i = 0; i < 4; ++i)
+                        {
+                            const int sx = x * 4 + i, sy = y * 4 + j;
+                            if (sx < fw && sy < fh)
+                            {
+                                acc += m_maps->heightM[static_cast<std::size_t>(sy) * fw + sx];
+                                ++n;
+                            }
+                        }
+                    coarse[static_cast<std::size_t>(y) * w + x] = static_cast<float>(acc / std::max(1, n));
+                }
+            constexpr int K = 15;
+            constexpr double Sigma = 5.0;
+            double kernel[2 * K + 1];
+            double ks = 0.0;
+            for (int i = -K; i <= K; ++i)
+                ks += kernel[i + K] = std::exp(-0.5 * i * i / (Sigma * Sigma));
+            for (double& k : kernel)
+                k /= ks;
+            std::vector<float> tmp(coarse.size());
+            for (int y = 0; y < h; ++y)
+                for (int x = 0; x < w; ++x)
+                {
+                    double acc = 0.0;
+                    for (int i = -K; i <= K; ++i)
+                        acc += kernel[i + K] * coarse[static_cast<std::size_t>(y) * w + ((x + i) % w + w) % w];
+                    tmp[static_cast<std::size_t>(y) * w + x] = static_cast<float>(acc);
+                }
+            m_smoothHeightM.resize(tmp.size());
+            for (int y = 0; y < h; ++y)
+                for (int x = 0; x < w; ++x)
+                {
+                    double acc = 0.0;
+                    for (int i = -K; i <= K; ++i)
+                        acc += kernel[i + K] * tmp[static_cast<std::size_t>(std::clamp(y + i, 0, h - 1)) * w + x];
+                    m_smoothHeightM[static_cast<std::size_t>(y) * w + x] = static_cast<float>(acc);
+                }
+            m_smoothW = w;
+            m_smoothH = h;
+        }
     }
-    // craters: a fresh bowl of r = macroCutoff/2 is ~0.2 x its diameter deep
-    m_detailBoundM = m_detailAmplitudeM * 3.0 + (m_cratered ? m_macroCutoffM * 0.25 : 0.0);
+    // craters: a bowl is at most ~0.2 x its diameter deep (complex ones far less),
+    // plus the rims and ejecta of the overlapping classes
+    m_detailBoundM = m_detailAmplitudeM * 3.0 +
+                     (m_cratered ? std::min(m_maxCraterRadiusM * 0.45, 1040.0 * std::pow(m_maxCraterRadiusM * 2.0e-3, 0.3) * 2.5)
+                                 : 0.0);
 }
 
-ImportedSurfaceField::Bilinear ImportedSurfaceField::locate(const glm::dvec3& dir) const
+double ImportedSurfaceField::craterDensityAt(const glm::dvec3& dir) const
 {
-    const int w = m_maps->width;
-    const int h = m_maps->height;
+    // the dark maria are young lava plains: a fraction of the highland craters
+    const Bilinear b = locate(dir);
+    const glm::vec3 c = m_maps->albedo[static_cast<std::size_t>(b.i00)];
+    const double lum = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+    const double t = std::clamp((lum / std::max(m_meanAlbedoLum, 1.0e-4) - 0.7) / 0.4, 0.0, 1.0);
+    return 0.2 + 0.8 * t * t * (3.0 - 2.0 * t);
+}
+
+ImportedSurfaceField::Bilinear ImportedSurfaceField::locate(const glm::dvec3& dir, int w, int h)
+{
     const double lon = std::atan2(dir.z, dir.x);
     const double lat = std::asin(std::clamp(dir.y, -1.0, 1.0));
     const double x = (0.5 + lon / (2.0 * Pi)) * w - 0.5;
@@ -78,7 +154,13 @@ SurfaceSample ImportedSurfaceField::sample(const glm::dvec3& dir, double minWave
         return (a * (1.0 - b.fx) + c * b.fx) * (1.0 - b.fy) + (d * (1.0 - b.fx) + e * b.fx) * b.fy;
     };
     double macro = 0.0;
-    if (!m_maps->heightM.empty())
+    if (!m_smoothHeightM.empty())
+    {
+        const Bilinear c = locate(dir, m_smoothW, m_smoothH);
+        const auto& g = m_smoothHeightM;
+        macro = (g[c.i00] * (1.0 - c.fx) + g[c.i10] * c.fx) * (1.0 - c.fy) + (g[c.i01] * (1.0 - c.fx) + g[c.i11] * c.fx) * c.fy;
+    }
+    else if (!m_maps->heightM.empty())
         macro = lerp4(m_maps->heightM[b.i00], m_maps->heightM[b.i10], m_maps->heightM[b.i01], m_maps->heightM[b.i11]);
     s.macroHeightM = macro;
     double coast = 1.0e4;
@@ -93,7 +175,19 @@ SurfaceSample ImportedSurfaceField::sample(const glm::dvec3& dir, double minWave
     s.coastM = coast;
     s.waterLevelM = 0.0;
     double detail = 0.0;
-    if (minWavelengthM < m_macroCutoffM)
+    if (m_cratered && minWavelengthM >= m_macroCutoffM)
+    {
+        // above the map texel: the big craters only (the hills are sub-texel)
+        const CraterSample c = m_craters.sample(dir, minWavelengthM);
+        detail = c.heightM;
+        s.freshness = c.freshness;
+        if (c.insideCrater)
+        {
+            s.featureClass = FeatureClass::ImpactCrater;
+            s.featureId = c.craterId;
+        }
+    }
+    else if (minWavelengthM < m_macroCutoffM)
     {
         // Land gets terrain below the source resolution, the sea floor none.
         // Rolling hills plus ridges, rougher on high ground (the curated

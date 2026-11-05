@@ -42,6 +42,8 @@ namespace surface = world::celestial::surface;
 namespace
 {
     constexpr double MetresPerAu = 149597870700.0;
+    // Elite on cratered bodies: lines only where the ground is steeper than ~4 deg
+    constexpr float ContourMinSlope = 0.07f;
     constexpr double LogFarM = 1.0e14;
 
     double nowSeconds()
@@ -553,6 +555,7 @@ namespace
         surface::SurfaceDetailPolicy policy;
         AtmosphereParams atmosphere;
         double contourKm = 1.0;
+        bool cratered = false; // airless / icy: Elite lines only on crater walls
         GlobeTier globe;
         PendingGlobe pendingGlobe;
         CloudTier cloud;
@@ -868,6 +871,10 @@ struct CelestialFlightRenderer::Impl
         rt.policy = surface::surfaceDetailPolicy(rt.descriptor);
         rt.atmosphere = atmosphereFor(rt.descriptor, src.kind, src.radiusM, rt.clouds != nullptr, rt.clouds.get());
         rt.contourKm = std::clamp(rt.descriptor.reliefAmplitudeKm / 6.0, 0.2, 3.0);
+        {
+            const surface::SurfaceArchetype a = surface::surfaceArchetype(rt.descriptor);
+            rt.cratered = a == surface::SurfaceArchetype::AirlessRocky || a == surface::SurfaceArchetype::Icy;
+        }
         rt.ready = true;
         rt.load.reset();
     }
@@ -1143,6 +1150,9 @@ struct CelestialFlightRenderer::Impl
         s.nadirCellPixels = quality.terrainCellPixels;
         s.finestSpacingM = std::max(0.25, rt.policy.finestVertexSpacingM);
         s.maxLevels = quality.maxTerrainLevels;
+        // the nearest body's globe reaches the largest face: the terrain takes over
+        // below the altitude where it is finer than that globe
+        s.globeTexelM = rt.field->referenceRadiusM() * 1.5707963267948966 / std::max(32, quality.maxGlobeFace);
         const glm::dvec3 nadir = glm::normalize(cameraBody);
         const double ground = rt.field->sample(nadir, 2000.0).heightM;
         const surface::LocalTerrainPlan plan =
@@ -1292,6 +1302,7 @@ struct CelestialFlightRenderer::Impl
             terrain.set("uContourFineKm", static_cast<float>(fine / 1000.0));
             terrain.set("uContourFineWeight", coarse > fine ? static_cast<float>(1.0 - (t - level)) : 0.0f);
         }
+        terrain.set("uContourMinSlope", rt.cratered ? ContourMinSlope : 0.0f);
         terrain.set("uNaturalZones", naturalZones(rt) ? 1.0f : 0.0f);
         terrain.set("uDetailStrength", quality.detailNormals ? 0.35f : 0.0f);
         terrain.set("uFarFade", 0.0f);
@@ -2020,6 +2031,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             globe.set("uHazeDensity", hazeDensity);
             globe.set("uContourKm", static_cast<float>(rt->contourKm));
             globe.set("uContourFineWeight", 0.0f);
+            globe.set("uContourMinSlope", rt->cratered ? ContourMinSlope : 0.0f);
             globe.set("uNaturalZones", naturalZones(*rt) ? 1.0f : 0.0f);
             globe.set("uSkyDisc", static_cast<float>(it.skyDisc));
             // low over the terrain no outline at all: it drew a level line through the

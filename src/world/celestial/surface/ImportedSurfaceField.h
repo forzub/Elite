@@ -54,7 +54,8 @@ private:
         int i00 = 0, i10 = 0, i01 = 0, i11 = 0;
         double fx = 0.0, fy = 0.0;
     };
-    Bilinear locate(const glm::dvec3& dir) const;
+    Bilinear locate(const glm::dvec3& dir) const { return locate(dir, m_maps->width, m_maps->height); }
+    static Bilinear locate(const glm::dvec3& dir, int w, int h);
 
     BodySurfaceDescriptor m_body;
     std::shared_ptr<const ImportedSurfaceMaps> m_maps;
@@ -68,6 +69,14 @@ private:
     // regolith landscape instead of the terrestrial hills-and-ridges detail
     bool m_cratered = false;
     CraterLayer m_craters;
+    // a cratered body: the map's height low-passed to its basins / maria (the
+    // macro shape); the craters of every size above it are the crater layer -
+    // a smooth sphere covered with craters, not the map's 8-bit texel roughness
+    std::vector<float> m_smoothHeightM; // quarter resolution, m_smoothW x m_smoothH
+    int m_smoothW = 0, m_smoothH = 0;
+    double m_maxCraterRadiusM = 0.0;
+    double m_meanAlbedoLum = 0.0;
+    double craterDensityAt(const glm::dvec3& dir) const; // maria (dark albedo) hold fewer craters
 };
 
 // Equirect 8-bit grey heights -> metres. Ocean (water mask) texels keep

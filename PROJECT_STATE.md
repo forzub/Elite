@@ -3042,6 +3042,42 @@ order - ask for it again if it is not in the session.
   belly-down landings / lay-down and stand-up of a hull (author question - analysis in the reply); 0.9 c cap not hit
   live; full test suite; J energy accounting.
 
+### User order 2026-11-05 z - belly-down landing along the surface - CODE + LIVE MOON RUN
+- Author: "посадку не кормой, а в обычном режиме и плашмя, двигаться вдоль поверхности". At engage the ship's ventral
+  thrust (newtonianRcsPositiveMps2.y, else manoeuvreThrusterAccel, else strafeAccel) >= 1.3 x surface g selects a
+  BELLY-DOWN landing (f.bellyLanding), else tail-down as before. Belly-down: hull level, ventral thrusters hold the
+  weight, the main engine along the nose brakes / drives along the surface (retrograde heading above 30 m/s horizontal
+  unless a reverse engine exists), side thrusters trim; a weight the ventral thrusters cannot hold pitches the nose up
+  (<= 0.7 rad) so the main engine takes the rest. LandingAutopilot glide path: cruise height
+  min(max(cruise, 10 x |v_h|), max(30 m, 0.15 x distance)) - the approach comes down along the surface.
+- LIVE (D:/tmp/elite_j10/belly2): BELLY-DOWN chosen (ventral 7.5 g vs 0.165 g), ON ORBIT 86.89 km, DE-ORBIT 217 s,
+  LANDED 534.2 s, contact 1.57 m/s vertical / 0.08 m/s horizontal, slope 4.1 deg. Failure recorded: belly1 fell back
+  to tail-down (the dev ship's descriptor has no per-axis RCS telemetry -> ventral 0; fixed by the strafe fallback).
+- Known gap (author remark "400 м/с как в обычном режиме, а ты пользуешься J"): de-orbit and landing still run inside
+  the J autopilot container; moving them to the normal flight mode (real Assisted / Newtonian laws) is a later step.
+
+### User order 2026-11-05 aa - Moon visuals (craters visible from far, no hard terrain switch) - CODE + PLANET LAB
+- Diagnosis (Planet Lab captures, new views mid_space 3 R, pre/post_terrain 0.65 / 0.55 R, low_globe 0.30 R,
+  terrain_on 0.15 R): Elite style showed a black disc with a rim (fixed 1.33 km contours faded by the anti-moire
+  fwidth fade), then contour noise of the 8-bit real height map ("ущелья"), then at 0.6 R the local terrain switched on
+  abruptly with a grid and polygonal, coarser relief (its outer rings run 11-22 px per cell; the 1024 globe is finer).
+- ImportedSurfaceField, cratered bodies (AirlessRocky / Icy with imported maps - the Moon): the real height map is kept
+  only as the macro shape (4x down-sample + gaussian sigma ~110 km: basins and maria); CraterLayer craters now span
+  0.03 R (52 km radius on the Moon) down to 1.5 m at every band limit; complex craters (D > ~15 km) shallower
+  (d ~ 1.04 km x D_km^0.3); the dark maria hold 0.2 of the highland density (albedo, tabulated on a 48^3 direction
+  grid). Albedo stays the real map. Server and client share the loader - the same relief (landing heights change).
+- Elite shader (cratered bodies): contour lines only where the slope > ~4 deg (crater walls, not basin slopes);
+  per-pixel nested power-of-two spacing so lines stay >= ~7 px apart (craters readable from 4 R).
+- LocalTerrain: activation below the altitude where its nadir cell is half the globe texel (Moon ~0.25 R instead of
+  0.6 R), and no terrain level coarser than the globe texel - beyond its footprint the globe shows.
+- Results (D:/tmp/elite_moonvis/after7, after8): cratered sphere at 4 R, 0.65 R, 0.3 R; terrain takes over seamlessly
+  near nadir. Cost: the 1024 globe bake ~10 s instead of ~1 s (big craters sampled at globe scale; async, the 512 tier
+  shows meanwhile). Pre-existing, not fixed: staircase contours on the terrain mesh close in; Modern style soft at near
+  orbit (magnified globe). Planet Lab --check: 1 FAIL "rocky coastline landmark id changes 3443" - identical without
+  these changes (baseline red, procedural body). EliteServicePagesCheck PASS (run from build/).
+- LIVE on the new relief (D:/tmp/elite_j10/moonvis): BELLY-DOWN, ON ORBIT 86.89 km, LANDED 526.7 s, contact
+  1.45 m/s vertical / 0.09 m/s horizontal, slope 4.6 deg. Author visual acceptance of the Moon in the game: PENDING.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

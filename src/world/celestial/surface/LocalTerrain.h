@@ -77,6 +77,11 @@ struct LocalTerrainSettings
     double finestSpacingM = 0.25; // reachability policy
     int maxLevels = 14;
     double activationAltitudeRadii = 0.6;
+    // > 0: the far representation's texel (m). The terrain takes over only where it
+    // is finer than that: below the altitude whose nadir cell is half a texel - above
+    // it the globe shows more (the terrain's outer rings are coarser still), and the
+    // switch is not a jump to a coarser, polygonal surface
+    double globeTexelM = 0.0;
 };
 
 struct LocalTerrainPlan

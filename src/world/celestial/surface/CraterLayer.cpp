@@ -37,6 +37,33 @@ void CraterLayer::configure(std::uint64_t seed, double bodyRadiusM, double maxCr
     }
 }
 
+void CraterLayer::setDensityModulation(const std::function<double(const glm::dvec3&)>& f)
+{
+    auto grid = std::make_shared<std::vector<float>>(static_cast<std::size_t>(DensityGrid) * DensityGrid * DensityGrid, 1.0f);
+    for (int z = 0; z < DensityGrid; ++z)
+        for (int y = 0; y < DensityGrid; ++y)
+            for (int x = 0; x < DensityGrid; ++x)
+            {
+                const glm::dvec3 c((x + 0.5) / DensityGrid * 2.0 - 1.0, (y + 0.5) / DensityGrid * 2.0 - 1.0,
+                                   (z + 0.5) / DensityGrid * 2.0 - 1.0);
+                if (glm::length(c) > 1.0e-6)
+                    (*grid)[(static_cast<std::size_t>(z) * DensityGrid + y) * DensityGrid + x] =
+                        static_cast<float>(std::clamp(f(glm::normalize(c)), 0.0, 1.0));
+            }
+    m_density = std::move(grid);
+}
+
+double CraterLayer::densityAt(const glm::dvec3& unitDir) const
+{
+    // the cell holding the direction's point on the unit sphere (cells ~2 / 48 of the
+    // radius: ~70 km on the Moon - the maria are hundreds of km)
+    const auto cell = [](double v) {
+        return std::clamp(static_cast<int>((v * 0.5 + 0.5) * DensityGrid), 0, DensityGrid - 1);
+    };
+    return (*m_density)[(static_cast<std::size_t>(cell(unitDir.z)) * DensityGrid + cell(unitDir.y)) * DensityGrid +
+                        cell(unitDir.x)];
+}
+
 CraterSample CraterLayer::sample(const glm::dvec3& dir, double minWavelengthM) const
 {
     CraterSample out;
@@ -75,6 +102,8 @@ CraterSample CraterLayer::sample(const glm::dvec3& dir, double minWavelengthM) c
                     const double r = glm::length(x - centre) / radius;
                     if (r >= 5.0)
                         continue;
+                    if (m_density && unitFromHash(h, 0) >= cls.probability * densityAt(centre / m_radius))
+                        continue;
                     // age: small craters are young more often (they are erased fast and
                     // made all the time), big ones mostly old and soft
                     const double youth = 1.5 + 1.5 * std::clamp(std::log10(std::max(radius, 1.0) / 30.0), 0.0, 1.0);
@@ -96,7 +125,10 @@ CraterSample CraterLayer::sample(const glm::dvec3& dir, double minWavelengthM) c
                     }
                     if (r >= 3.0)
                         continue;
-                    const double depth = radius * (0.10 + 0.30 * fresh);   // d/D 0.05 (old) .. 0.2 (fresh)
+                    // d/D 0.05 (old) .. 0.2 (fresh); a complex crater (D > ~15 km) is
+                    // shallower: d ~ 1.04 km x D_km^0.3 (lunar morphometry)
+                    const double complexDepth = 1040.0 * std::pow(radius * 2.0e-3, 0.3) * (0.45 + 0.55 * fresh);
+                    const double depth = std::min(radius * (0.10 + 0.30 * fresh), complexDepth);
                     const double rim = depth * (0.12 + 0.18 * fresh);
                     double hgt;
                     if (r < 1.0)

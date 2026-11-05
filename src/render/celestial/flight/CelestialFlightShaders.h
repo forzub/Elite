@@ -39,6 +39,8 @@ uniform float uHazeDensity;  // 0 = airless
 uniform float uContourKm;    // Elite contour spacing (the fixed, coarse set)
 uniform float uContourFineKm;     // the next finer nested set (half the spacing) ...
 uniform float uContourFineWeight; // ... fading in as the eye comes down
+uniform float uContourMinSlope;   // Elite on a cratered body: no lines on ground gentler than this (tan)
+uniform float uPixelAngle;       // radians per pixel (pixel footprint = dist x this)
 uniform float uNaturalZones; // 1: the body states life or open water (zone palette); 0: its real albedo
 uniform float uRimScale;     // Elite globe outline strength (the backdrop globe low over the ground: faint)
 uniform float uDetailStrength; // procedural micro relief (normal tilt)
@@ -192,16 +194,44 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
         // Elite Classic: black opaque body, light grey vector lines.
         float coast = isGas > 0.5 ? 0.0 : lineMask(coastKm, 1.3);
         float contourValue = heightKm / max(uContourKm, 1e-6);
-        float contour = isWater > 0.5 ? 0.0 : contourMask(contourValue, 0.9) * (lattice >= 0.0 ? 0.8 : 0.45);
-        // lines closer than a few pixels (fine contours far away, grazing ground)
-        // fade out instead of merging into a white moire
-        contour *= 1.0 - smoothstep(0.12, 0.35, fwidth(contourValue));
+        float contour;
+        if (uContourMinSlope > 0.0)
+        {
+            // a cratered body: the spacing coarsens per pixel in nested powers of two
+            // until the lines are >= ~7 px apart (the coarser set is a subset of the
+            // finer one: a steep crater wall keeps its outer lines from far away
+            // instead of fading out whole). The line width uses the continuous
+            // derivative, not fwidth of the stepped value (no seams at level edges).
+            float perPixel = max(fwidth(heightKm) / max(uContourKm, 1e-6), 1e-6);
+            float level = max(0.0, ceil(log2(perPixel / 0.15)));
+            float value = contourValue / exp2(level);
+            float w = perPixel / exp2(level);
+            float f = abs(fract(value + 0.5) - 0.5);
+            contour = isWater > 0.5 ? 0.0 : (1.0 - clamp(f / (w * 0.9), 0.0, 1.0)) * (lattice >= 0.0 ? 0.8 : 0.45);
+            contour *= 1.0 - smoothstep(0.12, 0.35, w);
+        }
+        else
+        {
+            contour = isWater > 0.5 ? 0.0 : contourMask(contourValue, 0.9) * (lattice >= 0.0 ? 0.8 : 0.45);
+            // lines closer than a few pixels (fine contours far away, grazing ground)
+            // fade out instead of merging into a white moire
+            contour *= 1.0 - smoothstep(0.12, 0.35, fwidth(contourValue));
+        }
         if (uContourFineWeight > 0.0 && isWater < 0.5)
         {
             float fineValue = heightKm / max(uContourFineKm, 1e-6);
             float fine = contourMask(fineValue, 0.9) * (lattice >= 0.0 ? 0.8 : 0.45) * uContourFineWeight;
             fine *= 1.0 - smoothstep(0.12, 0.35, fwidth(fineValue));
             contour = max(contour, fine);
+        }
+        if (uContourMinSlope > 0.0)
+        {
+            // a cratered body reads as a smooth sphere covered with craters: the lines
+            // stay on the steep crater walls and rims, the gentle basin slopes (~1 deg)
+            // draw none. Slope from the screen-space height change over the pixel
+            // footprint - the same measure on the globe and on the local terrain.
+            float slope = fwidth(heightKm) * 1000.0 / max(dist * uPixelAngle, 1e-3);
+            contour *= smoothstep(uContourMinSlope * 0.5, uContourMinSlope, slope);
         }
         if (isGas > 0.5)
             contour = contourMask(dot(land, vec3(0.3, 0.5, 0.2)) * 9.0, 1.0) * 0.6;
@@ -344,7 +374,6 @@ uniform samplerCube uRelief;
 uniform samplerCube uCloudCover;
 uniform float uHasClouds;
 uniform float uIsGas;
-uniform float uPixelAngle;
 uniform float uRadius;
 uniform float uSkyDisc;      // 0..1: a small far body in the sky (cinematic apparent size)
 uniform vec3 uFlat;          // colour while the texture bakes
@@ -473,7 +502,6 @@ in float vHeight;
 in vec2 vLattice;
 uniform mat3 uBodyToWorld;
 uniform vec3 uBodyCentre;   // body centre relative to the camera (world)
-uniform float uPixelAngle;
 uniform float uMicroScale;  // 1 / micro wavelength (m)
 uniform vec3 uAnchorBody;   // anchor in the body frame, mod the micro period
 uniform vec3 uAnchorWave;   // anchor mod the wave period (256 waves)

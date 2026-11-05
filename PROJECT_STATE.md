@@ -2991,8 +2991,11 @@ order - ask for it again if it is not in the session.
   beacons); administrative zones red / blue / green with the transponder rule (on -> automatic fine, off -> police);
   automatic velocity sync to the local frame on exit (small residual error, planner hint, no autopilot); two planners
   (visible promise + hidden server-side deterministic result, honest 3 sigma along beacons).
-- Defaults pending author review (PROPOSAL): star sump catches deep interstellar steps only; interstellar jump lasts hours;
-  jump charge visible in-system; after a sump ejection J or a new charge; L4/L5 naturally safe, a beacon improves precision.
+- Author answers (same day): the star catches both interstellar and in-system jump steps (in-system jumps route around
+  it via waypoints); the jump is instantaneous (screen ripple, new sky; HYPERION-1's 3 days = charging + in-system
+  flights); charging is not visible; J is never mandatory; J and jump are forbidden near ANY object, a beacon included
+  (fly away first). Still parameters: star capture radius (inner planets must stay reachable), keep-out distances by
+  object mass / size, L4/L5 safety (default: natural, a beacon improves precision).
 - Next (not started): implementation slices - data (sumps / jump limits / medium currents from the catalogue), visible
   planner, hidden server roll, exit sync, zones + transponder, J cap / acceleration / energy accounting.
 

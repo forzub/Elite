@@ -1668,7 +1668,11 @@ void GameSimulation::updateFreeFlights(double dt)
                         const glm::dvec3 side = glm::cross(rHat, glm::length(fwd) > 1.0e-6 ? glm::normalize(fwd) : glm::dvec3(tr.right()));
                         const glm::dvec3 nose = glm::length(fwd) > 1.0e-6 ? glm::normalize(fwd) : glm::cross(side, rHat);
                         const double r = primary->radiusMeters;
-                        for (const glm::dvec3 offset : {nose * half.z, -nose * half.z, side * half.x, -side * half.x})
+                        // the footprint: nose / tail, both sides and the four corners (a crater rim
+                        // between the edge points poked into the wide hull)
+                        for (const glm::dvec3 offset : {nose * half.z, -nose * half.z, side * half.x, -side * half.x,
+                                                        nose * half.z + side * half.x, nose * half.z - side * half.x,
+                                                        -nose * half.z + side * half.x, -nose * half.z - side * half.x})
                         {
                             TerrainSample under;
                             if (m_terrainHeight(primary->id, glm::normalize(rHat * r + offset), under))
@@ -1733,7 +1737,9 @@ void GameSimulation::updateFreeFlights(double dt)
                     }
                     std::cerr << "[FreeFlight] ship " << it->first.value << ": SURFACE CONTACT on " << primary->id
                               << " vertical " << vVert << " m/s horizontal " << vHor << " m/s (" << crushG << " g), ground material "
-                              << material << " slope " << slope << " deg feature " << (terrainKnown ? terrain.feature : 0) << " - "
+                              << material << " slope " << slope << " deg feature " << (terrainKnown ? terrain.feature : 0)
+                              << ", ground " << terrain.heightM << " m (30 m relief " << terrain.smoothHeightM << "), hull rests at "
+                              << ground << " m - "
                               << (motion.freeFlightSurfaceState == 1 ? "landed / survivable" : "CRASH") << std::endl;
                     // rest on the surface, moving with the body (body-fixed: it turns with it)
                     frame.originMeters = primary->centerMeters + rHat * (primary->radiusMeters + ground);

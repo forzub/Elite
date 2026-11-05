@@ -3192,6 +3192,14 @@ order - ask for it again if it is not in the session.
   envelope; tail-down vs belly-down: phase 11 flies tail-down (nose = thrust), the terminal belly-down; Newtonian
   plants, a body with faster rotation, an atmosphere (shuttle corridor) and the take-off not flown yet.
 - Next: the author's in-game check of the landing (PgDn on the Moon); then slice 4 (site-phased orbit insertion).
+- Author 2026-11-06: "корабль при посадке проваливается под грунт". Diagnosis: the server stood the hull on the field
+  sampled at a 30 m band (GameServer::terrainHeight) while the rendered terrain near the ground shows it down to ~1 m
+  (finest level 0.25 m spacing; CraterLayer to 1.5 m) - small craters, rims and ejecta were above the server's ground.
+  Evidence (land5): with ~1 m detail the site search saw roughness 3.6 m (0.9 m on the 30 m relief) and picked another
+  site; at contact centre 3009.88 m vs 3011.32 m (30 m), the footprint max 2.2 m above the centre. Fix: the ground
+  height at the rendered detail (band 1 m), slope / appearance on the 30 m relief, TerrainSample::smoothHeightM for
+  the contact log; footprint + 4 corners (the 26 m wide Cobra). land5: LANDED 1.57 / 0.06 m/s, slope 3.4 deg.
+  The visual result (no sinking) is NOT checked - the author's look in game is the gate.
 
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the

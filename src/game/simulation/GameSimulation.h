@@ -327,7 +327,8 @@ public:
     // field is still loading) -> the reference sphere is used.
     struct TerrainSample
     {
-        double heightM = 0.0;     // terrain or sea surface above the body radius
+        double heightM = 0.0;     // terrain or sea surface above the body radius (as rendered, ~1 m detail)
+        double smoothHeightM = 0.0;   // the same on the 30 m relief (diagnostics)
         int material = -1;        // world::celestial::surface::SurfaceMaterial, TerrainWater = sea / lake
         double slopeDeg = 0.0;
         int feature = 0;          // world::celestial::surface::FeatureClass (crater, mountain range, ...)

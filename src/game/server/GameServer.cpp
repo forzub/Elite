@@ -2433,10 +2433,16 @@ bool GameServer::terrainHeight(const std::string& bodyId, const glm::dvec3& worl
     const glm::dvec3 dirBody(glm::dot(d, glm::dvec3(o.prime)), glm::dot(d, glm::dvec3(o.north)), glm::dot(d, glm::dvec3(o.east)));
     const auto& field = *slot->loaded.field;
     const glm::dvec3 n = glm::normalize(dirBody);
+    // the ground the ship stands on is the RENDERED one: the finest terrain level near the ground
+    // shows the field down to ~1 m (small craters, rims, ejecta - CraterLayer to 1.5 m); a 30 m
+    // sample smoothed them away and the hull sank into the rendered relief (author 2026-11-06).
+    // The slope and the appearance stay on the 30 m relief (a stable, noise-free gradient).
     const auto sample = field.sample(n, 30.0);
+    const auto detail = field.sample(n, 1.0);
     // the sea is solid too: its surface over a sea-floor height
     const bool water = sample.water && sample.waterLevelM >= sample.heightM;
-    ground.heightM = water ? sample.waterLevelM : sample.heightM;
+    ground.heightM = water ? sample.waterLevelM : detail.heightM;
+    ground.smoothHeightM = water ? sample.waterLevelM : sample.heightM;
     // slope from two neighbours ~60 m away
     const double radius = std::max(1.0, field.referenceRadiusM());
     const double step = 60.0 / radius;

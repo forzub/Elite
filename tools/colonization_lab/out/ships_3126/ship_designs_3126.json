@@ -21927,6 +21927,12 @@
      "detail": "all suppliers inside open / licensed / restricted-civil channels"
     },
     {
+     "check": "grey_supply_declared",
+     "ok": true,
+     "level": "OK",
+     "detail": "N-10 (tau_ceti_cognium, dual_use black; реэкспорт)"
+    },
+    {
      "check": "component_prices_near_class_model",
      "ok": false,
      "level": "WARN",

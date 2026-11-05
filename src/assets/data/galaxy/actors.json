@@ -1,4 +1,5 @@
 {
+  "layer": "Исторический слой (ранняя редакция мира): 14 культурно-политических сил, рантайм GalaxyDatabase использует их для владения системами и узлами. НЕ реестр акторов 3126: акторы 3126, блоки, провинции и зоны — tools/colonization_lab/canon/political_order.json (поле historical_actor связывает слои). Status: PROPOSAL_PENDING_AUTHOR_REVIEW (2026-11-05).",
   "actors": [
     {
       "id": 1,

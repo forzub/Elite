@@ -3256,7 +3256,7 @@
   "imports": {
    "gj832_gaia_zone": "sol_authority",
    "gj876_next": "sol_authority",
-   "hd114783_hellas3": "sol_authority",
+   "hd114783_hellas3": "lalande_hellas",
    "leo83_zion": "sol_authority"
   },
   "jump_drives_total_y": 3184.1

@@ -39,6 +39,7 @@ usage (from tools/colonization_lab):
 
 Only the Python 3 standard library; deterministic output (sorted iteration, no clocks).
 """
+import political
 import argparse
 import json
 import os
@@ -125,6 +126,7 @@ class Data:
         self.unknowns = {u["id"]: u for u in self.F["unknowns"]}
         # economy / logistics / defence layer (world_economy.py), population history
         self.X = lore_economy.load()
+        self.PO = political.Order(W=self.W)
         self.SX = lore_sites.load()
         self.ST_E = endowment.load_endowment()
         with open(os.path.join(CANON, "population_history.json"), encoding="utf-8") as f:
@@ -567,6 +569,10 @@ def colony_doc(D, uid):
     if mr:
         g += ["", "Ненейтральные отношения по модели (торговля % оборота / культурная близость / обида):", "",
               table(["С кем", "Стойка", "Торговля %", "Культура", "Обида", "Статус"], mr)]
+    ps = political_status_block(D, path, uid)
+    if ps:
+        d.text("## Политический статус 3126")
+        d.gen("political_status", ps)
     d.text("## Отношения")
     d.gen("relations", "\n".join(g) if g else "Нет отношений в данных.")
     # trade partners
@@ -913,9 +919,119 @@ def demography_docs(D):
     return docs
 
 
+
+# ---------------------------------------------------------------- POLITICAL ORDER (political.py)
+PO_TAG = "PROPOSAL · на проверке автора"
+
+
+def po_tag(st):
+    return {"PROPOSAL_PENDING_AUTHOR_REVIEW": PO_TAG, "CANON": "CANON", "PROPOSAL": "PROPOSAL", "UNKNOWN": "UNKNOWN"}.get(st, st)
+
+
+def po_levels(O, lv):
+    return " · ".join(f"{O.P['categories'][c]['ru']} {O.P['access_scale'][str(lv[c])]['ru']}" for c in O.cats)
+
+
+def political_status_block(D, path, uid):
+    O = D.PO
+    if uid not in O.unit_actor:
+        return None
+    a = O.actor_of(uid)
+    g = []
+    if uid in O.zones():
+        z = O.P["units"][uid]
+        g.append(f"**Специальная зона, не актор и не член блока** ({z['zone_type']}): {z['ru']}. {z['regime']}. Статус: {po_tag(z['status'])}.")
+    else:
+        v = O.actors[a]
+        if O.unit_kind.get(uid) == "province":
+            u = O.P["units"][uid]
+            g.append(f"**Провинция актора {v['ru']}**, не суверенный субъект: {u['ru']}. Наследует {u['inherits']}; локально — {u['local']}. Статус провинции: {po_tag(u['status'])}.")
+        else:
+            g.append(f"**Актор 3126** (действующее лицо, узел политической силы): {v['ru']}." + (f" Единицы: {', '.join(D.pname(x) for x in v['units'])}." if len(v["units"]) > 1 else ""))
+        if v["bloc"]:
+            b = O.blocs[v["bloc"]]
+            mem = {"full": "полный член", "associate": "ассоциированный член", "pole": "самостоятельный полюс"}.get(v.get("membership"), v.get("membership"))
+            g.append(f"Блок: **{b['ru']}** — {mem}" + (f" ({v['membership_note']})" if v.get("membership_note") else "") + f". Идеология блока: {b['ideology']}. Статус: {po_tag(v['status'])}.")
+        else:
+            n = O.P["nonaligned"][a]
+            g.append(f"**Неприсоединившийся** — {O.P['nonaligned_types'][v['nonaligned']]['ru']}. Почему вне блоков: {n['why_outside']}. Независимость держится на том, что {n['independence']}. Статус: {po_tag(v['status'])}.")
+        ex = [e for e in O.exceptions if e["actor"] == a]
+        for e in ex:
+            g.append(f"Особое положение: {e['ru']} — {e['why']} ({po_tag(e['status'])}).")
+    sc = [s for s in O.sanctions if O.actor_of(uid) in (s["from"], s["to"]) and (uid in (s.get("units_from") or [uid]) or uid in (s.get("units_to") or [uid]))]
+    if sc:
+        g += ["", table(["Мера", "Против / с кем", "С года", "Категории", "Основание", "Статус"],
+                        [(s["kind"], D.pname(s["to"] if s["from"] == a else s["from"]), s["since"],
+                          ", ".join(f"{O.P['categories'][c]['ru']} ≥ {O.P['access_scale'][str(l)]['ru']}" for c, l in s["level"].items()), s["basis"], po_tag(s["status"])) for s in sc])]
+    g += ["", "Полная модель: " + link(path, "POLITICS/POLITICAL_ORDER.md", "POLITICS/POLITICAL_ORDER.md") + "."]
+    return "\n".join(g)
+
+
+def political_order_doc(D):
+    O = D.PO
+    path = "POLITICS/POLITICAL_ORDER.md"
+    d = new_doc(D, path, "Политический порядок 3126: акторы, блоки, неприсоединившиеся, доступ и санкции", "politics")
+    pl = lambda u: link(path, f"COLONIES/{u}.md", D.pname(u)) if u in D.pol else D.pname(u)
+    g = ["Источник: `tools/colonization_lab/canon/political_order.json` → `political.py` → `out/world_3126/political_order_3126.json`. "
+         f"Весь новый порядок — `{PO_TAG}` (PROPOSAL_PENDING_AUTHOR_REVIEW), кроме строк с пометкой CANON.", "",
+         "**Слои.** Актор — действующее лицо, узел политической силы (суверенный субъект 3126). Экономическая единица — единица демографии, экономики и рынков. "
+         "Провинция — единица актора вне метрополии. Специальная зона — не актор и не член блока. Старые `actors.json` / `subactors.json` (14 + 2) — исторический слой ранней редакции мира, не реестр 3126.", "",
+         f"Акторов 3126: **{len(O.actors)}**; экономических единиц: **{len(O.units)}**; провинций: {len(O.provinces())}; специальных зон: {len(O.zones())}; "
+         f"блоков: {len(O.blocs)} (из них полюс Сол); неприсоединившихся: {len(O.nonaligned())}.", "",
+         "### Акторы", "",
+         table(["Актор", "Единицы", "Блок / статус", "Членство", "Исторический актор (actors.json)", "Статус"],
+               [(O.actors[a]["ru"], ", ".join(pl(u) for u in O.actors[a]["units"]), O.blocs[O.actors[a]["bloc"]]["ru"] if O.actors[a]["bloc"] else "вне блоков: " + O.P["nonaligned_types"][O.actors[a]["nonaligned"]]["ru"],
+                 O.actors[a].get("membership") or "—", O.actors[a]["historical_actor"] if O.actors[a]["historical_actor"] is not None else "—", po_tag(O.actors[a]["status"])) for a in O.actors]), "",
+         "### Провинции и специальные зоны", "",
+         table(["Единица", "Тип", "Чья", "Суть", "Статус"],
+               [(pl(u), O.P["units"][u]["kind"], D.pname(O.P["units"][u]["actor"]) if O.P["units"][u]["actor"] else "—", O.P["units"][u]["ru"], po_tag(O.P["units"][u]["status"])) for u in O.P["units"]]), "",
+         "### Блоки", ""]
+    for b, v in O.blocs.items():
+        mem = ", ".join(pl(m) + (" (ассоц.)" if O.actors[m].get("membership") == "associate" else "") for m in O.bloc_members(b))
+        prov = [u for u in O.bloc_units(b) if O.unit_kind.get(u) == "province"]
+        g += [f"#### {v['ru']} (`{b}`, {v['kind']}) — {po_tag(v['status'])}", "",
+              f"- Члены ({len(O.bloc_members(b))}): {mem}" + (f"; провинции: {', '.join(pl(u) for u in prov)}" if prov else "") + ".",
+              f"- Идеология: {v['ideology']}." + (f" Формула: {v['motto']}." if v.get("motto") else ""),
+              f"- Чем НЕ является: {v['not']}.",
+              f"- Интеграция: `{v['integration']}`. Технологическая политика: {v['technology_policy']}.",
+              f"- Внутри: {po_levels(O, v['internal'])}.",
+              f"- Наружу (экспорт): {po_levels(O, v['export'])}; ввоз: {po_levels(O, v['import'])}."]
+        if v.get("associate_internal"):
+            g.append(f"- С ассоциированными членами: {po_levels(O, v['associate_internal'])}.")
+        if v.get("formed"):
+            g.append(f"- Как сложился: {v['formed']['when']} ({po_tag(v['formed']['status'])}{'' if v['formed'].get('date_canon') else '; дата не канон'}).")
+        if v.get("obligations"):
+            g.append(f"- Обязательства: {v['obligations']}. Чего блок не означает: {v['does_not_mean']}.")
+        if v.get("risk"):
+            g.append(f"- Риск для внешних: юридический {v['risk']['legal_risk']}, страховка ×{v['risk']['insurance_x']}, {v['risk']['provenance']}.")
+        g.append("")
+    g += ["### Неприсоединившиеся (не блок, не союзники друг другу)", "",
+          table(["Актор", "Тип", "Почему вне блоков", "На чём держится независимость", "С кем торгует", "Что ограничено"],
+                [(pl(a), O.P["nonaligned_types"][O.actors[a]["nonaligned"]]["ru"], O.P["nonaligned"][a]["why_outside"], O.P["nonaligned"][a]["independence"],
+                  O.P["nonaligned"][a]["trades_with"], O.P["nonaligned"][a]["restricted"]) for a in O.nonaligned()]), "",
+          "### Особые положения (явные исключения)", "",
+          table(["Актор", "Роль", "Почему", "Потолок доступа", "Статус"],
+                [(D.pname(e["actor"]), e["ru"], e["why"], ", ".join(f"{O.P['categories'][c]['ru']} ≤ {O.P['access_scale'][str(l)]['ru']}" for c, l in e["cap"].items()), po_tag(e["status"])) for e in O.exceptions]), "",
+          "### Санкции и ограничения (отдельный слой, выведен из истории)", "",
+          table(["Мера", "Кто", "Против", "С года", "Категории", "Основание", "Статус"],
+                [(s["kind"] + (" (временно)" if s.get("temporary") else ""), D.pname(s["from"]) + (f" [{', '.join(D.pname(u) for u in s['units_from'])}]" if s.get("units_from") else ""),
+                  D.pname(s["to"]) + (f" [{', '.join(D.pname(u) for u in s['units_to'])}]" if s.get("units_to") else ""), s["since"],
+                  ", ".join(f"{O.P['categories'][c]['ru']} ≥ {O.P['access_scale'][str(l)]['ru']}" for c, l in s["level"].items()), s["basis"], po_tag(s["status"])) for s in O.sanctions]), "",
+          "Напряжения без мер:", ""] + [f"- {D.pname(t['pair'][0])} — {D.pname(t['pair'][1])} (с {t['since']}): {t['text']} ({po_tag(t['status'])})." for t in O.P["tensions_without_measures"]] + [
+          "", "### Доступ между столицами (продавец → покупатель)", "",
+          "Цифры — шесть категорий по порядку: " + ", ".join(O.P["categories"][c]["ru"] for c in O.cats) + ". Шкала: " + "; ".join(f"{k} — {v['ru']}" for k, v in O.P["access_scale"].items()) + ".", ""]
+    seats = [next(a for a, v in O.actors.items() if v["bloc"] == b) for b in O.blocs] + O.nonaligned() + O.zones()
+    g.append(table(["продавец \\ покупатель"] + [D.pname(s) for s in seats],
+                   [(D.pname(s),) + tuple("—" if s == b else "".join(str(O.access(s, b)[c]) for c in O.cats) for b in seats) for s in seats]))
+    g += ["", "Правило разрешения: " + " ".join(O.P["resolution"]), "", "### Открытые вопросы автору", ""] + [f"- {q}" for q in O.P["open_questions"]]
+    d.gen("political_order", "\n".join(g))
+    d.narr("order_story", "Как сложился порядок (рассказ)", "объяснение блоков существующей историей; новые факты — только с пометкой [PROPOSAL].")
+    return d
+
+
 # ---------------------------------------------------------------- POLITICS
 def politics_docs(D):
-    docs = []
+    docs = [political_order_doc(D)]
     path = "POLITICS/RELATIONS.md"
     d = new_doc(D, path, "Отношения между политиями", "politics")
     g = [table(["Сторона A", "Сторона B", "С года", "Суть", "Обида", "Стойка (модель)", "Торговля %", "Статус"],

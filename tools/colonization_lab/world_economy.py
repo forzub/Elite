@@ -26,6 +26,7 @@ AUTHOR_TARGET.
     python world_economy.py            # compute and write out/world_3126/
     python world_economy.py --check    # recompute, compare, run the consistency checks
 """
+import political
 import argparse
 import copy
 import json
@@ -1136,7 +1137,7 @@ def compute_once(I, M):
 
 def shipyards(M, census):
     """New-build demand (dry tonnes / year) vs yard capacity; ships of polities without yards come from
-    their own bloc (canon/industry.json), else the largest trade partner with yards, else the nearest
+    their own political bloc (canon/political_order.json), else the largest trade partner with yards, else the nearest
     polity with yards; jump drives from the core makers."""
     I = M.I
     SE = I.SE["ship_classes"]
@@ -1153,8 +1154,11 @@ def shipyards(M, census):
     for k in sorted(by):
         if by[k]["has_yard_tech"]:
             continue
-        # own bloc first (canon/industry.json), then the main trade partner, then the nearest polity with yards
-        bloc = next((b["members"] for bid, b in I.IND["blocs"].items() if k in b["members"] and bid != "autarkies"), [])
+        # own bloc first (political.py), then the main trade partner, then the nearest polity with yards;
+        # non-aligned actors and special zones have no bloc mates (non-alignment is not an alliance)
+        PO = political.Order(W=I.W)
+        b = PO.bloc_of_unit(k) if k in PO.unit_actor else None
+        bloc = PO.bloc_units(b) if b else []
         ok_src = {x for x in by if by[x]["has_yard_tech"] and not M.pols[x]["refuses"]}
         mates = sorted((x for x in bloc if x != k and x in ok_src), key=lambda x: (-M.pols[x]["gdp"], x))
         partners = {}

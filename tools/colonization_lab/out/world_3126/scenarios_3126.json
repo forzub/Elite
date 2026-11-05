@@ -204,7 +204,7 @@
     "backlog_after_3y_dry_t": 0,
     "fleet_shortfall_share_after_3y": 0.0,
     "lost_dry_t_y": 108889,
-    "spare_capacity_elsewhere_dry_t_y": 406618,
+    "spare_capacity_elsewhere_dry_t_y": 406565,
     "takers": [
      "sol_authority",
      "eps_eri_harmony",

@@ -296,7 +296,8 @@ def docs(D, lm):
 
 
 LVL_RU = {"concern": "концерн", "assembly": "сборка", "parts": "детали", "import": "покупка"}
-CH_RU = {"open": "открыто (свой блок)", "licensed": "по лицензии", "restricted": "ограничено", "black": "чёрный рынок / реэкспорт", "own": "своё", "none": "нет"}
+CH_LV = {"open": 0, "licensed": 1, "restricted": 2, "black": 3, "closed": 4}
+CH_RU = {"open": "открыто", "licensed": "по лицензии", "restricted": "ограничено", "black": "санкции / реэкспорт", "closed": "закрыто", "own": "своё", "none": "нет"}
 
 
 from sol_network import FUNC_RU   # one translation of hub functions for Lore and the map
@@ -366,14 +367,23 @@ def industry_docs(D, lm, S, sites):
     pn = lambda k: D.pname(k) if k and k in D.X["economy"]["polities"] else (k or "—")
     path = "ECONOMY/INDUSTRY.md"
     d = lm.new_doc(D, path, "Промышленность: кто строит корабли, оборудование и модули", "economy")
-    g = ["Источник: `tools/colonization_lab/industry.py` (`canon/industry.json` + экономика + сайты) → `out/world_3126/industry_3126.json`.", "",
-         "### Блоки-союзы", "",
-         lm.table(["Блок", "Аналог", "Члены", "Почему вместе", "Школа кораблестроения", "Ядра от", "Производителей корпусов", "Доля главного"],
-                  [(v["ru"], v["analogue"], ", ".join(pn(m) for m in v["members"]), v["why"], IN["designs"][v["design"]]["ru"], pn(v["core_source"]),
+    sch = IN["schools"]
+    g = ["Источник: `tools/colonization_lab/industry.py` (`canon/industry.json` + экономика + сайты) → `out/world_3126/industry_3126.json`. "
+         "Политические блоки, доступ по категориям и санкции — `canon/political_order.json` ([POLITICS/POLITICAL_ORDER.md](../POLITICS/POLITICAL_ORDER.md)); "
+         "здесь — только промышленные школы и цепочки поставок. Школа — следствие традиции, стандартов и рынка, она не определяет блок.", "",
+         "### Блоки и их промышленность", "",
+         lm.table(["Блок (политика)", "Единицы", "Школы кораблестроения", "Ядра от", "Производителей корпусов", "Доля главного"],
+                  [(v["ru"], ", ".join(pn(m) for m in v["units"]), IN["fleet_uniformity"][b]["design_ru"], ", ".join(sorted({pn(sch[u]["core_source"]) for u in v["units"]})),
                     IN["fleet_uniformity"][b]["hull_makers"], IN["fleet_uniformity"][b]["main_maker_share"]) for b, v in IN["blocs"].items()]), "",
+         "Вне блоков: " + "; ".join(f"{pn(u)} — {IN['designs'][sch[u]['design']]['ru']}, ядра {pn(sch[u]['core_source'])}" for u in sorted(sch) if not IN["capability"].get(u, {}).get("bloc")) + ".", "",
          "Союзники летают на однотипных кораблях немногих производителей (Небесный пакт); Лига Лаланд покупает у многих — её флот пёстрый.", "",
          "### Школы", "", lm.table(["Школа", "Что это", "Цена ×", "Ресурс ×"], [(v["ru"], v["what"], v["price_x"], v["life_x"]) for v in IN["designs"].values()]), "",
-         "### Каналы между блоками", "", lm.table(["Покупатель → продавец", "Канал"], [(k.replace("|", " → "), CH_RU[v]) for k, v in sorted(IN["channels"].items()) if k.split("|")[0] != k.split("|")[1]]), "",
+         "### Каналы поставок по категориям (покупатель ← производитель)", "",
+         "Канал узла = доступ производитель → покупатель в категории узла (корпус — промышленность, двигатель и авионика — двойное назначение, оружие — военное, ядро — стратегическое). "
+         "Шесть цифр — гражданское, промышленность, двойное, военное, стратегическое, люди/финансы/данные; 0 открыто, 1 по лицензии, 2 ограничено, 3 санкции / косвенно, 4 закрыто.", "",
+         lm.table(["Покупатель"] + [pn(q) for q in sorted({m["polity"] for m in IN["manufacturers"]})],
+                  [(pn(k),) + tuple("своё" if k == q else "".join(str(CH_LV[IN["channels"][f"{k}|{q}"][c]]) for c in ("civilian_goods", "industrial", "dual_use", "military", "strategic", "people_finance_data"))
+                                    for q in sorted({m["polity"] for m in IN["manufacturers"]})) for k in sorted(IN["capability"])]), "",
          "### Кто что умеет (корабли)", "",
          lm.table(["Полития", "Роль", "Корпус", "Ядро", "Реактор", "Двигатель", "Авионика", "Жизнеобесп.", "Оружие"],
                   [(pn(k), c["ship_role"]) + tuple(LVL_RU[c["blocks"][b]["level"]] for b in ("hull_structure", "jump_core", "reactor", "main_drive", "avionics", "life_support", "weapons")) for k, c in IN["capability"].items()]), "",

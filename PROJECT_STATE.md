@@ -2717,7 +2717,51 @@ worked. Everything below is source only - no compile, no check run, no live evid
 - PAUSED by the user (2026-11-05): damage work stops here. The B1 working tree must first be committed as a WIP
   checkpoint (status: compiled, offline PASS, laser LIVE, missiles miss - NOT accepted) before the next order starts.
 
-### User order 2026-11-05 p - political order revision (PROPOSAL, not CANON) - NOT STARTED
+### User order 2026-11-05 p - political order revision - SOURCE + GENERATORS DONE, AUTHOR REVIEW PENDING
+Status: offline generators PASS; whole new order = PROPOSAL_PENDING_AUTHOR_REVIEW (not CANON). No runtime C++ change, not
+compiled (runtime JSON shape kept: economy_rules.json blocs.matrix + hub "bloc"). Restore tag
+`restore/pre-political-order-2026-11-05` (= B1 WIP checkpoint 7b6ebf5a, which the user ordered committed first).
+Terminology (user 2026-11-05): **actor = acting party, node of political force** (sovereign subject of 3126).
+- Single source of truth: `tools/colonization_lab/canon/political_order.json`, read only through
+  `tools/colonization_lab/political.py` (`--list` / `--check`; out/world_3126/political_order_3126.json + POLITICAL_ORDER_3126.md).
+  Layers: historical actor (src/assets/data/galaxy/actors.json 14 + subactors.json 2: early-world layer, runtime map
+  ownership; only a top-level "layer" note added, records untouched) / actor 3126 (21) / economic unit (23 = world.json
+  colonies + Sol) / province (hd40307_firmament -> eps_eri_harmony, CANON in world.json) / special zone (gj832_gaia_zone,
+  quarantine_exclusion). Blocs: cognium_pool 4, heavenly_pact 2 (+ province), lalande_league 3 (hd114783_hellas3 associate),
+  southern_circle 3, citadel_compact 2, free_belts 2, sol (pole) 1; non-aligned 4 (verde resource_neutral, next
+  strategic_multivector, karma ideological_isolationist, zion newcomer_religious) - not a bloc, not mutual allies.
+  Directional access seller -> buyer per category (civilian_goods, industrial, dual_use, military, strategic,
+  people_finance_data; 0 open, 1 licensed, 2 restricted, 3 sanctions/indirect = channel "black", 4 closed) = max(export
+  seller, import buyer) -> exception caps (Kern finance, Agora transit hub, Mecca jump math for the Southern circle,
+  Providence, Verde fuel; Karma excluded from caps) -> 8 sanctions, each tied to a relations_anchor record (Cognium-Citadel,
+  Cognium-Svarog, Harmony-Strife, Karma split, Maland-Firmament at unit level only, Hellas2-NewIndia, Kern-Hellas3 temporary,
+  Europa-Freeclans); Zion-Kern = tension without measures (crisis of 3126, open).
+- Migrated: industry.json `blocs` + hand bloc matrix in economy_live.json (+ polity_overrides) REMOVED; industry.json now
+  `industrial_schools` (design + core_source per unit, values carried over; Verde -> design none). The hidden
+  `if q == "wolf359_citadel"` in industry.py is replaced by strategic access 4. Runtime economy_rules.json blocs.matrix is
+  now derived (headline_channel_rule over access keys: bloc / nonaligned:<actor> / zone:<unit>) plus political_access
+  (unit -> unit six-digit codes). Consumers switched: industry.py, economy_live.py, ship_designer.py, world_economy.py
+  (yard partner: Third Hellas now buys ships via Agora, was Sol), lore_md.py (POLITICS/POLITICAL_ORDER.md + a generated
+  "Политический статус 3126" block in every colony dossier), lore_sites.py (INDUSTRY.md tables).
+- Data adjustments made while wiring (PROPOSAL): Pact military export 2 (state decision; keeps Sol PK-30 / PAO-7 with
+  Firmament armour/guns); UM transponder T-1 = industrial (network civil standard; Bastion ships carry it); jump-core
+  supply prefers the unit's core_source incl. an assembler (Firmament gets cores from Harmony); buyers outside their own
+  bloc spread purchases over 3 suppliers (keeps League fleet "many vendors").
+- Hand text fixed: RELATIONS.md (bloc formation rows, per-actor table: "cores from Citadel" claims contradicted the 2850
+  licence + Bastion-only-in-pact -> Cognium licence / Mecca; added Tianhe, Zion, Third Hellas, Providence, Sol rows),
+  WARS.md (blocs and sanctions instead of wars, no new wars), STRATEGIC_DEPENDENCIES.md, COLONIES gj581_europa /
+  hd40307_maland, Economy/INDUSTRY_AND_RESCUE.md §1, Economy/POLITICAL_ECONOMY.md (layer section), lab README.
+- Gates (2026-11-05, all rc=0): lab --check-dataset, --check-lore, logistics, world_economy, world_sites, political,
+  industry, economy_live (deterministic_rebuild), ship_designer (21 ships, 0 FAIL, 39 WARN), lore_md --check (pre-existing
+  stale FLEET_MODELS / SHIP_EQUIPMENT blocks refreshed by the rewrite), lore_html --check (139), calibrate_population.
+- Known, NOT fixed (outside the bloc layer): the lab.py trade-flow model still sells "jump cores" from New Shanghai to
+  Mecca, Svarog and New Karma (STRATEGIC_DEPENDENCIES generated table) - contradicts own Mecca math / refused licence /
+  refused network. Free belts formally receive Cognium cores at "restricted" (2850 licence covered all but Citadel /
+  Karma; no post-2862 sanction in the canon) - author question.
+- Next: author review of every bloc / actor / sanction / exception (open_questions in political_order.json); promote
+  accepted rows to CANON; then decide on the lab.py trade-model core flows; then resume damage B1 (missiles miss).
+
+Original order text (summary):
 Full revision of the 3126 political structure: separate ideological bloc / economic integration / technology access /
 sanctions (now mixed in tools/colonization_lab/canon/industry.json); polity 3126 vs historical actor
 (src/assets/data/galaxy/actors.json, ~14 old actors) vs economic unit (~23) vs province / special zone;

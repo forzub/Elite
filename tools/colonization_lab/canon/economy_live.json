@@ -165,26 +165,7 @@
     "runtime_data": "economy/price_info_delay_3126.json: матрица D_bulk_h между узлами сети и light_lag каждого хаба"
   },
 
-  "blocs": {
-    "note": "Блоки — industry.blocs (8). Канал между блоками — industry.trade_channels (open / licensed / restricted / black) + closed. Обиды world.relations_anchor с grievance >= 70 понижают канал пары политий на ступень; grievance >= 45 делает возможной блокаду.",
-    "channels_order": ["open", "licensed", "restricted", "black", "closed"],
-    "matrix": {
-      "cognium_pool":    {"cognium_pool": "open", "heavenly_pact": "restricted", "lalande_league": "licensed", "southern_circle": "restricted", "citadel_compact": "black", "free_belts": "restricted", "sol": "licensed", "autarkies": "restricted"},
-      "heavenly_pact":   {"heavenly_pact": "open", "lalande_league": "licensed", "southern_circle": "restricted", "citadel_compact": "restricted", "free_belts": "black", "sol": "licensed", "autarkies": "restricted"},
-      "lalande_league":  {"lalande_league": "open", "southern_circle": "licensed", "citadel_compact": "restricted", "free_belts": "restricted", "sol": "licensed", "autarkies": "restricted"},
-      "southern_circle": {"southern_circle": "open", "citadel_compact": "restricted", "free_belts": "restricted", "sol": "licensed", "autarkies": "restricted"},
-      "citadel_compact": {"citadel_compact": "open", "free_belts": "restricted", "sol": "licensed", "autarkies": "restricted"},
-      "free_belts":      {"free_belts": "open", "sol": "restricted", "autarkies": "restricted"},
-      "sol":             {"sol": "open", "autarkies": "restricted"},
-      "autarkies":       {"autarkies": "restricted"}
-    },
-    "polity_overrides": {
-      "delta_pav_karma": {"all": "closed", "except": "relief", "why": "отказ от сети (refuses_network)"},
-      "gj832_gaia_zone": {"all": "closed", "except": "licensed_science", "why": "карантин «Гайя» (канон)"}
-    },
-    "ship_bloc": "блок корабля = блок политии регистрации (порт приписки) + лицензии на борту; у игрока — регистрация + репутация"
-  },
-
+  "blocs": {"note": "Блоки, каналы и доступ по категориям — НЕ здесь: единственный источник — canon/political_order.json (political.py). economy_live.py пишет в рантайм (src/assets/data/economy/economy_rules.json) производные blocs.matrix (один канал на пару групп доступа: блок, nonaligned:<актор>, zone:<единица>; headline_channel_rule) и political_access (точная матрица единица -> единица по шести категориям). Прежняя ручная матрица 8 блоков и polity_overrides (Новая Карма closed except relief, «Гайя» closed except licensed_science) удалены 2026-11-05: их смысл теперь — профили nonaligned.delta_pav_karma и zone_profiles.gj832_gaia_zone.", "ship_bloc": "блок корабля = блок политии регистрации (порт приписки) + лицензии на борту; у игрока — регистрация + репутация"},
   "customs": {
     "note": "Решение таможни хаба о корабле чужого блока. Свой блок — всегда open. Вероятность — детерминированный бросок RNG(seed, hub, ship, day).",
     "by_channel": {

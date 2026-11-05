@@ -1,12 +1,14 @@
 """Industrial geography and rescue services of 3126 (offline, deterministic, stdlib only).
 
-From canon/industry.json (blocs, designs, manufacturers, block groups, rescue
-norms) + world.json (colonies, jump-core lineage, grievances) + the generated
+From canon/industry.json (industrial schools, designs, manufacturers, block groups,
+rescue norms) + canon/political_order.json via political.py (blocs, access per category,
+sanctions) + world.json (colonies, jump-core lineage, grievances) + the generated
 economy, defence and sites (out/world_3126) it derives:
 
   - per polity and per major block (ship, mining, gas, station): concern /
     assembly / parts / import, and who supplies it through which channel
-    (open inside a bloc, licensed, restricted, black market);
+    (access seller -> buyer in the block's category: open, licensed, restricted,
+    black market / sanctions, closed);
   - per site: what is produced, assembled and sold there;
   - fleet uniformity of each bloc (how many hull makers its fleets come from);
   - bills of major blocks of typical products with the makers by bloc;
@@ -25,6 +27,7 @@ import sys
 
 import lab
 import logistics as lg
+import political
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out", "world_3126")
@@ -56,7 +59,10 @@ class Inputs:
         self.eco = self.X["economy"]["polities"]
         self.col = {c["id"]: c for c in self.W["colonies"]}
         self.rel = {tuple(sorted((r["a"], r["b"]))): r["grievance"] for r in self.W["relations_anchor"]}
-        self.bloc_of = {m: b for b, v in self.IN["blocs"].items() for m in v["members"]}
+        self.PO = political.Order(W=self.W)
+        self.school = self.IN["industrial_schools"]["units"]
+        self.bloc_of = {u: self.PO.bloc_of_unit(u) for u in self.PO.units}
+        self.cat_of_block = self.PO.P["categories"]["industry_block"]
         self.jt = {j["unit"]: j for j in self.W["jump_technology"]}
 
     def system(self, k):
@@ -65,20 +71,12 @@ class Inputs:
 
 # ---------------------------------------------------------------- blocs and channels
 def channels(I):
-    B = I.IN["blocs"]
+    """Channel per buyer|seller unit pair and access category (political.py: seller -> buyer)."""
     out = {}
-    for a in sorted(B):
-        for b in sorted(B):
-            if a == b:
-                ch = "open"
-            else:
-                worst = max([I.rel.get(tuple(sorted((x, y))), 0) for x in B[a]["members"] for y in B[b]["members"]] + [0])
-                ch = "black" if worst >= 60 else "restricted" if worst >= 30 else "licensed"
-                if "free_belts" in (a, b) and ch == "licensed":
-                    ch = "restricted"          # clan ports: no export control, so partners treat them as grey
-                if "autarkies" in (a, b):
-                    ch = "restricted"
-            out[f"{a}|{b}"] = ch
+    for k in sorted(I.eco):
+        for q in sorted(I.eco):
+            lv = I.PO.access(q, k)
+            out[f"{k}|{q}"] = {c: political.CHANNEL[lv[c]] for c in I.PO.cats}
     return out
 
 
@@ -102,7 +100,7 @@ def capability(I):
         bias = I.col.get(k, {}).get("bias", {})
         if k == SOL:
             bias = {"shipbuilding": 25, "manufacturing": 25, "metallurgy": 20, "electronics": 25, "bio": 15, "extraction": 15, "research": 20}
-        design = IN["blocs"][I.bloc_of[k]]["design"]
+        design = I.school[k]["design"]
         rows = {}
         for grp in IN["block_groups"].values():
             for blk in grp:
@@ -142,7 +140,7 @@ def capability(I):
         role = "строит корабли целиком" if builds else "делает узлы и запчасти" if builds_partly >= 2 else "покупает корабли"
         if refuses(I, k):
             role = "строит только внутрисистемный флот (отказ от сети)" if builds_partly >= 2 else "живёт старым флотом (отказ от сети)"
-        out[k] = dict(bloc=I.bloc_of[k], design=design, blocks=rows, ship_role=role)
+        out[k] = dict(bloc=I.bloc_of[k], actor=I.PO.actor_of(k), design=design, blocks=rows, ship_role=role)
     return out
 
 
@@ -171,24 +169,25 @@ def supply(I, cap, ch):
             for q in sorted(cap):
                 if q == k or cap[q]["blocks"][blk]["level"] != "concern":
                     continue
-                if blk == "jump_core" and q == "wolf359_citadel" and cap[k]["bloc"] != "citadel_compact":
-                    continue                      # Citadel cores are military-only and never exported
-                chn = ch[f"{cap[k]['bloc']}|{cap[q]['bloc']}"]
-                rank = ("open", "licensed", "restricted", "black").index(chn)
+                chn = ch[f"{k}|{q}"][I.cat_of_block[blk]]
+                if chn == "closed":
+                    continue                      # e.g. Citadel cores outside its pact: strategic access 4
+                rank = political.CHANNEL.index(chn)
                 offers.append((rank, -I.eco[q]["gdp_cr_y"], q, chn))
             if blk == "jump_core":
-                src = I.IN["blocs"][cap[k]["bloc"]]["core_source"]
-                if src and src != k and cap[src]["blocks"]["jump_core"]["level"] == "concern":
-                    offers.append((-1, 0, src, ch[f"{cap[k]['bloc']}|{cap[src]['bloc']}"]))
-                elif src and src != k and cap[src]["blocks"]["jump_core"]["level"] == "assembly":
-                    offers.append((-1, 0, "tau_ceti_cognium", "licensed"))
+                src = I.school[k]["core_source"]
+                # preferred source: its own maker or the bloc assembler of sealed reference-fab blocks
+                if src and src != k and cap[src]["blocks"]["jump_core"]["level"] in ("concern", "assembly"):
+                    chn = ch[f"{k}|{src}"]["strategic"]
+                    if chn != "closed":
+                        offers.append((-1, 0, src, chn))
             offers.sort()
             if refuses(I, k):
                 rows[blk] = dict(source=None, channel="none", level=c["level"], note="отказ от сети: межзвёздных закупок нет")
             elif offers:
                 _, _, q, chn = offers[0]
-                rows[blk] = dict(source=q, channel=chn, level=c["level"], via="чёрный рынок / реэкспорт" if chn == "black" else None)
-                if chn != "open" and blk != "jump_core":
+                rows[blk] = dict(source=q, channel=chn, category=I.cat_of_block[blk], level=c["level"], via="чёрный рынок / реэкспорт" if chn == "black" else None)
+                if (I.bloc_of[k] is None or I.bloc_of[k] != I.bloc_of[q]) and blk != "jump_core":
                     # outside its own bloc a buyer spreads purchases over the three best suppliers
                     top = [o for o in offers if o[0] == offers[0][0]][:3]
                     w = [0.5, 0.3, 0.2][:len(top)]
@@ -202,9 +201,9 @@ def supply(I, cap, ch):
 def fleet_uniformity(I, cap, sup):
     out = {}
     fc = I.X["fleet_census"]["polities"]
-    for b, v in sorted(I.IN["blocs"].items()):
+    for b in sorted(I.PO.blocs):
         makers = {}
-        for k in v["members"]:
+        for k in I.PO.bloc_units(b):
             if k not in sup:
                 continue
             ships = sum(r["active"] for r in fc.get(k, {}).values())
@@ -216,8 +215,10 @@ def fleet_uniformity(I, cap, sup):
                 makers[key] = makers.get(key, 0) + ships * part["share"]
         tot = sum(makers.values()) or 1
         top = max(makers.values()) / tot if makers else 0
+        seat = next(a for a, v in I.PO.actors.items() if v["bloc"] == b)
+        designs = sorted({I.school[u]["design"] for u in I.PO.bloc_units(b)})
         out[b] = dict(hull_makers=len(makers), shares={m: r3(s / tot) for m, s in sorted(makers.items(), key=lambda kv: -kv[1])}, main_maker_share=r3(top),
-                      variety=I.IN["designs"][v["design"]]["variety"], design_ru=I.IN["designs"][v["design"]]["ru"])
+                      designs=designs, variety=I.IN["designs"][I.school[seat]["design"]]["variety"], design_ru=", ".join(I.IN["designs"][d]["ru"] for d in designs))
     return out
 
 
@@ -260,7 +261,7 @@ def boms(I, cap):
     makers_by_bloc = {}
     for m in I.IN["manufacturers"]:
         for g in m["groups"]:
-            makers_by_bloc.setdefault((I.bloc_of[m["polity"]], g), []).append(m["name"])
+            makers_by_bloc.setdefault((I.PO.access_key(m["polity"]), g), []).append(m["name"])
     for prod, shares in BOM.items():
         if shares is None:
             comp = I.SE["ship_classes"][prod]["components_cr"]
@@ -268,7 +269,8 @@ def boms(I, cap):
             shares = {COMP_TO_BLOCK[c]: v / tot for c, v in comp.items() if v > 0}
         rows = []
         for blk, sh in sorted(shares.items(), key=lambda kv: -kv[1]):
-            rows.append(dict(block=blk, share=r3(sh), makers={b: makers_by_bloc.get((b, blk), []) for b in I.IN["blocs"] if makers_by_bloc.get((b, blk))}))
+            keys = sorted({kk for kk, _ in makers_by_bloc})
+            rows.append(dict(block=blk, share=r3(sh), makers={b: makers_by_bloc.get((b, blk), []) for b in keys if makers_by_bloc.get((b, blk))}))
         out[prod] = rows
     return out
 
@@ -329,16 +331,15 @@ def checks(I, out):
 
     def add(n, ok, d):
         res.append(dict(check=n, ok=bool(ok), detail=d))
-    members = [m for v in I.IN["blocs"].values() for m in v["members"]]
-    missing = sorted(set(I.eco) - set(members))
-    dup = sorted({m for m in members if members.count(m) > 1})
-    add("every_polity_in_exactly_one_bloc", not missing and not dup, f"missing {missing}, dup {dup}")
+    missing = sorted(k for k in I.eco if k not in I.school or k not in I.PO.unit_actor)
+    add("every_unit_has_school_and_political_status", not missing, f"missing {missing}")
+    add("schools_are_not_blocs", "blocs" not in I.IN, "industry.json holds no political blocs (political_order.json)")
     cores = {k for k, c in out["capability"].items() if c["blocks"]["jump_core"]["level"] == "concern"}
     jt_own = {u for u, j in I.jt.items() if j["how"] in ("state_secret", "own")}
     add("core_makers_match_jump_lineage", cores == jt_own, f"{sorted(cores)} == {sorted(jt_own)}")
-    nosrc = [f"{k}:{b}" for k, rows in out["supply"].items() for b, r in rows.items() if r["source"] is None and k not in I.IN["blocs"]["autarkies"]["members"] and not refuses(I, k)]
+    nosrc = [f"{k}:{b}" for k, rows in out["supply"].items() for b, r in rows.items() if r["source"] is None and I.school[k]["design"] != "none" and not refuses(I, k)]
     add("every_block_has_a_source", not nosrc, ",".join(nosrc[:8]) or "ok")
-    exp_cit = [k for k, rows in out["supply"].items() if rows["jump_core"]["source"] == "wolf359_citadel" and out["capability"][k]["bloc"] != "citadel_compact"]
+    exp_cit = [k for k, rows in out["supply"].items() if rows["jump_core"]["source"] == "wolf359_citadel" and k != "wolf359_citadel" and out["capability"][k]["bloc"] != "citadel_compact"]
     add("citadel_cores_not_exported", not exp_cit, ",".join(exp_cit) or "ok")
     pact = out["fleet_uniformity"]["heavenly_pact"]
     league = out["fleet_uniformity"]["lalande_league"]
@@ -352,15 +353,18 @@ def checks(I, out):
 
 
 def md(I, out, chk):
-    L = ["# Промышленность и спасательные службы 3126 (PROPOSAL)", "", "Сгенерировано `tools/colonization_lab/industry.py`.", "", "## Блоки", "",
-         "| Блок | Аналог | Члены | Конструкторская школа | Ядра | Производителей корпусов | Доля главного |", "|---|---|---|---|---|---:|---:|"]
-    for b, v in I.IN["blocs"].items():
+    L = ["# Промышленность и спасательные службы 3126 (PROPOSAL)", "", "Сгенерировано `tools/colonization_lab/industry.py`. Блоки — `canon/political_order.json` (political.py); школы — `industry.json industrial_schools`.", "", "## Блоки (политика) и школы (промышленность)", "",
+         "| Блок | Единицы | Конструкторские школы | Ядра | Производителей корпусов | Доля главного |", "|---|---|---|---|---:|---:|"]
+    for b, v in I.PO.blocs.items():
         u = out["fleet_uniformity"][b]
-        L.append(f"| {v['ru']} | {v['analogue']} | {', '.join(v['members'])} | {I.IN['designs'][v['design']]['ru']} | {v['core_source'] or '—'} | {u['hull_makers']} | {u['main_maker_share']} |")
+        cores = sorted({I.school[x]["core_source"] or "—" for x in I.PO.bloc_units(b)})
+        L.append(f"| {v['ru']} | {', '.join(I.PO.bloc_units(b))} | {u['design_ru']} | {', '.join(cores)} | {u['hull_makers']} | {u['main_maker_share']} |")
+    outside = [u for u in I.PO.units if not I.bloc_of[u]]
+    L.append(f"| вне блоков | {', '.join(outside)} | {', '.join(sorted({I.IN['designs'][I.school[u]['design']]['ru'] for u in outside}))} | — | — | — |")
     L += ["", "## Кто строит корабли", "", "| Полития | Блок | Роль | Корпус | Ядро | Реактор | Двигатель | Авионика |", "|---|---|---|---|---|---|---|---|"]
     for k, c in out["capability"].items():
         b = c["blocks"]
-        L.append(f"| {k} | {c['bloc']} | {c['ship_role']} | {b['hull_structure']['level']} | {b['jump_core']['level']} | {b['reactor']['level']} | {b['main_drive']['level']} | {b['avionics']['level']} |")
+        L.append(f"| {k} | {c['bloc'] or 'вне блоков'} | {c['ship_role']} | {b['hull_structure']['level']} | {b['jump_core']['level']} | {b['reactor']['level']} | {b['main_drive']['level']} | {b['avionics']['level']} |")
     L += ["", "## Проверки", ""] + [f"- {'OK' if x['ok'] else 'FAIL'} {x['check']}: {x['detail']}" for x in chk]
     return "\n".join(L) + "\n"
 
@@ -370,7 +374,8 @@ def compute():
     ch = channels(I)
     cap = capability(I)
     sup = supply(I, cap, ch)
-    out = dict(blocs=I.IN["blocs"], designs=I.IN["designs"], channels=ch, capability=cap, supply=sup, fleet_uniformity=fleet_uniformity(I, cap, sup),
+    out = dict(blocs={b: dict(ru=v["ru"], kind=v["kind"], members=I.PO.bloc_members(b), units=I.PO.bloc_units(b)) for b, v in I.PO.blocs.items()},
+               schools=I.school, designs=I.IN["designs"], channels=ch, capability=cap, supply=sup, fleet_uniformity=fleet_uniformity(I, cap, sup),
                by_site=by_site(I, cap, sup), boms=boms(I, cap), manufacturers=I.IN["manufacturers"], status=TAG)
     out["rescue"] = rescue(I, cap)
     return I, out

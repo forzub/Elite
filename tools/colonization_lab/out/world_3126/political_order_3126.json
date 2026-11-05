@@ -1,0 +1,7389 @@
+{
+ "access": {
+  "cyg61_kern|delta_pav_freekarma": {
+   "levels": [
+    0,
+    0,
+    1,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "cognium_pool.internal"
+   ]
+  },
+  "cyg61_kern|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "cyg61_kern|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "cyg61_kern|eps_eri_strife": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "cyg61_kern|gj581_europa": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "cyg61_kern|gj581_freeclans": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "cyg61_kern|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "cyg61_kern|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "cyg61_kern|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "cyg61_kern|hd114783_hellas3": {
+   "levels": [
+    0,
+    2,
+    1,
+    2,
+    2,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_hellas3_claims_freeze industrial=2",
+    "kern_hellas3_claims_freeze people_finance_data=3"
+   ]
+  },
+  "cyg61_kern|hd20794_hellas2": {
+   "levels": [
+    0,
+    0,
+    1,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "cognium_pool.internal"
+   ]
+  },
+  "cyg61_kern|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "cyg61_kern|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "cyg61_kern|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "cyg61_kern|hd69830_verde": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "cyg61_kern|lalande_hellas": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "cyg61_kern|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "cyg61_kern|leo83_zion": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "cyg61_kern|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "cyg61_kern|sol_authority": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "cyg61_kern|tau_ceti_cognium": {
+   "levels": [
+    0,
+    0,
+    1,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "cognium_pool.internal"
+   ]
+  },
+  "cyg61_kern|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "delta_pav_freekarma|cyg61_kern": {
+   "levels": [
+    0,
+    0,
+    1,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "cognium_pool.internal"
+   ]
+  },
+  "delta_pav_freekarma|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|eps_eri_strife": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|gj581_europa": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|gj581_freeclans": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|hd114783_hellas3": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|hd20794_hellas2": {
+   "levels": [
+    0,
+    0,
+    1,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "cognium_pool.internal"
+   ]
+  },
+  "delta_pav_freekarma|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|hd69830_verde": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|lalande_hellas": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "delta_pav_freekarma|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|leo83_zion": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|sol_authority": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_freekarma|tau_ceti_cognium": {
+   "levels": [
+    0,
+    0,
+    1,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "cognium_pool.internal"
+   ]
+  },
+  "delta_pav_freekarma|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|cyg61_kern": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|delta_pav_freekarma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "karma_split_closure industrial=3",
+    "karma_split_closure dual_use=4"
+   ]
+  },
+  "delta_pav_karma|eps_eri_harmony": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|eps_eri_strife": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|gj581_europa": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|gj581_freeclans": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|gj832_tianhe": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|gj876_next": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|hd114783_hellas3": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|hd20794_hellas2": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|hd20794_newindia": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|hd40307_firmament": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|hd40307_maland": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|hd69830_verde": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|lalande_hellas": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|lalande_mecca": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|leo83_zion": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|proxima_outpost": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|sol_authority": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|tau_ceti_cognium": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "delta_pav_karma|wolf359_citadel": {
+   "levels": [
+    2,
+    2,
+    3,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|cyg61_kern": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "eps_eri_harmony|delta_pav_freekarma": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|eps_eri_strife": {
+   "levels": [
+    0,
+    2,
+    4,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "harmony_strife_embargo industrial=2",
+    "harmony_strife_embargo dual_use=4",
+    "harmony_strife_embargo military=4",
+    "harmony_strife_embargo people_finance_data=3"
+   ]
+  },
+  "eps_eri_harmony|gj581_europa": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|gj581_freeclans": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|gj832_tianhe": {
+   "levels": [
+    0,
+    0,
+    0,
+    1,
+    1,
+    1
+   ],
+   "why": [
+    "heavenly_pact.internal"
+   ]
+  },
+  "eps_eri_harmony|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "eps_eri_harmony|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|hd20794_hellas2": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|hd40307_firmament": {
+   "levels": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "why": [
+    "same actor"
+   ]
+  },
+  "eps_eri_harmony|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|hd69830_verde": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|lalande_hellas": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "eps_eri_harmony|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|leo83_zion": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|sol_authority": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|tau_ceti_cognium": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_harmony|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|cyg61_kern": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "eps_eri_strife|delta_pav_freekarma": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|eps_eri_harmony": {
+   "levels": [
+    0,
+    2,
+    4,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "harmony_strife_embargo industrial=2",
+    "harmony_strife_embargo dual_use=4",
+    "harmony_strife_embargo military=4",
+    "harmony_strife_embargo strategic=4",
+    "harmony_strife_embargo people_finance_data=3"
+   ]
+  },
+  "eps_eri_strife|gj581_europa": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|gj581_freeclans": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "free_belts.internal"
+   ]
+  },
+  "eps_eri_strife|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    3,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "eps_eri_strife|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|hd20794_hellas2": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|hd69830_verde": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|lalande_hellas": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps dual_use=2",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "eps_eri_strife|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|leo83_zion": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|sol_authority": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|tau_ceti_cognium": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "eps_eri_strife|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|cyg61_kern": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|delta_pav_freekarma": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|eps_eri_strife": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|gj581_freeclans": {
+   "levels": [
+    0,
+    0,
+    3,
+    3,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "europa_freeclans_registry_dispute dual_use=3",
+    "europa_freeclans_registry_dispute military=3"
+   ]
+  },
+  "gj581_europa|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "lalande_league.associate_internal"
+   ]
+  },
+  "gj581_europa|hd20794_hellas2": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|hd69830_verde": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|lalande_hellas": {
+   "levels": [
+    0,
+    0,
+    0,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "lalande_league.internal"
+   ]
+  },
+  "gj581_europa|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|leo83_zion": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|sol_authority": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|tau_ceti_cognium": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_europa|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|cyg61_kern": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "gj581_freeclans|delta_pav_freekarma": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|eps_eri_strife": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "free_belts.internal"
+   ]
+  },
+  "gj581_freeclans|gj581_europa": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    3,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "gj581_freeclans|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|hd20794_hellas2": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|hd69830_verde": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|lalande_hellas": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps dual_use=2",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "gj581_freeclans|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|leo83_zion": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|sol_authority": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|tau_ceti_cognium": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj581_freeclans|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    3,
+    3,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|cyg61_kern": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|delta_pav_freekarma": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|delta_pav_karma": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|eps_eri_harmony": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|eps_eri_strife": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|gj581_europa": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|gj581_freeclans": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|gj832_tianhe": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|gj876_next": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|hd114783_hellas3": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|hd20794_hellas2": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|hd20794_newindia": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|hd40307_firmament": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|hd40307_maland": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|hd69830_verde": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|lalande_hellas": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|lalande_mecca": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|leo83_zion": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|proxima_outpost": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|sol_authority": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|tau_ceti_cognium": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_gaia_zone|wolf359_citadel": {
+   "levels": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|cyg61_kern": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "gj832_tianhe|delta_pav_freekarma": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|eps_eri_harmony": {
+   "levels": [
+    0,
+    0,
+    0,
+    1,
+    1,
+    1
+   ],
+   "why": [
+    "heavenly_pact.internal"
+   ]
+  },
+  "gj832_tianhe|eps_eri_strife": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|gj581_europa": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|gj581_freeclans": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "gj832_tianhe|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|hd20794_hellas2": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|hd40307_firmament": {
+   "levels": [
+    0,
+    0,
+    0,
+    1,
+    1,
+    1
+   ],
+   "why": [
+    "heavenly_pact.internal"
+   ]
+  },
+  "gj832_tianhe|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|hd69830_verde": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|lalande_hellas": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "gj832_tianhe|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|leo83_zion": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|sol_authority": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|tau_ceti_cognium": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj832_tianhe|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj876_next|cyg61_kern": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj876_next|delta_pav_freekarma": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj876_next|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj876_next|eps_eri_harmony": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "gj876_next|eps_eri_strife": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj876_next|gj581_europa": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj876_next|gj581_freeclans": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj876_next|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj876_next|gj832_tianhe": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "gj876_next|hd114783_hellas3": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj876_next|hd20794_hellas2": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj876_next|hd20794_newindia": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0"
+   ]
+  },
+  "gj876_next|hd40307_firmament": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "gj876_next|hd40307_maland": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0"
+   ]
+  },
+  "gj876_next|hd69830_verde": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj876_next|lalande_hellas": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "gj876_next|lalande_mecca": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0"
+   ]
+  },
+  "gj876_next|leo83_zion": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "gj876_next|proxima_outpost": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "gj876_next|sol_authority": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "gj876_next|tau_ceti_cognium": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "gj876_next|wolf359_citadel": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "hd114783_hellas3|cyg61_kern": {
+   "levels": [
+    0,
+    2,
+    1,
+    2,
+    3,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_hellas3_claims_freeze industrial=2",
+    "kern_hellas3_claims_freeze people_finance_data=3"
+   ]
+  },
+  "hd114783_hellas3|delta_pav_freekarma": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|eps_eri_strife": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|gj581_europa": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "lalande_league.associate_internal"
+   ]
+  },
+  "hd114783_hellas3|gj581_freeclans": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|hd20794_hellas2": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|hd69830_verde": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|lalande_hellas": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    0
+   ],
+   "why": [
+    "lalande_league.associate_internal",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "hd114783_hellas3|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|leo83_zion": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|sol_authority": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|tau_ceti_cognium": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd114783_hellas3|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|cyg61_kern": {
+   "levels": [
+    0,
+    0,
+    1,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "cognium_pool.internal"
+   ]
+  },
+  "hd20794_hellas2|delta_pav_freekarma": {
+   "levels": [
+    0,
+    0,
+    1,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "cognium_pool.internal"
+   ]
+  },
+  "hd20794_hellas2|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|eps_eri_strife": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|gj581_europa": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|gj581_freeclans": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|hd114783_hellas3": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    2,
+    4,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "hellas2_newindia_water_war_residue dual_use=2",
+    "hellas2_newindia_water_war_residue military=4"
+   ]
+  },
+  "hd20794_hellas2|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|hd69830_verde": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|lalande_hellas": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "hd20794_hellas2|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|leo83_zion": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|sol_authority": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_hellas2|tau_ceti_cognium": {
+   "levels": [
+    0,
+    0,
+    1,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "cognium_pool.internal"
+   ]
+  },
+  "hd20794_hellas2|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|cyg61_kern": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|delta_pav_freekarma": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|eps_eri_strife": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|gj581_europa": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|gj581_freeclans": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1"
+   ]
+  },
+  "hd20794_newindia|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|hd20794_hellas2": {
+   "levels": [
+    0,
+    1,
+    2,
+    4,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "hellas2_newindia_water_war_residue military=4"
+   ]
+  },
+  "hd20794_newindia|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    1,
+    1
+   ],
+   "why": [
+    "southern_circle.internal"
+   ]
+  },
+  "hd20794_newindia|hd69830_verde": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|lalande_hellas": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "hd20794_newindia|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    1,
+    1
+   ],
+   "why": [
+    "southern_circle.internal"
+   ]
+  },
+  "hd20794_newindia|leo83_zion": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|sol_authority": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|tau_ceti_cognium": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd20794_newindia|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|cyg61_kern": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "hd40307_firmament|delta_pav_freekarma": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|eps_eri_harmony": {
+   "levels": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "why": [
+    "same actor"
+   ]
+  },
+  "hd40307_firmament|eps_eri_strife": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|gj581_europa": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|gj581_freeclans": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|gj832_tianhe": {
+   "levels": [
+    0,
+    0,
+    0,
+    1,
+    1,
+    1
+   ],
+   "why": [
+    "heavenly_pact.internal"
+   ]
+  },
+  "hd40307_firmament|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "hd40307_firmament|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|hd20794_hellas2": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|hd40307_maland": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "maland_firmament_cold_war civilian_goods=2",
+    "maland_firmament_cold_war industrial=3",
+    "maland_firmament_cold_war dual_use=4",
+    "maland_firmament_cold_war military=4",
+    "maland_firmament_cold_war people_finance_data=3"
+   ]
+  },
+  "hd40307_firmament|hd69830_verde": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|lalande_hellas": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "hd40307_firmament|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|leo83_zion": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|sol_authority": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|tau_ceti_cognium": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_firmament|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|cyg61_kern": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|delta_pav_freekarma": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|eps_eri_strife": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|gj581_europa": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|gj581_freeclans": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1"
+   ]
+  },
+  "hd40307_maland|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|hd20794_hellas2": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    1,
+    1
+   ],
+   "why": [
+    "southern_circle.internal"
+   ]
+  },
+  "hd40307_maland|hd40307_firmament": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "maland_firmament_cold_war civilian_goods=2",
+    "maland_firmament_cold_war industrial=3",
+    "maland_firmament_cold_war dual_use=4",
+    "maland_firmament_cold_war military=4",
+    "maland_firmament_cold_war people_finance_data=3"
+   ]
+  },
+  "hd40307_maland|hd69830_verde": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|lalande_hellas": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "hd40307_maland|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    1,
+    1
+   ],
+   "why": [
+    "southern_circle.internal"
+   ]
+  },
+  "hd40307_maland|leo83_zion": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|sol_authority": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|tau_ceti_cognium": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd40307_maland|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|cyg61_kern": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|delta_pav_freekarma": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|eps_eri_strife": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|gj581_europa": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|gj581_freeclans": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|hd114783_hellas3": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|hd20794_hellas2": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|lalande_hellas": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "hd69830_verde|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|leo83_zion": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|sol_authority": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|tau_ceti_cognium": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "hd69830_verde|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_hellas|cyg61_kern": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|delta_pav_freekarma": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_hellas|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|eps_eri_strife": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|gj581_europa": {
+   "levels": [
+    0,
+    0,
+    0,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "lalande_league.internal"
+   ]
+  },
+  "lalande_hellas|gj581_freeclans": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_hellas|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    0
+   ],
+   "why": [
+    "lalande_league.associate_internal",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|hd20794_hellas2": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|hd69830_verde": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|leo83_zion": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|sol_authority": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|tau_ceti_cognium": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    3,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_hellas|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_mecca|cyg61_kern": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|delta_pav_freekarma": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|eps_eri_strife": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|gj581_europa": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|gj581_freeclans": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1"
+   ]
+  },
+  "lalande_mecca|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|hd20794_hellas2": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    1,
+    1
+   ],
+   "why": [
+    "southern_circle.internal"
+   ]
+  },
+  "lalande_mecca|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    1,
+    1
+   ],
+   "why": [
+    "southern_circle.internal"
+   ]
+  },
+  "lalande_mecca|hd69830_verde": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|lalande_hellas": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "lalande_mecca|leo83_zion": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|sol_authority": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|tau_ceti_cognium": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "lalande_mecca|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|cyg61_kern": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "leo83_zion|delta_pav_freekarma": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|eps_eri_strife": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|gj581_europa": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|gj581_freeclans": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    3,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "leo83_zion|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|hd20794_hellas2": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|hd69830_verde": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|lalande_hellas": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "leo83_zion|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|sol_authority": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|tau_ceti_cognium": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "leo83_zion|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|cyg61_kern": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "proxima_outpost|delta_pav_freekarma": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|eps_eri_strife": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|gj581_europa": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|gj581_freeclans": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    4,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "proxima_outpost|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|hd20794_hellas2": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|hd69830_verde": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|lalande_hellas": {
+   "levels": [
+    0,
+    1,
+    2,
+    4,
+    4,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps dual_use=2",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "proxima_outpost|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|leo83_zion": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|sol_authority": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|tau_ceti_cognium": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "proxima_outpost|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    1,
+    1,
+    1,
+    2
+   ],
+   "why": [
+    "citadel_compact.internal"
+   ]
+  },
+  "sol_authority|cyg61_kern": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|delta_pav_freekarma": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|eps_eri_strife": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|gj581_europa": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|gj581_freeclans": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1"
+   ]
+  },
+  "sol_authority|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|hd20794_hellas2": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|hd69830_verde": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|lalande_hellas": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "sol_authority|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|leo83_zion": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|tau_ceti_cognium": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "sol_authority|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    2,
+    2,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|cyg61_kern": {
+   "levels": [
+    0,
+    0,
+    1,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "cognium_pool.internal"
+   ]
+  },
+  "tau_ceti_cognium|delta_pav_freekarma": {
+   "levels": [
+    0,
+    0,
+    1,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "cognium_pool.internal"
+   ]
+  },
+  "tau_ceti_cognium|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|eps_eri_strife": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|gj581_europa": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|gj581_freeclans": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|hd114783_hellas3": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|hd20794_hellas2": {
+   "levels": [
+    0,
+    0,
+    1,
+    1,
+    2,
+    0
+   ],
+   "why": [
+    "cognium_pool.internal"
+   ]
+  },
+  "tau_ceti_cognium|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|hd69830_verde": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|lalande_hellas": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "tau_ceti_cognium|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    1,
+    2,
+    2,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|leo83_zion": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "cognium_svarog_licence_revoked dual_use=3",
+    "cognium_svarog_licence_revoked military=4"
+   ]
+  },
+  "tau_ceti_cognium|sol_authority": {
+   "levels": [
+    0,
+    0,
+    1,
+    2,
+    2,
+    2
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "tau_ceti_cognium|wolf359_citadel": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "cognium_citadel_tech_denial dual_use=3",
+    "cognium_citadel_tech_denial military=4"
+   ]
+  },
+  "wolf359_citadel|cyg61_kern": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "kern_finance_bridge caps people_finance_data=1"
+   ]
+  },
+  "wolf359_citadel|delta_pav_freekarma": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|delta_pav_karma": {
+   "levels": [
+    2,
+    3,
+    4,
+    4,
+    4,
+    4
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|eps_eri_harmony": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|eps_eri_strife": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|gj581_europa": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|gj581_freeclans": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|gj832_gaia_zone": {
+   "levels": [
+    3,
+    4,
+    4,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|gj832_tianhe": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|gj876_next": {
+   "levels": [
+    0,
+    0,
+    1,
+    4,
+    4,
+    1
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "providence_multivector caps industrial=0",
+    "providence_multivector caps dual_use=1",
+    "providence_multivector caps people_finance_data=1"
+   ]
+  },
+  "wolf359_citadel|hd114783_hellas3": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|hd20794_hellas2": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|hd20794_newindia": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|hd40307_firmament": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|hd40307_maland": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|hd69830_verde": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|lalande_hellas": {
+   "levels": [
+    0,
+    1,
+    2,
+    4,
+    4,
+    0
+   ],
+   "why": [
+    "max(export seller, import buyer)",
+    "agora_neutral_port caps dual_use=2",
+    "agora_neutral_port caps people_finance_data=0"
+   ]
+  },
+  "wolf359_citadel|lalande_mecca": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|leo83_zion": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|proxima_outpost": {
+   "levels": [
+    0,
+    1,
+    1,
+    1,
+    1,
+    2
+   ],
+   "why": [
+    "citadel_compact.internal"
+   ]
+  },
+  "wolf359_citadel|sol_authority": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  },
+  "wolf359_citadel|tau_ceti_cognium": {
+   "levels": [
+    0,
+    1,
+    3,
+    4,
+    4,
+    3
+   ],
+   "why": [
+    "max(export seller, import buyer)"
+   ]
+  }
+ },
+ "actors": {
+  "cyg61_kern": {
+   "bloc": "cognium_pool",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "cyg61_kern"
+   ]
+  },
+  "delta_pav_freekarma": {
+   "bloc": "cognium_pool",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "delta_pav_freekarma"
+   ]
+  },
+  "delta_pav_karma": {
+   "bloc": null,
+   "membership": null,
+   "nonaligned": "ideological_isolationist",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "delta_pav_karma"
+   ]
+  },
+  "eps_eri_harmony": {
+   "bloc": "heavenly_pact",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "eps_eri_harmony",
+    "hd40307_firmament"
+   ]
+  },
+  "eps_eri_strife": {
+   "bloc": "free_belts",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "eps_eri_strife"
+   ]
+  },
+  "gj581_europa": {
+   "bloc": "lalande_league",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "gj581_europa"
+   ]
+  },
+  "gj581_freeclans": {
+   "bloc": "free_belts",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "gj581_freeclans"
+   ]
+  },
+  "gj832_tianhe": {
+   "bloc": "heavenly_pact",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "gj832_tianhe"
+   ]
+  },
+  "gj876_next": {
+   "bloc": null,
+   "membership": null,
+   "nonaligned": "strategic_multivector",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "gj876_next"
+   ]
+  },
+  "hd114783_hellas3": {
+   "bloc": "lalande_league",
+   "membership": "associate",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "hd114783_hellas3"
+   ]
+  },
+  "hd20794_hellas2": {
+   "bloc": "cognium_pool",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "hd20794_hellas2"
+   ]
+  },
+  "hd20794_newindia": {
+   "bloc": "southern_circle",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "hd20794_newindia"
+   ]
+  },
+  "hd40307_maland": {
+   "bloc": "southern_circle",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "hd40307_maland"
+   ]
+  },
+  "hd69830_verde": {
+   "bloc": null,
+   "membership": null,
+   "nonaligned": "resource_neutral",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "hd69830_verde"
+   ]
+  },
+  "lalande_hellas": {
+   "bloc": "lalande_league",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "lalande_hellas"
+   ]
+  },
+  "lalande_mecca": {
+   "bloc": "southern_circle",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "lalande_mecca"
+   ]
+  },
+  "leo83_zion": {
+   "bloc": null,
+   "membership": null,
+   "nonaligned": "newcomer_religious",
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "leo83_zion"
+   ]
+  },
+  "proxima_outpost": {
+   "bloc": "citadel_compact",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "proxima_outpost"
+   ]
+  },
+  "sol_authority": {
+   "bloc": "sol",
+   "membership": "pole",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "sol_authority"
+   ]
+  },
+  "tau_ceti_cognium": {
+   "bloc": "cognium_pool",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "tau_ceti_cognium"
+   ]
+  },
+  "wolf359_citadel": {
+   "bloc": "citadel_compact",
+   "membership": "full",
+   "nonaligned": null,
+   "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+   "units": [
+    "wolf359_citadel"
+   ]
+  }
+ },
+ "blocs": {
+  "citadel_compact": {
+   "integration": "medium",
+   "kind": "alliance",
+   "members": [
+    "proxima_outpost",
+    "wolf359_citadel"
+   ],
+   "units": [
+    "proxima_outpost",
+    "wolf359_citadel"
+   ]
+  },
+  "cognium_pool": {
+   "integration": "high",
+   "kind": "alliance",
+   "members": [
+    "cyg61_kern",
+    "delta_pav_freekarma",
+    "hd20794_hellas2",
+    "tau_ceti_cognium"
+   ],
+   "units": [
+    "cyg61_kern",
+    "delta_pav_freekarma",
+    "hd20794_hellas2",
+    "tau_ceti_cognium"
+   ]
+  },
+  "free_belts": {
+   "integration": "low_formal_high_informal",
+   "kind": "space",
+   "members": [
+    "eps_eri_strife",
+    "gj581_freeclans"
+   ],
+   "units": [
+    "eps_eri_strife",
+    "gj581_freeclans"
+   ]
+  },
+  "heavenly_pact": {
+   "integration": "very_high",
+   "kind": "alliance",
+   "members": [
+    "eps_eri_harmony",
+    "gj832_tianhe"
+   ],
+   "units": [
+    "eps_eri_harmony",
+    "gj832_tianhe",
+    "hd40307_firmament"
+   ]
+  },
+  "lalande_league": {
+   "integration": "high_core_low_associate",
+   "kind": "alliance",
+   "members": [
+    "gj581_europa",
+    "hd114783_hellas3",
+    "lalande_hellas"
+   ],
+   "units": [
+    "gj581_europa",
+    "hd114783_hellas3",
+    "lalande_hellas"
+   ]
+  },
+  "sol": {
+   "integration": "n/a",
+   "kind": "pole",
+   "members": [
+    "sol_authority"
+   ],
+   "units": [
+    "sol_authority"
+   ]
+  },
+  "southern_circle": {
+   "integration": "medium",
+   "kind": "alliance",
+   "members": [
+    "hd20794_newindia",
+    "hd40307_maland",
+    "lalande_mecca"
+   ],
+   "units": [
+    "hd20794_newindia",
+    "hd40307_maland",
+    "lalande_mecca"
+   ]
+  }
+ },
+ "categories": [
+  "civilian_goods",
+  "industrial",
+  "dual_use",
+  "military",
+  "strategic",
+  "people_finance_data"
+ ],
+ "checks": [
+  {
+   "check": "every_unit_mapped_once",
+   "detail": "missing [], extra []",
+   "ok": true
+  },
+  {
+   "check": "unit_in_at_most_one_actor",
+   "detail": "22",
+   "ok": true
+  },
+  {
+   "check": "actor_seat_is_own_unit",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "actor_bloc_known",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "nonaligned_have_profile_and_type",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "no_autarkies_bloc",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "zones_not_actors",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "provinces_inherit_bloc",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "profiles_cover_all_categories",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "exceptions_reference_actors",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "sanctions_derived_from_relations_anchor",
+   "detail": "8 measures",
+   "ok": true
+  },
+  {
+   "check": "citadel_strategic_closed_outside_pact",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "mecca_strategic_for_southern_circle",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "cognium_cores_reach_sol_league_pact",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "kern_finance_crosses_blocs",
+   "detail": "Kern finance <= licensed with everyone except Karma (isolation), Third Hellas (claims freeze), zones",
+   "ok": true
+  },
+  {
+   "check": "agora_more_open_than_league_peer",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "firmament_local_conflict_only",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "hellas3_less_integrated_than_core",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "southern_circle_less_integrated_than_pact",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "zone_closed_to_ordinary_trade",
+   "detail": "",
+   "ok": true
+  },
+  {
+   "check": "nonaligned_not_mutual_allies",
+   "detail": "",
+   "ok": true
+  }
+ ],
+ "do_not_edit": true,
+ "generated_by": "tools/colonization_lab/political.py",
+ "headline_matrix": {
+  "citadel_compact": {
+   "citadel_compact": "open",
+   "cognium_pool": "licensed",
+   "free_belts": "licensed",
+   "heavenly_pact": "licensed",
+   "lalande_league": "licensed",
+   "nonaligned:delta_pav_karma": "restricted",
+   "nonaligned:gj876_next": "open",
+   "nonaligned:hd69830_verde": "licensed",
+   "nonaligned:leo83_zion": "licensed",
+   "sol": "licensed",
+   "southern_circle": "licensed",
+   "zone:gj832_gaia_zone": "closed"
+  },
+  "cognium_pool": {
+   "cognium_pool": "open",
+   "free_belts": "licensed",
+   "heavenly_pact": "licensed",
+   "lalande_league": "open",
+   "nonaligned:delta_pav_karma": "restricted",
+   "nonaligned:gj876_next": "open",
+   "nonaligned:hd69830_verde": "open",
+   "nonaligned:leo83_zion": "licensed",
+   "sol": "licensed",
+   "southern_circle": "licensed",
+   "zone:gj832_gaia_zone": "closed"
+  },
+  "free_belts": {
+   "free_belts": "open",
+   "heavenly_pact": "restricted",
+   "lalande_league": "licensed",
+   "nonaligned:delta_pav_karma": "restricted",
+   "nonaligned:gj876_next": "open",
+   "nonaligned:hd69830_verde": "licensed",
+   "nonaligned:leo83_zion": "licensed",
+   "sol": "licensed",
+   "southern_circle": "licensed",
+   "zone:gj832_gaia_zone": "closed"
+  },
+  "heavenly_pact": {
+   "heavenly_pact": "open",
+   "lalande_league": "licensed",
+   "nonaligned:delta_pav_karma": "restricted",
+   "nonaligned:gj876_next": "open",
+   "nonaligned:hd69830_verde": "licensed",
+   "nonaligned:leo83_zion": "licensed",
+   "sol": "licensed",
+   "southern_circle": "licensed",
+   "zone:gj832_gaia_zone": "closed"
+  },
+  "lalande_league": {
+   "lalande_league": "open",
+   "nonaligned:delta_pav_karma": "restricted",
+   "nonaligned:gj876_next": "open",
+   "nonaligned:hd69830_verde": "open",
+   "nonaligned:leo83_zion": "licensed",
+   "sol": "licensed",
+   "southern_circle": "licensed",
+   "zone:gj832_gaia_zone": "closed"
+  },
+  "nonaligned:delta_pav_karma": {
+   "nonaligned:delta_pav_karma": "open",
+   "nonaligned:gj876_next": "restricted",
+   "nonaligned:hd69830_verde": "restricted",
+   "nonaligned:leo83_zion": "restricted",
+   "sol": "restricted",
+   "southern_circle": "restricted",
+   "zone:gj832_gaia_zone": "closed"
+  },
+  "nonaligned:gj876_next": {
+   "nonaligned:gj876_next": "open",
+   "nonaligned:hd69830_verde": "open",
+   "nonaligned:leo83_zion": "open",
+   "sol": "open",
+   "southern_circle": "open",
+   "zone:gj832_gaia_zone": "closed"
+  },
+  "nonaligned:hd69830_verde": {
+   "nonaligned:hd69830_verde": "open",
+   "nonaligned:leo83_zion": "licensed",
+   "sol": "licensed",
+   "southern_circle": "licensed",
+   "zone:gj832_gaia_zone": "closed"
+  },
+  "nonaligned:leo83_zion": {
+   "nonaligned:leo83_zion": "open",
+   "sol": "licensed",
+   "southern_circle": "licensed",
+   "zone:gj832_gaia_zone": "closed"
+  },
+  "sol": {
+   "sol": "open",
+   "southern_circle": "licensed",
+   "zone:gj832_gaia_zone": "closed"
+  },
+  "southern_circle": {
+   "southern_circle": "open",
+   "zone:gj832_gaia_zone": "closed"
+  },
+  "zone:gj832_gaia_zone": {
+   "zone:gj832_gaia_zone": "open"
+  }
+ },
+ "nonaligned": [
+  "delta_pav_karma",
+  "gj876_next",
+  "hd69830_verde",
+  "leo83_zion"
+ ],
+ "provinces": [
+  "hd40307_firmament"
+ ],
+ "scale": {
+  "0": "open",
+  "1": "licensed",
+  "2": "restricted",
+  "3": "sanctions_indirect",
+  "4": "closed"
+ },
+ "schema": "political_order_3126/1",
+ "special_zones": [
+  "gj832_gaia_zone"
+ ],
+ "status": "PROPOSAL_PENDING_AUTHOR_REVIEW",
+ "units": {
+  "cyg61_kern": {
+   "access_key": "cognium_pool",
+   "actor": "cyg61_kern",
+   "bloc": "cognium_pool",
+   "kind": "seat"
+  },
+  "delta_pav_freekarma": {
+   "access_key": "cognium_pool",
+   "actor": "delta_pav_freekarma",
+   "bloc": "cognium_pool",
+   "kind": "seat"
+  },
+  "delta_pav_karma": {
+   "access_key": "nonaligned:delta_pav_karma",
+   "actor": "delta_pav_karma",
+   "bloc": null,
+   "kind": "seat"
+  },
+  "eps_eri_harmony": {
+   "access_key": "heavenly_pact",
+   "actor": "eps_eri_harmony",
+   "bloc": "heavenly_pact",
+   "kind": "seat"
+  },
+  "eps_eri_strife": {
+   "access_key": "free_belts",
+   "actor": "eps_eri_strife",
+   "bloc": "free_belts",
+   "kind": "seat"
+  },
+  "gj581_europa": {
+   "access_key": "lalande_league",
+   "actor": "gj581_europa",
+   "bloc": "lalande_league",
+   "kind": "seat"
+  },
+  "gj581_freeclans": {
+   "access_key": "free_belts",
+   "actor": "gj581_freeclans",
+   "bloc": "free_belts",
+   "kind": "seat"
+  },
+  "gj832_gaia_zone": {
+   "access_key": "zone:gj832_gaia_zone",
+   "actor": null,
+   "bloc": null,
+   "kind": "special_zone"
+  },
+  "gj832_tianhe": {
+   "access_key": "heavenly_pact",
+   "actor": "gj832_tianhe",
+   "bloc": "heavenly_pact",
+   "kind": "seat"
+  },
+  "gj876_next": {
+   "access_key": "nonaligned:gj876_next",
+   "actor": "gj876_next",
+   "bloc": null,
+   "kind": "seat"
+  },
+  "hd114783_hellas3": {
+   "access_key": "lalande_league",
+   "actor": "hd114783_hellas3",
+   "bloc": "lalande_league",
+   "kind": "seat"
+  },
+  "hd20794_hellas2": {
+   "access_key": "cognium_pool",
+   "actor": "hd20794_hellas2",
+   "bloc": "cognium_pool",
+   "kind": "seat"
+  },
+  "hd20794_newindia": {
+   "access_key": "southern_circle",
+   "actor": "hd20794_newindia",
+   "bloc": "southern_circle",
+   "kind": "seat"
+  },
+  "hd40307_firmament": {
+   "access_key": "heavenly_pact",
+   "actor": "eps_eri_harmony",
+   "bloc": "heavenly_pact",
+   "kind": "province"
+  },
+  "hd40307_maland": {
+   "access_key": "southern_circle",
+   "actor": "hd40307_maland",
+   "bloc": "southern_circle",
+   "kind": "seat"
+  },
+  "hd69830_verde": {
+   "access_key": "nonaligned:hd69830_verde",
+   "actor": "hd69830_verde",
+   "bloc": null,
+   "kind": "seat"
+  },
+  "lalande_hellas": {
+   "access_key": "lalande_league",
+   "actor": "lalande_hellas",
+   "bloc": "lalande_league",
+   "kind": "seat"
+  },
+  "lalande_mecca": {
+   "access_key": "southern_circle",
+   "actor": "lalande_mecca",
+   "bloc": "southern_circle",
+   "kind": "seat"
+  },
+  "leo83_zion": {
+   "access_key": "nonaligned:leo83_zion",
+   "actor": "leo83_zion",
+   "bloc": null,
+   "kind": "seat"
+  },
+  "proxima_outpost": {
+   "access_key": "citadel_compact",
+   "actor": "proxima_outpost",
+   "bloc": "citadel_compact",
+   "kind": "seat"
+  },
+  "sol_authority": {
+   "access_key": "sol",
+   "actor": "sol_authority",
+   "bloc": "sol",
+   "kind": "seat"
+  },
+  "tau_ceti_cognium": {
+   "access_key": "cognium_pool",
+   "actor": "tau_ceti_cognium",
+   "bloc": "cognium_pool",
+   "kind": "seat"
+  },
+  "wolf359_citadel": {
+   "access_key": "citadel_compact",
+   "actor": "wolf359_citadel",
+   "bloc": "citadel_compact",
+   "kind": "seat"
+  }
+ }
+}

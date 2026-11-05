@@ -46,7 +46,7 @@
 | backlog_after_3y_dry_t | 0 |
 | fleet_shortfall_share_after_3y | 0.0 |
 | lost_dry_t_y | 108889 |
-| spare_capacity_elsewhere_dry_t_y | 406618 |
+| spare_capacity_elsewhere_dry_t_y | 406565 |
 | takers | Солнечная Администрация (Sol Authority), Цветущая Гармония, Пояс Раздора / Вольные астероиды |
 
 Восстановление: заказы уходят к другим верфям (свободно ~10 % их мощности); остальное — очередь: старые корабли летают дольше, фрахт растёт (~3 лет)

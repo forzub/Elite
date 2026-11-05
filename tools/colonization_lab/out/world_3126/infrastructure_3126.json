@@ -4806,7 +4806,7 @@
     "has_yard_tech": false,
     "jump_drives_y": 0.6000000000000001,
     "military_dry_t_y": 0.0,
-    "supplied_by": "sol_authority"
+    "supplied_by": "lalande_hellas"
    },
    "totals": {
     "equipment_t": 553050,
@@ -7455,10 +7455,10 @@
     }
    },
    "shipyards": {
-    "civil_dry_t_y": 56638,
+    "civil_dry_t_y": 57173,
     "has_yard_tech": true,
     "jump_drives_y": 27.4,
-    "military_dry_t_y": 10460
+    "military_dry_t_y": 12428
    },
    "totals": {
     "equipment_t": 104002350,
@@ -9202,10 +9202,10 @@
     }
    },
    "shipyards": {
-    "civil_dry_t_y": 3177057,
+    "civil_dry_t_y": 3176522,
     "has_yard_tech": true,
     "jump_drives_y": 2146.7000000000003,
-    "military_dry_t_y": 192205
+    "military_dry_t_y": 190237
    },
    "totals": {
     "equipment_t": 2110064950,

@@ -3,8 +3,8 @@
 
 Input (authored):  canon/ship_designs.json  - equipment products and ship models
                    canon/ship_economics.json - class targets (mass, payload, thrust, power, price by component)
-                   canon/industry.json       - manufacturers, blocs, design schools
-                   out/world_3126/industry_3126.json - trade channels between blocs
+                   canon/industry.json       - manufacturers, industrial schools (design per unit)
+                   canon/political_order.json (political.py) - bloc of the polity, access seller -> buyer per category
 Output:            out/ships_3126/ship_designs_3126.json  (every derived number and check)
                    out/ships_3126/SHIP_DESIGNS_3126.md     (report)
                    out/ships_3126/svg/<id>.svg             (simplified design: top / side / front)
@@ -17,6 +17,7 @@ not F*v; its waste heat is input * (1 - efficiency). A reactor's waste is mwe * 
 
 usage: ship_designer.py [--check]
 """
+import political
 import argparse
 import json
 import math
@@ -104,16 +105,16 @@ def compute():
     E = ECON["ship_classes"]
     C20_TARE_T = ECON["cargo_model"]["container_tare_t"]   # canonical empty C20 (runtime: ShipCargoPassports.h C20TareTonnes)
     I = load("industry.json")
-    channels = load(os.path.join("..", "out", "world_3126", "industry_3126.json"))["channels"]
+    PO = political.Order()
+    cat_of_product = PO.P["categories"]["ship_product_cat"]
     R = D["rules"]
     prods = {p["id"]: p for p in D["products"]}
     mfr = {m["id"]: m for m in I["manufacturers"]}
-    bloc_of = {pol: b for b, v in I["blocs"].items() for pol in v["members"]}
-    school_of_bloc = {b: v["design"] for b, v in I["blocs"].items()}
+    school_of = {u: v["design"] for u, v in I["industrial_schools"]["units"].items()}
     designs = I["designs"]
 
-    def bloc_of_mfr(mid):
-        return bloc_of.get(mfr[mid]["polity"]) if mid in mfr else None
+    def polity_of_mfr(mid):
+        return mfr[mid]["polity"] if mid in mfr else None
 
     out_ships = []
     for s in D["ships"]:
@@ -123,8 +124,8 @@ def compute():
             chk.append(dict(check=name, ok=bool(ok), level="OK" if ok else level, detail=detail))
 
         cls = E[s["cls"]]
-        bloc = bloc_of.get(s["polity"])
-        school = s.get("school_override") or school_of_bloc.get(bloc, "none")
+        bloc = PO.bloc_of_unit(s["polity"])
+        school = s.get("school_override") or school_of.get(s["polity"], "none")
         sx = designs.get(school, {"price_x": 1.0, "life_x": 1.0})
         layout_key = s["law"] + s["layout"]
         lay = R["layouts"][layout_key]
@@ -269,19 +270,19 @@ def compute():
         add("cargo_near_class_target", abs(max(s["cargo_t"], towed) / max(cls["cargo_t"], 1) - 1) <= tol or s.get("variant_of"),
             f"{s['cargo_t']} t vs class {cls['cargo_t']} t", "WARN")
 
-        # ---- suppliers through bloc channels
+        # ---- suppliers through access channels (political.py: maker's polity -> ship's polity, product category)
         bad = []
         grey = []
         for it in items:
             p = prods[it["product"]]
-            pb = bloc_of_mfr(p["mfr"])
-            if pb is None or pb == bloc:
+            pp = polity_of_mfr(p["mfr"])
+            if pp is None or pp == s["polity"]:
                 continue
-            ch = channels.get(f"{bloc}|{pb}", "restricted")
-            military = p["cat"] in ("weapon", "jump_core", "armour")
+            cat = cat_of_product.get(p["cat"], cat_of_product["default"])
+            ch = PO.channel(pp, s["polity"], cat)
             note = it["extra"].get("supplier_note", "")
-            if ch == "black" or (ch == "restricted" and military):
-                (grey if note else bad).append(f"{p['model']} ({pb}, {ch}{'; ' + note if note else ''})")
+            if ch in ("black", "closed"):
+                (grey if note and ch == "black" else bad).append(f"{p['model']} ({pp}, {cat} {ch}{'; ' + note if note else ''})")
         add("suppliers_reachable_through_channels", not bad, "; ".join(bad) or "all suppliers inside open / licensed / restricted-civil channels")
         if grey:
             add("grey_supply_declared", True, "; ".join(grey))
@@ -379,7 +380,7 @@ def compute():
         out_ships.append(dict(
             id=s["id"], designation=root, name=s["name"], cls=s["cls"], base=s.get("base", False), variant_of=s.get("variant_of"),
             variant_reason=s.get("variant_reason"), manufacturer=s["mfr"], manufacturer_name=mfr[s["mfr"]]["name"],
-            developer=s.get("developer"), polity=s["polity"], bloc=bloc, school=school, yard=s["yard"], purpose=s["purpose"],
+            developer=s.get("developer"), polity=s["polity"], bloc=bloc or "вне блоков", school=school, yard=s["yard"], purpose=s["purpose"],
             flight=dict(law=s["law"], layout=s["layout"], runtime_model=layout_key, runtime=s.get("runtime", "generic")),
             hull=dict(s["hull"], structure_t=r(structure, 1)), crew=s["crew"], passengers=s["passengers"], cold_sleep=cold,
             payload=dict(cargo_t=s["cargo_t"], c20=s["c20"], passenger_places=pax_seats),

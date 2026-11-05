@@ -4,7 +4,7 @@
 Inputs (canon, PROPOSAL): canon/hub_modules.json (module catalog and derivation rules),
 canon/trade_goods.json (37 trade goods mapped onto the 15 commodities.json categories),
 canon/economy_live.json (ticks, events, quarantine, board, price-info, blocs, customs, patrols),
-canon/commodities.json, canon/industry.json (blocs), canon/world.json (regimes),
+canon/commodities.json, canon/political_order.json (blocs, access, via political.py), canon/world.json (regimes),
 canon/world_sites.json (deep-space objects), canon/sol_network.json (Sol function codes).
 GENERATED inputs (run world_economy.py and world_sites.py first): the runtime sites document
 src/assets/data/galaxy_details/world_sites/sites_3126.json, out/world_3126/beacons_3126.json,
@@ -18,6 +18,7 @@ price_info_delay_3126.json.
     python economy_live.py            # compute, write out/ and the runtime copies
     python economy_live.py --check    # recompute, compare with the files, run the consistency checks
 """
+import political
 import argparse
 import hashlib
 import heapq
@@ -95,7 +96,9 @@ class Inputs:
         self.economy = load(os.path.join(OUT, "economy_3126.json"))
         self.cat = {c["id"]: c for c in self.CM["commodities"]}
         self.goods = self.TG["goods"]
-        self.bloc_of = {m: b for b, v in self.IN["blocs"].items() for m in v["members"]}
+        self.PO = political.Order(W=self.W)
+        # runtime "bloc" of a hub = access group: political bloc, else nonaligned:<actor> / zone:<unit> (political.access_key)
+        self.bloc_of = {u: self.PO.access_key(u) for u in self.PO.units}
         self.regime_of = {c["id"]: c.get("regime_3126") for c in self.W["colonies"]}
         self.regime_of["sol_authority"] = "sol_authority"
         self.polity_name = {}
@@ -645,7 +648,8 @@ def build(I):
         rec = dict(id=h["id"], name=h["name"], source=h["source"], type=h["type"], type_ru=h.get("type_ru"), system_id=h["system_id"],
                    system_name=I.system_name.get(h["system_id"]) if h["system_id"] is not None else None,
                    polity=h.get("polity"), owner=h.get("owner"), owner_name=I.polity_name.get(h.get("owner") or ""), operator=h.get("operator"),
-                   bloc=bloc, level=h.get("level"), map_level=h.get("map_level"), hidden=h.get("hidden", False),
+                   bloc=bloc, political_bloc=I.PO.bloc_of_unit(h["polity"]) if h.get("polity") in I.bloc_of else None,
+                   actor=I.PO.actor_of(h["polity"]) if h.get("polity") in I.bloc_of else None, level=h.get("level"), map_level=h.get("map_level"), hidden=h.get("hidden", False),
                    functions=h.get("functions") or [], purpose=h.get("purpose"), market=market, hosts_board=h["docks"] > 0 and market != "none" or h["type"] in ("orbital_hub", "trade_hub"),
                    blocks=blocks, totals=totals, supply=sup)
         rec["description_ru"] = describe(I, h, blocks, sup)
@@ -688,8 +692,13 @@ def files_of(I, hub_doc, mkt, delay):
     tg["regime_family"] = I.CM["regime_family"]
     rt[os.path.join(RUNTIME_ECONOMY, "trade_goods.json")] = dumps(tg, indent=1)
     el = dict(I.EL)
-    el.update(generated_by="tools/colonization_lab/economy_live.py (copy of canon/economy_live.json)", do_not_edit=True,
-              blocs_members={b: v["members"] for b, v in I.IN["blocs"].items()})
+    keys = sorted({I.PO.access_key(u) for u in I.PO.units})
+    el.update(generated_by="tools/colonization_lab/economy_live.py (copy of canon/economy_live.json + blocs derived from canon/political_order.json)", do_not_edit=True,
+              blocs_members={k: sorted(u for u in I.PO.units if I.PO.access_key(u) == k) for k in keys})
+    el["blocs"] = dict(I.EL["blocs"], channels_order=list(political.CHANNEL), matrix=I.PO.headline_matrix(),
+                       status=I.PO.P["status"], rule=I.PO.P["headline_channel_rule"])
+    el["political_access"] = dict(categories=I.PO.cats, scale=list(political.CHANNEL), note="seller unit -> buyer unit -> six digits = levels 0..4 in categories order (0 open, 1 licensed, 2 restricted, 3 black / sanctions, 4 closed)",
+                                  matrix=I.PO.unit_matrix())
     rt[os.path.join(RUNTIME_ECONOMY, "economy_rules.json")] = dumps(el, indent=1)
     out.update(rt)
     return out
@@ -746,10 +755,11 @@ def checks(I, hub_doc, mkt, delay):
     ok("board_examples_goods_known", all(e["goods"] is None or e["goods"] in {g["id"] for g in goods} for e in exs))
     keys = set(I.EL["board"]["entry_schema"])
     ok("board_examples_follow_schema", all(set(e) == keys for e in exs), "")
-    blocs = set(I.IN["blocs"])
-    m = I.EL["blocs"]["matrix"]
+    blocs = {I.PO.access_key(u) for u in I.PO.units}
+    m = I.PO.headline_matrix()
     full = all((m.get(a, {}).get(b) or m.get(b, {}).get(a)) for a in blocs for b in blocs)
     ok("bloc_matrix_complete", full and set(m) == blocs)
+    ok("hub_blocs_are_access_keys", all(h["bloc"] in blocs for h in hubs if h.get("polity") in I.bloc_of))
     n = len(mkt["goods_order"])
     ok("market_arrays_aligned", all(len(r[k]) == n for r in mkt["hubs"] for k in ("price_cr", "stock_t", "target_t", "flow_t_day")))
     ok("market_no_negative", all((x is None or x >= 0) for r in mkt["hubs"] for k in ("price_cr", "stock_t", "target_t") for x in r[k]))

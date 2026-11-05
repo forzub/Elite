@@ -873,6 +873,7 @@
 - OK `passenger_places` — 0 places vs 0 passengers
 - OK `cargo_near_class_target` — 2 t vs class 2 t
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
+- OK `grey_supply_declared` — N-10 (tau_ceti_cognium, dual_use black; реэкспорт)
 - WARN `component_prices_near_class_model` — main_drive 1.84/1.82 M, reactor 1.65/2.24 M, electronics 8.87/1.68 M, life_support 0.10/0.11 M, rcs_thermal 0.18/0.73 M, weapons 2.10/2.52 M
 - OK `no_single_point_of_failure_in_critical_functions` — thrust / life / comms redundant
 

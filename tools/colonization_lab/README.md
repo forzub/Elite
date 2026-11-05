@@ -11,6 +11,7 @@
 - `canon/commodities.json` — 15 товарных категорий, контейнер C20, каталог корабельных агрегатов;
 - `canon/ship_economics.json` — классы кораблей (гражданские, безопасность, военные), грузовая модель, правило прыжка, сборы;
 - `canon/polity_economy.json` — доктрины безопасности политий, расселение Сола, константы активов и задач обороны;
+- `canon/political_order.json` — **единственный источник политического порядка 3126**: акторы (действующие лица, узлы политической силы; 21), экономические единицы (23), провинции, специальные зоны, блоки, неприсоединившиеся, доступ по шести категориям (0 открыто … 4 закрыто), явные исключения, санкции из `world.json relations_anchor`; новый порядок — PROPOSAL_PENDING_AUTHOR_REVIEW. Старые `src/assets/data/galaxy/actors.json` / `subactors.json` — исторический слой, не реестр 3126;
 - физический каталог `src/assets/data/galaxy_details` — читается через `endowment.py` и `tools/universe_generator/resource_audit.py`.
 
 Выход (`out/`):
@@ -38,7 +39,8 @@ python logistics.py                   # корабли, правило прыж�
 python world_economy.py               # баланс мира 3126 -> out/world_3126/ (после lab.py и logistics.py); --check — пересчёт + проверки непротиворечивости
 python sol_network.py                 # сеть хабов Сола отдельно (печать и проверки); в данные её встраивает world_sites.py: 12 хабов Земли, хабы тел и пояса, маршруты, ретрансляторы, initial_world_state.orbital_hubs
 python world_sites.py                 # хабы, поселения, глубокий космос, фронтиры («Жопа мира»), общество, администраторы, право, связь, пассажиры, возраст флота, пираты -> out/world_3126/ + копии для рантайма (galaxy_details/world_sites, objects_details/world_*.json); --check
-python industry.py                    # промышленная география (блоки, концерны, кто что умеет, где производят/собирают/продают) и спасательные службы -> out/world_3126/; --check
+python political.py                   # политический порядок 3126 -> out/world_3126/political_order_3126.json, POLITICAL_ORDER_3126.md; --list — акторы, единицы, провинции, зоны, блоки; --check
+python industry.py                    # промышленная география (школы, концерны; блоки и каналы — из political.py, кто что умеет, где производят/собирают/продают) и спасательные службы -> out/world_3126/; --check
 python economy_live.py               # живой слой: состав 538 хабов и маяков из модулей, 37 товаров (14 групп) поверх 15 категорий, стартовые рынки, задержки ценовых бюллетеней -> out/world_3126/ + src/assets/data/economy/ (после world_sites.py); --check. Дизайн: out/ECONOMY_LIVE_DESIGN.md
 python lore_md.py --write             # обновить блоки GENERATED справочника Notes/Lore/ (после lab.py, world_economy.py, world_sites.py, industry.py); --check — блоки, id сущностей и числа населения в рассказе сверены с данными
 python lore_html.py                   # HTML-зеркало Notes/html (после любого изменения Notes/Lore); --check
@@ -104,6 +106,7 @@ seed=3126 missions=36 colonies=22 earth=11668961361 off_sol=10087992674 sha256=1
 | `logistics.py` | сеть 3126, правило прыжка (поле по оболочке + масса), энергия и пик, тяга, стоимость рейса, флот из потока |
 | `world_economy.py` | баланс мира 3126: расселение, спрос/производство, межзвёздные потоки, инфраструктура, флот, верфи, топливо, оборона, маяки, уязвимости, сценарии, проверки |
 | `lore_economy.py` | экономические блоки справочника (вызывается из `lore_md.py`) |
+| `political.py` | политический порядок: акторы / единицы / провинции / зоны, блоки, доступ продавец → покупатель по категориям, исключения, санкции; читают industry, economy_live, ship_designer, world_economy, lore_md |
 
 Документы: `Notes/History/COLONIZATION_CANON_3126.md` (справочник), `Notes/Colonycore/COLONYCORE_V2.md` (модель общества).
 
@@ -115,6 +118,7 @@ seed=3126 missions=36 colonies=22 earth=11668961361 off_sol=10087992674 sha256=1
 3. `python export_runtime.py --write`;
 4. `python lab.py --check-dataset`;
 5. `python lab.py --check-lore`.
-6. `python lore_md.py --write` и `python lore_md.py --check` — справочник `Notes/Lore/` (таблицы генерируются, рассказ вне маркеров сохраняется).
+6. после `world_sites.py`: `python political.py`, `python industry.py`, `python economy_live.py`, `python ship_designer.py` (каждый с `--check`);
+7. `python lore_md.py --write` и `python lore_md.py --check` — справочник `Notes/Lore/` (таблицы генерируются, рассказ вне маркеров сохраняется).
 
 Markdown-справочник пишется вручную по отчёту. Его таблицы населения (§8–§9) **устарели**: там авторские числа, а модель считает население причинно (отчёт §D).

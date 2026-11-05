@@ -41,7 +41,8 @@ enum class ProductCategory
     LifeSupport,
     Cargo,
     Service,
-    SparePart
+    SparePart,
+    JumpDrive
 };
 
 enum class PassportStatus

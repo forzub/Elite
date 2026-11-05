@@ -342,7 +342,9 @@ Hub Tactical and Orbital Transfer are different jobs and different modes.
 
 The pilot's own global flight, a third job next to Hub Tactical and Orbital
 Transfer (`GameSimulationFreeFlight.cpp`, flag `DynamicMotionState::freeFlight`,
-replicated; command `ClientShipCommand::ToggleFreeFlight`).
+replicated; command `ClientShipCommand::ToggleStabilization`, Ctrl+K - since the
+2026-11-05 flight architecture "free flight" is NORMAL flight and leaving it is
+STABILIZATION; the J engine is a separate switch, `ToggleJEngine`, Ctrl+J).
 
 - On: the travel frame is detached from the hub and re-based at the ship with
   its world kinematics (same seam as Orbital Transfer). The frame carries the

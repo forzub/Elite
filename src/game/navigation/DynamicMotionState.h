@@ -139,6 +139,16 @@ struct DynamicMotionState
     double freeFlightAutopilotRangeM = 0.0;        // to the target surface
     double freeFlightAutopilotRelSpeedMps = 0.0;   // relative to the target body
     float freeFlightAutopilotAccelMps2 = 0.0f;     // the autopilot's acceleration this tick
+    // Flight architecture (author 2026-11-05 cc): J is an ENGINE (the J field's huge g in
+    // place of the main engines' thrust), switched by the pilot only far from every object
+    // and above a body's J floor; it exists only in NORMAL flight (freeFlight).
+    bool jEngine = false;
+    // what the velocity is measured against (HUD, the Assisted reference): 0 a hub
+    // (stabilization in its frame), 1 space (normal flight, the star: global speed),
+    // 2 a body (normal flight inside its sphere of influence, freeFlightReferenceId),
+    // 3 orbit (stabilization on the ship's own ballistic trajectory), 4 ground
+    // (stabilization against the turning surface, freeFlightOrbitBodyId)
+    std::uint8_t velocityReferenceKind = 0;
 
     // True only while/after a real +/- Assisted trim. It lets the release edge
     // capture reached forward speed once without allowing keypad RCS or an

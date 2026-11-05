@@ -295,6 +295,8 @@ ELITE_WIRE_SCHEMA(
     v.freeFlightAutopilotRangeM,
     v.freeFlightAutopilotRelSpeedMps,
     v.freeFlightAutopilotAccelMps2,
+    v.jEngine,
+    v.velocityReferenceKind,
     v.assistedThrottleTrimWasActive,
     v.forwardSpeedMps,
     v.strafeSpeedMps,

@@ -863,15 +863,18 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         }
     }
 
-    // Ctrl+J: free flight on / off (server decides; leaving re-bases into the nearest hub frame).
-    if(Input::instance().isKeyPressedOnce(GLFW_KEY_J) &&
-       (Input::instance().isKeyPressed(GLFW_KEY_LEFT_CONTROL) || Input::instance().isKeyPressed(GLFW_KEY_RIGHT_CONTROL)))
+    // Ctrl+J: the J engine on / off (the server refuses it near objects / below the J floor).
+    // Ctrl+K: stabilization on / off (off = normal flight, no speed envelope; on = the hub /
+    // own orbit / ground frame with the 500 m/s manoeuvre envelope; the server picks it).
+    const bool jChord = ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_J);
+    const bool kChord = ctrlDown && !jChord && Input::instance().isKeyPressedOnce(GLFW_KEY_K);
+    if(jChord || kChord)
     {
         if(m_client)
         {
             game::network::ClientMessage msg;
             ClientShipCommand command;
-            command.type=ClientShipCommand::ToggleFreeFlight;
+            command.type=jChord ? ClientShipCommand::ToggleJEngine : ClientShipCommand::ToggleStabilization;
             msg.payload=command;
             m_client->sendMessage(msg);
         }
@@ -1534,12 +1537,12 @@ void SpaceState::update(float dt)
                     msg.payload = command;
                     m_client->sendMessage(msg);
                 }
-                // Ctrl+J free flight; hold '+' for N seconds (the keys a pilot presses)
-                else if (cmd == "freeflight")
+                // Ctrl+K stabilization on / off (= normal flight off / on), Ctrl+J the J engine
+                else if (cmd == "freeflight" || cmd == "stabilization" || cmd == "jengine")
                 {
                     game::network::ClientMessage msg;
                     ClientShipCommand command;
-                    command.type = ClientShipCommand::ToggleFreeFlight;
+                    command.type = cmd == "jengine" ? ClientShipCommand::ToggleJEngine : ClientShipCommand::ToggleStabilization;
                     msg.payload = command;
                     m_client->sendMessage(msg);
                 }
@@ -1701,7 +1704,7 @@ void SpaceState::update(float dt)
             freeFlightSent = true;
             game::network::ClientMessage msg;
             ClientShipCommand command;
-            command.type = ClientShipCommand::ToggleFreeFlight;
+            command.type = ClientShipCommand::ToggleStabilization;
             msg.payload = command;
             m_client->sendMessage(msg);
             std::cerr << "[DevFreeFlight] toggle sent" << std::endl;

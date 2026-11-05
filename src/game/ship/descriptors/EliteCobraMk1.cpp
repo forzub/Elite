@@ -1290,10 +1290,15 @@ if (const char* rawModel =
     desc.powerThermalInstallation.emergencyHeatExchanger.maxPumpElectricalMW = 3.0;
     desc.powerThermalInstallation.emergencyHeatExchanger.engageSourceK = 1950.0;
     desc.powerThermalInstallation.emergencyHeatExchanger.releaseSourceK = 1700.0;
+    // The Cobrett jump system (FE-30 passports 36A5 / 37A5: jump core Z-0.5, jump-charge
+    // tank) is installed equipment: hits, wear and spares need the module identities. It has
+    // no runtime function yet (the jump is not implemented) - passive modules like the services.
     for (const auto& service :
             {desc.powerThermalInstallation.shipReactorModuleId,
              desc.powerThermalInstallation.commonCoolingModuleId,
-             desc.powerThermalInstallation.emergencyHeatExchangerModuleId})
+             desc.powerThermalInstallation.emergencyHeatExchangerModuleId,
+             std::string("ship_jump_core"),
+             std::string("ship_jump_charge_tank")})
     {
         ModuleDescriptor m;
         m.moduleId = service;

@@ -3120,8 +3120,8 @@ order - ask for it again if it is not in the session.
 - Assisted under gravity: the target velocity follows the BALLISTIC continuation (falls with g) - with no input the
   ship follows its orbit, thrust only for the pilot's commands; on a surface reference it holds against g. Assisted
   rule: main thrust along the current velocity of the active reference; Backspace = partial Newtonian without '+'.
-- Landing goals: (a) wild landing (soil sample, rescue): a map point or the autopilot picks a flat spot from the
-  terrain field; (b) settlement: a map mark (surface sites already have lat/lon in WorldSitesCatalog), a generated
+- Landing goals: (a) wild landing (soil sample, rescue): AUTOMATIC only - the autopilot picks a flat spot from the
+  terrain field (author: a map click cannot find a pad at map scale); (b) settlement: a map mark (surface sites already have lat/lon in WorldSitesCatalog), a generated
   settlement by conditions (airless body / asteroid: underground entrances, 2-3 small domes, antenna, pad; asteroid:
   a passage in the rocks + pad), deterministic on server and client from one source; "land" -> the ship finds the pad,
   or the player clicks the map. Orbit insertion phased by the J autopilot: the plane through the site, the insertion
@@ -3129,6 +3129,39 @@ order - ask for it again if it is not in the session.
 - Next: slices 1 reference selection + J as an engine switch + HUD label; 2 Assisted ballistic rule, envelope only in
   stabilization, button + auto-on; 3 landing over these (map point / flat spot); 4 site-phased insertion; 5 settlements
   (marker, generation, pad). The uncommitted bb body-frame code is reused as the surface reference; nothing accepted.
+- (2026-11-06) J keep-out rule (author): the J engine switches on only well away from other objects; else refused.
+
+### Slice cc-1 2026-11-06 - J engine switch, stabilization switch, velocity references on the HUD - LIVE CHECKED, NOT ACCEPTED
+- Code: motion.jEngine + motion.velocityReferenceKind (0 hub, 1 space, 2 body, 3 orbit, 4 ground; wire schema 35);
+  commands ToggleStabilization (Ctrl+K, was ToggleFreeFlight) and ToggleJEngine (Ctrl+J, appended); server
+  toggleStabilization / toggleJEngine / jEngineBlocked (JDrive.h keep-out 20 km objects / 5 km ships, every body's
+  J floor) in GameSimulationFreeFlight.cpp. Normal flight = the old free flight; stabilization = hub capture / ground
+  (below the J floor AND within 500 m/s over the body - new speed check) / own ballistic frame. The J engine = the J
+  field along the main-engine thrust (1 g doubling every 2 s, x command; the END brake clamped at zero vs the
+  reference); it drops out on entering a keep-out / below a floor (refusal 3 / 4), refused at engage (7 / 8). The
+  Assisted velocity bending by the J field now only with the J engine on. Automatic stabilization: armed by the J engine
+  going off, a new sphere of influence or the orbit closing; fires after a 5 s coast (no thrust / input) on a closed
+  orbit with periapsis above max(safe altitude, ground + 1 km); disarmed when the pilot leaves stabilization or the
+  autopilot engages. HUD banner for normal flight (engine, speed vs space / body), orbit and ground stabilization
+  (manoeuvre speed, 500 limit, "no hub reference"); refusals shown 6 s even in a hub frame; flight vector "J " only
+  with the J engine. DEV script verbs: stabilization, jengine.
+- LIVE (D:/tmp/elite_cc1 run1-3, Earth hub): J refused at the hub (10 / 14 km < 20 km) PASS; Ctrl+K -> normal flight
+  PASS; J engine ramp 2 -> 4 -> 8 -> 16 g on HOME, END brakes with J PASS; J dropped by ship 10 (ship_travel_10, a real
+  hub ship at 4 km) - correct; automatic stabilization after the J drop and a 5 s coast on the closed orbit PASS;
+  manual Ctrl+K -> orbit stabilization PASS; HUD banners seen on screenshots (normal / orbit), the long key line was
+  cut at the right -> texts shortened (not re-shot).
+- Not run: the compiled contract tests (wire round trip for schema 35) - not built in build/ (separate project).
+- Open: the landing autopilot still ends J with enterBodyFrame (phase 9 -> 10, bb) - slice 3 rewires it; the J autopilot
+  ignores motion.jEngine (it owns its drive); a manual J at 0.5 c into a keep-out drops J with the speed kept.
+- Startup blocker found and fixed (not of this slice): FE-30 (fb5baf57) put the jump core / jump-charge tank (36A5 /
+  37A5) into the Cobrett passports but not into the runtime - the Cobra descriptor's passport validation threw inside
+  ObjectDescriptorRegistry's call_once on the client thread; under MinGW winpthreads the once stayed locked and the
+  server thread waited forever (loading screen at 25 %, ~0.5 s CPU). Fixed: passive modules ship_jump_core /
+  ship_jump_charge_tank in EliteCobraMk1.cpp, products um.core.z05 / std.tank.jumpcharge
+  (src/game/catalog/jump/JumpSystemPassports.h, ProductCategory::JumpDrive, data from ship_catalog_3126.json) in
+  CatalogRegistry. Lesson: an exception inside that call_once hangs the game instead of failing.
+- Next: slice 2 is mostly in place (envelope only in stabilization, Assisted ballistic in normal flight); then slice 3 -
+  the landing over the new modes (J to the orbit -> stabilization -> normal flight de-orbit -> ground stabilization).
 
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the

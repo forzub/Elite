@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 
+#include "src/game/catalog/jump/JumpSystemPassports.h"
 #include "src/game/catalog/power/KobraReactorPassports.h"
 #include "src/game/catalog/propulsion/KobraMainDrivePassports.h"
 #include "src/game/catalog/rcs/KobraRcsPassports.h"
@@ -17,7 +18,7 @@ namespace game::catalog
 
 [[nodiscard]] inline const ProductPassport* findProduct(std::string_view id)
 {
-    static const std::array<const ProductPassport*, 13> products {
+    static const std::array<const ProductPassport*, 15> products {
         &propulsion::kobraN1AxialMainDrive(),
         &propulsion::cr1VectorMainDrive(),
         &power::er5PropulsionReactor(),
@@ -30,7 +31,9 @@ namespace game::catalog
         &ships::ocs4RcsCluster(),
         &ships::ocs4Cooling(),
         &ships::ocs4SensorSuite(),
-        &ships::orbitalCargoShuttleOcs4().product
+        &ships::orbitalCargoShuttleOcs4().product,
+        &jump::jumpCoreZ05(),
+        &jump::jumpChargeTank()
     };
     for (const auto* product : products)
         if (product->stableId == id)

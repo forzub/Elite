@@ -109,7 +109,8 @@ FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
             km << std::fixed << std::setprecision(out.speedMps < 100000.0 ? 2 : 1) << out.speedMps / 1000.0 << " km/s";
         out.speedText = km.str();
         out.speedFraction01 = 1.0f;
-        out.modeText = "J " + out.modeText;
+        if (motion.jEngine)
+            out.modeText = "J " + out.modeText;   // the J engine, not the mode: normal flight shows the law alone
     }
 
     switch (motion.velocityAlignmentMode)

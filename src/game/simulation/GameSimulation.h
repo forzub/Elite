@@ -293,6 +293,13 @@ public:
         ShipControlState pilotControl {};
         game::navigation::LocalFlightControlLaw lawBeforeLanding = game::navigation::LocalFlightControlLaw::Assisted;
         double pilotLastLogSeconds = -1.0e30;
+        // the J engine (motion.jEngine): its own ramp - 1 g doubling every 2 s while it thrusts
+        double jRampSeconds = 0.0;
+        // automatic stabilization (author 2026-11-05 cc): armed by the J engine going off, by a
+        // new sphere of influence or by the orbit closing; fires after a coast on a safe closed orbit
+        bool autoStabilizeArmed = false;
+        bool lastBound = true;
+        double coastSeconds = 0.0;
     };
     // J off below a body's J floor: normal flight against its surface (see bodyFrame)
     void enterBodyFrame(EntityId shipId, Ship& ship, ActiveFreeFlight& f, const game::navigation::GravityBody& body,
@@ -300,6 +307,15 @@ public:
     void updateSurfaceLanding(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
     void applySurfaceLandingPilots();
     bool toggleFreeFlight(EntityId shipId);
+    // Flight architecture (author 2026-11-05 cc). Stabilization on / off: off = NORMAL flight
+    // (no speed envelope, the velocity against space or the body of the sphere of influence);
+    // on = the frame of a hub (capture), of the ground (low and slow) or of the ship's own
+    // ballistic trajectory (orbit), the 500 m/s manoeuvre envelope. The J engine: only in normal
+    // flight, only far from objects and above the J floor (else refused).
+    bool toggleStabilization(EntityId shipId);
+    bool toggleJEngine(EntityId shipId);
+    // 0 = J may engage here; else the refusal code (7 an object too close, 8 below the J floor)
+    int jEngineBlocked(EntityId shipId, int systemId, const glm::dvec3& shipWorld, std::string& why) const;
     // J terrain contact: ground (terrain or sea surface) height above the body
     // radius in a world direction from the body centre; false = unknown (the
     // field is still loading) -> the reference sphere is used.
@@ -722,6 +738,7 @@ private:
         bool ship = false;
     };
     bool jKeepOut(EntityId shipId, int systemId, const glm::dvec3& worldMeters, JKeepOutHit& hit) const;
+    std::vector<EntityId> m_pendingStabilize;   // automatic stabilization after the free-flight pass
     std::vector<EntityId> m_pendingJExit;   // legs that arrived: J off after the free-flight pass
     std::unordered_map<EntityId, ActiveRoute> m_routes;
     void updateRoutes(double dt);

@@ -1612,9 +1612,29 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         return;
     const auto& ships = m_client->world().ships();
     const auto it = ships.find(m_playerId.value);
-    if (it == ships.end() || !it->second.transform.motion.freeFlight)
+    if (it == ships.end())
         return;
     const auto& motion = it->second.transform.motion;
+    // a refused J engine is shown for a few seconds even in a hub frame
+    static std::uint8_t lastRefusal = 0;
+    static double refusalUntil = 0.0;
+    const double now = glfwGetTime();
+    if (motion.freeFlightCaptureRefusal != lastRefusal)
+    {
+        lastRefusal = motion.freeFlightCaptureRefusal;
+        refusalUntil = lastRefusal ? now + 6.0 : 0.0;
+    }
+    const bool refusalShown = lastRefusal != 0 && (motion.freeFlight || now < refusalUntil);
+    const int kind = motion.velocityReferenceKind;
+    // the flight mode banner: normal flight, stabilization on the own orbit / over the ground;
+    // the hub frame (ordinary stabilization) only while a refusal is shown
+    if (!motion.freeFlight && kind != 3 && kind != 4 && !refusalShown)
+        return;
+    const auto shortBody = [](std::string id) {
+        if (const auto dot = id.rfind('.'); dot != std::string::npos)
+            id = id.substr(dot + 1);   // a body id: system_0.Sol.Земля -> Земля
+        return id;
+    };
 
     std::string reference = motion.freeFlightReferenceId;
     if (const auto hub = m_client->world().hubs().find(reference); hub != m_client->world().hubs().end() && !hub->second.name.empty())
@@ -1627,13 +1647,26 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     // the reference is the body whose sphere of influence holds the ship; beyond
     // every planet's sphere it is the star and the speed is the global one
     const bool global = motion.freeFlightReferenceIsRoot != 0;
+    const char* engine = motion.jEngine ? "двигатель J" : "маршевые двигатели";
     std::ostringstream line1;
-    if (global)
-        line1 << "J  СВОБОДНЫЙ ПОЛЁТ - глобальная скорость " << jSpeed(glm::length(relative)) << " (отн. " << reference
-              << ")  ·  гравитация планет пренебрежима";
+    if (!motion.freeFlight)
+    {
+        const double local = glm::length(motion.localVelocityMps);
+        if (kind == 3)
+            line1 << "СТАБИЛИЗАЦИЯ ОРБИТЫ " << shortBody(motion.freeFlightOrbitBodyId) << "  ·  манёвровая скорость "
+                  << jSpeed(local) << " (предел 500 м/с)  ·  нет хаба-ориентира: орбита может уйти";
+        else if (kind == 4)
+            line1 << "СТАБИЛИЗАЦИЯ НАД ГРУНТОМ " << shortBody(motion.freeFlightOrbitBodyId) << "  ·  скорость над грунтом "
+                  << jSpeed(local) << " (предел 500 м/с)";
+        else
+            line1 << "СТАБИЛИЗАЦИЯ В ХАБЕ  ·  манёвровая скорость " << jSpeed(local) << " (предел 500 м/с)";
+    }
+    else if (global)
+        line1 << "НОРМАЛЬНЫЙ ПОЛЁТ  ·  " << engine << "  ·  глобальная скорость " << jSpeed(glm::length(relative))
+              << "  ·  гравитация планет пренебрежима";
     else
-        line1 << "J  СВОБОДНЫЙ ПОЛЁТ - скорость " << jSpeed(glm::length(relative)) << " отн. " << reference
-              << "  (в сфере её притяжения)";
+        line1 << "НОРМАЛЬНЫЙ ПОЛЁТ  ·  " << engine << "  ·  скорость " << jSpeed(glm::length(relative)) << " отн. " << reference
+              << " (в сфере её притяжения)";
     std::string thrust = motion.freeFlightThrust == 1 ? "ТЯГА ПОЛНАЯ" : motion.freeFlightThrust == 2 ? "ТОРМОЖЕНИЕ" : "ТЯГА ВЫКЛ";
     // the autopilot flies on the J drive, not on the latched main-engine command
     if (motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase != 5)
@@ -1644,15 +1677,21 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
                       motion.freeFlightAutopilotAccelMps2 < -0.05f ? "(торможение)" : "(разгон)");
         thrust = drive;
     }
-    std::string line2 = thrust + "   HOME тяга  ·  END торможение  ·  INSERT выкл  ·  PgDn посадка  ·  Ctrl+J выход";
+    std::string line2 = motion.freeFlight
+        ? thrust + "   HOME тяга · END торм. · INSERT выкл · PgDn посадка · Ctrl+J двигатель J · Ctrl+K стабилизация"
+        : std::string("Ctrl+K нормальный полёт (без предела скорости)  ·  Ctrl+J двигатель J");
     if (motion.freeFlightCaptureRefusal == 1)
         line2 = "Нет доступной локальной системы отсчёта (хаб дальше зоны захвата)   " + line2;
     else if (motion.freeFlightCaptureRefusal == 2)
         line2 = "Захват невозможен: слишком высокая скорость относительно хаба   " + line2;
     else if (motion.freeFlightCaptureRefusal == 3)
-        line2 = "J-поле не работает рядом с объектами: отход на мягкой тяге   " + line2;
+        line2 = "J выключен: рядом объект   " + line2;
     else if (motion.freeFlightCaptureRefusal == 4)
         line2 = "Ниже пола J: маршевые двигатели   " + line2;
+    else if (motion.freeFlightCaptureRefusal == 7)
+        line2 = "J не включается: рядом объект (хаб / станция 20 км, корабль 5 км)   " + line2;
+    else if (motion.freeFlightCaptureRefusal == 8)
+        line2 = "J не включается: ниже пола J   " + line2;
     else if (motion.freeFlightCaptureRefusal == 5)
         line2 = "Посадка невозможна: тяги маршевых не хватит, чтобы сесть и взлететь   " + line2;
     else if (motion.freeFlightCaptureRefusal == 6)
@@ -1670,6 +1709,8 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     text.textDrawPx(line1.str(), x + 20.0f, y + 22.0f, 17, glm::vec4(1.0f, 0.78f, 0.45f, 1.0f));
     text.textDrawPx(line2, x + 20.0f, y + 44.0f, 14,
                     motion.freeFlightCaptureRefusal ? glm::vec4(1.0f, 0.50f, 0.42f, 1.0f) : glm::vec4(0.86f, 0.80f, 0.70f, 0.95f));
+    if (!motion.freeFlight)
+        return;
 
     // ---- J autopilot: target, phase, height, speed, drive acceleration
     if (motion.freeFlightAutopilotPhase != 0)

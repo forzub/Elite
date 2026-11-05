@@ -676,7 +676,7 @@ inline bool decodeClientShipCommand(
     }
 
     if (type > static_cast<std::uint8_t>(
-            ClientShipCommand::FireWeapon))
+            ClientShipCommand::ToggleJEngine))
     {
         return false;
     }

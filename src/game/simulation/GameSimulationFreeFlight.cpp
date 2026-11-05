@@ -52,6 +52,20 @@
 // velocity over the ground; each tick the server folds what the laws did into the
 // world motion, adds real gravity, re-bases the frame on the ship and splits again.
 // Atmosphere, ground contact, rest and lift-off are the same as in J.
+//
+// FLIGHT ARCHITECTURE (author 2026-11-05 cc - the names above are the older ones). One physics;
+// the modes change only what is called zero velocity, never the motion:
+//   NORMAL flight  = what this file calls free flight (motion.freeFlight): no speed envelope,
+//                    the velocity against space (the star) or the body of the sphere of influence;
+//   STABILIZATION  = leaving it (Ctrl+K): a hub frame (capture), the ground frame (body frame,
+//                    low and slow) or the ship's own ballistic frame (orbit) with the 500 m/s
+//                    manoeuvre envelope; it engages by itself after a coast on a safe closed orbit
+//                    (armed by the J engine going off / a new sphere / the orbit closing);
+//   the J ENGINE   = Ctrl+J (motion.jEngine): the J field's acceleration (1 g doubling every 2 s
+//                    up to the cap) along the main-engine thrust in place of it; only in normal
+//                    flight, never near objects (JDrive.h keep-out) or below a body's J floor -
+//                    refused there, and it drops out when the ship enters such a zone. The Assisted
+//                    velocity bending by the J field works only with the J engine on.
 #include "src/game/simulation/GameSimulation.h"
 #include "src/game/simulation/JDrive.h"
 #include "src/game/catalog/ships/ShipDesignCatalog.h"
@@ -189,7 +203,7 @@ bool GameSimulation::jKeepOut(EntityId shipId, int systemId, const glm::dvec3& w
         if (d < jd::KeepOutShipM && d < best)
         {
             best = d;
-            hit = JKeepOutHit {"ship " + std::to_string(id.value), p, m.travelFrame.localToWorldVelocity(m.localPositionMeters, m.localVelocityMps), d, true};
+            hit = JKeepOutHit {"ship " + std::to_string(id.value) + " (" + m.travelFrame.frameId + ", hub " + m.hubId + ")", p, m.travelFrame.localToWorldVelocity(m.localPositionMeters, m.localVelocityMps), d, true};
             found = true;
         }
     }
@@ -308,6 +322,8 @@ void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& 
     f.autopilotHaveLastCenter = false;
     f.autopilotLastLogSeconds = -1.0e30;
     motion.freeFlightThrust = 0;
+    motion.jEngine = false;          // the autopilot flies its own J drive
+    f.autoStabilizeArmed = false;
     motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
     motion.freeFlightAutopilotTargetId = target;
     motion.freeFlightAutopilotPhase = 2;
@@ -686,6 +702,8 @@ void GameSimulation::enterBodyFrame(EntityId shipId, Ship& ship, ActiveFreeFligh
     motion.freeFlight = false;
     motion.freeFlightThrust = 0;
     motion.freeFlightCaptureRefusal = 0;
+    motion.jEngine = false;
+    motion.velocityReferenceKind = 4;   // stabilization against the ground
     if (motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::BackwardToVelocity ||
         motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::ForwardToVelocity)
         motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
@@ -890,9 +908,11 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
         const double safeSpeed = game::ship::controlledSpeedLimitMps(ship->core().effectivePhysics());
         if (nearest.empty() || best > FreeFlightCaptureRadiusMeters || relSpeed > safeSpeed)
         {
-            // below a body's J floor: normal flight against its surface (the body frame)
+            // below a body's J floor and within the manoeuvre envelope over it: stabilization
+            // against the ground (the body frame); faster (an orbit) - the own ballistic frame
+            const double overBody = glm::length(shipVel - motion.freeFlightReferenceVelocityMps);
             for (const auto& b : m_gravityBodies)
-                if (b.id == active->second.primaryBodyId && b.radiusMeters > 0.0 &&
+                if (b.id == active->second.primaryBodyId && b.radiusMeters > 0.0 && overBody <= safeSpeed &&
                     active->second.primaryAltitudeMeters <
                         game::simulation::jdrive::floorAltitudeM(b.radiusMeters, b.atmosphereRadiusMeters))
                 {
@@ -910,6 +930,8 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
             f.localFrame = true;
             f.autopilotTargetId.clear();
             f.autopilotPhase = 0;
+            motion.jEngine = false;
+            motion.velocityReferenceKind = 3;   // stabilization on the own trajectory (orbit)
             motion.travelFrame.originMeters = shipWorld;
             motion.travelFrame.linearVelocityMps = shipVel;
             motion.localPositionMeters = glm::dvec3(0.0);
@@ -931,6 +953,8 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
         motion.freeFlight = false;
         motion.freeFlightThrust = 0;
         motion.freeFlightCaptureRefusal = 0;
+        motion.jEngine = false;
+        motion.velocityReferenceKind = 0;   // stabilization in the hub frame
         motion.freeFlightReferenceId.clear();
         motion.freeFlightReferenceVelocityMps = glm::dvec3(0.0);
         motion.freeFlightOrbitBodyId.clear();
@@ -966,6 +990,8 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
     motion.freeFlight = true;
     motion.freeFlightThrust = 0;
     motion.freeFlightCaptureRefusal = 0;
+    motion.jEngine = false;
+    motion.velocityReferenceKind = 2;   // normal flight; space / the body from the first pass
     // the pilot's velocity reference: the hub just left (relative speed ~0 at the start)
     motion.freeFlightReferenceId = motion.hubId;
     if (const auto* hub = hubNavigationFrame(motion.hubId); hub && hub->valid)
@@ -980,6 +1006,113 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
     m_freeFlights[shipId] = f;
     std::cerr << "[FreeFlight] ship " << shipId.value << " ON at hub " << motion.hubId << ": global speed "
               << glm::length(shipWorldVel) / 1000.0 << " km/s\n";
+    return true;
+}
+
+int GameSimulation::jEngineBlocked(EntityId shipId, int systemId, const glm::dvec3& shipWorld, std::string& why) const
+{
+    namespace jd = game::simulation::jdrive;
+    JKeepOutHit hit;
+    if (jKeepOut(shipId, systemId, shipWorld, hit))
+    {
+        why = hit.objectId + " at " + std::to_string(static_cast<int>(hit.distanceMeters / 1000.0)) + " km (J needs " +
+              std::to_string(static_cast<int>((hit.ship ? jd::KeepOutShipM : jd::KeepOutObjectM) / 1000.0)) + " km)";
+        return 7;
+    }
+    for (const auto& b : m_gravityBodies)
+    {
+        if (b.radiusMeters <= 0.0)
+            continue;
+        const double altitude = glm::length(shipWorld - b.centerMeters) - b.radiusMeters;
+        const double floor = jd::floorAltitudeM(b.radiusMeters, b.atmosphereRadiusMeters);
+        if (altitude < floor)
+        {
+            why = b.id + " altitude " + std::to_string(static_cast<int>(altitude / 1000.0)) + " km below its J floor " +
+                  std::to_string(static_cast<int>(floor / 1000.0)) + " km";
+            return 8;
+        }
+    }
+    return 0;
+}
+
+bool GameSimulation::toggleStabilization(EntityId shipId)
+{
+    Ship* ship = getShip(shipId);
+    if (!ship)
+        return false;
+    auto& motion = ship->core().transform().motion;
+    const auto active = m_freeFlights.find(shipId);
+    if (active != m_freeFlights.end() && !active->second.localFrame)
+    {
+        // normal -> stabilization: a hub capture, the ground or the own orbit (toggleFreeFlight decides)
+        if (!active->second.autopilotTargetId.empty() || active->second.legActive)
+        {
+            std::cerr << "[Flight] ship " << shipId.value << ": stabilization refused - the autopilot flies" << std::endl;
+            return false;
+        }
+        motion.jEngine = false;
+        std::cerr << "[Flight] ship " << shipId.value << ": STABILIZATION ON (pilot)" << std::endl;
+        return toggleFreeFlight(shipId);
+    }
+    // stabilization -> normal flight (no envelope)
+    motion.jEngine = false;
+    const bool ok = toggleFreeFlight(shipId);
+    if (ok)
+        if (const auto f = m_freeFlights.find(shipId); f != m_freeFlights.end())
+        {
+            f->second.autoStabilizeArmed = false;   // the pilot left it: no automatic return here
+            f->second.lastBound = true;
+            f->second.coastSeconds = 0.0;
+        }
+    std::cerr << "[Flight] ship " << shipId.value << ": STABILIZATION OFF - normal flight" << (ok ? "" : " REFUSED") << std::endl;
+    return ok;
+}
+
+bool GameSimulation::toggleJEngine(EntityId shipId)
+{
+    Ship* ship = getShip(shipId);
+    if (!ship)
+        return false;
+    auto& motion = ship->core().transform().motion;
+    auto active = m_freeFlights.find(shipId);
+    if (motion.jEngine)
+    {
+        motion.jEngine = false;
+        if (active != m_freeFlights.end())
+        {
+            active->second.jRampSeconds = 0.0;
+            active->second.autoStabilizeArmed = true;
+        }
+        std::cerr << "[Flight] ship " << shipId.value << ": J engine OFF (main engines)" << std::endl;
+        return true;
+    }
+    if (active != m_freeFlights.end() && !active->second.autopilotTargetId.empty())
+    {
+        std::cerr << "[Flight] ship " << shipId.value << ": J engine refused - the autopilot flies its own J drive" << std::endl;
+        return false;
+    }
+    const glm::dvec3 shipWorld = motion.travelFrame.localToWorldPosition(motion.localPositionMeters);
+    std::string why;
+    if (const int blocked = jEngineBlocked(shipId, motion.systemId, shipWorld, why))
+    {
+        motion.freeFlightCaptureRefusal = static_cast<std::uint8_t>(blocked);
+        std::cerr << "[Flight] ship " << shipId.value << ": J engine REFUSED - " << why << std::endl;
+        return false;
+    }
+    if (active == m_freeFlights.end() || active->second.localFrame)
+    {
+        // J works only in normal flight: leave the stabilization first
+        if (!toggleStabilization(shipId))
+            return false;
+        active = m_freeFlights.find(shipId);
+        if (active == m_freeFlights.end() || active->second.localFrame)
+            return false;
+    }
+    motion.jEngine = true;
+    motion.freeFlightCaptureRefusal = 0;
+    active->second.jRampSeconds = 0.0;
+    active->second.autoStabilizeArmed = false;
+    std::cerr << "[Flight] ship " << shipId.value << ": J engine ON (normal flight; the thrust commands drive the J field)" << std::endl;
     return true;
 }
 
@@ -998,6 +1131,13 @@ void GameSimulation::updateFreeFlights(double dt)
     for (const EntityId id : std::exchange(m_pendingJExit, {}))
         if (m_freeFlights.count(id))
             (void)toggleFreeFlight(id);
+    // automatic stabilization decided last pass (a coast on a safe closed orbit)
+    for (const EntityId id : std::exchange(m_pendingStabilize, {}))
+        if (const auto f = m_freeFlights.find(id); f != m_freeFlights.end() && !f->second.localFrame)
+        {
+            std::cerr << "[Flight] ship " << id.value << ": STABILIZATION ON (automatic: a closed orbit, coasting)" << std::endl;
+            (void)toggleFreeFlight(id);
+        }
     updateRoutes(dt);
     for (auto it = m_freeFlights.begin(); it != m_freeFlights.end();)
     {
@@ -1055,6 +1195,7 @@ void GameSimulation::updateFreeFlights(double dt)
         {
             // local flight inside the falling frame: nothing is folded, the frame
             // carries the global motion, the flight laws own the local state
+            motion.velocityReferenceKind = 3;
             f.elapsedSeconds += dt;
             if (f.elapsedSeconds - f.lastLogSeconds >= 10.0)
             {
@@ -1079,12 +1220,56 @@ void GameSimulation::updateFreeFlights(double dt)
         f.primaryAltitudeMeters = reference ? glm::length(frame.originMeters - reference->centerMeters) - reference->radiusMeters
                                             : g1.primaryAltitudeMeters;
         motion.freeFlightReferenceIsRoot = referenceIsRoot ? 1 : 0;
+        motion.velocityReferenceKind = f.bodyFrame ? 4 : (referenceIsRoot ? 1 : 2);
+
+        // ---- the J engine: the J field along the main-engine thrust, in place of it
+        if (motion.jEngine && !f.bodyFrame)
+        {
+            namespace jd = game::simulation::jdrive;
+            std::string why;
+            if (const int blocked = jEngineBlocked(it->first, motion.systemId, frame.originMeters, why))
+            {
+                motion.jEngine = false;
+                f.jRampSeconds = 0.0;
+                f.autoStabilizeArmed = true;
+                motion.freeFlightCaptureRefusal = blocked == 7 ? 3 : 4;
+                std::cerr << "[Flight] ship " << it->first.value << ": J engine OFF - the J field does not work here: " << why << std::endl;
+            }
+            else
+            {
+                const glm::dvec3 main = motion.mainEngineAccelerationMps2;   // world, last flight step
+                const double command = std::min(1.0, glm::length(main) / std::max(1.0, mainEngineAccelMps2(*ship)));
+                if (command > 0.01)
+                {
+                    f.jRampSeconds += dt;
+                    const double accel = std::min(jd::MaxAccelMps2, jd::StandardGravityMps2 * std::exp2(f.jRampSeconds / 2.0)) * command;
+                    glm::dvec3 dv = glm::normalize(main) * accel * dt;
+                    if (motion.freeFlightThrust == 2)
+                    {
+                        // the brake: never past zero against the reference
+                        const double rel = glm::length(frame.linearVelocityMps - motion.freeFlightReferenceVelocityMps);
+                        if (glm::length(dv) > rel)
+                            dv *= rel / glm::length(dv);
+                    }
+                    frame.linearVelocityMps += dv;
+                    if (std::fmod(f.elapsedSeconds, 2.0) < dt)
+                        std::cerr << "[Flight] ship " << it->first.value << ": J engine " << accel / 9.81 << " g (command "
+                                  << command << "), speed vs reference "
+                                  << glm::length(frame.linearVelocityMps - motion.freeFlightReferenceVelocityMps) / 1000.0 << " km/s"
+                                  << std::endl;
+                }
+                else
+                    f.jRampSeconds = 0.0;
+            }
+        }
 
         // orbit relative to the reference body (sphere of influence) (HUD: falling / climbing, circular speed, Pe / Ap)
         {
             // the J reference: speed, altitude, orbit, atmosphere and ground are all
             // against the body whose sphere of influence holds the ship
             const game::navigation::GravityBody* primary = reference;
+            if (primary && f.lastPrimaryId != primary->id && !f.lastPrimaryId.empty())
+                f.autoStabilizeArmed = true;   // a new sphere of influence: its orbit may stabilize
             if (primary && f.lastPrimaryId != primary->id)
                 std::cerr << "[FreeFlight] ship " << it->first.value << ": reference body -> " << primary->id
                           << (referenceIsRoot ? " (root: planetary gravity negligible, global speed)" : " (its sphere of influence)")
@@ -1126,6 +1311,10 @@ void GameSimulation::updateFreeFlights(double dt)
                     motion.freeFlightOrbitPeriapsisAltM = p / (1.0 + e) - primary->radiusMeters;
                     motion.freeFlightOrbitApoapsisAltM = 0.0;
                 }
+                const bool bound = motion.freeFlightOrbitBound && !referenceIsRoot;
+                if (bound && !f.lastBound)
+                    f.autoStabilizeArmed = true;   // the orbit closed
+                f.lastBound = bound;
             }
             else if (!primary)
             {
@@ -1183,7 +1372,7 @@ void GameSimulation::updateFreeFlights(double dt)
                     // (Newtonian J keeps the free hull: thrust direction does the turning.)
                     // Not while braking (END flips the hull) and not slower than 50 m/s
                     // (hovering / landing: the velocity has no inertia to bend).
-                    if (motion.freeFlightThrust != 2 &&
+                    if (motion.jEngine && motion.freeFlightThrust != 2 &&
                         motion.velocityAlignmentMode != game::navigation::VelocityAlignmentMode::BackwardToVelocity &&
                         glm::length(v) > 50.0)
                     {
@@ -1253,6 +1442,24 @@ void GameSimulation::updateFreeFlights(double dt)
                 const double alt = motion.freeFlightOrbitAltitudeM;
                 motion.freeFlightOrbitSafeAltM = safeAlt;
                 motion.freeFlightOrbitDenseAltM = denseAlt;
+                {
+                    // automatic stabilization: a coast (no thrust, no input) on a closed orbit whose
+                    // periapsis clears the atmosphere / the terrain, once armed
+                    const auto& c = ship->core().control();
+                    const bool input = motion.freeFlightThrust != 0 || std::abs(tr.targetSpeedRate) > 0.02f ||
+                                       std::abs(c.forwardInput) > 0.05f || std::abs(c.strafeInput) > 0.05f ||
+                                       std::abs(c.liftInput) > 0.05f;
+                    const bool coasting = !f.bodyFrame && !motion.jEngine && f.autopilotTargetId.empty() && !f.legActive &&
+                                          !input && glm::length(motion.engineAccelerationMps2) < 0.05;
+                    f.coastSeconds = coasting ? f.coastSeconds + dt : 0.0;
+                    const bool safeOrbit = motion.freeFlightOrbitBound && !referenceIsRoot &&
+                                           motion.freeFlightOrbitPeriapsisAltM > std::max(safeAlt, motion.freeFlightGroundHeightM + 1000.0);
+                    if (f.autoStabilizeArmed && coasting && safeOrbit && f.coastSeconds >= 5.0)
+                    {
+                        f.autoStabilizeArmed = false;
+                        m_pendingStabilize.push_back(it->first);
+                    }
+                }
                 motion.freeFlightDragMps2 = 0.0;
                 const double speed = glm::length(v);
                 if (atmosphereTop > 0.0 && alt < atmosphereTop && speed > 0.1)

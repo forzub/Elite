@@ -864,8 +864,12 @@ void GameServer::update(double dt)
                     m_simulation.cancelOrbitalTransfer(id);
                     break;
 
-                case ClientShipCommand::ToggleFreeFlight:
-                    m_simulation.toggleFreeFlight(id);
+                case ClientShipCommand::ToggleStabilization:
+                    m_simulation.toggleStabilization(id);
+                    break;
+
+                case ClientShipCommand::ToggleJEngine:
+                    m_simulation.toggleJEngine(id);
                     break;
 
                 case ClientShipCommand::SetFreeFlightThrust:

@@ -25,7 +25,8 @@ this the section claimed one client owner):
   dominant body / SOI, J floor, clearance, airless; `navigation/rules/JDrive.h`: J figures and charge).
 - **Hand-over**: a global leg ends by leaving J into a stabilization frame (a hub capture, the own
   orbit, the ground); from there the local tactical owner (docking planner) may take over. A
-  pilot-initiated global action while a client tactical route runs cancels the tactical route first.
+  pilot-initiated global action while a client tactical route runs MUST cancel the tactical route first
+  (the rule; not yet enforced or tested in code - OPEN).
 
 The rest of this section describes the local tactical chain.
 

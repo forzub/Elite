@@ -22,6 +22,7 @@
 // 0.4 of the cap and an exponential tail d / 6 s against the destination.
 // The planner (game::navigation::route) decides the waypoints; this file only
 // flies them.
+#include "src/game/navigation/FreeFlightCodes.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/simulation/GameSimulation.h"
 #include "src/game/navigation/rules/JDrive.h"
@@ -74,24 +75,24 @@ bool GameSimulation::startFreeFlightLeg(EntityId shipId, const FreeFlightLeg& le
     auto& f = it->second;
     f.autopilotTargetId.clear();          // the body autopilot gives way
     f.leg = leg;
-    f.legActive = true;
-    f.legOrbitNormal = glm::dvec3(0.0);
+    f.legRun.active = true;
+    f.legRun.orbitNormal = glm::dvec3(0.0);
     // on the ground (landed): the take-off first - no J below the floor (ROUTE_PROGRAMS_DESIGN.md R2)
-    f.takeOff = motion.freeFlightSurfaceState == 1;
-    if (f.takeOff)
+    f.legRun.takeOff = motion.freeFlightSurfaceState == 1;
+    if (f.legRun.takeOff)
     {
         motion.freeFlightSurfaceState = 0;
-        motion.freeFlightAutopilotPhase = 0;   // the landing autopilot's "on the surface" panel ends
+        motion.freeFlightAutopilotPhase = game::navigation::code(game::navigation::AutopilotDisplayPhase::None);   // the "on the surface" panel ends
         motion.freeFlightAutopilotTargetId.clear();
         std::cerr << "[Route] ship " << shipId.value << ": TAKE-OFF - main-engine climb to the J floor first" << std::endl;
     }
-    f.legSeconds = 0.0;
-    f.legLastLog = -1.0e30;
+    f.legRun.seconds = 0.0;
+    f.legRun.lastLog = -1.0e30;
     // continuing in J (past a guide point): the drive stays at full strength
-    f.legDriveStartSeconds = alreadyInJ ? -1000.0 : -1.0;
-    f.legHaveLastBody = false;
-    f.legArrived = false;
-    f.legDepartureHubId = f.sourceHubId;   // the hub left on entering J
+    f.legRun.driveStartSeconds = alreadyInJ ? -1000.0 : -1.0;
+    f.legRun.haveLastBody = false;
+    f.legRun.arrived = false;
+    f.legRun.departureHubId = f.sourceHubId;   // the hub left on entering J
     motion.freeFlightThrust = 0;
     motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
     std::cerr << "[Route] ship " << shipId.value << ": leg -> "
@@ -99,7 +100,7 @@ bool GameSimulation::startFreeFlightLeg(EntityId shipId, const FreeFlightLeg& le
                   : leg.kind == FreeFlightLeg::Kind::Orbit ? "orbit of " + leg.bodyId + " at " +
                                                                  std::to_string(static_cast<int>(leg.orbitAltitudeM / 1000.0)) + " km"
                                                            : std::string("point"))
-              << " (departure " << f.legDepartureHubId << ")" << std::endl;
+              << " (departure " << f.legRun.departureHubId << ")" << std::endl;
     return true;
 }
 
@@ -109,7 +110,7 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
     auto& tr = ship.core().transform();
     auto& motion = tr.motion;
     auto& frame = motion.travelFrame;
-    f.legSeconds += dt;
+    f.legRun.seconds += dt;
     const FreeFlightLeg& leg = f.leg;
 
     // ---- destination kinematics: position to reach, velocity to match there
@@ -124,7 +125,7 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
         if (!hub || !hub->valid)
         {
             std::cerr << "[Route] ship " << shipId.value << ": hub " << leg.hubId << " unknown - leg dropped" << std::endl;
-            f.legActive = false;
+            f.legRun.active = false;
             return;
         }
         // the arrival point inside the J boundary, on the side the ship comes from
@@ -143,7 +144,7 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
         if (!other || !other->core().transform().motion.travelFrame.valid)
         {
             std::cerr << "[Route] ship " << shipId.value << ": rendezvous target " << leg.shipEntityId << " unknown - leg dropped" << std::endl;
-            f.legActive = false;
+            f.legRun.active = false;
             return;
         }
         const auto& om = other->core().transform().motion;
@@ -158,14 +159,14 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
     {
         if (!body)
         {
-            f.legActive = false;
+            f.legRun.active = false;
             return;
         }
-        const glm::dvec3 bodyVel = f.legHaveLastBody && dt > 0.0 ? (body->centerMeters - f.legLastBodyCentre) / dt : glm::dvec3(0.0);
-        f.legLastBodyCentre = body->centerMeters;
-        if (!f.legHaveLastBody)
+        const glm::dvec3 bodyVel = f.legRun.haveLastBody && dt > 0.0 ? (body->centerMeters - f.legRun.lastBodyCentre) / dt : glm::dvec3(0.0);
+        f.legRun.lastBodyCentre = body->centerMeters;
+        if (!f.legRun.haveLastBody)
         {
-            f.legHaveLastBody = true;
+            f.legRun.haveLastBody = true;
             return;
         }
         const glm::dvec3 rel = frame.originMeters - body->centerMeters;
@@ -175,7 +176,7 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
         const double r = body->radiusMeters + std::max(leg.orbitAltitudeM, jd::floorAltitudeM(body->radiusMeters, body->atmosphereRadiusMeters));
         // the orbit plane, fixed once: the ship's position and its motion across the radius (else
         // the ecliptic-like plane through the body) - the approach and the orbit share it
-        if (glm::length(f.legOrbitNormal) < 0.5)
+        if (glm::length(f.legRun.orbitNormal) < 0.5)
         {
             const glm::dvec3 w0 = frame.linearVelocityMps - bodyVel;
             glm::dvec3 n = glm::cross(rel, w0);
@@ -183,9 +184,9 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
                 n = glm::cross(rel, glm::cross(glm::dvec3(0, 1, 0), rel));
             if (glm::length(n) < 1.0e-9)
                 n = glm::cross(rel, glm::dvec3(1, 0, 0));
-            f.legOrbitNormal = glm::normalize(n);
+            f.legRun.orbitNormal = glm::normalize(n);
         }
-        const glm::dvec3 n = f.legOrbitNormal;
+        const glm::dvec3 n = f.legRun.orbitNormal;
         // the ship's position projected into the plane, and the prograde direction there
         glm::dvec3 u = up - n * glm::dot(up, n);
         u = glm::length(u) > 1.0e-9 ? glm::normalize(u) : glm::normalize(glm::cross(n, glm::dvec3(1, 0, 0)));
@@ -223,13 +224,13 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
     // ---- the drive: gentle inside any object's keep-out (no J field there), then 1 g doubling every 2 s
     JKeepOutHit keep;
     const bool inKeepOut = jKeepOut(shipId, motion.systemId, frame.originMeters, keep);
-    const bool nearDeparture = inKeepOut && !(leg.kind == FreeFlightLeg::Kind::Hub && keep.objectId == leg.hubId && f.legSeconds > 1.0 &&
-                                              keep.objectId != f.legDepartureHubId) &&
-                               !(leg.kind == FreeFlightLeg::Kind::Ship && f.legSeconds > 1.0 &&
+    const bool nearDeparture = inKeepOut && !(leg.kind == FreeFlightLeg::Kind::Hub && keep.objectId == leg.hubId && f.legRun.seconds > 1.0 &&
+                                              keep.objectId != f.legRun.departureHubId) &&
+                               !(leg.kind == FreeFlightLeg::Kind::Ship && f.legRun.seconds > 1.0 &&
                                  keep.objectId.rfind("ship " + std::to_string(leg.shipEntityId) + " ", 0) == 0);
-    if (!nearDeparture && f.legDriveStartSeconds == -1.0)
-        f.legDriveStartSeconds = f.legSeconds;
-    const double driveSeconds = f.legDriveStartSeconds == -1.0 ? 0.0 : f.legSeconds - f.legDriveStartSeconds;
+    if (!nearDeparture && f.legRun.driveStartSeconds == -1.0)
+        f.legRun.driveStartSeconds = f.legRun.seconds;
+    const double driveSeconds = f.legRun.driveStartSeconds == -1.0 ? 0.0 : f.legRun.seconds - f.legRun.driveStartSeconds;
     double limit = nearDeparture ? GentleAccelMps2 : std::min(MaxDriveMps2, 9.81 * std::exp2(driveSeconds / jd::DriveRampDoublingS));
 
     // ---- obstacles: never through a planet / moon / the star - go round the first one in the way
@@ -309,17 +310,18 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
 
     // ---- HUD (the J autopilot panel)
     const glm::dvec3 wAfter = w + dv;
-    motion.freeFlightAutopilotPhase = static_cast<std::uint8_t>(nearDeparture ? 9 : phase);
+    motion.freeFlightAutopilotPhase = nearDeparture ? game::navigation::code(game::navigation::AutopilotDisplayPhase::HubExit)
+                                                    : static_cast<std::uint8_t>(phase);
     motion.freeFlightAutopilotTargetId = leg.kind == FreeFlightLeg::Kind::Hub ? leg.hubId : leg.bodyId;
     motion.freeFlightAutopilotRangeM = d;
     motion.freeFlightAutopilotRelSpeedMps = glm::length(wAfter);
     motion.freeFlightAutopilotAccelMps2 = static_cast<float>(
         glm::length(wAfter) > 1.0e-3 ? glm::dot(accel, glm::normalize(wAfter)) : glm::length(accel));
 
-    if (f.legSeconds - f.legLastLog >= 2.0)
+    if (f.legRun.seconds - f.legRun.lastLog >= 2.0)
     {
-        f.legLastLog = f.legSeconds;
-        std::cerr << "[Route] ship " << shipId.value << " t+" << f.legSeconds << " s phase " << int(motion.freeFlightAutopilotPhase)
+        f.legRun.lastLog = f.legRun.seconds;
+        std::cerr << "[Route] ship " << shipId.value << " t+" << f.legRun.seconds << " s phase " << int(motion.freeFlightAutopilotPhase)
                   << ": to aim " << d / 1000.0 << " km, speed vs destination " << glm::length(wAfter) << " m/s, accel "
                   << glm::length(accel) << " m/s2" << std::endl;
     }
@@ -329,7 +331,7 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
     // ~15 000 km wide, a corridor guide is passed close to its axis)
     if (leg.passThrough && d < std::clamp(0.01 * leg.remainingAfterM, 20000.0, 2.0e6))
     {
-        f.legActive = false;
+        f.legRun.active = false;
         std::cerr << "[Route] ship " << shipId.value << ": passed a guide point at " << d / 1000.0 << " km, "
                   << glm::length(wAfter) / 1000.0 << " km/s" << std::endl;
         if (auto r = m_routes.find(shipId); r != m_routes.end())
@@ -342,9 +344,9 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
                                                               : d < 1500.0 && glm::length(wAfter) < 20.0;
     if (there)
     {
-        f.legActive = false;
-        f.legArrived = true;
-        std::cerr << "[Route] ship " << shipId.value << ": ARRIVED after " << f.legSeconds << " s, " << d << " m from the aim, "
+        f.legRun.active = false;
+        f.legRun.arrived = true;
+        std::cerr << "[Route] ship " << shipId.value << ": ARRIVED after " << f.legRun.seconds << " s, " << d << " m from the aim, "
                   << glm::length(wAfter) << " m/s vs destination - leaving J" << std::endl;
         m_pendingJExit.push_back(shipId);
         if (auto r = m_routes.find(shipId); r != m_routes.end())
@@ -412,8 +414,8 @@ void GameSimulation::pauseRoute(EntityId shipId)
     r->second.resumeCurrent = !r->second.legDone;   // mid-leg: the leg starts again on RESUME
     if (const auto it = m_freeFlights.find(shipId); it != m_freeFlights.end())
     {
-        it->second.legActive = false;
-        it->second.takeOff = false;
+        it->second.legRun.active = false;
+        it->second.legRun.takeOff = false;
         if (!it->second.autopilotTargetId.empty())
             setFreeFlightAutopilot(shipId, it->second.autopilotTargetId, false, {});
     }
@@ -452,7 +454,7 @@ void GameSimulation::cancelRoute(EntityId shipId)
     if (m_routes.erase(shipId))
         std::cerr << "[Route] ship " << shipId.value << ": route cancelled" << std::endl;
     if (const auto it = m_freeFlights.find(shipId); it != m_freeFlights.end())
-        it->second.legActive = false;
+        it->second.legRun.active = false;
 }
 
 void GameSimulation::updateRoutes(double dt)

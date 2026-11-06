@@ -1,5 +1,6 @@
 // SpaceState: Flight HUD and in-session overlays (route planning modal, navigation stress, language, universe time).
 
+#include "src/game/navigation/FreeFlightCodes.h"
 #include "src/game/SpaceStateInternal.h"
 
 
@@ -1741,23 +1742,23 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         ? thrust + keys
         : std::string("Ctrl+K нормальный полёт (без предела скорости)  ·  Ctrl+J двигатель J");
     line2 = routeHint + line2;
-    if (motion.freeFlightCaptureRefusal == 1)
+    if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::NoLocalFrame))
         line2 = "Нет доступной локальной системы отсчёта (хаб дальше зоны захвата)   " + line2;
-    else if (motion.freeFlightCaptureRefusal == 2)
+    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::CaptureTooFast))
         line2 = "Захват невозможен: слишком высокая скорость относительно хаба   " + line2;
-    else if (motion.freeFlightCaptureRefusal == 3)
+    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::JDroppedNearObject))
         line2 = "J выключен: рядом объект   " + line2;
-    else if (motion.freeFlightCaptureRefusal == 4)
+    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::BelowJFloorMainEngines))
         line2 = "Ниже пола J: маршевые двигатели   " + line2;
-    else if (motion.freeFlightCaptureRefusal == 7)
+    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::JRefusedNearObject))
         line2 = "J не включается: рядом объект (хаб / станция 20 км, корабль 5 км)   " + line2;
-    else if (motion.freeFlightCaptureRefusal == 9)
+    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::JChargeEmpty))
         line2 = "J: заряд прыжкового двигателя исчерпан   " + line2;
-    else if (motion.freeFlightCaptureRefusal == 8)
+    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::JRefusedBelowFloor))
         line2 = "J не включается: ниже пола J   " + line2;
-    else if (motion.freeFlightCaptureRefusal == 5)
+    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::LandingThrustTooLow))
         line2 = "Посадка невозможна: тяги маршевых не хватит, чтобы сесть и взлететь   " + line2;
-    else if (motion.freeFlightCaptureRefusal == 6)
+    else if (motion.freeFlightCaptureRefusal == game::navigation::code(game::navigation::FlightRefusal::LandingAtmosphere))
         line2 = "Посадка невозможна: атмосфера - садятся только челноки   " + line2;
 
     auto& text = TextRenderer::instance();

@@ -229,6 +229,18 @@ public:
     // navigation zones (GameSimulationZones.cpp): red entries and skipped blue gates fine the ship
     void updateZoneViolations(double dt);
     void resumeRoute(EntityId shipId);
+    // the J autopilot's internal stage (server only; the panel shows AutopilotDisplayPhase). The
+    // values are the ones the "[Autopilot] ... phase N ->" log prints.
+    enum class AutopilotStage : int
+    {
+        None = 0,
+        Departure = 1,        // leaving the departure body on the main engines / gentle J
+        Cruise = 2,           // the J transfer
+        Approach = 3,         // braking into the parking orbit
+        OrbitHold = 9,        // on the parking orbit, holding before the de-orbit
+        GroundStabilized = 10,// the terminal in the ground frame (landing autopilot)
+        Deorbit = 11          // the de-orbit in normal flight (main engines)
+    };
     struct ActiveFreeFlight
     {
         std::string sourceHubId;
@@ -249,7 +261,7 @@ public:
         // J autopilot to a body (empty = off)
         std::string autopilotTargetId;
         std::string autopilotDepartureId;
-        int autopilotPhase = 0;
+        AutopilotStage autopilotPhase = AutopilotStage::None;
         double autopilotSeconds = 0.0;
         double autopilotRampSeconds = 0.0;   // the drive ramp: counts only outside the J keep-out
         double orbitCoastSeconds = 0.0;      // landing: the coast on the parking orbit before the de-orbit
@@ -263,17 +275,41 @@ public:
         game::navigation::landing::LandingAutopilot landing;
         bool landingStarted = false;
         // a route leg (hub / orbit / point) flown by the route autopilot
+        // the sub-machines of a free flight (architecture audit item 3): one struct each
+        struct RouteLegRun     // a route leg being flown (GameSimulationRoute.cpp)
+        {
+            bool active = false;
+            bool takeOff = false;            // a leg from the ground: climb to the J floor on the main engines first
+            glm::dvec3 orbitNormal {0.0}; // an orbit leg: the orbit plane, fixed at the leg's start
+            bool arrived = false;
+            double seconds = 0.0;
+            double lastLog = -1.0e30;
+            double driveStartSeconds = -1.0;
+            std::string departureHubId;
+            bool haveLastBody = false;
+            glm::dvec3 lastBodyCentre {0.0};
+        } legRun;
+        struct GroundFrame     // the ground stabilization frame (landing / landed)
+        {
+            bool active = false;
+            std::string id;
+            bool havePrevious = false;
+            glm::dvec3 previousCentre {0.0};
+            bool previousBasisValid = false;
+            glm::dmat3 previousBasis {1.0};
+            bool liftOff = false;            // the laws pushed the ship off the ground this tick
+            glm::dvec3 traceLocalStart {0.0};  // DEV trace: the local velocity handed to the laws
+        } ground;
+        struct LandingPilot    // the landing pilot replacing the pilot's controls
+        {
+            bool active = false;
+            bool restoreLaw = false;
+            ShipControlState control {};
+            game::navigation::LocalFlightControlLaw lawBefore = game::navigation::LocalFlightControlLaw::Assisted;
+            double lastLogSeconds = -1.0e30;
+            bool freeRotation = false;      // the landing pilot put Assisted into the Backspace mode
+        } landingPilot;
         FreeFlightLeg leg;
-        bool legActive = false;
-        bool takeOff = false;            // a leg from the ground: climb to the J floor on the main engines first
-        glm::dvec3 legOrbitNormal {0.0}; // an orbit leg: the orbit plane, fixed at the leg's start
-        bool legArrived = false;
-        double legSeconds = 0.0;
-        double legLastLog = -1.0e30;
-        double legDriveStartSeconds = -1.0;
-        std::string legDepartureHubId;
-        bool legHaveLastBody = false;
-        glm::dvec3 legLastBodyCentre {0.0};
         double landingPlanSeconds = 0.0;
         // landed: the touchdown spot, body-fixed (it turns with the body)
         bool landedBodyKnown = false;
@@ -288,21 +324,8 @@ public:
         // travel frame moves with the ground under the ship, so the local velocity the flight
         // laws see is the velocity over the ground; every tick the server folds what the laws
         // did into the ship's world motion, applies real gravity, and splits it again.
-        bool bodyFrame = false;
-        std::string bodyFrameId;
-        bool bodyHavePrevious = false;
-        glm::dvec3 bodyPreviousCentre {0.0};
-        bool bodyPreviousBasisValid = false;
-        glm::dmat3 bodyPreviousBasis {1.0};
-        bool bodyLiftOff = false;            // the laws pushed the ship off the ground this tick
-        glm::dvec3 bodyTraceLocalStart {0.0};  // DEV trace: the local velocity handed to the laws
         // the landing virtual pilot of normal flight: ordinary Newtonian controls, applied
         // before the flight step (they override the pilot's input while it flies)
-        bool pilotActive = false;
-        bool pilotRestoreLaw = false;
-        ShipControlState pilotControl {};
-        game::navigation::LocalFlightControlLaw lawBeforeLanding = game::navigation::LocalFlightControlLaw::Assisted;
-        double pilotLastLogSeconds = -1.0e30;
         // the J engine (motion.jEngine): its own ramp - 1 g doubling every 2 s while it thrusts
         // automatic stabilization (author 2026-11-05 cc): armed by the J engine going off, by a
         // new sphere of influence or by the orbit closing; fires after a coast on a safe closed orbit
@@ -310,7 +333,6 @@ public:
         bool lastBound = true;
         double coastSeconds = 0.0;
         glm::dvec3 descentNose {0.0};        // landing phase 11: the last commanded thrust direction
-        bool pilotFreeRotation = false;      // the landing pilot put Assisted into the Backspace mode
     };
     // J off below a body's J floor: normal flight against its surface (see bodyFrame)
     void enterBodyFrame(EntityId shipId, Ship& ship, ActiveFreeFlight& f, const game::navigation::GravityBody& body,

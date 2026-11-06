@@ -66,6 +66,7 @@
 //                    flight, never near objects (JDrive.h keep-out) or below a body's J floor -
 //                    refused there, and it drops out when the ship enters such a zone. The Assisted
 //                    velocity bending by the J field works only with the J engine on.
+#include "src/game/navigation/FreeFlightCodes.h"
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/simulation/GameSimulation.h"
 #include "src/game/navigation/rules/JDrive.h"
@@ -90,6 +91,10 @@
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/game/ship/core/ShipDynamics.h"
+
+using game::navigation::AutopilotDisplayPhase;
+using game::navigation::FlightRefusal;
+using game::navigation::code;
 
 namespace
 {
@@ -192,13 +197,13 @@ void GameSimulation::setFreeFlightThrust(EntityId shipId, int command)
         namespace jd = game::navigation::jdrive;
         motion.jAccelCommandMps2 = command == 1 ? jd::MaxAccelMps2 : command == 2 ? -jd::MaxAccelMps2 : 0.0;
         motion.freeFlightThrust = 0;
-        motion.freeFlightCaptureRefusal = 0;
+        motion.freeFlightCaptureRefusal = code(FlightRefusal::None);
         std::cerr << "[Flight] ship " << shipId.value << " J command "
                   << (command == 1 ? "FULL + (HOME)" : command == 2 ? "FULL - (END)" : "ZERO (INSERT)") << std::endl;
         return;
     }
     motion.freeFlightThrust = static_cast<std::uint8_t>(command);
-    motion.freeFlightCaptureRefusal = 0;      // a new pilot action replaces the last capture message
+    motion.freeFlightCaptureRefusal = code(FlightRefusal::None);      // a new pilot action replaces the last capture message
     if (command != 2 && motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::BackwardToVelocity)
         motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
     std::cerr << "[FreeFlight] ship " << shipId.value << " thrust "
@@ -225,13 +230,13 @@ void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& 
         if (!f.autopilotTargetId.empty())
             std::cerr << "[Autopilot] ship " << shipId.value << ": cancelled (" << f.autopilotTargetId << ")" << std::endl;
         f.autopilotTargetId.clear();
-        f.autopilotPhase = 0;
-        if (f.pilotActive)
+        f.autopilotPhase = AutopilotStage::None;
+        if (f.landingPilot.active)
         {
-            f.pilotActive = false;
-            f.pilotRestoreLaw = true;
+            f.landingPilot.active = false;
+            f.landingPilot.restoreLaw = true;
         }
-        motion.freeFlightAutopilotPhase = 0;
+        motion.freeFlightAutopilotPhase = code(AutopilotDisplayPhase::None);
         return;
     }
     if (active->second.localFrame)
@@ -272,13 +277,13 @@ void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& 
         const bool shuttle = design && design->shipClass == "surface_lifter";
         if (!game::navigation::rules::isAirless(b.radiusMeters, b.atmosphereRadiusMeters) && !shuttle)
         {
-            motion.freeFlightCaptureRefusal = 6;
+            motion.freeFlightCaptureRefusal = code(FlightRefusal::LandingAtmosphere);
             std::cerr << "[Autopilot] ship " << shipId.value << ": REFUSED " << target << " - an atmosphere: only shuttles land" << std::endl;
             return;
         }
         if (main < jd::LandingThrustToWeightMin * gSurface)
         {
-            motion.freeFlightCaptureRefusal = 5;
+            motion.freeFlightCaptureRefusal = code(FlightRefusal::LandingThrustTooLow);
             std::cerr << "[Autopilot] ship " << shipId.value << ": REFUSED " << target << " - main engines " << main / 9.81
                       << " g vs surface gravity " << gSurface / 9.81 << " g (need x" << jd::LandingThrustToWeightMin << ")" << std::endl;
             return;
@@ -333,7 +338,7 @@ void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& 
         // body basis (prime, north, east)
         f.landingRequest.padBodyDirection = glm::dvec3(std::cos(la) * std::cos(lo), std::sin(la), std::cos(la) * std::sin(lo));
     }
-    f.autopilotPhase = 2;
+    f.autopilotPhase = AutopilotStage::Cruise;
     f.autopilotSeconds = 0.0;
     f.autopilotRampSeconds = 0.0;
     f.orbitNormal = glm::dvec3(0.0);
@@ -345,7 +350,7 @@ void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& 
     f.autoStabilizeArmed = false;
     motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
     motion.freeFlightAutopilotTargetId = target;
-    motion.freeFlightAutopilotPhase = 2;
+    motion.freeFlightAutopilotPhase = code(AutopilotDisplayPhase::Transfer);
     if (motion.freeFlightSurfaceState != 0)
     {
         motion.freeFlightSurfaceState = 0;   // lift off: the autopilot climbs away
@@ -373,7 +378,7 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     if (!target)
     {
         f.autopilotTargetId.clear();
-        motion.freeFlightAutopilotPhase = 0;
+        motion.freeFlightAutopilotPhase = code(AutopilotDisplayPhase::None);
         return;
     }
     const bool haveVelocity = f.autopilotHaveLastCenter;
@@ -382,7 +387,7 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     f.autopilotHaveLastCenter = true;
     if (!haveVelocity)
         return;
-    if (f.autopilotPhase == 11)
+    if (f.autopilotPhase == AutopilotStage::Deorbit)
     {
         updateNormalDescent(shipId, ship, f, *target, targetVelocity, dt);
         return;
@@ -411,12 +416,12 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
 
     glm::dvec3 wanted(0.0);
     double limit = ramp;
-    int phase = f.autopilotPhase;
-    int shownPhase = phase;
+    AutopilotStage phase = f.autopilotPhase;
+    int shownPhase = static_cast<int>(phase);
     double shownRange = height;
     glm::dvec3 orbitTangent(0.0);
     double orbitSpeed = 0.0;
-    if (phase == 9)
+    if (phase == AutopilotStage::OrbitHold)
     {
         // parking orbit: J off, no thrust - the orbit holds by itself; then the de-orbit
         f.orbitCoastSeconds += dt;
@@ -434,19 +439,19 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
             // (no envelope - the orbital speed is braked by the pilot's ordinary controls)
             std::cerr << "[Autopilot] ship " << shipId.value << ": orbit held " << f.orbitCoastSeconds << " s at "
                       << height / 1000.0 << " km - DE-ORBIT in NORMAL flight (main engines)" << std::endl;
-            f.autopilotPhase = 11;
+            f.autopilotPhase = AutopilotStage::Deorbit;
             f.descentNose = glm::dvec3(0.0);
-            f.lawBeforeLanding = motion.localControlLaw;
+            f.landingPilot.lawBefore = motion.localControlLaw;
             updateNormalDescent(shipId, ship, f, *target, targetVelocity, dt);
             return;
         }
-        motion.freeFlightAutopilotPhase = 12;
+        motion.freeFlightAutopilotPhase = code(AutopilotDisplayPhase::OrbitHold);
         motion.freeFlightAutopilotTargetId = target->id;
         motion.freeFlightAutopilotRangeM = height;
         motion.freeFlightAutopilotRelSpeedMps = glm::length(w);
         motion.freeFlightAutopilotAccelMps2 = 0.0f;
         if (motion.freeFlightCaptureRefusal == 4)
-            motion.freeFlightCaptureRefusal = 0;
+            motion.freeFlightCaptureRefusal = code(FlightRefusal::None);
         return;
     }
     {
@@ -532,7 +537,7 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
         const glm::dvec3 toAim = aim - frame.originMeters;
         const double d = glm::length(toAim);
         glm::dvec3 dir = d > 1e-3 ? toAim / d : glm::dvec3(0.0);
-        phase = 2;
+        phase = AutopilotStage::Cruise;
         // departure: never cut through the body left behind - first move off the line
         if (const GravityBody* departure = find(f.autopilotDepartureId); departure && departure != target && d > 1.0)
         {
@@ -544,11 +549,11 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
                 if (glm::length(side) < 1.0)
                     side = glm::cross(dir, std::abs(dir.z) < 0.9 ? glm::dvec3(0, 0, 1) : glm::dvec3(1, 0, 0));
                 dir = glm::normalize(side);
-                phase = 1;
+                phase = AutopilotStage::Departure;
             }
         }
         // never through the target either (an aim point on its far side): go round
-        if (phase == 2 && d > 1.0)
+        if (phase == AutopilotStage::Cruise && d > 1.0)
         {
             const glm::dvec3 s = frame.originMeters - target->centerMeters;
             const double t = std::clamp(-glm::dot(s, toAim) / (d * d), 0.0, 1.0);
@@ -562,13 +567,13 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
         }
         const double braking = std::sqrt(2.0 * 0.4 * maxAccel * d);
         const double tail = d / ApproachTauS;
-        if (phase == 2 && tail < braking)
-            phase = 3;
+        if (phase == AutopilotStage::Cruise && tail < braking)
+            phase = AutopilotStage::Approach;
         // tangential: the closing velocity on top of the orbit velocity at the insertion point
         wanted = dir * std::min(braking, tail) + orbitTangent * orbitSpeed;
-        if ((phase == 3 || f.orbitAcquire) && d < 1000.0 && glm::length(w - orbitTangent * orbitSpeed) < 5.0)
+        if ((phase == AutopilotStage::Approach || f.orbitAcquire) && d < 1000.0 && glm::length(w - orbitTangent * orbitSpeed) < 5.0)
         {
-            phase = 9;
+            phase = AutopilotStage::OrbitHold;
             f.orbitCoastSeconds = 0.0;
             std::cerr << "[Autopilot] ship " << shipId.value << ": ON ORBIT of " << target->id << " at " << height / 1000.0
                       << " km, " << orbitSpeed << " m/s (J off, coast) after " << f.autopilotSeconds << " s" << std::endl;
@@ -592,13 +597,13 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
         if (motion.freeFlightCaptureRefusal != 3 || f.autopilotSeconds - f.autopilotLastLogSeconds >= 1.9)
             std::cerr << "[Autopilot] ship " << shipId.value << ": J keep-out of " << hit.objectId << " at " << hit.distanceMeters / 1000.0
                       << " km (" << glm::length(hit.velocityMps - frame.linearVelocityMps) << " m/s relative)" << std::endl;
-        motion.freeFlightCaptureRefusal = 3;
+        motion.freeFlightCaptureRefusal = code(FlightRefusal::JDroppedNearObject);
         f.autopilotRampSeconds = 0.0;   // the full drive ramps from 1 g again outside the keep-out
     }
     else
     {
         if (motion.freeFlightCaptureRefusal == 3)
-            motion.freeFlightCaptureRefusal = 0;
+            motion.freeFlightCaptureRefusal = code(FlightRefusal::None);
         f.autopilotRampSeconds += dt;
     }
     // below the J floor of the reference body: no J field - the ship's own main engines
@@ -627,7 +632,7 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
         limit = std::min(limit, mainAccel);
         f.autopilotRampSeconds = 0.0;
         if (motion.freeFlightCaptureRefusal != 3)
-            motion.freeFlightCaptureRefusal = 4;
+            motion.freeFlightCaptureRefusal = code(FlightRefusal::BelowJFloorMainEngines);
         const glm::dvec3 gravity = game::navigation::GravityFieldSystem::sample(frame.originMeters, m_gravityBodies).accelerationMps2;
         thrustWanted = dv / TauS - gravity;
         const glm::dvec3 noseNow = glm::normalize(glm::dvec3(tr.forward()));
@@ -635,7 +640,7 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
         dv = noseNow * (std::clamp(glm::dot(thrustWanted, noseNow), reverse, limit) * dt);
     }
     else if (motion.freeFlightCaptureRefusal == 4)
-        motion.freeFlightCaptureRefusal = 0;
+        motion.freeFlightCaptureRefusal = code(FlightRefusal::None);
     const double maxDv = limit * dt;
     if (glm::length(dv) > maxDv)
         dv *= maxDv / glm::length(dv);
@@ -696,7 +701,7 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     if (f.autopilotSeconds - f.autopilotLastLogSeconds >= 2.0)
     {
         f.autopilotLastLogSeconds = f.autopilotSeconds;
-        std::cerr << "[Autopilot] ship " << shipId.value << " t+" << f.autopilotSeconds << " s phase " << phase << " -> "
+        std::cerr << "[Autopilot] ship " << shipId.value << " t+" << f.autopilotSeconds << " s phase " << static_cast<int>(phase) << " -> "
                   << target->id << ": height " << height / 1000.0 << " km, speed " << glm::length(w + dv) / 1000.0
                   << " km/s, accel " << glm::length(accel) << " m/s2 (drive " << ramp << ")" << std::endl;
     }
@@ -792,20 +797,20 @@ void GameSimulation::updateNormalDescent(EntityId shipId, Ship& ship, ActiveFree
         pilot.control.localControlLawCommandValid = true;
         pilot.control.requestedLocalControlLaw = native;
     }
-    if (!f.pilotActive)
+    if (!f.landingPilot.active)
         std::cerr << "[Autopilot] ship " << shipId.value << ": de-orbit pilot ON (normal flight, main engines along the nose, law "
                   << (native == game::navigation::LocalFlightControlLaw::Assisted ? "Assisted" : "Newtonian") << ")" << std::endl;
-    f.pilotActive = true;
-    f.pilotControl = pilot.control;
+    f.landingPilot.active = true;
+    f.landingPilot.control = pilot.control;
 
-    motion.freeFlightAutopilotPhase = 11;
+    motion.freeFlightAutopilotPhase = code(AutopilotDisplayPhase::Deorbit);
     motion.freeFlightAutopilotTargetId = body.id;
     motion.freeFlightAutopilotRangeM = arc;
     motion.freeFlightAutopilotRelSpeedMps = glm::length(v);
     motion.freeFlightAutopilotAccelMps2 = static_cast<float>(glm::length(motion.mainEngineAccelerationMps2));
-    if (f.autopilotSeconds - f.pilotLastLogSeconds >= 2.0)
+    if (f.autopilotSeconds - f.landingPilot.lastLogSeconds >= 2.0)
     {
-        f.pilotLastLogSeconds = f.autopilotSeconds;
+        f.landingPilot.lastLogSeconds = f.autopilotSeconds;
         const double noseOff = glm::degrees(std::acos(std::clamp(glm::dot(pilot.noseWanted, glm::normalize(rq.forward)), -1.0, 1.0)));
         std::cerr << "[Autopilot] ship " << shipId.value << " DE-ORBIT t+" << f.autopilotSeconds << " s: height " << h
                   << " m (ground " << (terrainKnown ? "sampled" : "site") << "), to the site " << arc / 1000.0 << " km, horizontal "
@@ -823,7 +828,7 @@ void GameSimulation::updateNormalDescent(EntityId shipId, Ship& ship, ActiveFree
                   << arc << " m from the site, " << glm::length(v) << " m/s over the ground after " << f.autopilotSeconds << " s"
                   << std::endl;
         enterBodyFrame(shipId, ship, f, body, bodyVelocityMps);
-        f.autopilotPhase = 10;
+        f.autopilotPhase = AutopilotStage::GroundStabilized;
         updateSurfaceLanding(shipId, ship, f, dt);
     }
 }
@@ -837,11 +842,11 @@ void GameSimulation::enterBodyFrame(EntityId shipId, Ship& ship, ActiveFreeFligh
     const glm::dvec3 shipWorld = frame.localToWorldPosition(motion.localPositionMeters);
     const glm::dvec3 shipVel = frame.localToWorldVelocity(motion.localPositionMeters, motion.localVelocityMps);
     f.localFrame = true;
-    f.bodyFrame = true;
-    f.bodyFrameId = body.id;
-    f.bodyPreviousCentre = body.centerMeters;
-    f.bodyHavePrevious = true;
-    f.bodyPreviousBasisValid = m_bodyOrientation && m_bodyOrientation(body.id, f.bodyPreviousBasis);
+    f.ground.active = true;
+    f.ground.id = body.id;
+    f.ground.previousCentre = body.centerMeters;
+    f.ground.havePrevious = true;
+    f.ground.previousBasisValid = m_bodyOrientation && m_bodyOrientation(body.id, f.ground.previousBasis);
     frame.originMeters = shipWorld;
     frame.linearVelocityMps = bodyVelocityMps;   // the turn of the ground joins on the next split
     // the body frame folds and splits world vectors directly (local == world): an identity basis.
@@ -856,7 +861,7 @@ void GameSimulation::enterBodyFrame(EntityId shipId, Ship& ship, ActiveFreeFligh
     motion.localVelocityMps = shipVel - bodyVelocityMps;
     motion.freeFlight = false;
     motion.freeFlightThrust = 0;
-    motion.freeFlightCaptureRefusal = 0;
+    motion.freeFlightCaptureRefusal = code(FlightRefusal::None);
     motion.jEngine = false;
     motion.velocityReferenceKind = 4;   // stabilization against the ground
     if (motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::BackwardToVelocity ||
@@ -965,7 +970,7 @@ void GameSimulation::updateSurfaceLanding(EntityId shipId, Ship& ship, ActiveFre
     {
         motion.assistedFreeRotation = true;
         motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
-        f.pilotFreeRotation = true;
+        f.landingPilot.freeRotation = true;
     }
     landing::SurfacePilotResult pilot = assisted ? landing::flySurfaceLandingVectoring(rq, params)
                                                  : landing::flySurfaceLanding(rq, params);
@@ -974,28 +979,28 @@ void GameSimulation::updateSurfaceLanding(EntityId shipId, Ship& ship, ActiveFre
         pilot.control.localControlLawCommandValid = true;
         pilot.control.requestedLocalControlLaw = native;
     }
-    if (!f.pilotActive)
+    if (!f.landingPilot.active)
     {
-        f.lawBeforeLanding = motion.localControlLaw;
+        f.landingPilot.lawBefore = motion.localControlLaw;
         std::cerr << "[Autopilot] ship " << shipId.value << ": landing pilot ON (normal flight, the ship's native law "
                   << (assisted ? "Assisted" : "Newtonian") << (motion.localControlLaw != native ? " - switching to it" : "")
                   << "; " << (assisted || f.bellyLanding ? "belly down" : "tail down") << ")" << std::endl;
     }
-    f.pilotActive = true;
-    f.pilotControl = pilot.control;
+    f.landingPilot.active = true;
+    f.landingPilot.control = pilot.control;
 
     const auto lp = f.landing.phase();
-    motion.freeFlightAutopilotPhase = static_cast<std::uint8_t>(lp == landing::LandingPhase::Planning ? 7
-                                                                : lp == landing::LandingPhase::Orbit  ? 8
-                                                                : lp == landing::LandingPhase::Transit ? 6
-                                                                                                       : 4);
+    motion.freeFlightAutopilotPhase = code(lp == landing::LandingPhase::Planning ? AutopilotDisplayPhase::SiteChoice
+                                                                : lp == landing::LandingPhase::Orbit  ? AutopilotDisplayPhase::OrbitSiteSearch
+                                                                : lp == landing::LandingPhase::Transit ? AutopilotDisplayPhase::ToPad
+                                                                                                       : AutopilotDisplayPhase::PadDescent);
     motion.freeFlightAutopilotTargetId = target->id;
     motion.freeFlightAutopilotRangeM = lp == landing::LandingPhase::Transit ? cmd.distanceToSiteM : cmd.heightAboveGroundM;
     motion.freeFlightAutopilotRelSpeedMps = glm::length(rq.actualVelocityMps);
     motion.freeFlightAutopilotAccelMps2 = static_cast<float>(glm::length(motion.engineAccelerationMps2));
-    if (f.autopilotSeconds - f.pilotLastLogSeconds >= 2.0)
+    if (f.autopilotSeconds - f.landingPilot.lastLogSeconds >= 2.0)
     {
-        f.pilotLastLogSeconds = f.autopilotSeconds;
+        f.landingPilot.lastLogSeconds = f.autopilotSeconds;
         const glm::dvec3 v = rq.actualVelocityMps;
         const double noseOff = glm::degrees(std::acos(std::clamp(glm::dot(pilot.noseWanted, rq.forward), -1.0, 1.0)));
         std::cerr << "[Autopilot] ship " << shipId.value << " NORMAL t+" << f.autopilotSeconds << " s " << f.landing.status()
@@ -1016,24 +1021,24 @@ void GameSimulation::applySurfaceLandingPilots()
         Ship* ship = getShip(id);
         if (!ship)
             continue;
-        if (f.pilotActive)
-            ship->setControlState(f.pilotControl);
-        else if (f.pilotRestoreLaw)
+        if (f.landingPilot.active)
+            ship->setControlState(f.landingPilot.control);
+        else if (f.landingPilot.restoreLaw)
         {
-            f.pilotRestoreLaw = false;
-            if (f.pilotFreeRotation)
+            f.landingPilot.restoreLaw = false;
+            if (f.landingPilot.freeRotation)
             {
                 ship->core().transform().motion.assistedFreeRotation = false;
-                f.pilotFreeRotation = false;
+                f.landingPilot.freeRotation = false;
             }
-            if (ship->core().transform().motion.localControlLaw == f.lawBeforeLanding)
+            if (ship->core().transform().motion.localControlLaw == f.landingPilot.lawBefore)
                 continue;
             ShipControlState restore {};
             restore.localControlLawCommandValid = true;
-            restore.requestedLocalControlLaw = f.lawBeforeLanding;
+            restore.requestedLocalControlLaw = f.landingPilot.lawBefore;
             ship->setControlState(restore);
             std::cerr << "[Autopilot] ship " << id.value << ": landing pilot OFF, flight law restored ("
-                      << int(f.lawBeforeLanding) << ")" << std::endl;
+                      << int(f.landingPilot.lawBefore) << ")" << std::endl;
         }
     }
 }
@@ -1087,8 +1092,8 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
                 {
                     auto& f = active->second;
                     f.autopilotTargetId.clear();
-                    f.autopilotPhase = 0;
-                    motion.freeFlightAutopilotPhase = 0;
+                    f.autopilotPhase = AutopilotStage::None;
+                    motion.freeFlightAutopilotPhase = code(AutopilotDisplayPhase::None);
                     enterBodyFrame(shipId, *ship, f, b, motion.freeFlightReferenceVelocityMps);
                     return true;
                 }
@@ -1098,7 +1103,7 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
             auto& f = active->second;
             f.localFrame = true;
             f.autopilotTargetId.clear();
-            f.autopilotPhase = 0;
+            f.autopilotPhase = AutopilotStage::None;
             motion.jEngine = false;
             motion.velocityReferenceKind = 3;   // stabilization on the own trajectory (orbit)
             motion.travelFrame.originMeters = shipWorld;
@@ -1107,8 +1112,8 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
             motion.localVelocityMps = glm::dvec3(0.0);
             motion.freeFlight = false;
             motion.freeFlightThrust = 0;
-            motion.freeFlightCaptureRefusal = 0;
-            motion.freeFlightAutopilotPhase = 0;
+            motion.freeFlightCaptureRefusal = code(FlightRefusal::None);
+            motion.freeFlightAutopilotPhase = code(AutopilotDisplayPhase::None);
             if (motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::BackwardToVelocity ||
                 motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::ForwardToVelocity)
                 motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
@@ -1121,7 +1126,7 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
                   << active->second.peakSpeedMps / 1000.0 << " km/s; nearest hub " << nearest << " at " << best / 1000.0 << " km\n";
         motion.freeFlight = false;
         motion.freeFlightThrust = 0;
-        motion.freeFlightCaptureRefusal = 0;
+        motion.freeFlightCaptureRefusal = code(FlightRefusal::None);
         motion.jEngine = false;
         motion.velocityReferenceKind = 0;   // stabilization in the hub frame
         motion.freeFlightReferenceId.clear();
@@ -1158,7 +1163,7 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
     motion.localVelocityMps = glm::dvec3(0.0);
     motion.freeFlight = true;
     motion.freeFlightThrust = 0;
-    motion.freeFlightCaptureRefusal = 0;
+    motion.freeFlightCaptureRefusal = code(FlightRefusal::None);
     motion.jEngine = false;
     motion.velocityReferenceKind = 2;   // normal flight; space / the body from the first pass
     // the pilot's velocity reference: the hub just left (relative speed ~0 at the start)
@@ -1186,7 +1191,7 @@ int GameSimulation::jEngineBlocked(EntityId shipId, int systemId, const glm::dve
     {
         why = hit.objectId + " at " + std::to_string(static_cast<int>(hit.distanceMeters / 1000.0)) + " km (J needs " +
               std::to_string(static_cast<int>((hit.ship ? jd::KeepOutShipM : jd::KeepOutObjectM) / 1000.0)) + " km)";
-        return 7;
+        return code(FlightRefusal::JRefusedNearObject);
     }
     for (const auto& b : m_gravityBodies)
     {
@@ -1198,7 +1203,7 @@ int GameSimulation::jEngineBlocked(EntityId shipId, int systemId, const glm::dve
         {
             why = b.id + " altitude " + std::to_string(static_cast<int>(altitude / 1000.0)) + " km below its J floor " +
                   std::to_string(static_cast<int>(floor / 1000.0)) + " km";
-            return 8;
+            return code(FlightRefusal::JRefusedBelowFloor);
         }
     }
     return 0;
@@ -1214,7 +1219,7 @@ bool GameSimulation::toggleStabilization(EntityId shipId)
     if (active != m_freeFlights.end() && !active->second.localFrame)
     {
         // normal -> stabilization: a hub capture, the ground or the own orbit (toggleFreeFlight decides)
-        if (!active->second.autopilotTargetId.empty() || active->second.legActive)
+        if (!active->second.autopilotTargetId.empty() || active->second.legRun.active)
         {
             std::cerr << "[Flight] ship " << shipId.value << ": stabilization refused - the autopilot flies" << std::endl;
             return false;
@@ -1261,7 +1266,7 @@ bool GameSimulation::toggleJEngine(EntityId shipId)
     }
     if (ship->core().effectivePhysics().jumpCoreRatingT <= 0.0 || motion.jChargeT == 0.0)
     {
-        motion.freeFlightCaptureRefusal = 9;
+        motion.freeFlightCaptureRefusal = code(FlightRefusal::JChargeEmpty);
         std::cerr << "[Flight] ship " << shipId.value << ": J engine REFUSED - the jump-drive charge is empty" << std::endl;
         return false;
     }
@@ -1287,7 +1292,7 @@ bool GameSimulation::toggleJEngine(EntityId shipId)
     motion.jAccelCommandMps2 = 0.0;
     motion.jAccelMps2 = 0.0;
     motion.freeFlightThrust = 0;   // the main engines idle under J
-    motion.freeFlightCaptureRefusal = 0;
+    motion.freeFlightCaptureRefusal = code(FlightRefusal::None);
     active->second.autoStabilizeArmed = false;
     std::cerr << "[Flight] ship " << shipId.value << ": J engine ON (normal flight; the thrust commands drive the J field)" << std::endl;
     return true;
@@ -1341,18 +1346,18 @@ void GameSimulation::updateFreeFlights(double dt)
 
         // 2. the frame advances by its velocity under the real gravity of all bodies (velocity Verlet)
         const auto g0 = game::navigation::GravityFieldSystem::sample(frame.originMeters, m_gravityBodies);
-        f.bodyLiftOff = false;
-        if (f.bodyFrame)
+        f.ground.liftOff = false;
+        if (f.ground.active)
         {
             // body frame: the frame moved with the ground (its velocity), the laws moved the
             // ship inside it; the world motion is both plus gravity - the frame is re-based on
             // the ship (local zero) for the shared physics below and split again at the end
             const glm::dvec3 local = motion.localPositionMeters;
             const glm::dvec3 localVel = motion.localVelocityMps;
-            const glm::dvec3 upHere = glm::normalize(frame.originMeters - f.bodyPreviousCentre);
-            f.bodyLiftOff = glm::dot(localVel, upHere) > 0.3;
+            const glm::dvec3 upHere = glm::normalize(frame.originMeters - f.ground.previousCentre);
+            f.ground.liftOff = glm::dot(localVel, upHere) > 0.3;
             if (std::getenv("ELITE_DEV_BODY_TRACE") && std::fmod(f.elapsedSeconds, 2.0) < dt)
-                std::cerr << "[BodyTrace] ship " << it->first.value << " dt " << dt << " local dv " << glm::length(localVel - f.bodyTraceLocalStart)
+                std::cerr << "[BodyTrace] ship " << it->first.value << " dt " << dt << " local dv " << glm::length(localVel - f.ground.traceLocalStart)
                           << " engines*dt " << glm::length(motion.engineAccelerationMps2) * dt << " requested main "
                           << glm::length(motion.requestedMainEngineAccelerationMps2) << " main " << glm::length(motion.mainEngineAccelerationMps2)
                           << " |local| " << glm::length(localVel) << std::endl;
@@ -1364,11 +1369,11 @@ void GameSimulation::updateFreeFlights(double dt)
         else
             frame.originMeters += frame.linearVelocityMps * dt + 0.5 * g0.accelerationMps2 * dt * dt;
         const auto g1 = game::navigation::GravityFieldSystem::sample(frame.originMeters, m_gravityBodies);
-        if (!f.bodyFrame)
+        if (!f.ground.active)
             frame.linearVelocityMps += 0.5 * (g0.accelerationMps2 + g1.accelerationMps2) * dt;
-        frame.linearAccelerationMps2 = f.bodyFrame ? glm::dvec3(0.0) : g1.accelerationMps2;
+        frame.linearAccelerationMps2 = f.ground.active ? glm::dvec3(0.0) : g1.accelerationMps2;
         frame.valid = true;
-        if (f.localFrame && !f.bodyFrame)
+        if (f.localFrame && !f.ground.active)
         {
             // local flight inside the falling frame: nothing is folded, the frame
             // carries the global motion, the flight laws own the local state
@@ -1397,11 +1402,11 @@ void GameSimulation::updateFreeFlights(double dt)
         f.primaryAltitudeMeters = reference ? glm::length(frame.originMeters - reference->centerMeters) - reference->radiusMeters
                                             : g1.primaryAltitudeMeters;
         motion.freeFlightReferenceIsRoot = referenceIsRoot ? 1 : 0;
-        motion.velocityReferenceKind = f.bodyFrame ? 4 : (referenceIsRoot ? 1 : 2);
+        motion.velocityReferenceKind = f.ground.active ? 4 : (referenceIsRoot ? 1 : 2);
         motion.mainEngineMaxMps2 = mainEngineAccelMps2(*ship);
 
         // ---- the J engine: the J field along the main-engine thrust, in place of it
-        if (motion.jEngine && !f.bodyFrame)
+        if (motion.jEngine && !f.ground.active)
         {
             namespace jd = game::navigation::jdrive;
             std::string why;
@@ -1411,7 +1416,8 @@ void GameSimulation::updateFreeFlights(double dt)
                 motion.jStopping = false;
                 motion.jAccelMps2 = motion.jAccelCommandMps2 = 0.0;
                 f.autoStabilizeArmed = true;
-                motion.freeFlightCaptureRefusal = blocked == 7 ? 3 : 4;
+                motion.freeFlightCaptureRefusal = code(blocked == code(FlightRefusal::JRefusedNearObject) ? FlightRefusal::JDroppedNearObject
+                                                                                                                : FlightRefusal::BelowJFloorMainEngines);
                 std::cerr << "[Flight] ship " << it->first.value << ": J engine OFF - the J field does not work here: " << why << std::endl;
             }
             else
@@ -1490,9 +1496,11 @@ void GameSimulation::updateFreeFlights(double dt)
                 motion.jChargeT = motion.jChargeCapacityT;
             }
             // the J autopilot's J phases and a route leg on its J drive (not the main-engine take-off)
-            const bool autopilotJ = (!f.autopilotTargetId.empty() && motion.freeFlightAutopilotPhase >= 1 &&
-                                     motion.freeFlightAutopilotPhase <= 4) ||
-                                    (f.legActive && !f.takeOff);
+            const auto shown = static_cast<AutopilotDisplayPhase>(motion.freeFlightAutopilotPhase);
+            const bool autopilotJ = (!f.autopilotTargetId.empty() &&
+                                     (shown == AutopilotDisplayPhase::Departure || shown == AutopilotDisplayPhase::Transfer ||
+                                      shown == AutopilotDisplayPhase::Approach)) ||
+                                    (f.legRun.active && !f.legRun.takeOff);
             const double a = motion.jEngine ? motion.jAccelMps2 : autopilotJ ? motion.freeFlightAutopilotAccelMps2 : 0.0;
             if (a != 0.0 && motion.jChargeT > 0.0)
             {
@@ -1504,7 +1512,7 @@ void GameSimulation::updateFreeFlights(double dt)
                     motion.jEngine = false;
                     motion.jStopping = false;
                     motion.jAccelMps2 = motion.jAccelCommandMps2 = 0.0;
-                    motion.freeFlightCaptureRefusal = 9;
+                    motion.freeFlightCaptureRefusal = code(FlightRefusal::JChargeEmpty);
                     f.autoStabilizeArmed = true;
                     std::cerr << "[Flight] ship " << it->first.value << ": J engine OFF - the jump-drive charge is empty" << std::endl;
                 }
@@ -1598,7 +1606,7 @@ void GameSimulation::updateFreeFlights(double dt)
                 const auto& control = ship->core().control();
                 const bool steering = std::abs(control.pitchInput) > 0.05f || std::abs(control.yawInput) > 0.05f;
                 if (motion.localControlLaw == game::navigation::LocalFlightControlLaw::Assisted && f.autopilotTargetId.empty() &&
-                    !f.legActive && !f.bodyFrame)
+                    !f.legRun.active && !f.ground.active)
                 {
                     // the hull holds the velocity (prograde) when the pilot does not steer:
                     // thrust stays along the velocity while gravity bends the path
@@ -1708,7 +1716,7 @@ void GameSimulation::updateFreeFlights(double dt)
                     const bool input = motion.freeFlightThrust != 0 || std::abs(tr.targetSpeedRate) > 0.02f ||
                                        std::abs(c.forwardInput) > 0.05f || std::abs(c.strafeInput) > 0.05f ||
                                        std::abs(c.liftInput) > 0.05f;
-                    const bool coasting = !f.bodyFrame && !motion.jEngine && f.autopilotTargetId.empty() && !f.legActive &&
+                    const bool coasting = !f.ground.active && !motion.jEngine && f.autopilotTargetId.empty() && !f.legRun.active &&
                                           !input && glm::length(motion.engineAccelerationMps2) < 0.05;
                     f.coastSeconds = coasting ? f.coastSeconds + dt : 0.0;
                     const bool safeOrbit = motion.freeFlightOrbitBound && !referenceIsRoot &&
@@ -1869,7 +1877,7 @@ void GameSimulation::updateFreeFlights(double dt)
                 const glm::dvec3 rHat = glm::normalize(frame.originMeters - primary->centerMeters);
                 const glm::dvec3 bodyVelocity = f.lastPrimaryId == primary->id && dt > 0.0
                     ? (primary->centerMeters - f.lastPrimaryCenterMeters) / dt : frame.linearVelocityMps;
-                if (motion.freeFlightSurfaceState == 1 && (motion.freeFlightThrust == 1 || f.bodyLiftOff))
+                if (motion.freeFlightSurfaceState == 1 && (motion.freeFlightThrust == 1 || f.ground.liftOff))
                     motion.freeFlightSurfaceState = 0;                     // lift off (J thrust / the flight laws)
                 else
                 {
@@ -1897,7 +1905,7 @@ void GameSimulation::updateFreeFlights(double dt)
             }
             // ---- take-off (a route leg from the ground): a vertical main-engine climb against the
             // body to its J floor, gently from rest to the climb speed; then the leg
-            if (f.takeOff && primary && dt > 0.0)
+            if (f.legRun.takeOff && primary && dt > 0.0)
             {
                 namespace jd = game::navigation::jdrive;
                 const double floorAlt = jd::floorAltitudeM(primary->radiusMeters, primary->atmosphereRadiusMeters);
@@ -1905,7 +1913,7 @@ void GameSimulation::updateFreeFlights(double dt)
                 const double alt = glm::length(frame.originMeters - primary->centerMeters) - primary->radiusMeters;
                 if (alt >= floorAlt)
                 {
-                    f.takeOff = false;
+                    f.legRun.takeOff = false;
                     std::cerr << "[Route] ship " << it->first.value << ": TAKE-OFF complete at " << alt / 1000.0 << " km (J floor "
                               << floorAlt / 1000.0 << " km) - the leg continues" << std::endl;
                 }
@@ -1930,24 +1938,24 @@ void GameSimulation::updateFreeFlights(double dt)
                 }
             }
             // ---- route leg (hub / orbit / point)
-            if (f.legActive && !f.takeOff && motion.freeFlightSurfaceState == 0 && !f.bodyFrame)
+            if (f.legRun.active && !f.legRun.takeOff && motion.freeFlightSurfaceState == 0 && !f.ground.active)
                 updateFreeFlightLeg(it->first, *ship, f, dt);
             // ---- J autopilot
             if (!f.autopilotTargetId.empty())
             {
                 if (motion.freeFlightSurfaceState == 0)
                 {
-                    if (f.bodyFrame)
+                    if (f.ground.active)
                         updateSurfaceLanding(it->first, *ship, f, dt);
                     else
                         updateFreeFlightAutopilot(it->first, *ship, f, dt);
                 }
                 else
                 {
-                    if (f.pilotActive)
+                    if (f.landingPilot.active)
                     {
-                        f.pilotActive = false;
-                        f.pilotRestoreLaw = true;
+                        f.landingPilot.active = false;
+                        f.landingPilot.restoreLaw = true;
                     }
                     std::cerr << "[Autopilot] ship " << it->first.value << ": "
                               << (motion.freeFlightSurfaceState == 1 ? "LANDED on " : "CRASHED on ") << f.autopilotTargetId << " after "
@@ -1960,12 +1968,12 @@ void GameSimulation::updateFreeFlights(double dt)
                                   << " m from the chosen site";
                     std::cerr << std::endl;
                     f.autopilotTargetId.clear();
-                    f.autopilotPhase = 0;
-                    motion.freeFlightAutopilotPhase = 5;
+                    f.autopilotPhase = AutopilotStage::None;
+                    motion.freeFlightAutopilotPhase = code(AutopilotDisplayPhase::OnSurface);
                 }
             }
             // the J speed cap: the field does not carry the ship above 0.9 c against the reference body
-            if (primary && f.lastPrimaryId == primary->id && dt > 0.0 && !f.bodyFrame)
+            if (primary && f.lastPrimaryId == primary->id && dt > 0.0 && !f.ground.active)
             {
                 const glm::dvec3 refVel = (primary->centerMeters - f.lastPrimaryCenterMeters) / dt;
                 const glm::dvec3 rel = frame.linearVelocityMps - refVel;
@@ -1976,31 +1984,31 @@ void GameSimulation::updateFreeFlights(double dt)
             f.lastPrimaryCenterMeters = primary ? primary->centerMeters : glm::dvec3(0.0);
         }
 
-        if (f.bodyFrame)
+        if (f.ground.active)
         {
             // split again: the frame moves with the ground under the ship (the body's velocity
             // and its turn), the local velocity is the velocity over the ground
             const game::navigation::GravityBody* body = nullptr;
             for (const auto& b : m_gravityBodies)
-                if (b.id == f.bodyFrameId)
+                if (b.id == f.ground.id)
                     body = &b;
             if (body)
             {
                 const glm::dvec3 shipVel = frame.linearVelocityMps + motion.localVelocityMps;
-                glm::dvec3 ground = f.bodyHavePrevious && dt > 0.0 ? (body->centerMeters - f.bodyPreviousCentre) / dt
+                glm::dvec3 ground = f.ground.havePrevious && dt > 0.0 ? (body->centerMeters - f.ground.previousCentre) / dt
                                                                   : motion.freeFlightReferenceVelocityMps;
                 glm::dmat3 basis(1.0);
                 const bool basisValid = m_bodyOrientation && m_bodyOrientation(body->id, basis);
                 const glm::dvec3 r = frame.originMeters - body->centerMeters;
-                if (basisValid && f.bodyPreviousBasisValid && dt > 0.0)
-                    ground += (basis * glm::transpose(f.bodyPreviousBasis) * r - r) / dt;
-                f.bodyPreviousBasis = basis;
-                f.bodyPreviousBasisValid = basisValid;
-                f.bodyPreviousCentre = body->centerMeters;
-                f.bodyHavePrevious = true;
+                if (basisValid && f.ground.previousBasisValid && dt > 0.0)
+                    ground += (basis * glm::transpose(f.ground.previousBasis) * r - r) / dt;
+                f.ground.previousBasis = basis;
+                f.ground.previousBasisValid = basisValid;
+                f.ground.previousCentre = body->centerMeters;
+                f.ground.havePrevious = true;
                 frame.linearVelocityMps = ground;
                 motion.localVelocityMps = motion.freeFlightSurfaceState != 0 ? glm::dvec3(0.0) : shipVel - ground;
-                f.bodyTraceLocalStart = motion.localVelocityMps;
+                f.ground.traceLocalStart = motion.localVelocityMps;
                 motion.localPositionMeters = glm::dvec3(0.0);
             }
         }

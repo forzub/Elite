@@ -3621,6 +3621,30 @@ order - ask for it again if it is not in the session.
   Not done: an A/B log diff against the pre-split binary; further split of updateDockingStabilizing /
   renderHudDockingTerminal / the orchestrator's helper lambdas.
 
+### Audit remaining items (author 2026-11-06: "продолжай с остальными пунктами аудита") - BUILT, gates 203 / 6 known / 0 new
+- Hardening (edc98b5f): core::safeCallOnce (a throwing init rethrows to every caller, no MinGW deadlock) in
+  ObjectDescriptorRegistry / ObjectAssemblyRegistry; the ModelAsset prewarm worker catches and falls back to
+  on-demand. The pure route composer owns no clock (setSegmentedRouteDiagnosticClock, installed by main).
+- DEV commands gated on the server: the embedded game allows them, the dedicated EliteServer only with --dev /
+  ELITE_DEV_COMMANDS=1 (live: "[Server] DEV commands rejected"); gated: weapon-type cycle, combat target, equipment
+  failure (the physical-model selection stays a player setting).
+- Zone fines on the server (7474bc25): GameSimulationZones (red entry, skipped blue gate) with motion
+  zoneFinesTotalCr / zoneViolation* (schema 40); the client only shows the notice; zone catalog + geometry in the
+  neutral route/RouteZones. The server loads the 3 Sol zones; a violation was NOT triggered live (no DEV path into
+  a red zone; a straight Earth -> Moon leg passes the customs gate, correctly no fine).
+- NAVIGATION_V2 §1 / §11b (80aab8f6, 05931c7f): two owners by scale; the hand-over cancel rule marked OPEN.
+- SpaceState decomposition (subagent, 4205d26d): DevScriptRunner (src/game/dev, update 1816 -> 1233 lines, env vars
+  cached, the Sol DEV aliases out of SpaceState: check_feature_contracts green); updateDockingAdvisory 3894 -> 697
+  + named phases; renderHUD 1115 -> 209 + 4 sections; live: verbs, a route, a dock request to "executing".
+- Free-flight state (this commit): navigation/FreeFlightCodes.h - FlightRefusal (0..9) and AutopilotDisplayPhase
+  (0..12) named, wire values unchanged, used by the server and the HUD; the internal AutopilotStage enum (0,1,2,3,
+  9,10,11 - the two numbering spaces no longer share bare ints); ActiveFreeFlight sub-machines grouped (legRun,
+  ground, landingPilot; 114 accesses). Bug fixed by the naming: the J charge was spent during the pad descent
+  (display phase 4 counted as a J phase). Live regressions: Shackleton landing 3.7 cm / take-off to the J floor;
+  the Tikhiy route starts.
+- Left: the autopilot fields of ActiveFreeFlight are not grouped yet; the station epoch mismatch (faded) OPEN; the
+  model-asset editor reds (6 allow-listed); build_agent/ (6 GB, untracked) removed.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

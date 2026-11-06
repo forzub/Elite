@@ -22,4 +22,4 @@
 
 ## Proposal ships (2026-11-06)
 
-`tools/build_proposals.js data.js` re-adds the "PROPOSAL (reference)" ships, parts and the coverage matrix (idempotent: strips earlier ones first) - run it after any regeneration of `data.js` from the canon. `tools/render_check.js` renders every ship / part with a stub DOM.
+`tools/build_proposals.js data.js` re-adds the "PROPOSAL (reference)" ships, parts and the coverage matrix (idempotent: strips earlier ones first) - run it after any regeneration of `data.js` from the canon. `node tools/render_check.js .` (the reference folder) renders every ship / part with a stub DOM. Run from the reference folder: `node tools/build_proposals.js data.js`.

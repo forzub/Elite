@@ -1734,7 +1734,7 @@
   "body:system_61.Fomalhaut.Fomalhaut_c": {
    "type": "planet",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Atropos",
@@ -1746,14 +1746,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): Мойра неотвратимости: первая, раскалённая (1600 K)"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): Мойра неотвратимости: первая, раскалённая (1600 K)"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_d": {
    "type": "planet",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Lachesis",
@@ -1765,14 +1765,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): Мойра жребия: вторая раскалённая (1350 K)"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): Мойра жребия: вторая раскалённая (1350 K)"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_e": {
    "type": "planet",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Clotho",
@@ -1784,14 +1784,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): Мойра-пряха: третья, безвоздушная (1050 K)"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): Мойра-пряха: третья, безвоздушная (1050 K)"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_f": {
    "type": "planet",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Nemesis",
@@ -1803,14 +1803,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): возмездие: 1700 K под 91 бар CO2"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): возмездие: 1700 K под 91 бар CO2"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_g": {
    "type": "planet",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Ananke",
@@ -1822,14 +1822,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): необходимость, мать Мойр: 1930 K под 930 бар CO2"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): необходимость, мать Мойр: 1930 K под 930 бар CO2"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_h": {
    "type": "planet",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Spes",
@@ -1841,14 +1841,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): надежда, спутница Фортуны: водородный мини-нептун"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): надежда, спутница Фортуны: водородный мини-нептун"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_i": {
    "type": "planet",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Derceto",
@@ -1860,14 +1860,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): богиня-рыба, бросившаяся в озеро: кипящий водный мир"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): богиня-рыба, бросившаяся в озеро: кипящий водный мир"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_j": {
    "type": "planet",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Oannes",
@@ -1879,14 +1879,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): человек-рыба, вышедший из моря: горячий водный мир"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): человек-рыба, вышедший из моря: горячий водный мир"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_k": {
    "type": "planet",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Felicitas",
@@ -1898,14 +1898,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): удача: умеренный водный мир (288 K)"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): удача: умеренный водный мир (288 K)"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_l": {
    "type": "planet",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Morta",
@@ -1917,14 +1917,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): Парка смерти: замёрзший водный мир (94 K)"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): Парка смерти: замёрзший водный мир (94 K)"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_k.Fomalhaut_k_I": {
    "type": "moon",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Occasio",
@@ -1936,14 +1936,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): случай, спутница Фелицитас"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): случай, спутница Фелицитас"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_l.Fomalhaut_l_I": {
    "type": "moon",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Decima",
@@ -1955,14 +1955,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): Парка, сестра Морты"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): Парка, сестра Морты"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_K1": {
    "type": "dwarf_planet",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Tyche",
@@ -1974,14 +1974,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): греческая Фортуна: карлик кольца обломков"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): греческая Фортуна: карлик кольца обломков"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_K2": {
    "type": "dwarf_planet",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Plutus",
@@ -1993,14 +1993,14 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): богатство, дитя Тюхе: карлик кольца"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): богатство, дитя Тюхе: карлик кольца"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_K3": {
    "type": "dwarf_planet",
    "system": "system:61",
-   "status": "PROPOSAL",
+   "status": "CANON",
    "names": {
     "international": {
      "text": "Fors",
@@ -2012,8 +2012,8 @@
     }
    },
    "naming_history": {
-    "status": "PROPOSAL",
-    "origin": "мифологическая серия Фортуны (как тела Сола): Форс Фортуна, слепой случай: карлик кольца"
+    "status": "CANON",
+    "origin": "мифологическая серия Фортуны (как тела Сола; принято автором 2026-11-06): Форс Фортуна, слепой случай: карлик кольца"
    }
   }
  },

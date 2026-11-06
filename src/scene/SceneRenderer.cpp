@@ -3423,6 +3423,9 @@ if (policy.drawObjects)
                 if (!policy.shouldDrawObject(object.type) || !object.gpu)
                     continue;
                 const auto& ma = *object.gpu;
+                // the prewarm: <= 3 ms per main frame of chunked uploads ahead of the LOD selection
+                if (cameraName == "mainCam")
+                    ma.pumpPrewarm(3.0);
                 glm::mat4 devPlacement(1.0f);
                 // DEV (measurement only): ELITE_DEV_MODEL_ASSET_PLACE_M=<m> puts the
                 // object in front of the main camera, <m> from the nearest face of its

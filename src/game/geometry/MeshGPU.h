@@ -3,6 +3,8 @@
 #include <glad/gl.h>
 #include <glm/glm.hpp>
 #include <vector>
+#include <algorithm>
+#include <cstddef>
 #include <iostream>
 #include <map>
 #include <cstddef>
@@ -15,225 +17,113 @@ class MeshGPU
 {
 public:
 
-    void upload(const game::ship::geometry::MeshData& mesh)
+    // CPU side of an upload (no GL): the expanded triangle vertices (barycentrics, face colour,
+    // normalised normals) and the edge lines. Thread-safe - a loader thread may build it.
+    struct Prepared
     {
+        std::vector<game::ship::geometry::MeshVertex> verts;
+        std::vector<glm::vec3> edgeVerts;
+        std::vector<float> edgeWeights;
+    };
 
-        // --- vertices ---
-        std::vector<game::ship::geometry::MeshVertex> gpuVerts;
-
-        gpuVerts.reserve(mesh.triangles.size() * 3);
-
-
-
+    static Prepared prepare(const game::ship::geometry::MeshData& mesh)
+    {
+        Prepared out;
+        out.verts.reserve(mesh.triangles.size() * 3);
+        // Do not replace the normals by the face normal: the loader computed smoothed vertex
+        // normals (one normal per triangle reads as a patchwork quilt).
+        const auto safeNormalize = [](const glm::vec3& n) -> glm::vec3 {
+            const float len = glm::length(n);
+            return len < 1e-6f ? glm::vec3(0.0f, 0.0f, 1.0f) : n / len;
+        };
         for (const auto& t : mesh.triangles)
         {
-
             auto v0 = mesh.vertices[t.v0];
             auto v1 = mesh.vertices[t.v1];
             auto v2 = mesh.vertices[t.v2];
-
-            v0.bary = glm::vec3(1,0,0);
-            v1.bary = glm::vec3(0,1,0);
-            v2.bary = glm::vec3(0,0,1);
-
-            // Material base colour of the face (attribute 3, per vertex of
-            // the expanded triangle): model data, interpreted by each style.
-            const glm::vec3 color = t.baseColor;
-
-            v0.debugColor = color;
-            v1.debugColor = color;
-            v2.debugColor = color;
-
-
-            
-
-
-
-
-// ВАЖНО:
-// Не перезаписываем нормали faceNormal'ом.
-// ObjLoader уже посчитал сглаженные vertex normals.
-//
-// Если здесь поставить одну normal на весь треугольник,
-// корпус будет выглядеть как лоскутное одеяло:
-// каждый треугольник ловит свет отдельно.
-auto safeNormalize = [](const glm::vec3& n) -> glm::vec3
-{
-    float len = glm::length(n);
-
-    if (len < 1e-6f)
-        return glm::vec3(0.0f, 0.0f, 1.0f);
-
-    return n / len;
-};
-
-v0.normal = safeNormalize(v0.normal);
-v1.normal = safeNormalize(v1.normal);
-v2.normal = safeNormalize(v2.normal);
-
-
-
-
-            // glm::vec3 p0 = v0.position;
-            // glm::vec3 p1 = v1.position;
-            // glm::vec3 p2 = v2.position;
-
-            // glm::vec3 faceNormal = glm::normalize(glm::cross(p1 - p0, p2 - p0));
-
-            // v0.normal = faceNormal;
-            // v1.normal = faceNormal;
-            // v2.normal = faceNormal;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            gpuVerts.push_back(v0);
-            gpuVerts.push_back(v1);
-            gpuVerts.push_back(v2);
+            v0.bary = glm::vec3(1, 0, 0);
+            v1.bary = glm::vec3(0, 1, 0);
+            v2.bary = glm::vec3(0, 0, 1);
+            // material base colour of the face (attribute 3): model data, each style interprets it
+            v0.debugColor = v1.debugColor = v2.debugColor = t.baseColor;
+            v0.normal = safeNormalize(v0.normal);
+            v1.normal = safeNormalize(v1.normal);
+            v2.normal = safeNormalize(v2.normal);
+            out.verts.push_back(v0);
+            out.verts.push_back(v1);
+            out.verts.push_back(v2);
         }
-
-        vertexCount = gpuVerts.size();
-
-
-
-        // --- edges ---
-        std::vector<glm::vec3> edgeVerts;
-        std::vector<float> edgeWeights;
-
+        out.edgeVerts.reserve(mesh.edges.size() * 2);
+        out.edgeWeights.reserve(mesh.edges.size() * 2);
         for (const auto& e : mesh.edges)
         {
-            edgeVerts.push_back(e.a);
-            edgeVerts.push_back(e.b);
-            edgeWeights.push_back(e.weight);
-            edgeWeights.push_back(e.weight);
+            out.edgeVerts.push_back(e.a);
+            out.edgeVerts.push_back(e.b);
+            out.edgeWeights.push_back(e.weight);
+            out.edgeWeights.push_back(e.weight);
         }
+        return out;
+    }
 
+    void upload(const game::ship::geometry::MeshData& mesh)
+    {
+        const Prepared prepared = prepare(mesh);
+        allocate(prepared, true);
+    }
 
-
-        edgeVertexCount = edgeVerts.size();
+    // GL side: the VAOs and buffers. withVertexData = false leaves the triangle buffer
+    // allocated but empty, to be filled by uploadChunk() over several frames.
+    void allocate(const Prepared& p, bool withVertexData)
+    {
+        vertexCount = p.verts.size();
+        edgeVertexCount = p.edgeVerts.size();
 
         glGenVertexArrays(1, &vaoEdges);
         glBindVertexArray(vaoEdges);
-
-        glGenBuffers(1,&edgeVBO);
+        glGenBuffers(1, &edgeVBO);
         glBindBuffer(GL_ARRAY_BUFFER, edgeVBO);
-
-        glBufferData(
-            GL_ARRAY_BUFFER,
-            edgeVerts.size()*sizeof(glm::vec3),
-            edgeVerts.data(),
-            GL_STATIC_DRAW
-        );
-
+        glBufferData(GL_ARRAY_BUFFER, p.edgeVerts.size() * sizeof(glm::vec3), p.edgeVerts.data(), GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
-
-        glVertexAttribPointer(
-            0,
-            3,
-            GL_FLOAT,
-            GL_FALSE,
-            sizeof(glm::vec3),
-            (void*)0
-        );
-
-        // Structural edge weight (attribute 1).
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+        // structural edge weight (attribute 1)
         glGenBuffers(1, &edgeWeightVBO);
         glBindBuffer(GL_ARRAY_BUFFER, edgeWeightVBO);
-        glBufferData(GL_ARRAY_BUFFER, edgeWeights.size() * sizeof(float), edgeWeights.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, p.edgeWeights.size() * sizeof(float), p.edgeWeights.data(), GL_STATIC_DRAW);
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
-
         glBindVertexArray(0);
 
-        // --- VAO ---
-        glGenVertexArrays(1,&vao);
+        glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
-
-        // vertex buffer
-        glGenBuffers(1,&vbo);
-        glBindBuffer(GL_ARRAY_BUFFER,vbo);
-
-        glBufferData(
-            GL_ARRAY_BUFFER,
-            gpuVerts.size()*sizeof(game::ship::geometry::MeshVertex),
-            gpuVerts.data(),
-            GL_STATIC_DRAW
-        );
-
-
-        
-
-        // attributes
+        glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, p.verts.size() * sizeof(game::ship::geometry::MeshVertex),
+                     withVertexData ? p.verts.data() : nullptr, GL_STATIC_DRAW);
+        using V = game::ship::geometry::MeshVertex;
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(
-            0,
-            3,
-            GL_FLOAT,
-            GL_FALSE,
-            sizeof(game::ship::geometry::MeshVertex),
-            (void*)offsetof(game::ship::geometry::MeshVertex, position)
-        );
-
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, position));
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(
-            1,
-            3,
-            GL_FLOAT,
-            GL_FALSE,
-            sizeof(game::ship::geometry::MeshVertex),
-            (void*)offsetof(game::ship::geometry::MeshVertex, normal)
-        );
-
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, normal));
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(
-            2,
-            3,
-            GL_FLOAT,
-            GL_FALSE,
-            sizeof(game::ship::geometry::MeshVertex),
-            (void*)offsetof(game::ship::geometry::MeshVertex, bary)
-        );
-
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, bary));
         glEnableVertexAttribArray(3);
-        glVertexAttribPointer(
-            3,
-            3,
-            GL_FLOAT,
-            GL_FALSE,
-            sizeof(game::ship::geometry::MeshVertex),
-            (void*)offsetof(game::ship::geometry::MeshVertex, debugColor)
-        );
-
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, debugColor));
         glBindVertexArray(0);
+    }
 
-        // std::cout
-        //     << "[MeshGPU] V=" << mesh.vertices.size()
-        //     << " T=" << mesh.triangles.size()
-        //     << " E=" << mesh.edges.size()
-        //     << std::endl;
-
-        // std::cout
-        //     << "[MeshGPU] GPU vertices="
-        //     << gpuVerts.size()
-        //     << std::endl;
-
-        // std::cout
-        //     << "[MeshGPU] ShipVertex size: "
-        //     << sizeof(game::ship::geometry::MeshVertex)
-        //     << std::endl;
-        
-        // std::cout << "Edge VBO created: " << edgeVBO << std::endl;
-        // std::cout << "Edge VAO created: " << vaoEdges << std::endl;
+    // Fills the triangle buffer from vertex `offset` with at most `maxVerts` vertices; returns
+    // the new offset (== p.verts.size() when complete).
+    std::size_t uploadChunk(const Prepared& p, std::size_t offset, std::size_t maxVerts)
+    {
+        const std::size_t n = std::min(maxVerts, p.verts.size() - offset);
+        if (n == 0)
+            return offset;
+        using V = game::ship::geometry::MeshVertex;
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferSubData(GL_ARRAY_BUFFER, static_cast<GLintptr>(offset * sizeof(V)), static_cast<GLsizeiptr>(n * sizeof(V)),
+                        p.verts.data() + offset);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        return offset + n;
     }
 
 

@@ -1,5 +1,6 @@
 #include "src/render/geometry/ModelAssetGpuLibrary.h"
 
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -162,29 +163,152 @@ std::unique_ptr<ModelAssetGpu> load(ObjectType type)
               << " lods=" << gpu->asset.renderLods.size() << " tris(all lods)=" << tris
               << " asset->logical scale=" << scale << " logical size=(" << size.x * scale << ", " << size.y * scale
               << ", " << size.z * scale << ") m\n";
+    gpu->startPrewarm();
     return gpu;
 }
 } // namespace
+
+ModelAssetGpu::~ModelAssetGpu()
+{
+    m_stop = true;
+    if (m_worker.joinable())
+        m_worker.join();
+}
+
+void ModelAssetGpu::ensureSlots(std::int32_t lod) const
+{
+    if (m_gpu.size() != asset.renderLods.size())
+    {
+        m_gpu.resize(asset.renderLods.size());
+        m_complete.resize(asset.renderLods.size());
+    }
+    const auto n = asset.renderLods[static_cast<std::size_t>(lod)].geometries.size();
+    auto& slots = m_gpu[static_cast<std::size_t>(lod)];
+    if (slots.size() != n)
+    {
+        slots.resize(n);
+        m_complete[static_cast<std::size_t>(lod)].resize(n, 0);
+    }
+}
+
+void ModelAssetGpu::countUpload(std::size_t verts) const
+{
+    m_uploadedTriangles += verts / 3;
+    m_uploadedBytes += verts * sizeof(game::ship::geometry::MeshVertex);
+    ++m_uploadedMeshes;
+}
+
+void ModelAssetGpu::startPrewarm() const
+{
+    if (m_worker.joinable())
+        return;
+    m_worker = std::thread([this] {
+        // coarse LODs first: the far view is complete soonest; LOD0 (the largest) last
+        for (std::int32_t lod = static_cast<std::int32_t>(asset.renderLods.size()) - 1; lod >= 0 && !m_stop; --lod)
+        {
+            const auto& lodData = asset.renderLods[static_cast<std::size_t>(lod)];
+            for (std::size_t g = 0; g < lodData.geometries.size() && !m_stop; ++g)
+            {
+                Piece piece;
+                piece.lod = lod;
+                piece.geometry = static_cast<std::int32_t>(g);
+                piece.prepared = std::make_unique<MeshGPU::Prepared>(
+                    MeshGPU::prepare(toMeshData(lodData.geometries[g].mesh, asset.materials)));
+                std::lock_guard<std::mutex> lock(m_mutex);
+                m_ready.push_back(std::move(piece));
+            }
+        }
+    });
+}
+
+void ModelAssetGpu::finishCurrent() const
+{
+    if (!m_current)
+        return;
+    auto& slot = m_gpu[static_cast<std::size_t>(m_current->lod)][static_cast<std::size_t>(m_current->geometry)];
+    slot->uploadChunk(*m_current->prepared, m_current->offset, m_current->prepared->verts.size());
+    m_complete[static_cast<std::size_t>(m_current->lod)][static_cast<std::size_t>(m_current->geometry)] = 1;
+    countUpload(m_current->prepared->verts.size());
+    m_current.reset();
+}
+
+void ModelAssetGpu::pumpPrewarm(double budgetMs) const
+{
+    const auto t0 = std::chrono::steady_clock::now();
+    const auto elapsed = [&] { return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count(); };
+    constexpr std::size_t ChunkVerts = 32768;   // ~1.5 MB of MeshVertex per glBufferSubData
+    while (elapsed() < budgetMs)
+    {
+        if (m_current)
+        {
+            auto& slot = m_gpu[static_cast<std::size_t>(m_current->lod)][static_cast<std::size_t>(m_current->geometry)];
+            m_current->offset = slot->uploadChunk(*m_current->prepared, m_current->offset, ChunkVerts);
+            if (m_current->offset >= m_current->prepared->verts.size())
+            {
+                m_complete[static_cast<std::size_t>(m_current->lod)][static_cast<std::size_t>(m_current->geometry)] = 1;
+                countUpload(m_current->prepared->verts.size());
+                m_current.reset();
+            }
+            continue;
+        }
+        Piece piece;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            if (m_ready.empty())
+                return;
+            piece = std::move(m_ready.front());
+            m_ready.pop_front();
+        }
+        ensureSlots(piece.lod);
+        auto& slot = m_gpu[static_cast<std::size_t>(piece.lod)][static_cast<std::size_t>(piece.geometry)];
+        if (slot)
+            continue;   // already uploaded synchronously (needed before the prewarm reached it)
+        slot = std::make_unique<MeshGPU>();
+        slot->allocate(*piece.prepared, false);
+        m_current = std::make_unique<Piece>(std::move(piece));
+    }
+}
 
 const MeshGPU* ModelAssetGpu::gpuFor(std::int32_t lod, std::int32_t geometry) const
 {
     if (lod < 0 || static_cast<std::size_t>(lod) >= asset.renderLods.size()) return nullptr;
     const auto& lodData = asset.renderLods[static_cast<std::size_t>(lod)];
     if (geometry < 0 || static_cast<std::size_t>(geometry) >= lodData.geometries.size()) return nullptr;
-    if (m_gpu.size() != asset.renderLods.size()) m_gpu.resize(asset.renderLods.size());
-    auto& slots = m_gpu[static_cast<std::size_t>(lod)];
-    if (slots.size() != lodData.geometries.size()) slots.resize(lodData.geometries.size());
-    auto& slot = slots[static_cast<std::size_t>(geometry)];
-    if (!slot)
+    ensureSlots(lod);
+    auto& slot = m_gpu[static_cast<std::size_t>(lod)][static_cast<std::size_t>(geometry)];
+    if (slot && m_complete[static_cast<std::size_t>(lod)][static_cast<std::size_t>(geometry)])
+        return slot.get();
+    if (slot)
     {
-        const auto& mesh = lodData.geometries[static_cast<std::size_t>(geometry)].mesh;
-        slot = std::make_unique<MeshGPU>();
-        slot->upload(toMeshData(mesh, asset.materials));
-        m_uploadedTriangles += mesh.triangles.size();
-        // MeshGPU expands triangles: 3 MeshVertex per triangle + edge lines.
-        m_uploadedBytes += mesh.triangles.size() * 3 * sizeof(game::ship::geometry::MeshVertex);
-        ++m_uploadedMeshes;
+        finishCurrent();   // the one being uploaded in chunks: finish it now
+        return slot.get();
     }
+    // prepared by the loader thread already? upload it whole; else build it here (the old path)
+    std::unique_ptr<MeshGPU::Prepared> prepared;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        for (auto it = m_ready.begin(); it != m_ready.end(); ++it)
+            if (it->lod == lod && it->geometry == geometry)
+            {
+                prepared = std::move(it->prepared);
+                m_ready.erase(it);
+                break;
+            }
+    }
+    const auto t0 = std::chrono::steady_clock::now();
+    const bool fromLoader = prepared != nullptr;
+    if (!prepared)
+        prepared = std::make_unique<MeshGPU::Prepared>(
+            MeshGPU::prepare(toMeshData(lodData.geometries[static_cast<std::size_t>(geometry)].mesh, asset.materials)));
+    slot = std::make_unique<MeshGPU>();
+    slot->allocate(*prepared, true);
+    m_complete[static_cast<std::size_t>(lod)][static_cast<std::size_t>(geometry)] = 1;
+    countUpload(prepared->verts.size());
+    const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+    if (ms > 2.0)
+        std::cerr << "[ModelAssetGpu] synchronous upload lod " << lod << " geometry " << geometry << ": "
+                  << prepared->verts.size() / 3 << " tris in " << ms << " ms ("
+                  << (fromLoader ? "prepared by the loader" : "built here") << ")" << std::endl;
     return slot.get();
 }
 

@@ -1,6 +1,10 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
+#include <deque>
+#include <mutex>
+#include <thread>
 #include <memory>
 #include <string>
 #include <vector>
@@ -34,13 +38,35 @@ struct ModelAssetGpu
     std::vector<std::string> nodeModule;
     std::string path;
 
+    ~ModelAssetGpu();
     const MeshGPU* gpuFor(std::int32_t lod, std::int32_t geometry) const;
+    // Prewarm (no first-sight stalls): a loader thread prepares every (LOD, geometry) on the CPU,
+    // coarse LODs first; pumpPrewarm() puts them on the GPU in chunks within a per-frame budget,
+    // before the presentation selects them. A mesh needed earlier is finished synchronously.
+    void startPrewarm() const;
+    void pumpPrewarm(double budgetMs) const;
     std::size_t uploadedTriangles() const { return m_uploadedTriangles; }
     std::size_t uploadedBytes() const { return m_uploadedBytes; }
     std::size_t uploadedMeshes() const { return m_uploadedMeshes; }
 
 private:
+    struct Piece
+    {
+        std::int32_t lod = 0;
+        std::int32_t geometry = 0;
+        std::unique_ptr<MeshGPU::Prepared> prepared;
+        std::size_t offset = 0;
+    };
+    void ensureSlots(std::int32_t lod) const;
+    void finishCurrent() const;
+    void countUpload(std::size_t verts) const;
     mutable std::vector<std::vector<std::unique_ptr<MeshGPU>>> m_gpu; // [lod][geometry]
+    mutable std::vector<std::vector<char>> m_complete;              // [lod][geometry] fully on the GPU
+    mutable std::mutex m_mutex;
+    mutable std::deque<Piece> m_ready;        // prepared by the loader thread, not yet uploaded
+    mutable std::unique_ptr<Piece> m_current; // uploading in chunks
+    mutable std::thread m_worker;
+    mutable std::atomic<bool> m_stop {false};
     mutable std::size_t m_uploadedTriangles = 0;
     mutable std::size_t m_uploadedBytes = 0;
     mutable std::size_t m_uploadedMeshes = 0;

@@ -560,6 +560,17 @@ void main()
     gl_Position = uViewProj * vec4(uBodyToWorld * mix(aPos, aMorph, m) + uAnchor, 1.0);
 }
 )";
+// settlement structures in the near-pass depth (ships behind a dome are hidden)
+inline const char* SettlementDepthVs = R"(
+layout(location = 0) in vec3 aPos;
+uniform mat4 uViewProj;
+uniform mat3 uBodyToWorld;
+uniform vec3 uAnchor;
+void main()
+{
+    gl_Position = uViewProj * vec4(uBodyToWorld * aPos + uAnchor, 1.0);
+}
+)";
 inline const char* TerrainDepthFs = R"(
 out vec4 fragColour;
 void main() { fragColour = vec4(0.0); }
@@ -1141,6 +1152,13 @@ out vec4 fragColour;
 void writeLogDepth();
 void main()
 {
+    // emissive vertices (settlement lights): albedo - 2, unlit
+    if (vAlbedo.r > 1.5)
+    {
+        fragColour = vec4((uStyle == 0 && uLinePass < 0.5) ? vec3(0.0) : vAlbedo - vec3(2.0), 1.0);
+        writeLogDepth();
+        return;
+    }
     vec3 n = normalize(vNormal);
     vec3 L = normalize(uSunDir);
     float l = dot(n, L);

@@ -1,3 +1,4 @@
+#include "src/world/celestial/settlements/SettlementMesh.h"
 #include "src/core/ThreadPriority.h"
 #include "src/render/celestial/flight/CelestialFlightRenderer.h"
 
@@ -569,6 +570,15 @@ namespace
         std::uint64_t lastUsedFrame = 0;
         glm::vec3 flatColour {0.5f};
         int lastLevel = -1;   // diagnostics: last logged representation
+        // surface settlements (SurfaceSettlementLayout / SettlementMesh), built once the field is ready
+        struct SettlementGpu
+        {
+            std::string siteId;
+            glm::dvec3 anchorBody {0.0};
+            IndexedMesh mesh;
+        };
+        bool settlementsBuilt = false;
+        std::vector<SettlementGpu> settlements;
     };
 
     struct AsteroidRuntime
@@ -609,7 +619,7 @@ struct CelestialFlightRenderer::Impl
     std::uint64_t frameIndex = 0;
     std::atomic<long long> samples {0};
 
-    Program globe, terrain, terrainDepth, cloud, atmosphere, ring, star, sprite, sun, mesh;
+    Program globe, terrain, terrainDepth, settlementDepth, cloud, atmosphere, ring, star, sprite, sun, mesh;
     IndexedMesh sphereHigh, sphereLow;
     GLuint ringVao = 0, ringVbo = 0;
     GLuint spriteVao = 0, spriteVbo = 0;
@@ -655,6 +665,7 @@ struct CelestialFlightRenderer::Impl
         ok = ok && linkProgram(globe, {LogDepthVs, GlobeVs}, {LogDepthFs, SurfaceShading, GlobeFs});
         ok = ok && linkProgram(terrain, {LogDepthVs, TerrainVs}, {LogDepthFs, SurfaceShading, TerrainFs});
         ok = ok && linkProgram(terrainDepth, {TerrainDepthVs}, {TerrainDepthFs});
+        ok = ok && linkProgram(settlementDepth, {SettlementDepthVs}, {TerrainDepthFs});
         ok = ok && linkProgram(cloud, {LogDepthVs, ShellVs}, {LogDepthFs, SurfaceShading, CloudFs});
         ok = ok && linkProgram(atmosphere, {LogDepthVs, ShellVs}, {LogDepthFs, AtmosphereFs});
         ok = ok && linkProgram(ring, {LogDepthVs, RingVs}, {LogDepthFs, SurfaceShading, RingFs});
@@ -727,6 +738,8 @@ struct CelestialFlightRenderer::Impl
             b.cloud.destroy();
             for (auto& [k, l] : b.levels)
                 l.destroy();
+            for (auto& s : b.settlements)
+                s.mesh.destroy();
             if (b.ringTexture)
                 glDeleteTextures(1, &b.ringTexture);
         }
@@ -741,7 +754,7 @@ struct CelestialFlightRenderer::Impl
         glDeleteBuffers(1, &spriteVbo);
         glDeleteVertexArrays(1, &spriteVao);
         glDeleteTextures(1, &dummyCube);
-        for (Program* p : {&globe, &terrain, &terrainDepth, &cloud, &atmosphere, &ring, &star, &sprite, &mesh})
+        for (Program* p : {&globe, &terrain, &terrainDepth, &settlementDepth, &cloud, &atmosphere, &ring, &star, &sprite, &mesh})
             if (p->id)
                 glDeleteProgram(p->id);
         timers.destroy();
@@ -1603,6 +1616,94 @@ struct CelestialFlightRenderer::Impl
         });
     }
 
+    // ---- surface settlements ----------------------------------------------------
+    void buildSettlements(BodyRuntime& rt)
+    {
+        rt.settlementsBuilt = true;
+        if (!rt.field || !rt.field->solidSurface() || rt.descriptor.surfacePressurePa >= 100.0)
+            return;
+        namespace st = world::celestial::settlements;
+        for (const auto& layout : st::surfaceSettlementsOn(rt.id, rt.field->referenceRadiusM()))
+        {
+            const st::SettlementMesh cpu = st::buildSettlementMesh(layout, *rt.field);
+            if (cpu.indices.empty())
+                continue;
+            BodyRuntime::SettlementGpu g;
+            g.siteId = layout.siteId;
+            g.anchorBody = cpu.anchorBody;
+            IndexedMesh& m = g.mesh;
+            glGenVertexArrays(1, &m.vao);
+            glBindVertexArray(m.vao);
+            glGenBuffers(1, &m.vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
+            glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(cpu.vertices.size() * sizeof(st::SettlementVertex)),
+                         cpu.vertices.data(), GL_STATIC_DRAW);
+            for (int i = 0; i < 3; ++i)
+            {
+                glEnableVertexAttribArray(static_cast<GLuint>(i));
+                glVertexAttribPointer(static_cast<GLuint>(i), 3, GL_FLOAT, GL_FALSE, sizeof(st::SettlementVertex),
+                                      reinterpret_cast<void*>(static_cast<std::size_t>(i) * 12));
+            }
+            glGenBuffers(1, &m.ebo);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(cpu.indices.size() * 4), cpu.indices.data(),
+                         GL_STATIC_DRAW);
+            glBindVertexArray(0);
+            m.count = static_cast<GLsizei>(cpu.indices.size());
+            m.bytes = cpu.vertices.size() * sizeof(st::SettlementVertex) + cpu.indices.size() * 4;
+            diagEvent(rt.id, "settlement " + layout.siteId + " mesh " + std::to_string(cpu.vertices.size()) + " vertices");
+            std::fprintf(stderr, "[Settlements] %s: %s (%s) drawn, %zu vertices\n", rt.id.c_str(), layout.name.c_str(),
+                         layout.siteId.c_str(), cpu.vertices.size());
+            rt.settlements.push_back(std::move(g));
+        }
+    }
+
+    // the structures of the nearest solid body's settlements within sight (after its terrain)
+    void drawSettlements(BodyRuntime& rt, const glm::mat3& toWorld, const glm::dvec3& centreRel, const glm::dvec3& cameraBody,
+                         const glm::mat4& viewProj, const glm::vec3& sunDir, const glm::vec3& sunColour)
+    {
+        if (!rt.ready)
+            return;
+        if (!rt.settlementsBuilt)
+            buildSettlements(rt);
+        constexpr double SightM = 250000.0;
+        bool started = false;
+        for (const auto& s : rt.settlements)
+        {
+            if (s.mesh.count == 0 || glm::length(cameraBody - s.anchorBody) > SightM)
+                continue;
+            if (!started)
+            {
+                started = true;
+                mesh.use();
+                setCommon(mesh, sunDir, sunColour);
+                mesh.set("uViewProj", viewProj);
+                mesh.set("uRot", toWorld);
+                glDisable(GL_CULL_FACE);
+                glEnable(GL_DEPTH_TEST);
+                glDepthMask(GL_TRUE);
+            }
+            mesh.set("uCentre", glm::vec3(glm::dmat3(toWorld) * s.anchorBody + centreRel));
+            glBindVertexArray(s.mesh.vao);
+            if (style == CelestialRenderStyle::EliteStyle)
+            {
+                mesh.set("uLinePass", 0.0f);
+                glEnable(GL_POLYGON_OFFSET_FILL);
+                glPolygonOffset(1.0f, 1.0f);
+                glDrawElements(GL_TRIANGLES, s.mesh.count, GL_UNSIGNED_INT, nullptr);
+                glDisable(GL_POLYGON_OFFSET_FILL);
+                mesh.set("uLinePass", 1.0f);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                glDrawElements(GL_TRIANGLES, s.mesh.count, GL_UNSIGNED_INT, nullptr);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
+            else
+                glDrawElements(GL_TRIANGLES, s.mesh.count, GL_UNSIGNED_INT, nullptr);
+        }
+        if (started)
+            glBindVertexArray(0);
+    }
+
     void drawAsteroids(const FlightCelestialFrame& frame, const glm::mat4& viewProj, const glm::vec3& sunDir,
                        const glm::vec3& sunColour)
     {
@@ -1991,6 +2092,7 @@ void CelestialFlightRenderer::Impl::render(const FlightCelestialFrame& frame, co
             if (primary)
                 updateTerrain(*rt, cameraBody, pixelAngle);
             drawTerrain(*rt, b, toWorld, it.rel, cameraBody, viewProj, pixelAngle, sunDir, sunColour, hazeDensity);
+            drawSettlements(*rt, toWorld, it.rel, cameraBody, viewProj, sunDir, sunColour);
             if (!rt->levels.empty())
             {
                 terrainBodyId = b.id;
@@ -2367,6 +2469,22 @@ void CelestialFlightRenderer::renderTerrainDepth(const glm::mat4& viewRotation, 
         p.set("uHalfCells", static_cast<float>(g.cells / 2));
         glBindVertexArray(g.vao);
         glDrawElements(GL_TRIANGLES, g.indexCount, GL_UNSIGNED_INT, nullptr);
+    }
+    // the settlements' structures too (a ship behind a dome is hidden by it)
+    if (!it->second.settlements.empty())
+    {
+        Program& sd = m->settlementDepth;
+        sd.use();
+        sd.set("uViewProj", viewProj);
+        sd.set("uBodyToWorld", m->terrainBodyToWorld);
+        for (const auto& s : it->second.settlements)
+        {
+            if (s.mesh.count == 0 || glm::length(m->terrainCameraBody - s.anchorBody) > 20000.0)
+                continue;
+            sd.set("uAnchor", glm::vec3(glm::dmat3(m->terrainBodyToWorld) * s.anchorBody + m->terrainBodyCentreRel));
+            glBindVertexArray(s.mesh.vao);
+            glDrawElements(GL_TRIANGLES, s.mesh.count, GL_UNSIGNED_INT, nullptr);
+        }
     }
     glBindVertexArray(0);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);

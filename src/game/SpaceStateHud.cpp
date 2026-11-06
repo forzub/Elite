@@ -1673,7 +1673,10 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     {
         char drive[96];
         // signed along the velocity: "-" is braking (the speed falls), "+" the speed grows
-        std::snprintf(drive, sizeof drive, "J-ПРИВОД АВТОПИЛОТА %+.1f g %s", motion.freeFlightAutopilotAccelMps2 / 9.81,
+        // phase 11 (the de-orbit) flies on the main engines, the rest of the autopilot on its J drive
+        std::snprintf(drive, sizeof drive, "%s %+.1f g %s",
+                      motion.freeFlightAutopilotPhase == 11 ? "МАРШЕВЫЕ АВТОПИЛОТА" : "J-ПРИВОД АВТОПИЛОТА",
+                      motion.freeFlightAutopilotAccelMps2 / 9.81,
                       motion.freeFlightAutopilotAccelMps2 < -0.05f ? "(торможение)" : "(разгон)");
         thrust = drive;
     }

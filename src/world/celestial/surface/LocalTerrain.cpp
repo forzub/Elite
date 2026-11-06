@@ -149,8 +149,15 @@ bool buildTerrainLevel(const SurfaceField& field, const TerrainLevelKey& key, in
     const auto latticeDir = [&](std::int64_t li, std::int64_t lj, double step) {
         return terrain_chart::direction(key.face, static_cast<double>(li) * step, static_cast<double>(lj) * step);
     };
+    // land is lifted 0.5 m over the water level only at the shoreline (the coast band), where it
+    // hides the sea floor under the interpolated coast; elsewhere - a dry body, a mare, a crater
+    // floor or an inland depression below the reference radius - it is drawn at its true height
+    // (the server's ground). The old unconditional lift drew every airless lowland at +0.5 m:
+    // Imbrium (-506 m) rose over the ship and the settlement standing on the true ground.
     const auto shown = [](const SurfaceSample& s) {
-        return s.water ? s.waterLevelM : std::max(s.heightM, s.waterLevelM + 0.5);
+        if (s.water)
+            return s.waterLevelM;
+        return s.coastM < 400.0 ? std::max(s.heightM, s.waterLevelM + 0.5) : s.heightM;
     };
 
     // Fine grid with border.

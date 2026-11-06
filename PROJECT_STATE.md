@@ -3222,6 +3222,26 @@ order - ask for it again if it is not in the session.
 - Next: slice cc-5b - the structures rendered on the surface (pad with markings / lights, entrance, domes, antenna),
   then the author's look; small bodies; atmosphere styles.
 
+### Slice cc-5b 2026-11-06 - settlement structures rendered; terrain drawn at its true height in lowlands - NOT ACCEPTED
+- src/world/celestial/settlements/SettlementMesh.h (CPU, no GL): from the layout - pads (concrete disc, yellow ring,
+  "H", number bars, 12 rim lights), the entrance (apron, metal arch with a dark opening, portal frame, lights), domes
+  (base ring, spherical cap, airlock), the antenna (mast, tilted dish, red top light), a rock passage (small bodies);
+  body-fixed relative to the settlement anchor, on the field's flat footprints, 1 m into the ground; albedo > 1.5 =
+  emissive (the mesh shader shows albedo - 2 unlit; asteroids unaffected). Renderer: built once per body when its
+  field is ready (airless only), drawn with the mesh program after the nearest body's terrain within 250 km (Elite
+  style fill + lines), and in the ships' near-pass depth within 20 km (settlementDepth program). ~6.5-7.3k vertices each.
+- Author 2026-11-06: "все объекты ниже уровня земли метров на 20-30". ROOT CAUSE: LocalTerrain drew every land sample at
+  max(height, waterLevel + 0.5) - an airless field reports water level 0, so every lowland below the reference radius
+  (maria, crater floors; Imbrium -506 m) was DRAWN lifted to +0.5 m while the server (and the ship, and the structures)
+  stood on the true height. Fixed: the lift only in the shoreline band (coastM < 400 m). Captures st_675 / st_690
+  (before: the terrain grid above the pads and the ship) vs st2_600 / st2_615 (after: the pads and the ship on the grid).
+  This may also be the author's earlier "проваливается под грунт" when landing in a mare / a crater.
+- LIVE st2 (Имбриум): LANDED 1.52 / 0.14 m/s, 3.7 cm from the pad; captures by the game's own back buffer
+  (ELITE_DEV_FRAME_CAPTURE), not screen grabs. The entrance / domes / antenna not in the captured views (not yet seen).
+- HUD: phase 11 shows "МАРШЕВЫЕ АВТОПИЛОТА" (was "J-ПРИВОД АВТОПИЛОТА").
+- Next: the author's look in game (structures, lowland terrain); Шеклтон (polar) landing; small bodies; styles for
+  bodies with an atmosphere.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

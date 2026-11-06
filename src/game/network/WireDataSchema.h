@@ -303,6 +303,8 @@ ELITE_WIRE_SCHEMA(
     v.jStopping,
     v.jChargeT,
     v.jChargeCapacityT,
+    v.shipMassT,
+    v.jumpCoreRatingT,
     v.routeState,
     v.routeLegIndex,
     v.routeLegCount,

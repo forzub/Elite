@@ -84,7 +84,7 @@ struct RoutePoint
 
 // J charge of a leg of `distanceM` flown at the route drive (JDrive.h rule): the drive's time at its
 // acceleration (a sqrt(d / a) profile, the 0.9 c cap) times its rate
-double estimateLegChargeT(double distanceM, double massT);
+double estimateLegChargeT(double distanceM, double massT, double coreRatingT);
 
 // a body the route must go round: its centre now and the clearance (star: heat margin)
 struct BodyObstacle

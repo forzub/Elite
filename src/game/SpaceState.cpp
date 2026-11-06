@@ -1,4 +1,5 @@
-#include "src/game/simulation/JDrive.h"
+#include "src/game/navigation/rules/BodyFlightRules.h"
+#include "src/game/navigation/rules/JDrive.h"
 #include "src/world/celestial/settlements/SurfaceSettlementLayout.h"
 #include "src/game/SpaceStateInternal.h"
 #include <algorithm>
@@ -754,8 +755,8 @@ void SpaceState::handleInput()
                         f.muM3s2 = b.gravitationalParameterM3s2;
                         f.radiusM = b.radiusKm * 1000.0;
                         const double atmo = std::max(f.radiusM, b.atmosphereOuterRadiusKm * 1000.0);
-                        f.floorAltitudeM = game::simulation::jdrive::floorAltitudeM(f.radiusM, atmo);
-                        f.landable = atmo <= f.radiusM * 1.0001 && f.radiusM > 0.0;   // no atmosphere: only shuttles land there
+                        f.floorAltitudeM = game::navigation::rules::floorAltitudeM(f.radiusM, atmo);
+                        f.landable = f.radiusM > 0.0 && game::navigation::rules::isAirless(f.radiusM, atmo);   // else only shuttles
                         return f;
                     }
                 return std::nullopt;

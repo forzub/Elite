@@ -22,8 +22,9 @@
 // 0.4 of the cap and an exponential tail d / 6 s against the destination.
 // The planner (game::navigation::route) decides the waypoints; this file only
 // flies them.
+#include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/simulation/GameSimulation.h"
-#include "src/game/simulation/JDrive.h"
+#include "src/game/navigation/rules/JDrive.h"
 
 #include <algorithm>
 #include <cmath>
@@ -36,12 +37,12 @@
 
 namespace
 {
-namespace jd = game::simulation::jdrive;
+namespace jd = game::navigation::jdrive;
 constexpr double HubArrivalM = jd::KeepOutObjectM + 5000.0;   // the aim just outside the keep-out, on the approach side
 constexpr double ShipArrivalM = jd::KeepOutShipM + 1000.0;    // a rendezvous: just outside the target ship's J keep-out
 constexpr double GentleAccelMps2 = jd::GentleAccelMps2;
 constexpr double GentleSpeedMps = jd::GentleSpeedMps;
-constexpr double ApproachTauS = 6.0;
+constexpr double ApproachTauS = jd::ApproachTauS;
 constexpr double MaxDriveMps2 = jd::MaxAccelMps2;
 }
 
@@ -229,7 +230,7 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
     if (!nearDeparture && f.legDriveStartSeconds == -1.0)
         f.legDriveStartSeconds = f.legSeconds;
     const double driveSeconds = f.legDriveStartSeconds == -1.0 ? 0.0 : f.legSeconds - f.legDriveStartSeconds;
-    double limit = nearDeparture ? GentleAccelMps2 : std::min(MaxDriveMps2, 9.81 * std::exp2(driveSeconds / 2.0));
+    double limit = nearDeparture ? GentleAccelMps2 : std::min(MaxDriveMps2, 9.81 * std::exp2(driveSeconds / jd::DriveRampDoublingS));
 
     // ---- obstacles: never through a planet / moon / the star - go round the first one in the way
     int phase = 2;
@@ -246,7 +247,7 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
         // radii (the Sun ~0.09 AU) - the hull's heat, not its surface (author 2026-11-06:
         // "маршрут должен проходить через солнце?")
         const bool star = b.gravitationalParameterM3s2 >= starMu && starMu > 0.0;
-        double clear = star ? 20.0 * b.radiusMeters : std::max(b.radiusMeters + 150000.0, b.atmosphereRadiusMeters + 50000.0);
+        double clear = game::navigation::rules::clearanceM(b.radiusMeters, b.atmosphereRadiusMeters, star);
         clear = std::min(clear, glm::length(targetPos - b.centerMeters) * 0.995);
         clear = std::min(clear, glm::length(frame.originMeters - b.centerMeters) * 0.995);
         const glm::dvec3 s = frame.originMeters - b.centerMeters;

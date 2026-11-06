@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/game/navigation/rules/BodyFlightRules.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -82,17 +83,14 @@ inline const DetailGravityBody* detailDominantBody(
     const glm::dvec3& positionMeters
 )
 {
-    const DetailGravityBody* best = nullptr;
-    for (const auto& body : bodies)
-    {
-        if (!std::isfinite(body.soiMeters))
-            continue;
-        if (glm::length(positionMeters - body.state->worldMeters) > body.soiMeters)
-            continue;
-        if (!best || body.soiMeters < best->soiMeters)
-            best = &body;
-    }
-    return best;
+    // ONE rule with the server and the planner (BodyFlightRules.h); the star (root) = nullptr
+    using B = DetailGravityBody;
+    bool isRoot = false;
+    const std::size_t k = game::navigation::rules::dominantBody(
+        bodies, positionMeters, [](const B& b) -> const std::string& { return b.state->id; },
+        [](const B& b) { return b.state->parentId; }, [](const B& b) { return b.muM3s2; },
+        [](const B& b) { return b.state->worldMeters; }, &isRoot);
+    return k < bodies.size() && !isRoot ? &bodies[k] : nullptr;
 }
 
 // The conic through (r, v) relative to the centre, sampled as offsets.

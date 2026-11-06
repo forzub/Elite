@@ -157,6 +157,8 @@ struct DynamicMotionState
     bool jStopping = false;   // J switched off: the field winds down to the main engines' level first
     double jChargeT = -1.0;          // jump-drive charge left (t); < 0 = not yet filled (first J use)
     double jChargeCapacityT = 0.0;
+    double shipMassT = 0.0;          // the ship's mass and its jump core's rating (the planner's charge rule)
+    double jumpCoreRatingT = 0.0;
     // the server's route: 0 none, 1 flying, 2 paused (manual flight until RESUME), 3 a service stay,
     // 4 landing (the landing autopilot); legIndex / legCount of it
     std::uint8_t routeState = 0;

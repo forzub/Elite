@@ -26,11 +26,15 @@
 //   2 mean jumps + 3 J legs fit the Cobrett's 3 t (3 x std.tank.jumpcharge, 1 t each);
 //   a J leg = R x a mean jump, R = 1/3 .. 1/2 by the core load M / rating (light = 3x cheaper);
 //   the rate grows with the acceleration: (a / a_max)^1.5 - flying gentler is cheaper.
-// Runtime figures are the Cobrett's (the only flown ship): core um.core.z05 rated 500 t, 3 tanks.
+// The ship's own figures (core rating, charge capacity) come from its descriptor (ShipParams
+// jumpCoreRatingT / jumpChargeCapacityT; the Cobrett: um.core.z05 500 t, 3 x 1 t tanks) - no ship
+// constants here (architecture audit 2026-11-06, item 4).
 #include <algorithm>
+
+#include "src/game/navigation/rules/BodyFlightRules.h"
 #include <cmath>
 
-namespace game::simulation::jdrive
+namespace game::navigation::jdrive
 {
 constexpr double StandardGravityMps2 = 9.80665;
 constexpr double LightSpeedMps = 299792458.0;
@@ -42,10 +46,12 @@ constexpr double GentleAccelMps2 = 9.81;
 constexpr double GentleSpeedMps = 300.0;
 constexpr double LandingThrustToWeightMin = 1.3;
 constexpr double FloorClimbSpeedMps = 400.0;    // main-engine climb out to the J floor
+// the J drive's ramp (1 g, doubling every DriveRampDoublingS) and the arrival tail (d / ApproachTauS),
+// shared by the J autopilot and the route legs
+constexpr double DriveRampDoublingS = 2.0;
+constexpr double ApproachTauS = 6.0;
 
 constexpr double ChargePerTankT = 1.0;           // std.tank.jumpcharge
-constexpr double CobrettChargeCapacityT = 3.0;   // 3 tanks (passport kb.ship.cobrett-i.*)
-constexpr double CobrettCoreRatingT = 500.0;     // um.core.z05
 constexpr double JumpChargePerLyT = 5.6e-5;      // q (per ly, per tonne of alpha + M)
 constexpr double MeanJumpLy = 22.83;
 constexpr double JumpEnvelopeT = 388.0;          // alpha_ref
@@ -71,7 +77,6 @@ inline double jChargeRateTps(double accelMps2, double massT, double coreRatingT)
 
 inline double floorAltitudeM(double radiusM, double atmosphereRadiusM)
 {
-    const double atmosphereTop = atmosphereRadiusM > radiusM ? atmosphereRadiusM - radiusM : 0.0;
-    return std::max({atmosphereTop + 50000.0, 0.05 * radiusM, 50000.0});
+    return game::navigation::rules::floorAltitudeM(radiusM, atmosphereRadiusM);
 }
 }

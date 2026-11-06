@@ -1,4 +1,5 @@
 
+#include "src/game/navigation/rules/JDrive.h"
 #include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
 #include "src/game/equipment/engine/presets/KobraN1AxialMainDrive.h"
 #include "src/game/equipment/reactor/presets/CobraCobrettyER5PropulsionReactor.h"
@@ -113,6 +114,10 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // 26.0 x 5.0 x 22.2 m logical hull and are intentionally explicit so
         // off-centre impacts can produce physically meaningful spin.
         desc.physics.massKg                  = 260000.0;
+        // jump core um.core.z05 (rated 500 t) + 3 x std.tank.jumpcharge (1 t each): passport
+        // kb.ship.cobrett-i.* (Notes/html/ship_reference)
+        desc.physics.jumpCoreRatingT         = 500.0;
+        desc.physics.jumpChargeCapacityT     = 3.0 * game::navigation::jdrive::ChargePerTankT;
         // Current Cobra logical origin is its nominal dry CoM. Keep this
         // explicit so future marks/cargo layouts never inherit origin==CoM.
         desc.physics.centerOfMassLocalMeters  = {0.0, 0.0, 0.0};

@@ -225,6 +225,11 @@ target_compile_features(EliteSystemMapInfoCheck PRIVATE cxx_std_17)
 target_link_libraries(EliteSystemMapInfoCheck PRIVATE nlohmann_json::nlohmann_json)
 
 
+# shared body flight rules + the route codec / charge estimate (architecture audit 2026-11-06)
+add_executable(EliteBodyFlightRulesCheck tools/navigation_runtime/BodyFlightRulesCheck.cpp src/game/navigation/route/RoutePlanner.cpp)
+target_include_directories(EliteBodyFlightRulesCheck PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
+target_link_libraries(EliteBodyFlightRulesCheck PRIVATE nlohmann_json::nlohmann_json)
+
 add_executable(EliteOrbitalTransferCheck tools/navigation_runtime/OrbitalTransferCheck.cpp)
 target_link_libraries(EliteOrbitalTransferCheck PRIVATE EliteOrbitalTransfer nlohmann_json::nlohmann_json)
 

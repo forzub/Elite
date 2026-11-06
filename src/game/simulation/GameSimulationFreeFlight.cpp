@@ -66,8 +66,9 @@
 //                    flight, never near objects (JDrive.h keep-out) or below a body's J floor -
 //                    refused there, and it drops out when the ship enters such a zone. The Assisted
 //                    velocity bending by the J field works only with the J engine on.
+#include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/simulation/GameSimulation.h"
-#include "src/game/simulation/JDrive.h"
+#include "src/game/navigation/rules/JDrive.h"
 #include "src/game/catalog/ships/ShipDesignCatalog.h"
 
 #include <algorithm>
@@ -106,46 +107,12 @@ constexpr double FreeFlightCaptureRadiusMeters = 50000.0;
 const game::navigation::GravityBody* referenceBody(const glm::dvec3& point,
                                                    const std::vector<game::navigation::GravityBody>& bodies, bool& isRoot)
 {
-    const game::navigation::GravityBody* root = nullptr;
-    for (const auto& b : bodies)
-        if (b.gravitationalParameterM3s2 > 0.0 && (!root || b.gravitationalParameterM3s2 > root->gravitationalParameterM3s2))
-            root = &b;
-    const auto byId = [&](const std::string& id) -> const game::navigation::GravityBody* {
-        for (const auto& b : bodies)
-            if (b.id == id)
-                return &b;
-        return nullptr;
-    };
-    const game::navigation::GravityBody* best = root;
-    double bestSphere = std::numeric_limits<double>::infinity();
-    for (const auto& b : bodies)
-    {
-        if (&b == root || b.gravitationalParameterM3s2 <= 0.0)
-            continue;
-        // the catalog parent: the nearest enclosing id that is a body, else the star
-        const game::navigation::GravityBody* parent = nullptr;
-        for (std::string id = b.id; !parent;)
-        {
-            const auto dot = id.rfind('.');
-            if (dot == std::string::npos)
-                break;
-            id.resize(dot);
-            parent = byId(id);
-        }
-        if (!parent || parent->gravitationalParameterM3s2 <= b.gravitationalParameterM3s2)
-            parent = root;
-        if (!parent)
-            continue;
-        const double sphere = glm::length(parent->centerMeters - b.centerMeters) *
-                              std::pow(b.gravitationalParameterM3s2 / parent->gravitationalParameterM3s2, 0.4);
-        if (sphere < bestSphere && glm::length(point - b.centerMeters) < sphere)
-        {
-            bestSphere = sphere;
-            best = &b;
-        }
-    }
-    isRoot = best == root;
-    return best;
+    // ONE rule for the server, the client planner and the maps (BodyFlightRules.h)
+    using B = game::navigation::GravityBody;
+    const std::size_t k = game::navigation::rules::dominantBody(
+        bodies, point, [](const B& b) -> const std::string& { return b.id; }, [](const B&) { return std::string(); },
+        [](const B& b) { return b.gravitationalParameterM3s2; }, [](const B& b) { return b.centerMeters; }, &isRoot);
+    return k < bodies.size() ? &bodies[k] : nullptr;
 }
 }
 
@@ -159,7 +126,7 @@ double mainEngineAccelMps2(const Ship& ship)
     if (p.forwardMainEngineAccelerationMps2 > 0.0f)
         return p.forwardMainEngineAccelerationMps2;
     const double gs = p.maxLinearGs > 0.0f ? p.maxLinearGs : p.maxGs;
-    return std::max(1.0, gs * game::simulation::jdrive::StandardGravityMps2);
+    return std::max(1.0, gs * game::navigation::jdrive::StandardGravityMps2);
 }
 
 // the hull's half height along a vertical: the box projected on it (belly down = half.y,
@@ -177,7 +144,7 @@ double halfHeightAlong(const Ship& ship, const glm::dvec3& vertical)
 
 bool GameSimulation::jKeepOut(EntityId shipId, int systemId, const glm::dvec3& worldMeters, JKeepOutHit& hit) const
 {
-    namespace jd = game::simulation::jdrive;
+    namespace jd = game::navigation::jdrive;
     bool found = false;
     double best = std::numeric_limits<double>::infinity();
     for (const auto& [hubId, frame] : m_hubNavigationFrames)
@@ -222,7 +189,7 @@ void GameSimulation::setFreeFlightThrust(EntityId shipId, int command)
     if (motion.jEngine && !motion.jStopping)
     {
         // J: HOME = full positive acceleration, END = full negative, INSERT = none
-        namespace jd = game::simulation::jdrive;
+        namespace jd = game::navigation::jdrive;
         motion.jAccelCommandMps2 = command == 1 ? jd::MaxAccelMps2 : command == 2 ? -jd::MaxAccelMps2 : 0.0;
         motion.freeFlightThrust = 0;
         motion.freeFlightCaptureRefusal = 0;
@@ -298,12 +265,12 @@ void GameSimulation::setFreeFlightAutopilot(EntityId shipId, const std::string& 
     {
         if (b.id != target || b.radiusMeters <= 0.0)
             continue;
-        namespace jd = game::simulation::jdrive;
+        namespace jd = game::navigation::jdrive;
         const double gSurface = b.gravitationalParameterM3s2 / (b.radiusMeters * b.radiusMeters);
         const double main = mainEngineAccelMps2(*ship);
         const auto* design = game::catalog::ships::ShipDesignCatalog::instance().findShip(ship->core().desc().catalog.passportId);
         const bool shuttle = design && design->shipClass == "surface_lifter";
-        if (b.atmosphereRadiusMeters > b.radiusMeters && !shuttle)
+        if (!game::navigation::rules::isAirless(b.radiusMeters, b.atmosphereRadiusMeters) && !shuttle)
         {
             motion.freeFlightCaptureRefusal = 6;
             std::cerr << "[Autopilot] ship " << shipId.value << ": REFUSED " << target << " - an atmosphere: only shuttles land" << std::endl;
@@ -425,12 +392,12 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     static const double maxAccel = [] {
         const char* v = std::getenv("ELITE_J_AUTOPILOT_MAX_ACCEL");
         const double a = v && *v ? std::atof(v) : 0.0;
-        return a > 0.0 ? a : game::simulation::jdrive::MaxAccelMps2;
+        return a > 0.0 ? a : game::navigation::jdrive::MaxAccelMps2;
     }();
-    namespace jd = game::simulation::jdrive;
+    namespace jd = game::navigation::jdrive;
     // J ends above the target's J floor; the descent below it is on the main engines
     const double AimAltitudeM = jd::floorAltitudeM(target->radiusMeters, target->atmosphereRadiusMeters);
-    constexpr double ApproachTauS = 6.0;
+    constexpr double ApproachTauS = game::navigation::jdrive::ApproachTauS;
     const double mainAccel = mainEngineAccelMps2(ship);
 
     const glm::dvec3 rel = frame.originMeters - target->centerMeters;
@@ -440,7 +407,7 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     const double ground = motion.freeFlightOrbitBodyId == target->id ? motion.freeFlightGroundHeightM : 0.0;
     const double height = rLen - target->radiusMeters - ground;
     // the drive: 1 g doubling every 2 s up to the cap
-    const double ramp = std::min(maxAccel, 9.81 * std::exp2(f.autopilotRampSeconds / 2.0));
+    const double ramp = std::min(maxAccel, 9.81 * std::exp2(f.autopilotRampSeconds / game::navigation::jdrive::DriveRampDoublingS));
 
     glm::dvec3 wanted(0.0);
     double limit = ramp;
@@ -610,8 +577,8 @@ void GameSimulation::updateFreeFlightAutopilot(EntityId shipId, Ship& ship, Acti
     f.autopilotPhase = phase;
 
     // the J speed cap (0.9 c against the target)
-    if (glm::length(wanted) > game::simulation::jdrive::SpeedCapMps)
-        wanted *= game::simulation::jdrive::SpeedCapMps / glm::length(wanted);
+    if (glm::length(wanted) > game::navigation::jdrive::SpeedCapMps)
+        wanted *= game::navigation::jdrive::SpeedCapMps / glm::length(wanted);
     // deadbeat velocity servo within the drive's authority (gravity was integrated this tick)
     glm::dvec3 dv = wanted - w;
     // no J field near objects: a gentle push out of the nearest keep-out (not in the
@@ -1116,7 +1083,7 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
             for (const auto& b : m_gravityBodies)
                 if (b.id == active->second.primaryBodyId && b.radiusMeters > 0.0 && overBody <= safeSpeed &&
                     active->second.primaryAltitudeMeters <
-                        game::simulation::jdrive::floorAltitudeM(b.radiusMeters, b.atmosphereRadiusMeters))
+                        game::navigation::jdrive::floorAltitudeM(b.radiusMeters, b.atmosphereRadiusMeters))
                 {
                     auto& f = active->second;
                     f.autopilotTargetId.clear();
@@ -1213,7 +1180,7 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
 
 int GameSimulation::jEngineBlocked(EntityId shipId, int systemId, const glm::dvec3& shipWorld, std::string& why) const
 {
-    namespace jd = game::simulation::jdrive;
+    namespace jd = game::navigation::jdrive;
     JKeepOutHit hit;
     if (jKeepOut(shipId, systemId, shipWorld, hit))
     {
@@ -1292,7 +1259,7 @@ bool GameSimulation::toggleJEngine(EntityId shipId)
         std::cerr << "[Flight] ship " << shipId.value << ": J engine refused - the autopilot flies its own J drive" << std::endl;
         return false;
     }
-    if (motion.jChargeT == 0.0)
+    if (ship->core().effectivePhysics().jumpCoreRatingT <= 0.0 || motion.jChargeT == 0.0)
     {
         motion.freeFlightCaptureRefusal = 9;
         std::cerr << "[Flight] ship " << shipId.value << ": J engine REFUSED - the jump-drive charge is empty" << std::endl;
@@ -1436,7 +1403,7 @@ void GameSimulation::updateFreeFlights(double dt)
         // ---- the J engine: the J field along the main-engine thrust, in place of it
         if (motion.jEngine && !f.bodyFrame)
         {
-            namespace jd = game::simulation::jdrive;
+            namespace jd = game::navigation::jdrive;
             std::string why;
             if (const int blocked = jEngineBlocked(it->first, motion.systemId, frame.originMeters, why))
             {
@@ -1513,19 +1480,24 @@ void GameSimulation::updateFreeFlights(double dt)
 
         // ---- the J charge: the pilot's J field or the autopilot's J drive (not its main-engine de-orbit)
         {
-            namespace jd = game::simulation::jdrive;
+            namespace jd = game::navigation::jdrive;
+            const auto shipPhysics = ship->core().effectivePhysics();
+            motion.shipMassT = shipPhysics.massKg / 1000.0;
+            motion.jumpCoreRatingT = shipPhysics.jumpCoreRatingT;
             if (motion.jChargeT < 0.0)
             {
-                motion.jChargeCapacityT = jd::CobrettChargeCapacityT;
+                motion.jChargeCapacityT = shipPhysics.jumpChargeCapacityT;
                 motion.jChargeT = motion.jChargeCapacityT;
             }
-            const bool autopilotJ = !f.autopilotTargetId.empty() && motion.freeFlightAutopilotPhase >= 1 &&
-                                    motion.freeFlightAutopilotPhase <= 4;
+            // the J autopilot's J phases and a route leg on its J drive (not the main-engine take-off)
+            const bool autopilotJ = (!f.autopilotTargetId.empty() && motion.freeFlightAutopilotPhase >= 1 &&
+                                     motion.freeFlightAutopilotPhase <= 4) ||
+                                    (f.legActive && !f.takeOff);
             const double a = motion.jEngine ? motion.jAccelMps2 : autopilotJ ? motion.freeFlightAutopilotAccelMps2 : 0.0;
             if (a != 0.0 && motion.jChargeT > 0.0)
             {
                 const double massT = ship->core().effectivePhysics().massKg / 1000.0;
-                motion.jChargeT = std::max(0.0, motion.jChargeT - jd::jChargeRateTps(a, massT, jd::CobrettCoreRatingT) * dt);
+                motion.jChargeT = std::max(0.0, motion.jChargeT - jd::jChargeRateTps(a, massT, motion.jumpCoreRatingT) * dt);
                 if (motion.jChargeT == 0.0 && motion.jEngine)
                 {
                     // the field collapses: normal flight at once
@@ -1927,7 +1899,7 @@ void GameSimulation::updateFreeFlights(double dt)
             // body to its J floor, gently from rest to the climb speed; then the leg
             if (f.takeOff && primary && dt > 0.0)
             {
-                namespace jd = game::simulation::jdrive;
+                namespace jd = game::navigation::jdrive;
                 const double floorAlt = jd::floorAltitudeM(primary->radiusMeters, primary->atmosphereRadiusMeters);
                 const glm::dvec3 up = glm::normalize(frame.originMeters - primary->centerMeters);
                 const double alt = glm::length(frame.originMeters - primary->centerMeters) - primary->radiusMeters;
@@ -1997,8 +1969,8 @@ void GameSimulation::updateFreeFlights(double dt)
             {
                 const glm::dvec3 refVel = (primary->centerMeters - f.lastPrimaryCenterMeters) / dt;
                 const glm::dvec3 rel = frame.linearVelocityMps - refVel;
-                if (glm::length(rel) > game::simulation::jdrive::SpeedCapMps)
-                    frame.linearVelocityMps = refVel + rel * (game::simulation::jdrive::SpeedCapMps / glm::length(rel));
+                if (glm::length(rel) > game::navigation::jdrive::SpeedCapMps)
+                    frame.linearVelocityMps = refVel + rel * (game::navigation::jdrive::SpeedCapMps / glm::length(rel));
             }
             f.lastPrimaryId = primary ? primary->id : std::string();
             f.lastPrimaryCenterMeters = primary ? primary->centerMeters : glm::dvec3(0.0);

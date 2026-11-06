@@ -2,6 +2,7 @@
 // zone-violation watch. The planner is game::navigation::route (zones from
 // assets/data/navigation/route_zones.json); the server's route autopilot flies
 // the legs (GameSimulationRoute.cpp).
+#include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/SpaceStateInternal.h"
 
 #include <algorithm>
@@ -10,7 +11,7 @@
 
 #include "src/game/navigation/route/RoutePlanner.h"
 #include "src/world/celestial/settlements/SurfaceSettlementLayout.h"
-#include "src/game/simulation/JDrive.h"
+#include "src/game/navigation/rules/JDrive.h"
 
 namespace
 {
@@ -29,35 +30,12 @@ std::string bodyAtPoint(const world::celestial::CelestialSystemSnapshot& snapsho
                 return b.gravitationalParameterM3s2;
         return 0.0;
     };
-    const world::celestial::CelestialBodyState* root = nullptr;
-    for (const auto& b : snapshot.bodies)
-        if (mu(b.id) > 0.0 && (!root || mu(b.id) > mu(root->id)))
-            root = &b;
-    std::string best = root ? root->id : std::string();
-    double bestSphere = 1.0e300;
-    for (const auto& b : snapshot.bodies)
-    {
-        if (root && b.id == root->id)
-            continue;
-        const double m = mu(b.id);
-        if (m <= 0.0)
-            continue;
-        const world::celestial::CelestialBodyState* parent = nullptr;
-        for (const auto& q : snapshot.bodies)
-            if (q.id == b.parentId)
-                parent = &q;
-        if (!parent || mu(parent->id) <= m)
-            parent = root;
-        if (!parent)
-            continue;
-        const double sphere = glm::length(parent->worldMeters - b.worldMeters) * std::pow(m / mu(parent->id), 0.4);
-        if (sphere < bestSphere && glm::length(p - b.worldMeters) < sphere)
-        {
-            bestSphere = sphere;
-            best = b.id;
-        }
-    }
-    return best;
+    // ONE rule with the server (BodyFlightRules.h)
+    using B = world::celestial::CelestialBodyState;
+    const std::size_t k = game::navigation::rules::dominantBody(
+        snapshot.bodies, p, [](const B& b) -> const std::string& { return b.id; }, [](const B& b) { return b.parentId; },
+        [&](const B& b) { return mu(b.id); }, [](const B& b) { return b.worldMeters; });
+    return k < snapshot.bodies.size() ? snapshot.bodies[k].id : std::string();
 }
 
 const route::ZoneCatalog& zoneCatalog()
@@ -136,17 +114,18 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
     auto& plan = m_navigationWorkspace.routePlan();
     using P = game::navigation::NavigationWaypointProgram;
     using Anchor = game::navigation::NavigationRouteAnchorKind;
-    namespace jd = game::simulation::jdrive;
+    namespace jd = game::navigation::jdrive;
 
     const auto& motion = shipIt->second.transform.motion;
-    const double capacity = motion.jChargeCapacityT > 0.0 ? motion.jChargeCapacityT : jd::CobrettChargeCapacityT;
+    const double capacity = motion.jChargeCapacityT;   // the ship's own (0: no jump drive)
     // DEV: ELITE_DEV_ROUTE_CHARGE_T=<t> plans from that charge (planner refuel insertion check)
     static const double devCharge = [] {
         const char* v = std::getenv("ELITE_DEV_ROUTE_CHARGE_T");
         return v && *v ? std::atof(v) : -1.0;
     }();
     const double charge0 = devCharge >= 0.0 ? devCharge : motion.jChargeT >= 0.0 ? motion.jChargeT : capacity;
-    constexpr double ShipMassT = 260.0;   // the Cobrett's dry mass (no cargo model on the client yet)
+    const double shipMassT = motion.shipMassT;        // replicated from the ship's parameters
+    const double coreRatingT = motion.jumpCoreRatingT;
     const glm::dvec3 startM = world::coordinates::fullMeters(shipIt->second.transform.worldPosition);
 
     std::vector<std::string> inserted;
@@ -193,6 +172,13 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
             for (const auto& b : snapshot->bodies)
                 starMu = std::max(starMu, mu(b.id));
             req.bodies.clear();
+            const auto atmosphere = [&](const std::string& id, double r) {
+                if (system)
+                    for (const auto& b : system->bodies)
+                        if (b.id == id)
+                            return std::max(r, b.atmosphereOuterRadiusKm * 1000.0);
+                return r;
+            };
             for (const auto& b : snapshot->bodies)
             {
                 const double r = b.radiusKm * 1000.0;
@@ -201,7 +187,7 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
                 const bool star = starMu > 0.0 && mu(b.id) >= starMu;
                 std::string name = b.id.substr(b.id.rfind('.') + 1);
                 req.bodies.push_back({star ? "звезда " + name + " (нагрев)" : name, b.worldMeters,
-                                      star ? 20.0 * r : std::max(r + 150000.0, r * 1.05)});
+                                      game::navigation::rules::clearanceM(r, atmosphere(b.id, r), star)});
             }
         }
         // the scheduled network's hub-to-hub routes as green corridors round the bodies
@@ -323,7 +309,7 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
         glm::dvec3 cur = startM;
         for (std::size_t k = 0; k < req.points.size(); ++k)
         {
-            const double cost = route::estimateLegChargeT(glm::length(req.points[k].worldM - cur), ShipMassT);
+            const double cost = route::estimateLegChargeT(glm::length(req.points[k].worldM - cur), shipMassT, coreRatingT);
             charge -= cost;
             chargeUsed += cost;
             const bool refuelHere = req.points[k].kind == route::RoutePoint::Kind::Hub && req.points[k].stop &&

@@ -1,4 +1,4 @@
-#include "src/game/simulation/JDrive.h"
+#include "src/game/navigation/rules/JDrive.h"
 #include <algorithm>
 #include "src/game/navigation/route/RoutePlanner.h"
 
@@ -288,9 +288,9 @@ PlannedRoute planRoute(const PlanRequest& request, const std::vector<ZoneGeometr
     return route;
 }
 
-double estimateLegChargeT(double distanceM, double massT)
+double estimateLegChargeT(double distanceM, double massT, double coreRatingT)
 {
-    namespace jd = game::simulation::jdrive;
+    namespace jd = game::navigation::jdrive;
     const double a = jd::MaxAccelMps2;
     // accelerate to the middle (or to the cap), brake the rest
     double t = 2.0 * std::sqrt(std::max(0.0, distanceM) / a);
@@ -301,9 +301,9 @@ double estimateLegChargeT(double distanceM, double massT)
         const double dRamp = jd::SpeedCapMps * tRamp;   // both ramps
         t = 2.0 * tRamp + (distanceM - dRamp) / jd::SpeedCapMps;
         // the coast at the cap is not driven: only the ramps burn
-        return jd::jChargeRateTps(a, massT, jd::CobrettCoreRatingT) * 2.0 * tRamp;
+        return jd::jChargeRateTps(a, massT, coreRatingT) * 2.0 * tRamp;
     }
-    return jd::jChargeRateTps(a, massT, jd::CobrettCoreRatingT) * t;
+    return jd::jChargeRateTps(a, massT, coreRatingT) * t;
 }
 
 std::string encodeRoute(const PlannedRoute& route)

@@ -106,6 +106,11 @@ struct ShipParams
     // pitch = right/X, yaw = up/Y, roll = forward/Z.
     double massKg                = 1.0;
 
+    // The jump drive (architecture audit item 4: the ship's own figures, not constants): the core's
+    // mass rating (t) and the jump-charge capacity (t, its tanks); 0 = no jump drive (no J).
+    double jumpCoreRatingT       = 0.0;
+    double jumpChargeCapacityT   = 0.0;
+
     // Explicit center of mass in canonical ship-local coordinates:
     // +X right, +Y up, -Z forward, +Z aft. Existing ships keep the previous
     // implicit behavior by defaulting to the local origin.

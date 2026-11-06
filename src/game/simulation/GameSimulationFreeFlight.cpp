@@ -1405,6 +1405,58 @@ void GameSimulation::updateFreeFlights(double dt)
         motion.velocityReferenceKind = f.ground.active ? 4 : (referenceIsRoot ? 1 : 2);
         motion.mainEngineMaxMps2 = mainEngineAccelMps2(*ship);
 
+        // ---- the client's global-flight command (NAVIGATION_V2 §1): the J field tracks its
+        // acceleration within the rules, the hull slews to its attitude target
+        const auto& control = ship->core().control();
+        const bool globalCommand = control.globalFlightCommandValid && f.autopilotTargetId.empty() && !f.legRun.active &&
+                                   !f.ground.active && !motion.jEngine;
+        if (globalCommand)
+        {
+            namespace jd = game::navigation::jdrive;
+            const double g = jd::StandardGravityMps2;
+            glm::dvec3 a = control.globalJAccelWorldMps2;
+            double mag = glm::length(a);
+            // the field's own ramp: from 1 g, doubling every DriveRampDoublingS - no step to 1e5 g
+            const double ramp = std::max(g, std::abs(motion.jAccelMps2) * std::exp2(dt / jd::DriveRampDoublingS));
+            mag = std::min({mag, ramp, jd::MaxAccelMps2});
+            if (mag > 0.0)
+            {
+                std::string why;
+                if (const int blocked = jEngineBlocked(it->first, motion.systemId, frame.originMeters, why))
+                {
+                    mag = 0.0;
+                    motion.freeFlightCaptureRefusal = code(blocked == code(FlightRefusal::JRefusedNearObject)
+                                                               ? FlightRefusal::JDroppedNearObject
+                                                               : FlightRefusal::BelowJFloorMainEngines);
+                }
+                else if (motion.jChargeT == 0.0 || motion.jumpCoreRatingT <= 0.0)
+                {
+                    mag = 0.0;
+                    motion.freeFlightCaptureRefusal = code(FlightRefusal::JChargeEmpty);
+                }
+            }
+            if (mag > 0.0)
+                frame.linearVelocityMps += glm::normalize(a) * (mag * dt);
+            motion.jAccelMps2 = mag;
+            if (control.globalAttitudeTargetValid && glm::length(control.globalAttitudeForward) > 1.0e-9)
+            {
+                // the J field turns the hull freely (~115 deg/s); on the main engines its own rate limits it
+                const glm::dvec3 fwd = glm::normalize(control.globalAttitudeForward);
+                glm::dvec3 up = control.globalAttitudeUp - fwd * glm::dot(control.globalAttitudeUp, fwd);
+                up = glm::length(up) > 1.0e-9 ? glm::normalize(up) : glm::dvec3(tr.up());
+                const glm::dvec3 right = glm::cross(fwd, up);
+                const glm::dquat wanted = glm::quat_cast(glm::dmat3(right, up, -fwd));
+                const glm::dquat current = glm::quat_cast(glm::dmat3(glm::mat3(tr.orientation)));
+                glm::dquat target = glm::dot(current, wanted) < 0.0 ? -wanted : wanted;
+                const double angle = glm::angle(target * glm::inverse(current));
+                const double rate = mag > 0.0 ? 2.0 : std::clamp(static_cast<double>(ship->core().effectivePhysics().maxPitchRate), 0.2, 2.0);
+                const double step = rate * dt;
+                const glm::dquat next = angle > step ? glm::slerp(current, target, step / angle) : target;
+                tr.orientation = glm::mat4(glm::mat3(glm::mat3_cast(next)));
+                tr.pitchRate = tr.yawRate = tr.rollRate = 0.0f;
+            }
+        }
+
         // ---- the J engine: the J field along the main-engine thrust, in place of it
         if (motion.jEngine && !f.ground.active)
         {
@@ -1500,8 +1552,8 @@ void GameSimulation::updateFreeFlights(double dt)
             const bool autopilotJ = (!f.autopilotTargetId.empty() &&
                                      (shown == AutopilotDisplayPhase::Departure || shown == AutopilotDisplayPhase::Transfer ||
                                       shown == AutopilotDisplayPhase::Approach)) ||
-                                    (f.legRun.active && !f.legRun.takeOff);
-            const double a = motion.jEngine ? motion.jAccelMps2 : autopilotJ ? motion.freeFlightAutopilotAccelMps2 : 0.0;
+                                    (f.legRun.active && !f.legRun.takeOff) || globalCommand;
+            const double a = motion.jEngine || globalCommand ? motion.jAccelMps2 : autopilotJ ? motion.freeFlightAutopilotAccelMps2 : 0.0;
             if (a != 0.0 && motion.jChargeT > 0.0)
             {
                 const double massT = ship->core().effectivePhysics().massKg / 1000.0;
@@ -1606,7 +1658,7 @@ void GameSimulation::updateFreeFlights(double dt)
                 const auto& control = ship->core().control();
                 const bool steering = std::abs(control.pitchInput) > 0.05f || std::abs(control.yawInput) > 0.05f;
                 if (motion.localControlLaw == game::navigation::LocalFlightControlLaw::Assisted && f.autopilotTargetId.empty() &&
-                    !f.legRun.active && !f.ground.active)
+                    !f.legRun.active && !f.ground.active && !globalCommand)
                 {
                     // the hull holds the velocity (prograde) when the pilot does not steer:
                     // thrust stays along the velocity while gravity bends the path

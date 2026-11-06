@@ -35,7 +35,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 23u;
+inline constexpr std::uint16_t WireProtocolVersion = 24u;
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -599,6 +599,14 @@ inline bool encodeShipControlState(
     writer.boolean(value.localControlLawCommandValid);
     writer.u8(static_cast<std::uint8_t>(value.requestedLocalControlLaw));
     writer.u8(static_cast<std::uint8_t>(value.velocityAlignmentCommand));
+    writer.boolean(value.globalFlightCommandValid);
+    writer.boolean(value.globalAttitudeTargetValid);
+    for (const glm::dvec3* v : {&value.globalJAccelWorldMps2, &value.globalAttitudeForward, &value.globalAttitudeUp})
+    {
+        writer.f64(v->x);
+        writer.f64(v->y);
+        writer.f64(v->z);
+    }
     writer.u64(value.controlTick);
     return true;
 }
@@ -628,6 +636,14 @@ inline bool decodeShipControlState(
         !reader.boolean(outValue.localControlLawCommandValid) ||
         !reader.u8(controlLaw) ||
         !reader.u8(alignmentMode) ||
+        !reader.boolean(outValue.globalFlightCommandValid) ||
+        !reader.boolean(outValue.globalAttitudeTargetValid) ||
+        !reader.f64(outValue.globalJAccelWorldMps2.x) || !reader.f64(outValue.globalJAccelWorldMps2.y) ||
+        !reader.f64(outValue.globalJAccelWorldMps2.z) ||
+        !reader.f64(outValue.globalAttitudeForward.x) || !reader.f64(outValue.globalAttitudeForward.y) ||
+        !reader.f64(outValue.globalAttitudeForward.z) ||
+        !reader.f64(outValue.globalAttitudeUp.x) || !reader.f64(outValue.globalAttitudeUp.y) ||
+        !reader.f64(outValue.globalAttitudeUp.z) ||
         !reader.u64(outValue.controlTick))
     {
         return false;

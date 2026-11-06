@@ -92,5 +92,16 @@ struct ShipControlState
     // prevents a millimetres-per-second trim from waking a main engine.
     bool navigationPrecisionTranslationOnly = false;
 
+    // Global flight (the CLIENT's autopilots -> the server's plant; NAVIGATION_V2 §1, author decision
+    // 2026-11-06): a J-field acceleration (world axes) and an attitude target, TRACKED by the server every
+    // tick within the rules (max / ramp / keep-out / J floor / charge / 0.9 c) - the main engines keep
+    // the ordinary main command (targetSpeedRate in normal flight). Ignored while a server-owned
+    // autopilot / route leg / ground frame flies the ship.
+    bool globalFlightCommandValid = false;
+    glm::dvec3 globalJAccelWorldMps2 {0.0};
+    bool globalAttitudeTargetValid = false;
+    glm::dvec3 globalAttitudeForward {0.0, 0.0, -1.0};
+    glm::dvec3 globalAttitudeUp {0.0, 1.0, 0.0};
+
     std::uint64_t controlTick = 0;
 };

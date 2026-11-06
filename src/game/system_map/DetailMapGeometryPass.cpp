@@ -1,6 +1,6 @@
 #include "src/game/system_map/DetailMapGeometryPass.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
-#include "src/game/system_map/SystemMapRendererInternal.h"
+#include "src/game/system_map/PlanetMapAxes.h"
 
 #include <algorithm>
 #include <array>

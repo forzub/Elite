@@ -51,35 +51,22 @@ try:
         "maxLateralAccelerationMps2",
     )
 
-    # Stage 5C replaces local corner fillets with one global cubic B-spline
-    # search. The coarse path selects topology; the smoother is allowed to
-    # deviate/lengthen it, while canonical obstacle safety remains absolute.
-    require(
-        "src/world/navigation/SmoothPathOptimizer.h",
-        "class SmoothPathOptimizer",
-        "sourceProgressMeters",
-        "maxSupportLevel",
-        "maxCurvaturePerMeter",
-        "curvatureVariation",
-    )
+    # Stage 5C's custom global B-spline smoother was retired by NAV-RUCKIG-1
+    # (9df31a2a). Its symbol remains only so stale callers fail closed; the
+    # TrajectoryGenerator must not route through it (no second motion backend).
     require(
         "src/world/navigation/SmoothPathOptimizer.cpp",
-        "openUniformKnots",
-        "evaluateSpline",
-        "adaptiveSample",
-        "segmentIntersectsNavigationObstacle",
-        "Smoothness dominates distance deliberately",
-        "selectedSupportLevel",
+        "#ifndef ELITE_LEGACY_SMOOTH_PATH_TEST_COMPAT",
+        "out.valid = false",
     )
     forbid(
         "src/world/navigation/TrajectoryGenerator.cpp",
+        "SmoothPathOptimizer::optimize",
         "buildSmoothedAnchors",
         "actualRadius = trim / tanHalf",
-        "radiusMeters * tanHalf",
     )
     require(
         "src/world/navigation/TrajectoryGenerator.cpp",
-        "SmoothPathOptimizer::optimize",
         "maxBrakingAccelerationMps2",
         "maxForwardAccelerationMps2",
         "maxLateralAccelerationMps2",
@@ -87,8 +74,8 @@ try:
     require(
         "src/world/navigation/TrajectoryGenerator.h",
         "double universeTimeScale = 1.0",
-        "maxSmoothSupportLevel",
-        "maxCurveChordErrorMeters",
+        "struct TrajectoryGenerationPolicy",
+        "Ruckig state-to-state solve policy",
     )
 
     for path in (
@@ -122,35 +109,32 @@ try:
         "src/game/client/ClientNavigationPlanningSnapshotFactory.h",
         "HubPredictionSource hubPredictionSource",
     )
+    # The client route autopilot (RouteExecutionCore) is the live consumer.
     require(
-        "src/game/SpaceState.cpp",
+        "src/game/navigation/autopilot/RouteExecutionCore.cpp",
         "TrajectoryGenerator::generate",
-        "preferredTurnRoom",
-        "buys smoothness with distance",
-        "maxSmoothSupportLevel",
         "pointSpeedConstraints",
-        "speedLimitRanges",
-        "terminalAllowedObstacleId",
-        "[Trajectory] request=",
     )
 
     cmake = text("CMakeLists.txt")
-    if cmake.count("src/world/navigation/SmoothPathOptimizer.cpp") < 2:
-        raise AssertionError("SmoothPathOptimizer is not available to both client and server")
     if cmake.count("src/world/navigation/TrajectoryGenerator.cpp") < 2:
         raise AssertionError("TrajectoryGenerator is not available to both client and server")
 
+    # tests/navigation_guidance was retired (91f24d13); the generator's
+    # behavioural regressions live in the navigation_ruckig suite.
     require(
-        "tests/navigation_guidance/NavigationGuidanceTests.cpp",
-        "testTrajectoryGeneratorParameterizesStraightPath",
-        "testTrajectoryGeneratorSmoothsCornerWithoutCuttingObstacle",
-        "testTrajectoryGeneratorHonorsHardDockingIngress",
-        "testTrajectoryGeneratorRejectsImpossibleInitialBraking",
-        "testTrajectoryGeneratorIsDeterministicAndInputPure",
-        "testTrajectoryGeneratorUsesGlobalBSplineSmoothing",
+        "tests/navigation_ruckig/TrajectoryGeneratorAngularTests.cpp",
+        "testAuthoredPathGeometryIsNotRedrawn",
+        "testAuthoredArcStaysInsideAccelerationEnvelope",
+        "testPlanningReserveStaysBelowHardLateralEnvelope",
+        "TRAJECTORY GENERATOR ANGULAR TESTS: PASS",
+    )
+    require(
+        "tests/navigation_ruckig/CMakeLists.txt",
+        "TrajectoryGeneratorAngularTests.cpp",
     )
 
-    print("[PASS] global smooth time-parameterized trajectory generator")
+    print("[PASS] Ruckig-based time-parameterized trajectory generator; retired smoother fails closed")
 except (AssertionError, FileNotFoundError, ValueError) as exc:
     print(f"[FAIL] {exc}", file=sys.stderr)
     sys.exit(1)

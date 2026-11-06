@@ -1,19 +1,24 @@
 from pathlib import Path
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1])); import source_units  # noqa: E402,F401  (split classes read as one unit)
+
 ROOT = Path(__file__).resolve().parents[2]
 
 terminal = (
     ROOT / "src/game/presentation/DockingStatusTerminal.h"
 ).read_text(encoding="utf-8")
-space = (
-    ROOT / "src/game/SpaceState.cpp"
-).read_text(encoding="utf-8")
+space = (ROOT / "src/game/SpaceState.cpp").read_text(encoding="utf-8", errors="replace")
 safety_h = (
     ROOT / "src/game/navigation/PreplanningSafetyCourse.h"
 ).read_text(encoding="utf-8")
 safety_cpp = (
     ROOT / "src/game/navigation/PreplanningSafetyCourse.cpp"
 ).read_text(encoding="utf-8")
+
+# Comments may name the layers the terminal must NOT own; check code only.
+terminal_code = "\n".join(
+    line.split("//", 1)[0] for line in terminal.splitlines()
+)
 
 # Terminal is presentation-only: no navigation, rendering, audio or SpaceState
 # dependency may leak into the pure state machine.
@@ -26,7 +31,7 @@ for forbidden in [
     "Audio",
     "GameClient",
 ]:
-    assert forbidden not in terminal, (
+    assert forbidden not in terminal_code, (
         f"docking terminal leaked external dependency: {forbidden}"
     )
 

@@ -2,6 +2,7 @@
 from pathlib import Path
 
 from model_asset_editor_source_bundle import load_source_bundle
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -147,7 +148,8 @@ regen_body = between(
     "nlohmann::json ModelAssetEditorSession::serializeAssetMetadata",
 )
 for token in (
-    "buildComponentCullMesh",
+    # Component cull became cull + surface simplification (6e3f9add).
+    "generateLodGeometryMesh(",
     'targetLod.sourceKind != "generated"',
     "manualSkipped",
     "sourceIsVariant",
@@ -231,7 +233,8 @@ for token in (
 if source_stage.index("maintenanceSourceScanHtml()") > source_stage.index("wizardSourceRefreshBtn"):
     raise AssertionError("SOURCE change scan must remain visible before whole-asset reimport controls")
 
-handle = between(web, "function handle(msg)", "function connect()")
+# Backend messages are routed by the handler table in session/handlers.js.
+handle = (ROOT / "src/assets/webui/model_asset_editor/session/handlers.js").read_text(encoding="utf-8")
 for token in (
     "source_change_scan_result",
     "state.wizardStage==='source'",
@@ -240,9 +243,6 @@ for token in (
     if token not in handle:
         raise AssertionError(f"SOURCE scan result routing missing {token!r}")
 
-require(
-    "tools/model_asset_editor/EditorVersion.h",
-    'ModelAssetEditorVersion = "0.10.73"',
-)
+require_editor_version_at_least("0.10.73")
 
 print("[PASS] model asset editor v0.10.73 maintenance / exact-hash SOURCE apply / manual SAVE")

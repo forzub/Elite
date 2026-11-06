@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import re
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT=Path(__file__).resolve().parents[2]
 HTML=ROOT/'src/assets/webui/model_asset_editor.html'
@@ -37,7 +38,7 @@ assert 'fragments.stageCheck' not in workspace
 assert 'fragments.stageCheck' not in structural
 assert "wizardStageCheckControls('semantics')" not in effects
 
-assert re.search(r'ModelAssetEditorVersion\s*=\s*"0.10.87"',version), 'editor version must be 0.10.87'
+assert editor_version_at_least("0.10.87"), 'editor version must be 0.10.87'
 print('MODEL ASSET EDITOR STAGE FOOTER LAYOUT: PASS')
 print(' - SOURCE through BUILD share one bottom-of-tab CHECK/BUILD footer')
 print(' - all supplemental authoring sections render above that footer')

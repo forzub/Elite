@@ -3,6 +3,8 @@
 from pathlib import Path
 import sys
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1])); import source_units  # noqa: E402,F401  (split classes read as one unit)
+
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 errors = []
@@ -54,7 +56,7 @@ if object_snapshot_h.is_file():
         fail(object_snapshot_h, "ObjectSnapshot does not carry stable hub binding")
 
 if simulation_cpp.is_file():
-    text = simulation_cpp.read_text(encoding="utf-8", errors="replace")
+    text = (ROOT / "src/game/simulation/GameSimulation.cpp").read_text(encoding="utf-8", errors="replace")
     for required in (
         "o.hubAttachment.systemId = obj.systemId",
         "o.hubAttachment.hubId = obj.hubId",
@@ -141,8 +143,10 @@ if client_world_cpp.is_file():
         "sameReferenceFrame(",
         "sampleRenderReferenceFrame",
         "interpolateReferenceFramePresentation(",
-        "itOld->referenceFrame.localPositionMeters",
-        "itNew->referenceFrame.localPositionMeters",
+        # 2174fa3c: both co-frame samples go through the shared two-snapshot
+        # playhead; the local position comes from it, not from raw samples.
+        "interpolateRemoteShipPresentation(",
+        "deadReckoning.localPositionMeters",
         "ship.renderReferenceFrame.localPositionMeters",
         "ship.renderReferenceFrame.localToWorldPosition(",
     ):

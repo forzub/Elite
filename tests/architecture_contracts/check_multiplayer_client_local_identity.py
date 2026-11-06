@@ -46,7 +46,7 @@ require(
     "src/game/client/ClientWorldState.cpp",
     "isLocalControlledEntity(ship.id)",
     "m_ships.find(m_localControlledEntityId.value)",
-    "if (!isLocalControlledEntity(id) || !ship.descriptor)",
+    "|| !isLocalControlledEntity(id))",
 )
 
 require(

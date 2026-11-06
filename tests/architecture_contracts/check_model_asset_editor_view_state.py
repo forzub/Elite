@@ -41,8 +41,11 @@ def js_function(data: str, name: str) -> str:
     raise AssertionError(f"unterminated JS function {name}")
 
 
-web = text("src/assets/webui/model_asset_editor.html")
+# The view state, runtime state, invariants and workflow effects moved from the
+# HTML composition root into ES modules (app/, effects/, transport/, viewport/);
+# the contract reasons about the whole source bundle.
 web_bundle = load_source_bundle(ROOT)
+web = web_bundle
 session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
 contract = text("tools/model_asset_editor/PATCH_CONTRACT.md")
 
@@ -51,12 +54,15 @@ for token in (
     "class EditorViewState",
     "this.activeLod=0;this.sceneLod=null;this.pendingActiveLod=null;",
     "this.selectedRenderNode=null;this.selectedRenderNodeId=null;this.selectedMeshId=null;this.selectedSemanticNode=null;",
-    "this.visibilityByLod=new Map();this.hiddenSemanticByLod=new Map();this.isolationByLod=new Map();",
-    "this.loadedLods=new Set();this.residentLods=new Set();",
-    "geometryInventoryVisibleByLod:{get:()=>editorViewState.geometryInventoryVisibility}",
-    "lodPreflightVisibleByLod:{get:()=>editorViewState.lodPreflightVisibility}",
-    "geometryStageVisibleByLod:{get:()=>editorViewState.geometryStageVisibility}",
-    "hiddenRenderNodes:{get:()=>editorViewState.hiddenRenderNodes}",
+    "this.visibilityByLod=new Map();",
+    "this.hiddenSemanticByLod=new Map();",
+    "this.isolationByLod=new Map();",
+    "this.loadedLods=new Set();",
+    "this.residentLods=new Set();",
+    "geometryInventoryVisibleByLod:{get:()=>view.geometryInventoryVisibility}",
+    "lodPreflightVisibleByLod:{get:()=>view.lodPreflightVisibility}",
+    "geometryStageVisibleByLod:{get:()=>view.geometryStageVisibility}",
+    "hiddenRenderNodes:{get:()=>view.hiddenRenderNodes}",
 ):
     if token not in web:
         raise AssertionError(f"EditorViewState authority missing {token!r}")
@@ -121,7 +127,7 @@ for token in (
 invariant = js_function(web, "assertEditorViewInvariant")
 for token in (
     "Number(state.sceneLod)!==Number(state.activeLod)",
-    "reportEditorDiagnostic('state_invariant'",
+    "reportDiagnostic('state_invariant'",
     "throw error",
     "renderNodeGroups.length>0",
     "residentLods.has(Number(state.sceneLod))",
@@ -141,11 +147,16 @@ for token in (
 
 # A received payload becomes resident cache. It may become active only if it was
 # the explicitly pending target, so async traffic cannot steal the viewport LOD.
-handle = js_function(web, "handle")
+# The backend message handlers live in session/handlers.js as a handler table.
+handle_start = web.index("lod_payload:msg=>{")
+handle = web[handle_start:web.index("\n  },", handle_start)]
 for token in (
     "editorViewState.syncResidency(state.asset)",
     "const activate=state.pendingActiveLod===li",
-    "if(activate){state.activeLod=li;state.pendingActiveLod=null;rebuildScene(true);}",
+    "if(activate){",
+    "state.activeLod=li;",
+    "state.pendingActiveLod=null;",
+    "rebuildScene(true);",
 ):
     if token not in handle:
         raise AssertionError(f"LOD payload activation boundary missing {token!r}")
@@ -154,9 +165,9 @@ for token in (
 # GEOMETRY map names are adapters and must not be independently ANDed here.
 visibility = js_function(web, "updateVisibility")
 for token in (
-    "editorViewVisible=editorViewState.renderNodeVisible(state.activeLod,i,rn)",
-    "transformCarrier=!editorViewVisible&&geometrySelectionNeedsAncestor(i,lod)",
-    "child.visible=editorViewVisible&&lodGeneratorNodePassesMeshFilter(rn,lodGeneratorSelectedGeometry(state.wizardStage,state.lodAnalysis,state.lodGeneratorMeshSelection,state.activeLod,activeRenderLod(state.asset?.renderLods,state.activeLod)))",
+    "editorViewVisible=editorViewState.renderNodeVisible(state.activeLod,index,renderNode)",
+    "transformCarrier=!editorViewVisible&&geometrySelectionNeedsAncestor(index,lod)",
+    "child.visible=editorViewVisible&&lodGeneratorNodePassesMeshFilter(renderNode,selectedGeometry)",
 ):
     if token not in visibility:
         raise AssertionError(f"authoritative viewport visibility missing {token!r}")
@@ -177,8 +188,8 @@ for token in (
     'data-wizard-groups="semantics physics damage validate build"',
     "function renderSharedStageMeshPanel()",
     "data-shared-mesh-lod",
-    "● ПОКАЗАТЬ ВСЕ",
-    "○ СПРЯТАТЬ ВСЕ",
+    "tr('model_editor.action.show_all','SHOW ALL')",
+    "tr('model_editor.action.hide_all','HIDE ALL')",
     "check.type='checkbox'",
     "editorViewState.setRenderNodeVisible(state.activeLod,i,check.checked)",
     "row.onclick=()=>selectRenderNode(i)",
@@ -191,12 +202,12 @@ for token in (
 # Browser diagnostics are captured before they can disappear into DevTools and
 # are appended in the per-asset WORKING workspace logs directory.
 for token in (
-    "window.addEventListener('error'",
-    "reportEditorDiagnostic('js_exception'",
-    "window.addEventListener('unhandledrejection'",
-    "reportEditorDiagnostic('unhandledrejection'",
-    "reportEditorDiagnostic('websocket_dispatch'",
-    "reportEditorDiagnostic('ui_dispatch'",
+    "windowObject.addEventListener('error'",
+    "report('js_exception'",
+    "windowObject.addEventListener('unhandledrejection'",
+    "report('unhandledrejection'",
+    "report('websocket_dispatch'",
+    "reportDiagnostic('ui_dispatch'",
     "timestamp:new Date().toISOString()",
     "stage:state.wizardStage",
     "activeLod:Number(state.activeLod)",

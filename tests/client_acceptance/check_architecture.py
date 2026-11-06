@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -36,7 +37,10 @@ harness = read(HARNESS)
 mapper = read(MAPPER)
 game_client = read(GAME_CLIENT)
 application = read(APPLICATION)
-space = read(SPACE)
+# SpaceState.cpp was split into SpaceState*.cpp units (Maps, Hud, Route, ...).
+space = "\n".join(
+    read(path) for path in sorted(SPACE.parent.glob("SpaceState*.cpp"))
+)
 space_header = read(SPACE_HEADER)
 space_init = read(SPACE_INIT)
 hud_presentation = read(HUD_PRESENTATION)
@@ -98,7 +102,7 @@ for forbidden in (
     if forbidden in harness:
         fail(f"harness bypasses the client/server path via: {forbidden}")
 
-if "updateFromKeyState(control, keys, currentLocalControlLaw)" not in mapper:
+if not re.search(r"updateFromKeyState\(control, keys, currentLocalControlLaw[,)]", mapper):
     fail("runtime PlayerInputMapper no longer shares the injectable mapping path")
 
 # F1-F12 are one protected player-facing presentation keyboard. Flight is an
@@ -176,15 +180,17 @@ for token in (
     if token not in application:
         fail(f"modified F-key chord separation lost: {token}")
 
+# The law-only Ctrl+F10 mapper toggle and its debounce were deleted
+# (7af378ac, efaf8843); the flight-law command is latched by GameClient.
+for token in ("CtrlF10State", "kCtrlF10ReleaseDebounceSamples"):
+    if token in mapper:
+        fail(f"obsolete Ctrl+F10 mapper toggle came back: {token}")
 for token in (
-    "const bool f10Down = keys.isKeyPressed(GLFW_KEY_F10)",
-    "CtrlF10State::ReleaseDebounce",
-    "kCtrlF10ReleaseDebounceSamples",
     "localControlLawCommandValid",
     "requestedLocalControlLaw",
 ):
-    if token not in mapper:
-        fail(f"Ctrl+F10 flight-law mapping lost: {token}")
+    if token not in game_client:
+        fail(f"flight-law command path lost from GameClient: {token}")
 
 for token in (
     "m_hasPendingLocalControlLawCommand = true",
@@ -196,8 +202,10 @@ for token in (
         fail(f"render/fixed-step command latch lost: {token}")
 
 for token in (
-    "CoordinateDisplayService::instance()",
-    ".cycle()",
+    # 7d9b9d2f: the format is client mode state, cycled by the Application.
+    "cycleCoordinateDisplayFormat();",
+    "nextCoordinateDisplayFormat(current)",
+    "m_clientModeState.setCoordinateDisplayFormatId(",
     "functionKey == 11 && ctrlDown && !altDown",
 ):
     if token not in application:
@@ -217,7 +225,8 @@ for token in (
         fail(f"F12 service-chord path no longer uses: {token}")
 
 for token in (
-    "m_constellationOverlayEnabled",
+    # 7d9b9d2f: the overlay flag is client mode state, pushed to the scene.
+    "modes.constellationsEnabled",
     "setConstellationOverlayEnabled",
 ):
     if token not in space:
@@ -364,7 +373,8 @@ for token in (
 for token in (
     "rebuildUnboundSpatialDetailMap",
     "empty-sector Details did not compose without a celestial system",
-    "const int selectedId = m_loadedSystemMapId",
+    "const int selectedId =\n        mode == SystemMapRenderer::Mode::Detail && m_loadedDetailTarget.valid()",
+    ": m_loadedSystemMapId;",
     "setSystemMapLoadedSystemMode()",
 ):
     if token not in game_client + space + harness + read(ROOT / "src/game/client/ClientDetailMapBridge.h"):

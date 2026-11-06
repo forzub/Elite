@@ -2,6 +2,7 @@
 """v0.10.74: shared high-tech UI chrome + contextual help without reopening stage cores."""
 from pathlib import Path
 import re
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 VERSION = (ROOT / 'tools/model_asset_editor/EditorVersion.h').read_text(encoding='utf-8')
@@ -13,16 +14,19 @@ MODEL = (ROOT / MODEL_REL).read_text(encoding='utf-8')
 EFFECT = (ROOT / EFFECT_REL).read_text(encoding='utf-8')
 I18N = (ROOT / I18N_REL).read_text(encoding='utf-8')
 
-if 'ModelAssetEditorVersion = "0.10.74"' not in VERSION:
+if not editor_version_at_least("0.10.74"):
     raise AssertionError('editor version is not 0.10.74')
 
 for path in (ROOT / MODEL_REL, ROOT / EFFECT_REL):
     if not path.is_file():
         raise AssertionError(f'missing UI chrome module: {path.relative_to(ROOT)}')
 
-if "import './ui_chrome.js';" not in I18N:
+# Since the localization close (db8da232) i18n.js imports the chrome effect as a
+# default binding and installs it explicitly instead of a side-effect import.
+chrome_imports = re.findall(r"import\s+(?:\w+\s+from\s+)?'./ui_chrome.js';", I18N)
+if not chrome_imports:
     raise AssertionError('I18N effect must load the shared UI chrome effect')
-if I18N.count("import './ui_chrome.js';") != 1:
+if len(chrome_imports) != 1:
     raise AssertionError('UI chrome bootstrap import must occur exactly once')
 
 # UI chrome is a new subsystem born physically separated. It must not be copied
@@ -50,8 +54,11 @@ for rel,source in ((MODEL_REL,MODEL),(EFFECT_REL,EFFECT)):
     if re.search(r'\bfunction\s+[A-Za-z_$][\w$]*\s*\(', source):
         raise AssertionError(f'new UI module introduced owned named functions without an ownership wave: {rel}')
 
+# The pure model exports shorthand properties ({normalizeText,keepVisible,topicFor,...}).
+for name in ('normalizeText', 'keepVisible', 'topicFor'):
+    if not re.search(r'\b' + name + r'\s*[:,}]', MODEL):
+        raise AssertionError(f'UI chrome pure model missing {name!r}')
 for token in (
-    'normalizeText:', 'keepVisible:', 'topicFor:',
     "'stage:source'", "'stage:lods'", "'stage:geometry'", "'stage:surfaces'", "'stage:semantics'",
     "'stage:physics'", "'stage:damage'", "'stage:validate'", "'stage:build'",
 ):

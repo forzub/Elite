@@ -1,8 +1,10 @@
 from pathlib import Path
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1])); import source_units  # noqa: E402,F401  (split classes read as one unit)
+
 ROOT = Path(__file__).resolve().parents[2]
 
-space = (ROOT / "src/game/SpaceState.cpp").read_text(encoding="utf-8")
+space = (ROOT / "src/game/SpaceState.cpp").read_text(encoding="utf-8", errors="replace")
 header = (ROOT / "src/game/SpaceState.h").read_text(encoding="utf-8")
 executor = (
     ROOT / "src/game/navigation/assisted/AssistedSafeCourseExecutor.h"
@@ -18,11 +20,13 @@ required = [
     "constexpr std::uint32_t MaxEntryConnectorMisses = 4;",
     "phase=entry-rebind-exhausted",
     "dock entry connector handoff did not converge",
-    "player.controlAuthorityTelemetry",
-    "phase=awaiting-server-capability",
+    # The capability gate moved behind the MotherComputer (638ad118): the
+    # client reads replicated motor telemetry through its adapter and
+    # reports the pre-planner rejection reason.
+    "m_motherComputer.snapshot()",
+    "phase=preplanner-blocked",
     "phase=capability-ready",
     "authoritative motor telemetry lost during docking",
-    "applyAuthorityToControlParams",
     "m_dockPlannedAssistedAuthority = liveAssistedAuthority",
     "hasSignificantAssistedAuthorityLoss",
     "accepted-trajectory-invalidated",
@@ -31,6 +35,13 @@ required = [
 ]
 for token in required:
     assert token in space, f"missing restored Assisted docking-entry contract: {token}"
+
+mother_adapter = (
+    ROOT / "src/game/ship/computer/MotherComputerClientAdapter.h"
+).read_text(encoding="utf-8")
+assert "ship.controlAuthorityTelemetry" in mother_adapter, (
+    "MotherComputer no longer consumes the replicated motor telemetry"
+)
 
 # Assisted-only moving-start lead and moving-worker handoff contracts.
 # Newtonian keeps the original conservative generic lead policy.
@@ -150,7 +161,7 @@ assert 'D:/tmp/elite_docking_planner.log' in space
 retry_start = space.index("++m_dockLateEntry.rebindAttempts;")
 retry_exhaustion = space.index("phase=entry-rebind-exhausted", retry_start)
 retry_fail = space.index(
-    'fail("dock entry connector handoff did not converge");',
+    'recoverOrFail("dock entry connector handoff did not converge");',
     retry_exhaustion,
 )
 retry_log = space.index("phase=entry-rebind-retry", retry_fail)
@@ -242,9 +253,7 @@ ship_snapshot = (
 client_snapshot = (
     ROOT / "src/game/client/ClientWorldState.h"
 ).read_text(encoding="utf-8")
-server = (
-    ROOT / "src/game/simulation/GameSimulation.cpp"
-).read_text(encoding="utf-8")
+server = (ROOT / "src/game/simulation/GameSimulation.cpp").read_text(encoding="utf-8", errors="replace")
 client_receive = (
     ROOT / "src/game/client/ClientWorldState.cpp"
 ).read_text(encoding="utf-8")
@@ -261,13 +270,14 @@ assert client_receive.count(
     "state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;"
 ) == 2
 assert "game::ship::telemetry::ShipControlAuthorityTelemetry," in wire
-assert "SimulationSnapshotWireSchemaVersion = 18u;" in schema
+# Schema version is not pinned here (it advances with every wire change).
+assert "SimulationSnapshotWireSchemaVersion = " in schema
 assert "m_dockReplicatedAssistedPrograms" not in space
 assert "readReplicatedAssistedControlAuthority" not in space
 
 # A virtual pilot must not turn installed motor damage into ideal geometry.
-assert "reservedCurveLateralAccelerationMps2" in space
-assert "ConcurrentTurnAxisFraction" in space
+# The curve-authority reservation lives in the dedicated client follower
+# (0070e896: one factual navigation capability), not in SpaceState.
 client_follow = (
     ROOT / "src/game/navigation/autopilot/DedicatedClientRouteAutopilot.h"
 ).read_text(encoding="utf-8")

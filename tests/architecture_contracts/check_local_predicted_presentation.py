@@ -21,8 +21,6 @@ require(
     "src/game/client/presentation/LocalPredictedPresentation.h",
     "sampleLocalPredictedPresentationTarget(",
     "ShipTransform target = fixedPredictedTransform;",
-    "ShipControlExecutionGateway::integrateAttitude(",
-    "predictHubTacticalMotion(",
     "fractionalStepSeconds",
     "fixedStepSeconds",
 )
@@ -42,6 +40,7 @@ require(
     "&m_localPredictedPresentationTarget",
     "playerPredictionRemainderMilliseconds",
     "playerRenderToFractionalTargetMeters",
+    "advanceReplicatedHubKinematics(",  # 4cc1bb90: no client engine solver
 )
 
 # The fractional presentation path must never overwrite the fixed predicted

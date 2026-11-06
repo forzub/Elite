@@ -8,8 +8,7 @@ README = (ROOT / "src/world/navigation/map/README.md").read_text(encoding="utf-8
 MAP_CMAKE = (ROOT / "src/world/navigation/map/CMakeLists.txt").read_text(encoding="utf-8")
 TEST_CMAKE = (ROOT / "tests/navigation_map/CMakeLists.txt").read_text(encoding="utf-8")
 TEST_CPP = (ROOT / "tests/navigation_map/NavigationMapContractTests.cpp").read_text(encoding="utf-8")
-CURRENT_STATE = (ROOT / "CURRENT_STATE.md").read_text(encoding="utf-8")
-CURRENT_TASK = (ROOT / "CURRENT_TASK.md").read_text(encoding="utf-8")
+FRAME_BOUNDARY = (ROOT / "src/game/navigation/NavigationFrameBoundary.h").read_text(encoding="utf-8")
 ARCH = (ROOT / "src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md").read_text(encoding="utf-8")
 
 
@@ -28,7 +27,11 @@ for forbidden in (
     "SpaceState",
     "ClientWorldState",
 ):
-    require(forbidden not in HEADER,
+    # Only #include lines count: comments may name the game/navigation adapter.
+    include_lines = "\n".join(
+        line for line in HEADER.splitlines() if line.lstrip().startswith("#include")
+    )
+    require(forbidden not in include_lines,
             f"public NavigationMap API leaks external dependency: {forbidden}")
 
 for marker in (
@@ -39,7 +42,6 @@ for marker in (
     "replaceDynamicWorld",
     "queryCorridor",
     "querySphere",
-    "WorkingFrame",
     "sourceRevision",
     "mapRevision",
 ):
@@ -47,8 +49,12 @@ for marker in (
 
 require("std::unordered_map<CellCoord" in IMPL,
         "CPU reference does not own its sparse spatial index internally")
-require("pointToMap" in IMPL and "vectorToMap" in IMPL,
-        "working-frame conversion escaped the NavigationMap block")
+# NavigationMap became NavLocal-only (33d1830a): system/world -> NavLocal
+# conversion is owned by the game-side NavigationFrameBoundary adapter.
+require("pointToMap" not in IMPL and "WorkingFrame" not in HEADER,
+        "NavigationMap regained its own working-frame conversion")
+require("NavLocal-only" in HEADER and "NavLocal" in FRAME_BOUNDARY,
+        "NavLocal frame conversion is no longer owned by NavigationFrameBoundary")
 require("conservativeSweptRadiusMeters" in IMPL,
         "NavigationMap does not own conservative dynamic prediction")
 require("cells.find" in IMPL,
@@ -82,11 +88,9 @@ for marker in (
     require(marker.lower() in README.lower(),
             f"NavigationMap boundary documentation missing: {marker}")
 
-require("NAV-V2-MAP-2" in CURRENT_TASK,
-        "CURRENT_TASK is not advanced to the active NavigationMap CPU/GPU measurement gate")
-require("NAV-V2-MAP-2" in CURRENT_STATE,
-        "CURRENT_STATE does not record the active NavigationMap CPU/GPU measurement gate")
-require("NavigationMap" in ARCH and "block boundary" in ARCH.lower(),
+# Legacy CURRENT_TASK/CURRENT_STATE stage markers are no longer checked
+# (PROJECT_STATE.md is the only living state file, AGENTS.md).
+require("## NavigationMap boundary" in ARCH,
         "navigation architecture does not define the NavigationMap block boundary")
 
 print("NAVIGATION MAP BOUNDARY CONTRACT: PASS")
@@ -95,4 +99,3 @@ print(" - spatial cells/prediction/backend state remain private")
 print(" - callers publish snapshots by value and receive compact query products by value")
 print(" - CPU reference is isolated from game/render/OpenGL dependencies")
 print(" - GPU backend can replace internals without changing planner call sites")
-print(" - project state/task agree on NAV-V2-MAP-2 measurement gate")

@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1])); import source_units  # noqa: E402,F401  (split classes read as one unit)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -37,10 +38,10 @@ assert "m_state.construction.nativeFlightControlLaw" in core
 assert "physicalControlModel" in snapshot
 assert "ship.core().state().construction.physicalControlModel" in simulation
 assert "v.physicalControlModel" in wire_schema
-assert "SimulationSnapshotWireSchemaVersion = 13u" in wire_codec
+assert "SimulationSnapshotWireSchemaVersion = " in wire_codec  # version not pinned
 
 assert "physicalControlModel" in client_h
-assert "ship.physicalControlModel" in client_cpp
+assert "state.physicalControlModel = s.physicalControlModel" in client_cpp
 assert "player.physicalControlModel" in space
 
 assert "functionKey == 9 && ctrlDown && !altDown" in app
@@ -50,7 +51,8 @@ assert "cyclePhysicalControlFamily()" in app
 assert "[Hotkey] F" in app
 assert "const auto model = ship.physicalControlModel;" in engine_hud
 assert "physicalControlSlots(model)" in engine_hud
-assert "buildShipCapability(" in engine_hud
+# db7739f9: the HUD shows replicated executed output; it reads slot state only.
+assert "buildPhysicalControlSlotState(" in engine_hud
 assert "descriptor.physicalControlModel" not in engine_hud.split(
     "const auto model = ship.physicalControlModel;", 1
 )[1].split("const bool assisted", 1)[0] or "model != descriptor.physicalControlModel" in engine_hud

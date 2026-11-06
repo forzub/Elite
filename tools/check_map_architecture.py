@@ -57,7 +57,19 @@ def check_receiver_contract(
     receiver: str,
     declaration: Path,
 ) -> None:
-    source_text = source.read_text(encoding="utf-8")
+    # The scene renderer / interaction moved from .inl include fragments to
+    # their own translation units; check every existing file of the stem.
+    sources = [
+        source.with_suffix(suffix)
+        for suffix in (".inl", ".h", ".cpp")
+        if source.with_suffix(suffix).exists()
+    ]
+    if not sources:
+        fail(source, "receiver-contract subject is missing")
+        return
+    source_text = "\n".join(
+        path.read_text(encoding="utf-8") for path in sources
+    )
     allowed = declared_methods(declaration)
     for member in sorted(
         set(re.findall(rf"\b{receiver}\.([A-Za-z_][A-Za-z0-9_]*)", source_text))
@@ -70,54 +82,56 @@ def check_receiver_contract(
 
 
 check_receiver_contract(
-    MAP_DIR / "SystemMapSceneRenderer.inl",
+    MAP_DIR / "SystemMapSceneRenderer.cpp",
     "viewState",
     MAP_DIR / "SystemMapView.h",
 )
 check_receiver_contract(
-    MAP_DIR / "SystemMapSceneRenderer.inl",
+    MAP_DIR / "SystemMapSceneRenderer.cpp",
     "context",
     MAP_DIR / "SystemMapRenderContext.h",
 )
 check_receiver_contract(
-    MAP_DIR / "LocalMapInteraction.inl",
+    MAP_DIR / "LocalMapInteraction.cpp",
     "detailView",
     MAP_DIR / "DetailMapView.h",
 )
 check_receiver_contract(
-    MAP_DIR / "LocalMapInteraction.inl",
+    MAP_DIR / "LocalMapInteraction.cpp",
     "hubView",
     MAP_DIR / "HubMapView.h",
 )
 
 
-# The shared backend must implement every context operation it inherits.
-renderer_header_path = MAP_DIR / "SystemMapRenderer.h"
-renderer_header = renderer_header_path.read_text(encoding="utf-8")
-for contract_name in (
-    "GalaxyMapRenderContext.h",
-    "SystemMapRenderContext.h",
-    "SystemMapInteraction.h",
-    "DetailMapRenderContext.h",
-    "HubMapRenderContext.h",
+# Every render/interaction context must be fully implemented by its backend.
+# (The facade implements only the galaxy/system contexts; the detail/hub passes
+# and the system interaction live in their own backends.)
+for contract_name, implementer_name in (
+    ("GalaxyMapRenderContext.h", "SystemMapRenderer.h"),
+    ("SystemMapRenderContext.h", "SystemMapRenderer.h"),
+    ("SystemMapInteraction.h", "SystemMapFrameInteractionContext.h"),
+    ("DetailMapRenderContext.h", "DetailMapBackend.h"),
+    ("HubMapRenderContext.h", "HubMapBackend.h"),
 ):
+    implementer_path = MAP_DIR / implementer_name
+    implementer_text = implementer_path.read_text(encoding="utf-8")
     contract_path = MAP_DIR / contract_name
     contract_text = contract_path.read_text(encoding="utf-8")
     pure_virtual_names = set(
         re.findall(
-            r"\bvirtual\s+[^;{}]*?\b([A-Za-z_][A-Za-z0-9_]*)\s*\([^;{}]*\)[^;{}]*=\s*0\s*;",
+            r"virtual\s+[^;{}]*?([A-Za-z_][A-Za-z0-9_]*)\s*\([^;{}]*\)[^;{}]*=\s*0\s*;",
             contract_text,
             flags=re.DOTALL,
         )
     )
     for method in sorted(pure_virtual_names):
         if not re.search(
-            rf"\b{method}\s*\([^;{{}}]*\)[^;{{}}]*\boverride\b",
-            renderer_header,
+            rf"{method}\s*\([^;{{}}]*\)[^;{{}}]*override",
+            implementer_text,
             flags=re.DOTALL,
         ):
             fail(
-                renderer_header_path,
+                implementer_path,
                 f"missing override for {contract_name}:{method}",
             )
 
@@ -150,7 +164,8 @@ for pattern in ("*SceneRenderer.*", "*Interaction.*", "*View.*"):
 
 # Regression guards for the helper/API breakages that previously compiled only
 # after stacking corrective patches.
-renderer_cpp = (MAP_DIR / "SystemMapRenderer.cpp").read_text(encoding="utf-8")
+# The shared geometry helpers live in the private renderer header.
+renderer_cpp = (MAP_DIR / "SystemMapRendererInternal.h").read_text(encoding="utf-8")
 for helper in (
     "planetEastAxisWorld",
     "systemBodyNorthAxisWorld",
@@ -165,7 +180,7 @@ for helper in (
     )
     if definitions != 1:
         fail(
-            MAP_DIR / "SystemMapRenderer.cpp",
+            MAP_DIR / "SystemMapRendererInternal.h",
             f"expected exactly one {helper} definition, found {definitions}",
         )
 

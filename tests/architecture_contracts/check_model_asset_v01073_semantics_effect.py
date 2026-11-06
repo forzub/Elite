@@ -6,6 +6,7 @@ import re
 
 import check_model_asset_function_purity as purity
 from model_asset_editor_source_bundle import load_source_bundle
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 HTML = (ROOT / 'src/assets/webui/model_asset_editor.html').read_text(encoding='utf-8')
@@ -16,7 +17,7 @@ REL = 'src/assets/webui/model_asset_editor/effects/semantics.js'
 SRC = (ROOT / REL).read_text(encoding='utf-8')
 BUNDLE = load_source_bundle(ROOT)
 
-if 'ModelAssetEditorVersion = "0.10.74"' not in VERSION:
+if not editor_version_at_least("0.10.74"):
     raise AssertionError('editor version is not 0.10.74')
 if CONTRACT['physical_split'].get('effect_extracted_modules') != ['i18n','lod_runtime','semantics']:
     raise AssertionError('wave7E effect extraction set must include i18n + lod_runtime + semantics')
@@ -81,7 +82,9 @@ for token in ('const changed=Object.keys(after).filter', "{context,changed,befor
         raise AssertionError(f'EditorViewState diagnostic does not report changed fields: {token!r}')
 
 inline_count=len(re.findall(r'\bfunction\s+[A-Za-z_$][\w$]*\s*\(',HTML))
-if inline_count != 212:
-    raise AssertionError(f'expected 212 inline named functions after SEMANTICS move, got {inline_count}')
+# Later extractions (application / transport / session / viewport layers) move
+# more functions out of the HTML; the count may only shrink.
+if inline_count > 212:
+    raise AssertionError(f'expected at most 212 inline named functions after SEMANTICS move, got {inline_count}')
 
 print('[PASS] Model Asset Editor v0.10.73 wave7E SEMANTICS effect extraction preserved under v0.10.74: 51 owned functions moved; initial tab render is projection-only; inline named functions=212')

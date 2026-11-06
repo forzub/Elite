@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from model_asset_editor_source_bundle import load_source_bundle
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -61,8 +62,8 @@ if "[SOURCE]" in catalog or "[RUNTIME]" in catalog:
 # The SOURCE geometry group has its own compact LOD browser and visibility controls.
 for token in [
     'id="geometryInventoryToolbar"',
-    "geometryInventoryVisibleByLod:{get:()=>editorViewState.geometryInventoryVisibility}",
-    "geometryInventorySelectedId:{get:()=>editorViewState.selectedMeshId",
+    "geometryInventoryVisibleByLod:{get:()=>view.geometryInventoryVisibility}",
+    "geometryInventorySelectedId:{get:()=>view.selectedMeshId",
     "function renderGeometryInventoryToolbar",
     "data-geometry-inventory-lod",
     "data-geometry-all-on",
@@ -89,7 +90,7 @@ if "send('save" in toolbar or "save_working" in toolbar:
 # Checkbox state projects into the authoritative EditorViewState; physical mesh
 # visibility reads that one state rather than independently ANDing the SOURCE map.
 visibility = function_body(web, "updateVisibility")
-if "editorViewState.renderNodeVisible(state.activeLod,i,rn)" not in visibility:
+if "editorViewState.renderNodeVisible(state.activeLod,index,renderNode)" not in visibility:
     raise AssertionError("SOURCE geometry visibility no longer reaches authoritative viewport state")
 if "geometryInventoryNodeVisible(rn,lod)" in visibility:
     raise AssertionError("SOURCE geometry map returned as an independent viewport visibility owner")
@@ -127,7 +128,12 @@ for forbidden in ("reload_lod", "reload_mesh_from_source", "reimport_asset", "sa
         raise AssertionError(f"geometry LOD view selector leaked mutating operation {forbidden!r}")
 
 # A different asset resets the single editor view state. Visibility is not serialized.
-if "editorViewState.resetForAsset()" not in function_body(web, "acceptAssetState"):
+# acceptAssetState resets through resetAssetScopedSession() (session/asset_acceptance.js).
+accept = function_body(web, "acceptAssetState")
+if "editorViewState.resetForAsset()" not in accept and not (
+    "resetAssetScopedSession()" in accept
+    and "editorViewState.resetForAsset()" in function_body(web, "resetAssetScopedSession")
+):
     raise AssertionError("asset switch does not reset authoritative EditorViewState")
 
 # The accepted SOURCE helper remains SOURCE-scoped for its own UI projection.
@@ -138,5 +144,5 @@ if "state.wizardStage!==\'source\'" not in function_body(web, "geometryInventory
 # Contract and visible version fence.
 require("tools/model_asset_editor/PATCH_CONTRACT.md", "SOURCE active-LOD mesh browser is viewport-only")
 require("tools/model_asset_editor/PATCH_CONTRACT.md", "first checkbox interaction isolates that mesh")
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.73"')
+require_editor_version_at_least("0.10.73")
 print("[PASS] model asset editor v0.10.73 SOURCE geometry LOD browser / visibility / selection")

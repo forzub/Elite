@@ -8,7 +8,6 @@ CMAKE = (BENCH / "CMakeLists.txt").read_text(encoding="utf-8")
 RUNNER = (BENCH / "run_mingw64.sh").read_text(encoding="utf-8")
 README = (BENCH / "README.md").read_text(encoding="utf-8")
 RUN_LOG = (BENCH / "RUN_LOG.md").read_text(encoding="utf-8")
-CURRENT_TASK = (ROOT / "CURRENT_TASK.md").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -62,16 +61,17 @@ for marker in (
     require(marker in README,
             f"avoidance benchmark documentation missing: {marker}")
 
-require("target-machine measurement pending" in RUN_LOG.lower(),
+def measured_or_pending(log: str, pending: str) -> bool:
+    """Either timing is still declared pending, or acceptance carries measured results."""
+    low = log.lower()
+    return pending in low or ("performance accepted" in low and "measured results" in low)
+
+
+require(measured_or_pending(RUN_LOG, "target-machine measurement pending"),
         "avoidance benchmark run log must not claim unmeasured acceptance")
 
-require(
-    "benchmarks/navigation_local_avoidance/" in CURRENT_TASK and
-    "behavior" in CURRENT_TASK.lower() and
-    "accepted" in CURRENT_TASK.lower() and
-    "benchmark" in CURRENT_TASK.lower(),
-    "CURRENT_TASK does not declare accepted behavior + active avoidance benchmark"
-)
+# Stage markers in the legacy CURRENT_TASK/CURRENT_STATE histories are no longer
+# checked: PROJECT_STATE.md is the only living state file (AGENTS.md).
 
 print("NAVIGATION LOCAL AVOIDANCE BENCHMARK CONTRACT: PASS")
 print(" - nominal clear and early-adjust paths are measured separately")

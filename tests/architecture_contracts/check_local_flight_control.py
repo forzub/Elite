@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import sys
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1])); import source_units  # noqa: E402,F401  (split classes read as one unit)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -81,9 +82,10 @@ for token in (
         fail(f"shared local motion law lost: {token}")
 
 for token in (
+    # The main thrust axis is the (gimballed) mainThrustDirection, not -f.
     "else if (reverseMainAccel > 1.0e-9)",
-    "motion.mainEngineAccelerationMps2 = -f * brakeAccel",
-    "-f * (mainThrustCommand * reverseMainAccel)",
+    "-mainThrustDirection * brakeAccel",
+    "-mainThrustDirection *\n                (mainThrustCommand * reverseMainAccel)",
 ):
     if token not in system:
         fail(f"Newtonian surviving-fore-main fallback lost: {token}")
@@ -113,7 +115,7 @@ for token in (
     "manoeuvreGasUsePerSecond",
     "manoeuvreGasRechargePerSecond",
     "manoeuvreGasRestartFraction",
-    "yieldAxisToManualRcs",
+    "yieldAxisToManualTranslation",
     "assistedLateralStabilizationAccel",
     "motion.assistedStabilizationAccelerationMps2",
 ):
@@ -123,8 +125,10 @@ for token in (
 for token in (
     "const double lateralResponse",
     "params.strafeDamping",
-    "manualRcsAcceleration +\n                motion.assistedStabilizationAccelerationMps2",
-    "Assisted doctrine is direction-coupled",
+    # cbf5e48e: per-slot actuators; the stabilizer keeps priority in the
+    # shared load envelope and main thrust yields (no RCS spill).
+    "Assisted doctrine gives velocity-to-nose correction priority",
+    "clampSecondaryToTotalAccelerationEnvelope(",
 ):
     if token not in system:
         fail(f"Assisted nose/course coupling regressed: {token}")
@@ -148,14 +152,11 @@ for forbidden in (
         fail(f"hard-coded player-only motion limit returned: {forbidden}")
 
 for token in (
-    "const bool f10Down = keys.isKeyPressed(GLFW_KEY_F10)",
-    "CtrlF10State::ReleaseDebounce",
-    "kCtrlF10ReleaseDebounceSamples",
+    # Ctrl+F10 law toggle left the mapper (7af378ac / efaf8843); the law
+    # command is latched in GameClient (checked below).
     "GLFW_KEY_HOME",
     "GLFW_KEY_INSERT",
     "GLFW_KEY_END",
-    "localControlLawCommandValid",
-    "LocalFlightControlStateMachine::next",
 ):
     if token not in mapper:
         fail(f"production input mapping lost: {token}")
@@ -211,44 +212,12 @@ for token in (
     if token not in shared:
         fail(f"shared server/client attitude path lost state transition: {token}")
 
-predictive_pilot = read("src/game/navigation/autopilot/PredictivePilot.h")
-client_autopilot = read(
-    "src/game/navigation/autopilot/ClientRouteAutopilot.h"
-)
+# PredictivePilot was deleted and ClientRouteAutopilot was replaced by the
+# compile-time DedicatedClientRouteAutopilot<Law> (4ffb7942); their contracts
+# live in check_automatic_docking.py / check_docking_module_boundaries.py.
 server = read("src/game/server/GameServer.cpp")
 
 for token in (
-    "class PredictivePilot final",
-    "targetSpeedRate",
-    "VelocityAlignmentMode::BrakeToStop",
-    "navigationAccelerationDemandValid = false",
-    "navigationVelocityTargetValid = false",
-    "navigationPrecisionTranslationOnly = false",
-):
-    if token not in predictive_pilot:
-        fail(f"PredictivePilot V2 ordinary-control contract lost: {token}")
-
-for token in (
-    "class ClientRouteAutopilot final",
-    "sampleContinuousReference(",
-    "ManeuverTrackingController::track(",
-    "sampleRouteCurveAtProgress(",
-    "PredictivePilot::make(",
-    "ShipControlState",
-):
-    if token not in client_autopilot:
-        fail(f"client automatic docking V2 path lost: {token}")
-
-for forbidden in (
-    "RouteFollower::follow(",
-    "TrajectoryFollower",
-):
-    if forbidden in client_autopilot:
-        fail(f"client automatic docking revived retired follower path: {forbidden}")
-
-for token in (
-    "ClientRouteAutopilot::start(",
-    "PredictivePilot::make(",
     "ClientAutopilot::update(",
     "m_client->submitInput(m_clientAutopilotControl)",
 ):
@@ -345,7 +314,7 @@ if "DynamicMotionSystem::" in prediction:
 if "ShipControlExecutionGateway::" not in prediction:
     fail("client HubTactical prediction no longer crosses ship control execution gateway")
 
-if "game::ship::effectiveShipPhysics" not in space:
+if "plannerCapability.effectivePhysics" not in space:
     fail("manual docking planning no longer consumes current engine health")
 
 if "const ShipParams& params" not in prediction:
@@ -368,12 +337,12 @@ for token in (
         fail(f"ship profile lost propulsion parameter: {token}")
 
 for token in (
-    "propulsionBankOperational",
-    "applyRuntimeMainPropulsionState",
-    "Main propulsion is deliberately binary",
+    # b76584a7: runtime propulsion truth flows through the capability layer.
+    "buildShipCapability(",
+    "capability.effectivePhysics",
 ):
     if token not in propulsion:
-        fail(f"binary runtime propulsion contract lost: {token}")
+        fail(f"capability-projected runtime propulsion contract lost: {token}")
 
 for forbidden in (
     "operationalFraction",
@@ -416,7 +385,7 @@ for forbidden in (
         fail(f"physical velocity/rate hard clamp returned: {forbidden}")
 
 for token in (
-    "limitPropulsionAccelerationToControlledSpeed",
+    "limitRequestedPropulsionToControlledSpeed",
     "allowedRadius = std::max(controlledSpeedLimit, currentSpeed)",
     "game::ship::controlledSpeedLimitMps(params)",
     "game::ship::forwardMainAccelerationLimitMps2(params)",
@@ -453,9 +422,10 @@ if "desc.physics.strafeAccel            = 73.549875f" not in cobra:
     fail("Cobra Assisted automatic lateral authority no longer reaches its 7.5 g linear envelope")
 for token in (
     "desc.physics.manoeuvreThrusterAccel = 2.0f",
-    "desc.physics.manoeuvreGasUsePerSecond = 0.20f",
-    "desc.physics.manoeuvreGasRechargePerSecond = 0.08f",
-    "desc.physics.manoeuvreGasRestartFraction = 0.20f",
+    # cee74f08: gas ratings come from the installed RCS tank passport.
+    "cobraArgonRcsTank()",
+    "1.0 / tank.fullDrawSeconds",
+    "tank.restartFraction",
     "desc.physics.forwardMainEngineAvailable = true",
     "desc.physics.reverseMainEngineAvailable = true",
     "desc.physics.forwardMainEngineAccelerationMps2 = 73.549875f",

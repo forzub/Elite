@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import json
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -53,7 +54,7 @@ for token in (
     "primaryDebugUiLease",
     "primaryDebugUiLease.ownsInstance()",
     "requestedWebUiPort",
-    "m_gameUiHttpPort = m_htmlUi.start(requestedWebUiPort, webUiRoot);",
+    "m_gameUiHttpPort = m_htmlUi.start(\n                requestedWebUiPort,\n                webUiRoot,",
     "makeGameUiHttpUrl(",
     "m_gameUiHttpPort",
     "std::uint16_t m_gameUiHttpPort = 0",
@@ -69,7 +70,7 @@ for token in (
     if token not in ui_server_cpp:
         fail(f"HtmlUiServer does not expose its OS-assigned port: {token}")
 
-if "start(std::uint16_t port" not in ui_server_h:
+if not re.search(r"start\(\s*std::uint16_t port", ui_server_h):
     fail("HtmlUiServer start signature does not accept an explicit ephemeral port request")
 
 for token in (

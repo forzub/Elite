@@ -27,7 +27,18 @@ for token in required_helper:
     assert token in helper, f"missing centering helper contract: {token}"
 
 # Newton must not receive the new in-corridor policy through a runtime selector.
-assert "if (law == LocalFlightControlLaw::Assisted)" not in follower
+# The follower is a template on Law; the only local `law` names are
+# `constexpr LocalFlightControlLaw law = Law;`, so a plain `if (law == ...)`
+# (e.g. the engine-out orientation lead, 3b851ddc) is still compile-time.
+# A runtime law parameter or selector is forbidden.
+import re
+law_decls = re.findall(r"LocalFlightControlLaw\s+law\b[^;]*;", follower)
+assert law_decls and all(d.startswith("LocalFlightControlLaw law = Law") for d in law_decls), (
+    f"runtime law selector in the dedicated follower: {law_decls}"
+)
+assert re.search(r"LocalFlightControlLaw\s+law\s*[,)]", follower) is None, (
+    "runtime law parameter in the dedicated follower"
+)
 assert "switch (law)" not in follower
 
 print("ASSISTED FOLLOWER CENTERING CONTRACT: PASS")

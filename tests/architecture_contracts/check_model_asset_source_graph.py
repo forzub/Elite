@@ -12,6 +12,7 @@ from pathlib import Path
 from model_asset_editor_source_bundle import load_source_bundle
 import json
 import re
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -293,5 +294,5 @@ cap = json.loads(text("tools/model_asset_editor/EDITOR_CAPABILITIES.json"))
 if "source_hash_mesh_graph" not in {x["id"] for x in cap["protected_capabilities"]}:
     raise AssertionError("source_hash_mesh_graph capability is not protected")
 
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.73"')
+require_editor_version_at_least("0.10.73")
 print("[PASS] v0.10.73 exact-hash SOURCE synchronization / per-mesh source graph")

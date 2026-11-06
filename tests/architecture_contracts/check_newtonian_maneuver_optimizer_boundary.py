@@ -22,6 +22,11 @@ required = [
 for token in required:
     assert token in optimizer, f"missing Newtonian planner contract token: {token}"
 
+# Dependencies are judged on code, not on comments (the header documents that
+# Assisted must never consume its phases).
+import re
+optimizer_code = re.sub(r"//.*", "", optimizer)
+
 for forbidden in [
     "Assisted",
     "AssistedRoutePlanner",
@@ -35,7 +40,7 @@ for forbidden in [
     "transit_volume",
     "SpaceState",
 ]:
-    assert forbidden not in optimizer, (
+    assert forbidden not in optimizer_code, (
         f"Newtonian maneuver optimizer leaked external/law-specific dependency: {forbidden}"
     )
 

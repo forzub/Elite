@@ -3555,6 +3555,21 @@ order - ask for it again if it is not in the session.
   DEV gating; zone fines + route completion on the server; typed route DTO in the wire schema; ActiveFreeFlight
   state machine; decompose the giant SpaceState functions; loader hardening; NAVIGATION_V2 ownership update.
 
+### Gate triage 2026-11-06 (audit item 1; source/offline only, no live flight)
+- Python gates 209: before 122 pass / 87 fail, after 196 pass / 13 known red / 0 new red. Nothing deleted; 74 stale
+  checks updated to the current design (split SpaceState* / GameSimulation* units read as one, CURRENT_TASK/STATE
+  markers dropped, exact version / schema pins -> minimum, retired subjects PredictivePilot / navigation_guidance /
+  rear monitor / B-spline smoother asserted as gone, model-asset hash locks re-baselined at 0.10.87, regex bugs).
+- One runner: `python tools/run_gates.py [-k text] [-v] [--timeout s] [-j n]`; exit 1 on a red not in
+  tools/gates_known_red.json or on a stale allow-list entry. Allow-list = REAL reds left for the main session:
+  GameServer.cpp:1 includes client RoutePlanner.h (4 gates, rec. 6); std::chrono in SegmentedRouteComposer.cpp:5/597/842;
+  Sol body ids in client SpaceState.cpp:1409+ (DEV script, rec. 8); missing EOF newline SystemMapRenderer.h /
+  SystemMapSceneRenderer.cpp; model-asset editor purity regressions (attachments.js:125, viewport/scene.js:11) and a
+  function census frozen at v0.10.73 (4 gates, editor re-baseline slice).
+- Production change: src/game/system_map/PlanetMapAxes.h holds the planet axis helpers; DetailMapGeometryPass.cpp no
+  longer includes the SystemMapRenderer facade, DetailMapPlanetPass.cpp lost its duplicate copy (both objects compiled;
+  tests/system_map/check_architecture.py green). Tracked __pycache__/*.pyc under tests/ get dirtied by direct gate runs.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

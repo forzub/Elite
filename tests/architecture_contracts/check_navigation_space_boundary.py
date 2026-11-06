@@ -9,8 +9,7 @@ SPACE_CMAKE = (ROOT / "src/world/navigation/space/CMakeLists.txt").read_text(enc
 TEST_CMAKE = (ROOT / "tests/navigation_space/CMakeLists.txt").read_text(encoding="utf-8")
 TEST_CPP = (ROOT / "tests/navigation_space/NavigationSpaceContractTests.cpp").read_text(encoding="utf-8")
 RUNNER = (ROOT / "tests/navigation_space/run_mingw64.sh").read_text(encoding="utf-8")
-CURRENT_STATE = (ROOT / "CURRENT_STATE.md").read_text(encoding="utf-8")
-CURRENT_TASK = (ROOT / "CURRENT_TASK.md").read_text(encoding="utf-8")
+ARCH = (ROOT / "src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md").read_text(encoding="utf-8")
 NAV_V2 = (ROOT / "NAVIGATION_WORLD_V2.md").read_text(encoding="utf-8")
 TURN_CONTRACT = (ROOT / "src/world/navigation/STATIC_TURN_COST.md").read_text(encoding="utf-8")
 
@@ -150,11 +149,10 @@ for marker in (
     "only production-facing api",
     "free-space regions",
     "portals",
-    "agent envelope",
+    "agentenvelope",
     "local invalidation",
     "cpu reference",
-    "hub / local-domain rule",
-    "private spatial index",
+    "private connectivity and spatial indices",
     "costed corridor",
 ):
     require(marker in README.lower(),
@@ -169,11 +167,12 @@ for marker in (
     require(marker in TURN_CONTRACT,
             f"static turn-cost contract missing invariant: {marker}")
 
-require("NAV-V2-SPACE-1" in CURRENT_TASK,
-        "CURRENT_TASK is not advanced to NAV-V2-SPACE-1")
-require("NAV-V2-SPACE-1" in CURRENT_STATE,
-        "CURRENT_STATE does not record NAV-V2-SPACE-1")
-require("NAV-V2-SPACE-1" in NAV_V2 and "Hybrid backend contract" in NAV_V2,
+# The Hub / local-domain rule moved from the space README (025705eb) to the
+# planning architecture. Legacy CURRENT_TASK/CURRENT_STATE stage markers are no
+# longer checked (PROJECT_STATE.md is the only living state file, AGENTS.md).
+require("navigation remains private to its local domain" in ARCH,
+        "navigation architecture lost the Hub / local-domain ownership rule")
+require("NAV-V2-SPACE-1" in NAV_V2 and "accepted hybrid ownership" in NAV_V2.lower(),
         "NavigationWorld v2 contract does not record static-space stage/hybrid ownership")
 
 print("NAVIGATION SPACE BOUNDARY CONTRACT: PASS")
@@ -190,4 +189,4 @@ print(" - static edge geometry/clearance/turn angles are published outside the q
 print(" - aperture, canyon/overflight and zigzag/smooth fixtures are pinned")
 print(" - agent-envelope clearance and narrow-portal admission are explicit")
 print(" - local invalidation + transactional patching are owned by the block")
-print(" - project state/task agree on NAV-V2-SPACE-1")
+print(" - NavigationWorld v2 records NAV-V2-SPACE-1 hybrid ownership")

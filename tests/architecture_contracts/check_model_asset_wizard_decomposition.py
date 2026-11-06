@@ -15,6 +15,17 @@ ROOT = Path(__file__).resolve().parents[2]
 WEB = load_source_bundle(ROOT)
 CONTRACT = json.loads((ROOT / "tools/model_asset_editor/FUNCTION_PURITY_CONTRACT.json").read_text(encoding="utf-8"))
 
+# Stage dispatch is the renderer registry since the application-state split: the
+# HTML binds `<stage>:<renderer>` in createWizardStageRendererRegistry and
+# app/stage_renderers.js forwards the same explicit arguments.
+STAGE_RENDERERS = (ROOT / "src/assets/webui/model_asset_editor/app/stage_renderers.js").read_text(encoding="utf-8")
+WEB_HTML = (ROOT / "src/assets/webui/model_asset_editor.html").read_text(encoding="utf-8")
+
+
+def stage_dispatch_only(stage: str, renderer: str, args: str) -> bool:
+    return f"{stage}:{renderer}" in WEB_HTML and f"=>source.{stage}({args})" in STAGE_RENDERERS
+
+
 
 def function_source(name: str) -> str:
     marker = f"function {name}("
@@ -248,7 +259,7 @@ def assert_pure_block(name: str, body: str) -> None:
 
 
 # SOURCE: dispatch-only shell + pure model/view + narrow effect adapter.
-if "if(stage==='source'){renderWizardSourceStage(root,state.asset,state.settings);return;}" not in shell:
+if not stage_dispatch_only("source", "renderWizardSourceStage", "root,state.asset,state.settings"):
     raise AssertionError("wizard decomposition: SOURCE branch must remain dispatch-only")
 for forbidden in ("wizardSourceRefreshBtn", "wizardSourceReimportBtn", "maintenanceSourceScanHtml()"):
     if forbidden in shell:
@@ -263,7 +274,6 @@ for token in (
     "bindMaintenanceSourceScan(root)",
     "send('refresh_source_variants')",
     "send('reimport_asset')",
-    "bindWizardStageCheckControls('source')",
 ):
     if token not in source_adapter:
         raise AssertionError(f"wizard decomposition: SOURCE effect adapter missing {token!r}")
@@ -272,7 +282,7 @@ if "if(stage==='" in source_adapter:
 
 # LODS: same boundary. Calculations and deterministic markup are pure; DOM/events/backend
 # remain isolated in the adapter until the whole tab is moved into its own module.
-if "if(stage==='lods'){renderWizardLodsStage(root,lods,payloads);return;}" not in shell:
+if not stage_dispatch_only("lods", "renderWizardLodsStage", "root,lods,payloads"):
     raise AssertionError("wizard decomposition: LODS branch must remain dispatch-only")
 for forbidden in ("modelPreflightPrepareBtn", "lodGeneratorAnalyzeBtn", "prepare_model_meshes", "analyze_lod_requirements"):
     if forbidden in shell:
@@ -289,7 +299,6 @@ for token in (
     "send('analyze_lod_requirements',{lodIndex:0})",
     "renderModelPreflightPanel()",
     "renderLodGeneratorPanel()",
-    "bindWizardStageCheckControls('lods')",
 ):
     if token not in lods_adapter:
         raise AssertionError(f"wizard decomposition: LODS effect adapter missing {token!r}")
@@ -298,7 +307,7 @@ if "if(stage==='" in lods_adapter:
 
 # GEOMETRY: calculations/markup are isolated from event/backend wiring. The adapter owns
 # visibility synchronization, DOM binding and commands until the tab moves to its own file.
-if "if(stage==='geometry'){renderWizardGeometryStage(root,lods);return;}" not in shell:
+if not stage_dispatch_only("geometry", "renderWizardGeometryStage", "root,lods"):
     raise AssertionError("wizard decomposition: GEOMETRY branch must remain dispatch-only")
 for forbidden in ("wizardGeometryScanBtn", "wizardGeometryConsolidateBtn", "geometryCompareAllBtn", "scan_render_duplicates", "consolidate_render_duplicates"):
     if forbidden in shell:
@@ -317,7 +326,6 @@ for token in (
     "renderGeometryCandidates()",
     "renderVariantAssignment()",
     "renderGeometryEditor()",
-    "bindWizardStageCheckControls('geometry')",
 ):
     if token not in geometry_adapter:
         raise AssertionError(f"wizard decomposition: GEOMETRY effect adapter missing {token!r}")
@@ -326,7 +334,7 @@ if "if(stage==='" in geometry_adapter:
 
 # SURFACES: the adapter owns selection normalization, visibility/DOM and backend commands.
 # View-model calculation and primary markup remain deterministic pure boundaries.
-if "if(stage==='surfaces'){renderWizardSurfacesStage(root,lods);return;}" not in shell:
+if not stage_dispatch_only("surfaces", "renderWizardSurfacesStage", "root,lods"):
     raise AssertionError("wizard decomposition: SURFACES branch must remain dispatch-only")
 for forbidden in ("wizardSurfaceAnalyzeBtn", "wizardSurfaceGeometryTable", "set_geometry_topology_class", "set_material_definition"):
     if forbidden in shell:
@@ -337,7 +345,7 @@ for token in (
     "wizardSurfacesStageModel({analysisReady:false",
     "wizardSurfacesStageHtml(model,text,{lodSelector,stageCheck:''})",
     "wizardSurfacesStageModel({analysisReady:true",
-    "wizardSurfacesStageHtml(model,text,{lodSelector,stageCheck:wizardStageCheckControls('surfaces')})",
+    "wizardSurfacesStageHtml(model,text,{lodSelector,stageCheck:''})",  # CHECK lives in the unified stage footer (aab146aa)
     "switchSurfaceLod(Number(btn.dataset.surfaceLod))",
     "surfaceShowCompleteLod",
     "surfaceHideCompleteLod",
@@ -345,7 +353,6 @@ for token in (
     "send('set_geometry_topology_class'",
     "send('assign_unassigned_material'",
     "send('set_material_definition'",
-    "bindWizardStageCheckControls('surfaces')",
 ):
     if token not in surfaces_adapter:
         raise AssertionError(f"wizard decomposition: SURFACES effect adapter missing {token!r}")
@@ -354,7 +361,7 @@ if "if(stage==='" in surfaces_adapter:
 
 # SEMANTICS subwave A: the mega-function is dispatch-only and the derived semantic
 # state/counts/tree projection and the main workspace composition live behind pure behavioural boundaries. TREE/BINDINGS markup is pure; event wiring, STRUCTURAL GRAPH and preview effects deliberately remain quarantined in the adapter.
-if "if(stage==='semantics'){renderWizardSemanticsStage(root,lods);return;}" not in shell:
+if not stage_dispatch_only("semantics", "renderWizardSemanticsStage", "root,lods"):
     raise AssertionError("wizard decomposition: SEMANTICS branch must remain dispatch-only")
 for forbidden in ("semanticCleanLegacyTree", "data-semantic-render-row", "set_render_node_semantic", "semanticGraphExplode"):
     if forbidden in shell:
@@ -381,7 +388,6 @@ for token in (
     "bindWizardSemanticsBindingInteractions(root,selected)",
     "bindWizardSemanticsPreviewInteractions(root)",
     "semanticRefreshSelectionUi()",
-    "bindWizardStageCheckControls('semantics')",
 ):
     if token not in semantics_adapter:
         raise AssertionError(f"wizard decomposition: SEMANTICS effect adapter missing {token!r}")
@@ -472,7 +478,6 @@ for token in (
     "bindWizardStructuralGraphEndpointInteractions(root)",
     "bindWizardStructuralGraphLinkInteractions(root)",
     "bindWizardStructuralGraphProxyInteractions()",
-    "bindWizardStageCheckControls('semantics')",
 ):
     if token not in semantics_structural_bind_panel:
         raise AssertionError(f"wizard decomposition: STRUCTURAL interaction orchestrator missing {token!r}")
@@ -877,7 +882,7 @@ for forbidden in ("if(structHit&&state.semanticStructureMode==='graph')", "const
 # PHYSICS / HIT VOLUMES / DAMAGE wave6A-wave6B: post-SEMANTICS stages use the
 # portable-block rule directly. Public calculations/presentation/payload builders are
 # certified PURE; editor state/DOM/THREE/backend wiring stays in explicit adapters.
-if "if(stage==='physics'){renderWizardPhysicsStage(root,state.asset);return;}" not in shell:
+if not stage_dispatch_only("physics", "renderWizardPhysicsStage", "root,state.asset"):
     raise AssertionError("wizard decomposition: PHYSICS branch must remain dispatch-only")
 for fn_name, body in (
     ("wizardPhysicsStageModel", physics_model),
@@ -899,9 +904,8 @@ for fn_name, body in (
     assert_pure_block(fn_name, body)
 for required in (
     "wizardPhysicsStageModel({nodes:asset?.nodes||[],collisionVolumes:asset?.collisionVolumes||[]})",
-    "wizardPhysicsStageHtml(model,text,{stageCheckControls:wizardStageCheckControls('physics')})",
+    "wizardPhysicsStageHtml(model,text,{stageCheckControls:''})",  # CHECK lives in the unified stage footer (aab146aa)
     "root.innerHTML=",
-    "bindWizardStageCheckControls('physics')",
 ):
     if required not in physics_adapter:
         raise AssertionError(f"wizard decomposition: PHYSICS stage adapter missing {required!r}")
@@ -916,7 +920,7 @@ for required in (
 for required in (
     "hitVolumeRenderPlan({",
     "collisionPrimitive(row)",
-    "obj.matrix.copy(row.worldMatrix)",
+    "object.matrix.copy(row.worldMatrix)",
 ):
     if required not in hit_volume_rebuild_adapter:
         raise AssertionError(f"wizard decomposition: HIT VOLUMES renderer adapter missing {required!r}")
@@ -929,7 +933,7 @@ for required in ("hitVolumeInspectorModel({collision:c,stage:state.wizardStage})
 
 # DAMAGE wave6B: stage summary, state variants, semantic-node state editing,
 # RenderNode state selectors and HIT/OPEN/REPAIR records are portable.
-if "if(stage==='damage'){renderWizardDamageStage(root,state.asset,lods);return;}" not in shell:
+if not stage_dispatch_only("damage", "renderWizardDamageStage", "root,state.asset,lods"):
     raise AssertionError("wizard decomposition: DAMAGE branch must remain dispatch-only")
 for fn_name, body in (
     ("wizardDamageStageModel", damage_stage_model),
@@ -957,7 +961,6 @@ for fn_name, body in (
 for required in (
     "wizardDamageStageModel({",
     "wizardDamageStageHtml(model,text,{lodSelector:",
-    "bindWizardStageCheckControls('damage')",
 ):
     if required not in damage_stage_adapter:
         raise AssertionError(f"wizard decomposition: DAMAGE stage adapter missing {required!r}")
@@ -988,9 +991,9 @@ if "damageStateVariantsModel({" not in damage_variants_adapter or "damageStateVa
 
 # FINAL ASSEMBLY wave6C: validation/build models and presentation are portable; backend
 # validation/build execution and DOM/status wiring remain adapters.
-if "if(stage==='validate'){renderWizardValidateStage(root,state.wizardValidationReport);return;}" not in shell:
+if not stage_dispatch_only("validate", "renderWizardValidateStage", "root,state.wizardValidationReport"):
     raise AssertionError("wizard decomposition: VALIDATE branch must remain dispatch-only")
-if "if(stage==='build'){renderWizardBuildStage(root,state.asset,lods,state.dirty);return;}" not in shell:
+if not stage_dispatch_only("build", "renderWizardBuildStage", "root,state.asset,lods,state.dirty"):
     raise AssertionError("wizard decomposition: BUILD branch must remain dispatch-only")
 for fn_name, body in (
     ("finalAssemblyValidationModel", final_validation_model),
@@ -1000,10 +1003,10 @@ for fn_name, body in (
     ("finalAssemblyStageCommand", final_stage_command),
 ):
     assert_pure_block(fn_name, body)
-for required in ("finalAssemblyValidationModel(report)", "finalAssemblyValidationHtml(model,text,{stageCheckControls:", "bindWizardStageCheckControls('validate')"):
+for required in ("finalAssemblyValidationModel(report)", "finalAssemblyValidationHtml(model,text,{stageCheckControls:"):
     if required not in final_validate_adapter:
         raise AssertionError(f"wizard decomposition: VALIDATE adapter missing {required!r}")
-for required in ("finalAssemblyBuildModel({", "finalAssemblyBuildHtml(model,text,{stageCheckControls:", "bindWizardStageCheckControls('build')"):
+for required in ("finalAssemblyBuildModel({", "finalAssemblyBuildHtml(model,text,{stageCheckControls:"):
     if required not in final_build_adapter:
         raise AssertionError(f"wizard decomposition: BUILD adapter missing {required!r}")
 if "send('check_wizard_stage',finalAssemblyStageCommand(stage))" not in final_check_adapter:

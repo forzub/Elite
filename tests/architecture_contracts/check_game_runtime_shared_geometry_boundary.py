@@ -37,7 +37,9 @@ for executable in ("EliteGame", "EliteServer"):
     body = block(rf"add_executable\({executable}\s*(.*?)\n\s*\)", f"{executable} sources")
     for source in SOURCES:
         assert source not in body, f"{executable} still compiles {source} directly"
-    exe_links = block(rf"target_link_libraries\({executable}\s+PRIVATE\s*(.*?)\n\s*\)", f"{executable} links")
+    # Union of all target_link_libraries blocks (optional one-liners exist).
+    exe_links = "\n".join(re.findall(
+        rf"target_link_libraries\({executable}\s+PRIVATE\s*(.*?)\n?\s*\)", CMAKE, re.S))
     assert "EliteAssemblyGeometry" in exe_links
 
 editor = block(r"add_executable\(EliteAssetEditor\s*(.*?)\n\s*\)", "EliteAssetEditor sources")

@@ -49,23 +49,12 @@ if "glm::dvec3(0.0, 0.0, 2.0)" not in scene_setup:
 if "glm::dvec3(0.0, 0.0, 0.0)" not in scene_setup:
     fail("guidance cylinder is no longer a static reference object")
 
-# Rear camera must consume the scene already prepared for the main camera and
-# retain the deliberately cheaper LOD policy. Reintroducing a second full scene
-# preparation near a dense station caused alternating frame cost/stalls.
-rear_counter = space.find("if ((rearCameraFrameCounter % kRearCameraFrameStride) == 0)")
-rear_end = space.find("m_perfRearCameraMs = nowMs() - rearStartMs;", rear_counter)
-if rear_counter < 0 or rear_end < 0:
-    fail("rear-camera render block not found")
-rear = space[rear_counter:rear_end]
-for token in (
-    "m_sceneRenderer.renderPrepared(",
-    "m_preparedScene",
-    "rearPolicy.forceAssemblyLod1 = true",
-    "rearPolicy.maxVisualShipsToDraw = 24",
-):
-    if token not in rear:
-        fail(f"rear-camera prepared/cheap-scene contract missing: {token}")
-if "m_sceneRenderer.render(" in rear or "rearView->drawCallback(" in rear:
-    fail("rear camera again prepares/renders an independent full scene")
+# The rear monitor and its second full world render were removed (0c647339:
+# one main camera, F1 front / F2 rear / F3 drone). A second per-frame full
+# scene render near a dense station caused alternating frame cost/stalls, so it
+# must not come back.
+for token in ("kRearCameraFrameStride", "rearView->drawCallback(", "m_perfRearCameraMs"):
+    if token in space:
+        fail(f"a second full rear-camera scene render returned: {token}")
 
-print("[PASS] sparse/Hub/HUD/rear-view navigation regressions remain locked")
+print("[PASS] sparse/Hub/HUD/single-camera navigation regressions remain locked")

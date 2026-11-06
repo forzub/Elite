@@ -9,8 +9,6 @@ CMAKE = (ROOT / "src/world/navigation/local/CMakeLists.txt").read_text(encoding=
 TEST_CMAKE = (ROOT / "tests/navigation_local/CMakeLists.txt").read_text(encoding="utf-8")
 TEST_CPP = (ROOT / "tests/navigation_local/NavigationLocalContractTests.cpp").read_text(encoding="utf-8")
 RUNNER = (ROOT / "tests/navigation_local/run_mingw64.sh").read_text(encoding="utf-8")
-CURRENT_TASK = (ROOT / "CURRENT_TASK.md").read_text(encoding="utf-8")
-CURRENT_STATE = (ROOT / "CURRENT_STATE.md").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -76,7 +74,10 @@ for forbidden in (
             f"local horizon implementation depends on forbidden legacy/runtime layer: {forbidden}")
 
 for marker in (
-    "latencyDistance",
+    # Horizon derives from the physical stopping reserve (18596458), not a
+    # latency distance.
+    "controlResponseReserveSeconds",
+    "responseReserveDistanceMeters",
     "brakingDistance",
     "maxResultAgeSeconds",
     "relativePosition",
@@ -124,10 +125,8 @@ for marker in (
 ):
     require(marker in TEST_CPP, f"local horizon fixture missing: {marker}")
 
-require("NAV-V2-LOCAL-1" in CURRENT_TASK,
-        "CURRENT_TASK is not advanced to NAV-V2-LOCAL-1")
-require("NAV-V2-LOCAL-1" in CURRENT_STATE,
-        "CURRENT_STATE does not record NAV-V2-LOCAL-1")
+# Legacy CURRENT_TASK/CURRENT_STATE stage markers are no longer checked
+# (PROJECT_STATE.md is the only living state file, AGENTS.md).
 
 print("NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS")
 print(" - local planner consumes compact NavigationMap query products only")
@@ -137,4 +136,3 @@ print(" - dynamic reference uses bounded closest approach + conservative swept b
 print(" - clear, terminal, crossing, head-on, stale and self-filter fixtures are pinned")
 print(" - conflict/stale results fail closed instead of inventing an unverified bypass")
 print(" - local runner builds every CTest-registered executable")
-print(" - project state/task agree on NAV-V2-LOCAL-1")

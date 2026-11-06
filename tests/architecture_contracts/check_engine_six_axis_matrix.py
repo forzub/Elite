@@ -2,6 +2,8 @@
 """Stop six-axis motor/telemetry authority from regressing to HUD guesses."""
 from pathlib import Path
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1])); import source_units  # noqa: E402,F401  (split classes read as one unit)
+
 ROOT = Path(__file__).resolve().parents[2]
 
 # ShipCore is split into ShipCore*.cpp units (one class): read them as one.
@@ -52,7 +54,7 @@ contains(
 hud = contains(
     "src/game/presentation/EngineThrustHudPresentation.h",
     "readEngineMotorLiveView(",
-    "bar.thrust01 = static_cast<float>(live.thrust01);",
+    "std::min(live.thrust01,live.available01)",
     "buildShipBiteState(",
 )
 for bad in (
@@ -85,7 +87,7 @@ contains(
 )
 contains(
     "src/game/network/WireDataCodec.h",
-    "SimulationSnapshotWireSchemaVersion = 17u",
+    "SimulationSnapshotWireSchemaVersion = ",  # version itself is not pinned
 )
 # User-approved fictional TVC doctrine: no mechanical nozzle lag,
 # Assisted at its previous gameplay envelope, separate Newtonian law.
@@ -100,9 +102,9 @@ matrix=contains(
     "equalDeliveredN / instantaneousN",
     "out.torqueBodyNm +=",
     "const std::array<double,6> weights {1.0,1.0,1.0,80.0,80.0,80.0};",
-    "PhysicalControlFamily::Newtonian",
-    "ship.mainGimbalYawLimitRad",
-    "ship.mainGimbalPitchLimitRad",
+    # 4f67103c: the installed engine passport owns the nozzle envelope;
+    # the flight law no longer narrows it (no Newtonian gimbal doctrine).
+    "availableGimbalRangeRad",
     "t.nozzleYawRad = 0.0;",
     "t.nozzlePitchRad = 0.0;",
     "std::tan(clampFinite(maxAngleRad, 0.0, 1.45))",
@@ -172,7 +174,7 @@ contains(
     "one failed engine prevented slower balanced straight flight",
     "repair did not restore nominal maneuver program",
 )
-if program.count("for(int iteration=0;iteration<144;++iteration)")!=1:
+if "".join(program.split()).count("for(intiteration=0;iteration<144;++iteration)")!=1:
     raise SystemExit("[ENGINE PRESETS][FAIL] unexpected program-generation iteration count")
 if "execute(" not in program or "solve(axis," not in program:
     raise SystemExit("[ENGINE PRESETS][FAIL] missing damage-only precompute")
@@ -183,14 +185,15 @@ contains(
     "src/game/equipment/engine/EngineUnit.h",
     "impactShockSecondsRemaining",
     "impactShockPermanentOnExpiry01",
-    "operating.coolantTemperatureK",
-    "step.coolantHeatMW = bulkHeatMW -",
-    "capacity*(step.next.temperatureK-startT)/deltaSeconds",
+    # e7651828: one canonical propulsion-pad heat sink (no per-engine
+    # coolant channel, no double-counted coolant heat).
+    "propulsionPadCoolingMW(",
+    "step.coolantHeatMW=0.0;",
+    "(step.dissipatedHeatMW-padMW)*deltaSeconds/capacity",
 )
 contains(
     "src/game/ship/core/ShipCore.cpp",
-    "m_thermal.addHeat(energyMJ)",
-    "m_thermal.removeHeat(-energyMJ)",
+    "m_thermal.addHeat(heatMW * dt)",
     "&transferredMW",
     "m_cooling.update(dt, m_thermal);",
     "m_moduleRuntime.addEngineImpactShock(",
@@ -198,8 +201,9 @@ contains(
 contains(
     "src/game/ship/core/CoolingSystem.cpp",
     "m_primaryCircuit.pumpCapacity",
-    "m_primaryCircuit.maxHeatTransfer",
-    "std::min(maxRadiatedPower, transportedMW)",
+    # b415eee3: radiators reject common coolant heat independent of the pump.
+    "calculateRadiatedPower(m_coolantTemp)",
+    "std::min(maxRadiatedPower, availableMW)",
 )
 contains(
     "src/world/modules/ObjectModuleRuntime.cpp",
@@ -213,7 +217,7 @@ contains(
     "ShipControlAuthorityTelemetry",
     "readAssistedControlAuthority(",
     "applyAuthorityToControlParams(",
-    "telemetry.negative[2]",
+    "out.negative[2]",
 )
 contains(
     "src/game/simulation/GameSimulation.cpp",

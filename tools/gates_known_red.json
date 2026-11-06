@@ -1,0 +1,57 @@
+{
+  "_comment": "Known-red Python gates for tools/run_gates.py. Each entry is a REAL production violation (or an explicitly deferred re-baseline) with its owner slice. Remove an entry in the same commit that turns its gate green; the runner fails on a stale entry.",
+  "known_red": {
+    "tests/architecture_contracts/check_manual_docking_advisory.py": {
+      "reason": "REAL: src/game/server/GameServer.cpp:1 includes the client src/game/navigation/route/RoutePlanner.h (decodeRoute at ~:913, RoutePoint::Kind ~:919-930); the server must not depend on client route planning",
+      "owner": "main session, audit rec. 6 (typed RouteLegList wire DTO)"
+    },
+    "tests/architecture_contracts/check_automatic_docking.py": {
+      "reason": "REAL: same GameServer.cpp -> RoutePlanner.h include (forbidden token RoutePlanner in GameServer.cpp)",
+      "owner": "main session, audit rec. 6"
+    },
+    "tests/architecture_contracts/check_local_flight_control.py": {
+      "reason": "REAL: same GameServer.cpp -> RoutePlanner.h include (forbidden token RoutePlanner in GameServer.cpp)",
+      "owner": "main session, audit rec. 6"
+    },
+    "tests/architecture_contracts/check_navigation_live_runtime_control.py": {
+      "reason": "REAL: same GameServer.cpp -> RoutePlanner.h include (server must stay navigation-execution blind)",
+      "owner": "main session, audit rec. 6"
+    },
+    "tests/architecture_contracts/check_navigation_route_boundaries.py": {
+      "reason": "REAL: std::chrono / steady_clock timing in the pure route module src/game/navigation/traffic/SegmentedRouteComposer.cpp:5, :597-602, :842-847 (7e9f4a2d); timing belongs to orchestration/debug code",
+      "owner": "main session (navigation)"
+    },
+    "tests/feature_contracts/check_feature_contracts.py": {
+      "reason": "REAL: world-specific Sol body ids (\"system_0.Sol.Земля\" ...) in client src/game/SpaceState.cpp:1409-1423, :1584-1586, :1618 (DEV SOL map/service script interpreter inside SpaceState::update)",
+      "owner": "main session, audit rec. 8 (DevScriptRunner)"
+    },
+    "tools/check_map_architecture.py": {
+      "reason": "REAL (hygiene): missing newline at end of file in src/game/system_map/SystemMapRenderer.h and src/game/system_map/SystemMapSceneRenderer.cpp (33bf8e1f)",
+      "owner": "main session (one-keystroke fix)"
+    },
+    "tests/architecture_contracts/check_model_asset_wizard_decomposition.py": {
+      "reason": "REAL: socketCanonicalWorldMatrix was certified pure and now reads state (src/assets/webui/model_asset_editor/viewport/attachments.js:125, 03329177)",
+      "owner": "model-asset editor"
+    },
+    "tests/architecture_contracts/check_model_asset_function_purity.py": {
+      "reason": "REAL: purity regressions (socketCanonicalWorldMatrix attachments.js:125, lodGeneratorSelectedGeometry viewport/scene.js:11 read state; socketWorldMatrix PURE->UNKNOWN; physicalSizePanelHtml EASY->TRANSITIVE) + census frozen at v0.10.73",
+      "owner": "model-asset editor"
+    },
+    "tests/architecture_contracts/check_model_asset_module_ownership.py": {
+      "reason": "DEFERRED re-baseline: MODULE_OWNERSHIP_CONTRACT.json census frozen at 546 functions (v0.10.73), code has 621; each new function needs an owner/role (editor owner review per PATCH_CONTRACT)",
+      "owner": "model-asset editor census re-baseline slice"
+    },
+    "tests/architecture_contracts/check_model_asset_dependency_ownership.py": {
+      "reason": "DEFERRED re-baseline: function owner inventory frozen at v0.10.73 diverges from the named-function inventory",
+      "owner": "model-asset editor census re-baseline slice"
+    },
+    "tests/architecture_contracts/check_model_asset_extraction_proof.py": {
+      "reason": "DEFERRED re-baseline: census frozen at v0.10.73; tr/i18n move breaks the Node harness (i18n.mjs has no export tr)",
+      "owner": "model-asset editor census re-baseline slice"
+    },
+    "tests/architecture_contracts/check_model_asset_physical_modules.py": {
+      "reason": "DEFERRED re-baseline: physical-module census frozen at v0.10.73 (e.g. i18n.baseLocale removed)",
+      "owner": "model-asset editor census re-baseline slice"
+    }
+  }
+}

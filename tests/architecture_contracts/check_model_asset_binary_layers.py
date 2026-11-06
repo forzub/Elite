@@ -69,7 +69,8 @@ for forbidden in ["buildIndependentRenderLodsFromLegacy", "manifestChunksV4", "w
     assert forbidden not in lod_io, f"LOD I/O leaked unrelated responsibility: {forbidden}"
 
 chunk_files = list((BINARY / "chunks").glob("*.cpp"))
-assert len(chunk_files) == 8, f"expected eight domain codec files, found {len(chunk_files)}"
+# 8 domain codecs at the layer split; later chunks (CMPT / PRES, 44496d5d) add files.
+assert len(chunk_files) >= 8, f"expected at least eight domain codec files, found {len(chunk_files)}"
 for path in chunk_files:
     text = path.read_text(encoding="utf-8")
     for forbidden in ["ModelAssetBinaryController", "std::ofstream", "std::ifstream", "packageLodPayloadPath"]:
@@ -96,7 +97,7 @@ root_body = root_target.group("body")
 test_target = re.search(r'add_executable\(model_asset_tests(?P<body>.*?)\n\)', test_cmake, re.S)
 assert test_target, "model_asset_tests target not found"
 test_body = test_target.group("body")
-for rel in ["ModelAssetBinary.cpp", *[str(path.relative_to(ROOT / "src/model_asset")) for path in all_binary_cpp]]:
+for rel in ["ModelAssetBinary.cpp", *[path.relative_to(ROOT / "src/model_asset").as_posix() for path in all_binary_cpp]]:
     source = f"src/model_asset/{rel}"
     assert source in root_body, f"EliteModelAsset does not compile independent TU: {source}"
     assert root_body.count(source) == 1, f"EliteModelAsset source duplicated: {source}"

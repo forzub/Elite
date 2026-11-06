@@ -6,8 +6,6 @@ BENCH = (ROOT / "benchmarks/navigation_gpu/main.cpp").read_text(encoding="utf-8"
 BENCH_CMAKE = (ROOT / "benchmarks/navigation_gpu/CMakeLists.txt").read_text(encoding="utf-8")
 BENCH_README = (ROOT / "benchmarks/navigation_gpu/README.md").read_text(encoding="utf-8")
 RUNNER = (ROOT / "benchmarks/navigation_gpu/run_mingw64.sh").read_text(encoding="utf-8")
-CURRENT_STATE = (ROOT / "CURRENT_STATE.md").read_text(encoding="utf-8")
-CURRENT_TASK = (ROOT / "CURRENT_TASK.md").read_text(encoding="utf-8")
 ARCH = (ROOT / "src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md").read_text(encoding="utf-8")
 
 
@@ -64,13 +62,11 @@ for marker in (
     require(marker.lower() in BENCH_README.lower(),
             f"benchmark design documentation missing: {marker}")
 
-require("NAV-V2-MAP-2" in CURRENT_TASK,
-        "CURRENT_TASK is not at the active CPU/GPU NavigationMap measurement gate")
-require("NAV-V2-MAP-2" in CURRENT_STATE,
-        "CURRENT_STATE does not record the active CPU/GPU NavigationMap measurement gate")
+# Stage markers in the legacy CURRENT_TASK/CURRENT_STATE histories are no longer
+# checked: PROJECT_STATE.md is the only living state file (AGENTS.md).
 require("ship-centered NavigationWorld" in ARCH,
         "navigation architecture lacks the ship-centered NavigationWorld authority")
-require("Hub-local" in ARCH,
+require("navigation remains private to its local domain" in ARCH,
         "navigation architecture does not preserve Hub-local ownership")
 require("GPU" in ARCH and "spatial" in ARCH.lower(),
         "navigation architecture lacks GPU spatial broadphase/prediction")
@@ -83,4 +79,3 @@ print(" - GLAD 2 include root is pinned to glad/include")
 print(" - 1k/5k/10k ship-centered actor scales are pinned")
 print(" - P/V/A prediction, spatial bins, corridor filtering and pair queries are measured")
 print(" - overflow/out-of-bounds and 1k CPU-reference correctness are fail-visible")
-print(" - project state/task agree on NAV-V2-MAP-2 measurement gate")

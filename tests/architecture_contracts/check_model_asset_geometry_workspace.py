@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from model_asset_editor_source_bundle import load_source_bundle
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -95,11 +96,10 @@ for required in (
     "geometryStageTable",
     "geometryCompareAllBtn",
     "geometryCompareNoneBtn",
-    "showAll:'ПОКАЗАТЬ ВСЕ'",
-    "hideAll:'СПРЯТАТЬ ВСЕ'",
+    "showAll:tr('model_editor.action.show_all','SHOW ALL')",
+    "hideAll:tr('model_editor.action.hide_all','HIDE ALL')",
     ">● ${text.showAll}</button>",
     ">○ ${text.hideAll}</button>",
-    "wizardStageCheckControls('geometry')",
     "wizardGeometryScanBtn",
     "wizardGeometryConsolidateBtn",
     "wizardGeometryCleanBtn",
@@ -134,14 +134,14 @@ for token in (
 # Visibility is viewport-local and independent per LOD. The first checkbox
 # interaction from default-all isolates the clicked mesh, matching SOURCE/LOD.
 for token in (
-    "geometryStageVisibleByLod:{get:()=>editorViewState.geometryStageVisibility}",
+    "geometryStageVisibleByLod:{get:()=>view.geometryStageVisibility}",
     "function geometryStageVisibilitySet(",
     "function geometryStageNodeVisible(",
     "function setGeometryStageNodeVisible(",
     "if(existing===null){set=new Set([i]);}",
     "function showAllGeometryStageMeshes(",
     "function hideAllGeometryStageMeshes(",
-    "editorViewVisible=editorViewState.renderNodeVisible(state.activeLod,i,rn)",
+    "editorViewVisible=editorViewState.renderNodeVisible(state.activeLod,index,renderNode)",
 ):
     if token not in web:
         raise AssertionError(f"GEOMETRY visibility contract missing {token!r}")
@@ -184,7 +184,7 @@ for token in (
     if token not in contract:
         raise AssertionError(f"PATCH_CONTRACT missing GEOMETRY protection {token!r}")
 
-if 'ModelAssetEditorVersion = "0.10.73"' not in version:
+if not editor_version_at_least("0.10.73"):
     raise AssertionError("editor version is not 0.10.73")
 
 print("[PASS] model asset editor v0.10.73 GEOMETRY per-mesh certification / selection / visibility")

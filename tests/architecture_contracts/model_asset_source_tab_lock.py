@@ -37,7 +37,11 @@ WIZARD_STAGE_ORDER = [
 # Baseline: v0.10.62 layout + v0.10.64 persistent instance links + v0.10.66
 # purity/decomposition + explicit v0.10.67 SOURCE-folder relink recovery control.
 # into certified pure model/HTML builders and a narrow effect adapter.
-SOURCE_TAB_SHA256 = "ddacf6e2cb4d6cbbf22e1b0bfb7ad6ffa242b26394aced4514b47b62c1c7678e"
+# Re-baselined at v0.10.87 (2026-11-06 gate triage): the deliberate, committed
+# application-state / renderer-registry split (089f824f..b553908b), the unified
+# stage validation footer (aab146aa) and the generated-LOD work (6e3f9add) changed
+# the protected surface; SOURCE layout / UX is unchanged by those commits.
+SOURCE_TAB_SHA256 = "1bbc3da3b804f75527e914464239223569758fbb0b37b309b702b521e4172f9f"
 
 PROTECTED_FUNCTIONS = [
     "wizardSourceStageModel",
@@ -167,11 +171,17 @@ def _function_source(body: str, name: str) -> str:
 
 
 def _source_stage_branch(body: str) -> str:
-    marker = "if(stage==='source'){"
+    """SOURCE dispatch: since the application-state split the wizard panel
+    dispatches through createWizardStageRendererRegistry({source:..., ...})."""
+    marker = "createWizardStageRendererRegistry({"
     start = body.find(marker)
     if start < 0:
-        raise AssertionError("SOURCE freeze: renderWizardPanelContents SOURCE branch missing")
-    return "if(stage==='source')" + _balanced_block(body, start)
+        raise AssertionError("SOURCE freeze: wizard stage renderer registry missing")
+    registry = _balanced_block(body, start)
+    entry = re.search(r"source:([A-Za-z_$][\w$]*)", registry)
+    if not entry:
+        raise AssertionError("SOURCE freeze: renderer registry has no SOURCE entry")
+    return "source:" + entry.group(1)
 
 
 def _css_rule(body: str, selector: str) -> str:
@@ -213,7 +223,9 @@ def validate_source_tab_lock() -> None:
         raise AssertionError(
             f"editor structure freeze: wizard stage order changed: {actual_stages!r}"
         )
-    if "wizardStage:'source'" not in body:
+    # The default stage lives in the extracted runtime state (app/runtime_state.js)
+    # since the 0.10.75+ application-state split; search the whole source bundle.
+    if "wizardStage:'source'" not in SOURCE_BUNDLE:
         raise AssertionError("editor structure freeze: SOURCE is no longer the default stage")
 
     button_stages = re.findall(r'data-wizard-stage="([^"]+)"', body)
@@ -236,22 +248,23 @@ def validate_source_tab_lock() -> None:
     # The established SOURCE panel order is part of the contract, not just the
     # existence of controls.
     branch = _source_stage_branch(body)
-    dispatch = "renderWizardSourceStage(root,state.asset,state.settings)"
-    if dispatch not in branch:
+    if branch != "source:renderWizardSourceStage":
         raise AssertionError("SOURCE structure freeze: SOURCE branch no longer dispatches through renderWizardSourceStage")
     source_stage = _function_source(body, "renderWizardSourceStage")
     ordered_tokens = [
         "wizardSourceStageModel(asset,settings)",
         "physicalSizePanelHtml()",
         "maintenanceSourceScanHtml()",
-        "wizardStageCheckControls('source')",
         "wizardSourceStageHtml(model,text,fragments)",
         "bindPhysicalSizePanel()",
         "bindMaintenanceSourceScan(root)",
         "wizardSourceRefreshBtn",
         "wizardSourceReimportBtn",
-        "bindWizardStageCheckControls('source')",
     ]
+    # Stage CHECK controls moved out of every stage into the unified stage
+    # validation footer (aab146aa); SOURCE must not render its own copy.
+    if "wizardStageCheckControls('source')" in source_stage:
+        raise AssertionError("SOURCE structure freeze: SOURCE renders its own stage-check controls again")
     cursor = -1
     for token in ordered_tokens:
         pos = source_stage.find(token, cursor + 1)
@@ -268,7 +281,7 @@ def validate_source_tab_lock() -> None:
     actual_hash = current_source_tab_sha256(body)
     if actual_hash != SOURCE_TAB_SHA256:
         raise AssertionError(
-            "SOURCE TAB IS FROZEN at the accepted v0.10.67 SOURCE-identity baseline: protected SOURCE behavior/layout changed. "
+            "SOURCE TAB IS FROZEN at the accepted v0.10.87 baseline: protected SOURCE behavior/layout changed. "
             f"expected {SOURCE_TAB_SHA256}, got {actual_hash}. "
             "Do not update this digest as a drive-by fix. An intentional SOURCE/structure "
             "change requires an explicit exceptional case plus PATCH_CONTRACT.md/CHANGELOG.md rationale."

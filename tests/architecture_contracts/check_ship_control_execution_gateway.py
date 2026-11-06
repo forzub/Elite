@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import sys
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1])); import source_units  # noqa: E402,F401  (split classes read as one unit)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -128,7 +129,11 @@ for rel, body in (
         if "".join(forbidden.split()) in body_compact:
             fail(f"{rel} bypasses gateway backend: {forbidden}")
 
-if "ShipControlExecutionGateway::integrateAttitude(" not in client_world:
+# acc79cba/72aa299b: fixed and render client ticks share the kinematic-only
+# extrapolator, which propagates orientation through the gateway.
+if "advanceReplicatedHubKinematics(" not in client_world:
+    fail("fixed client prediction bypasses the shared kinematic extrapolator")
+if "ShipControlExecutionGateway::" not in prediction or "propagateOrientation(" not in prediction:
     fail("fixed client attitude prediction bypasses gateway")
 
 # Network authority contract remains command-based: the client sends ordinary

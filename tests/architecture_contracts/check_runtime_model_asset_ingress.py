@@ -48,8 +48,10 @@ assert "EliteModelAsset" in links.group(1)
 assert "EliteAssemblyGeometry" in links.group(1)
 
 for target in ("EliteGame", "EliteServer"):
-    target_links = re.search(rf"target_link_libraries\({target}\s+PRIVATE\s*(.*?)\n\s*\)", CMAKE, re.S)
-    assert target_links and "EliteRuntimeModelAssets" in target_links.group(1), f"{target} does not link runtime model ingress"
+    # A target may have several target_link_libraries calls (single-line and
+    # multi-line); the ingress library must appear in one of them.
+    blocks = re.findall(rf"target_link_libraries\({target}\s+PRIVATE\b([^)]*)\)", CMAKE)
+    assert any(re.search(r"\bEliteRuntimeModelAssets\b", block) for block in blocks), f"{target} does not link runtime model ingress"
 
 assert "PhysicalGeometrySpace::Meters" in ADAPTER
 assert "asset.renderLods.push_back" in ADAPTER

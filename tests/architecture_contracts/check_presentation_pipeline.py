@@ -39,7 +39,7 @@ require(
     "resolveSnapshotPresentationWindow(",
     "presentationWindow.interpolationAlpha",
     "sampleRenderReferenceFrame",
-    "sampleLocalPredictedPresentationTarget",
+    "advanceReplicatedHubKinematics(",  # 4cc1bb90: fractional target = replicated kinematics only
 )
 
 require(

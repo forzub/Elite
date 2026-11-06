@@ -33,9 +33,14 @@ for executable in ("EliteGame", "EliteServer"):
     for source in SOURCES:
         assert source not in body, f"{executable} still compiles {source} directly"
 
-    links = block(
-        rf"target_link_libraries\({executable}\s+PRIVATE\s*(.*?)\n\s*\)",
-        f"{executable} link list",
+    # An executable may have several target_link_libraries blocks (optional
+    # EliteBite / winmm one-liners); the union of them is the link list.
+    links = "\n".join(
+        re.findall(
+            rf"target_link_libraries\({executable}\s+PRIVATE\s*(.*?)\n?\s*\)",
+            CMAKE,
+            re.S,
+        )
     )
     assert "EliteNavigationGeometry" in links, (
         f"{executable} does not link EliteNavigationGeometry"

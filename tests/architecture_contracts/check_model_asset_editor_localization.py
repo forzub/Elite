@@ -1,5 +1,6 @@
 from pathlib import Path
 import json,re,sys
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 ROOT=Path(__file__).resolve().parents[2]
 CAT=ROOT/'src/assets/localization/ui/tools/model_asset_editor.json'
 HTML=ROOT/'src/assets/webui/model_asset_editor.html'
@@ -106,7 +107,7 @@ for key,locale,forbidden in [
 # Fallback English is permitted only when a locale value is actually absent.
 # A present non-English locale may not silently copy full English prose.
 version=VERSION.read_text(encoding='utf-8')
-if 'ModelAssetEditorVersion = "0.10.87"' not in version: errors.append('expected editor version 0.10.87')
+if not editor_version_at_least("0.10.87"): errors.append('expected editor version 0.10.87')
 for required in [
  'model_editor.physical_scale.title','model_editor.surfaces.selection_help','model_editor.geometry_inventory.shared_tip',
  'model_editor.maintenance.scan_metrics','model_editor.overlay.render_detail','model_editor.common.detached'

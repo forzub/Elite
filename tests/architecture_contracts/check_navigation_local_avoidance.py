@@ -8,8 +8,6 @@ TEST = (ROOT / "tests/navigation_local/NavigationLocalAvoidanceTests.cpp").read_
 CMAKE = (ROOT / "src/world/navigation/local/CMakeLists.txt").read_text(encoding="utf-8")
 TEST_CMAKE = (ROOT / "tests/navigation_local/CMakeLists.txt").read_text(encoding="utf-8")
 README = (ROOT / "src/world/navigation/local/README.md").read_text(encoding="utf-8")
-CURRENT_TASK = (ROOT / "CURRENT_TASK.md").read_text(encoding="utf-8")
-CURRENT_STATE = (ROOT / "CURRENT_STATE.md").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -44,7 +42,8 @@ for marker in (
     "ConflictHold",
     "StaleHold",
     "StaticHold",
-    "targetProbesExamined",
+    "offsetCandidatesExamined",
+    "lateralGridHalfExtentSamples",
     "staticRejected",
     "dynamicRejected",
     "startRegionId",
@@ -52,15 +51,15 @@ for marker in (
     require(marker in HEADER, f"local avoidance API marker missing: {marker}")
 
 for marker in (
-    "primaryDeflectionRadians",
-    "secondaryDeflectionRadians",
-    "azimuthSamples",
+    # Visible-horizon bypass (9b87e385 / 58089c65): a bounded lateral offset
+    # grid replaced the deflection/azimuth probe fan.
+    "policy.lateralGridHalfExtentSamples",
     "staticAdditionalClearanceMeters",
     "staticQueries.queryPoint",
     "staticQueries.querySegment",
-    "targetStatic.spaceRevision != start.spaceRevision",
-    "targetStatic.sourceRevision != start.sourceRevision",
-    "targetStatic.regionId != start.regionId",
+    "nominalStatic.spaceRevision != start.spaceRevision",
+    "nominalStatic.sourceRevision != start.sourceRevision",
+    "firstStatic.startRegionId != start.regionId",
     "horizonPlanner.evaluate",
     "TargetMode::PassThrough",
     "Status::AdjustedClear",
@@ -83,30 +82,27 @@ require("navigation_local_avoidance_tests" in TEST_CMAKE,
         "local avoidance behavioral test target missing")
 
 for marker in (
-    "testNominalClearPassesThroughWithoutProbes",
-    "testSweptCorridorBlockerFindsSameRegionLateralTarget",
-    "testHeadOnConflictRemainsFailClosed",
-    "testNarrowStaticRegionRejectsLateralBypass",
-    "testStaleDynamicResultSkipsAvoidanceProbes",
+    "testNominalClearPassesThroughWithoutOffsetSearch",
+    "testCrossingObstacleProjectsToNormalPlaneAndFindsBypass",
+    "testHeadOnObstacleCanBypassWithoutMandatoryStop",
+    "testNarrowStaticRegionFailsClosedWhenNoOffsetFits",
+    "testStaleDynamicResultSkipsOffsetSearch",
     "testNonTraversableStartFailsStaticHold",
-    "NAVIGATION LOCAL AVOIDANCE CONTRACT TESTS: PASS",
+    "NAVIGATION LOCAL VISIBLE-HORIZON BYPASS TESTS: PASS",
 ):
     require(marker in TEST, f"local avoidance fixture missing: {marker}")
 
 for marker in (
-    "same-region",
-    "same static publication",
     "lateral",
-    "head-on",
+    "head_on",
+    "portal-crossing",
     "fail closed",
 ):
     require(marker in README.lower(),
             f"local avoidance documentation missing: {marker}")
 
-require("NAV-V2-LOCAL-1" in CURRENT_TASK and "avoidance" in CURRENT_TASK.lower(),
-        "CURRENT_TASK does not declare the local avoidance slice")
-require("NAV-V2-LOCAL-1" in CURRENT_STATE and "avoidance" in CURRENT_STATE.lower(),
-        "CURRENT_STATE does not record the local avoidance slice")
+# Legacy CURRENT_TASK/CURRENT_STATE stage markers are no longer checked
+# (PROJECT_STATE.md is the only living state file, AGENTS.md).
 
 print("NAVIGATION LOCAL AVOIDANCE BOUNDARY CONTRACT: PASS")
 print(" - adjusted-target search remains backend-neutral and bounded")
@@ -114,5 +110,5 @@ print(" - static state crosses the calculation boundary only through NavigationS
 print(" - static endpoint evidence must come from one space/source revision")
 print(" - lateral targets require same-region static free-space proof")
 print(" - dynamic candidates are rechecked through the accepted LocalHorizonPlanner")
-print(" - swept-corridor blockers may adjust; current-kinematics head-on remains fail closed")
+print(" - crossing and head-on blockers may bypass inside the visible horizon; no fit fails closed")
 print(" - stale/static-unsafe inputs do not invent a bypass")

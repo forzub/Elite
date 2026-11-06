@@ -54,8 +54,8 @@ for token in (
     "v.navigationExecution",
     "v.intentRevision",
     "v.activeTargetRevision",
-    "v.executedLinearAccelerationDemandMapMps2",
-    "v.executedAngularAccelerationDemandMapRadPerSec2",
+    "v.executedLinearAccelerationDemandSystemMps2",  # cfecf101: system-space names
+    "v.executedAngularAccelerationDemandSystemRadPerSec2",
     "v.mainEngineAccelerationMps2",
     "v.manoeuvreAccelerationMps2",
     "v.assistedStabilizationAccelerationMps2",
@@ -74,7 +74,7 @@ for token in (
         fail(f"obsolete client-composed map response remains in wire schema: {token}")
 
 for token in (
-    "SimulationSnapshotWireSchemaVersion = 16u",
+    "SimulationSnapshotWireSchemaVersion = ",  # the version itself is not pinned
     "SimulationSnapshotWireSchemaVersion",
     "MapResponseWireSchemaVersion",
     "encodeSimulationSnapshot(",

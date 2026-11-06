@@ -3,6 +3,7 @@
 #include "src/game/system_map/LocalMapAtmosphereRenderer.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
 #include "src/game/system_map/PlanetBodyOrientation.h"
+#include "src/game/system_map/PlanetMapAxes.h"
 
 #include <algorithm>
 #include <cmath>
@@ -19,6 +20,10 @@
 
 namespace
 {
+using game::system_map::planetEastAxisWorld;
+using game::system_map::planetNorthAxisWorld;
+using game::system_map::planetPrimeAxisWorld;
+
 double degToRadD(double degrees)
 {
     return degrees * glm::pi<double>() / 180.0;
@@ -31,32 +36,6 @@ glm::dvec3 safeNormalizeD(
 {
     const double length = glm::length(value);
     return length <= 1.0e-12 ? fallback : value / length;
-}
-
-glm::dvec3 planetNorthAxisWorld(
-    const world::celestial::DetailMapSnapshot& planet
-)
-{
-    return game::system_map::makePlanetBodyOrientation(
-        planet.planetAxialTiltDeg,
-        planet.planetAxisNodeDeg
-    ).north;
-}
-
-glm::dvec3 planetPrimeAxisWorld(const glm::dvec3& north)
-{
-    return game::system_map::planetPrimeAxisFromNorth(north);
-}
-
-glm::dvec3 planetEastAxisWorld(
-    const glm::dvec3& north,
-    const glm::dvec3& prime
-)
-{
-    return game::system_map::planetEastAxisFromNorthAndPrime(
-        north,
-        prime
-    );
 }
 
 glm::dvec3 planetSurfacePointMeters(

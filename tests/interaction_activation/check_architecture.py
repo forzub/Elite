@@ -189,7 +189,12 @@ else:
         if token not in execution:
             violations.append(f"ActivationExecutionPolicy contract missing {token}")
 
-sim_cpp = GAME_SIM_CPP.read_text(encoding="utf-8")
+# GameSimulation.cpp was split into GameSimulation*.cpp units (Activation,
+# FreeFlight, ReferenceFrames, DevScenarios, ...).
+sim_cpp = "".join(
+    path.read_text(encoding="utf-8")
+    for path in sorted(GAME_SIM_CPP.parent.glob("GameSimulation*.cpp"))
+)
 sim_h = GAME_SIM_H.read_text(encoding="utf-8")
 cadence_lab = CADENCE_LAB.read_text(encoding="utf-8") if CADENCE_LAB.exists() else ""
 scene_cpp = SCENE_CPP.read_text(encoding="utf-8")
@@ -315,15 +320,17 @@ planner_region, outside_planner_functions = function_region(
 )
 
 ai_start = outside_planner_functions.find("// === 1. AI / controls / attitude ===")
-ai_end = outside_planner_functions.find("ShipControlState aiControl", ai_start)
+ai_end = outside_planner_functions.find("NpcNavigationGoal goal;", ai_start)
 ai_region = (
     outside_planner_functions[ai_start:ai_end]
     if ai_start >= 0 and ai_end >= 0
     else ""
 )
 
+# activationExecutionMode(id) became motionExecutionMode(id) for the
+# materialized motion/AI/maintenance lanes.
 for token in (
-    "activationExecutionMode(id)",
+    "motionExecutionMode(id)",
     "advanceNpcAiCadence",
     "ActivationNpcAiCadenceEnabled",
 ):
@@ -331,7 +338,7 @@ for token in (
         violations.append(f"Stage 4A NPC AI execution lane missing {token}")
 
 maintenance_start = outside_planner_functions.find(
-    "const auto maintenanceMode = activationExecutionMode(id);"
+    "const auto maintenanceMode = motionExecutionMode(id);"
 )
 maintenance_end = outside_planner_functions.find(
     "if (npcRepairThinkTick", maintenance_start
@@ -402,7 +409,8 @@ for token in (
     "m_shipMotionControlStepDecisions.find(id)",
     "!decisionIt->second.execute",
     "motionControlDt",
-    "DynamicMotionSystem::applyLocalFrameInput(",
+    # Control semantics sit behind the ship control execution gateway.
+    "shipPtr->updateTranslationControl(motionControlDt)",
 ):
     if token not in input_region:
         violations.append(f"Stage 4B HubTactical control refresh missing {token}")
@@ -410,9 +418,11 @@ for token in (
 # Cheap translation propagation must stay fixed-step and outside the control
 # cadence gate. Sparse replication is a later slice with explicit omission
 # semantics; Stage 4B keeps every materialized entity present in snapshots.
+# Translation propagation goes through Ship -> ShipControlExecutionGateway
+# (which owns DynamicMotionSystem::updateLocalFrameMotion); snapshot assembly
+# lives in GameSimulationReplication.cpp (part of sim_cpp).
 for token in (
-    "DynamicMotionSystem::updateLocalFrameMotion(",
-    "shipPtr->core().desc().physics,\n                dt",
+    "shipPtr->propagateHubTacticalTranslation(dt)",
     "snapshot.ships.push_back(s);",
 ):
     if token not in outside_planner_functions:

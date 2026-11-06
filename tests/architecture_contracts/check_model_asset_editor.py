@@ -6,6 +6,7 @@ import re
 import check_model_asset_function_purity as purity
 from model_asset_core_tabs_lock import _function_source, validate_core_tabs_lock
 from model_asset_editor_source_bundle import load_source_bundle
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -13,6 +14,12 @@ ROOT = Path(__file__).resolve().parents[2]
 def text(path: str) -> str:
     if path == "src/assets/webui/model_asset_editor.html":
         return load_source_bundle(ROOT)
+    if path == "src/model_asset/ModelAssetBinary.cpp":
+        # The binary facade delegates to the physically split layers under
+        # src/model_asset/binary (check_model_asset_binary_layers.py); contracts
+        # reason about the facade + its layers as one serializer.
+        parts = [ROOT / path, *sorted((ROOT / "src/model_asset/binary").rglob("*.cpp"))]
+        return "".join(p.read_text(encoding="utf-8", errors="replace") for p in parts)
     return (ROOT / path).read_text(encoding="utf-8", errors="replace")
 
 
@@ -55,15 +62,20 @@ require(
     "struct RepairTarget",
     "std::vector<RenderLod> renderLods",
 )
+# The binary facade delegates to the split layers under src/model_asset/binary
+# (see check_model_asset_binary_layers.py); the v4 tokens live there now.
 require(
     "src/model_asset/ModelAssetBinary.cpp",
-    "ManifestMagicV4",
-    "MeshMagicV4",
     "ModelAssetBinary::validate",
     "saveManifest",
     "saveLod",
     "loadManifest",
     "loadLod",
+)
+require("src/model_asset/binary/ModelAssetBinaryManifestIO.cpp", "ManifestMagicV4")
+require("src/model_asset/binary/ModelAssetBinaryLodIO.cpp", "MeshMagicV4")
+require(
+    "src/model_asset/binary/ModelAssetBinaryValidation.cpp",
     "duplicate RenderNode id",
     "duplicate semantic Node id",
 )
@@ -241,13 +253,19 @@ build_body = body_between(
 for token in (
     "compiledPath(m_selectedId)",
     "ModelAssetBinary::save(path.string(), productionAsset, &error)",
-    "ModelAsset productionAsset = m_asset;",
-    "scaleAuthoringDistancesUniform(productionAsset, productionAsset.physicalSize.sourceToMeters);",
-    "productionAsset.physicalSize.geometrySpace = PhysicalGeometrySpace::Meters;",
+    "ModelAsset productionAsset = makeProductionCopy(m_asset);",
     "production editor sidecar is finalized by checkWizardStage()",
 ):
     if token not in build_body:
         raise AssertionError(f"BUILD production boundary missing {token!r}")
+# The metric production copy is the shared ModelAssetBuild (editor + headless build).
+for token in (
+    "ModelAsset production = working;",
+    "scaleAuthoringDistancesUniform(production, production.physicalSize.sourceToMeters);",
+    "production.physicalSize.geometrySpace = PhysicalGeometrySpace::Meters;",
+):
+    if token not in text("src/model_asset/ModelAssetBuild.cpp"):
+        raise AssertionError(f"BUILD production copy missing {token!r}")
 if 'validationError = "save the current WORKING ASSET before BUILD"' not in check_body:
     raise AssertionError("BUILD no longer requires an explicitly saved WORKING ASSET")
 
@@ -351,7 +369,7 @@ for token in (
     "let uiScrollPreserveDepth=0",
     "function preserveUiScroll(render)",
     "function renderWizardPanelContents()",
-    "function renderWizardPanel(){const result=preserveUiScroll(renderWizardPanelContents);renderSharedStageMeshPanel();return result;}",
+    "function renderWizardPanel(){const result=preserveUiScroll(renderWizardPanelContents);renderSharedStageMeshPanel();renderWizardStageFooter();return result;}",
     'data-preserve-scroll="side-panel"',
     'data-preserve-scroll="wizard-bar"',
     'data-preserve-scroll="geometry-compare"',
@@ -387,7 +405,8 @@ for token in (
 # -----------------------------------------------------------------------------
 # 0.10.64 GEOMETRY workspace: per-mesh certification, readable identities
 # -----------------------------------------------------------------------------
-geometry_stage = web[web.index("if(stage==='geometry')"):web.index("if(stage==='surfaces')")] + _function_source(web, "wizardGeometryStageModel") + _function_source(web, "wizardGeometryStageHtml") + _function_source(web, "renderWizardGeometryStage")
+# Stage dispatch is the renderer registry now; the GEOMETRY stage is its three functions.
+geometry_stage = _function_source(web, "wizardGeometryStageModel") + _function_source(web, "wizardGeometryStageHtml") + _function_source(web, "renderWizardGeometryStage")
 for token in (
     'class="geometryStickyToolbar"',
     'geometryStageTable',
@@ -398,11 +417,13 @@ for token in (
     'wizardExtraMeshTable',
     'wizardBaseReplacementTable',
     'wizardGeometryEditor',
-    "wizardStageCheckControls('geometry')",
     'geometryStatsHtml(lod)',
 ):
     if token not in geometry_stage:
         raise AssertionError(f"0.10.64 GEOMETRY workflow missing {token!r}")
+# Stage CHECK moved into the unified stage validation footer (aab146aa).
+if "wizardStageCheckControls('geometry')" in geometry_stage:
+    raise AssertionError("GEOMETRY renders its own stage-check controls again")
 
 for token in (
     'grid-template-columns:28px 28px 24px minmax(0,1fr) 40px 42px',
@@ -443,11 +464,10 @@ order = [
     geometry_stage.index('wizardGeometryCandidates'),
     geometry_stage.index('wizardExtraMeshTable'),
     geometry_stage.index('wizardGeometryEditor'),
-    geometry_stage.index("wizardStageCheckControls('geometry')"),
     geometry_stage.index('geometryStatsHtml(lod)'),
 ]
 if order != sorted(order):
-    raise AssertionError("GEOMETRY workflow order regressed: compare -> replacements -> edit -> CHECK -> stats")
+    raise AssertionError("GEOMETRY workflow order regressed: compare -> replacements -> edit -> stats")
 
 if 'data-wizard-groups="lods geometry"' in web:
     raise AssertionError("Render LOD files panel leaked back into GEOMETRY")
@@ -457,7 +477,7 @@ if 'id="renderInspectorSection" class="section" data-wizard-groups="geometry' in
 for token in (
     '.geometryStickyToolbar{position:sticky',
     '.geometryWorkspace .geometryStageTable{max-height:min(66vh,720px);min-height:390px}',
-    'geometryStageVisibleByLod:{get:()=>editorViewState.geometryStageVisibility}',
+    'geometryStageVisibleByLod:{get:()=>view.geometryStageVisibility}',
     "meshStageVisualClass(item.geometry,'geometry')",
     'syncGeometryWorkspaceSelectionUi',
     '.compareNode{white-space:normal',
@@ -466,7 +486,7 @@ for token in (
     '.baseReplaceIdentity .source{',
     'function geometrySelectionNeedsAncestor(index,lod)',
     "state.geometryCompareChecked.size>0",
-    'editorViewVisible=editorViewState.renderNodeVisible(state.activeLod,i,rn)',
+    'editorViewVisible=editorViewState.renderNodeVisible(state.activeLod,index,renderNode)',
     'function renderGeometryEditor()',
     'function geometryStatsHtml(lod)',
 ):
@@ -487,7 +507,6 @@ for token in (
     'semanticGraphExplode',
     'semanticBindingSummaryHtml',
     "tr('model_editor.semantics.binding.repair'",
-    "wizardStageCheckControls('semantics')",
 ):
     if token not in semantic_stage and token not in web:
         raise AssertionError(f"0.10.37 SEMANTICS tree/link workflow missing {token!r}")
@@ -666,7 +685,7 @@ if 'clearSemanticJointGizmos()' not in joint_rebuild:
 # is distinguished from a drag by a small movement threshold.
 if "addEventListener('pointerdown',pick)" in web:
     raise AssertionError('viewport selection fires on camera-drag pointerdown')
-for token in ("pickStart={id:ev.pointerId", 'Math.hypot(', 'if(moved<=4)pick(ev)'):
+for token in ("pickStart={id:event.pointerId", 'Math.hypot(', 'if(moved<=4)onPick?.(event)'):
     if token not in web:
         raise AssertionError(f'viewport click-vs-orbit guard missing {token!r}')
 
@@ -732,7 +751,8 @@ for token in (
     'semanticIsDescendant(nodes||[],i,Number(index))',
     'function updateSemanticCollisionTransforms()',
     "if((state.wizardStage==='physics'||state.wizardStage==='damage')&&$('hitToggle').checked)",
-    "function rebuildCollisions(){clearGroup(state.collisionGroup);if(!state.asset||!activeRenderLod(state.asset?.renderLods,state.activeLod)?.loaded||!$('hitToggle').checked)return;",
+    "function rebuildCollisions(){",
+    "if(!state.asset||!activeRenderLod(state.asset?.renderLods,state.activeLod)?.loaded||!isCollisionVisible())return;",
     'Number(n.parentIndex)<0)return null;',
 ):
     if token not in web:
@@ -857,7 +877,8 @@ for token in (
     if token not in model:
         raise AssertionError(f"0.10.47 asset-data contract missing {token!r}")
 
-binary = text("src/model_asset/ModelAssetBinary.cpp")
+# The chunk table lives in the split binary layer (ModelAssetBinaryChunkRegistry.cpp).
+binary = text("src/model_asset/binary/ModelAssetBinaryChunkRegistry.cpp")
 for token in (
     "{{{'S','I','Z','E'}}, writePhysicalSizeV4, readPhysicalSizeV4}",
     "{{{'S','M','E','T'}}, writeSocketMetadataV4, readSocketMetadataV4}",
@@ -875,8 +896,7 @@ for token in (
     'command == "calibrate_physical_scale"',
     "profile.sourceExtent = sourceExtent;",
     "profile.sourceToMeters = profile.targetMeters / sourceExtent;",
-    "ModelAsset productionAsset = m_asset;",
-    "scaleAuthoringDistancesUniform(productionAsset, productionAsset.physicalSize.sourceToMeters);",
+    "ModelAsset productionAsset = makeProductionCopy(m_asset);",
     "semanticBoundarySegments",
     "makeStructuralProxySeed",
     'command == "add_structural_link"',
@@ -1019,7 +1039,7 @@ for token in (
 # result stays visible as cached evidence across same-asset geometry refreshes.
 # Render-node visibility is editor-only and independent from semantic hiding.
 for token in (
-    "lodPreflightVisibleByLod:{get:()=>editorViewState.lodPreflightVisibility}",
+    "lodPreflightVisibleByLod:{get:()=>view.lodPreflightVisibility}",
     "preflightMeshToolbarHtml",
     "preflightFlipSelected",
     "selectedMeshOrientationAction",
@@ -1034,7 +1054,7 @@ for token in (
         raise AssertionError(f"LOD mesh visibility/cached-preflight UI contract missing {token!r}")
 
 # Keep the exact current editor version guarded.
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.74"')
+require_editor_version_at_least("0.10.74")
 
 # These marker phrases are intentionally referenced by the capability registry.
 manual_working_state_marker = "manual working-state save/restore contract"

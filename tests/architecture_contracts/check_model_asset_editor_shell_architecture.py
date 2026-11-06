@@ -2,6 +2,7 @@
 from pathlib import Path
 import re
 import sys
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT=Path(__file__).resolve().parents[2]
 HTML=ROOT/'src/assets/webui/model_asset_editor.html'
@@ -29,7 +30,7 @@ if 'createEditorTransportBridge' not in html or 'editorTransportBridge.bind(crea
  fail('transport composition bridge is missing')
 if 'createEditorViewState' not in html or 'installEditorViewProjection' not in html:
  fail('view-state composition is missing')
-if not re.search(r'ModelAssetEditorVersion\s*=\s*"0.10.87"',version):fail('editor version must be 0.10.87')
+if not editor_version_at_least("0.10.87"):fail('editor version must be 0.10.87')
 
 print('MODEL ASSET EDITOR SHELL ARCHITECTURE: PASS')
 print(' - extracted application/session/transport/viewport implementations stay outside the shell')

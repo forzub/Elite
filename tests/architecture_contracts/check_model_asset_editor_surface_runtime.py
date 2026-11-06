@@ -1,5 +1,6 @@
 from pathlib import Path
 import sys
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 ROOT=Path(__file__).resolve().parents[2]
 HTML=(ROOT/'src/assets/webui/model_asset_editor.html').read_text(encoding='utf-8')
 HANDLERS=(ROOT/'src/assets/webui/model_asset_editor/session/handlers.js').read_text(encoding='utf-8')
@@ -10,7 +11,7 @@ expected="surfaceDisplayRows.filter(r=>surfaceGeometryVisibility(effectiveGeomet
 if expected not in HTML: errors.append('SURFACES visible-count path does not use authoritative visibility adapter')
 if 'state.surfaceAnalysisRequested=false;' not in HANDLERS or 'state.surfaceAnalysisReady=true;' not in HANDLERS:
  errors.append('surface-analysis result does not close requested->ready transition')
-if 'ModelAssetEditorVersion = "0.10.87"' not in VERSION: errors.append('expected editor version 0.10.87')
+if not editor_version_at_least("0.10.87"): errors.append('expected editor version 0.10.87')
 if errors:
  print('MODEL ASSET EDITOR SURFACE RUNTIME: FAIL')
  for error in errors: print(' -',error)

@@ -5,13 +5,14 @@ import re
 
 import check_model_asset_function_purity as purity
 from model_asset_editor_source_bundle import load_source_bundle
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 BUNDLE = load_source_bundle(ROOT)
 VERSION = (ROOT / 'tools/model_asset_editor/EditorVersion.h').read_text(encoding='utf-8')
 WORKSPACE = (ROOT / 'src/assets/webui/model_asset_editor/semantics/workspace.js').read_text(encoding='utf-8')
 
-if 'ModelAssetEditorVersion = "0.10.73"' not in VERSION:
+if not editor_version_at_least("0.10.73"):
     raise AssertionError('editor version is not 0.10.73')
 
 if not re.search(r'function\s+semanticSelectedPanels\s*\(\s*selected\s*,\s*model\s*,\s*text\s*,\s*relationText\s*\)', WORKSPACE):

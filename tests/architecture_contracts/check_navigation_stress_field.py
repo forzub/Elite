@@ -18,14 +18,17 @@ def require(condition: bool, message: str) -> None:
 # X=prograde, Y=radial, Z=normal. Keep the transform pinned because layout and
 # navigation must describe the same physical field.
 require(
-    '-progradeAxis * localVector.z' in hub_basis,
+    # Formatting-insensitive: the subtraction now spans two source lines.
+    '-progradeAxis*localVector.z' in "".join(hub_basis.split()),
     "Hub visual/navigation basis sign contract changed",
 )
 
 required_scene_tokens = [
     '"hub_hex_dock_a"',
     '"guidance_dock_cylinder_b"',
-    'two staggered deterministic shells around the hub',
+    # The two-shell comment is re-wrapped; pin the shell labels instead.
+    'Inner shell: radius ~= 3 km',
+    'Outer shell: radius ~= 5 km',
     # Representative points on both shells. These intentionally do not form the
     # old player->dock barrier.
     'glm::dvec3(2770.0, 900.0, 1150.0)',
@@ -59,11 +62,15 @@ required_obstacle_tokens = [
 missing_obstacle = [token for token in required_obstacle_tokens if token not in obstacles]
 require(not missing_obstacle, "missing broadphase tokens: " + ", ".join(missing_obstacle))
 
+# The global perf logger was removed (22503389): the header only composes an
+# explicit path and must stay free of I/O, clocks and working-directory lookups.
 required_perf_tokens = [
-    'navigationPerfLogPath()',
-    'std::filesystem::absolute(',
-    '"[NavigationPerf] log_path="',
+    'navigationPerfLogPath(',
+    'const std::filesystem::path& diagnosticsRoot',
+    '"navigation_perf.log"',
 ]
+for forbidden in ('std::ofstream', 'std::chrono', 'current_path(', 'std::cout', 'std::cerr'):
+    require(forbidden not in perf_header, 'navigation perf header regained side effects: ' + forbidden)
 missing_perf = [token for token in required_perf_tokens if token not in perf_header]
 require(not missing_perf, "missing perf-log path tokens: " + ", ".join(missing_perf))
 
@@ -89,4 +96,4 @@ print(" - 16 deterministic obstacles are distributed on two staggered Hub shells
 print(" - old route-crossing barrier layout is forbidden")
 print(" - conservative segment/obstacle broadphase retained")
 print(" - Hub Map names are hover-only over the shared object overlay")
-print(" - navigation perf log announces its absolute startup path")
+print(" - navigation perf log path is composed explicitly, without logger side effects")

@@ -7,6 +7,7 @@ from model_asset_source_tab_lock import _function_source
 import shutil
 import subprocess
 import tempfile
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB = load_source_bundle(ROOT)
@@ -89,7 +90,7 @@ for token in (
     if token not in CONTRACT:
         raise AssertionError(f"PATCH_CONTRACT missing acceptance queue rule: {token!r}")
 
-if 'ModelAssetEditorVersion = "0.10.73"' not in VERSION:
+if not editor_version_at_least("0.10.73"):
     raise AssertionError("editor version is not 0.10.73")
 
 print("[PASS] model asset editor v0.10.73 SOURCE checked-change acceptance queue")

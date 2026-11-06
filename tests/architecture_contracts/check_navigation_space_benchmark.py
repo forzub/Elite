@@ -6,8 +6,6 @@ BENCH = (ROOT / "benchmarks/navigation_space/main.cpp").read_text(encoding="utf-
 CMAKE = (ROOT / "benchmarks/navigation_space/CMakeLists.txt").read_text(encoding="utf-8")
 RUNNER = (ROOT / "benchmarks/navigation_space/run_mingw64.sh").read_text(encoding="utf-8")
 README = (ROOT / "benchmarks/navigation_space/README.md").read_text(encoding="utf-8")
-CURRENT_STATE = (ROOT / "CURRENT_STATE.md").read_text(encoding="utf-8")
-CURRENT_TASK = (ROOT / "CURRENT_TASK.md").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -54,10 +52,8 @@ for marker in (
     require(marker.lower() in README.lower(),
             f"static-space benchmark documentation missing: {marker}")
 
-require("NAV-V2-SPACE-1" in CURRENT_STATE,
-        "CURRENT_STATE is not on NAV-V2-SPACE-1")
-require("NAV-V2-SPACE-1" in CURRENT_TASK,
-        "CURRENT_TASK is not on NAV-V2-SPACE-1")
+# Stage markers in the legacy CURRENT_TASK/CURRENT_STATE histories are no longer
+# checked: PROJECT_STATE.md is the only living state file (AGENTS.md).
 
 print("NAVIGATION SPACE BENCHMARK CONTRACT: PASS")
 print(" - deterministic open/hub 1k/5k/10k topology scales are pinned")

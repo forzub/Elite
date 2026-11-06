@@ -62,7 +62,7 @@ try:
         "GeometricPathPlanner::plan",
         "segmentClearOfNavigationObstacles",
         "gateSpacingMeters",
-        "dock alignment blocked",
+        "dock mandatory ingress blocked",
     )
     forbid(
         "src/game/navigation/DockingAdvisoryPlanner.h",
@@ -71,11 +71,12 @@ try:
         "targetObstacleId",
     )
 
-    # Client planning builds real OBB/capsule geometry once, at the frozen
-    # planning epoch, instead of SpaceState inventing magic obstacle radii.
+    # Client planning builds real geometry once, at the frozen planning epoch,
+    # from the authoritative replicated hit volumes (52a54333), instead of
+    # SpaceState inventing magic obstacle radii.
     require(
         "src/game/client/ClientNavigationPlanningSnapshotFactory.cpp",
-        "makeNavigationObstacleForObject",
+        "NavigationHitVolumeAdapter::buildObstacles",
         "navigationObstacles",
         "targetNavigationObstacleId",
     )
@@ -144,7 +145,7 @@ try:
         "tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",
         "r.gateSpacingMeters=500.0",
         "far dock failed:",
-        "corridor entry/exit semantics failed",
+        "corridor warning/leave/reentry semantics failed",
     )
 
     print("[PASS] canonical obstacle geometry + shared geometric path planner")

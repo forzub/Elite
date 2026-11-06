@@ -40,20 +40,26 @@ try:
         "GeometricPathPlanner::plan", "segmentClearOfNavigationObstacles",
         "gateSpacingMeters", "brakingMps2", "lateralMps2",
     )
+    # Card actions live in the SystemMapRendererNavigation.cpp translation unit
+    # (SystemMapRenderer facade split).
     require(
-        "src/game/system_map/SystemMapRenderer.cpp",
+        "src/game/system_map/SystemMapRendererNavigation.cpp",
         'calculate.key = "show_docking_route"',
         "dockingRouteRequests().request", "cancelDockingTaskForClosedCard",
         "dockingRouteRequests().clear", "decorateActiveGuidanceTrajectory",
+    )
+    require(
+        "src/game/system_map/SystemMapRenderer.cpp",
+        "decorateActiveGuidanceTrajectory(",
     )
     require(
         "src/game/system_map/MapObjectOverlayRenderer.cpp",
         "drawProjectedTrajectory", "MapTrajectoryKind::Planned", "GL_LINE_STRIP",
     )
     require(
-        "src/game/SpaceState.cpp",
-        "updateDockingAdvisory", "buildAuthoritativeHubSnapshot",
-        "GuidanceSource::DockingComputer", "spatialAdvisoryGates = true",
+        "src/game/SpaceStateDocking.cpp",
+        "void SpaceState::updateDockingAdvisory()", "buildAuthoritativeHubSnapshot",
+        "GuidanceSource::DockingComputer", "route.spatialAdvisoryGates = ",
         "request.gateSpacingMeters = 500.0",
     )
     require(

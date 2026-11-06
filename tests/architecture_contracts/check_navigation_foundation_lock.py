@@ -108,20 +108,28 @@ try:
         if (ROOT / retired).exists():
             raise AssertionError(f"retired docking guidance file returned: {retired}")
 
+    # updateDockingAdvisory moved from SpaceState.cpp into SpaceStateDocking.cpp
+    # (behaviour-preserving split, 2026-10-29).
     require(
-        "src/game/SpaceState.cpp",
+        "src/game/SpaceStateDocking.cpp",
         "void SpaceState::updateDockingAdvisory()",
         "buildAuthoritativeHubSnapshot",
-        "DockingAdvisoryPlanner::plan",
+        "Pipeline::route(request)",
         "request.gateSpacingMeters = 500.0",
         "GuidanceSource::DockingComputer",
-        "spatialAdvisoryGates = true",
+        "route.spatialAdvisoryGates = ",
+    )
+    # The client reaches the static DockingAdvisory product through the
+    # planner::RoutePlanner facade (Assisted/Newtonian planning pipelines).
+    require(
+        "src/game/navigation/planner/RoutePlanner.cpp",
+        "DockingAdvisoryPlanner::plan",
     )
     require(
         "src/game/navigation/DockingAdvisoryPlanner.cpp",
         "GeometricPathPlanner::plan",
         "segmentClearOfNavigationObstacles",
-        "dock alignment blocked",
+        "dock mandatory ingress blocked",
     )
 
     # The abandoned LocalGuidance/Ruckig route stack may remain compiled for
@@ -174,7 +182,7 @@ try:
     # Route calculation is allowed to mutate only navigation workspace/output.
     # It must not write simulation, cloud, map-resource or replicated transforms.
     guidance = function_body(
-        "src/game/SpaceState.cpp",
+        "src/game/SpaceStateDocking.cpp",
         "void SpaceState::updateDockingAdvisory()",
     )
     for forbidden in (
@@ -230,7 +238,8 @@ try:
     # genuinely static cylinder. This is our visual + collision-frame fixture.
     setup = source("src/game/scene/GameSceneSetup.cpp")
     box_pattern = re.compile(
-        r'ObjectType::GuidanceDockCube.*?glm::dvec3\(0\.0, 0\.0, 2\.0\)',
+        # The rotating probe is now the Earth Orbital Hub hex dock (56942af4).
+        r'ObjectType::(?:HubHexDock|GuidanceDockCube).*?glm::dvec3\(0\.0, 0\.0, 2\.0\)',
         re.S,
     )
     cylinder_pattern = re.compile(
@@ -238,7 +247,7 @@ try:
         re.S,
     )
     if not box_pattern.search(setup):
-        raise AssertionError("Hub guidance box is no longer the slow 2 deg/s rotation probe")
+        raise AssertionError("Hub hex dock is no longer the slow 2 deg/s rotation probe")
     if not cylinder_pattern.search(setup):
         raise AssertionError("Hub guidance cylinder is no longer static")
 
@@ -280,7 +289,7 @@ try:
     require(
         "tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",
         "spinning dock pose inconsistent",
-        "corridor entry/exit semantics failed",
+        "corridor warning/leave/reentry semantics failed",
         "r.gateSpacingMeters=500.0",
     )
     require(

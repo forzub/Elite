@@ -7,7 +7,6 @@ MAIN = (BENCH / "main.cpp").read_text(encoding="utf-8")
 CMAKE = (BENCH / "CMakeLists.txt").read_text(encoding="utf-8")
 RUNNER = (BENCH / "run_mingw64.sh").read_text(encoding="utf-8")
 README = (BENCH / "README.md").read_text(encoding="utf-8")
-CURRENT_TASK = (ROOT / "CURRENT_TASK.md").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -57,12 +56,8 @@ for marker in (
     require(marker in README.lower(),
             f"local benchmark documentation missing: {marker}")
 
-require(
-    "benchmarks/navigation_local/" in CURRENT_TASK and
-    "candidate" in CURRENT_TASK.lower() and
-    "benchmark" in CURRENT_TASK.lower(),
-    "CURRENT_TASK does not declare the local candidate-scaling benchmark"
-)
+# Stage markers in the legacy CURRENT_TASK/CURRENT_STATE histories are no longer
+# checked: PROJECT_STATE.md is the only living state file (AGENTS.md).
 
 print("NAVIGATION LOCAL BENCHMARK CONTRACT: PASS")
 print(" - compact candidate counts 0/16/64/256/1024 are pinned")

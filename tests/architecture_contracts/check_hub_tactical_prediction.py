@@ -33,9 +33,12 @@ if prediction_h.is_file():
     for required in (
         "canPredictHubTacticalMotion(",
         "travelFrameForPrediction(",
+        # acc79cba/72aa299b: client prediction is kinematic-only. It advances
+        # the replicated pose/rates/velocity through the shared gateway's
+        # orientation propagator and never re-runs controls or actuators.
         "ShipControlExecutionGateway::",
-        "evaluateTranslationControl(",
-        "propagateHubTacticalTranslation(",
+        "propagateOrientation(",
+        "advanceReplicatedHubKinematics(",
         "transform.motion.systemId == frame.systemId",
         "transform.motion.travelFrame.frameId",
     ):
@@ -50,6 +53,16 @@ if prediction_h.is_file():
             prediction_h,
             "client prediction bypassed ShipControlExecutionGateway",
         )
+    for forbidden in (
+        "evaluateTranslationControl(",
+        "integrateAttitude(",
+        "executeEngineControlMatrix(",
+    ):
+        if forbidden in text:
+            fail(
+                prediction_h,
+                f"client prediction simulates actuators again: {forbidden}",
+            )
 
 if gateway_cpp.is_file():
     text = gateway_cpp.read_text(encoding="utf-8", errors="replace")
@@ -75,8 +88,7 @@ if client_world_cpp.is_file():
     else:
         predict_block = text[predict_start:]
         for required in (
-            "ShipControlExecutionGateway::integrateAttitude(",
-            "predictHubTacticalMotion(",
+            "advanceReplicatedHubKinematics(",
         ):
             if required not in predict_block:
                 fail(

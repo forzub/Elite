@@ -55,14 +55,14 @@ for forbidden in (
     )
 
 for marker in (
+    # Map/World naming became System-space (NavigationSystemControlIntent).
     "struct NpcNavigationKinematicState",
-    "relativeWorldVelocityMps",
-    "forwardMap",
-    "rightMap",
-    "upMap",
+    "relativeSystemVelocityMps",
+    "forwardSystem",
+    "rightSystem",
+    "upSystem",
     "class NpcNavigationIntentController final",
-    "NavigationRuntimeControlBridge::Intent",
-    "buildIntent",
+    "NavigationSystemControlIntent buildIntent",
 ):
     require(marker in INTENT_H, f"NPC navigation intent interface missing: {marker}")
 
@@ -77,12 +77,12 @@ for forbidden in (
     )
 
 for marker in (
-    "desiredRelativeWorldVelocity",
-    "relativeWorldVelocity",
+    "desiredRelativeSystemVelocity",
+    "relativeSystemVelocity",
     "velocityResponsePerSecond",
     "angularDampingPerSecond",
-    "idealLinearAccelerationDemandMapMps2",
-    "idealAngularAccelerationDemandMapRadPerSec2",
+    "idealLinearAccelerationSystemMps2",
+    "idealAngularAccelerationSystemRadPerSec2",
 ):
     require(marker in INTENT_CPP, f"NPC nominal intent implementation missing: {marker}")
 
@@ -100,12 +100,14 @@ for marker in (
     "NpcNavigationKinematicState navigationState",
     "NpcNavigationIntentController::buildIntent",
     "bridgeIt->second->step",
-    "ShipControlAdapter::Request",
-    "ShipControlAdapter::make(",
+    # ShipControlAdapter was replaced by the shared autopilot control-law
+    # controller (AutopilotControlRequest -> m_npcAutopilotLawControllers).
+    "autopilot::AutopilotControlRequest",
+    "m_npcAutopilotLawControllers[id]",
     "pilotRequest.stopRequested",
     "ship.setControlState(latest.control)",
     "m_npcNavigationExecutionSnapshots[id] = latest.snapshot",
-    "kMaximumStepSeconds",
+    "maximumStepSeconds()",
 ):
     require(marker in SIM_CPP, f"GameSimulation NPC navigation ownership missing: {marker}")
 
@@ -116,7 +118,7 @@ require(
 
 require(
     "if (isNavigationRuntimeLabShip(id))" in SIM_CPP and
-    "ShipControlAdapter::make(" in SIM_CPP,
+    "pilotController.update(" in SIM_CPP,
     "production NPC control must pass through the ordinary pilot-input adapter",
 )
 

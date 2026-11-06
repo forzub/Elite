@@ -28,7 +28,8 @@ require(
 
 require(
     "src/game/simulation/GameSimulation.cpp",
-    "if (isHubMotionLabShip(id))",
+    # 56942af4: lab actors share the exclusion with station-controlled dock traffic.
+    "if (isHubMotionLabShip(id) || isDockStationControlledShip(id))",
     "updateHubMotionLabActors();",
     "s.motionLabKind = hubMotionLabActorKind(id);",
     "const bool motionLabProbe = isHubMotionLabShip(id);",
@@ -83,8 +84,8 @@ require(
     "[HubMotionLab][bad_alloc] phase=hud-init",
     "[HubMotionLab][bad_alloc] phase=client-prepareGameplayFrame",
     "[HubMotionLab][bad_alloc] phase=server-advance",
-    "[HubMotionLab][bad_alloc] phase=client-update",
-    "[HubMotionLab][bad_alloc] phase=station-traffic"
+    "[HubMotionLab][bad_alloc] phase=client-update"
+    # phase=station-traffic left with the client StationTrafficSystem (331a495d).
 )
 
 require(

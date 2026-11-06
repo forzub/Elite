@@ -77,20 +77,27 @@ require(
     "buildShipCapability(" in PROPULSION,
     "legacy effectiveShipPhysics bypasses capability layer",
 )
+# acc79cba: client prediction is kinematic-only (no client physics), so the
+# client consumer of replicated capability is the docking planner.
+SPACE_DOCKING = read("src/game/SpaceStateDocking.cpp")
 require(
-    "effectiveShipPhysics(" in CLIENT
-    and "ship.modules" in CLIENT,
-    "client prediction does not consume replicated capability state",
+    "buildShipCapability(" in SPACE_DOCKING
+    and "player.modules" in SPACE_DOCKING,
+    "client planner does not consume replicated capability state",
 )
 
 for body, name in (
     (GATEWAY_H, "gateway header"),
     (GATEWAY_CPP, "gateway implementation"),
 ):
+    # cbf5e48e/459edcc7: the gateway forwards the opaque model id and the
+    # per-slot state to the physical plant (r x F) and may ask the control
+    # FAMILY (flight law). It must still not enumerate the layout / slots.
     for forbidden in (
-        "PhysicalControlModelId",
         "PropulsionLayout",
         "EngineSlotDefinition",
+        "physicalControlSlots(",
+        "layoutOf(",
     ):
         require(
             forbidden not in body,

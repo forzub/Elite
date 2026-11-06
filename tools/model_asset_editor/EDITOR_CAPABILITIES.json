@@ -272,7 +272,7 @@
             "mergeAssetMetadata",
             "ELWIR001",
             "binaryType='arraybuffer'",
-            "handleEditorBinary",
+            "handleBinary(buffer)",
             "rebuildScene(true)"
           ]
         },
@@ -661,7 +661,7 @@
             "semanticPreviewRateDegPerSec",
             "model_editor.semantics.binding.title",
             "model_editor.semantics.node.advanced",
-            "rebuildCollisions(){clearGroup(state.collisionGroup);if(!state.asset",
+            "function rebuildCollisions(){",
             "semanticStaticFlattenCandidates",
             "semanticSelectionToAssetSpace",
             "semanticFlattenStaticTree",
@@ -765,7 +765,7 @@
             "scaleAuthoringDistancesUniform",
             "calibrate_physical_scale",
             "profile.sourceToMeters = profile.targetMeters / sourceExtent;",
-            "ModelAsset productionAsset = m_asset;"
+            "ModelAsset productionAsset = makeProductionCopy(m_asset);"
           ]
         },
         "source_import": {

@@ -3,6 +3,8 @@
 from pathlib import Path
 import sys
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1])); import source_units  # noqa: E402,F401  (split classes read as one unit)
+
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 errors = []
@@ -31,7 +33,7 @@ gateway_cpp = SRC / "game/ship/control/ShipControlExecutionGateway.cpp"
 motion = text(motion_h)
 travel = text(travel_h)
 dynamic = text(dynamic_cpp)
-sim = text(sim_cpp)
+sim = (ROOT / "src/game/simulation/GameSimulation.cpp").read_text(encoding="utf-8", errors="replace")
 snapshot = text(snapshot_h)
 prediction = text(prediction_h)
 gateway = text(gateway_cpp)
@@ -95,9 +97,11 @@ for token in (
     require(snapshot_h, snapshot, token, "snapshot lost owned travel-frame identity")
 
 for token in (
-    "travelFrameForPrediction(",
-    "frameSnapshot.matchedToReferenceFrame",
-    "transform.motion.travelFrame = frame",
+    # acc79cba: the client prediction is kinematic-only and takes the frame
+    # from the authoritative snapshot (ShipReferenceFrameSnapshot::kinematicFrame).
+    "travelFrameForPrediction(frameSnapshot)",
+    "source.kinematicFrame()",
+    "motion.travelFrame=frame",
 ):
     require(prediction_h, prediction, token, "client prediction stopped consuming authoritative travel-frame state")
 

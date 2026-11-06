@@ -6,7 +6,6 @@ MAIN = (ROOT / "benchmarks/navigation_space_costed/main.cpp").read_text(encoding
 README = (ROOT / "benchmarks/navigation_space_costed/README.md").read_text(encoding="utf-8")
 CMAKE = (ROOT / "benchmarks/navigation_space_costed/CMakeLists.txt").read_text(encoding="utf-8")
 RUNNER = (ROOT / "benchmarks/navigation_space_costed/run_mingw64.sh").read_text(encoding="utf-8")
-CURRENT_TASK = (ROOT / "CURRENT_TASK.md").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -64,10 +63,8 @@ for marker in (
     require(marker in README.lower(),
             f"costed benchmark documentation missing: {marker}")
 
-require("NAV-V2-SPACE-1" in CURRENT_TASK,
-        "CURRENT_TASK is not on NAV-V2-SPACE-1")
-require("costed" in CURRENT_TASK.lower(),
-        "CURRENT_TASK does not mention the active costed-corridor gate")
+# Stage markers in the legacy CURRENT_TASK/CURRENT_STATE histories are no longer
+# checked: PROJECT_STATE.md is the only living state file (AGENTS.md).
 
 print("NAVIGATION SPACE COSTED BENCHMARK CONTRACT: PASS")
 print(" - open/hub 1k/5k/10k topology scales are pinned")

@@ -11,6 +11,7 @@ from pathlib import Path
 
 from model_asset_editor_source_bundle import load_source_bundle
 import json
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -200,7 +201,7 @@ cap = caps.get("source_hash_mesh_graph")
 if not cap or "sourceMissing" not in str(cap) or "confirm_source_mesh_deletion" not in str(cap):
     raise AssertionError("source_hash_mesh_graph capability does not protect two-phase deletion")
 
-if 'ModelAssetEditorVersion = "0.10.73"' not in text("tools/model_asset_editor/EditorVersion.h"):
+if not editor_version_at_least("0.10.73"):
     raise AssertionError("editor version is not 0.10.73")
 
 print("[PASS] model asset editor v0.10.73 stage certification / confirmed SOURCE deletion")

@@ -52,15 +52,19 @@ for forbidden in (
             f"moving-gap predictor must stay backend/world neutral: {forbidden}")
 
 for marker in (
-    "does **not** perform pair discovery",
+    # The document was condensed at acceptance (b9c96619); pair discovery is
+    # pinned through the scaling invariant, contact points through downstream
+    # composition. Code-level neutrality is enforced above.
+    "MovingGapPredictor only for plausible pairs",
     "33 time samples",
     "32 continuous intervals",
-    "center deviation from chord <= |a_rel| * dt^2 / 8",
+    "differs from its endpoint chord by at most",
+    "|a_rel| * dt^2 / 8",
     "GapClosesDuringHorizon",
     "AlignmentLost",
     "v_surface = v_center + omega x r_surface",
     "No frame-path `N x N` moving-gap search is allowed",
-    "does not invent a collision or contact point",
+    "downstream emergency-contact prediction/severity composition",
 ):
     require(marker in DOC, f"moving-gap documentation missing: {marker}")
 

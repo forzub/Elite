@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import re
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKSPACE = ROOT / "src/assets/webui/model_asset_editor/semantics/workspace.js"
@@ -85,7 +86,7 @@ for required in [
 assert 'data-semantic-workspace-style' in structural, "compact SEMANTICS workspace chrome is missing"
 assert 'class="semanticHelp"' in tree and 'class="semanticHelp"' in graph, "long help text must be moved behind compact ? affordances"
 assert "wizardStageCheckControls('semantics')" not in effects, "SEMANTICS must use the common shell footer for stage CHECK"
-assert re.search(r'ModelAssetEditorVersion\s*=\s*"0.10.87"', version), "editor version must be 0.10.87"
+assert editor_version_at_least("0.10.87"), "editor version must be 0.10.87"
 
 print("MODEL ASSET SEMANTICS WORKSPACE LAYOUT: PASS")
 print(" - TREE and GRAPH workspaces use the compact workflow bar")

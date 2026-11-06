@@ -23,6 +23,9 @@ DISPATCH = read("src/game/ship/plant/ShipPhysicalControlModels.cpp")
 DESCRIPTOR = read("src/game/ship/ShipDescriptor.h")
 COBRA = read("src/game/ship/descriptors/EliteCobraMk1.cpp")
 CONTRACT = read("src/game/ship/plant/SHIP_PHYSICAL_CONTROL_MODEL_CONTRACT.md")
+# 24f40671: the canonical I/Y/X slot geometry moved from the two model
+# units into one plant header shared by every ship passport.
+LAYOUTS = read("src/game/ship/plant/CanonicalActuatorLayouts.h")
 
 for token in (
     "AssistedI",
@@ -55,19 +58,19 @@ for token in (
     "manoeuvreThrusterAccel = 0.0f",
     "RuntimeFlightRegime::ThrustAxisFallback",
 ):
-    require(token in ASSISTED_CPP, f"Assisted topology/physics lost: {token}")
+    require(token in ASSISTED_CPP + LAYOUTS, f"Assisted topology/physics lost: {token}")
 
 for token in (
     "main_center",
-    "rcs_fore_left",
+    "rcs_fore_upper_left",  # 8 corner RCS clusters (upper/lower) in the canonical layout
     "VectoringMain",
     "OmnidirectionalCluster",
     "reverseMainEngineAvailable = false",
     "RuntimeFlightRegime::SurvivalControl",
     "poweredMainVectoring.trajectoryStrafe01",
-    "poweredMainVectoring.roll01",
+    "matrix.poweredMainVectoring.yaw01",  # 2ff4fd81: vectoring read from the authority matrix
 ):
-    require(token in NEWTON_CPP, f"Newtonian topology/physics lost: {token}")
+    require(token in NEWTON_CPP + LAYOUTS, f"Newtonian topology/physics lost: {token}")
 
 require(
     "AssistedPhysicalControlModel::evaluate(" in DISPATCH

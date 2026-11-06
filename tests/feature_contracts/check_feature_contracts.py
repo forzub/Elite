@@ -16,6 +16,15 @@ def read(rel: str) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
+def read_space_units() -> str:
+    # SpaceState.cpp was split into SpaceState*.cpp units (Hud, Maps, Route,
+    # DevPanel, ...); the client-state contracts span all of them.
+    return "".join(
+        path.read_text(encoding="utf-8", errors="replace")
+        for path in sorted((ROOT / "src/game").glob("SpaceState*.cpp"))
+    )
+
+
 def fail(message: str) -> None:
     print(f"[FAIL] feature contract: {message}", file=sys.stderr)
     raise SystemExit(1)
@@ -59,7 +68,7 @@ def extract_struct_body(text: str, name: str) -> str:
 def check_debug_control_schema() -> None:
     settings_h = read("src/debug/DebugSettings.h")
     codec_h = read("src/game/debug/DebugControlSettingsCodec.h")
-    space_cpp = read("src/game/SpaceState.cpp") + read("src/game/SpaceStateDevPanel.cpp")
+    space_cpp = read_space_units()
     html = read("src/assets/webui/debug_control.html")
     debug_iface = read("src/game/debug/IDebugSessionControl.h")
     server_runtime = read("src/game/server/ServerRuntime.cpp")
@@ -186,7 +195,7 @@ def check_debug_control_schema() -> None:
 
 def check_debug_control_runtime_wiring() -> None:
     html = read("src/assets/webui/debug_control.html")
-    space_cpp = read("src/game/SpaceState.cpp")
+    space_cpp = read_space_units()
     space_init = read("src/game/SpaceState-Init.cpp")
     scene_cpp = read("src/scene/SceneRenderer.cpp")
     policy_h = read("src/scene/SceneRenderPolicy.h")
@@ -297,15 +306,11 @@ def check_debug_control_runtime_wiring() -> None:
         "renderLargeObjects": "mainPolicy.drawLargeObjects = dbg.renderLargeObjects;",
         "renderCelestialBodies": "mainPolicy.drawCelestial = dbg.renderCelestialBodies;",
     }
-    rear_policy_bindings = {
-        key: value.replace("mainPolicy", "policy")
-        for key, value in main_policy_bindings.items()
-    }
 
     for field, token in main_policy_bindings.items():
         require(token in space_cpp, f"Debug Control {field} is not wired into main-scene policy")
-    for field, token in rear_policy_bindings.items():
-        require(token in space_init, f"Debug Control {field} is not wired into rear-camera policy")
+    # 0c647339 removed the rear monitor and its second world render: the main
+    # policy is the only scene policy now.
 
     for token in (
         "bool shouldDrawRealShip(ShipRole role) const noexcept",
@@ -357,7 +362,7 @@ def check_debug_control_runtime_wiring() -> None:
 def check_debug_panels() -> None:
     panel_h = read("src/ui/html/HtmlUiPanelId.h")
     message_h = read("src/ui/html/HtmlUiMessage.h")
-    space_cpp = read("src/game/SpaceState.cpp")
+    space_cpp = read_space_units()
 
     diagnostic_panels = {
         "DebugControl": "debug_control",
@@ -499,7 +504,7 @@ def check_debug_panels() -> None:
 def check_map_feature_surface() -> None:
     map_mode = read("src/game/system_map/MapMode.h")
     space_h = read("src/game/SpaceState.h")
-    space_cpp = read("src/game/SpaceState.cpp")
+    space_cpp = read_space_units()
     app_cpp = read("src/core/Application.cpp")
     function_key_router = read("src/ui/presentation/PresentationFunctionKeyRouter.cpp")
     map_tests = read("tests/system_map/SystemMapBehaviorTests.cpp")
@@ -563,7 +568,7 @@ def check_map_feature_surface() -> None:
     )
 
     require(
-        "CoordinateDisplayService::instance()" in app_cpp and ".cycle();" in app_cpp,
+        "cycleCoordinateDisplayFormat();" in app_cpp and "nextCoordinateDisplayFormat(current)" in app_cpp,
         "Ctrl+F11 coordinate-format route disappeared",
     )
     require(
@@ -599,7 +604,7 @@ def check_world_authority_boundaries() -> None:
     scene_cpp = read("src/game/scene/GameSceneSetup.cpp")
     server_cpp = read("src/game/server/GameServer.cpp")
     server_h = read("src/game/server/GameServer.h")
-    space_cpp = read("src/game/SpaceState.cpp")
+    space_cpp = read_space_units()
     snapshot_h = read("src/game/simulation/SimulationSnapshot.h")
     ship_core_h = read("src/game/ship/core/ShipCore.h")
     renderer_cpp = read("src/scene/SceneRenderer.cpp")

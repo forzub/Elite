@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import sys
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 builder = (ROOT / 'tools/model_asset_editor/CanonicalMeshBuilder.cpp').read_text(encoding='utf-8')
@@ -12,7 +13,7 @@ fixture = ROOT / 'tests/model_asset/fixtures/cobramk1T_winding_regression.obj'
 pre_flip = 'applyParity(working.triangles, beforeOrientation);'
 libigl = 'repairTopologyWithLibigl(mesh, working, libiglStats, result.error)'
 checks = [
-    ('editor version 0.10.73', '"0.10.73"' in version),
+    ('editor version 0.10.73', editor_version_at_least("0.10.73")),
     ('v3 topology-preserving PREPARE id', 'canonical_mesh_libigl_topology_preserving_v3' in header),
     ('pre-libigl local winding repair', pre_flip in builder and libigl in builder and builder.index(pre_flip) < builder.index(libigl)),
     ('authored topology preservation predicate', 'const bool preserveAuthoredTopology' in builder and 'authoredTopologyPreserved' in builder),

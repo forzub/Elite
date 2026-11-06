@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from model_asset_editor_source_bundle import load_source_bundle
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -18,7 +19,8 @@ def between(body: str, start: str, end: str) -> str:
 
 
 model = text("src/model_asset/ModelAsset.h")
-binary = text("src/model_asset/ModelAssetBinary.cpp")
+# SIZE chunk codec moved into the split binary layer (chunks/MetadataChunks.cpp).
+binary = text("src/model_asset/ModelAssetBinary.cpp") + text("src/model_asset/binary/chunks/MetadataChunks.cpp")
 session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
 importer = text("tools/model_asset_editor/RuntimeAssemblyImporter.cpp")
 web = load_source_bundle(ROOT)
@@ -80,9 +82,8 @@ build = between(
     "std::string ModelAssetEditorSession::maintenanceComponentId(",
 )
 for token in (
-    "ModelAsset productionAsset = m_asset;",
-    "scaleAuthoringDistancesUniform(productionAsset, productionAsset.physicalSize.sourceToMeters);",
-    "productionAsset.physicalSize.geometrySpace = PhysicalGeometrySpace::Meters;",
+    # The metric copy is the shared ModelAssetBuild::makeProductionCopy (checked below).
+    "ModelAsset productionAsset = makeProductionCopy(m_asset);",
     "ModelAssetBinary::save(path.string(), productionAsset, &error)",
     "saved WORKING remains unchanged authoring space",
 ):
@@ -90,6 +91,14 @@ for token in (
         raise AssertionError(f"metric BUILD-copy boundary missing {token!r}")
 if "scaleAuthoringDistancesUniform(m_asset" in build:
     raise AssertionError("BUILD mutates the editor WORKING asset")
+production_copy = text("src/model_asset/ModelAssetBuild.cpp")
+for token in (
+    "ModelAsset production = working;",
+    "scaleAuthoringDistancesUniform(production, production.physicalSize.sourceToMeters);",
+    "production.physicalSize.geometrySpace = PhysicalGeometrySpace::Meters;",
+):
+    if token not in production_copy:
+        raise AssertionError(f"metric BUILD-copy boundary missing {token!r}")
 
 # The only m_asset inverse conversion is adoption/migration of a metric package;
 # no SOURCE maintenance path may scale freshly imported mesh bytes.
@@ -177,7 +186,7 @@ for token in (
     if token not in pipeline:
         raise AssertionError(f"MODEL_ASSET_PIPELINE physical boundary missing {token!r}")
 
-if 'ModelAssetEditorVersion = "0.10.73"' not in version:
+if not editor_version_at_least("0.10.73"):
     raise AssertionError("editor version is not 0.10.73")
 
 print("[PASS] model asset editor v0.10.73 authoring-space scale / metric BUILD copy / SI physics")

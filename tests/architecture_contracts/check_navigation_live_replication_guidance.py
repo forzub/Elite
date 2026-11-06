@@ -5,7 +5,14 @@ ROOT = Path(__file__).resolve().parents[2]
 
 SNAPSHOT = (ROOT / "src/game/simulation/NavigationExecutionSnapshot.h").read_text(encoding="utf-8")
 SHIP_SNAPSHOT = (ROOT / "src/game/simulation/ShipSnapshot.h").read_text(encoding="utf-8")
-SIM = (ROOT / "src/game/simulation/GameSimulation.cpp").read_text(encoding="utf-8")
+# Snapshot publication moved into the GameSimulationReplication.cpp unit.
+SIM = "\n".join(
+    (ROOT / rel).read_text(encoding="utf-8")
+    for rel in (
+        "src/game/simulation/GameSimulation.cpp",
+        "src/game/simulation/GameSimulationReplication.cpp",
+    )
+)
 WIRE_SCHEMA = (ROOT / "src/game/network/WireDataSchema.h").read_text(encoding="utf-8")
 WIRE_CODEC = (ROOT / "src/game/network/WireDataCodec.h").read_text(encoding="utf-8")
 CLIENT_H = (ROOT / "src/game/client/ClientWorldState.h").read_text(encoding="utf-8")
@@ -29,9 +36,10 @@ for marker in (
     "struct NavigationExecutionSnapshot",
     "intentRevision",
     "activeTargetRevision",
-    "idealLinearAccelerationDemandMapMps2",
-    "executedLinearAccelerationDemandMapMps2",
-    "executedAngularAccelerationDemandMapRadPerSec2",
+    # Map-space naming became System-space (authoritative physics axes).
+    "idealLinearAccelerationDemandSystemMps2",
+    "executedLinearAccelerationDemandSystemMps2",
+    "executedAngularAccelerationDemandSystemRadPerSec2",
     "reactionBlocked",
     "pendingCommandCount",
 ):
@@ -49,8 +57,8 @@ for marker in (
     "m_npcNavigationExecutionSnapshots.find(id)",
     "replicated.intentRevision = execution.intentRevision",
     "replicated.activeTargetRevision",
-    "replicated.executedLinearAccelerationDemandMapMps2",
-    "replicated.executedAngularAccelerationDemandMapRadPerSec2",
+    "replicated.executedLinearAccelerationDemandSystemMps2",
+    "replicated.executedAngularAccelerationDemandSystemRadPerSec2",
 ):
     require(marker in SIM, f"server snapshot publication missing: {marker}")
 
@@ -60,9 +68,13 @@ for marker in (
 ):
     require(marker in WIRE_SCHEMA, f"wire schema missing replicated execution: {marker}")
 
+# The exact schema number is owned by check_wire_data_schema.py; it has been
+# bumped many times since navigation execution was added at 9u.
+import re as _re
+_version = _re.search(r"SimulationSnapshotWireSchemaVersion = (\d+)u", WIRE_CODEC)
 require(
-    "SimulationSnapshotWireSchemaVersion = 9u" in WIRE_CODEC,
-    "snapshot wire schema version was not bumped for navigation execution",
+    _version is not None and int(_version.group(1)) >= 9,
+    "snapshot wire schema version predates navigation execution replication",
 )
 require(
     "struct WireSchema<std::monostate>" in WIRE_SCHEMA,
@@ -125,8 +137,8 @@ for marker in (
     "replicatedNavigationExecution().find",
     "authoritativeIntentRevision",
     "authoritativeActiveTargetRevision",
-    "authoritativeExecutedLinearAccelerationMapMps2",
-    "authoritativeExecutedAngularAccelerationMapRadPerSec2",
+    "authoritativeExecutedLinearAccelerationSystemMps2",
+    "authoritativeExecutedAngularAccelerationSystemRadPerSec2",
 ):
     require(marker in GUIDANCE, f"guidance presentation does not expose server truth: {marker}")
 

@@ -53,7 +53,8 @@ def main() -> int:
 
     for token in (
         "SkyCultureCatalog",
-        "cycleConstellationCulture()",
+        "setConstellationCultureId(",  # 7d9b9d2f: client mode state selects the culture
+        "nextConstellationCultureId(",
         "constellationStarIdentifier()",
         "hipparcosCatalogId",
         "brightStarCatalogId",

@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from model_asset_editor_source_bundle import load_source_bundle
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -134,14 +135,15 @@ for token in (
     ".preflightMeshToolbar button,.lodTechButton{min-width:0;height:25px",
     ".preflightRow.meshStagePassed.blocker",
     ".preflightRow.meshValidationPending.blocker",
-    "lodPreflightVisibleByLod:{get:()=>editorViewState.lodPreflightVisibility}",
+    "lodPreflightVisibleByLod:{get:()=>view.lodPreflightVisibility}",
     "function lodPreflightVisibilitySet(",
     "function setLodPreflightGeometryVisible(",
     "if(existing===null){set=new Set([id]);}",
     "preflightShowAll",
     "preflightHideAll",
-    "● ПОКАЗАТЬ ВСЕ",
-    "○ СПРЯТАТЬ ВСЕ",
+    # Visible labels are localized through tr() since the localization close.
+    "showAll:tr('model_editor.action.show_all','● SHOW ALL')",
+    "hideAll:tr('model_editor.action.hide_all','○ HIDE ALL')",
     "data-lod-preflight-visible",
 ):
     if token not in web:
@@ -173,7 +175,8 @@ for token in (
     "function selectPreflightGeometry(",
     "selectRenderNode(ri,{scrollPreflight:false});",
     "syncPreflightSelectionUi(!!options.scrollPreflight)",
-    "selectRenderNode(ri,{scrollPreflight:state.wizardStage==='lods',scrollGeometry:state.wizardStage==='geometry',focusTable:['source','lods','geometry'].includes(state.wizardStage)});",
+    "scrollPreflight:state.wizardStage==='lods',scrollGeometry:state.wizardStage==='geometry',",
+    "focusTable:['source','lods','geometry'].includes(state.wizardStage)",
     "scrollPreflightRowIntoView",
 ):
     if token not in web:
@@ -231,7 +234,7 @@ for token in (
     if token not in contract:
         raise AssertionError(f"PATCH_CONTRACT missing LOD protection {token!r}")
 
-if 'ModelAssetEditorVersion = "0.10.73"' not in version:
+if not editor_version_at_least("0.10.73"):
     raise AssertionError("editor version is not 0.10.73")
 
 print("[PASS] model asset editor v0.10.73 LOD per-mesh PREPARE workspace / selection / visibility / ANALYZE fence")

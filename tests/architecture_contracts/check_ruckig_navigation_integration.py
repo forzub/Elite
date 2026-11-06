@@ -6,7 +6,9 @@ MAIN_CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 RUCKIG_CMAKE = (ROOT / "cmake/EliteRuckigNavigation.cmake").read_text(encoding="utf-8")
 PLANNER_H = (ROOT / "src/game/navigation/LocalGuidancePlanner.h").read_text(encoding="utf-8")
 PLANNER_CPP = (ROOT / "src/game/navigation/LocalGuidancePlanner.cpp").read_text(encoding="utf-8")
-GUIDANCE_CMAKE = (ROOT / "tests/navigation_guidance/CMakeLists.txt").read_text(encoding="utf-8")
+# tests/navigation_guidance was retired (91f24d13); the navigation_runtime suite
+# is the regression suite that links the production Ruckig seam.
+GUIDANCE_CMAKE = (ROOT / "tests/navigation_runtime/CMakeLists.txt").read_text(encoding="utf-8")
 LICENSES = (ROOT / "THIRD_PARTY_LICENSES.md").read_text(encoding="utf-8")
 
 PIN = "a8db97a4e9c55e5160a3855f739fa3b270df8e4c"
@@ -43,7 +45,7 @@ require("EliteRuckigNavigation.cmake" in MAIN_CMAKE,
 require(MAIN_CMAKE.count("EliteNavigationRuckig") >= 3,
         "Ruckig runtime target is not created and linked to client/server")
 require("EliteNavigationRuckig" in GUIDANCE_CMAKE,
-        "navigation guidance regression suite does not exercise production Ruckig seam")
+        "navigation runtime regression suite does not exercise production Ruckig seam")
 
 for marker in (
     '#include "src/game/navigation/RuckigTrajectorySolver.h"',

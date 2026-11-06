@@ -55,10 +55,16 @@ allowed_same_as_english = {
     ("model_editor.maintenance.issue_lods", "es"),
     ("model_editor.geometry_compare.reference_short", "es"),
 }
+# Since the localization architecture close (db8da232 / 49ad363a) the policy is
+# the one in check_model_asset_editor_localization.py: single technical tokens
+# (WORKING, PRODUCTION, SOURCE, INST, ...) may stay identical in every locale;
+# a copied English phrase (three or more words) is still a failure.
 identical = []
 for key, row in strings.items():
     en = str(row.get("en", "")).strip()
     if not en:
+        continue
+    if len(re.findall(r"[A-Za-z]{3,}", en)) < 3:
         continue
     for locale in expected_locales[1:]:
         if str(row.get(locale, "")).strip() == en and (key, locale) not in allowed_same_as_english:
@@ -96,7 +102,8 @@ if missing_axis:
 WEB = load_source_bundle(ROOT)
 HTML_ONLY = (ROOT / 'src/assets/webui/model_asset_editor.html').read_text(encoding='utf-8')
 used_tr_keys = set(re.findall(r"\btr\(\s*['\"]([^'\"]+)['\"]", WEB))
-unknown_tr_keys = sorted(used_tr_keys - strings.keys())
+# A key ending in "." is a dynamic prefix (tr(prefix+id,...)), e.g. catalog groups.
+unknown_tr_keys = sorted(k for k in used_tr_keys - strings.keys() if not k.endswith("."))
 if unknown_tr_keys:
     raise AssertionError(f"WebUI tr() calls reference missing localization keys: {unknown_tr_keys[:30]}")
 
@@ -251,8 +258,9 @@ def scan_sinks(label,src):
     if words:found.append((label,m.group(1),raw[:180],words))
   return found
 for n in names:issues.extend(scan_sinks(n,balanced_function(WEB,n)))
-# event-handler tail is outside named functions but contains settings/add actions.
-tail=HTML_ONLY[HTML_ONLY.index('function connect()'):]
+# event handlers outside named functions contain settings/add actions; the
+# transport (connect) moved out of the HTML, so scan the whole composition root.
+tail=HTML_ONLY
 issues.extend(scan_sinks('global-event-handlers',tail))
 
 

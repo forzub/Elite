@@ -12,6 +12,7 @@ Locks the two runtime defects found with canonical cobra_mk1 WORKING r31:
 from pathlib import Path
 
 from model_asset_editor_source_bundle import load_source_bundle
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -27,7 +28,7 @@ def body_between(body: str, start: str, end: str) -> str:
 
 
 version = text("tools/model_asset_editor/EditorVersion.h")
-if 'ModelAssetEditorVersion = "0.10.73"' not in version:
+if not editor_version_at_least("0.10.73"):
     raise AssertionError("v0.10.73 SOURCE identity repair must bump the visible editor version")
 
 axis = text("src/assets/webui/model_asset_editor/core/axis_mapping.js")
@@ -106,7 +107,8 @@ if "data-maintenance-relink-source" not in web:
     raise AssertionError("SOURCE tab has no relink-folder control")
 if "send('set_source_asset_directory',{path})" not in web:
     raise AssertionError("SOURCE relink control does not dispatch the backend command")
-if "msg.type==='source_directory_updated'" not in web:
+# Backend messages are routed by the session/handlers.js handler table.
+if "source_directory_updated:msg=>{" not in web:
     raise AssertionError("frontend does not consume SOURCE relink result")
 
 scan = body_between(

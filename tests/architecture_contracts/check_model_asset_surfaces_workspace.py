@@ -110,9 +110,17 @@ for token in (
     "if(stage==='surfaces')",
     "$('wizardSurfaceGeometryTable')?.querySelectorAll('[data-surface-logical-id]')",
     "requestAnimationFrame(()=>focusActiveMeshTableSelection())",
-    "selected.clear();selected.add(String(g.id));surfaceSetSelectionAnchor(alias?.geometryId||g.id)",
 ):
     if token not in web:
+        raise AssertionError(f"SURFACES 3D/table synchronization missing {token!r}")
+# The 3D pick path moved to viewport/picking.js (one statement per line).
+picking = (ROOT / "src/assets/webui/model_asset_editor/viewport/picking.js").read_text(encoding="utf-8")
+for token in (
+    "selected.clear();",
+    "selected.add(String(geometry.id));",
+    "surfaceSetSelectionAnchor(alias?.geometryId||geometry.id);",
+):
+    if token not in picking:
         raise AssertionError(f"SURFACES 3D/table synchronization missing {token!r}")
 
 # Viewport selection is an exact saturated green replacement, not a tint of

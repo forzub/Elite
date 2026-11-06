@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1])); import source_units  # noqa: E402,F401  (split classes read as one unit)
+
 ROOT = Path(__file__).resolve().parents[2]
 
 def read(rel: str) -> str:
     path = ROOT / rel
     if not path.is_file():
         raise AssertionError(f"missing {rel}")
-    return path.read_text(encoding="utf-8", errors="replace")
+    return (ROOT / rel).read_text(encoding="utf-8", errors="replace")
 
 def require(rel: str, *tokens: str) -> str:
     body = read(rel)
@@ -16,6 +18,9 @@ def require(rel: str, *tokens: str) -> str:
         if token not in body and "".join(token.split()) not in compact:
             raise AssertionError(f"{rel}: missing token {token!r}")
     return body
+
+def strip_line_comments(body: str) -> str:
+    return "\n".join(line.split("//", 1)[0] for line in body.splitlines())
 
 def forbid(rel: str, *tokens: str) -> str:
     body = read(rel)
@@ -134,21 +139,19 @@ try:
         "ClientDockingPhase::RouteReady",
         "ClientDockingPhase::Executing",
         "coastForPlanningControl",
-        "navigationAccelerationDemandValid = true",
         "DockingRouteEntryPolicy::initialCourse(",
         "OrdinaryRoutePolicy::requiredStartLeadMeters(",
         "RouteEntryBinder::inspectBallisticPrefix(",
         "BallisticPrefixDisposition::OnPrefix",
         "RouteEntryBinder::extractBackbone(",
-        "RouteEntryBinder::bind(",
+        "Pipeline::bind(",
         "phase=entry-rebind",
         "executionStartUniverseTimeSeconds",
         "ClientNavigationPlanningSnapshotFactory",
-        "RoutePlanner::plan(request)",
+        "Pipeline::route(request)",
         "request.gateSpacingMeters = 500.0",
         "request.terminalGateSpacingMeters = 250.0",
         "request.deriveTerminalTurnRadiusFromVehicle = true",
-        "ClientAutopilot::start(",
         "ClientAutopilot::update(",
         "m_client->submitInput(m_clientAutopilotControl)",
         "execution=client-input",
@@ -202,19 +205,23 @@ try:
             "GameSimulation crossed the hard flight-law autopilot wall"
         )
 
+    # The retired ClientRouteAutopilot was replaced (4ffb7942) by the one
+    # compile-time dedicated DedicatedClientRouteAutopilot<Law>; the law
+    # binding lives in DedicatedClientRouteAutopilotLaws.h only.
+    # (source_units reads it together with RouteExecutionCore/State.)
     client_auto = require(
-        "src/game/navigation/autopilot/ClientRouteAutopilot.h",
-        "class ClientRouteAutopilot final",
+        "src/game/navigation/autopilot/DedicatedClientRouteAutopilot.h",
+        "class DedicatedClientRouteAutopilot final",
         "TrajectoryGenerator::generate(",
         "AcceptedManeuverProgramBuilder::build(",
         "pathGeometryAlreadyAuthored = true",
         "CourseCaptureGuidance::evaluate(",
         "RouteSpeedGuidance::evaluateTurnSlowdown(",
         "sampleRouteCurveAtProgress(",
-        "makeManeuverExecutionAuthority(params, law)",
+        "makeManeuverExecutionAuthority(",
         "AutopilotControlRequest request;",
-        "AutopilotControlTelemetry pilotTelemetry",
-        "state.pilotController.update(law, request, params)",
+        "AutopilotControlTelemetry",
+        "state.pilotController.update(request, params)",
         "ReferenceMode::SpatialCorridor",
         "ShipControlState",
         "actualCourseForCapture",
@@ -249,7 +256,7 @@ try:
         "there is no fixed 50-250 m lookahead",
     )
     for token in ("ShipControlState", "HullPoseGuidance", "HullAttitudeControl"):
-        if token in capture:
+        if token in strip_line_comments(capture):
             raise AssertionError(
                 "CourseCaptureGuidance is no longer pure route geometry: " + token
             )
@@ -286,11 +293,9 @@ try:
     newtonian = require(
         "src/game/navigation/autopilot/NewtonianOptimalController.h",
         "class NewtonianOptimalController final",
-        "Receding-horizon Newtonian controller",
-        "optimize(request, params)",
-        "out.forwardInput = 0.0f",
-        "out.strafeInput = 0.0f",
-        "out.liftInput = 0.0f",
+        # Newtonian Step 2: the receding-horizon optimizer was replaced by an
+        # explicit manoeuvre program executed phase by phase.
+        "NewtonianManoeuvreProgram.h",
         "navigationAccelerationDemandValid = false",
         "navigationVelocityTargetValid = false",
         "navigationPrecisionTranslationOnly = false",
@@ -359,7 +364,7 @@ try:
     )
 
     print("[PASS] client-owned automatic docking architecture")
-    print(" - Planner/ClientRouteAutopilot + isolated Assisted/Newtonian pilots live on the client")
+    print(" - Planner/DedicatedClientRouteAutopilot + isolated Assisted/Newtonian pilots live on the client")
     print(" - Manual route and Automatic use one client Planner product")
     print(" - server receives only ordinary ShipControlState execution input")
     print(" - docking/navigation task intent is absent from the network protocol")

@@ -200,7 +200,8 @@ try:
 
     # SpaceState is composition only. Stage construction belongs to the
     # explicit adapter and must not silently migrate back into orchestration.
-    space = read("src/game/SpaceState.cpp")
+    # Docking route orchestration moved into SpaceStateDocking.cpp.
+    space = read("src/game/SpaceState.cpp") + read("src/game/SpaceStateDocking.cpp")
     if "TrafficRoutePlanAdapter::" not in space:
         raise AssertionError("SpaceState does not use traffic route adapter")
     forbid(

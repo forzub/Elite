@@ -14,8 +14,10 @@ from __future__ import annotations
 
 from pathlib import Path
 import hashlib
+import re
 
 from model_asset_source_tab_lock import (
+    SOURCE_BUNDLE,
     WEBUI,
     _balanced_block,
     _css_rule,
@@ -23,9 +25,13 @@ from model_asset_source_tab_lock import (
     validate_source_tab_lock,
 )
 
-LOD_TAB_SHA256 = "a1d2590219a408837c251577ffd7518aef5b3f497e86b7085382f55623cf41cb"
-GEOMETRY_TAB_SHA256 = "d9ff18f3bc8e9f2487eccd57787168dc6b2e284e04c3c0f7a02115c43514208b"
-SURFACES_TAB_SHA256 = "0c8423af9a5d8944d5f837e10239e6f324d91951062b5c98a2d2f2e7c8a2c7b2"
+# Re-baselined at v0.10.87 (2026-11-06 gate triage). Deliberate committed changes
+# since the v0.10.64/66 baseline: application-state / renderer-registry split
+# (089f824f..b553908b), unified stage validation footer (aab146aa), generated LODs
+# preview / apply / report UI in LODS (6e3f9add), catalog model list (25436bed).
+LOD_TAB_SHA256 = "4f95c6e10e3ef59b19a49fd2ac376600958264883f7809fba2efa014aab4bc22"
+GEOMETRY_TAB_SHA256 = "04aec010715f5b2ef0ab134b8618eef5bf5e1ea5b7932b169668ccda9f07bf6d"
+SURFACES_TAB_SHA256 = "eded1ad0a40b4e78aac679e12e80cb7eee86b9220afb9618ba52d763ac480f8c"
 
 LOD_FUNCTIONS = [
     "wizardLodsStageModel",
@@ -132,11 +138,17 @@ SURFACES_CSS = [
 
 
 def _stage_branch(body: str, stage: str) -> str:
-    marker = f"if(stage==='{stage}'){{"
+    """Stage dispatch: the wizard panel dispatches through
+    createWizardStageRendererRegistry({<stage>:<renderer>, ...}) since the
+    application-state split; the frozen part is the registry entry."""
+    marker = "createWizardStageRendererRegistry({"
     start = body.find(marker)
     if start < 0:
-        raise AssertionError(f"{stage.upper()} freeze: stage branch missing")
-    return f"if(stage==='{stage}')" + _balanced_block(body, start)
+        raise AssertionError(f"{stage.upper()} freeze: wizard stage renderer registry missing")
+    entry = re.search(rf"(?<![\w$]){stage}:([A-Za-z_$][\w$]*)", _balanced_block(body, start))
+    if not entry:
+        raise AssertionError(f"{stage.upper()} freeze: renderer registry has no {stage} entry")
+    return f"{stage}:" + entry.group(1)
 
 
 def _payload(body: str, stage: str, functions: list[str], css: list[str]) -> str:
@@ -170,7 +182,7 @@ def validate_core_tabs_lock() -> None:
     actual_lod = current_lod_tab_sha256(body)
     if actual_lod != LOD_TAB_SHA256:
         raise AssertionError(
-            "LODS TAB IS FROZEN at v0.10.64: protected LODS behavior/layout changed. "
+            "LODS TAB IS FROZEN at v0.10.87: protected LODS behavior/layout changed. "
             f"expected {LOD_TAB_SHA256}, got {actual_lod}. "
             "Update only for an explicitly approved LODS change documented in PATCH_CONTRACT/CHANGELOG."
         )
@@ -178,7 +190,7 @@ def validate_core_tabs_lock() -> None:
     actual_geometry = current_geometry_tab_sha256(body)
     if actual_geometry != GEOMETRY_TAB_SHA256:
         raise AssertionError(
-            "GEOMETRY TAB IS FROZEN at the v0.10.66 purity-equivalent baseline: protected GEOMETRY behavior/layout changed. "
+            "GEOMETRY TAB IS FROZEN at the v0.10.87 baseline: protected GEOMETRY behavior/layout changed. "
             f"expected {GEOMETRY_TAB_SHA256}, got {actual_geometry}. "
             "Update only for an explicitly approved GEOMETRY change documented in PATCH_CONTRACT/CHANGELOG."
         )
@@ -186,7 +198,7 @@ def validate_core_tabs_lock() -> None:
     actual_surfaces = current_surfaces_tab_sha256(body)
     if actual_surfaces != SURFACES_TAB_SHA256:
         raise AssertionError(
-            "SURFACES TAB IS FROZEN at the v0.10.66 purity-equivalent baseline: protected SURFACES behavior/layout changed. "
+            "SURFACES TAB IS FROZEN at the v0.10.87 baseline: protected SURFACES behavior/layout changed. "
             f"expected {SURFACES_TAB_SHA256}, got {actual_surfaces}. "
             "Update only for an explicitly approved SURFACES change documented in PATCH_CONTRACT/CHANGELOG."
         )
@@ -210,6 +222,7 @@ def validate_core_tabs_lock() -> None:
         "selectionColor=0x00a84f",
         "selectionEmissive=0x00ff70",
     )
+    # The viewport picking path moved into viewport/picking.js; search the bundle.
     for token in shared_required:
-        if token not in body:
+        if token not in SOURCE_BUNDLE:
             raise AssertionError(f"accepted SOURCE/LODS/GEOMETRY/SURFACES shared UX contract missing {token!r}")

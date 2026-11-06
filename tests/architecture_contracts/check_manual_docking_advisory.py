@@ -2,6 +2,7 @@
 from pathlib import Path
 import json
 import sys
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1])); import source_units  # noqa: E402,F401  (split classes read as one unit)
 
 ROOT = Path(__file__).resolve().parents[2]
 CHECK_REVISION = "20261003-client-owned-guidance-v1"
@@ -54,18 +55,18 @@ try:
         "ClientDockingPhase::Stabilizing",
         "ClientDockingPhase::Planning",
         "ClientDockingPhase::RouteReady",
-        "ClientAutopilot::stabilize(",
+        "stabilizeAngularForPlanningControl",
         "m_client->submitInput(m_clientAutopilotControl)",
         "buildAuthoritativeHubSnapshot",
         "relativeSpeedMps",
-        "angularRateRadPerSec",
-        "SettleHoldSeconds",
+        "angularSpeedRadPerSec",
+        "AutomaticAngularSettledSeconds",
         "request.startMeters =",
         "request.hasInitialForward = true",
         "request.initialForwardLeadMeters",
         "request.gateSpacingMeters = 500.0",
         "request.terminalGateSpacingMeters = 250.0",
-        "RoutePlanner::plan(request)",
+        "Pipeline::route(request)",
         "m_dockAdvice.plan = std::move(job->plan)",
         "phase=route-ready",
         "phase=manual",
@@ -80,11 +81,8 @@ try:
         "m_clientAutopilotControl = {}",
     )
 
-    require(
-        "src/game/navigation/autopilot/ClientRouteAutopilot.h",
-        "static ShipControlState stabilize(",
-        "PredictivePilot::make(",
-    )
+    # ClientRouteAutopilot/PredictivePilot were retired (4ffb7942); the
+    # dedicated per-law autopilot is covered by check_automatic_docking.py.
 
     # Authoritative snapshots are still the source of actual ship/world state.
     require(
@@ -116,8 +114,9 @@ try:
     require(
         "src/game/navigation/DockingAdvisoryPlanner.cpp",
         "designTurnSpeedMps",
-        "0.50 * r.maxSpeedMps",
-        "20.0 * r.hullRadiusMeters",
+        # ded0e33f enlarged the terminal arc (same doctrine as check_automatic_docking.py).
+        "0.80 * r.maxSpeedMps",
+        "30.0 * r.hullRadiusMeters",
         "terminalTurnSpeedMps",
         "terminalArcCandidatesTested",
         "terminalArcAcceptedCandidates",

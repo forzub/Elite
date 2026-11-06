@@ -86,10 +86,19 @@ for block_name, block in BLOCKS.get("blocks", {}).items():
 # PHYSICS, Hit Volumes and DAMAGE are post-SEMANTICS blocks migrated under this
 # contract. Keep their dispatch/adapters narrow so implementation cannot leak back
 # into the common wizard/inspector mega-functions.
-shell = function_source("renderWizardPanelContents")
-if "if(stage==='physics'){renderWizardPhysicsStage(root,state.asset);return;}" not in shell:
+# Stage dispatch is the renderer registry (app/stage_renderers.js + the HTML
+# createWizardStageRendererRegistry binding) since the application-state split.
+STAGE_RENDERERS = (ROOT / "src/assets/webui/model_asset_editor/app/stage_renderers.js").read_text(encoding="utf-8")
+
+
+def stage_dispatch_only(stage: str, renderer: str, call: str) -> bool:
+    return f"{stage}:{renderer}" in WEB_HTML and call in STAGE_RENDERERS
+
+
+WEB_HTML = (ROOT / "src/assets/webui/model_asset_editor.html").read_text(encoding="utf-8")
+if not stage_dispatch_only("physics", "renderWizardPhysicsStage", "physics:({root,state})=>source.physics(root,state.asset)"):
     raise AssertionError("portable blocks: PHYSICS wizard branch must remain dispatch-only")
-if "if(stage==='damage'){renderWizardDamageStage(root,state.asset,lods);return;}" not in shell:
+if not stage_dispatch_only("damage", "renderWizardDamageStage", "damage:({root,state,lods})=>source.damage(root,state.asset,lods)"):
     raise AssertionError("portable blocks: DAMAGE wizard branch must remain dispatch-only")
 inspector = function_source("renderNodeInspector")
 if "renderPhysicsNodeInspector(root,state.selectedNode,n,actions);" not in inspector:
@@ -111,11 +120,11 @@ for forbidden in ("rnDamageStates", "set_render_node_states"):
 
 # FINAL ASSEMBLY wave6C: frontend owns portable report/readiness/build presentation and
 # explicit stage payloads; backend remains the validation/build execution port.
-shell = function_source("renderWizardPanelContents")
-if "if(stage==='validate'){renderWizardValidateStage(root,state.wizardValidationReport);return;}" not in shell:
+if not stage_dispatch_only("validate", "renderWizardValidateStage", "validate:({root,state})=>source.validate(root,state.wizardValidationReport)"):
     raise AssertionError("portable blocks: VALIDATE branch must remain dispatch-only")
-if "if(stage==='build'){renderWizardBuildStage(root,state.asset,lods,state.dirty);return;}" not in shell:
+if not stage_dispatch_only("build", "renderWizardBuildStage", "build:({root,state,lods})=>source.build(root,state.asset,lods,state.dirty)"):
     raise AssertionError("portable blocks: BUILD branch must remain dispatch-only")
+shell = function_source("renderWizardPanelContents")
 for forbidden in ("wizardValidationReport,rows=", "st=state.asset.storage", "lodPayloads||[]).filter"):
     if forbidden in shell:
         raise AssertionError(f"portable blocks: FINAL ASSEMBLY implementation leaked into renderWizardPanelContents: {forbidden}")

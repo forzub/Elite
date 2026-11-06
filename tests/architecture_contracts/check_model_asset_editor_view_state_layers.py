@@ -2,6 +2,7 @@
 from pathlib import Path
 import re
 import sys
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT=Path(__file__).resolve().parents[2]
 WEB=ROOT/'src/assets/webui/model_asset_editor'
@@ -56,7 +57,7 @@ for token in ['createEditorTransportBridge','pendingDiagnostics','bind(next)','s
 if 'const {send,reportEditorDiagnostic,connect,beginEditorAssetBinary,beginEditorLodBinary}=createEditorTransport({' in html:
  fail('HTML still initializes transport after consumers through a TDZ-prone destructuring')
 
-if not re.search(r'ModelAssetEditorVersion\s*=\s*"0.10.87"',version):fail('editor version must be 0.10.87')
+if not editor_version_at_least("0.10.87"):fail('editor version must be 0.10.87')
 
 print('MODEL ASSET EDITOR VIEW STATE LAYERS: PASS')
 print(' - EditorViewState and visibility projections are outside the HTML shell')

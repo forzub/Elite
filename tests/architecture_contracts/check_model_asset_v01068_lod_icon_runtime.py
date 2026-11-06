@@ -2,12 +2,13 @@
 """v0.10.73 regression: LOD file controls must not depend on a missing global lodIcon helper."""
 from pathlib import Path
 import re
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 web = (ROOT / 'src/assets/webui/model_asset_editor.html').read_text(encoding='utf-8')
 version = (ROOT / 'tools/model_asset_editor/EditorVersion.h').read_text(encoding='utf-8')
 
-if 'ModelAssetEditorVersion = "0.10.73"' not in version:
+if not editor_version_at_least("0.10.73"):
     raise AssertionError('editor version is not 0.10.73')
 
 m = re.search(r'function\s+renderLodFiles\s*\(\s*\)\s*\{(?P<body>.*?)\n\}', web, re.S)

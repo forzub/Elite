@@ -9,19 +9,19 @@ def text(path):
 window = text('src/window/Window.cpp')
 glad = text('glad/include/glad/gl.h')
 flags = text('src/game/RuntimeFeatureFlags.h')
-space = text('src/game/SpaceState.cpp')
+space = text('src/game/SpaceState.cpp') + '\n' + text('src/game/SpaceStateHud.cpp')
 cmake = text('CMakeLists.txt')
 cap_h = text('src/render/gpu/GlRuntimeCapabilities.h')
 cap_cpp = text('src/render/gpu/GlRuntimeCapabilities.cpp')
-plan = text('src/render/GPU_OFFLOAD_PLAN.md')
 
 assert 'GLFW_CONTEXT_VERSION_MAJOR, 4' in window
 assert 'GLFW_CONTEXT_VERSION_MINOR, 3' in window
-assert 'GLFW_OPENGL_COMPAT_PROFILE' in window
-assert 'GLFW_OPENGL_CORE_PROFILE' not in window
+# 37999c55 completed the OpenGL 4.3 Core API migration.
+assert 'GLFW_OPENGL_CORE_PROFILE' in window
+assert 'GLFW_OPENGL_COMPAT_PROFILE' not in window
 assert 'requireOpenGl43Baseline(gladVersion)' in window
 
-assert "gl:compatibility=4.3" in glad, 'bundled GLAD is not generated for OpenGL 4.3 compatibility'
+assert "gl:core=4.3" in glad, 'bundled GLAD is not generated for the OpenGL 4.3 core profile'
 assert 'GLAD_GL_VERSION_4_3' in glad
 assert 'glad_glDispatchCompute' in glad
 assert 'GL_SHADER_STORAGE_BUFFER' in glad
@@ -42,10 +42,9 @@ assert 'game::runtime::WorldSignalLabelsEnabled' in space[max(0, feed - 300):fee
 assert 'src/render/navigation/NavigationCellLabelLayer.cpp' in cmake
 assert 'src/render/system_map/HubMapGpuGeometryRenderer.cpp' in cmake
 assert 'src/render/HUD/WorldLabelRenderer.cpp' in cmake  # navigation markers still share it
-assert 'near-navigation labels' in plan
 
 print('CLIENT OPENGL 4.3 GPU BASELINE: PASS')
-print(' - GLFW requires OpenGL 4.3 compatibility during legacy-render transition')
+print(' - GLFW requires an OpenGL 4.3 core profile')
 print(' - bundled GLAD exposes core 4.3 compute/SSBO entry points')
 print(' - centralized startup capability gate owns the supported GPU floor')
 print(' - general world-signal labels are disabled; Hub/near-navigation labels remain')

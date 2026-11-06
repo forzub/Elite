@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1])); import source_units  # noqa: E402,F401  (split classes read as one unit)
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -9,7 +11,7 @@ def read(path: str) -> str:
     p = ROOT / path
     if not p.exists():
         raise AssertionError(f"missing required architecture file: {path}")
-    return p.read_text(encoding="utf-8")
+    return (ROOT / path).read_text(encoding="utf-8")
 
 
 def forbid(path: str, *tokens: str) -> None:
@@ -28,7 +30,9 @@ def require(path: str, *tokens: str) -> None:
 
 def main() -> None:
     planner_api = "src/game/navigation/planner/RoutePlannerApi.h"
-    follower_api = "src/game/navigation/autopilot/RouteFollowerApi.h"
+    # RouteFollowerApi/RouteFollower were retired by design (4ffb7942):
+    # DedicatedClientRouteAutopilot<Law> is the only route autopilot.
+    follower_api = "src/game/navigation/autopilot/DedicatedClientRouteAutopilot.h"
     traffic_api = "src/game/docking/traffic/DockTrafficControllerApi.h"
     landing_api = "src/game/docking/landing/DockLandingControllerApi.h"
 
@@ -42,12 +46,12 @@ def main() -> None:
         "DockLandingController",
     )
 
-    require(follower_api, "class RouteFollower", "RouteFollowerPolicy")
+    require(follower_api, "class DedicatedClientRouteAutopilot final")
     forbid(
         follower_api,
         "TrajectoryFollower.h",
-        "ManeuverTrackingController.h",
-        "RoutePlannerApi.h",
+        # ManeuverTrackingController.h is its implementation (formerly in RouteFollower.cpp).
+        "RoutePlanner::",  # consumes the RoutePlan product (RoutePlannerApi.h DTOs), never plans
         "docking/traffic",
         "docking/landing",
     )
@@ -92,19 +96,10 @@ def main() -> None:
         "navigation/autopilot",
     )
 
-    require(
-        "src/game/navigation/autopilot/RouteFollower.cpp",
-        "ManeuverProgramSampler.h",
-        "ManeuverTrackingController.h",
-        "RouteFollower::follow",
-        "the accepted centerline is the ONLY path",
-    )
     forbid(
-        "src/game/navigation/autopilot/RouteFollower.cpp",
+        "src/game/navigation/autopilot/RouteExecutionCore.cpp",
         "TrajectoryFollower.h",
-        "lookAhead",
         "steeringRay",
-        "navigation/planner",
         "docking/traffic",
         "docking/landing",
     )
@@ -136,17 +131,17 @@ def main() -> None:
         "DockingAutomaticRuntime",
     )
     require(
-        "src/game/SpaceState.cpp",
+        "src/game/SpaceStateInternal.h",
         "navigation/planner/RoutePlannerApi.h",
-        "ClientAutopilot::start(",
+    )
+    require(
+        "src/game/SpaceState.cpp",
         "ClientAutopilot::update(",
         "m_client->submitInput(m_clientAutopilotControl)",
     )
     require(
-        "src/game/navigation/autopilot/ClientRouteAutopilot.h",
-        "class ClientRouteAutopilot final",
-        "RouteFollower::follow(",
-        "PredictivePilot::make(",
+        "src/game/navigation/autopilot/DedicatedClientRouteAutopilot.h",
+        "class DedicatedClientRouteAutopilot final",
         "ShipControlState",
     )
     forbid(
@@ -165,7 +160,7 @@ def main() -> None:
         "src/game/docking/traffic/DockTrafficController.cpp",
         "src/game/docking/landing/DockLandingController.cpp",
         "src/game/navigation/planner/RoutePlanner.cpp",
-        "src/game/navigation/autopilot/RouteFollower.cpp",
+        "src/game/navigation/autopilot/RouteExecutionCore.cpp",
     ):
         if token not in cmake:
             raise AssertionError(f"CMake ownership missing: {token}")

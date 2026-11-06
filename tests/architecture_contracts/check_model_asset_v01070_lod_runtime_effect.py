@@ -3,6 +3,7 @@
 from pathlib import Path
 import json
 import re
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 HTML = (ROOT / 'src/assets/webui/model_asset_editor.html').read_text(encoding='utf-8')
@@ -12,7 +13,7 @@ MODULE = CONTRACT['modules']['lod_runtime']
 REL = 'src/assets/webui/model_asset_editor/effects/lod_runtime.js'
 SRC = (ROOT / REL).read_text(encoding='utf-8')
 
-if 'ModelAssetEditorVersion = "0.10.73"' not in VERSION:
+if not editor_version_at_least("0.10.73"):
     raise AssertionError('editor version is not 0.10.73')
 effect_modules=CONTRACT['physical_split'].get('effect_extracted_modules') or []
 if effect_modules[:2] != ['i18n', 'lod_runtime'] or 'lod_runtime' not in effect_modules:

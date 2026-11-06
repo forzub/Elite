@@ -49,8 +49,14 @@ for marker in (
 ):
     require(marker in README, f"continuous benchmark documentation missing: {marker}")
 
-require("target-machine timing pending" in RUN_LOG,
-        "continuous benchmark run log must declare pending target-machine timing")
+def measured_or_pending(log: str, pending: str) -> bool:
+    """Either timing is still declared pending, or acceptance carries measured results."""
+    low = log.lower()
+    return pending in low or ("performance accepted" in low and "measured results" in low)
+
+
+require(measured_or_pending(RUN_LOG, "target-machine timing pending"),
+        "continuous benchmark run log must declare pending timing or measured acceptance")
 require("574a2e98fd7a75ebf562bbfa476fba367fb888d1" in RUN_LOG,
         "continuous benchmark run log must preserve accepted behavior baseline")
 

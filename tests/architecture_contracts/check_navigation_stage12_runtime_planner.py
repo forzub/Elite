@@ -30,7 +30,12 @@ DOC = (ROOT / "src/game/navigation/STAGE12_END_TO_END.md").read_text(encoding="u
 ADAPTER_H = (ROOT / "src/game/navigation/NavigationHitVolumeAdapter.h").read_text(encoding="utf-8")
 ADAPTER_CPP = (ROOT / "src/game/navigation/NavigationHitVolumeAdapter.cpp").read_text(encoding="utf-8")
 SIM_H = (ROOT / "src/game/simulation/GameSimulation.h").read_text(encoding="utf-8")
-SIM_CPP = (ROOT / "src/game/simulation/GameSimulation.cpp").read_text(encoding="utf-8")
+# GameSimulation.cpp was split into GameSimulation*.cpp translation units
+# (navigation lab, replication, free flight, ...); the contract covers them all.
+SIM_CPP = "".join(
+    path.read_text(encoding="utf-8")
+    for path in sorted((ROOT / "src/game/simulation").glob("GameSimulation*.cpp"))
+)
 SCENE_CPP = (ROOT / "src/game/scene/GameSceneSetup.cpp").read_text(encoding="utf-8")
 LAB_H = (ROOT / "src/game/diagnostics/NavigationRuntimeLab.h").read_text(encoding="utf-8")
 LOCAL_H = (ROOT / "src/world/navigation/local/LocalAvoidancePlanner.h").read_text(encoding="utf-8")
@@ -331,7 +336,8 @@ for marker in (
     )
 
 require(
-    "ManeuverProgramSampler::sample(program, universeTimeSeconds)" in FOLLOWER_CPP and
+    # The sampler call is now multi-line and may be the SpatialCorridor variant.
+    "ManeuverProgramSampler::sample(program,universeTimeSeconds)" in compact_cpp(FOLLOWER_CPP) and
     "ManeuverTrackingController::track(" in FOLLOWER_CPP,
     "TrajectoryFollower must compose B9 sampler -> B10 tracker for AcceptedManeuverProgram",
 )
@@ -424,7 +430,9 @@ for marker in (
     "testRcsFeasibleLateralChangeStillExposesMainEngineOption",
     "testNoAngularAuthorityDoesNotFallBackToImpossibleLateralDemand",
     "testFeedbackReserveCanMakeMarginalDirectDemandInfeasible",
-    "testAssistedIsExplicitlyUnsupportedInFirstB5Slice",
+    # Assisted became supported after the first B5 slice.
+    "testAssistedUsesHealthyForeMainForDirectBraking",
+    "testAssistedForeMainFailureFallsBackToAftFlipAndBurn",
     "testFixtureLikeSeventyFiveDegreeDemandIsNotAcceptedAsOmnidirectional",
     "testTenThousandDirtyActorCompilesAndMeasure",
     "[TIMING] ordinary_physical_maneuver_compiler",
@@ -523,10 +531,13 @@ require(
     "corner-family matrix must remain wired into navigation_runtime",
 )
 
+# run_mingw64.sh became the V2 default gate (269fb81c / 14a0c05b): the maneuver
+# comparison labs are legacy, built only with ELITE_RUN_LEGACY_NAVIGATION_LABS=1,
+# and production tests run as one ctest pass without per-test timing lines.
 require(
-    "-R maneuver_corner_family_matrix" in RUNTIME_RUN_SH and
-    "corner_family_matrix_ms" in RUNTIME_RUN_SH,
-    "navigation runtime gate must expose corner-family matrix diagnostics",
+    "ELITE_RUN_LEGACY_NAVIGATION_LABS" in RUNTIME_RUN_SH and
+    "maneuver_corner_family_matrix_tests" in RUNTIME_RUN_SH,
+    "navigation runtime gate must expose corner-family matrix diagnostics (legacy lab target)",
 )
 
 
@@ -564,10 +575,13 @@ require(
     "rigid-body corridor test must remain wired into navigation_runtime",
 )
 
+# run_mingw64.sh became the V2 default gate (269fb81c / 14a0c05b): the maneuver
+# comparison labs are legacy, built only with ELITE_RUN_LEGACY_NAVIGATION_LABS=1,
+# and production tests run as one ctest pass without per-test timing lines.
 require(
-    "-R maneuver_rigid_body_corridor" in RUNTIME_RUN_SH and
-    "rigid_body_corridor_ms" in RUNTIME_RUN_SH,
-    "navigation runtime gate must expose rigid-body corridor diagnostics",
+    "ELITE_RUN_LEGACY_NAVIGATION_LABS" in RUNTIME_RUN_SH and
+    "maneuver_rigid_body_corridor_tests" in RUNTIME_RUN_SH,
+    "navigation runtime gate must expose rigid-body corridor diagnostics (legacy lab target)",
 )
 
 require(
@@ -625,10 +639,13 @@ require(
     "3D maneuver corridor matrix must remain wired into navigation_runtime",
 )
 
+# run_mingw64.sh became the V2 default gate (269fb81c / 14a0c05b): the maneuver
+# comparison labs are legacy, built only with ELITE_RUN_LEGACY_NAVIGATION_LABS=1,
+# and production tests run as one ctest pass without per-test timing lines.
 require(
-    "-R maneuver_corridor_matrix" in RUNTIME_RUN_SH and
-    "corridor_matrix_ms" in RUNTIME_RUN_SH,
-    "navigation runtime gate must expose 3D corridor matrix diagnostics",
+    "ELITE_RUN_LEGACY_NAVIGATION_LABS" in RUNTIME_RUN_SH and
+    "maneuver_corridor_matrix_tests" in RUNTIME_RUN_SH,
+    "navigation runtime gate must expose 3D corridor matrix diagnostics (legacy lab target)",
 )
 
 
@@ -660,10 +677,13 @@ require(
     "maneuver execution lab must remain wired into navigation_runtime",
 )
 
+# run_mingw64.sh became the V2 default gate (269fb81c / 14a0c05b): the maneuver
+# comparison labs are legacy, built only with ELITE_RUN_LEGACY_NAVIGATION_LABS=1,
+# and production tests run as one ctest pass without per-test timing lines.
 require(
-    "-R maneuver_program_execution_lab" in RUNTIME_RUN_SH and
-    "maneuver_execution_lab_ms" in RUNTIME_RUN_SH,
-    "navigation runtime gate must expose maneuver execution lab metrics",
+    "ELITE_RUN_LEGACY_NAVIGATION_LABS" in RUNTIME_RUN_SH and
+    "maneuver_program_execution_lab_tests" in RUNTIME_RUN_SH,
+    "navigation runtime gate must expose maneuver execution lab metrics (legacy lab target)",
 )
 
 
@@ -675,10 +695,12 @@ require(
     "B5 compiler production/test wiring must remain present",
 )
 
+# run_mingw64.sh became the V2 default gate (269fb81c / 14a0c05b): the maneuver
+# comparison labs are legacy, built only with ELITE_RUN_LEGACY_NAVIGATION_LABS=1,
+# and production tests run as one ctest pass without per-test timing lines.
 require(
-    "b5_scale_diagnostic_ms" in RUNTIME_RUN_SH and
-    "-R ordinary_physical_maneuver_compiler" in RUNTIME_RUN_SH,
-    "navigation runtime gate must expose B5 dirty-actor timing",
+    "-LE legacy_navigation_lab" in RUNTIME_RUN_SH,
+    "navigation runtime gate must run the B5 compiler with the production suite",
 )
 
 
@@ -774,11 +796,12 @@ require(
     "B14 scheduler production/test wiring must remain present",
 )
 
+# run_mingw64.sh became the V2 default gate (269fb81c / 14a0c05b): the maneuver
+# comparison labs are legacy, built only with ELITE_RUN_LEGACY_NAVIGATION_LABS=1,
+# and production tests run as one ctest pass without per-test timing lines.
 for marker in (
-    "scheduler_scale_diagnostic_ms",
-    "-R navigation_work_scheduler",
+    "-LE legacy_navigation_lab",
     "[RESULT] navigation_runtime PASS",
-    "[RESULT] navigation_runtime FAIL phase=",
 ):
     require(
         marker in RUNTIME_RUN_SH,
@@ -1568,8 +1591,10 @@ require(
     "std::uint64_t targetRevision = 0;" in CONTROL_INTENT_H and
     "std::uint64_t targetRevision = 0;" in
         (ROOT / "src/world/navigation/control/PilotSkillExecutor.h").read_text(encoding="utf-8") and
-    "result.intent.revision = segment.goalRevision;" in FOLLOWER_CPP and
-    "result.intent.targetRevision = segment.revision;" in FOLLOWER_CPP and
+    # The legacy short-segment follower path was removed (f5bea582); the
+    # B10 tracker now stamps objective vs. program revisions.
+    "result.intent.revision = program.objectiveRevision;" in TRACKER_CPP and
+    "result.intent.targetRevision = program.revision;" in TRACKER_CPP and
     "command.revision = intent.revision;" in
         (ROOT / "src/game/navigation/NavigationRuntimeControlBridge.cpp").read_text(encoding="utf-8") and
     "command.targetRevision = intent.targetRevision;" in

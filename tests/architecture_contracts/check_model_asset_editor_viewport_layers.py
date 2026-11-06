@@ -2,6 +2,7 @@
 from pathlib import Path
 import re
 import sys
+from model_asset_editor_version import editor_version_at_least, require_editor_version_at_least
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB = ROOT / 'src/assets/webui/model_asset_editor'
@@ -83,7 +84,7 @@ for forbidden in ['document.', 'window.', 'WebSocket', '.send(', 'request_catalo
     if forbidden in scene:
         fail(f'viewport scene effects absorbed non-viewport responsibility {forbidden!r}')
 
-if not re.search(r'ModelAssetEditorVersion\s*=\s*"0.10.87"', version):
+if not editor_version_at_least("0.10.87"):
     fail('editor version must be 0.10.87')
 
 print('MODEL ASSET EDITOR VIEWPORT LAYERS: PASS')

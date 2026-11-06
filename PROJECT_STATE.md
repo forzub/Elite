@@ -3472,6 +3472,9 @@ order - ask for it again if it is not in the session.
   Live ob1: Высокий -> Тихий "по коридору сети: Тихий – Высокий" (2 legs, 12 851 km). The dashed network lines on
   the System map stay schematic chords (aggregate schedule, not flight paths).
 - DEV: Cyrillic body ids in ELITE_DEV_* env vars arrive mangled - Latin aliases added (mercury .. neptune).
+- Author rule (2026-11-06): the station's own docking ports = an operating shuttle dock. Implemented: a Station
+  object's enabled docking_port anchors (hub_semantic_anchors.json, by its hub module id) count as shuttle_dock;
+  the current station model has none, so Высокий / Тихий still show the dock "(в плане)" until a model with ports.
 
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the

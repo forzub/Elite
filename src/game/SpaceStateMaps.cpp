@@ -1,6 +1,7 @@
 // SpaceState: Galaxy / System Map glue: map snapshots, map modes and transitions, the native map panel and the map UI state.
 
 #include <map>
+#include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/economy/EconomyModel.h"
 #include "src/game/navigation/orbital/OrbitalTransferPlanner.h"
 #include "src/game/presentation/SystemMapInfoBuilder.h"
@@ -855,6 +856,23 @@ SpaceState::buildNativeSystemMapPanelPresentation()
                     for (auto& row : runtimeRows)
                         if (row.type == type)
                             ++row.count;
+                // the station's own docking ports are an operating shuttle dock (author 2026-11-06); the
+                // current station model has none (hub_semantic_anchors.json) - a new model with ports
+                // turns the dock "operating" by itself
+                if (object.type == ObjectType::Station)
+                {
+                    static const game::navigation::HubSemanticAnchorCatalog anchorCatalog = [] {
+                        game::navigation::HubSemanticAnchorCatalog c;
+                        if (!c.load())
+                            c.load("src/assets/data/navigation/hub_semantic_anchors.json");
+                        return c;
+                    }();
+                    int ports = 0;
+                    for (const auto& anchor : anchorCatalog.anchorsForModule(object.hubAttachment.moduleId))
+                        ports += anchor.enabled && anchor.kind == game::navigation::HubSemanticAnchorKind::DockingPort ? 1 : 0;
+                    if (ports > 0)
+                        present["shuttle_dock"] += ports;
+                }
             }
         }
         else if (!economyId.empty())

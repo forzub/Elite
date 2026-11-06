@@ -257,6 +257,7 @@ public:
         // a route leg (hub / orbit / point) flown by the route autopilot
         FreeFlightLeg leg;
         bool legActive = false;
+        bool takeOff = false;            // a leg from the ground: climb to the J floor on the main engines first
         bool legArrived = false;
         double legSeconds = 0.0;
         double legLastLog = -1.0e30;

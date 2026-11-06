@@ -1923,8 +1923,42 @@ void GameSimulation::updateFreeFlights(double dt)
                 f.lastBasis = basis;
                 f.lastBasisBodyId = primary->id;
             }
+            // ---- take-off (a route leg from the ground): a vertical main-engine climb against the
+            // body to its J floor, gently from rest to the climb speed; then the leg
+            if (f.takeOff && primary && dt > 0.0)
+            {
+                namespace jd = game::simulation::jdrive;
+                const double floorAlt = jd::floorAltitudeM(primary->radiusMeters, primary->atmosphereRadiusMeters);
+                const glm::dvec3 up = glm::normalize(frame.originMeters - primary->centerMeters);
+                const double alt = glm::length(frame.originMeters - primary->centerMeters) - primary->radiusMeters;
+                if (alt >= floorAlt)
+                {
+                    f.takeOff = false;
+                    std::cerr << "[Route] ship " << it->first.value << ": TAKE-OFF complete at " << alt / 1000.0 << " km (J floor "
+                              << floorAlt / 1000.0 << " km) - the leg continues" << std::endl;
+                }
+                else
+                {
+                    const glm::dvec3 bodyVel = f.lastPrimaryId == primary->id ? (primary->centerMeters - f.lastPrimaryCenterMeters) / dt
+                                                                              : frame.linearVelocityMps;
+                    const double aboveGround = std::max(0.0, alt - motion.freeFlightGroundHeightM);
+                    const double climb = std::min(jd::FloorClimbSpeedMps, 5.0 + 0.5 * aboveGround);
+                    const glm::dvec3 dv = bodyVel + up * climb - frame.linearVelocityMps;
+                    const glm::dvec3 gravity = game::navigation::GravityFieldSystem::sample(frame.originMeters, m_gravityBodies).accelerationMps2;
+                    glm::dvec3 a = dv / 1.0 - gravity;
+                    const double aMax = 0.9 * mainEngineAccelMps2(*ship);
+                    if (glm::length(a) > aMax)
+                        a *= aMax / glm::length(a);
+                    frame.linearVelocityMps += a * dt;
+                    motion.mainEngineAccelerationMps2 = a;
+                    if (std::fmod(f.elapsedSeconds, 2.0) < dt)
+                        std::cerr << "[Route] ship " << it->first.value << " take-off: " << aboveGround << " m above the ground, climb "
+                                  << glm::dot(frame.linearVelocityMps - bodyVel, up) << " m/s (wanted " << climb << "), "
+                                  << glm::length(a) / 9.81 << " g" << std::endl;
+                }
+            }
             // ---- route leg (hub / orbit / point)
-            if (f.legActive && motion.freeFlightSurfaceState == 0 && !f.bodyFrame)
+            if (f.legActive && !f.takeOff && motion.freeFlightSurfaceState == 0 && !f.bodyFrame)
                 updateFreeFlightLeg(it->first, *ship, f, dt);
             // ---- J autopilot
             if (!f.autopilotTargetId.empty())

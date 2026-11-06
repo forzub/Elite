@@ -3339,6 +3339,44 @@ order - ask for it again if it is not in the session.
   Earth markers: a city click is won by the larger hub (size arbitration); F12 again while already on the local
   map is a no-op (re-centre needs F1 then F12); the panel mode label stays "ДЕТАЛИ" for the F12 cube.
 
+### Slice cc-7 2026-11-06 - station freezes, J charge, Fortuna names, route programs R1, take-off - NOT ACCEPTED
+- Author order: find the freezes (cache model loads, GPU offload), then the list without questions; the fleet
+  reference = coverage / interchangeability / power+cooling -> how many models to draw.
+- Freezes ROOT CAUSE (live app1): ModelAsset station LOD meshes uploaded lazily on the main thread at first
+  selection - 3..105 ms each (LOD0 geometry 1, 201k tris = 105 ms; the paired 50-60 ms spikes = two LOD0 pieces).
+  Fixed (419348b1): MeshGPU split prepare (CPU) / allocate + uploadChunk (GL); ModelAssetGpu prepares every
+  (LOD, geometry) on a loader thread (coarse first) and pumpPrewarm(3 ms / main frame) uploads 32k-vertex
+  chunks ahead of the selection; a mesh needed earlier finishes synchronously. Live app2: the same flight has
+  no station spikes; the one early synchronous LOD0 piece 9.6 ms (was 105). Map screens: one 50-145 ms frame per
+  F-key switch (first build), not continuous. GPU offload: the CPU frame is ~4-10 ms; no remaining per-frame
+  CPU load worth a compute pass; the vertex-expanded MeshGPU (3 vertices / triangle, ~110 MB for the station)
+  could become indexed + gl_PrimitiveID barycentrics (memory, not fps) - not done.
+- J charge (20ffc825): JDrive.h rule - jump = q d (alpha + M), q 5.6e-5 (-17 % so 2 jumps + 3 J legs fit 3 t);
+  J leg = 1/3..1/2 jump by core load; rate ~ (a / 1e5 g)^1.5; Cobrett 3 t (3 tanks), core 500 t; J refused /
+  collapses when empty (refusal 9); banner "заряд J x.xxx / 3 т"; a hub refuel stay fills it. Schema 37.
+- Fortuna (Fomalhaut) names (c9eb68c9): 15 PROPOSAL names, the kitchen series by conditions (Сковорода, Жаровня,
+  Огарок, Скороварка, Духовка, Мыльный пузырь, Чайник, Парилка, Газировка, Морозилка, Пробка, Кубик льда,
+  Крошка, Сухарь, Гренка); naming.py --check 29/29.
+- Fleet review (subagent, report D:/tmp/elite_fleet_review.md): 21 models / 19 types / 6 blocs; gaps (Sol no
+  jump freighter / liner, Cognium no security, Pact no passenger / shuttle / cutter, Southern circle and Citadel
+  thin, Lalande no hulls, no miner / raider anywhere); 102 SKUs, 45 single-ship, ~33 visible equipment models;
+  reactor oversizes (ST-6 3.84x, GT-3000 2.4x, He-S240 2.22x ...), PAO-7 / B-4 short at full fire, B-4 cooling
+  251 % of its plan area; impossible part sizes (hangars, boat bay, train module, cryo tank). Recommendation: 19
+  hulls (15-16 with shared kits), a minimum set of 9 covering all blocs, ~20 / ~33 equipment models.
+- Route programs (b31126d8 design PROPOSAL ROUTE_PROGRAMS_DESIGN.md, 46698f0d R1 WIP): waypoint program +
+  actions model; the panel cycles the programs the target admits, refuel / repair / pause / take-off toggles;
+  the arrival-profile icons only for a ship target (they were shown and accepted on every finish); the route
+  list shows the program line; launch honours the programs (dock services, orbit altitude; a landing finish ->
+  the landing autopilot, intermediates not flown yet). Not yet visually verified in a capture; pause not
+  executed by the server yet.
+- Take-off: a route leg from a landed ship did nothing (the leg runs only off the ground; live to3: stayed on
+  the pad 6 min). Added a take-off phase (vertical main-engine climb to the J floor, <= 0.9 main) before the leg.
+  DEV verb leg: sent index 0 (= cancel) - fixed. LIVE to4: landed at Шеклтон pad 1 (2.6 cm), leg -> Earth orbit
+  500 km: TAKE-OFF 5.9 m/s at 6.5 m, 400 m/s climb at ~0.16 g, complete at 86.88 km (J floor 86.87), the J leg
+  ARRIVED after 156.7 s, 18 m from the aim, 3 m/s vs destination.
+- Next: route window capture (not yet seen); R2 intermediate landings + take-off in a route, pause; R4 charge
+  planner with refuel insertion; R5 ship rendezvous.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

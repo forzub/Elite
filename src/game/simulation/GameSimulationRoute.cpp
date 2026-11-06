@@ -63,6 +63,13 @@ bool GameSimulation::startFreeFlightLeg(EntityId shipId, const FreeFlightLeg& le
     f.autopilotTargetId.clear();          // the body autopilot gives way
     f.leg = leg;
     f.legActive = true;
+    // on the ground (landed): the take-off first - no J below the floor (ROUTE_PROGRAMS_DESIGN.md R2)
+    f.takeOff = motion.freeFlightSurfaceState == 1;
+    if (f.takeOff)
+    {
+        motion.freeFlightSurfaceState = 0;
+        std::cerr << "[Route] ship " << shipId.value << ": TAKE-OFF - main-engine climb to the J floor first" << std::endl;
+    }
     f.legSeconds = 0.0;
     f.legLastLog = -1.0e30;
     // continuing in J (past a guide point): the drive stays at full strength

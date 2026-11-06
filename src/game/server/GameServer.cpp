@@ -1,4 +1,4 @@
-#include "src/game/navigation/route/RoutePlanner.h"
+#include "src/game/navigation/route/RouteWire.h"
 #include <thread>
 
 #include "src/game/system_map/PlanetBodyOrientation.h"

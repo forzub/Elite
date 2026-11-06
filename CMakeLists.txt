@@ -226,7 +226,7 @@ target_link_libraries(EliteSystemMapInfoCheck PRIVATE nlohmann_json::nlohmann_js
 
 
 # shared body flight rules + the route codec / charge estimate (architecture audit 2026-11-06)
-add_executable(EliteBodyFlightRulesCheck tools/navigation_runtime/BodyFlightRulesCheck.cpp src/game/navigation/route/RoutePlanner.cpp)
+add_executable(EliteBodyFlightRulesCheck tools/navigation_runtime/BodyFlightRulesCheck.cpp src/game/navigation/route/RoutePlanner.cpp src/game/navigation/route/RouteWire.cpp)
 target_include_directories(EliteBodyFlightRulesCheck PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(EliteBodyFlightRulesCheck PRIVATE nlohmann_json::nlohmann_json)
 
@@ -613,6 +613,7 @@ add_executable(EliteGame
     src/game/combat/WeaponCatalog.cpp
     src/game/combat/Penetration.cpp
     src/game/navigation/route/RoutePlanner.cpp
+    src/game/navigation/route/RouteWire.cpp
     src/game/navigation/landing/LandingAutopilot.cpp
     src/game/simulation/GameSimulationRefit.cpp
     src/game/simulation/GameSimulationDevScenarios.cpp
@@ -919,6 +920,7 @@ if(ELITE_BUILD_SERVER)
         src/game/combat/WeaponCatalog.cpp
         src/game/combat/Penetration.cpp
         src/game/navigation/route/RoutePlanner.cpp
+        src/game/navigation/route/RouteWire.cpp
         src/game/navigation/landing/LandingAutopilot.cpp
         src/game/simulation/GameSimulationRefit.cpp
         src/game/simulation/GameSimulationDevScenarios.cpp

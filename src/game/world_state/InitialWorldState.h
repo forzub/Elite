@@ -53,6 +53,19 @@ struct InitialWorldStateHubModule
     bool exists = true;
 };
 
+// A hub's docking module (architecture audit item 7: docks are hub DATA for any hub, not a
+// diagnostic scene): hub_hex_dock | dock_service_block | guidance_dock_cylinder, placed in hub
+// coordinates, optionally spinning about its own axes.
+struct InitialWorldStateDockModule
+{
+    std::string id;
+    std::string type;
+    std::string name;
+    glm::dvec3 offsetMeters {0.0};
+    glm::dvec3 localRotationDeg {0.0};
+    glm::dvec3 angularVelocityDegPerSecond {0.0};
+};
+
 struct InitialWorldStateOrbitalHub
 {
     std::string id;
@@ -65,6 +78,7 @@ struct InitialWorldStateOrbitalHub
 
     InitialWorldStateMotion motion;
     std::vector<InitialWorldStateHubModule> modules;
+    std::vector<InitialWorldStateDockModule> dockModules;
 };
 
 
@@ -258,6 +272,30 @@ inline InitialWorldStateOrbitalHub readOrbitalHub(
 
             if (!module.id.empty())
                 out.modules.push_back(std::move(module));
+        }
+    }
+
+    if (j.contains("dock_modules") && j["dock_modules"].is_array())
+    {
+        const auto vec = [](const nlohmann::json& o, const char* key) {
+            glm::dvec3 v {0.0};
+            if (o.contains(key) && o[key].is_object())
+                v = glm::dvec3(o[key].value("x", 0.0), o[key].value("y", 0.0), o[key].value("z", 0.0));
+            return v;
+        };
+        for (const auto& d : j["dock_modules"])
+        {
+            if (!d.is_object())
+                continue;
+            InitialWorldStateDockModule dock;
+            dock.id = d.value("id", "");
+            dock.type = d.value("type", "");
+            dock.name = d.value("name", dock.id);
+            dock.offsetMeters = vec(d, "offset_m");
+            dock.localRotationDeg = vec(d, "rotation_deg");
+            dock.angularVelocityDegPerSecond = vec(d, "angular_velocity_deg_s");
+            if (!dock.id.empty() && !dock.type.empty())
+                out.dockModules.push_back(std::move(dock));
         }
     }
 

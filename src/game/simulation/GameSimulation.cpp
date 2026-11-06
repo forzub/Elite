@@ -2641,6 +2641,16 @@ EntityId GameSimulation::spawnShip(
 
     ship->core().transform().setWorldPositionMeters(positionMeters);
     ship->core().transform().motion.systemId = systemId;
+    {
+        // the ship's jump drive and mass in its replicated state from the start (the client planner
+        // needs them in a hub too, not only once free flight runs)
+        auto& m = ship->core().transform().motion;
+        const auto physics = ship->core().effectivePhysics();
+        m.shipMassT = physics.massKg / 1000.0;
+        m.jumpCoreRatingT = physics.jumpCoreRatingT;
+        m.jChargeCapacityT = physics.jumpChargeCapacityT;
+        m.jChargeT = m.jChargeCapacityT;
+    }
 
     m_ships[id] = std::move(ship);
 

@@ -3570,6 +3570,32 @@ order - ask for it again if it is not in the session.
   longer includes the SystemMapRenderer facade, DetailMapPlanetPass.cpp lost its duplicate copy (both objects compiled;
   tests/system_map/check_architecture.py green). Tracked __pycache__/*.pyc under tests/ get dirtied by direct gate runs.
 
+### Audit items 1-4 (author order 2026-11-06: "начинай с пунктов 1-4") - BUILT, gates + offline check + live DEV runs
+- 1 Gates (subagent, 78855be7 + main): tools/run_gates.py + tools/gates_known_red.json (explicit allow-list,
+  exit 1 on a new red or a stale entry). 122/87 -> 201 pass / 8 known red / 0 new red. Left red (allow-listed):
+  SegmentedRouteComposer std::chrono in pure route code; Sol body ids in the DEV script inside SpaceState::update;
+  model-asset editor purity regressions + 4 census gates frozen at v0.10.73 (re-baseline slice). Fixed here:
+  GameServer.cpp no longer includes the client RoutePlanner.h (the legs + codec moved to the neutral
+  navigation/route/RouteWire.*: 4 gates green); planet-axis helpers in system_map/PlanetMapAxes.h (subagent);
+  EOF newlines (check_map_architecture green).
+- 2 One rules module: src/game/navigation/rules/BodyFlightRules.h - dominantBody (Laplace SOI; parent = catalog
+  parentId, else the id prefix, else the star), floorAltitudeM, clearanceM (star 20 R; max(R + 150 km, atmosphere +
+  50 km)), isAirless. Used by the server referenceBody, the client planner bodyAtPoint, the Detail-map trajectories,
+  the route leg obstacles, the planner obstacles, the landing check and the map's finish rows. JDrive.h moved to
+  navigation/rules (namespace game::navigation::jdrive) with DriveRampDoublingS / ApproachTauS (no duplicates).
+  Offline EliteBodyFlightRulesCheck: 18 checks PASS (SOI Earth / Moon / 300 000 km / 1.5 AU, prefix == catalog
+  parent, floors, clearances, airless, route codec round trip incl. a pad spec with ':', charge monotonic).
+- 3 J figures from the ship: ShipParams jumpCoreRatingT / jumpChargeCapacityT (Cobrett descriptor 500 t / 3 t);
+  motion shipMassT / jumpCoreRatingT / jChargeCapacityT set at spawn and replicated (schema 39); the planner uses
+  them (no 260 t, no Cobrett constants); no jump core = J refused / no J route; route legs now charge the J (live:
+  Earth -> lunar orbit 3.000 -> 2.992 t). Regression found and fixed live: the capacity was set only in free flight
+  (0 in a hub) -> the planner "inserted a refuel" at the finish hub and lost the finish; also never inserts a refuel
+  at the failing point's own hub.
+- 4 Hub docks are data: initial_world_state.json orbital_hubs[].dock_modules (Высокий: hub_hex_dock_a,
+  hub_hex_dock_base, guidance_dock_cylinder_b), spawned for ANY hub by spawnHubDockModules after the hub registers;
+  the guidance-lab stress objects stay a diagnostic scene (off). Live: [HubDocks] 3 attached; the player's entity id
+  is now 12 (the docks spawn first) - DEV scripts naming ship ids change.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

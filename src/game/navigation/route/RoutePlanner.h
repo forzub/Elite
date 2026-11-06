@@ -1,5 +1,6 @@
 #pragma once
 
+#include "src/game/navigation/route/RouteWire.h"
 #include <functional>
 #include <cstdint>
 #include <string>
@@ -68,19 +69,6 @@ struct ZoneGeometry
 };
 std::vector<ZoneGeometry> resolveZones(const ZoneCatalog& catalog, int systemId, const AnchorResolver& resolve);
 
-struct RoutePoint
-{
-    enum class Kind { Hub, Orbit, Point, Land, Ship };
-    Kind kind = Kind::Point;
-    std::string hubId, bodyId, label;
-    double orbitAltitudeM = 0.0;
-    glm::dvec3 worldM {0.0};       // where it is now
-    bool stop = false;             // stop here (J off) - hubs / finish; else pass through
-    std::string action;            // at a stop: "refuel", "repair", "pause" (joined by '+')
-    std::string landingSpec;       // Land: "" = a wild site, "site:<catalog id>" = a settlement pad
-    std::uint64_t shipEntityId = 0; // Ship: the rendezvous target (server entity id)
-    bool inserted = false;         // inserted by the planner (refuel stop)
-};
 
 // J charge of a leg of `distanceM` flown at the route drive (JDrive.h rule): the drive's time at its
 // acceleration (a sqrt(d / a) profile, the 0.9 c cap) times its rate
@@ -129,6 +117,6 @@ PlannedRoute planRoute(const PlanRequest& request, const std::vector<ZoneGeometr
 
 // Wire form for the server (ClientShipCommand::RouteLeg detail): legs separated by '|',
 // "hub:<id>[:stop][:<action>]" | "orbit:<body>:<alt m>[:stop]" | "pt:<x>,<y>,<z>".
-std::string encodeRoute(const PlannedRoute& route);
-std::vector<RoutePoint> decodeRoute(const std::string& wire);
+// the wire form of the planned legs (RouteWire.h)
+inline std::string encodeRoute(const PlannedRoute& route) { return encodeRouteLegs(route.legs); }
 } // namespace game::navigation::route

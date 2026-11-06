@@ -118,6 +118,12 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
 
     const auto& motion = shipIt->second.transform.motion;
     const double capacity = motion.jChargeCapacityT;   // the ship's own (0: no jump drive)
+    if (capacity <= 0.0 || motion.jumpCoreRatingT <= 0.0)
+    {
+        plan.summary = "нет прыжкового двигателя: маршрут на J невозможен";
+        std::cerr << "[RoutePlan] the ship has no jump drive - no J route" << std::endl;
+        return;
+    }
     // DEV: ELITE_DEV_ROUTE_CHARGE_T=<t> plans from that charge (planner refuel insertion check)
     static const double devCharge = [] {
         const char* v = std::getenv("ELITE_DEV_ROUTE_CHARGE_T");
@@ -331,6 +337,8 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
         double best = 1.0e300;
         for (const auto& [hubId, p] : req.hubsM)
         {
+            if (hubId == req.points[static_cast<std::size_t>(failAt)].hubId)
+                continue;   // the point itself: it is a stop already (a refuel there needs its own action)
             const double extra = glm::length(p - a) + glm::length(b - p) - glm::length(b - a);
             if (extra < best)
             {

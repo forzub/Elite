@@ -164,6 +164,32 @@ bool resolveParentBodyForInitialWorldState(
     );
 }
 
+// The docking modules of a hub, from its data (initial_world_state.json orbital_hubs[].dock_modules)
+void spawnHubDockModules(GameSimulation& sim, const game::world_state::InitialWorldStateOrbitalHub& hub, const glm::dvec3& hubCenterMeters)
+{
+    for (const auto& dock : hub.dockModules)
+    {
+        const ObjectType type = dock.type == "hub_hex_dock"           ? ObjectType::HubHexDock
+                              : dock.type == "dock_service_block"     ? ObjectType::HubDockServiceBlock
+                              : dock.type == "guidance_dock_cylinder" ? ObjectType::GuidanceDockCylinder
+                                                                      : ObjectType::Station;
+        if (type == ObjectType::Station)
+        {
+            std::cerr << "[HubDocks] " << hub.id << ": unknown dock module type '" << dock.type << "' - skipped\n";
+            continue;
+        }
+        const EntityId id = sim.spawnStation(type, hub.systemId, hubCenterMeters, glm::mat4(1.0f));
+        if (id.value == 0)
+            continue;
+        sim.setStaticObjectIdentity(id, dock.name, hub.name);
+        if (!sim.attachStaticObjectToHub(id, hub.id, dock.id, dock.offsetMeters, dock.localRotationDeg, true,
+                                         dock.angularVelocityDegPerSecond))
+            std::cerr << "[HubDocks] failed to attach " << dock.id << " to " << hub.id << "\n";
+        else
+            std::cerr << "[HubDocks] " << hub.id << ": " << dock.type << " " << dock.id << "\n";
+    }
+}
+
 bool spawnOrbitalHubFromInitialState(
     GameSimulation& sim,
     const game::world_state::InitialWorldStateOrbitalHub& hub
@@ -217,6 +243,7 @@ bool spawnOrbitalHubFromInitialState(
     runtimeHub.orientation = hubOrientation;
 
     sim.registerOrbitalHub(runtimeHub);
+    spawnHubDockModules(sim, hub, hubCenterMeters);   // after the hub exists: they attach to it
 
     for (const auto& module : hub.modules)
     {
@@ -790,11 +817,9 @@ void spawnHubGuidanceTestModules(
         }
     };
 
-    for (std::size_t specIndex = 0;
+    for (std::size_t specIndex = 3;   // 0..2 = the docks: hub data (dock_modules) now
          specIndex < sizeof(specs)/sizeof(specs[0]); ++specIndex)
     {
-        if (game::diagnostics::HubDockingFlightTestScene && specIndex >= 3)
-            break;
         const Spec& spec = specs[specIndex];
         const EntityId id = sim.spawnStation(
             spec.type,
@@ -1102,16 +1127,13 @@ EntityId buildGameScene(
         if (diagnosticHubAvailable)
             spawnHubMotionLabNpcs(sim, stationPos);
     }
-    // Высокий's docking modules (the rotating hex dock + its service block, the guidance
-    // cylinder with the blue zone) are the game's docking, not the motion lab: switching the lab
-    // off (5497cf37) removed them too (author 2026-11-06: "верни ... стыковочные доки")
-    if (diagnosticHubAvailable)
-        spawnHubGuidanceTestModules(
-            sim,
-            initialSystemId,
-            playerHub->id,
-            stationPos
-        );
+    // Высокий's docking modules are hub data now (dock_modules, spawned with every hub). The
+    // navigation stress objects of the old guidance lab stay a diagnostic scene, off by default.
+    if constexpr (!game::diagnostics::HubDockingFlightTestScene)
+    {
+        if (diagnosticHubAvailable)
+            spawnHubGuidanceTestModules(sim, initialSystemId, playerHub->id, stationPos);
+    }
 
     if constexpr (game::diagnostics::NavigationRuntimeLabEnabled &&
                   !game::diagnostics::HubDockingFlightTestScene)

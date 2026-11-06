@@ -67,6 +67,53 @@
           },
           "map_visible": true
         }
+      ],
+      "dock_modules": [
+        {
+          "id": "hub_hex_dock_a",
+          "type": "hub_hex_dock",
+          "name": "EARTH ORBITAL HUB DOCK",
+          "offset_m": {
+            "x": 3000.0,
+            "y": 350.0,
+            "z": 0.0
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 27.0,
+            "z": 0.0
+          },
+          "angular_velocity_deg_s": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 2.0
+          }
+        },
+        {
+          "id": "hub_hex_dock_base",
+          "type": "dock_service_block",
+          "name": "HUB DOCK SERVICE BLOCK",
+          "offset_m": {
+            "x": 3231.535154867169,
+            "y": 350.0,
+            "z": 454.41332733606765
+          },
+          "rotation_deg": {
+            "x": 0.0,
+            "y": 27.0,
+            "z": 0.0
+          }
+        },
+        {
+          "id": "guidance_dock_cylinder_b",
+          "type": "guidance_dock_cylinder",
+          "name": "GUIDANCE DOCK CYLINDER B",
+          "offset_m": {
+            "x": -3000.0,
+            "y": -250.0,
+            "z": 0.0
+          }
+        }
       ]
     },
     {

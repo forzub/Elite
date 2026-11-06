@@ -2,6 +2,96 @@
  "do_not_edit": true,
  "generated_by": "tools/colonization_lab/naming.py (from canon/naming.json)",
  "names": {
+  "body:system_61.Fomalhaut.Fomalhaut_K1": {
+   "en": "Crumb",
+   "native": "Crumb",
+   "native_lang": "en",
+   "ru": "Крошка"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_K2": {
+   "en": "Rusk",
+   "native": "Rusk",
+   "native_lang": "en",
+   "ru": "Сухарь"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_K3": {
+   "en": "Crouton",
+   "native": "Crouton",
+   "native_lang": "en",
+   "ru": "Гренка"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_c": {
+   "en": "Skillet",
+   "native": "Skillet",
+   "native_lang": "en",
+   "ru": "Сковорода"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_d": {
+   "en": "Griddle",
+   "native": "Griddle",
+   "native_lang": "en",
+   "ru": "Жаровня"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_e": {
+   "en": "Cinder",
+   "native": "Cinder",
+   "native_lang": "en",
+   "ru": "Огарок"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_f": {
+   "en": "Pressure Cooker",
+   "native": "Pressure Cooker",
+   "native_lang": "en",
+   "ru": "Скороварка"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_g": {
+   "en": "Oven",
+   "native": "Oven",
+   "native_lang": "en",
+   "ru": "Духовка"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_h": {
+   "en": "Soap Bubble",
+   "native": "Soap Bubble",
+   "native_lang": "en",
+   "ru": "Мыльный пузырь"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_i": {
+   "en": "Kettle",
+   "native": "Kettle",
+   "native_lang": "en",
+   "ru": "Чайник"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_j": {
+   "en": "Steam Room",
+   "native": "Steam Room",
+   "native_lang": "en",
+   "ru": "Парилка"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_k": {
+   "en": "Soda",
+   "native": "Soda",
+   "native_lang": "en",
+   "ru": "Газировка"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_k.Fomalhaut_k_I": {
+   "en": "Bottle Cap",
+   "native": "Bottle Cap",
+   "native_lang": "en",
+   "ru": "Пробка"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_l": {
+   "en": "Freezer",
+   "native": "Freezer",
+   "native_lang": "en",
+   "ru": "Морозилка"
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_l.Fomalhaut_l_I": {
+   "en": "Ice Cube",
+   "native": "Ice Cube",
+   "native_lang": "en",
+   "ru": "Кубик льда"
+  },
   "body:system_61.Fomalhaut.Lexie": {
    "en": "Lexie",
    "native": "Lexie",

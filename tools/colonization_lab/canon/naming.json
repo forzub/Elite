@@ -1730,6 +1730,291 @@
     "ru": "Айрон Шилд-1",
     "en": "Iron Shield"
    }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_c": {
+   "type": "planet",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Skillet",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Сковорода",
+     "en": "Skillet"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): 1600 K, a sodium / SiO rock-vapour haze, a 10-day year"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_d": {
+   "type": "planet",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Griddle",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Жаровня",
+     "en": "Griddle"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): 1350 K, a thin rock-vapour haze"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_e": {
+   "type": "planet",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Cinder",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Огарок",
+     "en": "Cinder"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): 1050 K, airless, burnt out"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_f": {
+   "type": "planet",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Pressure Cooker",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Скороварка",
+     "en": "Pressure Cooker"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): 1700 K under 91 bar of CO2"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_g": {
+   "type": "planet",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Oven",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Духовка",
+     "en": "Oven"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): 1930 K under 930 bar of CO2"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_h": {
+   "type": "planet",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Soap Bubble",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Мыльный пузырь",
+     "en": "Soap Bubble"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): a sub-Neptune: 1 bar of hydrogen and helium, 360 K"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_i": {
+   "type": "planet",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Kettle",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Чайник",
+     "en": "Kettle"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): water-rich, boiling at 1400 K under 1240 bar of CO2"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_j": {
+   "type": "planet",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Steam Room",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Парилка",
+     "en": "Steam Room"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): water-rich, 400 K under 226 bar of nitrogen"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_k": {
+   "type": "planet",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Soda",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Газировка",
+     "en": "Soda"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): water-rich, 288 K, 15.6 bar of CO2 - carbonated oceans"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_l": {
+   "type": "planet",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Freezer",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Морозилка",
+     "en": "Freezer"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): water-rich, frozen at 94 K, nitrogen with methane"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_k.Fomalhaut_k_I": {
+   "type": "moon",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Bottle Cap",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Пробка",
+     "en": "Bottle Cap"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): the airless moon of Soda, 166 K"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_l.Fomalhaut_l_I": {
+   "type": "moon",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Ice Cube",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Кубик льда",
+     "en": "Ice Cube"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): the frozen moon of Freezer, 106 K"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_K1": {
+   "type": "dwarf_planet",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Crumb",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Крошка",
+     "en": "Crumb"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): an icy dwarf in the debris ring, 50 AU"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_K2": {
+   "type": "dwarf_planet",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Rusk",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Сухарь",
+     "en": "Rusk"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): an icy dwarf in the debris ring, 45 AU"
+   }
+  },
+  "body:system_61.Fomalhaut.Fomalhaut_K3": {
+   "type": "dwarf_planet",
+   "system": "system:61",
+   "status": "PROPOSAL",
+   "names": {
+    "international": {
+     "text": "Crouton",
+     "lang": "en"
+    },
+    "exonyms": {
+     "ru": "Гренка",
+     "en": "Crouton"
+    }
+   },
+   "naming_history": {
+    "status": "PROPOSAL",
+    "origin": "кухонная серия Фортуны (система известна, никому не нужна): an icy dwarf in the debris ring, 39 AU"
+   }
   }
  },
  "heraldry": {

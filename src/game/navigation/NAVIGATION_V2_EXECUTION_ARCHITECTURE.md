@@ -10,7 +10,24 @@ but they are not allowed to reintroduce retired control seams.
 
 ## 1. Canonical ownership
 
-Player navigation intent and automatic route execution are client-owned.
+Two execution owners exist, split by SCALE (updated 2026-11-06 after the architecture audit; before
+this the section claimed one client owner):
+
+- **Local tactical flight (hub frame, docking, the dock approach)** - client-owned, described below:
+  the client route autopilot produces ordinary `ShipControlState`, the server only integrates it.
+- **Global flight (J engine, route legs, take-off, landing, rendezvous)** - SERVER-owned
+  (`GameSimulationFreeFlight.cpp`, `GameSimulationRoute.cpp`, `GameSimulationZones.cpp`): the client
+  plans (`navigation/route/RoutePlanner` - the route window, the J-charge walk, refuel insertion,
+  corridors, body avoidance) and sends the legs as a `RouteLeg` command (`route/RouteWire.h`, the neutral
+  wire form); the server flies them on the travel frame and owns the route state (`motion.routeState`),
+  the J charge, the landing pilot (which replaces the pilot's controls while it lands) and the
+  navigation-zone fines. Both sides use the SAME rules (`navigation/rules/BodyFlightRules.h`:
+  dominant body / SOI, J floor, clearance, airless; `navigation/rules/JDrive.h`: J figures and charge).
+- **Hand-over**: a global leg ends by leaving J into a stabilization frame (a hub capture, the own
+  orbit, the ground); from there the local tactical owner (docking planner) may take over. A
+  pilot-initiated global action while a client tactical route runs cancels the tactical route first.
+
+The rest of this section describes the local tactical chain.
 
 The server owns authoritative world/ship state, collision/damage and fixed-step
 physics. It receives the same ordinary `ShipControlState` surface whether the
@@ -339,6 +356,20 @@ Hub Tactical and Orbital Transfer are different jobs and different modes.
   error).
 
 ## 11b. Free flight (Ctrl+J), 2026-11-03
+
+**Current (2026-11-06)** - the modes as implemented (details in PROJECT_STATE slices cc-1 .. cc-10):
+- NORMAL flight (`motion.freeFlight`, Ctrl+K leaves / enters STABILIZATION): main engines, no speed
+  envelope; the hull may lead the velocity by 10 deg and the velocity turns toward it only as fast as
+  the main engines can (a_main / v); Backspace = a free hull (no prograde hold, no bending).
+- J engine (Ctrl+J, `motion.jEngine`): the throttle sets an ACCELERATION (HOME +max, END -max, INSERT 0,
+  +/- exponential), the field follows exponentially; off = the field winds down to the main engines'
+  level first; it spends the jump-drive charge (`JDrive.h`), the ship's own figures (`ShipParams`).
+  Refused near objects (keep-out) and below the J floor.
+- STABILIZATION: hub frame / own orbit / ground (500 m/s manoeuvre envelope); automatic on a closed
+  safe orbit after a coast.
+- Landing / take-off / route legs / rendezvous: server-owned (section 1).
+
+The history below is the 2026-11-03 first version.
 
 The pilot's own global flight, a third job next to Hub Tactical and Orbital
 Transfer (`GameSimulationFreeFlight.cpp`, flag `DynamicMotionState::freeFlight`,

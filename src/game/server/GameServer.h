@@ -51,6 +51,12 @@ class GameServer
 public:
     explicit GameServer(std::size_t bootstrapPlayerSlotCount = 1);
 
+    // DEV commands (spawn a combat target, inject an equipment failure, cycle the weapon type):
+    // the embedded single-player server allows them; a dedicated server only with --dev /
+    // ELITE_DEV_COMMANDS=1 (architecture audit 2026-11-06 item 4). Process-wide.
+    static void setDevCommandsAllowed(bool allowed) noexcept;
+    static bool devCommandsAllowed() noexcept;
+
     void update(double dt);
 
     void submitCommand(EntityId shipId, const ShipControlState& control);

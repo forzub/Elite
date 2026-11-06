@@ -1,4 +1,5 @@
 #include <algorithm>
+#include "src/game/server/GameServer.h"
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -1781,6 +1782,16 @@ int runHeadlessServer(bool resetAuthState)
 
 int main(int argc, char** argv)
 {
+    {
+        // DEV commands only when the operator asks for them
+        bool dev = false;
+        for (int k = 1; k < argc; ++k)
+            dev = dev || std::string(argv[k]) == "--dev";
+        if (const char* v = std::getenv("ELITE_DEV_COMMANDS"); v && *v == '1')
+            dev = true;
+        GameServer::setDevCommandsAllowed(dev);
+        std::cerr << "[Server] DEV commands " << (dev ? "ALLOWED" : "rejected") << std::endl;
+    }
     std::string runtimeRootError;
     if (!platform::initializeExecutableRuntimeRoot(&runtimeRootError))
     {

@@ -1,3 +1,5 @@
+#include <chrono>
+#include "src/game/navigation/traffic/SegmentedRouteComposer.h"
 #include <system_error>
 #include <typeinfo>
 #include <cmath>
@@ -625,6 +627,11 @@ int main(int argc, char** argv)
 {
 #ifdef _WIN32
     bindChildProcessesToThisProcessLifetime();
+    GameServer::setDevCommandsAllowed(true);   // the embedded single-player server: the player is the host
+    // the route composer's diagnostic planning times (the pure route code owns no clock)
+    game::navigation::traffic::setSegmentedRouteDiagnosticClock([] {
+        return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    });
     if (core::runtimeTraceEnabled())
         std::cerr
             << "[M8E-XPROC][process] pid=" << GetCurrentProcessId()

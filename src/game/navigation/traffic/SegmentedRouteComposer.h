@@ -5,6 +5,10 @@
 
 namespace game::navigation::traffic
 {
+// the diagnostic planning-time clock (milliseconds), installed by the orchestration (main)
+using SegmentedRouteDiagnosticClockMs = double (*)();
+void setSegmentedRouteDiagnosticClock(SegmentedRouteDiagnosticClockMs clock);
+
 
 // Composes one continuous executable route from ordinary free-space planner
 // legs separated by authored mandatory traffic-volume segments.

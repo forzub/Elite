@@ -2,7 +2,6 @@
 #include "src/game/navigation/traffic/SegmentedRouteComposer.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <limits>
 #include <utility>
@@ -15,6 +14,16 @@
 
 namespace game::navigation::traffic
 {
+namespace
+{
+// Pure route code owns no clock (gate check_navigation_route_boundaries): the diagnostic planning
+// times come from a clock the orchestration installs (0 when none).
+SegmentedRouteDiagnosticClockMs g_diagnosticClock = nullptr;
+double diagnosticNowMs() { return g_diagnosticClock ? g_diagnosticClock() : 0.0; }
+}
+
+void setSegmentedRouteDiagnosticClock(SegmentedRouteDiagnosticClockMs clock) { g_diagnosticClock = clock; }
+
 namespace
 {
 
@@ -594,13 +603,10 @@ static planner::RoutePlan composeOnce(
                     terminalRequest.vehicleLengthMeters
                 );
 
-        const auto inboundStarted = std::chrono::steady_clock::now();
+        const double inboundStarted = diagnosticNowMs();
         const auto inbound =
             planner::RoutePlanner::plan(legRequest);
-        const double inboundMs =
-            std::chrono::duration<double, std::milli>(
-                std::chrono::steady_clock::now() - inboundStarted
-            ).count();
+        const double inboundMs = diagnosticNowMs() - inboundStarted;
         freeLegTotalMs += inboundMs;
         freeLegDiagnostics +=
             " inbound_ms=" + std::to_string(inboundMs) +
@@ -839,13 +845,10 @@ static planner::RoutePlan composeOnce(
     finalRequest.requiredViaPointsMeters.clear();
     finalRequest.mandatoryTangentStraights.clear();
 
-    const auto terminalLegStarted = std::chrono::steady_clock::now();
+    const double terminalLegStarted = diagnosticNowMs();
     const auto finalLeg =
         planner::RoutePlanner::plan(finalRequest);
-    const double finalLegMs =
-        std::chrono::duration<double, std::milli>(
-            std::chrono::steady_clock::now() - terminalLegStarted
-        ).count();
+    const double finalLegMs = diagnosticNowMs() - terminalLegStarted;
     freeLegTotalMs += finalLegMs;
     freeLegDiagnostics +=
         " final_ms=" + std::to_string(finalLegMs) +

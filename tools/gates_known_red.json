@@ -1,10 +1,6 @@
 {
   "_comment": "Known-red Python gates for tools/run_gates.py. Each entry is a REAL production violation (or an explicitly deferred re-baseline) with its owner slice. Remove an entry in the same commit that turns its gate green; the runner fails on a stale entry.",
   "known_red": {
-    "tests/architecture_contracts/check_navigation_route_boundaries.py": {
-      "reason": "REAL: std::chrono / steady_clock timing in the pure route module src/game/navigation/traffic/SegmentedRouteComposer.cpp:5, :597-602, :842-847 (7e9f4a2d); timing belongs to orchestration/debug code",
-      "owner": "main session (navigation)"
-    },
     "tests/feature_contracts/check_feature_contracts.py": {
       "reason": "REAL: world-specific Sol body ids (\"system_0.Sol.Земля\" ...) in client src/game/SpaceState.cpp:1409-1423, :1584-1586, :1618 (DEV SOL map/service script interpreter inside SpaceState::update)",
       "owner": "main session, audit rec. 8 (DevScriptRunner)"

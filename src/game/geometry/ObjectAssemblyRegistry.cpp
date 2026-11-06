@@ -1,3 +1,4 @@
+#include "src/core/SafeCallOnce.h"
 #include "ObjectAssemblyRegistry.h"
 
 #include <stdexcept>
@@ -15,7 +16,8 @@ std::once_flag g_objectAssemblyRegistryInitFlag;
 
 void ObjectAssemblyRegistry::ensureInitialized()
 {
-    std::call_once(g_objectAssemblyRegistryInitFlag, []() {
+    static std::exception_ptr failure;
+    core::safeCallOnce(g_objectAssemblyRegistryInitFlag, failure, []() {
         ObjectAssemblyRegistry::init();
     });
 }

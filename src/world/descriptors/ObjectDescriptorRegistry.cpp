@@ -1,3 +1,4 @@
+#include "src/core/SafeCallOnce.h"
 #include "ObjectDescriptorRegistry.h"
 #include "src/world/types/ObjectType.h"
 
@@ -29,7 +30,8 @@ std::once_flag g_objectDescriptorRegistryInitFlag;
 
 void ObjectDescriptorRegistry::ensureInitialized()
 {
-    std::call_once(g_objectDescriptorRegistryInitFlag, []() {
+    static std::exception_ptr failure;
+    core::safeCallOnce(g_objectDescriptorRegistryInitFlag, failure, []() {
         ObjectDescriptorRegistry::init();
     });
 }

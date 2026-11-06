@@ -1,3 +1,4 @@
+#include <atomic>
 #include "src/game/navigation/route/RouteWire.h"
 #include <thread>
 
@@ -44,6 +45,21 @@ struct GameServer::TerrainField
     std::atomic<bool> ready {false};
     world::celestial::surface::LoadedBodySurface loaded;
 };
+
+namespace
+{
+std::atomic<bool> g_devCommandsAllowed {false};
+bool devCommandAccepted(const char* what, EntityId ship)
+{
+    if (g_devCommandsAllowed.load())
+        return true;
+    std::cerr << "[Server] DEV command '" << what << "' from ship " << ship.value << " REJECTED (dev commands off)" << std::endl;
+    return false;
+}
+} // namespace
+
+void GameServer::setDevCommandsAllowed(bool allowed) noexcept { g_devCommandsAllowed = allowed; }
+bool GameServer::devCommandsAllowed() noexcept { return g_devCommandsAllowed.load(); }
 
 GameServer::GameServer(std::size_t bootstrapPlayerSlotCount)
     : m_diagnostics{}
@@ -883,9 +899,9 @@ void GameServer::update(double dt)
                         m_simulation.setLaserFiring(id, shipCmd.index == 1);
                     else if (shipCmd.index == 2)
                         m_simulation.launchMissile(id);
-                    else if (shipCmd.index == 3 || shipCmd.index == 4)
+                    else if ((shipCmd.index == 3 || shipCmd.index == 4) && devCommandAccepted("weapon type", id))
                         m_simulation.cycleCombatWeapon(id, shipCmd.index == 4);
-                    else if (shipCmd.index == 5)
+                    else if (shipCmd.index == 5 && devCommandAccepted("combat target", id))
                         m_simulation.spawnCombatTarget(id, shipCmd.amount > 0.0 ? shipCmd.amount : 400.0);
                     break;
 
@@ -978,6 +994,8 @@ void GameServer::update(double dt)
 
                 case ClientShipCommand::InjectEquipmentFailure:
                 {
+                    if (!devCommandAccepted("equipment failure", id))
+                        break;
                     // A deliberate test fault on this player's authoritative
                     // installed hardware. The UI cannot pick another ship.
                     auto& core=ship.core();

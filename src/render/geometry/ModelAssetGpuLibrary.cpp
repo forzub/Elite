@@ -212,8 +212,19 @@ void ModelAssetGpu::startPrewarm() const
                 Piece piece;
                 piece.lod = lod;
                 piece.geometry = static_cast<std::int32_t>(g);
-                piece.prepared = std::make_unique<MeshGPU::Prepared>(
-                    MeshGPU::prepare(toMeshData(lodData.geometries[g].mesh, asset.materials)));
+                // an exception (bad_alloc on a huge LOD) must not leave the thread: the mesh is then
+                // built synchronously when it is needed (gpuFor), like before the prewarm
+                try
+                {
+                    piece.prepared = std::make_unique<MeshGPU::Prepared>(
+                        MeshGPU::prepare(toMeshData(lodData.geometries[g].mesh, asset.materials)));
+                }
+                catch (const std::exception& e)
+                {
+                    std::cerr << "[ModelAssetGpu] prewarm of lod " << lod << " geometry " << g << " failed: " << e.what()
+                              << " - built on demand" << std::endl;
+                    continue;
+                }
                 std::lock_guard<std::mutex> lock(m_mutex);
                 m_ready.push_back(std::move(piece));
             }

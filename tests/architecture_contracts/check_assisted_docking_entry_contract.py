@@ -169,7 +169,10 @@ retry_region = space[retry_start:retry_log]
 assert "constexpr std::uint32_t MaxEntryConnectorMisses = 4;" in retry_region
 assert "if (m_dockLateEntry.rebindAttempts >=" in retry_region
 assert "MaxEntryConnectorMisses)" in retry_region
-assert "return;" in space[retry_fail:retry_log]
+# (the Planning phase is its own function since the 2026-11-06 split, where
+# "stop this update" is spelled `return false;`)
+assert ("return;" in space[retry_fail:retry_log] or
+        "return false;" in space[retry_fail:retry_log])
 assert retry_start < retry_exhaustion < retry_fail < retry_log
 
 for forbidden in [

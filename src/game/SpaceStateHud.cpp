@@ -132,90 +132,7 @@ m_systemMapRenderer.render(
 
         if (m_activeCameraMode != ShipCameraMode::Drone)
         {
-            auto it = m_client->world().ships().find(m_playerId.value);
-            if (it != m_client->world().ships().end())
-            {
-                const auto& ship = it->second;
-
-                if (game::runtime::WorldSignalLabelsEnabled)
-                {
-                    m_playerView->renderWorldLabels(
-                        m_playerView->worldLabels(),
-                        world::coordinates::legacyFloatMeters(
-                            ship.renderTransform.worldPosition
-                        ),
-                        m_activeMainCamera->viewMatrix(),
-                        m_activeMainCamera->projectionMatrix(),
-                        vp
-                    );
-                }
-
-                game::presentation::NavigationHudVocabulary navVocabulary;
-                if (context().app)
-                {
-                    const auto& loc = context().app->localization();
-                    navVocabulary.objectText =
-                        loc.text("map.navigation_hud.object", "Object");
-                    navVocabulary.celestialText =
-                        loc.text("map.navigation_hud.celestial", "Celestial");
-                    navVocabulary.startText =
-                        loc.text("map.navigation_hud.start", "START");
-                    navVocabulary.finishText =
-                        loc.text("map.navigation_hud.finish", "FINISH");
-                    navVocabulary.waypointText =
-                        loc.text("map.navigation_hud.waypoint", "WAYPOINT");
-                    navVocabulary.relativeSpeedShort =
-                        loc.text("map.navigation_hud.relative_speed_short", "REL");
-                    navVocabulary.globalSpeedShort =
-                        loc.text("map.navigation_hud.global_speed_short", "GLOB");
-                }
-
-                // DEV: ELITE_DEV_CELESTIAL_MARKERS=venus,mars,... adds HUD
-                // planet markers through the same tracking path a map info
-                // card uses (rememberCelestialBody) - the marker load test.
-                static const char* devMarkers = std::getenv("ELITE_DEV_CELESTIAL_MARKERS");
-                if (devMarkers && m_client && m_client->celestialSnapshot())
-                {
-                    const std::string list = std::string(",") + devMarkers + ",";
-                    for (const auto& body : m_client->celestialSnapshot()->bodies)
-                    {
-                        const std::size_t slash = body.sourcePath.find_last_of("/\\");
-                        std::string stem = body.sourcePath.substr(slash == std::string::npos ? 0 : slash + 1);
-                        if (stem.rfind("planet_", 0) != 0)
-                            continue;
-                        stem = stem.substr(7, stem.size() - 7 - 5); // planet_<name>.json
-                        if (list.find("," + stem + ",") == std::string::npos &&
-                            list.find(",all,") == std::string::npos)
-                            continue;
-                        m_navigationWorkspace.targets().rememberCelestialBody(
-                            "dev:" + stem,
-                            m_client->celestialSnapshot()->systemId,
-                            body.id,
-                            "Planet",
-                            body.name,
-                            world::coordinates::makeWorldPositionFromMeters(body.worldMeters),
-                            glm::vec4(0.75f, 0.85f, 1.0f, 1.0f)
-                        );
-                    }
-                }
-
-                const auto navigationMarkers =
-                    game::presentation::buildNavigationHudMarkers(
-                        m_navigationWorkspace,
-                        m_client->world(),
-                        ship,
-                        navVocabulary,
-                        &m_hubSemanticAnchorCatalog,
-                        ship.renderReferenceFrame.universeTimeSeconds
-                    );
-
-                m_playerView->renderNavigationMarkers(
-                    navigationMarkers,
-                    m_activeMainCamera->viewMatrix(),
-                    m_activeMainCamera->projectionMatrix(),
-                    vp
-                );
-            }
+            renderHudWorldLabels(vp);
         }
 
         // World-anchored navigation presentation is projected onto the glass
@@ -226,198 +143,7 @@ m_systemMapRenderer.render(
             m_activeCameraMode != ShipCameraMode::Drone &&
             m_activeMainCamera)
         {
-            const auto guidance =
-                game::presentation::buildGuidanceCorridorHudPresentation(
-                    m_navigationWorkspace,
-                    playerShip,
-                    playerShip.renderReferenceFrame.universeTimeSeconds
-                );
-
-            TextRenderer::instance().beginFrameForViewport(
-                vp.width,
-                vp.height
-            );
-            m_guidanceCorridorRenderer.render(
-                guidance,
-                m_activeMainCamera->viewMatrix(),
-                m_activeMainCamera->projectionMatrix(),
-                vp
-            );
-
-            const bool dockingGuidanceVisible =
-                guidance.visible &&
-                guidance.spatialAdvisoryGates &&
-                guidance.source ==
-                    game::navigation::GuidanceSource::DockingComputer &&
-                !m_activeDockingGuidanceCorridorId.empty();
-
-            if (dockingGuidanceVisible)
-            {
-                const auto& dockingRequest =
-                    m_navigationWorkspace.
-                        dockingRouteRequests().pending();
-                const bool automaticDockingRequested =
-                    dockingRequest.valid() &&
-                    dockingRequest.mode ==
-                        game::navigation::
-                            DockingRouteRequest::Mode::Automatic;
-                const bool automaticDockingActive =
-                    automaticDockingRequested &&
-                    m_clientDockingPhase ==
-                        ClientDockingPhase::Executing;
-
-                const double dockingBlinkPhase = std::fmod(
-                    std::max(
-                        0.0,
-                        playerShip.renderReferenceFrame.
-                            universeTimeSeconds
-                    ) * 2.0,
-                    1.0
-                );
-                if (dockingBlinkPhase < 0.58)
-                {
-                    const std::string dockingText =
-                        localizedUiText(
-                            context().app,
-                            automaticDockingActive
-                                ? "cockpit.docking.automatic_mode"
-                                : automaticDockingRequested
-                                    ? "cockpit.docking.preparing_mode"
-                                    : "cockpit.docking.manual_mode",
-                            automaticDockingActive
-                                ? "AUTOMATIC DOCKING MODE"
-                                : automaticDockingRequested
-                                    ? "PREPARING AUTOMATIC DOCKING"
-                                    : "MANUAL DOCKING MODE"
-                        );
-                    constexpr int dockingPx = 20;
-                    auto& text = TextRenderer::instance();
-                    const float width =
-                        text.measureTextPx(
-                            dockingText,
-                            dockingPx
-                        );
-                    const float x =
-                        static_cast<float>(vp.width) * 0.5f -
-                        width * 0.5f;
-                    const float y = 32.0f;
-                    text.textDrawPx(
-                        dockingText,
-                        x,
-                        y,
-                        dockingPx,
-                        glm::vec4(
-                            0.62f,
-                            0.96f,
-                            1.0f,
-                            1.0f
-                        )
-                    );
-                }
-            }
-
-            const bool noSafeGuidance =
-                guidance.noSafePrimarySolution ||
-                m_noSafeDockingGuidanceSolution;
-            const bool guidanceUnavailable =
-                !noSafeGuidance && !m_dockingGuidanceFailureReason.empty();
-            if (noSafeGuidance || guidanceUnavailable)
-            {
-                const double blinkPhase = std::fmod(
-                    std::max(0.0, m_client->universeTimeSeconds()) * 2.0,
-                    1.0
-                );
-                if (blinkPhase < 0.58)
-                {
-                    std::string warning = noSafeGuidance
-                        ? localizedUiText(
-                            context().app,
-                            "map.navigation_hud.no_safe_guidance_solution",
-                            "NO SAFE GUIDANCE SOLUTION"
-                          )
-                        : localizedUiText(
-                            context().app,
-                            "map.navigation_hud.guidance_unavailable",
-                            "GUIDANCE UNAVAILABLE"
-                          );
-                    if (!m_dockingGuidanceFailureReason.empty())
-                    {
-                        warning += " [" +
-                            m_dockingGuidanceFailureReason + "]";
-                    }
-                    constexpr int warningPx = 22;
-                    auto& text = TextRenderer::instance();
-                    const float width = text.measureTextPx(warning, warningPx);
-                    const float x =
-                        static_cast<float>(vp.width) * 0.5f - width * 0.5f;
-                    const float y = 62.0f;
-                    text.solidRectPx(
-                        x - 12.0f,
-                        y - 5.0f,
-                        width + 24.0f,
-                        warningPx + 12.0f,
-                        glm::vec4(0.14f, 0.015f, 0.01f, 0.78f)
-                    );
-                    text.textDrawPx(
-                        warning,
-                        x,
-                        y,
-                        warningPx,
-                        glm::vec4(1.0f, 0.38f, 0.24f, 1.0f)
-                    );
-                }
-            }
-
-            game::presentation::GalacticCompassVocabulary compassVocabulary;
-            compassVocabulary.galacticCenter =
-                localizedUiText(
-                    context().app,
-                    "map.navigation_hud.galactic_center",
-                    "GC"
-                );
-            compassVocabulary.galacticAnticenter =
-                localizedUiText(
-                    context().app,
-                    "map.navigation_hud.galactic_anticenter",
-                    "GAC"
-                );
-            compassVocabulary.longitude90 =
-                localizedUiText(
-                    context().app,
-                    "map.navigation_hud.galactic_l90",
-                    "L90"
-                );
-            compassVocabulary.longitude270 =
-                localizedUiText(
-                    context().app,
-                    "map.navigation_hud.galactic_l270",
-                    "L270"
-                );
-            compassVocabulary.northGalacticPole =
-                localizedUiText(
-                    context().app,
-                    "map.navigation_hud.north_galactic_pole",
-                    "NGP"
-                );
-            compassVocabulary.southGalacticPole =
-                localizedUiText(
-                    context().app,
-                    "map.navigation_hud.south_galactic_pole",
-                    "SGP"
-                );
-
-            const bool compassVisible =
-                m_navigationWorkspace.modules().enabled(
-                    game::navigation::NavigationModuleId::HudGalacticCompass
-                );
-            const auto galacticCompass =
-                game::presentation::buildGalacticCompassPresentation(
-                    m_galacticReferenceFrame,
-                    glm::dvec3(playerShip.renderTransform.forward()),
-                    compassVisible,
-                    compassVocabulary
-                );
-            m_galacticCompassRenderer.render(galacticCompass, vp);
+            renderHudGuidanceAndCompass(vp, playerShip);
         }
 
         // The recon drone is an external camera: no cockpit frame.
@@ -435,109 +161,7 @@ m_systemMapRenderer.render(
         if (debug::get().render.shouldRenderCockpit() &&
             m_activeCameraMode != ShipCameraMode::Drone)
         {
-            const auto engineThrustInstrument =
-                game::presentation::buildEngineThrustHudPresentation(
-                    cockpit
-                );
-            m_engineThrustIndicatorRenderer.render(
-                engineThrustInstrument,
-                vp
-            );
-            // Compact amber system instruments beside the existing motor
-            // gauge. Read the same authoritative replicated ship systems
-            // seen by MotherComputer; never synthesize temperatures.
-            if (cockpit.valid)
-                m_engineThrustIndicatorRenderer.renderThermalSystems(
-                    cockpit.systems, engineThrustInstrument, vp
-                );
-
-            // The hull boresight is a fundamental attitude cue, not a velocity
-            // cue and not a navigation-module product. Keep it present whenever
-            // the cockpit HUD is present.
-            m_flightVectorIndicatorRenderer.renderBoresight(vp);
-
-            // Use the installed-motor capability resolved by MotherComputer
-            // for this exact snapshot, not a smoothed rendering transform.
-            if (cockpit.valid && cockpit.emergencyWorkingThrustAxis)
-            {
-                // Reproject the physical body-space working ray through
-                // the EXACT camera rendering this viewport. The old HUD
-                // pretended a hard-coded focal length and zero camera
-                // attachment rotation; neither is the real view.
-                const auto& sightCamera =
-                    m_playerView->camera(m_activeCameraMode);
-                const glm::dvec4 bodyRay(
-                    cockpit.workingThrustAxisBody,0.0);
-                const glm::dvec3 cameraRay = glm::dvec3(
-                    glm::dmat4(sightCamera.viewMatrix()) *
-                    glm::dmat4(playerShip.renderTransform.orientation) *
-                    bodyRay
-                );
-                m_flightVectorIndicatorRenderer.renderEmergencyThrustAxis(
-                    vp,
-                    cockpit.workingThrustAxisBody,
-                    cameraRay,
-                    sightCamera.fov(),
-                    localizedUiText(
-                        context().app,
-                        "cockpit.emergency.thrust_axis",
-                        "THRUST AXIS"
-                    ),
-                    m_playerView->hudEdgeMapper
-                );
-
-                // A working-axis sight alone cannot tell a human pilot where
-                // the inertial velocity is already going. During an emergency
-                // the HUD must show BOTH rays in the same real camera basis:
-                // amber = achievable zero-torque thrust, green V = actual
-                // hull-relative flight path in the matched local frame.
-                if(playerShip.renderReferenceFrame.valid)
-                {
-                    const glm::dvec3 localVelocity =
-                        playerShip.renderTransform.motion.localVelocityMps;
-                    if(std::isfinite(glm::length(localVelocity)) &&
-                       glm::length(localVelocity)>0.5)
-                    {
-                        const glm::dvec3 velocityWorld =
-                            playerShip.renderReferenceFrame.localToWorldVector(
-                                localVelocity);
-                        const glm::dvec3 velocityCamera=glm::dvec3(
-                            glm::dmat4(sightCamera.viewMatrix())*
-                            glm::dvec4(velocityWorld,0.0));
-                        m_flightVectorIndicatorRenderer.
-                            renderEmergencyVelocityVector(
-                                vp,velocityCamera,sightCamera.fov(),
-                                m_playerView->hudEdgeMapper);
-                    }
-                }
-            }
-
-            game::presentation::FlightInstrumentTextProfile textProfile;
-            textProfile.newtonianModeLabel =
-                localizedUiText(context().app, "cockpit.mode.newtonian", "NEWTONIAN");
-            textProfile.assistedModeLabel =
-                localizedUiText(context().app, "cockpit.mode.assisted", "ASSISTED");
-            textProfile.alignForwardLabel =
-                localizedUiText(context().app, "cockpit.action.align_forward", "ALIGN +V");
-            textProfile.alignBackwardLabel =
-                localizedUiText(context().app, "cockpit.action.align_backward", "ALIGN -V");
-            textProfile.brakingLabel =
-                localizedUiText(context().app, "cockpit.action.brake", "BRAKE");
-
-            if (m_navigationWorkspace.modules().enabled(
-                    game::navigation::NavigationModuleId::HudFlightVector))
-            {
-                const auto flightInstrument =
-                    game::presentation::buildFlightVectorIndicatorPresentation(
-                        cockpit,
-                        textProfile
-                    );
-
-                m_flightVectorIndicatorRenderer.render(
-                    flightInstrument,
-                    vp
-                );
-            }
+            renderHudCockpitInstruments(vp, playerShip, cockpit);
         }
 
         // ------------------------------------------------------------
@@ -547,537 +171,7 @@ m_systemMapRenderer.render(
         // terminal module.
         // ------------------------------------------------------------
         {
-            game::presentation::DockingTerminalSnapshot terminal;
-            terminal.localeId = context().app
-                ? context().app->localization().locale() : std::string();
-            const game::presentation::TerminalLocalizedText::Lookup terminalText =
-                [app = context().app](const char* key)
-                {
-                    return localizedUiText(app, key, key);
-                };
-            const auto lineText = [&terminalText](
-                const char* key, std::initializer_list<std::string> values)
-            {
-                return game::presentation::TerminalLocalizedText::render(
-                    terminalText, key, values);
-            };
-
-            const double terminalNowSeconds =
-                m_client->lastSimulationMetadata().serverTimeSeconds;
-
-            const bool dockingVisible =
-                m_clientDockingPhase != ClientDockingPhase::Idle ||
-                !m_dockingGuidanceFailureReason.empty() ||
-                !m_dockingStatusWarning.empty();
-
-            // Engine HUD and terminal consume the SAME BITE source,
-            // including its authoritative ship/tick provenance.
-            const auto& biteState = cockpit.bite;
-
-            const auto biteLines =
-                game::presentation::DockTerminalBitePresentation::lines(
-                    biteState, terminalText);
-            const bool biteVisible = !biteLines.empty();
-
-            // BITE is allowed to request presentation attention, never control.
-            // The same terminal surface is shared with docking diagnostics so
-            // a propulsion fault remains visible even while docking is idle.
-            const bool ignitionEvent =
-                cockpit.valid &&
-                cockpit.systems.propulsionSwitchRevision>0;
-            // the author wants the terminal on the HUD all the time - "it shows that something is
-            // going on" (2026-11-06); events / faults still decide its title and lines
-            (void)ignitionEvent;
-            terminal.visible = cockpit.valid || dockingVisible || biteVisible;
-            terminal.title = terminalText(
-                dockingVisible
-                    ? "cockpit.terminal.title"
-                    : "cockpit.terminal.system_title");
-            terminal.biteNominalText =
-                terminalText("cockpit.terminal.bite.nominal");
-
-            for (std::size_t i = 0; i < biteLines.size(); ++i)
-            {
-                game::presentation::DockingTerminalSeverity severity =
-                    game::presentation::DockingTerminalSeverity::Info;
-
-                if (i < biteState.faults.size())
-                {
-                    using BiteSeverity = game::bite::Severity;
-                    switch (biteState.faults[i].severity)
-                    {
-                        case BiteSeverity::Failed:
-                            severity =
-                                game::presentation::DockingTerminalSeverity::Error;
-                            break;
-                        case BiteSeverity::Warning:
-                        case BiteSeverity::Caution:
-                            severity =
-                                game::presentation::DockingTerminalSeverity::Warning;
-                            break;
-                        case BiteSeverity::Advisory:
-                            break;
-                    }
-                }
-
-                terminal.diagnostics.emplace_back(
-                    biteLines[i],
-                    severity
-                );
-            }
-
-            // The command is acknowledged only by the server's next
-            // replicated ShipCoreStatus, never by a local key press.
-            if (ignitionEvent)
-            {
-                const auto& power=cockpit.systems;
-                std::string message;
-                game::presentation::DockingTerminalSeverity severity =
-                    game::presentation::DockingTerminalSeverity::Info;
-                if(!power.propulsionReactorsOn)
-                {
-                    message="REACTORS OFF / main and RCS thrust disabled";
-                    severity=game::presentation::DockingTerminalSeverity::Warning;
-                }
-                else if(power.propulsionStartupSeconds>0.0)
-                {
-                    message="REACTORS STARTING / "+std::to_string(
-                        static_cast<int>(std::ceil(power.propulsionStartupSeconds)))+
-                        " s remaining";
-                }
-                else
-                {
-                    const bool synthetic=std::any_of(
-                        cockpit.drives.begin(),cockpit.drives.end(),
-                        [](const auto& d){return d.simulatedPower;});
-                    const bool live=std::any_of(
-                        cockpit.drives.begin(),cockpit.drives.end(),
-                        [](const auto& d){return d.installed && !d.failed &&
-                            d.integrity01>0.0f;});
-                    if(synthetic)
-                        message="REACTORS READY / diagnostic simulated 5 GW";
-                    else if(!live)
-                    {
-                        message="REACTOR ERROR / no functional installed ER-5";
-                        severity=game::presentation::DockingTerminalSeverity::Error;
-                    }
-                    else
-                        message="REACTORS READY / propulsion power enabled";
-                }
-                terminal.diagnostics.emplace_back(message,severity);
-            }
-            // A system fault reaches the same historical diagnostic terminal
-            // as BITE. State changes and reminders are terminal policy only.
-            if(cockpit.valid)
-                for(const auto& alert : cockpit.systems.alerts)
-                    terminal.diagnostics.emplace_back(
-                        alert.system + ": " + alert.message,
-                        alert.severity>=2
-                            ? game::presentation::DockingTerminalSeverity::Error
-                            : game::presentation::DockingTerminalSeverity::Warning);
-            // Hub dock dispatcher: the server's decision for THIS ship.
-            if (playerShip.dockDispatcher.active)
-            {
-                const auto& dock = playerShip.dockDispatcher;
-                game::presentation::DockDispatcherTerminalInput in;
-                in.phase = static_cast<game::docking::traffic::DockTrafficPhase>(dock.phase);
-                in.queuePosition = dock.queuePosition;
-                in.queueLength = dock.queueLength;
-                in.departureQueuePosition = dock.departureQueuePosition;
-                in.holdPointId = dock.holdPointId;
-                in.padId = dock.padId;
-                // One line per dispatcher state: the terminal history keeps
-                // a new entry only when the state text changes.
-                std::string text;
-                for (const auto& line : game::presentation::dockDispatcherTerminalLines(in))
-                    text += (text.empty() ? "" : " / ") + line;
-                if (in.phase == game::docking::traffic::DockTrafficPhase::Docked)
-                    text += " / L: REQUEST DEPARTURE";
-                terminal.diagnostics.emplace_back(text, game::presentation::DockingTerminalSeverity::Info);
-                terminal.visible = true;
-            }
-            {
-                using namespace game::ship::plant;
-                const auto model = playerShip.physicalControlModel;
-                const auto& slots = physicalControlSlots(model);
-
-                std::size_t aft = 0;
-                std::size_t fore = 0;
-                std::size_t manoeuvre = 0;
-                for (const auto& slot : slots)
-                {
-                    switch (slot.role)
-                    {
-                        case EngineSlotRole::AftMain: ++aft; break;
-                        case EngineSlotRole::ForeMain: ++fore; break;
-                        case EngineSlotRole::ManoeuvreCluster:
-                            ++manoeuvre;
-                            break;
-                    }
-                }
-
-                const bool assistedLaw =
-                    playerShip.renderTransform.motion.localControlLaw ==
-                        game::navigation::LocalFlightControlLaw::Assisted;
-                // Physical model identity is translated as flight family
-                // plus its immutable I/Y/X topology code.
-                const auto familyLabel = terminalText(
-                    familyOf(model) == PhysicalControlFamily::Assisted
-                        ? "cockpit.mode.assisted"
-                        : "cockpit.mode.newtonian"
-                );
-                const auto layoutName = [](PropulsionLayout layout)
-                {
-                    switch (layout)
-                    {
-                        case PropulsionLayout::Y: return "Y";
-                        case PropulsionLayout::X: return "X";
-                        case PropulsionLayout::I:
-                        default: return "I";
-                    }
-                };
-                terminal.ship = lineText(
-                    "cockpit.terminal.ship",
-                    {familyLabel + "-" + layoutName(layoutOf(model)),
-                     terminalText(assistedLaw
-                         ? "cockpit.mode.assisted"
-                         : "cockpit.mode.newtonian")});
-                terminal.physics = lineText(
-                    "cockpit.terminal.actuators",
-                    {std::to_string(aft + fore),
-                     std::to_string(aft),
-                     std::to_string(fore),
-                     std::to_string(manoeuvre)});
-            }
-
-            // The terminal intentionally occupies the legacy coordinate block
-            // directly below FRONT. Preserve coordinates when docking is idle;
-            // hide only those five text bindings while terminal is visible.
-            for (const char* id : {
-                     "main_coord_cell",
-                     "main_coord_x",
-                     "main_coord_y",
-                     "main_coord_z",
-                     "main_coord_v"
-                 })
-            {
-                if (auto* component = uiRoot->findById(id))
-                    component->visible = !terminal.visible;
-            }
-
-            switch (m_clientDockingPhase)
-            {
-                case ClientDockingPhase::Idle:
-                    terminal.phase = terminalText("cockpit.terminal.idle");
-                    break;
-                case ClientDockingPhase::Stabilizing:
-                    terminal.phase = terminalText("cockpit.terminal.stabilization");
-                    break;
-                case ClientDockingPhase::Planning:
-                    terminal.phase = terminalText("cockpit.terminal.planning");
-                    break;
-                case ClientDockingPhase::RouteReady:
-                    terminal.phase = terminalText("cockpit.terminal.route_ready");
-                    break;
-                case ClientDockingPhase::Executing:
-                    terminal.phase = terminalText("cockpit.terminal.autopilot");
-                    break;
-                case ClientDockingPhase::SecuringCourse:
-                    terminal.phase =
-                        m_dockAssistedSafeRecovery.stopFallback ||
-                        m_dockSafeCourse.stopFallback
-                            ? terminalText("cockpit.terminal.stop")
-                            : terminalText("cockpit.terminal.safe_course");
-                    break;
-            }
-
-            if (m_dockAdviceJob)
-            {
-                const auto& job = *m_dockAdviceJob;
-                const std::uint8_t stage =
-                    job.planningProgressStage.load(
-                        std::memory_order_acquire
-                    );
-                const double elapsedWallSeconds =
-                    std::chrono::duration<double>(
-                        std::chrono::steady_clock::now() -
-                        job.wallClockStart
-                    ).count();
-                terminal.planner =
-                    game::presentation::DockPlannerTerminalTelemetry::running(
-                        terminalText, stage,
-                        m_dockWorkerCount->load(std::memory_order_acquire)
-                    );
-                terminal.activity =
-                    game::presentation::DockPlannerTerminalTelemetry::elapsed(
-                        terminalText, elapsedWallSeconds, job.planningRequest
-                    );
-                terminal.plannerDetails.push_back(
-                    game::presentation::DockPlannerTerminalTelemetry::presetLine(
-                        terminalText, job.planningRequest.assistedRoutePreset
-                    )
-                );
-                terminal.plannerDetails.push_back(
-                    game::presentation::DockPlannerTerminalTelemetry::limits(
-                        terminalText, job.planningRequest
-                    )
-                );
-                terminal.plannerDetails.push_back(
-                    game::presentation::DockPlannerTerminalTelemetry::obstacles(
-                        terminalText, job.planningRequest
-                    )
-                );
-            }
-            else if (
-                (m_clientDockingPhase == ClientDockingPhase::Executing ||
-                 m_clientDockingPhase == ClientDockingPhase::RouteReady) &&
-                m_dockAdvice.plan.valid()
-            )
-            {
-                terminal.planner =
-                    game::presentation::DockPlannerTerminalTelemetry::completed(
-                        terminalText, m_dockAdvice.workerDurationMs
-                    );
-                terminal.activity =
-                    game::presentation::DockPlannerTerminalTelemetry::route(
-                        terminalText, m_dockAdvice.plan
-                    );
-                terminal.plannerDetails.push_back(
-                    game::presentation::DockPlannerTerminalTelemetry::presetLine(
-                        terminalText, m_dockAdvice.assistedRoutePreset
-                    )
-                );
-                for (const auto& line : {
-                    game::presentation::DockPlannerTerminalTelemetry::legTimings(
-                        terminalText, m_dockAdvice.plan
-                    ),
-                    game::presentation::DockPlannerTerminalTelemetry::legEta(
-                        terminalText, m_dockAdvice.plan
-                    ),
-                    game::presentation::DockPlannerTerminalTelemetry::legEvaluations(
-                        terminalText, m_dockAdvice.plan
-                    )
-                })
-                {
-                    if (!line.empty())
-                        terminal.plannerDetails.push_back(line);
-                }
-            }
-            else
-            {
-                terminal.planner = terminalText("cockpit.terminal.planner_off");
-            }
-
-            if (m_dockAssistedSafeRecovery.active)
-            {
-                terminal.safety = terminalText("cockpit.terminal.safe_course_acquiring");
-            }
-            else if (m_dockSafeCourse.active)
-            {
-                terminal.safety = terminalText("cockpit.terminal.safe_course_active");
-            }
-            else
-            {
-                terminal.safety = terminalText("cockpit.terminal.safe_course_clear");
-            }
-
-            if (m_dockLateEntry.active)
-            {
-                terminal.handoff =
-                    terminalText("cockpit.terminal.handoff_rebind") +
-                    " " +
-                    std::to_string(
-                        m_dockLateEntry.rebindAttempts
-                    );
-
-                terminal.error =
-                    terminalText(
-                        m_dockLateEntry.rebindAttempts > 0
-                            ? "cockpit.terminal.warning_handoff_retry"
-                            : "cockpit.terminal.warning_handoff_rebinding"
-                    );
-
-                if (m_dockLateEntry.rebindAttempts > 0)
-                {
-                    terminal.error +=
-                        " " +
-                        std::to_string(
-                            m_dockLateEntry.rebindAttempts
-                        );
-                }
-            }
-            else if (m_clientDockingPhase == ClientDockingPhase::Executing)
-            {
-                terminal.handoff = terminalText("cockpit.terminal.handoff_accepted");
-            }
-
-            if (!m_dockingGuidanceFailureReason.empty())
-            {
-                // Raw failure details stay in the diagnostics log.
-                // HUD must never emit an unlocalized internal sentence.
-                terminal.error =
-                    game::presentation::DockPlannerTerminalTelemetry::failure(
-                        terminalText, m_dockingGuidanceFailureReason);
-            }
-            else if(terminal.error.empty() && m_dockAdviceJob &&
-                    m_dockAdviceJob->ready.load(
-                        std::memory_order_acquire) &&
-                    !m_dockAdviceJob->plan.valid())
-            {
-                // A worker DID run and declined the physical route:
-                // show the existing localized reason category, while
-                // full planner diagnostics remain in job_result/log.
-                const auto& p=m_dockAdviceJob->plan;
-                terminal.error=
-                    game::presentation::DockPlannerTerminalTelemetry::failure(
-                        terminalText,
-                        p.failure.empty()
-                            ? std::string("planner route rejected")
-                            : p.failure);
-            }
-            else if (terminal.error.empty() &&
-                     !m_dockingStatusWarning.empty())
-            {
-                // Present the SAME pre-planner reason that is logged by
-                // DockAuthority; do not hide an engine-axis mismatch behind
-                // "navigation error; see log".
-                const char* messageKey =
-                    "cockpit.terminal.failure_generic";
-                if(m_dockingStatusWarning ==
-                       "awaiting authoritative motor telemetry")
-                    messageKey="cockpit.terminal.warning_authority";
-                else if(m_dockingStatusWarning ==
-                            "working thrust axis mismatch")
-                    messageKey="cockpit.terminal.warning_thrust_axis_mismatch";
-                else if(m_dockingStatusWarning ==
-                            "installed motor matrix unavailable")
-                    messageKey="cockpit.terminal.warning_motor_matrix";
-                else if(m_dockingStatusWarning ==
-                            "installed physics envelope unavailable")
-                    messageKey="cockpit.terminal.warning_physics_envelope";
-                else if(m_dockingStatusWarning ==
-                            "physical flight doctrine rejected")
-                    messageKey="cockpit.terminal.warning_flight_doctrine";
-                terminal.error=terminalText(messageKey);
-            }
-
-            // Presenters may compose local navigation phase strings, but
-            // the actual terminal receives its complete state only from
-            // MotherComputer, sharing cockpit BITE, ship identity and tick.
-            game::ship::computer::MotherComputerTerminalView terminalView;
-            terminalView.valid = cockpit.valid;
-            terminalView.shipInstanceId = cockpit.shipInstanceId;
-            terminalView.serverTick = cockpit.serverTick;
-            terminalView.presentation = std::move(terminal);
-            m_motherComputer.publishTerminal(std::move(terminalView));
-            const auto currentTerminal = m_motherComputer.terminalSnapshot(
-                cockpit.shipInstanceId,cockpit.serverTick
-            );
-            const auto terminalOutput =
-                m_dockingStatusTerminal.update(
-                    currentTerminal.valid
-                        ? currentTerminal.presentation
-                        : game::presentation::DockingTerminalSnapshot {},
-                    terminalNowSeconds
-                );
-
-            auto& text = TextRenderer::instance();
-
-            const float screenW =
-                static_cast<float>(vp.width);
-            const float screenH =
-                static_cast<float>(vp.height);
-
-            const int fontPx =
-                std::clamp(
-                    static_cast<int>(screenH * 0.0145f),
-                    11,
-                    17
-                );
-
-            const float terminalLeft =
-                screenW * 0.06f;
-            const float terminalTop =
-                screenH * 0.175f;
-            const float terminalWidth =
-                screenW * 0.25f;
-            const float terminalBottom =
-                screenH * 0.56f;
-            const float lineStep =
-                static_cast<float>(fontPx) * 1.28f;
-
-            float y = terminalTop;
-
-            for (const auto& line : terminalOutput.lines)
-            {
-                if (y + lineStep > terminalBottom)
-                    break;
-
-                std::string visibleText = line.text;
-                if (line.cursor)
-                    visibleText += "_";
-
-                // Hard visual width budget: no frame, no clipping rectangle,
-                // simply trim the text to the requested quarter-screen column.
-                while (!visibleText.empty() &&
-                       text.measureTextPx(
-                           visibleText,
-                           fontPx
-                       ) > terminalWidth)
-                {
-                    visibleText.pop_back();
-                }
-
-                const glm::vec4 color =
-                    line.severity ==
-                            game::presentation::
-                                DockingTerminalSeverity::Error
-                        ? glm::vec4(
-                              0.74f,
-                              0.53f,
-                              0.58f,
-                              0.39f
-                          )
-                        : line.severity ==
-                                game::presentation::
-                                    DockingTerminalSeverity::Warning
-                            ? glm::vec4(
-                                  0.68f,
-                                  0.56f,
-                                  0.60f,
-                                  0.36f
-                              )
-                            : glm::vec4(
-                                  0.53f,
-                                  0.66f,
-                                  0.72f,
-                                  0.36f
-                              );
-
-                text.textDrawPx(
-                    visibleText,
-                    terminalLeft,
-                    y,
-                    fontPx,
-                    color
-                );
-
-                y += lineStep;
-            }
-
-            // Presentation-only audio seam. The terminal itself remains pure:
-            // it reports how many characters appeared; the adapter rate-limits
-            // that event; AudioEngine owns the replaceable platform backend.
-            if (m_terminalAudioAdapter.shouldPlayTick(
-                    terminalOutput.typedCharacters,
-                    terminalNowSeconds
-                ))
-            {
-                audio::AudioEngine::instance().playTerminalTick();
-            }
-
-            if (!terminal.visible)
-                m_terminalAudioAdapter.reset();
+            renderHudDockingTerminal(vp, playerShip, cockpit);
         }
 
         uiRoot->render(vp);
@@ -1122,6 +216,944 @@ m_systemMapRenderer.render(
 
     m_perfHudMs = nowMs() - hudStartMs;
     core::hitch::mark("hud");
+}
+
+// renderHUD / ship UI: world-anchored labels and markers projected with the
+// active flight camera (not in the drone view).
+void SpaceState::renderHudWorldLabels(const Viewport& vp)
+{
+    auto it = m_client->world().ships().find(m_playerId.value);
+    if (it != m_client->world().ships().end())
+    {
+        const auto& ship = it->second;
+
+        if (game::runtime::WorldSignalLabelsEnabled)
+        {
+            m_playerView->renderWorldLabels(
+                m_playerView->worldLabels(),
+                world::coordinates::legacyFloatMeters(
+                    ship.renderTransform.worldPosition
+                ),
+                m_activeMainCamera->viewMatrix(),
+                m_activeMainCamera->projectionMatrix(),
+                vp
+            );
+        }
+
+        game::presentation::NavigationHudVocabulary navVocabulary;
+        if (context().app)
+        {
+            const auto& loc = context().app->localization();
+            navVocabulary.objectText =
+                loc.text("map.navigation_hud.object", "Object");
+            navVocabulary.celestialText =
+                loc.text("map.navigation_hud.celestial", "Celestial");
+            navVocabulary.startText =
+                loc.text("map.navigation_hud.start", "START");
+            navVocabulary.finishText =
+                loc.text("map.navigation_hud.finish", "FINISH");
+            navVocabulary.waypointText =
+                loc.text("map.navigation_hud.waypoint", "WAYPOINT");
+            navVocabulary.relativeSpeedShort =
+                loc.text("map.navigation_hud.relative_speed_short", "REL");
+            navVocabulary.globalSpeedShort =
+                loc.text("map.navigation_hud.global_speed_short", "GLOB");
+        }
+
+        // DEV: ELITE_DEV_CELESTIAL_MARKERS=venus,mars,... adds HUD
+        // planet markers through the same tracking path a map info
+        // card uses (rememberCelestialBody) - the marker load test.
+        static const char* devMarkers = std::getenv("ELITE_DEV_CELESTIAL_MARKERS");
+        if (devMarkers && m_client && m_client->celestialSnapshot())
+        {
+            const std::string list = std::string(",") + devMarkers + ",";
+            for (const auto& body : m_client->celestialSnapshot()->bodies)
+            {
+                const std::size_t slash = body.sourcePath.find_last_of("/\\");
+                std::string stem = body.sourcePath.substr(slash == std::string::npos ? 0 : slash + 1);
+                if (stem.rfind("planet_", 0) != 0)
+                    continue;
+                stem = stem.substr(7, stem.size() - 7 - 5); // planet_<name>.json
+                if (list.find("," + stem + ",") == std::string::npos &&
+                    list.find(",all,") == std::string::npos)
+                    continue;
+                m_navigationWorkspace.targets().rememberCelestialBody(
+                    "dev:" + stem,
+                    m_client->celestialSnapshot()->systemId,
+                    body.id,
+                    "Planet",
+                    body.name,
+                    world::coordinates::makeWorldPositionFromMeters(body.worldMeters),
+                    glm::vec4(0.75f, 0.85f, 1.0f, 1.0f)
+                );
+            }
+        }
+
+        const auto navigationMarkers =
+            game::presentation::buildNavigationHudMarkers(
+                m_navigationWorkspace,
+                m_client->world(),
+                ship,
+                navVocabulary,
+                &m_hubSemanticAnchorCatalog,
+                ship.renderReferenceFrame.universeTimeSeconds
+            );
+
+        m_playerView->renderNavigationMarkers(
+            navigationMarkers,
+            m_activeMainCamera->viewMatrix(),
+            m_activeMainCamera->projectionMatrix(),
+            vp
+        );
+    }
+
+}
+
+// renderHUD / ship UI: the guidance corridor and the galactic compass on the
+// glass, drawn before the cockpit frame occludes them.
+void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShipState& playerShip)
+{
+    const auto guidance =
+        game::presentation::buildGuidanceCorridorHudPresentation(
+            m_navigationWorkspace,
+            playerShip,
+            playerShip.renderReferenceFrame.universeTimeSeconds
+        );
+
+    TextRenderer::instance().beginFrameForViewport(
+        vp.width,
+        vp.height
+    );
+    m_guidanceCorridorRenderer.render(
+        guidance,
+        m_activeMainCamera->viewMatrix(),
+        m_activeMainCamera->projectionMatrix(),
+        vp
+    );
+
+    const bool dockingGuidanceVisible =
+        guidance.visible &&
+        guidance.spatialAdvisoryGates &&
+        guidance.source ==
+            game::navigation::GuidanceSource::DockingComputer &&
+        !m_activeDockingGuidanceCorridorId.empty();
+
+    if (dockingGuidanceVisible)
+    {
+        const auto& dockingRequest =
+            m_navigationWorkspace.
+                dockingRouteRequests().pending();
+        const bool automaticDockingRequested =
+            dockingRequest.valid() &&
+            dockingRequest.mode ==
+                game::navigation::
+                    DockingRouteRequest::Mode::Automatic;
+        const bool automaticDockingActive =
+            automaticDockingRequested &&
+            m_clientDockingPhase ==
+                ClientDockingPhase::Executing;
+
+        const double dockingBlinkPhase = std::fmod(
+            std::max(
+                0.0,
+                playerShip.renderReferenceFrame.
+                    universeTimeSeconds
+            ) * 2.0,
+            1.0
+        );
+        if (dockingBlinkPhase < 0.58)
+        {
+            const std::string dockingText =
+                localizedUiText(
+                    context().app,
+                    automaticDockingActive
+                        ? "cockpit.docking.automatic_mode"
+                        : automaticDockingRequested
+                            ? "cockpit.docking.preparing_mode"
+                            : "cockpit.docking.manual_mode",
+                    automaticDockingActive
+                        ? "AUTOMATIC DOCKING MODE"
+                        : automaticDockingRequested
+                            ? "PREPARING AUTOMATIC DOCKING"
+                            : "MANUAL DOCKING MODE"
+                );
+            constexpr int dockingPx = 20;
+            auto& text = TextRenderer::instance();
+            const float width =
+                text.measureTextPx(
+                    dockingText,
+                    dockingPx
+                );
+            const float x =
+                static_cast<float>(vp.width) * 0.5f -
+                width * 0.5f;
+            const float y = 32.0f;
+            text.textDrawPx(
+                dockingText,
+                x,
+                y,
+                dockingPx,
+                glm::vec4(
+                    0.62f,
+                    0.96f,
+                    1.0f,
+                    1.0f
+                )
+            );
+        }
+    }
+
+    const bool noSafeGuidance =
+        guidance.noSafePrimarySolution ||
+        m_noSafeDockingGuidanceSolution;
+    const bool guidanceUnavailable =
+        !noSafeGuidance && !m_dockingGuidanceFailureReason.empty();
+    if (noSafeGuidance || guidanceUnavailable)
+    {
+        const double blinkPhase = std::fmod(
+            std::max(0.0, m_client->universeTimeSeconds()) * 2.0,
+            1.0
+        );
+        if (blinkPhase < 0.58)
+        {
+            std::string warning = noSafeGuidance
+                ? localizedUiText(
+                    context().app,
+                    "map.navigation_hud.no_safe_guidance_solution",
+                    "NO SAFE GUIDANCE SOLUTION"
+                  )
+                : localizedUiText(
+                    context().app,
+                    "map.navigation_hud.guidance_unavailable",
+                    "GUIDANCE UNAVAILABLE"
+                  );
+            if (!m_dockingGuidanceFailureReason.empty())
+            {
+                warning += " [" +
+                    m_dockingGuidanceFailureReason + "]";
+            }
+            constexpr int warningPx = 22;
+            auto& text = TextRenderer::instance();
+            const float width = text.measureTextPx(warning, warningPx);
+            const float x =
+                static_cast<float>(vp.width) * 0.5f - width * 0.5f;
+            const float y = 62.0f;
+            text.solidRectPx(
+                x - 12.0f,
+                y - 5.0f,
+                width + 24.0f,
+                warningPx + 12.0f,
+                glm::vec4(0.14f, 0.015f, 0.01f, 0.78f)
+            );
+            text.textDrawPx(
+                warning,
+                x,
+                y,
+                warningPx,
+                glm::vec4(1.0f, 0.38f, 0.24f, 1.0f)
+            );
+        }
+    }
+
+    game::presentation::GalacticCompassVocabulary compassVocabulary;
+    compassVocabulary.galacticCenter =
+        localizedUiText(
+            context().app,
+            "map.navigation_hud.galactic_center",
+            "GC"
+        );
+    compassVocabulary.galacticAnticenter =
+        localizedUiText(
+            context().app,
+            "map.navigation_hud.galactic_anticenter",
+            "GAC"
+        );
+    compassVocabulary.longitude90 =
+        localizedUiText(
+            context().app,
+            "map.navigation_hud.galactic_l90",
+            "L90"
+        );
+    compassVocabulary.longitude270 =
+        localizedUiText(
+            context().app,
+            "map.navigation_hud.galactic_l270",
+            "L270"
+        );
+    compassVocabulary.northGalacticPole =
+        localizedUiText(
+            context().app,
+            "map.navigation_hud.north_galactic_pole",
+            "NGP"
+        );
+    compassVocabulary.southGalacticPole =
+        localizedUiText(
+            context().app,
+            "map.navigation_hud.south_galactic_pole",
+            "SGP"
+        );
+
+    const bool compassVisible =
+        m_navigationWorkspace.modules().enabled(
+            game::navigation::NavigationModuleId::HudGalacticCompass
+        );
+    const auto galacticCompass =
+        game::presentation::buildGalacticCompassPresentation(
+            m_galacticReferenceFrame,
+            glm::dvec3(playerShip.renderTransform.forward()),
+            compassVisible,
+            compassVocabulary
+        );
+    m_galacticCompassRenderer.render(galacticCompass, vp);
+
+}
+
+// renderHUD / ship UI: cockpit instruments (engine thrust, systems, boresight,
+// emergency working axis, flight instrument text, radar).
+void SpaceState::renderHudCockpitInstruments(const Viewport& vp, const ClientShipState& playerShip, const game::ship::computer::MotherComputerCockpitView& cockpit)
+{
+    const auto engineThrustInstrument =
+        game::presentation::buildEngineThrustHudPresentation(
+            cockpit
+        );
+    m_engineThrustIndicatorRenderer.render(
+        engineThrustInstrument,
+        vp
+    );
+    // Compact amber system instruments beside the existing motor
+    // gauge. Read the same authoritative replicated ship systems
+    // seen by MotherComputer; never synthesize temperatures.
+    if (cockpit.valid)
+        m_engineThrustIndicatorRenderer.renderThermalSystems(
+            cockpit.systems, engineThrustInstrument, vp
+        );
+
+    // The hull boresight is a fundamental attitude cue, not a velocity
+    // cue and not a navigation-module product. Keep it present whenever
+    // the cockpit HUD is present.
+    m_flightVectorIndicatorRenderer.renderBoresight(vp);
+
+    // Use the installed-motor capability resolved by MotherComputer
+    // for this exact snapshot, not a smoothed rendering transform.
+    if (cockpit.valid && cockpit.emergencyWorkingThrustAxis)
+    {
+        // Reproject the physical body-space working ray through
+        // the EXACT camera rendering this viewport. The old HUD
+        // pretended a hard-coded focal length and zero camera
+        // attachment rotation; neither is the real view.
+        const auto& sightCamera =
+            m_playerView->camera(m_activeCameraMode);
+        const glm::dvec4 bodyRay(
+            cockpit.workingThrustAxisBody,0.0);
+        const glm::dvec3 cameraRay = glm::dvec3(
+            glm::dmat4(sightCamera.viewMatrix()) *
+            glm::dmat4(playerShip.renderTransform.orientation) *
+            bodyRay
+        );
+        m_flightVectorIndicatorRenderer.renderEmergencyThrustAxis(
+            vp,
+            cockpit.workingThrustAxisBody,
+            cameraRay,
+            sightCamera.fov(),
+            localizedUiText(
+                context().app,
+                "cockpit.emergency.thrust_axis",
+                "THRUST AXIS"
+            ),
+            m_playerView->hudEdgeMapper
+        );
+
+        // A working-axis sight alone cannot tell a human pilot where
+        // the inertial velocity is already going. During an emergency
+        // the HUD must show BOTH rays in the same real camera basis:
+        // amber = achievable zero-torque thrust, green V = actual
+        // hull-relative flight path in the matched local frame.
+        if(playerShip.renderReferenceFrame.valid)
+        {
+            const glm::dvec3 localVelocity =
+                playerShip.renderTransform.motion.localVelocityMps;
+            if(std::isfinite(glm::length(localVelocity)) &&
+               glm::length(localVelocity)>0.5)
+            {
+                const glm::dvec3 velocityWorld =
+                    playerShip.renderReferenceFrame.localToWorldVector(
+                        localVelocity);
+                const glm::dvec3 velocityCamera=glm::dvec3(
+                    glm::dmat4(sightCamera.viewMatrix())*
+                    glm::dvec4(velocityWorld,0.0));
+                m_flightVectorIndicatorRenderer.
+                    renderEmergencyVelocityVector(
+                        vp,velocityCamera,sightCamera.fov(),
+                        m_playerView->hudEdgeMapper);
+            }
+        }
+    }
+
+    game::presentation::FlightInstrumentTextProfile textProfile;
+    textProfile.newtonianModeLabel =
+        localizedUiText(context().app, "cockpit.mode.newtonian", "NEWTONIAN");
+    textProfile.assistedModeLabel =
+        localizedUiText(context().app, "cockpit.mode.assisted", "ASSISTED");
+    textProfile.alignForwardLabel =
+        localizedUiText(context().app, "cockpit.action.align_forward", "ALIGN +V");
+    textProfile.alignBackwardLabel =
+        localizedUiText(context().app, "cockpit.action.align_backward", "ALIGN -V");
+    textProfile.brakingLabel =
+        localizedUiText(context().app, "cockpit.action.brake", "BRAKE");
+
+    if (m_navigationWorkspace.modules().enabled(
+            game::navigation::NavigationModuleId::HudFlightVector))
+    {
+        const auto flightInstrument =
+            game::presentation::buildFlightVectorIndicatorPresentation(
+                cockpit,
+                textProfile
+            );
+
+        m_flightVectorIndicatorRenderer.render(
+            flightInstrument,
+            vp
+        );
+    }
+
+}
+
+// renderHUD / ship UI: the isolated docking status terminal (snapshot DTO ->
+// MotherComputer terminal -> text lines + tick audio).
+void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipState& playerShip, const game::ship::computer::MotherComputerCockpitView& cockpit)
+{
+    game::presentation::DockingTerminalSnapshot terminal;
+    terminal.localeId = context().app
+        ? context().app->localization().locale() : std::string();
+    const game::presentation::TerminalLocalizedText::Lookup terminalText =
+        [app = context().app](const char* key)
+        {
+            return localizedUiText(app, key, key);
+        };
+    const auto lineText = [&terminalText](
+        const char* key, std::initializer_list<std::string> values)
+    {
+        return game::presentation::TerminalLocalizedText::render(
+            terminalText, key, values);
+    };
+
+    const double terminalNowSeconds =
+        m_client->lastSimulationMetadata().serverTimeSeconds;
+
+    const bool dockingVisible =
+        m_clientDockingPhase != ClientDockingPhase::Idle ||
+        !m_dockingGuidanceFailureReason.empty() ||
+        !m_dockingStatusWarning.empty();
+
+    // Engine HUD and terminal consume the SAME BITE source,
+    // including its authoritative ship/tick provenance.
+    const auto& biteState = cockpit.bite;
+
+    const auto biteLines =
+        game::presentation::DockTerminalBitePresentation::lines(
+            biteState, terminalText);
+    const bool biteVisible = !biteLines.empty();
+
+    // BITE is allowed to request presentation attention, never control.
+    // The same terminal surface is shared with docking diagnostics so
+    // a propulsion fault remains visible even while docking is idle.
+    const bool ignitionEvent =
+        cockpit.valid &&
+        cockpit.systems.propulsionSwitchRevision>0;
+    // the author wants the terminal on the HUD all the time - "it shows that something is
+    // going on" (2026-11-06); events / faults still decide its title and lines
+    (void)ignitionEvent;
+    terminal.visible = cockpit.valid || dockingVisible || biteVisible;
+    terminal.title = terminalText(
+        dockingVisible
+            ? "cockpit.terminal.title"
+            : "cockpit.terminal.system_title");
+    terminal.biteNominalText =
+        terminalText("cockpit.terminal.bite.nominal");
+
+    for (std::size_t i = 0; i < biteLines.size(); ++i)
+    {
+        game::presentation::DockingTerminalSeverity severity =
+            game::presentation::DockingTerminalSeverity::Info;
+
+        if (i < biteState.faults.size())
+        {
+            using BiteSeverity = game::bite::Severity;
+            switch (biteState.faults[i].severity)
+            {
+                case BiteSeverity::Failed:
+                    severity =
+                        game::presentation::DockingTerminalSeverity::Error;
+                    break;
+                case BiteSeverity::Warning:
+                case BiteSeverity::Caution:
+                    severity =
+                        game::presentation::DockingTerminalSeverity::Warning;
+                    break;
+                case BiteSeverity::Advisory:
+                    break;
+            }
+        }
+
+        terminal.diagnostics.emplace_back(
+            biteLines[i],
+            severity
+        );
+    }
+
+    // The command is acknowledged only by the server's next
+    // replicated ShipCoreStatus, never by a local key press.
+    if (ignitionEvent)
+    {
+        const auto& power=cockpit.systems;
+        std::string message;
+        game::presentation::DockingTerminalSeverity severity =
+            game::presentation::DockingTerminalSeverity::Info;
+        if(!power.propulsionReactorsOn)
+        {
+            message="REACTORS OFF / main and RCS thrust disabled";
+            severity=game::presentation::DockingTerminalSeverity::Warning;
+        }
+        else if(power.propulsionStartupSeconds>0.0)
+        {
+            message="REACTORS STARTING / "+std::to_string(
+                static_cast<int>(std::ceil(power.propulsionStartupSeconds)))+
+                " s remaining";
+        }
+        else
+        {
+            const bool synthetic=std::any_of(
+                cockpit.drives.begin(),cockpit.drives.end(),
+                [](const auto& d){return d.simulatedPower;});
+            const bool live=std::any_of(
+                cockpit.drives.begin(),cockpit.drives.end(),
+                [](const auto& d){return d.installed && !d.failed &&
+                    d.integrity01>0.0f;});
+            if(synthetic)
+                message="REACTORS READY / diagnostic simulated 5 GW";
+            else if(!live)
+            {
+                message="REACTOR ERROR / no functional installed ER-5";
+                severity=game::presentation::DockingTerminalSeverity::Error;
+            }
+            else
+                message="REACTORS READY / propulsion power enabled";
+        }
+        terminal.diagnostics.emplace_back(message,severity);
+    }
+    // A system fault reaches the same historical diagnostic terminal
+    // as BITE. State changes and reminders are terminal policy only.
+    if(cockpit.valid)
+        for(const auto& alert : cockpit.systems.alerts)
+            terminal.diagnostics.emplace_back(
+                alert.system + ": " + alert.message,
+                alert.severity>=2
+                    ? game::presentation::DockingTerminalSeverity::Error
+                    : game::presentation::DockingTerminalSeverity::Warning);
+    // Hub dock dispatcher: the server's decision for THIS ship.
+    if (playerShip.dockDispatcher.active)
+    {
+        const auto& dock = playerShip.dockDispatcher;
+        game::presentation::DockDispatcherTerminalInput in;
+        in.phase = static_cast<game::docking::traffic::DockTrafficPhase>(dock.phase);
+        in.queuePosition = dock.queuePosition;
+        in.queueLength = dock.queueLength;
+        in.departureQueuePosition = dock.departureQueuePosition;
+        in.holdPointId = dock.holdPointId;
+        in.padId = dock.padId;
+        // One line per dispatcher state: the terminal history keeps
+        // a new entry only when the state text changes.
+        std::string text;
+        for (const auto& line : game::presentation::dockDispatcherTerminalLines(in))
+            text += (text.empty() ? "" : " / ") + line;
+        if (in.phase == game::docking::traffic::DockTrafficPhase::Docked)
+            text += " / L: REQUEST DEPARTURE";
+        terminal.diagnostics.emplace_back(text, game::presentation::DockingTerminalSeverity::Info);
+        terminal.visible = true;
+    }
+    {
+        using namespace game::ship::plant;
+        const auto model = playerShip.physicalControlModel;
+        const auto& slots = physicalControlSlots(model);
+
+        std::size_t aft = 0;
+        std::size_t fore = 0;
+        std::size_t manoeuvre = 0;
+        for (const auto& slot : slots)
+        {
+            switch (slot.role)
+            {
+                case EngineSlotRole::AftMain: ++aft; break;
+                case EngineSlotRole::ForeMain: ++fore; break;
+                case EngineSlotRole::ManoeuvreCluster:
+                    ++manoeuvre;
+                    break;
+            }
+        }
+
+        const bool assistedLaw =
+            playerShip.renderTransform.motion.localControlLaw ==
+                game::navigation::LocalFlightControlLaw::Assisted;
+        // Physical model identity is translated as flight family
+        // plus its immutable I/Y/X topology code.
+        const auto familyLabel = terminalText(
+            familyOf(model) == PhysicalControlFamily::Assisted
+                ? "cockpit.mode.assisted"
+                : "cockpit.mode.newtonian"
+        );
+        const auto layoutName = [](PropulsionLayout layout)
+        {
+            switch (layout)
+            {
+                case PropulsionLayout::Y: return "Y";
+                case PropulsionLayout::X: return "X";
+                case PropulsionLayout::I:
+                default: return "I";
+            }
+        };
+        terminal.ship = lineText(
+            "cockpit.terminal.ship",
+            {familyLabel + "-" + layoutName(layoutOf(model)),
+             terminalText(assistedLaw
+                 ? "cockpit.mode.assisted"
+                 : "cockpit.mode.newtonian")});
+        terminal.physics = lineText(
+            "cockpit.terminal.actuators",
+            {std::to_string(aft + fore),
+             std::to_string(aft),
+             std::to_string(fore),
+             std::to_string(manoeuvre)});
+    }
+
+    // The terminal intentionally occupies the legacy coordinate block
+    // directly below FRONT. Preserve coordinates when docking is idle;
+    // hide only those five text bindings while terminal is visible.
+    for (const char* id : {
+             "main_coord_cell",
+             "main_coord_x",
+             "main_coord_y",
+             "main_coord_z",
+             "main_coord_v"
+         })
+    {
+        if (auto* component = uiRoot->findById(id))
+            component->visible = !terminal.visible;
+    }
+
+    switch (m_clientDockingPhase)
+    {
+        case ClientDockingPhase::Idle:
+            terminal.phase = terminalText("cockpit.terminal.idle");
+            break;
+        case ClientDockingPhase::Stabilizing:
+            terminal.phase = terminalText("cockpit.terminal.stabilization");
+            break;
+        case ClientDockingPhase::Planning:
+            terminal.phase = terminalText("cockpit.terminal.planning");
+            break;
+        case ClientDockingPhase::RouteReady:
+            terminal.phase = terminalText("cockpit.terminal.route_ready");
+            break;
+        case ClientDockingPhase::Executing:
+            terminal.phase = terminalText("cockpit.terminal.autopilot");
+            break;
+        case ClientDockingPhase::SecuringCourse:
+            terminal.phase =
+                m_dockAssistedSafeRecovery.stopFallback ||
+                m_dockSafeCourse.stopFallback
+                    ? terminalText("cockpit.terminal.stop")
+                    : terminalText("cockpit.terminal.safe_course");
+            break;
+    }
+
+    if (m_dockAdviceJob)
+    {
+        const auto& job = *m_dockAdviceJob;
+        const std::uint8_t stage =
+            job.planningProgressStage.load(
+                std::memory_order_acquire
+            );
+        const double elapsedWallSeconds =
+            std::chrono::duration<double>(
+                std::chrono::steady_clock::now() -
+                job.wallClockStart
+            ).count();
+        terminal.planner =
+            game::presentation::DockPlannerTerminalTelemetry::running(
+                terminalText, stage,
+                m_dockWorkerCount->load(std::memory_order_acquire)
+            );
+        terminal.activity =
+            game::presentation::DockPlannerTerminalTelemetry::elapsed(
+                terminalText, elapsedWallSeconds, job.planningRequest
+            );
+        terminal.plannerDetails.push_back(
+            game::presentation::DockPlannerTerminalTelemetry::presetLine(
+                terminalText, job.planningRequest.assistedRoutePreset
+            )
+        );
+        terminal.plannerDetails.push_back(
+            game::presentation::DockPlannerTerminalTelemetry::limits(
+                terminalText, job.planningRequest
+            )
+        );
+        terminal.plannerDetails.push_back(
+            game::presentation::DockPlannerTerminalTelemetry::obstacles(
+                terminalText, job.planningRequest
+            )
+        );
+    }
+    else if (
+        (m_clientDockingPhase == ClientDockingPhase::Executing ||
+         m_clientDockingPhase == ClientDockingPhase::RouteReady) &&
+        m_dockAdvice.plan.valid()
+    )
+    {
+        terminal.planner =
+            game::presentation::DockPlannerTerminalTelemetry::completed(
+                terminalText, m_dockAdvice.workerDurationMs
+            );
+        terminal.activity =
+            game::presentation::DockPlannerTerminalTelemetry::route(
+                terminalText, m_dockAdvice.plan
+            );
+        terminal.plannerDetails.push_back(
+            game::presentation::DockPlannerTerminalTelemetry::presetLine(
+                terminalText, m_dockAdvice.assistedRoutePreset
+            )
+        );
+        for (const auto& line : {
+            game::presentation::DockPlannerTerminalTelemetry::legTimings(
+                terminalText, m_dockAdvice.plan
+            ),
+            game::presentation::DockPlannerTerminalTelemetry::legEta(
+                terminalText, m_dockAdvice.plan
+            ),
+            game::presentation::DockPlannerTerminalTelemetry::legEvaluations(
+                terminalText, m_dockAdvice.plan
+            )
+        })
+        {
+            if (!line.empty())
+                terminal.plannerDetails.push_back(line);
+        }
+    }
+    else
+    {
+        terminal.planner = terminalText("cockpit.terminal.planner_off");
+    }
+
+    if (m_dockAssistedSafeRecovery.active)
+    {
+        terminal.safety = terminalText("cockpit.terminal.safe_course_acquiring");
+    }
+    else if (m_dockSafeCourse.active)
+    {
+        terminal.safety = terminalText("cockpit.terminal.safe_course_active");
+    }
+    else
+    {
+        terminal.safety = terminalText("cockpit.terminal.safe_course_clear");
+    }
+
+    if (m_dockLateEntry.active)
+    {
+        terminal.handoff =
+            terminalText("cockpit.terminal.handoff_rebind") +
+            " " +
+            std::to_string(
+                m_dockLateEntry.rebindAttempts
+            );
+
+        terminal.error =
+            terminalText(
+                m_dockLateEntry.rebindAttempts > 0
+                    ? "cockpit.terminal.warning_handoff_retry"
+                    : "cockpit.terminal.warning_handoff_rebinding"
+            );
+
+        if (m_dockLateEntry.rebindAttempts > 0)
+        {
+            terminal.error +=
+                " " +
+                std::to_string(
+                    m_dockLateEntry.rebindAttempts
+                );
+        }
+    }
+    else if (m_clientDockingPhase == ClientDockingPhase::Executing)
+    {
+        terminal.handoff = terminalText("cockpit.terminal.handoff_accepted");
+    }
+
+    if (!m_dockingGuidanceFailureReason.empty())
+    {
+        // Raw failure details stay in the diagnostics log.
+        // HUD must never emit an unlocalized internal sentence.
+        terminal.error =
+            game::presentation::DockPlannerTerminalTelemetry::failure(
+                terminalText, m_dockingGuidanceFailureReason);
+    }
+    else if(terminal.error.empty() && m_dockAdviceJob &&
+            m_dockAdviceJob->ready.load(
+                std::memory_order_acquire) &&
+            !m_dockAdviceJob->plan.valid())
+    {
+        // A worker DID run and declined the physical route:
+        // show the existing localized reason category, while
+        // full planner diagnostics remain in job_result/log.
+        const auto& p=m_dockAdviceJob->plan;
+        terminal.error=
+            game::presentation::DockPlannerTerminalTelemetry::failure(
+                terminalText,
+                p.failure.empty()
+                    ? std::string("planner route rejected")
+                    : p.failure);
+    }
+    else if (terminal.error.empty() &&
+             !m_dockingStatusWarning.empty())
+    {
+        // Present the SAME pre-planner reason that is logged by
+        // DockAuthority; do not hide an engine-axis mismatch behind
+        // "navigation error; see log".
+        const char* messageKey =
+            "cockpit.terminal.failure_generic";
+        if(m_dockingStatusWarning ==
+               "awaiting authoritative motor telemetry")
+            messageKey="cockpit.terminal.warning_authority";
+        else if(m_dockingStatusWarning ==
+                    "working thrust axis mismatch")
+            messageKey="cockpit.terminal.warning_thrust_axis_mismatch";
+        else if(m_dockingStatusWarning ==
+                    "installed motor matrix unavailable")
+            messageKey="cockpit.terminal.warning_motor_matrix";
+        else if(m_dockingStatusWarning ==
+                    "installed physics envelope unavailable")
+            messageKey="cockpit.terminal.warning_physics_envelope";
+        else if(m_dockingStatusWarning ==
+                    "physical flight doctrine rejected")
+            messageKey="cockpit.terminal.warning_flight_doctrine";
+        terminal.error=terminalText(messageKey);
+    }
+
+    // Presenters may compose local navigation phase strings, but
+    // the actual terminal receives its complete state only from
+    // MotherComputer, sharing cockpit BITE, ship identity and tick.
+    game::ship::computer::MotherComputerTerminalView terminalView;
+    terminalView.valid = cockpit.valid;
+    terminalView.shipInstanceId = cockpit.shipInstanceId;
+    terminalView.serverTick = cockpit.serverTick;
+    terminalView.presentation = std::move(terminal);
+    m_motherComputer.publishTerminal(std::move(terminalView));
+    const auto currentTerminal = m_motherComputer.terminalSnapshot(
+        cockpit.shipInstanceId,cockpit.serverTick
+    );
+    const auto terminalOutput =
+        m_dockingStatusTerminal.update(
+            currentTerminal.valid
+                ? currentTerminal.presentation
+                : game::presentation::DockingTerminalSnapshot {},
+            terminalNowSeconds
+        );
+
+    auto& text = TextRenderer::instance();
+
+    const float screenW =
+        static_cast<float>(vp.width);
+    const float screenH =
+        static_cast<float>(vp.height);
+
+    const int fontPx =
+        std::clamp(
+            static_cast<int>(screenH * 0.0145f),
+            11,
+            17
+        );
+
+    const float terminalLeft =
+        screenW * 0.06f;
+    const float terminalTop =
+        screenH * 0.175f;
+    const float terminalWidth =
+        screenW * 0.25f;
+    const float terminalBottom =
+        screenH * 0.56f;
+    const float lineStep =
+        static_cast<float>(fontPx) * 1.28f;
+
+    float y = terminalTop;
+
+    for (const auto& line : terminalOutput.lines)
+    {
+        if (y + lineStep > terminalBottom)
+            break;
+
+        std::string visibleText = line.text;
+        if (line.cursor)
+            visibleText += "_";
+
+        // Hard visual width budget: no frame, no clipping rectangle,
+        // simply trim the text to the requested quarter-screen column.
+        while (!visibleText.empty() &&
+               text.measureTextPx(
+                   visibleText,
+                   fontPx
+               ) > terminalWidth)
+        {
+            visibleText.pop_back();
+        }
+
+        const glm::vec4 color =
+            line.severity ==
+                    game::presentation::
+                        DockingTerminalSeverity::Error
+                ? glm::vec4(
+                      0.74f,
+                      0.53f,
+                      0.58f,
+                      0.39f
+                  )
+                : line.severity ==
+                        game::presentation::
+                            DockingTerminalSeverity::Warning
+                    ? glm::vec4(
+                          0.68f,
+                          0.56f,
+                          0.60f,
+                          0.36f
+                      )
+                    : glm::vec4(
+                          0.53f,
+                          0.66f,
+                          0.72f,
+                          0.36f
+                      );
+
+        text.textDrawPx(
+            visibleText,
+            terminalLeft,
+            y,
+            fontPx,
+            color
+        );
+
+        y += lineStep;
+    }
+
+    // Presentation-only audio seam. The terminal itself remains pure:
+    // it reports how many characters appeared; the adapter rate-limits
+    // that event; AudioEngine owns the replaceable platform backend.
+    if (m_terminalAudioAdapter.shouldPlayTick(
+            terminalOutput.typedCharacters,
+            terminalNowSeconds
+        ))
+    {
+        audio::AudioEngine::instance().playTerminalTick();
+    }
+
+    if (!terminal.visible)
+        m_terminalAudioAdapter.reset();
+
 }
 
 

@@ -528,6 +528,7 @@ add_executable(EliteGame
     src/game/SpaceStateHud.cpp
     src/game/SpaceStateServices.cpp
     src/game/SpaceStateDevPanel.cpp
+    src/game/dev/DevScriptRunner.cpp
 
     src/game/equipment/signalNode/processing/SignalReceiver.cpp
     src/world/WorldSignalTxSystem.cpp

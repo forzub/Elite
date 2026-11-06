@@ -3597,6 +3597,30 @@ order - ask for it again if it is not in the session.
   the guidance-lab stress objects stay a diagnostic scene (off). Live: [HubDocks] 3 attached; the player's entity id
   is now 12 (the docks spawn first) - DEV scripts naming ship ids change.
 
+### Audit rec. 8 / 10 - SpaceState god functions decomposed (subagent 2026-11-06; behaviour-preserving, BUILT + gates + live DEV runs)
+- DEV script interpreter out of SpaceState::update (1816 -> 1233 lines): src/game/dev/DevScriptRunner.{h,cpp}
+  (friend of SpaceState, one call per frame; every ELITE_DEV_* var of the block read once into a Config; latches
+  have process lifetime like the old function-local statics; verbs split by group in the original dispatch order;
+  log strings unchanged). The Sol body / hub ids are its DEV data table (per-verb alias tables kept exact), so
+  check_feature_contracts is green and left the known-red list (no gate change needed: it reads SpaceState*.cpp).
+- updateDockingAdvisory (3894 lines) -> 697-line orchestrator (helper lambdas + the frame aggregate) + phases:
+  checkDocking{Newtonian,Assisted}Authority, updateDocking{SecuringCourse,Stabilizing,Planning,Executing},
+  settleDockingCraftBeforePlanning, secureDockingCourseWhilePlanning, compileDockingTrafficRoute,
+  checkDockingEntryHandoff, publishDockingAdvisoryPresentation, free runDockAdviceWorker (the detached thread body).
+  Mechanical: blocks moved verbatim, outer locals bound by reference through a local aggregate (member templates
+  so the lambdas keep their closure types), top-level `return;` -> `return false;` = "stop this update".
+  Largest left: updateDockingStabilizing 567, runDockAdviceWorker 402.
+- renderHUD (1115) -> 209 + renderHudWorldLabels 88 / GuidanceAndCompass 196 / CockpitInstruments 107 /
+  DockingTerminal 535 (typed parameters, call order unchanged).
+- Gates: 203 pass / 6 known red / 0 new red. Updated to the new locations, intent kept: foundation_lock checks the
+  whole SpaceStateDocking.cpp; recent_navigation_regressions checks the draw order via the section calls in
+  renderHUD; assisted_docking_entry accepts `return false;` after the exhausted-rebind recoverOrFail.
+- Live (build_agent, --dev-direct-flight): freeflight/home/insert/jstate/report verbs log as before; finish:hub:
+  earth_hub.tikhiy + route:official -> "[Route] ship 12: ROUTE of 2 legs", route:pause / resume OK;
+  ELITE_DEV_DOCK_REQUEST_AT=15 -> request, planner worker (3.1 s), phase=executing, [DockClientTrack] tracking.
+  Not done: an A/B log diff against the pre-split binary; further split of updateDockingStabilizing /
+  renderHudDockingTerminal / the orchestrator's helper lambdas.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

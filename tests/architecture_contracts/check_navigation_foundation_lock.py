@@ -181,10 +181,14 @@ try:
 
     # Route calculation is allowed to mutate only navigation workspace/output.
     # It must not write simulation, cloud, map-resource or replicated transforms.
-    guidance = function_body(
+    # updateDockingAdvisory was split into phase functions + the planner
+    # worker (behaviour-preserving, 2026-11-06); the unit holds only them, so
+    # the boundary is checked over the whole SpaceStateDocking.cpp.
+    function_body(
         "src/game/SpaceStateDocking.cpp",
         "void SpaceState::updateDockingAdvisory()",
     )
+    guidance = source("src/game/SpaceStateDocking.cpp")
     for forbidden in (
         "renderTransform",
         "renderWorldPosition",

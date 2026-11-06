@@ -85,6 +85,8 @@ class IGameSession;
 }
 
 
+namespace game::dev { class DevScriptRunner; }
+
 enum class PlayerNavigationMapLevel
 {
     Galaxy,
@@ -96,6 +98,10 @@ enum class PlayerNavigationMapLevel
 
 class SpaceState : public GameState
 {
+    // DEV scripted acceptance driver (src/game/dev/DevScriptRunner): replays
+    // clicks / keys through the same private members the input paths use.
+    friend class game::dev::DevScriptRunner;
+
 public:
     // DEV map script hooks (ELITE_DEV_MAP_SCRIPT).
     void devToggleTrafficLanes();
@@ -285,8 +291,38 @@ private:
     void renderNavigationStressOverlay(const Viewport& viewport);
     // Ctrl+J free flight: the banner at the top of the HUD (speed no longer local, keys, capture)
     void renderFreeFlightBanner(const Viewport& viewport);
+    // renderHUD sections (SpaceStateHud.cpp)
+    void renderHudWorldLabels(const Viewport& vp);
+    void renderHudGuidanceAndCompass(const Viewport& vp, const ClientShipState& playerShip);
+    void renderHudCockpitInstruments(
+        const Viewport& vp,
+        const ClientShipState& playerShip,
+        const game::ship::computer::MotherComputerCockpitView& cockpit);
+    void renderHudDockingTerminal(
+        const Viewport& vp,
+        const ClientShipState& playerShip,
+        const game::ship::computer::MotherComputerCockpitView& cockpit);
     void renderRoutePlanningModal(const Viewport& viewport);
     void updateDockingAdvisory();
+    // updateDockingAdvisory phases (all in SpaceStateDocking.cpp). Frame /
+    // Gate / Locals are the per-update aggregates of updateDockingAdvisory's
+    // locals and helper lambdas (references), template parameters so the
+    // lambdas keep their closure types; instantiated only in that unit.
+    template <class Gate> bool checkDockingNewtonianAuthority(Gate& g);
+    template <class Gate> bool checkDockingAssistedAuthority(Gate& g);
+    template <class Frame> void updateDockingSecuringCourse(Frame& f);
+    template <class Frame> void updateDockingStabilizing(Frame& f);
+    template <class Frame, class Locals>
+    bool settleDockingCraftBeforePlanning(Frame& f, Locals& l);
+    template <class Frame, class Locals>
+    bool secureDockingCourseWhilePlanning(Frame& f, Locals& l);
+    template <class Frame, class Locals>
+    bool compileDockingTrafficRoute(Frame& f, Locals& l);
+    template <class Frame> bool updateDockingPlanning(Frame& f);
+    template <class Frame, class Locals>
+    bool checkDockingEntryHandoff(Frame& f, Locals& l);
+    template <class Frame> bool updateDockingExecuting(Frame& f);
+    template <class Frame> void publishDockingAdvisoryPresentation(Frame& f);
     void updateShipObservationInterest(float dt);
     game::presentation::SystemMapPanelPresentation
     buildNativeSystemMapPanelPresentation();

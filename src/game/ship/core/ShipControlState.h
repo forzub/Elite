@@ -93,15 +93,22 @@ struct ShipControlState
     bool navigationPrecisionTranslationOnly = false;
 
     // Global flight (the CLIENT's autopilots -> the server's plant; NAVIGATION_V2 §1, author decision
-    // 2026-11-06): a J-field acceleration (world axes) and an attitude target, TRACKED by the server every
-    // tick within the rules (max / ramp / keep-out / J floor / charge / 0.9 c) - the main engines keep
-    // the ordinary main command (targetSpeedRate in normal flight). Ignored while a server-owned
-    // autopilot / route leg / ground frame flies the ship.
+    // 2026-11-06). Executed by the server every tick within the rules (GameSimulation::
+    // applyGlobalFlightCommand): the J field tracks a WORLD velocity target within the client's
+    // acceleration limit and its own ramp / max / keep-out (gentle only) / J floor (none) / charge /
+    // 0.9 c; or the main engines push (a world acceleration within the hull's real thrust); the
+    // hull slews to the attitude target (J: the field's ~115 deg/s, else the hull's rate). The frame
+    // request switches normal flight <-> the ground stabilization idempotently.
     bool globalFlightCommandValid = false;
-    glm::dvec3 globalJAccelWorldMps2 {0.0};
+    bool globalJVelocityTargetValid = false;
+    glm::dvec3 globalJVelocityTargetWorldMps {0.0};
+    double globalJAccelLimitMps2 = 0.0;
+    glm::dvec3 globalMainAccelWorldMps2 {0.0};   // the main engines (world), |a| within their real thrust
     bool globalAttitudeTargetValid = false;
     glm::dvec3 globalAttitudeForward {0.0, 0.0, -1.0};
     glm::dvec3 globalAttitudeUp {0.0, 1.0, 0.0};
+    std::uint8_t globalFrameRequest = 0;   // globalflight::FrameRequest
+    std::uint8_t globalFreeRotationRequest = 0;   // Assisted free rotation (Backspace mode): 1 on, 2 off
 
     std::uint64_t controlTick = 0;
 };

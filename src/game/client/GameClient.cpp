@@ -451,6 +451,12 @@ GameClient::celestialSnapshot() const
     return m_catalogs.celestialSnapshot();
 }
 
+const world::celestial::CelestialSystemSnapshot*
+GameClient::resolveCelestialSystem(int systemId, double universeTimeSeconds) const
+{
+    return m_catalogs.resolveCelestialSystem(systemId, universeTimeSeconds);
+}
+
 void GameClient::updateTimeSynchronization(double wallDeltaSeconds)
 {
     const double safeWallDelta =

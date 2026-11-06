@@ -520,14 +520,17 @@ void SpaceState::updateDockingAdvisory()
 
     if (!pending.valid())
     {
+        // the body autopilot / the route own the control stream themselves
+        const bool otherPilot = m_bodyAutopilotOwnsControl || m_clientRouteOwnsControl;
         if (m_clientDockingPhase != ClientDockingPhase::Idle ||
-            m_clientAutopilotControlActive)
+            (m_clientAutopilotControlActive && !otherPilot))
         {
             std::cerr
                 << "[DockClient] phase=idle reason=no-pending-request"
                 << std::endl;
         }
-        releaseClientAutopilot();
+        if (!otherPilot)
+            releaseClientAutopilot();
         m_clientDockingPhase = ClientDockingPhase::Idle;
         m_lastDockingPathRequestSerial = 0;
         eraseVisibleRoute();

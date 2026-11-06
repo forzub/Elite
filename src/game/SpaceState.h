@@ -1,4 +1,6 @@
 #pragma once
+#include "src/game/navigation/globalflight/BodyAutopilot.h"
+#include "src/game/navigation/globalflight/RouteLegPilot.h"
 #include <map>
 #include <set>
 #include "src/game/navigation/route/RoutePlanner.h"
@@ -219,6 +221,36 @@ public:
     void requestOrbitalTransfer(const std::string& targetHubId);
     // J: fly to a body and land (empty = the dominant body)
     void requestFreeFlightAutopilot(const std::string& bodyId, const std::string& landingSpec = {});
+    // the body autopilot flown by the client (SpaceStateBodyAutopilot.cpp, NAVIGATION_V2 §1)
+    void updateClientBodyAutopilot();
+    // the planned route flown by the client (SpaceStateRouteRun.cpp)
+    void startClientRoute(const std::vector<game::navigation::route::RoutePoint>& legs);
+    void cancelClientRoute();
+    void updateClientRoute();
+    int clientRouteState() const;   // 0 none, 1 flying, 2 paused, 3 service, 4 landing
+    game::navigation::globalflight::RouteLegResolver clientRouteResolver() const;
+    struct ClientRouteRun
+    {
+        enum class State { Idle, Start, Leg, WaitingExit, Landing, Service, Paused };
+        State state = State::Idle;
+        std::vector<game::navigation::route::RoutePoint> legs;
+        std::vector<double> remainingAfterM;
+        std::size_t index = 0;
+        bool resumeCurrent = false;
+        bool landingSeen = false;
+        double serviceStart = -1.0;
+        std::string departureHubId;
+        game::navigation::globalflight::RouteLegPilot pilot;
+    };
+    ClientRouteRun m_clientRoute;
+    bool m_clientRouteOwnsControl = false;
+    std::uint64_t m_clientRouteLastTick = 0;
+    double m_clientRouteLastServerTime = 0.0;
+    void cancelClientBodyAutopilot();
+    bool clientBodyAutopilotFlying() const;
+    void applyClientBodyAutopilotDisplay(game::navigation::DynamicMotionState& motion) const;
+    bool clientBodyAutopilotWorld(game::navigation::globalflight::BodyAutopilotEnvironment& env,
+                                  game::navigation::globalflight::BodyAutopilotShip& sample);
 
     bool composeHubMapSnapshot(
         int systemId,
@@ -430,6 +462,18 @@ private:
     ClientDockingPhase m_clientDockingPhase =
         ClientDockingPhase::Idle;
     bool m_clientAutopilotControlActive = false;
+    game::navigation::globalflight::BodyAutopilot m_bodyAutopilot;
+    game::navigation::globalflight::BodyAutopilotOutput m_bodyAutopilotDisplay;
+    world::celestial::CelestialSystemSnapshot m_bodyAutopilotSnapshot;
+    std::vector<game::navigation::GravityBody> m_bodyAutopilotBodies;
+    bool m_bodyAutopilotEngagePending = false;
+    std::string m_bodyAutopilotEngageBody;
+    std::string m_bodyAutopilotEngageSpec;
+    bool m_bodyAutopilotOwnsControl = false;
+    bool m_bodyAutopilotPrimaryIsRoot = false;
+    std::uint64_t m_bodyAutopilotLastTick = 0;
+    double m_bodyAutopilotLastServerTime = 0.0;
+    double m_bodyAutopilotRestoreUntil = 0.0;
     ShipControlState m_clientAutopilotControl {};
     double m_clientDockingSettledSinceServerSeconds = -1.0;
     std::uint64_t m_clientDockingTraceTick = 0;

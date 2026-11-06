@@ -84,18 +84,6 @@ route::AnchorResolver SpaceState::routeAnchorResolver() const
     };
 }
 
-void SpaceState::sendRouteControl(bool pause)
-{
-    if (!m_client)
-        return;
-    game::network::ClientMessage msg;
-    ClientShipCommand command;
-    command.type = ClientShipCommand::RouteLeg;
-    command.index = pause ? 3 : 4;
-    msg.payload = command;
-    m_client->sendMessage(msg);
-    std::cerr << "[RoutePlan] " << (pause ? "PAUSE" : "RESUME") << " sent" << std::endl;
-}
 
 // The route window's plan -> planner points (ROUTE_PROGRAMS_DESIGN.md): each point's program decides
 // its kind (dock stop / pass, orbit, landing), its actions the stop's action string ("refuel",
@@ -403,13 +391,8 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
     if (!launch || !shortage.empty())
         return;
 
-    game::network::ClientMessage msg;
-    ClientShipCommand command;
-    command.type = ClientShipCommand::RouteLeg;
-    command.index = 1;
-    command.detail = route::encodeRoute(planned);
-    msg.payload = command;
-    m_client->sendMessage(msg);
+    // the client flies it (SpaceStateRouteRun.cpp, NAVIGATION_V2 §1)
+    startClientRoute(planned.legs);
     m_routeOfficial = official;
 }
 
@@ -428,12 +411,12 @@ void SpaceState::updateZoneViolations(double dt)
         // the route state for the window; a flown route that ended = "МАРШРУТ ВЫПОЛНЕН" (author:
         // "карточка должна была ... сообщить о том, что мишн комплит")
         auto& plan = m_navigationWorkspace.routePlan();
-        const int now = shipIt->second.transform.motion.routeState;
+        const int now = clientRouteState();
         if (plan.serverRouteState != 0 && now == 0 && m_routeLaunched)
         {
             plan.summary = "МАРШРУТ ВЫПОЛНЕН";
             m_routeLaunched = false;
-            std::cerr << "[RoutePlan] ROUTE COMPLETE (server)" << std::endl;
+            std::cerr << "[RoutePlan] ROUTE COMPLETE" << std::endl;
         }
         if (now != 0)
             m_routeLaunched = true;

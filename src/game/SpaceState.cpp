@@ -954,14 +954,12 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         {
             if(Input::instance().isKeyPressedOnce(GLFW_KEY_PAGE_DOWN))
             {
-                const auto& m=it->second.transform.motion;
-                const bool flying=m.freeFlightAutopilotPhase>=1 && m.freeFlightAutopilotPhase!=5;
-                game::network::ClientMessage msg;
-                ClientShipCommand command;
-                command.type=ClientShipCommand::FreeFlightAutopilot;
-                command.index=flying ? 0 : 1;
-                msg.payload=command;
-                m_client->sendMessage(msg);
+                // the body autopilot is the client's (NAVIGATION_V2 §1); a server-run one (a route
+                // leg's landing) is cancelled on the server
+                if(clientBodyAutopilotFlying())
+                    cancelClientBodyAutopilot();
+                else
+                    requestFreeFlightAutopilot({});
             }
             int thrust=-1;
             if(Input::instance().isKeyPressedOnce(GLFW_KEY_HOME)) thrust=1;
@@ -1031,9 +1029,10 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         m_playerControl = m_shipRuntimeControlOracle.control();
         m_client->submitInput(m_playerControl);
     }
-    else if (!m_clientAutopilotControlActive)
+    else if (!m_clientAutopilotControlActive && !m_bodyAutopilotOwnsControl && !m_clientRouteOwnsControl)
     {
         // Human input owns the ordinary control stream only while the local
+        // virtual pilots (docking, the body autopilot, the route) are inactive.
         // virtual pilot is inactive. Client autopilot submission happens from
         // updateDockingAdvisory(), so it continues even while a map/UI screen
         // causes handleInput() to return before reaching this block.
@@ -2323,6 +2322,8 @@ void SpaceState::update(float dt)
     else
     {
         updateDockingAdvisory();
+        updateClientRoute();
+        updateClientBodyAutopilot();
     }
     updateZoneViolations(dt);
 

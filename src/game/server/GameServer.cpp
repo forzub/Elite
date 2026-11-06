@@ -1,8 +1,8 @@
 #include <atomic>
-#include "src/game/navigation/route/RouteWire.h"
 #include <thread>
 
 #include "src/game/system_map/PlanetBodyOrientation.h"
+#include "src/game/navigation/globalflight/BodyTerrainProbe.h"
 #include "src/world/celestial/surface/BodySurfaceFieldLoader.h"
 #include "GameServer.h"
 #include "src/core/RuntimeTrace.h"
@@ -39,12 +39,6 @@
 
 
 
-
-struct GameServer::TerrainField
-{
-    std::atomic<bool> ready {false};
-    world::celestial::surface::LoadedBodySurface loaded;
-};
 
 namespace
 {
@@ -907,73 +901,18 @@ void GameServer::update(double dt)
 
                 case ClientShipCommand::RouteLeg:
                 {
-                    GameSimulation::FreeFlightLeg leg;
-                    const std::string& t = shipCmd.target;
-                    if (t.rfind("hub:", 0) == 0)
-                    {
-                        leg.kind = GameSimulation::FreeFlightLeg::Kind::Hub;
-                        leg.hubId = t.substr(4);
-                    }
-                    else if (t.rfind("orbit:", 0) == 0)
-                    {
-                        leg.kind = GameSimulation::FreeFlightLeg::Kind::Orbit;
-                        const std::string rest = t.substr(6);
-                        const auto colon = rest.rfind(':');
-                        leg.bodyId = rest.substr(0, colon);
-                        leg.orbitAltitudeM = colon == std::string::npos ? 100000.0 : std::atof(rest.c_str() + colon + 1) * 1000.0;
-                    }
-                    if (!shipCmd.detail.empty())
-                    {
-                        // a planned route: legs separated by '|'
-                        std::vector<GameSimulation::FreeFlightLeg> legs;
-                        const auto points = game::navigation::route::decodeRoute(shipCmd.detail);
-                        double remaining = 0.0;
-                        for (std::size_t k = 0; k < points.size(); ++k)
-                        {
-                            const auto& p = points[k];
-                            GameSimulation::FreeFlightLeg l;
-                            l.kind = p.kind == game::navigation::route::RoutePoint::Kind::Hub     ? GameSimulation::FreeFlightLeg::Kind::Hub
-                                   : p.kind == game::navigation::route::RoutePoint::Kind::Orbit ? GameSimulation::FreeFlightLeg::Kind::Orbit
-                                   : p.kind == game::navigation::route::RoutePoint::Kind::Land  ? GameSimulation::FreeFlightLeg::Kind::Land
-                                   : p.kind == game::navigation::route::RoutePoint::Kind::Ship  ? GameSimulation::FreeFlightLeg::Kind::Ship
-                                                                                                  : GameSimulation::FreeFlightLeg::Kind::Point;
-                            l.landingSpec = p.landingSpec;
-                            l.shipEntityId = p.shipEntityId;
-                            l.hubId = p.hubId;
-                            l.bodyId = p.bodyId;
-                            l.orbitAltitudeM = p.orbitAltitudeM;
-                            l.pointWorld = p.worldM;
-                            l.passThrough = p.kind == game::navigation::route::RoutePoint::Kind::Point && !p.stop;
-                            l.action = p.action;
-                            legs.push_back(l);
-                        }
-                        // the rest of the route after each pass-through point (straight-line
-                        // estimate on the server's own positions: hubs / bodies are sent by id)
-                        std::vector<glm::dvec3> at(points.size());
-                        for (std::size_t k = 0; k < points.size(); ++k)
-                            at[k] = m_simulation.routePointWorld(legs[k]);
-                        for (std::size_t k = legs.size(); k-- > 1;)
-                        {
-                            remaining += glm::length(at[k] - at[k - 1]);
-                            legs[k - 1].remainingAfterM = remaining;
-                            if (!legs[k - 1].passThrough)
-                                remaining = 0.0;
-                        }
-                        m_simulation.startRoute(id, std::move(legs));
-                    }
-                    else if (shipCmd.index == 0)
-                        m_simulation.cancelRoute(id);
-                    else if (shipCmd.index == 3)
-                        m_simulation.pauseRoute(id);
-                    else if (shipCmd.index == 4)
-                        m_simulation.resumeRoute(id);
+                    // the client flies routes (NAVIGATION_V2 §1): only a stop's service stay is the server's
+                    if (shipCmd.index == 5)
+                        m_simulation.startHubService(id, shipCmd.target, shipCmd.detail);
                     else
-                        m_simulation.startFreeFlightLeg(id, leg);
+                        std::cerr << "[Server] ship " << id.value << ": route command " << int(shipCmd.index)
+                                  << " ignored - the client flies routes" << std::endl;
                     break;
                 }
 
                 case ClientShipCommand::FreeFlightAutopilot:
-                    m_simulation.setFreeFlightAutopilot(id, shipCmd.target, shipCmd.index != 0, shipCmd.detail);
+                    // the client flies the body autopilot (NAVIGATION_V2 §1)
+                    std::cerr << "[Server] ship " << id.value << ": autopilot command ignored - the client flies it" << std::endl;
                     break;
 
                 case ClientShipCommand::RefitPreview:
@@ -2423,77 +2362,13 @@ bool GameServer::terrainHeight(const std::string& bodyId, const glm::dvec3& worl
     const auto* snapshot = celestialSnapshotForSystem(m_appliedSimulationContextSystemId);
     if (!snapshot)
         return false;
-    const world::celestial::CelestialBodyState* body = nullptr;
-    for (const auto& b : snapshot->bodies)
-        if (b.id == bodyId)
-            body = &b;
-    if (!body || body->sourcePath.empty())
+    game::navigation::globalflight::BodyTerrainSample g;
+    if (!game::navigation::globalflight::sampleBodyTerrain(*snapshot, bodyId, worldDirection, g))
         return false;
-
-    auto& slot = m_terrainFields[bodyId];
-    if (!slot)
-    {
-        // the same source the flight renderer loads: curated maps or the generated body
-        slot = std::make_shared<TerrainField>();
-        world::celestial::surface::BodySurfaceSource source;
-        source.id = bodyId;
-        source.descriptorPath = body->sourcePath;
-        source.radiusM = body->radiusKm * 1000.0;
-        world::celestial::surface::findImportedBodyMaps(".", snapshot->systemName, body->sourcePath, source);
-        std::thread([field = slot, source] {
-            world::celestial::surface::loadBodySurface(source, field->loaded);
-            field->ready.store(true, std::memory_order_release);
-            std::cerr << "[Terrain] " << source.id << ": surface field "
-                      << (field->loaded.field ? "loaded" : "FAILED " + field->loaded.error)
-                      << (source.importedHeightPath.empty() ? " (procedural)" : " (curated height map)") << std::endl;
-        }).detach();
-        return false;
-    }
-    if (!slot->ready.load(std::memory_order_acquire) || !slot->loaded.field)
-        return false;
-
-    // world -> body-fixed direction with the renderer's orientation (prime, north, east)
-    const auto o = game::system_map::makePlanetTextureOrientation(
-        body->axialTiltDeg, body->axisNodeDeg, body->rotationPhaseRad, body->textureLongitudeOffsetDeg);
-    const glm::dvec3 d = glm::normalize(worldDirection);
-    const glm::dvec3 dirBody(glm::dot(d, glm::dvec3(o.prime)), glm::dot(d, glm::dvec3(o.north)), glm::dot(d, glm::dvec3(o.east)));
-    const auto& field = *slot->loaded.field;
-    const glm::dvec3 n = glm::normalize(dirBody);
-    // the ground the ship stands on is the RENDERED one: the finest terrain level near the ground
-    // shows the field down to ~1 m (small craters, rims, ejecta - CraterLayer to 1.5 m); a 30 m
-    // sample smoothed them away and the hull sank into the rendered relief (author 2026-11-06).
-    // The slope and the appearance stay on the 30 m relief (a stable, noise-free gradient).
-    const auto sample = field.sample(n, 30.0);
-    const auto detail = field.sample(n, 1.0);
-    // the sea is solid too: its surface over a sea-floor height
-    const bool water = sample.water && sample.waterLevelM >= sample.heightM;
-    ground.heightM = water ? sample.waterLevelM : detail.heightM;
-    ground.smoothHeightM = water ? sample.waterLevelM : sample.heightM;
-    // slope under the hull: central differences +-15 m (a 30 m base, the hull's scale). A one-sided
-    // 60 m step reached past a settlement pad (flat to 36 m) onto the slope beyond it - a perfect
-    // landing on the Shackleton pad read 32.6 deg and counted as tipping over (author 2026-11-06).
-    const double radius = std::max(1.0, field.referenceRadiusM());
-    constexpr double HalfBaseM = 15.0;
-    const double step = HalfBaseM / radius;
-    glm::dvec3 t1 = glm::normalize(glm::cross(n, std::abs(n.y) < 0.9 ? glm::dvec3(0, 1, 0) : glm::dvec3(1, 0, 0)));
-    const glm::dvec3 t2 = glm::cross(n, t1);
-    const auto at = [&](const glm::dvec3& t, double s) { return field.sample(glm::normalize(n + t * (s * step)), 30.0).heightM; };
-    const double g1 = (at(t1, 1.0) - at(t1, -1.0)) / (2.0 * HalfBaseM);
-    const double g2 = (at(t2, 1.0) - at(t2, -1.0)) / (2.0 * HalfBaseM);
-    const double gradient = std::sqrt(g1 * g1 + g2 * g2);
-    ground.slopeDeg = water ? 0.0 : glm::degrees(std::atan(gradient));
-    // the dominant material of the rendered surface there
-    if (water)
-        ground.material = GameSimulation::TerrainWater;
-    else
-    {
-        const auto look = field.appearance(sample, n, gradient);
-        int best = 0;
-        for (int k = 1; k < static_cast<int>(look.weights.size()); ++k)
-            if (look.weights[static_cast<std::size_t>(k)] > look.weights[static_cast<std::size_t>(best)])
-                best = k;
-        ground.material = best;
-    }
-    ground.feature = static_cast<int>(sample.featureClass);
+    ground.heightM = g.heightM;
+    ground.smoothHeightM = g.smoothHeightM;
+    ground.material = g.material == game::navigation::globalflight::TerrainWaterMaterial ? GameSimulation::TerrainWater : g.material;
+    ground.slopeDeg = g.slopeDeg;
+    ground.feature = g.feature;
     return true;
 }

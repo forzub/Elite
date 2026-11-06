@@ -151,6 +151,8 @@ public:
 
     bool resolveCelestialSnapshot(bool forceRefresh = false);
     const world::celestial::StarAtlasDatabase* starAtlas() const;
+    // the system's celestial state at a universe time (the client's own runtime, the server's ephemeris)
+    const world::celestial::CelestialSystemSnapshot* resolveCelestialSystem(int systemId, double universeTimeSeconds) const;
     const world::celestial::CelestialSystemSnapshot*
         celestialSnapshot() const;
 

@@ -524,6 +524,8 @@ add_executable(EliteGame
     src/game/SpaceStateDocking.cpp
     src/game/navigation/DockingCorridorPresentation.cpp
     src/game/SpaceStateMaps.cpp
+    src/game/SpaceStateBodyAutopilot.cpp
+    src/game/SpaceStateRouteRun.cpp
     src/game/SpaceStateRoute.cpp
     src/game/SpaceStateHud.cpp
     src/game/SpaceStateServices.cpp
@@ -618,6 +620,9 @@ add_executable(EliteGame
     src/game/navigation/route/RouteWire.cpp
     src/game/navigation/route/RouteZones.cpp
     src/game/navigation/landing/LandingAutopilot.cpp
+    src/game/navigation/globalflight/BodyAutopilot.cpp
+    src/game/navigation/globalflight/RouteLegPilot.cpp
+    src/game/navigation/globalflight/BodyTerrainProbe.cpp
     src/game/simulation/GameSimulationRefit.cpp
     src/game/simulation/GameSimulationDevScenarios.cpp
     src/game/simulation/GameSimulationReplication.cpp
@@ -927,6 +932,9 @@ if(ELITE_BUILD_SERVER)
         src/game/navigation/route/RouteWire.cpp
         src/game/navigation/route/RouteZones.cpp
         src/game/navigation/landing/LandingAutopilot.cpp
+        src/game/navigation/globalflight/BodyAutopilot.cpp
+        src/game/navigation/globalflight/RouteLegPilot.cpp
+        src/game/navigation/globalflight/BodyTerrainProbe.cpp
         src/game/simulation/GameSimulationRefit.cpp
         src/game/simulation/GameSimulationDevScenarios.cpp
         src/game/simulation/GameSimulationReplication.cpp

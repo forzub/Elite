@@ -1648,7 +1648,9 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     const auto it = ships.find(m_playerId.value);
     if (it == ships.end())
         return;
-    const auto& motion = it->second.transform.motion;
+    game::navigation::DynamicMotionState motionView = it->second.transform.motion;
+    applyClientBodyAutopilotDisplay(motionView);   // the client flies the body autopilot
+    const auto& motion = motionView;
     // a refused J engine is shown for a few seconds even in a hub frame
     static std::uint8_t lastRefusal = 0;
     static double refusalUntil = 0.0;

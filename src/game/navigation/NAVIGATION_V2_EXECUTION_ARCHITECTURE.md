@@ -20,15 +20,18 @@ plant + the authority:
   (max acceleration, ramp, keep-out, J floor, 0.9 c cap, the charge), attitude slewing within the hull's
   rates, ground contact / damage, collisions, navigation-zone fines, the replicated authoritative state.
 - The command surface is `ShipControlState` (ordinary input every frame) extended with a global-flight part:
-  a J acceleration vector (world) and an attitude target. With ~0.1 s client-server latency at up to 1e5 g
-  the client commands TARGETS (acceleration, attitude) that the server tracks every tick - the J braking
-  profile (tail d / 6 s) stays stable under that latency.
+  a J WORLD VELOCITY TARGET with the client's acceleration limit, a main-engine world acceleration, an attitude
+  target, a frame request (normal flight / ground stabilization / stabilization) and a free-rotation request.
+  With client-server latency at up to 1e5 g the client commands TARGETS that the server tracks every tick
+  (deadbeat within the rules) - the J braking profile (tail d / 6 s) stays stable under that latency.
 - Shared rules on both sides: `navigation/rules/BodyFlightRules.h`, `navigation/rules/JDrive.h`.
 
-Migration status (2026-11-06): the local tactical chain below is client-owned already. The global
-flight (J autopilot, route legs, take-off, landing pilot, rendezvous) still RUNS ON THE SERVER
-(`GameSimulationFreeFlight.cpp`, `GameSimulationRoute.cpp`) and moves to the client in phases G1 (the
-command channel) .. G4 (route legs / take-off / rendezvous) - PROJECT_STATE "Client-owned global flight".
+Migration status (2026-11-06): DONE in code (G1..G4), live-verified on DEV runs, not yet author-accepted. The body
+autopilot (`navigation/globalflight/BodyAutopilot`) and the route-leg pilot (`navigation/globalflight/RouteLegPilot`)
+are neutral modules run by the client (`SpaceStateBodyAutopilot.cpp`, `SpaceStateRouteRun.cpp`); the server executes
+the command (`GameSimulation::applyGlobalFlightCommand` / `applyGlobalFrameRequests`), judges zones, keeps the J
+charge and runs a route stop's service stay at a hub (the charge fill is an authority action). The server-run
+autopilot / route legs / take-off are deleted; the old `FreeFlightAutopilot` / route `RouteLeg` commands are ignored.
 The hand-over rule: a global leg ends by leaving J into a stabilization frame (hub / own orbit / ground);
 a pilot-initiated global action while a client tactical route runs MUST cancel it first (OPEN).
 

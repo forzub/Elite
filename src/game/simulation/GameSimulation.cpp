@@ -1200,9 +1200,6 @@ void GameSimulation::update(
 
     m_orbitalUniverseTimeSeconds = time.universeTimeSeconds;
     m_npcRepairThinkTimerSeconds += dt;
-    if (!trajectoryDebugMode)
-        applySurfaceLandingPilots();
-
     const bool npcRepairThinkTick =
         m_npcRepairThinkTimerSeconds >= 15.0;
 

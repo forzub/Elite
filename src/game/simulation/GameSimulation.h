@@ -43,6 +43,7 @@
 #include "src/game/simulation/ShipSimulationDetailPolicy.h"
 
 #include "src/game/navigation/GravityFieldSystem.h"
+#include "src/game/navigation/globalflight/BodyAutopilot.h"
 #include "src/game/navigation/OrbitalCorridorSystem.h"
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
 #include "src/game/navigation/autopilot/AutopilotLawController.h"
@@ -199,48 +200,8 @@ public:
     // carries the ship's global motion under gravity; off - the ship is re-based into the
     // nearest hub frame with its actual relative position and velocity.
     // One leg of a route flown on the J drive (GameSimulationRoute.cpp).
-    struct FreeFlightLeg
-    {
-        enum class Kind { Hub, Orbit, Point, Land, Ship };
-        Kind kind = Kind::Hub;
-        std::string landingSpec;        // Land: "" wild site, "site:<id>" a settlement pad
-        std::uint64_t shipEntityId = 0; // Ship: the rendezvous target (its current position / velocity)
-        std::string hubId;              // Hub
-        std::string bodyId;             // Orbit
-        double orbitAltitudeM = 0.0;    // Orbit
-        glm::dvec3 pointWorld {0.0};    // Point
-        bool passThrough = false;       // a guide point of a route: fly through, no stop
-        double remainingAfterM = 0.0;   // route length after this leg (braking for pass-through)
-        std::string action;             // at a stop: "refuel"
-    };
-    // A planned route: legs in order (route planner -> RouteLeg command)
-    struct ActiveRoute
-    {
-        std::vector<FreeFlightLeg> legs;
-        std::size_t index = 0;
-        bool legDone = false;
-        bool waitingExit = false;
-        double serviceSeconds = -1.0;   // a stop action running (refuel)
-        double idleSeconds = 0.0;
-        bool paused = false;            // manual flight until RESUME (a "pause" point or the pilot's PAUSE)
-        bool resumeCurrent = false;     // paused mid-leg: RESUME restarts the current leg
-    };
-    void pauseRoute(EntityId shipId);
     // navigation zones (GameSimulationZones.cpp): red entries and skipped blue gates fine the ship
     void updateZoneViolations(double dt);
-    void resumeRoute(EntityId shipId);
-    // the J autopilot's internal stage (server only; the panel shows AutopilotDisplayPhase). The
-    // values are the ones the "[Autopilot] ... phase N ->" log prints.
-    enum class AutopilotStage : int
-    {
-        None = 0,
-        Departure = 1,        // leaving the departure body on the main engines / gentle J
-        Cruise = 2,           // the J transfer
-        Approach = 3,         // braking into the parking orbit
-        OrbitHold = 9,        // on the parking orbit, holding before the de-orbit
-        GroundStabilized = 10,// the terminal in the ground frame (landing autopilot)
-        Deorbit = 11          // the de-orbit in normal flight (main engines)
-    };
     struct ActiveFreeFlight
     {
         std::string sourceHubId;
@@ -258,37 +219,11 @@ public:
         // J off away from a hub: the ship flies in its own ballistic frame (global
         // motion under gravity) with ordinary local flight from rest inside it
         bool localFrame = false;
-        // J autopilot to a body (empty = off)
-        std::string autopilotTargetId;
-        std::string autopilotDepartureId;
-        AutopilotStage autopilotPhase = AutopilotStage::None;
-        double autopilotSeconds = 0.0;
-        double autopilotRampSeconds = 0.0;   // the drive ramp: counts only outside the J keep-out
-        double orbitCoastSeconds = 0.0;      // landing: the coast on the parking orbit before the de-orbit
-        glm::dvec3 orbitNormal {0.0};        // landing: the parking orbit plane, fixed once (zero = not yet)
-        bool orbitAcquire = false;           // landing: close to the orbit - aim at its nearest point
-        bool bellyLanding = false;           // landing: the ventral thrusters hold the weight - belly down
-        double autopilotLastLogSeconds = -1.0e30;
-        bool autopilotHaveLastCenter = false;
-        // the landing module (planner + transit + descent) once the approach is over
-        game::navigation::landing::LandingRequest landingRequest;
-        game::navigation::landing::LandingAutopilot landing;
-        bool landingStarted = false;
+        // the plant's J ramp for a global-flight command: counts only outside the keep-out
+        double globalRampSeconds = 0.0;
+        double globalLogSeconds = 0.0;      // the plant's command log (every 2 s)
         // a route leg (hub / orbit / point) flown by the route autopilot
         // the sub-machines of a free flight (architecture audit item 3): one struct each
-        struct RouteLegRun     // a route leg being flown (GameSimulationRoute.cpp)
-        {
-            bool active = false;
-            bool takeOff = false;            // a leg from the ground: climb to the J floor on the main engines first
-            glm::dvec3 orbitNormal {0.0}; // an orbit leg: the orbit plane, fixed at the leg's start
-            bool arrived = false;
-            double seconds = 0.0;
-            double lastLog = -1.0e30;
-            double driveStartSeconds = -1.0;
-            std::string departureHubId;
-            bool haveLastBody = false;
-            glm::dvec3 lastBodyCentre {0.0};
-        } legRun;
         struct GroundFrame     // the ground stabilization frame (landing / landed)
         {
             bool active = false;
@@ -300,17 +235,6 @@ public:
             bool liftOff = false;            // the laws pushed the ship off the ground this tick
             glm::dvec3 traceLocalStart {0.0};  // DEV trace: the local velocity handed to the laws
         } ground;
-        struct LandingPilot    // the landing pilot replacing the pilot's controls
-        {
-            bool active = false;
-            bool restoreLaw = false;
-            ShipControlState control {};
-            game::navigation::LocalFlightControlLaw lawBefore = game::navigation::LocalFlightControlLaw::Assisted;
-            double lastLogSeconds = -1.0e30;
-            bool freeRotation = false;      // the landing pilot put Assisted into the Backspace mode
-        } landingPilot;
-        FreeFlightLeg leg;
-        double landingPlanSeconds = 0.0;
         // landed: the touchdown spot, body-fixed (it turns with the body)
         bool landedBodyKnown = false;
         glm::dvec3 landedBodyDirection {0.0};
@@ -319,7 +243,6 @@ public:
         bool haveLastBasis = false;
         glm::dmat3 lastBasis {1.0};
         std::string lastBasisBodyId;
-        glm::dvec3 autopilotLastTargetCenter {0.0};
         // J off near a body (below its J floor): NORMAL flight against the body's surface. The
         // travel frame moves with the ground under the ship, so the local velocity the flight
         // laws see is the velocity over the ground; every tick the server folds what the laws
@@ -332,17 +255,15 @@ public:
         bool autoStabilizeArmed = false;
         bool lastBound = true;
         double coastSeconds = 0.0;
-        glm::dvec3 descentNose {0.0};        // landing phase 11: the last commanded thrust direction
     };
     // J off below a body's J floor: normal flight against its surface (see bodyFrame)
     void enterBodyFrame(EntityId shipId, Ship& ship, ActiveFreeFlight& f, const game::navigation::GravityBody& body,
                         const glm::dvec3& bodyVelocityMps);
-    void updateSurfaceLanding(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
-    // landing phase 11: the de-orbit and the braking toward the site in NORMAL flight (main engines,
-    // ordinary controls), handed over to the ground stabilization (phase 10) low and slow near the site
-    void updateNormalDescent(EntityId shipId, Ship& ship, ActiveFreeFlight& f, const game::navigation::GravityBody& body,
-                             const glm::dvec3& bodyVelocityMps, double dt);
-    void applySurfaceLandingPilots();
+    // the plant: executes a global-flight command (the client's, or the server-run body autopilot's)
+    // within the rules - the J field toward a velocity target, the main engines along the nose, the
+    // hull's slew; the frame requests switch normal flight <-> the ground stabilization
+    void applyGlobalFlightCommand(EntityId shipId, Ship& ship, ActiveFreeFlight& f, const ShipControlState& command, double dt);
+    void applyGlobalFrameRequests();
     bool toggleFreeFlight(EntityId shipId);
     // Flight architecture (author 2026-11-05 cc). Stabilization on / off: off = NORMAL flight
     // (no speed envelope, the velocity against space or the body of the sphere of influence);
@@ -373,19 +294,8 @@ public:
     using BodyOrientationProvider = std::function<bool(const std::string& bodyId, glm::dmat3& worldFromBody)>;
     void setBodyOrientationProvider(BodyOrientationProvider provider) { m_bodyOrientation = std::move(provider); }
     void setFreeFlightThrust(EntityId shipId, int command);
-    // J autopilot: fly to a body and land on it (empty id = the dominant body); engage false cancels
-    void setFreeFlightAutopilot(EntityId shipId, const std::string& bodyId, bool engage, const std::string& landingSpec = {});
-    // Route autopilot: fly one leg (enters J if needed); finishes matched and leaves J.
-    bool startFreeFlightLeg(EntityId shipId, const FreeFlightLeg& leg);
-    // A whole route (legs in order): flies them, stops / actions included.
-    bool startRoute(EntityId shipId, std::vector<FreeFlightLeg> legs);
-    glm::dvec3 routePointWorld(const FreeFlightLeg& leg) const;
-    void cancelRoute(EntityId shipId);
-    const ActiveRoute* activeRoute(EntityId shipId) const
-    {
-        const auto it = m_routes.find(shipId);
-        return it == m_routes.end() ? nullptr : &it->second;
-    }
+    // a route stop's service stay at a hub (the client flies the route, NAVIGATION_V2 §1)
+    void startHubService(EntityId shipId, const std::string& hubId, const std::string& action);
 
     // ---- combat (GameSimulationCombat.cpp): lasers, missiles, hits on hit volumes
     struct CombatLoadout
@@ -764,8 +674,6 @@ private:
     std::unordered_map<EntityId, ActiveFreeFlight> m_freeFlights;
     TerrainHeightProvider m_terrainHeight;
     BodyOrientationProvider m_bodyOrientation;
-    void updateFreeFlightAutopilot(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
-    void updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFreeFlight& f, double dt);
     // J keep-out (JDrive.h): the nearest hub / station / beacon or other ship whose keep-out holds a world point
     struct JKeepOutHit
     {
@@ -777,7 +685,6 @@ private:
     };
     bool jKeepOut(EntityId shipId, int systemId, const glm::dvec3& worldMeters, JKeepOutHit& hit) const;
     std::vector<EntityId> m_pendingStabilize;   // automatic stabilization after the free-flight pass
-    std::vector<EntityId> m_pendingJExit;   // legs that arrived: J off after the free-flight pass
     struct ZoneWatch
     {
         std::unordered_map<std::string, bool> inside;
@@ -786,8 +693,16 @@ private:
     };
     std::unordered_map<EntityId, ZoneWatch> m_zoneWatch;
     double m_zoneCheckSeconds = 0.0;
-    std::unordered_map<EntityId, ActiveRoute> m_routes;
-    void updateRoutes(double dt);
+    // a route stop's service at a hub (the client's route asks; the server fills the J charge - an
+    // authority action): the ship must stay in that hub's frame for the whole stay
+    struct HubService
+    {
+        std::string hubId;
+        std::string action;
+        double seconds = 0.0;
+    };
+    std::unordered_map<EntityId, HubService> m_hubServices;
+    void updateHubServices(double dt);
 
     // combat state
     struct CombatMissile

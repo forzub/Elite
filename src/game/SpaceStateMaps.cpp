@@ -2086,21 +2086,6 @@ void SpaceState::devSelectTrafficShip(const std::string& callsign)
 // Orbital Transfer from the map: the client previews the tunnel with the same planner the
 // server uses (Earth's state is recovered from the source hub's replicated ephemeris), then
 // asks the server, which plans and flies the authoritative transfer.
-void SpaceState::requestFreeFlightAutopilot(const std::string& bodyId, const std::string& landingSpec)
-{
-    if (!m_client)
-        return;
-    game::network::ClientMessage msg;
-    ClientShipCommand command;
-    command.type = ClientShipCommand::FreeFlightAutopilot;
-    command.index = 1;
-    command.target = bodyId;
-    command.detail = landingSpec;   // "pad:<lat>,<lon>" or empty = wild site search
-    msg.payload = command;
-    m_client->sendMessage(msg);
-    std::cerr << "[Autopilot] requested -> " << (bodyId.empty() ? std::string("the dominant body") : bodyId) << std::endl;
-}
-
 void SpaceState::requestOrbitalTransfer(const std::string& targetHubId)
 {
     namespace orb = game::navigation::orbital;

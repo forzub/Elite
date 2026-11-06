@@ -3676,6 +3676,74 @@ order - ask for it again if it is not in the session.
   (D:/tmp/elite_sysmap_tests); allow-list keys `cpp:<target>`. Off by default (cold build minutes). Run:
   `--cpp` 211 gates: 205 pass, 6 known red (model-asset editor), 0 new red; both C++ suites PASS.
 
+### Client-owned global flight G2..G4 (author 2026-11-06: "делай подряд все 4 пункта") - BUILT, live DEV runs; NOT ACCEPTED
+Scope (NAVIGATION_V2 §1 author decision): the planners and autopilots on the CLIENT, the server = plant + authority.
+- Step 1 (extraction, behaviour-preserving): `navigation/globalflight/BodyAutopilot.{h,cpp}` - the J transfer onto the
+  tangential parking orbit, the coast, the de-orbit in normal flight, the hand-over, the terminal landing pilot, moved
+  out of GameSimulation (updateFreeFlightAutopilot / updateNormalDescent / updateSurfaceLanding). Neutral: a ship
+  sample + callbacks (bodies, body orientation, terrain, keep-out) in, the ShipControlState command out.
+  The command surface (ShipControlState, wire protocol 25): globalFlightCommandValid; a J WORLD VELOCITY TARGET +
+  the client's acceleration limit (instead of G1's raw acceleration: deadbeat tracking on the server tick, robust to
+  latency); globalMainAccelWorldMps2 (main engines, |a| <= the hull's thrust); an attitude target; globalFrameRequest
+  (1 normal flight, 2 ground stabilization, 3 stabilization = hub capture / ground / own orbit); globalFreeRotationRequest.
+  The plant (GameSimulation::applyGlobalFlightCommand + applyGlobalFrameRequests): the J field toward the target within
+  min(client limit, 1e5 g, its own ramp 1 g doubling / 2 s); in a hub/ship keep-out only the gentle 1 g; below a J
+  floor none; an empty charge none; the attitude slew (J: 2 rad/s, else the hull rate). Rules, not intentions.
+  Behaviour change on purpose: the de-orbit's ground turn uses the module's own last basis (the server's `lastBasis`
+  was overwritten the same tick - the turn read ~0).
+  LIVE ba1 (server-run through the module + plant, Shackleton pad): ON ORBIT 86.9 km / 1639 m/s at t+190.9 s (baseline
+  194), hand-over 1948 m / 0.19 m / 79.9 m/s, LANDED t+561.6 s (baseline 564.5), 1.53 / 0.10 m/s, 0 m from the chosen
+  site, regolith, slope 0 - soft, no damage.
+- Terrain probe moved to `navigation/globalflight/BodyTerrainProbe` (process-wide field cache: an embedded server and
+  its client load one field per body). GameServer::terrainHeight delegates.
+- Step 2 (client body autopilot): src/game/SpaceStateBodyAutopilot.cpp - the module on every new server snapshot (dt by
+  server time), bodies from the client's celestial runtime AT THE SNAPSHOT'S universe time (GameClient::
+  resolveCelestialSystem), the ship from the replicated travel frame (+ local motion), keep-out from the replicated
+  hubs / ships; out through submitInput (the docking autopilot's channel); HUD reads the client's display overlay;
+  PAGE DOWN / map O / DEV autopilot: engage the client's. Restore of the flight law / free rotation after a landing.
+  Bugs found live: (ba2) the replicated worldPosition / worldVelocity stay at the hub-frame values in normal flight ->
+  the sample froze at the hub exit -> the travel frame; (ba3/ba4) the docking advisory released the shared control
+  slot every frame (cleared the buffer the runner resends) and the keyboard path re-took the stream -> the server saw
+  alternating valid / empty commands, the plant's ramp reset (~1/5 of the drive) -> ownership flags respected.
+  LIVE ba5 (client body autopilot, the same Shackleton script, pre-G4 build + the fixes): keep-out exit at 1 g as ba1,
+  phase 2 at t+77.6 s (ba1 78.4), ON ORBIT 86.89 km / 1638.95 m/s at t+190.74 s (ba1 190.94), the de-orbit pilot
+  matching ba1 within ~1 deg of nose, hand-over 1946.7 m / 0.11 m / 79.55 m/s at t+537.66 s (ba1 537.92), the ground
+  frame by the frame request, LANDED t+563.46 s, 1.54 / 0.12 m/s, 3.7 cm from the chosen site, regolith, slope 0 -
+  soft; "landing pilot OFF (client)" - the law / free rotation restored, the keyboard owns the stream again.
+- Step 3 (client route): navigation/globalflight/RouteLegPilot (updateFreeFlightLeg + the take-off moved, same laws /
+  logs) and src/game/SpaceStateRouteRun.cpp - the route of the planner's RoutePoints (launchPlannedRoute no longer
+  sends it): legs in order, pass-through guide points, landing legs on the body autopilot, a stop ends in the frame
+  request "stabilization" (hub capture / ground / own orbit), refuel / repair = the server's timed service stay
+  (RouteLeg command index 5 -> GameSimulation::startHubService: the ship stays in the hub frame 20 s, the server fills
+  the J charge), "pause" points and PAUSE / RESUME client-side, the route state for the window / HUD from the client.
+  DEV leg:hub / leg:orbit = a one-stop client route.
+- Step 4 (server = plant + authority): deleted the server-run body autopilot (setFreeFlightAutopilot / sample /
+  environment / dispatch), the landing-pilot control override (applySurfaceLandingPilots), the route legs, take-off,
+  routes / pause / resume (FreeFlightLeg, ActiveRoute, legRun, landingPilot, m_pendingJExit); GameServer ignores the
+  FreeFlightAutopilot command and route commands other than the service stay. The server keeps: the plant, J rules,
+  the charge, ground contact / damage, zones, the service stay. Diagnostic: "[Plant]" log every 2 s of a J command.
+- Gates (post-G4 build): run_gates -j 6 209: 203 pass, 6 known red (model-asset editor), 0 new; --cpp-only 2/2 PASS
+  (wire_data_plane_contract_tests, system_map_behavior_tests).
+- Process note: the G4 patch was applied before the G2/G3 commit by a mistaken invocation (a dry-run flag the script
+  does not parse) - so G1..G4 are one commit; ba1 / ba5 evidence comes from the intermediate builds named above.
+- OPEN: not author-accepted; zone fines / service stay not hit live; rendezvous (Ship legs) not flown live; motion.
+  routeState / routeLeg* and freeFlightAutopilot* stay in the wire but the server no longer writes them (client overlay)
+  - candidates for removal; the hand-over cancel rule (a pilot action during a client route) still OPEN; client
+  autopilot is single-player (NPC global flight would need its own server-side or client-side runner); the older
+  Orbital Transfer (hub -> hub around one body, requestOrbitalTransfer) is still planned and flown by the SERVER - the
+  same migration applies to it (next). A landing leg engaged at full J speed (past a guide point) restarts the drive
+  ramp from 1 g like the old server autopilot did (it overshoots the body and comes back) - carry the ramp (proposal).
+- LIVE rt5 (post-G4 build, client route: guide gate -> Shackleton pad + pause -> RESUME -> gate -> Earth orbit): gate
+  passed at 12 636 km/s, the landing leg on the client body autopilot (ON ORBIT, hand-over 0.11 m, LANDED 0 m from the
+  pad, 1.54 m/s), PAUSED, RESUMED -> TAKE-OFF STUCK: on leaving the ground frame the contact re-landed the ship (0.06
+  m/s down) before the first climb command, and only the HOME latch / the laws' lift-off freed it (the old server
+  take-off dodged it by its order in the tick). FIX (plant rule): a main-engine command pushing up harder than the
+  local weight lifts a landed ship off ("[Plant] LIFT-OFF").
+- LIVE rt6 (same route without the pause, post-fix): gate 12 641 km/s -> landing leg ON ORBIT 86.89 km -> hand-over
+  0.10 m / 79.5 m/s -> LANDED 0 m from the chosen site -> TAKE-OFF -> LIFT-OFF -> complete at 86.88 km (J floor 86.87)
+  -> gate 12 630 km/s -> orbit of Earth (382 km): ARRIVED 18 m / 3.0 m/s -> stabilization (own ballistic frame) ->
+  ROUTE COMPLETE (client) / "МАРШРУТ ВЫПОЛНЕН".
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

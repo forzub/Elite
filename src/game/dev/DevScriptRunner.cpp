@@ -374,13 +374,25 @@ bool DevScriptRunner::runRouteVerb(SpaceState& s, const std::string& cmd)
         for (const auto& [k, v] : LegOrbitPrefixAliases)
             if (spec.rfind(k, 0) == 0)
                 spec = v + spec.substr(std::char_traits<char>::length(k));
-        game::network::ClientMessage msg;
-        ClientShipCommand command;
-        command.type = ClientShipCommand::RouteLeg;
-        command.target = spec;
-        command.index = 2;   // a single leg (0 = cancel the route)
-        msg.payload = command;
-        s.m_client->sendMessage(msg);
+        // a single stop leg flown by the client's route runner
+        game::navigation::route::RoutePoint p;
+        p.stop = true;
+        if (spec.rfind("hub:", 0) == 0)
+        {
+            p.kind = game::navigation::route::RoutePoint::Kind::Hub;
+            p.hubId = spec.substr(4);
+        }
+        else if (spec.rfind("orbit:", 0) == 0)
+        {
+            p.kind = game::navigation::route::RoutePoint::Kind::Orbit;
+            const std::string rest = spec.substr(6);
+            const auto colon = rest.rfind(':');
+            p.bodyId = rest.substr(0, colon);
+            p.orbitAltitudeM = colon == std::string::npos ? 100000.0 : std::atof(rest.c_str() + colon + 1) * 1000.0;
+        }
+        else
+            return true;
+        s.startClientRoute({p});
     }
     else if (cmd.rfind("autopilot:", 0) == 0)
     {
@@ -398,12 +410,8 @@ bool DevScriptRunner::runRouteVerb(SpaceState& s, const std::string& cmd)
                 id = v;
         if (id == "off")
         {
-            game::network::ClientMessage msg;
-            ClientShipCommand command;
-            command.type = ClientShipCommand::FreeFlightAutopilot;
-            command.index = 0;
-            msg.payload = command;
-            s.m_client->sendMessage(msg);
+            s.cancelClientBodyAutopilot();
+            s.cancelClientRoute();
         }
         else
             s.requestFreeFlightAutopilot(id, landingSpec);

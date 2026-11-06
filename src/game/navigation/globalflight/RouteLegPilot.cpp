@@ -1,0 +1,332 @@
+// The route-leg pilot (see RouteLegPilot.h). Moved from the server's GameSimulation::updateFreeFlightLeg
+// and its take-off (2026-11-06): the same laws and logs; the velocity changes are a command for the
+// plant (a J velocity target with its limit, a main-engine acceleration, an attitude target).
+#include "src/game/navigation/globalflight/RouteLegPilot.h"
+
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+
+#include "src/game/navigation/FreeFlightCodes.h"
+#include "src/game/navigation/rules/BodyFlightRules.h"
+#include "src/game/navigation/rules/JDrive.h"
+
+namespace game::navigation::globalflight
+{
+namespace
+{
+namespace jd = game::navigation::jdrive;
+constexpr double HubArrivalM = jd::KeepOutObjectM + 5000.0;   // the aim just outside the keep-out, on the approach side
+constexpr double ShipArrivalM = jd::KeepOutShipM + 1000.0;    // a rendezvous: just outside the target ship's J keep-out
+using Kind = route::RoutePoint::Kind;
+
+const GravityBody* findBody(const BodyAutopilotEnvironment& env, const std::string& id)
+{
+    if (env.bodies)
+        for (const auto& b : *env.bodies)
+            if (b.id == id)
+                return &b;
+    return nullptr;
+}
+} // namespace
+
+void RouteLegPilot::start(const route::RoutePoint& leg, double remainingAfterM, bool alreadyInJ, bool onGround,
+                          const std::string& departureHubId, std::uint32_t shipId)
+{
+    *this = RouteLegPilot {};
+    m_leg = leg;
+    m_remainingAfterM = remainingAfterM;
+    m_active = true;
+    m_takeOff = onGround;
+    m_shipId = shipId;
+    // continuing in J (past a guide point): the drive stays at full strength
+    m_driveStartSeconds = alreadyInJ ? -1000.0 : -1.0;
+    m_departureHubId = departureHubId;
+    if (m_takeOff)
+        std::cerr << "[Route] ship " << shipId << ": TAKE-OFF - main-engine climb to the J floor first" << std::endl;
+    std::cerr << "[Route] ship " << shipId << ": leg -> "
+              << (leg.kind == Kind::Hub     ? "hub " + leg.hubId
+                  : leg.kind == Kind::Orbit ? "orbit of " + leg.bodyId + " at " + std::to_string(static_cast<int>(leg.orbitAltitudeM / 1000.0)) + " km"
+                  : leg.kind == Kind::Ship  ? "ship " + std::to_string(leg.shipEntityId)
+                                            : std::string("point"))
+              << " (departure " << m_departureHubId << ")" << std::endl;
+}
+
+BodyAutopilotOutput RouteLegPilot::stepTakeOff(const BodyAutopilotEnvironment& env, const BodyAutopilotShip& ship, double dt)
+{
+    BodyAutopilotOutput out;
+    out.refusal = ship.refusal;
+    out.control.globalFlightCommandValid = true;
+    out.control.globalFrameRequest = static_cast<std::uint8_t>(FrameRequest::NormalFlight);
+    const GravityBody* primary = findBody(env, ship.primaryBodyId);
+    if (!primary)
+    {
+        m_takeOff = false;
+        return out;
+    }
+    const double floorAlt = jd::floorAltitudeM(primary->radiusMeters, primary->atmosphereRadiusMeters);
+    const glm::dvec3 up = glm::normalize(ship.positionM - primary->centerMeters);
+    const double alt = glm::length(ship.positionM - primary->centerMeters) - primary->radiusMeters;
+    const bool haveLast = m_lastPrimaryId == primary->id;
+    const glm::dvec3 bodyVel = haveLast ? (primary->centerMeters - m_lastPrimaryCentre) / dt : ship.velocityMps;
+    m_lastPrimaryId = primary->id;
+    m_lastPrimaryCentre = primary->centerMeters;
+    if (alt >= floorAlt)
+    {
+        m_takeOff = false;
+        std::cerr << "[Route] ship " << m_shipId << ": TAKE-OFF complete at " << alt / 1000.0 << " km (J floor " << floorAlt / 1000.0
+                  << " km) - the leg continues" << std::endl;
+        return out;
+    }
+    if (!haveLast || ship.surfaceState != 0 && m_seconds < 0.5)
+        return out;   // the body's velocity needs two samples; the plant lifts the ship off first
+    const double aboveGround = std::max(0.0, alt - ship.groundHeightM);
+    const double climb = std::min(jd::FloorClimbSpeedMps, 5.0 + 0.5 * aboveGround);
+    const glm::dvec3 dv = bodyVel + up * climb - ship.velocityMps;
+    const glm::dvec3 gravity = env.bodies ? GravityFieldSystem::sample(ship.positionM, *env.bodies).accelerationMps2 : glm::dvec3(0.0);
+    glm::dvec3 a = dv / 1.0 - gravity;
+    const double aMax = 0.9 * mainEngineAccelMps2(ship.physics);
+    if (glm::length(a) > aMax)
+        a *= aMax / glm::length(a);
+    out.control.globalMainAccelWorldMps2 = a;
+    if (std::fmod(m_seconds, 2.0) < dt)
+        std::cerr << "[Route] ship " << m_shipId << " take-off: " << aboveGround << " m above the ground, climb "
+                  << glm::dot(ship.velocityMps - bodyVel, up) << " m/s (wanted " << climb << "), " << glm::length(a) / 9.81 << " g"
+                  << std::endl;
+    return out;
+}
+
+BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, const RouteLegResolver& resolve, const BodyAutopilotShip& ship,
+                                        double dt)
+{
+    BodyAutopilotOutput out;
+    out.refusal = ship.refusal;
+    if (!m_active || dt <= 0.0)
+        return out;
+    m_seconds += dt;
+    if (m_takeOff)
+        return stepTakeOff(env, ship, dt);
+    out.control.globalFlightCommandValid = true;
+    out.control.globalFrameRequest = static_cast<std::uint8_t>(FrameRequest::NormalFlight);
+    const route::RoutePoint& leg = m_leg;
+    const glm::dvec3 position = ship.positionM;
+    const glm::dvec3 velocity = ship.velocityMps;
+
+    // ---- destination kinematics: position to reach, velocity to match there
+    glm::dvec3 targetPos(0.0), targetVel(0.0);
+    const GravityBody* body = findBody(env, leg.bodyId);
+    if (leg.kind == Kind::Hub)
+    {
+        glm::dvec3 hubPos, hubVel;
+        if (!resolve.hub || !resolve.hub(leg.hubId, hubPos, hubVel))
+        {
+            std::cerr << "[Route] ship " << m_shipId << ": hub " << leg.hubId << " unknown - leg dropped" << std::endl;
+            m_active = false;
+            return out;
+        }
+        // the arrival point inside the J boundary, on the side the ship comes from
+        const glm::dvec3 fromHub = position - hubPos;
+        const glm::dvec3 side = glm::length(fromHub) > 1.0 ? glm::normalize(fromHub) : glm::dvec3(0, 1, 0);
+        targetPos = hubPos + side * HubArrivalM;
+        targetVel = hubVel;
+    }
+    else if (leg.kind == Kind::Ship)
+    {
+        // a rendezvous (ROUTE_PROGRAMS_DESIGN.md §4): the target ship's position now, its velocity
+        // matched, the arrival just outside its J keep-out on the approach side
+        glm::dvec3 otherPos, otherVel;
+        if (!resolve.ship || !resolve.ship(leg.shipEntityId, otherPos, otherVel))
+        {
+            std::cerr << "[Route] ship " << m_shipId << ": rendezvous target " << leg.shipEntityId << " unknown - leg dropped" << std::endl;
+            m_active = false;
+            return out;
+        }
+        const glm::dvec3 fromOther = position - otherPos;
+        const glm::dvec3 side = glm::length(fromOther) > 1.0 ? glm::normalize(fromOther) : glm::dvec3(0, 1, 0);
+        targetPos = otherPos + side * ShipArrivalM;
+        targetVel = otherVel;
+    }
+    else if (leg.kind == Kind::Orbit)
+    {
+        if (!body)
+        {
+            m_active = false;
+            return out;
+        }
+        const glm::dvec3 bodyVel = m_haveLastBody ? (body->centerMeters - m_lastBodyCentre) / dt : glm::dvec3(0.0);
+        m_lastBodyCentre = body->centerMeters;
+        if (!m_haveLastBody)
+        {
+            m_haveLastBody = true;
+            out.control.globalFlightCommandValid = true;
+            return out;
+        }
+        const glm::dvec3 rel = position - body->centerMeters;
+        const double D = std::max(1.0, glm::length(rel));
+        const glm::dvec3 up = glm::length(rel) > 1.0 ? glm::normalize(rel) : glm::dvec3(0, 1, 0);
+        // J ends above the body's J floor: a lower orbit is raised to it
+        const double r = body->radiusMeters + std::max(leg.orbitAltitudeM, jd::floorAltitudeM(body->radiusMeters, body->atmosphereRadiusMeters));
+        // the orbit plane, fixed once: the ship's position and its motion across the radius (else the
+        // ecliptic-like plane through the body) - the approach and the orbit share it
+        if (glm::length(m_orbitNormal) < 0.5)
+        {
+            const glm::dvec3 w0 = velocity - bodyVel;
+            glm::dvec3 n = glm::cross(rel, w0);
+            if (glm::length(n) < 1.0e-3 * D * std::max(1.0, glm::length(w0)))
+                n = glm::cross(rel, glm::cross(glm::dvec3(0, 1, 0), rel));
+            if (glm::length(n) < 1.0e-9)
+                n = glm::cross(rel, glm::dvec3(1, 0, 0));
+            m_orbitNormal = glm::normalize(n);
+        }
+        const glm::dvec3 n = m_orbitNormal;
+        glm::dvec3 u = up - n * glm::dot(up, n);
+        u = glm::length(u) > 1.0e-9 ? glm::normalize(u) : glm::normalize(glm::cross(n, glm::dvec3(1, 0, 0)));
+        const glm::dvec3 t = glm::normalize(glm::cross(n, u));
+        // the TANGENT point of the orbit circle seen from the ship (author 2026-11-06: not into the
+        // centre and a magic 90 deg turn - along the tangent, matching the circular speed)
+        glm::dvec3 aim, tangent;
+        if (D > r * 1.02)
+        {
+            const double th = std::acos(std::clamp(r / D, -1.0, 1.0));
+            const glm::dvec3 radial = u * std::cos(th) + t * std::sin(th);
+            aim = body->centerMeters + radial * r;
+            tangent = glm::normalize(glm::cross(n, radial));
+        }
+        else
+        {
+            aim = body->centerMeters + u * r;
+            tangent = t;
+        }
+        targetPos = aim;
+        targetVel = bodyVel + tangent * std::sqrt(body->gravitationalParameterM3s2 / r);
+    }
+    else
+    {
+        targetPos = leg.worldM;
+        targetVel = ship.referenceVelocityMps;
+    }
+
+    const glm::dvec3 toAim = targetPos - position;
+    const double d = glm::length(toAim);
+    glm::dvec3 dir = d > 1.0e-3 ? toAim / d : glm::dvec3(0.0);
+    const glm::dvec3 w = velocity - targetVel;
+
+    // ---- the drive: gentle inside any object's keep-out (no J field there), then 1 g doubling every 2 s
+    KeepOutHit keep;
+    const bool inKeepOut = env.keepOut && env.keepOut(position, keep);
+    const bool nearDeparture = inKeepOut &&
+                               !(leg.kind == Kind::Hub && keep.objectId == leg.hubId && m_seconds > 1.0 && keep.objectId != m_departureHubId) &&
+                               !(leg.kind == Kind::Ship && m_seconds > 1.0 &&
+                                 keep.objectId.rfind("ship " + std::to_string(leg.shipEntityId) + " ", 0) == 0);
+    if (!nearDeparture && m_driveStartSeconds == -1.0)
+        m_driveStartSeconds = m_seconds;
+    const double driveSeconds = m_driveStartSeconds == -1.0 ? 0.0 : m_seconds - m_driveStartSeconds;
+    const double limit = nearDeparture ? jd::GentleAccelMps2 : std::min(jd::MaxAccelMps2, 9.81 * std::exp2(driveSeconds / jd::DriveRampDoublingS));
+
+    // ---- obstacles: never through a planet / moon / the star - go round the first one in the way
+    int phase = 2;
+    double starMu = 0.0;
+    if (env.bodies)
+    {
+        for (const auto& b : *env.bodies)
+            starMu = std::max(starMu, b.gravitationalParameterM3s2);
+        for (const auto& b : *env.bodies)
+        {
+            if (b.radiusMeters < 50000.0 || d < 1.0)
+                continue;
+            // the body, its atmosphere and a margin; a destination below that (a hub in low orbit)
+            // still keeps the path from dipping under the destination's own altitude. The star: 20 of
+            // its radii (the hull's heat, not its surface)
+            const bool star = b.gravitationalParameterM3s2 >= starMu && starMu > 0.0;
+            double clear = game::navigation::rules::clearanceM(b.radiusMeters, b.atmosphereRadiusMeters, star);
+            clear = std::min(clear, glm::length(targetPos - b.centerMeters) * 0.995);
+            clear = std::min(clear, glm::length(position - b.centerMeters) * 0.995);
+            const glm::dvec3 s = position - b.centerMeters;
+            const double t = std::clamp(-glm::dot(s, toAim) / (d * d), 0.0, 1.0);
+            if (t > 0.0 && t < 1.0 && glm::length(s + toAim * t) < clear)
+            {
+                glm::dvec3 sideStep = s - dir * glm::dot(s, dir);
+                if (glm::length(sideStep) < 1.0)
+                    sideStep = glm::cross(dir, std::abs(dir.z) < 0.9 ? glm::dvec3(0, 0, 1) : glm::dvec3(1, 0, 0));
+                dir = glm::normalize(glm::normalize(sideStep) + dir * 0.3);
+                phase = 1;
+                break;
+            }
+        }
+    }
+
+    // a pass-through guide point: brake for the rest of the route, not for the point
+    const bool passThrough = leg.kind == Kind::Point && !leg.stop;
+    const double dEff = d + (passThrough ? m_remainingAfterM : 0.0);
+    const double braking = std::sqrt(2.0 * 0.4 * jd::MaxAccelMps2 * dEff);
+    const double tail = dEff / jd::ApproachTauS;
+    double speed = std::min({braking, tail, jd::SpeedCapMps});
+    if (nearDeparture)
+        speed = std::min(speed, jd::GentleSpeedMps);
+    if (phase == 2 && tail < braking)
+        phase = 3;
+    glm::dvec3 targetWorld = targetVel + dir * speed;
+    if (nearDeparture)
+    {
+        // inside an object's keep-out: a slow climb out AGAINST THAT OBJECT (its traffic), not against
+        // the destination - the destination's speed is matched only after the keep-out
+        const glm::dvec3 away = glm::normalize(position - keep.positionM + dir * 1.0);
+        targetWorld = keep.velocityMps + away * jd::GentleSpeedMps;
+    }
+    glm::dvec3 dv = targetWorld - velocity;
+    const double maxDv = limit * dt;
+    if (glm::length(dv) > maxDv)
+        dv *= maxDv / glm::length(dv);
+    out.control.globalJVelocityTargetValid = true;
+    out.control.globalJVelocityTargetWorldMps = targetWorld;
+    out.control.globalJAccelLimitMps2 = limit;
+    const glm::dvec3 accel = dv / dt;
+
+    // ---- attitude: nose on the destination during the transfer, along the motion at the end
+    {
+        glm::dvec3 nose = d > 50.0 ? dir : (glm::length(w + dv) > 1.0 ? glm::normalize(w + dv) : ship.forward);
+        glm::dvec3 upW = ship.up - nose * glm::dot(ship.up, nose);
+        if (glm::length(upW) < 1.0e-3)
+            upW = glm::cross(nose, std::abs(nose.z) < 0.9 ? glm::dvec3(0, 0, 1) : glm::dvec3(1, 0, 0));
+        out.control.globalAttitudeTargetValid = true;
+        out.control.globalAttitudeForward = nose;
+        out.control.globalAttitudeUp = glm::normalize(upW);
+    }
+
+    // ---- HUD (the J autopilot panel)
+    const glm::dvec3 wAfter = w + dv;
+    out.displayPhase = nearDeparture ? code(AutopilotDisplayPhase::HubExit) : static_cast<std::uint8_t>(phase);
+    out.displayTargetId = leg.kind == Kind::Hub ? leg.hubId : leg.bodyId;
+    out.displayRangeM = d;
+    out.displayRelSpeedMps = glm::length(wAfter);
+    out.displayAccelMps2 = static_cast<float>(glm::length(wAfter) > 1.0e-3 ? glm::dot(accel, glm::normalize(wAfter)) : glm::length(accel));
+    if (m_seconds - m_lastLog >= 2.0)
+    {
+        m_lastLog = m_seconds;
+        std::cerr << "[Route] ship " << m_shipId << " t+" << m_seconds << " s phase " << int(out.displayPhase) << ": to aim " << d / 1000.0
+                  << " km, speed vs destination " << glm::length(wAfter) << " m/s, accel " << glm::length(accel) << " m/s2" << std::endl;
+    }
+
+    // ---- a guide point passed: the route goes on in J (no stop, no matching); passed within 1 % of
+    // the rest of the route, 20 km .. 2000 km
+    if (passThrough && d < std::clamp(0.01 * m_remainingAfterM, 20000.0, 2.0e6))
+    {
+        m_active = false;
+        m_passed = true;
+        std::cerr << "[Route] ship " << m_shipId << ": passed a guide point at " << d / 1000.0 << " km, " << glm::length(wAfter) / 1000.0
+                  << " km/s" << std::endl;
+        return out;
+    }
+    // ---- finish: matched to the destination -> the stabilization (an orbit precisely: 3 m/s)
+    const bool there = leg.kind == Kind::Orbit ? d < 500.0 && glm::length(wAfter) < 3.0 : d < 1500.0 && glm::length(wAfter) < 20.0;
+    if (there)
+    {
+        m_active = false;
+        m_arrived = true;
+        std::cerr << "[Route] ship " << m_shipId << ": ARRIVED after " << m_seconds << " s, " << d << " m from the aim, "
+                  << glm::length(wAfter) << " m/s vs destination - leaving J" << std::endl;
+    }
+    return out;
+}
+
+} // namespace game::navigation::globalflight

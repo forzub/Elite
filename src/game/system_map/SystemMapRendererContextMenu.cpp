@@ -175,6 +175,27 @@ game::system_map::MapObjectOverlayItem SystemMapRenderer::makeWaypointCandidate(
     return candidate;
 }
 
+// The finish choice of a body (author 2026-11-06: orbit or landing, the orbit's altitude with its
+// first cosmic speed): three orbits from the J floor up, and a landing where the body allows it.
+void SystemMapRenderer::appendBodyFinishRows(const std::string& bodyId)
+{
+    if (!m_bodyFlightFacts)
+        return;
+    const auto facts = m_bodyFlightFacts(bodyId);
+    if (!facts || facts->muM3s2 <= 0.0 || facts->radiusM <= 0.0)
+        return;
+    for (const double k : {1.0, 3.0, 10.0})
+    {
+        const double h = std::max(facts->floorAltitudeM, 1000.0) * k;
+        const double v1 = std::sqrt(facts->muM3s2 / (facts->radiusM + h));
+        char label[128];
+        std::snprintf(label, sizeof label, "ФИНИШ: ОРБИТА %.0f КМ (v₁ %.2f КМ/С)", h / 1000.0, v1 / 1000.0);
+        m_contextMenu.rows.push_back({label, "finishbody:orbit:" + std::to_string(static_cast<long long>(h)), true});
+    }
+    if (facts->landable)
+        m_contextMenu.rows.push_back({"ФИНИШ: ПОСАДКА (АВТОМАТ)", "finishbody:land:0", true});
+}
+
 // The route commands of an overlay item: its own panel actions (route,
 // docking), else the route roles it can take.
 void SystemMapRenderer::appendContextActionRows(
@@ -459,6 +480,7 @@ bool SystemMapRenderer::openContextMenu(
                         appendContextActionRows(body);
                     }
             }
+            appendBodyFinishRows(target.bodyId);
             m_contextMenu.rows.push_back({text.contextDetails, "details", true});
         }
         else if (target.kind == Kind::Hub)
@@ -562,6 +584,28 @@ std::optional<game::system_map::MapIntent> SystemMapRenderer::executeContextComm
     if (command.rfind("transfer:", 0) == 0)
     {
         m_pendingOrbitalTransferHubId = command.substr(9);
+        return std::nullopt;
+    }
+
+    if (command.rfind("finishbody:", 0) == 0)
+    {
+        // the body as the finish with that program: orbit at the altitude / automatic landing
+        const std::string rest = command.substr(11);
+        const bool land = rest.rfind("land", 0) == 0;
+        const double altitude = std::atof(rest.substr(rest.find(':') + 1).c_str());
+        auto& plan = m_navigationWorkspace.routePlan();
+        auto* w = plan.findBySourceObjectId(menu.objectId);
+        if (!w || w->role != game::navigation::NavigationWaypointRole::Finish)
+        {
+            applyWaypointAction(menu.objectId, "toggle_finish");
+            w = plan.findBySourceObjectId(menu.objectId);
+        }
+        if (w)
+        {
+            w->program = land ? game::navigation::NavigationWaypointProgram::Land : game::navigation::NavigationWaypointProgram::Orbit;
+            w->actions.orbitAltitudeM = land ? 0.0 : altitude;
+            plan.summary.clear();
+        }
         return std::nullopt;
     }
 

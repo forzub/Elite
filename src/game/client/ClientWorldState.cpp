@@ -1671,6 +1671,17 @@ void ClientWorldState::update(
                                 itNew->worldPosition,
                                 itOld->worldPosition
                             );
+                        // DEV: ELITE_DEV_HUB_POSE_TRACE - is the station's pose refreshed every snapshot?
+                        {
+                            static const bool trace = std::getenv("ELITE_DEV_HUB_POSE_TRACE") != nullptr;
+                            static double lastOld = -1.0;
+                            if (trace && id == 1 && older->metadata.serverTimeSeconds != lastOld)
+                            {
+                                lastOld = older->metadata.serverTimeSeconds;
+                                std::fprintf(stderr, "[HubPoseSnap] station span %.4f s, |delta| %.1f m (%.0f m/s), alpha %.3f\n",
+                                             span, glm::length(delta), span > 0.0 ? glm::length(delta) / span : 0.0, t);
+                            }
+                        }
 
                         obj.renderWorldPosition =
                             world::coordinates::translated(

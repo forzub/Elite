@@ -1,3 +1,4 @@
+#include <deque>
 #include "src/core/HitchProfiler.h"
 #include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "SceneRenderer.h"
@@ -1375,15 +1376,87 @@ void SceneRenderer::prepareScene(
                     itPlayer->second.renderReferenceFrame
                 );
 
-            if (hubPose.valid)
+            // The world pose and the hub-frame pose of a hub's object disagree by ~0.5-0.7 km at
+            // heliocentric speed (~20 ms of epoch, OPEN: PROJECT_STATE cc-10) - when the player is
+            // captured into / released from the hub frame the source switches and the station
+            // jumped (author 2026-11-06). The difference is carried over and faded out in 1 s.
             {
-                objectRenderWorldPosition =
-                    world::coordinates::makeWorldPositionFromMeters(
-                        hubPose.worldPositionMeters
-                    );
-                objectRenderOrientation = hubPose.worldOrientation;
+                struct Blend { glm::dvec3 offset {0.0}; double startS = -1.0; int source = -1; glm::dvec3 last {0.0}; };
+                static std::unordered_map<std::uint32_t, Blend> blends;
+                auto& bl = blends[pair.first];
+                const glm::dvec3 fromWorld = world::coordinates::fullMeters(objectRenderWorldPosition);
+                const glm::dvec3 target = hubPose.valid ? hubPose.worldPositionMeters : fromWorld;
+                const int source = hubPose.valid ? 1 : 0;
+                const double nowS = renderProfileNowMs() * 0.001;
+                // relative to the player (the camera): the player's own pose changes frame at the
+                // same moment - what must stay continuous is the station seen from the ship
+                const glm::dvec3 player = world::coordinates::fullMeters(itPlayer->second.renderTransform.worldPosition);
+                if (bl.source >= 0 && bl.source != source)
+                {
+                    bl.offset = bl.last - (target - player);   // relative drawn last frame - relative now
+                    bl.startS = nowS;
+                }
+                bl.source = source;
+                glm::dvec3 drawn = target;
+                if (bl.startS >= 0.0)
+                {
+                    const double u = std::clamp((nowS - bl.startS) / 1.0, 0.0, 1.0);
+                    const double k = 1.0 - u * u * (3.0 - 2.0 * u);
+                    if (k <= 0.0 || glm::length(bl.offset) > 5000.0)
+                        bl.startS = -1.0;
+                    else
+                        drawn += bl.offset * k;
+                }
+                bl.last = drawn - player;
+                if (hubPose.valid || bl.startS >= 0.0)
+                    objectRenderWorldPosition = world::coordinates::makeWorldPositionFromMeters(drawn);
+                if (hubPose.valid)
+                    objectRenderOrientation = hubPose.worldOrientation;
             }
 
+            // DEV: ELITE_DEV_HUB_POSE_TRACE - the station's pose relative to the player, 60 frames
+            // before and after its presentation source switches (world pose -> hub frame)
+            {
+                static const bool trace = std::getenv("ELITE_DEV_HUB_POSE_TRACE") != nullptr;
+                struct Rec { glm::mat3 r; glm::dvec3 rel; int src; };
+                static std::unordered_map<std::uint32_t, std::deque<std::string>> ring;
+                static std::unordered_map<std::uint32_t, Rec> last;
+                static std::unordered_map<std::uint32_t, int> after;
+                if (trace && obj.type == ObjectType::Station && pair.first == 1)
+                {
+                    const glm::dvec3 rel = world::coordinates::fullMeters(objectRenderWorldPosition) -
+                                           world::coordinates::fullMeters(itPlayer->second.renderTransform.worldPosition);
+                    const glm::mat3 now(objectRenderOrientation);
+                    const int src = hubPose.valid ? 1 : 0;
+                    auto& l = last[pair.first];
+                    const glm::mat3 d = glm::transpose(l.r) * now;
+                    const double step = glm::degrees(std::acos(std::clamp((d[0][0] + d[1][1] + d[2][2] - 1.0f) * 0.5f, -1.0f, 1.0f)));
+                    char line[256];
+                    std::snprintf(line, sizeof line, "[HubPoseTrace] %s rel (%.1f %.1f %.1f) m, step pos %.2f m rot %.3f deg, player local %.1f m (v %.1f), frame %s",
+                                  src ? "hub-frame" : "world", rel.x, rel.y, rel.z, glm::length(rel - l.rel), step,
+                                  glm::length(itPlayer->second.renderTransform.motion.localPositionMeters),
+                                  glm::length(itPlayer->second.renderTransform.motion.localVelocityMps),
+                                  itPlayer->second.renderReferenceFrame.frameId.c_str());
+                    auto& rb = ring[pair.first];
+                    rb.push_back(line);
+                    if (rb.size() > 60)
+                        rb.pop_front();
+                    if (src != l.src)
+                    {
+                        std::fprintf(stderr, "[HubPoseTrace] ---- source switch ----\n");
+                        for (const auto& x : rb)
+                            std::fprintf(stderr, "%s\n", x.c_str());
+                        rb.clear();
+                        after[pair.first] = 60;
+                    }
+                    else if (after[pair.first] > 0)
+                    {
+                        --after[pair.first];
+                        std::fprintf(stderr, "%s\n", line);
+                    }
+                    l = {now, rel, src};
+                }
+            }
             glm::mat4 objectBaseModel =
                 world::coordinates::makeRenderModelMatrix(
                     objectRenderWorldPosition,

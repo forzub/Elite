@@ -265,6 +265,19 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
                     continue;
                 }
             }
+            else if (w->target.kind == Anchor::Hub)
+            {
+                // a catalog (world-site) hub - no runtime hub: its marker position, a stop there
+                p.kind = route::RoutePoint::Kind::Point;
+                p.stop = true;
+                p.action = act;
+                if (glm::length(p.worldM) < 1.0)
+                {
+                    std::cerr << "[RoutePlan] no position for the hub " << w->target.stableObjectId << std::endl;
+                    plan.summary = "нет координат цели: " + w->displayName;
+                    return;
+                }
+            }
             else if (landing)
             {
                 p.kind = route::RoutePoint::Kind::Land;
@@ -418,7 +431,21 @@ void SpaceState::updateZoneViolations(double dt)
     const auto* snapshot = m_client->celestialSnapshot();
     if (shipIt == m_client->world().ships().end() || !snapshot)
         return;
-    m_navigationWorkspace.routePlan().serverRouteState = shipIt->second.transform.motion.routeState;
+    {
+        // the route state for the window; a flown route that ended = "МАРШРУТ ВЫПОЛНЕН" (author:
+        // "карточка должна была ... сообщить о том, что мишн комплит")
+        auto& plan = m_navigationWorkspace.routePlan();
+        const int now = shipIt->second.transform.motion.routeState;
+        if (plan.serverRouteState != 0 && now == 0 && m_routeLaunched)
+        {
+            plan.summary = "МАРШРУТ ВЫПОЛНЕН";
+            m_routeLaunched = false;
+            std::cerr << "[RoutePlan] ROUTE COMPLETE (server)" << std::endl;
+        }
+        if (now != 0)
+            m_routeLaunched = true;
+        plan.serverRouteState = now;
+    }
     const glm::dvec3 p = world::coordinates::fullMeters(shipIt->second.transform.worldPosition);
     const auto zones = route::resolveZones(zoneCatalog(), snapshot->systemId, routeAnchorResolver());
     const auto fine = [&](const route::RouteZone& z, const std::string& what) {

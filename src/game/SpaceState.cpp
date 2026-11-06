@@ -1,3 +1,4 @@
+#include "src/game/simulation/JDrive.h"
 #include "src/world/celestial/settlements/SurfaceSettlementLayout.h"
 #include "src/game/SpaceStateInternal.h"
 #include <algorithm>
@@ -734,6 +735,32 @@ void SpaceState::handleInput()
         }
         if (const auto target = m_systemMapRenderer.consumeOrbitalTransferRequest())
             requestOrbitalTransfer(*target);
+        // the map's body flight facts (finish choice: orbit altitude with v1, landing) - once
+        static bool bodyFactsSet = false;
+        if (!bodyFactsSet && m_client && m_client->starAtlas())
+        {
+            bodyFactsSet = true;
+            m_systemMapRenderer.setBodyFlightFacts([this](const std::string& bodyId)
+                -> std::optional<::SystemMapRenderer::BodyFlightFacts> {
+                if (!m_client || !m_client->starAtlas() || !m_client->celestialSnapshot())
+                    return std::nullopt;
+                const auto* system = m_client->starAtlas()->findSystem(m_client->celestialSnapshot()->systemId);
+                if (!system)
+                    return std::nullopt;
+                for (const auto& b : system->bodies)
+                    if (b.id == bodyId)
+                    {
+                        ::SystemMapRenderer::BodyFlightFacts f;
+                        f.muM3s2 = b.gravitationalParameterM3s2;
+                        f.radiusM = b.radiusKm * 1000.0;
+                        const double atmo = std::max(f.radiusM, b.atmosphereOuterRadiusKm * 1000.0);
+                        f.floorAltitudeM = game::simulation::jdrive::floorAltitudeM(f.radiusM, atmo);
+                        f.landable = atmo <= f.radiusM * 1.0001 && f.radiusM > 0.0;   // no atmosphere: only shuttles land there
+                        return f;
+                    }
+                return std::nullopt;
+            });
+        }
         if (const int launch = m_systemMapRenderer.consumeRouteLaunchRequest())
             launchPlannedRoute(launch != 2, launch != 3);
         if (const int control = m_systemMapRenderer.consumeRouteControlRequest())

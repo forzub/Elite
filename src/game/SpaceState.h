@@ -732,6 +732,7 @@ private:
     // official / unofficial; launch = false: РАССЧИТАТЬ only (the summary, planner-inserted points)
     void launchPlannedRoute(bool official, bool launch = true);
     void sendRouteControl(bool pause);
+    bool m_routeLaunched = false;   // a route was flying (for the \"route complete\" notice)
     void updateZoneViolations(double dt);
     void renderZoneViolationBanner(const Viewport& viewport);
     game::navigation::route::AnchorResolver routeAnchorResolver() const;

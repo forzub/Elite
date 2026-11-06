@@ -992,6 +992,22 @@ private:
     std::optional<game::system_map::MapObjectOverlayItem> m_galaxySystemCard;
     // a body without an overlay card (moons): its route card from the context menu
     std::optional<game::system_map::MapObjectOverlayItem> m_bodyRouteCard;
+public:
+    // the flight facts of a body (from the client's catalog): mu, radius, the J floor, landable
+    struct BodyFlightFacts
+    {
+        double muM3s2 = 0.0;
+        double radiusM = 0.0;
+        double floorAltitudeM = 0.0;
+        bool landable = false;
+    };
+    void setBodyFlightFacts(std::function<std::optional<BodyFlightFacts>(const std::string&)> lookup)
+    {
+        m_bodyFlightFacts = std::move(lookup);
+    }
+private:
+    std::function<std::optional<BodyFlightFacts>(const std::string&)> m_bodyFlightFacts;
+    void appendBodyFinishRows(const std::string& bodyId);
     int m_galaxySystemCardSystemId = -1;
     std::vector<std::string> galaxyBreadcrumbs() const;
     std::vector<std::string> mapBreadcrumbs() const;

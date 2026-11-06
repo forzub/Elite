@@ -585,9 +585,10 @@ m_systemMapRenderer.render(
             const bool ignitionEvent =
                 cockpit.valid &&
                 cockpit.systems.propulsionSwitchRevision>0;
-            terminal.visible = dockingVisible || biteVisible ||
-                ignitionEvent ||
-                (cockpit.valid && !cockpit.systems.alerts.empty());
+            // the author wants the terminal on the HUD all the time - "it shows that something is
+            // going on" (2026-11-06); events / faults still decide its title and lines
+            (void)ignitionEvent;
+            terminal.visible = cockpit.valid || dockingVisible || biteVisible;
             terminal.title = terminalText(
                 dockingVisible
                     ? "cockpit.terminal.title"

@@ -74,6 +74,7 @@ bool GameSimulation::startFreeFlightLeg(EntityId shipId, const FreeFlightLeg& le
     f.autopilotTargetId.clear();          // the body autopilot gives way
     f.leg = leg;
     f.legActive = true;
+    f.legOrbitNormal = glm::dvec3(0.0);
     // on the ground (landed): the take-off first - no J below the floor (ROUTE_PROGRAMS_DESIGN.md R2)
     f.takeOff = motion.freeFlightSurfaceState == 1;
     if (f.takeOff)
@@ -167,17 +168,45 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
             return;
         }
         const glm::dvec3 rel = frame.originMeters - body->centerMeters;
+        const double D = std::max(1.0, glm::length(rel));
         const glm::dvec3 up = glm::length(rel) > 1.0 ? glm::normalize(rel) : glm::dvec3(0, 1, 0);
         // J ends above the body's J floor: a lower orbit is raised to it
         const double r = body->radiusMeters + std::max(leg.orbitAltitudeM, jd::floorAltitudeM(body->radiusMeters, body->atmosphereRadiusMeters));
-        // prograde: the ship's own motion across the radius (else any perpendicular)
-        const glm::dvec3 w = frame.linearVelocityMps - bodyVel;
-        glm::dvec3 along = w - up * glm::dot(w, up);
-        if (glm::length(along) < 1.0)
-            along = glm::cross(up, std::abs(up.y) < 0.9 ? glm::dvec3(0, 1, 0) : glm::dvec3(1, 0, 0));
-        along = glm::normalize(along);
-        targetPos = body->centerMeters + up * r;
-        targetVel = bodyVel + along * std::sqrt(body->gravitationalParameterM3s2 / r);
+        // the orbit plane, fixed once: the ship's position and its motion across the radius (else
+        // the ecliptic-like plane through the body) - the approach and the orbit share it
+        if (glm::length(f.legOrbitNormal) < 0.5)
+        {
+            const glm::dvec3 w0 = frame.linearVelocityMps - bodyVel;
+            glm::dvec3 n = glm::cross(rel, w0);
+            if (glm::length(n) < 1.0e-3 * D * std::max(1.0, glm::length(w0)))
+                n = glm::cross(rel, glm::cross(glm::dvec3(0, 1, 0), rel));
+            if (glm::length(n) < 1.0e-9)
+                n = glm::cross(rel, glm::dvec3(1, 0, 0));
+            f.legOrbitNormal = glm::normalize(n);
+        }
+        const glm::dvec3 n = f.legOrbitNormal;
+        // the ship's position projected into the plane, and the prograde direction there
+        glm::dvec3 u = up - n * glm::dot(up, n);
+        u = glm::length(u) > 1.0e-9 ? glm::normalize(u) : glm::normalize(glm::cross(n, glm::dvec3(1, 0, 0)));
+        const glm::dvec3 t = glm::normalize(glm::cross(n, u));
+        // the TANGENT point of the orbit circle seen from the ship (author 2026-11-06: not into the
+        // centre and a magic 90 deg turn - along the tangent, matching the circular speed): the
+        // approach line touches the circle there and the arrival velocity is along it
+        glm::dvec3 aim, tangent;
+        if (D > r * 1.02)
+        {
+            const double th = std::acos(std::clamp(r / D, -1.0, 1.0));
+            const glm::dvec3 radial = u * std::cos(th) + t * std::sin(th);
+            aim = body->centerMeters + radial * r;
+            tangent = glm::normalize(glm::cross(n, radial));
+        }
+        else
+        {
+            aim = body->centerMeters + u * r;
+            tangent = t;
+        }
+        targetPos = aim;
+        targetVel = bodyVel + tangent * std::sqrt(body->gravitationalParameterM3s2 / r);
     }
     else
     {

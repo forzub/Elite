@@ -264,6 +264,7 @@ public:
         FreeFlightLeg leg;
         bool legActive = false;
         bool takeOff = false;            // a leg from the ground: climb to the J floor on the main engines first
+        glm::dvec3 legOrbitNormal {0.0}; // an orbit leg: the orbit plane, fixed at the leg's start
         bool legArrived = false;
         double legSeconds = 0.0;
         double legLastLog = -1.0e30;

@@ -2443,14 +2443,18 @@ bool GameServer::terrainHeight(const std::string& bodyId, const glm::dvec3& worl
     const bool water = sample.water && sample.waterLevelM >= sample.heightM;
     ground.heightM = water ? sample.waterLevelM : detail.heightM;
     ground.smoothHeightM = water ? sample.waterLevelM : sample.heightM;
-    // slope from two neighbours ~60 m away
+    // slope under the hull: central differences +-15 m (a 30 m base, the hull's scale). A one-sided
+    // 60 m step reached past a settlement pad (flat to 36 m) onto the slope beyond it - a perfect
+    // landing on the Shackleton pad read 32.6 deg and counted as tipping over (author 2026-11-06).
     const double radius = std::max(1.0, field.referenceRadiusM());
-    const double step = 60.0 / radius;
+    constexpr double HalfBaseM = 15.0;
+    const double step = HalfBaseM / radius;
     glm::dvec3 t1 = glm::normalize(glm::cross(n, std::abs(n.y) < 0.9 ? glm::dvec3(0, 1, 0) : glm::dvec3(1, 0, 0)));
     const glm::dvec3 t2 = glm::cross(n, t1);
-    const double h1 = field.sample(glm::normalize(n + t1 * step), 30.0).heightM;
-    const double h2 = field.sample(glm::normalize(n + t2 * step), 30.0).heightM;
-    const double gradient = std::sqrt((h1 - sample.heightM) * (h1 - sample.heightM) + (h2 - sample.heightM) * (h2 - sample.heightM)) / 60.0;
+    const auto at = [&](const glm::dvec3& t, double s) { return field.sample(glm::normalize(n + t * (s * step)), 30.0).heightM; };
+    const double g1 = (at(t1, 1.0) - at(t1, -1.0)) / (2.0 * HalfBaseM);
+    const double g2 = (at(t2, 1.0) - at(t2, -1.0)) / (2.0 * HalfBaseM);
+    const double gradient = std::sqrt(g1 * g1 + g2 * g2);
     ground.slopeDeg = water ? 0.0 : glm::degrees(std::atan(gradient));
     // the dominant material of the rendered surface there
     if (water)

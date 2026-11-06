@@ -3242,6 +3242,23 @@ order - ask for it again if it is not in the session.
 - Next: the author's look in game (structures, lowland terrain); Шеклтон (polar) landing; small bodies; styles for
   bodies with an atmosphere.
 
+### Slice cc-5c 2026-11-06 - Шеклтон (polar, lat -89.6) settlement landing; ground slope under the hull - NOT ACCEPTED
+- Author: "давай посадку на Шеклтон проверим". LIVE sh1 (autopilot:moon@site:site.000.sol.shackleton): J to the
+  parking orbit 86.9 km / 1639 m/s at t+194 s, 15 s hold, de-orbit in normal flight (near-vertical over the pole),
+  hand-over at 1947 m / 0.56 m from the site / 79.8 m/s, LANDED t+564.7 s, 1.53 / 0.10 m/s, 2.6 cm from pad 1, ground
+  4108.28 m = the flattened pad (detail = 30 m relief). FAILED detail: slope reported 32.58 deg -> the contact counted
+  as tipping over (not soft: impact serial + 0.5 equipment damage on every module) and the site choice logged 32.6 deg.
+- ROOT CAUSE: GameServer::terrainHeight measured the slope one-sided 60 m from the centre - past the pad's flat disc
+  (36 m + blend) onto the crater-rim slope beyond. Fixed: central differences +-15 m (30 m base, the hull's scale)
+  on the 30 m relief.
+- LIVE sh2 after the fix: site chosen slope 0 deg; LANDED t+564.5 s, 1.53 / 0.12 m/s, 2.6 cm from pad 1, material 2
+  (regolith), slope 0 -> soft landing, no damage. A [CRASH] SEH in opengl32.dll was logged at the forced timeout
+  shutdown (after "Failed to unregister class Chrome_WidgetWin_0"), not in flight - teardown under a kill, not chased.
+- F3 captures sh2/f_600..f_650: the camera far from the ship - the crater rim and markers, structures not legible.
+- Open: the pad sits on the crater-rim slope - the 29 m blend ring around the flat disc may be a steep cut (to be
+  seen in game); the slope over a 30 m base also feeds the wild-site search (maxSlopeDeg) - more local than before.
+- Next: the author's look in game at Шеклтон / Имбриум; small bodies; styles for bodies with an atmosphere.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

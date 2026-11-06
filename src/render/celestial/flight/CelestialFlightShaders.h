@@ -238,7 +238,10 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
         // the local terrain (lattice >= 0) is what a landing pilot reads: its lines
         // brighter, its horizon rim a faint hairline instead of a glowing band
         bool terrainPass = lattice >= 0.0;
-        float grid = terrainPass ? lattice * 0.65 : 0.0; // precomputed lattice line mask
+        // the lattice grid under the ship is switched off (author 2026-11-06: "закоментируй ее,
+        // попробуем без нее"); the contours / coast lines stay
+        // float grid = terrainPass ? lattice * 0.65 : 0.0; // precomputed lattice line mask
+        float grid = 0.0;
         float nv = dot(nSphere, viewDir);
         // (the local terrain draws no outline at all - terrainPass below; the globe
         // keeps the full limb: crater rims standing past the sphere belong to it)

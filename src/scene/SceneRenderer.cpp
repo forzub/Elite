@@ -1,3 +1,4 @@
+#include "src/core/HitchProfiler.h"
 #include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "SceneRenderer.h"
 #include <glad/gl.h>
@@ -1981,6 +1982,7 @@ profileAfterSetupMs = renderProfileNowMs();
         m_starfieldRenderer.render(renderView, proj);
     }
 
+    if (cameraName == "mainCam") core::hitch::mark("r_starfield");
     // ============================================================
     // 0.25. CELESTIAL BODIES
     // ============================================================
@@ -2085,6 +2087,7 @@ profileAfterSetupMs = renderProfileNowMs();
 
 
 
+    if (cameraName == "mainCam") core::hitch::mark("r_celestial");
     // ============================================================
     // 0.5. FAR PASSES
     // ============================================================
@@ -2107,6 +2110,7 @@ profileAfterSetupMs = renderProfileNowMs();
     glDepthFunc(GL_LESS);
     glDepthMask(GL_TRUE);
 
+    if (cameraName == "mainCam") core::hitch::mark("r_far_passes");
     // The ground near the camera occludes ships and hubs (depth only, the
     // colour came from the celestial pass).
     if (policy.drawCelestial && m_celestialFlight.initialized())
@@ -2168,6 +2172,7 @@ profileAfterSetupMs = renderProfileNowMs();
 
 
 
+    if (cameraName == "mainCam") core::hitch::mark("r_terrain_depth_labels");
     // ============================================================
     // 1. РЕНДЕРИНГ КОРАБЛЕЙ (кроме игрока)
     // ============================================================
@@ -3324,6 +3329,7 @@ if (policy.drawObjects)
 
 
 
+    if (cameraName == "mainCam") core::hitch::mark("r_ships");
     // ============================================================
     // 2B. РЕНДЕРИНГ PREPARED OBJECTS / STATIONS
     // ============================================================

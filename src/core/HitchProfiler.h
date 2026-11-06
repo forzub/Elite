@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <vector>
@@ -116,7 +117,12 @@ inline void endFrame(double thresholdMs = 80.0)
         s.windowFrames = s.windowSlowFrames = 0;
         s.windowSumMs = s.windowMaxMs = 0.0;
     }
-    if (total < thresholdMs)
+    // DEV: ELITE_DEV_HITCH_MS lowers (or raises) the threshold for a diagnosis run
+    static const double devThresholdMs = [] {
+        const char* v = std::getenv("ELITE_DEV_HITCH_MS");
+        return v && *v ? std::atof(v) : -1.0;
+    }();
+    if (total < (devThresholdMs > 0.0 ? devThresholdMs : thresholdMs))
         return;
     if (std::FILE* f = hitchLog())
     {

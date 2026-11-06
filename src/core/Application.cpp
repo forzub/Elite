@@ -1047,12 +1047,14 @@ void Application::mainLoop()
 
 
 
+        core::hitch::mark("ev_poll_hotkeys");
         #ifdef _WIN32
         xprocPhaseBegin = XprocTraceClock::now();
         processDocumentWebViewCommands(0);
         processDocumentWebViewCommands(1);
         traceSlowMainPhase("webview-commands", xprocPhaseBegin);
         #endif
+        core::hitch::mark("ev_webview");
 
         if (!m_running)
             break;
@@ -1141,6 +1143,7 @@ void Application::mainLoop()
 #endif
             const bool localPaused = localSessionMenuPaused();
             state->prepareFrame(localPaused ? 0.0f : dt);
+            core::hitch::mark("ev_prepare_frame");
 
             const GameUiMode visibleMode = m_gameUi.committedTarget().mode;
             const bool presentationConsumesGameplayInput =

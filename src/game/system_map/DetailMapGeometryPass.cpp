@@ -169,43 +169,8 @@ void DetailMapGeometryPass::renderScene(
     // Hub/ship/infrastructure markers are rendered by the shared tactical
     // object overlay. This geometry pass keeps celestial/orbit structure only.
 
-    if (!presentation.selectedHubId.empty())
-    {
-        const auto selectedPoint =
-            std::find_if(
-                presentation.frame.hubScreenPoints.begin(),
-                presentation.frame.hubScreenPoints.end(),
-                [&](const DetailHubScreenPoint& point)
-                {
-                    return
-                        point.hubId ==
-                        presentation.selectedHubId;
-                }
-            );
-
-        if (selectedPoint !=
-                presentation.frame.hubScreenPoints.end() &&
-            selectedPoint->visible)
-        {
-            auto& text =
-                TextRenderer::instance();
-
-            text.beginFrameForViewport(
-                viewport.width,
-                viewport.height
-            );
-
-            text.textDrawPx(
-                selectedPoint->name,
-                selectedPoint->screen.x + 18.0f,
-                selectedPoint->screen.y - 9.0f,
-                13,
-                m_visuals.selectedHubLabelColor
-            );
-
-            text.endFrame();
-        }
-    }
+    // The selected hub's name is drawn by the object overlay next to its
+    // marker (selectOnClick); a second copy here doubled the label.
 
     const glm::vec4 bodyMarkerColor(
         0.72f,

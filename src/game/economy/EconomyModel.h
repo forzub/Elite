@@ -46,6 +46,18 @@ struct HubEconomyInfo
     // Composition (hub_modules blocks): one line per block, e.g.
     // "Пассажирский блок: челночный док x141, отель x21".
     std::vector<std::string> composition;
+    // The same composition per module (block order kept). This is the TARGET
+    // composition of the world model: hub_modules carries no build status -
+    // what really operates comes from the runtime hub (the map decides).
+    struct Module
+    {
+        std::string block;     // admin / passenger / cargo / service / ...
+        std::string blockRu;
+        std::string type;      // module_types key (admin_station, shuttle_dock, ...)
+        std::string ru;
+        int count = 1;
+    };
+    std::vector<Module> modules;
 };
 
 struct MarketQuote

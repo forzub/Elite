@@ -57,10 +57,15 @@ SystemMapPanelCommand resolveSystemMapPanelAction(
 // One line of the System Map information block (right panel).
 struct SystemMapInfoLine
 {
-    enum class Kind { Heading, Field, Paragraph, Bullet };
+    // Subheading: a small group title (a hub block); Module: one hub module
+    // row - pictogram `icon` (module type), name `label`, `value` = "×N" and
+    // its build status in brackets.
+    enum class Kind { Heading, Field, Paragraph, Bullet, Subheading, Module };
     Kind kind = Kind::Field;
     std::string label;
     std::string value;
+    std::string icon;
+    int status = 0;            // Module: 0 operating, 1 under construction, 2 planned
 };
 
 struct SystemMapPanelPresentationInput

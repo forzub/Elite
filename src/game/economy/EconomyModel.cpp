@@ -162,6 +162,8 @@ void EconomyModel::load()
                 const int count = static_cast<int>(num(module, "count", 1.0));
                 line += (line.empty() ? "" : ", ") + (ru == moduleRu.end() ? type : ru->second) +
                         (count > 1 ? " ×" + std::to_string(count) : std::string());
+                i.modules.push_back({str(block, "block"), str(block, "ru", str(block, "block")), type,
+                                     ru == moduleRu.end() ? type : ru->second, std::max(1, count)});
             }
             if (!line.empty())
                 i.composition.push_back(str(block, "ru", str(block, "block")) + ": " + line);

@@ -317,6 +317,11 @@ void HubMapPlanetPass::drawHubMapPlanetSurfaceHint(
     {
         return;
     }
+    // The horizon backdrop is the view from a low / medium orbit. A hub far
+    // from its parent (a Lagrange point: Ворота Луны at Earth-Moon L1, ~51
+    // Earth radii) must not be drawn skimming the planet's atmosphere.
+    if (hub.hubAltitudeMeters > 10.0 * hub.parentPlanetRadiusMeters)
+        return;
 
 
     m_resources.beginEnvironmentRenderSessionIfNeeded(

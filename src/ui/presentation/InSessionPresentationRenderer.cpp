@@ -230,6 +230,73 @@ void drawLabelValue(
     y += static_cast<float>(fontPx + 9);
 }
 
+// Hub module pictograms (right panel "Состав"): 9 x 9 cell glyphs drawn with
+// the panel's own solid rects, one per module type of hub_modules.
+struct ModulePictogram
+{
+    const char* type;
+    const char* rows[9];
+};
+
+const ModulePictogram* modulePictogram(const std::string& type)
+{
+    static const ModulePictogram table[] = {
+        {"admin_station", {"...###...", ".##...##.", ".#..#..#.", "#..###..#", "#.#####.#", "#..###..#", ".#..#..#.", ".##...##.", "...###..."}},
+        {"habitat", {"....#....", "...###...", "..#####..", ".#######.", "..#...#..", "..#...#..", "..#.#.#..", "..#.#.#..", "..#####.."}},
+        {"medical_bay", {"...###...", "...###...", "...###...", "#########", "#########", "#########", "...###...", "...###...", "...###..."}},
+        {"quarantine_ward", {"#########", "##.....##", "#.#...#.#", "#..#.#..#", "#...#...#", "#..#.#..#", "#.#...#.#", "##.....##", "#########"}},
+        {"market_exchange", {".........", "......##.", "......##.", "...##.##.", "...##.##.", "##.##.##.", "##.##.##.", "##.##.##.", "#########"}},
+        {"customs_post", {"#########", "#########", "##.....##", "##.....##", ".##...##.", ".##...##.", "..##.##..", "...###...", "....#...."}},
+        {"shuttle_dock", {"..#####..", ".#.....#.", "#.......#", "#...#...#", "#..###..#", "#...#...#", "#.......#", ".#.....#.", "..#####.."}},
+        {"hotel", {".........", "#........", "#.##.....", "#.##.....", "#.#######", "#########", "#.......#", "#.......#", "........."}},
+        {"liner_platform", {"....#....", "...###...", "..#####..", "..#####..", "..#####..", ".#######.", "#..#.#..#", ".........", "#########"}},
+        {"cargo_terminal", {"#########", "....#...#", "....#...#", "....#....", "..#####..", "..#.#.#..", "..#.#.#..", "..#####..", "#########"}},
+        {"warehouse", {".........", "...###...", "...#.#...", "...###...", ".###.###.", ".#.#.#.#.", ".###.###.", ".........", "#########"}},
+        {"refuel_dock", {"....#....", "....#....", "...###...", "..#####..", ".###.###.", ".##...##.", ".##...##.", "..#####..", "...###..."}},
+        {"service_dock", {".##...##.", ".##...##.", ".#######.", "..#####..", "...###...", "...###...", "...###...", "...###...", "...###..."}},
+        {"fuel_terminal", {"..#####..", ".#######.", ".#.....#.", ".#######.", ".#.....#.", ".#######.", ".#.....#.", ".#######.", "..#####.."}},
+        {"holding_area", {"#########", "#.......#", "#.####..#", "#.#..#..#", "#.####..#", "#.#.....#", "#.#.....#", "#.......#", "#########"}},
+        {"beacon_core", {".#.....#.", "#..#.#..#", "#.#...#.#", "#..#.#..#", ".#..#..#.", "....#....", "...###...", "..#.#.#..", ".#..#..#."}},
+        {"lab_module", {"...###...", "....#....", "....#....", "...#.#...", "..#...#..", ".#.....#.", "#.#####.#", "#########", ".#######."}},
+        {"naval_berth", {"....#....", "...#.#...", "..#...#..", ".#..#..#.", "#..#.#..#", "..#...#..", ".#.....#.", "#.......#", "........."}},
+        {"ore_yard", {".........", "...##....", "..####...", "..####.#.", "...##.###", ".##...###", "####...#.", "####.....", ".##......"}},
+        {"production_plant", {".......#.", ".......#.", ".......#.", "#..#..##.", "##.##.###", "#########", "#.#.#.#.#", "#########", "#########"}},
+        {"gas_platform_link", {"..#####..", ".#######.", "#########", "#########", ".#######.", "..#####..", "...#.#...", "...#.#...", "...###..."}},
+        {"shipyard_slip", {"#.......#", "#...#...#", "#..###..#", "#..###..#", "#..###..#", "#.#####.#", "#.#...#.#", "#.......#", "#########"}},
+        {"module", {"#########", "#.......#", "#.......#", "#...#...#", "#..###..#", "#...#...#", "#.......#", "#.......#", "#########"}}
+    };
+    for (const auto& p : table)
+        if (type == p.type)
+            return &p;
+    return &table[sizeof(table) / sizeof(table[0]) - 1];
+}
+
+void drawModulePictogram(TextRenderer& text, const std::string& type, float x, float y, float size, const glm::vec4& color)
+{
+    const auto* p = modulePictogram(type);
+    const float cell = size / 9.0f;
+    // a faint plate behind the glyph keeps the outline readable
+    text.solidRectPx(x - 1.0f, y - 1.0f, size + 2.0f, size + 2.0f, glm::vec4(color.r, color.g, color.b, 0.10f));
+    for (int r = 0; r < 9; ++r)
+    {
+        int c = 0;
+        while (c < 9)
+        {
+            if (p->rows[r][c] != '#')
+            {
+                ++c;
+                continue;
+            }
+            int e = c;
+            while (e < 9 && p->rows[r][e] == '#')
+                ++e;
+            text.solidRectPx(x + cell * static_cast<float>(c), y + cell * static_cast<float>(r),
+                             cell * static_cast<float>(e - c), cell, color);
+            c = e;
+        }
+    }
+}
+
 void drawButton(
     TextRenderer& text,
     const Rect& bounds,
@@ -553,16 +620,59 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
         const float boxBottom = (m_systemDropdownOpen ? layout.dropdownMenu.y : layout.dropdownButton.y) - static_cast<float>(bodyPx + 16);
         const float contentW = panelW - pad * 2.0f;
         const float labelW = contentW * 0.36f;
-        struct Row { std::string text; int px; glm::vec4 color; float x; float gapAfter; };
+        struct Row
+        {
+            std::string text; int px; glm::vec4 color; float x; float gapAfter;
+            std::string icon = {}; glm::vec4 iconColor = glm::vec4(0.0f);
+        };
+        const float iconSize = static_cast<float>(infoPx + 4);
         std::vector<Row> rows;
         for (const auto& line : panel.info)
         {
             using K = game::presentation::SystemMapInfoLine::Kind;
             if (line.kind == K::Heading)
             {
+                if (!rows.empty() && rows.back().gapAfter >= 0.0f)
+                    rows.back().gapAfter += 6.0f;      // air above a section heading
                 for (const auto& t : wrapText(text, line.label, headPx, contentW))
                     rows.push_back({t, headPx, glm::vec4(1.0f, 0.70f, 0.42f, 0.98f), panelX + pad, lineGap});
                 rows.back().gapAfter = lineGap + 3.0f;
+            }
+            else if (line.kind == K::Subheading)
+            {
+                for (const auto& t : wrapText(text, line.label, infoPx - 1, contentW))
+                    rows.push_back({t, infoPx - 1, glm::vec4(0.55f, 0.70f, 0.83f, 0.92f), panelX + pad, lineGap});
+                rows.back().gapAfter = lineGap + 3.0f;
+            }
+            else if (line.kind == K::Module)
+            {
+                // pictogram | name xN (status): operating bright, under construction amber, planned dim
+                const glm::vec4 iconColor = line.status == 0 ? glm::vec4(0.50f, 0.88f, 1.00f, 0.98f)
+                                          : line.status == 1 ? glm::vec4(1.00f, 0.72f, 0.30f, 0.95f)
+                                                             : glm::vec4(0.42f, 0.53f, 0.63f, 0.80f);
+                const glm::vec4 textColor = line.status == 0 ? glm::vec4(0.90f, 0.96f, 1.00f, 0.99f)
+                                          : line.status == 1 ? glm::vec4(0.98f, 0.82f, 0.58f, 0.95f)
+                                                             : glm::vec4(0.58f, 0.66f, 0.74f, 0.85f);
+                const float textX = panelX + pad + 6.0f + iconSize + 8.0f;
+                bool first = true;
+                // the bracketed status never breaks inside: its space is held by a placeholder
+                // ('~', not in these names) through the wrap and restored after
+                std::string value = line.value;
+                if (const auto open = value.find('('); open != std::string::npos)
+                    std::replace(value.begin() + static_cast<std::ptrdiff_t>(open), value.end(), ' ', '~');
+                for (auto t : wrapText(text, line.label + (value.empty() ? "" : "  " + value), infoPx,
+                                       contentW - (textX - panelX - pad)))
+                {
+                    std::replace(t.begin(), t.end(), '~', ' ');
+                    rows.push_back({t, infoPx, textColor, textX, lineGap});
+                    if (first)
+                    {
+                        rows.back().icon = line.icon;
+                        rows.back().iconColor = iconColor;
+                    }
+                    first = false;
+                }
+                rows.back().gapAfter = std::max(lineGap + 2.0f, iconSize + 4.0f - static_cast<float>(infoPx));
             }
             else if (line.kind == K::Paragraph || line.kind == K::Bullet)
             {
@@ -612,7 +722,13 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
         for (const auto& r : rows)
         {
             if (ry + static_cast<float>(r.px) >= boxTop && ry <= boxBottom)
+            {
                 text.textDrawPx(r.text, r.x, ry, r.px, r.color);
+                // the pictogram is centred on the text's x-height band (pen y = baseline)
+                if (!r.icon.empty())
+                    drawModulePictogram(text, r.icon, panelX + pad + 6.0f,
+                                        ry - static_cast<float>(r.px) * 0.38f - iconSize * 0.5f, iconSize, r.iconColor);
+            }
             if (r.gapAfter >= 0.0f)
                 ry += static_cast<float>(r.px) + r.gapAfter;
         }

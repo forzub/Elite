@@ -374,8 +374,12 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
                     : "Infrastructure")
             : object.typeName;
         overlay.owner = object.owner;
+        // A world-site hub ("site:<id>", Station kind; relays / buoys have
+        // their own kinds) is a hub target as well: its catalog Hub map.
         overlay.navigationHubId =
-            object.kind == world::celestial::SystemMapObjectKind::Hub
+            object.kind == world::celestial::SystemMapObjectKind::Hub ||
+                    (object.kind == world::celestial::SystemMapObjectKind::Station &&
+                     key.rfind("site:", 0) == 0)
                 ? key
                 : object.parentHubId;
         overlay.navigationHubParentBodyId = object.parentBodyId;

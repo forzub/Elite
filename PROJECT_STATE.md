@@ -3408,6 +3408,51 @@ order - ask for it again if it is not in the session.
 - War doctrines (78c53ae4): Notes/Lore/ECONOMY/WAR_DOCTRINES.md (author ideas + PROPOSAL). lore_html.py deleted
   Notes/html/ship_reference as "stale" (restored from git); it now only prunes mirrored folders.
 
+### Slice map-2 2026-11-06 - hub composition status + pictograms, moon labels, HUB for lunar (world-site) hubs - LIVE DEV RUNS, NOT ACCEPTED
+- Author report: (1) the composition is not trustworthy (as a rule only the station exists): module + "(строится)" /
+  "(в плане)"; (2) the text line ripples: show module images; (3) System map: moon names once the moons' orbits
+  exceed half the screen; (4) HUB from Details (Селена, lunar orbit) did nothing; HUB on the System map for Ворота
+  Луны opened a Details cube without the hub marker.
+- Root causes (live baseline D:/tmp/elite_maps2/b*, d*, e* first runs): Селена / Ворота Луны are unbound world sites
+  ("site:<id>"), not replicated hubs, and (a) the Hub map existed only for replicated hubs (rebuildHubMapFromClientState
+  finds no runtime hub -> composeHubMapSnapshot false -> setSystemMapHubMode returned silently); (b) a System-map CLICK
+  on a site set no selectedHubId (sites are Station-kind objects, navigationHubId empty; only the hub-list path set
+  it), so HUB fell to the free-tactical branch = the terminal-cube SpatialVolume Details (no hub marker, b2); (c) on
+  the Detail map world sites had no navigation hub binding and the presentation builder cleared any selected hub
+  absent from hubScreenPoints, so the HUB button stayed disabled (canOpenHub 0); (d) Lagrange sites were never on a
+  body Detail map. Composition: the panel listed the economy hub_modules TARGET as if built; runtime hubs carry only
+  their station (attached objects: 1 x Station for Высокий / Тихий).
+- Done (source + Debug build):
+  - Catalog Hub map: ClientWorldSitesMapBridge catalogHubRuntimeSample (orbit / Lagrange / heliocentric site at the
+    same presented position as its markers, frame radial / prograde, ONE station module, far player dropped),
+    used by ClientMapService::composeHub for "site:" ids; System-map site objects get navigationHubId = own id;
+    Detail orbit / Lagrange-primary sites are "world_site_hub:<type>" hub targets (hubScreenPoints, selection kept);
+    Lagrange hubs appear on their primary's Detail map; F12 with a site selected = its Hub map; the Hub-map horizon
+    backdrop is skipped beyond 10 parent radii (L1 hub no longer skims Earth). The duplicate selected-hub label of
+    DetailMapGeometryPass removed (the overlay draws it).
+  - Composition: EconomyModel HubEconomyInfo::modules (per type); status in SpaceStateMaps: a type present in the
+    runtime hub (Station -> admin_station, HubHexDock -> shuttle_dock, HubDockServiceBlock -> service_dock; a site
+    hub = its station, a beacon = beacon_core) operates, refuel_dock / service_dock not present "(строится)", others
+    "(в плане)"; "Состав" right after Тип; Доки / Терминалы / Ремонт / Склады carry the same status. Panel: block
+    subheadings + one row per module with a 9x9 pixel pictogram (22 types) drawn with the panel's solid rects,
+    colour by status (cyan operating, amber under construction, dim planned); a status never wraps inside.
+  - Moon labels: a moon is named when its orbit diameter > half the shorter viewport side (or the old 200 km/px);
+    labels ordered planets first, moons by size, a moon label overlapping a drawn label is skipped.
+  - DEV verbs: "panel:hub|detail|system|galaxy|select:<objectId>" (native panel actions), "mapturn:<yaw>,<pitch>";
+    "overlay" lists hidden items and the selected hub's attached runtime objects.
+- Live DEV evidence (--dev-direct-flight, back buffer D:/tmp/elite_maps2/): c1/c2/c3 (System click on Ворота Луны ->
+  HUB = its Hub map, no Earth horizon -> DETAIL = Earth Details with the Ворота Луны marker, HUB enabled); e1/e2/e3
+  (Moon Details, click Селена -> HUB = Hub map of Селена over the Moon -> back); i2 (F12 with Ворота Луны selected =
+  its Hub map); g1 / g2 (Тихий / Селена panel: pictogram rows, only the station operating); h3 / h6 (Jupiter: Ganymede
+  / Pasiphae named at their thresholds, Europa not), k2 (Mars S5: Phobos, Deimos named).
+- Gates: check_navigation_context PASS, check_object_overlay PASS, EliteSystemMapInfoCheck PASS; system_map
+  check_architecture RED pre-existing (DetailMapGeometryPass depends on SystemMapRenderer facade).
+- OPEN: author acceptance; the DEV wheel zoom did not change the System scale (Earth Moon label shown only at the
+  cube-level steps: at S4 the Moon orbit is 275 px < 360, at S5 the Moon is off screen) - a human wheel zoom is
+  expected to cross the threshold; surface sites (Шеклтон, Имбриум) have no Hub map (pads only); the catalog Hub map
+  has no dock geometry / traffic; whether the station's own docking ports count as "челночный док" operating is a
+  rule question (now: planned); moon names are the catalog's English names (Phobos, Ganymede).
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

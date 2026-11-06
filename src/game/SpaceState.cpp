@@ -1426,6 +1426,29 @@ void SpaceState::update(float dt)
                 // pointer:click:<id> | pointer:dclick:<id> | pointer:rclick:<id> | pointer:menu:<command>
                 else if (cmd.rfind("pointer:", 0) == 0)
                     m_systemMapRenderer.devPointer(arg("pointer:"));
+                // a native panel navigation button (the same typed action a click on it emits):
+                // panel:hub | panel:detail | panel:system | panel:galaxy | panel:select:<objectId>
+                else if (cmd.rfind("panel:", 0) == 0)
+                {
+                    using PanelAction = game::presentation::SystemMapPanelActionType;
+                    const std::string which = arg("panel:");
+                    game::presentation::SystemMapPanelAction action;
+                    if (which.rfind("select:", 0) == 0)
+                    {
+                        // a row of the hub / beacon list
+                        action.type = PanelAction::SelectObject;
+                        action.objectId = which.substr(7);
+                    }
+                    else
+                    action.type = which == "hub"      ? PanelAction::OpenHub
+                                  : which == "detail" ? PanelAction::OpenDetail
+                                  : which == "galaxy" ? PanelAction::OpenGalaxy
+                                                      : PanelAction::OpenSystem;
+                    applyNativeSystemMapPanelAction(action);
+                    std::cerr << "[SolMapScript] panel " << which << " -> mode "
+                              << static_cast<int>(m_systemMapRenderer.mode()) << " hub map " << m_loadedHubMapHubId
+                              << std::endl;
+                }
                 else if (cmd == "overlay")
                 {
                     std::cerr << "[SolMapScript] overlay " << m_systemMapRenderer.devOverlayReport() << '\n';
@@ -1433,10 +1456,23 @@ void SpaceState::update(float dt)
                     std::cerr << "[SolMapScript] panel '" << panel.infoTitle << "' canOpenHub " << panel.canOpenHub << ':';
                     for (const auto& line : panel.info)
                         std::cerr << " {" << line.label << (line.label.empty() ? "" : "=") << line.value << '}';
+                    // the runtime objects attached to the selected hub (what "operating" means in the panel)
+                    std::cerr << "\n[SolMapScript] selected hub '" << m_systemMapRenderer.selectedHubId() << "' attached:";
+                    for (const auto& [id, object] : m_client->world().objects())
+                        if (object.hubAttachment.valid && object.hubAttachment.hubId == m_systemMapRenderer.selectedHubId())
+                            std::cerr << " {" << id << " type " << static_cast<int>(object.type) << ' ' << object.displayName << '}';
                     std::cerr << "\n[SolMapScript] loaded detail kind " << static_cast<int>(m_loadedDetailTarget.sceneKind)
                               << " focus " << m_loadedDetailTarget.focusId << " cell " << m_loadedDetailTarget.spatialCell.x << ','
                               << m_loadedDetailTarget.spatialCell.y << ',' << m_loadedDetailTarget.spatialCell.z
                               << " hub map " << m_loadedHubMapHubId << " mode " << static_cast<int>(m_systemMapRenderer.mode()) << std::endl;
+                }
+                // mapturn:<yaw>,<pitch> (radians): the Detail map camera, as a drag turns it
+                else if (cmd.rfind("mapturn:", 0) == 0)
+                {
+                    const std::string a = arg("mapturn:");
+                    const auto comma = a.find(',');
+                    m_systemMapRenderer.devDetailOrbit(std::atof(a.c_str()),
+                                                       comma == std::string::npos ? 0.0 : std::atof(a.c_str() + comma + 1));
                 }
                 else if (cmd.rfind("zoom:", 0) == 0)
                     m_systemMapRenderer.devZoom(std::atof(arg("zoom:").c_str()));

@@ -142,6 +142,12 @@ LocalNavigationHubBinding resolveLocalNavigationHubBinding(
     {
         return {object.stableId, object.parentStableId};
     }
+    // an orbital world-site hub ("site:<id>"): its own catalog Hub map
+    if (object.objectClass == world::celestial::DetailObjectClass::Hub &&
+        object.kind.rfind("world_site_hub:", 0) == 0 && !object.stableId.empty())
+    {
+        return {object.stableId, object.parentStableId};
+    }
 
     if (object.parentStableId.empty())
         return {};
@@ -579,7 +585,7 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
         }
         // World sites (galaxy_details/world_sites): unobtrusive context
         // markers on the Detail map - smaller glyph, no motion arrow.
-        if (object.kind.rfind("world_site:", 0) == 0)
+        if (object.kind.rfind("world_site", 0) == 0)
         {
             item.velocityArrowMps = glm::dvec3(0.0);
             item.glyphScale *= 0.55;
@@ -604,7 +610,7 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
         if (!object.valid ||
             object.objectClass !=
                 world::celestial::DetailObjectClass::Hub ||
-            object.kind != "hub")
+            (object.kind != "hub" && object.kind.rfind("world_site_hub:", 0) != 0))
         {
             continue;
         }

@@ -192,10 +192,28 @@ bool SpaceState::prepareSelectedObjectLocalMap()
     if (hubId.empty() && m_client->world().hubs().count(activeId))
         hubId = activeId;
 
-    const auto hub = m_client->world().hubs().find(hubId);
-    if (!hubId.empty() && hub != m_client->world().hubs().end() && hub->second.systemId >= 0)
+    // the hub's system and parent body: a replicated hub, or a world-site hub
+    // ("site:<id>", its catalog Hub map) of the loaded map's system
+    int hubSystemId = -1;
+    std::string hubParentBodyId;
+    if (const auto hub = m_client->world().hubs().find(hubId); !hubId.empty() && hub != m_client->world().hubs().end())
     {
-        const int systemId = hub->second.systemId;
+        hubSystemId = hub->second.systemId;
+        hubParentBodyId = hub->second.parentBodyId;
+    }
+    else if (hubId.rfind("site:", 0) == 0)
+    {
+        hubSystemId = mode == SystemMapRenderer::Mode::Detail && m_loadedDetailTarget.valid()
+            ? m_loadedDetailTarget.systemId
+            : m_loadedSystemMapId;
+        if (const auto* site = m_client->catalogs().worldSites().findSite(hubSystemId, hubId.substr(5)))
+            hubParentBodyId = site->parentBodyId;
+        else
+            hubSystemId = -1;
+    }
+    if (!hubId.empty() && hubSystemId >= 0)
+    {
+        const int systemId = hubSystemId;
         if (!composeSystemMapSnapshot(systemId))
             return false;
         DetailTarget parent;
@@ -212,9 +230,9 @@ bool SpaceState::prepareSelectedObjectLocalMap()
                     parent.systemPositionLy = summary->positionLy;
             parent.focusClass = DetailObjectClass::Hub;
             parent.focusId = hubId;
-            parent.anchorId = hub->second.parentBodyId.empty() ? hubId : hub->second.parentBodyId;
-            parent.sceneKind = hub->second.parentBodyId.empty() ? DetailSceneKind::LocalObject
-                                                                : DetailSceneKind::CelestialBody;
+            parent.anchorId = hubParentBodyId.empty() ? hubId : hubParentBodyId;
+            parent.sceneKind = hubParentBodyId.empty() ? DetailSceneKind::LocalObject
+                                                       : DetailSceneKind::CelestialBody;
         }
         if (!composeDetailMapSnapshot(parent) || !composeHubMapSnapshot(systemId, hubId))
             return false;
@@ -804,28 +822,55 @@ SpaceState::buildNativeSystemMapPanelPresentation()
                                                                      : m_systemMapRenderer.selectedHubId();
         if (hubId.empty())
             hubId = info.selectedObjectId;
+        // a catalog (world-site) Hub map: its site facts
+        if (infoMode == SystemMapRenderer::Mode::Hub && hubId.rfind("site:", 0) == 0)
+            info.selectedObjectId = hubId;
         const auto hubIt = m_client->world().hubs().find(hubId);
         if (hubIt != m_client->world().hubs().end())
             info.selectedObjectId = hubId;
         const std::string economyId =
             info.selectedObjectId.rfind("site:", 0) == 0 ? info.selectedObjectId.substr(5) : info.selectedObjectId;
-        if (const auto* economy = economyId.empty() ? nullptr : game::economy::EconomyModel::instance().hub(economyId))
-            info.selectedHubModules = economy->composition;
+        // What really operates there: the module types of the runtime hub's
+        // replicated attached objects; a catalog (world-site) hub has its
+        // station only. The economy hub_modules composition is the TARGET:
+        // a type not present is planned, the refuel / repair docks (the
+        // service block every hub gets first) are under construction.
+        using HubModule = game::presentation::SystemMapInfoInput::HubModule;
+        std::map<std::string, int> present;
+        std::vector<HubModule> runtimeRows;
         if (hubIt != m_client->world().hubs().end())
         {
-            if (info.selectedHubModules.empty())
+            for (const auto& [id, object] : m_client->world().objects())
             {
-                // no economy record: the modules attached to it in the replicated world
-                std::map<std::string, int> modules;
-                for (const auto& [id, object] : m_client->world().objects())
-                {
-                    (void)id;
-                    if (object.hubAttachment.valid && object.hubAttachment.hubId == hubId)
-                        ++modules[object.displayName.empty() ? std::string("модуль") : object.displayName];
-                }
-                for (const auto& [name, count] : modules)
-                    info.selectedHubModules.push_back(count > 1 ? name + " ×" + std::to_string(count) : name);
+                (void)id;
+                if (!object.hubAttachment.valid || object.hubAttachment.hubId != hubId)
+                    continue;
+                const char* type = object.type == ObjectType::Station              ? "admin_station"
+                                   : object.type == ObjectType::HubHexDock          ? "shuttle_dock"
+                                   : object.type == ObjectType::HubDockServiceBlock ? "service_dock"
+                                                                                    : "module";
+                if (present[type]++ == 0)
+                    runtimeRows.push_back({"", "", type, object.displayName.empty() ? std::string("модуль") : object.displayName, 1, 0});
+                else
+                    for (auto& row : runtimeRows)
+                        if (row.type == type)
+                            ++row.count;
             }
+        }
+        else if (!economyId.empty())
+        {
+            ++present[economyId.rfind("beacon.", 0) == 0 ? "beacon_core" : "admin_station"];
+        }
+        if (const auto* economy = economyId.empty() ? nullptr : game::economy::EconomyModel::instance().hub(economyId))
+            for (const auto& m : economy->modules)
+                info.selectedHubModules.push_back(
+                    {m.block, m.blockRu, m.type, m.ru, m.count,
+                     present.count(m.type) ? 0 : (m.type == "refuel_dock" || m.type == "service_dock") ? 1 : 2});
+        if (hubIt != m_client->world().hubs().end())
+        {
+            // no economy record: the modules attached to it in the replicated world
+            if (info.selectedHubModules.empty())
+                info.selectedHubModules = runtimeRows;
             if (!info.catalog->findSite(info.systemId, hubId))
                 info.selectedHubName = hubIt->second.name.empty() ? hubId : hubIt->second.name;
         }

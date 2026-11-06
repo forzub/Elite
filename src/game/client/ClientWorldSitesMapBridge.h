@@ -1,12 +1,16 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <string>
 
 #include <glm/glm.hpp>
 
+#include "src/game/client/ClientDetailMapRuntimeSampler.h"
 #include "src/game/system_map/PlanetBodyOrientation.h"
+#include "src/world/celestial/CelestialTypes.h"
+#include "src/world/coordinates/WorldPosition.h"
 #include "src/world/celestial/CelestialOrbitKinematics.h"
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/world/celestial/WorldSitesCatalog.h"
@@ -214,7 +218,8 @@ inline void appendSystemMapWorldSites(
 inline void appendDetailMapWorldSites(
     world::celestial::DetailMapSnapshot& out,
     const world::celestial::WorldSitesCatalog& catalog,
-    double universeTimeSeconds
+    double universeTimeSeconds,
+    const world::celestial::CelestialSystemSnapshot* celestial = nullptr
 )
 {
     using namespace world::celestial;
@@ -224,7 +229,12 @@ inline void appendDetailMapWorldSites(
         out.planetAxialTiltDeg, out.planetAxisNodeDeg, out.planetRotationPhaseRad, out.planetTextureLongitudeOffsetDeg);
     for (const auto& site : catalog.sitesInSystem(out.systemId))
     {
-        if (site.parentBodyId != out.planetBodyId || !site.runtimeBinding.empty() || site.mapLevel == "none")
+        // a Lagrange-point hub of this planet (Ворота Луны at Earth-Moon L1) belongs
+        // to its primary's Detail map too: the planet's own neighbourhood
+        const bool lagrangeHere = site.placement == WorldSitePlacementKind::LagrangePoint &&
+                                  site.lagrangePrimaryId == out.planetBodyId && celestial != nullptr;
+        if ((site.parentBodyId != out.planetBodyId && !lagrangeHere) || !site.runtimeBinding.empty() ||
+            site.mapLevel == "none")
             continue;
         LocalSceneObject o;
         o.stableId = "site:" + site.id;
@@ -250,6 +260,32 @@ inline void appendDetailMapWorldSites(
             o.positionMeters = out.planetCenterMeters +
                 worldSiteOrbitOffsetMeters(site, out.planetRadiusMeters, 0.0, universeTimeSeconds);
             o.sizeMeters = glm::dvec3(800.0);
+            // an orbital hub site has a (catalog) Hub map: a hub target on the Detail map
+            if (site.type != "nav_relay" && site.type != "belt_anchor")
+                o.kind = "world_site_hub:" + site.type;
+        }
+        else if (lagrangeHere)
+        {
+            const CelestialBodyState* primary = nullptr;
+            const CelestialBodyState* secondary = nullptr;
+            for (const auto& b : celestial->bodies)
+            {
+                if (b.id == site.lagrangePrimaryId)
+                    primary = &b;
+                if (b.id == site.lagrangeSecondaryId)
+                    secondary = &b;
+            }
+            if (!primary || !secondary)
+                continue;
+            // the same placement law as the System map and the catalog Hub map,
+            // expressed relative to the Detail planet centre
+            o.positionMeters = out.planetCenterMeters +
+                (worldSiteLagrangeAu(primary->worldMeters, secondary->worldMeters, site.lagrangePoint,
+                                     site.lagrangeHillRatio) -
+                 primary->worldMeters);
+            o.sizeMeters = glm::dvec3(800.0);
+            if (site.type != "nav_relay" && site.type != "belt_anchor")
+                o.kind = "world_site_hub:" + site.type;
         }
         else
         {
@@ -262,5 +298,140 @@ inline void appendDetailMapWorldSites(
         o.valid = true;
         out.scene.objects.push_back(std::move(o));
     }
+}
+// The Hub map of an unbound world-site hub ("site:<id>"): a synthetic runtime
+// hub sample at the site's presented position (the same placement laws as the
+// System / Detail markers) plus ONE station module - the world model places
+// only the station there (its economy composition is planned, not built).
+// Returns false for a site without a Hub frame (surface sites, relays, buoys,
+// a missing parent body).
+inline bool catalogHubRuntimeSample(
+    DetailMapRuntimeSampleResult& runtime,
+    const world::celestial::WorldSite& site,
+    const world::celestial::CelestialSystemSnapshot& celestial,
+    double universeTimeSeconds
+)
+{
+    using namespace world::celestial;
+    if (site.type == "nav_relay" || site.type == "belt_anchor" || !site.runtimeBinding.empty())
+        return false;
+    auto bodyById = [&celestial](const std::string& id) -> const CelestialBodyState* {
+        for (const auto& b : celestial.bodies)
+            if (b.id == id)
+                return &b;
+        return nullptr;
+    };
+    const CelestialBodyState* star = nullptr;
+    for (const auto& b : celestial.bodies)
+        if (b.type == BodyType::Star)
+        {
+            star = &b;
+            break;
+        }
+
+    std::string parentId = site.parentBodyId;
+    glm::dvec3 position(0.0), velocity(0.0);
+    double altitudeMeters = 0.0;
+    if (site.placement == WorldSitePlacementKind::Orbit)
+    {
+        const CelestialBodyState* parent = bodyById(site.parentBodyId);
+        if (!parent)
+            return false;
+        const double r = parent->radiusKm * 1000.0;
+        const glm::dvec3 a = worldSiteOrbitOffsetMeters(site, r, 0.0, universeTimeSeconds - 1.0);
+        const glm::dvec3 b = worldSiteOrbitOffsetMeters(site, r, 0.0, universeTimeSeconds + 1.0);
+        position = parent->worldMeters + worldSiteOrbitOffsetMeters(site, r, 0.0, universeTimeSeconds);
+        velocity = parent->worldVelocityMetersPerSecond + (b - a) * 0.5;
+        altitudeMeters = site.altitudeKm * 1000.0;
+    }
+    else if (site.placement == WorldSitePlacementKind::LagrangePoint)
+    {
+        const CelestialBodyState* p = bodyById(site.lagrangePrimaryId);
+        const CelestialBodyState* q = bodyById(site.lagrangeSecondaryId);
+        if (!p || !q)
+            return false;
+        position = worldSiteLagrangeAu(p->worldMeters, q->worldMeters, site.lagrangePoint, site.lagrangeHillRatio);
+        velocity = q->worldVelocityMetersPerSecond;
+        if (!bodyById(parentId))
+            parentId = p->id;
+    }
+    else if (site.placement == WorldSitePlacementKind::Heliocentric && star)
+    {
+        const glm::dvec3 a = worldSiteHeliocentricAu(site.elements, universeTimeSeconds - 1.0);
+        const glm::dvec3 b = worldSiteHeliocentricAu(site.elements, universeTimeSeconds + 1.0);
+        position = star->worldMeters + worldSiteHeliocentricAu(site.elements, universeTimeSeconds) * MetersPerAu;
+        velocity = star->worldVelocityMetersPerSecond + (b - a) * 0.5 * MetersPerAu;
+        parentId = star->id;
+    }
+    else
+    {
+        return false;
+    }
+    const CelestialBodyState* parent = bodyById(parentId);
+    if (!parent)
+        return false;
+
+    // hub frame axes: radial away from the parent, prograde along the motion
+    // relative to it (replicated hub orientation columns: normal, radial, -prograde)
+    glm::dvec3 radial = position - parent->worldMeters;
+    radial = glm::length(radial) > 1.0 ? glm::normalize(radial) : glm::dvec3(0.0, 1.0, 0.0);
+    glm::dvec3 prograde = velocity - parent->worldVelocityMetersPerSecond;
+    prograde -= radial * glm::dot(prograde, radial);
+    if (glm::length(prograde) < 1.0e-6)
+        prograde = glm::cross(glm::dvec3(0.0, 1.0, 0.0), radial);
+    if (glm::length(prograde) < 1.0e-9)
+        prograde = glm::dvec3(1.0, 0.0, 0.0);
+    prograde = glm::normalize(prograde);
+    const glm::dvec3 normal = glm::normalize(glm::cross(prograde, radial));
+    glm::mat4 orientation(1.0f);
+    orientation[0] = glm::vec4(glm::vec3(normal), 0.0f);
+    orientation[1] = glm::vec4(glm::vec3(radial), 0.0f);
+    orientation[2] = glm::vec4(glm::vec3(-prograde), 0.0f);
+
+    DetailMapHubRuntimeSample hub;
+    hub.id = "site:" + site.id;
+    hub.name = site.name;
+    hub.owner = site.operatorName.empty() ? site.polityName : site.operatorName;
+    hub.systemId = celestial.systemId;
+    hub.parentBodyId = parentId;
+    hub.worldPosition = world::coordinates::makeWorldPositionFromMeters(position);
+    hub.worldVelocityMps = velocity;
+    hub.orientation = orientation;
+    hub.primeModuleId = hub.id + ".station";
+    hub.motion.enabled = site.placement == WorldSitePlacementKind::Orbit;
+    hub.motion.parentRadiusMeters = parent->radiusKm * 1000.0;
+    // the Hub map places its parent planet from the altitude: the real distance
+    // for a Lagrange / heliocentric site (Ворота Луны sits ~326 000 km from Earth)
+    hub.motion.altitudeMeters = site.placement == WorldSitePlacementKind::Orbit
+        ? altitudeMeters
+        : std::max(0.0, glm::length(position - parent->worldMeters) - parent->radiusKm * 1000.0);
+
+    DetailMapObjectRuntimeSample station;
+    station.type = ObjectType::Station;
+    station.systemId = celestial.systemId;
+    station.displayName = site.name;
+    station.ownerName = hub.owner;
+    station.navigationParentBodyId = parentId;
+    station.worldPosition = hub.worldPosition;
+    station.linearVelocityMps = velocity;
+    station.orientation = orientation;
+    station.hubAttachment.systemId = celestial.systemId;
+    station.hubAttachment.hubId = hub.id;
+    station.hubAttachment.moduleId = hub.primeModuleId;
+    station.hubAttachment.inheritHubOrientation = true;
+    station.hubAttachment.valid = true;
+
+    // the player marker of a replicated Hub map is kept even far away (a hub
+    // transition in flight); a catalog hub has no transitions: keep it nearby only
+    runtime.ships.erase(
+        std::remove_if(runtime.ships.begin(), runtime.ships.end(),
+                       [&](const DetailMapShipRuntimeSample& ship) {
+                           return ship.hubId != hub.id &&
+                                  glm::length(world::coordinates::fullMeters(ship.worldPosition) - position) > 200000.0;
+                       }),
+        runtime.ships.end());
+    runtime.hubs.push_back(std::move(hub));
+    runtime.objects.push_back(std::move(station));
+    return true;
 }
 }

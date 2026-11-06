@@ -300,7 +300,7 @@ bool ClientMapService::composeDetail(
         return false;
     }
     if (target.sceneKind == world::celestial::DetailSceneKind::CelestialBody)
-        appendDetailMapWorldSites(rebuilt, m_catalogs.worldSites(), sourceMetadata.universeTimeSeconds);
+        appendDetailMapWorldSites(rebuilt, m_catalogs.worldSites(), sourceMetadata.universeTimeSeconds, celestial);
 
     m_detailMetadata = sourceMetadata;
     m_detailSnapshot = std::move(rebuilt);
@@ -323,7 +323,7 @@ bool ClientMapService::composeHub(
         return false;
     }
 
-    const auto runtimeSample = m_world.sampleHubMapRuntimeAtServerTime(
+    auto runtimeSample = m_world.sampleHubMapRuntimeAtServerTime(
         systemId,
         sourceMetadata.serverTimeSeconds
     );
@@ -337,6 +337,16 @@ bool ClientMapService::composeHub(
     );
     if (!atlas || !celestial)
         return false;
+
+    // An unbound world-site hub ("site:<id>", e.g. the lunar Селена / Ворота
+    // Луны): a catalog Hub frame + its station (ClientWorldSitesMapBridge).
+    if (hubId.rfind("site:", 0) == 0)
+    {
+        const auto* site = m_catalogs.worldSites().findSite(systemId, hubId.substr(5));
+        if (!site ||
+            !catalogHubRuntimeSample(runtimeSample, *site, *celestial, sourceMetadata.universeTimeSeconds))
+            return false;
+    }
 
     world::celestial::HubMapSnapshot rebuilt;
     if (!rebuildHubMapFromClientState(

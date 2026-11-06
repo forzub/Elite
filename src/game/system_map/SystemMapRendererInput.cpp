@@ -1343,7 +1343,9 @@ std::string SystemMapRenderer::devOverlayReport() const
     out << "mode " << static_cast<int>(m_modeState.current()) << " active '" << m_objectOverlayState.activeObjectId()
         << "' detailHub '" << m_detailView.state().selectedHubId << "' items:";
     for (const auto& item : overlay->items)
-        if (item.visible)
+        if (!item.visible)
+            out << " [" << item.objectId << " | hidden]";
+        else
             out << " [" << item.objectId << " | " << item.name << " | hub=" << item.navigationHubId
                 << (item.selectOnClick ? " | sel" : "") << (m_objectOverlayState.isOpen(item.objectId) ? " | CARD" : "")
                 << " @" << static_cast<int>(item.screenPx.x) << "," << static_cast<int>(item.screenPx.y) << "]";

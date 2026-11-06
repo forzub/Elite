@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <initializer_list>
 #include <string>
 #include <vector>
 
@@ -30,10 +31,20 @@ struct SystemMapInfoInput
     // overlay object id ("site:<id>", replicated hub id, ship key) or empty
     std::string selectedObjectId;
     std::string selectedBodyId;
-    // a selected replicated hub: its name and composition (modules attached
-    // to it in the replicated world: "name x count"), empty otherwise
+    // a selected replicated hub: its name, empty otherwise
     std::string selectedHubName;
-    std::vector<std::string> selectedHubModules;
+    // the selected hub's composition, one row per module type (block order):
+    // the economy TARGET composition with the build status the runtime gives
+    struct HubModule
+    {
+        std::string block;     // block id (admin / passenger / ...)
+        std::string blockRu;
+        std::string type;      // module type = the pictogram
+        std::string name;
+        int count = 1;
+        int status = 0;        // 0 operating, 1 under construction, 2 planned
+    };
+    std::vector<HubModule> selectedHubModules;
     // relation of the player to this place: from warrants / reputation when they exist
     std::string playerRelation = "нейтральное: записей, ордеров и претензий нет";
 };
@@ -103,6 +114,54 @@ inline const world::celestial::WorldSite* siteOf(const SystemMapInfoInput& in, c
     return in.catalog->findSite(in.systemId, id);
 }
 
+inline const char* moduleStatusText(int status)
+{
+    return status == 1 ? "(строится)" : status == 2 ? "(в плане)" : "";
+}
+
+// worst status among the composition modules of these types (-1: none listed)
+inline int moduleStatus(const SystemMapInfoInput& in, std::initializer_list<const char*> types)
+{
+    int best = -1;
+    for (const auto& m : in.selectedHubModules)
+        for (const char* t : types)
+            if (m.type == t)
+                best = best < 0 ? m.status : std::min(best, m.status);
+    return best;
+}
+
+inline std::string withStatus(const SystemMapInfoInput& in, std::string value, std::initializer_list<const char*> types)
+{
+    const int status = moduleStatus(in, types);
+    return status > 0 ? value + " " + moduleStatusText(status) : value;
+}
+
+// "Состав": block subheadings, one pictogram row per module type
+inline void addComposition(const SystemMapInfoInput& in, std::vector<SystemMapInfoLine>& out)
+{
+    if (in.selectedHubModules.empty())
+        return;
+    add(out, SystemMapInfoLine::Kind::Heading, "Состав");
+    std::string block = "";
+    for (const auto& m : in.selectedHubModules)
+    {
+        if (m.block != block)
+        {
+            block = m.block;
+            if (!m.blockRu.empty())
+                add(out, SystemMapInfoLine::Kind::Subheading, m.blockRu);
+        }
+        SystemMapInfoLine line;
+        line.kind = SystemMapInfoLine::Kind::Module;
+        line.label = m.name;
+        line.value = (m.count > 1 ? "×" + std::to_string(m.count) : std::string()) +
+                     (m.status > 0 ? std::string(m.count > 1 ? " " : "") + moduleStatusText(m.status) : std::string());
+        line.icon = m.type;
+        line.status = m.status;
+        out.push_back(std::move(line));
+    }
+}
+
 inline std::string siteName(const SystemMapInfoInput& in, const std::string& id)
 {
     if (const auto* s = in.catalog ? in.catalog->findSite(in.systemId, id) : nullptr)
@@ -125,6 +184,8 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
     {
         add(out, K::Heading, s->name);
         add(out, K::Field, "Тип", s->typeLabel.empty() ? s->type : s->typeLabel);
+        // what is really there first (pictogram rows), then the facts and target capacities
+        addComposition(in, out);
         if (!s->polityName.empty())
             add(out, K::Field, "Владелец", s->polityName);
         if (!s->operatorName.empty())
@@ -142,13 +203,13 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
         if (!s->roles.empty())
             add(out, K::Field, "Роли", s->roles);
         if (s->docks > 0)
-            add(out, K::Field, "Доки", s->dockModules > 0
+            add(out, K::Field, "Доки", withStatus(in, s->dockModules > 0
                 ? std::to_string(s->dockSectors) + " сект., " + std::to_string(s->dockModules) + " модулей HexDock, " + std::to_string(s->docks) + " площадок"
-                : std::to_string(s->docks) + " площадок");
+                : std::to_string(s->docks) + " площадок", {"shuttle_dock"}));
         if (s->passengerTerminals > 0 || s->cargoTerminals > 0)
-            add(out, K::Field, "Терминалы", std::to_string(s->passengerTerminals) + " пасс., " + std::to_string(s->cargoTerminals) + " груз., " +
+            add(out, K::Field, "Терминалы", withStatus(in, std::to_string(s->passengerTerminals) + " пасс., " + std::to_string(s->cargoTerminals) + " груз., " +
                                              std::to_string(s->serviceBerths) + " сервисных причалов" +
-                                             (s->terminalNames.empty() ? std::string() : "; " + s->terminalNames));
+                                             (s->terminalNames.empty() ? std::string() : "; " + s->terminalNames), {"liner_platform", "cargo_terminal"}));
         if (s->arrivalsPerDay > 0)
         {
             char buf[96];
@@ -156,9 +217,9 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
             add(out, K::Field, "Трафик", buf);
         }
         if (!s->repair.empty())
-            add(out, K::Field, "Ремонт", s->repair);
+            add(out, K::Field, "Ремонт", withStatus(in, s->repair, {"service_dock"}));
         if (s->storageTonnes > 0.0)
-            add(out, K::Field, "Склады", scaled(s->storageTonnes) + " т");
+            add(out, K::Field, "Склады", withStatus(in, scaled(s->storageTonnes) + " т", {"warehouse"}));
         if (s->security > 0.0)
         {
             char buf[32];
@@ -171,12 +232,6 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
         add(out, K::Field, "Отношение к вам", in.playerRelation);
         if (!s->character.empty())
             add(out, K::Paragraph, "", s->character);
-        if (!in.selectedHubModules.empty())
-        {
-            add(out, K::Heading, "Состав");
-            for (const auto& m : in.selectedHubModules)
-                add(out, K::Bullet, "", m);
-        }
         // principal routes through this place (aggregate network)
         std::vector<const world::celestial::WorldRoute*> routes;
         for (const auto& r : in.catalog->routesInSystem(in.systemId))
@@ -205,12 +260,7 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
     {
         add(out, K::Heading, in.selectedHubName);
         add(out, K::Field, "Тип", "орбитальный хаб");
-        if (!in.selectedHubModules.empty())
-        {
-            add(out, K::Heading, "Состав");
-            for (const auto& m : in.selectedHubModules)
-                add(out, K::Bullet, "", m);
-        }
+        addComposition(in, out);
         add(out, K::Field, "Отношение к вам", in.playerRelation);
         return;
     }

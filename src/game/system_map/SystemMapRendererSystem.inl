@@ -141,8 +141,27 @@ void SystemMapRenderer::drawSystemLabels(
             m_systemView.visuals().labelSubtitleMaxPx
         );
 
+    // Label order: stars / planets / belts first (always labelled), then the
+    // moons, larger first - a moon label that would overlap an already drawn
+    // label is skipped (declutter of a crowded moon system).
+    std::vector<const world::celestial::SystemMapBody*> labelOrder;
     for (const auto& b : system.bodies)
+        labelOrder.push_back(&b);
+    std::stable_sort(labelOrder.begin(), labelOrder.end(), [](const auto* l, const auto* r) {
+        const bool lm = l->type == BodyType::Moon;
+        const bool rm = r->type == BodyType::Moon;
+        if (lm != rm)
+            return !lm;
+        return lm && l->radiusKm > r->radiusKm;
+    });
+    struct LabelBox { float x0, y0, x1, y1; };
+    std::vector<LabelBox> drawnLabels;
+    const float moonOrbitScreenThresholdPx =
+        0.5f * static_cast<float>(std::min(vp.width, vp.height));
+
+    for (const auto* bodyPtr : labelOrder)
     {
+        const auto& b = *bodyPtr;
         if (b.type != BodyType::Star &&
             b.type != BodyType::Planet &&
             b.type != BodyType::Moon &&
@@ -204,10 +223,17 @@ void SystemMapRenderer::drawSystemLabels(
                 0.000001
             );
 
+            // A moon is named once its orbit is larger than half the screen
+            // (orbit diameter > half the shorter viewport side) - the planet
+            // is then zoomed in far enough for its moon system to be read -
+            // or at the close km / px scale of the older rule.
+            const double moonOrbitDiameterPx =
+                2.0 * b.orbitRadiusAu * AU_KM / std::max(kmPerPixel, 1.0e-9);
             if (b.type == BodyType::Moon &&
                 kmPerPixel >
                     m_systemView.visuals()
-                        .moonLabelMaximumKmPerPixel)
+                        .moonLabelMaximumKmPerPixel &&
+                moonOrbitDiameterPx <= moonOrbitScreenThresholdPx)
             {
                 continue;
             }
@@ -279,6 +305,24 @@ void SystemMapRenderer::drawSystemLabels(
             selected
                 ? selectedTitlePixelSize
                 : titlePixelSize;
+
+        {
+            const LabelBox box {
+                x - 2.0f,
+                y - static_cast<float>(bodyTitlePixelSize),
+                x + text.measureTextPx(b.name, bodyTitlePixelSize) + 2.0f,
+                y + static_cast<float>(bodyTitlePixelSize) * 0.35f};
+            if (b.type == BodyType::Moon && !selected)
+            {
+                bool overlaps = false;
+                for (const auto& other : drawnLabels)
+                    overlaps = overlaps || (box.x0 < other.x1 && other.x0 < box.x1 &&
+                                            box.y0 < other.y1 && other.y0 < box.y1);
+                if (overlaps)
+                    continue;
+            }
+            drawnLabels.push_back(box);
+        }
 
         const glm::vec4 titleColor =
             selected

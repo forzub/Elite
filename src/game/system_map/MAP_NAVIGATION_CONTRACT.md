@@ -82,6 +82,15 @@ client first composes the corresponding parent Details target, then composes the
 Hub target. `Hub -> Details` therefore returns to the same selected object and
 not to a newly resolved player-relative location.
 
+Hub targets (2026-11-06, map-2): a replicated runtime hub, or an unbound
+world-site hub `site:<id>` (orbit / Lagrange / heliocentric placement, e.g.
+the lunar Селена, Ворота Луны). A site hub is a hub target on the System map
+(`navigationHubId` = its id, so a click selects it as a hub) and on the
+Detail map of its parent / Lagrange primary; its Hub map is a CATALOG frame
+composed on the client (`catalogHubRuntimeSample`: the presented site
+position, one station module, nearby ships). HUB from System / Detail opens
+that Hub map, never a terminal-cube Details fallback.
+
 ## 2. Loaded navigation context versus player navigation context
 
 This distinction is a core contract.

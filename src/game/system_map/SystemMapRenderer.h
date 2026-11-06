@@ -515,6 +515,8 @@ public:
     // DEV: the double-click approach on a body (body id) or a hub (hub id) - one cube level per call.
     void devEnter(const std::string& id) { m_devEnterId = id; }
     void devZoom(double steps) { m_pendingScrollY += steps; }
+    // DEV: turn the Detail / Hub map camera (yaw, pitch in radians) - the result of a drag
+    void devDetailOrbit(double yaw, double pitch) { m_detailView.camera().yaw += yaw; m_detailView.camera().pitch += pitch; }
     // DEV: a scripted pointer gesture on the current map, fed through the
     // production input path: "click:<objectId>", "dclick:<objectId>",
     // "rclick:<objectId>" (right click = context menu), "menu:<command>"

@@ -1,5 +1,5 @@
 {
-  "_comment": "Known-red Python gates for tools/run_gates.py. Each entry is a REAL production violation (or an explicitly deferred re-baseline) with its owner slice. Remove an entry in the same commit that turns its gate green; the runner fails on a stale entry.",
+  "_comment": "Known-red gates for tools/run_gates.py (Python check_*.py paths, or cpp:<target> for the C++ suites run with --cpp). Each entry is a REAL production violation (or an explicitly deferred re-baseline) with its owner slice. Remove an entry in the same commit that turns its gate green; the runner fails on a stale entry.",
   "known_red": {
     "tests/architecture_contracts/check_model_asset_wizard_decomposition.py": {
       "reason": "REAL: socketCanonicalWorldMatrix was certified pure and now reads state (src/assets/webui/model_asset_editor/viewport/attachments.js:125, 03329177)",

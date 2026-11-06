@@ -308,8 +308,18 @@ current map contract:
 - orbit rotates the complete camera pose around the chosen pivot;
 - zoom scales eye and target consistently;
 - celestial-body zoom respects safe surface clearance;
-- rotation pivot priority is body, explicit cell, cursor cell, mouse plane;
-- zoom pivot is cursor body or current camera target;
+- a press never moves the camera; the rotation pivot is chosen when the drag
+  starts: the drawn object near the press point (a body is then followed),
+  else the pressed body / hub / hover-layer point, else the target-plane
+  point under the press - never a cube centre (2026-10-31 b, `97b39d73`;
+  the 2.5D plan view, default, turns only the azimuth);
+- the wheel zooms about the body under the cursor (surface clearance,
+  followed), else the object near the cursor, else the point under the
+  cursor - never a drift to a cube centre (`97b39d73`);
+- a newly opened system fits the S0 root as the current parent
+  (`b2d39fd2`); a body click selects the body with the child cube it is in;
+  cubes are pointer targets only while the grid overlay (G) is shown
+  (`2eb47aad`);
 - refine/coarsen preserves the navigation point;
 - implicit anchor and explicit cell selection are separate states;
 - fixed mouse/scroll traces are deterministic on replay;

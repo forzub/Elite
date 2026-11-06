@@ -3661,6 +3661,21 @@ order - ask for it again if it is not in the session.
   loader threads; the 6 model-asset editor reds; the contract tests and the map behaviour tests are not run by
   tools/run_gates.py.
 
+### Map behaviour test triage + C++ suites in run_gates (2026-11-06)
+- SystemMapBehaviorTests 28/33 -> 33/33 (compiled, D:/tmp/elite_sysmap_tests). All 5 reds were STALE expectations
+  of deliberate map redesigns, none a production regression; production untouched:
+  rotation pivot (press = PendingClick, pivot at drag start: near object > pressed body / hub / layer point >
+  target plane, never a cube centre - 97b39d73); zoom pivot (body pivot needs the resolver's hover body; else the
+  point under the cursor - 97b39d73); explicit selection (cubes are targets only with the G grid overlay -
+  2eb47aad; body click selects the body + its child cube of the parent, anchor not moved - b2d39fd2); initial fit
+  (S0 root fitted, hierarchyFitHalfHeight, not fittedSystemRadius*padding - b2d39fd2); mouse trace (the drag-start
+  frame does not turn; plan view default turns only yaw - ac71cfb6; a free-3D replay added). The stale §7 bullets
+  of MAP_NAVIGATION_CONTRACT.md updated to the 2026-10-31 b camera contract.
+- tools/run_gates.py: `--cpp` (Python gates + C++ suites) / `--cpp-only`; configures (Ninja Debug, if no cache),
+  builds and runs cpp:wire_data_plane_contract_tests (D:/tmp/elite_contracts) and cpp:system_map_behavior_tests
+  (D:/tmp/elite_sysmap_tests); allow-list keys `cpp:<target>`. Off by default (cold build minutes). Run:
+  `--cpp` 211 gates: 205 pass, 6 known red (model-asset editor), 0 new red; both C++ suites PASS.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

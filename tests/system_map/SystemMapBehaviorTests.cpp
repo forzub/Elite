@@ -558,125 +558,110 @@ void testZoomScalesPoseAndRespectsBodyClearance()
     }
 }
 
+/*
+    Rotation pivot (map camera contract 2026-10-31 b, 97b39d73): a press
+    never moves the camera; the pivot is chosen when the drag starts (beyond
+    clickMoveThresholdPx): the drawn object near the PRESS point (a body is
+    then followed), else the pressed body / hub / hover-layer point, else the
+    target-plane point under the press - never a cube centre, whatever cube
+    is selected.
+*/
 void testRotationPivotPriority()
 {
     const Viewport viewport = testViewport();
     const SystemMapInteraction interaction;
-    double pendingScrollY = 0.0;
 
-    {
-        SystemMapView view = makeSystemView();
-        MockSystemMapInteractionContext context;
-
-        const CubicNavigationCell selected =
-            view.state().navigationGrid.cell(
-                CubicGridIndex{1, 0, 0},
-                view.state().navigationGrid.level()
-            );
-
-        view.state().navigationGrid.selectCell(selected);
-        view.state().navigationCellExplicitlySelected = true;
-
-        SystemMapCameraBodyTarget body;
-        body.bodyId = "planet";
-        body.absolutePosition = glm::dvec3(7.0, 8.0, 9.0);
-        body.physicalRadiusWorld = 2.0;
-        context.cameraBodyTarget = body;
-
-        interaction.handleInput(
-            view,
-            context,
-            inputFrame(viewport, 600.0, 400.0, true, false, 1.0),
-            pendingScrollY
-        );
-
+    const auto pressAndDrag = [&](SystemMapView& view, MockSystemMapInteractionContext& context, double x,
+                                  double y, double t) {
+        double pendingScrollY = 0.0;
+        interaction.handleInput(view, context, inputFrame(viewport, x, y, true, false, t), pendingScrollY);
+        // the press alone never rotates or picks a pivot
+        REQUIRE(!view.state().orbitPivotActive);
+        REQUIRE(!view.state().camera.rotating);
+        interaction.handleInput(view, context, inputFrame(viewport, x + 12.0, y, true, false, t + 0.05),
+                                pendingScrollY);
         REQUIRE(view.state().orbitPivotActive);
-        REQUIRE_VEC_NEAR(
-            view.state().orbitPivotAbsolute,
-            body.absolutePosition,
-            1.0e-12
-        );
-    }
+        REQUIRE(view.state().camera.rotating);
+    };
 
-    {
-        SystemMapView view = makeSystemView();
-        MockSystemMapInteractionContext context;
-
+    const auto selectSomeCube = [](SystemMapView& view) {
         const CubicNavigationCell selected =
-            view.state().navigationGrid.cell(
-                CubicGridIndex{1, 0, 0},
-                view.state().navigationGrid.level()
-            );
-
+            view.state().navigationGrid.cell(CubicGridIndex{1, 0, 0}, view.state().navigationGrid.level());
         view.state().navigationGrid.selectCell(selected);
         view.state().navigationCellExplicitlySelected = true;
+        return selected;
+    };
 
-        interaction.handleInput(
-            view,
-            context,
-            inputFrame(viewport, 600.0, 400.0, true, false, 2.0),
-            pendingScrollY
-        );
-
-        REQUIRE_VEC_NEAR(
-            view.state().orbitPivotAbsolute,
-            selected.center,
-            1.0e-12
-        );
-    }
-
+    // 1. the drawn object near the press wins (and a body is followed)
     {
         SystemMapView view = makeSystemView();
         MockSystemMapInteractionContext context;
-        view.state().navigationCellExplicitlySelected = false;
+        selectSomeCube(view);
 
-        const glm::dvec3 fallback =
-            view.targetPlanePointFromScreen(
-                viewport,
-                610.0,
-                400.0
-            );
+        game::system_map::SystemMapNearObject near;
+        near.bodyId = "planet";
+        near.absolutePosition = glm::dvec3(7.0, 8.0, 9.0);
+        context.nearPick = near;
+        context.bodyPositions.emplace("planet", near.absolutePosition);
 
-        REQUIRE(glm::length(fallback) > 0.0);
+        pressAndDrag(view, context, 600.0, 400.0, 1.0);
 
-        interaction.handleInput(
-            view,
-            context,
-            inputFrame(viewport, 610.0, 400.0, true, false, 3.0),
-            pendingScrollY
-        );
-
-        REQUIRE_VEC_NEAR(
-            view.state().orbitPivotAbsolute,
-            view.state().navigationGrid.anchorCell().center,
-            1.0e-12
-        );
+        REQUIRE_VEC_NEAR(view.state().orbitPivotAbsolute, near.absolutePosition, 1.0e-12);
+        REQUIRE(view.state().cameraFollowBodyId == "planet");
     }
 
+    // 2. no object near: the pressed body itself
+    {
+        SystemMapView view = makeSystemView();
+        MockSystemMapInteractionContext context;
+        selectSomeCube(view);
+
+        context.bodyPick = "planet";
+        context.bodyPositions.emplace("planet", glm::dvec3(-4.0, 2.0, 1.0));
+
+        pressAndDrag(view, context, 600.0, 400.0, 2.0);
+
+        REQUIRE_VEC_NEAR(view.state().orbitPivotAbsolute, glm::dvec3(-4.0, 2.0, 1.0), 1.0e-12);
+    }
+
+    // 3. nothing pressed: the target-plane point under the press, NOT the
+    //    selected (or anchor) cube centre
+    {
+        SystemMapView view = makeSystemView();
+        MockSystemMapInteractionContext context;
+        const CubicNavigationCell selected = selectSomeCube(view);
+
+        const glm::dvec3 expected = view.targetPlanePointFromScreen(viewport, 610.0, 400.0);
+        REQUIRE(glm::length(expected - selected.center) > 1.0e-6);
+
+        pressAndDrag(view, context, 610.0, 400.0, 3.0);
+
+        REQUIRE_VEC_NEAR(view.state().orbitPivotAbsolute, expected, 1.0e-9);
+    }
+
+    // 4. grid disabled: the same target-plane fallback
     {
         SystemMapView view = makeSystemView();
         MockSystemMapInteractionContext context;
         view.state().navigationGrid.setEnabled(false);
 
-        const glm::dvec3 expected =
-            view.targetPlanePointFromScreen(
-                viewport,
-                650.0,
-                420.0
-            );
+        const glm::dvec3 expected = view.targetPlanePointFromScreen(viewport, 650.0, 420.0);
 
-        interaction.handleInput(
-            view,
-            context,
-            inputFrame(viewport, 650.0, 420.0, true, false, 4.0),
-            pendingScrollY
-        );
+        pressAndDrag(view, context, 650.0, 420.0, 4.0);
 
-        REQUIRE_VEC_NEAR(
-            view.state().orbitPivotAbsolute,
-            expected,
-            1.0e-12
-        );
+        REQUIRE_VEC_NEAR(view.state().orbitPivotAbsolute, expected, 1.0e-9);
+    }
+
+    // release ends the rotation and the pivot
+    {
+        SystemMapView view = makeSystemView();
+        MockSystemMapInteractionContext context;
+        pressAndDrag(view, context, 600.0, 400.0, 5.0);
+        double pendingScrollY = 0.0;
+        interaction.handleInput(view, context, inputFrame(viewport, 612.0, 400.0, false, false, 5.1),
+                                pendingScrollY);
+        REQUIRE(!view.state().orbitPivotActive);
+        REQUIRE(!view.state().camera.rotating);
     }
 }
 
@@ -698,6 +683,10 @@ void testZoomPivotIsCursorBodyOrCurrentTarget()
         body.absolutePosition = glm::dvec3(30.0, 0.0, 0.0);
         body.physicalRadiusWorld = 0.0;
         context.cameraBodyTarget = body;
+        // The body must be the resolver's hover target (cursor on the drawn
+        // body), not only the camera-body pick (contract 97b39d73).
+        context.bodyPick = body.bodyId;
+        context.bodyPositions.emplace(body.bodyId, body.absolutePosition);
 
         const glm::dvec3 oldTarget = camera.target;
         const float oldDistance = camera.distance;
@@ -720,6 +709,29 @@ void testZoomPivotIsCursorBodyOrCurrentTarget()
 
         REQUIRE_VEC_NEAR(camera.target, expectedTarget, 1.0e-7);
         REQUIRE(pendingScrollY == 0.0);
+        REQUIRE(view.state().cameraFollowBodyId == body.bodyId);
+    }
+
+    // No object at the cursor: the target-plane point under the cursor stays
+    // fixed on the screen (never a drift to a cube centre).
+    {
+        SystemMapView view = makeSystemView();
+        MockSystemMapInteractionContext context;
+        auto& camera = view.state().camera;
+        camera.target = glm::dvec3(10.0, 0.0, 0.0);
+        camera.distance = 50.0f;
+
+        const glm::dvec3 pivot = view.targetPlanePointFromScreen(viewport, 700.0, 450.0);
+        const glm::dvec3 oldTarget = camera.target;
+        const float oldDistance = camera.distance;
+        double pendingScrollY = 1.0;
+
+        interaction.handleInput(view, context, inputFrame(viewport, 700.0, 450.0, false, false, 1.5),
+                                pendingScrollY);
+
+        const double poseScale = static_cast<double>(camera.distance) / static_cast<double>(oldDistance);
+        REQUIRE(poseScale < 1.0);
+        REQUIRE_VEC_NEAR(camera.target, pivot + (oldTarget - pivot) * poseScale, 1.0e-6);
     }
 
     {
@@ -883,6 +895,9 @@ void testAnchorAndExplicitSelectionSemantics()
         SystemMapView view = makeSystemView();
         MockSystemMapInteractionContext context;
         double pendingScrollY = 0.0;
+        // Cubes are pointer targets only while the optional grid overlay
+        // (G, hidden by default) is shown (hybrid System Map, 2eb47aad).
+        view.state().gridOverlayVisible = true;
 
         interaction.handleInput(
             view,
@@ -928,18 +943,41 @@ void testAnchorAndExplicitSelectionSemantics()
             pendingScrollY
         );
 
+        // A body click selects the body (implicitly, not as an explicit
+        // cube) with the child cube of the current parent it is in; a body
+        // outside the parent selects no cube (b2d39fd2 one-cube navigation).
         REQUIRE(view.state().selectedBodyId == "planet");
         REQUIRE(view.state().selectedHubId.empty());
         REQUIRE(!view.state().navigationCellExplicitlySelected);
-        REQUIRE(!view.state().navigationGrid.hasSelectedCell());
+        REQUIRE(
+            view.state().navigationGrid.hasSelectedCell() ==
+            view.hierarchyChildAt(context.bodyPositions.at("planet")).has_value()
+        );
+    }
 
-        const CubicGridIndex expectedAnchor =
-            view.state().navigationGrid.nearestIndexForPosition(
-                context.bodyPositions.at("planet"),
-                view.state().navigationGrid.level()
-            );
+    {
+        SystemMapView view = makeSystemView();
+        MockSystemMapInteractionContext context;
+        double pendingScrollY = 0.0;
 
-        REQUIRE(view.state().navigationGrid.anchorIndex() == expectedAnchor);
+        const glm::dvec3 inside = view.hierarchyBox().centerLy * static_cast<double>(view.state().lastScale);
+        const auto child = view.hierarchyChildAt(inside);
+        REQUIRE(child.has_value());
+
+        context.bodyPick = "planet";
+        context.bodyPositions.emplace("planet", inside);
+        view.state().navigationCellExplicitlySelected = true;
+
+        interaction.handleInput(view, context, inputFrame(viewport, 600.0, 400.0, true, false, 30.0),
+                                pendingScrollY);
+        interaction.handleInput(view, context, inputFrame(viewport, 600.0, 400.0, false, false, 30.1),
+                                pendingScrollY);
+
+        REQUIRE(view.state().selectedBodyId == "planet");
+        REQUIRE(!view.state().navigationCellExplicitlySelected);
+        REQUIRE(view.state().navigationGrid.hasSelectedCell());
+        REQUIRE(view.state().navigationGrid.selectedCell().index == child->index);
+        REQUIRE(view.state().navigationGrid.selectedCell().level == child->level);
     }
 }
 
@@ -1099,11 +1137,17 @@ void testPresentationBuilderPreparesStateBeforeRender()
 
     REQUIRE(view.state().navigationGrid.systemId() == 77);
     REQUIRE(view.state().lastCameraFitSystemId == 77);
-    REQUIRE_VEC_NEAR(view.state().camera.target, glm::dvec3(0.0), 1.0e-12);
+    // A newly opened system: the S0 root becomes the current parent, fitted
+    // whole on the screen (b2d39fd2, same frame model as the Galaxy Map).
+    REQUIRE(view.hierarchyBox().parent.level == 0);
+    REQUIRE_VEC_NEAR(
+        view.state().camera.target,
+        view.hierarchyBox().centerLy * static_cast<double>(view.state().lastScale),
+        1.0e-9
+    );
     REQUIRE_CLOSE(
         view.state().camera.distance,
-        view.controls().fittedSystemRadiusWorld *
-            view.controls().initialFitPadding,
+        view.hierarchyFitHalfHeight(viewport),
         1.0e-6,
         1.0e-7
     );
@@ -1916,10 +1960,12 @@ TraceSnapshot snapshot(const SystemMapView& view)
 }
 
 std::vector<TraceSnapshot> replayTrace(
-    const std::vector<TraceStep>& trace
+    const std::vector<TraceStep>& trace,
+    bool planView = true
 )
 {
     SystemMapView view = makeSystemView();
+    view.state().planView = planView;
     MockSystemMapInteractionContext context;
     const SystemMapInteraction interaction;
     double pendingScrollY = 0.0;
@@ -1974,6 +2020,8 @@ void testMouseAndScrollTraceIsRepeatable()
     std::vector<TraceStep> trace;
     trace.push_back({inputFrame(viewport, 600.0, 400.0, false, false, 1.0), 0.0});
     trace.push_back({inputFrame(viewport, 600.0, 400.0, true, false, 1.1), 0.0});
+    // beyond the drag threshold: the drag starts (pivot chosen, no turn yet)
+    trace.push_back({inputFrame(viewport, 608.0, 404.0, true, false, 1.15), 0.0});
     trace.push_back({inputFrame(viewport, 624.0, 408.0, true, false, 1.2), 0.0});
     trace.push_back({inputFrame(viewport, 624.0, 408.0, false, false, 1.3), 0.0});
     trace.push_back({inputFrame(viewport, 624.0, 408.0, false, true, 1.4), 0.0});
@@ -1990,11 +2038,24 @@ void testMouseAndScrollTraceIsRepeatable()
     for (std::size_t i = 0; i < first.size(); ++i)
         requireSnapshotNear(first[i], second[i]);
 
-    REQUIRE(first[2].yaw != first[1].yaw);
-    REQUIRE(first[2].pitch != first[1].pitch);
-    REQUIRE(glm::length(first[5].target - first[4].target) > 0.0);
-    REQUIRE(first[7].distance < first[6].distance);
-    REQUIRE(first[8].distance > first[7].distance);
+    // a press never moves the camera, nor does the drag-start frame
+    REQUIRE(first[1].yaw == first[0].yaw);
+    REQUIRE(first[2].yaw == first[1].yaw);
+    REQUIRE(first[2].rotating);
+    REQUIRE(first[3].yaw != first[2].yaw);
+    // 2.5D plan view (the default, ac71cfb6): a drag turns only the azimuth
+    REQUIRE(first[3].pitch == first[2].pitch);
+    REQUIRE(glm::length(first[6].target - first[5].target) > 0.0);
+    REQUIRE(first[8].distance < first[7].distance);
+    REQUIRE(first[9].distance > first[8].distance);
+
+    // the free 3D view: the same drag also tilts, and replays identically
+    const std::vector<TraceSnapshot> free3d = replayTrace(trace, false);
+    const std::vector<TraceSnapshot> free3dAgain = replayTrace(trace, false);
+    for (std::size_t i = 0; i < free3d.size(); ++i)
+        requireSnapshotNear(free3d[i], free3dAgain[i]);
+    REQUIRE(free3d[3].yaw != free3d[2].yaw);
+    REQUIRE(free3d[3].pitch != free3d[2].pitch);
 }
 
 
@@ -3070,7 +3131,7 @@ int main()
         {"orbit preserves complete camera pose", testOrbitPreservesCompleteCameraPose},
         {"zoom scales pose and respects body clearance", testZoomScalesPoseAndRespectsBodyClearance},
         {"rotation pivot priority", testRotationPivotPriority},
-        {"zoom pivot is cursor body or current target", testZoomPivotIsCursorBodyOrCurrentTarget},
+        {"zoom pivot is cursor object or point under cursor", testZoomPivotIsCursorBodyOrCurrentTarget},
         {"refine/coarsen preserve navigation point", testRefineCoarsenPreserveNavigationPoint},
         {"anchor and explicit selection semantics", testAnchorAndExplicitSelectionSemantics},
         {"Galaxy and System share cubic navigation core", testGalaxyAndSystemShareCubicNavigationCore},

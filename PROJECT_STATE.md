@@ -3533,6 +3533,28 @@ order - ask for it again if it is not in the session.
 - Высокий docks: commit 5497cf37 turned the HubMotionLab off - the same flag spawned the hex dock, its service block
   and the guidance cylinder; now spawned independently (live: attached objects 10/11/12, capture docks.png).
 
+### Interim architecture audit 2026-11-06 (subagent, read-only; full report docs/ARCH_AUDIT_2026-11-06.md)
+- Python gates: 209 check_*.py, 122 pass / 87 fail (mostly stale token-greps; they hide real new reds:
+  GameServer.cpp includes the client RoutePlanner.h, system_map facade coupling, stale wire-schema token list).
+- High: NAVIGATION_V2 §1 / §11b say route execution is client-owned via ShipControlState - the J autopilot, route
+  legs, take-off, rendezvous and the landing pilot are server-owned (two owners, hand-over unspecified); zone fines
+  computed / summed on the client; Высокий's docks still hang on diagnostic ids / HubDockingFlightTestScene; DEV
+  commands accepted from any client; ActiveFreeFlight ~70 fields / 7 sub-machines on booleans and bare phases 1..11.
+- Single-source breaks: 5 sphere-of-influence implementations, body clearance client vs server differ, the client
+  planner's 260 t + Cobrett charge constants for every ship, 3 "airless / landable" criteria, J ramp / ApproachTauS
+  twice, Pe/Ap twice, WorldSitesCatalog loaded 3x, route state in 3 forms; route legs as an unversioned string
+  protocol (km vs m, magic indices 0/3/4).
+- God functions: SpaceState::updateDockingAdvisory 3894 lines, SpaceState::update 1816 (~400 DEV interpreter),
+  renderHUD 1115, updateFreeFlights 726. 65 ELITE_* env vars, some read per tick / frame and changing gameplay.
+- Threading: ModelAssetGpu loader has no try/catch, MeshGPU never frees GL objects, detached terrain threads,
+  call_once bodies that can throw in ObjectDescriptorRegistry / ObjectAssemblyRegistry.
+- Tests: WireDataPlaneContractTests not built since schema 35 -> 38; no tests for the new pure logic (route codec,
+  charge, J floor, settlement layout, SOI, conics); SystemMapBehaviorTests does not compile.
+- Recommended order: gate triage + known-red allow-list; one SOI function + test; one route-safety module shared by
+  planner and server (JDrive.h to a neutral layer); J figures from the ship descriptor; hub docks from data;
+  DEV gating; zone fines + route completion on the server; typed route DTO in the wire schema; ActiveFreeFlight
+  state machine; decompose the giant SpaceState functions; loader hardening; NAVIGATION_V2 ownership update.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

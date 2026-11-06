@@ -1480,6 +1480,7 @@ m_hubVelocityMetersPerSecond[hubId] =
         // rendered surface. Refresh it first (it is rebuilt again further down).
         rebuildNavigationGravityContext();
         updateFreeFlights(dt);
+        updateZoneViolations(dt);
         updateShipReferenceFrames(dt);
         updateCombat(dt);
     }

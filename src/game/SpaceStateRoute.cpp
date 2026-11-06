@@ -411,7 +411,6 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
     msg.payload = command;
     m_client->sendMessage(msg);
     m_routeOfficial = official;
-    m_routeGatePassed.clear();
 }
 
 void SpaceState::updateZoneViolations(double dt)
@@ -440,40 +439,24 @@ void SpaceState::updateZoneViolations(double dt)
             m_routeLaunched = true;
         plan.serverRouteState = now;
     }
-    const glm::dvec3 p = world::coordinates::fullMeters(shipIt->second.transform.worldPosition);
-    const auto zones = route::resolveZones(zoneCatalog(), snapshot->systemId, routeAnchorResolver());
-    const auto fine = [&](const route::RouteZone& z, const std::string& what) {
-        m_violationText = "АДМИНИСТРАТИВНОЕ НАРУШЕНИЕ: " + what + " «" + z.name + "»  ·  штраф " +
-                          std::to_string(static_cast<long long>(z.fineCr)) + " кр  ·  " + z.authority;
-        m_violationShowSeconds = 8.0;
-        m_finesTotalCr += z.fineCr;
-        std::cerr << "[Zones] VIOLATION: " << what << " " << z.id << ", fine " << z.fineCr << " cr (total " << m_finesTotalCr
-                  << ")" << std::endl;
-    };
-    const auto* system = m_client->starAtlas() ? m_client->starAtlas()->findSystem(snapshot->systemId) : nullptr;
-    const std::string body = bodyAtPoint(*snapshot, system, p);
-    for (const auto& g : zones)
+    // the violations are judged by the server (GameSimulationZones.cpp): show its latest one
+    const auto& motion = shipIt->second.transform.motion;
+    if (motion.zoneViolationSerial != m_lastZoneViolationSerial)
     {
-        const bool inside = g.contains(p);
-        bool& was = m_zoneInside[g.zone->id];
-        if (inside && !was && g.zone->colour == route::ZoneColour::Red)
-            fine(*g.zone, "вход в красную зону");
-        if (inside && g.zone->colour == route::ZoneColour::Blue)
-            m_routeGatePassed.insert(g.zone->id);
-        was = inside;
-        // a blue gate skipped: the ship went from one of its bodies to the other without it
-        if (g.zone->colour == route::ZoneColour::Blue && !m_lastZoneBody.empty() && body != m_lastZoneBody)
-        {
-            const auto& gb = g.zone->gateBetween;
-            const bool between = std::find(gb.begin(), gb.end(), m_lastZoneBody) != gb.end() &&
-                                 std::find(gb.begin(), gb.end(), body) != gb.end();
-            if (between && !m_routeGatePassed.count(g.zone->id))
-                fine(*g.zone, "пропущен обязательный створ");
-            if (between)
-                m_routeGatePassed.erase(g.zone->id);
-        }
+        const bool first = m_lastZoneViolationSerial == 0xFFFF;
+        m_lastZoneViolationSerial = motion.zoneViolationSerial;
+        if (!first && motion.zoneViolationKind != 0)
+            for (const auto& z : zoneCatalog().zones)
+                if (z.id == motion.zoneViolationZoneId)
+                {
+                    m_violationText = std::string("АДМИНИСТРАТИВНОЕ НАРУШЕНИЕ: ") +
+                                      (motion.zoneViolationKind == 1 ? "вход в красную зону" : "пропущен обязательный створ") + " «" +
+                                      z.name + "»  ·  штраф " + std::to_string(static_cast<long long>(z.fineCr)) + " кр  ·  " +
+                                      z.authority;
+                    m_violationShowSeconds = 8.0;
+                }
     }
-    m_lastZoneBody = body;
+    m_finesTotalCr = motion.zoneFinesTotalCr;
 }
 
 void SpaceState::renderZoneViolationBanner(const Viewport& viewport)

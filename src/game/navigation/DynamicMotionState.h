@@ -164,6 +164,12 @@ struct DynamicMotionState
     std::uint8_t routeState = 0;
     std::uint8_t routeLegIndex = 0;
     std::uint8_t routeLegCount = 0;
+    // navigation-zone violations, judged by the SERVER (route_zones.json): the total of the fines,
+    // a serial bumped on every new violation, the last one (zone id, 1 red entry / 2 gate skipped)
+    double zoneFinesTotalCr = 0.0;
+    std::uint16_t zoneViolationSerial = 0;
+    std::uint8_t zoneViolationKind = 0;
+    std::string zoneViolationZoneId;
 
     // True only while/after a real +/- Assisted trim. It lets the release edge
     // capture reached forward speed once without allowing keypad RCS or an

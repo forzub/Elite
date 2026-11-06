@@ -732,14 +732,12 @@ private:
     // official / unofficial; launch = false: РАССЧИТАТЬ only (the summary, planner-inserted points)
     void launchPlannedRoute(bool official, bool launch = true);
     void sendRouteControl(bool pause);
-    bool m_routeLaunched = false;   // a route was flying (for the \"route complete\" notice)
+    bool m_routeLaunched = false;
+    std::uint16_t m_lastZoneViolationSerial = 0xFFFF;   // the server's violation record seen   // a route was flying (for the \"route complete\" notice)
     void updateZoneViolations(double dt);
     void renderZoneViolationBanner(const Viewport& viewport);
     game::navigation::route::AnchorResolver routeAnchorResolver() const;
     bool m_routeOfficial = true;
-    std::set<std::string> m_routeGatePassed;
-    std::map<std::string, bool> m_zoneInside;
-    std::string m_lastZoneBody;
     double m_zoneCheckSeconds = 0.0;
     double m_violationShowSeconds = 0.0;
     std::string m_violationText;

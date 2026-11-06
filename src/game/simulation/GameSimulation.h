@@ -226,6 +226,8 @@ public:
         bool resumeCurrent = false;     // paused mid-leg: RESUME restarts the current leg
     };
     void pauseRoute(EntityId shipId);
+    // navigation zones (GameSimulationZones.cpp): red entries and skipped blue gates fine the ship
+    void updateZoneViolations(double dt);
     void resumeRoute(EntityId shipId);
     struct ActiveFreeFlight
     {
@@ -754,6 +756,14 @@ private:
     bool jKeepOut(EntityId shipId, int systemId, const glm::dvec3& worldMeters, JKeepOutHit& hit) const;
     std::vector<EntityId> m_pendingStabilize;   // automatic stabilization after the free-flight pass
     std::vector<EntityId> m_pendingJExit;   // legs that arrived: J off after the free-flight pass
+    struct ZoneWatch
+    {
+        std::unordered_map<std::string, bool> inside;
+        std::unordered_map<std::string, bool> gatePassed;
+        std::string lastBody;
+    };
+    std::unordered_map<EntityId, ZoneWatch> m_zoneWatch;
+    double m_zoneCheckSeconds = 0.0;
     std::unordered_map<EntityId, ActiveRoute> m_routes;
     void updateRoutes(double dt);
 

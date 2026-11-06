@@ -345,6 +345,13 @@ public:
     std::unordered_map<std::string, glm::dvec3> bodyPositions;
     std::unordered_map<std::string, glm::dvec3> objectPositions;
 
+    // the nearest drawn object (a body or a hub) within the pick radius: the mock has none unless set
+    std::optional<game::system_map::SystemMapNearObject> nearPick;
+    std::optional<game::system_map::SystemMapNearObject> nearestSystemObject(double, double, float) const override
+    {
+        return nearPick;
+    }
+
     std::optional<std::string> pickSystemBodyId(
         double,
         double

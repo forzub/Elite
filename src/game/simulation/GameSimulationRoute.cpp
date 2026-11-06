@@ -202,16 +202,22 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
     const double driveSeconds = f.legDriveStartSeconds == -1.0 ? 0.0 : f.legSeconds - f.legDriveStartSeconds;
     double limit = nearDeparture ? GentleAccelMps2 : std::min(MaxDriveMps2, 9.81 * std::exp2(driveSeconds / 2.0));
 
-    // ---- obstacles: never through a planet / moon - go round the first one in the way
+    // ---- obstacles: never through a planet / moon / the star - go round the first one in the way
     int phase = 2;
+    double starMu = 0.0;
+    for (const auto& b : m_gravityBodies)
+        starMu = std::max(starMu, b.gravitationalParameterM3s2);
     for (const auto& b : m_gravityBodies)
     {
         if (b.radiusMeters < 50000.0 || d < 1.0)
             continue;
         // the body, its atmosphere and a margin; a destination below that (a hub in
         // low orbit) still keeps the path from dipping under the destination's own
-        // altitude (a hub behind the planet was reached THROUGH it)
-        double clear = std::max(b.radiusMeters + 150000.0, b.atmosphereRadiusMeters + 50000.0);
+        // altitude (a hub behind the planet was reached THROUGH it). The star: 20 of its
+        // radii (the Sun ~0.09 AU) - the hull's heat, not its surface (author 2026-11-06:
+        // "маршрут должен проходить через солнце?")
+        const bool star = b.gravitationalParameterM3s2 >= starMu && starMu > 0.0;
+        double clear = star ? 20.0 * b.radiusMeters : std::max(b.radiusMeters + 150000.0, b.atmosphereRadiusMeters + 50000.0);
         clear = std::min(clear, glm::length(targetPos - b.centerMeters) * 0.995);
         clear = std::min(clear, glm::length(frame.originMeters - b.centerMeters) * 0.995);
         const glm::dvec3 s = frame.originMeters - b.centerMeters;

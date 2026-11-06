@@ -990,6 +990,8 @@ private:
     glm::vec2 m_contextRightPressPx {0.0f};
     // Info card of a Galaxy star opened from its context menu.
     std::optional<game::system_map::MapObjectOverlayItem> m_galaxySystemCard;
+    // a body without an overlay card (moons): its route card from the context menu
+    std::optional<game::system_map::MapObjectOverlayItem> m_bodyRouteCard;
     int m_galaxySystemCardSystemId = -1;
     std::vector<std::string> galaxyBreadcrumbs() const;
     std::vector<std::string> mapBreadcrumbs() const;

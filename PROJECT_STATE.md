@@ -3453,6 +3453,26 @@ order - ask for it again if it is not in the session.
   has no dock geometry / traffic; whether the station's own docking ports count as "челночный док" operating is a
   rule question (now: planned); moon names are the catalog's English names (Phobos, Ganymede).
 
+### Slice cc-9 2026-11-06 - route window buttons on every map, moons as route points, body avoidance, network corridors - NOT ACCEPTED
+- Author (2026-11-06): no calculate / start buttons for a finish chosen on Details; a moon selected on System /
+  Details gives no route commands; routes are straight lines (Mars - Ceres across the Sun? through a planet?);
+  the hub-to-hub lines near Earth are straight - green zones must follow them. Fortuna names accepted (CANON,
+  02cb5d6a). Map items (hub composition statuses, pictograms, moon labels, HUB button for lunar site hubs) -
+  subagent slice map-2 (9d3cc8ed).
+- Route window (NavigationRouteOverlay footer, every map): РАССЧИТАТЬ / СТАРТ / ПАУЗА | ПРОДОЛЖИТЬ (by the server
+  route state) + the summary line. Live capture rt/detail_buttons.png (Detail map, finish Тихий).
+- Moons: a body without an overlay card gets a synthesized route card in the System context menu (add point /
+  finish). Detail-map moons are 3D bodies without glyphs - still no context menu there (OPEN).
+- Body avoidance: the planner treats the star (20 radii, the Sun ~0.09 AU, heat), planets and moons (r + 150 km /
+  5 %) as obstacles (the same detour as red zones); the server leg keeps 20 star radii (was 150 km over the
+  photosphere). Live ob2: Earth hub -> Neptune / Saturn gets "обход: Земля". No planet was behind the Sun at the
+  run epoch - the star detour shares the code but was not seen live.
+- Network corridors: the world-model scheduled routes between two runtime hubs become green corridors along
+  corridorPath (round the bodies); an official leg between the same ends follows it; the blue gate still applies.
+  Live ob1: Высокий -> Тихий "по коридору сети: Тихий – Высокий" (2 legs, 12 851 km). The dashed network lines on
+  the System map stay schematic chords (aggregate schedule, not flight paths).
+- DEV: Cyrillic body ids in ELITE_DEV_* env vars arrive mangled - Latin aliases added (mercury .. neptune).
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

@@ -220,6 +220,28 @@ std::string shortName(const game::navigation::NavigationWaypoint& waypoint)
     return source.substr(0, 25) + "...";
 }
 
+// the footer buttons: [РАССЧИТАТЬ] [СТАРТ] [ПАУЗА | ПРОДОЛЖИТЬ], relative to the panel's top-left
+struct FooterButton
+{
+    int command;
+    glm::dvec2 topLeft;
+    double width;
+};
+std::vector<FooterButton> footerButtons(double footerTop, int serverRouteState)
+{
+    const double y = footerTop + 22.0;
+    std::vector<FooterButton> out {{1, {8.0, y}, 84.0}, {2, {96.0, y}, 70.0}};
+    if (serverRouteState == 1 || serverRouteState == 3 || serverRouteState == 4)
+        out.push_back({3, {170.0, y}, 96.0});
+    else if (serverRouteState == 2)
+        out.push_back({4, {170.0, y}, 96.0});
+    return out;
+}
+const char* footerButtonLabel(int command)
+{
+    return command == 1 ? "РАССЧИТАТЬ" : command == 2 ? "СТАРТ" : command == 3 ? "ПАУЗА" : "ПРОДОЛЖИТЬ";
+}
+
 } // namespace
 
 double NavigationRouteOverlayState::panelHeight(
@@ -504,6 +526,18 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
             m_deleteNodeArmedId = 0;
             return result;
         }
+    }
+
+    // the footer buttons (a route with a finish)
+    if (routePlan.hasFinishWaypoint())
+    {
+        const double footerTop = height - FooterHeightPx;
+        for (const auto& b : footerButtons(footerTop, routePlan.serverRouteState))
+            if (contains(local, b.topLeft, b.width, 18.0))
+            {
+                result.routeCommand = b.command;
+                return result;
+            }
     }
 
     if (collapseHit)
@@ -857,8 +891,17 @@ void NavigationRouteOverlayRenderer::render(
         if (!routePlan.summary.empty())
             line += (line.empty() ? "" : "  ·  ") + routePlan.summary;
         if (!line.empty())
-            text.textDrawPx(line, static_cast<float>(top.x + 10.0), static_cast<float>(y + 14.0), 9,
+            text.textDrawPx(line, static_cast<float>(top.x + 10.0),
+                            static_cast<float>(top.y + height - NavigationRouteOverlayState::FooterHeightPx + 14.0), 9,
                             st == 2 ? glm::vec4(1.0f, 0.72f, 0.28f, 1.0f) : kMuted);
+        if (routePlan.hasFinishWaypoint())
+            for (const auto& b : footerButtons(height - NavigationRouteOverlayState::FooterHeightPx, routePlan.serverRouteState))
+            {
+                const glm::dvec2 at = top + b.topLeft;
+                const glm::vec4 c = b.command == 2 ? kFinish : b.command == 4 ? glm::vec4(1.0f, 0.72f, 0.28f, 1.0f) : kWaypoint;
+                outline(at, b.width, 18.0, c, 1.2f);
+                text.textDrawPx(footerButtonLabel(b.command), static_cast<float>(at.x + 6.0), static_cast<float>(at.y + 13.0), 9, c);
+            }
     }
 
     const bool deleteRouteArmed = state.deleteRouteArmed();

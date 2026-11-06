@@ -86,6 +86,26 @@ struct RoutePoint
 // acceleration (a sqrt(d / a) profile, the 0.9 c cap) times its rate
 double estimateLegChargeT(double distanceM, double massT);
 
+// a body the route must go round: its centre now and the clearance (star: heat margin)
+struct BodyObstacle
+{
+    std::string name;
+    glm::dvec3 centerM {0.0};
+    double clearM = 0.0;
+};
+
+// a green corridor of the scheduled network (world-model route between two hubs): the path round
+// the bodies between its ends; an official leg between the same ends follows it
+struct CorridorPath
+{
+    std::string name;
+    std::vector<glm::dvec3> points;   // origin .. destination, the detours between
+    double radiusM = 600000.0;
+};
+
+// the path from a to b round the bodies (the same detours the planner makes)
+std::vector<glm::dvec3> corridorPath(const glm::dvec3& a, const glm::dvec3& b, const std::vector<BodyObstacle>& bodies);
+
 struct PlanRequest
 {
     bool official = true;
@@ -93,6 +113,8 @@ struct PlanRequest
     std::string startBodyId;              // the body whose sphere holds the start
     std::vector<RoutePoint> points;       // intermediates in order, then the finish (stop)
     std::vector<std::pair<std::string, glm::dvec3>> hubsM;   // every hub now (radar for unofficial)
+    std::vector<BodyObstacle> bodies;     // the star, planets, moons: never through them
+    std::vector<CorridorPath> corridors;  // the scheduled network's green corridors
     std::function<std::string(const glm::dvec3&)> bodyAt;  // the body whose sphere holds a point
 };
 

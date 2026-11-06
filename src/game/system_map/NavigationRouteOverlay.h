@@ -18,6 +18,8 @@ struct NavigationRouteOverlayPointerResult
     bool consumed = false;
     std::uint64_t focusRouteNodeId = 0;
     std::uint64_t selectedRouteNodeId = 0;
+    // the route window's own buttons (every map): 1 calculate, 2 start, 3 pause, 4 resume
+    int routeCommand = 0;
 };
 
 class NavigationRouteOverlayState
@@ -29,7 +31,7 @@ public:
     static constexpr double StartRowHeightPx = 48.0;
     static constexpr double WaypointRowHeightPx = 48.0;
     static constexpr double FinishRowHeightPx = 84.0;
-    static constexpr double FooterHeightPx = 30.0;
+    static constexpr double FooterHeightPx = 66.0;   // summary line + buttons + hint
 
     bool collapsed() const noexcept { return m_collapsed; }
     const glm::dvec2& topLeftPx() const noexcept { return m_topLeftPx; }

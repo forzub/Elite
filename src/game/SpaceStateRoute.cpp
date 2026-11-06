@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "src/game/navigation/route/RoutePlanner.h"
+#include "src/world/celestial/settlements/SurfaceSettlementLayout.h"
 #include "src/game/simulation/JDrive.h"
 
 namespace
@@ -179,6 +180,45 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
         req.hubsM.clear();
         for (const auto& [hubId, hub] : m_client->world().hubs())
             req.hubsM.emplace_back(hubId, world::coordinates::fullMeters(hub.worldPosition));
+        // the bodies to go round: the star (the largest mu) by 20 radii, the rest by 150 km / 5 %
+        {
+            const auto mu = [&](const std::string& id) {
+                if (system)
+                    for (const auto& b : system->bodies)
+                        if (b.id == id)
+                            return b.gravitationalParameterM3s2;
+                return 0.0;
+            };
+            double starMu = 0.0;
+            for (const auto& b : snapshot->bodies)
+                starMu = std::max(starMu, mu(b.id));
+            req.bodies.clear();
+            for (const auto& b : snapshot->bodies)
+            {
+                const double r = b.radiusKm * 1000.0;
+                if (r < 50000.0)
+                    continue;
+                const bool star = starMu > 0.0 && mu(b.id) >= starMu;
+                std::string name = b.id.substr(b.id.rfind('.') + 1);
+                req.bodies.push_back({star ? "звезда " + name + " (нагрев)" : name, b.worldMeters,
+                                      star ? 20.0 * r : std::max(r + 150000.0, r * 1.05)});
+            }
+        }
+        // the scheduled network's hub-to-hub routes as green corridors round the bodies
+        req.corridors.clear();
+        if (const auto* sites = world::celestial::settlements::settlementCatalog())
+            for (const auto& r : sites->routesInSystem(snapshot->systemId))
+            {
+                const auto a = m_client->world().hubs().find(r.origin);
+                const auto b = m_client->world().hubs().find(r.destination);
+                if (a == m_client->world().hubs().end() || b == m_client->world().hubs().end() || r.origin == r.destination)
+                    continue;
+                route::CorridorPath c;
+                c.name = a->second.name + " – " + b->second.name;
+                c.points = route::corridorPath(world::coordinates::fullMeters(a->second.worldPosition),
+                                               world::coordinates::fullMeters(b->second.worldPosition), req.bodies);
+                req.corridors.push_back(std::move(c));
+            }
 
         for (const auto* w : order)
         {

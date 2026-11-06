@@ -439,6 +439,26 @@ bool SystemMapRenderer::openContextMenu(
             m_contextMenu.rows.push_back({text.contextInfo, "info", item != nullptr});
             if (item)
                 appendContextActionRows(*item);
+            else
+            {
+                // a body without an overlay card (moons are not decluttered into cards): its route
+                // roles still come from the body itself - add point / finish work for every body
+                for (const auto& b : system.bodies)
+                    if (b.id == target.bodyId)
+                    {
+                        game::system_map::MapObjectOverlayItem body;
+                        body.objectId = menu.objectId;
+                        body.name = b.name;
+                        body.infoKind = game::system_map::MapObjectInfoKind::Celestial;
+                        body.semanticTargetId = b.id;
+                        body.trackingSystemId = system.systemId;
+                        body.hasTrackingWorldPosition = true;
+                        body.trackingWorldPosition =
+                            world::coordinates::makeWorldPositionFromMeters(b.positionAu * world::celestial::MetersPerAu);
+                        m_bodyRouteCard = body;
+                        appendContextActionRows(body);
+                    }
+            }
             m_contextMenu.rows.push_back({text.contextDetails, "details", true});
         }
         else if (target.kind == Kind::Hub)

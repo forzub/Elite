@@ -258,6 +258,15 @@ SystemMapRenderer::handleInput(
             inside,
             leftDown
         );
+    // the route window's buttons: calculate / start / pause / resume (every map)
+    if (routePointer.routeCommand == 1)
+        m_pendingRouteLaunch = 3;
+    else if (routePointer.routeCommand == 2)
+        m_pendingRouteLaunch = 1;
+    else if (routePointer.routeCommand == 3)
+        m_pendingRouteControl = 1;
+    else if (routePointer.routeCommand == 4)
+        m_pendingRouteControl = 2;
     if (routePointer.selectedRouteNodeId != 0)
     {
         const auto* selectedNode =

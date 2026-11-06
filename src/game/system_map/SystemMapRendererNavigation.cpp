@@ -1200,7 +1200,12 @@ SystemMapRenderer::currentOverlayItem(const std::string& objectId) const
             return item.objectId == objectId;
         }
     );
-    return found == frame->items.end() ? nullptr : &(*found);
+    if (found != frame->items.end())
+        return &(*found);
+    // a body without an overlay card (a moon): the route card the context menu built for it
+    if (m_bodyRouteCard && m_bodyRouteCard->objectId == objectId)
+        return &*m_bodyRouteCard;
+    return nullptr;
 }
 
 void SystemMapRenderer::applyWaypointAction(

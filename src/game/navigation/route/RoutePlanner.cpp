@@ -92,6 +92,18 @@ void avoid(std::vector<glm::dvec3>& path, std::vector<std::string>& labels, cons
 }
 } // namespace
 
+std::vector<glm::dvec3> corridorPath(const glm::dvec3& a, const glm::dvec3& b, const std::vector<BodyObstacle>& bodies)
+{
+    std::vector<glm::dvec3> path {a, b};
+    std::vector<std::string> labels {"", ""};
+    std::vector<Obstacle> obstacles;
+    for (const BodyObstacle& o : bodies)
+        obstacles.push_back(Obstacle {o.centerM, o.centerM, o.clearM, o.name});
+    std::vector<std::string> notes;
+    avoid(path, labels, obstacles, notes);
+    return path;
+}
+
 ZoneCatalog loadZoneCatalog()
 {
     ZoneCatalog cat;
@@ -175,7 +187,33 @@ PlannedRoute planRoute(const PlanRequest& request, const std::vector<ZoneGeometr
         std::vector<glm::dvec3> path {cur};
         std::vector<std::string> labels {""};
 
+        bool onCorridor = false;
         if (request.official)
+        {
+            // a corridor of the scheduled network between the leg's ends: follow its path
+            for (const CorridorPath& c : request.corridors)
+            {
+                if (c.points.size() < 2)
+                    continue;
+                const double near = std::max(c.radiusM * 3.0, 50000.0);
+                const bool forward = glm::length(c.points.front() - cur) < near && glm::length(c.points.back() - target.worldM) < near;
+                const bool backward = glm::length(c.points.back() - cur) < near && glm::length(c.points.front() - target.worldM) < near;
+                if (!forward && !backward)
+                    continue;
+                std::vector<glm::dvec3> inner(c.points.begin() + 1, c.points.end() - 1);
+                if (backward)
+                    std::reverse(inner.begin(), inner.end());
+                for (const auto& p : inner)
+                {
+                    path.push_back(p);
+                    labels.push_back("зелёный коридор сети: " + c.name);
+                }
+                route.notes.push_back("по коридору сети: " + c.name);
+                onCorridor = true;
+                break;
+            }
+        }
+        if (request.official && !onCorridor)
         {
             // green corridor running this way: both of its ends near the leg's ends
             for (const ZoneGeometry& g : zones)
@@ -197,7 +235,10 @@ PlannedRoute planRoute(const PlanRequest& request, const std::vector<ZoneGeometr
                     break;
                 }
             }
-            // blue gate between the bodies this leg goes between
+        }
+        if (request.official)
+        {
+            // blue gate between the bodies this leg goes between (on a network corridor too)
             if (!curBody.empty() && !targetBody.empty() && curBody != targetBody)
                 for (const ZoneGeometry& g : zones)
                 {
@@ -224,6 +265,8 @@ PlannedRoute planRoute(const PlanRequest& request, const std::vector<ZoneGeometr
                 obstacles.push_back(Obstacle {g.a, g.b, g.radiusM,
                                               (g.zone->colour == ZoneColour::Red ? "красная зона " : "синий створ (без досмотра) ") +
                                                   g.zone->name});
+        for (const BodyObstacle& b : request.bodies)
+            obstacles.push_back(Obstacle {b.centerM, b.centerM, b.clearM, b.name});
         if (!request.official)
             for (const auto& [hubId, p] : request.hubsM)
             {

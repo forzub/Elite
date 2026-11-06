@@ -1553,7 +1553,9 @@ void SpaceState::update(float dt)
                     else if (spec.rfind("body:", 0) == 0)
                     {
                         static const std::pair<const char*, const char*> bodies[] = {
-                            {"moon", "system_0.Sol.Земля.Луна"}, {"earth", "system_0.Sol.Земля"}, {"mars", "system_0.Sol.Марс"}};
+                            {"moon", "system_0.Sol.Земля.Луна"}, {"earth", "system_0.Sol.Земля"}, {"mars", "system_0.Sol.Марс"},
+                            {"mercury", "system_0.Sol.Меркурий"}, {"venus", "system_0.Sol.Венера"}, {"jupiter", "system_0.Sol.Юпитер"},
+                            {"saturn", "system_0.Sol.Сатурн"}, {"uranus", "system_0.Sol.Уран"}, {"neptune", "system_0.Sol.Нептун"}};
                         std::string id = spec.substr(5);
                         for (const auto& [k, v] : bodies)
                             if (id == k)

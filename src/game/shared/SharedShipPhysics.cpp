@@ -204,6 +204,9 @@ float freeFlightMainCommand(
     auto& motion = transform.motion;
     if (!motion.freeFlight || !motion.travelFrame.valid)
         return pilotCommand;
+    // the J engine replaces the main engines: they idle, the J field takes the commands
+    if (motion.jEngine)
+        return 0.0f;
     using game::navigation::VelocityAlignmentMode;
     if (motion.freeFlightThrust == 1)
     {

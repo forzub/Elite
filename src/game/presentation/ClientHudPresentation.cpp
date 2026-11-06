@@ -111,6 +111,33 @@ FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
         out.speedFraction01 = 1.0f;
         if (motion.jEngine)
             out.modeText = "J " + out.modeText;   // the J engine, not the mode: normal flight shows the law alone
+        const auto gText = [](double mps2, bool sign) {
+            std::ostringstream t;
+            const double g = mps2 / 9.80665;
+            if (sign && g > 0.0)
+                t << '+';
+            if (std::abs(g) < 10.0)
+                t << std::fixed << std::setprecision(2) << g;
+            else
+                t << std::fixed << std::setprecision(0) << g;
+            t << " g";
+            return t.str();
+        };
+        out.thrustVisible = true;
+        if (motion.jEngine)
+        {
+            const double a = motion.jAccelMps2;
+            const double level = std::abs(a) < 9.80665 ? std::abs(a) / 9.80665 * 0.02 : std::log10(std::abs(a) / 9.80665) / 5.0;
+            out.thrustFraction01 = static_cast<float>((a < 0.0 ? -1.0 : 1.0) * std::clamp(level, 0.0, 1.0));
+            out.accelText = "J " + gText(a, true) + "  (" + gText(motion.jAccelCommandMps2, true) + ")" +
+                            (motion.jStopping ? "  выкл." : "");
+        }
+        else
+        {
+            const double a = glm::length(motion.mainEngineAccelerationMps2);
+            out.thrustFraction01 = motion.mainEngineMaxMps2 > 0.0 ? static_cast<float>(std::clamp(a / motion.mainEngineMaxMps2, 0.0, 1.0)) : 0.0f;
+            out.accelText = gText(a, false);
+        }
     }
 
     switch (motion.velocityAlignmentMode)

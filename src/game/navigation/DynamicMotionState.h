@@ -149,6 +149,12 @@ struct DynamicMotionState
     // 3 orbit (stabilization on the ship's own ballistic trajectory), 4 ground
     // (stabilization against the turning surface, freeFlightOrbitBodyId)
     std::uint8_t velocityReferenceKind = 0;
+    // the J engine: the pilot sets an ACCELERATION (signed, along the nose; HOME / END / INSERT,
+    // +/- exponentially), the field follows it exponentially; main = the main engines' maximum
+    double jAccelCommandMps2 = 0.0;
+    double jAccelMps2 = 0.0;
+    double mainEngineMaxMps2 = 0.0;
+    bool jStopping = false;   // J switched off: the field winds down to the main engines' level first
 
     // True only while/after a real +/- Assisted trim. It lets the release edge
     // capture reached forward speed once without allowing keypad RCS or an

@@ -77,6 +77,11 @@ struct FlightVectorIndicatorPresentation
     glm::mat3 shipModelToIndicatorBasis {1.0f};
 
     std::string speedText;
+    // thrust level beside the speed (red bar): J = log scale 1 g .. 1e5 g of the field, normal =
+    // the main engines' fraction; signed (negative = against the nose); the acceleration below
+    float thrustFraction01 = 0.0f;
+    bool thrustVisible = false;
+    std::string accelText;
     std::string modeText;
     std::string actionText;
     std::string fontPath;

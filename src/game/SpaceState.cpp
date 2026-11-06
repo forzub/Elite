@@ -2916,7 +2916,7 @@ m_playerView->updateCockpitStateFromSnapshot(
                 Input::instance().isKeyPressed(GLFW_KEY_RIGHT_CONTROL);
             if (!ctrlHeld && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
                 m_radarRangeIndex = (m_radarRangeIndex + 1) % 3;
-            const bool forwardScope = ship.transform.motion.freeFlight;
+            const bool forwardScope = ship.transform.motion.freeFlight && ship.transform.motion.jEngine;   // the J sector only with the J engine on
             m_radarDisplayRangeMeters = forwardScope ? ForwardRangeMeters : ScopeRangesMeters[m_radarRangeIndex];
 
             std::vector<RadarContactView> views;

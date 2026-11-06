@@ -3259,6 +3259,41 @@ order - ask for it again if it is not in the session.
   seen in game); the slope over a 30 m base also feeds the wild-site search (maxSlopeDeg) - more local than before.
 - Next: the author's look in game at Шеклтон / Имбриум; small bodies; styles for bodies with an atmosphere.
 
+### Slice cc-6 2026-11-06 - Assisted controls: J acceleration throttle, free hull, bounded turn; freeze diagnosis - NOT ACCEPTED
+- Author order (2026-11-06): J = the stick sets ACCELERATION (exponential law; HOME full +, END full -, INSERT
+  zero, +/- exponential trim); J off = wind the acceleration down to the main engines' level first; Backspace = a
+  free hull like Newtonian, the velocity never corrected, zero acceleration along it; normal flight must limit
+  the hull's turn (the velocity changes far slower than the hull turned); speed widget: red thrust bar + the
+  acceleration under the speed; the terrain lattice grid under the ship commented out.
+- Done (source + build + live DEV runs, D:/tmp/elite_cc1/j3*, rot5):
+  - DynamicMotionState jAccelCommandMps2 / jAccelMps2 / mainEngineMaxMps2 / jStopping (wire schema 35 -> 36;
+    contract tests not run). J block: command x2 per 0.5 s of +/- (from 1 g, to 1e5 g), field follows x2/s up,
+    x4/s down; along the nose; a negative field stops at rest against the reference; main engines idle under J
+    (freeFlightMainCommand returns 0). Live: HOME 2 -> 128 g in 8 s, INSERT winds down, '+' 3 s -> 59 g, END
+    reverses through zero, Ctrl+J off at 2.8 g -> "J engine OFF (main engines)".
+  - Ctrl+J "stays on" (author): the radar kept its J forward sector (FWD 2000 km) on freeFlight alone - now
+    freeFlight && jEngine. The server toggle itself was correct (live j1 / j2).
+  - Backspace: the free-flight prograde hold (ForwardToVelocity when not steering) ignored assistedFreeRotation
+    - ROOT CAUSE of "returns to the velocity"; now no hold / no lead limit / no bending with a free hull (live:
+    align 0 for 20 s after a yaw).
+  - Normal flight (no J): the J bending model with the rate capped at a_main / v (live: nose stops at 10 deg,
+    velocity turns 0.45 deg/s at 9.35 km/s = 7.5 g / v). The bend is assisted (no propellant accounting).
+  - HUD: speed widget red bar (J: log 1 g..1e5 g, normal: main fraction; orange = negative), "J +36 g (+100000 g)"
+    under the speed; banner line "УСКОРЕНИЕ J ... (задано ...)" / "J ВЫКЛЮЧАЕТСЯ" with the J keys.
+- Freezes: hitch log now has sub-phases (ev_poll_hotkeys / ev_webview / ev_prepare_frame, r_starfield /
+  r_celestial / r_far_passes / r_terrain_depth_labels / r_ships, remainder = stations pass) and
+  ELITE_DEV_HITCH_MS. Author session 10:01: in flight ~50 ms in the stations / prepared-objects pass (suspect: LOD
+  lazy uploads); map screens 35-86 ms prepare_frame and 90-270 ms hotkey-poll on F-key screen switches. Not
+  reproduced in --dev-direct-flight rotation runs (0 frames > 35 ms). OPEN.
+- Ship reference review (subagent): Cobrett A3 = ONE jump core um.core.z05 + 3 x std.tank.jumpcharge (1 t each);
+  runtime has 1 tank entry and a 70 MW service reactor vs passport 150 MW; A3 dry mass ~67 t unaccounted (reuses
+  the N1 economic class). Calibrated jump rule exists (ship_economics.json jump_rule, logistics.py): Cobrett
+  1.1 t per mean jump, 2.5-3 jumps per 3 t tank. Proposed J rule: J leg = R x mean jump, R 1/3..1/2 by core load;
+  rate ~ (a / 1e5 g)^1.5. Not implemented (J energy accounting still absent).
+- Next: fuel (J charge) by the rule above after the author's calibration choice; Detail map hub click /
+  context-menu info; F12 hub map (hub or player's space cube); Fomalhaut (Лекси) planet names; route waypoint
+  window with per-point programs + planner-inserted waypoints (refuel, jump intermediates) + ship rendezvous.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

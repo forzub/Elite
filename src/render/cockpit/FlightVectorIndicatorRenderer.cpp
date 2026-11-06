@@ -690,6 +690,18 @@ void FlightVectorIndicatorRenderer::render(
         bright
     );
 
+    // the thrust level: a red bar right of the speed axis (up = along the nose, down = against it)
+    if (presentation.thrustVisible)
+    {
+        const float x = center.x + radius * 0.22f;
+        const float f = std::clamp(presentation.thrustFraction01, -1.0f, 1.0f);
+        // red = along the nose, orange = negative (against it)
+        const glm::vec4 colour = f >= 0.0f ? glm::vec4(1.0f, 0.18f, 0.12f, 0.95f) : glm::vec4(1.0f, 0.55f, 0.1f, 0.95f);
+        emitLine({x, axisBottom}, {x, axisTop}, 1.0f, glm::vec4(0.6f, 0.12f, 0.1f, 0.5f));
+        if (std::abs(f) > 0.0f)
+            emitLine({x, axisBottom}, {x, axisBottom - axisLength * std::abs(f)}, 4.0f, colour);
+    }
+
     // 25/50/75/100 percent guide ticks.
     for (int i = 1; i <= 4; ++i)
     {
@@ -763,6 +775,15 @@ void FlightVectorIndicatorRenderer::render(
         center.y + radius * 0.62f,
         glm::vec3(0.55f, 0.94f, 1.0f)
     );
+
+    if (!presentation.accelText.empty())
+        drawCenteredText(
+            *m_secondaryFont,
+            presentation.accelText,
+            center.x,
+            center.y + radius * 0.62f + primaryPx * 1.05f,
+            glm::vec3(1.0f, 0.42f, 0.32f)
+        );
 
     drawCenteredText(
         *m_secondaryFont,

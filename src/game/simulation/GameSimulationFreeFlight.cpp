@@ -219,6 +219,17 @@ void GameSimulation::setFreeFlightThrust(EntityId shipId, int command)
     auto& motion = ship->core().transform().motion;
     if (!motion.freeFlight)
         return;
+    if (motion.jEngine && !motion.jStopping)
+    {
+        // J: HOME = full positive acceleration, END = full negative, INSERT = none
+        namespace jd = game::simulation::jdrive;
+        motion.jAccelCommandMps2 = command == 1 ? jd::MaxAccelMps2 : command == 2 ? -jd::MaxAccelMps2 : 0.0;
+        motion.freeFlightThrust = 0;
+        motion.freeFlightCaptureRefusal = 0;
+        std::cerr << "[Flight] ship " << shipId.value << " J command "
+                  << (command == 1 ? "FULL + (HOME)" : command == 2 ? "FULL - (END)" : "ZERO (INSERT)") << std::endl;
+        return;
+    }
     motion.freeFlightThrust = static_cast<std::uint8_t>(command);
     motion.freeFlightCaptureRefusal = 0;      // a new pilot action replaces the last capture message
     if (command != 2 && motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::BackwardToVelocity)
@@ -1268,13 +1279,12 @@ bool GameSimulation::toggleJEngine(EntityId shipId)
     auto active = m_freeFlights.find(shipId);
     if (motion.jEngine)
     {
-        motion.jEngine = false;
-        if (active != m_freeFlights.end())
-        {
-            active->second.jRampSeconds = 0.0;
-            active->second.autoStabilizeArmed = true;
-        }
-        std::cerr << "[Flight] ship " << shipId.value << ": J engine OFF (main engines)" << std::endl;
+        // off: the command drops to zero; the field winds down to the main engines' level and
+        // only then the ship is in normal flight (the J block finishes it)
+        motion.jAccelCommandMps2 = 0.0;
+        motion.jStopping = true;
+        std::cerr << "[Flight] ship " << shipId.value << ": J engine switching OFF - the field winds down from "
+                  << std::abs(motion.jAccelMps2) / 9.81 << " g" << std::endl;
         return true;
     }
     if (active != m_freeFlights.end() && !active->second.autopilotTargetId.empty())
@@ -1300,8 +1310,11 @@ bool GameSimulation::toggleJEngine(EntityId shipId)
             return false;
     }
     motion.jEngine = true;
+    motion.jStopping = false;
+    motion.jAccelCommandMps2 = 0.0;
+    motion.jAccelMps2 = 0.0;
+    motion.freeFlightThrust = 0;   // the main engines idle under J
     motion.freeFlightCaptureRefusal = 0;
-    active->second.jRampSeconds = 0.0;
     active->second.autoStabilizeArmed = false;
     std::cerr << "[Flight] ship " << shipId.value << ": J engine ON (normal flight; the thrust commands drive the J field)" << std::endl;
     return true;
@@ -1412,6 +1425,7 @@ void GameSimulation::updateFreeFlights(double dt)
                                             : g1.primaryAltitudeMeters;
         motion.freeFlightReferenceIsRoot = referenceIsRoot ? 1 : 0;
         motion.velocityReferenceKind = f.bodyFrame ? 4 : (referenceIsRoot ? 1 : 2);
+        motion.mainEngineMaxMps2 = mainEngineAccelMps2(*ship);
 
         // ---- the J engine: the J field along the main-engine thrust, in place of it
         if (motion.jEngine && !f.bodyFrame)
@@ -1421,36 +1435,73 @@ void GameSimulation::updateFreeFlights(double dt)
             if (const int blocked = jEngineBlocked(it->first, motion.systemId, frame.originMeters, why))
             {
                 motion.jEngine = false;
-                f.jRampSeconds = 0.0;
+                motion.jStopping = false;
+                motion.jAccelMps2 = motion.jAccelCommandMps2 = 0.0;
                 f.autoStabilizeArmed = true;
                 motion.freeFlightCaptureRefusal = blocked == 7 ? 3 : 4;
                 std::cerr << "[Flight] ship " << it->first.value << ": J engine OFF - the J field does not work here: " << why << std::endl;
             }
             else
             {
-                const glm::dvec3 main = motion.mainEngineAccelerationMps2;   // world, last flight step
-                const double command = std::min(1.0, glm::length(main) / std::max(1.0, mainEngineAccelMps2(*ship)));
-                if (command > 0.01)
+                // the pilot sets the acceleration: +/- change it exponentially (x2 per 0.5 s held,
+                // from 1 g); the field follows the command exponentially (x2 per s up, x4 per s
+                // down) - no step from 0 to 1e5 g
+                const double g = jd::StandardGravityMps2;
+                const double plus = ship->core().control().targetSpeedRate;
+                double cmd = motion.jStopping ? 0.0 : motion.jAccelCommandMps2;
+                if (!motion.jStopping && std::abs(plus) > 0.02)
                 {
-                    f.jRampSeconds += dt;
-                    const double accel = std::min(jd::MaxAccelMps2, jd::StandardGravityMps2 * std::exp2(f.jRampSeconds / 2.0)) * command;
-                    glm::dvec3 dv = glm::normalize(main) * accel * dt;
-                    if (motion.freeFlightThrust == 2)
-                    {
-                        // the brake: never past zero against the reference
-                        const double rel = glm::length(frame.linearVelocityMps - motion.freeFlightReferenceVelocityMps);
-                        if (glm::length(dv) > rel)
-                            dv *= rel / glm::length(dv);
-                    }
-                    frame.linearVelocityMps += dv;
-                    if (std::fmod(f.elapsedSeconds, 2.0) < dt)
-                        std::cerr << "[Flight] ship " << it->first.value << ": J engine " << accel / 9.81 << " g (command "
-                                  << command << "), speed vs reference "
-                                  << glm::length(frame.linearVelocityMps - motion.freeFlightReferenceVelocityMps) / 1000.0 << " km/s"
-                                  << std::endl;
+                    const double grow = std::exp2(dt / 0.5 * std::abs(plus));
+                    const bool up = plus > 0.0;
+                    if ((up && cmd >= 0.0) || (!up && cmd <= 0.0))
+                        cmd = (up ? 1.0 : -1.0) * std::min(jd::MaxAccelMps2, std::max(g, std::abs(cmd) * grow));
+                    else
+                        cmd = std::abs(cmd) / grow < g ? 0.0 : cmd / grow;
+                    motion.jAccelCommandMps2 = cmd;
+                }
+                double a = motion.jAccelMps2;
+                if (std::abs(cmd) < 1.0e-6 || (a != 0.0 && (a > 0.0) != (cmd > 0.0)))
+                {
+                    a /= std::exp2(dt * 2.0);                       // winding down (to zero or through it)
+                    if (std::abs(a) < 0.5 * g)
+                        a = 0.0;
                 }
                 else
-                    f.jRampSeconds = 0.0;
+                {
+                    const double mag = std::abs(a) < g ? g : std::abs(a) * std::exp2(dt);
+                    a = (cmd > 0.0 ? 1.0 : -1.0) * std::min(std::abs(cmd), mag);
+                }
+                // the J field along the nose; a negative one never pushes past rest against the reference
+                const glm::dvec3 nose = glm::normalize(glm::dvec3(tr.forward()));
+                const glm::dvec3 rel = frame.linearVelocityMps - motion.freeFlightReferenceVelocityMps;
+                glm::dvec3 dv = nose * (a * dt);
+                if (a < 0.0)
+                {
+                    const double along = glm::dot(rel, nose);
+                    if (along + a * dt <= 0.0)
+                    {
+                        dv = -nose * std::max(0.0, along);
+                        a = 0.0;
+                        motion.jAccelCommandMps2 = 0.0;
+                        std::cerr << "[Flight] ship " << it->first.value << ": J negative thrust stopped at rest against the reference"
+                                  << std::endl;
+                    }
+                }
+                frame.linearVelocityMps += dv;
+                motion.jAccelMps2 = a;
+                if (a != 0.0 && std::fmod(f.elapsedSeconds, 2.0) < dt)
+                    std::cerr << "[Flight] ship " << it->first.value << ": J engine " << a / g << " g (command " << motion.jAccelCommandMps2 / g
+                              << " g), speed vs reference " << glm::length(frame.linearVelocityMps - motion.freeFlightReferenceVelocityMps) / 1000.0
+                              << " km/s" << std::endl;
+                // switched off: normal flight once the field is down to the main engines' level
+                if (motion.jStopping && std::abs(a) <= mainEngineAccelMps2(*ship))
+                {
+                    motion.jEngine = false;
+                    motion.jStopping = false;
+                    motion.jAccelMps2 = motion.jAccelCommandMps2 = 0.0;
+                    f.autoStabilizeArmed = true;
+                    std::cerr << "[Flight] ship " << it->first.value << ": J engine OFF (main engines)" << std::endl;
+                }
             }
         }
 
@@ -1549,7 +1600,12 @@ void GameSimulation::updateFreeFlights(double dt)
                     // alignment owns the whole attitude and swallowed the roll input), but
                     // it does not bend the velocity
                     const bool rolling = std::abs(control.rollInput) > 0.05f;
-                    if (!steering && !rolling && motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::None &&
+                    // Backspace (free rotation): the hull turns freely like a Newtonian one - no
+                    // prograde hold, no lead limit, the velocity is not bent (author 2026-11-06)
+                    const bool freeHull = motion.assistedFreeRotation;
+                    if (freeHull && motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::ForwardToVelocity)
+                        motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
+                    if (!freeHull && !steering && !rolling && motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::None &&
                         motion.freeFlightThrust != 2)
                         motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::ForwardToVelocity;
                     if ((steering || rolling) &&
@@ -1563,7 +1619,11 @@ void GameSimulation::updateFreeFlights(double dt)
                     // (Newtonian J keeps the free hull: thrust direction does the turning.)
                     // Not while braking (END flips the hull) and not slower than 50 m/s
                     // (hovering / landing: the velocity has no inertia to bend).
-                    if (motion.jEngine && motion.freeFlightThrust != 2 &&
+                    // Normal flight (main engines) bends the same way, but only as fast as the main
+                    // engines can turn the velocity (a_main / v): the nose may not run away from a
+                    // velocity that turns slowly (author 2026-11-06: "надо как-то ограничивать угол
+                    // поворота корабля")
+                    if (!freeHull && motion.freeFlightThrust != 2 &&
                         motion.velocityAlignmentMode != game::navigation::VelocityAlignmentMode::BackwardToVelocity &&
                         glm::length(v) > 50.0)
                     {
@@ -1596,7 +1656,9 @@ void GameSimulation::updateFreeFlights(double dt)
                             }
                             if (steering && angle > 1.0e-5)
                             {
-                                const double rate = std::max(glm::radians(0.5), angle / 2.0);
+                                double rate = std::max(glm::radians(0.5), angle / 2.0);
+                                if (!motion.jEngine)
+                                    rate = std::min(rate, mainEngineAccelMps2(*ship) / speedRel);   // what the main engines can turn
                                 const double step = std::min(angle, rate * dt);
                                 const glm::dvec3 turned = vHat * std::cos(step) + glm::cross(axis, vHat) * std::sin(step);
                                 const glm::dvec3 dv = turned * speedRel - v;

@@ -1680,8 +1680,18 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
                       motion.freeFlightAutopilotAccelMps2 < -0.05f ? "(торможение)" : "(разгон)");
         thrust = drive;
     }
+    if (motion.jEngine && !(motion.freeFlightAutopilotPhase >= 1 && motion.freeFlightAutopilotPhase != 5))
+    {
+        char j[96];
+        std::snprintf(j, sizeof j, "%s J %+.0f g (задано %+.0f g)", motion.jStopping ? "J ВЫКЛЮЧАЕТСЯ:" : "УСКОРЕНИЕ",
+                      motion.jAccelMps2 / 9.81, motion.jAccelCommandMps2 / 9.81);
+        thrust = j;
+    }
+    const char* keys = motion.jEngine
+        ? "   HOME +макс · END -макс · INSERT 0 · +/- ускорение · Ctrl+J выкл J · Ctrl+K стабилизация"
+        : "   HOME тяга · END торм. · INSERT выкл · PgDn посадка · Ctrl+J двигатель J · Ctrl+K стабилизация";
     std::string line2 = motion.freeFlight
-        ? thrust + "   HOME тяга · END торм. · INSERT выкл · PgDn посадка · Ctrl+J двигатель J · Ctrl+K стабилизация"
+        ? thrust + keys
         : std::string("Ctrl+K нормальный полёт (без предела скорости)  ·  Ctrl+J двигатель J");
     if (motion.freeFlightCaptureRefusal == 1)
         line2 = "Нет доступной локальной системы отсчёта (хаб дальше зоны захвата)   " + line2;

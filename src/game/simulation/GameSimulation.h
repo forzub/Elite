@@ -294,7 +294,6 @@ public:
         game::navigation::LocalFlightControlLaw lawBeforeLanding = game::navigation::LocalFlightControlLaw::Assisted;
         double pilotLastLogSeconds = -1.0e30;
         // the J engine (motion.jEngine): its own ramp - 1 g doubling every 2 s while it thrusts
-        double jRampSeconds = 0.0;
         // automatic stabilization (author 2026-11-05 cc): armed by the J engine going off, by a
         // new sphere of influence or by the orbit closing; fires after a coast on a safe closed orbit
         bool autoStabilizeArmed = false;

@@ -55,6 +55,53 @@ enum class NavigationArrivalMode
     ParadeFormation
 };
 
+// What the route does at a waypoint (ROUTE_PROGRAMS_DESIGN.md §3). Auto = the old behaviour (a
+// hub with an action = a stop, a body finish = an orbit, else pass through).
+enum class NavigationWaypointProgram
+{
+    Auto = 0,
+    PassThrough,       // any target: fly past
+    Dock,              // hub: dock (services below)
+    Orbit,             // body: a parking orbit at orbitAltitudeM
+    OrbitSurvey,       // body: survey from orbit (surveyOrbits revolutions)
+    Land,              // body: automatic wild landing site
+    LandAtSettlement,  // settlement: its pad
+    Rendezvous,        // ship: the arrival profile
+    Stop               // free point: stop (stabilization)
+};
+
+struct NavigationWaypointActions
+{
+    bool refuel = false;
+    bool repair = false;
+    bool trade = false;            // unload / load (F8) - when trades exist
+    bool pauseHere = false;        // the mission pauses here: manual flight until RESUME
+    bool takeOffAfter = true;      // landing on an intermediate point: take off and continue
+    double orbitAltitudeM = 0.0;   // 0 = the planner's safe default
+    int surveyOrbits = 1;
+    std::string cargoPickup;       // free text until the cargo model exists
+    std::string cargoDrop;
+};
+
+// the programs a target kind admits (the first is the default)
+inline std::vector<NavigationWaypointProgram> programsFor(NavigationRouteAnchorKind kind, bool settlement)
+{
+    using P = NavigationWaypointProgram;
+    switch (kind)
+    {
+        case NavigationRouteAnchorKind::Hub: return {P::Dock, P::PassThrough};
+        case NavigationRouteAnchorKind::CelestialBody:
+            return settlement ? std::vector<P> {P::LandAtSettlement, P::PassThrough}
+                              : std::vector<P> {P::Orbit, P::OrbitSurvey, P::Land, P::PassThrough};
+        case NavigationRouteAnchorKind::Ship: return {P::Rendezvous};
+        case NavigationRouteAnchorKind::Infrastructure:
+        case NavigationRouteAnchorKind::SemanticAnchor:
+            return settlement ? std::vector<P> {P::LandAtSettlement, P::PassThrough} : std::vector<P> {P::PassThrough, P::Stop};
+        case NavigationRouteAnchorKind::FreeSpace: return {P::PassThrough, P::Stop};
+    }
+    return {P::PassThrough};
+}
+
 struct NavigationArrivalProfile
 {
     NavigationArrivalMode mode = NavigationArrivalMode::SafeZone;
@@ -182,6 +229,13 @@ struct NavigationWaypoint
     NavigationArrivalProfile arrival;
     // what to do at this point when the route stops there ("refuel"; empty = fly past)
     std::string stopAction;
+    // the point's program and its actions (ROUTE_PROGRAMS_DESIGN.md); the arrival profile above
+    // applies to a ship target only
+    NavigationWaypointProgram program = NavigationWaypointProgram::Auto;
+    NavigationWaypointActions actions;
+    // inserted by the planner (refuel stop, jump intermediate, zone detour) - shown with its reason
+    bool insertedByPlanner = false;
+    std::string insertedReason;
 
     // Latest presentation fallback. It is not semantic identity.
     world::coordinates::WorldPosition worldPosition;

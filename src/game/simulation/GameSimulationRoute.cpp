@@ -360,7 +360,12 @@ void GameSimulation::updateRoutes(double dt)
                 ++it;
                 continue;
             }
-            std::cerr << "[Route] ship " << id.value << ": refuelled at " << done.hubId << ", undocked" << std::endl;
+            // the jump-drive charge is filled (the J charge model, JDrive.h)
+            auto& m = ship->core().transform().motion;
+            if (m.jChargeCapacityT > 0.0)
+                m.jChargeT = m.jChargeCapacityT;
+            std::cerr << "[Route] ship " << id.value << ": refuelled at " << done.hubId << " (J charge " << m.jChargeT
+                      << " t), undocked" << std::endl;
         }
         route.serviceSeconds = -1.0;
         route.legDone = false;

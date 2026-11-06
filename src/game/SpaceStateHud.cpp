@@ -1687,6 +1687,12 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
                       motion.jAccelMps2 / 9.81, motion.jAccelCommandMps2 / 9.81);
         thrust = j;
     }
+    if (motion.freeFlight && motion.jChargeCapacityT > 0.0)
+    {
+        char c[64];
+        std::snprintf(c, sizeof c, "  ·  заряд J %.3f / %.0f т", motion.jChargeT, motion.jChargeCapacityT);
+        line1 << c;
+    }
     const char* keys = motion.jEngine
         ? "   HOME +макс · END -макс · INSERT 0 · +/- ускорение · Ctrl+J выкл J · Ctrl+K стабилизация"
         : "   HOME тяга · END торм. · INSERT выкл · PgDn посадка · Ctrl+J двигатель J · Ctrl+K стабилизация";
@@ -1703,6 +1709,8 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         line2 = "Ниже пола J: маршевые двигатели   " + line2;
     else if (motion.freeFlightCaptureRefusal == 7)
         line2 = "J не включается: рядом объект (хаб / станция 20 км, корабль 5 км)   " + line2;
+    else if (motion.freeFlightCaptureRefusal == 9)
+        line2 = "J: заряд прыжкового двигателя исчерпан   " + line2;
     else if (motion.freeFlightCaptureRefusal == 8)
         line2 = "J не включается: ниже пола J   " + line2;
     else if (motion.freeFlightCaptureRefusal == 5)

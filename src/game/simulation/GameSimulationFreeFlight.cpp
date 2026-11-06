@@ -1292,6 +1292,12 @@ bool GameSimulation::toggleJEngine(EntityId shipId)
         std::cerr << "[Flight] ship " << shipId.value << ": J engine refused - the autopilot flies its own J drive" << std::endl;
         return false;
     }
+    if (motion.jChargeT == 0.0)
+    {
+        motion.freeFlightCaptureRefusal = 9;
+        std::cerr << "[Flight] ship " << shipId.value << ": J engine REFUSED - the jump-drive charge is empty" << std::endl;
+        return false;
+    }
     const glm::dvec3 shipWorld = motion.travelFrame.localToWorldPosition(motion.localPositionMeters);
     std::string why;
     if (const int blocked = jEngineBlocked(shipId, motion.systemId, shipWorld, why))
@@ -1501,6 +1507,34 @@ void GameSimulation::updateFreeFlights(double dt)
                     motion.jAccelMps2 = motion.jAccelCommandMps2 = 0.0;
                     f.autoStabilizeArmed = true;
                     std::cerr << "[Flight] ship " << it->first.value << ": J engine OFF (main engines)" << std::endl;
+                }
+            }
+        }
+
+        // ---- the J charge: the pilot's J field or the autopilot's J drive (not its main-engine de-orbit)
+        {
+            namespace jd = game::simulation::jdrive;
+            if (motion.jChargeT < 0.0)
+            {
+                motion.jChargeCapacityT = jd::CobrettChargeCapacityT;
+                motion.jChargeT = motion.jChargeCapacityT;
+            }
+            const bool autopilotJ = !f.autopilotTargetId.empty() && motion.freeFlightAutopilotPhase >= 1 &&
+                                    motion.freeFlightAutopilotPhase <= 4;
+            const double a = motion.jEngine ? motion.jAccelMps2 : autopilotJ ? motion.freeFlightAutopilotAccelMps2 : 0.0;
+            if (a != 0.0 && motion.jChargeT > 0.0)
+            {
+                const double massT = ship->core().effectivePhysics().massKg / 1000.0;
+                motion.jChargeT = std::max(0.0, motion.jChargeT - jd::jChargeRateTps(a, massT, jd::CobrettCoreRatingT) * dt);
+                if (motion.jChargeT == 0.0 && motion.jEngine)
+                {
+                    // the field collapses: normal flight at once
+                    motion.jEngine = false;
+                    motion.jStopping = false;
+                    motion.jAccelMps2 = motion.jAccelCommandMps2 = 0.0;
+                    motion.freeFlightCaptureRefusal = 9;
+                    f.autoStabilizeArmed = true;
+                    std::cerr << "[Flight] ship " << it->first.value << ": J engine OFF - the jump-drive charge is empty" << std::endl;
                 }
             }
         }

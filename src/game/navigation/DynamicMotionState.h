@@ -155,6 +155,8 @@ struct DynamicMotionState
     double jAccelMps2 = 0.0;
     double mainEngineMaxMps2 = 0.0;
     bool jStopping = false;   // J switched off: the field winds down to the main engines' level first
+    double jChargeT = -1.0;          // jump-drive charge left (t); < 0 = not yet filled (first J use)
+    double jChargeCapacityT = 0.0;
 
     // True only while/after a real +/- Assisted trim. It lets the release edge
     // capture reached forward speed once without allowing keypad RCS or an

@@ -301,6 +301,8 @@ ELITE_WIRE_SCHEMA(
     v.jAccelMps2,
     v.mainEngineMaxMps2,
     v.jStopping,
+    v.jChargeT,
+    v.jChargeCapacityT,
     v.assistedThrottleTrimWasActive,
     v.forwardSpeedMps,
     v.strafeSpeedMps,

@@ -10,23 +10,27 @@ but they are not allowed to reintroduce retired control seams.
 
 ## 1. Canonical ownership
 
-Two execution owners exist, split by SCALE (updated 2026-11-06 after the architecture audit; before
-this the section claimed one client owner):
+**Author decision 2026-11-06 (normative):** the server simulates many players, so every planner and, where
+possible, every autopilot runs on the CLIENT; the server receives ordinary control commands and stays the
+plant + the authority:
+- CLIENT: route planning (route window, J charge walk, refuel insertion, corridors, body avoidance), the
+  docking planner and autopilot, the global J autopilot, the landing autopilot (site search, de-orbit,
+  terminal pilot), route-leg execution, take-off, rendezvous, the route state (pause / resume).
+- SERVER: fixed-step physics on the travel frame, the J field EXECUTING the client's command within the rules
+  (max acceleration, ramp, keep-out, J floor, 0.9 c cap, the charge), attitude slewing within the hull's
+  rates, ground contact / damage, collisions, navigation-zone fines, the replicated authoritative state.
+- The command surface is `ShipControlState` (ordinary input every frame) extended with a global-flight part:
+  a J acceleration vector (world) and an attitude target. With ~0.1 s client-server latency at up to 1e5 g
+  the client commands TARGETS (acceleration, attitude) that the server tracks every tick - the J braking
+  profile (tail d / 6 s) stays stable under that latency.
+- Shared rules on both sides: `navigation/rules/BodyFlightRules.h`, `navigation/rules/JDrive.h`.
 
-- **Local tactical flight (hub frame, docking, the dock approach)** - client-owned, described below:
-  the client route autopilot produces ordinary `ShipControlState`, the server only integrates it.
-- **Global flight (J engine, route legs, take-off, landing, rendezvous)** - SERVER-owned
-  (`GameSimulationFreeFlight.cpp`, `GameSimulationRoute.cpp`, `GameSimulationZones.cpp`): the client
-  plans (`navigation/route/RoutePlanner` - the route window, the J-charge walk, refuel insertion,
-  corridors, body avoidance) and sends the legs as a `RouteLeg` command (`route/RouteWire.h`, the neutral
-  wire form); the server flies them on the travel frame and owns the route state (`motion.routeState`),
-  the J charge, the landing pilot (which replaces the pilot's controls while it lands) and the
-  navigation-zone fines. Both sides use the SAME rules (`navigation/rules/BodyFlightRules.h`:
-  dominant body / SOI, J floor, clearance, airless; `navigation/rules/JDrive.h`: J figures and charge).
-- **Hand-over**: a global leg ends by leaving J into a stabilization frame (a hub capture, the own
-  orbit, the ground); from there the local tactical owner (docking planner) may take over. A
-  pilot-initiated global action while a client tactical route runs MUST cancel the tactical route first
-  (the rule; not yet enforced or tested in code - OPEN).
+Migration status (2026-11-06): the local tactical chain below is client-owned already. The global
+flight (J autopilot, route legs, take-off, landing pilot, rendezvous) still RUNS ON THE SERVER
+(`GameSimulationFreeFlight.cpp`, `GameSimulationRoute.cpp`) and moves to the client in phases G1 (the
+command channel) .. G4 (route legs / take-off / rendezvous) - PROJECT_STATE "Client-owned global flight".
+The hand-over rule: a global leg ends by leaving J into a stabilization frame (hub / own orbit / ground);
+a pilot-initiated global action while a client tactical route runs MUST cancel it first (OPEN).
 
 The rest of this section describes the local tactical chain.
 

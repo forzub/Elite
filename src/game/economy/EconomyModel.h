@@ -43,6 +43,9 @@ struct HubEconomyInfo
     bool hostsBoard = false;
     bool remote = false;
     bool hidden = false;
+    // Composition (hub_modules blocks): one line per block, e.g.
+    // "Пассажирский блок: челночный док x141, отель x21".
+    std::vector<std::string> composition;
 };
 
 struct MarketQuote

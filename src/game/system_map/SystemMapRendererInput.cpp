@@ -116,6 +116,8 @@ SystemMapRenderer::handleInput(
             GLFW_MOUSE_BUTTON_RIGHT
         ) == GLFW_PRESS;
 
+    driveDevPointer(vp, mx, my, leftDown, rightDown);
+
     // DEV only: a scripted pointer replaces the GLFW pointer; the rest of
     // the input path is production.
     if (game::system_map::GalaxyPointerDevScript::enabled() &&
@@ -819,7 +821,9 @@ SystemMapRenderer::handleInput(
                 ),
                 glm::dvec2(localMx, localMy),
                 inside,
-                leftDown
+                leftDown,
+                0.0,
+                currentTimeSeconds()
             );
 
         // Hub infrastructure is not selected through a screen-space radius or
@@ -930,6 +934,22 @@ SystemMapRenderer::handleInput(
                 else
                 {
                     m_detailView.clearHubSelection();
+                }
+
+                // Double click on a hub = go to the hub (its Hub map).
+                if (item != objectOverlay.items.end() &&
+                    overlayPointer.doubleClickedObjectId == item->objectId &&
+                    !item->navigationHubId.empty())
+                {
+                    auto& camera = m_detailView.camera();
+                    camera.rotating = false;
+                    camera.panning = false;
+                    camera.lastMouseX = mx;
+                    camera.lastMouseY = my;
+                    m_pendingScrollY = 0.0;
+                    return game::system_map::MapIntent::openHub(
+                        item->navigationHubId,
+                        item->navigationHubParentBodyId);
                 }
             }
 
@@ -1221,4 +1241,140 @@ bool SystemMapRenderer::moveSystemCubeSelection(int dx, int dy, double nowSecond
     st.navigationCellExplicitlySelected = true;
     m_systemSceneFrameDirty = true;
     return true;
+}
+
+
+// ============================================================================
+// DEV scripted pointer (ELITE_DEV_SOL_MAP_SCRIPT "pointer:<spec>")
+// ============================================================================
+
+bool SystemMapRenderer::driveDevPointer(
+    const Viewport& vp,
+    double& mx,
+    double& my,
+    bool& leftDown,
+    bool& rightDown
+)
+{
+    if (m_devPointerSpec.empty())
+        return false;
+    const auto colon = m_devPointerSpec.find(':');
+    const std::string verb = m_devPointerSpec.substr(0, colon);
+    const std::string arg = colon == std::string::npos ? std::string() : m_devPointerSpec.substr(colon + 1);
+    const int frame = m_devPointerFrame++;
+
+    glm::dvec2 at(-1.0);
+    if (verb == "menu" && frame > 0)
+    {
+        at = m_devPointerAt; // the press closes the menu: keep the row position
+    }
+    else if (verb == "menu")
+    {
+        if (!m_contextMenu.open)
+        {
+            std::cerr << "[DevPointer] menu not open for " << arg << std::endl;
+            m_devPointerSpec.clear();
+            return false;
+        }
+        const glm::vec4 b = m_contextMenu.bounds();
+        for (std::size_t i = 0; i < m_contextMenu.rows.size(); ++i)
+            if (m_contextMenu.rows[i].command == arg)
+                at = glm::dvec2(b.x + game::system_map::MapContextMenu::WidthPx * 0.5,
+                                b.y + game::system_map::MapContextMenu::HeaderHeightPx + 3.0 +
+                                    game::system_map::MapContextMenu::RowHeightPx * (static_cast<double>(i) + 0.5));
+    }
+    else
+    {
+        const game::system_map::MapObjectOverlayFrame* overlay =
+            m_modeState.current() == Mode::Detail ? &m_detailPresentation.frame.objectOverlay
+            : m_modeState.current() == Mode::Hub  ? &m_hubPresentation.frame.objectOverlay
+                                                  : &m_systemSceneFrame.interaction.objectOverlay;
+        for (const auto& item : overlay->items)
+            if (item.objectId == arg && item.visible)
+                at = item.screenPx;
+    }
+    if (at.x < 0.0)
+    {
+        std::cerr << "[DevPointer] target not on the map: " << m_devPointerSpec << std::endl;
+        m_devPointerSpec.clear();
+        return false;
+    }
+
+    // frame plan: 0 move, 1-2 press, 3 release (dclick: 4-5 press, 6 release)
+    bool left = false, right = false, done = false;
+    if (verb == "click" || verb == "menu")
+    {
+        left = frame == 1 || frame == 2;
+        done = frame >= 3;
+    }
+    else if (verb == "dclick")
+    {
+        left = frame == 1 || frame == 2 || frame == 4 || frame == 5;
+        done = frame >= 6;
+    }
+    else if (verb == "rclick")
+    {
+        right = frame == 1 || frame == 2;
+        done = frame >= 3;
+    }
+    else
+    {
+        done = true;
+    }
+    mx = static_cast<double>(vp.x) + at.x;
+    my = static_cast<double>(vp.y) + at.y;
+    leftDown = left;
+    rightDown = right;
+    m_devPointerAt = at;
+    if (frame == 0)
+        std::cerr << "[DevPointer] " << m_devPointerSpec << " at " << at.x << "," << at.y << std::endl;
+    if (done)
+        m_devPointerSpec.clear();
+    return true;
+}
+
+std::string SystemMapRenderer::devOverlayReport() const
+{
+    const game::system_map::MapObjectOverlayFrame* overlay =
+        m_modeState.current() == Mode::Detail ? &m_detailPresentation.frame.objectOverlay
+        : m_modeState.current() == Mode::Hub  ? &m_hubPresentation.frame.objectOverlay
+                                              : &m_systemSceneFrame.interaction.objectOverlay;
+    std::ostringstream out;
+    out << "mode " << static_cast<int>(m_modeState.current()) << " active '" << m_objectOverlayState.activeObjectId()
+        << "' detailHub '" << m_detailView.state().selectedHubId << "' items:";
+    for (const auto& item : overlay->items)
+        if (item.visible)
+            out << " [" << item.objectId << " | " << item.name << " | hub=" << item.navigationHubId
+                << (item.selectOnClick ? " | sel" : "") << (m_objectOverlayState.isOpen(item.objectId) ? " | CARD" : "")
+                << " @" << static_cast<int>(item.screenPx.x) << "," << static_cast<int>(item.screenPx.y) << "]";
+    return out.str();
+}
+
+bool SystemMapRenderer::activeTacticalObjectContext(
+    std::string& hubId,
+    glm::dvec3& worldMeters
+) const
+{
+    const std::string& active = m_objectOverlayState.activeObjectId();
+    if (active.empty() ||
+        (m_modeState.current() != Mode::System && m_modeState.current() != Mode::Detail))
+        return false;
+    const auto& overlay = m_modeState.current() == Mode::Detail
+        ? m_detailPresentation.frame.objectOverlay
+        : m_systemSceneFrame.interaction.objectOverlay;
+    for (const auto& item : overlay.items)
+    {
+        if (item.objectId != active)
+            continue;
+        if (item.infoKind != game::system_map::MapObjectInfoKind::Tactical || !item.hasTrackingWorldPosition)
+            return false;
+        hubId = item.navigationHubId;
+        // System items carry their system-local AU (their tracking position
+        // includes the galactic offset); Detail items track system meters.
+        worldMeters = item.hasNavigationSystemPositionAu
+            ? item.navigationSystemPositionAu * world::celestial::MetersPerAu
+            : world::coordinates::fullMeters(item.trackingWorldPosition);
+        return true;
+    }
+    return false;
 }

@@ -504,6 +504,11 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
         );
         item.navigationHubId = navigationHub.hubId;
         item.navigationHubParentBodyId = navigationHub.parentBodyId;
+        // Detail-map hubs / world sites: click selects (name at the marker,
+        // facts in the right panel), double click goes to the hub, the card
+        // comes from the context menu.
+        item.selectOnClick =
+            object.objectClass == world::celestial::DetailObjectClass::Hub;
         item.trackingWorldPosition =
             world::coordinates::makeWorldPositionFromMeters(
                 localSceneObjectWorldMeters(snapshot.scene, object)

@@ -715,6 +715,19 @@ void MapObjectOverlayRenderer::render(
             drawVelocityArrow(item);
         }
 
+        // A selected select-on-click object (Detail-map hub) carries its
+        // name next to the marker (below the player badge slot).
+        if (item.selectOnClick && item.drawGlyph && !item.name.empty() &&
+            state.isActive(item.objectId))
+        {
+            textRenderer.textDrawPx(
+                item.name,
+                static_cast<float>(item.screenPx.x + 10.0 + 9.0 * item.glyphScale),
+                static_cast<float>(item.screenPx.y - 7.0),
+                14,
+                glm::vec4(0.86f, 0.95f, 1.0f, 1.0f));
+        }
+
         const bool numberedShipTarget =
             item.infoKind == MapObjectInfoKind::Tactical &&
             item.kind == MapObjectGlyphKind::Ship &&

@@ -30,6 +30,10 @@ struct SystemMapInfoInput
     // overlay object id ("site:<id>", replicated hub id, ship key) or empty
     std::string selectedObjectId;
     std::string selectedBodyId;
+    // a selected replicated hub: its name and composition (modules attached
+    // to it in the replicated world: "name x count"), empty otherwise
+    std::string selectedHubName;
+    std::vector<std::string> selectedHubModules;
     // relation of the player to this place: from warrants / reputation when they exist
     std::string playerRelation = "нейтральное: записей, ордеров и претензий нет";
 };
@@ -167,6 +171,12 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
         add(out, K::Field, "Отношение к вам", in.playerRelation);
         if (!s->character.empty())
             add(out, K::Paragraph, "", s->character);
+        if (!in.selectedHubModules.empty())
+        {
+            add(out, K::Heading, "Состав");
+            for (const auto& m : in.selectedHubModules)
+                add(out, K::Bullet, "", m);
+        }
         // principal routes through this place (aggregate network)
         std::vector<const world::celestial::WorldRoute*> routes;
         for (const auto& r : in.catalog->routesInSystem(in.systemId))
@@ -187,6 +197,21 @@ inline void buildSystemMapInfo(const SystemMapInfoInput& in, std::string& title,
                 add(out, K::Bullet, "", siteName(in, other) + buf + (r->disruption != "none" && !r->disruption.empty() ? ", сбой: " + r->disruption : ""));
             }
         }
+        return;
+    }
+
+    // ---------------------------------------------------------------- a replicated hub without world-site facts
+    if (!in.selectedHubName.empty())
+    {
+        add(out, K::Heading, in.selectedHubName);
+        add(out, K::Field, "Тип", "орбитальный хаб");
+        if (!in.selectedHubModules.empty())
+        {
+            add(out, K::Heading, "Состав");
+            for (const auto& m : in.selectedHubModules)
+                add(out, K::Bullet, "", m);
+        }
+        add(out, K::Field, "Отношение к вам", in.playerRelation);
         return;
     }
 

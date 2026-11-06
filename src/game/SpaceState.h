@@ -262,6 +262,22 @@ private:
     bool buildSelectedMapDetailTarget(
         world::celestial::DetailTarget& outTarget
     ) const;
+    // F12 local map: the terminal System cube containing a point, focused on
+    // the object it shows (focus != None: never promoted to a body scene).
+    bool buildLocalCubeTarget(
+        int systemId,
+        const glm::dvec3& systemLocalAu,
+        world::celestial::DetailObjectClass focusClass,
+        const std::string& focusId,
+        world::celestial::DetailTarget& outTarget
+    ) const;
+    // System-local AU of the object a local cube follows ("player", "entity:N").
+    bool resolveLocalCubeFocusAu(const std::string& focusId, int systemId, glm::dvec3& outAu) const;
+    // F12 from an open System / Detail map with a selected object: its hub
+    // (Hub map) or the cube containing it. False: no such selection.
+    bool prepareSelectedObjectLocalMap();
+    // F12 cube follows its object into the neighbour cube.
+    void followLocalCubeFocus();
     void renderUniverseTimeSimulationOverlay(
         const Viewport& viewport
     );

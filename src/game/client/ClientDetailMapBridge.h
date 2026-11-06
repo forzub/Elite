@@ -782,9 +782,14 @@ inline bool rebuildDetailMapFromClientState(
 
             // A terminal cube is an address. If its centre is inside a body,
             // the semantic Details scene becomes that body, matching the
-            // established Galaxy/System/Details navigation behavior.
+            // established Galaxy/System/Details navigation behavior. A cube
+            // that is an OBJECT's local space (focus: the player / a ship / a
+            // hub, F12) stays that cube.
+            const bool objectLocalSpace = requestedTarget.focusClass != DetailObjectClass::None;
             for (const auto& body : celestial.bodies)
             {
+                if (objectLocalSpace)
+                    break;
                 const double radiusMeters =
                     std::max(0.0, body.radiusKm * 1000.0);
                 if (radiusMeters <= 0.0)

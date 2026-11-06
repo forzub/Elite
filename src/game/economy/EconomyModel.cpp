@@ -145,9 +145,27 @@ void EconomyModel::load()
         m_goods.push_back(std::move(t));
     }
 
+    std::unordered_map<std::string, std::string> moduleRu;
+    if (hubs.contains("module_types") && hubs["module_types"].is_object())
+        for (const auto& [type, info] : hubs["module_types"].items())
+            moduleRu[type] = info.is_object() ? str(info, "ru", type) : type;
     for (const auto& h : hubs.value("hubs", json::array()))
     {
         HubEconomyInfo i;
+        for (const auto& block : h.value("blocks", json::array()))
+        {
+            std::string line;
+            for (const auto& module : block.value("modules", json::array()))
+            {
+                const std::string type = str(module, "type");
+                const auto ru = moduleRu.find(type);
+                const int count = static_cast<int>(num(module, "count", 1.0));
+                line += (line.empty() ? "" : ", ") + (ru == moduleRu.end() ? type : ru->second) +
+                        (count > 1 ? " ×" + std::to_string(count) : std::string());
+            }
+            if (!line.empty())
+                i.composition.push_back(str(block, "ru", str(block, "block")) + ": " + line);
+        }
         i.id = str(h, "id");
         i.name = str(h, "name", i.id);
         i.typeRu = str(h, "type_ru");

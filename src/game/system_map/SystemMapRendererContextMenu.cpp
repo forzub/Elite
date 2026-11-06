@@ -274,6 +274,14 @@ bool SystemMapRenderer::openContextMenu(
         m_objectOverlayState.activate(glyph->objectId);
         menu.hubId = glyph->navigationHubId;
         menu.hubParentBodyId = glyph->navigationHubParentBodyId;
+        // The menu target is selected (single-click semantics).
+        if (menu.mode == Mode::Detail)
+        {
+            if (!glyph->navigationHubId.empty())
+                m_detailView.selectHub(glyph->navigationHubId, glyph->navigationHubParentBodyId);
+            else
+                m_detailView.clearHubSelection();
+        }
         m_contextMenu = menu;
         m_contextMenu.rows.push_back({text.contextInfo, "info", true});
         appendContextActionRows(*glyph);

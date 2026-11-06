@@ -1,5 +1,7 @@
 // SpaceState: Galaxy / System Map glue: map snapshots, map modes and transitions, the native map panel and the map UI state.
 
+#include <map>
+#include "src/game/economy/EconomyModel.h"
 #include "src/game/navigation/orbital/OrbitalTransferPlanner.h"
 #include "src/game/presentation/SystemMapInfoBuilder.h"
 #include "src/game/SpaceStateInternal.h"
@@ -78,17 +80,40 @@ bool SpaceState::buildPlayerDetailTarget(
     }
 
     // No semantic body/hub target (or F12 explicitly requested local space):
-    // address the exact terminal system-navigation cube that contains player.
-    game::navigation::SystemNavigationGrid grid;
-    grid.activateSystem(nav.currentSystemId);
+    // address the exact terminal system-navigation cube that contains the
+    // player. The cube is the PLAYER's local space (focus = player): it is
+    // never promoted to a body scene (in low orbit the 2500 km cube centre
+    // often lies inside the planet, and F12 then showed the whole planet's
+    // Details) and it follows the player into the neighbour cube.
+    return buildLocalCubeTarget(
+        nav.currentSystemId, nav.systemLocalAu, DetailObjectClass::Ship, "player", outTarget);
+}
 
+bool SpaceState::buildLocalCubeTarget(
+    int systemId,
+    const glm::dvec3& systemLocalAu,
+    world::celestial::DetailObjectClass focusClass,
+    const std::string& focusId,
+    world::celestial::DetailTarget& outTarget
+) const
+{
+    using namespace world::celestial;
+    outTarget = {};
+    if (!m_client || systemId < 0)
+        return false;
+    outTarget.systemId = systemId;
+    if (const auto* atlas = m_client->starAtlas())
+        if (const auto* summary = atlas->findSystemSummary(systemId))
+            outTarget.systemPositionLy = summary->positionLy;
+
+    game::navigation::SystemNavigationGrid grid;
+    grid.activateSystem(systemId);
     const int level = grid.maximumLevel();
-    const auto index =
-        grid.nearestIndexForPosition(nav.systemLocalAu, level);
-    const auto cell = grid.cell(index, level);
+    const auto cell = grid.cell(grid.nearestIndexForPosition(systemLocalAu, level), level);
 
     outTarget.sceneKind = DetailSceneKind::SpatialVolume;
-    outTarget.focusClass = DetailObjectClass::None;
+    outTarget.focusClass = focusClass;
+    outTarget.focusId = focusId;
     outTarget.spatialCell.level = cell.level;
     outTarget.spatialCell.maximumLevel = grid.maximumLevel();
     outTarget.spatialCell.x = cell.index.x;
@@ -96,8 +121,124 @@ bool SpaceState::buildPlayerDetailTarget(
     outTarget.spatialCell.z = cell.index.z;
     outTarget.spatialCell.centerAu = cell.center;
     outTarget.spatialCell.edgeAu = cell.size;
-
     return outTarget.valid();
+}
+
+bool SpaceState::resolveLocalCubeFocusAu(
+    const std::string& focusId,
+    int systemId,
+    glm::dvec3& outAu
+) const
+{
+    if (!m_client || focusId.empty())
+        return false;
+    if (focusId == "player")
+    {
+        const auto& nav = m_client->playerNavigation();
+        if (nav.currentSystemId != systemId)
+            return false;
+        outAu = nav.systemLocalAu;
+        return true;
+    }
+    if (focusId.rfind("entity:", 0) == 0)
+    {
+        const auto& ships = m_client->world().ships();
+        const auto it = ships.find(static_cast<std::uint32_t>(std::strtoul(focusId.c_str() + 7, nullptr, 10)));
+        if (it == ships.end())
+            return false;
+        outAu = world::coordinates::fullMeters(it->second.transform.worldPosition) / world::celestial::MetersPerAu;
+        return true;
+    }
+    return false;
+}
+
+void SpaceState::followLocalCubeFocus()
+{
+    using namespace world::celestial;
+    const DetailTarget loaded = m_loadedDetailTarget;
+    if (loaded.sceneKind != DetailSceneKind::SpatialVolume || loaded.focusClass == DetailObjectClass::None ||
+        loaded.focusId.empty() || loaded.systemId < 0)
+        return;
+    glm::dvec3 au(0.0);
+    if (!resolveLocalCubeFocusAu(loaded.focusId, loaded.systemId, au))
+        return;
+    DetailTarget next;
+    if (!buildLocalCubeTarget(loaded.systemId, au, loaded.focusClass, loaded.focusId, next) ||
+        next.spatialCell == loaded.spatialCell)
+        return;
+    if (composeDetailMapSnapshot(next))
+        std::cerr << "[LocalMap] " << next.focusId << " left cube " << loaded.spatialCell.x << ','
+                  << loaded.spatialCell.y << ',' << loaded.spatialCell.z << " -> shown in cube "
+                  << next.spatialCell.x << ',' << next.spatialCell.y << ',' << next.spatialCell.z << std::endl;
+}
+
+bool SpaceState::prepareSelectedObjectLocalMap()
+{
+    using namespace world::celestial;
+    if (!m_client || !context().app || context().app->gameUiMode() != GameUiMode::SystemMap)
+        return false;
+    const auto mode = m_systemMapRenderer.mode();
+    if (mode != SystemMapRenderer::Mode::System && mode != SystemMapRenderer::Mode::Detail)
+        return false;
+
+    std::string tacticalHubId;
+    glm::dvec3 tacticalMeters(0.0);
+    const bool tactical = m_systemMapRenderer.activeTacticalObjectContext(tacticalHubId, tacticalMeters);
+    const std::string activeId = m_systemMapRenderer.activeObjectId();
+
+    std::string hubId = m_systemMapRenderer.selectedHubId();
+    if (hubId.empty())
+        hubId = tacticalHubId;
+    if (hubId.empty() && m_client->world().hubs().count(activeId))
+        hubId = activeId;
+
+    const auto hub = m_client->world().hubs().find(hubId);
+    if (!hubId.empty() && hub != m_client->world().hubs().end() && hub->second.systemId >= 0)
+    {
+        const int systemId = hub->second.systemId;
+        if (!composeSystemMapSnapshot(systemId))
+            return false;
+        DetailTarget parent;
+        if (mode == SystemMapRenderer::Mode::Detail && m_loadedDetailTarget.valid() &&
+            m_loadedDetailTarget.systemId == systemId)
+        {
+            parent = m_loadedDetailTarget;
+        }
+        else
+        {
+            parent.systemId = systemId;
+            if (const auto* atlas = m_client->starAtlas())
+                if (const auto* summary = atlas->findSystemSummary(systemId))
+                    parent.systemPositionLy = summary->positionLy;
+            parent.focusClass = DetailObjectClass::Hub;
+            parent.focusId = hubId;
+            parent.anchorId = hub->second.parentBodyId.empty() ? hubId : hub->second.parentBodyId;
+            parent.sceneKind = hub->second.parentBodyId.empty() ? DetailSceneKind::LocalObject
+                                                                : DetailSceneKind::CelestialBody;
+        }
+        if (!composeDetailMapSnapshot(parent) || !composeHubMapSnapshot(systemId, hubId))
+            return false;
+        std::cerr << "[LocalMap] F12: the selected object's hub " << hubId << std::endl;
+        m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Hub);
+        return true;
+    }
+
+    if (!tactical || activeId.empty())
+        return false;
+    const int systemId = mode == SystemMapRenderer::Mode::Detail && m_loadedDetailTarget.valid()
+        ? m_loadedDetailTarget.systemId
+        : m_loadedSystemMapId;
+    const bool ship = activeId == "player" || activeId.rfind("entity:", 0) == 0;
+    DetailTarget cube;
+    if (!buildLocalCubeTarget(systemId, tacticalMeters / MetersPerAu,
+                              ship ? DetailObjectClass::Ship : DetailObjectClass::Hub, activeId, cube))
+        return false;
+    if (!composeSystemMapSnapshot(systemId) || !composeDetailMapSnapshot(cube))
+        return false;
+    std::cerr << "[LocalMap] F12: the cube of the selected object " << activeId << " (" << cube.spatialCell.x << ','
+              << cube.spatialCell.y << ',' << cube.spatialCell.z << ")" << std::endl;
+    m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Detail);
+    return true;
 }
 
 
@@ -291,8 +432,15 @@ void SpaceState::setSystemMapHubMode()
     }
 
     // A local-map drill belongs to the map context that is already loaded,
-    // never to the player's unrelated current navigation membership.
-    const int selectedId = m_loadedSystemMapId;
+    // never to the player's unrelated current navigation membership. On
+    // Details that is the loaded Details target: F11 opens Details without
+    // composing a System map, so m_loadedSystemMapId may still be -1 there
+    // (the Hub drill from such a Details map silently did nothing).
+    const int selectedId =
+        mode == SystemMapRenderer::Mode::Detail && m_loadedDetailTarget.valid() &&
+                m_loadedDetailTarget.systemId >= 0
+            ? m_loadedDetailTarget.systemId
+            : m_loadedSystemMapId;
     const std::string hubId = m_systemMapRenderer.selectedHubId();
 
     // For a free-space tactical target, HUB means "open this object's local
@@ -385,6 +533,7 @@ void SpaceState::updateLiveMapSnapshots(float dt)
             if (m_detailMapLiveRefreshTimer >= refreshSeconds)
             {
                 m_detailMapLiveRefreshTimer = 0.0;
+                followLocalCubeFocus();
                 composeDetailMapSnapshot(m_loadedDetailTarget);
             }
             return;
@@ -631,18 +780,59 @@ SpaceState::buildNativeSystemMapPanelPresentation()
     auto panel = game::presentation::buildSystemMapPanelPresentation(input);
     m_systemMapRenderer.setWorldSitesCatalog(&m_client->catalogs().worldSites());
     // System / Detail: the information block (world model facts; never a hand-written status)
-    if ((m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System || m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Detail) &&
-        m_systemMapSnapshot.systemId >= 0 && !m_systemMapShowsEmptySector)
+    const auto infoMode = m_systemMapRenderer.mode();
+    const int infoSystemId =
+        infoMode == SystemMapRenderer::Mode::Hub ? m_loadedHubMapSystemId
+        : infoMode == SystemMapRenderer::Mode::Detail && m_loadedDetailTarget.valid()
+            ? m_loadedDetailTarget.systemId
+            : m_systemMapSnapshot.systemId;
+    if ((infoMode == SystemMapRenderer::Mode::System || infoMode == SystemMapRenderer::Mode::Detail ||
+         (infoMode == SystemMapRenderer::Mode::Hub && !m_loadedHubMapHubId.empty())) &&
+        infoSystemId >= 0 && !m_systemMapShowsEmptySector)
     {
         game::presentation::SystemMapInfoInput info;
-        info.systemId = m_systemMapSnapshot.systemId;
+        info.systemId = infoSystemId;
         info.catalog = &m_client->catalogs().worldSites();
         info.system = &m_systemMapSnapshot;
         info.selectedObjectId = m_systemMapRenderer.activeObjectId();
         info.selectedBodyId = m_systemMapRenderer.selectedBodyId();
+        // A hub selected on the map (its marker or one of its module
+        // markers): the hub's facts + its composition (modules by block,
+        // economy hub_modules data) in the panel.
+        // (the Hub map: the hub it shows)
+        std::string hubId = infoMode == SystemMapRenderer::Mode::Hub ? m_loadedHubMapHubId
+                                                                     : m_systemMapRenderer.selectedHubId();
+        if (hubId.empty())
+            hubId = info.selectedObjectId;
+        const auto hubIt = m_client->world().hubs().find(hubId);
+        if (hubIt != m_client->world().hubs().end())
+            info.selectedObjectId = hubId;
+        const std::string economyId =
+            info.selectedObjectId.rfind("site:", 0) == 0 ? info.selectedObjectId.substr(5) : info.selectedObjectId;
+        if (const auto* economy = economyId.empty() ? nullptr : game::economy::EconomyModel::instance().hub(economyId))
+            info.selectedHubModules = economy->composition;
+        if (hubIt != m_client->world().hubs().end())
+        {
+            if (info.selectedHubModules.empty())
+            {
+                // no economy record: the modules attached to it in the replicated world
+                std::map<std::string, int> modules;
+                for (const auto& [id, object] : m_client->world().objects())
+                {
+                    (void)id;
+                    if (object.hubAttachment.valid && object.hubAttachment.hubId == hubId)
+                        ++modules[object.displayName.empty() ? std::string("модуль") : object.displayName];
+                }
+                for (const auto& [name, count] : modules)
+                    info.selectedHubModules.push_back(count > 1 ? name + " ×" + std::to_string(count) : name);
+            }
+            if (!info.catalog->findSite(info.systemId, hubId))
+                info.selectedHubName = hubIt->second.name.empty() ? hubId : hubIt->second.name;
+        }
         game::presentation::buildSystemMapInfo(info, panel.infoTitle, panel.info);
         // the star-system list belongs to the Galaxy map; here: every hub and beacon of this system
-        panel.objects = game::presentation::buildSystemMapObjectList(info);
+        if (infoMode != SystemMapRenderer::Mode::Hub)
+            panel.objects = game::presentation::buildSystemMapObjectList(info);
     }
     return panel;
 }
@@ -1260,6 +1450,10 @@ bool SpaceState::preparePlayerNavigationMapLevel(PlayerNavigationMapLevel level)
             world::celestial::DetailTarget target;
             if (!buildPlayerDetailTarget(target, true))
                 return preparePlayerNavigationMapLevel(PlayerNavigationMapLevel::System);
+            // The parent System context first (the right panel facts, the
+            // SYSTEM button and the Hub drill read the loaded System map).
+            if (!composeSystemMapSnapshot(target.systemId))
+                return false;
             if (!composeDetailMapSnapshot(target))
                 return false;
             m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Detail);
@@ -1268,6 +1462,11 @@ bool SpaceState::preparePlayerNavigationMapLevel(PlayerNavigationMapLevel level)
 
         case PlayerNavigationMapLevel::Local:
         {
+            // An object selected on the open System / Detail map: its hub or
+            // its cube. Otherwise (and always from flight): the player's.
+            if (prepareSelectedObjectLocalMap())
+                return true;
+
             const auto& nav = m_client->playerNavigation();
             if (nav.currentSystemId < 0)
                 return preparePlayerNavigationMapLevel(PlayerNavigationMapLevel::System);
@@ -1296,10 +1495,13 @@ bool SpaceState::preparePlayerNavigationMapLevel(PlayerNavigationMapLevel level)
 
             world::celestial::DetailTarget target;
             if (!buildPlayerDetailTarget(target, false) ||
+                !composeSystemMapSnapshot(target.systemId) ||
                 !composeDetailMapSnapshot(target))
             {
                 return false;
             }
+            std::cerr << "[LocalMap] F12: the player's cube " << target.spatialCell.x << ','
+                      << target.spatialCell.y << ',' << target.spatialCell.z << std::endl;
             m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Detail);
             return true;
         }

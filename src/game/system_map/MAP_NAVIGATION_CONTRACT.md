@@ -109,9 +109,14 @@ player's current navigation state rather than from an arbitrary map selection:
   Space sector;
 - **F11** — player's current Details context; if no meaningful Details address
   exists in interstellar space, falls back to System/Space;
-- **F12** — player's matched Hub when available, otherwise the player's local
-  Details/terminal spatial context according to the existing direct-selector
-  rules.
+- **F12** — the local map (2026-11-06): with an object selected on the OPEN
+  System / Details map, that object's Hub (a hub, or a ship / module attached
+  to one) or else the terminal System cube containing it; otherwise (and
+  always from flight) the player's matched Hub, else the player's terminal
+  cube. Such a cube is the object's local space (`DetailTarget` SpatialVolume
+  with focusClass Ship / Hub and the object id): it is never promoted to a
+  body scene, and while it is shown it FOLLOWS its object ("player",
+  "entity:N") into the neighbour cube when the object leaves it.
 
 Repeating the selector for the already visible navigation level is a no-op.
 A newer pending selector supersedes an older pending selector.
@@ -194,7 +199,8 @@ The resulting terminal cell is the Details spatial address.
 Inside a real known system, a terminal `SpatialVolume` is normally displayed as
 empty/local space. If the **centre of that terminal volume lies inside a
 celestial body's physical radius**, the semantic Details target is intentionally
-promoted to that body.
+promoted to that body. Exception: a cube that is an object's local space (F12,
+focusClass != None) stays the cube.
 
 This is address resolution, not a fallback to an arbitrary nearby body.
 

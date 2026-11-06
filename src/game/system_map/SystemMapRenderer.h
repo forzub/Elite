@@ -183,6 +183,10 @@ public:
     const std::string& selectedHubId() const;
     // The object the map currently presents as selected (site, hub, ship) - right panel source.
     const std::string& activeObjectId() const noexcept { return m_objectOverlayState.activeObjectId(); }
+    // The active tactical object of the current System / Detail map (hub,
+    // ship, world site): its local-neighbourhood hub (may be empty) and its
+    // system-barycentric position. False for no / a non-tactical selection.
+    bool activeTacticalObjectContext(std::string& hubId, glm::dvec3& worldMeters) const;
     const std::string& selectedHubParentBodyId() const;
 
     bool canOpenSelectedDetail() const;
@@ -421,6 +425,10 @@ private:
     std::string m_devFocusHubId;
     std::string m_devHoverObjectId;
     std::string m_devEnterId;
+    std::string m_devPointerSpec;
+    int m_devPointerFrame = 0;
+    glm::dvec2 m_devPointerAt {-1.0};
+    bool driveDevPointer(const Viewport& vp, double& mx, double& my, bool& leftDown, bool& rightDown);
     // a hub / beacon picked from the panel list; kept a few frames until its marker exists
     std::string m_listFocusObjectId;
     int m_listFocusFramesLeft = 0;
@@ -505,6 +513,13 @@ public:
     // DEV: the double-click approach on a body (body id) or a hub (hub id) - one cube level per call.
     void devEnter(const std::string& id) { m_devEnterId = id; }
     void devZoom(double steps) { m_pendingScrollY += steps; }
+    // DEV: a scripted pointer gesture on the current map, fed through the
+    // production input path: "click:<objectId>", "dclick:<objectId>",
+    // "rclick:<objectId>" (right click = context menu), "menu:<command>"
+    // (left click on the open context-menu row with that command).
+    void devPointer(const std::string& spec) { m_devPointerSpec = spec; m_devPointerFrame = 0; }
+    // DEV: overlay objects of the current map (id, name, next-map hub, screen px).
+    std::string devOverlayReport() const;
     // DEV: what the map shows right now (scripted checks: marker <-> world object identity)
     std::vector<std::string> devVisibleObjectIds() const
     {

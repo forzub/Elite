@@ -179,6 +179,12 @@ struct MapObjectOverlayItem
     bool visible = false;
     bool drawGlyph = true;
     bool wideVelocityArrow = false;
+    // Map pointer contract for objects with a next map (Detail-map hubs):
+    // a single click only SELECTS (no card; the name is drawn next to the
+    // selected marker), a double click is reported as doubleClickedObjectId
+    // (the map goes to the object's next map); the card comes from the
+    // context menu (INFO).
+    bool selectOnClick = false;
 };
 
 struct MapObjectOverlayFrame
@@ -200,6 +206,8 @@ struct MapObjectOverlayPointerResult
     MapObjectInfoKind activatedInfoKind = MapObjectInfoKind::Tactical;
     std::string activatedSemanticTargetId;
     std::string toggledObjectId;
+    // selectOnClick item: the second click of a double click on it.
+    std::string doubleClickedObjectId;
     std::string closedObjectId;
     std::string actionObjectId;
     std::string actionKey;
@@ -744,6 +752,24 @@ public:
                             ensureOpen(*picked, viewportSizePx);
                             result.toggledObjectId = id;
                         }
+                    }
+                    m_pointerCaptured = true;
+                    result.consumed = true;
+                }
+                else if (pickedAccepted && picked->selectOnClick)
+                {
+                    // Select only; a double click (same pointer contract as
+                    // every map) asks the map for the object's next map.
+                    const std::string id = picked->objectId;
+                    activate(id);
+                    result.activatedObjectId = id;
+                    result.activatedInfoKind = picked->infoKind;
+                    result.activatedSemanticTargetId = picked->semanticTargetId;
+                    if (nowSeconds >= 0.0 &&
+                        m_cardClickTracker.registerClick(
+                            nowSeconds, mousePx.x, mousePx.y, id))
+                    {
+                        result.doubleClickedObjectId = id;
                     }
                     m_pointerCaptured = true;
                     result.consumed = true;

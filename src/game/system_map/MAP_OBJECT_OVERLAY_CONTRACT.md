@@ -135,7 +135,10 @@ Each card owns independent state:
 Interaction rules:
 
 - clicking a visible object glyph activates that object and opens its card if
-  needed;
+  needed - EXCEPT a `selectOnClick` item (Detail-map hubs and world sites,
+  2026-11-06): a single click only selects it (its name is drawn next to the
+  marker, its facts + composition fill the right panel), a double click goes
+  to its Hub map, the card comes from the context menu INFO;
 - clicking the same glyph again reactivates the same object but **never closes**
   its already-open card;
 - clicking anywhere on an already-open card except `X` reactivates that object

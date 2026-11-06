@@ -1366,7 +1366,7 @@ void SpaceState::update(float dt)
                    startupElapsedMs(m_startupTotalBegin) >= steps[next].first * 1000.0)
             {
                 const std::string cmd = steps[next++].second;
-                std::cerr << "[SolMapScript] " << cmd << '\n';
+                std::cerr << "[SolMapScript] " << cmd << " (t=" << glfwGetTime() << ")\n";
                 auto arg = [&](const char* k) { return cmd.substr(std::string(k).size()); };
                 if (cmd == "system")
                     context().app->requestNavigationView(NavigationPresentationView::System);
@@ -1420,6 +1420,22 @@ void SpaceState::update(float dt)
                     m_systemMapRenderer.devActivateObject(arg("object:"));
                 else if (cmd.rfind("hover:", 0) == 0)
                     m_systemMapRenderer.devHover(arg("hover:"));
+                // a scripted pointer gesture through the production input path:
+                // pointer:click:<id> | pointer:dclick:<id> | pointer:rclick:<id> | pointer:menu:<command>
+                else if (cmd.rfind("pointer:", 0) == 0)
+                    m_systemMapRenderer.devPointer(arg("pointer:"));
+                else if (cmd == "overlay")
+                {
+                    std::cerr << "[SolMapScript] overlay " << m_systemMapRenderer.devOverlayReport() << '\n';
+                    const auto panel = buildNativeSystemMapPanelPresentation();
+                    std::cerr << "[SolMapScript] panel '" << panel.infoTitle << "' canOpenHub " << panel.canOpenHub << ':';
+                    for (const auto& line : panel.info)
+                        std::cerr << " {" << line.label << (line.label.empty() ? "" : "=") << line.value << '}';
+                    std::cerr << "\n[SolMapScript] loaded detail kind " << static_cast<int>(m_loadedDetailTarget.sceneKind)
+                              << " focus " << m_loadedDetailTarget.focusId << " cell " << m_loadedDetailTarget.spatialCell.x << ','
+                              << m_loadedDetailTarget.spatialCell.y << ',' << m_loadedDetailTarget.spatialCell.z
+                              << " hub map " << m_loadedHubMapHubId << " mode " << static_cast<int>(m_systemMapRenderer.mode()) << std::endl;
+                }
                 else if (cmd.rfind("zoom:", 0) == 0)
                     m_systemMapRenderer.devZoom(std::atof(arg("zoom:").c_str()));
                 else if (cmd.rfind("transfer:", 0) == 0)

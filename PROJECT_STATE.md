@@ -3294,6 +3294,51 @@ order - ask for it again if it is not in the session.
   context-menu info; F12 hub map (hub or player's space cube); Fomalhaut (Лекси) planet names; route waypoint
   window with per-point programs + planner-inserted waypoints (refuel, jump intermediates) + ship rendezvous.
 
+### Slice map-1 2026-11-06 - Detail-map hubs select / go to hub; F12 = hub or the player's cube - LIVE DEV RUNS, NOT ACCEPTED
+- Author report: (1) a Detail-map hub click opened the info card and the hub could not be entered; wanted: click
+  = SELECTED + its name at the marker + its info and composition in the right panel, info card from the context
+  menu (right click / Ctrl+click), a working "go to the hub". (2) F12 "chaos, sometimes nothing": it must show
+  the hub or the navigation cube with the selected object, by default the player's cube, following the player
+  into the next cube.
+- Root causes (live baseline D:/tmp/elite_maps/b*, c*): (a) every non-celestial overlay glyph opened its card on
+  a single click (MapObjectOverlayState::handlePointer); (b) F11 opens Details without composing a System map,
+  so m_loadedSystemMapId stayed -1 and setSystemMapHubMode returned silently - the HUB drill from such a
+  Details map did nothing; the right panel also stayed the bare "STAR ATLAS" block (its facts required the
+  loaded System snapshot); (c) F12 outside a hub frame built a 2500 km terminal cube in the HELIOCENTRIC frame;
+  in LEO its centre usually lies inside the Earth, so it was promoted to the whole Earth Details (c1/c2); else
+  the cube was fixed while the player + hub co-move with Earth at ~30 km/s, crossing it in ~80 s - after that
+  the cube was empty ("nothing at all", c7); F12 also ignored any map selection.
+- Done (source + Debug build):
+  - MapObjectOverlayItem::selectOnClick (Detail hubs + world sites, LocalMapPresentationBuilder): click selects
+    only, the name is drawn next to the selected marker, double click -> MapIntent::openHub (Hub map);
+    context-menu target selection also selects the Detail hub; INFO opens the card (unchanged menu).
+  - Right panel: Details read the loaded Details system; the Hub map shows its hub too; composition =
+    economy hub_modules_3126 blocks ("Пассажирский блок: челночный док (HexDock) x141, гостиница x21 ...",
+    EconomyModel::HubEconomyInfo::composition), fallback = replicated hub-attached modules; F11 / F12 compose
+    the parent System map first; setSystemMapHubMode on Details uses m_loadedDetailTarget.systemId.
+  - F12 (preparePlayerNavigationMapLevel Local): an object selected on the open System / Detail map -> its hub
+    (Hub map) or the terminal cube containing it; else (and from flight) the player's hub, else the player's
+    cube. Such a cube is a SpatialVolume with focusClass Ship / Hub + the object id: never promoted to a body,
+    and followLocalCubeFocus() (Detail live refresh) moves it to the neighbour cube when "player" / "entity:N"
+    leaves it. MAP_NAVIGATION_CONTRACT (F12, body promotion) and MAP_OBJECT_OVERLAY_CONTRACT (selectOnClick)
+    updated; check_navigation_context token updated.
+  - DEV: ELITE_DEV_SOL_MAP_SCRIPT "pointer:click|dclick|rclick:<objectId>", "pointer:menu:<command>" (scripted
+    pointer through the production input path), "overlay" (map items + panel + loaded targets); SOL steps log
+    their GLFW time.
+- Live DEV evidence (--dev-direct-flight, back buffer D:/tmp/elite_maps/): g1_selected (Тихий selected, name at
+  the marker, panel: facts + Состав by block, HUB enabled), g2_menu (right click menu), g3_card (INFO card),
+  g5_hubmap (double click -> Hub map of Тихий, from a fresh F11 Details); h2_f12_selected_hub (hub selected on
+  the System map -> F12 = its Hub map), h3_f12_from_flight (F12 from flight = the player's hub);
+  i2_f12_selected_ship_later (ship entity:11 selected -> F12 = its cube); f1..f4 (free flight + HOME: F12 =
+  the player's cube, log "[LocalMap] player left cube 42957,2,-40907 -> shown in cube 42957,2,-40908").
+- Gates: check_navigation_context PASS, check_object_overlay PASS, check_route_plan PASS; check_architecture
+  RED pre-existing (DetailMapGeometryPass includes SystemMapRendererInternal.h, untouched); SystemMapBehaviorTests
+  does NOT compile pre-existing (MockSystemMapInteractionContext abstract) - ctest ran a stale binary.
+- OPEN: author's mouse acceptance; the cube does not draw the planet that fills part of it in LEO (SpatialVolume
+  scenes have no body rendering); a cube of a world site does not follow (only player / entity ships); crowded
+  Earth markers: a city click is won by the larger hub (size arbitration); F12 again while already on the local
+  map is a no-op (re-centre needs F1 then F12); the panel mode label stays "ДЕТАЛИ" for the F12 cube.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

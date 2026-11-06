@@ -114,7 +114,10 @@ open_hub = function_body(space, "void SpaceState::setSystemMapHubMode()")
 for token in (
     "mode != SystemMapRenderer::Mode::System",
     "mode != SystemMapRenderer::Mode::Detail",
-    "const int selectedId = m_loadedSystemMapId;",
+    # Details: the loaded Details target's system (F11 opens Details
+    # without a System map); System: the loaded System map.
+    "? m_loadedDetailTarget.systemId",
+    ": m_loadedSystemMapId;",
     "if (mode == SystemMapRenderer::Mode::System)",
     "buildSelectedMapDetailTarget(detailTarget)",
     "composeDetailMapSnapshot(detailTarget)",

@@ -110,6 +110,10 @@ def main():
     a = ap.parse_args()
     files = build()
     existing = {posixpath.relpath(p.replace(os.sep, "/"), DST.replace(os.sep, "/")) for p in glob.glob(os.path.join(DST, "**", "*"), recursive=True) if os.path.isfile(p)}
+    # only the mirror's own pages: top-level files and folders that exist in Notes/Lore; standalone
+    # apps living in Notes/html (ship_reference/ ...) are not stale (they were deleted once, 2026-11-06)
+    lore_dirs = {d for d in os.listdir(SRC) if os.path.isdir(os.path.join(SRC, d))}
+    existing = {r for r in existing if "/" not in r or r.split("/", 1)[0] in lore_dirs}
     stale = sorted(existing - set(files))
     if a.check:
         bad = [r for r, t in files.items() if not os.path.isfile(os.path.join(DST, r)) or open(os.path.join(DST, r), encoding="utf-8").read() != t]

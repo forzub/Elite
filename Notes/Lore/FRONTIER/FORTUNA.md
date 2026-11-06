@@ -103,7 +103,7 @@ Fortuna / Фортуна; китайский экзоним эпохи коло�
 | axial_tilt_deg | 19.0 |
 | terrain | plate_tectonic_continents |
 | environment_preset | terrestrial_temperate |
-| neighbours | ["Fomalhaut h 2.12 а. е.", "Fomalhaut i 2.89 а. е.", "Fomalhaut j 6.00 а. е."] |
+| neighbours | ["Спес 2.12 а. е.", "Деркето 2.89 а. е.", "Оаннес 6.00 а. е."] |
 
 Лекси — не ресурс, не тайна и не награда. Она просто далеко, и она красивая.
 <!-- GENERATED:fortuna END -->

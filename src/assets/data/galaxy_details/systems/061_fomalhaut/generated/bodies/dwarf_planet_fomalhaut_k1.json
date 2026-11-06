@@ -1,8 +1,10 @@
 {
   "schema": "elite.generated_body.v1",
   "id": "system_61.Fomalhaut.Fomalhaut_K1",
-  "designation": "Fomalhaut K1",
-  "alternative_names": [],
+  "designation": "Тюхе",
+  "alternative_names": [
+    "Tyche"
+  ],
   "kind": "dwarf_planet",
   "parent_id": "system_61.Fomalhaut",
   "host_star": "fomalhaut",

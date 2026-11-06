@@ -1,8 +1,10 @@
 {
   "schema": "elite.generated_body.v1",
   "id": "system_61.Fomalhaut.Fomalhaut_d",
-  "designation": "Fomalhaut d",
-  "alternative_names": [],
+  "designation": "Лахесис",
+  "alternative_names": [
+    "Lachesis"
+  ],
   "kind": "planet",
   "parent_id": "system_61.Fomalhaut",
   "host_star": "fomalhaut",

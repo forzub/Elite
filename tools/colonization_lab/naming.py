@@ -242,6 +242,27 @@ def mirrors(NM):
                   "(пишет tools/colonization_lab/naming.py --write); остальные описания — легаси, не канон.")
     out[LEGACY_ACTORS] = _dump(A, indent=2)
     out[RUNTIME_NAMES] = _dump(NM.runtime_table(), indent=1, sort=True)
+
+    # body names -> the generated body files the runtime reads (StarAtlasDatabase: designation), the Sol
+    # way: designation = the Russian name, alternative_names = the international one. Lexie keeps its
+    # authored designation (observed/planet_lexie.json, test t16b).
+    for path in glob.glob(os.path.join(GALAXY_DETAILS, "systems", "*", "generated", "bodies", "*.json")):
+        b = _load(path)
+        eid = "body:" + b.get("id", "")
+        if eid not in NM.E or eid == LEXIE_ENTITY:
+            continue
+        names = NM.E[eid]["names"]
+        ru = names.get("exonyms", {}).get("ru")
+        intl = names.get("international", {}).get("text")
+        if not ru:
+            continue
+        # only the two name fields change: the generator's number formatting stays byte-for-byte
+        text = open(path, encoding="utf-8").read()
+        alt = [x for x in [intl] if x and x != ru]
+        alt_text = "[]" if not alt else "[\n" + ",\n".join("    " + json.dumps(x, ensure_ascii=False) for x in alt) + "\n  ]"
+        text = re.sub(r'(\n  "designation": )"(?:[^"\\]|\\.)*"', lambda m: m.group(1) + json.dumps(ru, ensure_ascii=False), text, count=1)
+        text = re.sub(r'(\n  "alternative_names": )\[[^\]]*\]', lambda m: m.group(1) + alt_text, text, count=1)
+        out[path] = text
     return out
 
 

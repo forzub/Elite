@@ -1737,17 +1737,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Skillet",
-     "lang": "en"
+     "text": "Atropos",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Сковорода",
-     "en": "Skillet"
+     "ru": "Атропос",
+     "en": "Atropos"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): 1600 K, a sodium / SiO rock-vapour haze, a 10-day year"
+    "origin": "мифологическая серия Фортуны (как тела Сола): Мойра неотвратимости: первая, раскалённая (1600 K)"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_d": {
@@ -1756,17 +1756,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Griddle",
-     "lang": "en"
+     "text": "Lachesis",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Жаровня",
-     "en": "Griddle"
+     "ru": "Лахесис",
+     "en": "Lachesis"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): 1350 K, a thin rock-vapour haze"
+    "origin": "мифологическая серия Фортуны (как тела Сола): Мойра жребия: вторая раскалённая (1350 K)"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_e": {
@@ -1775,17 +1775,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Cinder",
-     "lang": "en"
+     "text": "Clotho",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Огарок",
-     "en": "Cinder"
+     "ru": "Клото",
+     "en": "Clotho"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): 1050 K, airless, burnt out"
+    "origin": "мифологическая серия Фортуны (как тела Сола): Мойра-пряха: третья, безвоздушная (1050 K)"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_f": {
@@ -1794,17 +1794,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Pressure Cooker",
-     "lang": "en"
+     "text": "Nemesis",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Скороварка",
-     "en": "Pressure Cooker"
+     "ru": "Немезида",
+     "en": "Nemesis"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): 1700 K under 91 bar of CO2"
+    "origin": "мифологическая серия Фортуны (как тела Сола): возмездие: 1700 K под 91 бар CO2"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_g": {
@@ -1813,17 +1813,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Oven",
-     "lang": "en"
+     "text": "Ananke",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Духовка",
-     "en": "Oven"
+     "ru": "Ананке",
+     "en": "Ananke"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): 1930 K under 930 bar of CO2"
+    "origin": "мифологическая серия Фортуны (как тела Сола): необходимость, мать Мойр: 1930 K под 930 бар CO2"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_h": {
@@ -1832,17 +1832,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Soap Bubble",
-     "lang": "en"
+     "text": "Spes",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Мыльный пузырь",
-     "en": "Soap Bubble"
+     "ru": "Спес",
+     "en": "Spes"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): a sub-Neptune: 1 bar of hydrogen and helium, 360 K"
+    "origin": "мифологическая серия Фортуны (как тела Сола): надежда, спутница Фортуны: водородный мини-нептун"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_i": {
@@ -1851,17 +1851,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Kettle",
-     "lang": "en"
+     "text": "Derceto",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Чайник",
-     "en": "Kettle"
+     "ru": "Деркето",
+     "en": "Derceto"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): water-rich, boiling at 1400 K under 1240 bar of CO2"
+    "origin": "мифологическая серия Фортуны (как тела Сола): богиня-рыба, бросившаяся в озеро: кипящий водный мир"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_j": {
@@ -1870,17 +1870,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Steam Room",
-     "lang": "en"
+     "text": "Oannes",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Парилка",
-     "en": "Steam Room"
+     "ru": "Оаннес",
+     "en": "Oannes"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): water-rich, 400 K under 226 bar of nitrogen"
+    "origin": "мифологическая серия Фортуны (как тела Сола): человек-рыба, вышедший из моря: горячий водный мир"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_k": {
@@ -1889,17 +1889,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Soda",
-     "lang": "en"
+     "text": "Felicitas",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Газировка",
-     "en": "Soda"
+     "ru": "Фелицитас",
+     "en": "Felicitas"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): water-rich, 288 K, 15.6 bar of CO2 - carbonated oceans"
+    "origin": "мифологическая серия Фортуны (как тела Сола): удача: умеренный водный мир (288 K)"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_l": {
@@ -1908,17 +1908,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Freezer",
-     "lang": "en"
+     "text": "Morta",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Морозилка",
-     "en": "Freezer"
+     "ru": "Морта",
+     "en": "Morta"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): water-rich, frozen at 94 K, nitrogen with methane"
+    "origin": "мифологическая серия Фортуны (как тела Сола): Парка смерти: замёрзший водный мир (94 K)"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_k.Fomalhaut_k_I": {
@@ -1927,17 +1927,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Bottle Cap",
-     "lang": "en"
+     "text": "Occasio",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Пробка",
-     "en": "Bottle Cap"
+     "ru": "Окказия",
+     "en": "Occasio"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): the airless moon of Soda, 166 K"
+    "origin": "мифологическая серия Фортуны (как тела Сола): случай, спутница Фелицитас"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_l.Fomalhaut_l_I": {
@@ -1946,17 +1946,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Ice Cube",
-     "lang": "en"
+     "text": "Decima",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Кубик льда",
-     "en": "Ice Cube"
+     "ru": "Децима",
+     "en": "Decima"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): the frozen moon of Freezer, 106 K"
+    "origin": "мифологическая серия Фортуны (как тела Сола): Парка, сестра Морты"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_K1": {
@@ -1965,17 +1965,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Crumb",
-     "lang": "en"
+     "text": "Tyche",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Крошка",
-     "en": "Crumb"
+     "ru": "Тюхе",
+     "en": "Tyche"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): an icy dwarf in the debris ring, 50 AU"
+    "origin": "мифологическая серия Фортуны (как тела Сола): греческая Фортуна: карлик кольца обломков"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_K2": {
@@ -1984,17 +1984,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Rusk",
-     "lang": "en"
+     "text": "Plutus",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Сухарь",
-     "en": "Rusk"
+     "ru": "Плутос",
+     "en": "Plutus"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): an icy dwarf in the debris ring, 45 AU"
+    "origin": "мифологическая серия Фортуны (как тела Сола): богатство, дитя Тюхе: карлик кольца"
    }
   },
   "body:system_61.Fomalhaut.Fomalhaut_K3": {
@@ -2003,17 +2003,17 @@
    "status": "PROPOSAL",
    "names": {
     "international": {
-     "text": "Crouton",
-     "lang": "en"
+     "text": "Fors",
+     "lang": "la"
     },
     "exonyms": {
-     "ru": "Гренка",
-     "en": "Crouton"
+     "ru": "Форс",
+     "en": "Fors"
     }
    },
    "naming_history": {
     "status": "PROPOSAL",
-    "origin": "кухонная серия Фортуны (система известна, никому не нужна): an icy dwarf in the debris ring, 39 AU"
+    "origin": "мифологическая серия Фортуны (как тела Сола): Форс Фортуна, слепой случай: карлик кольца"
    }
   }
  },

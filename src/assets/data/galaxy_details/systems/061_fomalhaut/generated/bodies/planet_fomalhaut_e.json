@@ -1,8 +1,10 @@
 {
   "schema": "elite.generated_body.v1",
   "id": "system_61.Fomalhaut.Fomalhaut_e",
-  "designation": "Fomalhaut e",
-  "alternative_names": [],
+  "designation": "Клото",
+  "alternative_names": [
+    "Clotho"
+  ],
   "kind": "planet",
   "parent_id": "system_61.Fomalhaut",
   "host_star": "fomalhaut",

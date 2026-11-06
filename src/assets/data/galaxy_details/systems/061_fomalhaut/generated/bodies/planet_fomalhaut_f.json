@@ -1,8 +1,10 @@
 {
   "schema": "elite.generated_body.v1",
   "id": "system_61.Fomalhaut.Fomalhaut_f",
-  "designation": "Fomalhaut f",
-  "alternative_names": [],
+  "designation": "Немезида",
+  "alternative_names": [
+    "Nemesis"
+  ],
   "kind": "planet",
   "parent_id": "system_61.Fomalhaut",
   "host_star": "fomalhaut",

@@ -1,8 +1,10 @@
 {
   "schema": "elite.generated_body.v1",
   "id": "system_61.Fomalhaut.Fomalhaut_c",
-  "designation": "Fomalhaut c",
-  "alternative_names": [],
+  "designation": "Атропос",
+  "alternative_names": [
+    "Atropos"
+  ],
   "kind": "planet",
   "parent_id": "system_61.Fomalhaut",
   "host_star": "fomalhaut",

@@ -1,8 +1,10 @@
 {
   "schema": "elite.generated_body.v1",
   "id": "system_61.Fomalhaut.Fomalhaut_l.Fomalhaut_l_I",
-  "designation": "Fomalhaut l I",
-  "alternative_names": [],
+  "designation": "Децима",
+  "alternative_names": [
+    "Decima"
+  ],
   "kind": "moon",
   "parent_id": "system_61.Fomalhaut.Fomalhaut_l",
   "host_star": "fomalhaut",

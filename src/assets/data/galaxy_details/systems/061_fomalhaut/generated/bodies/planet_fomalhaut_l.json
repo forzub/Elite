@@ -1,8 +1,10 @@
 {
   "schema": "elite.generated_body.v1",
   "id": "system_61.Fomalhaut.Fomalhaut_l",
-  "designation": "Fomalhaut l",
-  "alternative_names": [],
+  "designation": "Морта",
+  "alternative_names": [
+    "Morta"
+  ],
   "kind": "planet",
   "parent_id": "system_61.Fomalhaut",
   "host_star": "fomalhaut",

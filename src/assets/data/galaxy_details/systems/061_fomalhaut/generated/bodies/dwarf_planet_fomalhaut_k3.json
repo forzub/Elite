@@ -1,8 +1,10 @@
 {
   "schema": "elite.generated_body.v1",
   "id": "system_61.Fomalhaut.Fomalhaut_K3",
-  "designation": "Fomalhaut K3",
-  "alternative_names": [],
+  "designation": "Форс",
+  "alternative_names": [
+    "Fors"
+  ],
   "kind": "dwarf_planet",
   "parent_id": "system_61.Fomalhaut",
   "host_star": "fomalhaut",

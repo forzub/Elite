@@ -1,8 +1,10 @@
 {
   "schema": "elite.generated_body.v1",
   "id": "system_61.Fomalhaut.Fomalhaut_k.Fomalhaut_k_I",
-  "designation": "Fomalhaut k I",
-  "alternative_names": [],
+  "designation": "Окказия",
+  "alternative_names": [
+    "Occasio"
+  ],
   "kind": "moon",
   "parent_id": "system_61.Fomalhaut.Fomalhaut_k",
   "host_star": "fomalhaut",

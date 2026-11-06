@@ -1,8 +1,10 @@
 {
   "schema": "elite.generated_body.v1",
   "id": "system_61.Fomalhaut.Fomalhaut_j",
-  "designation": "Fomalhaut j",
-  "alternative_names": [],
+  "designation": "Оаннес",
+  "alternative_names": [
+    "Oannes"
+  ],
   "kind": "planet",
   "parent_id": "system_61.Fomalhaut",
   "host_star": "fomalhaut",

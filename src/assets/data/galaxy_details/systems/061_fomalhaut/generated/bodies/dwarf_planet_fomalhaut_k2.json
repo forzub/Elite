@@ -1,8 +1,10 @@
 {
   "schema": "elite.generated_body.v1",
   "id": "system_61.Fomalhaut.Fomalhaut_K2",
-  "designation": "Fomalhaut K2",
-  "alternative_names": [],
+  "designation": "Плутос",
+  "alternative_names": [
+    "Plutus"
+  ],
   "kind": "dwarf_planet",
   "parent_id": "system_61.Fomalhaut",
   "host_star": "fomalhaut",

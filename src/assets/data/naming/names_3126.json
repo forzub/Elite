@@ -3,94 +3,94 @@
  "generated_by": "tools/colonization_lab/naming.py (from canon/naming.json)",
  "names": {
   "body:system_61.Fomalhaut.Fomalhaut_K1": {
-   "en": "Crumb",
-   "native": "Crumb",
-   "native_lang": "en",
-   "ru": "Крошка"
+   "en": "Tyche",
+   "native": "Tyche",
+   "native_lang": "la",
+   "ru": "Тюхе"
   },
   "body:system_61.Fomalhaut.Fomalhaut_K2": {
-   "en": "Rusk",
-   "native": "Rusk",
-   "native_lang": "en",
-   "ru": "Сухарь"
+   "en": "Plutus",
+   "native": "Plutus",
+   "native_lang": "la",
+   "ru": "Плутос"
   },
   "body:system_61.Fomalhaut.Fomalhaut_K3": {
-   "en": "Crouton",
-   "native": "Crouton",
-   "native_lang": "en",
-   "ru": "Гренка"
+   "en": "Fors",
+   "native": "Fors",
+   "native_lang": "la",
+   "ru": "Форс"
   },
   "body:system_61.Fomalhaut.Fomalhaut_c": {
-   "en": "Skillet",
-   "native": "Skillet",
-   "native_lang": "en",
-   "ru": "Сковорода"
+   "en": "Atropos",
+   "native": "Atropos",
+   "native_lang": "la",
+   "ru": "Атропос"
   },
   "body:system_61.Fomalhaut.Fomalhaut_d": {
-   "en": "Griddle",
-   "native": "Griddle",
-   "native_lang": "en",
-   "ru": "Жаровня"
+   "en": "Lachesis",
+   "native": "Lachesis",
+   "native_lang": "la",
+   "ru": "Лахесис"
   },
   "body:system_61.Fomalhaut.Fomalhaut_e": {
-   "en": "Cinder",
-   "native": "Cinder",
-   "native_lang": "en",
-   "ru": "Огарок"
+   "en": "Clotho",
+   "native": "Clotho",
+   "native_lang": "la",
+   "ru": "Клото"
   },
   "body:system_61.Fomalhaut.Fomalhaut_f": {
-   "en": "Pressure Cooker",
-   "native": "Pressure Cooker",
-   "native_lang": "en",
-   "ru": "Скороварка"
+   "en": "Nemesis",
+   "native": "Nemesis",
+   "native_lang": "la",
+   "ru": "Немезида"
   },
   "body:system_61.Fomalhaut.Fomalhaut_g": {
-   "en": "Oven",
-   "native": "Oven",
-   "native_lang": "en",
-   "ru": "Духовка"
+   "en": "Ananke",
+   "native": "Ananke",
+   "native_lang": "la",
+   "ru": "Ананке"
   },
   "body:system_61.Fomalhaut.Fomalhaut_h": {
-   "en": "Soap Bubble",
-   "native": "Soap Bubble",
-   "native_lang": "en",
-   "ru": "Мыльный пузырь"
+   "en": "Spes",
+   "native": "Spes",
+   "native_lang": "la",
+   "ru": "Спес"
   },
   "body:system_61.Fomalhaut.Fomalhaut_i": {
-   "en": "Kettle",
-   "native": "Kettle",
-   "native_lang": "en",
-   "ru": "Чайник"
+   "en": "Derceto",
+   "native": "Derceto",
+   "native_lang": "la",
+   "ru": "Деркето"
   },
   "body:system_61.Fomalhaut.Fomalhaut_j": {
-   "en": "Steam Room",
-   "native": "Steam Room",
-   "native_lang": "en",
-   "ru": "Парилка"
+   "en": "Oannes",
+   "native": "Oannes",
+   "native_lang": "la",
+   "ru": "Оаннес"
   },
   "body:system_61.Fomalhaut.Fomalhaut_k": {
-   "en": "Soda",
-   "native": "Soda",
-   "native_lang": "en",
-   "ru": "Газировка"
+   "en": "Felicitas",
+   "native": "Felicitas",
+   "native_lang": "la",
+   "ru": "Фелицитас"
   },
   "body:system_61.Fomalhaut.Fomalhaut_k.Fomalhaut_k_I": {
-   "en": "Bottle Cap",
-   "native": "Bottle Cap",
-   "native_lang": "en",
-   "ru": "Пробка"
+   "en": "Occasio",
+   "native": "Occasio",
+   "native_lang": "la",
+   "ru": "Окказия"
   },
   "body:system_61.Fomalhaut.Fomalhaut_l": {
-   "en": "Freezer",
-   "native": "Freezer",
-   "native_lang": "en",
-   "ru": "Морозилка"
+   "en": "Morta",
+   "native": "Morta",
+   "native_lang": "la",
+   "ru": "Морта"
   },
   "body:system_61.Fomalhaut.Fomalhaut_l.Fomalhaut_l_I": {
-   "en": "Ice Cube",
-   "native": "Ice Cube",
-   "native_lang": "en",
-   "ru": "Кубик льда"
+   "en": "Decima",
+   "native": "Decima",
+   "native_lang": "la",
+   "ru": "Децима"
   },
   "body:system_61.Fomalhaut.Lexie": {
    "en": "Lexie",

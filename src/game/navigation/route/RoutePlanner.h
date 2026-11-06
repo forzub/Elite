@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -69,14 +70,21 @@ std::vector<ZoneGeometry> resolveZones(const ZoneCatalog& catalog, int systemId,
 
 struct RoutePoint
 {
-    enum class Kind { Hub, Orbit, Point };
+    enum class Kind { Hub, Orbit, Point, Land, Ship };
     Kind kind = Kind::Point;
     std::string hubId, bodyId, label;
     double orbitAltitudeM = 0.0;
     glm::dvec3 worldM {0.0};       // where it is now
     bool stop = false;             // stop here (J off) - hubs / finish; else pass through
-    std::string action;            // at a stop: "refuel" ...
+    std::string action;            // at a stop: "refuel", "repair", "pause" (joined by '+')
+    std::string landingSpec;       // Land: "" = a wild site, "site:<catalog id>" = a settlement pad
+    std::uint64_t shipEntityId = 0; // Ship: the rendezvous target (server entity id)
+    bool inserted = false;         // inserted by the planner (refuel stop)
 };
+
+// J charge of a leg of `distanceM` flown at the route drive (JDrive.h rule): the drive's time at its
+// acceleration (a sqrt(d / a) profile, the 0.9 c cap) times its rate
+double estimateLegChargeT(double distanceM, double massT);
 
 struct PlanRequest
 {

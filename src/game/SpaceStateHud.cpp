@@ -1687,6 +1687,14 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
                       motion.jAccelMps2 / 9.81, motion.jAccelCommandMps2 / 9.81);
         thrust = j;
     }
+    std::string routeHint;
+    if (motion.routeState == 2)
+    {
+        char r[160];
+        std::snprintf(r, sizeof r, "МАРШРУТ НА ПАУЗЕ (точка %d из %d): ручной режим  ·  продолжить: карта → финиш → ПРОДОЛЖИТЬ МАРШРУТ   ",
+                      static_cast<int>(motion.routeLegIndex), static_cast<int>(motion.routeLegCount));
+        routeHint = r;
+    }
     if (motion.freeFlight && motion.jChargeCapacityT > 0.0)
     {
         char c[64];
@@ -1699,6 +1707,7 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
     std::string line2 = motion.freeFlight
         ? thrust + keys
         : std::string("Ctrl+K нормальный полёт (без предела скорости)  ·  Ctrl+J двигатель J");
+    line2 = routeHint + line2;
     if (motion.freeFlightCaptureRefusal == 1)
         line2 = "Нет доступной локальной системы отсчёта (хаб дальше зоны захвата)   " + line2;
     else if (motion.freeFlightCaptureRefusal == 2)

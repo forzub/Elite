@@ -79,6 +79,7 @@ struct NavigationWaypointActions
     bool takeOffAfter = true;      // landing on an intermediate point: take off and continue
     double orbitAltitudeM = 0.0;   // 0 = the planner's safe default
     int surveyOrbits = 1;
+    std::string landingSite;       // a settlement point: "site:<catalog id>" (its pad)
     std::string cargoPickup;       // free text until the cargo model exists
     std::string cargoDrop;
 };
@@ -264,7 +265,7 @@ inline const char* waypointProgramKey(NavigationWaypointProgram p)
 
 inline bool waypointIsSettlement(const NavigationWaypoint& w)
 {
-    return w.sourceObjectId.rfind("site:", 0) == 0 || w.target.stableObjectId.rfind("site.", 0) == 0;
+    return !w.actions.landingSite.empty() || w.sourceObjectId.rfind("site:", 0) == 0 || w.target.stableObjectId.rfind("site.", 0) == 0;
 }
 
 // Auto resolves to the target's default program
@@ -279,6 +280,11 @@ inline NavigationWaypointProgram effectiveProgram(const NavigationWaypoint& w)
 class RoutePlan
 {
 public:
+    // the last РАССЧИТАТЬ / launch summary (time, J charge, inserted points) and the server's route
+    // state (0 none, 1 flying, 2 paused, 3 service, 4 landing) - shown by the route window
+    std::string summary;
+    int serverRouteState = 0;
+
     const NavigationRouteStart& start() const noexcept { return m_start; }
     bool hasStart() const noexcept { return m_start.valid(); }
 

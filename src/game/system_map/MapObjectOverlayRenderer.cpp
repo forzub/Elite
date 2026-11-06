@@ -634,6 +634,9 @@ std::string MapObjectOverlayRenderer::text(
     if (key == "route_unofficial") return textProfile.routeUnofficial;
     if (key == "route_refuel_on") return textProfile.routeRefuelOn;
     if (key == "route_refuel_off") return textProfile.routeRefuelOff;
+    if (key == "route_calculate") return textProfile.routeCalculate;
+    if (key == "route_pause") return textProfile.routePause;
+    if (key == "route_resume") return textProfile.routeResume;
     if (key == "route_repair_on") return textProfile.routeRepairOn;
     if (key == "route_repair_off") return textProfile.routeRepairOff;
     if (key == "route_pause_on") return textProfile.routePauseOn;

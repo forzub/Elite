@@ -3377,6 +3377,37 @@ order - ask for it again if it is not in the session.
 - Next: route window capture (not yet seen); R2 intermediate landings + take-off in a route, pause; R4 charge
   planner with refuel insertion; R5 ship rendezvous.
 
+### Slice cc-8 2026-11-06 - router R2-R5 (partial), Fortuna mythology names, fleet reference gaps, war doctrines - NOT ACCEPTED
+- Author: rename the Fomalhaut bodies "the way the other bodies are" (Sol = classical mythology), Lexie untouched;
+  finish the router; complete the ship list in the HTML reference; then (later message) war-doctrine ideas.
+- Names (e10ce647): Fortuna = Roman Fortuna + "mouth of the fish": Атропос, Лахесис, Клото, Немезида, Ананке,
+  Спес, Деркето, Оаннес, Фелицитас, Морта, луны Окказия / Децима, карлики Тюхе / Плутос / Форс (PROPOSAL).
+  naming.py now mirrors body names into generated/bodies (designation = ru, alternative_names = intl; only those
+  two lines change) - the runtime reads designation. naming --check 29/29.
+- Router (built; live DEV runs rt2 / rt4 / rv1; contract tests not run; wire schema 38):
+  - Land legs (FreeFlightLeg::Kind::Land -> the landing autopilot, wild or "site:<id>" pad), take-off before a leg
+    from the ground, service stays, pause points (pause action / landing without take-off) + PAUSE / RESUME
+    (RouteLeg index 3 / 4), motion.routeState / legIndex / legCount, HUD hint "МАРШРУТ НА ПАУЗЕ", route list
+    footer (state + summary), РАССЧИТАТЬ (summary without launch).
+  - J charge walk + refuel insertion at the least-detour hub ("[план]" in the list), 10 % reserve, a refuel stop
+    only has to be reached (first version looped 4x inserting at the stop itself - fixed). DEV
+    ELITE_DEV_ROUTE_CHARGE_T=0.2: one refuel stop inserted at earth_orbital_hub (capture rt/insert.png).
+  - LIVE rt4: Earth hub -> guide gate -> LANDING Шеклтон pad (2.6 cm) -> PAUSED -> RESUME -> TAKE-OFF to 86.88 km
+    -> gate -> leg to Earth orbit (arrival not inside the run window; the same leg ARRIVED in to4).
+  - Bugs found live: the pad spec was lost (sourceObjectId rebound to the body) -> actions.landingSite; a Land leg
+    had no server position (remaining from the Sun, the guide passed at 19 600 km/s) -> body centre; the
+    stale "на поверхности" autopilot panel during take-off -> cleared.
+  - Rendezvous (R5 first part): Ship legs (target ship's position + velocity, arrival 6 km outside its J
+    keep-out, its keep-out does not throttle the approach); live rv1: the leg tracks ship 10 and closes; arrival
+    and the final approach to the arrival profile (formation / follow) NOT done.
+  - Open: intermediate jump systems (no jump runtime), trade actions, orbit survey (= orbit), repair model,
+    the 0.00 g readout during the take-off climb, DEV waypoint names show raw ids on the HUD markers.
+- Fleet reference (d5b537ce, subagent): 17 PROPOSAL ships (1 new hull ТС-6 «Дозор», 13 variants, 3 small craft),
+  2 parts (srw.reactor.sr26, kern.mine.cutter), coverage page; hulls to model 20 (19 new meshes) + 3 small craft;
+  builder kept in Notes/html/ship_reference/tools/.
+- War doctrines (78c53ae4): Notes/Lore/ECONOMY/WAR_DOCTRINES.md (author ideas + PROPOSAL). lore_html.py deleted
+  Notes/html/ship_reference as "stale" (restored from git); it now only prunes mirrored folders.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

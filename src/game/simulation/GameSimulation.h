@@ -201,8 +201,10 @@ public:
     // One leg of a route flown on the J drive (GameSimulationRoute.cpp).
     struct FreeFlightLeg
     {
-        enum class Kind { Hub, Orbit, Point };
+        enum class Kind { Hub, Orbit, Point, Land, Ship };
         Kind kind = Kind::Hub;
+        std::string landingSpec;        // Land: "" wild site, "site:<id>" a settlement pad
+        std::uint64_t shipEntityId = 0; // Ship: the rendezvous target (its current position / velocity)
         std::string hubId;              // Hub
         std::string bodyId;             // Orbit
         double orbitAltitudeM = 0.0;    // Orbit
@@ -220,7 +222,11 @@ public:
         bool waitingExit = false;
         double serviceSeconds = -1.0;   // a stop action running (refuel)
         double idleSeconds = 0.0;
+        bool paused = false;            // manual flight until RESUME (a "pause" point or the pilot's PAUSE)
+        bool resumeCurrent = false;     // paused mid-leg: RESUME restarts the current leg
     };
+    void pauseRoute(EntityId shipId);
+    void resumeRoute(EntityId shipId);
     struct ActiveFreeFlight
     {
         std::string sourceHubId;

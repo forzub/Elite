@@ -729,7 +729,9 @@ private:
     double m_devRollUntilMs = 0.0;
     bool m_laserKeyDown = false;   // SPACE held: lasers on (FireWeapon 1 / 0 on the edges)
     // route launch (map finish -> official / unofficial) and the zone watch
-    void launchPlannedRoute(bool official);
+    // official / unofficial; launch = false: РАССЧИТАТЬ only (the summary, planner-inserted points)
+    void launchPlannedRoute(bool official, bool launch = true);
+    void sendRouteControl(bool pause);
     void updateZoneViolations(double dt);
     void renderZoneViolationBanner(const Viewport& viewport);
     game::navigation::route::AnchorResolver routeAnchorResolver() const;

@@ -1116,6 +1116,26 @@ inline std::vector<game::system_map::MapObjectPanelAction> waypointPanelActions(
         unofficial.key = "route_unofficial";
         unofficial.labelKey = "route_unofficial";
         actions.push_back(std::move(unofficial));
+        game::system_map::MapObjectPanelAction calc;
+        calc.key = "route_calculate";
+        calc.labelKey = "route_calculate";
+        actions.push_back(std::move(calc));
+        // the server's route: PAUSE while it flies, RESUME while it waits
+        if (routePlan.serverRouteState == 1 || routePlan.serverRouteState == 3 || routePlan.serverRouteState == 4)
+        {
+            game::system_map::MapObjectPanelAction pause;
+            pause.key = "route_pause";
+            pause.labelKey = "route_pause";
+            actions.push_back(std::move(pause));
+        }
+        else if (routePlan.serverRouteState == 2)
+        {
+            game::system_map::MapObjectPanelAction resume;
+            resume.key = "route_resume";
+            resume.labelKey = "route_resume";
+            resume.active = true;
+            actions.push_back(std::move(resume));
+        }
     }
 
     return actions;

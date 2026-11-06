@@ -420,7 +420,8 @@ private:
     const world::celestial::WorldSitesCatalog* m_worldSites = nullptr;
     std::string m_transferTunnelBodyId;
     std::string m_pendingOrbitalTransferHubId;
-    int m_pendingRouteLaunch = 0;   // 1 official, 2 unofficial (finish info window)
+    int m_pendingRouteLaunch = 0;   // 1 official, 2 unofficial, 3 calculate only (finish info window)
+    int m_pendingRouteControl = 0;  // 1 pause, 2 resume
     std::string m_devFocusBodyId;
     std::string m_devFocusHubId;
     std::string m_devHoverObjectId;
@@ -466,6 +467,7 @@ public:
     }
     // Route launch from the finish's info window: 1 official, 2 unofficial; consumed by SpaceState.
     int consumeRouteLaunchRequest() { return std::exchange(m_pendingRouteLaunch, 0); }
+    int consumeRouteControlRequest() { return std::exchange(m_pendingRouteControl, 0); }
     void requestRouteLaunch(bool official) { m_pendingRouteLaunch = official ? 1 : 2; }
     void requestOrbitalTransferToSelectedHub()
     {

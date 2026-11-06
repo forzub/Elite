@@ -25,7 +25,15 @@ std::string programLine(const game::navigation::NavigationWaypoint& w, const gam
     if (w.actions.refuel || w.stopAction == "refuel") line += " + заправка";
     if (w.actions.repair) line += " + ремонт";
     if (w.actions.pauseHere) line += "  || пауза";
-    if (w.insertedByPlanner) line += "  [добавлено: " + w.insertedReason + "]";
+    if (w.insertedByPlanner) line = "[план] " + line;
+    // the row has ~34 characters beside the role (the delete cross on the right)
+    if (line.size() > 60)   // bytes: Cyrillic is 2 per character; cut on a character boundary
+    {
+        std::size_t n = 58;
+        while (n > 0 && (static_cast<unsigned char>(line[n]) & 0xC0) == 0x80)
+            --n;
+        line = line.substr(0, n) + "…";
+    }
     return line;
 }
 
@@ -840,6 +848,17 @@ void NavigationRouteOverlayRenderer::render(
         }
 
         y += rowHeight;
+    }
+    // the last calculation and the server's route state
+    {
+        static const char* states[] = {"", "МАРШРУТ: ПОЛЁТ", "МАРШРУТ: ПАУЗА — РУЧНОЙ РЕЖИМ", "МАРШРУТ: СТОЯНКА-СЕРВИС", "МАРШРУТ: ПОСАДКА"};
+        const int st = std::clamp(routePlan.serverRouteState, 0, 4);
+        std::string line = states[st];
+        if (!routePlan.summary.empty())
+            line += (line.empty() ? "" : "  ·  ") + routePlan.summary;
+        if (!line.empty())
+            text.textDrawPx(line, static_cast<float>(top.x + 10.0), static_cast<float>(y + 14.0), 9,
+                            st == 2 ? glm::vec4(1.0f, 0.72f, 0.28f, 1.0f) : kMuted);
     }
 
     const bool deleteRouteArmed = state.deleteRouteArmed();

@@ -38,6 +38,7 @@ namespace
 {
 namespace jd = game::simulation::jdrive;
 constexpr double HubArrivalM = jd::KeepOutObjectM + 5000.0;   // the aim just outside the keep-out, on the approach side
+constexpr double ShipArrivalM = jd::KeepOutShipM + 1000.0;    // a rendezvous: just outside the target ship's J keep-out
 constexpr double GentleAccelMps2 = jd::GentleAccelMps2;
 constexpr double GentleSpeedMps = jd::GentleSpeedMps;
 constexpr double ApproachTauS = 6.0;
@@ -49,6 +50,16 @@ bool GameSimulation::startFreeFlightLeg(EntityId shipId, const FreeFlightLeg& le
     Ship* ship = getShip(shipId);
     if (!ship)
         return false;
+    if (leg.kind == FreeFlightLeg::Kind::Land)
+    {
+        // a landing: the landing autopilot flies it (J to the parking orbit, de-orbit, terminal);
+        // from the ground it lifts off itself. updateRoutes waits for LANDED.
+        std::cerr << "[Route] ship " << shipId.value << ": leg -> LANDING on " << leg.bodyId
+                  << (leg.landingSpec.empty() ? std::string(" (wild site)") : " at " + leg.landingSpec) << std::endl;
+        setFreeFlightAutopilot(shipId, leg.landingSpec.rfind("site:", 0) == 0 ? std::string() : leg.bodyId, true, leg.landingSpec);
+        const auto it = m_freeFlights.find(shipId);
+        return it != m_freeFlights.end() && !it->second.autopilotTargetId.empty();
+    }
     auto& motion = ship->core().transform().motion;
     const bool alreadyInJ = motion.freeFlight;   // a route continuing past a guide point
     if (!motion.freeFlight && !toggleFreeFlight(shipId))
@@ -68,6 +79,8 @@ bool GameSimulation::startFreeFlightLeg(EntityId shipId, const FreeFlightLeg& le
     if (f.takeOff)
     {
         motion.freeFlightSurfaceState = 0;
+        motion.freeFlightAutopilotPhase = 0;   // the landing autopilot's "on the surface" panel ends
+        motion.freeFlightAutopilotTargetId.clear();
         std::cerr << "[Route] ship " << shipId.value << ": TAKE-OFF - main-engine climb to the J floor first" << std::endl;
     }
     f.legSeconds = 0.0;
@@ -118,6 +131,27 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
         targetPos = hub->originMeters + side * HubArrivalM;
         targetVel = hub->velocityMetersPerSecond;
     }
+    else if (leg.kind == FreeFlightLeg::Kind::Ship)
+    {
+        // a rendezvous (ROUTE_PROGRAMS_DESIGN.md §4): the target ship's position now, its velocity
+        // matched, the arrival just outside its J keep-out on the approach side
+        EntityId target;
+        target.value = leg.shipEntityId;
+        const Ship* other = getShip(target);
+        if (!other || !other->core().transform().motion.travelFrame.valid)
+        {
+            std::cerr << "[Route] ship " << shipId.value << ": rendezvous target " << leg.shipEntityId << " unknown - leg dropped" << std::endl;
+            f.legActive = false;
+            return;
+        }
+        const auto& om = other->core().transform().motion;
+        const glm::dvec3 otherPos = om.travelFrame.localToWorldPosition(om.localPositionMeters);
+        const glm::dvec3 otherVel = om.travelFrame.localToWorldVelocity(om.localPositionMeters, om.localVelocityMps);
+        const glm::dvec3 fromOther = frame.originMeters - otherPos;
+        const glm::dvec3 side = glm::length(fromOther) > 1.0 ? glm::normalize(fromOther) : glm::dvec3(0, 1, 0);
+        targetPos = otherPos + side * ShipArrivalM;
+        targetVel = otherVel;
+    }
     else if (leg.kind == FreeFlightLeg::Kind::Orbit)
     {
         if (!body)
@@ -160,7 +194,9 @@ void GameSimulation::updateFreeFlightLeg(EntityId shipId, Ship& ship, ActiveFree
     JKeepOutHit keep;
     const bool inKeepOut = jKeepOut(shipId, motion.systemId, frame.originMeters, keep);
     const bool nearDeparture = inKeepOut && !(leg.kind == FreeFlightLeg::Kind::Hub && keep.objectId == leg.hubId && f.legSeconds > 1.0 &&
-                                              keep.objectId != f.legDepartureHubId);
+                                              keep.objectId != f.legDepartureHubId) &&
+                               !(leg.kind == FreeFlightLeg::Kind::Ship && f.legSeconds > 1.0 &&
+                                 keep.objectId.rfind("ship " + std::to_string(leg.shipEntityId) + " ", 0) == 0);
     if (!nearDeparture && f.legDriveStartSeconds == -1.0)
         f.legDriveStartSeconds = f.legSeconds;
     const double driveSeconds = f.legDriveStartSeconds == -1.0 ? 0.0 : f.legSeconds - f.legDriveStartSeconds;
@@ -290,7 +326,18 @@ glm::dvec3 GameSimulation::routePointWorld(const FreeFlightLeg& leg) const
         const auto it = m_hubNavigationFrames.find(leg.hubId);
         return it != m_hubNavigationFrames.end() ? it->second.originMeters : leg.pointWorld;
     }
-    if (leg.kind == FreeFlightLeg::Kind::Orbit)
+    if (leg.kind == FreeFlightLeg::Kind::Ship)
+    {
+        EntityId target;
+        target.value = leg.shipEntityId;
+        if (const Ship* other = getShip(target))
+        {
+            const auto& om = other->core().transform().motion;
+            return om.travelFrame.localToWorldPosition(om.localPositionMeters);
+        }
+        return leg.pointWorld;
+    }
+    if (leg.kind == FreeFlightLeg::Kind::Orbit || leg.kind == FreeFlightLeg::Kind::Land)
         for (const auto& b : m_gravityBodies)
             if (b.id == leg.bodyId)
                 return b.centerMeters;
@@ -306,7 +353,9 @@ bool GameSimulation::startRoute(EntityId shipId, std::vector<FreeFlightLeg> legs
     m_routes[shipId] = route;
     std::cerr << "[Route] ship " << shipId.value << ": ROUTE of " << m_routes[shipId].legs.size() << " legs:";
     for (const auto& l : m_routes[shipId].legs)
-        std::cerr << " [" << (l.kind == FreeFlightLeg::Kind::Hub ? "hub " + l.hubId : l.kind == FreeFlightLeg::Kind::Orbit ? "orbit " + l.bodyId : std::string("point"))
+        std::cerr << " [" << (l.kind == FreeFlightLeg::Kind::Hub ? "hub " + l.hubId : l.kind == FreeFlightLeg::Kind::Orbit ? "orbit " + l.bodyId
+                              : l.kind == FreeFlightLeg::Kind::Land ? "land " + l.bodyId + " " + l.landingSpec
+                              : l.kind == FreeFlightLeg::Kind::Ship ? "ship " + std::to_string(l.shipEntityId) : std::string("point"))
                   << (l.passThrough ? " pass" : " stop") << (l.action.empty() ? "" : " " + l.action) << ", rest "
                   << l.remainingAfterM / 1000.0 << " km]";
     std::cerr << std::endl;
@@ -316,6 +365,50 @@ bool GameSimulation::startRoute(EntityId shipId, std::vector<FreeFlightLeg> legs
         return false;
     }
     return true;
+}
+
+void GameSimulation::pauseRoute(EntityId shipId)
+{
+    const auto r = m_routes.find(shipId);
+    if (r == m_routes.end() || r->second.paused)
+        return;
+    r->second.paused = true;
+    r->second.resumeCurrent = !r->second.legDone;   // mid-leg: the leg starts again on RESUME
+    if (const auto it = m_freeFlights.find(shipId); it != m_freeFlights.end())
+    {
+        it->second.legActive = false;
+        it->second.takeOff = false;
+        if (!it->second.autopilotTargetId.empty())
+            setFreeFlightAutopilot(shipId, it->second.autopilotTargetId, false, {});
+    }
+    std::cerr << "[Route] ship " << shipId.value << ": PAUSED by the pilot at leg " << r->second.index + 1 << std::endl;
+}
+
+void GameSimulation::resumeRoute(EntityId shipId)
+{
+    const auto r = m_routes.find(shipId);
+    if (r == m_routes.end() || !r->second.paused)
+        return;
+    auto& route = r->second;
+    route.paused = false;
+    if (!route.resumeCurrent)
+        ++route.index;   // paused at a point: on to the next one
+    route.resumeCurrent = false;
+    route.legDone = false;
+    route.waitingExit = false;
+    route.serviceSeconds = -1.0;
+    if (route.index >= route.legs.size())
+    {
+        std::cerr << "[Route] ship " << shipId.value << ": RESUME - nothing left, ROUTE COMPLETE" << std::endl;
+        m_routes.erase(r);
+        return;
+    }
+    std::cerr << "[Route] ship " << shipId.value << ": RESUMED - leg " << route.index + 1 << " of " << route.legs.size() << std::endl;
+    if (!startFreeFlightLeg(shipId, route.legs[route.index]))
+    {
+        std::cerr << "[Route] ship " << shipId.value << ": cannot start leg " << route.index + 1 << " - route stopped" << std::endl;
+        m_routes.erase(shipId);
+    }
 }
 
 void GameSimulation::cancelRoute(EntityId shipId)
@@ -337,6 +430,44 @@ void GameSimulation::updateRoutes(double dt)
         {
             it = m_routes.erase(it);
             continue;
+        }
+        auto& rm = ship->core().transform().motion;
+        rm.routeLegIndex = static_cast<std::uint8_t>(std::min<std::size_t>(route.index + 1, 255));
+        rm.routeLegCount = static_cast<std::uint8_t>(std::min<std::size_t>(route.legs.size(), 255));
+        if (route.paused)
+        {
+            rm.routeState = 2;   // manual flight; RESUME continues
+            ++it;
+            continue;
+        }
+        {
+            const FreeFlightLeg& cur = route.legs[route.index];
+            if (!route.legDone && cur.kind == FreeFlightLeg::Kind::Land)
+            {
+                rm.routeState = 4;
+                if (rm.freeFlightSurfaceState == 1)
+                {
+                    route.legDone = true;
+                    std::cerr << "[Route] ship " << id.value << ": landed (leg " << route.index + 1 << ")" << std::endl;
+                }
+                else if (rm.freeFlightSurfaceState == 2)
+                {
+                    std::cerr << "[Route] ship " << id.value << ": CRASHED on the landing leg - route stopped" << std::endl;
+                    rm.routeState = 0;
+                    it = m_routes.erase(it);
+                    continue;
+                }
+                else if (const auto ff = m_freeFlights.find(id); ff == m_freeFlights.end() || ff->second.autopilotTargetId.empty())
+                {
+                    std::cerr << "[Route] ship " << id.value << ": the landing autopilot gave up - route paused" << std::endl;
+                    route.paused = true;
+                    route.resumeCurrent = true;
+                    ++it;
+                    continue;
+                }
+            }
+            else if (!route.legDone)
+                rm.routeState = 1;
         }
         if (!route.legDone)
         {
@@ -362,6 +493,7 @@ void GameSimulation::updateRoutes(double dt)
                 std::cerr << "[Route] ship " << id.value << ": at " << done.hubId << " - docking for refuel" << std::endl;
             }
             route.serviceSeconds += dt;
+            rm.routeState = 3;
             if (route.serviceSeconds < 20.0)
             {
                 ++it;
@@ -382,7 +514,20 @@ void GameSimulation::updateRoutes(double dt)
         if (++route.index >= route.legs.size())
         {
             std::cerr << "[Route] ship " << id.value << ": ROUTE COMPLETE" << std::endl;
+            rm.routeState = 0;
+            rm.routeLegIndex = rm.routeLegCount = 0;
             it = m_routes.erase(it);
+            continue;
+        }
+        // a "pause" point: the mission waits here, the pilot flies; RESUME starts the next leg
+        if (done.action.find("pause") != std::string::npos)
+        {
+            --route.index;   // resume steps to the next leg
+            route.paused = true;
+            route.resumeCurrent = false;
+            rm.routeState = 2;
+            std::cerr << "[Route] ship " << id.value << ": PAUSED at point " << route.index << " - manual flight until RESUME" << std::endl;
+            ++it;
             continue;
         }
         if (!startFreeFlightLeg(id, route.legs[route.index]))

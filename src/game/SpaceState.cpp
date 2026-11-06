@@ -735,7 +735,9 @@ void SpaceState::handleInput()
         if (const auto target = m_systemMapRenderer.consumeOrbitalTransferRequest())
             requestOrbitalTransfer(*target);
         if (const int launch = m_systemMapRenderer.consumeRouteLaunchRequest())
-            launchPlannedRoute(launch == 1);
+            launchPlannedRoute(launch != 2, launch != 3);
+        if (const int control = m_systemMapRenderer.consumeRouteControlRequest())
+            sendRouteControl(control == 1);
 
         // G: optional cube overlay (hybrid System Map); arrows walk sibling cubes in the screen plane.
         if (Input::instance().isKeyPressedOnce(GLFW_KEY_G))
@@ -1442,16 +1444,38 @@ void SpaceState::update(float dt)
                     requestOrbitalTransfer(arg("transfer:"));
                 else if (cmd == "route:official" || cmd == "route:unofficial")
                     launchPlannedRoute(cmd == "route:official");
+                else if (cmd == "route:calc")
+                    launchPlannedRoute(true, false);
+                else if (cmd == "route:pause" || cmd == "route:resume")
+                    sendRouteControl(cmd == "route:pause");
                 else if (cmd.rfind("finish:", 0) == 0 || cmd.rfind("via:", 0) == 0)
                 {
                     // DEV: "finish:hub:<id>" | "finish:body:<moon|earth|mars>" | "via:hub:<id>[:refuel]"
                     const bool isFinish = cmd.rfind("finish:", 0) == 0;
                     std::string spec = arg(isFinish ? "finish:" : "via:");
                     std::string action;
-                    if (spec.size() > 7 && spec.compare(spec.size() - 7, 7, ":refuel") == 0)
+                    // suffixes (any order at the end): :refuel :pause :land :orbit :dock :stay (no take-off)
+                    bool pause = false, stay = false;
+                    game::navigation::NavigationWaypointProgram program = game::navigation::NavigationWaypointProgram::Auto;
+                    for (bool more = true; more;)
                     {
-                        action = "refuel";
-                        spec.resize(spec.size() - 7);
+                        more = false;
+                        static const std::pair<const char*, int> sfx[] = {{":refuel", 0}, {":pause", 1}, {":land", 2}, {":orbit", 3}, {":dock", 4}, {":stay", 5}};
+                        for (const auto& [k, kind] : sfx)
+                        {
+                            const std::size_t n = std::char_traits<char>::length(k);
+                            if (spec.size() > n && spec.compare(spec.size() - n, n, k) == 0)
+                            {
+                                spec.resize(spec.size() - n);
+                                more = true;
+                                if (kind == 0) action = "refuel";
+                                if (kind == 1) pause = true;
+                                if (kind == 2) program = game::navigation::NavigationWaypointProgram::Land;
+                                if (kind == 3) program = game::navigation::NavigationWaypointProgram::Orbit;
+                                if (kind == 4) program = game::navigation::NavigationWaypointProgram::Dock;
+                                if (kind == 5) stay = true;
+                            }
+                        }
                     }
                     game::navigation::RouteTargetRef target;
                     world::coordinates::WorldPosition where;
@@ -1465,6 +1489,30 @@ void SpaceState::update(float dt)
                             where = h->second.worldPosition;
                             name = h->second.name;
                         }
+                    }
+                    else if (spec.rfind("ship:", 0) == 0)
+                    {
+                        // DEV: a rendezvous with the ship of that server entity id
+                        const auto sit = m_client->world().ships().find(static_cast<std::uint32_t>(std::atoi(spec.c_str() + 5)));
+                        if (sit != m_client->world().ships().end())
+                        {
+                            target.kind = game::navigation::NavigationRouteAnchorKind::Ship;
+                            target.shipInstanceId = sit->second.instanceId;
+                            where = sit->second.transform.worldPosition;
+                            program = game::navigation::NavigationWaypointProgram::Rendezvous;
+                        }
+                    }
+                    else if (spec.rfind("site:", 0) == 0)
+                    {
+                        // a surface settlement: its body as the target, the program = its pad
+                        const std::string body = world::celestial::settlements::surfaceSettlementBody(spec.substr(5));
+                        target.kind = game::navigation::NavigationRouteAnchorKind::CelestialBody;
+                        target.stableObjectId = body;
+                        program = game::navigation::NavigationWaypointProgram::LandAtSettlement;
+                        if (const auto* snap = m_client->celestialSnapshot())
+                            for (const auto& b : snap->bodies)
+                                if (b.id == body)
+                                    where = world::coordinates::makeWorldPositionFromMeters(b.worldMeters);
                     }
                     else if (spec.rfind("body:", 0) == 0)
                     {
@@ -1483,7 +1531,13 @@ void SpaceState::update(float dt)
                     }
                     target.systemId = 0;
                     auto& plan = m_navigationWorkspace.routePlan();
-                    auto& w = plan.rememberCandidate(target, "dev:" + spec, where, std::string(), name);
+                    auto& w = plan.rememberCandidate(target, spec.rfind("site:", 0) == 0 ? spec : "dev:" + spec, where, std::string(), name);
+                    w.program = program;
+                    w.actions.pauseHere = pause;
+                    w.actions.takeOffAfter = !stay;
+                    w.actions.refuel = action == "refuel";
+                    if (spec.rfind("site:", 0) == 0)
+                        w.actions.landingSite = spec;
                     if (w.role != (isFinish ? game::navigation::NavigationWaypointRole::Finish
                                             : game::navigation::NavigationWaypointRole::Intermediate))
                         plan.toggleRole(w.id, isFinish ? game::navigation::NavigationWaypointRole::Finish

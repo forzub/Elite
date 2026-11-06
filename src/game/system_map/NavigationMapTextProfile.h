@@ -30,6 +30,9 @@ struct NavigationMapTextProfile
     std::string routeRefuelOn = "ЗАПРАВКА ЗДЕСЬ: ДА";
     std::string routeRefuelOff = "ЗАПРАВКА ЗДЕСЬ: НЕТ";
     // the point's program (ROUTE_PROGRAMS_DESIGN.md): the button cycles the programs its target admits
+    std::string routeCalculate = "РАССЧИТАТЬ (БЕЗ ВЫЛЕТА)";
+    std::string routePause = "ПАУЗА (РУЧНОЙ РЕЖИМ)";
+    std::string routeResume = "ПРОДОЛЖИТЬ МАРШРУТ";
     std::string routeProgramPrefix = "ПРОГРАММА: ";
     std::string programAuto = "АВТО";
     std::string programPassThrough = "ПРОЛЁТ";

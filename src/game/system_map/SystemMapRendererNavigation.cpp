@@ -1235,6 +1235,9 @@ void SystemMapRenderer::applyWaypointAction(
             std::move(address),
             item->name.empty() ? item->typeName : item->name
         );
+        // a surface settlement keeps its pad (the source binding may be rebound to its body later)
+        if (item->objectId.rfind("site:", 0) == 0 && waypoint->actions.landingSite.empty())
+            waypoint->actions.landingSite = item->objectId;
 
         using Context = game::navigation::NavigationRouteMapKind;
         Context context = Context::System;
@@ -1331,6 +1334,12 @@ void SystemMapRenderer::applyWaypointAction(
     {
         m_pendingRouteLaunch = actionKey == "route_official" ? 1 : 2;
     }
+    else if (actionKey == "route_calculate")
+        m_pendingRouteLaunch = 3;
+    else if (actionKey == "route_pause")
+        m_pendingRouteControl = 1;
+    else if (actionKey == "route_resume")
+        m_pendingRouteControl = 2;
 }
 
 std::optional<game::system_map::MapIntent>

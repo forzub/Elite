@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "src/game/navigation/route/RoutePlanner.h"
+#include "src/game/simulation/JDrive.h"
 
 namespace
 {
@@ -104,7 +105,25 @@ route::AnchorResolver SpaceState::routeAnchorResolver() const
     };
 }
 
-void SpaceState::launchPlannedRoute(bool official)
+void SpaceState::sendRouteControl(bool pause)
+{
+    if (!m_client)
+        return;
+    game::network::ClientMessage msg;
+    ClientShipCommand command;
+    command.type = ClientShipCommand::RouteLeg;
+    command.index = pause ? 3 : 4;
+    msg.payload = command;
+    m_client->sendMessage(msg);
+    std::cerr << "[RoutePlan] " << (pause ? "PAUSE" : "RESUME") << " sent" << std::endl;
+}
+
+// The route window's plan -> planner points (ROUTE_PROGRAMS_DESIGN.md): each point's program decides
+// its kind (dock stop / pass, orbit, landing), its actions the stop's action string ("refuel",
+// "repair", "pause", joined by '+'). The J charge is walked along the points; where it would fall
+// under 10 % of the capacity the planner inserts a refuel stop at the hub that adds the least way
+// (marked "added by the planner" in the list) and plans again. launch = false: the summary only.
+void SpaceState::launchPlannedRoute(bool official, bool launch)
 {
     if (!m_client)
         return;
@@ -113,107 +132,215 @@ void SpaceState::launchPlannedRoute(bool official)
     if (shipIt == m_client->world().ships().end() || !snapshot)
         return;
     const auto* system = m_client->starAtlas() ? m_client->starAtlas()->findSystem(snapshot->systemId) : nullptr;
-    const auto& plan = m_navigationWorkspace.routePlan();
+    auto& plan = m_navigationWorkspace.routePlan();
+    using P = game::navigation::NavigationWaypointProgram;
+    using Anchor = game::navigation::NavigationRouteAnchorKind;
+    namespace jd = game::simulation::jdrive;
 
+    const auto& motion = shipIt->second.transform.motion;
+    const double capacity = motion.jChargeCapacityT > 0.0 ? motion.jChargeCapacityT : jd::CobrettChargeCapacityT;
+    // DEV: ELITE_DEV_ROUTE_CHARGE_T=<t> plans from that charge (planner refuel insertion check)
+    static const double devCharge = [] {
+        const char* v = std::getenv("ELITE_DEV_ROUTE_CHARGE_T");
+        return v && *v ? std::atof(v) : -1.0;
+    }();
+    const double charge0 = devCharge >= 0.0 ? devCharge : motion.jChargeT >= 0.0 ? motion.jChargeT : capacity;
+    constexpr double ShipMassT = 260.0;   // the Cobrett's dry mass (no cargo model on the client yet)
+    const glm::dvec3 startM = world::coordinates::fullMeters(shipIt->second.transform.worldPosition);
+
+    std::vector<std::string> inserted;
     route::PlanRequest req;
-    req.official = official;
-    req.startM = world::coordinates::fullMeters(shipIt->second.transform.worldPosition);
-    req.bodyAt = [&](const glm::dvec3& p) { return bodyAtPoint(*snapshot, system, p); };
-    req.startBodyId = req.bodyAt(req.startM);
-    for (const auto& [hubId, hub] : m_client->world().hubs())
-        req.hubsM.emplace_back(hubId, world::coordinates::fullMeters(hub.worldPosition));
-
-    // intermediates in their order, then the finish
-    std::vector<const game::navigation::NavigationWaypoint*> order;
-    for (const auto& w : plan.waypoints())
-        if (w.role == game::navigation::NavigationWaypointRole::Intermediate)
-            order.push_back(&w);
-    std::sort(order.begin(), order.end(), [](const auto* a, const auto* b) { return a->sequence < b->sequence; });
-    for (const auto& w : plan.waypoints())
-        if (w.role == game::navigation::NavigationWaypointRole::Finish)
-            order.push_back(&w);
-    if (order.empty() || order.back()->role != game::navigation::NavigationWaypointRole::Finish)
+    route::PlannedRoute planned;
+    double chargeAtFinish = charge0, chargeUsed = 0.0;
+    std::string shortage;
+    for (int attempt = 0; attempt < 4; ++attempt)
     {
-        std::cerr << "[RoutePlan] no finish on the map" << std::endl;
-        return;
-    }
-    {
-        // a landing finish (a wild site / a settlement pad) is flown by the body autopilot, which
-        // lands; the route legs do not land yet - intermediates are ignored for now (R2)
-        using P = game::navigation::NavigationWaypointProgram;
-        const auto& fin = *order.back();
-        const P program = game::navigation::effectiveProgram(fin);
-        if (program == P::Land || program == P::LandAtSettlement)
+        // intermediates in their order, then the finish
+        std::vector<game::navigation::NavigationWaypoint*> order;
+        for (auto& w : const_cast<std::vector<game::navigation::NavigationWaypoint>&>(plan.waypoints()))
+            if (w.role == game::navigation::NavigationWaypointRole::Intermediate)
+                order.push_back(&w);
+        std::sort(order.begin(), order.end(), [](const auto* a, const auto* b) { return a->sequence < b->sequence; });
+        for (auto& w : const_cast<std::vector<game::navigation::NavigationWaypoint>&>(plan.waypoints()))
+            if (w.role == game::navigation::NavigationWaypointRole::Finish)
+                order.push_back(&w);
+        if (order.empty() || order.back()->role != game::navigation::NavigationWaypointRole::Finish)
         {
-            if (order.size() > 1)
-                std::cerr << "[RoutePlan] a landing finish: " << order.size() - 1
-                          << " intermediate point(s) not flown yet (R2) - straight to the landing" << std::endl;
-            if (program == P::LandAtSettlement)
-                requestFreeFlightAutopilot({}, fin.sourceObjectId.rfind("site:", 0) == 0 ? fin.sourceObjectId
-                                                                                         : "site:" + fin.target.stableObjectId);
-            else
-                requestFreeFlightAutopilot(fin.target.stableObjectId);
-            std::cerr << "[RoutePlan] finish program " << game::navigation::waypointProgramKey(program) << " -> the landing autopilot"
-                      << std::endl;
+            std::cerr << "[RoutePlan] no finish on the map" << std::endl;
+            plan.summary = "нет финиша";
             return;
         }
-    }
-    for (const auto* w : order)
-    {
-        const bool finish = w->role == game::navigation::NavigationWaypointRole::Finish;
-        route::RoutePoint p;
-        p.label = w->displayName;
-        p.worldM = world::coordinates::fullMeters(w->worldPosition);
-        using Anchor = game::navigation::NavigationRouteAnchorKind;
-        using P = game::navigation::NavigationWaypointProgram;
-        const P program = game::navigation::effectiveProgram(*w);
-        if (w->target.kind == Anchor::Hub && m_client->world().hubs().count(w->target.stableObjectId))
+
+        req = route::PlanRequest {};
+        req.official = official;
+        req.startM = startM;
+        req.bodyAt = [&](const glm::dvec3& p) { return bodyAtPoint(*snapshot, system, p); };
+        req.startBodyId = req.bodyAt(req.startM);
+        req.hubsM.clear();
+        for (const auto& [hubId, hub] : m_client->world().hubs())
+            req.hubsM.emplace_back(hubId, world::coordinates::fullMeters(hub.worldPosition));
+
+        for (const auto* w : order)
         {
-            p.kind = route::RoutePoint::Kind::Hub;
-            p.hubId = w->target.stableObjectId;
-            p.worldM = world::coordinates::fullMeters(m_client->world().hubs().at(p.hubId).worldPosition);
-            // the services of a dock stop: "refuel", "repair", "refuel+repair"
-            std::string services;
+            const bool finish = w->role == game::navigation::NavigationWaypointRole::Finish;
+            const P program = game::navigation::effectiveProgram(*w);
+            route::RoutePoint p;
+            p.label = w->displayName;
+            p.inserted = w->insertedByPlanner;
+            p.worldM = world::coordinates::fullMeters(w->worldPosition);
+            std::string act;
+            const auto add = [&](const char* a) { act += act.empty() ? a : std::string("+") + a; };
             if (w->actions.refuel || w->stopAction == "refuel")
-                services = "refuel";
+                add("refuel");
             if (w->actions.repair)
-                services += services.empty() ? "repair" : "+repair";
-            p.action = services;
-            p.stop = program == P::Dock && (finish || !services.empty() || w->actions.pauseHere);
-            if (!p.stop)
-                p.kind = route::RoutePoint::Kind::Point;   // a hub flown past
-        }
-        else if (w->target.kind == Anchor::CelestialBody && (finish || program == P::Orbit || program == P::OrbitSurvey) &&
-                 program != P::PassThrough)
-        {
-            p.kind = route::RoutePoint::Kind::Orbit;
-            p.bodyId = w->target.stableObjectId;
-            p.stop = true;
-            for (const auto& b : snapshot->bodies)
-                if (b.id == p.bodyId)
+                add("repair");
+            const bool landing = program == P::Land || program == P::LandAtSettlement;
+            if (w->actions.pauseHere || (landing && !finish && !w->actions.takeOffAfter))
+                add("pause");
+            if (w->target.kind == Anchor::Hub && m_client->world().hubs().count(w->target.stableObjectId))
+            {
+                p.kind = route::RoutePoint::Kind::Hub;
+                p.hubId = w->target.stableObjectId;
+                p.worldM = world::coordinates::fullMeters(m_client->world().hubs().at(p.hubId).worldPosition);
+                p.action = act;
+                p.stop = program == P::Dock && (finish || !act.empty());
+                if (!p.stop)
+                    p.kind = route::RoutePoint::Kind::Point;   // a hub flown past
+            }
+            else if (w->target.kind == Anchor::Ship)
+            {
+                // a rendezvous: the server entity of the ship instance, its position now
+                p.kind = route::RoutePoint::Kind::Ship;
+                p.stop = true;
+                p.action = act;
+                for (const auto& [eid, s] : m_client->world().ships())
+                    if (s.instanceId == w->target.shipInstanceId)
+                    {
+                        p.shipEntityId = eid;
+                        p.worldM = world::coordinates::fullMeters(s.transform.worldPosition);
+                    }
+                if (p.shipEntityId == 0)
                 {
-                    p.worldM = b.worldMeters;
-                    // a low, safe orbit: 6 % of the radius, at least 100 km (over an atmosphere); the
-                    // point's own altitude when set
-                    p.orbitAltitudeM = w->actions.orbitAltitudeM > 0.0 ? w->actions.orbitAltitudeM
-                                                                       : std::max(100000.0, b.radiusKm * 1000.0 * 0.06);
+                    std::cerr << "[RoutePlan] rendezvous target " << w->target.shipInstanceId << " not in this system - skipped" << std::endl;
+                    continue;
                 }
+            }
+            else if (landing)
+            {
+                p.kind = route::RoutePoint::Kind::Land;
+                p.stop = true;
+                p.action = act;
+                p.bodyId = w->target.stableObjectId;
+                if (program == P::LandAtSettlement)
+                    p.landingSpec = !w->actions.landingSite.empty() ? w->actions.landingSite
+                                  : w->sourceObjectId.rfind("site:", 0) == 0 ? w->sourceObjectId : "site:" + w->target.stableObjectId;
+                for (const auto& b : snapshot->bodies)
+                    if (b.id == p.bodyId)
+                        p.worldM = b.worldMeters;
+            }
+            else if (w->target.kind == Anchor::CelestialBody && program != P::PassThrough &&
+                     (finish || program == P::Orbit || program == P::OrbitSurvey))
+            {
+                p.kind = route::RoutePoint::Kind::Orbit;
+                p.bodyId = w->target.stableObjectId;
+                p.stop = true;
+                p.action = act;
+                for (const auto& b : snapshot->bodies)
+                    if (b.id == p.bodyId)
+                    {
+                        p.worldM = b.worldMeters;
+                        // a low, safe orbit: 6 % of the radius, at least 100 km; the point's own altitude when set
+                        p.orbitAltitudeM = w->actions.orbitAltitudeM > 0.0 ? w->actions.orbitAltitudeM
+                                                                           : std::max(100000.0, b.radiusKm * 1000.0 * 0.06);
+                    }
+            }
+            else
+            {
+                p.kind = route::RoutePoint::Kind::Point;
+                p.stop = finish || program == P::Stop || !act.empty();
+                p.action = act;
+            }
+            req.points.push_back(p);
         }
-        else
+
+        // the J charge along the points (straight segments; a refuel stop fills the tank)
+        double charge = charge0;
+        chargeUsed = 0.0;
+        int failAt = -1;
+        glm::dvec3 cur = startM;
+        for (std::size_t k = 0; k < req.points.size(); ++k)
         {
-            p.kind = route::RoutePoint::Kind::Point;
-            p.stop = finish;
+            const double cost = route::estimateLegChargeT(glm::length(req.points[k].worldM - cur), ShipMassT);
+            charge -= cost;
+            chargeUsed += cost;
+            const bool refuelHere = req.points[k].kind == route::RoutePoint::Kind::Hub && req.points[k].stop &&
+                                    req.points[k].action.find("refuel") != std::string::npos;
+            // a 10 % reserve on arrival; a refuel stop only has to be reached
+            if ((refuelHere ? charge < 0.0 : charge < 0.1 * capacity) && failAt < 0)
+                failAt = static_cast<int>(k);
+            if (refuelHere)
+                charge = capacity;
+            cur = req.points[k].worldM;
         }
-        req.points.push_back(p);
+        chargeAtFinish = charge;
+        if (failAt < 0)
+            break;
+        // insert a refuel stop before the failing point: the hub adding the least way
+        const glm::dvec3 a = failAt == 0 ? startM : req.points[static_cast<std::size_t>(failAt - 1)].worldM;
+        const glm::dvec3 b = req.points[static_cast<std::size_t>(failAt)].worldM;
+        std::string bestHub;
+        double best = 1.0e300;
+        for (const auto& [hubId, p] : req.hubsM)
+        {
+            const double extra = glm::length(p - a) + glm::length(b - p) - glm::length(b - a);
+            if (extra < best)
+            {
+                best = extra;
+                bestHub = hubId;
+            }
+        }
+        if (bestHub.empty())
+        {
+            shortage = "заряда J не хватит, заправки на пути нет";
+            break;
+        }
+        game::navigation::RouteTargetRef target;
+        target.kind = Anchor::Hub;
+        target.systemId = snapshot->systemId;
+        target.stableObjectId = bestHub;
+        const auto& hub = m_client->world().hubs().at(bestHub);
+        auto& w = plan.rememberCandidate(target, "planner:refuel:" + bestHub, hub.worldPosition, std::string(), hub.name);
+        if (w.role != game::navigation::NavigationWaypointRole::Intermediate)
+            plan.toggleRole(w.id, game::navigation::NavigationWaypointRole::Intermediate);
+        w.program = P::Dock;
+        w.actions.refuel = true;
+        w.stopAction = "refuel";
+        w.insertedByPlanner = true;
+        w.insertedReason = "заправка";
+        plan.moveIntermediateWaypoint(w.id, failAt + 1);
+        inserted.push_back(hub.name);
+        std::cerr << "[RoutePlan] J charge short before point " << failAt + 1 << ": planner inserted a refuel stop at " << bestHub
+                  << " (+" << best / 1000.0 << " km)" << std::endl;
     }
 
     const auto zones = route::resolveZones(zoneCatalog(), snapshot->systemId, routeAnchorResolver());
-    const route::PlannedRoute planned = route::planRoute(req, zones, zoneCatalog().hubRadarM);
-    std::cerr << "[RoutePlan] " << (official ? "OFFICIAL" : "UNOFFICIAL") << " route: " << planned.legs.size() << " legs, "
-              << planned.lengthM / 1000.0 << " km";
+    planned = route::planRoute(req, zones, zoneCatalog().hubRadarM);
+    std::cerr << "[RoutePlan] " << (official ? "OFFICIAL" : "UNOFFICIAL") << (launch ? "" : " (calculate only)") << " route: "
+              << planned.legs.size() << " legs, " << planned.lengthM / 1000.0 << " km, J charge used ~" << chargeUsed << " t, at the finish "
+              << chargeAtFinish << " / " << capacity << " t";
     for (const auto& n : planned.notes)
         std::cerr << " | " << n;
     std::cerr << std::endl;
+    {
+        char text[256];
+        std::snprintf(text, sizeof text, "%zu плеч · %.0f тыс. км · J −%.3f т · финиш %.2f/%.0f т", planned.legs.size(),
+                      planned.lengthM / 1.0e6, chargeUsed, std::max(0.0, chargeAtFinish), capacity);
+        plan.summary = text;
+        if (!inserted.empty())
+            plan.summary += " · +" + std::to_string(inserted.size()) + " запр.";
+        if (!shortage.empty())
+            plan.summary += " · " + shortage;
+    }
 
     // the route on the map (the transfer tunnel line, relative to the start body)
     {
@@ -226,6 +353,8 @@ void SpaceState::launchPlannedRoute(bool official)
             line.push_back(l.worldM - origin);
         m_systemMapRenderer.setTransferTunnel(req.startBodyId, std::move(line));
     }
+    if (!launch || !shortage.empty())
+        return;
 
     game::network::ClientMessage msg;
     ClientShipCommand command;
@@ -249,6 +378,7 @@ void SpaceState::updateZoneViolations(double dt)
     const auto* snapshot = m_client->celestialSnapshot();
     if (shipIt == m_client->world().ships().end() || !snapshot)
         return;
+    m_navigationWorkspace.routePlan().serverRouteState = shipIt->second.transform.motion.routeState;
     const glm::dvec3 p = world::coordinates::fullMeters(shipIt->second.transform.worldPosition);
     const auto zones = route::resolveZones(zoneCatalog(), snapshot->systemId, routeAnchorResolver());
     const auto fine = [&](const route::RouteZone& z, const std::string& what) {

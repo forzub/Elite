@@ -918,7 +918,11 @@ void GameServer::update(double dt)
                             GameSimulation::FreeFlightLeg l;
                             l.kind = p.kind == game::navigation::route::RoutePoint::Kind::Hub     ? GameSimulation::FreeFlightLeg::Kind::Hub
                                    : p.kind == game::navigation::route::RoutePoint::Kind::Orbit ? GameSimulation::FreeFlightLeg::Kind::Orbit
+                                   : p.kind == game::navigation::route::RoutePoint::Kind::Land  ? GameSimulation::FreeFlightLeg::Kind::Land
+                                   : p.kind == game::navigation::route::RoutePoint::Kind::Ship  ? GameSimulation::FreeFlightLeg::Kind::Ship
                                                                                                   : GameSimulation::FreeFlightLeg::Kind::Point;
+                            l.landingSpec = p.landingSpec;
+                            l.shipEntityId = p.shipEntityId;
                             l.hubId = p.hubId;
                             l.bodyId = p.bodyId;
                             l.orbitAltitudeM = p.orbitAltitudeM;
@@ -943,6 +947,10 @@ void GameServer::update(double dt)
                     }
                     else if (shipCmd.index == 0)
                         m_simulation.cancelRoute(id);
+                    else if (shipCmd.index == 3)
+                        m_simulation.pauseRoute(id);
+                    else if (shipCmd.index == 4)
+                        m_simulation.resumeRoute(id);
                     else
                         m_simulation.startFreeFlightLeg(id, leg);
                     break;

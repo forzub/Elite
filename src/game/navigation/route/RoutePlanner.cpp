@@ -1,3 +1,5 @@
+#include "src/game/simulation/JDrive.h"
+#include <algorithm>
 #include "src/game/navigation/route/RoutePlanner.h"
 
 #include <algorithm>
@@ -243,6 +245,24 @@ PlannedRoute planRoute(const PlanRequest& request, const std::vector<ZoneGeometr
     return route;
 }
 
+double estimateLegChargeT(double distanceM, double massT)
+{
+    namespace jd = game::simulation::jdrive;
+    const double a = jd::MaxAccelMps2;
+    // accelerate to the middle (or to the cap), brake the rest
+    double t = 2.0 * std::sqrt(std::max(0.0, distanceM) / a);
+    const double vPeak = a * t * 0.5;
+    if (vPeak > jd::SpeedCapMps)
+    {
+        const double tRamp = jd::SpeedCapMps / a;
+        const double dRamp = jd::SpeedCapMps * tRamp;   // both ramps
+        t = 2.0 * tRamp + (distanceM - dRamp) / jd::SpeedCapMps;
+        // the coast at the cap is not driven: only the ramps burn
+        return jd::jChargeRateTps(a, massT, jd::CobrettCoreRatingT) * 2.0 * tRamp;
+    }
+    return jd::jChargeRateTps(a, massT, jd::CobrettCoreRatingT) * t;
+}
+
 std::string encodeRoute(const PlannedRoute& route)
 {
     std::ostringstream o;
@@ -252,12 +272,19 @@ std::string encodeRoute(const PlannedRoute& route)
         const RoutePoint& p = route.legs[i];
         if (i)
             o << '|';
+        // ':' separates the fields; a landing spec "site:<id>" travels with '~' for its ':'
+        std::string spec = p.landingSpec;
+        std::replace(spec.begin(), spec.end(), ':', '~');
         if (p.kind == RoutePoint::Kind::Hub)
             o << "hub:" << p.hubId << ':' << (p.stop ? "stop" : "pass") << ':' << p.action;
         else if (p.kind == RoutePoint::Kind::Orbit)
-            o << "orbit:" << p.bodyId << ':' << p.orbitAltitudeM << ':' << (p.stop ? "stop" : "pass");
+            o << "orbit:" << p.bodyId << ':' << p.orbitAltitudeM << ':' << (p.stop ? "stop" : "pass") << ':' << p.action;
+        else if (p.kind == RoutePoint::Kind::Land)
+            o << "land:" << p.bodyId << ':' << spec << ':' << p.action;
+        else if (p.kind == RoutePoint::Kind::Ship)
+            o << "ship:" << p.shipEntityId << ':' << p.action;
         else
-            o << "pt:" << p.worldM.x << ',' << p.worldM.y << ',' << p.worldM.z << ':' << (p.stop ? "stop" : "pass");
+            o << "pt:" << p.worldM.x << ',' << p.worldM.y << ',' << p.worldM.z << ':' << (p.stop ? "stop" : "pass") << ':' << p.action;
     }
     return o.str();
 }
@@ -290,6 +317,23 @@ std::vector<RoutePoint> decodeRoute(const std::string& wire)
             p.bodyId = f[1];
             p.orbitAltitudeM = std::atof(f[2].c_str());
             p.stop = f.size() < 4 || f[3] == "stop";
+            p.action = f.size() >= 5 ? f[4] : std::string();
+        }
+        else if (f[0] == "ship" && f.size() >= 2)
+        {
+            p.kind = RoutePoint::Kind::Ship;
+            p.shipEntityId = std::strtoull(f[1].c_str(), nullptr, 10);
+            p.action = f.size() >= 3 ? f[2] : std::string();
+            p.stop = true;
+        }
+        else if (f[0] == "land" && f.size() >= 2)
+        {
+            p.kind = RoutePoint::Kind::Land;
+            p.bodyId = f[1];
+            p.landingSpec = f.size() >= 3 ? f[2] : std::string();
+            std::replace(p.landingSpec.begin(), p.landingSpec.end(), '~', ':');
+            p.action = f.size() >= 4 ? f[3] : std::string();
+            p.stop = true;
         }
         else if (f[0] == "pt" && f.size() >= 2)
         {
@@ -297,6 +341,7 @@ std::vector<RoutePoint> decodeRoute(const std::string& wire)
             if (std::sscanf(f[1].c_str(), "%lf,%lf,%lf", &p.worldM.x, &p.worldM.y, &p.worldM.z) != 3)
                 continue;
             p.stop = f.size() >= 3 && f[2] == "stop";
+            p.action = f.size() >= 4 ? f[3] : std::string();
         }
         else
             continue;

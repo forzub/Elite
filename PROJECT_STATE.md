@@ -3476,6 +3476,35 @@ order - ask for it again if it is not in the session.
   object's enabled docking_port anchors (hub_semantic_anchors.json, by its hub module id) count as shuttle_dock;
   the current station model has none, so Высокий / Тихий still show the dock "(в плане)" until a model with ports.
 
+### Slice map-3 2026-11-06 - F12 cube shows what is visible (Moon surface, player, sites), trajectories on Details, site hubs as cubes - LIVE DEV RUNS, NOT ACCEPTED
+- Author report: (1) F12 in lunar orbit: "a cube and some arc", no ship marker; (2) Moon Details: no player
+  trajectory - orbits of all objects on stationary trajectories must be shown; (3) Селена is not a cube.
+- Root causes (live baseline D:/tmp/elite_maps3/b1_f12): the arc was the geometry-pass outline of the Moon (cube
+  scenes had no body rendering); the player WAS in the scene but hidden by the Moon occlusion test (overlay
+  "[entity:9 | hidden]"); the cube scene held only its interior; world sites were added only to body Details;
+  ClientDetailMapBridge cleared playerOrbits ("no fabricated orbit") and nothing drew ship trajectories; Detail site
+  hubs (world_site_hub:*) got the Infrastructure triangle at 0.55 scale. Also: the player's replicated hubId stays
+  earth_orbital_hub after leaving for the Moon, so the Detail badge went to that hub (now only within 50 km).
+- Done (source + Debug build): ClientDetailMapTrajectories.h - osculating conic of each free ship about its dominant
+  body (deepest SOI = d (mu/muParent)^0.4, catalog GM), closed ellipse or the arc within min(SOI, 1e8 m): the
+  player's into playerOrbits (gold, labelled "орбита игрока Pe .. / Ap .."), other free ships' bound orbits dim
+  (DetailMapSnapshot::shipOrbits); orbital world sites get their rail circle in hubOrbits; DetailMapOrbit path
+  offsets (interpolated with the centre). Cube scenes (DetailLocalVisibleReach = 6 half-edges): ships / hubs /
+  beacons / bodies + the world sites of every body in view; DetailMapSnapshot::contextBodies rendered by
+  DetailMapBackend with the body-Detail planet pass (body-centred orthographic view at its projected place and
+  depth scale, far first; skipped when the eye is inside); the player (and the cube's focus) is never hidden behind
+  a body (dimmed); the player reads "игрок" in cubes. Site hubs: Hub glyph, hub colour, full scale. Contracts:
+  MAP_NAVIGATION_CONTRACT (F12 scene, trajectories note), MAP_OBJECT_OVERLAY_CONTRACT (site hub glyph, player kept).
+- Live DEV evidence (back buffer D:/tmp/elite_maps3/): c1_f12 (leg:orbit:moon:100, F12: textured Moon, player
+  marker + badge, orbit "Pe 96.6 km / Ap 103.3 km"); c3_moon_detail_turn (Moon Details: player orbit, Селена rail
+  orbit); d2_moon_turn (Селена as the cyan hub cube on its orbit).
+- Gates: check_navigation_context PASS, check_object_overlay PASS, check_route_plan PASS; check_architecture RED
+  pre-existing (DetailMapGeometryPass -> facade).
+- OPEN: author acceptance; F11 in lunar orbit opens EARTH Details (stale motion.hubId earth_orbital_hub, b2_f11) -
+  not fixed; the cube body is an orthographic impostor (no perspective distortion near the eye); a ship under J
+  thrust draws its instantaneous conic (changes while thrusting); heliocentric conics are not drawn; other ships'
+  open (hyperbolic) arcs are not drawn; Ворота Луны (L1) has no orbit line (not a Kepler orbit).
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

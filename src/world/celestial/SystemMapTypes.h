@@ -400,7 +400,38 @@ struct DetailMapOrbit
     glm::dvec3 progradeAxis {0.0};
     glm::dvec3 normalAxis {0.0};
 
+    // A conic trajectory (the osculating Kepler orbit of a ship from its
+    // replicated position + velocity about its dominant body): points as
+    // offsets from centerMeters. Empty = the circle of radiusMeters.
+    std::vector<glm::dvec3> pathOffsetsMeters;
+    bool pathClosed = true;
+    // Drawn next to the path (empty = no label), with Pe / Ap altitudes
+    // over the centre body (apoapsis < 0: an open, unbound trajectory).
+    std::string label;
+    double periapsisAltitudeMeters = 0.0;
+    double apoapsisAltitudeMeters = -1.0;
+    bool player = false;
+
     bool valid = false;
+};
+
+// A celestial body visible in a scene without a central body (a terminal
+// cube / deep-space local scene): the render parameters of the same body
+// renderer the body Detail map uses. Its position is the scene object with
+// the same stableId (interpolated with the scene).
+struct DetailMapContextBody
+{
+    std::string id;
+    std::string name;
+    std::string environmentPresetId;
+    BodyType type = BodyType::Unknown;
+    double radiusMeters = 0.0;
+    double rotationPhaseRad = 0.0;
+    double dayLengthHours = 0.0;
+    int rotationDirection = 1;
+    double axialTiltDeg = 0.0;
+    double axisNodeDeg = 0.0;
+    double textureLongitudeOffsetDeg = 0.0;
 };
 
 using PlanetMapObject = LocalSceneObject;
@@ -452,6 +483,9 @@ struct DetailMapSnapshot
 
     std::vector<DetailMapOrbit> hubOrbits;
     std::vector<DetailMapOrbit> playerOrbits;
+    // Conic trajectories of the other free ships (playerOrbits = the player's).
+    std::vector<DetailMapOrbit> shipOrbits;
+    std::vector<DetailMapContextBody> contextBodies;
     double ringPlaneInclinationOffsetDeg = 0.0;
 
     SystemMapRingVisualProfile ringVisual;

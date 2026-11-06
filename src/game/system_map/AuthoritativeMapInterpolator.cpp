@@ -368,6 +368,15 @@ world::celestial::DetailMapSnapshot interpolateDetail(
     std::unordered_map<std::string, const DetailMapOrbit*> fromPlayerOrbits;
     for (const auto& orbit : from.playerOrbits)
         fromPlayerOrbits[orbit.id] = &orbit;
+    for (const auto& orbit : from.shipOrbits)
+        fromPlayerOrbits[orbit.id] = &orbit;
+    for (auto& orbit : result.shipOrbits)
+    {
+        const auto it = fromPlayerOrbits.find(orbit.id);
+        if (it != fromPlayerOrbits.end())
+            interpolateOrbit(*it->second, orbit, from.planetVelocityMps, to.planetVelocityMps,
+                             universeIntervalSeconds, t);
+    }
     for (auto& orbit : result.playerOrbits)
     {
         const auto it = fromPlayerOrbits.find(orbit.id);
@@ -554,6 +563,8 @@ void extrapolateDetailToUniverseTime(
     for (auto& orbit : snapshot.hubOrbits)
         extrapolateOrbit(orbit);
     for (auto& orbit : snapshot.playerOrbits)
+        extrapolateOrbit(orbit);
+    for (auto& orbit : snapshot.shipOrbits)
         extrapolateOrbit(orbit);
 
     for (auto& object : snapshot.scene.objects)

@@ -263,6 +263,32 @@ inline void appendDetailMapWorldSites(
             // an orbital hub site has a (catalog) Hub map: a hub target on the Detail map
             if (site.type != "nav_relay" && site.type != "belt_anchor")
                 o.kind = "world_site_hub:" + site.type;
+            // its orbit (the same presentation law), drawn like a hub rail orbit
+            const glm::dvec3 now = o.positionMeters - out.planetCenterMeters;
+            const glm::dvec3 later = worldSiteOrbitOffsetMeters(site, out.planetRadiusMeters, 0.0, universeTimeSeconds + 60.0);
+            const double radius = glm::length(now);
+            if (radius > 1.0)
+            {
+                DetailMapOrbit orbit;
+                orbit.id = o.stableId + "_orbit";
+                orbit.name = site.name;
+                orbit.parentBodyId = out.planetBodyId;
+                orbit.centerMeters = out.planetCenterMeters;
+                orbit.positionMeters = o.positionMeters;
+                orbit.velocityMps = out.planetVelocityMps;
+                orbit.radiusMeters = radius;
+                orbit.altitudeMeters = radius - out.planetRadiusMeters;
+                orbit.radialAxis = now / radius;
+                glm::dvec3 prograde = later - now;
+                prograde -= orbit.radialAxis * glm::dot(prograde, orbit.radialAxis);
+                if (glm::length(prograde) > 1.0e-9)
+                {
+                    orbit.progradeAxis = glm::normalize(prograde);
+                    orbit.normalAxis = glm::cross(orbit.progradeAxis, orbit.radialAxis);
+                    orbit.valid = true;
+                    out.hubOrbits.push_back(std::move(orbit));
+                }
+            }
         }
         else if (lagrangeHere)
         {

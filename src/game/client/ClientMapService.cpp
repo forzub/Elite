@@ -301,6 +301,43 @@ bool ClientMapService::composeDetail(
     }
     if (target.sceneKind == world::celestial::DetailSceneKind::CelestialBody)
         appendDetailMapWorldSites(rebuilt, m_catalogs.worldSites(), sourceMetadata.universeTimeSeconds, celestial);
+    else if (!rebuilt.hasCentralBody)
+    {
+        // a terminal cube / local scene: the world sites (settlements, site
+        // hubs) of every body in view, placed by the same law as on that
+        // body's Detail map, kept within the scene's visible reach
+        const double reach = rebuilt.detailHalfExtentMeters > 0.0
+            ? rebuilt.detailHalfExtentMeters * DetailLocalVisibleReach
+            : 5.0e9;
+        for (const auto& body : rebuilt.contextBodies)
+        {
+            const auto state = std::find_if(celestial->bodies.begin(), celestial->bodies.end(),
+                                            [&](const auto& b) { return b.id == body.id; });
+            if (state == celestial->bodies.end())
+                continue;
+            world::celestial::DetailMapSnapshot bodyScene;
+            bodyScene.valid = true;
+            bodyScene.hasCentralBody = true;
+            bodyScene.systemId = rebuilt.systemId;
+            bodyScene.planetBodyId = body.id;
+            bodyScene.planetCenterMeters = state->worldMeters;
+            bodyScene.planetVelocityMps = state->worldVelocityMetersPerSecond;
+            bodyScene.planetRadiusMeters = body.radiusMeters;
+            bodyScene.planetRotationPhaseRad = body.rotationPhaseRad;
+            bodyScene.planetAxialTiltDeg = body.axialTiltDeg;
+            bodyScene.planetAxisNodeDeg = body.axisNodeDeg;
+            bodyScene.planetTextureLongitudeOffsetDeg = body.textureLongitudeOffsetDeg;
+            appendDetailMapWorldSites(bodyScene, m_catalogs.worldSites(), sourceMetadata.universeTimeSeconds, celestial);
+            for (auto& site : bodyScene.scene.objects)
+            {
+                const glm::dvec3 d = site.positionMeters - rebuilt.planetCenterMeters;
+                if (std::abs(d.x) <= reach && std::abs(d.y) <= reach && std::abs(d.z) <= reach)
+                    rebuilt.scene.objects.push_back(std::move(site));
+            }
+            for (auto& orbit : bodyScene.hubOrbits)
+                rebuilt.hubOrbits.push_back(std::move(orbit));
+        }
+    }
 
     m_detailMetadata = sourceMetadata;
     m_detailSnapshot = std::move(rebuilt);

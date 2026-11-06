@@ -44,7 +44,13 @@ The central Hub on Hub Map is an explicit exception:
   Hub itself.
 
 On System/planet Detail maps, hubs participate in the normal compact tactical
-object presentation rather than the Hub-map structural special case.
+object presentation rather than the Hub-map structural special case. A
+world-site hub (`world_site_hub:*`, e.g. Селена) uses the same hub cube glyph,
+colour and scale as a replicated hub (map-3); only non-hub world sites
+(settlements, relays) keep the smaller context marker. On Detail maps the
+player's marker (and the focus object of an F12 cube) is never hidden behind a
+body: it is drawn dimmed there; a stale replicated hub id of the player gives
+its badge to that hub only when the ship is within 50 km of it.
 
 ## PROTECTED: velocity policy
 

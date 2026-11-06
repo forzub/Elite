@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/client/ClientDetailMapRuntimeSampler.h"
+#include "src/game/client/ClientDetailMapTrajectories.h"
 #include "src/game/client/ClientLocalAuthority.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/ship/ShipDescriptorRegistry.h"
@@ -366,6 +367,11 @@ inline void resolveDetailOrbitalAxes(
     );
 }
 
+// A terminal cube's scene (F12) holds what is VISIBLE around it, not only its
+// interior: objects / bodies within this many half-edges of its centre (the
+// presentation then culls by the viewport).
+constexpr double DetailLocalVisibleReach = 6.0;
+
 inline void appendDetailLocalContext(
     world::celestial::DetailMapSnapshot& out,
     const world::celestial::CelestialSystemSnapshot& celestial,
@@ -377,6 +383,9 @@ inline void appendDetailLocalContext(
 )
 {
     using namespace world::celestial;
+
+    if (cubicBounds)
+        extentMeters *= DetailLocalVisibleReach;
 
     const auto intersectsBounds =
         [&](const glm::dvec3& positionMeters, double objectRadiusMeters)
@@ -425,6 +434,25 @@ inline void appendDetailLocalContext(
         contextBody.boundingRadiusMeters = radiusMeters;
         contextBody.valid = true;
         out.scene.objects.push_back(std::move(contextBody));
+
+        // rendered with the body renderer of the body Detail map (planets,
+        // moons, asteroids; a star / belt keeps its outline)
+        if (body.type == BodyType::Star || body.type == BodyType::AsteroidBelt ||
+            body.type == BodyType::Barycenter || radiusMeters <= 0.0)
+            continue;
+        DetailMapContextBody render;
+        render.id = body.id;
+        render.name = body.name;
+        render.environmentPresetId = body.environmentPresetId;
+        render.type = body.type;
+        render.radiusMeters = radiusMeters;
+        render.rotationPhaseRad = body.rotationPhaseRad;
+        render.dayLengthHours = body.dayLengthHours;
+        render.rotationDirection = body.rotationDirection;
+        render.axialTiltDeg = body.axialTiltDeg;
+        render.axisNodeDeg = body.axisNodeDeg;
+        render.textureLongitudeOffsetDeg = body.textureLongitudeOffsetDeg;
+        out.contextBodies.push_back(std::move(render));
     }
 
     for (const auto& object : runtime.objects)
@@ -453,8 +481,9 @@ inline void appendDetailLocalContext(
         if (!intersectsBounds(positionMeters, 0.0))
             continue;
 
+        // the player reads as the player (golden badge) in a local scene too
         out.scene.objects.push_back(
-            makeDetailShipObject(ship, false, localControlledEntityId)
+            makeDetailShipObject(ship, true, localControlledEntityId)
         );
     }
 
@@ -633,9 +662,10 @@ inline bool buildClientCelestialBodyDetail(
         true
     );
 
-    // Free ships do not receive a fabricated circular orbit. A real future
-    // trajectory renderer will own planned/predicted/historical trajectories.
+    // Free ships do not receive a fabricated circular orbit: their conics
+    // (ClientDetailMapTrajectories) come from the replicated motion.
     out.playerOrbits.clear();
+    out.shipOrbits.clear();
     return true;
 }
 
@@ -861,6 +891,29 @@ inline bool rebuildDetailMapFromClientState(
     out.scene.originWorldMeters = out.planetCenterMeters;
     if (effectiveTarget.sceneKind == DetailSceneKind::SpatialVolume)
         out.scene.halfExtentMeters = out.detailHalfExtentMeters;
+
+    // trajectories (conics) of the free ships whose dominant body is in view
+    if (out.hasCentralBody)
+    {
+        appendDetailShipTrajectories(out, atlas, celestial, runtime, localControlledEntityId,
+            [&](const DetailGravityBody& reference, const glm::dvec3&)
+            {
+                return reference.state->id == out.planetBodyId ||
+                       glm::length(reference.state->worldMeters - out.planetCenterMeters) <= 1.0e8;
+            });
+    }
+    else
+    {
+        const double reach = out.detailHalfExtentMeters > 0.0
+            ? out.detailHalfExtentMeters * DetailLocalVisibleReach
+            : 5.0e9;
+        appendDetailShipTrajectories(out, atlas, celestial, runtime, localControlledEntityId,
+            [&](const DetailGravityBody&, const glm::dvec3& position)
+            {
+                const glm::dvec3 d = position - out.planetCenterMeters;
+                return std::abs(d.x) <= reach && std::abs(d.y) <= reach && std::abs(d.z) <= reach;
+            });
+    }
 
     return true;
 }

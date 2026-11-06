@@ -126,6 +126,11 @@ player's current navigation state rather than from an arbitrary map selection:
   with focusClass Ship / Hub and the object id): it is never promoted to a
   body scene, and while it is shown it FOLLOWS its object ("player",
   "entity:N") into the neighbour cube when the object leaves it.
+  Its scene (map-3) holds what is VISIBLE around the cube, not only its
+  interior: ships, hubs, beacons, world sites (settlements, site hubs) and
+  bodies within 6 half-edges of its centre; bodies in view are drawn with the
+  body renderer of the body Details (surface, atmosphere); the player is never
+  lost behind a body (drawn dimmed); free ships' trajectories are drawn.
 
 Repeating the selector for the already visible navigation level is a no-op.
 A newer pending selector supersedes an older pending selector.
@@ -424,7 +429,11 @@ navigation contracts in this file.
 The following must not be inferred from existing code:
 
 - full ship selection on System Map -> Details is **NOT COMPLETE**;
-- historical/planned/predicted trajectory presentation is **NOT IMPLEMENTED**;
+- historical/planned/predicted trajectory presentation is **NOT IMPLEMENTED**
+  (map-3: the CURRENT osculating conic of a free ship about its dominant body
+  - deepest sphere of influence - is drawn on Details: the player's always,
+  labelled with Pe / Ap; other free ships' bound orbits dim; hubs and orbital
+  world-site hubs their rail circles);
 - a first-class durable `SpaceSectorId`/spatial-domain type replacing negative
   synthetic ids is **NOT IMPLEMENTED**;
 - a separate public `MapMode::Space` is **NOT IMPLEMENTED**;

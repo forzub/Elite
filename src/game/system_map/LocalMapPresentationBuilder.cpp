@@ -110,7 +110,7 @@ glm::vec4 localObjectColor(
 {
     if (object.player)
         return glm::vec4(1.00f, 0.78f, 0.28f, 0.98f);
-    if (object.kind == "hub")
+    if (object.kind == "hub" || object.kind.rfind("world_site_hub:", 0) == 0)
         return glm::vec4(0.34f, 0.88f, 1.00f, 0.96f);
     return glm::vec4(0.78f, 0.86f, 0.94f, 0.96f);
 }
@@ -121,7 +121,8 @@ MapObjectGlyphKind localObjectGlyphKind(
 {
     if (object.objectClass == world::celestial::DetailObjectClass::Ship)
         return MapObjectGlyphKind::Ship;
-    if (object.kind == "hub")
+    // a world-site hub (Селена, Ворота Луны) is a hub like a replicated one: the cube
+    if (object.kind == "hub" || object.kind.rfind("world_site_hub:", 0) == 0)
         return MapObjectGlyphKind::Hub;
     return MapObjectGlyphKind::Infrastructure;
 }
@@ -482,8 +483,14 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
     for (const auto& object : snapshot.scene.objects)
         if (object.valid && object.player)
         {
-            playerHubId = object.parentStableId;
             playerBadge = object.name;
+            // the replicated hub id can outlive the stay (a ship that left for
+            // the Moon still names its Earth hub): only a hub of this scene
+            // the ship is actually at counts
+            for (const auto& hub : snapshot.scene.objects)
+                if (hub.valid && hub.kind == "hub" && hub.stableId == object.parentStableId &&
+                    glm::length(hub.positionMeters - object.positionMeters) < 50000.0)
+                    playerHubId = object.parentStableId;
         }
 
     for (const auto& object : snapshot.scene.objects)
@@ -529,8 +536,16 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
             item.badge = playerBadge;
         }
         item.screenPx = presentation.camera.project(object.positionMeters);
+        const bool occluded = occludedByDetailBodies(object.positionMeters);
+        // the player (and the object whose local space this is) is never lost
+        // behind a body: drawn dimmed instead
+        const bool keepBehindBody =
+            object.player ||
+            (!snapshot.scene.focusId.empty() && object.stableId == snapshot.scene.focusId);
         item.visible = visibleInViewport(item.screenPx, viewport) &&
-                       !occludedByDetailBodies(object.positionMeters);
+                       (!occluded || keepBehindBody);
+        if (occluded && keepBehindBody)
+            item.factionColor.a *= 0.45f;
         item.physicalSizeMeters = localObjectPhysicalSizeMeters(object);
 
         const double perspective = presentation.camera.perspectiveFactor(
@@ -585,7 +600,7 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
         }
         // World sites (galaxy_details/world_sites): unobtrusive context
         // markers on the Detail map - smaller glyph, no motion arrow.
-        if (object.kind.rfind("world_site", 0) == 0)
+        if (object.kind.rfind("world_site:", 0) == 0)
         {
             item.velocityArrowMps = glm::dvec3(0.0);
             item.glyphScale *= 0.55;
@@ -620,7 +635,9 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
 
         DetailHubScreenPoint point;
         point.hubId = object.stableId;
-        point.parentBodyId = snapshot.planetBodyId;
+        point.parentBodyId = snapshot.planetBodyId.empty()
+            ? object.parentStableId
+            : snapshot.planetBodyId;
         point.name = object.name;
         point.screen =
             glm::vec2(

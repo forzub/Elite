@@ -16,6 +16,13 @@
       "es": "jugador",
       "ja": "プレイヤー"
     },
+    "overlay.player_orbit": {
+      "en": "player orbit",
+      "ru": "орбита игрока",
+      "zh-Hans": "玩家轨道",
+      "es": "órbita del jugador",
+      "ja": "プレイヤーの軌道"
+    },
     "overlay.selected": {
       "en": "SELECTED",
       "ru": "ВЫБРАНО",

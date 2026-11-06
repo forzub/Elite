@@ -163,6 +163,44 @@ void DetailMapGeometryPass::renderScene(
         );
     }
 
+    const glm::vec4 shipOrbitColor(0.70f, 0.78f, 0.86f, 0.42f);
+    for (const auto& orbit : planet.shipOrbits)
+        if (orbit.valid)
+            drawDetailMapOrbit3D(orbit, planet, scale, centerPx, 192, shipOrbitColor);
+
+    // trajectory labels: "<label>  Pe .. / Ap .." at the far point of the path
+    {
+        auto& text = TextRenderer::instance();
+        text.beginFrameForViewport(viewport.width, viewport.height);
+        for (const auto& orbit : planet.playerOrbits)
+        {
+            if (!orbit.valid || orbit.label.empty() || orbit.pathOffsetsMeters.empty())
+                continue;
+            std::size_t far = orbit.pathOffsetsMeters.size() - 1;
+            if (orbit.pathClosed)
+            {
+                double best = -1.0;
+                for (std::size_t i = 0; i < orbit.pathOffsetsMeters.size(); ++i)
+                    if (const double r = glm::length(orbit.pathOffsetsMeters[i]); r > best)
+                    {
+                        best = r;
+                        far = i;
+                    }
+            }
+            const glm::dvec2 at = activeCamera().project(orbit.centerMeters + orbit.pathOffsetsMeters[far]);
+            std::ostringstream line;
+            line << orbit.label << "  Pe " << formatDetailScaleDistance(orbit.periapsisAltitudeMeters / 1000.0);
+            if (orbit.apoapsisAltitudeMeters >= 0.0)
+                line << " / Ap " << formatDetailScaleDistance(orbit.apoapsisAltitudeMeters / 1000.0);
+            else
+                line << " / open";
+            const float x = static_cast<float>(std::clamp(at.x + 8.0, 4.0, std::max(4.0, viewport.width - 260.0)));
+            const float y = static_cast<float>(std::clamp(at.y - 6.0, 16.0, std::max(16.0, viewport.height - 40.0)));
+            text.textDrawPx(line.str(), x, y, 12, glm::vec4(1.0f, 0.80f, 0.40f, 0.95f));
+        }
+        text.endFrame();
+    }
+
     drawRingAsteroids(planet, viewport);
     drawBeltAsteroids(planet, viewport);
 
@@ -197,7 +235,11 @@ void DetailMapGeometryPass::renderScene(
             scale *
             activeCamera().state.zoom;
 
-        if (radiusPx >= 1.0)
+        // a body drawn by the body renderer (DetailMapBackend) needs no outline
+        const bool rendered = std::any_of(
+            planet.contextBodies.begin(), planet.contextBodies.end(),
+            [&](const world::celestial::DetailMapContextBody& c) { return c.id == body.stableId; });
+        if (radiusPx >= 1.0 && !(rendered && radiusPx >= 2.0))
         {
             drawPlanetMapCircle(
                 p,
@@ -706,8 +748,12 @@ void DetailMapGeometryPass::drawDetailMapOrbit3D(
     if (!orbit.valid || orbit.radiusMeters <= 1.0)
         return;
 
-    segments =
-        std::max(segments, 32);
+    const bool path = !orbit.pathOffsetsMeters.empty();
+    segments = path
+        ? static_cast<int>(orbit.pathOffsetsMeters.size()) - (orbit.pathClosed ? 0 : 1)
+        : std::max(segments, 32);
+    if (segments < 1)
+        return;
 
     glm::dvec3 radial =
         orbit.radialAxis;
@@ -733,6 +779,9 @@ void DetailMapGeometryPass::drawDetailMapOrbit3D(
     auto orbitPoint =
         [&](int i) -> glm::dvec3
         {
+            if (path)
+                return orbit.centerMeters +
+                    orbit.pathOffsetsMeters[static_cast<std::size_t>(i) % orbit.pathOffsetsMeters.size()];
             const double a =
                 glm::two_pi<double>() *
                 static_cast<double>(i) /
@@ -759,7 +808,7 @@ void DetailMapGeometryPass::drawDetailMapOrbit3D(
                 cameraSpace.y * cameraSpace.y;
 
             const double planetRadius =
-                planet.planetRadiusMeters;
+                planet.hasCentralBody ? planet.planetRadiusMeters : 0.0;
 
             const bool behindPlanetCenter =
                 cameraSpace.z < 0.0;
@@ -784,7 +833,7 @@ void DetailMapGeometryPass::drawDetailMapOrbit3D(
             orbitPoint(i);
 
         const glm::dvec3 p1 =
-            orbitPoint((i + 1) % segments);
+            orbitPoint(path && !orbit.pathClosed ? i + 1 : (i + 1) % segments);
 
         const glm::dvec3 mid =
             (p0 + p1) * 0.5;

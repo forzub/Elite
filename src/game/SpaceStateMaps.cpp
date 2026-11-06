@@ -1942,6 +1942,10 @@ void SpaceState::applyClientCatalogLocalization()
             );
         }
 
+        for (auto& orbit : m_detailMapSnapshot.playerOrbits)
+            if (!orbit.label.empty())
+                orbit.label = loc.text("overlay.player_orbit", "player orbit");
+
         for (auto& orbit : m_detailMapSnapshot.hubOrbits)
         {
             orbit.name = loc.catalogName(

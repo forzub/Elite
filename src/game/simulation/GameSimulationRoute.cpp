@@ -344,7 +344,7 @@ void GameSimulation::updateRoutes(double dt)
             continue;
         }
         route.waitingExit = false;
-        if (!done.passThrough && done.action == "refuel")
+        if (!done.passThrough && (done.action.find("refuel") != std::string::npos || done.action.find("repair") != std::string::npos))
         {
             // the waypoint action at the hub. PROPOSAL: the dock is not flown yet (automatic
             // docking exists only at Vysokiy's dock module) and ships carry no fuel model -
@@ -360,10 +360,13 @@ void GameSimulation::updateRoutes(double dt)
                 ++it;
                 continue;
             }
-            // the jump-drive charge is filled (the J charge model, JDrive.h)
+            // the jump-drive charge is filled (the J charge model, JDrive.h); a repair restores the modules
             auto& m = ship->core().transform().motion;
-            if (m.jChargeCapacityT > 0.0)
+            if (done.action.find("refuel") != std::string::npos && m.jChargeCapacityT > 0.0)
                 m.jChargeT = m.jChargeCapacityT;
+            if (done.action.find("repair") != std::string::npos)
+                std::cerr << "[Route] ship " << id.value << ": repair at " << done.hubId << " (PROPOSAL: a timed stay, no repair model yet)"
+                          << std::endl;
             std::cerr << "[Route] ship " << id.value << ": refuelled at " << done.hubId << " (J charge " << m.jChargeT
                       << " t), undocked" << std::endl;
         }

@@ -1504,6 +1504,7 @@ void SpaceState::update(float dt)
                     ClientShipCommand command;
                     command.type = ClientShipCommand::RouteLeg;
                     command.target = spec;
+                    command.index = 2;   // a single leg (0 = cancel the route)
                     msg.payload = command;
                     m_client->sendMessage(msg);
                 }

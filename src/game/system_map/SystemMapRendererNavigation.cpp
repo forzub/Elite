@@ -1302,7 +1302,30 @@ void SystemMapRenderer::applyWaypointAction(
     }
     else if (actionKey == "toggle_refuel")
     {
-        waypoint->stopAction = waypoint->stopAction == "refuel" ? std::string() : std::string("refuel");
+        const bool on = !(waypoint->stopAction == "refuel" || waypoint->actions.refuel);
+        waypoint->stopAction = on ? std::string("refuel") : std::string();
+        waypoint->actions.refuel = on;
+    }
+    else if (actionKey == "toggle_repair")
+        waypoint->actions.repair = !waypoint->actions.repair;
+    else if (actionKey == "toggle_pause")
+        waypoint->actions.pauseHere = !waypoint->actions.pauseHere;
+    else if (actionKey == "toggle_takeoff")
+        waypoint->actions.takeOffAfter = !waypoint->actions.takeOffAfter;
+    else if (actionKey == "cycle_program")
+    {
+        const auto list = game::navigation::programsFor(waypoint->target.kind, game::navigation::waypointIsSettlement(*waypoint));
+        const auto now = game::navigation::effectiveProgram(*waypoint);
+        std::size_t i = 0;
+        while (i < list.size() && list[i] != now)
+            ++i;
+        waypoint->program = list.empty() ? now : list[(i + 1) % list.size()];
+        // a hub flown past stops nowhere: its services go with the stop
+        if (waypoint->program == game::navigation::NavigationWaypointProgram::PassThrough)
+        {
+            waypoint->stopAction.clear();
+            waypoint->actions.refuel = waypoint->actions.repair = waypoint->actions.pauseHere = false;
+        }
     }
     else if (actionKey == "route_official" || actionKey == "route_unofficial")
     {

@@ -243,6 +243,39 @@ struct NavigationWaypoint
     std::string displayName;
 };
 
+// the program key of a waypoint ("route_program:<key>" labels); the effective one for Auto
+inline const char* waypointProgramKey(NavigationWaypointProgram p)
+{
+    using P = NavigationWaypointProgram;
+    switch (p)
+    {
+        case P::PassThrough: return "pass";
+        case P::Dock: return "dock";
+        case P::Orbit: return "orbit";
+        case P::OrbitSurvey: return "survey";
+        case P::Land: return "land";
+        case P::LandAtSettlement: return "settlement";
+        case P::Rendezvous: return "rendezvous";
+        case P::Stop: return "stop";
+        case P::Auto: break;
+    }
+    return "auto";
+}
+
+inline bool waypointIsSettlement(const NavigationWaypoint& w)
+{
+    return w.sourceObjectId.rfind("site:", 0) == 0 || w.target.stableObjectId.rfind("site.", 0) == 0;
+}
+
+// Auto resolves to the target's default program
+inline NavigationWaypointProgram effectiveProgram(const NavigationWaypoint& w)
+{
+    if (w.program != NavigationWaypointProgram::Auto)
+        return w.program;
+    const auto list = programsFor(w.target.kind, waypointIsSettlement(w));
+    return list.empty() ? NavigationWaypointProgram::PassThrough : list.front();
+}
+
 class RoutePlan
 {
 public:

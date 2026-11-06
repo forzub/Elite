@@ -4,6 +4,7 @@
 
 namespace game::system_map
 {
+struct NavigationMapTextProfile;
 
 // Localized presentation vocabulary for native map overlays. The owning
 // application resolves every value from LocalizationService; renderers never
@@ -28,6 +29,23 @@ struct NavigationMapTextProfile
     std::string routeUnofficial = "ЛЕТЕТЬ: НЕОФИЦИАЛЬНЫЙ МАРШРУТ";
     std::string routeRefuelOn = "ЗАПРАВКА ЗДЕСЬ: ДА";
     std::string routeRefuelOff = "ЗАПРАВКА ЗДЕСЬ: НЕТ";
+    // the point's program (ROUTE_PROGRAMS_DESIGN.md): the button cycles the programs its target admits
+    std::string routeProgramPrefix = "ПРОГРАММА: ";
+    std::string programAuto = "АВТО";
+    std::string programPassThrough = "ПРОЛЁТ";
+    std::string programDock = "СТЫКОВКА";
+    std::string programOrbit = "ВЫХОД НА ОРБИТУ";
+    std::string programOrbitSurvey = "РАЗВЕДКА С ОРБИТЫ";
+    std::string programLand = "ПОСАДКА (АВТОМАТ)";
+    std::string programLandAtSettlement = "ПОСАДКА НА ПЛОЩАДКУ";
+    std::string programRendezvous = "ВСТРЕЧА";
+    std::string programStop = "ОСТАНОВКА";
+    std::string routeRepairOn = "РЕМОНТ ЗДЕСЬ: ДА";
+    std::string routeRepairOff = "РЕМОНТ ЗДЕСЬ: НЕТ";
+    std::string routePauseOn = "ПАУЗА ЗДЕСЬ (РУЧНОЙ РЕЖИМ): ДА";
+    std::string routePauseOff = "ПАУЗА ЗДЕСЬ (РУЧНОЙ РЕЖИМ): НЕТ";
+    std::string routeTakeOffOn = "ПОСЛЕ ПОСАДКИ ВЗЛЁТ: ДА";
+    std::string routeTakeOffOff = "ПОСЛЕ ПОСАДКИ ВЗЛЁТ: НЕТ";
     std::string cancelFinish;
     std::string setIntermediate;
     std::string cancelIntermediate;

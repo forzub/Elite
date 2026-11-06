@@ -137,6 +137,27 @@ void SpaceState::launchPlannedRoute(bool official)
         std::cerr << "[RoutePlan] no finish on the map" << std::endl;
         return;
     }
+    {
+        // a landing finish (a wild site / a settlement pad) is flown by the body autopilot, which
+        // lands; the route legs do not land yet - intermediates are ignored for now (R2)
+        using P = game::navigation::NavigationWaypointProgram;
+        const auto& fin = *order.back();
+        const P program = game::navigation::effectiveProgram(fin);
+        if (program == P::Land || program == P::LandAtSettlement)
+        {
+            if (order.size() > 1)
+                std::cerr << "[RoutePlan] a landing finish: " << order.size() - 1
+                          << " intermediate point(s) not flown yet (R2) - straight to the landing" << std::endl;
+            if (program == P::LandAtSettlement)
+                requestFreeFlightAutopilot({}, fin.sourceObjectId.rfind("site:", 0) == 0 ? fin.sourceObjectId
+                                                                                         : "site:" + fin.target.stableObjectId);
+            else
+                requestFreeFlightAutopilot(fin.target.stableObjectId);
+            std::cerr << "[RoutePlan] finish program " << game::navigation::waypointProgramKey(program) << " -> the landing autopilot"
+                      << std::endl;
+            return;
+        }
+    }
     for (const auto* w : order)
     {
         const bool finish = w->role == game::navigation::NavigationWaypointRole::Finish;
@@ -144,17 +165,26 @@ void SpaceState::launchPlannedRoute(bool official)
         p.label = w->displayName;
         p.worldM = world::coordinates::fullMeters(w->worldPosition);
         using Anchor = game::navigation::NavigationRouteAnchorKind;
+        using P = game::navigation::NavigationWaypointProgram;
+        const P program = game::navigation::effectiveProgram(*w);
         if (w->target.kind == Anchor::Hub && m_client->world().hubs().count(w->target.stableObjectId))
         {
             p.kind = route::RoutePoint::Kind::Hub;
             p.hubId = w->target.stableObjectId;
             p.worldM = world::coordinates::fullMeters(m_client->world().hubs().at(p.hubId).worldPosition);
-            p.action = w->stopAction;
-            p.stop = finish || !w->stopAction.empty();
+            // the services of a dock stop: "refuel", "repair", "refuel+repair"
+            std::string services;
+            if (w->actions.refuel || w->stopAction == "refuel")
+                services = "refuel";
+            if (w->actions.repair)
+                services += services.empty() ? "repair" : "+repair";
+            p.action = services;
+            p.stop = program == P::Dock && (finish || !services.empty() || w->actions.pauseHere);
             if (!p.stop)
-                p.kind = route::RoutePoint::Kind::Point;   // an intermediate hub flown past
+                p.kind = route::RoutePoint::Kind::Point;   // a hub flown past
         }
-        else if (w->target.kind == Anchor::CelestialBody && finish)
+        else if (w->target.kind == Anchor::CelestialBody && (finish || program == P::Orbit || program == P::OrbitSurvey) &&
+                 program != P::PassThrough)
         {
             p.kind = route::RoutePoint::Kind::Orbit;
             p.bodyId = w->target.stableObjectId;
@@ -163,8 +193,10 @@ void SpaceState::launchPlannedRoute(bool official)
                 if (b.id == p.bodyId)
                 {
                     p.worldM = b.worldMeters;
-                    // a low, safe orbit: 6 % of the radius, at least 100 km (over an atmosphere)
-                    p.orbitAltitudeM = std::max(100000.0, b.radiusKm * 1000.0 * 0.06);
+                    // a low, safe orbit: 6 % of the radius, at least 100 km (over an atmosphere); the
+                    // point's own altitude when set
+                    p.orbitAltitudeM = w->actions.orbitAltitudeM > 0.0 ? w->actions.orbitAltitudeM
+                                                                       : std::max(100000.0, b.radiusKm * 1000.0 * 0.06);
                 }
         }
         else

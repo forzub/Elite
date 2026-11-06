@@ -634,6 +634,22 @@ std::string MapObjectOverlayRenderer::text(
     if (key == "route_unofficial") return textProfile.routeUnofficial;
     if (key == "route_refuel_on") return textProfile.routeRefuelOn;
     if (key == "route_refuel_off") return textProfile.routeRefuelOff;
+    if (key == "route_repair_on") return textProfile.routeRepairOn;
+    if (key == "route_repair_off") return textProfile.routeRepairOff;
+    if (key == "route_pause_on") return textProfile.routePauseOn;
+    if (key == "route_pause_off") return textProfile.routePauseOff;
+    if (key == "route_takeoff_on") return textProfile.routeTakeOffOn;
+    if (key == "route_takeoff_off") return textProfile.routeTakeOffOff;
+    if (key.rfind("route_program:", 0) == 0)
+    {
+        const std::string p = key.substr(14);
+        const std::string name = p == "pass" ? textProfile.programPassThrough : p == "dock" ? textProfile.programDock
+            : p == "orbit" ? textProfile.programOrbit : p == "survey" ? textProfile.programOrbitSurvey
+            : p == "land" ? textProfile.programLand : p == "settlement" ? textProfile.programLandAtSettlement
+            : p == "rendezvous" ? textProfile.programRendezvous : p == "stop" ? textProfile.programStop
+            : textProfile.programAuto;
+        return textProfile.routeProgramPrefix + name;
+    }
     if (key == "cancel_finish") return textProfile.cancelFinish;
     if (key == "set_intermediate") return textProfile.setIntermediate;
     if (key == "cancel_intermediate") return textProfile.cancelIntermediate;

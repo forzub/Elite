@@ -14,6 +14,21 @@ namespace game::system_map
 {
 namespace
 {
+// the program and actions of a point, for its route-list row
+std::string programLine(const game::navigation::NavigationWaypoint& w, const game::system_map::NavigationMapTextProfile& t)
+{
+    using P = game::navigation::NavigationWaypointProgram;
+    const P p = game::navigation::effectiveProgram(w);
+    std::string line = p == P::PassThrough ? t.programPassThrough : p == P::Dock ? t.programDock : p == P::Orbit ? t.programOrbit
+        : p == P::OrbitSurvey ? t.programOrbitSurvey : p == P::Land ? t.programLand : p == P::LandAtSettlement ? t.programLandAtSettlement
+        : p == P::Rendezvous ? t.programRendezvous : p == P::Stop ? t.programStop : t.programAuto;
+    if (w.actions.refuel || w.stopAction == "refuel") line += " + заправка";
+    if (w.actions.repair) line += " + ремонт";
+    if (w.actions.pauseHere) line += "  || пауза";
+    if (w.insertedByPlanner) line += "  [добавлено: " + w.insertedReason + "]";
+    return line;
+}
+
 constexpr glm::vec4 kBackground(0.08f, 0.10f, 0.13f, 0.94f);
 constexpr glm::vec4 kHeader(0.15f, 0.17f, 0.22f, 0.97f);
 constexpr glm::vec4 kBorder(0.72f, 0.78f, 0.86f, 0.72f);
@@ -565,7 +580,8 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
             return result;
         }
 
-        if (waypoint->role == game::navigation::NavigationWaypointRole::Finish)
+        if (waypoint->role == game::navigation::NavigationWaypointRole::Finish &&
+            waypoint->target.kind == game::navigation::NavigationRouteAnchorKind::Ship)
         {
             constexpr double iconSize = 28.0;
             constexpr double gap = 6.0;
@@ -783,7 +799,15 @@ void NavigationRouteOverlayRenderer::render(
             armed ? kDanger : kMuted
         );
 
-        if (finish)
+        // the point's program (+ actions) beside its role
+        {
+            std::string line = programLine(*waypoint, textProfile);
+            if (!line.empty())
+                text.textDrawPx(line, static_cast<float>(top.x + 112.0), static_cast<float>(visualY + 17.0), 9, kMuted);
+        }
+
+        // the arrival profile is the rendezvous with a ship - shown only for a ship finish
+        if (finish && waypoint->target.kind == game::navigation::NavigationRouteAnchorKind::Ship)
         {
             constexpr double iconSize = 28.0;
             constexpr double gap = 6.0;

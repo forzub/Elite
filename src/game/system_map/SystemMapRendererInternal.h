@@ -1077,14 +1077,31 @@ inline std::vector<game::system_map::MapObjectPanelAction> waypointPanelActions(
         actions.push_back(std::move(finish));
     }
 
-    // an intermediate hub: stop there to refuel (dock, refuel, undock) or fly past
-    if (isWaypoint && waypoint.target.kind == game::navigation::NavigationRouteAnchorKind::Hub)
+    // the point's program (cycles what its target admits) and its actions
+    if (isWaypoint || isFinish)
     {
-        game::system_map::MapObjectPanelAction refuel;
-        refuel.key = "toggle_refuel";
-        refuel.labelKey = waypoint.stopAction == "refuel" ? "route_refuel_on" : "route_refuel_off";
-        refuel.active = waypoint.stopAction == "refuel";
-        actions.push_back(std::move(refuel));
+        using P = game::navigation::NavigationWaypointProgram;
+        const P program = game::navigation::effectiveProgram(waypoint);
+        game::system_map::MapObjectPanelAction cycle;
+        cycle.key = "cycle_program";
+        cycle.labelKey = std::string("route_program:") + game::navigation::waypointProgramKey(program);
+        actions.push_back(std::move(cycle));
+        const auto toggle = [&](const char* key, bool on, const char* onLabel, const char* offLabel) {
+            game::system_map::MapObjectPanelAction a;
+            a.key = key;
+            a.labelKey = on ? onLabel : offLabel;
+            a.active = on;
+            actions.push_back(std::move(a));
+        };
+        if (program == P::Dock)
+        {
+            toggle("toggle_refuel", waypoint.stopAction == "refuel" || waypoint.actions.refuel, "route_refuel_on", "route_refuel_off");
+            toggle("toggle_repair", waypoint.actions.repair, "route_repair_on", "route_repair_off");
+        }
+        if (isWaypoint && (program == P::Land || program == P::LandAtSettlement))
+            toggle("toggle_takeoff", waypoint.actions.takeOffAfter, "route_takeoff_on", "route_takeoff_off");
+        if (program != P::PassThrough)
+            toggle("toggle_pause", waypoint.actions.pauseHere, "route_pause_on", "route_pause_off");
     }
 
     // the finish: plan and fly - the official route (green corridors, blue gates)

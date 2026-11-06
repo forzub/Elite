@@ -1100,16 +1100,18 @@ EntityId buildGameScene(
     if constexpr (game::diagnostics::HubMotionLabEnabled)
     {
         if (diagnosticHubAvailable)
-        {
             spawnHubMotionLabNpcs(sim, stationPos);
-            spawnHubGuidanceTestModules(
-                sim,
-                initialSystemId,
-                playerHub->id,
-                stationPos
-            );
-        }
     }
+    // Высокий's docking modules (the rotating hex dock + its service block, the guidance
+    // cylinder with the blue zone) are the game's docking, not the motion lab: switching the lab
+    // off (5497cf37) removed them too (author 2026-11-06: "верни ... стыковочные доки")
+    if (diagnosticHubAvailable)
+        spawnHubGuidanceTestModules(
+            sim,
+            initialSystemId,
+            playerHub->id,
+            stationPos
+        );
 
     if constexpr (game::diagnostics::NavigationRuntimeLabEnabled &&
                   !game::diagnostics::HubDockingFlightTestScene)

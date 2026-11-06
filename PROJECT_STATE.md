@@ -3505,6 +3505,34 @@ order - ask for it again if it is not in the session.
   thrust draws its instantaneous conic (changes while thrusting); heliocentric conics are not drawn; other ships'
   open (hyperbolic) arcs are not drawn; Ворота Луны (L1) has no orbit line (not a Kepler orbit).
 
+### Slice cc-10 2026-11-06 - tangential orbit insertion, finish choice, station hand-over jump, Высокий docks back - NOT ACCEPTED
+- Author (2026-11-06): the orbit leg flew into the body's centre and "magically" had the circular speed; a finish on
+  a body must offer an arbitrary orbit / its altitude with v1 / a landing; the route card must report completion;
+  Селена "Рассчитать" did nothing; the HUD terminal disappeared; freezes on the Moon-orbit -> Earth-hub flight; the
+  station jumped at the stabilization hand-over; give Высокий back its docks (the cylinder with the blue zone and
+  the hex dock). Map items -> subagent slice map-3 (857189b7).
+- Orbit leg (GameSimulationRoute Orbit): the plane fixed at the leg start (position x motion), the aim = the tangent
+  point of the orbit circle seen from the ship, the arrival velocity = v1 along the tangent. Live tg1: ARRIVED 18 m
+  from the aim, orbit 100.0 km at 1633 m/s (circular). The approach angle is not logged - tangency is by
+  construction, not measured.
+- Finish choice: the System context menu of a body adds "ФИНИШ: ОРБИТА N КМ (v₁ …)" x3 (J floor x1 / x3 / x10) and
+  "ФИНИШ: ПОСАДКА (АВТОМАТ)" for airless bodies (SystemMapRenderer::setBodyFlightFacts from the client catalog).
+  Not yet clicked live.
+- Route complete: the route window shows "МАРШРУТ ВЫПОЛНЕН" when the server route ends. Catalog site hubs as targets
+  (marker position; a clear "нет координат цели" otherwise). Not verified live.
+- HUD terminal: it was shown only on docking / BITE / ignition / alerts - now always in flight (author's wish).
+- Freezes: NOT reproduced on the same flight (Moon orbit -> Высокий, 0 frames > 30 ms besides the capture frames);
+  the author's 17:08 session had 0.2-0.6 s stalls every ~2 s with every phase inflated (hud, session_advance,
+  scene_prepare). OPEN - needs the author's exact setup (maps open? which view?).
+- Station hand-over jump ROOT (DEV ELITE_DEV_HUB_POSE_TRACE): the station's orientation is continuous (0.000 deg at
+  the switch); its POSITION relative to the player jumps 570-660 m when the station's presentation switches from the
+  world pose (interpolated snapshot) to the hub-frame pose - an ~19-22 ms epoch mismatch at 30 km/s heliocentric
+  between the free-flight frame and the objects (snapshots every 0.06 s, the station refreshed every snapshot).
+  Mitigation: the relative pose difference is carried over and faded out in 1 s (live hp6: step 0.00 m at the switch,
+  <= 11 m/frame after). The epoch mismatch itself is OPEN (the station is drawn ~0.6 km off in free flight near a hub).
+- Высокий docks: commit 5497cf37 turned the HubMotionLab off - the same flag spawned the hex dock, its service block
+  and the guidance cylinder; now spawned independently (live: attached objects 10/11/12, capture docks.png).
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

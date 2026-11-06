@@ -3523,7 +3523,8 @@ order - ask for it again if it is not in the session.
 - HUD terminal: it was shown only on docking / BITE / ignition / alerts - now always in flight (author's wish).
 - Freezes: NOT reproduced on the same flight (Moon orbit -> Высокий, 0 frames > 30 ms besides the capture frames);
   the author's 17:08 session had 0.2-0.6 s stalls every ~2 s with every phase inflated (hud, session_advance,
-  scene_prepare). OPEN - needs the author's exact setup (maps open? which view?).
+  scene_prepare). CLOSED (author 2026-11-06): he was switching windows during that session - an unfocused /
+  background window, not a bug; reopen only for stalls with the game window focused.
 - Station hand-over jump ROOT (DEV ELITE_DEV_HUB_POSE_TRACE): the station's orientation is continuous (0.000 deg at
   the switch); its POSITION relative to the player jumps 570-660 m when the station's presentation switches from the
   world pose (interpolated snapshot) to the hub-frame pose - an ~19-22 ms epoch mismatch at 30 km/s heliocentric

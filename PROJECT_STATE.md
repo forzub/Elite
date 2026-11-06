@@ -3645,6 +3645,22 @@ order - ask for it again if it is not in the session.
 - Left: the autopilot fields of ActiveFreeFlight are not grouped yet; the station epoch mismatch (faded) OPEN; the
   model-asset editor reds (6 allow-listed); build_agent/ (6 GB, untracked) removed.
 
+### Architecture re-check 2026-11-06 (author: "всё ли уже хорошо?")
+- Built and RUN the contract tests: wire_data_plane_contract_tests PASS on schema 40 (tests/architecture_contracts,
+  separate CMake project, D:/tmp/elite_contracts); SystemMapBehaviorTests compiles again (bbfeb8af: stale mock +
+  missing sources) - 28/33 PASS, 5 FAIL to triage (rotation pivot, zoom pivot target, explicit cube selection,
+  the initial fit distance 5000 vs 94.5, the mouse/scroll trace) - stale expectations after the map navigation
+  redesigns or real regressions: not decided.
+- Still open from the audit: the airless rule duplicated by the settlements / renderer (surface pressure < 100 Pa
+  vs the atmosphere radius); the player's Pe / Ap computed by the server and again by the Detail map; the
+  WorldSitesCatalog loaded 3x (client service, settlements, dock traffic); the route command still a string
+  protocol (neutral RouteWire + a round-trip test, but pause / resume / cancel are indices 0/3/4 and the bare DEV
+  leg target is in km); HubDockingFlightTestScene / NavigationRuntimeLabEnabled constexpr in production; 65
+  ELITE_* env vars (the DEV runner's cached, the rest not); the autopilot fields of ActiveFreeFlight ungrouped; the
+  hand-over cancel rule not enforced; the station epoch mismatch; MeshGPU never frees GL objects; detached terrain
+  loader threads; the 6 model-asset editor reds; the contract tests and the map behaviour tests are not run by
+  tools/run_gates.py.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

@@ -3764,7 +3764,9 @@ Progress (source + builds; live evidence per item below):
   Тихий): ARRIVED after 140 s, 120 m from the aim, 20 m/s vs the hub, handed over to earth_hub.tikhiy (25 km,
   23 m/s), ROUTE COMPLETE.
 - 2 DONE in code: the plant keeps the J ramp over a command gap <= 0.5 s (globalIdleSeconds); a landing leg after a
-  pass-through point hands the leg pilot's drive seconds to the body autopilot (carryDriveRamp). Live: pending.
+  pass-through point hands the leg pilot's drive seconds to the body autopilot (carryDriveRamp). LIVE q7/q9: the
+  landing leg after the gate started at the full drive (980 665 m/s2 at t+0.06 s, the plant's ramp going on from
+  52 s) - no restart from 1 g, no overshoot of the Moon.
 - 3 DONE: ClientShipCommand RequestOrbitalTransfer / CancelOrbitalTransfer / FreeFlightAutopilot removed, RouteLeg
   -> RouteService (the stop's service stay only); motion freeFlightAutopilot* / route* off the wire (client display
   only); WireProtocolVersion 26.
@@ -3803,7 +3805,12 @@ Progress (source + builds; live evidence per item below):
   stars only (the geometry: at 80 km the surface needs the nose ~ -15 deg or lower, which needs a sink the axial
   engine cannot stop) - see the author question below; phase 2 and the level approach show the surface flowing
   (the hull level, the horizon in the lower third). The transit re-accelerated after the hand-over (403 -> 500 m/s)
-  -> FIX: a transit entered fast never exceeds its entry speed (LandingAutopilot m_transitCapMps) - not yet flown.
+  -> FIX: a transit entered fast never exceeds its entry speed (LandingAutopilot m_transitCapMps).
+  LIVE q7 (the full route below, transit cap build) FAILED: the 15 km transit at 160 m/s from 7 km sank at the
+  150 m/s clamp against the ground UNDER the ship and met the rising Shackleton rim (pull-up to 22 m, then a crash
+  421 m short). FIX: the transit holds its height over the highest ground 3..12 s AHEAD (terrain probe) and never
+  sinks faster than it can stop over it. LIVE q9 (same route): lowest 840 m over the rim, hover at 32 m, LANDED
+  9 cm from the site.
   HUD "МАРШЕВЫЕ АВТОПИЛОТА +0.5 g (разгон)" while braking -> the autopilot's acceleration is now signed along the
   velocity ("-0.4 g (торможение)", q5 frames).
 - 7 Assisted velocity marker: DEV log [HudVel] (hull-to-velocity angle, law, free hull, reference, autopilot
@@ -3818,6 +3825,18 @@ Progress (source + builds; live evidence per item below):
   Now logged, and the DEV capture restores the window once (q4/q5 captures written).
 - Gates (post-change build): run_gates -j 6: 209 / 203 pass / 6 known red / 0 new; --cpp-only 2/2 PASS
   (wire_data_plane_contract_tests after the protocol 26 change).
+- LIVE q9 - the whole client route with ELITE_DEV_ROUTE_CHARGE_T=0.2 (official: refuel stop inserted by the
+  planner -> the gate -> Shackleton pad -> the gate -> Earth orbit): ARRIVED at Высокий 119 m / 19.9 m/s ->
+  SERVICE STAY (refuel; the server's stay, "done, J charge 3 t") -> the gate passed at 12 618 km/s -> the landing
+  leg with the carried ramp -> GLIDE 330 km -> braking at 21.5 km -> HAND-OVER 6.84 km / 15.1 km / 449 m/s -> hover
+  -> LANDED 9 cm -> TAKE-OFF, LIFT-OFF, complete at 86.87 km -> the gate -> Earth orbit ARRIVED 18 m / 3.0 m/s ->
+  ROUTE COMPLETE. (Item 4: the service stay is now live-checked; the fine path is not.)
+- 7 analysis ([HudVel], q4): the HUD's velocity reference matches the autopilot's ground velocity (ground frame:
+  HUD 432 m/s vs the autopilot's 449). Large hull-velocity angles are where the hull is deliberately held off the
+  velocity: the glide's phase 1 (up to ~50 deg, the nose +8..15 while the path bends to -40), the vectoring
+  terminal (the hull level, the velocity down: ~90 deg in the vertical descent). No reference bug found; asked the
+  author WHERE they saw it (manual flight or the autopilot). The log stays behind ELITE_DEV_HUDVEL_LOG=0 to mute.
+- The offline glide model is kept in tools/research/landing_glide (README there).
 - Author question (item 6): in the glide's first ~300 s the cockpit shows stars (physics + cockpit geometry, above);
   options: (a) accept - the drone view F3 shows the ship over the surface; (b) the autopilot switches to the drone
   view for the glide; (c) a shorter, steeper glide (nose lower, a harder final braking up to ~-35..-45 deg).

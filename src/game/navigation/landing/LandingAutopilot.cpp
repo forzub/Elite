@@ -237,7 +237,25 @@ LandingCommand LandingAutopilot::step(const LandingInput& in, const TerrainProbe
             // a glide path (~8.5 deg) toward the site: the ship comes down ALONG the surface and
             // reaches the site low and slow; far away the cruise height over the relief holds
             const double cruise = std::min(std::max(CruiseHeightM, glm::length(whNow) * 10.0), std::max(30.0, 0.15 * dh));
-            const double vz = std::clamp((cruise - agl) / 5.0, -150.0, 150.0);
+            // the relief AHEAD (3..12 s of flight along the way): the height is held over the highest
+            // ground the ship is about to cross, and the sink never outruns what the engines can stop over
+            // it (live q7 2026-11-07: a 15 km transit at 160 m/s from 7 km sank at the 150 m/s clamp over
+            // the ground under the ship and met the rising Shackleton rim - a crash 420 m short)
+            double aglAhead = agl;
+            if (probe && dh > 1.0)
+            {
+                const double speedAhead = std::max(glm::length(whNow), 30.0);
+                for (double sec : {3.0, 6.0, 9.0, 12.0})
+                {
+                    const double d = std::min(dh, speedAhead * sec);
+                    const glm::dvec3 p = in.shipPositionM + toSiteH / dh * d - in.bodyCentreM;
+                    TerrainPoint tp;
+                    if (probe(glm::transpose(in.worldFromBody) * glm::normalize(p), tp))
+                        aglAhead = std::min(aglAhead, rLen - in.bodyRadiusM - tp.heightM);
+                }
+            }
+            const double stopDown = std::sqrt(2.0 * 0.3 * net * std::max(0.0, aglAhead - cruise));
+            const double vz = std::clamp((cruise - aglAhead) / 5.0, -std::min(150.0, stopDown + 2.0), 150.0);
             wanted = (dh > 1.0e-3 ? toSiteH / dh * vh : glm::dvec3(0.0)) + up * vz;
             if (dh < DescentStartM && glm::length(whNow) < 2.0)
             {

@@ -1108,13 +1108,18 @@ inline std::vector<game::system_map::MapObjectPanelAction> waypointPanelActions(
     // or the unofficial one (smuggling: away from hubs' radar, no gates)
     if (isFinish)
     {
+        // START only after РАССЧИТАТЬ, and again only after a recalculation once the points, their
+        // order, programs or actions changed (author 2026-11-07)
+        const bool calculated = routePlan.calculatedUpToDate();
         game::system_map::MapObjectPanelAction official;
         official.key = "route_official";
         official.labelKey = "route_official";
+        official.enabled = calculated;
         actions.push_back(std::move(official));
         game::system_map::MapObjectPanelAction unofficial;
         unofficial.key = "route_unofficial";
         unofficial.labelKey = "route_unofficial";
+        unofficial.enabled = calculated;
         actions.push_back(std::move(unofficial));
         game::system_map::MapObjectPanelAction calc;
         calc.key = "route_calculate";

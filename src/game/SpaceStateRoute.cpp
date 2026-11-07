@@ -388,6 +388,8 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
             line.push_back(l.worldM - origin);
         m_systemMapRenderer.setTransferTunnel(req.startBodyId, std::move(line));
     }
+    // START follows the calculation: enabled while the route is still the one planned here
+    plan.calculatedSignature = shortage.empty() ? plan.planSignature() : std::string();
     if (!launch || !shortage.empty())
         return;
 

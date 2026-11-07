@@ -261,7 +261,8 @@ inline void appendDetailMapWorldSites(
                 worldSiteOrbitOffsetMeters(site, out.planetRadiusMeters, 0.0, universeTimeSeconds);
             o.sizeMeters = glm::dvec3(800.0);
             // an orbital hub site has a (catalog) Hub map: a hub target on the Detail map
-            if (site.type != "nav_relay" && site.type != "belt_anchor")
+            // a beacon (nav_relay) is a hub module (author 2026-11-07): a hub target as well
+            if (site.type != "belt_anchor")
                 o.kind = "world_site_hub:" + site.type;
             // its orbit (the same presentation law), drawn like a hub rail orbit
             const glm::dvec3 now = o.positionMeters - out.planetCenterMeters;
@@ -310,7 +311,8 @@ inline void appendDetailMapWorldSites(
                                      site.lagrangeHillRatio) -
                  primary->worldMeters);
             o.sizeMeters = glm::dvec3(800.0);
-            if (site.type != "nav_relay" && site.type != "belt_anchor")
+            // a beacon (nav_relay) is a hub module (author 2026-11-07): a hub target as well
+            if (site.type != "belt_anchor")
                 o.kind = "world_site_hub:" + site.type;
         }
         else
@@ -329,7 +331,7 @@ inline void appendDetailMapWorldSites(
 // hub sample at the site's presented position (the same placement laws as the
 // System / Detail markers) plus ONE station module - the world model places
 // only the station there (its economy composition is planned, not built).
-// Returns false for a site without a Hub frame (surface sites, relays, buoys,
+// Returns false for a site without a Hub frame (surface sites, buoys,
 // a missing parent body).
 inline bool catalogHubRuntimeSample(
     DetailMapRuntimeSampleResult& runtime,
@@ -339,7 +341,7 @@ inline bool catalogHubRuntimeSample(
 )
 {
     using namespace world::celestial;
-    if (site.type == "nav_relay" || site.type == "belt_anchor" || !site.runtimeBinding.empty())
+    if (site.type == "belt_anchor" || !site.runtimeBinding.empty())
         return false;
     auto bodyById = [&celestial](const std::string& id) -> const CelestialBodyState* {
         for (const auto& b : celestial.bodies)

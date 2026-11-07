@@ -884,8 +884,9 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         return;
     }
 
-    // L: docked at the hub dock -> ask the dock dispatcher for departure.
-    // The server decides; the terminal shows DEPARTURE QUEUED / CLEARED.
+    // Ctrl+L (LAUNCH; plain L too): docked at the hub dock -> ask the dock dispatcher for departure.
+    // The server decides; the terminal shows DEPARTURE QUEUED / CLEARED; the station flies the ship
+    // out along the dock axis and releases it at rest beyond the queue gates (author 2026-11-07).
     if(Input::instance().isKeyPressedOnce(GLFW_KEY_L) && m_client)
     {
         const auto it=m_client->world().ships().find(m_playerId.value);

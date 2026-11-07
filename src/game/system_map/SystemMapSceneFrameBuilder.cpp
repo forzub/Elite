@@ -378,7 +378,8 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
         // their own kinds) is a hub target as well: its catalog Hub map.
         overlay.navigationHubId =
             object.kind == world::celestial::SystemMapObjectKind::Hub ||
-                    (object.kind == world::celestial::SystemMapObjectKind::Station &&
+                    ((object.kind == world::celestial::SystemMapObjectKind::Station ||
+                      (object.kind == world::celestial::SystemMapObjectKind::Relay && object.parentHubId.empty())) &&
                      key.rfind("site:", 0) == 0)
                 ? key
                 : object.parentHubId;

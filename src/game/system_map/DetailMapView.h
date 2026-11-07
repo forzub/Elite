@@ -22,6 +22,14 @@ struct DetailMapViewState
 class DetailMapView
 {
 public:
+    // the Detail map frames the planet's whole neighbourhood (the Moon's orbit for Earth): x16 left
+    // Earth a dot and its low-orbit hubs one blob (author 2026-11-07) - zoom in to ~a hundred km
+    DetailMapView()
+    {
+        m_controls.maxZoom = 4000.0;
+        m_controls.zoomStep = 1.15;
+    }
+
     DetailMapViewState& state() noexcept { return m_state; }
     const DetailMapViewState& state() const noexcept { return m_state; }
 

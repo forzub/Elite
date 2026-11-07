@@ -906,13 +906,9 @@ struct DockServiceTraffic::Impl
                     out.profile = Profile::make(out.p0.z - out.p1.z, 0.0, 5.0, 0.3, 5.0);
                     out.duration = out.profile.total;
                     push(a, out);
-                    if (a.external)
-                    {
-                        setPhase(a, ActorPhase::Lift);
-                        say(a.id, std::string("departure cleared, station lifts from pad ") + hex::padIdFor(a.padIndex));
-                        break;
-                    }
-                    // Axis: burn out, flip, brake to the dispersal stop.
+                    // Axis: burn out, flip, brake to the dispersal stop. A pilot ship flies it too
+                    // (author 2026-11-07: "пусть автоматика выставит корабль за пределы дока"): the
+                    // station releases it at rest beyond every queue gate, not at the portal.
                     Segment axial;
                     axial.kind = SegmentKind::AxialOut;
                     axial.p0 = {0.0, 0.0, g.entryFaceZ};
@@ -944,8 +940,7 @@ struct DockServiceTraffic::Impl
                     setPhase(a, ActorPhase::AxialOut);
                 else if (a.external && segmentsDone)
                 {
-                    // Out of the slot: the pilot / autopilot takes over; the
-                    // outer lane stays held until it passes the clear point.
+                    // (no axial segment queued - an old departure): released at the portal
                     say(a.id, "released to the pilot at the portal");
                     setPhase(a, ActorPhase::Gone);
                 }
@@ -959,6 +954,13 @@ struct DockServiceTraffic::Impl
                     dispatcher.reportClear(a.id, now);
                     ++stats.departures;
                     say(a.id, "clear of the axis lane, outer lane released");
+                }
+                if (segmentsDone && a.external)
+                {
+                    // the pilot ship: at rest beyond the queue gates - the pilot takes over
+                    say(a.id, "released to the pilot beyond the dock lanes");
+                    setPhase(a, ActorPhase::Gone);
+                    break;
                 }
                 if (segmentsDone)
                 {

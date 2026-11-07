@@ -786,7 +786,7 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
         for (const auto& line : game::presentation::dockDispatcherTerminalLines(in))
             text += (text.empty() ? "" : " / ") + line;
         if (in.phase == game::docking::traffic::DockTrafficPhase::Docked)
-            text += " / L: REQUEST DEPARTURE";
+            text += " / CTRL+L: LAUNCH";
         terminal.diagnostics.emplace_back(text, game::presentation::DockingTerminalSeverity::Info);
         terminal.visible = true;
     }

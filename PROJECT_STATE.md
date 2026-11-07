@@ -3858,6 +3858,25 @@ Progress (source + builds; live evidence per item below):
   slow frames, many with dock_assisted_handle_output 30-48 ms; after (dk2) 0 slow frames through to "docked"
   (only the two known start-up load frames). Gates 209: 203 / 6 known / 0 new. Author re-check pending.
 
+### Author remarks 2026-11-07 (map, route window, undocking) - BUILT, partly DEV-checked, NOT ACCEPTED
+- Detail map zoom: the map frames the planet's whole neighbourhood (Earth: the Moon's orbit); x16 left Earth a dot.
+  Now max x4000, wheel step 1.15; zoomed in (> 1.5 x the fit) the pan / cursor pivot work in the spatial volume
+  (before: the pan was forced to 0 - only the centre could be magnified). Visual check: author.
+- Beacons (nav_relay world sites) as hubs ("маяк по сути модуль хаба"): Detail map kind world_site_hub:nav_relay
+  (selectable, double click = its catalog Hub map with one module), System map: a relay without a parent hub is a
+  hub target; a route point there = the catalog-hub Point stop at its marker (existing planner path).
+- Route window: START / unofficial START disabled until РАССЧИТАТЬ succeeded for exactly this route
+  (RoutePlan::planSignature: the author's points, roles, order, programs, actions; planner-inserted points
+  excluded); any change disables them again until the next calculation.
+- Undocking: Ctrl+L (plain L kept) = LAUNCH (the terminal hint says CTRL+L: LAUNCH). The station now flies a pilot
+  ship the same axial departure as the traffic (out along the dock axis, flip, brake) and releases it AT REST
+  beyond the queue gates (departureTurnZ -11 km) instead of at the portal. DEV dk3: the request was accepted, but
+  the dispatcher never cleared it in ~10 min (queue position 2 behind VYS-1701, cleared only at the run's end) -
+  departure starvation by the arrival flow: OPEN, next with the docking polish (the release beyond the gates is
+  therefore not yet flown live).
+- Next (author): docking polish, then the approach to a chosen ship and taking station in a formation.
+- Gates 209: 203 / 6 known / 0 new; --cpp-only 2/2.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

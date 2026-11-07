@@ -284,6 +284,29 @@ public:
     // state (0 none, 1 flying, 2 paused, 3 service, 4 landing) - shown by the route window
     std::string summary;
     int serverRouteState = 0;
+    // the route as РАССЧИТАТЬ last planned it (planSignature); START is enabled only while the
+    // route still is that one (author 2026-11-07: any change of the points, their order, programs
+    // or actions disables START until the next calculation)
+    std::string calculatedSignature;
+    bool calculatedUpToDate() const { return !calculatedSignature.empty() && calculatedSignature == planSignature(); }
+
+    // the author's points (not the planner-inserted ones), their order, programs and actions
+    std::string planSignature() const
+    {
+        std::string s;
+        for (const auto& w : m_waypoints)
+        {
+            if (w.insertedByPlanner || w.role == NavigationWaypointRole::None)
+                continue;
+            const auto& a = w.actions;
+            s += std::to_string(w.id) + ':' + std::to_string(static_cast<int>(w.role)) + ':' + std::to_string(w.sequence) + ':' +
+                 std::to_string(static_cast<int>(w.program)) + ':' + w.stopAction + ':' + w.target.stableObjectId + ':' +
+                 std::to_string(w.target.shipInstanceId) + ':' + (a.refuel ? 'r' : '-') + (a.repair ? 'p' : '-') +
+                 (a.pauseHere ? 'z' : '-') + (a.takeOffAfter ? 't' : '-') + std::to_string(a.orbitAltitudeM) + ':' +
+                 std::to_string(a.surveyOrbits) + ':' + a.landingSite + ';';
+        }
+        return s;
+    }
 
     const NavigationRouteStart& start() const noexcept { return m_start; }
     bool hasStart() const noexcept { return m_start.valid(); }

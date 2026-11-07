@@ -268,12 +268,17 @@ LocalMapInteractionResult LocalMapInteraction::handle(
     if (mode == MapMode::Detail &&
         detailView.state().sceneIsSpatialVolume)
     {
-        camera.pan = glm::dvec2(0.0);
-        camera.panning = false;
         camera.zoom = std::max(
             camera.zoom,
             detailView.state().minimumZoom
         );
+        // the whole volume in view stays centred; zoomed in, the pan / the cursor pivot work
+        // (author 2026-11-07: Earth and its hubs could not be reached)
+        if (camera.zoom <= 1.5 * detailView.state().minimumZoom)
+        {
+            camera.pan = glm::dvec2(0.0);
+            camera.panning = false;
+        }
     }
 
     if (hubMode)

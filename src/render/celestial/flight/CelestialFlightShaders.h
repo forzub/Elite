@@ -109,6 +109,10 @@ float rimMask(float nv, float widthPx)
     return 1.0 - clamp((nv - w * 0.5) / (w * widthPx), 0.0, 1.0);
 }
 
+// the weight of the surface lines (contours, coasts) - the globe and the local terrain alike
+// (author 2026-11-07: "сделал бы все линии немного поярче"; was 0.45 globe / 0.8 terrain)
+const float LineWeight = 0.65;
+
 float contourMask(float value, float widthPx)
 {
     float f = abs(fract(value + 0.5) - 0.5);
@@ -203,24 +207,36 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
             // instead of fading out whole). The line width uses the continuous
             // derivative, not fwidth of the stepped value (no seams at level edges).
             float perPixel = max(fwidth(heightKm) / max(uContourKm, 1e-6), 1e-6);
-            float level = max(0.0, ceil(log2(perPixel / 0.15)));
-            float value = contourValue / exp2(level);
-            float w = perPixel / exp2(level);
-            float f = abs(fract(value + 0.5) - 0.5);
-            contour = isWater > 0.5 ? 0.0 : (1.0 - clamp(f / (w * 0.9), 0.0, 1.0)) * (lattice >= 0.0 ? 0.8 : 0.45);
-            contour *= 1.0 - smoothstep(0.12, 0.35, w);
+            // lines >= ~20 px apart (author 2026-11-07: the crater by the Moon port drawn with very
+            // dense levels rippled on the screen - ~7 px was too dense, 12 px still busy in the
+            // live frame q4 x570); the level is continuous:
+            // the coarser set (a subset) stays whole, the finer set fades out as it closes up,
+            // instead of a hard per-pixel switch that crawled along a steep wall
+            float L = max(0.0, log2(perPixel / 0.05));
+            float l0 = floor(L);
+            float fr = L - l0;
+            float wFine = perPixel / exp2(l0);
+            float wCoarse = wFine * 0.5;
+            float vFine = contourValue / exp2(l0);
+            float fFine = abs(fract(vFine + 0.5) - 0.5);
+            float fCoarse = abs(fract(vFine * 0.5 + 0.5) - 0.5);
+            float lineCoarse = 1.0 - clamp(fCoarse / (wCoarse * 0.9), 0.0, 1.0);
+            float lineFine = (1.0 - clamp(fFine / (wFine * 0.9), 0.0, 1.0)) * (1.0 - smoothstep(0.0, 1.0, fr));
+            contour = isWater > 0.5 ? 0.0 : max(lineCoarse, lineFine) * LineWeight;
         }
         else
         {
-            contour = isWater > 0.5 ? 0.0 : contourMask(contourValue, 0.9) * (lattice >= 0.0 ? 0.8 : 0.45);
+            contour = isWater > 0.5 ? 0.0 : contourMask(contourValue, 0.9) * LineWeight;
             // lines closer than a few pixels (fine contours far away, grazing ground)
             // fade out instead of merging into a white moire
             contour *= 1.0 - smoothstep(0.12, 0.35, fwidth(contourValue));
         }
-        if (uContourFineWeight > 0.0 && isWater < 0.5)
+        // (a cratered body refines per pixel above - no extra set: on the local terrain only it drew
+        // a brighter, denser patch under the ship)
+        if (uContourFineWeight > 0.0 && isWater < 0.5 && uContourMinSlope <= 0.0)
         {
             float fineValue = heightKm / max(uContourFineKm, 1e-6);
-            float fine = contourMask(fineValue, 0.9) * (lattice >= 0.0 ? 0.8 : 0.45) * uContourFineWeight;
+            float fine = contourMask(fineValue, 0.9) * LineWeight * uContourFineWeight;
             fine *= 1.0 - smoothstep(0.12, 0.35, fwidth(fineValue));
             contour = max(contour, fine);
         }
@@ -235,8 +251,8 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
         }
         if (isGas > 0.5)
             contour = contourMask(dot(land, vec3(0.3, 0.5, 0.2)) * 9.0, 1.0) * 0.6;
-        // the local terrain (lattice >= 0) is what a landing pilot reads: its lines
-        // brighter, its horizon rim a faint hairline instead of a glowing band
+        // the local terrain (lattice >= 0) draws the same lines as the globe (author 2026-11-07:
+        // the brighter patch under the ship is gone); no horizon rim on it
         bool terrainPass = lattice >= 0.0;
         // the lattice grid under the ship is switched off (author 2026-11-06: "закоментируй ее,
         // попробуем без нее"); the contours / coast lines stay
@@ -251,7 +267,7 @@ vec3 shadeSurface(vec3 land, vec3 water, float coastKm, float heightKm, float em
         float fade = 0.30 + 0.70 * day;
         float lines = max(max(coast, contour), grid) * fade;
         float far = uHazeDensity > 0.0 ? exp(-dist * uHazeDensity * 0.3) : 1.0;
-        return uLineColour * max(lines * mix(terrainPass ? 0.6 : 0.35, 1.0, far), rim * (terrainPass ? 0.0 : 0.9 * uRimScale));
+        return uLineColour * max(lines * mix(0.5, 1.0, far), rim * (terrainPass ? 0.0 : 0.9 * uRimScale));
     }
 
     vec3 albedo = mix(land, water, isWater);

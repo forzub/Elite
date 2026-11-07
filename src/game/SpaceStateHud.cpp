@@ -615,6 +615,24 @@ void SpaceState::renderHudCockpitInstruments(const Viewport& vp, const ClientShi
             flightInstrument,
             vp
         );
+        // DEV diagnostic (author 2026-11-07: "скорость отображена перпендикулярно корпусу"): the angle
+        // between the hull and the velocity the indicator shows, with what it is measured against
+        {
+            static double lastLog = -1.0e30;
+            static const bool enabled = [] { const char* v = std::getenv("ELITE_DEV_HUDVEL_LOG"); return !v || *v != '0'; }();
+            const double now = m_client ? m_client->lastSimulationMetadata().serverTimeSeconds : 0.0;
+            const auto& mo = cockpit.renderTransform.motion;
+            if (enabled && now - lastLog >= 2.0 && flightInstrument.speedMps > 1.0)
+            {
+                lastLog = now;
+                const glm::vec3 fwd = flightInstrument.shipModelToIndicatorBasis[1];
+                const double off = glm::degrees(std::acos(std::clamp(static_cast<double>(fwd.y) / std::max(1.0e-6, static_cast<double>(glm::length(fwd))), -1.0, 1.0)));
+                std::cerr << "[HudVel] t " << now << " law " << (mo.localControlLaw == game::navigation::LocalFlightControlLaw::Assisted ? "A" : "N")
+                          << (mo.assistedFreeRotation ? " free" : "") << " ff " << mo.freeFlight << " J " << mo.jEngine << " ref " << int(mo.velocityReferenceKind)
+                          << " ap " << int(mo.freeFlightAutopilotPhase) << " speed " << flightInstrument.speedMps << " m/s, hull-velocity "
+                          << off << " deg" << std::endl;
+            }
+        }
     }
 
 }

@@ -257,7 +257,6 @@ void GameSimulation::applyGlobalFlightCommand(EntityId shipId, Ship& ship, Activ
     }
     else
     {
-        f.globalRampSeconds = 0.0;
         if (!motion.jEngine)
             motion.jAccelMps2 = 0.0;
         if (glm::length(cmd.globalMainAccelWorldMps2) > 0.0)
@@ -471,7 +470,6 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
             motion.freeFlight = false;
             motion.freeFlightThrust = 0;
             motion.freeFlightCaptureRefusal = code(FlightRefusal::None);
-            motion.freeFlightAutopilotPhase = code(AutopilotDisplayPhase::None);
             if (motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::BackwardToVelocity ||
                 motion.velocityAlignmentMode == game::navigation::VelocityAlignmentMode::ForwardToVelocity)
                 motion.velocityAlignmentMode = game::navigation::VelocityAlignmentMode::None;
@@ -498,9 +496,9 @@ bool GameSimulation::toggleFreeFlight(EntityId shipId)
     }
 
     if (motion.mode != game::navigation::MotionMode::HubTactical || !motion.travelFrame.valid ||
-        m_orbitalTransfers.count(shipId) || isDockStationControlledShip(shipId))
+        isDockStationControlledShip(shipId))
     {
-        std::cerr << "[FreeFlight] ship " << shipId.value << ": not in a state for free flight (mode/frame/docked/in transfer)\n";
+        std::cerr << "[FreeFlight] ship " << shipId.value << ": not in a state for free flight (mode/frame/docked)\n";
         return false;
     }
 
@@ -754,9 +752,12 @@ void GameSimulation::updateFreeFlights(double dt)
         const auto& control = ship->core().control();
         const bool globalCommand = control.globalFlightCommandValid && !f.ground.active;
         if (globalCommand)
+        {
+            f.globalIdleSeconds = 0.0;
             applyGlobalFlightCommand(it->first, *ship, f, control, dt);
-        else
-            f.globalRampSeconds = 0.0;
+        }
+        else if ((f.globalIdleSeconds += dt) > 0.5)
+            f.globalRampSeconds = 0.0;   // a short gap (one client pilot handing over to the next) keeps it
 
         // ---- the J engine: the J field along the main-engine thrust, in place of it
         if (motion.jEngine && !f.ground.active)
@@ -1316,4 +1317,28 @@ void GameSimulation::updateFreeFlights(double dt)
         }
         ++it;
     }
+}
+
+// re-base a ship into a hub's frame with its actual relative position / velocity (no snap)
+void GameSimulation::handOverToHub(EntityId shipId, Ship& ship, const std::string& hubId, const glm::dvec3* worldOverride, const glm::dvec3* velOverride)
+{
+    auto& tr = ship.core().transform();
+    auto& motion = tr.motion;
+    const auto* hubFrame = hubNavigationFrame(hubId);
+    if (!hubFrame || !hubFrame->valid)
+        return;
+    const game::navigation::KinematicFrame dest = hubFrame->kinematicFrame();
+    game::navigation::WorldKinematicState world;
+    world.positionMeters = worldOverride ? *worldOverride : motion.travelFrame.localToWorldPosition(motion.localPositionMeters);
+    world.velocityMps = velOverride ? *velOverride : motion.travelFrame.localToWorldVelocity(motion.localPositionMeters, motion.localVelocityMps);
+    const game::navigation::LocalKinematicState local = game::navigation::worldToLocalKinematics(dest, world);
+    game::navigation::TravelFrameSystem::matchToReference(motion, dest, "ship_travel_" + std::to_string(shipId.value), hubId);
+    motion.hubId = hubId;
+    motion.mode = game::navigation::MotionMode::HubTactical;
+    motion.localPositionMeters = local.positionMeters;
+    motion.localVelocityMps = local.velocityMps;
+    tr.setWorldPositionMeters(world.positionMeters);
+    motion.worldVelocityMps = world.velocityMps;
+    std::cerr << "[Flight] ship " << shipId.value << " handed over to " << hubId << ": local offset "
+              << glm::length(local.positionMeters) / 1000.0 << " km, relative speed " << glm::length(local.velocityMps) << " m/s\n";
 }

@@ -41,6 +41,7 @@ void RouteLegPilot::start(const route::RoutePoint& leg, double remainingAfterM, 
     m_shipId = shipId;
     // continuing in J (past a guide point): the drive stays at full strength
     m_driveStartSeconds = alreadyInJ ? -1000.0 : -1.0;
+    m_toldTargetInHub = false;
     m_departureHubId = departureHubId;
     if (m_takeOff)
         std::cerr << "[Route] ship " << shipId << ": TAKE-OFF - main-engine climb to the J floor first" << std::endl;
@@ -145,6 +146,24 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
         const glm::dvec3 side = glm::length(fromOther) > 1.0 ? glm::normalize(fromOther) : glm::dvec3(0, 1, 0);
         targetPos = otherPos + side * ShipArrivalM;
         targetVel = otherVel;
+        // a target inside a hub's keep-out (dock traffic): no J field there to brake in - the leg ends
+        // matched at that hub's keep-out edge, the rest is a local approach (live q6 2026-11-07: aimed at
+        // the ship itself, it entered the hub's keep-out at 1.4 km/s on the gentle 1 g and oscillated)
+        std::string hubId;
+        glm::dvec3 hubPos, hubVel;
+        if (resolve.hubAround && resolve.hubAround(otherPos, hubId, hubPos, hubVel))
+        {
+            const glm::dvec3 fromHub = position - hubPos;
+            const glm::dvec3 hubSide = glm::length(fromHub) > 1.0 ? glm::normalize(fromHub) : side;
+            targetPos = hubPos + hubSide * HubArrivalM;
+            targetVel = hubVel;
+            if (!m_toldTargetInHub)
+            {
+                m_toldTargetInHub = true;
+                std::cerr << "[Route] ship " << m_shipId << ": rendezvous target " << leg.shipEntityId << " is inside the keep-out of " << hubId
+                          << " - the leg ends at its edge (the rest is a local approach)" << std::endl;
+            }
+        }
     }
     else if (leg.kind == Kind::Orbit)
     {

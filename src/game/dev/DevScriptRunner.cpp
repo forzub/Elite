@@ -369,7 +369,7 @@ bool DevScriptRunner::runRouteVerb(SpaceState& s, const std::string& cmd)
     }
     else if (cmd.rfind("leg:", 0) == 0)
     {
-        // DEV: "leg:hub:<id>" | "leg:orbit:<moon|earth|mars>:<alt km>"
+        // DEV: "leg:hub:<id>" | "leg:orbit:<moon|earth|mars>:<alt km>" | "leg:ship:<callsign|any>"
         std::string spec = arg("leg:");
         for (const auto& [k, v] : LegOrbitPrefixAliases)
             if (spec.rfind(k, 0) == 0)
@@ -389,6 +389,24 @@ bool DevScriptRunner::runRouteVerb(SpaceState& s, const std::string& cmd)
             const auto colon = rest.rfind(':');
             p.bodyId = rest.substr(0, colon);
             p.orbitAltitudeM = colon == std::string::npos ? 100000.0 : std::atof(rest.c_str() + colon + 1) * 1000.0;
+        }
+        else if (spec.rfind("ship:", 0) == 0)
+        {
+            // a rendezvous: "ship:<callsign>" of a replicated traffic ship, or "ship:any" (the first one)
+            const std::string callsign = spec.substr(5);
+            p.kind = game::navigation::route::RoutePoint::Kind::Ship;
+            for (const auto& [id, ship] : s.m_client->world().ships())
+                if (id != s.m_playerId.value && ship.traffic.active && (callsign == "any" || ship.traffic.callsign == callsign))
+                {
+                    p.shipEntityId = id;
+                    std::cerr << "[DevScript] rendezvous with " << ship.traffic.callsign << " (entity " << id << ")" << std::endl;
+                    break;
+                }
+            if (p.shipEntityId == 0)
+            {
+                std::cerr << "[DevScript] no traffic ship " << callsign << " to meet" << std::endl;
+                return true;
+            }
         }
         else
             return true;

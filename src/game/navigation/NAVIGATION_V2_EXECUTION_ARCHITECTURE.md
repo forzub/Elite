@@ -324,6 +324,12 @@ Target-machine build/test evidence is required after each deletion slice.
 
 ## 11a. Orbital Transfer (hub -> hub around one body), 2026-11-03
 
+**REMOVED 2026-11-07** (§1 migration, author order "open items closed in the same run"): the server-run
+carrier mode, `GameSimulationOrbitalTransfer.cpp`, `orbital/OrbitalTransferPlanner` and its offline check are
+deleted. "Transfer to the selected hub" is a one-stop CLIENT route Hub leg (`SpaceStateRouteRun.cpp`,
+`globalflight/RouteLegPilot`): the J drive to the hub's keep-out edge with its velocity, then the hub capture
+(`handOverToHub`). The text below is the historical design.
+
 Hub Tactical and Orbital Transfer are different jobs and different modes.
 
 - **Hub Tactical** (unchanged): local tens of km inside the moving hub frame,

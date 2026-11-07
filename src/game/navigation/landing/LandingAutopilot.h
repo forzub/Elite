@@ -28,7 +28,7 @@
 //
 // Phases: Planning -> Orbit (no site yet: circular orbit, re-plan every 3 s) ->
 // Transit (to the point above the site at a height that grows with speed, J
-// drive) -> Descent (vertical speed min(400, sqrt(2 15 h), h / 4), at least
+// drive) -> Descent (a 4 s hover over the spot, then vertical speed min(400, sqrt(2 15 h), h / 4), at least
 // 1.5 m/s; the last 50 m only straight down over the spot) -> Down (the
 // caller's surface contact ends it).
 namespace game::navigation::landing
@@ -142,5 +142,7 @@ private:
     int m_searchPasses = 0;
     bool m_haveLastSiteTop = false;
     glm::dvec3 m_lastSiteTop {0.0};
+    double m_hoverLeftS = 0.0;   // the hover over the spot before the vertical descent
+    double m_transitCapMps = -1.0;   // the transit's speed cap, fixed on its first step (< 0: not yet)
 };
 } // namespace game::navigation::landing

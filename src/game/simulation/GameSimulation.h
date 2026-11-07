@@ -3,7 +3,6 @@
 #include "src/game/navigation/landing/LandingAutopilot.h"
 #include <functional>
 #include "src/game/simulation/ShipRefitSnapshot.h"
-#include "src/game/navigation/orbital/OrbitalTransferPlanner.h"
 #include <cstdint>
 
 #include <vector>
@@ -173,28 +172,6 @@ public:
     // Pilot asks the dock dispatcher to leave the pad (docked ships only).
     bool requestDockDeparture(EntityId shipId);
 
-    // Orbital Transfer (GameSimulationOrbitalTransfer.cpp): hub -> hub travel
-    // as an authoritative navigation mode; the tactical envelope is untouched.
-    struct ActiveOrbitalTransfer
-    {
-        std::string sourceHubId;
-        std::string targetHubId;
-        std::string parentBodyId;
-        game::navigation::orbital::CentralBody body;
-        game::navigation::orbital::TransferLimits limits;
-        game::navigation::orbital::OrbitalTransferPlan plan;
-        game::navigation::orbital::TransferCarrier carrier;
-        game::navigation::orbital::InterplanetaryEstimate estimate;
-        bool abstracted = false;      // interplanetary: time-compressed transit, not flight
-        bool thrustEnabled = true;
-        double engineMaxAccelMps2 = 0.0;
-        double lastOrbitalTimeSeconds = 0.0;
-        double transitEndRealSeconds = 0.0;
-        double peakSpeedMps = 0.0;
-        double lastLogOrbitalSeconds = -1.0e30;
-    };
-    bool requestOrbitalTransfer(EntityId shipId, const std::string& targetHubId);
-    void cancelOrbitalTransfer(EntityId shipId);
 
     // Ctrl+J free flight (GameSimulationFreeFlight.cpp): on - the travel frame is detached and
     // carries the ship's global motion under gravity; off - the ship is re-based into the
@@ -222,6 +199,7 @@ public:
         // the plant's J ramp for a global-flight command: counts only outside the keep-out
         double globalRampSeconds = 0.0;
         double globalLogSeconds = 0.0;      // the plant's command log (every 2 s)
+        double globalIdleSeconds = 0.0;     // no global command for this long: the ramp restarts after 0.5 s
         // a route leg (hub / orbit / point) flown by the route autopilot
         // the sub-machines of a free flight (architecture audit item 3): one struct each
         struct GroundFrame     // the ground stabilization frame (landing / landed)
@@ -320,7 +298,6 @@ public:
     void applyRefit(EntityId commandingShip, EntityId subject, const game::ship::refit::RefitOperation& operation);
     [[nodiscard]] game::simulation::ShipRefitSnapshot refitSnapshotFor(EntityId ship) const;
     const ActiveFreeFlight* freeFlight(EntityId shipId) const;
-    const ActiveOrbitalTransfer* orbitalTransfer(EntityId shipId) const;
     // This ship's dispatcher status (phase None when unknown to the dock).
     game::docking::traffic::DockTrafficShipStatus dockDispatcherStatus(EntityId shipId) const;
     std::size_t shipShellCount() const noexcept { return m_shipShells.size(); }
@@ -470,7 +447,6 @@ public:
     }
 
     void updateShipReferenceFrames(double dt);
-    void updateOrbitalTransfers();
     void updateFreeFlights(double dt);
     void handOverToHub(EntityId shipId, Ship& ship, const std::string& hubId, const glm::dvec3* worldOverride, const glm::dvec3* velOverride);
 
@@ -670,7 +646,6 @@ private:
     double m_shipMotionFidelityEvaluationAccumulatorSeconds = 0.0;
     std::unordered_map<EntityId, StaticObject> m_staticObjects;
     std::unordered_map<std::string, world::hubs::OrbitalHubRuntime> m_orbitalHubs;
-    std::unordered_map<EntityId, ActiveOrbitalTransfer> m_orbitalTransfers;
     std::unordered_map<EntityId, ActiveFreeFlight> m_freeFlights;
     TerrainHeightProvider m_terrainHeight;
     BodyOrientationProvider m_bodyOrientation;

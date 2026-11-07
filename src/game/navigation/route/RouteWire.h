@@ -1,6 +1,6 @@
 #pragma once
 
-// The wire form of a planned route (client planner -> RouteLeg command -> server): the legs and
+// The text form of a planned route (logs, the offline check) and the legs
 // their encode / decode. Neutral: the server includes this, never the client planner
 // (architecture audit 2026-11-06, gate check_manual_docking_advisory & co).
 #include <cstdint>

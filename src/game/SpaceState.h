@@ -240,6 +240,7 @@ public:
         bool landingSeen = false;
         double serviceStart = -1.0;
         std::string departureHubId;
+        double lastDriveSeconds = 0.0;   // the leg pilot's drive ramp (handed to a landing leg)
         game::navigation::globalflight::RouteLegPilot pilot;
     };
     ClientRouteRun m_clientRoute;
@@ -469,6 +470,7 @@ private:
     bool m_bodyAutopilotEngagePending = false;
     std::string m_bodyAutopilotEngageBody;
     std::string m_bodyAutopilotEngageSpec;
+    double m_bodyAutopilotCarryRampS = 0.0;   // a route hands its drive ramp to the landing leg
     bool m_bodyAutopilotOwnsControl = false;
     bool m_bodyAutopilotPrimaryIsRoot = false;
     std::uint64_t m_bodyAutopilotLastTick = 0;

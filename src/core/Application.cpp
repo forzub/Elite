@@ -1195,6 +1195,14 @@ void Application::mainLoop()
         // and rendering resumes naturally after restore.
         if (fbW <= 0 || fbH <= 0)
         {
+            // DEV: a frame capture due while the window draws nothing (minimized) is skipped - say so
+            static bool toldNoSurface = false;
+            if (!toldNoSurface && !core::dev::frameCaptureRequests().empty())
+            {
+                toldNoSurface = true;
+                std::cerr << "[FrameCapture] the window has no drawable surface (minimized) - restoring it for the DEV captures" << std::endl;
+                glfwRestoreWindow(m_window->nativeHandle());
+            }
             m_states.applyPendingChanges();
             continue;
         }

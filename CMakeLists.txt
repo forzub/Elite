@@ -208,16 +208,6 @@ add_subdirectory(src/world/navigation/trajectory)
 # static free-space topology, bounded local avoidance and the runtime planner
 # that converts those products into PilotSkillExecutor intent. It is shared by
 # client and headless server so Stage 12 cannot drift into two planners.
-# Orbital Transfer (hub -> hub around one body): pure planner + carrier law,
-# shared by the server executor, the client preview and the offline check.
-add_library(EliteOrbitalTransfer STATIC
-    src/game/navigation/orbital/OrbitalTransferPlanner.cpp
-)
-target_include_directories(EliteOrbitalTransfer PUBLIC
-    "${CMAKE_SOURCE_DIR}"
-    "${CMAKE_SOURCE_DIR}/src"
-)
-target_compile_features(EliteOrbitalTransfer PUBLIC cxx_std_17)
 
 add_executable(EliteSystemMapInfoCheck tools/navigation_runtime/SystemMapInfoCheck.cpp)
 target_include_directories(EliteSystemMapInfoCheck PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
@@ -230,8 +220,6 @@ add_executable(EliteBodyFlightRulesCheck tools/navigation_runtime/BodyFlightRule
 target_include_directories(EliteBodyFlightRulesCheck PRIVATE "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(EliteBodyFlightRulesCheck PRIVATE nlohmann_json::nlohmann_json)
 
-add_executable(EliteOrbitalTransferCheck tools/navigation_runtime/OrbitalTransferCheck.cpp)
-target_link_libraries(EliteOrbitalTransferCheck PRIVATE EliteOrbitalTransfer nlohmann_json::nlohmann_json)
 
 add_library(EliteNavigationWorldRuntime STATIC
     src/world/navigation/map/NavigationMap.cpp
@@ -269,7 +257,6 @@ target_include_directories(EliteNavigationWorldRuntime PUBLIC
 target_link_libraries(EliteNavigationWorldRuntime
     PUBLIC EliteNavigationGeometry
            EliteNavigationTrajectory
-           EliteOrbitalTransfer
            EliteCelestialSurface   # J terrain contact: the renderer's surface field on the server
 )
 
@@ -609,7 +596,6 @@ add_executable(EliteGame
     src/game/simulation/GameSimulation.cpp
     src/game/simulation/GameSimulationNavigationLab.cpp
     src/game/simulation/GameSimulationDockTraffic.cpp
-    src/game/simulation/GameSimulationOrbitalTransfer.cpp
     src/game/simulation/GameSimulationFreeFlight.cpp
     src/game/simulation/GameSimulationRoute.cpp
     src/game/simulation/GameSimulationZones.cpp
@@ -921,7 +907,6 @@ if(ELITE_BUILD_SERVER)
         src/game/simulation/GameSimulation.cpp
         src/game/simulation/GameSimulationNavigationLab.cpp
         src/game/simulation/GameSimulationDockTraffic.cpp
-        src/game/simulation/GameSimulationOrbitalTransfer.cpp
         src/game/simulation/GameSimulationFreeFlight.cpp
         src/game/simulation/GameSimulationRoute.cpp
         src/game/simulation/GameSimulationZones.cpp

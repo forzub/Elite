@@ -116,6 +116,8 @@ public:
     bool engage(const BodyAutopilotEnvironment& env, const BodyAutopilotShip& ship, const std::string& targetBodyId,
                 const std::string& departureBodyId, const std::string& landingSpec, std::uint8_t& refusal);
     void cancel();
+    // engaged at full J speed by a route (past a guide point): the drive keeps its ramp
+    void carryDriveRamp(double seconds) { m_rampSeconds = seconds; }
     void clear() { m_targetId.clear(); m_stage = AutopilotStage::None; m_pilotActive = false; }   // silent
     bool active() const { return !m_targetId.empty(); }
     const std::string& targetId() const { return m_targetId; }
@@ -136,6 +138,14 @@ private:
     const GravityBody* find(const BodyAutopilotEnvironment& env, const std::string& id) const;
     void stepTransfer(const BodyAutopilotEnvironment& env, const BodyAutopilotShip& ship, const GravityBody& target,
                       const glm::dvec3& targetVelocity, double dt, BodyAutopilotOutput& out);
+    struct GlideSample
+    {
+        double arcM = 0.0, heightM = 0.0, horizontalMps = 0.0, verticalMps = 0.0, radiusM = 0.0;
+        glm::dvec3 toSite {0.0}, up {0.0}, velocityMps {0.0};
+        bool terrainKnown = false;
+    };
+    void stepGlide(const BodyAutopilotEnvironment& env, const BodyAutopilotShip& ship, const GravityBody& body,
+                   const glm::dvec3& bodyVelocityMps, const GlideSample& gs, double dt, BodyAutopilotOutput& out);
     void stepDescent(const BodyAutopilotEnvironment& env, const BodyAutopilotShip& ship, const GravityBody& body,
                      const glm::dvec3& bodyVelocityMps, double dt, BodyAutopilotOutput& out);
     void stepSurface(const BodyAutopilotEnvironment& env, const BodyAutopilotShip& ship, const GravityBody& target, double dt,
@@ -160,6 +170,12 @@ private:
     bool m_landingStarted = false;
     double m_landingPlanSeconds = 0.0;
     glm::dvec3 m_descentNose {0.0};
+    // the aircraft-like de-orbit (a ship with a fore braking bank, stepGlide): its phase (1 the
+    // nose-up sink, 2 the nose-down braking), the fore-bank thrust of the last re-plan
+    bool m_glideInit = false;
+    int m_glidePhase = 1;
+    double m_glideThrustMps2 = 0.0;
+    double m_glideReplanSeconds = -1.0e30;
     bool m_haveLastBasis = false;      // the target's basis one sample ago (the ground's turn)
     glm::dmat3 m_lastBasis {1.0};
     // the landing pilot
@@ -173,6 +189,12 @@ private:
 // the ship's own main-engine acceleration (forward drive); a legacy descriptor without it falls back
 // to its linear g envelope
 double mainEngineAccelMps2(const ShipParams& p);
+// a ship with a fore (braking) main bank lands like an aircraft: the de-orbit glides nose along the
+// path and brakes nose-first (author 2026-11-07); others fly the thrust-axis descent
+inline bool alongPathLander(const ShipParams& p)
+{
+    return p.reverseMainEngineAvailable && p.reverseMainEngineAccelerationMps2 > 0.0f;
+}
 
 // the hull's half height along a vertical: the box projected on it (belly down = half.y, tail down = half.z)
 double halfHeightAlong(const ShipParams& p, const glm::dvec3& right, const glm::dvec3& up, const glm::dvec3& forward,

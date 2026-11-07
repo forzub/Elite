@@ -3744,6 +3744,84 @@ Scope (NAVIGATION_V2 §1 author decision): the planners and autopilots on the CL
   -> gate 12 630 km/s -> orbit of Earth (382 km): ARRIVED 18 m / 3.0 m/s -> stabilization (own ballistic frame) ->
   ROUTE COMPLETE (client) / "МАРШРУТ ВЫПОЛНЕН".
 
+### Work queue after G2..G4 (author 2026-11-07: open items are closed in the same run, not left OPEN) - IN PROGRESS
+Queue (from the G2..G4 OPEN list + author remarks 2026-11-07 on the live runs):
+1. Orbital Transfer (hub -> hub around one body) planned / flown on the client; the server path removed.
+2. A landing leg engaged at full J speed keeps the drive ramp (no restart from 1 g).
+3. Dead wire fields (routeState / routeLeg* / freeFlightAutopilot*) removed, protocol version bump.
+4. Live DEV runs: service stay (refuel), zone fines, rendezvous (Ship leg).
+5. NPC global flight: check whether NPCs use the removed server autopilot at all.
+6. (author) Landing profile like an aircraft: a descent along an arc with the nose along the path, then a hover
+   over the pad and a vertical touchdown - instead of nose-down / tail-down; the player watches a moving picture.
+7. (author) Assisted: the velocity marker is often perpendicular to the hull - diagnose and fix.
+8. (author) The highlighted patch on the body under the ship in flight - remove; all lines a bit brighter.
+9. (author) Moon spaceport: a crater / mound drawn with very dense levels - screen ripple (aliasing) - fix.
+Author-only: the hand-over cancel rule (a pilot action during a client route); acceptance of everything.
+Progress (source + builds; live evidence per item below):
+- 1 DONE in code: GameSimulationOrbitalTransfer.cpp, OrbitalTransferPlanner.{h,cpp}, the EliteOrbitalTransfer
+  library and EliteOrbitalTransferCheck deleted; "transfer to the selected hub" / DEV transfer: = a one-stop client
+  route Hub leg (startClientRoute); handOverToHub moved into GameSimulationFreeFlight.cpp. LIVE q6 (Высокий ->
+  Тихий): ARRIVED after 140 s, 120 m from the aim, 20 m/s vs the hub, handed over to earth_hub.tikhiy (25 km,
+  23 m/s), ROUTE COMPLETE.
+- 2 DONE in code: the plant keeps the J ramp over a command gap <= 0.5 s (globalIdleSeconds); a landing leg after a
+  pass-through point hands the leg pilot's drive seconds to the body autopilot (carryDriveRamp). Live: pending.
+- 3 DONE: ClientShipCommand RequestOrbitalTransfer / CancelOrbitalTransfer / FreeFlightAutopilot removed, RouteLeg
+  -> RouteService (the stop's service stay only); motion freeFlightAutopilot* / route* off the wire (client display
+  only); WireProtocolVersion 26.
+- 4 zone fines: the dominant body between Earth and the Moon is the Sun (its pull is the larger there; q1 log:
+  primary Земля -> Sol -> Луна), so the gate rule's body chain read Earth -> Sun -> Moon and could never fine a
+  skipped gate. FIX (source): the star is not a step of the chain. CORRECTION of my first reading: q1 / q6 (Earth
+  -> Moon straight) were not violations - the straight line passes the midpoint gate (15 000 km sphere), so "no
+  fine" was right there; a gate-skipping flight (an off-axis via point) was NOT flown live - the fix is
+  source-audited only.
+  Rendezvous: LIVE q6 FAILED - the traffic target (VYS-1702) sat inside Высокий's J keep-out; the leg aimed at the
+  ship, entered the keep-out at 1.4 km/s on the gentle 1 g and oscillated in/out for 200 s. FIX: a target inside a
+  hub keep-out (RouteLegResolver::hubAround) ends the leg matched at that hub's keep-out edge (the rest is a local
+  approach). LIVE q8 (from Тихий, leg:ship:any): "target inside the keep-out of earth_orbital_hub", ARRIVED 120 m /
+  20 m/s, handed over to earth_orbital_hub, ROUTE COMPLETE. DEV leg:ship:<callsign|any> added.
+- 5 DONE (no change): NPC traffic never enters free flight / J (no caller of toggleFreeFlight / the global command
+  outside the player's client) - nothing was lost by removing the server autopilot.
+- 6 landing profile - two FAILED live attempts recorded:
+  q2 (nose along the velocity, the old guidance: circular speed to the site, braking late, then a 57 km vertical
+  drop): CRASH at 163 m/s, 78 m from the site. q3 (an S-curve height profile, uniform braking along the arc):
+  CRASH 18 km short - the glide lagged, the late flare needed ~45 m/s2 up, the nose went 45-60 deg off and the
+  alignment gate held the engine off. Diagnosis by an offline 2D model (D:/tmp/elite_glide, reproduces q3:
+  hand-over 597 m / 19.9 km / 353 m/s vs live 588 m / 18.8 km / 350 m/s): this Assisted Cobra has NO keypad RCS in
+  normal flight (manoeuvre authority 0) - the vertical comes only from the tilt of the axial thrust; within
+  +-25 deg pitch the ship cannot descend ~80 km in ~300 km AND stop the sink. Design now (BodyAutopilot::stepGlide,
+  ships with a fore braking bank): phase 1 nose +15 deg, fore bank pushing back+down (re-planned every 1 s),
+  phase 2 nose -20 deg braking; ends at 450 m/s ~8-11 km high 15 km out (model: 285 / 330 / 400 km starts all
+  end within 0.4 km of the aim, pitch -20..+15 throughout); then the ground stabilization (its vectoring
+  thrust: 30-47 m/s2 any direction, hull level) stops the sink, flies the level approach, a 4 s HOVER over the
+  spot (new in LandingAutopilot) and the vertical touchdown.
+  LIVE q4 (nose +15 deg, Shackleton pad): GLIDE from 287.9 km / 82.7 km, braking (nose -20) at 29.5 km / 27.5 km
+  high, HAND-OVER 6.85 km high 15.2 km out at 449 m/s, hover at ~100 m (vertical -1 m/s), LANDED 0 m from the
+  site; descent 365 s (old 370 s). Frames: phase 1 at +15 deg showed ONLY STARS (the horizon is ~18 deg below the
+  local horizontal from 80 km, the cockpit sees ~12 deg below the nose) -> +8 deg (model: 330-400 km arcs, pitch
+  -20..+8, the insertion lead 340 km). LIVE q5 (+8 deg): GLIDE from 332.5 km, braking at 21.8 km / 19.7 km, HAND-OVER
+  6.77 km / 15.2 km / 449 m/s, hover at ~65 m, LANDED 2.6 cm from the site, descent 423 s. Frames: phase 1 STILL
+  stars only (the geometry: at 80 km the surface needs the nose ~ -15 deg or lower, which needs a sink the axial
+  engine cannot stop) - see the author question below; phase 2 and the level approach show the surface flowing
+  (the hull level, the horizon in the lower third). The transit re-accelerated after the hand-over (403 -> 500 m/s)
+  -> FIX: a transit entered fast never exceeds its entry speed (LandingAutopilot m_transitCapMps) - not yet flown.
+  HUD "МАРШЕВЫЕ АВТОПИЛОТА +0.5 g (разгон)" while braking -> the autopilot's acceleration is now signed along the
+  velocity ("-0.4 g (торможение)", q5 frames).
+- 7 Assisted velocity marker: DEV log [HudVel] (hull-to-velocity angle, law, free hull, reference, autopilot
+  phase every 2 s) added to find WHEN it is ~90 deg; analysis pending.
+- 8 DONE in code: one line weight for the globe and the local terrain (0.65; was 0.45 globe / 0.8 terrain, the
+  haze floor 0.5 both); no extra fine contour set on cratered bodies (it drew the denser patch). Visual: pending.
+- 9 in code: cratered-body contours >= ~20 px apart (was ~7 px; 12 px still busy in q4 x570), the level blended
+  continuously (the finer set fades as it closes up) instead of a hard per-pixel switch. q5 x610 (20 px build):
+  the crater rings by the port only slightly sparser (~8-10 px) - another source is likely (the globe and the local
+  terrain drawn over each other, or the known terrain-mesh "staircase"); OPEN - next: an A/B in Planet Lab.
+- DEV frame captures were silently skipped: the game window was minimized (no drawable surface, no frame drawn).
+  Now logged, and the DEV capture restores the window once (q4/q5 captures written).
+- Gates (post-change build): run_gates -j 6: 209 / 203 pass / 6 known red / 0 new; --cpp-only 2/2 PASS
+  (wire_data_plane_contract_tests after the protocol 26 change).
+- Author question (item 6): in the glide's first ~300 s the cockpit shows stars (physics + cockpit geometry, above);
+  options: (a) accept - the drone view F3 shows the ship over the surface; (b) the autopilot switches to the drone
+  view for the glide; (c) a shorter, steeper glide (nose lower, a harder final braking up to ~-35..-45 deg).
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

@@ -15,6 +15,7 @@ constexpr double TransitAccelMps2 = 10.0;     // horizontal braking profile
 constexpr double TransitSpeedCapMps = 1500.0;
 constexpr double AuthorityMps2 = 40.0;        // the lander's J drive authority
 constexpr double DescentStartM = 10.0;        // horizontal distance to start the descent
+constexpr double HoverSeconds = 4.0;          // the hover over the spot before the vertical descent
 
 void tangentBasis(const glm::dvec3& n, glm::dvec3& t1, glm::dvec3& t2)
 {
@@ -120,6 +121,8 @@ void LandingAutopilot::start(const LandingRequest& request, const glm::dvec3& st
     m_replanSeconds = 0.0;
     m_searchPasses = 0;
     m_haveLastSiteTop = false;
+    m_hoverLeftS = 0.0;
+    m_transitCapMps = -1.0;
 }
 
 bool LandingAutopilot::planAhead(const glm::dvec3& startBodyDirection, double bodyRadiusM,
@@ -223,10 +226,14 @@ LandingCommand LandingAutopilot::step(const LandingInput& in, const TerrainProbe
         const double aboveSite = -glm::dot(toSite, up);   // hull bottom over the site's touchdown height
         if (m_phase == LandingPhase::Transit)
         {
-            const double vh = std::min({TransitSpeedCapMps, std::sqrt(2.0 * transitAccel * dh), dh / 4.0});
             // the faster, the higher over the relief (10 s of flight): a short hop low,
             // a long one high
             const glm::dvec3 whNow = w - up * glm::dot(w, up);
+            // entered fast (a glide hand-over at ~450 m/s): never faster than that - the approach
+            // only slows down (live q4: it re-accelerated 403 -> 500 m/s and braked again)
+            if (m_transitCapMps < 0.0)
+                m_transitCapMps = glm::length(whNow) > 100.0 ? glm::length(whNow) : TransitSpeedCapMps;
+            const double vh = std::min({m_transitCapMps, std::sqrt(2.0 * transitAccel * dh), dh / 4.0});
             // a glide path (~8.5 deg) toward the site: the ship comes down ALONG the surface and
             // reaches the site low and slow; far away the cruise height over the relief holds
             const double cruise = std::min(std::max(CruiseHeightM, glm::length(whNow) * 10.0), std::max(30.0, 0.15 * dh));
@@ -236,6 +243,7 @@ LandingCommand LandingAutopilot::step(const LandingInput& in, const TerrainProbe
             {
                 m_phase = LandingPhase::Descent;
                 m_status = "descent";
+                m_hoverLeftS = HoverSeconds;
             }
         }
         if (m_phase == LandingPhase::Descent)
@@ -249,6 +257,16 @@ LandingCommand LandingAutopilot::step(const LandingInput& in, const TerrainProbe
             // the last 50 m only straight down over the spot: hover while still off it
             if (h < 50.0 && dh > 3.0)
                 down = 0.0;
+            // arrived over the spot: a hover first, then straight down (author 2026-11-07: "в самом
+            // финале - зависание над площадкой и вертикальная посадка")
+            if (m_hoverLeftS > 0.0)
+            {
+                m_hoverLeftS -= in.dt;
+                down = 0.0;
+                m_status = "hover";
+            }
+            else if (m_status == "hover")
+                m_status = "descent";
             wanted = hold - up * down;
         }
     }

@@ -74,8 +74,7 @@ struct PlannedRoute
 
 PlannedRoute planRoute(const PlanRequest& request, const std::vector<ZoneGeometry>& zones, double hubRadarM);
 
-// Wire form for the server (ClientShipCommand::RouteLeg detail): legs separated by '|',
-// "hub:<id>[:stop][:<action>]" | "orbit:<body>:<alt m>[:stop]" | "pt:<x>,<y>,<z>".
-// the wire form of the planned legs (RouteWire.h)
+// the text form of the planned legs (RouteWire.h; "hub:<id>[:stop][:<action>]" | "orbit:<body>:<alt m>[:stop]"
+// | "pt:<x>,<y>,<z>", separated by '|') - logs and the offline check
 inline std::string encodeRoute(const PlannedRoute& route) { return encodeRouteLegs(route.legs); }
 } // namespace game::navigation::route

@@ -1468,9 +1468,6 @@ m_hubVelocityMetersPerSecond[hubId] =
     // world speeds).
     if (!trajectoryDebugMode)
     {
-        // Orbital Transfer frames move first (carrier on the orbital clock), then every ship's
-        // world pose is re-materialised from its travel frame.
-        updateOrbitalTransfers();
         // J flies against the bodies of THIS epoch: the gravity context below was
         // still last tick's, so a ship resting on the Moon was placed one tick
         // behind it (0.01 s x 29 km/s heliocentric ~ 300 m) and drawn under the
@@ -2001,14 +1998,6 @@ m_hubVelocityMetersPerSecond[hubId] =
             const float motionControlDt = static_cast<float>(
                 decisionIt->second.executionDeltaSeconds
             );
-
-            // Orbital Transfer is an authoritative navigation mode: while it carries the
-            // frame, no pilot / autopilot translation is executed inside it.
-            if (m_orbitalTransfers.count(id))
-            {
-                shipPtr->propagateMotionOrientation(fdt);
-                continue;
-            }
 
             // GameSimulation owns cadence/reference-frame orchestration only.
             // ShipControlState semantics and actuator/backend selection are

@@ -32,6 +32,8 @@ struct RouteLegResolver
     std::function<bool(const std::string& hubId, glm::dvec3& positionM, glm::dvec3& velocityMps)> hub;
     // another ship's world position / velocity now
     std::function<bool(std::uint64_t entityId, glm::dvec3& positionM, glm::dvec3& velocityMps)> ship;
+    // the hub whose J keep-out holds this point (a rendezvous target parked at a hub)
+    std::function<bool(const glm::dvec3& pointM, std::string& hubId, glm::dvec3& hubPositionM, glm::dvec3& hubVelocityMps)> hubAround;
 };
 
 class RouteLegPilot
@@ -47,6 +49,8 @@ public:
     bool arrived() const { return m_arrived; }   // matched to a stop: the stabilization next
     bool passed() const { return m_passed; }     // a guide point passed: the next leg at once
     double seconds() const { return m_seconds; }
+    // how long the full drive has ramped (1 g doubling every 2 s)
+    double driveSeconds() const { return m_driveStartSeconds == -1.0 ? 0.0 : m_seconds - m_driveStartSeconds; }
     const route::RoutePoint& leg() const { return m_leg; }
 
     BodyAutopilotOutput step(const BodyAutopilotEnvironment& env, const RouteLegResolver& resolve, const BodyAutopilotShip& ship,
@@ -71,6 +75,7 @@ private:
     std::string m_lastPrimaryId;
     glm::dvec3 m_lastPrimaryCentre {0.0};
     std::uint32_t m_shipId = 0;
+    bool m_toldTargetInHub = false;
 };
 
 } // namespace game::navigation::globalflight

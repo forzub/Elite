@@ -866,14 +866,6 @@ void GameServer::update(double dt)
                     m_simulation.requestDockDeparture(id);
                     break;
 
-                case ClientShipCommand::RequestOrbitalTransfer:
-                    m_simulation.requestOrbitalTransfer(id, shipCmd.target);
-                    break;
-
-                case ClientShipCommand::CancelOrbitalTransfer:
-                    m_simulation.cancelOrbitalTransfer(id);
-                    break;
-
                 case ClientShipCommand::ToggleStabilization:
                     m_simulation.toggleStabilization(id);
                     break;
@@ -899,20 +891,9 @@ void GameServer::update(double dt)
                         m_simulation.spawnCombatTarget(id, shipCmd.amount > 0.0 ? shipCmd.amount : 400.0);
                     break;
 
-                case ClientShipCommand::RouteLeg:
-                {
-                    // the client flies routes (NAVIGATION_V2 §1): only a stop's service stay is the server's
-                    if (shipCmd.index == 5)
-                        m_simulation.startHubService(id, shipCmd.target, shipCmd.detail);
-                    else
-                        std::cerr << "[Server] ship " << id.value << ": route command " << int(shipCmd.index)
-                                  << " ignored - the client flies routes" << std::endl;
-                    break;
-                }
-
-                case ClientShipCommand::FreeFlightAutopilot:
-                    // the client flies the body autopilot (NAVIGATION_V2 §1)
-                    std::cerr << "[Server] ship " << id.value << ": autopilot command ignored - the client flies it" << std::endl;
+                case ClientShipCommand::RouteService:
+                    // the client flies routes (NAVIGATION_V2 §1); a stop's service stay is the server's
+                    m_simulation.startHubService(id, shipCmd.target, shipCmd.detail);
                     break;
 
                 case ClientShipCommand::RefitPreview:

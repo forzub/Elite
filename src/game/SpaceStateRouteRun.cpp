@@ -8,6 +8,7 @@
 #include "src/game/SpaceStateInternal.h"
 
 #include "src/game/navigation/FreeFlightCodes.h"
+#include "src/game/navigation/rules/JDrive.h"
 
 namespace
 {
@@ -152,8 +153,7 @@ void SpaceState::updateClientRoute()
             r.state = S::Service;
             game::network::ClientMessage msg;
             ClientShipCommand command;
-            command.type = ClientShipCommand::RouteLeg;
-            command.index = 5;   // a service stay at the hub (the server fills the J charge)
+            command.type = ClientShipCommand::RouteService;   // the server fills the J charge
             command.target = done.hubId;
             command.detail = done.action;
             msg.payload = command;
@@ -193,6 +193,11 @@ void SpaceState::updateClientRoute()
                       << std::endl;
             release();
             requestFreeFlightAutopilot(leg.landingSpec.rfind("site:", 0) == 0 ? std::string() : leg.bodyId, leg.landingSpec);
+            // past a guide point at full J speed: the landing leg's drive keeps the ramp (no restart from 1 g)
+            m_bodyAutopilotCarryRampS = motion.freeFlight && r.index > 0 && r.legs[r.index - 1].kind == route::RoutePoint::Kind::Point &&
+                                                !r.legs[r.index - 1].stop
+                                            ? r.lastDriveSeconds
+                                            : 0.0;
             r.state = S::Landing;
             r.landingSeen = false;
             return;
@@ -206,6 +211,7 @@ void SpaceState::updateClientRoute()
     case S::Leg:
     {
         const auto out = r.pilot.step(env, clientRouteResolver(), sample, dt);
+        r.lastDriveSeconds = r.pilot.driveSeconds();
         if (out.displayPhase != 0 || !out.displayTargetId.empty())
             m_bodyAutopilotDisplay = out;
         submit(out.control);
@@ -306,6 +312,21 @@ game::navigation::globalflight::RouteLegResolver SpaceState::clientRouteResolver
                                 : world::coordinates::fullMeters(it->second.transform.worldPosition);
         v = m.travelFrame.valid ? m.travelFrame.localToWorldVelocity(m.localPositionMeters, m.localVelocityMps) : m.worldVelocityMps;
         return true;
+    };
+    resolve.hubAround = [client](const glm::dvec3& point, std::string& hubId, glm::dvec3& p, glm::dvec3& v) {
+        namespace jd = game::navigation::jdrive;
+        for (const auto& [id, hub] : client->world().hubs())
+        {
+            const glm::dvec3 h = world::coordinates::fullMeters(hub.worldPosition);
+            if (glm::length(h - point) < jd::KeepOutObjectM)
+            {
+                hubId = id;
+                p = h;
+                v = hub.worldVelocityMps;
+                return true;
+            }
+        }
+        return false;
     };
     return resolve;
 }

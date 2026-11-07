@@ -129,11 +129,12 @@ struct DynamicMotionState
     std::int16_t freeFlightGroundMaterial = -1;
     float freeFlightGroundSlopeDeg = 0.0f;
     std::uint8_t freeFlightGroundFeature = 0;
-    // J autopilot (fly to a body and land): 0 off, 1 departure (clearing the body left),
-    // 2 transfer (exponential thrust ramp / braking), 3 approach, 4 descent, 5 down
     // 1: no planet's sphere of influence holds the ship - the reference is the
     // star, planetary gravity negligible: global speed, no altitude (HUD dashes)
     std::uint8_t freeFlightReferenceIsRoot = 0;
+    // CLIENT-side display only (not on the wire): the client's body autopilot / route
+    // (SpaceStateBodyAutopilot.cpp overlay). Autopilot phase: 0 off, 1 departure, 2 transfer,
+    // 3 approach, 4 descent, 5 down
     std::uint8_t freeFlightAutopilotPhase = 0;
     std::string freeFlightAutopilotTargetId;
     double freeFlightAutopilotRangeM = 0.0;        // to the target surface
@@ -159,8 +160,8 @@ struct DynamicMotionState
     double jChargeCapacityT = 0.0;
     double shipMassT = 0.0;          // the ship's mass and its jump core's rating (the planner's charge rule)
     double jumpCoreRatingT = 0.0;
-    // the server's route: 0 none, 1 flying, 2 paused (manual flight until RESUME), 3 a service stay,
-    // 4 landing (the landing autopilot); legIndex / legCount of it
+    // the client's route (display only, not on the wire): 0 none, 1 flying, 2 paused (manual flight
+    // until RESUME), 3 a service stay, 4 landing (the landing autopilot); legIndex / legCount of it
     std::uint8_t routeState = 0;
     std::uint8_t routeLegIndex = 0;
     std::uint8_t routeLegCount = 0;

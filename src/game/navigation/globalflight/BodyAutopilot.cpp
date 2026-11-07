@@ -281,6 +281,7 @@ void BodyAutopilot::stepTransfer(const BodyAutopilotEnvironment& env, const Body
                       << " km - DE-ORBIT in NORMAL flight (main engines)" << std::endl;
             m_stage = AutopilotStage::Deorbit;
             m_descentNose = glm::dvec3(0.0);
+            m_glideInit = false;
             m_lawBefore = ship.currentLaw;
             m_seconds -= dt;   // the descent counts this tick
             stepDescent(env, ship, *target, targetVelocity, dt, out);
@@ -343,7 +344,9 @@ void BodyAutopilot::stepTransfer(const BodyAutopilotEnvironment& env, const Body
             if (m_landing.site().valid && glm::length(m_orbitNormal) < 0.5 && rLen < rOrb * 4.0)
                 m_orbitNormal = n;   // the plane is fixed once the site is known and the body near
             const double gSurface = target->gravitationalParameterM3s2 / (target->radiusMeters * target->radiusMeters);
-            const double brake = std::min(10.0, 0.5 * std::max(0.3, mainAccel - gSurface));
+            // an along-path lander (a fore braking bank) glides (stepGlide): the de-orbit starts ~340 km
+            // out (the offline model: the nose +8 deg sink needs ~330-400 km)
+            const double brake = std::min(alongPathLander(ship.controlParams) ? 4.3 : 10.0, 0.5 * std::max(0.3, mainAccel - gSurface));
             const double theta = std::min(1.5, orbitSpeed * orbitSpeed / (2.0 * brake) / target->radiusMeters + 0.03);
             const glm::dvec3 insertion = glm::normalize(aimDirection * std::cos(theta) - glm::cross(n, aimDirection) * std::sin(theta));
             orbitTangent = glm::normalize(glm::cross(n, insertion));
@@ -562,6 +565,22 @@ void BodyAutopilot::stepDescent(const BodyAutopilotEnvironment& env, const BodyA
     toSite = glm::length(toSite) > 1.0e-12 ? glm::normalize(toSite) : (vh > 1.0 ? vhVec / vh : ship.forward);
     const double mainAccel = std::max(1.0, landing::surfaceMainEngineAccelMps2(params));
     const double g = body.gravitationalParameterM3s2 / (rLen * rLen);
+    if (alongPathLander(params))
+    {
+        // the aircraft-like de-orbit (author 2026-11-07) - see stepGlide
+        GlideSample gs;
+        gs.arcM = arc;
+        gs.heightM = h;
+        gs.horizontalMps = glm::dot(vhVec, toSite);
+        gs.verticalMps = vz;
+        gs.radiusM = rLen - h;
+        gs.toSite = toSite;
+        gs.up = up;
+        gs.velocityMps = v;
+        gs.terrainKnown = terrainKnown;
+        stepGlide(env, ship, body, bodyVelocityMps, gs, dt, out);
+        return;
+    }
 
     // the wanted velocity over the ground: toward the site, braking at 35 % of the main engine (the
     // rest holds the weight and the corrections), an approach tail arc / 15 s; down along a glide
@@ -626,7 +645,8 @@ void BodyAutopilot::stepDescent(const BodyAutopilotEnvironment& env, const BodyA
     out.displayTargetId = body.id;
     out.displayRangeM = arc;
     out.displayRelSpeedMps = glm::length(v);
-    out.displayAccelMps2 = static_cast<float>(glm::length(ship.mainEngineAccelerationMps2));
+    out.displayAccelMps2 = static_cast<float>(glm::length(v) > 1.0 ? glm::dot(ship.mainEngineAccelerationMps2, glm::normalize(v))
+                                                                    : glm::length(ship.mainEngineAccelerationMps2));
     if (m_seconds - m_pilotLastLogSeconds >= 2.0)
     {
         m_pilotLastLogSeconds = m_seconds;
@@ -644,6 +664,198 @@ void BodyAutopilot::stepDescent(const BodyAutopilotEnvironment& env, const BodyA
     {
         std::cerr << "[Autopilot] ship " << shipId << ": HAND-OVER to the ground stabilization at height " << h << " m, " << arc
                   << " m from the site, " << glm::length(v) << " m/s over the ground after " << m_seconds << " s" << std::endl;
+        m_stage = AutopilotStage::GroundStabilized;
+        BodyAutopilotShip inFrame = ship;
+        inFrame.referenceVelocityMps = bodyVelocityMps;
+        stepSurface(env, inFrame, body, dt, out);
+        out.control.globalFrameRequest = static_cast<std::uint8_t>(FrameRequest::GroundStabilization);
+    }
+}
+
+// ---- the aircraft-like de-orbit (author 2026-11-07: "посадку как у самолёта: снижение по дуге, в
+// самом финале - зависание над площадкой и вертикальная посадка"). A ship with a fore (braking)
+// main bank. In vacuum a hull with an axial engine has no lift: the vertical comes only from the
+// thrust's tilt. An offline study (2D, the Moon; the live q3 run reproduced within a few %) showed
+// that a pitch within ~ +-25 deg cannot both bring the ship down ~80 km and stop the sink before the
+// ground; so the glide ends HIGH and inside the ground stabilization's envelope, whose vectoring
+// thrust stops the sink with the hull level and flies the level approach, the hover and the vertical
+// touchdown (LandingAutopilot). The glide itself flies two attitudes:
+//   1 - the sink: the nose PitchUp above the horizon toward the site, the fore bank pushing back and
+//       down (an aircraft at a high angle of attack, the surface flowing below);
+//   2 - the braking: the nose PitchDown below the horizon, the fore bank braking and holding the sink.
+// Every second a planner (2D: the body's pull less the orbital lift) re-solves the thrust: in phase 2
+// the one that stops at EndArc from the site; in phase 1 the one that, with the switch made when the
+// nominal braking from there would end at EndArc, ends at EndHeight.
+namespace glideplan
+{
+constexpr double PitchUpRad = 0.13962634015954636;    // 8 deg: the horizon (~18 deg below from 80 km) stays in view (live q4: +15 deg showed only stars)
+constexpr double PitchDownRad = -0.3490658503988659;  // -20 deg
+constexpr double EndSpeedMps = 450.0;                 // inside the ground stabilization's envelope
+constexpr double EndArcM = 15000.0;
+constexpr double EndHeightM = 8000.0;
+constexpr double NominalBrakeMps2 = 10.0;
+
+struct S
+{
+    double arc, h, vh, vz;
+};
+
+inline void advance(S& s, double mu, double r0, double pitch, double thrust, double dt)
+{
+    const double r = r0 + s.h;
+    const double deficit = mu / (r * r) - s.vh * s.vh / r;   // the pull less the orbital lift
+    s.vh += -thrust * std::cos(pitch) * dt;                  // the fore bank: back along the nose
+    s.vz += (-thrust * std::sin(pitch) - deficit) * dt;
+    s.arc -= s.vh * dt;
+    s.h += s.vz * dt;
+}
+
+// a constant attitude and thrust until the speed falls to EndSpeed (or the ground)
+inline S coast(S s, double mu, double r0, double pitch, double thrust, double dt)
+{
+    for (double time = 0.0; time < 1500.0 && std::hypot(s.vh, s.vz) > EndSpeedMps && s.h >= 0.0; time += dt)
+        advance(s, mu, r0, pitch, thrust, dt);
+    return s;
+}
+
+inline bool brakeFitsNow(const S& s, double mu, double r0)
+{
+    return coast(s, mu, r0, PitchDownRad, NominalBrakeMps2, 4.0).arc <= EndArcM;
+}
+
+// phase 2's thrust that stops the ship at EndArc (more thrust = shorter)
+inline double brakeFor(const S& s, double mu, double r0, double maxThrust)
+{
+    double lo = 0.5, hi = std::max(1.0, maxThrust);
+    for (int i = 0; i < 18; ++i)
+    {
+        const double m = 0.5 * (lo + hi);
+        if (coast(s, mu, r0, PitchDownRad, m, 2.0).arc < EndArcM)
+            lo = m;
+        else
+            hi = m;
+    }
+    return 0.5 * (lo + hi);
+}
+
+// the end height when phase 1 flies with `thrust` until the nominal braking fits, then brakes
+inline double endHeight(S s, double mu, double r0, double thrust)
+{
+    for (double time = 0.0; time < 1500.0 && !brakeFitsNow(s, mu, r0); time += 2.0)
+    {
+        advance(s, mu, r0, PitchUpRad, thrust, 2.0);
+        if (s.h < 0.0)
+            return -1.0e9;
+    }
+    return coast(s, mu, r0, PitchDownRad, NominalBrakeMps2, 2.0).h;
+}
+
+// phase 1's thrust: more pushes down (a lower end)
+inline double sinkFor(const S& s, double mu, double r0, double maxThrust)
+{
+    double lo = 0.0, hi = std::min(15.0, maxThrust);
+    for (int i = 0; i < 14; ++i)
+    {
+        const double m = 0.5 * (lo + hi);
+        if (endHeight(s, mu, r0, m) > EndHeightM)
+            lo = m;
+        else
+            hi = m;
+    }
+    return 0.5 * (lo + hi);
+}
+} // namespace glideplan
+
+void BodyAutopilot::stepGlide(const BodyAutopilotEnvironment& env, const BodyAutopilotShip& ship, const GravityBody& body,
+                              const glm::dvec3& bodyVelocityMps, const GlideSample& gs, double dt, BodyAutopilotOutput& out)
+{
+    namespace gp = glideplan;
+    const std::uint32_t shipId = ship.shipId;
+    const ShipParams& params = ship.controlParams;
+    const double mu = body.gravitationalParameterM3s2;
+    const double reverseMax = std::max(1.0e-3, static_cast<double>(params.reverseMainEngineAccelerationMps2));
+    const gp::S now {gs.arcM, gs.heightM, gs.horizontalMps, gs.verticalMps};
+    if (!m_glideInit)
+    {
+        m_glideInit = true;
+        m_glidePhase = 1;
+        m_glideReplanSeconds = -1.0e30;
+        std::cerr << "[Autopilot] ship " << shipId << ": GLIDE (like an aircraft) from " << gs.arcM / 1000.0 << " km to the site, "
+                  << gs.heightM / 1000.0 << " km high, " << gs.horizontalMps << " m/s - the nose " << glm::degrees(gp::PitchUpRad)
+                  << " deg up while sinking, " << glm::degrees(gp::PitchDownRad) << " deg while braking; the ground stabilization from "
+                  << gp::EndSpeedMps << " m/s" << std::endl;
+    }
+    if (m_seconds - m_glideReplanSeconds >= 1.0)
+    {
+        m_glideReplanSeconds = m_seconds;
+        if (m_glidePhase == 1 && gp::brakeFitsNow(now, mu, gs.radiusM))
+        {
+            m_glidePhase = 2;
+            std::cerr << "[Autopilot] ship " << shipId << ": GLIDE braking (nose down) at " << gs.arcM / 1000.0 << " km, "
+                      << gs.heightM / 1000.0 << " km high, " << gs.horizontalMps << " / " << gs.verticalMps << " m/s" << std::endl;
+        }
+        m_glideThrustMps2 = m_glidePhase == 1 ? gp::sinkFor(now, mu, gs.radiusM, reverseMax) : gp::brakeFor(now, mu, gs.radiusM, reverseMax);
+    }
+    const double pitch = m_glidePhase == 1 ? gp::PitchUpRad : gp::PitchDownRad;
+    const glm::dvec3 nose = glm::normalize(gs.toSite * std::cos(pitch) + gs.up * std::sin(pitch));
+
+    landing::SurfacePilotRequest rq;
+    rq.forward = ship.forward;
+    rq.right = ship.right;
+    rq.up = ship.up;
+    rq.upLocal = gs.up;
+    rq.pitchRateRadPerSec = ship.pitchRate;
+    rq.yawRateRadPerSec = ship.yawRate;
+    rq.rollRateRadPerSec = ship.rollRate;
+    rq.dt = dt;
+    landing::SurfacePilotResult pilot;
+    pilot.noseWanted = nose;
+    landing::surfaceAttitudeInputs(rq, params, nose, gs.up, pilot.control);   // belly toward the ground
+    // the fore bank fires once the hull holds the attitude (full within 4 deg, none beyond 20 deg)
+    const double align = glm::dot(glm::normalize(ship.forward), nose);
+    const double lo = std::cos(glm::radians(20.0)), hi = std::cos(glm::radians(4.0));
+    const double t = std::clamp((align - lo) / (hi - lo), 0.0, 1.0);
+    const double command = -std::clamp(m_glideThrustMps2 / reverseMax, 0.0, 1.0) * t * t * (3.0 - 2.0 * t);
+    pilot.control.targetSpeedRate = static_cast<float>(command);
+    pilot.mainCommand = command;
+    if (ship.currentLaw != ship.nativeLaw)
+    {
+        pilot.control.localControlLawCommandValid = true;
+        pilot.control.requestedLocalControlLaw = ship.nativeLaw;
+    }
+    if (!m_pilotActive)
+        std::cerr << "[Autopilot] ship " << shipId << ": de-orbit pilot ON (normal flight, the aircraft-like glide on the fore bank, law "
+                  << (ship.nativeLaw == LocalFlightControlLaw::Assisted ? "Assisted" : "Newtonian") << ")" << std::endl;
+    m_pilotActive = true;
+    out.control = pilot.control;
+    out.control.globalFlightCommandValid = true;
+    out.control.globalFrameRequest = static_cast<std::uint8_t>(FrameRequest::NormalFlight);
+    out.pilotActive = true;
+    out.displayPhase = code(AutopilotDisplayPhase::Deorbit);
+    out.displayTargetId = body.id;
+    out.displayRangeM = gs.arcM;
+    out.displayRelSpeedMps = glm::length(gs.velocityMps);
+    // signed along the velocity (the HUD: "-" braking): the fore bank brakes - not "разгон"
+    out.displayAccelMps2 = static_cast<float>(glm::length(gs.velocityMps) > 1.0 ? glm::dot(ship.mainEngineAccelerationMps2, glm::normalize(gs.velocityMps))
+                                                                                 : glm::length(ship.mainEngineAccelerationMps2));
+    if (m_seconds - m_pilotLastLogSeconds >= 2.0)
+    {
+        m_pilotLastLogSeconds = m_seconds;
+        const double hullPitch = glm::degrees(std::asin(std::clamp(glm::dot(glm::normalize(ship.forward), gs.up), -1.0, 1.0)));
+        const double pathPitch = glm::degrees(std::atan2(gs.verticalMps, std::max(1.0e-3, gs.horizontalMps)));
+        std::cerr << "[Autopilot] ship " << shipId << " GLIDE " << m_glidePhase << " t+" << m_seconds << " s: height " << gs.heightM
+                  << " m (ground " << (gs.terrainKnown ? "sampled" : "site") << "), to the site " << gs.arcM / 1000.0 << " km, horizontal "
+                  << gs.horizontalMps << " m/s, vertical " << gs.verticalMps << " m/s, path " << pathPitch << " deg, hull pitch "
+                  << hullPitch << " deg (wanted " << glm::degrees(pitch) << "), fore bank " << m_glideThrustMps2 << " m/s2, cmd "
+                  << command * 100.0 << " % -> " << glm::length(ship.mainEngineAccelerationMps2) << " m/s2" << std::endl;
+    }
+    // hand-over: inside the ground stabilization's envelope -> its vectoring stops the sink with the
+    // hull level and flies the level approach, the hover and the vertical touchdown
+    if (glm::length(gs.velocityMps) <= gp::EndSpeedMps || (gs.heightM < 2000.0 && glm::length(gs.velocityMps) < 490.0))
+    {
+        std::cerr << "[Autopilot] ship " << shipId << ": HAND-OVER to the ground stabilization at height " << gs.heightM << " m, "
+                  << gs.arcM << " m from the site, " << glm::length(gs.velocityMps) << " m/s over the ground (vertical " << gs.verticalMps
+                  << ") after " << m_seconds << " s" << std::endl;
         m_stage = AutopilotStage::GroundStabilized;
         BodyAutopilotShip inFrame = ship;
         inFrame.referenceVelocityMps = bodyVelocityMps;

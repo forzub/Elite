@@ -75,7 +75,18 @@ void GameSimulation::updateZoneViolations(double dt)
         const std::size_t k = game::navigation::rules::dominantBody(
             m_gravityBodies, p, [](const B& b) -> const std::string& { return b.id; }, [](const B&) { return std::string(); },
             [](const B& b) { return b.gravitationalParameterM3s2; }, [](const B& b) { return b.centerMeters; });
-        const std::string body = k < m_gravityBodies.size() ? m_gravityBodies[k].id : std::string();
+        std::string body = k < m_gravityBodies.size() ? m_gravityBodies[k].id : std::string();
+        // the star dominates the space between a planet and its moon (its pull exceeds the planet's
+        // there): it is not a step of the body chain, or every Earth -> Moon flight "came from the Sun"
+        // and a skipped gate was never fined (live 2026-11-07)
+        {
+            std::size_t root = m_gravityBodies.size();
+            for (std::size_t i = 0; i < m_gravityBodies.size(); ++i)
+                if (root == m_gravityBodies.size() || m_gravityBodies[i].gravitationalParameterM3s2 > m_gravityBodies[root].gravitationalParameterM3s2)
+                    root = i;
+            if (root < m_gravityBodies.size() && body == m_gravityBodies[root].id && !m_zoneWatch[id].lastBody.empty())
+                body = m_zoneWatch[id].lastBody;
+        }
         auto& watch = m_zoneWatch[id];
         const auto fine = [&](const route::RouteZone& z, int kind) {
             motion.zoneFinesTotalCr += z.fineCr;

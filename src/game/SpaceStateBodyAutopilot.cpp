@@ -7,6 +7,8 @@
 // ordinary controls, the frame / free-rotation requests) - the server only executes it.
 #include "src/game/SpaceStateInternal.h"
 
+#include <utility>
+
 #include "src/game/catalog/ships/ShipDesignCatalog.h"
 #include "src/game/navigation/FreeFlightCodes.h"
 #include "src/game/navigation/globalflight/BodyTerrainProbe.h"
@@ -286,8 +288,11 @@ void SpaceState::updateClientBodyAutopilot()
         if (!m_bodyAutopilot.engage(env, sample, m_bodyAutopilotEngageBody, departure, m_bodyAutopilotEngageSpec, refusal))
         {
             m_bodyAutopilotDisplay = {};
+            m_bodyAutopilotCarryRampS = 0.0;
             return;
         }
+        if (m_bodyAutopilotCarryRampS > 0.0)
+            m_bodyAutopilot.carryDriveRamp(std::exchange(m_bodyAutopilotCarryRampS, 0.0));
         m_bodyAutopilotDisplay = {};
         m_bodyAutopilotDisplay.displayPhase = code(AutopilotDisplayPhase::Transfer);
         m_bodyAutopilotDisplay.displayTargetId = m_bodyAutopilot.targetId();

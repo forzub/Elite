@@ -3,7 +3,6 @@
 #include <map>
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/economy/EconomyModel.h"
-#include "src/game/navigation/orbital/OrbitalTransferPlanner.h"
 #include "src/game/presentation/SystemMapInfoBuilder.h"
 #include "src/game/SpaceStateInternal.h"
 
@@ -2083,61 +2082,24 @@ void SpaceState::devSelectTrafficShip(const std::string& callsign)
 }
 
 
-// Orbital Transfer from the map: the client previews the tunnel with the same planner the
-// server uses (Earth's state is recovered from the source hub's replicated ephemeris), then
-// asks the server, which plans and flies the authoritative transfer.
+// Hub -> hub from the map ("transfer to the selected hub"): a one-stop route leg flown by the
+// client (NAVIGATION_V2 §1) - the J drive to the hub's keep-out edge with its velocity, then the
+// hub capture. Replaces the server-flown Orbital Transfer carrier (2026-11-07).
 void SpaceState::requestOrbitalTransfer(const std::string& targetHubId)
 {
-    namespace orb = game::navigation::orbital;
     if (!m_client)
         return;
     const auto& world = m_client->world();
     const auto shipIt = world.ships().find(m_playerId.value);
     const auto targetIt = world.hubs().find(targetHubId);
-    if (shipIt == world.ships().end() || targetIt == world.hubs().end())
+    if (shipIt == world.ships().end() || targetIt == world.hubs().end() || shipIt->second.transform.motion.hubId == targetHubId)
         return;
-    const auto& motion = shipIt->second.transform.motion;
-    const auto sourceIt = world.hubs().find(motion.hubId);
     m_systemMapRenderer.clearTransferTunnel();
-    if (sourceIt != world.hubs().end() && sourceIt->second.parentBodyId == targetIt->second.parentBodyId && sourceIt->first != targetHubId)
-    {
-        const double t = m_client->universeTimeSeconds();
-        const auto& src = sourceIt->second;
-        const glm::dvec3 bodyPos = world::coordinates::fullMeters(src.worldPosition) - orb::targetPositionAt(src.motion, t);
-        const glm::dvec3 bodyVel = src.worldVelocityMps - orb::targetVelocityAt(src.motion, t);
-        const glm::dvec3 shipPos = world::coordinates::fullMeters(shipIt->second.transform.worldPosition);
-        orb::CentralBody body;
-        body.radiusMeters = src.motion.parentRadiusMeters > 0.0 ? src.motion.parentRadiusMeters : body.radiusMeters;
-        orb::TransferLimits limits;
-        const orb::OrbitalTransferPlan plan =
-            orb::planOrbitalTransfer(body, shipPos - bodyPos, motion.worldVelocityMps - bodyVel, t, targetIt->second.motion, limits);
-        if (plan.feasible)
-        {
-            m_systemMapRenderer.setTransferTunnel(targetIt->second.parentBodyId, plan.tunnelMeters);
-            std::cerr << "[OrbitalTransfer] preview -> " << targetIt->second.name << ": ETA " << plan.durationSeconds() << " s, path "
-                      << plan.pathLengthMeters / 1000.0 << " km, peak " << plan.peakSpeedMps / 1000.0 << " km/s\n";
-        }
-        else
-        {
-            std::cerr << "[OrbitalTransfer] preview -> " << targetIt->second.name << ": " << plan.reason << "\n";
-        }
-    }
-    else if (sourceIt != world.hubs().end() && sourceIt->first != targetHubId)
-    {
-        // other parent (Earth -> Ceres): the same compressed-time plan as the server, star-relative
-        const double t = m_client->universeTimeSeconds();
-        const auto& dst = targetIt->second;
-        const glm::dvec3 starPos = world::coordinates::fullMeters(dst.worldPosition) - orb::targetPositionAt(dst.motion, t);
-        const glm::dvec3 starVel = dst.worldVelocityMps - orb::targetVelocityAt(dst.motion, t);
-        const glm::dvec3 shipPos = world::coordinates::fullMeters(shipIt->second.transform.worldPosition);
-        const orb::OrbitalTransferPlan plan = orb::planCompressedTransit(shipPos - starPos, motion.worldVelocityMps - starVel, t, dst.motion, orb::TransferLimits {}, 90.0);
-        m_systemMapRenderer.setTransferTunnel(dst.parentBodyId, plan.tunnelMeters);
-        std::cerr << "[OrbitalTransfer] preview -> " << dst.name << ": compressed-time tunnel " << plan.pathLengthMeters / 1.495978707e11 << " AU\n";
-    }
-    game::network::ClientMessage msg;
-    ClientShipCommand command;
-    command.type = ClientShipCommand::RequestOrbitalTransfer;
-    command.target = targetHubId;
-    msg.payload = command;
-    m_client->sendMessage(msg);
+    game::navigation::route::RoutePoint p;
+    p.kind = game::navigation::route::RoutePoint::Kind::Hub;
+    p.hubId = targetHubId;
+    p.stop = true;
+    p.worldM = world::coordinates::fullMeters(targetIt->second.worldPosition);
+    std::cerr << "[Route] hub transfer -> " << targetIt->second.name << " (client route leg)" << std::endl;
+    startClientRoute({p});
 }

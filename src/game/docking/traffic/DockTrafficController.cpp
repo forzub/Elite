@@ -447,6 +447,41 @@ bool DockTrafficController::entryFreeNow(const DockingTrafficRequest& request) c
     return false;
 }
 
+std::size_t DockTrafficController::knownArrivals() const
+{
+    std::size_t arrivals = m_impl->arrivalQueue.size();
+    for (const auto& [id, record] : m_impl->ships)
+        if (record.phase == DockTrafficPhase::HoldAssigned || record.phase == DockTrafficPhase::AtHold ||
+            record.phase == DockTrafficPhase::EntryCleared)
+            ++arrivals;
+    return arrivals;
+}
+
+std::size_t DockTrafficController::freePadCount() const
+{
+    std::size_t free = 0;
+    for (const auto& pad : m_impl->facility.pads)
+    {
+        const auto owner = m_impl->padOwner.find(pad.id);
+        if (owner == m_impl->padOwner.end() || owner->second == 0)
+            ++free;
+    }
+    return free;
+}
+
+double DockTrafficController::predictedNewArrivalWaitSeconds() const
+{
+    const auto& impl = *m_impl;
+    std::size_t arrivals = impl.arrivalQueue.size();
+    for (const auto& [id, record] : impl.ships)
+        if (record.phase == DockTrafficPhase::HoldAssigned || record.phase == DockTrafficPhase::AtHold ||
+            record.phase == DockTrafficPhase::EntryCleared)
+            ++arrivals;
+    const std::size_t busy = impl.resourcesFree(impl.portalResources()) ? 0 : 1;
+    const std::size_t ahead = busy + arrivals + std::min(impl.departureQueue.size(), arrivals + 1);
+    return TypicalMovementSeconds * static_cast<double>(ahead);
+}
+
 bool DockTrafficController::reportAtHold(std::uint64_t shipId, double nowSeconds)
 {
     auto it = m_impl->ships.find(shipId);
@@ -814,7 +849,7 @@ DockTrafficShipStatus DockTrafficController::status(std::uint64_t shipId) const
 
     // Wait estimate: lane movements ahead (arrivals and departures alternate
     // when both wait) x a typical movement through the entrance.
-    constexpr double MovementSeconds = 120.0;
+    constexpr double MovementSeconds = TypicalMovementSeconds;
     std::size_t busy = m_impl->resourcesFree(m_impl->portalResources()) ? 0 : 1;
     std::size_t atHoldAhead = 0, atHoldAll = 0, assignedAhead = 0;
     for (const auto& [id, other] : m_impl->ships)

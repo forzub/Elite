@@ -138,6 +138,8 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
             }
         }
         config.cobrettCount = envInt("ELITE_DOCK_TRAFFIC_COBRETTS", config.cobrettCount);
+        // ELITE_DOCK_TRAFFIC_EMERGENCY=1: evacuation / combat - no flow control (queues may grow)
+        config.emergency = envInt("ELITE_DOCK_TRAFFIC_EMERGENCY", 0) != 0;
         config.shuttleIntervalSeconds = envDouble("ELITE_DOCK_TRAFFIC_INTERVAL", config.shuttleIntervalSeconds);
         // Earth = hub radial down. The FIXED frame is hub visual basis x
         // Rx Ry (yaw 27 deg about the hub radial Y), so Earth is exactly -Y.

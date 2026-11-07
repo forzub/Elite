@@ -132,6 +132,12 @@ struct TrafficConfig
     // Start populated: this many shuttles already docked (mid-service).
     int initialDockedShuttles = 2;
     int initialDockedCobretts = 1;
+    // Flow control (author 2026-11-07: "обычное ожидание до 5 мин, но в случае эвакуации или
+    // боевых действий нагрузка может и расти"): scheduled traffic waits at its far point /
+    // before entering the zone while a new arrival's predicted wait exceeds this limit
+    // minus its own trip in. Emergency (evacuation, combat): no limit. Pilots are never held.
+    double normalWaitLimitSeconds = 300.0;
+    bool emergency = false;
 };
 
 struct TrafficActorView
@@ -201,6 +207,7 @@ public:
     struct Stats
     {
         std::size_t arrivals = 0, departures = 0, shuttleFlights = 0, cobrettLoops = 0;
+        std::size_t flowHolds = 0; // flow control: scheduled traffic held back (normal wait limit)
         std::size_t maxArrivalQueue = 0, maxHoldsOccupied = 0, maxPadsOccupied = 0;
         double maxQueueWaitSeconds = 0.0;
     };

@@ -4021,3 +4021,14 @@ Results of the pass (2026-11-07, DEV live runs dk4..dk11, Assisted Cobra at Вы
   the far direct route through cylinder B is long (dk11: 48.65 km plan at up to 217 m/s from behind the dock -
   pre-existing planner behaviour); roll indicator for manual entry; the Track terminal / shuttles in the cube
   block (model ready: DockKind, purposes); positioning tiers (author answer pending).
+Author 2026-11-07: "трафик нет смысла делать затянутым - обычное ожидание до 5 мин, но в случае эвакуации или
+боевых действий нагрузка может и расти"; "маяки должны быть не только возле планет, но и по маршрутам; маршрут
+меняется из-за движения планет"; dock markup - "главное, чтобы был механизм считывания этой разметки" (queued).
+- Flow control (DockServiceTraffic::flowHeld, TrafficConfig normalWaitLimitSeconds 300 / emergency): scheduled
+  traffic (a Cobrett at its far point, an inbound shuttle before it enters the zone) is held while a new arrival
+  would wait longer than 300 s less its trip in, or while no pad would be free for it (known arrivals + inbound
+  >= free pads); pilots are never held; ELITE_DOCK_TRAFFIC_EMERGENCY=1 / --emergency lifts it. Dispatcher API:
+  predictedNewArrivalWaitSeconds, knownArrivals, freePadCount, TypicalMovementSeconds 120.
+  Offline 4 profiles: max hold wait 234 / 216 / 276 / 230 s, max departure wait 240 / 186 / 199 / 261 s,
+  12.2..12.5 arrivals/h, flow holds 134..348 per 6 h, 0 violations; emergency 9/600: 1260 / 506 s (unchanged).
+  Gates 209: 203 pass, 6 known red, 0 new; API tests PASS. Live: not run for this slice (game build OK).

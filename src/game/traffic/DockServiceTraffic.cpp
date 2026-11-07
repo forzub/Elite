@@ -451,6 +451,7 @@ struct DockServiceTraffic::Impl
         int loops = 0;
         bool external = false; // pilot ship under station control
         std::uint64_t flightSerial = 0; // persistent flight identity (not parsed back from the callsign)
+        bool flowHeldLogged = false; // flow control hold already reported
     };
 
     TrafficConfig config;
@@ -1069,8 +1070,20 @@ struct DockServiceTraffic::Impl
                 }
                 break;
             case ActorPhase::FarWait:
-                if (segmentsDone)
+                if (segmentsDone && flowHeld(c.cruiseSpeed > 0.0 ? config.cobrettFarDistance / c.cruiseSpeed : 0.0))
                 {
+                    // flow control: wait out here, look again shortly
+                    a.current.duration = std::max(0.0, now - a.current.t0) + 30.0;
+                    if (!a.flowHeldLogged)
+                    {
+                        a.flowHeldLogged = true;
+                        ++stats.flowHolds;
+                        say(a.id, "flow control: the dock queue is long, waiting at the far point");
+                    }
+                }
+                else if (segmentsDone)
+                {
+                    a.flowHeldLogged = false;
                     if (a.gateSlot < 0)
                         a.gateSlot = takeGate(a.id, false);
                     const glm::dvec3 gate = gates[static_cast<std::size_t>(a.gateSlot)].position;
@@ -1084,6 +1097,26 @@ struct DockServiceTraffic::Impl
         }
     }
 
+    // Flow control: hold scheduled traffic while a new arrival would wait
+    // longer than the normal limit (less the trip in, which is waiting too).
+    bool flowHeld(double tripInSeconds) const
+    {
+        if (config.emergency)
+            return false;
+        // inbound traffic that has not called the dispatcher yet counts as ahead too
+        std::size_t inbound = 0;
+        for (const auto& [id, a] : actors)
+            if (a.phase == ActorPhase::Inbound || a.phase == ActorPhase::WaitGate)
+                ++inbound;
+        const std::size_t ahead = dispatcher.knownArrivals() + inbound;
+        // no pad for it: it would wait for a service to end, not for the lanes
+        if (ahead >= dispatcher.freePadCount())
+            return true;
+        const double wait = dispatcher.predictedNewArrivalWaitSeconds() +
+            game::docking::traffic::DockTrafficController::TypicalMovementSeconds * static_cast<double>(inbound);
+        return wait > std::max(60.0, config.normalWaitLimitSeconds - tripInSeconds);
+    }
+
     void advance(double t)
     {
         now = std::max(now, t);
@@ -1091,6 +1124,14 @@ struct DockServiceTraffic::Impl
             initialise();
         while (now >= nextShuttleAt)
         {
+            if (flowHeld(config.materializeDistance / std::max(1.0, trafficShipClass(TrafficShipKind::CargoShuttle).cruiseSpeed)))
+            {
+                // flow control: the inbound shuttle is held before it enters the zone
+                ++stats.flowHolds;
+                say(0, "flow control: inbound shuttle held outside the zone (dock queue long)");
+                nextShuttleAt = now + 60.0;
+                break;
+            }
             const double at = nextShuttleAt;
             nextShuttleAt += config.shuttleIntervalSeconds;
             const double saved = now;

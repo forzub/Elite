@@ -177,6 +177,15 @@ public:
     // (arrival queue, holds, departures), the shared lanes and a pad are free.
     // The pilot's request then is a direct entry, otherwise it takes a hold.
     [[nodiscard]] bool entryFreeNow(const DockingTrafficRequest& request) const;
+    // The wait a NEW arrival asking now would get (lane movements ahead of it
+    // x a typical movement): the traffic flow control holds scheduled traffic
+    // back while it exceeds the normal limit.
+    [[nodiscard]] double predictedNewArrivalWaitSeconds() const;
+    static constexpr double TypicalMovementSeconds = 120.0;
+    // Arrivals the dispatcher already knows (queued, holding, cleared) and
+    // the pads not reserved by anyone.
+    [[nodiscard]] std::size_t knownArrivals() const;
+    [[nodiscard]] std::size_t freePadCount() const;
     bool reportAtHold(std::uint64_t shipId, double nowSeconds);
     // Past the chamber gate: the station takes over (outer lane and the hold
     // are released, the chamber lane stays until landing).

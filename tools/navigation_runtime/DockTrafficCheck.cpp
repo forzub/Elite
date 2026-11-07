@@ -111,6 +111,7 @@ int main(int argc, char** argv)
         if (!std::strcmp(argv[i], "--hours")) hours = std::atof(argv[++i]);
         else if (!std::strcmp(argv[i], "--cobretts")) config.cobrettCount = std::atoi(argv[++i]);
         else if (!std::strcmp(argv[i], "--interval")) config.shuttleIntervalSeconds = std::atof(argv[++i]);
+        else if (!std::strcmp(argv[i], "--emergency")) config.emergency = true;
         else if (!std::strcmp(argv[i], "--seed")) config.seed = std::strtoull(argv[++i], nullptr, 10);
         else if (!std::strcmp(argv[i], "--log")) logPath = argv[++i];
     }
@@ -255,11 +256,11 @@ int main(int argc, char** argv)
         "SUMMARY hours=%.1f arrivals=%zu departures=%zu shuttle_flights=%zu cobrett_loops=%zu "
         "max_arrival_queue=%zu max_holds_occupied=%zu max_pads_occupied=%zu max_queue_wait_s=%.0f "
         "arrivals_per_hour=%.1f invariant_violations=%zu separation_violations=%zu structure_violations=%zu "
-        "min_gap_m=%.1f (%s) max_departure_wait_s=%.0f max_hold_wait_s=%.0f wait_estimate_mean_abs_error_s=%.0f (n=%zu)",
+        "min_gap_m=%.1f (%s) max_departure_wait_s=%.0f max_hold_wait_s=%.0f wait_estimate_mean_abs_error_s=%.0f (n=%zu) flow_holds=%zu",
         hours, stats.arrivals, stats.departures, stats.shuttleFlights, stats.cobrettLoops, stats.maxArrivalQueue,
         stats.maxHoldsOccupied, stats.maxPadsOccupied, stats.maxQueueWaitSeconds, stats.arrivals / std::max(hours, 1.0e-9),
         invariantViolations, separationViolations, structureViolations, minGap, minGapWhat.c_str(),
-        maxDepartureWait, maxHoldWait, estimateSamples ? estimateError / static_cast<double>(estimateSamples) : 0.0, estimateSamples);
+        maxDepartureWait, maxHoldWait, estimateSamples ? estimateError / static_cast<double>(estimateSamples) : 0.0, estimateSamples, stats.flowHolds);
     log << summary << "\n";
     log << "MIN GAP BY PHASE PAIR (m):\n";
     for (const auto& [zone, gap] : minGapByZone)

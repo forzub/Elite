@@ -33,6 +33,7 @@
 #include "src/game/identity/ClientIdentityProfile.h"
 #include "src/game/identity/SecureRandom.h"
 #include "core/ConsoleOutput.h"
+#include "core/AsyncStderr.h"
 #include "world/celestial/visual/CelestialTextureBaker.h"
 #include "render/bitmap/stb_image.h"
 
@@ -123,6 +124,7 @@ LONG WINAPI eliteUnhandledExceptionFilter(EXCEPTION_POINTERS* info)
 
     std::cerr << "\n";
     std::cerr.flush();
+    core::drainAsyncStderrNow();
     return EXCEPTION_EXECUTE_HANDLER;
 }
 #endif
@@ -625,6 +627,8 @@ static void bindChildProcessesToThisProcessLifetime()
 
 int main(int argc, char** argv)
 {
+    // the logs never stall the game loop (a console write per `<<`, a QuickEdit selection)
+    core::installAsyncStderr();
 #ifdef _WIN32
     bindChildProcessesToThisProcessLifetime();
     GameServer::setDevCommandsAllowed(true);   // the embedded single-player server: the player is the host
@@ -660,6 +664,7 @@ int main(int argc, char** argv)
 #else
         std::cerr << "[CRASH] std::terminate\n";
 #endif
+        core::drainAsyncStderrNow();
         std::abort();
     });
 

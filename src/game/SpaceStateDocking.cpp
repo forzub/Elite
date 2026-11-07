@@ -418,6 +418,7 @@ void runDockAdviceWorker(
 
 void SpaceState::updateDockingAdvisory()
 {
+    core::hitch::mark("dock_advisory_enter");
     using namespace game::navigation;
     using AssistedClientAutopilot =
         game::navigation::autopilot::AssistedClientRouteAutopilot;
@@ -1100,11 +1101,13 @@ void SpaceState::updateDockingAdvisory()
         return;
     }
 
+    core::hitch::mark("dock_advisory_setup");
     if (m_clientDockingPhase ==
         ClientDockingPhase::Planning)
     {
         if (!updateDockingPlanning(f))
             return;
+        core::hitch::mark("dock_planning");
     }
 
     if (m_clientDockingPhase ==
@@ -3846,6 +3849,7 @@ bool SpaceState::updateDockingExecuting(Frame& f)
             tunnelRollPhase,
             pilotDt
         );
+        core::hitch::mark("dock_assisted_pre_autopilot");
         const auto output =
             AssistedClientAutopilot::update(
                 m_clientAssistedRouteAutopilot,
@@ -3854,8 +3858,10 @@ bool SpaceState::updateDockingExecuting(Frame& f)
                 universeTimeSeconds,
                 pilotDt
             );
+        core::hitch::mark("dock_assisted_autopilot_update");
         if (!handleOutput(output))
             return false;
+        core::hitch::mark("dock_assisted_handle_output");
     }
     else
     {

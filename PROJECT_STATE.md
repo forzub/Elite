@@ -3841,6 +3841,23 @@ Progress (source + builds; live evidence per item below):
   options: (a) accept - the drone view F3 shows the ship over the surface; (b) the autopilot switches to the drone
   view for the glide; (c) a shorter, steeper glide (nose lower, a harder final braking up to ~-35..-45 deg).
 
+### Docking freezes / the final-approach hang (author 2026-11-07, live play) - FIXED in code, DEV-verified, NOT ACCEPTED
+- Author: "при обычном докинге периодическое лёгкое подфризывание ... в финале кошмар ... игра повисла, закрыл".
+- Evidence (D:/tmp/elite_hitches.log, the author's session 13:09): frames of 85-280 ms every few s, all in
+  "dock_output_handling" (the client docking autopilot + its logs), then 0.5-2 s frames with hud / render_tail /
+  ev_poll_hotkeys inflated too, one frame 26.8 s (20.7 s in the docking span).
+- Root cause: std::cerr on Windows is unbuffered - every `<<` is its own write; into a console window one docking
+  trace line (~60 inserts) costs tens of ms, and a console with a text selection (QuickEdit) blocks every write
+  (a "hang"). The docking, dock-traffic and HUD logs are densest on the final approach. (stdout had been silenced
+  for the same reason long ago; cerr had become the main log.)
+- FIX: core/AsyncStderr.h - std::cerr appends to a memory buffer, a background thread writes it to the real
+  stderr every 50 ms (8 MB cap, the excess counted and dropped); the SEH filter / terminate handler drain it
+  synchronously. Finer hitch marks inside the Assisted docking step (dock_advisory_enter/_setup, dock_planning,
+  dock_assisted_pre_autopilot / _autopilot_update / _handle_output).
+- DEV A/B (automatic docking at Высокий, ELITE_DEV_DOCK_REQUEST_AT=15, hitch threshold 60 ms): before (dk1) 26
+  slow frames, many with dock_assisted_handle_output 30-48 ms; after (dk2) 0 slow frames through to "docked"
+  (only the two known start-up load frames). Gates 209: 203 / 6 known / 0 new. Author re-check pending.
+
 ## Next step
 - Fourth pass follow-ups (after the user's review): human acceptance of the
   hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival

@@ -17,6 +17,23 @@ enum class DockSizeClass : std::uint8_t
     Large
 };
 
+// What a dock physically is (author 2026-11-07). Dispatcher and autopilot treat
+// every kind as one facility; the kind only selects the approach and landing.
+enum class DockKind : std::uint8_t
+{
+    RotatingDrum = 0,   // spun chamber with pads on the walls (artificial gravity); roll sync at the
+                        // entrance; Assisted ships (they manoeuvre easily); hold points in front
+    TrackTerminal,      // non-rotating "railway station": parallel tracks, one per arriving ship, no
+                        // hold points; for Newtonian ships (less manoeuvring)
+    SurfacePad          // a pad on a body's surface (a spaceport): vertical touchdown
+};
+
+// Why a ship goes to a dock / what a place serves. Empty = any.
+inline constexpr const char* DockPurposeCargo = "cargo";
+inline constexpr const char* DockPurposePassenger = "passenger";
+inline constexpr const char* DockPurposeService = "service";   // repair / refit
+inline constexpr const char* DockPurposeRefuel = "refuel";
+
 struct DockingEnvelope
 {
     double widthMeters = 0.0;
@@ -62,6 +79,8 @@ struct ParkingPadDescriptor
     glm::dvec3 surfaceNormalLocal {0.0, 1.0, 0.0};
     glm::dvec3 approachForwardLocal {0.0, 0.0, -1.0};
     std::vector<std::string> conflictResourceIds;
+    // What this place serves (DockPurpose*); empty = every purpose.
+    std::vector<std::string> purposes;
 };
 
 struct TrafficConflictZoneDescriptor
@@ -81,6 +100,7 @@ struct DockFacilityDescriptor
 {
     std::string facilityId;
     int systemId = -1;
+    DockKind kind = DockKind::RotatingDrum;
     std::string kinematicFrameId;
     std::vector<AccessPortalDescriptor> portals;
     std::vector<EntryHoldPointDescriptor> holdPoints;

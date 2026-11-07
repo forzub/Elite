@@ -26,7 +26,9 @@
                                     //     "refuel" / "repair"); the CLIENT flies routes (NAVIGATION_V2 §1)
             FireWeapon,             // index 0 laser off, 1 laser on, 2 missile, 3 / 4 next laser / missile
                                     //     type (DEV), 5 DEV combat target `amount` m ahead
-            ToggleJEngine           // Ctrl+J: the J engine on / off (only far from objects, above the J floor)
+            ToggleJEngine,          // Ctrl+J: the J engine on / off (only far from objects, above the J floor)
+            RequestDockArrival      // automatic docking engaged (index 1) / dropped (index 0): the dock
+                                    //     dispatcher clears a direct entry or assigns a hold point
         };
         Type type;
 

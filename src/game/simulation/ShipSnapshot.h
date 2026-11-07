@@ -42,6 +42,16 @@ struct ShipDockDispatcherSnapshot
     std::string holdPointId;
     std::string padId;
     bool stationControlled = false;
+    // Wait estimate (lane movements ahead x a typical movement) and the
+    // geometry the client autopilot / widget needs, in the HUB-LOCAL map
+    // frame of the ship (motion.localPositionMeters): the assigned hold, the
+    // dock entrance and the axis pointing out of the dock.
+    float estimatedWaitSeconds = 0.0f;
+    std::uint32_t movementsAhead = 0;
+    bool holdValid = false;
+    glm::dvec3 holdLocalMeters {0.0};
+    glm::dvec3 entryLocalMeters {0.0};
+    glm::dvec3 axisOutLocal {0.0, 0.0, -1.0};
 };
 } // namespace game::simulation
 

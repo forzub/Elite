@@ -30,6 +30,8 @@ struct DockingTerminalSnapshot
     std::string ship;
     std::string physics;
     std::string activity;
+    // The dock dispatcher's status for this ship: printed when it changes.
+    std::string dispatcher;
     std::string error;
     std::string biteNominalText;
     // Completed immutable planner measurements (separate from BITE faults).
@@ -168,6 +170,8 @@ public:
                     enqueuePriority(diagnostic.first,diagnostic.second);
                 m_lastReminderSeconds = nowSeconds;
             }
+            enqueueChanged(m_last.dispatcher, snapshot.dispatcher,
+                           DockingTerminalSeverity::Info);
             enqueueChanged(m_last.activity, snapshot.activity,
                            DockingTerminalSeverity::Info);
             if (snapshot.plannerDetails != m_last.plannerDetails)

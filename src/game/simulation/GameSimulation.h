@@ -300,6 +300,10 @@ public:
     const ActiveFreeFlight* freeFlight(EntityId shipId) const;
     // This ship's dispatcher status (phase None when unknown to the dock).
     game::docking::traffic::DockTrafficShipStatus dockDispatcherStatus(EntityId shipId) const;
+    // The pilot's automatic docking engaged / dropped (ClientShipCommand::RequestDockArrival).
+    bool requestDockArrival(EntityId shipId, bool engage);
+    // Hub-local geometry of the dispatcher's assignment for the ship's snapshot.
+    void fillDockDispatcherGeometry(EntityId shipId, game::simulation::ShipDockDispatcherSnapshot& out) const;
     std::size_t shipShellCount() const noexcept { return m_shipShells.size(); }
     const std::unordered_map<EntityId, game::simulation::ShipShellState>& shipShells() const noexcept { return m_shipShells; }
 

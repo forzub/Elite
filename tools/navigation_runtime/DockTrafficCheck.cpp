@@ -130,6 +130,16 @@ int main(int argc, char** argv)
     std::size_t terminalSamples = 0;
     std::map<std::string, int> lastStructureLog;
 
+    struct Wait
+    {
+        bool active = false;
+        bool departure = false;
+        double since = 0.0;
+        double estimate = 0.0;
+    };
+    std::map<std::uint64_t, Wait> waits;
+    double maxDepartureWait = 0.0, maxHoldWait = 0.0, estimateError = 0.0;
+    std::size_t estimateSamples = 0;
     for (double t = 0.0; t <= end; t += dt)
     {
         traffic.advance(t);
@@ -185,6 +195,32 @@ int main(int argc, char** argv)
                 }
             }
         }
+        {
+            // Waits: a departure from its request to its clearance, an arrival at
+            // its hold until entry; the dispatcher's estimate at the start of the
+            // wait vs the real wait.
+            using game::docking::traffic::DockTrafficPhase;
+            for (const auto& st : traffic.dispatcher().snapshot().ships)
+            {
+                const bool waitingPhase = st.phase == DockTrafficPhase::DepartureQueued || st.phase == DockTrafficPhase::AtHold;
+                auto& w = waits[st.shipId];
+                if (waitingPhase && !w.active)
+                {
+                    w.active = true;
+                    w.departure = st.phase == DockTrafficPhase::DepartureQueued;
+                    w.since = t;
+                    w.estimate = st.estimatedWaitSeconds;
+                }
+                else if (!waitingPhase && w.active)
+                {
+                    w.active = false;
+                    const double real = t - w.since;
+                    (w.departure ? maxDepartureWait : maxHoldWait) = std::max(w.departure ? maxDepartureWait : maxHoldWait, real);
+                    estimateError += std::abs(real - w.estimate);
+                    ++estimateSamples;
+                }
+            }
+        }
         if (t >= nextSnapshot)
         {
             nextSnapshot += 60.0;
@@ -219,10 +255,11 @@ int main(int argc, char** argv)
         "SUMMARY hours=%.1f arrivals=%zu departures=%zu shuttle_flights=%zu cobrett_loops=%zu "
         "max_arrival_queue=%zu max_holds_occupied=%zu max_pads_occupied=%zu max_queue_wait_s=%.0f "
         "arrivals_per_hour=%.1f invariant_violations=%zu separation_violations=%zu structure_violations=%zu "
-        "min_gap_m=%.1f (%s)",
+        "min_gap_m=%.1f (%s) max_departure_wait_s=%.0f max_hold_wait_s=%.0f wait_estimate_mean_abs_error_s=%.0f (n=%zu)",
         hours, stats.arrivals, stats.departures, stats.shuttleFlights, stats.cobrettLoops, stats.maxArrivalQueue,
         stats.maxHoldsOccupied, stats.maxPadsOccupied, stats.maxQueueWaitSeconds, stats.arrivals / std::max(hours, 1.0e-9),
-        invariantViolations, separationViolations, structureViolations, minGap, minGapWhat.c_str());
+        invariantViolations, separationViolations, structureViolations, minGap, minGapWhat.c_str(),
+        maxDepartureWait, maxHoldWait, estimateSamples ? estimateError / static_cast<double>(estimateSamples) : 0.0, estimateSamples);
     log << summary << "\n";
     log << "MIN GAP BY PHASE PAIR (m):\n";
     for (const auto& [zone, gap] : minGapByZone)

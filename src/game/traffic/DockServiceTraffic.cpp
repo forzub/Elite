@@ -124,6 +124,12 @@ struct Segment
     Profile profile;
     double flipSeconds = 0.0;
     bool smoothTime = false; // RotMove: smoothstep(time) instead of profile
+    // RotMove on its profile: a quadratic Bezier through `control` (arcTable
+    // filled) and / or the hull turning b0 -> b1 between these fractions of
+    // the path (the drift onto a pad: sliding in while the nose swings round).
+    bool curved = false;
+    bool turnBasis = false;
+    double turnStart = 0.0, turnEnd = 1.0;
     // Axial roll sync / AxialOut roll decay.
     double rollStart = 0.0, phaseStart = 0.0, rollOffset = 0.0, syncLength = 1.0, rollRate = 0.0, rollDecay = 10.0;
     std::vector<double> arcTable; // Curve: cumulative length per u sample
@@ -159,6 +165,50 @@ struct SegmentPose
     glm::dvec3 position {0.0};
     glm::dmat3 basis {1.0};
 };
+
+void fillArcTable(Segment& s)
+{
+    s.arcTable.assign(1, 0.0);
+    glm::dvec3 prev = s.p0;
+    for (int i = 1; i <= 64; ++i)
+    {
+        const glm::dvec3 p = bezier(s, i / 64.0);
+        s.arcTable.push_back(s.arcTable.back() + glm::length(p - prev));
+        prev = p;
+    }
+}
+
+// Lively docking (author 2026-11-07: "влеты в станцию бодрее ... кобра вполне может дрифтом
+// заходить на площадку"): the portal is crossed at EntrySpeed, the corridor is flown without
+// crawling, and inside the chamber the ship drifts onto its pad - one arc from the axis out to
+// above the pad while the hull swings nose-to-exit, braking all the way - then a short touchdown.
+constexpr double EntrySpeedMps = 12.0;
+constexpr double ChamberGateSpeedMps = 8.0;
+constexpr double DriftBrakeMps2 = 1.0;
+constexpr double TouchdownSeconds = 6.0;
+constexpr double DepartureOutSpeedMps = 12.0;
+
+// ROTATING frame: from the chamber gate (on the axis, moving +Z at v0) to above pad k.
+Segment driftToPad(const hex::HexDockGeometry& g, int padIndex, const glm::dvec3& gate, const glm::dvec3& above, double v0)
+{
+    Segment drift;
+    drift.kind = SegmentKind::RotMove;
+    drift.curved = true;
+    drift.turnBasis = true;
+    drift.turnStart = 0.15;
+    drift.turnEnd = 0.85;
+    drift.p0 = gate;
+    drift.p1 = above;
+    // Keep going along the axis first, then slide out to the wall.
+    drift.control = {0.0, 0.0, above.z + 0.25 * (above.z - gate.z)};
+    fillArcTable(drift);
+    drift.b0 = hex::shipBasis({0.0, 0.0, 1.0}, {0.0, 1.0, 0.0});
+    drift.b1 = hex::padLandedBasis(padIndex);
+    (void)g;
+    drift.profile = Profile::make(drift.arcTable.back(), v0, 0.0, DriftBrakeMps2, std::max(v0, 1.0));
+    drift.duration = drift.profile.total;
+    return drift;
+}
 
 // Evaluate one segment at local time tau, FIXED frame.
 SegmentPose evaluate(const Segment& s, double tau, double phase)
@@ -258,8 +308,15 @@ SegmentPose evaluate(const Segment& s, double tau, double phase)
                 w = smoothstep01(tau / s.duration);
             else
                 w = s.profile.s(tau) / std::max(s.profile.length, 1.0e-9);
-            const glm::dvec3 local = s.p0 + (s.p1 - s.p0) * w;
-            const glm::dmat3 basis = s.smoothTime ? slerpBasis(s.b0, s.b1, w) : s.b0;
+            w = std::clamp(w, 0.0, 1.0);
+            const glm::dvec3 local = s.curved && s.arcTable.size() > 1
+                ? bezier(s, bezierU(s, w * s.arcTable.back()))
+                : s.p0 + (s.p1 - s.p0) * w;
+            glm::dmat3 basis = s.b0;
+            if (s.turnBasis)
+                basis = slerpBasis(s.b0, s.b1, smoothstep01(std::clamp((w - s.turnStart) / std::max(s.turnEnd - s.turnStart, 1.0e-6), 0.0, 1.0)));
+            else if (s.smoothTime)
+                basis = slerpBasis(s.b0, s.b1, w);
             out.position = spin * local;
             out.basis = spin * basis;
             break;
@@ -786,7 +843,7 @@ struct DockServiceTraffic::Impl
                     Segment axial;
                     axial.kind = SegmentKind::Axial;
                     axial.p0 = curve.p1;
-                    const double entrySpeed = 4.0;
+                    const double entrySpeed = EntrySpeedMps;
                     axial.profile = Profile::make(g.entryFaceZ - g.axisJoinZ, c.localSpeed * 0.8, entrySpeed, c.localAccel * 0.6, c.localSpeed * 0.8);
                     axial.duration = axial.profile.total;
                     axial.syncLength = 0.6 * (g.entryFaceZ - g.axisJoinZ);
@@ -802,7 +859,7 @@ struct DockServiceTraffic::Impl
                     corridor.p0 = {0.0, 0.0, g.entryFaceZ};
                     corridor.p1 = {0.0, 0.0, g.chamberFrontZ + c.length * 0.5 + 5.0}; // whole ship inside
                     corridor.b0 = hex::shipBasis({0.0, 0.0, 1.0}, {0.0, 1.0, 0.0});
-                    corridor.profile = Profile::make(corridor.p1.z - g.entryFaceZ, entrySpeed, 1.5, 0.3, entrySpeed);
+                    corridor.profile = Profile::make(corridor.p1.z - g.entryFaceZ, entrySpeed, ChamberGateSpeedMps, 0.6, entrySpeed);
                     corridor.duration = corridor.profile.total;
                     push(a, corridor);
                     setPhase(a, ActorPhase::Approach);
@@ -821,14 +878,8 @@ struct DockServiceTraffic::Impl
                     // nose turned to the exit, then lowered and latched.
                     const glm::dvec3 landed = hex::padLandedCenter(g, a.padIndex, c.height * 0.5);
                     const glm::dvec3 above = landed - hex::wallNormal(a.padIndex) * 22.0;
-                    Segment transfer;
-                    transfer.kind = SegmentKind::RotMove;
-                    transfer.smoothTime = true;
-                    transfer.p0 = {0.0, 0.0, g.chamberFrontZ + c.length * 0.5 + 5.0};
-                    transfer.p1 = above;
-                    transfer.b0 = hex::shipBasis({0.0, 0.0, 1.0}, {0.0, 1.0, 0.0});
-                    transfer.b1 = hex::padLandedBasis(a.padIndex);
-                    transfer.duration = 45.0;
+                    Segment transfer = driftToPad(g, a.padIndex, {0.0, 0.0, g.chamberFrontZ + c.length * 0.5 + 5.0}, above,
+                                                  ChamberGateSpeedMps);
                     push(a, transfer);
                     Segment descend;
                     descend.kind = SegmentKind::RotMove;
@@ -836,7 +887,7 @@ struct DockServiceTraffic::Impl
                     descend.p0 = above;
                     descend.p1 = landed;
                     descend.b0 = descend.b1 = transfer.b1;
-                    descend.duration = 12.0;
+                    descend.duration = TouchdownSeconds;
                     push(a, descend);
                     Segment docked;
                     docked.kind = SegmentKind::RotHold;
@@ -887,7 +938,7 @@ struct DockServiceTraffic::Impl
                     lift.p0 = landed;
                     lift.p1 = above;
                     lift.b0 = lift.b1 = hex::padLandedBasis(a.padIndex);
-                    lift.duration = 12.0;
+                    lift.duration = TouchdownSeconds;
                     push(a, lift);
                     Segment toGate;
                     toGate.kind = SegmentKind::RotMove;
@@ -896,14 +947,14 @@ struct DockServiceTraffic::Impl
                     toGate.p1 = {0.0, 0.0, g.chamberFrontZ + c.length * 0.5 + 5.0};
                     toGate.b0 = lift.b1;
                     toGate.b1 = hex::shipBasis({0.0, 0.0, -1.0}, {0.0, 1.0, 0.0});
-                    toGate.duration = 35.0;
+                    toGate.duration = 22.0;
                     push(a, toGate);
                     Segment out;
                     out.kind = SegmentKind::RotMove;
                     out.p0 = toGate.p1;
                     out.p1 = {0.0, 0.0, g.entryFaceZ};
                     out.b0 = toGate.b1;
-                    out.profile = Profile::make(out.p0.z - out.p1.z, 0.0, 5.0, 0.3, 5.0);
+                    out.profile = Profile::make(out.p0.z - out.p1.z, 0.0, DepartureOutSpeedMps, 1.0, DepartureOutSpeedMps);
                     out.duration = out.profile.total;
                     push(a, out);
                     // Axis: burn out, flip, brake to the dispersal stop. A pilot ship flies it too
@@ -913,7 +964,7 @@ struct DockServiceTraffic::Impl
                     axial.kind = SegmentKind::AxialOut;
                     axial.p0 = {0.0, 0.0, g.entryFaceZ};
                     axial.flipSeconds = c.flipSeconds;
-                    axial.profile = Profile::make(g.entryFaceZ - g.departureTurnZ, 5.0, 0.0, c.localAccel, 80.0, c.flipSeconds + 2.0);
+                    axial.profile = Profile::make(g.entryFaceZ - g.departureTurnZ, DepartureOutSpeedMps, 0.0, c.localAccel, 80.0, c.flipSeconds + 2.0);
                     axial.duration = axial.profile.total;
                     const double t0 = endTime(a);
                     axial.rollStart = phaseAt(t0) + hex::Pi * 0.5;
@@ -1246,19 +1297,24 @@ bool DockServiceTraffic::beginStationCapture(
     const glm::dmat3 toRot = glm::transpose(hex::rotationAboutZ(impl.phaseAt(impl.now)));
     a.current = Segment {};
     a.current.kind = SegmentKind::RotMove;
-    a.current.smoothTime = true;
+    a.current.turnBasis = true;
+    a.current.turnStart = 0.0;
+    a.current.turnEnd = 0.6;
     a.current.t0 = impl.now;
     a.current.p0 = toRot * fixedPose.position;
     a.current.p1 = {0.0, 0.0, g.entryFaceZ - c.length * 0.5 - 2.0};
     a.current.b0 = toRot * fixedPose.basis;
     a.current.b1 = hex::shipBasis({0.0, 0.0, 1.0}, {0.0, 1.0, 0.0});
-    a.current.duration = std::clamp(glm::length(a.current.p1 - a.current.p0) / 4.0, 8.0, 120.0);
+    // The pilot's own closing speed is kept (no stop at the capture point).
+    const double v0 = std::clamp(glm::dot(fixedPose.velocity, glm::dvec3(0.0, 0.0, 1.0)), 0.0, 25.0);
+    a.current.profile = Profile::make(glm::length(a.current.p1 - a.current.p0), v0, EntrySpeedMps, 0.8, std::max({v0, EntrySpeedMps, 20.0}));
+    a.current.duration = a.current.profile.total;
     Segment corridor;
     corridor.kind = SegmentKind::RotMove;
     corridor.p0 = a.current.p1;
     corridor.p1 = {0.0, 0.0, g.chamberFrontZ + c.length * 0.5 + 5.0};
     corridor.b0 = a.current.b1;
-    corridor.profile = Profile::make(corridor.p1.z - corridor.p0.z, 0.0, 1.5, 0.3, 4.0);
+    corridor.profile = Profile::make(corridor.p1.z - corridor.p0.z, EntrySpeedMps, ChamberGateSpeedMps, 0.6, EntrySpeedMps);
     corridor.duration = corridor.profile.total;
     impl.actors[shipId] = a;
     Impl::Actor& stored = impl.actors[shipId];

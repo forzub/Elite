@@ -3926,3 +3926,98 @@ Status: DONE / static engineering reference.
 - ship_passports_3126.json carries inherited design language, ship-level standard/foreign analogue, functional groups and weapon summary.
 - canon/weapon_system_reference.json bridges ship weapon hardware to combat weapons.json. Current laser/missile dynamics remain from combat data; physical missile/emitter dimensions and mount bindings are PROPOSAL/model for model construction.
 - Cobrett PD-1 is presented as a twin-emitter mount (proposal) to reconcile the engineering BOM with the legacy runtime's two laser hardpoints; legacy missile capacity=4 remains visibly flagged because a separate VLS-4 hardware passport is not yet authored.
+
+### Docks as objects, hold points for the pilot, docking widget (author 2026-11-07) - IN PROGRESS
+Author decisions:
+- The dock (not the station) owns docking: a station / terminal has docks; each dock = entrance(s), places, holds.
+  Dispatchers: "as many as needed - it is a game"; one per hub is fine if it copes.
+- Dock kinds: rotating drum (current 6-place, artificial gravity; Assisted ships, they manoeuvre easily), a
+  non-rotating "railway station" terminal of parallel tracks for Newtonian ships (later; one dock per arrival, NO
+  holds), a surface pad (the Moon).
+- Allocation criteria in order: 1) does the ship fit, 2) occupied / free, 3) the dock's purpose vs why the ship
+  goes there; plus ship size.
+- One entrance cannot serve two ships at once -> the dispatcher queues arrivals / departures.
+- 6 hold points in front of the drum entrance, off the rotation axis, far enough for "clearance -> onto the axis ->
+  roll to the entrance -> in"; the straight departure along the axis always stays free. Green light at once ->
+  the autopilot docks directly as now, else a hold is the route's intermediate point.
+- Player widget: calculating / moving / distance / dock queue position / estimated wait.
+- Later (design): how a piece of a mesh model is marked as a dock (what the dock part contains, how places are marked).
+Found in code (2026-11-07): the hex drum already has 6 holds (r 450 m, z -1600, FIXED frame) used by the traffic;
+the pilot uses "direct entry" (requested by the server only when the ship is already on the axis; while it waits
+nothing else is cleared) -> no hold for the pilot; one dispatcher hard-wired to hub_hex_dock_a; the cube service
+block (80 x 80 x 600 m tube) is not a dock; the dispatcher prefers the older of arrival / departure, and arrival
+pipelining kept the lanes busy (dk3: a departure waited ~10 min).
+Queue: (1) departure fairness; (2) the pilot asks the dispatcher when docking is engaged, green -> direct, else
+the assigned hold -> wait -> axis -> entry; (3) the widget; (4) dock kind / purpose / fit / free allocation in the
+dock model; (5) mesh-as-dock marking (proposal for the author).
+Done in code (2026-11-07, this pass; offline evidence, live pending):
+- (1) Departure fairness: arrivals and departures alternate when both wait (DockTrafficController lastClearedArrival).
+  EliteDockTrafficCheck now also reports max departure wait / max hold wait / the wait-estimate error. A/B on the
+  old 4 profiles (cobretts/interval 4/600, 4/1549, 9/600, 6/300): max departure wait 816/494/1272/1054 s ->
+  606/206/964/916 s; max hold wait 707/392/1622/1658 -> 1016/572/1622/1643 s; 0 violations.
+- Lively docking (author 2026-11-07 "влеты в станцию бодрее, кобра может дрифтом заходить на площадку"): portal
+  crossed at 12 m/s (was 4), corridor to 8 m/s (was 1.5), in the chamber a drift onto the pad (one arc from the
+  axis to above the pad, the hull swinging nose-to-exit, braking 1 m/s2), touchdown 6 s (was 12), departure lift
+  6 s / to the gate 22 s (was 12 / 35), out at 12 m/s (was 5); the pilot's capture keeps its own closing speed
+  (was a smoothstep from rest at 4 m/s, up to 150 s). Offline 4 profiles: 17.3 / 16.3 / 17.2 / 16.7 arrivals/h
+  (was ~12), max departure wait 286 / 106 / 566 / 416 s, max hold wait 360 / 360 / 1094 / 1116 s, 0 invariant /
+  separation / structure violations, min gap 34.9 m (neighbouring pads). Wait estimate = lane movements ahead x
+  110 s, mean abs error 57 s (4/600) / 134 s (9/600).
+- (2) Pilot hold points: ClientShipCommand::RequestDockArrival (wire 27) sent when automatic docking into the hex
+  dock starts (cancel when the request is dropped); the server asks dispatcher.entryFreeNow(): free -> direct entry
+  (as before), busy -> queued, hold nearest to the ship's azimuth; at the hold (< 60 m, < 2.5 m/s) the server
+  reports AtHold; drop radius 20 km. Snapshot carries the wait estimate, movements ahead and hub-local hold / entry /
+  axis. Client gate (SpaceState::updateDockingDispatcherGate): waits for the answer, flies to the hold (straight,
+  a detour around hub obstacles, 90 m/s cruise, 1.2 m/s2 braking, terminal hold facing the dock), waits; on
+  EntryCleared plans the normal docking from the hold - the route then starts at the new portal
+  hex_dock_a.axis_approach (axis z -900) instead of the far blue cylinder. DEV ELITE_DEV_DOCK_FORCE_HOLD=1.
+- (3) Widget: presentation/DockingWidgetText.h + SpaceState::renderDockingWidget (status: request / preparing /
+  calculating / moving / to the hold / waiting / entry cleared / station control / docked + Ctrl+L / departure
+  queue; distance to the entrance and speed; queue position, movements ahead, wait estimate).
+- (5) PROPOSAL for the author - a dock inside a mesh model (Model Asset editor sockets already have kinds and
+  local position / rotation; the editor colours "dock" sockets): a dock = a named group of sockets, the game builds
+  DockFacilityDescriptor from them at load instead of HexDockFacility.h constants:
+  dock_root:<id> (kind drum / track / pad, spin axis + rate for a drum, purposes); dock_portal:<id> (centre of the
+  entrance, -Z = inbound, scale X / Y = aperture); dock_pad:<id> (surface centre, +Y = pad normal, -Z = parked
+  nose, scale = footprint; size class, purposes); optional dock_hold:<n> (else 6 generated in a ring in front of
+  the portal) and dock_lane:<id> polyline (portal -> pads). Collision stays the part's collision boxes.
+  Track terminal = one portal + one pad per track, no holds. Author decision pending.
+Author decisions 2026-11-07 (later the same day):
+- A ship may or may not have an autopilot installed. The docking request builds a GREEN corridor (with a BLUE part
+  where required) and that corridor may lead to the hold point; the hold point is marked by a VOLUME.
+- The widget is a small panel with the key values (no long phrases); the status text goes to the HUD console
+  (the docking terminal), which exists for that.
+- Proposed (no answer yet): positioning tiers (exact in station / beacon range, inertial-navigation uncertainty
+  circle between them shrinking on celestial / beacon fixes, star and planets always visible as references).
+Results of the pass (2026-11-07, DEV live runs dk4..dk11, Assisted Cobra at Высокий, NOT author-accepted):
+- dk4: the hold path worked (H4 reached to 4.5 m, wait, clearance) but the planner route from the hold was 44.9 km
+  (route speed 500 m/s sized a multi-km terminal approach) -> near-dock route speed cap 35 m/s; dk5: still 5.8 km
+  (the ordinary 1000 m minimum start straight) -> near-dock lead = 8 hull lengths; dk6 (holds at -1600): 4.9 km,
+  the ship reached the axis then looped out to z -1900 (the planner's ~900 m terminal straight starts at z -1400,
+  the hold was inside it) -> holds moved to z -2600 (HexDockFacility holdZ); dk7/dk8: the loop stayed (the axis
+  portal at -900 / -1800 inside the planner's terminal geometry, 6.0 / 3.5 km).
+- Decision: from a hold the entry is always the same geometry -> a dedicated hold-entry path (client gate): a
+  quadratic arc from the hold onto the axis 1600 m out (control 2200 m out), the axis straight to 150 m out, flown
+  at 35 m/s on the arc / 20 m/s on the axis (law-neutral stabilize controllers, cross-track correction); the
+  station captures it on the axis (capture now < 25 m/s, z > -1000) and aligns the roll. dk9: clearance -> capture
+  72 s (dk5 215 s, dk8 109 s), cross-track <= 16 m, 2.4 km path; full cycle to "released to the pilot beyond the
+  dock lanes". The planner route from the hold (axis_approach portal) stays for starts in front of the dock.
+- Lively entry live: capture -> latched 53 + 36 s (dk9; was ~4.5 min in run5); direct entry dk11: request 10.7 km
+  away -> latched 272 s; departure request -> cleared after the alternation (162 s, a traffic arrival + departure
+  ahead) -> released ~210 s later at rest beyond the gates.
+- Docked = the docking request is complete (the client clears it; nothing replans a docking after the release).
+- Green corridor (source StationTrafficControl, priority 150, green in GuidanceCorridorRenderer): to the hold
+  (detour point included) + the hold volume (a 160 m box of frames facing the axis approach), then the entry path;
+  hub-local, placed with the RENDER reference frame; the request enables the HUD corridor + server guidance modules.
+  Requests without an autopilot (guidance mode) now also go to the dispatcher: corridor shown, nothing flown
+  (source-audited; the manual request UI/key not yet added).
+- Widget = a compact panel (title, status chip, label/value pairs: to entrance, speed, ahead / queue, wait, place,
+  Ctrl+L); the phrase goes to the docking terminal as its own "dispatcher" line (printed on change, no RECOVERED).
+- Offline final (holds at -2600): EliteDockTrafficCheck 4 profiles 14.8 / 14.8 / 14.8 / 14.5 arrivals/h, max
+  departure wait 364 / 163 / 506 / 516 s, max hold wait 582 / 454 / 1260 / 1288 s, 0 violations, min gap 34.9 m;
+  wait estimate (120 s per lane movement) mean abs error 58..238 s. docking_infrastructure_api_tests PASS (new:
+  purpose, entry-or-hold, alternation). Gates 209: 203 pass, 6 known red, 0 new; --cpp-only 2/2.
+- OPEN / next: the manual docking request (key / dock card) and HUD markers for a manual pilot inside the corridor;
+  the far direct route through cylinder B is long (dk11: 48.65 km plan at up to 217 m/s from behind the dock -
+  pre-existing planner behaviour); roll indicator for manual entry; the Track terminal / shuttles in the cube
+  block (model ready: DockKind, purposes); positioning tiers (author answer pending).

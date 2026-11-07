@@ -84,6 +84,9 @@ struct DockTrafficController::Impl
     std::map<std::string, std::uint64_t> resourceOwner;
     std::vector<DockTrafficEvent> events;
     std::uint64_t revisionCounter = 1;
+    // Fairness: when both an arrival and a departure wait, they alternate
+    // (author 2026-11-07: a departure waited ~10 min behind the arrival flow).
+    bool lastClearedArrival = false;
 
     void event(double now, std::uint64_t ship, std::string text)
     {
@@ -174,6 +177,13 @@ bool DockTrafficController::physicalFit(
     }
 
     return true;
+}
+
+bool DockTrafficController::purposeAllows(const std::string& purpose, const ParkingPadDescriptor& pad) noexcept
+{
+    if (purpose.empty() || pad.purposes.empty())
+        return true;
+    return std::find(pad.purposes.begin(), pad.purposes.end(), purpose) != pad.purposes.end();
 }
 
 bool DockTrafficController::classPolicyAllows(
@@ -411,6 +421,30 @@ DockingClearance DockTrafficController::requestDocking(
     text << "docking request accepted, queue " << m_impl->arrivalQueue.size();
     m_impl->event(nowSeconds, request.shipId, text.str());
     return out;
+}
+
+bool DockTrafficController::entryFreeNow(const DockingTrafficRequest& request) const
+{
+    const auto& impl = *m_impl;
+    if (impl.facility.portals.empty() || !impl.arrivalQueue.empty() || !impl.departureQueue.empty())
+        return false;
+    for (const auto& [id, record] : impl.ships)
+        if (record.phase == DockTrafficPhase::HoldAssigned || record.phase == DockTrafficPhase::AtHold ||
+            record.phase == DockTrafficPhase::EntryCleared || record.phase == DockTrafficPhase::DepartureCleared)
+            return false;
+    if (!impl.resourcesFree(impl.portalResources()))
+        return false;
+    const auto& portal = impl.facility.portals.front();
+    for (const auto& pad : impl.facility.pads)
+    {
+        const auto owner = impl.padOwner.find(pad.id);
+        if (owner != impl.padOwner.end() && owner->second != 0)
+            continue;
+        if (physicalFit(request.envelope, portal, pad) &&
+            classPolicyAllows(request.shipClass, pad.sizeClass, request.emergency) && purposeAllows(request.purpose, pad))
+            return true;
+    }
+    return false;
 }
 
 bool DockTrafficController::reportAtHold(std::uint64_t shipId, double nowSeconds)
@@ -660,7 +694,8 @@ void DockTrafficController::update(double nowSeconds)
             if (owner != impl.padOwner.end() && owner->second != 0)
                 continue;
             if (!physicalFit(record.request.envelope, portal, pad) ||
-                !classPolicyAllows(record.request.shipClass, pad.sizeClass, record.request.emergency))
+                !classPolicyAllows(record.request.shipClass, pad.sizeClass, record.request.emergency) ||
+                !purposeAllows(record.request.purpose, pad))
                 continue;
             return &pad;
         }
@@ -691,6 +726,7 @@ void DockTrafficController::update(double nowSeconds)
         impl.arrivalQueue.erase(std::remove(impl.arrivalQueue.begin(), impl.arrivalQueue.end(), direct->shipId),
                                 impl.arrivalQueue.end());
         impl.setPhase(*direct, DockTrafficPhase::EntryCleared, nowSeconds);
+        impl.lastClearedArrival = true;
         impl.event(nowSeconds, direct->shipId, "direct entry cleared to pad " + direct->pad);
         return;
     }
@@ -719,7 +755,8 @@ void DockTrafficController::update(double nowSeconds)
         departure = &impl.ships.at(impl.departureQueue.front());
 
     const bool chooseDeparture = departure &&
-        (!arrival || arrivalsWaitingWithoutPad || departure->readySince <= arrival->readySince);
+        (!arrival || arrivalsWaitingWithoutPad || impl.lastClearedArrival ||
+         departure->readySince <= arrival->readySince);
     // A pipelined slot is only for an arrival that is next in line anyway: an
     // older departure waits for both lanes instead of being overtaken.
     if (pipelineArrival && (chooseDeparture || !arrival))
@@ -729,6 +766,7 @@ void DockTrafficController::update(double nowSeconds)
         for (const auto& id : impl.portalResources())
             impl.resourceOwner[id] = departure->shipId;
         impl.setPhase(*departure, DockTrafficPhase::DepartureCleared, nowSeconds);
+        impl.lastClearedArrival = false;
         impl.departureQueue.pop_front();
         impl.event(nowSeconds, departure->shipId, "departure cleared from pad " + departure->pad);
         return;
@@ -742,6 +780,7 @@ void DockTrafficController::update(double nowSeconds)
         impl.padOwner[arrivalPad->id] = arrival->shipId;
         arrival->pad = arrivalPad->id;
         impl.setPhase(*arrival, DockTrafficPhase::EntryCleared, nowSeconds);
+        impl.lastClearedArrival = true;
         impl.event(nowSeconds, arrival->shipId,
             "entry cleared from hold " + arrival->hold + " to pad " + arrival->pad);
     }
@@ -772,6 +811,49 @@ DockTrafficShipStatus DockTrafficController::status(std::uint64_t shipId) const
     const auto di = std::find(d.begin(), d.end(), shipId);
     if (di != d.end())
         out.departureQueuePosition = static_cast<std::size_t>(di - d.begin()) + 1;
+
+    // Wait estimate: lane movements ahead (arrivals and departures alternate
+    // when both wait) x a typical movement through the entrance.
+    constexpr double MovementSeconds = 120.0;
+    std::size_t busy = m_impl->resourcesFree(m_impl->portalResources()) ? 0 : 1;
+    std::size_t atHoldAhead = 0, atHoldAll = 0, assignedAhead = 0;
+    for (const auto& [id, other] : m_impl->ships)
+    {
+        if (id == shipId)
+            continue;
+        if (other.phase == DockTrafficPhase::AtHold)
+        {
+            ++atHoldAll;
+            if (record.phase != DockTrafficPhase::AtHold || other.readySince < record.readySince)
+                ++atHoldAhead;
+        }
+        else if (other.phase == DockTrafficPhase::HoldAssigned && record.phase != DockTrafficPhase::AtHold &&
+                 (record.phase == DockTrafficPhase::Queued || other.phaseSince < record.phaseSince))
+            ++assignedAhead;
+    }
+    std::size_t ahead = 0;
+    switch (record.phase)
+    {
+        case DockTrafficPhase::Queued:
+        case DockTrafficPhase::HoldAssigned:
+        case DockTrafficPhase::AtHold:
+        {
+            const std::size_t arrivalsAhead =
+                atHoldAhead + assignedAhead + (out.queuePosition > 0 ? out.queuePosition - 1 : 0);
+            ahead = busy + arrivalsAhead + std::min(d.size(), arrivalsAhead + 1);
+            break;
+        }
+        case DockTrafficPhase::DepartureQueued:
+        {
+            const std::size_t depsAhead = out.departureQueuePosition > 0 ? out.departureQueuePosition - 1 : 0;
+            ahead = busy + depsAhead + std::min(atHoldAll, depsAhead + (m_impl->lastClearedArrival ? 0 : 1));
+            break;
+        }
+        default:
+            break;
+    }
+    out.movementsAhead = ahead;
+    out.estimatedWaitSeconds = MovementSeconds * static_cast<double>(ahead);
     return out;
 }
 

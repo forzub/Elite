@@ -56,7 +56,7 @@ struct HexDockGeometry
     double serviceBoreHalf = 40.0;   // through tunnel 80 x 80
 
     // Traffic layout in the FIXED frame.
-    double holdZ = -1600.0;       // hold "flower" plane
+    double holdZ = -2600.0;       // hold "flower" plane: beyond the pilot planner's ~900 m terminal axis (dk6: at -1600 the route looped out)
     double holdRadius = 450.0;    // 6 holds, 60 deg apart -> 450 m chord
     double axisJoinZ = -1000.0;   // arrivals join the axis here
     double gateZ = -8000.0;       // queue waiting gates (one per ship)
@@ -171,6 +171,7 @@ inline constexpr const char* ChamberLaneResource = "chamber_lane"; // free movem
     facility.facilityId = facilityId;
     facility.systemId = systemId;
     facility.kinematicFrameId = kinematicFrameId;
+    facility.kind = DockKind::RotatingDrum;
 
     AccessPortalDescriptor portal;
     portal.id = "portal_front";

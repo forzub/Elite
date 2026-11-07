@@ -331,6 +331,8 @@ private:
         const Viewport& vp,
         const ClientShipState& playerShip,
         const game::ship::computer::MotherComputerCockpitView& cockpit);
+    void renderDockingWidget(const Viewport& viewport);
+    std::string m_dockingWidgetConsoleLine;   // the widget's phrase for the HUD console
     void renderHudDockingTerminal(
         const Viewport& vp,
         const ClientShipState& playerShip,
@@ -355,6 +357,12 @@ private:
     template <class Frame, class Locals>
     bool checkDockingEntryHandoff(Frame& f, Locals& l);
     template <class Frame> bool updateDockingExecuting(Frame& f);
+    // The dock dispatcher gate of an automatic docking request: asks the
+    // dispatcher once, then either lets the normal docking flow run (direct
+    // entry cleared) or flies to the assigned hold point and waits there.
+    // false = this frame's control is already submitted (waiting / holding).
+    template <class Frame> bool updateDockingDispatcherGate(Frame& f);
+    void sendDockArrivalRequest(bool engage);
     template <class Frame> void publishDockingAdvisoryPresentation(Frame& f);
     void updateShipObservationInterest(float dt);
     game::presentation::SystemMapPanelPresentation
@@ -462,6 +470,21 @@ private:
 
     ClientDockingPhase m_clientDockingPhase =
         ClientDockingPhase::Idle;
+    // Dock dispatcher gate (author 2026-11-07: hold points for the pilot).
+    std::uint64_t m_dockArrivalSentSerial = 0;
+    double m_dockArrivalSentServerSeconds = 0.0;
+    bool m_dockHolding = false;
+    bool m_dockHoldWaypointValid = false;
+    glm::dvec3 m_dockHoldWaypoint {0.0};
+    double m_dockHoldPlanServerSeconds = -1.0e9;
+    double m_dockHoldLogServerSeconds = -1.0e9;
+    bool m_dockHoldEntryActive = false;          // cleared at the hold: flying / showing the entry path
+    std::vector<glm::dvec3> m_dockEntryPath;     // hub-local: arc onto the dock axis + the axis straight
+    std::vector<double> m_dockEntryPathS;
+    glm::dvec3 m_dockHoldFaceLocal {0.0, 0.0, -1.0};
+    std::uint8_t m_dockGateLastPhase = 0xff;
+    // Green corridor + hold volume of the dock dispatcher's assignment (HUD).
+    void publishDockTrafficGuidance(const ClientShipState& playerShip);
     bool m_clientAutopilotControlActive = false;
     game::navigation::globalflight::BodyAutopilot m_bodyAutopilot;
     game::navigation::globalflight::BodyAutopilotOutput m_bodyAutopilotDisplay;

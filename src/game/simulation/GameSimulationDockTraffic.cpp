@@ -37,6 +37,13 @@ double envDouble(const char* name, double fallback)
     const char* v = std::getenv(name);
     return v && *v ? std::atof(v) : fallback;
 }
+// The pilot's hold is reached: within this distance of the hold point and
+// slower than this relative to the dock.
+constexpr double HoldReachedMeters = 60.0;
+constexpr double HoldReachedMps = 2.5;
+// A request is dropped when the ship is this far from the dock (the pilot's
+// automatic route starts up to ~7 km away, through the guidance cylinder).
+constexpr double RequestDropMeters = 20000.0;
 } // namespace
 
 game::traffic::dock::DockServiceTraffic* GameSimulation::dockServiceTraffic() noexcept
@@ -372,6 +379,107 @@ game::docking::traffic::DockTrafficShipStatus GameSimulation::dockDispatcherStat
     return m_dockServiceTraffic->dispatcher().status(shipId.value);
 }
 
+namespace
+{
+template <class Objects, class StaticObjectT>
+void findHexDock(const Objects& objects, const StaticObjectT*& dock, const StaticObjectT*& base)
+{
+    dock = nullptr;
+    base = nullptr;
+    for (const auto& [id, obj] : objects)
+    {
+        if (!obj.attachedToHub)
+            continue;
+        if (obj.hubModuleId == DockModuleId)
+            dock = &obj;
+        else if (obj.hubModuleId == DockBaseModuleId)
+            base = &obj;
+    }
+}
+} // namespace
+
+bool GameSimulation::requestDockArrival(EntityId shipId, bool engage)
+{
+    using game::docking::traffic::DockTrafficPhase;
+    if (!m_dockServiceTraffic)
+        return false;
+    auto& dispatcher = m_dockServiceTraffic->dispatcher();
+    const double now = m_serverTimelineClock.timeSeconds();
+    const auto status = dispatcher.status(shipId.value);
+    if (!engage)
+    {
+        if (status.phase == DockTrafficPhase::Queued || status.phase == DockTrafficPhase::HoldAssigned ||
+            status.phase == DockTrafficPhase::AtHold || status.phase == DockTrafficPhase::EntryCleared)
+        {
+            dispatcher.cancel(shipId.value, now);
+            std::cerr << "[DockTraffic] pilot " << shipId.value << " docking dropped by the pilot, request cancelled\n";
+        }
+        return true;
+    }
+    if (status.phase != DockTrafficPhase::None && status.phase != DockTrafficPhase::Departed)
+        return true;   // already known (queued / holding / cleared / docked)
+    const StaticObject* dock = nullptr;
+    const StaticObject* base = nullptr;
+    findHexDock(m_staticObjects, dock, base);
+    Ship* ship = getShip(shipId);
+    if (!dock || !base || !ship)
+        return false;
+    if (status.phase == DockTrafficPhase::Departed)
+        dispatcher.cancel(shipId.value, now);
+    const glm::dvec3 origin = world::coordinates::fullMeters(dock->worldPosition);
+    const glm::dmat3 toFixed = glm::transpose(glm::dmat3(base->orientation));
+    const glm::dvec3 p = toFixed * (ship->core().transform().fullWorldMeters() - origin);
+    game::docking::traffic::DockingTrafficRequest r;
+    r.shipId = shipId.value;
+    r.shipClass = game::docking::DockSizeClass::Medium;
+    r.envelope = game::traffic::dock::dockingEnvelope(
+        game::traffic::dock::trafficShipClass(game::traffic::dock::TrafficShipKind::Cobrett));
+    r.insideControlledApproachHorizon = true;
+    // Green light at once -> the autopilot flies straight in (as before);
+    // otherwise the dispatcher queues the ship and assigns the hold point
+    // nearest to the side it comes from.
+    // DEV: ELITE_DEV_DOCK_FORCE_HOLD=1 always takes a hold point (hold-path tests).
+    const char* forceHold = std::getenv("ELITE_DEV_DOCK_FORCE_HOLD");
+    const bool direct = !(forceHold && forceHold[0] == '1') && dispatcher.entryFreeNow(r);
+    constexpr double TwoPi = 2.0 * 3.14159265358979323846;
+    const double azimuth = std::fmod(std::atan2(p.y, p.x) + TwoPi, TwoPi);
+    const bool ok = dispatcher.requestDocking(r, now, azimuth, direct).committed;
+    std::cerr << "[DockTraffic] pilot " << shipId.value << " automatic docking request " << (ok ? "accepted" : "rejected")
+              << (direct ? " - the entrance is free: direct entry" : " - the entrance is busy: a hold point") << " (fixed z="
+              << p.z << ", " << glm::length(p) << " m from the dock)\n";
+    return ok;
+}
+
+void GameSimulation::fillDockDispatcherGeometry(EntityId shipId, game::simulation::ShipDockDispatcherSnapshot& out) const
+{
+    namespace hex = game::docking::hex;
+    const StaticObject* dock = nullptr;
+    const StaticObject* base = nullptr;
+    findHexDock(m_staticObjects, dock, base);
+    const Ship* ship = nullptr;
+    if (const auto it = m_ships.find(shipId); it != m_ships.end())
+        ship = it->second.get();
+    if (!dock || !base || !ship)
+        return;
+    const auto& tr = ship->core().transform();
+    const auto* frame = tr.motion.mode == game::navigation::MotionMode::HubTactical ? hubNavigationFrame(tr.motion.hubId) : nullptr;
+    if (!frame || !frame->valid)
+        return;
+    const auto& g = hex::hexDockGeometry();
+    const glm::dvec3 origin = world::coordinates::fullMeters(dock->worldPosition);
+    const glm::dmat3 fixedBasis(base->orientation);
+    const glm::dvec3 entryWorld = origin + fixedBasis * glm::dvec3(0.0, 0.0, g.entryFaceZ);
+    out.entryLocalMeters = frame->worldToLocalPosition(entryWorld);
+    const glm::dvec3 outLocal = frame->worldToLocalPosition(entryWorld + fixedBasis * glm::dvec3(0.0, 0.0, -1000.0)) - out.entryLocalMeters;
+    out.axisOutLocal = glm::normalize(outLocal);
+    const int k = hex::indexOfId(out.holdPointId);
+    if (out.holdPointId.size() == 2 && out.holdPointId[0] == 'H' && k >= 0)
+    {
+        out.holdValid = true;
+        out.holdLocalMeters = frame->worldToLocalPosition(origin + fixedBasis * hex::holdPosition(g, k));
+    }
+}
+
 bool GameSimulation::requestDockDeparture(EntityId shipId)
 {
     if (!m_dockServiceTraffic)
@@ -456,15 +564,39 @@ void GameSimulation::updateDockPilotShips()
                                   << (ok ? "accepted" : "rejected") << " at z=" << p.z << "\n";
                     }
                     break;
+                case DockTrafficPhase::HoldAssigned:
+                {
+                    const int k = game::docking::hex::indexOfId(status.holdPointId);
+                    if (glm::length(p) > RequestDropMeters)
+                    {
+                        dispatcher.cancel(id.value, now);
+                        std::cerr << "[DockTraffic] pilot " << id.value << " left the zone, request cancelled\n";
+                    }
+                    else if (k >= 0 &&
+                             glm::length(p - game::docking::hex::holdPosition(game::docking::hex::hexDockGeometry(), k)) < HoldReachedMeters &&
+                             glm::length(v) < HoldReachedMps)
+                    {
+                        dispatcher.reportAtHold(id.value, now);
+                        std::cerr << "[DockTraffic] pilot " << id.value << " at hold " << status.holdPointId << "\n";
+                    }
+                    break;
+                }
+                case DockTrafficPhase::AtHold:
+                    if (glm::length(p) > RequestDropMeters)
+                    {
+                        dispatcher.cancel(id.value, now);
+                        std::cerr << "[DockTraffic] pilot " << id.value << " left the zone, request cancelled\n";
+                    }
+                    break;
                 case DockTrafficPhase::Queued:
                 case DockTrafficPhase::EntryCleared:
-                    if (glm::length(p) > 4000.0)
+                    if (glm::length(p) > RequestDropMeters)
                     {
                         dispatcher.cancel(id.value, now);
                         std::cerr << "[DockTraffic] pilot " << id.value << " left the zone, request cancelled\n";
                     }
                     else if (status.phase == DockTrafficPhase::EntryCleared &&
-                             radial < 60.0 && p.z > -800.0 && p.z < -150.0 && glm::length(v) < 15.0)
+                             radial < 60.0 && p.z > -1000.0 && p.z < -150.0 && glm::length(v) < 25.0)
                     {
                         game::traffic::dock::TrafficPose pose;
                         pose.present = true;
@@ -500,9 +632,9 @@ void GameSimulation::updateDockPilotShips()
         const auto pose = traffic.pose(id.value, now);
         if (!pose.present)
         {
-            // Released at the portal after the corridor out: physics again.
+            // Released by the station (at rest beyond the dock lanes): physics again.
             m_dockStationControlledShips.erase(id);
-            std::cerr << "[DockTraffic] pilot " << id.value << " released at the portal\n";
+            std::cerr << "[DockTraffic] pilot " << id.value << " released by the station: free flight\n";
             continue;
         }
         const glm::dvec3 position = origin + fixedBasis * pose.position;

@@ -748,7 +748,13 @@ ELITE_WIRE_SCHEMA(
     v.departureQueuePosition,
     v.holdPointId,
     v.padId,
-    v.stationControlled
+    v.stationControlled,
+    v.estimatedWaitSeconds,
+    v.movementsAhead,
+    v.holdValid,
+    v.holdLocalMeters,
+    v.entryLocalMeters,
+    v.axisOutLocal
 );
 
 ELITE_WIRE_ENUM_RANGE(

@@ -1,5 +1,6 @@
 // SpaceState: Flight HUD and in-session overlays (route planning modal, navigation stress, language, universe time).
 
+#include "src/game/presentation/DockingWidgetText.h"
 #include "src/game/navigation/FreeFlightCodes.h"
 #include "src/game/SpaceStateInternal.h"
 
@@ -206,6 +207,7 @@ m_systemMapRenderer.render(
     renderUiLanguageIndicator(vp);
     renderNavigationStressOverlay(vp);
     renderFreeFlightBanner(vp);
+    renderDockingWidget(vp);
     renderZoneViolationBanner(vp);
     if (context().app)
     {
@@ -312,8 +314,101 @@ void SpaceState::renderHudWorldLabels(const Viewport& vp)
 
 // renderHUD / ship UI: the guidance corridor and the galactic compass on the
 // glass, drawn before the cockpit frame occludes them.
+// The dock dispatcher's assignment as a GREEN corridor (author 2026-11-07): to the
+// assigned hold point, whose volume is a box of frames, and after the entry clearance
+// along the entry path onto the dock axis. Built in the hub-local frame and placed
+// into the world with the RENDER reference frame (the hub moves km per second).
+void SpaceState::publishDockTrafficGuidance(const ClientShipState& playerShip)
+{
+    constexpr const char* CorridorId = "dock_traffic";
+    auto& guidance = m_navigationWorkspace.guidance();
+    const auto& dock = playerShip.dockDispatcher;
+    std::vector<glm::dvec3> path;
+    double gateWidth = 90.0, gateHeight = 60.0;
+    const glm::dvec3 shipLocal = playerShip.renderTransform.motion.localPositionMeters;
+    if (m_dockHolding && dock.active && dock.holdValid)
+    {
+        path.push_back(shipLocal);
+        if (m_dockHoldWaypointValid)
+            path.push_back(m_dockHoldWaypoint);
+        path.push_back(dock.holdLocalMeters);
+    }
+    else if (m_dockHoldEntryActive && m_dockEntryPath.size() > 1)
+    {
+        path = m_dockEntryPath;
+        gateWidth = 120.0;
+        gateHeight = 50.0;
+    }
+    if (path.size() < 2 || !playerShip.renderReferenceFrame.valid)
+    {
+        guidance.erase(CorridorId);
+        return;
+    }
+    const auto frame = playerShip.renderReferenceFrame.kinematicFrame();
+    const double now = playerShip.renderReferenceFrame.universeTimeSeconds;
+    game::navigation::GuidanceCorridor corridor;
+    corridor.id = CorridorId;
+    corridor.systemId = playerShip.renderTransform.motion.systemId;
+    corridor.source = game::navigation::GuidanceSource::StationTrafficControl;
+    corridor.purpose = game::navigation::GuidancePurpose::Approach;
+    corridor.priority = 150;
+    corridor.advisoryOnly = true;
+    corridor.spatialAdvisoryGates = true;
+    corridor.generatedAtUniverseTimeSeconds = now;
+    corridor.validUntilUniverseTimeSeconds = now + 5.0;
+    corridor.hubLocalFrameId = playerShip.renderTransform.motion.hubId;
+    double speedHint = m_dockHolding ? 90.0 : 20.0;
+    const auto addFrame = [&](const glm::dvec3& local, const glm::dvec3& forwardLocal, double width, double height) {
+        const glm::dvec3 f = glm::normalize(frame.localToWorldVector(forwardLocal));
+        glm::dvec3 upHint = frame.localToWorldVector(glm::dvec3(0.0, 1.0, 0.0));
+        if (std::abs(glm::dot(glm::normalize(upHint), f)) > 0.95)
+            upHint = frame.localToWorldVector(glm::dvec3(1.0, 0.0, 0.0));
+        const glm::dvec3 right = glm::normalize(glm::cross(f, upHint));
+        const glm::dvec3 up = glm::cross(right, f);
+        game::navigation::GuidanceFrame g;
+        g.universeTimeSeconds = now;
+        g.centerMeters = frame.localToWorldPosition(local);
+        g.orientation = glm::quat_cast(glm::dmat3(right, up, -f));
+        g.widthMeters = width;
+        g.heightMeters = height;
+        g.recommendedSpeedMps = speedHint;
+        g.lateralToleranceMeters = width * 0.5;
+        g.verticalToleranceMeters = height * 0.5;
+        corridor.frames.push_back(g);
+        corridor.hubLocalGatePositionsMeters.push_back(local);
+    };
+    // Frames every ~200 m along the polyline.
+    constexpr double Spacing = 200.0;
+    double carry = 0.0;
+    for (std::size_t i = 1; i < path.size(); ++i)
+    {
+        const glm::dvec3 a = path[i - 1], b = path[i];
+        const double len = glm::length(b - a);
+        if (len < 1.0e-6)
+            continue;
+        const glm::dvec3 dir = (b - a) / len;
+        if (m_dockHoldEntryActive)
+            speedHint = i <= 48 ? 35.0 : 20.0;
+        else if (i + 1 == path.size())
+            speedHint = std::min(90.0, std::sqrt(2.0 * 1.2 * len));
+        for (double d = carry; d < len; d += Spacing)
+            addFrame(a + dir * d, dir, gateWidth, gateHeight);
+        carry = std::fmod(carry + std::ceil((len - carry) / Spacing) * Spacing - len, Spacing);
+    }
+    if (m_dockHolding)
+    {
+        // The hold point's volume: a 160 m box of frames facing the axis approach.
+        const glm::dvec3 face = glm::length(m_dockHoldFaceLocal) > 0.5 ? glm::normalize(m_dockHoldFaceLocal) : glm::dvec3(0.0, 0.0, -1.0);
+        speedHint = 0.0;
+        for (double d : {-80.0, -40.0, 0.0, 40.0, 80.0})
+            addFrame(dock.holdLocalMeters + face * d, face, 160.0, 160.0);
+    }
+    guidance.publish(std::move(corridor));
+}
+
 void SpaceState::renderHudGuidanceAndCompass(const Viewport& vp, const ClientShipState& playerShip)
 {
+    publishDockTrafficGuidance(playerShip);
     const auto guidance =
         game::presentation::buildGuidanceCorridorHudPresentation(
             m_navigationWorkspace,
@@ -782,12 +877,12 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
         in.padId = dock.padId;
         // One line per dispatcher state: the terminal history keeps
         // a new entry only when the state text changes.
-        std::string text;
-        for (const auto& line : game::presentation::dockDispatcherTerminalLines(in))
-            text += (text.empty() ? "" : " / ") + line;
-        if (in.phase == game::docking::traffic::DockTrafficPhase::Docked)
-            text += " / CTRL+L: LAUNCH";
-        terminal.diagnostics.emplace_back(text, game::presentation::DockingTerminalSeverity::Info);
+        // The docking widget's full phrase (the panel itself shows only values).
+        std::string text = m_dockingWidgetConsoleLine;
+        if (text.empty())
+            for (const auto& line : game::presentation::dockDispatcherTerminalLines(in))
+                text += (text.empty() ? "" : " / ") + line;
+        terminal.dispatcher = text;
         terminal.visible = true;
     }
     {
@@ -1656,6 +1751,65 @@ std::string jDistance(double m)
         std::snprintf(t, sizeof t, "%.3f а.е.", m / 1.495978707e11);
     return t;
 }
+}
+
+void SpaceState::renderDockingWidget(const Viewport& viewport)
+{
+    if (!m_client || viewport.width <= 0 || viewport.height <= 0)
+        return;
+    const auto it = m_client->world().ships().find(m_playerId.value);
+    if (it == m_client->world().ships().end())
+        return;
+    const auto& ship = it->second;
+    const auto& pending = m_navigationWorkspace.dockingRouteRequests().pending();
+    game::presentation::DockingWidgetInput in;
+    in.requestPending = pending.valid() && pending.mode == game::navigation::DockingRouteRequest::Mode::Automatic;
+    in.clientPhase = static_cast<game::presentation::DockingWidgetClientPhase>(static_cast<int>(m_clientDockingPhase));
+    const auto& dock = ship.dockDispatcher;
+    in.dispatcherActive = dock.active;
+    in.phase = static_cast<game::docking::traffic::DockTrafficPhase>(dock.phase);
+    in.queuePosition = dock.queuePosition;
+    in.queueLength = dock.queueLength;
+    in.departureQueuePosition = dock.departureQueuePosition;
+    in.movementsAhead = dock.movementsAhead;
+    in.estimatedWaitSeconds = dock.estimatedWaitSeconds;
+    in.holdPointId = dock.holdPointId;
+    in.padId = dock.padId;
+    in.distanceKnown = dock.active && glm::length(dock.entryLocalMeters) > 1.0;
+    in.distanceToEntryMeters = glm::length(dock.entryLocalMeters - ship.transform.motion.localPositionMeters);
+    in.speedMps = glm::length(ship.transform.motion.localVelocityMps);
+    if (m_noSafeDockingGuidanceSolution && !m_dockingGuidanceFailureReason.empty())
+        in.failure = m_dockingGuidanceFailureReason;
+    const auto widget = game::presentation::dockingWidgetText(in);
+    m_dockingWidgetConsoleLine = widget.visible ? widget.consoleLine : std::string();
+    if (!widget.visible)
+        return;
+    // A compact panel: title + status chip, then label / value pairs in two columns.
+    auto& text = TextRenderer::instance();
+    text.beginFrameForViewport(viewport.width, viewport.height);
+    const float width = 250.0f;
+    const std::size_t rows = (widget.fields.size() + 1) / 2;
+    const float height = 40.0f + 34.0f * static_cast<float>(rows) + 6.0f;
+    const float x = std::max(8.0f, static_cast<float>(viewport.width) - width - 24.0f);
+    const float y = 170.0f;
+    const glm::vec4 tone = widget.chipTone == 1 ? glm::vec4(1.0f, 0.78f, 0.30f, 1.0f)
+        : widget.chipTone == 2 ? glm::vec4(0.40f, 1.0f, 0.50f, 1.0f)
+        : widget.chipTone == 3 ? glm::vec4(1.0f, 0.42f, 0.32f, 1.0f)
+                               : glm::vec4(0.55f, 0.88f, 1.0f, 1.0f);
+    text.solidRectPx(x, y, width, height, glm::vec4(0.02f, 0.03f, 0.04f, 0.80f));
+    text.solidRectPx(x, y, width, 2.0f, glm::vec4(tone.r, tone.g, tone.b, 0.9f));
+    text.textDrawPx(widget.title, x + 12.0f, y + 22.0f, 12, glm::vec4(0.60f, 0.70f, 0.78f, 0.95f));
+    const float chipW = text.measureTextPx(widget.chip, 14) + 16.0f;
+    const float chipX = x + width - chipW - 10.0f;
+    text.solidRectPx(chipX, y + 8.0f, chipW, 20.0f, glm::vec4(tone.r * 0.25f, tone.g * 0.25f, tone.b * 0.25f, 0.9f));
+    text.textDrawPx(widget.chip, chipX + 8.0f, y + 23.0f, 14, tone);
+    for (std::size_t i = 0; i < widget.fields.size(); ++i)
+    {
+        const float cx = x + 12.0f + (i % 2 == 0 ? 0.0f : width * 0.5f);
+        const float cy = y + 40.0f + 34.0f * static_cast<float>(i / 2);
+        text.textDrawPx(widget.fields[i].label, cx, cy + 10.0f, 10, glm::vec4(0.55f, 0.62f, 0.68f, 0.95f));
+        text.textDrawPx(widget.fields[i].value, cx, cy + 28.0f, 16, glm::vec4(0.92f, 0.95f, 0.97f, 1.0f));
+    }
 }
 
 void SpaceState::renderFreeFlightBanner(const Viewport& viewport)

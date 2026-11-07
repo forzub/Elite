@@ -170,11 +170,62 @@ int main()
             "landing API permits main-engine authority"
         );
 
+        // ---- lifecycle (author 2026-11-07): purpose, entry-or-hold, fairness ----
+        {
+            using game::docking::traffic::DockTrafficController;
+            using game::docking::traffic::DockTrafficPhase;
+            auto facility = mediumFacility();
+            facility.pads.front().purposes = {game::docking::DockPurposeCargo};
+            game::docking::ParkingPadDescriptor pad2 = facility.pads.front();
+            pad2.id = "pad-m-02";
+            pad2.purposes = {game::docking::DockPurposePassenger};
+            facility.pads.push_back(pad2);
+            DockTrafficController lifecycle(facility);
+            game::docking::traffic::DockingTrafficRequest r;
+            r.shipClass = game::docking::DockSizeClass::Medium;
+            r.envelope = mediumShip();
+            r.insideControlledApproachHorizon = true;
+
+            r.shipId = 100;
+            r.purpose = game::docking::DockPurposePassenger;
+            require(lifecycle.entryFreeNow(r), "idle dock does not offer an immediate entry");
+            require(lifecycle.requestDocking(r, 0.0, -1.0, true).committed, "direct entry request rejected");
+            lifecycle.update(1.0);
+            require(lifecycle.status(100).phase == DockTrafficPhase::EntryCleared, "direct entry not cleared on an idle dock");
+            require(lifecycle.status(100).padId == "pad-m-02", "purpose ignored: a passenger ship got the cargo place");
+
+            r.shipId = 101;
+            r.purpose = game::docking::DockPurposeCargo;
+            require(!lifecycle.entryFreeNow(r), "busy entrance offered an immediate entry");
+            require(lifecycle.requestDocking(r, 2.0, 0.0, false).committed, "queued request rejected");
+            lifecycle.update(3.0);
+            require(lifecycle.status(101).phase == DockTrafficPhase::HoldAssigned, "busy dock did not assign a hold");
+            require(lifecycle.reportAtHold(101, 10.0), "hold arrival not accepted");
+            require(lifecycle.status(101).estimatedWaitSeconds > 0.0, "a waiting ship has no wait estimate");
+
+            // 100 lands; 101 enters; then 100's departure competes with 102 ready at a hold.
+            require(lifecycle.reportInsideChamber(100, 20.0) && lifecycle.reportLanded(100, 30.0), "first ship did not land");
+            lifecycle.update(31.0);
+            require(lifecycle.status(101).phase == DockTrafficPhase::EntryCleared, "hold ship not cleared after the lanes freed");
+            require(lifecycle.requestDeparture(100, 32.0), "departure request rejected");
+            require(lifecycle.reportInsideChamber(101, 40.0) && lifecycle.reportLanded(101, 50.0), "second ship did not land");
+            r.shipId = 102;
+            r.purpose.clear();
+            require(lifecycle.requestDocking(r, 51.0, 0.0, false).committed, "third request rejected");
+            lifecycle.update(52.0);
+            lifecycle.reportAtHold(102, 53.0);
+            lifecycle.update(54.0);
+            // the last clearance was an arrival -> the departure goes first
+            require(lifecycle.status(100).phase == DockTrafficPhase::DepartureCleared, "departure starved behind an arrival");
+            require(lifecycle.validate().empty(), "dispatcher invariant broken");
+        }
+
         std::cout << "DOCKING INFRASTRUCTURE API TESTS: PASS\n";
         std::cout << " - remote inquiry does not reserve queue/resources\n";
         std::cout << " - committed queue is stable inside the controlled horizon\n";
         std::cout << " - emergency upgrades only to larger physically compatible class\n";
         std::cout << " - landing handoff is separate and forbids main-engine authority\n";
+        std::cout << " - place purpose, entry-or-hold for the pilot, arrival/departure alternation\n";
         return 0;
     }
     catch (const std::exception& error)

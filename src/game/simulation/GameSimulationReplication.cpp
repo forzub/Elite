@@ -206,6 +206,9 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                 s.dockDispatcher.holdPointId = dock.holdPointId;
                 s.dockDispatcher.padId = dock.padId;
                 s.dockDispatcher.stationControlled = isDockStationControlledShip(id);
+                s.dockDispatcher.estimatedWaitSeconds = static_cast<float>(dock.estimatedWaitSeconds);
+                s.dockDispatcher.movementsAhead = static_cast<std::uint32_t>(dock.movementsAhead);
+                fillDockDispatcherGeometry(id, s.dockDispatcher);
             }
         }
 

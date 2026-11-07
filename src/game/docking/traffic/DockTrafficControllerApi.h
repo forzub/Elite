@@ -39,6 +39,8 @@ struct DockingTrafficRequest
     DockSizeClass shipClass = DockSizeClass::Unknown;
     DockingEnvelope envelope {};
     bool emergency = false;
+    // Why the ship comes (DockPurpose*); empty = any place will do.
+    std::string purpose;
 
     double etaToFacilitySeconds = 0.0;
 
@@ -112,6 +114,10 @@ struct DockTrafficShipStatus
     std::string padId;
     std::uint64_t revision = 0;
     double phaseSinceSeconds = 0.0;
+    // Rough wait until this ship's own movement through the entrance is
+    // cleared: lane movements ahead of it x a typical movement time.
+    double estimatedWaitSeconds = 0.0;
+    std::size_t movementsAhead = 0;
 };
 
 // Whole-facility view for terminals / logs / tests.
@@ -167,6 +173,10 @@ public:
         double nowSeconds,
         double preferredHoldAzimuthRad = -1.0,
         bool directEntry = false);
+    // True when an arrival asked now would be cleared at once: nobody waits
+    // (arrival queue, holds, departures), the shared lanes and a pad are free.
+    // The pilot's request then is a direct entry, otherwise it takes a hold.
+    [[nodiscard]] bool entryFreeNow(const DockingTrafficRequest& request) const;
     bool reportAtHold(std::uint64_t shipId, double nowSeconds);
     // Past the chamber gate: the station takes over (outer lane and the hold
     // are released, the chamber lane stays until landing).
@@ -200,6 +210,10 @@ public:
         const AccessPortalDescriptor& portal,
         const ParkingPadDescriptor& pad
     ) noexcept;
+
+    // Allocation order (author 2026-11-07): does the ship fit, is the place
+    // free, does the place serve why the ship comes.
+    [[nodiscard]] static bool purposeAllows(const std::string& purpose, const ParkingPadDescriptor& pad) noexcept;
 
     [[nodiscard]] static bool classPolicyAllows(
         DockSizeClass shipClass,

@@ -15,7 +15,9 @@
             TogglePropulsionReactors,
             ToggleAssistedFreeRotation,
             InjectEquipmentFailure, // developer-only main-engine malfunction
-            RequestDockDeparture,   // docked at the hub dock: ask the dispatcher to leave
+            RequestDockDeparture,   // docked at the hub dock: ask the dispatcher to leave (index 0);
+                                    //     index 1: the pilot takes the controls during the station's
+                                    //     departure (released early, outside the portal only)
             ToggleStabilization,    // Ctrl+K: stabilization (hub / orbit / ground frame, 500 m/s envelope)
                                     //     on / off = normal flight (no speed envelope) off / on
             SetFreeFlightThrust,    // free flight: index 0 off (INSERT), 1 full (HOME), 2 brake (END)

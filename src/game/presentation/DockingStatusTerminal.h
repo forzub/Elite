@@ -32,6 +32,8 @@ struct DockingTerminalSnapshot
     std::string activity;
     // The dock dispatcher's status for this ship: printed when it changes.
     std::string dispatcher;
+    // The pilot's takeover / the station's release (printed when it changes).
+    std::string pilotNotice;
     std::string error;
     std::string biteNominalText;
     // Completed immutable planner measurements (separate from BITE faults).
@@ -172,6 +174,8 @@ public:
             }
             enqueueChanged(m_last.dispatcher, snapshot.dispatcher,
                            DockingTerminalSeverity::Info);
+            enqueueChanged(m_last.pilotNotice, snapshot.pilotNotice,
+                           DockingTerminalSeverity::Warning);
             enqueueChanged(m_last.activity, snapshot.activity,
                            DockingTerminalSeverity::Info);
             if (snapshot.plannerDetails != m_last.plannerDetails)

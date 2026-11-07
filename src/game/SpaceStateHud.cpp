@@ -1,6 +1,7 @@
 // SpaceState: Flight HUD and in-session overlays (route planning modal, navigation stress, language, universe time).
 
 #include "src/game/presentation/DockingWidgetText.h"
+#include "src/game/docking/model/HexDockFacility.h"
 #include "src/game/navigation/FreeFlightCodes.h"
 #include "src/game/SpaceStateInternal.h"
 
@@ -790,6 +791,23 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
             for (const auto& line : game::presentation::dockDispatcherTerminalLines(in))
                 text += (text.empty() ? "" : " / ") + line;
         terminal.dispatcher = text;
+        terminal.visible = true;
+    }
+    {
+        // a notice lives a few seconds, so the same warning can be printed again later
+        static std::string shown;
+        static double shownAt = 0.0;
+        if (m_pilotNotice != shown)
+        {
+            shown = m_pilotNotice;
+            shownAt = glfwGetTime();
+        }
+        else if (!shown.empty() && glfwGetTime() - shownAt > 6.0)
+            m_pilotNotice.clear();
+    }
+    if (!m_pilotNotice.empty())
+    {
+        terminal.pilotNotice = m_pilotNotice;
         terminal.visible = true;
     }
     {
@@ -1687,6 +1705,27 @@ void SpaceState::renderDockingWidget(const Viewport& viewport)
     in.speedMps = glm::length(ship.transform.motion.localVelocityMps);
     if (m_noSafeDockingGuidanceSolution && !m_dockingGuidanceFailureReason.empty())
         in.failure = m_dockingGuidanceFailureReason;
+    in.stationControlled = dock.active && dock.stationControlled;
+    if (in.stationControlled && glm::length(dock.axisOutLocal) > 0.5)
+    {
+        // the station releases a departing ship at rest at the departure turn point
+        const auto& g = game::docking::hex::hexDockGeometry();
+        const double along = glm::dot(ship.transform.motion.localPositionMeters - dock.entryLocalMeters, dock.axisOutLocal);
+        in.releaseKnown = true;
+        in.releaseDistanceMeters = std::max(0.0, (g.entryFaceZ - g.departureTurnZ) - along);
+        in.beyondGate = along > 30.0;
+    }
+    // the station let the ship go: "управление ваше" for a few seconds
+    const double nowGlfw = glfwGetTime();
+    if (m_lastStationControlled && !in.stationControlled && in.phase != game::docking::traffic::DockTrafficPhase::StationControl &&
+        in.phase != game::docking::traffic::DockTrafficPhase::Docked)
+    {
+        m_stationReleasedAtSeconds = nowGlfw;
+        m_pilotNotice = "ВЫЛЕТ: станция отпустила корабль";
+    }
+    m_lastStationControlled = in.stationControlled;
+    in.justReleased = m_stationReleasedAtSeconds >= 0.0 && nowGlfw - m_stationReleasedAtSeconds < 8.0;
+    in.takeoverSecondsLeft = m_takeoverSecondsLeft;
     const auto widget = game::presentation::dockingWidgetText(in);
     m_dockingWidgetConsoleLine = widget.visible ? widget.consoleLine : std::string();
     if (!widget.visible)

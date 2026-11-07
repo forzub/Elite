@@ -863,7 +863,10 @@ void GameServer::update(double dt)
                     break;
 
                 case ClientShipCommand::RequestDockDeparture:
-                    m_simulation.requestDockDeparture(id);
+                    if (shipCmd.index == 1)
+                        m_simulation.releaseDockDepartureToPilot(id);
+                    else
+                        m_simulation.requestDockDeparture(id);
                     break;
 
                 case ClientShipCommand::RequestDockArrival:

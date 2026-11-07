@@ -41,6 +41,12 @@ struct DockingWidgetInput
     double distanceToEntryMeters = 0.0;
     double speedMps = 0.0;
     std::string failure;              // the client planner's failure, if any
+    bool stationControlled = false;   // the station flies the ship (capture / departure)
+    bool releaseKnown = false;        // departure: the distance to the release point
+    double releaseDistanceMeters = 0.0;
+    bool beyondGate = false;          // departure: already outside the dock (takeover possible)
+    bool justReleased = false;        // the station let the ship go a moment ago
+    double takeoverSecondsLeft = -1.0;  // >= 0: the pilot's takeover countdown
 };
 
 struct DockingWidgetField
@@ -87,11 +93,31 @@ struct DockingWidgetText
 {
     using game::docking::traffic::DockTrafficPhase;
     DockingWidgetText out;
-    const bool dispatcher = in.dispatcherActive && in.phase != DockTrafficPhase::None && in.phase != DockTrafficPhase::Departed;
-    if (!in.requestPending && !dispatcher)
+    // A departing ship stays on the panel until the station lets it go (its
+    // dispatcher record is already "departed" at the lane clear point).
+    // Released on the departure (its lane may still be held until the clear
+    // point): no longer the station's ship - only the short "yours" notice.
+    const bool releasedOnDeparture = !in.stationControlled &&
+        (in.phase == DockTrafficPhase::DepartureCleared || in.phase == DockTrafficPhase::Departed);
+    const bool dispatcher = in.dispatcherActive && !releasedOnDeparture &&
+        ((in.phase != DockTrafficPhase::None && in.phase != DockTrafficPhase::Departed) || in.stationControlled);
+    const bool departing = in.stationControlled &&
+        (in.phase == DockTrafficPhase::DepartureCleared || in.phase == DockTrafficPhase::Departed);
+    if (!in.requestPending && !dispatcher && !in.justReleased)
         return out;
     out.visible = true;
-    out.title = "СТЫКОВКА";
+    out.title = departing || (in.justReleased && !dispatcher) ? "ВЫЛЕТ" : "СТЫКОВКА";
+    if (in.justReleased && !dispatcher && !in.requestPending)
+    {
+        out.chip = "УПРАВЛЕНИЕ ВАШЕ";
+        out.chipTone = 2;
+        out.consoleLine = "ВЫЛЕТ: управление у пилота";
+        out.lines.push_back(out.consoleLine);
+        char v[32];
+        std::snprintf(v, sizeof v, "%.0f м/с", in.speedMps);
+        out.fields.push_back({"СКОРОСТЬ", v});
+        return out;
+    }
 
     const auto clientStatus = [&]() -> std::string {
         switch (in.clientPhase)
@@ -126,7 +152,7 @@ struct DockingWidgetText
             status = "вход разрешён: " + clientStatus();
             break;
         case DockTrafficPhase::StationControl:
-            status = "станция ведёт на площадку " + in.padId;
+            status = "станция ведёт на " + in.padId + ", руль у станции";
             showDistance = false;
             break;
         case DockTrafficPhase::Docked:
@@ -139,7 +165,9 @@ struct DockingWidgetText
             showDistance = false;
             break;
         case DockTrafficPhase::DepartureCleared:
-            status = "вылет: станция выводит корабль";
+        case DockTrafficPhase::Departed:
+            // no changing numbers here: the console prints every new phrase
+            status = in.beyondGate ? "за воротами; руль 3 с - взять управление" : "станция выводит корабль из дока";
             showDistance = false;
             break;
         default: break;
@@ -166,7 +194,7 @@ struct DockingWidgetText
              (in.phase == DockTrafficPhase::EntryCleared))
         out.lines.push_back("площадка " + in.padId);
 
-    out.consoleLine = "СТЫКОВКА: " + status;
+    out.consoleLine = (departing ? "ВЫЛЕТ: " : "СТЫКОВКА: ") + status;
     // ---- the panel ----
     const DockTrafficPhase ph = dispatcher ? in.phase : DockTrafficPhase::None;
     switch (ph)
@@ -182,12 +210,30 @@ struct DockingWidgetText
         case DockTrafficPhase::StationControl: out.chip = "СТАНЦИЯ"; out.chipTone = 2; break;
         case DockTrafficPhase::Docked: out.chip = "ДОК " + in.padId; out.chipTone = 2; break;
         case DockTrafficPhase::DepartureQueued: out.chip = "ВЫЛЕТ: ОЧЕРЕДЬ"; out.chipTone = 1; break;
-        case DockTrafficPhase::DepartureCleared: out.chip = "ВЫЛЕТ"; out.chipTone = 2; break;
+        case DockTrafficPhase::DepartureCleared:
+        case DockTrafficPhase::Departed: out.chip = "СТАНЦИЯ ВЕДЁТ"; out.chipTone = 2; break;
         default: break;
+    }
+    if (departing)
+    {
+        char v[32];
+        std::snprintf(v, sizeof v, "%.0f м/с", in.speedMps);
+        if (in.releaseKnown)
+            out.fields.push_back({"ДО ВЫПУСКА", dockingWidgetDistance(in.releaseDistanceMeters)});
+        out.fields.push_back({"СКОРОСТЬ", v});
+        if (in.beyondGate)
+            out.fields.push_back({"ПЕРЕХВАТ", "руль 3 с"});
     }
     if (!in.failure.empty())
     {
         out.chip = "ОШИБКА";
+        out.chipTone = 3;
+    }
+    if (in.takeoverSecondsLeft >= 0.0)
+    {
+        char c[48];
+        std::snprintf(c, sizeof c, "ПЕРЕХВАТ %.0f с", std::ceil(in.takeoverSecondsLeft));
+        out.chip = c;
         out.chipTone = 3;
     }
     if (showDistance && in.distanceKnown)
@@ -207,7 +253,7 @@ struct DockingWidgetText
             out.fields.push_back({"ВПЕРЕДИ", std::to_string(in.movementsAhead)});
         out.fields.push_back({"ЖДАТЬ", dockingWidgetWait(in.estimatedWaitSeconds)});
     }
-    if (dispatcher && (!in.holdPointId.empty() || !in.padId.empty()) && ph != DockTrafficPhase::Docked)
+    if (dispatcher && !departing && (!in.holdPointId.empty() || !in.padId.empty()) && ph != DockTrafficPhase::Docked)
     {
         std::string place = in.holdPointId.empty() || in.holdPointId == "DIRECT" ? std::string() : in.holdPointId;
         if (!in.padId.empty())

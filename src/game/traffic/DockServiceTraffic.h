@@ -195,6 +195,10 @@ public:
     // clearance the station lifts it out and releases it at the portal: pose()
     // then reports present = false and the pilot / autopilot has the ship.
     bool requestExternalDeparture(std::uint64_t shipId, double nowSeconds);
+    // The pilot takes the controls during the station's axial departure (outside
+    // the portal only - never inside the chamber): the station lets go at once,
+    // the ship keeps its velocity; the lane is released at the clear point as usual.
+    bool releaseExternalToPilot(std::uint64_t shipId, double nowSeconds);
     [[nodiscard]] bool isExternal(std::uint64_t shipId) const;
 
     game::docking::traffic::DockTrafficController& dispatcher();

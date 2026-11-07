@@ -491,6 +491,16 @@ bool GameSimulation::requestDockDeparture(EntityId shipId)
     return ok;
 }
 
+bool GameSimulation::releaseDockDepartureToPilot(EntityId shipId)
+{
+    if (!m_dockServiceTraffic)
+        return false;
+    const bool ok = m_dockServiceTraffic->releaseExternalToPilot(shipId.value, m_serverTimelineClock.timeSeconds());
+    std::cerr << "[DockTraffic] pilot " << shipId.value << " takes the controls during the departure: "
+              << (ok ? "released early" : "refused (still inside the dock)") << "\n";
+    return ok;
+}
+
 // Pilot ships (player-controlled) and the dock dispatcher. Docking is
 // requested when the ship enters the approach zone on the dock axis; the
 // station captures it at the portal once entry is cleared and owns its pose
@@ -614,7 +624,7 @@ void GameSimulation::updateDockPilotShips()
                     }
                     break;
                 case DockTrafficPhase::DepartureCleared:
-                    if (p.z <= -2400.0 || glm::length(p) > 3000.0)
+                    if (p.z <= -2400.0 || glm::length(p) > 3000.0 || radial > 300.0)
                     {
                         dispatcher.reportClear(id.value, now);
                         std::cerr << "[DockTraffic] pilot " << id.value << " clear of the dock lane\n";

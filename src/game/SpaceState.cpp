@@ -4,6 +4,7 @@
 #include "src/game/SpaceStateInternal.h"
 #include "src/game/dev/DevScriptRunner.h"
 #include <algorithm>
+#include <fstream>
 #include <cstdio>
 
 
@@ -545,6 +546,120 @@ void SpaceState::prepareFrame(float dt)
 // =====================================================================================
 // Input
 // =====================================================================================
+// The pilot takes the controls back from a virtual pilot (author 2026-11-08):
+// touching the controls while an autopilot flies the ship gives a warning; if
+// the pilot keeps handling them for 3 s the autopilot is switched off and its
+// route / docking request is dropped. Letting go for a second before that
+// cancels the takeover. A route flown by hand (guidance mode) is never dropped
+// by the controls - only by removing its card on the map. The station's
+// departure: beyond the dock gate the same takeover releases the ship early;
+// inside the dock the station keeps it (only a notice).
+void SpaceState::updatePilotTakeover(bool touching)
+{
+    using game::docking::traffic::DockTrafficPhase;
+    enum class Owner { None, Docking, Route, Body, StationAxis, StationInside };
+    Owner owner = Owner::None;
+    const auto& pending = m_navigationWorkspace.dockingRouteRequests().pending();
+    bool stationControlled = false;
+    if (m_client)
+        if (const auto it = m_client->world().ships().find(m_playerId.value); it != m_client->world().ships().end())
+        {
+            const auto& dock = it->second.dockDispatcher;
+            const auto phase = static_cast<DockTrafficPhase>(dock.phase);
+            // a release already sent: the snapshot may still say "station" for a moment
+            stationControlled = dock.active && dock.stationControlled && glfwGetTime() - m_takeoverReleaseSentSeconds > 3.0;
+            if (stationControlled)
+            {
+                // beyond the dock gate on the departure axis?
+                const double along = glm::dot(it->second.transform.motion.localPositionMeters - dock.entryLocalMeters, dock.axisOutLocal);
+                const bool departing = phase == DockTrafficPhase::DepartureCleared || phase == DockTrafficPhase::Departed;
+                owner = departing && along > 30.0 ? Owner::StationAxis : Owner::StationInside;
+            }
+        }
+    if (!stationControlled)
+    {
+        if (m_clientRouteOwnsControl)
+            owner = Owner::Route;
+        else if (m_bodyAutopilotOwnsControl)
+            owner = Owner::Body;
+        else if (m_clientAutopilotControlActive && pending.valid() && pending.mode == game::navigation::DockingRouteRequest::Mode::Automatic)
+            owner = Owner::Docking;
+    }
+    const double now = glfwGetTime();
+    const auto reset = [&] {
+        m_takeoverSinceSeconds = -1.0;
+        m_takeoverSecondsLeft = -1.0;
+    };
+    if (owner == Owner::None)
+    {
+        reset();
+        return;
+    }
+    if (owner == Owner::StationInside)
+    {
+        reset();
+        if (touching)
+            m_pilotNotice = "СТАНЦИЯ: в доке руль у станции, ждите ворот";
+        return;
+    }
+    if (touching)
+    {
+        if (m_takeoverSinceSeconds < 0.0)
+        {
+            m_takeoverSinceSeconds = now;
+            m_pilotNotice = owner == Owner::StationAxis
+                ? "ВНИМАНИЕ: руль - станция отпустит через 3 с"
+                : "ВНИМАНИЕ: руль - автопилот выкл. через 3 с";
+            std::cerr << "[Takeover] the pilot touches the controls - warning (3 s)" << std::endl;
+        }
+        m_takeoverLastInputSeconds = now;
+    }
+    else if (m_takeoverSinceSeconds >= 0.0 && now - m_takeoverLastInputSeconds > 1.0)
+    {
+        reset();
+        m_pilotNotice = owner == Owner::StationAxis ? "Руль отпущен: станция ведёт дальше" : "Руль отпущен: автопилот продолжает";
+        std::cerr << "[Takeover] controls released - the autopilot continues" << std::endl;
+        return;
+    }
+    if (m_takeoverSinceSeconds < 0.0)
+        return;
+    m_takeoverSecondsLeft = std::max(0.0, 3.0 - (now - m_takeoverSinceSeconds));
+    if (m_takeoverSecondsLeft > 0.0)
+        return;
+    reset();
+    switch (owner)
+    {
+        case Owner::Docking:
+            m_navigationWorkspace.dockingRouteRequests().clear();
+            m_pilotNotice = "АВТОПИЛОТ ВЫКЛ.: стыковка прервана";
+            break;
+        case Owner::Route:
+            cancelClientRoute();
+            m_pilotNotice = "АВТОПИЛОТ ВЫКЛ.: маршрут прерван";
+            break;
+        case Owner::Body:
+            cancelClientBodyAutopilot();
+            m_pilotNotice = "АВТОПИЛОТ ВЫКЛ.: управление у пилота";
+            break;
+        case Owner::StationAxis:
+            if (m_client)
+            {
+                game::network::ClientMessage msg;
+                ClientShipCommand command;
+                command.type = ClientShipCommand::RequestDockDeparture;
+                command.index = 1;   // the pilot takes the controls during the departure
+                msg.payload = command;
+                m_client->sendMessage(msg);
+            }
+            m_pilotNotice = "СТАНЦИЯ: управление передано пилоту";
+            m_takeoverReleaseSentSeconds = now;   // the release is on its way: no second takeover
+            break;
+        default:
+            break;
+    }
+    std::cerr << "[Takeover] " << m_pilotNotice << std::endl;
+}
+
 void SpaceState::handleInput()
 {
     // Restore the temporary manual construction preference once the
@@ -1030,23 +1145,36 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         m_playerControl = m_shipRuntimeControlOracle.control();
         m_client->submitInput(m_playerControl);
     }
-    else if (!m_clientAutopilotControlActive && !m_bodyAutopilotOwnsControl && !m_clientRouteOwnsControl)
+    else
     {
-        // Human input owns the ordinary control stream only while the local
-        // virtual pilots (docking, the body autopilot, the route) are inactive.
-        // virtual pilot is inactive. Client autopilot submission happens from
-        // updateDockingAdvisory(), so it continues even while a map/UI screen
-        // causes handleInput() to return before reaching this block.
-        m_inputMapper.update(m_playerControl, currentLocalControlLaw, playerFreeFlight);
+        // The pilot's controls are read every control frame. Human input owns
+        // the ordinary control stream only while the local virtual pilots
+        // (docking, the body autopilot, the route) are inactive; their
+        // submission happens from updateDockingAdvisory() / the route, so it
+        // continues even while a map/UI screen returns before this block.
+        // While a virtual pilot (or the station) flies, touching the controls
+        // is the pilot's takeover (updatePilotTakeover, author 2026-11-08).
+        ShipControlState sampled;
+        m_inputMapper.update(sampled, currentLocalControlLaw, playerFreeFlight);
         if (m_devThrustUntilMs > 0.0 && startupElapsedMs(m_startupTotalBegin) < m_devThrustUntilMs)
-            m_playerControl.targetSpeedRate = 1.0f;      // DEV map script "thrust:<s>": '+' held
+            sampled.targetSpeedRate = 1.0f;      // DEV map script "thrust:<s>": '+' held
         if (m_devYawUntilMs > 0.0 && startupElapsedMs(m_startupTotalBegin) < m_devYawUntilMs)
-            m_playerControl.yawInput = 1.0f;             // DEV "yaw:<s>": yaw key held
+            sampled.yawInput = 1.0f;             // DEV "yaw:<s>": yaw key held
         if (m_devPitchUntilMs > 0.0 && startupElapsedMs(m_startupTotalBegin) < m_devPitchUntilMs)
-            m_playerControl.pitchInput = 1.0f;           // DEV "pitch:<s>": pitch key held
+            sampled.pitchInput = 1.0f;           // DEV "pitch:<s>": pitch key held
         if (m_devRollUntilMs > 0.0 && startupElapsedMs(m_startupTotalBegin) < m_devRollUntilMs)
-            m_playerControl.rollInput = 1.0f;            // DEV "roll:<s>": roll key held
-        m_client->submitInput(m_playerControl);
+            sampled.rollInput = 1.0f;            // DEV "roll:<s>": roll key held
+        const bool virtualPilot = m_clientAutopilotControlActive || m_bodyAutopilotOwnsControl || m_clientRouteOwnsControl;
+        if (!virtualPilot)
+        {
+            m_playerControl = sampled;
+            m_client->submitInput(m_playerControl);
+        }
+        const bool touching = sampled.pitchInput != 0.0f || sampled.yawInput != 0.0f || sampled.rollInput != 0.0f ||
+                              sampled.strafeInput != 0.0f || sampled.liftInput != 0.0f || sampled.forwardInput != 0.0f ||
+                              sampled.targetSpeedRate != 0.0f || sampled.assistedMaxSpeedCommand ||
+                              sampled.velocityAlignmentCommand != game::navigation::VelocityAlignmentMode::None;
+        updatePilotTakeover(touching);
     }
 
 
@@ -2586,9 +2714,50 @@ m_playerView->updateCockpitStateFromSnapshot(
 // =====================================================================================
 void SpaceState::render(){}
 
+// DEV: ELITE_DEV_ROT_TRACE=<csv> - the player's rendered attitude per frame
+// (turn smoothness: the render step angle vs the frame time, the authoritative /
+// predicted attitude step, the motion mode). Measurement only.
+static void devTraceRenderedAttitude(const ClientWorldState& world, std::uint64_t playerId)
+{
+    static const char* path = std::getenv("ELITE_DEV_ROT_TRACE");
+    if (!path || !*path)
+        return;
+    static std::ofstream out(path);
+    static bool header = false;
+    static double lastT = -1.0;
+    static glm::quat lastRender(1.0f, 0.0f, 0.0f, 0.0f), lastAuth(1.0f, 0.0f, 0.0f, 0.0f);
+    const auto it = world.ships().find(playerId);
+    if (it == world.ships().end() || !out)
+        return;
+    if (!header)
+    {
+        out << "t,dt_ms,mode,free_flight,render_step_deg,render_rate_dps,auth_step_deg\n";
+        header = true;
+    }
+    const double t = glfwGetTime();
+    const glm::quat render = glm::normalize(glm::quat_cast(it->second.renderTransform.orientation));
+    const glm::quat auth = glm::normalize(glm::quat_cast(it->second.transform.orientation));
+    if (lastT >= 0.0)
+    {
+        const auto angle = [](const glm::quat& a, const glm::quat& b) {
+            return glm::degrees(2.0 * std::acos(std::min(1.0, std::abs(static_cast<double>(glm::dot(a, b))))));
+        };
+        const double dt = t - lastT;
+        const double step = angle(lastRender, render);
+        out << t << ',' << dt * 1000.0 << ',' << static_cast<int>(it->second.transform.motion.mode) << ','
+            << (it->second.transform.motion.freeFlight ? 1 : 0) << ',' << step << ',' << (dt > 0.0 ? step / dt : 0.0) << ','
+            << angle(lastAuth, auth) << '\n';
+    }
+    lastT = t;
+    lastRender = render;
+    lastAuth = auth;
+}
+
 void SpaceState::renderUI()
 {
     const double renderUiStartMs = nowMs();
+    if (m_client)
+        devTraceRenderedAttitude(m_client->world(), m_playerId.value);
 
 
         if (context().app &&

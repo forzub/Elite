@@ -226,6 +226,15 @@ public:
     // the planned route flown by the client (SpaceStateRouteRun.cpp)
     void startClientRoute(const std::vector<game::navigation::route::RoutePoint>& legs);
     void cancelClientRoute();
+    // The pilot's takeover of an autopilot / the station's departure (3 s of handling).
+    void updatePilotTakeover(bool touching);
+    double m_takeoverSinceSeconds = -1.0;
+    double m_takeoverLastInputSeconds = -1.0;
+    double m_takeoverSecondsLeft = -1.0;      // >= 0: the takeover countdown runs
+    double m_takeoverReleaseSentSeconds = -1.0e9;  // glfw time the station release was asked
+    std::string m_pilotNotice;                // the takeover / release notice for the HUD console
+    bool m_lastStationControlled = false;
+    double m_stationReleasedAtSeconds = -1.0; // glfw time the station let the ship go
     void updateClientRoute();
     int clientRouteState() const;   // 0 none, 1 flying, 2 paused, 3 service, 4 landing
     game::navigation::globalflight::RouteLegResolver clientRouteResolver() const;

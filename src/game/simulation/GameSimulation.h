@@ -171,6 +171,8 @@ public:
     game::traffic::dock::DockServiceTraffic* dockServiceTraffic() noexcept;
     // Pilot asks the dock dispatcher to leave the pad (docked ships only).
     bool requestDockDeparture(EntityId shipId);
+    // The pilot took the controls during the station's axial departure: released early.
+    bool releaseDockDepartureToPilot(EntityId shipId);
 
 
     // Ctrl+J free flight (GameSimulationFreeFlight.cpp): on - the travel frame is detached and

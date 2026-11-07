@@ -4065,3 +4065,31 @@ request now enables the same guidance modules as a dock-card request. Live dk16/
 capture cylinder_b.entry_front -> blue lane (hard) -> release -> terminal; Hub Map trajectory shown; request
 10.7 km out -> latched 272 s; full cycle to the release beyond the gates. A pilot hold point needs the planner
 itself to plan a stop there (not done).
+Author 2026-11-08: "почему после отстыковки не возвращается управление кораблем?" then "управление обратно отдано,
+но уже и из дока вылетел и виджет пропал. на терминале ХУД хоть какую-то информацию выдавать надо". Diagnosis: the
+station flies a departing pilot ship along the axis to rest at departureTurnZ (-11 km, ~2-3 min) and releases it
+only there; the dispatcher marks it Departed at the lane clear point (-2.4 km), so the widget (hidden on Departed)
+vanished while the station still held the ship. Author rule (same day): touching the controls while an autopilot
+flies -> a warning, after 3 s the autopilot is off and the route is dropped; a route flown by hand (guidance mode)
+is dropped only by removing its card on the map (maybe later a button).
+DONE (source + live DEV): SpaceState::updatePilotTakeover - the pilot's controls are sampled every control frame;
+owners: the docking autopilot (automatic request), the client route, the body autopilot, the station on the
+departure axis (beyond the gate). Touch -> "ВНИМАНИЕ: руль - ... через 3 с"; letting go > 1 s cancels; 3 s of
+handling -> docking request cleared (dispatcher cancel) / route cancelled / body autopilot cancelled / station
+asked to release (ClientShipCommand::RequestDockDeparture index 1 -> DockServiceTraffic::releaseExternalToPilot,
+AxialOut only, never inside the chamber). Inside the dock: only a notice. A released departing pilot off the axis
+(radial > 300 m) frees the outer lane. Widget: the departure stays on the panel until the station lets go
+("ВЫЛЕТ / СТАНЦИЯ ВЕДЁТ", ДО ВЫПУСКА km, СКОРОСТЬ, ПЕРЕХВАТ руль 3 с), then "УПРАВЛЕНИЕ ВАШЕ" for 8 s; console
+lines without changing numbers (no repeats); the HUD console gets a separate pilot notice (warning severity,
+6 s life). Live DEV dk19: docked -> departure queued 2nd, cleared after 177 s -> beyond the gate a 4 s yaw ->
+warning -> "released early" at z -175, free flight. dk20: a 1 s yaw during the docking autopilot -> warning ->
+"continues"; a 5 s yaw -> "АВТОПИЛОТ ВЫКЛ.: стыковка прервана", dispatcher cancel. Gates 209: 203 pass, 6 known
+red, 0 new; docking API tests PASS; DockTrafficCheck 0 violations. Not flown by the author yet.
+Author 2026-11-08: "иногда мне кажется, что повороты корабля на столько рваные, что я принимаю их за фризы".
+Measured (DEV ELITE_DEV_ROT_TRACE=<csv>, the rendered attitude per frame): steady 90 deg/s yaw / pitch / roll,
+hub frame and free flight: no stalls, frames <= 18 ms, the per-frame step follows the frame time (corr 0.64-0.73,
+one-frame offset). Hypothesis "the render blend towards a tick-stepped target pulses" - a rate-propagated render
+attitude was tried with a pre-registered PASS (frame-jump p95 <= 12 %): FAIL (no measurable change) -> REVERTED.
+The author's 00:05 session hitch log had almost no frames >= 80 ms in flight. OPEN: catch the real case - a turn
+exposes any 30-80 ms frame stall (4.5 deg at 90 deg/s) that the 80 ms hitch log misses; next author session with
+ELITE_DEV_HITCH_MS=35 (+ ELITE_DEV_ROT_TRACE) to see which phase stalls.

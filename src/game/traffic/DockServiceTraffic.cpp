@@ -1378,6 +1378,17 @@ bool DockServiceTraffic::requestExternalDeparture(std::uint64_t shipId, double n
     return true;
 }
 
+bool DockServiceTraffic::releaseExternalToPilot(std::uint64_t shipId, double nowSeconds)
+{
+    auto it = m_impl->actors.find(shipId);
+    if (it == m_impl->actors.end() || !it->second.external || it->second.phase != ActorPhase::AxialOut)
+        return false;
+    m_impl->now = std::max(m_impl->now, nowSeconds);
+    m_impl->say(shipId, "the pilot took the controls on the axis - released early");
+    m_impl->setPhase(it->second, ActorPhase::Gone);
+    return true;
+}
+
 bool DockServiceTraffic::isExternal(std::uint64_t shipId) const
 {
     const auto it = m_impl->actors.find(shipId);

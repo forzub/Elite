@@ -4032,3 +4032,36 @@ Author 2026-11-07: "трафик нет смысла делать затянут
   Offline 4 profiles: max hold wait 234 / 216 / 276 / 230 s, max departure wait 240 / 186 / 199 / 261 s,
   12.2..12.5 arrivals/h, flow holds 134..348 per 6 h, 0 violations; emergency 9/600: 1260 / 506 s (unchanged).
   Gates 209: 203 pass, 6 known red, 0 new; API tests PASS. Live: not run for this slice (game build OK).
+Author 2026-11-07 (regression report): "исчезла траектория на карте хаба ... мы теперь не проходим через синюю зону ...
+верни". Root cause: the hold flow erased the planner's route (the Hub Map draws only the docking computer's corridor
+id dock:<module>:<anchor>) and flew straight to the hold / from the hold (and the planner's near-dock start skipped
+the cylinder). Fix: the planner's near-dock start (axis_approach portal, 35 m/s cap, short lead) REVERTED - the
+direct route is again cylinder_b.entry_front -> dock front; the hold path now goes ship -> 700 m straight -> through
+the guidance cylinder (blue lane) -> 150 m beyond -> the hold (free legs bent around obstacles), corner speed caps
+braked into; the Hub Map gets the whole trajectory (to the hold + the entry preview into the dock) under the
+docking computer's id. dk12: hold path 20 km through the blue lane, cross-track in the cylinder <= 14 m, but ~1 km
+wide after the exit turn at 90 m/s -> corner caps (dk13 pending).
+Author 2026-11-07 order: interstellar JUMPS next - charging 5..10 min max (not 6..30 h), limits: fuel + the
+procedure; target (orbit / hub) -> "рассчитать прыжок" -> straight legs avoiding hazards, preferring inhabited
+systems, fuel check + refuel points -> "старт"; a cartoon-style effect (shake, tail up, jerk, cockpit distortion,
+new sky); the exit's direction and speed chosen to reach the hub / orbit, else hang in space. Beacons stay as they
+are. Readiness audit (2026-11-07): server/client already follow the active system (GameServer::
+resolveSingleActiveSimulationSystemId, client snapshot by playerNavigation.currentSystemId), ephemerides exist for
+all 61 systems, the starfield is observer-relative (changes after a jump); MISSING: any code that moves a ship to
+another system, runtime hubs outside Sol (all 10 orbital_hubs + 8 runtime bindings are Sol; 539 sites in 28
+systems are map markers only), interstellar routes / max hop / neighbour table, jump charge consumption and
+charging time, a cross-system planner, the zones (jump_distortion / unstable_navigation) are not loaded.
+Author 2026-11-07: "мне кажется или у тебя полностью сломался и планировщик и автопилот?" / "а зачем нам к доку
+лететь по ломаной? ломаная нужна была для прыжков" / "прыжок доставляет к хабу, а возле хаба уже действует обычная
+механика стыковки". Diagnosis: the planner / autopilot code was not changed, but the client dispatcher gate took the
+control stream away from them whenever the dock was busy (a home-made polyline pilot: 20 km to the hold, up to
+~330 m off its own corridor; guidance-mode requests got no planner at all; a 4 s pre-wait). DECISION: the gate no
+longer flies or draws anything - it only tells the dispatcher (RequestDockArrival, always a direct-entry request:
+first in the queue, captured on the approach axis once cleared) and ends the request when docked. REMOVED: the
+hold path / entry path pilots, the hold / entry corridors and the hold volume, the green frame colour (my misreading
+of "green corridor" = the zone type, not a colour), ELITE_DEV_DOCK_FORCE_HOLD. Kept: dispatcher alternation, flow
+control (<= 5 min), lively entry + drift, the panel + console line, holds at z -2600 for the traffic. The DEV dock
+request now enables the same guidance modules as a dock-card request. Live dk16/dk17: route stages free ->
+capture cylinder_b.entry_front -> blue lane (hard) -> release -> terminal; Hub Map trajectory shown; request
+10.7 km out -> latched 272 s; full cycle to the release beyond the gates. A pilot hold point needs the planner
+itself to plan a stop there (not done).

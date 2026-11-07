@@ -48,24 +48,6 @@
       }
     },
     {
-      "id": "hex_dock_a.axis_approach",
-      "module_id": "hub_hex_dock_a",
-      "semantic_anchor_id": "dock_axis_approach",
-      "role": "transit_entry",
-      "crossing_forward_local": [
-        0,
-        0,
-        1
-      ],
-      "up_local": [
-        0,
-        1,
-        0
-      ],
-      "required_clearance_m": 18,
-      "max_crossing_speed_mps": 40
-    },
-    {
       "id": "hex_dock_a.dock_front",
       "module_id": "hub_hex_dock_a",
       "semantic_anchor_id": "dock_gate_front",
@@ -107,12 +89,6 @@
     {
       "id": "cylinder_b.exit_to_hex_dock_a.front",
       "from_portal_id": "cylinder_b.exit_rear",
-      "to_portal_id": "hex_dock_a.dock_front",
-      "kind": "terminal_approach"
-    },
-    {
-      "id": "hex_dock_a.axis_approach_to_front",
-      "from_portal_id": "hex_dock_a.axis_approach",
       "to_portal_id": "hex_dock_a.dock_front",
       "kind": "terminal_approach"
     }

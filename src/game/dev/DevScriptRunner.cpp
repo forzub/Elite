@@ -638,6 +638,10 @@ void DevScriptRunner::requestDockingWhenDue(SpaceState& s)
         target.semanticAnchorId = DevDockAnchorId;
         const auto serial = s.m_navigationWorkspace.dockingRouteRequests().request(
             target, game::navigation::DockingRouteRequest::Mode::Automatic);
+        // the same modules a request from the dock card enables (route + corridor shown)
+        s.m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::RoutePlanning, true);
+        s.m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::LocalGuidance, true);
+        s.m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::HudGuidanceCorridor, true);
         std::cerr << "[DevDockRequest] request=" << serial << " target=" << DevDockModuleId << ':' << DevDockAnchorId << '\n';
     }
 }

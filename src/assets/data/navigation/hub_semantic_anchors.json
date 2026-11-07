@@ -36,35 +36,6 @@
           "capture_depth_m": 160
         },
         {
-          "id": "dock_axis_approach",
-          "kind": "transit_gate",
-          "local_position_m": [
-            0,
-            0,
-            -1800
-          ],
-          "local_forward": [
-            0,
-            0,
-            1
-          ],
-          "local_up": [
-            0,
-            1,
-            0
-          ],
-          "extent_m": [
-            160,
-            60,
-            0
-          ],
-          "required_clearance_m": 18,
-          "max_entry_speed_mps": 40,
-          "enabled": true,
-          "display_name": "HEX DOCK AXIS APPROACH",
-          "orientation_policy": "upright"
-        },
-        {
           "id": "attack_reference_core",
           "kind": "attack_point",
           "local_position_m": [

@@ -425,37 +425,27 @@ void SpaceState::sendDockArrivalRequest(bool engage)
     command.type = ClientShipCommand::RequestDockArrival;
     command.index = engage ? 1 : 0;
     msg.payload = command;
-    if (engage)
-    {
-        // The dispatcher's green corridor / hold volume is part of the request.
-        m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::HudGuidanceCorridor, true);
-        m_navigationWorkspace.modules().setEnabled(game::navigation::NavigationModuleId::ServerGuidance, true);
-    }
     m_client->sendMessage(msg);
-    std::cerr << "[DockHold] " << (engage ? "docking request sent to the dock dispatcher" : "docking dropped: request cancelled")
+    std::cerr << "[DockDispatcher] " << (engage ? "docking request sent to the dock dispatcher" : "docking dropped: request cancelled")
               << std::endl;
 }
 
 template <class Frame>
 bool SpaceState::updateDockingDispatcherGate(Frame& f)
 {
+    // The dock dispatcher learns of the docking when it is engaged (with or
+    // without an autopilot); the real planner and autopilot fly the route as
+    // before (through the blue lane to the dock). The station captures the
+    // ship on the approach axis once the dispatcher clears its entry; until
+    // then it waits at the end of its route. Never takes the control stream.
     using game::docking::traffic::DockTrafficPhase;
     auto& pending = f.pending;
-    // The docking request into the dispatcher-run hex dock - with the
-    // autopilot (automatic: the gate flies) or without one (guidance: the
-    // gate only shows the green corridor and the hold volume; author
-    // 2026-11-07: a ship may have no autopilot installed).
     if (pending.target.stableObjectId != "hub_hex_dock_a")
         return true;
-    const bool fly = f.automatic;
-    const double now = f.authoritativeServerSeconds;
     if (m_dockArrivalSentSerial != pending.serial)
     {
         m_dockArrivalSentSerial = pending.serial;
-        m_dockArrivalSentServerSeconds = now;
-        m_dockHolding = false;
-        m_dockHoldEntryActive = false;
-        m_dockHoldWaypointValid = false;
+        m_dockArrivalSentServerSeconds = f.authoritativeServerSeconds;
         m_dockGateLastPhase = 0xff;
         sendDockArrivalRequest(true);
     }
@@ -464,244 +454,19 @@ bool SpaceState::updateDockingDispatcherGate(Frame& f)
     if (dock.active && dock.phase != m_dockGateLastPhase)
     {
         m_dockGateLastPhase = dock.phase;
-        std::cerr << "[DockHold] dispatcher: " << game::docking::traffic::dockTrafficPhaseName(phase) << " hold="
-                  << dock.holdPointId << " pad=" << dock.padId << " ahead=" << dock.movementsAhead << " wait~"
-                  << dock.estimatedWaitSeconds << " s" << std::endl;
+        std::cerr << "[DockDispatcher] " << game::docking::traffic::dockTrafficPhaseName(phase) << " pad=" << dock.padId
+                  << " queue " << dock.queuePosition << "/" << dock.queueLength << " ahead=" << dock.movementsAhead
+                  << " wait~" << dock.estimatedWaitSeconds << " s" << std::endl;
     }
-    // Docked: the docking is complete - the request ends here (Ctrl+L
-    // asks for the departure; nothing replans a docking afterwards).
+    // Docked: the docking is complete - the request ends here (Ctrl+L asks
+    // for the departure; nothing replans a docking afterwards).
     if (dock.active && phase == DockTrafficPhase::Docked)
     {
-        std::cerr << "[DockHold] docked on " << dock.padId << ": docking request complete" << std::endl;
+        std::cerr << "[DockDispatcher] docked on " << dock.padId << ": docking request complete" << std::endl;
         f.requests.clear();
-        m_dockHolding = false;
-        m_dockHoldEntryActive = false;
         return false;
     }
-    if (dock.active && (dock.stationControlled || phase == DockTrafficPhase::StationControl || phase == DockTrafficPhase::DepartureQueued ||
-                        phase == DockTrafficPhase::DepartureCleared))
-    {
-        // The station owns the pose: no client flight.
-        if (fly && m_dockHoldEntryActive)
-            f.submitAutopilotControl(ShipControlState {});
-        return !m_dockHoldEntryActive;
-    }
-    const bool waiting = dock.active &&
-        (phase == DockTrafficPhase::Queued || phase == DockTrafficPhase::HoldAssigned || phase == DockTrafficPhase::AtHold);
-    if (!dock.active || phase == DockTrafficPhase::None || phase == DockTrafficPhase::Departed)
-    {
-        // No answer yet: stop and wait a few seconds (a hub without a
-        // dispatcher - then the old flow runs and the server's axis-zone
-        // request still applies).
-        if (now - m_dockArrivalSentServerSeconds > 4.0)
-            return true;
-        if (fly)
-            f.submitAutopilotControl(f.manualStopControl());
-        return false;
-    }
-
-    const auto agent = f.makeAgent();
-    const glm::dvec3 pos = agent.positionMapMeters;
-    const glm::dvec3 vel = agent.velocityMapMetersPerSecond;
-    const glm::dvec3 axisOut = glm::normalize(dock.axisOutLocal);
-    const glm::dvec3 faceDock = -axisOut;
-    const glm::dvec3 axisJoin = dock.entryLocalMeters + axisOut * 1600.0;
-
-    // A pilot (law-neutral) along a velocity / position reference, shared by
-    // the hold leg and the entry path.
-    const auto flyReference = [&](const glm::dvec3& desiredVelocity, const glm::dvec3& forward, bool terminal,
-                                  const glm::dvec3& terminalPoint, const glm::dvec3& terminalForward) {
-        glm::dvec3 accel = (desiredVelocity - vel) / 4.0;
-        if (glm::length(accel) > 3.0)
-            accel = glm::normalize(accel) * 3.0;
-        game::navigation::autopilot::AutopilotControlRequest rq;
-        rq.desiredVelocityMapMps = desiredVelocity;
-        rq.desiredLinearAccelerationMapMps2 = accel;
-        rq.actualVelocityMapMps = vel;
-        rq.actualPositionMapMeters = pos;
-        rq.desiredForwardMap = forward;
-        rq.desiredUpMap = agent.upMap;
-        rq.forwardMap = agent.forwardMap;
-        rq.rightMap = agent.rightMap;
-        rq.upMap = agent.upMap;
-        rq.pitchRateRadPerSec = agent.pitchRateRadPerSec;
-        rq.yawRateRadPerSec = agent.yawRateRadPerSec;
-        rq.rollRateRadPerSec = agent.rollRateRadPerSec;
-        rq.deltaSeconds = f.fixedDt;
-        if (terminal)
-        {
-            rq.desiredPositionMapMeters = terminalPoint;
-            rq.positionReferenceValid = true;
-            rq.terminalTargetValid = true;
-            rq.terminalPositionMapMeters = terminalPoint;
-            rq.terminalForwardMap = terminalForward;
-            rq.terminalUpMap = agent.upMap;
-            rq.terminalPositionToleranceMeters = 20.0;
-            rq.terminalSpeedToleranceMps = 0.5;
-            rq.terminalAttitudeToleranceRad = 0.1;
-            rq.terminalRollToleranceRad = 0.2;
-            rq.terminalAngularRateToleranceRadPerSec = 0.02;
-            rq.terminalAttitudeHold = glm::length(vel) < 1.5;
-        }
-        const auto control = f.controlLaw == game::navigation::LocalFlightControlLaw::Assisted
-            ? m_clientDockingAssistedStabilizePilotController.update(rq, f.effectivePhysics)
-            : m_clientDockingNewtonianStabilizePilotController.update(rq, f.effectivePhysics);
-        f.submitAutopilotControl(control);
-    };
-
-    if (!waiting)
-    {
-        // EntryCleared.
-        if (m_dockHolding)
-        {
-            // Cleared at the hold: the entry path is always the same - an arc
-            // onto the dock axis, the axis straight, the station's capture
-            // (it aligns the roll to the slot). The autopilot flies it; a
-            // manual pilot gets it as the green corridor.
-            m_dockHolding = false;
-            m_dockHoldWaypointValid = false;
-            m_dockHoldEntryActive = true;
-            f.eraseVisibleRoute();
-            if (fly)
-                f.releaseClientAutopilot();
-            m_dockEntryPath.clear();
-            m_dockEntryPathS.clear();
-            const glm::dvec3 p0 = pos;
-            const glm::dvec3 control = dock.entryLocalMeters + axisOut * 2200.0;
-            for (int i = 0; i <= 48; ++i)
-            {
-                const double u = i / 48.0, w = 1.0 - u;
-                m_dockEntryPath.push_back(w * w * p0 + 2.0 * w * u * control + u * u * axisJoin);
-            }
-            const glm::dvec3 end = dock.entryLocalMeters + axisOut * 150.0;
-            for (int i = 1; i <= 29; ++i)
-                m_dockEntryPath.push_back(axisJoin + (end - axisJoin) * (i / 29.0));
-            m_dockEntryPathS.push_back(0.0);
-            for (std::size_t i = 1; i < m_dockEntryPath.size(); ++i)
-                m_dockEntryPathS.push_back(m_dockEntryPathS.back() + glm::length(m_dockEntryPath[i] - m_dockEntryPath[i - 1]));
-            std::cerr << "[DockHold] entry cleared at the hold -> entry path " << m_dockEntryPathS.back()
-                      << " m (arc onto the axis, the axis, the station capture)" << std::endl;
-        }
-        if (!m_dockHoldEntryActive)
-            return true;   // a direct entry: the normal docking flow
-        if (!fly)
-            return false;  // manual: the corridor is shown, the pilot flies
-        // Closest point on the path, the tangent there and the distance to the axis join.
-        std::size_t best = 0;
-        double bestD = 1.0e30;
-        for (std::size_t i = 0; i < m_dockEntryPath.size(); ++i)
-        {
-            const double d = glm::length(m_dockEntryPath[i] - pos);
-            if (d < bestD)
-            {
-                bestD = d;
-                best = i;
-            }
-        }
-        const std::size_t next = std::min(best + 1, m_dockEntryPath.size() - 1);
-        const std::size_t prev = next > 0 ? next - 1 : 0;
-        glm::dvec3 tangent = m_dockEntryPath[next] - m_dockEntryPath[prev];
-        tangent = glm::length(tangent) > 1.0e-6 ? glm::normalize(tangent) : faceDock;
-        const double s = m_dockEntryPathS[best];
-        const double total = m_dockEntryPathS.back();
-        const double joinS = m_dockEntryPathS[48];
-        // Lively: 35 m/s on the arc, 20 m/s along the axis into the capture.
-        constexpr double ArcMps = 35.0, AxisMps = 20.0, BrakeMps2 = 0.8;
-        double speed = s < joinS ? std::min(ArcMps, std::sqrt(AxisMps * AxisMps + 2.0 * BrakeMps2 * (joinS - s))) : AxisMps;
-        if (s >= total - 1.0)
-            speed = 8.0;   // beyond the capture point: keep crawling in, the station takes it
-        // Steer back onto the path: the cross-track correction, capped.
-        glm::dvec3 correction = (m_dockEntryPath[best] - pos) * 0.15;
-        correction -= tangent * glm::dot(correction, tangent);
-        if (glm::length(correction) > 8.0)
-            correction = glm::normalize(correction) * 8.0;
-        flyReference(tangent * speed + correction, tangent, false, glm::dvec3(0.0), tangent);
-        if (now - m_dockHoldLogServerSeconds >= 3.0)
-        {
-            m_dockHoldLogServerSeconds = now;
-            std::cerr << "[DockHold] entry path s=" << s << "/" << total << " m cross=" << bestD << " m speed="
-                      << glm::length(vel) << " wanted=" << speed << std::endl;
-        }
-        return false;
-    }
-
-    // ---- waiting: fly to the assigned hold point and keep station there ----
-    if (!m_dockHolding)
-    {
-        m_dockHolding = true;
-        f.eraseVisibleRoute();
-        if (fly)
-            f.releaseClientAutopilot();
-        std::cerr << "[DockHold] the dock is busy: dispatcher " << game::docking::traffic::dockTrafficPhaseName(phase)
-                  << " hold=" << dock.holdPointId << " queue " << dock.queuePosition << "/" << dock.queueLength
-                  << " wait ~" << dock.estimatedWaitSeconds << " s" << std::endl;
-    }
-    if (!dock.holdValid)
-    {
-        // Queued without a hold yet (all six taken): stop where we are.
-        if (fly)
-            f.submitAutopilotControl(f.manualStopControl());
-        return false;
-    }
-    const glm::dvec3 target = dock.holdLocalMeters;
-    // At the hold the nose points at the axis approach (1600 m out on the
-    // axis): the entry path then starts along the nose.
-    const glm::dvec3 faceJoin = glm::length(axisJoin - target) > 1.0 ? glm::normalize(axisJoin - target) : faceDock;
-    m_dockHoldFaceLocal = faceJoin;
-
-    // A detour around the hub modules between the ship and the hold.
-    if (now - m_dockHoldPlanServerSeconds >= 2.0)
-    {
-        m_dockHoldPlanServerSeconds = now;
-        m_dockHoldWaypointValid = false;
-        const auto snapshot = game::client::ClientNavigationPlanningSnapshotFactory::buildAuthoritativeHubSnapshot(
-            m_client->world(), m_client->lastSimulationMetadata(), m_playerId, pending.target.systemId, pending.target.stableObjectId);
-        if (snapshot.ready())
-        {
-            const double margin = 250.0;
-            for (const auto& obstacle : snapshot.navigationObstacles)
-            {
-                const double r = obstacle.conservativeRadiusMeters() + obstacle.requiredClearanceMeters + margin;
-                const glm::dvec3 c = obstacle.centerMeters;
-                if (glm::length(target - c) < r || glm::length(pos - c) < r)
-                    continue;
-                const glm::dvec3 seg = target - pos;
-                const double len2 = glm::dot(seg, seg);
-                const double t = len2 > 1.0 ? std::clamp(glm::dot(c - pos, seg) / len2, 0.0, 1.0) : 0.0;
-                const glm::dvec3 closest = pos + seg * t;
-                if (glm::length(closest - c) >= r)
-                    continue;
-                glm::dvec3 side = closest - c;
-                if (glm::length(side) < 1.0)
-                    side = glm::cross(seg, glm::dvec3(0.0, 1.0, 0.0));
-                m_dockHoldWaypoint = c + glm::normalize(side) * (r * 1.4);
-                m_dockHoldWaypointValid = true;
-                break;
-            }
-        }
-    }
-    if (!fly)
-        return false;
-    const glm::dvec3 aim = m_dockHoldWaypointValid ? m_dockHoldWaypoint : target;
-    const double toGo = glm::length(aim - pos) + (m_dockHoldWaypointValid ? glm::length(target - aim) : 0.0);
-    const glm::dvec3 dir = glm::length(aim - pos) > 1.0e-6 ? glm::normalize(aim - pos) : faceJoin;
-    constexpr double CruiseMps = 90.0;
-    constexpr double BrakeMps2 = 1.2;   // gentle: either law brakes well within it
-    const double speed = std::min({CruiseMps, std::sqrt(2.0 * BrakeMps2 * std::max(0.0, toGo - 5.0)), 0.25 * toGo});
-    const bool terminal = !m_dockHoldWaypointValid && toGo < 200.0;
-    flyReference(dir * speed, speed > 8.0 ? dir : faceJoin, terminal, target, faceJoin);
-
-    const double distance = glm::length(target - pos);
-    m_dockingStatusWarning.clear();   // the docking widget shows the hold status
-    if (now - m_dockHoldLogServerSeconds >= 3.0)
-    {
-        m_dockHoldLogServerSeconds = now;
-        std::cerr << "[DockHold] " << game::docking::traffic::dockTrafficPhaseName(phase) << " hold=" << dock.holdPointId
-                  << " dist=" << distance << " m speed=" << glm::length(vel) << " wanted=" << speed
-                  << (m_dockHoldWaypointValid ? " (detour)" : "") << " queue " << dock.queuePosition << "/" << dock.queueLength
-                  << " ahead=" << dock.movementsAhead << " wait~" << dock.estimatedWaitSeconds << " s" << std::endl;
-    }
-    return false;
+    return true;
 }
 
 void SpaceState::updateDockingAdvisory()
@@ -813,7 +578,6 @@ void SpaceState::updateDockingAdvisory()
         {
             sendDockArrivalRequest(false);
             m_dockArrivalSentSerial = 0;
-            m_dockHolding = false;
         }
         // the body autopilot / the route own the control stream themselves
         const bool otherPilot = m_bodyAutopilotOwnsControl || m_clientRouteOwnsControl;
@@ -1754,21 +1518,10 @@ bool SpaceState::compileDockingTrafficRoute(Frame& f, Locals& l)
         trafficFrames[attachment.moduleId] = framePose;
     }
 
-    // A ship already in front of the dock (a dispatcher hold point, the
-    // released departure, a pilot nearby) joins the dock axis directly
-    // instead of the far blue cylinder lane (author 2026-11-07: hold ->
-    // onto the axis -> roll to the entrance -> in).
-    std::string firstPortal = "cylinder_b.entry_front";
-    if (const auto dockFrame = trafficFrames.find("hub_hex_dock_a"); dockFrame != trafficFrames.end())
-    {
-        const glm::dvec3 local = glm::transpose(dockFrame->second.localToWorldBasis) *
-            (request.startMeters - dockFrame->second.originWorldMeters);
-        if (local.z < -2000.0 && local.z > -4500.0 && std::hypot(local.x, local.y) < 1500.0)
-            firstPortal = "hex_dock_a.axis_approach";
-        std::cerr << "[DockClient] request=" << pending.serial << " route start in the dock frame ("
-                  << local.x << ", " << local.y << ", " << local.z << ") -> first portal " << firstPortal << std::endl;
-    }
-    const auto trafficRoute = trafficGraph->resolve(firstPortal, "hex_dock_a.dock_front");
+    const auto trafficRoute = trafficGraph->resolve(
+        "cylinder_b.entry_front",
+        "hex_dock_a.dock_front"
+    );
     if (!trafficRoute.valid)
     {
         fail(
@@ -2842,29 +2595,6 @@ void SpaceState::updateDockingStabilizing(Frame& f)
         requestCapability.executionCurveLateralMps2;
     request.initialSpeedMps = glm::length(startVelocityMps);
 
-    // A start right in front of the dock (a dispatcher hold point, ~1.6 km out,
-    // 450 m off the axis): a short, lively approach. The route speed would
-    // otherwise size a multi-km terminal approach and the ship loops far out
-    // (dk4: a 44.9 km route from the hold).
-    bool nearDockStart = false;
-    {
-        const glm::dvec3 rel = request.startMeters - localPort.positionMeters;
-        const double outward = glm::dot(rel, localPort.forward);
-        const double offAxis = glm::length(rel - localPort.forward * outward);
-        if (outward > 700.0 && outward < 4000.0 && offAxis < 1500.0)
-        {
-            nearDockStart = true;
-            constexpr double NearDockRouteMaxMps = 35.0;
-            if (request.maxSpeedMps > NearDockRouteMaxMps)
-            {
-                std::cerr << "[DockClient] request=" << pending.serial << " start in front of the dock (" << outward
-                          << " m out, " << offAxis << " m off the axis): route speed " << request.maxSpeedMps << " -> "
-                          << NearDockRouteMaxMps << " m/s" << std::endl;
-                request.maxSpeedMps = NearDockRouteMaxMps;
-            }
-        }
-    }
-
     request.assistedCompactStartLead = assisted;
     request.initialForwardLeadMeters =
         assisted
@@ -2886,20 +2616,6 @@ void SpaceState::updateDockingStabilizing(Frame& f)
                 request.maxAngularVelocityRadPerSecond,
                 hull.lengthMeters
             );
-
-    if (nearDockStart)
-    {
-        // The ordinary 1000 m minimum start straight carries a ship at a hold
-        // past the axis join and into a loop (dk5: 5.8 km for a 1.4 km
-        // approach). Near the dock the lead is the manoeuvre's own need.
-        const double nearLead = std::max(hull.lengthMeters * 8.0, 150.0);
-        if (request.initialForwardLeadMeters > nearLead)
-        {
-            std::cerr << "[DockClient] request=" << pending.serial << " near-dock start lead "
-                      << request.initialForwardLeadMeters << " -> " << nearLead << " m" << std::endl;
-            request.initialForwardLeadMeters = nearLead;
-        }
-    }
 
     std::cout
         << "[DockEntryPolicy]"

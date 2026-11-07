@@ -437,17 +437,17 @@ bool GameSimulation::requestDockArrival(EntityId shipId, bool engage)
     r.envelope = game::traffic::dock::dockingEnvelope(
         game::traffic::dock::trafficShipClass(game::traffic::dock::TrafficShipKind::Cobrett));
     r.insideControlledApproachHorizon = true;
-    // Green light at once -> the autopilot flies straight in (as before);
-    // otherwise the dispatcher queues the ship and assigns the hold point
-    // nearest to the side it comes from.
-    // DEV: ELITE_DEV_DOCK_FORCE_HOLD=1 always takes a hold point (hold-path tests).
-    const char* forceHold = std::getenv("ELITE_DEV_DOCK_FORCE_HOLD");
-    const bool direct = !(forceHold && forceHold[0] == '1') && dispatcher.entryFreeNow(r);
+    // The pilot's planner / autopilot fly their own route to the dock (through
+    // the blue lane): a direct-entry request - first in the queue; the station
+    // captures it on the approach axis once its entry is cleared.
+    // (A hold point for the pilot needs the planner to stop there: not yet.)
+    const bool direct = true;
+    const bool freeNow = dispatcher.entryFreeNow(r);
     constexpr double TwoPi = 2.0 * 3.14159265358979323846;
     const double azimuth = std::fmod(std::atan2(p.y, p.x) + TwoPi, TwoPi);
     const bool ok = dispatcher.requestDocking(r, now, azimuth, direct).committed;
     std::cerr << "[DockTraffic] pilot " << shipId.value << " automatic docking request " << (ok ? "accepted" : "rejected")
-              << (direct ? " - the entrance is free: direct entry" : " - the entrance is busy: a hold point") << " (fixed z="
+              << (freeNow ? " - the entrance is free" : " - the entrance is busy, queued first") << " (fixed z="
               << p.z << ", " << glm::length(p) << " m from the dock)\n";
     return ok;
 }

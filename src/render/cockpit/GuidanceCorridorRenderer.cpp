@@ -174,17 +174,14 @@ void GuidanceCorridorRenderer::render(
                         ? 0.18f + confidence * 0.42f
                         : 0.08f + confidence * 0.28f
                   )
-                : presentation.source == game::navigation::GuidanceSource::StationTrafficControl
-                    // the dock dispatcher's GREEN corridor / hold volume
-                    ? glm::vec4(0.38f, 1.0f, 0.46f, 0.20f + confidence * 0.45f)
-                    : glm::vec4(
-                        0.34f,
-                        0.92f,
-                        1.0f,
-                        spatialGates
-                            ? 0.16f + confidence * 0.40f
-                            : 0.06f + confidence * 0.20f
-                      );
+                : glm::vec4(
+                    0.34f,
+                    0.92f,
+                    1.0f,
+                    spatialGates
+                        ? 0.16f + confidence * 0.40f
+                        : 0.06f + confidence * 0.20f
+                  );
     const float warningBlinkScale =
         presentation.deviationWarning && !presentation.deviationBlinkOn
             ? 0.12f

@@ -44,6 +44,8 @@ public:
     void start(const route::RoutePoint& leg, double remainingAfterM, bool alreadyInJ, bool onGround, const std::string& departureHubId,
                std::uint32_t shipId);
     void stop() { m_active = false; m_takeOff = false; }
+    // a guide point on the way to a hub: flown against that hub (its velocity, the HUD reference)
+    void setRouteReferenceHub(const std::string& hubId) { m_routeHubId = hubId; }
     bool active() const { return m_active; }
     bool takingOff() const { return m_takeOff; }
     bool arrived() const { return m_arrived; }   // matched to a stop: the stabilization next
@@ -76,6 +78,10 @@ private:
     glm::dvec3 m_lastPrimaryCentre {0.0};
     std::uint32_t m_shipId = 0;
     bool m_toldTargetInHub = false;
+    std::string m_routeHubId;
+    glm::dvec3 m_lastWantedDv {0.0};
+    bool m_rampSyncLogged = false;
+    double m_plantBehindSeconds = 0.0;
 };
 
 } // namespace game::navigation::globalflight

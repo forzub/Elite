@@ -35,7 +35,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 27u;
+inline constexpr std::uint16_t WireProtocolVersion = 28u;
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -605,6 +605,7 @@ inline bool encodeShipControlState(
     writer.f64(value.globalJAccelLimitMps2);
     writer.u8(value.globalFrameRequest);
     writer.u8(value.globalFreeRotationRequest);
+    writer.string(value.globalReferenceHubId);
     for (const glm::dvec3* v : {&value.globalJVelocityTargetWorldMps, &value.globalMainAccelWorldMps2, &value.globalAttitudeForward,
                                 &value.globalAttitudeUp})
     {
@@ -647,6 +648,7 @@ inline bool decodeShipControlState(
         !reader.f64(outValue.globalJAccelLimitMps2) ||
         !reader.u8(outValue.globalFrameRequest) ||
         !reader.u8(outValue.globalFreeRotationRequest) ||
+        !reader.string(outValue.globalReferenceHubId, 128u) ||
         !reader.f64(outValue.globalJVelocityTargetWorldMps.x) || !reader.f64(outValue.globalJVelocityTargetWorldMps.y) ||
         !reader.f64(outValue.globalJVelocityTargetWorldMps.z) ||
         !reader.f64(outValue.globalMainAccelWorldMps2.x) || !reader.f64(outValue.globalMainAccelWorldMps2.y) ||

@@ -115,6 +115,11 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
 
     // ---- destination kinematics: position to reach, velocity to match there
     glm::dvec3 targetPos(0.0), targetVel(0.0);
+    // the velocity reference the pilot flies against - the one the HUD shows and the Assisted nose
+    // follows (author 2026-11-08: "the main velocity vector never matched the thrust vector"):
+    // a hub for hub legs (the stabilization's hub reference kept), else the dominant body
+    glm::dvec3 refVel = ship.referenceVelocityMps;
+    std::string refHubId;
     const GravityBody* body = findBody(env, leg.bodyId);
     if (leg.kind == Kind::Hub)
     {
@@ -130,6 +135,8 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
         const glm::dvec3 side = glm::length(fromHub) > 1.0 ? glm::normalize(fromHub) : glm::dvec3(0, 1, 0);
         targetPos = hubPos + side * HubArrivalM;
         targetVel = hubVel;
+        refVel = hubVel;
+        refHubId = leg.hubId;
     }
     else if (leg.kind == Kind::Ship)
     {
@@ -146,6 +153,7 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
         const glm::dvec3 side = glm::length(fromOther) > 1.0 ? glm::normalize(fromOther) : glm::dvec3(0, 1, 0);
         targetPos = otherPos + side * ShipArrivalM;
         targetVel = otherVel;
+        refVel = otherVel;
         // a target inside a hub's keep-out (dock traffic): no J field there to brake in - the leg ends
         // matched at that hub's keep-out edge, the rest is a local approach (live q6 2026-11-07: aimed at
         // the ship itself, it entered the hub's keep-out at 1.4 km/s on the gentle 1 g and oscillated)
@@ -157,6 +165,8 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
             const glm::dvec3 hubSide = glm::length(fromHub) > 1.0 ? glm::normalize(fromHub) : side;
             targetPos = hubPos + hubSide * HubArrivalM;
             targetVel = hubVel;
+            refVel = hubVel;
+            refHubId = hubId;
             if (!m_toldTargetInHub)
             {
                 m_toldTargetInHub = true;
@@ -218,11 +228,19 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
         }
         targetPos = aim;
         targetVel = bodyVel + tangent * std::sqrt(body->gravitationalParameterM3s2 / r);
+        refVel = bodyVel;
     }
     else
     {
         targetPos = leg.worldM;
         targetVel = ship.referenceVelocityMps;
+        glm::dvec3 hubPos, hubVel;
+        if (!m_routeHubId.empty() && resolve.hub && resolve.hub(m_routeHubId, hubPos, hubVel))
+        {
+            targetVel = hubVel;
+            refHubId = m_routeHubId;
+        }
+        refVel = targetVel;
     }
 
     const glm::dvec3 toAim = targetPos - position;
@@ -239,8 +257,26 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
                                  keep.objectId.rfind("ship " + std::to_string(leg.shipEntityId) + " ", 0) == 0);
     if (!nearDeparture && m_driveStartSeconds == -1.0)
         m_driveStartSeconds = m_seconds;
-    const double driveSeconds = m_driveStartSeconds == -1.0 ? 0.0 : m_seconds - m_driveStartSeconds;
-    const double limit = nearDeparture ? jd::GentleAccelMps2 : std::min(jd::MaxAccelMps2, 9.81 * std::exp2(driveSeconds / jd::DriveRampDoublingS));
+    double driveSeconds = m_driveStartSeconds == -1.0 ? 0.0 : m_seconds - m_driveStartSeconds;
+    double limit = nearDeparture ? jd::GentleAccelMps2 : std::min(jd::MaxAccelMps2, 9.81 * std::exp2(driveSeconds / jd::DriveRampDoublingS));
+    // the plant's field restarts its ramp under a J floor / in a keep-out: the pilot follows its real
+    // level (live 2026-11-08: the client braked on 1e5 g while the plant had 2e2 g - 8000 km overshoot)
+    // (held 0.5 s: the replicated level lags a jump of the wanted velocity by a tick or two)
+    const bool plantBehind = !nearDeparture && ship.jAccelKnown && driveSeconds > 1.0 && glm::length(m_lastWantedDv) > 2.0 * limit * dt &&
+                             ship.jAccelMps2 < 0.25 * limit;
+    m_plantBehindSeconds = plantBehind ? m_plantBehindSeconds + dt : 0.0;
+    if (m_plantBehindSeconds > 0.5)
+    {
+        m_plantBehindSeconds = 0.0;
+        const double level = std::max(9.81, ship.jAccelMps2);
+        m_driveStartSeconds = m_seconds - jd::DriveRampDoublingS * std::log2(level / 9.81);
+        driveSeconds = m_seconds - m_driveStartSeconds;
+        limit = std::min(jd::MaxAccelMps2, level);
+        if (!m_rampSyncLogged)
+            std::cerr << "[Route] ship " << m_shipId << ": the plant J field is at " << level << " m/s2 (pilot expected more) - ramp follows the plant"
+                      << std::endl;
+        m_rampSyncLogged = true;
+    }
 
     // ---- obstacles: never through a planet / moon / the star - go round the first one in the way
     int phase = 2;
@@ -277,7 +313,11 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
     // a pass-through guide point: brake for the rest of the route, not for the point
     const bool passThrough = leg.kind == Kind::Point && !leg.stop;
     const double dEff = d + (passThrough ? m_remainingAfterM : 0.0);
-    const double braking = std::sqrt(2.0 * 0.4 * jd::MaxAccelMps2 * dEff);
+    // the braking speed: the field still has to ramp up to full strength (rampLeft s, ~coasting),
+    // then brakes at 0.4 of it: k v^2 + rampLeft v = dEff
+    const double rampLeft = nearDeparture ? 0.0 : jd::DriveRampDoublingS * std::log2(std::max(1.0, jd::MaxAccelMps2 / std::max(9.81, limit)));
+    const double kBrake = 1.0 / (2.0 * 0.4 * jd::MaxAccelMps2);
+    const double braking = (-rampLeft + std::sqrt(rampLeft * rampLeft + 4.0 * kBrake * dEff)) / (2.0 * kBrake);
     const double tail = dEff / jd::ApproachTauS;
     double speed = std::min({braking, tail, jd::SpeedCapMps});
     if (nearDeparture)
@@ -293,6 +333,12 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
         targetWorld = keep.velocityMps + away * jd::GentleSpeedMps;
     }
     glm::dvec3 dv = targetWorld - velocity;
+    m_lastWantedDv = dv;
+    if (nearDeparture && !keep.ship)
+    {
+        refVel = keep.velocityMps;   // climbing out against the hub just left (its frame on the HUD)
+        refHubId = keep.objectId;
+    }
     const double maxDv = limit * dt;
     if (glm::length(dv) > maxDv)
         dv *= maxDv / glm::length(dv);
@@ -301,9 +347,16 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
     out.control.globalJAccelLimitMps2 = limit;
     const glm::dvec3 accel = dv / dt;
 
-    // ---- attitude: nose on the destination during the transfer, along the motion at the end
+    out.control.globalReferenceHubId = refHubId;
+
+    // ---- attitude: the Assisted rule - the nose along the wanted velocity against the reference
+    // (the J field bends the real one onto it, the thrust stays along the nose); at the very end
+    // along the remaining motion
     {
-        glm::dvec3 nose = d > 50.0 ? dir : (glm::length(w + dv) > 1.0 ? glm::normalize(w + dv) : ship.forward);
+        const glm::dvec3 wanted = targetWorld - refVel;
+        glm::dvec3 nose = glm::length(wanted) > 1.0 ? glm::normalize(wanted)
+                        : d > 50.0                  ? dir
+                        : (glm::length(w + dv) > 1.0 ? glm::normalize(w + dv) : ship.forward);
         glm::dvec3 upW = ship.up - nose * glm::dot(ship.up, nose);
         if (glm::length(upW) < 1.0e-3)
             upW = glm::cross(nose, std::abs(nose.z) < 0.9 ? glm::dvec3(0, 0, 1) : glm::dvec3(1, 0, 0));

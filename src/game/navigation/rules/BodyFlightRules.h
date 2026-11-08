@@ -10,7 +10,7 @@
 //                     root (the largest mu, the star); a parent lighter than the body is the root.
 //   floorAltitudeM  - the J floor (see JDrive.h): max(top of the atmosphere + 50 km, 5 % R, 50 km)
 //   clearanceM      - how close a route may pass: the star 20 radii (heat), a planet / moon
-//                     max(R + 150 km, atmosphere + 50 km)
+//                     max(R + 150 km, atmosphere + 50 km, R + J floor + 10 km)
 //   isAirless       - no atmosphere (only then a ship that is not a shuttle may land)
 
 #include <algorithm>
@@ -39,7 +39,10 @@ inline double clearanceM(double radiusM, double atmosphereRadiusM, bool isStar)
 {
     if (isStar)
         return 20.0 * radiusM;
-    return std::max(radiusM + 150000.0, std::max(radiusM, atmosphereRadiusM) + 50000.0);
+    // routes fly on the J field: never under the J floor (+10 km), where the plant drops it (live
+    // 2026-11-08: a chord between two 420 km Earth hubs dipped to 293 km, under the 319 km floor)
+    return std::max({radiusM + 150000.0, std::max(radiusM, atmosphereRadiusM) + 50000.0,
+                     radiusM + floorAltitudeM(radiusM, atmosphereRadiusM) + 10000.0});
 }
 
 // The dominant body over any body list. The accessors give a body's id, catalog parent id (may be

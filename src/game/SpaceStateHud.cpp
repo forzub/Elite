@@ -1815,6 +1815,8 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
         else
             line1 << "СТАБИЛИЗАЦИЯ В ХАБЕ  ·  манёвровая скорость " << jSpeed(local) << " (предел 500 м/с)";
     }
+    else if (kind == 0)
+        line1 << "НОРМАЛЬНЫЙ ПОЛЁТ  ·  " << engine << "  ·  скорость " << jSpeed(glm::length(relative)) << " отн. хаба " << reference;
     else if (global)
         line1 << "НОРМАЛЬНЫЙ ПОЛЁТ  ·  " << engine << "  ·  глобальная скорость " << jSpeed(glm::length(relative))
               << "  ·  гравитация планет пренебрежима";

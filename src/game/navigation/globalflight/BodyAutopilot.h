@@ -91,6 +91,8 @@ struct BodyAutopilotShip
     glm::dvec3 mainEngineAccelerationMps2 {0.0};
     glm::dvec3 engineAccelerationMps2 {0.0};
     std::uint8_t refusal = 0;          // the plant's last FlightRefusal code
+    bool jAccelKnown = false;          // the plant's J field acceleration now (replicated)
+    double jAccelMps2 = 0.0;
 };
 
 struct BodyAutopilotOutput

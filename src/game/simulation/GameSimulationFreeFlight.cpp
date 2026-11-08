@@ -896,8 +896,24 @@ void GameSimulation::updateFreeFlights(double dt)
                 motion.freeFlightOrbitAltitudeM = rLen - primary->radiusMeters;
                 // J speed is flown against the reference body (HUD, alignment,
                 // brake): Earth all the way to the Moon, the Moon inside its sphere, the star (global speed) between the planets
-                motion.freeFlightReferenceId = primary->id;
-                motion.freeFlightReferenceVelocityMps = bodyVelocity;
+                // ... unless the client's autopilot flies against a hub (a hub-to-hub route leg:
+                // the departure hub inside its keep-out, then the destination - author 2026-11-08,
+                // the stabilization's hub reference is kept; the Assisted nose follows that velocity)
+                const auto& routeCmd = ship->core().control();
+                const auto* refHub = routeCmd.globalFlightCommandValid && !routeCmd.globalReferenceHubId.empty() && !f.ground.active
+                                         ? hubNavigationFrame(routeCmd.globalReferenceHubId)
+                                         : nullptr;
+                if (refHub && refHub->valid)
+                {
+                    motion.freeFlightReferenceId = routeCmd.globalReferenceHubId;
+                    motion.freeFlightReferenceVelocityMps = refHub->velocityMetersPerSecond;
+                    motion.velocityReferenceKind = 0;
+                }
+                else
+                {
+                    motion.freeFlightReferenceId = primary->id;
+                    motion.freeFlightReferenceVelocityMps = bodyVelocity;
+                }
                 motion.freeFlightOrbitSpeedMps = speed;
                 motion.freeFlightOrbitRadialMps = glm::dot(v, r) / rLen;
                 motion.freeFlightOrbitCircularMps = std::sqrt(mu / rLen);

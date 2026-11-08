@@ -65,7 +65,9 @@ int main()
     check(std::abs(r::floorAltitudeM(1737.4e3, 1737.4e3) - 86870.0) < 1.0, "Moon J floor 86.87 km");
     check(std::abs(r::floorAltitudeM(6371e3, 6371e3 + 100e3) - 318550.0) < 1.0, "Earth J floor 318.6 km (atmosphere + 50 km / 5 % R)");
     check(r::clearanceM(696340e3, 696340e3, true) == 20.0 * 696340e3, "the star: 20 radii");
-    check(r::clearanceM(6371e3, 6471e3, false) == 6521e3, "Earth: max(R + 150 km, atmosphere + 50 km)");
+    check(std::abs(r::clearanceM(6371e3, 6471e3, false) - (6371e3 + 0.05 * 6371e3 + 10e3)) < 1.0,
+          "Earth: max(R + 150 km, atmosphere + 50 km, R + J floor (5 % R) + 10 km)");
+    check(r::clearanceM(1737e3, 1737e3, false) == 1737e3 + 150e3, "Moon: R + 150 km (above its 87 km J floor)");
     check(r::isAirless(1737.4e3, 1737.4e3) && !r::isAirless(6371e3, 6471e3), "airless: the Moon yes, the Earth no");
 
     // route codec round trip (a settlement pad spec carries ':')

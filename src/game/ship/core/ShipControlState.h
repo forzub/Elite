@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <string>
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/LocalFlightControlLaw.h"
@@ -109,6 +110,9 @@ struct ShipControlState
     glm::dvec3 globalAttitudeUp {0.0, 1.0, 0.0};
     std::uint8_t globalFrameRequest = 0;   // globalflight::FrameRequest
     std::uint8_t globalFreeRotationRequest = 0;   // Assisted free rotation (Backspace mode): 1 on, 2 off
+    // the velocity reference the autopilot flies against (author 2026-11-08: a hub-to-hub flight keeps
+    // the hub reference of the stabilization - HUD, alignment, the Assisted rule); empty = the body
+    std::string globalReferenceHubId;
 
     std::uint64_t controlTick = 0;
 };

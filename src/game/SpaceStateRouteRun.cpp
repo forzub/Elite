@@ -205,6 +205,15 @@ void SpaceState::updateClientRoute()
         r.pilot.start(leg, r.remainingAfterM[r.index], motion.freeFlight, motion.freeFlightSurfaceState == 1,
                       motion.freeFlight ? r.departureHubId : motion.hubId, sample.shipId);
         r.departureHubId = motion.freeFlight ? r.departureHubId : motion.hubId;
+        // a guide point flies against the hub the route is going to (the next hub point)
+        for (std::size_t k = r.index; k < r.legs.size(); ++k)
+            if (r.legs[k].kind == route::RoutePoint::Kind::Hub)
+            {
+                r.pilot.setRouteReferenceHub(r.legs[k].hubId);
+                break;
+            }
+            else if (r.legs[k].stop)
+                break;
         r.state = S::Leg;
         [[fallthrough]];
     }

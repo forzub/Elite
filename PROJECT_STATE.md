@@ -4093,3 +4093,27 @@ attitude was tried with a pre-registered PASS (frame-jump p95 <= 12 %): FAIL (no
 The author's 00:05 session hitch log had almost no frames >= 80 ms in flight. OPEN: catch the real case - a turn
 exposes any 30-80 ms frame stall (4.5 deg at 90 deg/s) that the 80 ms hitch log misses; next author session with
 ELITE_DEV_HITCH_MS=35 (+ ELITE_DEV_ROT_TRACE) to see which phase stalls.
+Author 2026-11-08 (jump plan): the reading of points 1-6 confirmed; hubs exist only where they are written in (each
+with its reason to be there); without a hub the jump exits on a planet orbit or just in space - START WITH ORBITS.
+Author 2026-11-08 (Assisted route): "ассистед, выбрал соседний околоземный хаб, нажал перелёт - всё время вектор
+главной скорости не совпадал с вектором тяги ... если полёт происходит в режиме стабилизации, не надо из него выходить;
+если выходим, ассистед должен вести себя как ассистед". Reproduced (DEV D:/tmp/elite_as1, Высокий -> Тихий, A3):
+HUD hull-to-velocity 106-110 deg from the first second, 95 deg on arrival. Root causes: (1) the route leg switched to
+normal flight and the server reset the velocity reference to the dominant body (Earth, 7.6 km/s orbital), while the
+client pilot flew against the hubs - the marker showed the orbit, the nose pointed at the destination; (2) inside
+the departure keep-out the nose pointed at the destination while the field pushed AWAY from the hub; (3) the client
+ramp ran on while the plant dropped the field under Earth's J floor (the chord between two 420 km hubs dipped to
+293 km < 319 km floor) -> braking planned on 1e5 g with 2e2 g real -> 8 000 km overshoot, nose 170 deg off.
+DONE (source + live DEV, wire protocol 28): ShipControlState::globalReferenceHubId - the route pilot names the hub it
+flies against (the departure hub inside its keep-out, then the destination; a guide point before a hub flies
+against that hub); the server keeps that hub as the velocity reference (kind 0, HUD "скорость ... отн. хаба Тихий",
+the Assisted alignment, END); the nose = the wanted velocity against that reference (the J field bends the real
+one onto it); the pilot follows the plant's real J level (held 0.5 s, replication lag) and plans braking with the
+ramp time still ahead; route clearance never under a body's J floor + 10 km (BodyFlightRules clearanceM,
+EliteBodyFlightRulesCheck PASS). Live as2..as4: as3 showed a false ramp sync at the guide point (lag) -> fixed by the
+0.5 s hold; as4: departure 25 -> < 1 deg within 8 s, transfer and arrival 0-4 deg, no overshoot, arrived 119 m /
+20 m/s, route complete (143 s). Remaining: at the reference switch (departure hub -> destination) the two hubs
+differ by 8-11 km/s - the nose turns at once, the velocity follows in ~17 s (130 -> 15 deg) - an Assisted turn,
+not removable while the thrust stays along the nose. Gates 209: 203 pass, 6 known red, 0 new. Not flown by the
+author. OPEN reading (asked): "не выходить из стабилизации" = keep the hub reference (done) or literally fly the
+in-keep-out departure / final approach in the stabilization mode on ordinary engines.

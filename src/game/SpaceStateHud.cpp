@@ -2000,7 +2000,11 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
 
         // terminal warning: losing altitude toward the atmosphere / surface
         std::string warning;
-        if (motion.freeFlightSurfaceState == 2)
+        if (motion.destroyedCause == 1)
+            warning = "КОРАБЛЬ РАЗРУШЕН: удар о поверхность";
+        else if (motion.destroyedCause == 2)
+            warning = "КОРАБЛЬ РАЗРУШЕН: перегрузка в плотных слоях атмосферы";
+        else if (motion.freeFlightSurfaceState == 2)
             warning = "КРУШЕНИЕ: удар о поверхность";
         else if (motion.freeFlightSurfaceState == 1)
             warning = "НА ПОВЕРХНОСТИ   HOME - взлёт";

@@ -361,6 +361,7 @@ public:
     // session is pinned Active and excluded from NPC authority.
     bool setPlayerControlled(EntityId id, bool controlled);
     bool isPlayerControlled(EntityId id) const noexcept;
+    bool isShipDestroyed(EntityId id) const noexcept;
     const std::unordered_set<EntityId>& playerControlledShipIds() const noexcept
     {
         return m_playerControlledShipIds;
@@ -469,6 +470,8 @@ public:
 
     void updateShipReferenceFrames(double dt);
     void updateFreeFlights(double dt);
+    // an impact beyond survival: the whole ship destroyed (every module), a wreck under physics only
+    void destroyShipOnImpact(EntityId shipId, Ship& ship, std::uint8_t cause, double speedMps, double decelerationG);
     void handOverToHub(EntityId shipId, Ship& ship, const std::string& hubId, const glm::dvec3* worldOverride, const glm::dvec3* velOverride);
 
     const game::navigation::HubNavigationFrame* hubNavigationFrame(

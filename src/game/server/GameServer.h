@@ -63,6 +63,8 @@ public:
     void submitCommand(EntityId shipId, const ShipControlState& control);
 
     const SimulationSnapshot& snapshot() const;
+    std::uint64_t serverTick() const { return m_serverTick; }
+    std::uint32_t snapshotInterval() const { return m_snapshotInterval; }
     game::diagnostics::NavigationRuntimeLabObservation
     navigationRuntimeLabObservation() const noexcept
     {

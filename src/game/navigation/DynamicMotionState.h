@@ -121,6 +121,10 @@ struct DynamicMotionState
     double freeFlightDragMps2 = 0.0;
     std::uint32_t freeFlightImpactSerial = 0;
     std::uint8_t freeFlightSurfaceState = 0;
+    // the ship is destroyed (author 2026-11-08: "при ударе корабль разрушается"): 0 intact,
+    // 1 a surface impact beyond survival, 2 the dense atmosphere at a deceleration beyond
+    // survival (> 30 g); the hull is a wreck - no pilot, no control, no J, no jump
+    std::uint8_t destroyedCause = 0;
     // terrain / sea surface height above the body radius under the ship
     // (the renderer's surface field; 0 until it is loaded or far above it)
     double freeFlightGroundHeightM = 0.0;

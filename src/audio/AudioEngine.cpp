@@ -1,5 +1,7 @@
 #include "src/audio/AudioEngine.h"
 
+#include <cstdlib>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -165,6 +167,14 @@ void AudioEngine::shutdown() noexcept
 
 void AudioEngine::playTerminalTick() noexcept
 {
+    // author 2026-11-08: "отключи пока все звуковые эфекты" - every sound effect is off until
+    // ELITE_SOUND_EFFECTS=1 turns them back on
+    static const bool effectsOn = [] {
+        const char* v = std::getenv("ELITE_SOUND_EFFECTS");
+        return v && *v == '1';
+    }();
+    if (!effectsOn)
+        return;
     if (!m_initialized)
         initialize();
     if (!m_available)

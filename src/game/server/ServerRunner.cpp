@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <optional>
 #include <cmath>
+#include <cstdlib>
 #include <stdexcept>
 #include <utility>
 
@@ -286,6 +287,14 @@ void ServerRunner::publishOutboundMessages()
     const auto& sharedSnapshot = m_server.snapshot();
     // the source id sets once per publication, shared by every destination
     std::optional<game::server::ReplicationSourceIds> sourceIds;
+    // Staggered publication (load test 2026-11-08: a snapshot tick cost ~2x an ordinary one -
+    // every session's selection / copy / encode on the build tick): the snapshot is built once
+    // per interval; destination k publishes it (interval - ticks) later at the most, the
+    // sessions spread over the interval by their id. A destination never waits longer than one
+    // interval since its last publication (a forced rebuild cannot starve a late group).
+    const std::uint64_t nowTick = m_server.serverTick();
+    const std::uint64_t interval = std::max<std::uint64_t>(1, m_server.snapshotInterval());
+    const std::uint64_t sinceBuild = nowTick >= sharedSnapshot.metadata.serverTick ? nowTick - sharedSnapshot.metadata.serverTick : 0;
 
     // Stage M7 consumes each destination's interest plan as real transport
     // cadence. The authoritative source snapshot remains full-presence; only
@@ -299,6 +308,17 @@ void ServerRunner::publishOutboundMessages()
             sharedSnapshot.metadata.serverTick)
         {
             continue;
+        }
+        {
+            // DEV A/B: ELITE_DEV_SNAPSHOT_STAGGER=0 publishes every session on the build tick (the old cadence)
+            static const bool stagger = [] {
+                const char* v = std::getenv("ELITE_DEV_SNAPSHOT_STAGGER");
+                return !(v && *v == '0');
+            }();
+            const std::uint64_t group = stagger ? (binding.sessionId.value + interval - 1) % interval : 0;   // the first session: group 0
+            const bool overdue = binding.lastPublishTick != 0 && nowTick - binding.lastPublishTick >= interval;
+            if (sinceBuild < group && !overdue)
+                continue;
         }
 
         auto& profile = serverTickProfile();
@@ -348,6 +368,7 @@ void ServerRunner::publishOutboundMessages()
             std::move(nextPublicationState);
         binding.lastPublishedServerTick =
             sharedSnapshot.metadata.serverTick;
+        binding.lastPublishTick = nowTick;
     }
 
     game::network::ServerSessionId responseSessionId;

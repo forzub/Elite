@@ -137,6 +137,13 @@ void SpaceState::updateClientRoute()
             m_clientAutopilotControl = {};
         }
     };
+    if (motion.destroyedCause != 0)
+    {
+        std::cerr << "[Route] the ship is DESTROYED - route stopped" << std::endl;
+        release();
+        r = ClientRouteRun {};
+        return;
+    }
     const auto submit = [&](const ShipControlState& control) {
         m_clientAutopilotControl = control;
         m_clientAutopilotControlActive = true;

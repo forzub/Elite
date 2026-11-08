@@ -278,6 +278,23 @@ void ShipCore::afterVolumeDamage(
 
 
 
+void ShipCore::destroyWholeShip()
+{
+    if (!m_desc)
+        return;
+    m_moduleRuntime.setWholeObjectDestroyed();
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent,
+        m_desc->typeId,
+        *m_desc,
+        m_moduleRuntime,
+        m_structuralLinkRuntime,
+        m_assemblyRuntime
+    );
+    m_hitVolumesDirty = false;
+    refreshRuntimeState();
+}
+
 bool ShipCore::debugDestroyModuleById(const std::string& moduleId)
 {
     if (!m_desc)

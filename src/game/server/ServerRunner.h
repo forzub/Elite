@@ -37,6 +37,9 @@ struct ServerTransportBinding
     // the star system this destination was last published in (multi-system server): objects /
     // hubs / signals of other systems are not sent; on a system change the old ones are removed
     int lastPublishedSystemId = -1;
+
+    // the server tick this destination was last published on (the staggered cadence)
+    std::uint64_t lastPublishTick = 0;
 };
 
 struct ServerAdvanceResult

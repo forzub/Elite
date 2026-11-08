@@ -352,6 +352,8 @@ public:
     int applyPartImpulse(const std::string& moduleId, double impulseKNs, int depth = 0);
 
     bool debugDestroyModuleById(const std::string& moduleId);
+    // the whole ship destroyed at once (an impact beyond survival): every module and support link
+    void destroyWholeShip();
     bool debugRestoreModuleById(const std::string& moduleId);
     bool debugResetStructure();
 

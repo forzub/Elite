@@ -905,7 +905,16 @@ void GameServer::update(double dt)
             {
                 ShipControlState cmd;
                 if (stream.consumeNext(cmd))
+                {
+                    // a destroyed ship takes no control (the tick is still acknowledged)
+                    if (ship.core().transform().motion.destroyedCause != 0)
+                    {
+                        const auto tick = cmd.controlTick;
+                        cmd = ShipControlState {};
+                        cmd.controlTick = tick;
+                    }
                     ship.setControlState(cmd);
+                }
             }
         }
 
@@ -921,9 +930,9 @@ void GameServer::update(double dt)
 
         auto& cmdQueue = cmdIt->second;
 
-        if (time.universeTimeSimulation)
+        if (time.universeTimeSimulation || ship.core().transform().motion.destroyedCause != 0)
         {
-            cmdQueue.clear();
+            cmdQueue.clear();   // accelerated diagnostics / a destroyed ship: no commands
             continue;
         }
 
@@ -2092,8 +2101,20 @@ bool GameServer::copySparseSnapshotForSession(
     // 107 hubs / all signals of all 61 systems, 134 KB, 2.2 MB/s per player): a session gets the
     // objects / hubs / signals of its own system only; the ships are selected below (interest).
     int systemId = -1;
-    if (const Ship* own = m_simulation.getShip(controlledEntityForSession(sessionId)))
-        systemId = own->core().transform().motion.systemId;
+    {
+        const EntityId ownId = controlledEntityForSession(sessionId);
+        bool found = false;
+        for (const auto& ship : m_lastSnapshot.ships)
+            if (ship.id == ownId)
+            {
+                systemId = ship.transform.motion.systemId;
+                found = true;
+                break;
+            }
+        if (!found)
+            if (const Ship* own = m_simulation.getShip(ownId))
+                systemId = own->core().transform().motion.systemId;
+    }
     outSnapshot.metadata = m_lastSnapshot.metadata;
     outSnapshot.replication = m_lastSnapshot.replication;
     outSnapshot.session = m_lastSnapshot.session;

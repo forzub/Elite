@@ -3927,6 +3927,12 @@ bool GameSimulation::setPlayerControlled(EntityId id, bool controlled)
     return true;
 }
 
+bool GameSimulation::isShipDestroyed(EntityId id) const noexcept
+{
+    const Ship* ship = getShip(id);
+    return ship && ship->core().transform().motion.destroyedCause != 0;
+}
+
 bool GameSimulation::isPlayerControlled(EntityId id) const noexcept
 {
     return m_playerControlledShipIds.find(id) !=

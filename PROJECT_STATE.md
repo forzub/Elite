@@ -4212,3 +4212,30 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   toggle desync (open-loop script), not the server.
 - Live DEV (EliteGame, jt1): Sol -> Tau Ceti jump, exit on Tau_Ceti_m orbit 418 km, stabilization ON, radar 0 tracks.
 - Gates 209: 203 pass / 6 known red / 0 new.
+
+### Impact destruction + staggered snapshot publication + sound effects off 2026-11-08 - BUILT, HEADLESS LOAD TEST + 1 LIVE DEV DROP, NOT AUTHOR-FLOWN
+- Author decisions: "при ударе корабль разрушается"; "сделай рассылку снимков по тикам"; "отключи пока все звуковые эфекты".
+- Destruction: DynamicMotionState::destroyedCause (0 intact, 1 surface impact beyond survival = the old non-survivable
+  CRASH, 2 dense atmosphere above 30 g deceleration); wire 30 / snapshot 42. GameSimulation::destroyShipOnImpact:
+  cancels a jump charge-up, J off, thrust 0, controls zeroed, ShipCore::destroyWholeShip (every module + support link
+  destroyed, hit volumes rebuilt), NPC -> markShipDerelict; a player's session keeps the wreck. The wreck flies on
+  ballistically (drag, gravity), never auto-stabilizes; GameServer zeroes its control stream and drops its commands.
+  Client: HUD "КОРАБЛЬ РАЗРУШЕН: удар о поверхность / перегрузка в плотных слоях атмосферы"; a client route stops.
+  Note: a steep entry at orbital speed (> 30 g) is now fatal; a shallow decaying orbit is not.
+- Live DEV (EliteGame, ELITE_DEV_J_DROP=40,3 at Earth): "DESTROYED - dense atmosphere at 23655 m/s, 364 g", HUD
+  message shown, wreck decelerates 6.9 -> 4.6 km/s at 42-43 km over 16 s.
+- Staggered publication (ServerRunner): the snapshot is still built every 3rd tick; session k publishes it
+  ((id-1) mod 3) ticks later (never more than one interval since its last publication); the session's system
+  for the object / hub filter is taken from the published snapshot. DEV A/B ELITE_DEV_SNAPSHOT_STAGGER=0.
+  A/B, 153 bots static 120 s, same machine state, alternating: off p95 32.7 / 33.7 ms, p99 35.4 / 38.7;
+  on p95 26.3 / 27.7, p99 28.1 / 32.6; avg unchanged (18-20), p50 up (15 -> 18-19: every tick carries a third).
+  Machine was slower than in the earlier run (simulation 13.4-14.7 ms vs 11.1 for the same scenario); absolute
+  numbers between sessions are not comparable, the A/B is.
+- Move run 480 s with destruction: 60 of 153 bots destroyed (24 surface, 36 atmosphere) by their blind J runs;
+  102 of 141 jumps done; avg 21.2 / p95 28.4 ms on the slower machine state.
+- Sound: AudioEngine::playTerminalTick (the only sound effect) is off unless ELITE_SOUND_EFFECTS=1.
+- Open: respawn / what the pilot sees after the loss (author decision) - the wreck's cockpit still shows the service
+  reactor panel running (ReactorSystem's temporary descriptor is not tied to modules); the bot pilot should avoid
+  bodies (closed loop) so the load test keeps its population; the snapshot build tick still carries the build
+  (~4 ms) - p95 26-28 > 20 ms budget.
+- Gates 209: 203 pass / 6 known red / 0 new.

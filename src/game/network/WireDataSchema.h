@@ -285,6 +285,7 @@ ELITE_WIRE_SCHEMA(
     v.freeFlightDragMps2,
     v.freeFlightImpactSerial,
     v.freeFlightSurfaceState,
+    v.destroyedCause,
     v.freeFlightGroundHeightM,
     v.freeFlightGroundMaterial,
     v.freeFlightGroundSlopeDeg,

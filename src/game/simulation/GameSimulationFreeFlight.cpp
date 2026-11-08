@@ -70,6 +70,7 @@
 #include "src/game/navigation/rules/BodyFlightRules.h"
 #include "src/game/simulation/GameSimulation.h"
 #include "src/game/navigation/rules/JDrive.h"
+#include "src/game/navigation/rules/JumpRules.h"
 #include "src/game/catalog/ships/ShipDesignCatalog.h"
 
 #include <algorithm>
@@ -659,7 +660,9 @@ void GameSimulation::updateFreeFlights(double dt)
     // automatic stabilization decided last pass (a coast on a safe closed orbit)
     std::vector<EntityId> otherPasses;
     for (const EntityId id : std::exchange(m_pendingStabilize, {}))
-        if (!passOwns(id) && getShip(id))
+        if (isShipDestroyed(id))
+            continue;   // a wreck
+        else if (!passOwns(id) && getShip(id))
             otherPasses.push_back(id);
         else if (const auto f = m_freeFlights.find(id); f != m_freeFlights.end() && !f->second.localFrame)
         {
@@ -1102,7 +1105,7 @@ void GameSimulation::updateFreeFlights(double dt)
                     f.coastSeconds = coasting ? f.coastSeconds + dt : 0.0;
                     const bool safeOrbit = motion.freeFlightOrbitBound && !referenceIsRoot &&
                                            motion.freeFlightOrbitPeriapsisAltM > std::max(safeAlt, motion.freeFlightGroundHeightM + 1000.0);
-                    if (f.autoStabilizeArmed && coasting && safeOrbit && f.coastSeconds >= 5.0)
+                    if (f.autoStabilizeArmed && coasting && safeOrbit && f.coastSeconds >= 5.0 && motion.destroyedCause == 0)
                     {
                         f.autoStabilizeArmed = false;
                         m_pendingStabilize.push_back(it->first);
@@ -1119,6 +1122,9 @@ void GameSimulation::updateFreeFlights(double dt)
                     // dense layers at speed: an impact on entry, then heating damage
                     // dense layers: deceleration above 1 g - an impact on entry, then heating
                     const bool dense = drag > 9.81;
+                    // beyond 30 g (the survivable crush of a surface contact) the hull breaks up
+                    if (drag > 30.0 * 9.81)
+                        destroyShipOnImpact(it->first, *ship, 2, speed, drag / 9.81);
                     if (dense && !f.insideDenseLayers)
                     {
                         ++motion.freeFlightImpactSerial;
@@ -1224,6 +1230,8 @@ void GameSimulation::updateFreeFlights(double dt)
                     {
                         const bool survivable = !lava && crushG < 30.0 && vHor < 150.0;
                         motion.freeFlightSurfaceState = survivable ? 1 : 2;
+                        if (!survivable)
+                            destroyShipOnImpact(it->first, *ship, 1, glm::length(vg), crushG);
                         double hit = survivable ? 0.35 : 1.0;
                         if (survivable && slope >= 25.0)
                             hit = std::max(hit, 0.5);                      // tipped over on the slope
@@ -1352,6 +1360,28 @@ void GameSimulation::updateFreeFlights(double dt)
 }
 
 // re-base a ship into a hub's frame with its actual relative position / velocity (no snap)
+void GameSimulation::destroyShipOnImpact(EntityId shipId, Ship& ship, std::uint8_t cause, double speedMps, double decelerationG)
+{
+    auto& motion = ship.core().transform().motion;
+    if (motion.destroyedCause != 0)
+        return;
+    motion.destroyedCause = cause;
+    std::cerr << "[FreeFlight] ship " << shipId.value << ": DESTROYED - "
+              << (cause == 1 ? "surface impact" : "dense atmosphere") << " at " << speedMps << " m/s, " << decelerationG
+              << " g" << std::endl;
+    cancelJump(shipId, static_cast<std::uint8_t>(game::navigation::jump::Refusal::Interrupted));
+    motion.jEngine = false;
+    motion.jStopping = false;
+    motion.freeFlightThrust = 0;
+    motion.freeFlightAutopilotPhase = 0;
+    ship.setControlState(ShipControlState {});
+    ship.core().destroyWholeShip();
+    markShipGraphDirty(shipId);
+    // an NPC hull loses its pilot / AI (a player's session keeps its ship: the HUD tells the loss)
+    if (!isPlayerControlled(shipId))
+        (void)markShipDerelict(shipId);
+}
+
 void GameSimulation::handOverToHub(EntityId shipId, Ship& ship, const std::string& hubId, const glm::dvec3* worldOverride, const glm::dvec3* velOverride)
 {
     auto& tr = ship.core().transform();

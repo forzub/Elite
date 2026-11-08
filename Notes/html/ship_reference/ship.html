@@ -1,1 +1,5 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Elite 3126 — паспорт корабля</title><link rel="stylesheet" href="style.css"></head><body data-page="ship"><header class="top"><a id="back" class="btn mini" href="index.html">← Все корабли</a><div><h1 id="shipTitle">Корабль</h1><div id="shipMeta" class="meta"></div></div></header><main class="app"><aside id="equipTree" class="sidebar"></aside><section id="partContent" class="content"></section></main><script src="data.js"></script><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>Elite 3126 — паспорт корабля</title>
+<script>/* the ship page moved into index.html (?ship=ID); old links keep working */
+location.replace("index.html?ship=" + encodeURIComponent(new URLSearchParams(location.search).get("id") || ""));</script>
+</head><body></body></html>

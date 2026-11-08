@@ -4239,3 +4239,28 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   bodies (closed loop) so the load test keeps its population; the snapshot build tick still carries the build
   (~4 ms) - p95 26-28 > 20 ms budget.
 - Gates 209: 203 pass / 6 known red / 0 new.
+
+### Author canon 2026-11-08: the cockpit is the escape capsule (input for after-destruction) - NOT IMPLEMENTED
+- For small frontier ships the pilot's cockpit IS the escape capsule: hard (not impossible) to destroy. On critical
+  damage or on demand it detaches and flies fast on its own engine to the nearest inhabited zone broadcasting SOS
+  (no range limit set yet). If the ship survives, a tug can be asked to haul it back, the capsule re-docks and the
+  ship can be repaired - and the same path lets a pilot steal someone else's abandoned ship.
+- Existing code to build on: ShipCore::ejectCockpitCapsule / ClientShipCommand::EjectCockpitCapsule (the cockpit
+  fragment = the capsule carrier) and markShipDerelict (abandoned hull, no AI). Today's impact destruction destroys
+  every module including the cockpit; with this canon a fatal impact should first try the capsule (author to decide
+  whether a capsule survives a surface impact / dense-layer breakup).
+
+### Ship reference HTML redesign 2026-11-08 (Notes/html/ship_reference) - BUILT, CHECKED IN HEADLESS CHROME
+- Author order: catalog of ship cards (picture + name) by bloc -> manufacturer -> role / class; ship view with a brief
+  side block and the functional A-frame schema of module cards with a shared "model ready" tick; module view with
+  description, characteristics, dimensions, an image-generator prompt, a sketch drop group, a sketch modal with notes
+  and re-save; the scroll position survives reloads everywhere. "The number before A is the ship's model code - each
+  ship its own."
+- One page index.html (?ship=, &part=, ?view=coverage; ship.html redirects). model_codes.js: one code per ship
+  (Cobrett-I N1 35, the rest 36-72 in catalog order); the canon still writes 35 for all - to be carried over.
+  store.js: IndexedDB always + optional folder mirror via the File System Access API (workshop/: workshop.json,
+  sketches/<part>/, ships/<ship>) so sketches can live in git. tools/render_check.js now checks the data
+  (38 ships, 38 unique codes, 104 parts, 0 problems).
+- Checked by driving headless Chrome over CDP: 2 sketches dropped, note saved and persisted after reload, model-ready
+  tick shared on the ship schema, label click inside a card toggles without navigating, scroll restored after reload
+  (ship view 700 px, catalog 1200 px). Not checked headless: the folder picker (needs a user gesture).

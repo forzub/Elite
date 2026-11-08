@@ -1,1 +1,24 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Elite 3126 — корабельный справочник</title><link rel="stylesheet" href="style.css"></head><body data-page="index"><header class="top"><h1>Elite 3126 · корабельный справочник</h1><span id="refMeta" class="meta">корабельный справочник</span><span class="spacer"></span><a class="btn mini" href="index.html?view=coverage">Покрытие флота</a></header><main class="app"><aside class="sidebar"><input id="search" class="search" placeholder="Поиск корабля…"><div id="shipList"></div></aside><section id="mainContent" class="content"></section></main><script src="data.js"></script><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Elite 3126 — корабельный справочник</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="?">Elite 3126 · корабельный справочник</a>
+  <input id="search" class="search" placeholder="Поиск: корабль, класс, производитель, шифр…" autocomplete="off">
+  <span id="refMeta" class="meta"></span>
+  <span class="spacer"></span>
+  <a class="btn mini" href="?view=coverage">Покрытие флота</a>
+  <button id="folderBtn" class="btn mini">Подключить папку</button>
+</header>
+<main id="view"></main>
+<script src="data.js"></script>
+<script src="model_codes.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

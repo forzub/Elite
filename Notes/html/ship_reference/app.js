@@ -517,9 +517,9 @@ if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 function folderButton() {
   const b = $("#folderBtn"); if (!b) return;
   const st = Store.folder;
-  b.textContent = st === "connected" ? "Папка: " + Store.folderName : st === "needs-permission" ? "Переподключить папку" : st === "unsupported" ? "Данные в браузере" : "Подключить папку";
-  b.className = "btn mini " + (st === "connected" ? "okBtn" : st === "needs-permission" ? "warnBtn" : "");
-  b.title = st === "connected" ? "Эскизы, заметки и отметки пишутся в эту папку (и в браузер)" :
+  b.textContent = st === "server" ? "Сервер: workshop ↻" : st === "server-error" ? "Сервер недоступен" : st === "connected" ? "Папка: " + Store.folderName : st === "needs-permission" ? "Переподключить папку" : st === "unsupported" ? "Данные в браузере" : "Подключить папку";
+  b.className = "btn mini " + (st === "connected" || st === "server" ? "okBtn" : st === "needs-permission" || st === "server-error" ? "warnBtn" : "");
+  b.title = st === "server" ? "Всё хранится в репозитории (Notes/html/ship_reference/workshop) через локальный сервер; кнопка обновляет с диска" : st === "connected" ? "Эскизы, заметки и отметки пишутся в эту папку (и в браузер)" :
     st === "unsupported" ? "Браузер не умеет писать в папку: всё хранится только в этом браузере (Chrome / Edge умеют)" :
     "Сейчас всё хранится только в этом браузере. Подключите папку (рекомендуется Notes/html/ship_reference/workshop), чтобы эскизы легли в репозиторий.";
 }

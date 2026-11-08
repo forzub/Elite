@@ -4401,3 +4401,12 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   Notes/html/ship_reference/workshop/workshop.json (reviews map, versioned prompts) + the sketch file; the page
   shows reviews read-only in the sketch window; merge fixed so a note-less record never erases the author's note.
 - Gates 210 (new: tests/maintenance/check_fault_catalog.py): 204 pass / 6 known red / 0 new.
+
+### Ship reference local server - 2026-11-09 - BUILT, CHECKED (headless Chrome over HTTP)
+- Author: "что это за папка воркшоп? возможно стоит сделать сервер для подключения этого справочника и полноценной
+  работы с ним?" - tools/ship_reference_server.py (stdlib, 127.0.0.1, default port 8790 - 8765 is taken by
+  another local service - next free port if busy) serves Notes/html/ship_reference and keeps the workshop in the
+  repository (workshop.json merged on every save; images via /api/file); Notes/html/ship_reference/start_server.cmd.
+  store.js detects the server (GET /api/ping) and stores nothing in the browser; refreshes from disk on focus.
+- Checked: page in server mode, a new sketch + note written to disk, an on-disk edit (review) survived a page save
+  and became visible, the test sketch removed; workshop.json restored to the pre-test state.

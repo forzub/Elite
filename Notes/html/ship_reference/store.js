@@ -96,8 +96,31 @@ const Store = (() => {
     else if (local && !disk) await writeFile(path, local);
   }
 
+  // ---- local server (tools/ship_reference_server.py): the workshop lives in the repository folder; the page
+  // keeps no browser copy. Every save is MERGED on the server, so edits made on disk meanwhile survive.
+  let server = false;
+  async function api(method, path, body) {
+    const r = await fetch(path, { method, body, headers: body && !(body instanceof Blob) ? { "Content-Type": "application/json" } : {} });
+    if (!r.ok) throw new Error(method + " " + path + ": " + r.status);
+    return r.headers.get("Content-Type")?.includes("json") ? r.json() : r;
+  }
+  const filePath = (kind, a, b) => kind === "sketch" ? "sketches/" + safe(a) + "/" + b : "ships/" + b;
+  async function refresh() {
+    if (!server) return;
+    try { const disk = await api("GET", "/api/workshop"); merge(state, disk); emit(); } catch (e) { console.warn(e); }
+  }
+
   let saveTimer = null;
   function save() {
+    if (server) {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(async () => {
+        try { const merged = await api("PUT", "/api/workshop", JSON.stringify(state)); state = Object.assign(empty(), merged); emit(); }
+        catch (e) { console.error("server save failed", e); folder = "server-error"; emit(); }
+      }, 250);
+      emit();
+      return;
+    }
     kvPut("state", state).catch(e => console.error("IndexedDB save failed", e));
     if (folder === "connected") {
       clearTimeout(saveTimer);
@@ -113,6 +136,15 @@ const Store = (() => {
     get folderName() { return dir ? dir.name : ""; },
     onChange(f) { listeners.add(f); },
     async init() {
+      if (location.protocol.startsWith("http")) {
+        try {
+          await api("GET", "/api/ping");
+          server = true; folder = "server";
+          state = Object.assign(empty(), await api("GET", "/api/workshop"));
+          addEventListener("focus", refresh);
+          return;
+        } catch (e) { console.warn("no reference server, browser storage", e); }
+      }
       db = await open();
       state = Object.assign(empty(), (await kvGet("state")) || {});
       if (!window.showDirectoryPicker) { folder = "unsupported"; return; }
@@ -124,6 +156,7 @@ const Store = (() => {
       } catch (e) { console.warn(e); folder = "needs-permission"; }
     },
     async connectFolder() {
+      if (server) { await refresh(); return; }
       if (!window.showDirectoryPicker) { alert("Этот браузер не умеет писать в папку (нужны Chrome или Edge). Данные хранятся в браузере."); return; }
       if (dir && folder === "needs-permission") {
         if ((await dir.requestPermission({ mode: "readwrite" })) !== "granted") return;
@@ -149,6 +182,12 @@ const Store = (() => {
     async addSketch(partId, file) {
       const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
       const s = { id, file: id + "." + ext(file), name: file.name || "эскиз", note: "", added: Date.now(), updated: Date.now() };
+      if (server) {
+        await api("POST", "/api/file?path=" + encodeURIComponent(filePath("sketch", partId, s.file)), file);
+        (state.sketches[partId] ||= []).push(s);
+        save();
+        return s;
+      }
       await blobPut(id, file);
       (state.sketches[partId] ||= []).push(s);
       if (folder === "connected") await writeFile(sketchPath(partId, s), file).catch(folderError);
@@ -163,6 +202,7 @@ const Store = (() => {
       const list = this.sketches(partId), s = list.find(x => x.id === id); if (!s) return;
       state.sketches[partId] = list.filter(x => x.id !== id);
       (state.deleted ||= []).push(id);
+      if (server) { await api("DELETE", "/api/file?path=" + encodeURIComponent(filePath("sketch", partId, s.file))); save(); return; }
       await blobDel(id);
       if (folder === "connected") await removeFile(sketchPath(partId, s));
       save();
@@ -173,6 +213,10 @@ const Store = (() => {
       const old = state.shipImages[shipId];
       const id = "ship_" + Date.now().toString(36);
       const s = { id, file: safe(shipId) + "." + ext(file), updated: Date.now() };
+      if (server) {
+        await api("POST", "/api/file?path=" + encodeURIComponent(filePath("ship", shipId, s.file)), file);
+        state.shipImages[shipId] = s; urls.clear(); save(); return;
+      }
       await blobPut(id, file);
       if (old) { await blobDel(old.id); urls.delete(old.id); }
       state.shipImages[shipId] = s;
@@ -181,12 +225,21 @@ const Store = (() => {
     },
     // ---- object URL of a stored image (null while missing)
     async url(id) {
+      if (server) {
+        for (const [pid, list] of Object.entries(state.sketches || {}))
+          for (const sk of list) if (sk.id === id) return "workshop/" + filePath("sketch", pid, sk.file);
+        for (const sh of Object.values(state.shipImages || {})) if (sh && sh.id === id) return "workshop/" + filePath("ship", null, sh.file) + "?v=" + (sh.updated || 0);
+        return null;
+      }
       if (urls.has(id)) return urls.get(id);
       if (!db) return null;
       const b = await blobGet(id);
       if (!b) return null;
       const u = URL.createObjectURL(b); urls.set(id, u); return u;
     },
-    async blob(id) { return db ? blobGet(id) : null; },
+    async blob(id) {
+      if (server) { const u = await this.url(id); return u ? (await fetch(u)).blob() : null; }
+      return db ? blobGet(id) : null;
+    },
   };
 })();

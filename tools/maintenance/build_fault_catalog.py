@@ -43,10 +43,14 @@ BUSES = {
     "propulsion_power": {"ru": "силовая шина двигателей", "source": ["reactor"], "sinks": ["drive", "rcs"]},
     "service_power": {"ru": "служебная шина питания", "source": ["service_reactor"],
                       "sinks": ["computer", "radar", "comm", "transponder", "life_support", "weapon", "coolant_loop", "escape_capsule",
-                                "docking_port", "container_rack", "jump_core"]},
-    "coolant": {"ru": "контур охлаждения", "source": ["coolant_loop"], "sinks": ["reactor", "drive", "service_reactor", "weapon", "computer"]},
+                                "docking_port", "container_rack", "jump_core", "passenger_module", "hangar", "boat_bay", "drone_bay",
+                                "workshop", "medbay", "ecm", "sensor_mast", "mining_rig", "tow_rig", "cryo_tank", "train_module",
+                                "landing_gear", "lifeboat"]},
+    "coolant": {"ru": "контур охлаждения", "source": ["coolant_loop"], "sinks": ["reactor", "drive", "service_reactor", "weapon", "computer",
+                                                                                     "ecm", "mining_rig", "cryo_tank", "passenger_module"]},
     "heat_rejection": {"ru": "отвод тепла радиаторами", "source": ["radiator"], "sinks": ["coolant_loop"]},
-    "data": {"ru": "шина данных", "source": ["computer"], "sinks": ["drive", "rcs", "reactor", "radar", "weapon", "docking_port", "jump_core"]},
+    "data": {"ru": "шина данных", "source": ["computer"], "sinks": ["drive", "rcs", "reactor", "radar", "weapon", "docking_port", "jump_core",
+                                                                     "sensor_mast", "ecm", "tow_rig", "mining_rig", "landing_gear", "hangar"]},
     "fuel": {"ru": "подача топливных таблеток", "source": ["tank:fusion_pellets"], "sinks": ["reactor", "service_reactor"]},
     "rcs_propellant": {"ru": "подача аргона", "source": ["tank:argon"], "sinks": ["rcs"]},
     "jump_charge": {"ru": "подача заряда прыжка", "source": ["tank:jump_charge"], "sinks": ["jump_core"]},
@@ -83,8 +87,9 @@ def C(cid, ru, category, applies_to, srus, modes, tank_fluid=None):
 
 
 # --- main drive: field-coupled plasma drive (Cobretty N1 axial / CR-1 vector)
-C("drive.plasma.cobretty", "плазменный главный двигатель Cobretty (N1 / CR-1)", "drive",
-  ["kb.drive.n1-axial", "kb.drive.cr1-vector"],
+C("drive.plasma", "плазменный главный двигатель", "drive",
+  ["kb.drive.n1-axial", "kb.drive.cr1-vector", "ofu.drive.u33", "ofu.drive.u65m", "ofu.drive.u70", "ofu.drive.u73l",
+   "th.drive.tz11", "th.drive.tz16v", "th.drive.tz28", "kern.drive.kt1"],
   {"injector": "коллектор форсунок рабочего тела", "coil": "сегменты катушек магнитного сопла", "chamber": "плазменная камера",
    "pad": "охлаждающий пятак двигателя", "hx": "резервный теплообменник (включается при повреждённом пятаке)",
    "gimbal": "привод подвеса / цапфы (CR-1: ±75°)", "busbar": "силовой ввод с шины реактора", "sensor": "датчики температуры и тяги"},
@@ -166,7 +171,8 @@ C("drive.plasma.cobretty", "плазменный главный двигател
   ])
 
 # --- propulsion reactor ER-5
-C("reactor.fusion.cobretty", "двигательный термоядерный реактор Cobretty ER", "reactor", ["kb.reactor.er5", "kb.reactor.er1"],
+C("reactor.fusion", "двигательный термоядерный реактор", "reactor", ["kb.reactor.er5", "kb.reactor.er1", "srw.reactor.sr48", "srw.reactor.sr26",
+  "th.reactor.tr10", "th.reactor.tr26v"],
   {"pad": "охлаждающий пятак", "plasma_ctl": "система управления плазмой", "damper": "демпферы и магниты удержания",
    "feed": "узел подачи таблеток", "inverter": "силовой преобразователь на шину", "sensor": "датчики плазмы"},
   [
@@ -216,7 +222,7 @@ C("reactor.fusion.cobretty", "двигательный термоядерный 
   ])
 
 # --- service reactor / APU
-C("apu.cobretty", "служебный реактор (ВСУ) Cobretty SR", "service_reactor", ["kb.apu.s150"],
+C("apu.fusion", "служебный реактор (ВСУ)", "service_reactor", ["kb.apu.s150", "srw.apu.s60", "srw.apu.s200", "th.apu.s150", "th.apu.s600"],
   {"cells": "энергоячейки", "starter": "стартёр", "regulator": "регулятор шины", "sensor": "датчики"},
   [
    M("APU-01", "cells", "деградация энергоячеек", ["wear", "radiation", "thermal"], ["output_mw", "temp"],
@@ -241,7 +247,7 @@ C("apu.cobretty", "служебный реактор (ВСУ) Cobretty SR", "ser
   ])
 
 # --- radiators
-C("radiator.csic", "панели радиатора C-SiC", "radiator", ["kb.rad.cs-panel"],
+C("radiator.panel", "панели радиатора", "radiator", ["kb.rad.cs-panel", "sol.rad.panel50", "th.rad.panel50"],
   {"panel": "излучающая панель", "hinge": "привод раскрытия", "manifold": "коллектор теплоносителя"},
   [
    M("RAD-01", "panel", "пробой панели (микрометеорит / осколок)", ["impact", "laser"], ["coolant_temp", "coolant_press"],
@@ -263,7 +269,7 @@ C("radiator.csic", "панели радиатора C-SiC", "radiator", ["kb.rad
   ])
 
 # --- coolant loop
-C("coolant.loop.cobretty", "контур охлаждения Cobretty (насос 180 МВт)", "coolant_loop", ["kb.cool.loop200"],
+C("coolant.loop", "контур охлаждения с насосом", "coolant_loop", ["kb.cool.loop200", "sol.cool.loop300", "th.cool.loop600"],
   {"pump": "насос", "pipes": "магистрали", "valves": "клапаны распределения", "fluid": "теплоноситель"},
   [
    M("CLP-01", "pump", "износ насоса контура", ["wear", "thermal"], ["coolant_flow", "current", "vibration"],
@@ -292,18 +298,19 @@ C("coolant.loop.cobretty", "контур охлаждения Cobretty (насо
   ])
 
 # --- jump core (sealed: yard only)
-C("jump_core.um", "ядро прыжка «Нулевая точка» (запечатано)", "jump_core", ["um.core.z05"],
+C("jump_core", "ядро прыжка (неразборный узел)", "jump_core", ["um.core.z05", "um.core.z1", "um.core.z5", "harmony.core.h5", "harmony.core.h12",
+  "harmony.core.h80", "kapehu.core.k5", "kapehu.core.k12", "bastion.core.b12"],
   {"field": "эмиттер поля", "damper": "демпферы лотосита", "seal": "пломбы и контроль вскрытия"},
   [
    M("JCR-01", "field", "дрейф калибровки поля", ["radiation", "wear"], ["field_cal"],
      {"C": {"power": 5}, "W": {"power": 20, "instab": 10}, "F": {"func": -100}},
      [T(1, "BITE: калибровочный тест поля (без прыжка)", "bite", 15, fail="=JCR-01", ok="->bus:data")],
-     [R("yard", "перекалибровка на верфи с лицензией", 12, note="запечатанный модуль: вскрытие на борту - нарушение лицензии")],
+     [R("yard", "перекалибровка на верфи изготовителя / лицензиата", 12, note="неразборный узел: вскрытие на борту - нарушение лицензии")],
      upstream=[("bus:data/CMP-02", 1.5)], symptoms={"W": "заряд прыжка расходуется больше, точность выхода хуже"}),
    M("JCR-02", "damper", "износ демпферов лотосита", ["wear", "radiation"], ["field_cal", "vibration"],
      {"W": {"instab": 20}, "F": {"func": -100}},
      [T(1, "BITE: спектр вибрации ядра при зарядке", "load_test", 20, fail="=JCR-02", ok="=JCR-01")],
-     [R("yard", "переотжиг демпферов", 48, note="только «Нулевая точка» / лицензиат")], symptoms={"F": "ядро отказывается заряжаться"}),
+     [R("yard", "переотжиг демпферов", 48, note="только изготовитель ядра (см. примечания к модели)")], symptoms={"F": "ядро отказывается заряжаться"}),
   ])
 
 # --- tanks
@@ -341,7 +348,7 @@ C("tank.argon", "бак аргона RCS", "tank", ["kb.rcs.argon-tank"],
   ], tank_fluid="argon")
 
 # --- RCS nozzle
-C("rcs.fc.cobretty", "маневровое сопло Cobretty (field-coupled)", "rcs", ["kb.rcs.fc-nozzle"],
+C("rcs.thruster", "маневровое сопло / кластер RCS", "rcs", ["kb.rcs.fc-nozzle", "std.rcs.cluster", "std.rcs.cluster_h"],
   {"valve": "клапан", "coil": "катушка ускорителя", "nozzle": "сопло"},
   [
    M("RCS-01", "valve", "залипание клапана (сопло «тянет»)", ["wear", "thermal"], ["valve_pos", "thrust_axis"],
@@ -358,7 +365,7 @@ C("rcs.fc.cobretty", "маневровое сопло Cobretty (field-coupled)",
   ])
 
 # --- computer
-C("computer.xz", "бортовой компьютер Синьчжи MC", "computer", ["xz.mc.c1", "xz.mc.c3"],
+C("computer", "бортовой компьютер", "computer", ["xz.mc.c1", "xz.mc.c3", "bastion.mc.w1", "hyp.mc.r1", "kapehu.mc.k1"],
   {"board": "вычислительная плата", "memory": "память", "psu": "блок питания"},
   [
    M("CMP-01", "memory", "деградация памяти (радиация)", ["radiation"], ["data_err"],
@@ -378,13 +385,13 @@ C("computer.xz", "бортовой компьютер Синьчжи MC", "compu
   ])
 
 # --- radar, comm, transponder
-C("radar.xz", "радар Синьчжи N", "radar", ["xz.radar.n2", "xz.radar.n10"],
+C("radar", "радар / антенная решётка", "radar", ["xz.radar.n2", "xz.radar.n10", "bastion.radar.s50", "hyp.radar.pa100", "kern.radar.deb5"],
   {"array": "передающие модули решётки", "rx": "приёмник"},
   [M("RDR-01", "array", "отказ модулей решётки", ["impact", "laser", "thermal"], ["range"],
      {"C": {"func": -5}, "W": {"func": -30}, "F": {"func": -100}}, [T(1, "BITE: самотест решётки", "bite", 3, fail="=RDR-01", ok="->bus:data")],
      [R("drone", "замена модулей решётки", 3, spare="SRU модули"), R("nanobay", "восстановление модулей", 12, nanite_kg=2)],
      symptoms={"W": "дальность обнаружения упала, ложные цели"})])
-C("comm.xz", "связной комплекс Синьчжи C", "comm", ["xz.comm.c1", "xz.comm.c3"],
+C("comm", "связной комплекс", "comm", ["xz.comm.c1", "xz.comm.c3", "bastion.comm.w1", "hyp.relay.r1"],
   {"feeder": "фидер антенны", "transceiver": "трансивер"},
   [M("COM-01", "feeder", "обрыв фидера на обшивке", ["impact", "laser"], ["tx_power", "rx_level"],
      {"W": {"func": -50}, "F": {"func": -100}},
@@ -402,7 +409,8 @@ C("transponder.um", "транспондер Управления Маяков Т
      symptoms={"W": "диспетчер не видит корабль - отказ в стыковке"})])
 
 # --- life support (the capsule's own and the cabin's)
-C("life_support.eurohab", "жизнеобеспечение Евро-Хабитат L", "life_support", ["eurohab.ls.l4", "eurohab.ls.l20"],
+C("life_support", "система жизнеобеспечения", "life_support", ["eurohab.ls.l4", "eurohab.ls.l20", "eurohab.ls.l200", "ofu.ls.o4", "terra.ls.t10",
+  "terra.ls.t60", "terra.ls.t200", "uhuru.ls.u500"],
   {"scrubber": "поглотитель CO2", "o2": "генератор O2", "water": "регенерация воды", "fan": "вентиляция"},
   [
    M("LSS-01", "scrubber", "истощение поглотителя CO2", ["wear", "internal"], ["co2"],
@@ -425,7 +433,7 @@ C("life_support.eurohab", "жизнеобеспечение Евро-Хабит�
   ])
 
 # --- escape capsule
-C("capsule.cobretty", "катапультируемая капсула кабины Cobretty", "escape_capsule", ["kb.surv.capsule2"],
+C("escape_capsule", "спасательная капсула (катапультируемая кабина)", "escape_capsule", ["kb.surv.capsule2", "std.surv.pod4"],
   {"pyro": "пиропатроны отстрела", "battery": "батарея капсулы", "beacon": "маяк SOS", "seal": "уплотнение люка"},
   [
    M("CAP-01", "pyro", "отказ цепи пиропатронов", ["wear", "radiation"], ["seal"],
@@ -460,7 +468,7 @@ C("dock.collar", "стыковочный узел", "docking_port", ["std.dock.c
    M("DOK-02", "seal", "износ уплотнения стыковочного узла", ["wear", "thermal"], ["seal"], {"W": {"func": -30}},
      [T(1, "Тест давлением после стыковки", "bite", 10, fail="=DOK-02")], [R("drone", "замена уплотнения", 1.5, spare="уплотнение")],
      symptoms={"W": "утечка при стыковке"})])
-C("weapon.pd.cobretty", "оборонительная турель Cobretty PD", "weapon", ["kb.wpn.pd1"], {"emitter": "излучатель", "mount": "привод наведения"},
+C("weapon.pd", "лазерная турель ПРО", "weapon", ["kb.wpn.pd1", "fa.wpn.pd2", "harmony.wpn.pd3", "bastion.wpn.pd4"], {"emitter": "излучатель", "mount": "привод наведения"},
   [M("PDW-01", "emitter", "деградация излучателя", ["thermal", "wear"], ["output_mw", "temp"], {"W": {"func": -30, "heat": 15}, "F": {"func": -100}},
      [T(1, "BITE: тестовый импульс", "bite", 1, fail=2, ok="=PDW-02"), T(2, "Охлаждение турели в норме?", "cross_check", 1, fail="->bus:coolant", ok="=PDW-01")],
      [R("nanobay", "восстановление излучателя", 20, nanite_kg=4)], upstream=[("bus:coolant/CLP-01", 2.0)],
@@ -468,6 +476,160 @@ C("weapon.pd.cobretty", "оборонительная турель Cobretty PD",
    M("PDW-02", "mount", "люфт привода наведения", ["wear", "impact"], ["position"], {"W": {"sec": -40}},
      [T(1, "BITE: прогон наведения", "bite", 1, fail="=PDW-02", ok="->bus:data")], [R("drone", "замена привода", 2, spare="SRU привод")],
      symptoms={"W": "турель мажет по быстрым целям"})])
+
+
+
+# ---------------------------------------------------------------- equipment beyond the Cobra (catalog slice 2)
+def S1(code, sru, name, causes, signals, effect, test, kind, minutes, repairs, needs=None, **kw):
+    """a mode isolated by one confirming check (then repair)"""
+    return M(code, sru, name, causes, signals, effect, [T(1, test, kind, minutes, needs=needs, fail="=" + code)], repairs, **kw)
+
+C("weapon.coilgun", "магнитная (coil) пушка", "weapon", ["fa.wpn.coil30", "bastion.wpn.coil10"],
+  {"coil": "ускоряющие катушки ствола", "caps": "накопитель (конденсаторная батарея)", "feed": "механизм подачи снарядов", "mount": "привод наведения"},
+  [S1("WCG-01", "coil", "эрозия ускоряющих катушек", ["wear", "thermal"], ["output_mw", "temp"], {"C": {"func": -5}, "W": {"func": -25, "heat": 15}, "F": {"func": -100}},
+      "Тестовый выстрел: скорость снаряда ниже нормы?", "load_test", 5, [R("drone", "замена секции ствола", 4, spare="SRU секция катушек"), R("nanobay", "перемотка катушек", 30, nanite_kg=10)],
+      upstream=[("bus:coolant/CLP-01", 2.0)], downstream=[("WCG-02", 40, "стрельба очередями")], symptoms={"W": "снаряд медленнее, разброс больше"}),
+   M("WCG-02", "caps", "деградация накопителя", ["thermal", "wear", "internal"], ["current", "output_mw"], {"C": {"power": 5}, "W": {"func": -30}, "F": {"func": -100}},
+     [T(1, "BITE: время заряда накопителя выше нормы?", "bite", 2, fail=2, ok="=WCG-01"), T(2, "Служебная шина стабильна?", "cross_check", 2, fail="->bus:service_power", ok="=WCG-02",
+       note="нестабильная шина «убивает» новые конденсаторы так же, как старые")],
+     [R("nanobay", "восстановление конденсаторов", 20, nanite_kg=6), R("yard", "замена накопителя", 8)],
+     upstream=[("bus:service_power/APU-02", 3.0)], symptoms={"W": "темп стрельбы падает"}),
+   S1("WCG-03", "feed", "заклинивание подачи", ["wear", "impact"], ["position"], {"F": {"func": -100}}, "BITE: прогон подачи вхолостую", "bite", 2,
+      [R("operator", "перезарядка с пульта", 0.05), R("drone", "чистка / замена механизма подачи", 2, spare="SRU подача")], intermittent="после ударов и перегрузок", symptoms={"F": "пушка молчит"}),
+  ])
+C("weapon.vls", "вертикальная пусковая установка ракет", "weapon", ["harmony.wpn.vls8", "bastion.wpn.vls16"],
+  {"hatch": "крышки ячеек", "ignition": "цепь пуска", "cell": "термостатирование ячеек"},
+  [S1("WVL-01", "hatch", "заклинивание крышки ячейки", ["impact", "thermal", "wear"], ["position"], {"W": {"func": -15}}, "BITE: прогон крышек ячеек", "bite", 3,
+      [R("drone", "освобождение / замена привода крышки", 1.5, spare="SRU привод крышки")], symptoms={"W": "часть ячеек не может пускать"}),
+   S1("WVL-02", "ignition", "обрыв цепи пуска", ["radiation", "impact", "internal"], ["data_err"], {"W": {"func": -20}, "F": {"func": -100}}, "BITE: прозвонка цепей пуска", "bite", 3,
+      [R("nanobay", "замена модуля цепи", 6, nanite_kg=1)], upstream=[("bus:data/CMP-02", 2.0)], symptoms={"F": "пуск невозможен"}),
+   S1("WVL-03", "cell", "перегрев ячеек", ["thermal"], ["temp"], {"W": {"func": -30}}, "Температура ячеек выше допуска?", "bite", 1,
+      [R("operator", "снизить темп пуска", 0.05)], upstream=[("bus:coolant/CLP-01", 3.0)], symptoms={"W": "ракеты на запрете по температуре"}),
+  ])
+C("weapon.mass_driver", "масс-драйвер ударников", "weapon", ["kern.md.impactor"],
+  {"coil": "разгонные катушки", "feed": "подача ударников"},
+  [S1("WMD-01", "coil", "износ разгонных катушек", ["wear", "thermal"], ["output_mw"], {"W": {"func": -30}, "F": {"func": -100}}, "Тестовый пуск: скорость ударника ниже нормы?", "load_test", 10,
+      [R("nanobay", "перемотка катушек", 40, nanite_kg=15)], upstream=[("bus:coolant/CLP-01", 2.0)]),
+   S1("WMD-02", "feed", "заклинивание подачи ударников", ["wear", "impact"], ["position"], {"F": {"func": -100}}, "BITE: прогон подачи", "bite", 3,
+      [R("drone", "чистка подачи", 2)])])
+C("armour", "броня корпуса", "armour", ["std.armour.ceramic", "bastion.armour.heavy"], {"plate": "броневая плита", "mount": "крепление плиты"},
+  [S1("ARM-01", "plate", "пробоина / растрескивание плиты", ["impact", "laser"], ["seal"], {"W": {"func": -40}, "F": {"func": -100}}, "Дрон: осмотр плит после попадания", "drone_inspect", 20,
+      [R("drone", "замена плиты из запаса", 2, spare="плита 1 т"), R("nanobay", "наплавка плиты", 15, nanite_kg=20), R("yard", "перебронирование", 24)],
+      downstream=[("ARM-02", 100, "")], symptoms={"W": "защита в этом секторе ослаблена"}),
+   S1("ARM-02", "mount", "ослабление крепления плиты", ["impact", "wear"], ["vibration"], {"C": {"func": -10}}, "Дрон: проверка креплений", "drone_inspect", 15,
+      [R("drone", "подтяжка / замена крепежа", 1)], symptoms={"C": "плита дребезжит на манёврах"})])
+C("passenger.cabin", "пассажирская / жилая секция", "passenger_module", ["agora.hab.pax100", "bharat.hab.bunk500", "ofu.cargo.p20", "std.cabin.hold6"],
+  {"seal": "гермоуплотнения люков", "climate": "климат-установка секции", "power": "распределение питания секции"},
+  [S1("PAX-01", "seal", "утечка воздуха из секции", ["wear", "impact"], ["cabin_press"], {"W": {"func": -30}, "F": {"func": -100}}, "Давление в секции падает при закрытых люках?", "bite", 15,
+      [R("operator", "закрыть секцию, перевести людей", 0.2), R("drone", "замена уплотнения / заплатка", 2, spare="уплотнения")], downstream=[("LSS-02", 30, "")],
+      symptoms={"W": "секцию приходится закрывать"}),
+   S1("PAX-02", "climate", "отказ климат-установки секции", ["wear", "internal"], ["temp", "co2"], {"W": {"func": -20}}, "BITE: климат секции", "bite", 3,
+      [R("nanobay", "ремонт климат-установки", 8, nanite_kg=2)], upstream=[("bus:coolant/CLP-01", 1.5)], symptoms={"W": "в секции жарко и душно - жалобы пассажиров"}),
+   S1("PAX-03", "power", "отказ распределения питания секции", ["internal", "thermal"], ["bus_voltage"], {"F": {"func": -100}}, "Напряжение на вводе секции", "bite", 2,
+      [R("drone", "замена распределителя", 2, spare="SRU распределитель")], upstream=[("bus:service_power/APU-02", 2.0)])])
+C("passenger.anabiosis", "блок анабиоза", "passenger_module", ["uhuru.cryo.pod100"], {"cooler": "криокулер блока", "monitor": "мониторинг капсул"},
+  [M("ANB-01", "cooler", "деградация криокулера блока", ["wear", "thermal"], ["temp"], {"C": {"power": 5}, "W": {"power": 20}, "F": {"func": -100}},
+     [T(1, "Температура в капсулах растёт?", "bite", 5, fail=2), T(2, "Теплоноситель контура в норме?", "cross_check", 2, fail="->bus:coolant", ok="=ANB-01")],
+     [R("nanobay", "восстановление криокулера", 20, nanite_kg=6), R("yard", "замена криокулера", 12)],
+     upstream=[("bus:coolant/CLP-01", 3.0), ("bus:service_power/APU-01", 2.0)],
+     symptoms={"W": "капсулы теплеют - обратный отсчёт до пробуждения", "F": "аварийное пробуждение людей (корабль к этому не готов)"}),
+   S1("ANB-02", "monitor", "сбой мониторинга капсул (ложная тревога)", ["radiation", "internal"], ["data_err"], {"W": {}}, "Сверить датчики капсулы с ручным осмотром", "cross_check", 20,
+      [R("operator", "перезапуск мониторинга", 0.1)], false_alarm=True, masks=["ANB-01"])])
+C("lifeboat", "спасательная шлюпка / убежище", "lifeboat", ["std.surv.boat20", "std.surv.refuge100"],
+  {"battery": "батарея", "release": "замки отстрела", "beacon": "маяк SOS"},
+  [S1("LBT-01", "battery", "разряд батареи шлюпки", ["wear", "thermal"], ["battery"], {"W": {"func": -40}, "F": {"func": -100}}, "BITE: ёмкость батареи", "load_test", 10,
+      [R("operator", "подзарядка от шины", 1)], upstream=[("bus:service_power/APU-02", 1.5)], pmcs="тест батарей шлюпок перед рейсом"),
+   S1("LBT-02", "release", "заклинивание замков отстрела", ["wear", "impact"], ["latch"], {"F": {"func": -100}}, "PMCS: тест замков (без отстрела)", "bite", 2,
+      [R("drone", "замена замка", 1.5, spare="SRU замок")], pmcs="тест замков перед рейсом"),
+   S1("LBT-03", "beacon", "отказ маяка SOS шлюпки", ["radiation", "internal"], ["beacon"], {"F": {"func": -100}}, "Самотест маяка", "bite", 1,
+      [R("nanobay", "замена маяка", 4, nanite_kg=0.5)])])
+C("bay", "ангар / отсек катера / отсек дронов", "hangar", ["bastion.bay.hangar4", "harmony.bay.hangar2", "std.bay.boat", "std.bay.drone4"],
+  {"doors": "створки", "cradle": "люльки и направляющие", "charger": "заправка / зарядка аппаратов"},
+  [S1("BAY-01", "doors", "отказ привода створок", ["wear", "impact", "thermal"], ["position"], {"F": {"func": -100}}, "BITE: прогон створок", "bite", 3,
+      [R("drone", "замена привода створок", 3, spare="SRU привод")], upstream=[("bus:data/CMP-02", 1.5)], symptoms={"F": "аппараты не выйти и не принять"}),
+   S1("BAY-02", "cradle", "деформация люльки", ["impact"], ["position"], {"W": {"func": -50}}, "Дрон: осмотр люлек", "drone_inspect", 20,
+      [R("drone", "правка / замена люльки", 3)]),
+   S1("BAY-03", "charger", "отказ зарядки аппаратов", ["internal", "thermal"], ["current"], {"W": {"func": -40}}, "BITE: ток зарядки", "bite", 2,
+      [R("nanobay", "замена модуля зарядки", 6, nanite_kg=1)], upstream=[("bus:service_power/APU-02", 2.0)])])
+C("train_module", "модуль прыжкового поезда", "train_module", ["harmony.mod.cargo4800", "harmony.mod.tank4200"],
+  {"coupler": "сцепка", "locks": "замки груза", "valve": "клапаны налива (цистерна)"},
+  [S1("TRN-01", "coupler", "износ сцепки", ["wear", "impact"], ["latch", "vibration"], {"W": {"func": -30}, "F": {"func": -100}}, "Дрон: осмотр сцепки", "drone_inspect", 30,
+      [R("drone", "замена пальцев сцепки", 4, spare="SRU сцепка")], pmcs="осмотр сцепок на каждой станции", symptoms={"F": "модуль нельзя брать в прыжок"}),
+   S1("TRN-02", "locks", "отказ замков груза модуля", ["wear"], ["latch"], {"W": {"func": -20}}, "BITE: замки модуля", "bite", 2, [R("drone", "замена замков", 2)]),
+   S1("TRN-03", "valve", "негерметичность клапана налива", ["wear", "thermal"], ["tank_press", "tank_level"], {"W": {}}, "Убыль груза цистерны?", "bite", 30,
+      [R("drone", "замена клапана", 2, spare="SRU клапан")])])
+C("bulk_hold", "грузовой трюм", "bulk_hold", ["std.cargo.hold100"], {"door": "грузовые ворота", "seal": "уплотнение"},
+  [S1("BLK-01", "door", "заклинивание грузовых ворот", ["wear", "impact"], ["position"], {"F": {"func": -100}}, "BITE: прогон ворот", "bite", 3, [R("drone", "освобождение / замена привода", 2)]),
+   S1("BLK-02", "seal", "износ уплотнения трюма", ["wear", "thermal"], ["seal"], {"W": {}}, "Тест давлением", "bite", 15, [R("drone", "замена уплотнения", 2)])])
+C("cryo_tank", "криоцистерна", "cryo_tank", ["sol.cryo.t1000"], {"insulation": "многослойная изоляция", "cooler": "криокулер"},
+  [S1("CRT-01", "insulation", "повреждение изоляции", ["impact", "laser", "wear"], ["temp", "tank_press"], {"W": {"power": 15}}, "Дрон: термограмма оболочки", "drone_inspect", 30,
+      [R("drone", "заплатка изоляции", 3)], downstream=[("CRT-02", 50, "кулер работает без остановки")], symptoms={"W": "растёт выкипание груза"}),
+   S1("CRT-02", "cooler", "износ криокулера", ["wear", "thermal"], ["temp", "current"], {"W": {"power": 20}, "F": {"func": -100}}, "BITE: холодопроизводительность", "load_test", 10,
+      [R("nanobay", "восстановление криокулера", 25, nanite_kg=8)], upstream=[("bus:coolant/CLP-01", 2.0)], symptoms={"F": "груз выкипает, давление растёт"})])
+C("workshop", "бортовая мастерская", "workshop", ["sol.workshop.w1"], {"fabricator": "станки и печать", "crane": "кран-балка"},
+  [S1("WSH-01", "fabricator", "отказ станков", ["internal", "wear"], ["data_err"], {"W": {"func": -50}}, "Самотест станков", "bite", 5, [R("nanobay", "ремонт станков", 10, nanite_kg=3)],
+      upstream=[("bus:service_power/APU-02", 2.0)]),
+   S1("WSH-02", "crane", "отказ кран-балки", ["wear"], ["position"], {"W": {"func": -30}}, "Прогон крана", "bite", 2, [R("operator", "ремонт силами бригады", 2)])])
+C("medbay", "медотсек", "medbay", ["std.med.bay"], {"autodoc": "автодок", "steril": "стерилизация"},
+  [S1("MED-01", "autodoc", "сбой автодока", ["internal", "radiation"], ["data_err"], {"W": {"func": -50}}, "Самотест автодока", "bite", 5, [R("nanobay", "замена платы автодока", 6, nanite_kg=1)],
+      upstream=[("bus:service_power/APU-02", 2.0)]),
+   S1("MED-02", "steril", "отказ стерилизации", ["wear"], ["temp"], {"W": {"func": -20}}, "Контроль цикла стерилизации", "bite", 30, [R("operator", "ручная обработка", 1)])])
+C("tow_rig", "буксирное устройство", "tow_rig", ["kern.tow.heavy", "kern.tow.raft20k"], {"clamp": "захваты", "winch": "лебёдка / привод", "frame": "силовая рама"},
+  [S1("TOW-01", "clamp", "износ захватов", ["wear", "impact"], ["latch"], {"W": {"func": -30}, "F": {"func": -100}}, "Дрон: осмотр захватов", "drone_inspect", 20,
+      [R("drone", "замена накладок захватов", 2, spare="SRU накладки")], symptoms={"W": "плот проскальзывает в захватах"}),
+   S1("TOW-02", "winch", "отказ привода лебёдки", ["wear", "thermal"], ["position", "current"], {"F": {"func": -100}}, "BITE: прогон привода", "bite", 3,
+      [R("drone", "замена привода", 3, spare="SRU привод")], upstream=[("bus:service_power/APU-02", 1.5)]),
+   S1("TOW-03", "frame", "трещина силовой рамы", ["impact", "wear"], ["vibration"], {"W": {"func": -40}}, "Дрон: дефектоскопия рамы", "drone_inspect", 60,
+      [R("nanobay", "наплавка рамы", 40, nanite_kg=30), R("yard", "замена рамы", 24)], upstream=[("TOW-01", 1.5)], symptoms={"W": "предел тяги буксира снижен"})])
+C("mining_rig", "горное оборудование", "mining_rig", ["kern.mine.cutter"], {"head": "фрезерная головка", "crusher": "дробилка", "boom": "привод штанги"},
+  [S1("MIN-01", "head", "износ фрезерной головки", ["wear", "impact"], ["vibration", "current"], {"C": {"func": -10}, "W": {"func": -40}}, "Ток привода фрезы растёт при той же подаче?", "load_test", 10,
+      [R("drone", "замена резцов", 3, spare="резцы"), R("nanobay", "наплавка головки", 20, nanite_kg=15)], downstream=[("MIN-02", 30, "")]),
+   S1("MIN-02", "crusher", "заклинивание дробилки", ["wear", "impact"], ["current"], {"F": {"func": -100}}, "BITE: прогон дробилки", "bite", 3, [R("drone", "чистка дробилки", 2)]),
+   S1("MIN-03", "boom", "отказ привода штанги", ["wear", "thermal"], ["position"], {"F": {"func": -100}}, "BITE: прогон штанги", "bite", 3,
+      [R("drone", "замена привода", 4)], upstream=[("bus:data/CMP-02", 1.5)])])
+C("landing_gear", "посадочные опоры", "landing_gear", ["ofu.lift.gear"], {"actuator": "привод выпуска", "damper": "амортизатор"},
+  [S1("LGR-01", "actuator", "отказ выпуска опор", ["wear", "thermal", "impact"], ["position"], {"F": {"func": -100}}, "BITE: выпуск / уборка опор", "bite", 3,
+      [R("drone", "замена привода", 3, spare="SRU привод")], upstream=[("bus:data/CMP-02", 1.5)], pmcs="выпуск опор перед каждым спуском", symptoms={"F": "посадка невозможна"}),
+   S1("LGR-02", "damper", "износ амортизатора", ["wear", "impact"], ["vibration"], {"W": {"func": -30}}, "Дрон: осмотр амортизаторов", "drone_inspect", 20,
+      [R("drone", "замена амортизатора", 2)], symptoms={"W": "жёсткая посадка - удар по корпусу"})])
+C("heat_shield", "теплозащитный экран", "heat_shield", ["ofu.lift.shield"], {"ablator": "абляционный слой", "tile": "плитки"},
+  [S1("HTS-01", "ablator", "выгорание абляционного слоя", ["thermal", "wear"], ["temp"], {"C": {"func": -10}, "W": {"func": -40}, "F": {"func": -100}}, "Дрон: толщинометрия экрана", "drone_inspect", 40,
+      [R("nanobay", "наплавка абляционного слоя", 30, nanite_kg=25), R("yard", "замена экрана", 12)], pmcs="толщинометрия после каждого входа в атмосферу",
+      symptoms={"W": "вход в атмосферу опаснее"}),
+   S1("HTS-02", "tile", "скол / трещина плитки", ["impact"], ["temp"], {"W": {"func": -30}}, "Дрон: осмотр плиток", "drone_inspect", 30, [R("drone", "замена плитки", 2, spare="плитки")])])
+C("ecm", "комплекс РЭБ", "ecm", ["hyp.ecm.e1"], {"amp": "усилитель передатчика", "array": "излучающая решётка"},
+  [S1("ECM-01", "amp", "перегрев усилителя", ["thermal", "internal"], ["temp", "tx_power"], {"W": {"func": -40, "heat": 20}, "F": {"func": -100}}, "BITE: мощность на нагрузке", "load_test", 5,
+      [R("nanobay", "замена усилителя", 10, nanite_kg=2)], upstream=[("bus:coolant/CLP-01", 2.5)], downstream=[("bus:service_power/APU-02", 20, "работа на полной мощности")]),
+   S1("ECM-02", "array", "повреждение излучающей решётки", ["impact", "laser"], ["tx_power"], {"W": {"func": -30}}, "Самотест решётки", "bite", 3, [R("drone", "замена модулей решётки", 3)])])
+C("sensor_mast", "сенсорная мачта", "sensor_mast", ["hyp.mast.s1"], {"actuator": "привод выдвижения", "optics": "оптика и апертуры"},
+  [S1("MST-01", "actuator", "заклинивание выдвижения мачты", ["wear", "thermal", "impact"], ["position"], {"F": {"func": -100}}, "BITE: прогон выдвижения", "bite", 3,
+      [R("drone", "освобождение / замена привода", 2)], upstream=[("bus:data/CMP-02", 1.5)]),
+   S1("MST-02", "optics", "загрязнение оптики", ["wear", "radiation"], ["range"], {"C": {"func": -10}, "W": {"func": -30}}, "Дрон: осмотр апертур", "drone_inspect", 15,
+      [R("drone", "очистка апертур", 0.5)], symptoms={"W": "дальность пассивного обнаружения падает"})])
+
+# notes per model (maker / variant specifics in a technology class)
+PART_NOTES = {
+    "kb.drive.cr1-vector": "CR-1 Vector: подвес ±75° - DRV-05 критичнее, чем у осевых двигателей",
+    "kb.drive.n1-axial": "N1 Axial: подвес ±4° - отказ подвеса почти не мешает полёту",
+    "ofu.drive.u73l": "Урал-73Л (подъёмный): работает в атмосфере - пятак и сопло изнашиваются быстрее",
+    "th.drive.tz16v": "ТЦ-1.6В - военная поставка: бронированный пятак, ресурс между осмотрами меньше",
+    "th.drive.tz28": "ТЦ-28В (тягач поезда): большой пятак, замена секций только на верфи Пакта",
+    "kern.drive.kt1": "KT-1 (буксир): долгие режимы малой тяги - главный износ у форсунок",
+    "um.core.z05": "запечатан «Нулевой точкой» (Когниум): обслуживание только у изготовителя / лицензиата",
+    "um.core.z1": "запечатан «Нулевой точкой» (Когниум): обслуживание только у изготовителя / лицензиата",
+    "um.core.z5": "запечатан «Нулевой точкой» (Когниум): обслуживание только у изготовителя / лицензиата",
+    "harmony.core.h5": "собран Гармонией из запечатанных блоков Когниума: блоки - только «Нулевая точка», сборка - верфь Гармонии",
+    "harmony.core.h12": "собран Гармонией из запечатанных блоков Когниума: блоки - только «Нулевая точка», сборка - верфь Гармонии",
+    "harmony.core.h80": "ядро тягача поезда; собран Гармонией из запечатанных блоков Когниума",
+    "kapehu.core.k5": "своя математика Капеху (вне стандарта Когниума): обслуживание только Kāpehu Systems",
+    "kapehu.core.k12": "своя математика Капеху (вне стандарта Когниума): обслуживание только Kāpehu Systems",
+    "bastion.core.b12": "военное ядро Бастиона: обслуживание только на верфи Mjølner, не экспортируется",
+    "srw.reactor.sr48": "Sol Reactor Works: серия на Луне, опытные образцы - Канаверал",
+    "th.reactor.tr26v": "ТР-2.6В - военная поставка",
+    "uhuru.ls.u500": "биорегенерация Uhuru: поглотитель - живая культура, восстанавливается сама, но гибнет от перегрева",
+}
+for _c in CLASSES:
+    _c["part_notes"] = {pid: PART_NOTES[pid] for pid in _c["applies_to"] if pid in PART_NOTES}
 
 
 # ---------------------------------------------------------------- reference designations
@@ -483,25 +645,44 @@ CLASS_LETTERS = {
     "FL": "фильтр / поглотитель (IEEE 315)", "G": "генератор (IEEE 315)", "E": "пиро- и прочие электрические элементы (IEEE 315)",
 }
 SRU_CLASS = {
-    "drive.plasma.cobretty": {"injector": "IJ", "coil": "L", "chamber": "MP", "pad": "PT", "hx": "HX", "gimbal": "MP", "busbar": "W", "sensor": "B"},
-    "reactor.fusion.cobretty": {"pad": "PT", "plasma_ctl": "A", "damper": "MP", "feed": "MP", "inverter": "PS", "sensor": "B"},
-    "apu.cobretty": {"cells": "BT", "starter": "MP", "regulator": "PS", "sensor": "B"},
-    "radiator.csic": {"panel": "RD", "hinge": "MP", "manifold": "WP"},
-    "coolant.loop.cobretty": {"pump": "PU", "pipes": "WP", "valves": "VL", "fluid": "TK"},
-    "jump_core.um": {"field": "L", "damper": "MP", "seal": "MP"},
+    "drive.plasma": {"injector": "IJ", "coil": "L", "chamber": "MP", "pad": "PT", "hx": "HX", "gimbal": "MP", "busbar": "W", "sensor": "B"},
+    "reactor.fusion": {"pad": "PT", "plasma_ctl": "A", "damper": "MP", "feed": "MP", "inverter": "PS", "sensor": "B"},
+    "apu.fusion": {"cells": "BT", "starter": "MP", "regulator": "PS", "sensor": "B"},
+    "radiator.panel": {"panel": "RD", "hinge": "MP", "manifold": "WP"},
+    "coolant.loop": {"pump": "PU", "pipes": "WP", "valves": "VL", "fluid": "TK"},
+    "jump_core": {"field": "L", "damper": "MP", "seal": "MP"},
     "tank.pellets": {"auger": "MP", "level": "B", "shell": "TK"},
     "tank.jump_charge": {"valve": "VL", "shell": "TK"},
     "tank.argon": {"regulator": "VL", "shell": "TK"},
-    "rcs.fc.cobretty": {"valve": "VL", "coil": "L", "nozzle": "MP"},
-    "computer.xz": {"board": "A", "memory": "A", "psu": "PS"},
-    "radar.xz": {"array": "A", "rx": "A"},
-    "comm.xz": {"feeder": "W", "transceiver": "A"},
+    "rcs.thruster": {"valve": "VL", "coil": "L", "nozzle": "MP"},
+    "computer": {"board": "A", "memory": "A", "psu": "PS"},
+    "radar": {"array": "A", "rx": "A"},
+    "comm": {"feeder": "W", "transceiver": "A"},
     "transponder.um": {"coder": "A"},
-    "life_support.eurohab": {"scrubber": "FL", "o2": "G", "water": "FL", "fan": "MP"},
-    "capsule.cobretty": {"pyro": "E", "battery": "BT", "beacon": "CM", "seal": "MP"},
+    "life_support": {"scrubber": "FL", "o2": "G", "water": "FL", "fan": "MP"},
+    "escape_capsule": {"pyro": "E", "battery": "BT", "beacon": "CM", "seal": "MP"},
     "cargo.c20lock": {"latch": "MP", "rail": "MP"},
     "dock.collar": {"seal": "MP", "latch": "MP"},
-    "weapon.pd.cobretty": {"emitter": "WE", "mount": "MP"},
+    "weapon.pd": {"emitter": "WE", "mount": "MP"},
+    "weapon.coilgun": {"coil": "L", "caps": "BT", "feed": "MP", "mount": "MP"},
+    "weapon.vls": {"hatch": "MP", "ignition": "E", "cell": "HX"},
+    "weapon.mass_driver": {"coil": "L", "feed": "MP"},
+    "armour": {"plate": "MP", "mount": "MP"},
+    "passenger.cabin": {"seal": "MP", "climate": "HX", "power": "PS"},
+    "passenger.anabiosis": {"cooler": "PU", "monitor": "A"},
+    "lifeboat": {"battery": "BT", "release": "MP", "beacon": "CM"},
+    "bay": {"doors": "MP", "cradle": "MP", "charger": "PS"},
+    "train_module": {"coupler": "MP", "locks": "MP", "valve": "VL"},
+    "bulk_hold": {"door": "MP", "seal": "MP"},
+    "cryo_tank": {"insulation": "MP", "cooler": "PU"},
+    "workshop": {"fabricator": "A", "crane": "MP"},
+    "medbay": {"autodoc": "A", "steril": "FL"},
+    "tow_rig": {"clamp": "MP", "winch": "MP", "frame": "MP"},
+    "mining_rig": {"head": "MP", "crusher": "MP", "boom": "MP"},
+    "landing_gear": {"actuator": "MP", "damper": "MP"},
+    "heat_shield": {"ablator": "MP", "tile": "MP"},
+    "ecm": {"amp": "A", "array": "A"},
+    "sensor_mast": {"actuator": "MP", "optics": "B"},
 }
 for _c in CLASSES:
     _c["sru_class"] = SRU_CLASS.get(_c["id"], {})
@@ -620,13 +801,15 @@ def main():
                          "tools/maintenance/build_fault_catalog.py; руками не править."),
                    signals=SIGNALS, stages=STAGES, repair_levels=LEVELS, buses=BUSES, class_letters=CLASS_LETTERS, classes=CLASSES)
     problems = check(catalog)
-    with open(PASSPORTS, encoding="utf-8") as f:
-        ships = json.load(f)["passports"]
+    # every ship of the reference (canon passports + the reference proposals): data.js
+    with open(os.path.join(ROOT, "Notes", "html", "ship_reference", "data.js"), encoding="utf-8") as f:
+        txt = f.read()
+        ships = json.loads(txt[txt.index("=") + 1:].rstrip().rstrip(";"))["ships"]
     cls_of = class_of_part()
     graphs = [ship_graph(s, cls_of) for s in ships]
     covered = [g for g in graphs if g["installed"]]
     cobra = [g for g in graphs if g["id"].startswith("kb.ship.cobrett-i")]
-    for g in cobra:
+    for g in graphs:
         if g["uncovered_parts"]:
             problems.append(f"{g['id']}: parts without a fault class {g['uncovered_parts']}")
     text = json.dumps(catalog, ensure_ascii=False, indent=1)

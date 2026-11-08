@@ -205,7 +205,8 @@ function manualHTML(p) {
   const L = FD.catalog.repair_levels, S = FD.catalog.signals;
   let h = `<div class="card tm"><h3>Техническое руководство · ${esc(c.ru)}</h3>
     <div class="sub">Класс оборудования <code>${esc(c.id)}</code> — общий для: ${c.applies_to.map(id => esc(partMap.get(id)?.name || id)).join(", ")}.
-    Детали (SRU): ${Object.values(c.srus).map(esc).join(", ")}.</div>`;
+    Детали (SRU): ${Object.entries(c.srus).map(([k, v]) => `${esc(v)}${c.sru_class && c.sru_class[k] ? ` <code>${esc(c.sru_class[k])}</code>` : ""}`).join(", ")}.</div>
+    ${c.part_notes && c.part_notes[p.id] ? `<div class="note warnbox">Эта модель: ${esc(c.part_notes[p.id])}</div>` : ""}`;
   for (const m of c.modes) {
     h += `<details class="tmMode" id="tm-${esc(m.code)}"><summary><code>${esc(m.code)}</code> ${esc(m.name_ru)}
       ${m.false_alarm ? '<span class="badge">ложная тревога</span>' : ""}${m.intermittent ? '<span class="badge">перемежающийся</span>' : ""}

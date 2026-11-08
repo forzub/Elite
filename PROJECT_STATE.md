@@ -4436,3 +4436,13 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   letters (sru_class) per equipment class. Passport functional groups renamed <model_code>F<k> (A = layout unit).
 - Reference: ship page = "Компоновка" (compartments, unit cards with designations and part designators) +
   "Функциональные цепочки". Gate tests/maintenance/check_ship_layout.py. Gates 211: 205 / 6 known / 0 new.
+
+### Fault catalog: all equipment (slice 2) - 2026-11-09 - BUILT (DATA + REFERENCE)
+- Author: "каталог для оборудования остальных производителей - так и делаем". Classes generalised by technology
+  (drive.plasma, reactor.fusion, apu.fusion, radiator.panel, coolant.loop, jump_core, rcs.thruster, computer,
+  radar, comm, life_support, escape_capsule, weapon.pd) with per-model notes; 19 new classes (coilgun, VLS, mass
+  driver, armour, cabins, anabiosis, lifeboats, bays, train modules, bulk hold, cryo tank, workshop, medbay, tow
+  rig, mining rig, landing gear, heat shield, ECM, sensor mast). 38 classes, 97 modes, buses extended; fault graphs
+  for all 53 reference ships; layouts: all 1 578 units classed, 5 141 part designations. The gate now requires
+  every ship's equipment to be covered.
+- Gates 211: 205 pass / 6 known red / 0 new.

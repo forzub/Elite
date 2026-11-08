@@ -4357,3 +4357,29 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   from data (troubleshooting Malfunction -> Test -> Corrective Action, MAC, parts, PMCS) into the ship reference;
   draft failure modes for all 34 unit categories. Two layers: the damage model (base, always on) and
   reliability / junkyard / capsule survival (difficulty, switchable). Open author questions in section 10.
+
+### Sol industry re-based on corporations + ship graveyards + damage/Tin Can design pass 2 - 2026-11-08 - DATA BUILT, NAMES NOT ACCEPTED
+- Author: names not accepted; "ты всю корабельную промышленность Сола отдал России ... Сол - упор на корпорации, в
+  том числе интернациональные; разработки - США (или во что оно превратится), промышленность - Китай, Россия -
+  поставщик сырья и проблем; проверь по текущим данным". Canon check (SOL_NETWORK.md): Sol's operators are the
+  Pacific Orbital Transport Co. (Tokyo), the Atlantic Port Co. (Canaveral), Wenchang Heavy (Chinese industrial,
+  "огромные краны, круглосуточно"), the Equatorial Fuel Co. (Kourou), metallurgy / gas trusts; Russia appears only
+  as the Baikonur orbit-plane heritage. The Russian layer was mine (Ural engine works, Cyrillic prefixes, shop slang).
+- Changed: OFU = international freight union (Kourou fuel co. + Pacific + Atlantic; "Ural" = the founding titanium
+  supplier); its engine works moved to Wenchang. Luna-Mars Yards = international corporation, controlling stake
+  Wenchang Heavy, Atlantic design bureaus; new plant "тяжёлые цеха Вэньчана". Sol Reactor Works = Atlantic (US
+  heir) R&D: new Canaveral research centre + the lunar series plant. Code prefixes OF / LM (were У / ЛМ); Sol crew
+  nicknames Chinese / English shop slang (燕子, 雨燕, the Dozen, 大油桶, the Fixer, the Broom, the Flatiron).
+- Graveyards: site type ship_graveyard (canon world_sites site_types + hub_modules type rule, dock split,
+  salvage_yard module), 16 graveyards in 7 blocs, kinds recycling / wild / drifting (graveyard_kind), level C:
+  Sol - Hermes breakers (Mercury smelters), Vesta trust scrap, the graveyard orbit above GEO, the wild yard by
+  Тихая Гавань; Cognium - Tau Ceti breakers, Kuiper drift; Pact - Harmony recycling shop, Tianhe belt drift;
+  Southern - Bharat breakers, Maland wild; Citadel - Ulven military disposal; Free Belts - the Great Strife wild
+  yard, the GJ 581 rust belt; Lalande - Agora breakers market, Lalande drift; Kern - insurance breakers.
+  632 hubs. world_sites / economy_live checks OK, lore OK, reference + manufacturers rebuilt.
+- Design (docs/MAINTENANCE_LAYER_DESIGN.md 9a-9c): Tin Can = a mini-game (main game keeps percentages); the
+  failure catalog is a cause graph (upstream / downstream / observable / masks): BITE shows the first failed
+  signal, a deeper cause burns the replaced unit again; masking, intermittent faults, false sensor alarms,
+  cascades. Nanites self-replicate from a feedstock (powder / scrap / regolith) to be replenished; the layer
+  switches at any time; the start offers several wrecks with different control laws.
+- Gates 209: 203 pass / 6 known red / 0 new.

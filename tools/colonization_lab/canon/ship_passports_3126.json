@@ -1247,11 +1247,11 @@
       "engineering_type": "ocs4_lastochka",
       "economic_class": "ocs4_lastochka",
       "name": "OCS-4",
-      "model_code": "У37",
+      "model_code": "OF37",
       "model_index": "OCS-4",
       "official_name": "OFU OCS-4",
-      "short_name": "Ласточка",
-      "short_name_ru": "Ласточка",
+      "short_name": "燕子",
+      "short_name_ru": "Яньцзы («ласточка»)",
       "legacy_name": "OCS-4 «Ласточка»",
       "manufacturer": "mfr.ofu",
       "cooperation_group": "sol_industrial",
@@ -1496,7 +1496,7 @@
       },
       "functional_groups": [
         {
-          "code": "У37A1",
+          "code": "OF37A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -1513,7 +1513,7 @@
           ]
         },
         {
-          "code": "У37A2",
+          "code": "OF37A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -1530,7 +1530,7 @@
           ]
         },
         {
-          "code": "У37A3",
+          "code": "OF37A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -1558,7 +1558,7 @@
           ]
         },
         {
-          "code": "У37A4",
+          "code": "OF37A4",
           "name": "Энергетика",
           "items": [
             {
@@ -1602,7 +1602,7 @@
           ]
         },
         {
-          "code": "У37A6",
+          "code": "OF37A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -1641,7 +1641,7 @@
           ]
         },
         {
-          "code": "У37A7",
+          "code": "OF37A7",
           "name": "Связь",
           "items": [
             {
@@ -1658,7 +1658,7 @@
           ]
         },
         {
-          "code": "У37A8",
+          "code": "OF37A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -1675,7 +1675,7 @@
           ]
         },
         {
-          "code": "У37A9",
+          "code": "OF37A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -1703,7 +1703,7 @@
           ]
         },
         {
-          "code": "У37A10",
+          "code": "OF37A10",
           "name": "Спасение",
           "items": [
             {
@@ -1720,7 +1720,7 @@
           ]
         },
         {
-          "code": "У37A11",
+          "code": "OF37A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -1752,11 +1752,11 @@
       "engineering_type": "surface_lifter",
       "economic_class": "surface_lifter",
       "name": "SL-12",
-      "model_code": "У38",
+      "model_code": "OF38",
       "model_index": "SL-12",
       "official_name": "OFU SL-12",
-      "short_name": "Двенашка",
-      "short_name_ru": "Двенашка",
+      "short_name": "the Dozen",
+      "short_name_ru": "Дюжина",
       "legacy_name": "SL-12 «Подъёмник»",
       "manufacturer": "mfr.ofu",
       "cooperation_group": "sol_industrial",
@@ -2026,7 +2026,7 @@
       },
       "functional_groups": [
         {
-          "code": "У38A1",
+          "code": "OF38A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -2043,7 +2043,7 @@
           ]
         },
         {
-          "code": "У38A2",
+          "code": "OF38A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -2060,7 +2060,7 @@
           ]
         },
         {
-          "code": "У38A3",
+          "code": "OF38A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -2088,7 +2088,7 @@
           ]
         },
         {
-          "code": "У38A4",
+          "code": "OF38A4",
           "name": "Энергетика",
           "items": [
             {
@@ -2124,7 +2124,7 @@
           ]
         },
         {
-          "code": "У38A6",
+          "code": "OF38A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -2163,7 +2163,7 @@
           ]
         },
         {
-          "code": "У38A7",
+          "code": "OF38A7",
           "name": "Связь",
           "items": [
             {
@@ -2180,7 +2180,7 @@
           ]
         },
         {
-          "code": "У38A8",
+          "code": "OF38A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -2197,7 +2197,7 @@
           ]
         },
         {
-          "code": "У38A9",
+          "code": "OF38A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -2236,7 +2236,7 @@
           ]
         },
         {
-          "code": "У38A10",
+          "code": "OF38A10",
           "name": "Спасение",
           "items": [
             {
@@ -2253,7 +2253,7 @@
           ]
         },
         {
-          "code": "У38A11",
+          "code": "OF38A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -2270,7 +2270,7 @@
           ]
         },
         {
-          "code": "У38A13",
+          "code": "OF38A13",
           "name": "Защита / посадка",
           "items": [
             {
@@ -4708,11 +4708,11 @@
       "engineering_type": "gas_tanker",
       "economic_class": "gas_tanker",
       "name": "GT-3000 «Титан»",
-      "model_code": "ЛМ39",
+      "model_code": "LM39",
       "model_index": "GT-3000",
       "official_name": "Luna-Mars Yards GT-3000 Titan",
-      "short_name": "Бочка",
-      "short_name_ru": "Бочка",
+      "short_name": "大油桶",
+      "short_name_ru": "Даютун («большая бочка»)",
       "legacy_name": "ГТ-3000 «Титан»",
       "manufacturer": "mfr.sol_mass_yards",
       "cooperation_group": "sol_industrial",
@@ -4963,7 +4963,7 @@
       },
       "functional_groups": [
         {
-          "code": "ЛМ39A1",
+          "code": "LM39A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -4989,7 +4989,7 @@
           ]
         },
         {
-          "code": "ЛМ39A2",
+          "code": "LM39A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -5006,7 +5006,7 @@
           ]
         },
         {
-          "code": "ЛМ39A3",
+          "code": "LM39A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -5034,7 +5034,7 @@
           ]
         },
         {
-          "code": "ЛМ39A4",
+          "code": "LM39A4",
           "name": "Энергетика",
           "items": [
             {
@@ -5070,7 +5070,7 @@
           ]
         },
         {
-          "code": "ЛМ39A6",
+          "code": "LM39A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -5109,7 +5109,7 @@
           ]
         },
         {
-          "code": "ЛМ39A7",
+          "code": "LM39A7",
           "name": "Связь",
           "items": [
             {
@@ -5126,7 +5126,7 @@
           ]
         },
         {
-          "code": "ЛМ39A8",
+          "code": "LM39A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -5143,7 +5143,7 @@
           ]
         },
         {
-          "code": "ЛМ39A9",
+          "code": "LM39A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -5171,7 +5171,7 @@
           ]
         },
         {
-          "code": "ЛМ39A10",
+          "code": "LM39A10",
           "name": "Спасение",
           "items": [
             {
@@ -5188,7 +5188,7 @@
           ]
         },
         {
-          "code": "ЛМ39A11",
+          "code": "LM39A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -6159,11 +6159,11 @@
       "engineering_type": "service_tender",
       "economic_class": "service_tender",
       "name": "ST-6",
-      "model_code": "ЛМ42",
+      "model_code": "LM42",
       "model_index": "ST-6",
       "official_name": "Luna-Mars Yards ST-6",
-      "short_name": "Шестёрка",
-      "short_name_ru": "Шестёрка",
+      "short_name": "the Fixer",
+      "short_name_ru": "Фиксер",
       "legacy_name": "СТ-6 «Мастеровой»",
       "manufacturer": "mfr.sol_mass_yards",
       "cooperation_group": "sol_industrial",
@@ -6431,7 +6431,7 @@
       },
       "functional_groups": [
         {
-          "code": "ЛМ42A1",
+          "code": "LM42A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -6457,7 +6457,7 @@
           ]
         },
         {
-          "code": "ЛМ42A3",
+          "code": "LM42A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -6485,7 +6485,7 @@
           ]
         },
         {
-          "code": "ЛМ42A4",
+          "code": "LM42A4",
           "name": "Энергетика",
           "items": [
             {
@@ -6521,7 +6521,7 @@
           ]
         },
         {
-          "code": "ЛМ42A6",
+          "code": "LM42A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -6560,7 +6560,7 @@
           ]
         },
         {
-          "code": "ЛМ42A7",
+          "code": "LM42A7",
           "name": "Связь",
           "items": [
             {
@@ -6577,7 +6577,7 @@
           ]
         },
         {
-          "code": "ЛМ42A8",
+          "code": "LM42A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -6605,7 +6605,7 @@
           ]
         },
         {
-          "code": "ЛМ42A9",
+          "code": "LM42A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -6633,7 +6633,7 @@
           ]
         },
         {
-          "code": "ЛМ42A10",
+          "code": "LM42A10",
           "name": "Спасение",
           "items": [
             {
@@ -6650,7 +6650,7 @@
           ]
         },
         {
-          "code": "ЛМ42A11",
+          "code": "LM42A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -6704,10 +6704,10 @@
       "engineering_type": "patrol_cutter",
       "economic_class": "patrol_cutter",
       "name": "PC-30 «Фарос»",
-      "model_code": "ЛМ43",
+      "model_code": "LM43",
       "model_index": "PC-30",
       "official_name": "Sol Coast Service PC-30 Pharos",
-      "short_name": "Тридцатка",
+      "short_name": "Thirty",
       "short_name_ru": "Тридцатка",
       "legacy_name": "ПК-30 «Страж»",
       "manufacturer": "mfr.sol_mass_yards",
@@ -7009,7 +7009,7 @@
       },
       "functional_groups": [
         {
-          "code": "ЛМ43A1",
+          "code": "LM43A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -7026,7 +7026,7 @@
           ]
         },
         {
-          "code": "ЛМ43A3",
+          "code": "LM43A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -7054,7 +7054,7 @@
           ]
         },
         {
-          "code": "ЛМ43A4",
+          "code": "LM43A4",
           "name": "Энергетика",
           "items": [
             {
@@ -7082,7 +7082,7 @@
           ]
         },
         {
-          "code": "ЛМ43A5",
+          "code": "LM43A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -7110,7 +7110,7 @@
           ]
         },
         {
-          "code": "ЛМ43A6",
+          "code": "LM43A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -7149,7 +7149,7 @@
           ]
         },
         {
-          "code": "ЛМ43A7",
+          "code": "LM43A7",
           "name": "Связь",
           "items": [
             {
@@ -7166,7 +7166,7 @@
           ]
         },
         {
-          "code": "ЛМ43A8",
+          "code": "LM43A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -7194,7 +7194,7 @@
           ]
         },
         {
-          "code": "ЛМ43A9",
+          "code": "LM43A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -7222,7 +7222,7 @@
           ]
         },
         {
-          "code": "ЛМ43A10",
+          "code": "LM43A10",
           "name": "Спасение",
           "items": [
             {
@@ -7239,7 +7239,7 @@
           ]
         },
         {
-          "code": "ЛМ43A11",
+          "code": "LM43A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -7267,7 +7267,7 @@
           ]
         },
         {
-          "code": "ЛМ43A12",
+          "code": "LM43A12",
           "name": "Вооружение",
           "items": [
             {
@@ -7295,7 +7295,7 @@
           ]
         },
         {
-          "code": "ЛМ43A13",
+          "code": "LM43A13",
           "name": "Защита / посадка",
           "items": [
             {
@@ -10777,10 +10777,10 @@
       "engineering_type": "impact_defence_tug",
       "economic_class": "impact_defence_tug",
       "name": "PDT-7 «Тунгуска»",
-      "model_code": "ЛМ41",
+      "model_code": "LM41",
       "model_index": "PDT-7",
       "official_name": "Sol Planetary Defence PDT-7 Tunguska",
-      "short_name": "Метла",
+      "short_name": "the Broom",
       "short_name_ru": "Метла",
       "legacy_name": "ПАО-7 «Щит»",
       "manufacturer": "mfr.sol_mass_yards",
@@ -11073,7 +11073,7 @@
       },
       "functional_groups": [
         {
-          "code": "ЛМ41A1",
+          "code": "LM41A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -11090,7 +11090,7 @@
           ]
         },
         {
-          "code": "ЛМ41A2",
+          "code": "LM41A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -11107,7 +11107,7 @@
           ]
         },
         {
-          "code": "ЛМ41A3",
+          "code": "LM41A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -11135,7 +11135,7 @@
           ]
         },
         {
-          "code": "ЛМ41A4",
+          "code": "LM41A4",
           "name": "Энергетика",
           "items": [
             {
@@ -11171,7 +11171,7 @@
           ]
         },
         {
-          "code": "ЛМ41A6",
+          "code": "LM41A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -11221,7 +11221,7 @@
           ]
         },
         {
-          "code": "ЛМ41A7",
+          "code": "LM41A7",
           "name": "Связь",
           "items": [
             {
@@ -11238,7 +11238,7 @@
           ]
         },
         {
-          "code": "ЛМ41A8",
+          "code": "LM41A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -11266,7 +11266,7 @@
           ]
         },
         {
-          "code": "ЛМ41A9",
+          "code": "LM41A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -11283,7 +11283,7 @@
           ]
         },
         {
-          "code": "ЛМ41A10",
+          "code": "LM41A10",
           "name": "Спасение",
           "items": [
             {
@@ -11300,7 +11300,7 @@
           ]
         },
         {
-          "code": "ЛМ41A11",
+          "code": "LM41A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -11339,7 +11339,7 @@
           ]
         },
         {
-          "code": "ЛМ41A12",
+          "code": "LM41A12",
           "name": "Вооружение",
           "items": [
             {
@@ -11356,7 +11356,7 @@
           ]
         },
         {
-          "code": "ЛМ41A13",
+          "code": "LM41A13",
           "name": "Защита / посадка",
           "items": [
             {

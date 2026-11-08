@@ -318,7 +318,7 @@ def compose(I, h):
 
     # specialised modules
     special = set(rule.get("special", []))
-    for key in ("ore_yard", "gas_platform_link", "shipyard_slip", "lab_module", "naval_berth", "production_plant"):
+    for key in ("ore_yard", "gas_platform_link", "shipyard_slip", "lab_module", "naval_berth", "production_plant", "salvage_yard"):
         if has_kw(I, h, key):
             special.add(key)
     if h["type"] in ("beacon_relay", "abandoned_hub"):
@@ -333,6 +333,8 @@ def compose(I, h):
         add("gas_platform_link", 1)
     if "shipyard_slip" in special:
         add("shipyard_slip", 4 if level_a else 1)
+    if "salvage_yard" in special:   # ship graveyards (author 2026-11-08): cutting, sorting, the wreck market
+        add("salvage_yard", 2 if level_a else 1)
     if "lab_module" in special:
         add("lab_module", 2 if level_a else 1)
     if "beacon_core" in special:
@@ -384,6 +386,7 @@ MOD_LABEL = {
     "production_plant": lambda m: "производственный модуль" + times(m),
     "gas_platform_link": lambda m: "узел газовых платформ",
     "shipyard_slip": lambda m: "стапель" + times(m),
+    "salvage_yard": lambda m: "разделочный двор" + times(m),
     "lab_module": lambda m: "лаборатория" + times(m),
     "naval_berth": lambda m: f"военные причалы ({m.get('berths', 0)})",
     "beacon_core": lambda m: "ядро маяка",

@@ -331,10 +331,12 @@ def build_sites(I, dsos):
         rec = base_site(I, s["id"], s["name"], s["type"], s["system"], s.get("polity"), s.get("operator"), s.get("population", 0), s.get("purpose"),
                         body=s.get("body"), placement={k: s[k] for k in ("orbit", "surface", "belt") if k in s}, founded=s.get("founded"),
                         history=s.get("history"), legal=s.get("legal", "lawful"), stocks=s.get("stocks"), beacon=s.get("beacon"),
-                        runtime_binding=s.get("runtime_binding"), manufacturer=s.get("manufacturer"),
+                        runtime_binding=s.get("runtime_binding"), manufacturer=s.get("manufacturer"), graveyard_kind=s.get("graveyard_kind"),
                         placement_reason=s.get("placement_reason"), source="authored")
         if "surface" in s:
             rec["placement"]["surface"].update(placement_status="authored")
+        if s.get("level"):
+            rec["level"] = s["level"]
         sites.append(rec)
         used.add(s["id"])
     # authored deep-space hubs
@@ -1503,7 +1505,7 @@ def runtime_export(I, out):
                          utilisation=s.get("utilisation"), repair=s.get("repair"), storage_t=s.get("storage_t"), security=s.get("security_base"),
                          medical_beds=s.get("medical_beds"), quarantine_beds=s.get("quarantine_beds"), legal=s.get("legal"),
                          jurisdiction=j.get("applicable_law_ru"), enforcement=j.get("enforcement"), known_to_player=s.get("known_to_player", "public"),
-                         manufacturer=s.get("manufacturer"), placement_reason=s.get("placement_reason")))
+                         manufacturer=s.get("manufacturer"), placement_reason=s.get("placement_reason"), graveyard_kind=s.get("graveyard_kind")))
     sp = I.WS["site_types"]["planetary_surface_port"]
     for c in out["sites"]["earth"]:
         if c.get("spaceport"):

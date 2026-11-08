@@ -2292,11 +2292,6 @@
   {
    "coverage": "full",
    "light_lag_s": 499.0,
-   "site": "plant.000.ofu.ural_works"
-  },
-  {
-   "coverage": "full",
-   "light_lag_s": 499.0,
    "site": "plant.000.lmy.luna_foundry"
   },
   {
@@ -2398,6 +2393,101 @@
    "coverage": "full",
    "light_lag_s": 986.4,
    "site": "plant.009.stone_docks"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "plant.000.ofu.wenchang_engines"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "plant.000.lmy.wenchang_heavy"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "plant.000.sol_reactor.canaveral"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 193.2,
+   "site": "junk.000.hermes_breakers"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 1329.8,
+   "site": "junk.000.vesta_scrap"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "junk.000.graveyard_orbit"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 10.3,
+   "site": "junk.008.tau_breakers"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 2836.1,
+   "site": "junk.008.kuiper_drift"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 1761.5,
+   "site": "junk.009.harmony_recycling"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 1033.9,
+   "site": "junk.012.tianhe_belt"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 180.9,
+   "site": "junk.014.bharat_breakers"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 3073.4,
+   "site": "junk.015.maland_wild"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 27.2,
+   "site": "junk.003.wolf_breakers"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 986.4,
+   "site": "junk.009.strife_wild"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 373.6,
+   "site": "junk.010.freeclans_drift"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 70.8,
+   "site": "junk.004.agora_breakers"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 2041.9,
+   "site": "junk.004.kuiper_drift"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 2461.4,
+   "site": "junk.031.kern_salvage"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 1329.8,
+   "site": "junk.000.belt_wild"
   },
   {
    "coverage": "none",

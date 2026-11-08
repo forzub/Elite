@@ -163,6 +163,16 @@
       "medical_beds_per_1000": 0.0,
       "quarantine_beds_per_1000": 0.0,
       "security": 0.0
+    },
+    "ship_graveyard": {
+      "ru": "свалка кораблей",
+      "map": "detail",
+      "docks": 4,
+      "storage_t": 200000,
+      "repair": "basic",
+      "medical_beds_per_1000": 2.0,
+      "quarantine_beds_per_1000": 0.5,
+      "security": 0.2
     }
   },
   "named_sites": [
@@ -242,30 +252,6 @@
       }
     },
     {
-      "id": "plant.000.ofu.ural_works",
-      "name": "Уральский двигательный завод ОФУ",
-      "type": "industrial_hub",
-      "frame": "system",
-      "system": 0,
-      "body": "system_0.Sol.Земля",
-      "surface": {
-        "lat_deg": 56.84,
-        "lon_deg": 60.61,
-        "elevation_ref": "terrain_surface"
-      },
-      "polity": "sol_authority",
-      "operator": "Orbital Freight Union «Ural-Kourou»",
-      "manufacturer": "mfr.ofu",
-      "purpose": "двигатели линии «Урал» (У-33 … У-73Л): тяжёлое литьё и огневые стенды; отсюда префикс У в чертежах ОФУ",
-      "population": 14000,
-      "placement_reason": "поверхность: тяжёлое литьё, огневые стенды и рабочие руки города; узлы весом в десятки тонн поднимают подъёмниками",
-      "knowledge": {
-        "status": "PROPOSAL",
-        "visibility": "PUBLIC_RECORD",
-        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
-      }
-    },
-    {
       "id": "plant.000.lmy.luna_foundry",
       "name": "Лунные литейные цеха ЛМВ (Море Дождей)",
       "type": "industrial_hub",
@@ -280,7 +266,7 @@
       "polity": "sol_authority",
       "operator": "Лунно-Марсианские верфи",
       "manufacturer": "mfr.sol_mass_yards",
-      "purpose": "силовые рамы, секции и радиаторы: металл из реголита, малая тяжесть, секции уходят на орбиту масс-драйвером",
+      "purpose": "силовые рамы, секции и радиаторы: металл из реголита (Лунная горная компания, Имбриум), малая тяжесть, секции уходят на орбиту масс-драйвером",
       "population": 11000,
       "placement_reason": "поверхность: тяжёлое литьё, огневые стенды и рабочие руки города; узлы весом в десятки тонн поднимают подъёмниками",
       "knowledge": {
@@ -754,6 +740,462 @@
         "visibility": "PUBLIC_RECORD",
         "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
       }
+    },
+    {
+      "id": "plant.000.ofu.wenchang_engines",
+      "name": "ОФУ — двигательный завод в Вэньчане",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 0,
+      "body": "system_0.Sol.Земля",
+      "surface": {
+        "lat_deg": 19.61,
+        "lon_deg": 110.95,
+        "elevation_ref": "terrain_surface"
+      },
+      "polity": "sol_authority",
+      "operator": "Orbital Freight Union «Ural-Kourou»",
+      "manufacturer": "mfr.ofu",
+      "purpose": "двигатели линии «Урал» (У-33 … У-73Л): серийное литьё и огневые стенды в индустриальном кластере Вэньчана; титан — с Урала",
+      "population": 14000,
+      "placement_reason": "поверхность: тяжёлое литьё, огневые стенды и рабочие руки города; узлы весом в десятки тонн поднимают подъёмниками",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      }
+    },
+    {
+      "id": "plant.000.lmy.wenchang_heavy",
+      "name": "Лунно-Марсианские верфи — тяжёлые цеха Вэньчана",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 0,
+      "body": "system_0.Sol.Земля",
+      "surface": {
+        "lat_deg": 19.55,
+        "lon_deg": 110.8,
+        "elevation_ref": "terrain_surface"
+      },
+      "polity": "sol_authority",
+      "operator": "Лунно-Марсианские верфи (Вэньчан Хэви)",
+      "manufacturer": "mfr.sol_mass_yards",
+      "purpose": "серийные силовые секции, баки и узлы корпусов; огромные краны, круглосуточно; секции поднимают на орбиту и на Деймос",
+      "population": 30000,
+      "placement_reason": "поверхность: тяжёлое литьё, огневые стенды и рабочие руки города; узлы весом в десятки тонн поднимают подъёмниками",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      }
+    },
+    {
+      "id": "plant.000.sol_reactor.canaveral",
+      "name": "Sol Reactor Works — исследовательский центр Канаверал",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 0,
+      "body": "system_0.Sol.Земля",
+      "surface": {
+        "lat_deg": 28.49,
+        "lon_deg": -80.58,
+        "elevation_ref": "terrain_surface"
+      },
+      "polity": "sol_authority",
+      "operator": "Sol Reactor Works",
+      "manufacturer": "mfr.sol_reactor",
+      "purpose": "разработка реакторов и двигателей Сола: атлантическая школа, опытные образцы и испытания; серия — на Луне",
+      "population": 6000,
+      "placement_reason": "поверхность: исследовательский центр при старом космодроме и университетах; серийное производство — на Луне",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      }
+    },
+    {
+      "id": "junk.000.hermes_breakers",
+      "name": "Разделочный двор «Гермес»",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 0,
+      "body": "system_0.Sol.Меркурий",
+      "orbit": {
+        "altitude_km": 2500,
+        "inclination_deg": 0.0
+      },
+      "polity": "sol_authority",
+      "operator": "Солнечная металлургическая компания",
+      "graveyard_kind": "recycling",
+      "purpose": "свалка кораблей (разделка и переработка): корпуса режут у металлургии Меркурия: металл в печи Калориса, годные узлы - на продажу",
+      "population": 2200,
+      "legal": "lawful",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.000.vesta_scrap",
+      "name": "Свалка треста Весты",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 0,
+      "body": "system_0.Sol.asteroid_belt",
+      "belt": {
+        "radius_au": 2.36,
+        "longitude_deg": 141.0
+      },
+      "polity": "sol_authority",
+      "operator": "Металлургический трест Весты",
+      "graveyard_kind": "recycling",
+      "purpose": "свалка кораблей (разделка и переработка): переработка списанных рудовозов пояса рядом с металлургией Весты",
+      "population": 900,
+      "legal": "lawful",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.000.graveyard_orbit",
+      "name": "Орбита захоронения",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 0,
+      "body": "system_0.Sol.Земля",
+      "orbit": {
+        "altitude_km": 36100,
+        "inclination_deg": 0.0
+      },
+      "polity": "sol_authority",
+      "operator": "никто (Портовая служба Сола следит за дрейфом)",
+      "graveyard_kind": "drifting",
+      "purpose": "свалка кораблей (дрейфующее кладбище): орбита над геостационарной, куда веками уводили отслужившее: корпуса XXIII-XXX веков, мусор, мародёры",
+      "population": 60,
+      "legal": "lawful",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.008.tau_breakers",
+      "name": "Разборочный причал Тау Кита",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 8,
+      "body": "system_8.Tau_Ceti.Tau_Ceti_b",
+      "orbit": {
+        "altitude_km": 42000,
+        "inclination_deg": 0.0
+      },
+      "polity": "tau_ceti_cognium",
+      "operator": "лицензированные разборщики Когниума",
+      "graveyard_kind": "recycling",
+      "purpose": "свалка кораблей (разделка и переработка): лицензионная разделка: ядра прыжка изымает Управление Маяков, остальное - на рынок",
+      "population": 1200,
+      "legal": "lawful",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.008.kuiper_drift",
+      "name": "Дальнее кладбище Тау Кита",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 8,
+      "body": "system_8.Tau_Ceti.kuiper_belt",
+      "belt": {
+        "radius_au": 5.9,
+        "longitude_deg": 32.0
+      },
+      "polity": "tau_ceti_cognium",
+      "operator": "никто",
+      "graveyard_kind": "drifting",
+      "purpose": "свалка кораблей (дрейфующее кладбище): брошенные корпуса в поясе Койпера, далеко от маршрутов",
+      "population": 0,
+      "legal": "lawful",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.009.harmony_recycling",
+      "name": "Цех вторичного сырья Гармонии",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 9,
+      "body": "system_9.Epsilon_Eridani.eps_Eri_b",
+      "orbit": {
+        "altitude_km": 160000,
+        "inclination_deg": 0.0
+      },
+      "polity": "eps_eri_harmony",
+      "operator": "Верфи Гармонии (цех вторсырья)",
+      "graveyard_kind": "recycling",
+      "purpose": "свалка кораблей (разделка и переработка): плановая разделка списанных «Хэ»: металл возвращается на верфь; в стороне от трасс",
+      "population": 2500,
+      "legal": "lawful",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.012.tianhe_belt",
+      "name": "Кладбище пояса Тяньхэ",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 12,
+      "body": "system_12.Gliese_832.asteroid_belt",
+      "belt": {
+        "radius_au": 2.07,
+        "longitude_deg": 260.0
+      },
+      "polity": "gj832_tianhe",
+      "operator": "никто (кордон Тяньхэ иногда проверяет)",
+      "graveyard_kind": "drifting",
+      "purpose": "свалка кораблей (дрейфующее кладбище): отслужившие корпуса оставлены в поясе; официально их нет",
+      "population": 0,
+      "legal": "lawful",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.014.bharat_breakers",
+      "name": "Разборочная площадка Бхарат",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 14,
+      "body": "system_14.HD_20794.HD_20794_d",
+      "orbit": {
+        "altitude_km": 31000,
+        "inclination_deg": 0.0
+      },
+      "polity": "hd20794_newindia",
+      "operator": "Бхарат Ассембли (разборка)",
+      "graveyard_kind": "recycling",
+      "purpose": "свалка кораблей (разделка и переработка): разборка по-индийски: каждый болт идёт в дело, корпуса режут вручную",
+      "population": 3500,
+      "legal": "lawful",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.015.maland_wild",
+      "name": "Стихийная свалка Маланд",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 15,
+      "body": "system_15.HD_40307.kuiper_belt",
+      "belt": {
+        "radius_au": 6.3,
+        "longitude_deg": 205.0
+      },
+      "polity": "hd40307_maland",
+      "operator": "никто (общины сборщиков)",
+      "graveyard_kind": "wild",
+      "purpose": "свалка кораблей (стихийная свалка): стихийная свалка на окраине пояса: общины сборщиков живут в старых корпусах",
+      "population": 300,
+      "legal": "contested",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.003.wolf_breakers",
+      "name": "Утилизационный двор Ульвена",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 3,
+      "body": "system_3.Wolf_359.Wolf_359_d",
+      "orbit": {
+        "altitude_km": 4200,
+        "inclination_deg": 0.0
+      },
+      "polity": "wolf359_citadel",
+      "operator": "Арсенал «Бастион» (утилизация)",
+      "graveyard_kind": "recycling",
+      "purpose": "свалка кораблей (разделка и переработка): военная утилизация: оружие и ядра снимают под охраной, остальное режут",
+      "population": 800,
+      "legal": "lawful",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.009.strife_wild",
+      "name": "Большая свалка Пояса Раздора",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 9,
+      "body": "system_9.Epsilon_Eridani.asteroid_belt",
+      "belt": {
+        "radius_au": 2.02,
+        "longitude_deg": 333.0
+      },
+      "polity": "eps_eri_strife",
+      "operator": "никто (кланы делят по контрактам)",
+      "graveyard_kind": "wild",
+      "purpose": "свалка кораблей (стихийная свалка): самая большая стихийная свалка: корпуса Гармонии, трофеи, переделки - всё продаётся",
+      "population": 1500,
+      "legal": "contested",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.010.freeclans_drift",
+      "name": "Ржавый пояс Свободного мира",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 10,
+      "body": "system_10.Gliese_581.kuiper_belt",
+      "belt": {
+        "radius_au": 0.82,
+        "longitude_deg": 77.0
+      },
+      "polity": "gj581_freeclans",
+      "operator": "никто",
+      "graveyard_kind": "drifting",
+      "purpose": "свалка кораблей (дрейфующее кладбище): корпуса кланов, брошенные в поясе; кто первый нашёл - того и корпус",
+      "population": 0,
+      "legal": "lawful",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.004.agora_breakers",
+      "name": "Разборочный рынок Агоры",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 4,
+      "body": "system_4.Lalande_21185.Lalande_21185_g",
+      "orbit": {
+        "altitude_km": 19000,
+        "inclination_deg": 0.0
+      },
+      "polity": "lalande_hellas",
+      "operator": "Agora Modular (вторичные секции)",
+      "graveyard_kind": "recycling",
+      "purpose": "свалка кораблей (разделка и переработка): разборка и продажа б/у секций по открытому стандарту; в стороне от Ставродроми",
+      "population": 1600,
+      "legal": "lawful",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.004.kuiper_drift",
+      "name": "Кладбище Лаланд",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 4,
+      "body": "system_4.Lalande_21185.kuiper_belt",
+      "belt": {
+        "radius_au": 4.3,
+        "longitude_deg": 288.0
+      },
+      "polity": "lalande_mecca",
+      "operator": "никто",
+      "graveyard_kind": "drifting",
+      "purpose": "свалка кораблей (дрейфующее кладбище): брошенные корпуса в поясе Лаланд, далеко от маршрутов",
+      "population": 0,
+      "legal": "lawful",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.031.kern_salvage",
+      "name": "Страховая разделка Керна",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 31,
+      "body": "system_31.61_Cygni_A.kuiper_belt",
+      "belt": {
+        "radius_au": 5.1,
+        "longitude_deg": 12.0
+      },
+      "polity": "cyg61_kern",
+      "operator": "Kern Salvage (страховая разделка)",
+      "graveyard_kind": "recycling",
+      "purpose": "свалка кораблей (разделка и переработка): Керн режет то, что сам страховал: корпуса с выплаченной страховкой",
+      "population": 700,
+      "legal": "lawful",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
+    },
+    {
+      "id": "junk.000.belt_wild",
+      "name": "Свалка у Тихой Гавани",
+      "type": "ship_graveyard",
+      "frame": "system",
+      "system": 0,
+      "body": "system_0.Sol.asteroid_belt",
+      "belt": {
+        "radius_au": 2.9,
+        "longitude_deg": 307.0
+      },
+      "polity": "sol_authority",
+      "operator": "никто (у Тихой Гавани)",
+      "graveyard_kind": "wild",
+      "purpose": "свалка кораблей (стихийная свалка): стихийная свалка рядом с пиратским анклавом главного пояса: дешёвые развалины без вопросов",
+      "population": 120,
+      "legal": "contested",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08"
+      },
+      "level": "C"
     }
   ],
   "deep_space_objects": [

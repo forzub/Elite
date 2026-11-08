@@ -6,7 +6,7 @@
 
 | Тип | Число |
 |---|---:|
-| промышленный хаб | 119 |
+| промышленный хаб | 121 |
 | горнодобывающий хаб | 115 |
 | орбитальный хаб | 48 |
 | наземный космопорт | 47 |
@@ -16,6 +16,7 @@
 | военный хаб | 26 |
 | карантинный хаб | 20 |
 | пиратский анклав | 19 |
+| свалка кораблей | 16 |
 | хаб пояса | 9 |
 | вольный порт | 5 |
 | межзвёздная заправка | 4 |
@@ -23,7 +24,7 @@
 | брошенный хаб | 1 |
 | межзвёздный ретранслятор | 1 |
 
-Всего сайтов 537; объектов глубокого космоса 9; агломераций Земли 61.
+Всего сайтов 555; объектов глубокого космоса 9; агломераций Земли 61.
 
 ## Дорога в карман Керна
 
@@ -70,7 +71,7 @@
 
 ## Проверки
 
-- OK one_id_one_object: 539 ids
+- OK one_id_one_object: 557 ids
 - OK site_bodies_exist_in_catalog: ok
 - OK every_site_has_placement: ok
 - OK access_chains_use_real_hops_only: frontier.worlds_ass max 30.753, frontier.ceti_chest max 25.603, frontier.vega_observatory max 18.304, kern_pocket max 30.753
@@ -111,5 +112,5 @@
 - OK no_jump_ship_older_than_jump_drive: ok
 - OK records_match_schemas: Hub / DeepSpaceObject / LocalAdministrator
 - OK knowledge_never_before_truth: 5 records
-- OK every_site_has_jurisdiction: 537 sites
+- OK every_site_has_jurisdiction: 555 sites
 - OK status_present: ok

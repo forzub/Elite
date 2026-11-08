@@ -2,7 +2,7 @@
  "checks": [
   {
    "check": "one_id_one_object",
-   "detail": "539 ids",
+   "detail": "557 ids",
    "ok": true
   },
   {
@@ -207,7 +207,7 @@
   },
   {
    "check": "every_site_has_jurisdiction",
-   "detail": "537 sites",
+   "detail": "555 sites",
    "ok": true
   },
   {

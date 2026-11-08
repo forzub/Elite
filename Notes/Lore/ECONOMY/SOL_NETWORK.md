@@ -31,18 +31,18 @@
 
 | Система | Уровень развития | Крупных хабов | Бюджет | Слито в комплексы (B) | Местных объектов (C) |
 |---|---|---|---|---|---|
-| Sol (Солнце) | core | 29 | 24-30 | 0 | 9 |
+| Sol (Солнце) | core | 29 | 24-30 | 0 | 13 |
 | Barnard's Star | frontier | 1 | 0-3 | 0 | 0 |
-| Wolf 359 | colony | 6 | 4-10 | 1 | 19 |
-| Lalande 21185 | developed | 11 | 10-18 | 0 | 40 |
-| Tau Ceti | developed | 4 | 10-18 | 3 | 19 |
-| Epsilon Eridani | developed | 11 | 10-18 | 8 | 41 |
-| Gliese 581 | colony | 5 | 4-10 | 1 | 34 |
+| Wolf 359 | colony | 6 | 4-10 | 1 | 20 |
+| Lalande 21185 | developed | 11 | 10-18 | 0 | 42 |
+| Tau Ceti | developed | 4 | 10-18 | 3 | 21 |
+| Epsilon Eridani | developed | 11 | 10-18 | 8 | 43 |
+| Gliese 581 | colony | 5 | 4-10 | 1 | 35 |
 | Gliese 667 (A+B+C) | frontier | 1 | 0-3 | 0 | 0 |
-| Gliese 832 | developed | 7 | 10-18 | 0 | 27 |
+| Gliese 832 | developed | 7 | 10-18 | 0 | 28 |
 | Gliese 876 | periphery | 2 | 1-5 | 0 | 6 |
-| HD 20794 (82 G. Eridani) | developed | 8 | 10-18 | 0 | 40 |
-| HD 40307 | colony | 6 | 4-10 | 1 | 38 |
+| HD 20794 (82 G. Eridani) | developed | 8 | 10-18 | 0 | 41 |
+| HD 40307 | colony | 6 | 4-10 | 1 | 39 |
 | HD 69830 | colony | 3 | 4-10 | 0 | 15 |
 | HD 102195 | frontier | 1 | 0-3 | 0 | 4 |
 | Delta Pavonis | developed | 8 | 10-18 | 0 | 33 |
@@ -50,7 +50,7 @@
 | Gliese 436 | frontier | 0 | 0-3 | 0 | 1 |
 | Gliese 357 | frontier | 1 | 0-3 | 0 | 0 |
 | Epsilon Indi | frontier | 0 | 0-3 | 0 | 1 |
-| 61 Cygni | colony | 2 | 4-10 | 0 | 12 |
+| 61 Cygni | colony | 2 | 4-10 | 0 | 13 |
 | HD 114783 | periphery | 1 | 1-5 | 0 | 8 |
 | Sigma² Ursae Majoris | frontier | 0 | 0-3 | 0 | 1 |
 | HD 104067 | frontier | 2 | 0-3 | 0 | 1 |

@@ -32,6 +32,7 @@
     "production_plant": {"ru": "производственный модуль", "block": "industry", "function": "металлургия, химия, сборка (по назначению хаба)"},
     "gas_platform_link": {"ru": "узел газовых платформ", "block": "industry", "function": "сбор газа и He-3 с платформ в атмосфере гиганта"},
     "shipyard_slip": {"ru": "стапель", "block": "industry", "function": "сборка и капремонт корпусов"},
+    "salvage_yard": {"ru": "разделочный двор", "block": "industry", "function": "разборка корпусов, сортировка годных узлов, продажа развалин и б/у деталей"},
     "lab_module": {"ru": "лабораторный модуль", "block": "science", "staff": 30, "function": "наблюдения, исследования, образцы"},
     "naval_berth": {"ru": "военный причал и арсенал", "block": "military", "function": "причалы кораблей флота, боезапас, топливо флота"},
     "beacon_core": {"ru": "ядро маяка", "block": "beacon", "function": "навигационный маяк / ретранслятор: эфемериды, точное время, почта, рыночные бюллетени"}
@@ -53,7 +54,8 @@
     "deep_space_refuel_point":[0.25, 0.00, 0.00, 0.50, 0.25, 0.00],
     "deep_space_relay":       [0.00, 0.00, 0.00, 0.50, 0.50, 0.00],
     "derelict_hub":           [0.50, 0.00, 0.00, 0.00, 0.50, 0.00],
-    "abandoned_hub":          [0.00, 0.00, 0.00, 0.00, 0.00, 0.00]
+    "abandoned_hub":          [0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
+    "ship_graveyard":         [0.25, 0.00, 0.50, 0.00, 0.25, 0.00]
   },
   "type_rules": {
     "orbital_hub":            {"market": "full",   "customs": true,  "fuel_terminal": "level_a", "holding_min": 6},
@@ -71,6 +73,7 @@
     "deep_space_relay":       {"market": "none",   "customs": false, "fuel_terminal": "no",      "holding_min": 2, "special": ["beacon_core"]},
     "derelict_hub":           {"market": "none",   "customs": false, "fuel_terminal": "no",      "holding_min": 0},
     "abandoned_hub":          {"market": "none",   "customs": false, "fuel_terminal": "no",      "holding_min": 0},
+    "ship_graveyard":         {"market": "local",  "customs": false, "fuel_terminal": "no",      "holding_min": 2, "special": ["salvage_yard"]},
     "beacon_bridge":          {"market": "supply", "customs": false, "fuel_terminal": "no",      "holding_min": 2, "special": ["beacon_core"]},
     "beacon_relay":           {"market": "none",   "customs": false, "fuel_terminal": "no",      "holding_min": 0, "special": ["beacon_core"]}
   },
@@ -80,6 +83,7 @@
     "gas_platform_link": ["газовые платформы", "he-3", "gas"],
     "ore_yard": ["рудник", "руд", "лёд", "ice", "mining"],
     "shipyard_slip": ["верф", "shipyard", "стапел"],
+    "salvage_yard": ["свалк", "разделк", "разборк", "переработка списанных"],
     "lab_module": ["наук", "science", "наблюдени", "observation"],
     "naval_berth": ["военн", "defence", "кордон", "пикет"],
     "quarantine_ward": ["карантин", "quarantine"],
@@ -104,7 +108,7 @@
   "supply": {
     "note": "Снабжение и вахты. Хаб считается удалённым (remote), если его тип в remote_types или в его системе нет хаба с полным рынком. Удалённые хабы и маяки сами не закупают на рынке: их оператор публикует заявки на доске родительского хаба (supply_parent).",
     "remote_level_a_exempt": "хаб класса A (столица пояса, главная база) не вахтовый, даже если тип в remote_types",
-    "remote_types": ["mining_hub", "science_hub", "military_hub", "quarantine_hub", "deep_space_refuel_point", "deep_space_relay", "beacon_bridge", "beacon_relay"],
+    "remote_types": ["mining_hub", "science_hub", "military_hub", "quarantine_hub", "deep_space_refuel_point", "deep_space_relay", "beacon_bridge", "beacon_relay", "ship_graveyard"],
     "rotation": {
       "mining_hub":              {"share": 0.7, "period_days": 90},
       "science_hub":             {"share": 0.8, "period_days": 120},

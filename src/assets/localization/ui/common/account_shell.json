@@ -267,6 +267,22 @@
       "zh-Hans": "恒星、行星、卫星、云层、大气、行星环和小行星。飞行中按 Ctrl+F7 切换风格。",
       "es": "Estrellas, planetas, lunas, nubes, atmósferas, anillos y asteroides. En vuelo: Ctrl+F7 cambia el estilo.",
       "ja": "恒星・惑星・衛星・雲・大気・環・小惑星。飛行中は Ctrl+F7 で切り替え。"
-    }
+    },
+    "main.settings.capsule_survival": {
+      "en": "DIFFICULTY: CAPSULE SURVIVAL",
+      "ru": "СЛОЖНОСТЬ: ВЫЖИВАНИЕ В КАПСУЛЕ",
+      "zh-Hans": "难度：救生舱求生",
+      "es": "DIFICULTAD: SUPERVIVENCIA EN LA CÁPSULA",
+      "ja": "難易度：脱出カプセルでの生存"
+    },
+    "main.settings.capsule_survival_help": {
+      "en": "After the ship is lost you keep the escape capsule alive until rescue arrives: air, CO2, power, repairs. Off: the wait is just waited out.",
+      "ru": "После гибели корабля вы поддерживаете жизнь в спасательной капсуле, пока не прилетят спасатели: воздух, CO2, энергия, ремонт. Выключено: ожидание просто проходит.",
+      "zh-Hans": "飞船损毁后，在救援到达前维持救生舱运转：空气、二氧化碳、电力、维修。关闭时只需等待。",
+      "es": "Tras perder la nave mantienes viva la cápsula hasta el rescate: aire, CO2, energía, reparaciones. Desactivado: solo se espera.",
+      "ja": "艦を失った後、救助が来るまで脱出カプセルを維持する：空気・CO2・電力・修理。オフでは待つだけ。"
+    },
+    "main.settings.on": {"en": "ON", "ru": "ВКЛ", "zh-Hans": "开", "es": "SÍ", "ja": "オン"},
+    "main.settings.off": {"en": "OFF", "ru": "ВЫКЛ", "zh-Hans": "关", "es": "NO", "ja": "オフ"}
   }
 }

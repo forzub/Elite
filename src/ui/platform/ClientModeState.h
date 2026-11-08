@@ -19,7 +19,21 @@ struct ClientModeState
     // Celestial bodies: "elite" | "modern" | "anime"
     // (render::celestial_flight::CelestialRenderStyle).
     std::string celestialRenderStyleId = "modern";
+    // Difficulty layers (author 2026-11-08): optional gameplay layers the player switches on or off.
+    // capsuleSurvival - after the ship is lost the pilot lives in the escape capsule until the rescue
+    // arrives and keeps it alive (air, CO2, power, repairs - "как в Tin Can"); off = the wait is simply
+    // waited out. The layer is laid in; its gameplay is a later slice.
+    bool capsuleSurvivalEnabled = false;
     std::uint64_t revision = 1;
+
+    bool setCapsuleSurvivalEnabled(bool enabled) noexcept
+    {
+        if (capsuleSurvivalEnabled == enabled)
+            return false;
+        capsuleSurvivalEnabled = enabled;
+        ++revision;
+        return true;
+    }
 
     bool setUiLocale(std::string locale)
     {

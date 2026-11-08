@@ -569,6 +569,9 @@ void Application::init()
         (void)m_clientModeState.setCelestialRenderStyleId(
             m_clientPreferences.celestialRenderStyleId
         );
+        (void)m_clientModeState.setCapsuleSurvivalEnabled(
+            m_clientPreferences.capsuleSurvivalEnabled
+        );
         if (!m_clientPreferences.skyCultureId.empty())
         {
             (void)m_clientModeState.setSkyCultureId(
@@ -2133,6 +2136,21 @@ void Application::processDocumentWebViewCommands(int surfaceIndex)
             continue;
         }
 
+        // difficulty layer: survival in the escape capsule (ClientModeState::capsuleSurvivalEnabled)
+        constexpr const char* SetCapsuleSurvivalPrefix = "set_capsule_survival|";
+        if (webCommand.rfind(SetCapsuleSurvivalPrefix, 0) == 0)
+        {
+            const bool on = webCommand.substr(std::char_traits<char>::length(SetCapsuleSurvivalPrefix)) == "on";
+            if (m_clientModeState.setCapsuleSurvivalEnabled(on))
+            {
+                persistClientModeState();
+                std::cout << "[Difficulty] capsule survival " << (on ? "ON" : "OFF") << std::endl;
+            }
+            if (m_gameUi.committedTarget().mode == GameUiMode::MainMenu)
+                applyMainMenuView();
+            continue;
+        }
+
         constexpr const char* SetLocalePrefix = "set_ui_locale|";
         if (webCommand.rfind(SetLocalePrefix, 0) == 0)
         {
@@ -2415,6 +2433,7 @@ void Application::applyMainMenuView()
     state["errorCode"] = m_uiNavigationState.transientMessageCode();
     state["locale"] = m_localization.locale();
     state["celestialStyle"] = m_clientModeState.celestialRenderStyleId;
+    state["capsuleSurvival"] = m_clientModeState.capsuleSurvivalEnabled;
     state["localPlayerName"] = m_localPlayerDisplayName;
     state["accountAvailable"] = !m_authenticatedRemoteAccountHandle.empty();
     state["passwordRecoveryAvailable"] = false;
@@ -2616,6 +2635,8 @@ void Application::persistClientModeState()
         m_clientModeState.coordinateDisplayFormatId;
     m_clientPreferences.celestialRenderStyleId =
         m_clientModeState.celestialRenderStyleId;
+    m_clientPreferences.capsuleSurvivalEnabled =
+        m_clientModeState.capsuleSurvivalEnabled;
 
     std::string preferencesError;
     if (!ui::platform::ClientPreferencesStore::save(

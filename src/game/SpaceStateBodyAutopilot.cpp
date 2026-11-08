@@ -186,6 +186,26 @@ void SpaceState::requestFreeFlightAutopilot(const std::string& bodyId, const std
     m_bodyAutopilotLastTick = 0;     // the first step after the engage has no dt
     m_bodyAutopilotEngageBody = bodyId;
     m_bodyAutopilotEngageSpec = landingSpec;
+    if (m_client)
+        if (const auto ship = m_client->world().ships().find(m_playerId.value); ship != m_client->world().ships().end())
+        {
+            const int systemId = ship->second.transform.motion.systemId;
+            bool bodyHasHub = false;
+            for (const auto& [id, hub] : m_client->world().hubs())
+                if (!bodyId.empty() && hub.parentBodyId == bodyId)
+                    bodyHasHub = true;
+            if (!bodyHasHub)
+            {
+                const std::string warning = systemHasRescueService(systemId)
+                    ? std::string("АВТОПИЛОТ: у цели нет хаба со спасательной службой - SOS могут не услышать")
+                    : rescueWarningAt(world::coordinates::fullMeters(ship->second.transform.worldPosition), systemId, "АВТОПИЛОТ");
+                if (!warning.empty())
+                {
+                    m_pilotNotice = warning;
+                    std::cerr << "[Autopilot] " << warning << std::endl;
+                }
+            }
+        }
     std::cerr << "[Autopilot] requested (client) -> " << (bodyId.empty() ? std::string("the dominant body") : bodyId)
               << (landingSpec.empty() ? std::string() : " " + landingSpec) << std::endl;
 }

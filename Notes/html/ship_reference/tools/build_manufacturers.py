@@ -249,7 +249,10 @@ def main():
     for m in mfrs_src:
         site_type = PLANT_SITE_TYPE.get(m['plant'], m['plant'])
         pol = polities[m['polity']]
-        plants = [r['id'] for r in pol['hubs'] if r.get('type') == site_type]
+        # canon (author 2026-11-08): every manufacturer owns its plant sites (industry.json manufacturers[].plants)
+        plants = list(m.get('plants') or [])
+        if not plants:
+            plants = [r['id'] for r in pol['hubs'] if r.get('type') == site_type]
         if not plants:  # a plant site may exist without module data
             plants_sites = [s['id'] for s in sites_doc['sites'] if s.get('polity') == m['polity'] and s.get('type') == site_type]
             plants = plants_sites
@@ -262,6 +265,7 @@ def main():
             'groups': [{'id': g, 'ru': group_ru.get(g, g)} for g in m.get('groups', [])],
             'plant': m['plant'], 'plant_site_type': site_type, 'plant_ru': PLANT_RU.get(m['plant'], m['plant']),
             'plants': plants, 'note': m.get('note'),
+            'plant_reasons': {s['id']: s.get('placement_reason') for s in sites_doc['sites'] if s['id'] in plants and s.get('placement_reason')} or None,
             'naming': {k: nm[k] for k in NAMING_FIELDS if nm and k in nm} if nm else None,
         }
         manufacturers.append({k: v for k, v in rec.items() if v is not None})

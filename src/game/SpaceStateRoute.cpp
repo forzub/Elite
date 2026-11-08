@@ -375,6 +375,15 @@ void SpaceState::launchPlannedRoute(bool official, bool launch)
             plan.summary += " · +" + std::to_string(inserted.size()) + " запр.";
         if (!shortage.empty())
             plan.summary += " · " + shortage;
+        int outside = 0;
+        for (const auto& l : planned.legs)
+            if (rescueAt(l.worldM, snapshot->systemId).zone != game::navigation::rescue::Zone::Inside)
+                ++outside;
+        if (outside > 0)
+        {
+            plan.summary += " · вне зоны спасения: " + std::to_string(outside) + " из " + std::to_string(planned.legs.size()) + " точек";
+            std::cerr << "[RoutePlan] " << outside << " of " << planned.legs.size() << " points outside the rescue zones" << std::endl;
+        }
     }
 
     // the route on the map (the transfer tunnel line, relative to the start body)

@@ -67,7 +67,9 @@ void SpaceState::handleJumpRequest(int kind, int systemId)
             m_jumpCalculatedSystemId = -1;
         }
         m_pilotNotice = b;
-        std::cerr << "[Jump] calculated: " << b << std::endl;
+        if (m_jumpCalculatedSystemId == systemId && !systemHasRescueService(systemId))
+            m_pilotNotice += " · ВНИМАНИЕ: в системе нет спасательной службы - SOS услышат только случайные корабли";
+        std::cerr << "[Jump] calculated: " << m_pilotNotice << std::endl;
         return;
     }
     if (kind == 2 && systemId == m_jumpCalculatedSystemId)

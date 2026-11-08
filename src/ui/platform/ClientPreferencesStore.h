@@ -20,6 +20,7 @@ struct ClientPreferences
     std::string skyCultureId;
     std::string coordinateDisplayFormatId = "hierarchical";
     std::string celestialRenderStyleId = "modern";
+    bool capsuleSurvivalEnabled = false;   // difficulty layer (ClientModeState)
 
     // Temporary developer selection of the six fixed ordinary-flight
     // constructions. Empty means "use the descriptor default".

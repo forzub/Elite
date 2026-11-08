@@ -178,6 +178,7 @@ nlohmann::json toJson(const ClientPreferences& preferences)
     root["coordinate_display_format_id"] =
         preferences.coordinateDisplayFormatId;
     root["celestial_render_style"] = preferences.celestialRenderStyleId;
+    root["difficulty_capsule_survival"] = preferences.capsuleSurvivalEnabled;
     root["preferred_physical_control_model"] =
         preferences.preferredPhysicalControlModel;
     root["last_successful_account_by_server"] = nlohmann::json::object();
@@ -271,6 +272,13 @@ bool fromJson(
         const std::string style = root["celestial_render_style"].get<std::string>();
         if (style == "elite" || style == "modern" || style == "anime")
             parsed.celestialRenderStyleId = style;
+    }
+
+    if (root.contains("difficulty_capsule_survival"))
+    {
+        if (!root["difficulty_capsule_survival"].is_boolean())
+            return fail(outError, "difficulty_capsule_survival must be a boolean");
+        parsed.capsuleSurvivalEnabled = root["difficulty_capsule_survival"].get<bool>();
     }
 
     if (root.contains("preferred_physical_control_model"))

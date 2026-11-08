@@ -4317,3 +4317,30 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
 - Checked: headless Chrome (catalog search by old name «Пилигрим» finds L-900 «Эос»; ship view shows official /
   native / export / crew names and codes 和51A1...; manufacturers list and Harmony detail render, no JS errors).
 - EliteGame builds; gates 209: 203 pass / 6 known red / 0 new.
+
+### Manufacturer plants + data gaps + rescue zones (SOS) + difficulty layer "capsule survival" 2026-11-08 - BUILT, 1 LIVE HUD CHECK, NOT AUTHOR-ACCEPTED
+- Author: "площадки должны принадлежать производителям - подумай, что оставить на орбите, что спустить на планеты
+  или заныкать в поясе"; "в жилых зонах есть спасательные службы; предупреждение в терминале HUD, при расчёте маршрута
+  или старте автопилота: вдали от обитаемых зон SOS могут не услышать; в обитаемой зоне подберут через 10-20 мин";
+  "заложи слой - уровень сложности (как в Tin Can), включается / выключается в настройках". Names: not approved yet.
+- Plants: 24 named sites in canon/world_sites.json (field manufacturer, placement_reason) + Деймос-Верфь
+  (sol_network operator now Лунно-Марсианские верфи; founder stays Марсианские верфи, 2702); industry.json
+  manufacturers[].plants. Rule: orbit = big hulls / clean rooms / sections bigger than any lifter (Harmony, Hyperion,
+  Cobretty yard, Bharat rings, Mjølner, Agora, Xinzhi, Terra Habitat, OFU yard, Tianhe mass yard, Kāpehu core fab);
+  surface = heavy casting, engine / reactor test stands, biology, lifters (OFU Ural works + Kourou, LMY lunar foundry,
+  Sol Reactor Works Tranquillitatis, Cobretty K3 works, Tianhe danwei No. 1, Firmament armour, Eurohab, Uhuru);
+  belt = mining kit and hollowed asteroids, the hidden state core fab (Kern Deep Dock, Stone Docks, Нулевая точка).
+  Every manufacturer resolves (Hyperion's gap closed).
+- Gaps filled: the 52 Earth megacity spaceports (spaceport flag) are now hubs (one standard port per 100 M people,
+  level A > 50 M) -> 614 hubs (was 538); mfr.mizan (retired Arabic Lalande branch) -> mfr.kapehu_systems in
+  industry.json and ship_designs.json (parts already used it). world_sites / economy_live / ship_designer / lore
+  rebuilt; world_sites check OK, naming 29/29, lore check OK. Manufacturers page uses the canon plants + reasons.
+- Rescue zones: navigation/rules/RescueRules.h - a zone = 30 light-seconds around an inhabited hub (canon
+  comms.coverage_ls station); inside: pickup 10-20 min; outside: SOS may not be heard; a system with no inhabited
+  hub: no service. SpaceStateRescue.cpp; HUD terminal line (stable text per zone); route plan summary counts the
+  points outside the zones; route start / body autopilot start / jump calculation warn through the pilot notice.
+  Live: Earth orbit -> "SOS: зона спасения «Высокий» - подберут через 10-20 мин". Outside / no-service: not flown.
+- Difficulty layer: ClientModeState::capsuleSurvivalEnabled, persisted (difficulty_capsule_survival), webui command
+  set_capsule_survival|on/off, main menu settings dialog (5 locales); the destruction HUD line notes the mode when the
+  pilot is alive. The Tin Can-style gameplay itself is NOT built (later slice).
+- EliteGame builds; gates 209: 203 pass / 6 known red / 0 new.

@@ -193,6 +193,567 @@
         "visibility": "PUBLIC_RECORD",
         "basis": "геометрия каталога: единственная цепочка прыжков <= 32 св. лет в карман 37/41/45"
       }
+    },
+    {
+      "id": "plant.000.ofu.ural_kourou_yard",
+      "name": "Урал-Куру — орбитальная верфь ОФУ",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 0,
+      "body": "system_0.Sol.Земля",
+      "orbit": {
+        "altitude_km": 1800,
+        "inclination_deg": 28.5
+      },
+      "polity": "sol_authority",
+      "operator": "Orbital Freight Union «Ural-Kourou»",
+      "manufacturer": "mfr.ofu",
+      "purpose": "верфь ОФУ: сборка корпусов OCS-4 и SL-12, контейнерные модули P20",
+      "population": 9000,
+      "placement_reason": "орбита: готовый крупный корпус или секцию не нужно поднимать из гравитационного колодца",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.000.ofu.kourou",
+      "name": "Куру — наземный комплекс подъёмников ОФУ",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 0,
+      "body": "system_0.Sol.Земля",
+      "surface": {
+        "lat_deg": 5.16,
+        "lon_deg": -52.65,
+        "elevation_ref": "terrain_surface"
+      },
+      "polity": "sol_authority",
+      "operator": "Orbital Freight Union «Ural-Kourou»",
+      "manufacturer": "mfr.ofu",
+      "purpose": "сборка и обкатка подъёмников SL-12 (они и так садятся на поверхность), космодром Гвианы, наследие европейского агентства",
+      "population": 6000,
+      "placement_reason": "поверхность: тяжёлое литьё, огневые стенды и рабочие руки города; узлы весом в десятки тонн поднимают подъёмниками",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.000.ofu.ural_works",
+      "name": "Уральский двигательный завод ОФУ",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 0,
+      "body": "system_0.Sol.Земля",
+      "surface": {
+        "lat_deg": 56.84,
+        "lon_deg": 60.61,
+        "elevation_ref": "terrain_surface"
+      },
+      "polity": "sol_authority",
+      "operator": "Orbital Freight Union «Ural-Kourou»",
+      "manufacturer": "mfr.ofu",
+      "purpose": "двигатели линии «Урал» (У-33 … У-73Л): тяжёлое литьё и огневые стенды; отсюда префикс У в чертежах ОФУ",
+      "population": 14000,
+      "placement_reason": "поверхность: тяжёлое литьё, огневые стенды и рабочие руки города; узлы весом в десятки тонн поднимают подъёмниками",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.000.lmy.luna_foundry",
+      "name": "Лунные литейные цеха ЛМВ (Море Дождей)",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 0,
+      "body": "system_0.Sol.Земля.Луна",
+      "surface": {
+        "lat_deg": 32.8,
+        "lon_deg": -15.6,
+        "elevation_ref": "terrain_surface"
+      },
+      "polity": "sol_authority",
+      "operator": "Лунно-Марсианские верфи",
+      "manufacturer": "mfr.sol_mass_yards",
+      "purpose": "силовые рамы, секции и радиаторы: металл из реголита, малая тяжесть, секции уходят на орбиту масс-драйвером",
+      "population": 11000,
+      "placement_reason": "поверхность: тяжёлое литьё, огневые стенды и рабочие руки города; узлы весом в десятки тонн поднимают подъёмниками",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.000.sol_reactor.tranquillitatis",
+      "name": "Sol Reactor Works — Море Спокойствия",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 0,
+      "body": "system_0.Sol.Земля.Луна",
+      "surface": {
+        "lat_deg": 8.5,
+        "lon_deg": 31.4,
+        "elevation_ref": "terrain_surface"
+      },
+      "polity": "sol_authority",
+      "operator": "Sol Reactor Works",
+      "manufacturer": "mfr.sol_reactor",
+      "purpose": "реакторы SR и ВСУ: гелий-3 из реголита рядом, огневые испытания реакторов вдали от людей",
+      "population": 7000,
+      "placement_reason": "поверхность: тяжёлое литьё, огневые стенды и рабочие руки города; узлы весом в десятки тонн поднимают подъёмниками",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.000.terra_habitat.geo",
+      "name": "Terra Habitat — орбитальные цеха",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 0,
+      "body": "system_0.Sol.Земля",
+      "orbit": {
+        "altitude_km": 35786,
+        "inclination_deg": 0.0
+      },
+      "polity": "sol_authority",
+      "operator": "Terra Habitat",
+      "manufacturer": "mfr.terra_habitat",
+      "purpose": "жилые кабины, агромодули и ЖО: секции крупнее любого подъёмника собирают сразу на орбите",
+      "population": 5000,
+      "placement_reason": "орбита: готовый крупный корпус или секцию не нужно поднимать из гравитационного колодца",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.008.hyperion.museum_yard",
+      "name": "Верфь Гипериона (при музее HYPERION-1)",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 8,
+      "body": "system_8.Tau_Ceti.Tau_Ceti_m",
+      "orbit": {
+        "altitude_km": 12000,
+        "inclination_deg": 0.0
+      },
+      "polity": "tau_ceti_cognium",
+      "operator": "Верфи Гипериона",
+      "manufacturer": "mfr.hyperion",
+      "purpose": "верфь прототипов, курьеров и тендеров маяков; установка и сертификация ядер; музейный корпус HYPERION-1 у причала",
+      "population": 6000,
+      "placement_reason": "орбита: готовый крупный корпус или секцию не нужно поднимать из гравитационного колодца",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.008.um_core_fab.zero_point",
+      "name": "«Нулевая точка» — фабрика ядер Управления Маяков",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 8,
+      "body": "system_8.Tau_Ceti.kuiper_belt",
+      "belt": {
+        "radius_au": 5.68,
+        "longitude_deg": 211.0
+      },
+      "polity": "tau_ceti_cognium",
+      "operator": "Фабрика ядер Управления Маяков «Нулевая точка»",
+      "manufacturer": "mfr.um_core_fab",
+      "purpose": "единственный эталонный производитель ядер прыжка; переотжиг демпферов лотосита; закрытая зона",
+      "population": 1500,
+      "placement_reason": "пояс: сырьё под рукой и подальше от чужих глаз",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.008.xinzhi.orbital_fab",
+      "name": "Синьчжи — орбитальная фабрика микросхем",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 8,
+      "body": "system_8.Tau_Ceti.Tau_Ceti_m",
+      "orbit": {
+        "altitude_km": 9000,
+        "inclination_deg": 0.0
+      },
+      "polity": "tau_ceti_cognium",
+      "operator": "Синьчжи Электроникс",
+      "manufacturer": "mfr.xinzhi",
+      "purpose": "авионика, радары, связь: чистые комнаты в невесомости",
+      "population": 4000,
+      "placement_reason": "орбита: готовый крупный корпус или секцию не нужно поднимать из гравитационного колодца",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.014.cobretty.k3_yard",
+      "name": "Cobretty — орбитальная верфь K3",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 14,
+      "body": "system_14.HD_20794.HD_20794_K3",
+      "orbit": {
+        "altitude_km": 900,
+        "inclination_deg": 0.0
+      },
+      "polity": "hd20794_hellas2",
+      "operator": "Cobretty Corporation",
+      "manufacturer": "mfr.cobretty",
+      "purpose": "верфь корпусов Cobrett, модули C20 / P20",
+      "population": 9000,
+      "placement_reason": "орбита: готовый крупный корпус или секцию не нужно поднимать из гравитационного колодца",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.014.cobretty.k3_works",
+      "name": "Cobretty — двигательный и реакторный завод K3",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 14,
+      "body": "system_14.HD_20794.HD_20794_K3",
+      "surface": {
+        "lat_deg": 12.4,
+        "lon_deg": 77.0,
+        "elevation_ref": "terrain_surface"
+      },
+      "polity": "hd20794_hellas2",
+      "operator": "Cobretty Corporation",
+      "manufacturer": "mfr.cobretty",
+      "purpose": "двигатели N1 / CR-1 и реакторы ER: литьё и стенды на луне с малой тяжестью; узлы поднимают на верфь",
+      "population": 12000,
+      "placement_reason": "поверхность: тяжёлое литьё, огневые стенды и рабочие руки города; узлы весом в десятки тонн поднимают подъёмниками",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.031.kern.deep_dock",
+      "name": "Kern Heavy — Глубокий док",
+      "type": "mining_hub",
+      "frame": "system",
+      "system": 31,
+      "body": "system_31.61_Cygni_A.kuiper_belt",
+      "belt": {
+        "radius_au": 4.93,
+        "longitude_deg": 147.0
+      },
+      "polity": "cyg61_kern",
+      "operator": "Kern Heavy Mining",
+      "manufacturer": "mfr.kern_heavy",
+      "purpose": "горное оборудование, буксиры и выдолбленные танкеры: верфь внутри астероида, руда под рукой",
+      "population": 6000,
+      "placement_reason": "пояс: сырьё под рукой и подальше от чужих глаз",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.009.harmony.yard1",
+      "name": "Верфи Гармонии №1 (eps Eri b)",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 9,
+      "body": "system_9.Epsilon_Eridani.eps_Eri_b",
+      "orbit": {
+        "altitude_km": 95000,
+        "inclination_deg": 0.0
+      },
+      "polity": "eps_eri_harmony",
+      "operator": "Верфи Гармонии",
+      "manufacturer": "mfr.harmony_yards",
+      "purpose": "верфь стандартных корпусов «Хэ», вращающиеся кольца, доки; у газового гиганта — лёд и газ",
+      "population": 24000,
+      "placement_reason": "орбита: готовый крупный корпус или секцию не нужно поднимать из гравитационного колодца",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.009.harmony.yard2",
+      "name": "Верфи Гармонии №2 (K4)",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 9,
+      "body": "system_9.Epsilon_Eridani.Epsilon_Eridani_K4",
+      "orbit": {
+        "altitude_km": 1500,
+        "inclination_deg": 0.0
+      },
+      "polity": "eps_eri_harmony",
+      "operator": "Верфи Гармонии",
+      "manufacturer": "mfr.harmony_yards",
+      "purpose": "верфь достройки: вооружение, сборка ядер из запечатанных блоков Когниума",
+      "population": 12000,
+      "placement_reason": "орбита: готовый крупный корпус или секцию не нужно поднимать из гравитационного колодца",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.012.tianhe.danwei1",
+      "name": "Тяньхэ Тяжмаш — завод-данвэй №1",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 12,
+      "body": "system_12.Gliese_832.GJ_832_b.GJ_832_b_III",
+      "surface": {
+        "lat_deg": 18.0,
+        "lon_deg": 104.0,
+        "elevation_ref": "terrain_surface"
+      },
+      "polity": "gj832_tianhe",
+      "operator": "Тяньхэ Тяжмаш",
+      "manufacturer": "mfr.tianhe_heavy",
+      "purpose": "реакторы и двигатели для всего Пакта: тяжёлое литьё и стенды, данвэй при заводе; блоки на орбиту подъёмниками",
+      "population": 40000,
+      "placement_reason": "поверхность: тяжёлое литьё, огневые стенды и рабочие руки города; узлы весом в десятки тонн поднимают подъёмниками",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.012.tianhe.mass_yard",
+      "name": "Массовые верфи Тяньхэ",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 12,
+      "body": "system_12.Gliese_832.GJ_832_b.GJ_832_b_III",
+      "orbit": {
+        "altitude_km": 1200,
+        "inclination_deg": 0.0
+      },
+      "polity": "gj832_tianhe",
+      "operator": "Тяньхэ Тяжмаш",
+      "manufacturer": "mfr.tianhe_heavy",
+      "purpose": "верфь сторожевых катеров кордона и подъёмников",
+      "population": 9000,
+      "placement_reason": "орбита: готовый крупный корпус или секцию не нужно поднимать из гравитационного колодца",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.015.firmament.armour",
+      "name": "Бронезавод Твердыни",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 15,
+      "body": "system_15.HD_40307.HD_40307_K3",
+      "surface": {
+        "lat_deg": -8.0,
+        "lon_deg": 140.0,
+        "elevation_ref": "terrain_surface"
+      },
+      "polity": "hd40307_firmament",
+      "operator": "Бронезавод Твердыни",
+      "manufacturer": "mfr.firmament_armour",
+      "purpose": "броня и орудия: керамика и тяжёлые плиты на поверхности луны",
+      "population": 9000,
+      "placement_reason": "поверхность: тяжёлое литьё, огневые стенды и рабочие руки города; узлы весом в десятки тонн поднимают подъёмниками",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.004.agora.section_park",
+      "name": "Agora Modular — секционный парк",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 4,
+      "body": "system_4.Lalande_21185.Lalande_21185_j",
+      "orbit": {
+        "altitude_km": 26000,
+        "inclination_deg": 0.0
+      },
+      "polity": "lalande_hellas",
+      "operator": "Agora Modular",
+      "manufacturer": "mfr.agora_modular",
+      "purpose": "станционные секции по открытому стандарту; десятки малых фирм; рядом Ставродроми",
+      "population": 15000,
+      "placement_reason": "орбита: готовый крупный корпус или секцию не нужно поднимать из гравитационного колодца",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.004.kapehu.core_fab",
+      "name": "Kāpehu Systems — фабрика ядер",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 4,
+      "body": "system_4.Lalande_21185.Lalande_21185_m",
+      "orbit": {
+        "altitude_km": 2000,
+        "inclination_deg": 0.0
+      },
+      "polity": "lalande_mecca",
+      "operator": "Kāpehu Systems",
+      "manufacturer": "mfr.kapehu_systems",
+      "purpose": "ядра прыжка собственной математики Фаре-Татаи и бортовые компьютеры K",
+      "population": 4000,
+      "placement_reason": "орбита: готовый крупный корпус или секцию не нужно поднимать из гравитационного колодца",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.010.eurohab.agro",
+      "name": "Евро-Хабитат — агро- и ЖО-модули",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 10,
+      "body": "system_10.Gliese_581.Gliese_581_h",
+      "surface": {
+        "lat_deg": 30.0,
+        "lon_deg": 12.0,
+        "elevation_ref": "terrain_surface"
+      },
+      "polity": "gj581_europa",
+      "operator": "Консорциум «Евро-Хабитат»",
+      "manufacturer": "mfr.eurohab",
+      "purpose": "агро- и ЖО-модули: биология растёт под настоящей тяжестью",
+      "population": 8000,
+      "placement_reason": "поверхность: тяжёлое литьё, огневые стенды и рабочие руки города; узлы весом в десятки тонн поднимают подъёмниками",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.014.bharat.rings",
+      "name": "Сборочные кольца Бхарат",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 14,
+      "body": "system_14.HD_20794.HD_20794_K2",
+      "orbit": {
+        "altitude_km": 1200,
+        "inclination_deg": 0.0
+      },
+      "polity": "hd20794_newindia",
+      "operator": "Бхарат Ассембли",
+      "manufacturer": "mfr.bharat",
+      "purpose": "сборка корпусов по лицензии и криобаков: кольца-стапели на орбите",
+      "population": 30000,
+      "placement_reason": "орбита: готовый крупный корпус или секцию не нужно поднимать из гравитационного колодца",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.015.uhuru.coop",
+      "name": "Uhuru Bio-Systems — кооператив",
+      "type": "industrial_hub",
+      "frame": "system",
+      "system": 15,
+      "body": "system_15.HD_40307.HD_40307_k",
+      "surface": {
+        "lat_deg": -5.0,
+        "lon_deg": 35.0,
+        "elevation_ref": "terrain_surface"
+      },
+      "polity": "hd40307_maland",
+      "operator": "Uhuru Bio-Systems",
+      "manufacturer": "mfr.uhuru_bio",
+      "purpose": "ЖО и агромодули кооператива агроколец",
+      "population": 7000,
+      "placement_reason": "поверхность: тяжёлое литьё, огневые стенды и рабочие руки города; узлы весом в десятки тонн поднимают подъёмниками",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.003.bastion.mjolner",
+      "name": "Mjølner — арсенал и военная верфь",
+      "type": "military_hub",
+      "frame": "system",
+      "system": 3,
+      "body": "system_3.Wolf_359.Wolf_359_c",
+      "orbit": {
+        "altitude_km": 5000,
+        "inclination_deg": 0.0
+      },
+      "polity": "wolf359_citadel",
+      "operator": "Арсенал «Бастион»",
+      "manufacturer": "mfr.bastion",
+      "purpose": "арсенал и военная верфь: ядра Б-12, корпуса, оружие (начат как боевая станция «Бастион-1», 2175)",
+      "population": 12000,
+      "placement_reason": "орбита: готовый крупный корпус или секцию не нужно поднимать из гравитационного колодца",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
+    },
+    {
+      "id": "plant.009.stone_docks",
+      "name": "Каменные доки",
+      "type": "mining_hub",
+      "frame": "system",
+      "system": 9,
+      "body": "system_9.Epsilon_Eridani.asteroid_belt",
+      "belt": {
+        "radius_au": 1.98,
+        "longitude_deg": 300.0
+      },
+      "polity": "eps_eri_strife",
+      "operator": "Каменные доки Раздора",
+      "manufacturer": "mfr.stone_docks",
+      "purpose": "выдолбленные астероиды: танкеры, склады, жильё, переделки корпусов",
+      "population": 8000,
+      "placement_reason": "пояс: сырьё под рукой и подальше от чужих глаз",
+      "knowledge": {
+        "status": "PROPOSAL",
+        "visibility": "PUBLIC_RECORD",
+        "basis": "решение автора 2026-11-08: площадки принадлежат производителям; размещение по физике производства"
+      }
     }
   ],
   "deep_space_objects": [

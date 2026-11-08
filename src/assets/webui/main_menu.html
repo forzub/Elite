@@ -230,6 +230,14 @@
             </select>
             <div class="elite-field-help" data-i18n="main.settings.celestial_style_help">Stars, planets, moons, clouds, atmospheres, rings and asteroids. In flight: Ctrl+F7 cycles the style.</div>
           </div>
+          <div class="elite-field">
+            <label class="elite-field-label" for="capsule-survival" data-i18n="main.settings.capsule_survival">DIFFICULTY: CAPSULE SURVIVAL</label>
+            <select class="elite-select" id="capsule-survival" onchange="selectCapsuleSurvival(this.value)">
+              <option value="off" data-i18n="main.settings.off">OFF</option>
+              <option value="on" data-i18n="main.settings.on">ON</option>
+            </select>
+            <div class="elite-field-help" data-i18n="main.settings.capsule_survival_help">After the ship is lost you keep the escape capsule alive until rescue arrives: air, CO2, power, repairs. Off: the wait is just waited out.</div>
+          </div>
           <div class="elite-button-row">
             <button class="elite-button elite-button--secondary" data-i18n="main.back" onclick="window.EliteUiKit.closeDialog('#settings-dialog')">BACK</button>
           </div>
@@ -337,6 +345,8 @@
 
       if (typeof next.celestialStyle === 'string')
         document.getElementById('celestial-style').value = next.celestialStyle;
+      if (typeof next.capsuleSurvival === 'boolean')
+        document.getElementById('capsule-survival').value = next.capsuleSurvival ? 'on' : 'off';
       populateLocaleSelect('registration-locale', next.locales, next.locale);
       populateLocaleSelect('account-locale', next.locales, next.locale);
 
@@ -381,7 +391,13 @@
       const dialog = document.getElementById('settings-dialog');
       if (typeof currentState.celestialStyle === 'string')
         document.getElementById('celestial-style').value = currentState.celestialStyle;
+      if (typeof currentState.capsuleSurvival === 'boolean')
+        document.getElementById('capsule-survival').value = currentState.capsuleSurvival ? 'on' : 'off';
       window.EliteUiKit.showDialog(dialog);
+    }
+
+    function selectCapsuleSurvival(value) {
+      sendCommand('set_capsule_survival|' + (value === 'on' ? 'on' : 'off'));
     }
 
     function selectCelestialStyle(style) {

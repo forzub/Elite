@@ -956,7 +956,7 @@
    "level": "A",
    "movements_day": 8,
    "name": "Деймос-Верфь",
-   "operator": "Марсианские верфи",
+   "operator": "Лунно-Марсианские верфи (Деймос-Верфь)",
    "orbit_altitude_km": 8,
    "owner": "sol_authority",
    "pads_per_module": 6,
@@ -1640,7 +1640,7 @@
    ],
    "local_facilities": 19,
    "major_visible_hubs": 6,
-   "merged": 0,
+   "merged": 1,
    "name": "Wolf 359",
    "system": 3,
    "tier": "colony"
@@ -1650,7 +1650,7 @@
     10,
     18
    ],
-   "local_facilities": 38,
+   "local_facilities": 40,
    "major_visible_hubs": 11,
    "merged": 0,
    "name": "Lalande 21185",
@@ -1662,7 +1662,7 @@
     10,
     18
    ],
-   "local_facilities": 16,
+   "local_facilities": 19,
    "major_visible_hubs": 4,
    "merged": 3,
    "name": "Tau Ceti",
@@ -1674,7 +1674,7 @@
     10,
     18
    ],
-   "local_facilities": 38,
+   "local_facilities": 41,
    "major_visible_hubs": 11,
    "merged": 8,
    "name": "Epsilon Eridani",
@@ -1686,7 +1686,7 @@
     4,
     10
    ],
-   "local_facilities": 33,
+   "local_facilities": 34,
    "major_visible_hubs": 5,
    "merged": 1,
    "name": "Gliese 581",
@@ -1710,7 +1710,7 @@
     10,
     18
    ],
-   "local_facilities": 25,
+   "local_facilities": 27,
    "major_visible_hubs": 7,
    "merged": 0,
    "name": "Gliese 832",
@@ -1734,7 +1734,7 @@
     10,
     18
    ],
-   "local_facilities": 37,
+   "local_facilities": 40,
    "major_visible_hubs": 8,
    "merged": 0,
    "name": "HD 20794 (82 G. Eridani)",
@@ -1746,7 +1746,7 @@
     4,
     10
    ],
-   "local_facilities": 36,
+   "local_facilities": 38,
    "major_visible_hubs": 6,
    "merged": 1,
    "name": "HD 40307",
@@ -1842,7 +1842,7 @@
     4,
     10
    ],
-   "local_facilities": 11,
+   "local_facilities": 12,
    "major_visible_hubs": 2,
    "merged": 0,
    "name": "61 Cygni",

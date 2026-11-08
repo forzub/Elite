@@ -1,5 +1,6 @@
 // SpaceState: Flight HUD and in-session overlays (route planning modal, navigation stress, language, universe time).
 
+#include <cstring>
 #include "src/game/navigation/rules/CapsuleRules.h"
 #include "src/game/presentation/DockingWidgetText.h"
 #include "src/game/docking/model/HexDockFacility.h"
@@ -794,6 +795,23 @@ void SpaceState::renderHudDockingTerminal(const Viewport& vp, const ClientShipSt
                 text += (text.empty() ? "" : " / ") + line;
         terminal.dispatcher = text;
         terminal.visible = true;
+    }
+    {
+        // rescue zone (author 2026-11-08): in an inhabited zone the capsule is picked up in 10-20 min,
+        // outside - as luck has it; the text changes only with the zone, so the history stays short
+        namespace rz = game::navigation::rescue;
+        const int systemId = playerShip.transform.motion.systemId;
+        std::string hub;
+        const auto e = rescueAt(world::coordinates::fullMeters(playerShip.transform.worldPosition), systemId, &hub);
+        if (e.zone == rz::Zone::Inside)
+            terminal.diagnostics.emplace_back("SOS: зона спасения «" + hub + "» - подберут через 10-20 мин",
+                                              game::presentation::DockingTerminalSeverity::Info);
+        else if (e.zone == rz::Zone::Outside)
+            terminal.diagnostics.emplace_back("SOS: вне зоны спасения - сигнал могут не услышать (ближайшая зона «" + hub + "»)",
+                                              game::presentation::DockingTerminalSeverity::Warning);
+        else
+            terminal.diagnostics.emplace_back("SOS: в системе нет спасательной службы - услышат только случайные корабли",
+                                              game::presentation::DockingTerminalSeverity::Warning);
     }
     {
         // a notice lives a few seconds, so the same warning can be printed again later
@@ -2011,6 +2029,9 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
                 char tail[160];
                 if (cs == cap::State::PilotAlive || cs == cap::State::PilotKilled)
                     std::snprintf(tail, sizeof tail, " · %s (%.0f g, предел %.0f g)", cap::stateText(cs), motion.capsuleBodyG, cap::BodyLimitG);
+                // difficulty layer "capsule survival" (settings): the waiting game is a later slice
+                if (cs == cap::State::PilotAlive && context().app && context().app->clientModeState().capsuleSurvivalEnabled)
+                    std::snprintf(tail + std::strlen(tail), sizeof tail - std::strlen(tail), " · режим выживания в капсуле");
                 else
                     std::snprintf(tail, sizeof tail, " · %s", cap::stateText(cs));
                 warning += tail;

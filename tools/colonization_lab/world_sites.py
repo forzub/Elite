@@ -331,7 +331,8 @@ def build_sites(I, dsos):
         rec = base_site(I, s["id"], s["name"], s["type"], s["system"], s.get("polity"), s.get("operator"), s.get("population", 0), s.get("purpose"),
                         body=s.get("body"), placement={k: s[k] for k in ("orbit", "surface", "belt") if k in s}, founded=s.get("founded"),
                         history=s.get("history"), legal=s.get("legal", "lawful"), stocks=s.get("stocks"), beacon=s.get("beacon"),
-                        runtime_binding=s.get("runtime_binding"), source="authored")
+                        runtime_binding=s.get("runtime_binding"), manufacturer=s.get("manufacturer"),
+                        placement_reason=s.get("placement_reason"), source="authored")
         if "surface" in s:
             rec["placement"]["surface"].update(placement_status="authored")
         sites.append(rec)
@@ -1501,11 +1502,24 @@ def runtime_export(I, out):
                          function=[sol_network.FUNC_RU.get(f, f) for f in (s.get("function") or [])] or None, docks=s.get("docks"), dock_sectors=s.get("dock_sectors"), dock_modules=s.get("dock_modules"), level=s.get("level", "A"), complex=s.get("complex"), terminals=s.get("terminals"), roles=s.get("roles"), passenger_terminals=s.get("passenger_terminals"), cargo_terminals=s.get("cargo_terminals"), service_berths=s.get("service_berths"), arrivals_day=s.get("arrivals_day"),
                          utilisation=s.get("utilisation"), repair=s.get("repair"), storage_t=s.get("storage_t"), security=s.get("security_base"),
                          medical_beds=s.get("medical_beds"), quarantine_beds=s.get("quarantine_beds"), legal=s.get("legal"),
-                         jurisdiction=j.get("applicable_law_ru"), enforcement=j.get("enforcement"), known_to_player=s.get("known_to_player", "public")))
+                         jurisdiction=j.get("applicable_law_ru"), enforcement=j.get("enforcement"), known_to_player=s.get("known_to_player", "public"),
+                         manufacturer=s.get("manufacturer"), placement_reason=s.get("placement_reason")))
+    sp = I.WS["site_types"]["planetary_surface_port"]
     for c in out["sites"]["earth"]:
         if c.get("spaceport"):
-            rows.append(dict(id=c["id"], name=c["name"], type="planetary_surface_port", system_id=0, parent_body_id=c["body"],
-                             placement=dict(surface=c["surface"]), map_level="detail", polity=SOL, population=c["population"], runtime_binding=None))
+            # A megacity's surface spaceport (lifters SL-12 <-> the orbital hubs): a hub like every other
+            # surface port (economy_live derives its modules; port staff, not the city, live in its habitat).
+            # Docks grow with the city (one standard port per ~100 M people).
+            ports = max(1, round(c["population"] / 1e8))
+            rows.append(dict(id=c["id"], name=c["name"], type="planetary_surface_port", type_ru=sp["ru"], system_id=0, parent_body_id=c["body"],
+                             placement=dict(surface=c["surface"]), map_level="detail", polity=SOL, polity_name=I.pol[SOL]["name"],
+                             population=c["population"], runtime_binding=None, operator="Портовая служба Сола",
+                             purpose="наземный космопорт агломерации: подъёмники SL-12 <-> орбитальные хабы Сола",
+                             docks=sp["docks"] * ports, storage_t=sp["storage_t"] * ports, repair=sp["repair"], security=sp["security"],
+                             level="A" if c["population"] > 5e7 else "B",
+                             medical_beds=round(c["population"] * sp["medical_beds_per_1000"] / 1000.0, 1),
+                             quarantine_beds=round(c["population"] * sp["quarantine_beds_per_1000"] / 1000.0, 1),
+                             known_to_player="public"))
     zones = []
     for z in out["frontier"]["hazard_zones"]:
         anc = z.get("anchor", "")

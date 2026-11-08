@@ -514,6 +514,7 @@ add_executable(EliteGame
     src/game/SpaceStateBodyAutopilot.cpp
     src/game/SpaceStateRouteRun.cpp
     src/game/SpaceStateJump.cpp
+    src/game/SpaceStateRescue.cpp
     src/game/SpaceStateRoute.cpp
     src/game/SpaceStateHud.cpp
     src/game/SpaceStateServices.cpp

@@ -2280,6 +2280,126 @@
    "site": "site.024.pereval"
   },
   {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "plant.000.ofu.ural_kourou_yard"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "plant.000.ofu.kourou"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "plant.000.ofu.ural_works"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "plant.000.lmy.luna_foundry"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "plant.000.sol_reactor.tranquillitatis"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 499.0,
+   "site": "plant.000.terra_habitat.geo"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 88.6,
+   "site": "plant.008.hyperion.museum_yard"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 2836.1,
+   "site": "plant.008.um_core_fab.zero_point"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 88.6,
+   "site": "plant.008.xinzhi.orbital_fab"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 3819.0,
+   "site": "plant.014.cobretty.k3_yard"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 3819.0,
+   "site": "plant.014.cobretty.k3_works"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 2461.4,
+   "site": "plant.031.kern.deep_dock"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 1761.5,
+   "site": "plant.009.harmony.yard1"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 3586.2,
+   "site": "plant.009.harmony.yard2"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 1846.3,
+   "site": "plant.012.tianhe.danwei1"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 1846.3,
+   "site": "plant.012.tianhe.mass_yard"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 3643.0,
+   "site": "plant.015.firmament.armour"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 369.9,
+   "site": "plant.004.agora.section_park"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 1300.7,
+   "site": "plant.004.kapehu.core_fab"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 87.0,
+   "site": "plant.010.eurohab.agro"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 3616.4,
+   "site": "plant.014.bharat.rings"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 986.9,
+   "site": "plant.015.uhuru.coop"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 10.8,
+   "site": "plant.003.bastion.mjolner"
+  },
+  {
+   "coverage": "full",
+   "light_lag_s": 986.4,
+   "site": "plant.009.stone_docks"
+  },
+  {
    "coverage": "none",
    "light_lag_s": 367.6,
    "site": "site.019.porog"

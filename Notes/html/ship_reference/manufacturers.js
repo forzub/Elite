@@ -202,12 +202,12 @@ function renderDetail(m) {
     </div></div>
   </div></div></div>`;
 
-  html += `<div class="secTitle"><h2>Основные площадки</h2><span class="sub">${esc(m.plant_ru)}${plants.size ? " · " + plural(plants.size, "площадка", "площадки", "площадок") : ""}</span></div>`;
+  html += `<div class="secTitle"><h2>Площадки производителя</h2><span class="sub">${plants.size ? " · " + plural(plants.size, "площадка", "площадки", "площадок") : ""}</span></div>`;
   if (!plants.size) html += `<div class="note warnbox">площадка не найдена в данных: у цивилизации «${esc(p.ru)}» нет площадки типа ${esc(m.plant_site_type)}.</div>`;
   for (const id of plants) {
     const h = hubIndex.get(id) || { id, name: id };
     html += `<div class="hubCard plant"><div class="hubTitle">${esc(h.name)}</div><div class="hubWhere">${whereText(h)}</div>
-      <div class="row" style="margin:0 0 8px">${hubFacts(h)}</div>${h.purpose ? `<div class="purpose">${esc(h.purpose)}</div>` : ""}${hubBlocks(h)}</div>`;
+      <div class="row" style="margin:0 0 8px">${hubFacts(h)}</div>${h.purpose ? `<div class="purpose">${esc(h.purpose)}</div>` : ""}${(m.plant_reasons || {})[id] ? `<div class="purpose sub">Почему здесь: ${esc(m.plant_reasons[id])}</div>` : ""}${hubBlocks(h)}</div>`;
   }
 
   // the civilization's hubs grouped by system

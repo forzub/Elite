@@ -20,6 +20,20 @@ void SpaceState::startClientRoute(const std::vector<route::RoutePoint>& legs)
 {
     if (legs.empty())
         return;
+    if (m_client)
+        if (const auto ship = m_client->world().ships().find(m_playerId.value); ship != m_client->world().ships().end())
+        {
+            const int systemId = ship->second.transform.motion.systemId;
+            std::string warning;
+            for (const auto& l : legs)
+                if (warning.empty())
+                    warning = rescueWarningAt(l.worldM, systemId, "МАРШРУТ");
+            if (!warning.empty())
+            {
+                m_pilotNotice = warning;
+                std::cerr << "[Route] " << warning << std::endl;
+            }
+        }
     cancelClientBodyAutopilot();
     m_clientRoute = ClientRouteRun {};
     m_clientRoute.legs = legs;

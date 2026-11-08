@@ -674,7 +674,7 @@
   {
    "id": "mizan.core.m12",
    "cat": "jump_core",
-   "mfr": "mfr.mizan",
+   "mfr": "mfr.kapehu_systems",
    "name": "Дар аль-Мизан М-12",
    "model": "М-12",
    "mass_t": 80,
@@ -687,7 +687,7 @@
   {
    "id": "mizan.core.m5",
    "cat": "jump_core",
-   "mfr": "mfr.mizan",
+   "mfr": "mfr.kapehu_systems",
    "name": "Дар аль-Мизан М-5",
    "model": "М-5",
    "mass_t": 40,
@@ -701,7 +701,7 @@
   {
    "id": "mizan.mc.m1",
    "cat": "computer",
-   "mfr": "mfr.mizan",
+   "mfr": "mfr.kapehu_systems",
    "name": "Мизан бортовой вычислитель МВ-1",
    "model": "МВ-1",
    "mass_t": 1.0,

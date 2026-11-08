@@ -1,4 +1,5 @@
 #pragma once
+#include "src/game/navigation/rules/RescueRules.h"
 #include "src/game/navigation/globalflight/BodyAutopilot.h"
 #include "src/game/navigation/globalflight/RouteLegPilot.h"
 #include <map>
@@ -221,6 +222,10 @@ public:
     void requestOrbitalTransfer(const std::string& targetHubId);
     // J: fly to a body and land (empty = the dominant body)
     void requestFreeFlightAutopilot(const std::string& bodyId, const std::string& landingSpec = {});
+    // rescue zones (navigation/rules/RescueRules.h, SpaceStateRescue.cpp): where an SOS is heard
+    bool systemHasRescueService(int systemId) const;
+    game::navigation::rescue::Estimate rescueAt(const glm::dvec3& worldM, int systemId, std::string* nearestHubName = nullptr) const;
+    std::string rescueWarningAt(const glm::dvec3& worldM, int systemId, const char* what) const;
     // the body autopilot flown by the client (SpaceStateBodyAutopilot.cpp, NAVIGATION_V2 §1)
     void updateClientBodyAutopilot();
     // the planned route flown by the client (SpaceStateRouteRun.cpp)

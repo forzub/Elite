@@ -53,15 +53,36 @@ const PM = new Map(D.parts.map(p => [p.id, p]));
 const SM = new Map(D.ships.map(s => [s.id, s]));
 
 // ---------------------------------------------------------------- slots / groups
+// group codes are <model code>A<k> (the model code is the ship's own, author 2026-11-08): names by the A<k> part
 const GROUP_NAMES = {};
-for (const s of D.ships) for (const g of s.functional_groups) GROUP_NAMES[g.code] = g.name;
-GROUP_NAMES["35A13"] = GROUP_NAMES["35A13"] || "Защита / посадка";
+for (const s of D.ships) for (const g of s.functional_groups) GROUP_NAMES[g.code.replace(/^[0-9]+/, "")] = g.name;
+GROUP_NAMES["A13"] = GROUP_NAMES["A13"] || "Защита / посадка";
+// the proposal ships' model codes (the canon passports carry their own model_code)
+const PROPOSAL_MODEL_CODES = {
+  "ofu.ship.ocs-4j.strizh": 36,
+  "sol.ship.gt-3000p.poputchik": 40,
+  "kb.ship.cobrett-i.frnu-inta.a3p": 45,
+  "kern.ship.ht-20k-d.krot": 47,
+  "harmony.ship.he-120p.chunyun": 53,
+  "tianhe.ship.ts-6.dozor": 56,
+  "tianhe.ship.b-4t.sokol-t": 57,
+  "bharat.ship.c-120t.sahayak": 60,
+  "bharat.ship.pk-30b.rakshak": 61,
+  "bastion.ship.he-120c.oboz": 62,
+  "bastion.ship.ts-6b.zastava": 63,
+  "stone.ship.he-120r.brodyaga": 66,
+  "stone.ship.kamen-s.salvage": 68,
+  "agora.ship.pk-30a.limenarch": 69,
+  "aux.craft.boarding-boat": 70,
+  "aux.craft.service-drone": 71,
+  "aux.craft.lifeboat-20": 72,
+};
 const CAT_GROUP = {
-  drive: "35A1", rcs: "35A2", radiator: "35A3", coolant_loop: "35A3", reactor: "35A4", service_reactor: "35A4", jump_core: "35A5",
-  computer: "35A6", radar: "35A6", transponder: "35A6", sensor_mast: "35A6", ecm: "35A6", comm: "35A7", life_support: "35A8", medbay: "35A8",
-  container_rack: "35A9", bulk_hold: "35A9", passenger_module: "35A9", train_module: "35A9", cryo_tank: "35A9",
-  escape_capsule: "35A10", lifeboat: "35A10", docking_port: "35A11", tow_rig: "35A11", drone_bay: "35A11", workshop: "35A11", boat_bay: "35A11",
-  hangar: "35A11", mining_rig: "35A11", weapon: "35A12", armour: "35A13", heat_shield: "35A13", landing_gear: "35A13"
+  drive: "A1", rcs: "A2", radiator: "A3", coolant_loop: "A3", reactor: "A4", service_reactor: "A4", jump_core: "A5",
+  computer: "A6", radar: "A6", transponder: "A6", sensor_mast: "A6", ecm: "A6", comm: "A7", life_support: "A8", medbay: "A8",
+  container_rack: "A9", bulk_hold: "A9", passenger_module: "A9", train_module: "A9", cryo_tank: "A9",
+  escape_capsule: "A10", lifeboat: "A10", docking_port: "A11", tow_rig: "A11", drone_bay: "A11", workshop: "A11", boat_bay: "A11",
+  hangar: "A11", mining_rig: "A11", weapon: "A12", armour: "A13", heat_shield: "A13", landing_gear: "A13"
 };
 const CAT_SLOT = {
   drive: "D", rcs: "Q", radiator: "T", coolant_loop: "L", reactor: "R", service_reactor: "S", jump_core: "J", computer: "M", radar: "SR",
@@ -75,7 +96,7 @@ function slotFor(p) {
   return CAT_SLOT[p.cat];
 }
 function groupFor(p, slot) {
-  if (p.cat === "tank") return slot === "JT" ? "35A5" : slot === "QT" ? "35A2" : "35A9";
+  if (p.cat === "tank") return slot === "JT" ? "A5" : slot === "QT" ? "A2" : "A9";
   return CAT_GROUP[p.cat];
 }
 function item(pid, qty) {
@@ -431,7 +452,9 @@ for (const sp of specs) {
   const dry = sp.mass_override_t != null ? sp.mass_override_t : r1(structure + eqMass(bom));
   const groupsMap = {};
   for (const it of bom) { const g = groupFor(PM.get(it.part_id), it.slot_code); (groupsMap[g] ??= []).push(it); }
-  const functional_groups = Object.keys(groupsMap).sort((a, b) => Number(a.slice(3)) - Number(b.slice(3))).map(code => ({ code, name: GROUP_NAMES[code], items: groupsMap[code] }));
+  const modelCode = PROPOSAL_MODEL_CODES[sp.id];
+  if (modelCode == null) throw new Error("no model code for " + sp.id + " (PROPOSAL_MODEL_CODES)");
+  const functional_groups = Object.keys(groupsMap).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1))).map(g => ({ code: modelCode + g, name: GROUP_NAMES[g], items: groupsMap[g] }));
   const weapons = { laser_emitters: [], missile_cells: [], kinetic_mounts: [], total_laser_emitters: 0, total_missile_cells: 0 };
   for (const it of bom.filter(x => x.category === "weapon")) {
     const bnd = D.weapons.bindings[it.part_id] || {};
@@ -446,7 +469,7 @@ for (const sp of specs) {
   const bal = balance(sp, bom, dry);
   const ship = {
     schema: "elite.ship_passport.engineering.v1", status: ST, id: sp.id, engineering_type: sp.engineering_type, economic_class: sp.economic_class,
-    name: sp.name, manufacturer: sp.manufacturer, cooperation_group: sp.group, purpose: sp.purpose,
+    name: sp.name, model_code: modelCode, manufacturer: sp.manufacturer, cooperation_group: sp.group, purpose: sp.purpose,
     frame: { status: "DEFERRED", envelope_m: sp.envelope, form: sp.form, note: sp.parent ? "variant: frame/mesh of " + sp.parent + " reused; module layout differs" : "frame/structural passport will be authored during model build" },
     flight: { law: sp.law, layout: sp.layout, installed_main_engines: sp.installed, simultaneous_main_engines: sp.simultaneous, rated_directional_thrust_mn: sp.thrust_mn, rated_propulsion_input_mw: sp.input_mw, standardized_reactor_capacity_mw: rxMwe },
     jump_system: { fitted: cores.length > 0, cores, jump_charge_tanks: jt, note: null },

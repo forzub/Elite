@@ -4257,10 +4257,14 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   and re-save; the scroll position survives reloads everywhere. "The number before A is the ship's model code - each
   ship its own."
 - One page index.html (?ship=, &part=, ?view=coverage; ship.html redirects). model_codes.js: one code per ship
-  (Cobrett-I N1 35, the rest 36-72 in catalog order); the canon still writes 35 for all - to be carried over.
+  (Cobrett-I N1 35, the rest 36-72 in catalog order). CARRIED INTO THE CANON the same day (author: "перенеси шифры в
+  канон"): ship_passports_3126.json passports have model_code and group codes <model_code>A<k> (21 passports, 235
+  groups, 0 mismatches); the 17 proposal ships take theirs from build_proposals.js PROPOSAL_MODEL_CODES (groups by
+  their A<k> part); data.js updated and reproduced byte-for-byte by the builder; model_codes.js removed, the page
+  reads model_code. Nothing else consumes the passports canon (no C++ / gate reader).
   store.js: IndexedDB always + optional folder mirror via the File System Access API (workshop/: workshop.json,
   sketches/<part>/, ships/<ship>) so sketches can live in git. tools/render_check.js now checks the data
-  (38 ships, 38 unique codes, 104 parts, 0 problems).
+  (38 ships, 38 unique model codes matching their group codes, 104 parts, 0 problems).
 - Checked by driving headless Chrome over CDP: 2 sketches dropped, note saved and persisted after reload, model-ready
   tick shared on the ship schema, label click inside a card toggles without navigating, scroll restored after reload
   (ship view 700 px, catalog 1200 px). Not checked headless: the folder picker (needs a user gesture).

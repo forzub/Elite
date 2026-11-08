@@ -5,7 +5,6 @@
 // position is kept per view across reloads.
 "use strict";
 const D = window.ELITE_SHIP_REF_DATA;
-const MODEL_CODES = window.ELITE_SHIP_MODEL_CODES || {};
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]));
 const fmt = n => typeof n === "number" ? new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 3 }).format(n) : String(n ?? "—");
@@ -104,8 +103,9 @@ const roleOf = (() => {
 })();
 const roleRu = id => ROLES.find(r => r.id === id)?.ru || "Прочее";
 const roleIndex = id => { const i = ROLES.findIndex(r => r.id === id); return i < 0 ? 99 : i; };
-const shipCode = s => String(MODEL_CODES[s.id] ?? "35");
-const sectionCode = (s, g) => g.code.replace(/^\d+(?=A)/, shipCode(s));
+// the ship model code (canon passport field model_code: the number before "A" in its group codes)
+const shipCode = s => String(s.model_code ?? (s.functional_groups[0]?.code.match(/^[0-9]+/) || ["?"])[0]);
+const sectionCode = (s, g) => g.code;
 
 // all module keys of a ship (unique parts + the hull) and how many are modelled
 function shipModules(s) {

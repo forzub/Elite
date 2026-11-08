@@ -881,6 +881,21 @@ void GameServer::update(double dt)
                     m_simulation.toggleJEngine(id);
                     break;
 
+                case ClientShipCommand::RequestJump:
+                {
+                    if (shipCmd.index < 0)
+                    {
+                        m_simulation.cancelJump(id, 8);
+                        break;
+                    }
+                    const Ship* jumper = m_simulation.getShip(id);
+                    const auto* from = jumper ? m_starAtlas.findSystemSummary(jumper->core().transform().motion.systemId) : nullptr;
+                    const auto* to = m_starAtlas.findSystemSummary(shipCmd.index);
+                    const double distanceLy = from && to ? glm::length(to->positionLy - from->positionLy) : 0.0;
+                    m_simulation.requestJump(id, to ? to->id : -1, to ? to->name : std::string(), distanceLy, shipCmd.detail);
+                    break;
+                }
+
                 case ClientShipCommand::SetFreeFlightThrust:
                     m_simulation.setFreeFlightThrust(id, shipCmd.index);
                     break;

@@ -252,6 +252,9 @@ public:
     // flight, only far from objects and above the J floor (else refused).
     bool toggleStabilization(EntityId shipId);
     bool toggleJEngine(EntityId shipId);
+    // the interstellar jump (GameSimulationJump.cpp): START (the charge-up) / cancel
+    bool requestJump(EntityId shipId, int targetSystemId, const std::string& targetName, double distanceLy, const std::string& exitBodyId);
+    void cancelJump(EntityId shipId, std::uint8_t why);
     // 0 = J may engage here; else the refusal code (7 an object too close, 8 below the J floor)
     int jEngineBlocked(EntityId shipId, int systemId, const glm::dvec3& shipWorld, std::string& why) const;
     // J terrain contact: ground (terrain or sea surface) height above the body
@@ -665,7 +668,24 @@ private:
         bool ship = false;
     };
     bool jKeepOut(EntityId shipId, int systemId, const glm::dvec3& worldMeters, JKeepOutHit& hit) const;
-    std::vector<EntityId> m_pendingStabilize;   // automatic stabilization after the free-flight pass
+    std::vector<EntityId> m_pendingStabilize;
+    struct ActiveJump
+    {
+        int targetSystemId = -1;
+        std::string targetName;
+        std::string exitBodyId;
+        double distanceLy = 0.0;
+        double costT = 0.0;
+        double durationS = 0.0;
+        double elapsedS = 0.0;
+        bool jumped = false;
+        int waitTicks = 0;
+        std::string exitSampleId;
+        glm::dvec3 exitLastCentre {0.0};
+    };
+    std::unordered_map<EntityId, ActiveJump> m_jumps;
+    void updateJumps(double dt);
+    bool shipAwaitingJumpExit(EntityId shipId) const;   // automatic stabilization after the free-flight pass
     struct ZoneWatch
     {
         std::unordered_map<std::string, bool> inside;

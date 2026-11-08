@@ -420,6 +420,12 @@ private:
     const world::celestial::WorldSitesCatalog* m_worldSites = nullptr;
     std::string m_transferTunnelBodyId;
     std::string m_pendingOrbitalTransferHubId;
+public:
+    struct JumpRequest { int kind = 0; int systemId = -1; };
+private:
+    JumpRequest m_pendingJump;
+    int m_jumpCalculatedSystemId = -1;
+    int m_jumpChargingSystemId = -1;
     int m_pendingRouteLaunch = 0;   // 1 official, 2 unofficial, 3 calculate only (finish info window)
     int m_pendingRouteControl = 0;  // 1 pause, 2 resume
     std::string m_devFocusBodyId;
@@ -429,7 +435,8 @@ private:
     std::string m_devPointerSpec;
     int m_devPointerFrame = 0;
     glm::dvec2 m_devPointerAt {-1.0};
-    bool driveDevPointer(const Viewport& vp, double& mx, double& my, bool& leftDown, bool& rightDown);
+    bool driveDevPointer(const Viewport& vp, double& mx, double& my, bool& leftDown, bool& rightDown,
+                         const world::celestial::GalaxyMapSnapshot* galaxy = nullptr);
     // a hub / beacon picked from the panel list; kept a few frames until its marker exists
     std::string m_listFocusObjectId;
     int m_listFocusFramesLeft = 0;
@@ -464,6 +471,14 @@ public:
         std::string id = std::move(m_pendingOrbitalTransferHubId);
         m_pendingOrbitalTransferHubId.clear();
         return id;
+    }
+    // The interstellar jump from a star's context menu (kind 1 calculate, 2 START, 3 cancel; the
+    // target system); SpaceState consumes it and tells back what is calculated / charging.
+    JumpRequest consumeJumpRequest() { return std::exchange(m_pendingJump, JumpRequest {}); }
+    void setJumpState(int calculatedSystemId, int chargingSystemId)
+    {
+        m_jumpCalculatedSystemId = calculatedSystemId;
+        m_jumpChargingSystemId = chargingSystemId;
     }
     // Route launch from the finish's info window: 1 official, 2 unofficial; consumed by SpaceState.
     int consumeRouteLaunchRequest() { return std::exchange(m_pendingRouteLaunch, 0); }

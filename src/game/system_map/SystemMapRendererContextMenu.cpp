@@ -380,6 +380,14 @@ bool SystemMapRenderer::openContextMenu(
             m_contextMenu.rows.push_back({text.contextInfo, "info", true});
             appendContextActionRows(item);
             m_contextMenu.rows.push_back({text.contextDetails, "details", true});
+            // the interstellar jump (author 2026-11-08): calculate first, START only for the calculated star
+            if (m_jumpChargingSystemId == star->id)
+                m_contextMenu.rows.push_back({"ОТМЕНИТЬ ПРЫЖОК", "jump:cancel", true});
+            else
+            {
+                m_contextMenu.rows.push_back({"РАССЧИТАТЬ ПРЫЖОК", "jump:calc", true});
+                m_contextMenu.rows.push_back({"ПРЫЖОК: СТАРТ", "jump:start", m_jumpCalculatedSystemId == star->id && m_jumpChargingSystemId < 0});
+            }
         }
         else if (target.kind == Kind::Medium)
         {
@@ -578,6 +586,13 @@ std::optional<game::system_map::MapIntent> SystemMapRenderer::executeContextComm
             return std::nullopt;
         m_objectOverlayState.activate(item->objectId);
         m_objectOverlayState.ensureOpen(*item, viewportSize);
+        return std::nullopt;
+    }
+
+    if (command.rfind("jump:", 0) == 0)
+    {
+        m_pendingJump.kind = command == "jump:calc" ? 1 : command == "jump:start" ? 2 : 3;
+        m_pendingJump.systemId = menu.systemId;
         return std::nullopt;
     }
 

@@ -116,7 +116,7 @@ SystemMapRenderer::handleInput(
             GLFW_MOUSE_BUTTON_RIGHT
         ) == GLFW_PRESS;
 
-    driveDevPointer(vp, mx, my, leftDown, rightDown);
+    driveDevPointer(vp, mx, my, leftDown, rightDown, &galaxy);
 
     // DEV only: a scripted pointer replaces the GLFW pointer; the rest of
     // the input path is production.
@@ -1262,7 +1262,8 @@ bool SystemMapRenderer::driveDevPointer(
     double& mx,
     double& my,
     bool& leftDown,
-    bool& rightDown
+    bool& rightDown,
+    const world::celestial::GalaxyMapSnapshot* galaxy
 )
 {
     if (m_devPointerSpec.empty())
@@ -1291,6 +1292,19 @@ bool SystemMapRenderer::driveDevPointer(
                 at = glm::dvec2(b.x + game::system_map::MapContextMenu::WidthPx * 0.5,
                                 b.y + game::system_map::MapContextMenu::HeaderHeightPx + 3.0 +
                                     game::system_map::MapContextMenu::RowHeightPx * (static_cast<double>(i) + 0.5));
+    }
+    else if (m_modeState.current() == Mode::Galaxy && galaxy && arg.rfind("galaxy-system:", 0) == 0)
+    {
+        // a star of the Galaxy map (not an overlay item): its projected position
+        const int id = std::atoi(arg.c_str() + 14);
+        for (const auto& star : galaxy->systems)
+            if (star.id == id)
+            {
+                const glm::mat4 mvp = m_galaxyView.projectionMatrix(vp) * m_galaxyView.viewMatrix();
+                const glm::vec4 clip = mvp * glm::vec4(m_galaxyView.positionLyToRender(star.positionLy), 1.0f);
+                if (clip.w > 0.0f)
+                    at = glm::dvec2((clip.x / clip.w * 0.5f + 0.5f) * vp.width, (1.0f - (clip.y / clip.w * 0.5f + 0.5f)) * vp.height);
+            }
     }
     else
     {

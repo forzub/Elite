@@ -479,6 +479,27 @@ bool DevScriptRunner::runShipVerb(SpaceState& s, const std::string& cmd)
         msg.payload = command;
         s.m_client->sendMessage(msg);
     }
+    // the map menu's jump rows through the client's own handler: "jumpui:calc|start|cancel:<system id>"
+    else if (cmd.rfind("jumpui:", 0) == 0)
+    {
+        const std::string rest = cmd.substr(7);
+        const int kind = rest.rfind("calc", 0) == 0 ? 1 : rest.rfind("start", 0) == 0 ? 2 : 3;
+        const auto colon = rest.find(':');
+        s.handleJumpRequest(kind, colon == std::string::npos ? -1 : std::atoi(rest.c_str() + colon + 1));
+    }
+    // the interstellar jump: "jump:<system id>[:<exit body id>]" (START), "jump:cancel"
+    else if (cmd.rfind("jump:", 0) == 0)
+    {
+        game::network::ClientMessage msg;
+        ClientShipCommand command;
+        command.type = ClientShipCommand::RequestJump;
+        const std::string rest = cmd.substr(5);
+        command.index = rest == "cancel" ? -1 : std::atoi(rest.c_str());
+        if (const auto colon = rest.find(':'); colon != std::string::npos)
+            command.detail = rest.substr(colon + 1);
+        msg.payload = command;
+        s.m_client->sendMessage(msg);
+    }
     // Ctrl+K stabilization on / off (= normal flight off / on), Ctrl+J the J engine
     else if (cmd == "freeflight" || cmd == "stabilization" || cmd == "jengine")
     {

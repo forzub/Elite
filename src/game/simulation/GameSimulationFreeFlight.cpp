@@ -655,6 +655,7 @@ void GameSimulation::updateFreeFlights(double dt)
     if (dt <= 0.0)
         return;
     applyGlobalFrameRequests();
+    updateJumps(dt);
     // automatic stabilization decided last pass (a coast on a safe closed orbit)
     for (const EntityId id : std::exchange(m_pendingStabilize, {}))
         if (const auto f = m_freeFlights.find(id); f != m_freeFlights.end() && !f->second.localFrame)
@@ -675,6 +676,11 @@ void GameSimulation::updateFreeFlights(double dt)
         auto& tr = ship->core().transform();
         auto& motion = tr.motion;
         auto& frame = motion.travelFrame;
+        if (shipAwaitingJumpExit(it->first))
+        {
+            ++it;   // jumped: held until the new system's bodies place the exit (GameSimulationJump.cpp)
+            continue;
+        }
 
         // 1. fold last tick's local motion into the frame (non-rotating frame: a pure
         //    translation) - not in the local ballistic frame, where the local state is the pilot's

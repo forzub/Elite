@@ -333,6 +333,15 @@ private:
     void renderNavigationStressOverlay(const Viewport& viewport);
     // Ctrl+J free flight: the banner at the top of the HUD (speed no longer local, keys, capture)
     void renderFreeFlightBanner(const Viewport& viewport);
+    // the interstellar jump (navigation/rules/JumpRules.h): the map's calculate / START / cancel,
+    // the charge-up panel, the ripple of the jump itself
+    void handleJumpRequest(int kind, int systemId);
+    void renderHudJump(const Viewport& viewport);
+    int m_jumpCalculatedSystemId = -1;
+    std::uint16_t m_jumpSeenSerial = 0;
+    std::uint16_t m_jumpSeenRefusalSerial = 0;
+    bool m_jumpSerialsKnown = false;
+    double m_jumpRippleStart = -1.0e9;
     // renderHUD sections (SpaceStateHud.cpp)
     void renderHudWorldLabels(const Viewport& vp);
     void renderHudGuidanceAndCompass(const Viewport& vp, const ClientShipState& playerShip);

@@ -513,6 +513,7 @@ add_executable(EliteGame
     src/game/SpaceStateMaps.cpp
     src/game/SpaceStateBodyAutopilot.cpp
     src/game/SpaceStateRouteRun.cpp
+    src/game/SpaceStateJump.cpp
     src/game/SpaceStateRoute.cpp
     src/game/SpaceStateHud.cpp
     src/game/SpaceStateServices.cpp
@@ -598,6 +599,7 @@ add_executable(EliteGame
     src/game/simulation/GameSimulationDockTraffic.cpp
     src/game/simulation/GameSimulationFreeFlight.cpp
     src/game/simulation/GameSimulationRoute.cpp
+    src/game/simulation/GameSimulationJump.cpp
     src/game/simulation/GameSimulationZones.cpp
     src/game/simulation/GameSimulationCombat.cpp
     src/game/combat/WeaponCatalog.cpp
@@ -909,6 +911,7 @@ if(ELITE_BUILD_SERVER)
         src/game/simulation/GameSimulationDockTraffic.cpp
         src/game/simulation/GameSimulationFreeFlight.cpp
         src/game/simulation/GameSimulationRoute.cpp
+        src/game/simulation/GameSimulationJump.cpp
         src/game/simulation/GameSimulationZones.cpp
         src/game/simulation/GameSimulationCombat.cpp
         src/game/combat/WeaponCatalog.cpp

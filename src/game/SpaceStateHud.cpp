@@ -208,6 +208,7 @@ m_systemMapRenderer.render(
     renderUiLanguageIndicator(vp);
     renderNavigationStressOverlay(vp);
     renderFreeFlightBanner(vp);
+    renderHudJump(vp);
     renderDockingWidget(vp);
     renderZoneViolationBanner(vp);
     if (context().app)

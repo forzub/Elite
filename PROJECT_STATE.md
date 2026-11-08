@@ -4117,3 +4117,34 @@ differ by 8-11 km/s - the nose turns at once, the velocity follows in ~17 s (130
 not removable while the thrust stays along the nose. Gates 209: 203 pass, 6 known red, 0 new. Not flown by the
 author. OPEN reading (asked): "не выходить из стабилизации" = keep the hub reference (done) or literally fly the
 in-keep-out departure / final approach in the stabilization mode on ordinary engines.
+### Jump stage J1 2026-11-08 - interstellar jump to a planet orbit - LIVE DEV, NOT AUTHOR-FLOWN
+- Survey: the runtime is keyed by systemId end to end (the server's simulated system = the player ships' system,
+  GameServer::resolveSingleActiveSimulationSystemId; gravity / celestial snapshot / client sky + maps follow); every
+  system sits at its own origin; nothing ever changed a ship's system before. Hubs exist only for system 0 (spawned at
+  startup) - none elsewhere, as the author wants (a hub only where it is written in).
+- Rules (navigation/rules/JumpRules.h, shared): hop <= 32 ly (canon max_hop_ly of 3126), mass <= jump core rating,
+  charge q*d*(alpha+M) (JDrive.h logistics rule), charge-up 5..10 min by distance, refusal codes + texts.
+- Server (GameSimulationJump.cpp): ClientShipCommand::RequestJump (index = system, -1 cancel; wire protocol 29,
+  snapshot schema 41 - motion.jumpState / target / distance / cost / charge elapsed+duration / refusal + serials);
+  START only in normal flight; the charge-up is silent and is lost if the ship leaves normal flight; at its end the
+  jump waits until the ship is clear of objects and above every J floor (jEngineBlocked), then: charge spent, motion
+  AND travelFrame systemId switched (the replicated frame identity carries the client's system - first run showed the
+  client still in system 0), a placeholder until the new system's bodies are in the gravity context, then a circular
+  orbit of the exit planet at its J floor + 100 km on the lit side (the planet with the most world sites, else the
+  heaviest; no planet -> 1 AU from the star at rest); the automatic stabilization takes the closed orbit.
+- Client (SpaceStateJump.cpp): galaxy map star context menu РАССЧИТАТЬ ПРЫЖОК -> notice (distance, charge, charge-up
+  time or the refusal) -> ПРЫЖОК: СТАРТ (enabled only for the calculated star) -> ОТМЕНИТЬ ПРЫЖОК while charging;
+  HUD panel (target, ly, charge-up m:ss with a bar, cost; "ЗАРЯЖЕНО: отойдите от объектов"); refusals in the HUD
+  console; the jump = a cartoon ripple (flash + 4 dotted rings, 1.6 s). DEV: ELITE_DEV_JUMP_CHARGE_S, verbs
+  jump:<id>[:<body>] / jump:cancel / jumpui:calc|start|cancel:<id>, the DEV pointer can click galaxy stars
+  (galaxy-system:<id>), ELITE_DEV_JUMP_DIAG, ELITE_DEV_JUMP_NOSE_DOWN.
+- Live DEV (D:/tmp/elite_jp1..12, Высокий -> Fomalhaut 25.1 ly, 0.91 t of 3 t): START before РАССЧИТАТЬ ignored;
+  menu rclick + РАССЧИТАТЬ through the real map input (jp3); waited at 5 km from the hub, jumped at 20 km; exit on an
+  840 km orbit of Fomalhaut_g, stabilization ON 5 s later; client system 61, snapshot 61, renderer alt 840 km.
+  Gates 209: 203 pass / 6 known red / 0 new; C++ wire / map contracts PASS.
+- Found, open: (1) Fomalhaut_g (Venus-like, 932 bar CO2, little relief) renders in the Elite style as a BLACK disc
+  with no contours - nose-down frame has no stars at all, so it is drawn, but looks like nothing (author decision on
+  the look of featureless / dense-atmosphere bodies); (2) for ~1 s after the jump the radar showed Sol's ships
+  (12 tracks) - other-system ships are still replicated; (3) multiplayer: players in different systems not handled
+  (the server simulates one system); (4) next: J2 multi-hop planner (hazards, inhabited systems, charge, refuel points)
+  needs hubs in other systems (spawn from the written-in world sites).

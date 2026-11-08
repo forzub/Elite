@@ -160,6 +160,19 @@ struct DynamicMotionState
     double jChargeCapacityT = 0.0;
     double shipMassT = 0.0;          // the ship's mass and its jump core's rating (the planner's charge rule)
     double jumpCoreRatingT = 0.0;
+    // the interstellar jump (GameSimulationJump.cpp, navigation/rules/JumpRules.h): 0 none,
+    // 1 charging, 2 charged - waiting clear of objects, 3 jumped - the exit being placed;
+    // jumpSerial counts the jumps made (the client's ripple), jumpRefusalSerial the refusals
+    std::uint8_t jumpState = 0;
+    int jumpTargetSystemId = -1;
+    std::string jumpTargetName;
+    double jumpDistanceLy = 0.0;
+    double jumpCostT = 0.0;
+    double jumpChargeElapsedS = 0.0;
+    double jumpChargeDurationS = 0.0;
+    std::uint8_t jumpRefusal = 0;
+    std::uint16_t jumpRefusalSerial = 0;
+    std::uint16_t jumpSerial = 0;
     // the client's route (display only, not on the wire): 0 none, 1 flying, 2 paused (manual flight
     // until RESUME), 3 a service stay, 4 landing (the landing autopilot); legIndex / legCount of it
     std::uint8_t routeState = 0;

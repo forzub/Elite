@@ -878,6 +878,14 @@ void SpaceState::handleInput()
                 return std::nullopt;
             });
         }
+        if (const auto jump = m_systemMapRenderer.consumeJumpRequest(); jump.kind != 0)
+            handleJumpRequest(jump.kind, jump.systemId);
+        if (m_client)
+            if (const auto self = m_client->world().ships().find(m_playerId.value); self != m_client->world().ships().end())
+            {
+                const auto& jm = self->second.transform.motion;
+                m_systemMapRenderer.setJumpState(m_jumpCalculatedSystemId, jm.jumpState == 1 || jm.jumpState == 2 ? jm.jumpTargetSystemId : -1);
+            }
         if (const int launch = m_systemMapRenderer.consumeRouteLaunchRequest())
             launchPlannedRoute(launch != 2, launch != 3);
         if (const int control = m_systemMapRenderer.consumeRouteControlRequest())

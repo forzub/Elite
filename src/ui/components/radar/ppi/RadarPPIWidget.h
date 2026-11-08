@@ -40,6 +40,10 @@ public:
     virtual void loadConfig(std::shared_ptr<game::IRadarEffectsConfig> config) = 0;
     // Сброс всех глюков
     virtual void resetGlitches() = 0;
+    // forced jamming 0..1 on top of the random glitches
+    virtual void setForcedJam(float level) { m_forcedJam = level; }
+protected:
+    float m_forcedJam = 0.0f;
 };
 
 // ============================================================================

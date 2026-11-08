@@ -43,6 +43,7 @@ void RouteLegPilot::start(const route::RoutePoint& leg, double remainingAfterM, 
     m_driveStartSeconds = alreadyInJ ? -1000.0 : -1.0;
     m_toldTargetInHub = false;
     m_departureHubId = departureHubId;
+    m_assistedAligned = alreadyInJ;   // past a guide point the hull is already on the motion
     if (m_takeOff)
         std::cerr << "[Route] ship " << shipId << ": TAKE-OFF - main-engine climb to the J floor first" << std::endl;
     std::cerr << "[Route] ship " << shipId << ": leg -> "
@@ -332,9 +333,90 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
         const glm::dvec3 away = glm::normalize(position - keep.positionM + dir * 1.0);
         targetWorld = keep.velocityMps + away * jd::GentleSpeedMps;
     }
+    // ---- Assisted (author 2026-11-08: "Assisted always turns along the main velocity vector; leaving
+    // the stabilization the ship lines its thrust up with the orbital velocity and flies to the other
+    // hub from that attitude"): the main velocity is the one against the dominant body. The ship
+    // first turns onto it (the velocity held), then the velocity is kept within AssistLeadRad of the
+    // hull while the hull turns onto the wanted velocity - the motion follows the nose, never sideways
+    const bool assisted = ship.currentLaw == LocalFlightControlLaw::Assisted;
+    m_assistNoseValid = false;
+    glm::dvec3 mainVel = ship.referenceVelocityMps;
+    bool haveMain = false;
+    if (const GravityBody* mb = findBody(env, ship.primaryBodyId))
+    {
+        if (m_mainBodyId == mb->id)
+        {
+            mainVel = (mb->centerMeters - m_mainBodyLastCentre) / dt;
+            haveMain = true;
+        }
+        m_mainBodyId = mb->id;
+        m_mainBodyLastCentre = mb->centerMeters;
+    }
+    if (assisted && haveMain)
+    {
+        constexpr double AssistLeadRad = 2.0 * 3.14159265358979 / 180.0;
+        const glm::dvec3 mainRel = velocity - mainVel;
+        const glm::dvec3 wantRel = targetWorld - mainVel;
+        const double wantSpeed = glm::length(wantRel);
+        const glm::dvec3 fwd = glm::normalize(ship.forward);
+        const double offHull = glm::length(mainRel) > 30.0 ? std::acos(std::clamp(glm::dot(glm::normalize(mainRel), fwd), -1.0, 1.0)) : 0.0;
+        if (!m_assistedAligned && offHull < 3.0 * AssistLeadRad / 2.0)
+            m_assistedAligned = true;
+        else if (m_assistedAligned && offHull > 15.0 * AssistLeadRad / 2.0)
+            m_assistedAligned = false;   // lost (a new dominant body): line up again
+        if (wantSpeed > 30.0)
+        {
+            if (!m_assistedAligned)
+            {
+                targetWorld = velocity;   // hold the motion while the hull turns onto it
+                m_assistNose = glm::length(mainRel) > 1.0 ? glm::normalize(mainRel) : fwd;
+            }
+            else
+            {
+                // the nose leads the real main velocity by at most AssistLeadRad towards the wanted one
+                // (a weak J field at the start turns the motion slowly - the hull waits for it), and the
+                // commanded velocity stays within AssistLeadRad of the hull (a strong field turns the
+                // motion as fast as the hull turns)
+                const glm::dvec3 wantDir = wantRel / wantSpeed;
+                const glm::dvec3 relDir = glm::length(mainRel) > 1.0 ? glm::normalize(mainRel) : fwd;
+                const auto toward = [](const glm::dvec3& from, const glm::dvec3& to, double maxRad) {
+                    const double a = std::acos(std::clamp(glm::dot(from, to), -1.0, 1.0));
+                    if (a <= maxRad)
+                        return to;
+                    glm::dvec3 axis = to - from * glm::dot(to, from);
+                    if (glm::length(axis) < 1.0e-9)
+                        return from;
+                    axis = glm::normalize(axis);
+                    return glm::normalize(from * std::cos(maxRad) + axis * std::sin(maxRad));
+                };
+                const glm::dvec3 cmdDir = toward(fwd, toward(relDir, wantDir, AssistLeadRad), AssistLeadRad);
+                // the speed while the hull is still off the wanted direction: none beyond 45 deg, full
+                // when on it (live as7: kept along a slowly turning hull at speed, the ship circled the
+                // target at 300 km - the turning radius v / omega); a motion nearly stopped leaves the
+                // hull free to come round onto the wanted direction, then it speeds up along the hull
+                const double offWant = std::acos(std::clamp(glm::dot(fwd, wantDir), -1.0, 1.0));
+                m_assistWantOffDeg = offWant * 57.2957795;
+                const double cos45 = 0.70710678;
+                const double useful = std::clamp((std::cos(offWant) - cos45) / (1.0 - cos45), 0.0, 1.0);
+                targetWorld = mainVel + cmdDir * (wantSpeed * useful);
+                const bool stopped = glm::length(mainRel) < 50.0;
+                m_assistNose = stopped ? wantDir : toward(relDir, wantDir, AssistLeadRad);
+            }
+            m_assistNoseValid = true;
+        }
+        refVel = mainVel;
+        refHubId.clear();   // the HUD's reference: the dominant body
+        if (m_seconds - m_assistLogSeconds >= 2.0)
+        {
+            m_assistLogSeconds = m_seconds;
+            std::cerr << "[RouteAssist] ship " << m_shipId << " t+" << m_seconds << (m_assistedAligned ? " aligned" : " LINING UP")
+                      << ": main velocity " << glm::length(mainRel) << " m/s vs " << m_mainBodyId << ", hull off it "
+                      << offHull * 57.2957795 << " deg, wanted velocity " << wantSpeed << " m/s " << m_assistWantOffDeg << " deg off the hull" << std::endl;
+        }
+    }
     glm::dvec3 dv = targetWorld - velocity;
     m_lastWantedDv = dv;
-    if (nearDeparture && !keep.ship)
+    if (nearDeparture && !keep.ship && !(assisted && haveMain))
     {
         refVel = keep.velocityMps;   // climbing out against the hub just left (its frame on the HUD)
         refHubId = keep.objectId;
@@ -354,7 +436,8 @@ BodyAutopilotOutput RouteLegPilot::step(const BodyAutopilotEnvironment& env, con
     // along the remaining motion
     {
         const glm::dvec3 wanted = targetWorld - refVel;
-        glm::dvec3 nose = glm::length(wanted) > 1.0 ? glm::normalize(wanted)
+        glm::dvec3 nose = m_assistNoseValid             ? m_assistNose
+                        : glm::length(wanted) > 1.0 ? glm::normalize(wanted)
                         : d > 50.0                  ? dir
                         : (glm::length(w + dv) > 1.0 ? glm::normalize(w + dv) : ship.forward);
         glm::dvec3 upW = ship.up - nose * glm::dot(ship.up, nose);

@@ -22,6 +22,9 @@
 #include <iterator>
 
 #include "src/world/celestial/SystemMapTypes.h"
+#include "src/world/celestial/WorldSitesCatalog.h"
+#include <map>
+#include <tuple>
 #include "src/game/world_state/InitialWorldState.h"
 #include "src/game/navigation/GalaxyNavigationConfig.h"
 #include "src/game/navigation/PlayerSpatialDomainResolver.h"
@@ -892,7 +895,32 @@ void GameServer::update(double dt)
                     const auto* from = jumper ? m_starAtlas.findSystemSummary(jumper->core().transform().motion.systemId) : nullptr;
                     const auto* to = m_starAtlas.findSystemSummary(shipCmd.index);
                     const double distanceLy = from && to ? glm::length(to->positionLy - from->positionLy) : 0.0;
-                    m_simulation.requestJump(id, to ? to->id : -1, to ? to->name : std::string(), distanceLy, shipCmd.detail);
+                    // the exit body (unless the pilot named one): the planet with the most world sites,
+                    // else the canon (observed / authored) planet, else the heaviest planet
+                    std::string exitBody = shipCmd.detail;
+                    if (exitBody.empty() && to)
+                        if (const auto* system = m_starAtlas.findSystem(to->id))
+                        {
+                            std::map<std::string, int> sitesOnBody;
+                            world::celestial::WorldSitesCatalog sites;
+                            if (sites.loadFromRuntimeOrSource())
+                                for (const auto& s : sites.sitesInSystem(to->id))
+                                    ++sitesOnBody[s.parentBodyId];
+                            std::tuple<int, int, double> best {-1, -1, -1.0};
+                            for (const auto& b : system->bodies)
+                            {
+                                if (b.type != world::celestial::BodyType::Planet || b.radiusKm < 1000.0)
+                                    continue;
+                                const auto n = sitesOnBody.find(b.id);
+                                const std::tuple<int, int, double> key {n == sitesOnBody.end() ? 0 : n->second, b.observed ? 1 : 0, b.massKg};
+                                if (key > best)
+                                {
+                                    best = key;
+                                    exitBody = b.id;
+                                }
+                            }
+                        }
+                    m_simulation.requestJump(id, to ? to->id : -1, to ? to->name : std::string(), distanceLy, exitBody);
                     break;
                 }
 

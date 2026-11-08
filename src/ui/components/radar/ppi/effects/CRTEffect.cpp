@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "CRTEffects.h"
 #include <glad/gl.h>
 #include <cstdlib>
@@ -121,13 +122,13 @@ void CRTEffect::applyToShader(unsigned int shaderProgram, float time,
     GLint loc;
     
     loc = glGetUniformLocation(shaderProgram, "flickerIntensity");
-    if (loc >= 0) glUniform1f(loc, m_data.flicker.intensity);
+    if (loc >= 0) glUniform1f(loc, std::max(m_data.flicker.intensity, m_forcedJam));
     
     loc = glGetUniformLocation(shaderProgram, "breathingIntensity");
     if (loc >= 0) glUniform1f(loc, m_data.breathing.intensity);
     
     loc = glGetUniformLocation(shaderProgram, "constantHumBarIntensity");
-    if (loc >= 0) glUniform1f(loc, m_data.constantHumBars.intensity);
+    if (loc >= 0) glUniform1f(loc, std::max(m_data.constantHumBars.intensity, m_forcedJam));
     
     loc = glGetUniformLocation(shaderProgram, "constantHumBarPhase");
     if (loc >= 0) glUniform1f(loc, m_data.humBarPhase);
@@ -139,7 +140,7 @@ void CRTEffect::applyToShader(unsigned int shaderProgram, float time,
 
     // Постоянные эффекты
     glUniform1f(glGetUniformLocation(shaderProgram, "flickerIntensity"), 
-                m_data.flicker.intensity);
+                std::max(m_data.flicker.intensity, m_forcedJam));
     glUniform1f(glGetUniformLocation(shaderProgram, "breathingIntensity"), 
                 m_data.breathing.intensity);
     // Постоянные эффекты с новыми параметрами
@@ -150,7 +151,7 @@ void CRTEffect::applyToShader(unsigned int shaderProgram, float time,
     
     // Постоянные полосы
     glUniform1f(glGetUniformLocation(shaderProgram, "constantHumBarIntensity"), 
-                m_data.constantHumBars.intensity);
+                std::max(m_data.constantHumBars.intensity, m_forcedJam));
     glUniform1f(glGetUniformLocation(shaderProgram, "constantHumBarPhase"), 
                 m_data.humBarPhase);
     glUniform1f(glGetUniformLocation(shaderProgram, "constantHumBarWidth"), 

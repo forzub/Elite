@@ -82,6 +82,16 @@ private:
     glm::dvec3 m_lastWantedDv {0.0};
     bool m_rampSyncLogged = false;
     double m_plantBehindSeconds = 0.0;
+    // Assisted (author 2026-11-08): the hull's thrust axis along the main velocity - the velocity
+    // against the dominant body (the orbital motion); first aligned with it, then the velocity
+    // follows the hull as it turns
+    std::string m_mainBodyId;
+    glm::dvec3 m_mainBodyLastCentre {0.0};
+    bool m_assistedAligned = false;
+    glm::dvec3 m_assistNose {0.0};
+    bool m_assistNoseValid = false;
+    double m_assistWantOffDeg = 0.0;
+    double m_assistLogSeconds = -10.0;
 };
 
 } // namespace game::navigation::globalflight

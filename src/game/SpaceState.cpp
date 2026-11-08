@@ -2632,6 +2632,21 @@ m_playerView->updateCockpitStateFromSnapshot(
                     });
                 }
             }
+            // the interstellar jump blinds the scope (author 2026-11-08): from 3 s before the charge
+            // completes, while charged and waiting, and 3 s after the jump - noise, no contacts (the
+            // previous system's ships never show in the new one)
+            {
+                const auto& m = ship.transform.motion;
+                const double sinceJump = glfwGetTime() - m_jumpRippleStart;
+                float jam = 0.0f;
+                if (m.jumpState == 2 || m.jumpState == 3 || (sinceJump >= 0.0 && sinceJump < 3.0))
+                    jam = 1.0f;
+                else if (m.jumpState == 1 && m.jumpChargeDurationS - m.jumpChargeElapsedS < 3.0)
+                    jam = static_cast<float>(std::clamp(1.0 - (m.jumpChargeDurationS - m.jumpChargeElapsedS) / 3.0, 0.0, 1.0));
+                if (jam > 0.3f)
+                    views.clear();
+                m_radarWidget->setJamLevel(jam);
+            }
             m_radarWidget->configureFromDesc(
                 m_radarSweepDegPerSec,
                 static_cast<float>(m_radarDisplayRangeMeters)

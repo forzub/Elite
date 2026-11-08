@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "LCDEffects.h"
 #include <glad/gl.h>
 #include <cstdlib>
@@ -100,7 +101,7 @@ void LCDEffect::applyToShader(unsigned int shaderProgram, float time,
     
     // Interference
     glUniform1f(glGetUniformLocation(shaderProgram, "interferenceIntensity"), 
-                m_data.interference.intensity);
+                std::max(m_data.interference.intensity, m_forcedJam));
     glUniform1f(glGetUniformLocation(shaderProgram, "interferenceSpeed"), 
                 m_data.interference.interferenceParams.speed);
     glUniform1f(glGetUniformLocation(shaderProgram, "interferenceAmplitude"), 
@@ -108,7 +109,7 @@ void LCDEffect::applyToShader(unsigned int shaderProgram, float time,
     
     // Digital Noise
     glUniform1f(glGetUniformLocation(shaderProgram, "noiseIntensity"), 
-                m_data.digitalNoise.intensity);
+                std::max(m_data.digitalNoise.intensity, m_forcedJam));
     glUniform1f(glGetUniformLocation(shaderProgram, "noiseAmount"), 
                 m_data.digitalNoise.noiseParams.amount);
     

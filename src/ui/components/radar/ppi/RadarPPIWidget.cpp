@@ -1,3 +1,4 @@
+#include <cstdint>
 #include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "RadarPPIWidget.h"
 #include "effects/CRTEffects.h"
@@ -95,6 +96,8 @@ void RadarPPIWidget::update(float dt)
     RadarWidgetBase::update(dt);  // ← ЭТО ВАЖНО!
     
     m_time += dt;  // обновляем локальное время
+    if (m_effect)
+        m_effect->setForcedJam(m_jamLevel);
     
     // Синхронизация контактов (было в вашем коде)
     for (const auto& c : m_contacts)
@@ -504,6 +507,38 @@ void RadarPPIWidget::renderContacts()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+    // forced jamming (the interstellar jump): snow and running streaks over the scope, new every frame
+    if (m_jamLevel > 0.0f)
+    {
+        std::uint32_t seed = static_cast<std::uint32_t>(m_time * 997.0f) * 2654435761u + 12345u;
+        const auto rnd = [&seed]() {
+            seed = seed * 1664525u + 1013904223u;
+            return static_cast<float>(seed >> 8) / 16777216.0f;
+        };
+        const float persp = m_visualConfig.background.perspective;
+        const int dots = static_cast<int>(900.0f * m_jamLevel);
+        elite::render::core_legacy::begin(GL_POINTS);
+        for (int i = 0; i < dots; ++i)
+        {
+            const float a = rnd() * 6.2831853f;
+            const float r = std::sqrt(rnd()) * m_radius;
+            const float b = 0.35f + 0.65f * rnd();
+            elite::render::core_legacy::color4f(0.55f * b, 0.85f * b, 1.0f * b, 0.85f * m_jamLevel);
+            elite::render::core_legacy::vertex2f(m_centerX + std::sin(a) * r, m_centerY - std::cos(a) * r * persp);
+        }
+        elite::render::core_legacy::end();
+        elite::render::core_legacy::begin(GL_LINES);
+        for (int i = 0; i < 6; ++i)
+        {
+            const float y = (rnd() * 2.0f - 1.0f) * m_radius * persp;
+            const float half = m_radius * std::sqrt(std::max(0.0f, 1.0f - (y / (m_radius * persp)) * (y / (m_radius * persp))));
+            elite::render::core_legacy::color4f(0.6f, 0.9f, 1.0f, 0.5f * m_jamLevel * rnd());
+            elite::render::core_legacy::vertex2f(m_centerX - half, m_centerY + y);
+            elite::render::core_legacy::vertex2f(m_centerX + half, m_centerY + y);
+        }
+        elite::render::core_legacy::end();
+    }
 
     // Game scope: every track is drawn every frame at its current position
     // (the sweep only brightens it); tracks beyond the scale sit dimmed on

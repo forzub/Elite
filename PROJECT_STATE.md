@@ -4148,3 +4148,25 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   (12 tracks) - other-system ships are still replicated; (3) multiplayer: players in different systems not handled
   (the server simulates one system); (4) next: J2 multi-hop planner (hazards, inhabited systems, charge, refuel points)
   needs hubs in other systems (spawn from the written-in world sites).
+### Assisted route = Assisted, jump exit + radar 2026-11-08 - LIVE DEV, NOT AUTHOR-FLOWN
+- Author's reading resolved: "Assisted always turns along the main velocity vector; leaving the stabilization the
+  ship lines its thrust up with the ORBITAL velocity and flies to the other hub from that attitude" - the main
+  velocity is the one against the dominant body, not a hub (the ce884a11 hub reference made the motion look
+  sideways). RouteLegPilot (Assisted law only; Newtonian keeps the old law): the reference = the plant's primary
+  body (its velocity differenced on the client); LINING UP first (velocity held, nose onto the main velocity, < 3 deg);
+  then the nose leads the real main velocity by <= 2 deg towards the wanted one and the commanded velocity stays
+  within 2 deg of the hull; speed only while the hull is within 45 deg of the wanted direction (none beyond: as7 showed
+  circling at 300 km - turning radius v/omega); a motion under 50 m/s frees the nose onto the wanted direction (as8
+  freed it by a relative threshold at 7 km/s -> 20-28 deg); alignment kept past a guide point.
+- Live DEV earth_orbital_hub -> earth_hub.tikhiy (D:/tmp/elite_as5..9): as9 HudVel hull-velocity <= 2.5 deg in 73 of 75
+  samples (20 deg at 403 m/s while turning in place, 11 deg at the guide point - since fixed, not re-flown), arrived
+  120 m / 20 m/s, route complete. Newtonian-I same route (elite_nw1, ELITE_SHIP_PHYSICAL_TEST_MODEL): arrived 119 m /
+  19.8 m/s, complete (nose free, as Newtonian).
+- Jump exit body chosen by the server: world sites > canon (observed/authored) planet > heaviest. Fomalhaut has no
+  world sites -> Lexie (jp13/15: orbit 444 km, stabilized). Fomalhaut_g (Ananke, procedural) was the old choice.
+- Radar blinded by the jump: from 3 s before the charge completes, while charged/waiting and 3 s after - no
+  contacts, snow + streaks drawn on the scope (RadarWidgetBase::setJamLevel; shader effects also forced). jp15 frame:
+  snow visible, 0 tracks; after the jump 0 tracks (no Sol ghosts).
+- Gates 209: 203 pass / 6 known red / 0 new.
+- OPEN (author directive 2026-11-08): "the server must simulate the systems or parts of systems where players are" -
+  multi-system runtime (today one active celestial context; a second player in another system blocks a jump exit).

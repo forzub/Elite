@@ -46,6 +46,9 @@ public:
         float sweepSpeed,
         float displayRange);
 
+    // forced jamming 0..1 (the interstellar jump: the field blinds the scope); the scope's own noise
+    void setJamLevel(float level) { m_jamLevel = level; }
+
     virtual void applyVisualConfig(
             const IRadarVisualConfig& cfg);
     virtual void applyEffectsConfig(
@@ -85,6 +88,7 @@ protected:
 
     std::vector<RadarContactView> m_contacts;
 
+    float m_jamLevel = 0.0f;
     float m_sweepAngle = 0.0f;
     float m_sweepSpeed = 30.0f;
     float m_displayRange = 200.0f;

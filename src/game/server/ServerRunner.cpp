@@ -1,6 +1,8 @@
 #include "src/game/server/ServerRunner.h"
+#include "src/game/server/ServerTickProfile.h"
 
 #include <algorithm>
+#include <optional>
 #include <cmath>
 #include <stdexcept>
 #include <utility>
@@ -282,6 +284,8 @@ void ServerRunner::receiveInboundMessages(
 void ServerRunner::publishOutboundMessages()
 {
     const auto& sharedSnapshot = m_server.snapshot();
+    // the source id sets once per publication, shared by every destination
+    std::optional<game::server::ReplicationSourceIds> sourceIds;
 
     // Stage M7 consumes each destination's interest plan as real transport
     // cadence. The authoritative source snapshot remains full-presence; only
@@ -297,10 +301,18 @@ void ServerRunner::publishOutboundMessages()
             continue;
         }
 
+        auto& profile = serverTickProfile();
+        auto stageStart = std::chrono::steady_clock::now();
+        const auto stage = [&stageStart](double& sink) {
+            const auto now = std::chrono::steady_clock::now();
+            sink += std::chrono::duration<double>(now - stageStart).count();
+            stageStart = now;
+        };
         binding.lastShipInterestPlan =
             m_server.shipReplicationInterestPlanForSession(
                 binding.sessionId
             );
+        stage(profile.sessionPlan);
 
         // Mutate cadence/lifecycle memory only after packet composition has
         // succeeded. A rejected/stale session must not silently advance its
@@ -312,19 +324,26 @@ void ServerRunner::publishOutboundMessages()
             game::server::selectReplicationPublications(
                 binding.lastShipInterestPlan,
                 sharedSnapshot,
-                nextPublicationState
+                nextPublicationState,
+                sourceIds ? *sourceIds : sourceIds.emplace(game::server::buildReplicationSourceIds(sharedSnapshot))
             );
+        stage(profile.sessionSelect);
 
         SimulationSnapshot sessionSnapshot;
+        int publishedSystemId = binding.lastPublishedSystemId;
         if (!m_server.copySparseSnapshotForSession(
                 binding.sessionId,
                 selection,
-                sessionSnapshot))
+                sessionSnapshot,
+                publishedSystemId))
         {
             continue;
         }
+        binding.lastPublishedSystemId = publishedSystemId;
+        stage(profile.sessionCopy);
 
         binding.transport->publishSnapshot(sessionSnapshot);
+        stage(profile.sessionPublish);
         binding.replicationPublicationState =
             std::move(nextPublicationState);
         binding.lastPublishedServerTick =
@@ -357,10 +376,14 @@ void ServerRunner::runFixedStep()
             binding.transport->update(fixedStep);
     }
 
-    for (auto& binding : m_transports)
-        receiveInboundMessages(binding);
+    {
+        ScopedTickTimer timer(serverTickProfile().inbound);
+        for (auto& binding : m_transports)
+            receiveInboundMessages(binding);
+    }
 
     m_server.update(m_policy.fixedStepSeconds);
+    ++serverTickProfile().ticks;
 
     publishOutboundMessages();
 

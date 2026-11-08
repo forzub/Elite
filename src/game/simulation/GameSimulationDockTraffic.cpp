@@ -522,7 +522,7 @@ void GameSimulation::updateDockPilotShips()
         else if (obj.hubModuleId == DockBaseModuleId)
             base = &obj;
     }
-    if (!dock || !base)
+    if (!dock || !base || dock->systemId != m_activeCelestialSystemId)
         return;
 
     const double now = m_serverTimelineClock.timeSeconds();

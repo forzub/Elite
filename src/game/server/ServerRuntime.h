@@ -80,12 +80,19 @@ public:
     // the durable account repository so the CLI reset keeps the same contract.
     bool resetAuthenticationStateForDevelopment();
 
-private:
+    // Load test (EliteServer --load-test): a dedicated runtime with N player slots; the sessions'
+    // ships are sent to their systems; the tick's simulation wall time / system passes.
     ServerRuntime(
         const WorldParams& worldParams,
         game::debug::IServerDebugChannel& debugChannel,
         std::size_t bootstrapPlayerSlotCount
     );
+    bool devPlaceShipInSystem(EntityId shipId, int systemId, int ordinal);
+    std::size_t lastTickSystemPasses() const noexcept;
+    double lastTickSimulationSeconds() const noexcept;
+    std::size_t orbitalHubCount() const;
+
+private:
 
     game::network::ServerSessionId attachResolvedPlayerSessionTransport(
         IServerTransport& transport,

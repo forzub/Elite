@@ -26,7 +26,7 @@ server_h = require(
     "src/game/server/GameServer.h",
     "navigationStateForSession(",
     "navigationStateForEntity(",
-    "resolveSingleActiveSimulationSystemId() const",
+    "void switchSimulationContext(int systemId)",
     "applyCelestialOrbitParentParameters(int systemId)",
     "m_simulation.activeCelestialSystemId()",
 )
@@ -39,10 +39,9 @@ server_cpp = require(
     "snapshot.session.playerNavigation = {};",
     "navigationStateForSession(sessionId, sessionNavigation)",
     "outSnapshot.session.playerNavigation = sessionNavigation;",
-    "int GameServer::resolveSingleActiveSimulationSystemId() const",
-    "m_simulation.playerControlledShipIds()",
-    "simulationContextSystemId",
-    "applyCelestialOrbitParentParameters(simulationContextSystemId)",
+    "void GameServer::switchSimulationContext(int systemId)",
+    "switchSimulationContext(passSystems[pass])",
+    "applyCelestialOrbitParentParameters(systemId)",
 )
 
 for path, text in (
@@ -54,22 +53,26 @@ for path, text in (
             f"{path}: singleton m_playerNavigation returned after per-session navigation migration"
         )
 
-context_start = server_cpp.find("int GameServer::resolveSingleActiveSimulationSystemId() const")
-context_end = server_cpp.find("GameServer::navigationStateForEntity", context_start)
-if context_start >= 0 and context_end > context_start:
+# Multi-system tick (2026-11-08): the simulated systems are those of ALL ships (no primary player
+# chooses a context); every one gets its own pass.
+context_start = server_cpp.find("std::vector<int> passSystems;")
+context_end = server_cpp.find("m_simulation.setSystemPass(0);", context_start)
+if context_start < 0 or context_end <= context_start:
+    errors.append("GameServer.cpp: multi-system pass loop not found")
+else:
     context_body = server_cpp[context_start:context_end]
     if "m_simulation.playerId()" in context_body:
         errors.append(
-            "GameServer.cpp: active simulation context still selects a primary player"
+            "GameServer.cpp: the simulated systems are still chosen by a primary player"
         )
     for needle in (
-        "ship->core().transform().motion.systemId",
-        "resolvedSystemId != shipSystemId",
-        "m_simulation.activeCelestialSystemId()",
+        "m_simulation.ships()",
+        "shipPtr->core().transform().motion.systemId",
+        "m_simulation.update(time);",
     ):
         if needle not in context_body:
             errors.append(
-                f"GameServer.cpp: single-active context resolver missing {needle!r}"
+                f"GameServer.cpp: multi-system pass loop missing {needle!r}"
             )
 
 update_start = server_cpp.find("void GameServer::update(double dt)")

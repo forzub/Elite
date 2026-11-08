@@ -13,6 +13,14 @@
 #include <string>
 #include <thread>
 #include <variant>
+#include <deque>
+#include <map>
+#include <memory>
+#include <vector>
+#ifdef _WIN32
+#include <windows.h>
+#include <psapi.h>
+#endif
 
 #include <glm/geometric.hpp>
 
@@ -21,11 +29,15 @@
 #include "src/platform/ProcessSingleInstanceGuard.h"
 #include "src/game/server/HeadlessServerEndpoints.h"
 #include "src/game/server/ServerRuntime.h"
+#include "src/game/server/ServerTickProfile.h"
 #include "src/game/server/NetworkServerHost.h"
 #include "src/game/diagnostics/NavigationRuntimeLab.h"
 #include "src/game/network/NetworkEndpoint.h"
 #include "src/world/WorldParams.h"
 #include "src/world/coordinates/WorldPosition.h"
+#include "src/world/celestial/StarAtlasDatabase.h"
+#include "src/game/network/WireMessageCodec.h"
+#include "src/game/network/WireCompression.h"
 
 namespace
 {
@@ -46,6 +58,8 @@ void printUsage()
         << "  EliteServer.exe --reset-auth-state      Clear server account registrations before start (development/test)\n"
         << "  EliteServer.exe --self-test             Boot and advance the real server, then exit\n"
         << "  EliteServer.exe --self-test-navigation  Run Stage-12 live navigation proving actor\n"
+        << "  EliteServer.exe --load-test [K|2-3] [SECONDS] [move]  K player bots per star system (0 = one bot, the baseline);\n"
+        << "                                           move: travel / jump cycles (ELITE_DEV_JUMP_CHARGE_S, ELITE_DEV_ECONOMY_TICK_S)\n"
         << "  EliteServer.exe --help                  Show this help\n";
 }
 
@@ -1725,6 +1739,445 @@ int runDockTrafficProbe(double seconds, const std::string& logPath)
     return 0;
 }
 
+// ---- Load test (author 2026-11-08: "по 2-3 нпс в каждой из 61 систем ... нпс в данной ситуации
+// были имитацией игроков, т.е. сервер нагружаем той информацией, которой он оперирует по отношению
+// к игроку"). Every bot is a real player session: an authenticated account, a player ship from the
+// bootstrap pool, its own transport that receives the per-session snapshots and encodes them to
+// the wire exactly like the TCP transport (then drops the bytes), a control state every tick,
+// time syncs and galaxy map requests like a client. The ships are sent to their systems, so the
+// server simulates every system with a ship in it (the multi-system tick).
+class LoadTestTransport final : public IServerTransport
+{
+public:
+    void update(float) override {}
+    bool receiveSessionHello(game::network::SessionHello&) override { return false; }
+    bool receiveClientMessage(game::network::ClientMessage& out) override
+    {
+        if (m_messages.empty())
+            return false;
+        out = std::move(m_messages.front());
+        m_messages.pop_front();
+        return true;
+    }
+    bool receiveMapRequest(game::network::MapRequest& out) override
+    {
+        if (m_maps.empty())
+            return false;
+        out = std::move(m_maps.front());
+        m_maps.pop_front();
+        return true;
+    }
+    bool receiveTimeSyncRequest(game::network::TimeSyncRequest& out) override
+    {
+        if (m_times.empty())
+            return false;
+        out = m_times.front();
+        m_times.pop_front();
+        return true;
+    }
+    void publishSessionRejectImmediately(const game::network::SessionReject&) override { m_rejected = true; }
+    void publishSessionWelcomeImmediately(const game::network::SessionWelcome& w) override
+    {
+        m_welcome = w;
+        m_hasWelcome = true;
+    }
+    void publishSnapshot(const SimulationSnapshot& s) override { encode(s); }
+    void publishSnapshotImmediately(const SimulationSnapshot& s) override { encode(s); }
+    void sendMapResponse(game::network::MapResponse r) override { encodeAny(r); }
+    void sendTimeSyncResponse(game::network::TimeSyncResponse r) override { encodeAny(r); }
+
+    void push(game::network::ClientMessage m) { m_messages.push_back(std::move(m)); }
+    void pushMap(game::network::MapRequest m) { m_maps.push_back(std::move(m)); }
+    void pushTime(game::network::TimeSyncRequest t) { m_times.push_back(t); }
+
+    game::network::SessionWelcome m_welcome {};
+    bool m_hasWelcome = false;
+    bool m_rejected = false;
+    std::uint64_t m_bytes = 0;
+    std::uint64_t m_snapshots = 0;
+    std::uint64_t m_snapshotShips = 0;
+
+private:
+    void encode(const SimulationSnapshot& s)
+    {
+        ++m_snapshots;
+        m_snapshotShips += s.ships.size();
+        encodeAny(s);
+        if (m_breakdownWanted)
+        {
+            // what the bytes are: the snapshot encoded with one part removed at a time
+            m_breakdownWanted = false;
+            const auto size = [this](const SimulationSnapshot& v) {
+                game::network::wire::WireMessageKind kind {};
+                std::vector<std::uint8_t> payload;
+                game::network::wire::encodeMessagePayload(v, kind, payload, m_compressor);
+                return payload.size();
+            };
+            const std::size_t all = size(s);
+            SimulationSnapshot c = s;
+            c.ships.clear();
+            const std::size_t noShips = size(c);
+            c = s;
+            c.signals.clear();
+            const std::size_t noSignals = size(c);
+            c = s;
+            c.objects.clear();
+            const std::size_t noObjects = size(c);
+            c = s;
+            c.hubs.clear();
+            const std::size_t noHubs = size(c);
+            c = s;
+            c.session = {};
+            const std::size_t noSession = size(c);
+            std::cerr << "[LoadTest] snapshot " << all << " B: ships " << s.ships.size() << " = " << all - noShips << " B, signals "
+                      << s.signals.size() << " = " << all - noSignals << " B, objects " << s.objects.size() << " = " << all - noObjects
+                      << " B, hubs " << s.hubs.size() << " = " << all - noHubs << " B, session = " << all - noSession << " B\n";
+        }
+    }
+
+public:
+    bool m_breakdownWanted = false;
+
+private:
+    template <typename T>
+    void encodeAny(const T& value)
+    {
+        game::network::wire::WireMessageKind kind {};
+        std::vector<std::uint8_t> payload;
+        if (game::network::wire::encodeMessagePayload(value, kind, payload, m_compressor))
+            m_bytes += payload.size();
+    }
+    std::deque<game::network::ClientMessage> m_messages;
+    std::deque<game::network::MapRequest> m_maps;
+    std::deque<game::network::TimeSyncRequest> m_times;
+    game::network::wire::NoWireCompression m_compressor;
+};
+
+std::size_t processWorkingSetMb()
+{
+#ifdef _WIN32
+    PROCESS_MEMORY_COUNTERS pmc {};
+    if (K32GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof pmc))
+        return static_cast<std::size_t>(pmc.WorkingSetSize / (1024 * 1024));
+#endif
+    return 0;
+}
+
+// perSystem: ships per system (0 = one bot in the start system only: the baseline; -1 = 2 or 3)
+int runLoadTest(int perSystem, double measureSeconds, bool move)
+{
+    core::disableRuntimeStdoutNoise();
+    world::celestial::StarAtlasDatabase atlas;
+    if (!atlas.loadFromRuntimeOrSource())
+    {
+        std::cerr << "[LoadTest] star atlas not loaded\n";
+        return 2;
+    }
+    struct Bot
+    {
+        int systemId = -1;
+        int ordinal = 0;
+        std::unique_ptr<LoadTestTransport> transport;
+        EntityId ship {};
+        std::uint64_t tick = 0;
+        double phase = 0.0;
+        int currentSystemId = -1;     // from the authoritative snapshot, once a second
+        int jumpFromSystemId = -1;    // the system a jump was requested from (-1: none pending)
+        int jumpsRequested = 0;
+        int jumpsDone = 0;
+    };
+    std::vector<Bot> bots;
+    if (perSystem == 0)
+        bots.push_back(Bot {-1, 0});
+    else
+        for (const auto& s : atlas.systems())
+        {
+            const int n = perSystem > 0 ? perSystem : 2 + (s.id % 2);
+            for (int k = 0; k < n; ++k)
+                bots.push_back(Bot {s.id, k});
+        }
+    std::cerr << "[LoadTest] " << bots.size() << " player bots in " << (perSystem == 0 ? 1 : atlas.systems().size()) << " systems\n";
+
+    game::server::HeadlessDebugChannel debugChannel;
+    WorldParams worldParams;
+    const auto bootStart = std::chrono::steady_clock::now();
+    game::server::ServerRuntime runtime(worldParams, debugChannel, bots.size());
+    std::cerr << "[LoadTest] runtime built in " << std::chrono::duration<double>(std::chrono::steady_clock::now() - bootStart).count()
+              << " s, " << runtime.orbitalHubCount() << " orbital hubs, working set " << processWorkingSetMb() << " MB\n";
+
+    for (std::size_t i = 0; i < bots.size(); ++i)
+    {
+        auto& b = bots[i];
+        b.transport = std::make_unique<LoadTestTransport>();
+        b.phase = static_cast<double>((i * 7919) % 60);
+        if (!runtime.attachPlayerSessionTransport(*b.transport, makeSelfTestIdentity(50000u + i, 7u)) || !b.transport->m_hasWelcome)
+        {
+            std::cerr << "[LoadTest] session " << i << " not admitted\n";
+            return 3;
+        }
+        b.ship = b.transport->m_welcome.controlledEntityId;
+    }
+    const double step = runtime.fixedStepSeconds();
+    // the ships leave the start hub: a few seconds first (sessions settle), then each to its system
+    for (int i = 0; i < static_cast<int>(1.0 / step); ++i)
+        runtime.advance(step);
+    int placed = 0;
+    for (auto& b : bots)
+        if (b.systemId >= 0 && runtime.devPlaceShipInSystem(b.ship, b.systemId, b.ordinal))
+            ++placed;
+    std::cerr << "[LoadTest] " << placed << " ships sent to their systems; step " << step << " s\n";
+
+    // the move scenario: the jump neighbours (< 30 ly) of every system
+    std::map<int, std::vector<int>> neighbours;
+    for (const auto& a : atlas.systems())
+        for (const auto& o : atlas.systems())
+            if (a.id != o.id && glm::length(a.positionLy - o.positionLy) < 30.0)
+                neighbours[a.id].push_back(o.id);
+    const long cycleTicks = static_cast<long>(240.0 / step);
+    const auto at = [step](double seconds) { return static_cast<long>(seconds / step); };
+    std::size_t botIndex = 0;
+    const auto command = [](Bot& b, ClientShipCommand::Type type, int index) {
+        ClientShipCommand c;
+        c.type = type;
+        c.index = index;
+        game::network::ClientMessage m;
+        m.clientTick = b.tick;
+        m.payload = c;
+        b.transport->push(std::move(m));
+    };
+    const auto driveBots = [&](double now) {
+        botIndex = 0;
+        for (auto& b : bots)
+        {
+            ++b.tick;
+            ++botIndex;
+            ShipControlState c;
+            c.controlTick = b.tick;
+            // a pilot's minute: coast, pitch, thrust, yaw, brake (move: only while stabilized, not
+            // in the J travel phase - a turn at hundreds of km/s steers into a planet)
+            const double t = std::fmod(now + b.phase, 60.0);
+            const bool travelling = move && (static_cast<long>(now / step) + static_cast<long>(b.phase * 4.0 / step)) %
+                    static_cast<long>(240.0 / step) < static_cast<long>(110.0 / step);
+            if (travelling)
+                ;
+            else if (t >= 20.0 && t < 30.0)
+                c.pitchInput = 0.3f;
+            else if (t >= 30.0 && t < 45.0)
+                c.forwardInput = 0.4f;
+            else if (t >= 45.0 && t < 55.0)
+                c.yawInput = -0.3f;
+            else if (t >= 55.0)
+                c.forwardInput = -0.4f;
+            game::network::ClientMessage m;
+            m.clientTick = b.tick;
+            m.payload = c;
+            b.transport->push(std::move(m));
+            if (move)
+            {
+                // a 4-minute travel cycle like a player's: out of stabilization, J engine on, full J
+                // acceleration 37 s, brake 40 s; then every second cycle of every other pilot a
+                // jump to a neighbour star (< 30 ly); the others stop the J engine and stabilize
+                const long k = (static_cast<long>(now / step) + at(b.phase * 4.0)) % cycleTicks;
+                const bool jumper = ((botIndex + static_cast<std::size_t>((now + b.phase * 4.0) / 240.0)) % 2) == 0;
+                if (k == at(0.0))
+                    command(b, ClientShipCommand::ToggleStabilization, 0);
+                else if (k == at(2.0))
+                    command(b, ClientShipCommand::ToggleJEngine, 0);
+                else if (k == at(3.0))
+                    command(b, ClientShipCommand::SetFreeFlightThrust, 1);
+                else if (k == at(40.0))
+                    command(b, ClientShipCommand::SetFreeFlightThrust, 2);
+                else if (k == at(80.0))
+                    command(b, ClientShipCommand::SetFreeFlightThrust, 0);
+                else if (k == at(85.0) && jumper)
+                {
+                    const auto n = neighbours.find(b.currentSystemId);
+                    if (n != neighbours.end() && !n->second.empty())
+                    {
+                        command(b, ClientShipCommand::RequestJump, n->second[(b.tick / 7) % n->second.size()]);
+                        b.jumpFromSystemId = b.currentSystemId;
+                        ++b.jumpsRequested;
+                    }
+                }
+                else if (k == at(100.0) && !jumper)
+                    command(b, ClientShipCommand::ToggleJEngine, 0);
+                else if (k == at(105.0) && !jumper)
+                    command(b, ClientShipCommand::ToggleStabilization, 0);
+                else if (k == at(230.0) && jumper && b.jumpFromSystemId >= 0 && b.currentSystemId == b.jumpFromSystemId)
+                {
+                    // the jump did not happen: cancel, stop, stabilize
+                    command(b, ClientShipCommand::RequestJump, -1);
+                    command(b, ClientShipCommand::ToggleJEngine, 0);
+                    command(b, ClientShipCommand::ToggleStabilization, 0);
+                    b.jumpFromSystemId = -1;
+                }
+            }
+            if (b.tick % static_cast<std::uint64_t>(2.0 / step) == 0)
+            {
+                game::network::TimeSyncRequest ts;
+                ts.sequence = b.tick;
+                ts.clientSendTimeSeconds = now;
+                b.transport->pushTime(ts);
+            }
+            if ((b.tick + static_cast<std::uint64_t>(b.phase / step)) % static_cast<std::uint64_t>(60.0 / step) == 0)
+            {
+                game::network::GalaxyMapRequest map;
+                map.requestId = b.tick;
+                b.transport->pushMap(map);
+            }
+        }
+    };
+
+    // warm-up: the exits are placed by their systems' passes
+    double now = 0.0;
+    for (int i = 0; i < static_cast<int>(5.0 / step); ++i, now += step)
+    {
+        driveBots(now);
+        runtime.advance(step);
+    }
+    {
+        SimulationSnapshot snap;
+        runtime.copyAuthoritativePublishedSnapshot(snap);
+        std::map<int, int> perSys;
+        int inJump = 0;
+        for (const auto& s : snap.ships)
+        {
+            ++perSys[s.transform.motion.systemId];
+            if (s.transform.motion.jumpState != 0)
+                ++inJump;
+        }
+        std::cerr << "[LoadTest] after warm-up: " << snap.ships.size() << " ships in " << perSys.size() << " systems, " << inJump
+                  << " still in a jump exit, " << runtime.lastTickSystemPasses() << " system passes per tick\n";
+    }
+
+    for (auto& b : bots)
+        b.transport->m_bytes = b.transport->m_snapshots = b.transport->m_snapshotShips = 0;
+    bots.front().transport->m_breakdownWanted = true;
+    game::server::serverTickProfile() = {};
+    bots.back().transport->m_breakdownWanted = true;
+    std::vector<double> tickMs;
+    std::vector<double> simMs;
+    const int ticks = static_cast<int>(measureSeconds / step);
+    tickMs.reserve(ticks);
+    simMs.reserve(ticks);
+    std::map<std::uint32_t, Bot*> botByShip;
+    for (auto& b : bots)
+        botByShip[b.ship.value] = &b;
+    const auto observe = [&](bool report, double at) {
+        SimulationSnapshot snap;
+        runtime.copyAuthoritativePublishedSnapshot(snap);
+        std::map<int, int> perSys;
+        int jumpStates[4] {};
+        int freeFlight = 0;
+        int present = 0;
+        for (const auto& s : snap.ships)
+        {
+            const auto it = botByShip.find(s.id.value);
+            if (it == botByShip.end())
+                continue;
+            ++present;
+            Bot& b = *it->second;
+            const int sys = s.transform.motion.systemId;
+            if (b.currentSystemId >= 0 && sys != b.currentSystemId && b.jumpFromSystemId >= 0)
+            {
+                ++b.jumpsDone;
+                b.jumpFromSystemId = -1;
+            }
+            b.currentSystemId = sys;
+            ++perSys[sys];
+            ++jumpStates[std::min<int>(3, s.transform.motion.jumpState)];
+            if (s.transform.motion.freeFlight)
+                ++freeFlight;
+        }
+        if (!report)
+            return;
+        int requested = 0, done = 0;
+        for (const auto& b : bots)
+        {
+            requested += b.jumpsRequested;
+            done += b.jumpsDone;
+        }
+        std::cerr << "[LoadTest] t=" << at << " s: " << present << " of " << bots.size() << " player ships in " << perSys.size()
+                  << " systems; normal flight " << freeFlight << "; charging " << jumpStates[1] << ", charged-waiting " << jumpStates[2]
+                  << ", exiting " << jumpStates[3] << "; jumps requested " << requested << ", done " << done << "\n";
+    };
+    observe(false, 0.0);
+    const auto wallStart = std::chrono::steady_clock::now();
+    const int secondTicks = static_cast<int>(1.0 / step);
+    for (int i = 0; i < ticks; ++i, now += step)
+    {
+        driveBots(now);
+        const auto t0 = std::chrono::steady_clock::now();
+        runtime.advance(step);
+        tickMs.push_back(std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count());
+        simMs.push_back(runtime.lastTickSimulationSeconds() * 1000.0);
+        if (i % secondTicks == 0)
+            observe(i % (30 * secondTicks) == 0, i * step);
+    }
+    observe(true, ticks * step);
+    const double wall = std::chrono::duration<double>(std::chrono::steady_clock::now() - wallStart).count();
+    const auto stats = [](std::vector<double> v) {
+        std::sort(v.begin(), v.end());
+        double sum = 0.0;
+        for (double x : v)
+            sum += x;
+        char b[160];
+        std::snprintf(b, sizeof b, "avg %.3f  p50 %.3f  p95 %.3f  p99 %.3f  max %.3f ms", sum / v.size(), v[v.size() / 2],
+                      v[v.size() * 95 / 100], v[v.size() * 99 / 100], v.back());
+        return std::string(b);
+    };
+    std::uint64_t bytes = 0, snaps = 0, snapShips = 0;
+    for (const auto& b : bots)
+    {
+        bytes += b.transport->m_bytes;
+        snaps += b.transport->m_snapshots;
+        snapShips += b.transport->m_snapshotShips;
+    }
+    std::cerr << "[LoadTest] RESULT bots " << bots.size() << ", systems simulated " << runtime.lastTickSystemPasses() << ", ticks " << ticks
+              << " (" << measureSeconds << " s of game time at " << 1.0 / step << " Hz) in " << wall << " s wall\n";
+    std::cerr << "[LoadTest] RESULT server tick (whole: sessions, simulation, replication, wire encoding): " << stats(tickMs) << "\n";
+    std::cerr << "[LoadTest] RESULT simulation part (all system passes): " << stats(simMs) << "\n";
+    {
+        double busy = 0.0;
+        for (double x : tickMs)
+            busy += x;
+        std::cerr << "[LoadTest] RESULT tick budget " << step * 1000.0 << " ms: the server ticks used " << 100.0 * busy / 1000.0 / measureSeconds
+                  << " % of one core (" << wall << " s wall with the test driver)\n";
+    }
+    std::cerr << "[LoadTest] RESULT wire: " << bytes / measureSeconds / 1024.0 << " KiB/s total, "
+              << bytes / measureSeconds / 1024.0 / bots.size() << " KiB/s per player, " << (snaps ? snapShips / snaps : 0)
+              << " ships per snapshot, " << snaps / measureSeconds / bots.size() << " snapshots/s per player\n";
+    std::cerr << "[LoadTest] RESULT working set " << processWorkingSetMb() << " MB\n";
+    {
+        const auto& p = game::server::serverTickProfile();
+        const double n = std::max<long long>(1, p.ticks);
+        char b[512];
+        std::snprintf(b, sizeof b,
+                      "[LoadTest] RESULT per tick (ms): simulation %.3f, sensors %.3f, snapshot build %.3f, session plans %.3f, "
+                      "selection %.3f, copies %.3f, publish+encode %.3f, inbound %.3f, map requests %.3f\n",
+                      1000 * p.simulation / n, 1000 * p.sensors / n, 1000 * p.snapshotBuild / n, 1000 * p.sessionPlan / n,
+                      1000 * p.sessionSelect / n, 1000 * p.sessionCopy / n, 1000 * p.sessionPublish / n, 1000 * p.inbound / n,
+                      1000 * p.mapRequests / n);
+        std::cerr << b;
+        std::snprintf(b, sizeof b,
+                      "[LoadTest] RESULT simulation stages per tick (ms): ship maintenance %.3f, hubs %.3f, hub frames + free flight %.3f, "
+                      "static objects %.3f, AI / controls %.3f, physics %.3f, signals / radar %.3f\n",
+                      1000 * p.simStage[0] / n, 1000 * p.simStage[1] / n, 1000 * p.simStage[2] / n, 1000 * p.simStage[3] / n,
+                      1000 * p.simStage[4] / n, 1000 * p.simStage[5] / n, 1000 * p.simStage[6] / n);
+        std::cerr << b;
+        std::snprintf(b, sizeof b, "[LoadTest] RESULT snapshot build per tick (ms): ship/object DTOs %.3f, session data %.3f, canonical merge %.3f\n",
+                      1000 * p.snapshotParts[0] / n, 1000 * p.snapshotParts[1] / n, 1000 * p.snapshotParts[2] / n);
+        std::cerr << b;
+        if (p.economyTicks > 0)
+        {
+            std::snprintf(b, sizeof b, "[LoadTest] RESULT economy: %lld full rounds (a new day for every hub), %.3f ms per round, %.3f ms per server tick (%lld rows)\n",
+                          p.economyTicks, 1000 * p.economy / p.economyTicks, 1000 * p.economy / n, p.economyQuotes);
+            std::cerr << b;
+        }
+    }
+    return 0;
+}
+
 int runHeadlessServer(bool resetAuthState)
 {
     core::disableRuntimeStdoutNoise();
@@ -1805,6 +2258,10 @@ int main(int argc, char** argv)
     bool oneClientSelfTest = false;
     bool resetAuthState = false;
     bool haveListenEndpoint = false;
+    bool loadTest = false;
+    int loadTestPerSystem = -1;
+    double loadTestSeconds = 30.0;
+    bool loadTestMove = false;
     double dockTrafficProbeSeconds = 0.0;
     std::string dockTrafficProbeLog;
     game::network::NetworkEndpoint listenEndpoint;
@@ -1834,6 +2291,24 @@ int main(int argc, char** argv)
             }
             dockTrafficProbeSeconds = std::atof(argv[++i]);
             dockTrafficProbeLog = argv[++i];
+            continue;
+        }
+
+        if (arg == "--load-test")
+        {
+            loadTest = true;
+            if (i + 1 < argc && argv[i + 1][0] != '-')
+            {
+                const std::string k = argv[++i];
+                loadTestPerSystem = k == "2-3" ? -1 : std::atoi(k.c_str());
+            }
+            if (i + 1 < argc && argv[i + 1][0] != '-')
+                loadTestSeconds = std::atof(argv[++i]);
+            if (i + 1 < argc && std::string(argv[i + 1]) == "move")
+            {
+                loadTestMove = true;
+                ++i;
+            }
             continue;
         }
 
@@ -1911,6 +2386,9 @@ int main(int argc, char** argv)
 
     if (headlessSelfTest)
         return runHeadlessSelfTest();
+
+    if (loadTest)
+        return runLoadTest(loadTestPerSystem, loadTestSeconds, loadTestMove);
 
     if (navigationSelfTest)
         return runNavigationRuntimeSelfTest();

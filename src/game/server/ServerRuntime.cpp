@@ -75,6 +75,26 @@ ServerRuntime::ServerRuntime(
 
 ServerRuntime::~ServerRuntime() = default;
 
+bool ServerRuntime::devPlaceShipInSystem(EntityId shipId, int systemId, int ordinal)
+{
+    return m_server->devPlaceShipInSystem(shipId, systemId, ordinal);
+}
+
+std::size_t ServerRuntime::lastTickSystemPasses() const noexcept
+{
+    return m_server->lastTickSystemPasses();
+}
+
+double ServerRuntime::lastTickSimulationSeconds() const noexcept
+{
+    return m_server->lastTickSimulationSeconds();
+}
+
+std::size_t ServerRuntime::orbitalHubCount() const
+{
+    return m_server->orbitalHubCount();
+}
+
 ServerAdvanceResult ServerRuntime::advance(double elapsedSeconds)
 {
     // Debug commands are authoritative requests. Process them at the runtime

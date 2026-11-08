@@ -1,4 +1,5 @@
 #include <atomic>
+#include <chrono>
 #include <thread>
 
 #include "src/game/system_map/PlanetBodyOrientation.h"
@@ -23,6 +24,10 @@
 
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/world/celestial/WorldSitesCatalog.h"
+#include "src/game/scene/GameSceneSetup.h"
+#include "src/game/server/ServerTickProfile.h"
+#include "src/game/economy/EconomyModel.h"
+#include "src/game/navigation/rules/BodyFlightRules.h"
 #include <map>
 #include <tuple>
 #include "src/game/world_state/InitialWorldState.h"
@@ -194,6 +199,9 @@ m_simulation.setCelestialBodyKinematicStateAu(
         m_simulation.buildInitialScene(initialWorldState);
 
         applyCelestialOrbitParentParameters(initialSystemId);
+        m_gravityParametersAppliedSystems.insert(initialSystemId);
+        m_initialSimulationSystemId = initialSystemId;
+        materializeWorldSiteHubs(initialSystemId);
 
         // Готовим хабы, станции и reference frames до размещения игрока.
         // Это не полный update и не создаёт грязный стартовый snapshot.
@@ -497,46 +505,6 @@ m_simulation.setCelestialBodyKinematicStateAu(
 
 
 
-int GameServer::resolveSingleActiveSimulationSystemId() const
-{
-    int resolvedSystemId = -1;
-
-    for (const EntityId controlledId :
-         m_simulation.playerControlledShipIds())
-    {
-        const Ship* ship = m_simulation.getShip(controlledId);
-        if (!ship)
-            continue;
-
-        const int shipSystemId =
-            ship->core().transform().motion.systemId;
-
-        // Interstellar controlled entities do not nominate a local celestial
-        // runtime. Keep whichever materialized system is already active until
-        // the later multi-system/interstellar runtime stage owns that domain.
-        if (shipSystemId < 0)
-            continue;
-
-        if (resolvedSystemId < 0)
-        {
-            resolvedSystemId = shipSystemId;
-            continue;
-        }
-
-        if (resolvedSystemId != shipSystemId)
-        {
-            // The current production simulation still materializes one local
-            // celestial system at a time. Crucially, do not pick a "primary
-            // player" here: keep the already-active context until a real
-            // multi-system runtime can host both systems simultaneously.
-            return m_simulation.activeCelestialSystemId();
-        }
-    }
-
-    return resolvedSystemId >= 0
-        ? resolvedSystemId
-        : m_simulation.activeCelestialSystemId();
-}
 
 world::celestial::PlayerNavigationState
 GameServer::navigationStateForEntity(EntityId entityId) const
@@ -598,6 +566,125 @@ GameServer::celestialSnapshotForSystem(int systemId) const
     );
 }
 
+
+void GameServer::switchSimulationContext(int systemId)
+{
+    std::unordered_map<std::string, glm::dvec3> celestialPositionsAu;
+    std::unordered_map<std::string, glm::dvec3> celestialVelocitiesAuPerSecond;
+    if (const auto* celestial = celestialSnapshotForSystem(systemId))
+        for (const auto& state : celestial->bodies)
+        {
+            celestialPositionsAu[state.id] = state.positionAu;
+            celestialVelocitiesAuPerSecond[state.id] = state.velocityAuPerSecond;
+        }
+    m_simulation.setCelestialBodyKinematicStateAu(systemId, celestialPositionsAu, celestialVelocitiesAuPerSecond);
+    if (m_gravityParametersAppliedSystems.insert(systemId).second)
+        applyCelestialOrbitParentParameters(systemId);
+    m_appliedSimulationContextSystemId = systemId;
+}
+
+void GameServer::materializeWorldSiteHubs(int startSystemId)
+{
+    world::celestial::WorldSitesCatalog sites;
+    if (!sites.loadFromRuntimeOrSource())
+        return;
+    int made = 0;
+    int systems = 0;
+    for (const auto& summary : m_starAtlas.systems())
+    {
+        const int systemId = summary.id;
+        if (systemId == startSystemId)
+            continue;
+        const auto* system = m_starAtlas.findSystem(systemId);
+        if (!system)
+            continue;
+        // body -> its most populated site (an orbital one first: it is a station already)
+        std::map<std::string, const world::celestial::WorldSite*> best;
+        for (const auto& s : sites.sitesInSystem(systemId))
+        {
+            const auto* b = [&]() -> const world::celestial::CelestialBodyDefinition* {
+                for (const auto& body : system->bodies)
+                    if (body.id == s.parentBodyId)
+                        return &body;
+                return nullptr;
+            }();
+            if (!b || b->radiusKm <= 0.0 || b->gravitationalParameterM3s2 <= 0.0)
+                continue;   // a belt / trojan reservoir, not a body a hub can orbit
+            const bool orbit = s.placement == world::celestial::WorldSitePlacementKind::Orbit && s.altitudeKm > 0.0;
+            auto& cur = best[s.parentBodyId];
+            const bool curOrbit = cur && cur->placement == world::celestial::WorldSitePlacementKind::Orbit && cur->altitudeKm > 0.0;
+            if (!cur || (orbit && !curOrbit) || (orbit == curOrbit && s.population > cur->population))
+                cur = &s;
+        }
+        if (best.empty())
+            continue;
+        switchSimulationContext(systemId);
+        ++systems;
+        for (const auto& [bodyId, s] : best)
+        {
+            const world::celestial::CelestialBodyDefinition* body = nullptr;
+            for (const auto& b : system->bodies)
+                if (b.id == bodyId)
+                    body = &b;
+            const double radiusM = body->radiusKm * 1000.0;
+            const double floorM = game::navigation::rules::floorAltitudeM(radiusM, std::max(radiusM, body->atmosphereOuterRadiusKm * 1000.0));
+            game::world_state::InitialWorldStateOrbitalHub hub;
+            hub.id = s->id;
+            hub.name = s->name;
+            hub.owner = s->operatorName.empty() ? s->polityName : s->operatorName;
+            hub.systemId = systemId;
+            hub.parentBodyId = bodyId;
+            hub.mapObjectModuleId = s->id + ".station";
+            hub.motion.type = "parent_orbit";
+            hub.motion.orbitalPeriodPolicy = world::orbits::OrbitalPeriodPolicy::Kepler;
+            hub.motion.orbitalPeriodSeconds = 0.0;
+            // a surface / belt site: its hub on a low orbit just above the J floor
+            hub.motion.altitudeKm = s->placement == world::celestial::WorldSitePlacementKind::Orbit && s->altitudeKm > 0.0
+                ? std::max(s->altitudeKm, floorM / 1000.0 + 100.0)
+                : floorM / 1000.0 + 300.0;
+            hub.motion.selfRotationPeriodSeconds = 180.0;
+            hub.motion.inclinationDeg = s->inclinationDeg;
+            const auto h = std::hash<std::string> {}(s->id);
+            hub.motion.longitudeOfAscendingNodeDeg = static_cast<double>(h % 360);
+            hub.motion.initialPhaseDeg = static_cast<double>((h / 360) % 360);
+            game::world_state::InitialWorldStateHubModule station;
+            station.id = hub.mapObjectModuleId;
+            station.type = "command_station";
+            station.name = s->name;
+            hub.modules.push_back(station);
+            if (game::scene::spawnOrbitalHub(m_simulation, hub))
+                ++made;
+            else
+                std::cerr << "[WorldSiteHubs] " << s->id << " on " << bodyId << ": not created" << std::endl;
+        }
+    }
+    switchSimulationContext(startSystemId);
+    std::cerr << "[WorldSiteHubs] " << made << " hubs in " << systems << " inhabited systems (one per body with world sites)" << std::endl;
+}
+
+bool GameServer::devPlaceShipInSystem(EntityId shipId, int systemId, int ordinal)
+{
+    const auto* system = m_starAtlas.findSystem(systemId);
+    if (!system)
+        return false;
+    std::vector<std::string> exits;
+    for (const auto& [hubId, hub] : m_simulation.orbitalHubs())
+        if (hub.systemId == systemId && std::find(exits.begin(), exits.end(), hub.parentBodyId) == exits.end())
+            exits.push_back(hub.parentBodyId);
+    std::sort(exits.begin(), exits.end());
+    if (exits.empty())
+    {
+        std::vector<const world::celestial::CelestialBodyDefinition*> planets;
+        for (const auto& b : system->bodies)
+            if (b.type == world::celestial::BodyType::Planet && b.radiusKm >= 1000.0)
+                planets.push_back(&b);
+        std::sort(planets.begin(), planets.end(), [](const auto* a, const auto* b) { return a->massKg > b->massKg; });
+        for (const auto* p : planets)
+            exits.push_back(p->id);
+    }
+    const std::string exit = exits.empty() ? std::string() : exits[static_cast<std::size_t>(ordinal) % exits.size()];
+    return m_simulation.devPlaceShipInSystem(shipId, systemId, system->name, exit);
+}
 
 void GameServer::applyCelestialOrbitParentParameters(int systemId)
 {
@@ -1120,50 +1207,82 @@ m_simulation.setOrbitalUniverseTimeSeconds(
     universeTime
 );
 
-// The materialized celestial context is a world-runtime concern, not a
-// per-session navigation value. If every connected human ship currently names
-// the same local system, that system may nominate the single materialized
-// context. Split-system play remains explicitly deferred to multi-system
-// runtime; no arbitrary "primary player" is allowed to choose the context.
-const int simulationContextSystemId =
-    resolveSingleActiveSimulationSystemId();
-
-if (simulationContextSystemId >= 0)
+// Multi-system tick (author 2026-11-08: "сервер должен считать те системы или участки систем где
+// находятся игроки", "подключишь симуляцию всех систем"): every system with a ship in it gets a
+// pass - its bodies from the analytic ephemeris at this universe time (nothing is integrated for
+// them), its gravity / hubs as the active context - and the simulation advances that system's
+// ships. Pass 0 also runs the once-per-tick work. The system the server started in is always
+// simulated (its hubs / dock traffic run without ships).
 {
-    std::unordered_map<std::string, glm::dvec3> celestialPositionsAu;
-    std::unordered_map<std::string, glm::dvec3>
-        celestialVelocitiesAuPerSecond;
-
-    if (const auto* celestial =
-            celestialSnapshotForSystem(simulationContextSystemId))
+    const auto passStart = std::chrono::steady_clock::now();
+    std::vector<int> passSystems;
+    if (m_initialSimulationSystemId >= 0)
+        passSystems.push_back(m_initialSimulationSystemId);
+    for (const auto& [shipId, shipPtr] : m_simulation.ships())
     {
-        for (const auto& state : celestial->bodies)
-        {
-            celestialPositionsAu[state.id] = state.positionAu;
-            celestialVelocitiesAuPerSecond[state.id] =
-                state.velocityAuPerSecond;
-        }
+        (void)shipId;
+        if (!shipPtr)
+            continue;
+        const int systemId = shipPtr->core().transform().motion.systemId;
+        if (systemId >= 0 && std::find(passSystems.begin(), passSystems.end(), systemId) == passSystems.end())
+            passSystems.push_back(systemId);
     }
-
-    m_simulation.setCelestialBodyKinematicStateAu(
-        simulationContextSystemId,
-        celestialPositionsAu,
-        celestialVelocitiesAuPerSecond
-    );
-
-    if (m_appliedSimulationContextSystemId !=
-        simulationContextSystemId)
+    for (std::size_t pass = 0; pass < passSystems.size(); ++pass)
     {
-        applyCelestialOrbitParentParameters(simulationContextSystemId);
+        switchSimulationContext(passSystems[pass]);
+        m_simulation.setSystemPass(static_cast<int>(pass));
+        m_simulation.update(time);
     }
+    m_simulation.setSystemPass(0);
+    m_lastTickSystemPasses = passSystems.size();
+    m_lastTickSimulationSeconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - passStart).count();
+    game::server::serverTickProfile().simulation += m_lastTickSimulationSeconds;
 }
-
-m_simulation.update(time);
 
 // Navigation sensors observe the completed authoritative epoch. Their cadence
 // is device-owned and uses universe time; render/snapshot FPS cannot create a
 // measurement. The synthetic radar asks for truth rows only when a scan is due.
-updateNavigationSensorDevices(universeTime);
+{
+    game::server::ScopedTickTimer timer(game::server::serverTickProfile().sensors);
+    updateNavigationSensorDevices(universeTime);
+}
+// DEV / load test (author 2026-11-08: "погоняй эту симуляцию ... с тиками по экономике"): the
+// economy is a deterministic function of the day computed by the clients today; with
+// ELITE_DEV_ECONOMY_TICK_S = T the server recomputes every hub's market / events / board once per
+// T game seconds (each round a new day) - the work a server-held economy would do per day. The
+// round is spread over the T seconds, a slice of hubs per tick (all at once: 57 ms, a 170 ms tick).
+{
+    static const double economyTickS = [] {
+        const char* v = std::getenv("ELITE_DEV_ECONOMY_TICK_S");
+        return v && *v ? std::atof(v) : 0.0;
+    }();
+    static std::size_t economyNext = 0;
+    static int economyDayOffset = 0;
+    const auto& economy = game::economy::EconomyModel::instance();
+    if (economyTickS > 0.0 && !economy.hubs().empty() && time.gameplayDeltaSeconds > 0.0)
+    {
+        auto& profile = game::server::serverTickProfile();
+        game::server::ScopedTickTimer timer(profile.economy);
+        const auto& hubs = economy.hubs();
+        const double ticksPerRound = std::max(1.0, economyTickS / time.gameplayDeltaSeconds);
+        const std::size_t slice = static_cast<std::size_t>(std::ceil(static_cast<double>(hubs.size()) / ticksPerRound));
+        const int day = game::economy::EconomyModel::dayOf(universeTime) + economyDayOffset;
+        for (std::size_t k = 0; k < slice && economyNext < hubs.size(); ++k, ++economyNext)
+        {
+            const auto& hub = hubs[economyNext];
+            const auto quotes = economy.market(hub.id, day);
+            const auto events = economy.events(hub.id, day);
+            const auto board = economy.board(hub.id, day);
+            profile.economyQuotes += static_cast<long long>(quotes.size() + events.size() + board.size());
+        }
+        if (economyNext >= hubs.size())
+        {
+            economyNext = 0;
+            ++economyDayOffset;
+            ++profile.economyTicks;
+        }
+    }
+}
 
 
 
@@ -1181,18 +1300,31 @@ updateNavigationSensorDevices(universeTime);
         // Snapshot construction belongs to the publication cadence. The
         // simulation step above mutates authoritative state only; replication
         // DTOs are materialized here when they can actually be delivered.
-        m_lastSnapshot =
-            m_simulation.buildReplicationSnapshot(m_serverTick);
-        populateClientSessionSnapshot(m_lastSnapshot);
+        game::server::ScopedTickTimer timer(game::server::serverTickProfile().snapshotBuild);
+        {
+            game::server::ScopedTickTimer t1(game::server::serverTickProfile().snapshotParts[0]);
+            m_lastSnapshot =
+                m_simulation.buildReplicationSnapshot(m_serverTick);
+        }
+        {
+            game::server::ScopedTickTimer t2(game::server::serverTickProfile().snapshotParts[1]);
+            populateClientSessionSnapshot(m_lastSnapshot);
+        }
+        game::server::ScopedTickTimer t3(game::server::serverTickProfile().snapshotParts[2]);
         m_canonicalReplicationSnapshot =
-            game::network::materializeCanonicalReplicationSnapshot(
+            m_lastSnapshot.replication.entitySetMode == game::network::ReplicatedEntitySetMode::FullAuthoritativeSet
+            ? game::network::materializeCanonicalFromFullSet(std::move(m_canonicalReplicationSnapshot), m_lastSnapshot)
+            : game::network::materializeCanonicalReplicationSnapshot(
                 &m_canonicalReplicationSnapshot,
                 m_lastSnapshot
             );
         m_forceSnapshotPublication = false;
     }
 
-    processPendingMapRequests();
+    {
+        game::server::ScopedTickTimer timer(game::server::serverTickProfile().mapRequests);
+        processPendingMapRequests();
+    }
 }
 
 bool GameServer::enqueueMapRequest(
@@ -1948,14 +2080,37 @@ bool GameServer::copyHydratedSnapshotForSession(
 bool GameServer::copySparseSnapshotForSession(
     game::network::ServerSessionId sessionId,
     const game::server::ReplicationPublicationSelection& selection,
-    SimulationSnapshot& outSnapshot
+    SimulationSnapshot& outSnapshot,
+    int& inOutPublishedSystemId
 ) const
 {
     world::celestial::PlayerNavigationState sessionNavigation;
     if (!navigationStateForSession(sessionId, sessionNavigation))
         return false;
 
-    outSnapshot = m_lastSnapshot;
+    // Multi-system server (load test 2026-11-08: every snapshot carried all 110 station objects /
+    // 107 hubs / all signals of all 61 systems, 134 KB, 2.2 MB/s per player): a session gets the
+    // objects / hubs / signals of its own system only; the ships are selected below (interest).
+    int systemId = -1;
+    if (const Ship* own = m_simulation.getShip(controlledEntityForSession(sessionId)))
+        systemId = own->core().transform().motion.systemId;
+    outSnapshot.metadata = m_lastSnapshot.metadata;
+    outSnapshot.replication = m_lastSnapshot.replication;
+    outSnapshot.session = m_lastSnapshot.session;
+    outSnapshot.signals.clear();
+    for (const auto& signal : m_lastSnapshot.signals)
+        if (signal.systemId == systemId)
+            outSnapshot.signals.push_back(signal);
+    outSnapshot.objects.clear();
+    for (const auto& object : m_lastSnapshot.objects)
+        if (object.systemId == systemId)
+            outSnapshot.objects.push_back(object);
+    outSnapshot.hubs.clear();
+    for (const auto& hub : m_lastSnapshot.hubs)
+        if (hub.systemId == systemId)
+            outSnapshot.hubs.push_back(hub);
+    const int leftSystemId = inOutPublishedSystemId != systemId ? inOutPublishedSystemId : -1;
+    inOutPublishedSystemId = systemId;
     outSnapshot.session.playerNavigation = sessionNavigation;
     outSnapshot.session.ownedNavigationAssets =
         ownedNavigationAssetsForSession(sessionId);
@@ -1966,6 +2121,16 @@ bool GameServer::copySparseSnapshotForSession(
     outSnapshot.replication.removedShipIds = selection.removedShipIds;
     outSnapshot.replication.removedObjectIds = selection.removedObjectIds;
     outSnapshot.replication.removedHubIds = selection.removedHubIds;
+    if (leftSystemId >= 0)
+    {
+        // the session left a system (a jump): the client drops what it kept of it
+        for (const auto& object : m_lastSnapshot.objects)
+            if (object.systemId == leftSystemId)
+                outSnapshot.replication.removedObjectIds.push_back(object.id);
+        for (const auto& hub : m_lastSnapshot.hubs)
+            if (hub.systemId == leftSystemId)
+                outSnapshot.replication.removedHubIds.push_back(hub.id);
+    }
 
     const auto isHydrationId =
         [&](EntityId id)

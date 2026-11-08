@@ -94,8 +94,8 @@ if set_kinematics is None:
 else:
     for token in (
         "m_activeCelestialSystemId != systemId",
+        "m_parkedCelestialContexts",
         "m_celestialBodyGravityParameters.clear()",
-        "m_hubNavigationFrames.clear()",
         "m_gravityBodies.clear()",
         "m_orbitalCorridors.clear()",
     ):
@@ -244,9 +244,14 @@ server_update = function_body(server_text, "void GameServer::update(double dt)")
 if server_update is None:
     fail(server_cpp, "could not locate GameServer update")
 else:
-    if "m_simulation.setCelestialBodyKinematicStateAu(\n        simulationContextSystemId," not in server_update:
+    # multi-system tick (2026-11-08): one pass per occupied system, each after an explicit
+    # world-runtime context switch (its bodies, its gravity / orbit-parent parameters)
+    if "switchSimulationContext(passSystems[pass])" not in server_update or "m_simulation.setSystemPass(" not in server_update:
+        fail(server_cpp, "server does not switch the world-runtime system context before each system pass")
+    switch_body = function_body(server_text, "void GameServer::switchSimulationContext(int systemId)")
+    if switch_body is None or "m_simulation.setCelestialBodyKinematicStateAu(systemId," not in switch_body:
         fail(server_cpp, "server injects celestial kinematics without explicit world-runtime system id")
-    if "m_appliedSimulationContextSystemId" not in server_update:
+    elif "applyCelestialOrbitParentParameters(systemId)" not in switch_body or "m_appliedSimulationContextSystemId" not in switch_body:
         fail(server_cpp, "server does not rebuild gravity/orbit-parent parameters after a system context change")
 
 if errors:

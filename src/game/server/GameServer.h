@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <unordered_set>
 #include <atomic>
 #include <memory>
 #include <mutex>
@@ -83,7 +84,8 @@ public:
     bool copySparseSnapshotForSession(
         game::network::ServerSessionId sessionId,
         const game::server::ReplicationPublicationSelection& selection,
-        SimulationSnapshot& outSnapshot
+        SimulationSnapshot& outSnapshot,
+        int& inOutPublishedSystemId
     ) const;
 
     std::vector<game::navigation::OwnedNavigationAsset>
@@ -317,6 +319,16 @@ private:
     world::time::UniverseClock m_universeClock;
     double m_lastUniverseTimeSeconds = 0.0;
     int m_appliedSimulationContextSystemId = -1;
+    // multi-system tick: the start system (always simulated), the systems whose gravity parameters
+    // are in the simulation's (parked) contexts, the last tick's pass count / simulation wall time
+    int m_initialSimulationSystemId = -1;
+    std::unordered_set<int> m_gravityParametersAppliedSystems;
+public:
+    std::size_t lastTickSystemPasses() const noexcept { return m_lastTickSystemPasses; }
+    double lastTickSimulationSeconds() const noexcept { return m_lastTickSimulationSeconds; }
+private:
+    std::size_t m_lastTickSystemPasses = 0;
+    double m_lastTickSimulationSeconds = 0.0;
 
     // J terrain contact: the surface field of a body (the renderer's loader),
     // loaded in the background on the first low pass, then sampled per tick.
@@ -353,6 +365,18 @@ private:
     const world::celestial::CelestialSystemSnapshot*
     celestialSnapshotForSystem(int systemId) const;
 
-    int resolveSingleActiveSimulationSystemId() const;
     void applyCelestialOrbitParentParameters(int systemId);
+    // the simulation's active celestial context -> systemId (its bodies at this universe time, its
+    // gravity parameters on the first visit)
+    void switchSimulationContext(int systemId);
+    // the hubs of the inhabited systems other than the start one (author 2026-11-08: "в населенных
+    // системах есть хабы? если нет - сделай хотя бы по одному на жилую зону"): one hub per body
+    // with world sites, from its most populated orbital site
+    void materializeWorldSiteHubs(int startSystemId);
+public:
+    // DEV / load test: send a ship to systemId (ordinal picks the exit body: the hub bodies first,
+    // else the planets by mass)
+    bool devPlaceShipInSystem(EntityId shipId, int systemId, int ordinal);
+    std::size_t orbitalHubCount() const { return m_simulation.orbitalHubs().size(); }
+private:
 };

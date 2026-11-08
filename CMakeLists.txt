@@ -912,6 +912,7 @@ if(ELITE_BUILD_SERVER)
         src/game/simulation/GameSimulationFreeFlight.cpp
         src/game/simulation/GameSimulationRoute.cpp
         src/game/simulation/GameSimulationJump.cpp
+        src/game/economy/EconomyModel.cpp
         src/game/simulation/GameSimulationZones.cpp
         src/game/simulation/GameSimulationCombat.cpp
         src/game/combat/WeaponCatalog.cpp

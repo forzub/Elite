@@ -113,6 +113,11 @@ void GameSimulation::updateJumps(double dt)
         auto& tr = ship->core().transform();
         auto& motion = tr.motion;
         auto& frame = motion.travelFrame;
+        if (!passOwns(ship))
+        {
+            ++it;   // another system's pass (a jumped ship waits for its new system's pass)
+            continue;
+        }
 
         if (!j.jumped)
         {
@@ -178,7 +183,7 @@ void GameSimulation::updateJumps(double dt)
         }
 
         // ---- after the jump: wait for the new system's bodies, then the exit orbit
-        if (m_activeCelestialSystemId != j.targetSystemId || m_gravityBodies.empty())
+        if (m_gravityBodies.empty())
         {
             if (++j.waitTicks % 500 == 0)
                 std::cerr << "[Jump] ship " << id.value << ": waiting for system " << j.targetSystemId << " (active "
@@ -254,7 +259,16 @@ void GameSimulation::updateJumps(double dt)
         if (glm::length(normal) < 1.0e-9)
             normal = glm::dvec3(0.0, 1.0, 0.0);
         normal = glm::normalize(normal);
-        const glm::dvec3 tangent = glm::normalize(glm::cross(normal, radial));
+        glm::dvec3 tangent = glm::normalize(glm::cross(normal, radial));
+        if (!star)
+        {
+            // every ship its own exit point on the lit side (load test 2026-11-08: all the ships
+            // jumping to one planet exited at ONE point - inside each other, and each then blocked
+            // the other's J engine / next jump for good): +-60 deg along the orbit by the ship id
+            const double a = glm::radians(static_cast<double>((id.value * 37u) % 121u) - 60.0);
+            radial = glm::normalize(std::cos(a) * radial + std::sin(a) * tangent);
+            tangent = glm::normalize(glm::cross(normal, radial));
+        }
         frame.originMeters = exit->centerMeters + radial * r;
         frame.linearVelocityMps = bodyVel + (star ? glm::dvec3(0.0) : tangent * std::sqrt(exit->gravitationalParameterM3s2 / r));
         motion.localPositionMeters = glm::dvec3(0.0);
@@ -278,4 +292,55 @@ void GameSimulation::updateJumps(double dt)
                   << std::endl;
         it = m_jumps.erase(it);
     }
+}
+
+bool GameSimulation::devPlaceShipInSystem(EntityId id, int systemId, const std::string& systemName, const std::string& exitBodyId)
+{
+    Ship* ship = getShip(id);
+    if (!ship || systemId < 0)
+        return false;
+    auto& tr = ship->core().transform();
+    auto& motion = tr.motion;
+    if (!motion.freeFlight || m_freeFlights.count(id) == 0)
+        (void)toggleFreeFlight(id);   // out of a hub frame into normal flight
+    if (!motion.freeFlight || m_freeFlights.count(id) == 0)
+    {
+        std::cerr << "[Jump] DEV place ship " << id.value << " in system " << systemId << ": not in normal flight" << std::endl;
+        return false;
+    }
+    m_freeFlights[id].localFrame = false;
+    auto& frame = motion.travelFrame;
+    motion.systemId = systemId;
+    frame.systemId = systemId;
+    motion.hubId.clear();
+    motion.parentBodyId.clear();
+    motion.freeFlightReferenceId.clear();
+    motion.freeFlightReferenceVelocityMps = glm::dvec3(0.0);
+    motion.freeFlightOrbitBodyId.clear();
+    motion.jEngine = false;
+    motion.jStopping = false;
+    motion.jAccelMps2 = motion.jAccelCommandMps2 = 0.0;
+    motion.freeFlightThrust = 0;
+    frame.originMeters = glm::dvec3(PlaceholderOrbitM, 0.0, 0.0);
+    frame.linearVelocityMps = glm::dvec3(0.0);
+    frame.linearAccelerationMps2 = glm::dvec3(0.0);
+    motion.localPositionMeters = glm::dvec3(0.0);
+    motion.localVelocityMps = glm::dvec3(0.0);
+    tr.setWorldPositionMeters(frame.originMeters);
+    m_shipReferenceBindings.erase(id);
+    motion.matchedToReferenceFrame = false;
+    auto& f = m_freeFlights[id];
+    f.lastPrimaryId.clear();
+    f.primaryBodyId.clear();
+    f.autoStabilizeArmed = false;
+    ActiveJump j;
+    j.targetSystemId = systemId;
+    j.targetName = systemName;
+    j.exitBodyId = exitBodyId;
+    j.jumped = true;
+    m_jumps[id] = j;
+    motion.jumpState = 3;
+    motion.jumpTargetSystemId = systemId;
+    motion.jumpTargetName = systemName;
+    return true;
 }

@@ -4,6 +4,7 @@
 #include <cmath>
 #include <string>
 #include <utility>
+#include <unordered_map>
 
 #include "src/game/simulation/SimulationSnapshot.h"
 
@@ -422,6 +423,88 @@ inline SimulationSnapshot materializeCanonicalReplicationSnapshot(
     canonical.replication.removedObjectIds.clear();
     canonical.replication.removedHubIds.clear();
 
+    return canonical;
+}
+
+/*
+    The server's own canonical sample from a FullAuthoritativeSet snapshot, consuming the previous
+    canonical sample (load test 2026-11-08: the generic merge above deep-copied every ship 2-3
+    times and searched linearly - 14 ms per publication at 161 ships). Same result as the generic
+    FullAuthoritativeSet path: the incoming entity set, the omitted heavy graph fields taken (moved)
+    from the previous sample.
+*/
+inline SimulationSnapshot materializeCanonicalFromFullSet(
+    SimulationSnapshot&& previousCanonical,
+    const SimulationSnapshot& incoming
+)
+{
+    SimulationSnapshot canonical;
+    canonical.metadata = incoming.metadata;
+    canonical.replication = incoming.replication;
+    canonical.replication.entitySetMode = ReplicatedEntitySetMode::FullAuthoritativeSet;
+    canonical.replication.removedShipIds.clear();
+    canonical.replication.removedObjectIds.clear();
+    canonical.replication.removedHubIds.clear();
+    canonical.signals = incoming.signals;
+    canonical.hubs = incoming.hubs;
+    canonical.session = incoming.session;
+
+    const auto takeOmitted = [](game::simulation::ObjectGraphSnapshot& to, game::simulation::ObjectGraphSnapshot& from) {
+        if (!to.hasModules)
+        {
+            to.hasModules = from.hasModules;
+            to.modules = std::move(from.modules);
+        }
+        if (!to.hasStructuralLinks)
+        {
+            to.hasStructuralLinks = from.hasStructuralLinks;
+            to.structuralLinks = std::move(from.structuralLinks);
+        }
+        if (!to.hasAssemblyModules)
+        {
+            to.hasAssemblyModules = from.hasAssemblyModules;
+            to.assemblyModules = std::move(from.assemblyModules);
+        }
+        if (!to.hasDetachedFragments)
+        {
+            to.hasDetachedFragments = from.hasDetachedFragments;
+            to.detachedFragments = std::move(from.detachedFragments);
+        }
+        if (!to.hasRepairJobs)
+        {
+            to.hasRepairJobs = from.hasRepairJobs;
+            to.repairJobs = std::move(from.repairJobs);
+        }
+        if (!to.hasDebugHitVolumes)
+        {
+            to.hasDebugHitVolumes = from.hasDebugHitVolumes;
+            to.debugHitVolumes = std::move(from.debugHitVolumes);
+        }
+    };
+
+    std::unordered_map<std::uint32_t, ShipSnapshot*> previousShips;
+    previousShips.reserve(previousCanonical.ships.size());
+    for (auto& ship : previousCanonical.ships)
+        previousShips.emplace(ship.id.value, &ship);
+    canonical.ships.reserve(incoming.ships.size());
+    for (const auto& ship : incoming.ships)
+    {
+        canonical.ships.push_back(ship);
+        if (const auto it = previousShips.find(ship.id.value); it != previousShips.end())
+            takeOmitted(canonical.ships.back().graph, it->second->graph);
+    }
+
+    std::unordered_map<std::uint32_t, ObjectSnapshot*> previousObjects;
+    previousObjects.reserve(previousCanonical.objects.size());
+    for (auto& object : previousCanonical.objects)
+        previousObjects.emplace(object.id.value, &object);
+    canonical.objects.reserve(incoming.objects.size());
+    for (const auto& object : incoming.objects)
+    {
+        canonical.objects.push_back(object);
+        if (const auto it = previousObjects.find(object.id.value); it != previousObjects.end())
+            takeOmitted(canonical.objects.back().graph, it->second->graph);
+    }
     return canonical;
 }
 

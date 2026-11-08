@@ -1,3 +1,4 @@
+#include "src/game/server/ServerTickProfile.h"
 #include "src/game/ship/descriptors/CatalogShipRegistry.h"
 #include "src/game/simulation/GameSimulationInternal.h"
 
@@ -1199,17 +1200,26 @@ void GameSimulation::update(
         : time.gameplayDeltaSeconds;
 
     m_orbitalUniverseTimeSeconds = time.universeTimeSeconds;
-    m_npcRepairThinkTimerSeconds += dt;
-    const bool npcRepairThinkTick =
-        m_npcRepairThinkTimerSeconds >= 15.0;
-
-    if (npcRepairThinkTick)
-        m_npcRepairThinkTimerSeconds = 0.0;
+    const bool firstPass = firstSystemPass();
+    if (firstPass)
+    {
+        m_npcRepairThinkTimerSeconds += dt;
+        m_npcRepairThinkTick = m_npcRepairThinkTimerSeconds >= 15.0;
+        if (m_npcRepairThinkTick)
+            m_npcRepairThinkTimerSeconds = 0.0;
+        m_serverTimelineClock.advance(time.serverDeltaSeconds);
+    }
+    const bool npcRepairThinkTick = m_npcRepairThinkTick;
+    auto stageStart = std::chrono::steady_clock::now();
+    const auto stageMark = [&stageStart](int k) {
+        const auto now = std::chrono::steady_clock::now();
+        game::server::serverTickProfile().simStage[k] += std::chrono::duration<double>(now - stageStart).count();
+        stageStart = now;
+    };
 
     // Режим 1: нормальная мощность
 
     float fdt = static_cast<float>(dt);
-    m_serverTimelineClock.advance(time.serverDeltaSeconds);
 
 
 // Celestial positions and velocities are injected atomically by GameServer
@@ -1339,6 +1349,7 @@ void GameSimulation::update(
 
 
 
+    stageMark(0);
     for (auto& [hubId, hub] : m_orbitalHubs)
     {
         if (hub.systemId != m_activeCelestialSystemId ||
@@ -1457,6 +1468,7 @@ m_hubVelocityMetersPerSecond[hubId] =
 
 
 
+    stageMark(1);
     rebuildHubNavigationFrames(trajectoryDeltaSeconds);
     initializeNavigationRuntimeLab();
 
@@ -1476,7 +1488,8 @@ m_hubVelocityMetersPerSecond[hubId] =
         updateFreeFlights(dt);
         updateZoneViolations(dt);
         updateShipReferenceFrames(dt);
-        updateCombat(dt);
+        if (firstPass)
+            updateCombat(dt);
     }
 
     if (!trajectoryDebugMode)
@@ -1484,6 +1497,7 @@ m_hubVelocityMetersPerSecond[hubId] =
 
 
 
+    stageMark(2);
     for (auto& [id, obj] : m_staticObjects)
     {
         if (obj.systemId != m_activeCelestialSystemId)
@@ -1712,17 +1726,24 @@ m_hubVelocityMetersPerSecond[hubId] =
     // after both have been updated, never from stale first-frame poses.
     publishNavigationRuntimeLabStaticGeometry();
 
+    stageMark(3);
     // === 1. AI / controls / attitude ===
     if (!trajectoryDebugMode)
     {
-        applyPhysicalCorridorHotStart();
-        updateShipStateFlightTest();
-        updateCatalogShipLineup();
-        updateShipShells(dt);
+        if (firstPass)
+        {
+            applyPhysicalCorridorHotStart();
+            updateShipStateFlightTest();
+            updateCatalogShipLineup();
+            updateShipShells(dt);
+        }
         updateDockServiceTraffic(dt);
-        updateShipSimulationDetail(dt);
-        updateShipTierTransitionTest();
-        updateFiveHundredShipHerdDiagnostics();
+        if (firstPass)
+        {
+            updateShipSimulationDetail(dt);
+            updateShipTierTransitionTest();
+            updateFiveHundredShipHerdDiagnostics();
+        }
         // Stage 4B uses one cadence decision for both attitude/control-force
         // evaluation and HubTactical engine-command refresh. Reusing the same
         // accumulated dt prevents the two halves of ship motion from drifting
@@ -2014,6 +2035,7 @@ m_hubVelocityMetersPerSecond[hubId] =
         production ships. Do not update production reference-frame or gravity
         fields from the accelerated celestial epoch.
     */
+    stageMark(4);
     if (trajectoryDebugMode)
     {
         advanceUniverseTrajectoryDiagnostic(
@@ -2248,13 +2270,13 @@ m_hubVelocityMetersPerSecond[hubId] =
 
 
 
-    if (m_diagnostics.settings.hubPlayerChainCsv)
+    if (firstPass && m_diagnostics.settings.hubPlayerChainCsv)
         debugLogHubPlayerChain(dt);
 
-    if (m_diagnostics.settings.serverNavigationCsv)
+    if (firstPass && m_diagnostics.settings.serverNavigationCsv)
         debugLogServerNavState(dt);
 
-    if (m_diagnostics.settings.playerMotionCsv)
+    if (firstPass && m_diagnostics.settings.playerMotionCsv)
         debugLogPlayerMotion(dt);
 
 
@@ -2263,7 +2285,7 @@ m_hubVelocityMetersPerSecond[hubId] =
 
     if constexpr (game::promo::PromoFlybyScenario::Enabled)
     {
-        if (!trajectoryDebugMode)
+        if (!trajectoryDebugMode && firstPass)
             m_promoFlybyScenario.update(*this, fdt);
     }
 
@@ -2271,6 +2293,7 @@ m_hubVelocityMetersPerSecond[hubId] =
 
 
 
+    stageMark(5);
     /*
         Signals and radar are gameplay state derived from production ship
         transforms. During accelerated trajectory diagnostics the production
@@ -2440,6 +2463,7 @@ m_hubVelocityMetersPerSecond[hubId] =
     }
 
 
+    stageMark(6);
 }
 
 
@@ -3216,12 +3240,26 @@ void GameSimulation::setCelestialBodyKinematicStateAu(
 
     if (m_activeCelestialSystemId != systemId)
     {
+        // park the leaving system's context, restore the entering one's (multi-system tick); hub
+        // frames / velocities are keyed by the globally unique hub id and stay in place
+        if (m_activeCelestialSystemId >= 0)
+        {
+            auto& parked = m_parkedCelestialContexts[m_activeCelestialSystemId];
+            parked.gravityParameters = std::move(m_celestialBodyGravityParameters);
+            parked.gravityBodies = std::move(m_gravityBodies);
+            parked.orbitalCorridors = std::move(m_orbitalCorridors);
+        }
         m_activeCelestialSystemId = systemId;
         m_celestialBodyGravityParameters.clear();
-        m_hubNavigationFrames.clear();
-        m_hubVelocityMetersPerSecond.clear();
         m_gravityBodies.clear();
         m_orbitalCorridors.clear();
+        if (const auto it = m_parkedCelestialContexts.find(systemId); it != m_parkedCelestialContexts.end())
+        {
+            m_celestialBodyGravityParameters = std::move(it->second.gravityParameters);
+            m_gravityBodies = std::move(it->second.gravityBodies);
+            m_orbitalCorridors = std::move(it->second.orbitalCorridors);
+            m_parkedCelestialContexts.erase(it);
+        }
     }
 
     m_celestialBodyPositionsAu = positionsAu;
@@ -3239,6 +3277,17 @@ void GameSimulation::setCelestialBodyKinematicStateAu(
 
 
 
+
+bool GameSimulation::passOwns(const Ship* ship) const
+{
+    return ship && game::simulation::sameRuntimeSystem(ship->core().transform().motion.systemId, m_activeCelestialSystemId);
+}
+
+bool GameSimulation::passOwns(EntityId id) const
+{
+    const auto it = m_ships.find(id);
+    return it != m_ships.end() && passOwns(it->second.get());
+}
 
 void GameSimulation::setCelestialBodyGravityParameters(
     int systemId,

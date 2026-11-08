@@ -25,8 +25,17 @@ void GameSimulation::rebuildHubNavigationFrames(double frameDeltaSeconds)
     // acceleration. The current production motion path still consumes the
     // legacy HubNavigationFrame fields; acceleration is shadow state only in
     // this migration stage.
-    const auto previousFrames = m_hubNavigationFrames;
-    m_hubNavigationFrames.clear();
+    // only this pass's system: its frames move out (kept as the previous epoch), the other
+    // systems' frames stay untouched (multi-system tick)
+    std::unordered_map<std::string, game::navigation::HubNavigationFrame> previousFrames;
+    for (auto it = m_hubNavigationFrames.begin(); it != m_hubNavigationFrames.end();)
+        if (it->second.systemId == m_activeCelestialSystemId)
+        {
+            previousFrames.emplace(it->first, std::move(it->second));
+            it = m_hubNavigationFrames.erase(it);
+        }
+        else
+            ++it;
 
     for (auto& [hubId, hub] : m_orbitalHubs)
     {
@@ -841,7 +850,7 @@ void GameSimulation::updateShipReferenceFrames(double dt)
     for (auto& [shipId, binding] : m_shipReferenceBindings)
     {
         Ship* ship = getShip(shipId);
-        if (!ship)
+        if (!ship || !passOwns(ship))
             continue;
 
         const auto resolved =

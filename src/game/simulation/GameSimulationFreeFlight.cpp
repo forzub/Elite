@@ -312,7 +312,7 @@ void GameSimulation::applyGlobalFrameRequests()
     std::vector<std::pair<EntityId, std::uint8_t>> requests;
     for (const auto& [id, ship] : m_ships)
     {
-        if (!ship)
+        if (!ship || !passOwns(ship.get()))
             continue;
         const auto& control = ship->core().control();
         if (control.globalFrameRequest != 0)
@@ -657,12 +657,17 @@ void GameSimulation::updateFreeFlights(double dt)
     applyGlobalFrameRequests();
     updateJumps(dt);
     // automatic stabilization decided last pass (a coast on a safe closed orbit)
+    std::vector<EntityId> otherPasses;
     for (const EntityId id : std::exchange(m_pendingStabilize, {}))
-        if (const auto f = m_freeFlights.find(id); f != m_freeFlights.end() && !f->second.localFrame)
+        if (!passOwns(id) && getShip(id))
+            otherPasses.push_back(id);
+        else if (const auto f = m_freeFlights.find(id); f != m_freeFlights.end() && !f->second.localFrame)
         {
             std::cerr << "[Flight] ship " << id.value << ": STABILIZATION ON (automatic: a closed orbit, coasting)" << std::endl;
             (void)toggleFreeFlight(id);
         }
+    for (const EntityId id : otherPasses)
+        m_pendingStabilize.push_back(id);
     updateHubServices(dt);
     for (auto it = m_freeFlights.begin(); it != m_freeFlights.end();)
     {
@@ -670,6 +675,11 @@ void GameSimulation::updateFreeFlights(double dt)
         if (!ship || (!ship->core().transform().motion.freeFlight && !it->second.localFrame))
         {
             it = m_freeFlights.erase(it);
+            continue;
+        }
+        if (!passOwns(ship))
+        {
+            ++it;   // another system's pass
             continue;
         }
         auto& f = it->second;

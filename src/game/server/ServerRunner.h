@@ -33,6 +33,10 @@ struct ServerTransportBinding
     // Per-destination hydration/cadence/lifecycle memory. It belongs to the
     // transport session, not to authoritative world simulation.
     game::server::ReplicationPublicationState replicationPublicationState;
+
+    // the star system this destination was last published in (multi-system server): objects /
+    // hubs / signals of other systems are not sent; on a system change the old ones are removed
+    int lastPublishedSystemId = -1;
 };
 
 struct ServerAdvanceResult

@@ -4170,3 +4170,45 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
 - Gates 209: 203 pass / 6 known red / 0 new.
 - OPEN (author directive 2026-11-08): "the server must simulate the systems or parts of systems where players are" -
   multi-system runtime (today one active celestial context; a second player in another system blocks a jump exit).
+### Multi-system server + 153-player load test 2026-11-08 - BUILT, HEADLESS LOAD TEST + 1 LIVE DEV JUMP, NOT AUTHOR-FLOWN
+- Author directives: "сервер должен считать те системы ... где находятся игроки"; "по 2-3 нпс в каждой из 61 систем ...
+  нпс = имитация игроков"; "в населенных системах есть хабы? если нет - хотя бы по одному на жилую зону"; "погоняй ... с
+  перемещениями, прыжками нпс, тиками по экономике".
+- Multi-system tick: GameServer::update runs one GameSimulation::update pass per system that has a ship (plus the start
+  system), after switchSimulationContext(systemId) (bodies from the analytic ephemeris at this universe time, gravity
+  parameters on the first visit). GameSimulation parks / restores the per-system celestial context
+  (m_parkedCelestialContexts); hub frames / velocities stay global (hub id keyed), each pass rebuilds its own system's.
+  Pass 0 runs the once-per-tick work (clocks, combat, shells, dev scenarios, diagnostics); passOwns() filters the
+  free-flight / jump / hub-service / reference-binding / zone loops. resolveSingleActiveSimulationSystemId removed;
+  4 textual contracts (active_system_context, kinematic_frames, multiplayer_session_navigation, system_membership)
+  rewritten to the pass-loop contract.
+- World-site hubs: GameServer::materializeWorldSiteHubs - one runtime orbital hub per body with world sites outside Sol
+  (the most populated orbital site; surface / belt sites -> 300 km above the J floor), command_station module:
+  99 hubs in 27 inhabited systems (107 with Sol's 8). 33 systems have no sites -> no hubs.
+- Replication per session: only the session's system's objects / hubs / signals (was: all 110 objects / 107 hubs of
+  all systems in every snapshot, 134 KB, 2.2 MB/s per player); on a system change the old system's rows are removed.
+  Also: the source id sets built once per publication (ReplicationSourceIds + fingerprints; were rebuilt per session),
+  materializeCanonicalFromFullSet (moves the omitted graph fields; the generic merge deep-copied each ship 2-3 times).
+- Jump exit: every ship its own point on the lit side (+-60 deg by ship id) - the load test showed all ships jumping
+  to one planet exiting INSIDE each other and blocking each other's J engine / next jump for good.
+- EliteServer --load-test [K|2-3] [SECONDS] [move] (build-relwithdebinfo, -O2): every bot is a real session (account,
+  bootstrap player ship, own transport encoding every snapshot with the TCP wire codec), control state every tick,
+  time sync 2 s, galaxy map 60 s; move = 4-min travel cycles (stabilization off, J on, full 37 s, brake 40 s; every
+  other cycle a jump to a < 30 ly neighbour). ELITE_DEV_ECONOMY_TICK_S: a DEV server economy round (market / events /
+  board of every economy hub, a new day per round) spread over the round's ticks. ServerTickProfile = per-stage timing.
+- Results, 153 player bots in 61 systems, 50 Hz (20 ms budget):
+  first run 48.6 ms avg / 123 ms p95 per tick, 2.4 MB/s per player; after the fixes (static): 14.8 ms avg, p95 22.8,
+  74 % of one core, 165 KiB/s per player, 278 MB. Move scenario 480 s (jumps charge 20 s, economy every 10 s):
+  15.3 ms avg, p50 11.9, p95 23.7, max 68 ms, 77 % of one core, 144 KiB/s per player, 291 MB; 141 jumps requested,
+  101 done, 0 stuck exits, all 153 ships present. Per tick: simulation 11.1 (61 passes; physics 2.8, AI/controls 2.1,
+  signals/radar 1.8, frames+free flight 1.6), snapshot build 1.0, selection 0.9, encode 0.9; economy 84 ms per
+  full round (all hubs) = 0.31 ms per tick spread (all at once: 57 ms -> a 170 ms tick). Baseline 1 player in Sol:
+  0.55 ms per tick.
+- Found, open: (1) the bots' blind J runs hit planets (100 dense-layer entries, 46 surface contacts at up to 2000
+  km/s): the J floor switches J off correctly, but the momentum carries the ship in and nothing happens to it (no
+  damage / loss) - author decision on impact consequences; (2) the own ship is ~5.3 KB per snapshot (16.7/s) - the
+  remaining wire load (ships' graph / systems payload); (3) the snapshot tick (every 3rd) is ~2x an ordinary one
+  (p95 23 ms) - publication could be spread over the ticks; (4) 14 jump refusals "need normal flight" are the bots'
+  toggle desync (open-loop script), not the server.
+- Live DEV (EliteGame, jt1): Sol -> Tau Ceti jump, exit on Tau_Ceti_m orbit 418 km, stabilization ON, radar 0 tracks.
+- Gates 209: 203 pass / 6 known red / 0 new.

@@ -103,6 +103,7 @@ public:
 
     [[nodiscard]] bool loaded() const { return m_loaded; }
     [[nodiscard]] const std::vector<TradeGood>& goods() const { return m_goods; }
+    [[nodiscard]] const std::vector<HubEconomyInfo>& hubs() const { return m_hubs; }
     [[nodiscard]] const HubEconomyInfo* hub(const std::string& id) const;
     [[nodiscard]] std::vector<const HubEconomyInfo*> hubsOfSystem(int systemId) const;
 

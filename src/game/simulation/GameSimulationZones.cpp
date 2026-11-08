@@ -25,10 +25,11 @@ const game::navigation::route::ZoneCatalog& zones()
 void GameSimulation::updateZoneViolations(double dt)
 {
     namespace route = game::navigation::route;
-    m_zoneCheckSeconds -= dt;
-    if (m_zoneCheckSeconds > 0.0)
+    double& zoneCheckSeconds = m_zoneCheckSecondsBySystem[m_activeCelestialSystemId];
+    zoneCheckSeconds -= dt;
+    if (zoneCheckSeconds > 0.0)
         return;
-    m_zoneCheckSeconds = 0.25;
+    zoneCheckSeconds = 0.25;
     const auto& catalog = zones();
     if (catalog.zones.empty())
         return;
@@ -64,7 +65,7 @@ void GameSimulation::updateZoneViolations(double dt)
     };
     for (auto& [id, shipPtr] : m_ships)
     {
-        if (!shipPtr || shipPtr->core().role() != ShipRole::Player)
+        if (!shipPtr || shipPtr->core().role() != ShipRole::Player || !passOwns(shipPtr.get()))
             continue;
         auto& motion = shipPtr->core().transform().motion;
         const auto geometry = route::resolveZones(catalog, motion.systemId, resolver);

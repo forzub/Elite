@@ -410,6 +410,18 @@ public:
         return m_activeCelestialSystemId;
     }
 
+    // Multi-system tick (author 2026-11-08: "подключишь симуляцию всех систем"): GameServer runs
+    // update() once per occupied system, switching the celestial context before each pass. Pass 0
+    // also runs the once-per-tick work (clocks, combat, traffic shells, dev scenarios); the other
+    // passes advance only the ships / hubs / zones of their own system.
+    void setSystemPass(int index) noexcept { m_systemPassIndex = index; }
+    bool firstSystemPass() const noexcept { return m_systemPassIndex == 0; }
+    bool passOwns(const Ship* ship) const;
+    bool passOwns(EntityId id) const;
+    // DEV / load test: the ship leaves for systemId at once (the jump's instant part, no charge,
+    // no checks); its system's pass puts it on the exit body's orbit like a jump exit.
+    bool devPlaceShipInSystem(EntityId shipId, int systemId, const std::string& systemName, const std::string& exitBodyId);
+
     void buildInitialScene(
         const game::world_state::InitialWorldState& initialState
     );
@@ -944,6 +956,9 @@ private:
     // time. The id is explicit so entities from another system can never be
     // evaluated against the active system's celestial cache by accident.
     int m_activeCelestialSystemId = -1;
+    int m_systemPassIndex = 0;
+    bool m_npcRepairThinkTick = false;
+    std::unordered_map<int, double> m_zoneCheckSecondsBySystem;
 
     std::unordered_map<std::string, glm::dvec3> m_celestialBodyPositionsAu;
     std::unordered_map<std::string, glm::dvec3> m_celestialBodyVelocitiesMetersPerSecond;
@@ -966,6 +981,16 @@ private:
 
     std::vector<game::navigation::GravityBody> m_gravityBodies;
     std::vector<game::navigation::OrbitalCorridor> m_orbitalCorridors;
+
+    // the celestial context of the systems not in the current pass (multi-system tick): kept,
+    // not cleared, so a switch back costs nothing and keeps the derived caches
+    struct ParkedCelestialContext
+    {
+        std::unordered_map<std::string, CelestialBodyGravityParameters> gravityParameters;
+        std::vector<game::navigation::GravityBody> gravityBodies;
+        std::vector<game::navigation::OrbitalCorridor> orbitalCorridors;
+    };
+    std::unordered_map<int, ParkedCelestialContext> m_parkedCelestialContexts;
 
 
 };

@@ -57,7 +57,7 @@ for required in (
         fail(snapshot_path, f"snapshot lost moving-frame kinematics: {required}")
 
 for required in (
-    "const auto previousFrames = m_hubNavigationFrames",
+    "previousFrames.emplace(it->first, std::move(it->second))",
     "rebuildHubNavigationFrames(trajectoryDeltaSeconds)",
     "std::abs(frameDeltaSeconds)",
     "frame.accelerationMetersPerSecond2",

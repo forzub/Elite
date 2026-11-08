@@ -23,6 +23,11 @@ void GameSimulation::updateHubServices(double dt)
             it = m_hubServices.erase(it);
             continue;
         }
+        if (!passOwns(ship))
+        {
+            ++it;
+            continue;
+        }
         auto& m = ship->core().transform().motion;
         auto& service = it->second;
         // PROPOSAL: the dock is not flown yet - the service is a timed stay in the hub's frame

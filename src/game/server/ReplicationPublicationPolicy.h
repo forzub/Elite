@@ -34,6 +34,10 @@ struct ReplicationPublicationState
     // SparseRetainMissing their lifecycle still needs explicit remove rows.
     std::unordered_set<std::uint32_t> replicatedObjectIds;
     std::unordered_set<std::string> replicatedHubIds;
+    // the source object / hub id sets the two sets above were last made from (0: unknown); equal
+    // fingerprints = nothing appeared or left, no per-destination set rebuild
+    std::uint64_t replicatedObjectsFingerprint = 0;
+    std::uint64_t replicatedHubsFingerprint = 0;
 
     bool hasBootstrapBaseline = false;
 };
@@ -100,10 +104,72 @@ inline void seedReplicationPublicationState(
     state.hasBootstrapBaseline = true;
 }
 
+// The id sets of one source snapshot, built ONCE per publication and shared by every destination
+// (load test 2026-11-08: rebuilding them per session - 153 sessions x 161 ships / 110 objects /
+// 107 hub-id strings - cost 8.7 ms per publication).
+struct ReplicationSourceIds
+{
+    std::unordered_set<std::uint32_t> ships;
+    std::unordered_set<std::uint32_t> objects;
+    std::unordered_set<std::string> hubs;
+    std::uint64_t objectsFingerprint = 0;
+    std::uint64_t hubsFingerprint = 0;
+};
+
+inline ReplicationSourceIds buildReplicationSourceIds(const SimulationSnapshot& snapshot)
+{
+    ReplicationSourceIds ids;
+    ids.ships.reserve(snapshot.ships.size());
+    for (const auto& ship : snapshot.ships)
+        ids.ships.insert(ship.id.value);
+    // order-independent fingerprints (sum of mixed hashes) + the count, never 0
+    const auto mix = [](std::uint64_t h) {
+        h ^= h >> 33;
+        h *= 0xff51afd7ed558ccdULL;
+        h ^= h >> 33;
+        h *= 0xc4ceb9fe1a85ec53ULL;
+        return h ^ (h >> 33);
+    };
+    ids.objects.reserve(snapshot.objects.size());
+    std::uint64_t fo = 0;
+    for (const auto& object : snapshot.objects)
+    {
+        ids.objects.insert(object.id.value);
+        fo += mix(object.id.value + 0x9e3779b97f4a7c15ULL);
+    }
+    ids.objectsFingerprint = (fo ^ mix(snapshot.objects.size())) | 1u;
+    ids.hubs.reserve(snapshot.hubs.size());
+    std::uint64_t fh = 0;
+    for (const auto& hub : snapshot.hubs)
+    {
+        ids.hubs.insert(hub.id);
+        fh += mix(std::hash<std::string> {}(hub.id));
+    }
+    ids.hubsFingerprint = (fh ^ mix(snapshot.hubs.size() + 7u)) | 1u;
+    return ids;
+}
+
+inline ReplicationPublicationSelection selectReplicationPublications(
+    const ShipReplicationInterestPlan& shipInterest,
+    const SimulationSnapshot& currentSnapshot,
+    ReplicationPublicationState& state,
+    const ReplicationSourceIds& source
+);
+
 inline ReplicationPublicationSelection selectReplicationPublications(
     const ShipReplicationInterestPlan& shipInterest,
     const SimulationSnapshot& currentSnapshot,
     ReplicationPublicationState& state
+)
+{
+    return selectReplicationPublications(shipInterest, currentSnapshot, state, buildReplicationSourceIds(currentSnapshot));
+}
+
+inline ReplicationPublicationSelection selectReplicationPublications(
+    const ShipReplicationInterestPlan& shipInterest,
+    const SimulationSnapshot& currentSnapshot,
+    ReplicationPublicationState& state,
+    const ReplicationSourceIds& source
 )
 {
     ReplicationPublicationSelection selection;
@@ -117,10 +183,7 @@ inline ReplicationPublicationSelection selectReplicationPublications(
     const double now = currentSnapshot.metadata.serverTimeSeconds;
     constexpr double TimeToleranceSeconds = 1.0e-9;
 
-    std::unordered_set<std::uint32_t> currentShipIds;
-    currentShipIds.reserve(currentSnapshot.ships.size());
-    for (const auto& ship : currentSnapshot.ships)
-        currentShipIds.insert(ship.id.value);
+    const auto& currentShipIds = source.ships;
 
     for (const auto& decision : shipInterest.decisions)
     {
@@ -207,29 +270,27 @@ inline ReplicationPublicationSelection selectReplicationPublications(
     // Stage M7 only decimates ships. Objects and hubs continue to be included
     // in every packet, but SparseRetainMissing makes their disappearance
     // ambiguous unless we publish explicit lifecycle removals too.
-    std::unordered_set<std::uint32_t> currentObjectIds;
-    currentObjectIds.reserve(currentSnapshot.objects.size());
-    for (const auto& object : currentSnapshot.objects)
-        currentObjectIds.insert(object.id.value);
-
-    for (const auto id : state.replicatedObjectIds)
+    if (state.replicatedObjectsFingerprint != source.objectsFingerprint)
     {
-        if (currentObjectIds.find(id) == currentObjectIds.end())
-            selection.removedObjectIds.push_back(EntityId{id});
+        for (const auto id : state.replicatedObjectIds)
+        {
+            if (source.objects.find(id) == source.objects.end())
+                selection.removedObjectIds.push_back(EntityId{id});
+        }
+        state.replicatedObjectIds = source.objects;
+        state.replicatedObjectsFingerprint = source.objectsFingerprint;
     }
-    state.replicatedObjectIds = std::move(currentObjectIds);
 
-    std::unordered_set<std::string> currentHubIds;
-    currentHubIds.reserve(currentSnapshot.hubs.size());
-    for (const auto& hub : currentSnapshot.hubs)
-        currentHubIds.insert(hub.id);
-
-    for (const auto& id : state.replicatedHubIds)
+    if (state.replicatedHubsFingerprint != source.hubsFingerprint)
     {
-        if (currentHubIds.find(id) == currentHubIds.end())
-            selection.removedHubIds.push_back(id);
+        for (const auto& id : state.replicatedHubIds)
+        {
+            if (source.hubs.find(id) == source.hubs.end())
+                selection.removedHubIds.push_back(id);
+        }
+        state.replicatedHubIds = source.hubs;
+        state.replicatedHubsFingerprint = source.hubsFingerprint;
     }
-    state.replicatedHubIds = std::move(currentHubIds);
 
     sortEntityIds(selection.shipUpdateIds);
     sortEntityIds(selection.shipHydrationIds);

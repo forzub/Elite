@@ -218,7 +218,7 @@ if update_sim is None:
 else:
     promo_pos = update_sim.find("m_promoFlybyScenario.update(*this, fdt);")
     if promo_pos >= 0:
-        guard_pos = update_sim.rfind("if (!trajectoryDebugMode)", 0, promo_pos)
+        guard_pos = update_sim.rfind("if (!trajectoryDebugMode", 0, promo_pos)
         if guard_pos < 0 or promo_pos - guard_pos > 300:
             fail(simulation_cpp, "PromoFlybyScenario can mutate production state during diagnostic branch")
 
@@ -263,34 +263,29 @@ if "m_playerNavigation" in server_text or "m_playerNavigation" in server_h_text:
 for token in (
     "navigationStateForSession(",
     "navigationStateForEntity(",
-    "resolveSingleActiveSimulationSystemId() const",
+    "void switchSimulationContext(int systemId)",
 ):
     if token not in server_h_text:
         fail(server_h, f"multiplayer navigation/system boundary missing: {token}")
 
-simulation_context = function_body(
-    server_text,
-    "int GameServer::resolveSingleActiveSimulationSystemId() const",
-)
-if simulation_context is None:
-    fail(server_cpp, "could not locate single-active simulation-context resolver")
+# Multi-system tick (2026-11-08): every system with a ship gets a pass; the systems come from the
+# ships themselves (never from session navigation or a primary player).
+server_update = function_body(server_text, "void GameServer::update(double dt)")
+if server_update is None:
+    fail(server_cpp, "could not locate GameServer update")
 else:
     require_text(
         server_cpp,
-        simulation_context,
+        server_update,
         (
-            "m_simulation.playerControlledShipIds()",
-            "ship->core().transform().motion.systemId",
-            "m_simulation.activeCelestialSystemId()",
+            "for (const auto& [shipId, shipPtr] : m_simulation.ships())",
+            "shipPtr->core().transform().motion.systemId",
+            "switchSimulationContext(passSystems[pass])",
         ),
-        "single-active system context is not derived from all controlled entities",
+        "the simulated systems are not derived from all ships",
     )
-    if "m_simulation.playerId()" in simulation_context:
-        fail(server_cpp, "single-active system context still chooses a primary player")
-
-server_update = function_body(server_text, "void GameServer::update(double dt)")
-if server_update is None or "resolveSingleActiveSimulationSystemId()" not in server_update:
-    fail(server_cpp, "active celestial context is not resolved independently of session navigation")
+    if "m_simulation.playerId()" in server_update[server_update.find("passSystems"):server_update.find("setSystemPass(0)")]:
+        fail(server_cpp, "the simulated systems still follow a primary player")
 
 resolver_h_text = read(spatial_resolver_h)
 resolver_cpp_text = read(spatial_resolver_cpp)

@@ -1193,3 +1193,11 @@ EntityId buildInitialScene(
 }
 
 } // namespace game::scene
+
+namespace game::scene
+{
+bool spawnOrbitalHub(GameSimulation& sim, const game::world_state::InitialWorldStateOrbitalHub& hub)
+{
+    return spawnOrbitalHubFromInitialState(sim, hub);
+}
+} // namespace game::scene

@@ -336,7 +336,7 @@ function renderPart(s, p) {
       <div class="card"><h3>Промт для генератора эскиза</h3>
         <textarea id="prompt" class="prompt" spellcheck="false">${esc(prompt)}</textarea>
         <div class="row"><button class="btn" id="copyPrompt">Копировать</button><button class="btn" id="savePrompt" disabled>Сохранить правку</button>
-        <button class="btn" id="resetPrompt"${edited ? "" : " disabled"}>Вернуть автоматический</button><span class="sub" id="promptState">${edited ? "отредактирован" : "собран из паспорта"}</span></div>
+        <button class="btn" id="resetPrompt"${edited ? "" : " disabled"}>Вернуть автоматический</button><span class="sub" id="promptState">${(() => { const i = Store.promptInfo(p.id); return i ? (i.source ? esc(i.source) : "отредактирован") + (i.version ? " · версия " + esc(i.version) : "") : "собран из паспорта"; })()}</span></div>
         <h4>Замены</h4>${kv("Штатная", one(rp.standard, false))}${kv("Внешний / вражеский аналог", one(rp.hostile_or_foreign, true))}</div>
     </div>
     <div class="card"><h3>Эскизы</h3>
@@ -395,6 +395,7 @@ function openSketch(partId, id) {
   m.innerHTML = `<div class="modalBox"><div class="modalImg"><img alt=""></div>
     <div class="modalSide"><div class="row"><b>${esc(partMap.get(partId)?.name || partId)}</b><span class="spacer"></span><button class="btn mini" data-x>✕</button></div>
     <div class="sub">${esc(sk.name)} · добавлен ${esc(new Date(sk.added).toLocaleString("ru-RU"))}</div>
+    ${(() => { const r = Store.review(sk.id); return r ? `<div class="review"><div class="reviewHead">Рецензия${r.author ? " · " + esc(r.author) : ""}${r.updated ? " · " + esc(new Date(r.updated).toLocaleString("ru-RU")) : ""}${r.verdict ? ` · <b>${esc(r.verdict)}</b>` : ""}</div>${(r.items || []).map(i => `<div class="reviewItem ${esc(i.kind || "")}">${esc(i.text)}</div>`).join("")}${r.next ? `<div class="reviewNext">${esc(r.next)}</div>` : ""}</div>` : ""; })()}
     <label class="sub" for="note">Заметки</label><textarea id="note" class="note" placeholder="что поправить, что оставить…">${esc(sk.note || "")}</textarea>
     <div class="row"><button class="btn" data-save disabled>Пересохранить</button><span class="sub" data-state>${sk.updated > sk.added ? "сохранено " + esc(new Date(sk.updated).toLocaleString("ru-RU")) : ""}</span></div>
     <div class="row"><button class="btn mini" data-prev${i ? "" : " disabled"}>← пред.</button><button class="btn mini" data-next${i < list.length - 1 ? "" : " disabled"}>след. →</button>

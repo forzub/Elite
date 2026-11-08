@@ -14,7 +14,7 @@ const Store = (() => {
   let folder = "none";            // none | connected | needs-permission | unsupported
   const listeners = new Set();
   const urls = new Map();         // blob id -> object URL
-  const empty = () => ({ version: 1, modelReady: {}, prompts: {}, sketches: {}, shipImages: {} });
+  const empty = () => ({ version: 1, modelReady: {}, prompts: {}, sketches: {}, shipImages: {}, reviews: {} });
   let state = empty();
 
   const req = r => new Promise((ok, ko) => { r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); });
@@ -58,14 +58,20 @@ const Store = (() => {
   const shipPath = (shipId, s) => ["ships", s.file];
 
   function merge(into, from) {
-    for (const k of ["modelReady", "prompts", "shipImages"])
-      for (const [id, v] of Object.entries(from[k] || {}))
+    for (const k of ["modelReady", "prompts", "shipImages", "reviews"])
+      for (const [id, v] of Object.entries((into[k] ||= {}, from[k]) || {}))
         if (!(id in into[k]) || (v && v.updated && (!into[k][id] || (into[k][id].updated || 0) < v.updated))) into[k][id] = v;
     for (const [pid, list] of Object.entries(from.sketches || {})) {
       const mine = into.sketches[pid] ||= [];
       for (const s of list) {
         const m = mine.find(x => x.id === s.id);
-        if (!m) mine.push(s); else if ((s.updated || 0) > (m.updated || 0)) Object.assign(m, s);
+        if (!m) mine.push(s);
+        else if ((s.updated || 0) > (m.updated || 0)) {
+          // a note is the author's text: a newer record without a note never erases one
+          const keep = m.note && !s.note ? m.note : null;
+          Object.assign(m, s);
+          if (keep) m.note = keep;
+        }
       }
     }
     // a deletion recorded on either side wins
@@ -134,6 +140,9 @@ const Store = (() => {
     setReady(key, ready) { state.modelReady[key] = { ready, updated: Date.now() }; save(); },
     // ---- prompt overrides
     prompt(partId) { return state.prompts[partId]?.text ?? null; },
+    promptInfo(partId) { return state.prompts[partId] || null; },
+    // a review of a sketch (written into workshop.json by the assistant; read-only on the page)
+    review(sketchId) { return (state.reviews || {})[sketchId] || null; },
     setPrompt(partId, text) { if (text == null) delete state.prompts[partId]; else state.prompts[partId] = { text, updated: Date.now() }; save(); },
     // ---- sketches
     sketches(partId) { return state.sketches[partId] || []; },

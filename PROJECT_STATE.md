@@ -4410,3 +4410,14 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   store.js detects the server (GET /api/ping) and stores nothing in the browser; refreshes from disk on focus.
 - Checked: page in server mode, a new sketch + note written to disk, an on-disk edit (review) survived a page save
   and became visible, the test sketch removed; workshop.json restored to the pre-test state.
+
+### Equipment-first + reference designations (proposal) - 2026-11-09
+- Author: in-game models are NOT canon for now; reverse order: design the equipment first, then assemble ships.
+  The CR-1 sketch review corrected (no longer asks to match the old Cobra nacelle; the equipment passport 5 x 5 x
+  6.5 m is the basis), prompt v3 in workshop.json. The earlier OPEN item "correct the CR-1 passport to the mesh"
+  is withdrawn.
+- Author: designations by LAYOUT, not function (46A1A2PT1 style); the functional schema groups chains
+  (pad - engine - reactor - engine - pad, x2). docs/REFERENCE_DESIGNATIONS.md: this is the ASME Y14.44 / IEEE 200 /
+  IEEE 315 reference-designation system (unit number, A separable assembly, U inseparable, class letters + number);
+  proposed class letters for our equipment, the two schemas (layout tree / functional chains), a Cobrett-I A3
+  example. Open: author to confirm the letters and whether the pad belongs to the reactor or the engine.

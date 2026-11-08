@@ -3,10 +3,10 @@
  "modelReady": {},
  "prompts": {
   "kb.drive.cr1-vector": {
-   "text": "Technical concept sketch of a spacecraft main engine pod for a hard science-fiction game set in the year 3126: the Cobretty CR-1 Vector, a fusion-electric plasma drive mounted as a side nacelle of a 22 m wedge-shaped light freighter.\nShape: a slender cylindrical pod 8.7 m long and 2.35 m in diameter (length to diameter about 3.7 : 1), mass 14 t. No floor stand: it hangs on a short trunnion pylon at mid-length.\nThrust vectoring: the whole pod swivels on a trunnion bearing through +-75 degrees; show the pivot axis and the swept arc as a dashed sector.\nRear: a magnetic nozzle - a ring of superconducting field coils around an open plasma exit about 2 m across with a short radiating skirt. NOT a chemical rocket bell.\nFront third: the power coupling from the ship's reactor bus (4.85 GW input, heavy busbar connectors), propellant feed lines and the injector manifold, a coolant heat exchanger with two coolant line ports.\nMiddle: the plasma chamber with access panels; the actuator housings of the trunnion drive; one small diagnostic sensor port (no camera lenses).\nStyle: Cognium premium modular school - compact integrated shapes, clean surfaces, service panels clearly separated so each replaceable sub-unit (injector manifold, trunnion actuator, coil segment, heat exchanger) is readable.\nViews: three-quarter perspective plus an orthographic side view, pencil and grey marker on light grey paper, dimension lines in metres, a 1.8 m human figure for scale, neutral background, no text, no logos.",
-   "updated": 1794176100000,
-   "source": "Claude (по рецензии эскиза)",
-   "version": 2
+   "text": "Technical concept sketch of a spacecraft main engine for a hard science-fiction game set in the year 3126: the Cobretty CR-1 Vector, a fusion-electric plasma drive, a replaceable standardized unit.\nEnvelope: 5 m wide x 5 m high x 6.5 m long, mass 14 t; the magnetic nozzle exit is 5 m across and is the widest part.\nThrust vectoring: the whole engine swivels on a trunnion bearing through +-75 degrees; show the trunnion axis and the swept arc as a dashed sector.\nRear: a magnetic nozzle - a ring of superconducting field coils around an open plasma exit with a short radiating skirt. NOT a chemical rocket bell.\nFront: the power coupling from the reactor bus (4.85 GW input, heavy busbar connectors), propellant feed lines and the injector manifold, a coolant heat exchanger with two coolant line ports.\nMiddle: the plasma chamber with access panels; the actuator housings of the trunnion drive; one small diagnostic sensor port (no camera lenses).\nMounting: trunnion lugs and a mounting flange to the ship's engine bay frame - no floor stand.\nStyle: Cognium premium modular school - compact integrated shapes, clean surfaces, service panels clearly separated so each replaceable sub-unit (injector manifold, trunnion actuator, coil segment, heat exchanger) is readable.\nViews: three-quarter perspective plus an orthographic side view, pencil and grey marker on light grey paper, dimension lines in metres, a 1.8 m human figure for scale, neutral background, no text, no logos.",
+   "updated": 1794176381988,
+   "source": "Claude (по рецензии эскиза; паспорт оборудования - основа)",
+   "version": 3
   }
  },
  "sketches": {
@@ -25,8 +25,8 @@
  "reviews": {
   "mw8cz1jfpl0z9": {
    "author": "Claude",
-   "updated": 1794176100000,
-   "verdict": "переделать: форма гондолы и поворотный подвес",
+   "updated": 1794176381988,
+   "verdict": "переделать: поворотный подвес, магнитное сопло, крепление",
    "items": [
     {
      "kind": "ok",
@@ -41,8 +41,8 @@
      "text": "Сопло около 5 м по человеку - совпадает с паспортом (излучатель Ø 5,0 м)."
     },
     {
-     "kind": "wrong",
-     "text": "Форма не совпадает с моделью, которая уже в игре: гондола CR-1 у Cobrett-I A3 - вытянутый цилиндр 8,7 × 2,35 × 2,35 м на боковом пилоне (assets/models/ships/cobretty-mk1-int/LOD0/ship_engine_L.obj). Паспорт 5 × 5 × 6,5 м ошибочен, эскиз повторил ошибку паспорта."
+     "kind": "ok",
+     "text": "Габарит по паспорту оборудования (5 × 5 × 6,5 м) соблюдён в целом. Решение автора 2026-11-09: модели в игре пока не канон - сначала оборудование, потом корабль; первая версия рецензии ошибочно требовала подогнать двигатель под старую гондолу Кобры."
     },
     {
      "kind": "wrong",

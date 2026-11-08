@@ -4311,7 +4311,7 @@
   {
    "id": "ofu.ship.ocs-4.lastochka",
    "designation": "OCS-4",
-   "name": "OCS-4 «Ласточка»",
+   "name": "OCS-4",
    "cls": "ocs4_lastochka",
    "manufacturer": "Orbital Freight Union «Ural-Kourou»",
    "runtime": "generic",
@@ -5483,7 +5483,7 @@
   {
    "id": "ofu.ship.sl-12.podyomnik",
    "designation": "SL-12",
-   "name": "SL-12 «Подъёмник»",
+   "name": "SL-12",
    "cls": "surface_lifter",
    "manufacturer": "Orbital Freight Union «Ural-Kourou»",
    "runtime": "generic",
@@ -7008,7 +7008,7 @@
   {
    "id": "bharat.ship.c-120.konveyer",
    "designation": "C-120",
-   "name": "C-120 «Конвейер»",
+   "name": "C-120 «Вахак»",
    "cls": "medium_freighter",
    "manufacturer": "Бхарат Ассембли",
    "runtime": "generic",
@@ -8467,8 +8467,8 @@
   },
   {
    "id": "harmony.ship.he-120",
-   "designation": "Хэ-120",
-   "name": "Хэ-120 «Хуэйлю»",
+   "designation": "He-120",
+   "name": "Хэ-120 «Синча»",
    "cls": "medium_freighter",
    "manufacturer": "Верфи Гармонии",
    "runtime": "generic",
@@ -8521,7 +8521,7 @@
    "endurance_days": 40,
    "installed": [
     {
-     "code": "Хэ-120-A1A1",
+     "code": "He-120-A1A1",
      "product": "th.drive.tz13",
      "cat": "drive",
      "qty": 1,
@@ -8551,7 +8551,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A2A1",
+     "code": "He-120-A2A1",
      "product": "th.reactor.tr10",
      "cat": "reactor",
      "qty": 1,
@@ -8581,7 +8581,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A2A2",
+     "code": "He-120-A2A2",
      "product": "th.apu.s150",
      "cat": "service_reactor",
      "qty": 1,
@@ -8609,7 +8609,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A3A1",
+     "code": "He-120-A3A1",
      "product": "th.rad.panel50",
      "cat": "radiator",
      "qty": 4,
@@ -8654,7 +8654,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A3A2",
+     "code": "He-120-A3A2",
      "product": "th.cool.loop600",
      "cat": "coolant_loop",
      "qty": 1,
@@ -8682,7 +8682,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A4A1",
+     "code": "He-120-A4A1",
      "product": "harmony.core.h5",
      "cat": "jump_core",
      "qty": 1,
@@ -8710,7 +8710,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A4A2",
+     "code": "He-120-A4A2",
      "product": "std.tank.jumpcharge",
      "cat": "tank",
      "qty": 30,
@@ -8789,7 +8789,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A4A3",
+     "code": "He-120-A4A3",
      "product": "std.tank.pellets",
      "cat": "tank",
      "qty": 8,
@@ -8868,7 +8868,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A5A1",
+     "code": "He-120-A5A1",
      "product": "std.rcs.cluster_h",
      "cat": "rcs",
      "qty": 8,
@@ -9024,7 +9024,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A6A1",
+     "code": "He-120-A6A1",
      "product": "xz.mc.c1",
      "cat": "computer",
      "qty": 1,
@@ -9052,7 +9052,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A6A2",
+     "code": "He-120-A6A2",
      "product": "xz.radar.n2",
      "cat": "radar",
      "qty": 1,
@@ -9080,7 +9080,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A6A3",
+     "code": "He-120-A6A3",
      "product": "xz.comm.c1",
      "cat": "comm",
      "qty": 1,
@@ -9108,7 +9108,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A6A4",
+     "code": "He-120-A6A4",
      "product": "um.xpdr.t1",
      "cat": "transponder",
      "qty": 1,
@@ -9136,7 +9136,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A7A1",
+     "code": "He-120-A7A1",
      "product": "terra.ls.t10",
      "cat": "life_support",
      "qty": 1,
@@ -9164,7 +9164,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A7A2",
+     "code": "He-120-A7A2",
      "product": "std.surv.pod4",
      "cat": "escape_capsule",
      "qty": 2,
@@ -9209,7 +9209,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A8A1",
+     "code": "He-120-A8A1",
      "product": "std.cargo.c20lock",
      "cat": "container_rack",
      "qty": 120,
@@ -9288,7 +9288,7 @@
      ]
     },
     {
-     "code": "Хэ-120-A9A1",
+     "code": "He-120-A9A1",
      "product": "std.dock.collar",
      "cat": "docking_port",
      "qty": 2,
@@ -9374,7 +9374,7 @@
    "schematic": {
     "nodes": [
      {
-      "code": "Хэ-120-A1A1",
+      "code": "He-120-A1A1",
       "product": "th.drive.tz13",
       "name": "Тяньхэ ТЦ-13",
       "cat": "drive",
@@ -9388,7 +9388,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A2A1",
+      "code": "He-120-A2A1",
       "product": "th.reactor.tr10",
       "name": "Тяньхэ ТР-10",
       "cat": "reactor",
@@ -9402,7 +9402,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A2A2",
+      "code": "He-120-A2A2",
       "product": "th.apu.s150",
       "name": "Тяньхэ СР-150",
       "cat": "service_reactor",
@@ -9416,7 +9416,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A3A1",
+      "code": "He-120-A3A1",
       "product": "th.rad.panel50",
       "name": "Тяньхэ радиаторная секция (50 м2)",
       "cat": "radiator",
@@ -9430,7 +9430,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A3A2",
+      "code": "He-120-A3A2",
       "product": "th.cool.loop600",
       "name": "Тяньхэ контур охлаждения (600 МВт)",
       "cat": "coolant_loop",
@@ -9444,7 +9444,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A4A1",
+      "code": "He-120-A4A1",
       "product": "harmony.core.h5",
       "name": "Гармония Х-5 (сборка из блоков Когниума)",
       "cat": "jump_core",
@@ -9458,7 +9458,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A4A2",
+      "code": "He-120-A4A2",
       "product": "std.tank.jumpcharge",
       "name": "Бак заряда прыжка (1 т)",
       "cat": "tank",
@@ -9472,7 +9472,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A4A3",
+      "code": "He-120-A4A3",
       "product": "std.tank.pellets",
       "name": "Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
@@ -9486,7 +9486,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A5A1",
+      "code": "He-120-A5A1",
       "product": "std.rcs.cluster_h",
       "name": "Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
@@ -9500,7 +9500,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A6A1",
+      "code": "He-120-A6A1",
       "product": "xz.mc.c1",
       "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
       "cat": "computer",
@@ -9514,7 +9514,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A6A2",
+      "code": "He-120-A6A2",
       "product": "xz.radar.n2",
       "name": "Синьчжи навигационный радар N-2 (2 000 км)",
       "cat": "radar",
@@ -9528,7 +9528,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A6A3",
+      "code": "He-120-A6A3",
       "product": "xz.comm.c1",
       "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
@@ -9542,7 +9542,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A6A4",
+      "code": "He-120-A6A4",
       "product": "um.xpdr.t1",
       "name": "Транспондер Управления Маяков Т-1",
       "cat": "transponder",
@@ -9556,7 +9556,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A7A1",
+      "code": "He-120-A7A1",
       "product": "terra.ls.t10",
       "name": "Terra Habitat ЖО T-10",
       "cat": "life_support",
@@ -9570,7 +9570,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A7A2",
+      "code": "He-120-A7A2",
       "product": "std.surv.pod4",
       "name": "Спасательная капсула (4 места)",
       "cat": "escape_capsule",
@@ -9584,7 +9584,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A8A1",
+      "code": "He-120-A8A1",
       "product": "std.cargo.c20lock",
       "name": "Стойка C20 (замки и рельсы, 1 место)",
       "cat": "container_rack",
@@ -9598,7 +9598,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-120-A9A1",
+      "code": "He-120-A9A1",
       "product": "std.dock.collar",
       "name": "Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
@@ -9615,235 +9615,235 @@
     "edges": [
      {
       "net": "power_propulsion",
-      "src": "Хэ-120-A2A1",
-      "dst": "Хэ-120-A1A1"
+      "src": "He-120-A2A1",
+      "dst": "He-120-A1A1"
      },
      {
       "net": "power_propulsion",
-      "src": "Хэ-120-A2A1",
-      "dst": "Хэ-120-A5A1"
+      "src": "He-120-A2A1",
+      "dst": "He-120-A5A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-120-A2A2",
-      "dst": "Хэ-120-A3A2"
+      "src": "He-120-A2A2",
+      "dst": "He-120-A3A2"
      },
      {
       "net": "power_service",
-      "src": "Хэ-120-A2A2",
-      "dst": "Хэ-120-A4A1"
+      "src": "He-120-A2A2",
+      "dst": "He-120-A4A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-120-A2A2",
-      "dst": "Хэ-120-A6A1"
+      "src": "He-120-A2A2",
+      "dst": "He-120-A6A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-120-A2A2",
-      "dst": "Хэ-120-A6A2"
+      "src": "He-120-A2A2",
+      "dst": "He-120-A6A2"
      },
      {
       "net": "power_service",
-      "src": "Хэ-120-A2A2",
-      "dst": "Хэ-120-A6A3"
+      "src": "He-120-A2A2",
+      "dst": "He-120-A6A3"
      },
      {
       "net": "power_service",
-      "src": "Хэ-120-A2A2",
-      "dst": "Хэ-120-A6A4"
+      "src": "He-120-A2A2",
+      "dst": "He-120-A6A4"
      },
      {
       "net": "power_service",
-      "src": "Хэ-120-A2A2",
-      "dst": "Хэ-120-A7A1"
+      "src": "He-120-A2A2",
+      "dst": "He-120-A7A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-120-A2A2",
-      "dst": "Хэ-120-A9A1"
+      "src": "He-120-A2A2",
+      "dst": "He-120-A9A1"
      },
      {
       "net": "coolant",
-      "src": "Хэ-120-A1A1",
-      "dst": "Хэ-120-A3A2"
+      "src": "He-120-A1A1",
+      "dst": "He-120-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-120-A2A1",
-      "dst": "Хэ-120-A3A2"
+      "src": "He-120-A2A1",
+      "dst": "He-120-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-120-A2A2",
-      "dst": "Хэ-120-A3A2"
+      "src": "He-120-A2A2",
+      "dst": "He-120-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-120-A4A1",
-      "dst": "Хэ-120-A3A2"
+      "src": "He-120-A4A1",
+      "dst": "He-120-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-120-A6A1",
-      "dst": "Хэ-120-A3A2"
+      "src": "He-120-A6A1",
+      "dst": "He-120-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-120-A6A2",
-      "dst": "Хэ-120-A3A2"
+      "src": "He-120-A6A2",
+      "dst": "He-120-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-120-A7A1",
-      "dst": "Хэ-120-A3A2"
+      "src": "He-120-A7A1",
+      "dst": "He-120-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-120-A3A2",
-      "dst": "Хэ-120-A3A1"
+      "src": "He-120-A3A2",
+      "dst": "He-120-A3A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-120-A4A2",
-      "dst": "Хэ-120-A4A1"
+      "src": "He-120-A4A2",
+      "dst": "He-120-A4A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-120-A4A3",
-      "dst": "Хэ-120-A2A1"
+      "src": "He-120-A4A3",
+      "dst": "He-120-A2A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-120-A4A3",
-      "dst": "Хэ-120-A2A2"
+      "src": "He-120-A4A3",
+      "dst": "He-120-A2A2"
      },
      {
       "net": "data",
-      "src": "Хэ-120-A6A1",
-      "dst": "Хэ-120-A1A1"
+      "src": "He-120-A6A1",
+      "dst": "He-120-A1A1"
      },
      {
       "net": "data",
-      "src": "Хэ-120-A6A1",
-      "dst": "Хэ-120-A2A1"
+      "src": "He-120-A6A1",
+      "dst": "He-120-A2A1"
      },
      {
       "net": "data",
-      "src": "Хэ-120-A6A1",
-      "dst": "Хэ-120-A2A2"
+      "src": "He-120-A6A1",
+      "dst": "He-120-A2A2"
      },
      {
       "net": "data",
-      "src": "Хэ-120-A6A1",
-      "dst": "Хэ-120-A3A2"
+      "src": "He-120-A6A1",
+      "dst": "He-120-A3A2"
      },
      {
       "net": "data",
-      "src": "Хэ-120-A6A1",
-      "dst": "Хэ-120-A4A1"
+      "src": "He-120-A6A1",
+      "dst": "He-120-A4A1"
      },
      {
       "net": "data",
-      "src": "Хэ-120-A6A1",
-      "dst": "Хэ-120-A5A1"
+      "src": "He-120-A6A1",
+      "dst": "He-120-A5A1"
      },
      {
       "net": "data",
-      "src": "Хэ-120-A6A1",
-      "dst": "Хэ-120-A6A2"
+      "src": "He-120-A6A1",
+      "dst": "He-120-A6A2"
      },
      {
       "net": "data",
-      "src": "Хэ-120-A6A1",
-      "dst": "Хэ-120-A6A3"
+      "src": "He-120-A6A1",
+      "dst": "He-120-A6A3"
      },
      {
       "net": "data",
-      "src": "Хэ-120-A6A1",
-      "dst": "Хэ-120-A7A1"
+      "src": "He-120-A6A1",
+      "dst": "He-120-A7A1"
      }
     ],
     "functions": {
      "thrust": [
       [
-       "Хэ-120-A1A1"
+       "He-120-A1A1"
       ],
       [
-       "Хэ-120-A2A1"
+       "He-120-A2A1"
       ],
       [
-       "Хэ-120-A3A2"
+       "He-120-A3A2"
       ],
       [
-       "Хэ-120-A6A1"
+       "He-120-A6A1"
       ],
       [
-       "Хэ-120-A4A2",
-       "Хэ-120-A4A3"
+       "He-120-A4A2",
+       "He-120-A4A3"
       ]
      ],
      "jump": [
       [
-       "Хэ-120-A4A1"
+       "He-120-A4A1"
       ],
       [
-       "Хэ-120-A6A1"
+       "He-120-A6A1"
       ],
       [
-       "Хэ-120-A2A2"
+       "He-120-A2A2"
       ]
      ],
      "life": [
       [
-       "Хэ-120-A7A1"
+       "He-120-A7A1"
       ],
       [
-       "Хэ-120-A2A2"
+       "He-120-A2A2"
       ],
       [
-       "Хэ-120-A3A2"
+       "He-120-A3A2"
       ]
      ],
      "sensors": [
       [
-       "Хэ-120-A6A2"
+       "He-120-A6A2"
       ],
       [
-       "Хэ-120-A2A2"
+       "He-120-A2A2"
       ],
       [
-       "Хэ-120-A6A1"
+       "He-120-A6A1"
       ]
      ],
      "comms": [
       [
-       "Хэ-120-A6A3"
+       "He-120-A6A3"
       ],
       [
-       "Хэ-120-A6A4"
+       "He-120-A6A4"
       ]
      ],
      "attitude": [
       [
-       "Хэ-120-A5A1"
+       "He-120-A5A1"
       ],
       [
-       "Хэ-120-A2A1"
+       "He-120-A2A1"
       ]
      ]
     },
     "single_points_of_failure": [
-     "Хэ-120-A1A1",
-     "Хэ-120-A2A1",
-     "Хэ-120-A2A2",
-     "Хэ-120-A3A2",
-     "Хэ-120-A4A1",
-     "Хэ-120-A6A1",
-     "Хэ-120-A6A2",
-     "Хэ-120-A6A3",
-     "Хэ-120-A6A4",
-     "Хэ-120-A7A1"
+     "He-120-A1A1",
+     "He-120-A2A1",
+     "He-120-A2A2",
+     "He-120-A3A2",
+     "He-120-A4A1",
+     "He-120-A6A1",
+     "He-120-A6A2",
+     "He-120-A6A3",
+     "He-120-A6A4",
+     "He-120-A7A1"
     ],
     "redundancy": {
      "thrust": 1,
@@ -9857,8 +9857,8 @@
   },
   {
    "id": "harmony.ship.he-t12.lokomotiv",
-   "designation": "Хэ-Т12",
-   "name": "Хэ-Т12 «Локомотив» + 12 модулей",
+   "designation": "He-T12",
+   "name": "Хэ-T12 «Хэсе»",
    "cls": "jump_train",
    "manufacturer": "Верфи Гармонии",
    "runtime": "generic",
@@ -9911,7 +9911,7 @@
    "endurance_days": 60,
    "installed": [
     {
-     "code": "Хэ-Т12-A1A1",
+     "code": "He-T12-A1A1",
      "product": "th.drive.tz23",
      "cat": "drive",
      "qty": 4,
@@ -9995,7 +9995,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A2A1",
+     "code": "He-T12-A2A1",
      "product": "th.reactor.tr20",
      "cat": "reactor",
      "qty": 4,
@@ -10079,7 +10079,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A2A2",
+     "code": "He-T12-A2A2",
      "product": "th.apu.s600",
      "cat": "service_reactor",
      "qty": 1,
@@ -10107,7 +10107,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A3A1",
+     "code": "He-T12-A3A1",
      "product": "th.rad.panel50",
      "cat": "radiator",
      "qty": 20,
@@ -10152,7 +10152,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A3A2",
+     "code": "He-T12-A3A2",
      "product": "th.cool.loop600",
      "cat": "coolant_loop",
      "qty": 2,
@@ -10197,7 +10197,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A4A1",
+     "code": "He-T12-A4A1",
      "product": "harmony.core.h80",
      "cat": "jump_core",
      "qty": 1,
@@ -10225,7 +10225,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A4A2",
+     "code": "He-T12-A4A2",
      "product": "std.tank.jumpcharge",
      "cat": "tank",
      "qty": 420,
@@ -10304,7 +10304,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A4A3",
+     "code": "He-T12-A4A3",
      "product": "std.tank.pellets",
      "cat": "tank",
      "qty": 120,
@@ -10383,7 +10383,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A5A1",
+     "code": "He-T12-A5A1",
      "product": "std.rcs.cluster_h",
      "cat": "rcs",
      "qty": 16,
@@ -10539,7 +10539,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A6A1",
+     "code": "He-T12-A6A1",
      "product": "xz.mc.c3",
      "cat": "computer",
      "qty": 1,
@@ -10567,7 +10567,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A6A2",
+     "code": "He-T12-A6A2",
      "product": "xz.radar.n10",
      "cat": "radar",
      "qty": 1,
@@ -10595,7 +10595,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A6A3",
+     "code": "He-T12-A6A3",
      "product": "xz.comm.c1",
      "cat": "comm",
      "qty": 1,
@@ -10623,7 +10623,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A6A4",
+     "code": "He-T12-A6A4",
      "product": "um.xpdr.t1",
      "cat": "transponder",
      "qty": 1,
@@ -10651,7 +10651,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A7A1",
+     "code": "He-T12-A7A1",
      "product": "terra.ls.t60",
      "cat": "life_support",
      "qty": 1,
@@ -10679,7 +10679,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A7A2",
+     "code": "He-T12-A7A2",
      "product": "std.surv.boat20",
      "cat": "lifeboat",
      "qty": 1,
@@ -10707,7 +10707,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A8A1",
+     "code": "He-T12-A8A1",
      "product": "harmony.mod.cargo4800",
      "cat": "train_module",
      "qty": 12,
@@ -10786,7 +10786,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A9A1",
+     "code": "He-T12-A9A1",
      "product": "std.dock.collar",
      "cat": "docking_port",
      "qty": 2,
@@ -10831,7 +10831,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12-A11A1",
+     "code": "He-T12-A11A1",
      "product": "harmony.wpn.pd3",
      "cat": "weapon",
      "qty": 2,
@@ -10918,7 +10918,7 @@
    "schematic": {
     "nodes": [
      {
-      "code": "Хэ-Т12-A1A1",
+      "code": "He-T12-A1A1",
       "product": "th.drive.tz23",
       "name": "Тяньхэ ТЦ-23",
       "cat": "drive",
@@ -10932,7 +10932,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A2A1",
+      "code": "He-T12-A2A1",
       "product": "th.reactor.tr20",
       "name": "Тяньхэ ТР-20",
       "cat": "reactor",
@@ -10946,7 +10946,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A2A2",
+      "code": "He-T12-A2A2",
       "product": "th.apu.s600",
       "name": "Тяньхэ СР-600",
       "cat": "service_reactor",
@@ -10960,7 +10960,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A3A1",
+      "code": "He-T12-A3A1",
       "product": "th.rad.panel50",
       "name": "Тяньхэ радиаторная секция (50 м2)",
       "cat": "radiator",
@@ -10974,7 +10974,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A3A2",
+      "code": "He-T12-A3A2",
       "product": "th.cool.loop600",
       "name": "Тяньхэ контур охлаждения (600 МВт)",
       "cat": "coolant_loop",
@@ -10988,7 +10988,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A4A1",
+      "code": "He-T12-A4A1",
       "product": "harmony.core.h80",
       "name": "Гармония Х-80 (тягач поезда)",
       "cat": "jump_core",
@@ -11002,7 +11002,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A4A2",
+      "code": "He-T12-A4A2",
       "product": "std.tank.jumpcharge",
       "name": "Бак заряда прыжка (1 т)",
       "cat": "tank",
@@ -11016,7 +11016,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A4A3",
+      "code": "He-T12-A4A3",
       "product": "std.tank.pellets",
       "name": "Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
@@ -11030,7 +11030,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A5A1",
+      "code": "He-T12-A5A1",
       "product": "std.rcs.cluster_h",
       "name": "Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
@@ -11044,7 +11044,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A6A1",
+      "code": "He-T12-A6A1",
       "product": "xz.mc.c3",
       "name": "Синьчжи MotherComputer MC-C3 (флот)",
       "cat": "computer",
@@ -11058,7 +11058,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A6A2",
+      "code": "He-T12-A6A2",
       "product": "xz.radar.n10",
       "name": "Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
@@ -11072,7 +11072,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A6A3",
+      "code": "He-T12-A6A3",
       "product": "xz.comm.c1",
       "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
@@ -11086,7 +11086,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A6A4",
+      "code": "He-T12-A6A4",
       "product": "um.xpdr.t1",
       "name": "Транспондер Управления Маяков Т-1",
       "cat": "transponder",
@@ -11100,7 +11100,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A7A1",
+      "code": "He-T12-A7A1",
       "product": "terra.ls.t60",
       "name": "Terra Habitat ЖО T-60 (флот)",
       "cat": "life_support",
@@ -11114,7 +11114,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A7A2",
+      "code": "He-T12-A7A2",
       "product": "std.surv.boat20",
       "name": "Спасательная шлюпка (20 мест, 10 суток)",
       "cat": "lifeboat",
@@ -11128,7 +11128,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A8A1",
+      "code": "He-T12-A8A1",
       "product": "harmony.mod.cargo4800",
       "name": "Модуль поезда грузовой (4 800 т, 240 C20)",
       "cat": "train_module",
@@ -11142,7 +11142,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A9A1",
+      "code": "He-T12-A9A1",
       "product": "std.dock.collar",
       "name": "Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
@@ -11156,7 +11156,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12-A11A1",
+      "code": "He-T12-A11A1",
       "product": "harmony.wpn.pd3",
       "name": "Гармония турель ПРО ПТ-3",
       "cat": "weapon",
@@ -11173,247 +11173,247 @@
     "edges": [
      {
       "net": "power_propulsion",
-      "src": "Хэ-Т12-A2A1",
-      "dst": "Хэ-Т12-A1A1"
+      "src": "He-T12-A2A1",
+      "dst": "He-T12-A1A1"
      },
      {
       "net": "power_propulsion",
-      "src": "Хэ-Т12-A2A1",
-      "dst": "Хэ-Т12-A5A1"
+      "src": "He-T12-A2A1",
+      "dst": "He-T12-A5A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12-A2A2",
-      "dst": "Хэ-Т12-A3A2"
+      "src": "He-T12-A2A2",
+      "dst": "He-T12-A3A2"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12-A2A2",
-      "dst": "Хэ-Т12-A4A1"
+      "src": "He-T12-A2A2",
+      "dst": "He-T12-A4A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12-A2A2",
-      "dst": "Хэ-Т12-A6A1"
+      "src": "He-T12-A2A2",
+      "dst": "He-T12-A6A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12-A2A2",
-      "dst": "Хэ-Т12-A6A2"
+      "src": "He-T12-A2A2",
+      "dst": "He-T12-A6A2"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12-A2A2",
-      "dst": "Хэ-Т12-A6A3"
+      "src": "He-T12-A2A2",
+      "dst": "He-T12-A6A3"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12-A2A2",
-      "dst": "Хэ-Т12-A6A4"
+      "src": "He-T12-A2A2",
+      "dst": "He-T12-A6A4"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12-A2A2",
-      "dst": "Хэ-Т12-A7A1"
+      "src": "He-T12-A2A2",
+      "dst": "He-T12-A7A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12-A2A2",
-      "dst": "Хэ-Т12-A9A1"
+      "src": "He-T12-A2A2",
+      "dst": "He-T12-A9A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12-A2A2",
-      "dst": "Хэ-Т12-A11A1"
+      "src": "He-T12-A2A2",
+      "dst": "He-T12-A11A1"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12-A1A1",
-      "dst": "Хэ-Т12-A3A2"
+      "src": "He-T12-A1A1",
+      "dst": "He-T12-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12-A2A1",
-      "dst": "Хэ-Т12-A3A2"
+      "src": "He-T12-A2A1",
+      "dst": "He-T12-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12-A2A2",
-      "dst": "Хэ-Т12-A3A2"
+      "src": "He-T12-A2A2",
+      "dst": "He-T12-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12-A4A1",
-      "dst": "Хэ-Т12-A3A2"
+      "src": "He-T12-A4A1",
+      "dst": "He-T12-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12-A6A1",
-      "dst": "Хэ-Т12-A3A2"
+      "src": "He-T12-A6A1",
+      "dst": "He-T12-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12-A6A2",
-      "dst": "Хэ-Т12-A3A2"
+      "src": "He-T12-A6A2",
+      "dst": "He-T12-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12-A7A1",
-      "dst": "Хэ-Т12-A3A2"
+      "src": "He-T12-A7A1",
+      "dst": "He-T12-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12-A11A1",
-      "dst": "Хэ-Т12-A3A2"
+      "src": "He-T12-A11A1",
+      "dst": "He-T12-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12-A3A2",
-      "dst": "Хэ-Т12-A3A1"
+      "src": "He-T12-A3A2",
+      "dst": "He-T12-A3A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-Т12-A4A2",
-      "dst": "Хэ-Т12-A4A1"
+      "src": "He-T12-A4A2",
+      "dst": "He-T12-A4A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-Т12-A4A3",
-      "dst": "Хэ-Т12-A2A1"
+      "src": "He-T12-A4A3",
+      "dst": "He-T12-A2A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-Т12-A4A3",
-      "dst": "Хэ-Т12-A2A2"
+      "src": "He-T12-A4A3",
+      "dst": "He-T12-A2A2"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12-A6A1",
-      "dst": "Хэ-Т12-A1A1"
+      "src": "He-T12-A6A1",
+      "dst": "He-T12-A1A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12-A6A1",
-      "dst": "Хэ-Т12-A2A1"
+      "src": "He-T12-A6A1",
+      "dst": "He-T12-A2A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12-A6A1",
-      "dst": "Хэ-Т12-A2A2"
+      "src": "He-T12-A6A1",
+      "dst": "He-T12-A2A2"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12-A6A1",
-      "dst": "Хэ-Т12-A3A2"
+      "src": "He-T12-A6A1",
+      "dst": "He-T12-A3A2"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12-A6A1",
-      "dst": "Хэ-Т12-A4A1"
+      "src": "He-T12-A6A1",
+      "dst": "He-T12-A4A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12-A6A1",
-      "dst": "Хэ-Т12-A5A1"
+      "src": "He-T12-A6A1",
+      "dst": "He-T12-A5A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12-A6A1",
-      "dst": "Хэ-Т12-A6A2"
+      "src": "He-T12-A6A1",
+      "dst": "He-T12-A6A2"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12-A6A1",
-      "dst": "Хэ-Т12-A6A3"
+      "src": "He-T12-A6A1",
+      "dst": "He-T12-A6A3"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12-A6A1",
-      "dst": "Хэ-Т12-A7A1"
+      "src": "He-T12-A6A1",
+      "dst": "He-T12-A7A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12-A6A1",
-      "dst": "Хэ-Т12-A11A1"
+      "src": "He-T12-A6A1",
+      "dst": "He-T12-A11A1"
      }
     ],
     "functions": {
      "thrust": [
       [
-       "Хэ-Т12-A1A1"
+       "He-T12-A1A1"
       ],
       [
-       "Хэ-Т12-A2A1"
+       "He-T12-A2A1"
       ],
       [
-       "Хэ-Т12-A3A2"
+       "He-T12-A3A2"
       ],
       [
-       "Хэ-Т12-A6A1"
+       "He-T12-A6A1"
       ],
       [
-       "Хэ-Т12-A4A2",
-       "Хэ-Т12-A4A3"
+       "He-T12-A4A2",
+       "He-T12-A4A3"
       ]
      ],
      "jump": [
       [
-       "Хэ-Т12-A4A1"
+       "He-T12-A4A1"
       ],
       [
-       "Хэ-Т12-A6A1"
+       "He-T12-A6A1"
       ],
       [
-       "Хэ-Т12-A2A2"
+       "He-T12-A2A2"
       ]
      ],
      "life": [
       [
-       "Хэ-Т12-A7A1"
+       "He-T12-A7A1"
       ],
       [
-       "Хэ-Т12-A2A2"
+       "He-T12-A2A2"
       ],
       [
-       "Хэ-Т12-A3A2"
+       "He-T12-A3A2"
       ]
      ],
      "sensors": [
       [
-       "Хэ-Т12-A6A2"
+       "He-T12-A6A2"
       ],
       [
-       "Хэ-Т12-A2A2"
+       "He-T12-A2A2"
       ],
       [
-       "Хэ-Т12-A6A1"
+       "He-T12-A6A1"
       ]
      ],
      "comms": [
       [
-       "Хэ-Т12-A6A3"
+       "He-T12-A6A3"
       ],
       [
-       "Хэ-Т12-A6A4"
+       "He-T12-A6A4"
       ]
      ],
      "attitude": [
       [
-       "Хэ-Т12-A5A1"
+       "He-T12-A5A1"
       ],
       [
-       "Хэ-Т12-A2A1"
+       "He-T12-A2A1"
       ]
      ]
     },
     "single_points_of_failure": [
-     "Хэ-Т12-A2A2",
-     "Хэ-Т12-A4A1",
-     "Хэ-Т12-A6A1",
-     "Хэ-Т12-A6A2",
-     "Хэ-Т12-A6A3",
-     "Хэ-Т12-A6A4",
-     "Хэ-Т12-A7A1"
+     "He-T12-A2A2",
+     "He-T12-A4A1",
+     "He-T12-A6A1",
+     "He-T12-A6A2",
+     "He-T12-A6A3",
+     "He-T12-A6A4",
+     "He-T12-A7A1"
     ],
     "redundancy": {
      "thrust": 1,
@@ -11427,8 +11427,8 @@
   },
   {
    "id": "harmony.ship.he-t12c.tanker",
-   "designation": "Хэ-Т12Ц",
-   "name": "Хэ-Т12Ц (поезд-танкер)",
+   "designation": "He-T12G",
+   "name": "Хэ-T12G «Хэсе»",
    "cls": "jump_tanker",
    "manufacturer": "Верфи Гармонии",
    "runtime": "generic",
@@ -11481,7 +11481,7 @@
    "endurance_days": 60,
    "installed": [
     {
-     "code": "Хэ-Т12Ц-A1A1",
+     "code": "He-T12G-A1A1",
      "product": "th.drive.tz23",
      "cat": "drive",
      "qty": 4,
@@ -11565,7 +11565,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A2A1",
+     "code": "He-T12G-A2A1",
      "product": "th.reactor.tr20",
      "cat": "reactor",
      "qty": 4,
@@ -11649,7 +11649,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A2A2",
+     "code": "He-T12G-A2A2",
      "product": "th.apu.s600",
      "cat": "service_reactor",
      "qty": 1,
@@ -11677,7 +11677,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A3A1",
+     "code": "He-T12G-A3A1",
      "product": "th.rad.panel50",
      "cat": "radiator",
      "qty": 20,
@@ -11722,7 +11722,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A3A2",
+     "code": "He-T12G-A3A2",
      "product": "th.cool.loop600",
      "cat": "coolant_loop",
      "qty": 2,
@@ -11767,7 +11767,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A4A1",
+     "code": "He-T12G-A4A1",
      "product": "harmony.core.h80",
      "cat": "jump_core",
      "qty": 1,
@@ -11795,7 +11795,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A4A2",
+     "code": "He-T12G-A4A2",
      "product": "std.tank.jumpcharge",
      "cat": "tank",
      "qty": 420,
@@ -11874,7 +11874,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A4A3",
+     "code": "He-T12G-A4A3",
      "product": "std.tank.pellets",
      "cat": "tank",
      "qty": 120,
@@ -11953,7 +11953,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A5A1",
+     "code": "He-T12G-A5A1",
      "product": "std.rcs.cluster_h",
      "cat": "rcs",
      "qty": 16,
@@ -12109,7 +12109,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A6A1",
+     "code": "He-T12G-A6A1",
      "product": "xz.mc.c3",
      "cat": "computer",
      "qty": 1,
@@ -12137,7 +12137,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A6A2",
+     "code": "He-T12G-A6A2",
      "product": "xz.radar.n10",
      "cat": "radar",
      "qty": 1,
@@ -12165,7 +12165,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A6A3",
+     "code": "He-T12G-A6A3",
      "product": "xz.comm.c1",
      "cat": "comm",
      "qty": 1,
@@ -12193,7 +12193,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A6A4",
+     "code": "He-T12G-A6A4",
      "product": "um.xpdr.t1",
      "cat": "transponder",
      "qty": 1,
@@ -12221,7 +12221,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A7A1",
+     "code": "He-T12G-A7A1",
      "product": "terra.ls.t60",
      "cat": "life_support",
      "qty": 1,
@@ -12249,7 +12249,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A7A2",
+     "code": "He-T12G-A7A2",
      "product": "std.surv.boat20",
      "cat": "lifeboat",
      "qty": 1,
@@ -12277,7 +12277,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A8A1",
+     "code": "He-T12G-A8A1",
      "product": "harmony.mod.tank4200",
      "cat": "train_module",
      "qty": 12,
@@ -12356,7 +12356,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A9A1",
+     "code": "He-T12G-A9A1",
      "product": "std.dock.collar",
      "cat": "docking_port",
      "qty": 2,
@@ -12401,7 +12401,7 @@
      ]
     },
     {
-     "code": "Хэ-Т12Ц-A11A1",
+     "code": "He-T12G-A11A1",
      "product": "harmony.wpn.pd3",
      "cat": "weapon",
      "qty": 2,
@@ -12488,7 +12488,7 @@
    "schematic": {
     "nodes": [
      {
-      "code": "Хэ-Т12Ц-A1A1",
+      "code": "He-T12G-A1A1",
       "product": "th.drive.tz23",
       "name": "Тяньхэ ТЦ-23",
       "cat": "drive",
@@ -12502,7 +12502,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A2A1",
+      "code": "He-T12G-A2A1",
       "product": "th.reactor.tr20",
       "name": "Тяньхэ ТР-20",
       "cat": "reactor",
@@ -12516,7 +12516,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A2A2",
+      "code": "He-T12G-A2A2",
       "product": "th.apu.s600",
       "name": "Тяньхэ СР-600",
       "cat": "service_reactor",
@@ -12530,7 +12530,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A3A1",
+      "code": "He-T12G-A3A1",
       "product": "th.rad.panel50",
       "name": "Тяньхэ радиаторная секция (50 м2)",
       "cat": "radiator",
@@ -12544,7 +12544,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A3A2",
+      "code": "He-T12G-A3A2",
       "product": "th.cool.loop600",
       "name": "Тяньхэ контур охлаждения (600 МВт)",
       "cat": "coolant_loop",
@@ -12558,7 +12558,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A4A1",
+      "code": "He-T12G-A4A1",
       "product": "harmony.core.h80",
       "name": "Гармония Х-80 (тягач поезда)",
       "cat": "jump_core",
@@ -12572,7 +12572,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A4A2",
+      "code": "He-T12G-A4A2",
       "product": "std.tank.jumpcharge",
       "name": "Бак заряда прыжка (1 т)",
       "cat": "tank",
@@ -12586,7 +12586,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A4A3",
+      "code": "He-T12G-A4A3",
       "product": "std.tank.pellets",
       "name": "Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
@@ -12600,7 +12600,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A5A1",
+      "code": "He-T12G-A5A1",
       "product": "std.rcs.cluster_h",
       "name": "Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
@@ -12614,7 +12614,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A6A1",
+      "code": "He-T12G-A6A1",
       "product": "xz.mc.c3",
       "name": "Синьчжи MotherComputer MC-C3 (флот)",
       "cat": "computer",
@@ -12628,7 +12628,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A6A2",
+      "code": "He-T12G-A6A2",
       "product": "xz.radar.n10",
       "name": "Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
@@ -12642,7 +12642,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A6A3",
+      "code": "He-T12G-A6A3",
       "product": "xz.comm.c1",
       "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
@@ -12656,7 +12656,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A6A4",
+      "code": "He-T12G-A6A4",
       "product": "um.xpdr.t1",
       "name": "Транспондер Управления Маяков Т-1",
       "cat": "transponder",
@@ -12670,7 +12670,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A7A1",
+      "code": "He-T12G-A7A1",
       "product": "terra.ls.t60",
       "name": "Terra Habitat ЖО T-60 (флот)",
       "cat": "life_support",
@@ -12684,7 +12684,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A7A2",
+      "code": "He-T12G-A7A2",
       "product": "std.surv.boat20",
       "name": "Спасательная шлюпка (20 мест, 10 суток)",
       "cat": "lifeboat",
@@ -12698,7 +12698,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A8A1",
+      "code": "He-T12G-A8A1",
       "product": "harmony.mod.tank4200",
       "name": "Модуль поезда-цистерна (4 170 т)",
       "cat": "train_module",
@@ -12712,7 +12712,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A9A1",
+      "code": "He-T12G-A9A1",
       "product": "std.dock.collar",
       "name": "Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
@@ -12726,7 +12726,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Т12Ц-A11A1",
+      "code": "He-T12G-A11A1",
       "product": "harmony.wpn.pd3",
       "name": "Гармония турель ПРО ПТ-3",
       "cat": "weapon",
@@ -12743,247 +12743,247 @@
     "edges": [
      {
       "net": "power_propulsion",
-      "src": "Хэ-Т12Ц-A2A1",
-      "dst": "Хэ-Т12Ц-A1A1"
+      "src": "He-T12G-A2A1",
+      "dst": "He-T12G-A1A1"
      },
      {
       "net": "power_propulsion",
-      "src": "Хэ-Т12Ц-A2A1",
-      "dst": "Хэ-Т12Ц-A5A1"
+      "src": "He-T12G-A2A1",
+      "dst": "He-T12G-A5A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12Ц-A2A2",
-      "dst": "Хэ-Т12Ц-A3A2"
+      "src": "He-T12G-A2A2",
+      "dst": "He-T12G-A3A2"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12Ц-A2A2",
-      "dst": "Хэ-Т12Ц-A4A1"
+      "src": "He-T12G-A2A2",
+      "dst": "He-T12G-A4A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12Ц-A2A2",
-      "dst": "Хэ-Т12Ц-A6A1"
+      "src": "He-T12G-A2A2",
+      "dst": "He-T12G-A6A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12Ц-A2A2",
-      "dst": "Хэ-Т12Ц-A6A2"
+      "src": "He-T12G-A2A2",
+      "dst": "He-T12G-A6A2"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12Ц-A2A2",
-      "dst": "Хэ-Т12Ц-A6A3"
+      "src": "He-T12G-A2A2",
+      "dst": "He-T12G-A6A3"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12Ц-A2A2",
-      "dst": "Хэ-Т12Ц-A6A4"
+      "src": "He-T12G-A2A2",
+      "dst": "He-T12G-A6A4"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12Ц-A2A2",
-      "dst": "Хэ-Т12Ц-A7A1"
+      "src": "He-T12G-A2A2",
+      "dst": "He-T12G-A7A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12Ц-A2A2",
-      "dst": "Хэ-Т12Ц-A9A1"
+      "src": "He-T12G-A2A2",
+      "dst": "He-T12G-A9A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Т12Ц-A2A2",
-      "dst": "Хэ-Т12Ц-A11A1"
+      "src": "He-T12G-A2A2",
+      "dst": "He-T12G-A11A1"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12Ц-A1A1",
-      "dst": "Хэ-Т12Ц-A3A2"
+      "src": "He-T12G-A1A1",
+      "dst": "He-T12G-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12Ц-A2A1",
-      "dst": "Хэ-Т12Ц-A3A2"
+      "src": "He-T12G-A2A1",
+      "dst": "He-T12G-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12Ц-A2A2",
-      "dst": "Хэ-Т12Ц-A3A2"
+      "src": "He-T12G-A2A2",
+      "dst": "He-T12G-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12Ц-A4A1",
-      "dst": "Хэ-Т12Ц-A3A2"
+      "src": "He-T12G-A4A1",
+      "dst": "He-T12G-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12Ц-A6A1",
-      "dst": "Хэ-Т12Ц-A3A2"
+      "src": "He-T12G-A6A1",
+      "dst": "He-T12G-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12Ц-A6A2",
-      "dst": "Хэ-Т12Ц-A3A2"
+      "src": "He-T12G-A6A2",
+      "dst": "He-T12G-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12Ц-A7A1",
-      "dst": "Хэ-Т12Ц-A3A2"
+      "src": "He-T12G-A7A1",
+      "dst": "He-T12G-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12Ц-A11A1",
-      "dst": "Хэ-Т12Ц-A3A2"
+      "src": "He-T12G-A11A1",
+      "dst": "He-T12G-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Т12Ц-A3A2",
-      "dst": "Хэ-Т12Ц-A3A1"
+      "src": "He-T12G-A3A2",
+      "dst": "He-T12G-A3A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-Т12Ц-A4A2",
-      "dst": "Хэ-Т12Ц-A4A1"
+      "src": "He-T12G-A4A2",
+      "dst": "He-T12G-A4A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-Т12Ц-A4A3",
-      "dst": "Хэ-Т12Ц-A2A1"
+      "src": "He-T12G-A4A3",
+      "dst": "He-T12G-A2A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-Т12Ц-A4A3",
-      "dst": "Хэ-Т12Ц-A2A2"
+      "src": "He-T12G-A4A3",
+      "dst": "He-T12G-A2A2"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12Ц-A6A1",
-      "dst": "Хэ-Т12Ц-A1A1"
+      "src": "He-T12G-A6A1",
+      "dst": "He-T12G-A1A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12Ц-A6A1",
-      "dst": "Хэ-Т12Ц-A2A1"
+      "src": "He-T12G-A6A1",
+      "dst": "He-T12G-A2A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12Ц-A6A1",
-      "dst": "Хэ-Т12Ц-A2A2"
+      "src": "He-T12G-A6A1",
+      "dst": "He-T12G-A2A2"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12Ц-A6A1",
-      "dst": "Хэ-Т12Ц-A3A2"
+      "src": "He-T12G-A6A1",
+      "dst": "He-T12G-A3A2"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12Ц-A6A1",
-      "dst": "Хэ-Т12Ц-A4A1"
+      "src": "He-T12G-A6A1",
+      "dst": "He-T12G-A4A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12Ц-A6A1",
-      "dst": "Хэ-Т12Ц-A5A1"
+      "src": "He-T12G-A6A1",
+      "dst": "He-T12G-A5A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12Ц-A6A1",
-      "dst": "Хэ-Т12Ц-A6A2"
+      "src": "He-T12G-A6A1",
+      "dst": "He-T12G-A6A2"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12Ц-A6A1",
-      "dst": "Хэ-Т12Ц-A6A3"
+      "src": "He-T12G-A6A1",
+      "dst": "He-T12G-A6A3"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12Ц-A6A1",
-      "dst": "Хэ-Т12Ц-A7A1"
+      "src": "He-T12G-A6A1",
+      "dst": "He-T12G-A7A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Т12Ц-A6A1",
-      "dst": "Хэ-Т12Ц-A11A1"
+      "src": "He-T12G-A6A1",
+      "dst": "He-T12G-A11A1"
      }
     ],
     "functions": {
      "thrust": [
       [
-       "Хэ-Т12Ц-A1A1"
+       "He-T12G-A1A1"
       ],
       [
-       "Хэ-Т12Ц-A2A1"
+       "He-T12G-A2A1"
       ],
       [
-       "Хэ-Т12Ц-A3A2"
+       "He-T12G-A3A2"
       ],
       [
-       "Хэ-Т12Ц-A6A1"
+       "He-T12G-A6A1"
       ],
       [
-       "Хэ-Т12Ц-A4A2",
-       "Хэ-Т12Ц-A4A3"
+       "He-T12G-A4A2",
+       "He-T12G-A4A3"
       ]
      ],
      "jump": [
       [
-       "Хэ-Т12Ц-A4A1"
+       "He-T12G-A4A1"
       ],
       [
-       "Хэ-Т12Ц-A6A1"
+       "He-T12G-A6A1"
       ],
       [
-       "Хэ-Т12Ц-A2A2"
+       "He-T12G-A2A2"
       ]
      ],
      "life": [
       [
-       "Хэ-Т12Ц-A7A1"
+       "He-T12G-A7A1"
       ],
       [
-       "Хэ-Т12Ц-A2A2"
+       "He-T12G-A2A2"
       ],
       [
-       "Хэ-Т12Ц-A3A2"
+       "He-T12G-A3A2"
       ]
      ],
      "sensors": [
       [
-       "Хэ-Т12Ц-A6A2"
+       "He-T12G-A6A2"
       ],
       [
-       "Хэ-Т12Ц-A2A2"
+       "He-T12G-A2A2"
       ],
       [
-       "Хэ-Т12Ц-A6A1"
+       "He-T12G-A6A1"
       ]
      ],
      "comms": [
       [
-       "Хэ-Т12Ц-A6A3"
+       "He-T12G-A6A3"
       ],
       [
-       "Хэ-Т12Ц-A6A4"
+       "He-T12G-A6A4"
       ]
      ],
      "attitude": [
       [
-       "Хэ-Т12Ц-A5A1"
+       "He-T12G-A5A1"
       ],
       [
-       "Хэ-Т12Ц-A2A1"
+       "He-T12G-A2A1"
       ]
      ]
     },
     "single_points_of_failure": [
-     "Хэ-Т12Ц-A2A2",
-     "Хэ-Т12Ц-A4A1",
-     "Хэ-Т12Ц-A6A1",
-     "Хэ-Т12Ц-A6A2",
-     "Хэ-Т12Ц-A6A3",
-     "Хэ-Т12Ц-A6A4",
-     "Хэ-Т12Ц-A7A1"
+     "He-T12G-A2A2",
+     "He-T12G-A4A1",
+     "He-T12G-A6A1",
+     "He-T12G-A6A2",
+     "He-T12G-A6A3",
+     "He-T12G-A6A4",
+     "He-T12G-A7A1"
     ],
     "redundancy": {
      "thrust": 1,
@@ -12997,8 +12997,8 @@
   },
   {
    "id": "sol.ship.gt-3000.titan",
-   "designation": "ГТ-3000",
-   "name": "ГТ-3000 «Титан»",
+   "designation": "GT-3000",
+   "name": "GT-3000 «Титан»",
    "cls": "gas_tanker",
    "manufacturer": "Лунно-Марсианские верфи",
    "runtime": "generic",
@@ -13051,7 +13051,7 @@
    "endurance_days": 60,
    "installed": [
     {
-     "code": "ГТ-3000-A1A1",
+     "code": "GT-3000-A1A1",
      "product": "ofu.drive.u23",
      "cat": "drive",
      "qty": 3,
@@ -13117,7 +13117,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A2A1",
+     "code": "GT-3000-A2A1",
      "product": "srw.reactor.sr22",
      "cat": "reactor",
      "qty": 3,
@@ -13183,7 +13183,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A2A2",
+     "code": "GT-3000-A2A2",
      "product": "srw.apu.s60",
      "cat": "service_reactor",
      "qty": 1,
@@ -13211,7 +13211,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A3A1",
+     "code": "GT-3000-A3A1",
      "product": "sol.rad.panel50",
      "cat": "radiator",
      "qty": 3,
@@ -13256,7 +13256,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A3A2",
+     "code": "GT-3000-A3A2",
      "product": "sol.cool.loop300",
      "cat": "coolant_loop",
      "qty": 1,
@@ -13284,7 +13284,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A4A1",
+     "code": "GT-3000-A4A1",
      "product": "std.tank.pellets",
      "cat": "tank",
      "qty": 10,
@@ -13363,7 +13363,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A5A1",
+     "code": "GT-3000-A5A1",
      "product": "std.rcs.cluster",
      "cat": "rcs",
      "qty": 8,
@@ -13519,7 +13519,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A6A1",
+     "code": "GT-3000-A6A1",
      "product": "xz.mc.c1",
      "cat": "computer",
      "qty": 1,
@@ -13547,7 +13547,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A6A2",
+     "code": "GT-3000-A6A2",
      "product": "xz.radar.n2",
      "cat": "radar",
      "qty": 1,
@@ -13575,7 +13575,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A6A3",
+     "code": "GT-3000-A6A3",
      "product": "xz.comm.c1",
      "cat": "comm",
      "qty": 1,
@@ -13603,7 +13603,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A6A4",
+     "code": "GT-3000-A6A4",
      "product": "um.xpdr.t1",
      "cat": "transponder",
      "qty": 1,
@@ -13631,7 +13631,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A7A1",
+     "code": "GT-3000-A7A1",
      "product": "terra.ls.t10",
      "cat": "life_support",
      "qty": 1,
@@ -13659,7 +13659,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A7A2",
+     "code": "GT-3000-A7A2",
      "product": "std.surv.pod4",
      "cat": "escape_capsule",
      "qty": 1,
@@ -13687,7 +13687,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A8A1",
+     "code": "GT-3000-A8A1",
      "product": "sol.cryo.t1000",
      "cat": "cryo_tank",
      "qty": 3,
@@ -13749,7 +13749,7 @@
      ]
     },
     {
-     "code": "ГТ-3000-A9A1",
+     "code": "GT-3000-A9A1",
      "product": "std.dock.collar",
      "cat": "docking_port",
      "qty": 2,
@@ -13835,7 +13835,7 @@
    "schematic": {
     "nodes": [
      {
-      "code": "ГТ-3000-A1A1",
+      "code": "GT-3000-A1A1",
       "product": "ofu.drive.u23",
       "name": "Урал-23",
       "cat": "drive",
@@ -13849,7 +13849,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A2A1",
+      "code": "GT-3000-A2A1",
       "product": "srw.reactor.sr22",
       "name": "Sol Reactor Works SR-2.2",
       "cat": "reactor",
@@ -13863,7 +13863,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A2A2",
+      "code": "GT-3000-A2A2",
       "product": "srw.apu.s60",
       "name": "Sol Reactor Works S-60",
       "cat": "service_reactor",
@@ -13877,7 +13877,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A3A1",
+      "code": "GT-3000-A3A1",
       "product": "sol.rad.panel50",
       "name": "ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
@@ -13891,7 +13891,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A3A2",
+      "code": "GT-3000-A3A2",
       "product": "sol.cool.loop300",
       "name": "ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
@@ -13905,7 +13905,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A4A1",
+      "code": "GT-3000-A4A1",
       "product": "std.tank.pellets",
       "name": "Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
@@ -13919,7 +13919,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A5A1",
+      "code": "GT-3000-A5A1",
       "product": "std.rcs.cluster",
       "name": "Кластер RCS (4 сопла, поле)",
       "cat": "rcs",
@@ -13933,7 +13933,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A6A1",
+      "code": "GT-3000-A6A1",
       "product": "xz.mc.c1",
       "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
       "cat": "computer",
@@ -13947,7 +13947,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A6A2",
+      "code": "GT-3000-A6A2",
       "product": "xz.radar.n2",
       "name": "Синьчжи навигационный радар N-2 (2 000 км)",
       "cat": "radar",
@@ -13961,7 +13961,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A6A3",
+      "code": "GT-3000-A6A3",
       "product": "xz.comm.c1",
       "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
@@ -13975,7 +13975,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A6A4",
+      "code": "GT-3000-A6A4",
       "product": "um.xpdr.t1",
       "name": "Транспондер Управления Маяков Т-1",
       "cat": "transponder",
@@ -13989,7 +13989,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A7A1",
+      "code": "GT-3000-A7A1",
       "product": "terra.ls.t10",
       "name": "Terra Habitat ЖО T-10",
       "cat": "life_support",
@@ -14003,7 +14003,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A7A2",
+      "code": "GT-3000-A7A2",
       "product": "std.surv.pod4",
       "name": "Спасательная капсула (4 места)",
       "cat": "escape_capsule",
@@ -14017,7 +14017,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A8A1",
+      "code": "GT-3000-A8A1",
       "product": "sol.cryo.t1000",
       "name": "Криоцистерна He-3/D (1 000 т)",
       "cat": "cryo_tank",
@@ -14031,7 +14031,7 @@
       "condition": "new"
      },
      {
-      "code": "ГТ-3000-A9A1",
+      "code": "GT-3000-A9A1",
       "product": "std.dock.collar",
       "name": "Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
@@ -14048,206 +14048,206 @@
     "edges": [
      {
       "net": "power_propulsion",
-      "src": "ГТ-3000-A2A1",
-      "dst": "ГТ-3000-A1A1"
+      "src": "GT-3000-A2A1",
+      "dst": "GT-3000-A1A1"
      },
      {
       "net": "power_propulsion",
-      "src": "ГТ-3000-A2A1",
-      "dst": "ГТ-3000-A5A1"
+      "src": "GT-3000-A2A1",
+      "dst": "GT-3000-A5A1"
      },
      {
       "net": "power_service",
-      "src": "ГТ-3000-A2A2",
-      "dst": "ГТ-3000-A3A2"
+      "src": "GT-3000-A2A2",
+      "dst": "GT-3000-A3A2"
      },
      {
       "net": "power_service",
-      "src": "ГТ-3000-A2A2",
-      "dst": "ГТ-3000-A6A1"
+      "src": "GT-3000-A2A2",
+      "dst": "GT-3000-A6A1"
      },
      {
       "net": "power_service",
-      "src": "ГТ-3000-A2A2",
-      "dst": "ГТ-3000-A6A2"
+      "src": "GT-3000-A2A2",
+      "dst": "GT-3000-A6A2"
      },
      {
       "net": "power_service",
-      "src": "ГТ-3000-A2A2",
-      "dst": "ГТ-3000-A6A3"
+      "src": "GT-3000-A2A2",
+      "dst": "GT-3000-A6A3"
      },
      {
       "net": "power_service",
-      "src": "ГТ-3000-A2A2",
-      "dst": "ГТ-3000-A6A4"
+      "src": "GT-3000-A2A2",
+      "dst": "GT-3000-A6A4"
      },
      {
       "net": "power_service",
-      "src": "ГТ-3000-A2A2",
-      "dst": "ГТ-3000-A7A1"
+      "src": "GT-3000-A2A2",
+      "dst": "GT-3000-A7A1"
      },
      {
       "net": "power_service",
-      "src": "ГТ-3000-A2A2",
-      "dst": "ГТ-3000-A8A1"
+      "src": "GT-3000-A2A2",
+      "dst": "GT-3000-A8A1"
      },
      {
       "net": "power_service",
-      "src": "ГТ-3000-A2A2",
-      "dst": "ГТ-3000-A9A1"
+      "src": "GT-3000-A2A2",
+      "dst": "GT-3000-A9A1"
      },
      {
       "net": "coolant",
-      "src": "ГТ-3000-A1A1",
-      "dst": "ГТ-3000-A3A2"
+      "src": "GT-3000-A1A1",
+      "dst": "GT-3000-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ГТ-3000-A2A1",
-      "dst": "ГТ-3000-A3A2"
+      "src": "GT-3000-A2A1",
+      "dst": "GT-3000-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ГТ-3000-A2A2",
-      "dst": "ГТ-3000-A3A2"
+      "src": "GT-3000-A2A2",
+      "dst": "GT-3000-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ГТ-3000-A6A1",
-      "dst": "ГТ-3000-A3A2"
+      "src": "GT-3000-A6A1",
+      "dst": "GT-3000-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ГТ-3000-A6A2",
-      "dst": "ГТ-3000-A3A2"
+      "src": "GT-3000-A6A2",
+      "dst": "GT-3000-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ГТ-3000-A7A1",
-      "dst": "ГТ-3000-A3A2"
+      "src": "GT-3000-A7A1",
+      "dst": "GT-3000-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ГТ-3000-A3A2",
-      "dst": "ГТ-3000-A3A1"
+      "src": "GT-3000-A3A2",
+      "dst": "GT-3000-A3A1"
      },
      {
       "net": "fuel",
-      "src": "ГТ-3000-A4A1",
-      "dst": "ГТ-3000-A2A1"
+      "src": "GT-3000-A4A1",
+      "dst": "GT-3000-A2A1"
      },
      {
       "net": "fuel",
-      "src": "ГТ-3000-A4A1",
-      "dst": "ГТ-3000-A2A2"
+      "src": "GT-3000-A4A1",
+      "dst": "GT-3000-A2A2"
      },
      {
       "net": "data",
-      "src": "ГТ-3000-A6A1",
-      "dst": "ГТ-3000-A1A1"
+      "src": "GT-3000-A6A1",
+      "dst": "GT-3000-A1A1"
      },
      {
       "net": "data",
-      "src": "ГТ-3000-A6A1",
-      "dst": "ГТ-3000-A2A1"
+      "src": "GT-3000-A6A1",
+      "dst": "GT-3000-A2A1"
      },
      {
       "net": "data",
-      "src": "ГТ-3000-A6A1",
-      "dst": "ГТ-3000-A2A2"
+      "src": "GT-3000-A6A1",
+      "dst": "GT-3000-A2A2"
      },
      {
       "net": "data",
-      "src": "ГТ-3000-A6A1",
-      "dst": "ГТ-3000-A3A2"
+      "src": "GT-3000-A6A1",
+      "dst": "GT-3000-A3A2"
      },
      {
       "net": "data",
-      "src": "ГТ-3000-A6A1",
-      "dst": "ГТ-3000-A5A1"
+      "src": "GT-3000-A6A1",
+      "dst": "GT-3000-A5A1"
      },
      {
       "net": "data",
-      "src": "ГТ-3000-A6A1",
-      "dst": "ГТ-3000-A6A2"
+      "src": "GT-3000-A6A1",
+      "dst": "GT-3000-A6A2"
      },
      {
       "net": "data",
-      "src": "ГТ-3000-A6A1",
-      "dst": "ГТ-3000-A6A3"
+      "src": "GT-3000-A6A1",
+      "dst": "GT-3000-A6A3"
      },
      {
       "net": "data",
-      "src": "ГТ-3000-A6A1",
-      "dst": "ГТ-3000-A7A1"
+      "src": "GT-3000-A6A1",
+      "dst": "GT-3000-A7A1"
      }
     ],
     "functions": {
      "thrust": [
       [
-       "ГТ-3000-A1A1"
+       "GT-3000-A1A1"
       ],
       [
-       "ГТ-3000-A2A1"
+       "GT-3000-A2A1"
       ],
       [
-       "ГТ-3000-A3A2"
+       "GT-3000-A3A2"
       ],
       [
-       "ГТ-3000-A6A1"
+       "GT-3000-A6A1"
       ],
       [
-       "ГТ-3000-A4A1"
+       "GT-3000-A4A1"
       ]
      ],
      "jump": [],
      "life": [
       [
-       "ГТ-3000-A7A1"
+       "GT-3000-A7A1"
       ],
       [
-       "ГТ-3000-A2A2"
+       "GT-3000-A2A2"
       ],
       [
-       "ГТ-3000-A3A2"
+       "GT-3000-A3A2"
       ]
      ],
      "sensors": [
       [
-       "ГТ-3000-A6A2"
+       "GT-3000-A6A2"
       ],
       [
-       "ГТ-3000-A2A2"
+       "GT-3000-A2A2"
       ],
       [
-       "ГТ-3000-A6A1"
+       "GT-3000-A6A1"
       ]
      ],
      "comms": [
       [
-       "ГТ-3000-A6A3"
+       "GT-3000-A6A3"
       ],
       [
-       "ГТ-3000-A6A4"
+       "GT-3000-A6A4"
       ]
      ],
      "attitude": [
       [
-       "ГТ-3000-A5A1"
+       "GT-3000-A5A1"
       ],
       [
-       "ГТ-3000-A2A1"
+       "GT-3000-A2A1"
       ]
      ]
     },
     "single_points_of_failure": [
-     "ГТ-3000-A2A2",
-     "ГТ-3000-A3A2",
-     "ГТ-3000-A6A1",
-     "ГТ-3000-A6A2",
-     "ГТ-3000-A6A3",
-     "ГТ-3000-A6A4",
-     "ГТ-3000-A7A1"
+     "GT-3000-A2A2",
+     "GT-3000-A3A2",
+     "GT-3000-A6A1",
+     "GT-3000-A6A2",
+     "GT-3000-A6A3",
+     "GT-3000-A6A4",
+     "GT-3000-A7A1"
     ],
     "redundancy": {
      "thrust": 1,
@@ -14261,8 +14261,8 @@
   },
   {
    "id": "stone.ship.kamen.tanker",
-   "designation": "КД-Т",
-   "name": "«Камень» (танкер из астероида)",
+   "designation": "RT",
+   "name": "«Камень» (каменный танкер)",
    "cls": "gas_tanker",
    "manufacturer": "Каменные доки Раздора",
    "runtime": "generic",
@@ -14315,7 +14315,7 @@
    "endurance_days": 90,
    "installed": [
     {
-     "code": "КД-Т-A1A1",
+     "code": "RT-A1A1",
      "product": "ofu.drive.u33",
      "cat": "drive",
      "qty": 1,
@@ -14345,7 +14345,7 @@
      ]
     },
     {
-     "code": "КД-Т-A2A1",
+     "code": "RT-A2A1",
      "product": "ofu.reactor.er26",
      "cat": "reactor",
      "qty": 1,
@@ -14375,7 +14375,7 @@
      ]
     },
     {
-     "code": "КД-Т-A2A2",
+     "code": "RT-A2A2",
      "product": "ofu.apu.s20",
      "cat": "service_reactor",
      "qty": 1,
@@ -14403,7 +14403,7 @@
      ]
     },
     {
-     "code": "КД-Т-A3A1",
+     "code": "RT-A3A1",
      "product": "sol.rad.panel50",
      "cat": "radiator",
      "qty": 2,
@@ -14448,7 +14448,7 @@
      ]
     },
     {
-     "code": "КД-Т-A3A2",
+     "code": "RT-A3A2",
      "product": "sol.cool.loop300",
      "cat": "coolant_loop",
      "qty": 1,
@@ -14476,7 +14476,7 @@
      ]
     },
     {
-     "code": "КД-Т-A4A1",
+     "code": "RT-A4A1",
      "product": "std.tank.pellets",
      "cat": "tank",
      "qty": 6,
@@ -14555,7 +14555,7 @@
      ]
     },
     {
-     "code": "КД-Т-A5A1",
+     "code": "RT-A5A1",
      "product": "std.rcs.cluster",
      "cat": "rcs",
      "qty": 8,
@@ -14711,7 +14711,7 @@
      ]
     },
     {
-     "code": "КД-Т-A6A1",
+     "code": "RT-A6A1",
      "product": "xz.mc.c1",
      "cat": "computer",
      "qty": 1,
@@ -14739,7 +14739,7 @@
      ]
     },
     {
-     "code": "КД-Т-A6A2",
+     "code": "RT-A6A2",
      "product": "kern.radar.deb5",
      "cat": "radar",
      "qty": 1,
@@ -14767,7 +14767,7 @@
      ]
     },
     {
-     "code": "КД-Т-A6A3",
+     "code": "RT-A6A3",
      "product": "xz.comm.c1",
      "cat": "comm",
      "qty": 1,
@@ -14795,7 +14795,7 @@
      ]
     },
     {
-     "code": "КД-Т-A7A1",
+     "code": "RT-A7A1",
      "product": "eurohab.ls.l20",
      "cat": "life_support",
      "qty": 1,
@@ -14823,7 +14823,7 @@
      ]
     },
     {
-     "code": "КД-Т-A7A2",
+     "code": "RT-A7A2",
      "product": "std.surv.pod4",
      "cat": "escape_capsule",
      "qty": 2,
@@ -14868,7 +14868,7 @@
      ]
     },
     {
-     "code": "КД-Т-A9A1",
+     "code": "RT-A9A1",
      "product": "std.dock.collar",
      "cat": "docking_port",
      "qty": 1,
@@ -14937,7 +14937,7 @@
    "schematic": {
     "nodes": [
      {
-      "code": "КД-Т-A1A1",
+      "code": "RT-A1A1",
       "product": "ofu.drive.u33",
       "name": "Урал-33",
       "cat": "drive",
@@ -14951,7 +14951,7 @@
       "condition": "refurbished"
      },
      {
-      "code": "КД-Т-A2A1",
+      "code": "RT-A2A1",
       "product": "ofu.reactor.er26",
       "name": "ОФУ ЭР-2.6",
       "cat": "reactor",
@@ -14965,7 +14965,7 @@
       "condition": "refurbished"
      },
      {
-      "code": "КД-Т-A2A2",
+      "code": "RT-A2A2",
       "product": "ofu.apu.s20",
       "name": "ОФУ СР-20",
       "cat": "service_reactor",
@@ -14979,7 +14979,7 @@
       "condition": "new"
      },
      {
-      "code": "КД-Т-A3A1",
+      "code": "RT-A3A1",
       "product": "sol.rad.panel50",
       "name": "ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
@@ -14993,7 +14993,7 @@
       "condition": "new"
      },
      {
-      "code": "КД-Т-A3A2",
+      "code": "RT-A3A2",
       "product": "sol.cool.loop300",
       "name": "ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
@@ -15007,7 +15007,7 @@
       "condition": "new"
      },
      {
-      "code": "КД-Т-A4A1",
+      "code": "RT-A4A1",
       "product": "std.tank.pellets",
       "name": "Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
@@ -15021,7 +15021,7 @@
       "condition": "new"
      },
      {
-      "code": "КД-Т-A5A1",
+      "code": "RT-A5A1",
       "product": "std.rcs.cluster",
       "name": "Кластер RCS (4 сопла, поле)",
       "cat": "rcs",
@@ -15035,7 +15035,7 @@
       "condition": "new"
      },
      {
-      "code": "КД-Т-A6A1",
+      "code": "RT-A6A1",
       "product": "xz.mc.c1",
       "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
       "cat": "computer",
@@ -15049,7 +15049,7 @@
       "condition": "refurbished"
      },
      {
-      "code": "КД-Т-A6A2",
+      "code": "RT-A6A2",
       "product": "kern.radar.deb5",
       "name": "Kern радар обломков DR-5 (5 000 км)",
       "cat": "radar",
@@ -15063,7 +15063,7 @@
       "condition": "new"
      },
      {
-      "code": "КД-Т-A6A3",
+      "code": "RT-A6A3",
       "product": "xz.comm.c1",
       "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
@@ -15077,7 +15077,7 @@
       "condition": "new"
      },
      {
-      "code": "КД-Т-A7A1",
+      "code": "RT-A7A1",
       "product": "eurohab.ls.l20",
       "name": "Евро-Хабитат ЖО L-20",
       "cat": "life_support",
@@ -15091,7 +15091,7 @@
       "condition": "new"
      },
      {
-      "code": "КД-Т-A7A2",
+      "code": "RT-A7A2",
       "product": "std.surv.pod4",
       "name": "Спасательная капсула (4 места)",
       "cat": "escape_capsule",
@@ -15105,7 +15105,7 @@
       "condition": "new"
      },
      {
-      "code": "КД-Т-A9A1",
+      "code": "RT-A9A1",
       "product": "std.dock.collar",
       "name": "Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
@@ -15122,194 +15122,194 @@
     "edges": [
      {
       "net": "power_propulsion",
-      "src": "КД-Т-A2A1",
-      "dst": "КД-Т-A1A1"
+      "src": "RT-A2A1",
+      "dst": "RT-A1A1"
      },
      {
       "net": "power_propulsion",
-      "src": "КД-Т-A2A1",
-      "dst": "КД-Т-A5A1"
+      "src": "RT-A2A1",
+      "dst": "RT-A5A1"
      },
      {
       "net": "power_service",
-      "src": "КД-Т-A2A2",
-      "dst": "КД-Т-A3A2"
+      "src": "RT-A2A2",
+      "dst": "RT-A3A2"
      },
      {
       "net": "power_service",
-      "src": "КД-Т-A2A2",
-      "dst": "КД-Т-A6A1"
+      "src": "RT-A2A2",
+      "dst": "RT-A6A1"
      },
      {
       "net": "power_service",
-      "src": "КД-Т-A2A2",
-      "dst": "КД-Т-A6A2"
+      "src": "RT-A2A2",
+      "dst": "RT-A6A2"
      },
      {
       "net": "power_service",
-      "src": "КД-Т-A2A2",
-      "dst": "КД-Т-A6A3"
+      "src": "RT-A2A2",
+      "dst": "RT-A6A3"
      },
      {
       "net": "power_service",
-      "src": "КД-Т-A2A2",
-      "dst": "КД-Т-A7A1"
+      "src": "RT-A2A2",
+      "dst": "RT-A7A1"
      },
      {
       "net": "power_service",
-      "src": "КД-Т-A2A2",
-      "dst": "КД-Т-A9A1"
+      "src": "RT-A2A2",
+      "dst": "RT-A9A1"
      },
      {
       "net": "coolant",
-      "src": "КД-Т-A1A1",
-      "dst": "КД-Т-A3A2"
+      "src": "RT-A1A1",
+      "dst": "RT-A3A2"
      },
      {
       "net": "coolant",
-      "src": "КД-Т-A2A1",
-      "dst": "КД-Т-A3A2"
+      "src": "RT-A2A1",
+      "dst": "RT-A3A2"
      },
      {
       "net": "coolant",
-      "src": "КД-Т-A2A2",
-      "dst": "КД-Т-A3A2"
+      "src": "RT-A2A2",
+      "dst": "RT-A3A2"
      },
      {
       "net": "coolant",
-      "src": "КД-Т-A6A1",
-      "dst": "КД-Т-A3A2"
+      "src": "RT-A6A1",
+      "dst": "RT-A3A2"
      },
      {
       "net": "coolant",
-      "src": "КД-Т-A6A2",
-      "dst": "КД-Т-A3A2"
+      "src": "RT-A6A2",
+      "dst": "RT-A3A2"
      },
      {
       "net": "coolant",
-      "src": "КД-Т-A7A1",
-      "dst": "КД-Т-A3A2"
+      "src": "RT-A7A1",
+      "dst": "RT-A3A2"
      },
      {
       "net": "coolant",
-      "src": "КД-Т-A3A2",
-      "dst": "КД-Т-A3A1"
+      "src": "RT-A3A2",
+      "dst": "RT-A3A1"
      },
      {
       "net": "fuel",
-      "src": "КД-Т-A4A1",
-      "dst": "КД-Т-A2A1"
+      "src": "RT-A4A1",
+      "dst": "RT-A2A1"
      },
      {
       "net": "fuel",
-      "src": "КД-Т-A4A1",
-      "dst": "КД-Т-A2A2"
+      "src": "RT-A4A1",
+      "dst": "RT-A2A2"
      },
      {
       "net": "data",
-      "src": "КД-Т-A6A1",
-      "dst": "КД-Т-A1A1"
+      "src": "RT-A6A1",
+      "dst": "RT-A1A1"
      },
      {
       "net": "data",
-      "src": "КД-Т-A6A1",
-      "dst": "КД-Т-A2A1"
+      "src": "RT-A6A1",
+      "dst": "RT-A2A1"
      },
      {
       "net": "data",
-      "src": "КД-Т-A6A1",
-      "dst": "КД-Т-A2A2"
+      "src": "RT-A6A1",
+      "dst": "RT-A2A2"
      },
      {
       "net": "data",
-      "src": "КД-Т-A6A1",
-      "dst": "КД-Т-A3A2"
+      "src": "RT-A6A1",
+      "dst": "RT-A3A2"
      },
      {
       "net": "data",
-      "src": "КД-Т-A6A1",
-      "dst": "КД-Т-A5A1"
+      "src": "RT-A6A1",
+      "dst": "RT-A5A1"
      },
      {
       "net": "data",
-      "src": "КД-Т-A6A1",
-      "dst": "КД-Т-A6A2"
+      "src": "RT-A6A1",
+      "dst": "RT-A6A2"
      },
      {
       "net": "data",
-      "src": "КД-Т-A6A1",
-      "dst": "КД-Т-A6A3"
+      "src": "RT-A6A1",
+      "dst": "RT-A6A3"
      },
      {
       "net": "data",
-      "src": "КД-Т-A6A1",
-      "dst": "КД-Т-A7A1"
+      "src": "RT-A6A1",
+      "dst": "RT-A7A1"
      }
     ],
     "functions": {
      "thrust": [
       [
-       "КД-Т-A1A1"
+       "RT-A1A1"
       ],
       [
-       "КД-Т-A2A1"
+       "RT-A2A1"
       ],
       [
-       "КД-Т-A3A2"
+       "RT-A3A2"
       ],
       [
-       "КД-Т-A6A1"
+       "RT-A6A1"
       ],
       [
-       "КД-Т-A4A1"
+       "RT-A4A1"
       ]
      ],
      "jump": [],
      "life": [
       [
-       "КД-Т-A7A1"
+       "RT-A7A1"
       ],
       [
-       "КД-Т-A2A2"
+       "RT-A2A2"
       ],
       [
-       "КД-Т-A3A2"
+       "RT-A3A2"
       ]
      ],
      "sensors": [
       [
-       "КД-Т-A6A2"
+       "RT-A6A2"
       ],
       [
-       "КД-Т-A2A2"
+       "RT-A2A2"
       ],
       [
-       "КД-Т-A6A1"
+       "RT-A6A1"
       ]
      ],
      "comms": [
       [
-       "КД-Т-A6A3"
+       "RT-A6A3"
       ]
      ],
      "attitude": [
       [
-       "КД-Т-A5A1"
+       "RT-A5A1"
       ],
       [
-       "КД-Т-A2A1"
+       "RT-A2A1"
       ]
      ]
     },
     "single_points_of_failure": [
-     "КД-Т-A1A1",
-     "КД-Т-A2A1",
-     "КД-Т-A2A2",
-     "КД-Т-A3A2",
-     "КД-Т-A6A1",
-     "КД-Т-A6A2",
-     "КД-Т-A6A3",
-     "КД-Т-A7A1"
+     "RT-A1A1",
+     "RT-A2A1",
+     "RT-A2A2",
+     "RT-A3A2",
+     "RT-A6A1",
+     "RT-A6A2",
+     "RT-A6A3",
+     "RT-A7A1"
     ],
     "redundancy": {
      "thrust": 1,
@@ -15324,7 +15324,7 @@
   {
    "id": "kern.ship.ht-20k.mul",
    "designation": "HT-20K",
-   "name": "HT-20K «Мул»",
+   "name": "HT-20K",
    "cls": "ore_tug",
    "manufacturer": "Kern Heavy Mining",
    "runtime": "generic",
@@ -16572,8 +16572,8 @@
   },
   {
    "id": "sol.ship.st-6.masterovoy",
-   "designation": "СТ-6",
-   "name": "СТ-6 «Мастеровой»",
+   "designation": "ST-6",
+   "name": "ST-6",
    "cls": "service_tender",
    "manufacturer": "Лунно-Марсианские верфи",
    "runtime": "generic",
@@ -16626,7 +16626,7 @@
    "endurance_days": 30,
    "installed": [
     {
-     "code": "СТ-6-A1A1",
+     "code": "ST-6-A1A1",
      "product": "ofu.drive.u15",
      "cat": "drive",
      "qty": 4,
@@ -16710,7 +16710,7 @@
      ]
     },
     {
-     "code": "СТ-6-A2A1",
+     "code": "ST-6-A2A1",
      "product": "srw.reactor.sr14",
      "cat": "reactor",
      "qty": 2,
@@ -16758,7 +16758,7 @@
      ]
     },
     {
-     "code": "СТ-6-A2A2",
+     "code": "ST-6-A2A2",
      "product": "srw.apu.s60",
      "cat": "service_reactor",
      "qty": 1,
@@ -16786,7 +16786,7 @@
      ]
     },
     {
-     "code": "СТ-6-A3A1",
+     "code": "ST-6-A3A1",
      "product": "sol.rad.panel50",
      "cat": "radiator",
      "qty": 3,
@@ -16831,7 +16831,7 @@
      ]
     },
     {
-     "code": "СТ-6-A3A2",
+     "code": "ST-6-A3A2",
      "product": "sol.cool.loop300",
      "cat": "coolant_loop",
      "qty": 1,
@@ -16859,7 +16859,7 @@
      ]
     },
     {
-     "code": "СТ-6-A4A1",
+     "code": "ST-6-A4A1",
      "product": "std.tank.pellets",
      "cat": "tank",
      "qty": 4,
@@ -16938,7 +16938,7 @@
      ]
     },
     {
-     "code": "СТ-6-A6A1",
+     "code": "ST-6-A6A1",
      "product": "xz.mc.c1",
      "cat": "computer",
      "qty": 1,
@@ -16966,7 +16966,7 @@
      ]
     },
     {
-     "code": "СТ-6-A6A2",
+     "code": "ST-6-A6A2",
      "product": "xz.radar.n2",
      "cat": "radar",
      "qty": 1,
@@ -16994,7 +16994,7 @@
      ]
     },
     {
-     "code": "СТ-6-A6A3",
+     "code": "ST-6-A6A3",
      "product": "xz.comm.c1",
      "cat": "comm",
      "qty": 1,
@@ -17022,7 +17022,7 @@
      ]
     },
     {
-     "code": "СТ-6-A6A4",
+     "code": "ST-6-A6A4",
      "product": "um.xpdr.t1",
      "cat": "transponder",
      "qty": 1,
@@ -17050,7 +17050,7 @@
      ]
     },
     {
-     "code": "СТ-6-A7A1",
+     "code": "ST-6-A7A1",
      "product": "terra.ls.t10",
      "cat": "life_support",
      "qty": 1,
@@ -17078,7 +17078,7 @@
      ]
     },
     {
-     "code": "СТ-6-A7A2",
+     "code": "ST-6-A7A2",
      "product": "std.surv.pod4",
      "cat": "escape_capsule",
      "qty": 2,
@@ -17123,7 +17123,7 @@
      ]
     },
     {
-     "code": "СТ-6-A7A3",
+     "code": "ST-6-A7A3",
      "product": "std.med.bay",
      "cat": "medbay",
      "qty": 1,
@@ -17151,7 +17151,7 @@
      ]
     },
     {
-     "code": "СТ-6-A8A1",
+     "code": "ST-6-A8A1",
      "product": "std.cargo.c20lock",
      "cat": "container_rack",
      "qty": 6,
@@ -17230,7 +17230,7 @@
      ]
     },
     {
-     "code": "СТ-6-A9A1",
+     "code": "ST-6-A9A1",
      "product": "std.bay.drone4",
      "cat": "drone_bay",
      "qty": 1,
@@ -17258,7 +17258,7 @@
      ]
     },
     {
-     "code": "СТ-6-A10A1",
+     "code": "ST-6-A10A1",
      "product": "sol.workshop.w1",
      "cat": "workshop",
      "qty": 1,
@@ -17286,7 +17286,7 @@
      ]
     },
     {
-     "code": "СТ-6-A9A2",
+     "code": "ST-6-A9A2",
      "product": "std.dock.collar",
      "cat": "docking_port",
      "qty": 2,
@@ -17372,7 +17372,7 @@
    "schematic": {
     "nodes": [
      {
-      "code": "СТ-6-A1A1",
+      "code": "ST-6-A1A1",
       "product": "ofu.drive.u15",
       "name": "Урал-15",
       "cat": "drive",
@@ -17386,7 +17386,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A2A1",
+      "code": "ST-6-A2A1",
       "product": "srw.reactor.sr14",
       "name": "Sol Reactor Works SR-1.4",
       "cat": "reactor",
@@ -17400,7 +17400,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A2A2",
+      "code": "ST-6-A2A2",
       "product": "srw.apu.s60",
       "name": "Sol Reactor Works S-60",
       "cat": "service_reactor",
@@ -17414,7 +17414,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A3A1",
+      "code": "ST-6-A3A1",
       "product": "sol.rad.panel50",
       "name": "ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
@@ -17428,7 +17428,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A3A2",
+      "code": "ST-6-A3A2",
       "product": "sol.cool.loop300",
       "name": "ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
@@ -17442,7 +17442,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A4A1",
+      "code": "ST-6-A4A1",
       "product": "std.tank.pellets",
       "name": "Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
@@ -17456,7 +17456,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A6A1",
+      "code": "ST-6-A6A1",
       "product": "xz.mc.c1",
       "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
       "cat": "computer",
@@ -17470,7 +17470,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A6A2",
+      "code": "ST-6-A6A2",
       "product": "xz.radar.n2",
       "name": "Синьчжи навигационный радар N-2 (2 000 км)",
       "cat": "radar",
@@ -17484,7 +17484,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A6A3",
+      "code": "ST-6-A6A3",
       "product": "xz.comm.c1",
       "name": "Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)",
       "cat": "comm",
@@ -17498,7 +17498,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A6A4",
+      "code": "ST-6-A6A4",
       "product": "um.xpdr.t1",
       "name": "Транспондер Управления Маяков Т-1",
       "cat": "transponder",
@@ -17512,7 +17512,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A7A1",
+      "code": "ST-6-A7A1",
       "product": "terra.ls.t10",
       "name": "Terra Habitat ЖО T-10",
       "cat": "life_support",
@@ -17526,7 +17526,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A7A2",
+      "code": "ST-6-A7A2",
       "product": "std.surv.pod4",
       "name": "Спасательная капсула (4 места)",
       "cat": "escape_capsule",
@@ -17540,7 +17540,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A7A3",
+      "code": "ST-6-A7A3",
       "product": "std.med.bay",
       "name": "Медотсек (4 койки)",
       "cat": "medbay",
@@ -17554,7 +17554,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A8A1",
+      "code": "ST-6-A8A1",
       "product": "std.cargo.c20lock",
       "name": "Стойка C20 (замки и рельсы, 1 место)",
       "cat": "container_rack",
@@ -17568,7 +17568,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A9A1",
+      "code": "ST-6-A9A1",
       "product": "std.bay.drone4",
       "name": "Отсек дронов (4 сервисных дрона)",
       "cat": "drone_bay",
@@ -17582,7 +17582,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A10A1",
+      "code": "ST-6-A10A1",
       "product": "sol.workshop.w1",
       "name": "Мастерская сервисного тендера (2 бригады)",
       "cat": "workshop",
@@ -17596,7 +17596,7 @@
       "condition": "new"
      },
      {
-      "code": "СТ-6-A9A2",
+      "code": "ST-6-A9A2",
       "product": "std.dock.collar",
       "name": "Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
@@ -17613,211 +17613,211 @@
     "edges": [
      {
       "net": "power_propulsion",
-      "src": "СТ-6-A2A1",
-      "dst": "СТ-6-A1A1"
+      "src": "ST-6-A2A1",
+      "dst": "ST-6-A1A1"
      },
      {
       "net": "power_service",
-      "src": "СТ-6-A2A2",
-      "dst": "СТ-6-A3A2"
+      "src": "ST-6-A2A2",
+      "dst": "ST-6-A3A2"
      },
      {
       "net": "power_service",
-      "src": "СТ-6-A2A2",
-      "dst": "СТ-6-A6A1"
+      "src": "ST-6-A2A2",
+      "dst": "ST-6-A6A1"
      },
      {
       "net": "power_service",
-      "src": "СТ-6-A2A2",
-      "dst": "СТ-6-A6A2"
+      "src": "ST-6-A2A2",
+      "dst": "ST-6-A6A2"
      },
      {
       "net": "power_service",
-      "src": "СТ-6-A2A2",
-      "dst": "СТ-6-A6A3"
+      "src": "ST-6-A2A2",
+      "dst": "ST-6-A6A3"
      },
      {
       "net": "power_service",
-      "src": "СТ-6-A2A2",
-      "dst": "СТ-6-A6A4"
+      "src": "ST-6-A2A2",
+      "dst": "ST-6-A6A4"
      },
      {
       "net": "power_service",
-      "src": "СТ-6-A2A2",
-      "dst": "СТ-6-A7A1"
+      "src": "ST-6-A2A2",
+      "dst": "ST-6-A7A1"
      },
      {
       "net": "power_service",
-      "src": "СТ-6-A2A2",
-      "dst": "СТ-6-A7A3"
+      "src": "ST-6-A2A2",
+      "dst": "ST-6-A7A3"
      },
      {
       "net": "power_service",
-      "src": "СТ-6-A2A2",
-      "dst": "СТ-6-A9A1"
+      "src": "ST-6-A2A2",
+      "dst": "ST-6-A9A1"
      },
      {
       "net": "power_service",
-      "src": "СТ-6-A2A2",
-      "dst": "СТ-6-A10A1"
+      "src": "ST-6-A2A2",
+      "dst": "ST-6-A10A1"
      },
      {
       "net": "power_service",
-      "src": "СТ-6-A2A2",
-      "dst": "СТ-6-A9A2"
+      "src": "ST-6-A2A2",
+      "dst": "ST-6-A9A2"
      },
      {
       "net": "coolant",
-      "src": "СТ-6-A1A1",
-      "dst": "СТ-6-A3A2"
+      "src": "ST-6-A1A1",
+      "dst": "ST-6-A3A2"
      },
      {
       "net": "coolant",
-      "src": "СТ-6-A2A1",
-      "dst": "СТ-6-A3A2"
+      "src": "ST-6-A2A1",
+      "dst": "ST-6-A3A2"
      },
      {
       "net": "coolant",
-      "src": "СТ-6-A2A2",
-      "dst": "СТ-6-A3A2"
+      "src": "ST-6-A2A2",
+      "dst": "ST-6-A3A2"
      },
      {
       "net": "coolant",
-      "src": "СТ-6-A6A1",
-      "dst": "СТ-6-A3A2"
+      "src": "ST-6-A6A1",
+      "dst": "ST-6-A3A2"
      },
      {
       "net": "coolant",
-      "src": "СТ-6-A6A2",
-      "dst": "СТ-6-A3A2"
+      "src": "ST-6-A6A2",
+      "dst": "ST-6-A3A2"
      },
      {
       "net": "coolant",
-      "src": "СТ-6-A7A1",
-      "dst": "СТ-6-A3A2"
+      "src": "ST-6-A7A1",
+      "dst": "ST-6-A3A2"
      },
      {
       "net": "coolant",
-      "src": "СТ-6-A3A2",
-      "dst": "СТ-6-A3A1"
+      "src": "ST-6-A3A2",
+      "dst": "ST-6-A3A1"
      },
      {
       "net": "fuel",
-      "src": "СТ-6-A4A1",
-      "dst": "СТ-6-A2A1"
+      "src": "ST-6-A4A1",
+      "dst": "ST-6-A2A1"
      },
      {
       "net": "fuel",
-      "src": "СТ-6-A4A1",
-      "dst": "СТ-6-A2A2"
+      "src": "ST-6-A4A1",
+      "dst": "ST-6-A2A2"
      },
      {
       "net": "data",
-      "src": "СТ-6-A6A1",
-      "dst": "СТ-6-A1A1"
+      "src": "ST-6-A6A1",
+      "dst": "ST-6-A1A1"
      },
      {
       "net": "data",
-      "src": "СТ-6-A6A1",
-      "dst": "СТ-6-A2A1"
+      "src": "ST-6-A6A1",
+      "dst": "ST-6-A2A1"
      },
      {
       "net": "data",
-      "src": "СТ-6-A6A1",
-      "dst": "СТ-6-A2A2"
+      "src": "ST-6-A6A1",
+      "dst": "ST-6-A2A2"
      },
      {
       "net": "data",
-      "src": "СТ-6-A6A1",
-      "dst": "СТ-6-A3A2"
+      "src": "ST-6-A6A1",
+      "dst": "ST-6-A3A2"
      },
      {
       "net": "data",
-      "src": "СТ-6-A6A1",
-      "dst": "СТ-6-A6A2"
+      "src": "ST-6-A6A1",
+      "dst": "ST-6-A6A2"
      },
      {
       "net": "data",
-      "src": "СТ-6-A6A1",
-      "dst": "СТ-6-A6A3"
+      "src": "ST-6-A6A1",
+      "dst": "ST-6-A6A3"
      },
      {
       "net": "data",
-      "src": "СТ-6-A6A1",
-      "dst": "СТ-6-A7A1"
+      "src": "ST-6-A6A1",
+      "dst": "ST-6-A7A1"
      },
      {
       "net": "life",
-      "src": "СТ-6-A7A1",
-      "dst": "СТ-6-A7A3"
+      "src": "ST-6-A7A1",
+      "dst": "ST-6-A7A3"
      }
     ],
     "functions": {
      "thrust": [
       [
-       "СТ-6-A1A1"
+       "ST-6-A1A1"
       ],
       [
-       "СТ-6-A2A1"
+       "ST-6-A2A1"
       ],
       [
-       "СТ-6-A3A2"
+       "ST-6-A3A2"
       ],
       [
-       "СТ-6-A6A1"
+       "ST-6-A6A1"
       ],
       [
-       "СТ-6-A4A1"
+       "ST-6-A4A1"
       ]
      ],
      "jump": [],
      "life": [
       [
-       "СТ-6-A7A1"
+       "ST-6-A7A1"
       ],
       [
-       "СТ-6-A2A2"
+       "ST-6-A2A2"
       ],
       [
-       "СТ-6-A3A2"
+       "ST-6-A3A2"
       ]
      ],
      "sensors": [
       [
-       "СТ-6-A6A2"
+       "ST-6-A6A2"
       ],
       [
-       "СТ-6-A2A2"
+       "ST-6-A2A2"
       ],
       [
-       "СТ-6-A6A1"
+       "ST-6-A6A1"
       ]
      ],
      "comms": [
       [
-       "СТ-6-A6A3"
+       "ST-6-A6A3"
       ],
       [
-       "СТ-6-A6A4"
+       "ST-6-A6A4"
       ]
      ],
      "attitude": [
       [
-       "СТ-6-A1A1"
+       "ST-6-A1A1"
       ],
       [
-       "СТ-6-A2A1"
+       "ST-6-A2A1"
       ]
      ]
     },
     "single_points_of_failure": [
-     "СТ-6-A2A2",
-     "СТ-6-A3A2",
-     "СТ-6-A6A1",
-     "СТ-6-A6A2",
-     "СТ-6-A6A3",
-     "СТ-6-A6A4",
-     "СТ-6-A7A1"
+     "ST-6-A2A2",
+     "ST-6-A3A2",
+     "ST-6-A6A1",
+     "ST-6-A6A2",
+     "ST-6-A6A3",
+     "ST-6-A6A4",
+     "ST-6-A7A1"
     ],
     "redundancy": {
      "thrust": 1,
@@ -17831,8 +17831,8 @@
   },
   {
    "id": "sol.ship.pk-30.strazh",
-   "designation": "ПК-30",
-   "name": "ПК-30 «Страж»",
+   "designation": "PC-30",
+   "name": "PC-30 «Фарос»",
    "cls": "patrol_cutter",
    "manufacturer": "Лунно-Марсианские верфи",
    "runtime": "generic",
@@ -17885,7 +17885,7 @@
    "endurance_days": 30,
    "installed": [
     {
-     "code": "ПК-30-A1A1",
+     "code": "PC-30-A1A1",
      "product": "ofu.drive.u65m",
      "cat": "drive",
      "qty": 4,
@@ -17969,7 +17969,7 @@
      ]
     },
     {
-     "code": "ПК-30-A2A1",
+     "code": "PC-30-A2A1",
      "product": "srw.reactor.sr48",
      "cat": "reactor",
      "qty": 2,
@@ -18017,7 +18017,7 @@
      ]
     },
     {
-     "code": "ПК-30-A2A2",
+     "code": "PC-30-A2A2",
      "product": "srw.apu.s200",
      "cat": "service_reactor",
      "qty": 2,
@@ -18062,7 +18062,7 @@
      ]
     },
     {
-     "code": "ПК-30-A3A1",
+     "code": "PC-30-A3A1",
      "product": "sol.rad.panel50",
      "cat": "radiator",
      "qty": 4,
@@ -18107,7 +18107,7 @@
      ]
     },
     {
-     "code": "ПК-30-A3A2",
+     "code": "PC-30-A3A2",
      "product": "sol.cool.loop300",
      "cat": "coolant_loop",
      "qty": 2,
@@ -18152,7 +18152,7 @@
      ]
     },
     {
-     "code": "ПК-30-A4A1",
+     "code": "PC-30-A4A1",
      "product": "um.core.z1",
      "cat": "jump_core",
      "qty": 1,
@@ -18180,7 +18180,7 @@
      ]
     },
     {
-     "code": "ПК-30-A4A2",
+     "code": "PC-30-A4A2",
      "product": "std.tank.jumpcharge",
      "cat": "tank",
      "qty": 5,
@@ -18259,7 +18259,7 @@
      ]
     },
     {
-     "code": "ПК-30-A4A3",
+     "code": "PC-30-A4A3",
      "product": "std.tank.pellets",
      "cat": "tank",
      "qty": 4,
@@ -18338,7 +18338,7 @@
      ]
     },
     {
-     "code": "ПК-30-A6A1",
+     "code": "PC-30-A6A1",
      "product": "xz.mc.c3",
      "cat": "computer",
      "qty": 2,
@@ -18383,7 +18383,7 @@
      ]
     },
     {
-     "code": "ПК-30-A6A2",
+     "code": "PC-30-A6A2",
      "product": "xz.radar.n10",
      "cat": "radar",
      "qty": 1,
@@ -18411,7 +18411,7 @@
      ]
     },
     {
-     "code": "ПК-30-A6A3",
+     "code": "PC-30-A6A3",
      "product": "xz.comm.c3",
      "cat": "comm",
      "qty": 2,
@@ -18456,7 +18456,7 @@
      ]
     },
     {
-     "code": "ПК-30-A6A4",
+     "code": "PC-30-A6A4",
      "product": "um.xpdr.t1",
      "cat": "transponder",
      "qty": 2,
@@ -18501,7 +18501,7 @@
      ]
     },
     {
-     "code": "ПК-30-A7A1",
+     "code": "PC-30-A7A1",
      "product": "terra.ls.t10",
      "cat": "life_support",
      "qty": 2,
@@ -18546,7 +18546,7 @@
      ]
     },
     {
-     "code": "ПК-30-A7A2",
+     "code": "PC-30-A7A2",
      "product": "std.surv.pod4",
      "cat": "escape_capsule",
      "qty": 4,
@@ -18625,7 +18625,7 @@
      ]
     },
     {
-     "code": "ПК-30-A7A3",
+     "code": "PC-30-A7A3",
      "product": "std.med.bay",
      "cat": "medbay",
      "qty": 1,
@@ -18653,7 +18653,7 @@
      ]
     },
     {
-     "code": "ПК-30-A8A1",
+     "code": "PC-30-A8A1",
      "product": "std.cabin.hold6",
      "cat": "passenger_module",
      "qty": 1,
@@ -18681,7 +18681,7 @@
      ]
     },
     {
-     "code": "ПК-30-A9A1",
+     "code": "PC-30-A9A1",
      "product": "std.bay.boat",
      "cat": "boat_bay",
      "qty": 1,
@@ -18709,7 +18709,7 @@
      ]
     },
     {
-     "code": "ПК-30-A9A2",
+     "code": "PC-30-A9A2",
      "product": "std.dock.collar",
      "cat": "docking_port",
      "qty": 1,
@@ -18737,7 +18737,7 @@
      ]
     },
     {
-     "code": "ПК-30-A11A1",
+     "code": "PC-30-A11A1",
      "product": "fa.wpn.coil30",
      "cat": "weapon",
      "qty": 1,
@@ -18765,7 +18765,7 @@
      ]
     },
     {
-     "code": "ПК-30-A11A2",
+     "code": "PC-30-A11A2",
      "product": "fa.wpn.pd2",
      "cat": "weapon",
      "qty": 1,
@@ -18793,7 +18793,7 @@
      ]
     },
     {
-     "code": "ПК-30-A12A1",
+     "code": "PC-30-A12A1",
      "product": "std.armour.ceramic",
      "cat": "armour",
      "qty": 20,
@@ -18914,7 +18914,7 @@
    "schematic": {
     "nodes": [
      {
-      "code": "ПК-30-A1A1",
+      "code": "PC-30-A1A1",
       "product": "ofu.drive.u65m",
       "name": "Урал-65М (служебный)",
       "cat": "drive",
@@ -18928,7 +18928,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A2A1",
+      "code": "PC-30-A2A1",
       "product": "srw.reactor.sr48",
       "name": "Sol Reactor Works SR-4.8",
       "cat": "reactor",
@@ -18942,7 +18942,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A2A2",
+      "code": "PC-30-A2A2",
       "product": "srw.apu.s200",
       "name": "Sol Reactor Works S-200",
       "cat": "service_reactor",
@@ -18956,7 +18956,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A3A1",
+      "code": "PC-30-A3A1",
       "product": "sol.rad.panel50",
       "name": "ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
@@ -18970,7 +18970,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A3A2",
+      "code": "PC-30-A3A2",
       "product": "sol.cool.loop300",
       "name": "ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
@@ -18984,7 +18984,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A4A1",
+      "code": "PC-30-A4A1",
       "product": "um.core.z1",
       "name": "Ядро «Нулевая точка» Я-1",
       "cat": "jump_core",
@@ -18998,7 +18998,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A4A2",
+      "code": "PC-30-A4A2",
       "product": "std.tank.jumpcharge",
       "name": "Бак заряда прыжка (1 т)",
       "cat": "tank",
@@ -19012,7 +19012,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A4A3",
+      "code": "PC-30-A4A3",
       "product": "std.tank.pellets",
       "name": "Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
@@ -19026,7 +19026,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A6A1",
+      "code": "PC-30-A6A1",
       "product": "xz.mc.c3",
       "name": "Синьчжи MotherComputer MC-C3 (флот)",
       "cat": "computer",
@@ -19040,7 +19040,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A6A2",
+      "code": "PC-30-A6A2",
       "product": "xz.radar.n10",
       "name": "Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
@@ -19054,7 +19054,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A6A3",
+      "code": "PC-30-A6A3",
       "product": "xz.comm.c3",
       "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
       "cat": "comm",
@@ -19068,7 +19068,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A6A4",
+      "code": "PC-30-A6A4",
       "product": "um.xpdr.t1",
       "name": "Транспондер Управления Маяков Т-1",
       "cat": "transponder",
@@ -19082,7 +19082,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A7A1",
+      "code": "PC-30-A7A1",
       "product": "terra.ls.t10",
       "name": "Terra Habitat ЖО T-10",
       "cat": "life_support",
@@ -19096,7 +19096,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A7A2",
+      "code": "PC-30-A7A2",
       "product": "std.surv.pod4",
       "name": "Спасательная капсула (4 места)",
       "cat": "escape_capsule",
@@ -19110,7 +19110,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A7A3",
+      "code": "PC-30-A7A3",
       "product": "std.med.bay",
       "name": "Медотсек (4 койки)",
       "cat": "medbay",
@@ -19124,7 +19124,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A8A1",
+      "code": "PC-30-A8A1",
       "product": "std.cabin.hold6",
       "name": "Камера для задержанных и спасённых (6 мест)",
       "cat": "passenger_module",
@@ -19138,7 +19138,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A9A1",
+      "code": "PC-30-A9A1",
       "product": "std.bay.boat",
       "name": "Ангар досмотрового катера (1 катер)",
       "cat": "boat_bay",
@@ -19152,7 +19152,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A9A2",
+      "code": "PC-30-A9A2",
       "product": "std.dock.collar",
       "name": "Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
@@ -19166,7 +19166,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A11A1",
+      "code": "PC-30-A11A1",
       "product": "fa.wpn.coil30",
       "name": "Твердыня магнитная пушка КП-30",
       "cat": "weapon",
@@ -19180,7 +19180,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A11A2",
+      "code": "PC-30-A11A2",
       "product": "fa.wpn.pd2",
       "name": "Твердыня турель ПРО ПТ-2",
       "cat": "weapon",
@@ -19194,7 +19194,7 @@
       "condition": "new"
      },
      {
-      "code": "ПК-30-A12A1",
+      "code": "PC-30-A12A1",
       "product": "std.armour.ceramic",
       "name": "Броня керамокомпозитная (1 т)",
       "cat": "armour",
@@ -19211,272 +19211,272 @@
     "edges": [
      {
       "net": "power_propulsion",
-      "src": "ПК-30-A2A1",
-      "dst": "ПК-30-A1A1"
+      "src": "PC-30-A2A1",
+      "dst": "PC-30-A1A1"
      },
      {
       "net": "power_service",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A3A2"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A3A2"
      },
      {
       "net": "power_service",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A4A1"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A4A1"
      },
      {
       "net": "power_service",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A6A1"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A6A1"
      },
      {
       "net": "power_service",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A6A2"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A6A2"
      },
      {
       "net": "power_service",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A6A3"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A6A3"
      },
      {
       "net": "power_service",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A6A4"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A6A4"
      },
      {
       "net": "power_service",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A7A1"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A7A1"
      },
      {
       "net": "power_service",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A7A3"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A7A3"
      },
      {
       "net": "power_service",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A8A1"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A8A1"
      },
      {
       "net": "power_service",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A9A1"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A9A1"
      },
      {
       "net": "power_service",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A9A2"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A9A2"
      },
      {
       "net": "power_service",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A11A1"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A11A1"
      },
      {
       "net": "power_service",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A11A2"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A11A2"
      },
      {
       "net": "coolant",
-      "src": "ПК-30-A1A1",
-      "dst": "ПК-30-A3A2"
+      "src": "PC-30-A1A1",
+      "dst": "PC-30-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПК-30-A2A1",
-      "dst": "ПК-30-A3A2"
+      "src": "PC-30-A2A1",
+      "dst": "PC-30-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПК-30-A2A2",
-      "dst": "ПК-30-A3A2"
+      "src": "PC-30-A2A2",
+      "dst": "PC-30-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПК-30-A4A1",
-      "dst": "ПК-30-A3A2"
+      "src": "PC-30-A4A1",
+      "dst": "PC-30-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПК-30-A6A1",
-      "dst": "ПК-30-A3A2"
+      "src": "PC-30-A6A1",
+      "dst": "PC-30-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПК-30-A6A2",
-      "dst": "ПК-30-A3A2"
+      "src": "PC-30-A6A2",
+      "dst": "PC-30-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПК-30-A7A1",
-      "dst": "ПК-30-A3A2"
+      "src": "PC-30-A7A1",
+      "dst": "PC-30-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПК-30-A11A1",
-      "dst": "ПК-30-A3A2"
+      "src": "PC-30-A11A1",
+      "dst": "PC-30-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПК-30-A11A2",
-      "dst": "ПК-30-A3A2"
+      "src": "PC-30-A11A2",
+      "dst": "PC-30-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПК-30-A3A2",
-      "dst": "ПК-30-A3A1"
+      "src": "PC-30-A3A2",
+      "dst": "PC-30-A3A1"
      },
      {
       "net": "fuel",
-      "src": "ПК-30-A4A2",
-      "dst": "ПК-30-A4A1"
+      "src": "PC-30-A4A2",
+      "dst": "PC-30-A4A1"
      },
      {
       "net": "fuel",
-      "src": "ПК-30-A4A3",
-      "dst": "ПК-30-A2A1"
+      "src": "PC-30-A4A3",
+      "dst": "PC-30-A2A1"
      },
      {
       "net": "fuel",
-      "src": "ПК-30-A4A3",
-      "dst": "ПК-30-A2A2"
+      "src": "PC-30-A4A3",
+      "dst": "PC-30-A2A2"
      },
      {
       "net": "data",
-      "src": "ПК-30-A6A1",
-      "dst": "ПК-30-A1A1"
+      "src": "PC-30-A6A1",
+      "dst": "PC-30-A1A1"
      },
      {
       "net": "data",
-      "src": "ПК-30-A6A1",
-      "dst": "ПК-30-A2A1"
+      "src": "PC-30-A6A1",
+      "dst": "PC-30-A2A1"
      },
      {
       "net": "data",
-      "src": "ПК-30-A6A1",
-      "dst": "ПК-30-A2A2"
+      "src": "PC-30-A6A1",
+      "dst": "PC-30-A2A2"
      },
      {
       "net": "data",
-      "src": "ПК-30-A6A1",
-      "dst": "ПК-30-A3A2"
+      "src": "PC-30-A6A1",
+      "dst": "PC-30-A3A2"
      },
      {
       "net": "data",
-      "src": "ПК-30-A6A1",
-      "dst": "ПК-30-A4A1"
+      "src": "PC-30-A6A1",
+      "dst": "PC-30-A4A1"
      },
      {
       "net": "data",
-      "src": "ПК-30-A6A1",
-      "dst": "ПК-30-A6A2"
+      "src": "PC-30-A6A1",
+      "dst": "PC-30-A6A2"
      },
      {
       "net": "data",
-      "src": "ПК-30-A6A1",
-      "dst": "ПК-30-A6A3"
+      "src": "PC-30-A6A1",
+      "dst": "PC-30-A6A3"
      },
      {
       "net": "data",
-      "src": "ПК-30-A6A1",
-      "dst": "ПК-30-A7A1"
+      "src": "PC-30-A6A1",
+      "dst": "PC-30-A7A1"
      },
      {
       "net": "data",
-      "src": "ПК-30-A6A1",
-      "dst": "ПК-30-A11A1"
+      "src": "PC-30-A6A1",
+      "dst": "PC-30-A11A1"
      },
      {
       "net": "data",
-      "src": "ПК-30-A6A1",
-      "dst": "ПК-30-A11A2"
+      "src": "PC-30-A6A1",
+      "dst": "PC-30-A11A2"
      },
      {
       "net": "life",
-      "src": "ПК-30-A7A1",
-      "dst": "ПК-30-A8A1"
+      "src": "PC-30-A7A1",
+      "dst": "PC-30-A8A1"
      },
      {
       "net": "life",
-      "src": "ПК-30-A7A1",
-      "dst": "ПК-30-A7A3"
+      "src": "PC-30-A7A1",
+      "dst": "PC-30-A7A3"
      }
     ],
     "functions": {
      "thrust": [
       [
-       "ПК-30-A1A1"
+       "PC-30-A1A1"
       ],
       [
-       "ПК-30-A2A1"
+       "PC-30-A2A1"
       ],
       [
-       "ПК-30-A3A2"
+       "PC-30-A3A2"
       ],
       [
-       "ПК-30-A6A1"
+       "PC-30-A6A1"
       ],
       [
-       "ПК-30-A4A2",
-       "ПК-30-A4A3"
+       "PC-30-A4A2",
+       "PC-30-A4A3"
       ]
      ],
      "jump": [
       [
-       "ПК-30-A4A1"
+       "PC-30-A4A1"
       ],
       [
-       "ПК-30-A6A1"
+       "PC-30-A6A1"
       ],
       [
-       "ПК-30-A2A2"
+       "PC-30-A2A2"
       ]
      ],
      "life": [
       [
-       "ПК-30-A7A1"
+       "PC-30-A7A1"
       ],
       [
-       "ПК-30-A2A2"
+       "PC-30-A2A2"
       ],
       [
-       "ПК-30-A3A2"
+       "PC-30-A3A2"
       ]
      ],
      "sensors": [
       [
-       "ПК-30-A6A2"
+       "PC-30-A6A2"
       ],
       [
-       "ПК-30-A2A2"
+       "PC-30-A2A2"
       ],
       [
-       "ПК-30-A6A1"
+       "PC-30-A6A1"
       ]
      ],
      "comms": [
       [
-       "ПК-30-A6A3"
+       "PC-30-A6A3"
       ],
       [
-       "ПК-30-A6A4"
+       "PC-30-A6A4"
       ]
      ],
      "attitude": [
       [
-       "ПК-30-A1A1"
+       "PC-30-A1A1"
       ],
       [
-       "ПК-30-A2A1"
+       "PC-30-A2A1"
       ]
      ]
     },
     "single_points_of_failure": [
-     "ПК-30-A4A1",
-     "ПК-30-A6A2"
+     "PC-30-A4A1",
+     "PC-30-A6A2"
     ],
     "redundancy": {
      "thrust": 2,
@@ -19490,8 +19490,8 @@
   },
   {
    "id": "bastion.ship.b-4.sokol",
-   "designation": "Б-4",
-   "name": "Б-4 «Сокол»",
+   "designation": "B-4",
+   "name": "B-4 класса «Фальк»",
    "cls": "interceptor",
    "manufacturer": "Арсенал «Бастион»",
    "runtime": "generic",
@@ -19544,7 +19544,7 @@
    "endurance_days": 5,
    "installed": [
     {
-     "code": "Б-4-A1A1",
+     "code": "B-4-A1A1",
      "product": "th.drive.tz16v",
      "cat": "drive",
      "qty": 8,
@@ -19700,7 +19700,7 @@
      ]
     },
     {
-     "code": "Б-4-A2A1",
+     "code": "B-4-A2A1",
      "product": "th.reactor.tr26v",
      "cat": "reactor",
      "qty": 4,
@@ -19784,7 +19784,7 @@
      ]
     },
     {
-     "code": "Б-4-A2A2",
+     "code": "B-4-A2A2",
      "product": "ofu.apu.s20",
      "cat": "service_reactor",
      "qty": 2,
@@ -19829,7 +19829,7 @@
      ]
     },
     {
-     "code": "Б-4-A3A1",
+     "code": "B-4-A3A1",
      "product": "kb.rad.cs-panel",
      "cat": "radiator",
      "qty": 30,
@@ -19874,7 +19874,7 @@
      ]
     },
     {
-     "code": "Б-4-A3A2",
+     "code": "B-4-A3A2",
      "product": "kb.cool.loop200",
      "cat": "coolant_loop",
      "qty": 2,
@@ -19919,7 +19919,7 @@
      ]
     },
     {
-     "code": "Б-4-A4A1",
+     "code": "B-4-A4A1",
      "product": "std.tank.pellets",
      "cat": "tank",
      "qty": 2,
@@ -19964,7 +19964,7 @@
      ]
     },
     {
-     "code": "Б-4-A6A1",
+     "code": "B-4-A6A1",
      "product": "bastion.mc.w1",
      "cat": "computer",
      "qty": 2,
@@ -20009,7 +20009,7 @@
      ]
     },
     {
-     "code": "Б-4-A6A2",
+     "code": "B-4-A6A2",
      "product": "xz.radar.n10",
      "cat": "radar",
      "qty": 1,
@@ -20037,7 +20037,7 @@
      ]
     },
     {
-     "code": "Б-4-A6A3",
+     "code": "B-4-A6A3",
      "product": "bastion.comm.w1",
      "cat": "comm",
      "qty": 2,
@@ -20082,7 +20082,7 @@
      ]
     },
     {
-     "code": "Б-4-A6A4",
+     "code": "B-4-A6A4",
      "product": "um.xpdr.t1",
      "cat": "transponder",
      "qty": 2,
@@ -20127,7 +20127,7 @@
      ]
     },
     {
-     "code": "Б-4-A7A1",
+     "code": "B-4-A7A1",
      "product": "ofu.ls.o4",
      "cat": "life_support",
      "qty": 2,
@@ -20172,7 +20172,7 @@
      ]
     },
     {
-     "code": "Б-4-A7A2",
+     "code": "B-4-A7A2",
      "product": "kb.surv.capsule2",
      "cat": "escape_capsule",
      "qty": 1,
@@ -20200,7 +20200,7 @@
      ]
     },
     {
-     "code": "Б-4-A11A1",
+     "code": "B-4-A11A1",
      "product": "bastion.wpn.coil10",
      "cat": "weapon",
      "qty": 2,
@@ -20245,7 +20245,7 @@
      ]
     },
     {
-     "code": "Б-4-A12A1",
+     "code": "B-4-A12A1",
      "product": "bastion.armour.heavy",
      "cat": "armour",
      "qty": 5,
@@ -20366,7 +20366,7 @@
    "schematic": {
     "nodes": [
      {
-      "code": "Б-4-A1A1",
+      "code": "B-4-A1A1",
       "product": "th.drive.tz16v",
       "name": "Тяньхэ ТЦ-1.6В (военная поставка)",
       "cat": "drive",
@@ -20380,7 +20380,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-4-A2A1",
+      "code": "B-4-A2A1",
       "product": "th.reactor.tr26v",
       "name": "Тяньхэ ТР-2.6В",
       "cat": "reactor",
@@ -20394,7 +20394,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-4-A2A2",
+      "code": "B-4-A2A2",
       "product": "ofu.apu.s20",
       "name": "ОФУ СР-20",
       "cat": "service_reactor",
@@ -20408,7 +20408,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-4-A3A1",
+      "code": "B-4-A3A1",
       "product": "kb.rad.cs-panel",
       "name": "Cobretty C-SiC radiator panel set (10 m2)",
       "cat": "radiator",
@@ -20422,7 +20422,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-4-A3A2",
+      "code": "B-4-A3A2",
       "product": "kb.cool.loop200",
       "name": "Cobretty coolant loop + pump (180 MW)",
       "cat": "coolant_loop",
@@ -20436,7 +20436,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-4-A4A1",
+      "code": "B-4-A4A1",
       "product": "std.tank.pellets",
       "name": "Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
@@ -20450,7 +20450,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-4-A6A1",
+      "code": "B-4-A6A1",
       "product": "bastion.mc.w1",
       "name": "Бастион боевой вычислитель БВ-1",
       "cat": "computer",
@@ -20464,7 +20464,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-4-A6A2",
+      "code": "B-4-A6A2",
       "product": "xz.radar.n10",
       "name": "Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
@@ -20478,7 +20478,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-4-A6A3",
+      "code": "B-4-A6A3",
       "product": "bastion.comm.w1",
       "name": "Бастион связь БС-1",
       "cat": "comm",
@@ -20492,7 +20492,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-4-A6A4",
+      "code": "B-4-A6A4",
       "product": "um.xpdr.t1",
       "name": "Транспондер Управления Маяков Т-1",
       "cat": "transponder",
@@ -20506,7 +20506,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-4-A7A1",
+      "code": "B-4-A7A1",
       "product": "ofu.ls.o4",
       "name": "ОФУ ЖО О-4 (челнок)",
       "cat": "life_support",
@@ -20520,7 +20520,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-4-A7A2",
+      "code": "B-4-A7A2",
       "product": "kb.surv.capsule2",
       "name": "Cobretty катапультируемая капсула кабины (2 места)",
       "cat": "escape_capsule",
@@ -20534,7 +20534,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-4-A11A1",
+      "code": "B-4-A11A1",
       "product": "bastion.wpn.coil10",
       "name": "Бастион скорострельная пушка БП-10",
       "cat": "weapon",
@@ -20548,7 +20548,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-4-A12A1",
+      "code": "B-4-A12A1",
       "product": "bastion.armour.heavy",
       "name": "Броня Бастиона тяжёлая (1 т)",
       "cat": "armour",
@@ -20565,195 +20565,195 @@
     "edges": [
      {
       "net": "power_propulsion",
-      "src": "Б-4-A2A1",
-      "dst": "Б-4-A1A1"
+      "src": "B-4-A2A1",
+      "dst": "B-4-A1A1"
      },
      {
       "net": "power_service",
-      "src": "Б-4-A2A2",
-      "dst": "Б-4-A3A2"
+      "src": "B-4-A2A2",
+      "dst": "B-4-A3A2"
      },
      {
       "net": "power_service",
-      "src": "Б-4-A2A2",
-      "dst": "Б-4-A6A1"
+      "src": "B-4-A2A2",
+      "dst": "B-4-A6A1"
      },
      {
       "net": "power_service",
-      "src": "Б-4-A2A2",
-      "dst": "Б-4-A6A2"
+      "src": "B-4-A2A2",
+      "dst": "B-4-A6A2"
      },
      {
       "net": "power_service",
-      "src": "Б-4-A2A2",
-      "dst": "Б-4-A6A3"
+      "src": "B-4-A2A2",
+      "dst": "B-4-A6A3"
      },
      {
       "net": "power_service",
-      "src": "Б-4-A2A2",
-      "dst": "Б-4-A6A4"
+      "src": "B-4-A2A2",
+      "dst": "B-4-A6A4"
      },
      {
       "net": "power_service",
-      "src": "Б-4-A2A2",
-      "dst": "Б-4-A7A1"
+      "src": "B-4-A2A2",
+      "dst": "B-4-A7A1"
      },
      {
       "net": "power_service",
-      "src": "Б-4-A2A2",
-      "dst": "Б-4-A11A1"
+      "src": "B-4-A2A2",
+      "dst": "B-4-A11A1"
      },
      {
       "net": "coolant",
-      "src": "Б-4-A1A1",
-      "dst": "Б-4-A3A2"
+      "src": "B-4-A1A1",
+      "dst": "B-4-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-4-A2A1",
-      "dst": "Б-4-A3A2"
+      "src": "B-4-A2A1",
+      "dst": "B-4-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-4-A2A2",
-      "dst": "Б-4-A3A2"
+      "src": "B-4-A2A2",
+      "dst": "B-4-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-4-A6A1",
-      "dst": "Б-4-A3A2"
+      "src": "B-4-A6A1",
+      "dst": "B-4-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-4-A6A2",
-      "dst": "Б-4-A3A2"
+      "src": "B-4-A6A2",
+      "dst": "B-4-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-4-A7A1",
-      "dst": "Б-4-A3A2"
+      "src": "B-4-A7A1",
+      "dst": "B-4-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-4-A11A1",
-      "dst": "Б-4-A3A2"
+      "src": "B-4-A11A1",
+      "dst": "B-4-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-4-A3A2",
-      "dst": "Б-4-A3A1"
+      "src": "B-4-A3A2",
+      "dst": "B-4-A3A1"
      },
      {
       "net": "fuel",
-      "src": "Б-4-A4A1",
-      "dst": "Б-4-A2A1"
+      "src": "B-4-A4A1",
+      "dst": "B-4-A2A1"
      },
      {
       "net": "fuel",
-      "src": "Б-4-A4A1",
-      "dst": "Б-4-A2A2"
+      "src": "B-4-A4A1",
+      "dst": "B-4-A2A2"
      },
      {
       "net": "data",
-      "src": "Б-4-A6A1",
-      "dst": "Б-4-A1A1"
+      "src": "B-4-A6A1",
+      "dst": "B-4-A1A1"
      },
      {
       "net": "data",
-      "src": "Б-4-A6A1",
-      "dst": "Б-4-A2A1"
+      "src": "B-4-A6A1",
+      "dst": "B-4-A2A1"
      },
      {
       "net": "data",
-      "src": "Б-4-A6A1",
-      "dst": "Б-4-A2A2"
+      "src": "B-4-A6A1",
+      "dst": "B-4-A2A2"
      },
      {
       "net": "data",
-      "src": "Б-4-A6A1",
-      "dst": "Б-4-A3A2"
+      "src": "B-4-A6A1",
+      "dst": "B-4-A3A2"
      },
      {
       "net": "data",
-      "src": "Б-4-A6A1",
-      "dst": "Б-4-A6A2"
+      "src": "B-4-A6A1",
+      "dst": "B-4-A6A2"
      },
      {
       "net": "data",
-      "src": "Б-4-A6A1",
-      "dst": "Б-4-A6A3"
+      "src": "B-4-A6A1",
+      "dst": "B-4-A6A3"
      },
      {
       "net": "data",
-      "src": "Б-4-A6A1",
-      "dst": "Б-4-A7A1"
+      "src": "B-4-A6A1",
+      "dst": "B-4-A7A1"
      },
      {
       "net": "data",
-      "src": "Б-4-A6A1",
-      "dst": "Б-4-A11A1"
+      "src": "B-4-A6A1",
+      "dst": "B-4-A11A1"
      }
     ],
     "functions": {
      "thrust": [
       [
-       "Б-4-A1A1"
+       "B-4-A1A1"
       ],
       [
-       "Б-4-A2A1"
+       "B-4-A2A1"
       ],
       [
-       "Б-4-A3A2"
+       "B-4-A3A2"
       ],
       [
-       "Б-4-A6A1"
+       "B-4-A6A1"
       ],
       [
-       "Б-4-A4A1"
+       "B-4-A4A1"
       ]
      ],
      "jump": [],
      "life": [
       [
-       "Б-4-A7A1"
+       "B-4-A7A1"
       ],
       [
-       "Б-4-A2A2"
+       "B-4-A2A2"
       ],
       [
-       "Б-4-A3A2"
+       "B-4-A3A2"
       ]
      ],
      "sensors": [
       [
-       "Б-4-A6A2"
+       "B-4-A6A2"
       ],
       [
-       "Б-4-A2A2"
+       "B-4-A2A2"
       ],
       [
-       "Б-4-A6A1"
+       "B-4-A6A1"
       ]
      ],
      "comms": [
       [
-       "Б-4-A6A3"
+       "B-4-A6A3"
       ],
       [
-       "Б-4-A6A4"
+       "B-4-A6A4"
       ]
      ],
      "attitude": [
       [
-       "Б-4-A1A1"
+       "B-4-A1A1"
       ],
       [
-       "Б-4-A2A1"
+       "B-4-A2A1"
       ]
      ]
     },
     "single_points_of_failure": [
-     "Б-4-A6A2"
+     "B-4-A6A2"
     ],
     "redundancy": {
      "thrust": 2,
@@ -20767,8 +20767,8 @@
   },
   {
    "id": "harmony.ship.he-f22.dun",
-   "designation": "Хэ-Ф22",
-   "name": "Хэ-Ф22 «Дунь»",
+   "designation": "He-F22",
+   "name": "Хэ-F22 класса «Шэнхэ»",
    "cls": "escort_frigate",
    "manufacturer": "Верфи Гармонии",
    "runtime": "generic",
@@ -20821,7 +20821,7 @@
    "endurance_days": 90,
    "installed": [
     {
-     "code": "Хэ-Ф22-A1A1",
+     "code": "He-F22-A1A1",
      "product": "th.drive.tz11",
      "cat": "drive",
      "qty": 6,
@@ -20941,7 +20941,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A2A1",
+     "code": "He-F22-A2A1",
      "product": "th.reactor.tr11",
      "cat": "reactor",
      "qty": 3,
@@ -21007,7 +21007,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A2A2",
+     "code": "He-F22-A2A2",
      "product": "th.apu.s600",
      "cat": "service_reactor",
      "qty": 2,
@@ -21052,7 +21052,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A3A1",
+     "code": "He-F22-A3A1",
      "product": "th.rad.panel50",
      "cat": "radiator",
      "qty": 10,
@@ -21097,7 +21097,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A3A2",
+     "code": "He-F22-A3A2",
      "product": "th.cool.loop600",
      "cat": "coolant_loop",
      "qty": 2,
@@ -21142,7 +21142,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A4A1",
+     "code": "He-F22-A4A1",
      "product": "harmony.core.h5",
      "cat": "jump_core",
      "qty": 1,
@@ -21170,7 +21170,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A4A2",
+     "code": "He-F22-A4A2",
      "product": "std.tank.jumpcharge",
      "cat": "tank",
      "qty": 28,
@@ -21249,7 +21249,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A4A3",
+     "code": "He-F22-A4A3",
      "product": "std.tank.pellets",
      "cat": "tank",
      "qty": 30,
@@ -21328,7 +21328,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A5A1",
+     "code": "He-F22-A5A1",
      "product": "std.rcs.cluster_h",
      "cat": "rcs",
      "qty": 8,
@@ -21484,7 +21484,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A6A1",
+     "code": "He-F22-A6A1",
      "product": "xz.mc.c3",
      "cat": "computer",
      "qty": 2,
@@ -21529,7 +21529,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A6A2",
+     "code": "He-F22-A6A2",
      "product": "xz.radar.n10",
      "cat": "radar",
      "qty": 2,
@@ -21574,7 +21574,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A6A3",
+     "code": "He-F22-A6A3",
      "product": "xz.comm.c3",
      "cat": "comm",
      "qty": 2,
@@ -21619,7 +21619,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A6A4",
+     "code": "He-F22-A6A4",
      "product": "um.xpdr.t1",
      "cat": "transponder",
      "qty": 2,
@@ -21664,7 +21664,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A7A1",
+     "code": "He-F22-A7A1",
      "product": "terra.ls.t60",
      "cat": "life_support",
      "qty": 2,
@@ -21709,7 +21709,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A7A2",
+     "code": "He-F22-A7A2",
      "product": "std.surv.boat20",
      "cat": "lifeboat",
      "qty": 2,
@@ -21754,7 +21754,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A7A3",
+     "code": "He-F22-A7A3",
      "product": "std.med.bay",
      "cat": "medbay",
      "qty": 2,
@@ -21799,7 +21799,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A9A1",
+     "code": "He-F22-A9A1",
      "product": "std.bay.boat",
      "cat": "boat_bay",
      "qty": 1,
@@ -21827,7 +21827,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A9A2",
+     "code": "He-F22-A9A2",
      "product": "std.dock.collar",
      "cat": "docking_port",
      "qty": 2,
@@ -21872,7 +21872,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A11A1",
+     "code": "He-F22-A11A1",
      "product": "harmony.wpn.vls8",
      "cat": "weapon",
      "qty": 2,
@@ -21917,7 +21917,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A11A2",
+     "code": "He-F22-A11A2",
      "product": "harmony.wpn.pd3",
      "cat": "weapon",
      "qty": 6,
@@ -21996,7 +21996,7 @@
      ]
     },
     {
-     "code": "Хэ-Ф22-A12A1",
+     "code": "He-F22-A12A1",
      "product": "std.armour.ceramic",
      "cat": "armour",
      "qty": 220,
@@ -22117,7 +22117,7 @@
    "schematic": {
     "nodes": [
      {
-      "code": "Хэ-Ф22-A1A1",
+      "code": "He-F22-A1A1",
       "product": "th.drive.tz11",
       "name": "Тяньхэ ТЦ-11",
       "cat": "drive",
@@ -22131,7 +22131,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A2A1",
+      "code": "He-F22-A2A1",
       "product": "th.reactor.tr11",
       "name": "Тяньхэ ТР-11",
       "cat": "reactor",
@@ -22145,7 +22145,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A2A2",
+      "code": "He-F22-A2A2",
       "product": "th.apu.s600",
       "name": "Тяньхэ СР-600",
       "cat": "service_reactor",
@@ -22159,7 +22159,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A3A1",
+      "code": "He-F22-A3A1",
       "product": "th.rad.panel50",
       "name": "Тяньхэ радиаторная секция (50 м2)",
       "cat": "radiator",
@@ -22173,7 +22173,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A3A2",
+      "code": "He-F22-A3A2",
       "product": "th.cool.loop600",
       "name": "Тяньхэ контур охлаждения (600 МВт)",
       "cat": "coolant_loop",
@@ -22187,7 +22187,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A4A1",
+      "code": "He-F22-A4A1",
       "product": "harmony.core.h5",
       "name": "Гармония Х-5 (сборка из блоков Когниума)",
       "cat": "jump_core",
@@ -22201,7 +22201,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A4A2",
+      "code": "He-F22-A4A2",
       "product": "std.tank.jumpcharge",
       "name": "Бак заряда прыжка (1 т)",
       "cat": "tank",
@@ -22215,7 +22215,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A4A3",
+      "code": "He-F22-A4A3",
       "product": "std.tank.pellets",
       "name": "Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
@@ -22229,7 +22229,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A5A1",
+      "code": "He-F22-A5A1",
       "product": "std.rcs.cluster_h",
       "name": "Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
@@ -22243,7 +22243,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A6A1",
+      "code": "He-F22-A6A1",
       "product": "xz.mc.c3",
       "name": "Синьчжи MotherComputer MC-C3 (флот)",
       "cat": "computer",
@@ -22257,7 +22257,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A6A2",
+      "code": "He-F22-A6A2",
       "product": "xz.radar.n10",
       "name": "Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
@@ -22271,7 +22271,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A6A3",
+      "code": "He-F22-A6A3",
       "product": "xz.comm.c3",
       "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
       "cat": "comm",
@@ -22285,7 +22285,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A6A4",
+      "code": "He-F22-A6A4",
       "product": "um.xpdr.t1",
       "name": "Транспондер Управления Маяков Т-1",
       "cat": "transponder",
@@ -22299,7 +22299,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A7A1",
+      "code": "He-F22-A7A1",
       "product": "terra.ls.t60",
       "name": "Terra Habitat ЖО T-60 (флот)",
       "cat": "life_support",
@@ -22313,7 +22313,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A7A2",
+      "code": "He-F22-A7A2",
       "product": "std.surv.boat20",
       "name": "Спасательная шлюпка (20 мест, 10 суток)",
       "cat": "lifeboat",
@@ -22327,7 +22327,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A7A3",
+      "code": "He-F22-A7A3",
       "product": "std.med.bay",
       "name": "Медотсек (4 койки)",
       "cat": "medbay",
@@ -22341,7 +22341,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A9A1",
+      "code": "He-F22-A9A1",
       "product": "std.bay.boat",
       "name": "Ангар досмотрового катера (1 катер)",
       "cat": "boat_bay",
@@ -22355,7 +22355,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A9A2",
+      "code": "He-F22-A9A2",
       "product": "std.dock.collar",
       "name": "Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
@@ -22369,7 +22369,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A11A1",
+      "code": "He-F22-A11A1",
       "product": "harmony.wpn.vls8",
       "name": "Гармония пусковая ВПУ-8 (8 ракет)",
       "cat": "weapon",
@@ -22383,7 +22383,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A11A2",
+      "code": "He-F22-A11A2",
       "product": "harmony.wpn.pd3",
       "name": "Гармония турель ПРО ПТ-3",
       "cat": "weapon",
@@ -22397,7 +22397,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-Ф22-A12A1",
+      "code": "He-F22-A12A1",
       "product": "std.armour.ceramic",
       "name": "Броня керамокомпозитная (1 т)",
       "cat": "armour",
@@ -22414,271 +22414,271 @@
     "edges": [
      {
       "net": "power_propulsion",
-      "src": "Хэ-Ф22-A2A1",
-      "dst": "Хэ-Ф22-A1A1"
+      "src": "He-F22-A2A1",
+      "dst": "He-F22-A1A1"
      },
      {
       "net": "power_propulsion",
-      "src": "Хэ-Ф22-A2A1",
-      "dst": "Хэ-Ф22-A5A1"
+      "src": "He-F22-A2A1",
+      "dst": "He-F22-A5A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Ф22-A2A2",
-      "dst": "Хэ-Ф22-A3A2"
+      "src": "He-F22-A2A2",
+      "dst": "He-F22-A3A2"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Ф22-A2A2",
-      "dst": "Хэ-Ф22-A4A1"
+      "src": "He-F22-A2A2",
+      "dst": "He-F22-A4A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Ф22-A2A2",
-      "dst": "Хэ-Ф22-A6A1"
+      "src": "He-F22-A2A2",
+      "dst": "He-F22-A6A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Ф22-A2A2",
-      "dst": "Хэ-Ф22-A6A2"
+      "src": "He-F22-A2A2",
+      "dst": "He-F22-A6A2"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Ф22-A2A2",
-      "dst": "Хэ-Ф22-A6A3"
+      "src": "He-F22-A2A2",
+      "dst": "He-F22-A6A3"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Ф22-A2A2",
-      "dst": "Хэ-Ф22-A6A4"
+      "src": "He-F22-A2A2",
+      "dst": "He-F22-A6A4"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Ф22-A2A2",
-      "dst": "Хэ-Ф22-A7A1"
+      "src": "He-F22-A2A2",
+      "dst": "He-F22-A7A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Ф22-A2A2",
-      "dst": "Хэ-Ф22-A7A3"
+      "src": "He-F22-A2A2",
+      "dst": "He-F22-A7A3"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Ф22-A2A2",
-      "dst": "Хэ-Ф22-A9A1"
+      "src": "He-F22-A2A2",
+      "dst": "He-F22-A9A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Ф22-A2A2",
-      "dst": "Хэ-Ф22-A9A2"
+      "src": "He-F22-A2A2",
+      "dst": "He-F22-A9A2"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Ф22-A2A2",
-      "dst": "Хэ-Ф22-A11A1"
+      "src": "He-F22-A2A2",
+      "dst": "He-F22-A11A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-Ф22-A2A2",
-      "dst": "Хэ-Ф22-A11A2"
+      "src": "He-F22-A2A2",
+      "dst": "He-F22-A11A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Ф22-A1A1",
-      "dst": "Хэ-Ф22-A3A2"
+      "src": "He-F22-A1A1",
+      "dst": "He-F22-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Ф22-A2A1",
-      "dst": "Хэ-Ф22-A3A2"
+      "src": "He-F22-A2A1",
+      "dst": "He-F22-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Ф22-A2A2",
-      "dst": "Хэ-Ф22-A3A2"
+      "src": "He-F22-A2A2",
+      "dst": "He-F22-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Ф22-A4A1",
-      "dst": "Хэ-Ф22-A3A2"
+      "src": "He-F22-A4A1",
+      "dst": "He-F22-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Ф22-A6A1",
-      "dst": "Хэ-Ф22-A3A2"
+      "src": "He-F22-A6A1",
+      "dst": "He-F22-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Ф22-A6A2",
-      "dst": "Хэ-Ф22-A3A2"
+      "src": "He-F22-A6A2",
+      "dst": "He-F22-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Ф22-A7A1",
-      "dst": "Хэ-Ф22-A3A2"
+      "src": "He-F22-A7A1",
+      "dst": "He-F22-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Ф22-A11A1",
-      "dst": "Хэ-Ф22-A3A2"
+      "src": "He-F22-A11A1",
+      "dst": "He-F22-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Ф22-A11A2",
-      "dst": "Хэ-Ф22-A3A2"
+      "src": "He-F22-A11A2",
+      "dst": "He-F22-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-Ф22-A3A2",
-      "dst": "Хэ-Ф22-A3A1"
+      "src": "He-F22-A3A2",
+      "dst": "He-F22-A3A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-Ф22-A4A2",
-      "dst": "Хэ-Ф22-A4A1"
+      "src": "He-F22-A4A2",
+      "dst": "He-F22-A4A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-Ф22-A4A3",
-      "dst": "Хэ-Ф22-A2A1"
+      "src": "He-F22-A4A3",
+      "dst": "He-F22-A2A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-Ф22-A4A3",
-      "dst": "Хэ-Ф22-A2A2"
+      "src": "He-F22-A4A3",
+      "dst": "He-F22-A2A2"
      },
      {
       "net": "data",
-      "src": "Хэ-Ф22-A6A1",
-      "dst": "Хэ-Ф22-A1A1"
+      "src": "He-F22-A6A1",
+      "dst": "He-F22-A1A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Ф22-A6A1",
-      "dst": "Хэ-Ф22-A2A1"
+      "src": "He-F22-A6A1",
+      "dst": "He-F22-A2A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Ф22-A6A1",
-      "dst": "Хэ-Ф22-A2A2"
+      "src": "He-F22-A6A1",
+      "dst": "He-F22-A2A2"
      },
      {
       "net": "data",
-      "src": "Хэ-Ф22-A6A1",
-      "dst": "Хэ-Ф22-A3A2"
+      "src": "He-F22-A6A1",
+      "dst": "He-F22-A3A2"
      },
      {
       "net": "data",
-      "src": "Хэ-Ф22-A6A1",
-      "dst": "Хэ-Ф22-A4A1"
+      "src": "He-F22-A6A1",
+      "dst": "He-F22-A4A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Ф22-A6A1",
-      "dst": "Хэ-Ф22-A5A1"
+      "src": "He-F22-A6A1",
+      "dst": "He-F22-A5A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Ф22-A6A1",
-      "dst": "Хэ-Ф22-A6A2"
+      "src": "He-F22-A6A1",
+      "dst": "He-F22-A6A2"
      },
      {
       "net": "data",
-      "src": "Хэ-Ф22-A6A1",
-      "dst": "Хэ-Ф22-A6A3"
+      "src": "He-F22-A6A1",
+      "dst": "He-F22-A6A3"
      },
      {
       "net": "data",
-      "src": "Хэ-Ф22-A6A1",
-      "dst": "Хэ-Ф22-A7A1"
+      "src": "He-F22-A6A1",
+      "dst": "He-F22-A7A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Ф22-A6A1",
-      "dst": "Хэ-Ф22-A11A1"
+      "src": "He-F22-A6A1",
+      "dst": "He-F22-A11A1"
      },
      {
       "net": "data",
-      "src": "Хэ-Ф22-A6A1",
-      "dst": "Хэ-Ф22-A11A2"
+      "src": "He-F22-A6A1",
+      "dst": "He-F22-A11A2"
      },
      {
       "net": "life",
-      "src": "Хэ-Ф22-A7A1",
-      "dst": "Хэ-Ф22-A7A3"
+      "src": "He-F22-A7A1",
+      "dst": "He-F22-A7A3"
      }
     ],
     "functions": {
      "thrust": [
       [
-       "Хэ-Ф22-A1A1"
+       "He-F22-A1A1"
       ],
       [
-       "Хэ-Ф22-A2A1"
+       "He-F22-A2A1"
       ],
       [
-       "Хэ-Ф22-A3A2"
+       "He-F22-A3A2"
       ],
       [
-       "Хэ-Ф22-A6A1"
+       "He-F22-A6A1"
       ],
       [
-       "Хэ-Ф22-A4A2",
-       "Хэ-Ф22-A4A3"
+       "He-F22-A4A2",
+       "He-F22-A4A3"
       ]
      ],
      "jump": [
       [
-       "Хэ-Ф22-A4A1"
+       "He-F22-A4A1"
       ],
       [
-       "Хэ-Ф22-A6A1"
+       "He-F22-A6A1"
       ],
       [
-       "Хэ-Ф22-A2A2"
+       "He-F22-A2A2"
       ]
      ],
      "life": [
       [
-       "Хэ-Ф22-A7A1"
+       "He-F22-A7A1"
       ],
       [
-       "Хэ-Ф22-A2A2"
+       "He-F22-A2A2"
       ],
       [
-       "Хэ-Ф22-A3A2"
+       "He-F22-A3A2"
       ]
      ],
      "sensors": [
       [
-       "Хэ-Ф22-A6A2"
+       "He-F22-A6A2"
       ],
       [
-       "Хэ-Ф22-A2A2"
+       "He-F22-A2A2"
       ],
       [
-       "Хэ-Ф22-A6A1"
+       "He-F22-A6A1"
       ]
      ],
      "comms": [
       [
-       "Хэ-Ф22-A6A3"
+       "He-F22-A6A3"
       ],
       [
-       "Хэ-Ф22-A6A4"
+       "He-F22-A6A4"
       ]
      ],
      "attitude": [
       [
-       "Хэ-Ф22-A5A1"
+       "He-F22-A5A1"
       ],
       [
-       "Хэ-Ф22-A2A1"
+       "He-F22-A2A1"
       ]
      ]
     },
     "single_points_of_failure": [
-     "Хэ-Ф22-A4A1"
+     "He-F22-A4A1"
     ],
     "redundancy": {
      "thrust": 2,
@@ -22692,8 +22692,8 @@
   },
   {
    "id": "bastion.ship.b-90.tsitadel",
-   "designation": "Б-90",
-   "name": "Б-90 «Цитадель»",
+   "designation": "B-90",
+   "name": "B-90 класса «Ингрид Хауглан»",
    "cls": "line_combatant",
    "manufacturer": "Арсенал «Бастион»",
    "runtime": "generic",
@@ -22746,7 +22746,7 @@
    "endurance_days": 180,
    "installed": [
     {
-     "code": "Б-90-A1A1",
+     "code": "B-90-A1A1",
      "product": "th.drive.tz28",
      "cat": "drive",
      "qty": 4,
@@ -22830,7 +22830,7 @@
      ]
     },
     {
-     "code": "Б-90-A2A1",
+     "code": "B-90-A2A1",
      "product": "th.reactor.tr30",
      "cat": "reactor",
      "qty": 4,
@@ -22914,7 +22914,7 @@
      ]
     },
     {
-     "code": "Б-90-A2A2",
+     "code": "B-90-A2A2",
      "product": "th.apu.s600",
      "cat": "service_reactor",
      "qty": 2,
@@ -22959,7 +22959,7 @@
      ]
     },
     {
-     "code": "Б-90-A3A1",
+     "code": "B-90-A3A1",
      "product": "th.rad.panel50",
      "cat": "radiator",
      "qty": 40,
@@ -23004,7 +23004,7 @@
      ]
     },
     {
-     "code": "Б-90-A3A2",
+     "code": "B-90-A3A2",
      "product": "th.cool.loop600",
      "cat": "coolant_loop",
      "qty": 4,
@@ -23083,7 +23083,7 @@
      ]
     },
     {
-     "code": "Б-90-A4A1",
+     "code": "B-90-A4A1",
      "product": "bastion.core.b12",
      "cat": "jump_core",
      "qty": 1,
@@ -23111,7 +23111,7 @@
      ]
     },
     {
-     "code": "Б-90-A4A2",
+     "code": "B-90-A4A2",
      "product": "std.tank.jumpcharge",
      "cat": "tank",
      "qty": 120,
@@ -23190,7 +23190,7 @@
      ]
     },
     {
-     "code": "Б-90-A4A3",
+     "code": "B-90-A4A3",
      "product": "std.tank.pellets",
      "cat": "tank",
      "qty": 160,
@@ -23269,7 +23269,7 @@
      ]
     },
     {
-     "code": "Б-90-A5A1",
+     "code": "B-90-A5A1",
      "product": "std.rcs.cluster_h",
      "cat": "rcs",
      "qty": 16,
@@ -23425,7 +23425,7 @@
      ]
     },
     {
-     "code": "Б-90-A6A1",
+     "code": "B-90-A6A1",
      "product": "bastion.mc.w1",
      "cat": "computer",
      "qty": 2,
@@ -23470,7 +23470,7 @@
      ]
     },
     {
-     "code": "Б-90-A6A2",
+     "code": "B-90-A6A2",
      "product": "bastion.radar.s50",
      "cat": "radar",
      "qty": 2,
@@ -23515,7 +23515,7 @@
      ]
     },
     {
-     "code": "Б-90-A6A3",
+     "code": "B-90-A6A3",
      "product": "bastion.comm.w1",
      "cat": "comm",
      "qty": 2,
@@ -23560,7 +23560,7 @@
      ]
     },
     {
-     "code": "Б-90-A6A4",
+     "code": "B-90-A6A4",
      "product": "um.xpdr.t1",
      "cat": "transponder",
      "qty": 2,
@@ -23605,7 +23605,7 @@
      ]
     },
     {
-     "code": "Б-90-A7A1",
+     "code": "B-90-A7A1",
      "product": "terra.ls.t200",
      "cat": "life_support",
      "qty": 2,
@@ -23650,7 +23650,7 @@
      ]
     },
     {
-     "code": "Б-90-A7A2",
+     "code": "B-90-A7A2",
      "product": "std.surv.boat20",
      "cat": "lifeboat",
      "qty": 9,
@@ -23729,7 +23729,7 @@
      ]
     },
     {
-     "code": "Б-90-A7A3",
+     "code": "B-90-A7A3",
      "product": "std.med.bay",
      "cat": "medbay",
      "qty": 3,
@@ -23791,7 +23791,7 @@
      ]
     },
     {
-     "code": "Б-90-A9A1",
+     "code": "B-90-A9A1",
      "product": "bastion.bay.hangar4",
      "cat": "hangar",
      "qty": 1,
@@ -23819,7 +23819,7 @@
      ]
     },
     {
-     "code": "Б-90-A9A2",
+     "code": "B-90-A9A2",
      "product": "std.bay.drone4",
      "cat": "drone_bay",
      "qty": 2,
@@ -23864,7 +23864,7 @@
      ]
     },
     {
-     "code": "Б-90-A9A3",
+     "code": "B-90-A9A3",
      "product": "std.dock.collar",
      "cat": "docking_port",
      "qty": 2,
@@ -23909,7 +23909,7 @@
      ]
     },
     {
-     "code": "Б-90-A11A1",
+     "code": "B-90-A11A1",
      "product": "bastion.wpn.vls16",
      "cat": "weapon",
      "qty": 6,
@@ -23988,7 +23988,7 @@
      ]
     },
     {
-     "code": "Б-90-A11A2",
+     "code": "B-90-A11A2",
      "product": "bastion.wpn.pd4",
      "cat": "weapon",
      "qty": 12,
@@ -24067,7 +24067,7 @@
      ]
     },
     {
-     "code": "Б-90-A12A1",
+     "code": "B-90-A12A1",
      "product": "bastion.armour.heavy",
      "cat": "armour",
      "qty": 1600,
@@ -24188,7 +24188,7 @@
    "schematic": {
     "nodes": [
      {
-      "code": "Б-90-A1A1",
+      "code": "B-90-A1A1",
       "product": "th.drive.tz28",
       "name": "Тяньхэ ТЦ-28В",
       "cat": "drive",
@@ -24202,7 +24202,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A2A1",
+      "code": "B-90-A2A1",
       "product": "th.reactor.tr30",
       "name": "Тяньхэ ТР-30В",
       "cat": "reactor",
@@ -24216,7 +24216,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A2A2",
+      "code": "B-90-A2A2",
       "product": "th.apu.s600",
       "name": "Тяньхэ СР-600",
       "cat": "service_reactor",
@@ -24230,7 +24230,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A3A1",
+      "code": "B-90-A3A1",
       "product": "th.rad.panel50",
       "name": "Тяньхэ радиаторная секция (50 м2)",
       "cat": "radiator",
@@ -24244,7 +24244,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A3A2",
+      "code": "B-90-A3A2",
       "product": "th.cool.loop600",
       "name": "Тяньхэ контур охлаждения (600 МВт)",
       "cat": "coolant_loop",
@@ -24258,7 +24258,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A4A1",
+      "code": "B-90-A4A1",
       "product": "bastion.core.b12",
       "name": "Бастион Б-12",
       "cat": "jump_core",
@@ -24272,7 +24272,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A4A2",
+      "code": "B-90-A4A2",
       "product": "std.tank.jumpcharge",
       "name": "Бак заряда прыжка (1 т)",
       "cat": "tank",
@@ -24286,7 +24286,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A4A3",
+      "code": "B-90-A4A3",
       "product": "std.tank.pellets",
       "name": "Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
@@ -24300,7 +24300,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A5A1",
+      "code": "B-90-A5A1",
       "product": "std.rcs.cluster_h",
       "name": "Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
@@ -24314,7 +24314,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A6A1",
+      "code": "B-90-A6A1",
       "product": "bastion.mc.w1",
       "name": "Бастион боевой вычислитель БВ-1",
       "cat": "computer",
@@ -24328,7 +24328,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A6A2",
+      "code": "B-90-A6A2",
       "product": "bastion.radar.s50",
       "name": "Бастион радар обзора С-50 (50 000 км)",
       "cat": "radar",
@@ -24342,7 +24342,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A6A3",
+      "code": "B-90-A6A3",
       "product": "bastion.comm.w1",
       "name": "Бастион связь БС-1",
       "cat": "comm",
@@ -24356,7 +24356,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A6A4",
+      "code": "B-90-A6A4",
       "product": "um.xpdr.t1",
       "name": "Транспондер Управления Маяков Т-1",
       "cat": "transponder",
@@ -24370,7 +24370,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A7A1",
+      "code": "B-90-A7A1",
       "product": "terra.ls.t200",
       "name": "Terra Habitat ЖО T-200 (флот)",
       "cat": "life_support",
@@ -24384,7 +24384,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A7A2",
+      "code": "B-90-A7A2",
       "product": "std.surv.boat20",
       "name": "Спасательная шлюпка (20 мест, 10 суток)",
       "cat": "lifeboat",
@@ -24398,7 +24398,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A7A3",
+      "code": "B-90-A7A3",
       "product": "std.med.bay",
       "name": "Медотсек (4 койки)",
       "cat": "medbay",
@@ -24412,7 +24412,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A9A1",
+      "code": "B-90-A9A1",
       "product": "bastion.bay.hangar4",
       "name": "Ангар перехватчиков (4 места)",
       "cat": "hangar",
@@ -24426,7 +24426,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A9A2",
+      "code": "B-90-A9A2",
       "product": "std.bay.drone4",
       "name": "Отсек дронов (4 сервисных дрона)",
       "cat": "drone_bay",
@@ -24440,7 +24440,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A9A3",
+      "code": "B-90-A9A3",
       "product": "std.dock.collar",
       "name": "Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
@@ -24454,7 +24454,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A11A1",
+      "code": "B-90-A11A1",
       "product": "bastion.wpn.vls16",
       "name": "Бастион ВПУ-16 дальних ракет",
       "cat": "weapon",
@@ -24468,7 +24468,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A11A2",
+      "code": "B-90-A11A2",
       "product": "bastion.wpn.pd4",
       "name": "Бастион турель ПРО БТ-4",
       "cat": "weapon",
@@ -24482,7 +24482,7 @@
       "condition": "new"
      },
      {
-      "code": "Б-90-A12A1",
+      "code": "B-90-A12A1",
       "product": "bastion.armour.heavy",
       "name": "Броня Бастиона тяжёлая (1 т)",
       "cat": "armour",
@@ -24499,276 +24499,276 @@
     "edges": [
      {
       "net": "power_propulsion",
-      "src": "Б-90-A2A1",
-      "dst": "Б-90-A1A1"
+      "src": "B-90-A2A1",
+      "dst": "B-90-A1A1"
      },
      {
       "net": "power_propulsion",
-      "src": "Б-90-A2A1",
-      "dst": "Б-90-A5A1"
+      "src": "B-90-A2A1",
+      "dst": "B-90-A5A1"
      },
      {
       "net": "power_service",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A3A2"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A3A2"
      },
      {
       "net": "power_service",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A4A1"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A4A1"
      },
      {
       "net": "power_service",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A6A1"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A6A1"
      },
      {
       "net": "power_service",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A6A2"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A6A2"
      },
      {
       "net": "power_service",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A6A3"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A6A3"
      },
      {
       "net": "power_service",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A6A4"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A6A4"
      },
      {
       "net": "power_service",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A7A1"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A7A1"
      },
      {
       "net": "power_service",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A7A3"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A7A3"
      },
      {
       "net": "power_service",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A9A1"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A9A1"
      },
      {
       "net": "power_service",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A9A2"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A9A2"
      },
      {
       "net": "power_service",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A9A3"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A9A3"
      },
      {
       "net": "power_service",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A11A1"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A11A1"
      },
      {
       "net": "power_service",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A11A2"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A11A2"
      },
      {
       "net": "coolant",
-      "src": "Б-90-A1A1",
-      "dst": "Б-90-A3A2"
+      "src": "B-90-A1A1",
+      "dst": "B-90-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-90-A2A1",
-      "dst": "Б-90-A3A2"
+      "src": "B-90-A2A1",
+      "dst": "B-90-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-90-A2A2",
-      "dst": "Б-90-A3A2"
+      "src": "B-90-A2A2",
+      "dst": "B-90-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-90-A4A1",
-      "dst": "Б-90-A3A2"
+      "src": "B-90-A4A1",
+      "dst": "B-90-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-90-A6A1",
-      "dst": "Б-90-A3A2"
+      "src": "B-90-A6A1",
+      "dst": "B-90-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-90-A6A2",
-      "dst": "Б-90-A3A2"
+      "src": "B-90-A6A2",
+      "dst": "B-90-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-90-A7A1",
-      "dst": "Б-90-A3A2"
+      "src": "B-90-A7A1",
+      "dst": "B-90-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-90-A11A1",
-      "dst": "Б-90-A3A2"
+      "src": "B-90-A11A1",
+      "dst": "B-90-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-90-A11A2",
-      "dst": "Б-90-A3A2"
+      "src": "B-90-A11A2",
+      "dst": "B-90-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Б-90-A3A2",
-      "dst": "Б-90-A3A1"
+      "src": "B-90-A3A2",
+      "dst": "B-90-A3A1"
      },
      {
       "net": "fuel",
-      "src": "Б-90-A4A2",
-      "dst": "Б-90-A4A1"
+      "src": "B-90-A4A2",
+      "dst": "B-90-A4A1"
      },
      {
       "net": "fuel",
-      "src": "Б-90-A4A3",
-      "dst": "Б-90-A2A1"
+      "src": "B-90-A4A3",
+      "dst": "B-90-A2A1"
      },
      {
       "net": "fuel",
-      "src": "Б-90-A4A3",
-      "dst": "Б-90-A2A2"
+      "src": "B-90-A4A3",
+      "dst": "B-90-A2A2"
      },
      {
       "net": "data",
-      "src": "Б-90-A6A1",
-      "dst": "Б-90-A1A1"
+      "src": "B-90-A6A1",
+      "dst": "B-90-A1A1"
      },
      {
       "net": "data",
-      "src": "Б-90-A6A1",
-      "dst": "Б-90-A2A1"
+      "src": "B-90-A6A1",
+      "dst": "B-90-A2A1"
      },
      {
       "net": "data",
-      "src": "Б-90-A6A1",
-      "dst": "Б-90-A2A2"
+      "src": "B-90-A6A1",
+      "dst": "B-90-A2A2"
      },
      {
       "net": "data",
-      "src": "Б-90-A6A1",
-      "dst": "Б-90-A3A2"
+      "src": "B-90-A6A1",
+      "dst": "B-90-A3A2"
      },
      {
       "net": "data",
-      "src": "Б-90-A6A1",
-      "dst": "Б-90-A4A1"
+      "src": "B-90-A6A1",
+      "dst": "B-90-A4A1"
      },
      {
       "net": "data",
-      "src": "Б-90-A6A1",
-      "dst": "Б-90-A5A1"
+      "src": "B-90-A6A1",
+      "dst": "B-90-A5A1"
      },
      {
       "net": "data",
-      "src": "Б-90-A6A1",
-      "dst": "Б-90-A6A2"
+      "src": "B-90-A6A1",
+      "dst": "B-90-A6A2"
      },
      {
       "net": "data",
-      "src": "Б-90-A6A1",
-      "dst": "Б-90-A6A3"
+      "src": "B-90-A6A1",
+      "dst": "B-90-A6A3"
      },
      {
       "net": "data",
-      "src": "Б-90-A6A1",
-      "dst": "Б-90-A7A1"
+      "src": "B-90-A6A1",
+      "dst": "B-90-A7A1"
      },
      {
       "net": "data",
-      "src": "Б-90-A6A1",
-      "dst": "Б-90-A11A1"
+      "src": "B-90-A6A1",
+      "dst": "B-90-A11A1"
      },
      {
       "net": "data",
-      "src": "Б-90-A6A1",
-      "dst": "Б-90-A11A2"
+      "src": "B-90-A6A1",
+      "dst": "B-90-A11A2"
      },
      {
       "net": "life",
-      "src": "Б-90-A7A1",
-      "dst": "Б-90-A7A3"
+      "src": "B-90-A7A1",
+      "dst": "B-90-A7A3"
      }
     ],
     "functions": {
      "thrust": [
       [
-       "Б-90-A1A1"
+       "B-90-A1A1"
       ],
       [
-       "Б-90-A2A1"
+       "B-90-A2A1"
       ],
       [
-       "Б-90-A3A2"
+       "B-90-A3A2"
       ],
       [
-       "Б-90-A6A1"
+       "B-90-A6A1"
       ],
       [
-       "Б-90-A4A2",
-       "Б-90-A4A3"
+       "B-90-A4A2",
+       "B-90-A4A3"
       ]
      ],
      "jump": [
       [
-       "Б-90-A4A1"
+       "B-90-A4A1"
       ],
       [
-       "Б-90-A6A1"
+       "B-90-A6A1"
       ],
       [
-       "Б-90-A2A2"
+       "B-90-A2A2"
       ]
      ],
      "life": [
       [
-       "Б-90-A7A1"
+       "B-90-A7A1"
       ],
       [
-       "Б-90-A2A2"
+       "B-90-A2A2"
       ],
       [
-       "Б-90-A3A2"
+       "B-90-A3A2"
       ]
      ],
      "sensors": [
       [
-       "Б-90-A6A2"
+       "B-90-A6A2"
       ],
       [
-       "Б-90-A2A2"
+       "B-90-A2A2"
       ],
       [
-       "Б-90-A6A1"
+       "B-90-A6A1"
       ]
      ],
      "comms": [
       [
-       "Б-90-A6A3"
+       "B-90-A6A3"
       ],
       [
-       "Б-90-A6A4"
+       "B-90-A6A4"
       ]
      ],
      "attitude": [
       [
-       "Б-90-A5A1"
+       "B-90-A5A1"
       ],
       [
-       "Б-90-A2A1"
+       "B-90-A2A1"
       ]
      ]
     },
     "single_points_of_failure": [
-     "Б-90-A4A1"
+     "B-90-A4A1"
     ],
     "redundancy": {
      "thrust": 2,
@@ -26612,8 +26612,8 @@
   },
   {
    "id": "harmony.ship.he-s240.tylovik",
-   "designation": "Хэ-С240",
-   "name": "Хэ-С240 «Тыловик»",
+   "designation": "He-B240",
+   "name": "Хэ-B240 класса «Бутянь»",
    "cls": "fleet_tender",
    "manufacturer": "Верфи Гармонии",
    "runtime": "generic",
@@ -26666,7 +26666,7 @@
    "endurance_days": 180,
    "installed": [
     {
-     "code": "Хэ-С240-A1A1",
+     "code": "He-B240-A1A1",
      "product": "th.drive.tz13",
      "cat": "drive",
      "qty": 3,
@@ -26732,7 +26732,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A2A1",
+     "code": "He-B240-A2A1",
      "product": "th.reactor.tr11",
      "cat": "reactor",
      "qty": 3,
@@ -26798,7 +26798,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A2A2",
+     "code": "He-B240-A2A2",
      "product": "th.apu.s600",
      "cat": "service_reactor",
      "qty": 2,
@@ -26843,7 +26843,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A3A1",
+     "code": "He-B240-A3A1",
      "product": "th.rad.panel50",
      "cat": "radiator",
      "qty": 12,
@@ -26888,7 +26888,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A3A2",
+     "code": "He-B240-A3A2",
      "product": "th.cool.loop600",
      "cat": "coolant_loop",
      "qty": 2,
@@ -26933,7 +26933,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A4A1",
+     "code": "He-B240-A4A1",
      "product": "harmony.core.h12",
      "cat": "jump_core",
      "qty": 1,
@@ -26961,7 +26961,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A4A2",
+     "code": "He-B240-A4A2",
      "product": "std.tank.jumpcharge",
      "cat": "tank",
      "qty": 90,
@@ -27040,7 +27040,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A4A3",
+     "code": "He-B240-A4A3",
      "product": "std.tank.pellets",
      "cat": "tank",
      "qty": 60,
@@ -27119,7 +27119,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A5A1",
+     "code": "He-B240-A5A1",
      "product": "std.rcs.cluster_h",
      "cat": "rcs",
      "qty": 16,
@@ -27275,7 +27275,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A6A1",
+     "code": "He-B240-A6A1",
      "product": "xz.mc.c3",
      "cat": "computer",
      "qty": 2,
@@ -27320,7 +27320,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A6A2",
+     "code": "He-B240-A6A2",
      "product": "xz.radar.n10",
      "cat": "radar",
      "qty": 1,
@@ -27348,7 +27348,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A6A3",
+     "code": "He-B240-A6A3",
      "product": "xz.comm.c3",
      "cat": "comm",
      "qty": 2,
@@ -27393,7 +27393,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A6A4",
+     "code": "He-B240-A6A4",
      "product": "um.xpdr.t1",
      "cat": "transponder",
      "qty": 2,
@@ -27438,7 +27438,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A7A1",
+     "code": "He-B240-A7A1",
      "product": "terra.ls.t60",
      "cat": "life_support",
      "qty": 2,
@@ -27483,7 +27483,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A7A2",
+     "code": "He-B240-A7A2",
      "product": "std.surv.boat20",
      "cat": "lifeboat",
      "qty": 3,
@@ -27545,7 +27545,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A7A3",
+     "code": "He-B240-A7A3",
      "product": "std.med.bay",
      "cat": "medbay",
      "qty": 3,
@@ -27607,7 +27607,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A8A1",
+     "code": "He-B240-A8A1",
      "product": "std.cargo.c20lock",
      "cat": "container_rack",
      "qty": 240,
@@ -27686,7 +27686,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A9A1",
+     "code": "He-B240-A9A1",
      "product": "harmony.bay.hangar2",
      "cat": "hangar",
      "qty": 1,
@@ -27714,7 +27714,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A9A2",
+     "code": "He-B240-A9A2",
      "product": "std.bay.drone4",
      "cat": "drone_bay",
      "qty": 2,
@@ -27759,7 +27759,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A10A1",
+     "code": "He-B240-A10A1",
      "product": "sol.workshop.w1",
      "cat": "workshop",
      "qty": 2,
@@ -27804,7 +27804,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A9A3",
+     "code": "He-B240-A9A3",
      "product": "std.dock.collar",
      "cat": "docking_port",
      "qty": 4,
@@ -27883,7 +27883,7 @@
      ]
     },
     {
-     "code": "Хэ-С240-A11A1",
+     "code": "He-B240-A11A1",
      "product": "harmony.wpn.pd3",
      "cat": "weapon",
      "qty": 2,
@@ -27970,7 +27970,7 @@
    "schematic": {
     "nodes": [
      {
-      "code": "Хэ-С240-A1A1",
+      "code": "He-B240-A1A1",
       "product": "th.drive.tz13",
       "name": "Тяньхэ ТЦ-13",
       "cat": "drive",
@@ -27984,7 +27984,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A2A1",
+      "code": "He-B240-A2A1",
       "product": "th.reactor.tr11",
       "name": "Тяньхэ ТР-11",
       "cat": "reactor",
@@ -27998,7 +27998,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A2A2",
+      "code": "He-B240-A2A2",
       "product": "th.apu.s600",
       "name": "Тяньхэ СР-600",
       "cat": "service_reactor",
@@ -28012,7 +28012,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A3A1",
+      "code": "He-B240-A3A1",
       "product": "th.rad.panel50",
       "name": "Тяньхэ радиаторная секция (50 м2)",
       "cat": "radiator",
@@ -28026,7 +28026,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A3A2",
+      "code": "He-B240-A3A2",
       "product": "th.cool.loop600",
       "name": "Тяньхэ контур охлаждения (600 МВт)",
       "cat": "coolant_loop",
@@ -28040,7 +28040,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A4A1",
+      "code": "He-B240-A4A1",
       "product": "harmony.core.h12",
       "name": "Гармония Х-12",
       "cat": "jump_core",
@@ -28054,7 +28054,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A4A2",
+      "code": "He-B240-A4A2",
       "product": "std.tank.jumpcharge",
       "name": "Бак заряда прыжка (1 т)",
       "cat": "tank",
@@ -28068,7 +28068,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A4A3",
+      "code": "He-B240-A4A3",
       "product": "std.tank.pellets",
       "name": "Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
@@ -28082,7 +28082,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A5A1",
+      "code": "He-B240-A5A1",
       "product": "std.rcs.cluster_h",
       "name": "Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
@@ -28096,7 +28096,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A6A1",
+      "code": "He-B240-A6A1",
       "product": "xz.mc.c3",
       "name": "Синьчжи MotherComputer MC-C3 (флот)",
       "cat": "computer",
@@ -28110,7 +28110,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A6A2",
+      "code": "He-B240-A6A2",
       "product": "xz.radar.n10",
       "name": "Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
@@ -28124,7 +28124,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A6A3",
+      "code": "He-B240-A6A3",
       "product": "xz.comm.c3",
       "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
       "cat": "comm",
@@ -28138,7 +28138,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A6A4",
+      "code": "He-B240-A6A4",
       "product": "um.xpdr.t1",
       "name": "Транспондер Управления Маяков Т-1",
       "cat": "transponder",
@@ -28152,7 +28152,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A7A1",
+      "code": "He-B240-A7A1",
       "product": "terra.ls.t60",
       "name": "Terra Habitat ЖО T-60 (флот)",
       "cat": "life_support",
@@ -28166,7 +28166,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A7A2",
+      "code": "He-B240-A7A2",
       "product": "std.surv.boat20",
       "name": "Спасательная шлюпка (20 мест, 10 суток)",
       "cat": "lifeboat",
@@ -28180,7 +28180,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A7A3",
+      "code": "He-B240-A7A3",
       "product": "std.med.bay",
       "name": "Медотсек (4 койки)",
       "cat": "medbay",
@@ -28194,7 +28194,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A8A1",
+      "code": "He-B240-A8A1",
       "product": "std.cargo.c20lock",
       "name": "Стойка C20 (замки и рельсы, 1 место)",
       "cat": "container_rack",
@@ -28208,7 +28208,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A9A1",
+      "code": "He-B240-A9A1",
       "product": "harmony.bay.hangar2",
       "name": "Ангар перехватчиков (2 места)",
       "cat": "hangar",
@@ -28222,7 +28222,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A9A2",
+      "code": "He-B240-A9A2",
       "product": "std.bay.drone4",
       "name": "Отсек дронов (4 сервисных дрона)",
       "cat": "drone_bay",
@@ -28236,7 +28236,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A10A1",
+      "code": "He-B240-A10A1",
       "product": "sol.workshop.w1",
       "name": "Мастерская сервисного тендера (2 бригады)",
       "cat": "workshop",
@@ -28250,7 +28250,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A9A3",
+      "code": "He-B240-A9A3",
       "product": "std.dock.collar",
       "name": "Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
@@ -28264,7 +28264,7 @@
       "condition": "new"
      },
      {
-      "code": "Хэ-С240-A11A1",
+      "code": "He-B240-A11A1",
       "product": "harmony.wpn.pd3",
       "name": "Гармония турель ПРО ПТ-3",
       "cat": "weapon",
@@ -28281,267 +28281,267 @@
     "edges": [
      {
       "net": "power_propulsion",
-      "src": "Хэ-С240-A2A1",
-      "dst": "Хэ-С240-A1A1"
+      "src": "He-B240-A2A1",
+      "dst": "He-B240-A1A1"
      },
      {
       "net": "power_propulsion",
-      "src": "Хэ-С240-A2A1",
-      "dst": "Хэ-С240-A5A1"
+      "src": "He-B240-A2A1",
+      "dst": "He-B240-A5A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A3A2"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A3A2"
      },
      {
       "net": "power_service",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A4A1"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A4A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A6A1"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A6A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A6A2"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A6A2"
      },
      {
       "net": "power_service",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A6A3"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A6A3"
      },
      {
       "net": "power_service",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A6A4"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A6A4"
      },
      {
       "net": "power_service",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A7A1"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A7A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A7A3"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A7A3"
      },
      {
       "net": "power_service",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A9A1"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A9A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A9A2"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A9A2"
      },
      {
       "net": "power_service",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A10A1"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A10A1"
      },
      {
       "net": "power_service",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A9A3"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A9A3"
      },
      {
       "net": "power_service",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A11A1"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A11A1"
      },
      {
       "net": "coolant",
-      "src": "Хэ-С240-A1A1",
-      "dst": "Хэ-С240-A3A2"
+      "src": "He-B240-A1A1",
+      "dst": "He-B240-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-С240-A2A1",
-      "dst": "Хэ-С240-A3A2"
+      "src": "He-B240-A2A1",
+      "dst": "He-B240-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-С240-A2A2",
-      "dst": "Хэ-С240-A3A2"
+      "src": "He-B240-A2A2",
+      "dst": "He-B240-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-С240-A4A1",
-      "dst": "Хэ-С240-A3A2"
+      "src": "He-B240-A4A1",
+      "dst": "He-B240-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-С240-A6A1",
-      "dst": "Хэ-С240-A3A2"
+      "src": "He-B240-A6A1",
+      "dst": "He-B240-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-С240-A6A2",
-      "dst": "Хэ-С240-A3A2"
+      "src": "He-B240-A6A2",
+      "dst": "He-B240-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-С240-A7A1",
-      "dst": "Хэ-С240-A3A2"
+      "src": "He-B240-A7A1",
+      "dst": "He-B240-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-С240-A11A1",
-      "dst": "Хэ-С240-A3A2"
+      "src": "He-B240-A11A1",
+      "dst": "He-B240-A3A2"
      },
      {
       "net": "coolant",
-      "src": "Хэ-С240-A3A2",
-      "dst": "Хэ-С240-A3A1"
+      "src": "He-B240-A3A2",
+      "dst": "He-B240-A3A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-С240-A4A2",
-      "dst": "Хэ-С240-A4A1"
+      "src": "He-B240-A4A2",
+      "dst": "He-B240-A4A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-С240-A4A3",
-      "dst": "Хэ-С240-A2A1"
+      "src": "He-B240-A4A3",
+      "dst": "He-B240-A2A1"
      },
      {
       "net": "fuel",
-      "src": "Хэ-С240-A4A3",
-      "dst": "Хэ-С240-A2A2"
+      "src": "He-B240-A4A3",
+      "dst": "He-B240-A2A2"
      },
      {
       "net": "data",
-      "src": "Хэ-С240-A6A1",
-      "dst": "Хэ-С240-A1A1"
+      "src": "He-B240-A6A1",
+      "dst": "He-B240-A1A1"
      },
      {
       "net": "data",
-      "src": "Хэ-С240-A6A1",
-      "dst": "Хэ-С240-A2A1"
+      "src": "He-B240-A6A1",
+      "dst": "He-B240-A2A1"
      },
      {
       "net": "data",
-      "src": "Хэ-С240-A6A1",
-      "dst": "Хэ-С240-A2A2"
+      "src": "He-B240-A6A1",
+      "dst": "He-B240-A2A2"
      },
      {
       "net": "data",
-      "src": "Хэ-С240-A6A1",
-      "dst": "Хэ-С240-A3A2"
+      "src": "He-B240-A6A1",
+      "dst": "He-B240-A3A2"
      },
      {
       "net": "data",
-      "src": "Хэ-С240-A6A1",
-      "dst": "Хэ-С240-A4A1"
+      "src": "He-B240-A6A1",
+      "dst": "He-B240-A4A1"
      },
      {
       "net": "data",
-      "src": "Хэ-С240-A6A1",
-      "dst": "Хэ-С240-A5A1"
+      "src": "He-B240-A6A1",
+      "dst": "He-B240-A5A1"
      },
      {
       "net": "data",
-      "src": "Хэ-С240-A6A1",
-      "dst": "Хэ-С240-A6A2"
+      "src": "He-B240-A6A1",
+      "dst": "He-B240-A6A2"
      },
      {
       "net": "data",
-      "src": "Хэ-С240-A6A1",
-      "dst": "Хэ-С240-A6A3"
+      "src": "He-B240-A6A1",
+      "dst": "He-B240-A6A3"
      },
      {
       "net": "data",
-      "src": "Хэ-С240-A6A1",
-      "dst": "Хэ-С240-A7A1"
+      "src": "He-B240-A6A1",
+      "dst": "He-B240-A7A1"
      },
      {
       "net": "data",
-      "src": "Хэ-С240-A6A1",
-      "dst": "Хэ-С240-A11A1"
+      "src": "He-B240-A6A1",
+      "dst": "He-B240-A11A1"
      },
      {
       "net": "life",
-      "src": "Хэ-С240-A7A1",
-      "dst": "Хэ-С240-A7A3"
+      "src": "He-B240-A7A1",
+      "dst": "He-B240-A7A3"
      }
     ],
     "functions": {
      "thrust": [
       [
-       "Хэ-С240-A1A1"
+       "He-B240-A1A1"
       ],
       [
-       "Хэ-С240-A2A1"
+       "He-B240-A2A1"
       ],
       [
-       "Хэ-С240-A3A2"
+       "He-B240-A3A2"
       ],
       [
-       "Хэ-С240-A6A1"
+       "He-B240-A6A1"
       ],
       [
-       "Хэ-С240-A4A2",
-       "Хэ-С240-A4A3"
+       "He-B240-A4A2",
+       "He-B240-A4A3"
       ]
      ],
      "jump": [
       [
-       "Хэ-С240-A4A1"
+       "He-B240-A4A1"
       ],
       [
-       "Хэ-С240-A6A1"
+       "He-B240-A6A1"
       ],
       [
-       "Хэ-С240-A2A2"
+       "He-B240-A2A2"
       ]
      ],
      "life": [
       [
-       "Хэ-С240-A7A1"
+       "He-B240-A7A1"
       ],
       [
-       "Хэ-С240-A2A2"
+       "He-B240-A2A2"
       ],
       [
-       "Хэ-С240-A3A2"
+       "He-B240-A3A2"
       ]
      ],
      "sensors": [
       [
-       "Хэ-С240-A6A2"
+       "He-B240-A6A2"
       ],
       [
-       "Хэ-С240-A2A2"
+       "He-B240-A2A2"
       ],
       [
-       "Хэ-С240-A6A1"
+       "He-B240-A6A1"
       ]
      ],
      "comms": [
       [
-       "Хэ-С240-A6A3"
+       "He-B240-A6A3"
       ],
       [
-       "Хэ-С240-A6A4"
+       "He-B240-A6A4"
       ]
      ],
      "attitude": [
       [
-       "Хэ-С240-A5A1"
+       "He-B240-A5A1"
       ],
       [
-       "Хэ-С240-A2A1"
+       "He-B240-A2A1"
       ]
      ]
     },
     "single_points_of_failure": [
-     "Хэ-С240-A4A1",
-     "Хэ-С240-A6A2"
+     "He-B240-A4A1",
+     "He-B240-A6A2"
     ],
     "redundancy": {
      "thrust": 2,
@@ -28555,8 +28555,8 @@
   },
   {
    "id": "sol.ship.pao-7.shchit",
-   "designation": "ПАО-7",
-   "name": "ПАО-7 «Щит»",
+   "designation": "PDT-7",
+   "name": "PDT-7 «Тунгуска»",
    "cls": "impact_defence_tug",
    "manufacturer": "Лунно-Марсианские верфи",
    "runtime": "generic",
@@ -28609,7 +28609,7 @@
    "endurance_days": 45,
    "installed": [
     {
-     "code": "ПАО-7-A1A1",
+     "code": "PDT-7-A1A1",
      "product": "ofu.drive.u70",
      "cat": "drive",
      "qty": 4,
@@ -28693,7 +28693,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A2A1",
+     "code": "PDT-7-A2A1",
      "product": "srw.reactor.sr7",
      "cat": "reactor",
      "qty": 4,
@@ -28777,7 +28777,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A2A2",
+     "code": "PDT-7-A2A2",
      "product": "srw.apu.s200",
      "cat": "service_reactor",
      "qty": 2,
@@ -28822,7 +28822,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A3A1",
+     "code": "PDT-7-A3A1",
      "product": "sol.rad.panel50",
      "cat": "radiator",
      "qty": 14,
@@ -28867,7 +28867,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A3A2",
+     "code": "PDT-7-A3A2",
      "product": "sol.cool.loop300",
      "cat": "coolant_loop",
      "qty": 2,
@@ -28912,7 +28912,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A4A1",
+     "code": "PDT-7-A4A1",
      "product": "std.tank.pellets",
      "cat": "tank",
      "qty": 30,
@@ -28991,7 +28991,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A5A1",
+     "code": "PDT-7-A5A1",
      "product": "std.rcs.cluster_h",
      "cat": "rcs",
      "qty": 8,
@@ -29147,7 +29147,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A6A1",
+     "code": "PDT-7-A6A1",
      "product": "xz.mc.c3",
      "cat": "computer",
      "qty": 2,
@@ -29192,7 +29192,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A6A2",
+     "code": "PDT-7-A6A2",
      "product": "kern.radar.deb5",
      "cat": "radar",
      "qty": 1,
@@ -29220,7 +29220,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A6A3",
+     "code": "PDT-7-A6A3",
      "product": "xz.radar.n10",
      "cat": "radar",
      "qty": 1,
@@ -29248,7 +29248,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A6A4",
+     "code": "PDT-7-A6A4",
      "product": "xz.comm.c3",
      "cat": "comm",
      "qty": 2,
@@ -29293,7 +29293,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A6A5",
+     "code": "PDT-7-A6A5",
      "product": "um.xpdr.t1",
      "cat": "transponder",
      "qty": 2,
@@ -29338,7 +29338,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A7A1",
+     "code": "PDT-7-A7A1",
      "product": "terra.ls.t60",
      "cat": "life_support",
      "qty": 2,
@@ -29383,7 +29383,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A7A2",
+     "code": "PDT-7-A7A2",
      "product": "std.surv.boat20",
      "cat": "lifeboat",
      "qty": 1,
@@ -29411,7 +29411,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A7A3",
+     "code": "PDT-7-A7A3",
      "product": "std.med.bay",
      "cat": "medbay",
      "qty": 1,
@@ -29439,7 +29439,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A9A1",
+     "code": "PDT-7-A9A1",
      "product": "std.bay.drone4",
      "cat": "drone_bay",
      "qty": 2,
@@ -29484,7 +29484,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A9A2",
+     "code": "PDT-7-A9A2",
      "product": "std.dock.collar",
      "cat": "docking_port",
      "qty": 2,
@@ -29529,7 +29529,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A10A1",
+     "code": "PDT-7-A10A1",
      "product": "kern.tow.heavy",
      "cat": "tow_rig",
      "qty": 1,
@@ -29557,7 +29557,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A11A1",
+     "code": "PDT-7-A11A1",
      "product": "kern.md.impactor",
      "cat": "weapon",
      "qty": 1,
@@ -29585,7 +29585,7 @@
      ]
     },
     {
-     "code": "ПАО-7-A12A1",
+     "code": "PDT-7-A12A1",
      "product": "std.armour.ceramic",
      "cat": "armour",
      "qty": 60,
@@ -29706,7 +29706,7 @@
    "schematic": {
     "nodes": [
      {
-      "code": "ПАО-7-A1A1",
+      "code": "PDT-7-A1A1",
       "product": "ofu.drive.u70",
       "name": "Урал-70",
       "cat": "drive",
@@ -29720,7 +29720,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A2A1",
+      "code": "PDT-7-A2A1",
       "product": "srw.reactor.sr7",
       "name": "Sol Reactor Works SR-7",
       "cat": "reactor",
@@ -29734,7 +29734,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A2A2",
+      "code": "PDT-7-A2A2",
       "product": "srw.apu.s200",
       "name": "Sol Reactor Works S-200",
       "cat": "service_reactor",
@@ -29748,7 +29748,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A3A1",
+      "code": "PDT-7-A3A1",
       "product": "sol.rad.panel50",
       "name": "ЛМВ радиаторная секция (50 м2)",
       "cat": "radiator",
@@ -29762,7 +29762,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A3A2",
+      "code": "PDT-7-A3A2",
       "product": "sol.cool.loop300",
       "name": "ЛМВ контур охлаждения (300 МВт)",
       "cat": "coolant_loop",
@@ -29776,7 +29776,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A4A1",
+      "code": "PDT-7-A4A1",
       "product": "std.tank.pellets",
       "name": "Бункер топливных таблеток D/He-3 (1 т)",
       "cat": "tank",
@@ -29790,7 +29790,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A5A1",
+      "code": "PDT-7-A5A1",
       "product": "std.rcs.cluster_h",
       "name": "Тяжёлый кластер RCS (4 сопла)",
       "cat": "rcs",
@@ -29804,7 +29804,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A6A1",
+      "code": "PDT-7-A6A1",
       "product": "xz.mc.c3",
       "name": "Синьчжи MotherComputer MC-C3 (флот)",
       "cat": "computer",
@@ -29818,7 +29818,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A6A2",
+      "code": "PDT-7-A6A2",
       "product": "kern.radar.deb5",
       "name": "Kern радар обломков DR-5 (5 000 км)",
       "cat": "radar",
@@ -29832,7 +29832,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A6A3",
+      "code": "PDT-7-A6A3",
       "product": "xz.radar.n10",
       "name": "Синьчжи радар обзора N-10 (10 000 км)",
       "cat": "radar",
@@ -29846,7 +29846,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A6A4",
+      "code": "PDT-7-A6A4",
       "product": "xz.comm.c3",
       "name": "Синьчжи связной комплекс C-3 (флот, защищённый)",
       "cat": "comm",
@@ -29860,7 +29860,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A6A5",
+      "code": "PDT-7-A6A5",
       "product": "um.xpdr.t1",
       "name": "Транспондер Управления Маяков Т-1",
       "cat": "transponder",
@@ -29874,7 +29874,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A7A1",
+      "code": "PDT-7-A7A1",
       "product": "terra.ls.t60",
       "name": "Terra Habitat ЖО T-60 (флот)",
       "cat": "life_support",
@@ -29888,7 +29888,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A7A2",
+      "code": "PDT-7-A7A2",
       "product": "std.surv.boat20",
       "name": "Спасательная шлюпка (20 мест, 10 суток)",
       "cat": "lifeboat",
@@ -29902,7 +29902,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A7A3",
+      "code": "PDT-7-A7A3",
       "product": "std.med.bay",
       "name": "Медотсек (4 койки)",
       "cat": "medbay",
@@ -29916,7 +29916,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A9A1",
+      "code": "PDT-7-A9A1",
       "product": "std.bay.drone4",
       "name": "Отсек дронов (4 сервисных дрона)",
       "cat": "drone_bay",
@@ -29930,7 +29930,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A9A2",
+      "code": "PDT-7-A9A2",
       "product": "std.dock.collar",
       "name": "Стыковочный узел (стандарт хабов)",
       "cat": "docking_port",
@@ -29944,7 +29944,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A10A1",
+      "code": "PDT-7-A10A1",
       "product": "kern.tow.heavy",
       "name": "Kern тяжёлый захват (обломки, камни)",
       "cat": "tow_rig",
@@ -29958,7 +29958,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A11A1",
+      "code": "PDT-7-A11A1",
       "product": "kern.md.impactor",
       "name": "Kern пусковая ударников МД-40 (масс-драйвер)",
       "cat": "weapon",
@@ -29972,7 +29972,7 @@
       "condition": "new"
      },
      {
-      "code": "ПАО-7-A12A1",
+      "code": "PDT-7-A12A1",
       "product": "std.armour.ceramic",
       "name": "Броня керамокомпозитная (1 т)",
       "cat": "armour",
@@ -29989,241 +29989,241 @@
     "edges": [
      {
       "net": "power_propulsion",
-      "src": "ПАО-7-A2A1",
-      "dst": "ПАО-7-A1A1"
+      "src": "PDT-7-A2A1",
+      "dst": "PDT-7-A1A1"
      },
      {
       "net": "power_propulsion",
-      "src": "ПАО-7-A2A1",
-      "dst": "ПАО-7-A5A1"
+      "src": "PDT-7-A2A1",
+      "dst": "PDT-7-A5A1"
      },
      {
       "net": "power_service",
-      "src": "ПАО-7-A2A2",
-      "dst": "ПАО-7-A3A2"
+      "src": "PDT-7-A2A2",
+      "dst": "PDT-7-A3A2"
      },
      {
       "net": "power_service",
-      "src": "ПАО-7-A2A2",
-      "dst": "ПАО-7-A6A1"
+      "src": "PDT-7-A2A2",
+      "dst": "PDT-7-A6A1"
      },
      {
       "net": "power_service",
-      "src": "ПАО-7-A2A2",
-      "dst": "ПАО-7-A6A2"
+      "src": "PDT-7-A2A2",
+      "dst": "PDT-7-A6A2"
      },
      {
       "net": "power_service",
-      "src": "ПАО-7-A2A2",
-      "dst": "ПАО-7-A6A3"
+      "src": "PDT-7-A2A2",
+      "dst": "PDT-7-A6A3"
      },
      {
       "net": "power_service",
-      "src": "ПАО-7-A2A2",
-      "dst": "ПАО-7-A6A4"
+      "src": "PDT-7-A2A2",
+      "dst": "PDT-7-A6A4"
      },
      {
       "net": "power_service",
-      "src": "ПАО-7-A2A2",
-      "dst": "ПАО-7-A6A5"
+      "src": "PDT-7-A2A2",
+      "dst": "PDT-7-A6A5"
      },
      {
       "net": "power_service",
-      "src": "ПАО-7-A2A2",
-      "dst": "ПАО-7-A7A1"
+      "src": "PDT-7-A2A2",
+      "dst": "PDT-7-A7A1"
      },
      {
       "net": "power_service",
-      "src": "ПАО-7-A2A2",
-      "dst": "ПАО-7-A7A3"
+      "src": "PDT-7-A2A2",
+      "dst": "PDT-7-A7A3"
      },
      {
       "net": "power_service",
-      "src": "ПАО-7-A2A2",
-      "dst": "ПАО-7-A9A1"
+      "src": "PDT-7-A2A2",
+      "dst": "PDT-7-A9A1"
      },
      {
       "net": "power_service",
-      "src": "ПАО-7-A2A2",
-      "dst": "ПАО-7-A9A2"
+      "src": "PDT-7-A2A2",
+      "dst": "PDT-7-A9A2"
      },
      {
       "net": "power_service",
-      "src": "ПАО-7-A2A2",
-      "dst": "ПАО-7-A10A1"
+      "src": "PDT-7-A2A2",
+      "dst": "PDT-7-A10A1"
      },
      {
       "net": "power_service",
-      "src": "ПАО-7-A2A2",
-      "dst": "ПАО-7-A11A1"
+      "src": "PDT-7-A2A2",
+      "dst": "PDT-7-A11A1"
      },
      {
       "net": "coolant",
-      "src": "ПАО-7-A1A1",
-      "dst": "ПАО-7-A3A2"
+      "src": "PDT-7-A1A1",
+      "dst": "PDT-7-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПАО-7-A2A1",
-      "dst": "ПАО-7-A3A2"
+      "src": "PDT-7-A2A1",
+      "dst": "PDT-7-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПАО-7-A2A2",
-      "dst": "ПАО-7-A3A2"
+      "src": "PDT-7-A2A2",
+      "dst": "PDT-7-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПАО-7-A6A1",
-      "dst": "ПАО-7-A3A2"
+      "src": "PDT-7-A6A1",
+      "dst": "PDT-7-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПАО-7-A6A2",
-      "dst": "ПАО-7-A3A2"
+      "src": "PDT-7-A6A2",
+      "dst": "PDT-7-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПАО-7-A6A3",
-      "dst": "ПАО-7-A3A2"
+      "src": "PDT-7-A6A3",
+      "dst": "PDT-7-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПАО-7-A7A1",
-      "dst": "ПАО-7-A3A2"
+      "src": "PDT-7-A7A1",
+      "dst": "PDT-7-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПАО-7-A11A1",
-      "dst": "ПАО-7-A3A2"
+      "src": "PDT-7-A11A1",
+      "dst": "PDT-7-A3A2"
      },
      {
       "net": "coolant",
-      "src": "ПАО-7-A3A2",
-      "dst": "ПАО-7-A3A1"
+      "src": "PDT-7-A3A2",
+      "dst": "PDT-7-A3A1"
      },
      {
       "net": "fuel",
-      "src": "ПАО-7-A4A1",
-      "dst": "ПАО-7-A2A1"
+      "src": "PDT-7-A4A1",
+      "dst": "PDT-7-A2A1"
      },
      {
       "net": "fuel",
-      "src": "ПАО-7-A4A1",
-      "dst": "ПАО-7-A2A2"
+      "src": "PDT-7-A4A1",
+      "dst": "PDT-7-A2A2"
      },
      {
       "net": "data",
-      "src": "ПАО-7-A6A1",
-      "dst": "ПАО-7-A1A1"
+      "src": "PDT-7-A6A1",
+      "dst": "PDT-7-A1A1"
      },
      {
       "net": "data",
-      "src": "ПАО-7-A6A1",
-      "dst": "ПАО-7-A2A1"
+      "src": "PDT-7-A6A1",
+      "dst": "PDT-7-A2A1"
      },
      {
       "net": "data",
-      "src": "ПАО-7-A6A1",
-      "dst": "ПАО-7-A2A2"
+      "src": "PDT-7-A6A1",
+      "dst": "PDT-7-A2A2"
      },
      {
       "net": "data",
-      "src": "ПАО-7-A6A1",
-      "dst": "ПАО-7-A3A2"
+      "src": "PDT-7-A6A1",
+      "dst": "PDT-7-A3A2"
      },
      {
       "net": "data",
-      "src": "ПАО-7-A6A1",
-      "dst": "ПАО-7-A5A1"
+      "src": "PDT-7-A6A1",
+      "dst": "PDT-7-A5A1"
      },
      {
       "net": "data",
-      "src": "ПАО-7-A6A1",
-      "dst": "ПАО-7-A6A2"
+      "src": "PDT-7-A6A1",
+      "dst": "PDT-7-A6A2"
      },
      {
       "net": "data",
-      "src": "ПАО-7-A6A1",
-      "dst": "ПАО-7-A6A3"
+      "src": "PDT-7-A6A1",
+      "dst": "PDT-7-A6A3"
      },
      {
       "net": "data",
-      "src": "ПАО-7-A6A1",
-      "dst": "ПАО-7-A6A4"
+      "src": "PDT-7-A6A1",
+      "dst": "PDT-7-A6A4"
      },
      {
       "net": "data",
-      "src": "ПАО-7-A6A1",
-      "dst": "ПАО-7-A7A1"
+      "src": "PDT-7-A6A1",
+      "dst": "PDT-7-A7A1"
      },
      {
       "net": "data",
-      "src": "ПАО-7-A6A1",
-      "dst": "ПАО-7-A11A1"
+      "src": "PDT-7-A6A1",
+      "dst": "PDT-7-A11A1"
      },
      {
       "net": "life",
-      "src": "ПАО-7-A7A1",
-      "dst": "ПАО-7-A7A3"
+      "src": "PDT-7-A7A1",
+      "dst": "PDT-7-A7A3"
      }
     ],
     "functions": {
      "thrust": [
       [
-       "ПАО-7-A1A1"
+       "PDT-7-A1A1"
       ],
       [
-       "ПАО-7-A2A1"
+       "PDT-7-A2A1"
       ],
       [
-       "ПАО-7-A3A2"
+       "PDT-7-A3A2"
       ],
       [
-       "ПАО-7-A6A1"
+       "PDT-7-A6A1"
       ],
       [
-       "ПАО-7-A4A1"
+       "PDT-7-A4A1"
       ]
      ],
      "jump": [],
      "life": [
       [
-       "ПАО-7-A7A1"
+       "PDT-7-A7A1"
       ],
       [
-       "ПАО-7-A2A2"
+       "PDT-7-A2A2"
       ],
       [
-       "ПАО-7-A3A2"
+       "PDT-7-A3A2"
       ]
      ],
      "sensors": [
       [
-       "ПАО-7-A6A2",
-       "ПАО-7-A6A3"
+       "PDT-7-A6A2",
+       "PDT-7-A6A3"
       ],
       [
-       "ПАО-7-A2A2"
+       "PDT-7-A2A2"
       ],
       [
-       "ПАО-7-A6A1"
+       "PDT-7-A6A1"
       ]
      ],
      "comms": [
       [
-       "ПАО-7-A6A4"
+       "PDT-7-A6A4"
       ],
       [
-       "ПАО-7-A6A5"
+       "PDT-7-A6A5"
       ]
      ],
      "attitude": [
       [
-       "ПАО-7-A5A1"
+       "PDT-7-A5A1"
       ],
       [
-       "ПАО-7-A2A1"
+       "PDT-7-A2A1"
       ]
      ]
     },
@@ -30241,7 +30241,7 @@
   {
    "id": "hyp.ship.l-900.piligrim",
    "designation": "L-900",
-   "name": "L-900 «Пилигрим»",
+   "name": "L-900 «Эос»",
    "cls": "liner",
    "manufacturer": "Верфи Гипериона",
    "runtime": "generic",
@@ -32054,7 +32054,7 @@
   {
    "id": "bharat.ship.t-5000.iskhod",
    "designation": "T-5000",
-   "name": "T-5000 «Исход»",
+   "name": "T-5000 «Правас»",
    "cls": "colonist_transport",
    "manufacturer": "Бхарат Ассембли",
    "runtime": "generic",

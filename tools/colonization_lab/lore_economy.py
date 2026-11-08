@@ -18,8 +18,8 @@ TARGET = "`AUTHOR_TARGET`"
 ROLE_RU = {"bulk_cargo": "навал / контейнеры (поезда)", "medium_cargo": "средний груз", "tanker": "танкер", "shuttle": "челнок", "tug": "буксир",
            "maintenance": "сервис", "patrol": "патруль", "escort": "эскорт", "interceptor": "перехватчик", "military": "военный",
            "impact_defence": "противоастероидная оборона"}
-SC_RU = {"cobrett_i_n1": "Cobrett-I N1", "medium_freighter": "фрейтер «Конвейер»", "jump_train": "прыжковый поезд", "jump_tanker": "поезд-танкер",
-         "ocs4_lastochka": "OCS-4 «Ласточка»", "gas_tanker": "газовый танкер", "ore_tug": "рудный буксир", "service_tender": "сервисный тендер",
+SC_RU = {"cobrett_i_n1": "Cobrett-I N1", "medium_freighter": "средний фрейтер", "jump_train": "прыжковый поезд", "jump_tanker": "поезд-танкер",
+         "ocs4_lastochka": "орбитальный челнок OCS-4", "gas_tanker": "газовый танкер", "ore_tug": "рудный буксир", "service_tender": "сервисный тендер",
          "patrol_cutter": "патрульный катер", "interceptor": "перехватчик", "escort_frigate": "эскортный фрегат", "line_combatant": "линейный ракетный корабль",
          "recon_picket": "разведчик / РЭБ-пикет", "fleet_tender": "тендер флота", "impact_defence_tug": "буксир ПАО"}
 CHANNEL_RU = {"official": "официальный", "re_export": "реэкспорт через нейтрала", "sanctioned": "под санкциями", "smuggling": "контрабанда", "covert_state": "тайный госканал"}
@@ -273,7 +273,7 @@ def docs(D, lm):
            [(SC_RU.get(c, c), ROLE_RU.get(s["role"], s["role"]), s["purpose"], n0(s["dry_mass_t"]), n0(s["cargo_t"]), n0(s["cargo_m3"]), s.get("container_slots", 0), s["burn_accel_g"], s["crew"],
              n0(L_["build_cost"][c]["list_price_cr"]), s["service_life_years"],
              "/".join(str(L_["range_mean_jumps"][c][x]) for x in ("empty", "half", "full")) if c in L_["range_mean_jumps"] else "—", TAG) for c, s in S.items()], lm), "",
-         "Тяжёлый перевозчик — не монолит, а **прыжковый поезд**: тягач-«Локомотив» с ядром прыжка + до 12 модулей по 4 800 т. Тягач оставляет модули на погрузке в депо и забирает готовые, поэтому дорогое ядро не простаивает; поле прыжка строится по оболочке, и длинный поезд платит в основном за массу (дёшево на тонну).", "",
+         "Тяжёлый перевозчик — не монолит, а **прыжковый поезд**: тягач Хэ-T12 «Хэсе» с ядром прыжка + до 12 модулей по 4 800 т. Тягач оставляет модули на погрузке в депо и забирает готовые, поэтому дорогое ядро не простаивает; поле прыжка строится по оболочке, и длинный поезд платит в основном за массу (дёшево на тонну).", "",
          "### Флоты по политиям", ""]
     rows = []
     for k, rws in X["fleet_census"]["polities"].items():

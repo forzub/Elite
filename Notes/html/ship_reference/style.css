@@ -9,7 +9,8 @@ a{color:var(--accent);text-decoration:none}button{font:inherit}
 .top{height:var(--top);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 18px;background:#0d141c;position:sticky;top:0;z-index:20}
 .brand{font-weight:700;font-size:16px;color:#e6f2fb;white-space:nowrap}
 .top .search{width:min(420px,40vw);background:#0b1118;border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px 10px}
-.top .meta{color:var(--mut);font-size:12px}
+.top .meta{color:var(--mut);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.top .btn{white-space:nowrap;flex:none}
 .btn{border:1px solid #36536c;background:#142536;color:#dcecff;border-radius:7px;padding:7px 10px;cursor:pointer;display:inline-block}
 .btn:hover{background:#1b3248}.btn:disabled{opacity:.45;cursor:default}
 .btn.mini{font-size:12px;padding:5px 9px}.btn.danger{border-color:#7a3a36;background:#2a1414;color:#ffc9c4}
@@ -52,6 +53,8 @@ h2{font-size:22px;margin:0 0 6px}h3{font-size:15px;margin:0 0 10px;color:#d9efff
 .shipCard .pic{border-radius:0}
 .cardBody{padding:9px 11px 11px}
 .cardName{font-weight:700;font-size:15px}
+.cardOfficial{color:#bcd3e4;font-size:12.5px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.official{color:#cfe2f0;font-size:14px;margin:2px 0}
 .cardSub{color:var(--mut);font-size:12px;margin:2px 0 7px}
 .progress{height:4px;background:#1c2a37;border-radius:3px;overflow:hidden;margin-bottom:6px}.progress i{display:block;height:100%;background:var(--accent2)}
 

@@ -13,7 +13,12 @@
       "engineering_type": "cobrett_n1",
       "economic_class": "cobrett_i_n1",
       "name": "Cobrett-I N1",
-      "model_code": 35,
+      "model_code": "KB35",
+      "model_index": "Cobrett-I N1",
+      "official_name": "Cobrett-I FRN-U N1",
+      "short_name": "Kobra",
+      "short_name_ru": "Кобра",
+      "legacy_name": "Cobrett-I N1",
       "manufacturer": "mfr.cobretty",
       "cooperation_group": "cognium_pool",
       "purpose": "быстрый гибкий фрахт: ценный и срочный груз, курьер, малый чартер",
@@ -301,14 +306,14 @@
         },
         "hostile_or_foreign": {
           "ship_id": "bharat.ship.c-120.konveyer",
-          "name": "C-120 «Конвейер»",
+          "name": "C-120 «Вахак»",
           "group": "southern_circle",
           "reason": "внешний аналог роли"
         }
       },
       "functional_groups": [
         {
-          "code": "35A1",
+          "code": "KB35A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -325,7 +330,7 @@
           ]
         },
         {
-          "code": "35A2",
+          "code": "KB35A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -353,7 +358,7 @@
           ]
         },
         {
-          "code": "35A3",
+          "code": "KB35A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -381,7 +386,7 @@
           ]
         },
         {
-          "code": "35A4",
+          "code": "KB35A4",
           "name": "Энергетика",
           "items": [
             {
@@ -417,7 +422,7 @@
           ]
         },
         {
-          "code": "35A5",
+          "code": "KB35A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -445,7 +450,7 @@
           ]
         },
         {
-          "code": "35A6",
+          "code": "KB35A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -484,7 +489,7 @@
           ]
         },
         {
-          "code": "35A7",
+          "code": "KB35A7",
           "name": "Связь",
           "items": [
             {
@@ -501,7 +506,7 @@
           ]
         },
         {
-          "code": "35A8",
+          "code": "KB35A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -518,7 +523,7 @@
           ]
         },
         {
-          "code": "35A9",
+          "code": "KB35A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -546,7 +551,7 @@
           ]
         },
         {
-          "code": "35A10",
+          "code": "KB35A10",
           "name": "Спасение",
           "items": [
             {
@@ -563,7 +568,7 @@
           ]
         },
         {
-          "code": "35A11",
+          "code": "KB35A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -580,7 +585,7 @@
           ]
         },
         {
-          "code": "35A12",
+          "code": "KB35A12",
           "name": "Вооружение",
           "items": [
             {
@@ -650,7 +655,12 @@
       "engineering_type": "cobrett_a3",
       "economic_class": "cobrett_i_n1",
       "name": "Cobrett-I A3",
-      "model_code": 44,
+      "model_code": "KB44",
+      "model_index": "Cobrett-I A3",
+      "official_name": "Cobrett-I FRN-U/INT-A A3",
+      "short_name": "Kobra",
+      "short_name_ru": "Кобра",
+      "legacy_name": "Cobrett-I A3",
       "manufacturer": "mfr.cobretty",
       "cooperation_group": "cognium_pool",
       "purpose": "как N1, для пилотов с законом Assisted; дороже в обслуживании",
@@ -916,14 +926,14 @@
         },
         "hostile_or_foreign": {
           "ship_id": "bharat.ship.c-120.konveyer",
-          "name": "C-120 «Конвейер»",
+          "name": "C-120 «Вахак»",
           "group": "southern_circle",
           "reason": "внешний аналог роли"
         }
       },
       "functional_groups": [
         {
-          "code": "44A1",
+          "code": "KB44A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -940,7 +950,7 @@
           ]
         },
         {
-          "code": "44A3",
+          "code": "KB44A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -968,7 +978,7 @@
           ]
         },
         {
-          "code": "44A4",
+          "code": "KB44A4",
           "name": "Энергетика",
           "items": [
             {
@@ -1004,7 +1014,7 @@
           ]
         },
         {
-          "code": "44A5",
+          "code": "KB44A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -1032,7 +1042,7 @@
           ]
         },
         {
-          "code": "44A6",
+          "code": "KB44A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -1071,7 +1081,7 @@
           ]
         },
         {
-          "code": "44A7",
+          "code": "KB44A7",
           "name": "Связь",
           "items": [
             {
@@ -1088,7 +1098,7 @@
           ]
         },
         {
-          "code": "44A8",
+          "code": "KB44A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -1105,7 +1115,7 @@
           ]
         },
         {
-          "code": "44A9",
+          "code": "KB44A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -1133,7 +1143,7 @@
           ]
         },
         {
-          "code": "44A10",
+          "code": "KB44A10",
           "name": "Спасение",
           "items": [
             {
@@ -1150,7 +1160,7 @@
           ]
         },
         {
-          "code": "44A11",
+          "code": "KB44A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -1167,7 +1177,7 @@
           ]
         },
         {
-          "code": "44A12",
+          "code": "KB44A12",
           "name": "Вооружение",
           "items": [
             {
@@ -1236,8 +1246,13 @@
       "id": "ofu.ship.ocs-4.lastochka",
       "engineering_type": "ocs4_lastochka",
       "economic_class": "ocs4_lastochka",
-      "name": "OCS-4 «Ласточка»",
-      "model_code": 37,
+      "name": "OCS-4",
+      "model_code": "У37",
+      "model_index": "OCS-4",
+      "official_name": "OFU OCS-4",
+      "short_name": "Ласточка",
+      "short_name_ru": "Ласточка",
+      "legacy_name": "OCS-4 «Ласточка»",
       "manufacturer": "mfr.ofu",
       "cooperation_group": "sol_industrial",
       "purpose": "только орбита ↔ хабы и депо (без посадки, без прыжка)",
@@ -1481,7 +1496,7 @@
       },
       "functional_groups": [
         {
-          "code": "37A1",
+          "code": "У37A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -1498,7 +1513,7 @@
           ]
         },
         {
-          "code": "37A2",
+          "code": "У37A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -1515,7 +1530,7 @@
           ]
         },
         {
-          "code": "37A3",
+          "code": "У37A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -1543,7 +1558,7 @@
           ]
         },
         {
-          "code": "37A4",
+          "code": "У37A4",
           "name": "Энергетика",
           "items": [
             {
@@ -1587,7 +1602,7 @@
           ]
         },
         {
-          "code": "37A6",
+          "code": "У37A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -1626,7 +1641,7 @@
           ]
         },
         {
-          "code": "37A7",
+          "code": "У37A7",
           "name": "Связь",
           "items": [
             {
@@ -1643,7 +1658,7 @@
           ]
         },
         {
-          "code": "37A8",
+          "code": "У37A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -1660,7 +1675,7 @@
           ]
         },
         {
-          "code": "37A9",
+          "code": "У37A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -1688,7 +1703,7 @@
           ]
         },
         {
-          "code": "37A10",
+          "code": "У37A10",
           "name": "Спасение",
           "items": [
             {
@@ -1705,7 +1720,7 @@
           ]
         },
         {
-          "code": "37A11",
+          "code": "У37A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -1736,8 +1751,13 @@
       "id": "ofu.ship.sl-12.podyomnik",
       "engineering_type": "surface_lifter",
       "economic_class": "surface_lifter",
-      "name": "SL-12 «Подъёмник»",
-      "model_code": 38,
+      "name": "SL-12",
+      "model_code": "У38",
+      "model_index": "SL-12",
+      "official_name": "OFU SL-12",
+      "short_name": "Двенашка",
+      "short_name_ru": "Двенашка",
+      "legacy_name": "SL-12 «Подъёмник»",
       "manufacturer": "mfr.ofu",
       "cooperation_group": "sol_industrial",
       "purpose": "космопорт на поверхности ↔ низкая орбита: 12 мест C20 или 12 модулей P20 (144 пассажира)",
@@ -2006,7 +2026,7 @@
       },
       "functional_groups": [
         {
-          "code": "38A1",
+          "code": "У38A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -2023,7 +2043,7 @@
           ]
         },
         {
-          "code": "38A2",
+          "code": "У38A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -2040,7 +2060,7 @@
           ]
         },
         {
-          "code": "38A3",
+          "code": "У38A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -2068,7 +2088,7 @@
           ]
         },
         {
-          "code": "38A4",
+          "code": "У38A4",
           "name": "Энергетика",
           "items": [
             {
@@ -2104,7 +2124,7 @@
           ]
         },
         {
-          "code": "38A6",
+          "code": "У38A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -2143,7 +2163,7 @@
           ]
         },
         {
-          "code": "38A7",
+          "code": "У38A7",
           "name": "Связь",
           "items": [
             {
@@ -2160,7 +2180,7 @@
           ]
         },
         {
-          "code": "38A8",
+          "code": "У38A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -2177,7 +2197,7 @@
           ]
         },
         {
-          "code": "38A9",
+          "code": "У38A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -2216,7 +2236,7 @@
           ]
         },
         {
-          "code": "38A10",
+          "code": "У38A10",
           "name": "Спасение",
           "items": [
             {
@@ -2233,7 +2253,7 @@
           ]
         },
         {
-          "code": "38A11",
+          "code": "У38A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -2250,7 +2270,7 @@
           ]
         },
         {
-          "code": "38A13",
+          "code": "У38A13",
           "name": "Защита / посадка",
           "items": [
             {
@@ -2292,8 +2312,15 @@
       "id": "bharat.ship.c-120.konveyer",
       "engineering_type": "medium_freighter",
       "economic_class": "medium_freighter",
-      "name": "C-120 «Конвейер»",
-      "model_code": 58,
+      "name": "C-120 «Вахак»",
+      "model_code": "BH58",
+      "model_index": "C-120",
+      "official_name": "Bharat C-120 Vahak",
+      "native_script": "भारत C-120 वाहक",
+      "romanization": "Vahak",
+      "short_name": "हाथी",
+      "short_name_ru": "Хатхи («слон»)",
+      "legacy_name": "C-120 «Конвейер»",
       "manufacturer": "mfr.bharat",
       "cooperation_group": "southern_circle",
       "purpose": "вторичные межзвёздные трассы: контейнеры, машины, товары, медикаменты",
@@ -2581,7 +2608,7 @@
       },
       "functional_groups": [
         {
-          "code": "58A1",
+          "code": "BH58A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -2607,7 +2634,7 @@
           ]
         },
         {
-          "code": "58A2",
+          "code": "BH58A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -2624,7 +2651,7 @@
           ]
         },
         {
-          "code": "58A3",
+          "code": "BH58A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -2652,7 +2679,7 @@
           ]
         },
         {
-          "code": "58A4",
+          "code": "BH58A4",
           "name": "Энергетика",
           "items": [
             {
@@ -2688,7 +2715,7 @@
           ]
         },
         {
-          "code": "58A5",
+          "code": "BH58A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -2721,7 +2748,7 @@
           ]
         },
         {
-          "code": "58A6",
+          "code": "BH58A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -2765,7 +2792,7 @@
           ]
         },
         {
-          "code": "58A7",
+          "code": "BH58A7",
           "name": "Связь",
           "items": [
             {
@@ -2782,7 +2809,7 @@
           ]
         },
         {
-          "code": "58A8",
+          "code": "BH58A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -2799,7 +2826,7 @@
           ]
         },
         {
-          "code": "58A9",
+          "code": "BH58A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -2827,7 +2854,7 @@
           ]
         },
         {
-          "code": "58A10",
+          "code": "BH58A10",
           "name": "Спасение",
           "items": [
             {
@@ -2844,7 +2871,7 @@
           ]
         },
         {
-          "code": "58A11",
+          "code": "BH58A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -2875,8 +2902,15 @@
       "id": "harmony.ship.he-120",
       "engineering_type": "medium_freighter",
       "economic_class": "medium_freighter",
-      "name": "Хэ-120 «Хуэйлю»",
-      "model_code": 50,
+      "name": "Хэ-120 «Синча»",
+      "model_code": "和50",
+      "model_index": "和-120",
+      "official_name": "和-120 星槎",
+      "native_script": "和-120 星槎",
+      "romanization": "He-120 Xingcha",
+      "short_name": "幺两洞",
+      "short_name_ru": "Яолядун («один-два-ноль»)",
+      "legacy_name": "Хэ-120 «Хуэйлю»",
       "manufacturer": "mfr.harmony_yards",
       "cooperation_group": "heavenly_pact",
       "purpose": "как C-120 для флотов Пакта; ремонт в любом порту блока",
@@ -3146,7 +3180,7 @@
       },
       "functional_groups": [
         {
-          "code": "50A1",
+          "code": "和50A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -3172,7 +3206,7 @@
           ]
         },
         {
-          "code": "50A2",
+          "code": "和50A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -3189,7 +3223,7 @@
           ]
         },
         {
-          "code": "50A3",
+          "code": "和50A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -3217,7 +3251,7 @@
           ]
         },
         {
-          "code": "50A4",
+          "code": "和50A4",
           "name": "Энергетика",
           "items": [
             {
@@ -3245,7 +3279,7 @@
           ]
         },
         {
-          "code": "50A5",
+          "code": "和50A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -3273,7 +3307,7 @@
           ]
         },
         {
-          "code": "50A6",
+          "code": "和50A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -3312,7 +3346,7 @@
           ]
         },
         {
-          "code": "50A7",
+          "code": "和50A7",
           "name": "Связь",
           "items": [
             {
@@ -3329,7 +3363,7 @@
           ]
         },
         {
-          "code": "50A8",
+          "code": "和50A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -3346,7 +3380,7 @@
           ]
         },
         {
-          "code": "50A9",
+          "code": "和50A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -3374,7 +3408,7 @@
           ]
         },
         {
-          "code": "50A10",
+          "code": "和50A10",
           "name": "Спасение",
           "items": [
             {
@@ -3391,7 +3425,7 @@
           ]
         },
         {
-          "code": "50A11",
+          "code": "和50A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -3422,8 +3456,15 @@
       "id": "harmony.ship.he-t12.lokomotiv",
       "engineering_type": "jump_train",
       "economic_class": "jump_train",
-      "name": "Хэ-Т12 «Локомотив» + 12 модулей",
-      "model_code": 51,
+      "name": "Хэ-T12 «Хэсе»",
+      "model_code": "和51",
+      "model_index": "和-T12",
+      "official_name": "和-T12 和谐号",
+      "native_script": "和-T12 和谐号",
+      "romanization": "He-T12 Hexie",
+      "short_name": "老牛",
+      "short_name_ru": "Лаоню («старый вол»)",
+      "legacy_name": "Хэ-Т12 «Локомотив»",
       "manufacturer": "mfr.harmony_yards",
       "cooperation_group": "heavenly_pact",
       "purpose": "магистрали: навал и контейнеры в модулях; тягач оставляет модули в депо и забирает готовые",
@@ -3707,7 +3748,7 @@
       },
       "functional_groups": [
         {
-          "code": "51A1",
+          "code": "和51A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -3733,7 +3774,7 @@
           ]
         },
         {
-          "code": "51A2",
+          "code": "和51A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -3750,7 +3791,7 @@
           ]
         },
         {
-          "code": "51A3",
+          "code": "和51A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -3778,7 +3819,7 @@
           ]
         },
         {
-          "code": "51A4",
+          "code": "和51A4",
           "name": "Энергетика",
           "items": [
             {
@@ -3814,7 +3855,7 @@
           ]
         },
         {
-          "code": "51A5",
+          "code": "和51A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -3842,7 +3883,7 @@
           ]
         },
         {
-          "code": "51A6",
+          "code": "和51A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -3881,7 +3922,7 @@
           ]
         },
         {
-          "code": "51A7",
+          "code": "和51A7",
           "name": "Связь",
           "items": [
             {
@@ -3898,7 +3939,7 @@
           ]
         },
         {
-          "code": "51A8",
+          "code": "和51A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -3915,7 +3956,7 @@
           ]
         },
         {
-          "code": "51A9",
+          "code": "和51A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -3943,7 +3984,7 @@
           ]
         },
         {
-          "code": "51A10",
+          "code": "和51A10",
           "name": "Спасение",
           "items": [
             {
@@ -3960,7 +4001,7 @@
           ]
         },
         {
-          "code": "51A11",
+          "code": "和51A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -3977,7 +4018,7 @@
           ]
         },
         {
-          "code": "51A12",
+          "code": "和51A12",
           "name": "Вооружение",
           "items": [
             {
@@ -4038,8 +4079,15 @@
       "id": "harmony.ship.he-t12c.tanker",
       "engineering_type": "jump_tanker",
       "economic_class": "jump_tanker",
-      "name": "Хэ-Т12Ц (поезд-танкер)",
-      "model_code": 52,
+      "name": "Хэ-T12G «Хэсе»",
+      "model_code": "和52",
+      "model_index": "和-T12G",
+      "official_name": "和-T12G 和谐号",
+      "native_script": "和-T12G 和谐号",
+      "romanization": "He-T12G Hexie",
+      "short_name": "油龙",
+      "short_name_ru": "Юлун («масляный дракон»)",
+      "legacy_name": "Хэ-Т12Ц",
       "manufacturer": "mfr.harmony_yards",
       "cooperation_group": "heavenly_pact",
       "purpose": "топливо реакторов и заряд прыжка к депо и импортёрам",
@@ -4321,14 +4369,14 @@
         "standard": null,
         "hostile_or_foreign": {
           "ship_id": "sol.ship.gt-3000.titan",
-          "name": "ГТ-3000 «Титан»",
+          "name": "GT-3000 «Титан»",
           "group": "sol_industrial",
           "reason": "внешний аналог роли"
         }
       },
       "functional_groups": [
         {
-          "code": "52A1",
+          "code": "和52A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -4354,7 +4402,7 @@
           ]
         },
         {
-          "code": "52A2",
+          "code": "和52A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -4371,7 +4419,7 @@
           ]
         },
         {
-          "code": "52A3",
+          "code": "和52A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -4399,7 +4447,7 @@
           ]
         },
         {
-          "code": "52A4",
+          "code": "和52A4",
           "name": "Энергетика",
           "items": [
             {
@@ -4435,7 +4483,7 @@
           ]
         },
         {
-          "code": "52A5",
+          "code": "和52A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -4463,7 +4511,7 @@
           ]
         },
         {
-          "code": "52A6",
+          "code": "和52A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -4502,7 +4550,7 @@
           ]
         },
         {
-          "code": "52A7",
+          "code": "和52A7",
           "name": "Связь",
           "items": [
             {
@@ -4519,7 +4567,7 @@
           ]
         },
         {
-          "code": "52A8",
+          "code": "和52A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -4536,7 +4584,7 @@
           ]
         },
         {
-          "code": "52A9",
+          "code": "和52A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -4564,7 +4612,7 @@
           ]
         },
         {
-          "code": "52A10",
+          "code": "和52A10",
           "name": "Спасение",
           "items": [
             {
@@ -4581,7 +4629,7 @@
           ]
         },
         {
-          "code": "52A11",
+          "code": "和52A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -4598,7 +4646,7 @@
           ]
         },
         {
-          "code": "52A12",
+          "code": "和52A12",
           "name": "Вооружение",
           "items": [
             {
@@ -4659,8 +4707,13 @@
       "id": "sol.ship.gt-3000.titan",
       "engineering_type": "gas_tanker",
       "economic_class": "gas_tanker",
-      "name": "ГТ-3000 «Титан»",
-      "model_code": 39,
+      "name": "GT-3000 «Титан»",
+      "model_code": "ЛМ39",
+      "model_index": "GT-3000",
+      "official_name": "Luna-Mars Yards GT-3000 Titan",
+      "short_name": "Бочка",
+      "short_name_ru": "Бочка",
+      "legacy_name": "ГТ-3000 «Титан»",
       "manufacturer": "mfr.sol_mass_yards",
       "cooperation_group": "sol_industrial",
       "purpose": "He-3 и дейтерий с платформ Юпитера и Сатурна к депо и портам",
@@ -4903,14 +4956,14 @@
         "standard": null,
         "hostile_or_foreign": {
           "ship_id": "harmony.ship.he-t12c.tanker",
-          "name": "Хэ-Т12Ц (поезд-танкер)",
+          "name": "Хэ-T12G «Хэсе»",
           "group": "heavenly_pact",
           "reason": "внешний аналог роли"
         }
       },
       "functional_groups": [
         {
-          "code": "39A1",
+          "code": "ЛМ39A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -4936,7 +4989,7 @@
           ]
         },
         {
-          "code": "39A2",
+          "code": "ЛМ39A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -4953,7 +5006,7 @@
           ]
         },
         {
-          "code": "39A3",
+          "code": "ЛМ39A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -4981,7 +5034,7 @@
           ]
         },
         {
-          "code": "39A4",
+          "code": "ЛМ39A4",
           "name": "Энергетика",
           "items": [
             {
@@ -5017,7 +5070,7 @@
           ]
         },
         {
-          "code": "39A6",
+          "code": "ЛМ39A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -5056,7 +5109,7 @@
           ]
         },
         {
-          "code": "39A7",
+          "code": "ЛМ39A7",
           "name": "Связь",
           "items": [
             {
@@ -5073,7 +5126,7 @@
           ]
         },
         {
-          "code": "39A8",
+          "code": "ЛМ39A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -5090,7 +5143,7 @@
           ]
         },
         {
-          "code": "39A9",
+          "code": "ЛМ39A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -5118,7 +5171,7 @@
           ]
         },
         {
-          "code": "39A10",
+          "code": "ЛМ39A10",
           "name": "Спасение",
           "items": [
             {
@@ -5135,7 +5188,7 @@
           ]
         },
         {
-          "code": "39A11",
+          "code": "ЛМ39A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -5166,8 +5219,13 @@
       "id": "stone.ship.kamen.tanker",
       "engineering_type": "gas_tanker",
       "economic_class": "gas_tanker",
-      "name": "«Камень» (танкер из астероида)",
-      "model_code": 67,
+      "name": "«Камень» (каменный танкер)",
+      "model_code": "SR67",
+      "model_index": "rock tanker",
+      "official_name": "rock tanker (Stone Docks)",
+      "short_name": "rock",
+      "short_name_ru": "Камень",
+      "legacy_name": "«Камень» (танкер из астероида)",
       "manufacturer": "mfr.stone_docks",
       "cooperation_group": "free_belts",
       "purpose": "лёд и летучие внутри системы; каменная оболочка — защита от обломков; медленный и дешёвый",
@@ -5387,14 +5445,14 @@
         "standard": null,
         "hostile_or_foreign": {
           "ship_id": "harmony.ship.he-t12c.tanker",
-          "name": "Хэ-Т12Ц (поезд-танкер)",
+          "name": "Хэ-T12G «Хэсе»",
           "group": "heavenly_pact",
           "reason": "внешний аналог роли"
         }
       },
       "functional_groups": [
         {
-          "code": "67A1",
+          "code": "SR67A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -5411,7 +5469,7 @@
           ]
         },
         {
-          "code": "67A2",
+          "code": "SR67A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -5428,7 +5486,7 @@
           ]
         },
         {
-          "code": "67A3",
+          "code": "SR67A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -5456,7 +5514,7 @@
           ]
         },
         {
-          "code": "67A4",
+          "code": "SR67A4",
           "name": "Энергетика",
           "items": [
             {
@@ -5500,7 +5558,7 @@
           ]
         },
         {
-          "code": "67A6",
+          "code": "SR67A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -5528,7 +5586,7 @@
           ]
         },
         {
-          "code": "67A7",
+          "code": "SR67A7",
           "name": "Связь",
           "items": [
             {
@@ -5545,7 +5603,7 @@
           ]
         },
         {
-          "code": "67A8",
+          "code": "SR67A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -5562,7 +5620,7 @@
           ]
         },
         {
-          "code": "67A9",
+          "code": "SR67A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -5579,7 +5637,7 @@
           ]
         },
         {
-          "code": "67A10",
+          "code": "SR67A10",
           "name": "Спасение",
           "items": [
             {
@@ -5596,7 +5654,7 @@
           ]
         },
         {
-          "code": "67A11",
+          "code": "SR67A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -5627,8 +5685,13 @@
       "id": "kern.ship.ht-20k.mul",
       "engineering_type": "ore_tug",
       "economic_class": "ore_tug",
-      "name": "HT-20K «Мул»",
-      "model_code": 46,
+      "name": "HT-20K",
+      "model_code": "K46",
+      "model_index": "HT-20K",
+      "official_name": "Kern HT-20K",
+      "short_name": "Mule",
+      "short_name_ru": "Мул",
+      "legacy_name": "HT-20K «Мул»",
       "manufacturer": "mfr.kern_heavy",
       "cooperation_group": "cognium_pool",
       "purpose": "толкает плоты руды и льда (до 20 000 т) от рудников к заводам; буксирует оборудование и маяки",
@@ -5856,7 +5919,7 @@
       },
       "functional_groups": [
         {
-          "code": "46A1",
+          "code": "K46A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -5873,7 +5936,7 @@
           ]
         },
         {
-          "code": "46A2",
+          "code": "K46A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -5890,7 +5953,7 @@
           ]
         },
         {
-          "code": "46A3",
+          "code": "K46A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -5918,7 +5981,7 @@
           ]
         },
         {
-          "code": "46A4",
+          "code": "K46A4",
           "name": "Энергетика",
           "items": [
             {
@@ -5946,7 +6009,7 @@
           ]
         },
         {
-          "code": "46A6",
+          "code": "K46A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -5985,7 +6048,7 @@
           ]
         },
         {
-          "code": "46A7",
+          "code": "K46A7",
           "name": "Связь",
           "items": [
             {
@@ -6002,7 +6065,7 @@
           ]
         },
         {
-          "code": "46A8",
+          "code": "K46A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -6019,7 +6082,7 @@
           ]
         },
         {
-          "code": "46A9",
+          "code": "K46A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -6036,7 +6099,7 @@
           ]
         },
         {
-          "code": "46A10",
+          "code": "K46A10",
           "name": "Спасение",
           "items": [
             {
@@ -6053,7 +6116,7 @@
           ]
         },
         {
-          "code": "46A11",
+          "code": "K46A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -6095,8 +6158,13 @@
       "id": "sol.ship.st-6.masterovoy",
       "engineering_type": "service_tender",
       "economic_class": "service_tender",
-      "name": "СТ-6 «Мастеровой»",
-      "model_code": 42,
+      "name": "ST-6",
+      "model_code": "ЛМ42",
+      "model_index": "ST-6",
+      "official_name": "Luna-Mars Yards ST-6",
+      "short_name": "Шестёрка",
+      "short_name_ru": "Шестёрка",
+      "legacy_name": "СТ-6 «Мастеровой»",
       "manufacturer": "mfr.sol_mass_yards",
       "cooperation_group": "sol_industrial",
       "purpose": "ремонт рудников, станций, маяков и кораблей на месте; запчасти и мастерская",
@@ -6363,7 +6431,7 @@
       },
       "functional_groups": [
         {
-          "code": "42A1",
+          "code": "ЛМ42A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -6389,7 +6457,7 @@
           ]
         },
         {
-          "code": "42A3",
+          "code": "ЛМ42A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -6417,7 +6485,7 @@
           ]
         },
         {
-          "code": "42A4",
+          "code": "ЛМ42A4",
           "name": "Энергетика",
           "items": [
             {
@@ -6453,7 +6521,7 @@
           ]
         },
         {
-          "code": "42A6",
+          "code": "ЛМ42A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -6492,7 +6560,7 @@
           ]
         },
         {
-          "code": "42A7",
+          "code": "ЛМ42A7",
           "name": "Связь",
           "items": [
             {
@@ -6509,7 +6577,7 @@
           ]
         },
         {
-          "code": "42A8",
+          "code": "ЛМ42A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -6537,7 +6605,7 @@
           ]
         },
         {
-          "code": "42A9",
+          "code": "ЛМ42A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -6565,7 +6633,7 @@
           ]
         },
         {
-          "code": "42A10",
+          "code": "ЛМ42A10",
           "name": "Спасение",
           "items": [
             {
@@ -6582,7 +6650,7 @@
           ]
         },
         {
-          "code": "42A11",
+          "code": "ЛМ42A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -6635,8 +6703,13 @@
       "id": "sol.ship.pk-30.strazh",
       "engineering_type": "patrol_cutter",
       "economic_class": "patrol_cutter",
-      "name": "ПК-30 «Страж»",
-      "model_code": 43,
+      "name": "PC-30 «Фарос»",
+      "model_code": "ЛМ43",
+      "model_index": "PC-30",
+      "official_name": "Sol Coast Service PC-30 Pharos",
+      "short_name": "Тридцатка",
+      "short_name_ru": "Тридцатка",
+      "legacy_name": "ПК-30 «Страж»",
       "manufacturer": "mfr.sol_mass_yards",
       "cooperation_group": "sol_industrial",
       "purpose": "береговая охрана: таможня и досмотр, полиция, SAR, охрана маяков",
@@ -6936,7 +7009,7 @@
       },
       "functional_groups": [
         {
-          "code": "43A1",
+          "code": "ЛМ43A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -6953,7 +7026,7 @@
           ]
         },
         {
-          "code": "43A3",
+          "code": "ЛМ43A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -6981,7 +7054,7 @@
           ]
         },
         {
-          "code": "43A4",
+          "code": "ЛМ43A4",
           "name": "Энергетика",
           "items": [
             {
@@ -7009,7 +7082,7 @@
           ]
         },
         {
-          "code": "43A5",
+          "code": "ЛМ43A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -7037,7 +7110,7 @@
           ]
         },
         {
-          "code": "43A6",
+          "code": "ЛМ43A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -7076,7 +7149,7 @@
           ]
         },
         {
-          "code": "43A7",
+          "code": "ЛМ43A7",
           "name": "Связь",
           "items": [
             {
@@ -7093,7 +7166,7 @@
           ]
         },
         {
-          "code": "43A8",
+          "code": "ЛМ43A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -7121,7 +7194,7 @@
           ]
         },
         {
-          "code": "43A9",
+          "code": "ЛМ43A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -7149,7 +7222,7 @@
           ]
         },
         {
-          "code": "43A10",
+          "code": "ЛМ43A10",
           "name": "Спасение",
           "items": [
             {
@@ -7166,7 +7239,7 @@
           ]
         },
         {
-          "code": "43A11",
+          "code": "ЛМ43A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -7194,7 +7267,7 @@
           ]
         },
         {
-          "code": "43A12",
+          "code": "ЛМ43A12",
           "name": "Вооружение",
           "items": [
             {
@@ -7222,7 +7295,7 @@
           ]
         },
         {
-          "code": "43A13",
+          "code": "ЛМ43A13",
           "name": "Защита / посадка",
           "items": [
             {
@@ -7289,8 +7362,13 @@
       "id": "bastion.ship.b-4.sokol",
       "engineering_type": "interceptor",
       "economic_class": "interceptor",
-      "name": "Б-4 «Сокол»",
-      "model_code": 64,
+      "name": "B-4 класса «Фальк»",
+      "model_code": "MJ64",
+      "model_index": "B-4",
+      "official_name": "B-4 Falk-klassen",
+      "short_name": "Vatman",
+      "short_name_ru": "Ватман",
+      "legacy_name": "Б-4 «Сокол»",
       "manufacturer": "mfr.bastion",
       "cooperation_group": "citadel_compact",
       "purpose": "быстрый ответ в системе: перехват пиратов и нарушителей, камней и обломков; короткая автономность",
@@ -7515,7 +7593,7 @@
       },
       "functional_groups": [
         {
-          "code": "64A1",
+          "code": "MJ64A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -7532,7 +7610,7 @@
           ]
         },
         {
-          "code": "64A3",
+          "code": "MJ64A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -7560,7 +7638,7 @@
           ]
         },
         {
-          "code": "64A4",
+          "code": "MJ64A4",
           "name": "Энергетика",
           "items": [
             {
@@ -7596,7 +7674,7 @@
           ]
         },
         {
-          "code": "64A6",
+          "code": "MJ64A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -7635,7 +7713,7 @@
           ]
         },
         {
-          "code": "64A7",
+          "code": "MJ64A7",
           "name": "Связь",
           "items": [
             {
@@ -7652,7 +7730,7 @@
           ]
         },
         {
-          "code": "64A8",
+          "code": "MJ64A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -7669,7 +7747,7 @@
           ]
         },
         {
-          "code": "64A9",
+          "code": "MJ64A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -7686,7 +7764,7 @@
           ]
         },
         {
-          "code": "64A10",
+          "code": "MJ64A10",
           "name": "Спасение",
           "items": [
             {
@@ -7703,7 +7781,7 @@
           ]
         },
         {
-          "code": "64A12",
+          "code": "MJ64A12",
           "name": "Вооружение",
           "items": [
             {
@@ -7720,7 +7798,7 @@
           ]
         },
         {
-          "code": "64A13",
+          "code": "MJ64A13",
           "name": "Защита / посадка",
           "items": [
             {
@@ -7757,8 +7835,15 @@
       "id": "harmony.ship.he-f22.dun",
       "engineering_type": "escort_frigate",
       "economic_class": "escort_frigate",
-      "name": "Хэ-Ф22 «Дунь»",
-      "model_code": 55,
+      "name": "Хэ-F22 класса «Шэнхэ»",
+      "model_code": "和55",
+      "model_index": "和-F22",
+      "official_name": "和-F22 盛和级",
+      "native_script": "和-F22 盛和级",
+      "romanization": "He-F22 Shenghe",
+      "short_name": "盾",
+      "short_name_ru": "Дунь («щит»)",
+      "legacy_name": "Хэ-Ф22 «Дунь»",
       "manufacturer": "mfr.harmony_yards",
       "cooperation_group": "heavenly_pact",
       "purpose": "охрана конвоев: ПРО, сенсоры, автономность наравне с поездами",
@@ -8066,7 +8151,7 @@
       },
       "functional_groups": [
         {
-          "code": "55A1",
+          "code": "和55A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -8083,7 +8168,7 @@
           ]
         },
         {
-          "code": "55A2",
+          "code": "和55A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -8100,7 +8185,7 @@
           ]
         },
         {
-          "code": "55A3",
+          "code": "和55A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -8128,7 +8213,7 @@
           ]
         },
         {
-          "code": "55A4",
+          "code": "和55A4",
           "name": "Энергетика",
           "items": [
             {
@@ -8164,7 +8249,7 @@
           ]
         },
         {
-          "code": "55A5",
+          "code": "和55A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -8192,7 +8277,7 @@
           ]
         },
         {
-          "code": "55A6",
+          "code": "和55A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -8231,7 +8316,7 @@
           ]
         },
         {
-          "code": "55A7",
+          "code": "和55A7",
           "name": "Связь",
           "items": [
             {
@@ -8248,7 +8333,7 @@
           ]
         },
         {
-          "code": "55A8",
+          "code": "和55A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -8276,7 +8361,7 @@
           ]
         },
         {
-          "code": "55A9",
+          "code": "和55A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -8293,7 +8378,7 @@
           ]
         },
         {
-          "code": "55A10",
+          "code": "和55A10",
           "name": "Спасение",
           "items": [
             {
@@ -8310,7 +8395,7 @@
           ]
         },
         {
-          "code": "55A11",
+          "code": "和55A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -8338,7 +8423,7 @@
           ]
         },
         {
-          "code": "55A12",
+          "code": "和55A12",
           "name": "Вооружение",
           "items": [
             {
@@ -8366,7 +8451,7 @@
           ]
         },
         {
-          "code": "55A13",
+          "code": "和55A13",
           "name": "Защита / посадка",
           "items": [
             {
@@ -8492,8 +8577,13 @@
       "id": "bastion.ship.b-90.tsitadel",
       "engineering_type": "line_combatant",
       "economic_class": "line_combatant",
-      "name": "Б-90 «Цитадель»",
-      "model_code": 65,
+      "name": "B-90 класса «Ингрид Хауглан»",
+      "model_code": "MJ65",
+      "model_index": "B-90",
+      "official_name": "B-90 Ingrid Haugland-klassen",
+      "short_name": "Damen",
+      "short_name_ru": "Дамен («Дама»)",
+      "legacy_name": "Б-90 «Цитадель»",
       "manufacturer": "mfr.bastion",
       "cooperation_group": "citadel_compact",
       "purpose": "сдерживание и война: дальние ракеты, сильные сенсоры, броня; главная боевая единица Цитадели",
@@ -8817,7 +8907,7 @@
       },
       "functional_groups": [
         {
-          "code": "65A1",
+          "code": "MJ65A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -8834,7 +8924,7 @@
           ]
         },
         {
-          "code": "65A2",
+          "code": "MJ65A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -8851,7 +8941,7 @@
           ]
         },
         {
-          "code": "65A3",
+          "code": "MJ65A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -8879,7 +8969,7 @@
           ]
         },
         {
-          "code": "65A4",
+          "code": "MJ65A4",
           "name": "Энергетика",
           "items": [
             {
@@ -8915,7 +9005,7 @@
           ]
         },
         {
-          "code": "65A5",
+          "code": "MJ65A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -8943,7 +9033,7 @@
           ]
         },
         {
-          "code": "65A6",
+          "code": "MJ65A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -8982,7 +9072,7 @@
           ]
         },
         {
-          "code": "65A7",
+          "code": "MJ65A7",
           "name": "Связь",
           "items": [
             {
@@ -8999,7 +9089,7 @@
           ]
         },
         {
-          "code": "65A8",
+          "code": "MJ65A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -9027,7 +9117,7 @@
           ]
         },
         {
-          "code": "65A9",
+          "code": "MJ65A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -9044,7 +9134,7 @@
           ]
         },
         {
-          "code": "65A10",
+          "code": "MJ65A10",
           "name": "Спасение",
           "items": [
             {
@@ -9061,7 +9151,7 @@
           ]
         },
         {
-          "code": "65A11",
+          "code": "MJ65A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -9100,7 +9190,7 @@
           ]
         },
         {
-          "code": "65A12",
+          "code": "MJ65A12",
           "name": "Вооружение",
           "items": [
             {
@@ -9128,7 +9218,7 @@
           ]
         },
         {
-          "code": "65A13",
+          "code": "MJ65A13",
           "name": "Защита / посадка",
           "items": [
             {
@@ -9255,7 +9345,14 @@
       "engineering_type": "recon_picket",
       "economic_class": "recon_picket",
       "name": "R-7 «Аргус»",
-      "model_code": 49,
+      "model_code": "HY49",
+      "model_index": "R-7",
+      "official_name": "Hyperion R-7 Argus",
+      "native_script": "许珀里翁 R-7 阿耳戈斯",
+      "romanization": "Argus",
+      "short_name": "千里眼",
+      "short_name_ru": "Цяньлиянь («Тысячеверстный глаз»)",
+      "legacy_name": "R-7 «Аргус»",
       "manufacturer": "mfr.hyperion",
       "cooperation_group": "cognium_pool",
       "purpose": "сенсоры и раннее предупреждение у точек выхода, РЭБ, ретрансляция сети маяков в войну",
@@ -9581,14 +9678,14 @@
         "standard": null,
         "hostile_or_foreign": {
           "ship_id": "bastion.ship.b-90.tsitadel",
-          "name": "Б-90 «Цитадель»",
+          "name": "B-90 класса «Ингрид Хауглан»",
           "group": "citadel_compact",
           "reason": "внешний аналог роли"
         }
       },
       "functional_groups": [
         {
-          "code": "49A1",
+          "code": "HY49A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -9614,7 +9711,7 @@
           ]
         },
         {
-          "code": "49A2",
+          "code": "HY49A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -9631,7 +9728,7 @@
           ]
         },
         {
-          "code": "49A3",
+          "code": "HY49A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -9659,7 +9756,7 @@
           ]
         },
         {
-          "code": "49A4",
+          "code": "HY49A4",
           "name": "Энергетика",
           "items": [
             {
@@ -9695,7 +9792,7 @@
           ]
         },
         {
-          "code": "49A5",
+          "code": "HY49A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -9723,7 +9820,7 @@
           ]
         },
         {
-          "code": "49A6",
+          "code": "HY49A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -9784,7 +9881,7 @@
           ]
         },
         {
-          "code": "49A7",
+          "code": "HY49A7",
           "name": "Связь",
           "items": [
             {
@@ -9812,7 +9909,7 @@
           ]
         },
         {
-          "code": "49A8",
+          "code": "HY49A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -9840,7 +9937,7 @@
           ]
         },
         {
-          "code": "49A9",
+          "code": "HY49A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -9857,7 +9954,7 @@
           ]
         },
         {
-          "code": "49A10",
+          "code": "HY49A10",
           "name": "Спасение",
           "items": [
             {
@@ -9874,7 +9971,7 @@
           ]
         },
         {
-          "code": "49A11",
+          "code": "HY49A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -9902,7 +9999,7 @@
           ]
         },
         {
-          "code": "49A12",
+          "code": "HY49A12",
           "name": "Вооружение",
           "items": [
             {
@@ -9963,8 +10060,15 @@
       "id": "harmony.ship.he-s240.tylovik",
       "engineering_type": "fleet_tender",
       "economic_class": "fleet_tender",
-      "name": "Хэ-С240 «Тыловик»",
-      "model_code": 54,
+      "name": "Хэ-B240 класса «Бутянь»",
+      "model_code": "和54",
+      "model_index": "和-B240",
+      "official_name": "和-B240 补天级",
+      "native_script": "和-B240 补天级",
+      "romanization": "He-B240 Butian",
+      "short_name": "奶妈",
+      "short_name_ru": "Наймa («кормилица»)",
+      "legacy_name": "Хэ-С240 «Тыловик»",
       "manufacturer": "mfr.harmony_yards",
       "cooperation_group": "heavenly_pact",
       "purpose": "автономность эскадры вдали от баз: топливо, заряд прыжка, боеприпасы, ремонт",
@@ -10290,14 +10394,14 @@
         "standard": null,
         "hostile_or_foreign": {
           "ship_id": "bastion.ship.b-90.tsitadel",
-          "name": "Б-90 «Цитадель»",
+          "name": "B-90 класса «Ингрид Хауглан»",
           "group": "citadel_compact",
           "reason": "внешний аналог роли"
         }
       },
       "functional_groups": [
         {
-          "code": "54A1",
+          "code": "和54A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -10323,7 +10427,7 @@
           ]
         },
         {
-          "code": "54A2",
+          "code": "和54A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -10340,7 +10444,7 @@
           ]
         },
         {
-          "code": "54A3",
+          "code": "和54A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -10368,7 +10472,7 @@
           ]
         },
         {
-          "code": "54A4",
+          "code": "和54A4",
           "name": "Энергетика",
           "items": [
             {
@@ -10404,7 +10508,7 @@
           ]
         },
         {
-          "code": "54A5",
+          "code": "和54A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -10432,7 +10536,7 @@
           ]
         },
         {
-          "code": "54A6",
+          "code": "和54A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -10471,7 +10575,7 @@
           ]
         },
         {
-          "code": "54A7",
+          "code": "和54A7",
           "name": "Связь",
           "items": [
             {
@@ -10488,7 +10592,7 @@
           ]
         },
         {
-          "code": "54A8",
+          "code": "和54A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -10516,7 +10620,7 @@
           ]
         },
         {
-          "code": "54A9",
+          "code": "和54A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -10544,7 +10648,7 @@
           ]
         },
         {
-          "code": "54A10",
+          "code": "和54A10",
           "name": "Спасение",
           "items": [
             {
@@ -10561,7 +10665,7 @@
           ]
         },
         {
-          "code": "54A11",
+          "code": "和54A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -10611,7 +10715,7 @@
           ]
         },
         {
-          "code": "54A12",
+          "code": "和54A12",
           "name": "Вооружение",
           "items": [
             {
@@ -10672,8 +10776,13 @@
       "id": "sol.ship.pao-7.shchit",
       "engineering_type": "impact_defence_tug",
       "economic_class": "impact_defence_tug",
-      "name": "ПАО-7 «Щит»",
-      "model_code": 41,
+      "name": "PDT-7 «Тунгуска»",
+      "model_code": "ЛМ41",
+      "model_index": "PDT-7",
+      "official_name": "Sol Planetary Defence PDT-7 Tunguska",
+      "short_name": "Метла",
+      "short_name_ru": "Метла",
+      "legacy_name": "ПАО-7 «Щит»",
       "manufacturer": "mfr.sol_mass_yards",
       "cooperation_group": "sol_industrial",
       "purpose": "защита планет и обитаемых станций: обнаружить, перехватить, увести, отклонить или раздробить камень; тяжёлое спасение",
@@ -10964,7 +11073,7 @@
       },
       "functional_groups": [
         {
-          "code": "41A1",
+          "code": "ЛМ41A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -10981,7 +11090,7 @@
           ]
         },
         {
-          "code": "41A2",
+          "code": "ЛМ41A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -10998,7 +11107,7 @@
           ]
         },
         {
-          "code": "41A3",
+          "code": "ЛМ41A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -11026,7 +11135,7 @@
           ]
         },
         {
-          "code": "41A4",
+          "code": "ЛМ41A4",
           "name": "Энергетика",
           "items": [
             {
@@ -11062,7 +11171,7 @@
           ]
         },
         {
-          "code": "41A6",
+          "code": "ЛМ41A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -11112,7 +11221,7 @@
           ]
         },
         {
-          "code": "41A7",
+          "code": "ЛМ41A7",
           "name": "Связь",
           "items": [
             {
@@ -11129,7 +11238,7 @@
           ]
         },
         {
-          "code": "41A8",
+          "code": "ЛМ41A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -11157,7 +11266,7 @@
           ]
         },
         {
-          "code": "41A9",
+          "code": "ЛМ41A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -11174,7 +11283,7 @@
           ]
         },
         {
-          "code": "41A10",
+          "code": "ЛМ41A10",
           "name": "Спасение",
           "items": [
             {
@@ -11191,7 +11300,7 @@
           ]
         },
         {
-          "code": "41A11",
+          "code": "ЛМ41A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -11230,7 +11339,7 @@
           ]
         },
         {
-          "code": "41A12",
+          "code": "ЛМ41A12",
           "name": "Вооружение",
           "items": [
             {
@@ -11247,7 +11356,7 @@
           ]
         },
         {
-          "code": "41A13",
+          "code": "ЛМ41A13",
           "name": "Защита / посадка",
           "items": [
             {
@@ -11284,8 +11393,15 @@
       "id": "hyp.ship.l-900.piligrim",
       "engineering_type": "liner",
       "economic_class": "liner",
-      "name": "L-900 «Пилигрим»",
-      "model_code": 48,
+      "name": "L-900 «Эос»",
+      "model_code": "HY48",
+      "model_index": "L-900",
+      "official_name": "Hyperion L-900 Eos",
+      "native_script": "许珀里翁 L-900 厄俄斯",
+      "romanization": "Eos",
+      "short_name": "大巴",
+      "short_name_ru": "Даба («автобус»)",
+      "legacy_name": "L-900 «Пилигрим»",
       "manufacturer": "mfr.hyperion",
       "cooperation_group": "cognium_pool",
       "purpose": "регулярные межзвёздные рейсы: 900 мест (60 каюты / 240 бизнес / 600 эконом), почта и 90 т срочного груза",
@@ -11570,14 +11686,14 @@
         "standard": null,
         "hostile_or_foreign": {
           "ship_id": "bharat.ship.t-5000.iskhod",
-          "name": "T-5000 «Исход»",
+          "name": "T-5000 «Правас»",
           "group": "southern_circle",
           "reason": "внешний аналог роли"
         }
       },
       "functional_groups": [
         {
-          "code": "48A1",
+          "code": "HY48A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -11603,7 +11719,7 @@
           ]
         },
         {
-          "code": "48A2",
+          "code": "HY48A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -11620,7 +11736,7 @@
           ]
         },
         {
-          "code": "48A3",
+          "code": "HY48A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -11648,7 +11764,7 @@
           ]
         },
         {
-          "code": "48A4",
+          "code": "HY48A4",
           "name": "Энергетика",
           "items": [
             {
@@ -11676,7 +11792,7 @@
           ]
         },
         {
-          "code": "48A5",
+          "code": "HY48A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -11704,7 +11820,7 @@
           ]
         },
         {
-          "code": "48A6",
+          "code": "HY48A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -11743,7 +11859,7 @@
           ]
         },
         {
-          "code": "48A7",
+          "code": "HY48A7",
           "name": "Связь",
           "items": [
             {
@@ -11760,7 +11876,7 @@
           ]
         },
         {
-          "code": "48A8",
+          "code": "HY48A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -11788,7 +11904,7 @@
           ]
         },
         {
-          "code": "48A9",
+          "code": "HY48A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -11827,7 +11943,7 @@
           ]
         },
         {
-          "code": "48A10",
+          "code": "HY48A10",
           "name": "Спасение",
           "items": [
             {
@@ -11844,7 +11960,7 @@
           ]
         },
         {
-          "code": "48A11",
+          "code": "HY48A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {
@@ -11875,8 +11991,15 @@
       "id": "bharat.ship.t-5000.iskhod",
       "engineering_type": "colonist_transport",
       "economic_class": "colonist_transport",
-      "name": "T-5000 «Исход»",
-      "model_code": 59,
+      "name": "T-5000 «Правас»",
+      "model_code": "BH59",
+      "model_index": "T-5000",
+      "official_name": "Bharat T-5000 Pravas",
+      "native_script": "भारत T-5000 प्रवास",
+      "romanization": "Pravas",
+      "short_name": "मेला",
+      "short_name_ru": "Мела («ярмарка»)",
+      "legacy_name": "T-5000 «Исход»",
       "manufacturer": "mfr.bharat",
       "cooperation_group": "southern_circle",
       "purpose": "миграция и эвакуация: 5 000 мест (70 % койки, 30 % анабиоз), медленно и дёшево на человека; реквизируется при бедствиях",
@@ -12190,14 +12313,14 @@
         "standard": null,
         "hostile_or_foreign": {
           "ship_id": "hyp.ship.l-900.piligrim",
-          "name": "L-900 «Пилигрим»",
+          "name": "L-900 «Эос»",
           "group": "cognium_pool",
           "reason": "внешний аналог роли"
         }
       },
       "functional_groups": [
         {
-          "code": "59A1",
+          "code": "BH59A1",
           "name": "Главная двигательная группа",
           "items": [
             {
@@ -12223,7 +12346,7 @@
           ]
         },
         {
-          "code": "59A2",
+          "code": "BH59A2",
           "name": "Маневровая система / RCS",
           "items": [
             {
@@ -12240,7 +12363,7 @@
           ]
         },
         {
-          "code": "59A3",
+          "code": "BH59A3",
           "name": "Система охлаждения",
           "items": [
             {
@@ -12268,7 +12391,7 @@
           ]
         },
         {
-          "code": "59A4",
+          "code": "BH59A4",
           "name": "Энергетика",
           "items": [
             {
@@ -12304,7 +12427,7 @@
           ]
         },
         {
-          "code": "59A5",
+          "code": "BH59A5",
           "name": "Прыжковая система",
           "items": [
             {
@@ -12337,7 +12460,7 @@
           ]
         },
         {
-          "code": "59A6",
+          "code": "BH59A6",
           "name": "Автоника и сенсоры",
           "items": [
             {
@@ -12381,7 +12504,7 @@
           ]
         },
         {
-          "code": "59A7",
+          "code": "BH59A7",
           "name": "Связь",
           "items": [
             {
@@ -12398,7 +12521,7 @@
           ]
         },
         {
-          "code": "59A8",
+          "code": "BH59A8",
           "name": "Жизнеобеспечение",
           "items": [
             {
@@ -12426,7 +12549,7 @@
           ]
         },
         {
-          "code": "59A9",
+          "code": "BH59A9",
           "name": "Груз / пассажиры / расходные баки",
           "items": [
             {
@@ -12476,7 +12599,7 @@
           ]
         },
         {
-          "code": "59A10",
+          "code": "BH59A10",
           "name": "Спасение",
           "items": [
             {
@@ -12493,7 +12616,7 @@
           ]
         },
         {
-          "code": "59A11",
+          "code": "BH59A11",
           "name": "Сервис / стыковка / буксировка",
           "items": [
             {

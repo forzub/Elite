@@ -1,97 +1,97 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 410" font-family="Segoe UI, Arial, sans-serif" font-size="10">
 <rect width="100%" height="100%" fill="#0e1620"/>
-<text x="20" y="16" fill="#f0b46a" font-size="14">«Камень» (танкер из астероида) — Каменные доки Раздора</text>
+<text x="20" y="16" fill="#f0b46a" font-size="14">«Камень» (каменный танкер) — Каменные доки Раздора</text>
 <rect x="20.0" y="50" width="300.0" height="300.0" fill="none" stroke="#24364a"/>
 <text x="24.0" y="64" fill="#8fb3d1">вид сверху</text>
 <g fill="#1f3348" stroke="#7fa6c9" stroke-width="1.2"><polygon points="279.82482286863325,200.0 273.94972413388007,242.27126684521036 243.86289612260754,268.364907830045 210.71258856568338,320.1610247750908 184.00108136931823,342.537134910605 153.53314526635043,308.588842107508 115.0875885656834,300.675453189941 85.2594084756022,295.5459326400225 79.39374463224162,244.94386970283517 88.57482286863325,200.0 94.23351040857503,155.05613029716483 97.35689637610295,104.45406735997759 115.08758856568332,99.32454681005898 150.7908673905178,91.41115789249197 186.74335924515083,57.46286508939497 210.71258856568335,79.83897522490905 231.76540822210671,131.63509216995493 259.1099583575466,157.72873315478967" /></g>
 <rect x="45.6" y="215.0" width="11.9" height="105.0" fill="#7fb8e6" fill-opacity="0.25" stroke="#7fb8e6" stroke-width="0.8"><title>радиаторы 100 м2</title></rect>
 <rect x="282.5" y="215.0" width="11.9" height="105.0" fill="#7fb8e6" fill-opacity="0.25" stroke="#7fb8e6" stroke-width="0.8"><title>радиаторы 100 м2</title></rect>
 <text x="316.0" y="346.0" fill="#8fb3d1" text-anchor="end">45 × 60 м</text>
-<circle cx="170.0" cy="327.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>КД-Т-A1A1 Урал-33</title></circle>
-<circle cx="170.0" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>КД-Т-A2A1 ОФУ ЭР-2.6</title></circle>
-<circle cx="170.0" cy="238.2" r="3" fill="#c76b6b" fill-opacity="0.9"><title>КД-Т-A2A2 ОФУ СР-20</title></circle>
-<circle cx="74.4" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>КД-Т-A3A1 ЛМВ радиаторная секция (50 м2)</title></circle>
-<circle cx="265.6" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>КД-Т-A3A1 ЛМВ радиаторная секция (50 м2)</title></circle>
-<circle cx="170.0" cy="251.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>КД-Т-A3A2 ЛМВ контур охлаждения (300 МВт)</title></circle>
-<circle cx="98.3" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>КД-Т-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="146.1" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>КД-Т-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="193.9" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>КД-Т-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="241.7" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>КД-Т-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="83.9" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="256.1" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="83.9" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="256.1" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="83.9" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="256.1" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="83.9" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="256.1" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="170.0" cy="104.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>КД-Т-A6A1 Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
-<circle cx="170.0" cy="91.6" r="3" fill="#2fa58a" fill-opacity="0.9"><title>КД-Т-A6A2 Kern радар обломков DR-5 (5 000 км)</title></circle>
-<circle cx="170.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>КД-Т-A6A3 Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
-<circle cx="170.0" cy="123.5" r="3" fill="#5aa04a" fill-opacity="0.9"><title>КД-Т-A7A1 Евро-Хабитат ЖО L-20</title></circle>
-<circle cx="146.1" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>КД-Т-A7A2 Спасательная капсула (4 места)</title></circle>
-<circle cx="193.9" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>КД-Т-A7A2 Спасательная капсула (4 места)</title></circle>
-<circle cx="170.0" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>КД-Т-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="170.0" cy="327.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>RT-A1A1 Урал-33</title></circle>
+<circle cx="170.0" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>RT-A2A1 ОФУ ЭР-2.6</title></circle>
+<circle cx="170.0" cy="238.2" r="3" fill="#c76b6b" fill-opacity="0.9"><title>RT-A2A2 ОФУ СР-20</title></circle>
+<circle cx="74.4" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>RT-A3A1 ЛМВ радиаторная секция (50 м2)</title></circle>
+<circle cx="265.6" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>RT-A3A1 ЛМВ радиаторная секция (50 м2)</title></circle>
+<circle cx="170.0" cy="251.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>RT-A3A2 ЛМВ контур охлаждения (300 МВт)</title></circle>
+<circle cx="98.3" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>RT-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="146.1" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>RT-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="193.9" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>RT-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="241.7" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>RT-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="83.9" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="256.1" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="83.9" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="256.1" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="83.9" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="256.1" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="83.9" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="256.1" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="170.0" cy="104.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>RT-A6A1 Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
+<circle cx="170.0" cy="91.6" r="3" fill="#2fa58a" fill-opacity="0.9"><title>RT-A6A2 Kern радар обломков DR-5 (5 000 км)</title></circle>
+<circle cx="170.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>RT-A6A3 Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
+<circle cx="170.0" cy="123.5" r="3" fill="#5aa04a" fill-opacity="0.9"><title>RT-A7A1 Евро-Хабитат ЖО L-20</title></circle>
+<circle cx="146.1" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>RT-A7A2 Спасательная капсула (4 места)</title></circle>
+<circle cx="193.9" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>RT-A7A2 Спасательная капсула (4 места)</title></circle>
+<circle cx="170.0" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>RT-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
 <rect x="340.0" y="50" width="300.0" height="300.0" fill="none" stroke="#24364a"/>
 <text x="344.0" y="64" fill="#8fb3d1">вид сбоку</text>
 <g fill="#1f3348" stroke="#7fa6c9" stroke-width="1.2"><polygon points="587.6220647721184,200.0 582.3997547856711,242.27126684521036 555.65590766454,268.364907830045 526.1889676139408,320.1610247750908 502.4454056616162,342.537134910605 475.3627957923115,308.588842107508 441.1889676139408,300.675453189941 414.67502975609085,295.5459326400225 409.46110633977037,244.94386970283517 417.62206477211845,200.0 422.6520092520667,155.05613029716483 425.42835233431373,104.45406735997759 441.18896761394075,99.32454681005898 472.92521545823803,91.41115789249197 504.88298599568964,57.46286508939497 526.1889676139408,79.83897522490905 544.9025850863171,131.63509216995493 569.2088518733748,157.72873315478967" /></g>
 <text x="636.0" y="346.0" fill="#8fb3d1" text-anchor="end">40 × 60 м</text>
-<circle cx="490.0" cy="327.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>КД-Т-A1A1 Урал-33</title></circle>
-<circle cx="490.0" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>КД-Т-A2A1 ОФУ ЭР-2.6</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#c76b6b" fill-opacity="0.9"><title>КД-Т-A2A2 ОФУ СР-20</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>КД-Т-A3A1 ЛМВ радиаторная секция (50 м2)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>КД-Т-A3A1 ЛМВ радиаторная секция (50 м2)</title></circle>
-<circle cx="490.0" cy="251.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>КД-Т-A3A2 ЛМВ контур охлаждения (300 МВт)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>КД-Т-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>КД-Т-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>КД-Т-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>КД-Т-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="558.0" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="558.0" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="422.0" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="422.0" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="558.0" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="558.0" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="422.0" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="422.0" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="490.0" cy="104.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>КД-Т-A6A1 Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
-<circle cx="566.5" cy="91.6" r="3" fill="#2fa58a" fill-opacity="0.9"><title>КД-Т-A6A2 Kern радар обломков DR-5 (5 000 км)</title></circle>
-<circle cx="490.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>КД-Т-A6A3 Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
-<circle cx="490.0" cy="123.5" r="3" fill="#5aa04a" fill-opacity="0.9"><title>КД-Т-A7A1 Евро-Хабитат ЖО L-20</title></circle>
-<circle cx="490.0" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>КД-Т-A7A2 Спасательная капсула (4 места)</title></circle>
-<circle cx="490.0" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>КД-Т-A7A2 Спасательная капсула (4 места)</title></circle>
-<circle cx="490.0" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>КД-Т-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="490.0" cy="327.5" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>RT-A1A1 Урал-33</title></circle>
+<circle cx="490.0" cy="270.1" r="4.5" fill="#d64545" fill-opacity="0.9"><title>RT-A2A1 ОФУ ЭР-2.6</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#c76b6b" fill-opacity="0.9"><title>RT-A2A2 ОФУ СР-20</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>RT-A3A1 ЛМВ радиаторная секция (50 м2)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>RT-A3A1 ЛМВ радиаторная секция (50 м2)</title></circle>
+<circle cx="490.0" cy="251.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>RT-A3A2 ЛМВ контур охлаждения (300 МВт)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>RT-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>RT-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>RT-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="490.0" cy="238.2" r="3" fill="#b08ad6" fill-opacity="0.9"><title>RT-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="558.0" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="558.0" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="422.0" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="422.0" cy="85.2" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="558.0" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="558.0" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="422.0" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="422.0" cy="314.8" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="490.0" cy="104.4" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>RT-A6A1 Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
+<circle cx="566.5" cy="91.6" r="3" fill="#2fa58a" fill-opacity="0.9"><title>RT-A6A2 Kern радар обломков DR-5 (5 000 км)</title></circle>
+<circle cx="490.0" cy="98.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>RT-A6A3 Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
+<circle cx="490.0" cy="123.5" r="3" fill="#5aa04a" fill-opacity="0.9"><title>RT-A7A1 Евро-Хабитат ЖО L-20</title></circle>
+<circle cx="490.0" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>RT-A7A2 Спасательная капсула (4 места)</title></circle>
+<circle cx="490.0" cy="129.9" r="3" fill="#8cc56f" fill-opacity="0.9"><title>RT-A7A2 Спасательная капсула (4 места)</title></circle>
+<circle cx="490.0" cy="72.5" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>RT-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
 <rect x="660.0" y="50" width="300.0" height="300.0" fill="none" stroke="#24364a"/>
 <text x="664.0" y="64" fill="#8fb3d1">вид спереди</text>
 <g fill="#1f3348" stroke="#7fa6c9" stroke-width="1.2"><polygon points="919.8248228686332,200.0 913.9497241338801,228.18084456347356 883.8628961226075,245.57660522003002 850.7125885656834,280.1073498500606 824.0010813693182,295.02475660707 793.5331452663504,272.3925614050053 755.0875885656834,267.116968793294 725.2594084756022,263.69728842668167 719.3937446322416,229.96257980189012 728.5748228686332,200.0 734.2335104085751,170.03742019810988 737.3568963761029,136.3027115733184 755.0875885656833,132.883031206706 790.7908673905177,127.60743859499463 826.7433592451508,104.97524339292998 850.7125885656833,119.89265014993937 871.7654082221067,154.42339477996995 899.1099583575466,171.81915543652644" /></g>
 <line x1="685.6" y1="200.0" x2="697.5" y2="200.0" stroke="#7fb8e6" stroke-width="2"/>
 <line x1="922.5" y1="200.0" x2="934.4" y2="200.0" stroke="#7fb8e6" stroke-width="2"/>
 <text x="956.0" y="346.0" fill="#8fb3d1" text-anchor="end">45 × 40 м</text>
-<circle cx="810.0" cy="200.0" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>КД-Т-A1A1 Урал-33</title></circle>
-<circle cx="810.0" cy="200.0" r="4.5" fill="#d64545" fill-opacity="0.9"><title>КД-Т-A2A1 ОФУ ЭР-2.6</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#c76b6b" fill-opacity="0.9"><title>КД-Т-A2A2 ОФУ СР-20</title></circle>
-<circle cx="714.4" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>КД-Т-A3A1 ЛМВ радиаторная секция (50 м2)</title></circle>
-<circle cx="905.6" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>КД-Т-A3A1 ЛМВ радиаторная секция (50 м2)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>КД-Т-A3A2 ЛМВ контур охлаждения (300 МВт)</title></circle>
-<circle cx="738.3" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>КД-Т-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="786.1" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>КД-Т-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="833.9" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>КД-Т-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="881.7" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>КД-Т-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
-<circle cx="723.9" cy="132.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="896.1" cy="132.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="723.9" cy="268.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="896.1" cy="268.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="723.9" cy="132.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="896.1" cy="132.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="723.9" cy="268.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="896.1" cy="268.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>КД-Т-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>КД-Т-A6A1 Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
-<circle cx="810.0" cy="123.5" r="3" fill="#2fa58a" fill-opacity="0.9"><title>КД-Т-A6A2 Kern радар обломков DR-5 (5 000 км)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>КД-Т-A6A3 Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#5aa04a" fill-opacity="0.9"><title>КД-Т-A7A1 Евро-Хабитат ЖО L-20</title></circle>
-<circle cx="786.1" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>КД-Т-A7A2 Спасательная капсула (4 места)</title></circle>
-<circle cx="833.9" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>КД-Т-A7A2 Спасательная капсула (4 места)</title></circle>
-<circle cx="810.0" cy="200.0" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>КД-Т-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
+<circle cx="810.0" cy="200.0" r="4.5" fill="#e8762b" fill-opacity="0.9"><title>RT-A1A1 Урал-33</title></circle>
+<circle cx="810.0" cy="200.0" r="4.5" fill="#d64545" fill-opacity="0.9"><title>RT-A2A1 ОФУ ЭР-2.6</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#c76b6b" fill-opacity="0.9"><title>RT-A2A2 ОФУ СР-20</title></circle>
+<circle cx="714.4" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>RT-A3A1 ЛМВ радиаторная секция (50 м2)</title></circle>
+<circle cx="905.6" cy="200.0" r="3" fill="#7fb8e6" fill-opacity="0.9"><title>RT-A3A1 ЛМВ радиаторная секция (50 м2)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#3d8fd6" fill-opacity="0.9"><title>RT-A3A2 ЛМВ контур охлаждения (300 МВт)</title></circle>
+<circle cx="738.3" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>RT-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="786.1" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>RT-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="833.9" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>RT-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="881.7" cy="200.0" r="3" fill="#b08ad6" fill-opacity="0.9"><title>RT-A4A1 Бункер топливных таблеток D/He-3 (1 т)</title></circle>
+<circle cx="723.9" cy="132.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="896.1" cy="132.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="723.9" cy="268.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="896.1" cy="268.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="723.9" cy="132.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="896.1" cy="132.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="723.9" cy="268.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="896.1" cy="268.0" r="3" fill="#d6b13d" fill-opacity="0.9"><title>RT-A5A1 Кластер RCS (4 сопла, поле)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#3dbf9a" fill-opacity="0.9"><title>RT-A6A1 Синьчжи MotherComputer MC-C1 (гражданский)</title></circle>
+<circle cx="810.0" cy="123.5" r="3" fill="#2fa58a" fill-opacity="0.9"><title>RT-A6A2 Kern радар обломков DR-5 (5 000 км)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#57c7b0" fill-opacity="0.9"><title>RT-A6A3 Синьчжи связной комплекс C-1 (приём/передача, сеть маяков)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#5aa04a" fill-opacity="0.9"><title>RT-A7A1 Евро-Хабитат ЖО L-20</title></circle>
+<circle cx="786.1" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>RT-A7A2 Спасательная капсула (4 места)</title></circle>
+<circle cx="833.9" cy="200.0" r="3" fill="#8cc56f" fill-opacity="0.9"><title>RT-A7A2 Спасательная капсула (4 места)</title></circle>
+<circle cx="810.0" cy="200.0" r="3" fill="#d0d0d0" fill-opacity="0.9"><title>RT-A9A1 Стыковочный узел (стандарт хабов)</title></circle>
 <circle cx="25" cy="365.0" r="4" fill="#e8762b"/><text x="33" y="368.0" fill="#c8d6e5">главный двигатель</text>
 <circle cx="155" cy="365.0" r="4" fill="#d64545"/><text x="163" y="368.0" fill="#c8d6e5">двигательный реактор</text>
 <circle cx="285" cy="365.0" r="4" fill="#c76b6b"/><text x="293" y="368.0" fill="#c8d6e5">служебный реактор</text>

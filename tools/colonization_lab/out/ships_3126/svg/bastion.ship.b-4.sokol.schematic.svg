@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 330" font-family="Segoe UI, Arial, sans-serif" font-size="10">
 <rect width="100%" height="100%" fill="#0e1620"/>
-<text x="16" y="22" fill="#f0b46a" font-size="14">Б-4 «Сокол»: функциональная схема</text>
+<text x="16" y="22" fill="#f0b46a" font-size="14">B-4 класса «Фальк»: функциональная схема</text>
 <line x1="560" y1="18" x2="580" y2="18" stroke="#e8762b" stroke-width="2"/><text x="584" y="22" fill="#c8d6e5">propulsion</text>
 <line x1="632" y1="18" x2="652" y2="18" stroke="#f0d060" stroke-width="2"/><text x="656" y="22" fill="#c8d6e5">service</text>
 <line x1="704" y1="18" x2="724" y2="18" stroke="#3d8fd6" stroke-width="2"/><text x="728" y="22" fill="#c8d6e5">coolant</text>
@@ -35,45 +35,45 @@
 <path d="M770,70 C770.0,70 650.0,254 650,254" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
 <rect x="490" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="550" y="67" fill="#e6eef6" text-anchor="middle">ТЦ-1.6В ×8</text>
-<text x="550" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A1A1 · yard</text>
+<text x="550" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A1A1 · yard</text>
 <rect x="170" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="230" y="67" fill="#e6eef6" text-anchor="middle">ТР-2.6В ×4</text>
-<text x="230" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A2A1 · yard</text>
+<text x="230" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A2A1 · yard</text>
 <rect x="170" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="230" y="113" fill="#e6eef6" text-anchor="middle">СР-20 ×2</text>
-<text x="230" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A2A2 · station</text>
+<text x="230" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A2A2 · station</text>
 <rect x="330" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="390" y="67" fill="#e6eef6" text-anchor="middle">RP-10 ×30</text>
-<text x="390" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A3A1 · crew</text>
+<text x="390" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A3A1 · crew</text>
 <rect x="330" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="390" y="113" fill="#e6eef6" text-anchor="middle">CL-180 ×2</text>
-<text x="390" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A3A2 · station</text>
+<text x="390" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A3A2 · station</text>
 <rect x="10" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="70" y="67" fill="#e6eef6" text-anchor="middle">БТ-1 ×2</text>
-<text x="70" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A4A1 · station</text>
+<text x="70" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A4A1 · station</text>
 <rect x="650" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="710" y="67" fill="#e6eef6" text-anchor="middle">БВ-1 ×2</text>
-<text x="710" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A6A1 · station</text>
+<text x="710" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A6A1 · station</text>
 <rect x="650" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
 <text x="710" y="113" fill="#e6eef6" text-anchor="middle">N-10</text>
-<text x="710" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A6A2 · station</text>
+<text x="710" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A6A2 · station</text>
 <rect x="650" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="710" y="159" fill="#e6eef6" text-anchor="middle">БС-1 ×2</text>
-<text x="710" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A6A3 · crew</text>
+<text x="710" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A6A3 · crew</text>
 <rect x="650" y="192" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="710" y="205" fill="#e6eef6" text-anchor="middle">Т-1 ×2</text>
-<text x="710" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A6A4 · crew</text>
+<text x="710" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A6A4 · crew</text>
 <rect x="810" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="870" y="67" fill="#e6eef6" text-anchor="middle">О-4 ×2</text>
-<text x="870" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A7A1 · station</text>
+<text x="870" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A7A1 · station</text>
 <rect x="810" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="870" y="113" fill="#e6eef6" text-anchor="middle">EC-2</text>
-<text x="870" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A7A2 · station</text>
+<text x="870" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A7A2 · station</text>
 <rect x="650" y="238" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="710" y="251" fill="#e6eef6" text-anchor="middle">БП-10 ×2</text>
-<text x="710" y="264" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A11A1 · station</text>
+<text x="710" y="264" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A11A1 · station</text>
 <rect x="810" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="870" y="159" fill="#e6eef6" text-anchor="middle">БТ-1 ×5</text>
-<text x="870" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">Б-4-A12A1 · yard</text>
+<text x="870" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">B-4-A12A1 · yard</text>
 <text x="16" y="318" fill="#ff8a8a">красная рамка — единичная точка отказа функции</text>
 </svg>

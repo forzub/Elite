@@ -19,9 +19,22 @@
 
 `ship.html?id=ID` (старые ссылки) переадресует на `index.html?ship=ID`.
 
-**Шифр модели** (число перед «A» в кодах секций) - поле `model_code` паспорта, свой у каждого корабля
-(Cobrett-I N1 = 35, остальные 36…72). Канон: `tools/colonization_lab/canon/ship_passports_3126.json`
-(21 паспорт); у 17 предложений справочника шифры в `tools/build_proposals.js` (`PROPOSAL_MODEL_CODES`).
+**Имена кораблей** - канон `tools/colonization_lab/canon/ship_naming.json` (решение автора 2026-11-08): доктрина
+именования каждого производителя (язык, формат индекса, собственные имена, военное / гражданское, что на корпусе,
+что говорит экипаж, узнаваемость) и для каждой модели: `model_index`, `official_name`, `native_script`,
+`romanization` (экспортная латиница без тонов), `display_name_ru` (= `name`), `short_name` / `short_name_ru`
+(разговорное), `export_index` (ASCII-корень кодов рантайма), `legacy_name`. ID кораблей не меняются.
+`python tools/colonization_lab/ship_naming.py --write` пишет зеркала (паспорта, ship_designs.json); затем
+`ship_designer.py`, `lore_md.py --write`, `lore_html.py`; справочник - `node tools/build_proposals.js data.js`
+(читает тот же канон). Поиск справочника находит и новые, и старые имена.
+
+**Шифр модели** (то, что стоит перед «A» в кодах секций) - `model_code`: префикс производителя + номер
+(KB35, 和50, ЛМ39, MJ65, ΑΓ69 ...); префиксы - `code_prefix` в `ship_naming.json`.
+
+**Производители** - `manufacturers.html` (кнопка в шапке): знак, имена, доктрина, площадки (система, тело,
+орбита / пояс / поверхность), состав каждого хаба по модулям и таблица унификации модулей цивилизации.
+Данные: `python tools/build_manufacturers.py` -> `manufacturers_data.js` (из industry.json, ship_naming.json,
+sites_3126.json, hub_modules_3126.json).
 
 ## Где хранятся эскизы, заметки и отметки
 

@@ -16,10 +16,10 @@
 | Класс | Роль | Назначение | Сухая масса, т | Груз, т | м³ | C20 | Ускорение, g | Экипаж | Цена, Cr | Срок, лет | Прыжков на бак (пуст/пол/полн) | Статус |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | Cobrett-I N1 | средний груз | fast flexible freight: high-value cargo, urgent parts, courier, small charters; expensive per tonne | 260 | 120 | 140 | 6 | 1.0 | 2 | 3 393 621 | 35 | 3.0/2.73/2.5 | `PROPOSAL` (модель) |
-| фрейтер «Конвейер» | средний груз | secondary routes: containers, machinery, consumer goods, medical; 120 C20 places | 1 900 | 2 400 | 2 800 | 120 | 0.3 | 6 | 15 241 078 | 40 | 3.96/3.13/2.59 | `PROPOSAL` (модель) |
+| средний фрейтер | средний груз | secondary routes: containers, machinery, consumer goods, medical; 120 C20 places | 1 900 | 2 400 | 2 800 | 120 | 0.3 | 6 | 15 241 078 | 40 | 3.96/3.13/2.59 | `PROPOSAL` (модель) |
 | прыжковый поезд | навал / контейнеры (поезда) | trunk routes: bulk and containers in modules; the tug can drop and pick up modules at depots, so the expensive jump core is not idle while modules load | 10 800 | 57 600 | 140 000 | 2880 | 0.12 | 12 | 73 942 470 | 45 | 10.49/4.77/3.09 | `PROPOSAL` (модель) |
 | поезд-танкер | танкер | reactor fuel and jump charge to depots and importers; the same tug as the jump train, tank modules | 12 000 | 50 000 | 300 000 | 0 | 0.13 | 12 | 76 550 670 | 45 | 9.58/5.1/3.48 | `PROPOSAL` (модель) |
-| OCS-4 «Ласточка» | челнок | in-system cargo ORBIT ONLY: orbital hubs, depots, moons without atmosphere; 0.4 g, no landing gear / heat shield (cannot lift off Earth); 450 t gross = 409 t net + 24 C20 tare | 380 | 409 | 2 600 | 24 | 0.4 | 3 | 1 973 160 | 40 | — | `PROPOSAL` (модель) |
+| орбитальный челнок OCS-4 | челнок | in-system cargo ORBIT ONLY: orbital hubs, depots, moons without atmosphere; 0.4 g, no landing gear / heat shield (cannot lift off Earth); 450 t gross = 409 t net + 24 C20 tare | 380 | 409 | 2 600 | 24 | 0.4 | 3 | 1 973 160 | 40 | — | `PROPOSAL` (модель) |
 | газовый танкер | танкер | He-3 / deuterium from gas-giant platforms to depots and ports | 900 | 3 000 | 19 000 | 0 | 0.18 | 4 | 4 186 161 | 40 | — | `PROPOSAL` (модель) |
 | рудный буксир | буксир | pushes ore / ice / construction rafts from asteroid mines to refineries; tows equipment and beacons; slow and strong | 700 | 20 000 | 0 | 0 | 0.02 | 3 | 2 104 704 | 40 | — | `PROPOSAL` (модель) |
 | сервисный тендер | сервис | repairs of mines, stations, beacons and ships in place; carries spare parts and a workshop | 500 | 150 | 600 | 6 | 0.4 | 8 | 1 890 714 | 35 | — | `PROPOSAL` (модель) |
@@ -34,7 +34,7 @@
 | liner | passenger | scheduled interstellar passenger service: 900 seats (60 cabin / 240 business / 600 economy), mail and 90 t of priority cargo | 2 600 | 90 | 300 | 0 | 0.3 | 40 | 26 021 352 | 40 | 3.81/3.78/3.76 | `PROPOSAL` (модель) |
 | colonist_transport | passenger | migration and evacuation: 5 000 berths (bunks, 30 % cold-sleep pods), slow and cheap per head; requisitioned in disasters | 6 500 | 600 | 2 000 | 0 | 0.18 | 60 | 42 218 316 | 45 | 4.5/4.42/4.35 | `PROPOSAL` (модель) |
 
-Тяжёлый перевозчик — не монолит, а **прыжковый поезд**: тягач-«Локомотив» с ядром прыжка + до 12 модулей по 4 800 т. Тягач оставляет модули на погрузке в депо и забирает готовые, поэтому дорогое ядро не простаивает; поле прыжка строится по оболочке, и длинный поезд платит в основном за массу (дёшево на тонну).
+Тяжёлый перевозчик — не монолит, а **прыжковый поезд**: тягач Хэ-T12 «Хэсе» с ядром прыжка + до 12 модулей по 4 800 т. Тягач оставляет модули на погрузке в депо и забирает готовые, поэтому дорогое ядро не простаивает; поле прыжка строится по оболочке, и длинный поезд платит в основном за массу (дёшево на тонну).
 
 ### Флоты по политиям
 

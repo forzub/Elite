@@ -255,7 +255,7 @@ void GameSimulation::updateDockServiceTraffic(double /*dt*/)
                 ? game::ship::descriptors::orbitalCargoShuttleDescriptor()
                 : EliteCobraMk1::EliteCobraMk1Descriptor();
             ShipInitData init;
-            init.visual.shipType = shuttle ? "OCS-4 Lastochka" : "Cobrett-I";
+            init.visual.shipType = shuttle ? "OFU OCS-4" : "Cobrett-I";
             init.visual.shipName = actor.callsign;
             init.registry.instanceId = actor.id;
             init.registry.ownerName = shuttle ? "Orbital Freight Union" : "Hub traffic";

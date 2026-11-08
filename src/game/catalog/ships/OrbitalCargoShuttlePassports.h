@@ -98,8 +98,8 @@ inline constexpr std::string_view Manufacturer = "Orbital Freight Union \"Ural-K
             OrbitalCargoShuttleOcs4Id,
             ProductCategory::Ship,
             ofu::Manufacturer,
-            "OCS-4 \"Lastochka\"",
-            "OCS-4 \"Lastochka\" orbital cargo shuttle",
+            "OFU OCS-4",
+            "OFU OCS-4 orbital cargo shuttle",
             "OCS",
             "OCS-4",
             "4",
@@ -113,7 +113,7 @@ inline constexpr std::string_view Manufacturer = "Orbital Freight Union \"Ural-K
             "Currently realised as dock traffic only (no player hardware model).",
             {}
         };
-        p.fullName = "Orbital Freight Union \"Ural-Kourou\" OCS-4 \"Lastochka\" orbital cargo shuttle";
+        p.fullName = "Orbital Freight Union \"Ural-Kourou\" OCS-4 orbital cargo shuttle";   // \"Lastochka\" is the Ural shop nickname, not official (canon ship_naming.json)
         p.layout = &codes::LayoutI;
         p.operationalClasses = {};
         p.flightGeneration = &codes::NewtonianGeneration1;

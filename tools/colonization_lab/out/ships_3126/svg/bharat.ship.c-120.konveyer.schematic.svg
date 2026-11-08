@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 330" font-family="Segoe UI, Arial, sans-serif" font-size="10">
 <rect width="100%" height="100%" fill="#0e1620"/>
-<text x="16" y="22" fill="#f0b46a" font-size="14">C-120 «Конвейер»: функциональная схема</text>
+<text x="16" y="22" fill="#f0b46a" font-size="14">C-120 «Вахак»: функциональная схема</text>
 <line x1="560" y1="18" x2="580" y2="18" stroke="#e8762b" stroke-width="2"/><text x="584" y="22" fill="#c8d6e5">propulsion</text>
 <line x1="632" y1="18" x2="652" y2="18" stroke="#f0d060" stroke-width="2"/><text x="656" y="22" fill="#c8d6e5">service</text>
 <line x1="704" y1="18" x2="724" y2="18" stroke="#3d8fd6" stroke-width="2"/><text x="728" y="22" fill="#c8d6e5">coolant</text>

@@ -16,7 +16,7 @@ for (const s of D.ships) {
   else if (seen.has(c)) bad(`model code ${c} shared by ${seen.get(c)} and ${s.id}`); else seen.set(c, s.id);
   if (!app.includes(" " + s.economic_class + ": \"")) bad("class without a Russian name: " + s.economic_class);
   for (const g of s.functional_groups) {
-    if (g.code !== c + "A" + g.code.split("A")[1] || !/^[0-9]+A[0-9]+$/.test(g.code)) bad(`section code ${g.code} of ${s.id} is not ${c}A<k>`);
+    if (!g.code.startsWith(c + "A") || !/^[0-9]+$/.test(g.code.slice(c.length + 1))) bad(`section code ${g.code} of ${s.id} is not ${c}A<k>`);
     for (const it of g.items) if (!parts.has(it.part_id)) bad(`unresolved module ${it.part_id} on ${s.id}`);
   }
 }

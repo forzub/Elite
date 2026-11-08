@@ -16,7 +16,7 @@ namespace game::ship::descriptors
     static const ShipDescriptor descriptor = [] {
         ShipDescriptor d;
         d.typeId = ObjectType::OrbitalCargoShuttle;
-        d.identity = {"OCS-4 Lastochka", "Orbital cargo shuttle"};
+        d.identity = {"OFU OCS-4", "Orbital cargo shuttle"};
         d.physicalControlModel = game::ship::plant::PhysicalControlModelId::NewtonianI;
         d.localFlightControlLaw = game::ship::plant::nativeFlightLaw(d.physicalControlModel);
         d.physics.massKg = 380000.0;

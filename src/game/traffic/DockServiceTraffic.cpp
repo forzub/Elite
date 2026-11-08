@@ -374,7 +374,7 @@ const TrafficShipClass& trafficShipClass(TrafficShipKind kind)
     using catalog::ships::Ocs4Cargo;
     // Orbital cargo shuttle: see src/game/catalog/ships/OrbitalCargoShuttlePassports.h
     static const TrafficShipClass shuttle {
-        TrafficShipKind::CargoShuttle, "OCS-4 \"Lastochka\" orbital cargo shuttle",
+        TrafficShipKind::CargoShuttle, "OFU OCS-4 orbital cargo shuttle",
         56.0, 18.0, 14.0, 0.5 * std::sqrt(56.0 * 56.0 + 18.0 * 18.0 + 14.0 * 14.0),
         Ocs4Cargo.dryMassKg, 1000.0 * Ocs4Cargo.cargoTonnes,
         4.0, 200.0, 25.0, 1.2, 18.0, 900.0, game::docking::DockSizeClass::Medium,

@@ -4288,3 +4288,32 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
 - NOT DONE (next slice, needs author input): the capsule separating and flying on its own engine to the nearest
   inhabited zone with SOS, rescue / tug back / re-dock / repair, stealing an abandoned hull; what the player does
   after "pilot killed". Gates 209: 203 / 6 known / 0 new.
+
+### Ship naming by manufacturer + per-maker model codes + bloc completeness + manufacturers page 2026-11-08 - BUILT, CHECKED HEADLESS, NOT AUTHOR-ACCEPTED (names PROPOSAL)
+- Author orders: per-manufacturer naming traditions (not translation; slang-born names allowed; own-script cultures
+  carry the local name + a toneless export latin like "Mazda"; Chinese names loud like their space programme);
+  the code before "A" is each maker's own marking; every bloc must field every ship type it needs (generate the
+  missing); a manufacturers page with locations, hubs and hub modules (module unification per civilization).
+- Lore research (4 read-only agents) grounded the doctrines: Cobretty = KOBRA dock slang of Kobersberg-Braunauer
+  (history.md), Homestead en; Kern en, prospectus culture; Hyperion en + 中文, Greek titan line; OFU / Luna-Mars Yards
+  Sol, en with Cyrillic drawing-code heritage (part codes КЦ-1000, АК-1); Harmony 新和 中文; Tianhe party state;
+  Bharat hi; Bastion nb (BS hull numbers, Old Norse only for myths); Stone Docks no system (Seal Register).
+- Canon: tools/colonization_lab/canon/ship_naming.json (11 doctrines, 53 models) + ship_naming.py --write/--check
+  (mirrors: passports name / naming fields / model_code <prefix><n> / group codes / replacement names;
+  ship_designs.json name + designation = ASCII export_index, the runtime installation-code root). IDs unchanged.
+  Rebuilt: runtime ship_catalog_3126.json (ship_designer: 21 ships, 0 FAIL), Notes/Lore (lore_md, 45 files: names
+  only), Notes/html lore; lore_economy.py class labels; naming.json VERIFY item on Russian ship names removed.
+  C++ display strings of OCS-4 drop "Lastochka" (the Ural shop nickname) - labels only, not keys.
+- Bloc completeness: rule = own model, or a partner hull at availability >= 3/5; raider = free belts only. 15 gap
+  fillers generated as variants of existing hulls (build_proposals.js derive()): Pact courier 416型, lifter 421型,
+  ice tug 和-T8 移山; Southern C-30 Doot, H-20 Majdoor, frigate F-120 Prahari; Citadel TS-6F, B-12L, B-20G "Hulken";
+  Cognium F-900 Atlas; Sol frigate FF-3000 Gagarin; Free Belts T-5000R hive, OCS-4R bucket, Cobrett-I R stinger;
+  Lalande corvette PC-30AK Akritas. Balance: 0 FAIL (warnings inherited: oversize reactors, fins). Reference now
+  53 models (21 canon + 32 proposals), 53 unique codes, builder idempotent, render_check 0 problems.
+- Manufacturers page (agent): manufacturers.html / .js / .css + tools/build_manufacturers.py -> manufacturers_data.js
+  (19 manufacturers, 14 polities, 399 hubs, 22 module types). Open in data: Hyperion's plant type "orbital" has no
+  orbital_hub site in Cognium; 52 Sol surface ports have no hub_modules entry; plants are matched by site type +
+  polity only (several makers share a polity's hubs).
+- Checked: headless Chrome (catalog search by old name «Пилигрим» finds L-900 «Эос»; ship view shows official /
+  native / export / crew names and codes 和51A1...; manufacturers list and Harmony detail render, no JS errors).
+- EliteGame builds; gates 209: 203 pass / 6 known red / 0 new.

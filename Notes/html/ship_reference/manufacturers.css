@@ -1,0 +1,65 @@
+/* manufacturers page — additions on top of style.css */
+.mfrCards{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px}
+.mfrCard{cursor:pointer;transition:border-color .12s;margin-bottom:0;display:flex;flex-direction:column;gap:2px}
+.mfrCard:hover{border-color:#4d86ad}
+.mfrHead{display:flex;gap:14px;align-items:flex-start;margin-bottom:6px}
+.mfrHead .grow{flex:1;min-width:0}
+.mfrName{font-size:17px;font-weight:700;color:#e6f2fb;line-height:1.25}
+.mfrName a{color:inherit}
+.mfrAlt{color:var(--mut);font-size:12.5px;margin-top:2px}
+.mfrAlt .native{color:#cfe2f0;font-size:14px;margin-right:6px}
+.tagline{font-style:italic;color:#c9d9e6;margin:4px 0 0;font-size:13px}
+.mark{flex:none;width:68px;height:68px;border-radius:10px;overflow:hidden;display:block;box-shadow:0 0 0 1px #ffffff1a}
+.mark.big{width:120px;height:120px;border-radius:14px}
+.mark.uncanon{box-shadow:0 0 0 1px #ffffff26;outline:1px dashed #6a7f91;outline-offset:2px}
+.mark svg{width:100%;height:100%;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{padding:2px 7px;border-radius:5px;background:var(--chip);color:#cfe3f2;font-size:11.5px;white-space:nowrap}
+.chip.grp{background:#1e2f24;color:#bfe7b8}
+.chip.lvl{background:#33291a;color:var(--warn);font-family:Consolas,monospace}
+.mfrCard .kv{grid-template-columns:120px 1fr;font-size:13px;padding:5px 0}
+.plantLine{margin:1px 0}
+.plantLine .where{color:var(--mut);font-size:12px}
+.missing{color:var(--danger)}
+.doctrine{font-size:12.5px;color:#b8c7d2}
+.doctrine b{color:#9fb7c9;font-weight:600}
+.blocHead .sub{font-size:12px}
+
+/* detail */
+.mfrTop{display:flex;gap:20px;align-items:flex-start}
+.mfrTop .grow{flex:1;min-width:0}
+.mfrTop h2{margin-bottom:2px}
+.secTitle{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:26px 0 10px;border-bottom:2px solid #2c4a62;padding-bottom:6px}
+.secTitle h2{margin:0;font-size:18px}
+.hubCard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.hubCard.plant{border-color:#3e6f8f;box-shadow:inset 3px 0 0 #73c8ff}
+.hubTitle{font-weight:700;font-size:14.5px;color:#e2f2ff}
+.hubWhere{color:var(--mut);font-size:12.5px;margin:2px 0 8px}
+.hubWhere b{color:#c9dceb;font-weight:600}
+.blockRow{display:grid;grid-template-columns:190px 1fr;gap:10px;border-top:1px solid #1f2e3c;padding:5px 0;font-size:12.5px}
+.blockRow:first-of-type{border-top:0}
+.blockRow .bn{color:#9fc3dc}
+.mod{display:inline-block;margin:1px 10px 1px 0;white-space:nowrap}
+.mod .n{font-family:Consolas,monospace;color:var(--accent);font-weight:600}
+.mod .i{color:var(--mut);font-size:11.5px}
+.sysGroup{margin:14px 0 4px;color:#cfe8fa;font-weight:600;font-size:13.5px}
+.sysGroup .sub{font-weight:400;font-size:12px}
+details.hub{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:6px 0;padding:0 12px}
+details.hub>summary{cursor:pointer;padding:8px 0;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;list-style:none}
+details.hub>summary::before{content:"▸";color:var(--mut);width:10px}
+details.hub[open]>summary::before{content:"▾"}
+details.hub>summary .nm{font-weight:600;color:#e2f2ff}
+details.hub>summary .where{color:var(--mut);font-size:12px}
+details.hub>summary .cnt{margin-left:auto;color:var(--mut);font-size:12px;font-family:Consolas,monospace}
+details.hub.plant{border-color:#3e6f8f}
+details.hub .body{padding:0 0 10px}
+.purpose{font-size:12px;color:#aebfcc;margin:0 0 6px}
+table.uni{font-size:12.5px}
+table.uni td.num,table.uni th.num{text-align:right;font-family:Consolas,monospace;white-space:nowrap}
+table.uni tr.blk td{background:#152230;color:#9fc3dc;font-weight:600;padding-top:9px}
+.bar{height:6px;background:#1c2a37;border-radius:3px;overflow:hidden;min-width:90px}.bar i{display:block;height:100%;background:#4f9fd0}
+.bar.full i{background:var(--accent2)}
+.tick{color:var(--accent2)}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.empty{color:var(--mut);padding:20px 0}
+@media(max-width:640px){.mfrCards{grid-template-columns:1fr}.mfrTop{flex-direction:column}.blockRow{grid-template-columns:1fr;gap:2px}.mfrCard .kv{grid-template-columns:1fr;gap:2px}}

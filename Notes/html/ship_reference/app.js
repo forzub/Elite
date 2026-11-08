@@ -104,7 +104,18 @@ const roleOf = (() => {
 const roleRu = id => ROLES.find(r => r.id === id)?.ru || "Прочее";
 const roleIndex = id => { const i = ROLES.findIndex(r => r.id === id); return i < 0 ? 99 : i; };
 // the ship model code (canon passport field model_code: the number before "A" in its group codes)
-const shipCode = s => String(s.model_code ?? (s.functional_groups[0]?.code.match(/^[0-9]+/) || ["?"])[0]);
+const shipCode = s => String(s.model_code ?? (s.functional_groups[0]?.code.split("A")[0] || "?"));
+// every name form of a ship (canon ship_naming.json): search finds old and new names alike
+const nameForms = s => [s.name, s.model_index, s.official_name, s.native_script, s.romanization, s.short_name, s.short_name_ru, s.legacy_name].filter(Boolean);
+const doctrine = m => (D.naming_doctrines || {})[m] || null;
+// the official / native line under the Russian name (only when it says something the Russian form does not)
+function officialLine(s) {
+  const parts = [];
+  if (s.native_script) parts.push(s.native_script);
+  if (s.official_name && s.official_name !== s.native_script && s.official_name !== s.name) parts.push(s.official_name);
+  if (s.romanization && !parts.some(p => p.includes(s.romanization))) parts.push(s.romanization);
+  return parts;
+}
 const sectionCode = (s, g) => g.code;
 
 // all module keys of a ship (unique parts + the hull) and how many are modelled
@@ -171,7 +182,7 @@ function go(params) {
 
 function renderCatalog(filter) {
   const f = filter.trim().toLowerCase();
-  const match = s => !f || [s.name, s.id, s.purpose, CLASS_RU[s.economic_class], mfrName(s.manufacturer), roleRu(roleOf(s.id)), shipCode(s)].join(" ").toLowerCase().includes(f);
+  const match = s => !f || [...nameForms(s), s.id, s.purpose, CLASS_RU[s.economic_class], mfrName(s.manufacturer), roleRu(roleOf(s.id)), shipCode(s)].join(" ").toLowerCase().includes(f);
   let html = "";
   for (const g of BLOC_ORDER) {
     const ships = D.ships.filter(s => s.cooperation_group === g && match(s));
@@ -187,7 +198,8 @@ function renderCatalog(filter) {
           const r = readiness(s);
           html += `<a class="shipCard${isProp(s) ? " prop" : ""}" href="?ship=${encodeURIComponent(s.id)}" data-ship="${esc(s.id)}">${shipPic(s)}
             <div class="cardBody"><div class="cardName">${esc(s.name)}</div>
-            <div class="cardSub">${esc(CLASS_RU[s.economic_class] || s.economic_class)} · ${esc(shipCode(s))}A</div>
+            ${officialLine(s).length ? `<div class="cardOfficial">${esc(officialLine(s)[0])}</div>` : ""}
+            <div class="cardSub">${esc(CLASS_RU[s.economic_class] || s.economic_class)} · ${esc(shipCode(s))}${s.short_name_ru ? ` · «${esc(s.short_name_ru.replace(/ \(.*$/, ""))}»` : ""}</div>
             <div class="progress" title="модели модулей: ${r.ready} из ${r.total}"><i style="width:${(100 * r.ready / r.total).toFixed(0)}%"></i></div>
             ${isProp(s) ? '<span class="badge prop">предложение</span>' : ""}</div></a>`;
         }
@@ -212,7 +224,10 @@ function shipBrief(s) {
   return `<div class="brief">
     <div class="dropTarget" data-drop="ship" title="Перетащите сюда изображение корабля">${shipPic(s, "big")}<span class="dropHint">перетащите изображение корабля</span></div>
     <h2>${esc(s.name)}</h2>
+    ${officialLine(s).map(x => `<div class="official">${esc(x)}</div>`).join("")}
     <div class="sub">${isProp(s) ? '<span class="badge prop">предложение справочника</span> ' : ""}шифр модели <b>${esc(shipCode(s))}</b></div>
+    ${s.short_name ? kv("Экипажи зовут", esc(s.short_name) + (s.short_name_ru && s.short_name_ru !== s.short_name ? ` <span class="sub">· ${esc(s.short_name_ru)}</span>` : "")) : ""}
+    ${s.legacy_name && s.legacy_name !== s.name ? kv("Прежнее имя", `<span class="sub">${esc(s.legacy_name)}</span>`) : ""}
     ${kv("Назначение", esc(s.purpose))}
     ${kv("Класс", esc(CLASS_RU[s.economic_class] || s.economic_class))}
     ${kv("Роль", esc(roleRu(roleOf(s.id))))}
@@ -227,6 +242,8 @@ function shipBrief(s) {
     <p class="feat">${esc(m.construction || b.hull || "")}</p>
     <p class="feat">${esc(m.signature || b.visual || "")}</p>
     <p class="feat sub">${esc(b.philosophy || "")}</p>
+    ${(() => { const d = doctrine(s.manufacturer); return d ? `<h4>Как называет ${esc(mfrName(s.manufacturer))}</h4>
+      <p class="feat">${esc(d.index_format)}</p><p class="feat">${esc(d.proper_names)}</p><p class="feat sub">На корпусе: ${esc(d.on_hull)}</p>` : ""; })()}
     ${kv("Модели модулей", `<b>${r.ready}</b> из ${r.total}`)}
   </div>`;
 }

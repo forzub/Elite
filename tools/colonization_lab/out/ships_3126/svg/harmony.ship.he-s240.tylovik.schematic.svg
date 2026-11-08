@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 468" font-family="Segoe UI, Arial, sans-serif" font-size="10">
 <rect width="100%" height="100%" fill="#0e1620"/>
-<text x="16" y="22" fill="#f0b46a" font-size="14">Хэ-С240 «Тыловик»: функциональная схема</text>
+<text x="16" y="22" fill="#f0b46a" font-size="14">Хэ-B240 класса «Бутянь»: функциональная схема</text>
 <line x1="560" y1="18" x2="580" y2="18" stroke="#e8762b" stroke-width="2"/><text x="584" y="22" fill="#c8d6e5">propulsion</text>
 <line x1="632" y1="18" x2="652" y2="18" stroke="#f0d060" stroke-width="2"/><text x="656" y="22" fill="#c8d6e5">service</text>
 <line x1="704" y1="18" x2="724" y2="18" stroke="#3d8fd6" stroke-width="2"/><text x="728" y="22" fill="#c8d6e5">coolant</text>
@@ -47,69 +47,69 @@
 <path d="M930,70 C930.0,70 810.0,162 810,162" fill="none" stroke="#8cc56f" stroke-opacity="0.55" stroke-width="1.2"/>
 <rect x="490" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="550" y="67" fill="#e6eef6" text-anchor="middle">ТЦ-13 ×3</text>
-<text x="550" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A1A1 · yard</text>
+<text x="550" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A1A1 · yard</text>
 <rect x="170" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="230" y="67" fill="#e6eef6" text-anchor="middle">ТР-11 ×3</text>
-<text x="230" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A2A1 · yard</text>
+<text x="230" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A2A1 · yard</text>
 <rect x="170" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="230" y="113" fill="#e6eef6" text-anchor="middle">СР-600 ×2</text>
-<text x="230" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A2A2 · station</text>
+<text x="230" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A2A2 · station</text>
 <rect x="330" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="390" y="67" fill="#e6eef6" text-anchor="middle">РС-50 ×12</text>
-<text x="390" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A3A1 · crew</text>
+<text x="390" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A3A1 · crew</text>
 <rect x="330" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="390" y="113" fill="#e6eef6" text-anchor="middle">КО-600 ×2</text>
-<text x="390" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A3A2 · station</text>
+<text x="390" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A3A2 · station</text>
 <rect x="10" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
 <text x="70" y="67" fill="#e6eef6" text-anchor="middle">Х-12</text>
-<text x="70" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A4A1 · factory</text>
+<text x="70" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A4A1 · factory</text>
 <rect x="10" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="70" y="113" fill="#e6eef6" text-anchor="middle">БЗ-1 ×90</text>
-<text x="70" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A4A2 · station</text>
+<text x="70" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A4A2 · station</text>
 <rect x="10" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="70" y="159" fill="#e6eef6" text-anchor="middle">БТ-1 ×60</text>
-<text x="70" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A4A3 · station</text>
+<text x="70" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A4A3 · station</text>
 <rect x="490" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="550" y="113" fill="#e6eef6" text-anchor="middle">RCS-4Т ×16</text>
-<text x="550" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A5A1 · crew</text>
+<text x="550" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A5A1 · crew</text>
 <rect x="650" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="710" y="67" fill="#e6eef6" text-anchor="middle">MC-C3 ×2</text>
-<text x="710" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A6A1 · station</text>
+<text x="710" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A6A1 · station</text>
 <rect x="650" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
 <text x="710" y="113" fill="#e6eef6" text-anchor="middle">N-10</text>
-<text x="710" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A6A2 · station</text>
+<text x="710" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A6A2 · station</text>
 <rect x="650" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="710" y="159" fill="#e6eef6" text-anchor="middle">C-3 ×2</text>
-<text x="710" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A6A3 · crew</text>
+<text x="710" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A6A3 · crew</text>
 <rect x="650" y="192" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="710" y="205" fill="#e6eef6" text-anchor="middle">Т-1 ×2</text>
-<text x="710" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A6A4 · crew</text>
+<text x="710" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A6A4 · crew</text>
 <rect x="810" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="870" y="67" fill="#e6eef6" text-anchor="middle">T-60 ×2</text>
-<text x="870" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A7A1 · station</text>
+<text x="870" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A7A1 · station</text>
 <rect x="810" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="870" y="113" fill="#e6eef6" text-anchor="middle">СШ-20 ×3</text>
-<text x="870" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A7A2 · station</text>
+<text x="870" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A7A2 · station</text>
 <rect x="810" y="146" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="870" y="159" fill="#e6eef6" text-anchor="middle">МО-4 ×3</text>
-<text x="870" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A7A3 · station</text>
+<text x="870" y="172" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A7A3 · station</text>
 <rect x="810" y="192" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="870" y="205" fill="#e6eef6" text-anchor="middle">C20-R ×240</text>
-<text x="870" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A8A1 · crew</text>
+<text x="870" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A8A1 · crew</text>
 <rect x="650" y="238" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="710" y="251" fill="#e6eef6" text-anchor="middle">АП-2</text>
-<text x="710" y="264" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A9A1 · yard</text>
+<text x="710" y="264" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A9A1 · yard</text>
 <rect x="650" y="284" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="710" y="297" fill="#e6eef6" text-anchor="middle">ОД-4 ×2</text>
-<text x="710" y="310" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A9A2 · station</text>
+<text x="710" y="310" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A9A2 · station</text>
 <rect x="810" y="238" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="870" y="251" fill="#e6eef6" text-anchor="middle">МС-1 ×2</text>
-<text x="870" y="264" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A10A1 · station</text>
+<text x="870" y="264" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A10A1 · station</text>
 <rect x="650" y="330" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="710" y="343" fill="#e6eef6" text-anchor="middle">СУ-1 ×4</text>
-<text x="710" y="356" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A9A3 · station</text>
+<text x="710" y="356" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A9A3 · station</text>
 <rect x="650" y="376" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="710" y="389" fill="#e6eef6" text-anchor="middle">ПТ-3 ×2</text>
-<text x="710" y="402" fill="#8fb3d1" text-anchor="middle" font-size="8">Хэ-С240-A11A1 · station</text>
+<text x="710" y="402" fill="#8fb3d1" text-anchor="middle" font-size="8">He-B240-A11A1 · station</text>
 <text x="16" y="456" fill="#ff8a8a">красная рамка — единичная точка отказа функции</text>
 </svg>

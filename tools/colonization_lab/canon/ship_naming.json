@@ -35,7 +35,8 @@
         "mark": "литая буква K в ромбе",
         "livery": "тёмный графит, жёлтая полоса Хомстеда (регистр HSC)",
         "tagline": "Late, Not Last (девиз Хомстеда)"
-      }
+      },
+      "designation_standard": "asme_y14_44"
     },
     "mfr.kern_heavy": {
       "code_prefix": "K",
@@ -54,7 +55,8 @@
         "mark": "чёрная K в виде кирки на оранжевом квадрате",
         "livery": "сигнальный оранжевый, затёртый",
         "tagline": "Everything is a resource."
-      }
+      },
+      "designation_standard": "asme_y14_44"
     },
     "mfr.hyperion": {
       "code_prefix": "HY",
@@ -75,7 +77,8 @@
         "mark": "тонкое чёрное кольцо с разрывом на 1 часе",
         "livery": "белый, три красные точки основателей",
         "tagline": "Cognoscere ut navigare"
-      }
+      },
+      "designation_standard": "asme_y14_44"
     },
     "mfr.ofu": {
       "code_prefix": "OF",
@@ -94,7 +97,8 @@
         "mark": "две стрелы Урал → Куру в кольце",
         "livery": "контейнерный серо-синий, крупные номера люков",
         "tagline": "Freight is freedom."
-      }
+      },
+      "designation_standard": "iec_81346"
     },
     "mfr.sol_mass_yards": {
       "code_prefix": "LM",
@@ -113,7 +117,8 @@
         "mark": "жёлтое кольцо орбиты с двумя точками (Луна, Марс)",
         "livery": "тёмно-синий с белым кругом Земли",
         "tagline": "Built to return."
-      }
+      },
+      "designation_standard": "iec_81346"
     },
     "mfr.harmony_yards": {
       "code_prefix": "和",
@@ -134,7 +139,8 @@
         "mark": "жёлтый круг 和 на красном",
         "livery": "красный с белыми индексами",
         "tagline": "进步来自稳定 (Прогресс через стабильность)"
-      }
+      },
+      "designation_standard": "gb_t_5094"
     },
     "mfr.tianhe_heavy": {
       "code_prefix": "天",
@@ -155,7 +161,8 @@
         "mark": "дуга Млечного Пути из пяти звёзд",
         "livery": "серо-зелёный, красные номера",
         "tagline": "提前完成计划 (план досрочно)"
-      }
+      },
+      "designation_standard": "gb_t_5094"
     },
     "mfr.bharat": {
       "code_prefix": "BH",
@@ -176,7 +183,8 @@
         "mark": "колесо о 24 спицах, одна золотая",
         "livery": "белый с шафрановой и зелёной полосой",
         "tagline": "Hum banate hain (Мы собираем)"
-      }
+      },
+      "designation_standard": "iec_81346"
     },
     "mfr.bastion": {
       "code_prefix": "MJ",
@@ -196,7 +204,8 @@
         "mark": "щит четырёх когорт",
         "livery": "матово-серый, белые номера BS",
         "tagline": "Skjaldborg heldr"
-      }
+      },
+      "designation_standard": "norsok"
     },
     "mfr.stone_docks": {
       "code_prefix": "SR",
@@ -215,7 +224,8 @@
         "mark": "перечёркнутый чужой логотип",
         "livery": "камень и ржавчина",
         "tagline": "Signed at gunpoint."
-      }
+      },
+      "designation_standard": "donor"
     },
     "mfr.agora_modular": {
       "code_prefix": "ΑΓ",
@@ -236,7 +246,8 @@
         "mark": "перекрёсток (σταυροδρόμι) в квадрате",
         "livery": "белый и морской синий",
         "tagline": "Ανοιχτό πρότυπο (Открытый стандарт)"
-      }
+      },
+      "designation_standard": "iec_81346"
     }
   },
   "ships": {
@@ -872,6 +883,33 @@
       "naming": "greek_port_office",
       "reason": "акриты — византийские стражи границы; корвет Лиги, которая почти не воюет",
       "legacy_name": "PC-30AK «Акритас»"
+    }
+  },
+  "designation_standards": {
+    "asme_y14_44": {
+      "ru": "американская система позиционных обозначений (ASME Y14.44 / IEEE 315)",
+      "example": "KB44A1A2PT1",
+      "rule": "номер изделия + цепочка узлов A (разборный) / U (неразборный) по компоновке + буквы класса детали и номер"
+    },
+    "iec_81346": {
+      "ru": "международная IEC 81346 (аспекты: = функция, + место, - изделие; классы IEC 81346-2)",
+      "example": "=LM39+1-M2-E1",
+      "rule": "= номер изделия, + отсек, - изделие класса IEC (M двигатель, G генератор / реактор / насос, E тепло, C хранение, Q клапан, K обработка сигналов, B датчики) и номер"
+    },
+    "gb_t_5094": {
+      "ru": "китайская GB/T 5094 (национальная редакция IEC 81346; классы GB/T 20939)",
+      "example": "=和50+1-M2-E1",
+      "rule": "как IEC 81346; номер изделия - знак серии «和» / «天» с номером"
+    },
+    "norsok": {
+      "ru": "норвежская система тегов NORSOK (нефтегазовая традиция Северного моря)",
+      "example": "MJ64-01-ME-001/PT1",
+      "rule": "номер изделия - номер отсека (две цифры) - код класса - порядковый номер (три цифры) / деталь"
+    },
+    "donor": {
+      "ru": "своей системы нет: переделка сохраняет маркировку донора",
+      "example": "по донору",
+      "rule": "стандарт корабля-донора (variant_of)"
     }
   }
 }

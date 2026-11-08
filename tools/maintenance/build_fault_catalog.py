@@ -86,8 +86,8 @@ def C(cid, ru, category, applies_to, srus, modes, tank_fluid=None):
 C("drive.plasma.cobretty", "плазменный главный двигатель Cobretty (N1 / CR-1)", "drive",
   ["kb.drive.n1-axial", "kb.drive.cr1-vector"],
   {"injector": "коллектор форсунок рабочего тела", "coil": "сегменты катушек магнитного сопла", "chamber": "плазменная камера",
-   "hx": "теплообменник двигателя", "gimbal": "привод подвеса / цапфы (CR-1: ±75°)", "busbar": "силовой ввод с шины реактора",
-   "sensor": "датчики температуры и тяги"},
+   "pad": "охлаждающий пятак двигателя", "hx": "резервный теплообменник (включается при повреждённом пятаке)",
+   "gimbal": "привод подвеса / цапфы (CR-1: ±75°)", "busbar": "силовой ввод с шины реактора", "sensor": "датчики температуры и тяги"},
   [
    M("DRV-01", "injector", "засор форсунок рабочего тела", ["wear", "internal"], ["thrust", "chamber_press"],
      {"C": {"func": -5}, "W": {"func": -20, "instab": 10}, "F": {"func": -60, "instab": 30}},
@@ -103,11 +103,11 @@ C("drive.plasma.cobretty", "плазменный главный двигател
    M("DRV-02", "coil", "деградация сегмента катушки магнитного сопла", ["thermal", "radiation", "wear"], ["thrust", "temp", "thrust_axis"],
      {"C": {"heat": 5}, "W": {"func": -15, "heat": 20, "instab": 10}, "F": {"func": -70, "heat": 60}},
      [T(1, "BITE: ток по сегментам катушек", "bite", 2, fail=2, ok="=DRV-08"),
-      T(2, "Температура теплоносителя двигателя в норме?", "cross_check", 1, fail="->bus:coolant", ok=3,
-        note="перегретая катушка - чаще следствие плохого охлаждения, а не причина"),
+      T(2, "Температура пятака двигателя в норме?", "cross_check", 1, fail="=DRV-09", ok=3,
+        note="перегретая катушка - чаще следствие плохого пятака, а не причина"),
       T(3, "Дрон: термограмма сопла (двигатель только что работал)", "drone_inspect", 30, needs="без тяги")],
      [R("drone", "замена сегмента катушки", 6, spare="SRU сегмент катушки"), R("nanobay", "перемотка сегмента", 40, nanite_kg=12, power_mw=2)],
-     upstream=[("bus:coolant/CLP-01", 4.0), ("bus:coolant/CLP-02", 3.0), ("DRV-04", 2.0)],
+     upstream=[("DRV-09", 4.0), ("DRV-04", 2.0)],
      downstream=[("DRV-03", 20, "работа на сегменте с отказом"), ("DRV-06", 60, "")],
      symptoms={"C": "сопло греется на 5-8 % сильнее", "W": "вектор тяги уводит, тяга -15 %", "F": "магнитное сопло не держит плазму"}),
    M("DRV-03", "chamber", "эрозия стенки плазменной камеры", ["wear", "thermal", "impact"], ["chamber_press", "vibration", "temp"],
@@ -117,12 +117,24 @@ C("drive.plasma.cobretty", "плазменный главный двигател
      [R("nanobay", "наплавка стенки камеры", 60, nanite_kg=30, power_mw=3), R("yard", "замена камеры", 30)],
      upstream=[("DRV-01", 2.5), ("DRV-02", 3.0)], downstream=[],
      symptoms={"C": "лёгкая вибрация на полной тяге", "W": "вибрация, пульсации тяги", "F": "прогар камеры - двигатель заглушён"}),
-   M("DRV-04", "hx", "засорение теплообменника двигателя", ["wear", "internal"], ["coolant_temp", "temp"],
+   M("DRV-09", "pad", "повреждение охлаждающего пятака двигателя", ["impact", "laser", "thermal", "wear"], ["temp_pad", "temp", "coolant_temp"],
+     {"C": {"heat": 10}, "W": {"heat": 30, "func": -10}, "F": {"heat": 70, "func": -40}},
+     [T(1, "BITE: температура пятака двигателя выше нормы при той же тяге?", "bite", 2, fail=2, ok="=DRV-08"),
+      T(2, "Дрон: осмотр и термограмма пятака", "drone_inspect", 30, needs="без тяги")],
+     [R("drone", "замена секции пятака", 5, spare="SRU секция пятака двигателя"), R("nanobay", "восстановление покрытия пятака", 30, nanite_kg=12)],
+     upstream=[],
+     downstream=[("DRV-02", 25, "тяга > 50 %"), ("bus:coolant/CLP-01", 60, "тепло двигателя ушло в контур"), ("DRV-04", 80, "теплообменник работает постоянно")],
+     symptoms={"C": "пятак двигателя горячее обычного", "W": "тепло двигателя пошло в общий контур охлаждения: греются реактор и соседи",
+               "F": "двигатель ограничен по тяге перегревом"},
+     pmcs="осмотр пятаков двигателей дроном после боя или прохода через обломки"),
+   M("DRV-04", "hx", "засорение резервного теплообменника двигателя", ["wear", "internal"], ["coolant_temp", "temp"],
      {"C": {"heat": 5}, "W": {"heat": 25}, "F": {"heat": 60, "func": -30}},
-     [T(1, "Перепад температуры теплоносителя вход/выход двигателя мал?", "cross_check", 2, fail=2, ok="->bus:coolant"),
-      T(2, "Промывка теплообменника (с пульта, контур на байпас)", "bite", 20, fail="=DRV-04", ok="=DRV-04")],
+     [T(1, "Пятак двигателя цел, а двигатель всё равно греется?", "cross_check", 2, fail="=DRV-09", ok=2,
+        note="теплообменник нагружен, только когда пятак повреждён: начинать с пятака"),
+      T(2, "Перепад температуры теплоносителя вход/выход двигателя мал?", "cross_check", 2, fail=3, ok="->bus:coolant"),
+      T(3, "Промывка теплообменника (с пульта, контур на байпас)", "bite", 20, fail="=DRV-04", ok="=DRV-04")],
      [R("operator", "промывка теплообменника", 0.4), R("drone", "замена теплообменника", 5, spare="SRU теплообменник")],
-     upstream=[("bus:coolant/CLP-03", 3.0)], downstream=[("DRV-02", 30, "тяга > 70 %")],
+     upstream=[("bus:coolant/CLP-03", 3.0), ("DRV-09", 2.0)], downstream=[("DRV-02", 30, "тяга > 70 % при повреждённом пятаке")],
      symptoms={"C": "двигатель греется", "W": "автомат ограничивает тягу по температуре", "F": "перегрев - двигатель глушится"}),
    M("DRV-05", "gimbal", "износ / заклинивание привода подвеса", ["wear", "impact"], ["position", "thrust_axis"],
      {"C": {"sec": -10}, "W": {"sec": -40}, "F": {"sec": -100}},
@@ -261,7 +273,7 @@ C("coolant.loop.cobretty", "контур охлаждения Cobretty (насо
         note="насос гонит, а расхода нет - утечка или засор, а не насос")],
      [R("drone", "замена насоса", 4, spare="SRU насос"), R("nanobay", "восстановление крыльчатки и подшипников", 20, nanite_kg=6)],
      upstream=[("bus:service_power/APU-02", 1.5)],
-     downstream=[("bus:coolant/RCT-01", 20, "реактор > 50 %"), ("bus:coolant/DRV-02", 25, "тяга > 50 %"), ("bus:coolant/APU-01", 60, "")],
+     downstream=[("bus:coolant/RCT-01", 20, "реактор > 50 %"), ("bus:coolant/DRV-02", 25, "тяга > 50 % и повреждён пятак двигателя"), ("bus:coolant/APU-01", 60, "")],
      masks=["CLP-02"],
      symptoms={"C": "теплоноситель на 5 % горячее", "W": "все потребители контура греются - BITE покажет их, а не насос", "F": "охлаждение потеряно"}),
    M("CLP-02", "pipes", "утечка в магистрали", ["impact", "wear", "laser"], ["coolant_press", "coolant_flow"],
@@ -458,6 +470,43 @@ C("weapon.pd.cobretty", "оборонительная турель Cobretty PD",
      symptoms={"W": "турель мажет по быстрым целям"})])
 
 
+# ---------------------------------------------------------------- reference designations
+# class letters (docs/REFERENCE_DESIGNATIONS.md, accepted by the author 2026-11-09); ASME Y14.44 / IEEE 315 style
+CLASS_LETTERS = {
+    "A": "сборочная единица / узел (разборный)", "U": "неразборный узел", "ME": "главный двигатель", "GR": "двигательный реактор",
+    "GS": "служебный реактор (ВСУ)", "PT": "охлаждающий пятак", "RD": "панель радиатора", "HX": "теплообменник", "PU": "насос",
+    "VL": "клапан", "TK": "бак / бункер", "RC": "маневровое сопло", "JC": "ядро прыжка", "CP": "бортовой компьютер",
+    "RA": "радар / антенная решётка", "CM": "связной комплекс", "TX": "транспондер", "LS": "жизнеобеспечение", "EC": "спасательная капсула",
+    "BT": "батарея", "W": "кабель / жгут", "WP": "трубопровод / магистраль", "J": "разъём (гнездо)", "P": "разъём (вилка)", "S": "выключатель",
+    "B": "датчик", "MP": "механическая деталь", "WE": "вооружение", "DK": "стыковочный узел", "CR": "контейнерная стойка",
+    "L": "катушка (IEEE 315)", "IJ": "форсуночный коллектор", "PS": "источник / преобразователь питания (IEEE 315)",
+    "FL": "фильтр / поглотитель (IEEE 315)", "G": "генератор (IEEE 315)", "E": "пиро- и прочие электрические элементы (IEEE 315)",
+}
+SRU_CLASS = {
+    "drive.plasma.cobretty": {"injector": "IJ", "coil": "L", "chamber": "MP", "pad": "PT", "hx": "HX", "gimbal": "MP", "busbar": "W", "sensor": "B"},
+    "reactor.fusion.cobretty": {"pad": "PT", "plasma_ctl": "A", "damper": "MP", "feed": "MP", "inverter": "PS", "sensor": "B"},
+    "apu.cobretty": {"cells": "BT", "starter": "MP", "regulator": "PS", "sensor": "B"},
+    "radiator.csic": {"panel": "RD", "hinge": "MP", "manifold": "WP"},
+    "coolant.loop.cobretty": {"pump": "PU", "pipes": "WP", "valves": "VL", "fluid": "TK"},
+    "jump_core.um": {"field": "L", "damper": "MP", "seal": "MP"},
+    "tank.pellets": {"auger": "MP", "level": "B", "shell": "TK"},
+    "tank.jump_charge": {"valve": "VL", "shell": "TK"},
+    "tank.argon": {"regulator": "VL", "shell": "TK"},
+    "rcs.fc.cobretty": {"valve": "VL", "coil": "L", "nozzle": "MP"},
+    "computer.xz": {"board": "A", "memory": "A", "psu": "PS"},
+    "radar.xz": {"array": "A", "rx": "A"},
+    "comm.xz": {"feeder": "W", "transceiver": "A"},
+    "transponder.um": {"coder": "A"},
+    "life_support.eurohab": {"scrubber": "FL", "o2": "G", "water": "FL", "fan": "MP"},
+    "capsule.cobretty": {"pyro": "E", "battery": "BT", "beacon": "CM", "seal": "MP"},
+    "cargo.c20lock": {"latch": "MP", "rail": "MP"},
+    "dock.collar": {"seal": "MP", "latch": "MP"},
+    "weapon.pd.cobretty": {"emitter": "WE", "mount": "MP"},
+}
+for _c in CLASSES:
+    _c["sru_class"] = SRU_CLASS.get(_c["id"], {})
+
+
 # ---------------------------------------------------------------- build + checks
 def class_of_part():
     out = {}
@@ -484,6 +533,9 @@ def check(catalog):
                 problems.append(f"duplicate code {m['code']}")
             codes[m["code"]] = c
     for c in catalog["classes"]:
+        for sru in c["srus"]:
+            if c["sru_class"].get(sru) not in CLASS_LETTERS:
+                problems.append(f"{c['id']}: SRU {sru} has no class letter")
         src, snk = bus_role(c)
         for m in c["modes"]:
             if m["sru"] not in c["srus"]:
@@ -566,7 +618,7 @@ def main():
                    note=("Режимы отказа по классам оборудования (docs/MAINTENANCE_LAYER_DESIGN.md). Основная игра берёт effect "
                          "(проценты по стадиям); мини-игра ремонта - граф upstream / downstream / masks. Пишет "
                          "tools/maintenance/build_fault_catalog.py; руками не править."),
-                   signals=SIGNALS, stages=STAGES, repair_levels=LEVELS, buses=BUSES, classes=CLASSES)
+                   signals=SIGNALS, stages=STAGES, repair_levels=LEVELS, buses=BUSES, class_letters=CLASS_LETTERS, classes=CLASSES)
     problems = check(catalog)
     with open(PASSPORTS, encoding="utf-8") as f:
         ships = json.load(f)["passports"]

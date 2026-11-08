@@ -4421,3 +4421,18 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   IEEE 315 reference-designation system (unit number, A separable assembly, U inseparable, class letters + number);
   proposed class letters for our equipment, the two schemas (layout tree / functional chains), a Cobrett-I A3
   example. Open: author to confirm the letters and whether the pad belongs to the reactor or the engine.
+
+### Layout designations + per-maker standards + engine pads - 2026-11-09 - BUILT (DATA + REFERENCE)
+- Author: class letters accepted; the unit number is the passport model code; each engine has its own cooling pad
+  (heat goes to the common loop only when the pad is damaged); "американский стандарт не для всех - у китайцев
+  точно будет другим".
+- tools/maintenance/build_ship_layout.py -> src/assets/data/ships/ship_layouts_3126.json + reference
+  layout_data.js: all 53 ships laid out from their equipment (propulsion bays = reactor + drive groups, then cockpit
+  capsule, systems, cooling, jump, fuel, RCS, payload, weapons, docking, hull); designations in the maker's
+  standard (ship_naming.json designation_standard): ASME Y14.44 9 ships, IEC 81346 25, GB/T 5094 12, NORSOK 7,
+  Stone Docks = donor; functional chains (pad - engine - reactor - engine - pad xN; the 7 bus chains).
+  Cobrett-I A3: KB44A1 / KB44A2 bays (A1 ER-5, A2 / A3 CR-1 with PT1 each), chain x2.
+- Fault catalog: DRV-09 engine pad damage; the engine heat exchanger is the backup path; 51 modes; SRU class
+  letters (sru_class) per equipment class. Passport functional groups renamed <model_code>F<k> (A = layout unit).
+- Reference: ship page = "Компоновка" (compartments, unit cards with designations and part designators) +
+  "Функциональные цепочки". Gate tests/maintenance/check_ship_layout.py. Gates 211: 205 / 6 known / 0 new.

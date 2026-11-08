@@ -134,3 +134,17 @@ table.coverage{font-size:12px;min-width:980px}table.coverage td,table.coverage t
 .tmStages .st-c{border-left-color:#7fa8c4}.tmStages .st-w{border-left-color:#d0a13e}.tmStages .st-f{border-left-color:#c45a52}
 .tmSteps{font-size:12.5px}.tmSteps td{vertical-align:top}
 .bus{color:#9fd0ff}
+
+/* layout designations and functional chains */
+.des{font:600 11.5px Consolas,monospace;color:#ffd38a;margin-bottom:2px;word-break:break-all}
+.srus{font:10.5px Consolas,monospace;color:#7fa8c4;margin:0 0 4px}
+.stdLine{margin:-8px 0 12px}
+.chains{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;margin-bottom:14px}
+.chain{margin:0}
+.chainHead{display:flex;gap:10px;align-items:baseline;margin-bottom:8px;flex-wrap:wrap}
+.mult{font:700 18px Consolas,monospace;color:#9be28f}
+.cboxes,.cflow{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.cbox{background:#101a24;border:1px solid #2f4b62;border-radius:6px;padding:5px 8px;font-size:12px;display:flex;flex-direction:column}
+.cbox span{color:#9fb6c8;font-size:11px}
+.cbox.pad{border-color:#5f9a6a}.cbox.reactor{border-color:#c48a3a}.cbox.drive{border-color:#4d86ad}.cbox.src{border-color:#8c6bb0}
+.clink{color:#56738a}

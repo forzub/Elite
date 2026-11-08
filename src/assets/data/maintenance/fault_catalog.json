@@ -143,6 +143,44 @@
    ]
   }
  },
+ "class_letters": {
+  "A": "сборочная единица / узел (разборный)",
+  "U": "неразборный узел",
+  "ME": "главный двигатель",
+  "GR": "двигательный реактор",
+  "GS": "служебный реактор (ВСУ)",
+  "PT": "охлаждающий пятак",
+  "RD": "панель радиатора",
+  "HX": "теплообменник",
+  "PU": "насос",
+  "VL": "клапан",
+  "TK": "бак / бункер",
+  "RC": "маневровое сопло",
+  "JC": "ядро прыжка",
+  "CP": "бортовой компьютер",
+  "RA": "радар / антенная решётка",
+  "CM": "связной комплекс",
+  "TX": "транспондер",
+  "LS": "жизнеобеспечение",
+  "EC": "спасательная капсула",
+  "BT": "батарея",
+  "W": "кабель / жгут",
+  "WP": "трубопровод / магистраль",
+  "J": "разъём (гнездо)",
+  "P": "разъём (вилка)",
+  "S": "выключатель",
+  "B": "датчик",
+  "MP": "механическая деталь",
+  "WE": "вооружение",
+  "DK": "стыковочный узел",
+  "CR": "контейнерная стойка",
+  "L": "катушка (IEEE 315)",
+  "IJ": "форсуночный коллектор",
+  "PS": "источник / преобразователь питания (IEEE 315)",
+  "FL": "фильтр / поглотитель (IEEE 315)",
+  "G": "генератор (IEEE 315)",
+  "E": "пиро- и прочие электрические элементы (IEEE 315)"
+ },
  "classes": [
   {
    "id": "drive.plasma.cobretty",
@@ -156,7 +194,8 @@
     "injector": "коллектор форсунок рабочего тела",
     "coil": "сегменты катушек магнитного сопла",
     "chamber": "плазменная камера",
-    "hx": "теплообменник двигателя",
+    "pad": "охлаждающий пятак двигателя",
+    "hx": "резервный теплообменник (включается при повреждённом пятаке)",
     "gimbal": "привод подвеса / цапфы (CR-1: ±75°)",
     "busbar": "силовой ввод с шины реактора",
     "sensor": "датчики температуры и тяги"
@@ -308,12 +347,12 @@
       },
       {
        "step": 2,
-       "test": "Температура теплоносителя двигателя в норме?",
+       "test": "Температура пятака двигателя в норме?",
        "kind": "cross_check",
        "minutes": 1,
-       "if_fail": "->bus:coolant",
+       "if_fail": "=DRV-09",
        "if_ok": 3,
-       "note": "перегретая катушка - чаще следствие плохого охлаждения, а не причина"
+       "note": "перегретая катушка - чаще следствие плохого пятака, а не причина"
       },
       {
        "step": 3,
@@ -340,12 +379,8 @@
      ],
      "upstream": [
       {
-       "ref": "bus:coolant/CLP-01",
+       "ref": "DRV-09",
        "x": 4.0
-      },
-      {
-       "ref": "bus:coolant/CLP-02",
-       "x": 3.0
       },
       {
        "ref": "DRV-04",
@@ -449,9 +484,96 @@
      "pmcs": null
     },
     {
+     "code": "DRV-09",
+     "sru": "pad",
+     "name_ru": "повреждение охлаждающего пятака двигателя",
+     "causes": [
+      "impact",
+      "laser",
+      "thermal",
+      "wear"
+     ],
+     "signals": [
+      "temp_pad",
+      "temp",
+      "coolant_temp"
+     ],
+     "effect": {
+      "C": {
+       "heat": 10
+      },
+      "W": {
+       "heat": 30,
+       "func": -10
+      },
+      "F": {
+       "heat": 70,
+       "func": -40
+      }
+     },
+     "symptoms": {
+      "C": "пятак двигателя горячее обычного",
+      "W": "тепло двигателя пошло в общий контур охлаждения: греются реактор и соседи",
+      "F": "двигатель ограничен по тяге перегревом"
+     },
+     "isolation": [
+      {
+       "step": 1,
+       "test": "BITE: температура пятака двигателя выше нормы при той же тяге?",
+       "kind": "bite",
+       "minutes": 2,
+       "if_fail": 2,
+       "if_ok": "=DRV-08"
+      },
+      {
+       "step": 2,
+       "test": "Дрон: осмотр и термограмма пятака",
+       "kind": "drone_inspect",
+       "minutes": 30,
+       "needs": "без тяги"
+      }
+     ],
+     "repair": [
+      {
+       "level": "drone",
+       "action": "замена секции пятака",
+       "hours": 5,
+       "spare": "SRU секция пятака двигателя"
+      },
+      {
+       "level": "nanobay",
+       "action": "восстановление покрытия пятака",
+       "hours": 30,
+       "nanite_kg": 12
+      }
+     ],
+     "upstream": [],
+     "downstream": [
+      {
+       "ref": "DRV-02",
+       "after_h": 25,
+       "when": "тяга > 50 %"
+      },
+      {
+       "ref": "bus:coolant/CLP-01",
+       "after_h": 60,
+       "when": "тепло двигателя ушло в контур"
+      },
+      {
+       "ref": "DRV-04",
+       "after_h": 80,
+       "when": "теплообменник работает постоянно"
+      }
+     ],
+     "masks": [],
+     "intermittent": null,
+     "false_alarm": false,
+     "pmcs": "осмотр пятаков двигателей дроном после боя или прохода через обломки"
+    },
+    {
      "code": "DRV-04",
      "sru": "hx",
-     "name_ru": "засорение теплообменника двигателя",
+     "name_ru": "засорение резервного теплообменника двигателя",
      "causes": [
       "wear",
       "internal"
@@ -480,14 +602,23 @@
      "isolation": [
       {
        "step": 1,
-       "test": "Перепад температуры теплоносителя вход/выход двигателя мал?",
+       "test": "Пятак двигателя цел, а двигатель всё равно греется?",
        "kind": "cross_check",
        "minutes": 2,
-       "if_fail": 2,
-       "if_ok": "->bus:coolant"
+       "if_fail": "=DRV-09",
+       "if_ok": 2,
+       "note": "теплообменник нагружен, только когда пятак повреждён: начинать с пятака"
       },
       {
        "step": 2,
+       "test": "Перепад температуры теплоносителя вход/выход двигателя мал?",
+       "kind": "cross_check",
+       "minutes": 2,
+       "if_fail": 3,
+       "if_ok": "->bus:coolant"
+      },
+      {
+       "step": 3,
        "test": "Промывка теплообменника (с пульта, контур на байпас)",
        "kind": "bite",
        "minutes": 20,
@@ -512,13 +643,17 @@
       {
        "ref": "bus:coolant/CLP-03",
        "x": 3.0
+      },
+      {
+       "ref": "DRV-09",
+       "x": 2.0
       }
      ],
      "downstream": [
       {
        "ref": "DRV-02",
        "after_h": 30,
-       "when": "тяга > 70 %"
+       "when": "тяга > 70 % при повреждённом пятаке"
       }
      ],
      "masks": [],
@@ -775,7 +910,17 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "injector": "IJ",
+    "coil": "L",
+    "chamber": "MP",
+    "pad": "PT",
+    "hx": "HX",
+    "gimbal": "MP",
+    "busbar": "W",
+    "sensor": "B"
+   }
   },
   {
    "id": "reactor.fusion.cobretty",
@@ -1248,7 +1393,15 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "pad": "PT",
+    "plasma_ctl": "A",
+    "damper": "MP",
+    "feed": "MP",
+    "inverter": "PS",
+    "sensor": "B"
+   }
   },
   {
    "id": "apu.cobretty",
@@ -1443,7 +1596,13 @@
      "pmcs": "тест холодного пуска раз в 100 ч"
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "cells": "BT",
+    "starter": "MP",
+    "regulator": "PS",
+    "sensor": "B"
+   }
   },
   {
    "id": "radiator.csic",
@@ -1628,7 +1787,12 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "panel": "RD",
+    "hinge": "MP",
+    "manifold": "WP"
+   }
   },
   {
    "id": "coolant.loop.cobretty",
@@ -1721,7 +1885,7 @@
       {
        "ref": "bus:coolant/DRV-02",
        "after_h": 25,
-       "when": "тяга > 50 %"
+       "when": "тяга > 50 % и повреждён пятак двигателя"
       },
       {
        "ref": "bus:coolant/APU-01",
@@ -1876,7 +2040,13 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "pump": "PU",
+    "pipes": "WP",
+    "valves": "VL",
+    "fluid": "TK"
+   }
   },
   {
    "id": "jump_core.um",
@@ -1996,7 +2166,12 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "field": "L",
+    "damper": "MP",
+    "seal": "MP"
+   }
   },
   {
    "id": "tank.pellets",
@@ -2117,7 +2292,12 @@
      "pmcs": "продувка шнека каждые 200 ч"
     }
    ],
-   "tank_fluid": "fusion_pellets"
+   "tank_fluid": "fusion_pellets",
+   "sru_class": {
+    "auger": "MP",
+    "level": "B",
+    "shell": "TK"
+   }
   },
   {
    "id": "tank.jump_charge",
@@ -2181,7 +2361,11 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": "jump_charge"
+   "tank_fluid": "jump_charge",
+   "sru_class": {
+    "valve": "VL",
+    "shell": "TK"
+   }
   },
   {
    "id": "tank.argon",
@@ -2299,7 +2483,11 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": "argon"
+   "tank_fluid": "argon",
+   "sru_class": {
+    "regulator": "VL",
+    "shell": "TK"
+   }
   },
   {
    "id": "rcs.fc.cobretty",
@@ -2443,7 +2631,12 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "valve": "VL",
+    "coil": "L",
+    "nozzle": "MP"
+   }
   },
   {
    "id": "computer.xz",
@@ -2595,7 +2788,12 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "board": "A",
+    "memory": "A",
+    "psu": "PS"
+   }
   },
   {
    "id": "radar.xz",
@@ -2668,7 +2866,11 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "array": "A",
+    "rx": "A"
+   }
   },
   {
    "id": "comm.xz",
@@ -2804,7 +3006,11 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "feeder": "W",
+    "transceiver": "A"
+   }
   },
   {
    "id": "transponder.um",
@@ -2866,7 +3072,10 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "coder": "A"
+   }
   },
   {
    "id": "life_support.eurohab",
@@ -3062,7 +3271,13 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "scrubber": "FL",
+    "o2": "G",
+    "water": "FL",
+    "fan": "MP"
+   }
   },
   {
    "id": "capsule.cobretty",
@@ -3312,7 +3527,13 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "pyro": "E",
+    "battery": "BT",
+    "beacon": "CM",
+    "seal": "MP"
+   }
   },
   {
    "id": "cargo.c20lock",
@@ -3376,7 +3597,11 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "latch": "MP",
+    "rail": "MP"
+   }
   },
   {
    "id": "dock.collar",
@@ -3478,7 +3703,11 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "seal": "MP",
+    "latch": "MP"
+   }
   },
   {
    "id": "weapon.pd.cobretty",
@@ -3599,7 +3828,11 @@
      "pmcs": null
     }
    ],
-   "tank_fluid": null
+   "tank_fluid": null,
+   "sru_class": {
+    "emitter": "WE",
+    "mount": "MP"
+   }
   }
  ]
 }

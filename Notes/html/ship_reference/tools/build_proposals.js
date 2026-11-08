@@ -59,7 +59,7 @@ const SM = new Map(D.ships.map(s => [s.id, s]));
 // ---------------------------------------------------------------- slots / groups
 // group codes are <model code>A<k> (the model code is the ship's own, author 2026-11-08): names by the A<k> part
 const GROUP_NAMES = {};
-for (const s of D.ships) for (const g of s.functional_groups) GROUP_NAMES["A" + g.code.split("A").pop()] = g.name;
+for (const s of D.ships) for (const g of s.functional_groups) GROUP_NAMES["A" + g.code.match(/(\d+)$/)[1]] = g.name;
 GROUP_NAMES["A13"] = GROUP_NAMES["A13"] || "Защита / посадка";
 // the proposal ships' model codes (the canon passports carry their own model_code)
 const PROPOSAL_MODEL_CODES = {
@@ -676,7 +676,7 @@ for (const sp of specs) {
   for (const it of bom) { const g = groupFor(PM.get(it.part_id), it.slot_code); (groupsMap[g] ??= []).push(it); }
   const modelCode = PROPOSAL_MODEL_CODES[sp.id];
   if (modelCode == null) throw new Error("no model code for " + sp.id + " (PROPOSAL_MODEL_CODES)");
-  const functional_groups = Object.keys(groupsMap).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1))).map(g => ({ code: modelCode + g, name: GROUP_NAMES[g], items: groupsMap[g] }));
+  const functional_groups = Object.keys(groupsMap).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1))).map(g => ({ code: modelCode + "F" + g.slice(1), name: GROUP_NAMES[g], items: groupsMap[g] }));
   const weapons = { laser_emitters: [], missile_cells: [], kinetic_mounts: [], total_laser_emitters: 0, total_missile_cells: 0 };
   for (const it of bom.filter(x => x.category === "weapon")) {
     const bnd = D.weapons.bindings[it.part_id] || {};
@@ -829,7 +829,7 @@ for (let i = 0; i < D.ships.length; i++) {
     }
     out[k] = v;
   }
-  for (const g of out.functional_groups) g.code = code + "A" + g.code.split("A").pop();
+  for (const g of out.functional_groups) g.code = code + "F" + g.code.match(/(\d+)$/)[1];   // F: functional group; A is a layout unit
   for (const r of Object.values(out.replacements || {})) if (r && r.ship_id && NAMING.ships[r.ship_id]) r.name = NAMING.ships[r.ship_id].display_name_ru;
   if (out.reference && out.reference.variant_of && NAMING.ships[out.reference.variant_of]) out.reference.variant_of_name = NAMING.ships[out.reference.variant_of].display_name_ru;
   D.ships[i] = out;

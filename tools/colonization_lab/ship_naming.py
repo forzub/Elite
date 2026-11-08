@@ -87,8 +87,10 @@ def rename_passport(p, naming):
                     out[f] = n[f]
             continue
         out[k] = v
+    # functional groups are <model_code>F<k>: "A" is a LAYOUT unit in the reference designations (author
+    # 2026-11-09, tools/maintenance/build_ship_layout.py)
     for g in out["functional_groups"]:
-        g["code"] = code + "A" + g["code"].split("A")[-1]
+        g["code"] = code + "F" + re.search(r"(\d+)$", g["code"]).group(1)
     for r in (out.get("replacements") or {}).values():
         if isinstance(r, dict) and r.get("ship_id") in naming["ships"]:
             r["name"] = naming["ships"][r["ship_id"]]["display_name_ru"]

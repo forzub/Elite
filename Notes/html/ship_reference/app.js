@@ -330,7 +330,67 @@ function moduleCard(s, g, it) {
     <div class="modSub">${esc(catRu(p.cat))} · ${fmt(it.qty)} шт.${shared > 1 ? ` · на ${shared} кораблях` : ""}</div>
     <label class="ready" title="модель этого модуля готова (общая отметка для всех кораблей)"><input type="checkbox" data-ready="${esc(p.id)}"${ready ? " checked" : ""}> модель готова</label></div></a>`;
 }
+// ---- layout (tools/maintenance/build_ship_layout.py): compartments by LAYOUT with reference designations in the
+// maker's standard; the functional chains join units by function (author 2026-11-09)
+const LD = window.ELITE_LAYOUT_DATA || null;
+const layoutOf = id => LD ? LD.ships.find(x => x.id === id) : null;
+function layoutCard(s, n) {
+  const p = partMap.get(n.part);
+  if (!p) return `<div class="modCard missing">${esc(n.part)}</div>`;
+  const ready = Store.isReady(p.id), shared = D.ships.filter(x => shipModules(x).has(p.id)).length;
+  const srus = (n.srus || []).map(x => `<span title="${esc(x.ru)}">${esc(x.des.slice(n.des.length))}</span>`).join(" ");
+  return `<a class="modCard${ready ? " ready" : ""}" href="?ship=${encodeURIComponent(s.id)}&part=${encodeURIComponent(p.id)}">
+    ${partThumb(p)}
+    <div class="modBody"><div class="des">${esc(n.des)}${n.inseparable ? ' <span class="badge">неразборный</span>' : ""}</div><div class="modName">${esc(p.name)}</div>
+    <div class="modSub">${esc(catRu(p.cat))}${n.qty ? ` · ${fmt(n.qty)} шт.` : ""}${shared > 1 ? ` · на ${shared} кораблях` : ""}</div>
+    ${srus ? `<div class="srus">${srus}</div>` : ""}
+    <label class="ready" title="модель этого модуля готова (общая отметка для всех кораблей)"><input type="checkbox" data-ready="${esc(p.id)}"${ready ? " checked" : ""}> модель готова</label></div></a>`;
+}
+const ROLE_RU = { pad: "пятак", drive: "двигатель", reactor: "реактор" };
+function chainHTML(L) {
+  if (!L || !L.chains.length) return "";
+  let h = `<h2 class="viewTitle">Функциональные цепочки</h2><div class="chains">`;
+  for (const c of L.chains) {
+    if (c.id === "propulsion") {
+      const boxes = c.pattern.map(x => {
+        const p = x.part ? partMap.get(x.part) : null;
+        return `<div class="cbox ${esc(x.role)}"><b>${esc(ROLE_RU[x.role] || x.role)}</b>${p ? `<span>${esc(p.name)}</span>` : ""}</div>`;
+      }).join('<div class="clink">—</div>');
+      h += `<div class="card chain"><div class="chainHead"><b>${esc(c.ru)}</b><span class="mult">×${c.instances.length}</span>
+        <span class="sub">${c.compartments.map(esc).join(", ")}</span></div><div class="cboxes">${boxes}</div>
+        <div class="sub">каждый двигатель сбрасывает своё тепло через свой пятак; в общий контур - только при повреждённом пятаке</div></div>`;
+    } else {
+      const grp = list => { const m = new Map(); for (const u of list) { const k = u.part; m.set(k, (m.get(k) || 0) + (u.qty || 1)); } return [...m].map(([pid, q]) => `${esc(partMap.get(pid)?.name || pid)}${q > 1 ? " ×" + q : ""}`).join(", "); };
+      h += `<div class="card chain"><div class="chainHead"><b>${esc(c.ru)}</b></div>
+        <div class="cflow"><div class="cbox src">${grp(c.sources)}</div><div class="clink">→</div><div class="cbox">${grp(c.sinks)}</div></div></div>`;
+    }
+  }
+  return h + "</div>";
+}
 function renderShip(s) {
+  const L = layoutOf(s.id);
+  if (L) return renderShipLayout(s, L);
+  return renderShipFunctional(s);
+}
+function renderShipLayout(s, L) {
+  const hullReady = Store.isReady("hull:" + s.id);
+  const std = (LD.standards || {})[L.standard];
+  let schema = `<div class="section hull"><div class="secHead"><b>${esc(L.unit)}</b> · Корпус / рама</div><div class="mods">
+    <div class="modCard${hullReady ? " ready" : ""}"><div class="pic thumb">${shipSilhouette(s)}</div><div class="modBody"><div class="modName">Корпус ${esc(s.name)}</div>
+    <div class="modSub">${esc((s.frame?.envelope_m || []).map(fmt).join(" × "))} м · ${esc(s.frame?.form || "")} · паспорт рамы отложен</div>
+    <label class="ready"><input type="checkbox" data-ready="hull:${esc(s.id)}"${hullReady ? " checked" : ""}> модель готова</label></div></div></div></div>`;
+  for (const c of L.compartments)
+    schema += `<div class="section"><div class="secHead"><b>${esc(c.des)}</b> · ${esc(c.ru)}</div><div class="mods">${c.children.map(n => layoutCard(s, n)).join("")}</div></div>`;
+  return `<div class="shipView"><aside class="side">${shipBrief(s)}</aside>
+    <div class="mainCol"><div class="crumbs"><a href="?" data-nav>Каталог</a> › ${esc(blocTitle(s.cooperation_group))} › ${esc(mfrName(s.manufacturer))} › <b>${esc(s.name)}</b></div>
+    <h2 class="viewTitle">Компоновка · ${esc(s.name)}</h2>
+    <div class="sub stdLine">Позиционные обозначения: ${esc(std ? std.ru : L.standard)}${std ? ` · пример <code>${esc(std.example)}</code>` : ""}. Компоновка сгенерирована из оборудования (предложение).</div>
+    <div class="schema">${schema}</div>
+    ${chainHTML(L)}
+    ${shipFaultHTML(s)}
+    <details class="card fullPassport"><summary>Полный инженерный паспорт (баланс, вооружение, замены)</summary>${fullPassport(s)}</details></div></div>`;
+}
+function renderShipFunctional(s) {
   const hullReady = Store.isReady("hull:" + s.id);
   let schema = `<div class="section hull"><div class="secHead"><b>${esc(shipCode(s))}</b> · Корпус / рама</div><div class="mods">
     <div class="modCard${hullReady ? " ready" : ""}"><div class="pic thumb">${shipSilhouette(s)}</div><div class="modBody"><div class="modName">Корпус ${esc(s.name)}</div>

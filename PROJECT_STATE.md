@@ -4344,3 +4344,16 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   set_capsule_survival|on/off, main menu settings dialog (5 locales); the destruction HUD line notes the mode when the
   pilot is alive. The Tin Can-style gameplay itself is NOT built (later slice).
 - EliteGame builds; gates 209: 203 pass / 6 known red / 0 new.
+
+### Design 2026-11-08: damage + maintenance + Tin Can capsule layer - PROPOSAL, NO CODE
+- Author: start on a ship graveyard, buy a Cobra there, it breaks often; the player lives in the cockpit capsule;
+  a nanobot bay restores parts (slow, not free) and a repair drone crawls the hull; reliability grows with repairs
+  until pirates shred the ship; an Army-style technical manual (fault isolation: typical faults, fault codes,
+  corrective actions) per unit and per ship; an isolated, switchable layer. Then: "слой повреждений ещё толком не
+  прорабатывался - может, получится совместить Tin Can и интересный слой повреждений".
+- docs/MAINTENANCE_LAYER_DESIGN.md: one failure-mode catalog for wear AND battle damage (cause -> modes, energy ->
+  stage, hit volume -> unit / part), effects through the existing EquipmentSample fields, BITE fault codes
+  (CAT-NN-stage), repair levels operator / drone / nanobay / yard (Army -10/-20/-30/-40, LRU/SRU), TM generated
+  from data (troubleshooting Malfunction -> Test -> Corrective Action, MAC, parts, PMCS) into the ship reference;
+  draft failure modes for all 34 unit categories. Two layers: the damage model (base, always on) and
+  reliability / junkyard / capsule survival (difficulty, switchable). Open author questions in section 10.

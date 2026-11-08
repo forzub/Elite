@@ -4383,3 +4383,21 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   cascades. Nanites self-replicate from a feedstock (powder / scrap / regolith) to be replenished; the layer
   switches at any time; the start offers several wrecks with different control laws.
 - Gates 209: 203 pass / 6 known red / 0 new.
+
+### Fault catalog by equipment (slice 1: Cobrett-I) + sketch review workflow - 2026-11-09 - BUILT (DATA + REFERENCE), NO GAME CODE
+- Author: "каталог по оборудованию, поскольку оно установлено во многих местах, а потом по совокупности
+  оборудования - для корабля"; "проэкспектируй эскиз и покажи, как будем работать дальше".
+- tools/maintenance/build_fault_catalog.py -> src/assets/data/maintenance/fault_catalog.json + reference
+  fault_data.js: 19 equipment classes (all Cobrett-I N1 / A3 units), 50 failure modes (SRU, causes, BITE signals,
+  per-stage percent effects for the main game, symptoms, upstream / downstream / masks through 8 ship buses,
+  isolation steps with branches, repair by operator / drone / nanobay / yard, PMCS); ship graphs resolved from the
+  BOM (N1 64 edges, A3 61). Reference: "Техническое руководство" on module pages, "Цепочки неисправностей" on ship
+  pages. Gate tests/maintenance/check_fault_catalog.py (deterministic outputs, every isolation path concludes).
+- Sketch workflow: the author's first sketch (CR-1 Vector, stored in Edge IndexedDB, part kb.drive.cr1-vector)
+  reviewed: the sketch follows the passport envelope 5 x 5 x 6.5 m, but the in-game nacelle mesh
+  (assets/models/ships/cobretty-mk1-int/LOD0/ship_engine_L.obj, model in metres) is 8.7 x 2.35 x 2.35 m - the
+  passport geometry is wrong (OPEN: correct the passport to the mesh, author to confirm); no +-75 deg vectoring;
+  chemical bell instead of a magnetic nozzle; camera cluster; floor stand. Review + prompt v2 written to
+  Notes/html/ship_reference/workshop/workshop.json (reviews map, versioned prompts) + the sketch file; the page
+  shows reviews read-only in the sketch window; merge fixed so a note-less record never erases the author's note.
+- Gates 210 (new: tests/maintenance/check_fault_catalog.py): 204 pass / 6 known red / 0 new.

@@ -123,3 +123,14 @@ table.coverage{font-size:12px;min-width:980px}table.coverage td,table.coverage t
 .reviewItem{padding:3px 0 3px 10px;border-left:3px solid #3a5568;margin:3px 0;color:#cbd9e4}
 .reviewItem.ok{border-left-color:#5fbf6a}.reviewItem.fix{border-left-color:#d0a13e}.reviewItem.wrong{border-left-color:#c45a52}
 .reviewNext{margin-top:6px;color:#e6f2fb}
+
+/* technical manual */
+.tm code,.tmMode code{font-family:Consolas,monospace;color:#ffd38a}
+.tmMode{border-top:1px solid #22313f;padding:6px 0}
+.tmMode summary{cursor:pointer}
+.tmBody{padding:6px 0 4px 14px}
+.tmStages{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px;margin:6px 0}
+.tmStages>div{border-left:3px solid #3a5568;padding:4px 8px;background:#101a24;border-radius:4px;font-size:12.5px}
+.tmStages .st-c{border-left-color:#7fa8c4}.tmStages .st-w{border-left-color:#d0a13e}.tmStages .st-f{border-left-color:#c45a52}
+.tmSteps{font-size:12.5px}.tmSteps td{vertical-align:top}
+.bus{color:#9fd0ff}

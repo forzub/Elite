@@ -168,6 +168,79 @@ function partThumb(p) {
   return `<div class="pic thumb">${sketchBox(p)}</div>`;
 }
 
+
+// ---------------------------------------------------------------- technical manual (fault catalog)
+// tools/maintenance/build_fault_catalog.py -> fault_data.js: failure modes per equipment class, a cause graph
+// through the ship's buses (docs/MAINTENANCE_LAYER_DESIGN.md)
+const FD = window.ELITE_FAULT_DATA || null;
+const faultClassOf = (() => { const m = new Map(); if (FD) for (const c of FD.catalog.classes) for (const p of c.applies_to) m.set(p, c); return m; })();
+const faultModeOf = (() => { const m = new Map(); if (FD) for (const c of FD.catalog.classes) for (const x of c.modes) m.set(x.code, { mode: x, cls: c }); return m; })();
+const STAGE_CLASS = { C: "st-c", W: "st-w", F: "st-f" };
+const CAUSE_RU = { wear: "износ", thermal: "перегрев", impact: "удар", laser: "лазер", radiation: "радиация", internal: "внутренний дефект" };
+const KIND_RU = { bite: "BITE", load_test: "тест под нагрузкой", drone_inspect: "осмотр дроном", cross_check: "перекрёстная проверка", swap: "переключение", bench: "анализ" };
+function codeLink(ref) {
+  const code = ref.split("/").pop(), bus = ref.startsWith("bus:") ? ref.slice(4).split("/")[0] : null;
+  const hit = faultModeOf.get(code);
+  const label = esc(code) + (hit ? " " + esc(hit.mode.name_ru) : "");
+  const pid = hit ? hit.cls.applies_to[0] : null;
+  return (bus ? `<span class="bus">${esc(FD.catalog.buses[bus]?.ru || bus)}</span> → ` : "") +
+    (pid ? `<a href="#tm-${esc(code)}" data-tm="${esc(code)}" data-tm-part="${esc(pid)}">${label}</a>` : label);
+}
+function effectText(e) {
+  const parts = [];
+  const f = { func: "функция", sec: "вторичная функция", power: "потребление", heat: "тепло", instab: "нестабильность" };
+  for (const [k, v] of Object.entries(e || {})) parts.push(`${f[k] || k} ${v > 0 ? "+" : ""}${v} %`);
+  return parts.join(", ") || "—";
+}
+function stepNext(n) {
+  if (n == null) return "";
+  if (typeof n === "number") return `шаг ${n}`;
+  if (n.startsWith("=")) return `неисправность ${codeLink(n.slice(1))}`;
+  if (n.startsWith("->bus:")) { const b = n.slice(6); return `искать выше по шине «${esc(FD.catalog.buses[b]?.ru || b)}»`; }
+  return esc(n);
+}
+function manualHTML(p) {
+  const c = faultClassOf.get(p.id);
+  if (!c) return "";
+  const L = FD.catalog.repair_levels, S = FD.catalog.signals;
+  let h = `<div class="card tm"><h3>Техническое руководство · ${esc(c.ru)}</h3>
+    <div class="sub">Класс оборудования <code>${esc(c.id)}</code> — общий для: ${c.applies_to.map(id => esc(partMap.get(id)?.name || id)).join(", ")}.
+    Детали (SRU): ${Object.values(c.srus).map(esc).join(", ")}.</div>`;
+  for (const m of c.modes) {
+    h += `<details class="tmMode" id="tm-${esc(m.code)}"><summary><code>${esc(m.code)}</code> ${esc(m.name_ru)}
+      ${m.false_alarm ? '<span class="badge">ложная тревога</span>' : ""}${m.intermittent ? '<span class="badge">перемежающийся</span>' : ""}
+      <span class="sub">· ${esc(c.srus[m.sru] || m.sru)}</span></summary>
+      <div class="tmBody">
+      <div class="tmStages">${["C", "W", "F"].filter(s => m.symptoms[s] || m.effect[s]).map(s => `<div class="${STAGE_CLASS[s]}"><b>${esc(m.code)}-${s}</b> ${esc(m.symptoms[s] || "")}<div class="sub">в игре: ${effectText(m.effect[s])}</div></div>`).join("")}</div>
+      ${kv("Сигналы BITE", m.signals.map(x => esc(S[x] || x)).join(", "))}
+      ${kv("Причины", m.causes.map(c => esc(CAUSE_RU[c] || c)).join(", "))}
+      ${m.intermittent ? kv("Проявляется", esc(m.intermittent)) : ""}
+      ${m.upstream.length ? kv("Вызывается", m.upstream.map(u => codeLink(u.ref) + ` <span class="sub">×${u.x}</span>`).join("<br>")) : ""}
+      ${m.downstream.length ? kv("Если не устранить", m.downstream.map(d => codeLink(d.ref) + ` <span class="sub">через ~${d.after_h} ч${d.when ? ", " + esc(d.when) : ""}</span>`).join("<br>")) : ""}
+      ${m.masks.length ? kv("Маскирует", m.masks.map(codeLink).join("<br>")) : ""}
+      <h4>Поиск неисправности</h4><table class="tmSteps"><tr><th>Шаг</th><th>Проверка</th><th>Не в норме</th><th>В норме</th></tr>
+      ${m.isolation.map(s => `<tr><td>${s.step}</td><td>${esc(s.test)} <span class="sub">(${esc(KIND_RU[s.kind] || s.kind)}, ${s.minutes} мин${s.needs ? "; " + esc(s.needs) : ""})</span>${s.note ? `<div class="note">${esc(s.note)}</div>` : ""}</td><td>${stepNext(s.if_fail)}</td><td>${stepNext(s.if_ok)}</td></tr>`).join("")}</table>
+      <h4>Устранение</h4>${m.repair.map(r => kv(L[r.level] || r.level, `${esc(r.action)} · ${r.hours} ч${r.nanite_kg ? ` · наниты ${r.nanite_kg} кг` : ""}${r.spare ? ` · ${esc(r.spare)}` : ""}${r.power_mw ? ` · ${r.power_mw} МВт` : ""}${r.note ? ` <span class="sub">(${esc(r.note)})</span>` : ""}`)).join("")}
+      ${m.pmcs ? kv("Профилактика", esc(m.pmcs)) : ""}
+      </div></details>`;
+  }
+  return h + "</div>";
+}
+function shipFaultHTML(s) {
+  const g = FD && FD.ships.find(x => x.id === s.id);
+  if (!g || !g.edges.length) return "";
+  const rows = g.edges.filter(e => e.kind !== "masks").sort((a, b) => a.source.localeCompare(b.source));
+  const masks = g.edges.filter(e => e.kind === "masks");
+  return `<details class="card fullPassport"><summary>Цепочки неисправностей корабля (${g.edges.length} связей из каталога оборудования)</summary>
+    <div class="sub">Граф собран из установленного оборудования и шин корабля. BITE показывает первый вышедший за допуск сигнал;
+    причина может лежать выше по цепочке.</div>
+    <table class="tmSteps"><tr><th>Причина</th><th>Связь</th><th>Следствие</th></tr>
+    ${rows.map(e => `<tr><td>${codeLink(e.source)}</td><td class="sub">${e.kind === "causes" ? `вызывает / ускоряет ×${e.x}` : `повреждает через ~${e.after_h} ч${e.when ? " (" + esc(e.when) + ")" : ""}`}</td><td>${codeLink(e.target)}</td></tr>`).join("")}</table>
+    ${masks.length ? `<h4>Маскирование</h4>${masks.map(e => `<div>${codeLink(e.source)} скрывает ${codeLink(e.target)}</div>`).join("")}` : ""}
+    ${g.uncovered_parts.length ? `<div class="note warnbox">Без каталога отказов: ${g.uncovered_parts.map(esc).join(", ")}</div>` : ""}
+  </details>`;
+}
+
 // ---------------------------------------------------------------- views
 const view = () => {
   const q = new URLSearchParams(location.search);
@@ -269,6 +342,7 @@ function renderShip(s) {
     <div class="mainCol"><div class="crumbs"><a href="?" data-nav>Каталог</a> › ${esc(blocTitle(s.cooperation_group))} › ${esc(mfrName(s.manufacturer))} › <b>${esc(s.name)}</b></div>
     <h2 class="viewTitle">Функциональная схема · ${esc(s.name)}</h2>
     <div class="schema">${schema}</div>
+    ${shipFaultHTML(s)}
     <details class="card fullPassport"><summary>Полный инженерный паспорт (баланс, вооружение, замены)</summary>${fullPassport(s)}</details></div></div>`;
 }
 
@@ -339,6 +413,7 @@ function renderPart(s, p) {
         <button class="btn" id="resetPrompt"${edited ? "" : " disabled"}>Вернуть автоматический</button><span class="sub" id="promptState">${(() => { const i = Store.promptInfo(p.id); return i ? (i.source ? esc(i.source) : "отредактирован") + (i.version ? " · версия " + esc(i.version) : "") : "собран из паспорта"; })()}</span></div>
         <h4>Замены</h4>${kv("Штатная", one(rp.standard, false))}${kv("Внешний / вражеский аналог", one(rp.hostile_or_foreign, true))}</div>
     </div>
+    ${manualHTML(p)}
     <div class="card"><h3>Эскизы</h3>
       <div class="dropZone" data-drop="sketch">Перетащите эскизы сюда, вставьте из буфера (Ctrl+V) или <label class="link">выберите файлы<input type="file" accept="image/*" multiple hidden id="pickFiles"></label></div>
       <div class="gallery">${Store.sketches(p.id).map(sk => `<button class="sketchThumb" data-sketch="${esc(sk.id)}" title="${esc(sk.note || sk.name)}"><div class="pic"><img data-blob="${esc(sk.id)}" alt=""></div><span>${esc(new Date(sk.added).toLocaleString("ru-RU"))}${sk.note ? " · 📝" : ""}</span></button>`).join("") || '<span class="sub">Эскизов пока нет.</span>'}</div>
@@ -478,6 +553,13 @@ function bindView(ship, part) {
     if (e.target.tagName === "INPUT") return;
     e.preventDefault();
     const cb = l.querySelector("input"); cb.checked = !cb.checked; cb.dispatchEvent(new Event("change"));
+  });
+  out.querySelectorAll("a[data-tm]").forEach(a => a.onclick = e => {
+    e.preventDefault();
+    const code = a.dataset.tm, pid = a.dataset.tmPart, here = new URLSearchParams(location.search);
+    const open = () => { const d = document.getElementById("tm-" + code); if (d) { d.open = true; d.scrollIntoView({ block: "start" }); } };
+    if (here.get("part") === pid) open();
+    else { go({ ...(here.get("ship") ? { ship: here.get("ship") } : {}), part: pid }); setTimeout(open, 50); }
   });
   out.querySelectorAll("a[href^='?']").forEach(a => a.onclick = e => {
     if (e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;

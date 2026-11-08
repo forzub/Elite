@@ -4268,3 +4268,23 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
 - Checked by driving headless Chrome over CDP: 2 sketches dropped, note saved and persisted after reload, model-ready
   tick shared on the ship schema, label click inside a card toggles without navigating, scroll restored after reload
   (ship view 700 px, catalog 1200 px). Not checked headless: the folder picker (needs a user gesture).
+
+### Escape capsule outcome at a fatal impact 2026-11-08 - BUILT, 2 LIVE DEV DROPS, NOT AUTHOR-FLOWN
+- Author: "капсула может пережить удар, но выдержит ли внутри тело удар ... штука не хрупкая, но разрушаемая;
+  несгораемая в атмосфере типа земной и более разреженной".
+- navigation/rules/CapsuleRules.h: body limit 50 g (restrained short pulse, Stapp 46 g); surface impact: body g =
+  v_vert^2 / (2 x 6 m) (hull crumple + capsule absorber), the shell crushed above 1000 m/s total; dense-atmosphere
+  breakup: body g = max(drag now, Allen-Eggers ballistic peak v^2 sin(gamma) / (2 e H) while descending); the capsule
+  burns / crushes only in an atmosphere denser than 1.5 x Earth's surface pressure. Only a ship with the detachable
+  "ship_cockpit" (Cobrett-I) carries one; others -> "no capsule".
+- Catalog surface pressure now reaches the server bodies (CelestialBodyDefinition / gravity parameters /
+  GravityBody.surfacePressurePa; Earth 101325, Venus 9.2 MPa, Mars 610). The DRAG model still uses Earth density for
+  every atmosphere (unchanged - a separate decision: it changes every descent / landing).
+- Replicated DynamicMotionState capsuleState (1 alive, 2 pilot killed, 3 capsule destroyed, 4 no capsule) +
+  capsuleBodyG; wire 31 / snapshot 43; HUD appends the outcome to the destruction line; load test counts them.
+- Live DEV (Earth): 40 km at 3 x circular -> breakup 364 g, "капсула цела, пилот погиб" (HUD shown); 300 m drop ->
+  vertical 68 m/s, ship crushed, pilot 39.7 g "капсула цела, пилот жив" (horizontal 461 m/s = Earth's rotation under
+  a body-fixed drop; the body g uses the vertical component only - a simplification).
+- NOT DONE (next slice, needs author input): the capsule separating and flying on its own engine to the nearest
+  inhabited zone with SOS, rescue / tug back / re-dock / repair, stealing an abandoned hull; what the player does
+  after "pilot killed". Gates 209: 203 / 6 known / 0 new.

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "src/game/navigation/rules/CapsuleRules.h"
+
 #include "src/game/navigation/landing/LandingAutopilot.h"
 #include <functional>
 #include "src/game/simulation/ShipRefitSnapshot.h"
@@ -402,7 +404,8 @@ public:
         const std::string& bodyId,
         double radiusMeters,
         double gravitationalParameterM3s2,
-        double atmosphereOuterRadiusMeters
+        double atmosphereOuterRadiusMeters,
+        double surfacePressurePa = 0.0
     );
     void setOrbitalUniverseTimeSeconds(double t);
 
@@ -471,7 +474,8 @@ public:
     void updateShipReferenceFrames(double dt);
     void updateFreeFlights(double dt);
     // an impact beyond survival: the whole ship destroyed (every module), a wreck under physics only
-    void destroyShipOnImpact(EntityId shipId, Ship& ship, std::uint8_t cause, double speedMps, double decelerationG);
+    void destroyShipOnImpact(EntityId shipId, Ship& ship, std::uint8_t cause, double speedMps, double decelerationG,
+                             const game::navigation::capsule::Outcome& capsule);
     void handOverToHub(EntityId shipId, Ship& ship, const std::string& hubId, const glm::dvec3* worldOverride, const glm::dvec3* velOverride);
 
     const game::navigation::HubNavigationFrame* hubNavigationFrame(
@@ -972,6 +976,7 @@ private:
         double gravitationalParameterM3s2 = 0.0;
         // Catalog atmosphere outer radius; equals radiusMeters for airless bodies.
         double atmosphereOuterRadiusMeters = 0.0;
+        double surfacePressurePa = 0.0;
     };
 
     std::unordered_map<std::string, CelestialBodyGravityParameters>

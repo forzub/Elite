@@ -300,6 +300,8 @@ struct CelestialBodyDefinition
 
     // Top of the atmosphere (0 = airless), for navigation and approach.
     double atmosphereOuterRadiusKm = 0.0;
+    // Surface pressure (Pa) from the catalog descriptor (0 = airless / unknown).
+    double surfacePressurePa = 0.0;
     std::string bodyClass;
 
     // Map presentation level derived from physics at catalog load (the

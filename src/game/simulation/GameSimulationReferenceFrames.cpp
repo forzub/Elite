@@ -1028,6 +1028,7 @@ void GameSimulation::rebuildNavigationGravityContext()
         // data); airless bodies carry their physical radius.
         body.atmosphereRadiusMeters =
             std::max(body.radiusMeters, parameters.atmosphereOuterRadiusMeters);
+        body.surfacePressurePa = parameters.surfacePressurePa;
         body.influenceRadiusMeters = 0.0;
 
         m_gravityBodies.push_back(std::move(body));

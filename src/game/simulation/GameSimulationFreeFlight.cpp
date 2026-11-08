@@ -1123,8 +1123,13 @@ void GameSimulation::updateFreeFlights(double dt)
                     // dense layers: deceleration above 1 g - an impact on entry, then heating
                     const bool dense = drag > 9.81;
                     // beyond 30 g (the survivable crush of a surface contact) the hull breaks up
-                    if (drag > 30.0 * 9.81)
-                        destroyShipOnImpact(it->first, *ship, 2, speed, drag / 9.81);
+                    if (drag > 30.0 * 9.81 && motion.destroyedCause == 0)
+                    {
+                        const glm::dvec3 up = glm::normalize(frame.originMeters - primary->centerMeters);
+                        destroyShipOnImpact(it->first, *ship, 2, speed, drag / 9.81,
+                                            game::navigation::capsule::atmosphereBreakup(drag, speed, -glm::dot(v, up) / speed, scaleHeight,
+                                                                                         primary->surfacePressurePa));
+                    }
                     if (dense && !f.insideDenseLayers)
                     {
                         ++motion.freeFlightImpactSerial;
@@ -1230,8 +1235,9 @@ void GameSimulation::updateFreeFlights(double dt)
                     {
                         const bool survivable = !lava && crushG < 30.0 && vHor < 150.0;
                         motion.freeFlightSurfaceState = survivable ? 1 : 2;
-                        if (!survivable)
-                            destroyShipOnImpact(it->first, *ship, 1, glm::length(vg), crushG);
+                        if (!survivable && motion.destroyedCause == 0)
+                            destroyShipOnImpact(it->first, *ship, 1, glm::length(vg), crushG,
+                                                game::navigation::capsule::surfaceImpact(vVert, glm::length(vg)));
                         double hit = survivable ? 0.35 : 1.0;
                         if (survivable && slope >= 25.0)
                             hit = std::max(hit, 0.5);                      // tipped over on the slope
@@ -1360,15 +1366,23 @@ void GameSimulation::updateFreeFlights(double dt)
 }
 
 // re-base a ship into a hub's frame with its actual relative position / velocity (no snap)
-void GameSimulation::destroyShipOnImpact(EntityId shipId, Ship& ship, std::uint8_t cause, double speedMps, double decelerationG)
+void GameSimulation::destroyShipOnImpact(EntityId shipId, Ship& ship, std::uint8_t cause, double speedMps, double decelerationG,
+                                         const game::navigation::capsule::Outcome& capsule)
 {
+    namespace cap = game::navigation::capsule;
     auto& motion = ship.core().transform().motion;
     if (motion.destroyedCause != 0)
         return;
     motion.destroyedCause = cause;
+    // the escape capsule (the cockpit of a small frontier ship): only a ship that carries one
+    const auto* cockpit = ship.core().moduleRuntime().findModule("ship_cockpit");
+    const bool hasCapsule = cockpit && cockpit->detachable;
+    motion.capsuleState = static_cast<std::uint8_t>(hasCapsule ? capsule.state : cap::State::NoCapsule);
+    motion.capsuleBodyG = static_cast<float>(capsule.bodyG);
     std::cerr << "[FreeFlight] ship " << shipId.value << ": DESTROYED - "
               << (cause == 1 ? "surface impact" : "dense atmosphere") << " at " << speedMps << " m/s, " << decelerationG
-              << " g" << std::endl;
+              << " g; " << (hasCapsule ? "capsule: " : "") << cap::stateText(static_cast<cap::State>(motion.capsuleState))
+              << " (pilot " << capsule.bodyG << " g, limit " << cap::BodyLimitG << " g)" << std::endl;
     cancelJump(shipId, static_cast<std::uint8_t>(game::navigation::jump::Refusal::Interrupted));
     motion.jEngine = false;
     motion.jStopping = false;

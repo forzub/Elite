@@ -3294,7 +3294,8 @@ void GameSimulation::setCelestialBodyGravityParameters(
     const std::string& bodyId,
     double radiusMeters,
     double gravitationalParameterM3s2,
-    double atmosphereOuterRadiusMeters
+    double atmosphereOuterRadiusMeters,
+    double surfacePressurePa
 )
 {
     if (systemId < 0 ||
@@ -3311,6 +3312,7 @@ void GameSimulation::setCelestialBodyGravityParameters(
         std::max(0.0, gravitationalParameterM3s2);
     parameters.atmosphereOuterRadiusMeters =
         std::max(parameters.radiusMeters, atmosphereOuterRadiusMeters);
+    parameters.surfacePressurePa = std::max(0.0, surfacePressurePa);
 
     m_celestialBodyGravityParameters[bodyId] =
         parameters;

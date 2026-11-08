@@ -1,5 +1,6 @@
 // SpaceState: Flight HUD and in-session overlays (route planning modal, navigation stress, language, universe time).
 
+#include "src/game/navigation/rules/CapsuleRules.h"
 #include "src/game/presentation/DockingWidgetText.h"
 #include "src/game/docking/model/HexDockFacility.h"
 #include "src/game/navigation/FreeFlightCodes.h"
@@ -2000,10 +2001,21 @@ void SpaceState::renderFreeFlightBanner(const Viewport& viewport)
 
         // terminal warning: losing altitude toward the atmosphere / surface
         std::string warning;
-        if (motion.destroyedCause == 1)
-            warning = "КОРАБЛЬ РАЗРУШЕН: удар о поверхность";
-        else if (motion.destroyedCause == 2)
-            warning = "КОРАБЛЬ РАЗРУШЕН: перегрузка в плотных слоях атмосферы";
+        if (motion.destroyedCause != 0)
+        {
+            namespace cap = game::navigation::capsule;
+            warning = motion.destroyedCause == 1 ? "КОРАБЛЬ РАЗРУШЕН: удар о поверхность" : "КОРАБЛЬ РАЗРУШЕН: перегрузка в плотных слоях атмосферы";
+            const auto cs = static_cast<cap::State>(motion.capsuleState);
+            if (cs != cap::State::None)
+            {
+                char tail[160];
+                if (cs == cap::State::PilotAlive || cs == cap::State::PilotKilled)
+                    std::snprintf(tail, sizeof tail, " · %s (%.0f g, предел %.0f g)", cap::stateText(cs), motion.capsuleBodyG, cap::BodyLimitG);
+                else
+                    std::snprintf(tail, sizeof tail, " · %s", cap::stateText(cs));
+                warning += tail;
+            }
+        }
         else if (motion.freeFlightSurfaceState == 2)
             warning = "КРУШЕНИЕ: удар о поверхность";
         else if (motion.freeFlightSurfaceState == 1)

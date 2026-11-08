@@ -125,6 +125,11 @@ struct DynamicMotionState
     // 1 a surface impact beyond survival, 2 the dense atmosphere at a deceleration beyond
     // survival (> 30 g); the hull is a wreck - no pilot, no control, no J, no jump
     std::uint8_t destroyedCause = 0;
+    // the escape capsule at the destruction (navigation/rules/CapsuleRules.h capsule::State): 0 none,
+    // 1 capsule intact - pilot alive, 2 capsule intact - pilot killed, 3 capsule destroyed, 4 no capsule;
+    // capsuleBodyG = the deceleration the pilot took
+    std::uint8_t capsuleState = 0;
+    float capsuleBodyG = 0.0f;
     // terrain / sea surface height above the body radius under the ship
     // (the renderer's surface field; 0 until it is loaded or far above it)
     double freeFlightGroundHeightM = 0.0;

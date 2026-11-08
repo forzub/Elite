@@ -2071,6 +2071,7 @@ int runLoadTest(int perSystem, double measureSeconds, bool move)
         int freeFlight = 0;
         int present = 0;
         int destroyed[3] {};
+        int capsule[5] {};
         for (const auto& s : snap.ships)
         {
             const auto it = botByShip.find(s.id.value);
@@ -2090,6 +2091,7 @@ int runLoadTest(int perSystem, double measureSeconds, bool move)
             if (s.transform.motion.freeFlight)
                 ++freeFlight;
             ++destroyed[std::min<int>(2, s.transform.motion.destroyedCause)];
+            ++capsule[std::min<int>(4, s.transform.motion.capsuleState)];
         }
         if (!report)
             return;
@@ -2102,7 +2104,9 @@ int runLoadTest(int perSystem, double measureSeconds, bool move)
         std::cerr << "[LoadTest] t=" << at << " s: " << present << " of " << bots.size() << " player ships in " << perSys.size()
                   << " systems; normal flight " << freeFlight << "; charging " << jumpStates[1] << ", charged-waiting " << jumpStates[2]
                   << ", exiting " << jumpStates[3] << "; jumps requested " << requested << ", done " << done
-                  << "; destroyed " << destroyed[1] + destroyed[2] << " (surface " << destroyed[1] << ", atmosphere " << destroyed[2] << ")\n";
+                  << "; destroyed " << destroyed[1] + destroyed[2] << " (surface " << destroyed[1] << ", atmosphere " << destroyed[2]
+                  << "; capsule: pilot alive " << capsule[1] << ", pilot killed " << capsule[2] << ", capsule destroyed " << capsule[3]
+                  << ", no capsule " << capsule[4] << ")\n";
     };
     observe(false, 0.0);
     const auto wallStart = std::chrono::steady_clock::now();

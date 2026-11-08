@@ -20,6 +20,7 @@ struct GravityBody
     double gravitationalParameterM3s2 = 0.0;
 
     double atmosphereRadiusMeters = 0.0;
+    double surfacePressurePa = 0.0;   // catalog surface pressure (0 = airless / unknown)
     double influenceRadiusMeters = 0.0;
 };
 

@@ -1711,7 +1711,10 @@ CelestialBodyDefinition bodyFromGenerated(const json& b)
     body.orbitInParentEquator = kind == "moon";
     body.environmentPresetId = b.value("environment_preset_id", std::string());
     if (b.contains("atmosphere"))
+    {
         body.atmosphereOuterRadiusKm = b["atmosphere"].value("outer_radius_km", 0.0);
+        body.surfacePressurePa = b["atmosphere"].value("surface_pressure_pa", 0.0);
+    }
 
     // Orientation through the shared orientation reader; authored visual keys win.
     const json spin = b.value("spin", json::object());

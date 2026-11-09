@@ -4482,3 +4482,8 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   the new sky's stars burst out of the centre and brake into place (0.4..1). Live D:/tmp/elite_jfx6: both phases
   outward.
 - Next: author's look review in a live flight; real audio backend for the hum; beacon runtime to replace the lock proxy.
+
+### Ship reference: identical compartments as one stacked card (author 2026-11-09) - DONE
+- app.js renderShipLayout groups compartments with the same content (key + parts / qty / class letters): one card
+  with all designators (`=OF38+1, =OF38+2, =OF38+3 · двигательный отсек ×3`), frames drawn behind it (one for x2, two
+  for x3+). 37 of 53 ships have such stacks. render_check: 53 ships, 0 problems; headless Chrome checked (SL-12).

@@ -380,8 +380,22 @@ function renderShipLayout(s, L) {
     <div class="modCard${hullReady ? " ready" : ""}"><div class="pic thumb">${shipSilhouette(s)}</div><div class="modBody"><div class="modName">Корпус ${esc(s.name)}</div>
     <div class="modSub">${esc((s.frame?.envelope_m || []).map(fmt).join(" × "))} м · ${esc(s.frame?.form || "")} · паспорт рамы отложен</div>
     <label class="ready"><input type="checkbox" data-ready="hull:${esc(s.id)}"${hullReady ? " checked" : ""}> модель готова</label></div></div></div></div>`;
-  for (const c of L.compartments)
-    schema += `<div class="section"><div class="secHead"><b>${esc(c.des)}</b> · ${esc(c.ru)}</div><div class="mods">${c.children.map(n => layoutCard(s, n)).join("")}</div></div>`;
+  // identical compartments (e.g. the propulsion bays) are drawn once, as a stack: frames behind
+  // the card show how many there are (author 2026-11-09)
+  const sig = c => c.key + "|" + c.children.map(n => `${n.part}:${n.qty || 1}:${n.cls}`).join(",");
+  const groups = [];
+  for (const c of L.compartments) {
+    const g = groups.find(x => x.sig === sig(c));
+    if (g) g.list.push(c); else groups.push({ sig: sig(c), list: [c] });
+  }
+  for (const g of groups) {
+    const c = g.list[0], n = g.list.length;
+    const name = n > 1 ? c.ru.replace(/\s*\d+$/, "") : c.ru;
+    const head = n > 1
+      ? `<b>${g.list.map(x => esc(x.des)).join(", ")}</b> · ${esc(name)} <span class="stackN">×${n}</span><div class="sub">показан ${esc(c.des)}; остальные такие же, обозначения деталей - с заменой номера отсека</div>`
+      : `<b>${esc(c.des)}</b> · ${esc(c.ru)}`;
+    schema += `<div class="section${n > 1 ? " stacked" + (n > 2 ? " stacked3" : "") : ""}"><div class="secHead">${head}</div><div class="mods">${c.children.map(x => layoutCard(s, x)).join("")}</div></div>`;
+  }
   return `<div class="shipView"><aside class="side">${shipBrief(s)}</aside>
     <div class="mainCol"><div class="crumbs"><a href="?" data-nav>Каталог</a> › ${esc(blocTitle(s.cooperation_group))} › ${esc(mfrName(s.manufacturer))} › <b>${esc(s.name)}</b></div>
     <h2 class="viewTitle">Компоновка · ${esc(s.name)}</h2>

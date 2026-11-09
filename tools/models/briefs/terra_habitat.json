@@ -1,0 +1,164 @@
+{
+ "manufacturer": {
+  "id": "mfr.terra_habitat",
+  "name": "Terra Habitat",
+  "polity": "sol_authority",
+  "kind": "corporation",
+  "groups": [
+   "habitat_cabins",
+   "agro_life_modules",
+   "life_support"
+  ],
+  "plant": "industrial_hub",
+  "plants": [
+   "plant.000.terra_habitat.geo"
+  ]
+ },
+ "parts": [
+  {
+   "id": "terra.ls.t10",
+   "cat": "life_support",
+   "mfr": "mfr.terra_habitat",
+   "name": "Terra Habitat ЖО T-10",
+   "model": "T-10",
+   "mass_t": 4,
+   "price_cr": 45000,
+   "persons": 10,
+   "days": 60,
+   "power_mw": 0.2,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.793,
+     1.596,
+     1.995
+    ],
+    "service_clearance_m": [
+     3.13,
+     1.79,
+     2.23
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "life_support",
+    "ru": "система жизнеобеспечения",
+    "srus": {
+     "scrubber": "поглотитель CO2",
+     "o2": "генератор O2",
+     "water": "регенерация воды",
+     "fan": "вентиляция"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-120",
+    "sol.ship.gt-3000.titan",
+    "sol.ship.st-6.masterovoy",
+    "sol.ship.pk-30.strazh",
+    "ofu.ship.ocs-4j.strizh",
+    "sol.ship.gt-3000p.poputchik",
+    "tianhe.ship.ts-6.dozor",
+    "bharat.ship.pk-30b.rakshak"
+   ]
+  },
+  {
+   "id": "terra.ls.t200",
+   "cat": "life_support",
+   "mfr": "mfr.terra_habitat",
+   "name": "Terra Habitat ЖО T-200 (флот)",
+   "model": "T-200",
+   "mass_t": 70,
+   "price_cr": 3000000,
+   "persons": 200,
+   "days": 200,
+   "power_mw": 4,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     7.25,
+     4.143,
+     5.179
+    ],
+    "service_clearance_m": [
+     8.12,
+     4.64,
+     5.8
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "life_support",
+    "ru": "система жизнеобеспечения",
+    "srus": {
+     "scrubber": "поглотитель CO2",
+     "o2": "генератор O2",
+     "water": "регенерация воды",
+     "fan": "вентиляция"
+    }
+   },
+   "installed_on": [
+    "bastion.ship.b-90.tsitadel",
+    "sol.ship.gt-3000p.poputchik",
+    "harmony.ship.he-120p.chunyun"
+   ]
+  },
+  {
+   "id": "terra.ls.t60",
+   "cat": "life_support",
+   "mfr": "mfr.terra_habitat",
+   "name": "Terra Habitat ЖО T-60 (флот)",
+   "model": "T-60",
+   "mass_t": 22,
+   "price_cr": 700000,
+   "persons": 60,
+   "days": 200,
+   "power_mw": 1.2,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     4.929,
+     2.817,
+     3.521
+    ],
+    "service_clearance_m": [
+     5.52,
+     3.16,
+     3.94
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "life_support",
+    "ru": "система жизнеобеспечения",
+    "srus": {
+     "scrubber": "поглотитель CO2",
+     "o2": "генератор O2",
+     "water": "регенерация воды",
+     "fan": "вентиляция"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-t12.lokomotiv",
+    "harmony.ship.he-t12c.tanker",
+    "harmony.ship.he-f22.dun",
+    "harmony.ship.he-s240.tylovik",
+    "sol.ship.pao-7.shchit",
+    "harmony.ship.he-120p.chunyun",
+    "stone.ship.he-120r.brodyaga",
+    "harmony.ship.he-t8.yishan"
+   ]
+  }
+ ]
+}

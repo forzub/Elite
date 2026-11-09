@@ -1,0 +1,356 @@
+{
+ "manufacturer": {
+  "id": "mfr.cobretty",
+  "name": "Cobretty Corporation",
+  "polity": "hd20794_hellas2",
+  "kind": "corporation",
+  "groups": [
+   "hull_structure",
+   "reactor",
+   "main_drive",
+   "rcs",
+   "cargo_modules"
+  ],
+  "plant": "industrial_hub",
+  "plants": [
+   "plant.014.cobretty.k3_yard",
+   "plant.014.cobretty.k3_works"
+  ],
+  "note": "Cobrett-I (рантайм: kb.ship.cobrett-i.*, «Cobretty Corporation»); ядра — по лицензии Когниума; модули C20 / P20"
+ },
+ "parts": [
+  {
+   "id": "kb.apu.s150",
+   "cat": "service_reactor",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty SR-150",
+   "model": "SR-150",
+   "mass_t": 12,
+   "price_cr": 160000,
+   "mwe": 150,
+   "eff": 0.45,
+   "overhaul_h": 40000,
+   "life_h": 80000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.76,
+     1.76,
+     1.76
+    ],
+    "service_clearance_m": [
+     1.97,
+     1.97,
+     1.97
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "apu.fusion",
+    "ru": "служебный реактор (ВСУ)",
+    "srus": {
+     "cells": "энергоячейки",
+     "starter": "стартёр",
+     "regulator": "регулятор шины",
+     "sensor": "датчики"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu.n1",
+    "kb.ship.cobrett-i.frnu-inta.a3",
+    "hyp.ship.r-7.argus",
+    "hyp.ship.l-900.piligrim",
+    "kb.ship.cobrett-i.frnu-inta.a3p",
+    "hyp.ship.f-900.atlas",
+    "stone.ship.kb-r.stinger"
+   ]
+  },
+  {
+   "id": "kb.cool.loop200",
+   "cat": "coolant_loop",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty coolant loop + pump (180 MW)",
+   "model": "CL-180",
+   "mass_t": 3,
+   "price_cr": 40000,
+   "capacity_mw": 180,
+   "pump_mw": 2,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.466,
+     1.233,
+     1.233
+    ],
+    "service_clearance_m": [
+     2.76,
+     1.38,
+     1.38
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "coolant.loop",
+    "ru": "контур охлаждения с насосом",
+    "srus": {
+     "pump": "насос",
+     "pipes": "магистрали",
+     "valves": "клапаны распределения",
+     "fluid": "теплоноситель"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu.n1",
+    "kb.ship.cobrett-i.frnu-inta.a3",
+    "bastion.ship.b-4.sokol",
+    "hyp.ship.r-7.argus",
+    "hyp.ship.l-900.piligrim",
+    "kb.ship.cobrett-i.frnu-inta.a3p",
+    "aux.craft.boarding-boat",
+    "hyp.ship.f-900.atlas"
+   ]
+  },
+  {
+   "id": "kb.drive.n1-axial",
+   "cat": "drive",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty N1 Axial Main Drive",
+   "model": "N1-AX",
+   "mass_t": 14,
+   "price_cr": 380000,
+   "thrust_mn": 9.56,
+   "input_mw": 4850,
+   "eff": 0.9855,
+   "gimbal_deg": 4,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "runtime_preset": "elite.engine.kobra.n1-axial.v1",
+   "existing": true,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     5,
+     5,
+     6.5
+    ],
+    "service_clearance_m": [
+     5.6,
+     5.6,
+     7.28
+    ],
+    "nozzle_or_emitter_diameter_m": 5,
+    "anchor": "Cobrett N1/CR-1 common-family scale",
+    "basis": [
+     "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+    ]
+   },
+   "fault_class": {
+    "id": "drive.field",
+    "ru": "полевой главный двигатель",
+    "srus": {
+     "field_ctl": "блок управления полем (фазировка поля, вектор тяги)",
+     "coil": "сегменты кольца полевых катушек",
+     "pad": "охлаждающий пятак двигателя (сменные секции)",
+     "hx": "резервный теплообменник (включается при повреждённом пятаке)",
+     "busbar": "силовой ввод с шины реактора (во фланце)",
+     "sensor": "датчики температуры, поля и тяги"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu.n1",
+    "hyp.ship.r-7.argus",
+    "hyp.ship.l-900.piligrim",
+    "hyp.ship.f-900.atlas",
+    "stone.ship.kb-r.stinger"
+   ]
+  },
+  {
+   "id": "kb.rad.cs-panel",
+   "cat": "radiator",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty C-SiC radiator panel set (10 m2)",
+   "model": "RP-10",
+   "mass_t": 0.12,
+   "price_cr": 3500,
+   "area_m2": 10,
+   "temp_k": 1050,
+   "eps": 0.9,
+   "material": "elite.material.radiator.c-sic.v1",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.24,
+     0.15,
+     4.47
+    ],
+    "deployed_area_m2": 10,
+    "service_clearance_m": [
+     2.35,
+     0.5,
+     4.7
+    ],
+    "basis": [
+     "panel face area equals declared radiating area; thickness is service envelope"
+    ]
+   },
+   "fault_class": {
+    "id": "radiator.panel",
+    "ru": "панели радиатора",
+    "srus": {
+     "panel": "излучающая панель",
+     "hinge": "привод раскрытия",
+     "manifold": "коллектор теплоносителя"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu.n1",
+    "kb.ship.cobrett-i.frnu-inta.a3",
+    "bastion.ship.b-4.sokol",
+    "hyp.ship.r-7.argus",
+    "hyp.ship.l-900.piligrim",
+    "kb.ship.cobrett-i.frnu-inta.a3p",
+    "aux.craft.boarding-boat",
+    "hyp.ship.f-900.atlas"
+   ]
+  },
+  {
+   "id": "kb.rcs.fc-nozzle",
+   "cat": "rcs",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty field-coupled RCS nozzle",
+   "model": "FC-RCS",
+   "mass_t": 0.4,
+   "price_cr": 5000,
+   "thrust_mn": 0.5,
+   "input_mw": 20,
+   "eff": 0.94,
+   "runtime_preset": "cobra.rcs.electric.fixed.v1",
+   "existing": true,
+   "overhaul_h": 20000,
+   "life_h": 40000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     0.737,
+     0.737,
+     0.737
+    ],
+    "service_clearance_m": [
+     0.83,
+     0.83,
+     0.83
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "rcs.thruster",
+    "ru": "полевое маневровое сопло / кластер RCS",
+    "srus": {
+     "driver": "силовой ключ импульсов",
+     "coil": "катушка поля сопла",
+     "emitter": "излучатель тепла сопла"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu.n1",
+    "aux.craft.boarding-boat",
+    "stone.ship.kb-r.stinger"
+   ]
+  },
+  {
+   "id": "kb.surv.capsule2",
+   "cat": "escape_capsule",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty катапультируемая капсула кабины (2 места)",
+   "model": "EC-2",
+   "mass_t": 2.5,
+   "price_cr": 40000,
+   "seats": 2,
+   "existing": true,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.926,
+     1.926,
+     2.696
+    ],
+    "service_clearance_m": [
+     2.16,
+     2.16,
+     3.02
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "escape_capsule",
+    "ru": "спасательная капсула (катапультируемая кабина)",
+    "srus": {
+     "pyro": "пиропатроны отстрела",
+     "battery": "батарея капсулы",
+     "beacon": "маяк SOS",
+     "seal": "уплотнение люка"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu.n1",
+    "kb.ship.cobrett-i.frnu-inta.a3",
+    "bastion.ship.b-4.sokol",
+    "kb.ship.cobrett-i.frnu-inta.a3p",
+    "stone.ship.kb-r.stinger"
+   ]
+  },
+  {
+   "id": "kb.wpn.pd1",
+   "cat": "weapon",
+   "mfr": "mfr.cobretty",
+   "name": "Cobretty PD-1 оборонительная турель",
+   "model": "PD-1",
+   "mass_t": 1.5,
+   "price_cr": 120000,
+   "kind": "point_defence",
+   "power_mw": 3,
+   "overhaul_h": 30000,
+   "life_h": 60000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.25,
+     0.75,
+     2
+    ],
+    "service_clearance_m": [
+     1.4,
+     0.84,
+     2.24
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "weapon.pd",
+    "ru": "лазерная турель ПРО",
+    "srus": {
+     "emitter": "излучатель",
+     "mount": "привод наведения"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu.n1",
+    "kb.ship.cobrett-i.frnu-inta.a3",
+    "kb.ship.cobrett-i.frnu-inta.a3p",
+    "stone.ship.kb-r.stinger"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,118 @@
+{
+ "manufacturer": {
+  "id": "mfr.sol_reactor",
+  "name": "Sol Reactor Works",
+  "polity": "sol_authority",
+  "kind": "corporation",
+  "groups": [
+   "reactor",
+   "reactor_modules",
+   "thermal",
+   "he3_separators"
+  ],
+  "plant": "industrial_hub",
+  "plants": [
+   "plant.000.sol_reactor.canaveral",
+   "plant.000.sol_reactor.tranquillitatis"
+  ],
+  "note": "атлантическая школа (наследник США): исследования и опытные образцы на Канаверале, серия реакторов - на Луне у гелия-3"
+ },
+ "parts": [
+  {
+   "id": "srw.apu.s200",
+   "cat": "service_reactor",
+   "mfr": "mfr.sol_reactor",
+   "name": "Sol Reactor Works S-200",
+   "model": "S-200",
+   "mass_t": 16,
+   "price_cr": 220000,
+   "mwe": 200,
+   "eff": 0.45,
+   "overhaul_h": 40000,
+   "life_h": 80000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.937,
+     1.937,
+     1.937
+    ],
+    "service_clearance_m": [
+     2.17,
+     2.17,
+     2.17
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "apu.fusion",
+    "ru": "служебный реактор (ВСУ)",
+    "srus": {
+     "cells": "энергоячейки",
+     "starter": "стартёр",
+     "regulator": "регулятор шины",
+     "sensor": "датчики"
+    }
+   },
+   "installed_on": [
+    "sol.ship.pk-30.strazh",
+    "sol.ship.pao-7.shchit",
+    "bharat.ship.t-5000.iskhod",
+    "bharat.ship.f-120.prahari",
+    "sol.ship.ff-3000.gagarin",
+    "stone.ship.t-5000r.hive"
+   ]
+  },
+  {
+   "id": "srw.apu.s60",
+   "cat": "service_reactor",
+   "mfr": "mfr.sol_reactor",
+   "name": "Sol Reactor Works S-60",
+   "model": "S-60",
+   "mass_t": 6,
+   "price_cr": 70000,
+   "mwe": 60,
+   "eff": 0.45,
+   "overhaul_h": 40000,
+   "life_h": 80000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.397,
+     1.397,
+     1.397
+    ],
+    "service_clearance_m": [
+     1.56,
+     1.56,
+     1.56
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "apu.fusion",
+    "ru": "служебный реактор (ВСУ)",
+    "srus": {
+     "cells": "энергоячейки",
+     "starter": "стартёр",
+     "regulator": "регулятор шины",
+     "sensor": "датчики"
+    }
+   },
+   "installed_on": [
+    "ofu.ship.ocs-4.lastochka",
+    "ofu.ship.sl-12.podyomnik",
+    "bharat.ship.c-120.konveyer",
+    "sol.ship.gt-3000.titan",
+    "stone.ship.kamen.tanker",
+    "kern.ship.ht-20k.mul",
+    "sol.ship.st-6.masterovoy",
+    "bastion.ship.b-4.sokol"
+   ]
+  }
+ ]
+}

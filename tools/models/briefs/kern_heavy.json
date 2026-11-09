@@ -1,0 +1,292 @@
+{
+ "manufacturer": {
+  "id": "mfr.kern_heavy",
+  "name": "Kern Heavy Mining",
+  "polity": "cyg61_kern",
+  "kind": "corporation",
+  "groups": [
+   "drill_heads",
+   "ore_processors",
+   "mass_drivers",
+   "tug_drives",
+   "shielding"
+  ],
+  "plant": "mining_hub",
+  "plants": [
+   "plant.031.kern.deep_dock"
+  ],
+  "note": "горное оборудование и рудные буксиры; танкеры и склады в выдолбленных астероидах"
+ },
+ "parts": [
+  {
+   "id": "kern.drive.kt1",
+   "cat": "drive",
+   "mfr": "mfr.kern_heavy",
+   "name": "Kern KT-1 Tug Drive",
+   "model": "KT-1",
+   "mass_t": 2.5,
+   "price_cr": 100000,
+   "thrust_mn": 1,
+   "input_mw": 750,
+   "eff": 0.982,
+   "gimbal_deg": 8,
+   "overhaul_h": 40000,
+   "life_h": 70000,
+   "notes": "тихоходный, ресурсный: буксировка неделями",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.82,
+     2.82,
+     3.66
+    ],
+    "service_clearance_m": [
+     3.16,
+     3.16,
+     4.1
+    ],
+    "nozzle_or_emitter_diameter_m": 2.82,
+    "anchor": "scaled by installed mass",
+    "basis": [
+     "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+    ]
+   },
+   "fault_class": {
+    "id": "drive.field",
+    "ru": "полевой главный двигатель",
+    "srus": {
+     "field_ctl": "блок управления полем (фазировка поля, вектор тяги)",
+     "coil": "сегменты кольца полевых катушек",
+     "pad": "охлаждающий пятак двигателя (сменные секции)",
+     "hx": "резервный теплообменник (включается при повреждённом пятаке)",
+     "busbar": "силовой ввод с шины реактора (во фланце)",
+     "sensor": "датчики температуры, поля и тяги"
+    }
+   },
+   "installed_on": [
+    "kern.ship.ht-20k.mul",
+    "kern.ship.ht-20k-d.krot",
+    "aux.craft.boarding-boat",
+    "bharat.ship.h-20.majdoor",
+    "bastion.ship.b-20g.hulken"
+   ]
+  },
+  {
+   "id": "kern.md.impactor",
+   "cat": "weapon",
+   "mfr": "mfr.kern_heavy",
+   "name": "Kern пусковая ударников МД-40 (масс-драйвер)",
+   "model": "МД-40",
+   "mass_t": 90,
+   "price_cr": 3750000,
+   "kind": "mass_driver",
+   "power_mw": 400,
+   "notes": "гражданское двойное назначение: отклонение и дробление камней",
+   "overhaul_h": 30000,
+   "life_h": 60000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     4.894,
+     2.936,
+     7.83
+    ],
+    "service_clearance_m": [
+     5.48,
+     3.29,
+     8.77
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "weapon.mass_driver",
+    "ru": "масс-драйвер ударников",
+    "srus": {
+     "coil": "разгонные катушки",
+     "feed": "подача ударников"
+    }
+   },
+   "installed_on": [
+    "sol.ship.pao-7.shchit"
+   ]
+  },
+  {
+   "id": "kern.radar.deb5",
+   "cat": "radar",
+   "mfr": "mfr.kern_heavy",
+   "name": "Kern радар обломков DR-5 (5 000 км)",
+   "model": "DR-5",
+   "mass_t": 3,
+   "price_cr": 220000,
+   "range_km": 5000,
+   "power_mw": 2,
+   "runtime_backend": "TestIdeal",
+   "overhaul_h": 40000,
+   "life_h": 90000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.778,
+     1.111,
+     2.778
+    ],
+    "service_clearance_m": [
+     3.11,
+     1.24,
+     3.11
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "radar",
+    "ru": "радар / антенная решётка",
+    "srus": {
+     "array": "передающие модули решётки",
+     "rx": "приёмник"
+    }
+   },
+   "installed_on": [
+    "stone.ship.kamen.tanker",
+    "kern.ship.ht-20k.mul",
+    "sol.ship.pao-7.shchit",
+    "stone.ship.kamen-s.salvage",
+    "kern.ship.ht-20k-d.krot",
+    "bharat.ship.h-20.majdoor",
+    "bastion.ship.b-20g.hulken"
+   ]
+  },
+  {
+   "id": "kern.tow.heavy",
+   "cat": "tow_rig",
+   "mfr": "mfr.kern_heavy",
+   "name": "Kern тяжёлый захват (обломки, камни)",
+   "model": "TR-H",
+   "mass_t": 80,
+   "price_cr": 600000,
+   "tow_t": 50000,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     5.623,
+     5.623,
+     2.109
+    ],
+    "service_clearance_m": [
+     6.3,
+     6.3,
+     2.36
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "tow_rig",
+    "ru": "буксирное устройство",
+    "srus": {
+     "clamp": "захваты",
+     "winch": "лебёдка / привод",
+     "frame": "силовая рама"
+    }
+   },
+   "installed_on": [
+    "sol.ship.pao-7.shchit",
+    "stone.ship.kamen-s.salvage"
+   ]
+  },
+  {
+   "id": "kern.tow.raft20k",
+   "cat": "tow_rig",
+   "mfr": "mfr.kern_heavy",
+   "name": "Kern буксирная рама плота (20 000 т)",
+   "model": "TR-20K",
+   "mass_t": 60,
+   "price_cr": 160000,
+   "tow_t": 20000,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     5.109,
+     5.109,
+     1.916
+    ],
+    "service_clearance_m": [
+     5.72,
+     5.72,
+     2.15
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "tow_rig",
+    "ru": "буксирное устройство",
+    "srus": {
+     "clamp": "захваты",
+     "winch": "лебёдка / привод",
+     "frame": "силовая рама"
+    }
+   },
+   "installed_on": [
+    "kern.ship.ht-20k.mul",
+    "harmony.ship.he-t8.yishan",
+    "bharat.ship.h-20.majdoor"
+   ]
+  },
+  {
+   "id": "kern.mine.cutter",
+   "cat": "mining_rig",
+   "mfr": "mfr.kern_heavy",
+   "name": "Kern добычной комбайн МК-1 (фреза-дробилка, 200 т/ч)",
+   "model": "МК-1",
+   "mass_t": 45,
+   "price_cr": 900000,
+   "power_mw": 30,
+   "throughput_t_h": 200,
+   "overhaul_h": 20000,
+   "life_h": 60000,
+   "status": "PROPOSAL (reference)",
+   "notes": "PROPOSAL (reference): выносная фреза-дробилка на штанге; режет реголит и мелкие тела, подаёт дроблёнку в трюм/полость. Нет в каноне — единственная добычная деталь справочника.",
+   "geometry": {
+    "status": "PROPOSAL (reference)",
+    "envelope_m": [
+     3.9,
+     3.9,
+     2.47
+    ],
+    "service_clearance_m": [
+     4.37,
+     4.37,
+     2.77
+    ],
+    "basis": [
+     "same effective density as kern.tow.heavy (1.2 t/m3)",
+     "drum head on a boom; boom stowed along the hull"
+    ]
+   },
+   "fault_class": {
+    "id": "mining_rig",
+    "ru": "горное оборудование",
+    "srus": {
+     "head": "фрезерная головка",
+     "crusher": "дробилка",
+     "boom": "привод штанги"
+    }
+   },
+   "installed_on": [
+    "stone.ship.kamen-s.salvage",
+    "kern.ship.ht-20k-d.krot",
+    "bastion.ship.b-20g.hulken"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,204 @@
+{
+ "manufacturer": {
+  "id": "mfr.eurohab",
+  "name": "Консорциум «Евро-Хабитат»",
+  "polity": "gj581_europa",
+  "kind": "consortium",
+  "groups": [
+   "agro_life_modules",
+   "life_support",
+   "habitat_cabins"
+  ],
+  "plant": "industrial_hub",
+  "plants": [
+   "plant.010.eurohab.agro"
+  ]
+ },
+ "parts": [
+  {
+   "id": "eurohab.ls.l20",
+   "cat": "life_support",
+   "mfr": "mfr.eurohab",
+   "name": "Евро-Хабитат ЖО L-20",
+   "model": "L-20",
+   "mass_t": 7,
+   "price_cr": 120000,
+   "persons": 20,
+   "days": 90,
+   "power_mw": 0.4,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     3.365,
+     1.923,
+     2.404
+    ],
+    "service_clearance_m": [
+     3.77,
+     2.15,
+     2.69
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "life_support",
+    "ru": "система жизнеобеспечения",
+    "srus": {
+     "scrubber": "поглотитель CO2",
+     "o2": "генератор O2",
+     "water": "регенерация воды",
+     "fan": "вентиляция"
+    }
+   },
+   "installed_on": [
+    "bharat.ship.c-120.konveyer",
+    "stone.ship.kamen.tanker",
+    "kern.ship.ht-20k.mul",
+    "hyp.ship.r-7.argus",
+    "kb.ship.cobrett-i.frnu-inta.a3p",
+    "bharat.ship.c-120t.sahayak",
+    "stone.ship.kamen-s.salvage",
+    "kern.ship.ht-20k-d.krot"
+   ]
+  },
+  {
+   "id": "eurohab.ls.l200",
+   "cat": "life_support",
+   "mfr": "mfr.eurohab",
+   "name": "Евро-Хабитат ЖО L-200 (лайнер)",
+   "model": "L-200",
+   "mass_t": 45,
+   "price_cr": 700000,
+   "persons": 200,
+   "days": 40,
+   "power_mw": 4,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     6.257,
+     3.576,
+     4.47
+    ],
+    "service_clearance_m": [
+     7.01,
+     4.01,
+     5.01
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "life_support",
+    "ru": "система жизнеобеспечения",
+    "srus": {
+     "scrubber": "поглотитель CO2",
+     "o2": "генератор O2",
+     "water": "регенерация воды",
+     "fan": "вентиляция"
+    }
+   },
+   "installed_on": [
+    "hyp.ship.l-900.piligrim"
+   ]
+  },
+  {
+   "id": "eurohab.ls.l4",
+   "cat": "life_support",
+   "mfr": "mfr.eurohab",
+   "name": "Евро-Хабитат ЖО L-4 (4 чел.)",
+   "model": "L-4",
+   "mass_t": 2,
+   "price_cr": 35000,
+   "persons": 4,
+   "days": 60,
+   "power_mw": 0.08,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.216,
+     1.267,
+     1.583
+    ],
+    "service_clearance_m": [
+     2.48,
+     1.42,
+     1.77
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "life_support",
+    "ru": "система жизнеобеспечения",
+    "srus": {
+     "scrubber": "поглотитель CO2",
+     "o2": "генератор O2",
+     "water": "регенерация воды",
+     "fan": "вентиляция"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu.n1",
+    "kb.ship.cobrett-i.frnu-inta.a3",
+    "stone.ship.kb-r.stinger"
+   ]
+  },
+  {
+   "id": "std.med.bay",
+   "cat": "medbay",
+   "mfr": "mfr.eurohab",
+   "name": "Медотсек (4 койки)",
+   "model": "МО-4",
+   "mass_t": 3,
+   "price_cr": 80000,
+   "beds": 4,
+   "power_mw": 0.05,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     3.476,
+     1.738,
+     2.483
+    ],
+    "service_clearance_m": [
+     3.89,
+     1.95,
+     2.78
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "medbay",
+    "ru": "медотсек",
+    "srus": {
+     "autodoc": "автодок",
+     "steril": "стерилизация"
+    }
+   },
+   "installed_on": [
+    "sol.ship.st-6.masterovoy",
+    "sol.ship.pk-30.strazh",
+    "harmony.ship.he-f22.dun",
+    "bastion.ship.b-90.tsitadel",
+    "hyp.ship.r-7.argus",
+    "harmony.ship.he-s240.tylovik",
+    "sol.ship.pao-7.shchit",
+    "hyp.ship.l-900.piligrim"
+   ]
+  }
+ ]
+}

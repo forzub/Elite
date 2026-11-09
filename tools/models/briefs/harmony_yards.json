@@ -1,0 +1,364 @@
+{
+ "manufacturer": {
+  "id": "mfr.harmony_yards",
+  "name": "Верфи Гармонии",
+  "polity": "eps_eri_harmony",
+  "kind": "state_concern",
+  "groups": [
+   "hull_structure",
+   "rotating_rings",
+   "dock_modules",
+   "weapons"
+  ],
+  "plant": "orbital",
+  "plants": [
+   "plant.009.harmony.yard1",
+   "plant.009.harmony.yard2"
+  ],
+  "note": "крупнейший концерн Пакта; стандартные корпуса «Хэ» для всего блока; сборка ядер из запечатанных блоков Когниума"
+ },
+ "parts": [
+  {
+   "id": "harmony.bay.hangar2",
+   "cat": "hangar",
+   "mfr": "mfr.harmony_yards",
+   "name": "Ангар перехватчиков (2 места)",
+   "model": "АП-2",
+   "mass_t": 160,
+   "price_cr": 1500000,
+   "craft_slots": 2,
+   "craft": "interceptor",
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "craft_ship": "bastion.ship.b-4.sokol",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     10.079,
+     5.04,
+     12.599
+    ],
+    "service_clearance_m": [
+     11.29,
+     5.64,
+     14.11
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "bay",
+    "ru": "ангар / отсек катера / отсек дронов",
+    "srus": {
+     "doors": "створки",
+     "cradle": "люльки и направляющие",
+     "charger": "заправка / зарядка аппаратов"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-s240.tylovik"
+   ]
+  },
+  {
+   "id": "harmony.core.h12",
+   "cat": "jump_core",
+   "mfr": "mfr.harmony_yards",
+   "name": "Гармония Х-12",
+   "model": "Х-12",
+   "mass_t": 80,
+   "price_cr": 10500000,
+   "rating_t": 12000,
+   "sealed": true,
+   "overhaul_h": 60000,
+   "life_h": 120000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     3.175,
+     3.175,
+     3.175
+    ],
+    "service_clearance_m": [
+     3.56,
+     3.56,
+     3.56
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "jump_core",
+    "ru": "ядро прыжка (неразборный узел)",
+    "srus": {
+     "field": "эмиттер поля",
+     "damper": "демпферы лотосита",
+     "seal": "пломбы и контроль вскрытия"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-s240.tylovik"
+   ]
+  },
+  {
+   "id": "harmony.core.h5",
+   "cat": "jump_core",
+   "mfr": "mfr.harmony_yards",
+   "name": "Гармония Х-5 (сборка из блоков Когниума)",
+   "model": "Х-5",
+   "mass_t": 38,
+   "price_cr": 3600000,
+   "rating_t": 5000,
+   "sealed": true,
+   "notes": "запечатанные блоки «Нулевой точки», собранные на Гармонии",
+   "overhaul_h": 60000,
+   "life_h": 120000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.477,
+     2.477,
+     2.477
+    ],
+    "service_clearance_m": [
+     2.77,
+     2.77,
+     2.77
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "jump_core",
+    "ru": "ядро прыжка (неразборный узел)",
+    "srus": {
+     "field": "эмиттер поля",
+     "damper": "демпферы лотосита",
+     "seal": "пломбы и контроль вскрытия"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-120",
+    "harmony.ship.he-f22.dun",
+    "harmony.ship.he-120p.chunyun",
+    "bastion.ship.he-120c.oboz",
+    "stone.ship.he-120r.brodyaga"
+   ]
+  },
+  {
+   "id": "harmony.core.h80",
+   "cat": "jump_core",
+   "mfr": "mfr.harmony_yards",
+   "name": "Гармония Х-80 (тягач поезда)",
+   "model": "Х-80",
+   "mass_t": 320,
+   "price_cr": 22000000,
+   "rating_t": 80000,
+   "sealed": true,
+   "overhaul_h": 60000,
+   "life_h": 120000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     5.04,
+     5.04,
+     5.04
+    ],
+    "service_clearance_m": [
+     5.64,
+     5.64,
+     5.64
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "jump_core",
+    "ru": "ядро прыжка (неразборный узел)",
+    "srus": {
+     "field": "эмиттер поля",
+     "damper": "демпферы лотосита",
+     "seal": "пломбы и контроль вскрытия"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-t12.lokomotiv",
+    "harmony.ship.he-t12c.tanker"
+   ]
+  },
+  {
+   "id": "harmony.mod.cargo4800",
+   "cat": "train_module",
+   "mfr": "mfr.harmony_yards",
+   "name": "Модуль поезда грузовой (4 800 т, 240 C20)",
+   "model": "МП-4800",
+   "mass_t": 400,
+   "price_cr": 900000,
+   "payload_t": 4800,
+   "c20_slots": 240,
+   "overhaul_h": 60000,
+   "life_h": 150000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     14.133,
+     14.133,
+     35.332
+    ],
+    "service_clearance_m": [
+     15.83,
+     15.83,
+     39.57
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "train_module",
+    "ru": "модуль прыжкового поезда",
+    "srus": {
+     "coupler": "сцепка",
+     "locks": "замки груза",
+     "valve": "клапаны налива (цистерна)"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-t12.lokomotiv"
+   ]
+  },
+  {
+   "id": "harmony.mod.tank4200",
+   "cat": "train_module",
+   "mfr": "mfr.harmony_yards",
+   "name": "Модуль поезда-цистерна (4 170 т)",
+   "model": "МЦ-4200",
+   "mass_t": 500,
+   "price_cr": 1000000,
+   "payload_t": 4170,
+   "overhaul_h": 60000,
+   "life_h": 150000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     13.541,
+     13.541,
+     33.852
+    ],
+    "service_clearance_m": [
+     15.17,
+     15.17,
+     37.91
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "train_module",
+    "ru": "модуль прыжкового поезда",
+    "srus": {
+     "coupler": "сцепка",
+     "locks": "замки груза",
+     "valve": "клапаны налива (цистерна)"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-t12c.tanker"
+   ]
+  },
+  {
+   "id": "harmony.wpn.pd3",
+   "cat": "weapon",
+   "mfr": "mfr.harmony_yards",
+   "name": "Гармония турель ПРО ПТ-3",
+   "model": "ПТ-3",
+   "mass_t": 5,
+   "price_cr": 1500000,
+   "kind": "point_defence",
+   "power_mw": 12,
+   "overhaul_h": 30000,
+   "life_h": 60000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.867,
+     1.12,
+     2.988
+    ],
+    "service_clearance_m": [
+     2.09,
+     1.25,
+     3.35
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "weapon.pd",
+    "ru": "лазерная турель ПРО",
+    "srus": {
+     "emitter": "излучатель",
+     "mount": "привод наведения"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-t12.lokomotiv",
+    "harmony.ship.he-t12c.tanker",
+    "harmony.ship.he-f22.dun",
+    "harmony.ship.he-s240.tylovik",
+    "tianhe.ship.ts-6.dozor",
+    "tianhe.ship.b-4t.sokol-t",
+    "tianhe.ship.t416.tianyi",
+    "harmony.ship.he-t8.yishan"
+   ]
+  },
+  {
+   "id": "harmony.wpn.vls8",
+   "cat": "weapon",
+   "mfr": "mfr.harmony_yards",
+   "name": "Гармония пусковая ВПУ-8 (8 ракет)",
+   "model": "ВПУ-8",
+   "mass_t": 24,
+   "price_cr": 4500000,
+   "kind": "missile_cells",
+   "cells": 8,
+   "power_mw": 1,
+   "overhaul_h": 30000,
+   "life_h": 60000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     3.15,
+     1.89,
+     5.04
+    ],
+    "service_clearance_m": [
+     3.53,
+     2.12,
+     5.64
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "weapon.vls",
+    "ru": "вертикальная пусковая установка ракет",
+    "srus": {
+     "hatch": "крышки ячеек",
+     "ignition": "цепь пуска",
+     "cell": "термостатирование ячеек"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-f22.dun",
+    "stone.ship.he-120r.brodyaga"
+   ]
+  }
+ ]
+}

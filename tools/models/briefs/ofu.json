@@ -1,0 +1,409 @@
+{
+ "manufacturer": {
+  "id": "mfr.ofu",
+  "name": "Orbital Freight Union «Ural-Kourou»",
+  "polity": "sol_authority",
+  "kind": "corporation",
+  "groups": [
+   "hull_structure",
+   "main_drive",
+   "reactor",
+   "cargo_modules"
+  ],
+  "plant": "orbital",
+  "plants": [
+   "plant.000.ofu.ural_kourou_yard",
+   "plant.000.ofu.kourou",
+   "plant.000.ofu.wenchang_engines"
+  ],
+  "note": "OCS-4 «Ласточка» и подъёмники (рантайм: ofu.*)"
+ },
+ "parts": [
+  {
+   "id": "ofu.cargo.p20",
+   "cat": "passenger_module",
+   "mfr": "mfr.ofu",
+   "name": "Пассажирский модуль P20 (12 мест, своё ЖО на сутки, отстреливаемый)",
+   "model": "P20",
+   "mass_t": 4.5,
+   "price_cr": 50000,
+   "seats": 12,
+   "ls_persons": 12,
+   "ls_days": 1,
+   "survival_seats": 12,
+   "power_mw": 0.2,
+   "overhaul_h": 60000,
+   "life_h": 150000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     3.61,
+     2.578,
+     5.157
+    ],
+    "service_clearance_m": [
+     4.04,
+     2.89,
+     5.78
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "passenger.cabin",
+    "ru": "пассажирская / жилая секция",
+    "srus": {
+     "seal": "гермоуплотнения люков",
+     "climate": "климат-установка секции",
+     "power": "распределение питания секции"
+    }
+   },
+   "installed_on": [
+    "ofu.ship.sl-12.podyomnik",
+    "tianhe.ship.t421.tianti",
+    "bastion.ship.b-12l.heis"
+   ]
+  },
+  {
+   "id": "ofu.drive.u33",
+   "cat": "drive",
+   "mfr": "mfr.ofu",
+   "name": "Урал-33",
+   "model": "У-33",
+   "mass_t": 6,
+   "price_cr": 260000,
+   "thrust_mn": 3.3,
+   "input_mw": 2400,
+   "eff": 0.984,
+   "gimbal_deg": 6,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     3.77,
+     3.77,
+     4.9
+    ],
+    "service_clearance_m": [
+     4.22,
+     4.22,
+     5.49
+    ],
+    "nozzle_or_emitter_diameter_m": 3.77,
+    "anchor": "scaled by installed mass",
+    "basis": [
+     "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+    ]
+   },
+   "fault_class": {
+    "id": "drive.field",
+    "ru": "полевой главный двигатель",
+    "srus": {
+     "field_ctl": "блок управления полем (фазировка поля, вектор тяги)",
+     "coil": "сегменты кольца полевых катушек",
+     "pad": "охлаждающий пятак двигателя (сменные секции)",
+     "hx": "резервный теплообменник (включается при повреждённом пятаке)",
+     "busbar": "силовой ввод с шины реактора (во фланце)",
+     "sensor": "датчики температуры, поля и тяги"
+    }
+   },
+   "installed_on": [
+    "ofu.ship.ocs-4.lastochka",
+    "sol.ship.gt-3000.titan",
+    "stone.ship.kamen.tanker",
+    "ofu.ship.ocs-4j.strizh",
+    "sol.ship.gt-3000p.poputchik",
+    "stone.ship.kamen-s.salvage",
+    "stone.ship.ocs-4r.bucket"
+   ]
+  },
+  {
+   "id": "ofu.drive.u65m",
+   "cat": "drive",
+   "mfr": "mfr.ofu",
+   "name": "Урал-65М (служебный)",
+   "model": "У-65М",
+   "mass_t": 9,
+   "price_cr": 350000,
+   "thrust_mn": 6.5,
+   "input_mw": 4500,
+   "eff": 0.985,
+   "gimbal_deg": 60,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     4.32,
+     4.32,
+     5.61
+    ],
+    "service_clearance_m": [
+     4.84,
+     4.84,
+     6.28
+    ],
+    "nozzle_or_emitter_diameter_m": 4.32,
+    "anchor": "scaled by installed mass",
+    "basis": [
+     "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+    ]
+   },
+   "fault_class": {
+    "id": "drive.field",
+    "ru": "полевой главный двигатель",
+    "srus": {
+     "field_ctl": "блок управления полем (фазировка поля, вектор тяги)",
+     "coil": "сегменты кольца полевых катушек",
+     "pad": "охлаждающий пятак двигателя (сменные секции)",
+     "hx": "резервный теплообменник (включается при повреждённом пятаке)",
+     "busbar": "силовой ввод с шины реактора (во фланце)",
+     "sensor": "датчики температуры, поля и тяги"
+    }
+   },
+   "installed_on": [
+    "sol.ship.st-6.masterovoy",
+    "sol.ship.pk-30.strazh",
+    "bharat.ship.pk-30b.rakshak",
+    "agora.ship.pk-30a.limenarch",
+    "bharat.ship.c-30.doot",
+    "agora.ship.pc-30ak.akritas"
+   ]
+  },
+  {
+   "id": "ofu.drive.u70",
+   "cat": "drive",
+   "mfr": "mfr.ofu",
+   "name": "Урал-70",
+   "model": "У-70",
+   "mass_t": 11,
+   "price_cr": 1125000,
+   "thrust_mn": 7,
+   "input_mw": 6500,
+   "eff": 0.985,
+   "gimbal_deg": 8,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     4.61,
+     4.61,
+     6
+    ],
+    "service_clearance_m": [
+     5.16,
+     5.16,
+     6.72
+    ],
+    "nozzle_or_emitter_diameter_m": 4.61,
+    "anchor": "scaled by installed mass",
+    "basis": [
+     "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+    ]
+   },
+   "fault_class": {
+    "id": "drive.field",
+    "ru": "полевой главный двигатель",
+    "srus": {
+     "field_ctl": "блок управления полем (фазировка поля, вектор тяги)",
+     "coil": "сегменты кольца полевых катушек",
+     "pad": "охлаждающий пятак двигателя (сменные секции)",
+     "hx": "резервный теплообменник (включается при повреждённом пятаке)",
+     "busbar": "силовой ввод с шины реактора (во фланце)",
+     "sensor": "датчики температуры, поля и тяги"
+    }
+   },
+   "installed_on": [
+    "bharat.ship.c-120.konveyer",
+    "sol.ship.pao-7.shchit",
+    "bharat.ship.t-5000.iskhod",
+    "bharat.ship.c-120t.sahayak",
+    "bharat.ship.f-120.prahari",
+    "sol.ship.ff-3000.gagarin",
+    "stone.ship.t-5000r.hive"
+   ]
+  },
+  {
+   "id": "ofu.drive.u73l",
+   "cat": "drive",
+   "mfr": "mfr.ofu",
+   "name": "Урал-73Л (подъёмный)",
+   "model": "У-73Л",
+   "mass_t": 13,
+   "price_cr": 400000,
+   "thrust_mn": 7.33,
+   "input_mw": 8670,
+   "eff": 0.98,
+   "gimbal_deg": 10,
+   "notes": "форсированный подъёмный двигатель: старт с поверхности при 2.5 g, высокая удельная мощность",
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     4.88,
+     4.88,
+     6.34
+    ],
+    "service_clearance_m": [
+     5.47,
+     5.47,
+     7.1
+    ],
+    "nozzle_or_emitter_diameter_m": 4.88,
+    "anchor": "scaled by installed mass",
+    "basis": [
+     "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+    ]
+   },
+   "fault_class": {
+    "id": "drive.field",
+    "ru": "полевой главный двигатель",
+    "srus": {
+     "field_ctl": "блок управления полем (фазировка поля, вектор тяги)",
+     "coil": "сегменты кольца полевых катушек",
+     "pad": "охлаждающий пятак двигателя (сменные секции)",
+     "hx": "резервный теплообменник (включается при повреждённом пятаке)",
+     "busbar": "силовой ввод с шины реактора (во фланце)",
+     "sensor": "датчики температуры, поля и тяги"
+    }
+   },
+   "installed_on": [
+    "ofu.ship.sl-12.podyomnik"
+   ]
+  },
+  {
+   "id": "ofu.lift.gear",
+   "cat": "landing_gear",
+   "mfr": "mfr.ofu",
+   "name": "Посадочные опоры (4)",
+   "model": "ПО-4",
+   "mass_t": 18,
+   "price_cr": 40000,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.047,
+     2.865,
+     2.047
+    ],
+    "service_clearance_m": [
+     2.29,
+     3.21,
+     2.29
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "landing_gear",
+    "ru": "посадочные опоры",
+    "srus": {
+     "actuator": "привод выпуска",
+     "damper": "амортизатор"
+    }
+   },
+   "installed_on": [
+    "ofu.ship.sl-12.podyomnik",
+    "tianhe.ship.t421.tianti",
+    "bastion.ship.b-12l.heis"
+   ]
+  },
+  {
+   "id": "ofu.lift.shield",
+   "cat": "heat_shield",
+   "mfr": "mfr.ofu",
+   "name": "Теплозащитный экран подъёмника",
+   "model": "ТЗ-12",
+   "mass_t": 30,
+   "price_cr": 180000,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     6.694,
+     0.335,
+     6.694
+    ],
+    "service_clearance_m": [
+     7.5,
+     0.38,
+     7.5
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "heat_shield",
+    "ru": "теплозащитный экран",
+    "srus": {
+     "ablator": "абляционный слой",
+     "tile": "плитки"
+    }
+   },
+   "installed_on": [
+    "ofu.ship.sl-12.podyomnik",
+    "tianhe.ship.t421.tianti",
+    "bastion.ship.b-12l.heis"
+   ]
+  },
+  {
+   "id": "ofu.ls.o4",
+   "cat": "life_support",
+   "mfr": "mfr.ofu",
+   "name": "ОФУ ЖО О-4 (челнок)",
+   "model": "О-4",
+   "mass_t": 1.5,
+   "price_cr": 30000,
+   "persons": 4,
+   "days": 14,
+   "power_mw": 0.06,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.014,
+     1.151,
+     1.438
+    ],
+    "service_clearance_m": [
+     2.26,
+     1.29,
+     1.61
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "life_support",
+    "ru": "система жизнеобеспечения",
+    "srus": {
+     "scrubber": "поглотитель CO2",
+     "o2": "генератор O2",
+     "water": "регенерация воды",
+     "fan": "вентиляция"
+    }
+   },
+   "installed_on": [
+    "ofu.ship.ocs-4.lastochka",
+    "ofu.ship.sl-12.podyomnik",
+    "bastion.ship.b-4.sokol",
+    "tianhe.ship.b-4t.sokol-t",
+    "aux.craft.boarding-boat",
+    "tianhe.ship.t421.tianti",
+    "bastion.ship.b-12l.heis",
+    "stone.ship.ocs-4r.bucket"
+   ]
+  }
+ ]
+}

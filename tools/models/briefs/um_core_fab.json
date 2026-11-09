@@ -1,0 +1,198 @@
+{
+ "manufacturer": {
+  "id": "mfr.um_core_fab",
+  "name": "Фабрика ядер Управления Маяков «Нулевая точка»",
+  "polity": "tau_ceti_cognium",
+  "kind": "state_secret_fab",
+  "groups": [
+   "jump_core"
+  ],
+  "plant": "industrial_hub",
+  "note": "единственный эталонный производитель ядер; переотжиг демпферов лотосита",
+  "plants": [
+   "plant.008.um_core_fab.zero_point"
+  ]
+ },
+ "parts": [
+  {
+   "id": "um.core.z05",
+   "cat": "jump_core",
+   "mfr": "mfr.um_core_fab",
+   "name": "Ядро «Нулевая точка» Я-0.5",
+   "model": "Я-0.5",
+   "mass_t": 6,
+   "price_cr": 610000,
+   "rating_t": 500,
+   "sealed": true,
+   "overhaul_h": 60000,
+   "life_h": 120000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.339,
+     1.339,
+     1.339
+    ],
+    "service_clearance_m": [
+     1.5,
+     1.5,
+     1.5
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "jump_core",
+    "ru": "ядро прыжка (неразборный узел)",
+    "srus": {
+     "field": "эмиттер поля",
+     "damper": "демпферы лотосита",
+     "seal": "пломбы и контроль вскрытия"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu.n1",
+    "kb.ship.cobrett-i.frnu-inta.a3",
+    "kb.ship.cobrett-i.frnu-inta.a3p",
+    "stone.ship.kb-r.stinger"
+   ]
+  },
+  {
+   "id": "um.core.z1",
+   "cat": "jump_core",
+   "mfr": "mfr.um_core_fab",
+   "name": "Ядро «Нулевая точка» Я-1",
+   "model": "Я-1",
+   "mass_t": 10,
+   "price_cr": 1800000,
+   "rating_t": 1000,
+   "sealed": true,
+   "overhaul_h": 60000,
+   "life_h": 120000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.587,
+     1.587,
+     1.587
+    ],
+    "service_clearance_m": [
+     1.78,
+     1.78,
+     1.78
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "jump_core",
+    "ru": "ядро прыжка (неразборный узел)",
+    "srus": {
+     "field": "эмиттер поля",
+     "damper": "демпферы лотосита",
+     "seal": "пломбы и контроль вскрытия"
+    }
+   },
+   "installed_on": [
+    "sol.ship.pk-30.strazh",
+    "hyp.ship.r-7.argus",
+    "ofu.ship.ocs-4j.strizh",
+    "tianhe.ship.ts-6.dozor",
+    "agora.ship.pk-30a.limenarch",
+    "tianhe.ship.t416.tianyi",
+    "agora.ship.pc-30ak.akritas"
+   ]
+  },
+  {
+   "id": "um.core.z5",
+   "cat": "jump_core",
+   "mfr": "mfr.um_core_fab",
+   "name": "Ядро «Нулевая точка» Я-5",
+   "model": "Я-5",
+   "mass_t": 35,
+   "price_cr": 4800000,
+   "rating_t": 5000,
+   "sealed": true,
+   "overhaul_h": 60000,
+   "life_h": 120000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.41,
+     2.41,
+     2.41
+    ],
+    "service_clearance_m": [
+     2.7,
+     2.7,
+     2.7
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "jump_core",
+    "ru": "ядро прыжка (неразборный узел)",
+    "srus": {
+     "field": "эмиттер поля",
+     "damper": "демпферы лотосита",
+     "seal": "пломбы и контроль вскрытия"
+    }
+   },
+   "installed_on": [
+    "hyp.ship.l-900.piligrim",
+    "sol.ship.gt-3000p.poputchik",
+    "hyp.ship.f-900.atlas",
+    "sol.ship.ff-3000.gagarin"
+   ]
+  },
+  {
+   "id": "um.xpdr.t1",
+   "cat": "transponder",
+   "mfr": "mfr.um_core_fab",
+   "name": "Транспондер Управления Маяков Т-1",
+   "model": "Т-1",
+   "mass_t": 0.05,
+   "price_cr": 8000,
+   "power_mw": 0.02,
+   "overhaul_h": 40000,
+   "life_h": 90000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     0.464,
+     0.464,
+     0.464
+    ],
+    "service_clearance_m": [
+     0.52,
+     0.52,
+     0.52
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "transponder.um",
+    "ru": "транспондер Управления Маяков Т-1",
+    "srus": {
+     "coder": "кодер"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i.frnu.n1",
+    "kb.ship.cobrett-i.frnu-inta.a3",
+    "ofu.ship.ocs-4.lastochka",
+    "ofu.ship.sl-12.podyomnik",
+    "bharat.ship.c-120.konveyer",
+    "harmony.ship.he-120",
+    "harmony.ship.he-t12.lokomotiv",
+    "harmony.ship.he-t12c.tanker"
+   ]
+  }
+ ]
+}

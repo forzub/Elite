@@ -1,0 +1,160 @@
+{
+ "manufacturer": {
+  "id": "mfr.kapehu_systems",
+  "name": "Kāpehu Systems",
+  "polity": "lalande_mecca",
+  "kind": "state_concern",
+  "groups": [
+   "jump_core",
+   "avionics"
+  ],
+  "plant": "industrial_hub",
+  "plants": [
+   "plant.004.kapehu.core_fab"
+  ],
+  "note": "ядра собственной математики (вне стандарта Когниума); экспорт в Южный круг"
+ },
+ "parts": [
+  {
+   "id": "kapehu.core.k12",
+   "cat": "jump_core",
+   "mfr": "mfr.kapehu_systems",
+   "name": "Капеху K-12",
+   "model": "K-12",
+   "mass_t": 80,
+   "price_cr": 8200000,
+   "rating_t": 12000,
+   "sealed": true,
+   "overhaul_h": 60000,
+   "life_h": 120000,
+   "legacy_id": "mizan.core.m12",
+   "notes": "former legacy id mizan.core.m12; Pacific/Tauranga canonical replacement",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     3.175,
+     3.175,
+     3.175
+    ],
+    "service_clearance_m": [
+     3.56,
+     3.56,
+     3.56
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "jump_core",
+    "ru": "ядро прыжка (неразборный узел)",
+    "srus": {
+     "field": "эмиттер поля",
+     "damper": "демпферы лотосита",
+     "seal": "пломбы и контроль вскрытия"
+    }
+   },
+   "installed_on": [
+    "bharat.ship.t-5000.iskhod",
+    "stone.ship.t-5000r.hive"
+   ]
+  },
+  {
+   "id": "kapehu.core.k5",
+   "cat": "jump_core",
+   "mfr": "mfr.kapehu_systems",
+   "name": "Капеху K-5",
+   "model": "K-5",
+   "mass_t": 40,
+   "price_cr": 3600000,
+   "rating_t": 5000,
+   "sealed": true,
+   "notes": "собственная математика вне стандарта Когниума; совместим только с ядрами Мизан при ремонте; former legacy id mizan.core.m5; Pacific/Tauranga canonical replacement",
+   "overhaul_h": 60000,
+   "life_h": 120000,
+   "legacy_id": "mizan.core.m5",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.52,
+     2.52,
+     2.52
+    ],
+    "service_clearance_m": [
+     2.82,
+     2.82,
+     2.82
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "jump_core",
+    "ru": "ядро прыжка (неразборный узел)",
+    "srus": {
+     "field": "эмиттер поля",
+     "damper": "демпферы лотосита",
+     "seal": "пломбы и контроль вскрытия"
+    }
+   },
+   "installed_on": [
+    "bharat.ship.c-120.konveyer",
+    "bharat.ship.pk-30b.rakshak",
+    "bharat.ship.c-120t.sahayak",
+    "bharat.ship.c-30.doot",
+    "bharat.ship.f-120.prahari"
+   ]
+  },
+  {
+   "id": "kapehu.mc.k1",
+   "cat": "computer",
+   "mfr": "mfr.kapehu_systems",
+   "name": "Капеху бортовой вычислитель K-1",
+   "model": "K-1",
+   "mass_t": 1,
+   "price_cr": 70000,
+   "power_mw": 0.5,
+   "grade": "civil",
+   "overhaul_h": 40000,
+   "life_h": 90000,
+   "legacy_id": "mizan.mc.m1",
+   "notes": "former legacy id mizan.mc.m1; Pacific/Tauranga canonical replacement",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.406,
+     0.843,
+     1.406
+    ],
+    "service_clearance_m": [
+     1.57,
+     0.94,
+     1.57
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "computer",
+    "ru": "бортовой компьютер",
+    "srus": {
+     "board": "вычислительная плата",
+     "memory": "память",
+     "psu": "блок питания"
+    }
+   },
+   "installed_on": [
+    "bharat.ship.c-120.konveyer",
+    "bharat.ship.t-5000.iskhod",
+    "bharat.ship.pk-30b.rakshak",
+    "bharat.ship.c-120t.sahayak",
+    "bharat.ship.c-30.doot",
+    "bharat.ship.h-20.majdoor",
+    "bharat.ship.f-120.prahari",
+    "stone.ship.t-5000r.hive"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,414 @@
+{
+ "manufacturer": {
+  "id": "mfr.bastion",
+  "name": "Арсенал «Бастион»",
+  "polity": "wolf359_citadel",
+  "kind": "state_concern",
+  "groups": [
+   "jump_core",
+   "hull_structure",
+   "weapons",
+   "avionics"
+  ],
+  "plant": "military_hub",
+  "plants": [
+   "plant.003.bastion.mjolner"
+  ],
+  "note": "военные ядра своей разработки, только для Пакта Цитадели; гражданское — по остаточному принципу"
+ },
+ "parts": [
+  {
+   "id": "bastion.armour.heavy",
+   "cat": "armour",
+   "mfr": "mfr.bastion",
+   "name": "Броня Бастиона тяжёлая (1 т)",
+   "model": "БТ-1",
+   "mass_t": 1,
+   "price_cr": 60000,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.567,
+     1.045,
+     0.078
+    ],
+    "service_clearance_m": [
+     1.76,
+     1.17,
+     0.09
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "armour",
+    "ru": "броня корпуса",
+    "srus": {
+     "plate": "броневая плита",
+     "mount": "крепление плиты"
+    }
+   },
+   "installed_on": [
+    "bastion.ship.b-4.sokol",
+    "bastion.ship.b-90.tsitadel",
+    "bastion.ship.ts-6b.zastava",
+    "bastion.ship.he-120c.oboz",
+    "bastion.ship.ts-6f.post",
+    "bastion.ship.b-20g.hulken"
+   ]
+  },
+  {
+   "id": "bastion.bay.hangar4",
+   "cat": "hangar",
+   "mfr": "mfr.bastion",
+   "name": "Ангар перехватчиков (4 места)",
+   "model": "АП-4",
+   "mass_t": 300,
+   "price_cr": 2800000,
+   "craft_slots": 4,
+   "craft": "interceptor",
+   "craft_ship": "bastion.ship.b-4.sokol",
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     12.429,
+     6.214,
+     15.536
+    ],
+    "service_clearance_m": [
+     13.92,
+     6.96,
+     17.4
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "bay",
+    "ru": "ангар / отсек катера / отсек дронов",
+    "srus": {
+     "doors": "створки",
+     "cradle": "люльки и направляющие",
+     "charger": "заправка / зарядка аппаратов"
+    }
+   },
+   "installed_on": [
+    "bastion.ship.b-90.tsitadel"
+   ]
+  },
+  {
+   "id": "bastion.comm.w1",
+   "cat": "comm",
+   "mfr": "mfr.bastion",
+   "name": "Бастион связь БС-1",
+   "model": "БС-1",
+   "mass_t": 3,
+   "price_cr": 3000000,
+   "power_mw": 3,
+   "range_ls": 60,
+   "overhaul_h": 40000,
+   "life_h": 90000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.466,
+     1.233,
+     2.466
+    ],
+    "service_clearance_m": [
+     2.76,
+     1.38,
+     2.76
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "comm",
+    "ru": "связной комплекс",
+    "srus": {
+     "feeder": "фидер антенны",
+     "transceiver": "трансивер"
+    }
+   },
+   "installed_on": [
+    "bastion.ship.b-4.sokol",
+    "bastion.ship.b-90.tsitadel",
+    "bastion.ship.ts-6b.zastava",
+    "bastion.ship.he-120c.oboz",
+    "bastion.ship.ts-6f.post",
+    "bastion.ship.b-12l.heis"
+   ]
+  },
+  {
+   "id": "bastion.core.b12",
+   "cat": "jump_core",
+   "mfr": "mfr.bastion",
+   "name": "Бастион Б-12",
+   "model": "Б-12",
+   "mass_t": 90,
+   "price_cr": 66000000,
+   "rating_t": 12000,
+   "sealed": true,
+   "notes": "военные ядра собственной разработки; не экспортируются",
+   "overhaul_h": 60000,
+   "life_h": 120000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     3.302,
+     3.302,
+     3.302
+    ],
+    "service_clearance_m": [
+     3.7,
+     3.7,
+     3.7
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "jump_core",
+    "ru": "ядро прыжка (неразборный узел)",
+    "srus": {
+     "field": "эмиттер поля",
+     "damper": "демпферы лотосита",
+     "seal": "пломбы и контроль вскрытия"
+    }
+   },
+   "installed_on": [
+    "bastion.ship.b-90.tsitadel",
+    "bastion.ship.ts-6f.post"
+   ]
+  },
+  {
+   "id": "bastion.mc.w1",
+   "cat": "computer",
+   "mfr": "mfr.bastion",
+   "name": "Бастион боевой вычислитель БВ-1",
+   "model": "БВ-1",
+   "mass_t": 4,
+   "price_cr": 1200000,
+   "power_mw": 3,
+   "grade": "military",
+   "overhaul_h": 40000,
+   "life_h": 90000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.231,
+     1.339,
+     2.231
+    ],
+    "service_clearance_m": [
+     2.5,
+     1.5,
+     2.5
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "computer",
+    "ru": "бортовой компьютер",
+    "srus": {
+     "board": "вычислительная плата",
+     "memory": "память",
+     "psu": "блок питания"
+    }
+   },
+   "installed_on": [
+    "bastion.ship.b-4.sokol",
+    "bastion.ship.b-90.tsitadel",
+    "bastion.ship.ts-6b.zastava",
+    "bastion.ship.he-120c.oboz",
+    "bastion.ship.ts-6f.post",
+    "bastion.ship.b-12l.heis",
+    "bastion.ship.b-20g.hulken"
+   ]
+  },
+  {
+   "id": "bastion.radar.s50",
+   "cat": "radar",
+   "mfr": "mfr.bastion",
+   "name": "Бастион радар обзора С-50 (50 000 км)",
+   "model": "С-50",
+   "mass_t": 22,
+   "price_cr": 18000000,
+   "range_km": 50000,
+   "power_mw": 40,
+   "runtime_backend": "TestIdeal",
+   "overhaul_h": 40000,
+   "life_h": 90000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     5.396,
+     2.159,
+     5.396
+    ],
+    "service_clearance_m": [
+     6.04,
+     2.42,
+     6.04
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "radar",
+    "ru": "радар / антенная решётка",
+    "srus": {
+     "array": "передающие модули решётки",
+     "rx": "приёмник"
+    }
+   },
+   "installed_on": [
+    "bastion.ship.b-90.tsitadel",
+    "bastion.ship.ts-6b.zastava",
+    "bastion.ship.ts-6f.post",
+    "bastion.ship.b-12l.heis"
+   ]
+  },
+  {
+   "id": "bastion.wpn.coil10",
+   "cat": "weapon",
+   "mfr": "mfr.bastion",
+   "name": "Бастион скорострельная пушка БП-10",
+   "model": "БП-10",
+   "mass_t": 2.5,
+   "price_cr": 900000,
+   "kind": "coilgun",
+   "power_mw": 12,
+   "overhaul_h": 30000,
+   "life_h": 60000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.482,
+     0.889,
+     2.371
+    ],
+    "service_clearance_m": [
+     1.66,
+     1,
+     2.66
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "weapon.coilgun",
+    "ru": "магнитная (coil) пушка",
+    "srus": {
+     "coil": "ускоряющие катушки ствола",
+     "caps": "накопитель (конденсаторная батарея)",
+     "feed": "механизм подачи снарядов",
+     "mount": "привод наведения"
+    }
+   },
+   "installed_on": [
+    "bastion.ship.b-4.sokol",
+    "bastion.ship.ts-6b.zastava"
+   ]
+  },
+  {
+   "id": "bastion.wpn.pd4",
+   "cat": "weapon",
+   "mfr": "mfr.bastion",
+   "name": "Бастион турель ПРО БТ-4",
+   "model": "БТ-4",
+   "mass_t": 6,
+   "price_cr": 4500000,
+   "kind": "point_defence",
+   "power_mw": 15,
+   "overhaul_h": 30000,
+   "life_h": 60000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.984,
+     1.191,
+     3.175
+    ],
+    "service_clearance_m": [
+     2.22,
+     1.33,
+     3.56
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "weapon.pd",
+    "ru": "лазерная турель ПРО",
+    "srus": {
+     "emitter": "излучатель",
+     "mount": "привод наведения"
+    }
+   },
+   "installed_on": [
+    "bastion.ship.b-90.tsitadel",
+    "bastion.ship.ts-6b.zastava",
+    "bastion.ship.he-120c.oboz",
+    "bastion.ship.ts-6f.post"
+   ]
+  },
+  {
+   "id": "bastion.wpn.vls16",
+   "cat": "weapon",
+   "mfr": "mfr.bastion",
+   "name": "Бастион ВПУ-16 дальних ракет",
+   "model": "ВПУ-16",
+   "mass_t": 60,
+   "price_cr": 22500000,
+   "kind": "missile_cells",
+   "cells": 16,
+   "power_mw": 2,
+   "overhaul_h": 30000,
+   "life_h": 60000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     4.275,
+     2.565,
+     6.84
+    ],
+    "service_clearance_m": [
+     4.79,
+     2.87,
+     7.66
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "weapon.vls",
+    "ru": "вертикальная пусковая установка ракет",
+    "srus": {
+     "hatch": "крышки ячеек",
+     "ignition": "цепь пуска",
+     "cell": "термостатирование ячеек"
+    }
+   },
+   "installed_on": [
+    "bastion.ship.b-90.tsitadel",
+    "bharat.ship.f-120.prahari"
+   ]
+  }
+ ]
+}

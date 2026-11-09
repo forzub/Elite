@@ -1,0 +1,159 @@
+{
+ "manufacturer": {
+  "id": "mfr.firmament_armour",
+  "name": "Бронезавод Твердыни",
+  "polity": "hd40307_firmament",
+  "kind": "state_plant",
+  "groups": [
+   "weapons",
+   "shielding"
+  ],
+  "plant": "industrial_hub",
+  "plants": [
+   "plant.015.firmament.armour"
+  ]
+ },
+ "parts": [
+  {
+   "id": "fa.wpn.coil30",
+   "cat": "weapon",
+   "mfr": "mfr.firmament_armour",
+   "name": "Твердыня магнитная пушка КП-30",
+   "model": "КП-30",
+   "mass_t": 6,
+   "price_cr": 700000,
+   "kind": "coilgun",
+   "power_mw": 25,
+   "overhaul_h": 30000,
+   "life_h": 60000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.984,
+     1.191,
+     3.175
+    ],
+    "service_clearance_m": [
+     2.22,
+     1.33,
+     3.56
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "weapon.coilgun",
+    "ru": "магнитная (coil) пушка",
+    "srus": {
+     "coil": "ускоряющие катушки ствола",
+     "caps": "накопитель (конденсаторная батарея)",
+     "feed": "механизм подачи снарядов",
+     "mount": "привод наведения"
+    }
+   },
+   "installed_on": [
+    "sol.ship.pk-30.strazh",
+    "kb.ship.cobrett-i.frnu-inta.a3p",
+    "tianhe.ship.ts-6.dozor",
+    "tianhe.ship.b-4t.sokol-t",
+    "bharat.ship.pk-30b.rakshak",
+    "stone.ship.he-120r.brodyaga",
+    "sol.ship.ff-3000.gagarin",
+    "stone.ship.kb-r.stinger"
+   ]
+  },
+  {
+   "id": "fa.wpn.pd2",
+   "cat": "weapon",
+   "mfr": "mfr.firmament_armour",
+   "name": "Твердыня турель ПРО ПТ-2",
+   "model": "ПТ-2",
+   "mass_t": 3,
+   "price_cr": 600000,
+   "kind": "point_defence",
+   "power_mw": 8,
+   "overhaul_h": 30000,
+   "life_h": 60000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.575,
+     0.945,
+     2.52
+    ],
+    "service_clearance_m": [
+     1.76,
+     1.06,
+     2.82
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "weapon.pd",
+    "ru": "лазерная турель ПРО",
+    "srus": {
+     "emitter": "излучатель",
+     "mount": "привод наведения"
+    }
+   },
+   "installed_on": [
+    "sol.ship.pk-30.strazh",
+    "hyp.ship.r-7.argus",
+    "bharat.ship.pk-30b.rakshak",
+    "stone.ship.he-120r.brodyaga",
+    "agora.ship.pk-30a.limenarch",
+    "bharat.ship.c-30.doot",
+    "bharat.ship.f-120.prahari",
+    "sol.ship.ff-3000.gagarin"
+   ]
+  },
+  {
+   "id": "std.armour.ceramic",
+   "cat": "armour",
+   "mfr": "mfr.firmament_armour",
+   "name": "Броня керамокомпозитная (1 т)",
+   "model": "БК-1",
+   "mass_t": 1,
+   "price_cr": 30000,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.567,
+     1.045,
+     0.078
+    ],
+    "service_clearance_m": [
+     1.76,
+     1.17,
+     0.09
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "armour",
+    "ru": "броня корпуса",
+    "srus": {
+     "plate": "броневая плита",
+     "mount": "крепление плиты"
+    }
+   },
+   "installed_on": [
+    "sol.ship.pk-30.strazh",
+    "harmony.ship.he-f22.dun",
+    "sol.ship.pao-7.shchit",
+    "kb.ship.cobrett-i.frnu-inta.a3p",
+    "tianhe.ship.ts-6.dozor",
+    "tianhe.ship.b-4t.sokol-t",
+    "bharat.ship.pk-30b.rakshak",
+    "stone.ship.he-120r.brodyaga"
+   ]
+  }
+ ]
+}

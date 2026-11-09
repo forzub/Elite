@@ -1,0 +1,300 @@
+{
+ "manufacturer": {
+  "id": "mfr.sol_mass_yards",
+  "name": "Лунно-Марсианские верфи",
+  "polity": "sol_authority",
+  "kind": "corporation",
+  "groups": [
+   "hull_structure",
+   "rotating_rings",
+   "dock_modules",
+   "pressure_segments",
+   "radiator_arrays"
+  ],
+  "plant": "orbital",
+  "plants": [
+   "plant.000.lmy.wenchang_heavy",
+   "plant.000.lmy.luna_foundry",
+   "site.000.sol.mars_deimos"
+  ],
+  "note": "международная корпорация Сола: контрольный пакет - Вэньчан Хэви (наследник Китайской корпорации Реставрации), проектные бюро - атлантические; серийные секции - Вэньчан, рамы - Луна, достройка - Деймос; госзаказ Сола (танкеры, службы)"
+ },
+ "parts": [
+  {
+   "id": "sol.cool.loop300",
+   "cat": "coolant_loop",
+   "mfr": "mfr.sol_mass_yards",
+   "name": "ЛМВ контур охлаждения (300 МВт)",
+   "model": "КО-300",
+   "mass_t": 5,
+   "price_cr": 60000,
+   "capacity_mw": 300,
+   "pump_mw": 3,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.924,
+     1.462,
+     1.462
+    ],
+    "service_clearance_m": [
+     3.27,
+     1.64,
+     1.64
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "coolant.loop",
+    "ru": "контур охлаждения с насосом",
+    "srus": {
+     "pump": "насос",
+     "pipes": "магистрали",
+     "valves": "клапаны распределения",
+     "fluid": "теплоноситель"
+    }
+   },
+   "installed_on": [
+    "ofu.ship.ocs-4.lastochka",
+    "ofu.ship.sl-12.podyomnik",
+    "bharat.ship.c-120.konveyer",
+    "sol.ship.gt-3000.titan",
+    "stone.ship.kamen.tanker",
+    "kern.ship.ht-20k.mul",
+    "sol.ship.st-6.masterovoy",
+    "sol.ship.pk-30.strazh"
+   ]
+  },
+  {
+   "id": "sol.cryo.t1000",
+   "cat": "cryo_tank",
+   "mfr": "mfr.sol_mass_yards",
+   "name": "Криоцистерна He-3/D (1 000 т)",
+   "model": "КЦ-1000",
+   "mass_t": 60,
+   "price_cr": 120000,
+   "capacity_t": 1000,
+   "overhaul_h": 60000,
+   "life_h": 150000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     8.855,
+     8.855,
+     15.94
+    ],
+    "service_clearance_m": [
+     9.92,
+     9.92,
+     17.85
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "cryo_tank",
+    "ru": "криоцистерна",
+    "srus": {
+     "insulation": "многослойная изоляция",
+     "cooler": "криокулер"
+    }
+   },
+   "installed_on": [
+    "sol.ship.gt-3000.titan"
+   ]
+  },
+  {
+   "id": "sol.rad.panel50",
+   "cat": "radiator",
+   "mfr": "mfr.sol_mass_yards",
+   "name": "ЛМВ радиаторная секция (50 м2)",
+   "model": "РС-50С",
+   "mass_t": 0.65,
+   "price_cr": 15000,
+   "area_m2": 50,
+   "temp_k": 1050,
+   "eps": 0.9,
+   "material": "elite.material.radiator.c-sic.v1",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     5,
+     0.15,
+     10
+    ],
+    "deployed_area_m2": 50,
+    "service_clearance_m": [
+     5.25,
+     0.5,
+     10.5
+    ],
+    "basis": [
+     "panel face area equals declared radiating area; thickness is service envelope"
+    ]
+   },
+   "fault_class": {
+    "id": "radiator.panel",
+    "ru": "панели радиатора",
+    "srus": {
+     "panel": "излучающая панель",
+     "hinge": "привод раскрытия",
+     "manifold": "коллектор теплоносителя"
+    }
+   },
+   "installed_on": [
+    "ofu.ship.ocs-4.lastochka",
+    "ofu.ship.sl-12.podyomnik",
+    "bharat.ship.c-120.konveyer",
+    "sol.ship.gt-3000.titan",
+    "stone.ship.kamen.tanker",
+    "kern.ship.ht-20k.mul",
+    "sol.ship.st-6.masterovoy",
+    "sol.ship.pk-30.strazh"
+   ]
+  },
+  {
+   "id": "sol.workshop.w1",
+   "cat": "workshop",
+   "mfr": "mfr.sol_mass_yards",
+   "name": "Мастерская сервисного тендера (2 бригады)",
+   "model": "МС-1",
+   "mass_t": 35,
+   "price_cr": 180000,
+   "power_mw": 0.8,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     7,
+     4,
+     5
+    ],
+    "service_clearance_m": [
+     7.84,
+     4.48,
+     5.6
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "workshop",
+    "ru": "бортовая мастерская",
+    "srus": {
+     "fabricator": "станки и печать",
+     "crane": "кран-балка"
+    }
+   },
+   "installed_on": [
+    "sol.ship.st-6.masterovoy",
+    "harmony.ship.he-s240.tylovik",
+    "bharat.ship.c-120t.sahayak",
+    "stone.ship.kamen-s.salvage"
+   ]
+  },
+  {
+   "id": "std.bay.boat",
+   "cat": "boat_bay",
+   "mfr": "mfr.sol_mass_yards",
+   "name": "Ангар досмотрового катера (1 катер)",
+   "model": "АК-1",
+   "mass_t": 18,
+   "price_cr": 400000,
+   "craft_slots": 1,
+   "craft": "boarding_boat",
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "craft_envelope_m": [
+    9,
+    4,
+    3
+   ],
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     4.866,
+     2.433,
+     6.082
+    ],
+    "service_clearance_m": [
+     5.45,
+     2.72,
+     6.81
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "bay",
+    "ru": "ангар / отсек катера / отсек дронов",
+    "srus": {
+     "doors": "створки",
+     "cradle": "люльки и направляющие",
+     "charger": "заправка / зарядка аппаратов"
+    }
+   },
+   "installed_on": [
+    "sol.ship.pk-30.strazh",
+    "harmony.ship.he-f22.dun",
+    "kb.ship.cobrett-i.frnu-inta.a3p",
+    "tianhe.ship.ts-6.dozor",
+    "bharat.ship.pk-30b.rakshak",
+    "bastion.ship.ts-6b.zastava",
+    "stone.ship.he-120r.brodyaga",
+    "agora.ship.pk-30a.limenarch"
+   ]
+  },
+  {
+   "id": "std.cabin.hold6",
+   "cat": "passenger_module",
+   "mfr": "mfr.sol_mass_yards",
+   "name": "Камера для задержанных и спасённых (6 мест)",
+   "model": "КЗ-6",
+   "mass_t": 3,
+   "price_cr": 30000,
+   "seats": 6,
+   "overhaul_h": 60000,
+   "life_h": 150000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.865,
+     2.047,
+     4.093
+    ],
+    "service_clearance_m": [
+     3.21,
+     2.29,
+     4.58
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "passenger.cabin",
+    "ru": "пассажирская / жилая секция",
+    "srus": {
+     "seal": "гермоуплотнения люков",
+     "climate": "климат-установка секции",
+     "power": "распределение питания секции"
+    }
+   },
+   "installed_on": [
+    "sol.ship.pk-30.strazh",
+    "kb.ship.cobrett-i.frnu-inta.a3p",
+    "tianhe.ship.ts-6.dozor",
+    "bharat.ship.pk-30b.rakshak",
+    "bastion.ship.ts-6b.zastava",
+    "agora.ship.pk-30a.limenarch",
+    "agora.ship.pc-30ak.akritas"
+   ]
+  }
+ ]
+}

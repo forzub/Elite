@@ -1,0 +1,425 @@
+{
+ "manufacturer": {
+  "id": "mfr.tianhe_heavy",
+  "name": "Тяньхэ Тяжмаш",
+  "polity": "gj832_tianhe",
+  "kind": "state_concern",
+  "groups": [
+   "reactor",
+   "main_drive",
+   "thermal",
+   "reactor_modules",
+   "radiator_arrays",
+   "scoop_platforms"
+  ],
+  "plant": "industrial_hub",
+  "plants": [
+   "plant.012.tianhe.danwei1",
+   "plant.012.tianhe.mass_yard"
+  ],
+  "note": "реакторы и двигатели для всех верфей Пакта"
+ },
+ "parts": [
+  {
+   "id": "std.rcs.cluster_h",
+   "cat": "rcs",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяжёлый кластер RCS (4 сопла)",
+   "model": "RCS-4Т",
+   "mass_t": 6,
+   "price_cr": 45000,
+   "thrust_mn": 4,
+   "input_mw": 150,
+   "eff": 0.93,
+   "overhaul_h": 20000,
+   "life_h": 40000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.817,
+     1.817,
+     1.817
+    ],
+    "service_clearance_m": [
+     2.04,
+     2.04,
+     2.04
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "rcs.thruster",
+    "ru": "полевое маневровое сопло / кластер RCS",
+    "srus": {
+     "driver": "силовой ключ импульсов",
+     "coil": "катушка поля сопла",
+     "emitter": "излучатель тепла сопла"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-120",
+    "harmony.ship.he-t12.lokomotiv",
+    "harmony.ship.he-t12c.tanker",
+    "harmony.ship.he-f22.dun",
+    "bastion.ship.b-90.tsitadel",
+    "harmony.ship.he-s240.tylovik",
+    "sol.ship.pao-7.shchit",
+    "harmony.ship.he-120p.chunyun"
+   ]
+  },
+  {
+   "id": "th.apu.s150",
+   "cat": "service_reactor",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ СР-150",
+   "model": "СР-150",
+   "mass_t": 15,
+   "price_cr": 140000,
+   "mwe": 150,
+   "eff": 0.42,
+   "overhaul_h": 40000,
+   "life_h": 80000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.896,
+     1.896,
+     1.896
+    ],
+    "service_clearance_m": [
+     2.12,
+     2.12,
+     2.12
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "apu.fusion",
+    "ru": "служебный реактор (ВСУ)",
+    "srus": {
+     "cells": "энергоячейки",
+     "starter": "стартёр",
+     "regulator": "регулятор шины",
+     "sensor": "датчики"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-120",
+    "tianhe.ship.ts-6.dozor",
+    "harmony.ship.he-120p.chunyun",
+    "tianhe.ship.b-4t.sokol-t",
+    "bastion.ship.ts-6b.zastava",
+    "bastion.ship.he-120c.oboz",
+    "stone.ship.he-120r.brodyaga",
+    "tianhe.ship.t416.tianyi"
+   ]
+  },
+  {
+   "id": "th.apu.s600",
+   "cat": "service_reactor",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ СР-600",
+   "model": "СР-600",
+   "mass_t": 45,
+   "price_cr": 600000,
+   "mwe": 600,
+   "eff": 0.44,
+   "overhaul_h": 40000,
+   "life_h": 80000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.735,
+     2.735,
+     2.735
+    ],
+    "service_clearance_m": [
+     3.06,
+     3.06,
+     3.06
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "apu.fusion",
+    "ru": "служебный реактор (ВСУ)",
+    "srus": {
+     "cells": "энергоячейки",
+     "starter": "стартёр",
+     "regulator": "регулятор шины",
+     "sensor": "датчики"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-t12.lokomotiv",
+    "harmony.ship.he-t12c.tanker",
+    "harmony.ship.he-f22.dun",
+    "bastion.ship.b-90.tsitadel",
+    "harmony.ship.he-s240.tylovik",
+    "harmony.ship.he-t8.yishan"
+   ]
+  },
+  {
+   "id": "th.cool.loop600",
+   "cat": "coolant_loop",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ контур охлаждения (600 МВт)",
+   "model": "КО-600",
+   "mass_t": 9,
+   "price_cr": 90000,
+   "capacity_mw": 600,
+   "pump_mw": 6,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     3.557,
+     1.778,
+     1.778
+    ],
+    "service_clearance_m": [
+     3.98,
+     1.99,
+     1.99
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "coolant.loop",
+    "ru": "контур охлаждения с насосом",
+    "srus": {
+     "pump": "насос",
+     "pipes": "магистрали",
+     "valves": "клапаны распределения",
+     "fluid": "теплоноситель"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-120",
+    "harmony.ship.he-t12.lokomotiv",
+    "harmony.ship.he-t12c.tanker",
+    "harmony.ship.he-f22.dun",
+    "bastion.ship.b-90.tsitadel",
+    "harmony.ship.he-s240.tylovik",
+    "tianhe.ship.ts-6.dozor",
+    "harmony.ship.he-120p.chunyun"
+   ]
+  },
+  {
+   "id": "th.drive.tz11",
+   "cat": "drive",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ ТЦ-11",
+   "model": "ТЦ-11",
+   "mass_t": 16,
+   "price_cr": 1170000,
+   "thrust_mn": 10.7,
+   "input_mw": 10000,
+   "eff": 0.985,
+   "gimbal_deg": 40,
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     5.23,
+     5.23,
+     6.8
+    ],
+    "service_clearance_m": [
+     5.86,
+     5.86,
+     7.62
+    ],
+    "nozzle_or_emitter_diameter_m": 5.23,
+    "anchor": "scaled by installed mass",
+    "basis": [
+     "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+    ]
+   },
+   "fault_class": {
+    "id": "drive.field",
+    "ru": "полевой главный двигатель",
+    "srus": {
+     "field_ctl": "блок управления полем (фазировка поля, вектор тяги)",
+     "coil": "сегменты кольца полевых катушек",
+     "pad": "охлаждающий пятак двигателя (сменные секции)",
+     "hx": "резервный теплообменник (включается при повреждённом пятаке)",
+     "busbar": "силовой ввод с шины реактора (во фланце)",
+     "sensor": "датчики температуры, поля и тяги"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-f22.dun",
+    "tianhe.ship.ts-6.dozor",
+    "bastion.ship.ts-6b.zastava",
+    "tianhe.ship.t416.tianyi",
+    "tianhe.ship.t421.tianti",
+    "bastion.ship.ts-6f.post",
+    "bastion.ship.b-12l.heis"
+   ]
+  },
+  {
+   "id": "th.drive.tz16v",
+   "cat": "drive",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ ТЦ-1.6В (военная поставка)",
+   "model": "ТЦ-1.6В",
+   "mass_t": 2.6,
+   "price_cr": 230000,
+   "thrust_mn": 1.55,
+   "input_mw": 2375,
+   "eff": 0.986,
+   "gimbal_deg": 60,
+   "notes": "экспорт Пакту Цитадели по лицензии; форсированный, короткий ресурс",
+   "overhaul_h": 8000,
+   "life_h": 15000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.85,
+     2.85,
+     3.71
+    ],
+    "service_clearance_m": [
+     3.19,
+     3.19,
+     4.16
+    ],
+    "nozzle_or_emitter_diameter_m": 2.85,
+    "anchor": "scaled by installed mass",
+    "basis": [
+     "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+    ]
+   },
+   "fault_class": {
+    "id": "drive.field",
+    "ru": "полевой главный двигатель",
+    "srus": {
+     "field_ctl": "блок управления полем (фазировка поля, вектор тяги)",
+     "coil": "сегменты кольца полевых катушек",
+     "pad": "охлаждающий пятак двигателя (сменные секции)",
+     "hx": "резервный теплообменник (включается при повреждённом пятаке)",
+     "busbar": "силовой ввод с шины реактора (во фланце)",
+     "sensor": "датчики температуры, поля и тяги"
+    }
+   },
+   "installed_on": [
+    "bastion.ship.b-4.sokol",
+    "tianhe.ship.b-4t.sokol-t"
+   ]
+  },
+  {
+   "id": "th.drive.tz28",
+   "cat": "drive",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ ТЦ-28В",
+   "model": "ТЦ-28В",
+   "mass_t": 40,
+   "price_cr": 10500000,
+   "thrust_mn": 27.5,
+   "input_mw": 27500,
+   "eff": 0.986,
+   "gimbal_deg": 6,
+   "notes": "военный вариант с бронированным кожухом",
+   "overhaul_h": 30000,
+   "life_h": 50000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     7.09,
+     7.09,
+     9.22
+    ],
+    "service_clearance_m": [
+     7.94,
+     7.94,
+     10.33
+    ],
+    "nozzle_or_emitter_diameter_m": 7.09,
+    "anchor": "scaled by installed mass",
+    "basis": [
+     "scaled from Cobrett CR-1/N1 family envelope; runtime CR-1 thermal emitter diameter = 5.0 m"
+    ]
+   },
+   "fault_class": {
+    "id": "drive.field",
+    "ru": "полевой главный двигатель",
+    "srus": {
+     "field_ctl": "блок управления полем (фазировка поля, вектор тяги)",
+     "coil": "сегменты кольца полевых катушек",
+     "pad": "охлаждающий пятак двигателя (сменные секции)",
+     "hx": "резервный теплообменник (включается при повреждённом пятаке)",
+     "busbar": "силовой ввод с шины реактора (во фланце)",
+     "sensor": "датчики температуры, поля и тяги"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-120",
+    "harmony.ship.he-t12.lokomotiv",
+    "harmony.ship.he-t12c.tanker",
+    "bastion.ship.b-90.tsitadel",
+    "harmony.ship.he-s240.tylovik",
+    "harmony.ship.he-120p.chunyun",
+    "bastion.ship.he-120c.oboz",
+    "stone.ship.he-120r.brodyaga"
+   ]
+  },
+  {
+   "id": "th.rad.panel50",
+   "cat": "radiator",
+   "mfr": "mfr.tianhe_heavy",
+   "name": "Тяньхэ радиаторная секция (50 м2)",
+   "model": "РС-50",
+   "mass_t": 0.75,
+   "price_cr": 12000,
+   "area_m2": 50,
+   "temp_k": 1000,
+   "eps": 0.88,
+   "material": "elite.material.radiator.c-sic.v1",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     5,
+     0.15,
+     10
+    ],
+    "deployed_area_m2": 50,
+    "service_clearance_m": [
+     5.25,
+     0.5,
+     10.5
+    ],
+    "basis": [
+     "panel face area equals declared radiating area; thickness is service envelope"
+    ]
+   },
+   "fault_class": {
+    "id": "radiator.panel",
+    "ru": "панели радиатора",
+    "srus": {
+     "panel": "излучающая панель",
+     "hinge": "привод раскрытия",
+     "manifold": "коллектор теплоносителя"
+    }
+   },
+   "installed_on": [
+    "harmony.ship.he-120",
+    "harmony.ship.he-t12.lokomotiv",
+    "harmony.ship.he-t12c.tanker",
+    "harmony.ship.he-f22.dun",
+    "bastion.ship.b-90.tsitadel",
+    "harmony.ship.he-s240.tylovik",
+    "tianhe.ship.ts-6.dozor",
+    "harmony.ship.he-120p.chunyun"
+   ]
+  }
+ ]
+}

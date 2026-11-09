@@ -1,0 +1,220 @@
+{
+ "manufacturer": {
+  "id": "mfr.hyperion",
+  "name": "Верфи Гипериона",
+  "polity": "tau_ceti_cognium",
+  "kind": "state_concern",
+  "groups": [
+   "hull_structure",
+   "avionics",
+   "dock_modules"
+  ],
+  "plant": "orbital",
+  "note": "курьеры, разведчики, корабли Управления Маяков",
+  "plants": [
+   "plant.008.hyperion.museum_yard"
+  ]
+ },
+ "parts": [
+  {
+   "id": "hyp.ecm.e1",
+   "cat": "ecm",
+   "mfr": "mfr.hyperion",
+   "name": "Hyperion комплекс РЭБ E-1",
+   "model": "E-1",
+   "mass_t": 8,
+   "price_cr": 3000000,
+   "power_mw": 30,
+   "overhaul_h": 40000,
+   "life_h": 90000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     3.218,
+     1.609,
+     3.862
+    ],
+    "service_clearance_m": [
+     3.6,
+     1.8,
+     4.33
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "ecm",
+    "ru": "комплекс РЭБ",
+    "srus": {
+     "amp": "усилитель передатчика",
+     "array": "излучающая решётка"
+    }
+   },
+   "installed_on": [
+    "hyp.ship.r-7.argus"
+   ]
+  },
+  {
+   "id": "hyp.mast.s1",
+   "cat": "sensor_mast",
+   "mfr": "mfr.hyperion",
+   "name": "Hyperion выдвижная сенсорная мачта",
+   "model": "SM-1",
+   "mass_t": 6,
+   "price_cr": 1800000,
+   "power_mw": 2,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     1.817,
+     6.057,
+     1.817
+    ],
+    "service_clearance_m": [
+     2.04,
+     6.78,
+     2.04
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "sensor_mast",
+    "ru": "сенсорная мачта",
+    "srus": {
+     "actuator": "привод выдвижения",
+     "optics": "оптика и апертуры"
+    }
+   },
+   "installed_on": [
+    "hyp.ship.r-7.argus"
+   ]
+  },
+  {
+   "id": "hyp.mc.r1",
+   "cat": "computer",
+   "mfr": "mfr.hyperion",
+   "name": "Hyperion разведывательный вычислитель HR-1",
+   "model": "HR-1",
+   "mass_t": 3,
+   "price_cr": 3000000,
+   "power_mw": 4,
+   "grade": "military",
+   "overhaul_h": 40000,
+   "life_h": 90000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.027,
+     1.216,
+     2.027
+    ],
+    "service_clearance_m": [
+     2.27,
+     1.36,
+     2.27
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "computer",
+    "ru": "бортовой компьютер",
+    "srus": {
+     "board": "вычислительная плата",
+     "memory": "память",
+     "psu": "блок питания"
+    }
+   },
+   "installed_on": [
+    "hyp.ship.r-7.argus"
+   ]
+  },
+  {
+   "id": "hyp.radar.pa100",
+   "cat": "radar",
+   "mfr": "mfr.hyperion",
+   "name": "Hyperion пассивная решётка PA-100 + активный режим",
+   "model": "PA-100",
+   "mass_t": 12,
+   "price_cr": 4500000,
+   "range_km": 100000,
+   "power_mw": 12,
+   "runtime_backend": "TestIdeal",
+   "overhaul_h": 40000,
+   "life_h": 90000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     4.409,
+     1.764,
+     4.409
+    ],
+    "service_clearance_m": [
+     4.94,
+     1.98,
+     4.94
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "radar",
+    "ru": "радар / антенная решётка",
+    "srus": {
+     "array": "передающие модули решётки",
+     "rx": "приёмник"
+    }
+   },
+   "installed_on": [
+    "hyp.ship.r-7.argus"
+   ]
+  },
+  {
+   "id": "hyp.relay.r1",
+   "cat": "comm",
+   "mfr": "mfr.hyperion",
+   "name": "Hyperion полевой ретранслятор R-1 (сеть маяков в войну)",
+   "model": "R-1",
+   "mass_t": 4,
+   "price_cr": 1200000,
+   "power_mw": 5,
+   "range_ls": 120,
+   "overhaul_h": 40000,
+   "life_h": 90000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.714,
+     1.357,
+     2.714
+    ],
+    "service_clearance_m": [
+     3.04,
+     1.52,
+     3.04
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "comm",
+    "ru": "связной комплекс",
+    "srus": {
+     "feeder": "фидер антенны",
+     "transceiver": "трансивер"
+    }
+   },
+   "installed_on": [
+    "hyp.ship.r-7.argus"
+   ]
+  }
+ ]
+}

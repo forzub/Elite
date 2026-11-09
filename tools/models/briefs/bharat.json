@@ -1,0 +1,103 @@
+{
+ "manufacturer": {
+  "id": "mfr.bharat",
+  "name": "Бхарат Ассембли",
+  "polity": "hd20794_newindia",
+  "kind": "corporation",
+  "groups": [
+   "hull_structure",
+   "cargo_modules",
+   "pressure_segments",
+   "cryo_tanks"
+  ],
+  "plant": "industrial_hub",
+  "plants": [
+   "plant.014.bharat.rings"
+  ],
+  "note": "крупнейшие сборочные заводы Южного круга; корпуса по лицензии, ядра — Тауранга или Когниум"
+ },
+ "parts": [
+  {
+   "id": "bharat.hab.bunk500",
+   "cat": "passenger_module",
+   "mfr": "mfr.bharat",
+   "name": "Секция переселенцев (500 коек)",
+   "model": "СП-500",
+   "mass_t": 85,
+   "price_cr": 300000,
+   "seats": 500,
+   "overhaul_h": 60000,
+   "life_h": 150000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     12.515,
+     8.939,
+     17.878
+    ],
+    "service_clearance_m": [
+     14.02,
+     10.01,
+     20.02
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "passenger.cabin",
+    "ru": "пассажирская / жилая секция",
+    "srus": {
+     "seal": "гермоуплотнения люков",
+     "climate": "климат-установка секции",
+     "power": "распределение питания секции"
+    }
+   },
+   "installed_on": [
+    "bharat.ship.t-5000.iskhod",
+    "stone.ship.t-5000r.hive"
+   ]
+  },
+  {
+   "id": "std.surv.refuge100",
+   "cat": "lifeboat",
+   "mfr": "mfr.bharat",
+   "name": "Спасательный модуль-убежище (100 мест)",
+   "model": "СМ-100",
+   "mass_t": 12,
+   "price_cr": 90000,
+   "seats": 100,
+   "overhaul_h": 40000,
+   "life_h": 100000,
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     3.731,
+     2.612,
+     8.209
+    ],
+    "service_clearance_m": [
+     4.18,
+     2.93,
+     9.19
+    ],
+    "basis": [
+     "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
+    ]
+   },
+   "fault_class": {
+    "id": "lifeboat",
+    "ru": "спасательная шлюпка / убежище",
+    "srus": {
+     "battery": "батарея",
+     "release": "замки отстрела",
+     "beacon": "маяк SOS"
+    }
+   },
+   "installed_on": [
+    "bharat.ship.t-5000.iskhod",
+    "stone.ship.t-5000r.hive"
+   ]
+  }
+ ]
+}

@@ -4554,3 +4554,11 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   Not verified in the running editor (GUI wizard SOURCE -> BUILD is the author's step: semantic parts, sockets for the
   flanges/lugs/pad, LOD distances, BUILD to src/assets/compiled/models/equipment_<folder>/).
 - Renders + review card in the ER-5 workshop sketches.
+- Author 2026-11-09 (same day): pad size questioned (sketch showed pad ~ reactor size) -> pad stays 11 m (passport
+  padSideM drives the cooling area; the sketch was wrong). Then: reactor gets the drive's diameter so the bay is one
+  cylinder. Done as ER-5 v2: canon kb.reactor.er5 geometry envelope 4x4x5 -> 5x5x5 m, service clearance 5.75 m (+ basis
+  note), data.js same; ship_designer 21 ships 0 FAIL (runtime catalog unchanged), lore unchanged, proposals rebuilt.
+  Model: torus now COAXIAL with the bay (axis OBJ Z, r 0.95-2.2, length 3.5 m + flanges on the end faces, mating faces
+  z = -/+2.5), 8 poloidal confinement hoops, inverter +X, feed -X, plasma control -Y, column + pad on top (pad y 3.0).
+  The flange rims are now inside the envelope (deviation closed). Triangles LOD0 69 916, LOD1 11 908, LOD2 1 980.
+  Bay assembly render (CR-1 + ER-5 + CR-1) + ER-5 prompt v2 in the workshop.

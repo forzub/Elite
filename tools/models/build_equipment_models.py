@@ -548,28 +548,33 @@ def placed(src, R, t):
 
 
 # ---------------------------------------------------------------- Cobretty ER-5 propulsion reactor
-# Passport (CobraCobrettyER5PropulsionReactor.h, canon kb.reactor.er5): 5000 MWe D-He3, 25 t, body 4 x 4 x 5 m flange to
-# flange, square cooling pad 11 x 11 m x 0.25 m (PT1) above it on a short heat-pipe column. A flat torus (axis = OBJ +Y)
-# hangs in the engine bay between the two drives on two axial flanges (OBJ -Z fore, +Z aft; mating faces at z = -/+2.5).
-# The flanges mate the CR-1 flange exactly (r 2.25, 24 bolts on r 2.08, spigot groove r 1.50-1.80, busbar pocket
-# r 0.68 with 3 sockets on r 0.32, data socket at y = -1.15), so the flange rims (dia 4.5 m) stand 0.25 m out of the
-# 4 m body envelope. Serviceable units = SRUs of the fault class reactor.fusion: pad, plasma_ctl, damper (confinement
-# magnets), feed (pellet feed), inverter, sensor.
-ER5 = dict(r_in=0.62, r_out=1.95, h=1.0, corner=0.40, face_z=2.5, flange_r=2.25,
-           pad_y0=2.3, pad_t=0.25, pad_half=5.5)
+# Passport (CobraCobrettyER5PropulsionReactor.h, canon kb.reactor.er5): 5000 MWe D-He3, 25 t, body 5 x 5 x 5 m flange to
+# flange, square cooling pad 11 x 11 m x 0.25 m (PT1) above it on a short heat-pipe column.
+# Author 2026-11-09: the reactor has the drive's diameter so drive - reactor - drive read as one cylindrical engine bay.
+# So the torus is COAXIAL with the bay (axis = OBJ Z, like the CR-1 axis): outer dia 4.4 m (+ hoops / units up to 5 m),
+# the two flanges sit on its end faces (OBJ -Z fore, +Z aft; mating faces at z = -/+2.5) and mate the CR-1 flange exactly
+# (r 2.25, 24 bolts on r 2.08, spigot groove r 1.50-1.80, busbar pocket r 0.68 with 3 sockets on r 0.32, data socket at
+# y = -1.15). The pad is on top (+Y). Serviceable units = SRUs of the fault class reactor.fusion: pad, plasma_ctl,
+# damper (confinement magnet hoops), feed (pellet feed), inverter, sensor.
+ER5 = dict(r_in=0.95, r_out=2.2, zh=1.75, corner=0.55, face_z=2.5, flange_r=2.25,
+           pad_y0=3.0, pad_t=0.25, pad_half=5.5)
+
+
+def polz(r, a, z):
+    return (r * math.cos(a), r * math.sin(a), z)
 
 
 def er5_flange(lod, seg):
-    """one flange in its local frame: mating face at z = 0 facing +Z, the neck going -Z into the torus"""
+    """one flange in its local frame: mating face at z = 0 facing +Z, the neck going -Z onto the torus end face"""
     d = ER5
     f = Part("flange")
     fr = d["flange_r"]
     c = 0.04 if lod == 0 else 0.0
     if lod < 2:
-        prof = [(0, -1.05), (1.1, -1.05), (1.1, -0.75), (1.9, -0.30), (fr - c, -0.30), (fr, -0.30 + c), (fr, -c), (fr - c, 0),
+        prof = [(0, -0.80), (1.9, -0.80), (1.9, -0.30), (fr - c, -0.30), (fr, -0.30 + c), (fr, -c), (fr - c, 0),
                 (1.80, 0), (1.80, -0.10), (1.50, -0.10), (1.50, 0), (0.68, 0), (0.68, -0.27), (0, -0.27)]
     else:
-        prof = [(0, -1.05), (1.1, -1.05), (1.1, -0.75), (1.9, -0.30), (fr, -0.30), (fr, 0), (0.68, 0), (0.68, -0.27), (0, -0.27)]
+        prof = [(0, -0.80), (1.9, -0.80), (1.9, -0.30), (fr, -0.30), (fr, 0), (0.68, 0), (0.68, -0.27), (0, -0.27)]
     lathe(f, "eq_metal_band", [p for i, p in enumerate(prof) if i == 0 or p != prof[i - 1]], seg)
     if lod < 2:
         lathe(f, "eq_metal_graphite", crect(1.505, 1.795, -0.10, -0.095), seg)          # groove liner (darker ring)
@@ -585,10 +590,10 @@ def er5_flange(lod, seg):
             hex_bolt(f, "eq_steel", (2.08 * math.cos(a), 2.08 * math.sin(a), -0.30), (0, 0, -1))
         for i in range(4):                                                              # data socket pins
             cyl(f, "eq_copper", (-0.12 + 0.08 * i, -1.15, 0.008), (-0.12 + 0.08 * i, -1.15, 0.012), 0.022, 8)
-        for i in range(12):                                                             # stiffening ribs on the bell
+        for i in range(12):                                                             # gussets neck -> flange disc
             a = 2 * math.pi * i / 12 + math.pi / 12
             Rz = rot_z(a)
-            box(f, "eq_metal_band", apply(Rz, (1.58, 0, 0))[:2] + (-0.52,), (0.62, 0.06, 0.40), Rz, chamfer=0.01)
+            box(f, "eq_metal_band", apply(Rz, (2.03, 0, 0))[:2] + (-0.52,), (0.30, 0.06, 0.44), Rz, chamfer=0.01)
     return f
 
 
@@ -596,131 +601,129 @@ def er5_parts(lod):
     seg = {0: 96, 1: 32, 2: 16}[lod]
     small = {0: 24, 1: 10, 2: 6}[lod]
     d = ER5
-    ri, ro, h, cr = d["r_in"], d["r_out"], d["h"], d["corner"]
-    P = {}
+    ri, ro, zh, cr = d["r_in"], d["r_out"], d["zh"], d["corner"]
     nc = {0: 8, 1: 3, 2: 1}[lod]
+    P = {}
+    hoops = [math.pi / 8 + k * math.pi / 4 for k in range(8)]          # 22.5 deg + k * 45 deg: units sit between them
 
-    # --- vessel: the flat torus, equator coolant manifold, top access panels
+    # --- vessel: the coaxial torus, a coolant manifold band round the middle, access panels on the upper shoulders
     v = P["er5_vessel"] = Part("er5_vessel")
-    ylathe(v, "eq_metal_graphite", rrect(ri, ro, -h, h, cr, nc), seg, soft=35)
+    lathe(v, "eq_metal_graphite", rrect(ri, ro, -zh, zh, cr, nc), seg, soft=35)
     if lod < 2:
-        for yy in (-0.30, 0.30):                                                         # equator manifold pipes
-            ylathe(v, "eq_metal_band", rrect(ro - 0.01, ro + 0.11, yy - 0.06, yy + 0.06, 0.05, 3 if lod == 0 else 1), seg, soft=50)
-        free = [(-0.42, -0.05), (0.05, 0.42), (math.pi - 0.42, math.pi - 0.05), (math.pi + 0.05, math.pi + 0.42),
-                (0.80, 2.34), (math.pi + 0.80, math.pi + 2.34)]
-        for t0, t1 in free:                                                              # top access panels
-            ylathe(v, "eq_metal_panel", crect(ri + cr + 0.06, ro - cr - 0.06, h - 0.01, h + 0.03, 0.01 if lod == 0 else 0.0),
-                   max(4, int(seg * (t1 - t0) / (2 * math.pi))), t0 + 0.03, t1 - 0.03, cap=True)
-            if lod == 0:
-                for th in (t0 + 0.08, t1 - 0.08):
-                    for rr in (ri + cr + 0.14, ro - cr - 0.14):
-                        hex_bolt(v, "eq_steel", polar(rr, th, h + 0.03), (0, 1, 0), 0.04, 0.02, washer=False)
-        if lod == 0:                                                                     # manifold clips
-            for k in range(16):
-                th = 2 * math.pi * (k + 0.5) / 16
-                if abs(math.sin(th)) > 0.5:
-                    continue
-                Ry = rot_y(-th)
-                box(v, "eq_steel", polar(ro + 0.06, th, 0.0), (0.10, 0.80, 0.08), Ry, chamfer=0.01)
+        lathe(v, "eq_metal_band", crect(ro - 0.02, ro + 0.07, -0.09, 0.09, 0.015 if lod == 0 else 0.0), seg)
+        for ac in (math.pi / 4, 3 * math.pi / 4):
+            for z0, z1 in ((0.18, zh - cr - 0.05), (-(zh - cr - 0.05), -0.18)):
+                lathe(v, "eq_metal_panel", crect(ro - 0.01, ro + 0.035, z0, z1, 0.01 if lod == 0 else 0.0), max(4, seg // 16),
+                      I3, (0, 0, 0), ac - 0.30, ac + 0.30, cap=True)
+                if lod == 0:
+                    for aa in (ac - 0.25, ac + 0.25):
+                        for zz in (z0 + 0.08, z1 - 0.08):
+                            hex_bolt(v, "eq_steel", polz(ro + 0.035, aa, zz), polz(1, aa, 0), 0.04, 0.02, washer=False)
+                    Rz = rot_z(ac)
+                    box(v, "eq_steel", apply(Rz, (ro + 0.06, 0, 0))[:2] + ((z0 + z1) / 2,), (0.03, 0.035, 0.30), Rz, chamfer=0.008)
 
-    # --- confinement magnets / dampers: 4 hoop housings round the tube cross-section (between the boxes and the necks)
+    # --- confinement magnets / dampers: 8 poloidal hoop housings round the tube cross-section
     m = P["er5_confinement"] = Part("er5_confinement")
-    hoops = (math.radians(35), math.radians(-35), math.radians(145), math.radians(215))
-    for th in hoops:
-        ylathe(m, "eq_field_coil", rrect(ri - 0.07, ro + 0.07, -h - 0.07, h + 0.07, cr + 0.06, nc), small, th - 0.11, th + 0.11, cap=True, soft=35)
+    for a in hoops:
+        lathe(m, "eq_field_coil", rrect(ri - 0.07, ro + 0.07, -zh - 0.07, zh + 0.07, cr + 0.06, nc), small, I3, (0, 0, 0),
+              a - 0.07, a + 0.07, cap=True, soft=35)
         if lod < 2:
-            ylathe(m, "eq_metal_band", rrect(ri - 0.09, ro + 0.09, -h - 0.09, h + 0.09, cr + 0.07, nc), small, th - 0.03, th + 0.03, cap=True, soft=35)
+            lathe(m, "eq_metal_band", rrect(ri - 0.09, ro + 0.09, -zh - 0.09, zh + 0.09, cr + 0.07, nc), small, I3, (0, 0, 0),
+                  a - 0.02, a + 0.02, cap=True, soft=35)
         if lod == 0:
-            Ry = rot_y(-th)
-            box(m, "eq_metal_band", polar(ro + 0.14, th, 0.0), (0.12, 0.62, 0.34), Ry, chamfer=0.02)     # clamp block
-            for yy in (-0.2, 0.2):
-                hex_bolt(m, "eq_steel", polar(ro + 0.20, th, yy), polar(1, th, 0), 0.05, 0.03, washer=False)
-            for rr in ((ri + ro) / 2 - 0.25, (ri + ro) / 2 + 0.25):                                   # top bolts
-                hex_bolt(m, "eq_steel", polar(rr, th, h + 0.09), (0, 1, 0), 0.05, 0.03, washer=False)
-            cyl(m, "eq_insulator", polar((ri + ro) / 2, th, h + 0.09), polar((ri + ro) / 2, th, h + 0.20), 0.05, 12, chamfer=0.01)
+            Rz = rot_z(a)
+            box(m, "eq_metal_band", apply(Rz, (ro + 0.13, 0, 0))[:2] + (0.0,), (0.10, 0.36, 0.70), Rz, chamfer=0.02)   # clamp block
+            for zz in (-0.22, 0.22):
+                hex_bolt(m, "eq_steel", polz(ro + 0.18, a, zz), polz(1, a, 0), 0.05, 0.03, washer=False)
+            cyl(m, "eq_insulator", polz(ro + 0.18, a, 0.0), polz(ro + 0.28, a, 0.0), 0.05, 12, chamfer=0.01)      # lead-in
 
-    # --- flanges to the two drives
+    # --- flanges to the two drives (on the torus end faces)
     fl = er5_flange(lod, seg)
     P["er5_flange_aft"] = placed(fl, I3, (0, 0, d["face_z"]))
     P["er5_flange_aft"].name = "er5_flange_aft"
     P["er5_flange_fore"] = placed(fl, rot_y(math.pi), (0, 0, -d["face_z"]))
     P["er5_flange_fore"].name = "er5_flange_fore"
 
-    # --- power inverter to the engine bus (+X), busbars to both flanges
+    # --- power inverter to the engine bus (+X side), two busbars to each flange
     iv = P["er5_inverter"] = Part("er5_inverter")
-    box(iv, "eq_metal_panel", (2.05, 0, 0), (0.36, 1.0, 1.05), chamfer=0.04 if lod == 0 else 0.0)
+    xi = ro + 0.13
+    box(iv, "eq_metal_panel", (xi, 0, 0), (0.30, 1.0, 1.25), chamfer=0.04 if lod == 0 else 0.0)
     if lod < 2:
         for zs in (-1, 1):
-            for yy in (-0.22, 0.22):
-                a, b = (2.0, yy, zs * 0.50), (1.60, yy, zs * 2.05)
+            for yy in (-0.24, 0.24):
+                a, b, c2 = (xi, yy, zs * 0.62), (xi, yy, zs * 1.70), (2.05, yy, zs * 2.18)
                 cyl(iv, "eq_insulator", a, b, 0.07, small)
+                cyl(iv, "eq_insulator", b, c2, 0.07, small)
+                lathe(iv, "eq_insulator", [(0, -0.07), (0.07, -0.07), (0.07, 0.07), (0, 0.07)], small, I3, b)   # elbow
                 if lod == 0:
-                    cyl(iv, "eq_copper", a, (a[0] - 0.015, yy, a[2] + zs * 0.06), 0.085, small)
-                    mid = tuple((p + q) / 2 for p, q in zip(a, b))
-                    cyl(iv, "eq_steel", (mid[0], mid[1], mid[2] - 0.04), (mid[0], mid[1], mid[2] + 0.04), 0.09, small)  # support clamp
+                    cyl(iv, "eq_copper", a, (xi, yy, zs * 0.70), 0.085, small)
+                    cyl(iv, "eq_steel", (xi, yy, zs * 1.15 - 0.04), (xi, yy, zs * 1.15 + 0.04), 0.09, small)   # support clamp
     if lod == 0:
-        box(iv, "eq_metal_graphite", (2.235, 0.0, 0.0), (0.012, 0.80, 0.86), chamfer=0.004)            # front cover
+        box(iv, "eq_metal_graphite", (xi + 0.155, 0.0, 0.0), (0.012, 0.80, 1.0), chamfer=0.004)           # front cover
         for yy in (-0.34, 0.34):
-            for zz in (-0.37, 0.37):
-                hex_bolt(iv, "eq_steel", (2.241, yy, zz), (1, 0, 0), 0.04, 0.02, washer=False)
+            for zz in (-0.44, 0.44):
+                hex_bolt(iv, "eq_steel", (xi + 0.161, yy, zz), (1, 0, 0), 0.04, 0.02, washer=False)
         for i in range(3):
-            box(iv, "eq_status_amber", (2.243, 0.22, -0.20 + 0.08 * i), (0.006, 0.05, 0.05))
-        for i in range(6):                                                                             # cooling fins
-            box(iv, "eq_metal_band", (2.05, 0.51, -0.40 + 0.16 * i), (0.28, 0.02, 0.06))
+            box(iv, "eq_status_amber", (xi + 0.163, 0.22, -0.20 + 0.08 * i), (0.006, 0.05, 0.05))
+        for i in range(7):                                                                             # cooling fins
+            box(iv, "eq_metal_band", (xi, 0.51, -0.48 + 0.16 * i), (0.24, 0.02, 0.06))
 
-    # --- pellet feed from the fuel bunker (-X): feed housing, bunker port on top
+    # --- pellet feed from the fuel bunker (-X side): feed housing, bunker port on top
     fd = P["er5_fuel_feed"] = Part("er5_fuel_feed")
-    box(fd, "eq_metal_panel", (-2.05, 0.02, 0), (0.36, 0.90, 0.90), chamfer=0.04 if lod == 0 else 0.0)
+    xf = -(ro + 0.13)
+    box(fd, "eq_metal_panel", (xf, 0.02, 0), (0.30, 0.90, 0.95), chamfer=0.04 if lod == 0 else 0.0)
     if lod < 2:
-        cyl(fd, "eq_metal_band", (-2.05, 0.47, 0), (-2.05, 0.90, 0), 0.12, small)
-        lathe(fd, "eq_steel", [(0, 0), (0.20, 0), (0.20, 0.05), (0, 0.05)], small, R_Y, (-2.05, 0.90, 0))
+        cyl(fd, "eq_metal_band", (xf, 0.47, 0), (xf, 0.85, 0), 0.12, small)
+        lathe(fd, "eq_steel", [(0, 0), (0.20, 0), (0.20, 0.05), (0, 0.05)], small, R_Y, (xf, 0.85, 0))
     if lod == 0:
         for i in range(6):
             a = 2 * math.pi * i / 6
-            hex_bolt(fd, "eq_steel", (-2.05 + 0.15 * math.cos(a), 0.95, 0.15 * math.sin(a)), (0, 1, 0), 0.03, 0.02, washer=False)
-        box(fd, "eq_metal_graphite", (-2.235, 0.0, 0.0), (0.012, 0.62, 0.62), chamfer=0.004)            # hatch
-        box(fd, "eq_status_amber", (-2.243, 0.22, 0.20), (0.006, 0.08, 0.10))                           # sight window
-        for zz in (-0.22, 0.22):
-            cyl(fd, "eq_steel", (-2.25, -0.33, zz - 0.06), (-2.25, -0.33, zz + 0.06), 0.02, 10)          # hinges
+            hex_bolt(fd, "eq_steel", (xf + 0.15 * math.cos(a), 0.90, 0.15 * math.sin(a)), (0, 1, 0), 0.03, 0.02, washer=False)
+        box(fd, "eq_metal_graphite", (xf - 0.155, 0.0, 0.0), (0.012, 0.62, 0.66), chamfer=0.004)            # hatch
+        box(fd, "eq_status_amber", (xf - 0.163, 0.22, 0.20), (0.006, 0.08, 0.10))                           # sight window
+        for zz in (-0.24, 0.24):
+            cyl(fd, "eq_steel", (xf - 0.17, -0.33, zz - 0.06), (xf - 0.17, -0.33, zz + 0.06), 0.02, 10)      # hinges
 
-    # --- plasma control unit (under the vessel, below the inverter)
+    # --- plasma control unit (under the vessel, -Y)
     pc = P["er5_plasma_ctl"] = Part("er5_plasma_ctl")
-    rm = (ri + ro) / 2
-    box(pc, "eq_metal_panel", (rm, -h - 0.13, 0), (0.50, 0.26, 0.90), chamfer=0.03 if lod == 0 else 0.0)
+    yb = -(ro + 0.13)
+    box(pc, "eq_metal_panel", (0, yb, 0), (0.90, 0.26, 1.0), chamfer=0.03 if lod == 0 else 0.0)
     if lod == 0:
-        box(pc, "eq_status_amber", (rm, -h - 0.265, 0.30), (0.10, 0.006, 0.06))
-        for zz in (-0.30, -0.15, 0.0):
-            cyl(pc, "eq_metal_graphite", (rm, -h - 0.26, zz), (rm, -h - 0.32, zz), 0.04, 12, chamfer=0.006)
-        cyl(pc, "eq_metal_band", (rm + 0.26, -h - 0.10, 0.0), (ro - 0.06, -h + 0.40, 0.0), 0.05, 12)                # conduit to the inverter
+        box(pc, "eq_status_amber", (0.30, yb - 0.135, 0.30), (0.10, 0.006, 0.06))
+        for xx in (-0.30, -0.15, 0.0):
+            cyl(pc, "eq_metal_graphite", (xx, yb - 0.13, -0.25), (xx, yb - 0.19, -0.25), 0.04, 12, chamfer=0.006)
+        cyl(pc, "eq_metal_band", (0.45, yb + 0.05, 0.0), polz(ro + 0.04, -math.pi / 2 + 0.55, 0.0), 0.05, 12)   # conduit
 
-    # --- plasma sensor ports on the vessel top
+    # --- plasma sensor ports on the shoulders
     sn = P["er5_plasma_sensors"] = Part("er5_plasma_sensors")
     if lod < 2:
-        for th in (math.radians(20), math.radians(-20), math.radians(160), math.radians(200), math.pi / 2, -math.pi / 2):
-            p0 = polar((ri + ro) / 2, th, h)
-            cyl(sn, "eq_metal_graphite", p0, (p0[0], h + 0.14, p0[2]), 0.07, small, chamfer=0.01 if lod == 0 else 0.0)
+        for a, zz in ((math.pi / 4, 0.9), (math.pi / 4, -0.9), (3 * math.pi / 4, 0.9), (3 * math.pi / 4, -0.9),
+                      (5 * math.pi / 4, 0.0), (7 * math.pi / 4, 0.0)):
+            p0, p1 = polz(ro + 0.03, a, zz), polz(ro + 0.17, a, zz)
+            cyl(sn, "eq_metal_graphite", p0, p1, 0.07, small, chamfer=0.01 if lod == 0 else 0.0)
             if lod == 0:
-                lathe(sn, "eq_insulator", [(0, 0), (0.05, 0), (0.04, 0.03), (0, 0.05)], 16, R_Y, (p0[0], h + 0.14, p0[2]))
+                lathe(sn, "eq_insulator", [(0, 0), (0.05, 0), (0.04, 0.03), (0, 0.05)], 16, axis_to(polz(1, a, 0)), p1)
 
-    # --- heat-pipe column from the vessel to the pad: spider over the torus hole, 7 heat pipes, collars, top plate
+    # --- heat-pipe column from the vessel top to the pad: saddle, 7 heat pipes, collars, top plate
     hc = P["er5_heat_pipe_column"] = Part("er5_heat_pipe_column")
-    y0, y1 = h - 0.06, d["pad_y0"]
-    for k in range(4):
-        th = math.pi / 4 + k * math.pi / 2
-        box(hc, "eq_metal_band", polar(0.62, th, h + 0.02), (1.20, 0.16, 0.16), rot_y(-th), chamfer=0.015 if lod == 0 else 0.0)
-    ylathe(hc, "eq_metal_band", [(0, y0), (0.50, y0), (0.50, h + 0.14), (0, h + 0.14)], seg)
+    y0, y1 = ro, d["pad_y0"]
+    box(hc, "eq_metal_band", (0, ro + 0.02, 0), (0.80, 0.16, 1.30), chamfer=0.03 if lod == 0 else 0.0)            # saddle
+    ylathe(hc, "eq_metal_band", [(0, y0), (0.50, y0), (0.50, y0 + 0.16), (0, y0 + 0.16)], seg)
     pipes = [(0.0, 0.0, 0.20)] + [(0.34 * math.cos(2 * math.pi * i / 6), 0.34 * math.sin(2 * math.pi * i / 6), 0.08) for i in range(6)]
     for x, z, r in pipes if lod < 2 else pipes[:1]:
-        cyl(hc, "eq_steel" if r < 0.1 else "eq_metal_graphite", (x, h + 0.14, z), (x, y1 - 0.08, z), r if lod < 2 else 0.30, small)
+        cyl(hc, "eq_steel" if r < 0.1 else "eq_metal_graphite", (x, y0 + 0.16, z), (x, y1 - 0.08, z), r if lod < 2 else 0.30, small)
     if lod < 2:
-        for yy in (h + 0.45, h + 0.75, h + 1.05):
+        for yy in (y0 + 0.36, y0 + 0.58):
             ylathe(hc, "eq_metal_band", crect(0.15, 0.46, yy - 0.03, yy + 0.03, 0.01 if lod == 0 else 0.0), seg)
     ylathe(hc, "eq_metal_band", [(0, y1 - 0.08), (0.65, y1 - 0.08), (0.65, y1), (0, y1)], seg)
     if lod == 0:
         for i in range(8):
             a = 2 * math.pi * (i + 0.5) / 8
-            hex_bolt(hc, "eq_steel", polar(0.56, a, h + 0.14), (0, 1, 0), 0.04, 0.025, washer=False)
+            hex_bolt(hc, "eq_steel", polar(0.42, a, y0 + 0.16), (0, 1, 0), 0.04, 0.025, washer=False)
             hex_bolt(hc, "eq_steel", polar(0.56, a, y1 - 0.08), (0, -1, 0), 0.04, 0.025, washer=False)
+        for sx in (-1, 1):
+            for sz in (-1, 1):
+                hex_bolt(hc, "eq_steel", (sx * 0.32, ro + 0.10, sz * 0.55), (0, 1, 0), 0.05, 0.03, washer=False)
 
     # --- cooling pad PT1: 11 x 11 m, 0.25 m; frame (rim, diagonals, midlines), 8 triangular ceramic sections
     pd = P["reactor_cooling_pad"] = Part("reactor_cooling_pad")
@@ -747,8 +750,7 @@ def er5_parts(lod):
         for k in range(8):                                                                             # 8 sections
             ca = corners[k // 2]
             mid = (ca[0], 0.0) if k % 2 == 0 else (0.0, ca[1])
-            tri = inset([(0.0, 0.0), ca, mid], 0.13)
-            prism(pd, "eq_pad_ceramic", tri, py0 + 0.04, py1 - 0.012)
+            prism(pd, "eq_pad_ceramic", inset([(0.0, 0.0), ca, mid], 0.13), py0 + 0.04, py1 - 0.012)
     else:
         box(pd, "eq_pad_ceramic", (0, py1 - 0.06, 0), (2 * L - 0.3, 0.10, 2 * L - 0.3))
     if lod == 0:
@@ -764,8 +766,8 @@ def er5_parts(lod):
         for s in (-1, 1):                                                                              # rim bolts + side slots
             for i in range(10):
                 q = -L + 0.85 + i * (2 * L - 1.7) / 9
-                hex_bolt(pd, "eq_steel", (s * (L - bw / 2), py1 + 0.0, q), (0, 1, 0), 0.05, 0.025, washer=False)
-                hex_bolt(pd, "eq_steel", (q, py1 + 0.0, s * (L - bw / 2)), (0, 1, 0), 0.05, 0.025, washer=False)
+                hex_bolt(pd, "eq_steel", (s * (L - bw / 2), py1, q), (0, 1, 0), 0.05, 0.025, washer=False)
+                hex_bolt(pd, "eq_steel", (q, py1, s * (L - bw / 2)), (0, 1, 0), 0.05, 0.025, washer=False)
             for q in (-L / 2, L / 2):
                 box(pd, "eq_metal_graphite", (s * L + s * 0.004, (py0 + py1) / 2, q), (0.01, 0.08, 1.6))
                 box(pd, "eq_metal_graphite", (q, (py0 + py1) / 2, s * L + s * 0.004), (1.6, 0.08, 0.01))
@@ -775,32 +777,27 @@ def er5_parts(lod):
         for i in range(4):
             hex_bolt(pd, "eq_steel", (0.32 * (1 if i % 2 else -1), py1 + 0.05, 0.32 * (1 if i // 2 else -1)), (0, 1, 0), 0.07, 0.035)
 
-    # --- emergency connection to the shared coolant loop: the only copper lines (column foot -> port block)
+    # --- emergency connection to the shared coolant loop: the only copper lines (column foot -> port block, aft top)
     ec = P["er5_emergency_coolant"] = Part("er5_emergency_coolant")
     if lod < 2:
-        th = math.radians(150)
-        Ry = rot_y(-th)
-        box(ec, "eq_metal_panel", polar(rm, th, h + 0.10), (0.34, 0.20, 0.46), Ry, chamfer=0.02 if lod == 0 else 0.0)
+        box(ec, "eq_metal_panel", (0, ro + 0.08, 1.15), (0.46, 0.18, 0.34), chamfer=0.02 if lod == 0 else 0.0)
         for s in (-1, 1):
-            off = (-math.sin(th) * 0.12 * s, 0, math.cos(th) * 0.12 * s)
-            a = tuple(p + o for p, o in zip(polar(0.50, th, h + 0.24), off))
-            b = tuple(p + o for p, o in zip(polar(rm - 0.16, th, h + 0.24), off))
-            cyl(ec, "eq_copper", a, b, 0.05, small)
-            top = tuple(p + o for p, o in zip(polar(rm, th, h + 0.20), off))
-            cyl(ec, "eq_copper", top, (top[0], h + 0.42, top[2]), 0.06, small)
+            x = 0.12 * s
+            cyl(ec, "eq_copper", (x, ro + 0.22, 0.45), (x, ro + 0.22, 1.02), 0.05, small)
+            cyl(ec, "eq_copper", (x, ro + 0.17, 1.15), (x, ro + 0.40, 1.15), 0.06, small)
             if lod == 0:
-                lathe(ec, "eq_steel", [(0, 0), (0.10, 0), (0.10, 0.04), (0, 0.04)], small, R_Y, (top[0], h + 0.42, top[2]))
-                cyl(ec, "eq_copper", a, (a[0], h + 0.12, a[2]), 0.05, small)
+                lathe(ec, "eq_steel", [(0, 0), (0.10, 0), (0.10, 0.04), (0, 0.04)], small, R_Y, (x, ro + 0.40, 1.15))
+                cyl(ec, "eq_copper", (x, ro + 0.22, 1.02), (x, ro + 0.22, 1.15), 0.05, small)
 
-    # --- mounting lugs to the engine bay frame under the four magnet hoops (no floor stand)
+    # --- mounting lugs to the engine bay frame on the lower shoulders (no floor stand)
     mt = P["er5_mounts"] = Part("er5_mounts")
-    for th in hoops:
-        Ry = rot_y(-th)
-        box(mt, "eq_metal_band", polar(rm, th, -h - 0.20), (0.46, 0.30, 0.28), Ry, chamfer=0.02 if lod == 0 else 0.0)
-        if lod < 2:
-            ax = polar(1, th + math.pi / 2, 0)
-            c0 = polar(rm, th, -h - 0.26)
-            lathe(mt, "eq_steel", crect(0.05, 0.10, -0.16, 0.16, 0.01 if lod == 0 else 0.0), small, axis_to(ax), c0)
+    for a in (5 * math.pi / 4, 7 * math.pi / 4):
+        for zz in (-0.9, 0.9):
+            Rz = rot_z(a)
+            box(mt, "eq_metal_band", apply(Rz, (ro + 0.10, 0, 0))[:2] + (zz,), (0.26, 0.42, 0.46), Rz, chamfer=0.02 if lod == 0 else 0.0)
+            if lod < 2:
+                c0 = apply(Rz, (ro + 0.18, 0, 0))[:2] + (zz,)
+                lathe(mt, "eq_steel", crect(0.05, 0.10, -0.16, 0.16, 0.01 if lod == 0 else 0.0), small, I3, c0)
     return P
 
 

@@ -14,10 +14,13 @@ them by hand; change the generator and rebuild. Preview renders:
 - `cobretty_cr1_vector/` - Cobretty CR-1 Vector field-coupling main drive.
   Unit axis OBJ +Z; reactor flange at z = 0, cooling pad at z = 6.5
   (part `engine_hot_emitter_annulus` = the passport's thermal emitter mesh id).
-- `cobretty_er5_reactor/` - Cobretty ER-5 propulsion reactor. Torus axis OBJ +Y;
-  flanges to the fore / aft drives with mating faces at z = -2.5 / +2.5
-  (they mate the CR-1 flange); cooling pad PT1 (`reactor_cooling_pad`,
-  11 x 11 x 0.25 m) at y = 2.3 on the heat-pipe column.
+- `cobretty_er5_reactor/` - Cobretty ER-5 propulsion reactor, 5 x 5 x 5 m: the
+  drive's diameter, so drive - reactor - drive form one cylindrical engine bay.
+  Torus coaxial with the bay (axis OBJ Z); flanges to the fore / aft drives on its
+  end faces, mating faces at z = -2.5 / +2.5 (they mate the CR-1 flange: place the
+  aft CR-1 at z = +2.5 as is, the fore one turned 180 deg about Y at z = -2.5);
+  cooling pad PT1 (`reactor_cooling_pad`, 11 x 11 x 0.25 m) at y = 3.0 on the
+  heat-pipe column.
 
 No textures: every detail is geometry, colours are MTL materials (`eq_*`
 names are shared asset-level material ids). LOD0 is meant for <= ~30 m,

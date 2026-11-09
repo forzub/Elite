@@ -2363,20 +2363,21 @@
       "geometry": {
         "status": "PROPOSAL/model",
         "envelope_m": [
-          4,
-          4,
+          5,
+          5,
           5
         ],
         "service_clearance_m": [
-          4.6,
-          4.6,
+          5.75,
+          5.75,
           5.75
         ],
         "cooling_pad_side_m": 11,
         "cooling_pad_thickness_m": 0.25,
         "anchor": "runtime ER-5 padSideM = 11.0 m",
         "basis": [
-          "reactor housing scales with mass; cooling interface scales with thermal waste"
+          "reactor housing scales with mass; cooling interface scales with thermal waste",
+          "author 2026-11-09: body diameter = CR-1 envelope (5 m), coaxial torus, flanges on its end faces - drive / reactor / drive read as one cylindrical engine bay"
         ]
       },
       "cooperation_group": "cognium_pool",

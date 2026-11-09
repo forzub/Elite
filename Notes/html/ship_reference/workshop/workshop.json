@@ -9,10 +9,10 @@
    "text": "Technical concept poster of a spacecraft main engine for a hard science-fiction game set in the year 3126: the Cobretty CR-1 Vector main drive. It is a FIELD-COUPLING drive: it expels no reaction mass - no nozzle, no exhaust, no propellant lines, no gimbal or trunnion. A replaceable standardized unit.\nShape: a compact closed cylinder 6.5 m long; the cooling pad on its outer end is the widest part, 5.0 m across (overall envelope 5 x 5 x 6.5 m), dry mass 14 t.\nOuter end - the cooling pad: a solid flat disc 5.0 m across, dark matte hafnium-carbide ceramic composite with a faint orange glow at its centre (it runs at 2500 K), divided into 8 replaceable sector segments held by quick-release clamps on a thin rim. The pad radiates the engine's own waste heat into space.\nDirectly behind the pad: a ring of field coil segments (field steering of the thrust up to 75 degrees, no moving parts).\nInner end: a heavy bolted docking flange that joins the propulsion reactor module; in its centre the power busbar coupling (4.85 GW input) and a data connector.\nSide: one service module holding a backup heat exchanger with two coolant line ports (used only when the pad is damaged) and temperature / field sensors.\nMounting: four flat lugs to the engine bay frame - no floor stand, no feet.\nStyle: Cobretty premium modular school - compact integrated shapes, ring bands, clean grey-graphite surfaces, each replaceable sub-unit (pad sectors, coil ring segments, heat exchanger, busbar coupling) visibly separate.\nViews: three-quarter perspective, orthographic side view, view onto the pad, view onto the flange; close-ups of the pad clamp, the flange coupling and the service module. Dimension lines in metres, a 1.8 m human figure for scale, dark neutral background.\nText: if labels are drawn, use only these: \"Cobretty CR-1 Vector\", \"Ø 5.0 m\", \"6.5 m\", \"14 t\", \"pad\", \"flange to reactor\". No other numbers, no logos."
   },
   "kb.reactor.er5": {
-   "updated": 1794239747885,
-   "version": 1,
-   "source": "Claude (по эскизам автора 2026-11-09; основа - игровой паспорт CobraCobrettyER5PropulsionReactor)",
-   "text": "Technical concept poster of a spacecraft propulsion reactor for a hard science-fiction game set in the year 3126: the Cobretty ER-5, a compact D-He3 fusion reactor that powers the two main engines of its engine bay (5000 MW electric). A replaceable standardized unit.\nReactor body: a low torus lying flat with two axial docking flanges on opposite sides - fore and aft - that bolt to the two engines of the bay; the whole body fits in 4 x 4 x 5 m (flange to flange 5 m), dry mass 25 t.\nCooling pad: a thin square plate 11 x 11 m and only 0.25 m thick - almost three times wider than the reactor - made of 8 triangular replaceable sections on a light frame, dark matte radiating surface. It is part of the ship's outer skin, above the reactor, and radiates the reactor's waste heat into space. It joins the reactor through one short central column of heat pipes. Show it lifted in an exploded view with dashed alignment lines.\nOn the torus: a fuel pellet feed unit with a port from the fuel bunker, a power inverter module to the engine bus with heavy busbar terminals, a plasma control unit, plasma sensor ports, confinement magnet and damper housings; access panels clearly separate so each replaceable unit is readable.\nMounting: lugs to the engine bay frame - no floor platform, no feet.\nStyle: Cobretty premium modular school - ring bands, clean grey-graphite surfaces, copper-coloured coolant lines only on the emergency connection to the shared loop.\nViews: exploded three-quarter perspective, top view of the pad, side view of the assembly, top view of the torus. Dimension lines in metres, a 1.8 m human figure for scale, dark neutral background.\nText: if labels are drawn, use only these: \"Cobretty ER-5\", \"5000 MW\", \"25 t\", \"4 x 4 x 5 m\", \"pad 11 x 11 m\", \"flange to engine\". No other numbers, no logos."
+   "text": "Technical concept poster of a spacecraft propulsion reactor for a hard science-fiction game set in the year 3126: the Cobretty ER-5, a compact D-He3 fusion reactor that powers the two field-coupling main drives of its engine bay (5000 MW electric). A replaceable standardized unit.\nLayout: the engine bay is ONE cylinder of constant diameter 5 m: drive - reactor - drive on one axis. The reactor is a fat torus lying COAXIAL with the bay axis (the axis runs fore-aft through the torus hole), outer diameter about 4.4 m, length 5 m flange to flange; on each end face a large bolted flange (diameter 4.5 m, ring of 24 bolts) that mates the drive flange - the drives bolt directly to it. Dry mass 25 t.\nAround the torus: 8 confinement-magnet hoop housings running across the torus cross-section (front face - outer wall - back face), a power inverter box on one side with two insulated busbars to each flange, a fuel pellet feed box on the other side with a port to the fuel bunker, a plasma control unit underneath, small plasma sensor ports, access panels.\nCooling pad: a thin square plate 11 x 11 m and only 0.25 m thick - more than twice as wide as the bay - made of 8 triangular replaceable sections on a light frame, dark matte radiating surface. It is part of the ship's outer skin and covers the reactor and the inner ends of both drives; it joins the reactor through one short column of heat pipes. Show it lifted in an exploded view with dashed alignment lines.\nMounting: four lugs on the lower shoulders to the engine bay frame - no floor platform, no feet.\nStyle: Cobretty premium modular school - ring bands, clean grey-graphite surfaces, copper-coloured lines only on the emergency connection to the shared coolant loop.\nViews: exploded three-quarter perspective of the whole bay (drive - reactor - drive), side view of the bay, end view of the reactor flange. Dimension lines in metres, a 1.8 m human figure for scale, dark neutral background.\nText: if labels are drawn, use only these: \"Cobretty ER-5\", \"5000 MW\", \"25 t\", \"5 x 5 x 5 m\", \"pad 11 x 11 m\", \"flange to engine\". No other numbers, no logos.",
+   "updated": 1794251691816,
+   "version": 2,
+   "source": "Claude: модель v2 (реактор диаметром двигателя, соосный тор)"
   }
  },
  "sketches": {
@@ -84,36 +84,44 @@
     "updated": 1794239302510
    },
    {
-    "id": "model-er5-lod0-pad",
-    "file": "model-er5-lod0-pad.png",
-    "name": "3D-модель v1 · LOD0 сверху, пятак 11 × 11 м (рендер)",
+    "id": "model-er5-bay-side",
+    "file": "model-er5-bay-side.png",
+    "name": "3D-модель v2 · отсек в сборке: CR-1 + ER-5 + CR-1, сбоку (без пятака)",
     "note": "",
-    "added": 1794250982066,
-    "updated": 1794250982066
+    "added": 1794251691816,
+    "updated": 1794251691816
+   },
+   {
+    "id": "model-er5-bay-top",
+    "file": "model-er5-bay-top.png",
+    "name": "3D-модель v2 · отсек в сборке с пятаком 11 × 11 м",
+    "note": "",
+    "added": 1794251691816,
+    "updated": 1794251691816
    },
    {
     "id": "model-er5-lod0-body",
     "file": "model-er5-lod0-body.png",
-    "name": "3D-модель v1 · LOD0 без пятака: тор, узлы, фланцы (рендер)",
+    "name": "3D-модель v2 · ER-5 LOD0 без пятака: соосный тор, узлы, фланцы",
     "note": "",
-    "added": 1794250982066,
-    "updated": 1794250982066
+    "added": 1794251691816,
+    "updated": 1794251691816
    },
    {
-    "id": "model-er5-lod0-side",
-    "file": "model-er5-lod0-side.png",
-    "name": "3D-модель v1 · LOD0 вид сбоку (рендер)",
+    "id": "model-er5-lod0-pad",
+    "file": "model-er5-lod0-pad.png",
+    "name": "3D-модель v2 · ER-5 LOD0 сверху, пятак (рендер)",
     "note": "",
-    "added": 1794250982066,
-    "updated": 1794250982066
+    "added": 1794251691816,
+    "updated": 1794251691816
    },
    {
     "id": "model-er5-lods",
     "file": "model-er5-lods.png",
-    "name": "3D-модель v1 · LOD0 / LOD1 / LOD2",
+    "name": "3D-модель v2 · ER-5 LOD0 / LOD1 / LOD2",
     "note": "",
-    "added": 1794250982066,
-    "updated": 1794250982066
+    "added": 1794251691816,
+    "updated": 1794251691816
    }
   ]
  },
@@ -339,33 +347,37 @@
    ],
    "next": "После вашего решения: импорт в редактор моделей (semantic parts, сокеты), затем реактор ER-5 тем же способом."
   },
-  "model-er5-lod0-body": {
+  "model-er5-bay-side": {
    "author": "Claude",
-   "updated": 1794250982066,
-   "verdict": "модель v1 по паспорту - на рецензию автору",
+   "updated": 1794251691816,
+   "verdict": "модель v2: реактор диаметром двигателя, отсек - один цилиндр",
    "items": [
     {
      "kind": "ok",
-     "text": "Построена тем же генератором tools/models/build_equipment_models.py по паспорту ER-5 и по вашему эскизу «панель и тороидальный модуль»: плоский тор (Ø 3,9 м, высота 2 м) с двумя осевыми фланцами к двигателям отсека, расстояние фланец - фланец 5 м; над ним на короткой колонне тепловых труб - квадратный пятак 11 × 11 × 0,25 м из 8 треугольных секций. Высота сборки с пятаком ~3,95 м."
+     "text": "По решению автора (2026-11-09) реактор того же диаметра, что двигатель: габарит ER-5 теперь 5 × 5 × 5 м (канон и справочник обновлены, зона обслуживания 5,75 м). Двигатель - реактор - двигатель стоят на одной оси одним цилиндрическим отсеком ~18 м."
     },
     {
      "kind": "ok",
-     "text": "Детали отдельными OBJ = заменяемые узлы из каталога отказов (reactor.fusion): reactor_cooling_pad (пятак PT1), er5_confinement (4 хомута магнитов удержания / демпферов), er5_fuel_feed (подача таблеток с портом от бункера), er5_inverter (преобразователь на шину, по 2 шины к каждому фланцу), er5_plasma_ctl (блок управления плазмой снизу), er5_plasma_sensors (6 датчиков сверху), er5_heat_pipe_column, er5_emergency_coolant (медь - только аварийный ввод в общий контур), er5_vessel, er5_flange_fore / er5_flange_aft, er5_mounts (4 проушины, без платформы)."
+     "text": "Чтобы вписаться в 5 м от фланца до фланца, тор развёрнут соосно отсеку (ось вдоль корабля): фланцы на его торцах, 8 хомутов магнитов удержания идут поперёк тора. Фланцы ответные к CR-1 и больше не выходят за габарит."
     },
     {
      "kind": "ok",
-     "text": "Фланцы ответные к CR-1: тот же диаметр 4,5 м, 24 болта, канавка под центрирующий бурт, гнездо силового ввода с 3 контактами, разъём данных внизу - двигатель встаёт на реактор без переходника."
+     "text": "Узлы те же (заменяемые блоки каталога отказов): преобразователь на шину с шинами к обоим фланцам (+X), подача таблеток (-X), блок управления плазмой (снизу), 6 датчиков, 4 проушины, колонна тепловых труб и медный аварийный ввод сверху."
+    },
+    {
+     "kind": "ok",
+     "text": "Пятак 11 × 11 м по паспорту лежит над отсеком как часть обшивки и накрывает и реактор, и начала двигателей (зазор над двигателями ~0,5 м)."
+    },
+    {
+     "kind": "ok",
+     "text": "LOD0 ~70 тыс. треугольников, LOD1 ~12 тыс., LOD2 ~2 тыс."
     },
     {
      "kind": "fix",
-     "text": "Отступление от паспорта: обод фланцев Ø 4,5 м выходит за габарит 4 × 4 м на 0,25 м с каждой стороны - иначе фланец не совпадёт с фланцем CR-1. Сам тор и все узлы в габарите. Если габарит важнее - скажите, уменьшу фланцы у обоих агрегатов."
-    },
-    {
-     "kind": "ok",
-     "text": "LOD0 ~62 тыс. треугольников (ближе ~30 м), LOD1 ~10 тыс., LOD2 ~1,6 тыс. (датчики и аварийный ввод на LOD2 не строятся)."
+     "text": "Эскизы ER-5 рисовали тор осью вверх - это уже не так. Промт v2 в поле промта реактора описывает новую компоновку."
     }
    ],
-   "next": "Оба агрегата (CR-1 и ER-5) теперь видны в редакторе моделей в группе «Оборудование»: выбрать, пройти мастер SOURCE → … → BUILD."
+   "next": "В редакторе моделей: группа «Оборудование» → cobretty_er5_reactor, мастер SOURCE → BUILD."
   }
  },
  "deleted": []

@@ -1,0 +1,295 @@
+{
+ "asset": "uhuru_u500_life_support",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "u500_cradle.1",
+   "part": "u500_cradle",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.05,
+    -1.95
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.95,
+    0.05,
+    0.12
+   ]
+  },
+  {
+   "id": "u500_cradle.2",
+   "part": "u500_cradle",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.05,
+    1.95
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.95,
+    0.05,
+    0.12
+   ]
+  },
+  {
+   "id": "u500_water.1",
+   "part": "u500_water",
+   "shape": "cylinder",
+   "position": [
+    -2.95,
+    1.7,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.07,
+   "half_height": 1.6
+  },
+  {
+   "id": "u500_water.2",
+   "part": "u500_water",
+   "shape": "cylinder",
+   "position": [
+    -2.95,
+    3.75,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.75,
+   "half_height": 0.45
+  },
+  {
+   "id": "u500_o2.1",
+   "part": "u500_o2",
+   "shape": "cylinder",
+   "position": [
+    -0.8,
+    1.85,
+    -1.3
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.92,
+   "half_height": 1.75
+  },
+  {
+   "id": "u500_o2.2",
+   "part": "u500_o2",
+   "shape": "cylinder",
+   "position": [
+    -0.8,
+    4.025,
+    -1.3
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.612,
+   "half_height": 0.425
+  },
+  {
+   "id": "u500_o2.3",
+   "part": "u500_o2",
+   "shape": "cylinder",
+   "position": [
+    -0.8,
+    1.85,
+    1.3
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.92,
+   "half_height": 1.75
+  },
+  {
+   "id": "u500_o2.4",
+   "part": "u500_o2",
+   "shape": "cylinder",
+   "position": [
+    -0.8,
+    4.025,
+    1.3
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.612,
+   "half_height": 0.425
+  },
+  {
+   "id": "u500_scrubber.1",
+   "part": "u500_scrubber",
+   "shape": "cylinder",
+   "position": [
+    1.55,
+    1.35,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.12,
+   "half_height": 2.0
+  },
+  {
+   "id": "u500_scrubber.2",
+   "part": "u500_scrubber",
+   "shape": "cylinder",
+   "position": [
+    1.55,
+    1.35,
+    -2.39
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.7875,
+   "half_height": 0.39
+  },
+  {
+   "id": "u500_scrubber.3",
+   "part": "u500_scrubber",
+   "shape": "cylinder",
+   "position": [
+    1.55,
+    1.35,
+    2.42
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.7875,
+   "half_height": 0.42
+  },
+  {
+   "id": "u500_cradle.3",
+   "part": "u500_cradle",
+   "shape": "box",
+   "position": [
+    1.55,
+    0.2,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.8,
+    0.15,
+    1.3
+   ]
+  },
+  {
+   "id": "u500_fan.1",
+   "part": "u500_fan",
+   "shape": "cylinder",
+   "position": [
+    3.32,
+    0.9,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.66,
+   "half_height": 0.8
+  },
+  {
+   "id": "u500_fan.2",
+   "part": "u500_fan",
+   "shape": "cylinder",
+   "position": [
+    3.32,
+    2.67,
+    0.61
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.24,
+   "half_height": 0.97
+  },
+  {
+   "id": "u500_fan.3",
+   "part": "u500_fan",
+   "shape": "box",
+   "position": [
+    2.585,
+    3.4,
+    0.61
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.975,
+    0.24,
+    0.24
+   ]
+  },
+  {
+   "id": "u500_fan.4",
+   "part": "u500_fan",
+   "shape": "cylinder",
+   "position": [
+    1.85,
+    2.85,
+    0.61
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.24,
+   "half_height": 0.55
+  }
+ ]
+}

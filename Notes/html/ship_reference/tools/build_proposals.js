@@ -38,7 +38,7 @@ const newParts = [
     }
   },
   {
-    id: "kern.mine.cutter", cat: "mining_rig", mfr: "mfr.kern_heavy", name: "Kern добычной комбайн МК-1 (фреза-дробилка, 200 т/ч)", model: "МК-1",
+    id: "kern.mine.cutter", cat: "mining_rig", mfr: "mfr.kern_heavy", model_asset: "equipment/kern_mk1_cutter", name: "Kern добычной комбайн МК-1 (фреза-дробилка, 200 т/ч)", model: "МК-1",
     mass_t: 45, price_cr: 900000, power_mw: 30, throughput_t_h: 200, overhaul_h: 20000, life_h: 60000, status: ST,
     notes: "PROPOSAL (reference): выносная фреза-дробилка на штанге; режет реголит и мелкие тела, подаёт дроблёнку в трюм/полость. Нет в каноне — единственная добычная деталь справочника.",
     geometry: {

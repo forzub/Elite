@@ -1,0 +1,250 @@
+{
+ "asset": "tianhe_tz16v_drive",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "tz16v_busbar.1",
+   "part": "tz16v_busbar",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -0.0612
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.3548,
+   "half_height": 0.0612
+  },
+  {
+   "id": "tz16v_flange.1",
+   "part": "tz16v_flange",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.11
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.3648,
+   "half_height": 0.11
+  },
+  {
+   "id": "tz16v_housing.1",
+   "part": "tz16v_housing",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    1.21
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.78,
+   "half_height": 0.99
+  },
+  {
+   "id": "tz16v_housing.2",
+   "part": "tz16v_housing",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    2.41
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.98,
+   "half_height": 0.21
+  },
+  {
+   "id": "tz16v_hx.1",
+   "part": "tz16v_hx",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    1.36
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.06,
+   "half_height": 0.58
+  },
+  {
+   "id": "tz16v_coil_ring.1",
+   "part": "tz16v_coil_ring",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    2.945
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.4,
+   "half_height": 0.325
+  },
+  {
+   "id": "engine_hot_emitter_annulus.1",
+   "part": "engine_hot_emitter_annulus",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    3.43
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.425,
+   "half_height": 0.16
+  },
+  {
+   "id": "tz16v_field_ctl.1",
+   "part": "tz16v_field_ctl",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.15,
+    1.35
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    0.15,
+    0.3,
+    0.575
+   ]
+  },
+  {
+   "id": "tz16v_sensors.1",
+   "part": "tz16v_sensors",
+   "shape": "box",
+   "position": [
+    -0.552,
+    -0.552,
+    0.62
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.06,
+    0.08,
+    0.08
+   ]
+  },
+  {
+   "id": "tz16v_sensors.2",
+   "part": "tz16v_sensors",
+   "shape": "box",
+   "position": [
+    0.552,
+    -0.552,
+    0.62
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.06,
+    0.08,
+    0.08
+   ]
+  },
+  {
+   "id": "tz16v_sensors.3",
+   "part": "tz16v_sensors",
+   "shape": "box",
+   "position": [
+    0.552,
+    0.552,
+    2.25
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.06,
+    0.08,
+    0.08
+   ]
+  },
+  {
+   "id": "tz16v_mounts.1",
+   "part": "tz16v_mounts",
+   "shape": "box",
+   "position": [
+    -1.04,
+    0.0,
+    0.5
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.19,
+    0.18,
+    0.2
+   ]
+  },
+  {
+   "id": "tz16v_mounts.2",
+   "part": "tz16v_mounts",
+   "shape": "box",
+   "position": [
+    1.04,
+    0.0,
+    0.5
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.19,
+    0.18,
+    0.2
+   ]
+  }
+ ]
+}

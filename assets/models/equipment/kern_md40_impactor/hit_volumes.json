@@ -1,0 +1,271 @@
+{
+ "asset": "kern_md40_impactor",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "md40_flange.1",
+   "part": "md40_flange",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.07,
+    -2.6
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.7,
+    0.07,
+    0.7
+   ]
+  },
+  {
+   "id": "md40_flange.2",
+   "part": "md40_flange",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.07,
+    1.6
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.7,
+    0.07,
+    0.7
+   ]
+  },
+  {
+   "id": "md40_cradle.1",
+   "part": "md40_cradle",
+   "shape": "box",
+   "position": [
+    -1.47,
+    0.325,
+    -0.11
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.15,
+    0.225,
+    3.735
+   ]
+  },
+  {
+   "id": "md40_cradle.2",
+   "part": "md40_cradle",
+   "shape": "box",
+   "position": [
+    1.47,
+    0.325,
+    -0.11
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.15,
+    0.225,
+    3.735
+   ]
+  },
+  {
+   "id": "md40_cradle.3",
+   "part": "md40_cradle",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.575,
+    -1.3
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.47,
+    0.325,
+    0.18
+   ]
+  },
+  {
+   "id": "md40_cradle.4",
+   "part": "md40_cradle",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.575,
+    0.3
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.47,
+    0.325,
+    0.18
+   ]
+  },
+  {
+   "id": "md40_cradle.5",
+   "part": "md40_cradle",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.575,
+    1.6
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.47,
+    0.325,
+    0.18
+   ]
+  },
+  {
+   "id": "md40_cradle.6",
+   "part": "md40_cradle",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.575,
+    3.2
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.47,
+    0.325,
+    0.18
+   ]
+  },
+  {
+   "id": "md40_coil.1",
+   "part": "md40_coil",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.75,
+    1.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.06,
+    0.91,
+    2.7
+   ]
+  },
+  {
+   "id": "md40_coil.2",
+   "part": "md40_coil",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.75,
+    3.8075
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.0,
+    1.0,
+    0.1075
+   ]
+  },
+  {
+   "id": "md40_feed.1",
+   "part": "md40_feed",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.62,
+    -2.8175
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    2.2,
+    1.07,
+    1.0975
+   ]
+  },
+  {
+   "id": "md40_feed.2",
+   "part": "md40_feed",
+   "shape": "box",
+   "position": [
+    0.0,
+    2.813,
+    -2.84
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    2.1,
+    0.123,
+    0.985
+   ]
+  },
+  {
+   "id": "md40_feed.3",
+   "part": "md40_feed",
+   "shape": "box",
+   "position": [
+    2.32,
+    1.55,
+    -2.85
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.13,
+    0.95,
+    0.8
+   ]
+  }
+ ]
+}

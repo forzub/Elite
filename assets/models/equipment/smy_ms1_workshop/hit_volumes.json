@@ -1,0 +1,271 @@
+{
+ "asset": "smy_ms1_workshop",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "ms1_shell.1",
+   "part": "ms1_shell",
+   "shape": "box",
+   "position": [
+    0.0,
+    -1.89,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.5,
+    0.11,
+    2.5
+   ]
+  },
+  {
+   "id": "ms1_shell.2",
+   "part": "ms1_shell",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.93,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.5,
+    0.07,
+    2.5
+   ]
+  },
+  {
+   "id": "ms1_shell.3",
+   "part": "ms1_shell",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    -2.42
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.5,
+    2.0,
+    0.08
+   ]
+  },
+  {
+   "id": "ms1_shell.4",
+   "part": "ms1_shell",
+   "shape": "box",
+   "position": [
+    3.42,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.08,
+    2.0,
+    2.5
+   ]
+  },
+  {
+   "id": "ms1_shell.5",
+   "part": "ms1_shell",
+   "shape": "box",
+   "position": [
+    -3.42,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.08,
+    2.0,
+    2.5
+   ]
+  },
+  {
+   "id": "ms1_door.1",
+   "part": "ms1_door",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.7,
+    2.28
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.35,
+    0.22,
+    0.2
+   ]
+  },
+  {
+   "id": "ms1_fabricator.1",
+   "part": "ms1_fabricator",
+   "shape": "box",
+   "position": [
+    -1.95,
+    -1.08,
+    -0.3
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.2,
+    0.7,
+    0.45
+   ]
+  },
+  {
+   "id": "ms1_fabricator.2",
+   "part": "ms1_fabricator",
+   "shape": "box",
+   "position": [
+    -2.65,
+    -0.78,
+    -1.45
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.68,
+    1.0,
+    0.63
+   ]
+  },
+  {
+   "id": "ms1_crane.1",
+   "part": "ms1_crane",
+   "shape": "box",
+   "position": [
+    0.6,
+    1.5,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.25,
+    0.25,
+    2.2
+   ]
+  },
+  {
+   "id": "ms1_crane.2",
+   "part": "ms1_crane",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.58,
+    2.05
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.35,
+    0.15,
+    0.1
+   ]
+  },
+  {
+   "id": "ms1_crane.3",
+   "part": "ms1_crane",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.58,
+    -2.05
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.35,
+    0.15,
+    0.1
+   ]
+  },
+  {
+   "id": "ms1_bench.1",
+   "part": "ms1_bench",
+   "shape": "box",
+   "position": [
+    1.3,
+    -0.98,
+    -2.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.7,
+    0.8,
+    0.4
+   ]
+  },
+  {
+   "id": "ms1_mounts.1",
+   "part": "ms1_mounts",
+   "shape": "box",
+   "position": [
+    0.0,
+    -1.94,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.3,
+    0.06,
+    1.9
+   ]
+  }
+ ]
+}

@@ -1,0 +1,179 @@
+{
+ "asset": "bastion_bt4_pd",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "bt4_flange.1",
+   "part": "bt4_flange",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.045,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.85,
+   "half_height": 0.045
+  },
+  {
+   "id": "bt4_mount.1",
+   "part": "bt4_mount",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.195,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.76,
+   "half_height": 0.105
+  },
+  {
+   "id": "bt4_mount.2",
+   "part": "bt4_mount",
+   "shape": "box",
+   "position": [
+    -0.78,
+    0.59,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.09,
+    0.29,
+    0.43
+   ]
+  },
+  {
+   "id": "bt4_mount.3",
+   "part": "bt4_mount",
+   "shape": "box",
+   "position": [
+    0.78,
+    0.59,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.09,
+    0.29,
+    0.43
+   ]
+  },
+  {
+   "id": "bt4_mount.4",
+   "part": "bt4_mount",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.72,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.17,
+   "half_height": 0.992
+  },
+  {
+   "id": "bt4_mount.5",
+   "part": "bt4_mount",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.19,
+    -0.85
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.32,
+    0.1,
+    0.28
+   ]
+  },
+  {
+   "id": "bt4_emitter.1",
+   "part": "bt4_emitter",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.72,
+    -0.0787
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.42,
+   "half_height": 1.5088
+  },
+  {
+   "id": "bt4_emitter.2",
+   "part": "bt4_emitter",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.02,
+    1.3
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.31,
+    0.09,
+    0.29
+   ]
+  },
+  {
+   "id": "bt4_emitter.3",
+   "part": "bt4_emitter",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.1355,
+    0.45
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.15,
+    0.0555,
+    0.26
+   ]
+  }
+ ]
+}

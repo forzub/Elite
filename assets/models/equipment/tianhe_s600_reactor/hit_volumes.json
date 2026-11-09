@@ -1,0 +1,259 @@
+{
+ "asset": "tianhe_s600_reactor",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "s600_skid.1",
+   "part": "s600_skid",
+   "shape": "box",
+   "position": [
+    0.0,
+    -1.2718,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.3675,
+    0.0957,
+    1.1077
+   ]
+  },
+  {
+   "id": "s600_vessel.1",
+   "part": "s600_vessel",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    -0.253,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.7953,
+   "half_height": 0.9094
+  },
+  {
+   "id": "s600_cells.1",
+   "part": "s600_cells",
+   "shape": "box",
+   "position": [
+    -0.9994,
+    -0.4581,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.2451,
+    0.6496,
+    0.9983
+   ]
+  },
+  {
+   "id": "s600_cells.2",
+   "part": "s600_cells",
+   "shape": "box",
+   "position": [
+    0.9994,
+    -0.4581,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.2451,
+    0.6496,
+    0.9983
+   ]
+  },
+  {
+   "id": "s600_starter.1",
+   "part": "s600_starter",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    -0.9846,
+    -1.0393
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.2735,
+   "half_height": 0.7521
+  },
+  {
+   "id": "s600_starter.2",
+   "part": "s600_starter",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    -0.3282,
+    -1.0393
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.2735,
+   "half_height": 0.7521
+  },
+  {
+   "id": "s600_regulator.1",
+   "part": "s600_regulator",
+   "shape": "box",
+   "position": [
+    0.0,
+    -0.547,
+    1.0162
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.547,
+    0.5743,
+    0.2856
+   ]
+  },
+  {
+   "id": "s600_heat_pipe_column.1",
+   "part": "s600_heat_pipe_column",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.9094,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.5196,
+   "half_height": 0.253
+  },
+  {
+   "id": "reactor_cooling_pad.1",
+   "part": "reactor_cooling_pad",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.2649,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.3675,
+    0.1026,
+    1.3675
+   ]
+  },
+  {
+   "id": "s600_sensors.1",
+   "part": "s600_sensors",
+   "shape": "box",
+   "position": [
+    0.4951,
+    0.6017,
+    0.4951
+   ],
+   "rotation_deg": [
+    0.0,
+    -45.0,
+    0.0
+   ],
+   "half_size": [
+    0.1094,
+    0.1368,
+    0.1094
+   ]
+  },
+  {
+   "id": "s600_sensors.2",
+   "part": "s600_sensors",
+   "shape": "box",
+   "position": [
+    -0.4951,
+    0.6017,
+    0.4951
+   ],
+   "rotation_deg": [
+    0.0,
+    -135.0,
+    0.0
+   ],
+   "half_size": [
+    0.1094,
+    0.1368,
+    0.1094
+   ]
+  },
+  {
+   "id": "s600_sensors.3",
+   "part": "s600_sensors",
+   "shape": "box",
+   "position": [
+    -0.4951,
+    0.6017,
+    -0.4951
+   ],
+   "rotation_deg": [
+    0.0,
+    -225.0,
+    0.0
+   ],
+   "half_size": [
+    0.1094,
+    0.1368,
+    0.1094
+   ]
+  },
+  {
+   "id": "s600_sensors.4",
+   "part": "s600_sensors",
+   "shape": "box",
+   "position": [
+    0.4951,
+    0.6017,
+    -0.4951
+   ],
+   "rotation_deg": [
+    0.0,
+    -315.0,
+    0.0
+   ],
+   "half_size": [
+    0.1094,
+    0.1368,
+    0.1094
+   ]
+  }
+ ]
+}

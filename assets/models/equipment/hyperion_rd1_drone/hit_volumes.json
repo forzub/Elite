@@ -1,0 +1,307 @@
+{
+ "asset": "hyperion_rd1_drone",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "rd1_body.1",
+   "part": "rd1_body",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.125,
+   "half_height": 0.66
+  },
+  {
+   "id": "rd1_frame.1",
+   "part": "rd1_frame",
+   "shape": "box",
+   "position": [
+    0.215,
+    0.01,
+    0.28
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.095,
+    0.025,
+    0.08
+   ]
+  },
+  {
+   "id": "rd1_frame.2",
+   "part": "rd1_frame",
+   "shape": "box",
+   "position": [
+    -0.215,
+    0.01,
+    0.28
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.095,
+    0.025,
+    0.08
+   ]
+  },
+  {
+   "id": "rd1_frame.3",
+   "part": "rd1_frame",
+   "shape": "box",
+   "position": [
+    0.215,
+    0.01,
+    -0.3
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.095,
+    0.025,
+    0.08
+   ]
+  },
+  {
+   "id": "rd1_frame.4",
+   "part": "rd1_frame",
+   "shape": "box",
+   "position": [
+    -0.215,
+    0.01,
+    -0.3
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.095,
+    0.025,
+    0.08
+   ]
+  },
+  {
+   "id": "rd1_thruster_fl.1",
+   "part": "rd1_thruster_fl",
+   "shape": "cylinder",
+   "position": [
+    0.4,
+    0.0,
+    0.28
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.096,
+   "half_height": 0.032
+  },
+  {
+   "id": "rd1_thruster_fr.1",
+   "part": "rd1_thruster_fr",
+   "shape": "cylinder",
+   "position": [
+    -0.4,
+    0.0,
+    0.28
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.096,
+   "half_height": 0.032
+  },
+  {
+   "id": "rd1_thruster_rl.1",
+   "part": "rd1_thruster_rl",
+   "shape": "cylinder",
+   "position": [
+    0.4,
+    0.0,
+    -0.3
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.096,
+   "half_height": 0.032
+  },
+  {
+   "id": "rd1_thruster_rr.1",
+   "part": "rd1_thruster_rr",
+   "shape": "cylinder",
+   "position": [
+    -0.4,
+    0.0,
+    -0.3
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.096,
+   "half_height": 0.032
+  },
+  {
+   "id": "rd1_power.1",
+   "part": "rd1_power",
+   "shape": "box",
+   "position": [
+    0.0,
+    -0.165,
+    -0.08
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.08,
+    0.045,
+    0.17
+   ]
+  },
+  {
+   "id": "rd1_gimbal.1",
+   "part": "rd1_gimbal",
+   "shape": "box",
+   "position": [
+    0.0,
+    -0.2,
+    0.36
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.1,
+    0.065,
+    0.025
+   ]
+  },
+  {
+   "id": "rd1_camera.1",
+   "part": "rd1_camera",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    -0.26,
+    0.36
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.07,
+   "half_height": 0.084
+  },
+  {
+   "id": "rd1_camera.2",
+   "part": "rd1_camera",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    -0.26,
+    0.42
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.042,
+   "half_height": 0.06
+  },
+  {
+   "id": "rd1_antenna.1",
+   "part": "rd1_antenna",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.29,
+    -0.56
+   ],
+   "rotation_deg": [
+    -123.6901,
+    0.0,
+    -180.0
+   ],
+   "half_size": [
+    0.02,
+    0.02,
+    0.2163
+   ]
+  },
+  {
+   "id": "rd1_antenna.2",
+   "part": "rd1_antenna",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.5075,
+    -0.68
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.09,
+   "half_height": 0.0425
+  },
+  {
+   "id": "rd1_dock_latch.1",
+   "part": "rd1_dock_latch",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.155,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.11,
+    0.035,
+    0.11
+   ]
+  }
+ ]
+}

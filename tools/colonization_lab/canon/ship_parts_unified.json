@@ -676,7 +676,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/agora_ps100_passenger"
     },
     {
       "id": "bastion.armour.heavy",
@@ -715,7 +716,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/bastion_bt1_armour"
     },
     {
       "id": "bastion.bay.hangar4",
@@ -757,7 +759,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/bastion_ap4_hangar"
     },
     {
       "id": "bastion.comm.w1",
@@ -798,7 +801,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/bastion_bs1_comm"
     },
     {
       "id": "bastion.core.b12",
@@ -840,7 +844,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/bastion_b12_core"
     },
     {
       "id": "bastion.mc.w1",
@@ -881,7 +886,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/bastion_bv1_computer"
     },
     {
       "id": "bastion.radar.s50",
@@ -923,7 +929,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/bastion_s50_radar"
     },
     {
       "id": "bastion.wpn.coil10",
@@ -964,7 +971,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/bastion_bp10_coilgun"
     },
     {
       "id": "bastion.wpn.pd4",
@@ -1005,7 +1013,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/bastion_bt4_pd"
     },
     {
       "id": "bastion.wpn.vls16",
@@ -1047,7 +1056,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/bastion_vpu16_vls"
     },
     {
       "id": "bharat.hab.bunk500",
@@ -1093,7 +1103,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/bharat_sp500_bunks"
     },
     {
       "id": "eurohab.ls.l20",
@@ -1141,7 +1152,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/eurohab_l20_lifesupport"
     },
     {
       "id": "eurohab.ls.l200",
@@ -1189,7 +1201,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/eurohab_l200_lifesupport"
     },
     {
       "id": "eurohab.ls.l4",
@@ -1237,7 +1250,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/eurohab_l4_lifesupport"
     },
     {
       "id": "fa.wpn.coil30",
@@ -1278,7 +1292,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/firmament_kp30_coilgun"
     },
     {
       "id": "fa.wpn.pd2",
@@ -1325,7 +1340,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/firmament_pt2_pointdefence"
     },
     {
       "id": "harmony.bay.hangar2",
@@ -1367,7 +1383,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/harmony_ap2_hangar"
     },
     {
       "id": "harmony.core.h12",
@@ -1414,7 +1431,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/harmony_h12_core"
     },
     {
       "id": "harmony.core.h5",
@@ -1462,7 +1480,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/harmony_h5_core"
     },
     {
       "id": "harmony.core.h80",
@@ -1509,7 +1528,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/harmony_h80_core"
     },
     {
       "id": "harmony.mod.cargo4800",
@@ -1549,7 +1569,8 @@
           "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
         },
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/harmony_mp4800_cargo"
     },
     {
       "id": "harmony.mod.tank4200",
@@ -1588,7 +1609,8 @@
           "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
         },
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/harmony_mc4200_tank"
     },
     {
       "id": "harmony.wpn.pd3",
@@ -1635,7 +1657,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/harmony_pd3_turret"
     },
     {
       "id": "harmony.wpn.vls8",
@@ -1677,7 +1700,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/harmony_vls8_launcher"
     },
     {
       "id": "hyp.ecm.e1",
@@ -1710,7 +1734,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/hyperion_e1_ecm"
     },
     {
       "id": "hyp.mast.s1",
@@ -1743,7 +1768,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/hyperion_sm1_mast"
     },
     {
       "id": "hyp.mc.r1",
@@ -1790,7 +1816,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/hyperion_hr1_computer"
     },
     {
       "id": "hyp.radar.pa100",
@@ -1838,7 +1865,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/hyperion_pa100_radar"
     },
     {
       "id": "hyp.relay.r1",
@@ -1885,7 +1913,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/hyperion_r1_comm"
     },
     {
       "id": "kapehu.core.k12",
@@ -1934,7 +1963,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/kapehu_k12_core"
     },
     {
       "id": "kapehu.core.k5",
@@ -1983,7 +2013,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/kapehu_k5_core"
     },
     {
       "id": "kapehu.mc.k1",
@@ -2026,7 +2057,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/kapehu_k1_computer"
     },
     {
       "id": "kb.apu.s150",
@@ -2067,7 +2099,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/cobretty_sr150_service_reactor"
     },
     {
       "id": "kb.cool.loop200",
@@ -2106,7 +2139,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/cobretty_cl180_coolant_loop"
     },
     {
       "id": "kb.drive.cr1-vector",
@@ -2207,7 +2241,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/cobretty_n1ax_drive"
     },
     {
       "id": "kb.rad.cs-panel",
@@ -2249,7 +2284,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/cobretty_rp10_radiator"
     },
     {
       "id": "kb.rcs.fc-nozzle",
@@ -2293,7 +2329,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/cobretty_fcrcs_rcs"
     },
     {
       "id": "kb.reactor.er1",
@@ -2441,7 +2478,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/cobretty_ec2_capsule"
     },
     {
       "id": "kb.wpn.pd1",
@@ -2482,7 +2520,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/cobretty_pd1_turret"
     },
     {
       "id": "kern.drive.kt1",
@@ -2534,7 +2573,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/kern_kt1_drive"
     },
     {
       "id": "kern.md.impactor",
@@ -2569,7 +2609,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/kern_md40_impactor"
     },
     {
       "id": "kern.radar.deb5",
@@ -2617,7 +2658,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/kern_dr5_radar"
     },
     {
       "id": "kern.tow.heavy",
@@ -2656,7 +2698,8 @@
           "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
         },
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/kern_trh_tow"
     },
     {
       "id": "kern.tow.raft20k",
@@ -2695,7 +2738,8 @@
           "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
         },
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/kern_tr20k_tow"
     },
     {
       "id": "ofu.cargo.p20",
@@ -2745,7 +2789,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/ofu_p20_passenger_module"
     },
     {
       "id": "ofu.drive.u33",
@@ -2796,7 +2841,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/ofu_u33_drive"
     },
     {
       "id": "ofu.drive.u65m",
@@ -2841,7 +2887,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/ofu_u65m_drive"
     },
     {
       "id": "ofu.drive.u70",
@@ -2892,7 +2939,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/ofu_u70_drive"
     },
     {
       "id": "ofu.drive.u73l",
@@ -2944,7 +2992,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/ofu_u73l_drive"
     },
     {
       "id": "ofu.lift.gear",
@@ -2976,7 +3025,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/ofu_po4_landing_gear"
     },
     {
       "id": "ofu.lift.shield",
@@ -3008,7 +3058,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/ofu_tz12_heat_shield"
     },
     {
       "id": "ofu.ls.o4",
@@ -3056,7 +3107,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/ofu_o4_life_support"
     },
     {
       "id": "sol.cool.loop300",
@@ -3095,7 +3147,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/smy_ko300_coolant_loop"
     },
     {
       "id": "sol.cryo.t1000",
@@ -3128,7 +3181,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/smy_kc1000_cryo_tank"
     },
     {
       "id": "sol.rad.panel50",
@@ -3170,7 +3224,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/smy_rs50s_radiator"
     },
     {
       "id": "sol.workshop.w1",
@@ -3203,7 +3258,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/smy_ms1_workshop"
     },
     {
       "id": "srw.apu.s200",
@@ -3250,7 +3306,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/srw_s200_service_reactor"
     },
     {
       "id": "srw.apu.s60",
@@ -3297,7 +3354,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/srw_s60_service_reactor"
     },
     {
       "id": "srw.reactor.sr48",
@@ -3383,7 +3441,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/firmament_bk1_armour"
     },
     {
       "id": "std.bay.boat",
@@ -3422,7 +3481,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/smy_ak1_boat_bay"
     },
     {
       "id": "std.bay.drone4",
@@ -3455,7 +3515,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/agora_od4_dronebay"
     },
     {
       "id": "std.cabin.hold6",
@@ -3501,7 +3562,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/smy_kz6_passenger_module"
     },
     {
       "id": "std.cargo.c20lock",
@@ -3534,7 +3596,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/agora_c20r_rack"
     },
     {
       "id": "std.cargo.hold100",
@@ -3567,7 +3630,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/agora_hold100_hold"
     },
     {
       "id": "std.dock.collar",
@@ -3599,7 +3663,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/agora_su1_collar"
     },
     {
       "id": "std.med.bay",
@@ -3633,7 +3698,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/eurohab_mo4_medbay"
     },
     {
       "id": "std.rcs.cluster",
@@ -3675,7 +3741,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/agora_rcs4_cluster"
     },
     {
       "id": "std.rcs.cluster_h",
@@ -3717,7 +3784,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/tianhe_cluster_h_rcs"
     },
     {
       "id": "std.surv.boat20",
@@ -3757,7 +3825,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/agora_sh20_lifeboat"
     },
     {
       "id": "std.surv.pod4",
@@ -3797,7 +3866,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/agora_sk4_pod"
     },
     {
       "id": "std.surv.refuge100",
@@ -3837,7 +3907,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/bharat_sm100_refuge"
     },
     {
       "id": "std.tank.jumpcharge",
@@ -3877,7 +3948,8 @@
           "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
         },
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/agora_bz1_jumptank"
     },
     {
       "id": "std.tank.pellets",
@@ -3917,7 +3989,8 @@
           "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
         },
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/agora_bt1_pellettank"
     },
     {
       "id": "terra.ls.t10",
@@ -3965,7 +4038,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/terra_t10_life_support"
     },
     {
       "id": "terra.ls.t200",
@@ -4013,7 +4087,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/terra_t200_life_support"
     },
     {
       "id": "terra.ls.t60",
@@ -4061,7 +4136,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/terra_t60_life_support"
     },
     {
       "id": "th.apu.s150",
@@ -4108,7 +4184,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/tianhe_s150_reactor"
     },
     {
       "id": "th.apu.s600",
@@ -4155,7 +4232,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/tianhe_s600_reactor"
     },
     {
       "id": "th.cool.loop600",
@@ -4194,7 +4272,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/tianhe_ko600_coolant_loop"
     },
     {
       "id": "th.drive.tz11",
@@ -4245,7 +4324,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/tianhe_tz11_drive"
     },
     {
       "id": "th.drive.tz16v",
@@ -4297,7 +4377,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/tianhe_tz16v_drive"
     },
     {
       "id": "th.drive.tz28",
@@ -4343,7 +4424,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/tianhe_tz28v_drive"
     },
     {
       "id": "th.rad.panel50",
@@ -4385,7 +4467,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/tianhe_rs50_radiator"
     },
     {
       "id": "th.reactor.tr10",
@@ -4536,7 +4619,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/uhuru_ab100_passenger_module"
     },
     {
       "id": "uhuru.ls.u500",
@@ -4578,7 +4662,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/uhuru_u500_life_support"
     },
     {
       "id": "um.core.z05",
@@ -4625,7 +4710,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/zeropoint_z05_jump_core"
     },
     {
       "id": "um.core.z1",
@@ -4672,7 +4758,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/zeropoint_z1_jump_core"
     },
     {
       "id": "um.core.z5",
@@ -4719,7 +4806,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/zeropoint_z5_jump_core"
     },
     {
       "id": "um.xpdr.t1",
@@ -4752,7 +4840,8 @@
       "replacements": {
         "standard": null,
         "hostile_or_foreign": null
-      }
+      },
+      "model_asset": "equipment/zeropoint_t1_transponder"
     },
     {
       "id": "xz.comm.c1",
@@ -4799,7 +4888,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/xinzhi_c1_comm"
     },
     {
       "id": "xz.comm.c3",
@@ -4846,7 +4936,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/xinzhi_c3_comm"
     },
     {
       "id": "xz.mc.c1",
@@ -4893,7 +4984,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/xinzhi_mcc1_computer"
     },
     {
       "id": "xz.mc.c3",
@@ -4940,7 +5032,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/xinzhi_mcc3_computer"
     },
     {
       "id": "xz.radar.n10",
@@ -4988,7 +5081,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/xinzhi_n10_radar"
     },
     {
       "id": "xz.radar.n2",
@@ -5036,7 +5130,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/xinzhi_n2_radar"
     }
   ]
 }

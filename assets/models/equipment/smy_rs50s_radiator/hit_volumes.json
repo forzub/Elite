@@ -1,0 +1,91 @@
+{
+ "asset": "smy_rs50s_radiator",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "rs50s_panel.1",
+   "part": "rs50s_panel",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.055,
+    0.275
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    2.5,
+    0.055,
+    4.725
+   ]
+  },
+  {
+   "id": "rs50s_manifold.1",
+   "part": "rs50s_manifold",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.085,
+    -4.625
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    2.5,
+    0.075,
+    0.21
+   ]
+  },
+  {
+   "id": "rs50s_hinge.1",
+   "part": "rs50s_hinge",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.06,
+    -4.93
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    2.45,
+    0.06,
+    0.07
+   ]
+  },
+  {
+   "id": "rs50s_hinge.2",
+   "part": "rs50s_hinge",
+   "shape": "box",
+   "position": [
+    2.22,
+    0.07,
+    -4.91
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.24,
+    0.07,
+    0.09
+   ]
+  }
+ ]
+}

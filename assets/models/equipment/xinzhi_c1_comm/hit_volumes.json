@@ -1,0 +1,105 @@
+{
+ "asset": "xinzhi_c1_comm",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "c1_mount.1",
+   "part": "c1_mount",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.055,
+    -0.671
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.35,
+    0.055,
+    0.05
+   ]
+  },
+  {
+   "id": "c1_mount.2",
+   "part": "c1_mount",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0175,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.535,
+    0.0175,
+    0.721
+   ]
+  },
+  {
+   "id": "c1_transceiver.1",
+   "part": "c1_transceiver",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.17,
+    0.06
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.721,
+    0.14,
+    0.661
+   ]
+  },
+  {
+   "id": "c1_feeder.1",
+   "part": "c1_feeder",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.47,
+    0.06
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.6,
+   "half_height": 0.15
+  },
+  {
+   "id": "c1_feeder.2",
+   "part": "c1_feeder",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.6705,
+    0.06
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.36,
+   "half_height": 0.0505
+  }
+ ]
+}

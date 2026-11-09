@@ -1,0 +1,409 @@
+{
+ "asset": "cobretty_n1ax_drive",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "n1_flange.1",
+   "part": "n1_flange",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -0.12
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.62,
+   "half_height": 0.12
+  },
+  {
+   "id": "n1_flange.2",
+   "part": "n1_flange",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.135
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.25,
+   "half_height": 0.215
+  },
+  {
+   "id": "n1_housing.1",
+   "part": "n1_housing",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.625
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.85,
+   "half_height": 0.275
+  },
+  {
+   "id": "n1_housing.2",
+   "part": "n1_housing",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    3.525
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.55,
+   "half_height": 2.625
+  },
+  {
+   "id": "n1_housing.3",
+   "part": "n1_housing",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    6.015
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.0,
+   "half_height": 0.135
+  },
+  {
+   "id": "engine_hot_emitter_annulus.1",
+   "part": "engine_hot_emitter_annulus",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    6.34
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.5,
+   "half_height": 0.19
+  },
+  {
+   "id": "n1_field_ctl.1",
+   "part": "n1_field_ctl",
+   "shape": "box",
+   "position": [
+    -1.97,
+    0.0,
+    1.07
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.4,
+    0.55,
+    0.43
+   ]
+  },
+  {
+   "id": "n1_backup_hx.1",
+   "part": "n1_backup_hx",
+   "shape": "box",
+   "position": [
+    1.97,
+    0.0,
+    1.07
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.4,
+    0.55,
+    0.43
+   ]
+  },
+  {
+   "id": "n1_backup_hx.2",
+   "part": "n1_backup_hx",
+   "shape": "box",
+   "position": [
+    2.45,
+    0.0,
+    1.07
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.09,
+    0.4,
+    0.12
+   ]
+  },
+  {
+   "id": "n1_sensors.1",
+   "part": "n1_sensors",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.62,
+    1.26
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.15,
+    0.05,
+    0.18
+   ]
+  },
+  {
+   "id": "n1_coil_stack.1",
+   "part": "n1_coil_stack",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    1.95
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.97,
+   "half_height": 0.33
+  },
+  {
+   "id": "n1_sensors.2",
+   "part": "n1_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    1.7,
+    1.57
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.06,
+   "half_height": 0.05
+  },
+  {
+   "id": "n1_coil_stack.2",
+   "part": "n1_coil_stack",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    3.15
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.12,
+   "half_height": 0.33
+  },
+  {
+   "id": "n1_sensors.3",
+   "part": "n1_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    1.85,
+    2.77
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.06,
+   "half_height": 0.05
+  },
+  {
+   "id": "n1_coil_stack.3",
+   "part": "n1_coil_stack",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    4.35
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.27,
+   "half_height": 0.33
+  },
+  {
+   "id": "n1_sensors.4",
+   "part": "n1_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    2.0,
+    3.97
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.06,
+   "half_height": 0.05
+  },
+  {
+   "id": "n1_coil_stack.4",
+   "part": "n1_coil_stack",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    5.55
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.42,
+   "half_height": 0.33
+  },
+  {
+   "id": "n1_sensors.5",
+   "part": "n1_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    2.15,
+    5.17
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.06,
+   "half_height": 0.05
+  },
+  {
+   "id": "n1_mounts.1",
+   "part": "n1_mounts",
+   "shape": "box",
+   "position": [
+    -1.3435,
+    -1.3435,
+    1.07
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.35,
+    0.2,
+    0.22
+   ]
+  },
+  {
+   "id": "n1_mounts.2",
+   "part": "n1_mounts",
+   "shape": "box",
+   "position": [
+    -1.3435,
+    -1.3435,
+    3.75
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.35,
+    0.2,
+    0.22
+   ]
+  },
+  {
+   "id": "n1_mounts.3",
+   "part": "n1_mounts",
+   "shape": "box",
+   "position": [
+    1.3435,
+    -1.3435,
+    1.07
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.35,
+    0.2,
+    0.22
+   ]
+  },
+  {
+   "id": "n1_mounts.4",
+   "part": "n1_mounts",
+   "shape": "box",
+   "position": [
+    1.3435,
+    -1.3435,
+    3.75
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.35,
+    0.2,
+    0.22
+   ]
+  }
+ ]
+}

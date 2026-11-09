@@ -1,0 +1,105 @@
+{
+ "asset": "zeropoint_t1_transponder",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "t1_housing.1",
+   "part": "t1_housing",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.16,
+    -0.015
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.232,
+    0.14,
+    0.185
+   ]
+  },
+  {
+   "id": "t1_housing.2",
+   "part": "t1_housing",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.16,
+    -0.216
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.08,
+   "half_height": 0.016
+  },
+  {
+   "id": "t1_coder.1",
+   "part": "t1_coder",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.15,
+    0.189
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.15,
+    0.09,
+    0.019
+   ]
+  },
+  {
+   "id": "t1_antenna.1",
+   "part": "t1_antenna",
+   "shape": "cylinder",
+   "position": [
+    0.1,
+    0.382,
+    -0.05
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.06,
+   "half_height": 0.082
+  },
+  {
+   "id": "t1_mount.1",
+   "part": "t1_mount",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.01,
+    -0.015
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.232,
+    0.01,
+    0.17
+   ]
+  }
+ ]
+}

@@ -1,0 +1,218 @@
+{
+ "asset": "tianhe_cluster_h_rcs",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "rcsh_body.1",
+   "part": "rcsh_body",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.05,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.9,
+   "half_height": 0.05
+  },
+  {
+   "id": "rcsh_body.2",
+   "part": "rcsh_body",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.56,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.44,
+   "half_height": 0.46
+  },
+  {
+   "id": "rcsh_body.3",
+   "part": "rcsh_body",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    1.32,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.56,
+   "half_height": 0.3
+  },
+  {
+   "id": "rcsh_coils.1",
+   "part": "rcsh_coils",
+   "shape": "cylinder",
+   "position": [
+    0.665,
+    1.29,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.3,
+   "half_height": 0.085
+  },
+  {
+   "id": "rcsh_emitters.1",
+   "part": "rcsh_emitters",
+   "shape": "cylinder",
+   "position": [
+    0.815,
+    1.29,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.29,
+   "half_height": 0.065
+  },
+  {
+   "id": "rcsh_coils.2",
+   "part": "rcsh_coils",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    1.29,
+    0.665
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.3,
+   "half_height": 0.085
+  },
+  {
+   "id": "rcsh_emitters.2",
+   "part": "rcsh_emitters",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    1.29,
+    0.815
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.29,
+   "half_height": 0.065
+  },
+  {
+   "id": "rcsh_coils.3",
+   "part": "rcsh_coils",
+   "shape": "cylinder",
+   "position": [
+    -0.665,
+    1.29,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "radius": 0.3,
+   "half_height": 0.085
+  },
+  {
+   "id": "rcsh_emitters.3",
+   "part": "rcsh_emitters",
+   "shape": "cylinder",
+   "position": [
+    -0.815,
+    1.29,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "radius": 0.29,
+   "half_height": 0.065
+  },
+  {
+   "id": "rcsh_coils.4",
+   "part": "rcsh_coils",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    1.29,
+    -0.665
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.3,
+   "half_height": 0.085
+  },
+  {
+   "id": "rcsh_emitters.4",
+   "part": "rcsh_emitters",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    1.29,
+    -0.815
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.29,
+   "half_height": 0.065
+  },
+  {
+   "id": "rcsh_driver.1",
+   "part": "rcsh_driver",
+   "shape": "box",
+   "position": [
+    0.4101,
+    0.55,
+    0.4101
+   ],
+   "rotation_deg": [
+    0.0,
+    -45.0,
+    0.0
+   ],
+   "half_size": [
+    0.16,
+    0.31,
+    0.22
+   ]
+  }
+ ]
+}

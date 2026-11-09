@@ -1,0 +1,228 @@
+{
+ "asset": "firmament_kp30_coilgun",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "kp30_mount.1",
+   "part": "kp30_mount",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.04,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.65,
+    0.04,
+    0.65
+   ]
+  },
+  {
+   "id": "kp30_mount.2",
+   "part": "kp30_mount",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.155,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.64,
+   "half_height": 0.075
+  },
+  {
+   "id": "kp30_mount.3",
+   "part": "kp30_mount",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.28,
+    -0.71
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.66,
+    0.05,
+    0.81
+   ]
+  },
+  {
+   "id": "kp30_mount.4",
+   "part": "kp30_mount",
+   "shape": "box",
+   "position": [
+    -0.62,
+    0.75,
+    -0.58
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.09,
+    0.42,
+    0.56
+   ]
+  },
+  {
+   "id": "kp30_mount.5",
+   "part": "kp30_mount",
+   "shape": "box",
+   "position": [
+    0.62,
+    0.75,
+    -0.58
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.09,
+    0.42,
+    0.56
+   ]
+  },
+  {
+   "id": "kp30_mount.6",
+   "part": "kp30_mount",
+   "shape": "box",
+   "position": [
+    0.84,
+    0.66,
+    -0.82
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.1,
+    0.21,
+    0.26
+   ]
+  },
+  {
+   "id": "kp30_coil.1",
+   "part": "kp30_coil",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.8,
+    0.02
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.5,
+    0.3,
+    0.16
+   ]
+  },
+  {
+   "id": "kp30_coil.2",
+   "part": "kp30_coil",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.8,
+    -0.62
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.4,
+    0.23,
+    0.48
+   ]
+  },
+  {
+   "id": "kp30_coil.3",
+   "part": "kp30_coil",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.8,
+    0.88
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.18,
+    0.18,
+    0.7
+   ]
+  },
+  {
+   "id": "kp30_caps.1",
+   "part": "kp30_caps",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.665,
+    -1.34
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.66,
+    0.335,
+    0.18
+   ]
+  },
+  {
+   "id": "kp30_feed.1",
+   "part": "kp30_feed",
+   "shape": "box",
+   "position": [
+    -0.83,
+    0.655,
+    -0.62
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.1,
+    0.325,
+    0.5
+   ]
+  }
+ ]
+}

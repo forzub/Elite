@@ -1,0 +1,296 @@
+{
+ "asset": "harmony_ap2_hangar",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "hangar2_shell.1",
+   "part": "hangar2_shell",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    -0.095
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    4.77,
+    1.34,
+    5.945
+   ]
+  },
+  {
+   "id": "hangar2_shell.2",
+   "part": "hangar2_shell",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    -0.095
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.7,
+    2.41,
+    5.945
+   ]
+  },
+  {
+   "id": "hangar2_doors.1",
+   "part": "hangar2_doors",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    6.0747
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    4.77,
+    1.34,
+    0.2248
+   ]
+  },
+  {
+   "id": "hangar2_doors.2",
+   "part": "hangar2_doors",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    6.0747
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.7,
+    2.41,
+    0.2248
+   ]
+  },
+  {
+   "id": "hangar2_cradles.1",
+   "part": "hangar2_cradles",
+   "shape": "box",
+   "position": [
+    -2.1,
+    2.41,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.7,
+    0.13,
+    5.3
+   ]
+  },
+  {
+   "id": "hangar2_chargers.1",
+   "part": "hangar2_chargers",
+   "shape": "box",
+   "position": [
+    -4.83,
+    0.0,
+    -1.35
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.21,
+    0.7,
+    1.0
+   ]
+  },
+  {
+   "id": "hangar2_chargers.2",
+   "part": "hangar2_chargers",
+   "shape": "box",
+   "position": [
+    -4.83,
+    0.0,
+    1.35
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.21,
+    0.7,
+    1.0
+   ]
+  },
+  {
+   "id": "hangar2_cradles.2",
+   "part": "hangar2_cradles",
+   "shape": "box",
+   "position": [
+    2.1,
+    2.41,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.7,
+    0.13,
+    5.3
+   ]
+  },
+  {
+   "id": "hangar2_chargers.3",
+   "part": "hangar2_chargers",
+   "shape": "box",
+   "position": [
+    4.83,
+    0.0,
+    -1.35
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.21,
+    0.7,
+    1.0
+   ]
+  },
+  {
+   "id": "hangar2_chargers.4",
+   "part": "hangar2_chargers",
+   "shape": "box",
+   "position": [
+    4.83,
+    0.0,
+    1.35
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.21,
+    0.7,
+    1.0
+   ]
+  },
+  {
+   "id": "hangar2_mounts.1",
+   "part": "hangar2_mounts",
+   "shape": "cylinder",
+   "position": [
+    -2.6,
+    -2.4,
+    -4.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.62,
+   "half_height": 0.12
+  },
+  {
+   "id": "hangar2_mounts.2",
+   "part": "hangar2_mounts",
+   "shape": "cylinder",
+   "position": [
+    -2.6,
+    -2.4,
+    4.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.62,
+   "half_height": 0.12
+  },
+  {
+   "id": "hangar2_mounts.3",
+   "part": "hangar2_mounts",
+   "shape": "cylinder",
+   "position": [
+    2.6,
+    -2.4,
+    -4.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.62,
+   "half_height": 0.12
+  },
+  {
+   "id": "hangar2_mounts.4",
+   "part": "hangar2_mounts",
+   "shape": "cylinder",
+   "position": [
+    2.6,
+    -2.4,
+    4.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.62,
+   "half_height": 0.12
+  },
+  {
+   "id": "hangar2_flange.1",
+   "part": "hangar2_flange",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -6.1498
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.95,
+   "half_height": 0.1498
+  }
+ ]
+}

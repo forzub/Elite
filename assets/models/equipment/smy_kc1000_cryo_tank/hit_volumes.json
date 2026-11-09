@@ -1,0 +1,328 @@
+{
+ "asset": "smy_kc1000_cryo_tank",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "kc1000_insulation.1",
+   "part": "kc1000_insulation",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 3.98,
+   "half_height": 6.9
+  },
+  {
+   "id": "kc1000_frame.1",
+   "part": "kc1000_frame",
+   "shape": "box",
+   "position": [
+    4.2129,
+    1.745,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    22.5
+   ],
+   "half_size": [
+    0.15,
+    0.15,
+    6.1
+   ]
+  },
+  {
+   "id": "kc1000_frame.2",
+   "part": "kc1000_frame",
+   "shape": "box",
+   "position": [
+    1.745,
+    4.2129,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    67.5
+   ],
+   "half_size": [
+    0.15,
+    0.15,
+    6.1
+   ]
+  },
+  {
+   "id": "kc1000_frame.3",
+   "part": "kc1000_frame",
+   "shape": "box",
+   "position": [
+    -1.745,
+    4.2129,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    112.5
+   ],
+   "half_size": [
+    0.15,
+    0.15,
+    6.1
+   ]
+  },
+  {
+   "id": "kc1000_frame.4",
+   "part": "kc1000_frame",
+   "shape": "box",
+   "position": [
+    -4.2129,
+    1.745,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    157.5
+   ],
+   "half_size": [
+    0.15,
+    0.15,
+    6.1
+   ]
+  },
+  {
+   "id": "kc1000_frame.5",
+   "part": "kc1000_frame",
+   "shape": "box",
+   "position": [
+    -4.2129,
+    -1.745,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    202.5
+   ],
+   "half_size": [
+    0.15,
+    0.15,
+    6.1
+   ]
+  },
+  {
+   "id": "kc1000_frame.6",
+   "part": "kc1000_frame",
+   "shape": "box",
+   "position": [
+    -1.745,
+    -4.2129,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    247.5
+   ],
+   "half_size": [
+    0.15,
+    0.15,
+    6.1
+   ]
+  },
+  {
+   "id": "kc1000_frame.7",
+   "part": "kc1000_frame",
+   "shape": "box",
+   "position": [
+    1.745,
+    -4.2129,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    292.5
+   ],
+   "half_size": [
+    0.15,
+    0.15,
+    6.1
+   ]
+  },
+  {
+   "id": "kc1000_frame.8",
+   "part": "kc1000_frame",
+   "shape": "box",
+   "position": [
+    4.2129,
+    -1.745,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    337.5
+   ],
+   "half_size": [
+    0.15,
+    0.15,
+    6.1
+   ]
+  },
+  {
+   "id": "kc1000_frame.9",
+   "part": "kc1000_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    -6.1
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    4.2683,
+    4.2683,
+    0.15
+   ]
+  },
+  {
+   "id": "kc1000_cooler.1",
+   "part": "kc1000_cooler",
+   "shape": "box",
+   "position": [
+    -1.6,
+    0.0,
+    6.95
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.8,
+    0.84,
+    0.69
+   ]
+  },
+  {
+   "id": "kc1000_frame.10",
+   "part": "kc1000_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    6.1
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    4.2683,
+    4.2683,
+    0.15
+   ]
+  },
+  {
+   "id": "kc1000_cooler.2",
+   "part": "kc1000_cooler",
+   "shape": "box",
+   "position": [
+    1.6,
+    0.0,
+    6.95
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.8,
+    0.84,
+    0.69
+   ]
+  },
+  {
+   "id": "kc1000_ports.1",
+   "part": "kc1000_ports",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.2,
+    -6.65
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.1,
+    0.4,
+    0.45
+   ]
+  },
+  {
+   "id": "kc1000_ports.2",
+   "part": "kc1000_ports",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.2,
+    -7.37
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.85,
+    0.21,
+    0.6
+   ]
+  },
+  {
+   "id": "kc1000_mounts.1",
+   "part": "kc1000_mounts",
+   "shape": "box",
+   "position": [
+    0.0,
+    -4.3275,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.7,
+    0.1,
+    5.8
+   ]
+  }
+ ]
+}

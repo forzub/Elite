@@ -1,0 +1,281 @@
+{
+ "asset": "terra_t200_life_support",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "t200_mounts.1",
+   "part": "t200_mounts",
+   "shape": "box",
+   "position": [
+    0.0,
+    -1.9515,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.6,
+    0.12,
+    2.5395
+   ]
+  },
+  {
+   "id": "t200_cabinet.1",
+   "part": "t200_cabinet",
+   "shape": "box",
+   "position": [
+    0.0,
+    -1.5565,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.55,
+    0.275,
+    2.4645
+   ]
+  },
+  {
+   "id": "t200_scrubber.1",
+   "part": "t200_scrubber",
+   "shape": "cylinder",
+   "position": [
+    -2.95,
+    0.1085,
+    -0.65
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.28,
+   "half_height": 1.39
+  },
+  {
+   "id": "t200_scrubber.2",
+   "part": "t200_scrubber",
+   "shape": "cylinder",
+   "position": [
+    -2.95,
+    0.1085,
+    0.65
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.28,
+   "half_height": 1.39
+  },
+  {
+   "id": "t200_scrubber.3",
+   "part": "t200_scrubber",
+   "shape": "cylinder",
+   "position": [
+    -2.33,
+    0.1085,
+    -0.65
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.28,
+   "half_height": 1.39
+  },
+  {
+   "id": "t200_scrubber.4",
+   "part": "t200_scrubber",
+   "shape": "cylinder",
+   "position": [
+    -2.33,
+    0.1085,
+    0.65
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.28,
+   "half_height": 1.39
+  },
+  {
+   "id": "t200_scrubber.5",
+   "part": "t200_scrubber",
+   "shape": "cylinder",
+   "position": [
+    -1.71,
+    0.1085,
+    -0.65
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.28,
+   "half_height": 1.39
+  },
+  {
+   "id": "t200_scrubber.6",
+   "part": "t200_scrubber",
+   "shape": "cylinder",
+   "position": [
+    -1.71,
+    0.1085,
+    0.65
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.28,
+   "half_height": 1.39
+  },
+  {
+   "id": "t200_o2.1",
+   "part": "t200_o2",
+   "shape": "box",
+   "position": [
+    -0.15,
+    0.1085,
+    0.15
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.95,
+    1.39,
+    1.15
+   ]
+  },
+  {
+   "id": "t200_o2.2",
+   "part": "t200_o2",
+   "shape": "box",
+   "position": [
+    -0.15,
+    0.1085,
+    1.33
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.75,
+    1.09,
+    0.06
+   ]
+  },
+  {
+   "id": "t200_water.1",
+   "part": "t200_water",
+   "shape": "cylinder",
+   "position": [
+    2.35,
+    0.0585,
+    -0.15
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.15,
+   "half_height": 1.34
+  },
+  {
+   "id": "t200_fan.1",
+   "part": "t200_fan",
+   "shape": "box",
+   "position": [
+    -0.3,
+    1.7385,
+    -0.1
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.2,
+    0.21,
+    0.55
+   ]
+  },
+  {
+   "id": "t200_fan.2",
+   "part": "t200_fan",
+   "shape": "cylinder",
+   "position": [
+    -2.33,
+    1.9985,
+    -0.1
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.42,
+   "half_height": 0.08
+  },
+  {
+   "id": "t200_fan.3",
+   "part": "t200_fan",
+   "shape": "cylinder",
+   "position": [
+    -0.15,
+    1.9985,
+    -0.1
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.42,
+   "half_height": 0.08
+  },
+  {
+   "id": "t200_fan.4",
+   "part": "t200_fan",
+   "shape": "cylinder",
+   "position": [
+    2.35,
+    1.9985,
+    -0.1
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.42,
+   "half_height": 0.08
+  }
+ ]
+}

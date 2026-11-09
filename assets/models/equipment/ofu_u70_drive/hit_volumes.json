@@ -1,0 +1,284 @@
+{
+ "asset": "ofu_u70_drive",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "u70_flange.1",
+   "part": "u70_flange",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.09
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.75,
+   "half_height": 0.09
+  },
+  {
+   "id": "u70_busbar.1",
+   "part": "u70_busbar",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.5
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.36,
+   "half_height": 0.5
+  },
+  {
+   "id": "u70_flange.2",
+   "part": "u70_flange",
+   "shape": "box",
+   "position": [
+    1.3081,
+    1.3081,
+    0.16
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.22,
+    0.2,
+    0.16
+   ]
+  },
+  {
+   "id": "u70_flange.3",
+   "part": "u70_flange",
+   "shape": "box",
+   "position": [
+    -1.3081,
+    1.3081,
+    0.16
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.22,
+    0.2,
+    0.16
+   ]
+  },
+  {
+   "id": "u70_flange.4",
+   "part": "u70_flange",
+   "shape": "box",
+   "position": [
+    -1.3081,
+    -1.3081,
+    0.16
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.22,
+    0.2,
+    0.16
+   ]
+  },
+  {
+   "id": "u70_flange.5",
+   "part": "u70_flange",
+   "shape": "box",
+   "position": [
+    1.3081,
+    -1.3081,
+    0.16
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.22,
+    0.2,
+    0.16
+   ]
+  },
+  {
+   "id": "u70_interstage.1",
+   "part": "u70_interstage",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.59
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.7,
+   "half_height": 0.41
+  },
+  {
+   "id": "u70_housing.1",
+   "part": "u70_housing",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    2.475
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.46,
+   "half_height": 1.475
+  },
+  {
+   "id": "u70_housing.2",
+   "part": "u70_housing",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    4.35
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.725,
+   "half_height": 0.4
+  },
+  {
+   "id": "u70_coil_ring.1",
+   "part": "u70_coil_ring",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    4.96
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.19,
+   "half_height": 0.21
+  },
+  {
+   "id": "u70_coil_ring.2",
+   "part": "u70_coil_ring",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    5.43
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.19,
+   "half_height": 0.21
+  },
+  {
+   "id": "engine_hot_emitter_annulus.1",
+   "part": "engine_hot_emitter_annulus",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    5.84
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.305,
+   "half_height": 0.2
+  },
+  {
+   "id": "u70_field_ctl.1",
+   "part": "u70_field_ctl",
+   "shape": "box",
+   "position": [
+    1.7,
+    0.0,
+    2.075
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.3,
+    0.5,
+    0.6638
+   ]
+  },
+  {
+   "id": "u70_hx.1",
+   "part": "u70_hx",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    3.4
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.94,
+   "half_height": 0.24
+  },
+  {
+   "id": "u70_sensors.1",
+   "part": "u70_sensors",
+   "shape": "box",
+   "position": [
+    0.0,
+    -1.5,
+    2.725
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "half_size": [
+    0.1,
+    0.45,
+    0.45
+   ]
+  }
+ ]
+}

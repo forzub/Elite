@@ -1,0 +1,414 @@
+{
+ "asset": "harmony_h5_core",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "h5_housing.1",
+   "part": "h5_housing",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.2385,
+    0.513,
+    1.0651
+   ]
+  },
+  {
+   "id": "h5_housing.2",
+   "part": "h5_housing",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    1.2385,
+    0.513,
+    1.0651
+   ]
+  },
+  {
+   "id": "h5_housing.3",
+   "part": "h5_housing",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    1.2385,
+    0.513,
+    1.0651
+   ]
+  },
+  {
+   "id": "h5_housing.4",
+   "part": "h5_housing",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    1.2385,
+    0.513,
+    1.0651
+   ]
+  },
+  {
+   "id": "h5_field.1",
+   "part": "h5_field",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.1023,
+   "half_height": 0.9165
+  },
+  {
+   "id": "h5_dampers.1",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    0.8238,
+    0.3412,
+    -1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.2",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    0.3412,
+    0.8238,
+    -1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.3",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    -0.3412,
+    0.8238,
+    -1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.4",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    -0.8238,
+    0.3412,
+    -1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.5",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    -0.8238,
+    -0.3412,
+    -1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.6",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    -0.3412,
+    -0.8238,
+    -1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.7",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    0.3412,
+    -0.8238,
+    -1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.8",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    0.8238,
+    -0.3412,
+    -1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.9",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    0.8238,
+    0.3412,
+    1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.10",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    0.3412,
+    0.8238,
+    1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.11",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    -0.3412,
+    0.8238,
+    1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.12",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    -0.8238,
+    0.3412,
+    1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.13",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    -0.8238,
+    -0.3412,
+    1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.14",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    -0.3412,
+    -0.8238,
+    1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.15",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    0.3412,
+    -0.8238,
+    1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_dampers.16",
+   "part": "h5_dampers",
+   "shape": "cylinder",
+   "position": [
+    0.8238,
+    -0.3412,
+    1.1345
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1858,
+   "half_height": 0.0694
+  },
+  {
+   "id": "h5_seal.1",
+   "part": "h5_seal",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    1.1518
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.322,
+   "half_height": 0.0867
+  },
+  {
+   "id": "h5_flange.1",
+   "part": "h5_flange",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -1.1518
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.5945,
+   "half_height": 0.0867
+  }
+ ]
+}

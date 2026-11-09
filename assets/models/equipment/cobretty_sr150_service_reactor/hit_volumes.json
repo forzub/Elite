@@ -1,0 +1,270 @@
+{
+ "asset": "cobretty_sr150_service_reactor",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "sr150_vessel.1",
+   "part": "sr150_vessel",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    -0.22,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.62,
+   "half_height": 0.78
+  },
+  {
+   "id": "sr150_bus_coupling.1",
+   "part": "sr150_bus_coupling",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    -0.22,
+    -0.815
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.38,
+   "half_height": 0.055
+  },
+  {
+   "id": "sr150_cells.1",
+   "part": "sr150_cells",
+   "shape": "box",
+   "position": [
+    -0.745,
+    -0.3,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.115,
+    0.28,
+    0.61
+   ]
+  },
+  {
+   "id": "sr150_starter.1",
+   "part": "sr150_starter",
+   "shape": "cylinder",
+   "position": [
+    0.72,
+    -0.62,
+    -0.065
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.14,
+   "half_height": 0.385
+  },
+  {
+   "id": "sr150_regulator.1",
+   "part": "sr150_regulator",
+   "shape": "box",
+   "position": [
+    0.745,
+    -0.02,
+    0.05
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.115,
+    0.23,
+    0.4
+   ]
+  },
+  {
+   "id": "sr150_heat_pipe_column.1",
+   "part": "sr150_heat_pipe_column",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.52,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.25,
+    0.15,
+    0.45
+   ]
+  },
+  {
+   "id": "reactor_cooling_pad.1",
+   "part": "reactor_cooling_pad",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.73,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.88,
+    0.09,
+    0.88
+   ]
+  },
+  {
+   "id": "sr150_emergency_coolant.1",
+   "part": "sr150_emergency_coolant",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.52,
+    0.58
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.13,
+    0.1,
+    0.15
+   ]
+  },
+  {
+   "id": "sr150_mounts.1",
+   "part": "sr150_mounts",
+   "shape": "box",
+   "position": [
+    0.0,
+    -0.82,
+    -0.45
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.55,
+    0.06,
+    0.11
+   ]
+  },
+  {
+   "id": "sr150_mounts.2",
+   "part": "sr150_mounts",
+   "shape": "box",
+   "position": [
+    0.0,
+    -0.82,
+    0.45
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.55,
+    0.06,
+    0.11
+   ]
+  },
+  {
+   "id": "sr150_sensors.1",
+   "part": "sr150_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.4419,
+    0.2219,
+    -0.5
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -45.0
+   ],
+   "radius": 0.045,
+   "half_height": 0.065
+  },
+  {
+   "id": "sr150_sensors.2",
+   "part": "sr150_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.4419,
+    0.2219,
+    0.5
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -45.0
+   ],
+   "radius": 0.045,
+   "half_height": 0.065
+  },
+  {
+   "id": "sr150_sensors.3",
+   "part": "sr150_sensors",
+   "shape": "cylinder",
+   "position": [
+    -0.4419,
+    0.2219,
+    -0.5
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "radius": 0.045,
+   "half_height": 0.065
+  },
+  {
+   "id": "sr150_sensors.4",
+   "part": "sr150_sensors",
+   "shape": "cylinder",
+   "position": [
+    -0.4419,
+    0.2219,
+    0.5
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "radius": 0.045,
+   "half_height": 0.065
+  }
+ ]
+}

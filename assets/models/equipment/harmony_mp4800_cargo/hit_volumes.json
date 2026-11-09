@@ -1,0 +1,2693 @@
+{
+ "asset": "harmony_mp4800_cargo",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "cargo4800_frame.1",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    6.8165,
+    0.0,
+    -16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.2",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    4.82,
+    4.82,
+    -16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.3",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    6.8165,
+    -16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.4",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -4.82,
+    4.82,
+    -16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.5",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -6.8165,
+    0.0,
+    -16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    180.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.6",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -4.82,
+    -4.82,
+    -16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.7",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    -6.8165,
+    -16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    270.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.8",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    4.82,
+    -4.82,
+    -16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.9",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    6.8165,
+    0.0,
+    -9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.10",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    4.82,
+    4.82,
+    -9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.11",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    6.8165,
+    -9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.12",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -4.82,
+    4.82,
+    -9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.13",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -6.8165,
+    0.0,
+    -9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    180.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.14",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -4.82,
+    -4.82,
+    -9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.15",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    -6.8165,
+    -9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    270.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.16",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    4.82,
+    -4.82,
+    -9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.17",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    6.8165,
+    0.0,
+    -3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.18",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    4.82,
+    4.82,
+    -3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.19",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    6.8165,
+    -3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.20",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -4.82,
+    4.82,
+    -3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.21",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -6.8165,
+    0.0,
+    -3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    180.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.22",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -4.82,
+    -4.82,
+    -3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.23",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    -6.8165,
+    -3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    270.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.24",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    4.82,
+    -4.82,
+    -3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.25",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    6.8165,
+    0.0,
+    3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.26",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    4.82,
+    4.82,
+    3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.27",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    6.8165,
+    3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.28",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -4.82,
+    4.82,
+    3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.29",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -6.8165,
+    0.0,
+    3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    180.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.30",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -4.82,
+    -4.82,
+    3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.31",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    -6.8165,
+    3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    270.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.32",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    4.82,
+    -4.82,
+    3.3232
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.33",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    6.8165,
+    0.0,
+    9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.34",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    4.82,
+    4.82,
+    9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.35",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    6.8165,
+    9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.36",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -4.82,
+    4.82,
+    9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.37",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -6.8165,
+    0.0,
+    9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    180.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.38",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -4.82,
+    -4.82,
+    9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.39",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    -6.8165,
+    9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    270.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.40",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    4.82,
+    -4.82,
+    9.9696
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.41",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    6.8165,
+    0.0,
+    16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.42",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    4.82,
+    4.82,
+    16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.43",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    6.8165,
+    16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.44",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -4.82,
+    4.82,
+    16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.45",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -6.8165,
+    0.0,
+    16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    180.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.46",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -4.82,
+    -4.82,
+    16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.47",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    0.0,
+    -6.8165,
+    16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    270.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.48",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    4.82,
+    -4.82,
+    16.616
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.25,
+    3.027,
+    0.3
+   ]
+  },
+  {
+   "id": "cargo4800_frame.49",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    6.7208,
+    2.7839,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    22.5
+   ],
+   "half_size": [
+    0.275,
+    0.3,
+    16.616
+   ]
+  },
+  {
+   "id": "cargo4800_frame.50",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    2.7839,
+    6.7208,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    67.5
+   ],
+   "half_size": [
+    0.275,
+    0.3,
+    16.616
+   ]
+  },
+  {
+   "id": "cargo4800_frame.51",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -2.7839,
+    6.7208,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    112.5
+   ],
+   "half_size": [
+    0.275,
+    0.3,
+    16.616
+   ]
+  },
+  {
+   "id": "cargo4800_frame.52",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -6.7208,
+    2.7839,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    157.5
+   ],
+   "half_size": [
+    0.275,
+    0.3,
+    16.616
+   ]
+  },
+  {
+   "id": "cargo4800_frame.53",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -6.7208,
+    -2.7839,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    202.5
+   ],
+   "half_size": [
+    0.275,
+    0.3,
+    16.616
+   ]
+  },
+  {
+   "id": "cargo4800_frame.54",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    -2.7839,
+    -6.7208,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    247.5
+   ],
+   "half_size": [
+    0.275,
+    0.3,
+    16.616
+   ]
+  },
+  {
+   "id": "cargo4800_frame.55",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    2.7839,
+    -6.7208,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    292.5
+   ],
+   "half_size": [
+    0.275,
+    0.3,
+    16.616
+   ]
+  },
+  {
+   "id": "cargo4800_frame.56",
+   "part": "cargo4800_frame",
+   "shape": "box",
+   "position": [
+    6.7208,
+    -2.7839,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    337.5
+   ],
+   "half_size": [
+    0.275,
+    0.3,
+    16.616
+   ]
+  },
+  {
+   "id": "cargo4800_frame.57",
+   "part": "cargo4800_frame",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -16.616
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.0,
+   "half_height": 0.4
+  },
+  {
+   "id": "cargo4800_coupler_fore.1",
+   "part": "cargo4800_coupler_fore",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -17.106
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.7,
+   "half_height": 0.09
+  },
+  {
+   "id": "cargo4800_coupler_fore.2",
+   "part": "cargo4800_coupler_fore",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -17.431
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.8,
+   "half_height": 0.235
+  },
+  {
+   "id": "cargo4800_frame.58",
+   "part": "cargo4800_frame",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    16.616
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.0,
+   "half_height": 0.4
+  },
+  {
+   "id": "cargo4800_coupler_aft.1",
+   "part": "cargo4800_coupler_aft",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    17.106
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.7,
+   "half_height": 0.09
+  },
+  {
+   "id": "cargo4800_coupler_aft.2",
+   "part": "cargo4800_coupler_aft",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    17.431
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.25,
+   "half_height": 0.235
+  },
+  {
+   "id": "cargo4800_locks.1",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    6.4665,
+    0.0,
+    -16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.2",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    4.5725,
+    4.5725,
+    -16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.3",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    0.0,
+    6.4665,
+    -16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.4",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -4.5725,
+    4.5725,
+    -16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.5",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -6.4665,
+    0.0,
+    -16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    180.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.6",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -4.5725,
+    -4.5725,
+    -16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.7",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    0.0,
+    -6.4665,
+    -16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    270.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.8",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    4.5725,
+    -4.5725,
+    -16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.9",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    6.4665,
+    0.0,
+    -9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.10",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    4.5725,
+    4.5725,
+    -9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.11",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    0.0,
+    6.4665,
+    -9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.12",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -4.5725,
+    4.5725,
+    -9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.13",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -6.4665,
+    0.0,
+    -9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    180.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.14",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -4.5725,
+    -4.5725,
+    -9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.15",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    0.0,
+    -6.4665,
+    -9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    270.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.16",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    4.5725,
+    -4.5725,
+    -9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.17",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    6.4665,
+    0.0,
+    -2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.18",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    4.5725,
+    4.5725,
+    -2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.19",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    0.0,
+    6.4665,
+    -2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.20",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -4.5725,
+    4.5725,
+    -2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.21",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -6.4665,
+    0.0,
+    -2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    180.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.22",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -4.5725,
+    -4.5725,
+    -2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.23",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    0.0,
+    -6.4665,
+    -2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    270.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.24",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    4.5725,
+    -4.5725,
+    -2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.25",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    6.4665,
+    0.0,
+    2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.26",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    4.5725,
+    4.5725,
+    2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.27",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    0.0,
+    6.4665,
+    2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.28",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -4.5725,
+    4.5725,
+    2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.29",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -6.4665,
+    0.0,
+    2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    180.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.30",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -4.5725,
+    -4.5725,
+    2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.31",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    0.0,
+    -6.4665,
+    2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    270.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.32",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    4.5725,
+    -4.5725,
+    2.8632
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.33",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    6.4665,
+    0.0,
+    9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.34",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    4.5725,
+    4.5725,
+    9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.35",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    0.0,
+    6.4665,
+    9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.36",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -4.5725,
+    4.5725,
+    9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.37",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -6.4665,
+    0.0,
+    9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    180.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.38",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -4.5725,
+    -4.5725,
+    9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.39",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    0.0,
+    -6.4665,
+    9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    270.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.40",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    4.5725,
+    -4.5725,
+    9.5096
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.41",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    6.4665,
+    0.0,
+    16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.42",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    4.5725,
+    4.5725,
+    16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.43",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    0.0,
+    6.4665,
+    16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.44",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -4.5725,
+    4.5725,
+    16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.45",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -6.4665,
+    0.0,
+    16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    180.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.46",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    -4.5725,
+    -4.5725,
+    16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.47",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    0.0,
+    -6.4665,
+    16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    270.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_locks.48",
+   "part": "cargo4800_locks",
+   "shape": "box",
+   "position": [
+    4.5725,
+    -4.5725,
+    16.156
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.18,
+    0.35,
+    0.16
+   ]
+  },
+  {
+   "id": "cargo4800_load.1",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    -13.2928
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.72,
+    3.915,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.2",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    5.225,
+    -13.2928
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    1.31,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.3",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    -5.225,
+    -13.2928
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    1.31,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.4",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    5.0,
+    0.0,
+    -13.2928
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    2.6,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.5",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    -5.0,
+    0.0,
+    -13.2928
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    2.6,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.6",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    -6.6464
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.72,
+    3.915,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.7",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    5.225,
+    -6.6464
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    1.31,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.8",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    -5.225,
+    -6.6464
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    1.31,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.9",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    5.0,
+    0.0,
+    -6.6464
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    2.6,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.10",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    -5.0,
+    0.0,
+    -6.6464
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    2.6,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.11",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.72,
+    3.915,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.12",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    5.225,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    1.31,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.13",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    -5.225,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    1.31,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.14",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    5.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    2.6,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.15",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    -5.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    2.6,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.16",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    6.6464
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.72,
+    3.915,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.17",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    5.225,
+    6.6464
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    1.31,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.18",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    -5.225,
+    6.6464
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    1.31,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.19",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    5.0,
+    0.0,
+    6.6464
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    2.6,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.20",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    -5.0,
+    0.0,
+    6.6464
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    2.6,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.21",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    13.2928
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.72,
+    3.915,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.22",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    5.225,
+    13.2928
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    1.31,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.23",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    0.0,
+    -5.225,
+    13.2928
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    1.31,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.24",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    5.0,
+    0.0,
+    13.2928
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    2.6,
+    3.03
+   ]
+  },
+  {
+   "id": "cargo4800_load.25",
+   "part": "cargo4800_load",
+   "shape": "box",
+   "position": [
+    -5.0,
+    0.0,
+    13.2928
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    2.6,
+    3.03
+   ]
+  }
+ ]
+}

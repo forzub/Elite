@@ -1,0 +1,918 @@
+{
+ "status": "PROPOSAL (author request 2026-11-10) - not canon; models in tools/models/units/new_equipment.py",
+ "parts": [
+  {
+   "id": "sol.wpn.pb8",
+   "cat": "weapon",
+   "mfr": "mfr.sol_mass_yards",
+   "name": "ЛМВ лёгкий ракетный блок ПБ-8 (8 ракет)",
+   "model": "ПБ-8",
+   "mass_t": 0.85,
+   "price_cr": 380000,
+   "kind": "missile_rack",
+   "cells": 8,
+   "power_mw": 0.02,
+   "missile": {
+    "length_m": 1.08,
+    "body_diameter_m": 0.136,
+    "mass_kg": 28,
+    "price_cr": 12000,
+    "launch": "outward (+Y), hot launch from the cell"
+   },
+   "reload": "end-loading hatch (+Z): canisters slide out on the cell rails; 8 rounds by a crew pair or a repair drone, ~20 min",
+   "overhaul_h": 20000,
+   "life_h": 50000,
+   "model_asset": "smy_pb8_rack",
+   "notes": "Light external box launcher for small ships (Cobrett-I class). Sol Authority serial export item: regolith-grey walls on a rib grid, slate-blue frame, SMY rectangular rail mount with 4 twist pins (foreign hulls need an adapter rail). Per-cell frangible blow-out covers (pb8_hatch_N) and separate missiles (pb8_missile_N) so the model can show fired / empty cells. Mass basis: housing + rails ~0.6 t, 8 x 28 kg rounds.",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     0.63,
+     1.277,
+     1.188
+    ],
+    "service_clearance_m": [
+     0.71,
+     1.43,
+     1.33
+    ],
+    "bounds_m": {
+     "min": [
+      -0.315,
+      0.0,
+      -0.608
+     ],
+     "max": [
+      0.315,
+      1.277,
+      0.58
+     ]
+    },
+    "basis": [
+     "measured from the LOD1 model (tools/models/units/new_equipment.py)"
+    ],
+    "frame": "hull skin: mounting face y = 0, cells fire along +Y"
+   },
+   "fault_class": {
+    "id": "weapon.missile_rack",
+    "ru": "навесной ракетный блок",
+    "srus": {
+     "hatch": "вышибные крышки ячеек (pb8_hatch_1..8)",
+     "ignition": "блок управления пуском и цепь воспламенения (pb8_ignition)",
+     "reload": "люк перезарядки и направляющие (pb8_reload_hatch)",
+     "mount": "рельсовое крепление с 4 поворотными штырями (pb8_rail_mount)"
+    }
+   },
+   "installed_on": [
+    "kb.ship.cobrett-i (proposed)"
+   ]
+  },
+  {
+   "id": "hyp.drone.rd1",
+   "cat": "drone",
+   "mfr": "mfr.hyperion",
+   "name": "Hyperion разведывательный дрон RD-1",
+   "model": "RD-1",
+   "mass_t": 0.045,
+   "price_cr": 240000,
+   "kind": "recon",
+   "power_kw": 3,
+   "endurance_h": 6,
+   "field_thrust_n": 30,
+   "sensor": {
+    "turret": "EO/IR camera + laser ranger on a 2-axis gimbal (yaw 360, pitch -90..+30)",
+    "comm": "deployable dish on a carbon boom"
+   },
+   "overhaul_h": 8000,
+   "life_h": 30000,
+   "model_asset": "hyperion_rd1_drone",
+   "notes": "Slender scout drone (~1.4 m): gold MLI foil over the body, carbon struts, white radome nose. Four field-coupled thruster rings (no propellant) on carbon outriggers, power block with a fin radiator under the belly. Docks by the Hyperion 3-point kinematic latch on its back; in an Agora std.bay.drone4 cradle (corner-casting standard) it needs a kinematic adapter plate. Envelope is with the antenna deployed; stowed (boom folded forward along the spine) the height drops to ~0.50 m.",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     0.992,
+     0.887,
+     1.43
+    ],
+    "service_clearance_m": [
+     1.11,
+     0.99,
+     1.6
+    ],
+    "bounds_m": {
+     "min": [
+      -0.496,
+      -0.33,
+      -0.77
+     ],
+     "max": [
+      0.496,
+      0.557,
+      0.66
+     ]
+    },
+    "basis": [
+     "measured from the LOD1 model (tools/models/units/new_equipment.py)"
+    ],
+    "frame": "free flyer: long axis Z, nose +Z, docking latch +Y",
+    "stowed_envelope_m": [
+     0.99,
+     0.5,
+     1.33
+    ]
+   },
+   "fault_class": {
+    "id": "drone.recon",
+    "ru": "разведывательный дрон",
+    "srus": {
+     "optics": "камера и карданный подвес (rd1_camera, rd1_gimbal)",
+     "comms": "раскладная антенна (rd1_antenna)",
+     "power": "блок питания (rd1_power)",
+     "thrust": "полевые движители (rd1_thruster_fl/fr/rl/rr)",
+     "latch": "стыковочный замок (rd1_dock_latch)"
+    }
+   },
+   "carried_in": [
+    "std.bay.drone4 (with adapter)"
+   ]
+  },
+  {
+   "id": "agora.drone.rm2",
+   "cat": "drone",
+   "mfr": "mfr.agora_modular",
+   "name": "Agora ремонтный дрон RM-2 «Mantide»",
+   "model": "RM-2",
+   "mass_t": 0.14,
+   "price_cr": 420000,
+   "kind": "repair",
+   "power_kw": 9,
+   "endurance_h": 4,
+   "field_thrust_n": 60,
+   "manipulator_payload_kg": 60,
+   "cutter_kw": 8,
+   "walk": "4 legs with magnetic feet (hull walking, power-off hold)",
+   "overhaul_h": 6000,
+   "life_h": 25000,
+   "model_asset": "agora_rm2_drone",
+   "notes": "Mantis-like repair drone: raptorial front arms (left = 2-jaw claw on a roll wrist, right = plasma cutter with gas/power cartridge), a fine-work tool arm under the head (driver bit, micro-gripper, work lamp), expressive sensor head with two eyes, three ocelli, lidar mandible and feelers; four walking legs on magnetic pads; abdomen = power pack with Agora corner castings for the std.bay.drone4 cradle twist locks (native fit). Field-coupled thruster pods on the thorax and abdomen fly it around obstacles. Patchwork palette (warm white / terracotta / sea blue) with brass joints. Every moving part is a separate OBJ part modelled in the rest pose; pivots in 'rig'. Stowed envelope assumes legs folded up along the body (femur +60, knee -80) and arms folded (elbow -110) - not modelled yet.",
+   "geometry": {
+    "status": "PROPOSAL/model",
+    "envelope_m": [
+     2.384,
+     1.238,
+     2.248
+    ],
+    "service_clearance_m": [
+     2.67,
+     1.39,
+     2.52
+    ],
+    "bounds_m": {
+     "min": [
+      -1.192,
+      -0.0,
+      -1.048
+     ],
+     "max": [
+      1.192,
+      1.238,
+      1.2
+     ]
+    },
+    "basis": [
+     "measured from the LOD1 model (tools/models/units/new_equipment.py)"
+    ],
+    "frame": "walking on the hull: feet at y = 0, head +Z, +X = drone's left",
+    "stowed_envelope_m": [
+     0.85,
+     0.8,
+     2.1
+    ]
+   },
+   "fault_class": {
+    "id": "drone.repair",
+    "ru": "ремонтный дрон",
+    "srus": {
+     "manipulator": "клешня с запястьем (rm2_arm_l_*, rm2_claw_jaw_a/b)",
+     "cutter": "плазменный резак (rm2_cutter)",
+     "tool": "манипулятор тонких работ (rm2_tool_*)",
+     "legs": "ноги и магнитные опоры (rm2_leg_*)",
+     "thrust": "полевые движители (rm2_thrusters_fore/aft)",
+     "sensors": "сенсорная голова (rm2_head, rm2_antenna_l/r)",
+     "power": "силовой блок-брюшко (rm2_abdomen)"
+    }
+   },
+   "carried_in": [
+    "std.bay.drone4"
+   ],
+   "rig": {
+    "convention": "OBJ frame, metres; every part is modelled in the rest pose (angle 0); rotate a part about axis through pivot_m (right-hand rule), children inherit the parent's transform; range_deg is a suggested animation range",
+    "joints": [
+     {
+      "part": "rm2_thorax",
+      "parent": null,
+      "pivot_m": [
+       0,
+       0.6,
+       0
+      ],
+      "axis": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "range_deg": [
+       -180,
+       180
+      ],
+      "joint": "root (body frame)"
+     },
+     {
+      "part": "rm2_thrusters_fore",
+      "parent": "rm2_thorax",
+      "pivot_m": [
+       0,
+       0.8,
+       0.0
+      ],
+      "axis": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "range_deg": [
+       0,
+       0
+      ],
+      "joint": "fixed"
+     },
+     {
+      "part": "rm2_abdomen",
+      "parent": "rm2_thorax",
+      "pivot_m": [
+       0.0,
+       0.62,
+       -0.24
+      ],
+      "axis": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -25,
+       35
+      ],
+      "joint": "abdomen pitch (+ = tail up)"
+     },
+     {
+      "part": "rm2_thrusters_aft",
+      "parent": "rm2_abdomen",
+      "pivot_m": [
+       0.0,
+       0.8738,
+       -0.8489
+      ],
+      "axis": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "range_deg": [
+       0,
+       0
+      ],
+      "joint": "fixed"
+     },
+     {
+      "part": "rm2_neck",
+      "parent": "rm2_thorax",
+      "pivot_m": [
+       0.0,
+       0.8,
+       0.56
+      ],
+      "axis": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "range_deg": [
+       -60,
+       60
+      ],
+      "joint": "neck yaw"
+     },
+     {
+      "part": "rm2_head",
+      "parent": "rm2_neck",
+      "pivot_m": [
+       0.0,
+       0.85,
+       0.64
+      ],
+      "axis": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -35,
+       40
+      ],
+      "joint": "head pitch (+ = look down)"
+     },
+     {
+      "part": "rm2_antenna_l",
+      "parent": "rm2_head",
+      "pivot_m": [
+       0.045,
+       0.955,
+       0.735
+      ],
+      "axis": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -30,
+       45
+      ],
+      "joint": "feeler sweep"
+     },
+     {
+      "part": "rm2_antenna_r",
+      "parent": "rm2_head",
+      "pivot_m": [
+       -0.045,
+       0.955,
+       0.735
+      ],
+      "axis": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -30,
+       45
+      ],
+      "joint": "feeler sweep"
+     },
+     {
+      "part": "rm2_leg_fl_coxa",
+      "parent": "rm2_thorax",
+      "pivot_m": [
+       0.175,
+       0.55,
+       0.1
+      ],
+      "axis": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "range_deg": [
+       -40,
+       40
+      ],
+      "joint": "hip yaw"
+     },
+     {
+      "part": "rm2_leg_fl_femur",
+      "parent": "rm2_leg_fl_coxa",
+      "pivot_m": [
+       0.2894,
+       0.55,
+       0.1618
+      ],
+      "axis": [
+       -0.4755,
+       0.0,
+       0.8797
+      ],
+      "range_deg": [
+       -50,
+       70
+      ],
+      "joint": "hip pitch (fold up for the bay)"
+     },
+     {
+      "part": "rm2_leg_fl_tibia",
+      "parent": "rm2_leg_fl_femur",
+      "pivot_m": [
+       0.7468,
+       0.91,
+       0.4091
+      ],
+      "axis": [
+       -0.4755,
+       0.0,
+       0.8797
+      ],
+      "range_deg": [
+       -80,
+       60
+      ],
+      "joint": "knee"
+     },
+     {
+      "part": "rm2_leg_fl_foot",
+      "parent": "rm2_leg_fl_tibia",
+      "pivot_m": [
+       1.1,
+       0.15,
+       0.6
+      ],
+      "axis": [
+       -0.4755,
+       0.0,
+       0.8797
+      ],
+      "range_deg": [
+       -45,
+       45
+      ],
+      "joint": "ankle (pad stays flat on the hull)"
+     },
+     {
+      "part": "rm2_leg_fr_coxa",
+      "parent": "rm2_thorax",
+      "pivot_m": [
+       -0.175,
+       0.55,
+       0.1
+      ],
+      "axis": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "range_deg": [
+       -40,
+       40
+      ],
+      "joint": "hip yaw"
+     },
+     {
+      "part": "rm2_leg_fr_femur",
+      "parent": "rm2_leg_fr_coxa",
+      "pivot_m": [
+       -0.2894,
+       0.55,
+       0.1618
+      ],
+      "axis": [
+       -0.4755,
+       0.0,
+       -0.8797
+      ],
+      "range_deg": [
+       -50,
+       70
+      ],
+      "joint": "hip pitch (fold up for the bay)"
+     },
+     {
+      "part": "rm2_leg_fr_tibia",
+      "parent": "rm2_leg_fr_femur",
+      "pivot_m": [
+       -0.7468,
+       0.91,
+       0.4091
+      ],
+      "axis": [
+       -0.4755,
+       0.0,
+       -0.8797
+      ],
+      "range_deg": [
+       -80,
+       60
+      ],
+      "joint": "knee"
+     },
+     {
+      "part": "rm2_leg_fr_foot",
+      "parent": "rm2_leg_fr_tibia",
+      "pivot_m": [
+       -1.1,
+       0.15,
+       0.6
+      ],
+      "axis": [
+       -0.4755,
+       0.0,
+       -0.8797
+      ],
+      "range_deg": [
+       -45,
+       45
+      ],
+      "joint": "ankle (pad stays flat on the hull)"
+     },
+     {
+      "part": "rm2_leg_rl_coxa",
+      "parent": "rm2_thorax",
+      "pivot_m": [
+       0.175,
+       0.55,
+       -0.16
+      ],
+      "axis": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "range_deg": [
+       -40,
+       40
+      ],
+      "joint": "hip yaw"
+     },
+     {
+      "part": "rm2_leg_rl_femur",
+      "parent": "rm2_leg_rl_coxa",
+      "pivot_m": [
+       0.2811,
+       0.55,
+       -0.2351
+      ],
+      "axis": [
+       0.5774,
+       -0.0,
+       0.8165
+      ],
+      "range_deg": [
+       -50,
+       70
+      ],
+      "joint": "hip pitch (fold up for the bay)"
+     },
+     {
+      "part": "rm2_leg_rl_tibia",
+      "parent": "rm2_leg_rl_femur",
+      "pivot_m": [
+       0.7057,
+       0.91,
+       -0.5353
+      ],
+      "axis": [
+       0.5774,
+       -0.0,
+       0.8165
+      ],
+      "range_deg": [
+       -80,
+       60
+      ],
+      "joint": "knee"
+     },
+     {
+      "part": "rm2_leg_rl_foot",
+      "parent": "rm2_leg_rl_tibia",
+      "pivot_m": [
+       1.08,
+       0.15,
+       -0.8
+      ],
+      "axis": [
+       0.5774,
+       -0.0,
+       0.8165
+      ],
+      "range_deg": [
+       -45,
+       45
+      ],
+      "joint": "ankle (pad stays flat on the hull)"
+     },
+     {
+      "part": "rm2_leg_rr_coxa",
+      "parent": "rm2_thorax",
+      "pivot_m": [
+       -0.175,
+       0.55,
+       -0.16
+      ],
+      "axis": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "range_deg": [
+       -40,
+       40
+      ],
+      "joint": "hip yaw"
+     },
+     {
+      "part": "rm2_leg_rr_femur",
+      "parent": "rm2_leg_rr_coxa",
+      "pivot_m": [
+       -0.2811,
+       0.55,
+       -0.2351
+      ],
+      "axis": [
+       0.5774,
+       0.0,
+       -0.8165
+      ],
+      "range_deg": [
+       -50,
+       70
+      ],
+      "joint": "hip pitch (fold up for the bay)"
+     },
+     {
+      "part": "rm2_leg_rr_tibia",
+      "parent": "rm2_leg_rr_femur",
+      "pivot_m": [
+       -0.7057,
+       0.91,
+       -0.5353
+      ],
+      "axis": [
+       0.5774,
+       0.0,
+       -0.8165
+      ],
+      "range_deg": [
+       -80,
+       60
+      ],
+      "joint": "knee"
+     },
+     {
+      "part": "rm2_leg_rr_foot",
+      "parent": "rm2_leg_rr_tibia",
+      "pivot_m": [
+       -1.08,
+       0.15,
+       -0.8
+      ],
+      "axis": [
+       0.5774,
+       0.0,
+       -0.8165
+      ],
+      "range_deg": [
+       -45,
+       45
+      ],
+      "joint": "ankle (pad stays flat on the hull)"
+     },
+     {
+      "part": "rm2_arm_l_shoulder",
+      "parent": "rm2_thorax",
+      "pivot_m": [
+       0.11,
+       0.75,
+       0.46
+      ],
+      "axis": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "range_deg": [
+       -35,
+       35
+      ],
+      "joint": "shoulder yaw"
+     },
+     {
+      "part": "rm2_arm_l_upper",
+      "parent": "rm2_arm_l_shoulder",
+      "pivot_m": [
+       0.11,
+       0.75,
+       0.46
+      ],
+      "axis": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -70,
+       60
+      ],
+      "joint": "shoulder pitch"
+     },
+     {
+      "part": "rm2_arm_l_fore",
+      "parent": "rm2_arm_l_upper",
+      "pivot_m": [
+       0.17,
+       0.47,
+       0.72
+      ],
+      "axis": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -110,
+       40
+      ],
+      "joint": "elbow (mantis fold)"
+     },
+     {
+      "part": "rm2_arm_l_wrist",
+      "parent": "rm2_arm_l_fore",
+      "pivot_m": [
+       0.19,
+       0.76,
+       1.0
+      ],
+      "axis": [
+       0.0,
+       -0.6644,
+       0.7474
+      ],
+      "range_deg": [
+       -180,
+       180
+      ],
+      "joint": "wrist roll (pitch about X also possible: -60..60)"
+     },
+     {
+      "part": "rm2_claw_jaw_a",
+      "parent": "rm2_arm_l_wrist",
+      "pivot_m": [
+       0.19,
+       0.7102,
+       1.0561
+      ],
+      "axis": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -10,
+       40
+      ],
+      "joint": "jaw open (+ = open)"
+     },
+     {
+      "part": "rm2_claw_jaw_b",
+      "parent": "rm2_arm_l_wrist",
+      "pivot_m": [
+       0.19,
+       0.7102,
+       1.0561
+      ],
+      "axis": [
+       -1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -10,
+       40
+      ],
+      "joint": "jaw open (+ = open)"
+     },
+     {
+      "part": "rm2_arm_r_shoulder",
+      "parent": "rm2_thorax",
+      "pivot_m": [
+       -0.11,
+       0.75,
+       0.46
+      ],
+      "axis": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "range_deg": [
+       -35,
+       35
+      ],
+      "joint": "shoulder yaw"
+     },
+     {
+      "part": "rm2_arm_r_upper",
+      "parent": "rm2_arm_r_shoulder",
+      "pivot_m": [
+       -0.11,
+       0.75,
+       0.46
+      ],
+      "axis": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -70,
+       60
+      ],
+      "joint": "shoulder pitch"
+     },
+     {
+      "part": "rm2_arm_r_fore",
+      "parent": "rm2_arm_r_upper",
+      "pivot_m": [
+       -0.17,
+       0.47,
+       0.72
+      ],
+      "axis": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -110,
+       40
+      ],
+      "joint": "elbow (mantis fold)"
+     },
+     {
+      "part": "rm2_cutter",
+      "parent": "rm2_arm_r_fore",
+      "pivot_m": [
+       -0.19,
+       0.76,
+       1.0
+      ],
+      "axis": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -70,
+       70
+      ],
+      "joint": "torch pitch (roll about the torch axis: -180..180)"
+     },
+     {
+      "part": "rm2_tool_upper",
+      "parent": "rm2_thorax",
+      "pivot_m": [
+       0.0,
+       0.67,
+       0.5
+      ],
+      "axis": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -60,
+       50
+      ],
+      "joint": "tool arm base pitch"
+     },
+     {
+      "part": "rm2_tool_fore",
+      "parent": "rm2_tool_upper",
+      "pivot_m": [
+       0.0,
+       0.52,
+       0.61
+      ],
+      "axis": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -90,
+       60
+      ],
+      "joint": "tool arm elbow"
+     },
+     {
+      "part": "rm2_tool_head",
+      "parent": "rm2_tool_fore",
+      "pivot_m": [
+       0.0,
+       0.56,
+       0.79
+      ],
+      "axis": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "range_deg": [
+       -70,
+       70
+      ],
+      "joint": "tool head pitch (bit spins about the head axis)"
+     }
+    ]
+   }
+  }
+ ]
+}

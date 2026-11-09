@@ -1,0 +1,208 @@
+{
+ "asset": "bharat_sm100_refuge",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "refuge100_hull.1",
+   "part": "refuge100_hull",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    -0.2
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.75,
+    0.905,
+    3.35
+   ]
+  },
+  {
+   "id": "refuge100_hull.2",
+   "part": "refuge100_hull",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    -0.2
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.555,
+    1.1,
+    3.35
+   ]
+  },
+  {
+   "id": "refuge100_hull.3",
+   "part": "refuge100_hull",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    3.605
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.4875,
+    0.902,
+    0.455
+   ]
+  },
+  {
+   "id": "refuge100_release.1",
+   "part": "refuge100_release",
+   "shape": "box",
+   "position": [
+    0.792,
+    0.5515,
+    -3.72
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.15,
+    0.13,
+    0.17
+   ]
+  },
+  {
+   "id": "refuge100_release.2",
+   "part": "refuge100_release",
+   "shape": "box",
+   "position": [
+    -0.792,
+    0.5515,
+    -3.72
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.15,
+    0.13,
+    0.17
+   ]
+  },
+  {
+   "id": "refuge100_release.3",
+   "part": "refuge100_release",
+   "shape": "box",
+   "position": [
+    -0.792,
+    -0.5515,
+    -3.72
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.15,
+    0.13,
+    0.17
+   ]
+  },
+  {
+   "id": "refuge100_release.4",
+   "part": "refuge100_release",
+   "shape": "box",
+   "position": [
+    0.792,
+    -0.5515,
+    -3.72
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.15,
+    0.13,
+    0.17
+   ]
+  },
+  {
+   "id": "refuge100_flange.1",
+   "part": "refuge100_flange",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -3.8272
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.78,
+   "half_height": 0.2772
+  },
+  {
+   "id": "refuge100_battery.1",
+   "part": "refuge100_battery",
+   "shape": "box",
+   "position": [
+    0.0,
+    -1.2,
+    0.4
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.71,
+    0.105,
+    1.1
+   ]
+  },
+  {
+   "id": "refuge100_beacon.1",
+   "part": "refuge100_beacon",
+   "shape": "box",
+   "position": [
+    0.25,
+    1.21,
+    2.55
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.25,
+    0.11,
+    0.18
+   ]
+  }
+ ]
+}

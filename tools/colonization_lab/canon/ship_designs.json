@@ -77,7 +77,8 @@
    "overhaul_h": 30000,
    "life_h": 50000,
    "runtime_preset": "elite.engine.kobra.n1-axial.v1",
-   "existing": true
+   "existing": true,
+   "model_asset": "equipment/cobretty_n1ax_drive"
   },
   {
    "id": "kb.drive.cr1-vector",
@@ -110,7 +111,8 @@
    "eff": 0.984,
    "gimbal_deg": 6,
    "overhaul_h": 30000,
-   "life_h": 50000
+   "life_h": 50000,
+   "model_asset": "equipment/ofu_u33_drive"
   },
   {
    "id": "ofu.drive.u73l",
@@ -126,7 +128,8 @@
    "gimbal_deg": 10,
    "notes": "форсированный подъёмный двигатель: старт с поверхности при 2.5 g, высокая удельная мощность",
    "overhaul_h": 30000,
-   "life_h": 50000
+   "life_h": 50000,
+   "model_asset": "equipment/ofu_u73l_drive"
   },
   {
    "id": "ofu.drive.u43",
@@ -141,7 +144,10 @@
    "eff": 0.984,
    "gimbal_deg": 6,
    "overhaul_h": 30000,
-   "life_h": 50000
+   "life_h": 50000,
+   "model_asset": "equipment/ofu_u70_drive",
+   "model_part": "ofu.drive.u70",
+   "model_units": 1
   },
   {
    "id": "ofu.drive.u15",
@@ -156,7 +162,10 @@
    "eff": 0.984,
    "gimbal_deg": 60,
    "overhaul_h": 30000,
-   "life_h": 50000
+   "life_h": 50000,
+   "model_asset": "equipment/ofu_u65m_drive",
+   "model_part": "ofu.drive.u65m",
+   "model_units": 1
   },
   {
    "id": "ofu.drive.u65m",
@@ -171,7 +180,8 @@
    "eff": 0.985,
    "gimbal_deg": 60,
    "overhaul_h": 30000,
-   "life_h": 50000
+   "life_h": 50000,
+   "model_asset": "equipment/ofu_u65m_drive"
   },
   {
    "id": "ofu.drive.u70",
@@ -186,7 +196,8 @@
    "eff": 0.985,
    "gimbal_deg": 8,
    "overhaul_h": 30000,
-   "life_h": 50000
+   "life_h": 50000,
+   "model_asset": "equipment/ofu_u70_drive"
   },
   {
    "id": "ofu.drive.u23",
@@ -201,7 +212,10 @@
    "eff": 0.984,
    "gimbal_deg": 6,
    "overhaul_h": 30000,
-   "life_h": 50000
+   "life_h": 50000,
+   "model_asset": "equipment/ofu_u33_drive",
+   "model_part": "ofu.drive.u33",
+   "model_units": 1
   },
   {
    "id": "th.drive.tz13",
@@ -216,7 +230,10 @@
    "eff": 0.983,
    "gimbal_deg": 5,
    "overhaul_h": 30000,
-   "life_h": 50000
+   "life_h": 50000,
+   "model_asset": "equipment/tianhe_tz28v_drive",
+   "model_part": "th.drive.tz28",
+   "model_units": 1
   },
   {
    "id": "th.drive.tz23",
@@ -231,7 +248,10 @@
    "eff": 0.983,
    "gimbal_deg": 5,
    "overhaul_h": 30000,
-   "life_h": 50000
+   "life_h": 50000,
+   "model_asset": "equipment/tianhe_tz28v_drive",
+   "model_part": "th.drive.tz28",
+   "model_units": 1
   },
   {
    "id": "th.drive.tz11",
@@ -246,7 +266,8 @@
    "eff": 0.985,
    "gimbal_deg": 40,
    "overhaul_h": 30000,
-   "life_h": 50000
+   "life_h": 50000,
+   "model_asset": "equipment/tianhe_tz11_drive"
   },
   {
    "id": "th.drive.tz16v",
@@ -262,7 +283,8 @@
    "gimbal_deg": 60,
    "notes": "экспорт Пакту Цитадели по лицензии; форсированный, короткий ресурс",
    "overhaul_h": 8000,
-   "life_h": 15000
+   "life_h": 15000,
+   "model_asset": "equipment/tianhe_tz16v_drive"
   },
   {
    "id": "th.drive.tz28",
@@ -278,7 +300,8 @@
    "gimbal_deg": 6,
    "notes": "военный вариант с бронированным кожухом",
    "overhaul_h": 30000,
-   "life_h": 50000
+   "life_h": 50000,
+   "model_asset": "equipment/tianhe_tz28v_drive"
   },
   {
    "id": "kern.drive.kt1",
@@ -294,7 +317,8 @@
    "gimbal_deg": 8,
    "overhaul_h": 40000,
    "life_h": 70000,
-   "notes": "тихоходный, ресурсный: буксировка неделями"
+   "notes": "тихоходный, ресурсный: буксировка неделями",
+   "model_asset": "equipment/kern_kt1_drive"
   },
   {
    "id": "hyp.drive.hd4",
@@ -309,7 +333,10 @@
    "eff": 0.987,
    "gimbal_deg": 6,
    "overhaul_h": 30000,
-   "life_h": 50000
+   "life_h": 50000,
+   "model_asset": "equipment/cobretty_n1ax_drive",
+   "model_part": "kb.drive.n1-axial",
+   "model_units": 1
   },
   {
    "id": "hyp.drive.hd3",
@@ -324,7 +351,10 @@
    "eff": 0.987,
    "gimbal_deg": 8,
    "overhaul_h": 30000,
-   "life_h": 50000
+   "life_h": 50000,
+   "model_asset": "equipment/cobretty_n1ax_drive",
+   "model_part": "kb.drive.n1-axial",
+   "model_units": 1
   },
   {
    "id": "kb.reactor.er5",
@@ -355,7 +385,10 @@
    "eff": 0.9,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/cobretty_er5_reactor",
+   "model_part": "kb.reactor.er5",
+   "model_units": 1
   },
   {
    "id": "kb.reactor.er1",
@@ -384,7 +417,10 @@
    "eff": 0.9,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/srw_sr48_reactor",
+   "model_part": "srw.reactor.sr48",
+   "model_units": 1
   },
   {
    "id": "srw.reactor.sr9",
@@ -398,7 +434,10 @@
    "eff": 0.9,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/srw_sr48_reactor",
+   "model_part": "srw.reactor.sr48",
+   "model_units": 2
   },
   {
    "id": "srw.reactor.sr33",
@@ -412,7 +451,10 @@
    "eff": 0.9,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/srw_sr48_reactor",
+   "model_part": "srw.reactor.sr48",
+   "model_units": 1
   },
   {
    "id": "srw.reactor.sr14",
@@ -426,7 +468,10 @@
    "eff": 0.9,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/srw_sr48_reactor",
+   "model_part": "srw.reactor.sr48",
+   "model_units": 1
   },
   {
    "id": "srw.reactor.sr48",
@@ -455,7 +500,10 @@
    "eff": 0.9,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/srw_sr48_reactor",
+   "model_part": "srw.reactor.sr48",
+   "model_units": 2
   },
   {
    "id": "srw.reactor.sr22",
@@ -469,7 +517,10 @@
    "eff": 0.9,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/srw_sr48_reactor",
+   "model_part": "srw.reactor.sr48",
+   "model_units": 1
   },
   {
    "id": "th.reactor.tr10",
@@ -498,7 +549,10 @@
    "eff": 0.89,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/tianhe_tr10_reactor",
+   "model_part": "th.reactor.tr10",
+   "model_units": 2
   },
   {
    "id": "th.reactor.tr11",
@@ -512,7 +566,10 @@
    "eff": 0.89,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/tianhe_tr10_reactor",
+   "model_part": "th.reactor.tr10",
+   "model_units": 2
   },
   {
    "id": "th.reactor.tr26v",
@@ -541,7 +598,10 @@
    "eff": 0.9,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/tianhe_tr10_reactor",
+   "model_part": "th.reactor.tr10",
+   "model_units": 3
   },
   {
    "id": "kb.apu.s70",
@@ -555,7 +615,10 @@
    "eff": 0.45,
    "existing": true,
    "overhaul_h": 40000,
-   "life_h": 80000
+   "life_h": 80000,
+   "model_asset": "equipment/cobretty_sr150_service_reactor",
+   "model_part": "kb.apu.s150",
+   "model_units": 1
   },
   {
    "id": "ofu.apu.s20",
@@ -568,7 +631,10 @@
    "mwe": 20,
    "eff": 0.45,
    "overhaul_h": 40000,
-   "life_h": 80000
+   "life_h": 80000,
+   "model_asset": "equipment/srw_s60_service_reactor",
+   "model_part": "srw.apu.s60",
+   "model_units": 1
   },
   {
    "id": "srw.apu.s60",
@@ -581,7 +647,8 @@
    "mwe": 60,
    "eff": 0.45,
    "overhaul_h": 40000,
-   "life_h": 80000
+   "life_h": 80000,
+   "model_asset": "equipment/srw_s60_service_reactor"
   },
   {
    "id": "srw.apu.s200",
@@ -594,7 +661,8 @@
    "mwe": 200,
    "eff": 0.45,
    "overhaul_h": 40000,
-   "life_h": 80000
+   "life_h": 80000,
+   "model_asset": "equipment/srw_s200_service_reactor"
   },
   {
    "id": "th.apu.s150",
@@ -607,7 +675,8 @@
    "mwe": 150,
    "eff": 0.42,
    "overhaul_h": 40000,
-   "life_h": 80000
+   "life_h": 80000,
+   "model_asset": "equipment/tianhe_s150_reactor"
   },
   {
    "id": "th.apu.s600",
@@ -620,7 +689,8 @@
    "mwe": 600,
    "eff": 0.44,
    "overhaul_h": 40000,
-   "life_h": 80000
+   "life_h": 80000,
+   "model_asset": "equipment/tianhe_s600_reactor"
   },
   {
    "id": "kb.apu.s150",
@@ -633,7 +703,8 @@
    "mwe": 150,
    "eff": 0.45,
    "overhaul_h": 40000,
-   "life_h": 80000
+   "life_h": 80000,
+   "model_asset": "equipment/cobretty_sr150_service_reactor"
   },
   {
    "id": "kb.rad.cs-panel",
@@ -646,7 +717,8 @@
    "area_m2": 10,
    "temp_k": 1050,
    "eps": 0.9,
-   "material": "elite.material.radiator.c-sic.v1"
+   "material": "elite.material.radiator.c-sic.v1",
+   "model_asset": "equipment/cobretty_rp10_radiator"
   },
   {
    "id": "th.rad.panel50",
@@ -659,7 +731,8 @@
    "area_m2": 50,
    "temp_k": 1000,
    "eps": 0.88,
-   "material": "elite.material.radiator.c-sic.v1"
+   "material": "elite.material.radiator.c-sic.v1",
+   "model_asset": "equipment/tianhe_rs50_radiator"
   },
   {
    "id": "sol.rad.panel50",
@@ -672,7 +745,8 @@
    "area_m2": 50,
    "temp_k": 1050,
    "eps": 0.9,
-   "material": "elite.material.radiator.c-sic.v1"
+   "material": "elite.material.radiator.c-sic.v1",
+   "model_asset": "equipment/smy_rs50s_radiator"
   },
   {
    "id": "kb.cool.loop200",
@@ -683,7 +757,8 @@
    "mass_t": 3,
    "price_cr": 40000,
    "capacity_mw": 180,
-   "pump_mw": 2.0
+   "pump_mw": 2.0,
+   "model_asset": "equipment/cobretty_cl180_coolant_loop"
   },
   {
    "id": "th.cool.loop600",
@@ -694,7 +769,8 @@
    "mass_t": 9,
    "price_cr": 90000,
    "capacity_mw": 600,
-   "pump_mw": 6.0
+   "pump_mw": 6.0,
+   "model_asset": "equipment/tianhe_ko600_coolant_loop"
   },
   {
    "id": "sol.cool.loop300",
@@ -705,7 +781,8 @@
    "mass_t": 5,
    "price_cr": 60000,
    "capacity_mw": 300,
-   "pump_mw": 3.0
+   "pump_mw": 3.0,
+   "model_asset": "equipment/smy_ko300_coolant_loop"
   },
   {
    "id": "um.core.z05",
@@ -718,7 +795,8 @@
    "rating_t": 500,
    "sealed": true,
    "overhaul_h": 60000,
-   "life_h": 120000
+   "life_h": 120000,
+   "model_asset": "equipment/zeropoint_z05_jump_core"
   },
   {
    "id": "um.core.z1",
@@ -731,7 +809,8 @@
    "rating_t": 1000,
    "sealed": true,
    "overhaul_h": 60000,
-   "life_h": 120000
+   "life_h": 120000,
+   "model_asset": "equipment/zeropoint_z1_jump_core"
   },
   {
    "id": "um.core.z5",
@@ -744,7 +823,8 @@
    "rating_t": 5000,
    "sealed": true,
    "overhaul_h": 60000,
-   "life_h": 120000
+   "life_h": 120000,
+   "model_asset": "equipment/zeropoint_z5_jump_core"
   },
   {
    "id": "mizan.core.m5",
@@ -758,7 +838,10 @@
    "sealed": true,
    "notes": "собственная математика вне стандарта Когниума; совместим только с ядрами Мизан при ремонте",
    "overhaul_h": 60000,
-   "life_h": 120000
+   "life_h": 120000,
+   "model_asset": "equipment/kapehu_k5_core",
+   "model_part": "kapehu.core.k5",
+   "model_units": 1
   },
   {
    "id": "mizan.core.m12",
@@ -771,7 +854,10 @@
    "rating_t": 12000,
    "sealed": true,
    "overhaul_h": 60000,
-   "life_h": 120000
+   "life_h": 120000,
+   "model_asset": "equipment/kapehu_k12_core",
+   "model_part": "kapehu.core.k12",
+   "model_units": 1
   },
   {
    "id": "harmony.core.h5",
@@ -785,7 +871,8 @@
    "sealed": true,
    "notes": "запечатанные блоки «Нулевой точки», собранные на Гармонии",
    "overhaul_h": 60000,
-   "life_h": 120000
+   "life_h": 120000,
+   "model_asset": "equipment/harmony_h5_core"
   },
   {
    "id": "harmony.core.h12",
@@ -798,7 +885,8 @@
    "rating_t": 12000,
    "sealed": true,
    "overhaul_h": 60000,
-   "life_h": 120000
+   "life_h": 120000,
+   "model_asset": "equipment/harmony_h12_core"
   },
   {
    "id": "harmony.core.h80",
@@ -811,7 +899,8 @@
    "rating_t": 80000,
    "sealed": true,
    "overhaul_h": 60000,
-   "life_h": 120000
+   "life_h": 120000,
+   "model_asset": "equipment/harmony_h80_core"
   },
   {
    "id": "bastion.core.b12",
@@ -825,7 +914,8 @@
    "sealed": true,
    "notes": "военные ядра собственной разработки; не экспортируются",
    "overhaul_h": 60000,
-   "life_h": 120000
+   "life_h": 120000,
+   "model_asset": "equipment/bastion_b12_core"
   },
   {
    "id": "std.tank.jumpcharge",
@@ -838,7 +928,8 @@
    "fluid": "jump_charge",
    "capacity_t": 1.0,
    "overhaul_h": 60000,
-   "life_h": 120000
+   "life_h": 120000,
+   "model_asset": "equipment/agora_bz1_jumptank"
   },
   {
    "id": "std.tank.pellets",
@@ -851,7 +942,8 @@
    "fluid": "fusion_pellets",
    "capacity_t": 1.0,
    "overhaul_h": 60000,
-   "life_h": 120000
+   "life_h": 120000,
+   "model_asset": "equipment/agora_bt1_pellettank"
   },
   {
    "id": "kb.rcs.fc-nozzle",
@@ -867,7 +959,8 @@
    "runtime_preset": "cobra.rcs.electric.fixed.v1",
    "existing": true,
    "overhaul_h": 20000,
-   "life_h": 40000
+   "life_h": 40000,
+   "model_asset": "equipment/cobretty_fcrcs_rcs"
   },
   {
    "id": "std.rcs.cluster",
@@ -881,7 +974,8 @@
    "input_mw": 40,
    "eff": 0.94,
    "overhaul_h": 20000,
-   "life_h": 40000
+   "life_h": 40000,
+   "model_asset": "equipment/agora_rcs4_cluster"
   },
   {
    "id": "std.rcs.cluster_h",
@@ -895,7 +989,8 @@
    "input_mw": 150,
    "eff": 0.93,
    "overhaul_h": 20000,
-   "life_h": 40000
+   "life_h": 40000,
+   "model_asset": "equipment/tianhe_cluster_h_rcs"
   },
   {
    "id": "xz.mc.c1",
@@ -908,7 +1003,8 @@
    "power_mw": 0.4,
    "grade": "civil",
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/xinzhi_mcc1_computer"
   },
   {
    "id": "xz.mc.c3",
@@ -921,7 +1017,8 @@
    "power_mw": 1.5,
    "grade": "fleet",
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/xinzhi_mcc3_computer"
   },
   {
    "id": "mizan.mc.m1",
@@ -934,7 +1031,10 @@
    "power_mw": 0.5,
    "grade": "civil",
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/kapehu_k1_computer",
+   "model_part": "kapehu.mc.k1",
+   "model_units": 1
   },
   {
    "id": "bastion.mc.w1",
@@ -947,7 +1047,8 @@
    "power_mw": 3.0,
    "grade": "military",
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/bastion_bv1_computer"
   },
   {
    "id": "hyp.mc.r1",
@@ -960,7 +1061,8 @@
    "power_mw": 4.0,
    "grade": "military",
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/hyperion_hr1_computer"
   },
   {
    "id": "xz.radar.n2",
@@ -974,7 +1076,8 @@
    "power_mw": 0.6,
    "runtime_backend": "TestIdeal",
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/xinzhi_n2_radar"
   },
   {
    "id": "xz.radar.n10",
@@ -988,7 +1091,8 @@
    "power_mw": 4.0,
    "runtime_backend": "TestIdeal",
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/xinzhi_n10_radar"
   },
   {
    "id": "bastion.radar.s50",
@@ -1002,7 +1106,8 @@
    "power_mw": 40,
    "runtime_backend": "TestIdeal",
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/bastion_s50_radar"
   },
   {
    "id": "hyp.radar.pa100",
@@ -1016,7 +1121,8 @@
    "power_mw": 12,
    "runtime_backend": "TestIdeal",
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/hyperion_pa100_radar"
   },
   {
    "id": "kern.radar.deb5",
@@ -1030,7 +1136,8 @@
    "power_mw": 2.0,
    "runtime_backend": "TestIdeal",
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/kern_dr5_radar"
   },
   {
    "id": "xz.comm.c1",
@@ -1043,7 +1150,8 @@
    "power_mw": 0.3,
    "range_ls": 10,
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/xinzhi_c1_comm"
   },
   {
    "id": "xz.comm.c3",
@@ -1056,7 +1164,8 @@
    "power_mw": 2.0,
    "range_ls": 60,
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/xinzhi_c3_comm"
   },
   {
    "id": "bastion.comm.w1",
@@ -1069,7 +1178,8 @@
    "power_mw": 3.0,
    "range_ls": 60,
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/bastion_bs1_comm"
   },
   {
    "id": "um.xpdr.t1",
@@ -1081,7 +1191,8 @@
    "price_cr": 8000,
    "power_mw": 0.02,
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/zeropoint_t1_transponder"
   },
   {
    "id": "hyp.ecm.e1",
@@ -1093,7 +1204,8 @@
    "price_cr": 3000000,
    "power_mw": 30,
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/hyperion_e1_ecm"
   },
   {
    "id": "hyp.relay.r1",
@@ -1106,7 +1218,8 @@
    "power_mw": 5,
    "range_ls": 120,
    "overhaul_h": 40000,
-   "life_h": 90000
+   "life_h": 90000,
+   "model_asset": "equipment/hyperion_r1_comm"
   },
   {
    "id": "eurohab.ls.l4",
@@ -1120,7 +1233,8 @@
    "days": 60,
    "power_mw": 0.08,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/eurohab_l4_lifesupport"
   },
   {
    "id": "eurohab.ls.l20",
@@ -1134,7 +1248,8 @@
    "days": 90,
    "power_mw": 0.4,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/eurohab_l20_lifesupport"
   },
   {
    "id": "eurohab.ls.l200",
@@ -1148,7 +1263,8 @@
    "days": 40,
    "power_mw": 4,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/eurohab_l200_lifesupport"
   },
   {
    "id": "terra.ls.t10",
@@ -1162,7 +1278,8 @@
    "days": 60,
    "power_mw": 0.2,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/terra_t10_life_support"
   },
   {
    "id": "terra.ls.t60",
@@ -1176,7 +1293,8 @@
    "days": 200,
    "power_mw": 1.2,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/terra_t60_life_support"
   },
   {
    "id": "terra.ls.t200",
@@ -1190,7 +1308,8 @@
    "days": 200,
    "power_mw": 4,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/terra_t200_life_support"
   },
   {
    "id": "uhuru.ls.u500",
@@ -1204,7 +1323,8 @@
    "days": 60,
    "power_mw": 8,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/uhuru_u500_life_support"
   },
   {
    "id": "ofu.ls.o4",
@@ -1218,7 +1338,8 @@
    "days": 14,
    "power_mw": 0.06,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/ofu_o4_life_support"
   },
   {
    "id": "kb.surv.capsule2",
@@ -1231,7 +1352,8 @@
    "seats": 2,
    "existing": true,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/cobretty_ec2_capsule"
   },
   {
    "id": "std.surv.pod4",
@@ -1243,7 +1365,8 @@
    "price_cr": 18000,
    "seats": 4,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/agora_sk4_pod"
   },
   {
    "id": "std.surv.boat20",
@@ -1255,7 +1378,8 @@
    "price_cr": 60000,
    "seats": 20,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/agora_sh20_lifeboat"
   },
   {
    "id": "std.surv.refuge100",
@@ -1267,7 +1391,8 @@
    "price_cr": 90000,
    "seats": 100,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/bharat_sm100_refuge"
   },
   {
    "id": "std.med.bay",
@@ -1280,7 +1405,8 @@
    "beds": 4,
    "power_mw": 0.05,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/eurohab_mo4_medbay"
   },
   {
    "id": "std.cargo.c20lock",
@@ -1292,7 +1418,8 @@
    "price_cr": 2500,
    "c20_slots": 1,
    "overhaul_h": 60000,
-   "life_h": 150000
+   "life_h": 150000,
+   "model_asset": "equipment/agora_c20r_rack"
   },
   {
    "id": "ofu.cargo.p20",
@@ -1308,7 +1435,8 @@
    "survival_seats": 12,
    "power_mw": 0.2,
    "overhaul_h": 60000,
-   "life_h": 150000
+   "life_h": 150000,
+   "model_asset": "equipment/ofu_p20_passenger_module"
   },
   {
    "id": "std.cabin.hold6",
@@ -1320,7 +1448,8 @@
    "price_cr": 30000,
    "seats": 6,
    "overhaul_h": 60000,
-   "life_h": 150000
+   "life_h": 150000,
+   "model_asset": "equipment/smy_kz6_passenger_module"
   },
   {
    "id": "agora.hab.pax100",
@@ -1332,7 +1461,8 @@
    "price_cr": 260000,
    "seats": 100,
    "overhaul_h": 60000,
-   "life_h": 150000
+   "life_h": 150000,
+   "model_asset": "equipment/agora_ps100_passenger"
   },
   {
    "id": "bharat.hab.bunk500",
@@ -1344,7 +1474,8 @@
    "price_cr": 300000,
    "seats": 500,
    "overhaul_h": 60000,
-   "life_h": 150000
+   "life_h": 150000,
+   "model_asset": "equipment/bharat_sp500_bunks"
   },
   {
    "id": "uhuru.cryo.pod100",
@@ -1357,7 +1488,8 @@
    "seats": 100,
    "cold_sleep": true,
    "overhaul_h": 60000,
-   "life_h": 150000
+   "life_h": 150000,
+   "model_asset": "equipment/uhuru_ab100_passenger_module"
   },
   {
    "id": "harmony.mod.cargo4800",
@@ -1370,7 +1502,8 @@
    "payload_t": 4800,
    "c20_slots": 240,
    "overhaul_h": 60000,
-   "life_h": 150000
+   "life_h": 150000,
+   "model_asset": "equipment/harmony_mp4800_cargo"
   },
   {
    "id": "harmony.mod.tank4200",
@@ -1382,7 +1515,8 @@
    "price_cr": 1000000,
    "payload_t": 4170,
    "overhaul_h": 60000,
-   "life_h": 150000
+   "life_h": 150000,
+   "model_asset": "equipment/harmony_mc4200_tank"
   },
   {
    "id": "sol.cryo.t1000",
@@ -1394,7 +1528,8 @@
    "price_cr": 120000,
    "capacity_t": 1000,
    "overhaul_h": 60000,
-   "life_h": 150000
+   "life_h": 150000,
+   "model_asset": "equipment/smy_kc1000_cryo_tank"
   },
   {
    "id": "std.cargo.hold100",
@@ -1406,7 +1541,8 @@
    "price_cr": 20000,
    "capacity_t": 100,
    "overhaul_h": 60000,
-   "life_h": 150000
+   "life_h": 150000,
+   "model_asset": "equipment/agora_hold100_hold"
   },
   {
    "id": "std.dock.collar",
@@ -1417,7 +1553,8 @@
    "mass_t": 1.5,
    "price_cr": 25000,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/agora_su1_collar"
   },
   {
    "id": "std.bay.boat",
@@ -1435,7 +1572,8 @@
     9.0,
     4.0,
     3.0
-   ]
+   ],
+   "model_asset": "equipment/smy_ak1_boat_bay"
   },
   {
    "id": "std.bay.drone4",
@@ -1447,7 +1585,8 @@
    "price_cr": 180000,
    "drones": 4,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/agora_od4_dronebay"
   },
   {
    "id": "harmony.bay.hangar2",
@@ -1461,7 +1600,8 @@
    "craft": "interceptor",
    "overhaul_h": 40000,
    "life_h": 100000,
-   "craft_ship": "bastion.ship.b-4.sokol"
+   "craft_ship": "bastion.ship.b-4.sokol",
+   "model_asset": "equipment/harmony_ap2_hangar"
   },
   {
    "id": "bastion.bay.hangar4",
@@ -1475,7 +1615,8 @@
    "craft": "interceptor",
    "craft_ship": "bastion.ship.b-4.sokol",
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/bastion_ap4_hangar"
   },
   {
    "id": "ofu.lift.shield",
@@ -1486,7 +1627,8 @@
    "mass_t": 30,
    "price_cr": 180000,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/ofu_tz12_heat_shield"
   },
   {
    "id": "ofu.lift.gear",
@@ -1497,7 +1639,8 @@
    "mass_t": 18,
    "price_cr": 40000,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/ofu_po4_landing_gear"
   },
   {
    "id": "kern.tow.raft20k",
@@ -1509,7 +1652,8 @@
    "price_cr": 160000,
    "tow_t": 20000,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/kern_tr20k_tow"
   },
   {
    "id": "kern.tow.heavy",
@@ -1521,7 +1665,8 @@
    "price_cr": 600000,
    "tow_t": 50000,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/kern_trh_tow"
   },
   {
    "id": "sol.workshop.w1",
@@ -1533,7 +1678,8 @@
    "price_cr": 180000,
    "power_mw": 0.8,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/smy_ms1_workshop"
   },
   {
    "id": "std.armour.ceramic",
@@ -1544,7 +1690,8 @@
    "mass_t": 1.0,
    "price_cr": 30000,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/firmament_bk1_armour"
   },
   {
    "id": "bastion.armour.heavy",
@@ -1555,7 +1702,8 @@
    "mass_t": 1.0,
    "price_cr": 60000,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/bastion_bt1_armour"
   },
   {
    "id": "hyp.mast.s1",
@@ -1567,7 +1715,8 @@
    "price_cr": 1800000,
    "power_mw": 2,
    "overhaul_h": 40000,
-   "life_h": 100000
+   "life_h": 100000,
+   "model_asset": "equipment/hyperion_sm1_mast"
   },
   {
    "id": "kb.wpn.pd1",
@@ -1580,7 +1729,8 @@
    "kind": "point_defence",
    "power_mw": 3,
    "overhaul_h": 30000,
-   "life_h": 60000
+   "life_h": 60000,
+   "model_asset": "equipment/cobretty_pd1_turret"
   },
   {
    "id": "fa.wpn.coil30",
@@ -1593,7 +1743,8 @@
    "kind": "coilgun",
    "power_mw": 25,
    "overhaul_h": 30000,
-   "life_h": 60000
+   "life_h": 60000,
+   "model_asset": "equipment/firmament_kp30_coilgun"
   },
   {
    "id": "fa.wpn.pd2",
@@ -1606,7 +1757,8 @@
    "kind": "point_defence",
    "power_mw": 8,
    "overhaul_h": 30000,
-   "life_h": 60000
+   "life_h": 60000,
+   "model_asset": "equipment/firmament_pt2_pointdefence"
   },
   {
    "id": "harmony.wpn.pd3",
@@ -1619,7 +1771,8 @@
    "kind": "point_defence",
    "power_mw": 12,
    "overhaul_h": 30000,
-   "life_h": 60000
+   "life_h": 60000,
+   "model_asset": "equipment/harmony_pd3_turret"
   },
   {
    "id": "harmony.wpn.vls8",
@@ -1633,7 +1786,8 @@
    "cells": 8,
    "power_mw": 1,
    "overhaul_h": 30000,
-   "life_h": 60000
+   "life_h": 60000,
+   "model_asset": "equipment/harmony_vls8_launcher"
   },
   {
    "id": "bastion.wpn.coil10",
@@ -1646,7 +1800,8 @@
    "kind": "coilgun",
    "power_mw": 12,
    "overhaul_h": 30000,
-   "life_h": 60000
+   "life_h": 60000,
+   "model_asset": "equipment/bastion_bp10_coilgun"
   },
   {
    "id": "bastion.wpn.vls16",
@@ -1660,7 +1815,8 @@
    "cells": 16,
    "power_mw": 2,
    "overhaul_h": 30000,
-   "life_h": 60000
+   "life_h": 60000,
+   "model_asset": "equipment/bastion_vpu16_vls"
   },
   {
    "id": "bastion.wpn.pd4",
@@ -1673,7 +1829,8 @@
    "kind": "point_defence",
    "power_mw": 15,
    "overhaul_h": 30000,
-   "life_h": 60000
+   "life_h": 60000,
+   "model_asset": "equipment/bastion_bt4_pd"
   },
   {
    "id": "kern.md.impactor",
@@ -1687,7 +1844,8 @@
    "power_mw": 400,
    "notes": "гражданское двойное назначение: отклонение и дробление камней",
    "overhaul_h": 30000,
-   "life_h": 60000
+   "life_h": 60000,
+   "model_asset": "equipment/kern_md40_impactor"
   }
  ],
  "ships": [

@@ -1,0 +1,296 @@
+{
+ "asset": "tianhe_tz11_drive",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "tz11_busbar.1",
+   "part": "tz11_busbar",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -0.1
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.58,
+   "half_height": 0.1
+  },
+  {
+   "id": "tz11_flange.1",
+   "part": "tz11_flange",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.175
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.231,
+   "half_height": 0.175
+  },
+  {
+   "id": "tz11_housing.1",
+   "part": "tz11_housing",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    2.8
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.9801,
+   "half_height": 2.45
+  },
+  {
+   "id": "tz11_coil_ring.1",
+   "part": "tz11_coil_ring",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    5.7
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.45,
+   "half_height": 0.45
+  },
+  {
+   "id": "engine_hot_emitter_annulus.1",
+   "part": "engine_hot_emitter_annulus",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    6.375
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 2.615,
+   "half_height": 0.225
+  },
+  {
+   "id": "tz11_hx.1",
+   "part": "tz11_hx",
+   "shape": "box",
+   "position": [
+    -2.2201,
+    0.0,
+    2.9
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.24,
+    0.625,
+    1.2
+   ]
+  },
+  {
+   "id": "tz11_field_ctl.1",
+   "part": "tz11_field_ctl",
+   "shape": "box",
+   "position": [
+    2.2101,
+    0.0,
+    3.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.23,
+    0.65,
+    1.05
+   ]
+  },
+  {
+   "id": "tz11_sensors.1",
+   "part": "tz11_sensors",
+   "shape": "box",
+   "position": [
+    1.0401,
+    1.8015,
+    1.6
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    60.0
+   ],
+   "half_size": [
+    0.1,
+    0.13,
+    0.13
+   ]
+  },
+  {
+   "id": "tz11_sensors.2",
+   "part": "tz11_sensors",
+   "shape": "box",
+   "position": [
+    -1.0401,
+    1.8015,
+    1.6
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    120.0
+   ],
+   "half_size": [
+    0.1,
+    0.13,
+    0.13
+   ]
+  },
+  {
+   "id": "tz11_sensors.3",
+   "part": "tz11_sensors",
+   "shape": "box",
+   "position": [
+    1.0401,
+    1.8015,
+    4.5
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    60.0
+   ],
+   "half_size": [
+    0.1,
+    0.13,
+    0.13
+   ]
+  },
+  {
+   "id": "tz11_sensors.4",
+   "part": "tz11_sensors",
+   "shape": "box",
+   "position": [
+    -1.0401,
+    1.8015,
+    4.5
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    120.0
+   ],
+   "half_size": [
+    0.1,
+    0.13,
+    0.13
+   ]
+  },
+  {
+   "id": "tz11_mounts.1",
+   "part": "tz11_mounts",
+   "shape": "box",
+   "position": [
+    -1.8621,
+    -1.0751,
+    1.4
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    210.0
+   ],
+   "half_size": [
+    0.17,
+    0.26,
+    0.44
+   ]
+  },
+  {
+   "id": "tz11_mounts.2",
+   "part": "tz11_mounts",
+   "shape": "box",
+   "position": [
+    -1.8621,
+    -1.0751,
+    4.4
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    210.0
+   ],
+   "half_size": [
+    0.17,
+    0.26,
+    0.44
+   ]
+  },
+  {
+   "id": "tz11_mounts.3",
+   "part": "tz11_mounts",
+   "shape": "box",
+   "position": [
+    1.8621,
+    -1.0751,
+    1.4
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    330.0
+   ],
+   "half_size": [
+    0.17,
+    0.26,
+    0.44
+   ]
+  },
+  {
+   "id": "tz11_mounts.4",
+   "part": "tz11_mounts",
+   "shape": "box",
+   "position": [
+    1.8621,
+    -1.0751,
+    4.4
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    330.0
+   ],
+   "half_size": [
+    0.17,
+    0.26,
+    0.44
+   ]
+  }
+ ]
+}

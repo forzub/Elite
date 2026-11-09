@@ -4623,6 +4623,20 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   tools/models/briefs/<maker>.json (96 remaining parts with passports and fault-class SRUs).
 - Running: 8 parallel builders (maker groups + new equipment: missile rack / recon drone / repair drone with a rig
   proposal in tools/models/briefs/new_parts_proposal.json - canon not edited until the author accepts).
+- Result (2026-11-10): 106 equipment models in 18 maker modules (tools/models/units/*.py), every one with 4 LODs,
+  serviceable units as parts, hit_volumes.json; all 103 reference parts covered + 3 new items (Sol PB-8 missile rack
+  sol.wpn.pb8, Hyperion RD-1 recon drone hyp.drone.rd1, Agora RM-2 «Мантида» repair drone agora.drone.rm2 with a
+  37-joint rig) proposed in tools/models/briefs/new_parts_proposal.json (NOT in canon). build --check passes; budgets
+  met except SR-4.8 / SR-2.6 LOD2 4.5k (target ~4k). Each maker uses its own interface standard (DESIGN_SCHOOLS.md).
+- Catalog: model_asset on all 101 unified parts, 103 reference parts and all 120 runtime products (22 legacy products
+  inherit the model of their legacy_resolution canonical part: model_part + model_units, e.g. TR-30V = 3 x TR-10).
+  ship_designer 21 ships 0 FAIL; reference render_check 0 problems; gates 205 PASS / 6 known red / 0 new.
+- Open for the author: (1) hull-skin flat units whose passport puts thickness on Z (std.dock.collar, bastion.armour.heavy,
+  std.armour.ceramic) were built +Y-outward with axes swapped - passports should read [W, thickness, L];
+  (2) service reactors have no cooling_pad_side_m - builders used the envelope top face as the pad;
+  (3) std.bay.boat cannot hold its boat (craft 9 x 4 x 3 m vs bay 4.87 x 2.43 x 6.08 m); (4) ofu.lift.gear is a set of
+  4 with one envelope, stowed leg exceeds it; (5) sol.rad.panel50 radiating area ~46 m2 vs 50; (6) harmony
+  cargo4800: 240 C20 do not fit the envelope (model carries 85); (7) accept the 3 new items into canon.
 
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):

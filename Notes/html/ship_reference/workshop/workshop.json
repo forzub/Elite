@@ -3,31 +3,427 @@
  "modelReady": {
   "kb.drive.cr1-vector": {
    "ready": true,
-   "updated": 1794261148076
+   "updated": 1794266964573
   },
   "kb.reactor.er5": {
    "ready": true,
-   "updated": 1794261148076
+   "updated": 1794266964573
   },
   "kb.reactor.er1": {
    "ready": true,
-   "updated": 1794261148076
+   "updated": 1794266964573
   },
   "srw.reactor.sr48": {
    "ready": true,
-   "updated": 1794261148076
+   "updated": 1794266964573
   },
   "srw.reactor.sr26": {
    "ready": true,
-   "updated": 1794261148076
+   "updated": 1794266964573
   },
   "th.reactor.tr10": {
    "ready": true,
-   "updated": 1794261148076
+   "updated": 1794266964573
   },
   "th.reactor.tr26v": {
    "ready": true,
-   "updated": 1794261148076
+   "updated": 1794266964573
+  },
+  "xz.radar.n10": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.cargo.hold100": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.cargo.c20lock": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.dock.collar": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.bay.drone4": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.surv.pod4": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.surv.boat20": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "agora.hab.pax100": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.rcs.cluster": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.tank.jumpcharge": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.tank.pellets": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "bastion.armour.heavy": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "bastion.comm.w1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "bastion.mc.w1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "bastion.bay.hangar4": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "bastion.core.b12": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "bastion.radar.s50": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "bastion.wpn.coil10": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "bastion.wpn.pd4": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "bastion.wpn.vls16": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.surv.refuge100": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "bharat.hab.bunk500": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kb.drive.n1-axial": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kb.cool.loop200": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kb.rad.cs-panel": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kb.rcs.fc-nozzle": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kb.apu.s150": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kb.wpn.pd1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kb.surv.capsule2": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "eurohab.ls.l4": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "eurohab.ls.l20": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "eurohab.ls.l200": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.med.bay": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.armour.ceramic": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "fa.wpn.coil30": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "fa.wpn.pd2": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "harmony.core.h5": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "harmony.core.h12": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "harmony.core.h80": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "harmony.wpn.pd3": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "harmony.wpn.vls8": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "harmony.bay.hangar2": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "harmony.mod.cargo4800": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "harmony.mod.tank4200": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "hyp.relay.r1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "hyp.mc.r1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "hyp.ecm.e1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "hyp.radar.pa100": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "hyp.mast.s1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kapehu.mc.k1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kapehu.core.k5": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kapehu.core.k12": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kern.drive.kt1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kern.mine.cutter": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kern.radar.deb5": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kern.tow.heavy": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kern.tow.raft20k": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "kern.md.impactor": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "sol.wpn.pb8": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "hyp.drone.rd1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "agora.drone.rm2": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "ofu.drive.u33": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "ofu.drive.u65m": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "ofu.drive.u70": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "ofu.drive.u73l": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "ofu.lift.shield": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "ofu.lift.gear": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "ofu.ls.o4": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "ofu.cargo.p20": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.bay.boat": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "sol.cool.loop300": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "sol.cryo.t1000": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.cabin.hold6": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "sol.rad.panel50": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "sol.workshop.w1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "srw.apu.s200": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "srw.apu.s60": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "terra.ls.t10": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "terra.ls.t60": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "terra.ls.t200": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "th.drive.tz11": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "th.drive.tz16v": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "th.drive.tz28": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "th.cool.loop600": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "th.rad.panel50": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "std.rcs.cluster_h": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "th.apu.s150": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "th.apu.s600": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "uhuru.ls.u500": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "uhuru.cryo.pod100": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "um.core.z05": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "um.core.z1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "um.core.z5": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "um.xpdr.t1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "xz.comm.c1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "xz.comm.c3": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "xz.mc.c1": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "xz.mc.c3": {
+   "ready": true,
+   "updated": 1794266964573
+  },
+  "xz.radar.n2": {
+   "ready": true,
+   "updated": 1794266964573
   }
  },
  "prompts": {
@@ -101,6 +497,30 @@
     "note": "",
     "added": 1794254351347,
     "updated": 1794254351347
+   },
+   {
+    "id": "kb.drive.cr1-vector-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/cobretty_cr1_vector",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.drive.cr1-vector-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/cobretty_cr1_vector",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.drive.cr1-vector-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/cobretty_cr1_vector",
+    "added": 1794266964573,
+    "updated": 1794266964573
    }
   ],
   "kb.reactor.er5": [
@@ -167,6 +587,30 @@
     "note": "",
     "added": 1794254351347,
     "updated": 1794254351347
+   },
+   {
+    "id": "kb.reactor.er5-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/cobretty_er5_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.reactor.er5-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/cobretty_er5_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.reactor.er5-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/cobretty_er5_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
    }
   ],
   "kb.reactor.er1": [
@@ -188,11 +632,27 @@
    },
    {
     "id": "kb.reactor.er1-model-hits",
-    "file": "model-hits.png",
+    "file": "model-hits.jpg",
     "name": "Хитвалумы, цвет = деталь",
     "note": "",
     "added": 1794260662177,
     "updated": 1794260662177
+   },
+   {
+    "id": "kb.reactor.er1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/cobretty_er1_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.reactor.er1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/cobretty_er1_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
    }
   ],
   "srw.reactor.sr48": [
@@ -214,11 +674,27 @@
    },
    {
     "id": "srw.reactor.sr48-model-hits",
-    "file": "model-hits.png",
+    "file": "model-hits.jpg",
     "name": "Хитвалумы, цвет = деталь",
     "note": "",
     "added": 1794260662177,
     "updated": 1794260662177
+   },
+   {
+    "id": "srw.reactor.sr48-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/srw_sr48_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "srw.reactor.sr48-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/srw_sr48_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
    }
   ],
   "srw.reactor.sr26": [
@@ -240,11 +716,27 @@
    },
    {
     "id": "srw.reactor.sr26-model-hits",
-    "file": "model-hits.png",
+    "file": "model-hits.jpg",
     "name": "Хитвалумы, цвет = деталь",
     "note": "",
     "added": 1794260662177,
     "updated": 1794260662177
+   },
+   {
+    "id": "srw.reactor.sr26-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/srw_sr26_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "srw.reactor.sr26-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/srw_sr26_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
    }
   ],
   "th.reactor.tr10": [
@@ -266,11 +758,27 @@
    },
    {
     "id": "th.reactor.tr10-model-hits",
-    "file": "model-hits.png",
+    "file": "model-hits.jpg",
     "name": "Хитвалумы, цвет = деталь",
     "note": "",
     "added": 1794260662177,
     "updated": 1794260662177
+   },
+   {
+    "id": "th.reactor.tr10-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/tianhe_tr10_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.reactor.tr10-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/tianhe_tr10_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
    }
   ],
   "th.reactor.tr26v": [
@@ -292,11 +800,2601 @@
    },
    {
     "id": "th.reactor.tr26v-model-hits",
-    "file": "model-hits.png",
+    "file": "model-hits.jpg",
     "name": "Хитвалумы, цвет = деталь",
     "note": "",
     "added": 1794260662177,
     "updated": 1794260662177
+   },
+   {
+    "id": "th.reactor.tr26v-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/tianhe_tr26v_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.reactor.tr26v-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/tianhe_tr26v_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "xz.radar.n10": [
+   {
+    "id": "xz.radar.n10-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/xinzhi_n10_radar",
+    "added": 1794265567391,
+    "updated": 1794265567391
+   },
+   {
+    "id": "xz.radar.n10-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/xinzhi_n10_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "xz.radar.n10-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/xinzhi_n10_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.cargo.hold100": [
+   {
+    "id": "std.cargo.hold100-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/agora_hold100_hold",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.cargo.hold100-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/agora_hold100_hold",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.cargo.hold100-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/agora_hold100_hold",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.cargo.c20lock": [
+   {
+    "id": "std.cargo.c20lock-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/agora_c20r_rack",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.cargo.c20lock-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/agora_c20r_rack",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.cargo.c20lock-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/agora_c20r_rack",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.dock.collar": [
+   {
+    "id": "std.dock.collar-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/agora_su1_collar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.dock.collar-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/agora_su1_collar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.dock.collar-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/agora_su1_collar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.bay.drone4": [
+   {
+    "id": "std.bay.drone4-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/agora_od4_dronebay",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.bay.drone4-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/agora_od4_dronebay",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.bay.drone4-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/agora_od4_dronebay",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.surv.pod4": [
+   {
+    "id": "std.surv.pod4-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/agora_sk4_pod",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.surv.pod4-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/agora_sk4_pod",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.surv.pod4-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/agora_sk4_pod",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.surv.boat20": [
+   {
+    "id": "std.surv.boat20-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/agora_sh20_lifeboat",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.surv.boat20-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/agora_sh20_lifeboat",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.surv.boat20-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/agora_sh20_lifeboat",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "agora.hab.pax100": [
+   {
+    "id": "agora.hab.pax100-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/agora_ps100_passenger",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "agora.hab.pax100-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/agora_ps100_passenger",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "agora.hab.pax100-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/agora_ps100_passenger",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.rcs.cluster": [
+   {
+    "id": "std.rcs.cluster-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/agora_rcs4_cluster",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.rcs.cluster-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/agora_rcs4_cluster",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.rcs.cluster-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/agora_rcs4_cluster",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.tank.jumpcharge": [
+   {
+    "id": "std.tank.jumpcharge-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/agora_bz1_jumptank",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.tank.jumpcharge-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/agora_bz1_jumptank",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.tank.jumpcharge-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/agora_bz1_jumptank",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.tank.pellets": [
+   {
+    "id": "std.tank.pellets-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/agora_bt1_pellettank",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.tank.pellets-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/agora_bt1_pellettank",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.tank.pellets-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/agora_bt1_pellettank",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "bastion.armour.heavy": [
+   {
+    "id": "bastion.armour.heavy-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/bastion_bt1_armour",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.armour.heavy-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/bastion_bt1_armour",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.armour.heavy-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/bastion_bt1_armour",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "bastion.comm.w1": [
+   {
+    "id": "bastion.comm.w1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/bastion_bs1_comm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.comm.w1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/bastion_bs1_comm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.comm.w1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/bastion_bs1_comm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "bastion.mc.w1": [
+   {
+    "id": "bastion.mc.w1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/bastion_bv1_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.mc.w1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/bastion_bv1_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.mc.w1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/bastion_bv1_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "bastion.bay.hangar4": [
+   {
+    "id": "bastion.bay.hangar4-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/bastion_ap4_hangar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.bay.hangar4-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/bastion_ap4_hangar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.bay.hangar4-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/bastion_ap4_hangar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "bastion.core.b12": [
+   {
+    "id": "bastion.core.b12-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/bastion_b12_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.core.b12-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/bastion_b12_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.core.b12-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/bastion_b12_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "bastion.radar.s50": [
+   {
+    "id": "bastion.radar.s50-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/bastion_s50_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.radar.s50-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/bastion_s50_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.radar.s50-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/bastion_s50_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "bastion.wpn.coil10": [
+   {
+    "id": "bastion.wpn.coil10-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/bastion_bp10_coilgun",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.wpn.coil10-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/bastion_bp10_coilgun",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.wpn.coil10-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/bastion_bp10_coilgun",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "bastion.wpn.pd4": [
+   {
+    "id": "bastion.wpn.pd4-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/bastion_bt4_pd",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.wpn.pd4-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/bastion_bt4_pd",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.wpn.pd4-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/bastion_bt4_pd",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "bastion.wpn.vls16": [
+   {
+    "id": "bastion.wpn.vls16-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/bastion_vpu16_vls",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.wpn.vls16-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/bastion_vpu16_vls",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bastion.wpn.vls16-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/bastion_vpu16_vls",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.surv.refuge100": [
+   {
+    "id": "std.surv.refuge100-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/bharat_sm100_refuge",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.surv.refuge100-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/bharat_sm100_refuge",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.surv.refuge100-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/bharat_sm100_refuge",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "bharat.hab.bunk500": [
+   {
+    "id": "bharat.hab.bunk500-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/bharat_sp500_bunks",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bharat.hab.bunk500-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/bharat_sp500_bunks",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "bharat.hab.bunk500-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/bharat_sp500_bunks",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kb.drive.n1-axial": [
+   {
+    "id": "kb.drive.n1-axial-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/cobretty_n1ax_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.drive.n1-axial-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/cobretty_n1ax_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.drive.n1-axial-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/cobretty_n1ax_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kb.cool.loop200": [
+   {
+    "id": "kb.cool.loop200-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/cobretty_cl180_coolant_loop",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.cool.loop200-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/cobretty_cl180_coolant_loop",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.cool.loop200-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/cobretty_cl180_coolant_loop",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kb.rad.cs-panel": [
+   {
+    "id": "kb.rad.cs-panel-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/cobretty_rp10_radiator",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.rad.cs-panel-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/cobretty_rp10_radiator",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.rad.cs-panel-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/cobretty_rp10_radiator",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kb.rcs.fc-nozzle": [
+   {
+    "id": "kb.rcs.fc-nozzle-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/cobretty_fcrcs_rcs",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.rcs.fc-nozzle-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/cobretty_fcrcs_rcs",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.rcs.fc-nozzle-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/cobretty_fcrcs_rcs",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kb.apu.s150": [
+   {
+    "id": "kb.apu.s150-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/cobretty_sr150_service_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.apu.s150-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/cobretty_sr150_service_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.apu.s150-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/cobretty_sr150_service_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kb.wpn.pd1": [
+   {
+    "id": "kb.wpn.pd1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/cobretty_pd1_turret",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.wpn.pd1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/cobretty_pd1_turret",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.wpn.pd1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/cobretty_pd1_turret",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kb.surv.capsule2": [
+   {
+    "id": "kb.surv.capsule2-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/cobretty_ec2_capsule",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.surv.capsule2-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/cobretty_ec2_capsule",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kb.surv.capsule2-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/cobretty_ec2_capsule",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "eurohab.ls.l4": [
+   {
+    "id": "eurohab.ls.l4-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/eurohab_l4_lifesupport",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "eurohab.ls.l4-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/eurohab_l4_lifesupport",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "eurohab.ls.l4-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/eurohab_l4_lifesupport",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "eurohab.ls.l20": [
+   {
+    "id": "eurohab.ls.l20-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/eurohab_l20_lifesupport",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "eurohab.ls.l20-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/eurohab_l20_lifesupport",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "eurohab.ls.l20-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/eurohab_l20_lifesupport",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "eurohab.ls.l200": [
+   {
+    "id": "eurohab.ls.l200-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/eurohab_l200_lifesupport",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "eurohab.ls.l200-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/eurohab_l200_lifesupport",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "eurohab.ls.l200-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/eurohab_l200_lifesupport",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.med.bay": [
+   {
+    "id": "std.med.bay-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/eurohab_mo4_medbay",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.med.bay-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/eurohab_mo4_medbay",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.med.bay-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/eurohab_mo4_medbay",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.armour.ceramic": [
+   {
+    "id": "std.armour.ceramic-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/firmament_bk1_armour",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.armour.ceramic-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/firmament_bk1_armour",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.armour.ceramic-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/firmament_bk1_armour",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "fa.wpn.coil30": [
+   {
+    "id": "fa.wpn.coil30-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/firmament_kp30_coilgun",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "fa.wpn.coil30-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/firmament_kp30_coilgun",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "fa.wpn.coil30-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/firmament_kp30_coilgun",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "fa.wpn.pd2": [
+   {
+    "id": "fa.wpn.pd2-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/firmament_pt2_pointdefence",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "fa.wpn.pd2-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/firmament_pt2_pointdefence",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "fa.wpn.pd2-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/firmament_pt2_pointdefence",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "harmony.core.h5": [
+   {
+    "id": "harmony.core.h5-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/harmony_h5_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.core.h5-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/harmony_h5_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.core.h5-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/harmony_h5_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "harmony.core.h12": [
+   {
+    "id": "harmony.core.h12-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/harmony_h12_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.core.h12-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/harmony_h12_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.core.h12-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/harmony_h12_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "harmony.core.h80": [
+   {
+    "id": "harmony.core.h80-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/harmony_h80_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.core.h80-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/harmony_h80_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.core.h80-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/harmony_h80_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "harmony.wpn.pd3": [
+   {
+    "id": "harmony.wpn.pd3-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/harmony_pd3_turret",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.wpn.pd3-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/harmony_pd3_turret",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.wpn.pd3-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/harmony_pd3_turret",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "harmony.wpn.vls8": [
+   {
+    "id": "harmony.wpn.vls8-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/harmony_vls8_launcher",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.wpn.vls8-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/harmony_vls8_launcher",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.wpn.vls8-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/harmony_vls8_launcher",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "harmony.bay.hangar2": [
+   {
+    "id": "harmony.bay.hangar2-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/harmony_ap2_hangar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.bay.hangar2-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/harmony_ap2_hangar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.bay.hangar2-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/harmony_ap2_hangar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "harmony.mod.cargo4800": [
+   {
+    "id": "harmony.mod.cargo4800-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/harmony_mp4800_cargo",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.mod.cargo4800-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/harmony_mp4800_cargo",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.mod.cargo4800-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/harmony_mp4800_cargo",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "harmony.mod.tank4200": [
+   {
+    "id": "harmony.mod.tank4200-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/harmony_mc4200_tank",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.mod.tank4200-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/harmony_mc4200_tank",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "harmony.mod.tank4200-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/harmony_mc4200_tank",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "hyp.relay.r1": [
+   {
+    "id": "hyp.relay.r1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/hyperion_r1_comm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "hyp.relay.r1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/hyperion_r1_comm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "hyp.relay.r1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/hyperion_r1_comm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "hyp.mc.r1": [
+   {
+    "id": "hyp.mc.r1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/hyperion_hr1_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "hyp.mc.r1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/hyperion_hr1_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "hyp.mc.r1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/hyperion_hr1_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "hyp.ecm.e1": [
+   {
+    "id": "hyp.ecm.e1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/hyperion_e1_ecm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "hyp.ecm.e1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/hyperion_e1_ecm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "hyp.ecm.e1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/hyperion_e1_ecm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "hyp.radar.pa100": [
+   {
+    "id": "hyp.radar.pa100-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/hyperion_pa100_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "hyp.radar.pa100-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/hyperion_pa100_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "hyp.radar.pa100-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/hyperion_pa100_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "hyp.mast.s1": [
+   {
+    "id": "hyp.mast.s1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/hyperion_sm1_mast",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "hyp.mast.s1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/hyperion_sm1_mast",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "hyp.mast.s1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/hyperion_sm1_mast",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kapehu.mc.k1": [
+   {
+    "id": "kapehu.mc.k1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/kapehu_k1_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kapehu.mc.k1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/kapehu_k1_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kapehu.mc.k1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/kapehu_k1_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kapehu.core.k5": [
+   {
+    "id": "kapehu.core.k5-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/kapehu_k5_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kapehu.core.k5-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/kapehu_k5_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kapehu.core.k5-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/kapehu_k5_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kapehu.core.k12": [
+   {
+    "id": "kapehu.core.k12-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/kapehu_k12_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kapehu.core.k12-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/kapehu_k12_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kapehu.core.k12-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/kapehu_k12_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kern.drive.kt1": [
+   {
+    "id": "kern.drive.kt1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/kern_kt1_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kern.drive.kt1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/kern_kt1_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kern.drive.kt1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/kern_kt1_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kern.mine.cutter": [
+   {
+    "id": "kern.mine.cutter-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/kern_mk1_cutter",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kern.mine.cutter-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/kern_mk1_cutter",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kern.mine.cutter-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/kern_mk1_cutter",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kern.radar.deb5": [
+   {
+    "id": "kern.radar.deb5-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/kern_dr5_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kern.radar.deb5-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/kern_dr5_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kern.radar.deb5-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/kern_dr5_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kern.tow.heavy": [
+   {
+    "id": "kern.tow.heavy-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/kern_trh_tow",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kern.tow.heavy-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/kern_trh_tow",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kern.tow.heavy-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/kern_trh_tow",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kern.tow.raft20k": [
+   {
+    "id": "kern.tow.raft20k-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/kern_tr20k_tow",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kern.tow.raft20k-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/kern_tr20k_tow",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kern.tow.raft20k-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/kern_tr20k_tow",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "kern.md.impactor": [
+   {
+    "id": "kern.md.impactor-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/kern_md40_impactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kern.md.impactor-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/kern_md40_impactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "kern.md.impactor-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/kern_md40_impactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "sol.wpn.pb8": [
+   {
+    "id": "sol.wpn.pb8-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/smy_pb8_rack",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "sol.wpn.pb8-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/smy_pb8_rack",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "sol.wpn.pb8-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/smy_pb8_rack",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "hyp.drone.rd1": [
+   {
+    "id": "hyp.drone.rd1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/hyperion_rd1_drone",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "hyp.drone.rd1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/hyperion_rd1_drone",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "hyp.drone.rd1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/hyperion_rd1_drone",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "agora.drone.rm2": [
+   {
+    "id": "agora.drone.rm2-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/agora_rm2_drone",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "agora.drone.rm2-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/agora_rm2_drone",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "agora.drone.rm2-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/agora_rm2_drone",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "ofu.drive.u33": [
+   {
+    "id": "ofu.drive.u33-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/ofu_u33_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.drive.u33-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/ofu_u33_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.drive.u33-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/ofu_u33_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "ofu.drive.u65m": [
+   {
+    "id": "ofu.drive.u65m-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/ofu_u65m_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.drive.u65m-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/ofu_u65m_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.drive.u65m-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/ofu_u65m_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "ofu.drive.u70": [
+   {
+    "id": "ofu.drive.u70-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/ofu_u70_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.drive.u70-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/ofu_u70_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.drive.u70-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/ofu_u70_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "ofu.drive.u73l": [
+   {
+    "id": "ofu.drive.u73l-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/ofu_u73l_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.drive.u73l-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/ofu_u73l_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.drive.u73l-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/ofu_u73l_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "ofu.lift.shield": [
+   {
+    "id": "ofu.lift.shield-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/ofu_tz12_heat_shield",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.lift.shield-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/ofu_tz12_heat_shield",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.lift.shield-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/ofu_tz12_heat_shield",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "ofu.lift.gear": [
+   {
+    "id": "ofu.lift.gear-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/ofu_po4_landing_gear",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.lift.gear-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/ofu_po4_landing_gear",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.lift.gear-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/ofu_po4_landing_gear",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "ofu.ls.o4": [
+   {
+    "id": "ofu.ls.o4-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/ofu_o4_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.ls.o4-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/ofu_o4_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.ls.o4-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/ofu_o4_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "ofu.cargo.p20": [
+   {
+    "id": "ofu.cargo.p20-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/ofu_p20_passenger_module",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.cargo.p20-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/ofu_p20_passenger_module",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "ofu.cargo.p20-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/ofu_p20_passenger_module",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.bay.boat": [
+   {
+    "id": "std.bay.boat-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/smy_ak1_boat_bay",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.bay.boat-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/smy_ak1_boat_bay",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.bay.boat-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/smy_ak1_boat_bay",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "sol.cool.loop300": [
+   {
+    "id": "sol.cool.loop300-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/smy_ko300_coolant_loop",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "sol.cool.loop300-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/smy_ko300_coolant_loop",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "sol.cool.loop300-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/smy_ko300_coolant_loop",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "sol.cryo.t1000": [
+   {
+    "id": "sol.cryo.t1000-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/smy_kc1000_cryo_tank",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "sol.cryo.t1000-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/smy_kc1000_cryo_tank",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "sol.cryo.t1000-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/smy_kc1000_cryo_tank",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.cabin.hold6": [
+   {
+    "id": "std.cabin.hold6-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/smy_kz6_passenger_module",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.cabin.hold6-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/smy_kz6_passenger_module",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.cabin.hold6-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/smy_kz6_passenger_module",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "sol.rad.panel50": [
+   {
+    "id": "sol.rad.panel50-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/smy_rs50s_radiator",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "sol.rad.panel50-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/smy_rs50s_radiator",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "sol.rad.panel50-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/smy_rs50s_radiator",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "sol.workshop.w1": [
+   {
+    "id": "sol.workshop.w1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/smy_ms1_workshop",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "sol.workshop.w1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/smy_ms1_workshop",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "sol.workshop.w1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/smy_ms1_workshop",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "srw.apu.s200": [
+   {
+    "id": "srw.apu.s200-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/srw_s200_service_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "srw.apu.s200-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/srw_s200_service_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "srw.apu.s200-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/srw_s200_service_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "srw.apu.s60": [
+   {
+    "id": "srw.apu.s60-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/srw_s60_service_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "srw.apu.s60-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/srw_s60_service_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "srw.apu.s60-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/srw_s60_service_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "terra.ls.t10": [
+   {
+    "id": "terra.ls.t10-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/terra_t10_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "terra.ls.t10-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/terra_t10_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "terra.ls.t10-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/terra_t10_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "terra.ls.t60": [
+   {
+    "id": "terra.ls.t60-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/terra_t60_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "terra.ls.t60-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/terra_t60_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "terra.ls.t60-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/terra_t60_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "terra.ls.t200": [
+   {
+    "id": "terra.ls.t200-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/terra_t200_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "terra.ls.t200-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/terra_t200_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "terra.ls.t200-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/terra_t200_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "th.drive.tz11": [
+   {
+    "id": "th.drive.tz11-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/tianhe_tz11_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.drive.tz11-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/tianhe_tz11_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.drive.tz11-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/tianhe_tz11_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "th.drive.tz16v": [
+   {
+    "id": "th.drive.tz16v-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/tianhe_tz16v_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.drive.tz16v-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/tianhe_tz16v_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.drive.tz16v-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/tianhe_tz16v_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "th.drive.tz28": [
+   {
+    "id": "th.drive.tz28-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/tianhe_tz28v_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.drive.tz28-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/tianhe_tz28v_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.drive.tz28-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/tianhe_tz28v_drive",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "th.cool.loop600": [
+   {
+    "id": "th.cool.loop600-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/tianhe_ko600_coolant_loop",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.cool.loop600-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/tianhe_ko600_coolant_loop",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.cool.loop600-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/tianhe_ko600_coolant_loop",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "th.rad.panel50": [
+   {
+    "id": "th.rad.panel50-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/tianhe_rs50_radiator",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.rad.panel50-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/tianhe_rs50_radiator",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.rad.panel50-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/tianhe_rs50_radiator",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "std.rcs.cluster_h": [
+   {
+    "id": "std.rcs.cluster_h-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/tianhe_cluster_h_rcs",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.rcs.cluster_h-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/tianhe_cluster_h_rcs",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "std.rcs.cluster_h-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/tianhe_cluster_h_rcs",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "th.apu.s150": [
+   {
+    "id": "th.apu.s150-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/tianhe_s150_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.apu.s150-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/tianhe_s150_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.apu.s150-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/tianhe_s150_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "th.apu.s600": [
+   {
+    "id": "th.apu.s600-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/tianhe_s600_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.apu.s600-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/tianhe_s600_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "th.apu.s600-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/tianhe_s600_reactor",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "uhuru.ls.u500": [
+   {
+    "id": "uhuru.ls.u500-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/uhuru_u500_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "uhuru.ls.u500-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/uhuru_u500_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "uhuru.ls.u500-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/uhuru_u500_life_support",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "uhuru.cryo.pod100": [
+   {
+    "id": "uhuru.cryo.pod100-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/uhuru_ab100_passenger_module",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "uhuru.cryo.pod100-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/uhuru_ab100_passenger_module",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "uhuru.cryo.pod100-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/uhuru_ab100_passenger_module",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "um.core.z05": [
+   {
+    "id": "um.core.z05-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/zeropoint_z05_jump_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "um.core.z05-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/zeropoint_z05_jump_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "um.core.z05-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/zeropoint_z05_jump_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "um.core.z1": [
+   {
+    "id": "um.core.z1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/zeropoint_z1_jump_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "um.core.z1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/zeropoint_z1_jump_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "um.core.z1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/zeropoint_z1_jump_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "um.core.z5": [
+   {
+    "id": "um.core.z5-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/zeropoint_z5_jump_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "um.core.z5-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/zeropoint_z5_jump_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "um.core.z5-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/zeropoint_z5_jump_core",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "um.xpdr.t1": [
+   {
+    "id": "um.xpdr.t1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/zeropoint_t1_transponder",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "um.xpdr.t1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/zeropoint_t1_transponder",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "um.xpdr.t1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/zeropoint_t1_transponder",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "xz.comm.c1": [
+   {
+    "id": "xz.comm.c1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/xinzhi_c1_comm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "xz.comm.c1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/xinzhi_c1_comm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "xz.comm.c1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/xinzhi_c1_comm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "xz.comm.c3": [
+   {
+    "id": "xz.comm.c3-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/xinzhi_c3_comm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "xz.comm.c3-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/xinzhi_c3_comm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "xz.comm.c3-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/xinzhi_c3_comm",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "xz.mc.c1": [
+   {
+    "id": "xz.mc.c1-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/xinzhi_mcc1_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "xz.mc.c1-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/xinzhi_mcc1_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "xz.mc.c1-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/xinzhi_mcc1_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "xz.mc.c3": [
+   {
+    "id": "xz.mc.c3-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/xinzhi_mcc3_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "xz.mc.c3-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/xinzhi_mcc3_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "xz.mc.c3-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/xinzhi_mcc3_computer",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   }
+  ],
+  "xz.radar.n2": [
+   {
+    "id": "xz.radar.n2-model-lod1",
+    "file": "model-lod1.jpg",
+    "name": "3D-модель · LOD1 (вид с 20-30 м)",
+    "note": "assets/models/equipment/xinzhi_n2_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "xz.radar.n2-model-lod0",
+    "file": "model-lod0.jpg",
+    "name": "3D-модель · LOD0 (вблизи: жгуты, трубки, крепёж)",
+    "note": "assets/models/equipment/xinzhi_n2_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
+   },
+   {
+    "id": "xz.radar.n2-model-hits",
+    "file": "model-hits.jpg",
+    "name": "Хитвалумы, цвет = деталь",
+    "note": "assets/models/equipment/xinzhi_n2_radar",
+    "added": 1794266964573,
+    "updated": 1794266964573
    }
   ]
  },

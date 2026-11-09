@@ -1,0 +1,99 @@
+{
+ "asset": "cobretty_fcrcs_rcs",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "fcrcs_base.1",
+   "part": "fcrcs_base",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.025,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.355,
+   "half_height": 0.025
+  },
+  {
+   "id": "fcrcs_base.2",
+   "part": "fcrcs_base",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.225,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.21,
+   "half_height": 0.175
+  },
+  {
+   "id": "fcrcs_driver.1",
+   "part": "fcrcs_driver",
+   "shape": "box",
+   "position": [
+    0.27,
+    0.22,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.075,
+    0.15,
+    0.15
+   ]
+  },
+  {
+   "id": "fcrcs_coil.1",
+   "part": "fcrcs_coil",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.49,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.365,
+   "half_height": 0.09
+  },
+  {
+   "id": "fcrcs_emitter.1",
+   "part": "fcrcs_emitter",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.635,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.3,
+   "half_height": 0.055
+  }
+ ]
+}

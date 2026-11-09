@@ -1,0 +1,159 @@
+{
+ "asset": "cobretty_cl180_coolant_loop",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "cl180_skid.1",
+   "part": "cl180_skid",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.065,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.22,
+    0.065,
+    0.6
+   ]
+  },
+  {
+   "id": "cl180_pump.1",
+   "part": "cl180_pump",
+   "shape": "cylinder",
+   "position": [
+    -0.86,
+    0.48,
+    -0.22
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.32,
+   "half_height": 0.32
+  },
+  {
+   "id": "cl180_pump.2",
+   "part": "cl180_pump",
+   "shape": "cylinder",
+   "position": [
+    -0.38,
+    0.48,
+    -0.22
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.38,
+   "half_height": 0.16
+  },
+  {
+   "id": "cl180_pipes.1",
+   "part": "cl180_pipes",
+   "shape": "cylinder",
+   "position": [
+    0.115,
+    0.48,
+    -0.22
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.08,
+   "half_height": 0.335
+  },
+  {
+   "id": "cl180_pipes.2",
+   "part": "cl180_pipes",
+   "shape": "box",
+   "position": [
+    0.18,
+    1.06,
+    -0.22
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.6,
+    0.08,
+    0.08
+   ]
+  },
+  {
+   "id": "cl180_valves.1",
+   "part": "cl180_valves",
+   "shape": "box",
+   "position": [
+    0.83,
+    0.37,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.38,
+    0.29,
+    0.53
+   ]
+  },
+  {
+   "id": "cl180_valves.2",
+   "part": "cl180_valves",
+   "shape": "box",
+   "position": [
+    0.83,
+    0.78,
+    0.05
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.31,
+    0.15,
+    0.5
+   ]
+  },
+  {
+   "id": "cl180_fluid.1",
+   "part": "cl180_fluid",
+   "shape": "cylinder",
+   "position": [
+    0.05,
+    0.64,
+    0.3
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.22,
+   "half_height": 0.56
+  }
+ ]
+}

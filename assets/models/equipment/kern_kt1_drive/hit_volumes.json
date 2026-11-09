@@ -1,0 +1,305 @@
+{
+ "asset": "kern_kt1_drive",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "kt1_flange.1",
+   "part": "kt1_flange",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    0.16
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.15,
+    1.15,
+    0.15
+   ]
+  },
+  {
+   "id": "kt1_busbar.1",
+   "part": "kt1_busbar",
+   "shape": "box",
+   "position": [
+    0.0,
+    -0.98,
+    0.52
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.4,
+    0.15,
+    0.22
+   ]
+  },
+  {
+   "id": "kt1_busbar.2",
+   "part": "kt1_busbar",
+   "shape": "box",
+   "position": [
+    0.0,
+    -0.45,
+    0.01
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.475,
+    0.15,
+    0.01
+   ]
+  },
+  {
+   "id": "kt1_housing.1",
+   "part": "kt1_housing",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    1.51
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    1.1,
+    0.76,
+    1.21
+   ]
+  },
+  {
+   "id": "kt1_housing.2",
+   "part": "kt1_housing",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    1.51
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.76,
+    1.1,
+    1.21
+   ]
+  },
+  {
+   "id": "kt1_housing.3",
+   "part": "kt1_housing",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    1.51
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.725,
+    0.725,
+    1.21
+   ]
+  },
+  {
+   "id": "kt1_coil.1",
+   "part": "kt1_coil",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    3.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.39,
+   "half_height": 0.28
+  },
+  {
+   "id": "engine_hot_emitter_annulus.1",
+   "part": "engine_hot_emitter_annulus",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    3.47
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.41,
+   "half_height": 0.19
+  },
+  {
+   "id": "kt1_field_ctl.1",
+   "part": "kt1_field_ctl",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.23,
+    1.35
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.6,
+    0.13,
+    0.64
+   ]
+  },
+  {
+   "id": "kt1_hx.1",
+   "part": "kt1_hx",
+   "shape": "box",
+   "position": [
+    -1.25,
+    0.0,
+    1.55
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.15,
+    0.65,
+    0.78
+   ]
+  },
+  {
+   "id": "kt1_sensor.1",
+   "part": "kt1_sensor",
+   "shape": "box",
+   "position": [
+    0.8,
+    0.8,
+    2.4
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.15,
+    0.15,
+    0.15
+   ]
+  },
+  {
+   "id": "kt1_sensor.2",
+   "part": "kt1_sensor",
+   "shape": "box",
+   "position": [
+    -0.8,
+    0.8,
+    2.4
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -45.0
+   ],
+   "half_size": [
+    0.15,
+    0.15,
+    0.15
+   ]
+  },
+  {
+   "id": "kt1_sensor.3",
+   "part": "kt1_sensor",
+   "shape": "box",
+   "position": [
+    1.2,
+    -0.75,
+    0.6
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.1,
+    0.15,
+    0.15
+   ]
+  },
+  {
+   "id": "kt1_skids.1",
+   "part": "kt1_skids",
+   "shape": "box",
+   "position": [
+    -0.7,
+    -1.255,
+    1.49
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.12,
+    0.155,
+    1.13
+   ]
+  },
+  {
+   "id": "kt1_skids.2",
+   "part": "kt1_skids",
+   "shape": "box",
+   "position": [
+    0.7,
+    -1.255,
+    1.49
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.12,
+    0.155,
+    1.13
+   ]
+  }
+ ]
+}

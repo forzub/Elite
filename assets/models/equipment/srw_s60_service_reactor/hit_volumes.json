@@ -1,0 +1,335 @@
+{
+ "asset": "srw_s60_service_reactor",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "s60_vessel.1",
+   "part": "s60_vessel",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    -0.1875,
+    0.0252
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.4183,
+   "half_height": 0.6022
+  },
+  {
+   "id": "s60_flange.1",
+   "part": "s60_flange",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    -0.1875,
+    -0.6311
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.4183,
+   "half_height": 0.0541
+  },
+  {
+   "id": "s60_cells.1",
+   "part": "s60_cells",
+   "shape": "box",
+   "position": [
+    -0.577,
+    -0.2164,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.1154,
+    0.238,
+    0.494
+   ]
+  },
+  {
+   "id": "s60_starter.1",
+   "part": "s60_starter",
+   "shape": "cylinder",
+   "position": [
+    0.5481,
+    -0.4472,
+    -0.0361
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.101,
+   "half_height": 0.3029
+  },
+  {
+   "id": "s60_regulator.1",
+   "part": "s60_regulator",
+   "shape": "box",
+   "position": [
+    0.5698,
+    -0.0865,
+    0.0721
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.1154,
+    0.1731,
+    0.3245
+   ]
+  },
+  {
+   "id": "s60_sensors.1",
+   "part": "s60_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    -0.1875,
+    0.6491
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.1659,
+   "half_height": 0.0288
+  },
+  {
+   "id": "s60_heat_pipe_column.1",
+   "part": "s60_heat_pipe_column",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.3029,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.1803,
+    0.1298,
+    0.4508
+   ]
+  },
+  {
+   "id": "reactor_cooling_pad.1",
+   "part": "reactor_cooling_pad",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.5012,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.6985,
+    0.0685,
+    0.6985
+   ]
+  },
+  {
+   "id": "s60_mounts.1",
+   "part": "s60_mounts",
+   "shape": "box",
+   "position": [
+    0.0,
+    -0.6419,
+    -0.3606
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.3173,
+    0.0577,
+    0.0793
+   ]
+  },
+  {
+   "id": "s60_mounts.2",
+   "part": "s60_mounts",
+   "shape": "box",
+   "position": [
+    0.0,
+    -0.6419,
+    0.3606
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.3173,
+    0.0577,
+    0.0793
+   ]
+  },
+  {
+   "id": "s60_sensors.2",
+   "part": "s60_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.3748,
+    0.0288,
+    -0.3606
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -60.0
+   ],
+   "radius": 0.018,
+   "half_height": 0.0288
+  },
+  {
+   "id": "s60_sensors.3",
+   "part": "s60_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.3748,
+    0.0288,
+    -0.0721
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -60.0
+   ],
+   "radius": 0.018,
+   "half_height": 0.0288
+  },
+  {
+   "id": "s60_sensors.4",
+   "part": "s60_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.3748,
+    0.0288,
+    0.2164
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -60.0
+   ],
+   "radius": 0.018,
+   "half_height": 0.0288
+  },
+  {
+   "id": "s60_sensors.5",
+   "part": "s60_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.3748,
+    0.0288,
+    0.5049
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -60.0
+   ],
+   "radius": 0.018,
+   "half_height": 0.0288
+  },
+  {
+   "id": "s60_sensors.6",
+   "part": "s60_sensors",
+   "shape": "cylinder",
+   "position": [
+    -0.3748,
+    0.0288,
+    -0.3606
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    60.0
+   ],
+   "radius": 0.018,
+   "half_height": 0.0288
+  },
+  {
+   "id": "s60_sensors.7",
+   "part": "s60_sensors",
+   "shape": "cylinder",
+   "position": [
+    -0.3748,
+    0.0288,
+    -0.0721
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    60.0
+   ],
+   "radius": 0.018,
+   "half_height": 0.0288
+  },
+  {
+   "id": "s60_sensors.8",
+   "part": "s60_sensors",
+   "shape": "cylinder",
+   "position": [
+    -0.3748,
+    0.0288,
+    0.2164
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    60.0
+   ],
+   "radius": 0.018,
+   "half_height": 0.0288
+  },
+  {
+   "id": "s60_sensors.9",
+   "part": "s60_sensors",
+   "shape": "cylinder",
+   "position": [
+    -0.3748,
+    0.0288,
+    0.5049
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    60.0
+   ],
+   "radius": 0.018,
+   "half_height": 0.0288
+  }
+ ]
+}

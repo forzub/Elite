@@ -1,0 +1,128 @@
+{
+ "asset": "agora_sk4_pod",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "pod4_hull.1",
+   "part": "pod4_hull",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    -0.215
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.83,
+    0.76,
+    0.765
+   ]
+  },
+  {
+   "id": "pod4_hull.2",
+   "part": "pod4_hull",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    0.856
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.64,
+    0.608,
+    0.306
+   ]
+  },
+  {
+   "id": "pod4_pyro.1",
+   "part": "pod4_pyro",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0,
+    -1.04
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.83,
+    0.7885,
+    0.125
+   ]
+  },
+  {
+   "id": "pod4_seal.1",
+   "part": "pod4_seal",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -1.025
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.53,
+   "half_height": 0.045
+  },
+  {
+   "id": "pod4_battery.1",
+   "part": "pod4_battery",
+   "shape": "box",
+   "position": [
+    0.0,
+    -0.795,
+    -0.15
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.31,
+    0.035,
+    0.55
+   ]
+  },
+  {
+   "id": "pod4_beacon.1",
+   "part": "pod4_beacon",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.795,
+    0.25
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.15,
+    0.035,
+    0.15
+   ]
+  }
+ ]
+}

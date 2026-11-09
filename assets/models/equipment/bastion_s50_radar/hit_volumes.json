@@ -1,0 +1,219 @@
+{
+ "asset": "bastion_s50_radar",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "s50_flange.1",
+   "part": "s50_flange",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.08,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.6,
+   "half_height": 0.08
+  },
+  {
+   "id": "s50_apron.1",
+   "part": "s50_apron",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.27,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    2.698,
+    0.13,
+    2.698
+   ]
+  },
+  {
+   "id": "s50_housing.1",
+   "part": "s50_housing",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.785,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.95,
+   "half_height": 0.385
+  },
+  {
+   "id": "s50_housing.2",
+   "part": "s50_housing",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    1.555,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.35,
+   "half_height": 0.385
+  },
+  {
+   "id": "s50_rx.1",
+   "part": "s50_rx",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    2.02,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.9,
+   "half_height": 0.08
+  },
+  {
+   "id": "s50_array.1",
+   "part": "s50_array",
+   "shape": "box",
+   "position": [
+    0.7145,
+    1.17,
+    1.2375
+   ],
+   "rotation_deg": [
+    0.0,
+    -60.0,
+    36.1691
+   ],
+   "half_size": [
+    0.06,
+    0.9538,
+    0.7425
+   ]
+  },
+  {
+   "id": "s50_array.2",
+   "part": "s50_array",
+   "shape": "box",
+   "position": [
+    -0.7145,
+    1.17,
+    1.2375
+   ],
+   "rotation_deg": [
+    0.0,
+    -120.0,
+    36.1691
+   ],
+   "half_size": [
+    0.06,
+    0.9538,
+    0.7425
+   ]
+  },
+  {
+   "id": "s50_array.3",
+   "part": "s50_array",
+   "shape": "box",
+   "position": [
+    -1.4289,
+    1.17,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    -180.0,
+    36.1691
+   ],
+   "half_size": [
+    0.06,
+    0.9538,
+    0.7425
+   ]
+  },
+  {
+   "id": "s50_array.4",
+   "part": "s50_array",
+   "shape": "box",
+   "position": [
+    -0.7145,
+    1.17,
+    -1.2375
+   ],
+   "rotation_deg": [
+    0.0,
+    -240.0,
+    36.1691
+   ],
+   "half_size": [
+    0.06,
+    0.9538,
+    0.7425
+   ]
+  },
+  {
+   "id": "s50_array.5",
+   "part": "s50_array",
+   "shape": "box",
+   "position": [
+    0.7145,
+    1.17,
+    -1.2375
+   ],
+   "rotation_deg": [
+    0.0,
+    -300.0,
+    36.1691
+   ],
+   "half_size": [
+    0.06,
+    0.9538,
+    0.7425
+   ]
+  },
+  {
+   "id": "s50_array.6",
+   "part": "s50_array",
+   "shape": "box",
+   "position": [
+    1.4289,
+    1.17,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    -360.0,
+    36.1691
+   ],
+   "half_size": [
+    0.06,
+    0.9538,
+    0.7425
+   ]
+  }
+ ]
+}

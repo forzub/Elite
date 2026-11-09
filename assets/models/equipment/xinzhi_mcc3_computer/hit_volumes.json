@@ -1,0 +1,171 @@
+{
+ "asset": "xinzhi_mcc3_computer",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "mcc3_mount.1",
+   "part": "mcc3_mount",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.065,
+    -0.904
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.45,
+    0.065,
+    0.05
+   ]
+  },
+  {
+   "id": "mcc3_mount.2",
+   "part": "mcc3_mount",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.0175,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.735,
+    0.0175,
+    0.954
+   ]
+  },
+  {
+   "id": "mcc3_chassis.1",
+   "part": "mcc3_chassis",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.09,
+    0.055
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.954,
+    0.055,
+    0.899
+   ]
+  },
+  {
+   "id": "mcc3_chassis.2",
+   "part": "mcc3_chassis",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.115,
+    0.055
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.53,
+    0.03,
+    0.899
+   ]
+  },
+  {
+   "id": "mcc3_psu.1",
+   "part": "mcc3_psu",
+   "shape": "box",
+   "position": [
+    -0.744,
+    0.645,
+    0.055
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.21,
+    0.5,
+    0.899
+   ]
+  },
+  {
+   "id": "mcc3_psu.2",
+   "part": "mcc3_psu",
+   "shape": "box",
+   "position": [
+    0.744,
+    0.645,
+    0.055
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.21,
+    0.5,
+    0.899
+   ]
+  },
+  {
+   "id": "mcc3_board.1",
+   "part": "mcc3_board",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.615,
+    0.477
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.504,
+    0.47,
+    0.477
+   ]
+  },
+  {
+   "id": "mcc3_memory.1",
+   "part": "mcc3_memory",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.605,
+    -0.422
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.504,
+    0.46,
+    0.392
+   ]
+  }
+ ]
+}

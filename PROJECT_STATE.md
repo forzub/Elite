@@ -4475,4 +4475,10 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   a jump BACKWARD". Lens cut ~2.5x again (swell 0.06, fling -0.06, swings 0.05); rays now follow a curve that first
   leaves the screen centre (forward rush) and then bends into the new point. Live D:/tmp/elite_jfx5: outward start
   confirmed; when the target lies behind the nose the curves' second half still comes back toward the centre.
+- Author review 3: "now hardly seen; drop the 2-3 damped swings; the stars move the wrong way - as if the ship flies
+  AWAY from them; flying forward they must spread to the edges". Lens set between the two tries (swell 0.11, fling
+  -0.10); the return is one 0.22 s snap, no swings; the old->new star link dropped (with the target behind the nose
+  it can only converge): two radial outward phases - the old sky's stars accelerate to the edges and leave (0..0.5),
+  the new sky's stars burst out of the centre and brake into place (0.4..1). Live D:/tmp/elite_jfx6: both phases
+  outward.
 - Next: author's look review in a live flight; real audio backend for the hum; beacon runtime to replace the lock proxy.

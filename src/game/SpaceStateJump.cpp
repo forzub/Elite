@@ -98,8 +98,7 @@ void SpaceState::handleJumpRequest(int kind, int systemId)
 //     cockpit's edges stay put and its centre is drawn away like rubber (author 2026-11-09: not the
 //     whole view shrinking) in 0.3 s; the old sky goes dark and every bright star sends a ray from
 //     its old place to its place in the new sky; the ray reaches it and collapses into the new
-//     point (0.2..1.8 s); the new sky comes up; the view springs back with 2-3 damped fish-eye
-//     swings (1.9..3.3 s);
+//     point (0.2..1.8 s); the new sky comes up; the view snaps back to normal (1.9..2.1 s);
 //   the exit (jumpExitSerial): the terminal's report - the system, the exit orbit, the coordinates
 //     and how far from the calculated point the ship came out (the planned 3 sigma box; outside it
 //     a warning: the ship was dragged off).
@@ -109,7 +108,7 @@ constexpr double FlingS = 0.14;   // sharp (author 2026-11-09)
 constexpr double RaysStartS = 0.20;
 constexpr double RaysS = 1.60;
 constexpr double ReturnStartS = 1.90;
-constexpr double ReturnS = 0.90;   // the springing back: a sharp snap and 2-3 damped swings
+constexpr double ReturnS = 0.22;   // one sharp snap back, no swings (author review 3)
 constexpr double FxEndS = ReturnStartS + ReturnS;
 constexpr std::size_t MaxRays = 220;
 constexpr double AuM = 1.495978707e11;
@@ -144,9 +143,9 @@ ChargeLook chargeLook(double frac, bool waiting)
     const float swell = smooth01((f - 0.6) / 0.4);
     // half the first try's lens (author 2026-11-09: the cockpit must feel whole, not a screen
     // under a fish-eye filter)
-    // second cut (author 2026-11-09: "it bends to the centre too much - a picture, not a cockpit")
-    c.zoom = 1.0f + 0.015f * swell;
-    c.bulge = 0.06f * swell;
+    // review 2: "a picture, not a cockpit" at 0.16; review 3: "hardly seen" at 0.06 - in between
+    c.zoom = 1.0f + 0.025f * swell;
+    c.bulge = 0.11f * swell;
     return c;
 }
 
@@ -379,7 +378,7 @@ void SpaceState::updateJumpPresentation()
             const float e = easeOutCubic(tj / FlingS);
             m_jumpScreen.shakePx = shakeAt(now, peak.shakePx * px * (1.0f - e));
             m_jumpScreen.zoom = mixf(peak.zoom, 1.0f, e);
-            m_jumpScreen.bulge = mixf(peak.bulge, -0.06f, e);
+            m_jumpScreen.bulge = mixf(peak.bulge, -0.10f, e);
             m_jumpScreen.vignette = 0.35f * e;
         }
         else if (tj < ReturnStartS)
@@ -387,18 +386,16 @@ void SpaceState::updateJumpPresentation()
             const float e = static_cast<float>((tj - FlingS) / (ReturnStartS - FlingS));
             m_jumpScreen.shakePx = glm::vec2(0.0f);
             m_jumpScreen.zoom = 1.0f;
-            m_jumpScreen.bulge = mixf(-0.06f, -0.05f, e);
+            m_jumpScreen.bulge = mixf(-0.10f, -0.09f, e);
             m_jumpScreen.vignette = 0.35f;
         }
         else
         {
-            // damped swings of the lens about neutral: ~2.5 periods, the last ones barely seen
+            // one sharp snap back to normal (the damped swings were dropped, author review 3)
             const double u = (tj - ReturnStartS) / ReturnS;
-            constexpr double Tau = 6.283185307179586;
-            const double swing = -0.05 * std::exp(-4.0 * u) * std::cos(Tau * 2.5 * u);
             m_jumpScreen.shakePx = glm::vec2(0.0f);
             m_jumpScreen.zoom = 1.0f;
-            m_jumpScreen.bulge = static_cast<float>(swing) * (1.0f - smooth01((u - 0.9) / 0.1));
+            m_jumpScreen.bulge = -0.09f * (1.0f - easeOutCubic(u));
             m_jumpScreen.vignette = 0.35f * (1.0f - smooth01(u / 0.4));
         }
         // the old sky is gone at once; the new one comes up as the rays collapse into it
@@ -424,48 +421,56 @@ void SpaceState::renderJumpStarRays(const Viewport& vp)
         out = glm::vec2((clip.x / clip.w * 0.5f + 0.5f) * W, (1.0f - (clip.y / clip.w * 0.5f + 0.5f)) * H);
         return out.x > -0.5f * W && out.x < 1.5f * W && out.y > -0.5f * H && out.y < 1.5f * H;
     };
-    // the ray's head runs from the old point to the new one (0..0.55), its tail follows (0.45..1).
-    // The path is a curve that first leaves the screen centre (author 2026-11-09: straight rays
-    // converging on the centre read as a jump BACKWARD): every star starts streaming outward, as
-    // when rushing forward, and then bends into its place in the new sky.
+    // Forward, always (author 2026-11-09, review 3: "if we fly forward the stars must spread to the
+    // edges, not to the centre"): two phases, both radial and outward from the screen centre -
+    //   out (0..0.5): the old sky's stars accelerate toward the edges and leave the screen;
+    //   in (0.4..1): the new sky's stars burst out of the centre and brake into their places.
+    // (The first try linked each star's old point to its new one: with the target behind the
+    // nose that drew the stars INTO the centre - a jump backward.)
     const double u = m_jumpRays01;
-    const float head = smooth01(u / 0.55);
-    const float tail = smooth01((u - 0.45) / 0.55);
-    const float fade = 1.0f - smooth01((u - 0.85) / 0.15);
+    const glm::vec2 centre(0.5f * W, 0.5f * H);
     const float px = H / 1080.0f;
-    m_jumpRayBatch.begin(vp.width, vp.height);
-    for (const auto& r : m_jumpRays)
-    {
-        glm::vec2 a, b;
-        if (!toScreen(r.from, a) || !toScreen(r.to, b))
-            continue;
-        const glm::vec2 centre(0.5f * W, 0.5f * H);
-        glm::vec2 out = a - centre;
-        out = glm::length(out) > 1.0f ? glm::normalize(out) : glm::vec2(1.0f, 0.0f);
-        const glm::vec2 ctrl = a + out * (0.6f * glm::length(b - a) + 0.10f * H);
-        const auto curve = [&](float s) {
-            const float q = 1.0f - s;
-            return q * q * a + 2.0f * q * s * ctrl + s * s * b;
-        };
-        const glm::vec2 h = curve(head);
-        const glm::vec4 c(glm::mix(r.color, glm::vec3(0.75f, 0.88f, 1.0f), 0.35f), 1.0f);
-        const float w = (0.8f + 1.8f * r.weight) * px;
-        // a streak brighter toward its head
-        constexpr int Pieces = 8;
+    const auto easeIn = [](double x) { const float t = smooth01(x); return t * t; };
+    const auto streak = [&](const glm::vec2& tail, const glm::vec2& head, const glm::vec3& color, float weight, float alpha) {
+        if (alpha <= 0.002f)
+            return;
+        const glm::vec4 c(glm::mix(color, glm::vec3(0.75f, 0.88f, 1.0f), 0.35f), 1.0f);
+        const float w = (0.8f + 1.8f * weight) * px;
+        constexpr int Pieces = 6;   // brighter toward the head
         for (int k = 0; k < Pieces; ++k)
         {
             const float s0 = static_cast<float>(k) / Pieces;
             const float s1 = static_cast<float>(k + 1) / Pieces;
             glm::vec4 ck = c;
-            ck.a = (0.15f + 0.75f * s1) * r.weight * fade;
-            m_jumpRayBatch.line(curve(tail + (head - tail) * s0), curve(tail + (head - tail) * s1), w, ck);
+            ck.a = (0.15f + 0.75f * s1) * weight * alpha;
+            m_jumpRayBatch.line(tail + (head - tail) * s0, tail + (head - tail) * s1, w, ck);
         }
-        // the head: the star itself
         glm::vec4 hc = c;
-        hc.a = std::min(1.0f, 0.4f + r.weight) * fade;
+        hc.a = std::min(1.0f, 0.4f + weight) * alpha;
         const float hs = w * 1.6f;
-        m_jumpRayBatch.filledTriangle(h + glm::vec2(-hs, -hs), h + glm::vec2(hs, -hs), h + glm::vec2(hs, hs), hc);
-        m_jumpRayBatch.filledTriangle(h + glm::vec2(-hs, -hs), h + glm::vec2(hs, hs), h + glm::vec2(-hs, hs), hc);
+        m_jumpRayBatch.filledTriangle(head + glm::vec2(-hs, -hs), head + glm::vec2(hs, -hs), head + glm::vec2(hs, hs), hc);
+        m_jumpRayBatch.filledTriangle(head + glm::vec2(-hs, -hs), head + glm::vec2(hs, hs), head + glm::vec2(-hs, hs), hc);
+    };
+    m_jumpRayBatch.begin(vp.width, vp.height);
+    for (const auto& r : m_jumpRays)
+    {
+        glm::vec2 a, b;
+        if (u < 0.5 && toScreen(r.from, a))
+        {
+            const double e = u / 0.5;
+            const glm::vec2 d = a - centre;
+            const glm::vec2 head = centre + d * (1.0f + 2.5f * easeIn(e));
+            const glm::vec2 tail = centre + d * (1.0f + 2.5f * easeIn(e - 0.30));
+            streak(tail, head, r.color, r.weight, 1.0f - smooth01((e - 0.6) / 0.4));
+        }
+        if (u > 0.4 && toScreen(r.to, b))
+        {
+            const double f = (u - 0.4) / 0.6;
+            const glm::vec2 d = b - centre;
+            const glm::vec2 head = centre + d * (0.10f + 0.90f * easeOutCubic(f));
+            const glm::vec2 tail = centre + d * (0.10f + 0.90f * easeOutCubic(f - 0.25));
+            streak(tail, head, r.color, r.weight, smooth01(f / 0.15) * (1.0f - smooth01((f - 0.85) / 0.15)));
+        }
     }
     m_jumpRayBatch.flush();
 }

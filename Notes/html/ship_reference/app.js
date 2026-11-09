@@ -496,7 +496,8 @@ function renderPart(s, p) {
         ${sketchBox(p)}
         ${kv("Зона обслуживания", (g.service_clearance_m || []).map(fmt).join(" × ") + " м")}
         ${g.cooling_pad_side_m ? kv("Охлаждающий пятак", fmt(g.cooling_pad_side_m) + " × " + fmt(g.cooling_pad_side_m) + " м") : ""}
-        ${g.deployed_area_m2 ? kv("Развёрнутая площадь", fmt(g.deployed_area_m2) + " м²") : ""}</div>
+        ${g.deployed_area_m2 ? kv("Развёрнутая площадь", fmt(g.deployed_area_m2) + " м²") : ""}
+        ${kv("3D-модель", p.model_asset ? "assets/models/" + p.model_asset + " (LOD0-2, хитвалумы)" : "нет")}</div>
       <div class="card"><h3>Промт для генератора эскиза</h3>
         <textarea id="prompt" class="prompt" spellcheck="false">${esc(prompt)}</textarea>
         <div class="row"><button class="btn" id="copyPrompt">Копировать</button><button class="btn" id="savePrompt" disabled>Сохранить правку</button>

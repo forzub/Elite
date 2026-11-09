@@ -2153,7 +2153,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/cobretty_cr1_vector"
     },
     {
       "id": "kb.drive.n1-axial",
@@ -2343,7 +2344,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/cobretty_er1_reactor"
     },
     {
       "id": "kb.reactor.er5",
@@ -2397,7 +2399,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/cobretty_er5_reactor"
     },
     {
       "id": "kb.surv.capsule2",
@@ -3340,7 +3343,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/srw_sr48_reactor"
     },
     {
       "id": "std.armour.ceramic",
@@ -4432,7 +4436,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/tianhe_tr10_reactor"
     },
     {
       "id": "th.reactor.tr26v",
@@ -4483,7 +4488,8 @@
           "fit": "adapter_or_refit_required",
           "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
         }
-      }
+      },
+      "model_asset": "equipment/tianhe_tr26v_reactor"
     },
     {
       "id": "uhuru.cryo.pod100",

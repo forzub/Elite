@@ -23,7 +23,7 @@ const REPL_NOTE_STD = "Ближайший аналог той же коопер�
 const REPL_NOTE_FOREIGN = "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО.";
 const newParts = [
   {
-    id: "srw.reactor.sr26", cat: "reactor", mfr: "mfr.sol_reactor", name: "Sol Reactor Works SR-2.6 (малый силовой)", model: "SR-2.6",
+    id: "srw.reactor.sr26", cat: "reactor", mfr: "mfr.sol_reactor", model_asset: "equipment/srw_sr26_reactor", name: "Sol Reactor Works SR-2.6 (малый силовой)", model: "SR-2.6",
     mass_t: 13, price_cr: 520000, mwe: 2600, eff: 0.9, overhaul_h: 30000, life_h: 50000, startup_s: 420, status: ST,
     notes: "PROPOSAL (reference): малый силовой реактор Сола в диапазоне снятых при унификации SR-1.4/2.2/3.3. Покрывает один У-33 (2.4 ГВт) + пик RCS с запасом ~8 %. Сейчас стоит на OCS-4J, GT-3000P, «Камень-С»; кандидат на замену 2×-переразмеренных SR-4.8 на OCS-4, GT-3000, «Камне» и ST-6 (решение автора).",
     geometry: {

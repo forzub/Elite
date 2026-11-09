@@ -94,7 +94,8 @@
    "overhaul_h": 30000,
    "life_h": 50000,
    "runtime_preset": "elite.engine.cobretty.cr1-vector.v1",
-   "existing": true
+   "existing": true,
+   "model_asset": "equipment/cobretty_cr1_vector"
   },
   {
    "id": "ofu.drive.u33",
@@ -339,7 +340,8 @@
    "existing": true,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/cobretty_er5_reactor"
   },
   {
    "id": "kb.reactor.er3",
@@ -367,7 +369,8 @@
    "eff": 0.9,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/cobretty_er1_reactor"
   },
   {
    "id": "ofu.reactor.er26",
@@ -437,7 +440,8 @@
    "eff": 0.9,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/srw_sr48_reactor"
   },
   {
    "id": "srw.reactor.sr7",
@@ -479,7 +483,8 @@
    "eff": 0.89,
    "overhaul_h": 30000,
    "life_h": 50000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/tianhe_tr10_reactor"
   },
   {
    "id": "th.reactor.tr20",
@@ -521,7 +526,8 @@
    "eff": 0.9,
    "overhaul_h": 8000,
    "life_h": 15000,
-   "startup_s": 420
+   "startup_s": 420,
+   "model_asset": "equipment/tianhe_tr26v_reactor"
   },
   {
    "id": "th.reactor.tr30",

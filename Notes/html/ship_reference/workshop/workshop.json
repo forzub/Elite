@@ -1,6 +1,35 @@
 {
  "version": 1,
- "modelReady": {},
+ "modelReady": {
+  "kb.drive.cr1-vector": {
+   "ready": true,
+   "updated": 1794261148076
+  },
+  "kb.reactor.er5": {
+   "ready": true,
+   "updated": 1794261148076
+  },
+  "kb.reactor.er1": {
+   "ready": true,
+   "updated": 1794261148076
+  },
+  "srw.reactor.sr48": {
+   "ready": true,
+   "updated": 1794261148076
+  },
+  "srw.reactor.sr26": {
+   "ready": true,
+   "updated": 1794261148076
+  },
+  "th.reactor.tr10": {
+   "ready": true,
+   "updated": 1794261148076
+  },
+  "th.reactor.tr26v": {
+   "ready": true,
+   "updated": 1794261148076
+  }
+ },
  "prompts": {
   "kb.drive.cr1-vector": {
    "updated": 1794239747885,

@@ -4601,6 +4601,12 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
 - Open: reactors pair with other makers' drives (OFU with Sol, Kern with ER-1, TZ-11 and TZ-28 with TR-10): flanges are
   each maker's standard, mating by a bay adapter ring - not modelled yet. Service reactors (APU) not modelled yet.
 - Renders + review cards in the workshop for kb.reactor.er1, srw.reactor.sr48/sr26, th.reactor.tr10/tr26v.
+- Author 2026-11-09: flanges = each maker's standard, mating to other makers' drives through a bay adapter ring
+  (ACCEPTED); a reactor may stick out from under the hull where it does not fit its seat (accepted as a look).
+  Models accepted -> linked in the ship catalog: model_asset = "equipment/<folder>" (SOURCE folder relative to
+  assets/models) on canon ship_designs.json products and ship_parts_unified.json parts (CR-1, ER-5, ER-1, SR-4.8,
+  TR-10, TR-2.6V), SR-2.6 in build_proposals.js; runtime ship_catalog_3126.json products carry it (params);
+  reference: modelReady for the 7 parts + a "3D-модель" row on the part card. render_check 53 ships / 103 parts, 0 problems.
 
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):

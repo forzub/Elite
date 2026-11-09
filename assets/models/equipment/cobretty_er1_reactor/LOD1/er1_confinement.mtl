@@ -6,3 +6,19 @@ Ks 0.350 0.300 0.250
 Ns 70
 d 1
 illum 2
+
+newmtl eq_insulator
+Ka 0 0 0
+Kd 0.800 0.780 0.720
+Ks 0.100 0.100 0.100
+Ns 20
+d 1
+illum 2
+
+newmtl eq_metal_band
+Ka 0 0 0
+Kd 0.200 0.210 0.230
+Ks 0.300 0.300 0.300
+Ns 80
+d 1
+illum 2

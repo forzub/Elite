@@ -6,3 +6,11 @@ Ks 0.300 0.300 0.300
 Ns 80
 d 1
 illum 2
+
+newmtl eq_steel
+Ka 0 0 0
+Kd 0.580 0.590 0.610
+Ks 0.550 0.550 0.550
+Ns 120
+d 1
+illum 2

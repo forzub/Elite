@@ -36,6 +36,8 @@ stage -> "SOURCE HITS" imports them onto the parts. Preview: render_preview.py
 `... <view> <hidden> hits`.
 
 No textures: every detail is geometry, colours are MTL materials (`eq_*`
-names are shared asset-level material ids). LOD0 is meant for <= ~30 m,
-LOD1 for ~30-150 m, LOD2 beyond; a part missing in a far LOD is a detail
-dropped at that distance.
+names are shared asset-level material ids). LODs (author 2026-11-10):
+LOD0 = close inspection (a few metres: harnesses, pipes, small fasteners),
+LOD1 = the look from ~20-30 m, LOD2 ~30-150 m, LOD3 beyond; a part missing
+in a far LOD is a detail dropped at that distance. Generator: kernel
+tools/models/eqlib.py + one module per maker in tools/models/units/.

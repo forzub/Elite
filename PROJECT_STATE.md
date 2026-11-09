@@ -4608,6 +4608,22 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   TR-10, TR-2.6V), SR-2.6 in build_proposals.js; runtime ship_catalog_3126.json products carry it (params);
   reference: modelReady for the 7 parts + a "3D-модель" row on the part card. render_check 53 ships / 103 parts, 0 problems.
 
+### Equipment models for every ship unit, LOD shift, design schools (author 2026-11-10) - IN PROGRESS
+- Author: finish all equipment blocks before compartments; design per maker spirit and colony history; similar modules
+  must differ (even in envelope) to make foreign replacement harder; LOD0 becomes a close-inspection level (harnesses,
+  pipes, fine detail) and the 20-30 m model becomes LOD1 (shift by one), applied to existing units too; add missile
+  racks, a recon drone (camera + antenna + power + thrusters) and a repair drone (spider / mantis, flexible body for
+  animations, plasma cutter, fine manipulation). Cobra model review requested (non-canon, opinion only).
+- Done (commit c94bc697): generator split into tools/models/eqlib.py (kernel, LOD policy close() / seg_for / small_for /
+  min_bolt, register_materials, tube / harness / pipe_run / bezier / sag / cyl_path) + tools/models/units/<maker>.py +
+  thin driver (4 LODs, orphan cleanup, --only). Former LOD0..2 = LOD1..3 byte-identical (459 files verified); close
+  LOD0 extras for the 7 existing units (17-28k triangles).
+- Done (commit e71f86ae): tools/models/DESIGN_SCHOOLS.md (18 makers: form language, palette, interface standard,
+  close-up flavour, from colony lore), tools/models/UNIT_AUTHORING.md (unit contract, frames, budgets, checks),
+  tools/models/briefs/<maker>.json (96 remaining parts with passports and fault-class SRUs).
+- Running: 8 parallel builders (maker groups + new equipment: missile rack / recon drone / repair drone with a rig
+  proposal in tools/models/briefs/new_parts_proposal.json - canon not edited until the author accepts).
+
 ### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
 Survey (source-audited 2026-11-09):
 - Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,

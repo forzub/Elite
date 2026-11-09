@@ -4601,3 +4601,27 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
 - Open: reactors pair with other makers' drives (OFU with Sol, Kern with ER-1, TZ-11 and TZ-28 with TR-10): flanges are
   each maker's standard, mating by a bay adapter ring - not modelled yet. Service reactors (APU) not modelled yet.
 - Renders + review cards in the workshop for kb.reactor.er1, srw.reactor.sr48/sr26, th.reactor.tr10/tr26v.
+
+### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
+Survey (source-audited 2026-11-09):
+- Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,
+  hiddenPartIds from ClientWorldState::rebuildHiddenPartIds). ModelAssetGpuLibrary::packageFor is station-only.
+- ModelAssetPresentation already implements Compartment / CompartmentPortal / Opening / StateVariant + activeStates:
+  interiors are drawn only behind open, visible portals (BFS depth 2, Full representation >= 700 px); reference test
+  tests/model_asset_presentation/PresentationCheck.cpp (synthetic 22 m ship, "breach -> engineering only").
+  ObjectState.nodeState is never filled by the renderer (only nodeMotion).
+- No breach / opened-compartment state exists in game or world code; the client receives only module state/health.
+  Penetration BurnState holes are server-only.
+- ship_layouts_3126.json compartments are a designation tree without positions; 3D placement exists only as catalog
+  installed-item blocks (center, size) in ship_catalog_3126.json. Catalog hulls draw only primitive blocks.
+Slices (each its own acceptance; commit != acceptance):
+  S1 data: compartment extents per ship (union of its units' catalog blocks) + part -> equipment model folder map.
+  S2 ship asset assembler (tool, ModelAssetBinary): hull shell per compartment (intact + breached variants), equipment
+     instances sharing one geometry per model, Compartment / exterior Portal / Opening / StateVariant "breached",
+     collision from hit_volumes.json; output a compiled .elmodel per ship. First ship: Cobrett-I.
+  S3 runtime render: ships on ModelAssetGpuLibrary (packageFor + SceneRenderer ship loop), nodeState from replicated
+     state, ship-specific presentation thresholds (an open breach must show interiors closer than the 700 px rule).
+  S4 server: per-compartment breach state (hull section health / penetration holes) + replication to the client.
+  S5 (high risk, later): hits and collision from the asset instead of descriptor AABBs.
+Acceptance for the stage: live flight on the target machine - an intact Cobrett-I shows no interior; breaching one
+compartment shows only that compartment's equipment.

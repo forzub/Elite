@@ -353,16 +353,27 @@ function chainHTML(L) {
   let h = `<h2 class="viewTitle">Функциональные цепочки</h2><div class="chains">`;
   for (const c of L.chains) {
     if (c.id === "propulsion") {
-      const boxes = c.pattern.map(x => {
+      // pads drawn as their own items (author 2026-11-09: "пятаков не вижу"): the drive's round hot pad on the
+      // drive's side, the reactor's square pad over the reactor; designations of the shown group
+      const first = c.instances[0];
+      const boxes = c.pattern.map((x, i) => {
+        const u = first[i] || {};
+        if (x.role === "pad") {
+          const drv = partMap.get((c.pattern[i + 1]?.role === "drive" ? c.pattern[i + 1] : c.pattern[i - 1])?.part);
+          const dia = drv?.geometry?.nozzle_or_emitter_diameter_m;
+          return `<div class="cbox pad"><b><i class="padIcon round"></i>пятак двигателя</b><span>${esc(u.des || "")}${dia ? ` · Ø${fmt(dia)} м` : ""}</span></div>`;
+        }
         const p = x.part ? partMap.get(x.part) : null;
-        return `<div class="cbox ${esc(x.role)}"><b>${esc(ROLE_RU[x.role] || x.role)}</b>${p ? `<span>${esc(p.name)}</span>` : ""}</div>`;
+        const box = `<div class="cbox ${esc(x.role)}"><b>${esc(ROLE_RU[x.role] || x.role)}</b>${p ? `<span>${esc(p.name)}</span>` : ""}${u.des ? `<span>${esc(u.des)}</span>` : ""}</div>`;
+        if (x.role !== "reactor" || !u.pad) return box;
+        const side = p?.geometry?.cooling_pad_side_m;
+        return `<div class="cstack"><div class="cbox pad"><b><i class="padIcon"></i>пятак реактора</b><span>${esc(u.pad)}${side ? ` · ${fmt(side)}×${fmt(side)} м` : ""}</span></div><div class="clink v">|</div>${box}</div>`;
       }).join('<div class="clink">—</div>');
       // identical groups are drawn once, as a stack, like the identical compartments (author 2026-11-09)
       const n = c.instances.length;
-      const drives = c.instances.map(i => (i.find(x => x.role === "drive") || i[0] || {}).des).filter(Boolean);
-      h += `<div class="card chain${n > 1 ? " stacked" + (n > 2 ? " stacked3" : "") : ""}"><div class="chainHead"><b>${esc(c.ru)}</b>${n > 1 ? `<span class="mult">×${n}</span>` : ""}
+      h += `<div class="card chain wide${n > 1 ? " stacked" + (n > 2 ? " stacked3" : "") : ""}"><div class="chainHead"><b>${esc(c.ru)}</b>${n > 1 ? `<span class="mult">×${n}</span>` : ""}
         <span class="sub">${c.compartments.map(esc).join(", ")}</span></div>
-        ${n > 1 ? `<div class="sub">показана одна группа (${esc(drives[0] || "")}); остальные такие же: ${drives.slice(1).map(esc).join(", ")}</div>` : ""}<div class="cboxes">${boxes}</div>
+        ${n > 1 ? `<div class="sub">показана группа отсека ${esc(c.compartments[0])}; в ${c.compartments.slice(1).map(esc).join(", ")} - такая же, обозначения с заменой номера отсека</div>` : ""}<div class="cboxes">${boxes}</div>
         <div class="sub">каждый двигатель сбрасывает своё тепло через свой пятак; в общий контур - только при повреждённом пятаке</div></div>`;
     } else {
       const grp = list => { const m = new Map(); for (const u of list) { const k = u.part; m.set(k, (m.get(k) || 0) + (u.qty || 1)); } return [...m].map(([pid, q]) => `${esc(partMap.get(pid)?.name || pid)}${q > 1 ? " ×" + q : ""}`).join(", "); };

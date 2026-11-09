@@ -4490,3 +4490,15 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
 - Functional chains (author: "in the functional chains do the same"): the propulsion group with N identical
   instances is drawn as the same stacked card (frames behind, xN, the shown group's drive and the others listed);
   .stacked / .stacked3 are now generic classes. render_check 53 / 0; headless Chrome checked (SL-12, x3).
+
+### Ship reference: pads in the propulsion chain; reviews of the author's CR-1 / ER-5 sketches (author 2026-11-09) - DONE (reviews = PROPOSAL)
+- Author: "в функциональных схемах вижу реактор и двигатели, пятаков не вижу". The propulsion chain card now spans the full
+  width; each drive pad is its own item (round icon, designation, Ø from the drive passport), the reactor pad is drawn over
+  the reactor (square icon, designation, side from cooling_pad_side_m). render_check 53 / 0; headless Chrome (Cobrett-I A3).
+- 4 new author sketches reviewed into workshop.json reviews (Russian); prompts: CR-1 v4, ER-5 v1.
+- Root cause found: my earlier CR-1 prompt v3 / review (plasma drive, magnetic nozzle, injectors, trunnion) contradicted the
+  code - every drive preset is PropulsionPrinciple::FieldCoupling with field steering (no servo) and a solid 5 m pad
+  (aperture 0). Corrected in the reviews and prompt v4.
+- OPEN (author decision): fault catalog class drive.plasma (build_fault_catalog.py: injector / magnetic-nozzle coil / plasma
+  chamber / gimbal SRUs, DRV-01 propellant clogging) contradicts FieldCoupling; proposal: rename to drive.field with SRUs
+  pad sectors, field coil ring, busbar coupling, backup HX, sensors; drop propellant modes.

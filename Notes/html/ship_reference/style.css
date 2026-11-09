@@ -141,6 +141,7 @@ table.coverage{font-size:12px;min-width:980px}table.coverage td,table.coverage t
 .stdLine{margin:-8px 0 12px}
 .chains{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;margin-bottom:14px}
 .chain{margin:0}
+.chain.wide{grid-column:1/-1}
 .chainHead{display:flex;gap:10px;align-items:baseline;margin-bottom:8px;flex-wrap:wrap}
 .mult{font:700 18px Consolas,monospace;color:#9be28f}
 .cboxes,.cflow{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
@@ -148,6 +149,8 @@ table.coverage{font-size:12px;min-width:980px}table.coverage td,table.coverage t
 .cbox span{color:#9fb6c8;font-size:11px}
 .cbox.pad{border-color:#5f9a6a}.cbox.reactor{border-color:#c48a3a}.cbox.drive{border-color:#4d86ad}.cbox.src{border-color:#8c6bb0}
 .clink{color:#56738a}
+.cstack{display:flex;flex-direction:column;align-items:stretch;gap:0}.clink.v{text-align:center;line-height:10px}
+.cbox.pad{background:#11201a}.padIcon{display:inline-block;width:10px;height:10px;border:2px solid #7fc48c;margin-right:5px;vertical-align:-1px}.padIcon.round{border-radius:50%}
 
 /* identical compartments drawn as one stack (author 2026-11-09) */
 .stacked{position:relative;box-shadow:6px 6px 0 -1px #0b1219,6px 6px 0 0 #2a4258;margin:0 8px 8px 0}

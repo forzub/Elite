@@ -3,10 +3,16 @@
  "modelReady": {},
  "prompts": {
   "kb.drive.cr1-vector": {
-   "text": "Technical concept sketch of a spacecraft main engine for a hard science-fiction game set in the year 3126: the Cobretty CR-1 Vector, a fusion-electric plasma drive, a replaceable standardized unit.\nEnvelope: 5 m wide x 5 m high x 6.5 m long, mass 14 t; the magnetic nozzle exit is 5 m across and is the widest part.\nThrust vectoring: the whole engine swivels on a trunnion bearing through +-75 degrees; show the trunnion axis and the swept arc as a dashed sector.\nRear: a magnetic nozzle - a ring of superconducting field coils around an open plasma exit with a short radiating skirt. NOT a chemical rocket bell.\nFront: the power coupling from the reactor bus (4.85 GW input, heavy busbar connectors), propellant feed lines and the injector manifold, a coolant heat exchanger with two coolant line ports.\nMiddle: the plasma chamber with access panels; the actuator housings of the trunnion drive; one small diagnostic sensor port (no camera lenses).\nMounting: trunnion lugs and a mounting flange to the ship's engine bay frame - no floor stand.\nStyle: Cognium premium modular school - compact integrated shapes, clean surfaces, service panels clearly separated so each replaceable sub-unit (injector manifold, trunnion actuator, coil segment, heat exchanger) is readable.\nViews: three-quarter perspective plus an orthographic side view, pencil and grey marker on light grey paper, dimension lines in metres, a 1.8 m human figure for scale, neutral background, no text, no logos.",
-   "updated": 1794176381988,
-   "source": "Claude (по рецензии эскиза; паспорт оборудования - основа)",
-   "version": 3
+   "updated": 1794239747885,
+   "version": 4,
+   "source": "Claude (по эскизам автора 2026-11-09; основа - игровой паспорт CobrettyCR1VectorMainDrive)",
+   "text": "Technical concept poster of a spacecraft main engine for a hard science-fiction game set in the year 3126: the Cobretty CR-1 Vector main drive. It is a FIELD-COUPLING drive: it expels no reaction mass - no nozzle, no exhaust, no propellant lines, no gimbal or trunnion. A replaceable standardized unit.\nShape: a compact closed cylinder 6.5 m long; the cooling pad on its outer end is the widest part, 5.0 m across (overall envelope 5 x 5 x 6.5 m), dry mass 14 t.\nOuter end - the cooling pad: a solid flat disc 5.0 m across, dark matte hafnium-carbide ceramic composite with a faint orange glow at its centre (it runs at 2500 K), divided into 8 replaceable sector segments held by quick-release clamps on a thin rim. The pad radiates the engine's own waste heat into space.\nDirectly behind the pad: a ring of field coil segments (field steering of the thrust up to 75 degrees, no moving parts).\nInner end: a heavy bolted docking flange that joins the propulsion reactor module; in its centre the power busbar coupling (4.85 GW input) and a data connector.\nSide: one service module holding a backup heat exchanger with two coolant line ports (used only when the pad is damaged) and temperature / field sensors.\nMounting: four flat lugs to the engine bay frame - no floor stand, no feet.\nStyle: Cobretty premium modular school - compact integrated shapes, ring bands, clean grey-graphite surfaces, each replaceable sub-unit (pad sectors, coil ring segments, heat exchanger, busbar coupling) visibly separate.\nViews: three-quarter perspective, orthographic side view, view onto the pad, view onto the flange; close-ups of the pad clamp, the flange coupling and the service module. Dimension lines in metres, a 1.8 m human figure for scale, dark neutral background.\nText: if labels are drawn, use only these: \"Cobretty CR-1 Vector\", \"Ø 5.0 m\", \"6.5 m\", \"14 t\", \"pad\", \"flange to reactor\". No other numbers, no logos."
+  },
+  "kb.reactor.er5": {
+   "updated": 1794239747885,
+   "version": 1,
+   "source": "Claude (по эскизам автора 2026-11-09; основа - игровой паспорт CobraCobrettyER5PropulsionReactor)",
+   "text": "Technical concept poster of a spacecraft propulsion reactor for a hard science-fiction game set in the year 3126: the Cobretty ER-5, a compact D-He3 fusion reactor that powers the two main engines of its engine bay (5000 MW electric). A replaceable standardized unit.\nReactor body: a low torus lying flat with two axial docking flanges on opposite sides - fore and aft - that bolt to the two engines of the bay; the whole body fits in 4 x 4 x 5 m (flange to flange 5 m), dry mass 25 t.\nCooling pad: a thin square plate 11 x 11 m and only 0.25 m thick - almost three times wider than the reactor - made of 8 triangular replaceable sections on a light frame, dark matte radiating surface. It is part of the ship's outer skin, above the reactor, and radiates the reactor's waste heat into space. It joins the reactor through one short central column of heat pipes. Show it lifted in an exploded view with dashed alignment lines.\nOn the torus: a fuel pellet feed unit with a port from the fuel bunker, a power inverter module to the engine bus with heavy busbar terminals, a plasma control unit, plasma sensor ports, confinement magnet and damper housings; access panels clearly separate so each replaceable unit is readable.\nMounting: lugs to the engine bay frame - no floor platform, no feet.\nStyle: Cobretty premium modular school - ring bands, clean grey-graphite surfaces, copper-coloured coolant lines only on the emergency connection to the shared loop.\nViews: exploded three-quarter perspective, top view of the pad, side view of the assembly, top view of the torus. Dimension lines in metres, a 1.8 m human figure for scale, dark neutral background.\nText: if labels are drawn, use only these: \"Cobretty ER-5\", \"5000 MW\", \"25 t\", \"4 x 4 x 5 m\", \"pad 11 x 11 m\", \"flange to engine\". No other numbers, no logos."
   }
  },
  "sketches": {
@@ -18,6 +24,40 @@
     "note": "",
     "added": 1794174120000,
     "updated": 1794174120000
+   },
+   {
+    "id": "mw9fqidles00v",
+    "file": "mw9fqidles00v.png",
+    "name": "Футуристический промышленный реактор цилиндрической формы.png",
+    "note": "",
+    "added": 1794239271561,
+    "updated": 1794239271561
+   },
+   {
+    "id": "mw9fqkgx6j6lq",
+    "file": "mw9fqkgx6j6lq.png",
+    "name": "Технический постер двигателя COBRA ER-5.png",
+    "note": "",
+    "added": 1794239274273,
+    "updated": 1794239274273
+   }
+  ],
+  "kb.reactor.er5": [
+   {
+    "id": "mw9fr68ix2en2",
+    "file": "mw9fr68ix2en2.png",
+    "name": "Техническая схема панели и тороидального модуля.png",
+    "note": "",
+    "added": 1794239302482,
+    "updated": 1794239302482
+   },
+   {
+    "id": "mw9fr69ak9l0b",
+    "file": "mw9fr69ak9l0b.png",
+    "name": "Техническая схема реактора RT-6K.png",
+    "note": "",
+    "added": 1794239302510,
+    "updated": 1794239302510
    }
   ]
  },
@@ -66,6 +106,154 @@
     }
    ],
    "next": "Промт v2 записан в поле промта этого модуля. Сгенерируй по нему 2-3 варианта и перетащи сюда - отрецензирую и сведу лучшее."
+  },
+  "mw9fqidles00v": {
+   "author": "Claude",
+   "updated": 1794239747885,
+   "verdict": "хорошая основа по форме; пятак не выделен",
+   "items": [
+    {
+     "kind": "ok",
+     "text": "Закрытый цилиндр без сопла и выхлопа - это и есть наш двигатель: в игре CR-1 полевой (FieldCoupling), рабочее тело не выбрасывает. Мой промт v3 (плазма, магнитное сопло, форсунки, цапфы) был ошибкой - игровой паспорт двигателя говорит обратное."
+    },
+    {
+     "kind": "ok",
+     "text": "Торцевой диск в кольце катушек хорошо читается как пятак с полевым кольцом за ним. Кольцевые бандажи, кожухи, трубопроводы - школа Cobretty/Когниум."
+    },
+    {
+     "kind": "fix",
+     "text": "Пятак сливается с корпусом: тот же серый металл. Пятак - отдельная сменная деталь (расходник, замена через ~8 000 ч): тёмная керамика HfC-C, секции на быстросъёмных зажимах, при работе светится (2 500 К)."
+    },
+    {
+     "kind": "fix",
+     "text": "Пятак - самая широкая часть (Ø 5,0 м, габарит 5 × 5 × 6,5 м). Здесь торец уже бандажей корпуса."
+    },
+    {
+     "kind": "fix",
+     "text": "Нет второго торца: фланец стыковки с реакторным модулем, в центре - силовой ввод с шины (4,85 ГВт) и разъём данных. Сейчас там силовая рама-ферма."
+    },
+    {
+     "kind": "fix",
+     "text": "Нет масштаба (человек 1,8 м) и размерных линий."
+    },
+    {
+     "kind": "ok",
+     "text": "Имя файла «реактор» - но это двигатель, эскиз лежит правильно."
+    }
+   ],
+   "next": "Промт v4 записан в поле промта CR-1 (полевой двигатель, пятак, фланец к реактору). Этот эскиз - ориентир по форме."
+  },
+  "mw9fqkgx6j6lq": {
+   "author": "Claude",
+   "updated": 1794239747885,
+   "verdict": "лучшая концепция; исправить имя, размеры, массу, охлаждение",
+   "items": [
+    {
+     "kind": "ok",
+     "text": "Компоновка точно совпадает с функциональной цепочкой «пятак - двигатель - реактор - двигатель - пятак»: глухая рабочая плита на внешнем торце, стыковочный фланец к реакторному модулю на внутреннем."
+    },
+    {
+     "kind": "ok",
+     "text": "Закрытая плита без открытого сопла - верно для полевого двигателя. Сервисный модуль, магистрали, крупные виды по узлам - формат, нужный для мануала ремонта."
+    },
+    {
+     "kind": "wrong",
+     "text": "Имя: ER-5 - это реактор. Двигатель - Cobretty CR-1 Vector."
+    },
+    {
+     "kind": "wrong",
+     "text": "Размеры и масса: паспорт - Ø 5,0 × 6,5 м, 14 т; на постере Ø 6,0 × 7,0 м и ~32 т. Плита (пятак) Ø 5,0 м и шире корпуса, а не Ø 4,5 внутри корпуса Ø 6,0."
+    },
+    {
+     "kind": "fix",
+     "text": "Охлаждение: двигатель сбрасывает тепло своим пятаком в космос, а не жидкостью от реактора. Магистрали - только резервный теплообменник в общий контур, он работает при повреждённом пятаке."
+    },
+    {
+     "kind": "fix",
+     "text": "«Симметричная конструкция для реверсивной работы» - в паспорте этого нет: торможение даёт встречный двигатель пары (передний / задний в отсеке). Убрать или оставить как вопрос автору."
+    },
+    {
+     "kind": "fix",
+     "text": "Напольные лапы как у станка: в отсеке это проушины к раме отсека."
+    },
+    {
+     "kind": "fix",
+     "text": "Плита в медной обечайке выглядит металлической. Это сменный керамический пятак HfC-C, секциями (в каталоге отказов: «замена секции пятака»), горячий (2 500 К)."
+    },
+    {
+     "kind": "fix",
+     "text": "Отклонение тяги ±75° - полевое, без механики: подвес и цапфы не нужны. Можно показать кольцо полевых катушек за плитой."
+    }
+   ],
+   "next": "Промт v4 в поле промта CR-1 сохраняет этот формат постера, но с паспортными цифрами. Если снова будут подписи, текст в промте задан точно - генератор не должен придумывать числа."
+  },
+  "mw9fr68ix2en2": {
+   "author": "Claude",
+   "updated": 1794239747885,
+   "verdict": "лучшая схема реактора; подогнать пропорции",
+   "items": [
+    {
+     "kind": "ok",
+     "text": "Тор с двумя осевыми фланцами по бокам - ровно место реактора в цепочке: фланцы к переднему и заднему двигателям отсека."
+    },
+    {
+     "kind": "ok",
+     "text": "Отдельный квадратный пятак над реактором, разнесённый пунктиром, - именно так он есть в данных (пятак реактора ER-5, PT1). Секции-треугольники хорошо ложатся на «замену секции пятака» в каталоге отказов."
+    },
+    {
+     "kind": "ok",
+     "text": "Сервисный блок с разъёмами и обвязка трубопроводами читаются как заменяемые узлы."
+    },
+    {
+     "kind": "fix",
+     "text": "Пропорции: пятак 11 × 11 м при толщине 0,25 м, реактор помещается в 4 × 4 × 5 м. Пятак почти втрое шире реактора и тонкий, а не массивная рама."
+    },
+    {
+     "kind": "fix",
+     "text": "Нет связи пятака с реактором: нужна короткая центральная колонна тепловых труб. Пятак - часть обшивки, он излучает наружу."
+    },
+    {
+     "kind": "fix",
+     "text": "Добавить узел подачи таблеток D/He-3 (топливо из бункера), силовой преобразователь на шину, датчики плазмы - это заменяемые узлы ER-5 из каталога отказов."
+    },
+    {
+     "kind": "fix",
+     "text": "Нет масштаба и размеров."
+    }
+   ],
+   "next": "Промт v1 для ER-5 записан в поле промта реактора на основе этой схемы."
+  },
+  "mw9fr69ak9l0b": {
+   "author": "Claude",
+   "updated": 1794239747885,
+   "verdict": "хорошая подача; неверные имя, размеры, масса",
+   "items": [
+    {
+     "kind": "ok",
+     "text": "Тор, D-He³, пятак сверху, боковые фланцы, виды сверху и сбоку - концепция совпадает со схемой и с цепочкой отсека."
+    },
+    {
+     "kind": "wrong",
+     "text": "Имя: «Реактор кормовой RT-6K». Паспорт: Cobretty ER-5 Propulsion Reactor, двигательный реактор отсека (в Cobrett-I их два - по одному на отсек), а не кормовой."
+    },
+    {
+     "kind": "wrong",
+     "text": "Размеры и масса: паспорт - 4 × 4 × 5 м, 25 т, 5 000 МВт эл.; на постере Ø 6,0 м, ~48 т. Радиатор 10 × 10, а пятак 11 × 11 м, 0,25 м."
+    },
+    {
+     "kind": "fix",
+     "text": "«Активное охлаждение» - пятак излучает пассивно; общий контур подключается только при перегреве."
+    },
+    {
+     "kind": "fix",
+     "text": "Напольная рама-платформа: в отсеке реактор висит между двумя двигателями на фланцах и крепится к раме отсека. Платформу убрать или заменить узлами крепления."
+    },
+    {
+     "kind": "fix",
+     "text": "Пятак на постере почти равен реактору по площади и толстый. Он должен быть заметно больше и тоньше."
+    }
+   ],
+   "next": "Промт v1 для ER-5 записан в поле промта реактора. В подписях, если они нужны, использовать только цифры из промта."
   }
  },
  "deleted": []

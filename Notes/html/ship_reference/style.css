@@ -150,6 +150,6 @@ table.coverage{font-size:12px;min-width:980px}table.coverage td,table.coverage t
 .clink{color:#56738a}
 
 /* identical compartments drawn as one stack (author 2026-11-09) */
-.section.stacked{position:relative;box-shadow:6px 6px 0 -1px #0b1219,6px 6px 0 0 #2a4258;margin:0 8px 8px 0}
-.section.stacked3{box-shadow:6px 6px 0 -1px #0b1219,6px 6px 0 0 #2a4258,12px 12px 0 -1px #0a1016,12px 12px 0 0 #22384b;margin:0 14px 14px 0}
+.stacked{position:relative;box-shadow:6px 6px 0 -1px #0b1219,6px 6px 0 0 #2a4258;margin:0 8px 8px 0}
+.stacked3{box-shadow:6px 6px 0 -1px #0b1219,6px 6px 0 0 #2a4258,12px 12px 0 -1px #0a1016,12px 12px 0 0 #22384b;margin:0 14px 14px 0}
 .stackN{font:700 15px Consolas,monospace;color:#9be28f;margin-left:6px}

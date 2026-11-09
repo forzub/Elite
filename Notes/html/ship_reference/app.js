@@ -357,8 +357,12 @@ function chainHTML(L) {
         const p = x.part ? partMap.get(x.part) : null;
         return `<div class="cbox ${esc(x.role)}"><b>${esc(ROLE_RU[x.role] || x.role)}</b>${p ? `<span>${esc(p.name)}</span>` : ""}</div>`;
       }).join('<div class="clink">—</div>');
-      h += `<div class="card chain"><div class="chainHead"><b>${esc(c.ru)}</b><span class="mult">×${c.instances.length}</span>
-        <span class="sub">${c.compartments.map(esc).join(", ")}</span></div><div class="cboxes">${boxes}</div>
+      // identical groups are drawn once, as a stack, like the identical compartments (author 2026-11-09)
+      const n = c.instances.length;
+      const drives = c.instances.map(i => (i.find(x => x.role === "drive") || i[0] || {}).des).filter(Boolean);
+      h += `<div class="card chain${n > 1 ? " stacked" + (n > 2 ? " stacked3" : "") : ""}"><div class="chainHead"><b>${esc(c.ru)}</b>${n > 1 ? `<span class="mult">×${n}</span>` : ""}
+        <span class="sub">${c.compartments.map(esc).join(", ")}</span></div>
+        ${n > 1 ? `<div class="sub">показана одна группа (${esc(drives[0] || "")}); остальные такие же: ${drives.slice(1).map(esc).join(", ")}</div>` : ""}<div class="cboxes">${boxes}</div>
         <div class="sub">каждый двигатель сбрасывает своё тепло через свой пятак; в общий контур - только при повреждённом пятаке</div></div>`;
     } else {
       const grp = list => { const m = new Map(); for (const u of list) { const k = u.part; m.set(k, (m.get(k) || 0) + (u.qty || 1)); } return [...m].map(([pid, q]) => `${esc(partMap.get(pid)?.name || pid)}${q > 1 ? " ×" + q : ""}`).join(", "); };

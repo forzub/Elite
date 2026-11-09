@@ -4487,3 +4487,6 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
 - app.js renderShipLayout groups compartments with the same content (key + parts / qty / class letters): one card
   with all designators (`=OF38+1, =OF38+2, =OF38+3 · двигательный отсек ×3`), frames drawn behind it (one for x2, two
   for x3+). 37 of 53 ships have such stacks. render_check: 53 ships, 0 problems; headless Chrome checked (SL-12).
+- Functional chains (author: "in the functional chains do the same"): the propulsion group with N identical
+  instances is drawn as the same stacked card (frames behind, xN, the shown group's drive and the others listed);
+  .stacked / .stacked3 are now generic classes. render_check 53 / 0; headless Chrome checked (SL-12, x3).

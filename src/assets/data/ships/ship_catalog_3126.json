@@ -504,20 +504,6 @@
    "material": "elite.material.radiator.c-sic.v1"
   },
   {
-   "id": "kb.rcs.argon-tank",
-   "cat": "tank",
-   "mfr": "mfr.cobretty",
-   "name": "Cobretty argon RCS tank",
-   "model": "AR-T",
-   "mass_t": 1.5,
-   "price_cr": 15000,
-   "fluid": "argon",
-   "capacity_t": 2.0,
-   "existing": true,
-   "overhaul_h": 20000,
-   "life_h": 40000
-  },
-  {
    "id": "kb.rcs.fc-nozzle",
    "cat": "rcs",
    "mfr": "mfr.cobretty",
@@ -1670,8 +1656,8 @@
     "aft": 1,
     "fore": 0,
     "thrust_mn": 9.56,
-    "accel_g_loaded": 2.451,
-    "accel_g_service": 3.644,
+    "accel_g_loaded": 2.463,
+    "accel_g_service": 3.671,
     "class_burn_g": 1.0,
     "drive_emitter_diameter_m": 2.74,
     "sustainable_thrust01": 1.0
@@ -2152,34 +2138,6 @@
      ]
     },
     {
-     "code": "Cobrett-I N1-A4A4",
-     "product": "kb.rcs.argon-tank",
-     "cat": "tank",
-     "qty": 1,
-     "positions": [
-      [
-       0.0,
-       0.0,
-       0.3
-      ]
-     ],
-     "slots": [],
-     "blocks": [
-      {
-       "c": [
-        0.0,
-        0.0,
-        3.33
-       ],
-       "s": [
-        1.229,
-        1.229,
-        1.967
-       ]
-      }
-     ]
-    },
-    {
      "code": "Cobrett-I N1-A6A1",
      "product": "xz.mc.c1",
      "cat": "computer",
@@ -2485,25 +2443,25 @@
    ],
    "mass": {
     "dry_t": 260,
-    "equipment_t": 84.4,
-    "structure_t": 175.6,
-    "fluids_t": 7.0,
+    "equipment_t": 82.9,
+    "structure_t": 177.1,
+    "fluids_t": 5.0,
     "consumables_t": 0.36,
-    "service_t": 267.54,
+    "service_t": 265.54,
     "net_payload_t": 120.0,
     "container_tare_t": 10.2,
     "c20_tare_t": 1.7,
-    "gross_t": 397.74
+    "gross_t": 395.74
    },
    "price": {
-    "parts_cr": 2275000,
+    "parts_cr": 2260000,
     "hull_cr": 650000,
-    "list_cr": 3986000.0,
+    "list_cr": 3966000.0,
     "groups_cr": {
      "main_drive": 380000,
      "reactor": 520000,
      "rcs_thermal": 293000,
-     "jump_drive": 649000,
+     "jump_drive": 634000,
      "electronics": 198000,
      "life_support": 75000,
      "weapons": 120000
@@ -2646,20 +2604,6 @@
       "repair_level": "crew",
       "line_replaceable": true,
       "replace_hours": 2,
-      "overhaul_h": 20000,
-      "life_h": 40000,
-      "condition": "new"
-     },
-     {
-      "code": "Cobrett-I N1-A4A4",
-      "product": "kb.rcs.argon-tank",
-      "name": "Cobretty argon RCS tank",
-      "cat": "tank",
-      "qty": 1,
-      "assembly": "A4",
-      "repair_level": "station",
-      "line_replaceable": true,
-      "replace_hours": 6,
       "overhaul_h": 20000,
       "life_h": 40000,
       "condition": "new"
@@ -2908,11 +2852,6 @@
       "dst": "Cobrett-I N1-A2A2"
      },
      {
-      "net": "fuel",
-      "src": "Cobrett-I N1-A4A4",
-      "dst": "Cobrett-I N1-A5A1"
-     },
-     {
       "net": "data",
       "src": "Cobrett-I N1-A6A1",
       "dst": "Cobrett-I N1-A1A1"
@@ -2979,8 +2918,7 @@
       ],
       [
        "Cobrett-I N1-A4A2",
-       "Cobrett-I N1-A4A3",
-       "Cobrett-I N1-A4A4"
+       "Cobrett-I N1-A4A3"
       ]
      ],
      "jump": [

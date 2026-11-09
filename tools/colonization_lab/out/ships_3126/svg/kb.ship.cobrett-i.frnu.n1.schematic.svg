@@ -30,7 +30,6 @@
 <path d="M130,116 C130.0,116 10.0,70 10,70" fill="none" stroke="#b08ad6" stroke-opacity="0.55" stroke-width="1.2"/>
 <path d="M130,162 C210.0,162 90.0,70 170,70" fill="none" stroke="#b08ad6" stroke-opacity="0.55" stroke-width="1.2"/>
 <path d="M130,162 C210.0,162 90.0,116 170,116" fill="none" stroke="#b08ad6" stroke-opacity="0.55" stroke-width="1.2"/>
-<path d="M130,208 C370.0,208 250.0,116 490,116" fill="none" stroke="#b08ad6" stroke-opacity="0.55" stroke-width="1.2"/>
 <path d="M770,70 C690.0,70 570.0,70 490,70" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
 <path d="M770,70 C530.0,70 410.0,70 170,70" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
 <path d="M770,70 C530.0,70 410.0,116 170,116" fill="none" stroke="#3dbf9a" stroke-opacity="0.55" stroke-width="1.2"/>
@@ -68,9 +67,6 @@
 <rect x="490" y="100" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
 <text x="550" y="113" fill="#e6eef6" text-anchor="middle">FC-RCS ×24</text>
 <text x="550" y="126" fill="#8fb3d1" text-anchor="middle" font-size="8">Cobrett-I N1-A5A1 · crew</text>
-<rect x="10" y="192" width="120" height="32" rx="4" fill="#1f3348" stroke="#7fa6c9" stroke-width="1"/>
-<text x="70" y="205" fill="#e6eef6" text-anchor="middle">AR-T</text>
-<text x="70" y="218" fill="#8fb3d1" text-anchor="middle" font-size="8">Cobrett-I N1-A4A4 · station</text>
 <rect x="650" y="54" width="120" height="32" rx="4" fill="#1f3348" stroke="#ff5b5b" stroke-width="2"/>
 <text x="710" y="67" fill="#e6eef6" text-anchor="middle">MC-C1</text>
 <text x="710" y="80" fill="#8fb3d1" text-anchor="middle" font-size="8">Cobrett-I N1-A6A1 · station</text>

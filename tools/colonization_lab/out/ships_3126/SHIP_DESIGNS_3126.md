@@ -4,7 +4,7 @@
 
 | Модель | Класс | Производитель | Схема | Сухая, т | Груз | Тяга, МН | g груж./лёгк. | Реакторы, МВт | Ядро | Цена, млн Cr | Проверки |
 |---|---|---|---|---:|---|---:|---|---:|---|---:|---|
-| Cobrett-I N1 | cobrett_i_n1 | Cobretty Corporation | NewtonianI | 260 | 120 т | 9.56 | 2.451/3.644 | 5000 | Я-0.5 | 4.0 | OK · WARN 2 |
+| Cobrett-I N1 | cobrett_i_n1 | Cobretty Corporation | NewtonianI | 260 | 120 т | 9.56 | 2.463/3.671 | 5000 | Я-0.5 | 4.0 | OK · WARN 2 |
 | Cobrett-I A3 (вариант) | cobrett_i_n1 | Cobretty Corporation | AssistedI | 260 | 110 т | 19.12 | 5.054/7.342 | 10000 | Я-0.5 | 4.9 | OK · WARN 3 |
 | OCS-4 | ocs4_lastochka | Orbital Freight Union «Ural-Kourou» | NewtonianI | 380 | 409 т | 3.3 | 0.404/0.88 | 2600 | — | 2.3 | OK · WARN 3 |
 | SL-12 | surface_lifter | Orbital Freight Union «Ural-Kourou» | NewtonianY | 620 | 240 т, 144 пасс. | 21.99 | 2.494/3.583 | 27000 | — | 7.0 | OK · WARN 1 |
@@ -31,14 +31,14 @@
 - Класс: `cobrett_i_n1`.
 - Производитель: Cobretty Corporation (hd20794_hellas2, блок cognium_pool, школа modular_premium); верфь: industrial_hub.
 - Назначение: быстрый гибкий фрахт: ценный и срочный груз, курьер, малый чартер.
-- Корпус: wedge, 22.2 × 26.0 × 5.0 м; несущий клиновидный монокок; алюминий-литиевый сплав, C-SiC обшивка; силовой набор 175.6 т.
+- Корпус: wedge, 22.2 × 26.0 × 5.0 м; несущий клиновидный монокок; алюминий-литиевый сплав, C-SiC обшивка; силовой набор 177.1 т.
 - Схема управления: Newtonian I (рантайм `NewtonianI`, existing:EliteCobraMk1:NewtonianI).
 - Экипаж 2, пассажиры 0; груз 120 т, C20 6; автономность 30 сут; ресурс 40 лет.
-- Масса: сухая 260 т (оборудование 84.4 т), в рабочем снаряжении 267.54 т, полная 397.74 т (груз 120.0 т + тара C20 10.2 т).
-- Тяга 9.56 МН: 2.451 g гружёный (полная масса), 3.644 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
+- Масса: сухая 260 т (оборудование 82.9 т), в рабочем снаряжении 265.54 т, полная 395.74 т (груз 120.0 т + тара C20 10.2 т).
+- Тяга 9.56 МН: 2.463 g гружёный (полная масса), 3.671 g в рабочем снаряжении; длительно допустимая доля тяги 1.0.
 - Энергия: 1 × ER-5 = 5000 МВт; бытовая нагрузка 4.3 МВт от 70 МВт; площадка реактора 120.4 м².
 - Охлаждение: 380 м² радиаторов при 1050 K = 235.7 МВт; контуры 180 МВт; излучатель двигателя ⌀ 2.74 м.
-- Цена: детали 2.27 млн, корпус 0.65 млн, прейскурант 3.99 млн Cr.
+- Цена: детали 2.26 млн, корпус 0.65 млн, прейскурант 3.97 млн Cr.
 - Единичные точки отказа: Cobrett-I N1-A1A1, Cobrett-I N1-A2A1, Cobrett-I N1-A2A2, Cobrett-I N1-A3A2, Cobrett-I N1-A4A1, Cobrett-I N1-A6A1, Cobrett-I N1-A6A2, Cobrett-I N1-A6A3, Cobrett-I N1-A6A4, Cobrett-I N1-A7A1.
 
 | Позиция | Изделие | Кол. | Производитель | Ремонт |
@@ -52,7 +52,6 @@
 | Cobrett-I N1-A4A2 | Бак заряда прыжка (1 т) | 3 | Agora Modular | station, LRU, 6 ч |
 | Cobrett-I N1-A4A3 | Бункер топливных таблеток D/He-3 (1 т) | 2 | Agora Modular | station, LRU, 6 ч |
 | Cobrett-I N1-A5A1 | Cobretty field-coupled RCS nozzle | 24 | Cobretty Corporation | crew, LRU, 2 ч |
-| Cobrett-I N1-A4A4 | Cobretty argon RCS tank | 1 | Cobretty Corporation | station, LRU, 6 ч |
 | Cobrett-I N1-A6A1 | Синьчжи MotherComputer MC-C1 (гражданский) | 1 | Синьчжи Электроникс | station, LRU, 4 ч |
 | Cobrett-I N1-A6A2 | Синьчжи навигационный радар N-2 (2 000 км) | 1 | Синьчжи Электроникс | station, LRU, 6 ч |
 | Cobrett-I N1-A6A3 | Синьчжи связной комплекс C-1 (приём/передача, сеть маяков) | 1 | Синьчжи Электроникс | crew, LRU, 2 ч |
@@ -67,9 +66,9 @@
 - OK `drives_fill_layout_slots` — 1 drives for NewtonianI (1 aft + 0 fore)
 - OK `one_generator_per_group` — 1 propulsion reactors for 1 groups
 - OK `generator_covers_group_demand` — 5000 MWe per group vs 4850 MW demand
-- OK `equipment_fits_dry_mass` — hull structure 176 t = 68% of dry 260 t (possible 15%-90%)
+- OK `equipment_fits_dry_mass` — hull structure 177 t = 68% of dry 260 t (possible 15%-90%)
 - OK `hull_structure_share_typical` — hull structure 68% of dry (typical 30%-75%)
-- OK `thrust_meets_class_acceleration` — 9.56 MN: 2.45 g loaded, 3.64 g in service (class burn 1.0 g)
+- OK `thrust_meets_class_acceleration` — 9.56 MN: 2.46 g loaded, 3.67 g in service (class burn 1.0 g)
 - OK `thrust_near_class_target` — 9.6 MN vs class 9.56 MN
 - OK `service_power_covers_hotel` — service 70 MWe vs hotel 4.3 MW (+15 %)
 - OK `rcs_fills_newtonian_bank` — 24 RCS units on the 8-node Newtonian bank
@@ -78,7 +77,7 @@
 - OK `coolant_loops_carry_service_heat` — loops 180 MW vs service heat 9.6 MW
 - OK `radiators_reject_service_heat` — 380 m2 at 1050 K = 236 MW vs 9.6 MW
 - OK `jump_core_installed` — jump class needs a core
-- OK `jump_core_rating_covers_gross` — core 500 t vs gross 398 t
+- OK `jump_core_rating_covers_gross` — core 500 t vs gross 396 t
 - OK `jump_charge_capacity` — 3 t charge vs class 3.0 t
 - OK `life_support_capacity` — 4 places for 2 awake persons (0 in cold sleep)
 - OK `life_support_endurance` — 60 days vs endurance 30 days
@@ -87,7 +86,7 @@
 - OK `passenger_places` — 0 places vs 0 passengers
 - OK `cargo_near_class_target` — 120 t vs class 120 t
 - OK `suppliers_reachable_through_channels` — all suppliers inside open / licensed / restricted-civil channels
-- WARN `component_prices_near_class_model` — main_drive 0.38/0.47 M, reactor 0.52/0.57 M, jump_drive 0.65/0.76 M, electronics 0.20/0.24 M, life_support 0.07/0.09 M, rcs_thermal 0.29/0.17 M, weapons 0.12/0.15 M
+- WARN `component_prices_near_class_model` — main_drive 0.38/0.47 M, reactor 0.52/0.57 M, jump_drive 0.63/0.76 M, electronics 0.20/0.24 M, life_support 0.07/0.09 M, rcs_thermal 0.29/0.17 M, weapons 0.12/0.15 M
 - WARN `no_single_point_of_failure_in_critical_functions` — Cobrett-I N1-A1A1, Cobrett-I N1-A2A1, Cobrett-I N1-A2A2, Cobrett-I N1-A3A2, Cobrett-I N1-A6A1, Cobrett-I N1-A6A3, Cobrett-I N1-A6A4, Cobrett-I N1-A7A1
 
 ## Cobrett-I A3 (Cobrett-I A3)

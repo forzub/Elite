@@ -864,20 +864,6 @@
    "life_h": 40000
   },
   {
-   "id": "kb.rcs.argon-tank",
-   "cat": "tank",
-   "mfr": "mfr.cobretty",
-   "name": "Cobretty argon RCS tank",
-   "model": "AR-T",
-   "mass_t": 1.5,
-   "price_cr": 15000,
-   "fluid": "argon",
-   "capacity_t": 2.0,
-   "existing": true,
-   "overhaul_h": 20000,
-   "life_h": 40000
-  },
-  {
    "id": "std.rcs.cluster",
    "cat": "rcs",
    "mfr": "mfr.agora_modular",
@@ -1774,11 +1760,6 @@
      "Q",
      "kb.rcs.fc-nozzle",
      24
-    ],
-    [
-     "QT",
-     "kb.rcs.argon-tank",
-     1
     ],
     [
      "M",

@@ -4499,6 +4499,26 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
 - Root cause found: my earlier CR-1 prompt v3 / review (plasma drive, magnetic nozzle, injectors, trunnion) contradicted the
   code - every drive preset is PropulsionPrinciple::FieldCoupling with field steering (no servo) and a solid 5 m pad
   (aperture 0). Corrected in the reviews and prompt v4.
-- OPEN (author decision): fault catalog class drive.plasma (build_fault_catalog.py: injector / magnetic-nozzle coil / plasma
+- (resolved below) fault catalog class drive.plasma (build_fault_catalog.py: injector / magnetic-nozzle coil / plasma
   chamber / gimbal SRUs, DRV-01 propellant clogging) contradicts FieldCoupling; proposal: rename to drive.field with SRUs
   pad sectors, field coil ring, busbar coupling, backup HX, sensors; drop propellant modes.
+
+### Field concept applied to equipment descriptions and faults (author 2026-11-09) - DONE (source-audited, gates)
+- Author: "мы приняли полевую концепцию. поэтому давай подгоним все описание и проблемы в работе под это."
+- Fault catalog (build_fault_catalog.py): drive.plasma -> drive.field (SRUs: field control unit, field coil ring, pad
+  sectors, backup HX, busbar in the flange, sensors). DRV-01 field phasing drift, DRV-02 coil segment degradation,
+  DRV-03 inter-turn breakdown in the coil ring, DRV-05 vector channel failure (field steering, matches gimbalFailure
+  0.90), DRV-09 pad damage or wear-out (replace only: code ServicePolicy::ReplaceOnly, 8 000 / 12 000 h).
+  Injector / chamber / mechanical gimbal modes removed. RCS: power switch (RCS-01), field coil (RCS-02), new RCS-03
+  nozzle emitter damage (ManoeuvreEnginePreset derating). Signals: chamber_press / valve_pos removed, field_stab added.
+- Argon RCS tank (kb.rcs.argon-tank) removed from canon: ship_designs.json, ship_parts_unified.json (101 parts; the
+  std tanks' foreign analog -> null), ship_passports_3126.json (Cobrett-I N1 dry estimate 266 -> 264.5 t), data.js;
+  class tank.argon and bus rcs_propellant removed (7 buses). Rebuilt: ship_designer (21 ships, 0 FAIL, 39 WARN, --check
+  OK), runtime ship_catalog_3126.json, out/ships_3126, lore_md --write (check OK), lore_html, build_proposals (Stinger
+  re-derived without the tank), layouts (0 problems), fault catalog (37 classes / 96 modes, 0 problems).
+- Texts: docs/MAINTENANCE_LAYER_DESIGN.md (examples, drive / RCS rows, game-cycle example, new section 13);
+  reference category descriptions and prompt hints (drive / rcs / tank, "field vector deflection" label); the old
+  CR-1 sketch review marked outdated.
+- Checks: check_fault_catalog 0 problems, check_ship_layout 0, render_check 53 ships / 103 parts / 0;
+  gates 211: 205 pass / 6 known red / 0 new. No C++ change (no runtime code referenced the removed codes or argon).
+

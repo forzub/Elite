@@ -55,9 +55,9 @@
       },
       "service_power_capacity_mw": 150,
       "mass": {
-        "standardized_parts_delta_t": 6,
-        "dry_estimated_after_standardization_t": 266,
-        "delta_fraction": 0.0231,
+        "standardized_parts_delta_t": 4.5,
+        "dry_estimated_after_standardization_t": 264.5,
+        "delta_fraction": 0.0173,
         "frame_revalidation_required": false,
         "dry_original_t": 260
       },
@@ -168,17 +168,6 @@
           "manufacturer": "mfr.cobretty",
           "cooperation_group": "cognium_pool",
           "geometry_ref": "kb.rcs.fc-nozzle"
-        },
-        {
-          "slot_code": "QT",
-          "legacy_part_id": "kb.rcs.argon-tank",
-          "part_id": "kb.rcs.argon-tank",
-          "qty": 1,
-          "source_qty": 1,
-          "category": "tank",
-          "manufacturer": "mfr.cobretty",
-          "cooperation_group": "cognium_pool",
-          "geometry_ref": "kb.rcs.argon-tank"
         },
         {
           "slot_code": "M",
@@ -343,17 +332,6 @@
               "manufacturer": "mfr.cobretty",
               "cooperation_group": "cognium_pool",
               "geometry_ref": "kb.rcs.fc-nozzle"
-            },
-            {
-              "slot_code": "QT",
-              "legacy_part_id": "kb.rcs.argon-tank",
-              "part_id": "kb.rcs.argon-tank",
-              "qty": 1,
-              "source_qty": 1,
-              "category": "tank",
-              "manufacturer": "mfr.cobretty",
-              "cooperation_group": "cognium_pool",
-              "geometry_ref": "kb.rcs.argon-tank"
             }
           ]
         },

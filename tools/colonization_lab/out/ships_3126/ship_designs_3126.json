@@ -32,7 +32,7 @@
     ],
     "structure": "несущий клиновидный монокок",
     "material": "алюминий-литиевый сплав, C-SiC обшивка",
-    "structure_t": 175.6
+    "structure_t": 177.1
    },
    "crew": 2,
    "passengers": 0,
@@ -46,15 +46,15 @@
    "service_life_years": 40,
    "mass": {
     "dry_t": 260,
-    "equipment_t": 84.4,
-    "structure_t": 175.6,
-    "fluids_t": 7.0,
+    "equipment_t": 82.9,
+    "structure_t": 177.1,
+    "fluids_t": 5.0,
     "consumables_t": 0.36,
-    "service_t": 267.54,
+    "service_t": 265.54,
     "net_payload_t": 120.0,
     "container_tare_t": 10.2,
     "c20_tare_t": 1.7,
-    "gross_t": 397.74
+    "gross_t": 395.74
    },
    "propulsion": {
     "drive": "kb.drive.n1-axial",
@@ -62,8 +62,8 @@
     "aft": 1,
     "fore": 0,
     "thrust_mn": 9.56,
-    "accel_g_loaded": 2.451,
-    "accel_g_service": 3.644,
+    "accel_g_loaded": 2.463,
+    "accel_g_service": 3.671,
     "class_burn_g": 1.0,
     "drive_emitter_diameter_m": 2.74,
     "sustainable_thrust01": 1.0
@@ -90,14 +90,14 @@
     "radiator_material": "elite.material.radiator.c-sic.v1"
    },
    "price": {
-    "parts_cr": 2275000,
+    "parts_cr": 2260000,
     "hull_cr": 650000,
-    "list_cr": 3986000.0,
+    "list_cr": 3966000.0,
     "groups_cr": {
      "main_drive": 380000,
      "reactor": 520000,
      "rcs_thermal": 293000,
-     "jump_drive": 649000,
+     "jump_drive": 634000,
      "electronics": 198000,
      "life_support": 75000,
      "weapons": 120000
@@ -587,36 +587,6 @@
      ]
     },
     {
-     "key": "QT",
-     "product": "kb.rcs.argon-tank",
-     "cat": "tank",
-     "qty": 1,
-     "code": "Cobrett-I N1-A4A4",
-     "assembly": "A4",
-     "extra": {},
-     "positions": [
-      [
-       0.0,
-       0.0,
-       0.3
-      ]
-     ],
-     "blocks": [
-      {
-       "c": [
-        0.0,
-        0.0,
-        3.33
-       ],
-       "s": [
-        1.229,
-        1.229,
-        1.967
-       ]
-      }
-     ]
-    },
-    {
      "key": "M",
      "product": "xz.mc.c1",
      "cat": "computer",
@@ -1067,20 +1037,6 @@
       "condition": "new"
      },
      {
-      "code": "Cobrett-I N1-A4A4",
-      "product": "kb.rcs.argon-tank",
-      "name": "Cobretty argon RCS tank",
-      "cat": "tank",
-      "qty": 1,
-      "assembly": "A4",
-      "repair_level": "station",
-      "line_replaceable": true,
-      "replace_hours": 6,
-      "overhaul_h": 20000,
-      "life_h": 40000,
-      "condition": "new"
-     },
-     {
       "code": "Cobrett-I N1-A6A1",
       "product": "xz.mc.c1",
       "name": "Синьчжи MotherComputer MC-C1 (гражданский)",
@@ -1324,11 +1280,6 @@
       "dst": "Cobrett-I N1-A2A2"
      },
      {
-      "net": "fuel",
-      "src": "Cobrett-I N1-A4A4",
-      "dst": "Cobrett-I N1-A5A1"
-     },
-     {
       "net": "data",
       "src": "Cobrett-I N1-A6A1",
       "dst": "Cobrett-I N1-A1A1"
@@ -1395,8 +1346,7 @@
       ],
       [
        "Cobrett-I N1-A4A2",
-       "Cobrett-I N1-A4A3",
-       "Cobrett-I N1-A4A4"
+       "Cobrett-I N1-A4A3"
       ]
      ],
      "jump": [
@@ -1493,7 +1443,7 @@
      "check": "equipment_fits_dry_mass",
      "ok": true,
      "level": "OK",
-     "detail": "hull structure 176 t = 68% of dry 260 t (possible 15%-90%)"
+     "detail": "hull structure 177 t = 68% of dry 260 t (possible 15%-90%)"
     },
     {
      "check": "hull_structure_share_typical",
@@ -1505,7 +1455,7 @@
      "check": "thrust_meets_class_acceleration",
      "ok": true,
      "level": "OK",
-     "detail": "9.56 MN: 2.45 g loaded, 3.64 g in service (class burn 1.0 g)"
+     "detail": "9.56 MN: 2.46 g loaded, 3.67 g in service (class burn 1.0 g)"
     },
     {
      "check": "thrust_near_class_target",
@@ -1559,7 +1509,7 @@
      "check": "jump_core_rating_covers_gross",
      "ok": true,
      "level": "OK",
-     "detail": "core 500 t vs gross 398 t"
+     "detail": "core 500 t vs gross 396 t"
     },
     {
      "check": "jump_charge_capacity",
@@ -1613,7 +1563,7 @@
      "check": "component_prices_near_class_model",
      "ok": false,
      "level": "WARN",
-     "detail": "main_drive 0.38/0.47 M, reactor 0.52/0.57 M, jump_drive 0.65/0.76 M, electronics 0.20/0.24 M, life_support 0.07/0.09 M, rcs_thermal 0.29/0.17 M, weapons 0.12/0.15 M"
+     "detail": "main_drive 0.38/0.47 M, reactor 0.52/0.57 M, jump_drive 0.63/0.76 M, electronics 0.20/0.24 M, life_support 0.07/0.09 M, rcs_thermal 0.29/0.17 M, weapons 0.12/0.15 M"
     },
     {
      "check": "no_single_point_of_failure_in_critical_functions",

@@ -26,14 +26,14 @@ const CLASS_RU = {
 };
 // category: [russian name, what it does (ru), english term for the image prompt, english function]
 const CAT = {
-  drive: ["Главный двигатель", "создаёт основную тягу корабля; работает от пропульсивных реакторов", "main propulsion drive unit", "main thrust engine with nozzle, gimbal mount and feed lines"],
-  rcs: ["Маневровый блок (RCS)", "ориентация и точное маневрирование: пары сопел по осям", "reaction control thruster cluster", "attitude control thruster quad with small nozzles"],
+  drive: ["Главный двигатель", "создаёт основную тягу корабля полем, без рабочего тела; работает от пропульсивных реакторов", "main field-coupling drive unit", "closed field-coupling engine: solid round cooling pad on the outer end, field coil ring behind it, flange to the reactor; no nozzle, no exhaust, no propellant"],
+  rcs: ["Маневровый блок (RCS)", "ориентация и точное маневрирование: пары полевых сопел по осям, без рабочего тела", "field-coupled reaction control cluster", "attitude control quad of small field-coupled emitters with heat-radiating faces, no propellant"],
   reactor: ["Пропульсивный реактор", "питает главные двигатели; отводит тепло через охлаждающий пятак", "propulsion fusion reactor module", "compact reactor block with a flat cooling pad face, armoured shell and power couplings"],
   service_reactor: ["Служебный реактор (ВСУ)", "питает бортовые системы, сенсоры, оружие и жизнеобеспечение", "auxiliary power unit reactor", "small service reactor with power bus connectors"],
   radiator: ["Радиатор", "сбрасывает служебное тепло излучением в космос", "deployable heat radiator panel", "thin deployable radiator panels on a hinged boom with coolant manifolds"],
   coolant_loop: ["Контур охлаждения", "переносит тепло от агрегатов к радиаторам и пятакам", "coolant loop pump module", "pump and heat-exchanger unit with insulated pipework"],
   jump_core: ["Ядро прыжка", "запечатанный стратегический модуль межзвёздного прыжка", "sealed jump-drive core", "sealed armoured jump core canister with field emitters and warning markings"],
-  tank: ["Бак", "запас рабочего тела / заряда прыжка / расходников", "propellant tank", "cylindrical pressure tank with mounting saddles"],
+  tank: ["Бак", "запас топливных таблеток / заряда прыжка / расходников", "fuel / charge tank", "cylindrical tank with mounting saddles"],
   cryo_tank: ["Криобак", "хранение криогенных жидкостей", "cryogenic tank", "insulated cryogenic dewar tank"],
   computer: ["Бортовой компьютер", "навигация, управление полётом, автоматика", "flight computer rack", "rugged avionics computer rack with cooling ducts"],
   radar: ["Радар", "обнаружение и сопровождение целей", "radar sensor array", "phased-array radar panel on a sensor mount"],
@@ -65,7 +65,7 @@ const catRu = c => (CAT[c] || [c])[0];
 const FIELD_RU = {
   model: "Модель", mass_t: "Масса, т", price_cr: "Цена, кр", seats: "Мест", overhaul_h: "Ресурс до капремонта, ч", life_h: "Полный ресурс, ч",
   power_mw: "Мощность, МВт", mwe: "Электрическая мощность, МВт(э)", eff: "КПД", capacity_mw: "Тепловая ёмкость, МВт", pump_mw: "Мощность насоса, МВт",
-  thrust_mn: "Тяга, МН", input_mw: "Потребляемая мощность, МВт", gimbal_deg: "Отклонение кардана, °", startup_s: "Запуск, с",
+  thrust_mn: "Тяга, МН", input_mw: "Потребляемая мощность, МВт", gimbal_deg: "Отклонение вектора тяги полем, °", startup_s: "Запуск, с",
   range_ls: "Дальность, св. с", range_km: "Дальность, км", rating_t: "Номинал ядра прыжка, т", sealed: "Запечатан", grade: "Класс",
   kind: "Тип", cells: "Ячеек", persons: "Человек", days: "Суток", ls_persons: "ЖО: человек", ls_days: "ЖО: суток", survival_seats: "Спасательных мест",
   payload_t: "Полезная нагрузка, т", c20_slots: "Мест C20", capacity_t: "Ёмкость, т", tow_t: "Буксировка, т", area_m2: "Площадь, м²",

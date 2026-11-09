@@ -15,9 +15,9 @@
   },
   "standardization": {
     "legacy_skus": 121,
-    "canonical_skus": 102,
+    "canonical_skus": 101,
     "removed_by_unification": 19,
-    "major_technical_lru_skus": 66,
+    "major_technical_lru_skus": 65,
     "mission_survival_weapon_and_payload_skus": 36,
     "policy": [
       "A more powerful standard drive may replace a weaker unit and is software/power limited to the ship's rated thrust/input.",
@@ -339,10 +339,6 @@
         "canonical_id": "kb.rcs.fc-nozzle",
         "quantity_multiplier": 1
       },
-      "kb.rcs.argon-tank": {
-        "canonical_id": "kb.rcs.argon-tank",
-        "quantity_multiplier": 1
-      },
       "std.rcs.cluster": {
         "canonical_id": "std.rcs.cluster",
         "quantity_multiplier": 1
@@ -623,7 +619,7 @@
     "coolant_loop": 3,
     "drive": 10,
     "radiator": 3,
-    "tank": 3,
+    "tank": 2,
     "rcs": 3,
     "reactor": 5,
     "escape_capsule": 2,
@@ -2255,48 +2251,6 @@
       }
     },
     {
-      "id": "kb.rcs.argon-tank",
-      "cat": "tank",
-      "mfr": "mfr.cobretty",
-      "name": "Cobretty argon RCS tank",
-      "model": "AR-T",
-      "mass_t": 1.5,
-      "price_cr": 15000,
-      "fluid": "argon",
-      "capacity_t": 2,
-      "existing": true,
-      "overhaul_h": 20000,
-      "life_h": 40000,
-      "geometry": {
-        "status": "PROPOSAL/model",
-        "envelope_m": [
-          1.229,
-          1.229,
-          1.967
-        ],
-        "service_clearance_m": [
-          1.38,
-          1.38,
-          2.2
-        ],
-        "basis": [
-          "same effective-density/aspect model as ship_designer.py primitive equipment blocks"
-        ]
-      },
-      "cooperation_group": "cognium_pool",
-      "replacements": {
-        "standard": null,
-        "hostile_or_foreign": {
-          "part_id": "std.tank.jumpcharge",
-          "name": "Бак заряда прыжка (1 т)",
-          "manufacturer": "mfr.agora_modular",
-          "cooperation_group": "lalande_open_market",
-          "fit": "adapter_or_refit_required",
-          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
-        }
-      }
-    },
-    {
       "id": "kb.rcs.fc-nozzle",
       "cat": "rcs",
       "mfr": "mfr.cobretty",
@@ -3916,14 +3870,7 @@
           "fit": "functional_analog",
           "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
         },
-        "hostile_or_foreign": {
-          "part_id": "kb.rcs.argon-tank",
-          "name": "Cobretty argon RCS tank",
-          "manufacturer": "mfr.cobretty",
-          "cooperation_group": "cognium_pool",
-          "fit": "adapter_or_refit_required",
-          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
-        }
+        "hostile_or_foreign": null
       }
     },
     {
@@ -3963,14 +3910,7 @@
           "fit": "functional_analog",
           "note": "Ближайший аналог той же кооперационной группы; габарит и интерфейсы сверять по паспорту."
         },
-        "hostile_or_foreign": {
-          "part_id": "kb.rcs.argon-tank",
-          "name": "Cobretty argon RCS tank",
-          "manufacturer": "mfr.cobretty",
-          "cooperation_group": "cognium_pool",
-          "fit": "adapter_or_refit_required",
-          "note": "Внешний/вражеский функциональный аналог. Не plug-and-play: возможны переходная рама, другая разводка питания/охлаждения и ПО."
-        }
+        "hostile_or_foreign": null
       }
     },
     {

@@ -4585,3 +4585,19 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   Stale test fixed: tests/model_asset/CMakeLists.txt lacked chunks/PresentationChunks.cpp (link error readPresentationV4).
   Gates 205 PASS / 6 known red / 0 new. Next (author): open an Equipment asset, SOURCE -> PHYSICS -> SOURCE HITS, check
   the volumes; step 3 (ship hull compartments, interior only for a breached compartment) is a separate large stage.
+
+### Reactor families per maker + passport geometry audit (author 2026-11-09) - PROPOSAL (models), CR-1 / ER-5 APPROVED
+- Author: CR-1 and ER-5 models approved; reactors must differ per maker within one base concept; check that every
+  passport has geometric dimensions; consider real-world device shapes.
+- Audit: all 101 canon parts and all 103 reference parts have geometry.envelope_m and service_clearance_m (no gaps).
+- Author choices (2026-11-09): Sol Reactor Works = linear FRC collider (ref. Helion Polaris); Tianhe Heavy = heavy
+  tokamak with exposed D-coils on a flat-plate polygonal cryostat (ref. EAST/CFETR); Cobretty = the approved coaxial drum.
+- Generator: srw_parts (formation sections, compression waist under dense coils, 4 capacitor banks), th_parts (12-gon
+  cryostat, 12 D-coils, 12-gon flanges), shared heat_column / cooling_pad builders (ER-5 output unchanged), family
+  scaling (ER-1, SR-2.6, TR-2.6V = big unit scaled to the passport, own pad), per-maker materials, hit volumes for all.
+  LOD0 triangles: SR-4.8 / SR-2.6 13.4k, TR-10 / TR-2.6V 7.6k, ER-1 11.6k.
+- Canon: SR-4.8 envelope 3.83x3.83x4.79 -> 3.4x3.4x6.1 m (clearance 3.91x3.91x7.02); SR-2.6 (build_proposals.js)
+  3.215x3.215x4.02 -> 2.85x2.85x5.11 m; same volume and mass. Rebuilt ship_designer (21 ships, 0 FAIL), lore, proposals.
+- Open: reactors pair with other makers' drives (OFU with Sol, Kern with ER-1, TZ-11 and TZ-28 with TR-10): flanges are
+  each maker's standard, mating by a bay adapter ring - not modelled yet. Service reactors (APU) not modelled yet.
+- Renders + review cards in the workshop for kb.reactor.er1, srw.reactor.sr48/sr26, th.reactor.tr10/tr26v.

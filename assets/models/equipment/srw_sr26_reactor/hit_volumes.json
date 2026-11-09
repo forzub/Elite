@@ -1,0 +1,458 @@
+{
+ "asset": "srw_sr26_reactor",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "srw_vessel.1",
+   "part": "srw_vessel",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.1735,
+   "half_height": 1.886
+  },
+  {
+   "id": "srw_coils.1",
+   "part": "srw_coils",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.855,
+   "half_height": 0.6287
+  },
+  {
+   "id": "srw_formation_fore.1",
+   "part": "srw_formation_fore",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -2.1165
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.3579,
+   "half_height": 0.2305
+  },
+  {
+   "id": "srw_formation_aft.1",
+   "part": "srw_formation_aft",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    2.1165
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.3579,
+   "half_height": 0.2305
+  },
+  {
+   "id": "srw_flange_fore.1",
+   "part": "srw_flange_fore",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -2.4518
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.425,
+   "half_height": 0.1048
+  },
+  {
+   "id": "srw_flange_aft.1",
+   "part": "srw_flange_aft",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    2.4518
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.425,
+   "half_height": 0.1048
+  },
+  {
+   "id": "srw_capacitor_banks.1",
+   "part": "srw_capacitor_banks",
+   "shape": "box",
+   "position": [
+    0.8891,
+    0.8891,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.109,
+    0.2389,
+    2.0537
+   ]
+  },
+  {
+   "id": "srw_capacitor_banks.2",
+   "part": "srw_capacitor_banks",
+   "shape": "box",
+   "position": [
+    -0.8891,
+    0.8891,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.109,
+    0.2389,
+    2.0537
+   ]
+  },
+  {
+   "id": "srw_capacitor_banks.3",
+   "part": "srw_capacitor_banks",
+   "shape": "box",
+   "position": [
+    -0.8891,
+    -0.8891,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.109,
+    0.2389,
+    2.0537
+   ]
+  },
+  {
+   "id": "srw_capacitor_banks.4",
+   "part": "srw_capacitor_banks",
+   "shape": "box",
+   "position": [
+    0.8891,
+    -0.8891,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.109,
+    0.2389,
+    2.0537
+   ]
+  },
+  {
+   "id": "srw_fuel_feed.1",
+   "part": "srw_fuel_feed",
+   "shape": "box",
+   "position": [
+    -1.3579,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.0922,
+    0.1886,
+    0.2934
+   ]
+  },
+  {
+   "id": "srw_plasma_ctl.1",
+   "part": "srw_plasma_ctl",
+   "shape": "box",
+   "position": [
+    0.0,
+    -0.9807,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.3353,
+    0.0922,
+    0.5449
+   ]
+  },
+  {
+   "id": "srw_heat_pipe_column.1",
+   "part": "srw_heat_pipe_column",
+   "shape": "box",
+   "position": [
+    0.0,
+    0.8718,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.3353,
+    0.0671,
+    0.5449
+   ]
+  },
+  {
+   "id": "srw_heat_pipe_column.2",
+   "part": "srw_heat_pipe_column",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    1.4124,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.5449,
+   "half_height": 0.5574
+  },
+  {
+   "id": "reactor_cooling_pad.1",
+   "part": "reactor_cooling_pad",
+   "shape": "box",
+   "position": [
+    0.0,
+    2.0998,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    3.96,
+    0.1299,
+    3.96
+   ]
+  },
+  {
+   "id": "srw_emergency_coolant.1",
+   "part": "srw_emergency_coolant",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.0226,
+    0.6706
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.1676,
+    0.1676,
+    0.3353
+   ]
+  },
+  {
+   "id": "srw_plasma_sensors.1",
+   "part": "srw_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.9179,
+    0.0,
+    -0.3772
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.0503,
+   "half_height": 0.0629
+  },
+  {
+   "id": "srw_plasma_sensors.2",
+   "part": "srw_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.9179,
+    0.0,
+    0.3772
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.0503,
+   "half_height": 0.0629
+  },
+  {
+   "id": "srw_plasma_sensors.3",
+   "part": "srw_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    -0.9179,
+    0.0,
+    -0.3772
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "radius": 0.0503,
+   "half_height": 0.0629
+  },
+  {
+   "id": "srw_plasma_sensors.4",
+   "part": "srw_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    -0.9179,
+    0.0,
+    0.3772
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "radius": 0.0503,
+   "half_height": 0.0629
+  },
+  {
+   "id": "srw_mounts.1",
+   "part": "srw_mounts",
+   "shape": "box",
+   "position": [
+    -0.978,
+    -0.978,
+    -2.1165
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.0922,
+    0.1509,
+    0.1676
+   ]
+  },
+  {
+   "id": "srw_mounts.2",
+   "part": "srw_mounts",
+   "shape": "box",
+   "position": [
+    -0.978,
+    -0.978,
+    2.1165
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.0922,
+    0.1509,
+    0.1676
+   ]
+  },
+  {
+   "id": "srw_mounts.3",
+   "part": "srw_mounts",
+   "shape": "box",
+   "position": [
+    0.978,
+    -0.978,
+    -2.1165
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.0922,
+    0.1509,
+    0.1676
+   ]
+  },
+  {
+   "id": "srw_mounts.4",
+   "part": "srw_mounts",
+   "shape": "box",
+   "position": [
+    0.978,
+    -0.978,
+    2.1165
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.0922,
+    0.1509,
+    0.1676
+   ]
+  }
+ ]
+}

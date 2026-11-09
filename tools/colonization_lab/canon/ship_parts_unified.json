@@ -3312,20 +3312,21 @@
       "geometry": {
         "status": "PROPOSAL/model",
         "envelope_m": [
-          3.83,
-          3.83,
-          4.79
+          3.4,
+          3.4,
+          6.1
         ],
         "service_clearance_m": [
-          4.4,
-          4.4,
-          5.51
+          3.91,
+          3.91,
+          7.02
         ],
         "cooling_pad_side_m": 10.78,
         "cooling_pad_thickness_m": 0.25,
         "anchor": "ER-5 cooling-pad scaling by waste heat",
         "basis": [
-          "reactor housing scales with mass; cooling interface scales with thermal waste"
+          "reactor housing scales with mass; cooling interface scales with thermal waste",
+          "author 2026-11-09: Sol Reactor Works school = linear FRC collider (formation sections at both ends, compression chamber in the middle) - elongated along the bay axis, same volume"
         ]
       },
       "cooperation_group": "sol_industrial",

@@ -1,0 +1,598 @@
+{
+ "asset": "cobretty_er1_reactor",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "er1_vessel.1",
+   "part": "er1_vessel",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.0296,
+   "half_height": 0.819
+  },
+  {
+   "id": "er1_confinement.1",
+   "part": "er1_confinement",
+   "shape": "box",
+   "position": [
+    0.9728,
+    0.403,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    22.5
+   ],
+   "half_size": [
+    0.0421,
+    0.0796,
+    0.8518
+   ]
+  },
+  {
+   "id": "er1_confinement.2",
+   "part": "er1_confinement",
+   "shape": "box",
+   "position": [
+    0.403,
+    0.9728,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    67.5
+   ],
+   "half_size": [
+    0.0421,
+    0.0796,
+    0.8518
+   ]
+  },
+  {
+   "id": "er1_confinement.3",
+   "part": "er1_confinement",
+   "shape": "box",
+   "position": [
+    -0.403,
+    0.9728,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    112.5
+   ],
+   "half_size": [
+    0.0421,
+    0.0796,
+    0.8518
+   ]
+  },
+  {
+   "id": "er1_confinement.4",
+   "part": "er1_confinement",
+   "shape": "box",
+   "position": [
+    -0.9728,
+    0.403,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    157.5
+   ],
+   "half_size": [
+    0.0421,
+    0.0796,
+    0.8518
+   ]
+  },
+  {
+   "id": "er1_confinement.5",
+   "part": "er1_confinement",
+   "shape": "box",
+   "position": [
+    -0.9728,
+    -0.403,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    202.5
+   ],
+   "half_size": [
+    0.0421,
+    0.0796,
+    0.8518
+   ]
+  },
+  {
+   "id": "er1_confinement.6",
+   "part": "er1_confinement",
+   "shape": "box",
+   "position": [
+    -0.403,
+    -0.9728,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    247.5
+   ],
+   "half_size": [
+    0.0421,
+    0.0796,
+    0.8518
+   ]
+  },
+  {
+   "id": "er1_confinement.7",
+   "part": "er1_confinement",
+   "shape": "box",
+   "position": [
+    0.403,
+    -0.9728,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    292.5
+   ],
+   "half_size": [
+    0.0421,
+    0.0796,
+    0.8518
+   ]
+  },
+  {
+   "id": "er1_confinement.8",
+   "part": "er1_confinement",
+   "shape": "box",
+   "position": [
+    0.9728,
+    -0.403,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    337.5
+   ],
+   "half_size": [
+    0.0421,
+    0.0796,
+    0.8518
+   ]
+  },
+  {
+   "id": "er1_flange_aft.1",
+   "part": "er1_flange_aft",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.9828
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.053,
+   "half_height": 0.1872
+  },
+  {
+   "id": "er1_flange_fore.1",
+   "part": "er1_flange_fore",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -0.9828
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.053,
+   "half_height": 0.1872
+  },
+  {
+   "id": "er1_inverter.1",
+   "part": "er1_inverter",
+   "shape": "box",
+   "position": [
+    1.0904,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.0749,
+    0.234,
+    0.2925
+   ]
+  },
+  {
+   "id": "er1_inverter.2",
+   "part": "er1_inverter",
+   "shape": "box",
+   "position": [
+    1.0296,
+    0.0,
+    -0.6552
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.0936,
+    0.1498,
+    0.365
+   ]
+  },
+  {
+   "id": "er1_inverter.3",
+   "part": "er1_inverter",
+   "shape": "box",
+   "position": [
+    1.0296,
+    0.0,
+    0.6552
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.0936,
+    0.1498,
+    0.365
+   ]
+  },
+  {
+   "id": "er1_fuel_feed.1",
+   "part": "er1_fuel_feed",
+   "shape": "box",
+   "position": [
+    -1.0904,
+    0.0094,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.0749,
+    0.2106,
+    0.2223
+   ]
+  },
+  {
+   "id": "er1_fuel_feed.2",
+   "part": "er1_fuel_feed",
+   "shape": "cylinder",
+   "position": [
+    -1.0904,
+    0.3206,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.0936,
+   "half_height": 0.1006
+  },
+  {
+   "id": "er1_plasma_ctl.1",
+   "part": "er1_plasma_ctl",
+   "shape": "box",
+   "position": [
+    0.0,
+    -1.0904,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.2106,
+    0.0608,
+    0.234
+   ]
+  },
+  {
+   "id": "er1_plasma_sensors.1",
+   "part": "er1_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.7694,
+    0.7694,
+    0.4212
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -45.0
+   ],
+   "radius": 0.0328,
+   "half_height": 0.0445
+  },
+  {
+   "id": "er1_plasma_sensors.2",
+   "part": "er1_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.7694,
+    0.7694,
+    -0.4212
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -45.0
+   ],
+   "radius": 0.0328,
+   "half_height": 0.0445
+  },
+  {
+   "id": "er1_plasma_sensors.3",
+   "part": "er1_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    -0.7694,
+    0.7694,
+    0.4212
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "radius": 0.0328,
+   "half_height": 0.0445
+  },
+  {
+   "id": "er1_plasma_sensors.4",
+   "part": "er1_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    -0.7694,
+    0.7694,
+    -0.4212
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "radius": 0.0328,
+   "half_height": 0.0445
+  },
+  {
+   "id": "er1_plasma_sensors.5",
+   "part": "er1_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    -0.7694,
+    -0.7694,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -225.0
+   ],
+   "radius": 0.0328,
+   "half_height": 0.0445
+  },
+  {
+   "id": "er1_plasma_sensors.6",
+   "part": "er1_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    0.7694,
+    -0.7694,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -135.0
+   ],
+   "radius": 0.0328,
+   "half_height": 0.0445
+  },
+  {
+   "id": "er1_heat_pipe_column.1",
+   "part": "er1_heat_pipe_column",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.039,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.1872,
+    0.0374,
+    0.3042
+   ]
+  },
+  {
+   "id": "er1_heat_pipe_column.2",
+   "part": "er1_heat_pipe_column",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    1.2168,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.3042,
+   "half_height": 0.1872
+  },
+  {
+   "id": "reactor_cooling_pad.1",
+   "part": "reactor_cooling_pad",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.4765,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    2.24,
+    0.0725,
+    2.24
+   ]
+  },
+  {
+   "id": "er1_emergency_coolant.1",
+   "part": "er1_emergency_coolant",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.1372,
+    0.3838
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.1076,
+    0.1076,
+    0.2012
+   ]
+  },
+  {
+   "id": "er1_mounts.1",
+   "part": "er1_mounts",
+   "shape": "box",
+   "position": [
+    -0.7677,
+    -0.7677,
+    -0.4212
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.0702,
+    0.0983,
+    0.1076
+   ]
+  },
+  {
+   "id": "er1_mounts.2",
+   "part": "er1_mounts",
+   "shape": "box",
+   "position": [
+    -0.7677,
+    -0.7677,
+    0.4212
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.0702,
+    0.0983,
+    0.1076
+   ]
+  },
+  {
+   "id": "er1_mounts.3",
+   "part": "er1_mounts",
+   "shape": "box",
+   "position": [
+    0.7677,
+    -0.7677,
+    -0.4212
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.0702,
+    0.0983,
+    0.1076
+   ]
+  },
+  {
+   "id": "er1_mounts.4",
+   "part": "er1_mounts",
+   "shape": "box",
+   "position": [
+    0.7677,
+    -0.7677,
+    0.4212
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.0702,
+    0.0983,
+    0.1076
+   ]
+  }
+ ]
+}

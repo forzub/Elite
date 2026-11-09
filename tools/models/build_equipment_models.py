@@ -45,6 +45,11 @@ MATERIALS = {
     "eq_copper": ((0.66, 0.38, 0.20), (0.60, 0.45, 0.35), 90),
     "eq_insulator": ((0.80, 0.78, 0.72), (0.10, 0.10, 0.10), 20),
     "eq_status_amber": ((0.95, 0.62, 0.15), (0.20, 0.20, 0.20), 30),
+    # Sol Reactor Works: white panels, navy coils; Tianhe Heavy: olive steel, red-lacquered coil casings
+    "eq_srw_white": ((0.80, 0.81, 0.80), (0.25, 0.25, 0.25), 50),
+    "eq_srw_coil": ((0.12, 0.17, 0.30), (0.30, 0.30, 0.35), 70),
+    "eq_th_steel": ((0.33, 0.36, 0.31), (0.20, 0.20, 0.20), 40),
+    "eq_th_coil": ((0.45, 0.16, 0.12), (0.30, 0.25, 0.25), 60),
 }
 
 
@@ -603,6 +608,83 @@ def er5_flange(lod, seg):
     return f
 
 
+def heat_column(hc, lod, seg, small, y0, y1, band="eq_metal_band", pipe="eq_steel", core="eq_metal_graphite"):
+    """heat-pipe column from a unit top (y0) to its pad (y1): saddle, 7 heat pipes, collars, top plate (shared by all reactors)"""
+    ro = y0
+    box(hc, band, (0, ro + 0.02, 0), (0.80, 0.16, 1.30), chamfer=0.03 if lod == 0 else 0.0)            # saddle
+    ylathe(hc, band, [(0, y0), (0.50, y0), (0.50, y0 + 0.16), (0, y0 + 0.16)], seg)
+    pipes = [(0.0, 0.0, 0.20)] + [(0.34 * math.cos(2 * math.pi * i / 6), 0.34 * math.sin(2 * math.pi * i / 6), 0.08) for i in range(6)]
+    for x, z, r in pipes if lod == 0 else pipes[:1]:
+        cyl(hc, pipe if r < 0.1 else core, (x, y0 + 0.16, z), (x, y1 - 0.08, z), r if lod == 0 else 0.36, small)
+    if lod < 2:
+        for yy in (y0 + 0.36, y0 + 0.58):
+            ylathe(hc, band, crect(0.15, 0.46, yy - 0.03, yy + 0.03, 0.01 if lod == 0 else 0.0), seg)
+    ylathe(hc, band, [(0, y1 - 0.08), (0.65, y1 - 0.08), (0.65, y1), (0, y1)], seg)
+    if lod == 0:
+        for i in range(8):
+            a = 2 * math.pi * (i + 0.5) / 8
+            hex_bolt(hc, pipe, polar(0.42, a, y0 + 0.16), (0, 1, 0), 0.04, 0.025, washer=False)
+            hex_bolt(hc, pipe, polar(0.56, a, y1 - 0.08), (0, -1, 0), 0.04, 0.025, washer=False)
+        for sx in (-1, 1):
+            for sz in (-1, 1):
+                hex_bolt(hc, pipe, (sx * 0.32, ro + 0.10, sz * 0.55), (0, 1, 0), 0.05, 0.03, washer=False)
+
+
+def cooling_pad(pd, lod, py0, pt, L, frame="eq_metal_band", ceramic="eq_pad_ceramic", backing="eq_metal_graphite", steel="eq_steel"):
+    """square cooling pad (side 2L, thickness pt, underside at py0): rim, midline and diagonal beams, 8 triangular sections"""
+    py1 = py0 + pt
+    bw = 0.22
+    if lod == 2:
+        box(pd, ceramic, (0, (py0 + py1) / 2, 0), (2 * L, pt, 2 * L))     # far pad: one slab
+    else:
+        box(pd, backing, (0, py0 + 0.02, 0), (2 * L - 0.2, 0.04, 2 * L - 0.2))                  # backing sheet
+        for s in (-1, 1):                                                                                  # rim beams
+            box(pd, frame, (s * (L - bw / 2), (py0 + py1) / 2, 0), (bw, pt, 2 * L), chamfer=0.02 if lod == 0 else 0.0)
+            box(pd, frame, (0, (py0 + py1) / 2, s * (L - bw / 2)), (2 * L - 2 * bw, pt, bw), chamfer=0.02 if lod == 0 else 0.0)
+        for th in (0.0, math.pi / 2):                                                                      # midline beams
+            box(pd, frame, (0, (py0 + py1) / 2, 0), (2 * L - 2 * bw, pt - 0.01, 0.18), rot_y(th))
+        for th in (math.pi / 4, -math.pi / 4):                                                             # diagonal beams
+            box(pd, frame, (0, (py0 + py1) / 2, 0), (2 * L * math.sqrt(2) - 0.6, pt - 0.01, 0.18), rot_y(th))
+        box(pd, frame, (0, py1 - 0.10, 0), (1.0, 0.30, 1.0), chamfer=0.04 if lod == 0 else 0.0)  # centre hub
+        corners = [(sx * L, sz * L) for sx, sz in ((1, 1), (-1, 1), (-1, -1), (1, -1))]
+        for x, z in corners:                                                                               # corner blocks
+            box(pd, frame, (x - math.copysign(0.24, x), (py0 + py1) / 2 + 0.03, z - math.copysign(0.24, z)), (0.50, pt + 0.08, 0.50),
+                chamfer=0.04 if lod == 0 else 0.0)
+        for x, z in ((L, 0), (-L, 0), (0, L), (0, -L)):                                                    # edge-mid blocks
+            box(pd, frame, (x - math.copysign(0.2, x) if x else 0, (py0 + py1) / 2 + 0.02, z - math.copysign(0.2, z) if z else 0),
+                (0.42 if x else 0.60, pt + 0.04, 0.60 if x else 0.42), chamfer=0.03 if lod == 0 else 0.0)
+        if lod < 2:
+            for k in range(8):                                                                             # 8 sections
+                ca = corners[k // 2]
+                mid = (ca[0], 0.0) if k % 2 == 0 else (0.0, ca[1])
+                prism(pd, ceramic, inset([(0.0, 0.0), ca, mid], 0.13), py0 + 0.04, py1 - 0.012)
+        else:
+            box(pd, ceramic, (0, py1 - 0.06, 0), (2 * L - 0.3, 0.10, 2 * L - 0.3))
+        if lod == 0:
+            def bolts_along(p0, p1, step):
+                n = max(1, int(math.hypot(p1[0] - p0[0], p1[1] - p0[1]) / step))
+                for i in range(1, n):
+                    t = i / n
+                    hex_bolt(pd, steel, (p0[0] + (p1[0] - p0[0]) * t, py1 - 0.005, p0[1] + (p1[1] - p0[1]) * t), (0, 1, 0), 0.05, 0.025, washer=False)
+            for x, z in corners:
+                bolts_along((math.copysign(0.75, x), math.copysign(0.75, z)), (x - math.copysign(0.6, x), z - math.copysign(0.6, z)), 1.0)
+            for x, z in ((L, 0), (-L, 0), (0, L), (0, -L)):
+                bolts_along((math.copysign(0.6, x) if x else 0, math.copysign(0.6, z) if z else 0), (x - math.copysign(0.5, x) if x else 0, z - math.copysign(0.5, z) if z else 0), 1.0)
+            for s in (-1, 1):                                                                              # rim bolts + side slots
+                for i in range(10):
+                    q = -L + 0.85 + i * (2 * L - 1.7) / 9
+                    hex_bolt(pd, steel, (s * (L - bw / 2), py1, q), (0, 1, 0), 0.05, 0.025, washer=False)
+                    hex_bolt(pd, steel, (q, py1, s * (L - bw / 2)), (0, 1, 0), 0.05, 0.025, washer=False)
+                for q in (-L / 2, L / 2):
+                    box(pd, backing, (s * L + s * 0.004, (py0 + py1) / 2, q), (0.01, 0.08, 1.6))
+                    box(pd, backing, (q, (py0 + py1) / 2, s * L + s * 0.004), (1.6, 0.08, 0.01))
+            for x, z in corners:                                                                           # lifting eyes
+                lathe(pd, steel, crect(0.05, 0.09, -0.03, 0.03), 8, axis_to((1, 0, 0)),
+                      (x - math.copysign(0.24, x), py1 + 0.14, z - math.copysign(0.24, z)))
+            for i in range(4):
+                hex_bolt(pd, steel, (0.32 * (1 if i % 2 else -1), py1 + 0.05, 0.32 * (1 if i // 2 else -1)), (0, 1, 0), 0.07, 0.035)
+
+
 def er5_parts(lod):
     seg = {0: 32, 1: 16, 2: 12}[lod]
     small = {0: 12, 1: 8, 2: 6}[lod]
@@ -710,81 +792,9 @@ def er5_parts(lod):
             if lod == 0:
                 lathe(sn, "eq_insulator", [(0.05, 0), (0.04, 0.03), (0, 0.05)], 8, axis_to(polz(1, a, 0)), p1)
 
-    # --- heat-pipe column from the vessel top to the pad: saddle, 7 heat pipes, collars, top plate
-    hc = P["er5_heat_pipe_column"] = Part("er5_heat_pipe_column")
-    y0, y1 = ro, d["pad_y0"]
-    box(hc, "eq_metal_band", (0, ro + 0.02, 0), (0.80, 0.16, 1.30), chamfer=0.03 if lod == 0 else 0.0)            # saddle
-    ylathe(hc, "eq_metal_band", [(0, y0), (0.50, y0), (0.50, y0 + 0.16), (0, y0 + 0.16)], seg)
-    pipes = [(0.0, 0.0, 0.20)] + [(0.34 * math.cos(2 * math.pi * i / 6), 0.34 * math.sin(2 * math.pi * i / 6), 0.08) for i in range(6)]
-    for x, z, r in pipes if lod == 0 else pipes[:1]:
-        cyl(hc, "eq_steel" if r < 0.1 else "eq_metal_graphite", (x, y0 + 0.16, z), (x, y1 - 0.08, z), r if lod == 0 else 0.36, small)
-    if lod < 2:
-        for yy in (y0 + 0.36, y0 + 0.58):
-            ylathe(hc, "eq_metal_band", crect(0.15, 0.46, yy - 0.03, yy + 0.03, 0.01 if lod == 0 else 0.0), seg)
-    ylathe(hc, "eq_metal_band", [(0, y1 - 0.08), (0.65, y1 - 0.08), (0.65, y1), (0, y1)], seg)
-    if lod == 0:
-        for i in range(8):
-            a = 2 * math.pi * (i + 0.5) / 8
-            hex_bolt(hc, "eq_steel", polar(0.42, a, y0 + 0.16), (0, 1, 0), 0.04, 0.025, washer=False)
-            hex_bolt(hc, "eq_steel", polar(0.56, a, y1 - 0.08), (0, -1, 0), 0.04, 0.025, washer=False)
-        for sx in (-1, 1):
-            for sz in (-1, 1):
-                hex_bolt(hc, "eq_steel", (sx * 0.32, ro + 0.10, sz * 0.55), (0, 1, 0), 0.05, 0.03, washer=False)
-
-    # --- cooling pad PT1: 11 x 11 m, 0.25 m; frame (rim, diagonals, midlines), 8 triangular ceramic sections
-    pd = P["reactor_cooling_pad"] = Part("reactor_cooling_pad")
-    py0, pt, L = d["pad_y0"], d["pad_t"], d["pad_half"]
-    py1 = py0 + pt
-    bw = 0.22
-    if lod == 2:
-        box(pd, "eq_pad_ceramic", (0, (py0 + py1) / 2, 0), (2 * L, pt, 2 * L))     # far pad: one slab
-    else:
-        box(pd, "eq_metal_graphite", (0, py0 + 0.02, 0), (2 * L - 0.2, 0.04, 2 * L - 0.2))                  # backing sheet
-        for s in (-1, 1):                                                                                  # rim beams
-            box(pd, "eq_metal_band", (s * (L - bw / 2), (py0 + py1) / 2, 0), (bw, pt, 2 * L), chamfer=0.02 if lod == 0 else 0.0)
-            box(pd, "eq_metal_band", (0, (py0 + py1) / 2, s * (L - bw / 2)), (2 * L - 2 * bw, pt, bw), chamfer=0.02 if lod == 0 else 0.0)
-        for th in (0.0, math.pi / 2):                                                                      # midline beams
-            box(pd, "eq_metal_band", (0, (py0 + py1) / 2, 0), (2 * L - 2 * bw, pt - 0.01, 0.18), rot_y(th))
-        for th in (math.pi / 4, -math.pi / 4):                                                             # diagonal beams
-            box(pd, "eq_metal_band", (0, (py0 + py1) / 2, 0), (2 * L * math.sqrt(2) - 0.6, pt - 0.01, 0.18), rot_y(th))
-        box(pd, "eq_metal_band", (0, py1 - 0.10, 0), (1.0, 0.30, 1.0), chamfer=0.04 if lod == 0 else 0.0)  # centre hub
-        corners = [(sx * L, sz * L) for sx, sz in ((1, 1), (-1, 1), (-1, -1), (1, -1))]
-        for x, z in corners:                                                                               # corner blocks
-            box(pd, "eq_metal_band", (x - math.copysign(0.24, x), (py0 + py1) / 2 + 0.03, z - math.copysign(0.24, z)), (0.50, pt + 0.08, 0.50),
-                chamfer=0.04 if lod == 0 else 0.0)
-        for x, z in ((L, 0), (-L, 0), (0, L), (0, -L)):                                                    # edge-mid blocks
-            box(pd, "eq_metal_band", (x - math.copysign(0.2, x) if x else 0, (py0 + py1) / 2 + 0.02, z - math.copysign(0.2, z) if z else 0),
-                (0.42 if x else 0.60, pt + 0.04, 0.60 if x else 0.42), chamfer=0.03 if lod == 0 else 0.0)
-        if lod < 2:
-            for k in range(8):                                                                             # 8 sections
-                ca = corners[k // 2]
-                mid = (ca[0], 0.0) if k % 2 == 0 else (0.0, ca[1])
-                prism(pd, "eq_pad_ceramic", inset([(0.0, 0.0), ca, mid], 0.13), py0 + 0.04, py1 - 0.012)
-        else:
-            box(pd, "eq_pad_ceramic", (0, py1 - 0.06, 0), (2 * L - 0.3, 0.10, 2 * L - 0.3))
-        if lod == 0:
-            def bolts_along(p0, p1, step):
-                n = max(1, int(math.hypot(p1[0] - p0[0], p1[1] - p0[1]) / step))
-                for i in range(1, n):
-                    t = i / n
-                    hex_bolt(pd, "eq_steel", (p0[0] + (p1[0] - p0[0]) * t, py1 - 0.005, p0[1] + (p1[1] - p0[1]) * t), (0, 1, 0), 0.05, 0.025, washer=False)
-            for x, z in corners:
-                bolts_along((math.copysign(0.75, x), math.copysign(0.75, z)), (x - math.copysign(0.6, x), z - math.copysign(0.6, z)), 1.0)
-            for x, z in ((L, 0), (-L, 0), (0, L), (0, -L)):
-                bolts_along((math.copysign(0.6, x) if x else 0, math.copysign(0.6, z) if z else 0), (x - math.copysign(0.5, x) if x else 0, z - math.copysign(0.5, z) if z else 0), 1.0)
-            for s in (-1, 1):                                                                              # rim bolts + side slots
-                for i in range(10):
-                    q = -L + 0.85 + i * (2 * L - 1.7) / 9
-                    hex_bolt(pd, "eq_steel", (s * (L - bw / 2), py1, q), (0, 1, 0), 0.05, 0.025, washer=False)
-                    hex_bolt(pd, "eq_steel", (q, py1, s * (L - bw / 2)), (0, 1, 0), 0.05, 0.025, washer=False)
-                for q in (-L / 2, L / 2):
-                    box(pd, "eq_metal_graphite", (s * L + s * 0.004, (py0 + py1) / 2, q), (0.01, 0.08, 1.6))
-                    box(pd, "eq_metal_graphite", (q, (py0 + py1) / 2, s * L + s * 0.004), (1.6, 0.08, 0.01))
-            for x, z in corners:                                                                           # lifting eyes
-                lathe(pd, "eq_steel", crect(0.05, 0.09, -0.03, 0.03), 8, axis_to((1, 0, 0)),
-                      (x - math.copysign(0.24, x), py1 + 0.14, z - math.copysign(0.24, z)))
-            for i in range(4):
-                hex_bolt(pd, "eq_steel", (0.32 * (1 if i % 2 else -1), py1 + 0.05, 0.32 * (1 if i // 2 else -1)), (0, 1, 0), 0.07, 0.035)
+    # --- heat-pipe column from the vessel top to the pad, cooling pad PT1 (11 x 11 x 0.25 m)
+    heat_column(P.setdefault("er5_heat_pipe_column", Part("er5_heat_pipe_column")), lod, seg, small, ro, d["pad_y0"])
+    cooling_pad(P.setdefault("reactor_cooling_pad", Part("reactor_cooling_pad")), lod, d["pad_y0"], d["pad_t"], d["pad_half"])
 
     # --- emergency connection to the shared coolant loop: the only copper lines (column foot -> port block, aft top)
     ec = P["er5_emergency_coolant"] = Part("er5_emergency_coolant")
@@ -880,7 +890,386 @@ def er5_hits():
     return H
 
 
-HITS = {"cobretty_cr1_vector": cr1_hits, "cobretty_er5_reactor": er5_hits}
+# ---------------------------------------------------------------- reactor families (author 2026-11-09)
+# One base concept for every propulsion reactor: a unit coaxial with the engine bay (axis = OBJ Z), flanges to the fore /
+# aft drives on its ends (mating faces at z = -/+face_z), the cooling pad on a heat-pipe column on top (+Y), the same
+# serviceable units (fault class reactor.fusion: pad, plasma_ctl, damper = confinement, feed, inverter, sensor).
+# Each maker has its own confinement school and look:
+#   Cobretty (Hellas, premium modular)   - compact coaxial tokamak drum, magnet hoops under a smooth skin (ER-5 above);
+#   Sol Reactor Works (Atlantic school)  - linear FRC collider (reference: Helion Polaris): formation sections at both
+#                                          ends, coil-wrapped accelerators tapering to a central compression chamber,
+#                                          long capacitor banks (pulsed power + direct energy recovery); white / navy;
+#   Tianhe Heavy (Pact state concern)    - heavy tokamak (reference: EAST / CFETR): flat-plate 12-sided cryostat, 12
+#                                          exposed D-shaped TF coils standing out like a gear, big welded flanges;
+#                                          olive steel / red coil casings.
+# The smaller models of a family are the big one scaled to their passport envelope, with their own pad side.
+SRW = dict(face_z=3.05, flange_r=1.70, form_r=1.55, form_z0=2.25, form_z1=2.80, comp_r=0.85, comp_z=0.75, cone_r=1.40,
+           pad_y0=2.35, pad_t=0.25, pad_half=5.39)
+
+
+def srw_flange(lod, seg):
+    """SRW flange, local frame: mating face at z = 0 facing +Z, body towards -Z"""
+    d = SRW
+    f = Part("flange")
+    fr = d["flange_r"]
+    prof = [(fr - 0.05, -0.25), (fr, -0.25), (fr, 0), (0.55, 0), (0.55, -0.20), (0, -0.20)]
+    lathe(f, "eq_metal_band", prof, seg)
+    if lod < 2:
+        for i in range(3):
+            a = 2 * math.pi * i / 3 + math.pi / 2
+            p = (0.26 * math.cos(a), 0.26 * math.sin(a), -0.20)
+            lathe(f, "eq_insulator", [(0.11, 0), (0.11, 0.03), (0, 0.03)], 12 if lod == 0 else 6, I3, p)
+            lathe(f, "eq_copper", [(0.06, 0.03), (0.06, 0.06), (0, 0.06)], 12 if lod == 0 else 6, I3, p)
+        box(f, "eq_metal_graphite", (0.0, -0.95, 0.004), (0.34, 0.22, 0.008))
+    if lod == 0:
+        for i in range(16):
+            a = 2 * math.pi * (i + 0.5) / 16
+            hex_bolt(f, "eq_steel", (1.58 * math.cos(a), 1.58 * math.sin(a), -0.25), (0, 0, -1), 0.08, 0.05)
+    return f
+
+
+def srw_parts(lod):
+    seg = {0: 32, 1: 16, 2: 12}[lod]
+    small = {0: 12, 1: 8, 2: 6}[lod]
+    d = SRW
+    fz0, fz1, fr = d["form_z0"], d["form_z1"], d["form_r"]
+    P = {}
+
+    # --- vessel: accelerators tapering to the compression chamber (open ends sit inside the formation sections)
+    v = P["srw_vessel"] = Part("srw_vessel")
+    cz, cr, kr = d["comp_z"], d["comp_r"], d["cone_r"]
+    lathe(v, "eq_srw_white", [(kr, -fz0 - 0.05), (cr - 0.05, -cz - 0.10), (cr, -cz), (cr, cz), (cr - 0.05, cz + 0.10), (kr, fz0 + 0.05)], seg, soft=30)
+
+    # --- confinement / compression coils (damper SRU): dense rings on the chamber, spaced rings on the accelerators
+    m = P["srw_coils"] = Part("srw_coils")
+    step = {0: 1, 1: 2, 2: 4}[lod]
+    rings = [(-cz + 0.06 + i * (2 * cz - 0.12) / 10) for i in range(0, 11, step)]
+    for z in rings:
+        lathe(m, "eq_srw_coil", crect(cr, cr + 0.17, z - 0.05, z + 0.05), seg)
+    for s in (-1, 1):
+        for i in range(0, 6, step):
+            z = cz + 0.25 + i * (fz0 - cz - 0.45) / 5
+            rr = cr - 0.05 + (kr - cr + 0.05) * (z - cz - 0.10) / (fz0 - cz - 0.05)
+            lathe(m, "eq_srw_coil", crect(rr, rr + 0.13, s * z - 0.05, s * z + 0.05), seg)
+
+    # --- formation sections at both ends (white drums, two navy bands, an end ring)
+    for name, s in (("srw_formation_fore", -1), ("srw_formation_aft", 1)):
+        fm = P[name] = Part(name)
+        z0, z1 = (fz0, fz1) if s > 0 else (-fz1, -fz0)
+        prof = [(kr, z0), (fr, z0), (fr, z1), (fr - 0.25, z1)] if s > 0 else [(fr - 0.25, z0), (fr, z0), (fr, z1), (kr, z1)]
+        lathe(fm, "eq_srw_white", prof, seg)
+        if lod < 2:
+            for zz in (z0 + 0.12, z1 - 0.12):
+                lathe(fm, "eq_srw_coil", crect(fr - 0.01, fr + 0.07, zz - 0.05, zz + 0.05), seg)
+
+    # --- flanges to the drives
+    fl = srw_flange(lod, seg)
+    P["srw_flange_aft"] = placed(fl, I3, (0, 0, d["face_z"]))
+    P["srw_flange_aft"].name = "srw_flange_aft"
+    P["srw_flange_fore"] = placed(fl, rot_y(math.pi), (0, 0, -d["face_z"]))
+    P["srw_flange_fore"].name = "srw_flange_fore"
+
+    # --- capacitor banks (inverter SRU: pulsed power + direct energy recovery): 4 long boxes on the diagonals
+    cb = P["srw_capacitor_banks"] = Part("srw_capacitor_banks")
+    for k in range(4):
+        a = math.pi / 4 + k * math.pi / 2
+        Rz = rot_z(a)
+        box(cb, "eq_metal_panel", apply(Rz, (1.50, 0, 0))[:2] + (0.0,), (0.24, 0.55, 2 * fz0 + 0.40), Rz, chamfer=0.03 if lod == 0 else 0.0)
+        if lod == 0:
+            for i in range(1, 6):                                                       # cell dividers
+                z = -fz0 + 0.10 + i * (2 * fz0 - 0.20) / 6
+                box(cb, "eq_srw_coil", apply(Rz, (1.625, 0, 0))[:2] + (z,), (0.02, 0.57, 0.05), Rz)
+            box(cb, "eq_status_amber", apply(Rz, (1.625, 0.18, 0))[:2] + (0.4,), (0.01, 0.06, 0.12), Rz)
+        if lod < 2:
+            for s in (-1, 1):                                                           # cables to the formation coils
+                p0 = apply(Rz, (1.42, 0, 0))[:2] + (s * (fz0 - 0.15),)
+                p1 = apply(Rz, (1.42, 0, 0))[:2] + (s * (fz0 + 0.12),)
+                cyl(cb, "eq_insulator", p0, p1, 0.06, small)
+
+    # --- fuel feed: He-3 / D gas valves on top of each formation section (-X side), one manifold box
+    fd = P["srw_fuel_feed"] = Part("srw_fuel_feed")
+    box(fd, "eq_metal_panel", (-1.62, 0.0, 0.0), (0.22, 0.45, 0.70), chamfer=0.03 if lod == 0 else 0.0)
+    if lod < 2:
+        for s in (-1, 1):
+            cyl(fd, "eq_steel", (-1.62, 0.0, s * 0.35), (-1.62, 0.0, s * (fz0 + 0.30)), 0.04, small)
+            cyl(fd, "eq_metal_band", polz(fr, math.radians(160), s * (fz0 + 0.30)), polz(fr + 0.18, math.radians(160), s * (fz0 + 0.30)), 0.08, small)
+
+    # --- plasma control unit under the compression chamber, sensor ports on its sides
+    pc = P["srw_plasma_ctl"] = Part("srw_plasma_ctl")
+    box(pc, "eq_metal_panel", (0, -(cr + 0.32), 0), (0.80, 0.22, 1.30), chamfer=0.03 if lod == 0 else 0.0)
+    if lod == 0:
+        box(pc, "eq_status_amber", (0.25, -(cr + 0.435), 0.4), (0.10, 0.006, 0.06))
+        cyl(pc, "eq_metal_band", (0.3, -(cr + 0.21), 0.55), (0.3, -(cr + 0.21), cz + 0.3), 0.05, 8)
+    sn = P["srw_plasma_sensors"] = Part("srw_plasma_sensors")
+    if lod == 0:
+        for a in (0.0, math.pi):
+            for z in (-0.45, 0.45):
+                cyl(sn, "eq_metal_graphite", polz(cr + 0.17, a, z), polz(cr + 0.32, a, z), 0.06, small)
+
+    # --- heat-pipe column from the chamber coils to the pad, the pad (PT1)
+    top = cr + 0.17
+    heat_column(P.setdefault("srw_heat_pipe_column", Part("srw_heat_pipe_column")), lod, seg, small, top, d["pad_y0"],
+                band="eq_srw_white")
+    cooling_pad(P.setdefault("reactor_cooling_pad", Part("reactor_cooling_pad")), lod, d["pad_y0"], d["pad_t"], d["pad_half"],
+                frame="eq_srw_white")
+
+    # --- emergency coolant (the only copper) and the mounting lugs under the formation sections
+    ec = P["srw_emergency_coolant"] = Part("srw_emergency_coolant")
+    if lod < 2:
+        box(ec, "eq_metal_panel", (0, top + 0.08, 1.15), (0.40, 0.16, 0.30))
+        for s in (-1, 1):
+            cyl(ec, "eq_copper", (0.11 * s, top + 0.20, 0.45), (0.11 * s, top + 0.20, 1.02), 0.045, small)
+            cyl(ec, "eq_copper", (0.11 * s, top + 0.16, 1.15), (0.11 * s, top + 0.36, 1.15), 0.055, small)
+    mt = P["srw_mounts"] = Part("srw_mounts")
+    for a in (5 * math.pi / 4, 7 * math.pi / 4):
+        for s in (-1, 1):
+            Rz = rot_z(a)
+            zz = s * (fz0 + fz1) / 2
+            box(mt, "eq_metal_band", apply(Rz, (fr + 0.10, 0, 0))[:2] + (zz,), (0.22, 0.36, 0.40), Rz)
+            if lod < 2:
+                lathe(mt, "eq_steel", crect(0.04, 0.08, -0.14, 0.14), small, I3, apply(Rz, (fr + 0.16, 0, 0))[:2] + (zz,))
+    return P
+
+
+TH = dict(face_z=3.105, flange_r=2.30, cryo_r=1.95, cryo_z=2.25, cone_z=2.55, neck_r=1.45, coil_r0=1.75, coil_out=0.70,
+          coil_h=1.95, pad_y0=3.25, pad_t=0.25, pad_half=8.205)
+TH_FACET0 = math.pi / 12          # 12-gon vertices at 15 + 30k deg: facet centres at 0, 30, 60 ... (units sit there)
+
+
+def th_flange(lod):
+    """Tianhe flange, local frame: mating face at z = 0 facing +Z; 12-sided welded plate, big bolts"""
+    d = TH
+    f = Part("flange")
+    fr = d["flange_r"]
+    lathe(f, "eq_th_steel", [(d["neck_r"], -0.70), (d["neck_r"], -0.35), (fr, -0.35), (fr, 0), (0.60, 0), (0.60, -0.22), (0, -0.22)],
+          12, I3, (0, 0, 0), TH_FACET0, TH_FACET0 + 2 * math.pi, smooth=False)
+    if lod < 2:
+        for i in range(3):
+            a = 2 * math.pi * i / 3 + math.pi / 2
+            p = (0.30 * math.cos(a), 0.30 * math.sin(a), -0.22)
+            lathe(f, "eq_insulator", [(0.13, 0), (0.13, 0.04), (0, 0.04)], 12 if lod == 0 else 6, I3, p)
+            lathe(f, "eq_copper", [(0.07, 0.04), (0.07, 0.07), (0, 0.07)], 12 if lod == 0 else 6, I3, p)
+        box(f, "eq_metal_graphite", (0.0, -1.20, 0.004), (0.42, 0.26, 0.008))
+        for i in range(12):                                                         # welded gussets neck -> plate
+            a = TH_FACET0 + 2 * math.pi * i / 12
+            Rz = rot_z(a)
+            box(f, "eq_th_steel", apply(Rz, ((d["neck_r"] + fr) / 2, 0, 0))[:2] + (-0.52,), (fr - d["neck_r"], 0.10, 0.34), Rz)
+    if lod == 0:
+        for i in range(24):
+            a = 2 * math.pi * (i + 0.5) / 24
+            hex_bolt(f, "eq_steel", (2.10 * math.cos(a), 2.10 * math.sin(a), -0.35), (0, 0, -1), 0.12, 0.08)
+    return f
+
+
+def th_parts(lod):
+    seg = {0: 32, 1: 16, 2: 12}[lod]
+    small = {0: 12, 1: 8, 2: 6}[lod]
+    d = TH
+    R, cz, kz = d["cryo_r"], d["cryo_z"], d["cone_z"]
+    ap = R * math.cos(math.pi / 12)                                                 # 12-gon apothem
+    P = {}
+
+    # --- cryostat: flat-plate 12-gon drum with conical end plates, two welded belts, diagnostic port plates
+    v = P["th_cryostat"] = Part("th_cryostat")
+    poly = lambda prof: lathe(v, "eq_th_steel", prof, 12, I3, (0, 0, 0), TH_FACET0, TH_FACET0 + 2 * math.pi, smooth=False)
+    poly([(d["neck_r"], -kz), (R, -cz), (R, cz), (d["neck_r"], kz)])
+    if lod < 2:
+        for zz in (-1.25, 1.25):
+            lathe(v, "eq_metal_band", crect(R - 0.02, R + 0.08, zz - 0.10, zz + 0.10), 12, I3, (0, 0, 0), TH_FACET0, TH_FACET0 + 2 * math.pi, smooth=False)
+        for k in (2, 4, 8, 10):                                                     # port plates on facets 60/120/240/300 deg
+            a = k * math.pi / 6
+            Rz = rot_z(a)
+            box(v, "eq_metal_panel", apply(Rz, (ap + 0.04, 0, 0))[:2] + (0.0,), (0.08, 0.70, 0.90), Rz)
+            if lod == 0:
+                for yy in (-0.28, 0.28):
+                    for zz in (-0.38, 0.38):
+                        hex_bolt(v, "eq_steel", apply(Rz, (ap + 0.08, yy, 0))[:2] + (zz,), apply(Rz, (1, 0, 0)), 0.07, 0.04)
+    if lod == 0:                                                                    # longitudinal weld seams at the vertices
+        for k in range(12):
+            a = TH_FACET0 + k * math.pi / 6
+            Rz = rot_z(a)
+            box(v, "eq_metal_band", apply(Rz, (R + 0.01, 0, 0))[:2] + (0.0,), (0.04, 0.06, 2 * cz - 0.1), Rz)
+
+    # --- 12 exposed D-shaped TF coils (damper / confinement SRU) standing out at the 12-gon vertices
+    m = P["th_tf_coils"] = Part("th_tf_coils")
+    n_arc = {0: 10, 1: 6, 2: 4}[lod]
+    r0, ro, h = d["coil_r0"], d["coil_out"], d["coil_h"]
+    pts = [(r0 + ro * math.cos(t), h * math.sin(t)) for t in (math.pi / 2 - math.pi * i / n_arc for i in range(n_arc + 1))]
+    for k in range(12):
+        a = TH_FACET0 + k * math.pi / 6
+        Rz = rot_z(a)
+        for (r1, z1), (r2, z2) in zip(pts, pts[1:]):
+            L = math.hypot(r2 - r1, z2 - z1) + 0.05
+            phi = math.atan2(r2 - r1, z2 - z1)
+            c = apply(Rz, ((r1 + r2) / 2, 0, 0))
+            box(m, "eq_th_coil", (c[0], c[1], (z1 + z2) / 2), (0.22, 0.30, L), mat_mul(Rz, rot_y(phi)))
+        if lod == 0:                                                                # coil clamps on the cryostat belts
+            for zz in (-1.25, 1.25):
+                box(m, "eq_metal_band", apply(Rz, (R + 0.14, 0, 0))[:2] + (zz,), (0.20, 0.42, 0.24), Rz)
+
+    # --- flanges
+    fl = th_flange(lod)
+    P["th_flange_aft"] = placed(fl, I3, (0, 0, d["face_z"]))
+    P["th_flange_aft"].name = "th_flange_aft"
+    P["th_flange_fore"] = placed(fl, rot_y(math.pi), (0, 0, -d["face_z"]))
+    P["th_flange_fore"].name = "th_flange_fore"
+
+    # --- inverter (+X facet) with busbars along the drum to both flanges
+    iv = P["th_inverter"] = Part("th_inverter")
+    box(iv, "eq_metal_panel", (ap + 0.17, 0, 0), (0.30, 0.62, 1.70))
+    if lod < 2:
+        for zs in (-1, 1):
+            for yy in (-0.16, 0.16):
+                cyl(iv, "eq_insulator", (ap + 0.17, yy, zs * 0.85), (ap + 0.17, yy, zs * 2.78), 0.07, small)
+    if lod == 0:
+        box(iv, "eq_metal_graphite", (ap + 0.325, 0, 0), (0.012, 0.50, 1.40))
+        for i in range(3):
+            box(iv, "eq_status_amber", (ap + 0.333, 0.16, -0.5 + 0.1 * i), (0.006, 0.06, 0.06))
+
+    # --- fuel feed (-X facet), plasma control (bottom facet), sensors on the upper facets
+    fd = P["th_fuel_feed"] = Part("th_fuel_feed")
+    box(fd, "eq_metal_panel", (-(ap + 0.17), 0, 0), (0.30, 0.62, 1.10))
+    if lod < 2:
+        cyl(fd, "eq_metal_band", (-(ap + 0.17), 0.31, 0), (-(ap + 0.17), 0.70, 0), 0.12, small)
+    pc = P["th_plasma_ctl"] = Part("th_plasma_ctl")
+    box(pc, "eq_metal_panel", (0, -(ap + 0.15), 0), (0.62, 0.26, 1.40))
+    sn = P["th_plasma_sensors"] = Part("th_plasma_sensors")
+    if lod == 0:
+        for a in (math.pi / 6, 5 * math.pi / 6):
+            for zz in (-0.7, 0.7):
+                cyl(sn, "eq_metal_graphite", polz(ap, a, zz), polz(ap + 0.18, a, zz), 0.08, small)
+
+    # --- column + pad, emergency coolant, lugs
+    heat_column(P.setdefault("th_heat_pipe_column", Part("th_heat_pipe_column")), lod, seg, small, ap, d["pad_y0"],
+                band="eq_th_steel")
+    cooling_pad(P.setdefault("reactor_cooling_pad", Part("reactor_cooling_pad")), lod, d["pad_y0"], d["pad_t"], d["pad_half"],
+                frame="eq_th_steel")
+    ec = P["th_emergency_coolant"] = Part("th_emergency_coolant")
+    if lod < 2:
+        box(ec, "eq_metal_panel", (0, ap + 0.08, 1.30), (0.44, 0.16, 0.34))
+        for s in (-1, 1):
+            cyl(ec, "eq_copper", (0.12 * s, ap + 0.20, 0.45), (0.12 * s, ap + 0.20, 1.15), 0.05, small)
+            cyl(ec, "eq_copper", (0.12 * s, ap + 0.16, 1.30), (0.12 * s, ap + 0.40, 1.30), 0.06, small)
+    mt = P["th_mounts"] = Part("th_mounts")
+    for a in (7 * math.pi / 6, 11 * math.pi / 6):
+        for zz in (-1.8, 1.8):
+            Rz = rot_z(a)
+            box(mt, "eq_metal_band", apply(Rz, (ap + 0.14, 0, 0))[:2] + (zz,), (0.28, 0.46, 0.50), Rz)
+            if lod < 2:
+                lathe(mt, "eq_steel", crect(0.05, 0.11, -0.18, 0.18), small, I3, apply(Rz, (ap + 0.22, 0, 0))[:2] + (zz,))
+    return P
+
+
+# --- smaller family members: the big unit scaled to the passport envelope, own pad side, part prefix renamed
+def scaled_family(base_fn, D, s, pad_side, rename=None):
+    def fn(lod):
+        saved = dict(D)
+        D["pad_half"] = pad_side / 2 / s
+        try:
+            P = base_fn(lod)
+        finally:
+            D.clear()
+            D.update(saved)
+        out = {}
+        for k, part in P.items():
+            q = Part(part.name)
+            q.v = [(x * s, y * s, z * s) for x, y, z in part.v]
+            q.n = list(part.n)
+            q.faces = part.faces
+            name = k
+            for a, b in (rename or {}).items():
+                name = name.replace(a, b)
+            q.name = name
+            out[name] = q
+        return out
+    return fn
+
+
+def scaled_hits(base_hits, D, s, pad_side, rename=None):
+    def fn():
+        saved = dict(D)
+        D["pad_half"] = pad_side / 2 / s
+        try:
+            H = base_hits()
+        finally:
+            D.clear()
+            D.update(saved)
+        for v in H:
+            v["position"] = [x * s for x in v["position"]]
+            if "half_size" in v:
+                v["half_size"] = [x * s for x in v["half_size"]]
+            for k in ("radius", "half_height"):
+                if k in v:
+                    v[k] *= s
+            for a, b in (rename or {}).items():
+                v["part"] = v["part"].replace(a, b)
+        return H
+    return fn
+
+
+def srw_hits():
+    d = SRW
+    fz0, fz1, fr = d["form_z0"], d["form_z1"], d["form_r"]
+    H = [hcyl("srw_vessel", (0, 0, -fz0), (0, 0, fz0), d["cone_r"]),
+         hcyl("srw_coils", (0, 0, -d["comp_z"]), (0, 0, d["comp_z"]), d["comp_r"] + 0.17),
+         hcyl("srw_formation_fore", (0, 0, -fz1), (0, 0, -fz0), fr + 0.07),
+         hcyl("srw_formation_aft", (0, 0, fz0), (0, 0, fz1), fr + 0.07),
+         hcyl("srw_flange_fore", (0, 0, -d["face_z"]), (0, 0, -fz1), d["flange_r"]),
+         hcyl("srw_flange_aft", (0, 0, fz1), (0, 0, d["face_z"]), d["flange_r"])]
+    for k in range(4):
+        a = math.pi / 4 + k * math.pi / 2
+        H.append(hbox("srw_capacitor_banks", polz(1.50, a, 0), (0.26, 0.57, 2 * fz0 + 0.40), (0, 0, math.degrees(a))))
+    cr, top = d["comp_r"], d["comp_r"] + 0.17
+    H += [hbox("srw_fuel_feed", (-1.62, 0, 0), (0.22, 0.45, 0.70)),
+          hbox("srw_plasma_ctl", (0, -(cr + 0.32), 0), (0.80, 0.22, 1.30)),
+          hbox("srw_heat_pipe_column", (0, top + 0.02, 0), (0.80, 0.16, 1.30)),
+          hcyl("srw_heat_pipe_column", (0, top, 0), (0, d["pad_y0"], 0), 0.65),
+          hbox("reactor_cooling_pad", (0, d["pad_y0"] + d["pad_t"] / 2 + 0.03, 0), (2 * d["pad_half"], d["pad_t"] + 0.06, 2 * d["pad_half"])),
+          hbox("srw_emergency_coolant", (0, top + 0.20, 0.80), (0.40, 0.40, 0.80))]
+    for a in (0.0, math.pi):
+        for z in (-0.45, 0.45):
+            H.append(hcyl("srw_plasma_sensors", polz(cr + 0.17, a, z), polz(cr + 0.32, a, z), 0.06))
+    for a in (5 * math.pi / 4, 7 * math.pi / 4):
+        for s in (-1, 1):
+            H.append(hbox("srw_mounts", polz(fr + 0.10, a, s * (fz0 + fz1) / 2), (0.22, 0.36, 0.40), (0, 0, math.degrees(a))))
+    return H
+
+
+def th_hits():
+    d = TH
+    R = d["cryo_r"]
+    ap = R * math.cos(math.pi / 12)
+    H = [hcyl("th_cryostat", (0, 0, -d["cone_z"]), (0, 0, d["cone_z"]), R)]
+    for k in range(12):
+        a = TH_FACET0 + k * math.pi / 6
+        H.append(hbox("th_tf_coils", polz(R + 0.25, a, 0), (0.50, 0.30, 3.70), (0, 0, math.degrees(a))))
+    H += [hcyl("th_flange_fore", (0, 0, -d["face_z"]), (0, 0, -d["face_z"] + 0.70), d["flange_r"]),
+          hcyl("th_flange_aft", (0, 0, d["face_z"] - 0.70), (0, 0, d["face_z"]), d["flange_r"]),
+          hbox("th_inverter", (ap + 0.17, 0, 0), (0.30, 0.62, 1.70))]
+    for zs in (-1, 1):
+        H.append(hbox("th_inverter", (ap + 0.17, 0, zs * 1.82), (0.16, 0.48, 1.94)))
+    H += [hbox("th_fuel_feed", (-(ap + 0.17), 0, 0), (0.30, 0.62, 1.10)),
+          hcyl("th_fuel_feed", (-(ap + 0.17), 0.31, 0), (-(ap + 0.17), 0.70, 0), 0.12),
+          hbox("th_plasma_ctl", (0, -(ap + 0.15), 0), (0.62, 0.26, 1.40)),
+          hbox("th_heat_pipe_column", (0, ap + 0.02, 0), (0.80, 0.16, 1.30)),
+          hcyl("th_heat_pipe_column", (0, ap, 0), (0, d["pad_y0"], 0), 0.65),
+          hbox("reactor_cooling_pad", (0, d["pad_y0"] + d["pad_t"] / 2 + 0.03, 0), (2 * d["pad_half"], d["pad_t"] + 0.06, 2 * d["pad_half"])),
+          hbox("th_emergency_coolant", (0, ap + 0.22, 0.88), (0.44, 0.44, 1.0))]
+    for a in (math.pi / 6, 5 * math.pi / 6):
+        for zz in (-0.7, 0.7):
+            H.append(hcyl("th_plasma_sensors", polz(ap, a, zz), polz(ap + 0.18, a, zz), 0.08))
+    for a in (7 * math.pi / 6, 11 * math.pi / 6):
+        for zz in (-1.8, 1.8):
+            H.append(hbox("th_mounts", polz(ap + 0.14, a, zz), (0.28, 0.46, 0.50), (0, 0, math.degrees(a))))
+    return H
+
+
+# family scale factors: passport envelope / big unit envelope (ER-1 2.34 m / 5; SR-2.6 2.85 / 3.4; TR-2.6V 3.04 / 4.97)
+ER1_S, SR26_S, TR26_S = 2.34 / 5.0, 2.85 / 3.4, 3.04 / 4.97
+HITS = {"cobretty_cr1_vector": cr1_hits, "cobretty_er5_reactor": er5_hits,
+        "cobretty_er1_reactor": scaled_hits(er5_hits, ER5, ER1_S, 4.48, {"er5_": "er1_"}),
+        "srw_sr48_reactor": srw_hits, "srw_sr26_reactor": scaled_hits(srw_hits, SRW, SR26_S, 7.92),
+        "tianhe_tr10_reactor": th_hits, "tianhe_tr26v_reactor": scaled_hits(th_hits, TH, TR26_S, 7.78)}
 
 
 def hits_text(asset):
@@ -904,7 +1293,10 @@ def hits_text(asset):
 
 
 # ---------------------------------------------------------------- output
-ASSETS = {"cobretty_cr1_vector": cr1_parts, "cobretty_er5_reactor": er5_parts}
+ASSETS = {"cobretty_cr1_vector": cr1_parts, "cobretty_er5_reactor": er5_parts,
+          "cobretty_er1_reactor": scaled_family(er5_parts, ER5, ER1_S, 4.48, {"er5_": "er1_"}),
+          "srw_sr48_reactor": srw_parts, "srw_sr26_reactor": scaled_family(srw_parts, SRW, SR26_S, 7.92),
+          "tianhe_tr10_reactor": th_parts, "tianhe_tr26v_reactor": scaled_family(th_parts, TH, TR26_S, 7.78)}
 
 
 def obj_text(part, mtl_name):

@@ -22,6 +22,13 @@ them by hand; change the generator and rebuild. Preview renders:
   cooling pad PT1 (`reactor_cooling_pad`, 11 x 11 x 0.25 m) at y = 3.0 on the
   heat-pipe column.
 
+- Reactor families (author 2026-11-09: one base concept, each maker its own school;
+  all coaxial with the bay, flanges on the ends, pad PT1 `reactor_cooling_pad` on a
+  heat-pipe column on top, the same serviceable units):
+  `cobretty_er1_reactor/` (ER-5 scaled), `srw_sr48_reactor/` + `srw_sr26_reactor/`
+  (Sol Reactor Works linear FRC), `tianhe_tr10_reactor/` + `tianhe_tr26v_reactor/`
+  (Tianhe heavy tokamak, exposed D-coils, 12-sided cryostat).
+
 `<unit>/hit_volumes.json` - hit volumes generated from the same dimensions as
 the mesh (boxes and cylinders, one or more per part, the engine CollisionVolume
 fields; "cylinder" = CollisionShape::Cylinder). In the Model Asset Editor: PHYSICS

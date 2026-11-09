@@ -27,9 +27,9 @@ const newParts = [
     mass_t: 13, price_cr: 520000, mwe: 2600, eff: 0.9, overhaul_h: 30000, life_h: 50000, startup_s: 420, status: ST,
     notes: "PROPOSAL (reference): малый силовой реактор Сола в диапазоне снятых при унификации SR-1.4/2.2/3.3. Покрывает один У-33 (2.4 ГВт) + пик RCS с запасом ~8 %. Сейчас стоит на OCS-4J, GT-3000P, «Камень-С»; кандидат на замену 2×-переразмеренных SR-4.8 на OCS-4, GT-3000, «Камне» и ST-6 (решение автора).",
     geometry: {
-      status: ST, envelope_m: [3.215, 3.215, 4.02], service_clearance_m: [3.69, 3.69, 4.62], cooling_pad_side_m: 7.92, cooling_pad_thickness_m: 0.25,
+      status: ST, envelope_m: [2.85, 2.85, 5.11], service_clearance_m: [3.28, 3.28, 5.88], cooling_pad_side_m: 7.92, cooling_pad_thickness_m: 0.25,
       anchor: "ER-5 cooling-pad scaling by waste heat",
-      basis: ["same effective density as SR-4.8 / TR-2.6V (0.313 t/m3), aspect 1:1:1.25", "pad side = sqrt(1.3 x waste / 6 MW/m2), waste = 2600 x (1/0.9 - 1) = 289 MW"]
+      basis: ["same effective density as SR-4.8 / TR-2.6V (0.313 t/m3)", "pad side = sqrt(1.3 x waste / 6 MW/m2), waste = 2600 x (1/0.9 - 1) = 289 MW", "author 2026-11-09: Sol Reactor Works school = linear FRC collider (formation sections at both ends, compression chamber in the middle) - elongated along the bay axis, same volume"]
     },
     cooperation_group: "sol_industrial",
     replacements: {

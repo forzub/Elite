@@ -1,0 +1,458 @@
+{
+ "asset": "srw_sr48_reactor",
+ "generator": "tools/models/build_equipment_models.py (do not edit)",
+ "frame": "OBJ frame of the LOD meshes, metres, +Y up; rotation_deg applied as T * Rx * Ry * Rz",
+ "shapes": {
+  "box": "half_size",
+  "cylinder": "radius + half_height along local +Y (CollisionShape::Cylinder)"
+ },
+ "volumes": [
+  {
+   "id": "srw_vessel.1",
+   "part": "srw_vessel",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.4,
+   "half_height": 2.25
+  },
+  {
+   "id": "srw_coils.1",
+   "part": "srw_coils",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.02,
+   "half_height": 0.75
+  },
+  {
+   "id": "srw_formation_fore.1",
+   "part": "srw_formation_fore",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -2.525
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.62,
+   "half_height": 0.275
+  },
+  {
+   "id": "srw_formation_aft.1",
+   "part": "srw_formation_aft",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    2.525
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.62,
+   "half_height": 0.275
+  },
+  {
+   "id": "srw_flange_fore.1",
+   "part": "srw_flange_fore",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    -2.925
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.7,
+   "half_height": 0.125
+  },
+  {
+   "id": "srw_flange_aft.1",
+   "part": "srw_flange_aft",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    0.0,
+    2.925
+   ],
+   "rotation_deg": [
+    90.0,
+    0.0,
+    0.0
+   ],
+   "radius": 1.7,
+   "half_height": 0.125
+  },
+  {
+   "id": "srw_capacitor_banks.1",
+   "part": "srw_capacitor_banks",
+   "shape": "box",
+   "position": [
+    1.0607,
+    1.0607,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    45.0
+   ],
+   "half_size": [
+    0.13,
+    0.285,
+    2.45
+   ]
+  },
+  {
+   "id": "srw_capacitor_banks.2",
+   "part": "srw_capacitor_banks",
+   "shape": "box",
+   "position": [
+    -1.0607,
+    1.0607,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    135.0
+   ],
+   "half_size": [
+    0.13,
+    0.285,
+    2.45
+   ]
+  },
+  {
+   "id": "srw_capacitor_banks.3",
+   "part": "srw_capacitor_banks",
+   "shape": "box",
+   "position": [
+    -1.0607,
+    -1.0607,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.13,
+    0.285,
+    2.45
+   ]
+  },
+  {
+   "id": "srw_capacitor_banks.4",
+   "part": "srw_capacitor_banks",
+   "shape": "box",
+   "position": [
+    1.0607,
+    -1.0607,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.13,
+    0.285,
+    2.45
+   ]
+  },
+  {
+   "id": "srw_fuel_feed.1",
+   "part": "srw_fuel_feed",
+   "shape": "box",
+   "position": [
+    -1.62,
+    0.0,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.11,
+    0.225,
+    0.35
+   ]
+  },
+  {
+   "id": "srw_plasma_ctl.1",
+   "part": "srw_plasma_ctl",
+   "shape": "box",
+   "position": [
+    0.0,
+    -1.17,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.4,
+    0.11,
+    0.65
+   ]
+  },
+  {
+   "id": "srw_heat_pipe_column.1",
+   "part": "srw_heat_pipe_column",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.04,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.4,
+    0.08,
+    0.65
+   ]
+  },
+  {
+   "id": "srw_heat_pipe_column.2",
+   "part": "srw_heat_pipe_column",
+   "shape": "cylinder",
+   "position": [
+    0.0,
+    1.685,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "radius": 0.65,
+   "half_height": 0.665
+  },
+  {
+   "id": "reactor_cooling_pad.1",
+   "part": "reactor_cooling_pad",
+   "shape": "box",
+   "position": [
+    0.0,
+    2.505,
+    0.0
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    5.39,
+    0.155,
+    5.39
+   ]
+  },
+  {
+   "id": "srw_emergency_coolant.1",
+   "part": "srw_emergency_coolant",
+   "shape": "box",
+   "position": [
+    0.0,
+    1.22,
+    0.8
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "half_size": [
+    0.2,
+    0.2,
+    0.4
+   ]
+  },
+  {
+   "id": "srw_plasma_sensors.1",
+   "part": "srw_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    1.095,
+    0.0,
+    -0.45
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.06,
+   "half_height": 0.075
+  },
+  {
+   "id": "srw_plasma_sensors.2",
+   "part": "srw_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    1.095,
+    0.0,
+    0.45
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    -90.0
+   ],
+   "radius": 0.06,
+   "half_height": 0.075
+  },
+  {
+   "id": "srw_plasma_sensors.3",
+   "part": "srw_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    -1.095,
+    0.0,
+    -0.45
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "radius": 0.06,
+   "half_height": 0.075
+  },
+  {
+   "id": "srw_plasma_sensors.4",
+   "part": "srw_plasma_sensors",
+   "shape": "cylinder",
+   "position": [
+    -1.095,
+    0.0,
+    0.45
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    90.0
+   ],
+   "radius": 0.06,
+   "half_height": 0.075
+  },
+  {
+   "id": "srw_mounts.1",
+   "part": "srw_mounts",
+   "shape": "box",
+   "position": [
+    -1.1667,
+    -1.1667,
+    -2.525
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.11,
+    0.18,
+    0.2
+   ]
+  },
+  {
+   "id": "srw_mounts.2",
+   "part": "srw_mounts",
+   "shape": "box",
+   "position": [
+    -1.1667,
+    -1.1667,
+    2.525
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    225.0
+   ],
+   "half_size": [
+    0.11,
+    0.18,
+    0.2
+   ]
+  },
+  {
+   "id": "srw_mounts.3",
+   "part": "srw_mounts",
+   "shape": "box",
+   "position": [
+    1.1667,
+    -1.1667,
+    -2.525
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.11,
+    0.18,
+    0.2
+   ]
+  },
+  {
+   "id": "srw_mounts.4",
+   "part": "srw_mounts",
+   "shape": "box",
+   "position": [
+    1.1667,
+    -1.1667,
+    2.525
+   ],
+   "rotation_deg": [
+    0.0,
+    0.0,
+    315.0
+   ],
+   "half_size": [
+    0.11,
+    0.18,
+    0.2
+   ]
+  }
+ ]
+}

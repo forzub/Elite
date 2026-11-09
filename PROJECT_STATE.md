@@ -4471,4 +4471,8 @@ in-keep-out departure / final approach in the stabilization mode on ordinary eng
   (Высокий -> Fomalhaut, 20 s charge): 220 rays, exit 25 752 km off the point (sigma 19 809 km, box 59 427 km);
   a false "ПРЫЖОК ПРЕРВАН" (2 -> 0 between snapshots) found and fixed.
 - Gates 211: 205 pass / 6 known red / 0 new.
+- Author review 2 (same day): "still bends to the centre too much - a picture, not a cockpit; the stars make it look like
+  a jump BACKWARD". Lens cut ~2.5x again (swell 0.06, fling -0.06, swings 0.05); rays now follow a curve that first
+  leaves the screen centre (forward rush) and then bends into the new point. Live D:/tmp/elite_jfx5: outward start
+  confirmed; when the target lies behind the nose the curves' second half still comes back toward the centre.
 - Next: author's look review in a live flight; real audio backend for the hum; beacon runtime to replace the lock proxy.
